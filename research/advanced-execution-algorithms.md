@@ -847,11 +847,11 @@ Total Quantity = Display Quantity (visible) + Hidden Quantity (reserve)
 
 ---
 
-## 9. HypeTerminal Advanced Execution Panel — Design Ideas
+## 9. gatu Advanced Execution Panel — Design Ideas
 
 ### Why Build This
 
-Hyperliquid currently supports TWAP (fixed 30s intervals, 3% slippage cap, basic randomize flag) and Scale Orders natively. No other CEX-grade execution algos exist on-chain. HypeTerminal can become the **first frontend to offer institutional-grade execution on Hyperliquid** by implementing client-side algo orchestration on top of Hyperliquid's API. This is a significant competitive moat — no other Hyperliquid frontend (Insilico, Dexly, Rage Trade) offers a unified execution panel with multiple algo types.
+Hyperliquid currently supports TWAP (fixed 30s intervals, 3% slippage cap, basic randomize flag) and Scale Orders natively. No other CEX-grade execution algos exist on-chain. gatu can become the **first frontend to offer institutional-grade execution on Hyperliquid** by implementing client-side algo orchestration on top of Hyperliquid's API. This is a significant competitive moat — no other Hyperliquid frontend (Insilico, Dexly, Rage Trade) offers a unified execution panel with multiple algo types.
 
 ### Architecture: Client-Side Algo Engine
 
@@ -897,7 +897,7 @@ Since Hyperliquid only exposes basic order primitives via API, all advanced algo
 
 **Why better than native:** Hyperliquid's native TWAP has a fixed 30s interval and limited controls. Client-side TWAP can offer:
 
-| Feature | Native HL | HypeTerminal Enhanced |
+| Feature | Native HL | gatu Enhanced |
 |---------|-----------|----------------------|
 | Interval | Fixed 30s | 5s - 300s configurable |
 | Price limit | 3% slippage only | Configurable limit price |
@@ -1119,7 +1119,7 @@ Every algo should have these safety features:
 2. **Order types available**: Limit, Market, Stop, Scale, TWAP (native). Client algos should use **limit IOC** for child orders to avoid stale resting orders.
 3. **WebSocket channels needed**: `userFills` (fill tracking), `l2Book` (BBO for chase/iceberg pricing), `trades` (volume for POV), `orderUpdates` (order status).
 4. **Vault/sub-account support**: Algos should work with vault addresses, not just main wallet.
-5. **Builder fee**: HypeTerminal can attach a small builder fee to algo orders as monetization.
+5. **Builder fee**: gatu can attach a small builder fee to algo orders as monetization.
 6. **Testnet**: All algos should be testable on Hyperliquid testnet before mainnet deployment.
 
 ### Competitive Landscape
@@ -1129,6 +1129,6 @@ Every algo should have these safety features:
 | Hyperliquid UI | Basic | Basic | No | No | No | None |
 | Insilico Terminal | Enhanced (CLI) | Enhanced (CLI) | No | Yes (CLI) | No | None (CLI-only) |
 | Dexly | Basic | Basic | No | No | No | Minimal |
-| **HypeTerminal** | **Enhanced** | **Enhanced + Viz** | **Yes** | **Yes** | **Phase 2** | **Full** |
+| **gatu** | **Enhanced** | **Enhanced + Viz** | **Yes** | **Yes** | **Phase 2** | **Full** |
 
-HypeTerminal's advantages: **GUI-first** (vs Insilico's CLI), **visualization** (distribution previews, progress tracking), **unified panel** (all algos in one place), **execution analytics** (no other HL frontend offers TCA).
+gatu's advantages: **GUI-first** (vs Insilico's CLI), **visualization** (distribution previews, progress tracking), **unified panel** (all algos in one place), **execution analytics** (no other HL frontend offers TCA).

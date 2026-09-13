@@ -136,15 +136,15 @@ No dedicated pair trading UI exists for Hyperliquid. All current pair trading is
 - Hummingbot with Hyperliquid connector (requires coding)
 - Manual execution (the painful multi-tab workflow described above)
 
-**This is the gap HypeTerminal can fill.**
+**This is the gap gatu can fill.**
 
 ---
 
-## Full Pair Trading Suite Spec for HypeTerminal
+## Full Pair Trading Suite Spec for gatu
 
 ### Overview
 
-A pair trading module integrated into HypeTerminal that provides discovery, analysis, execution, and monitoring — the complete workflow in a single interface. Eliminates the spreadsheet + multi-chart + manual execution workflow.
+A pair trading module integrated into gatu that provides discovery, analysis, execution, and monitoring — the complete workflow in a single interface. Eliminates the spreadsheet + multi-chart + manual execution workflow.
 
 ### Module 1: Pair Scanner & Discovery
 
@@ -452,7 +452,7 @@ src/components/pairs/
 
 ### Competitive Positioning
 
-| Feature | Excel + TradingView | PairTrade Finder | Python Bots | HypeTerminal |
+| Feature | Excel + TradingView | PairTrade Finder | Python Bots | gatu |
 |---|---|---|---|---|
 | Pair discovery | Manual | Yes (equities) | Custom code | Yes (crypto + equities) |
 | Correlation matrix | Manual | Yes | Custom code | Yes, real-time |
@@ -465,4 +465,4 @@ src/components/pairs/
 | No code required | Spreadsheet skills | Yes | Python required | Yes |
 | Real-time monitoring | No | Delayed | Custom | Yes, WebSocket |
 
-**HypeTerminal's edge**: The only tool that combines pair discovery, analysis, and execution natively on Hyperliquid with no code required. Builder codes provide a revenue model. The existing trading infrastructure (order entry, position management, real-time data) means pair trading is an incremental feature, not a ground-up build.
+**gatu's edge**: The only tool that combines pair discovery, analysis, and execution natively on Hyperliquid with no code required. Builder codes provide a revenue model. The existing trading infrastructure (order entry, position management, real-time data) means pair trading is an incremental feature, not a ground-up build.

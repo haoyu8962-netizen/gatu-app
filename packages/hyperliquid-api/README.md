@@ -36,4 +36,4 @@ This is the `bin` declared in `package.json` — it drops the skill files into w
 
 ## Not for human reading
 
-If you're a developer working on HypeTerminal, you almost never need this package. Look at `packages/hl-react` instead.
+If you're a developer working on gatu, you almost never need this package. Look at `packages/hl-react` instead.

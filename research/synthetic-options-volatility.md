@@ -1,8 +1,8 @@
-# Synthetic Options & Volatility Analytics for HypeTerminal
+# Synthetic Options & Volatility Analytics for gatu
 
 ## Executive Summary
 
-Hyperliquid has the liquidity, execution speed, and order primitives to support synthetic options — but no native options product. With HIP-4 Outcomes on testnet and Deribit's $2.9B Coinbase acquisition validating the market, 2026 is the inflection year for options-like products on perp-native platforms. HypeTerminal can fill this gap with two features: a **Volatility Dashboard** (analytics) and a **Synthetic Options Builder** (execution).
+Hyperliquid has the liquidity, execution speed, and order primitives to support synthetic options — but no native options product. With HIP-4 Outcomes on testnet and Deribit's $2.9B Coinbase acquisition validating the market, 2026 is the inflection year for options-like products on perp-native platforms. gatu can fill this gap with two features: a **Volatility Dashboard** (analytics) and a **Synthetic Options Builder** (execution).
 
 ---
 
@@ -282,11 +282,11 @@ Logic:
 | Lyra/Derive | AMM-based | Thin | Yes | Complex |
 | Aevo | Orderbook | Medium | Hybrid | Good |
 | Hyperliquid | None (perps only) | Very deep | Yes | Good |
-| **HypeTerminal** | **Synthetic via perps** | **HL liquidity** | **Yes** | **Guided** |
+| **gatu** | **Synthetic via perps** | **HL liquidity** | **Yes** | **Guided** |
 
 ### Competitive Advantage
 
-HypeTerminal's synthetic options builder would be **the first UI layer** that turns Hyperliquid's perp primitives into structured, risk-defined positions — without requiring protocol changes. This captures the demand for:
+gatu's synthetic options builder would be **the first UI layer** that turns Hyperliquid's perp primitives into structured, risk-defined positions — without requiring protocol changes. This captures the demand for:
 
 1. Defined-risk positions without full options complexity
 2. Funding rate monetization strategies (selling vol)

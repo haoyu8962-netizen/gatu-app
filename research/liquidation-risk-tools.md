@@ -29,7 +29,7 @@ No single tool connects to a trader's live positions and continuously monitors p
 ### What's Missing
 
 1. **No margin ratio / health factor display** — No prominent gauge showing how close the entire account is to liquidation as a ratio or percentage. Traders must mentally compute `(accountValue - maintenanceMargin) / accountValue`.
-2. **No proactive liquidation warnings** — No browser notifications, sounds, or visual alerts when liquidation approaches. HypeTerminal has a `liqIsNear` check (within 10% of mark price) but it's purely visual (text coloring).
+2. **No proactive liquidation warnings** — No browser notifications, sounds, or visual alerts when liquidation approaches. gatu has a `liqIsNear` check (within 10% of mark price) but it's purely visual (text coloring).
 3. **No what-if scenario tool** — Cannot simulate "what happens to my liq price if BTC drops 20%?" or "what if I add $500 margin?"
 4. **No aggregated cross-position risk view** — Cross-margin positions share collateral, but no visualization of how correlated positions compound risk. Long BTC + ETH + SOL = highly correlated downside, but UI treats each independently.
 5. **No distance-to-liquidation %** — Shows liquidation price but not "you are X% away from liquidation" prominently.
@@ -75,7 +75,7 @@ No single tool connects to a trader's live positions and continuously monitors p
 
 ---
 
-## 4. Feature Ideas for HypeTerminal
+## 4. Feature Ideas for gatu
 
 ### Tier 1 — High Impact
 

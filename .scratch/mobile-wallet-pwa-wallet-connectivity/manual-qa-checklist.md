@@ -34,12 +34,12 @@ Use Testnet for agent approval and trading behavior unless the run explicitly re
 
 | Area | Platform | Wallet / Backing | Expected Result | Result | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| Wallet connect | iOS Safari | MetaMask Mobile | Connects and returns to HypeTerminal with the selected address visible. | Not run | |
-| Wallet connect | iOS Safari | Coinbase Wallet | Connects and returns to HypeTerminal with the selected address visible. | Not run | |
+| Wallet connect | iOS Safari | MetaMask Mobile | Connects and returns to gatu with the selected address visible. | Not run | |
+| Wallet connect | iOS Safari | Coinbase Wallet | Connects and returns to gatu with the selected address visible. | Not run | |
 | Wallet connect | iOS PWA | MetaMask Mobile | Connects and returns to the installed PWA with the selected address visible. | Not run | |
 | Wallet connect | iOS PWA | Coinbase Wallet | Connects and returns to the installed PWA with the selected address visible. | Not run | |
-| Wallet connect | Android Chrome | MetaMask Mobile | Connects and returns to HypeTerminal with the selected address visible. | Not run | |
-| Wallet connect | Android Chrome | Coinbase Wallet | Connects and returns to HypeTerminal with the selected address visible. | Not run | |
+| Wallet connect | Android Chrome | MetaMask Mobile | Connects and returns to gatu with the selected address visible. | Not run | |
+| Wallet connect | Android Chrome | Coinbase Wallet | Connects and returns to gatu with the selected address visible. | Not run | |
 | Wallet connect | Android PWA | MetaMask Mobile | Connects and returns to the installed PWA with the selected address visible. | Not run | |
 | Wallet connect | Android PWA | Coinbase Wallet | Connects and returns to the installed PWA with the selected address visible. | Not run | |
 | Hardware approval | Desktop or mobile wallet software | Ledger-backed account | Main wallet creates a `Mobile` phone link; phone imports agent; routine trading uses the agent. | Not run | |
@@ -57,7 +57,7 @@ Run these steps for each iOS/Android browser and PWA row in the matrix.
 4. Verify the UI exposes a pairing/deep-link fallback when the wallet does not open automatically.
 5. Complete the connection in MetaMask Mobile or Coinbase Wallet.
 6. Verify the flow returns to the browser or installed PWA instead of stranding the user in the wallet app.
-7. Verify the connected address is visible in the HypeTerminal account surface.
+7. Verify the connected address is visible in the gatu account surface.
 8. Disconnect, clear recent wallet state if needed, and repeat for the next wallet/platform row.
 
 Record failures with:

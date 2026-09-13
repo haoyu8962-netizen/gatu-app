@@ -1,4 +1,4 @@
-# Product Opportunities for HypeTerminal
+# Product Opportunities for gatu
 
 > **The thesis**: Hyperliquid has become the "AWS of liquidity" — a neutral backend handling $8.3B daily volume across crypto, equities, and commodities. But 40% of users already trade through third-party frontends because the official UI doesn't serve them. This is the opening.
 
@@ -134,7 +134,7 @@
 | Based | Largest share, premium UX | Power-user focused | Major |
 | Phantom | Wallet integration, mobile | Not a dedicated terminal | $100K/day |
 | PVP.trade | Specialized | Narrow audience | $7.2M lifetime |
-| HypeTerminal (us) | Design quality | Early stage | — |
+| gatu (us) | Design quality | Early stage | — |
 
 ### Where We Can Win
 1. **Beginner accessibility** — no one has solved this

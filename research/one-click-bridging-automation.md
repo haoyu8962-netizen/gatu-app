@@ -1,8 +1,8 @@
-# One-Click Bridging Automation for HypeTerminal
+# One-Click Bridging Automation for gatu
 
 ## Executive Summary
 
-Bridging funds into Hyperliquid remains the single biggest onboarding friction for traders. Despite improvements in 2025-2026 (native USDC via CCTP, Across Protocol subsidized routes, HyperEVM launch), the process still requires 3-7 manual steps across multiple apps and wallets. HypeTerminal can eliminate this friction with an embedded one-click bridge flow, turning a multi-minute, multi-tab ordeal into a single action inside the trading interface.
+Bridging funds into Hyperliquid remains the single biggest onboarding friction for traders. Despite improvements in 2025-2026 (native USDC via CCTP, Across Protocol subsidized routes, HyperEVM launch), the process still requires 3-7 manual steps across multiple apps and wallets. gatu can eliminate this friction with an embedded one-click bridge flow, turning a multi-minute, multi-tab ordeal into a single action inside the trading interface.
 
 ---
 
@@ -158,24 +158,24 @@ If a trader holds ETH, SOL, or non-USDC tokens, they must:
 
 ---
 
-## Proposed Solution: One-Click Bridge Inside HypeTerminal
+## Proposed Solution: One-Click Bridge Inside gatu
 
 ### Core Concept
 
-Embed a bridge aggregator directly into HypeTerminal's deposit flow so traders never leave the app. Any token, any chain → USDC on Hyperliquid in one click.
+Embed a bridge aggregator directly into gatu's deposit flow so traders never leave the app. Any token, any chain → USDC on Hyperliquid in one click.
 
 ### Architecture Options
 
 #### Option A: LI.FI Widget Integration (Recommended for MVP)
 
-**What:** Embed the LI.FI React widget directly into HypeTerminal's deposit modal.
+**What:** Embed the LI.FI React widget directly into gatu's deposit modal.
 
 **Why LI.FI:**
 - React widget — drop-in, no backend required
 - 60+ source chains, 18+ bridges, 20+ DEX aggregators
 - Automatic route optimization (cost, speed, success rate)
 - Handles swap + bridge in one transaction where possible
-- Customizable UI (can match HypeTerminal design tokens)
+- Customizable UI (can match gatu design tokens)
 - Compact, wide, and drawer layout variants
 - Session persistence (resume interrupted transfers)
 - Simulates all routes before execution
@@ -188,7 +188,7 @@ npm install @lifi/widget @lifi/sdk
 - Configure destination chain = Hyperliquid (via Arbitrum/CCTP)
 - Lock destination token = USDC
 - Pre-fill destination address from connected wallet
-- Style with HypeTerminal design tokens (OKLCH Zinc+Blue)
+- Style with gatu design tokens (OKLCH Zinc+Blue)
 
 **Effort:** ~1-2 weeks for basic integration, ~3-4 weeks polished.
 
@@ -276,7 +276,7 @@ Single wallet confirmation (approve + bridge bundled where possible)
 
 4. **Fallback protection** — If a bridge fails mid-transfer, show clear recovery instructions. LI.FI has automatic fallback routing.
 
-5. **No custodial risk** — All bridging is non-custodial, wallet-to-wallet. HypeTerminal never holds funds.
+5. **No custodial risk** — All bridging is non-custodial, wallet-to-wallet. gatu never holds funds.
 
 6. **Rate limiting** — Protect against rapid repeated bridge attempts (potential exploit vector).
 
@@ -308,15 +308,15 @@ Single wallet confirmation (approve + bridge bundled where possible)
 
 - LI.FI offers revenue sharing for integrators (fee split on bridge transactions)
 - Across has referral/integrator programs
-- Potential to earn 2-10 bps on every deposit flowing through HypeTerminal
-- At scale: if HypeTerminal processes $10M/day in deposits, that's $2K-10K/day in bridge fees
+- Potential to earn 2-10 bps on every deposit flowing through gatu
+- At scale: if gatu processes $10M/day in deposits, that's $2K-10K/day in bridge fees
 
 ### Implementation Phases
 
 **Phase 1 — MVP (2 weeks)**
 - LI.FI widget embedded in deposit modal
 - Locked destination: Hyperliquid (USDC)
-- Basic styling to match HypeTerminal
+- Basic styling to match gatu
 - Works for EVM chains only
 
 **Phase 2 — Polish (2 weeks)**

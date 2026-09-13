@@ -6,7 +6,7 @@ Hyperliquid does $8.3B in daily volume. On-chain. No custody risk. Verifiable se
 
 And then you open a third-party client to trade on it — and you've just trusted a black box you can't inspect.
 
-That's the problem we're solving with HypeTerminal.
+That's the problem we're solving with gatu.
 
 ---
 
@@ -34,7 +34,7 @@ The other thing open source enables: forks.
 
 Hyperliquid is permissionless infrastructure at the execution layer. Anyone can build on it.
 
-HypeTerminal is the same thing at the interface layer. Fork it, strip it down, rebuild it for your specific use case — a mobile-only client, a bot-first terminal, a quant desk's internal tool.
+gatu is the same thing at the interface layer. Fork it, strip it down, rebuild it for your specific use case — a mobile-only client, a bot-first terminal, a quant desk's internal tool.
 
 You don't start from scratch. You start from a working Hyperliquid client.
 
@@ -51,7 +51,7 @@ You're not just giving people free code. You're giving them a business model.
 So the structure ends up being:
 
 Hyperliquid → permissionless execution layer  
-HypeTerminal → permissionless interface layer
+gatu → permissionless interface layer
 
 Same bet, one level up.
 

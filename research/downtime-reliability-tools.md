@@ -144,7 +144,7 @@ None of these offer automated failover/hedge execution specifically triggered by
 
 ---
 
-## 4. Feature Ideas: Uptime Monitor + Backup Execution for HypeTerminal
+## 4. Feature Ideas: Uptime Monitor + Backup Execution for gatu
 
 ### A. Real-Time Health Monitoring Dashboard
 

@@ -929,7 +929,7 @@ const HYPERLIQUID_CHAIN_ID = 999 // TODO: Verify actual LI.FI chain ID for Hyper
 
 // Initialize LI.FI SDK
 createConfig({
-  integrator: 'hypeterminal',
+  integrator: 'gatu',
 })
 
 interface UseLifiDepositProps {

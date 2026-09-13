@@ -4,11 +4,11 @@ Status: done
 
 ## Summary
 
-Decide whether HypeTerminal should adopt Reown AppKit directly, use Reown/WalletConnect headlessly inside the existing custom modal, or stay with plain wagmi connectors plus custom WalletConnect UI.
+Decide whether gatu should adopt Reown AppKit directly, use Reown/WalletConnect headlessly inside the existing custom modal, or stay with plain wagmi connectors plus custom WalletConnect UI.
 
 ## Recommended Decision
 
-Use headless/custom Reown WalletConnect integration while keeping wagmi as the underlying wallet-client source and preserving the HypeTerminal wallet modal.
+Use headless/custom Reown WalletConnect integration while keeping wagmi as the underlying wallet-client source and preserving the gatu wallet modal.
 
 ## Decision
 

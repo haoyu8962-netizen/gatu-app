@@ -1,6 +1,6 @@
 # apps/terminal
 
-The HypeTerminal trading application composes `@gatu/hl-react` (Hyperliquid data, signing and transports) and `@gatu/ui` (shared primitives and tokens). This document describes the current checkout. Start with the [root README](../../README.md) for repository setup and the [documentation index](../../docs/README.md) for design contracts, tutorials and review records.
+The gatu trading application composes `@gatu/hl-react` (Hyperliquid data, signing and transports) and `@gatu/ui` (shared primitives and tokens). This document describes the current checkout. Start with the [root README](../../README.md) for repository setup and the [documentation index](../../docs/README.md) for design contracts, tutorials and review records.
 
 ## Stack and build
 

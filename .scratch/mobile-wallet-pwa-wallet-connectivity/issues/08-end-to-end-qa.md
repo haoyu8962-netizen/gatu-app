@@ -74,7 +74,7 @@ Avoid unrelated refactors.
 - Passed local browser smoke checks with `agent-browser`:
   - `http://localhost:3001/mobile-agent-sync` renders the missing-link import state.
   - A malformed `#ht-mobile-sync=...` fragment is removed from the address bar by the import route.
-  - At a 390x844 viewport, the import route renders without visible overlap; screenshot captured at `/tmp/hypeterminal-mobile-agent-sync-390x844.png`.
+  - At a 390x844 viewport, the import route renders without visible overlap; screenshot captured at `/tmp/gatu-mobile-agent-sync-390x844.png`.
   - Opening `Connect Wallet` no longer throws and shows Coinbase Wallet, WalletConnect, and the dev mock wallet.
   - Connecting the dev mock wallet exposes `Link mobile device` from the account menu, and that modal shows `Reset` plus `Create phone link`.
 

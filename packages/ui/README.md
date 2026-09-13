@@ -1,6 +1,6 @@
 # @gatu/ui
 
-The HypeTerminal design system. Primitives, tokens, and variants — nothing app-specific.
+The gatu design system. Primitives, tokens, and variants — nothing app-specific.
 
 Built on [Base UI](https://base-ui.com) (headless accessibility primitives), [Tailwind CSS v4](https://tailwindcss.com) (utility classes + `@theme` tokens), [Class Variance Authority](https://cva.style) (variants), and [Phosphor Icons](https://phosphoricons.com).
 

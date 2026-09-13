@@ -1,4 +1,4 @@
-# Grid Trading Bot — Comprehensive Research for HypeTerminal
+# Grid Trading Bot — Comprehensive Research for gatu
 
 ## 1. How Grid Trading Works for Perpetual Futures
 
@@ -889,7 +889,7 @@ Grid structure for systematic order placement, but:
 - Builder needs 100 USDC+ in perps account value
 - User must approve max builder fee, can revoke anytime
 - Apply to both sides of perp trades
-- Opportunity: HypeTerminal as a builder can collect fees on grid bot orders
+- Opportunity: gatu as a builder can collect fees on grid bot orders
 
 **Vault system opportunity:**
 - Vaults can be created and tokenized on HyperEVM
@@ -916,7 +916,7 @@ Grid structure for systematic order placement, but:
 
 ---
 
-## 7. Feature Priority Ranking for HypeTerminal
+## 7. Feature Priority Ranking for gatu
 
 | Priority | Feature | Rationale |
 |----------|---------|-----------|

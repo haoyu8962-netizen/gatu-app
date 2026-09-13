@@ -5,7 +5,7 @@ Created: 2026-05-21
 
 ## Problem Statement
 
-HypeTerminal needs a reliable way for users to connect wallets and trade from phone/PWA on iPhone and Android. The current wallet stack supports injected wallets, Coinbase Wallet, WalletConnect, and Hyperliquid agent wallets, but the mobile experience is not yet designed end to end.
+gatu needs a reliable way for users to connect wallets and trade from phone/PWA on iPhone and Android. The current wallet stack supports injected wallets, Coinbase Wallet, WalletConnect, and Hyperliquid agent wallets, but the mobile experience is not yet designed end to end.
 
 Users need wallet connection to work across mobile wallet apps, desktop extension wallets, and hardware-wallet-backed accounts. Hardware wallets are especially important, but direct Ledger/Trezor access from a mobile PWA is not reliable enough to be the primary path. The app also needs mobile trading to feel fast: signing every order through WalletConnect or a hardware wallet would be too slow and fragile.
 
@@ -20,12 +20,12 @@ The main wallet remains the authority for deposits, withdrawals, builder fee app
 
 ## User Stories
 
-1. As an iPhone trader, I want to connect my mobile wallet from the PWA, so that I can start using HypeTerminal without a desktop extension.
+1. As an iPhone trader, I want to connect my mobile wallet from the PWA, so that I can start using gatu without a desktop extension.
 2. As an Android trader, I want to connect my mobile wallet from the PWA, so that wallet setup works from my phone.
 3. As a desktop trader, I want to scan a QR code with my phone, so that I can link mobile trading without redoing all account setup.
 4. As a hardware wallet user, I want to approve mobile trading from my hardware-wallet-backed account, so that my funds remain controlled by the hardware wallet.
 5. As a Ledger user, I want to approve the mobile agent through Ledger Live or a Ledger-supported wallet, so that I do not need direct Ledger support inside the phone browser.
-6. As a Trezor user, I want to approve the mobile agent through Trezor Suite or a Trezor-supported wallet, so that I can use HypeTerminal without relying on direct mobile browser hardware APIs.
+6. As a Trezor user, I want to approve the mobile agent through Trezor Suite or a Trezor-supported wallet, so that I can use gatu without relying on direct mobile browser hardware APIs.
 7. As a trader, I want the phone to trade without wallet popups on every order, so that order entry stays fast.
 8. As a trader, I want withdrawals to still require my main wallet, so that an imported mobile agent cannot withdraw funds.
 9. As a trader, I want old mobile access replaced when I link a new phone, so that stale devices cannot keep trading indefinitely.
@@ -48,7 +48,7 @@ The main wallet remains the authority for deposits, withdrawals, builder fee app
 ## Implementation Decisions
 
 - Keep wagmi and viem as the account/wallet-client foundation.
-- Add a headless/custom Reown WalletConnect experience for mobile wallet discovery, QR, and deep-link handling while preserving HypeTerminal's current wallet modal design.
+- Add a headless/custom Reown WalletConnect experience for mobile wallet discovery, QR, and deep-link handling while preserving gatu's current wallet modal design.
 - Keep the current Hyperliquid user-wallet vs agent-wallet split: user wallet signs approvals and sensitive actions; agent wallet signs routine trading actions.
 - Add a mobile device sync flow modeled on Hyperliquid's own QR agent flow.
 - Use a named mobile agent slot so older mobile access can be replaced/deleted.

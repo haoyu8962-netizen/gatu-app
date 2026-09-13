@@ -1,12 +1,12 @@
 # Forkability & Builder Monetization
 
-How to make HypeTerminal extremely forkable so builders can launch branded trading terminals on Hyperliquid and monetize via builder fees.
+How to make gatu extremely forkable so builders can launch branded trading terminals on Hyperliquid and monetize via builder fees.
 
 ---
 
 ## Current State
 
-HypeTerminal already has partial fork-friendliness:
+gatu already has partial fork-friendliness:
 
 - **Builder fee config** in `src/config/hyperliquid.ts` — address + fee rate (0.01%)
 - **`VITE_BUILDER_ADDRESS` env var** — overrides the default builder address
@@ -89,7 +89,7 @@ HypeTerminal already has partial fork-friendliness:
 
 ### Phase 2: Fork CLI
 
-- [ ] **`npx create-hypeterminal`** — interactive setup script:
+- [ ] **`npx create-gatu`** — interactive setup script:
   - Prompts for: app name, builder address, fee rate, primary color, wallet connect ID
   - Writes `fork.config.ts` and `.env`
   - Replaces asset placeholders
@@ -142,10 +142,10 @@ HypeTerminal already has partial fork-friendliness:
 
 ### Phase 7: Builder Ecosystem
 
-- [ ] **Fork registry** — optional opt-in directory of HypeTerminal forks (name, URL, builder address, fee rate)
+- [ ] **Fork registry** — optional opt-in directory of gatu forks (name, URL, builder address, fee rate)
 - [ ] **Upstream sync guide** — documented process for pulling upstream updates without losing customizations (git rebase strategy, merge conflict hotspots)
 - [ ] **Breaking change policy** — semver `fork.config.ts` schema; migration scripts for config changes between versions
-- [ ] **Builder showcase** — landing page on hypeterminal.xyz featuring top forks by volume
+- [ ] **Builder showcase** — landing page on gatu.ai featuring top forks by volume
 
 ---
 
@@ -178,7 +178,7 @@ HypeTerminal already has partial fork-friendliness:
 
 **Config as code, not GUI**: `fork.config.ts` is a TypeScript file, not a JSON blob. Builders get type safety, autocomplete, and can use expressions (e.g., derive SEO description from app name). Build-time validation catches errors before deploy.
 
-**Don't abstract the SDK away**: Forks should import `@hyperliquid` SDK directly for custom features. HypeTerminal provides the trading UI shell; builders add value on top. Over-abstracting the exchange layer makes forks fragile to upstream changes.
+**Don't abstract the SDK away**: Forks should import `@hyperliquid` SDK directly for custom features. gatu provides the trading UI shell; builders add value on top. Over-abstracting the exchange layer makes forks fragile to upstream changes.
 
 **Keep the fork surface small**: Every file a builder must touch is a merge conflict waiting to happen. The ideal fork touches exactly one file (`fork.config.ts`) and optionally adds files in designated extension directories. Core components should never need editing for basic forks.
 

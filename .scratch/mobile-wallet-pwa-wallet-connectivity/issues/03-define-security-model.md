@@ -50,7 +50,7 @@ https://<app-origin>/mobile-agent-sync#ht-mobile-sync=<base64url(JSON.stringify(
 ```json
 {
   "v": 1,
-  "type": "hypeterminal.mobile-agent-sync",
+  "type": "gatu.mobile-agent-sync",
   "syncId": "<base64url 16 random bytes>",
   "createdAtMs": 1779364227000,
   "expiresAtMs": 1779364827000,
@@ -75,9 +75,9 @@ The decrypted plaintext is UTF-8 JSON:
 ```json
 {
   "v": 1,
-  "type": "hypeterminal.mobile-agent",
+  "type": "gatu.mobile-agent",
   "syncId": "<same syncId as envelope>",
-  "issuerOrigin": "https://app.hypeterminal.com",
+  "issuerOrigin": "https://app.gatu.ai",
   "env": "Mainnet",
   "userAddress": "0x...",
   "agentAddress": "0x...",
@@ -110,10 +110,10 @@ Use browser-native WebCrypto only:
 1. Generate the pairing code from `crypto.getRandomValues(new Uint8Array(8))`.
 2. Display the code as 16 uppercase hex characters grouped as `XXXX-XXXX-XXXX-XXXX`.
 3. Normalize user input by uppercasing and removing spaces/hyphens. Reject anything other than exactly 16 hex characters.
-4. Import key material with `crypto.subtle.importKey("raw", utf8("HypeTerminal mobile sync v1:" + normalizedCode), "PBKDF2", false, ["deriveKey"])`.
+4. Import key material with `crypto.subtle.importKey("raw", utf8("gatu mobile sync v1:" + normalizedCode), "PBKDF2", false, ["deriveKey"])`.
 5. Derive an AES-GCM key with `crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 310000 }, keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"])`.
 6. Encrypt/decrypt with `crypto.subtle.encrypt` / `crypto.subtle.decrypt` using `{ name: "AES-GCM", iv, additionalData, tagLength: 128 }`.
-7. `additionalData` must be UTF-8 bytes for `HypeTerminal mobile sync envelope v1:` plus canonical JSON of the envelope fields excluding `ciphertext`. The canonical JSON function must sort object keys recursively.
+7. `additionalData` must be UTF-8 bytes for `gatu mobile sync envelope v1:` plus canonical JSON of the envelope fields excluding `ciphertext`. The canonical JSON function must sort object keys recursively.
 
 All random values, salts, IVs, sync IDs, and pairing codes must come from WebCrypto. Do not use `Math.random`.
 
@@ -193,7 +193,7 @@ Before enabling mobile sync on authenticated trading pages:
 
 - Hyperliquid `approveAgent` accepts `agentAddress` and optional `agentName`, and the official docs note named-agent limits.
 - The `@nktkas/hyperliquid` client accepts `agentName` values of the form `<base> valid_until <timestamp>` and validates the base name length after stripping that suffix.
-- Existing HypeTerminal agent storage already uses localStorage-backed `{ privateKey, publicKey }` records; v1 may extend that shape for mobile metadata rather than introducing a second secret store.
+- Existing gatu agent storage already uses localStorage-backed `{ privateKey, publicKey }` records; v1 may extend that shape for mobile metadata rather than introducing a second secret store.
 
 ## Notes
 
