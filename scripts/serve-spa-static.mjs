@@ -4,7 +4,8 @@
 // paths that only the Nitro server can answer return a JSON 404 instead of the shell so a client
 // never parses HTML as an API response.
 import { createReadStream, existsSync, statSync } from "node:fs";
-import { createServer } from "node:http";
+import { createServer, request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -83,7 +84,29 @@ function cacheControlFor(file) {
 	return "public, max-age=0, must-revalidate";
 }
 
-export function createStaticHandler(publicDir) {
+/**
+ * Forwards a server-only request to the origin that hosts the API handlers (a Nitro server or an
+ * edge function), the way a CDN allow-lists `/api/*` to a dynamic origin. Headers, including
+ * `Host` and `Origin`, pass through unchanged so same-origin checks behave as they would behind
+ * a CDN that fronts both the static files and the API.
+ */
+function proxyToApiOrigin(request, response, apiOrigin, url) {
+	const target = new URL(url.pathname + url.search, apiOrigin);
+	const transport = target.protocol === "https:" ? httpsRequest : httpRequest;
+	const upstream = transport(target, { method: request.method, headers: request.headers }, (upstreamResponse) => {
+		response.writeHead(upstreamResponse.statusCode ?? 502, upstreamResponse.headers);
+		upstreamResponse.pipe(response);
+	});
+	upstream.on("error", () => {
+		if (!response.headersSent) {
+			response.writeHead(502, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+		}
+		response.end(JSON.stringify({ error: "api origin unreachable", origin: apiOrigin }));
+	});
+	request.pipe(upstream);
+}
+
+export function createStaticHandler(publicDir, { apiOrigin } = {}) {
 	const root = resolve(publicDir);
 	const isFile = (relative) => {
 		const target = resolve(root, relative);
@@ -97,6 +120,10 @@ export function createStaticHandler(publicDir) {
 		const result = resolveStaticRequest(url.pathname, { acceptsHtml, isFile });
 
 		if (result.kind === "server-only") {
+			if (apiOrigin) {
+				proxyToApiOrigin(request, response, apiOrigin, url);
+				return;
+			}
 			response.writeHead(404, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
 			response.end(JSON.stringify({ error: "server route unavailable on static hosting", path: result.pathname }));
 			return;
@@ -118,16 +145,24 @@ export function createStaticHandler(publicDir) {
 	};
 }
 
-function readArgs(argv) {
-	const options = { publicDir: "apps/terminal/.output/public", port: Number(process.env.PORT) || 3030, host: "127.0.0.1" };
+export function readArgs(argv, env = process.env) {
+	const options = {
+		publicDir: "apps/terminal/.output/public",
+		port: Number(env.PORT) || 3030,
+		host: "127.0.0.1",
+		apiOrigin: env.SPA_API_ORIGIN || undefined,
+	};
 	for (let index = 0; index < argv.length; index += 1) {
 		const argument = argv[index];
 		if (argument === "--port") options.port = Number(argv[++index]);
 		else if (argument.startsWith("--port=")) options.port = Number(argument.slice("--port=".length));
 		else if (argument === "--host") options.host = argv[++index];
 		else if (argument.startsWith("--host=")) options.host = argument.slice("--host=".length);
+		else if (argument === "--api") options.apiOrigin = argv[++index];
+		else if (argument.startsWith("--api=")) options.apiOrigin = argument.slice("--api=".length);
 		else if (!argument.startsWith("-")) options.publicDir = argument;
 	}
+	if (options.apiOrigin) options.apiOrigin = new URL(options.apiOrigin).origin;
 	return options;
 }
 
@@ -139,9 +174,14 @@ function main() {
 		console.error("Run `pnpm build` before `pnpm serve:spa`.");
 		process.exit(1);
 	}
-	const server = createServer(createStaticHandler(publicDir));
+	const server = createServer(createStaticHandler(publicDir, { apiOrigin: options.apiOrigin }));
 	server.listen(options.port, options.host, () => {
 		console.log(`Static SPA build served from ${publicDir} at http://${options.host}:${options.port}/`);
+		console.log(
+			options.apiOrigin
+				? `Server-only paths are proxied to ${options.apiOrigin}`
+				: "Server-only paths answer 404; pass --api <origin> to proxy them",
+		);
 	});
 }
 

@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import { nitro } from 'nitro/vite'
-import { defineConfig, type Plugin, type PluginOption } from 'vite'
+import { defineConfig, loadEnv, type Plugin, type PluginOption } from 'vite'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import { lingui } from '@lingui/vite-plugin'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -15,9 +15,13 @@ import {
   resolveClientChunkGraphCacheFile,
   writeClientChunkGraphFile,
 } from '../../scripts/client-chunk-graph.mjs'
+import { BUILD_META_PATH } from './src/config/api-paths'
+import { type BuildMeta, createBuildMeta } from './src/config/build-meta'
 import { DOCUMENT_ROUTE_PATHS } from './src/config/document-routes'
+import { resolveMobilePairingFeatureFlags } from './src/config/mobile-pairing-flags'
 import { chartingLibrarySecurityHeaders, securityHeaders } from './src/config/security-headers'
 import { hashCatalogMessageIds } from './src/lib/i18n-catalog'
+import { MOBILE_SYNC_TICKET_API_VERSION } from './src/lib/mobile-sync/one-time-ticket-policy'
 
 // SPA mode: the build prerenders one static shell for every client-rendered application route
 // and real HTML for the document routes, so the client output can be hosted without the Nitro
@@ -119,6 +123,31 @@ const referralJoinHeaders = {
   'cache-control': 'no-store',
   'referrer-policy': 'no-referrer',
   'x-robots-tag': 'noindex, nofollow',
+}
+
+// The same build identity that the `/build-meta.json` server route reports, written as a static
+// file so a CDN deployment without the Nitro server still exposes it. Flags come from the same
+// `VITE_*` environment the client bundle sees for this mode.
+export function createBuildMetaForMode(mode: string): BuildMeta {
+  return createBuildMeta({
+    version: terminalPackage.version,
+    commit: buildSha,
+    release: releaseId,
+    builtAt: buildTime,
+    ticketApiVersion: MOBILE_SYNC_TICKET_API_VERSION,
+    pairing: resolveMobilePairingFeatureFlags(loadEnv(mode, terminalDirectory, 'VITE_')),
+  })
+}
+
+export function createBuildMetaPlugin(meta: BuildMeta): Plugin {
+  return {
+    name: 'gatu-build-meta',
+    apply: 'build',
+    applyToEnvironment: (environment) => environment.name === 'client',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: BUILD_META_PATH.slice(1), source: `${JSON.stringify(meta)}\n` })
+    },
+  }
 }
 
 function createReferralJoinDevRequestGuard(): Plugin {
@@ -340,4 +369,7 @@ const config = defineConfig({
   ].filter(Boolean),
 })
 
-export default config
+export default defineConfig(({ mode }) => ({
+  ...config,
+  plugins: [...(config.plugins ?? []), createBuildMetaPlugin(createBuildMetaForMode(mode))],
+}))

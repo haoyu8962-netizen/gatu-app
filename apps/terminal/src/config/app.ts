@@ -1,4 +1,4 @@
-export const APP_NAME = "gatu";
+export { APP_NAME } from "./build-meta";
 export const APP_RELEASE_VERSION = import.meta.env.VITE_GATU_APP_VERSION?.trim() || "0.1.0";
 export const APP_BUILD_COMMIT = import.meta.env.VITE_GATU_BUILD_SHA?.trim() || "dev";
 export const APP_RELEASE_ID = import.meta.env.VITE_GATU_RELEASE_ID?.trim() || "local";

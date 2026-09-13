@@ -1,6 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { acceptsHtmlNavigation, resolveStaticRequest, SHELL_FILE } from "./serve-spa-static.mjs";
+import { acceptsHtmlNavigation, readArgs, resolveStaticRequest, SHELL_FILE } from "./serve-spa-static.mjs";
+
+test("arguments select the public directory, port, host and optional API origin", () => {
+	const defaults = readArgs([], {});
+	assert.equal(defaults.publicDir, "apps/terminal/.output/public");
+	assert.equal(defaults.port, 3030);
+	assert.equal(defaults.apiOrigin, undefined);
+
+	const explicit = readArgs(["dist/public", "--port", "4000", "--api", "http://127.0.0.1:3000/ignored/path"], {});
+	assert.equal(explicit.publicDir, "dist/public");
+	assert.equal(explicit.port, 4000);
+	assert.equal(explicit.apiOrigin, "http://127.0.0.1:3000");
+
+	assert.equal(readArgs(["--api=https://api.example.test"], {}).apiOrigin, "https://api.example.test");
+	assert.equal(readArgs([], { SPA_API_ORIGIN: "http://localhost:3000" }).apiOrigin, "http://localhost:3000");
+});
 
 test("navigation detection mirrors CDN rewrites: only explicit non-HTML requests are refused", () => {
 	assert.equal(acceptsHtmlNavigation(undefined), true);

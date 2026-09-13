@@ -1,7 +1,8 @@
 import { LEGAL_STATUS_ERROR_REASONS, type LegalStatusErrorReason } from "@gatu/hl-react";
 import { L2_BOOK_STREAM_ERROR_CODES, type L2BookStreamErrorCode } from "@gatu/hl-react/subscriptions/l2";
+import { CLIENT_ERROR_REPORT_API_PATH } from "@/config/api-paths";
 
-export const CLIENT_ERROR_REPORT_ENDPOINT = "/client-error-report";
+export const CLIENT_ERROR_REPORT_ENDPOINT = CLIENT_ERROR_REPORT_API_PATH;
 export const CLIENT_ERROR_REPORT_MAX_BYTES = 4096;
 export const CLIENT_ERROR_REPORT_MAX_FRAMES = 5;
 

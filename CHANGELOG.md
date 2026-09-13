@@ -18,9 +18,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - The production build now also prerenders a client-rendered application shell
   (`_shell.html`) and static HTML for the document routes, and
   `pnpm --filter @gatu/terminal serve:spa` serves the client output like a CDN.
-  The Nitro server remains the deployed shape; static hosting still requires
-  migrating the geo, error-report, leaderboard and build-meta endpoints. See
+  The Nitro server remains the deployed shape; static hosting still requires a
+  host that routes `/api/*` to the server handlers. See
   [ADR 0005](docs/adr/0005-spa-static-shell.md).
+- Geo checks call `/api/geo` and `/api/referral-geo` and client error reports
+  post to `/api/client-error-report` instead of TanStack server functions, so
+  the same handlers can run on an edge runtime. `/build-meta.json` is also
+  written as a static file at build time. `serve:spa --api <origin>` proxies
+  the server-only paths for local end-to-end checks.
 
 ### Changed
 

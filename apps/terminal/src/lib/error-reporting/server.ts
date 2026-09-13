@@ -99,7 +99,7 @@ export function createErrorReportRateLimiter(limit: number, windowMs: number): E
 	};
 }
 
-function isSameOriginRequest(request: Request): boolean {
+export function isSameOriginRequest(request: Request): boolean {
 	const origin = request.headers.get("origin");
 	if (!origin || origin === "null") return false;
 	if (request.headers.get("sec-fetch-site") && request.headers.get("sec-fetch-site") !== "same-origin") return false;

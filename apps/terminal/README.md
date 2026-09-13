@@ -21,7 +21,7 @@ Dependency versions are maintained in [package.json](package.json) and the works
 
 [vite.config.ts](vite.config.ts) composes `nitro()` from `nitro/vite`, `tanstackStart`, React Compiler, Lingui and Tailwind plugins. It also defines build identity, security/cache headers, compact non-English catalogs and client chunk metadata. Manual chunking groups selected UI/TanStack dependencies; web3 dependencies use Rollup's dependency-aware splitting. The build checks static chunk cycles and bundle budgets before succeeding. See [runtime guardrails](../../docs/runtime-guardrails.md) and [performance baseline](../../docs/terminal-performance-baseline.md) before altering these boundaries.
 
-TanStack Start SPA mode is enabled (`createTanstackStartOptions()` in `vite.config.ts`). After the server build, the same `pnpm build` prerenders the client-rendered application shell to `.output/public/_shell.html` (masked at `/trade`, because `/` redirects on the server) and real HTML for the document routes listed in [config/document-routes.ts](src/config/document-routes.ts). The Nitro server output is unchanged, so `pnpm serve` keeps working; the shell exists so `.output/public` can also be hosted statically. Static hosting is not the deployed shape yet: the geo, error-report, leaderboard and build-meta endpoints still need the server. See [ADR 0005](../../docs/adr/0005-spa-static-shell.md).
+TanStack Start SPA mode is enabled (`createTanstackStartOptions()` in `vite.config.ts`). After the server build, the same `pnpm build` prerenders the client-rendered application shell to `.output/public/_shell.html` (masked at `/trade`, because `/` redirects on the server) and real HTML for the document routes listed in [config/document-routes.ts](src/config/document-routes.ts). The Nitro server output is unchanged, so `pnpm serve` keeps working; the shell exists so `.output/public` can also be hosted statically. The client no longer uses TanStack server functions: every server endpoint it calls lives under `/api/` ([config/api-paths.ts](src/config/api-paths.ts)) as a Web-standard `Request → Response` handler that Nitro mounts today and an edge runtime can mount later, and `/build-meta.json` is also written as a static file. Static hosting is still not the deployed shape: a host must route `/api/*` to a server that mounts those handlers, and CDN headers and deployment scripts remain Nitro-based. See [ADR 0005](../../docs/adr/0005-spa-static-shell.md).
 
 ## Commands
 
@@ -39,7 +39,7 @@ pnpm serve
 
 The dev server uses a strict port. Its config does not set `3000`, so the examples explicitly choose a port. Reuse an existing server when possible. `dev:browser` opens the system browser for wallet testing; embedded previews can block the external-wallet iframe. See [wallet initialization debugging](../../docs/wallet-initialization-debugging.md).
 
-`pnpm build` compiles catalogs and creates `.output/`; `pnpm serve` runs the Nitro server through `scripts/serve-nitro.mjs`. `pnpm --filter @gatu/terminal serve:spa` serves `.output/public` on `127.0.0.1:3030` the way a CDN would: existing files first, application routes rewritten to `_shell.html`, and the server-only paths (`/_serverFn/*`, `/api/*`, `/build-meta.json`, `/client-error-report`, `/mobile-agent-sync-ticket`) answered with a JSON 404 so the client never parses the shell as data. Under that server the geo lookup fails closed, which disables trading and funds actions while browsing keeps working. For the visualizer-enabled build, run `ANALYZE=true pnpm --filter @gatu/terminal build`; `ANALYZE` must reach the Vite process. Root `pnpm test` additionally checks generated OG cards, the website and cross-app brand behavior; it is broader than the terminal Vitest command above.
+`pnpm build` compiles catalogs and creates `.output/`; `pnpm serve` runs the Nitro server through `scripts/serve-nitro.mjs`. `pnpm --filter @gatu/terminal serve:spa` serves `.output/public` on `127.0.0.1:3030` the way a CDN would: existing files first, application routes rewritten to `_shell.html`, and the server-only paths (`/api/*`, `/_serverFn/*`, `/client-error-report`, `/mobile-agent-sync-ticket`, plus `/build-meta.json` when the static file is absent) answered with a JSON 404 so the client never parses the shell as data. Without an API origin the geo lookup fails closed, which disables trading and funds actions while browsing keeps working; pass `--api http://127.0.0.1:3000` (or `SPA_API_ORIGIN`) to proxy those paths to a running `pnpm serve` and exercise the complete application from the static files. For the visualizer-enabled build, run `ANALYZE=true pnpm --filter @gatu/terminal build`; `ANALYZE` must reach the Vite process. Root `pnpm test` additionally checks generated OG cards, the website and cross-app brand behavior; it is broader than the terminal Vitest command above.
 
 ## Directory layout
 
@@ -102,9 +102,11 @@ Routes live in [src/routes/](src/routes). URL parameters below use `:name`; file
 | `/join/:code`, `/join/*` | Referral-code entry and invalid-path handling |
 | `/mobile-agent-sync` | Feature-gated mobile Agent import surface |
 | `POST /mobile-agent-sync-ticket` | Server-side mobile Agent ticket handling |
+| `GET /api/geo` | Visitor jurisdiction verdict for trading and funds gates; portable handler in [lib/geo/geo-api.ts](src/lib/geo/geo-api.ts) |
+| `POST /api/referral-geo` | Fresh same-origin geo decision before referral and staking actions |
 | `GET /api/leaderboard` | Leaderboard API handler |
-| `POST /client-error-report` | Client failure report handler |
-| `GET /build-meta.json` | Running build identity |
+| `POST /api/client-error-report` | Client failure report handler |
+| `GET /build-meta.json` | Running build identity; the build also writes the same JSON into `.output/public` |
 | Other paths | Not-found/splat handling |
 
 [router.tsx](src/router.tsx) wires the generated route tree. [__root.tsx](src/routes/__root.tsx) owns the persistent document shell. Trading routes are client-rendered behind terminal skeletons; document routes can render without Privy. [market-route.ts](src/lib/hyperliquid/market-route.ts) owns market URL mapping; avoid reconstructing names or spot identities in page components.
