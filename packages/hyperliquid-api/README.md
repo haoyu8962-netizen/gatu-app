@@ -29,7 +29,7 @@ Hyperliquid has three API surfaces — `Info` (read), `Exchange` (write/signed),
 ## Install
 
 ```bash
-npx hypeterminal-install-hyperliquid-api-skill
+npx gatu-install-hyperliquid-api-skill
 ```
 
 This is the `bin` declared in `package.json` — it drops the skill files into wherever the agent client loads skills from. Read `SKILL.md` for the decision rules the agent follows.
