@@ -24,7 +24,8 @@ test("objects get the cache policy the edge expects", () => {
 	assert.equal(objectCacheControl("charting_library/bundles/1227.68542dac293294290d44.rtl.css"), IMMUTABLE_CACHE_CONTROL);
 	assert.equal(objectCacheControl("charting_library/bundles/EuclidCircular.be8f862db48c2976009f.woff2"), IMMUTABLE_CACHE_CONTROL);
 	assert.equal(objectCacheControl("charting_library/bundles/library.js"), REVALIDATE_CACHE_CONTROL);
-	assert.equal(objectCacheControl("charting_library/charting_library.js"), REVALIDATE_CACHE_CONTROL);
+	assert.equal(objectCacheControl("charting_library/charting_library.js"), IMMUTABLE_CACHE_CONTROL);
+	assert.equal(objectCacheControl("charting_library/charting_library.esm.js"), REVALIDATE_CACHE_CONTROL);
 	assert.equal(objectCacheControl("charting_library/sameorigin.html"), REVALIDATE_CACHE_CONTROL);
 	assert.ok(HTML_CACHE_CONTROL.includes("s-maxage=60") && HTML_CACHE_CONTROL.includes("stale-while-revalidate"));
 	assert.equal(objectCacheControl("tradingview-theme-dark.css"), REVALIDATE_CACHE_CONTROL);
@@ -97,7 +98,8 @@ test("invalidation and lambda commands are explicit and bounded", () => {
 });
 
 const SHELL_PRELOADS = Array.from({ length: 24 }, (_, index) => `/assets/chunk-${index}.js`);
-const SHELL_HTML = `<html><head>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}</head></html>`;
+const CHART_ENTRY = "/charting_library/charting_library.js?v=abc";
+const SHELL_HTML = `<html><head>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/></head></html>`;
 
 function createPublicDir() {
 	const dir = mkdtempSync(join(tmpdir(), "gatu-cf-verify-"));
@@ -149,7 +151,7 @@ test("verification passes when the edge serves the build with the expected heade
 				body: SHELL_HTML,
 				headers: { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-robots-tag": "noindex, nofollow", "x-gatu-route": "referral-join" },
 			},
-			"/charting_library/charting_library.js": { body: "js", headers: { "cache-control": REVALIDATE_CACHE_CONTROL } },
+			"/charting_library/charting_library.js": { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
 			"*": { status: 404, body: "missing" },
 		}),
 	});
@@ -159,6 +161,7 @@ test("verification passes when the edge serves the build with the expected heade
 	);
 	assert.equal(results.length, 12);
 	assert.equal(results.find((result) => result.name === "shell preloads the startup closure")?.detail, "24 links");
+	assert.equal(results.find((result) => result.name.startsWith("chart entry"))?.detail, CHART_ENTRY);
 	assert.equal(results.find((result) => result.name === "shell repeats from the edge")?.detail, "Hit from cloudfront");
 	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
 });
@@ -187,7 +190,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 		"signed lambda post with a payload hash",
 		"referral deep link headers",
 		"missing files stay 404",
-		"chart package revalidates",
+		"chart entry is immutable and preloaded by the shell",
 		"shell preloads the startup closure",
 		"health probe answers 204",
 		"shell repeats from the edge",

@@ -20,6 +20,8 @@ const NO_STORE_FILES = new Set(["build-meta.json", "sw.js"]);
 /** TradingView writes a 20-hex content hash into every bundle file name, so those never change in place. */
 const HASHED_CHART_BUNDLE = /^charting_library\/bundles\/[^/]+\.[0-9a-f]{20}(\.rtl)?\.[a-z0-9]+$/;
 const MAX_KEYS_PER_COMMAND = 500;
+/** Versioned by its `?v=<commit>` query in the browser and refreshed at the edge by the release invalidation. */
+const CHART_ENTRY_KEY = "charting_library/charting_library.js";
 /** The build injects the trade startup closure into the shell; a shell with fewer links skipped that step. */
 const MIN_SHELL_PRELOADS = 20;
 
@@ -27,7 +29,7 @@ const MIN_SHELL_PRELOADS = 20;
 export function objectCacheControl(relativePath) {
 	const key = relativePath.replaceAll("\\", "/");
 	if (PRECOMPRESSED_EXTENSIONS.has(extname(key))) return null;
-	if (key.startsWith("assets/") || HASHED_CHART_BUNDLE.test(key)) return IMMUTABLE_CACHE_CONTROL;
+	if (key.startsWith("assets/") || HASHED_CHART_BUNDLE.test(key) || key === CHART_ENTRY_KEY) return IMMUTABLE_CACHE_CONTROL;
 	if (key.startsWith("charting_library/") || /^tradingview-theme-.*\.css$/.test(key)) return REVALIDATE_CACHE_CONTROL;
 	if (NO_STORE_FILES.has(key)) return NO_STORE;
 	if (key.endsWith(".html")) return HTML_CACHE_CONTROL;
@@ -251,10 +253,13 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		const serverFn = await fetchImpl(`${base}/_serverFn/abc`);
 		expect(serverFn.status === 404, `server function status ${serverFn.status}`);
 	});
-	await check("chart package revalidates", async () => {
-		const response = await fetchImpl(`${base}/charting_library/charting_library.js`);
+	await check("chart entry is immutable and preloaded by the shell", async () => {
+		const href = /<link rel="preload" href="(\/charting_library\/charting_library\.js\?v=[^"]+)" as="script"/.exec(shell.toString("utf8"))?.[1];
+		expect(href, "the local shell does not preload the chart entry");
+		const response = await fetchImpl(`${base}${href}`);
 		expect(response.status === 200, `status ${response.status}`);
-		expect(response.headers.get("cache-control") === REVALIDATE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
+		expect(response.headers.get("cache-control") === IMMUTABLE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
+		return href;
 	});
 	await check("shell preloads the startup closure", async () => {
 		const hrefs = [...shell.toString("utf8").matchAll(/<link rel="modulepreload" href="(\/assets\/[^"]+)"/g)].map((match) => match[1]);

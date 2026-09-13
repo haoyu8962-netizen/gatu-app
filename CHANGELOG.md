@@ -44,7 +44,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   content-hashed bundles are immutable instead of revalidated on every chart load.
   The build writes the trade startup chunks into the shell as `modulepreload` links,
   the bootstrap entry prefetches `/api/geo` before the wallet runtime loads, and the
-  Lambda answers `GET /api/health` for a five-minute keep-warm schedule.
+  Lambda answers `GET /api/health` for a five-minute keep-warm schedule. The shell also
+  preloads the TradingView loader and prefetches the chart iframe's main bundles on desktop
+  widths, and the loader is cached as immutable behind its commit query.
 
 ### Changed
 

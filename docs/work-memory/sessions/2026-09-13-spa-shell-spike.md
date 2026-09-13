@@ -143,6 +143,27 @@
 
 限制：所有测量来自同一台机器直连东京边缘，未覆盖慢网与远地边缘；移动端现在也会预加载桌面面板块；`analyzeClientBundle()` 与预算检查在构建里各跑一次；晚期上传静默停止的根因未定位，只加了失败关闭的核对。
 
+## 第十检查点：阶段 5 图表入口提前（2026-09-14，基于 `cdf76c71`）
+
+用户确认执行 P9。实现：`config/chart-library.ts` 承载 `CHART_LIBRARY_PATH` 与 `createChartLibraryScriptUrl(commit)`（无环境访问，Vite 配置与运行时共用），`config/chart.ts` 改为再导出，`load-tradingview.ts` 的 `TRADINGVIEW_SCRIPT_SRC` 与 `createBuildMeta()` 新字段 `chartLibraryScript` 同源；`inject-shell-preloads.mjs` 读取 `build-meta.json` 的该字段注入 `preload as="script"`，并对构建时 glob 得到的 `bundles/runtime.*`、`bundles/library.*`（各必须恰好一个）、`sameorigin.html`、`tradingview-theme-dark.css` 注入 `prefetch`，全部 `media="(min-width: 1001px)"`；`scripts/inject-shell-preloads.d.mts` 让 vitest 能以类型安全的方式导入脚本常量，`chart-library-preload.test.ts` 断言运行时 URL、构建元数据字段与桌面断点（`MOBILE_BREAKPOINT_PX + 1`）三者一致；`objectCacheControl` 与 Nitro 路由规则把入口 `charting_library.js` 改 immutable；`verify` 的"图表入口重新验证"改为"壳内预加载的图表入口线上 immutable"。`deploy/README.md` 里 Caddy 时代"WebKit 热缓存下 v28 可能初始化失败、必须每次重新验证"的警告没有证据记录，已改写为说明现行策略并把 iPad WebKit 热缓存回归列为 DNS 切换前的必做项。测试：node 5 + 22、vitest 8 文件 117 用例、typecheck、Biome 通过。
+
+发布：构建 `cloudfront-2026-09-13-p5`（壳 97 个 `modulepreload` + 1 个 preload + 4 个 prefetch，预算通过）；`reupload --only charting_library/charting_library.js` 后首次 `sync` 在资源阶段失败，`aws s3 cp/sync` 报 "Failed to connect to proxy URL: http://127.0.0.1:6152"，本机 HTTPS 代理短暂不可用；`runAws` 已改为流式输出，所以这次错误直接可见并让脚本中止，这也是第九检查点"晚期上传静默停止"最可能的根因（当时 stderr 被过滤）。代理恢复后重跑 `sync`，"Release markers match the local build"，两条失效完成，verify 主网 12/12、测试网 13/13。
+
+同环境测量（Playwright 全新 Chromium 上下文，本机直连东京边缘，毫秒；两个样本，第一个样本受本机网络抖动影响整体偏慢）：
+
+| 指标 | 阶段 2 后（对照） | 阶段 5 样本 1 | 阶段 5 样本 2 |
+| --- | --- | --- | --- |
+| TTFB / DCL / FCP / load | 174 / 196 / 220 / 976 | 256 / 845 / 856 / 1,042 | 224 / 305 / 428 / 414 |
+| 启动 JS 最后到达 | 936 | 1,016 | 449 |
+| 图表入口到达（发起方） | 1,763（面板挂载后 `<script>`） | 362（壳 preload，仅 1 次请求） | 446（壳 preload） |
+| `library.js` prefetch 完成 | 无 | 1,726（772 KB） | 458 |
+| 图表 iframe 创建 | 1,769 | 1,731 | 940 |
+| iframe 内 `library.js` | 从网络下载 | 缓存命中，frame 后 323 | 缓存命中，frame 后 306 |
+| iframe 核心资源完成 | frame 后约 700 | — | frame 后 763，11 个 canvas 已绘制 |
+| `/api/geo` 完成 | 1,388 | 1,422 | 818 |
+
+解读：入口现在随首波到达（0.36–0.45 s），iframe 内最大的文件命中 HTTP 缓存；样本 2 里 iframe 在 0.94 s 创建、约 1.8 s 完成核心资源，比阶段 2 后的 1.77 s 创建、约 2.5 s 完成提前约 0.8 s；样本 1 的 iframe 仍在 1.73 s 创建，说明创建时机还受面板挂载与数据就绪影响，不只取决于入口。prefetch 在 DCL 之后才发起（Chrome 的最低优先级），没有推迟启动 JS。移动端未测（`media` 条件下不下载）。限制同前：单机直连、样本少、未做 iPad WebKit 热缓存回归。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

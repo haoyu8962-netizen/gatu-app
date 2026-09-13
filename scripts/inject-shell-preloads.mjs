@@ -4,7 +4,7 @@
  * them through nested `import()` calls. Runs after the bundle budget check; the closure comes from
  * the same chunk-graph analysis, so the shell never preloads a file the build did not emit.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { analyzeClientBundle } from "./check-client-bundle-budget.mjs";
@@ -12,6 +12,13 @@ import { analyzeClientBundle } from "./check-client-bundle-budget.mjs";
 export const SHELL_PRELOAD_START = "<!--gatu-shell-preloads-->";
 export const SHELL_PRELOAD_END = "<!--/gatu-shell-preloads-->";
 const SHELL_FILE = "_shell.html";
+const BUILD_META_FILE = "build-meta.json";
+/** The terminal switches to its mobile surface at and below 1000px (`MOBILE_BREAKPOINT_PX`). */
+export const DESKTOP_MIN_WIDTH_PX = 1001;
+export const DESKTOP_MEDIA_QUERY = `(min-width: ${DESKTOP_MIN_WIDTH_PX}px)`;
+const CHART_BUNDLE_PATTERNS = { runtime: /^runtime\.[0-9a-f]{20}\.js$/, library: /^library\.[0-9a-f]{20}\.js$/ };
+/** Requested by the chart iframe, so only the HTTP cache can hand them over; prefetch keeps them off the critical path. */
+const CHART_STATIC_PREFETCHES = ["/charting_library/sameorigin.html", "/tradingview-theme-dark.css"];
 
 export function collectShellPreloadFiles({ tradeStartupFiles, runtimeProfileSizes }) {
 	const files = new Set(tradeStartupFiles);
@@ -32,6 +39,29 @@ export function renderShellPreloadLinks({ files, existingHrefs }) {
 		else if (file.endsWith(".css")) links.push(`<link rel="preload" href="${href}" as="style"/>`);
 	}
 	return links;
+}
+
+export function findChartBundles(bundlesDirectory) {
+	const files = existsSync(bundlesDirectory) ? readdirSync(bundlesDirectory) : [];
+	const bundles = {};
+	for (const [name, pattern] of Object.entries(CHART_BUNDLE_PATTERNS)) {
+		const matches = files.filter((file) => pattern.test(file));
+		if (matches.length !== 1) throw new Error(`expected one TradingView ${name} bundle, found ${matches.length}`);
+		bundles[name] = `/charting_library/bundles/${matches[0]}`;
+	}
+	return bundles;
+}
+
+/** Desktop only: the mobile layout mounts the chart on demand, so phones do not pay for it up front. */
+export function renderChartPreloadLinks({ chartLibraryScript, bundles, mediaQuery = DESKTOP_MEDIA_QUERY }) {
+	if (typeof chartLibraryScript !== "string" || !chartLibraryScript.startsWith("/charting_library/")) {
+		throw new Error("build-meta.json has no chartLibraryScript for the shell to preload");
+	}
+	const prefetches = [bundles.runtime, bundles.library, ...CHART_STATIC_PREFETCHES];
+	return [
+		`<link rel="preload" href="${chartLibraryScript}" as="script" media="${mediaQuery}"/>`,
+		...prefetches.map((href) => `<link rel="prefetch" href="${href}" media="${mediaQuery}"/>`),
+	];
 }
 
 export function injectShellPreloads(html, links) {
@@ -55,9 +85,16 @@ export async function injectShellPreloadsIntoBuild(publicDirectoryArgument) {
 		if (!existsSync(join(publicDirectory, "assets", file))) throw new Error(`startup asset ${file} is missing from the build`);
 	}
 	const html = readFileSync(shellFile, "utf8");
-	const links = renderShellPreloadLinks({ files, existingHrefs: readShellAssetHrefs(html) });
+	const buildMeta = JSON.parse(readFileSync(join(publicDirectory, BUILD_META_FILE), "utf8"));
+	const links = [
+		...renderShellPreloadLinks({ files, existingHrefs: readShellAssetHrefs(html) }),
+		...renderChartPreloadLinks({
+			chartLibraryScript: buildMeta.chartLibraryScript,
+			bundles: findChartBundles(join(publicDirectory, "charting_library", "bundles")),
+		}),
+	];
 	writeFileSync(shellFile, injectShellPreloads(html, links));
-	console.log(`Shell preloads: ${links.length} links added for ${files.length} startup assets in ${SHELL_FILE}.`);
+	console.log(`Shell preloads: ${links.length} links added for ${files.length} startup assets and the chart in ${SHELL_FILE}.`);
 	return { files, links };
 }
 

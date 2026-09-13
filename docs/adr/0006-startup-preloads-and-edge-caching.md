@@ -15,7 +15,8 @@ CloudFront 首发后与官方站同环境冷缓存对比：官方站把 45 个�
 3. **TradingView 哈希 bundle immutable。** `charting_library/bundles/` 下文件名带 20 位内容哈希的文件（js、css、rtl.css、woff2、cur、svg、png）一年 immutable；入口 `charting_library.js`（带 `?v=<commit>`）、`sameorigin.html` 与主题样式继续重新验证。chart 响应头策略不再覆盖 `Cache-Control`，由对象元数据决定；Nitro 路由规则同步。
 4. **地区判定从引导入口预取。** `src/lib/geo/geo-prefetch.ts` 在 4 KB 的引导块 `client.ts` 里对非文档路由发出一次 `/api/geo` 请求并暂存响应，`getGeo` 在无 override 时通过 `takeGeoPrefetch()` 一次性复用，失败即回退为自己请求。路由面判定从 `providers/client-runtime.tsx` 抽到无 React 依赖的 `config/app-route-surface.ts`，引导块因此不引入 React。查询键、`staleTime` 与 fail-closed 语义不变。
 5. **Lambda 保温与提速。** 内存 256 MB → 512 MB；新增 `GET /api/health`（204，`no-store`）；EventBridge Scheduler `gatu-terminal-api-warm` 每 5 分钟用合成函数 URL 事件调用 `/api/health`，执行角色 `gatu-terminal-api-warm-role` 只允许调用该函数。角色与调度由 root 一次性创建，`gatu-edge` 策略不含 `scheduler`。
-6. **不做边缘初判。** 用 `CloudFront-Viewer-Country` 在边缘直接回答 `/api/geo` 能把判定压到毫秒，但代理检测会从"先于交易"变为"随后收紧"；用户明确不采用，地区判定仍以 Lambda + IPdata 的完整判定为准。
+6. **图表入口随首波下载。** `config/chart-library.ts` 的 `createChartLibraryScriptUrl(commit)` 是运行时加载器与 `build-meta.json` 新字段 `chartLibraryScript` 的唯一来源；注入脚本据此在壳里 `preload` TradingView 入口，并 `prefetch` iframe 的 `runtime.*`、`library.*` bundle、`sameorigin.html` 与暗色主题样式（iframe 是另一个文档，只有 HTTP 缓存能复用，prefetch 优先级最低不与启动 JS 争抢）；全部带 `media="(min-width: 1001px)"`，移动布局只在切到图表页时才挂载图表。入口对象改为 immutable：浏览器按 `?v=<commit>` 区分版本，边缘由发布失效刷新。不采用官方站的头部同步脚本（阻塞解析），也不在面板挂载前创建 widget。
+7. **不做边缘初判。** 用 `CloudFront-Viewer-Country` 在边缘直接回答 `/api/geo` 能把判定压到毫秒，但代理检测会从"先于交易"变为"随后收紧"；用户明确不采用，地区判定仍以 Lambda + IPdata 的完整判定为准。
 
 ## 备选方案与取舍
 

@@ -1,9 +1,15 @@
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import {
 	collectShellPreloadFiles,
+	DESKTOP_MEDIA_QUERY,
+	findChartBundles,
 	injectShellPreloads,
 	readShellAssetHrefs,
+	renderChartPreloadLinks,
 	renderShellPreloadLinks,
 	SHELL_PRELOAD_END,
 	SHELL_PRELOAD_START,
@@ -41,4 +47,31 @@ test("injection goes before </head> once and replaces its own block on a second 
 	assert.equal(second.split(SHELL_PRELOAD_START).length, 2);
 	assert.ok(second.includes("client-root-D.js") && !second.includes("client-root-C.js"));
 	assert.throws(() => injectShellPreloads("<html></html>", []), /<\/head>/);
+});
+
+test("the chart entry is preloaded and its iframe bundles prefetched, desktop only", () => {
+	const bundles = { runtime: "/charting_library/bundles/runtime.4d986d07cb97d8edacba.js", library: "/charting_library/bundles/library.f5eaeb6901219f861981.js" };
+	const links = renderChartPreloadLinks({ chartLibraryScript: "/charting_library/charting_library.js?v=abc", bundles });
+	assert.equal(links[0], `<link rel="preload" href="/charting_library/charting_library.js?v=abc" as="script" media="${DESKTOP_MEDIA_QUERY}"/>`);
+	assert.deepEqual(
+		links.slice(1).map((link) => /href="([^"]+)"/.exec(link)[1]),
+		[bundles.runtime, bundles.library, "/charting_library/sameorigin.html", "/tradingview-theme-dark.css"],
+	);
+	assert.ok(links.slice(1).every((link) => link.startsWith('<link rel="prefetch"') && link.includes(`media="${DESKTOP_MEDIA_QUERY}"`)));
+	assert.throws(() => renderChartPreloadLinks({ chartLibraryScript: undefined, bundles }), /chartLibraryScript/);
+});
+
+test("exactly one runtime and one library bundle must exist in the TradingView package", () => {
+	const dir = mkdtempSync(join(tmpdir(), "gatu-chart-bundles-"));
+	mkdirSync(join(dir, "bundles"));
+	writeFileSync(join(dir, "bundles", "runtime.4d986d07cb97d8edacba.js"), "js");
+	writeFileSync(join(dir, "bundles", "library.f5eaeb6901219f861981.js"), "js");
+	writeFileSync(join(dir, "bundles", "en.4026.6f886b4ecb915f046a50.js"), "js");
+	assert.deepEqual(findChartBundles(join(dir, "bundles")), {
+		runtime: "/charting_library/bundles/runtime.4d986d07cb97d8edacba.js",
+		library: "/charting_library/bundles/library.f5eaeb6901219f861981.js",
+	});
+	writeFileSync(join(dir, "bundles", "library.0123456789abcdef0123.js"), "js");
+	assert.throws(() => findChartBundles(join(dir, "bundles")), /one TradingView library bundle, found 2/);
+	assert.throws(() => findChartBundles(join(dir, "missing")), /runtime bundle, found 0/);
 });

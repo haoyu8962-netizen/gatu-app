@@ -29,6 +29,7 @@ describe("build metadata", () => {
 			commit: "abc123",
 			release: "release-1",
 			builtAt: "2026-09-13T00:00:00.000Z",
+			chartLibraryScript: "/charting_library/charting_library.js?v=abc123",
 			mobileSync: {
 				ticketApiVersion: 2,
 				legacyRegisterDisabled: true,

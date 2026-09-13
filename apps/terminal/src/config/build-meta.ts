@@ -1,3 +1,5 @@
+import { createChartLibraryScriptUrl } from "./chart-library";
+
 export const APP_NAME = "gatu";
 
 export interface BuildMetaInput {
@@ -15,6 +17,8 @@ export interface BuildMeta {
 	commit: string;
 	release: string;
 	builtAt: string;
+	/** The TradingView loader URL this build requests, so the shell can preload the same one. */
+	chartLibraryScript: string;
 	mobileSync: {
 		ticketApiVersion: number;
 		legacyRegisterDisabled: true;
@@ -36,6 +40,7 @@ export function createBuildMeta(input: BuildMetaInput): BuildMeta {
 		commit: input.commit,
 		release: input.release,
 		builtAt: input.builtAt,
+		chartLibraryScript: createChartLibraryScriptUrl(input.commit),
 		mobileSync: {
 			ticketApiVersion: input.ticketApiVersion,
 			legacyRegisterDisabled: true,

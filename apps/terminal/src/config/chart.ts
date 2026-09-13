@@ -7,7 +7,7 @@ import type {
 import { DEFAULT_QUOTE_TOKEN } from "./app";
 import { isValidLocale, type LocaleCode } from "./i18n";
 
-export const CHART_LIBRARY_PATH = "/charting_library/";
+export { CHART_LIBRARY_PATH } from "./chart-library";
 
 export const CHART_TIME_FRAMES: TimeFrameItem[] = [
 	{ text: "5y", resolution: "1W" as ResolutionString, description: "5 Years" },

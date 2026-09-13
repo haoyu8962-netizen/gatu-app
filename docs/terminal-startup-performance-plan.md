@@ -1,6 +1,6 @@
 # 终端启动性能对齐官方站：修复计划
 
-状态：阶段 1（P2、P3）与阶段 2（P1、P4.1、P4.2）已发布到 `*.cloudfront.net`，决策记录在 [ADR 0006](adr/0006-startup-preloads-and-edge-caching.md)；P4.3 边缘初判按用户决定不做；阶段 3 评估后暂缓（见 P5、P6 的说明），阶段 4 未开始。阶段 2 后的同环境测量见任务记录第九检查点：97 个启动块 0.94 s 到齐、FCP 220 ms、`/api/geo` 1.39 s，官方站同工具 FCP 1,148 ms、58 块 1.35 s 到齐。基线是 `claude/spa-mode` 分支提交 `6721c375` 的 CloudFront 首发；对比对象是 2026-09-13 在同一台机器、同一个应用内浏览器里冷缓存实测的 `app.hyperliquid.xyz/trade/HYPE`。度量方法、原始数字与官方站技术栈指纹记录在 [任务记录](work-memory/sessions/2026-09-13-spa-shell-spike.md) 第八检查点；托管形态见 [ADR 0005](adr/0005-spa-static-shell.md) 与 [CloudFront 手册](../deploy/cloudfront/README.md)。
+状态：阶段 1（P2、P3）与阶段 2（P1、P4.1、P4.2）已发布到 `*.cloudfront.net`，决策记录在 [ADR 0006](adr/0006-startup-preloads-and-edge-caching.md)；P4.3 边缘初判按用户决定不做；阶段 3 评估后暂缓（见 P5、P6 的说明）；阶段 5（P9 图表入口提前）已实施；阶段 4 未开始。阶段 2 后的同环境测量见任务记录第九检查点：97 个启动块 0.94 s 到齐、FCP 220 ms、`/api/geo` 1.39 s，官方站同工具 FCP 1,148 ms、58 块 1.35 s 到齐。基线是 `claude/spa-mode` 分支提交 `6721c375` 的 CloudFront 首发；对比对象是 2026-09-13 在同一台机器、同一个应用内浏览器里冷缓存实测的 `app.hyperliquid.xyz/trade/HYPE`。度量方法、原始数字与官方站技术栈指纹记录在 [任务记录](work-memory/sessions/2026-09-13-spa-shell-spike.md) 第八检查点；托管形态见 [ADR 0005](adr/0005-spa-static-shell.md) 与 [CloudFront 手册](../deploy/cloudfront/README.md)。
 
 ## 目标
 
@@ -94,7 +94,7 @@ CloudWatch 告警：Lambda `Errors`、`Throttles`、`Duration p95`；CloudFront 
 - 壳 head：`lib/seo.ts` 为所有路由输出 `canonical`，壳里因此固定指向 `/trade`；改为只有文档路由输出 `canonical`，应用壳不带。
 - 文档：`agent.md` 第 44 行与 `apps/terminal/README.md` 第 50、52、117 行的 SSR 表述改为"预渲染壳"；`deploy/README.md` 开头改为指向 CloudFront 手册并把 EC2/Caddy 部分标为过渡期；`docs/README.md` 部署入口指向 CloudFront 手册；新增 ADR 0006 记录壳预加载、边缘缓存策略、图表 immutable 与地区预取的取舍；按规则重新基线 `terminal-performance-baseline.md`。
 
-### P9 · 图表入口提前 — 计划，待确认
+### P9 · 图表入口提前 — 已实施（第十检查点：入口 0.36–0.45 s 到达，iframe 内 `library.js` 缓存命中，样本 2 中 iframe 0.94 s 创建、约 1.8 s 完成核心资源）
 
 问题：`charting_library.js` 由 `lib/chart/load-tradingview.ts` 在图表面板挂载后才以 `<script>` 注入，同机冷缓存 1.76 s 到达；随后 widget 在同源 iframe（`charting_library/sameorigin.html`）里再请求 72 个文件，其中 `bundles/library.<hash>.js` 原始 2.8 MB，iframe 阶段约 0.7 s。官方站在 HTML 头部同步 `<script>` 加载入口（0.54 s 到达），代价是阻塞解析，FCP 1.15 s。目标是让入口与 iframe 的大文件随首波并发下载、widget 创建时全部命中缓存，同时不阻塞解析、不提前创建 widget（[Runtime guardrails §4](runtime-guardrails.md#4-tradingview-lifecycle)）、移动端不多下载。
 
@@ -106,7 +106,7 @@ CloudWatch 告警：Lambda `Errors`、`Throttles`、`Duration p95`；CloudFront 
 4. **移动端不参与。** `mobile-trade-layout.tsx` 只在 `topView === "chart"` 时激活图表，`media` 条件让 1000 px 及以下不下载这些文件。
 5. **不做的事。** 官方站式头部同步脚本（阻塞解析、FCP 退化）；在面板挂载前创建 widget；预取 72 个文件全集（文件名随语言与主题变化，大部分是小 CSS，收益集中在 `library.js`）。
 
-验证：注入脚本测试覆盖字段缺失与 glob 不唯一即失败、media 条件、去重；`deploy.test.mjs` 断言入口 immutable；`verify` 新增"壳含图表入口 preload 且线上返回 200 与 immutable"；Playwright 同机冷缓存前后对比 `chartEntryEnd`（目标 ≤ 1.0 s）、iframe `frameStart` 与资源完成（目标 ≤ `frameStart` + 0.2 s）、控制台无 "preloaded but not used" 警告；DevTools Slow 4G 对比 FCP 与启动 JS 到齐时间不退化。
+验证：注入脚本测试覆盖字段缺失与 glob 不唯一即失败、media 条件、去重；DNS 切换前在 iPad WebKit 上做热缓存图表初始化回归（`deploy/README.md` 记录过 v28 在 WebKit 热缓存下可能初始化失败，但没有可复现证据，immutable 入口与 bundle 是新的暴露面）；`deploy.test.mjs` 断言入口 immutable；`verify` 新增"壳含图表入口 preload 且线上返回 200 与 immutable"；Playwright 同机冷缓存前后对比 `chartEntryEnd`（目标 ≤ 1.0 s）、iframe `frameStart` 与资源完成（目标 ≤ `frameStart` + 0.2 s）、控制台无 "preloaded but not used" 警告；DevTools Slow 4G 对比 FCP 与启动 JS 到齐时间不退化。
 
 预期收益：入口到达 1.76 s → 约 0.9 s；iframe 阶段 0.7 s → 约 0.15 s；图表可见约提前 1 s；FCP 与 load 不变。
 
