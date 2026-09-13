@@ -34,6 +34,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   Funding forms share exact-amount handling and clearer requested-action
   feedback. See [account overview](docs/account-overview.md),
   [deposits](docs/cctp-deposits.md) and [withdrawals](docs/withdrawals.md).
+- The repository, documentation, root package and the API-skill installer now
+  use the `gatu` name; the installer bin is `gatu-install-hyperliquid-api-skill`.
+  An orphaned `hypeterminal:recent-wallets` browser-storage entry is removed on
+  startup.
 
 ### Fixed
 
