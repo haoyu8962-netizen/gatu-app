@@ -2,7 +2,7 @@ import { defineConfig } from "deepsec/config";
 
 export default defineConfig({
   projects: [
-    { id: "hypeterminal", root: ".." },
+    { id: "gatu", root: ".." },
     // <deepsec:projects-insert-above>
   ],
 });

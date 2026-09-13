@@ -1,7 +1,7 @@
-# Agent setup for `hypeterminal`
+# Agent setup for `gatu`
 
-This is a deepsec scanning workspace. Project `hypeterminal` was just registered
-(target: `..`). Setup is incomplete — `data/hypeterminal/INFO.md`
+This is a deepsec scanning workspace. Project `gatu` was just registered
+(target: `..`). Setup is incomplete — `data/gatu/INFO.md`
 still has placeholder sections.
 
 ## What to do
@@ -11,7 +11,7 @@ still has placeholder sections.
    under `node_modules/deepsec/dist/docs/`. Read `getting-started.md`,
    `configuration.md`, and `writing-matchers.md` (skim the rest).
 
-2. **Fill in `data/hypeterminal/INFO.md`.** It's auto-injected into the AI
+2. **Fill in `data/gatu/INFO.md`.** It's auto-injected into the AI
    prompt for every batch — keep it short and selective.
 
    **Length budget: 50–100 lines total.** Verbose context dilutes
@@ -48,8 +48,8 @@ still has placeholder sections.
 The user will run:
 
 ```bash
-pnpm deepsec scan    --project-id hypeterminal
-pnpm deepsec process --project-id hypeterminal
+pnpm deepsec scan    --project-id gatu
+pnpm deepsec process --project-id gatu
 ```
 
 You can delete this file once setup is complete.

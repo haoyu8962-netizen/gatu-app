@@ -1,4 +1,4 @@
-# hypeterminal
+# gatu
 
 ## What this codebase does
 
