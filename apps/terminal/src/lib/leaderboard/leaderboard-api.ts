@@ -4,6 +4,7 @@ import type {
 	LeaderboardSortDirection,
 	LeaderboardSortKey,
 } from "@/components/leaderboard/leaderboard-domain";
+import { LEADERBOARD_API_PATH } from "@/config/api-paths";
 
 export type LeaderboardApiEnv = "Mainnet" | "Testnet";
 
@@ -108,7 +109,7 @@ export function getLeaderboardApiUrl(query: LeaderboardApiQuery): string {
 		page: String(query.page),
 		pageSize: String(query.pageSize),
 	});
-	return `/api/leaderboard?${searchParams.toString()}`;
+	return `${LEADERBOARD_API_PATH}?${searchParams.toString()}`;
 }
 
 function parseOptionalEnum<const T extends readonly string[]>(

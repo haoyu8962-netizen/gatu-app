@@ -46,24 +46,31 @@ describe("static page classification", () => {
 		expect(classifyStaticPageRequest("GET", "/joiner")).toMatchObject({ marker: null });
 	});
 
-	it("passes server-only paths, non-navigation methods and unsafe paths to the server handlers", () => {
-		for (const path of [
-			"/api/geo",
-			"/api/referral-geo",
-			"/api/client-error-report",
-			"/api/leaderboard?x=1".split("?")[0],
-			"/mobile-agent-sync-ticket",
-			"/mobile-agent-sync-ticket/consume",
-			"/client-error-report",
-			"/join/%",
-			"/../etc/passwd",
-			"/trade/..",
-			"/trade\\BTC",
-		]) {
+	it("passes GET-able API routes, non-navigation methods and unsafe paths to the server handlers", () => {
+		for (const path of ["/api/geo", "/api/leaderboard", "/join/%", "/../etc/passwd", "/trade/..", "/trade\\BTC"]) {
 			expect(classifyStaticPageRequest("GET", path), path).toEqual({ kind: "pass" });
 		}
-		expect(classifyStaticPageRequest("POST", "/trade/BTC")).toEqual({ kind: "pass" });
+		for (const path of ["/trade/BTC", "/api/referral-geo", "/api/client-error-report", "/mobile-agent-sync-ticket"]) {
+			expect(classifyStaticPageRequest("POST", path), path).toEqual({ kind: "pass" });
+		}
 		expect(classifyStaticPageRequest("OPTIONS", "/docs")).toEqual({ kind: "pass" });
+	});
+
+	it("never renders a page for server paths that are requested with the wrong method", () => {
+		for (const path of [
+			"/api/referral-geo",
+			"/api/client-error-report",
+			"/client-error-report",
+			"/mobile-agent-sync-ticket",
+			"/mobile-agent-sync-ticket/",
+			"/mobile-agent-sync-ticket/consume",
+		]) {
+			expect(classifyStaticPageRequest("GET", path), path).toEqual({ kind: "method-not-allowed", allow: "POST" });
+			expect(classifyStaticPageRequest("HEAD", path), path).toEqual({ kind: "method-not-allowed", allow: "POST" });
+		}
+		for (const path of ["/api", "/api/", "/api/unknown", "/api/geo/extra"]) {
+			expect(classifyStaticPageRequest("GET", path), path).toEqual({ kind: "not-found" });
+		}
 	});
 
 	it("refuses HTML for file-like paths and reports the server-function transport as gone", () => {

@@ -28,8 +28,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   the server-only paths for local end-to-end checks.
 - Runtime server rendering is off: the production server answers navigations
   from the prerendered shell and document pages, keeps the route-rule security
-  headers, answers `/_serverFn/*` with 404 and keeps `POST /client-error-report`
-  as a temporary alias. Deployment health checks now also probe `/api/geo`
+  headers, answers `/_serverFn/*` with 404, answers wrong-method or unknown
+  server paths with 405/404 instead of a page, and keeps
+  `POST /client-error-report` as a temporary alias. Deployment health checks now also probe `/api/geo`
   with the production IPdata key. See [ADR 0005](docs/adr/0005-spa-static-shell.md).
 
 ### Changed

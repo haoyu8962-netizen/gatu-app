@@ -50,6 +50,12 @@ export function createStaticPagesResponder(options: StaticPagesResponderOptions)
 			return Response.json({ error: "Server functions are not available" }, { status: 404, headers: JSON_NO_STORE });
 		}
 		if (decision.kind === "not-found") return new Response("Not Found", { status: 404, headers: TEXT_NO_STORE });
+		if (decision.kind === "method-not-allowed") {
+			return Response.json(
+				{ error: "Method not allowed" },
+				{ status: 405, headers: { ...JSON_NO_STORE, allow: decision.allow } },
+			);
+		}
 
 		for (const candidate of decision.candidates) {
 			const html = await load(candidate);
