@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 
 const AGENT = "0x2222222222222222222222222222222222222222" as Address;
 const OTHER_AGENT = "0x3333333333333333333333333333333333333333" as Address;
-const APPROVED_AGENTS: ExtraAgentsResponse = [{ address: AGENT, name: "HypeTerminal", validUntil: null }];
+const APPROVED_AGENTS: ExtraAgentsResponse = [{ address: AGENT, name: "gatu", validUntil: null }];
 const LOCAL_AGENT: AgentWallet = {
 	privateKey: `0x${"ab".repeat(32)}`,
 	publicKey: AGENT,
@@ -62,7 +62,7 @@ describe("Agent verification status", () => {
 			isAgentReady: false,
 			needsAgent: true,
 		});
-		expect(requirements(APPROVED_AGENTS, "HypeTerminal")).toMatchObject({
+		expect(requirements(APPROVED_AGENTS, "gatu")).toMatchObject({
 			isAgentReady: true,
 			needsAgent: false,
 		});
@@ -125,7 +125,7 @@ describe("Agent missing reason", () => {
 		expect(
 			deriveAgentMissingReason({
 				...baseOptions,
-				extraAgentsData: [{ address: AGENT, name: "HypeTerminal", validUntil: null }],
+				extraAgentsData: [{ address: AGENT, name: "gatu", validUntil: null }],
 			}),
 		).toBe("agent_name_mismatch");
 	});
