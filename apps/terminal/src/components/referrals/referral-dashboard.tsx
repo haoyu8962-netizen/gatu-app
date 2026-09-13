@@ -112,7 +112,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 					<Trans>Invite traders, review fee benefits, and claim rewards reported by Hyperliquid.</Trans>
 				</p>
 				{initialReferralCode ? (
-					<p className="mt-2 rounded-20 border border-stroke-weak bg-fill-weak px-3 py-2 text-xs text-fg">
+					<p className="mt-2 py-2 text-xs text-fg">
 						<Trans>You were invited with referral code {initialReferralCode}. Review it before applying.</Trans>
 					</p>
 				) : null}

@@ -131,7 +131,7 @@ export function StakingActionModal({
 					</>
 				) : visibleStage === "review" ? (
 					<>
-						<div className="space-y-2 rounded-8 border border-stroke-weak bg-fill-weaker p-3 text-xs">
+						<div className="space-y-2 py-3 text-xs">
 							<ReviewRow label={t`Signing account`} value={shortenAddress(ownerAddress, 6, 6)} ltr />
 							{action.validator ? (
 								<ReviewRow

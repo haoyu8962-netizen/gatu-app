@@ -100,7 +100,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 				</div>
 
 				<div className="mt-4 grid gap-3 min-[1001px]:grid-cols-[minmax(0,1fr)_auto]">
-					<div className="rounded-10 border border-stroke-weak bg-fill-weak px-3 py-2.5">
+					<div className="py-2.5">
 						<p className="text-2xs text-fg-muted">
 							<Trans>Total value locked</Trans>
 						</p>

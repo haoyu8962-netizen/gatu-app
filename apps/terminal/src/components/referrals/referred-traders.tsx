@@ -134,7 +134,7 @@ export function ReferredTraders({ traders, tokenMetadata }: Props) {
 									<span className="tabular-nums text-fg">{formatUSD(trader.cumRewardedFeesSinceReferred)}</span>
 								</div>
 								{trader.tokenToState.length ? (
-									<details className="mt-2 rounded-16 bg-fill-weak px-2.5 py-2">
+									<details className="mt-2 py-2">
 										<summary className="cursor-pointer text-2xs font-medium text-fg-muted">
 											<Trans>Reward assets</Trans>
 										</summary>

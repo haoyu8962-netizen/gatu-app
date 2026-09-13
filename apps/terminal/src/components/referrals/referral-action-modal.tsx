@@ -117,7 +117,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 				{step === "review" ? (
 					<div className="space-y-3">
 						{action === "claim" ? (
-							<div className="divide-y divide-stroke-weak overflow-hidden rounded-24 border border-stroke-weak">
+							<div className="divide-y divide-stroke-weak">
 								{unclaimedRewards.map((reward) => (
 									<div key={reward.tokenId} className="flex items-center justify-between gap-4 px-4 py-3">
 										<span className="text-sm text-fg-muted">{reward.name}</span>
@@ -131,7 +131,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 								))}
 							</div>
 						) : (
-							<div className="rounded-24 border border-stroke-weak bg-fill-weak p-4">
+							<div className="py-4">
 								<p className="text-xs text-fg-muted">
 									{action === "apply" ? <Trans>Code to apply</Trans> : <Trans>Code to create</Trans>}
 								</p>

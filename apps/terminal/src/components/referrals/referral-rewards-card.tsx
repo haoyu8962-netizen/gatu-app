@@ -87,7 +87,7 @@ export function ReferralRewardsCard({ rewards }: Props) {
 				</Trans>
 			</p>
 
-			<details className="group mt-3 rounded-20 bg-fill-weaker">
+			<details className="group mt-3">
 				<summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-xs font-semibold text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus">
 					<InfoIcon className="size-4 text-info" />
 					<span className="flex-1">
