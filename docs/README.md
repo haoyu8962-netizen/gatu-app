@@ -33,6 +33,14 @@
 | 视觉与启动性能 | [UI 入口及优先级](ui-ux-guidelines.md)、[启动性能基线](terminal-performance-baseline.md)、[OG 资产](../designs/og-cards/README.md) |
 | Hyperliquid API 核对 | [核对工作流](hyperliquid-sdk-reference.md)、[方法目录](hyperliquid-sdk-directory.md)、[独立 API Skill 资料](../packages/hyperliquid-api/README.md) |
 
+## 拟实施方案
+
+这些文档是开发计划，不代表当前产品已经支持。
+
+| 主题 | 方案与前置条件 |
+| --- | --- |
+| Across 持久充值地址 | [接入设计](across-deposit-addresses.md)、[ADR 0004](adr/0004-across-deposit-addresses.md)：邮箱用户独立入口；生产权限、服务端身份/持久化、账户模式及资金验收待完成 |
+
 ## 历史设计、调查与交付证据
 
 这些文件保留当时的方案、观察或执行结果。使用其中的“当前”“已完成”“通过”前必须核对范围和日期；本表不把它们提升为现行契约。
