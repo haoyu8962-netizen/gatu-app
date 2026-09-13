@@ -1,6 +1,6 @@
 # Across 持久充值地址接入设计
 
-状态：拟议，尚未实现、联调或发布。修订日期：2026-09-13；本次复核基线：`8153b7b7`。本版修订原 `0662cae1` 方案，逐项处置见[复核记录](work-memory/sessions/2026-09-13-across-plan-review-followup.md)。当前运行行为继续由 [CCTP](cctp-deposits.md)、[首次交易](trading-onboarding.md)及[资金入口](account-overview.md)约束；官方资料按[共享阅读流程](across-reference.md)核对。
+状态：拟议，尚未实现、联调或发布。修订日期：2026-09-13；本次复核基线：`965e0590`。原 `0662cae1` 方案的[首轮复核](work-memory/sessions/2026-09-13-across-plan-review-followup.md)与本轮 [N1–N8 处置](work-memory/sessions/2026-09-13-across-rereview-resolution.md)保留依据。当前运行行为继续由 [CCTP](cctp-deposits.md)、[首次交易](trading-onboarding.md)及[资金入口](account-overview.md)约束；官方资料按[共享阅读流程](across-reference.md)核对。
 
 ## 1. 目标与首期范围
 
@@ -83,6 +83,8 @@ flowchart LR
 
 所有路由限制方法、请求体大小及参数长度，先验身份再访问数据库/上游，Privy token 不转发给 Across。分页和详情均有独立配额。响应仅保留本产品需要的状态与引用；未归属或不匹配数据不返回。Across 记录不写入 CCTP nonce/hash store，不能触发旧桥重试。创建/曝光重新检查全部能力；历史读取保留身份与环境隔离，但不因新的 geo/legal/发布关闭而封死已有资金排查。
 
+客户端每次请求前调用公开 `usePrivy().getAccessToken(): Promise<string | null>`，SDK 会在过期或将过期时尝试刷新；不调用内部接口或虚构 forceRefresh 参数。返回 null/失败时不发送请求；只对明确的认证失效至多重新取 token 并重试一次，同参数地址请求仍须幂等。重试前后核对 session/owner/environment，变化即取消。403、429、超时不触发刷新循环或自动登录/签名；被动获取失败遵循展示契约，主动操作保留反馈。此模块不另存 token 到缓存、日志或浏览器持久存储。[Privy access tokens](https://docs.privy.io/authentication/user-authentication/access-tokens)。
+
 ## 5. 身份、环境与访问门控
 
 环境由受信任请求的 canonical Host 决定，复用 `config/public-origins.ts` 的 `getCanonicalNetworkForHostname()`：`app.gatu.ai` 对应 mainnet，`testnet.gatu.ai` 不开放 PDA 创建；测试域历史不得读取主网绑定。校验 request URL、Host 和同源 Origin 的一致性，拒绝未知域，不接受客户端 network 或任意转发头切换环境。沿既有 Caddy 反代与 loopback 监听边界验证真实用户 IP；Host 是环境选择，不是用户授权。开发回环仅走显式 mock 环境/独立 DB，不因 loopback 获得生产权限。
@@ -97,6 +99,17 @@ legal 与 geo 分开验证：现有客户端 fresh legal gate 保留；后端 IP
 
 在语义明确前保留 `packages/hl-react/src/legal.ts` 的 parse/assert fail-closed 规则，不把服务端的 unrestricted 当作用户 geo 许可，也不直接忽略 `userAllowed=false` 或把响应裁成 acceptedTerms 后放行。若确认代理上下文会导致误拒绝，先取得适合服务端的地址状态依据并修订此契约；不能降低 guard 消除误拒绝。P0 未完成时只可 mock，生产曝光保持关闭；这里不调用 `acceptTerms2`。
 
+`legalCheck` 的 P0 完成标准如下，不能只以“三个出口返回一致”结案：
+
+| 验收项 | 证据与通过条件 |
+| --- | --- |
+| 对照矩阵 | 授权测试者分别从部署出口、至少一个允许地区和一个受限地区，对同一组原 owner 查询；组内含成功 role=missing、已接受条款、未接受条款的已知状态。仅只读，不为制造样本代签条款；记录 SDK/主机、时间、脱敏 owner/角色、出口地区及三字段/失败，并在缓存过期后复查 |
+| 字段适用性 | 取得官方说明或供应商答复，明确 acceptedTerms 与地址的关系，以及 userAllowed/restrictions 在服务器代查时代表什么；对照结果须与其一致。样本相同不能单独证明所有响应与地域无关；差异也不能直接证明 acceptedTerms 一定可信 |
+| 放行与拒绝 | fixture 覆盖真实用户 geo 受限但服务器允许、服务器拒绝但用户 geo 允许、未接受、未知字段、超时和过期缓存。前者由 geo 拒绝，后者不得忽略服务端拒绝；正常已许可 owner 必须可用，missing 不能被模式缺失误拒；动作权限复用现有解析，不把 u/o 一概当作全部动作被禁 |
+| 发布结论 | 字段语义、正常场景可用性与拒绝场景均有证据才解除此阻塞；若代理语义不适用，需先明确替代的可信服务端依据及相同验收，再修订设计，不能降级为客户端布尔值。未取得证据保持 off；P1/P2 的 mock 开发不因此停工 |
+
+限频还须取得 legalCheck 的实际权重或官方认可的上界，再与其他调用一起验收总预算。文档的“其他已公开 info=20”不能作为这个 SDK 端点的已证明最坏值；P0 对照串行、无自动重试，遇限流暂停，不通过压测探测阈值。
+
 ## 6. 两表持久化与请求预算
 
 SQLite 位于 `/opt/gatu/shared/across/deposits.sqlite3`，独立于 repo/release。仅两张业务表：
@@ -106,7 +119,7 @@ SQLite 位于 `/opt/gatu/shared/across/deposits.sqlite3`，独立于 repo/releas
 
 先持久待创建参数，再请求上游；校验目的/退款及唯一匹配的 EVM instruction、已验收链/币/精度/限额，DB 提交成功才曝光。不能使用 instruction[0]；切换源链重新匹配，精度缺失且无已验证 registry 补全时不展示。超时重试使用完全相同参数；已保存请求重取的地址改变时保留原映射并关闭新曝光。参数变更创建新 recipe 并保留旧绑定；Key 轮换不改变 recipe。同一地址不能静默转给另一用户或配置。事务不持有外部 HTTP 写锁，采用 WAL、FULL、唯一约束与有界 busy timeout；数据库禁止放在网络文件系统。
 
-备份使用在线备份 API 并验证恢复，保留旧 recipe 和原用户关联；只复制活动主 DB 文件不完整。上线前明确备份频率、恢复点和备份间隙的映射丢失处理：供应商仍可能处理已发地址，缺失本地绑定时暂停新曝光，按原配置与供应商证据人工恢复，不能猜映射或声称“重新 POST 可找回所有旧用户”。首次曝光、配置变更和回滚都要验证恢复路径。[SQLite WAL](https://sqlite.org/wal.html)、[在线备份](https://sqlite.org/backup.html)。
+备份使用在线备份 API 并验证恢复，保留旧 recipe 和原用户关联；只复制活动主 DB 文件不完整。上线前明确备份频率、恢复点和备份间隙的映射丢失处理：先暂停受影响绑定的曝光；无法界定影响范围时暂停全部新曝光。若原 App/环境、DID/owner 归属、完整历史请求和残存地址证据齐全，可按同参受控重取，核对地址/目的/退款及唯一约束并提交 DB 后恢复；重新曝光还要通过当前许可。缺参数、缺归属或返回不一致时保持关闭并人工核验，不能猜映射或声称能找回所有旧用户。可恢复性取决于证据与供应商是否仍接受请求，不取决于 recipe 是否当前；退役 recipe 恢复后仍只供历史/支持，不重新提供 QR。首次曝光、配置变更和回滚都要验证恢复路径。[SQLite WAL](https://sqlite.org/wal.html)、[在线备份](https://sqlite.org/backup.html)、[同参复用](https://docs.across.to/introduction/persistent-deposit-addresses)。
 
 首期仅一个 Nitro 进程、没有共享 worker。短期缓存、请求合并和限流可采用有界进程内 Map；重启清空缓存不影响持久映射，重启后的上游预算从保守冷启动开始。增加多实例前改用共享预算，不能沿用每进程上限；多主机前迁移数据库。
 
@@ -128,6 +141,8 @@ SQLite 位于 `/opt/gatu/shared/across/deposits.sqlite3`，独立于 repo/releas
 
 激活费独立展示与核对：已激活零余额不重复估算首次费用；确定未激活时说明 1 个报价币费用及可能的供应商包含/代付，未知时不伪装成免费。不得采用报告的 `max(routeMin, 5 USDC + 1 USDC + indicativeFees)` 作为协议最低额：其中“净到账至少 5”没有通用 PDA 依据，且费用可能已包含激活、按归集重报。若产品要求某净到账下限，需先定义该目标并取得同币种、同口径的费用边界，再用 Big.js 推导；当前不设该额外目标，也不承诺转 5 会精确到账约 3.7。
 
+路线最低额不保证足够完成下一笔订单，面板需简要提示这个区别。普通永续订单的 $10 最低名义值不是最低现金余额，初始保证金还取决于杠杆及账户约束，现货又有报价币可用余额限制。首期不采用“激活费＋费用＋10 USDC”的通用首充引导公式，也不把账户余额低于 $10 直接判为不可交易；继续使用现有订单/规模/保证金 guards。若以后提供建议金额，先定义市场、账户模式、订单目标和费用缓冲，再用当前数据计算，不保证成交。[HL 错误分类](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/error-responses)、[保证金](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/margining)。
+
 创建报价、输入金额、桥 outputAmount、最终 actionsTargetAmount、实际激活扣费和可交易余额是不同概念。P0 确认每个字段是否已扣激活费；不能按余额差证明某笔到账，更不能一律容忍 1 USDC 差额掩盖其他丢款。证据不足只展示供应商报告及交易引用，不标“已确认可交易”。
 
 | 原始状态/情况 | 展示与处理 |
@@ -144,13 +159,19 @@ SQLite 位于 `/opt/gatu/shared/across/deposits.sqlite3`，独立于 repo/releas
 
 列表的 status 过滤只接受六种桥状态；PDA 额外状态能返回但不能作为过滤条件，且地址模式忽略该过滤。每次查看展示分页的供应商记录；刷新第一页并重新开始分页，可按已确认稳定身份去重。偏移分页会受插入/迟到数据影响，不承诺无遗漏完整账本，不从已加载页计算“全部历史合计”。P0 必须确认记录 ID、同 hash 多转入/批量 sweep 身份与查询保留期；未能唯一识别的记录不可合并覆盖或用于财务合计。详情只从已归属记录取得 selector，避免把某笔 sweep 的第一条结果当成用户全部资金。
 
+`depositTxnRef`、`sweepTxnRef` 或分页序号都不能单独作转账主键。P0 需确认未归集→已索引的稳定 transfer/事件身份及关联规则；只有证据证明为同一笔才归并，不虚构响应没有的 logIndex 等字段。缺少唯一身份时保留分开的观察，刷新替换查询结果，不按 hash 增量覆盖；临时展示引用不充当业务身份。selector 无法唯一定位时不展示单笔确认详情，可展示地址列表和整笔链上交易引用。
+
 最终交付要核对 `actionsTargetRecipient/Token/ChainId/Amount/TxnRef` 等实际证据，不能用中间 HyperEVM recipient 代替 HyperCore owner。这些字段可能为空，P0 应明确替代证据接口。对同 owner 新鲜账户数据按[账户模式](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/account-abstraction-modes)核验落点，再使用现有交易 guards；默认/未知模式不自动转为 Standard。Across 按需查询中断只影响 GATU 的发现与展示，不能直接改写原转账为失败。
 
 首期退款恢复采用 **Privy 官方导出 UI + 用户自行导入外部钱包取回**，并明确需要退款源链原生 Gas。当前应用没有导出入口，但已安装的 React SDK 声明支持 `useExportWallet().exportWallet({address: exactOwner})`；入口属于 P2 必须新增的交付，不把现有 CCTP 当作所有链的退款转出能力。[Privy 导出文档](https://docs.privy.io/wallets/wallets/export)、[MFA](https://docs.privy.io/authentication/user-authentication/mfa/verify/overview)、[HL 导出实践](https://hyperliquid.gitbook.io/hyperliquid-docs/onboarding/export-your-email-wallet)。
 
 导出只能由用户明确点击，先比对 session/owner，显式传地址，使用 Privy 隔离窗口；GATU 不读取私钥、不新增 getWalletPrivateKey 调用、不接收用户粘贴的私钥。遵循实际配置的 MFA，不能假设每个用户已启用；取消/验证失败不换钱包、不自动重试导出。支持说明覆盖选择退款链、原生 Gas、导入后地址核对，以及私钥不得提供给客服。该恢复入口不要求有可交易余额或启用 sponsored，不因新充值 geo/发布门控关闭而消失；身份和钱包归属仍必须验证。钱包创建环境、导出权限、移动浏览器、MFA 与退款链均需验收；用户失去 Privy 登录或原钱包归属时转人工恢复，不保证导出可用。
 
+Web 环境要求不等于所有内嵌浏览器均不支持：[Privy 移动导出实践](https://docs.privy.io/recipes/mobile-key-export)支持 WebView 加载导出网页。首期不新增原生桥接，也不只凭 UA/PWA standalone 禁用。P3 覆盖移动 Safari/Chrome、PWA standalone 和实际支持的内嵌环境；上下文不支持或实测阻断时，保留恢复指引，让用户在系统或桌面浏览器打开同一官方 GATU origin，重新登录并核对原 owner，不在 URL 中携带 token。已启用 MFA 的用户按 SDK 要求完成验证，覆盖验证窗口过期、取消与失败；`exportWallet()` resolve 仅表示对话框结束，不证明复制私钥或退款取回。
+
 GATU 的误币文案在供应商确认前仅承诺“仅发送所列网络的原生 USDC，其他资产可能无法自动退回”。不照抄 HL 的小额损失/十分钟退款规则，也不把 Across 通用退款 120–150 分钟当 PDA SLA。按链验收退款币/链/扣费/耗时和一次用户自行取回；不以“地址相同”代替验收。历史页可提供用户明确点击的 [Across transfers](https://across.to/transfers)与源链浏览器兜底，使用 no-referrer，不自动拼接未文档化查询参数或触发第三方登录/连接；该页面是否显示 GATU 地址历史也需验证。
+
+实施时支持手册需规定：收到工单后先核实归属，再按需保存脱敏的供应商观察快照，注明时间、环境、分页条件、记录身份确定性及链上引用，并明确访问权限和保留期。快照不含 token/授权头/邮箱/私钥，不证明完整历史或最终到账；供应商不可用时记录查询失败。此流程不新增 worker、镜像表或自动外发工单。
 
 ## 8. 部署、配置与回滚
 
@@ -162,6 +183,8 @@ GATU 的误币文案在供应商确认前仅承诺“仅发送所列网络的原
 
 拟新增运行时配置：`ACROSS_API_KEY`、`ACROSS_INTEGRATOR_ID`、`ACROSS_API_BASE_URL`、`PRIVY_APP_ID`、`PRIVY_APP_SECRET`、可选 `PRIVY_VERIFICATION_KEY`、`ACROSS_DEPOSIT_DB_PATH`、`ACROSS_DEPOSIT_ADDRESS_MODE=off|pilot|on`、`ACROSS_DEPOSIT_PILOT_USER_IDS`。不新增 tracking/worker 开关。秘密无 VITE 前缀；浏览器与后端 Privy App ID 一致，Across 生产主机白名单且拒绝跨主机转发 Authorization。客户端同源调用不新增 Across connect-src；导出复用现有 Privy 官方 UI，并验证所需 origin/CSP 在实际浏览器可用。
 
+Privy App Secret 不是只读查询凭证，官方[删除用户示例](https://docs.privy.io/user-management/users/managing-users/deleting-users)也使用它；但不能据此声称它能签任意用户钱包。只注入终端服务运行时，凭据文件 0600 并限相应运维/服务用户访问，不复用于其他服务；部署说明记录轮换及泄露处理。模块只封装验签与用户查询，不提供管理、user-key 获取、导出私钥或签名代理，收到的用户 token 同样视为秘密。若 Privy 提供适用的受限凭据，再评估替换，不虚构当前已有只读 scope。
+
 mode=off 停止新建和操作性曝光，保留历史绑定读取、按需状态查询及导出/支持入口。后端依赖故障时关闭新曝光，历史内部数据模型区分当前观察与缓存；被动获取失败遵循移动展示契约，不渲染 unavailable/原始错误文案。用户明确重试失败及真实退款异常可提供操作反馈；不能保证供应商离线时仍有完整历史。接口日志只含内部关联 ID/错误类别，不记录 JWT、邮箱、授权头、私钥、签名或完整用户响应；地址/交易引用按需存储和受控支持，隐私文案说明向 Across 的数据传递。
 
 上线前须确认 Key 撤销、配额耗尽、服务退役与误存恢复的供应商责任。停止 GATU 查询不会主动停止 Across 已建立的资金流程，但不能据此保证 Key 撤销或 Across 停服后仍照常归集。已复制地址不可撤销或自动改 owner。首次开放后，常规回滚只允许仍保留历史/导出能力且兼容 DB 的版本；回滚到尚无 PDA 支持的版本前必须提供经过验收的恢复入口，不能随旧 release 一并删掉用户恢复能力。
@@ -170,7 +193,7 @@ mode=off 停止新建和操作性曝光，保留历史绑定读取、按需状�
 
 | 阶段 | 交付与完成条件 |
 | --- | --- |
-| P0：契约核验 | 用 GATU 自己的权限固定主机、recipient 请求形态、退款参数、Integrator ID、PDA→SPOT 目标、费用/激活口径、稳定记录身份/查询保留期、误币/误链/小额及 Key 退役规则；核对 legal 的地址/出口语义。取得脱敏可重复响应或供应商明确答复 |
+| P0：契约核验 | 用 GATU 自己的权限固定主机、recipient 请求形态、退款参数、Integrator ID、PDA→SPOT 目标、费用/激活口径、稳定记录身份/查询保留期、误币/误链/小额及 Key 退役规则；legal 必须通过 §5 的矩阵、字段适用性和放行/拒绝标准并确认预算权重。取得脱敏可重复响应或供应商明确答复 |
 | P1：后端 | Host 隔离、Privy 身份、geo/legal、两表幂等创建、按需列表/详情、缓存/总预算、native 构建与备份恢复。生产仍关闭；未知契约用明确标识的 mock，不伪造为真实 schema |
 | P2：前端与支持 | 共享方法能力、地址/指示性费用/激活说明、历史查询、精确 owner 导出和退款教程；sponsored 按实际能力显示，旧余额和在途 CCTP 恢复保持。移动、主题、语言和账户切换无串用 |
 | P3：受控资金验收 | 授权操作员用真实小额核对新账户激活前后 role/mode/Spot/Perp、已激活零余额、重复转入、每个首发模式/链的最终交付与退款取回。退款测试先由供应商确认安全方法，不故意发送已知不可恢复小额或误币来“验证损失” |
@@ -182,9 +205,19 @@ P1/P2 可按 mock 并行开发；生产地址曝光需 P0 与对应 P3 场景完
 
 实现时同步 `docs/cctp-deposits.md`、`trading-onboarding.md`、`email-trading-signing.md`、`account-overview.md`、`mobile-data-presentation.md`、`runtime-guardrails.md`、部署/环境示例、导出/退款支持教程、隐私文案与 CHANGELOG。先修订“新充值仅 CCTP”为按方法约束，再实现新行为；不借此放宽旧 CCTP guards。本次只修方案，不把当前 Reference 改成已支持 Across。
 
+实施新行为前必须明确改写以下现行条款，而非只在新方案中声明例外：
+
+| 现行位置 | 实施时的修订边界 |
+| --- | --- |
+| `cctp-deposits.md` 开头的 CCTP-only for new USDC deposits | 限定为本文维护的 CCTP 方式，链接新增 Across 方式；fresh cctp 仍是 CCTP 执行条件 |
+| `runtime-guardrails.md` §2 的 usdcRouting sole runtime source for deposit and withdrawal protocol selection，以及 bridge response pauses new deposits | 限定为现有原生充值/提现协议路径；Across capability 不读取或依赖 usdcRouting 来授权/禁用地址。保留 CCTP fresh guard、提现规则及 Bridge2 新提交禁用 |
+| `trading-onboarding.md` 第 7 步及后续 sole source of truth 路由不变量 | 先按方法分发，再执行相应门控；CCTP 仍检查 usdcRouting，Across 用独立服务端能力；完整空快照、准确 owner、legal/signer 顺序与旧资金恢复不变 |
+
 ## 10. 验证计划
 
 实施的测试围绕实际风险：伪造/过期 token、跨 DID/Host/owner 读取、primary/唯一/index-0 分支、钱包解绑、geo/legal失败与缓存过期；并发幂等、响应丢失/DB失败不曝光；Key/recipe变更与旧地址；费用倍率/精度/激活不重复扣；首次 missing、既有 default 和未知模式区分；批量/同 hash多条、分页漂移、详情越权/引用过期、404/未知状态；导出显式传 owner、取消/MFA/移动浏览器失败；off/回滚仍有历史和恢复；Linux native 加载、备份还原、秘密不进浏览器。
+
+本轮补充的回归覆盖 token=null、一次认证重试及非认证错误不循环；§5 legal 对照的正/负场景；当前/退役 recipe 的受控恢复和证据缺失；pending→indexed 的身份不足不合并；PWA/内嵌导出阻断后的浏览器指引、重新登录 owner 核对，以及关闭导出窗口不标记退款已取回。
 
 按改动运行 `pnpm exec biome check <TS/TSX>`、`pnpm typecheck`、`pnpm --filter @gatu/terminal test`、`pnpm build` 及部署检查。AGENTS 的钱包/onboarding、资金可用性、模式、移动展示、i18n 回归仍有效。浏览器使用独立 Vite fixture cache，在 375px、1000px、1440px 与明暗/中英切换检查；自动测试不操作真实导出私钥或资金，真实验收由授权用户操作。
 
@@ -192,4 +225,4 @@ P1/P2 可按 mock 并行开发；生产地址曝光需 P0 与对应 P3 场景完
 
 ## 11. 本次结果
 
-本次完成审查报告逐项核对与方案修订，未取得生产 Key、未创建充值地址、未运行真实充值/导出/签名或应用构建。已确定首期架构，P0/P3 待外部证据的事项仍未完成，详见[复核记录](work-memory/sessions/2026-09-13-across-plan-review-followup.md)。需要项目自己的 Across 权限、Privy 服务端配置、部署出口核验条件及授权操作员验收窗口；秘密通过服务器配置提供，不贴聊天。
+本次完成审查报告逐项核对与方案修订，未取得生产 Key、未创建充值地址、未运行真实充值/导出/签名或应用构建。已确定首期架构，P0/P3 待外部证据的事项仍未完成，详见[本轮复核记录](work-memory/sessions/2026-09-13-across-rereview-resolution.md)。需要项目自己的 Across 权限、Privy 服务端配置、部署出口核验条件及授权操作员验收窗口；秘密通过服务器配置提供，不贴聊天。
