@@ -1,0 +1,36 @@
+# Proposed Caddyfile changes for the CloudFront cut-over. Apply them to /etc/caddy/Caddyfile
+# together with the distribution switch; `deploy.sh` step 1 (`caddy validate`) and
+# `validate-caddy-forwarded-headers.mjs` must pass on the server before reloading.
+#
+# 1. Add the origin hostname to the site block so Caddy obtains its certificate. CloudFront
+#    connects to origin.gatu.ai with SNI origin.gatu.ai but forwards the viewer Host header, so the
+#    existing per-host matchers (@testnet, @mainnet_trade, ...) keep working unchanged.
+#
+#    app.gatu.ai, testnet.gatu.ai, origin.gatu.ai {
+#
+# 2. Trust the CloudFront viewer address only when the origin-verify secret matches. Direct
+#    requests to the origin (no secret) keep today's behavior: the TCP peer address becomes the
+#    client IP. Put the secret in /etc/caddy/env (CADDY_ORIGIN_VERIFY) and load it with
+#    `EnvironmentFile=` in caddy.service; never commit the value.
+#
+#    @from_cloudfront {
+#        header X-Origin-Verify {env.CADDY_ORIGIN_VERIFY}
+#        header_regexp viewer_address CloudFront-Viewer-Address ^\[?([0-9a-fA-F.:]+?)\]?:\d+$
+#    }
+#    handle @from_cloudfront {
+#        reverse_proxy 127.0.0.1:3000 {
+#            header_up X-Forwarded-For {re.viewer_address.1}
+#            header_up X-Real-IP {re.viewer_address.1}
+#        }
+#    }
+#    handle {
+#        reverse_proxy 127.0.0.1:3000 {
+#            header_up X-Forwarded-For {remote_host}
+#            header_up X-Real-IP {remote_host}
+#        }
+#    }
+#
+# 3. Optional hardening once every viewer reaches Caddy through CloudFront: restrict the EC2
+#    security group for port 443 to the managed prefix list
+#    `com.amazonaws.global.cloudfront.origin-facing`, keep port 80 open for ACME HTTP-01, and
+#    respond 403 to requests without the origin-verify header.

@@ -31,6 +31,7 @@ Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai + testnet.gatu.ai
   只有显式设置 `GATU_RUNTIME_SSR=true` 才回退到服务端渲染。
 - `/_serverFn/*` 已无调用方，运行时返回 404。旧的 `/client-error-report` 路径保留为 `POST` 别名，
   直到没有旧版本客户端仍在浏览器中打开后再删除。
+- 把 CloudFront 放到这套拓扑前面的操作材料（只读核查结果、分发配置生成器、Caddy 可信代理链片段、切换与回滚步骤）见 [cloudfront/README.md](cloudfront/README.md)；第一步不迁 S3，源站仍是本机 Caddy → Node。
 - `deploy.sh` 第 8 步在 Node 探针中新增 `verify_geo_provider`：以 `X-Forwarded-For: 8.8.8.8` 请求
   `http://127.0.0.1:3000/api/geo`，要求返回 200 且 `country` 为 `US`。这一步用生产密钥证明
   `/api/geo` 已挂载、可信代理链解析出客户端 IP、IPdata 密钥可用；密钥缺失或提供方故障会导致发布回滚。
