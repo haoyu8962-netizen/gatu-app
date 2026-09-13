@@ -109,29 +109,78 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 Browser-fixture servers must use a Vite dependency cache separate from the application dev server, with neither cache nested inside the other. Follow `docs/runtime-guardrails.md` when changing browser-test configuration; a different root or port does not isolate Vite's default cache.
 
-Run checks proportional to the touched surface before committing:
+Run checks proportional to the touched surface before committing. Every contract above has a focused regression entry; run the groups for the sections you touched, and the full `pnpm --filter @gatu/terminal test` run when a change crosses several of them:
 
 ```bash
 pnpm exec biome check <changed TypeScript/TSX files>
 pnpm --filter @gatu/terminal typecheck
+
+# Wallet signing, onboarding and connection UI
 pnpm --dir apps/terminal exec vitest run \
-  src/lib/tests/orderbook.test.ts \
-  src/lib/tests/orderbook-size-cell.test.tsx \
-  src/lib/tests/orderbook-rows.test.ts
-pnpm --dir apps/terminal exec vitest run \
-  src/lib/tests/chart-theme-colors.test.ts \
-  src/lib/tests/tradingview-chart.test.tsx
-pnpm --dir apps/terminal exec vitest run \
-  src/lib/tests/modal-surface-contract.test.ts
-pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/trading-onboarding-domain.test.ts \
+  src/lib/tests/trading-onboarding-gate.test.tsx \
+  src/lib/tests/agent-registration-session.test.ts \
+  src/lib/tests/agent-storage-scope.test.ts \
+  src/lib/tests/external-agent-signer.test.ts \
+  src/lib/tests/privy-agent-signer.test.ts \
+  src/lib/tests/mobile-agent-lifecycle.test.ts \
+  src/lib/tests/legal-gate.test.ts \
   src/lib/tests/privy-config.test.ts \
   src/lib/tests/wallet-modal.test.tsx \
   src/lib/tests/wallet-session.test.tsx \
   src/lib/tests/pwa-install.test.tsx \
   src/lib/tests/pwa-manifest.test.ts
+
+# Mobile data presentation
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/mobile-data-presentation-contract.test.ts \
+  src/lib/tests/funds-action-availability.test.ts \
+  src/lib/tests/user-positions-readiness.test.tsx \
+  src/lib/tests/mobile-account-view.test.tsx
+
+# Trading terminal visual contract
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/chart-theme-colors.test.ts \
+  src/lib/tests/tradingview-chart.test.tsx \
+  src/lib/tests/modal-surface-contract.test.ts
+
+# Order book: geometry, transport, animation and palette
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/orderbook.test.ts \
+  src/lib/tests/orderbook-size-cell.test.tsx \
+  src/lib/tests/orderbook-rows.test.ts \
+  src/lib/tests/orderbook-hover.test.ts \
+  src/lib/tests/orderbook-new-levels.test.ts \
+  src/lib/tests/orderbook-level-pulses.test.ts \
+  src/lib/tests/orderbook-color-contrast.test.ts \
+  src/lib/tests/orderbook-l2-feature-gate.test.ts \
+  src/lib/tests/l2-book-transport-pool.test.ts \
+  src/lib/tests/mobile-orderbook-subscription.test.tsx \
+  src/lib/tests/use-l2-book-subscription.test.tsx
+
+# Recent trades
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/trades.test.ts \
+  src/lib/tests/trades-panel.test.tsx \
+  src/lib/tests/trade-row.test.tsx
+
+# Desktop trading layout and order entry
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/desktop-grid-layout.test.ts \
+  src/lib/tests/grid-content-height.test.tsx \
+  src/lib/tests/order-entry.test.ts \
+  src/lib/tests/order-entry-store.test.tsx \
+  src/lib/tests/trade-form-twap-advanced.test.tsx \
+  src/lib/tests/trade-form-compact-fields.test.tsx \
+  src/lib/tests/trade-form-tp-sl.test.tsx
+
+# Runtime translation contract (Change discipline)
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/i18n-reactivity-contract.test.ts \
+  src/lib/tests/i18n-hot-switch.test.tsx
 ```
 
-When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.
+Layout contracts also have browser suites: `docs/desktop-grid-layout.md` and `docs/runtime-guardrails.md` §9 name the Playwright configs under `apps/terminal/tests/browser/`. When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.
 
 <!-- BEGIN CODEX AUTO-COMMIT -->
 For every task that may modify repository files, use the `$auto-commit` skill from the beginning of the task. After completing and validating the requested work, create a Git commit before the final response. Do not commit only when the user explicitly says not to commit or when the skill's safety exceptions apply. Never push unless the user explicitly requests it.

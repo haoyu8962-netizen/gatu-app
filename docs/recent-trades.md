@@ -17,4 +17,11 @@
 
 ## 验证
 
-修改列定义、断点或精度时，在 1001px、1420px 附近及最窄容器宽度下核对表头与行对齐、`Time` 列隐藏、标签可访问名称保留；运行 `lib/trade/trades.ts` 相关单测与订单簿面板浏览器回归。
+修改列定义、断点或精度时，在 1001px、1420px 附近及最窄容器宽度下核对表头与行对齐、`Time` 列隐藏、标签可访问名称保留。运行：
+
+```bash
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/trades.test.ts \
+  src/lib/tests/trades-panel.test.tsx \
+  src/lib/tests/trade-row.test.tsx
+```
