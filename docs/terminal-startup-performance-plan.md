@@ -1,6 +1,6 @@
 # 终端启动性能对齐官方站：修复计划
 
-状态：阶段 1（P2、P3）与阶段 2（P1、P4.1、P4.2）已发布到 `*.cloudfront.net`，决策记录在 [ADR 0006](adr/0006-startup-preloads-and-edge-caching.md)；P4.3 边缘初判按用户决定不做；阶段 3、4 未开始。基线是 `claude/spa-mode` 分支提交 `6721c375` 的 CloudFront 首发；对比对象是 2026-09-13 在同一台机器、同一个应用内浏览器里冷缓存实测的 `app.hyperliquid.xyz/trade/HYPE`。度量方法、原始数字与官方站技术栈指纹记录在 [任务记录](work-memory/sessions/2026-09-13-spa-shell-spike.md) 第八检查点；托管形态见 [ADR 0005](adr/0005-spa-static-shell.md) 与 [CloudFront 手册](../deploy/cloudfront/README.md)。
+状态：阶段 1（P2、P3）与阶段 2（P1、P4.1、P4.2）已发布到 `*.cloudfront.net`，决策记录在 [ADR 0006](adr/0006-startup-preloads-and-edge-caching.md)；P4.3 边缘初判按用户决定不做；阶段 3 评估后暂缓（见 P5、P6 的说明），阶段 4 未开始。阶段 2 后的同环境测量见任务记录第九检查点：97 个启动块 0.94 s 到齐、FCP 220 ms、`/api/geo` 1.39 s，官方站同工具 FCP 1,148 ms、58 块 1.35 s 到齐。基线是 `claude/spa-mode` 分支提交 `6721c375` 的 CloudFront 首发；对比对象是 2026-09-13 在同一台机器、同一个应用内浏览器里冷缓存实测的 `app.hyperliquid.xyz/trade/HYPE`。度量方法、原始数字与官方站技术栈指纹记录在 [任务记录](work-memory/sessions/2026-09-13-spa-shell-spike.md) 第八检查点；托管形态见 [ADR 0005](adr/0005-spa-static-shell.md) 与 [CloudFront 手册](../deploy/cloudfront/README.md)。
 
 ## 目标
 
@@ -66,7 +66,9 @@
 
 验证：`payload-hash.test.ts` 旁新增 `geo-prefetch.test.ts`（复用、一次性、失败回退、文档路由不预取）；`lambda-handler.test.ts` 加 health 用例；线上测 `geoEnd` 时间与冷/热延迟。
 
-### P5 · 分块整理与命名对齐
+### P5 · 分块整理与命名对齐 — 暂缓
+
+阶段 2 之后重新评估：chunk 图显示 `vendor-tanstack-router` 实际是"入口共享块"（217 个仓库模块：hl-react signing/internal/hooks、`lib/hyperliquid`、`domain/market`、类别路由与错误页），`client-hydrate.tsx` 又静态引用 hl-react 的请求调度器，所以即使把 hl-react 与 SDK 拆成独立块，它们仍在水合前的静态闭包里；388 个 JS 块里 294 个小于 10 KB，但它们大多属于非启动路由，启动路径的 97 个文件在预加载后 0.94 s 内一次到齐。继续重排要改动预算脚本按块名识别的 surface（`client-root`、`trade-terminal-page`、`token-selector-popup` 等）并重新基线，收益已无法在测量里体现，因此暂缓；若日后要做，先把 `client-hydrate.tsx` 对请求调度器的引用改为错误时动态导入。
 
 问题：`createManualChunks` 只按少数包名分配，Rollup 把 hl-react、zustand、sonner 等并进了名为 `vendor-tanstack-router` 的块，React 落在 `vendor-base-ui`，`vite-manual-chunks.test.ts` 只测函数不测产物；`/trade` 首屏 98 个 JS 文件。
 
@@ -74,7 +76,9 @@
 
 验证：新增产物级测试，读取 `client-chunk-graph.json` 断言 React 与 SDK 落在声明的块中；文件数目标 ≤ 60。
 
-### P6 · 首屏字体与小项
+### P6 · 首屏字体与小项 — 字体保留，其余等 EC2 退役
+
+复核后 IBM Plex Sans 并非只用于一处：`font-market-close` 用在交易页头部、市场概览、代币选择器与历史订单表，都在首屏可见，去掉预加载会造成首屏字体闪换，因此两套预加载保留。
 
 - 首屏同时预加载 Inter 与 IBM Plex Sans 两套可变字体（94 KB gzip）。IBM Plex Sans 只用于 `--font-market-close`；改为不预加载、`font-display: swap` 按需加载，`FONT_PRELOAD_URLS` 只留 Inter。若设计上坚持两套，改为只预加载首屏可见的那一套。
 - Radix 与 Base UI 并存来自 `cmdk` 与 `vaul` 的依赖，替换成本高于收益，本轮不动，记入观察项。
