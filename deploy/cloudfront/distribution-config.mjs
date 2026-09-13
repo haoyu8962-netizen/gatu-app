@@ -20,6 +20,9 @@ export const API_ORIGIN_REQUEST_POLICY_NAME = "gatu-terminal-api";
 export const NOT_FOUND_PAGE = "/404.html";
 
 export const API_PATH_PATTERNS = Object.freeze(["/api/*", "/client-error-report", "/mobile-agent-sync-ticket*"]);
+/** Read-only API whose handler sets `s-maxage`; it gets its own behavior ahead of the uncached `/api/*` one. */
+export const LEADERBOARD_PATH_PATTERN = "/api/leaderboard";
+export const API_CACHE_POLICY_NAME = "gatu-terminal-api-cached";
 export const JOIN_PATH_PATTERN = "/join*";
 export const CHART_PATH_PATTERNS = Object.freeze(["/charting_library/*", "/tradingview-theme-*.css"]);
 export const ASSET_PATH_PATTERNS = Object.freeze([
@@ -111,6 +114,7 @@ export function validateOptions(options) {
 		lambdaUrlDomain,
 		lambdaOriginAccessControlId,
 		apiOriginRequestPolicyId,
+		apiCachePolicyId,
 		responseHeadersPolicyIds,
 		functionArns,
 	} = options;
@@ -122,7 +126,12 @@ export function validateOptions(options) {
 	if (typeof lambdaUrlDomain !== "string" || !/\.lambda-url\.[a-z0-9-]+\.on\.aws$/.test(lambdaUrlDomain)) {
 		throw new Error("lambdaUrlDomain must be a Lambda function URL host");
 	}
-	for (const [name, value] of Object.entries({ s3OriginAccessControlId, lambdaOriginAccessControlId, apiOriginRequestPolicyId })) {
+	for (const [name, value] of Object.entries({
+		s3OriginAccessControlId,
+		lambdaOriginAccessControlId,
+		apiOriginRequestPolicyId,
+		apiCachePolicyId,
+	})) {
 		if (typeof value !== "string" || value.trim() === "") throw new Error(`${name} is required`);
 	}
 	for (const key of ["base", "trade", "join", "chart"]) {
@@ -135,6 +144,27 @@ export function validateOptions(options) {
 			throw new Error(`functionArns.${key} must be a CloudFront Function ARN`);
 		}
 	}
+}
+
+/**
+ * Caches API responses only as long as the origin says (`s-maxage`), keyed by the full query string,
+ * so the leaderboard snapshot is served from the edge instead of re-running the Lambda per viewer.
+ */
+export function createApiCachePolicyConfig() {
+	return {
+		Name: API_CACHE_POLICY_NAME,
+		Comment: "gatu API responses cached by origin s-maxage, keyed by query string",
+		DefaultTTL: 0,
+		MaxTTL: 1800,
+		MinTTL: 0,
+		ParametersInCacheKeyAndForwardedToOrigin: {
+			EnableAcceptEncodingGzip: true,
+			EnableAcceptEncodingBrotli: true,
+			HeadersConfig: { HeaderBehavior: "none" },
+			CookiesConfig: { CookieBehavior: "none" },
+			QueryStringsConfig: { QueryStringBehavior: "all" },
+		},
+	};
 }
 
 export function createApiOriginRequestPolicyConfig() {
@@ -172,6 +202,7 @@ export function createDistributionConfig(options) {
 		lambdaUrlDomain,
 		lambdaOriginAccessControlId,
 		apiOriginRequestPolicyId,
+		apiCachePolicyId,
 		responseHeadersPolicyIds,
 		functionArns,
 		callerReference = `gatu-terminal-${network}-${randomUUID()}`,
@@ -203,6 +234,15 @@ export function createDistributionConfig(options) {
 		});
 
 	const behaviors = [
+		cacheBehavior({
+			pathPattern: LEADERBOARD_PATH_PATTERN,
+			targetOriginId: API_ORIGIN_ID,
+			cachePolicyId: apiCachePolicyId,
+			originRequestPolicyId: apiOriginRequestPolicyId,
+			responseHeadersPolicyId: responseHeadersPolicyIds.base,
+			methods: READ_METHODS,
+			functions: { request: functionArns.request },
+		}),
 		...API_PATH_PATTERNS.map(apiBehavior),
 		cacheBehavior({
 			pathPattern: JOIN_PATH_PATTERN,
@@ -305,6 +345,9 @@ function readArgs(argv) {
 			case "--lambda-oac":
 				options.lambdaOriginAccessControlId = value;
 				break;
+			case "--api-cache-policy":
+				options.apiCachePolicyId = value;
+				break;
 			case "--api-origin-request-policy":
 				options.apiOriginRequestPolicyId = value;
 				break;
@@ -332,6 +375,10 @@ function readArgs(argv) {
 
 function main() {
 	const argv = process.argv.slice(2);
+	if (argv[0] === "--api-cache-policy-config") {
+		process.stdout.write(`${JSON.stringify(createApiCachePolicyConfig(), null, 2)}\n`);
+		return;
+	}
 	if (argv[0] === "--api-origin-request-policy-config") {
 		process.stdout.write(`${JSON.stringify(createApiOriginRequestPolicyConfig(), null, 2)}\n`);
 		return;

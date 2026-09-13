@@ -58,7 +58,7 @@ describe("home route boot contract", () => {
 			headers: { "cache-control": "no-store" },
 		});
 		expect(HomeRoute.options.component).toBeUndefined();
-		expect(HomeRoute.options.ssr).toBe(true);
+		expect(HomeRoute.options.ssr).toBe(false);
 	});
 
 	it("preserves a safe last-selected market in the redirect", () => {

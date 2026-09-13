@@ -35,7 +35,7 @@
 | `functions/terminal-request.js` | viewer-request：文档路由改写到 `index.html`，其余应用路径改写到 `_shell.html`，服务端路径与文件路径原样放行，`/_serverFn/*` 直接 404，写入 `x-gatu-forwarded-host`，`/join*` 标记 `x-gatu-route` |
 | `functions/terminal-response.js` | viewer-response（由 `render-functions.mjs` 从 `terminal-response.template.js` 渲染，勿手改）：设置 `Content-Security-Policy`（图表包路径用同源 iframe 版本，其余用终端版本）并把 `x-gatu-route: referral-join` 暴露为响应头。CloudFront 响应头策略最多接受 1,783 字符的 CSP，而应用策略是 1,946 字符，所以 CSP 由函数下发；`pnpm test:cloudfront` 会在渲染结果与 `security-headers.ts` 不一致时失败 |
 | `response-headers-policies.mjs` | 从 `security-headers.ts` 生成四个策略（不含 CSP）：base、trade（带该网络的 Hyperliquid API `preconnect`）、join（`no-store`/`no-referrer`/`noindex`）、chart（`X-Frame-Options: SAMEORIGIN`，缓存由对象元数据决定：入口重新验证、哈希 bundle immutable）；testnet 版本全部附加 `noindex` |
-| `distribution-config.mjs` | 生成 DistributionConfig：S3 源（OAC）+ Lambda 源（OAC），`/api/*`、`/client-error-report`、`/mobile-agent-sync-ticket*` 走 Lambda 且不缓存，`/join*` 不缓存，所有静态行为挂 viewer-response 函数（CSP），导航行为再挂 viewer-request 函数，图表/资源路径 CachingOptimized，交易路径挂 trade 策略，404 映射到 `/404.html`。不传 `--alias`/`--certificate-arn` 时使用默认 `*.cloudfront.net` 证书，供证书签发前先行验证；`--api-origin-request-policy-config` 输出 Lambda 源请求策略（白名单 9 个头，CloudFront 上限 10，转发 viewer 地址但不转发 Host） |
+| `distribution-config.mjs` | 生成 DistributionConfig：S3 源（OAC）+ Lambda 源（OAC），`/api/leaderboard` 走 Lambda 但按源的 `s-maxage` 在边缘缓存（缓存策略 `gatu-terminal-api-cached`，按完整查询串区分），其余 `/api/*`、`/client-error-report`、`/mobile-agent-sync-ticket*` 走 Lambda 且不缓存，`/join*` 不缓存，所有静态行为挂 viewer-response 函数（CSP），导航行为再挂 viewer-request 函数，图表/资源路径 CachingOptimized，交易路径挂 trade 策略，404 映射到 `/404.html`。不传 `--alias`/`--certificate-arn` 时使用默认 `*.cloudfront.net` 证书，供证书签发前先行验证；`--api-origin-request-policy-config` 输出 Lambda 源请求策略（白名单 9 个头，CloudFront 上限 10，转发 viewer 地址但不转发 Host） |
 | `deploy.mjs` | `sync`（按缓存策略分组 `aws s3 sync`，资源先、HTML 与 `build-meta.json` 后，从不 `--delete`）、`reupload --only <前缀>`（缓存策略变化时用 `aws s3 cp` 强制重写已有对象的元数据，`sync` 会跳过内容未变的文件）；`sync` 结束时核对 S3 上 `_shell.html` 与 `build-meta.json` 的字节数与本地构建一致，中途停下的同步会直接报错、`invalidate`（`/*`）、`lambda`（zip + `update-function-code` + 等待）、`verify`（经公网检查壳与文档页与本地构建逐字节一致、CSP 与网络专属 preconnect、`build-meta.json` 一致、`/api/geo` 真实判定、带 `x-amz-content-sha256` 的同源 `POST /api/referral-geo` 返回决策、`/join` 头与标记、缺失文件 404、壳内预加载的图表入口线上 immutable、壳内 ≥ 20 个 `modulepreload` 且都在本地构建中并在线上 `immutable`、`/api/health` 204、壳二次请求边缘命中、图表 bundle immutable 且边缘命中、testnet `noindex`） |
 
 缓存策略（`objectCacheControl`）：`assets/*`、`charting_library/bundles/*`（TradingView 文件名自带 20 位内容哈希）与入口 `charting_library/charting_library.js`（浏览器按 `?v=<commit>` 区分版本，边缘靠发布失效刷新）`immutable` 一年；壳与文档页 `public, max-age=0, s-maxage=60, stale-while-revalidate=300`，浏览器每次条件请求，边缘缓存一分钟并在后台刷新，发布时的 `/*` 失效保证新版本立即可见；图表入口、`sameorigin.html`、主题样式重新验证；`build-meta.json` 与 `sw.js` `no-store`。改动策略后对受影响前缀跑 `node deploy/cloudfront/deploy.mjs reupload --bucket gatu-terminal-2026 --only charting_library/bundles/ --only _shell.html --execute`，再失效。
@@ -76,13 +76,15 @@
    # 对数组中的每个策略：aws cloudfront create-response-headers-policy --response-headers-policy-config file://<单个策略 JSON>
    node deploy/cloudfront/distribution-config.mjs --api-origin-request-policy-config > /tmp/orp.json
    aws cloudfront create-origin-request-policy --origin-request-policy-config file:///tmp/orp.json
+   node deploy/cloudfront/distribution-config.mjs --api-cache-policy-config > /tmp/api-cache.json
+   aws cloudfront create-cache-policy --cache-policy-config file:///tmp/api-cache.json
    ```
 7. **分发**（主网、测试网各一个，共用 S3 桶与 Lambda）：
    ```bash
    node deploy/cloudfront/distribution-config.mjs --network mainnet --alias app.gatu.ai \
      --certificate-arn <arn> --bucket-domain gatu-terminal-2026.s3.ap-northeast-1.amazonaws.com \
      --s3-oac <id> --lambda-url-domain <xxx>.lambda-url.ap-northeast-1.on.aws --lambda-oac <id> \
-     --api-origin-request-policy <id> --policy-base <id> --policy-trade <id> --policy-join <id> --policy-chart <id> \
+     --api-origin-request-policy <id> --api-cache-policy <id> --policy-base <id> --policy-trade <id> --policy-join <id> --policy-chart <id> \
      --function-request <arn> --function-response <arn> > /tmp/cf-mainnet.json
    aws cloudfront create-distribution --distribution-config file:///tmp/cf-mainnet.json
    ```

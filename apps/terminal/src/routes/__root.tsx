@@ -1,12 +1,20 @@
 import { i18n } from "@lingui/core";
 import type { QueryClient } from "@tanstack/react-query";
-import { createRootRouteWithContext, HeadContent, Outlet, Scripts, useRouterState } from "@tanstack/react-router";
+import {
+	createRootRouteWithContext,
+	HeadContent,
+	Outlet,
+	Scripts,
+	useHydrated,
+	useRouterState,
+} from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
 import { ApplicationErrorBoundary } from "@/components/application-error-boundary";
 import { DashboardShellSkeleton } from "@/components/dashboard/dashboard-shell-skeleton";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { RouterErrorPage } from "@/components/pages/router-error-page";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
+import { getHydrationRouteSurface } from "@/config/app-route-surface";
 import { isRtlLocale } from "@/config/i18n";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
@@ -56,7 +64,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootComponent() {
 	const pathname = useRouterState({ select: getPresentedRoutePathname });
+	const hydrated = useHydrated();
 	const routeSurface = getAppRouteSurface(pathname);
+	const fallbackSurface = getHydrationRouteSurface(pathname, hydrated);
 
 	useEffect(() => {
 		registerServiceWorker();
@@ -73,7 +83,7 @@ function RootComponent() {
 		);
 	}
 
-	const fallback = routeSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />;
+	const fallback = fallbackSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />;
 
 	return (
 		<ApplicationErrorBoundary>

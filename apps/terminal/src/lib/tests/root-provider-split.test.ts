@@ -59,7 +59,7 @@ describe("root provider startup split", () => {
 		);
 		expect(rootRouteSource).toMatch(/if \(routeSurface === "document"\)[\s\S]*?<Outlet \/>[\s\S]*?<Toaster \/>/);
 		expect(rootRouteSource).toContain(
-			'const fallback = routeSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />',
+			'const fallback = fallbackSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />',
 		);
 
 		const appRuntimeSource = rootRouteSource.slice(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAppRouteSurface, isDocumentRoutePath } from "@/providers/client-runtime";
+import { getAppRouteSurface, getHydrationRouteSurface, isDocumentRoutePath } from "@/providers/client-runtime";
 
 describe("application route surface classification", () => {
 	it.each(["/docs", "/docs/", "/terms", "/privacy", "/risk", "/support", "/cookies"])(
@@ -40,4 +40,19 @@ describe("application route surface classification", () => {
 			expect(getAppRouteSurface(pathname)).toBe("dashboard");
 		},
 	);
+});
+
+describe("hydration route surface", () => {
+	it("reproduces the prerendered terminal skeleton for application routes until hydration finishes", () => {
+		expect(getHydrationRouteSurface("/portfolio", false)).toBe("terminal");
+		expect(getHydrationRouteSurface("/join/abc", false)).toBe("terminal");
+		expect(getHydrationRouteSurface("/trade/HYPE", false)).toBe("terminal");
+		expect(getHydrationRouteSurface("/portfolio", true)).toBe("dashboard");
+		expect(getHydrationRouteSurface("/trade/HYPE", true)).toBe("terminal");
+	});
+
+	it("keeps document routes on their own prerendered page in both phases", () => {
+		expect(getHydrationRouteSurface("/docs", false)).toBe("document");
+		expect(getHydrationRouteSurface("/docs", true)).toBe("document");
+	});
 });

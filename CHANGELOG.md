@@ -48,7 +48,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   preloads the TradingView loader on desktop widths and hands surface-specific startup chunks
   and the chart iframe's main bundles to the bootstrap entry, so phones no longer download
   desktop panels or chart bundles up front; the loader is cached as immutable behind its
-  commit query.
+  commit query. Dashboard routes now hydrate against the prerendered terminal skeleton
+  instead of discarding it (no more recoverable-error reports per dashboard navigation),
+  the bootstrap entry stays dependency-free until the mobile credential scrub, and the
+  leaderboard API is cached at the edge with a 30 s function timeout so the first load no
+  longer times out.
 
 ### Changed
 

@@ -1,6 +1,11 @@
 import { createContext, type ReactNode, use } from "react";
 
-export { type AppRouteSurface, getAppRouteSurface, isDocumentRoutePath } from "@/config/app-route-surface";
+export {
+	type AppRouteSurface,
+	getAppRouteSurface,
+	getHydrationRouteSurface,
+	isDocumentRoutePath,
+} from "@/config/app-route-surface";
 
 const ClientRuntimeContext = createContext(false);
 

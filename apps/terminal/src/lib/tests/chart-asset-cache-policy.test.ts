@@ -15,6 +15,7 @@ const releaseVerifier = readFileSync(resolve(REPOSITORY_ROOT, "deploy/mobile-syn
 const systemdUnit = readFileSync(resolve(REPOSITORY_ROOT, "deploy/gatu.service"), "utf8");
 const referralUriGuard = readFileSync(resolve(REPOSITORY_ROOT, "deploy/referral-uri-guard.cjs"), "utf8");
 const rootRoute = readFileSync(resolve(TERMINAL_ROOT, "src/routes/__root.tsx"), "utf8");
+const securityHeadersSource = readFileSync(resolve(TERMINAL_ROOT, "src/config/security-headers.ts"), "utf8");
 
 interface ServiceWorkerHarnessOptions {
 	caches: Record<string, unknown>;
@@ -45,8 +46,10 @@ afterEach(() => {
 });
 
 describe("TradingView asset cache policy", () => {
-	it("revalidates the complete chart package at the application server", () => {
+	it("revalidates the chart package except its content-hashed bundles and versioned loader", () => {
 		expect(viteConfig).toMatch(/'\/charting_library\/\*\*'[\s\S]*?max-age=0, must-revalidate/);
+		expect(viteConfig).toMatch(/'\/charting_library\/bundles\/\*\*'[\s\S]*?max-age=31536000, immutable/);
+		expect(viteConfig).toMatch(/'\/charting_library\/charting_library\.js'[\s\S]*?max-age=31536000, immutable/);
 		expect(viteConfig).toMatch(/'\/tradingview-theme-\*\.css'[\s\S]*?max-age=0, must-revalidate/);
 		expect(viteConfig).toMatch(
 			/publicAssets:[\s\S]*?baseURL: '\/charting_library'[\s\S]*?maxAge: 0[\s\S]*?fallthrough: false/,
@@ -147,9 +150,10 @@ describe("TradingView asset cache policy", () => {
 		expect(caddyfile).toContain('>Referrer-Policy "no-referrer"');
 		expect(caddyfile).toContain('>X-Robots-Tag "noindex, nofollow"');
 		expect(caddyfile).toContain("@testnet host testnet.gatu.ai");
-		expect(viteConfig).toMatch(
-			/const referralJoinHeaders = \{[\s\S]*?'cache-control': 'no-store'[\s\S]*?'referrer-policy': 'no-referrer'[\s\S]*?'x-robots-tag': 'noindex, nofollow'/,
+		expect(securityHeadersSource).toMatch(
+			/export const referralJoinHeaders[\s\S]*?"cache-control": "no-store"[\s\S]*?"referrer-policy": "no-referrer"[\s\S]*?"x-robots-tag": "noindex, nofollow"/,
 		);
+		expect(viteConfig).toContain("referralJoinHeaders, securityHeaders } from './src/config/security-headers'");
 		expect(viteConfig).toMatch(/'\/join': \{[\s\S]*?headers: referralJoinHeaders/);
 		expect(viteConfig).toMatch(/'\/join\/\*\*': \{[\s\S]*?headers: referralJoinHeaders/);
 	});

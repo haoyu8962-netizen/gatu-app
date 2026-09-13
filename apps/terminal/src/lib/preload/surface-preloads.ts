@@ -35,9 +35,13 @@ function appendLinks(doc: Document, rel: "modulepreload" | "prefetch", hrefs: re
 	return appended;
 }
 
+function matchesDesktopViewport(): boolean {
+	return typeof window.matchMedia === "function" && window.matchMedia(DESKTOP_MEDIA_QUERY).matches;
+}
+
 export function startSurfacePreloads(
 	doc: Document = document,
-	matchesDesktop: () => boolean = () => window.matchMedia(DESKTOP_MEDIA_QUERY).matches,
+	matchesDesktop: () => boolean = matchesDesktopViewport,
 ): SurfacePreloadResult {
 	const desktop = matchesDesktop();
 	const modulepreload = appendLinks(

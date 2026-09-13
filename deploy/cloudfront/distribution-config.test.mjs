@@ -1,13 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+	API_CACHE_POLICY_NAME,
 	API_ORIGIN_ID,
 	API_PATH_PATTERNS,
 	ASSET_PATH_PATTERNS,
 	CHART_PATH_PATTERNS,
+	createApiCachePolicyConfig,
 	createApiOriginRequestPolicyConfig,
 	createDistributionConfig,
 	JOIN_PATH_PATTERN,
+	LEADERBOARD_PATH_PATTERN,
 	MANAGED_POLICIES,
 	NOT_FOUND_PAGE,
 	S3_ORIGIN_ID,
@@ -24,6 +27,7 @@ const OPTIONS = {
 	lambdaUrlDomain: "abcdef.lambda-url.ap-northeast-1.on.aws",
 	lambdaOriginAccessControlId: "E1LAMBDAOAC",
 	apiOriginRequestPolicyId: "orp-1",
+	apiCachePolicyId: "cp-api",
 	responseHeadersPolicyIds: { base: "rhp-base", trade: "rhp-trade", join: "rhp-join", chart: "rhp-chart" },
 	functionArns: {
 		request: "arn:aws:cloudfront::123456789012:function/gatu-terminal-request",
@@ -103,11 +107,27 @@ test("static behaviors read from the private bucket with the matching header pol
 	]);
 });
 
+test("the leaderboard is cached at the edge by the origin s-maxage, ahead of the uncached api behaviors", () => {
+	const config = createDistributionConfig(OPTIONS);
+	const leaderboard = behavior(config, LEADERBOARD_PATH_PATTERN);
+	assert.equal(config.CacheBehaviors.Items[0].PathPattern, LEADERBOARD_PATH_PATTERN);
+	assert.equal(leaderboard.TargetOriginId, API_ORIGIN_ID);
+	assert.equal(leaderboard.CachePolicyId, "cp-api");
+	assert.equal(leaderboard.OriginRequestPolicyId, "orp-1");
+	assert.deepEqual(leaderboard.AllowedMethods.Items, ["GET", "HEAD"]);
+	const policy = createApiCachePolicyConfig();
+	assert.equal(policy.Name, API_CACHE_POLICY_NAME);
+	assert.deepEqual([policy.MinTTL, policy.DefaultTTL, policy.MaxTTL], [0, 0, 1800]);
+	assert.equal(policy.ParametersInCacheKeyAndForwardedToOrigin.QueryStringsConfig.QueryStringBehavior, "all");
+	assert.equal(policy.ParametersInCacheKeyAndForwardedToOrigin.HeadersConfig.HeaderBehavior, "none");
+	assert.throws(() => validateOptions({ ...OPTIONS, apiCachePolicyId: "" }), /apiCachePolicyId/);
+});
+
 test("api behaviors are evaluated before the static ones and tls uses the us-east-1 certificate", () => {
 	const config = createDistributionConfig(OPTIONS);
 	const patterns = config.CacheBehaviors.Items.map((item) => item.PathPattern);
-	assert.deepEqual(patterns.slice(0, API_PATH_PATTERNS.length), [...API_PATH_PATTERNS]);
-	assert.equal(patterns[API_PATH_PATTERNS.length], JOIN_PATH_PATTERN);
+	assert.deepEqual(patterns.slice(1, 1 + API_PATH_PATTERNS.length), [...API_PATH_PATTERNS]);
+	assert.equal(patterns[1 + API_PATH_PATTERNS.length], JOIN_PATH_PATTERN);
 	assert.equal(config.ViewerCertificate.ACMCertificateArn, OPTIONS.certificateArn);
 	assert.equal(config.HttpVersion, "http2and3");
 	assert.equal(config.Comment.includes("mainnet"), true);

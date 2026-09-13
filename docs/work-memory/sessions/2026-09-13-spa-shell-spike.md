@@ -176,6 +176,22 @@
 
 复测（Playwright，同机）：iPhone 13 视口冷缓存：93 个资源 1.35 MB（修复前 110 个、约 1.77 MB），仅桌面块 0/14、图表预取 0/4、图表入口与 bundle 均未下载，FCP 192 ms，`/api/geo` 1.35 s，底部导航正常，无控制台错误、无错误上报。1440×900（同一上下文，缓存已热，本次 TTFB 2.1 s 属代理抖动，时序不作对比）：引导块追加 14 个 `modulepreload` 与 4 个 `prefetch`，14/14 与 4/4 均已下载，7 个面板，图表 iframe 内 `library.js` 缓存命中并绘制 11 个 canvas，无控制台错误。
 
+## 第十二检查点：全面结构审查（2026-09-14，基于 `fc0fc240`）
+
+用户要求排查其他缺陷。范围：全仓自动门禁、目录与文件结构、依赖、文档链接、无引用模块、CloudFront 上各路由的运行时行为。
+
+自动门禁：`pnpm typecheck`（三个包）通过；`pnpm check` 失败——6 个 `src/locales/*/messages.js`（`lingui compile` 产物，已在 `.gitignore`，Biome 仍扫描到）格式告警与 `src/lib/lazy.ts:16` 的 `noExplicitAny`，CI 的 typecheck/production-build 工作流都不跑 `pnpm check`，因此从未拦截；`pnpm --filter @gatu/terminal test` 全量 550 文件 6,086 用例中 14 文件 39 用例失败；website 4 用例、OG 校验、CI 的 12 个 node 验证器（219 用例，5 个 Linux 专属跳过）、`pnpm test:cloudfront`、`i18n:extract` 无漂移均通过。
+
+失败用例归类：本分支引入或需随契约更新的 4 个文件——`client-bootstrap-error`（引导块调用 `window.matchMedia`，jsdom 无此 API）、`mobile-sync-bootstrap-fragment`（引导块只能有两条静态导入，我加了 geo 预取与表面预加载）、`home-route`（`/` 已按 ADR 0005 改为 `ssr:false`，测试仍断言 `true`）、`chart-asset-cache-policy`（`referralJoinHeaders` 已移到 `security-headers.ts`；图表 bundle 与入口改为 immutable）——以及一处因修复而需更新的 `root-provider-split` 源码断言。其余 10 个文件 35 用例（`desktop-positions-panel-shell` 18、`global-settings-slippage-effective` 6、`referral-ui-contract` 3、`adaptive-modal-swipe-dismissal` 3、`mobile-input-zoom-contract` 2、`position-market-close-modal`、`orders-table-visual-contract`、`mobile-trade-tp-sl-contract`、`mobile-order-risk-summary-contract`、`market-asset-info` 各 1）在本分支未触碰任何相关文件，属基线 `2c44be20` 已有的红测（多为 UI 视觉契约的源码字符串断言与过期 mock），与另一会话正在进行的 UI 评审分支重叠，本轮不改。
+
+运行时缺陷（CloudFront 主网分发，Playwright）：(1) 每次打开仪表盘路由（`/portfolio`、`/vaults`、`/leaderboard`…）都产生一条 `react_recoverable` 错误上报（CloudWatch 已核实 `route: portfolio`）：壳在 `/trade` 掩码预渲染的是终端骨架，客户端在水合时按路径选了仪表盘骨架，React 丢弃服务端 HTML 重渲染；(2) `/leaderboard` 空表：`/api/leaderboard` 在 Lambda 上刷新约 34 MB 的上游快照，处理器自身超时 15 s，函数超时却是 10 s，CloudWatch 有 `Duration: 10000 ms` 的调用；`/api/*` 行为 CachingDisabled，处理器输出的 `s-maxage=300` 从未被边缘使用。
+
+修复（本检查点提交）：`config/app-route-surface.ts` 新增 `getHydrationRouteSurface(pathname, hydrated)`，`__root.tsx` 在 `useHydrated()` 为假时固定终端骨架；`client.ts` 恢复两条静态导入，地区预取与表面预加载合并为 `lib/bootstrap/early-prefetch.ts` 动态导入，并列入预算脚本的静态启动闭包前缀；`surface-preloads.ts` 缺 `matchMedia` 时视为非桌面；四个契约测试按现行契约更新；Lambda 超时 10 s → 30 s；`distribution-config.mjs` 新增 `/api/leaderboard` 行为与缓存策略 `gatu-terminal-api-cached`（TTL 0/0/1800、按查询串缓存），CLI `--api-cache-policy(-config)`，两条分发已更新（缓存策略 `9dc817a5-e3f8-4ece-ac7a-623ef6157243`，用生成器产出的行为项插到线上配置首位，其余字段保持线上值）。
+
+复测：发布 `cloudfront-2026-09-14-p7`（静态启动闭包 74 个文件含 `early-prefetch` 块，壳 85 个共有 `modulepreload`），verify 主网 12/12、测试网 13/13；`/portfolio` 错误上报 0（修复前每次 1 条），`early-prefetch` 块与 `/api/geo` 均已加载；`/api/leaderboard` 有效查询：首次 `Miss` 13.0 s（Lambda 在 30 s 内完成刷新），随后 `Hit` 0.18 s、`age` 1，页面 10 行数据、API 1.17 s，错误上报 0；测试网首次 6.9 s。全量 vitest 复跑：10 文件 33 用例失败，全部是基线已有的红测，本分支引入的 4 文件与修复带来的 1 文件已全部转绿。遗留：Lambda 快照过期后（5 分钟）第一个未命中的访问仍要等约 13 s，可由定时调用经 CloudFront 预热；根目录评审文件、`.scratch/`、无引用模块、`features/README.md` 失效链接、`pnpm check` 的 6 个目录格式告警与 `lazy.ts` 的 `any` 未处理，留给后续清理。
+
+结构与文档：13 条本地链接失效，其中真实失效 3 条（`features/README.md` → `tp-sl.md`、`advanced-order-types.md`；根目录 `review_market_symbol_numbering.md` → 已删除的 `kline-chart.tsx`），其余为 SDK 文档中的正则文本与法务页的站内绝对路径；无引用模块 11 个（`components/icons/{coinbase,metamask,rabby}-icon.tsx`、`components/trade/tradebox/leverage-control.tsx`（仅测试引用）、`domain/trade/order-entry-calcs.ts`（纯再导出，无人引用）、`hooks/ui/{use-intent-script-loader,use-lingering-text,use-lingering-validation,use-virtual-table}.ts`、`lib/trade/close-toast.ts`、`packages/hl-react/src/testing.tsx`）；根目录堆放 22 个历史评审文件（`review_*.md`、`launch-review-*.md`、`tv_stability_review_*.md`），`notes/index.md` 只登记了部分；`.scratch/mobile-wallet-pwa-wallet-connectivity/` 10 个文件被纳入版本库且无文档入口；根 `vercel.json` 仍指向 `NITRO_PRESET=vercel` 的旧部署方式；`apps/terminal` 42 个依赖中只有 `permissionless` 找不到直接引用（Privy 智能钱包的对等依赖，保留）；`patches/` 两个补丁均在 `pnpm-workspace`/锁文件中生效；CSP 的 `script-src` 与 `style-src` 含 `'unsafe-inline'`，`img-src` 允许任意 `https:`，官方站则完全没有 CSP。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。
