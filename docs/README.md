@@ -41,7 +41,7 @@
 | 主题 | 方案与前置条件 |
 | --- | --- |
 | Across 持久充值地址 | [接入设计](across-deposit-addresses.md)、[ADR 0004](adr/0004-across-deposit-addresses.md)：邮箱用户独立入口；生产权限、服务端身份/持久化、账户模式及资金验收待完成 |
-| 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：构建已产出 `_shell.html`、静态文档页与 `build-meta.json`，客户端只调用可移植的 `/api/*` 处理器，`serve:spa --api` 可本地端到端验证；边缘运行时挂载、CDN 安全头与部署脚本待完成 |
+| 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：运行时不再 SSR，Node 进程用预渲染的 `_shell.html` 与文档页回答导航，只执行可移植的 `/api/*` 处理器；发布健康检查含真实 geo 探针；把 `public/` 搬到 CDN 与边缘运行时挂载待完成 |
 
 ## 历史设计、调查与交付证据
 

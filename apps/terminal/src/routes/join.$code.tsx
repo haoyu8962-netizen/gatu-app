@@ -6,6 +6,7 @@ import { buildPageHead } from "@/lib/seo";
 import { isSafeReferralJoinCode, resolveReferralJoinIntent } from "@/lib/trade/referral-join";
 
 export const Route = createFileRoute("/join/$code")({
+	ssr: false,
 	beforeLoad: ({ params }) => {
 		// TanStack has already decoded path params at this boundary. Validate that
 		// decoded value directly; the client separately verifies the raw browser

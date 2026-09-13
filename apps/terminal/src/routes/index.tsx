@@ -7,7 +7,7 @@ import { buildPageHead } from "@/lib/seo";
 import { getTradeHomeMarketName } from "@/stores/use-market-store";
 
 export const Route = createFileRoute("/")({
-	ssr: true,
+	ssr: false,
 	pendingMinMs: 0,
 	pendingComponent: AppShellSkeleton,
 	beforeLoad: ({ context }) => {

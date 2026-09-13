@@ -1,6 +1,6 @@
 # ADR 0005：交易终端以预渲染 SPA 壳交付，Nitro 服务端退为可选
 
-状态：拟议；分支 `claude/spa-mode` 已完成生产构建与本地静态托管验证，尚未部署，服务端点尚未迁移。建立日期：2026-09-13。验证证据见文末，工作记录见 [SPA 壳验证记录](../work-memory/sessions/2026-09-13-spa-shell-spike.md)。
+状态：已在分支 `claude/spa-mode` 实现并本地验证，尚未部署。运行时服务端渲染已关闭（决策 9），服务端点已改为可移植的 `/api/*` 处理器（决策 5–7）；把 `public/` 搬到 CDN 与边缘运行时挂载仍是后续任务。建立日期：2026-09-13。验证证据见文末，工作记录见 [SPA 壳验证记录](../work-memory/sessions/2026-09-13-spa-shell-spike.md)。
 
 ## 背景与约束
 
@@ -33,6 +33,8 @@ Nitro 目前承担的服务端职责：
 6. 处理器本身与宿主分离：`src/lib/geo/geo-api.ts` 的 `createGeoApiHandlers(environment)` 只用 Web 标准 `Request`/`Response`/`fetch`，宿主注入 `development`、`ipdataApiKey()` 与 `resolveClientIp(request)`；`src/lib/geo/geo-api-server.ts` 是 Nitro 适配器（`getRequestIP({ xForwardedFor: true })`、`process.env.IPDATA_API_KEY`），Worker/Lambda 适配器只需换这三项。交易 geo 按 IP 缓存 10 分钟并设上限；推荐/质押 geo 每次新鲜查询、租约 60 秒，与原语义一致。
 7. `/build-meta.json` 由 `src/config/build-meta.ts` 的 `createBuildMeta()` 统一生成：Nitro 路由在运行时返回，`vite.config.ts` 的 `createBuildMetaPlugin` 在客户端构建期把同一份 JSON 写成静态文件，配对标志来自同一 `VITE_*` 环境（`loadEnv`）。`src/config/mobile-pairing-flags.ts` 承载无环境访问的纯解析器，供配置与运行时共用。
 8. `serve-spa-static.mjs` 支持 `--api <origin>`（或 `SPA_API_ORIGIN`）：server-only 路径原样代理（保留 `Host`/`Origin`），用于在静态文件上端到端验证；不传则仍返回 JSON 404。
+9. 运行时彻底不做服务端渲染：`src/start.ts` 注册 `staticPagesRequestMiddleware`（`src/lib/static-pages/`），生产环境下 Node 进程在路由器之前用预渲染产物回答导航：文档路由返回各自的 `index.html`，其余应用路径返回 `_shell.html`，`HEAD` 只回头部；文件形态的路径不返回 HTML（404），`/_serverFn/*` 返回 404；`/api/*`、配对票据与旧的 `/client-error-report` 别名继续交给服务端处理器。Nitro route rules 的安全头照常附加。产物目录按 `GATU_PUBLIC_DIR` → `./public` → `./.output/public` 查找；找不到壳时导航 503（fail closed），只有 `GATU_RUNTIME_SSR=true` 才回退 SSR。dev 服务器与构建期预渲染（`TSS_PRERENDERING`）绕过该中间件，因此文档路由保留 `ssr: true` 供预渲染使用，`/` 与 `/join/*` 改为 `ssr: false`。
+10. 部署契约随之调整：`/join/*` 返回的壳由中间件盖上 `<meta name="gatu-route" content="referral-join">` 标记，`deploy.sh` 的 referral 深链检查不变；第 8 步新增 `verify_geo_provider`，用生产 IPdata 密钥对 `/api/geo` 做真实探针（`X-Forwarded-For: 8.8.8.8` → 200 且 `country === "US"`），失败即回滚。
 
 ## 备选方案与取舍
 
@@ -52,8 +54,9 @@ Nitro 目前承担的服务端职责：
 
 尚未完成、不得视为可发布：
 
-- 服务端点已可移植但仍只由 Nitro 挂载。静态托管必须把 `/api/*`（含 `/api/leaderboard`）路由到挂载这些处理器的服务；没有该路由时 `/api/geo` 得到 404，`useGeoRestriction` 按契约 fail closed：浏览与行情正常，交易与资金动作被禁用。Worker/Lambda 适配器与其部署（密钥、可信代理链、`CF-Connecting-IP` 或等价头）另立任务；本仓库暂不加入 `wrangler` 等新依赖。
-- 安全头、`no-store`、按 host 的 `preconnect` 需要在 CDN 层重建；`serve-spa-static.mjs` 只模拟回写与缓存，不下发 CSP。
+- 服务端点已可移植但仍只由 Nitro 挂载。把 `public/` 搬到对象存储 + CDN 时，必须把 `/api/*`（含 `/api/leaderboard`）与 `/mobile-agent-sync-ticket` 路由到挂载这些处理器的服务；没有该路由时 `/api/geo` 得到 404，`useGeoRestriction` 按契约 fail closed：浏览与行情正常，交易与资金动作被禁用。Worker/Lambda 适配器与其部署（密钥、可信代理链、`CF-Connecting-IP` 或等价头）另立任务；本仓库暂不加入 `wrangler` 等新依赖。
+- 旧路径 `POST /client-error-report` 以别名保留一个发布周期，避免仍打开旧包的浏览器丢失错误上报；确认无旧客户端后删除。
+- 现有部署（Caddy → Node）已经是"静态壳 + API"形态：安全头由 Nitro route rules 附加，`preconnect` 由 Caddy 附加，无需改动。只有把 `public/` 搬到对象存储 + CDN 时才需要在 CDN 层重建这些头；`serve-spa-static.mjs` 只模拟回写与缓存，不下发 CSP。
 - 壳的 head 来自 `/trade` 掩码路由（标题、描述、`canonical=/trade`），客户端 hydration 后由路由 head 覆盖。所有应用路径共用这份静态 head，若需要更中性的壳 head，应新增专用掩码路由或在 CDN 层禁止缓存壳。
 - 配对票据在多实例前必须迁到共享 CAS+TTL 存储，与 [部署手册](../../deploy/README.md) 的既有要求一致；本决策不改变该门槛。
 - `deploy/` 脚本、健康检查与 CI 仍按 Nitro 部署，不包含静态托管流程。
@@ -86,4 +89,14 @@ Nitro 目前承担的服务端职责：
 | Nitro 生产模式 + 占位 IPdata 密钥（127.0.0.1:3031） | `curl` | `GET /api/geo` 带 `X-Forwarded-For` 返回 503 `provider_error`（证明 IP 解析与处理器挂载正常，未落到 `missing_ip`）；生产模式忽略 `override`；`POST /api/referral-geo` 同源返回 200 `unavailable/provider_error`，跨站 403；`POST /api/client-error-report` 空体 400；`/_serverFn/*` 403 |
 | 静态文件 + `--api` 代理（127.0.0.1:3030 → 3031） | `curl` 与应用内浏览器 | `/api/geo` 经代理返回 503；`/build-meta.json` 由静态文件直接回应；同源 POST 经代理通过校验；`/trade/BTC` 从壳启动并渲染 7 个面板，网络中只有 `/api/geo`，无 `_serverFn` 请求 |
 
-已知的验证局限：应用内浏览器面板处于隐藏状态（`document.visibilityState === "hidden"`），订阅按契约暂停缓冲，订单簿在两种托管方式下都停留在等待态，这是验证环境伪影而不是 SPA 模式差异；同一浏览器对 Nitro 与静态版本都无法注册 Service Worker，也属环境限制；占位密钥只能证明 IP 解析与提供方调用链路，真实判定仍依赖生产密钥；旧路径 `/client-error-report` 现在返回页面而不是 202，尚未刷新的旧客户端在下次加载前丢失错误上报；未做真实 CDN 部署、Privy 登录、签名、下单、移动布局、非英文语言壳与 Lighthouse/INP 采样。
+第三检查点（同日，运行时 SSR 关闭，基于 `5944465d`）：
+
+| 检查 | 命令 | 结果 |
+| --- | --- | --- |
+| 生产构建 | `GATU_RELEASE_ID=spa-mode-spike-3 pnpm build` | 通过，2 分 37 秒；预渲染 7 页；客户端 gzip 总量 3,057,526 B；中间件只出现在服务端产物 |
+| 单元与契约测试 | static-pages、static-pages-responder、app-route-surface、root-provider-split、geo-api、client-error-report-server、security-policy-docs；`node --test` 静态服务器与 deploy 健康检查 | 通过 |
+| Nitro 生产模式（占位密钥 + `referral-uri-guard.cjs`） | `curl` | `/docs` 与 `docs/index.html`、`/trade/BTC` 与 `/` 与 `_shell.html` 逐字节相同；`/join/*` 为壳 + 标记且带 `no-store`/`no-referrer`/`noindex`；壳响应带一份 CSP；`HEAD` 只回头部；`/_serverFn/*` 404；`/assets/missing.js` 404；`/api/geo` 503 `provider_error`；旧路径与新路径的错误上报空体均 400 |
+| 发布健康检查函数 | source `deploy.sh` 后运行 `verify_build_metadata`、`verify_referral_deep_link`、`verify_upstream_malformed_referral_deep_link`、`health_check` | 全部通过；`verify_geo_provider` 在占位密钥下按设计失败并打印原因 |
+| 应用内浏览器（经 Nitro） | `/trade/BTC`、`/docs`、`/join/abc123` | 终端渲染 7 个面板且只请求 `/api/geo`；文档页直接是预渲染内容且不加载 Privy；无效推荐码由客户端判定并显示 404 页 |
+
+已知的验证局限：应用内浏览器面板处于隐藏状态（`document.visibilityState === "hidden"`），订阅按契约暂停缓冲，订单簿在两种托管方式下都停留在等待态，这是验证环境伪影而不是 SPA 模式差异；同一浏览器对 Nitro 与静态版本都无法注册 Service Worker，也属环境限制；占位密钥只能证明 IP 解析与提供方调用链路，真实判定由发布流程的 `verify_geo_provider` 用生产密钥确认；对 server-only 路径使用错误方法（如 `GET /mobile-agent-sync-ticket`）仍由 Start 处理器渲染根壳，属既有行为；未做真实 CDN 部署、Privy 登录、签名、下单、移动布局、非英文语言壳与 Lighthouse/INP 采样。

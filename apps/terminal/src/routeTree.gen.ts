@@ -14,6 +14,7 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as ApiWalletRouteImport } from './routes/api-wallet'
 import { Route as BuildMetaDotjsonRouteImport } from './routes/build-meta[.]json'
 import { Route as BuildersPerpRouteImport } from './routes/builders-perp'
+import { Route as ClientErrorReportRouteImport } from './routes/client-error-report'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
@@ -70,6 +71,11 @@ const BuildMetaDotjsonRoute = BuildMetaDotjsonRouteImport.update({
 const BuildersPerpRoute = BuildersPerpRouteImport.update({
   id: '/builders-perp',
   path: '/builders-perp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientErrorReportRoute = ClientErrorReportRouteImport.update({
+  id: '/client-error-report',
+  path: '/client-error-report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CookiesRoute = CookiesRouteImport.update({
@@ -239,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/api-wallet': typeof ApiWalletRoute
   '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
+  '/client-error-report': typeof ClientErrorReportRoute
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -277,6 +284,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/api-wallet': typeof ApiWalletRoute
   '/build-meta.json': typeof BuildMetaDotjsonRoute
+  '/client-error-report': typeof ClientErrorReportRoute
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -315,6 +323,7 @@ export interface FileRoutesById {
   '/api-wallet': typeof ApiWalletRoute
   '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
+  '/client-error-report': typeof ClientErrorReportRoute
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
     | '/api-wallet'
     | '/build-meta.json'
     | '/builders-perp'
+    | '/client-error-report'
     | '/cookies'
     | '/docs'
     | '/leaderboard'
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/api-wallet'
     | '/build-meta.json'
+    | '/client-error-report'
     | '/cookies'
     | '/docs'
     | '/leaderboard'
@@ -431,6 +442,7 @@ export interface FileRouteTypes {
     | '/api-wallet'
     | '/build-meta.json'
     | '/builders-perp'
+    | '/client-error-report'
     | '/cookies'
     | '/docs'
     | '/leaderboard'
@@ -471,6 +483,7 @@ export interface RootRouteChildren {
   ApiWalletRoute: typeof ApiWalletRoute
   BuildMetaDotjsonRoute: typeof BuildMetaDotjsonRoute
   BuildersPerpRoute: typeof BuildersPerpRouteWithChildren
+  ClientErrorReportRoute: typeof ClientErrorReportRoute
   CookiesRoute: typeof CookiesRoute
   DocsRoute: typeof DocsRoute
   LeaderboardRoute: typeof LeaderboardRoute
@@ -533,6 +546,13 @@ declare module '@tanstack/react-router' {
       path: '/builders-perp'
       fullPath: '/builders-perp'
       preLoaderRoute: typeof BuildersPerpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/client-error-report': {
+      id: '/client-error-report'
+      path: '/client-error-report'
+      fullPath: '/client-error-report'
+      preLoaderRoute: typeof ClientErrorReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cookies': {
@@ -809,6 +829,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWalletRoute: ApiWalletRoute,
   BuildMetaDotjsonRoute: BuildMetaDotjsonRoute,
   BuildersPerpRoute: BuildersPerpRouteWithChildren,
+  ClientErrorReportRoute: ClientErrorReportRoute,
   CookiesRoute: CookiesRoute,
   DocsRoute: DocsRoute,
   LeaderboardRoute: LeaderboardRoute,
@@ -840,10 +861,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

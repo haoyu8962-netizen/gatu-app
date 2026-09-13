@@ -1,19 +1,40 @@
 # 部署:单台 EC2 + Caddy 双域名
 
-gatu 是 TanStack Start + Nitro 的 **SSR 应用**,必须有常驻 Node 进程运行
-`apps/terminal/.output/server/index.mjs`(`node-server` preset 产物,自包含)。
+gatu 是 TanStack Start + Nitro 应用，仍由常驻 Node 进程运行
+`apps/terminal/.output/server/index.mjs`(`node-server` preset 产物,自包含)，但**运行时不再服务端渲染**：
+导航请求由 Node 进程直接返回构建期产物（应用路由返回预渲染的 `_shell.html`，文档路由返回各自的
+`index.html`），Node 只执行 `/api/*` 与移动配对处理器。见 [ADR 0005](../docs/adr/0005-spa-static-shell.md)。
 本目录提供一台 EC2 上的完整部署:
 
 ```
 Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai + testnet.gatu.ai)
          → 反代 127.0.0.1:3000
          → systemd gatu.service → /opt/gatu/current referral URI guard → node server/index.mjs
+                                   ├─ 导航：public/_shell.html 或 public/<文档路由>/index.html
+                                   └─ /api/*、/mobile-agent-sync-ticket：服务端处理器
 ```
 
 > 行情 WebSocket、订单签名都由浏览器直连 Hyperliquid,**不经过本机**。
-> 服务端负责首屏 SSR、`getGeo`(IPdata 查询)、脱敏客户端错误接收，以及移动配对 QR 的
+> 服务端负责返回静态壳与文档页、`/api/geo` 与 `/api/referral-geo`(IPdata 查询)、
+> `/api/client-error-report` 脱敏客户端错误接收，以及移动配对 QR 的
 > 60 秒首次消费票据。移动配对 store 只保存 origin、服务端随机 `syncId`、随机消费者 ID 和过期时间，
 > 不接收或保存 Agent 私钥、QR 密钥、钱包地址。
+
+### 静态壳运行模式
+
+- `_shell.html` 与文档页 HTML 在 `pnpm build` 的预渲染阶段生成一次；运行时由
+  `apps/terminal/src/lib/static-pages/request-middleware.ts` 在路由器之前返回，Nitro 的 route rules
+  仍为这些响应附加 CSP 等安全头。`/join/*` 返回的壳会带上 `<meta name="gatu-route" content="referral-join">`
+  标记，供本目录的发布健康检查识别 referral 深链能力。
+- 进程从 `GATU_PUBLIC_DIR`、当前目录下的 `public/`、`.output/public/` 依次查找 `_shell.html`；
+  `WorkingDirectory=/opt/gatu/current` 下无需额外配置。找不到壳时导航返回 503（fail closed），
+  只有显式设置 `GATU_RUNTIME_SSR=true` 才回退到服务端渲染。
+- `/_serverFn/*` 已无调用方，运行时返回 404。旧的 `/client-error-report` 路径保留为 `POST` 别名，
+  直到没有旧版本客户端仍在浏览器中打开后再删除。
+- `deploy.sh` 第 8 步在 Node 探针中新增 `verify_geo_provider`：以 `X-Forwarded-For: 8.8.8.8` 请求
+  `http://127.0.0.1:3000/api/geo`，要求返回 200 且 `country` 为 `US`。这一步用生产密钥证明
+  `/api/geo` 已挂载、可信代理链解析出客户端 IP、IPdata 密钥可用；密钥缺失或提供方故障会导致发布回滚。
+  回滚到旧版本时不执行该探针（旧版本没有 `/api/geo`）。
 
 `app.gatu.ai` 和 `testnet.gatu.ai` 共用同一 Caddy 站点、Node upstream 和 immutable release。
 部署脚本分别检查两个公网 origin，并比对 `/build-meta.json` 中的 commit/release。

@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["static-hosting"],
-  "summary": "TanStack Start SPA 模式在 claude/spa-mode 分支构建通过并本地静态托管验证；第二检查点把 geo/错误上报改为可移植的 /api/* 处理器并静态化 build-meta.json；边缘挂载、CDN 头与部署脚本仍未完成。",
+  "summary": "TanStack Start SPA 模式在 claude/spa-mode 分支构建通过并本地静态托管验证；第二检查点把 geo/错误上报改为可移植的 /api/* 处理器并静态化 build-meta.json；第三检查点关闭运行时 SSR（静态壳中间件）、补 /join 标记、旧路径别名与发布 geo 探针；CDN 搬迁与边缘挂载仍未完成。",
   "thread": null,
   "baseCommit": "2c44be20",
-  "commits": ["fe22fb61"],
+  "commits": ["fe22fb61", "5944465d"],
   "sources": [
     { "path": "docs/adr/0005-spa-static-shell.md" },
     { "path": "apps/terminal/vite.config.ts" },
@@ -60,9 +60,20 @@
 
 限制：占位密钥只能证明链路，不能证明真实判定；旧路径 `/client-error-report` 现在回页面而非 202，未刷新的旧客户端在下次加载前丢失上报；`ANY` 方法分发依赖框架 `handlers[method] ?? handlers.ANY` 的实现（start-server-core 1.169.17 已核对）；未在真实 CDN 上验证 `/api/*` 路由与 `Host`/`Origin` 转发。
 
+## 第三检查点：关闭运行时 SSR（同日，基于 `5944465d`）
+
+用户要求文档页也改成静态预渲染并把 SSR 彻底关掉，同时完成上一检查点列出的三项未完成事项。前提核查：Nitro 的公共资源清单在服务端构建期生成，预渲染阶段之后写入的 `_shell.html` 与文档页不在清单里（`GET /docs` 在 `TSS_SHELL=true` 下仍返回壳而非 27 KB 文档页），因此不能依赖 Nitro 静态处理器；`deploy.sh` 的 referral 深链检查要求 `/join/*` HTML 含 `<meta name="gatu-route" content="referral-join">`，而 `join.$code.tsx` 之前默认 SSR 且在 `head()` 里输出该标记。
+
+改动：`src/start.ts` 用 `createStart` 注册 `staticPagesRequestMiddleware` 与 CSRF 中间件；`src/lib/static-pages/static-pages.ts`（纯分类与标记注入）、`static-pages-responder.ts`（注入 `readFile` 的响应器，缓存命中文件，找不到壳时 503 fail closed，`GATU_RUNTIME_SSR=true` 才回退）、`request-middleware.ts`（Node 适配，dev 与 `TSS_PRERENDERING` 绕过，产物目录按 `GATU_PUBLIC_DIR` → `./public` → `./.output/public` 查找）；`/` 与 `/join/*` 改为 `ssr: false`；`referralJoinHeaders` 移到 `config/security-headers.ts` 供 route rules 与中间件共用；新增 `routes/client-error-report.ts` 作为旧路径 `POST` 别名；`deploy.sh` 新增 `verify_geo_provider`（`X-Forwarded-For: 8.8.8.8` → `/api/geo` 200 且 `country === "US"`，仅在新版本链路执行）；`deploy/README.md`、终端 README、CHANGELOG、`.claude/rules/ssr.md`、ADR 0005 同步。避开 Codex 正在编辑的 `deploy/gatu.service` 与 `deploy/env.runtime.example`，新增环境变量只写入 README。
+
+验证：生产构建通过（2 分 37 秒，客户端 gzip 总量 3,057,526 B，比基线少 97,181 B，预渲染 7 页）；中间件代码只出现在 `.output/server`，客户端资源中无 `Static shell missing`/`GATU_RUNTIME_SSR`；typecheck、Biome 通过；static-pages 5 + responder 4 用例、route-surface 28、root-provider-split 9、geo-api 10、client-error-report-server 6、security-policy-docs 5 通过；静态服务器 7 项与 deploy 健康检查 37 项 node 测试通过。Nitro 生产模式（127.0.0.1:3031，占位 IPdata 密钥，带 `referral-uri-guard.cjs`）：`/docs`、`/docs/` 与 `docs/index.html` 逐字节相同，`/trade/BTC` 与 `/` 与 `_shell.html` 逐字节相同，`/join/__gatu_healthcheck__` 为壳 + 49 字节标记并带 `no-store`/`no-referrer`/`noindex`，壳响应带一份 CSP 与 `cache-control: no-cache`，`HEAD` 只回头部，`Accept: application/json` 的页面请求仍得到壳；`/assets/missing.js` 404 文本，`/favicon.ico` 由 Nitro 静态清单返回，`/_serverFn/x` 404 JSON，`/api/geo` 503 `provider_error`，`POST /client-error-report` 与 `POST /api/client-error-report` 空体均 400，`/join/%` 经守卫 404 `no-store`。直接 source `deploy.sh` 运行 `verify_build_metadata`、`verify_referral_deep_link`、`verify_upstream_malformed_referral_deep_link` 与完整 `health_check 3031` 全部通过；`verify_geo_provider` 在占位密钥下按设计失败并打印原因。应用内浏览器经 Nitro 打开 `/trade/BTC` 渲染 7 个面板，网络只有 `/api/geo`；`/docs` 直接是预渲染页且未加载 Privy；`/join/abc123` 由客户端判定为无效码显示 404 页，`gatu-route` meta 存在。dev 服务器保持 SSR，`/api/geo`、`/client-error-report` 别名（400）正常。
+
+限制：对 server-only 路径使用错误方法（如 `GET /mobile-agent-sync-ticket`）仍会落到 Start 处理器渲染根壳（6.5 KB，属既有行为，可给票据路由加 `ANY` 405 处理器收口，涉及配对契约未改）；`verify_geo_provider` 的真实通过需要生产密钥，本地只验证了失败路径与报错信息；`grep -o` 对含二进制字节的 HTML 不输出匹配，标记存在以 `verify_referral_deep_link` 通过和响应体字节差为准。
+
 ## 后续与替代关系
 
-- 边缘运行时适配（注入 `development`、`ipdataApiKey()`、`resolveClientIp`，例如 `CF-Connecting-IP`）及其部署与密钥管理，`/api/leaderboard` 的宿主，CDN 安全头/`preconnect` 重建，是静态托管上线的前置条件；本仓库暂不加入 `wrangler` 等新依赖，避免与并行的 Across 工作冲突 lockfile。
+- 把 `public/` 搬到对象存储 + CDN 时，需要把 `/api/*` 与 `/mobile-agent-sync-ticket` 路由到挂载处理器的宿主，并在 CDN 层重建安全头与 `preconnect`；边缘运行时适配（注入 `development`、`ipdataApiKey()`、`resolveClientIp`，例如 `CF-Connecting-IP`）及其密钥管理另立任务；本仓库暂不加入 `wrangler` 等新依赖，避免与并行的 Across 工作冲突 lockfile。
+- 旧路径 `POST /client-error-report` 别名保留一个发布周期后删除。
 - 壳 head 目前带 `/trade` 的标题与 `canonical`，需要中性化或在 CDN 层禁止缓存壳。
 - 配对票据在多实例前迁到共享 CAS+TTL 存储，按部署手册既有要求执行。
 - 下一次接手先看 `docs/adr/0005-spa-static-shell.md`、`apps/terminal/vite.config.ts`、`scripts/serve-spa-static.mjs`。

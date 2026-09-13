@@ -26,6 +26,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   the same handlers can run on an edge runtime. `/build-meta.json` is also
   written as a static file at build time. `serve:spa --api <origin>` proxies
   the server-only paths for local end-to-end checks.
+- Runtime server rendering is off: the production server answers navigations
+  from the prerendered shell and document pages, keeps the route-rule security
+  headers, answers `/_serverFn/*` with 404 and keeps `POST /client-error-report`
+  as a temporary alias. Deployment health checks now also probe `/api/geo`
+  with the production IPdata key. See [ADR 0005](docs/adr/0005-spa-static-shell.md).
 
 ### Changed
 

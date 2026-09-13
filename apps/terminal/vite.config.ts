@@ -19,7 +19,7 @@ import { BUILD_META_PATH } from './src/config/api-paths'
 import { type BuildMeta, createBuildMeta } from './src/config/build-meta'
 import { DOCUMENT_ROUTE_PATHS } from './src/config/document-routes'
 import { resolveMobilePairingFeatureFlags } from './src/config/mobile-pairing-flags'
-import { chartingLibrarySecurityHeaders, securityHeaders } from './src/config/security-headers'
+import { chartingLibrarySecurityHeaders, referralJoinHeaders, securityHeaders } from './src/config/security-headers'
 import { hashCatalogMessageIds } from './src/lib/i18n-catalog'
 import { MOBILE_SYNC_TICKET_API_VERSION } from './src/lib/mobile-sync/one-time-ticket-policy'
 
@@ -118,12 +118,6 @@ export function createOrderSummaryChunksPlugin(): Plugin {
 const buildSha = resolveBuildSha()
 const releaseId = process.env.GATU_RELEASE_ID?.trim() || 'local'
 const buildTime = process.env.GATU_BUILD_TIME?.trim() || new Date().toISOString()
-const referralJoinHeaders = {
-  ...securityHeaders,
-  'cache-control': 'no-store',
-  'referrer-policy': 'no-referrer',
-  'x-robots-tag': 'noindex, nofollow',
-}
 
 // The same build identity that the `/build-meta.json` server route reports, written as a static
 // file so a CDN deployment without the Nitro server still exposes it. Flags come from the same

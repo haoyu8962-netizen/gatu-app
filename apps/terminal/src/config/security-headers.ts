@@ -119,3 +119,13 @@ export const chartingLibrarySecurityHeaders: Record<string, string> = {
 	...commonSecurityHeaders,
 	"x-frame-options": "SAMEORIGIN",
 };
+
+// Referral landing paths carry user-controlled codes: never cache them, never leak them through
+// Referer, and keep them out of search results. Shared by the Nitro route rules and the static
+// shell responder so both delivery shapes emit the same headers.
+export const referralJoinHeaders: Record<string, string> = {
+	...securityHeaders,
+	"cache-control": "no-store",
+	"referrer-policy": "no-referrer",
+	"x-robots-tag": "noindex, nofollow",
+};
