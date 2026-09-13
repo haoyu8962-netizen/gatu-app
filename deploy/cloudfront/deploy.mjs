@@ -9,19 +9,23 @@ import { extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const PRECOMPRESSED_EXTENSIONS = new Set([".br", ".gz", ".zst"]);
-export const HTML_CACHE_CONTROL = "no-cache";
+/** Browsers revalidate every navigation; the edge answers from cache for a minute and refreshes in the background. */
+export const HTML_CACHE_CONTROL = "public, max-age=0, s-maxage=60, stale-while-revalidate=300";
 export const NO_STORE = "no-store";
 export const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 export const REVALIDATE_CACHE_CONTROL = "public, max-age=0, must-revalidate";
 /** CloudFront signs Lambda origin requests without their body; POST callers send the body hash themselves. */
 export const PAYLOAD_HASH_HEADER = "x-amz-content-sha256";
 const NO_STORE_FILES = new Set(["build-meta.json", "sw.js"]);
+/** TradingView writes a 20-hex content hash into every bundle file name, so those never change in place. */
+const HASHED_CHART_BUNDLE = /^charting_library\/bundles\/[^/]+\.[0-9a-f]{20}(\.rtl)?\.[a-z0-9]+$/;
+const MAX_KEYS_PER_COMMAND = 500;
 
 /** Cache policy for one object in the public directory; `null` means the file is not uploaded. */
 export function objectCacheControl(relativePath) {
 	const key = relativePath.replaceAll("\\", "/");
 	if (PRECOMPRESSED_EXTENSIONS.has(extname(key))) return null;
-	if (key.startsWith("assets/")) return IMMUTABLE_CACHE_CONTROL;
+	if (key.startsWith("assets/") || HASHED_CHART_BUNDLE.test(key)) return IMMUTABLE_CACHE_CONTROL;
 	if (key.startsWith("charting_library/") || /^tradingview-theme-.*\.css$/.test(key)) return REVALIDATE_CACHE_CONTROL;
 	if (NO_STORE_FILES.has(key)) return NO_STORE;
 	if (key.endsWith(".html")) return HTML_CACHE_CONTROL;
@@ -96,6 +100,44 @@ export function buildSyncCommands({ publicDir, bucket, files }) {
 	return commands;
 }
 
+function chunk(items, size) {
+	const chunks = [];
+	for (let index = 0; index < items.length; index += size) chunks.push(items.slice(index, index + size));
+	return chunks;
+}
+
+/**
+ * `aws s3 sync` skips unchanged files, so a cache policy change never reaches objects that are
+ * already in the bucket. This re-uploads the selected files with `aws s3 cp` (which always writes
+ * the object and its metadata), grouped by cache policy and bounded per command.
+ */
+export function buildReuploadCommands({ publicDir, bucket, files, prefixes }) {
+	const selected = files.filter((file) => prefixes.some((prefix) => file === prefix || file.startsWith(prefix)));
+	const { early, late } = planUpload(selected);
+	const commands = [];
+	for (const phase of [early, late]) {
+		for (const [cacheControl, keys] of groupByCacheControl(phase)) {
+			for (const keyChunk of chunk(keys, MAX_KEYS_PER_COMMAND)) {
+				const includes = keyChunk.flatMap((key) => ["--include", key]);
+				commands.push([
+					"s3",
+					"cp",
+					publicDir,
+					`s3://${bucket}`,
+					"--recursive",
+					"--exclude",
+					"*",
+					...includes,
+					"--cache-control",
+					cacheControl,
+					"--no-progress",
+				]);
+			}
+		}
+	}
+	return commands;
+}
+
 export function buildInvalidationCommand(distributionId) {
 	return ["cloudfront", "create-invalidation", "--distribution-id", distributionId, "--paths", "/*"];
 }
@@ -105,6 +147,13 @@ export function buildLambdaCommands({ functionName, zipPath }) {
 		["lambda", "update-function-code", "--function-name", functionName, "--zip-file", `fileb://${zipPath}`, "--publish"],
 		["lambda", "wait", "function-updated", "--function-name", functionName],
 	];
+}
+
+function findChartBundle(publicDir) {
+	const directory = join(publicDir, "charting_library", "bundles");
+	if (!existsSync(directory)) return undefined;
+	const files = readdirSync(directory).filter((file) => HASHED_CHART_BUNDLE.test(`charting_library/bundles/${file}`));
+	return files.find((file) => file.startsWith("runtime.")) ?? files.find((file) => file.endsWith(".js"));
 }
 
 function sha256(buffer) {
@@ -205,6 +254,25 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(response.status === 200, `status ${response.status}`);
 		expect(response.headers.get("cache-control") === REVALIDATE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
 	});
+	await check("shell repeats from the edge", async () => {
+		await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
+		const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
+		expect(response.headers.get("cache-control") === HTML_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
+		const cache = response.headers.get("x-cache") ?? "";
+		expect(/^(Hit|RefreshHit) from cloudfront/.test(cache), `x-cache ${cache || "missing"}`);
+		return cache;
+	});
+	await check("chart bundles are immutable at the edge", async () => {
+		const bundle = findChartBundle(publicDir);
+		expect(bundle, "no hashed chart bundle in the local build");
+		await fetchImpl(`${base}/charting_library/bundles/${bundle}`);
+		const response = await fetchImpl(`${base}/charting_library/bundles/${bundle}`);
+		expect(response.status === 200, `status ${response.status}`);
+		expect(response.headers.get("cache-control") === IMMUTABLE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
+		const cache = response.headers.get("x-cache") ?? "";
+		expect(/^(Hit|RefreshHit) from cloudfront/.test(cache), `x-cache ${cache || "missing"}`);
+		return `${bundle} ${cache}`;
+	});
 	if (network === "testnet") {
 		await check("testnet stays out of search results", async () => {
 			const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
@@ -249,6 +317,9 @@ function readArgs(argv) {
 			case "--origin":
 				options.origin = value();
 				break;
+			case "--only":
+				(options.prefixes ??= []).push(value());
+				break;
 			case "--network":
 				options.network = value();
 				break;
@@ -282,6 +353,14 @@ async function main() {
 			}
 			break;
 		}
+		case "reupload": {
+			const bucket = requireOption(options, "bucket");
+			const prefixes = requireOption(options, "prefixes");
+			const commands = buildReuploadCommands({ publicDir, bucket, files: listPublicFiles(publicDir), prefixes });
+			if (commands.length === 0) throw new Error(`No uploadable files match ${prefixes.join(", ")}`);
+			for (const command of commands) runAws(command, options.execute);
+			break;
+		}
 		case "invalidate":
 			runAws(buildInvalidationCommand(requireOption(options, "distributionId")), options.execute);
 			break;
@@ -302,7 +381,7 @@ async function main() {
 			break;
 		}
 		default:
-			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|invalidate|lambda|verify> [--execute] [--bucket B] [--distribution ID] [--function-name F] [--origin URL] [--network mainnet|testnet]");
+			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|lambda|verify> [--execute] [--bucket B] [--only PREFIX]... [--distribution ID] [--function-name F] [--origin URL] [--network mainnet|testnet]");
 			process.exit(2);
 	}
 }

@@ -39,7 +39,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   requests to the same-origin API now carry `x-amz-content-sha256`, which CloudFront's
   signed Lambda origin requires. The first CloudFront release is live on the
   `*.cloudfront.net` domains only; `app.gatu.ai` still points at the EC2 server until
-  the certificate is issued and DNS is switched.
+  the certificate is issued and DNS is switched. The edge now serves the shell and
+  document pages from cache for a minute with background refresh, and TradingView's
+  content-hashed bundles are immutable instead of revalidated on every chart load.
 
 ### Changed
 

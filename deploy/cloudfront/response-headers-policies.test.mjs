@@ -6,7 +6,6 @@ import {
 	securityHeaders,
 } from "../../apps/terminal/src/config/security-headers.ts";
 import {
-	CHART_CACHE_CONTROL,
 	createResponseHeadersPolicies,
 	HYPERLIQUID_API_ORIGINS,
 	NOINDEX,
@@ -40,7 +39,7 @@ test("mainnet policies carry the mainnet preconnect, join and chart specifics", 
 	assert.equal(chart.SecurityHeadersConfig.FrameOptions.FrameOption, "SAMEORIGIN");
 	assert.equal(chart.SecurityHeadersConfig.ContentSecurityPolicy, undefined);
 	assert.equal(chartingLibrarySecurityHeaders["x-frame-options"], "SAMEORIGIN");
-	assert.equal(customHeader(chart, "cache-control"), CHART_CACHE_CONTROL);
+	assert.equal(customHeader(chart, "cache-control"), undefined, "object metadata decides chart caching");
 });
 
 test("testnet policies add noindex everywhere and point the preconnect at the testnet API", () => {

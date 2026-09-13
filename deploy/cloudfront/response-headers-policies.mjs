@@ -14,7 +14,6 @@ export const HYPERLIQUID_API_ORIGINS = Object.freeze({
 	mainnet: "https://api.hyperliquid.xyz",
 	testnet: "https://api.hyperliquid-testnet.xyz",
 });
-export const CHART_CACHE_CONTROL = "public, max-age=0, must-revalidate";
 export const NOINDEX = "noindex, nofollow";
 const HSTS_MAX_AGE_SECONDS = 31_536_000;
 const FRAME_OPTIONS = new Set(["DENY", "SAMEORIGIN"]);
@@ -94,7 +93,7 @@ export function createResponseHeadersPolicies(network) {
 		),
 		toResponseHeadersPolicyConfig(
 			`gatu-terminal-chart-${network}`,
-			{ ...chartingLibrarySecurityHeaders, ...robots, "cache-control": CHART_CACHE_CONTROL },
+			{ ...chartingLibrarySecurityHeaders, ...robots },
 			"TradingView package: same-origin frames and revalidated caching",
 		),
 	];

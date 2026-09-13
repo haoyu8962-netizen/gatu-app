@@ -301,6 +301,9 @@ const config = defineConfig({
         '/charting_library/**': {
           headers: { ...chartingLibrarySecurityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
         },
+        '/charting_library/bundles/**': {
+          headers: { ...chartingLibrarySecurityHeaders, 'cache-control': 'public, max-age=31536000, immutable' },
+        },
         '/tradingview-theme-*.css': {
           headers: { ...securityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
         },
