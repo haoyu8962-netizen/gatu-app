@@ -111,7 +111,8 @@ function resolveRouteAssets({ startManifest, routeIds, optionalRouteIds, field, 
 	);
 }
 
-export async function checkClientBundleBudget(assetsDirectoryArgument) {
+/** Reads the built client, the chunk graph and the TanStack manifest; no logging, no budget verdict. */
+export async function analyzeClientBundle(assetsDirectoryArgument) {
 	const assetsDirectory = resolve(assetsDirectoryArgument ?? "apps/terminal/.output/public/assets");
 	const publicGraphArtifacts = findPublicClientChunkGraphArtifacts(resolve(assetsDirectory, ".."));
 	if (publicGraphArtifacts.length > 0) {
@@ -203,6 +204,38 @@ export async function checkClientBundleBudget(assetsDirectoryArgument) {
 		const assets = sizes.filter(({ file }) => file.startsWith(`${surface.name}-`) && file.endsWith(".js"));
 		return { ...surface, assets };
 	});
+
+	return {
+		assetsDirectory,
+		assetFiles,
+		sizes,
+		sizesByFile,
+		largestChunk,
+		totalGzip,
+		violations,
+		tradeRoutePreloadFiles,
+		runtimeEntryFiles,
+		tradeStaticEntryFiles,
+		tradeStartupFiles,
+		tradeStartupGzip,
+		runtimeProfileSizes,
+		surfaceSizes,
+	};
+}
+
+export async function checkClientBundleBudget(assetsDirectoryArgument) {
+	const {
+		largestChunk,
+		totalGzip,
+		violations,
+		tradeRoutePreloadFiles,
+		runtimeEntryFiles,
+		tradeStaticEntryFiles,
+		tradeStartupFiles,
+		tradeStartupGzip,
+		runtimeProfileSizes,
+		surfaceSizes,
+	} = await analyzeClientBundle(assetsDirectoryArgument);
 
 	if (largestChunk.raw > budgets.largestChunkRawBytes) {
 		violations.push(`${largestChunk.file} raw ${largestChunk.raw} > ${budgets.largestChunkRawBytes} bytes`);

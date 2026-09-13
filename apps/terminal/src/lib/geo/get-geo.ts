@@ -1,11 +1,23 @@
 import { GEO_API_PATH } from "@/config/api-paths";
 import type { GeoVerdict } from "@/config/geo";
 import { geoVerdictSchema } from "@/lib/geo/geo-contracts";
+import { GEO_REQUEST_INIT, takeGeoPrefetch } from "@/lib/geo/geo-prefetch";
 
 const GEO_UNAVAILABLE_MESSAGE = "Geo restriction check unavailable";
 
 export interface GetGeoInput {
 	data: { override: string | null };
+}
+
+async function fetchGeoResponse(override: string | null): Promise<Response> {
+	if (!override) {
+		try {
+			const prefetched = await takeGeoPrefetch();
+			if (prefetched) return prefetched;
+		} catch {}
+	}
+	const search = override ? `?${new URLSearchParams({ override })}` : "";
+	return fetch(`${GEO_API_PATH}${search}`, GEO_REQUEST_INIT);
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
@@ -24,13 +36,7 @@ async function readErrorMessage(response: Response): Promise<string> {
  * fails closed for those actions.
  */
 export async function getGeo({ data }: GetGeoInput): Promise<GeoVerdict> {
-	const search = data.override ? `?${new URLSearchParams({ override: data.override })}` : "";
-	const response = await fetch(`${GEO_API_PATH}${search}`, {
-		headers: { accept: "application/json" },
-		cache: "no-store",
-		credentials: "omit",
-		mode: "same-origin",
-	});
+	const response = await fetchGeoResponse(data.override);
 	if (!response.ok) throw new Error(await readErrorMessage(response));
 
 	const parsed = geoVerdictSchema.safeParse(await response.json());

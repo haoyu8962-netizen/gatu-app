@@ -13,6 +13,8 @@ on:
       - "docs/mobile-phone-access-device-validation.md"
       - "scripts/check-client-bundle-budget.mjs"
       - "scripts/check-client-bundle-budget.test.mjs"
+      - "scripts/inject-shell-preloads.mjs"
+      - "scripts/inject-shell-preloads.test.mjs"
       - "scripts/check-client-chunk-cycles.mjs"
       - "scripts/client-chunk-graph.*"
       - "scripts/measure/analyze-client-root-deps.mjs"
@@ -65,6 +67,7 @@ jobs:
           scripts/validate-mobile-phone-access-device-validation.test.js
           deploy/resolve-client-asset.test.mjs
           scripts/check-client-bundle-budget.test.mjs
+          scripts/inject-shell-preloads.test.mjs
 
       - name: Verify Caddy ticket block and forwarded IP handling over HTTP
         run: |

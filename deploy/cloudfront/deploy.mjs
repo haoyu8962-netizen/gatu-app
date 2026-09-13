@@ -20,6 +20,8 @@ const NO_STORE_FILES = new Set(["build-meta.json", "sw.js"]);
 /** TradingView writes a 20-hex content hash into every bundle file name, so those never change in place. */
 const HASHED_CHART_BUNDLE = /^charting_library\/bundles\/[^/]+\.[0-9a-f]{20}(\.rtl)?\.[a-z0-9]+$/;
 const MAX_KEYS_PER_COMMAND = 500;
+/** The build injects the trade startup closure into the shell; a shell with fewer links skipped that step. */
+const MIN_SHELL_PRELOADS = 20;
 
 /** Cache policy for one object in the public directory; `null` means the file is not uploaded. */
 export function objectCacheControl(relativePath) {
@@ -254,6 +256,20 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(response.status === 200, `status ${response.status}`);
 		expect(response.headers.get("cache-control") === REVALIDATE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
 	});
+	await check("shell preloads the startup closure", async () => {
+		const hrefs = [...shell.toString("utf8").matchAll(/<link rel="modulepreload" href="(\/assets\/[^"]+)"/g)].map((match) => match[1]);
+		expect(hrefs.length >= MIN_SHELL_PRELOADS, `only ${hrefs.length} modulepreload links in the local shell`);
+		for (const href of hrefs) expect(existsSync(join(publicDir, href.slice(1))), `${href} is not in the local build`);
+		const response = await fetchImpl(`${base}${hrefs.at(-1)}`);
+		expect(response.status === 200, `status ${response.status} for ${hrefs.at(-1)}`);
+		expect(response.headers.get("cache-control") === IMMUTABLE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
+		return `${hrefs.length} links`;
+	});
+	await check("health probe answers 204", async () => {
+		const response = await fetchImpl(`${base}/api/health`);
+		expect(response.status === 204, `status ${response.status}`);
+		expect(response.headers.get("cache-control") === NO_STORE, `cache-control ${response.headers.get("cache-control")}`);
+	});
 	await check("shell repeats from the edge", async () => {
 		await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
 		const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
@@ -332,8 +348,25 @@ function readArgs(argv) {
 
 function runAws(args, execute) {
 	console.log(`aws ${args.map((arg) => (/[\s*]/.test(arg) ? JSON.stringify(arg) : arg)).join(" ")}`);
-	if (!execute) return "";
-	return execFileSync("aws", args, { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
+	if (!execute) return;
+	execFileSync("aws", args, { stdio: ["ignore", "inherit", "inherit"] });
+}
+
+function readAwsJson(args) {
+	return JSON.parse(execFileSync("aws", [...args, "--output", "json"], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] }));
+}
+
+/** The files a viewer receives first; a sync that stopped early must never look like a release. */
+export const RELEASE_MARKER_FILES = ["_shell.html", "build-meta.json"];
+
+export function assertReleaseMarkersUploaded({ bucket, publicDir, headObject }) {
+	for (const file of RELEASE_MARKER_FILES) {
+		const localBytes = statSync(join(publicDir, file)).size;
+		const remoteBytes = headObject(bucket, file);
+		if (remoteBytes !== localBytes) {
+			throw new Error(`${file} in s3://${bucket} is ${remoteBytes} bytes but the local build is ${localBytes} bytes; the sync did not finish`);
+		}
+	}
 }
 
 function requireOption(options, name) {
@@ -350,6 +383,14 @@ async function main() {
 			if (!existsSync(join(publicDir, "_shell.html"))) throw new Error(`No _shell.html in ${publicDir}; run pnpm build first`);
 			for (const command of buildSyncCommands({ publicDir, bucket, files: listPublicFiles(publicDir) })) {
 				runAws(command, options.execute);
+			}
+			if (options.execute) {
+				assertReleaseMarkersUploaded({
+					bucket,
+					publicDir,
+					headObject: (name, key) => readAwsJson(["s3api", "head-object", "--bucket", name, "--key", key]).ContentLength,
+				});
+				console.log(`Release markers match the local build: ${RELEASE_MARKER_FILES.join(", ")}`);
 			}
 			break;
 		}

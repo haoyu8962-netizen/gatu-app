@@ -120,6 +120,29 @@
 
 结论与计划要点：差距主要来自分块瀑布（壳只预加载 6 个块）、壳与图表包的缓存策略、地区判定发起过晚与 Lambda 冷启动；计划按 P1 壳内预加载静态闭包、P2 壳边缘缓存、P3 图表 bundle immutable、P4 地区预取与保温、P5 分块整理、P6 字体、P7 告警、P8 过渡与文档八项排期，四个阶段，每阶段发布后同环境复测。未执行任何修改。
 
+## 第九检查点：执行修复计划阶段 1 与阶段 2（同日，基于 `65166713`）
+
+用户决定：从阶段 1 开始执行，不做边缘初判（P4.3），保温用 EventBridge 定时调用。决策记录 [ADR 0006](../../adr/0006-startup-preloads-and-edge-caching.md)。
+
+阶段 1（提交 `34d1c089`，只改部署材料）：`HTML_CACHE_CONTROL` 改为 `public, max-age=0, s-maxage=60, stale-while-revalidate=300`；`charting_library/bundles/` 下带 20 位内容哈希的文件（js、css、rtl.css、woff2、cur、svg、png）改 immutable，入口与 `sameorigin.html` 保持重新验证，Nitro 路由规则同步；chart 响应头策略去掉 `Cache-Control` 覆盖（发现时线上 bundle 仍回旧头，正是策略 `Override=True` 覆盖了对象元数据，`update-response-headers-policy` 后即生效）；新增 `deploy.mjs reupload --only <前缀>`（`aws s3 cp` 强制重写元数据，因为 `sync` 跳过内容未变的文件，每命令 ≤ 500 个键）；`verify` 新增"壳二次请求边缘命中"与"图表 bundle immutable 且边缘命中"。对 `_shell.html`、`404.html`、六个文档页与 3,707 个 bundle 执行 reupload，两条分发失效并等待完成，verify 主网 10/10、测试网 11/11。
+
+阶段 2（本检查点提交，改应用与构建）：`scripts/inject-shell-preloads.mjs` 在 `pnpm build` 末尾把静态交易启动闭包与移动、桌面运行时 profile 的并集写进 `_shell.html`（`check-client-bundle-budget.mjs` 拆出无日志的 `analyzeClientBundle()` 供复用；标记 `<!--gatu-shell-preloads-->`，重复运行只替换；缺文件即失败；3 个 node 测试；CI 工作流加入该测试）；`config/app-route-surface.ts` 从 `providers/client-runtime.tsx` 抽出无 React 依赖的路由面判定；`lib/geo/geo-prefetch.ts` 在引导块 `client.ts` 对非文档路由预取 `/api/geo`，`getGeo` 一次性复用（4 个 vitest 用例）；Lambda 新增 `GET /api/health` 204 `no-store`；`verify` 新增"壳内 ≥ 20 个 modulepreload 且都在本地构建中并在线上 immutable"与"health 204"。AWS：Lambda 内存 256 → 512 MB；用 root 创建执行角色 `gatu-terminal-api-warm-role` 与 EventBridge Scheduler `gatu-terminal-api-warm`（`rate(5 minutes)`，合成函数 URL 事件调用 `/api/health`，重试 0 次）。构建 `GATU_RELEASE_ID=cloudfront-2026-09-13-p2`：预算通过（静态交易启动 1,553,403 B gzip，比基线少 16,818；桌面运行时 +4,940、移动 +1,020，均在容差内），壳注入 91 个链接，共 97 个 `modulepreload`，壳 19,282 B，文档页未注入。
+
+发布事故与修复：首次 `deploy.mjs sync --execute` 后 verify 报壳、文档页与 `build-meta.json` 与本地不一致，S3 时间戳显示只有早期阶段（资源、重新验证组）上传，四条晚期命令没有生效；把同样的命令手动执行即成功，原因未定位（当时把 stderr 一并过滤，看不到错误）。修复：`runAws` 改为直接继承 stdout/stderr，不再缓冲；`sync` 结束时核对 S3 上 `_shell.html` 与 `build-meta.json` 字节数与本地一致，不一致即抛错（`assertReleaseMarkersUploaded`，含测试）。重新失效后 verify 主网 12/12、测试网 13/13；`/api/health` 三次 0.26–0.41 s，`/api/geo` 0.27–0.54 s（无冷启动）。
+
+同环境测量（Playwright 全新 Chromium 上下文，本机直连东京边缘，单样本，毫秒）：
+
+| 阶段 | TTFB | DCL | FCP | load | `client-root` 到达 | 主块到达 | 启动 JS 最后到达 | `/api/geo` 完成 | 图表入口到达 | 图表 iframe 资源完成 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 阶段 1 前 | 424 | 496 | 632 | 626 | 676 | 697 | — | 3,865 | 1,903 | — |
+| 阶段 1 后 | 197 | 762 | 772 | 989 | 1,362 | 1,702 | — | 2,697 | 3,198 | 3,560（72 个文件） |
+| 阶段 2 后 | 174 | 196 | 220 | 976 | 596 | 925 | 936（97 个文件） | 1,388（976 发起） | 1,763 | ≈ 2,470（72 个文件） |
+| 官方站（同工具同时段） | 494 | 1,049 | 1,148 | 1,068 | — | — | 1,348（58 个文件） | 首个 API 1,137，最后 2,271 | 537 | 图表在主文档内加载，无独立 iframe |
+
+解读：预加载让 97 个启动块在 0.94 s 内一次到齐，`client-root` 从 1.36 s 提前到 0.60 s；地区判定发起点仍在路由块执行之后（引导块静态依赖 `vendor-tanstack-router`，见 P5），但已从 2.7 s 降到 1.4 s；剩余差距是图表入口的加载时机（官方站在 HTML 头部同步加载 `charting_library.js`，本项目在交易页挂载后才加载）。阶段 1 与阶段 2 之间的差异含本机网络噪声，只看量级。
+
+限制：所有测量来自同一台机器直连东京边缘，未覆盖慢网与远地边缘；移动端现在也会预加载桌面面板块；`analyzeClientBundle()` 与预算检查在构建里各跑一次；晚期上传静默停止的根因未定位，只加了失败关闭的核对。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

@@ -1,6 +1,6 @@
 # 终端启动性能对齐官方站：修复计划
 
-状态：计划，未执行。基线是 `claude/spa-mode` 分支提交 `6721c375` 的 CloudFront 首发；对比对象是 2026-09-13 在同一台机器、同一个应用内浏览器里冷缓存实测的 `app.hyperliquid.xyz/trade/HYPE`。度量方法、原始数字与官方站技术栈指纹记录在 [任务记录](work-memory/sessions/2026-09-13-spa-shell-spike.md) 第八检查点；托管形态见 [ADR 0005](adr/0005-spa-static-shell.md) 与 [CloudFront 手册](../deploy/cloudfront/README.md)。
+状态：阶段 1（P2、P3）与阶段 2（P1、P4.1、P4.2）已发布到 `*.cloudfront.net`，决策记录在 [ADR 0006](adr/0006-startup-preloads-and-edge-caching.md)；P4.3 边缘初判按用户决定不做；阶段 3、4 未开始。基线是 `claude/spa-mode` 分支提交 `6721c375` 的 CloudFront 首发；对比对象是 2026-09-13 在同一台机器、同一个应用内浏览器里冷缓存实测的 `app.hyperliquid.xyz/trade/HYPE`。度量方法、原始数字与官方站技术栈指纹记录在 [任务记录](work-memory/sessions/2026-09-13-spa-shell-spike.md) 第八检查点；托管形态见 [ADR 0005](adr/0005-spa-static-shell.md) 与 [CloudFront 手册](../deploy/cloudfront/README.md)。
 
 ## 目标
 
@@ -28,7 +28,7 @@
 
 ## 设计
 
-### P1 · 壳内预加载交易页静态闭包（最大收益）
+### P1 · 壳内预加载交易页静态闭包（最大收益）— 已实施
 
 问题：壳只写 6 个 `modulepreload`，其余 92 个块靠嵌套 `import()` 逐层发现，形成 `client-root` → 主块 → 页面块 → 面板块的四层瀑布；官方站把 45 个块一次写进 HTML。
 
@@ -38,7 +38,7 @@
 
 备选：把预加载写进 `__root.tsx` 的 `head()`。否决，因为块名带哈希，只能在构建后得知。
 
-### P2 · 壳与文档页改为边缘缓存 + 后台刷新
+### P2 · 壳与文档页改为边缘缓存 + 后台刷新 — 已实施
 
 问题：`_shell.html` 是 `no-cache`，实测每次导航都 `RefreshHit` 回源 S3，首个边缘节点冷启动 TTFB 2.2 s；官方站 HTML 由边缘直出。
 
@@ -46,7 +46,7 @@
 
 验证：`deploy.test.mjs` 断言新的头；`verify` 增加"二次请求 `x-cache` 为 Hit 或 RefreshHit 且 `age` 存在"的检查；`curl` 前后对比 TTFB。
 
-### P3 · TradingView 内部 bundle 改为 immutable
+### P3 · TradingView 内部 bundle 改为 immutable — 已实施
 
 问题：`charting_library/` 全部 `max-age=0, must-revalidate`，每次打开图表 85 个文件逐个重新验证并在冷边缘 `Miss`；这些文件名本身带 20 位内容哈希。
 
@@ -54,7 +54,7 @@
 
 验证：`deploy.test.mjs` 覆盖哈希与非哈希两类；`verify` 增加对一个 bundle 文件的 `immutable` 与二次 `Hit` 检查。
 
-### P4 · 地区判定提前并压低延迟
+### P4 · 地区判定提前并压低延迟 — 第 1、2 项已实施，第 3 项不做
 
 问题：`/api/geo` 在钱包运行时加载后才发起，冷加载 11.7 s 才拿到结果；Lambda 冷启动加 IPdata 首次调用约 1.6 s。
 

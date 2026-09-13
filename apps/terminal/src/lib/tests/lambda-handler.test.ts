@@ -134,6 +134,10 @@ describe("lambda function url adapter", () => {
 		expect((await handler(event({ rawPath: "/api/client-error-report" }))).statusCode).toBe(405);
 		expect((await handler(event({ rawPath: "/mobile-agent-sync-ticket", method: "POST" }))).statusCode).toBe(503);
 		expect((await handler(event({ rawPath: "/api/unknown" }))).statusCode).toBe(404);
+		const health = await handler(event({ rawPath: "/api/health" }));
+		expect(health.statusCode).toBe(204);
+		expect(health.headers["cache-control"]).toBe("no-store");
+		expect((await handler(event({ rawPath: "/api/health", method: "POST" }))).statusCode).toBe(405);
 		expect((await handler(event({ rawPath: "/trade/BTC" }))).statusCode).toBe(404);
 		expect((await handler(event({ rawPath: "/api/leaderboard", method: "POST" }))).statusCode).toBe(405);
 	});

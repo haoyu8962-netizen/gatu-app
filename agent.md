@@ -41,7 +41,7 @@ Public trading links use `/trade/:symbol` or `/trade/:base/:quote`; `/` redirect
 
 ## Runtime and signing boundaries
 
-The SSR document shell owns Query, Lingui and direction context. Wallet dependencies load through `ClientRuntimeGate` after hydration. Document routes (`/docs`, `/support`, `/terms`, `/privacy`, `/risk`, `/cookies`) render without the wallet runtime. Browser globals belong behind a verified client-only import boundary; a component's client-only rendering alone does not make its imports SSR-safe. See [SSR rules](.claude/rules/ssr.md) and [runtime guardrails](docs/runtime-guardrails.md).
+The prerendered document shell (built once by the server renderer; no rendering at runtime) owns Query, Lingui and direction context. Wallet dependencies load through `ClientRuntimeGate` after hydration. Document routes (`/docs`, `/support`, `/terms`, `/privacy`, `/risk`, `/cookies`) render without the wallet runtime. Browser globals belong behind a verified client-only import boundary; a component's client-only rendering alone does not make its imports SSR-safe. See [SSR rules](.claude/rules/ssr.md) and [runtime guardrails](docs/runtime-guardrails.md).
 
 Privy owns authentication and the external-wallet catalog; `@privy-io/wagmi` supplies connector state. The active account must match the selected Hyperliquid owner before any user-signed client is created. Ordinary email trading uses that user's exact active embedded owner. External-wallet trading and Agent-only sessions use verified Agent/API wallets. Authentication, owner signer readiness, Agent approval, local key availability, legal acceptance and builder-fee approval are separate facts.
 

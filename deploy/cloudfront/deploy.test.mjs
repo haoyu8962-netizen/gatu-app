@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import {
+	assertReleaseMarkersUploaded,
 	buildInvalidationCommand,
 	buildLambdaCommands,
 	buildReuploadCommands,
@@ -71,6 +72,16 @@ test("reupload rewrites only the selected files with cp, bounded per command", (
 	assert.equal(buildReuploadCommands({ publicDir: "/p", bucket: "b", files: many, prefixes: ["charting_library/"] }).length, 3);
 });
 
+test("a sync that stopped before the shell is reported instead of passing silently", () => {
+	const publicDir = createPublicDir();
+	const sizes = { "_shell.html": SHELL_HTML.length, "build-meta.json": JSON.stringify({ commit: "abc", release: "r1" }).length };
+	assert.doesNotThrow(() => assertReleaseMarkersUploaded({ bucket: "b", publicDir, headObject: (_, key) => sizes[key] }));
+	assert.throws(
+		() => assertReleaseMarkersUploaded({ bucket: "b", publicDir, headObject: (_, key) => (key === "_shell.html" ? 12_677 : sizes[key]) }),
+		/_shell.html in s3:\/\/b is 12677 bytes/,
+	);
+});
+
 test("invalidation and lambda commands are explicit and bounded", () => {
 	assert.deepEqual(buildInvalidationCommand("E123"), [
 		"cloudfront",
@@ -85,10 +96,15 @@ test("invalidation and lambda commands are explicit and bounded", () => {
 	assert.ok(wait.includes("function-updated"));
 });
 
+const SHELL_PRELOADS = Array.from({ length: 24 }, (_, index) => `/assets/chunk-${index}.js`);
+const SHELL_HTML = `<html><head>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}</head></html>`;
+
 function createPublicDir() {
 	const dir = mkdtempSync(join(tmpdir(), "gatu-cf-verify-"));
 	mkdirSync(join(dir, "docs"), { recursive: true });
-	writeFileSync(join(dir, "_shell.html"), "<html>shell</html>");
+	mkdirSync(join(dir, "assets"), { recursive: true });
+	for (const href of SHELL_PRELOADS) writeFileSync(join(dir, href.slice(1)), "js");
+	writeFileSync(join(dir, "_shell.html"), SHELL_HTML);
 	writeFileSync(join(dir, "docs", "index.html"), "<html>docs</html>");
 	writeFileSync(join(dir, "build-meta.json"), JSON.stringify({ commit: "abc", release: "r1" }));
 	mkdirSync(join(dir, "charting_library", "bundles"), { recursive: true });
@@ -118,7 +134,9 @@ test("verification passes when the edge serves the build with the expected heade
 		publicDir,
 		network: "mainnet",
 		fetchImpl: fakeFetch({
-			"/trade/HYPE": edgeSequence({ body: "<html>shell</html>", headers: { ...headers, "cache-control": HTML_CACHE_CONTROL } }),
+			"/trade/HYPE": edgeSequence({ body: SHELL_HTML, headers: { ...headers, "cache-control": HTML_CACHE_CONTROL } }),
+			[SHELL_PRELOADS.at(-1)]: { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
+			"/api/health": { status: 204, body: null, headers: { "cache-control": NO_STORE } },
 			"/charting_library/bundles/runtime.4d986d07cb97d8edacba.js": edgeSequence({ body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } }),
 			"/docs": { body: "<html>docs</html>", headers: { "content-security-policy": "x" } },
 			"/build-meta.json": { body: JSON.stringify({ commit: "abc", release: "r1" }) },
@@ -128,7 +146,7 @@ test("verification passes when the edge serves the build with the expected heade
 				body: JSON.stringify({ checkedAt: 1, country: "GB", status: "allowed", ttlMs: 60_000 }),
 			}),
 			"/join/__gatu_healthcheck__": {
-				body: "<html>shell</html>",
+				body: SHELL_HTML,
 				headers: { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-robots-tag": "noindex, nofollow", "x-gatu-route": "referral-join" },
 			},
 			"/charting_library/charting_library.js": { body: "js", headers: { "cache-control": REVALIDATE_CACHE_CONTROL } },
@@ -139,7 +157,8 @@ test("verification passes when the edge serves the build with the expected heade
 		results.filter((result) => !result.ok),
 		[],
 	);
-	assert.equal(results.length, 10);
+	assert.equal(results.length, 12);
+	assert.equal(results.find((result) => result.name === "shell preloads the startup closure")?.detail, "24 links");
 	assert.equal(results.find((result) => result.name === "shell repeats from the edge")?.detail, "Hit from cloudfront");
 	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
 });
@@ -169,6 +188,8 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 		"referral deep link headers",
 		"missing files stay 404",
 		"chart package revalidates",
+		"shell preloads the startup closure",
+		"health probe answers 204",
 		"shell repeats from the edge",
 		"chart bundles are immutable at the edge",
 		"testnet stays out of search results",

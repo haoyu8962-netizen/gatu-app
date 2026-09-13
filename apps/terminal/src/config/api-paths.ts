@@ -6,4 +6,6 @@ export const GEO_API_PATH = "/api/geo";
 export const REFERRAL_GEO_API_PATH = "/api/referral-geo";
 export const CLIENT_ERROR_REPORT_API_PATH = "/api/client-error-report";
 export const LEADERBOARD_API_PATH = "/api/leaderboard";
+/** Liveness probe for the keep-warm schedule and release verification; never cached. */
+export const HEALTH_API_PATH = "/api/health";
 export const BUILD_META_PATH = "/build-meta.json";

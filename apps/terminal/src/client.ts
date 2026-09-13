@@ -1,7 +1,9 @@
 import { renderBootstrapErrorPage } from "./lib/bootstrap-error-page";
+import { shouldPrefetchGeo, startGeoPrefetch } from "./lib/geo/geo-prefetch";
 import { canHydrateAfterMobileAgentSyncScrub } from "./lib/mobile-sync/bootstrap-fragment";
 
 if (canHydrateAfterMobileAgentSyncScrub) {
+	if (shouldPrefetchGeo(window.location.pathname)) startGeoPrefetch();
 	void import("./lib/error-reporting/client")
 		.then(({ installGlobalErrorReporting, reportClientError }) => {
 			installGlobalErrorReporting();

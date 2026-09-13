@@ -1,6 +1,7 @@
 import {
 	CLIENT_ERROR_REPORT_API_PATH,
 	GEO_API_PATH,
+	HEALTH_API_PATH,
 	LEADERBOARD_API_PATH,
 	REFERRAL_GEO_API_PATH,
 } from "@/config/api-paths";
@@ -128,6 +129,12 @@ export function createApiRouter(environment: LambdaEnvironment): (request: Reque
 
 	return async function route(request) {
 		const pathname = trimTrailingSlash(new URL(request.url).pathname);
+		if (pathname === HEALTH_API_PATH) {
+			if (request.method !== "GET" && request.method !== "HEAD") {
+				return jsonResponse({ error: "Method not allowed" }, 405, { allow: "GET" });
+			}
+			return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
+		}
 		if (pathname === GEO_API_PATH) return getGeoHandlers().geo(request);
 		if (pathname === REFERRAL_GEO_API_PATH) return getGeoHandlers().referralActionGeo(request);
 		if (pathname === CLIENT_ERROR_REPORT_API_PATH || pathname === LEGACY_CLIENT_ERROR_REPORT_PATH) {
