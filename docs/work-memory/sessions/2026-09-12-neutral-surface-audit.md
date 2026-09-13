@@ -63,3 +63,5 @@
 2026-09-12 追加结果（基线 `32b73f68`）：已完成指定范围的 12 个组件文件修复，第 5 行未改；`pnpm typecheck`、12 个修改文件的 Biome check、`pnpm build`（含循环依赖与包体积检查）、`memory:index/check/test` 均通过（memory 8/8）；375px 与 1440px 完成受影响页面截图对比，账户相关弹窗使用真实组件与固定示例数据，深浅主题示例无渲染错误或横向溢出、前后文字一致，两张前态截图按基线 class 复现，证据保存在 Git 忽略的 `.worklog/2026-09-12/neutral-surface-fix/`；未新增测试，未执行真实签名或资金操作。
 
 2026-09-13 追加结果（基线 `61d44a8f`）：按后续标注移除 `staking-view.tsx` 质押概览内两张指标卡及余额明细的装饰填充与外框；375px、1440px 深浅主题截图检查完成，概览内三处背景透明且无外框、页面无横向溢出，截图保存在 `.worklog/2026-09-13/staking-surface/`；Biome check、terminal typecheck、完整构建（含循环依赖与包体积检查）、memory:index/check/test 均通过（memory 8/8）；未新增测试，未执行账户签名或资金操作。
+
+2026-09-13 追加结果（基线 `540cfc54`）：质押概览六处金额缺失占位由横杠改为 `0 HYPE`，账户模型与操作保护未变；375px 加载示例、1440px 错误/正常示例及未连接账户页面已核对，缺数据时划转禁用、完整示例显示原有金额，截图保存在 `.worklog/2026-09-13/staking-zero/`；Biome check、terminal typecheck、现有 staking-view/use-staking-controller 测试 14/14、完整构建（含循环依赖与包体积检查）、memory:index/check/test（8/8）均通过；未新增测试，未执行签名或资金操作。
