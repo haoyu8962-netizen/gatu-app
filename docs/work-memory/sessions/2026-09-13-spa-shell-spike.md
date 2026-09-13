@@ -108,6 +108,18 @@
 
 限制：两条分发仍用默认 `*.cloudfront.net` 证书；ACM 证书 `PENDING_VALIDATION`，等用户把两条验证 CNAME 加到 Cloudflare 后再给分发挂别名与证书，然后由用户切换 DNS；`verify` 与浏览器都从执行机的公网 IP 发起（IPdata 判定为 US），未做真实地区覆盖；未做 Privy 登录、签名、下单与移动布局；EC2 仍在服务 `app.gatu.ai`，尚未退役。
 
+## 第八检查点：与官方站同环境对比与修复计划（同日，基于 `6721c375`）
+
+用户要求复核修改后的架构、用浏览器实测官方站的技术栈与数据流、对比差异并规划修复。计划文档：[终端启动性能对齐官方站](../../terminal-startup-performance-plan.md)（状态：计划，未执行）。
+
+产物复核：`.output/public` 5,056 个文件 65.6 MB，其中 `charting_library` 43.8 MB / 3,707 个文件全部 `max-age=0, must-revalidate`；`assets/` 1,312 个文件含 915 个 `.gz/.br/.zst` 预压缩副本（`deploy.mjs` 排除上传，S3 上为 0）。壳引用 9 个文件 gzip 639 KB（`vendor-tanstack-router` 356 KB，两套字体 94 KB）；打开 `/trade/HYPE` 实际下载 98 个 JS 文件。`vendor-tanstack-router` 块内含 hl-react 可靠性表（`l2Book`、`clearinghouseState` 字符串各十余次）、zustand、sonner，React 本体在 `vendor-base-ui`；`createManualChunks` 只按包名分配。仍描述 SSR 的文档：`agent.md` 第 44 行、`apps/terminal/README.md` 第 50、52、117 行、`deploy/README.md`（62 处 EC2/Caddy）。
+
+官方站实测（应用内浏览器，冷缓存，单样本）：HTML 6.7 KB、`#root` 为空、45 个 `modulepreload`；TTFB 378 ms，DCL 2.5 s，load 3.9 s；10 秒内 94 个资源 2.37 MB；首批 48 个 JS/CSS gzip 1.66 MB（原始 5.7 MB），最大块 `config-*.js` 570 KB gzip 几乎全是钱包、lit 与 zod。指纹：React + styled-components + react-intl，React Query 离线缓存，Vite/rolldown；Privy + wagmi + ethers/viem + Reown AppKit + Coinbase SDK + WalletConnect；Across、MoonPay；TradingView `charting_library_v28.5`；mixpanel 与 gtag；无 CSP、无 `Cache-Control`，`SW.js` 返回 index.html，Service Worker 未生效。数据流：`webData3` 聚合流加 `bbo`、`l2Book`、`activeAssetCtx/Data`、`orderUpdates`、`notification`、`twapStates`、`userFills`；REST 做 `spotMeta`、`allPerpMetas`、`clearinghouseState`、`candleSnapshot`、`legalCheck`、`portfolio`、`userFees`、`leaderboard`；API 域为 `api-ui.hyperliquid.xyz`。
+
+本项目同环境冷缓存（测试网分发首次命中该边缘）：TTFB 2,188 ms，DCL 3.6 s，load 6.2 s；114 个资源 1.77 MB；壳块 3.9 s 到达，`client-root` 7.3 s，主块 8.0 s，图表入口 11.6 s，`/api/geo` 11.7 s。热缓存下 DCL 569 ms、load 778 ms，7 个面板，无控制台错误。`curl`：壳 `Miss` 后 `RefreshHit`（每次回源），`/api/geo` 冷 1.69 s / 1.64 s、热 0.36 s，图表 bundle `Miss` 且 `must-revalidate`；IPdata 从本机首次 1.65 s、复用 0.44 s；Lambda 256 MB arm64。修正一处早前判断：gatu 已订阅 `orderUpdates` 与 `twapStates`（多行调用未被首次检索命中），推送流覆盖与官方站等价。
+
+结论与计划要点：差距主要来自分块瀑布（壳只预加载 6 个块）、壳与图表包的缓存策略、地区判定发起过晚与 Lambda 冷启动；计划按 P1 壳内预加载静态闭包、P2 壳边缘缓存、P3 图表 bundle immutable、P4 地区预取与保温、P5 分块整理、P6 字体、P7 告警、P8 过渡与文档八项排期，四个阶段，每阶段发布后同环境复测。未执行任何修改。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。
