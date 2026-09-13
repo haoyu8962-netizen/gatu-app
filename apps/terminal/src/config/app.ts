@@ -14,8 +14,6 @@ export const FORMAT_COMPACT_DEFAULT = true;
 
 export const DEFAULT_FAVORITE_MARKETS = ["BTC", "ETH", "HYPE"] as const;
 
-export const RECENT_WALLETS_LIMIT = 3;
-
 export const DEFAULT_MARKET_KEY = "perp:BTC";
 export const DEFAULT_MARKET_NAME = "BTC";
 export const DEFAULT_MARKET_SCOPE = "perp" as const;
@@ -37,9 +35,9 @@ export const STORAGE_KEYS = {
 	HIP3_DISCLAIMER: "hip3-deployer-disclaimer-v1",
 	PENDING_ORDERS: "hl-pending-orders-v1",
 	PENDING_TWAPS: "hl-pending-twaps-v1",
-	RECENT_WALLETS: "hypeterminal:recent-wallets",
 	RQ_CACHE: "hl-rq-cache-v1",
 	LEGACY_METADATA: "hl-markets-meta-v1",
+	LEGACY_RECENT_WALLETS: "hypeterminal:recent-wallets",
 } as const;
 
 export const RQ_CACHE_BUSTER = "v3";
