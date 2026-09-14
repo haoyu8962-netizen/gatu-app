@@ -90,6 +90,7 @@ export { useTradingGuard } from "./hooks/useTradingGuard";
 export { useHttpTransport, useSubscriptionTransport } from "./hooks/useTransport";
 export { verifyLegalActionAllowed } from "./internal/exchange/legal-execution";
 export { enableHyperliquidDebug } from "./internal/websocket/debug";
+export { markFrameReceivedAt, takeFrameReceivedAt } from "./internal/websocket/frame-receipt";
 export {
 	createHealthReport,
 	type HealthAlert,
@@ -317,13 +318,23 @@ export {
 export { type TradingRequirements, type UseTradingStatusResult, useTradingStatus } from "./signing/use-trading-status";
 export {
 	COMPACT_ASSET_CTXS_CODEC_LIMITS,
+	COMPACT_ASSET_CTXS_MAX_PENDING_FRAMES,
+	type CompactAssetCtxsAccumulator,
 	type CompactAssetCtxsChannel,
+	type CompactAssetCtxsDelta,
 	type CompactAssetCtxsEvent,
 	type CompactPerpAssetCtx,
+	type CompactPerpAssetCtxsDelta,
 	type CompactPerpAssetCtxsEvent,
 	type CompactSpotAssetCtx,
+	type CompactSpotAssetCtxsDelta,
 	type CompactSpotAssetCtxsEvent,
+	createCompactAssetCtxsAccumulator,
 	decodeCompactAssetCtxs,
+	parseCompactPerpAssetCtxsDelta,
+	parseCompactPerpAssetCtxsView,
+	parseCompactSpotAssetCtxsDelta,
+	parseCompactSpotAssetCtxsView,
 	subscribeCompactAssetCtxs,
 } from "./subscriptions/compact-asset-ctxs";
 export { CompactSubscriptionClient } from "./subscriptions/compact-subscription-client";

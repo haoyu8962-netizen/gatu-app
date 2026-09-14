@@ -24,25 +24,55 @@ import { type DesktopGridLoadingPanelId, DesktopGridLoadingSurface } from "./des
 const VALUE_PLACEHOLDER = "-";
 const NAME_PLACEHOLDER = "—";
 const NAV_LABELS = ["Trade", "Portfolio", "Earn", "Vaults", "Staking", "Referrals", "Leaderboard", "More"] as const;
-const MARKET_STATS = ["Mark", "ORACLE", "24h Change", "24H VOL", "OPEN INT", "FUNDING"] as const;
-const ORDER_TYPE_TABS = ["Market", "Limit", "Advanced"] as const;
-const ORDER_CONTROLS = [
-	["Margin", "Cross"],
-	["Leverage", NAME_PLACEHOLDER],
-	["Account", "Account"],
-] as const;
-const ORDER_OPTIONS = ["Reduce Only", "TP/SL"] as const;
-const ORDER_SUMMARY_ROWS = ["Liq. Price", "Order Value", "Margin Req.", "Est. Slippage", "Slippage", "Fees"] as const;
-const ACCOUNT_TABS = [
-	"Balances",
-	"Positions",
-	"Open Orders",
-	"TWAP",
-	"Trade History",
-	"Funding Payments",
-	"Order History",
-] as const;
-const ACCOUNT_SUMMARY_ROWS = ["Account Margin Ratio", "Portfolio Value", "Cross Account Leverage"] as const;
+export interface PanelFrameLabels {
+	marketStats: readonly string[];
+	orderBook: string;
+	trades: string;
+	price: string;
+	size: string;
+	total: string;
+	spread: string;
+	orderControls: readonly (readonly [label: string, value: string])[];
+	orderTypeTabs: readonly string[];
+	long: string;
+	short: string;
+	available: string;
+	orderOptions: readonly string[];
+	connectWallet: string;
+	orderSummaryRows: readonly string[];
+	accountTabs: readonly string[];
+	deposit: string;
+	withdraw: string;
+	accountSummary: string;
+	accountSummaryRows: readonly string[];
+}
+
+export const DEFAULT_PANEL_FRAME_LABELS: PanelFrameLabels = {
+	marketStats: ["Mark", "ORACLE", "24h Change", "24H VOL", "OPEN INT", "FUNDING"],
+	orderBook: "Order Book",
+	trades: "Trades",
+	price: "Price",
+	size: "Size",
+	total: "Total",
+	spread: "Spread",
+	orderControls: [
+		["Margin", "Cross"],
+		["Leverage", NAME_PLACEHOLDER],
+		["Account", "Account"],
+	],
+	orderTypeTabs: ["Market", "Limit", "Advanced"],
+	long: "Long",
+	short: "Short",
+	available: "Available",
+	orderOptions: ["Reduce Only", "TP/SL"],
+	connectWallet: "Connect Wallet",
+	orderSummaryRows: ["Liq. Price", "Order Value", "Margin Req.", "Est. Slippage", "Slippage", "Fees"],
+	accountTabs: ["Balances", "Positions", "Open Orders", "TWAP", "Trade History", "Funding Payments", "Order History"],
+	deposit: "Deposit",
+	withdraw: "Withdraw",
+	accountSummary: "Account Summary",
+	accountSummaryRows: ["Account Margin Ratio", "Portfolio Value", "Cross Account Leverage"],
+};
 const FOOTER_LINKS = ["Docs", "Support", "Terms", "Privacy Policy", "Risk Disclosure"] as const;
 const MOBILE_TABS = [
 	{ label: "Markets", icon: ChartBarIcon },
@@ -86,23 +116,27 @@ export function AppShellSkeleton() {
 	);
 }
 
-export function renderDesktopPanelFrame(panelId: DesktopGridLoadingPanelId) {
+export function renderDesktopPanelFrame(panelId: DesktopGridLoadingPanelId, labels = DEFAULT_PANEL_FRAME_LABELS) {
 	switch (panelId) {
 		case "favoriteCoins":
 			return <FavoritesFrame />;
 		case "coinInfo":
-			return <MarketHeaderFrame />;
+			return <MarketHeaderFrame labels={labels} />;
 		case "chart":
 			return <ChartFrame />;
 		case "marketData":
-			return <OrderBookFrame />;
+			return <OrderBookFrame labels={labels} />;
 		case "tradingInterface":
-			return <TradePanelFrame />;
+			return <TradePanelFrame labels={labels} />;
 		case "accountTable":
-			return <AccountTableFrame />;
+			return <AccountTableFrame labels={labels} />;
 		case "accountInfo":
-			return <AccountInfoFrame />;
+			return <AccountInfoFrame labels={labels} />;
 	}
+}
+
+interface FrameProps {
+	labels: PanelFrameLabels;
 }
 
 function DesktopHeaderFrame() {
@@ -183,7 +217,7 @@ function FavoritesFrame() {
 	);
 }
 
-function MarketHeaderFrame() {
+function MarketHeaderFrame({ labels }: FrameProps) {
 	return (
 		<div className="flex h-full min-w-0 items-center gap-6 overflow-hidden px-4">
 			<div className="flex shrink-0 items-center gap-2">
@@ -191,7 +225,7 @@ function MarketHeaderFrame() {
 				<span className="text-sm font-semibold text-fg">{NAME_PLACEHOLDER}</span>
 				<CaretDownIcon className="size-3 text-fg-muted" />
 			</div>
-			{MARKET_STATS.map((label) => (
+			{labels.marketStats.map((label) => (
 				<div key={label} className="flex shrink-0 flex-col gap-0.5">
 					<span className="text-2xs tracking-wide text-fg-muted">{label}</span>
 					<span className="text-xs font-medium tabular-nums text-fg">{VALUE_PLACEHOLDER}</span>
@@ -209,30 +243,34 @@ function ChartFrame() {
 	);
 }
 
-function OrderBookFrame() {
+function OrderBookFrame({ labels }: FrameProps) {
 	return (
 		<div className="flex h-full flex-col">
 			<div className="flex border-b border-stroke-weak text-xs font-medium">
 				<span className="flex flex-1 items-center justify-center gap-1.5 border-b-2 border-fg px-2 py-2 text-fg">
 					<BookBookmarkIcon className="size-3.5 shrink-0" />
-					Order Book
+					{labels.orderBook}
 				</span>
 				<span className="flex flex-1 items-center justify-center gap-1.5 px-2 py-2 text-fg-muted">
 					<ListDashesIcon className="size-3.5 shrink-0" />
-					Trades
+					{labels.trades}
 				</span>
 			</div>
 			<div className="grid grid-cols-3 gap-1 border-b border-stroke-weak px-2 py-1.5 text-xs text-fg-muted">
 				<span className="flex items-center gap-1">
-					Price
+					{labels.price}
 					<CaretDownIcon className="size-3" />
 				</span>
-				<span className="text-right">Size ({NAME_PLACEHOLDER})</span>
-				<span className="text-right">Total ({NAME_PLACEHOLDER})</span>
+				<span className="text-right">
+					{labels.size} ({NAME_PLACEHOLDER})
+				</span>
+				<span className="text-right">
+					{labels.total} ({NAME_PLACEHOLDER})
+				</span>
 			</div>
 			<div className="flex-1" />
 			<div className="flex items-center justify-between bg-alternate px-2 py-1 text-xs text-fg-muted">
-				<span>Spread</span>
+				<span>{labels.spread}</span>
 				<span>{NAME_PLACEHOLDER}</span>
 			</div>
 			<div className="flex-1" />
@@ -240,11 +278,11 @@ function OrderBookFrame() {
 	);
 }
 
-function TradePanelFrame() {
+function TradePanelFrame({ labels }: FrameProps) {
 	return (
 		<div className="flex h-full flex-col gap-3 overflow-hidden p-3">
 			<div className="grid grid-cols-3 gap-1.5">
-				{ORDER_CONTROLS.map(([label, value]) => (
+				{labels.orderControls.map(([label, value]) => (
 					<div key={label} className="rounded-8 border border-trading-panel-stroke-card px-2 py-1.5">
 						<div className="text-3xs text-trading-panel-muted">{label}</div>
 						<div className="flex items-center justify-between gap-1 text-xs font-medium text-fg">
@@ -255,7 +293,7 @@ function TradePanelFrame() {
 				))}
 			</div>
 			<div className="flex border-b border-stroke-weak text-xs font-medium">
-				{ORDER_TYPE_TABS.map((label, index) => (
+				{labels.orderTypeTabs.map((label, index) => (
 					<span
 						key={label}
 						className={cn("flex-1 py-2 text-center", index === 0 ? "border-b-2 border-fg text-fg" : "text-fg-muted")}
@@ -265,15 +303,17 @@ function TradePanelFrame() {
 				))}
 			</div>
 			<div className="grid grid-cols-2 gap-1 rounded-8 border border-trading-panel-stroke-card p-1 text-xs font-semibold">
-				<span className="rounded-6 border border-stroke-success-strong py-1.5 text-center text-success">Long</span>
-				<span className="py-1.5 text-center text-fg-muted">Short</span>
+				<span className="rounded-6 border border-stroke-success-strong py-1.5 text-center text-success">
+					{labels.long}
+				</span>
+				<span className="py-1.5 text-center text-fg-muted">{labels.short}</span>
 			</div>
 			<div className={SUMMARY_ROW_CLASS}>
-				<span className="text-trading-panel-muted">Available</span>
+				<span className="text-trading-panel-muted">{labels.available}</span>
 				<span className="text-fg">{VALUE_PLACEHOLDER}</span>
 			</div>
 			<div className="flex items-center justify-between rounded-8 border border-trading-panel-stroke-input px-3 py-2 text-xs">
-				<span className="text-trading-panel-muted">Size</span>
+				<span className="text-trading-panel-muted">{labels.size}</span>
 				<span className="flex items-center gap-1 text-fg-muted">
 					0.00
 					<span className="font-medium text-fg">{NAME_PLACEHOLDER}</span>
@@ -285,7 +325,7 @@ function TradePanelFrame() {
 				<span className="rounded-6 border border-trading-panel-stroke-input px-2 py-1 text-xs text-fg-muted">0 %</span>
 			</div>
 			<div className="space-y-2 text-xs text-trading-panel-muted">
-				{ORDER_OPTIONS.map((label) => (
+				{labels.orderOptions.map((label) => (
 					<div key={label} className="flex items-center gap-2">
 						<span className="size-3.5 rounded-6 border border-trading-panel-stroke-control" />
 						{label}
@@ -299,10 +339,10 @@ function TradePanelFrame() {
 					"h-10 min-h-10 bg-market-close-control text-2sm text-market-close-on-control",
 				)}
 			>
-				Connect Wallet
+				{labels.connectWallet}
 			</span>
 			<div className="space-y-1.5">
-				{ORDER_SUMMARY_ROWS.map((label) => (
+				{labels.orderSummaryRows.map((label) => (
 					<div key={label} className={SUMMARY_ROW_CLASS}>
 						<span className="text-trading-panel-muted">{label}</span>
 						<span className="text-fg">{VALUE_PLACEHOLDER}</span>
@@ -313,11 +353,11 @@ function TradePanelFrame() {
 	);
 }
 
-function AccountTableFrame() {
+function AccountTableFrame({ labels }: FrameProps) {
 	return (
 		<div className="flex h-full flex-col">
 			<div className="flex gap-1 overflow-hidden border-b border-stroke-weak px-3">
-				{ACCOUNT_TABS.map((label, index) => (
+				{labels.accountTabs.map((label, index) => (
 					<span
 						key={label}
 						className={cn(UNDERLINE_TAB_CLASS, index === 1 ? "border-b-2 border-fg text-fg" : "text-fg-muted")}
@@ -330,18 +370,18 @@ function AccountTableFrame() {
 	);
 }
 
-function AccountInfoFrame() {
+function AccountInfoFrame({ labels }: FrameProps) {
 	return (
 		<div className="flex h-full flex-col gap-3 overflow-hidden p-3">
 			<div className="grid grid-cols-2 gap-2 text-xs font-semibold">
-				<span className="rounded-8 bg-fill-weak py-2 text-center text-fg">Deposit</span>
+				<span className="rounded-8 bg-fill-weak py-2 text-center text-fg">{labels.deposit}</span>
 				<span className="rounded-8 border border-trading-panel-stroke-card py-2 text-center text-fg-muted">
-					Withdraw
+					{labels.withdraw}
 				</span>
 			</div>
-			<span className="text-2sm font-semibold text-fg">Account Summary</span>
+			<span className="text-2sm font-semibold text-fg">{labels.accountSummary}</span>
 			<div className="space-y-1.5">
-				{ACCOUNT_SUMMARY_ROWS.map((label) => (
+				{labels.accountSummaryRows.map((label) => (
 					<div key={label} className={SUMMARY_ROW_CLASS}>
 						<span className="text-fg-muted">{label}</span>
 						<span className="text-fg">{VALUE_PLACEHOLDER}</span>
@@ -427,7 +467,7 @@ export function MobileShellSkeleton() {
 				</div>
 				<div className="flex min-h-36 flex-[2] flex-col bg-surface">
 					<div className="flex gap-1 overflow-hidden border-b border-stroke-weak px-2">
-						{ACCOUNT_TABS.slice(0, 4).map((label, index) => (
+						{DEFAULT_PANEL_FRAME_LABELS.accountTabs.slice(0, 4).map((label, index) => (
 							<span
 								key={label}
 								className={cn(UNDERLINE_TAB_CLASS, index === 1 ? "border-b-2 border-fg text-fg" : "text-fg-muted")}

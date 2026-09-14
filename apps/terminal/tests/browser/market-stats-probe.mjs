@@ -9,6 +9,7 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
 page.on("console", (message) => { if (message.type() === "error") errors.push(message.text().slice(0, 160)); });
 page.on("pageerror", (error) => errors.push(`pageerror: ${String(error).slice(0, 160)}`));
+page.on("response", (response) => { if (response.status() >= 400) errors.push(`${response.status()} ${response.request().method()} ${response.url().slice(0, 140)}`); });
 await page.goto(`${origin}${path}`, { waitUntil: "load", timeout: 60000 });
 await page.waitForTimeout(6000);
 const snapshot = await page.evaluate(() => {

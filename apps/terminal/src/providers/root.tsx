@@ -6,10 +6,10 @@ import { useSyncExternalStore } from "react";
 import "@/lib/i18n";
 import { getQueryRetryDelayMs, shouldRetryQuery } from "@/lib/query-retry";
 import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
+import { clientRootLoader } from "@/providers/client-root-loader";
 import { ClientRuntimeProvider, getPresentedRoutePathname, isDocumentRoutePath } from "@/providers/client-runtime";
 
 const isServer = typeof document === "undefined";
-type ClientRootProviderComponent = typeof import("@/providers/client-root").ClientRootProvider;
 // Start fetching the client-only wallet runtime as soon as the root module evaluates. The document
 // shell hydrates without waiting for it, while this eager promise avoids introducing a second network
 // waterfall after hydration. Document-only entries keep the wallet code deferred, but a later client
@@ -17,39 +17,8 @@ type ClientRootProviderComponent = typeof import("@/providers/client-root").Clie
 // plain store instead of React.lazy: a Suspense boundary that showed its fallback during hydration
 // makes React throttle the reveal of resolved content by 300ms, which cost the first real render
 // that much on every cold load.
-let clientRootProviderModule: Promise<typeof import("@/providers/client-root")> | undefined;
-let clientRootProvider: ClientRootProviderComponent | null = null;
-let clientRootProviderError: unknown;
-const clientRootProviderListeners = new Set<() => void>();
-function loadClientRootProvider() {
-	clientRootProviderModule ??= import("@/providers/client-root").then(
-		(module) => {
-			clientRootProvider = module.ClientRootProvider;
-			for (const listener of clientRootProviderListeners) listener();
-			return module;
-		},
-		(error: unknown) => {
-			clientRootProviderError = error;
-			for (const listener of clientRootProviderListeners) listener();
-			throw error;
-		},
-	);
-	return clientRootProviderModule;
-}
-function subscribeClientRootProvider(listener: () => void) {
-	clientRootProviderListeners.add(listener);
-	return () => {
-		clientRootProviderListeners.delete(listener);
-	};
-}
-function getClientRootProvider() {
-	return clientRootProvider;
-}
-function getServerClientRootProvider() {
-	return null;
-}
 if (!isServer && !isDocumentRoutePath(window.location.pathname)) {
-	loadClientRootProvider().catch(() => {});
+	clientRootLoader.load().catch(() => {});
 }
 
 export function getRootProviderContext() {
@@ -83,19 +52,19 @@ export function ClientRuntimeGate({ children, fallback }: { children: React.Reac
 	const hydrated = useHydrated();
 	const pathname = useRouterState({ select: getPresentedRoutePathname });
 	const queryClient = useQueryClient();
-	const ClientRootProvider = useSyncExternalStore(
-		subscribeClientRootProvider,
-		getClientRootProvider,
-		getServerClientRootProvider,
+	const { Provider: ClientRootProvider, error } = useSyncExternalStore(
+		clientRootLoader.subscribe,
+		clientRootLoader.getState,
+		clientRootLoader.getServerState,
 	);
 
 	if (isDocumentRoutePath(pathname)) {
 		return <>{children}</>;
 	}
 	if (isServer || !hydrated) return <>{fallback}</>;
-	if (clientRootProviderError) throw clientRootProviderError;
+	if (error) throw error;
 	if (!ClientRootProvider) {
-		loadClientRootProvider().catch(() => {});
+		clientRootLoader.load().catch(() => {});
 		return <>{fallback}</>;
 	}
 

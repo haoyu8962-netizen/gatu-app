@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect, useLayoutEffect } from "react";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { TabTitleSync } from "@/hooks/use-document-title";
-import { MOBILE_MEDIA_QUERY, useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import {
 	findCanonicalMarketForRoute,
@@ -17,7 +17,7 @@ import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { useMarketActions, useSelectedMarket } from "@/stores/use-market-store";
 import { useOrderEntryActions, useOrderEntryMarketIdentity } from "@/stores/use-order-entry-store";
 import { AccountActivityFeedOwner } from "./account-activity-feed-owner";
-import { DesktopTerminalSurface, preloadDesktopTerminalSurface } from "./layout/desktop-terminal-surface";
+import { DesktopTerminalSurface } from "./layout/desktop-terminal-surface";
 import { TerminalBootError } from "./layout/terminal-boot-error";
 import { MobileLoadingFallback } from "./mobile/mobile-loading-fallback";
 import { MobileTerminal } from "./mobile/mobile-terminal";
@@ -26,18 +26,8 @@ import { OrderToast } from "./tradebox/order-toast";
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 
 /** Resolves every lazy piece of the first terminal render for the current surface, so none suspends at boot. */
-export function preloadTradeTerminalSurface(): void {
+export function preloadGlobalModals(): void {
 	void GlobalModals.preload?.();
-	if (matchesMobileViewport()) return;
-	preloadDesktopTerminalSurface();
-}
-
-function matchesMobileViewport(): boolean {
-	return (
-		typeof window !== "undefined" &&
-		typeof window.matchMedia === "function" &&
-		window.matchMedia(MOBILE_MEDIA_QUERY).matches
-	);
 }
 
 export function TradeTerminalPage() {

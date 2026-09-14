@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { isDocumentRoutePath } from "@/providers/client-runtime";
 
+const clientRootLoaderSource = readFileSync(resolve(process.cwd(), "src/providers/client-root-loader.ts"), "utf8");
 const rootProviderSource = readFileSync(resolve(process.cwd(), "src/providers/root.tsx"), "utf8");
 const clientRootProviderSource = readFileSync(resolve(process.cwd(), "src/providers/client-root.tsx"), "utf8");
 const rootRouteSource = readFileSync(resolve(process.cwd(), "src/routes/__root.tsx"), "utf8");
@@ -16,9 +17,9 @@ describe("root provider startup split", () => {
 	});
 
 	it("keeps wallet runtimes out of the statically imported root provider", () => {
-		expect(rootProviderSource).toContain('import("@/providers/client-root")');
-		expect(rootProviderSource).toContain("let clientRootProviderModule");
-		expect(rootProviderSource).toContain("loadClientRootProvider().catch(() => {});");
+		expect(clientRootLoaderSource).toContain('import("@/providers/client-root")');
+		expect(clientRootLoaderSource).toContain("publish({ Provider: null, error: error ?? new Error(");
+		expect(rootProviderSource).toContain("clientRootLoader.load().catch(() => {});");
 		expect(rootProviderSource).toContain("!isDocumentRoutePath(window.location.pathname)");
 		expect(rootProviderSource).toContain("useSyncExternalStore(");
 		expect(rootProviderSource).not.toContain("lazy(() =>");
@@ -49,7 +50,8 @@ describe("root provider startup split", () => {
 		);
 		expect(rootProviderSource).not.toContain("fallback={children}");
 		expect(rootProviderSource).toContain("if (isServer || !hydrated) return <>{fallback}</>;");
-		expect(rootProviderSource).toContain("if (clientRootProviderError) throw clientRootProviderError;");
+		expect(rootProviderSource).toContain("if (error) throw error;");
+		expect(rootProviderSource).toContain("clientRootLoader.getServerState,");
 		expect(rootRouteSource).toContain("<ClientRuntimeGate fallback={fallback}>");
 		expect(rootRouteSource).not.toContain("<ClientOnly");
 	});

@@ -735,7 +735,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			if (chaos.messageFrozenUntil > receivedAt) return;
 			const runtime = subscriptionRuntime.get(key);
 			if (runtime) runtime.lastMessageAt = receivedAt;
-			watchdog.markFresh(key);
+			watchdog.markFresh(key, receivedAt);
 			if (getVisibilityState() === "hidden" && shouldPauseKey(key)) {
 				visibilityBuffer.set(key, { data, receivedAt });
 				return;

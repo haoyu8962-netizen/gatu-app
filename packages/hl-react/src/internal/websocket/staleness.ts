@@ -10,8 +10,8 @@ type KeyEntry = {
 export type StalenessWatchdog = {
 	register: (key: string, thresholdMs: number) => void;
 	unregister: (key: string) => void;
-	arm: (key: string) => void;
-	markFresh: (key: string) => void;
+	arm: (key: string, at?: number) => void;
+	markFresh: (key: string, at?: number) => void;
 	isStale: (key: string) => boolean;
 	getLastMessageAt: (key: string) => number | undefined;
 	subscribe: (key: string, listener: StalenessListener) => () => void;
@@ -65,21 +65,21 @@ export function createStalenessWatchdog(checkIntervalMs: number): StalenessWatch
 		if (keys.size === 0) stopInterval();
 	}
 
-	function arm(key: string) {
+	function arm(key: string, at = Date.now()) {
 		const entry = keys.get(key);
 		if (!entry) return;
-		entry.lastMessageAt = Date.now();
+		entry.lastMessageAt = at;
 		if (intervalId === undefined && keys.size > 0) {
 			startInterval();
 		}
 		entry.isStale = false;
 	}
 
-	function markFresh(key: string) {
+	function markFresh(key: string, at = Date.now()) {
 		const entry = keys.get(key);
 		if (!entry) return;
 		const wasStale = entry.isStale;
-		arm(key);
+		arm(key, at);
 		if (wasStale) {
 			for (const listener of entry.listeners) {
 				listener(false);

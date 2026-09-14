@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { useStore } from "zustand";
 import { OversizedWebSocketPayloadError } from "../../errors";
 import { createThrottledUpdater } from "../../internal/websocket/batch-updater";
+import { takeFrameReceivedAt } from "../../internal/websocket/frame-receipt";
 import { isPayloadOversized } from "../../internal/websocket/payload-guard";
 import {
 	getPayloadLimitBytesForSubscriptionKey,
@@ -98,7 +99,7 @@ export function useSub<TData>(
 					};
 					const promise = subscribeRef.current((data) => {
 						if (!isCurrentGeneration()) return;
-						const receivedAt = Date.now();
+						const receivedAt = takeFrameReceivedAt(data) ?? Date.now();
 						if (shouldDropPayload(data)) {
 							if (shouldDiscardQueuedDataOnError) updater.destroy();
 							return;
@@ -147,7 +148,7 @@ export function useSub<TData>(
 				return subscribeRef
 					.current((data) => {
 						if (!isCurrentGeneration()) return;
-						const receivedAt = Date.now();
+						const receivedAt = takeFrameReceivedAt(data) ?? Date.now();
 						if (shouldDropPayload(data)) return;
 						state.setSubscriptionData(key, data, receivedAt);
 					}, guardedFailureOptions)

@@ -4,6 +4,8 @@ import {
 	type CompactSpotAssetCtxsEvent,
 	canUseL2Decompression,
 	type PerpMarket,
+	parseCompactPerpAssetCtxsView,
+	parseCompactSpotAssetCtxsView,
 	type SpotMarket,
 	useHyperliquidTransport,
 	useSubscription,
@@ -17,12 +19,12 @@ import {
 	resolveActiveMarketPrice,
 	resolveFastMarketPrice,
 } from "@/domain/trade/market-price";
-import { reportClientError } from "@/lib/error-reporting/client";
 import { loadLastMark, saveLastMark } from "@/lib/last-mark-cache";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useSelectedMarket } from "@/stores/use-market-store";
 import type { DexAssetCtx, SpotAssetCtx, SpotAssetCtxs } from "@/types/hyperliquid";
 import { getMarketApiCoin, getSpotMarketApiCoin } from "../market-identity";
+import { disableCompactMarketCtxs, isCompactMarketCtxsDisabled } from "../markets/market-ctxs-fallback";
 import { useMarkets } from "../markets/use-markets";
 import { useMarketsInfoContext } from "./MarketsInfoProvider";
 
@@ -66,7 +68,6 @@ interface StatsCache {
 }
 
 const COMPACT_MARKET_CTXS_SUPPORTED = canUseL2Decompression();
-let compactMarketCtxsFallbackReported = false;
 
 export function createMarketLookup(markets: readonly UnifiedMarketInfo[]) {
 	const byName = new Map<string, UnifiedMarketInfo>();
@@ -91,32 +92,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isAllDexsAssetCtxs(value: unknown): value is CompactPerpAssetCtxsEvent {
-	return (
-		Array.isArray(value) &&
-		value.every(
-			(entry) =>
-				Array.isArray(entry) &&
-				entry.length === 2 &&
-				typeof entry[0] === "string" &&
-				Array.isArray(entry[1]) &&
-				entry[1].every(isRecord),
-		)
-	);
+function readCachedPerpCtxs(value: unknown): CompactPerpAssetCtxsEvent | undefined {
+	if (value === undefined) return undefined;
+	try {
+		return parseCompactPerpAssetCtxsView(value);
+	} catch {
+		return undefined;
+	}
 }
 
-function isSpotAssetCtxs(value: unknown): value is CompactSpotAssetCtxsEvent {
-	return isRecord(value) && Object.values(value).every(isRecord);
+function readCachedSpotCtxs(value: unknown): CompactSpotAssetCtxsEvent | undefined {
+	if (value === undefined) return undefined;
+	try {
+		return parseCompactSpotAssetCtxsView(value);
+	} catch {
+		return undefined;
+	}
 }
 
 function keySpotCtxsByCoin(spotCtxs: SpotAssetCtxs): CompactSpotAssetCtxsEvent {
 	return Object.fromEntries(spotCtxs.map((ctx) => [ctx.coin, ctx]));
-}
-
-function reportCompactMarketCtxsFallback(error: unknown) {
-	if (compactMarketCtxsFallbackReported) return;
-	compactMarketCtxsFallbackReported = true;
-	reportClientError(error, { kind: "market_ctxs_compact_fallback" });
 }
 
 function removeStatsCache() {
@@ -138,14 +133,18 @@ function loadStatsCache(env: "Mainnet" | "Testnet"): StatsCache | null {
 			typeof data.savedAt !== "number" ||
 			!Number.isFinite(data.savedAt) ||
 			data.savedAt > now + 60_000 ||
-			now - data.savedAt > MARKETS_STATS_TTL_MS ||
-			(data.allDexsCtxs !== undefined && !isAllDexsAssetCtxs(data.allDexsCtxs)) ||
-			(data.spotCtxs !== undefined && !isSpotAssetCtxs(data.spotCtxs))
+			now - data.savedAt > MARKETS_STATS_TTL_MS
 		) {
 			removeStatsCache();
 			return null;
 		}
-		return data as unknown as StatsCache;
+		const allDexsCtxs = readCachedPerpCtxs(data.allDexsCtxs);
+		const spotCtxs = readCachedSpotCtxs(data.spotCtxs);
+		if ((data.allDexsCtxs !== undefined && !allDexsCtxs) || (data.spotCtxs !== undefined && !spotCtxs)) {
+			removeStatsCache();
+			return null;
+		}
+		return { env, allDexsCtxs, spotCtxs, savedAt: data.savedAt };
 	} catch {
 		removeStatsCache();
 		return null;
@@ -214,7 +213,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 	const fastPriceSubscriptionEnabled = perpSubscriptionEnabled || spotSubscriptionEnabled;
 
 	const markets = useMarkets();
-	const [compactCtxsFailed, setCompactCtxsFailed] = useState(false);
+	const [compactCtxsFailed, setCompactCtxsFailed] = useState(isCompactMarketCtxsDisabled);
 	const useCompactCtxs = COMPACT_MARKET_CTXS_SUPPORTED && !compactCtxsFailed;
 	const { data: compactPerpCtxs, error: compactPerpError } = useSubscription("pac", undefined, {
 		enabled: perpSubscriptionEnabled && useCompactCtxs,
@@ -245,7 +244,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 	useEffect(() => {
 		const error = compactPerpError ?? compactSpotError;
 		if (error === undefined || error === null) return;
-		reportCompactMarketCtxsFallback(error);
+		disableCompactMarketCtxs(error);
 		setCompactCtxsFailed(true);
 	}, [compactPerpError, compactSpotError]);
 

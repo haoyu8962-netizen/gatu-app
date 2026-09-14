@@ -10,13 +10,20 @@ export type CompactPerpAssetCtx = Pick<
 	DexAssetCtx,
 	"funding" | "openInterest" | "prevDayPx" | "dayNtlVlm" | "oraclePx" | "markPx" | "midPx" | "dayBaseVlm"
 >;
-export type CompactPerpAssetCtxsEvent = [dex: string, ctxs: CompactPerpAssetCtx[]][];
 export type CompactSpotAssetCtx = Pick<
 	SpotAssetCtx,
 	"prevDayPx" | "dayNtlVlm" | "markPx" | "midPx" | "dayBaseVlm" | "circulatingSupply"
 >;
+/** One decoded frame: the first frame after subscribing is complete, later frames carry only changed fields. */
+export type CompactPerpAssetCtxsDelta = [dex: string, ctxs: Partial<CompactPerpAssetCtx>[]][];
+export type CompactSpotAssetCtxsDelta = Record<string, Partial<CompactSpotAssetCtx>>;
+/** The accumulated state handed to consumers; an entry stays undefined until every field arrived. */
+export type CompactPerpAssetCtxsEvent = [dex: string, ctxs: (CompactPerpAssetCtx | undefined)[]][];
 export type CompactSpotAssetCtxsEvent = Record<string, CompactSpotAssetCtx>;
 export type CompactAssetCtxsChannel = "pac" | "sac";
+export type CompactAssetCtxsDelta<C extends CompactAssetCtxsChannel> = C extends "pac"
+	? CompactPerpAssetCtxsDelta
+	: CompactSpotAssetCtxsDelta;
 export type CompactAssetCtxsEvent<C extends CompactAssetCtxsChannel> = C extends "pac"
 	? CompactPerpAssetCtxsEvent
 	: CompactSpotAssetCtxsEvent;
@@ -26,35 +33,125 @@ export const COMPACT_ASSET_CTXS_CODEC_LIMITS = {
 	maximumBase64Characters: 512 * 1024,
 	maximumDecompressedBytes: 4 * 1024 * 1024,
 } as const;
+export const COMPACT_ASSET_CTXS_MAX_PENDING_FRAMES = 64;
+
+const PERP_FIELDS = [
+	"funding",
+	"openInterest",
+	"prevDayPx",
+	"dayNtlVlm",
+	"oraclePx",
+	"markPx",
+	"midPx",
+	"dayBaseVlm",
+] as const;
+const SPOT_FIELDS = ["prevDayPx", "dayNtlVlm", "markPx", "midPx", "dayBaseVlm", "circulatingSupply"] as const;
+const DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parsePerpAssetCtxs(value: unknown): CompactPerpAssetCtxsEvent {
-	const valid =
-		Array.isArray(value) &&
-		value.every(
-			(entry) =>
-				Array.isArray(entry) &&
-				entry.length === 2 &&
-				typeof entry[0] === "string" &&
-				Array.isArray(entry[1]) &&
-				entry[1].every(isRecord),
-		);
-	if (!valid) throw new L2BookStreamError("invalid_frame");
-	return value as CompactPerpAssetCtxsEvent;
+function isDecimalString(value: unknown): value is string {
+	return typeof value === "string" && DECIMAL_PATTERN.test(value);
 }
 
-function parseSpotAssetCtxs(value: unknown): CompactSpotAssetCtxsEvent {
-	if (!isRecord(value) || !Object.values(value).every(isRecord)) throw new L2BookStreamError("invalid_frame");
-	return value as CompactSpotAssetCtxsEvent;
+function isFieldValue(field: string, value: unknown): boolean {
+	return field === "midPx" ? value === null || isDecimalString(value) : isDecimalString(value);
+}
+
+function readDelta<T extends object>(value: unknown, fields: readonly (keyof T & string)[]): Partial<T> | undefined {
+	if (!isRecord(value)) return undefined;
+	const delta: Record<string, unknown> = {};
+	for (const field of fields) {
+		if (!(field in value)) continue;
+		if (!isFieldValue(field, value[field])) return undefined;
+		delta[field] = value[field];
+	}
+	return delta as Partial<T>;
+}
+
+function isComplete<T extends object>(ctx: Partial<T>, fields: readonly (keyof T & string)[]): ctx is T {
+	return fields.every((field) => field in ctx);
+}
+
+export function isCompletePerpAssetCtx(ctx: Partial<CompactPerpAssetCtx>): ctx is CompactPerpAssetCtx {
+	return isComplete(ctx, PERP_FIELDS);
+}
+
+export function isCompleteSpotAssetCtx(ctx: Partial<CompactSpotAssetCtx>): ctx is CompactSpotAssetCtx {
+	return isComplete(ctx, SPOT_FIELDS);
+}
+
+/**
+ * Perp contexts are addressed by dex order and array index, so one malformed entry invalidates the
+ * whole frame; consumers fall back to the plain channel instead of reading shifted values.
+ */
+export function parseCompactPerpAssetCtxsDelta(value: unknown): CompactPerpAssetCtxsDelta {
+	if (!Array.isArray(value)) throw new L2BookStreamError("invalid_frame");
+	return value.map((entry) => {
+		if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string" || !Array.isArray(entry[1])) {
+			throw new L2BookStreamError("invalid_frame");
+		}
+		const ctxs = entry[1].map((ctx) => readDelta<CompactPerpAssetCtx>(ctx, PERP_FIELDS));
+		if (ctxs.some((ctx) => ctx === undefined)) throw new L2BookStreamError("invalid_frame");
+		return [entry[0], ctxs as Partial<CompactPerpAssetCtx>[]];
+	});
+}
+
+/**
+ * Spot contexts are addressed by market name, so a malformed entry only loses that market; a frame
+ * with no usable entry at all is treated as a format change.
+ */
+export function parseCompactSpotAssetCtxsDelta(value: unknown): CompactSpotAssetCtxsDelta {
+	if (!isRecord(value)) throw new L2BookStreamError("invalid_frame");
+	const delta: CompactSpotAssetCtxsDelta = {};
+	let usable = 0;
+	for (const [coin, entry] of Object.entries(value)) {
+		const ctx = readDelta<CompactSpotAssetCtx>(entry, SPOT_FIELDS);
+		if (!ctx) continue;
+		delta[coin] = ctx;
+		usable += 1;
+	}
+	if (usable === 0) throw new L2BookStreamError("invalid_frame");
+	return delta;
+}
+
+/** Validates a stored accumulated view (session cache); null entries mark contexts still incomplete. */
+export function parseCompactPerpAssetCtxsView(value: unknown): CompactPerpAssetCtxsEvent {
+	if (!Array.isArray(value)) throw new L2BookStreamError("invalid_frame");
+	return value.map((entry) => {
+		if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string" || !Array.isArray(entry[1])) {
+			throw new L2BookStreamError("invalid_frame");
+		}
+		const ctxs = entry[1].map((ctx) => {
+			if (ctx === null || ctx === undefined) return undefined;
+			const read = readDelta<CompactPerpAssetCtx>(ctx, PERP_FIELDS);
+			if (!read || !isCompletePerpAssetCtx(read)) throw new L2BookStreamError("invalid_frame");
+			return read;
+		});
+		return [entry[0], ctxs];
+	});
+}
+
+export function parseCompactSpotAssetCtxsView(value: unknown): CompactSpotAssetCtxsEvent {
+	if (!isRecord(value)) throw new L2BookStreamError("invalid_frame");
+	const view: CompactSpotAssetCtxsEvent = {};
+	let usable = 0;
+	for (const [coin, entry] of Object.entries(value)) {
+		const ctx = readDelta<CompactSpotAssetCtx>(entry, SPOT_FIELDS);
+		if (!ctx || !isCompleteSpotAssetCtx(ctx)) continue;
+		view[coin] = ctx;
+		usable += 1;
+	}
+	if (usable === 0) throw new L2BookStreamError("invalid_frame");
+	return view;
 }
 
 export async function decodeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 	channel: C,
 	payload: unknown,
-): Promise<CompactAssetCtxsEvent<C>> {
+): Promise<CompactAssetCtxsDelta<C>> {
 	if (typeof payload !== "string") throw new L2BookStreamError("invalid_frame");
 	const text = await inflateL2CompressedPayload(payload, COMPACT_ASSET_CTXS_CODEC_LIMITS);
 	let parsed: unknown;
@@ -63,14 +160,79 @@ export async function decodeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 	} catch (error) {
 		throw new L2BookStreamError("invalid_json", { cause: error });
 	}
-	return (channel === "pac" ? parsePerpAssetCtxs(parsed) : parseSpotAssetCtxs(parsed)) as CompactAssetCtxsEvent<C>;
+	return (
+		channel === "pac" ? parseCompactPerpAssetCtxsDelta(parsed) : parseCompactSpotAssetCtxsDelta(parsed)
+	) as CompactAssetCtxsDelta<C>;
+}
+
+export interface CompactAssetCtxsAccumulator<C extends CompactAssetCtxsChannel> {
+	add: (delta: CompactAssetCtxsDelta<C>) => CompactAssetCtxsEvent<C>;
 }
 
 /**
- * `pac` and `sac` carry every perp or spot market context as one base64 + raw DEFLATE frame, a
- * fraction of the plain `allDexsAssetCtxs`/`spotAssetCtxs` bytes. Frames decode sequentially so the
- * listener observes arrival order; the first frame that fails to decode ends the subscription and
- * reports through `onError`, like a transport failure.
+ * The first frame after subscribing must carry every field of every entry; later frames merge
+ * their changed fields into that state. Each `add` returns a fresh view for consumers.
+ */
+export function createCompactPerpAssetCtxsAccumulator(): CompactAssetCtxsAccumulator<"pac"> {
+	let state: Map<string, Partial<CompactPerpAssetCtx>[]> | undefined;
+	return {
+		add: (delta) => {
+			if (!state) {
+				if (!delta.every(([, ctxs]) => ctxs.every(isCompletePerpAssetCtx)))
+					throw new L2BookStreamError("invalid_frame");
+				state = new Map(delta.map(([dex, ctxs]) => [dex, ctxs]));
+			} else {
+				for (const [dex, ctxs] of delta) {
+					const previous = state.get(dex) ?? [];
+					const merged: Partial<CompactPerpAssetCtx>[] = [];
+					for (let index = 0; index < Math.max(previous.length, ctxs.length); index += 1) {
+						merged[index] = { ...previous[index], ...ctxs[index] };
+					}
+					state.set(dex, merged);
+				}
+			}
+			return [...state].map(([dex, ctxs]) => [dex, ctxs.map((ctx) => (isCompletePerpAssetCtx(ctx) ? ctx : undefined))]);
+		},
+	};
+}
+
+export function createCompactSpotAssetCtxsAccumulator(): CompactAssetCtxsAccumulator<"sac"> {
+	let state: Map<string, Partial<CompactSpotAssetCtx>> | undefined;
+	return {
+		add: (delta) => {
+			if (!state) {
+				if (!Object.values(delta).every(isCompleteSpotAssetCtx)) throw new L2BookStreamError("invalid_frame");
+				state = new Map(Object.entries(delta));
+			} else {
+				for (const [coin, ctx] of Object.entries(delta)) state.set(coin, { ...state.get(coin), ...ctx });
+			}
+			const view: CompactSpotAssetCtxsEvent = {};
+			for (const [coin, ctx] of state) if (isCompleteSpotAssetCtx(ctx)) view[coin] = ctx;
+			return view;
+		},
+	};
+}
+
+export function createCompactAssetCtxsAccumulator<C extends CompactAssetCtxsChannel>(
+	channel: C,
+): CompactAssetCtxsAccumulator<C> {
+	return (
+		channel === "pac" ? createCompactPerpAssetCtxsAccumulator() : createCompactSpotAssetCtxsAccumulator()
+	) as CompactAssetCtxsAccumulator<C>;
+}
+
+function toStreamError(error: unknown): L2BookStreamError {
+	return error instanceof L2BookStreamError ? error : new L2BookStreamError("decompression_failed", { cause: error });
+}
+
+/**
+ * `pac` and `sac` carry every perp or spot market context as base64 + raw DEFLATE frames: a complete
+ * snapshot first, then only the fields that changed. Frames decode and merge strictly in arrival
+ * order (a bounded backlog; falling behind by more than 64 frames ends the stream rather than
+ * skipping a delta), the listener receives the accumulated view, and decoding stops once the
+ * consumer unsubscribes. A frame that fails to decode ends the subscription: before the server
+ * confirmation the returned promise rejects, afterwards `onError` fires once, both like a transport
+ * failure.
  */
 export function subscribeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 	transport: ISubscriptionTransport,
@@ -78,38 +240,83 @@ export function subscribeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 	listener: (event: CompactAssetCtxsEvent<C>) => void,
 	options?: CompactAssetCtxsSubscribeOptions,
 ): Promise<ISubscription> {
-	let queue: Promise<void> = Promise.resolve();
+	const accumulator = createCompactAssetCtxsAccumulator(channel);
+	const pending: unknown[] = [];
 	let raw: ISubscription | undefined;
-	let failed = false;
-	const fail = (error: unknown) => {
-		if (failed) return;
-		failed = true;
-		void raw?.unsubscribe().catch(() => {});
-		options?.onError?.(
-			error instanceof L2BookStreamError ? error : new L2BookStreamError("decompression_failed", { cause: error }),
-		);
+	let confirmed = false;
+	let stopped = false;
+	let decoding = false;
+	let failure: L2BookStreamError | undefined;
+
+	const stop = () => {
+		stopped = true;
+		pending.length = 0;
 	};
-	const subscription = transport.subscribe(
-		channel,
-		{ type: channel },
-		(event: CustomEvent<unknown>) => {
-			if (failed) return;
-			const detail = event.detail;
-			queue = queue
-				.then(async () => {
-					if (failed) return;
-					listener(await decodeCompactAssetCtxs(channel, detail));
-				})
-				.catch(fail);
-		},
-		options,
-	);
-	void subscription.then(
-		(active) => {
-			raw = active;
-			if (failed) void active.unsubscribe().catch(() => {});
-		},
-		() => {},
-	);
-	return subscription;
+	const fail = (error: unknown) => {
+		if (stopped) return;
+		failure = toStreamError(error);
+		stop();
+		if (!confirmed) return;
+		void raw?.unsubscribe().catch(() => {});
+		options?.onError?.(failure);
+	};
+	const drain = async () => {
+		if (decoding) return;
+		decoding = true;
+		try {
+			while (pending.length > 0 && !stopped) {
+				const frame = pending.shift();
+				const delta = await decodeCompactAssetCtxs(channel, frame);
+				if (stopped) return;
+				listener(accumulator.add(delta));
+			}
+		} catch (error) {
+			fail(error);
+		} finally {
+			decoding = false;
+		}
+	};
+
+	return transport
+		.subscribe(
+			channel,
+			{ type: channel },
+			(event: CustomEvent<unknown>) => {
+				if (stopped) return;
+				if (pending.length >= COMPACT_ASSET_CTXS_MAX_PENDING_FRAMES) {
+					fail(new Error("compact market context backlog exceeded"));
+					return;
+				}
+				pending.push(event.detail);
+				void drain();
+			},
+			{
+				...options,
+				onError: (error) => {
+					stop();
+					options?.onError?.(error);
+				},
+			},
+		)
+		.then(
+			(active) => {
+				if (failure) {
+					void active.unsubscribe().catch(() => {});
+					throw failure;
+				}
+				raw = active;
+				confirmed = true;
+				return {
+					unsubscribe: async () => {
+						if (stopped) return;
+						stop();
+						await active.unsubscribe();
+					},
+				};
+			},
+			(error: unknown) => {
+				stop();
+				throw error;
+			},
+		);
 }

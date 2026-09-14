@@ -1,6 +1,7 @@
 import { type ISubscription, type ISubscriptionTransport, TransportError } from "@nktkas/hyperliquid";
 import { l2Book } from "@nktkas/hyperliquid/api/subscription";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { takeFrameReceivedAt } from "../../../../../packages/hl-react/src/internal/websocket/frame-receipt";
 import {
 	createL2BookTransportPool,
 	L2_BOOK_REPLAY_MAX_AGE_MS,
@@ -413,6 +414,36 @@ describe("freshest-frame replay for late subscribers", () => {
 		await pendingLate;
 		expect(late).toHaveBeenCalledOnce();
 		expect(late.mock.calls[0][0].detail.time).toBe(2);
+	});
+
+	it("keeps other coins on the shared transport out of a payload's live and remembered frames", async () => {
+		const { pool, transports } = createHarness();
+		const hype = vi.fn();
+		const btc = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, hype);
+		await pool.subscribe(false, { coin: "BTC" }, btc);
+		const hypeFrame = { coin: "HYPE", levels: [[], []], time: 1 };
+		transports[0].emit(hypeFrame);
+		transports[0].emit({ coin: "BTC", levels: [[], []], time: 2 });
+		expect(hype).toHaveBeenCalledOnce();
+		expect(btc).toHaveBeenCalledOnce();
+		const late = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, late);
+		expect(late).toHaveBeenCalledOnce();
+		expect(late.mock.calls[0][0].detail).toEqual(hypeFrame);
+	});
+
+	it("hands the replayed frame over with its original receipt time", async () => {
+		const { pool, transports } = createHarness();
+		await pool.subscribe(false, { coin: "HYPE" }, vi.fn());
+		const receivedAt = Date.now();
+		transports[0].emit({ coin: "HYPE", levels: [[], []], time: 1 });
+		await vi.advanceTimersByTimeAsync(2_000);
+		const late = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, late);
+		expect(late).toHaveBeenCalledOnce();
+		expect(takeFrameReceivedAt(late.mock.calls[0][0].detail)).toBe(receivedAt);
+		expect(Date.now() - receivedAt).toBeGreaterThanOrEqual(2_000);
 	});
 
 	it("forgets the frame once the payload's last lease releases", async () => {

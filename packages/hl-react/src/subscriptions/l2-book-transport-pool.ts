@@ -1,4 +1,5 @@
 import { type ISubscriptionTransport, TransportError } from "@nktkas/hyperliquid";
+import { markFrameReceivedAt } from "../internal/websocket/frame-receipt";
 
 interface BookTransport extends ISubscriptionTransport {
 	close(): void;
@@ -14,6 +15,7 @@ interface BookPayload {
 interface RememberedFrame {
 	event: CustomEvent<unknown>;
 	receivedAt: number;
+	receivedAtWall: number;
 }
 
 interface PoolEntry {
@@ -49,6 +51,12 @@ function getGroupingKey(isTestnet: boolean, book: BookPayload): string {
 
 function getPayloadKey(book: BookPayload): string {
 	return JSON.stringify([book.coin, book.nSigFigs, book.mantissa, book.fast]);
+}
+
+function readFrameCoin(event: CustomEvent<unknown>): string | undefined {
+	const detail = event.detail;
+	if (typeof detail !== "object" || detail === null || !("coin" in detail)) return undefined;
+	return typeof detail.coin === "string" ? detail.coin : undefined;
 }
 
 export function createL2BookTransportPool(createTransport: (isTestnet: boolean) => BookTransport) {
@@ -97,12 +105,12 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 			isActive: () => !acquired.disposed,
 			remember: (event: CustomEvent<unknown>) => {
 				if (acquired.disposed) return;
-				acquired.latestFrames.set(payloadKey, { event, receivedAt: performance.now() });
+				acquired.latestFrames.set(payloadKey, { event, receivedAt: performance.now(), receivedAtWall: Date.now() });
 			},
 			latest: () => {
 				const frame = acquired.latestFrames.get(payloadKey);
 				if (!frame || performance.now() - frame.receivedAt > L2_BOOK_REPLAY_MAX_AGE_MS) return undefined;
-				return frame.event;
+				return frame;
 			},
 			release: (failed = false) => {
 				if (released) return;
@@ -128,7 +136,8 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 		options?: Parameters<ISubscriptionTransport["subscribe"]>[3],
 	) {
 		if (options?.signal?.aborted) throw new TransportError("Order book subscription aborted");
-		const lease = acquire(isTestnet, readBookPayload(payload));
+		const book = readBookPayload(payload);
+		const lease = acquire(isTestnet, book);
 		let released = false;
 		let receivedLiveFrame = false;
 		function release(failed = false) {
@@ -141,7 +150,10 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 				"l2Book",
 				payload,
 				(event) => {
-					if (released || !lease.isActive()) return;
+					// The SDK dispatches every l2Book frame on the socket to every l2Book listener and
+					// filters by coin only in its method wrapper, so the pool must not let another coin's
+					// frame count as this payload's live frame or overwrite its remembered snapshot.
+					if (released || !lease.isActive() || readFrameCoin(event) !== book.coin) return;
 					receivedLiveFrame = true;
 					lease.remember(event);
 					listener(event);
@@ -160,9 +172,13 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 				throw new TransportError("Order book connection closed before confirmation");
 			}
 			// A subscriber joining a stream the transport already confirmed would otherwise wait for
-			// the next server push; the freshest frame of the same payload is its current state.
+			// the next server push; the freshest frame of the same payload is its current state. Its
+			// original receipt time travels with it so the store does not treat it as newer than it is.
 			const replay = receivedLiveFrame ? undefined : lease.latest();
-			if (replay) listener(replay as CustomEvent<T>);
+			if (replay) {
+				markFrameReceivedAt(replay.event.detail, replay.receivedAtWall);
+				listener(replay.event as CustomEvent<T>);
+			}
 			return {
 				unsubscribe: async () => {
 					if (released) return;

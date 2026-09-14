@@ -157,6 +157,33 @@ Desktop runtime increment: 25 assets / 196,958 bytes (+4,970), 99 startup assets
 / 1,755,042 bytes in total. Every other named surface stayed within its limit.
 The measured boot effect is recorded in the task record (checkpoint 25) and
 [ADR 0005](adr/0005-spa-static-shell.md) decision 14.
+### Correction after the 2026-09-14 adversarial review
+
+The paragraph above did not meet the re-baseline rules of this document: the
+build ran on Node 22.13.0 instead of the pinned 22.15.0, the build identity was
+not the final commit, and no route-only diagnostic was recorded. The baseline
+value was kept, and the measurement was redone under the rules:
+
+- Toolchain: Node 22.15.0 (nvm), pnpm 10.21.0. Command from the worktree root:
+  `GATU_RELEASE_ID=cloudfront-2026-09-14-p18 pnpm build`, run on the working
+  tree that became the review-fix commit recorded in the task record
+  (checkpoint 28); the build metadata commit is that commit's parent
+  `1c734761`. The same toolchain produced p17 one build earlier; p18 adds the
+  snapshot-plus-delta accumulator for the compact market channels.
+- Graph inventory: 391 client chunks, no circular static imports. Route-only
+  diagnostic: the static trade startup closure is seeded by 6 route preloads,
+  1 runtime script and 3 semantic entries (the budget script's startup line).
+- `trade-terminal-page`: 123,761 gzip bytes against the 123,242-byte baseline
+  (+519, allowance 4,000). The chunk grew because the runtime market-loading
+  workspace now renders its frame labels through Lingui, while the preload
+  chain moved out of the chunk into `preload-trade-terminal-surface.ts`.
+- Client gzip total 3,070,454 bytes (84,253 below baseline). Static trade
+  startup 74 assets / 1,561,249 bytes (8,972 below baseline). Mobile runtime
+  increment 11 assets / 111,639 bytes (+1,059), 85 startup assets / 1,672,888
+  bytes in total. Desktop runtime increment 25 assets / 196,984 bytes (+4,996),
+  99 startup assets / 1,758,233 bytes in total. Every other named surface stayed
+  within its limit.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:

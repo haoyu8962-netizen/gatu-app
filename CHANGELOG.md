@@ -120,6 +120,19 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- A wallet runtime chunk that failed to load after hydration left the static shell on screen
+  forever, because the runtime gate's store snapshot did not change on failure; the loader now
+  publishes every outcome as a new snapshot so the error boundary receives the failure.
+- The order book's replayed first snapshot keeps its original receipt time and ignores frames of
+  other coins sharing the same transport, so a replay never counts as newer than it is and cannot
+  be poisoned by another market.
+- The compact market-context streams are decoded as a complete snapshot followed by changed-field
+  deltas that merge into one accumulated view (the first release treated every frame as complete),
+  validate every consumed field, decode strictly in order with a bounded backlog, stop decoding once
+  unsubscribed, reject a frame that fails before the server confirmation, and keep their fallback to
+  the plain channels for the whole page session; the runtime market-loading frame renders its labels
+  through Lingui.
+
 - The TradingView chart no longer inserts Google Analytics on the 2% of loads the vendored
   library samples: its internal feature flag `14851` is disabled in `CHART_DISABLED_FEATURES`
   (the chart Content-Security-Policy already blocked the loader). See

@@ -62,7 +62,7 @@ describe("InfoClient mapped types", () => {
 		expectTypeOf<"pac">().toMatchTypeOf<SubMethod>();
 		expectTypeOf<"sac">().toMatchTypeOf<SubMethod>();
 		expectTypeOf<undefined>().toMatchTypeOf<SubParams<"pac">>();
-		expectTypeOf<SubEvent<"pac">>().toMatchTypeOf<[string, { markPx: string; prevDayPx: string }[]][]>();
+		expectTypeOf<SubEvent<"pac">>().toMatchTypeOf<[string, ({ markPx: string; prevDayPx: string } | undefined)[]][]>();
 		expectTypeOf<SubEvent<"sac">>().toMatchTypeOf<Record<string, { markPx: string; circulatingSupply: string }>>();
 	});
 

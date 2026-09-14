@@ -7,7 +7,7 @@ const bootOrderbook = vi.fn();
 
 vi.mock("@/lib/hyperliquid/markets/market-catalog-bootstrap", () => ({ startMarketCatalogBootstrap }));
 vi.mock("@/components/app-runtime-overlays", () => ({ preloadAppRuntimeOverlays }));
-vi.mock("@/components/trade/trade-terminal-page", () => ({ preloadTradeTerminalSurface }));
+vi.mock("@/components/trade/preload-trade-terminal-surface", () => ({ preloadTradeTerminalSurface }));
 vi.mock("@/lib/trade/orderbook-boot", () => ({ bootOrderbook }));
 
 describe("bootTradeRoute", () => {

@@ -74,7 +74,20 @@ stream identity:
 The replay is the current state of a live stream on the same transport
 (network + grouping + fast) for the same payload, never another grouping's or
 network's snapshot; consumers see the same status transitions as before and
-only skip the wait for the next server push.
+only skip the wait for the next server push. Two rules keep that true (added
+after the 2026-09-14 adversarial review, task record checkpoint 28):
+
+- The SDK dispatches every `l2Book` frame on a socket to every `l2Book`
+  listener and filters by coin only in its method wrapper, so the pool checks
+  the frame's coin before it counts as a payload's live frame or overwrites its
+  remembered snapshot. Otherwise another coin sharing the grouping transport
+  would poison the memory and suppress the replay.
+- The remembered frame keeps its wall-clock receipt time and hands it to the
+  consumer through `markFrameReceivedAt`; `useSub` stamps `lastMessageAt` and
+  the staleness watchdog with that time instead of the delivery time. A
+  replayed frame is therefore exactly as fresh as it would have been for a
+  subscriber that had been listening all along, and never extends a staleness
+  deadline.
 
 ## Alternatives and tradeoffs
 

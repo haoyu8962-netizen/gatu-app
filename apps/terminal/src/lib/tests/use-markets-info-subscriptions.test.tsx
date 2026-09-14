@@ -15,7 +15,8 @@ const mocks = vi.hoisted(() => ({
 	},
 	useSubscription: vi.fn(),
 	responses: {} as Record<string, unknown>,
-	reportClientError: vi.fn(),
+	disableCompactMarketCtxs: vi.fn(),
+	compactDisabled: false,
 }));
 
 vi.mock("@gatu/hl-react", () => ({
@@ -31,8 +32,12 @@ vi.mock("@gatu/hl-react", () => ({
 	},
 }));
 
-vi.mock("@/lib/error-reporting/client", () => ({
-	reportClientError: (...args: unknown[]) => mocks.reportClientError(...args),
+vi.mock("@/lib/hyperliquid/markets/market-ctxs-fallback", () => ({
+	isCompactMarketCtxsDisabled: () => mocks.compactDisabled,
+	disableCompactMarketCtxs: (error: unknown) => {
+		mocks.compactDisabled = true;
+		mocks.disableCompactMarketCtxs(error);
+	},
 }));
 
 vi.mock("@/lib/hyperliquid/markets/use-markets", () => ({
@@ -105,7 +110,8 @@ describe("useMarketsInfoInternal subscription gate", () => {
 		document.body.appendChild(container);
 		root = createRoot(container);
 		mocks.useSubscription.mockReset();
-		mocks.reportClientError.mockReset();
+		mocks.disableCompactMarketCtxs.mockReset();
+		mocks.compactDisabled = false;
 		for (const key of Object.keys(mocks.responses)) delete mocks.responses[key];
 		mocks.fastPriceSubscription.data = undefined;
 		mocks.fastPriceSubscription.status = "idle";
@@ -172,14 +178,41 @@ describe("useMarketsInfoInternal subscription gate", () => {
 		});
 	});
 
-	it("falls back to the plain channels for the session once a compact stream fails, reporting once", () => {
-		mocks.responses.pac = { data: undefined, status: "error", error: new Error("bad frame"), isStale: false };
+	it("falls back to the plain channels once a compact stream fails and keeps that across remounts", () => {
+		const error = new Error("bad frame");
+		mocks.responses.pac = { data: undefined, status: "error", error, isStale: false };
 
 		renderProbe(true);
 
 		expectLatestSubscriptionState(true, false);
-		expect(mocks.reportClientError).toHaveBeenCalledTimes(1);
-		expect(mocks.reportClientError.mock.calls[0][1]).toEqual({ kind: "market_ctxs_compact_fallback" });
+		expect(mocks.disableCompactMarketCtxs).toHaveBeenCalledTimes(1);
+		expect(mocks.disableCompactMarketCtxs).toHaveBeenCalledWith(error);
+
+		act(() => root.unmount());
+		root = createRoot(container);
+		mocks.useSubscription.mockClear();
+		delete mocks.responses.pac;
+		renderProbe(true);
+
+		expectLatestSubscriptionState(true, false);
+		expect(mocks.useSubscription).toHaveBeenCalledTimes(5);
+	});
+
+	it("discards a cached snapshot whose entries no longer parse", () => {
+		sessionStorage.setItem(
+			"hl-mkt-stats-v2",
+			JSON.stringify({
+				env: "Mainnet",
+				savedAt: Date.now(),
+				allDexsCtxs: [["", [{ markPx: 1 }]]],
+				spotCtxs: undefined,
+			}),
+		);
+
+		renderProbe(true);
+
+		expect(captured.getMarketByName("BTC")?.prevDayPx).toBeUndefined();
+		expect(sessionStorage.getItem("hl-mkt-stats-v2")).toBeNull();
 	});
 
 	it("stops both market feeds immediately when the route-level gate closes", () => {
