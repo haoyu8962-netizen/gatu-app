@@ -54,5 +54,5 @@ Do not build mobile agent QR sync UI in this issue.
 ## Goal Prompt
 
 ```text
-/goal Read .scratch/mobile-wallet-pwa-wallet-connectivity/PRD.md and .scratch/mobile-wallet-pwa-wallet-connectivity/issues/06-integrate-headless-reown.md. Integrate headless/custom Reown WalletConnect into the existing wallet modal while preserving wagmi consumers. Do not implement mobile agent sync UI. Update the issue status and notes when done.
+/goal Read research/mobile-wallet-pwa/PRD.md and research/mobile-wallet-pwa/issues/06-integrate-headless-reown.md. Integrate headless/custom Reown WalletConnect into the existing wallet modal while preserving wagmi consumers. Do not implement mobile agent sync UI. Update the issue status and notes when done.
 ```

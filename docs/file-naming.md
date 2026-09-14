@@ -91,7 +91,7 @@ When reviewing existing names:
 |-----------|------------|---------|
 | React Components | PascalCase | `OrderEntryPanel.tsx`, `UserProfile.tsx` |
 | Hooks | camelCase with `use` prefix | `useOrderBook.ts`, `useWebSocket.ts` |
-| Utilities/Helpers | kebab-case | `order-entry-calcs.ts`, `format-utils.ts` |
+| Utilities/Helpers | kebab-case | `account-ledger-format.ts`, `order-validation-presentation.ts` |
 | Constants | kebab-case or SCREAMING_SNAKE | `api-endpoints.ts`, `TRADE_CONSTANTS.ts` |
 | Types/Interfaces | PascalCase | `OrderTypes.ts`, `ApiResponse.ts` |
 | Context | PascalCase with Context suffix | `AuthContext.tsx`, `ThemeContext.tsx` |
@@ -112,7 +112,7 @@ src/
     useOrderBook.ts            # Hook (camelCase with use prefix)
   lib/
     trade/
-      order-entry-calcs.ts     # Utility (kebab-case)
+      account-ledger-format.ts # Utility (kebab-case)
       orderbook-utils.ts       # Utility (kebab-case)
   types/
     OrderTypes.ts              # Types (PascalCase)

@@ -68,7 +68,7 @@
 | [SDK 快照 1](hyperliquid-sdk-1.md)、[快照 2](hyperliquid-sdk-2.md) | 已归档的 0.33.1 schema；不能覆盖仓库锁定版本 |
 | [前端校验摘录](hyperliquid-frontend-checks.md)、[Wagmi 规则](wagmi.md)、[TanStack 链接](tanstack.md)、[iOS 输入资料](best-practices-ios-safari-inputs.md) | 外部技术参考；修改相关技术行为前重新查官方资料及本地版本 |
 | [features](../features/README.md) | 功能说明与早期计划；各项成熟度不同，需对照实现 |
-| [research](../research/) | 产品/协议研究，不能视为已承诺或已实现功能 |
+| [research](../research/) | 产品/协议研究，不能视为已承诺或已实现功能；[移动钱包 PWA 早期 PRD 与议题拆分](../research/mobile-wallet-pwa/PRD.md) 是历史草稿，现行契约见 Runtime guardrails §8 与移动配对文档 |
 | [pipeline/features](../pipeline/features/README.md)、[pipeline/blog](../pipeline/blog/README.md) | 规划与内容生产资料 |
 | [legal](../legal/README.md) | 法务内容入口，本文档审查未做法律有效性评估 |
 | [移动钱包研究](../outputs/wallet-mobile-pwa-research.md)、[来源记录](../outputs/wallet-mobile-pwa-research.provenance.md) | 当时的外部研究，不替代当前钱包契约 |

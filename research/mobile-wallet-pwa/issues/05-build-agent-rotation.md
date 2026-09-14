@@ -73,5 +73,5 @@ Existing agent status and L1 signing modules were not touched, so their focused 
 ## Goal Prompt
 
 ```text
-/goal Read .scratch/mobile-wallet-pwa-wallet-connectivity/PRD.md and .scratch/mobile-wallet-pwa-wallet-connectivity/issues/05-build-agent-rotation.md. Implement only mobile agent lifecycle and tests. Keep UI out of scope. Update the issue status and notes when done.
+/goal Read research/mobile-wallet-pwa/PRD.md and research/mobile-wallet-pwa/issues/05-build-agent-rotation.md. Implement only mobile agent lifecycle and tests. Keep UI out of scope. Update the issue status and notes when done.
 ```

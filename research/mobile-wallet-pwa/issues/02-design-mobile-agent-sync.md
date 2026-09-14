@@ -41,5 +41,5 @@ Verification: PRD and downstream issue files reference one-QR encrypted payload 
 Goal prompt:
 
 ```text
-/goal Read .scratch/mobile-wallet-pwa-wallet-connectivity/PRD.md and .scratch/mobile-wallet-pwa-wallet-connectivity/issues/02-design-mobile-agent-sync.md. Make sure the mobile sync decision is consistently recorded as one-QR encrypted payload plus one-time pairing code, with no third-party relay. Do not implement product code.
+/goal Read research/mobile-wallet-pwa/PRD.md and research/mobile-wallet-pwa/issues/02-design-mobile-agent-sync.md. Make sure the mobile sync decision is consistently recorded as one-QR encrypted payload plus one-time pairing code, with no third-party relay. Do not implement product code.
 ```

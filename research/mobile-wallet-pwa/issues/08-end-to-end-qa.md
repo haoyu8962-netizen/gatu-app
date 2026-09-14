@@ -108,5 +108,5 @@ Manual QA protocol: `../manual-qa-checklist.md`
 ## Goal Prompt
 
 ```text
-/goal Read .scratch/mobile-wallet-pwa-wallet-connectivity/PRD.md and .scratch/mobile-wallet-pwa-wallet-connectivity/issues/08-end-to-end-qa.md. Run end-to-end verification for the completed mobile wallet feature, fix scoped bugs found during QA, and update the issue with results.
+/goal Read research/mobile-wallet-pwa/PRD.md and research/mobile-wallet-pwa/issues/08-end-to-end-qa.md. Run end-to-end verification for the completed mobile wallet feature, fix scoped bugs found during QA, and update the issue with results.
 ```

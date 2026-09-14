@@ -104,5 +104,5 @@ Run this work as ordered Codex goals. Do not start a later goal until the previo
 Goal prompt format:
 
 ```text
-/goal Read .scratch/mobile-wallet-pwa-wallet-connectivity/PRD.md and .scratch/mobile-wallet-pwa-wallet-connectivity/issues/<issue-file>. Complete only that issue. Keep changes scoped to the issue, update the issue Status and Notes when done, and run the verification listed in the issue.
+/goal Read research/mobile-wallet-pwa/PRD.md and research/mobile-wallet-pwa/issues/<issue-file>. Complete only that issue. Keep changes scoped to the issue, update the issue Status and Notes when done, and run the verification listed in the issue.
 ```

@@ -70,5 +70,5 @@ Existing agent storage/signing modules were not touched, so their focused tests 
 ## Goal Prompt
 
 ```text
-/goal Read .scratch/mobile-wallet-pwa-wallet-connectivity/PRD.md and issues 03 and 04 in .scratch/mobile-wallet-pwa-wallet-connectivity/issues. Implement only the mobile sync core module and tests. Do not build UI or Reown integration. Update issue 04 status and notes when done.
+/goal Read research/mobile-wallet-pwa/PRD.md and issues 03 and 04 in research/mobile-wallet-pwa/issues. Implement only the mobile sync core module and tests. Do not build UI or Reown integration. Update issue 04 status and notes when done.
 ```

@@ -192,6 +192,10 @@
 
 结构与文档：13 条本地链接失效，其中真实失效 3 条（`features/README.md` → `tp-sl.md`、`advanced-order-types.md`；根目录 `review_market_symbol_numbering.md` → 已删除的 `kline-chart.tsx`），其余为 SDK 文档中的正则文本与法务页的站内绝对路径；无引用模块 11 个（`components/icons/{coinbase,metamask,rabby}-icon.tsx`、`components/trade/tradebox/leverage-control.tsx`（仅测试引用）、`domain/trade/order-entry-calcs.ts`（纯再导出，无人引用）、`hooks/ui/{use-intent-script-loader,use-lingering-text,use-lingering-validation,use-virtual-table}.ts`、`lib/trade/close-toast.ts`、`packages/hl-react/src/testing.tsx`）；根目录堆放 22 个历史评审文件（`review_*.md`、`launch-review-*.md`、`tv_stability_review_*.md`），`notes/index.md` 只登记了部分；`.scratch/mobile-wallet-pwa-wallet-connectivity/` 10 个文件被纳入版本库且无文档入口；根 `vercel.json` 仍指向 `NITRO_PRESET=vercel` 的旧部署方式；`apps/terminal` 42 个依赖中只有 `permissionless` 找不到直接引用（Privy 智能钱包的对等依赖，保留）；`patches/` 两个补丁均在 `pnpm-workspace`/锁文件中生效；CSP 的 `script-src` 与 `style-src` 含 `'unsafe-inline'`，`img-src` 允许任意 `https:`，官方站则完全没有 CSP。
 
+## 第十三检查点：结构清理（2026-09-14，基于 `b2787e3b`）
+
+用户同意按第十二检查点的建议处理。决定与动作：根目录 22 个评审文件按文档治理保留原路径（`notes/index.md` 已全部登记），只给 `review_market_symbol_numbering.md` 追加更正说明；`.scratch/mobile-wallet-pwa-wallet-connectivity/` 移到 `research/mobile-wallet-pwa/`，`docs/README.md` 研究行登记为历史草稿，`.gitignore` 加 `.scratch/`；删除根 `vercel.json`（终端 Vercel 时期遗留；`apps/website/vercel.json` 由网站 README 明确使用，保留）；删除 11 个无引用模块并从 `i18n-reactivity-contract.test.ts` 的文件清单去掉 `leverage-control.tsx`，`docs/file-naming.md` 的示例文件名换成现存文件；`features/README.md` 的 TP/SL 与高级订单两行改为指向现行文档并标为已实现；`biome.json` 忽略 `src/locales/**/messages.js`，`lib/lazy.ts` 的 `any` 改为 `unknown`，typecheck 工作流新增 `pnpm check`。`permissionless` 确认为 Privy 的可选对等依赖（智能钱包需要），保留。验证：`pnpm check` 1,358 文件通过，`pnpm typecheck` 通过，`i18n-reactivity-contract` 与 `spa-shell-config` 80 用例通过，删除文件无残留引用。CSP 收紧按建议分两步，第一步 report-only 另立提交。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

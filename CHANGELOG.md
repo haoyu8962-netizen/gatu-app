@@ -54,6 +54,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
   leaderboard API is cached at the edge with a 30 s function timeout so the first load no
   longer times out.
 
+- Repository cleanup: removed eleven modules nothing imported (three wallet icons, the
+  superseded leverage control, four unused UI hooks, the close-toast helper, the
+  `order-entry-calcs` re-export barrel and the unused hl-react test provider), the root
+  `vercel.json` left over from the terminal's Vercel period, and moved the mobile wallet
+  PWA scratch notes under `research/`. `pnpm check` is clean again (compiled Lingui
+  catalogs are ignored, `createLazyComponent` no longer uses `any`) and now runs in CI.
+
 ### Changed
 
 - Desktop panels retain aligned chart, market-data, order-entry and account

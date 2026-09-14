@@ -225,5 +225,5 @@ Verification:
 Goal prompt:
 
 ```text
-/goal Read .scratch/mobile-wallet-pwa-wallet-connectivity/PRD.md and .scratch/mobile-wallet-pwa-wallet-connectivity/issues/03-define-security-model.md. Complete the security model for the one-QR encrypted mobile sync flow. Update only markdown docs, mark the issue ready-for-agent or done when resolved, and do not implement product code.
+/goal Read research/mobile-wallet-pwa/PRD.md and research/mobile-wallet-pwa/issues/03-define-security-model.md. Complete the security model for the one-QR encrypted mobile sync flow. Update only markdown docs, mark the issue ready-for-agent or done when resolved, and do not implement product code.
 ```

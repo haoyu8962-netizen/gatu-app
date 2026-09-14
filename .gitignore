@@ -19,6 +19,7 @@ scripts/measure/**/out/
 
 # Logs and one-off scratch output
 .worklog/
+.scratch/
 *.log
 logs/
 tmp/

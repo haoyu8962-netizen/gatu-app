@@ -6,8 +6,8 @@ This folder contains specifications for planned features. Each feature has its o
 
 | Feature | Priority | Status | File |
 |---------|----------|--------|------|
-| TP/SL Orders | High | Planned | [tp-sl.md](./tp-sl.md) |
-| Advanced Order Types | High | Planned | [advanced-order-types.md](./advanced-order-types.md) |
+| TP/SL Orders | High | Implemented | [订单表单双端一致性](../docs/order-entry-surface-parity.md) |
+| Advanced Order Types | High | Implemented | [TWAP 回归](../docs/twap-regression-tests.md)、[表单布局审计](../docs/order-entry-layout-audit.md) |
 | Leverage Management | High | Planned | [leverage-management.md](./leverage-management.md) |
 | Spot Swap | High | Planned | [spot-swap.md](./spot-swap.md) |
 | Color Tokens and Theme Naming | High | In Progress | [color-tokens.md](./color-tokens.md) |

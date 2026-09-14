@@ -60,5 +60,5 @@ Do not change wallet connector architecture in this issue.
 ## Goal Prompt
 
 ```text
-/goal Read .scratch/mobile-wallet-pwa-wallet-connectivity/PRD.md and .scratch/mobile-wallet-pwa-wallet-connectivity/issues/07-build-mobile-sync-ui.md. Build only the mobile sync UI using the sync core and agent lifecycle modules. Update the issue status and notes when done.
+/goal Read research/mobile-wallet-pwa/PRD.md and research/mobile-wallet-pwa/issues/07-build-mobile-sync-ui.md. Build only the mobile sync UI using the sync core and agent lifecycle modules. Update the issue status and notes when done.
 ```
