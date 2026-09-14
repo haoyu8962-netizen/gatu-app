@@ -316,6 +316,27 @@ P5：`lib/wallet/privy-session-hint.ts` 检查 Privy 本地存储的会话键（
 
 剩余：`sac` 里约 900 个 `#` 前缀键不在 `spotMeta.universe`，暂不使用；解压后主线程解析量与原来同量级（90 KB + 203 KB），本项只降网络字节；紧凑流回退的实际频率靠 `market_ctxs_compact_fallback` 报告观察；第二十三检查点列出的 P1–P5 至此全部完成。
 
+## 第二十八检查点：P1–P5 的对抗审查与修复（2026-09-14，基于 `1c734761`；修复提交 `b3437ef2`）
+
+用户要求用 Codex（`gpt-6-astra`，`codex exec -s read-only`，`model_reasoning_effort=high`）对 `31e644b6..HEAD` 四个提交做对抗审查；提示词限定契约、已知限制与十项核查清单，要求给出级别、文件行号、场景与验证命令。审查结论：0 P0、2 P1、7 P2、1 P3（27 次只读命令，212,870 token；未运行测试或构建）。逐条复核与处置：
+
+1. P1 `providers/root.tsx`——确认成立。加载失败只改了错误变量，`useSyncExternalStore` 的快照仍是 `null`，React 不重渲染，`throw` 到不了错误边界，页面会停在静态壳。修复：新增 `providers/client-root-loader.ts`，把加载结果发布为不可变快照对象（成功与失败都换对象），`ClientRuntimeGate` 读快照里的 `Provider`/`error`；新增 `client-root-loader.test.ts`（注入 importer 验证成功、失败、去重、失败时新快照），`root-provider-split.test.ts` 跟进。
+2. P1 回放帧被当成新鲜的实时数据——部分成立。回放帧来自同一传输、同一 payload 的实时流，不是 ADR 0003 意义上的跨身份缓存；但 `useSub` 用交付时刻盖 `lastMessageAt`，会把陈旧截止推后最多 5 s。修复：池记录帧的墙钟接收时间，回放时经 `internal/websocket/frame-receipt.ts` 的 WeakMap 交给 `useSub`，`store.setSubscriptionData` 与陈旧看门狗（`staleness.markFresh(key, at)`）改用原始时间；新增用例断言回放帧带原始接收时间。
+3. P2 跨币种污染回放缓存——确认成立（SDK 按频道向所有监听器广播，在方法包装层才按币种过滤）。修复：池在计入实时帧与记忆前按 `event.detail.coin` 过滤；新增两币种交错到帧的用例。
+4. P2 确认前解码失败留下"active 但无数据"的订阅——确认成立。5. P2 退订不停止解码队列——确认成立。6. P2 浅层形状校验——确认成立。三项一并重写 `compact-asset-ctxs.ts`：字段级校验（十进制字符串，`midPx` 允许 null，只保留已知字段）、确认前失败让 `subscribe` 的 Promise 拒绝、退订后停止解码与回调、幂等的包装退订句柄、有界积压；复测线上时又发现原设计的一个事实错误（见下）。
+7. P2 回退闩锁随 Provider 重建丢失而上报闩锁保留——确认成立。修复：`markets/market-ctxs-fallback.ts` 模块级状态（与页面会话同寿命），`useMarketsInfo` 初始化时读取；测试覆盖卸载重挂载后仍走原频道，新增 `market-ctxs-fallback.test.ts`。
+8. P2 运行时加载态用英文占位——确认成立（`TerminalLoadingWorkspace` 在 `I18nReadyGate` 内）。修复：`renderDesktopPanelFrame(panelId, labels)`，加载态通过 `useLingui` 的 `t` 提供标签（复用真实面板的消息 ID，`lingui extract` 无新增 ID，六个目录只增加引用行），预渲染壳与路由 pending 骨架保持英文以维持水合一致（ADR 0005 决策 13、14 补充）。
+9. P2 重新基线不合规——确认成立。处置：先把预解析链移出页面块（新 `components/trade/preload-trade-terminal-surface.ts`，页面只导出 `preloadGlobalModals`），但加载态标签翻译使页面块反而涨到 123,768 gz，仍高于旧上限 123,207，于是保留 123,242 的基线，用钉住的 Node 22.15.0（nvm）重新构建，按文档规则在 `docs/terminal-performance-baseline.md` 追加更正节（命令、提交、图谱清单 391 块、路由诊断、静态与两个运行时增量、总量）。
+10. P3 文档把"发起预加载"写成"全部解析完成"——确认成立。修正 `trade-route-boot.ts` 注释与 ADR 0005 决策 14 措辞，行为不变。
+
+发布 p17 后复测暴露的事实错误：`pac`/`sac` 只有订阅后的第一帧是全量快照，之后每帧是增量——`pac` 保持 dex 与索引结构但每个条目只含变化了的字段（约 9–10 KB base64），`sac` 只含变化了的市场与字段（约 1–1.5 KB，60–70 个键）。第二十七检查点的核实只解码了首帧。p16 把增量当全量覆盖整份状态（选中市场靠 `activeAssetCtx`，头部未受影响；收藏栏与市场选择器在增量到达并越过 5 s 节流后会缺字段），p17 的字段校验则把增量判为坏帧、触发回退并上报 `market_ctxs_compact_fallback`，线上接收器当时还不认识该 kind 而返回 400（`market-stats-probe` 与 `csp-coverage` 因此各看到控制台错误）。修复：`compact-asset-ctxs.ts` 改为累积器——首帧必须每个条目字段齐全，否则视为格式变化；后续按 dex 索引或市场名合并，回调收到合并后的视图，字段未齐的条目在视图里缺席；帧按到达顺序解码，积压超过 64 帧终止流而不跳过增量；会话缓存存视图并用视图解析器校验；Lambda 按发布顺序重新部署（`build:lambda` → `deploy.mjs lambda --function-name gatu-terminal-api`，版本 4，接收器认识新 kind）。用 vitest 把线上连续帧喂给真实解码器与累积器：4 帧 `pac` 后 519 个 perp 条目、4 帧 `sac` 后 1,497 个现货条目全部完整。ADR 0008、hl-react README、CHANGELOG 同步更正。
+
+验证：`biome check`、`pnpm typecheck` 通过；相关套件 11 文件 134 例通过（紧凑频道 13 例、传输池新增 2 例、加载器 3 例、回退模块 1 例等）。
+
+构建 p18（Node 22.15.0 / pnpm 10.21.0）：`trade-terminal-page` 123,761 gz（基线 123,242，+519）、静态启动闭包 1,561,249（-8,972 于基线）、客户端总量 3,070,454（-84,253）、391 块无循环静态导入；全量 vitest 558 文件在与构建并发时 16 个红文件，10 个基线红之外的 6 个（`global-modals-hip3-disclaimer`、`chart-build-assets`、`portfolio-overview`、`mobile-agent-sync-modal`、`establish-connection-modal`、`chart-store`）单跑通过（`establish-connection-modal` 在构建并发下超时，空闲时 15 例通过）。发布 p18：函数（10 哈希）→ sync（1,586 对象，0 失败）→ 两条分发失效并等待 → verify 主网 14/14、测试网 15/15。线上复测：`csp-coverage` 32 步 0 违规、0 控制台错误（p17 为 6 条 400）；`market-stats-probe` 头部六项指标、收藏栏三个涨跌幅与订单簿数字齐全，无 4xx 请求；`orderbook-race` 3 次网格→首个带价格行 0/0/0 ms；`boot-milestones` 两次：水合 672 → 表面 735 → 网格、订单簿数据、图表 iframe 同帧 1,225（网络较慢的一次 1,196 → 1,262 → 1,755）；`ws-race` 6 s 收 176 K 字符（`pac` 2 帧 31.7 K、`sac` 2 帧 42.6 K、`fastAssetCtxs` 6 帧 41.8 K、`trades` 12 帧 46 K——取样落在成交活跃时段），紧凑频道部分与 p16 一致。p17 到 p18 之间线上处于"字段校验拒绝增量 → 回退原频道 → 上报被 400 拒绝"的状态，行情显示靠原频道正常。
+
+未改动：审查提出但保留原样的只有 P1 第 2 项里"回放帧不得可交互"的诉求——回放帧带原始接收时间后，其新鲜度与一直在线的订阅者完全相同，不属于契约里的缓存行，ADR 0003 已写明依据。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

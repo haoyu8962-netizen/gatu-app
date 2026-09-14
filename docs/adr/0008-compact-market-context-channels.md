@@ -1,6 +1,6 @@
 # ADR 0008：全市场行情改用公开 WebSocket 的紧凑频道 `pac`/`sac`
 
-- 状态：已采用（2026-09-14），随 p16 发布到 `*.cloudfront.net`
+- 状态：已采用（2026-09-14），随 p16 发布到 `*.cloudfront.net`；对抗审查与线上复测后改为快照 + 增量累积，随 p18 发布
 - 前置：[ADR 0003](0003-orderbook-transport-isolation.md)（订单簿传输隔离）、[ADR 0005](0005-spa-static-shell.md)（静态壳）
 - 证据：[任务记录](../work-memory/sessions/2026-09-13-spa-shell-spike.md)第二十三、二十七检查点
 
