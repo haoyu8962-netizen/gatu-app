@@ -210,6 +210,10 @@ AWS：用 `gatu-edge` 创建 `gatu-terminal-api-csp-report`（nodejs22.x、arm64
 
 端到端：Playwright 全新上下文加载主网 `/trade/BTC`（7 个面板正常渲染），注入一张 `https://example.com/` 图片后浏览器触发 `securitypolicyviolation`（`img-src`、`disposition: report`、策略含接收器 `report-uri`），随后 CloudWatch 出现同一 `documentUrl`/`blockedUrl` 的 `csp_violation`。同一会话还收到首条真实报告：`script-src` 拦截 `eval`，来源 `assets/vendor-tanstack-router-*.js:2`；现行强制策略同样没有 `'unsafe-eval'`，说明这条在生产早已被拦截且无可见影响（页面与路由正常）。report-only 策略会报告它自己会拦截的一切，而不只是与现行策略的差集，评估第二步时按差集看。其余无报告。Biome 配置忽略 `deploy/**`，本次改动没有可检查的 TS 文件；`pnpm memory:index/check/test` 通过。探针函数已删除，未改 IAM 策略、DNS 与分发配置。
 
+## 第十六检查点：CSP 第二步计划（2026-09-14，基于 `0f1d91e0`）
+
+用户要求先规划内联脚本哈希。只做了调查与计划，未改运行时代码：计划写在 [docs/csp-inline-script-hashes-plan.md](../../csp-inline-script-hashes-plan.md)（方案 A 哈希随发布轮换并保留上一版集合、备选 B′ 外置脚本、B 观察 / C 强制两次发布、需要决策的事项）。调查证据（构建 `fc0fc240` 产物）：7 页各 3 段内联脚本，去重 10 个哈希；主题脚本 7 页相同，流屏障脚本含资源文件名与预渲染时间戳 `u`，每次构建都变；无内联事件处理器与 `javascript:` URL；客户端包 7 处 `createElement("script")` 都设 `src`，无 `text`/`innerHTML` 注入；`vendor-tanstack-router` 的水合入口在 `window.$_TSR` 缺失时抛错；渲染后的函数 7,689 B / 10,240 B；`gatu-edge` 有 `cloudfront:*`（发布时可 `get-function` 读线上集合）。未定位 `eval` 调用点（`grep` 在本机是 ugrep，复杂模式会报错）。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。
