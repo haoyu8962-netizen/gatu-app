@@ -77,14 +77,18 @@ test("server paths and file-like paths pass through untouched", () => {
 
 test("the response function sets the terminal or chart content security policy", () => {
 	const shell = onResponse({ request: onRequest(viewerRequest("/trade/BTC")), response: { statusCode: 200, headers: {} } });
-	const { cspReportUri, cspScriptHashes } = readEdgeConfig();
+	const { cspReportUri, cspScriptHashes, cspImageSources } = readEdgeConfig();
 	const reportSuffix = cspReportUri ? `; report-uri ${cspReportUri}` : "";
-	const hashedTerminalCsp = serializeContentSecurityPolicy({ ...cspDirectives, "script-src": createStrictCspDirectives()["script-src"] });
-	assert.equal(
-		shell.headers["content-security-policy"].value,
-		cspScriptHashes === "enforce" ? `${hashedTerminalCsp}${reportSuffix}` : contentSecurityPolicy,
-	);
-	assert.equal(shell.headers["content-security-policy-report-only"]?.value, cspReportUri ? `${contentSecurityPolicyReportOnly}${reportSuffix}` : undefined);
+	const strict = createStrictCspDirectives();
+	const enforcedDirectives = {
+		...cspDirectives,
+		...(cspScriptHashes === "enforce" ? { "script-src": strict["script-src"] } : {}),
+		...(cspImageSources === "enforce" ? { "img-src": strict["img-src"] } : {}),
+	};
+	const enforced = cspScriptHashes === "enforce" || cspImageSources === "enforce" ? `${serializeContentSecurityPolicy(enforcedDirectives)}${reportSuffix}` : contentSecurityPolicy;
+	assert.equal(shell.headers["content-security-policy"].value, enforced);
+	const candidate = cspReportUri ? `${contentSecurityPolicyReportOnly}${reportSuffix}` : "";
+	assert.equal(shell.headers["content-security-policy-report-only"]?.value, candidate && candidate !== enforced ? candidate : undefined);
 	const chart = onResponse({
 		request: onRequest(viewerRequest("/charting_library/charting_library.js")),
 		response: { statusCode: 200, headers: {} },
@@ -101,7 +105,7 @@ test("the response function sets the terminal or chart content security policy",
 const HASHES = ["sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "sha256-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="];
 const PREVIOUS = ["sha256-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC="];
 
-function renderWith({ scriptHashesMode, reportUri }) {
+function renderWith({ scriptHashesMode, imageSourcesMode = "report-only", reportUri }) {
 	const strict = createStrictCspDirectives();
 	return renderResponseFunction({
 		template: readFileSync(RESPONSE_TEMPLATE_PATH, "utf8"),
@@ -111,6 +115,7 @@ function renderWith({ scriptHashesMode, reportUri }) {
 		scriptSrc: cspDirectives["script-src"],
 		strictScriptSrc: strict["script-src"],
 		scriptHashesMode,
+		imageSourcesMode,
 		reportUri,
 	});
 }
@@ -139,6 +144,16 @@ test("the filled inline script hashes reach the policies the mode selects", () =
 	assert.equal(enforced.reportOnly, `${strictWithHashes}; report-uri https://reports.example/`);
 	assert.equal(headersFor(enforce, "/charting_library/charting_library.js").enforced, chartingLibraryContentSecurityPolicy);
 
+	const images = fillScriptHashes(renderWith({ scriptHashesMode: "enforce", imageSourcesMode: "enforce", reportUri: "https://reports.example/" }), { current: HASHES, previous: PREVIOUS });
+	const both = headersFor(images, "/trade/BTC");
+	assert.equal(both.enforced, `${strictWithHashes}; report-uri https://reports.example/`, "with every directive enforced the enforced policy is the candidate");
+	assert.equal(both.reportOnly, undefined, "the report-only header is omitted once it would repeat the enforced policy");
+	assert.equal(headersFor(images, "/charting_library/charting_library.js").enforced, chartingLibraryContentSecurityPolicy);
+	const imagesOnly = fillScriptHashes(renderWith({ scriptHashesMode: "report-only", imageSourcesMode: "enforce", reportUri: "https://reports.example/" }), { current: HASHES, previous: [] });
+	const imagesOnlyHeaders = headersFor(imagesOnly, "/trade/BTC");
+	assert.equal(imagesOnlyHeaders.enforced, `${serializeContentSecurityPolicy({ ...cspDirectives, "img-src": createStrictCspDirectives()["img-src"] })}; report-uri https://reports.example/`);
+	assert.equal(imagesOnlyHeaders.reportOnly, `${serializeContentSecurityPolicy(createStrictCspDirectives(HASHES))}; report-uri https://reports.example/`);
+
 	const silent = fillScriptHashes(renderWith({ scriptHashesMode: "enforce", reportUri: "" }), { current: HASHES, previous: [] });
 	const quiet = headersFor(silent, "/trade/BTC");
 	assert.equal(quiet.enforced, serializeContentSecurityPolicy({ ...cspDirectives, "script-src": createStrictCspDirectives(HASHES)["script-src"] }));
@@ -148,6 +163,7 @@ test("the filled inline script hashes reach the policies the mode selects", () =
 
 test("the renderer rejects unknown modes, unsafe values and templates without placeholders", () => {
 	assert.throws(() => renderWith({ scriptHashesMode: "off", reportUri: "" }), /scriptHashesMode/);
+	assert.throws(() => renderWith({ scriptHashesMode: "enforce", imageSourcesMode: "off", reportUri: "" }), /imageSourcesMode/);
 	assert.throws(() => renderResponseFunction({ template: "var handler = 1;", cspTemplate: "x", imgSrc: "x", strictImgSrc: "x", scriptSrc: "x", strictScriptSrc: "x", scriptHashesMode: "enforce" }), /has no __CSP_TEMPLATE__/);
 	const template = readFileSync(RESPONSE_TEMPLATE_PATH, "utf8");
 	const base = { template, cspTemplate: createCspTemplate(), imgSrc: "x", strictImgSrc: "x", scriptSrc: "x", strictScriptSrc: "x", scriptHashesMode: "enforce" };

@@ -21,6 +21,8 @@ var SCRIPT_HASHES_CURRENT = "";
 var SCRIPT_HASHES_PREVIOUS = "";
 // "report-only": only the report-only policy names the hashes; "enforce": the enforced policy too.
 var SCRIPT_HASHES_MODE = "enforce";
+// Same switch for the narrowed image sources.
+var IMAGE_SOURCES_MODE = "enforce";
 // Report receiver from edge-config.json; empty switches the report-only header off.
 var REPORT_URI = "https://siqpvdjvlkzrxgcpsevl4f5kui0ynupf.lambda-url.ap-northeast-1.on.aws/";
 
@@ -31,10 +33,13 @@ function policy(frameAncestors, imgSrc, scriptSrc) {
 var SCRIPT_HASHES = (SCRIPT_HASHES_CURRENT + ' ' + SCRIPT_HASHES_PREVIOUS).trim();
 var HASHED_SCRIPT_SRC = SCRIPT_HASHES ? STRICT_SCRIPT_SRC + ' ' + SCRIPT_HASHES : STRICT_SCRIPT_SRC;
 var ENFORCE_HASHES = SCRIPT_HASHES_MODE === 'enforce';
+var ENFORCE_IMAGES = IMAGE_SOURCES_MODE === 'enforce';
 var REPORT_SUFFIX = REPORT_URI ? '; report-uri ' + REPORT_URI : '';
-var TERMINAL_CSP = policy("'none'", IMG_SRC, ENFORCE_HASHES ? HASHED_SCRIPT_SRC : SCRIPT_SRC) + (ENFORCE_HASHES ? REPORT_SUFFIX : '');
+var TERMINAL_CSP = policy("'none'", ENFORCE_IMAGES ? STRICT_IMG_SRC : IMG_SRC, ENFORCE_HASHES ? HASHED_SCRIPT_SRC : SCRIPT_SRC) + (ENFORCE_HASHES || ENFORCE_IMAGES ? REPORT_SUFFIX : '');
 var CHART_CSP = policy("'self'", IMG_SRC, SCRIPT_SRC);
-var TERMINAL_CSP_REPORT_ONLY = REPORT_URI ? policy("'none'", STRICT_IMG_SRC, HASHED_SCRIPT_SRC) + REPORT_SUFFIX : '';
+var CANDIDATE_CSP = REPORT_URI ? policy("'none'", STRICT_IMG_SRC, HASHED_SCRIPT_SRC) + REPORT_SUFFIX : '';
+// Once every stricter directive is enforced the candidate repeats the enforced policy; sending it again would only double every report.
+var TERMINAL_CSP_REPORT_ONLY = CANDIDATE_CSP !== TERMINAL_CSP ? CANDIDATE_CSP : '';
 
 function isChartAsset(uri) {
 	return uri.indexOf('/charting_library/') === 0 || uri.indexOf('/tradingview-theme-') === 0;

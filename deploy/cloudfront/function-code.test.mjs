@@ -50,11 +50,13 @@ test("the size limit and the edge config are validated", () => {
 	assert.throws(() => assertFunctionCodeSize("x".repeat(FUNCTION_CODE_LIMIT_BYTES + 1)), /CloudFront Functions allow/);
 	const dir = mkdtempSync(join(tmpdir(), "gatu-edge-config-"));
 	const path = join(dir, "edge-config.json");
-	writeFileSync(path, JSON.stringify({ cspReportUri: "https://reports.example/", cspScriptHashes: "enforce" }));
-	assert.deepEqual(readEdgeConfig(path), { cspReportUri: "https://reports.example/", cspScriptHashes: "enforce" });
-	writeFileSync(path, JSON.stringify({ cspReportUri: "", cspScriptHashes: "off" }));
+	writeFileSync(path, JSON.stringify({ cspReportUri: "https://reports.example/", cspScriptHashes: "enforce", cspImageSources: "report-only" }));
+	assert.deepEqual(readEdgeConfig(path), { cspReportUri: "https://reports.example/", cspScriptHashes: "enforce", cspImageSources: "report-only" });
+	writeFileSync(path, JSON.stringify({ cspReportUri: "", cspScriptHashes: "off", cspImageSources: "enforce" }));
 	assert.throws(() => readEdgeConfig(path), /cspScriptHashes/);
-	writeFileSync(path, JSON.stringify({ cspReportUri: "http://reports.example/", cspScriptHashes: "report-only" }));
+	writeFileSync(path, JSON.stringify({ cspReportUri: "", cspScriptHashes: "enforce" }));
+	assert.throws(() => readEdgeConfig(path), /cspImageSources/);
+	writeFileSync(path, JSON.stringify({ cspReportUri: "http://reports.example/", cspScriptHashes: "report-only", cspImageSources: "report-only" }));
 	assert.throws(() => readEdgeConfig(path), /https origin/);
 	assert.deepEqual(SCRIPT_HASHES_MODES, ["report-only", "enforce"]);
 });

@@ -115,7 +115,7 @@ const CHART_ENTRY = "/charting_library/charting_library.js?v=abc";
 const THEME_SCRIPT = '(()=>{document.documentElement.classList.add("dark")})();';
 const THEME_HASH = cspHash(THEME_SCRIPT);
 const SHELL_HTML = `<html><head><script>${THEME_SCRIPT}</script>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/><meta name="gatu-preload-desktop" content="/assets/chunk-1.js"/><meta name="gatu-preload-mobile" content=""/><meta name="gatu-chart-prefetch" content="/charting_library/sameorigin.html"/></head></html>`;
-const REPORT_ONLY_HEADER = `default-src 'self'; script-src 'self' 'report-sample' '${THEME_HASH}'; report-uri https://reports.example/`;
+const REPORT_ONLY_HEADER = `default-src 'self'; img-src 'self' data: https://app.hyperliquid.xyz; script-src 'self' 'report-sample' '${THEME_HASH}'; report-uri https://reports.example/`;
 
 function createPublicDir() {
 	const dir = mkdtempSync(join(tmpdir(), "gatu-cf-verify-"));
@@ -176,9 +176,10 @@ test("verification passes when the edge serves the build with the expected heade
 		results.filter((result) => !result.ok),
 		[],
 	);
-	assert.equal(results.length, 13);
+	assert.equal(results.length, 14);
 	assert.equal(results.find((result) => result.name === "shell preloads the startup closure")?.detail, "24 links");
 	assert.equal(results.find((result) => result.name === "inline scripts are allowed by the edge policy")?.detail, "2 pages, 1 inline scripts, report-only");
+	assert.equal(results.find((result) => result.name === "image sources follow the edge config")?.detail, "3 sources, report-only");
 	assert.equal(results.find((result) => result.name.startsWith("chart entry"))?.detail, CHART_ENTRY);
 	assert.equal(results.find((result) => result.name === "shell repeats from the edge")?.detail, "Hit from cloudfront");
 	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
@@ -211,6 +212,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 		"chart entry is immutable and preloaded by the shell",
 		"shell preloads the startup closure",
 		"inline scripts are allowed by the edge policy",
+		"image sources follow the edge config",
 		"health probe answers 204",
 		"shell repeats from the edge",
 		"chart bundles are immutable at the edge",
@@ -238,6 +240,20 @@ test("the enforced stage rejects a policy that still allows unsafe-inline or mis
 	assert.match((await run(`default-src 'self'; script-src 'self' 'unsafe-inline' '${THEME_HASH}'`)).detail, /still allows 'unsafe-inline'/);
 	assert.match((await run("default-src 'self'; script-src 'self'")).detail, /does not allow inline script sha256-/);
 	assert.match((await run("default-src 'self'")).detail, /has no content-security-policy with a script-src/);
+	async function images(header) {
+		const results = await verifyDeployment({
+			origin: "https://app.gatu.ai",
+			publicDir,
+			network: "mainnet",
+			scriptHashesMode: "enforce",
+			imageSourcesMode: "enforce",
+			fetchImpl: fakeFetch({ "/trade/HYPE": { body: SHELL_HTML, headers: { "content-security-policy": header } }, "*": { status: 404, body: "missing" } }),
+		});
+		return results.find((result) => result.name === "image sources follow the edge config");
+	}
+	assert.equal((await images("default-src 'self'; img-src 'self' data: https://app.hyperliquid.xyz")).ok, true);
+	assert.match((await images("default-src 'self'; img-src 'self' data: blob: https:")).detail, /still allows any https origin/);
+	assert.match((await images("default-src 'self'")).detail, /no content-security-policy with an img-src/);
 });
 
 test("a release fills the committed function with the build's hashes and keeps the live set as previous", () => {

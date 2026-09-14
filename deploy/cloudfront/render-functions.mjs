@@ -13,7 +13,7 @@ import {
 	cspDirectives,
 	serializeContentSecurityPolicy,
 } from "../../apps/terminal/src/config/security-headers.ts";
-import { assertFunctionCodeSize, readEdgeConfig, SCRIPT_HASHES_MODES } from "./function-code.mjs";
+import { assertFunctionCodeSize, EDGE_CSP_MODES, readEdgeConfig } from "./function-code.mjs";
 
 export { EDGE_CONFIG_PATH, FUNCTION_CODE_LIMIT_BYTES, readEdgeConfig } from "./function-code.mjs";
 
@@ -29,6 +29,7 @@ const PLACEHOLDERS = {
 	scriptSrc: "__SCRIPT_SRC__",
 	strictScriptSrc: "__STRICT_SCRIPT_SRC__",
 	scriptHashesMode: "__SCRIPT_HASHES_MODE__",
+	imageSourcesMode: "__IMAGE_SOURCES_MODE__",
 	reportUri: "__REPORT_URI__",
 };
 
@@ -44,9 +45,21 @@ function embed(value, { slots = false } = {}) {
 	return value;
 }
 
-export function renderResponseFunction({ template, cspTemplate, imgSrc, strictImgSrc, scriptSrc, strictScriptSrc, scriptHashesMode, reportUri = "" }) {
-	if (!SCRIPT_HASHES_MODES.includes(scriptHashesMode)) throw new Error(`scriptHashesMode must be one of ${SCRIPT_HASHES_MODES.join(", ")}`);
-	const values = { cspTemplate, imgSrc, strictImgSrc, scriptSrc, strictScriptSrc, scriptHashesMode, reportUri };
+export function renderResponseFunction({
+	template,
+	cspTemplate,
+	imgSrc,
+	strictImgSrc,
+	scriptSrc,
+	strictScriptSrc,
+	scriptHashesMode,
+	imageSourcesMode = "report-only",
+	reportUri = "",
+}) {
+	for (const [name, mode] of [["scriptHashesMode", scriptHashesMode], ["imageSourcesMode", imageSourcesMode]]) {
+		if (!EDGE_CSP_MODES.includes(mode)) throw new Error(`${name} must be one of ${EDGE_CSP_MODES.join(", ")}`);
+	}
+	const values = { cspTemplate, imgSrc, strictImgSrc, scriptSrc, strictScriptSrc, scriptHashesMode, imageSourcesMode, reportUri };
 	let rendered = template.replace(
 		"// Generated from terminal-response.template.js by render-functions.mjs; do not edit the rendered\n// file by hand.",
 		"// GENERATED FILE: rendered from terminal-response.template.js by render-functions.mjs; do not\n// edit by hand.",
@@ -73,6 +86,7 @@ export function renderCurrentResponseFunction() {
 		scriptSrc: cspDirectives["script-src"],
 		strictScriptSrc: strict["script-src"],
 		scriptHashesMode: config.cspScriptHashes,
+		imageSourcesMode: config.cspImageSources,
 		reportUri: config.cspReportUri,
 	});
 }

@@ -69,8 +69,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   of `'unsafe-inline'`: the build lists the hashes, the release writes the current and previous
   sets into the CloudFront Function, `deploy.mjs sync` refuses to upload pages the live policy
   does not allow, and `verify` checks every page against the live header. The edge enforces the
-  hashed `script-src` (no `'unsafe-inline'`, no `blob:`, violations reported) since the same day;
-  `cspScriptHashes` in the edge config switches back to report-only. See ADR 0007 and
+  hashed `script-src` (no `'unsafe-inline'`, no `blob:`, violations reported) and the narrowed
+  `img-src` (known hosts only) since the same day; `cspScriptHashes` and `cspImageSources` in
+  the edge config switch either back to report-only, and the report-only header is omitted while
+  it would repeat the enforced policy. See ADR 0007 and
   [the inline script hash plan](docs/csp-inline-script-hashes-plan.md).
 
 ### Changed

@@ -214,7 +214,7 @@ function sha256(buffer) {
  * shell and document parity with the local build, security and preconnect headers, the live geo
  * endpoint, referral deep-link headers, and 404s for missing files.
  */
-export async function verifyDeployment({ origin, publicDir, network, fetchImpl = fetch, scriptHashesMode = "report-only" }) {
+export async function verifyDeployment({ origin, publicDir, network, fetchImpl = fetch, scriptHashesMode = "report-only", imageSourcesMode = "report-only" }) {
 	const base = origin.replace(/\/+$/, "");
 	const expectedApiOrigin = network === "testnet" ? "https://api.hyperliquid-testnet.xyz" : "https://api.hyperliquid.xyz";
 	const shell = readFileSync(join(publicDir, "_shell.html"));
@@ -334,6 +334,15 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 			total += hashes.length;
 		}
 		return `${pages.length} pages, ${total} inline scripts, ${scriptHashesMode}`;
+	});
+	await check("image sources follow the edge config", async () => {
+		const response = await fetchImpl(`${base}/trade/HYPE`, { headers: { accept: "text/html" } });
+		const headerName = imageSourcesMode === "enforce" ? "content-security-policy" : "content-security-policy-report-only";
+		const imgSrc = /(?:^|;\s*)img-src ([^;]*)/.exec(response.headers.get(headerName) ?? "")?.[1];
+		expect(imgSrc !== undefined, `no ${headerName} with an img-src`);
+		const sources = imgSrc.split(" ");
+		expect(sources.includes("'self'") && !sources.includes("https:"), `${headerName} img-src still allows any https origin: ${imgSrc}`);
+		return `${sources.length} sources, ${imageSourcesMode}`;
 	});
 	await check("health probe answers 204", async () => {
 		const response = await fetchImpl(`${base}/api/health`);
@@ -545,6 +554,7 @@ async function main() {
 				publicDir,
 				network: options.network,
 				scriptHashesMode: readEdgeConfig().cspScriptHashes,
+				imageSourcesMode: readEdgeConfig().cspImageSources,
 			});
 			for (const result of results) console.log(`${result.ok ? "ok  " : "FAIL"} ${result.name}${result.detail ? ` — ${result.detail}` : ""}`);
 			if (results.some((result) => !result.ok)) process.exit(1);

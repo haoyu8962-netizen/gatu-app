@@ -7,10 +7,12 @@ import { fileURLToPath } from "node:url";
 
 export const FUNCTION_CODE_LIMIT_BYTES = 10 * 1024;
 /**
- * `report-only`: the enforced policy keeps `'unsafe-inline'` and only the report-only policy names
- * the inline script hashes; `enforce`: both policies do, and the enforced one reports too.
+ * Each stricter directive is switched separately: `report-only` keeps it in the report-only policy,
+ * `enforce` moves it into the enforced policy as well (which then reports too). The report-only
+ * header is omitted once it would repeat the enforced policy.
  */
-export const SCRIPT_HASHES_MODES = ["report-only", "enforce"];
+export const EDGE_CSP_MODES = ["report-only", "enforce"];
+export const SCRIPT_HASHES_MODES = EDGE_CSP_MODES;
 export const EDGE_CONFIG_PATH = join(dirname(fileURLToPath(import.meta.url)), "edge-config.json");
 const HASH_VARIABLES = { current: "SCRIPT_HASHES_CURRENT", previous: "SCRIPT_HASHES_PREVIOUS" };
 const HASH_PATTERN = /^sha256-[A-Za-z0-9+/]{43}=$/;
@@ -22,10 +24,10 @@ export function readEdgeConfig(path = EDGE_CONFIG_PATH) {
 	if (cspReportUri && !/^https:\/\/[a-z0-9.-]+\/?$/.test(cspReportUri)) {
 		throw new Error("edge-config.json cspReportUri must be an https origin");
 	}
-	if (!SCRIPT_HASHES_MODES.includes(config.cspScriptHashes)) {
-		throw new Error(`edge-config.json cspScriptHashes must be one of ${SCRIPT_HASHES_MODES.join(", ")}`);
+	for (const key of ["cspScriptHashes", "cspImageSources"]) {
+		if (!EDGE_CSP_MODES.includes(config[key])) throw new Error(`edge-config.json ${key} must be one of ${EDGE_CSP_MODES.join(", ")}`);
 	}
-	return { cspReportUri, cspScriptHashes: config.cspScriptHashes };
+	return { cspReportUri, cspScriptHashes: config.cspScriptHashes, cspImageSources: config.cspImageSources };
 }
 
 export function assertFunctionCodeSize(code, label = "Rendered function") {
