@@ -3,6 +3,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, w
 import { dirname, isAbsolute, posix, relative, resolve, sep } from "node:path";
 
 export const CLIENT_CHUNK_GRAPH_FILE = "client-chunk-graph.json";
+/** The graph inventories the hashed chunks and stylesheets Vite writes here; other emitted files (the content-hashed TradingView loader copy, build metadata) are not chunks. */
+const CLIENT_ASSETS_DIRECTORY = "assets/";
 
 function isClientGraphAsset(file) {
 	return file.endsWith(".js") || file.endsWith(".css");
@@ -55,6 +57,7 @@ export function createClientChunkGraph(bundle, repositoryRoot) {
 	const assets = [];
 
 	for (const output of Object.values(bundle)) {
+		if (!output.fileName.startsWith(CLIENT_ASSETS_DIRECTORY)) continue;
 		const file = normalizeOutputFile(output.fileName);
 		if (isClientGraphAsset(file)) assets.push(file);
 		if (output.type !== "chunk") continue;
