@@ -270,6 +270,14 @@ AWS：用 `gatu-edge` 创建 `gatu-terminal-api-csp-report`（nodejs22.x、arm64
 
 可选处理（未实施，等用户决定）：P1 把预渲染壳换成终端真实框架（占位值为"-"），FCP 那一帧就像最终页面；P2 把 `TradeTerminalPage` 与行情订阅移到钱包运行时门之前，Provider 边界下移到依赖钱包的组件（即加载顺序审查的建议 D），预计订阅提前约 370 ms；P3 启动只订阅当前市场与轻量频道，全市场快照延后到首屏之后或改用更轻的频道（需核实公开 API 是否提供 `pac`/`sac`/`l2`）；P4 查订单簿为何在首帧到达后仍延迟渲染；P5 未登录时顶栏不显示"Connecting…"。
 
+## 第二十四检查点：首屏框架（P1）与 Connect Wallet 即时显示（P5）（2026-09-14，基于 `31e644b6`）
+
+用户选定 P1 与 P5。P1：`AppShellSkeleton` 从空网格改为终端的真实框架——`DesktopGridLoadingSurface` 新增 `renderPanel`，七个面板分别填入收藏栏（星标）、市场头部（币种占位、Mark/ORACLE/24h Change/24H VOL/OPEN INT/FUNDING 各 `-`）、图表（居中品牌标）、订单簿（Order Book/Trades 页签、Price/Size/Total 列头、Spread 行）、下单面板（Margin/Leverage/Account 选择器、Market/Limit/Advanced 页签、Long/Short、Available、Size、滑杆、Reduce Only/TP/SL、Connect Wallet、六行汇总）、账户表页签、账户概览（Deposit/Withdraw、Account Summary 三行）；壳外再画顶栏（导航八项、Connect Wallet、主题/语言/设置图标）与页脚（状态点、⌘K、五个链接、版本）；移动壳画市场栏、下单表单与订单簿分栏、账户页签、三项底部导航。全部是惰性标记（无 `button`/`nav`/链接/输入框/动画，整体 `aria-hidden`），启动占位契约测试不变；标签为英文源文（不经 Lingui），原因与取舍记入 ADR 0005 决策 13。新增 `app-shell-frame.test.tsx`（桌面标签齐全、无数字、七面板各有内容、无可聚焦元素、移动端 Connect Wallet 与三页签）。壳 `_shell.html` 19 KB → 41 KB 原始（gzip 后随资源一起在 8 KB 级），预算：静态启动闭包 -12.5 KB 于基线，总量 -89 KB。
+
+P5：`lib/wallet/privy-session-hint.ts` 检查 Privy 本地存储的会话键（`privy:token`、`privy:refresh_token`、`privy:id_token`，键名以已安装 SDK 3.30.0 的 `CUSTOMER_ACCESS_TOKEN_STORAGE_KEY` 核实；SDK 对未登录访客也会写 `privy:caid`/`privy:connections`，所以不能按前缀判断）；`user-menu.tsx` 在 Privy 未就绪时只有存在会话键或初始化恢复到期才显示 Connecting...，否则直接显示 Connect Wallet，点击打开的 `WalletModal` 自己等 `ready` 再启动 Privy。`user-menu.test.tsx` 补两条用例并在 `beforeEach` 清空 localStorage；原有等待用例改为先写入会话键。相关契约测试（钱包/上手/布局 9 文件 144 用例、骨架与用户菜单 15 文件 192 用例）、typecheck、`pnpm check` 通过。
+
+发布 p12（基于 `31e644b6`，首版框架）与 p13（同一提交，修正市场指标与下单选择器标签的大小写，与真实页面一致）：均按 functions → sync → 失效 → verify，主网 14/14、测试网 15/15；覆盖 32 步 0 违规、0 控制台错误。首屏逐帧（p12，同机单样本，TTFB 221）：首绘约 0.8 s 时页面已是完整框架（680 字符文本，含 Connect Wallet、Order Book、账户页签），1.6 s 真实面板（30 个按钮、7 面板；顶栏此时直接是 Connect Wallet 而不是 Connecting...），2.0 s 数据齐。p13 复测两次遇本机网络抖动（TTFB 3.3 s 与 9.2 s），框架仍在首绘时完整出现并在等待期间保持，属环境噪声，未再取样。截图对照：框架与真实页面的几何一致，剩余差异是框架里币种/数值为占位、真实页面收藏栏有市场药丸。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

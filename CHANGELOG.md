@@ -77,6 +77,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The prerendered application shell now draws the terminal's real frame (navigation,
+  market header, order book and order-entry chrome, account tabs, footer) with `-`
+  placeholders instead of an empty grid, so the first paint already looks like the terminal
+  while the runtime loads. Labels are English until the localized page replaces the frame.
+- The header shows `Connect Wallet` immediately for visitors without a stored Privy session;
+  `Connecting...` now appears only when a session is being restored or recovery is due.
+
 - Desktop panels retain aligned chart, market-data, order-entry and account
   boundaries during resizing. Mobile order-entry and its adjacent book grow with
   the form, with the page owning vertical scrolling. See

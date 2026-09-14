@@ -39,6 +39,8 @@ Nitro 目前承担的服务端职责：
 12. **壳与仪表盘路由的水合表面。** 壳在 `/trade` 掩码路由预渲染，带的是终端骨架；仪表盘路由（组合、金库、质押、推荐、排行榜、历史页、`/join/*`）在水合期间必须复现同一骨架，否则 React 丢弃服务端 HTML、重新客户端渲染并通过 `onRecoverableError` 上报一次 `react_recoverable`（2026-09-14 在 CloudWatch 实测每次仪表盘导航一条）。`config/app-route-surface.ts` 的 `getHydrationRouteSurface(pathname, hydrated)` 在 `useHydrated()` 为假时把非文档路由的骨架表面固定为 `terminal`，水合完成后再切到真实表面；文档路由水合自己的预渲染页面，不受影响。
 13. Lambda 源坚持用 OAC（函数 URL `AuthType=AWS_IAM`）而不是"公开 URL + 共享密钥头"：未签名的直接调用在 Lambda 入口就被拒绝，不产生调用计费与并发占用，也没有需要轮换的密钥。代价有两条，都由本仓库承担：函数资源策略必须同时授予 CloudFront 服务主体 `lambda:InvokeFunctionUrl` 与 `lambda:InvokeFunction`（AWS 文档要求；只加前者时 CloudFront 得到 403 `AccessDeniedException`）；CloudFront 签名不读请求体，浏览器发出的 `POST` 必须自带 `x-amz-content-sha256`，否则 Lambda 回"signature does not match"。因此同源 JSON `POST` 统一经 `src/lib/api/payload-hash.ts` 的 `createJsonPostHeaders(body)` 发出（同步 SHA-256，`keepalive` 错误上报在卸载时也能立即发出），`deploy.mjs verify` 用同样的头做一次真实 `POST /api/referral-geo`。共享密钥方案曾被实现到一半后放弃：它需要把函数 URL 改成公开、在分发配置与 Lambda 环境两处保存密钥。
 
+13. **壳预渲染终端的真实框架，而不是空骨架。** 2026-09-14 与官方站同机对比（任务记录第二十三检查点）：两站到内容齐备的时刻相近，但官方从空白直接跳到带数据的整页，我们先画只有边框的空格子、再画空面板、再逐个填数，三段可见的等待被感知为"加载状态"。`AppShellSkeleton` 因此改为终端的真实框架：顶栏导航与 Connect Wallet、收藏栏、市场头部各项指标、订单簿页签与列头、下单表单的控件与汇总行、账户表页签、账户概览、页脚；数值一律是 `-`/`—` 占位，移动端同样画出市场栏、下单表单、订单簿与三项底部导航。框架仍是启动占位契约要求的惰性标记：没有 `button`、`nav`、链接、输入框与动画，整体 `aria-hidden`，屏幕阅读器只听到加载播报。标签是英文源文（不经 Lingui）：壳只预渲染一次并在任何非英文目录激活前水合，翻译过的标签会与预渲染 HTML 不一致、迫使 React 丢弃壳；非英文用户在真实页面渲染前会看到不到一秒的英文框架，与官方站的顶栏一致。几何仍来自 `desktop-grid-loading-surface.tsx` 的默认布局，`renderPanel` 只往面板里填内容。
+
 ## 备选方案与取舍
 
 | 方案 | 判断 |

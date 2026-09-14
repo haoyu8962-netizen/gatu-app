@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 const GRID_ROW_HEIGHT_PX = 30;
 const GRID_GAP_PX = 3;
@@ -71,9 +71,11 @@ const PANEL_PRESENTATIONS = DEFAULT_DESKTOP_GRID_LOADING_LAYOUTS.md.map((mdItem)
 export function DesktopGridLoadingSurface({
 	markShellPanels = false,
 	panelClassName,
+	renderPanel,
 }: {
 	markShellPanels?: boolean;
 	panelClassName: string;
+	renderPanel?: (panelId: DesktopGridLoadingPanelId) => ReactNode;
 }) {
 	return (
 		<div
@@ -89,7 +91,9 @@ export function DesktopGridLoadingSurface({
 					data-shell-panel={markShellPanels ? "" : undefined}
 					className={`${panelClassName} ${PANEL_CLASS_NAME}`}
 					style={panel.style}
-				/>
+				>
+					{renderPanel?.(panel.i)}
+				</div>
 			))}
 		</div>
 	);

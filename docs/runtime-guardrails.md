@@ -64,6 +64,11 @@ Do not collapse these states into one boolean.
 - A Privy-authenticated session is not proof that the expected signing wallet
   is active. Email and reconnect flows must select the exact wallet associated
   with the current user and fail closed when that wallet is unavailable.
+- Before Privy reports ready, the header shows `Connect Wallet` unless this
+  browser holds a Privy session (`lib/wallet/privy-session-hint.ts` checks the
+  SDK's local-storage token keys) or auth-initialization recovery is due; only
+  those cases show `Connecting...`. The connect button may open `WalletModal`
+  before readiness because the modal itself waits for `ready` to launch Privy.
 - `WalletModal` owns the primary interactive Connect surface. Surfaces outside
   `MOBILE_QR_SURFACE_MEDIA_QUERY` launch Privy directly; matching surfaces use
   the application drawer first and must close it before launching Privy.

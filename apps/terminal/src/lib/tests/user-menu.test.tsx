@@ -289,6 +289,7 @@ describe("UserMenu", () => {
 		testState.mobileSyncModalUnmounts = 0;
 		testState.ready = true;
 		testState.sessionMode = "disconnected";
+		window.localStorage.clear();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -496,6 +497,7 @@ describe("UserMenu", () => {
 
 	it("keeps loading and connect labels inside the mobile account width", () => {
 		testState.ready = false;
+		window.localStorage.setItem("privy:token", "stored-session");
 		act(() => {
 			root.render(createElement(UserMenu));
 		});
@@ -544,10 +546,35 @@ describe("UserMenu", () => {
 		expect(testState.disconnectWallet).not.toHaveBeenCalled();
 	});
 
+	it("shows the connect entry before Privy is ready when this browser holds no Privy session", async () => {
+		testState.ready = false;
+		testState.walletsReady = false;
+		await act(async () => {
+			root.render(createElement(UserMenu));
+		});
+		expect(container.textContent).not.toContain("Connecting...");
+		const connect = findButtonByText(container, "Connect Wallet");
+		expect(connect.disabled).toBe(false);
+		await act(async () => connect.click());
+		await vi.waitFor(() => expect(testState.walletModalMounts).toBe(1));
+		expect(testState.walletModalOpen).toBe(true);
+		expect(testState.login).not.toHaveBeenCalled();
+	});
+
+	it("waits with the connecting state before Privy is ready when a Privy session is stored", () => {
+		testState.ready = false;
+		testState.walletsReady = false;
+		window.localStorage.setItem("privy:refresh_token", "stored-session");
+		act(() => root.render(createElement(UserMenu)));
+		expect(findButtonByText(container, "Connecting...").disabled).toBe(true);
+		expect(container.textContent).not.toContain("Connect Wallet");
+	});
+
 	it("offers auth initialization recovery only after the delay and removes it when auth becomes ready", () => {
 		vi.useFakeTimers();
 		testState.ready = false;
 		testState.walletsReady = false;
+		window.localStorage.setItem("privy:token", "stored-session");
 		act(() => root.render(createElement(UserMenu)));
 		expect(findButtonByText(container, "Connecting...").disabled).toBe(true);
 		act(() => vi.advanceTimersByTime(29_999));

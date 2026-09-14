@@ -19,6 +19,7 @@ import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hoo
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { createLazyComponent } from "@/lib/lazy";
+import { hasPersistedPrivySession } from "@/lib/wallet/privy-session-hint";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import { UserMenuModalErrorBoundary, UserMenuModalLoadingFallback } from "./user-menu-modal-boundary";
 import { loadUserMenuModalModule } from "./user-menu-modal-load";
@@ -65,6 +66,7 @@ export function UserMenu({ variant = "default" }: Props) {
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [walletModalLoadAttempt, setWalletModalLoadAttempt] = useState(0);
 	const [mounted, setMounted] = useState(false);
+	const [sessionHint, setSessionHint] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
 	const isMobile = useIsMobile();
 	const isMobileQrSurface = useIsMobileQrSurface();
@@ -72,6 +74,7 @@ export function UserMenu({ variant = "default" }: Props) {
 
 	useEffect(() => {
 		setMounted(true);
+		setSessionHint(hasPersistedPrivySession());
 	}, []);
 
 	const initializationScope =
@@ -116,7 +119,10 @@ export function UserMenu({ variant = "default" }: Props) {
 		setMobileSyncLoadAttempt((attempt) => attempt + 1);
 	}
 
-	if (!mounted || (!authenticationReady && sessionMode !== "agent-only")) {
+	const awaitsStoredSession =
+		!authenticationReady && sessionMode !== "agent-only" && (sessionHint || recoveryAvailable);
+
+	if (!mounted || awaitsStoredSession) {
 		return (
 			<Button
 				variant={isDesktopNav ? "filled" : "outline"}
