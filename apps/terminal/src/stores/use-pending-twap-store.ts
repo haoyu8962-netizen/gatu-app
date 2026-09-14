@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { create } from "zustand";
 import { STORAGE_KEYS } from "@/config/app";
 import {
@@ -6,6 +5,7 @@ import {
 	TWAP_RECONCILIATION_MAX_AGE_MS,
 	type TwapIntent,
 } from "@/domain/trade/twap";
+import { z } from "@/lib/zod";
 
 const baselineSchema = z.object({
 	ready: z.boolean(),

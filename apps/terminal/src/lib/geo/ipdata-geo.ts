@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { isTradeRestricted, TRADE_RESTRICTED_REGIONS } from "@/config/geo";
+import { z } from "@/lib/zod";
 
 const ipdataGeoResponseSchema = z
 	.object({

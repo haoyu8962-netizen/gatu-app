@@ -24,7 +24,7 @@
 
 ## 后果与边界
 
-- 报告只反映真实用户会话，本机与 Playwright 验证不会触发第三方图片；需要等真实流量。report-only 策略会报告它自己会拦截的一切，包括现行策略早已拦截的项（首条真实报告就是 `vendor-tanstack-router` 块里的 `eval`，现行 `script-src` 同样没有 `'unsafe-eval'`），评估第二步时要按候选策略与现行策略的差集看。
+- 报告只反映真实用户会话，本机与 Playwright 验证不会触发第三方图片；需要等真实流量。report-only 策略会报告它自己会拦截的一切，包括现行策略早已拦截的项（首条真实报告就是 `vendor-tanstack-router` 块里的 `eval`，现行 `script-src` 同样没有 `'unsafe-eval'`），评估第二步时要按候选策略与现行策略的差集看。该 `eval` 的来源是 Zod 4 的 `util.allowsEval`：第一个 `z.object()` 构建时用 `new Function("")` 探测能否 JIT，探测被策略拦下并上报，Zod 随即退回普通解析器，页面无异常。2026-09-14 起终端与 `hl-react` 的每个 schema 模块都经 `apps/terminal/src/lib/zod.ts`、`packages/hl-react/src/zod.ts` 导入 Zod，包装模块先执行 `config({ jitless: true })` 再 `export * from "zod"`，依赖顺序保证配置先于任何 schema 构建；`zod-jitless.test.ts` 钉住配置、探测未发生与"不得直接导入 zod 值"。第一次尝试把配置放在水合入口的第一条导入里无效（发布 p9 仍每页一条 `eval`）：打包后一个 chunk 的静态导入先于它自己的代码执行，其它 chunk 里的 schema 先构建了。服务端渲染与 Lambda 不受影响，性能不变，因为在策略下 JIT 本来就不可用。
 - 接收器是公开端点，任何人都能写日志；预留并发、正文上限与每分钟限额把成本封顶。
 - 过渡期 Nitro（EC2）不发 report-only 头，只有 CloudFront 目标参与观察。
 - 2026-09-14 实测：接收器函数经 IAM 直接调用返回 204，但 `AuthType=NONE` 的函数 URL 对任何请求都回 403 `AccessDeniedException`，资源策略（`Principal: *`、`FunctionUrlAuthType: NONE`）正确，重建 URL 无效，与账号级"Lambda 函数 URL 公开访问阻断"一致；本机 `aws-cli 2.36.2` 没有 `get/put-public-access-block-config`，`put-function-concurrency 2` 也因账号并发下限被拒。启用步骤：升级 AWS CLI 后对函数或账号执行 `put-public-access-block-config --public-access-block-config BlockPublicPolicy=false,RestrictPublicResource=false`（或在控制台关闭），确认 `curl -X POST` 返回 204，再把函数 URL 写进 `edge-config.json`、渲染并 `deploy.mjs functions --execute`。

@@ -230,6 +230,16 @@ AWS：用 `gatu-edge` 创建 `gatu-terminal-api-csp-report`（nodejs22.x、arm64
 
 实现：`edge-config.json` 新增 `cspImageSources`（与 `cspScriptHashes` 同一对取值，`function-code.mjs` 校验），模板新增 `IMAGE_SOURCES_MODE`，强制策略按两个开关拼出，任一 `enforce` 即附 `report-uri`；候选策略与强制策略逐字相同时省略 report-only 头（否则每条违规报两次）；`verify` 新增"image sources follow the edge config"（按开关所指的头检查 `img-src` 不含裸 `https:`）；测试 32 用例、`pnpm check` 通过。发布：只发布函数（仍是构建 p8，10 current + 7 previous），约 5 s 生效。核对：两条分发 `/trade/BTC` 与 `/docs` 的强制头 3,075 字符，`img-src 'self' data: blob:` 加 5 个已知主机，17 个哈希，无 `'unsafe-inline'`，含 `report-uri`，report-only 头已不再下发；图表路径仍是 1,946 字符的旧策略。verify 主网 14/14、测试网 15/15。覆盖复跑（32 步）：桌面 7 个面板、移动 3 个导航项，0 条 `img-src`、0 条内联脚本、0 条其它指令报告、0 条控制台错误，`eval` 20 条且只有 `enforce` 一种（report-only 头省略后不再重复）。CloudWatch 切换后 20 条报告全部是 `eval`。至此 ADR 0007 的两步收紧全部上线；剩余观察点：登录后界面的图片来源、`eval` 日志量。
 
+## 第二十检查点：消除 `eval` 报告（2026-09-14，基于 `d79ac6f8`）
+
+用户要求在上游消除 `new Function` 探测。定位：`vendor-tanstack-router` 块里唯一的 `new Function("")` 来自 Zod 4.3.4 的 `util.allowsEval`（`v4/core/util.js:150`），`$ZodObject` 构建时算 `fastEnabled = !globalConfig.jitless && allowsEval.value`（`schemas.js:901-903`），即第一个 `z.object()` 构建时探测一次并缓存；`jitless: true` 时短路不探测，这个开关就是 Zod 为禁止 `eval` 的环境准备的。客户端包里只有一份 Zod。
+
+第一次尝试（发布 p9，基于同一提交的未提交改动）：`src/config/zod-runtime.ts` 执行 `z.config({ jitless: true })`，作为 `client-hydrate.tsx` 的第一条导入。发布后覆盖仍每页一条 `eval`：配置被打进 `client-hydrate` chunk，而该 chunk 的静态导入（`vendor-base-ui`、`vendor-tanstack-router`、`index-*`）先于 chunk 体执行，其它 chunk 里的 schema 已先构建。结论：跨 chunk 的副作用顺序不能靠入口的导入顺序，只能靠模块依赖。
+
+第二次（发布 p10）：新增 `apps/terminal/src/lib/zod.ts` 与 `packages/hl-react/src/zod.ts`，先 `config({ jitless: true })` 再 `export * from "zod"`；终端 9 个 schema 模块与 `hl-react` 的 `legal.ts`、`agent-storage.ts` 改为经包装导入（`validated-storage.ts` 只有 `import type`，不受影响）；删除 `zod-runtime.ts` 与入口导入。`zod-jitless.test.ts`：`z.config().jitless` 为真、构建并解析对象 schema 前后 `util.allowsEval` 仍是未求值的 getter（探测未发生）、扫描两处源码目录不得直接导入 `zod` 的值。打包后包装模块落在 `vendor-tanstack-router` chunk（与 Zod 同 chunk，先于所有消费方执行）。验证：`pnpm check` 1,363 文件、`pnpm typecheck` 三包、vitest 相关 4 文件 32 用例通过。
+
+发布 p10：build → `functions --execute`（10 current + 7 previous）→ `sync`（守卫通过）→ 两条失效 → verify 主网 14/14、测试网 15/15（Lambda 代码未变，未重发）。覆盖 32 步：0 条 `script-src` 报告、0 条其它指令报告、0 条控制台错误，桌面 7 面板、移动 3 导航项。CloudWatch：失效完成后 0 条报告（此前 20 分钟内的 20 条全部在 p9 时段）。附带观察：p9 覆盖时 `/spot` 的图表 iframe 曾尝试加载 `https://www.google-analytics.com/analytics.js`，被图表策略拦下（`script-src` 无该主机），只见于控制台、p10 未复现，属 TradingView 库行为，本次未处理。`build-meta.json` 的 `commit` 仍是构建时的 HEAD `d79ac6f8`，改动在发布后才提交。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

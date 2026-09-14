@@ -1,7 +1,7 @@
-import { z } from "zod";
 import type { GeoVerdict } from "@/config/geo";
 import { resolveDevelopmentGeoVerdict } from "@/lib/geo/development-geo";
 import { type ParsedIpdataGeo, parseIpdataGeoResponse } from "@/lib/geo/ipdata-geo";
+import { z } from "@/lib/zod";
 
 export const REFERRAL_GEO_LEASE_MS = 60_000;
 

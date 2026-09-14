@@ -576,6 +576,8 @@ Nitro 目标的 `script-src` 仍包含 `'unsafe-inline'`，用于兼容 TanStack
 CloudFront 目标自 2026-09-14 起改为按预渲染页内联脚本的哈希强制（`edge-config.json` 的
 `cspScriptHashes: enforce`，撤回改为 `report-only` 即可），每次发布必须先发布函数再上传 HTML，
 并跑 `apps/terminal/tests/browser/csp-coverage.mjs`。不要直接从 Nitro 策略删除 `'unsafe-inline'`。
+两种策略都没有 `'unsafe-eval'`：schema 模块一律经 `src/lib/zod.ts`（`hl-react` 经 `packages/hl-react/src/zod.ts`）导入 Zod，
+包装模块先关闭 Zod 4 的 JIT，否则第一个对象 schema 构建时的 `new Function("")` 探测会在每个页面产生一条 `eval` 违规报告。
 
 核对生产响应:
 

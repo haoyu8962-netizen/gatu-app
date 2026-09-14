@@ -101,6 +101,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Zod's JIT parser is disabled before any schema exists: application and `hl-react` modules
+  import Zod through `src/lib/zod.ts` and `packages/hl-react/src/zod.ts`, which switch it off
+  first. Building the first object schema no longer probes `new Function`, which the edge
+  Content-Security-Policy blocked and reported as an `eval` violation on every page even though
+  Zod fell back to its ordinary parser.
+
 - Reduced repeated order-queue render code so deployment builds retain more
   room under the existing trading-page bundle budget, preserving status badges,
   warning priority and individual order feedback. See
