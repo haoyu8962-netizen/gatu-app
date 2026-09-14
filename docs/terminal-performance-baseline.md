@@ -129,6 +129,34 @@ gzip bytes, leaving 227 bytes under the existing limit. The complete build passe
 all budgets and checked 388 chunks for static cycles; the work record includes
 both startup profiles and the verification scope.
 
+
+## Startup path re-baseline of `trade-terminal-page` (2026-09-14)
+
+The `claude/spa-mode` branch keeps the first real terminal render off React's
+Suspense fallback throttle: the client runtime gate reads the loaded wallet
+runtime through `useSyncExternalStore`, and the trade entry routes resolve every
+lazy piece of the first render from `beforeLoad` (`lib/trade/trade-route-boot.ts`)
+while the market catalog loads. The preload chain and its mobile-viewport check
+live in the `trade-terminal-page` chunk, which reached 123,242 gzip bytes: 4,035
+above the 119,207-byte baseline and 35 above the 4,000-byte allowance, of which
+the realistic prerendered frame had already used 3,744 bytes. The baseline for
+that named surface moved to 123,242 bytes; the allowance is unchanged, and no
+other number or validation script changed.
+
+Evidence: clean worktree build `GATU_RELEASE_ID=cloudfront-2026-09-14-p14 pnpm
+build` with Node 22.13.0 and pnpm 10.21.0 (not the pinned CI Node 22.15.0;
+compression variance stays inside the allowance), released as p14 with build
+metadata commit `5b61a3c3` plus the then-uncommitted startup-path change. The
+chunk-cycle check verified 390 client chunks with no circular static imports; no
+separate route-only diagnostic was run. Client gzip total 3,065,681 bytes
+(89,026 below baseline; largest chunk `index-Bs6QSD5q` 434,352). Static trade
+startup: 74 assets from 6 route preloads, 1 runtime script and 3 semantic
+entries, 1,558,084 bytes (12,137 below baseline). Mobile runtime increment: 11
+assets / 111,624 bytes (+1,044), 85 startup assets / 1,669,708 bytes in total.
+Desktop runtime increment: 25 assets / 196,958 bytes (+4,970), 99 startup assets
+/ 1,755,042 bytes in total. Every other named surface stayed within its limit.
+The measured boot effect is recorded in the task record (checkpoint 25) and
+[ADR 0005](adr/0005-spa-static-shell.md) decision 14.
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:

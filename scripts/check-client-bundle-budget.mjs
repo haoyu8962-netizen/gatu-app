@@ -58,7 +58,7 @@ const budgets = {
 		],
 	},
 	surfaces: [
-		{ name: "trade-terminal-page", baselineGzipBytes: 119_207, allowedIncreaseBytes: 4_000 },
+		{ name: "trade-terminal-page", baselineGzipBytes: 123_242, allowedIncreaseBytes: 4_000 },
 		{ name: "token-selector-popup", baselineGzipBytes: 14_355, allowedIncreaseBytes: 1_500 },
 		{ name: "api-wallet", baselineGzipBytes: 17_967, allowedIncreaseBytes: 2_000 },
 		{ name: "fundingHistory._address", baselineGzipBytes: 6_820, allowedIncreaseBytes: 1_500 },

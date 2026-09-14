@@ -77,6 +77,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The first real terminal render no longer waits on React's Suspense fallback throttle: the
+  client runtime gate switches synchronously once the wallet runtime module has loaded, and the
+  trade entry routes resolve every lazy piece of the first render (user menu, panels, chart,
+  default positions tab, footer, overlays) while the market catalog loads. The market-loading
+  workspace draws the same frame as the shell instead of empty panels.
 - The prerendered application shell now draws the terminal's real frame (navigation,
   market header, order book and order-entry chrome, account tabs, footer) with `-`
   placeholders instead of an empty grid, so the first paint already looks like the terminal

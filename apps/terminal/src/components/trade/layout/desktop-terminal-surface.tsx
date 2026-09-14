@@ -4,12 +4,18 @@ import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { GeoRestrictionBanner } from "../geo/geo-restriction-banner";
-import { TopNav } from "../header/top-nav";
+import { preloadTopNav, TopNav } from "../header/top-nav";
 import { TestnetBanner } from "../testnet-banner";
-import { MainWorkspace } from "./main-workspace";
+import { MainWorkspace, preloadMainWorkspacePanels } from "./main-workspace";
 import { TerminalLoadingWorkspace } from "./terminal-loading-workspace";
 
 const FooterBar = createLazyComponent(() => import("../footer/footer-bar"), "FooterBar");
+
+export function preloadDesktopTerminalSurface(): void {
+	void FooterBar.preload?.();
+	preloadTopNav();
+	preloadMainWorkspacePanels();
+}
 
 interface Props {
 	marketReady: boolean;

@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { startMarketCatalogBootstrap } from "@/lib/hyperliquid/markets/market-catalog-bootstrap";
+import { bootTradeRoute } from "@/lib/trade/trade-route-boot";
 
 function BuildersPerpLayout() {
 	return <Outlet />;
@@ -7,7 +7,7 @@ function BuildersPerpLayout() {
 
 export const Route = createFileRoute("/builders-perp")({
 	beforeLoad: ({ context }) => {
-		startMarketCatalogBootstrap(context.queryClient);
+		bootTradeRoute(context.queryClient);
 	},
 	component: BuildersPerpLayout,
 });

@@ -1,4 +1,5 @@
 import { Trans } from "@lingui/react/macro";
+import { renderDesktopPanelFrame } from "./app-shell-skeleton";
 import { DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
 
 export function TerminalLoadingWorkspace() {
@@ -12,7 +13,10 @@ export function TerminalLoadingWorkspace() {
 			<output className="sr-only">
 				<Trans>Loading markets...</Trans>
 			</output>
-			<DesktopGridLoadingSurface panelClassName="desktop-grid-panel bg-surface" />
+			<DesktopGridLoadingSurface
+				panelClassName="desktop-grid-panel overflow-hidden bg-surface"
+				renderPanel={renderDesktopPanelFrame}
+			/>
 		</main>
 	);
 }

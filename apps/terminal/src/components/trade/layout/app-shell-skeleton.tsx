@@ -86,7 +86,7 @@ export function AppShellSkeleton() {
 	);
 }
 
-function renderDesktopPanelFrame(panelId: DesktopGridLoadingPanelId) {
+export function renderDesktopPanelFrame(panelId: DesktopGridLoadingPanelId) {
 	switch (panelId) {
 		case "favoriteCoins":
 			return <FavoritesFrame />;

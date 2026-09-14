@@ -41,6 +41,8 @@ Nitro 目前承担的服务端职责：
 
 13. **壳预渲染终端的真实框架，而不是空骨架。** 2026-09-14 与官方站同机对比（任务记录第二十三检查点）：两站到内容齐备的时刻相近，但官方从空白直接跳到带数据的整页，我们先画只有边框的空格子、再画空面板、再逐个填数，三段可见的等待被感知为"加载状态"。`AppShellSkeleton` 因此改为终端的真实框架：顶栏导航与 Connect Wallet、收藏栏、市场头部各项指标、订单簿页签与列头、下单表单的控件与汇总行、账户表页签、账户概览、页脚；数值一律是 `-`/`—` 占位，移动端同样画出市场栏、下单表单、订单簿与三项底部导航。框架仍是启动占位契约要求的惰性标记：没有 `button`、`nav`、链接、输入框与动画，整体 `aria-hidden`，屏幕阅读器只听到加载播报。标签是英文源文（不经 Lingui）：壳只预渲染一次并在任何非英文目录激活前水合，翻译过的标签会与预渲染 HTML 不一致、迫使 React 丢弃壳；非英文用户在真实页面渲染前会看到不到一秒的英文框架，与官方站的顶栏一致。几何仍来自 `desktop-grid-loading-surface.tsx` 的默认布局，`renderPanel` 只往面板里填内容。
 
+14. **启动路径不经过 Suspense。** 2026-09-14 用 `tests/browser/boot-milestones.mjs` 逐段计时并配合 CPU 采样：React 水合完成到第一次真实渲染稳定相差 300–400 ms，其间主线程几乎空闲；面板首次提交又比工作区晚 200–560 ms。根因是 React 的 fallback 节流：只由重试车道触发、且树里仍有 Suspense fallback 的渲染，会推迟到上一次 fallback 提交后 300 ms 才提交。启动链上每一级都在触发它——`ClientRuntimeGate` 的 `React.lazy` 钱包运行时、`TopNav` 的 `UserMenu`、工作区的五个面板、`ChartPanel` 内的 TradingView、`PositionsPanel` 的默认页签、页脚、根覆盖层（Toaster、资金动作恢复宿主）。处理：`ClientRuntimeGate` 改为用 `useSyncExternalStore` 读取已加载的 `ClientRootProvider`（模块求值时仍提前 `import()`，服务端快照为空、水合时先渲染占位，加载失败在渲染时抛给错误边界），不再有 Suspense；交易入口路由的 `beforeLoad` 通过 `lib/trade/trade-route-boot.ts` 在启动市场目录请求的同时预解析当前表面的全部懒组件（`TradeTerminalPage` → `preloadTradeTerminalSurface` → 桌面表面/顶栏/工作区面板/图表/持仓默认页签/页脚；根覆盖层移到 `components/app-runtime-overlays.tsx` 并一并预解析），TanStack 的 `lazyRouteComponent` 解析后同步渲染，第一次真实渲染因此不再挂起。Suspense 边界保留给未预解析的情况。市场加载态的 `TerminalLoadingWorkspace` 也画决策 13 的真实框架，避免在目录慢时退回空格子。
+
 ## 备选方案与取舍
 
 | 方案 | 判断 |

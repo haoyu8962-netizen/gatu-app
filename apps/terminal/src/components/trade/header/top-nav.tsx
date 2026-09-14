@@ -20,6 +20,10 @@ import { ThemeToggle } from "./theme-toggle";
 
 const UserMenu = createLazyComponent(() => import("./user-menu"), "UserMenu");
 
+export function preloadTopNav(): void {
+	void UserMenu.preload?.();
+}
+
 export type TopNavMode = "default" | "market-loading";
 
 interface Props {

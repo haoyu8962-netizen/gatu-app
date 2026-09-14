@@ -8,7 +8,8 @@ import {
 	useHydrated,
 	useRouterState,
 } from "@tanstack/react-router";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { AppRuntimeOverlays, DocumentOverlays } from "@/components/app-runtime-overlays";
 import { ApplicationErrorBoundary } from "@/components/application-error-boundary";
 import { DashboardShellSkeleton } from "@/components/dashboard/dashboard-shell-skeleton";
 import { NotFoundPage } from "@/components/pages/not-found-page";
@@ -18,7 +19,6 @@ import { getHydrationRouteSurface } from "@/config/app-route-surface";
 import { isRtlLocale } from "@/config/i18n";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
-import { createLazyComponent } from "@/lib/lazy";
 import { buildRootHead } from "@/lib/seo";
 import { getAppRouteSurface, getPresentedRoutePathname, useClientRuntimeReady } from "@/providers/client-runtime";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
@@ -30,11 +30,6 @@ import appCss from "../styles.css?url";
 
 const FONT_PRELOAD_URLS = [interLatinWoff2, ibmPlexSansLatinWoff2];
 
-const Toaster = createLazyComponent(() => import("@/components/ui/sonner"), "Toaster");
-const FundsActionRecoveryHost = createLazyComponent(
-	() => import("@/components/funds-action/funds-action-recovery-host"),
-	"FundsActionRecoveryHost",
-);
 const THEME_BOOTSTRAP_SCRIPT = `(()=>{let theme="dark";try{const value=JSON.parse(localStorage.getItem("global-settings-v2")||"null");if(value?.state?.theme==="light")theme="light"}catch{}document.documentElement.classList.remove("light","dark");document.documentElement.classList.add(theme)})();`;
 let serviceWorkerRegistration: Promise<ServiceWorkerRegistration | undefined> | undefined;
 
@@ -76,9 +71,7 @@ function RootComponent() {
 		return (
 			<ApplicationErrorBoundary>
 				<Outlet />
-				<Suspense fallback={null}>
-					<Toaster />
-				</Suspense>
+				<DocumentOverlays />
 			</ApplicationErrorBoundary>
 		);
 	}
@@ -104,12 +97,7 @@ function AppRuntime({ fallback }: { fallback: React.ReactNode }) {
 			<ExchangeScopeProvider>
 				<MarketsInfoProvider>
 					<Outlet />
-					<Suspense fallback={null}>
-						<FundsActionRecoveryHost />
-					</Suspense>
-					<Suspense fallback={null}>
-						<Toaster />
-					</Suspense>
+					<AppRuntimeOverlays />
 				</MarketsInfoProvider>
 			</ExchangeScopeProvider>
 		</I18nReadyGate>

@@ -21,6 +21,13 @@ const OrderbookPanel = createLazyComponent(() => import("../orderbook/orderbook-
 const PositionsPanel = createLazyComponent(() => import("../positions/positions-panel"), "PositionsPanel");
 const TradePanel = createLazyComponent(() => import("../tradebox/trade-panel"), "TradePanel");
 
+// Resolved lazies render synchronously; a panel that suspends at boot makes React throttle the reveal.
+export function preloadMainWorkspacePanels(): void {
+	for (const panel of [AccountPanel, ChartPanel, OrderbookPanel, PositionsPanel, TradePanel]) void panel.preload?.();
+	void import("../chart/chart-panel").then((module) => module.preloadChartPanel()).catch(() => {});
+	void import("../positions/positions-panel").then((module) => module.preloadPositionsPanel()).catch(() => {});
+}
+
 const panelFallback = <div aria-hidden="true" className="h-full w-full bg-surface" />;
 
 function preloadPrimaryWorkspacePanels() {

@@ -40,6 +40,10 @@ const OrdersTab = createLazyComponent(() => import("./orders-tab"), "OrdersTab")
 const PositionsTab = createLazyComponent(() => import("./positions-tab"), "PositionsTab");
 const TwapTab = createLazyComponent(() => import("./twap-tab"), "TwapTab");
 
+export function preloadPositionsPanel(): void {
+	void PositionsTab.preload?.();
+}
+
 const HISTORY_TAB_PRELOADERS: Readonly<Record<string, () => void>> = {
 	funding: () => void FundingTab.preload?.(),
 	history: () => void HistoryTab.preload?.(),
