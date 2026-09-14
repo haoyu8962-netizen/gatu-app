@@ -63,8 +63,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 - A stricter candidate Content-Security-Policy (image sources limited to known hosts, no
   `blob:` scripts) can be sent in report-only mode by the edge, with violations logged by a
-  dedicated report receiver Lambda; the header stays off until the receiver's public URL is
-  unblocked at the account level. See ADR 0007.
+  dedicated report receiver Lambda; the edge sends the header whenever
+  `deploy/cloudfront/edge-config.json` names the receiver URL. See ADR 0007.
 
 ### Changed
 

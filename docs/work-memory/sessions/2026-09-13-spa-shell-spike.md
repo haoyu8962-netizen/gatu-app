@@ -202,6 +202,14 @@
 
 AWS：用 `gatu-edge` 创建 `gatu-terminal-api-csp-report`（nodejs22.x、arm64、128 MB、3 s、处理程序 `csp-report.handler`，复用 API 执行角色），函数 URL `AuthType=NONE`，资源策略 `public-url`（`Principal: *`，条件 `FunctionUrlAuthType: NONE`）。`aws lambda invoke` 直接调用返回 204，但函数 URL 对 POST/GET 一律 403 `AccessDeniedException`（"Forbidding. For troubleshooting Function URL authorization issues"），删除并重建 URL 后仍然 403；`put-function-concurrency 2` 用 root 也被 `InvalidParameterValueException` 拒绝（账号并发下限）。判断为账号级 Lambda 函数 URL 公开访问阻断，本机 aws-cli 2.36.2 没有 `get/put-public-access-block-config` 无法核实或解除。曾把接收器 URL 写进 `edge-config.json` 并发布函数，线上壳一度带 report-only 头（`report-uri` 指向接收器）；确认端点不可达后把 `cspReportUri` 置空、重新渲染并发布，线上壳已无 report-only 头，图表路径的 CSP 未受影响。后续：升级 AWS CLI 或在控制台解除阻断，`curl -X POST` 得到 204 后填回 URL 并发布函数即可启用；第二步内联脚本哈希待第一步报告稳定后再做。
 
+## 第十五检查点：解除接收器阻断并开启 report-only（2026-09-14，基于 `df2751cc`）
+
+用户要求"升级 AWS CLI 并解除阻断，然后启用"。`brew upgrade awscli` 2.36.2 → 2.36.44；新 CLI 的 Lambda 服务模型只有 `get/put/delete-resource-policy`，没有任何公开访问阻断操作（仅一个 `PublicPolicyException`），`organizations describe-organization` 显示账号不在组织内，说明第十四检查点"账号级阻断"的判断没有依据。复现：用 root 新建探针函数 `gatu-terminal-api-urlprobe`（固定返回 204），只加 `lambda:InvokeFunctionUrl` 语句时函数 URL 同样 403；按 AWS 文档补第二条 `lambda:InvokeFunction`（条件 `lambda:InvokedViaFunctionUrl: true`，`add-permission --invoked-via-function-url`；用 `--function-url-auth-type NONE` 加该动作会被 `InvalidParameterValueException` 拒绝）后立即 204。根因：AWS 自 2025 年 10 月起要求函数 URL（含 `AuthType=NONE`）同时具备两条权限，接收器的策略只有第一条，与第七检查点 CloudFront OAC 源的双权限是同一规则。修复：用 `gatu-edge` 给 `gatu-terminal-api-csp-report` 加语句 `public-invoke`；`GET` 返回 405，样本 `POST`（`application/csp-report`）返回 204，CloudWatch `/aws/lambda/gatu-terminal-api-csp-report` 出现 `csp_violation`（`directive: img-src`、`disposition: report`）。探针函数已删除。
+
+启用：`edge-config.json` 的 `cspReportUri` 填入接收器 URL，`render-functions.mjs` 重新渲染，`test:cloudfront` 25 用例通过，`deploy.mjs functions --execute`（`gatu-edge`）更新并发布两个函数。核对：两条分发的 `/trade/BTC` 与 `/docs` 响应都带 `content-security-policy`（1,971 字符）与指向接收器的 `content-security-policy-report-only`（2,194 字符），`/charting_library/charting_library.js` 只有图表版 CSP、无 report-only；`deploy.mjs verify` 主网 12/12、测试网 13/13（构建仍为 `cloudfront-2026-09-14-p7`，本次只改函数与配置）。
+
+端到端：Playwright 全新上下文加载主网 `/trade/BTC`（7 个面板正常渲染），注入一张 `https://example.com/` 图片后浏览器触发 `securitypolicyviolation`（`img-src`、`disposition: report`、策略含接收器 `report-uri`），随后 CloudWatch 出现同一 `documentUrl`/`blockedUrl` 的 `csp_violation`。同一会话还收到首条真实报告：`script-src` 拦截 `eval`，来源 `assets/vendor-tanstack-router-*.js:2`；现行强制策略同样没有 `'unsafe-eval'`，说明这条在生产早已被拦截且无可见影响（页面与路由正常）。report-only 策略会报告它自己会拦截的一切，而不只是与现行策略的差集，评估第二步时按差集看。其余无报告。Biome 配置忽略 `deploy/**`，本次改动没有可检查的 TS 文件；`pnpm memory:index/check/test` 通过。探针函数已删除，未改 IAM 策略、DNS 与分发配置。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

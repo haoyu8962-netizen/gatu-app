@@ -1,6 +1,6 @@
 # ADR 0007：内容安全策略分两步收紧
 
-- 状态：已接受（2026-09-14）；代码与函数已就位，但 report-only 头暂未开启——接收器的公开函数 URL 在本账号一律 403（见"后果与边界"），`edge-config.json` 的 `cspReportUri` 保持为空，解除阻断后填入即可启用
+- 状态：已接受（2026-09-14）；report-only 头已于同日开启（`edge-config.json` 的 `cspReportUri` 指向接收器的函数 URL，两条分发的 viewer-response 函数已发布），第二步（内联脚本哈希）待报告稳定后另立提交
 - 前置：[ADR 0005](0005-spa-static-shell.md)（CSP 由 viewer-response 函数下发）、[ADR 0006](0006-startup-preloads-and-edge-caching.md)
 
 ## 背景与约束
@@ -10,7 +10,7 @@
 ## 决策
 
 1. **候选策略先以 report-only 观察。** `security-headers.ts` 新增 `cspReportOnlyDirectives`：`img-src` 收窄为 `'self' data: blob:` 加 `app.hyperliquid.xyz`、`*.privy.io`、`explorer-api.walletconnect.com`、`*.walletconnect.com`、`*.coinbase.com`，`script-src` 去掉 `blob:`；其余与现行策略相同。viewer-response 函数在非图表路径上把它作为 `Content-Security-Policy-Report-Only` 下发，附 `report-uri`。现行 `Content-Security-Policy` 不变。
-2. **报告接收器独立于签名源。** 新增 Lambda `gatu-terminal-api-csp-report`（128 MB、3 s、公开函数 URL；预留并发因账号并发下限暂未设置），处理器 `src/edge/csp-report-lambda.ts` 无任何依赖：只接受 `POST` 与 CSP 报告的三种内容类型，正文 ≤ 8 KB，每实例每分钟 120 条，解析旧格式 `{"csp-report"}` 与 Reporting API 批次后把裁剪过的摘要写进 CloudWatch，返回 204。它不持有密钥、不写存储，被滥用的上限是日志量。
+2. **报告接收器独立于签名源。** 新增 Lambda `gatu-terminal-api-csp-report`（128 MB、3 s、`AuthType=NONE` 的函数 URL，资源策略须同时授予 `*` 两条语句：`lambda:InvokeFunctionUrl` 与带 `lambda:InvokedViaFunctionUrl` 条件的 `lambda:InvokeFunction`；预留并发因账号并发下限暂未设置），处理器 `src/edge/csp-report-lambda.ts` 无任何依赖：只接受 `POST` 与 CSP 报告的三种内容类型，正文 ≤ 8 KB，每实例每分钟 120 条，解析旧格式 `{"csp-report"}` 与 Reporting API 批次后把裁剪过的摘要写进 CloudWatch，返回 204。它不持有密钥、不写存储，被滥用的上限是日志量。
 3. **接收器地址是部署配置。** `deploy/cloudfront/edge-config.json` 的 `cspReportUri` 由 `render-functions.mjs` 读取；为空时函数不发 report-only 头，`pnpm test:cloudfront` 的漂移检查保证提交的函数代码与配置一致。`deploy.mjs functions` 从文件更新并发布两个 CloudFront Functions。
 4. **第二步的门槛。** 报告连续一个发布周期没有本应用自己的资源被拦截后，把候选目录并入 `cspDirectives`；`script-src` 去掉 `'unsafe-inline'` 需要构建后为 7 个预渲染页的内联脚本算哈希并渲染进函数，届时另立提交。`style-src` 的 `'unsafe-inline'` 保留：Base UI、react-grid-layout 与 TradingView 依赖内联样式。
 
@@ -22,7 +22,8 @@
 
 ## 后果与边界
 
-- 报告只反映真实用户会话，本机与 Playwright 验证不会触发第三方图片；需要等真实流量。
+- 报告只反映真实用户会话，本机与 Playwright 验证不会触发第三方图片；需要等真实流量。report-only 策略会报告它自己会拦截的一切，包括现行策略早已拦截的项（首条真实报告就是 `vendor-tanstack-router` 块里的 `eval`，现行 `script-src` 同样没有 `'unsafe-eval'`），评估第二步时要按候选策略与现行策略的差集看。
 - 接收器是公开端点，任何人都能写日志；预留并发、正文上限与每分钟限额把成本封顶。
 - 过渡期 Nitro（EC2）不发 report-only 头，只有 CloudFront 目标参与观察。
 - 2026-09-14 实测：接收器函数经 IAM 直接调用返回 204，但 `AuthType=NONE` 的函数 URL 对任何请求都回 403 `AccessDeniedException`，资源策略（`Principal: *`、`FunctionUrlAuthType: NONE`）正确，重建 URL 无效，与账号级"Lambda 函数 URL 公开访问阻断"一致；本机 `aws-cli 2.36.2` 没有 `get/put-public-access-block-config`，`put-function-concurrency 2` 也因账号并发下限被拒。启用步骤：升级 AWS CLI 后对函数或账号执行 `put-public-access-block-config --public-access-block-config BlockPublicPolicy=false,RestrictPublicResource=false`（或在控制台关闭），确认 `curl -X POST` 返回 204，再把函数 URL 写进 `edge-config.json`、渲染并 `deploy.mjs functions --execute`。
+- 2026-09-14 更正（同日晚些时候）：上一条的判断不成立。AWS CLI 升到 2.36.44 后确认 Lambda 服务模型没有公开访问阻断操作；用 root 新建的探针函数复现了同样的 403，补上文档要求的第二条资源策略语句（`lambda:InvokeFunction`，条件 `lambda:InvokedViaFunctionUrl: true`，CLI `add-permission --invoked-via-function-url`）后立刻返回 204。AWS 自 2025 年 10 月起要求函数 URL（含 `AuthType=NONE`）同时具备 `lambda:InvokeFunctionUrl` 与 `lambda:InvokeFunction`，只授前者时任何经 URL 的请求都是 403 而直接 `invoke` 正常——与 [ADR 0005](0005-spa-static-shell.md) 决策 13 里 CloudFront OAC 源的"双权限"是同一规则。接收器补齐语句后 `GET` 返回 405、样本 `POST` 返回 204 并在 CloudWatch 出现 `csp_violation` 事件；随后 `cspReportUri` 填入接收器 URL、重新渲染并发布函数，探针函数已删除。
