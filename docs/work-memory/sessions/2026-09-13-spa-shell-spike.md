@@ -258,6 +258,18 @@ AWS：用 `gatu-edge` 创建 `gatu-terminal-api-csp-report`（nodejs22.x、arm64
 
 建议（未实施，等用户决定）：A. 用 `manualChunks` 把引导闭包（`client.ts` 的两条静态依赖、`early-prefetch`、`geo-prefetch`、`surface-preloads`、`config/layout|app-route-surface|api-paths|document-routes`）固定成独立小 chunk，让地区预取与表面预加载不再等 1.16 MB vendor 求值（预计提前约 250 ms），并给预算脚本加"引导 chunk 不得导入 vendor"的断言；B. `startEarlyPrefetches` 按 `getAppRouteSurface` 只在终端路由追加桌面面板与图表预取，仪表盘少下载约 970 KB；C. 把交互后才需要的模态/对话框/历史页签/邮箱上手/CSV 导出改为 `createLazyComponent` 或按需 `import()`，并把 `testnet-banner` 按网络条件懒加载，缩小静态闭包与壳预加载清单（预算脚本会给出新的基线）；D. 架构级：让终端在钱包运行时挂载前就渲染行情/图表/订单簿（Provider 边界下移），未登录首屏不再等 1.5 MB 的钱包 SDK 求值——改动大，需另立设计；E. 文档页考虑不水合或用更轻的入口。另记：Privy SDK 启动时向 `auth.privy.io/api/v1/analytics_events` 发遥测，属 SDK 行为，未处理。
 
+## 第二十三检查点：首次打开的"空格子"状态与官方站对比（2026-09-14，线上 p11 vs app.hyperliquid.xyz）
+
+用户贴出首次打开交易终端时的截图（只有顶栏 logo 与空的网格框）并要求调试官方站为何"瞬间全部加载"。工具：`tests/browser/first-paint-race.mjs`（导航开始后 250–5,500 ms 的定时截图与 DOM 标记：可见文本量、价格样式数字、按钮、canvas、iframe、`.react-grid-item`）与 `tests/browser/ws-race.mjs`（CDP 记录 WebSocket 建立、订阅与首帧时刻）。均为同机单样本冷加载。
+
+我们的时间线（`/trade/HYPE`）：TTFB 505、FCP 784（壳 + 样式）；250–1,042 ms 画面就是截图里的样子——预渲染的 `AppShellSkeleton` 只有网格边框，正文 15 个字符；1,335 ms 真实面板出现（658 字符、30 个按钮、7 个网格项、"Connect Wallet"，顶栏显示"Connecting…"，行情列为"-"，订单簿空）；1,603 ms 市场头部有价格（20 个数字）但订单簿仍空；2,036 ms 全部数据（88 个数字），图表 iframe 1.6 s 创建、仍显示 logo 加载态。WebSocket：801 ms 就打开了第一条到 `api.hyperliquid.xyz/ws` 的连接，但第一批订阅 1,172 ms 才发（等 `ClientRuntimeGate` 挂完钱包运行时与 Provider），`l2Book` 首帧 1,353 ms、`allDexsAssetCtxs` 1,522 ms（229 KB）、`spotAssetCtxs` 1,610 ms（304 KB，两者 6 s 内各来 2 次）、`activeAssetCtx` 1,650 ms；6 s 内收到 584 K 字符。
+
+官方站：HTML 2 KB，TTFB 333，FCP 1,084（比我们晚）；250–500 ms 整页空白（连顶栏都没有）；750 ms 只有顶栏与"Connect"按钮（111 字符）；1,300 ms 仍只有顶栏（公告弹层开始出现）；1,618 ms 整个终端一次出现且带数据：订单簿满、价格、持仓表"No open positions yet"，图表区仍是 logo 加载态，此后不再变化。单一 WebSocket 连到 `api-ui.hyperliquid.xyz/ws`，1,191 ms 打开，1,358 ms 一次发出 8 条订阅（`l2`、`activeAssetData`、`activeAssetCtx`、`webData3`、`pac`、`outcomeMetaUpdates`、`sac`、`fastAssetCtxs`），1,433–1,635 ms 首帧到齐，6 s 内只收 151 K 字符（`pac` 53 K、`sac` 40 K 代替我们的 533 K 全量资产快照）。它的 `index` 主块 397 KB gz 以同步 `<script type=module>` 加载，`charting_library.js` 是阻塞脚本，59 个 JS 共 2.0 MB。
+
+结论：两站到"内容全部可用"的时刻相近（我们 1.3 s 出面板、1.6–2.0 s 数据齐；官方 1.6 s 一次到齐），差异在中间帧：官方从空白直接跳到带数据的完整页面，没有任何骨架，用户感知为"瞬间"；我们先画一个只有边框的空格子（0.78–1.3 s），再画空面板与"-"占位，再逐个订阅填数，三段可见的等待被感知为"加载状态"。造成三段的原因：(1) 壳里预渲染的是空骨架而不是终端的真实框架（顶栏导航、收藏栏、市场头部、面板标题/页签、下单表单控件）；(2) 真实面板和行情订阅都在 `ClientRuntimeGate` 之后，要等钱包运行时求值与 Privy/Wagmi Provider 挂载，连接已在 801 ms 就绪却到 1,172 ms 才订阅；(3) 启动就订阅 `allDexsAssetCtxs` 与 `spotAssetCtxs` 两个全量快照（533 KB JSON，每 3 s 重发）在主线程解析，且订单簿在 `l2Book` 到达（1,353 ms）后仍要等其它数据才渲染；(4) 顶栏在未登录时显示"Connecting…"而官方直接显示"Connect"。
+
+可选处理（未实施，等用户决定）：P1 把预渲染壳换成终端真实框架（占位值为"-"），FCP 那一帧就像最终页面；P2 把 `TradeTerminalPage` 与行情订阅移到钱包运行时门之前，Provider 边界下移到依赖钱包的组件（即加载顺序审查的建议 D），预计订阅提前约 370 ms；P3 启动只订阅当前市场与轻量频道，全市场快照延后到首屏之后或改用更轻的频道（需核实公开 API 是否提供 `pac`/`sac`/`l2`）；P4 查订单簿为何在首帧到达后仍延迟渲染；P5 未登录时顶栏不显示"Connecting…"。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。
