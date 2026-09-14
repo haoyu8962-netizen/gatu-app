@@ -290,6 +290,20 @@ P5：`lib/wallet/privy-session-hint.ts` 检查 Privy 本地存储的会话键（
 
 剩余：订单簿剖析轨道的首次提交仍比网格晚约 360 ms（P4 未做）；启动仍订阅 `allDexsAssetCtxs`/`spotAssetCtxs` 全量快照（P3 未做）；Privy iframe 的长任务未处理。
 
+## 第二十六检查点：P4——订单簿与网格同帧（2026-09-14，基于 `e91ad6ea`）
+
+用户选定 P4（第二十三检查点："查订单簿为何在首帧到达后仍延迟渲染"）。先更正第二十五检查点的一个数字：那里写的"订单簿剖析轨道首次提交 1,267"来自 `render-profile` 只保留最近 30 条样本的环形缓冲（订单簿 6 s 内提交 42 次，`recent[0]` 已不是首次），不是真实首次提交；本检查点起 `render-profile.tsx` 记录 `firstCommitTime`，`boot-milestones.mjs` 改用它并新增 `bookData`（首个 `[data-orderbook-price]`）标记。
+
+定位工具：新增 `tests/browser/orderbook-race.mjs`（Playwright + CDP：`webSocketCreated`/`WillSendHandshakeRequest`/`HandshakeResponseReceived`/帧收发，用握手事件的 `wallTime` 把 CDP 单调时间对齐到页面 `performance.timeOrigin`；DOM 每 5 ms 轮询网格、订单簿容器、占位行、首个带价格的行；加载 8 s 后再从页面串行开 3 条探针 socket 计时；`NO_PROXY=1` 加 `--no-proxy-server`）。主网 `/trade/HYPE` 冷加载 10 次（7 次默认 + 3 次 no-proxy）：网络正常的 5 次里，网格到首个带价格的行 243–370 ms，拆分为面板挂载→池化 socket 开始连接 35–60 ms、TCP/TLS 连接 54–250 ms、订阅发出→首帧 73–164 ms、首帧→DOM 3–68 ms——根因是 `OrderbookPanel` 挂载后才第一次向 `l2Book` 传输池要连接（ADR 0003 的隔离设计让全簿走独立 socket），主 socket 早已打开却帮不上。另外 5 次里池化 socket 创建后 1.0 s / 2.3 s / 2.6 s 才发握手、或 8 s 内根本没发（主 socket 也偶发 1.75 s）；`--no-proxy-server` 无效，因为本机 DNS 把所有主机解析成 198.18.x（代理客户端 fake-ip/TUN），流量仍经代理；同一页加载后串行开的探针 socket 在正常时段 160–290 ms 打开、在坏时段 1.0–1.3 s，说明卡顿是本机代理的连接建立抖动而非 Chromium 节流或应用逻辑——真实用户付的是一次连接加一次往返，但同样在网格之后。
+
+实现（ADR 0003 追加"Warm-up and freshest-frame replay"）：(1) `packages/hl-react/src/subscriptions/l2-book-transport-pool.ts` 按物理传输 + payload（币种/nSigFigs/mantissa/fast）记住最新一帧及其 `performance.now()` 接收时间；新订阅者在传输已确认订阅、且自己尚未收到实时帧时，收到 ≤5 s 内的最新帧一次（`L2_BOOK_REPLAY_MAX_AGE_MS`）；该 payload 的最后一个租约释放或传输关闭即丢弃，跨分组/网络/币种不可能命中（键里就没有）。(2) `clients.ts` 新增 `warmL2BookSubscription(isTestnet, params, ttlMs = 15 s)`：经同一个 `SubscriptionClient` 与传输池用空监听器订阅（payload 因此与面板完全一致，SDK 的订阅管理器按 payload 去重，面板的 `subscribe` 立刻确认），到期或提前释放时只摘掉自己的监听器。(3) `apps/terminal/src/lib/trade/orderbook-boot.ts`：`getBootOrderbookCoin(pathname)` 从 `/trade/*` 取 perp、builder-perp 与 `@index` 现货名（它们就是 API 币种；`PURR/USDC` 这类交易对名要等目录，跳过），`/perp`、`/builders-perp[/dex]` 取持久化的已选市场（`use-market-store.ts` 新增 `getStoredSelectedMarket`，builder 需与路由 dex 前缀一致）；`bootOrderbook` 单槽持有预热租约、新导航替换旧租约；`bootTradeRoute(queryClient, pathname)` 在六个交易入口路由的 `beforeLoad` 里调用（路由传 `location.pathname`）。副作用：`getSubscriptionClient` 在 `beforeLoad` 就创建了主 WebSocket 传输，主 socket 也随之提前。测试：传输池新增 4 例（回放最新帧、跨币种与超时不回放、等待期间已收实时帧则不重复、租约释放后遗忘）、`orderbook-boot.test.ts` 5 例（jsdom）、`trade-route-boot.test.ts` 与 `home-route.test.ts` 跟进签名；`biome check` 17 文件、`pnpm typecheck`（hl-react/ui/terminal）通过；全量 vitest 555 文件：13 个红文件中 9 个是基线红、`global-settings-slippage-effective` 单跑仍红 2 例（基线红，第二十五检查点那次通过属偶然）、`chart-build-assets`/`establish-connection-modal`/`chart-store` 单跑通过（并发伪影）。预算（p15）：静态启动闭包 1,558,523 gz（比 p14 多 439 B，仍低于基线 11,698）；`trade-terminal-page` 123,238；客户端总量 3,065,599（-89,108）。
+
+发布 p15（`GATU_RELEASE_ID=cloudfront-2026-09-14-p15`，`build-meta` 提交号 `e91ad6ea`，P4 改动构建时未提交）：`functions --execute`（10 个哈希）→ `sync`（1,585 个对象，0 失败，`_shell.html`/`build-meta.json` 一致）→ 两条分发 `/*` 失效并等待完成 → verify 主网 14/14、测试网 15/15 → `csp-coverage.mjs` 32 步 0 违规、0 控制台错误。
+
+线上计时（`orderbook-race.mjs` 4 次）：池化 socket 现在与主 socket 同时在引导阶段创建（469/470/515/1,169 ms，此前在网格之后），socket 一打开就发 `l2Book` 订阅（590–1,337 ms），首帧 674–1,413 ms，全部早于网格（811–1,596 ms）；网格→首个带价格的行 0 / 29 / 0 / 0 ms（p14 为 243–370）。29 ms 那次是代理握手花了 138 ms、首帧 832 ms 比网格 811 晚 21 ms，回放仍生效。主 socket 的 `allDexsAssetCtxs` 等订阅也提前到 636–685 ms（p14 样本 868–1,184）。`boot-milestones.mjs` 2 次：`bookData` 与 `grid` 同为 1,021 / 868 ms；水合 chunk 到达→顶栏首次提交 +160 / +114 ms，p14 样本 +113，无系统性变化；订单簿剖析轨道真实首次提交 992 / 849，比工作区晚约 40 ms，是网格内面板的提交顺序，数据当时已在。
+
+剩余：移动端紧凑簿走 `l2` 增量流（`useOrderbookFeed`），未预热；`/trade/BASE/QUOTE` 现货交易对要等目录，沿用旧时序；本机代理造成的连接卡顿与应用无关；P3（启动只订阅轻量频道）未做。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

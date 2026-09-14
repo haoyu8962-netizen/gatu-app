@@ -52,6 +52,30 @@ idle cleanup and repeated error callbacks must follow the same ownership rules.
 Capacity or rate-limit failure remains an unavailable subscription until recovery;
 another grouping's snapshot cannot serve as current data.
 
+### Warm-up and freshest-frame replay (2026-09-14)
+
+The first order-book frame used to arrive 240–370 ms after the terminal grid
+on a healthy network: the panel's subscription was the pool's first lease, so
+it paid for a new socket handshake and a subscribe round trip after mounting
+(task record checkpoint 26). Two additions remove that wait without changing
+stream identity:
+
+- The trade entry routes warm the full-book stream for the market the URL
+  names from `beforeLoad`, through the same `SubscriptionClient` and pool,
+  with a no-op listener that ends after 15 seconds or when a later navigation
+  warms another market. Perp, builder-perp and `@index` spot names are API
+  coins; a spot pair name waits for the catalog and keeps the old timing.
+- The pool remembers the freshest frame per physical transport and payload
+  with its monotonic receipt time, and replays it once to a subscriber that
+  joins an already confirmed subscription without having received a live
+  frame, provided the frame is at most 5 seconds old. The memory is dropped
+  when the payload's last lease releases or the transport closes.
+
+The replay is the current state of a live stream on the same transport
+(network + grouping + fast) for the same payload, never another grouping's or
+network's snapshot; consumers see the same status transitions as before and
+only skip the wait for the next server push.
+
 ## Alternatives and tradeoffs
 
 | Alternative | Benefit | Reason not selected |

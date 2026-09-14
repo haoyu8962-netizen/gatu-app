@@ -37,6 +37,7 @@ export {
 	getSubscriptionClient,
 	initializeClients,
 	subscribeWsReconnect,
+	warmL2BookSubscription,
 } from "./clients";
 export {
 	assertExchange,

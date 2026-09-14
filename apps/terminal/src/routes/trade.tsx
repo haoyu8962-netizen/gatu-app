@@ -12,9 +12,9 @@ export const Route = createFileRoute("/trade")({
 	ssr: false,
 	pendingMinMs: 0,
 	pendingComponent: AppShellSkeleton,
-	beforeLoad: ({ context }) => {
+	beforeLoad: ({ context, location }) => {
 		void TradeTerminalPage.preload?.();
-		bootTradeRoute(context.queryClient);
+		bootTradeRoute(context.queryClient, location.pathname);
 	},
 	component: TradeTerminalPage,
 });

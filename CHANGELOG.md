@@ -77,6 +77,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The order book no longer waits for a new WebSocket connection and a subscribe round trip after
+  the terminal renders: trade routes open the pooled full-book stream for the URL market while the
+  market catalog loads, and the panel that subscribes next receives the freshest snapshot at once.
 - The first real terminal render no longer waits on React's Suspense fallback throttle: the
   client runtime gate switches synchronously once the wallet runtime module has loaded, and the
   trade entry routes resolve every lazy piece of the first render (user menu, panels, chart,

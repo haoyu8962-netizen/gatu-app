@@ -4,23 +4,51 @@ interface BookTransport extends ISubscriptionTransport {
 	close(): void;
 }
 
+interface BookPayload {
+	coin: string;
+	nSigFigs: number | null;
+	mantissa: number | null;
+	fast: boolean;
+}
+
+interface RememberedFrame {
+	event: CustomEvent<unknown>;
+	receivedAt: number;
+}
+
 interface PoolEntry {
 	transport: BookTransport;
 	leases: number;
 	disposed: boolean;
 	idleTimer?: ReturnType<typeof setTimeout>;
+	payloadLeases: Map<string, number>;
+	latestFrames: Map<string, RememberedFrame>;
 }
 
 const MAX_CONNECTIONS = 4;
 const MAX_NEW_CONNECTIONS = 24;
 const WINDOW_MS = 60_000;
+export const L2_BOOK_REPLAY_MAX_AGE_MS = 5_000;
 
-function getGroupingKey(isTestnet: boolean, payload: unknown): string {
+function readBookPayload(payload: unknown): BookPayload {
 	if (typeof payload !== "object" || payload === null || !("coin" in payload)) {
 		throw new TransportError("Invalid order book subscription");
 	}
-	const book = payload as { nSigFigs?: number | null; mantissa?: number | null; fast?: boolean };
-	return JSON.stringify([isTestnet, book.nSigFigs ?? null, book.mantissa ?? null, book.fast === true]);
+	const book = payload as { coin: unknown; nSigFigs?: number | null; mantissa?: number | null; fast?: boolean };
+	return {
+		coin: String(book.coin),
+		nSigFigs: book.nSigFigs ?? null,
+		mantissa: book.mantissa ?? null,
+		fast: book.fast === true,
+	};
+}
+
+function getGroupingKey(isTestnet: boolean, book: BookPayload): string {
+	return JSON.stringify([isTestnet, book.nSigFigs, book.mantissa, book.fast]);
+}
+
+function getPayloadKey(book: BookPayload): string {
+	return JSON.stringify([book.coin, book.nSigFigs, book.mantissa, book.fast]);
 }
 
 export function createL2BookTransportPool(createTransport: (isTestnet: boolean) => BookTransport) {
@@ -31,12 +59,14 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 		if (entry.disposed) return;
 		entry.disposed = true;
 		clearTimeout(entry.idleTimer);
+		entry.latestFrames.clear();
 		if (entries.get(key) === entry) entries.delete(key);
 		entry.transport.close();
 	}
 
-	function acquire(isTestnet: boolean, payload: unknown) {
-		const key = getGroupingKey(isTestnet, payload);
+	function acquire(isTestnet: boolean, book: BookPayload) {
+		const key = getGroupingKey(isTestnet, book);
+		const payloadKey = getPayloadKey(book);
 		let entry = entries.get(key);
 		if (!entry) {
 			const now = performance.now();
@@ -48,20 +78,42 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 				remove(...idle);
 			}
 			openedAt.push(now);
-			entry = { transport: createTransport(isTestnet), leases: 0, disposed: false };
+			entry = {
+				transport: createTransport(isTestnet),
+				leases: 0,
+				disposed: false,
+				payloadLeases: new Map(),
+				latestFrames: new Map(),
+			};
 			entries.set(key, entry);
 		}
 		const acquired = entry;
 		clearTimeout(acquired.idleTimer);
 		acquired.leases += 1;
+		acquired.payloadLeases.set(payloadKey, (acquired.payloadLeases.get(payloadKey) ?? 0) + 1);
 		let released = false;
 		return {
 			transport: acquired.transport,
 			isActive: () => !acquired.disposed,
+			remember: (event: CustomEvent<unknown>) => {
+				if (acquired.disposed) return;
+				acquired.latestFrames.set(payloadKey, { event, receivedAt: performance.now() });
+			},
+			latest: () => {
+				const frame = acquired.latestFrames.get(payloadKey);
+				if (!frame || performance.now() - frame.receivedAt > L2_BOOK_REPLAY_MAX_AGE_MS) return undefined;
+				return frame.event;
+			},
 			release: (failed = false) => {
 				if (released) return;
 				released = true;
 				acquired.leases -= 1;
+				const payloadCount = (acquired.payloadLeases.get(payloadKey) ?? 1) - 1;
+				if (payloadCount > 0) acquired.payloadLeases.set(payloadKey, payloadCount);
+				else {
+					acquired.payloadLeases.delete(payloadKey);
+					acquired.latestFrames.delete(payloadKey);
+				}
 				if (failed) remove(key, acquired);
 				else if (acquired.leases === 0 && !acquired.disposed)
 					acquired.idleTimer = setTimeout(() => remove(key, acquired), WINDOW_MS);
@@ -76,8 +128,9 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 		options?: Parameters<ISubscriptionTransport["subscribe"]>[3],
 	) {
 		if (options?.signal?.aborted) throw new TransportError("Order book subscription aborted");
-		const lease = acquire(isTestnet, payload);
+		const lease = acquire(isTestnet, readBookPayload(payload));
 		let released = false;
+		let receivedLiveFrame = false;
 		function release(failed = false) {
 			if (released) return;
 			released = true;
@@ -88,7 +141,10 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 				"l2Book",
 				payload,
 				(event) => {
-					if (!released && lease.isActive()) listener(event);
+					if (released || !lease.isActive()) return;
+					receivedLiveFrame = true;
+					lease.remember(event);
+					listener(event);
 				},
 				{
 					...options,
@@ -103,6 +159,10 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 				await subscription.unsubscribe();
 				throw new TransportError("Order book connection closed before confirmation");
 			}
+			// A subscriber joining a stream the transport already confirmed would otherwise wait for
+			// the next server push; the freshest frame of the same payload is its current state.
+			const replay = receivedLiveFrame ? undefined : lease.latest();
+			if (replay) listener(replay as CustomEvent<T>);
 			return {
 				unsubscribe: async () => {
 					if (released) return;

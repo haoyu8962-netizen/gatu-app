@@ -88,6 +88,10 @@ export function useSelectedMarkets() {
 	return useMarketStore((state) => state.selectedMarkets);
 }
 
+export function getStoredSelectedMarket(scope: ExchangeScope): string | undefined {
+	return useMarketStore.getState().selectedMarkets[scope];
+}
+
 export function getTradeHomeMarketName(): string {
 	const marketName = useMarketStore.getState().selectedMarkets.all;
 	return isSafeTradeRouteMarketName(marketName) ? marketName : DEFAULT_SELECTED_MARKETS.all;

@@ -20,6 +20,7 @@ function check() {
   if (document.querySelector('[data-testid="desktop-terminal-surface"]')) mark("surface");
   if (document.querySelector(".react-grid-item")) mark("grid");
   if (document.querySelector('[data-orderbook-side-container] > *')) mark("bookRow");
+  if (document.querySelector("[data-orderbook-price]")) mark("bookData");
   if (document.querySelector('iframe[src*="sameorigin"], iframe[srcdoc]')) mark("chartFrame");
   if (/\\d{1,3}(,\\d{3})*\\.\\d{2,}/.test(document.body.innerText.slice(0, 4000))) mark("firstPrice");
 }
@@ -43,7 +44,7 @@ const result = await page.evaluate(() => {
 		chunks: { bootstrap: pick(/index-[A-Za-z0-9_-]{8}\.js$/), hydrate: pick(/client-hydrate/), clientRoot: pick(/client-root-/), walletSdk: pick(/index-Bs6QSD5q/), vendorRouter: pick(/vendor-tanstack-router/), tradePage: pick(/trade-terminal-page/), geo: pick(/\/api\/geo/), privyApps: pick(/auth\.privy\.io\/api\/v1\/apps/) },
 		infoRequests: res.filter((e) => /hyperliquid(-testnet)?\.xyz\/info/.test(e.name)).map((e) => ({ start: Math.round(e.startTime), end: Math.round(e.responseEnd), kb: Math.round((e.encodedBodySize || 0) / 1024) })),
 		catalogClient: pick(/market-catalog-info-client/),
-		renderCommits: (() => { try { const s = window.__terminal_render_profile?.(); return s ? Object.fromEntries(Object.entries(s.tracks).map(([k, v]) => [k, { first: Math.round((v.recent[0]?.commitTime ?? 0)), commits: v.commits, total: Math.round(v.totalDuration) }])) : null; } catch { return null; } })(),
+		renderCommits: (() => { try { const s = window.__terminal_render_profile?.(); return s ? Object.fromEntries(Object.entries(s.tracks).map(([k, v]) => [k, { first: Math.round(v.firstCommitTime || v.recent[0]?.commitTime || 0), commits: v.commits, total: Math.round(v.totalDuration) }])) : null; } catch { return null; } })(),
 		longTasks: window.__m.longTasks.slice(0, 30),
 		longTaskTotal: window.__m.longTasks.reduce((s, [, d]) => s + d, 0),
 	};

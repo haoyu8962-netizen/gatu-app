@@ -6,8 +6,8 @@ function BuildersPerpLayout() {
 }
 
 export const Route = createFileRoute("/builders-perp")({
-	beforeLoad: ({ context }) => {
-		bootTradeRoute(context.queryClient);
+	beforeLoad: ({ context, location }) => {
+		bootTradeRoute(context.queryClient, location.pathname);
 	},
 	component: BuildersPerpLayout,
 });
