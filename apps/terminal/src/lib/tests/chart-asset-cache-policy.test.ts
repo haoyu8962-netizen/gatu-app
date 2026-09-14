@@ -46,10 +46,13 @@ afterEach(() => {
 });
 
 describe("TradingView asset cache policy", () => {
-	it("revalidates the chart package except its content-hashed bundles and versioned loader", () => {
+	it("revalidates the chart package except its content-hashed bundles and emits a content-hashed loader copy", () => {
 		expect(viteConfig).toMatch(/'\/charting_library\/\*\*'[\s\S]*?max-age=0, must-revalidate/);
 		expect(viteConfig).toMatch(/'\/charting_library\/bundles\/\*\*'[\s\S]*?max-age=31536000, immutable/);
-		expect(viteConfig).toMatch(/'\/charting_library\/charting_library\.js'[\s\S]*?max-age=31536000, immutable/);
+		expect(viteConfig).not.toMatch(/'\/charting_library\/charting_library\.js'/);
+		expect(viteConfig).toMatch(
+			/fileName: createHashedChartLibraryEntryPath\(chartLibraryHash\), source: chartLibraryEntry/,
+		);
 		expect(viteConfig).toMatch(/'\/tradingview-theme-\*\.css'[\s\S]*?max-age=0, must-revalidate/);
 		expect(viteConfig).toMatch(
 			/publicAssets:[\s\S]*?baseURL: '\/charting_library'[\s\S]*?maxAge: 0[\s\S]*?fallthrough: false/,

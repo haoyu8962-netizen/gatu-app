@@ -271,3 +271,53 @@ describe("leaderboard API server", () => {
 		expect(fetchImplementation).not.toHaveBeenCalled();
 	});
 });
+
+describe("leaderboard API server inside a lambda invocation", () => {
+	it("awaits the stale refresh instead of answering with the old snapshot", async () => {
+		let now = GENERATED_AT;
+		let version = 1;
+		const fetchImplementation = vi.fn(async (url: string) =>
+			url.endsWith("/leaderboard")
+				? jsonResponse(leaderboardFixture(), `"leaderboard-v${version}"`)
+				: jsonResponse(vaultFixture(), `"vaults-v${version}"`),
+		);
+		const handler = createLeaderboardApiHandler({
+			fetch: fetchImplementation,
+			now: () => now,
+			awaitStaleRefresh: true,
+		});
+		await handler(request());
+
+		now += LEADERBOARD_API_CACHE_POLICY.freshForMs + 1;
+		version = 2;
+		const response = await handler(request());
+		expect(response.status).toBe(200);
+		expect(response.headers.get("warning")).toBeNull();
+		expect((await response.json()).stale).toBe(false);
+		expect(fetchImplementation).toHaveBeenCalledTimes(4);
+	});
+
+	it("falls back to the bounded stale snapshot when the awaited refresh fails", async () => {
+		let now = GENERATED_AT;
+		let fail = false;
+		const fetchImplementation = vi.fn(async (url: string) => {
+			if (fail) throw new Error("offline");
+			return url.endsWith("/leaderboard")
+				? jsonResponse(leaderboardFixture(), '"leaderboard-v1"')
+				: jsonResponse(vaultFixture(), '"vaults-v1"');
+		});
+		const handler = createLeaderboardApiHandler({
+			fetch: fetchImplementation,
+			now: () => now,
+			awaitStaleRefresh: true,
+		});
+		await handler(request());
+
+		fail = true;
+		now += LEADERBOARD_API_CACHE_POLICY.freshForMs + 1;
+		const response = await handler(request());
+		expect(response.status).toBe(200);
+		expect(response.headers.get("warning")).toContain("Response is stale");
+		expect((await response.json()).stale).toBe(true);
+	});
+});

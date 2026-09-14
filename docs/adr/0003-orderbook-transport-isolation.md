@@ -88,6 +88,12 @@ after the 2026-09-14 adversarial review, task record checkpoint 28):
   replayed frame is therefore exactly as fresh as it would have been for a
   subscriber that had been listening all along, and never extends a staleness
   deadline.
+- The store keeps that receipt time through the subscription confirmation
+  (added after the 2026-09-15 review, task record checkpoint 29): a resolving
+  `subscribe` arms the watchdog with the runtime's `lastMessageAt` instead of
+  the present, and `setSubscriptionData` reads the watchdog's verdict after
+  marking the receipt, so a warmed stream whose last frame is already old is
+  stale from its first commit instead of gaining up to five seconds.
 
 ## Alternatives and tradeoffs
 

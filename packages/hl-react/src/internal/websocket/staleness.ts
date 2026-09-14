@@ -65,6 +65,8 @@ export function createStalenessWatchdog(checkIntervalMs: number): StalenessWatch
 		if (keys.size === 0) stopInterval();
 	}
 
+	// `at` is when the frame was actually received; a frame handed over late (a replayed order book
+	// snapshot) must not look fresher than it is, so staleness is judged from that time, not from now.
 	function arm(key: string, at = Date.now()) {
 		const entry = keys.get(key);
 		if (!entry) return;
@@ -72,7 +74,7 @@ export function createStalenessWatchdog(checkIntervalMs: number): StalenessWatch
 		if (intervalId === undefined && keys.size > 0) {
 			startInterval();
 		}
-		entry.isStale = false;
+		entry.isStale = Date.now() - at > entry.thresholdMs;
 	}
 
 	function markFresh(key: string, at = Date.now()) {
@@ -80,7 +82,7 @@ export function createStalenessWatchdog(checkIntervalMs: number): StalenessWatch
 		if (!entry) return;
 		const wasStale = entry.isStale;
 		arm(key, at);
-		if (wasStale) {
+		if (wasStale && !entry.isStale) {
 			for (const listener of entry.listeners) {
 				listener(false);
 			}

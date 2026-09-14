@@ -29,25 +29,50 @@ export interface CspViolationSummary {
 }
 
 export const CSP_REPORT_MAX_BODY_BYTES = 8_192;
+/** Logged violations per minute per instance; a batch counts every entry it makes us log. */
 export const CSP_REPORTS_PER_MINUTE = 120;
+export const CSP_REPORTS_PER_REQUEST = 10;
 const ACCEPTED_CONTENT_TYPES = ["application/csp-report", "application/reports+json", "application/json"];
 const FIELD_LIMIT = 200;
+const SAMPLE_LIMIT = 40;
+const JOIN_PATH = /^\/join\/[^/]+/;
 
-function text(value: unknown): string {
-	return typeof value === "string" ? value.slice(0, FIELD_LIMIT) : "";
+function text(value: unknown, limit = FIELD_LIMIT): string {
+	return typeof value === "string" ? value.slice(0, limit) : "";
+}
+
+/**
+ * URLs are logged without query strings, fragments or credentials, and the referral deep link keeps
+ * only its route shape: a document URI may carry referral codes or other personal parameters that
+ * belong to the viewer, not to a CSP log. Non-URL values (`inline`, `eval`, `blob`) pass through.
+ */
+export function sanitizeReportUrl(value: unknown): string {
+	const raw = text(value);
+	if (!raw || !/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) return raw;
+	try {
+		const url = new URL(raw);
+		const pathname = url.pathname.replace(JOIN_PATH, "/join/*");
+		return `${url.origin}${pathname}`.slice(0, FIELD_LIMIT);
+	} catch {
+		return "";
+	}
 }
 
 function summarize(report: Record<string, unknown>): CspViolationSummary {
-	const source = text(report["source-file"] ?? report.sourceFile);
+	const source = sanitizeReportUrl(report["source-file"] ?? report.sourceFile);
 	const line = report["line-number"] ?? report.lineNumber;
 	return {
-		documentUrl: text(report["document-uri"] ?? report.documentURL),
+		documentUrl: sanitizeReportUrl(report["document-uri"] ?? report.documentURL),
 		directive: text(report["effective-directive"] ?? report.effectiveDirective ?? report["violated-directive"]),
-		blockedUrl: text(report["blocked-uri"] ?? report.blockedURL),
-		source: typeof line === "number" ? `${source}:${line}` : source,
-		sample: text(report["script-sample"] ?? report.sample),
+		blockedUrl: sanitizeReportUrl(report["blocked-uri"] ?? report.blockedURL),
+		source: typeof line === "number" && source ? `${source}:${line}` : source,
+		sample: text(report["script-sample"] ?? report.sample, SAMPLE_LIMIT),
 		disposition: text(report.disposition) || "report",
 	};
+}
+
+function hasContent(summary: CspViolationSummary): boolean {
+	return summary.directive !== "" || summary.blockedUrl !== "" || summary.sample !== "";
 }
 
 /** Accepts the legacy `{"csp-report": {...}}` shape and Reporting API batches. */
@@ -62,11 +87,14 @@ export function summarizeCspReports(body: string): CspViolationSummary[] {
 		return parsed
 			.filter((entry): entry is { type?: unknown; body?: unknown } => typeof entry === "object" && entry !== null)
 			.filter((entry) => entry.type === "csp-violation" && typeof entry.body === "object" && entry.body !== null)
-			.map((entry) => summarize(entry.body as Record<string, unknown>));
+			.map((entry) => summarize(entry.body as Record<string, unknown>))
+			.filter(hasContent)
+			.slice(0, CSP_REPORTS_PER_REQUEST);
 	}
 	if (typeof parsed === "object" && parsed !== null) {
 		const legacy = (parsed as { "csp-report"?: unknown })["csp-report"];
-		if (typeof legacy === "object" && legacy !== null) return [summarize(legacy as Record<string, unknown>)];
+		if (typeof legacy === "object" && legacy !== null)
+			return [summarize(legacy as Record<string, unknown>)].filter(hasContent);
 	}
 	return [];
 }
@@ -99,10 +127,14 @@ export function createCspReportHandler(environment: CspReportEnvironment = {}) {
 			windowStartedAt = time;
 			reportsInWindow = 0;
 		}
-		if (reportsInWindow >= CSP_REPORTS_PER_MINUTE) return respond(429, { "retry-after": "60" });
-		reportsInWindow += 1;
+		const summaries = summarizeCspReports(body);
+		const budget = Math.max(0, CSP_REPORTS_PER_MINUTE - reportsInWindow);
+		if (budget === 0 || (summaries.length > 0 && budget < summaries.length)) {
+			return respond(429, { "retry-after": "60" });
+		}
+		reportsInWindow += Math.max(1, summaries.length);
 
-		for (const summary of summarizeCspReports(body)) {
+		for (const summary of summaries) {
 			log(JSON.stringify({ event: "csp_violation", receivedAt: new Date(time).toISOString(), ...summary }));
 		}
 		return respond(204);

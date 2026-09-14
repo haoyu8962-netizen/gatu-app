@@ -120,18 +120,40 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The TradingView loader is served under a content-hashed file name
+  (`charting_library.<hash>.js`) that the build emits and the shell preloads. The previous
+  immutable `?v=<commit>` object could pin a stale library body for a year, because the edge
+  cache key ignores the query string; the plain `charting_library.js` revalidates again.
+- The Portfolio summary shows a dash for Max Drawdown again instead of a fabricated `0.00%`; the
+  metric stays intentionally unavailable until a cash-flow-adjusted series exists.
 - A wallet runtime chunk that failed to load after hydration left the static shell on screen
   forever, because the runtime gate's store snapshot did not change on failure; the loader now
   publishes every outcome as a new snapshot so the error boundary receives the failure.
 - The order book's replayed first snapshot keeps its original receipt time and ignores frames of
   other coins sharing the same transport, so a replay never counts as newer than it is and cannot
-  be poisoned by another market.
+  be poisoned by another market; the subscription confirmation no longer resets that time to the
+  present, and the stale flag is computed when the data is committed.
+- The CloudFront release keeps every inline-script hash the edge still serves:
+  `deploy.mjs functions --origin <origin>` reads the live pages and retains their hashes next to
+  the new build's set, so an upload that failed between two releases can no longer leave a served
+  page blocked by the enforced Content-Security-Policy. `reupload` rewrites object metadata as an
+  in-bucket copy instead of uploading the local body, so it cannot publish an unguarded shell.
+- The CSP report receiver keeps only the origin and path of reported URLs (query strings,
+  credentials and referral codes are dropped, `/join/<code>` collapses to `/join/*`), accepts at
+  most ten reports per request, and meters its per-minute budget by reports instead of requests.
+- The leaderboard API waits for a stale refresh inside a Lambda invocation instead of starting a
+  background refresh the runtime may freeze, falling back to the stale snapshot when the refresh
+  fails; the edge's stale-while-revalidate keeps responses fast.
+- The shell preload injector is idempotent (a second run reproduces the same shell), the static
+  startup budget closure includes the `preload-trade-terminal-surface` chunk so the shell preloads
+  it, and dashboard routes no longer prefetch the desktop trade panels and chart bundles.
 - The compact market-context streams are decoded as a complete snapshot followed by changed-field
   deltas that merge into one accumulated view (the first release treated every frame as complete),
   validate every consumed field, decode strictly in order with a bounded backlog, stop decoding once
-  unsubscribed, reject a frame that fails before the server confirmation, and keep their fallback to
-  the plain channels for the whole page session; the runtime market-loading frame renders its labels
-  through Lingui.
+  unsubscribed, reject a frame that fails before the server confirmation, reset on a transport
+  disconnect so every reconnect must deliver a complete snapshot, treat any malformed delta entry as
+  a format change that triggers the fallback, and keep that fallback to the plain channels for the
+  whole page session; the runtime market-loading frame renders its labels through Lingui.
 
 - The TradingView chart no longer inserts Google Analytics on the 2% of loads the vendored
   library samples: its internal feature flag `14851` is disabled in `CHART_DISABLED_FEATURES`

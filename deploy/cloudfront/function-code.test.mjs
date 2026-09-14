@@ -40,6 +40,13 @@ test("a release keeps the previous release's hashes and drops the one before", (
 	assert.deepEqual(rotateScriptHashes({ build: [C], live: { current: [A, B], previous: [] } }), { current: [C], previous: [A, B] });
 	assert.deepEqual(rotateScriptHashes({ build: [C, A], live: { current: [A, B], previous: [] } }), { current: [A, C], previous: [B] });
 	assert.deepEqual(rotateScriptHashes({ build: [C], live: { current: [C], previous: [A] } }), { current: [C], previous: [A] });
+});
+
+test("pages the origin still serves stay allowed even when the live function names a build that never shipped", () => {
+	const D = "sha256-dddd";
+	assert.deepEqual(rotateScriptHashes({ build: [C], live: { current: [B], previous: [A] }, served: [A] }), { current: [C], previous: [A, B] });
+	assert.deepEqual(rotateScriptHashes({ build: [C], live: { current: [C], previous: [B] }, served: [B] }), { current: [C], previous: [B] });
+	assert.deepEqual(rotateScriptHashes({ build: [C], live: { current: [B], previous: [] }, served: [C, D] }), { current: [C], previous: [B, D] });
 	const live = fillScriptHashes(CODE, { current: [A], previous: [B] });
 	assert.deepEqual(missingScriptHashes(live, [A, B]), []);
 	assert.deepEqual(missingScriptHashes(live, [A, C]), [C]);

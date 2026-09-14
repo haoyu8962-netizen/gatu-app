@@ -28,6 +28,7 @@ export type CompactAssetCtxsEvent<C extends CompactAssetCtxsChannel> = C extends
 	? CompactPerpAssetCtxsEvent
 	: CompactSpotAssetCtxsEvent;
 export type CompactAssetCtxsSubscribeOptions = SubscribeFailureOptions & { signal?: AbortSignal };
+export type CompactAssetCtxsDisconnectSubscriber = (listener: () => void) => () => void;
 
 export const COMPACT_ASSET_CTXS_CODEC_LIMITS = {
 	maximumBase64Characters: 512 * 1024,
@@ -100,20 +101,19 @@ export function parseCompactPerpAssetCtxsDelta(value: unknown): CompactPerpAsset
 }
 
 /**
- * Spot contexts are addressed by market name, so a malformed entry only loses that market; a frame
- * with no usable entry at all is treated as a format change.
+ * Spot contexts are addressed by market name. A malformed entry still invalidates the whole frame:
+ * dropping it would keep that market's previous values alive across later deltas, which is a silent
+ * wrong number rather than a fallback.
  */
 export function parseCompactSpotAssetCtxsDelta(value: unknown): CompactSpotAssetCtxsDelta {
 	if (!isRecord(value)) throw new L2BookStreamError("invalid_frame");
 	const delta: CompactSpotAssetCtxsDelta = {};
-	let usable = 0;
 	for (const [coin, entry] of Object.entries(value)) {
 		const ctx = readDelta<CompactSpotAssetCtx>(entry, SPOT_FIELDS);
-		if (!ctx) continue;
+		if (!ctx) throw new L2BookStreamError("invalid_frame");
 		delta[coin] = ctx;
-		usable += 1;
 	}
-	if (usable === 0) throw new L2BookStreamError("invalid_frame");
+	if (Object.keys(delta).length === 0) throw new L2BookStreamError("invalid_frame");
 	return delta;
 }
 
@@ -167,6 +167,7 @@ export async function decodeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 
 export interface CompactAssetCtxsAccumulator<C extends CompactAssetCtxsChannel> {
 	add: (delta: CompactAssetCtxsDelta<C>) => CompactAssetCtxsEvent<C>;
+	reset: () => void;
 }
 
 /**
@@ -193,6 +194,9 @@ export function createCompactPerpAssetCtxsAccumulator(): CompactAssetCtxsAccumul
 			}
 			return [...state].map(([dex, ctxs]) => [dex, ctxs.map((ctx) => (isCompletePerpAssetCtx(ctx) ? ctx : undefined))]);
 		},
+		reset: () => {
+			state = undefined;
+		},
 	};
 }
 
@@ -209,6 +213,9 @@ export function createCompactSpotAssetCtxsAccumulator(): CompactAssetCtxsAccumul
 			const view: CompactSpotAssetCtxsEvent = {};
 			for (const [coin, ctx] of state) if (isCompleteSpotAssetCtx(ctx)) view[coin] = ctx;
 			return view;
+		},
+		reset: () => {
+			state = undefined;
 		},
 	};
 }
@@ -232,13 +239,16 @@ function toStreamError(error: unknown): L2BookStreamError {
  * skipping a delta), the listener receives the accumulated view, and decoding stops once the
  * consumer unsubscribes. A frame that fails to decode ends the subscription: before the server
  * confirmation the returned promise rejects, afterwards `onError` fires once, both like a transport
- * failure.
+ * failure. When the socket reconnects the SDK re-sends the subscription and the server answers with
+ * a complete snapshot again, so a disconnect clears the accumulated state, the backlog and any
+ * decode still in flight; the next frame must be complete like the first one.
  */
 export function subscribeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 	transport: ISubscriptionTransport,
 	channel: C,
 	listener: (event: CompactAssetCtxsEvent<C>) => void,
 	options?: CompactAssetCtxsSubscribeOptions,
+	subscribeDisconnect?: CompactAssetCtxsDisconnectSubscriber,
 ): Promise<ISubscription> {
 	const accumulator = createCompactAssetCtxsAccumulator(channel);
 	const pending: unknown[] = [];
@@ -246,12 +256,22 @@ export function subscribeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 	let confirmed = false;
 	let stopped = false;
 	let decoding = false;
+	let generation = 0;
 	let failure: L2BookStreamError | undefined;
+	let detachDisconnect: (() => void) | undefined;
 
 	const stop = () => {
 		stopped = true;
 		pending.length = 0;
+		detachDisconnect?.();
+		detachDisconnect = undefined;
 	};
+	detachDisconnect = subscribeDisconnect?.(() => {
+		if (stopped) return;
+		generation += 1;
+		pending.length = 0;
+		accumulator.reset();
+	});
 	const fail = (error: unknown) => {
 		if (stopped) return;
 		failure = toStreamError(error);
@@ -266,8 +286,9 @@ export function subscribeCompactAssetCtxs<C extends CompactAssetCtxsChannel>(
 		try {
 			while (pending.length > 0 && !stopped) {
 				const frame = pending.shift();
+				const frameGeneration = generation;
 				const delta = await decodeCompactAssetCtxs(channel, frame);
-				if (stopped) return;
+				if (stopped || frameGeneration !== generation) continue;
 				listener(accumulator.add(delta));
 			}
 		} catch (error) {

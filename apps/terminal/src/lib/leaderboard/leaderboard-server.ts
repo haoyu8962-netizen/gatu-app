@@ -59,6 +59,12 @@ interface SnapshotResult {
 interface CreateLeaderboardApiHandlerOptions {
 	readonly fetch?: FetchImplementation;
 	readonly now?: () => number;
+	/**
+	 * A long-lived process refreshes a stale snapshot in the background and answers with the old one.
+	 * A Lambda invocation ends with its response and gets no reliable time afterwards, so it awaits
+	 * the refresh instead; CloudFront's `stale-while-revalidate` keeps that wait off the viewer.
+	 */
+	readonly awaitStaleRefresh?: boolean;
 }
 
 export function createLeaderboardApiHandler(
@@ -108,7 +114,15 @@ export function createLeaderboardApiHandler(
 		) {
 			const failedAt = failedRefreshes.get(env);
 			if (failedAt === undefined || requestTime - failedAt >= LEADERBOARD_API_CACHE_POLICY.retryAfterFailureMs) {
-				void startRefresh(env, current, requestTime).catch(() => undefined);
+				const refresh = startRefresh(env, current, requestTime);
+				if (options.awaitStaleRefresh) {
+					try {
+						return { snapshot: await refresh, stale: false };
+					} catch {
+						return { snapshot: current, stale: true };
+					}
+				}
+				void refresh.catch(() => undefined);
 			}
 			return { snapshot: current, stale: true };
 		}

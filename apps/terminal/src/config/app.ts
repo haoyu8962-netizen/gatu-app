@@ -3,6 +3,7 @@ export const APP_RELEASE_VERSION = import.meta.env.VITE_GATU_APP_VERSION?.trim()
 export const APP_BUILD_COMMIT = import.meta.env.VITE_GATU_BUILD_SHA?.trim() || "dev";
 export const APP_RELEASE_ID = import.meta.env.VITE_GATU_RELEASE_ID?.trim() || "local";
 export const APP_BUILD_TIME = import.meta.env.VITE_GATU_BUILD_TIME?.trim() || "unknown";
+export const APP_CHART_LIBRARY_HASH = import.meta.env.VITE_GATU_CHART_LIBRARY_HASH?.trim() || "";
 export const APP_VERSION =
 	APP_BUILD_COMMIT === "dev"
 		? `v${APP_RELEASE_VERSION}-dev`

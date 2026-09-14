@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
 	CSP_REPORT_MAX_BODY_BYTES,
 	CSP_REPORTS_PER_MINUTE,
+	CSP_REPORTS_PER_REQUEST,
 	createCspReportHandler,
+	sanitizeReportUrl,
 	summarizeCspReports,
 } from "@/edge/csp-report-lambda";
 
@@ -67,7 +69,7 @@ describe("csp report receiver", () => {
 				directive: "script-src",
 				blockedUrl: "inline",
 				source: "",
-				sample: '(()=>{let theme="dark";try{const value=JS',
+				sample: '(()=>{let theme="dark";try{const value=J',
 				disposition: "enforce",
 			},
 		]);
@@ -83,6 +85,62 @@ describe("csp report receiver", () => {
 		]);
 		expect(summarizeCspReports("not json")).toEqual([]);
 		expect(summarizeCspReports(JSON.stringify({ other: 1 }))).toEqual([]);
+	});
+
+	it("logs URLs without query strings, fragments or referral codes and truncates script samples", () => {
+		expect(sanitizeReportUrl("https://app.gatu.ai/join/abc123?ref=ME#x")).toBe("https://app.gatu.ai/join/*");
+		expect(sanitizeReportUrl("https://user:pw@app.gatu.ai/trade/HYPE?utm=1")).toBe("https://app.gatu.ai/trade/HYPE");
+		expect(sanitizeReportUrl("inline")).toBe("inline");
+		expect(sanitizeReportUrl("blob")).toBe("blob");
+		expect(sanitizeReportUrl("https://[bad")).toBe("");
+		const [summary] = summarizeCspReports(
+			JSON.stringify({
+				"csp-report": {
+					"document-uri": "https://app.gatu.ai/join/CODE?ref=friend",
+					"effective-directive": "script-src",
+					"blocked-uri": "https://cdn.example/x.js?token=secret",
+					"source-file": "https://app.gatu.ai/assets/a.js?v=1",
+					"line-number": 3,
+					"script-sample": "x".repeat(200),
+				},
+			}),
+		);
+		expect(summary).toMatchObject({
+			documentUrl: "https://app.gatu.ai/join/*",
+			blockedUrl: "https://cdn.example/x.js",
+			source: "https://app.gatu.ai/assets/a.js:3",
+		});
+		expect(summary?.sample).toHaveLength(40);
+	});
+
+	it("drops empty entries and caps a batch, charging every logged entry against the minute budget", async () => {
+		const log = vi.fn();
+		const handler = createCspReportHandler({ now: () => 1_000, log });
+		const batch = JSON.stringify([
+			...Array.from({ length: 30 }, () => ({
+				type: "csp-violation",
+				body: {
+					documentURL: "https://app.gatu.ai/trade/HYPE",
+					effectiveDirective: "img-src",
+					blockedURL: "https://x.example/i.png",
+				},
+			})),
+			{ type: "csp-violation", body: {} },
+		]);
+		expect((await handler(event(batch, { contentType: "application/reports+json" }))).statusCode).toBe(204);
+		expect(log).toHaveBeenCalledTimes(CSP_REPORTS_PER_REQUEST);
+		for (let index = 1; index * CSP_REPORTS_PER_REQUEST < CSP_REPORTS_PER_MINUTE; index += 1) {
+			expect((await handler(event(batch, { contentType: "application/reports+json" }))).statusCode).toBe(204);
+		}
+		expect((await handler(event(batch, { contentType: "application/reports+json" }))).statusCode).toBe(429);
+		expect(log).toHaveBeenCalledTimes(CSP_REPORTS_PER_MINUTE);
+		expect(
+			(
+				await handler(
+					event(JSON.stringify([{ type: "csp-violation", body: {} }]), { contentType: "application/reports+json" }),
+				)
+			).statusCode,
+		).toBe(429);
 	});
 
 	it("logs one line per violation and answers 204 without a body", async () => {

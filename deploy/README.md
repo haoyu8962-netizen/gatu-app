@@ -548,8 +548,8 @@ Caddy 已直接对外可用。若要全球加速/抗量,在 Caddy 前再挂一�
 `/assets/*` 走长缓存。`/join/**` 必须 bypass cache 并保留 no-store/no-referrer/noindex。
 当前 Charting Library v28
 在 iPad WebKit 热缓存下可能无法完成初始化，这一条在 Caddy 时代的处理是让 `/charting_library/*` 与
-`/tradingview-theme.css` 每次重新验证。CloudFront 目标改为：文件名带内容哈希的 `bundles/*` 与按
-`?v=<commit>` 版本化的入口 `charting_library.js` immutable，`sameorigin.html` 与主题样式仍每次重新验证，
+`/tradingview-theme.css` 每次重新验证。CloudFront 目标改为：文件名带内容哈希的 `bundles/*` 与构建发出的
+内容哈希入口副本 `charting_library.<hash>.js` immutable，未哈希的 `charting_library.js`、`sameorigin.html` 与主题样式仍每次重新验证，
 `sync` 从不删除旧版文件（[ADR 0006](../docs/adr/0006-startup-preloads-and-edge-caching.md)）。该警告没有留下可复现
 的证据记录，因此 DNS 切换前仍要在 iPad WebKit 上做一次热缓存图表初始化回归；若复现，把入口与
 bundle 改回重新验证只需改 `deploy/cloudfront/deploy.mjs` 的 `objectCacheControl` 并执行 `reupload`。

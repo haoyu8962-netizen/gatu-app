@@ -7,7 +7,7 @@ import {
 } from "@/config/api-paths";
 import { handleClientErrorReport } from "@/lib/error-reporting/server";
 import { createGeoApiHandlers, type GeoApiHandlers } from "@/lib/geo/geo-api";
-import { handleLeaderboardApiRequest } from "@/lib/leaderboard/leaderboard-server";
+import { createLeaderboardApiHandler } from "@/lib/leaderboard/leaderboard-server";
 
 /** Header the CloudFront viewer-request function fills with the public host the viewer used. */
 export const FORWARDED_HOST_HEADER = "x-gatu-forwarded-host";
@@ -115,6 +115,7 @@ function trimTrailingSlash(pathname: string): string {
 }
 
 export function createApiRouter(environment: LambdaEnvironment): (request: Request) => Promise<Response> {
+	const handleLeaderboardApiRequest = createLeaderboardApiHandler({ awaitStaleRefresh: true });
 	let geoHandlers: GeoApiHandlers | undefined;
 	function getGeoHandlers(): GeoApiHandlers {
 		geoHandlers ??= createGeoApiHandlers({

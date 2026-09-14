@@ -25,7 +25,8 @@ for (const scenario of SCENARIOS) {
 	const started = Date.now();
 	await page.goto(`${origin}${scenario.path}`, { waitUntil: "load", timeout: 60000 });
 	await page.waitForTimeout(9000);
-	const timing = await page.evaluate(() => {
+	const timing = await page.evaluate(async () => {
+		const rawHtml = await fetch(location.href, { headers: { accept: "text/html" } }).then((response) => response.text());
 		const nav = performance.getEntriesByType("navigation")[0];
 		const paints = Object.fromEntries(performance.getEntriesByType("paint").map((p) => [p.name, Math.round(p.startTime)]));
 		const resources = performance.getEntriesByType("resource").map((r) => ({
@@ -38,7 +39,8 @@ for (const scenario of SCENARIOS) {
 		}));
 		return {
 			ttfb: Math.round(nav.responseStart), dcl: Math.round(nav.domContentLoadedEventEnd), load: Math.round(nav.loadEventEnd), paints,
-			staticModulepreloads: document.querySelectorAll('head link[rel="modulepreload"]').length,
+			staticModulepreloads: (rawHtml.match(/<link rel="modulepreload"/g) ?? []).length,
+			modulepreloadsNow: document.querySelectorAll('head link[rel="modulepreload"]').length,
 			resources,
 			panels: document.querySelectorAll(".react-grid-item").length,
 			frames: [...document.querySelectorAll("iframe")].map((f) => (f.src || "srcdoc").replace(location.origin, "").slice(0, 60)),
@@ -53,7 +55,7 @@ for (const scenario of SCENARIOS) {
 		executed.set(entry.url.replace(origin, ""), { total, used });
 	}
 	const scripts = timing.resources.filter((r) => r.name.endsWith(".js") || r.name.includes(".js?"));
-	const notExecuted = scripts.filter((r) => !executed.has(r.name.split("?")[0]));
+	const notExecuted = scripts.filter((r) => !executed.has(r.name));
 	report.scenarios.push({
 		...scenario,
 		elapsedMs: Date.now() - started,

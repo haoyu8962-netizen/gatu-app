@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
@@ -65,5 +66,22 @@ describe("build metadata", () => {
 			fileName: BUILD_META_PATH.slice(1),
 			source: `${JSON.stringify(meta)}\n`,
 		});
+	});
+
+	it("emits the TradingView loader under its content hash next to the metadata that names it", () => {
+		const meta = createBuildMetaForMode("production");
+		const hash = /^\/charting_library\/charting_library\.([0-9a-f]{16})\.js$/.exec(meta.chartLibraryScript)?.[1];
+		expect(hash).toBeDefined();
+
+		const emitFile = vi.fn();
+		const generateBundle = createBuildMetaPlugin(meta).generateBundle as unknown as (this: {
+			emitFile: typeof emitFile;
+		}) => void;
+		generateBundle.call({ emitFile });
+		const entry = emitFile.mock.calls
+			.map(([file]) => file)
+			.find((file) => file.fileName === meta.chartLibraryScript.slice(1));
+		expect(entry?.type).toBe("asset");
+		expect(createHash("sha256").update(entry.source).digest("hex").slice(0, 16)).toBe(hash);
 	});
 });

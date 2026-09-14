@@ -87,14 +87,20 @@ export function collectChartPrefetches(bundles) {
 	return [bundles.runtime, bundles.library, ...CHART_STATIC_PREFETCHES];
 }
 
-export function injectShellPreloads(html, links) {
-	const block = `${SHELL_PRELOAD_START}${links.join("")}${SHELL_PRELOAD_END}`;
+/** The shell as the prerender wrote it: a previous injection block, if any, is removed first. */
+export function stripShellPreloads(html) {
 	const start = html.indexOf(SHELL_PRELOAD_START);
 	const end = html.indexOf(SHELL_PRELOAD_END);
-	if (start !== -1 && end > start) return `${html.slice(0, start)}${block}${html.slice(end + SHELL_PRELOAD_END.length)}`;
-	const headEnd = html.indexOf("</head>");
+	if (start === -1 || end < start) return html;
+	return `${html.slice(0, start)}${html.slice(end + SHELL_PRELOAD_END.length)}`;
+}
+
+export function injectShellPreloads(html, links) {
+	const block = `${SHELL_PRELOAD_START}${links.join("")}${SHELL_PRELOAD_END}`;
+	const base = stripShellPreloads(html);
+	const headEnd = base.indexOf("</head>");
 	if (headEnd === -1) throw new Error("shell has no </head>");
-	return `${html.slice(0, headEnd)}${block}${html.slice(headEnd)}`;
+	return `${base.slice(0, headEnd)}${block}${base.slice(headEnd)}`;
 }
 
 export async function injectShellPreloadsIntoBuild(publicDirectoryArgument) {
@@ -108,7 +114,8 @@ export async function injectShellPreloadsIntoBuild(publicDirectoryArgument) {
 	for (const file of files) {
 		if (!existsSync(join(publicDirectory, "assets", file))) throw new Error(`startup asset ${file} is missing from the build`);
 	}
-	const html = readFileSync(shellFile, "utf8");
+	// Links from an earlier run must not count as the shell's own, or a second run would drop them.
+	const html = stripShellPreloads(readFileSync(shellFile, "utf8"));
 	const buildMeta = JSON.parse(readFileSync(join(publicDirectory, BUILD_META_FILE), "utf8"));
 	const links = [
 		...renderShellPreloadLinks({ files: surfaces.common, existingHrefs: readShellAssetHrefs(html) }),

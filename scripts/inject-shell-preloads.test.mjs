@@ -9,6 +9,7 @@ import {
 	DESKTOP_MEDIA_QUERY,
 	findChartBundles,
 	injectShellPreloads,
+	stripShellPreloads,
 	readShellAssetHrefs,
 	renderChartPreloadLink,
 	renderShellPreloadLinks,
@@ -83,4 +84,15 @@ test("exactly one runtime and one library bundle must exist in the TradingView p
 	writeFileSync(join(dir, "bundles", "library.0123456789abcdef0123.js"), "js");
 	assert.throws(() => findChartBundles(join(dir, "bundles")), /one TradingView library bundle, found 2/);
 	assert.throws(() => findChartBundles(join(dir, "missing")), /runtime bundle, found 0/);
+});
+
+test("injecting twice yields the same shell and previously injected links never count as the shell's own", () => {
+	const html = '<html><head><link rel="modulepreload" href="/assets/entry.js"/></head><body></body></html>';
+	const links = renderShellPreloadLinks({ files: ["entry.js", "vendor.js", "styles.css"], existingHrefs: readShellAssetHrefs(html) });
+	const once = injectShellPreloads(html, links);
+	const again = injectShellPreloads(once, renderShellPreloadLinks({ files: ["entry.js", "vendor.js", "styles.css"], existingHrefs: readShellAssetHrefs(stripShellPreloads(once)) }));
+	assert.equal(again, once);
+	assert.ok(once.includes('<link rel="modulepreload" href="/assets/vendor.js"/>'));
+	assert.equal(stripShellPreloads(once), html);
+	assert.deepEqual([...readShellAssetHrefs(stripShellPreloads(once))], ["/assets/entry.js"]);
 });

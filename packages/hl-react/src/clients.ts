@@ -138,7 +138,10 @@ export function getSubscriptionClient(isTestnet: boolean): CompactSubscriptionCl
 					? bookTransports.subscribe(isTestnet, payload, listener, options)
 					: primary.subscribe(channel, payload, listener, options),
 		};
-		return new CompactSubscriptionClient({ transport });
+		return new CompactSubscriptionClient({
+			transport,
+			subscribeDisconnect: (listener) => subscribeWsDisconnect(isTestnet, listener),
+		});
 	});
 }
 

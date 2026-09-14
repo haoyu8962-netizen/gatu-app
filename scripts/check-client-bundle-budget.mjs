@@ -34,7 +34,7 @@ const budgets = {
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
 		optionalRouteIds: ["/trade"],
-		staticClosureChunkPrefixes: ["client-root", "trade-terminal-page", "early-prefetch"],
+		staticClosureChunkPrefixes: ["client-root", "trade-terminal-page", "early-prefetch", "preload-trade-terminal-surface"],
 		baselineGzipBytes: 1_570_221,
 		allowedIncreaseBytes: 10_000,
 	},

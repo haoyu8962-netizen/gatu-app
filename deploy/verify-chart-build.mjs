@@ -7,6 +7,14 @@ import * as zlib from "node:zlib";
 const COMPRESSION_SUFFIXES = [".br", ".gz", ".zst"];
 const MANIFEST_SCHEMA_VERSION = 1;
 const REQUIRED_CHART_FILES = ["charting_library.js", "sameorigin.html", "package.json"];
+const CHART_ENTRY_FILE = "charting_library.js";
+const HASHED_CHART_ENTRY = /^charting_library\.[0-9a-f]{16}\.js$/;
+
+/** The application build emits a copy of the loader named by its content hash; see apps/terminal/src/config/chart-library.ts. */
+async function readHashedChartEntryName(sourceChartRoot) {
+	const contents = await readRegularFile(resolve(sourceChartRoot, CHART_ENTRY_FILE), "TradingView entry");
+	return `charting_library.${createHash("sha256").update(contents).digest("hex").slice(0, 16)}.js`;
+}
 
 async function listFiles(root, directory = "") {
 	const entries = await readdir(resolve(root, directory), { withFileTypes: true });
@@ -278,6 +286,7 @@ async function verifyChartBuild(sourcePublicRoot, outputPublicRoot, manifestPath
 
 	const manifest = await readManifest(resolve(manifestPath));
 	await assertSourceMatchesManifest(sourceChartRoot, sourceFiles, manifest);
+	const hashedEntry = await readHashedChartEntryName(sourceChartRoot);
 
 	for (const relativePath of sourceFiles) {
 		if (!outputFiles.has(relativePath)) {
@@ -294,9 +303,20 @@ async function verifyChartBuild(sourcePublicRoot, outputPublicRoot, manifestPath
 		if (sourceFiles.has(relativePath)) {
 			continue;
 		}
+		if (relativePath === hashedEntry) {
+			await assertIdentical(
+				resolve(sourceChartRoot, CHART_ENTRY_FILE),
+				resolve(outputChartRoot, relativePath),
+				`Content-hashed TradingView entry ${relativePath}`,
+			);
+			continue;
+		}
+		if (HASHED_CHART_ENTRY.test(relativePath)) {
+			throw new Error(`Build output contains a TradingView entry from another package: ${relativePath}`);
+		}
 		const suffix = getCompressionSuffix(relativePath);
 		const baseRelativePath = suffix ? relativePath.slice(0, -suffix.length) : undefined;
-		if (!baseRelativePath || !sourceFiles.has(baseRelativePath)) {
+		if (!baseRelativePath || !(sourceFiles.has(baseRelativePath) || baseRelativePath === hashedEntry)) {
 			throw new Error(`Build output contains unexpected TradingView asset: ${relativePath}`);
 		}
 		await assertValidCompressedAsset(outputChartRoot, relativePath, baseRelativePath);

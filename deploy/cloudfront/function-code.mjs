@@ -78,11 +78,18 @@ export function fillScriptHashes(code, { current, previous }) {
  * previous release's pages for up to a minute after the invalidation. Publishing the same build
  * again keeps the live PREVIOUS instead of dropping it.
  */
-export function rotateScriptHashes({ build, live }) {
+/**
+ * CURRENT is this build; PREVIOUS keeps what viewers may still receive: the live function's CURRENT
+ * (the last release) and, when known, the hashes of the pages the origin serves right now. The
+ * served set matters when a function was published for a build whose upload never completed: the
+ * live function then names that build, while the bucket still serves the one before it.
+ */
+export function rotateScriptHashes({ build, live, served = [] }) {
 	const current = [...new Set(build)].sort();
 	const liveCurrent = [...new Set(live.current)].sort();
 	const sameBuild = current.length === liveCurrent.length && current.every((hash, index) => hash === liveCurrent[index]);
-	const previous = (sameBuild ? live.previous : liveCurrent).filter((hash) => !current.includes(hash));
+	const retained = new Set([...(sameBuild ? live.previous : liveCurrent), ...served]);
+	const previous = [...retained].filter((hash) => !current.includes(hash)).sort();
 	return { current, previous };
 }
 

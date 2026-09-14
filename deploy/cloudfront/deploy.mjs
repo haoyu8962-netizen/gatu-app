@@ -23,8 +23,8 @@ const NO_STORE_FILES = new Set(["build-meta.json", "sw.js"]);
 /** TradingView writes a 20-hex content hash into every bundle file name, so those never change in place. */
 const HASHED_CHART_BUNDLE = /^charting_library\/bundles\/[^/]+\.[0-9a-f]{20}(\.rtl)?\.[a-z0-9]+$/;
 const MAX_KEYS_PER_COMMAND = 500;
-/** Versioned by its `?v=<commit>` query in the browser and refreshed at the edge by the release invalidation. */
-const CHART_ENTRY_KEY = "charting_library/charting_library.js";
+/** The build copies the TradingView loader under a 16-hex content hash; the plain `charting_library.js` stays revalidated. */
+const HASHED_CHART_ENTRY = /^charting_library\/charting_library\.[0-9a-f]{16}\.js$/;
 /** The build injects the trade startup closure into the shell; a shell with fewer links skipped that step. */
 const MIN_SHELL_PRELOADS = 20;
 /** Surface-specific preload lists the bootstrap entry reads; written by scripts/inject-shell-preloads.mjs. */
@@ -34,7 +34,7 @@ const SURFACE_PRELOAD_META_NAMES = ["gatu-preload-desktop", "gatu-preload-mobile
 export function objectCacheControl(relativePath) {
 	const key = relativePath.replaceAll("\\", "/");
 	if (PRECOMPRESSED_EXTENSIONS.has(extname(key))) return null;
-	if (key.startsWith("assets/") || HASHED_CHART_BUNDLE.test(key) || key === CHART_ENTRY_KEY) return IMMUTABLE_CACHE_CONTROL;
+	if (key.startsWith("assets/") || HASHED_CHART_BUNDLE.test(key) || HASHED_CHART_ENTRY.test(key)) return IMMUTABLE_CACHE_CONTROL;
 	if (key.startsWith("charting_library/") || /^tradingview-theme-.*\.css$/.test(key)) return REVALIDATE_CACHE_CONTROL;
 	if (NO_STORE_FILES.has(key)) return NO_STORE;
 	if (key.endsWith(".html")) return HTML_CACHE_CONTROL;
@@ -126,11 +126,30 @@ export function releaseFunctionPath(publicDir) {
  * function's CURRENT as PREVIOUS, so pages the edge still serves from the previous release stay
  * allowed until the invalidation and the shell's `s-maxage` have passed.
  */
-export function prepareResponseFunction({ committedCode, buildHashes, liveCode = "" }) {
+export function prepareResponseFunction({ committedCode, buildHashes, liveCode = "", servedHashes = [] }) {
 	if (buildHashes.length === 0) throw new Error("The build has no inline scripts; refusing to publish a policy that would allow none");
 	const live = liveCode && hasScriptHashLines(liveCode) ? parseScriptHashes(liveCode) : { current: [], previous: [] };
-	const sets = rotateScriptHashes({ build: buildHashes, live });
+	const sets = rotateScriptHashes({ build: buildHashes, live, served: servedHashes });
 	return { code: fillScriptHashes(committedCode, sets), ...sets };
+}
+
+/** The routes a viewer can request for each prerendered page; the shell answers every client route. */
+export function servedPageRoutes(publicDir) {
+	return listPrerenderedPages(publicDir)
+		.filter((page) => page === "_shell.html" || page.endsWith("/index.html"))
+		.map((page) => (page === "_shell.html" ? "/trade/HYPE" : `/${page.slice(0, -"/index.html".length)}`));
+}
+
+/** Inline script hashes of the pages the origin serves right now, so a rotation never drops them. */
+export async function collectServedScriptHashes({ origin, publicDir, fetchImpl = fetch }) {
+	const base = origin.replace(/\/+$/, "");
+	const hashes = new Set();
+	for (const route of servedPageRoutes(publicDir)) {
+		const response = await fetchImpl(`${base}${route}`, { headers: { accept: "text/html", "cache-control": "no-cache" } });
+		if (!response.ok) throw new Error(`${route} answered ${response.status} while reading the served inline script hashes`);
+		for (const script of collectInlineScripts(await response.text())) hashes.add(script.hash);
+	}
+	return [...hashes].sort();
 }
 
 function functionComment(file) {
@@ -157,10 +176,12 @@ function chunk(items, size) {
 
 /**
  * `aws s3 sync` skips unchanged files, so a cache policy change never reaches objects that are
- * already in the bucket. This re-uploads the selected files with `aws s3 cp` (which always writes
- * the object and its metadata), grouped by cache policy and bounded per command.
+ * already in the bucket. This rewrites the metadata of the selected objects with an in-bucket copy
+ * (`--metadata-directive REPLACE`), grouped by cache policy and bounded per command. It never
+ * uploads a local body: a shell or page must only reach the bucket through `sync`, which checks the
+ * live edge policy and uploads assets first.
  */
-export function buildReuploadCommands({ publicDir, bucket, files, prefixes }) {
+export function buildReuploadCommands({ bucket, files, prefixes }) {
 	const selected = files.filter((file) => prefixes.some((prefix) => file === prefix || file.startsWith(prefix)));
 	const { early, late } = planUpload(selected);
 	const commands = [];
@@ -171,12 +192,14 @@ export function buildReuploadCommands({ publicDir, bucket, files, prefixes }) {
 				commands.push([
 					"s3",
 					"cp",
-					publicDir,
+					`s3://${bucket}`,
 					`s3://${bucket}`,
 					"--recursive",
 					"--exclude",
 					"*",
 					...includes,
+					"--metadata-directive",
+					"REPLACE",
 					"--cache-control",
 					cacheControl,
 					"--no-progress",
@@ -299,11 +322,14 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(serverFn.status === 404, `server function status ${serverFn.status}`);
 	});
 	await check("chart entry is immutable and preloaded by the shell", async () => {
-		const href = /<link rel="preload" href="(\/charting_library\/charting_library\.js\?v=[^"]+)" as="script"/.exec(shell.toString("utf8"))?.[1];
-		expect(href, "the local shell does not preload the chart entry");
+		const href = /<link rel="preload" href="(\/charting_library\/charting_library\.[0-9a-f]{16}\.js)" as="script"/.exec(shell.toString("utf8"))?.[1];
+		expect(href, "the local shell does not preload a content-hashed chart entry");
+		expect(existsSync(join(publicDir, href.slice(1))), `${href} is not in the local build`);
 		const response = await fetchImpl(`${base}${href}`);
 		expect(response.status === 200, `status ${response.status}`);
 		expect(response.headers.get("cache-control") === IMMUTABLE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
+		const plain = await fetchImpl(`${base}/charting_library/charting_library.js`);
+		expect(plain.headers.get("cache-control") === REVALIDATE_CACHE_CONTROL, `unhashed entry cache-control ${plain.headers.get("cache-control")}`);
 		return href;
 	});
 	await check("shell preloads the startup closure", async () => {
@@ -504,7 +530,7 @@ async function main() {
 		case "reupload": {
 			const bucket = requireOption(options, "bucket");
 			const prefixes = requireOption(options, "prefixes");
-			const commands = buildReuploadCommands({ publicDir, bucket, files: listPublicFiles(publicDir), prefixes });
+			const commands = buildReuploadCommands({ bucket, files: listPublicFiles(publicDir), prefixes });
 			if (commands.length === 0) throw new Error(`No uploadable files match ${prefixes.join(", ")}`);
 			for (const command of commands) runAws(command, options.execute);
 			break;
@@ -528,10 +554,13 @@ async function main() {
 				if (!existsSync(path)) throw new Error(`No CloudFront Function code at ${path}`);
 				if (name === RESPONSE_FUNCTION_NAME) {
 					if (!existsSync(join(publicDir, "_shell.html"))) throw new Error(`No _shell.html in ${publicDir}; the response function needs the build's inline script hashes`);
+					const servedHashes = options.origin ? await collectServedScriptHashes({ origin: options.origin, publicDir }) : [];
+					if (!options.origin) console.warn("No --origin given: the served pages' hashes are not checked; pass the CloudFront origin so a rotation cannot drop a page still online");
 					const prepared = prepareResponseFunction({
 						committedCode: readFileSync(path, "utf8"),
 						buildHashes: collectInlineScriptHashes(publicDir).hashes,
 						liveCode: options.execute ? readLiveFunctionCode(name) : "",
+						servedHashes,
 					});
 					path = releaseFunctionPath(publicDir);
 					mkdirSync(dirname(path), { recursive: true });

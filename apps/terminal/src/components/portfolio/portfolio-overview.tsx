@@ -121,7 +121,7 @@ export function PortfolioOverview() {
 						tone={pnl ?? undefined}
 					/>
 					<SummaryRow label={<Trans>Volume</Trans>} value={formatUSD(snapshot?.vlm ?? "0")} />
-					<SummaryRow label={<Trans>Max Drawdown</Trans>} value={formatPercent("0", { signDisplay: "auto" })} />
+					<SummaryRow label={<Trans>Max Drawdown</Trans>} value="—" />
 					<SummaryRow
 						label={<Trans>Total Equity</Trans>}
 						value={formatUSD(data.totalEquity ?? "0", { compact: false })}

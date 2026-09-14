@@ -184,7 +184,7 @@ describe("PortfolioOverview", () => {
 
 		expect(summaryValue(container, "PNL")).toBe("$0.00");
 		expect(summaryValue(container, "Volume")).toBe("$0.00");
-		expect(summaryValue(container, "Max Drawdown")).toBe("0.00%");
+		expect(summaryValue(container, "Max Drawdown")).toBe("—");
 		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Something went wrong");
 
 		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
@@ -284,7 +284,7 @@ describe("PortfolioOverview", () => {
 
 		expect(summaryValue(container, "PNL")).toMatch(/0\.00/);
 		expect(summaryValue(container, "Volume")).toMatch(/0\.00/);
-		expect(summaryValue(container, "Max Drawdown")).toBe("0.00%");
+		expect(summaryValue(container, "Max Drawdown")).toBe("—");
 		expect(container.querySelector('[role="alert"]')).toBeNull();
 	});
 
@@ -302,7 +302,7 @@ describe("PortfolioOverview", () => {
 		expect(summaryElement(container, "PNL")?.classList).toContain("text-market-down");
 		expect(summaryElement(container, "PNL")?.classList).not.toContain("text-error");
 	});
-	it("does not classify a withdrawal as performance drawdown", () => {
+	it("never shows a numeric drawdown while the metric is unavailable, even with a falling history", () => {
 		mocks.portfolioError = false;
 		mocks.portfolioData = createZeroPortfolio();
 		for (const [, snapshot] of mocks.portfolioData)
@@ -311,7 +311,7 @@ describe("PortfolioOverview", () => {
 				[2, "500"],
 			];
 		renderOverview(root);
-		expect(summaryValue(container, "Max Drawdown")).toBe("0.00%");
+		expect(summaryValue(container, "Max Drawdown")).toBe("—");
 		expect(container.textContent).toContain("cash-flow-adjusted history");
 		expect(container.textContent).not.toContain("-50.00%");
 	});

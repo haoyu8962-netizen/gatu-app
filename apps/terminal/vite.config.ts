@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
@@ -17,6 +18,7 @@ import {
 } from '../../scripts/client-chunk-graph.mjs'
 import { BUILD_META_PATH } from './src/config/api-paths'
 import { type BuildMeta, createBuildMeta } from './src/config/build-meta'
+import { createHashedChartLibraryEntryPath } from './src/config/chart-library'
 import { DOCUMENT_ROUTE_PATHS } from './src/config/document-routes'
 import { resolveMobilePairingFeatureFlags } from './src/config/mobile-pairing-flags'
 import { chartingLibrarySecurityHeaders, referralJoinHeaders, securityHeaders } from './src/config/security-headers'
@@ -118,6 +120,11 @@ export function createOrderSummaryChunksPlugin(): Plugin {
 const buildSha = resolveBuildSha()
 const releaseId = process.env.GATU_RELEASE_ID?.trim() || 'local'
 const buildTime = process.env.GATU_BUILD_TIME?.trim() || new Date().toISOString()
+const chartLibraryEntryPath = fileURLToPath(new URL('./public/charting_library/charting_library.js', import.meta.url))
+const chartLibraryEntry = existsSync(chartLibraryEntryPath) ? readFileSync(chartLibraryEntryPath) : undefined
+// Names the immutable copy of the TradingView loader; see `config/chart-library.ts`.
+const chartLibraryHash = chartLibraryEntry ? createHash('sha256').update(chartLibraryEntry).digest('hex').slice(0, 16) : ''
+
 export const buildIdentity = Object.freeze({
   version: terminalPackage.version,
   commit: buildSha,
@@ -136,6 +143,7 @@ export function createBuildMetaForMode(mode: string): BuildMeta {
     builtAt: buildTime,
     ticketApiVersion: MOBILE_SYNC_TICKET_API_VERSION,
     pairing: resolveMobilePairingFeatureFlags(loadEnv(mode, terminalDirectory, 'VITE_')),
+    chartLibraryHash,
   })
 }
 
@@ -146,6 +154,9 @@ export function createBuildMetaPlugin(meta: BuildMeta): Plugin {
     applyToEnvironment: (environment) => environment.name === 'client',
     generateBundle() {
       this.emitFile({ type: 'asset', fileName: BUILD_META_PATH.slice(1), source: `${JSON.stringify(meta)}\n` })
+      if (chartLibraryEntry && chartLibraryHash) {
+        this.emitFile({ type: 'asset', fileName: createHashedChartLibraryEntryPath(chartLibraryHash), source: chartLibraryEntry })
+      }
     },
   }
 }
@@ -246,6 +257,7 @@ const config = defineConfig({
     'import.meta.env.VITE_GATU_BUILD_SHA': JSON.stringify(buildSha),
     'import.meta.env.VITE_GATU_RELEASE_ID': JSON.stringify(releaseId),
     'import.meta.env.VITE_GATU_BUILD_TIME': JSON.stringify(buildTime),
+    'import.meta.env.VITE_GATU_CHART_LIBRARY_HASH': JSON.stringify(chartLibraryHash),
   },
   server: {
     strictPort: true,
@@ -302,9 +314,6 @@ const config = defineConfig({
           headers: { ...chartingLibrarySecurityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
         },
         '/charting_library/bundles/**': {
-          headers: { ...chartingLibrarySecurityHeaders, 'cache-control': 'public, max-age=31536000, immutable' },
-        },
-        '/charting_library/charting_library.js': {
           headers: { ...chartingLibrarySecurityHeaders, 'cache-control': 'public, max-age=31536000, immutable' },
         },
         '/tradingview-theme-*.css': {

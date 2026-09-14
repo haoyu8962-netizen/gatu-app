@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
@@ -42,6 +43,19 @@ function writePackageMetadata(root: string) {
 function writePackageMetadataPair(source: string, output: string) {
 	writePackageMetadata(source);
 	writePackageMetadata(output);
+}
+
+function writeCompletePackagePair(source: string, output: string) {
+	for (const [relativePath, contents] of [
+		["charting_library/charting_library.js", "entry"],
+		["charting_library/sameorigin.html", "document"],
+		["tradingview-theme-dark.css", ":root{}"],
+		["tradingview-theme-light.css", ":root{}"],
+	] as const) {
+		writeAsset(source, relativePath, contents);
+		writeAsset(output, relativePath, contents);
+	}
+	writePackageMetadataPair(source, output);
 }
 
 function generateManifest(source: string, manifest: string) {
@@ -90,6 +104,31 @@ describe("TradingView build asset verification", () => {
 		generateManifest(source, manifest);
 
 		expect(runVerifier(source, output, manifest)).not.toThrow();
+	});
+
+	it("accepts the content-hashed copy of the chart entry that the application build emits", () => {
+		const { manifest, output, source } = createPublicRoots();
+		writeCompletePackagePair(source, output);
+		const hash = createHash("sha256").update("entry").digest("hex").slice(0, 16);
+		writeAsset(output, `charting_library/charting_library.${hash}.js`, "entry");
+		writeAsset(output, `charting_library/charting_library.${hash}.js.gz`, zlib.gzipSync(Buffer.from("entry")));
+		generateManifest(source, manifest);
+
+		expect(runVerifier(source, output, manifest)).not.toThrow();
+	});
+
+	it("rejects a hashed chart entry whose name or contents do not come from the source package", () => {
+		const { manifest, output, source } = createPublicRoots();
+		writeCompletePackagePair(source, output);
+		generateManifest(source, manifest);
+		const hash = createHash("sha256").update("entry").digest("hex").slice(0, 16);
+
+		writeAsset(output, `charting_library/charting_library.${hash}.js`, "entry!");
+		expect(runVerifier(source, output, manifest)).toThrow(/Content-hashed TradingView entry .* differs/);
+
+		rmSync(resolve(output, `charting_library/charting_library.${hash}.js`));
+		writeAsset(output, "charting_library/charting_library.0123456789abcdef.js", "entry");
+		expect(runVerifier(source, output, manifest)).toThrow(/entry from another package/);
 	});
 
 	it("rejects a missing lazy-loaded chart bundle", () => {

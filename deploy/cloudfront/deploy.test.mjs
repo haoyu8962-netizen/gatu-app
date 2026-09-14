@@ -29,7 +29,9 @@ test("objects get the cache policy the edge expects", () => {
 	assert.equal(objectCacheControl("charting_library/bundles/1227.68542dac293294290d44.rtl.css"), IMMUTABLE_CACHE_CONTROL);
 	assert.equal(objectCacheControl("charting_library/bundles/EuclidCircular.be8f862db48c2976009f.woff2"), IMMUTABLE_CACHE_CONTROL);
 	assert.equal(objectCacheControl("charting_library/bundles/library.js"), REVALIDATE_CACHE_CONTROL);
-	assert.equal(objectCacheControl("charting_library/charting_library.js"), IMMUTABLE_CACHE_CONTROL);
+	assert.equal(objectCacheControl("charting_library/charting_library.0123456789abcdef.js"), IMMUTABLE_CACHE_CONTROL);
+	assert.equal(objectCacheControl("charting_library/charting_library.js"), REVALIDATE_CACHE_CONTROL);
+	assert.equal(objectCacheControl("charting_library/charting_library.0123456789abcdef.js.br"), null);
 	assert.equal(objectCacheControl("charting_library/charting_library.esm.js"), REVALIDATE_CACHE_CONTROL);
 	assert.equal(objectCacheControl("charting_library/sameorigin.html"), REVALIDATE_CACHE_CONTROL);
 	assert.ok(HTML_CACHE_CONTROL.includes("s-maxage=60") && HTML_CACHE_CONTROL.includes("stale-while-revalidate"));
@@ -66,16 +68,18 @@ test("html and build metadata upload after every asset, precompressed siblings a
 	assert.ok(!commands.flat().includes("assets/a.js.br"));
 });
 
-test("reupload rewrites only the selected files with cp, bounded per command", () => {
+test("reupload rewrites the metadata of the selected objects in the bucket, never uploading a local body", () => {
 	const files = ["_shell.html", "assets/a.js", "charting_library/bundles/x.0123456789abcdef0123.js", "charting_library/charting_library.js", "docs/index.html"];
-	const commands = buildReuploadCommands({ publicDir: "/out/public", bucket: "b", files, prefixes: ["charting_library/bundles/", "_shell.html"] });
+	const commands = buildReuploadCommands({ bucket: "b", files, prefixes: ["charting_library/bundles/", "_shell.html"] });
 	assert.equal(commands.length, 2);
-	assert.deepEqual(commands[0].slice(0, 5), ["s3", "cp", "/out/public", "s3://b", "--recursive"]);
+	assert.deepEqual(commands[0].slice(0, 5), ["s3", "cp", "s3://b", "s3://b", "--recursive"]);
+	assert.ok(commands.every((command) => command.includes("--metadata-directive") && command.includes("REPLACE")));
+	assert.ok(commands.every((command) => !command.some((argument) => argument.startsWith("/"))));
 	assert.ok(commands[0].includes("charting_library/bundles/x.0123456789abcdef0123.js") && commands[0].includes(IMMUTABLE_CACHE_CONTROL));
 	assert.ok(commands[1].includes("_shell.html") && commands[1].includes(HTML_CACHE_CONTROL));
 	assert.ok(!commands.flat().includes("docs/index.html") && !commands.flat().includes("charting_library/charting_library.js"));
 	const many = Array.from({ length: 1_001 }, (_, index) => `charting_library/bundles/${index}.0123456789abcdef0123.js`);
-	assert.equal(buildReuploadCommands({ publicDir: "/p", bucket: "b", files: many, prefixes: ["charting_library/"] }).length, 3);
+	assert.equal(buildReuploadCommands({ bucket: "b", files: many, prefixes: ["charting_library/"] }).length, 3);
 });
 
 test("a sync that stopped before the shell is reported instead of passing silently", () => {
@@ -111,7 +115,7 @@ test("invalidation and lambda commands are explicit and bounded", () => {
 });
 
 const SHELL_PRELOADS = Array.from({ length: 24 }, (_, index) => `/assets/chunk-${index}.js`);
-const CHART_ENTRY = "/charting_library/charting_library.js?v=abc";
+const CHART_ENTRY = "/charting_library/charting_library.0123456789abcdef.js";
 const THEME_SCRIPT = '(()=>{document.documentElement.classList.add("dark")})();';
 const THEME_HASH = cspHash(THEME_SCRIPT);
 const SHELL_HTML = `<html><head><script>${THEME_SCRIPT}</script>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/><meta name="gatu-preload-desktop" content="/assets/chunk-1.js"/><meta name="gatu-preload-mobile" content=""/><meta name="gatu-chart-prefetch" content="/charting_library/sameorigin.html"/></head></html>`;
@@ -127,6 +131,7 @@ function createPublicDir() {
 	writeFileSync(join(dir, "build-meta.json"), JSON.stringify({ commit: "abc", release: "r1" }));
 	mkdirSync(join(dir, "charting_library", "bundles"), { recursive: true });
 	writeFileSync(join(dir, "charting_library", "bundles", "runtime.4d986d07cb97d8edacba.js"), "js");
+	writeFileSync(join(dir, CHART_ENTRY.slice(1)), "js");
 	return dir;
 }
 
@@ -168,7 +173,8 @@ test("verification passes when the edge serves the build with the expected heade
 				body: SHELL_HTML,
 				headers: { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-robots-tag": "noindex, nofollow", "x-gatu-route": "referral-join" },
 			},
-			"/charting_library/charting_library.js": { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
+			[CHART_ENTRY]: { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
+			"/charting_library/charting_library.js": { body: "js", headers: { "cache-control": REVALIDATE_CACHE_CONTROL } },
 			"*": { status: 404, body: "missing" },
 		}),
 	});
@@ -197,7 +203,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 			"/build-meta.json": { body: JSON.stringify({ commit: "old", release: "r0" }) },
 			"/api/geo": { status: 503, body: JSON.stringify({ error: "unavailable", reason: "missing_config" }) },
 			"/join/__gatu_healthcheck__": { body: "x", headers: { "cache-control": "no-store" } },
-			"/charting_library/charting_library.js": { body: "js", headers: { "cache-control": "max-age=0" } },
+			[CHART_ENTRY]: { body: "js", headers: { "cache-control": "max-age=0" } },
 			"*": { status: 200, body: "<html>shell</html>" },
 		}),
 	});

@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 
-import type { CompactSubscriptionClient } from "@gatu/hl-react";
-import { OversizedWebSocketPayloadError } from "@gatu/hl-react";
+import {
+	type CompactSubscriptionClient,
+	markFrameReceivedAt,
+	OversizedWebSocketPayloadError,
+	type SubscriptionResult,
+} from "@gatu/hl-react";
 import { useSubscription } from "@gatu/hl-react/hooks/useSubscription";
 import { useSub } from "@gatu/hl-react/hooks/utils/useSub";
 import { HyperliquidContext, type HyperliquidContextValue, HyperliquidStoreContext } from "@gatu/hl-react/provider";
@@ -664,5 +668,34 @@ describe("useSub hook surface", () => {
 			]);
 		});
 		expect(captured?.map((trade) => trade.coin)).toEqual(["BTC"]);
+	});
+
+	it("keeps a replayed frame's original receipt time through confirmation and staleness", async () => {
+		const receivedAt = Date.now() - 20_000;
+		const l2Book = vi.fn(async (_params: unknown, listener: (data: unknown) => void) => {
+			const frame = { coin: "ETH", levels: [[], []], time: 1 };
+			markFrameReceivedAt(frame, receivedAt);
+			listener(frame);
+			return { unsubscribe: vi.fn(async () => {}) };
+		});
+		const subscription = { l2Book } as unknown as CompactSubscriptionClient;
+		let result: SubscriptionResult<unknown> | undefined;
+		function Consumer() {
+			result = useSubscription("l2Book", { coin: "ETH" });
+			return null;
+		}
+
+		act(() => {
+			root.render(
+				<FullWrapper subscription={subscription}>
+					<Consumer />
+				</FullWrapper>,
+			);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(50));
+
+		expect(result?.status).toBe("active");
+		expect(result?.lastMessageAt).toBe(receivedAt);
+		expect(result?.isStale).toBe(true);
 	});
 });

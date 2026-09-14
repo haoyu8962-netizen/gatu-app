@@ -75,6 +75,7 @@ Avoid unrelated refactors.
   - `http://localhost:3001/mobile-agent-sync` renders the missing-link import state.
   - A malformed `#ht-mobile-sync=...` fragment is removed from the address bar by the import route.
   - At a 390x844 viewport, the import route renders without visible overlap; screenshot captured at `/tmp/gatu-mobile-agent-sync-390x844.png`.
+    (Path note, 2026-09-14: the brand cleanup rewrote the old product name inside this historical path at the user's request; the screenshot was never kept in the repository and is no longer retrievable.)
   - Opening `Connect Wallet` no longer throws and shows Coinbase Wallet, WalletConnect, and the dev mock wallet.
   - Connecting the dev mock wallet exposes `Link mobile device` from the account menu, and that modal shows `Reset` plus `Create phone link`.
 

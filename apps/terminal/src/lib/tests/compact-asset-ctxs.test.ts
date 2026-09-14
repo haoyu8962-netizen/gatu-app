@@ -83,9 +83,14 @@ describe("compact market context frames", () => {
 		});
 	});
 
-	it("drops malformed spot entries from a delta while other markets stay usable", () => {
-		expect(parseCompactSpotAssetCtxsDelta({ "@1": { markPx: "1" }, "@2": { markPx: "abc" }, "@3": 4 })).toEqual({
+	it("rejects a delta with a malformed spot entry instead of keeping that market's previous values", () => {
+		expect(() => parseCompactSpotAssetCtxsDelta({ "@1": { markPx: "1" }, "@2": { markPx: "abc" } })).toThrow(
+			L2BookStreamError,
+		);
+		expect(() => parseCompactSpotAssetCtxsDelta({ "@1": { markPx: "1" }, "@3": 4 })).toThrow(L2BookStreamError);
+		expect(parseCompactSpotAssetCtxsDelta({ "@1": { markPx: "1" }, "@2": { midPx: null } })).toEqual({
 			"@1": { markPx: "1" },
+			"@2": { midPx: null },
 		});
 	});
 
@@ -191,6 +196,45 @@ describe("compact market context subscription", () => {
 		await new Promise((resolve) => setTimeout(resolve, 20));
 		expect(listener).not.toHaveBeenCalled();
 		expect(transport.unsubscribe).toHaveBeenCalledTimes(1);
+	});
+
+	it("restarts from a complete snapshot after the socket reconnects and drops decodes from the old connection", async () => {
+		const transport = createTransport();
+		const listener = vi.fn();
+		const onError = vi.fn();
+		const disconnectListeners: (() => void)[] = [];
+		const detach = vi.fn();
+		const subscription = await subscribeCompactAssetCtxs(transport, "pac", listener, { onError }, (handler) => {
+			disconnectListeners.push(handler);
+			return detach;
+		});
+		transport.emit(encode([["", [PERP_CTX]]]));
+		await vi.waitFor(() => expect(listener).toHaveBeenCalledTimes(1));
+		transport.emit(encode([["", [{ markPx: "2" }]]]));
+		for (const handler of disconnectListeners) handler();
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		expect(listener).toHaveBeenCalledTimes(1);
+		transport.emit(encode([["", [{ markPx: "3" }]]]));
+		await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+		expect(onError.mock.calls[0][0]).toMatchObject({ code: "invalid_frame" });
+		expect(detach).toHaveBeenCalledTimes(1);
+		await subscription.unsubscribe();
+	});
+
+	it("delivers the reconnect snapshot as a fresh view", async () => {
+		const transport = createTransport();
+		const listener = vi.fn();
+		const disconnectListeners: (() => void)[] = [];
+		await subscribeCompactAssetCtxs(transport, "sac", listener, undefined, (handler) => {
+			disconnectListeners.push(handler);
+			return () => {};
+		});
+		transport.emit(encode({ "@1": SPOT_CTX, "@9": SPOT_CTX }));
+		await vi.waitFor(() => expect(listener).toHaveBeenCalledTimes(1));
+		for (const handler of disconnectListeners) handler();
+		transport.emit(encode({ "@1": { ...SPOT_CTX, markPx: "7" } }));
+		await vi.waitFor(() => expect(listener).toHaveBeenCalledTimes(2));
+		expect(listener.mock.calls[1][0]).toEqual({ "@1": { ...SPOT_CTX, markPx: "7" } });
 	});
 
 	it("ends the stream instead of skipping deltas when the backlog grows past the bound", async () => {
