@@ -9,7 +9,14 @@ import {
 	chartingLibraryContentSecurityPolicy,
 	contentSecurityPolicy,
 } from "../../../apps/terminal/src/config/security-headers.ts";
-import { FUNCTION_CODE_LIMIT_BYTES, renderCurrentResponseFunction } from "../render-functions.mjs";
+import {
+	createReportOnlyPolicy,
+	FUNCTION_CODE_LIMIT_BYTES,
+	readEdgeConfig,
+	renderCurrentResponseFunction,
+	renderResponseFunction,
+	RESPONSE_TEMPLATE_PATH,
+} from "../render-functions.mjs";
 
 const directory = dirname(fileURLToPath(import.meta.url));
 
@@ -93,4 +100,19 @@ test("join paths carry the referral marker through to the response headers", () 
 	assert.equal(plain.headers["x-gatu-route"], undefined);
 	const untouched = onResponse({ request: plain, response: { statusCode: 200, headers: {} } });
 	assert.equal(untouched.headers["x-gatu-route"], undefined);
+});
+
+test("the report-only policy is emitted only when a report receiver is configured", () => {
+	const template = readFileSync(RESPONSE_TEMPLATE_PATH, "utf8");
+	const withReceiver = renderResponseFunction({
+		template,
+		terminalCsp: "default-src 'self'",
+		chartCsp: "frame-ancestors 'self'",
+		terminalCspReportOnly: createReportOnlyPolicy("img-src 'self'", "https://reports.example/"),
+	});
+	assert.ok(withReceiver.includes('var TERMINAL_CSP_REPORT_ONLY = "img-src \'self\'; report-uri https://reports.example/";'));
+	const withoutReceiver = renderResponseFunction({ template, terminalCsp: "default-src 'self'", chartCsp: "frame-ancestors 'self'" });
+	assert.ok(withoutReceiver.includes('var TERMINAL_CSP_REPORT_ONLY = "";'));
+	assert.equal(createReportOnlyPolicy("img-src 'self'", ""), "");
+	assert.equal(typeof readEdgeConfig().cspReportUri, "string");
 });

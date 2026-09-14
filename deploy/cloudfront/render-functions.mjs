@@ -9,12 +9,28 @@ import { fileURLToPath } from "node:url";
 import {
 	chartingLibraryContentSecurityPolicy,
 	contentSecurityPolicy,
+	contentSecurityPolicyReportOnly,
 } from "../../apps/terminal/src/config/security-headers.ts";
 
 export const FUNCTION_CODE_LIMIT_BYTES = 10 * 1024;
 const directory = dirname(fileURLToPath(import.meta.url));
 export const RESPONSE_TEMPLATE_PATH = join(directory, "functions", "terminal-response.template.js");
 export const RESPONSE_FUNCTION_PATH = join(directory, "functions", "terminal-response.js");
+export const EDGE_CONFIG_PATH = join(directory, "edge-config.json");
+
+/** Deployment values the rendered function embeds; empty strings switch the related header off. */
+export function readEdgeConfig(path = EDGE_CONFIG_PATH) {
+	const config = JSON.parse(readFileSync(path, "utf8"));
+	const cspReportUri = typeof config.cspReportUri === "string" ? config.cspReportUri.trim() : "";
+	if (cspReportUri && !/^https:\/\/[a-z0-9.-]+\/?$/.test(cspReportUri)) {
+		throw new Error("edge-config.json cspReportUri must be an https origin");
+	}
+	return { cspReportUri };
+}
+
+export function createReportOnlyPolicy(policy, reportUri) {
+	return reportUri ? `${policy}; report-uri ${reportUri}` : "";
+}
 
 function embed(value) {
 	if (value.includes('"') || value.includes("\\") || /[\r\n]/.test(value)) {
@@ -23,15 +39,16 @@ function embed(value) {
 	return value;
 }
 
-export function renderResponseFunction({ template, terminalCsp, chartCsp }) {
+export function renderResponseFunction({ template, terminalCsp, chartCsp, terminalCspReportOnly = "" }) {
 	const rendered = template
 		.replace("__TERMINAL_CSP__", embed(terminalCsp))
 		.replace("__CHART_CSP__", embed(chartCsp))
+		.replace("__TERMINAL_CSP_REPORT_ONLY__", embed(terminalCspReportOnly))
 		.replace(
 			"// Generated from terminal-response.template.js by render-functions.mjs; do not edit the rendered\n// file by hand.",
 			"// GENERATED FILE: rendered from terminal-response.template.js by render-functions.mjs; do not\n// edit by hand.",
 		);
-	if (rendered.includes("__TERMINAL_CSP__") || rendered.includes("__CHART_CSP__")) {
+	if (rendered.includes("__TERMINAL_CSP__") || rendered.includes("__CHART_CSP__") || rendered.includes("__TERMINAL_CSP_REPORT_ONLY__")) {
 		throw new Error("Template placeholders were not replaced");
 	}
 	const bytes = Buffer.byteLength(rendered, "utf8");
@@ -46,6 +63,7 @@ export function renderCurrentResponseFunction() {
 		template: readFileSync(RESPONSE_TEMPLATE_PATH, "utf8"),
 		terminalCsp: contentSecurityPolicy,
 		chartCsp: chartingLibraryContentSecurityPolicy,
+		terminalCspReportOnly: createReportOnlyPolicy(contentSecurityPolicyReportOnly, readEdgeConfig().cspReportUri),
 	});
 }
 

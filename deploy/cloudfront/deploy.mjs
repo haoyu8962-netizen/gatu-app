@@ -106,6 +106,28 @@ export function buildSyncCommands({ publicDir, bucket, files }) {
 	return commands;
 }
 
+const FUNCTIONS_DIR = resolve(fileURLToPath(new URL(".", import.meta.url)), "functions");
+export const CLOUDFRONT_FUNCTIONS = [
+	{ name: "gatu-terminal-request", file: "terminal-request.js" },
+	{ name: "gatu-terminal-response", file: "terminal-response.js" },
+];
+
+function functionComment(file) {
+	return file === "terminal-request.js" ? "gatu shell rewrite" : "gatu route marker + csp";
+}
+
+/**
+ * Updates a CloudFront Function from its file and publishes it to LIVE. `update-function` needs the
+ * current ETag and `publish-function` the ETag the update returned, so the caller re-reads it in
+ * between; the returned publish command ends with a placeholder for that value.
+ */
+export function buildFunctionUpdateCommands({ name, file, etag, comment }) {
+	return [
+		["cloudfront", "update-function", "--name", name, "--if-match", etag, "--function-config", `Comment=${comment},Runtime=cloudfront-js-2.0`, "--function-code", `fileb://${file}`],
+		["cloudfront", "publish-function", "--name", name, "--if-match", "<updated-etag>"],
+	];
+}
+
 function chunk(items, size) {
 	const chunks = [];
 	for (let index = 0; index < items.length; index += size) chunks.push(items.slice(index, index + size));
@@ -315,6 +337,7 @@ function readArgs(argv) {
 		execute: false,
 		publicDir: "apps/terminal/.output/public",
 		lambdaDir: "apps/terminal/dist-lambda",
+		lambdaEntry: "index.mjs",
 		network: "mainnet",
 	};
 	for (let index = 0; index < rest.length; index += 1) {
@@ -345,6 +368,9 @@ function readArgs(argv) {
 				break;
 			case "--only":
 				(options.prefixes ??= []).push(value());
+				break;
+			case "--lambda-entry":
+				options.lambdaEntry = value();
 				break;
 			case "--network":
 				options.network = value();
@@ -417,12 +443,24 @@ async function main() {
 			break;
 		case "lambda": {
 			const functionName = requireOption(options, "functionName");
-			const bundle = resolve(options.lambdaDir, "index.mjs");
+			const bundle = resolve(options.lambdaDir, options.lambdaEntry);
 			if (!existsSync(bundle) || !statSync(bundle).isFile()) throw new Error(`No Lambda bundle at ${bundle}; run pnpm --filter @gatu/terminal build:lambda`);
-			const zipPath = resolve(options.lambdaDir, "lambda.zip");
+			const zipPath = resolve(options.lambdaDir, `${options.lambdaEntry.replace(/\.mjs$/, "")}.zip`);
 			console.log(`zip -j ${zipPath} ${bundle}`);
 			if (options.execute) execFileSync("zip", ["-j", "-q", zipPath, bundle], { stdio: "inherit" });
 			for (const command of buildLambdaCommands({ functionName, zipPath })) runAws(command, options.execute);
+			break;
+		}
+		case "functions": {
+			for (const { name, file } of CLOUDFRONT_FUNCTIONS) {
+				const path = resolve(FUNCTIONS_DIR, file);
+				if (!existsSync(path)) throw new Error(`No CloudFront Function code at ${path}`);
+				const current = options.execute ? readAwsJson(["cloudfront", "describe-function", "--name", name]) : { ETag: "<etag>" };
+				const [update, publish] = buildFunctionUpdateCommands({ name, file: path, etag: current.ETag, comment: functionComment(file) });
+				runAws(update, options.execute);
+				const updatedEtag = options.execute ? readAwsJson(["cloudfront", "describe-function", "--name", name]).ETag : "<updated-etag>";
+				runAws([...publish.slice(0, -1), updatedEtag], options.execute);
+			}
 			break;
 		}
 		case "verify": {
@@ -432,7 +470,7 @@ async function main() {
 			break;
 		}
 		default:
-			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|lambda|verify> [--execute] [--bucket B] [--only PREFIX]... [--distribution ID] [--function-name F] [--origin URL] [--network mainnet|testnet]");
+			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|lambda|functions|verify> [--execute] [--bucket B] [--only PREFIX]... [--distribution ID] [--function-name F] [--lambda-entry index.mjs] [--origin URL] [--network mainnet|testnet]");
 			process.exit(2);
 	}
 }

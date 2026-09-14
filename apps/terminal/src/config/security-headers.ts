@@ -97,6 +97,29 @@ function serializeContentSecurityPolicy(directives: Record<string, string>) {
 
 export const contentSecurityPolicy = serializeContentSecurityPolicy(cspDirectives);
 
+/**
+ * The stricter policy under evaluation: image sources limited to hosts the application is known to
+ * use, and no `blob:` scripts. It is emitted as `Content-Security-Policy-Report-Only` by the edge so
+ * violations reach the report receiver without blocking anything; once the reports stay quiet the
+ * directives move into `cspDirectives`.
+ */
+export const cspReportOnlyDirectives: Record<string, string> = {
+	...cspDirectives,
+	"img-src": [
+		"'self'",
+		"data:",
+		"blob:",
+		"https://app.hyperliquid.xyz",
+		"https://*.privy.io",
+		"https://explorer-api.walletconnect.com",
+		"https://*.walletconnect.com",
+		"https://*.coinbase.com",
+	].join(" "),
+	"script-src": "'self' 'unsafe-inline' https://challenges.cloudflare.com",
+};
+
+export const contentSecurityPolicyReportOnly = serializeContentSecurityPolicy(cspReportOnlyDirectives);
+
 export const chartingLibraryContentSecurityPolicy = serializeContentSecurityPolicy({
 	...cspDirectives,
 	"frame-ancestors": "'self'",

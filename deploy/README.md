@@ -565,7 +565,8 @@ hashed bundles。完成版本化、双目录保留和移动端热缓存回归前
 ### CSP(应用层已启用)
 
 CSP 由 `apps/terminal/src/config/security-headers.ts` 定义,并通过
-`apps/terminal/vite.config.ts` 的 Nitro `routeRules` 下发。主文档使用
+`apps/terminal/vite.config.ts` 的 Nitro `routeRules` 下发。CloudFront 目标由 viewer-response 函数下发同一策略，
+并把更严的候选策略作为 `Content-Security-Policy-Report-Only` 送到独立的报告接收器（[ADR 0007](../docs/adr/0007-csp-report-only-hardening.md)）。主文档使用
 `frame-ancestors 'none'`,TradingView 同源资源使用允许 `frame-ancestors 'self'` 的独立策略。
 Caddy 只补充 HSTS 等代理层响应头,不要再添加第二份 CSP;浏览器会同时执行多份 CSP,
 未经协调的重复策略会让钱包、Turnstile、TradingView iframe 或 SSR 启动过程白屏。

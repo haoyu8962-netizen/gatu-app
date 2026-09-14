@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import {
 	assertReleaseMarkersUploaded,
+	buildFunctionUpdateCommands,
 	buildInvalidationCommand,
 	buildLambdaCommands,
 	buildReuploadCommands,
@@ -81,6 +82,14 @@ test("a sync that stopped before the shell is reported instead of passing silent
 		() => assertReleaseMarkersUploaded({ bucket: "b", publicDir, headObject: (_, key) => (key === "_shell.html" ? 12_677 : sizes[key]) }),
 		/_shell.html in s3:\/\/b is 12677 bytes/,
 	);
+});
+
+test("cloudfront functions are updated from their files and published with the returned etag", () => {
+	const [update, publish] = buildFunctionUpdateCommands({ name: "gatu-terminal-response", file: "/repo/deploy/cloudfront/functions/terminal-response.js", etag: "E1", comment: "gatu route marker + csp" });
+	assert.deepEqual(update.slice(0, 6), ["cloudfront", "update-function", "--name", "gatu-terminal-response", "--if-match", "E1"]);
+	assert.ok(update.includes("fileb:///repo/deploy/cloudfront/functions/terminal-response.js"));
+	assert.ok(update.includes("Comment=gatu route marker + csp,Runtime=cloudfront-js-2.0"));
+	assert.deepEqual(publish, ["cloudfront", "publish-function", "--name", "gatu-terminal-response", "--if-match", "<updated-etag>"]);
 });
 
 test("invalidation and lambda commands are explicit and bounded", () => {
