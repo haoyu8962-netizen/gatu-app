@@ -184,6 +184,37 @@ value was kept, and the measurement was redone under the rules:
   99 startup assets / 1,758,233 bytes in total. Every other named surface stayed
   within its limit.
 
+### Second correction after the 2026-09-15 review
+
+The 2026-09-14 correction still fell short of the rules: the build identity was
+a parent commit plus uncommitted fixes, the build time was not fixed, and the
+"route-only diagnostic" reported seed counts rather than bytes. The baseline
+value stays at 123,242 bytes; this record is the compliant measurement.
+
+- Commit `0f08462a` (`claude/spa-mode`, clean source tree; the only uncommitted
+  file was this task's work record). Toolchain: Node 22.15.0 (nvm), pnpm
+  10.21.0. Command from the worktree root:
+  `GATU_RELEASE_ID=cloudfront-2026-09-15-p19 GATU_BUILD_TIME=2026-09-15T00:00:00.000Z pnpm build`,
+  released as p19; `build-meta.json` names that commit, release and time.
+- Graph inventory: 391 client chunks, no circular static imports, 392 graph
+  assets (the content-hashed TradingView loader copy and `build-meta.json` are
+  emitted outside `assets/` and are not chunks).
+- Route-only diagnostic (`analyzeClientBundle().tradeRoutePreloadFiles` with
+  `sizesByFile`): the 6 route preload files total 518,908 gzip bytes; the
+  runtime entry script `index-Bv802odA.js` is 2,057 bytes; the 4 semantic
+  entries (`client-root`, `trade-terminal-page`, `early-prefetch`,
+  `preload-trade-terminal-surface`) total 135,051 bytes.
+- `trade-terminal-page`: 123,804 gzip bytes against the 123,242-byte baseline
+  (+562, allowance 4,000).
+- Static trade startup: 75 assets / 1,562,860 bytes (7,361 below baseline; one
+  asset more than p18 because the preload chain chunk is now a semantic root).
+  Mobile runtime increment 11 assets / 111,640 bytes (+1,060), 86 startup assets
+  / 1,674,500 bytes in total. Desktop runtime increment 25 assets / 196,992
+  bytes (+5,004), 100 startup assets / 1,759,852 bytes in total.
+- Client gzip total 3,070,775 bytes (83,932 below baseline; largest chunk
+  `index-Bs6QSD5q-BqDTMEGU.js` 434,360). Every other named surface stayed
+  within its limit; the budget script reported no violations.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:

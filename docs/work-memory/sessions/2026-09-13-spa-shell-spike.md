@@ -337,6 +337,37 @@ P5：`lib/wallet/privy-session-hint.ts` 检查 Privy 本地存储的会话键（
 
 未改动：审查提出但保留原样的只有 P1 第 2 项里"回放帧不得可交互"的诉求——回放帧带原始接收时间后，其新鲜度与一直在线的订阅者完全相同，不属于契约里的缓存行，ADR 0003 已写明依据。
 
+## 第二十九检查点：9 月 13–14 日提交的三路对抗审查与修复（2026-09-15，基于 `38bfe51a`；修复提交 `0b8f31d7`）
+
+用户要求对 9 月 13、14 日的提交继续用 Codex 最新模型做对抗审查；分支没有 PR，因此按提交范围审查。三路并行只读审查（`gpt-6-astra`，`codex exec -s read-only`，`model_reasoning_effort=high`，提示词禁止修改与提交）：A 基础设施与 CSP（17 个提交 `2c44be20..2312a496`，177,048 token）、B 性能与工具并复核第二十八检查点的十项（12 个提交，231,938 token）、C 文档与 UI（17 个提交 `80c23619..2c44be20`，158,009 token）。结论：A 2 P1 / 4 P2，B 1 P1 / 6 P2 / 1 P3，C 1 P2 / 1 P3；三路都未运行测试或构建。B 对第二十八检查点的复核：十项里七项"已解决"，三项"部分"（回放时间、形状校验、重新基线），分别对应下面的 B1、B2/B3、B7。逐条复核与处置：
+
+- A1 P1 哈希轮换可能删除线上仍在提供的页面的哈希——成立：函数发布后若上传失败或取消，再次构建并发布会把线上页面的哈希挤出 PREVIOUS。修复：`deploy.mjs functions --origin <线上源>` 抓取线上各预渲染页（`servedPageRoutes`）当前内联脚本的哈希，`rotateScriptHashes({ build, live, served })` 把它们并入 PREVIOUS；没有 `--origin` 时打印警告并退回只看上次发布的规则；测试覆盖"函数发布成功、上传失败、重新构建再发布"。
+- A2 P1 `reupload` 绕过 CSP 守卫且能单独上传引用未上传资源的新壳——成立。修复：`reupload` 改为桶内 `s3 cp --metadata-directive REPLACE` 复制，只改线上对象的元数据、不上传本地正文；测试与手册同步。
+- A3 P2 图表入口 `?v=<commit>` + immutable 与边缘缓存键不含查询串冲突——成立。修复：Vite 配置计算 `public/charting_library/charting_library.js` 的 SHA-256 前 16 位，经 `VITE_GATU_CHART_LIBRARY_HASH` 注入运行时，build-meta 插件把同一份字节发出为 `charting_library/charting_library.<hash>.js`；`createChartLibraryScriptUrl(version)` 对 16 位十六进制返回哈希路径，否则 `?v=`（开发服务器）；`objectCacheControl` 只对哈希入口 immutable，未哈希入口回到重新验证；`deploy.mjs verify` 要求壳预加载哈希入口、线上 immutable 且未哈希入口已重新验证；`verify-chart-build.mjs` 只接受与源字节相同且名字等于源哈希的副本；Nitro 路由规则删掉入口 immutable。ADR 0006 决策 3/6、两份部署手册、启动性能计划的 P9 条目已更正。
+- A4 P2 排行榜沿用常驻进程的后台刷新——成立。修复：Lambda 里 `createLeaderboardApiHandler({ awaitStaleRefresh: true })` 等待刷新，失败时回退旧快照并标 stale，边缘的 `stale-while-revalidate` 承担后台重验证；两条测试。
+- A5 P2 CSP 报告直接记录 URL——成立。修复：`sanitizeReportUrl` 只保留 origin 与路径（去查询串、凭据、片段，`/join/<code>` 折叠为 `/join/*`，`inline`/`eval` 这类非 URL 值原样），脚本样本截到 40 字符；测试含推荐码与查询参数。
+- A6 P2 批量报告绕过每分钟限额——成立。修复：缺必需字段的空报告丢弃、每请求最多 10 条、按写出的条数扣减预算、预算不足回 429；测试覆盖批次计量。ADR 0007 决策 2/5 更新。实例外的限流仍取决于尚未设置的预留并发，未改。
+- B1 P1 订阅确认再次覆盖回放时间——成立。修复：确认路径 `watchdog.arm(key, runtime.lastMessageAt)`，`setSubscriptionData` 在 `markFresh(key, receivedAt)` 之后读取看门狗的 `isStale`，`staleness.arm/markFresh` 接受时间参数；`use-sub.test.tsx` 新增回放→节流→store→看门狗的整链用例。ADR 0003 补第三条规则。
+- B2 P2 丢弃损坏的 `sac` 条目会静默保留旧值——成立。修复：任一条目损坏即 `invalid_frame` 触发回退；测试改为断言整帧无效。
+- B3 P2 SDK 自动重连绕过首帧校验——成立（核对 SDK 0.33.3 的重连行为）。修复：`CompactSubscriptionConfig.subscribeDisconnect`（`clients.ts` 接 `subscribeWsDisconnect`），断线时代次加一、清空待解码队列与累积器，重连后重新要求完整首帧；两条测试。ADR 0008 更新。
+- B4 P2 预加载注入器重复执行不幂等——成立。修复：`stripShellPreloads` 先移除旧块再收集壳原生链接；测试连续两次注入逐字节一致。
+- B5 P2 `preload-trade-terminal-surface` 块漏出预算与壳预加载——成立。修复：加入预算脚本的静态启动语义根前缀，p19 产物核对见下。
+- B6 P2 仪表盘无条件预加载交易面板与图表——成立。修复：`early-prefetch.ts` 只在 `getAppRouteSurface(pathname) === "terminal"` 时调用 `startSurfacePreloads()`；新增 `early-prefetch.test.ts`。
+- B7 P2 重新基线的更正记录仍不合规——成立。处置：修复提交之后用干净提交、Node 22.15.0、固定 `GATU_RELEASE_ID` 与 `GATU_BUILD_TIME` 重新构建并按规则记录（见下与基线文档的第二次更正）。
+- B8 P3 加载审计工具误报——成立。修复：覆盖率与资源按完整 URL 对齐，静态 `modulepreload` 从原始 HTML 统计、动态追加的链接单列。
+- C1 P2 未实现的最大回撤恒显 `0.00%`——成立。修复：恢复 `—` 占位，测试改回"成功加载也不得伪造回撤"。
+- C2 P3 品牌清理改写了历史截图路径——成立。处置：在该记录追加说明（原路径与替换后的路径现都不存在，不据此断言截图从未存在），不改写历史正文。
+
+验证（提交 `0b8f31d7`）：`biome check` 通过；`pnpm typecheck`（hl-react、ui、terminal）通过；`pnpm test:cloudfront` 33 例通过；`node --experimental-strip-types --test scripts/*.test.mjs deploy/*.test.mjs` 197 通过、0 失败；全量 `pnpm --filter @gatu/terminal test` 559 文件与 typecheck 并发时 29 个红文件：10 个基线红之外的 19 个单独重跑全部通过（`chart-asset-cache-policy` 是删除 Nitro 入口 immutable 规则后同步测试契约），其余都是 5 s 超时的争用产物。基线红仍是 `desktop-positions-panel-shell`、`global-settings-slippage-effective`、`referral-ui-contract`、`adaptive-modal-swipe-dismissal`、`mobile-input-zoom-contract`、`position-market-close-modal`、`orders-table-visual-contract`、`mobile-trade-tp-sl-contract`、`mobile-order-risk-summary-contract`、`market-asset-info`。
+
+构建 p19（提交 `0f08462a`，Node 22.15.0 / pnpm 10.21.0，`GATU_RELEASE_ID=cloudfront-2026-09-15-p19 GATU_BUILD_TIME=2026-09-15T00:00:00.000Z pnpm build`；第一次构建在预算检查处失败——chunk 图把发出的哈希入口副本当成了无元数据的 JS 资源，`0f08462a` 让图只盘点 `assets/` 目录后重建）：391 块无循环静态导入；`trade-terminal-page` 123,804 gz（基线 123,242，+562）；静态启动闭包 75 资源 / 1,562,860（-7,361；4 个语义根，`preload-trade-terminal-surface` 已在壳的 `modulepreload` 里）；移动增量 11 / 111,640，桌面增量 25 / 196,992；客户端总量 3,070,775（-83,932）；路由预加载 6 文件 518,908 gz。壳预加载 86 个共有资源 + 14 个仅桌面 + 0 个仅移动；`build-meta.json` 的 `chartLibraryScript` 为 `/charting_library/charting_library.2925de328d845fd5.js`（与源文件 SHA-256 前 16 位一致，`verify-chart-build.mjs` 通过）；内联脚本哈希 10 个（8 页）。合规的重新基线记录写在 `docs/terminal-performance-baseline.md` 的第二次更正。
+
+发布 p19：`functions --execute --origin https://d2i25dhfjwco8b.cloudfront.net`（本次 10 个内联脚本哈希为 CURRENT，线上页面仍在提供的 7 个并入 PREVIOUS）→ `lambda`（`gatu-terminal-api` 与 `gatu-terminal-api-csp-report` 都更新，两者的处理代码本次都有改动）→ `sync`（守卫"线上策略允许全部 10 个哈希"通过，两阶段上传，HTML 与 `build-meta.json` 最后）→ `reupload --only charting_library/charting_library.js`（桶内复制，未哈希入口回到 `public, max-age=0, must-revalidate`）→ 两条分发 `/*` 失效并等待完成 → `verify` 主网 14/14、测试网 15/15 全绿（含新的"哈希入口 immutable 且未哈希入口已重新验证"、`build-meta` 提交 `0f08462a` / `cloudfront-2026-09-15-p19`、壳 86 个 `modulepreload`、7 页 21 段内联脚本在 enforce 策略下允许）。
+
+线上复测（主网 `d2i25dhfjwco8b.cloudfront.net`，同机冷缓存、单样本，工具与前几个检查点相同）：`csp-coverage.mjs` 全部步骤 0 条违规（`scriptSrcViolations`、`otherViolations` 均空）；`boot-milestones.mjs` 两次冷加载：TTFB 280 / 203，FCP 532 / 424，水合 570 / 514，fallback 消失、顶栏、表面 627 / 912，网格 829 / 912，订单簿数据 840 / 912（第二次全部落在同一帧），Privy iframe 1,196 / 1,241，长任务合计约 1.5 s（其中约 1.2 s 是钱包运行时）；`orderbook-race.mjs` 三次：网格、订单簿面板、数据、20 行同帧（980 / 1,000 / 933），首个 `l2Book` 快照 812 / 919 / 857 ms 均早于网格，`gridToBookData` 三次都是 0；`market-stats-probe.mjs`：头部 101 个数字、4 个占位，24h 涨跌、成交量、未平仓、资金费率均由 `pac`/`sac` 填充，无控制台错误。与 p18 相比处于同一量级（差异在单样本噪声内），本次目标是正确性修复而不是提速。
+
+边界与未改动：接收器的限额仍是实例级，实例外限流取决于尚未设置的预留并发；过渡期 Nitro 宿主对哈希入口副本按 `/charting_library/**` 重新验证（rou3 路由规则不能表达文件名里的哈希），只有 CloudFront 目标享受 immutable；`deploy/README.md` 里 iPad WebKit 热缓存的图表初始化回归仍待做；全量 vitest 与 typecheck 并发时的超时红文件是本机争用现象，未改测试超时。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。
