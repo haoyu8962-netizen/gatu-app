@@ -98,6 +98,9 @@ export const CHART_DISABLED_FEATURES = [
 	"countdown",
 	"timeframes_toolbar",
 	"main_series_scale_menu",
+	// Internal flag behind the library's sampled Google Analytics ping (2% of loads); the chart CSP
+	// blocks the loader host anyway. See docs/runtime-guardrails.md §4.
+	"14851",
 ] as ChartingLibraryFeatureset[];
 
 export const CHART_FAVORITE_INTERVALS = ["1", "5", "60", "240", "1D"] as ResolutionString[];

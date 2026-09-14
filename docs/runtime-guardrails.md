@@ -361,6 +361,13 @@ mobile regressions.
   `pointer-events: none` to the loaded TradingView iframe.
 - CSP changes must keep the main document strict while allowing the
   charting-library same-origin iframe mode.
+- The vendored library samples 2% of chart loads to insert a Google Analytics
+  loader from inside the iframe, gated by its internal feature flag `14851`.
+  Keep `"14851"` in `CHART_DISABLED_FEATURES` and never add
+  `www.google-analytics.com` to any policy; the chart CSP blocks the loader
+  as a second line. Re-check after every library upgrade with
+  `node apps/terminal/tests/browser/chart-analytics-probe.mjs <origin>`, which
+  forces `Math.random` to `0` in every frame so the sampled branch would run.
 - TradingView theme CSS runs inside the iframe, so application CSS variables
   do not inherit into it. Define its semantic background variables inside
   `apps/terminal/public/tradingview-theme-{dark,light}.css`: the canvas uses

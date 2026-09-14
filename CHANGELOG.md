@@ -101,6 +101,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The TradingView chart no longer inserts Google Analytics on the 2% of loads the vendored
+  library samples: its internal feature flag `14851` is disabled in `CHART_DISABLED_FEATURES`
+  (the chart Content-Security-Policy already blocked the loader). See
+  [runtime guardrails §4](docs/runtime-guardrails.md).
 - Zod's JIT parser is disabled before any schema exists: application and `hl-react` modules
   import Zod through `src/lib/zod.ts` and `packages/hl-react/src/zod.ts`, which switch it off
   first. Building the first object schema no longer probes `new Function`, which the edge

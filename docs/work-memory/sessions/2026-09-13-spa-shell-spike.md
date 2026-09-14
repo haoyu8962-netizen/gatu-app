@@ -240,6 +240,14 @@ AWS：用 `gatu-edge` 创建 `gatu-terminal-api-csp-report`（nodejs22.x、arm64
 
 发布 p10：build → `functions --execute`（10 current + 7 previous）→ `sync`（守卫通过）→ 两条失效 → verify 主网 14/14、测试网 15/15（Lambda 代码未变，未重发）。覆盖 32 步：0 条 `script-src` 报告、0 条其它指令报告、0 条控制台错误，桌面 7 面板、移动 3 导航项。CloudWatch：失效完成后 0 条报告（此前 20 分钟内的 20 条全部在 p9 时段）。附带观察：p9 覆盖时 `/spot` 的图表 iframe 曾尝试加载 `https://www.google-analytics.com/analytics.js`，被图表策略拦下（`script-src` 无该主机），只见于控制台、p10 未复现，属 TradingView 库行为，本次未处理。`build-meta.json` 的 `commit` 仍是构建时的 HEAD `d79ac6f8`，改动在发布后才提交。
 
+## 第二十一检查点：关闭 TradingView 的 Google Analytics 采样（2026-09-14，基于 `cee6c813`）
+
+用户要求处理图表 iframe 加载 Google Analytics 的问题。定位：`public/charting_library/bundles/library.f5eaeb6901219f861981.js` 在图表加载完成后执行 `if (l.enabled("14851") && Math.random() <= .02)`，插入 `//www.google-analytics.com/analytics.js` 并向 `UA-112911840-1` 发送匿名化的 pageview（2% 采样）；`14851` 是库内部 feature 注册表（`bundles/7346.*.js` 模块 56570）里的合法名字，iframe 启动时把 `urlParams.disabledFeatures` 逐个 `setEnabled(name, false)`，所以 `disabled_features` 能关掉它。复现：Playwright `addInitScript` 把每个 frame 的 `Math.random` 固定为 0，p10 线上图表 iframe 每次都插入 GA 脚本（被图表策略拦下，仅控制台报错）。
+
+修复：`config/chart.ts` 的 `CHART_DISABLED_FEATURES` 加入 `"14851"`（附注释）；`docs/runtime-guardrails.md` §4 新增规则（保留该 flag、任何策略不得放行 `www.google-analytics.com`、库升级后用探针复查）；探针入库为 `apps/terminal/tests/browser/chart-analytics-probe.mjs`（强制采样分支，检查 iframe 收到的 `disabledFeatures` 含 `14851`、无 GA 脚本与 `GoogleAnalyticsObject`、canvas 已绘制，不满足即非零退出）。中途一次误判：用 `preview_start` 起的开发服务器实际运行在主检出（cwd `gatu/apps/terminal`），探针看到的是未改的旧列表，已停掉并改为发布后在线上验证。`pnpm check`、终端 typecheck 通过；无测试钉住该列表。
+
+发布 p11（基于 `cee6c813`）：build → `functions --execute`（10 current + 7 previous）→ `sync`（守卫通过）→ 两条失效 → verify 主网 14/14、测试网 15/15。探针（线上 p11）：图表 iframe `flagDisabled: true`、`analyticsScript: false`、`analyticsObject: false`、11 个 canvas、0 条控制台错误。覆盖 32 步：0 条违规、0 条控制台错误、桌面 7 面板、移动 3 导航项。Lambda 未变未重发。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。
