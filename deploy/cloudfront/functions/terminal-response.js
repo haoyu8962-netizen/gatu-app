@@ -20,7 +20,7 @@ var STRICT_SCRIPT_SRC = "'self' https://challenges.cloudflare.com 'report-sample
 var SCRIPT_HASHES_CURRENT = "";
 var SCRIPT_HASHES_PREVIOUS = "";
 // "report-only": only the report-only policy names the hashes; "enforce": the enforced policy too.
-var SCRIPT_HASHES_MODE = "report-only";
+var SCRIPT_HASHES_MODE = "enforce";
 // Report receiver from edge-config.json; empty switches the report-only header off.
 var REPORT_URI = "https://siqpvdjvlkzrxgcpsevl4f5kui0ynupf.lambda-url.ap-northeast-1.on.aws/";
 

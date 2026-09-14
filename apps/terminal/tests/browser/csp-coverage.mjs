@@ -38,6 +38,7 @@ async function tryClick(page, selectors, label, results, wait = 3000) {
 const browser = await chromium.launch({ headless: true });
 const results = [];
 const consoleErrors = [];
+const functional = {};
 let header = null;
 
 async function run(contextOptions, steps) {
@@ -59,6 +60,7 @@ await run({ viewport: { width: 1440, height: 900 } }, async (page) => {
 	await page.goto(`${origin}/trade/BTC`, { waitUntil: "load", timeout: 60000 });
 	await settle(page, 8000);
 	await collect(page, "desktop trade", results);
+	functional.desktopPanels = await page.locator(".react-grid-item").count();
 	await tryClick(page, ['button:has-text("Connect")', 'button:has-text("Log in")', 'button:has-text("Login")', 'button:has-text("Sign in")'], "desktop connect modal", results, 6000);
 	await page.keyboard.press("Escape").catch(() => {});
 	await page.waitForTimeout(1000);
@@ -77,6 +79,7 @@ await run({ viewport: { width: 390, height: 664 }, isMobile: true, hasTouch: tru
 	await page.goto(`${origin}/trade/BTC`, { waitUntil: "load", timeout: 60000 });
 	await settle(page, 8000);
 	await collect(page, "mobile trade", results);
+	functional.mobileNavItems = await page.locator("nav button, nav a").count();
 	for (const tab of ["Markets", "Account", "Trade"]) {
 		await tryClick(page, [`nav button:has-text("${tab}")`, `nav a:has-text("${tab}")`, `button:has-text("${tab}")`, `a:has-text("${tab}")`], `mobile tab ${tab}`, results, 3000);
 	}
@@ -94,6 +97,7 @@ const otherViolations = results.flatMap((step) => step.violations.filter((v) => 
 console.log(JSON.stringify({
 	origin,
 	reportOnlyHeader: header,
+	functional,
 	steps: results.map((step) => ({ label: step.label, url: step.url, violations: step.violations.length, skipped: step.skipped })),
 	scriptSrcViolations: scriptViolations,
 	otherViolations: otherViolations.slice(0, 20),

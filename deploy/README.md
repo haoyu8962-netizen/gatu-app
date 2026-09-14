@@ -571,11 +571,11 @@ CSP 由 `apps/terminal/src/config/security-headers.ts` 定义,并通过
 Caddy 只补充 HSTS 等代理层响应头,不要再添加第二份 CSP;浏览器会同时执行多份 CSP,
 未经协调的重复策略会让钱包、Turnstile、TradingView iframe 或 SSR 启动过程白屏。
 
-当前 `script-src` 包含 `'unsafe-inline'`,用于兼容 TanStack Start SSR 注入的启动脚本;
-这会放宽对内联脚本注入的防护,属于已知限制,不应描述成严格 CSP。移除前必须把每请求 nonce
-贯穿 TanStack Router 的 `ssr.nonce`、`HeadContent`/`Scripts`、内联样式和第三方认证流程,
-并先在生产同等环境使用 `Content-Security-Policy-Report-Only`、钱包登录、下单、充值、桥和
-TradingView 回归测试验证。不要直接从当前策略删除 `'unsafe-inline'`。
+Nitro 目标的 `script-src` 仍包含 `'unsafe-inline'`，用于兼容 TanStack Start 注入的启动脚本；
+这会放宽对内联脚本注入的防护，属于已知限制，不应描述成严格 CSP，EC2 退役时随 `routeRules` 一并消失。
+CloudFront 目标自 2026-09-14 起改为按预渲染页内联脚本的哈希强制（`edge-config.json` 的
+`cspScriptHashes: enforce`，撤回改为 `report-only` 即可），每次发布必须先发布函数再上传 HTML，
+并跑 `apps/terminal/tests/browser/csp-coverage.mjs`。不要直接从 Nitro 策略删除 `'unsafe-inline'`。
 
 核对生产响应:
 

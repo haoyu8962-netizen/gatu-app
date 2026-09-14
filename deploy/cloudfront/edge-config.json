@@ -1,4 +1,4 @@
 {
 	"cspReportUri": "https://siqpvdjvlkzrxgcpsevl4f5kui0ynupf.lambda-url.ap-northeast-1.on.aws/",
-	"cspScriptHashes": "report-only"
+	"cspScriptHashes": "enforce"
 }

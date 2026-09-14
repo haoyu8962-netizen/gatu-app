@@ -68,8 +68,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - The report-only policy names the prerendered pages' inline scripts by `sha256` hash instead
   of `'unsafe-inline'`: the build lists the hashes, the release writes the current and previous
   sets into the CloudFront Function, `deploy.mjs sync` refuses to upload pages the live policy
-  does not allow, and `verify` checks every page against the live header. Enforcing the hashed
-  policy is a configuration switch (`cspScriptHashes`) for a later release. See ADR 0007 and
+  does not allow, and `verify` checks every page against the live header. The edge enforces the
+  hashed `script-src` (no `'unsafe-inline'`, no `blob:`, violations reported) since the same day;
+  `cspScriptHashes` in the edge config switches back to report-only. See ADR 0007 and
   [the inline script hash plan](docs/csp-inline-script-hashes-plan.md).
 
 ### Changed

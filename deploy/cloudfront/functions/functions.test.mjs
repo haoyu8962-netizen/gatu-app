@@ -77,13 +77,14 @@ test("server paths and file-like paths pass through untouched", () => {
 
 test("the response function sets the terminal or chart content security policy", () => {
 	const shell = onResponse({ request: onRequest(viewerRequest("/trade/BTC")), response: { statusCode: 200, headers: {} } });
-	assert.equal(shell.headers["content-security-policy"].value, contentSecurityPolicy);
 	const { cspReportUri, cspScriptHashes } = readEdgeConfig();
-	assert.equal(cspScriptHashes, "report-only", "the enforced policy keeps 'unsafe-inline' until the report-only stage is over");
+	const reportSuffix = cspReportUri ? `; report-uri ${cspReportUri}` : "";
+	const hashedTerminalCsp = serializeContentSecurityPolicy({ ...cspDirectives, "script-src": createStrictCspDirectives()["script-src"] });
 	assert.equal(
-		shell.headers["content-security-policy-report-only"]?.value,
-		cspReportUri ? `${contentSecurityPolicyReportOnly}; report-uri ${cspReportUri}` : undefined,
+		shell.headers["content-security-policy"].value,
+		cspScriptHashes === "enforce" ? `${hashedTerminalCsp}${reportSuffix}` : contentSecurityPolicy,
 	);
+	assert.equal(shell.headers["content-security-policy-report-only"]?.value, cspReportUri ? `${contentSecurityPolicyReportOnly}${reportSuffix}` : undefined);
 	const chart = onResponse({
 		request: onRequest(viewerRequest("/charting_library/charting_library.js")),
 		response: { statusCode: 200, headers: {} },
