@@ -1,4 +1,5 @@
-import type { ExchangeClient, InfoClient, ISubscription, SubscriptionClient } from "@nktkas/hyperliquid";
+import type { ExchangeClient, InfoClient, ISubscription } from "@nktkas/hyperliquid";
+import type { CompactSubscriptionClient } from "../subscriptions/compact-subscription-client";
 
 // ── InfoClient mapped types ─────────────────────────────────────────
 
@@ -55,9 +56,11 @@ export type ExchangeResponse<M extends ExchangeMethod> = ExchangeClientMethods[M
 // ── SubscriptionClient mapped types ─────────────────────────────────
 
 type SubClientMethods = {
-	[K in keyof SubscriptionClient as SubscriptionClient[K] extends (...args: never[]) => Promise<ISubscription>
+	[K in keyof CompactSubscriptionClient as CompactSubscriptionClient[K] extends (
+		...args: never[]
+	) => Promise<ISubscription>
 		? K
-		: never]: SubscriptionClient[K];
+		: never]: CompactSubscriptionClient[K];
 };
 
 export type SubMethod = keyof SubClientMethods & string;

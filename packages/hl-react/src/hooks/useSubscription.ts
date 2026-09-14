@@ -1,4 +1,4 @@
-import type { ISubscription, SubscriptionClient } from "@nktkas/hyperliquid";
+import type { ISubscription } from "@nktkas/hyperliquid";
 import { useRef } from "react";
 import { RingBuffer } from "../internal/circular-buffer/ring-buffer";
 import { serializeKey, subscriptionKeys } from "../query/keys";
@@ -8,6 +8,7 @@ import {
 	getDefaultThrottle,
 	shouldAcceptSubscriptionEvent,
 } from "../registries/subscription";
+import type { CompactSubscriptionClient } from "../subscriptions/compact-subscription-client";
 import { useConfig, useHyperliquidTransport } from "../transport-provider";
 import type { SubscribeFailureOptions, SubscriptionOptions, SubscriptionResult } from "../types";
 import type { SubEvent, SubMethod, SubParams } from "../types/clients";
@@ -42,7 +43,7 @@ export function useSubscription<M extends SubMethod>(
 	return useSub(
 		key,
 		(listener: (data: SubEvent<M>) => void, failureOptions?: SubscribeFailureOptions) => {
-			const fn = (subscription as SubscriptionClient)[method] as (...args: unknown[]) => Promise<ISubscription>;
+			const fn = (subscription as CompactSubscriptionClient)[method] as (...args: unknown[]) => Promise<ISubscription>;
 			const acceptEvent = (event: SubEvent<M>) => shouldAcceptSubscriptionEvent(method, params, event);
 			const eventAccumulator = createSubscriptionEventAccumulator(method);
 

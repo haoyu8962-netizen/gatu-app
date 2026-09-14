@@ -1,5 +1,8 @@
 import {
 	type BuilderPerpMarket,
+	type CompactPerpAssetCtxsEvent,
+	type CompactSpotAssetCtxsEvent,
+	canUseL2Decompression,
 	type PerpMarket,
 	type SpotMarket,
 	useHyperliquidTransport,
@@ -14,10 +17,11 @@ import {
 	resolveActiveMarketPrice,
 	resolveFastMarketPrice,
 } from "@/domain/trade/market-price";
+import { reportClientError } from "@/lib/error-reporting/client";
 import { loadLastMark, saveLastMark } from "@/lib/last-mark-cache";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useSelectedMarket } from "@/stores/use-market-store";
-import type { AllDexsAssetCtxs, DexAssetCtx, SpotAssetCtx, SpotAssetCtxs } from "@/types/hyperliquid";
+import type { DexAssetCtx, SpotAssetCtx, SpotAssetCtxs } from "@/types/hyperliquid";
 import { getMarketApiCoin, getSpotMarketApiCoin } from "../market-identity";
 import { useMarkets } from "../markets/use-markets";
 import { useMarketsInfoContext } from "./MarketsInfoProvider";
@@ -56,10 +60,13 @@ interface MarketsInfoResult {
 
 interface StatsCache {
 	env: "Mainnet" | "Testnet";
-	allDexsCtxs: AllDexsAssetCtxs | undefined;
-	spotCtxs: SpotAssetCtxs | undefined;
+	allDexsCtxs: CompactPerpAssetCtxsEvent | undefined;
+	spotCtxs: CompactSpotAssetCtxsEvent | undefined;
 	savedAt: number;
 }
+
+const COMPACT_MARKET_CTXS_SUPPORTED = canUseL2Decompression();
+let compactMarketCtxsFallbackReported = false;
 
 export function createMarketLookup(markets: readonly UnifiedMarketInfo[]) {
 	const byName = new Map<string, UnifiedMarketInfo>();
@@ -84,7 +91,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isAllDexsAssetCtxs(value: unknown): value is AllDexsAssetCtxs {
+function isAllDexsAssetCtxs(value: unknown): value is CompactPerpAssetCtxsEvent {
 	return (
 		Array.isArray(value) &&
 		value.every(
@@ -98,8 +105,18 @@ function isAllDexsAssetCtxs(value: unknown): value is AllDexsAssetCtxs {
 	);
 }
 
-function isSpotAssetCtxs(value: unknown): value is SpotAssetCtxs {
-	return Array.isArray(value) && value.every(isRecord);
+function isSpotAssetCtxs(value: unknown): value is CompactSpotAssetCtxsEvent {
+	return isRecord(value) && Object.values(value).every(isRecord);
+}
+
+function keySpotCtxsByCoin(spotCtxs: SpotAssetCtxs): CompactSpotAssetCtxsEvent {
+	return Object.fromEntries(spotCtxs.map((ctx) => [ctx.coin, ctx]));
+}
+
+function reportCompactMarketCtxsFallback(error: unknown) {
+	if (compactMarketCtxsFallbackReported) return;
+	compactMarketCtxsFallbackReported = true;
+	reportClientError(error, { kind: "market_ctxs_compact_fallback" });
 }
 
 function removeStatsCache() {
@@ -137,8 +154,8 @@ function loadStatsCache(env: "Mainnet" | "Testnet"): StatsCache | null {
 
 function saveStatsCache(
 	env: "Mainnet" | "Testnet",
-	allDexsCtxs: AllDexsAssetCtxs | undefined,
-	spotCtxs: SpotAssetCtxs | undefined,
+	allDexsCtxs: CompactPerpAssetCtxsEvent | undefined,
+	spotCtxs: CompactSpotAssetCtxsEvent | undefined,
 ) {
 	if (typeof window === "undefined") return;
 	if (!allDexsCtxs && !spotCtxs) return;
@@ -172,7 +189,7 @@ function useSubscriptionWarmWindow(enabled: boolean, keepAliveMs: number) {
 	return isWarm;
 }
 
-function getDexCtxs(allDexsCtxs: AllDexsAssetCtxs | undefined, dexName: string) {
+function getDexCtxs(allDexsCtxs: CompactPerpAssetCtxsEvent | undefined, dexName: string) {
 	if (!allDexsCtxs) return undefined;
 	const dexEntry = allDexsCtxs.find((entry) => entry[0] === dexName);
 	return dexEntry?.[1];
@@ -197,12 +214,22 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 	const fastPriceSubscriptionEnabled = perpSubscriptionEnabled || spotSubscriptionEnabled;
 
 	const markets = useMarkets();
+	const [compactCtxsFailed, setCompactCtxsFailed] = useState(false);
+	const useCompactCtxs = COMPACT_MARKET_CTXS_SUPPORTED && !compactCtxsFailed;
+	const { data: compactPerpCtxs, error: compactPerpError } = useSubscription("pac", undefined, {
+		enabled: perpSubscriptionEnabled && useCompactCtxs,
+		throttleMs: updateInterval,
+	});
+	const { data: compactSpotCtxs, error: compactSpotError } = useSubscription("sac", undefined, {
+		enabled: spotSubscriptionEnabled && useCompactCtxs,
+		throttleMs: updateInterval,
+	});
 	const { data: allDexsCtxsEvent } = useSubscription("allDexsAssetCtxs", undefined, {
-		enabled: perpSubscriptionEnabled,
+		enabled: perpSubscriptionEnabled && !useCompactCtxs,
 		throttleMs: updateInterval,
 	});
 	const { data: spotCtxsEvent } = useSubscription("spotAssetCtxs", undefined, {
-		enabled: spotSubscriptionEnabled,
+		enabled: spotSubscriptionEnabled && !useCompactCtxs,
 		throttleMs: updateInterval,
 	});
 	const {
@@ -215,14 +242,24 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		maxStaleMs: LIVE_MARK_MAX_STALE_MS,
 	});
 
+	useEffect(() => {
+		const error = compactPerpError ?? compactSpotError;
+		if (error === undefined || error === null) return;
+		reportCompactMarketCtxsFallback(error);
+		setCompactCtxsFailed(true);
+	}, [compactPerpError, compactSpotError]);
+
 	const [cachedStats] = useState(() => loadStatsCache(env));
+	const livePerpCtxs = compactPerpCtxs ?? allDexsCtxsEvent?.ctxs;
+	const legacySpotCtxs = useMemo(() => (spotCtxsEvent ? keySpotCtxsByCoin(spotCtxsEvent) : undefined), [spotCtxsEvent]);
+	const liveSpotCtxs = compactSpotCtxs ?? legacySpotCtxs;
 
 	useEffect(() => {
-		saveStatsCache(env, allDexsCtxsEvent?.ctxs, spotCtxsEvent);
-	}, [env, allDexsCtxsEvent, spotCtxsEvent]);
+		saveStatsCache(env, livePerpCtxs, liveSpotCtxs);
+	}, [env, livePerpCtxs, liveSpotCtxs]);
 
-	const allDexsCtxs = allDexsCtxsEvent?.ctxs ?? cachedStats?.allDexsCtxs;
-	const spotCtxs = spotCtxsEvent ?? cachedStats?.spotCtxs;
+	const allDexsCtxs = livePerpCtxs ?? cachedStats?.allDexsCtxs;
+	const spotCtxs = liveSpotCtxs ?? cachedStats?.spotCtxs;
 
 	const result = useMemo((): MarketsInfoResult => {
 		const perpCtxs = getDexCtxs(allDexsCtxs, "");
@@ -256,7 +293,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		);
 
 		const spotMarketsInfo: SpotMarketInfo[] = markets.spot.map((market) =>
-			withLivePrice(market, spotCtxs?.[market.ctxIndex]),
+			withLivePrice(market, spotCtxs?.[market.name]),
 		);
 
 		const builderPerpMarketsInfo: BuilderPerpMarketsInfo = { all: [] };

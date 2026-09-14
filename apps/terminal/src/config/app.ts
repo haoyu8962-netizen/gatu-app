@@ -31,7 +31,7 @@ export const STORAGE_KEYS = {
 	SIDEBAR_STATE: "sidebar_state-v2",
 	ORDER_ENTRY: "order-entry-v2",
 	LAST_MARK: "hl-last-mark-v1",
-	MARKETS_STATS: "hl-mkt-stats-v1",
+	MARKETS_STATS: "hl-mkt-stats-v2",
 	HIP3_DISCLAIMER: "hip3-deployer-disclaimer-v1",
 	PENDING_ORDERS: "hl-pending-orders-v1",
 	PENDING_TWAPS: "hl-pending-twaps-v1",

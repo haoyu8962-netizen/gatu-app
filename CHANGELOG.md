@@ -77,6 +77,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- All-market statistics now arrive on the public WebSocket's compact `pac`/`sac` channels (one
+  compressed frame each, about a sixth of the bytes of `allDexsAssetCtxs`/`spotAssetCtxs`) whenever
+  the browser can inflate them; a stream that cannot be decoded falls back to the plain channels for
+  the session and reports once. Spot contexts are matched by market name.
 - The order book no longer waits for a new WebSocket connection and a subscribe round trip after
   the terminal renders: trade routes open the pooled full-book stream for the URL market while the
   market catalog loads, and the panel that subscribes next receives the freshest snapshot at once.

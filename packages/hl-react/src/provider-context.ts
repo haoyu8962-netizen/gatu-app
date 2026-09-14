@@ -1,8 +1,9 @@
-import type { InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
+import type { InfoClient } from "@nktkas/hyperliquid";
 import { createContext } from "react";
 import type { ExchangeProviderLifecycleLease } from "./internal/exchange/request-scheduler";
 import type { SessionMode } from "./signing/agent-session";
 import type { BuilderConfig, HyperliquidEnv } from "./signing/types";
+import type { CompactSubscriptionClient } from "./subscriptions/compact-subscription-client";
 
 export interface HyperliquidExchangeSessionLease {
 	readonly id: symbol;
@@ -14,7 +15,7 @@ export interface HyperliquidExchangeSessionLease {
 
 export interface HyperliquidTransportContextValue {
 	info: InfoClient;
-	subscription: SubscriptionClient;
+	subscription: CompactSubscriptionClient;
 	env: HyperliquidEnv;
 	isTestnet: boolean;
 }

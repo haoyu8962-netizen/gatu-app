@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import type { CompactSubscriptionClient } from "@gatu/hl-react";
 import { useSubscription } from "@gatu/hl-react/hooks/useSubscription";
 import { HyperliquidContext, type HyperliquidContextValue, HyperliquidStoreContext } from "@gatu/hl-react/provider";
 import { createHyperliquidStore, type HyperliquidStore } from "@gatu/hl-react/store";
@@ -7,7 +8,6 @@ import type {
 	FastAssetCtxsWsEvent,
 	ISubscription,
 	SubscriptionOptions as SdkSubscriptionOptions,
-	SubscriptionClient,
 } from "@nktkas/hyperliquid";
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -23,7 +23,7 @@ describe("fastAssetCtxs subscription", () => {
 	let failureOptions: SdkSubscriptionOptions[];
 	let disconnectListeners: Set<() => void>;
 	let unsubscribe: () => Promise<void>;
-	let subscription: SubscriptionClient;
+	let subscription: CompactSubscriptionClient;
 	let captured: ReturnType<typeof useSubscription<"fastAssetCtxs">>;
 
 	beforeEach(() => {
@@ -51,7 +51,7 @@ describe("fastAssetCtxs subscription", () => {
 				failureOptions.push(options ?? {});
 				return { unsubscribe };
 			}),
-		} as unknown as SubscriptionClient;
+		} as unknown as CompactSubscriptionClient;
 	});
 
 	afterEach(() => {

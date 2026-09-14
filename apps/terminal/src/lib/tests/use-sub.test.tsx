@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 
+import type { CompactSubscriptionClient } from "@gatu/hl-react";
 import { OversizedWebSocketPayloadError } from "@gatu/hl-react";
 import { useSubscription } from "@gatu/hl-react/hooks/useSubscription";
 import { useSub } from "@gatu/hl-react/hooks/utils/useSub";
 import { HyperliquidContext, type HyperliquidContextValue, HyperliquidStoreContext } from "@gatu/hl-react/provider";
 import { createHyperliquidStore, getStoreInternals, type HyperliquidStore } from "@gatu/hl-react/store";
-import type { L2BookWsEvent, SubscriptionClient, TradesWsEvent } from "@nktkas/hyperliquid";
+import type { L2BookWsEvent, TradesWsEvent } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -42,7 +43,7 @@ describe("useSub hook surface", () => {
 		return createElement(HyperliquidStoreContext.Provider, { value: store }, children);
 	}
 
-	function FullWrapper({ children, subscription }: { children: ReactNode; subscription: SubscriptionClient }) {
+	function FullWrapper({ children, subscription }: { children: ReactNode; subscription: CompactSubscriptionClient }) {
 		const value: HyperliquidContextValue = {
 			info: {} as HyperliquidContextValue["info"],
 			subscription,
@@ -474,7 +475,7 @@ describe("useSub hook surface", () => {
 				unsubscribe,
 			};
 		});
-		const subscription = { l2Book } as unknown as SubscriptionClient;
+		const subscription = { l2Book } as unknown as CompactSubscriptionClient;
 
 		function Consumer({ refreshKey }: { refreshKey: string }) {
 			useSubscription("l2Book", { coin: "ETH" }, { refreshKey });
@@ -522,7 +523,7 @@ describe("useSub hook surface", () => {
 			allDexsAssetCtxs,
 			spotAssetCtxs,
 			fastAssetCtxs,
-		} as unknown as SubscriptionClient;
+		} as unknown as CompactSubscriptionClient;
 		const methods = ["allDexsAssetCtxs", "spotAssetCtxs", "fastAssetCtxs"] as const;
 		const keys = methods.map((method) => JSON.stringify(["hl", "subscription", method, {}]));
 
@@ -575,7 +576,7 @@ describe("useSub hook surface", () => {
 			emit = listener;
 			return { unsubscribe: vi.fn(async () => {}) };
 		});
-		const subscription = { l2Book } as unknown as SubscriptionClient;
+		const subscription = { l2Book } as unknown as CompactSubscriptionClient;
 
 		function Consumer() {
 			captured = useSubscription("l2Book", { coin: "ETH", fast: true }).data;
@@ -606,7 +607,7 @@ describe("useSub hook surface", () => {
 			listeners.set(params.coin, listener);
 			return { unsubscribe: vi.fn(async () => {}) };
 		});
-		const subscription = { trades } as unknown as SubscriptionClient;
+		const subscription = { trades } as unknown as CompactSubscriptionClient;
 		let captured: TradesWsEvent | undefined;
 
 		function Consumer({ coin }: { coin: string }) {

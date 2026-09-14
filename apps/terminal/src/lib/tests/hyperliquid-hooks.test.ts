@@ -1,3 +1,4 @@
+import { CompactSubscriptionClient } from "@gatu/hl-react";
 import { ExchangeClient, InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
 import type { ExchangeMethod, InfoMethod, SubMethod } from "@/lib/hyperliquid";
@@ -10,9 +11,10 @@ const EXCHANGE_METHODS: ExchangeMethod[] = Object.getOwnPropertyNames(ExchangeCl
 	(name) => name !== "constructor" && name !== "config_",
 ) as ExchangeMethod[];
 
-const SUB_METHODS: SubMethod[] = Object.getOwnPropertyNames(SubscriptionClient.prototype).filter(
-	(name) => name !== "constructor" && name !== "config_",
-) as SubMethod[];
+const SUB_METHODS: SubMethod[] = [
+	...Object.getOwnPropertyNames(SubscriptionClient.prototype),
+	...Object.getOwnPropertyNames(CompactSubscriptionClient.prototype),
+].filter((name) => name !== "constructor" && name !== "config_") as SubMethod[];
 
 describe("dynamic dispatch safety", () => {
 	it("every InfoMethod exists on InfoClient.prototype", () => {
@@ -34,8 +36,8 @@ describe("dynamic dispatch safety", () => {
 	it("every SubMethod exists on SubscriptionClient.prototype", () => {
 		for (const method of SUB_METHODS) {
 			expect(
-				typeof SubscriptionClient.prototype[method],
-				`SubscriptionClient.prototype.${method} should be a function`,
+				typeof CompactSubscriptionClient.prototype[method],
+				`CompactSubscriptionClient.prototype.${method} should be a function`,
 			).toBe("function");
 		}
 	});
@@ -54,10 +56,11 @@ describe("dynamic dispatch safety", () => {
 		expect(EXCHANGE_METHODS.sort()).toEqual(prototypeMethods.sort());
 	});
 
-	it("SubMethod union covers all SubscriptionClient methods", () => {
-		const prototypeMethods = Object.getOwnPropertyNames(SubscriptionClient.prototype).filter(
-			(name) => name !== "constructor" && name !== "config_",
-		);
+	it("SubMethod union covers all SubscriptionClient methods and the compact channels", () => {
+		const prototypeMethods = [
+			...Object.getOwnPropertyNames(SubscriptionClient.prototype),
+			...Object.getOwnPropertyNames(CompactSubscriptionClient.prototype),
+		].filter((name) => name !== "constructor" && name !== "config_");
 		expect(SUB_METHODS.sort()).toEqual(prototypeMethods.sort());
 	});
 });

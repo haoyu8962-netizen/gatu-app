@@ -5,7 +5,6 @@ import {
 	InfoClient,
 	type IRequestTransport,
 	type ISubscriptionTransport,
-	SubscriptionClient,
 	WebSocketTransport,
 	type WebSocketTransportOptions,
 } from "@nktkas/hyperliquid";
@@ -17,6 +16,7 @@ import { getSdkReconnectionDelayMs } from "./internal/websocket/reliability";
 import { createWsTransportMonitor, type WsTransportMonitor } from "./internal/websocket/transport-monitor";
 import { LRU } from "./lru";
 import { createL1AgentWallet } from "./signing/l1-agent-wallet";
+import { CompactSubscriptionClient } from "./subscriptions/compact-subscription-client";
 import { createL2BookTransportPool } from "./subscriptions/l2-book-transport-pool";
 import type { SubParams } from "./types/clients";
 
@@ -129,7 +129,7 @@ export function warmL2BookSubscription(
 	return end;
 }
 
-export function getSubscriptionClient(isTestnet: boolean): SubscriptionClient {
+export function getSubscriptionClient(isTestnet: boolean): CompactSubscriptionClient {
 	return getOrCreate(`subscription:${isTestnet}`, () => {
 		const primary = getWsTransport(isTestnet);
 		const transport: ISubscriptionTransport = {
@@ -138,7 +138,7 @@ export function getSubscriptionClient(isTestnet: boolean): SubscriptionClient {
 					? bookTransports.subscribe(isTestnet, payload, listener, options)
 					: primary.subscribe(channel, payload, listener, options),
 		};
-		return new SubscriptionClient({ transport });
+		return new CompactSubscriptionClient({ transport });
 	});
 }
 

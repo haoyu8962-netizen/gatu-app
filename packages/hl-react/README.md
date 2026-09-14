@@ -100,6 +100,7 @@ Endpoint coverage is intentionally generic rather than one-hook-per-endpoint:
 |---|---|---|
 | `InfoClient` | `useInfo(method, params, options)` | `useInfo("perpDexs", undefined)` |
 | `SubscriptionClient` | `useSubscription(method, params, options)` | `useSubscription("allDexsAssetCtxs", undefined)` |
+| compact market contexts (`pac`, `sac`; not in the SDK) | the same `useSubscription` | `useSubscription("pac", undefined)` — every perp or spot context as one base64 + raw DEFLATE frame, decoded by `subscriptions/compact-asset-ctxs.ts` |
 | `ExchangeClient` | `useExchange(method, options)` | `useExchange("sendToEvmWithData")` |
 
 The workspace and this package's peer dependency pin `@nktkas/hyperliquid` to

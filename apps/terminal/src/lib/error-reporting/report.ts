@@ -12,6 +12,7 @@ export const CLIENT_ERROR_KINDS = [
 	"react_uncaught",
 	"react_recoverable",
 	"orderbook_l2_fallback",
+	"market_ctxs_compact_fallback",
 	"legal_status_check",
 	"window_error",
 	"unhandled_rejection",

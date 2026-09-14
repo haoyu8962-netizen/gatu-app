@@ -316,6 +316,18 @@ export {
 } from "./signing/use-trading-authorization";
 export { type TradingRequirements, type UseTradingStatusResult, useTradingStatus } from "./signing/use-trading-status";
 export {
+	COMPACT_ASSET_CTXS_CODEC_LIMITS,
+	type CompactAssetCtxsChannel,
+	type CompactAssetCtxsEvent,
+	type CompactPerpAssetCtx,
+	type CompactPerpAssetCtxsEvent,
+	type CompactSpotAssetCtx,
+	type CompactSpotAssetCtxsEvent,
+	decodeCompactAssetCtxs,
+	subscribeCompactAssetCtxs,
+} from "./subscriptions/compact-asset-ctxs";
+export { CompactSubscriptionClient } from "./subscriptions/compact-subscription-client";
+export {
 	buildL2SubscriptionPayload,
 	canUseL2Decompression,
 	createL2BookProcessor,
