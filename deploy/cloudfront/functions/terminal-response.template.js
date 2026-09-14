@@ -3,14 +3,38 @@
 // Generated from terminal-response.template.js by render-functions.mjs; do not edit the rendered
 // file by hand. The application's Content-Security-Policy is longer than the 1,783 characters a
 // CloudFront response headers policy accepts, so this function sets it from the same source
-// (`apps/terminal/src/config/security-headers.ts`): the TradingView package gets the frame policy,
-// everything else the terminal policy. The static shell cannot carry a per-path route marker in its
-// body either, so the viewer-request function tags join paths on the request and this function
-// surfaces the tag as a response header for the deployment health check.
-var TERMINAL_CSP = "__TERMINAL_CSP__";
-var CHART_CSP = "__CHART_CSP__";
-// Stricter policy under evaluation (empty when no report receiver is configured in edge-config.json).
-var TERMINAL_CSP_REPORT_ONLY = "__TERMINAL_CSP_REPORT_ONLY__";
+// (`apps/terminal/src/config/security-headers.ts`). Every policy is the same directive list with
+// three slots (frame-ancestors, img-src, script-src), which keeps the function under its 10 KB
+// limit with two releases' inline script hashes: the TradingView package gets the frame policy,
+// everything else the terminal policy plus the stricter report-only policy. The static shell cannot
+// carry a per-path route marker in its body either, so the viewer-request function tags join paths
+// on the request and this function surfaces the tag as a response header for the health check.
+var CSP_TEMPLATE = "__CSP_TEMPLATE__";
+var IMG_SRC = "__IMG_SRC__";
+var STRICT_IMG_SRC = "__STRICT_IMG_SRC__";
+var SCRIPT_SRC = "__SCRIPT_SRC__";
+var STRICT_SCRIPT_SRC = "__STRICT_SCRIPT_SRC__";
+// Hashes of the prerendered pages' inline scripts for the current release and the one before it
+// (the edge may still serve its pages for a minute after a release). Empty in the committed file:
+// `deploy.mjs functions` fills both lines from the build and the live function when publishing.
+var SCRIPT_HASHES_CURRENT = "";
+var SCRIPT_HASHES_PREVIOUS = "";
+// "report-only": only the report-only policy names the hashes; "enforce": the enforced policy too.
+var SCRIPT_HASHES_MODE = "__SCRIPT_HASHES_MODE__";
+// Report receiver from edge-config.json; empty switches the report-only header off.
+var REPORT_URI = "__REPORT_URI__";
+
+function policy(frameAncestors, imgSrc, scriptSrc) {
+	return CSP_TEMPLATE.replace('{FA}', frameAncestors).replace('{IMG}', imgSrc).replace('{SCRIPT}', scriptSrc);
+}
+
+var SCRIPT_HASHES = (SCRIPT_HASHES_CURRENT + ' ' + SCRIPT_HASHES_PREVIOUS).trim();
+var HASHED_SCRIPT_SRC = SCRIPT_HASHES ? STRICT_SCRIPT_SRC + ' ' + SCRIPT_HASHES : STRICT_SCRIPT_SRC;
+var ENFORCE_HASHES = SCRIPT_HASHES_MODE === 'enforce';
+var REPORT_SUFFIX = REPORT_URI ? '; report-uri ' + REPORT_URI : '';
+var TERMINAL_CSP = policy("'none'", IMG_SRC, ENFORCE_HASHES ? HASHED_SCRIPT_SRC : SCRIPT_SRC) + (ENFORCE_HASHES ? REPORT_SUFFIX : '');
+var CHART_CSP = policy("'self'", IMG_SRC, SCRIPT_SRC);
+var TERMINAL_CSP_REPORT_ONLY = REPORT_URI ? policy("'none'", STRICT_IMG_SRC, HASHED_SCRIPT_SRC) + REPORT_SUFFIX : '';
 
 function isChartAsset(uri) {
 	return uri.indexOf('/charting_library/') === 0 || uri.indexOf('/tradingview-theme-') === 0;

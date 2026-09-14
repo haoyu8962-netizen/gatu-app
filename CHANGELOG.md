@@ -65,6 +65,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
   `blob:` scripts) can be sent in report-only mode by the edge, with violations logged by a
   dedicated report receiver Lambda; the edge sends the header whenever
   `deploy/cloudfront/edge-config.json` names the receiver URL. See ADR 0007.
+- The report-only policy names the prerendered pages' inline scripts by `sha256` hash instead
+  of `'unsafe-inline'`: the build lists the hashes, the release writes the current and previous
+  sets into the CloudFront Function, `deploy.mjs sync` refuses to upload pages the live policy
+  does not allow, and `verify` checks every page against the live header. Enforcing the hashed
+  policy is a configuration switch (`cspScriptHashes`) for a later release. See ADR 0007 and
+  [the inline script hash plan](docs/csp-inline-script-hashes-plan.md).
 
 ### Changed
 

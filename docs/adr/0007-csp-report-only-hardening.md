@@ -1,6 +1,6 @@
 # ADR 0007：内容安全策略分两步收紧
 
-- 状态：已接受（2026-09-14）；report-only 头已于同日开启（`edge-config.json` 的 `cspReportUri` 指向接收器的函数 URL，两条分发的 viewer-response 函数已发布），第二步（内联脚本哈希）待报告稳定后另立提交
+- 状态：已接受（2026-09-14）；report-only 头已于同日开启（`edge-config.json` 的 `cspReportUri` 指向接收器的函数 URL，两条分发的 viewer-response 函数已发布）；第二步（内联脚本哈希，决策 5）的观察阶段同日发布，强制（`enforce`）待观察期后另立提交
 - 前置：[ADR 0005](0005-spa-static-shell.md)（CSP 由 viewer-response 函数下发）、[ADR 0006](0006-startup-preloads-and-edge-caching.md)
 
 ## 背景与约束
@@ -12,7 +12,8 @@
 1. **候选策略先以 report-only 观察。** `security-headers.ts` 新增 `cspReportOnlyDirectives`：`img-src` 收窄为 `'self' data: blob:` 加 `app.hyperliquid.xyz`、`*.privy.io`、`explorer-api.walletconnect.com`、`*.walletconnect.com`、`*.coinbase.com`，`script-src` 去掉 `blob:`；其余与现行策略相同。viewer-response 函数在非图表路径上把它作为 `Content-Security-Policy-Report-Only` 下发，附 `report-uri`。现行 `Content-Security-Policy` 不变。
 2. **报告接收器独立于签名源。** 新增 Lambda `gatu-terminal-api-csp-report`（128 MB、3 s、`AuthType=NONE` 的函数 URL，资源策略须同时授予 `*` 两条语句：`lambda:InvokeFunctionUrl` 与带 `lambda:InvokedViaFunctionUrl` 条件的 `lambda:InvokeFunction`；预留并发因账号并发下限暂未设置），处理器 `src/edge/csp-report-lambda.ts` 无任何依赖：只接受 `POST` 与 CSP 报告的三种内容类型，正文 ≤ 8 KB，每实例每分钟 120 条，解析旧格式 `{"csp-report"}` 与 Reporting API 批次后把裁剪过的摘要写进 CloudWatch，返回 204。它不持有密钥、不写存储，被滥用的上限是日志量。
 3. **接收器地址是部署配置。** `deploy/cloudfront/edge-config.json` 的 `cspReportUri` 由 `render-functions.mjs` 读取；为空时函数不发 report-only 头，`pnpm test:cloudfront` 的漂移检查保证提交的函数代码与配置一致。`deploy.mjs functions` 从文件更新并发布两个 CloudFront Functions。
-4. **第二步的门槛。** 报告连续一个发布周期没有本应用自己的资源被拦截后，把候选目录并入 `cspDirectives`；`script-src` 去掉 `'unsafe-inline'` 需要构建后为 7 个预渲染页的内联脚本算哈希并渲染进函数，届时另立提交。`style-src` 的 `'unsafe-inline'` 保留：Base UI、react-grid-layout 与 TradingView 依赖内联样式。
+4. **收紧的门槛。** `script-src`：report-only 一个发布周期内没有 `blocked-uri: inline` 的报告（现行策略早已拦截的 `eval` 除外）、脚本化覆盖（双端、文档页、`/join`、钱包登录、Turnstile、下单、充值、图表）无报告后，把 `edge-config.json` 的 `cspScriptHashes` 切到 `enforce`；`img-src` 收窄等正式域名切换后有真实流量再决定，因为第三方图片来源无法从代码穷举。`style-src` 的 `'unsafe-inline'` 保留：Base UI、react-grid-layout 与 TradingView 依赖内联样式。
+5. **内联脚本哈希随发布轮换，策略保留上一版集合。** 预渲染页的三段内联脚本里，TanStack 流屏障含资源文件名与预渲染时间戳，每次构建哈希都变，所以哈希不进仓库：`scripts/collect-inline-script-hashes.mjs` 在构建末尾从最终 HTML 算出集合（按 HTML 解析器看到的文本：CR/CRLF 归一为 LF、脚本里的 U+0000 换成 U+FFFD——流屏障序列化的路由匹配 id 含 NUL，首次发布按文件字节算的 7 个流屏障哈希浏览器全部不认，靠浏览器覆盖发现）并拒绝内联事件处理器与 `javascript:` URL；`apps/terminal/tests/browser/csp-coverage.mjs` 在页面脚本之前注册 `securitypolicyviolation` 监听遍历双端页面与弹窗，是独立于收集器的信号，每次发布哈希策略后必须跑；`deploy.mjs functions` 发布时把本次构建的集合写为 CURRENT、线上函数的 CURRENT 写为 PREVIOUS（失效完成前边缘最多还服务上一版页面 60 s；同一构建重发保留 PREVIOUS），`sync` 上传前核对线上策略已含本次构建的哈希，`verify` 抓取线上 7 页逐一核对。viewer-response 函数改为一份目录模板加 `frame-ancestors`、`img-src`、`script-src` 三个槽位在边缘拼出三份策略，含两版哈希时约 6 KB（原先三份完整策略 7.7 KB，加哈希会逼近 10 KB 上限）。`cspScriptHashes` 选 `report-only`（现状：强制策略不变，只有 report-only 头带哈希与 `'report-sample'`）或 `enforce`（强制策略也用哈希并附 `report-uri`）；改回 `report-only` 即秒级撤回。被拦截的流屏障会让 TanStack 的水合入口抛错、应用不启动，所以策略与页面不匹配是白屏而不是降级，这也是 `sync` 守卫与 PREVIOUS 集合存在的原因。否决的备选：外置流屏障脚本（零轮换，但冷加载多约 1 RTT）、`'unsafe-inline'` 与哈希并存（现代浏览器等价于纯哈希，审计上模糊）、`'strict-dynamic'`（应用脚本全部同源，不需要）。
 
 ## 备选方案与取舍
 

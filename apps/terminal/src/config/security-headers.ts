@@ -64,6 +64,20 @@ const privyFrameSources = [
 	"https://challenges.cloudflare.com",
 ] as const;
 
+/** Hosts besides the application that may serve scripts (Turnstile). */
+const scriptHosts = ["https://challenges.cloudflare.com"] as const;
+
+const knownImageSources = [
+	"'self'",
+	"data:",
+	"blob:",
+	"https://app.hyperliquid.xyz",
+	"https://*.privy.io",
+	"https://explorer-api.walletconnect.com",
+	"https://*.walletconnect.com",
+	"https://*.coinbase.com",
+] as const;
+
 export const cspDirectives: Record<string, string> = {
 	"default-src": "'self'",
 	"base-uri": "'self'",
@@ -73,7 +87,7 @@ export const cspDirectives: Record<string, string> = {
 	"img-src": "'self' data: blob: https:",
 	"font-src": "'self' data:",
 	"style-src": "'self' 'unsafe-inline'",
-	"script-src": "'self' blob: 'unsafe-inline' https://challenges.cloudflare.com",
+	"script-src": ["'self'", "blob:", "'unsafe-inline'", ...scriptHosts].join(" "),
 	"connect-src": [
 		"'self'",
 		...hyperliquidConnectSources,
@@ -89,7 +103,7 @@ export const cspDirectives: Record<string, string> = {
 	"manifest-src": "'self'",
 };
 
-function serializeContentSecurityPolicy(directives: Record<string, string>) {
+export function serializeContentSecurityPolicy(directives: Record<string, string>) {
 	return Object.entries(directives)
 		.map(([directive, value]) => `${directive} ${value}`)
 		.join("; ");
@@ -98,25 +112,23 @@ function serializeContentSecurityPolicy(directives: Record<string, string>) {
 export const contentSecurityPolicy = serializeContentSecurityPolicy(cspDirectives);
 
 /**
- * The stricter policy under evaluation: image sources limited to hosts the application is known to
- * use, and no `blob:` scripts. It is emitted as `Content-Security-Policy-Report-Only` by the edge so
- * violations reach the report receiver without blocking anything; once the reports stay quiet the
- * directives move into `cspDirectives`.
+ * The stricter directives under evaluation: image sources limited to hosts the application is known
+ * to use, and scripts limited to the allowed hosts plus the `sha256-…` hashes of the prerendered
+ * pages' inline scripts (no `'unsafe-inline'`, no `blob:`). The edge emits them as
+ * `Content-Security-Policy-Report-Only`, and as the enforced policy's `script-src` once
+ * `deploy/cloudfront/edge-config.json` switches to `enforce`; the hashes come from the build at
+ * publish time (`deploy/cloudfront/README.md`), so they are empty here. `'report-sample'` makes
+ * reports carry the first 40 characters of a blocked inline script.
  */
-export const cspReportOnlyDirectives: Record<string, string> = {
-	...cspDirectives,
-	"img-src": [
-		"'self'",
-		"data:",
-		"blob:",
-		"https://app.hyperliquid.xyz",
-		"https://*.privy.io",
-		"https://explorer-api.walletconnect.com",
-		"https://*.walletconnect.com",
-		"https://*.coinbase.com",
-	].join(" "),
-	"script-src": "'self' 'unsafe-inline' https://challenges.cloudflare.com",
-};
+export function createStrictCspDirectives(scriptHashes: readonly string[] = []): Record<string, string> {
+	return {
+		...cspDirectives,
+		"img-src": knownImageSources.join(" "),
+		"script-src": ["'self'", ...scriptHosts, "'report-sample'", ...scriptHashes.map((hash) => `'${hash}'`)].join(" "),
+	};
+}
+
+export const cspReportOnlyDirectives = createStrictCspDirectives();
 
 export const contentSecurityPolicyReportOnly = serializeContentSecurityPolicy(cspReportOnlyDirectives);
 

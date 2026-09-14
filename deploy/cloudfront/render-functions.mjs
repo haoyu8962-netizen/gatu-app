@@ -1,69 +1,79 @@
 #!/usr/bin/env node
 // Renders the viewer-response CloudFront Function from its template and the application's
-// security headers, so the edge emits exactly the Content-Security-Policy the server emits.
-// Run with `node --experimental-strip-types deploy/cloudfront/render-functions.mjs` after changing
-// `apps/terminal/src/config/security-headers.ts`; `pnpm test:cloudfront` fails on drift.
+// security headers, so the edge emits exactly the Content-Security-Policy the server emits. Run with
+// `node --experimental-strip-types deploy/cloudfront/render-functions.mjs` after changing
+// `apps/terminal/src/config/security-headers.ts` or `edge-config.json`; `pnpm test:cloudfront`
+// fails on drift. The committed file carries empty inline script hash sets; `deploy.mjs functions`
+// fills them from the build at publish time (see function-code.mjs).
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-	chartingLibraryContentSecurityPolicy,
-	contentSecurityPolicy,
-	contentSecurityPolicyReportOnly,
+	createStrictCspDirectives,
+	cspDirectives,
+	serializeContentSecurityPolicy,
 } from "../../apps/terminal/src/config/security-headers.ts";
+import { assertFunctionCodeSize, readEdgeConfig, SCRIPT_HASHES_MODES } from "./function-code.mjs";
 
-export const FUNCTION_CODE_LIMIT_BYTES = 10 * 1024;
+export { EDGE_CONFIG_PATH, FUNCTION_CODE_LIMIT_BYTES, readEdgeConfig } from "./function-code.mjs";
+
 const directory = dirname(fileURLToPath(import.meta.url));
 export const RESPONSE_TEMPLATE_PATH = join(directory, "functions", "terminal-response.template.js");
 export const RESPONSE_FUNCTION_PATH = join(directory, "functions", "terminal-response.js");
-export const EDGE_CONFIG_PATH = join(directory, "edge-config.json");
+/** The three directives that differ between the terminal, chart and report-only policies. */
+export const CSP_SLOTS = { "frame-ancestors": "{FA}", "img-src": "{IMG}", "script-src": "{SCRIPT}" };
+const PLACEHOLDERS = {
+	cspTemplate: "__CSP_TEMPLATE__",
+	imgSrc: "__IMG_SRC__",
+	strictImgSrc: "__STRICT_IMG_SRC__",
+	scriptSrc: "__SCRIPT_SRC__",
+	strictScriptSrc: "__STRICT_SCRIPT_SRC__",
+	scriptHashesMode: "__SCRIPT_HASHES_MODE__",
+	reportUri: "__REPORT_URI__",
+};
 
-/** Deployment values the rendered function embeds; empty strings switch the related header off. */
-export function readEdgeConfig(path = EDGE_CONFIG_PATH) {
-	const config = JSON.parse(readFileSync(path, "utf8"));
-	const cspReportUri = typeof config.cspReportUri === "string" ? config.cspReportUri.trim() : "";
-	if (cspReportUri && !/^https:\/\/[a-z0-9.-]+\/?$/.test(cspReportUri)) {
-		throw new Error("edge-config.json cspReportUri must be an https origin");
-	}
-	return { cspReportUri };
+/** The shared directive list with a slot where each policy fills in its own value. */
+export function createCspTemplate(directives = cspDirectives) {
+	return serializeContentSecurityPolicy({ ...directives, ...CSP_SLOTS });
 }
 
-export function createReportOnlyPolicy(policy, reportUri) {
-	return reportUri ? `${policy}; report-uri ${reportUri}` : "";
-}
-
-function embed(value) {
-	if (value.includes('"') || value.includes("\\") || /[\r\n]/.test(value)) {
-		throw new Error("Content-Security-Policy values must not contain quotes, backslashes or line breaks");
+function embed(value, { slots = false } = {}) {
+	if (/["\\$\r\n]/.test(value) || (!slots && /[{}]/.test(value))) {
+		throw new Error("Content-Security-Policy values must not contain quotes, backslashes, dollars, braces or line breaks");
 	}
 	return value;
 }
 
-export function renderResponseFunction({ template, terminalCsp, chartCsp, terminalCspReportOnly = "" }) {
-	const rendered = template
-		.replace("__TERMINAL_CSP__", embed(terminalCsp))
-		.replace("__CHART_CSP__", embed(chartCsp))
-		.replace("__TERMINAL_CSP_REPORT_ONLY__", embed(terminalCspReportOnly))
-		.replace(
-			"// Generated from terminal-response.template.js by render-functions.mjs; do not edit the rendered\n// file by hand.",
-			"// GENERATED FILE: rendered from terminal-response.template.js by render-functions.mjs; do not\n// edit by hand.",
-		);
-	if (rendered.includes("__TERMINAL_CSP__") || rendered.includes("__CHART_CSP__") || rendered.includes("__TERMINAL_CSP_REPORT_ONLY__")) {
+export function renderResponseFunction({ template, cspTemplate, imgSrc, strictImgSrc, scriptSrc, strictScriptSrc, scriptHashesMode, reportUri = "" }) {
+	if (!SCRIPT_HASHES_MODES.includes(scriptHashesMode)) throw new Error(`scriptHashesMode must be one of ${SCRIPT_HASHES_MODES.join(", ")}`);
+	const values = { cspTemplate, imgSrc, strictImgSrc, scriptSrc, strictScriptSrc, scriptHashesMode, reportUri };
+	let rendered = template.replace(
+		"// Generated from terminal-response.template.js by render-functions.mjs; do not edit the rendered\n// file by hand.",
+		"// GENERATED FILE: rendered from terminal-response.template.js by render-functions.mjs; do not\n// edit by hand.",
+	);
+	for (const [key, placeholder] of Object.entries(PLACEHOLDERS)) {
+		if (!rendered.includes(placeholder)) throw new Error(`The template has no ${placeholder}`);
+		rendered = rendered.replace(placeholder, embed(values[key], { slots: key === "cspTemplate" }));
+	}
+	if (Object.values(PLACEHOLDERS).some((placeholder) => rendered.includes(placeholder))) {
 		throw new Error("Template placeholders were not replaced");
 	}
-	const bytes = Buffer.byteLength(rendered, "utf8");
-	if (bytes > FUNCTION_CODE_LIMIT_BYTES) {
-		throw new Error(`Rendered function is ${bytes} bytes; CloudFront Functions allow ${FUNCTION_CODE_LIMIT_BYTES}`);
-	}
+	assertFunctionCodeSize(rendered);
 	return rendered;
 }
 
 export function renderCurrentResponseFunction() {
+	const strict = createStrictCspDirectives();
+	const config = readEdgeConfig();
 	return renderResponseFunction({
 		template: readFileSync(RESPONSE_TEMPLATE_PATH, "utf8"),
-		terminalCsp: contentSecurityPolicy,
-		chartCsp: chartingLibraryContentSecurityPolicy,
-		terminalCspReportOnly: createReportOnlyPolicy(contentSecurityPolicyReportOnly, readEdgeConfig().cspReportUri),
+		cspTemplate: createCspTemplate(),
+		imgSrc: cspDirectives["img-src"],
+		strictImgSrc: strict["img-src"],
+		scriptSrc: cspDirectives["script-src"],
+		strictScriptSrc: strict["script-src"],
+		scriptHashesMode: config.cspScriptHashes,
+		reportUri: config.cspReportUri,
 	});
 }
 

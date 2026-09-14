@@ -26,6 +26,16 @@ const LEGACY = JSON.stringify({
 	},
 });
 
+const INLINE = JSON.stringify({
+	"csp-report": {
+		"document-uri": "https://app.gatu.ai/docs",
+		"effective-directive": "script-src",
+		"blocked-uri": "inline",
+		"script-sample": '(()=>{let theme="dark";try{const value=JS',
+		disposition: "enforce",
+	},
+});
+
 const REPORTING_API = JSON.stringify([
 	{
 		type: "csp-violation",
@@ -47,7 +57,18 @@ describe("csp report receiver", () => {
 				directive: "img-src",
 				blockedUrl: "https://cdn.example/logo.png",
 				source: "https://app.gatu.ai/assets/index-abc.js:12",
+				sample: "",
 				disposition: "report",
+			},
+		]);
+		expect(summarizeCspReports(INLINE)).toEqual([
+			{
+				documentUrl: "https://app.gatu.ai/docs",
+				directive: "script-src",
+				blockedUrl: "inline",
+				source: "",
+				sample: '(()=>{let theme="dark";try{const value=JS',
+				disposition: "enforce",
 			},
 		]);
 		expect(summarizeCspReports(REPORTING_API)).toEqual([
@@ -56,6 +77,7 @@ describe("csp report receiver", () => {
 				directive: "script-src",
 				blockedUrl: "blob",
 				source: "",
+				sample: "",
 				disposition: "report",
 			},
 		]);

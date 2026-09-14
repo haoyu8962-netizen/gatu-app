@@ -24,6 +24,7 @@ export interface CspViolationSummary {
 	directive: string;
 	blockedUrl: string;
 	source: string;
+	sample: string;
 	disposition: string;
 }
 
@@ -44,6 +45,7 @@ function summarize(report: Record<string, unknown>): CspViolationSummary {
 		directive: text(report["effective-directive"] ?? report.effectiveDirective ?? report["violated-directive"]),
 		blockedUrl: text(report["blocked-uri"] ?? report.blockedURL),
 		source: typeof line === "number" ? `${source}:${line}` : source,
+		sample: text(report["script-sample"] ?? report.sample),
 		disposition: text(report.disposition) || "report",
 	};
 }

@@ -8,21 +8,22 @@ import { DOCUMENT_ROUTE_PATHS } from "../../../apps/terminal/src/config/document
 import {
 	chartingLibraryContentSecurityPolicy,
 	contentSecurityPolicy,
+	contentSecurityPolicyReportOnly,
+	createStrictCspDirectives,
+	cspDirectives,
+	serializeContentSecurityPolicy,
 } from "../../../apps/terminal/src/config/security-headers.ts";
-import {
-	createReportOnlyPolicy,
-	FUNCTION_CODE_LIMIT_BYTES,
-	readEdgeConfig,
-	renderCurrentResponseFunction,
-	renderResponseFunction,
-	RESPONSE_TEMPLATE_PATH,
-} from "../render-functions.mjs";
+import { fillScriptHashes, FUNCTION_CODE_LIMIT_BYTES, readEdgeConfig } from "../function-code.mjs";
+import { createCspTemplate, renderCurrentResponseFunction, renderResponseFunction, RESPONSE_TEMPLATE_PATH } from "../render-functions.mjs";
 
 const directory = dirname(fileURLToPath(import.meta.url));
 
-function loadFunction(file, extra = "") {
-	const source = readFileSync(join(directory, file), "utf8");
+function loadFunctionSource(source, extra = "") {
 	return vm.runInNewContext(`${source}\n({ handler: handler ${extra} })`, {});
+}
+
+function loadFunction(file, extra = "") {
+	return loadFunctionSource(readFileSync(join(directory, file), "utf8"), extra);
 }
 
 function viewerRequest(uri, headers = { host: { value: "app.gatu.ai" } }) {
@@ -77,6 +78,12 @@ test("server paths and file-like paths pass through untouched", () => {
 test("the response function sets the terminal or chart content security policy", () => {
 	const shell = onResponse({ request: onRequest(viewerRequest("/trade/BTC")), response: { statusCode: 200, headers: {} } });
 	assert.equal(shell.headers["content-security-policy"].value, contentSecurityPolicy);
+	const { cspReportUri, cspScriptHashes } = readEdgeConfig();
+	assert.equal(cspScriptHashes, "report-only", "the enforced policy keeps 'unsafe-inline' until the report-only stage is over");
+	assert.equal(
+		shell.headers["content-security-policy-report-only"]?.value,
+		cspReportUri ? `${contentSecurityPolicyReportOnly}; report-uri ${cspReportUri}` : undefined,
+	);
 	const chart = onResponse({
 		request: onRequest(viewerRequest("/charting_library/charting_library.js")),
 		response: { statusCode: 200, headers: {} },
@@ -87,6 +94,65 @@ test("the response function sets the terminal or chart content security policy",
 		response: { statusCode: 200, headers: {} },
 	});
 	assert.equal(theme.headers["content-security-policy"].value, chartingLibraryContentSecurityPolicy);
+	assert.equal(chart.headers["content-security-policy-report-only"], undefined);
+});
+
+const HASHES = ["sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "sha256-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="];
+const PREVIOUS = ["sha256-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC="];
+
+function renderWith({ scriptHashesMode, reportUri }) {
+	const strict = createStrictCspDirectives();
+	return renderResponseFunction({
+		template: readFileSync(RESPONSE_TEMPLATE_PATH, "utf8"),
+		cspTemplate: createCspTemplate(),
+		imgSrc: cspDirectives["img-src"],
+		strictImgSrc: strict["img-src"],
+		scriptSrc: cspDirectives["script-src"],
+		strictScriptSrc: strict["script-src"],
+		scriptHashesMode,
+		reportUri,
+	});
+}
+
+function headersFor(source, uri) {
+	const { handler } = loadFunctionSource(source);
+	const response = handler({ request: onRequest(viewerRequest(uri)), response: { statusCode: 200, headers: {} } });
+	return { enforced: response.headers["content-security-policy"]?.value, reportOnly: response.headers["content-security-policy-report-only"]?.value };
+}
+
+test("the filled inline script hashes reach the policies the mode selects", () => {
+	const hashedScriptSrc = createStrictCspDirectives([...HASHES, ...PREVIOUS])["script-src"];
+	const strictWithHashes = serializeContentSecurityPolicy(createStrictCspDirectives([...HASHES, ...PREVIOUS]));
+
+	const reportOnly = fillScriptHashes(renderWith({ scriptHashesMode: "report-only", reportUri: "https://reports.example/" }), { current: HASHES, previous: PREVIOUS });
+	const observed = headersFor(reportOnly, "/trade/BTC");
+	assert.equal(observed.enforced, contentSecurityPolicy);
+	assert.equal(observed.reportOnly, `${strictWithHashes}; report-uri https://reports.example/`);
+	assert.ok(observed.reportOnly.includes(`'${HASHES[0]}' '${HASHES[1]}' '${PREVIOUS[0]}'`));
+	const reportOnlyScriptSrc = /script-src ([^;]*)/.exec(observed.reportOnly)[1];
+	assert.ok(!reportOnlyScriptSrc.includes("'unsafe-inline'") && !reportOnlyScriptSrc.includes("blob:"));
+
+	const enforce = fillScriptHashes(renderWith({ scriptHashesMode: "enforce", reportUri: "https://reports.example/" }), { current: HASHES, previous: PREVIOUS });
+	const enforced = headersFor(enforce, "/docs");
+	assert.equal(enforced.enforced, `${serializeContentSecurityPolicy({ ...cspDirectives, "script-src": hashedScriptSrc })}; report-uri https://reports.example/`);
+	assert.equal(enforced.reportOnly, `${strictWithHashes}; report-uri https://reports.example/`);
+	assert.equal(headersFor(enforce, "/charting_library/charting_library.js").enforced, chartingLibraryContentSecurityPolicy);
+
+	const silent = fillScriptHashes(renderWith({ scriptHashesMode: "enforce", reportUri: "" }), { current: HASHES, previous: [] });
+	const quiet = headersFor(silent, "/trade/BTC");
+	assert.equal(quiet.enforced, serializeContentSecurityPolicy({ ...cspDirectives, "script-src": createStrictCspDirectives(HASHES)["script-src"] }));
+	assert.equal(quiet.reportOnly, undefined);
+	assert.ok(Buffer.byteLength(enforce, "utf8") <= FUNCTION_CODE_LIMIT_BYTES);
+});
+
+test("the renderer rejects unknown modes, unsafe values and templates without placeholders", () => {
+	assert.throws(() => renderWith({ scriptHashesMode: "off", reportUri: "" }), /scriptHashesMode/);
+	assert.throws(() => renderResponseFunction({ template: "var handler = 1;", cspTemplate: "x", imgSrc: "x", strictImgSrc: "x", scriptSrc: "x", strictScriptSrc: "x", scriptHashesMode: "enforce" }), /has no __CSP_TEMPLATE__/);
+	const template = readFileSync(RESPONSE_TEMPLATE_PATH, "utf8");
+	const base = { template, cspTemplate: createCspTemplate(), imgSrc: "x", strictImgSrc: "x", scriptSrc: "x", strictScriptSrc: "x", scriptHashesMode: "enforce" };
+	assert.throws(() => renderResponseFunction({ ...base, imgSrc: 'x"y' }), /must not contain/);
+	assert.throws(() => renderResponseFunction({ ...base, scriptSrc: "{SCRIPT}" }), /must not contain/);
+	assert.ok(createCspTemplate().includes("frame-ancestors {FA}; form-action 'self'; img-src {IMG}"));
 });
 
 test("join paths carry the referral marker through to the response headers", () => {
@@ -103,16 +169,10 @@ test("join paths carry the referral marker through to the response headers", () 
 });
 
 test("the report-only policy is emitted only when a report receiver is configured", () => {
-	const template = readFileSync(RESPONSE_TEMPLATE_PATH, "utf8");
-	const withReceiver = renderResponseFunction({
-		template,
-		terminalCsp: "default-src 'self'",
-		chartCsp: "frame-ancestors 'self'",
-		terminalCspReportOnly: createReportOnlyPolicy("img-src 'self'", "https://reports.example/"),
-	});
-	assert.ok(withReceiver.includes('var TERMINAL_CSP_REPORT_ONLY = "img-src \'self\'; report-uri https://reports.example/";'));
-	const withoutReceiver = renderResponseFunction({ template, terminalCsp: "default-src 'self'", chartCsp: "frame-ancestors 'self'" });
-	assert.ok(withoutReceiver.includes('var TERMINAL_CSP_REPORT_ONLY = "";'));
-	assert.equal(createReportOnlyPolicy("img-src 'self'", ""), "");
+	const withReceiver = renderWith({ scriptHashesMode: "report-only", reportUri: "https://reports.example/" });
+	assert.equal(headersFor(withReceiver, "/trade/BTC").reportOnly, `${contentSecurityPolicyReportOnly}; report-uri https://reports.example/`);
+	const withoutReceiver = renderWith({ scriptHashesMode: "report-only", reportUri: "" });
+	assert.equal(headersFor(withoutReceiver, "/trade/BTC").reportOnly, undefined);
+	assert.ok(withoutReceiver.includes('var SCRIPT_HASHES_CURRENT = "";') && withoutReceiver.includes('var SCRIPT_HASHES_PREVIOUS = "";'));
 	assert.equal(typeof readEdgeConfig().cspReportUri, "string");
 });

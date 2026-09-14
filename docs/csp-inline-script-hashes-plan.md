@@ -1,6 +1,6 @@
 # CSP 第二步：内联脚本哈希（计划）
 
-- 状态：计划（2026-09-14），未执行。前置：[ADR 0007](adr/0007-csp-report-only-hardening.md) 第一步（report-only 候选策略与报告接收器）已于同日上线。
+- 状态：B 阶段已执行（2026-09-14，决策见 [ADR 0007](adr/0007-csp-report-only-hardening.md) 决策 5），C 阶段待观察期后。执行偏差：发布不再读取哈希文件而是直接从产物计算（文件仍写到 `.output/edge/` 供查看）；每组 10 个的上限改为函数 10 KB 的字节上限；紧急开关是把 `cspScriptHashes` 改回 `report-only`，没有单独的 `unsafe-inline` 档；哈希必须按 HTML 解析器看到的文本计算（U+0000 → U+FFFD、CR → LF），首次发布按文件字节算的流屏障哈希浏览器不认，由浏览器覆盖脚本发现后修正。前置：ADR 0007 第一步（report-only 候选策略与报告接收器）已于同日上线。
 - 目标：CloudFront 目标的主文档策略把 `script-src` 从 `'self' blob: 'unsafe-inline' https://challenges.cloudflare.com` 收紧为 `'self' https://challenges.cloudflare.com` 加预渲染页内联脚本的 SHA-256 哈希，先以 report-only 观察，再强制。图表 iframe 策略（`charting_library/`、主题样式）与 `style-src` 不在本步范围。
 - 执行后：ADR 0007 记录最终决策，本文只保留计划与执行时的偏差。
 

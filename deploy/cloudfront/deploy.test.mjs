@@ -3,6 +3,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { cspHash } from "../../scripts/collect-inline-script-hashes.mjs";
+import { parseScriptHashes } from "./function-code.mjs";
 import {
 	assertReleaseMarkersUploaded,
 	buildFunctionUpdateCommands,
@@ -15,6 +17,8 @@ import {
 	NO_STORE,
 	objectCacheControl,
 	planUpload,
+	prepareResponseFunction,
+	releaseFunctionPath,
 	REVALIDATE_CACHE_CONTROL,
 	verifyDeployment,
 } from "./deploy.mjs";
@@ -108,7 +112,10 @@ test("invalidation and lambda commands are explicit and bounded", () => {
 
 const SHELL_PRELOADS = Array.from({ length: 24 }, (_, index) => `/assets/chunk-${index}.js`);
 const CHART_ENTRY = "/charting_library/charting_library.js?v=abc";
-const SHELL_HTML = `<html><head>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/><meta name="gatu-preload-desktop" content="/assets/chunk-1.js"/><meta name="gatu-preload-mobile" content=""/><meta name="gatu-chart-prefetch" content="/charting_library/sameorigin.html"/></head></html>`;
+const THEME_SCRIPT = '(()=>{document.documentElement.classList.add("dark")})();';
+const THEME_HASH = cspHash(THEME_SCRIPT);
+const SHELL_HTML = `<html><head><script>${THEME_SCRIPT}</script>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/><meta name="gatu-preload-desktop" content="/assets/chunk-1.js"/><meta name="gatu-preload-mobile" content=""/><meta name="gatu-chart-prefetch" content="/charting_library/sameorigin.html"/></head></html>`;
+const REPORT_ONLY_HEADER = `default-src 'self'; script-src 'self' 'report-sample' '${THEME_HASH}'; report-uri https://reports.example/`;
 
 function createPublicDir() {
 	const dir = mkdtempSync(join(tmpdir(), "gatu-cf-verify-"));
@@ -139,17 +146,18 @@ function fakeFetch(routes) {
 
 test("verification passes when the edge serves the build with the expected headers", async () => {
 	const publicDir = createPublicDir();
-	const headers = { "content-security-policy": "default-src 'self'", link: "<https://api.hyperliquid.xyz>; rel=preconnect" };
+	const headers = { "content-security-policy": "default-src 'self'", "content-security-policy-report-only": REPORT_ONLY_HEADER, link: "<https://api.hyperliquid.xyz>; rel=preconnect" };
 	const results = await verifyDeployment({
 		origin: "https://app.gatu.ai/",
 		publicDir,
 		network: "mainnet",
+		scriptHashesMode: "report-only",
 		fetchImpl: fakeFetch({
 			"/trade/HYPE": edgeSequence({ body: SHELL_HTML, headers: { ...headers, "cache-control": HTML_CACHE_CONTROL } }),
 			[SHELL_PRELOADS.at(-1)]: { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
 			"/api/health": { status: 204, body: null, headers: { "cache-control": NO_STORE } },
 			"/charting_library/bundles/runtime.4d986d07cb97d8edacba.js": edgeSequence({ body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } }),
-			"/docs": { body: "<html>docs</html>", headers: { "content-security-policy": "x" } },
+			"/docs": { body: "<html>docs</html>", headers: { "content-security-policy": "x", "content-security-policy-report-only": REPORT_ONLY_HEADER } },
 			"/build-meta.json": { body: JSON.stringify({ commit: "abc", release: "r1" }) },
 			"/api/geo": { body: JSON.stringify({ country: "GB", proxy: false, tradeRestricted: false }) },
 			"/api/referral-geo": (init) => ({
@@ -168,8 +176,9 @@ test("verification passes when the edge serves the build with the expected heade
 		results.filter((result) => !result.ok),
 		[],
 	);
-	assert.equal(results.length, 12);
+	assert.equal(results.length, 13);
 	assert.equal(results.find((result) => result.name === "shell preloads the startup closure")?.detail, "24 links");
+	assert.equal(results.find((result) => result.name === "inline scripts are allowed by the edge policy")?.detail, "2 pages, 1 inline scripts, report-only");
 	assert.equal(results.find((result) => result.name.startsWith("chart entry"))?.detail, CHART_ENTRY);
 	assert.equal(results.find((result) => result.name === "shell repeats from the edge")?.detail, "Hit from cloudfront");
 	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
@@ -201,9 +210,49 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 		"missing files stay 404",
 		"chart entry is immutable and preloaded by the shell",
 		"shell preloads the startup closure",
+		"inline scripts are allowed by the edge policy",
 		"health probe answers 204",
 		"shell repeats from the edge",
 		"chart bundles are immutable at the edge",
 		"testnet stays out of search results",
 	]);
+});
+
+test("the enforced stage rejects a policy that still allows unsafe-inline or misses a page's script", async () => {
+	const publicDir = createPublicDir();
+	async function run(header) {
+		const results = await verifyDeployment({
+			origin: "https://app.gatu.ai",
+			publicDir,
+			network: "mainnet",
+			scriptHashesMode: "enforce",
+			fetchImpl: fakeFetch({
+				"/trade/HYPE": { body: SHELL_HTML, headers: { "content-security-policy": header } },
+				"/docs": { body: "<html>docs</html>", headers: { "content-security-policy": header } },
+				"*": { status: 404, body: "missing" },
+			}),
+		});
+		return results.find((result) => result.name === "inline scripts are allowed by the edge policy");
+	}
+	assert.equal((await run(`default-src 'self'; script-src 'self' '${THEME_HASH}'`)).ok, true);
+	assert.match((await run(`default-src 'self'; script-src 'self' 'unsafe-inline' '${THEME_HASH}'`)).detail, /still allows 'unsafe-inline'/);
+	assert.match((await run("default-src 'self'; script-src 'self'")).detail, /does not allow inline script sha256-/);
+	assert.match((await run("default-src 'self'")).detail, /has no content-security-policy with a script-src/);
+});
+
+test("a release fills the committed function with the build's hashes and keeps the live set as previous", () => {
+	const committed = 'var SCRIPT_HASHES_CURRENT = "";\nvar SCRIPT_HASHES_PREVIOUS = "";\nfunction handler(event) { return event.response; }\n';
+	const A = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+	const B = "sha256-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=";
+	const first = prepareResponseFunction({ committedCode: committed, buildHashes: [A] });
+	assert.deepEqual([first.current, first.previous], [[A], []]);
+	assert.deepEqual(parseScriptHashes(first.code), { current: [A], previous: [] });
+	const second = prepareResponseFunction({ committedCode: committed, buildHashes: [B], liveCode: first.code });
+	assert.deepEqual(parseScriptHashes(second.code), { current: [B], previous: [A] });
+	const third = prepareResponseFunction({ committedCode: committed, buildHashes: [B], liveCode: second.code });
+	assert.deepEqual(parseScriptHashes(third.code), { current: [B], previous: [A] });
+	const migrated = prepareResponseFunction({ committedCode: committed, buildHashes: [A], liveCode: "var TERMINAL_CSP = 'legacy';\nfunction handler(event) { return event.response; }\n" });
+	assert.deepEqual(parseScriptHashes(migrated.code), { current: [A], previous: [] });
+	assert.throws(() => prepareResponseFunction({ committedCode: committed, buildHashes: [] }), /no inline scripts/);
+	assert.ok(releaseFunctionPath("/repo/apps/terminal/.output/public").endsWith(join(".output", "edge", "terminal-response.js")));
 });

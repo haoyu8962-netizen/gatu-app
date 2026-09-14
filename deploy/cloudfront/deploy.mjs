@@ -4,9 +4,12 @@
 // verifies the public origin. Every AWS command is printed; nothing runs without `--execute`.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join, relative, resolve } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { collectInlineScriptHashes, collectInlineScripts, listPrerenderedPages } from "../../scripts/collect-inline-script-hashes.mjs";
+import { fillScriptHashes, hasScriptHashLines, missingScriptHashes, parseScriptHashes, readEdgeConfig, rotateScriptHashes } from "./function-code.mjs";
 
 export const PRECOMPRESSED_EXTENSIONS = new Set([".br", ".gz", ".zst"]);
 /** Browsers revalidate every navigation; the edge answers from cache for a minute and refreshes in the background. */
@@ -107,10 +110,28 @@ export function buildSyncCommands({ publicDir, bucket, files }) {
 }
 
 const FUNCTIONS_DIR = resolve(fileURLToPath(new URL(".", import.meta.url)), "functions");
+export const RESPONSE_FUNCTION_NAME = "gatu-terminal-response";
 export const CLOUDFRONT_FUNCTIONS = [
 	{ name: "gatu-terminal-request", file: "terminal-request.js" },
-	{ name: "gatu-terminal-response", file: "terminal-response.js" },
+	{ name: RESPONSE_FUNCTION_NAME, file: "terminal-response.js" },
 ];
+
+/** Where a release writes the response function filled with the build's inline script hashes; never the committed file. */
+export function releaseFunctionPath(publicDir) {
+	return resolve(publicDir, "..", "edge", "terminal-response.js");
+}
+
+/**
+ * The committed response function with this build's inline script hashes as CURRENT and the live
+ * function's CURRENT as PREVIOUS, so pages the edge still serves from the previous release stay
+ * allowed until the invalidation and the shell's `s-maxage` have passed.
+ */
+export function prepareResponseFunction({ committedCode, buildHashes, liveCode = "" }) {
+	if (buildHashes.length === 0) throw new Error("The build has no inline scripts; refusing to publish a policy that would allow none");
+	const live = liveCode && hasScriptHashLines(liveCode) ? parseScriptHashes(liveCode) : { current: [], previous: [] };
+	const sets = rotateScriptHashes({ build: buildHashes, live });
+	return { code: fillScriptHashes(committedCode, sets), ...sets };
+}
 
 function functionComment(file) {
 	return file === "terminal-request.js" ? "gatu shell rewrite" : "gatu route marker + csp";
@@ -193,7 +214,7 @@ function sha256(buffer) {
  * shell and document parity with the local build, security and preconnect headers, the live geo
  * endpoint, referral deep-link headers, and 404s for missing files.
  */
-export async function verifyDeployment({ origin, publicDir, network, fetchImpl = fetch }) {
+export async function verifyDeployment({ origin, publicDir, network, fetchImpl = fetch, scriptHashesMode = "report-only" }) {
 	const base = origin.replace(/\/+$/, "");
 	const expectedApiOrigin = network === "testnet" ? "https://api.hyperliquid-testnet.xyz" : "https://api.hyperliquid.xyz";
 	const shell = readFileSync(join(publicDir, "_shell.html"));
@@ -297,6 +318,23 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		}
 		return `${hrefs.length} links`;
 	});
+	await check("inline scripts are allowed by the edge policy", async () => {
+		const pages = listPrerenderedPages(publicDir).filter((page) => page === "_shell.html" || page.endsWith("/index.html"));
+		const headerName = scriptHashesMode === "enforce" ? "content-security-policy" : "content-security-policy-report-only";
+		let total = 0;
+		for (const page of pages) {
+			const route = page === "_shell.html" ? "/trade/HYPE" : `/${page.slice(0, -"/index.html".length)}`;
+			const response = await fetchImpl(`${base}${route}`, { headers: { accept: "text/html" } });
+			expect(response.status === 200, `${route} status ${response.status}`);
+			const hashes = collectInlineScripts(await response.text()).map((script) => script.hash);
+			const scriptSrc = /(?:^|;\s*)script-src ([^;]*)/.exec(response.headers.get(headerName) ?? "")?.[1];
+			expect(scriptSrc !== undefined, `${route} has no ${headerName} with a script-src`);
+			for (const hash of hashes) expect(scriptSrc.includes(`'${hash}'`), `${route}: ${headerName} does not allow inline script ${hash}`);
+			if (scriptHashesMode === "enforce") expect(!scriptSrc.includes("'unsafe-inline'"), `${route}: script-src still allows 'unsafe-inline'`);
+			total += hashes.length;
+		}
+		return `${pages.length} pages, ${total} inline scripts, ${scriptHashesMode}`;
+	});
 	await check("health probe answers 204", async () => {
 		const response = await fetchImpl(`${base}/api/health`);
 		expect(response.status === 204, `status ${response.status}`);
@@ -392,6 +430,29 @@ function readAwsJson(args) {
 	return JSON.parse(execFileSync("aws", [...args, "--output", "json"], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] }));
 }
 
+/** The code CloudFront currently runs for a function; `get-function` writes it to a file. */
+function readLiveFunctionCode(name) {
+	const outFile = join(tmpdir(), `${name}-live-${process.pid}.js`);
+	try {
+		readAwsJson(["cloudfront", "get-function", "--name", name, "--stage", "LIVE", outFile]);
+		return readFileSync(outFile, "utf8");
+	} finally {
+		rmSync(outFile, { force: true });
+	}
+}
+
+/** Uploading pages whose inline scripts the live policy does not allow would be an outage under `enforce`. */
+function assertLivePolicyAllowsBuild(publicDir) {
+	const build = collectInlineScriptHashes(publicDir);
+	const missing = missingScriptHashes(readLiveFunctionCode(RESPONSE_FUNCTION_NAME), build.hashes);
+	if (missing.length > 0) {
+		throw new Error(
+			`The live ${RESPONSE_FUNCTION_NAME} function does not allow ${missing.length} of this build's ${build.hashes.length} inline script hashes; run: node deploy/cloudfront/deploy.mjs functions --execute`,
+		);
+	}
+	console.log(`The live edge policy allows all ${build.hashes.length} inline script hashes of this build`);
+}
+
 /** The files a viewer receives first; a sync that stopped early must never look like a release. */
 export const RELEASE_MARKER_FILES = ["_shell.html", "build-meta.json"];
 
@@ -417,6 +478,7 @@ async function main() {
 		case "sync": {
 			const bucket = requireOption(options, "bucket");
 			if (!existsSync(join(publicDir, "_shell.html"))) throw new Error(`No _shell.html in ${publicDir}; run pnpm build first`);
+			if (options.execute) assertLivePolicyAllowsBuild(publicDir);
 			for (const command of buildSyncCommands({ publicDir, bucket, files: listPublicFiles(publicDir) })) {
 				runAws(command, options.execute);
 			}
@@ -453,8 +515,22 @@ async function main() {
 		}
 		case "functions": {
 			for (const { name, file } of CLOUDFRONT_FUNCTIONS) {
-				const path = resolve(FUNCTIONS_DIR, file);
+				let path = resolve(FUNCTIONS_DIR, file);
 				if (!existsSync(path)) throw new Error(`No CloudFront Function code at ${path}`);
+				if (name === RESPONSE_FUNCTION_NAME) {
+					if (!existsSync(join(publicDir, "_shell.html"))) throw new Error(`No _shell.html in ${publicDir}; the response function needs the build's inline script hashes`);
+					const prepared = prepareResponseFunction({
+						committedCode: readFileSync(path, "utf8"),
+						buildHashes: collectInlineScriptHashes(publicDir).hashes,
+						liveCode: options.execute ? readLiveFunctionCode(name) : "",
+					});
+					path = releaseFunctionPath(publicDir);
+					mkdirSync(dirname(path), { recursive: true });
+					writeFileSync(path, prepared.code);
+					console.log(
+						`Rendered ${path}: ${prepared.current.length} current + ${prepared.previous.length} previous inline script hashes${options.execute ? "" : " (dry run: the previous set comes from the live function)"}`,
+					);
+				}
 				const current = options.execute ? readAwsJson(["cloudfront", "describe-function", "--name", name]) : { ETag: "<etag>" };
 				const [update, publish] = buildFunctionUpdateCommands({ name, file: path, etag: current.ETag, comment: functionComment(file) });
 				runAws(update, options.execute);
@@ -464,7 +540,12 @@ async function main() {
 			break;
 		}
 		case "verify": {
-			const results = await verifyDeployment({ origin: requireOption(options, "origin"), publicDir, network: options.network });
+			const results = await verifyDeployment({
+				origin: requireOption(options, "origin"),
+				publicDir,
+				network: options.network,
+				scriptHashesMode: readEdgeConfig().cspScriptHashes,
+			});
 			for (const result of results) console.log(`${result.ok ? "ok  " : "FAIL"} ${result.name}${result.detail ? ` — ${result.detail}` : ""}`);
 			if (results.some((result) => !result.ok)) process.exit(1);
 			break;
