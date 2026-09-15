@@ -372,6 +372,18 @@ p19 之后用户在开发服务器（`localhost:3007`）上看到图表面板"So
 
 PR #24（`claude/spa-mode` → `main`，58 个提交）首轮 CI：typecheck、i18n、网站构建、浏览器回归通过；四个 `Build terminal` 矩阵任务都在 "Verify production lazy client graph" 一步失败——该步从仓库根目录按路径启动 `apps/terminal/.output/server/index.mjs`，`curl /builders-perp` 连续 30 s 得到 503 "Static shell missing"。本机同样命令复现：静态壳中间件只在 `GATU_PUBLIC_DIR`、`cwd/public`、`cwd/.output/public` 找 `_shell.html`，CI 的 cwd 是仓库根，都不存在（EC2 的 `gatu.service` 在 `/opt/gatu/current` 下运行，`public/` 与 `server/` 同级，所以线上不受影响；CloudFront 不跑这个进程）。修复：`static-pages/public-dir.ts` 的 `listPublicDirCandidates` 追加 `cwd/apps/terminal/.output/public` 与服务器入口脚本（`process.argv[1]`）旁的 `../public`；`static-pages.test.ts` 钉住候选顺序。重建后从仓库根目录复跑该步：`/builders-perp`、`/docs` 200，`resolve-client-asset.mjs` 解析出 `trade-terminal-page` 块，`verify-chart-build.mjs` 通过。这一步在 `codex/tishi`（2026-09-12）上是绿的，说明是本分支关闭运行时 SSR 后引入的。
 
+## 第三十检查点：正式域名切到 CloudFront（2026-09-15，基于 `ba9fee58`；工具提交 `c71aefac`）
+
+用户要求列出 DNS 切换待办；核对到的起点：ACM 证书 `ff5677c6…`（app + testnet，us-east-1）`PENDING_VALIDATION`、两条验证 CNAME 均未发布，两条分发无别名、用默认证书，`app.gatu.ai`/`testnet.gatu.ai` 是 DNS-only 的 A 记录指向 EC2 `18.182.219.124`，`gatu.ai` 无 CAA，HSTS 两边一致。给出的顺序是：验证 CNAME → 证书 `ISSUED` → 分发挂别名与证书 → 切换前验证 → 切 DNS → 切换后核对 → 退役 EC2。
+
+实际发生的顺序不同：用户回复"已完成"时，权威服务器（`holly.ns.cloudflare.com`）已把两个域名改成 CNAME 指向分发，而证书仍未签发、分发也没有别名。实测用户此时得到的是证书错误（`no alternative certificate subject name matches 'app.gatu.ai'`），忽略证书后是 CloudFront 403 "The request could not be satisfied"；EC2 直连仍返回 200。原因有二：`testnet` 的验证 CNAME 没有发布（只有 `app` 那条），以及 DNS 先于证书与别名切换。建议先回退 A 记录止血，用户选择不回退、等证书；`testnet` 验证记录补发布后约 15 分钟证书 `ISSUED`（12:08 前后），随即用 `get-distribution-config` → 改 `Aliases`/`ViewerCertificate`（`sni-only`、`TLSv1.2_2021`）→ `update-distribution --if-match` 给两条分发挂上别名与证书，`distribution-deployed` 于 12:12:23（主网）与 12:12:25（测试网）返回，`https://app.gatu.ai/api/health`、`https://testnet.gatu.ai/api/health` 经 CloudFront 返回 204，故障结束。从证书签发到恢复约 4 分钟；DNS 先切到恢复之间的时长取决于用户切换的时刻，本记录没有那个时间戳。
+
+切换后核对（正式域名）：`csp-coverage.mjs https://app.gatu.ai` 32 步 0 违规；`boot-milestones.mjs`（单样本）TTFB 285、FCP 556、水合 623、fallback 消失/顶栏/表面 961、网格与订单簿数据 1,074、Privy iframe 1,220；`deploy.mjs verify` 主网 10/14、测试网 11/15，四项 FAIL（壳正文、文档页、`build-meta` 与本地不一致，本地壳预加载的 `client-hydrate-*.js` 线上 404）都是因为本地 `.output` 是为修 CI 重建的 `ba9fee58` 产物而线上是 p19，其余（geo、签名 POST、`/join`、404、哈希图表入口、内联脚本策略、图片来源、健康探针、边缘命中、bundle immutable、testnet noindex）全部通过。处置：发布 p20 让本地与线上对齐后重新 verify（见下）。
+
+固化：`deploy.mjs aliases --distribution <id> --alias <host> --certificate-arn <arn> --execute`（`c71aefac`，`applyDistributionAliases` 只改别名与证书、保留 `CallerReference`，测试 34 例通过；手册新增 8b 步并写明顺序不能颠倒）。
+
+发布 p20（提交 `c71aefac`，Node 22.15.0，`GATU_RELEASE_ID=cloudfront-2026-09-15-p20 GATU_BUILD_TIME=2026-09-15T04:30:00.000Z`；相对 p19 只含 dev 服务器图表入口回退、静态壳目录查找与部署工具改动，Lambda 代码未变故未重发）：`functions --execute --origin https://app.gatu.ai`（10 current + 7 previous）→ `sync`（守卫通过）→ 两条失效并等待 → `verify --origin https://app.gatu.ai` 14/14、`verify --origin https://testnet.gatu.ai` 15/15 全绿（`build-meta` c71aefac / p20）。这是第一次以正式域名完成整条发布链。教训：切换清单里"你做的步骤"与"我做的步骤"交错时，每一步完成都要用权威 DNS 与 AWS API 核对，而不是凭口头"已完成"推进；DNS 切换永远放在最后一步。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

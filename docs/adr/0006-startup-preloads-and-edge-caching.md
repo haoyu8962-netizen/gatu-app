@@ -1,6 +1,6 @@
 # ADR 0006：启动预加载、边缘缓存与地区判定预取
 
-- 状态：已接受（2026-09-13），阶段 1 与阶段 2 已发布到 `*.cloudfront.net`，正式域名切换后同样生效
+- 状态：已接受（2026-09-13），阶段 1 与阶段 2 已发布；2026-09-15 正式域名已切到 CloudFront
 - 前置：[ADR 0005](0005-spa-static-shell.md)（静态壳与无服务器托管）
 - 计划与度量：[终端启动性能对齐官方站](../terminal-startup-performance-plan.md)、[任务记录](../work-memory/sessions/2026-09-13-spa-shell-spike.md)
 

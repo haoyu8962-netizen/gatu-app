@@ -37,9 +37,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   CloudFront Functions, header policies, distribution generator and static deployment
   script for the S3 + Lambda target that retires the EC2 server. Browser `POST`
   requests to the same-origin API now carry `x-amz-content-sha256`, which CloudFront's
-  signed Lambda origin requires. The first CloudFront release is live on the
-  `*.cloudfront.net` domains only; `app.gatu.ai` still points at the EC2 server until
-  the certificate is issued and DNS is switched. The edge now serves the shell and
+  signed Lambda origin requires. The first CloudFront releases ran on the
+  `*.cloudfront.net` domains; since 2026-09-15 `app.gatu.ai` and `testnet.gatu.ai` point at
+  the distributions (`deploy.mjs aliases` attaches the hostnames and the ACM certificate),
+  with the EC2 server kept for one release cycle as the rollback. The edge now serves the shell and
   document pages from cache for a minute with background refresh, and TradingView's
   content-hashed bundles are immutable instead of revalidated on every chart load.
   The build writes the trade startup chunks into the shell as `modulepreload` links,
