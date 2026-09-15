@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { BUILD_META_PATH } from "@/config/api-paths";
 import { APP_NAME } from "@/config/app";
 import { createBuildMeta } from "@/config/build-meta";
-import { createBuildMetaForMode, createBuildMetaPlugin } from "../../../vite.config";
+import { createBuildMetaForMode, createBuildMetaPlugin, resolveChartLibraryHashForCommand } from "../../../vite.config";
 
 const terminalPackage = JSON.parse(
 	readFileSync(fileURLToPath(new URL("../../../package.json", import.meta.url)), "utf8"),
@@ -66,6 +66,11 @@ describe("build metadata", () => {
 			fileName: BUILD_META_PATH.slice(1),
 			source: `${JSON.stringify(meta)}\n`,
 		});
+	});
+
+	it("names the hashed loader only for a build, so the dev server keeps the commit-versioned file", () => {
+		expect(resolveChartLibraryHashForCommand("serve")).toBe("");
+		expect(resolveChartLibraryHashForCommand("build")).toMatch(/^[0-9a-f]{16}$/);
 	});
 
 	it("emits the TradingView loader under its content hash next to the metadata that names it", () => {

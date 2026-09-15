@@ -368,6 +368,8 @@ P5：`lib/wallet/privy-session-hint.ts` 检查 Privy 本地存储的会话键（
 
 边界与未改动：接收器的限额仍是实例级，实例外限流取决于尚未设置的预留并发；过渡期 Nitro 宿主对哈希入口副本按 `/charting_library/**` 重新验证（rou3 路由规则不能表达文件名里的哈希），只有 CloudFront 目标享受 immutable；`deploy/README.md` 里 iPad WebKit 热缓存的图表初始化回归仍待做；全量 vitest 与 typecheck 并发时的超时红文件是本机争用现象，未改测试超时。
 
+p19 之后用户在开发服务器（`localhost:3007`）上看到图表面板"Something went wrong / Retry"（`TradingViewChart` 的错误边界）。原因：A3 的 Vite `define` 在 dev 与 build 都注入了 `VITE_GATU_CHART_LIBRARY_HASH`，加载器于是请求 `/charting_library/charting_library.<hash>.js`，但哈希副本只由 build 阶段的 build-meta 插件发出，dev 服务器只有 `public/` 里的原文件，返回 404（浏览器网络面板两次 404，控制台"An unknown error occurred when fetching the script."）。CloudFront 上的 p19 不受影响（哈希副本 200、immutable，`verify` 已核对）。修复：`resolveChartLibraryHashForCommand(command)` 只在 `build` 时返回哈希，dev 回到 `charting_library.js?v=<commit>`；`build-meta.test.ts` 钉住"serve 为空、build 为 16 位十六进制"。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

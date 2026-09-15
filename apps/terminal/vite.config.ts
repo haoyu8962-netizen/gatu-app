@@ -125,6 +125,11 @@ const chartLibraryEntry = existsSync(chartLibraryEntryPath) ? readFileSync(chart
 // Names the immutable copy of the TradingView loader; see `config/chart-library.ts`.
 const chartLibraryHash = chartLibraryEntry ? createHash('sha256').update(chartLibraryEntry).digest('hex').slice(0, 16) : ''
 
+/** Only a build emits the hashed loader copy; the dev server serves the plain file, versioned by the commit query instead. */
+export function resolveChartLibraryHashForCommand(command: 'build' | 'serve'): string {
+  return command === 'build' ? chartLibraryHash : ''
+}
+
 export const buildIdentity = Object.freeze({
   version: terminalPackage.version,
   commit: buildSha,
@@ -257,7 +262,6 @@ const config = defineConfig({
     'import.meta.env.VITE_GATU_BUILD_SHA': JSON.stringify(buildSha),
     'import.meta.env.VITE_GATU_RELEASE_ID': JSON.stringify(releaseId),
     'import.meta.env.VITE_GATU_BUILD_TIME': JSON.stringify(buildTime),
-    'import.meta.env.VITE_GATU_CHART_LIBRARY_HASH': JSON.stringify(chartLibraryHash),
   },
   server: {
     strictPort: true,
@@ -384,7 +388,11 @@ const config = defineConfig({
   ].filter(Boolean),
 })
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ command, mode }) => ({
   ...config,
+  define: {
+    ...config.define,
+    'import.meta.env.VITE_GATU_CHART_LIBRARY_HASH': JSON.stringify(resolveChartLibraryHashForCommand(command)),
+  },
   plugins: [...(config.plugins ?? []), createBuildMetaPlugin(createBuildMetaForMode(mode))],
 }))
