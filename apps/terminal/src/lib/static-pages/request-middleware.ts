@@ -7,13 +7,13 @@ let responderPromise: Promise<StaticPagesResponder> | undefined;
 async function resolvePublicDir(): Promise<string | null> {
 	const { access } = await import("node:fs/promises");
 	const { resolve } = await import("node:path");
-	const candidates = [
-		process.env.GATU_PUBLIC_DIR?.trim() || null,
-		resolve(process.cwd(), "public"),
-		resolve(process.cwd(), ".output/public"),
-	];
+	const { listPublicDirCandidates } = await import("@/lib/static-pages/public-dir");
+	const candidates = listPublicDirCandidates({
+		configuredDir: process.env.GATU_PUBLIC_DIR,
+		cwd: process.cwd(),
+		entryFile: process.argv[1],
+	});
 	for (const candidate of candidates) {
-		if (!candidate) continue;
 		try {
 			await access(resolve(candidate, STATIC_SHELL_FILE));
 			return candidate;

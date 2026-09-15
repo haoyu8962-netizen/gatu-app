@@ -26,7 +26,7 @@ Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai + testnet.gatu.ai
   `apps/terminal/src/lib/static-pages/request-middleware.ts` 在路由器之前返回，Nitro 的 route rules
   仍为这些响应附加 CSP 等安全头。`/join/*` 返回的壳会带上 `<meta name="gatu-route" content="referral-join">`
   标记，供本目录的发布健康检查识别 referral 深链能力。
-- 进程从 `GATU_PUBLIC_DIR`、当前目录下的 `public/`、`.output/public/` 依次查找 `_shell.html`；
+- 进程从 `GATU_PUBLIC_DIR`、当前目录下的 `public/`、`.output/public/`、`apps/terminal/.output/public/`，以及服务器入口脚本（`process.argv[1]`）旁的 `../public/` 依次查找 `_shell.html`（发布目录里 `server/index.mjs` 与 `public/` 同级，仓库根目录启动时靠入口路径找到 `.output/public`）；
   `WorkingDirectory=/opt/gatu/current` 下无需额外配置。找不到壳时导航返回 503（fail closed），
   只有显式设置 `GATU_RUNTIME_SSR=true` 才回退到服务端渲染。
 - `/_serverFn/*` 已无调用方，运行时返回 404。旧的 `/client-error-report` 路径保留为 `POST` 别名，

@@ -370,6 +370,8 @@ P5：`lib/wallet/privy-session-hint.ts` 检查 Privy 本地存储的会话键（
 
 p19 之后用户在开发服务器（`localhost:3007`）上看到图表面板"Something went wrong / Retry"（`TradingViewChart` 的错误边界）。原因：A3 的 Vite `define` 在 dev 与 build 都注入了 `VITE_GATU_CHART_LIBRARY_HASH`，加载器于是请求 `/charting_library/charting_library.<hash>.js`，但哈希副本只由 build 阶段的 build-meta 插件发出，dev 服务器只有 `public/` 里的原文件，返回 404（浏览器网络面板两次 404，控制台"An unknown error occurred when fetching the script."）。CloudFront 上的 p19 不受影响（哈希副本 200、immutable，`verify` 已核对）。修复：`resolveChartLibraryHashForCommand(command)` 只在 `build` 时返回哈希，dev 回到 `charting_library.js?v=<commit>`；`build-meta.test.ts` 钉住"serve 为空、build 为 16 位十六进制"。
 
+PR #24（`claude/spa-mode` → `main`，58 个提交）首轮 CI：typecheck、i18n、网站构建、浏览器回归通过；四个 `Build terminal` 矩阵任务都在 "Verify production lazy client graph" 一步失败——该步从仓库根目录按路径启动 `apps/terminal/.output/server/index.mjs`，`curl /builders-perp` 连续 30 s 得到 503 "Static shell missing"。本机同样命令复现：静态壳中间件只在 `GATU_PUBLIC_DIR`、`cwd/public`、`cwd/.output/public` 找 `_shell.html`，CI 的 cwd 是仓库根，都不存在（EC2 的 `gatu.service` 在 `/opt/gatu/current` 下运行，`public/` 与 `server/` 同级，所以线上不受影响；CloudFront 不跑这个进程）。修复：`static-pages/public-dir.ts` 的 `listPublicDirCandidates` 追加 `cwd/apps/terminal/.output/public` 与服务器入口脚本（`process.argv[1]`）旁的 `../public`；`static-pages.test.ts` 钉住候选顺序。重建后从仓库根目录复跑该步：`/builders-perp`、`/docs` 200，`resolve-client-asset.mjs` 解析出 `trade-terminal-page` 块，`verify-chart-build.mjs` 通过。这一步在 `codex/tishi`（2026-09-12）上是绿的，说明是本分支关闭运行时 SSR 后引入的。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

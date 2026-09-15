@@ -1,5 +1,7 @@
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { DOCUMENT_ROUTE_PATHS } from "@/config/document-routes";
+import { listPublicDirCandidates } from "@/lib/static-pages/public-dir";
 import {
 	classifyStaticPageRequest,
 	decorateStaticPage,
@@ -88,5 +90,36 @@ describe("static page decoration", () => {
 		);
 		expect(decorateStaticPage(html, null)).toBe(html);
 		expect(decorateStaticPage("<body></body>", REFERRAL_JOIN_ROUTE_MARKER)).toBe("<body></body>");
+	});
+});
+
+describe("public directory lookup", () => {
+	it("checks the configured directory, the working directory layouts, then the server entry's sibling", () => {
+		expect(
+			listPublicDirCandidates({
+				configuredDir: " /srv/gatu/public ",
+				cwd: "/repo",
+				entryFile: "/repo/apps/terminal/.output/server/index.mjs",
+			}),
+		).toEqual(
+			[
+				"/srv/gatu/public",
+				resolve("/repo/public"),
+				resolve("/repo/.output/public"),
+				resolve("/repo/apps/terminal/.output/public"),
+				resolve("/repo/apps/terminal/.output/public"),
+			].filter((candidate, index, all) => all.indexOf(candidate) === index),
+		);
+	});
+
+	it("finds a release directory from its own server entry without any configuration", () => {
+		expect(
+			listPublicDirCandidates({ configuredDir: undefined, cwd: "/", entryFile: "/opt/gatu/current/server/index.mjs" }),
+		).toContain(resolve("/opt/gatu/current/public"));
+		expect(listPublicDirCandidates({ configuredDir: "", cwd: "/x", entryFile: undefined })).toEqual([
+			resolve("/x/public"),
+			resolve("/x/.output/public"),
+			resolve("/x/apps/terminal/.output/public"),
+		]);
 	});
 });
