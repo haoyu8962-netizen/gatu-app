@@ -4,6 +4,7 @@ import {
 	API_CACHE_POLICY_NAME,
 	API_ORIGIN_ID,
 	API_PATH_PATTERNS,
+	applyDistributionAliases,
 	ASSET_PATH_PATTERNS,
 	CHART_PATH_PATTERNS,
 	createApiCachePolicyConfig,
@@ -160,4 +161,18 @@ test("invalid inputs are rejected before anything reaches AWS", () => {
 	assert.throws(() => validateOptions({ ...OPTIONS, lambdaUrlDomain: "example.com" }), /lambdaUrlDomain/);
 	assert.throws(() => validateOptions({ ...OPTIONS, responseHeadersPolicyIds: { base: "x" } }), /responseHeadersPolicyIds/);
 	assert.throws(() => validateOptions({ ...OPTIONS, functionArns: { request: "nope" } }), /functionArns/);
+});
+
+test("the cut-over adds aliases and the ACM certificate to a live distribution without touching the rest", () => {
+	const live = { ...createDistributionConfig({ ...OPTIONS, aliases: [], certificateArn: undefined }), CallerReference: "live-1" };
+	const updated = applyDistributionAliases(live, { aliases: ["app.gatu.ai"], certificateArn: OPTIONS.certificateArn });
+	assert.deepEqual(updated.Aliases, { Quantity: 1, Items: ["app.gatu.ai"] });
+	assert.equal(updated.ViewerCertificate.ACMCertificateArn, OPTIONS.certificateArn);
+	assert.equal(updated.ViewerCertificate.SSLSupportMethod, "sni-only");
+	assert.equal(updated.ViewerCertificate.MinimumProtocolVersion, "TLSv1.2_2021");
+	assert.equal(updated.CallerReference, "live-1");
+	assert.deepEqual({ ...updated, Aliases: live.Aliases, ViewerCertificate: live.ViewerCertificate }, live);
+	assert.throws(() => applyDistributionAliases(live, { aliases: [], certificateArn: OPTIONS.certificateArn }), /alias/);
+	assert.throws(() => applyDistributionAliases(live, { aliases: ["app.gatu.ai"], certificateArn: undefined }), /together/);
+	assert.throws(() => applyDistributionAliases(live, { aliases: ["App.gatu.ai"], certificateArn: OPTIONS.certificateArn }), /hostnames/);
 });

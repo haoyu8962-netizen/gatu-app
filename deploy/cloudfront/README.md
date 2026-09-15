@@ -99,6 +99,7 @@
    node deploy/cloudfront/deploy.mjs sync --bucket gatu-terminal-2026 --execute
    node deploy/cloudfront/deploy.mjs invalidate --distribution <id> --execute
    ```
+8b. **挂别名与证书**（证书 `ISSUED` 之后、切 DNS 之前，顺序不能颠倒——2026-09-15 曾先切 DNS，用户在这段时间里看到的是证书不匹配错误）：`node deploy/cloudfront/deploy.mjs aliases --distribution <mainnet-id> --alias app.gatu.ai --certificate-arn <arn> --execute`，测试网同理；命令读取现行配置、只改 `Aliases` 与 `ViewerCertificate`（`sni-only`、`TLSv1.2_2021`），`update-distribution` 后等待 `Deployed`（约 3–5 分钟）。
 9. **切换前验证**（分发 `Deployed` 后，DNS 未改）：用 `curl --resolve app.gatu.ai:443:<分发 IP>` 逐项检查，或临时把本机 hosts 指向分发后运行 `node deploy/cloudfront/deploy.mjs verify --origin https://app.gatu.ai --network mainnet`。特别确认畸形 `/join/%` 的响应状态，以及 `/api/geo` 在真实公网 IP 下返回 200。
 10. **切换 DNS**：Cloudflare 把 `app.gatu.ai`、`testnet.gatu.ai` 改为 CNAME 到各自分发（DNS-only）。回滚只需改回 EC2 的 A 记录，EC2 在确认稳定前保留。
 11. **退役 EC2**：连续观察一个发布周期后停掉 `gatu.service` 与 Caddy，`deploy/deploy.sh` 及其 Caddy/systemd 文件转为历史资料。

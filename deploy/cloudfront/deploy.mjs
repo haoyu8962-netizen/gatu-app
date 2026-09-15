@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectInlineScriptHashes, collectInlineScripts, listPrerenderedPages } from "../../scripts/collect-inline-script-hashes.mjs";
+import { applyDistributionAliases } from "./distribution-config.mjs";
 import { fillScriptHashes, hasScriptHashLines, missingScriptHashes, parseScriptHashes, readEdgeConfig, rotateScriptHashes } from "./function-code.mjs";
 
 export const PRECOMPRESSED_EXTENSIONS = new Set([".br", ".gz", ".zst"]);
@@ -448,6 +449,12 @@ function readArgs(argv) {
 			case "--network":
 				options.network = value();
 				break;
+			case "--alias":
+				(options.aliases ??= []).push(value());
+				break;
+			case "--certificate-arn":
+				options.certificateArn = value();
+				break;
 			default:
 				throw new Error(`Unknown argument ${argument}`);
 		}
@@ -538,6 +545,22 @@ async function main() {
 		case "invalidate":
 			runAws(buildInvalidationCommand(requireOption(options, "distributionId")), options.execute);
 			break;
+		case "aliases": {
+			const distributionId = requireOption(options, "distributionId");
+			const aliases = requireOption(options, "aliases");
+			const certificateArn = requireOption(options, "certificateArn");
+			const live = readAwsJson(["cloudfront", "get-distribution-config", "--id", distributionId]);
+			const updated = applyDistributionAliases(live.DistributionConfig, { aliases, certificateArn });
+			const file = join(tmpdir(), `gatu-distribution-${distributionId}-${process.pid}.json`);
+			writeFileSync(file, `${JSON.stringify(updated, null, 2)}\n`);
+			console.log(`Distribution ${distributionId}: aliases ${aliases.join(", ")} with certificate ${certificateArn} (ETag ${live.ETag}) → ${file}`);
+			runAws(
+				["cloudfront", "update-distribution", "--id", distributionId, "--if-match", live.ETag, "--distribution-config", `file://${file}`],
+				options.execute,
+			);
+			runAws(["cloudfront", "wait", "distribution-deployed", "--id", distributionId], options.execute);
+			break;
+		}
 		case "lambda": {
 			const functionName = requireOption(options, "functionName");
 			const bundle = resolve(options.lambdaDir, options.lambdaEntry);
@@ -590,7 +613,7 @@ async function main() {
 			break;
 		}
 		default:
-			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|lambda|functions|verify> [--execute] [--bucket B] [--only PREFIX]... [--distribution ID] [--function-name F] [--lambda-entry index.mjs] [--origin URL] [--network mainnet|testnet]");
+			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|aliases|lambda|functions|verify> [--execute] [--bucket B] [--only PREFIX]... [--alias HOST]... [--certificate-arn ARN] [--distribution ID] [--function-name F] [--lambda-entry index.mjs] [--origin URL] [--network mainnet|testnet]");
 			process.exit(2);
 	}
 }

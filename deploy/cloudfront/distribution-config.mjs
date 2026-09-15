@@ -104,6 +104,20 @@ export function viewerCertificate(certificateArn) {
 	};
 }
 
+/**
+ * The alias and certificate step of the DNS cut-over: an existing distribution keeps every other
+ * setting (and its immutable CallerReference) and only gains the hostnames plus the ACM certificate.
+ */
+export function applyDistributionAliases(distributionConfig, { aliases, certificateArn }) {
+	validateViewerCertificate(aliases, certificateArn);
+	if (aliases.length === 0) throw new Error("at least one alias is required");
+	return {
+		...distributionConfig,
+		Aliases: { Quantity: aliases.length, Items: [...aliases] },
+		ViewerCertificate: viewerCertificate(certificateArn),
+	};
+}
+
 export function validateOptions(options) {
 	const {
 		network,
