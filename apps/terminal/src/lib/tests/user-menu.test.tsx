@@ -6,6 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
+	exportVisible: false,
+	exportWallet: vi.fn(async (beforeOpen?: () => void) => {
+		beforeOpen?.();
+	}),
 	authenticated: false,
 	displayAddress: undefined as `0x${string}` | undefined,
 	emailAddress: undefined as string | undefined,
@@ -46,6 +50,14 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 type TestLazyComponent = ((props: Record<string, unknown>) => ReactNode) & {
 	preload?: () => Promise<unknown>;
 };
+
+vi.mock("@/hooks/wallet/use-email-wallet-export", () => ({
+	useEmailWalletExport: () => ({
+		visible: testState.exportVisible,
+		canExport: true,
+		exportEmailWallet: testState.exportWallet,
+	}),
+}));
 
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
@@ -268,6 +280,8 @@ describe("UserMenu", () => {
 	let root: Root;
 
 	beforeEach(async () => {
+		testState.exportVisible = false;
+		testState.exportWallet.mockClear();
 		testState.authenticated = false;
 		testState.displayAddress = undefined;
 		testState.emailAddress = undefined;
@@ -315,6 +329,19 @@ describe("UserMenu", () => {
 		container.remove();
 		vi.clearAllMocks();
 		vi.useRealTimers();
+	});
+
+	it("offers an explicit email export action in the account menu", async () => {
+		testState.authenticated = true;
+		testState.emailAddress = "owner@example.test";
+		testState.exportVisible = true;
+		act(() => root.render(createElement(UserMenu)));
+		const button = [...container.querySelectorAll("button")].find((item) => item.textContent === "Export email wallet");
+		expect(button).toBeDefined();
+		await act(async () => {
+			button?.click();
+		});
+		expect(testState.exportWallet).toHaveBeenCalledOnce();
 	});
 
 	it("loads the shared wallet modal on demand without waiting for unauthenticated wallet connectors", async () => {
@@ -483,6 +510,10 @@ describe("UserMenu", () => {
 		trigger = dropdown?.querySelector<HTMLButtonElement>('button[aria-label="Account and wallet"]');
 		const desktopLabels = [...(trigger?.querySelectorAll<HTMLElement>("span.truncate") ?? [])];
 		const desktopLabelClasses = desktopLabels.map((item) => item.className);
+		expect([...(trigger?.querySelectorAll("bdi") ?? [])].map((label) => label.textContent)).toEqual([
+			testState.emailAddress,
+			testState.emailAddress,
+		]);
 		expect(dropdown?.className).toContain("shrink-0");
 		expect(trigger?.className).toContain("shrink-0");
 		expect(

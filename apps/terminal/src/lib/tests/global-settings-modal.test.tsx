@@ -13,6 +13,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 
 const testState = vi.hoisted(() => ({
+	exportVisible: false,
+	exportWallet: vi.fn(async (beforeOpen?: () => void) => {
+		beforeOpen?.();
+	}),
 	open: true,
 	close: vi.fn(() => {
 		testState.open = false;
@@ -34,6 +38,14 @@ const testState = vi.hoisted(() => ({
 	}),
 	numberInputProps: null as Record<string, unknown> | null,
 	toggleProps: [] as Record<string, unknown>[],
+}));
+
+vi.mock("@/hooks/wallet/use-email-wallet-export", () => ({
+	useEmailWalletExport: () => ({
+		visible: testState.exportVisible,
+		canExport: true,
+		exportEmailWallet: testState.exportWallet,
+	}),
 }));
 
 vi.mock("@gatu/ui", () => ({
@@ -115,6 +127,8 @@ describe("GlobalSettingsModal", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		testState.exportVisible = false;
+		testState.exportWallet.mockClear();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.open = true;
 		testState.close.mockClear();
@@ -146,6 +160,31 @@ describe("GlobalSettingsModal", () => {
 			root.render(createElement(I18nProvider, { i18n }, testState.open ? createElement(GlobalSettingsModal) : null)),
 		);
 	}
+
+	it("closes Settings before launching the explicit email export action", async () => {
+		testState.exportVisible = true;
+		renderModal();
+		await act(async () => {
+			getButton(container, "Export email wallet").click();
+		});
+		expect(testState.exportWallet).toHaveBeenCalledOnce();
+		expect(testState.close).toHaveBeenCalledOnce();
+		expect(testState.open).toBe(false);
+	});
+
+	it("translates wallet export without remounting Settings or losing its draft", () => {
+		testState.exportVisible = true;
+		renderModal();
+		const button = getButton(container, "Export email wallet");
+		const input = getSlippageInput(container);
+		changeInput(input, "1.25");
+		const messageId = createHash("sha256").update("Export email wallet\x1f").digest("base64").slice(0, 6);
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: { [messageId]: "导出邮箱钱包" } }));
+		expect(getButton(container, "导出邮箱钱包")).toBe(button);
+		expect(getSlippageInput(container)).toBe(input);
+		expect(input.value).toBe("1.25");
+		expect(testState.exportWallet).not.toHaveBeenCalled();
+	});
 
 	it("keeps edits and blur local until the explicit confirmation", () => {
 		const input = getSlippageInput(container);

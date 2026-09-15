@@ -14,6 +14,7 @@ import { useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useIsMobile, useIsMobileQrSurface } from "@/hooks/use-mobile";
+import { useEmailWalletExport } from "@/hooks/wallet/use-email-wallet-export";
 import { useWalletInitializationRecovery } from "@/hooks/wallet/use-wallet-initialization-recovery";
 import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -44,6 +45,7 @@ interface Props {
 
 export function UserMenu({ variant = "default" }: Props) {
 	const { t } = useLingui();
+	const walletExport = useEmailWalletExport();
 	const {
 		authenticationReady,
 		walletDirectoryReady,
@@ -200,9 +202,21 @@ export function UserMenu({ variant = "default" }: Props) {
 	}
 
 	const displayLabel = emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : t`Account`);
-	const compactDisplayLabel = displayAddress ? shortenAddress(displayAddress) : displayLabel;
+	const compactDisplayLabel = emailAddress ?? (displayAddress ? shortenAddress(displayAddress) : displayLabel);
 
 	const actionItems = [
+		...(walletExport.visible
+			? [
+					{
+						label: t`Export email wallet`,
+						icon: <WalletIcon className="size-3.5" />,
+						disabled: !walletExport.canExport,
+						onSelect: () => {
+							void walletExport.exportEmailWallet();
+						},
+					},
+				]
+			: []),
 		...(authenticated && sessionMode !== "agent-only" && !hasWalletAccess
 			? [
 					{

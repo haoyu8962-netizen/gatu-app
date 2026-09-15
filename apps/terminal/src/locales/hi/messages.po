@@ -2005,6 +2005,10 @@ msgstr "आपके टोकन बैलेंस प्राप्त न�
 msgid "Could not import phone access. Retry or create a new desktop QR."
 msgstr "फ़ोन एक्सेस इम्पोर्ट नहीं हो सका। दोबारा प्रयास करें या नया डेस्कटॉप QR बनाएं।"
 
+#: src/hooks/wallet/use-email-wallet-export.ts
+msgid "Could not open wallet export. Retry in your system browser on the same GATU site, using the same email."
+msgstr "वॉलेट निर्यात नहीं खुल सका। सिस्टम ब्राउज़र में उसी GATU साइट पर उसी ईमेल से फिर कोशिश करें।"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Could not render QR. Create a new key."
 msgstr "QR रेंडर नहीं हो सका। नई कुंजी बनाएं।"
@@ -2871,6 +2875,15 @@ msgstr "एक्सप्लोरर"
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Export CSV"
 msgstr "CSV निर्यात करें"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Export email wallet"
+msgstr "ईमेल वॉलेट निर्यात करें"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Export your email wallet to use it in another wallet app. Never share your private key."
+msgstr "अपने ईमेल वॉलेट को दूसरे वॉलेट ऐप में उपयोग करने के लिए निर्यात करें। अपनी निजी कुंजी कभी साझा न करें।"
 
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Exporting deposits and withdrawals..."
@@ -4501,6 +4514,7 @@ msgstr "शुद्ध प्राप्त"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/funds-route-details.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -6722,12 +6736,16 @@ msgid "Send failed"
 msgstr "भेजना विफल रहा"
 
 #: src/components/trade/positions/send-modal.tsx
+msgid "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
+msgstr "दूसरे Hyperliquid खाते में भेजें। Arbitrum पर USDC पाने के लिए निकासी का उपयोग करें।"
+
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "टोकन भेजें"
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Send tokens to another account on the Hyperliquid L1."
-msgstr "Hyperliquid L1 पर किसी अन्य खाते में टोकन भेजें।"
+#~ msgid "Send tokens to another account on the Hyperliquid L1."
+#~ msgstr "Hyperliquid L1 पर किसी अन्य खाते में टोकन भेजें।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Send USDC to your wallet address below."
@@ -9359,6 +9377,10 @@ msgstr "ऑर्डर बुक की प्रतीक्षा..."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Waiting for wallet signature"
 msgstr "वॉलेट हस्ताक्षर की प्रतीक्षा है"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Wallet"
+msgstr "वॉलेट"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #~ msgid "Wallet ({0})"

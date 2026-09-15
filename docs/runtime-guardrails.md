@@ -91,6 +91,28 @@ Do not collapse these states into one boolean.
   Ethereum-only wallet selection, and customize radius through Privy's
   supported public CSS variables rather than generated DOM classes.
 
+### Email Wallet Identity And Export
+
+Email sessions retain their email label at desktop, compact and mobile widths;
+truncate the label instead of substituting the wallet address. Copy Address still
+copies the account address. Accounts without email retain their ENS/address labels.
+
+The account menu and Settings expose Export email wallet independently of Across,
+funding, account mode and trading approval. The shared export hook requires a ready,
+authenticated email session with embedded intent and an unambiguous exact owner
+matching the current Privy user. Agent-only/external/ambiguous sessions cannot export.
+Only explicit clicks call Privy's `exportWallet({ address: owner })`; never omit the
+address or read, return, log or store the private key. Settings closes before opening
+Privy. Privy owns verification/MFA and the isolated export interface. Closing that
+interface is not proof that a key was copied or funds recovered. Duplicate clicks
+are blocked and late failures after an identity change or unmount remain silent.
+
+Use the same GATU origin in a system browser if the export interface cannot open.
+An independent recovery entry is preferred over moving unverified Across funding
+features into this runtime. Verify owner mismatch, logout, stale completion,
+repeated clicks, settings dismissal and English/Chinese reactivity with mocks;
+inspect entry visibility at 375, 1100 and 1440 pixels without exposing a real key.
+
 ### Provider Lifetime During Navigation
 
 - The root route and client runtime gate must classify their surface using

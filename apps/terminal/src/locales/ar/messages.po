@@ -2005,6 +2005,10 @@ msgstr "تعذّر جلب أرصدة رموزك"
 msgid "Could not import phone access. Retry or create a new desktop QR."
 msgstr "تعذّر استيراد وصول الهاتف. أعد المحاولة أو أنشئ رمز QR جديداً لسطح المكتب."
 
+#: src/hooks/wallet/use-email-wallet-export.ts
+msgid "Could not open wallet export. Retry in your system browser on the same GATU site, using the same email."
+msgstr "تعذر فتح تصدير المحفظة. أعد المحاولة في متصفح النظام على موقع GATU نفسه باستخدام البريد الإلكتروني نفسه."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Could not render QR. Create a new key."
 msgstr "تعذّر عرض رمز QR. أنشئ مفتاحاً جديداً."
@@ -2871,6 +2875,15 @@ msgstr "المستكشف"
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Export CSV"
 msgstr "تصدير CSV"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Export email wallet"
+msgstr "تصدير محفظة البريد الإلكتروني"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Export your email wallet to use it in another wallet app. Never share your private key."
+msgstr "صدّر محفظة بريدك الإلكتروني لاستخدامها في تطبيق محفظة آخر. لا تشارك مفتاحك الخاص مطلقًا."
 
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Exporting deposits and withdrawals..."
@@ -4501,6 +4514,7 @@ msgstr "الصافي المستلم"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/funds-route-details.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -6722,12 +6736,16 @@ msgid "Send failed"
 msgstr "فشل الإرسال"
 
 #: src/components/trade/positions/send-modal.tsx
+msgid "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
+msgstr "أرسل إلى حساب Hyperliquid آخر. لاستلام USDC على Arbitrum، استخدم السحب."
+
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "إرسال الرموز"
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Send tokens to another account on the Hyperliquid L1."
-msgstr "أرسل الرموز إلى حساب آخر على Hyperliquid L1."
+#~ msgid "Send tokens to another account on the Hyperliquid L1."
+#~ msgstr "أرسل الرموز إلى حساب آخر على Hyperliquid L1."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Send USDC to your wallet address below."
@@ -9359,6 +9377,10 @@ msgstr "في انتظار دفتر الأوامر..."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Waiting for wallet signature"
 msgstr "في انتظار توقيع المحفظة"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Wallet"
+msgstr "المحفظة"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #~ msgid "Wallet ({0})"

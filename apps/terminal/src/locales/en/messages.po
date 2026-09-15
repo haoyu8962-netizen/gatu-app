@@ -2005,6 +2005,10 @@ msgstr "Could not fetch your token balances"
 msgid "Could not import phone access. Retry or create a new desktop QR."
 msgstr "Could not import phone access. Retry or create a new desktop QR."
 
+#: src/hooks/wallet/use-email-wallet-export.ts
+msgid "Could not open wallet export. Retry in your system browser on the same GATU site, using the same email."
+msgstr "Could not open wallet export. Retry in your system browser on the same GATU site, using the same email."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Could not render QR. Create a new key."
 msgstr "Could not render QR. Create a new key."
@@ -2871,6 +2875,15 @@ msgstr "Explorer"
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Export CSV"
 msgstr "Export CSV"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Export email wallet"
+msgstr "Export email wallet"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Export your email wallet to use it in another wallet app. Never share your private key."
+msgstr "Export your email wallet to use it in another wallet app. Never share your private key."
 
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Exporting deposits and withdrawals..."
@@ -4501,6 +4514,7 @@ msgstr "Net received"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/funds-route-details.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -6722,12 +6736,16 @@ msgid "Send failed"
 msgstr "Send failed"
 
 #: src/components/trade/positions/send-modal.tsx
+msgid "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
+msgstr "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
+
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "Send Tokens"
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Send tokens to another account on the Hyperliquid L1."
-msgstr "Send tokens to another account on the Hyperliquid L1."
+#~ msgid "Send tokens to another account on the Hyperliquid L1."
+#~ msgstr "Send tokens to another account on the Hyperliquid L1."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Send USDC to your wallet address below."
@@ -9359,6 +9377,10 @@ msgstr "Waiting for order book..."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Waiting for wallet signature"
 msgstr "Waiting for wallet signature"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Wallet"
+msgstr "Wallet"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #~ msgid "Wallet ({0})"

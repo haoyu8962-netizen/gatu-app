@@ -16,6 +16,10 @@ const slippageHarness = vi.hoisted(() => ({
 	}),
 }));
 
+vi.mock("@/hooks/wallet/use-email-wallet-export", () => ({
+	useEmailWalletExport: () => ({ visible: false, canExport: false, exportEmailWallet: vi.fn() }),
+}));
+
 vi.mock("@gatu/ui", () => ({
 	Button: ({ children, intent: _intent, size: _size, variant: _variant, ...props }: Record<string, unknown>) =>
 		createElement("button", { ...props, type: "button" }, children as ReactNode),

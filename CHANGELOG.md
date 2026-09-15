@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Added
 
+- Email wallet export in the account menu and Settings, with exact-owner checks;
+  compact layouts retain email identity, and Send identifies the Hyperliquid network.
+
 - Cumulative order-book depth tooltips for mouse, keyboard and touch selection,
   preserving ordinary click-to-fill and touch scrolling. See
   [order-book interaction behavior](docs/orderbook-hover.md).

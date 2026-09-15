@@ -418,11 +418,15 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		<PendingActionModal open={open} onOpenChange={onOpenChange} isPending={isPending}>
 			<ModalHeader>
 				<ModalTitle>{t`Send Tokens`}</ModalTitle>
-				<ModalDescription>{t`Send tokens to another account on the Hyperliquid L1.`}</ModalDescription>
+				<ModalDescription>{t`Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw.`}</ModalDescription>
 			</ModalHeader>
 
 			<ModalContent>
 				<div className="space-y-4">
+					<div className="flex items-center justify-between gap-3 text-sm">
+						<span className="text-fg-muted">{t`Network`}</span>
+						<span>Hyperliquid (HyperCore)</span>
+					</div>
 					{!hasWalletAccess && (
 						<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
 							<WarningCircleIcon className="size-3.5 shrink-0" />

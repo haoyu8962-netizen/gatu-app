@@ -2005,6 +2005,10 @@ msgstr "No se pudieron obtener tus saldos de tokens"
 msgid "Could not import phone access. Retry or create a new desktop QR."
 msgstr "No se pudo importar el acceso del teléfono. Reintenta o crea un nuevo QR de escritorio."
 
+#: src/hooks/wallet/use-email-wallet-export.ts
+msgid "Could not open wallet export. Retry in your system browser on the same GATU site, using the same email."
+msgstr "No se pudo abrir la exportación. Reintenta en el navegador del sistema, en el mismo sitio GATU y con el mismo correo."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Could not render QR. Create a new key."
 msgstr "No se pudo generar el QR. Crea una nueva clave."
@@ -2871,6 +2875,15 @@ msgstr "Explorador"
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Export CSV"
 msgstr "Exportar CSV"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Export email wallet"
+msgstr "Exportar cartera de correo electrónico"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Export your email wallet to use it in another wallet app. Never share your private key."
+msgstr "Exporta tu cartera de correo electrónico para usarla en otra aplicación. Nunca compartas tu clave privada."
 
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Exporting deposits and withdrawals..."
@@ -4501,6 +4514,7 @@ msgstr "Neto recibido"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/funds-route-details.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -6722,12 +6736,16 @@ msgid "Send failed"
 msgstr "Error al enviar"
 
 #: src/components/trade/positions/send-modal.tsx
+msgid "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
+msgstr "Envía a otra cuenta de Hyperliquid. Para recibir USDC en Arbitrum, utiliza Retirar."
+
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "Enviar tokens"
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Send tokens to another account on the Hyperliquid L1."
-msgstr "Envía tokens a otra cuenta en la L1 de Hyperliquid."
+#~ msgid "Send tokens to another account on the Hyperliquid L1."
+#~ msgstr "Envía tokens a otra cuenta en la L1 de Hyperliquid."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Send USDC to your wallet address below."
@@ -9359,6 +9377,10 @@ msgstr "Esperando libro de órdenes..."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Waiting for wallet signature"
 msgstr "Esperando la firma del monedero"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Wallet"
+msgstr "Billetera"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #~ msgid "Wallet ({0})"
