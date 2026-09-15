@@ -1,7 +1,7 @@
 import type { ReferralResponse } from "@nktkas/hyperliquid";
 import Big from "big.js";
-import { z } from "zod";
 import { getPublicOrigin } from "@/config/public-origins";
+import { z } from "@/lib/zod";
 
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 const UNSIGNED_DECIMAL_PATTERN = /^[0-9]+(?:\.[0-9]+)?$/;

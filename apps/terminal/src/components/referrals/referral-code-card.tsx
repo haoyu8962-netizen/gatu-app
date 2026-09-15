@@ -138,7 +138,7 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 			) : null}
 
 			{data.referrerState.stage === "needToCreateCode" ? (
-				<div className="mt-3 rounded-20 border border-stroke-weak bg-fill-weaker p-3">
+				<div className="mt-3 py-3">
 					<p className="text-xs font-semibold text-fg">
 						<Trans>You are eligible to create a referral code.</Trans>
 					</p>

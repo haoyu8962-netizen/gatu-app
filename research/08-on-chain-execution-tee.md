@@ -111,7 +111,7 @@ Purpose-built for AI agents to securely hold assets and autonomously execute on-
 
 ### 3.3 Implications for the Market
 
-OKX's investment signals that **major exchanges view agentic infrastructure as a core product category**, not an experiment. The MCP integration pattern (natural language instructions translated to on-chain actions) is likely to become a standard interface pattern. HypeTerminal should monitor this as both a competitive threat and an architectural reference.
+OKX's investment signals that **major exchanges view agentic infrastructure as a core product category**, not an experiment. The MCP integration pattern (natural language instructions translated to on-chain actions) is likely to become a standard interface pattern. gatu should monitor this as both a competitive threat and an architectural reference.
 
 ---
 
@@ -207,9 +207,9 @@ TEEs solve this by running strategy logic in an enclave where:
 - **Cryptographic attestation** proves the correct code ran without modification
 - **Output is controlled**: only signed transactions exit the enclave, not strategy internals
 
-### 6.3 Practical Architecture for HypeTerminal
+### 6.3 Practical Architecture for gatu
 
-A TEE-based agent execution model for HypeTerminal:
+A TEE-based agent execution model for gatu:
 
 1. User deploys agent code and configuration to a TEE enclave
 2. TEE generates signing keys internally (never exposed externally)
@@ -241,12 +241,12 @@ EigenCompute, which entered **Mainnet Alpha in January 2026**, offers:
 
 elizaOS demonstrated this by building cryptographically verifiable agents using EigenCompute and EigenAI -- proving the pattern works for autonomous agent hosting.
 
-### 7.3 Relevance to HypeTerminal
+### 7.3 Relevance to gatu
 
-EigenCompute could serve as the hosting layer for HypeTerminal trading agents:
+EigenCompute could serve as the hosting layer for gatu trading agents:
 
 - Agents run in verified containers with attestation proofs
-- Users don't need to trust HypeTerminal's servers -- they can verify execution
+- Users don't need to trust gatu's servers -- they can verify execution
 - The cryptoeconomic security model (staked ETH) provides financial guarantees against misbehavior
 - The "Agentic Intranets" phase (2026) involves agents operating continuously across enterprise systems, aligning with always-on trading agent requirements
 
@@ -268,7 +268,7 @@ The paper establishes a taxonomy of how agents interact with blockchains:
 4. **Autonomous signing**: agents hold keys and sign transactions independently
 5. **Multi-agent workflows**: multiple agents coordinate complex operations
 
-HypeTerminal agents would primarily operate at levels 3-4 (delegated execution via API wallets, potentially autonomous signing via TEE-held keys).
+gatu agents would primarily operate at levels 3-4 (delegated execution via API wallets, potentially autonomous signing via TEE-held keys).
 
 ### 8.3 Threat Model
 
@@ -321,7 +321,7 @@ The path from current hybrid models to fully on-chain agents:
 
 ---
 
-## 10. Opportunities for HypeTerminal
+## 10. Opportunities for gatu
 
 ### 10.1 Near-Term (2026)
 
@@ -333,7 +333,7 @@ The path from current hybrid models to fully on-chain agents:
 
 ### 10.2 Medium-Term (2027)
 
-1. **EigenCompute hosting**: deploy agents on verifiable infrastructure, removing trust in HypeTerminal servers
+1. **EigenCompute hosting**: deploy agents on verifiable infrastructure, removing trust in gatu servers
 2. **Agent marketplace**: ERC-8004 identities enable a marketplace where agents with proven track records can be discovered and deployed
 3. **Multi-agent coordination**: agents that specialize (one for signals, one for execution, one for risk) and coordinate via on-chain protocols
 4. **Cross-platform portability**: agents with ERC-8004 identities that can operate across Hyperliquid, dYdX, and other venues
@@ -377,9 +377,9 @@ The path from current hybrid models to fully on-chain agents:
 
 ## 12. Open Questions
 
-1. **CoreWriter latency budget**: What is the end-to-end latency from CoreWriter submission to HyperCore fill? Is this competitive for the strategies HypeTerminal agents will run?
+1. **CoreWriter latency budget**: What is the end-to-end latency from CoreWriter submission to HyperCore fill? Is this competitive for the strategies gatu agents will run?
 
-2. **TEE provider selection**: Should HypeTerminal standardize on Intel TDX, AMD SEV-SNP, or support multiple TEE backends? What are the attestation verification costs on HyperEVM?
+2. **TEE provider selection**: Should gatu standardize on Intel TDX, AMD SEV-SNP, or support multiple TEE backends? What are the attestation verification costs on HyperEVM?
 
 3. **ERC-8004 on HyperEVM**: Can ERC-8004 contracts be deployed on HyperEVM today? What modifications are needed for Hyperliquid-specific agent identity (linking to API wallets)?
 
@@ -395,7 +395,7 @@ The path from current hybrid models to fully on-chain agents:
 
 9. **Cost model**: What is the total cost of operating a TEE-based agent (infrastructure, gas, attestation) compared to a traditional cloud-hosted bot? At what AUM does the cost become justified?
 
-10. **Competitive moat**: As OKX, Alchemy, and others build agentic infrastructure, what is HypeTerminal's defensible advantage? Is it Hyperliquid-specific optimization, or a broader agent platform play?
+10. **Competitive moat**: As OKX, Alchemy, and others build agentic infrastructure, what is gatu's defensible advantage? Is it Hyperliquid-specific optimization, or a broader agent platform play?
 
 ---
 

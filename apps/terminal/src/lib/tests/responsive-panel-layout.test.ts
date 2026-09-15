@@ -136,7 +136,9 @@ describe("responsive panel layout contract", () => {
 		expect(APP_SHELL_SOURCE).toContain("<DesktopGridLoadingSurface");
 		expect(APP_SHELL_SOURCE).toContain("markShellPanels");
 		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).toContain("<DesktopGridLoadingSurface");
-		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).toContain('panelClassName="desktop-grid-panel bg-surface"');
+		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).toContain(
+			'panelClassName="desktop-grid-panel overflow-hidden bg-surface"',
+		);
 		expect(MAIN_WORKSPACE_SOURCE).toContain("<DesktopGridLoadingSurface");
 		expect(DESKTOP_GRID_LOADING_SURFACE_SOURCE).not.toContain('from "react-grid-layout"');
 

@@ -2,10 +2,9 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import type { HyperliquidContextValue } from "@gatu/hl-react";
+import type { CompactSubscriptionClient, HyperliquidContextValue } from "@gatu/hl-react";
 import { HyperliquidContext, HyperliquidStoreContext } from "@gatu/hl-react/provider";
 import { createHyperliquidStore, getStoreInternals, type HyperliquidStore } from "@gatu/hl-react/store";
-import type { SubscriptionClient } from "@nktkas/hyperliquid";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,7 +18,7 @@ const METHODS = ["userFills", "userFundings", "userHistoricalOrders", "userTwapH
 type Listener = (event: unknown) => void;
 
 interface SubscriptionHarness {
-	client: SubscriptionClient;
+	client: CompactSubscriptionClient;
 	listeners: Map<(typeof METHODS)[number], Listener>;
 	methods: Record<(typeof METHODS)[number], ReturnType<typeof vi.fn>>;
 	unsubscribes: Map<(typeof METHODS)[number], ReturnType<typeof vi.fn>>;
@@ -41,7 +40,7 @@ function createSubscriptionHarness(): SubscriptionHarness {
 	) as SubscriptionHarness["methods"];
 
 	return {
-		client: methods as unknown as SubscriptionClient,
+		client: methods as unknown as CompactSubscriptionClient,
 		listeners,
 		methods,
 		unsubscribes,

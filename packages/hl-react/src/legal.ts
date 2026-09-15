@@ -6,9 +6,9 @@ import {
 	type Signature,
 	signUserSignedAction,
 } from "@nktkas/hyperliquid/signing";
-import { ZodError, z } from "zod";
 import { WalletAccountMismatchError } from "./errors";
 import type { HyperliquidEnv } from "./signing/types";
+import { ZodError, z } from "./zod";
 
 const LEGAL_RESTRICTIONS = ["n", "a", "o", "u"] as const;
 

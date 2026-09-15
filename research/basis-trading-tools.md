@@ -153,7 +153,7 @@ Hyperliquid's "clean price" status (deep liquidity, predictable funding, on-chai
 
 ---
 
-## 6. Feature Ideas: HypeTerminal Basis Trading Monitor & Executor
+## 6. Feature Ideas: gatu Basis Trading Monitor & Executor
 
 ### 6.1 Basis Monitor Dashboard
 
@@ -252,13 +252,13 @@ Hyperliquid's "clean price" status (deep liquidity, predictable funding, on-chai
 - Click any asset in the opportunity scanner to see full analysis + one-click trade setup.
 - Drag to adjust position size, leverage sliders update estimated APY and liquidation price in real-time.
 - Toggle between "Monitor" (read-only) and "Execute" (trading enabled) modes.
-- Dark mode optimized for extended monitoring sessions (consistent with HypeTerminal design system).
+- Dark mode optimized for extended monitoring sessions (consistent with gatu design system).
 
 ---
 
 ## 7. Competitive Landscape
 
-| Product | Strengths | Gaps HypeTerminal Can Fill |
+| Product | Strengths | Gaps gatu Can Fill |
 |---|---|---|
 | **CoinGlass** | Best funding rate data aggregation | No execution, no Hyperliquid-native features, no vault integration |
 | **Hummingbot** | Open-source bot with HL connector | CLI-only, no visual dashboard, complex configuration |
@@ -267,7 +267,7 @@ Hyperliquid's "clean price" status (deep liquidity, predictable funding, on-chai
 | **Hyperliquid native UI** | Funding comparison page | No cross-venue comparison, no automation, no position management |
 | **Laevitas** | Deep derivatives analytics | No execution, limited DEX data |
 
-**HypeTerminal's edge:** Combine monitoring + execution + vault management in a single Hyperliquid-native interface. No existing tool offers all three with a polished UI. The combination of real-time basis monitoring with one-click execution and vault packaging is a clear gap in the market.
+**gatu's edge:** Combine monitoring + execution + vault management in a single Hyperliquid-native interface. No existing tool offers all three with a polished UI. The combination of real-time basis monitoring with one-click execution and vault packaging is a clear gap in the market.
 
 ---
 

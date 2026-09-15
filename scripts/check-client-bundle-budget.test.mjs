@@ -93,6 +93,11 @@ test("creates a semantic client graph without exposing external module paths", (
 			"assets/styles.css": { type: "asset", fileName: "assets/styles.css" },
 			"assets/url-styles.css": { type: "asset", fileName: "assets/url-styles.css" },
 			"assets/font.woff2": { type: "asset", fileName: "assets/font.woff2" },
+			"charting_library/charting_library.0123456789abcdef.js": {
+				type: "asset",
+				fileName: "charting_library/charting_library.0123456789abcdef.js",
+			},
+			"build-meta.json": { type: "asset", fileName: "build-meta.json" },
 		},
 		"/repo",
 	);

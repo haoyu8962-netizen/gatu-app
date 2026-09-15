@@ -7,7 +7,7 @@ import {
 } from "../mobile-sync/sync-core";
 
 const NOW_MS = 1_779_364_227_000;
-const APP_ORIGIN = "https://app.hypeterminal.com";
+const APP_ORIGIN = "https://app.gatu.test";
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 

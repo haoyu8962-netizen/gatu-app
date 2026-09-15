@@ -436,6 +436,38 @@ prepare_mobile_sync_rollback() {
 	}
 }
 
+verify_geo_provider() {
+	local port="$1"
+	local base_url="http://127.0.0.1:${port}"
+	local tmpdir status
+	tmpdir="$(mktemp -d)"
+
+	# 8.8.8.8 is a stable, public United States address. A 200 verdict proves the release
+	# mounts /api/geo, resolves the forwarded client IP and holds a working IPdata key.
+	if ! status="$(curl_with_deadline -sS -H "X-Forwarded-For: 8.8.8.8" -H "Accept: application/json" -D "${tmpdir}/headers" -o "${tmpdir}/body" -w "%{http_code}" "${base_url}/api/geo")"; then
+		echo "ERROR: failed to request /api/geo from the Node upstream." >&2
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	if [ "$status" != "200" ]; then
+		echo "ERROR: /api/geo returned ${status}; the IPdata key or provider is not working: $(head -c 200 "${tmpdir}/body")" >&2
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	if ! node - "${tmpdir}/body" <<'NODE'
+const fs = require("node:fs");
+const verdict = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+if (verdict.country !== "US" || typeof verdict.tradeRestricted !== "boolean" || typeof verdict.proxy !== "boolean") {
+	throw new Error(`Unexpected geo verdict for 8.8.8.8: ${JSON.stringify(verdict)}`);
+}
+NODE
+	then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	rm -rf "$tmpdir"
+}
+
 verify_mobile_sync_health() {
 	local release_dir="$1" port="$2" origin
 	close_mobile_sync_edge || return 1
@@ -1048,6 +1080,7 @@ if health_check "$PORT" "$build_commit" "$release_name" &&
 	edge_health_check "$GATU_MAINNET_PUBLIC_BASE_URL" "$build_commit" "$release_name" &&
 	edge_health_check "$GATU_TESTNET_PUBLIC_BASE_URL" "$build_commit" "$release_name" true &&
 	verify_release_parity "$GATU_MAINNET_PUBLIC_BASE_URL" "$GATU_TESTNET_PUBLIC_BASE_URL" "$build_commit" "$release_name" &&
+	verify_geo_provider "$PORT" &&
 	verify_mobile_sync_health "$new_release" "$PORT"; then
 	pin_mobile_sync_baseline "$new_release"
 	cleanup_old_releases

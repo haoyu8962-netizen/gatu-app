@@ -8,6 +8,7 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./store": "./src/store.ts",
+		"./legal": "./src/legal.ts",
 		"./provider": "./src/provider.tsx",
 		"./session-provider": "./src/session-provider.tsx",
 		"./transport-provider": "./src/transport-provider.tsx",

@@ -1228,7 +1228,7 @@ function PositionTpSlForm({
 			<PositionHeader coin={positionRef.coin} isLong={isLong} />
 
 			<ModalContent className="max-[1000px]:px-4 max-[1000px]:pt-3 max-[1000px]:pb-0">
-				<div className="rounded-[12px] border border-market-close-stroke-card bg-market-close-card p-3 space-y-1 text-xs">
+				<div className="space-y-2 py-3 text-xs">
 					<InfoRow
 						className="p-0"
 						label={t`Size`}

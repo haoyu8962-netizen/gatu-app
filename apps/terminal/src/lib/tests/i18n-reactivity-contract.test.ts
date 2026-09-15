@@ -59,7 +59,6 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/tradebox/deposit/funding-address-card.tsx",
 	"components/trade/tradebox/deposit/withdraw-form.tsx",
 	"components/trade/tradebox/embedded-deposit-auto-bridge.tsx",
-	"components/trade/tradebox/leverage-control.tsx",
 	"components/trade/tradebox/leverage-editor.tsx",
 	"components/trade/tradebox/leverage-modal.tsx",
 	"components/trade/tradebox/leverage-slider.tsx",

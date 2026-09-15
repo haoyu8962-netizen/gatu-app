@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -143,6 +144,10 @@ describe("client error transport", () => {
 		});
 
 		const body = String(init?.body);
+		expect(init?.headers).toEqual({
+			"content-type": "application/json",
+			"x-amz-content-sha256": createHash("sha256").update(body, "utf8").digest("hex"),
+		});
 		expect(new TextEncoder().encode(body).byteLength).toBeLessThanOrEqual(CLIENT_ERROR_REPORT_MAX_BYTES);
 		expect(JSON.parse(body)).toMatchObject({
 			kind: "window_error",

@@ -87,6 +87,7 @@ describe("PortfolioPerformanceChart", () => {
 			isUnavailable: state === "unavailable",
 		});
 		const notice = container.querySelector('[role="alert"], [role="status"]');
+		expect(container.querySelector("[data-portfolio-latest-value]")?.textContent).toBe("$0.00");
 		expect(notice?.classList.contains("hidden")).toBe(true);
 		expect(notice?.classList.contains("min-[1001px]:flex")).toBe(true);
 		expect(container.textContent).not.toContain("No performance history");

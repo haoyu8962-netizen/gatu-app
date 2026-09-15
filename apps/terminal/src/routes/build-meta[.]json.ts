@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { APP_BUILD_COMMIT, APP_BUILD_TIME, APP_NAME, APP_RELEASE_ID, APP_RELEASE_VERSION } from "@/config/app";
-
+import {
+	APP_BUILD_COMMIT,
+	APP_BUILD_TIME,
+	APP_CHART_LIBRARY_HASH,
+	APP_RELEASE_ID,
+	APP_RELEASE_VERSION,
+} from "@/config/app";
+import { createBuildMeta } from "@/config/build-meta";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { MOBILE_SYNC_TICKET_API_VERSION } from "@/lib/mobile-sync/one-time-ticket-policy";
 
@@ -9,20 +15,15 @@ export const Route = createFileRoute("/build-meta.json")({
 		handlers: {
 			GET: () =>
 				Response.json(
-					{
-						name: APP_NAME,
+					createBuildMeta({
 						version: APP_RELEASE_VERSION,
 						commit: APP_BUILD_COMMIT,
 						release: APP_RELEASE_ID,
 						builtAt: APP_BUILD_TIME,
-						mobileSync: {
-							ticketApiVersion: MOBILE_SYNC_TICKET_API_VERSION,
-							legacyRegisterDisabled: true,
-							store: "single-process",
-							createAndReveal: MOBILE_PAIRING_FEATURES.createAndReveal,
-							importFromQr: MOBILE_PAIRING_FEATURES.importFromQr,
-						},
-					},
+						ticketApiVersion: MOBILE_SYNC_TICKET_API_VERSION,
+						pairing: MOBILE_PAIRING_FEATURES,
+						chartLibraryHash: APP_CHART_LIBRARY_HASH,
+					}),
 					{ headers: { "cache-control": "no-store" } },
 				),
 		},

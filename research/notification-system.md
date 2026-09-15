@@ -1,4 +1,4 @@
-# HypeTerminal Notification System Spec
+# gatu Notification System Spec
 
 ## Problem
 

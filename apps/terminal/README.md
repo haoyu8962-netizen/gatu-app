@@ -1,6 +1,6 @@
 # apps/terminal
 
-The HypeTerminal trading application composes `@gatu/hl-react` (Hyperliquid data, signing and transports) and `@gatu/ui` (shared primitives and tokens). This document describes the current checkout. Start with the [root README](../../README.md) for repository setup and the [documentation index](../../docs/README.md) for design contracts, tutorials and review records.
+The gatu trading application composes `@gatu/hl-react` (Hyperliquid data, signing and transports) and `@gatu/ui` (shared primitives and tokens). This document describes the current checkout. Start with the [root README](../../README.md) for repository setup and the [documentation index](../../docs/README.md) for design contracts, tutorials and review records.
 
 ## Stack and build
 
@@ -21,6 +21,8 @@ Dependency versions are maintained in [package.json](package.json) and the works
 
 [vite.config.ts](vite.config.ts) composes `nitro()` from `nitro/vite`, `tanstackStart`, React Compiler, Lingui and Tailwind plugins. It also defines build identity, security/cache headers, compact non-English catalogs and client chunk metadata. Manual chunking groups selected UI/TanStack dependencies; web3 dependencies use Rollup's dependency-aware splitting. The build checks static chunk cycles and bundle budgets before succeeding. See [runtime guardrails](../../docs/runtime-guardrails.md) and [performance baseline](../../docs/terminal-performance-baseline.md) before altering these boundaries.
 
+TanStack Start SPA mode is enabled (`createTanstackStartOptions()` in `vite.config.ts`). After the server build, the same `pnpm build` prerenders the client-rendered application shell to `.output/public/_shell.html` (masked at `/trade`, because `/` redirects on the server) and real HTML for the document routes listed in [config/document-routes.ts](src/config/document-routes.ts). Runtime server rendering is off. [src/start.ts](src/start.ts) registers the static-pages request middleware ([lib/static-pages/](src/lib/static-pages)): in production the Nitro process answers every navigation from the prerendered output (`_shell.html` for application routes, `<route>/index.html` for document routes, both with the Nitro route-rule headers), refuses HTML for file-like paths, answers `/_serverFn/*` with 404, answers `GET`/`HEAD` on POST-only server paths with 405 and unknown `/api/*` paths with 404, and only executes the `/api/*` and pairing handlers. Missing shell output fails closed with 503 unless `GATU_RUNTIME_SSR=true`; `GATU_PUBLIC_DIR` overrides the output lookup. The dev server and the build-time prerender still render on the server, which is why the document routes keep `ssr: true` while `/` and `/join/*` are client-rendered. The client no longer uses TanStack server functions: every server endpoint it calls lives under `/api/` ([config/api-paths.ts](src/config/api-paths.ts)) as a Web-standard `Request → Response` handler that Nitro mounts today and that [src/edge/lambda-handler.ts](src/edge/lambda-handler.ts) adapts to an AWS Lambda function URL (`pnpm --filter @gatu/terminal build:lambda` writes the single-file bundle to `dist-lambda/`). `/build-meta.json` is also written as a static file, and `public/404.html` is the static not-found page for missing files on a CDN. See [ADR 0005](../../docs/adr/0005-spa-static-shell.md), the [deployment guide](../../deploy/README.md#静态壳运行模式) and the [CloudFront deployment](../../deploy/cloudfront/README.md). After the budget checks, `scripts/inject-shell-preloads.mjs` writes the trade startup closure (static closure plus both runtime profiles) into `_shell.html` as `modulepreload`/stylesheet preloads, so a cold navigation downloads every startup chunk in one wave; on desktop widths it also preloads the TradingView loader named by `build-meta.json`. Desktop-only and mobile-only startup chunks and the chart iframe's main bundles are written as `<meta name="gatu-preload-*">` lists that [lib/preload/surface-preloads.ts](src/lib/preload/surface-preloads.ts) turns into links for the current surface, because Chromium ignores `media` on `modulepreload` and `prefetch` links. The block sits between `<!--gatu-shell-preloads-->` markers and document pages are untouched.
+
 ## Commands
 
 Run from the repository root; Node `>=22.15.0` and the pinned pnpm `10.21.0` are required.
@@ -37,7 +39,7 @@ pnpm serve
 
 The dev server uses a strict port. Its config does not set `3000`, so the examples explicitly choose a port. Reuse an existing server when possible. `dev:browser` opens the system browser for wallet testing; embedded previews can block the external-wallet iframe. See [wallet initialization debugging](../../docs/wallet-initialization-debugging.md).
 
-`pnpm build` compiles catalogs and creates `.output/`; `pnpm serve` runs the Nitro server through `scripts/serve-nitro.mjs`. For the visualizer-enabled build, run `ANALYZE=true pnpm --filter @gatu/terminal build`; `ANALYZE` must reach the Vite process. Root `pnpm test` additionally checks generated OG cards, the website and cross-app brand behavior; it is broader than the terminal Vitest command above.
+`pnpm build` compiles catalogs and creates `.output/`; `pnpm serve` runs the Nitro server through `scripts/serve-nitro.mjs`. `pnpm --filter @gatu/terminal serve:spa` serves `.output/public` on `127.0.0.1:3030` the way a CDN would: existing files first, application routes rewritten to `_shell.html`, and the server-only paths (`/api/*`, `/_serverFn/*`, `/client-error-report`, `/mobile-agent-sync-ticket`, plus `/build-meta.json` when the static file is absent) answered with a JSON 404 so the client never parses the shell as data. Without an API origin the geo lookup fails closed, which disables trading and funds actions while browsing keeps working; pass `--api http://127.0.0.1:3000` (or `SPA_API_ORIGIN`) to proxy those paths to a running `pnpm serve` and exercise the complete application from the static files. For the visualizer-enabled build, run `ANALYZE=true pnpm --filter @gatu/terminal build`; `ANALYZE` must reach the Vite process. Root `pnpm test` additionally checks generated OG cards, the website and cross-app brand behavior; it is broader than the terminal Vitest command above.
 
 ## Directory layout
 
@@ -100,16 +102,20 @@ Routes live in [src/routes/](src/routes). URL parameters below use `:name`; file
 | `/join/:code`, `/join/*` | Referral-code entry and invalid-path handling |
 | `/mobile-agent-sync` | Feature-gated mobile Agent import surface |
 | `POST /mobile-agent-sync-ticket` | Server-side mobile Agent ticket handling |
+| `GET /api/geo` | Visitor jurisdiction verdict for trading and funds gates; portable handler in [lib/geo/geo-api.ts](src/lib/geo/geo-api.ts). The bootstrap entry prefetches it on application surfaces through [lib/geo/geo-prefetch.ts](src/lib/geo/geo-prefetch.ts) so the verdict is usually ready before the wallet runtime mounts |
+| `GET /api/health` | Liveness probe (204, `no-store`) for the CloudFront keep-warm schedule and release verification; Lambda only |
+| `POST /api/referral-geo` | Fresh same-origin geo decision before referral and staking actions |
+| Browser `POST` helper | Every same-origin JSON `POST` goes through `createJsonPostHeaders()` in [lib/api/payload-hash.ts](src/lib/api/payload-hash.ts): the CloudFront target signs Lambda origin requests without their body, so the viewer sends `x-amz-content-sha256` itself |
 | `GET /api/leaderboard` | Leaderboard API handler |
-| `POST /client-error-report` | Client failure report handler |
-| `GET /build-meta.json` | Running build identity |
+| `POST /api/client-error-report` | Client failure report handler; `POST /client-error-report` remains a temporary alias for bundles loaded before the move |
+| `GET /build-meta.json` | Running build identity; the build also writes the same JSON into `.output/public` |
 | Other paths | Not-found/splat handling |
 
 [router.tsx](src/router.tsx) wires the generated route tree. [__root.tsx](src/routes/__root.tsx) owns the persistent document shell. Trading routes are client-rendered behind terminal skeletons; document routes can render without Privy. [market-route.ts](src/lib/hyperliquid/market-route.ts) owns market URL mapping; avoid reconstructing names or spot identities in page components.
 
 ## Provider and data flow
 
-[providers/root.tsx](src/providers/root.tsx) keeps the HTML shell stable across SSR, hydration and runtime activation:
+[providers/root.tsx](src/providers/root.tsx) keeps the HTML shell stable across the build-time prerender, hydration and runtime activation:
 
 ```text
 RootProvider

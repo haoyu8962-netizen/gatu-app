@@ -163,7 +163,7 @@ function ReviewContent({ action }: { action: ApiWalletActionView }) {
 					{action.errorMessage}
 				</p>
 			) : null}
-			<div className="space-y-2 rounded-24 border border-api-wallet-stroke-card bg-api-wallet-card px-3.5 py-3">
+			<div className="space-y-2 py-3">
 				{rows.map((row) => (
 					<div key={row.key} className="flex items-start justify-between gap-3">
 						<span className="shrink-0 text-xs text-api-wallet-muted">{row.label}</span>

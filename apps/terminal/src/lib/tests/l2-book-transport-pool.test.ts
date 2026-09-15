@@ -1,7 +1,11 @@
 import { type ISubscription, type ISubscriptionTransport, TransportError } from "@nktkas/hyperliquid";
 import { l2Book } from "@nktkas/hyperliquid/api/subscription";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createL2BookTransportPool } from "../../../../../packages/hl-react/src/subscriptions/l2-book-transport-pool";
+import { takeFrameReceivedAt } from "../../../../../packages/hl-react/src/internal/websocket/frame-receipt";
+import {
+	createL2BookTransportPool,
+	L2_BOOK_REPLAY_MAX_AGE_MS,
+} from "../../../../../packages/hl-react/src/subscriptions/l2-book-transport-pool";
 
 type Options = Parameters<ISubscriptionTransport["subscribe"]>[3];
 
@@ -365,5 +369,92 @@ describe("public order book grouping transport isolation", () => {
 		await vi.advanceTimersByTimeAsync(60_000);
 		await pool.subscribe(false, { coin: "HYPE" }, vi.fn());
 		expect(transports).toHaveLength(25);
+	});
+});
+
+describe("freshest-frame replay for late subscribers", () => {
+	it("replays the freshest frame of the same payload to a subscriber joining a confirmed stream", async () => {
+		const { pool, transports } = createHarness();
+		const first = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, first);
+		transports[0].emit({ coin: "HYPE", levels: [[], []], time: 1 });
+		const freshest = { coin: "HYPE", levels: [[{ px: "1", sz: "1", n: 1 }], []], time: 2 };
+		transports[0].emit(freshest);
+		const late = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, late);
+		expect(late).toHaveBeenCalledOnce();
+		expect(late.mock.calls[0][0].detail).toEqual(freshest);
+		expect(first).toHaveBeenCalledTimes(2);
+		expect(transports).toHaveLength(1);
+	});
+
+	it("does not replay across coins or after the replay window closes", async () => {
+		const { pool, transports } = createHarness();
+		await pool.subscribe(false, { coin: "HYPE" }, vi.fn());
+		transports[0].emit({ coin: "HYPE", levels: [[], []], time: 1 });
+		const otherCoin = vi.fn();
+		await pool.subscribe(false, { coin: "BTC" }, otherCoin);
+		expect(otherCoin).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(L2_BOOK_REPLAY_MAX_AGE_MS + 1);
+		const stale = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, stale);
+		expect(stale).not.toHaveBeenCalled();
+	});
+
+	it("skips the replay for a subscriber that already received a live frame while pending", async () => {
+		const { pool, transports } = createHarness(false);
+		const pendingFirst = pool.subscribe(false, { coin: "HYPE" }, vi.fn());
+		transports[0].confirm();
+		await pendingFirst;
+		transports[0].emit({ coin: "HYPE", levels: [[], []], time: 1 });
+		const late = vi.fn();
+		const pendingLate = pool.subscribe(false, { coin: "HYPE" }, late);
+		transports[0].emit({ coin: "HYPE", levels: [[], []], time: 2 });
+		transports[0].confirm();
+		await pendingLate;
+		expect(late).toHaveBeenCalledOnce();
+		expect(late.mock.calls[0][0].detail.time).toBe(2);
+	});
+
+	it("keeps other coins on the shared transport out of a payload's live and remembered frames", async () => {
+		const { pool, transports } = createHarness();
+		const hype = vi.fn();
+		const btc = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, hype);
+		await pool.subscribe(false, { coin: "BTC" }, btc);
+		const hypeFrame = { coin: "HYPE", levels: [[], []], time: 1 };
+		transports[0].emit(hypeFrame);
+		transports[0].emit({ coin: "BTC", levels: [[], []], time: 2 });
+		expect(hype).toHaveBeenCalledOnce();
+		expect(btc).toHaveBeenCalledOnce();
+		const late = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, late);
+		expect(late).toHaveBeenCalledOnce();
+		expect(late.mock.calls[0][0].detail).toEqual(hypeFrame);
+	});
+
+	it("hands the replayed frame over with its original receipt time", async () => {
+		const { pool, transports } = createHarness();
+		await pool.subscribe(false, { coin: "HYPE" }, vi.fn());
+		const receivedAt = Date.now();
+		transports[0].emit({ coin: "HYPE", levels: [[], []], time: 1 });
+		await vi.advanceTimersByTimeAsync(2_000);
+		const late = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, late);
+		expect(late).toHaveBeenCalledOnce();
+		expect(takeFrameReceivedAt(late.mock.calls[0][0].detail)).toBe(receivedAt);
+		expect(Date.now() - receivedAt).toBeGreaterThanOrEqual(2_000);
+	});
+
+	it("forgets the frame once the payload's last lease releases", async () => {
+		const { pool, transports } = createHarness();
+		const first = await pool.subscribe(false, { coin: "HYPE" }, vi.fn());
+		const keepAlive = await pool.subscribe(false, { coin: "BTC" }, vi.fn());
+		transports[0].emit({ coin: "HYPE", levels: [[], []], time: 1 });
+		await first.unsubscribe();
+		const late = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, late);
+		expect(late).not.toHaveBeenCalled();
+		await keepAlive.unsubscribe();
 	});
 });

@@ -1,4 +1,4 @@
-# HypeTerminal Positioning & Go-to-Market Strategy
+# gatu Positioning & Go-to-Market Strategy
 
 > **Positioning**: "The first trading terminal that understands you trade crypto, commodities, AND equities — and adapts its interface to each."
 
@@ -28,7 +28,7 @@
 ## Positioning Statement
 
 ### For Traders
-> "HypeTerminal adapts to what you trade. Crypto shows funding rates and liquidations. Commodities show supply data and market hours. Equities show fundamentals and earnings. One terminal, every context."
+> "gatu adapts to what you trade. Crypto shows funding rates and liquidations. Commodities show supply data and market hours. Equities show fundamentals and earnings. One terminal, every context."
 
 ### For The Market
 > "Hyperliquid is no longer a crypto DEX — it's a multi-asset derivatives exchange where oil surpasses ETH in volume. The interface should reflect that. We built it."
@@ -46,7 +46,7 @@ When you select gold, the interface shows supply/demand data, CME market hours, 
 **Why it matters**: Professional platforms (IBKR, thinkorswim, Bloomberg) all do this. No HL frontend does.
 
 ### Pillar 2: Fragmentation Resolution
-TSLA is listed by TradeXYZ (USDC), Felix (USDH), and Ventuals (USDH). HypeTerminal shows ONE "TSLA" and routes to the best price/liquidity. Like 1inch for HL's fragmented HIP-3 markets.
+TSLA is listed by TradeXYZ (USDC), Felix (USDH), and Ventuals (USDH). gatu shows ONE "TSLA" and routes to the best price/liquidity. Like 1inch for HL's fragmented HIP-3 markets.
 
 **Why it matters**: Confirmed community confusion ("two versions of Tesla is confusing"). First to solve this wins.
 
@@ -153,7 +153,7 @@ Simple mode for beginners (market orders, no leverage, clean interface). Pro mod
 
 ## The Thesis in One Paragraph
 
-Hyperliquid has evolved from a crypto DEX into a multi-asset derivatives exchange where oil surpasses ETH and the S&P 500 trades 24/7. But every frontend — including the official one — still treats it like a crypto exchange. 40% of users already rejected the official UI. Traditional commodity and equity traders are migrating but finding crypto-first interfaces that don't show the data they need. HypeTerminal will be the first interface that adapts to what you trade — showing funding rates for crypto, supply data for commodities, and fundamentals for equities — while resolving the fragmentation of duplicate HIP-3 markets into a unified best-price experience. The builder code model is proven ($40M+ paid to builders). The market is massive ($8.3B daily volume, growing 14-48% CAGR). The window is now.
+Hyperliquid has evolved from a crypto DEX into a multi-asset derivatives exchange where oil surpasses ETH and the S&P 500 trades 24/7. But every frontend — including the official one — still treats it like a crypto exchange. 40% of users already rejected the official UI. Traditional commodity and equity traders are migrating but finding crypto-first interfaces that don't show the data they need. gatu will be the first interface that adapts to what you trade — showing funding rates for crypto, supply data for commodities, and fundamentals for equities — while resolving the fragmentation of duplicate HIP-3 markets into a unified best-price experience. The builder code model is proven ($40M+ paid to builders). The market is massive ($8.3B daily volume, growing 14-48% CAGR). The window is now.
 
 ---
 

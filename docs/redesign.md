@@ -1,4 +1,4 @@
-# HypeTerminal Design System Redesign
+# gatu Design System Redesign
 
 ## Strategy
 
@@ -323,7 +323,7 @@ Linear uses essentially 3 variables to generate entire themes:
 2. Accent color (sparse, intentional)
 3. Contrast level (accessibility)
 
-For HypeTerminal:
+For gatu:
 - **Base**: Zinc (cool neutral) — already correct
 - **Accent**: Blue (`accent-blue`) — already correct
 - **Domain**: Market green/red — unique to trading, keep
@@ -390,7 +390,7 @@ Consider for:
 4. **Design all states** — empty, sparse, dense, error
 5. **Tabular numbers** — `font-variant-numeric: tabular-nums` for data alignment
 
-### For HypeTerminal
+### For gatu
 
 1. **One way to do each thing** — every visual pattern has exactly one token/class combination
 2. **Tokens over classes** — use semantic tokens, never raw color values

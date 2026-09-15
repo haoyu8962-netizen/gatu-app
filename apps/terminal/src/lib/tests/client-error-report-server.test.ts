@@ -13,7 +13,7 @@ const VALID_REPORT: ClientErrorReport = {
 };
 
 function createReportRequest(body: BodyInit, origin = "https://gatu.ai", headers: HeadersInit = {}): Request {
-	return new Request("https://gatu.ai/client-error-report", {
+	return new Request("https://gatu.ai/api/client-error-report", {
 		method: "POST",
 		headers: {
 			origin,

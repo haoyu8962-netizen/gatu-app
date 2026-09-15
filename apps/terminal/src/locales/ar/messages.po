@@ -188,6 +188,7 @@ msgid "24H"
 msgstr "24 ساعة"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 msgid "24h Change"
 msgstr "تغيّر 24h"
 
@@ -197,6 +198,7 @@ msgctxt "Market overview"
 msgid "24h Change"
 msgstr "التغير خلال 24 ساعة"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "24H VOL"
@@ -321,6 +323,8 @@ msgid "Access restricted"
 msgstr "الوصول مقيّد"
 
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -353,6 +357,7 @@ msgstr "الحساب والمحفظة"
 msgid "Account data unavailable"
 msgstr "بيانات الحساب غير متاحة"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
@@ -382,6 +387,7 @@ msgstr "بيانات تخزين الحساب غير متاحة"
 msgid "Account staking status"
 msgstr "حالة تخزين الحساب"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account Summary"
 msgstr "ملخص الحساب"
@@ -523,6 +529,7 @@ msgstr "تعديل الرافعة المالية"
 msgid "Adjust Margin"
 msgstr "تعديل الهامش"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Advanced"
@@ -904,6 +911,7 @@ msgstr "فشل الإيداع التلقائي لـ USDC"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -1020,6 +1028,7 @@ msgstr "تغيّر الرصيد قبل الإرسال. راجع الرصيد ا�
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "بيانات الرصيد غير متاحة. حاول مرة أخرى بعد استعادة الاتصال."
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "الأرصدة"
@@ -1122,7 +1131,6 @@ msgstr "معاينة الكاميرا لرمز QR الخاص بمحفظة سطح
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
@@ -1189,8 +1197,8 @@ msgid "CCTP deposits are awaiting funded end-to-end verification for this networ
 msgstr "تنتظر إيداعات CCTP إجراء تحقق شامل ممول على هذه الشبكة."
 
 #: src/components/trade/tradebox/leverage-control.tsx
-msgid "Change leverage"
-msgstr "تغيير الرافعة المالية"
+#~ msgid "Change leverage"
+#~ msgstr "تغيير الرافعة المالية"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to ascending order"
@@ -1644,8 +1652,6 @@ msgstr "مبلغ TP/SL المحدد"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
-#: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -1796,6 +1802,7 @@ msgid "Connect wallet"
 msgstr "ربط المحفظة"
 
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
@@ -2043,6 +2050,7 @@ msgstr "إنشاء خزنة"
 msgid "Creating your wallet. Please wait..."
 msgstr "جارٍ إنشاء محفظتك. يرجى الانتظار..."
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
@@ -2054,6 +2062,7 @@ msgstr "جارٍ إنشاء محفظتك. يرجى الانتظار..."
 msgid "Cross"
 msgstr "متقاطع"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
@@ -2190,6 +2199,7 @@ msgstr "جهة النشر"
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2713,6 +2723,7 @@ msgstr "حقوق الملكية"
 msgid "Est. Fee"
 msgstr "الرسوم المقدرة"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
@@ -3050,6 +3061,7 @@ msgstr "الرسوم"
 msgid "Fee market for taker and maker rates"
 msgstr "سوق الرسوم لمعدلات الآخذ والصانع"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Fees"
@@ -3203,6 +3215,7 @@ msgctxt "Cumulative position funding"
 msgid "Funding"
 msgstr "التمويل"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "FUNDING"
@@ -3217,6 +3230,7 @@ msgstr "FUNDING"
 msgid "Funding payments"
 msgstr "مدفوعات التمويل"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Funding Payments"
 msgstr "مدفوعات التمويل"
@@ -3720,8 +3734,7 @@ msgstr "سجل المكافآت القديم"
 msgid "Lending Net Balance"
 msgstr "صافي رصيد الإقراض والاقتراض"
 
-#: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/tradebox/leverage-editor.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3737,6 +3750,7 @@ msgstr "الرافعة المالية ثابتة عند {currentLeverage}× له
 msgid "Lifetime USDC rewards"
 msgstr "إجمالي مكافآت USDC التراكمية"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3805,6 +3819,7 @@ msgstr "ربط جهاز الجوال"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "حساب التخزين المرتبط: <0>{0}</0>."
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
@@ -4010,6 +4025,7 @@ msgstr "تسجيل الدخول بالبريد الإلكتروني"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -4065,6 +4081,7 @@ msgstr "يدوي"
 msgid "Manual Account Summary"
 msgstr "ملخص الحساب اليدوي"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -4090,6 +4107,7 @@ msgstr "وضع الهامش"
 msgid "Margin Ratio"
 msgstr "نسبة الهامش"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
@@ -4102,6 +4120,7 @@ msgstr "الهامش المطلوب"
 msgid "Margin Used"
 msgstr "الهامش المستخدم"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Mark"
@@ -4138,6 +4157,7 @@ msgstr "سعر العلامة: يُستخدم لحسابات الهامش، وا
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -4962,6 +4982,7 @@ msgstr "فتح قائمة الأوامر"
 msgid "Open Deposit to prepare your email wallet."
 msgstr "افتح الإيداع لإعداد محفظة بريدك الإلكتروني."
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "OPEN INT"
@@ -4987,6 +5008,7 @@ msgstr "فتح التنقل"
 msgid "Open official link"
 msgstr "فتح الرابط الرسمي"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "الأوامر المفتوحة"
@@ -5037,12 +5059,14 @@ msgstr "تم التحقق من العملية"
 msgid "OR"
 msgstr "أو"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/config/ui-text.ts
 msgid "ORACLE"
 msgstr "أوراكل"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -5093,6 +5117,7 @@ msgstr "تم تنفيذ الأمر"
 msgid "Order history"
 msgstr "سجل الأوامر"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "سجل الأوامر"
@@ -5157,6 +5182,7 @@ msgstr "تم إرسال الطلب. جارٍ تأكيد حالته لدى الم
 msgid "Order type"
 msgstr "نوع الأمر"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
@@ -5490,6 +5516,7 @@ msgstr "فترة أداء المحفظة الاستثمارية"
 msgid "Portfolio summary"
 msgstr "ملخص المحفظة الاستثمارية"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
@@ -5543,6 +5570,7 @@ msgstr "يجب تعديل أوامر TP/SL الخاصة بالمركز من عن
 msgid "Position Value"
 msgstr "قيمة المركز"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/config/trade.ts
 msgid "Positions"
@@ -5615,6 +5643,7 @@ msgstr "صفحة الخزائن السابقة"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5889,6 +5918,7 @@ msgstr "تمت الاستعادة في علامة التبويب هذه. تنت�
 msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
 msgstr "تعذر حفظ بيانات الاسترداد في هذا المتصفح. دوّن معرّف معاملة Arbitrum قبل الإغلاق."
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6201,7 +6231,6 @@ msgstr "استئناف التتبع"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/twap-history-feedback.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-page.tsx
@@ -6754,6 +6783,7 @@ msgstr "مشاركة الأرباح والخسائر لـ {displayName}"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -6839,6 +6869,7 @@ msgstr "جاري التوقيع..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6914,10 +6945,10 @@ msgid "SL must be below entry"
 msgstr "يجب أن يكون SL أدنى من سعر الدخول"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
-#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "SL Price"
 msgstr "سعر SL"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
@@ -7038,6 +7069,7 @@ msgstr "من الحساب الفوري إلى التخزين"
 msgid "Spot to staking available"
 msgstr "النقل من الحساب الفوري إلى التخزين متاح"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -7199,7 +7231,6 @@ msgstr "إيقاف"
 msgid "Stop Limit"
 msgstr "Stop Limit"
 
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -7419,7 +7450,6 @@ msgstr "جاري التبديل..."
 msgid "System finalization · hash unavailable"
 msgstr "إتمام النظام · التجزئة غير متاحة"
 
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -8284,6 +8314,7 @@ msgstr "تعذر تحميل البيانات الوصفية للرمز."
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr "هناك عدد كبير جدًا من موافقات الهاتف بانتظار الاستعادة في علامة التبويب هذه. قم بحل إحداها أو إلغائها أولاً."
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -8349,10 +8380,10 @@ msgid "TP must be below entry"
 msgstr "يجب أن يكون TP أدنى من سعر الدخول"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
-#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "TP Price"
 msgstr "سعر TP"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
@@ -8393,6 +8424,7 @@ msgstr "تداول"
 msgid "Trade history"
 msgstr "سجل الصفقات"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "سجل التداول"
@@ -8454,6 +8486,7 @@ msgstr "المتداولون"
 msgid "Traders referred"
 msgstr "المتداولون المُحالون"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -8656,6 +8689,7 @@ msgstr "جرّب تطبيق PWA."
 msgid "TVL"
 msgstr "إجمالي القيمة المقفلة"
 
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -8975,7 +9009,6 @@ msgstr "ما يصل إلى أحدث {ORDER_HISTORY_API_LIMIT} من الأوام�
 msgid "Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills"
 msgstr "ما يصل إلى أحدث {TRADE_HISTORY_SNAPSHOT_LIMIT} من عمليات التنفيذ"
 
-#: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Update failed"
@@ -8988,7 +9021,6 @@ msgstr "فشل التحديث"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "تم التحديث"
@@ -9422,6 +9454,7 @@ msgstr "المركز بالكامل"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx

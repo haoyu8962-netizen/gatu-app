@@ -73,3 +73,5 @@
 3. **图表 lookup 顺序交换**(symbolName 优先)+ PURR perp→spot 回归测试(与 review_e0ab4854.md F1 同项)。
 4. **C3 余额估值键维度**:token→spot market 映射或改用 spotAssetCtxs。
 5. P3 批次:XAUT0 映射条目、剥 U 启发式加固(循环剥/残留校验)、tokenByName 冲突不覆盖、getMarketKindFromName 与 KlineChart 死代码清理、撤单静默过滤提示。
+
+> 更正（2026-09-14）：文中引用的 `apps/terminal/src/components/trade/chart/kline-chart.tsx` 已被删除，图表实现现为 `apps/terminal/src/components/trade/chart/tradingview-chart.tsx`；本文其余内容按原样保留。

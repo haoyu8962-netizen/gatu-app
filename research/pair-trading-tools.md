@@ -7,7 +7,7 @@
 3. [Statistical Methods](#statistical-methods)
 4. [Best Pairs for Crypto Perps](#best-pairs-for-crypto-perps)
 5. [Existing Tools & Platforms](#existing-tools--platforms)
-6. [HypeTerminal Pair Trading Suite — Feature Design](#hypeterminal-pair-trading-suite--feature-design)
+6. [gatu Pair Trading Suite — Feature Design](#gatu-pair-trading-suite--feature-design)
 7. [UI Dashboard Ideas](#ui-dashboard-ideas)
 8. [Risk Management Framework](#risk-management-framework)
 9. [Technical Implementation on Hyperliquid](#technical-implementation-on-hyperliquid)
@@ -291,7 +291,7 @@ The leading dedicated pair trading platform in crypto DeFi.
 
 ---
 
-## HypeTerminal Pair Trading Suite — Feature Design
+## gatu Pair Trading Suite — Feature Design
 
 ### Feature 1: Real-Time Pair Suggester
 
@@ -544,7 +544,7 @@ Regime Alerts:  0                ● Green
 
 ```
 ┌─────────────────────────────────────────────┐
-│              HypeTerminal Frontend           │
+│              gatu Frontend           │
 │                                              │
 │  ┌──────────┐  ┌──────────┐  ┌───────────┐ │
 │  │Pair       │  │Spread    │  │Execution  │ │
@@ -767,9 +767,9 @@ Every tick (real-time):
 
 ---
 
-## HypeTerminal Architecture Decision (April 2025)
+## gatu Architecture Decision (April 2025)
 
-This section documents the architectural research and final decisions made for implementing pair trading in HypeTerminal. It supersedes the earlier "Technical Implementation" section above where the two conflict.
+This section documents the architectural research and final decisions made for implementing pair trading in gatu. It supersedes the earlier "Technical Implementation" section above where the two conflict.
 
 ---
 
@@ -807,9 +807,9 @@ The initial architecture proposal was one sub-account per pair trade. This fails
 
 ---
 
-### HypeTerminal's Architecture: One Shared Sub-Account + App-Layer Records
+### gatu's Architecture: One Shared Sub-Account + App-Layer Records
 
-HypeTerminal improves on Pear's approach by combining their app-layer record keeping with one permanent shared sub-account — solving the "dedicated wallet" problem at the protocol level without managing a second wallet.
+gatu improves on Pear's approach by combining their app-layer record keeping with one permanent shared sub-account — solving the "dedicated wallet" problem at the protocol level without managing a second wallet.
 
 **Account structure:**
 
@@ -959,7 +959,7 @@ const cloid = encodePairCloid(trade.id, "legA")
 
 ### TP/SL Limitation
 
-Pear monitors ratios server-side 24/7. HypeTerminal's monitoring is client-side — it only fires while the tab is open. This must be disclosed in the UI at the feature level, not just in docs:
+Pear monitors ratios server-side 24/7. gatu's monitoring is client-side — it only fires while the tab is open. This must be disclosed in the UI at the feature level, not just in docs:
 
 ```
 TP @ Z=0.0   SL @ Z=-3.5   [● Active while app is open]
@@ -985,7 +985,7 @@ if (locked.has(selectedCoin)) {
 
 ### Comparison with Pear Protocol
 
-| Concern | Pear Protocol | HypeTerminal |
+| Concern | Pear Protocol | gatu |
 |---------|--------------|--------------|
 | Position isolation from manual trades | None — tells users to use a separate wallet | Protocol-level via shared sub-account |
 | Agent key custody | Pear's servers hold it | User's browser (same as existing terminal) |

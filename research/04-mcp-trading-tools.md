@@ -6,7 +6,7 @@
 - **The finance/trading MCP ecosystem has matured rapidly in 2026**, with production servers from Alpha Vantage, Financial Datasets, VARRD, FactSet, and multiple crypto-specific providers. Over 20 live blockchain MCP tools are already processing real-time data and executing trades.
 - **MCP's 2026 roadmap focuses on production hardening**: stateless Streamable HTTP transport for horizontal scaling, MCP Server Cards for dynamic discovery, enterprise governance (audit trails, SSO), and the Tasks primitive for long-running operations -- all critical for trading infrastructure.
 - **The paradigm is shifting from dashboards to structured tool-driven interfaces**: MCP Apps (January 2026, co-developed by Anthropic and OpenAI) enables interactive UI widgets inside AI chat, transforming agents from text-only assistants into application platforms.
-- **HypeTerminal can expose its Hyperliquid trading features as MCP tools**, enabling any AI agent (Claude, GPT, Gemini) to read orderbooks, manage positions, execute trades, and analyze portfolios through a standardized interface -- positioning HypeTerminal as the MCP gateway to Hyperliquid.
+- **gatu can expose its Hyperliquid trading features as MCP tools**, enabling any AI agent (Claude, GPT, Gemini) to read orderbooks, manage positions, execute trades, and analyze portfolios through a standardized interface -- positioning gatu as the MCP gateway to Hyperliquid.
 
 ---
 
@@ -149,7 +149,7 @@ A standard for exposing structured server metadata via a `.well-known` URL, enab
 - **Static security validation**: Verify authentication requirements without a live connection
 - **Reduced latency**: UI hydration without full handshake
 
-**Trading impact**: An agent could automatically discover "HypeTerminal MCP Server" at `hypeterminal.com/.well-known/mcp-server-card`, learn it offers orderbook, positions, and trade execution tools, and configure itself without manual setup.
+**Trading impact**: An agent could automatically discover "gatu MCP Server" at `gatu.ai/.well-known/mcp-server-card`, learn it offers orderbook, positions, and trade execution tools, and configure itself without manual setup.
 
 ### 3.3 Tasks Primitive
 
@@ -183,9 +183,9 @@ On January 26, 2026, Anthropic and OpenAI jointly released **MCP Apps** -- the f
 
 **Key insight**: MCP Apps transforms AI chatbots from conversation tools into application platforms. Trading terminals become pluggable components within agent interfaces. The user interacts with a single AI surface that orchestrates the underlying tools.
 
-### Implications for HypeTerminal
+### Implications for gatu
 
-HypeTerminal's React components (orderbook, positions, chart) could be exposed as MCP App widgets that render inside Claude, GPT, or any MCP-compatible client. The terminal stops being the only interface -- it becomes the canonical MCP server for Hyperliquid, consumable by any agent.
+gatu's React components (orderbook, positions, chart) could be exposed as MCP App widgets that render inside Claude, GPT, or any MCP-compatible client. The terminal stops being the only interface -- it becomes the canonical MCP server for Hyperliquid, consumable by any agent.
 
 ---
 
@@ -245,7 +245,7 @@ A Hyperliquid MCP server should expose the following tool categories:
          | JSON-RPC over Streamable HTTP
          |
 +--------v----------+
-|  HypeTerminal     |
+|  gatu     |
 |  MCP Server       |   (Node.js / TypeScript)
 |                   |
 |  - Tool Registry  |
@@ -264,7 +264,7 @@ A Hyperliquid MCP server should expose the following tool categories:
 
 ### Technical Decisions
 
-- **Runtime**: Node.js/TypeScript (aligns with HypeTerminal's existing stack)
+- **Runtime**: Node.js/TypeScript (aligns with gatu's existing stack)
 - **Transport**: Streamable HTTP (production-ready, scalable, load-balancer friendly)
 - **Authentication**: API key-based initially, SSO when MCP enterprise features ship
 - **State**: Stateless server design (no session affinity required)
@@ -297,12 +297,12 @@ The fintools-ai organization maintains multiple specialized MCP servers:
 | `mcp-order-flow-server` | General order flow information |
 | `mcp-market-data-server` | Market data insights for AI trading agents |
 
-### Lessons for HypeTerminal
+### Lessons for gatu
 
 1. **Decompose by domain**: Separate MCP servers for market data, order flow, and execution (rather than one monolithic server)
 2. **Sub-10ms tool responses**: Trading tools must be fast. Cache aggressively, use WebSocket subscriptions for live data
 3. **Multi-agent swarm**: v2's architectural shift validates the multi-agent approach for trading
-4. **Clean chat interface**: The MCP tools power a professional trading chat UI -- similar to what HypeTerminal could offer
+4. **Clean chat interface**: The MCP tools power a professional trading chat UI -- similar to what gatu could offer
 
 ---
 
@@ -320,9 +320,9 @@ Microsoft's adoption of MCP for Dynamics 365 ERP provides enterprise-grade patte
 
 4. **Real-World Integration**: KPMG's Supplier Performance Insight Agent automates finance workflows by integrating internal ERP data with external market signals through MCP.
 
-### Applicable Patterns for HypeTerminal
+### Applicable Patterns for gatu
 
-| D365 Pattern | HypeTerminal Equivalent |
+| D365 Pattern | gatu Equivalent |
 |-------------|------------------------|
 | Business logic as MCP tools | Trading logic (order validation, position sizing) as MCP tools |
 | Governed agent access | API key scoping (read-only vs. trade execution permissions) |
@@ -331,7 +331,7 @@ Microsoft's adoption of MCP for Dynamics 365 ERP provides enterprise-grade patte
 
 ---
 
-## 8. How HypeTerminal Could Expose Features as MCP Tools
+## 8. How gatu Could Expose Features as MCP Tools
 
 ### Tiered Access Model
 
@@ -353,7 +353,7 @@ Microsoft's adoption of MCP for Dynamics 365 ERP provides enterprise-grade patte
 
 ### MCP App Widgets
 
-Using MCP Apps, HypeTerminal could expose interactive widgets:
+Using MCP Apps, gatu could expose interactive widgets:
 
 - **Orderbook Widget**: Real-time depth visualization inside the agent chat
 - **Position Card**: Interactive position details with modify/close actions
@@ -362,7 +362,7 @@ Using MCP Apps, HypeTerminal could expose interactive widgets:
 
 ### Integration Flow
 
-1. User connects HypeTerminal MCP server in their AI client (Claude Desktop, etc.)
+1. User connects gatu MCP server in their AI client (Claude Desktop, etc.)
 2. Agent discovers available tools via `tools/list`
 3. User asks: "What's my current ETH exposure and risk?"
 4. Agent calls `get_positions` and `get_liquidation_price` tools
@@ -382,7 +382,7 @@ Using MCP Apps, HypeTerminal could expose interactive widgets:
 import { McpServer } from "@modelcontextprotocol/sdk/server";
 
 const server = new McpServer({
-  name: "hypeterminal",
+  name: "gatu",
   version: "1.0.0",
 });
 
@@ -429,24 +429,24 @@ server.tool("get_orderbook", {
 
 ---
 
-## 10. Opportunities for HypeTerminal
+## 10. Opportunities for gatu
 
 ### Near-Term (3-6 months)
 
-1. **Hyperliquid MCP Server (Read-Only)**: Expose market data, orderbook, and public analytics as MCP tools. Low risk, high discoverability. Any AI agent can query Hyperliquid through HypeTerminal.
-2. **Trading Copilot Integration**: Integrate MCP tools with HypeTerminal's existing UI. Users chat with an AI assistant that has full context of their positions and the market.
-3. **MCP Server Card**: Publish a `.well-known/mcp-server-card` so agent ecosystems automatically discover HypeTerminal's capabilities.
+1. **Hyperliquid MCP Server (Read-Only)**: Expose market data, orderbook, and public analytics as MCP tools. Low risk, high discoverability. Any AI agent can query Hyperliquid through gatu.
+2. **Trading Copilot Integration**: Integrate MCP tools with gatu's existing UI. Users chat with an AI assistant that has full context of their positions and the market.
+3. **MCP Server Card**: Publish a `.well-known/mcp-server-card` so agent ecosystems automatically discover gatu's capabilities.
 
 ### Medium-Term (6-12 months)
 
-4. **Authenticated MCP (Tier 2+3)**: Add position reading and trade execution tools. Users connect their HypeTerminal API key in Claude Desktop or custom agents to trade Hyperliquid through any MCP client.
-5. **MCP App Widgets**: Expose HypeTerminal's React components (orderbook, chart, position cards) as MCP App widgets renderable inside AI chat.
+4. **Authenticated MCP (Tier 2+3)**: Add position reading and trade execution tools. Users connect their gatu API key in Claude Desktop or custom agents to trade Hyperliquid through any MCP client.
+5. **MCP App Widgets**: Expose gatu's React components (orderbook, chart, position cards) as MCP App widgets renderable inside AI chat.
 6. **Agent Analytics**: Track which tools agents call most, what trading patterns emerge, and optimize tool design based on usage data.
 
 ### Long-Term (12+ months)
 
-7. **MCP Gateway for Hyperliquid**: Position HypeTerminal as THE MCP gateway to Hyperliquid. Third-party agents that want Hyperliquid access go through HypeTerminal's governed, rate-limited, audited MCP server.
-8. **Tool Marketplace**: Allow third-party developers to register custom MCP tools (custom indicators, strategies, signals) that extend HypeTerminal's server.
+7. **MCP Gateway for Hyperliquid**: Position gatu as THE MCP gateway to Hyperliquid. Third-party agents that want Hyperliquid access go through gatu's governed, rate-limited, audited MCP server.
+8. **Tool Marketplace**: Allow third-party developers to register custom MCP tools (custom indicators, strategies, signals) that extend gatu's server.
 9. **Cross-Protocol MCP**: Extend the MCP server to cover HyperEVM, spot trading, and future Hyperliquid features as they launch.
 
 ---
@@ -480,7 +480,7 @@ server.tool("get_orderbook", {
 
 ## 12. Open Questions
 
-1. **Server scope**: Should HypeTerminal run one monolithic MCP server or multiple specialized servers (market data, portfolio, execution)?
+1. **Server scope**: Should gatu run one monolithic MCP server or multiple specialized servers (market data, portfolio, execution)?
 2. **MCP Apps priority**: How soon should we invest in MCP App widgets vs. focusing on the tool layer first?
 3. **Auth model**: API key per user, per agent, or per session? How do we handle key revocation for misbehaving agents?
 4. **Real-time data**: Should the MCP server expose WebSocket-like streaming via SSE, or stick to polling? MCP's streaming story is still evolving.

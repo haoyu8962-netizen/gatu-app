@@ -18,6 +18,7 @@ type RenderTrackSummary = {
 	averageDuration: number;
 	maxDuration: number;
 	slowCommits: number;
+	firstCommitTime: number;
 	lastCommitTime: number;
 	lastDuration: number;
 	recent: RenderSample[];
@@ -78,6 +79,7 @@ function createEmptyTrack(id: string): RenderTrackSummary {
 		averageDuration: 0,
 		maxDuration: 0,
 		slowCommits: 0,
+		firstCommitTime: 0,
 		lastCommitTime: 0,
 		lastDuration: 0,
 		recent: [],
@@ -105,6 +107,7 @@ function snapshot(): RenderProfileSnapshot {
 					totalDuration: round(track.totalDuration),
 					averageDuration: round(track.averageDuration),
 					maxDuration: round(track.maxDuration),
+					firstCommitTime: round(track.firstCommitTime),
 					lastDuration: round(track.lastDuration),
 					recent: track.recent.map((sample) => ({
 						...sample,
@@ -141,6 +144,7 @@ function recordSample(sample: RenderSample) {
 	track.averageDuration = track.totalDuration / track.commits;
 	track.maxDuration = Math.max(track.maxDuration, sample.actualDuration);
 	track.lastDuration = sample.actualDuration;
+	if (track.commits === 1) track.firstCommitTime = sample.commitTime;
 	track.lastCommitTime = sample.commitTime;
 	if (sample.actualDuration > SLOW_COMMIT_THRESHOLD_MS) track.slowCommits += 1;
 	track.recent.push(sample);

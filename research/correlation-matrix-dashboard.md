@@ -1,6 +1,6 @@
 # Correlation Matrix & Heatmap Dashboard Research
 
-> Comprehensive research for building a live Correlation Matrix tool in HypeTerminal
+> Comprehensive research for building a live Correlation Matrix tool in gatu
 > Date: 2026-03-23
 
 ---
@@ -9,7 +9,7 @@
 
 1. [Modern Trading Terminal Examples](#1-modern-trading-terminal-examples)
 2. [Pair Selection & Risk Management](#2-pair-selection--risk-management)
-3. [HypeTerminal Feature Design Ideas](#3-hypeterminal-feature-design-ideas)
+3. [gatu Feature Design Ideas](#3-gatu-feature-design-ideas)
 4. [Technical Calculation Methods](#4-technical-calculation-methods)
 5. [2025-2026 Trends](#5-2025-2026-trends)
 6. [Architecture & Implementation](#6-architecture--implementation)
@@ -258,7 +258,7 @@ The correlation matrix should integrate with position data to show:
 
 ---
 
-## 3. HypeTerminal Feature Design Ideas
+## 3. gatu Feature Design Ideas
 
 ### 3.1 Color Coding Schemes
 
@@ -272,7 +272,7 @@ The standard for correlation matrices is a diverging color palette with a neutra
  Strong Neg    Weak Neg      Neutral       Weak Pos      Strong Pos
 ```
 
-**Recommended Color Tokens (using HypeTerminal design system):**
+**Recommended Color Tokens (using gatu design system):**
 
 | Correlation Range | Color Token | Description |
 |-------------------|-------------|-------------|
@@ -298,7 +298,7 @@ This blue-orange/red diverging scheme is recommended by ColorBrewer and is safe 
 
 **Continuous Gradient Implementation:**
 
-For heatmap mode, use OKLCH color interpolation (consistent with HypeTerminal's OKLCH Zinc+Blue token system):
+For heatmap mode, use OKLCH color interpolation (consistent with gatu's OKLCH Zinc+Blue token system):
 
 ```css
 /* CSS custom property approach */
@@ -381,7 +381,7 @@ When a user clicks a cell in the correlation matrix, open a dedicated spread cha
 - "Open Long Spread" button pre-fills both legs with correct hedge ratio
 - "Open Short Spread" button for the inverse
 - Position sizing suggestions based on account balance and risk parameters
-- Link to the trade execution panel in HypeTerminal
+- Link to the trade execution panel in gatu
 
 ### 3.4 Timeframe Selection
 
@@ -740,7 +740,7 @@ where Rᵢ and Sᵢ are the ranks of xᵢ and yᵢ
 - More expensive than Pearson by a factor of log(T)
 
 **Practical Recommendation:**
-Spearman should be the **default** for crypto correlation in HypeTerminal, with Pearson as an option. The non-normality and outlier prevalence in crypto makes Spearman more reliable.
+Spearman should be the **default** for crypto correlation in gatu, with Pearson as an option. The non-normality and outlier prevalence in crypto makes Spearman more reliable.
 
 ### 4.3 Kendall Tau
 
@@ -861,7 +861,7 @@ Or in matrix form: Γₜ = Dₜ⁻¹ Σₜ Dₜ⁻¹ where Dₜ is a diagonal ma
 - Lambda selection is somewhat arbitrary
 - Not as robust to outliers as rank-based methods
 
-**Recommended for HypeTerminal:**
+**Recommended for gatu:**
 EWMC should be offered alongside rolling Pearson/Spearman as an advanced option, especially for:
 - Users interested in how correlations are evolving right now
 - Risk management (following RiskMetrics methodology)
@@ -893,7 +893,7 @@ where:
 - Detects non-linear relationships that Pearson misses
 - More computationally expensive: O(N²) per pair
 
-**Use in HypeTerminal:**
+**Use in gatu:**
 - Advanced screening mode for detecting hidden non-linear dependencies
 - Flag pairs where Pearson correlation is low but distance correlation is high
 - Useful for finding complex lead-lag relationships in crypto markets
@@ -934,7 +934,7 @@ where H is Shannon entropy.
 - No sign information (can't distinguish positive vs negative correlation)
 - Results are harder to interpret than correlation coefficients
 
-**Practical Use in HypeTerminal:**
+**Practical Use in gatu:**
 - Offer as an "advanced" or "research" mode
 - Normalize to [0, 1] using MI / max(H(X), H(Y)) for comparability
 - Use k-NN estimator (Kraskov-Stogbauer-Grassberger) for better finite-sample performance
@@ -983,7 +983,7 @@ More powerful, handles multiple cointegrating relationships:
 | Johansen | Multi-asset systems, robust | More complex, computationally expensive |
 | KSS (Kapetanios-Snell-Shin) | Non-linear cointegration, crypto | Newer method, less widely tested |
 
-**Integration in HypeTerminal:**
+**Integration in gatu:**
 
 ```
 Correlation Matrix → Click cell → "Test Cointegration" button
@@ -1125,7 +1125,7 @@ HMMs are the leading approach for crypto market regime detection in 2025-2026:
 4. Cluster dates using K-Means or spectral clustering
 5. Identify 5-7 distinct market regimes
 
-**Application in HypeTerminal:**
+**Application in gatu:**
 - Display current detected regime label (e.g., "High Correlation / Risk-Off")
 - Show regime transition probabilities
 - Color-code the correlation matrix background by regime
@@ -1158,7 +1158,7 @@ HMMs are the leading approach for crypto market regime detection in 2025-2026:
 - Stablecoin depegging correlation (when one stablecoin depegs, others may follow)
 - NFT market correlation with underlying chain tokens
 
-**HypeTerminal Opportunity:**
+**gatu Opportunity:**
 - Hyperliquid-specific: correlate builder-launched tokens with underlying protocols
 - Track how Hyperliquid-native tokens correlate with their CEX-listed counterparts
 - Monitor HLP (Hyperliquid Liquidity Pool) correlation with individual assets

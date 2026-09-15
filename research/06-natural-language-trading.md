@@ -102,9 +102,9 @@ OQL decouples the pipeline into two phases:
 
 The paper demonstrates that this neuro-symbolic pipeline significantly improves execution accuracy and logical consistency over direct baselines. It represents the first application of the Text-to-SQL paradigm adapted to financial derivatives trading.
 
-### Relevance to HypeTerminal
+### Relevance to gatu
 
-While HypeTerminal trades perpetual futures (not options), the OQL pattern directly applies:
+While gatu trades perpetual futures (not options), the OQL pattern directly applies:
 
 1. Define a **Hyperliquid Query Language (HQL)** -- a domain-specific IR for perpetual futures trading intents.
 2. LLM parses natural language into HQL.
@@ -190,9 +190,9 @@ Orbit is a modular, interoperable DeFi proxy network integrating 117+ chains and
 
 **Key insight:** Orbit demonstrates that natural language interfaces can abstract away not just order type complexity but also chain and protocol selection -- the user says "stake my ETH for the best yield" and the system determines where and how.
 
-### Lessons for HypeTerminal
+### Lessons for gatu
 
-1. **Specialization wins** -- GRIFFAIN's specialized agents (sniping, arbitrage, DCA) outperform general-purpose agents. HypeTerminal should build domain-specific agents for Hyperliquid perpetual futures, not generic crypto trading agents.
+1. **Specialization wins** -- GRIFFAIN's specialized agents (sniping, arbitrage, DCA) outperform general-purpose agents. gatu should build domain-specific agents for Hyperliquid perpetual futures, not generic crypto trading agents.
 2. **Memory matters** -- GRIFFAIN's personal agents maintain persistent memory. A trading agent that remembers "the user prefers 3x leverage" and "the user always uses limit orders for entries" dramatically reduces friction.
 3. **Security is table stakes** -- both platforms invest heavily in key management and transaction safety. For Hyperliquid (where users connect wallets), the agent must never have unsupervised access to signing.
 
@@ -222,9 +222,9 @@ Each skill is a structured interface -- not a raw API wrapper but a semantic lay
 
 Community response was enthusiastic. Builders called for similar skill packs from other DeFi protocols. This establishes a pattern: **protocol-native agent interfaces** that go beyond raw API access to provide agent-optimized abstractions.
 
-### Relevance to HypeTerminal
+### Relevance to gatu
 
-HypeTerminal could define its own skill pack for Hyperliquid perpetual futures:
+gatu could define its own skill pack for Hyperliquid perpetual futures:
 - **perp-swap** -- market and limit order execution
 - **position-manager** -- close, modify, add to positions
 - **risk-calculator** -- margin, leverage, liquidation price computation
@@ -296,7 +296,7 @@ Research shows that autonomous AI trading agents have already seen over $300 mil
 
 ### Session Keys and EIP-7702
 
-EIP-7702 enables safe agent trading without exposing private keys. Session keys allow AI agents to perform scoped, temporary actions while users retain full custody. This is the recommended approach for HypeTerminal: issue session-scoped keys with per-asset, per-size, per-time limitations.
+EIP-7702 enables safe agent trading without exposing private keys. Session keys allow AI agents to perform scoped, temporary actions while users retain full custody. This is the recommended approach for gatu: issue session-scoped keys with per-asset, per-size, per-time limitations.
 
 ---
 
@@ -305,7 +305,7 @@ EIP-7702 enables safe agent trading without exposing private keys. Session keys 
 ### Design Principles
 
 1. **Stay close to the API** -- the intent parser's output should map directly to Hyperliquid SDK function calls. No intermediate abstraction layers that add complexity.
-2. **Keep strings** -- consistent with HypeTerminal's data philosophy, parsed intents should use string representations for sizes and prices, converting via big.js only when math is needed.
+2. **Keep strings** -- consistent with gatu's data philosophy, parsed intents should use string representations for sizes and prices, converting via big.js only when math is needed.
 3. **Typed output** -- the parser produces a strongly-typed TypeScript object validated by Zod, not a loose JSON blob.
 
 ### Intent Schema
@@ -456,7 +456,7 @@ User: "1 BTC, every hour"
 
 ---
 
-## 10. Opportunities for HypeTerminal
+## 10. Opportunities for gatu
 
 1. **Command Palette with Intent Parsing** -- Cmd+K opens a natural language input. The parser resolves intent, renders a confirmation card using static generative UI, and executes on approval. This is the highest-impact, lowest-risk starting point.
 
@@ -470,7 +470,7 @@ User: "1 BTC, every hour"
 
 6. **Onboarding via Natural Language** -- new users describe what they want to do ("I want to go long on Bitcoin") and the agent walks them through the process, rendering each step as a UI component. Lower barrier to entry than learning the full terminal UI.
 
-7. **Hyperliquid Skill Pack** -- open-source a set of Hyperliquid-specific AI agent skills (similar to Uniswap's 7 skills) that any agent framework can invoke. Positions HypeTerminal as the reference implementation for AI-powered Hyperliquid trading.
+7. **Hyperliquid Skill Pack** -- open-source a set of Hyperliquid-specific AI agent skills (similar to Uniswap's 7 skills) that any agent framework can invoke. Positions gatu as the reference implementation for AI-powered Hyperliquid trading.
 
 ---
 

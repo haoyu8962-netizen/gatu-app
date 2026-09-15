@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import { ROUTE_SEO } from "@/config/seo";
-import { startMarketCatalogBootstrap } from "@/lib/hyperliquid/markets/market-catalog-bootstrap";
 import { createLazyComponent } from "@/lib/lazy";
 import { buildPageHead } from "@/lib/seo";
+import { bootTradeRoute } from "@/lib/trade/trade-route-boot";
 
 const TradeTerminalPage = createLazyComponent(
 	() => import("@/components/trade/trade-terminal-page"),
@@ -14,9 +14,9 @@ export const Route = createFileRoute("/builders-perp/")({
 	ssr: false,
 	pendingMinMs: 0,
 	pendingComponent: AppShellSkeleton,
-	beforeLoad: ({ context }) => {
+	beforeLoad: ({ context, location }) => {
 		void TradeTerminalPage.preload?.();
-		startMarketCatalogBootstrap(context.queryClient);
+		bootTradeRoute(context.queryClient, location.pathname);
 	},
 	head: () => buildPageHead(ROUTE_SEO.BUILDERS_PERP),
 	component: TradeTerminalPage,

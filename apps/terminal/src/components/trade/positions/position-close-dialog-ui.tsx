@@ -103,11 +103,7 @@ interface PositionCloseSummaryProps {
 
 export function PositionCloseSummary({ testId, ariaLabel, items }: PositionCloseSummaryProps) {
 	return (
-		<section
-			data-testid={testId}
-			aria-label={ariaLabel}
-			className="rounded-[12px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3 min-[1001px]:px-4 min-[1001px]:py-3.5"
-		>
+		<section data-testid={testId} aria-label={ariaLabel} className="py-3 min-[1001px]:py-3.5">
 			<div className="flex justify-between gap-2 min-[1001px]:block min-[1001px]:space-y-2.5">
 				{items.map((item) => (
 					<div

@@ -1,5 +1,4 @@
 import Big from "big.js";
-import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
@@ -19,6 +18,7 @@ import { getNetwork, type Network, subscribeNetworkStorage, switchNetwork } from
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import type { MarginMode } from "@/lib/trade/margin-mode";
+import { z } from "@/lib/zod";
 
 type Theme = "dark" | "light";
 

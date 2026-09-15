@@ -2,6 +2,9 @@ import { renderBootstrapErrorPage } from "./lib/bootstrap-error-page";
 import { canHydrateAfterMobileAgentSyncScrub } from "./lib/mobile-sync/bootstrap-fragment";
 
 if (canHydrateAfterMobileAgentSyncScrub) {
+	void import("./lib/bootstrap/early-prefetch")
+		.then(({ startEarlyPrefetches }) => startEarlyPrefetches())
+		.catch(() => {});
 	void import("./lib/error-reporting/client")
 		.then(({ installGlobalErrorReporting, reportClientError }) => {
 			installGlobalErrorReporting();

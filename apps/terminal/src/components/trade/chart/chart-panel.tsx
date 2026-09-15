@@ -9,6 +9,10 @@ import { useTheme } from "@/stores/use-global-settings-store";
 
 const TradingViewChart = createLazyComponent(() => import("./tradingview-chart"), "TradingViewChart");
 
+export function preloadChartPanel(): void {
+	void TradingViewChart.preload?.();
+}
+
 interface Props {
 	active?: boolean;
 	yAxisInside?: boolean;

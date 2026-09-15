@@ -459,7 +459,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 
 					{isStablecoinSwap ? (
 						<>
-							<div className="rounded-8 border border-stroke-weak/35 bg-fill-weak/40 px-3 py-2.5 space-y-2">
+							<div className="py-2.5 space-y-2">
 								<div className="flex items-center justify-between gap-3 text-xs text-fg-muted">
 									<span>
 										<Trans>You will approximately receive</Trans>
@@ -487,7 +487,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 							</p>
 						</>
 					) : (
-						<div className="rounded-8 border border-stroke-weak/35 bg-fill-weak/40 px-3 py-2.5 space-y-2">
+						<div className="py-2.5 space-y-2">
 							<div className="flex items-center justify-between text-xs text-fg-muted">
 								<span>
 									<Trans>Rate</Trans>

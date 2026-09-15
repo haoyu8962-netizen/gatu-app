@@ -2,32 +2,24 @@ import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { useHydrated, useRouterState } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import { useSyncExternalStore } from "react";
 import "@/lib/i18n";
 import { getQueryRetryDelayMs, shouldRetryQuery } from "@/lib/query-retry";
 import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
+import { clientRootLoader } from "@/providers/client-root-loader";
 import { ClientRuntimeProvider, getPresentedRoutePathname, isDocumentRoutePath } from "@/providers/client-runtime";
 
 const isServer = typeof document === "undefined";
 // Start fetching the client-only wallet runtime as soon as the root module evaluates. The document
 // shell hydrates without waiting for it, while this eager promise avoids introducing a second network
 // waterfall after hydration. Document-only entries keep the wallet code deferred, but a later client
-// navigation into the app can still load it on demand.
-let clientRootProviderModule: Promise<typeof import("@/providers/client-root")> | undefined;
-function loadClientRootProvider() {
-	clientRootProviderModule ??= import("@/providers/client-root");
-	return clientRootProviderModule;
-}
+// navigation into the app can still load it on demand. The loaded component is published through a
+// plain store instead of React.lazy: a Suspense boundary that showed its fallback during hydration
+// makes React throttle the reveal of resolved content by 300ms, which cost the first real render
+// that much on every cold load.
 if (!isServer && !isDocumentRoutePath(window.location.pathname)) {
-	void loadClientRootProvider();
+	clientRootLoader.load().catch(() => {});
 }
-const LazyClientRootProvider = isServer
-	? null
-	: lazy(() =>
-			loadClientRootProvider().then((module) => ({
-				default: module.ClientRootProvider,
-			})),
-		);
 
 export function getRootProviderContext() {
 	const queryClient = new QueryClient({
@@ -60,15 +52,21 @@ export function ClientRuntimeGate({ children, fallback }: { children: React.Reac
 	const hydrated = useHydrated();
 	const pathname = useRouterState({ select: getPresentedRoutePathname });
 	const queryClient = useQueryClient();
+	const { Provider: ClientRootProvider, error } = useSyncExternalStore(
+		clientRootLoader.subscribe,
+		clientRootLoader.getState,
+		clientRootLoader.getServerState,
+	);
 
 	if (isDocumentRoutePath(pathname)) {
 		return <>{children}</>;
 	}
-	if (isServer || !hydrated || !LazyClientRootProvider) return <>{fallback}</>;
+	if (isServer || !hydrated) return <>{fallback}</>;
+	if (error) throw error;
+	if (!ClientRootProvider) {
+		clientRootLoader.load().catch(() => {});
+		return <>{fallback}</>;
+	}
 
-	return (
-		<Suspense fallback={fallback}>
-			<LazyClientRootProvider queryClient={queryClient}>{children}</LazyClientRootProvider>
-		</Suspense>
-	);
+	return <ClientRootProvider queryClient={queryClient}>{children}</ClientRootProvider>;
 }

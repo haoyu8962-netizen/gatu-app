@@ -1,9 +1,9 @@
-import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { STORAGE_KEYS } from "@/config/app";
 import { HIP3_DISCLAIMER_VERSION } from "@/config/hip3-deployers";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
+import { z } from "@/lib/zod";
 
 const hip3DisclaimerStoreSchema = z.object({
 	state: z.object({

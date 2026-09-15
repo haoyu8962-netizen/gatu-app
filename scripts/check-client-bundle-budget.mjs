@@ -34,7 +34,7 @@ const budgets = {
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
 		optionalRouteIds: ["/trade"],
-		staticClosureChunkPrefixes: ["client-root", "trade-terminal-page"],
+		staticClosureChunkPrefixes: ["client-root", "trade-terminal-page", "early-prefetch", "preload-trade-terminal-surface"],
 		baselineGzipBytes: 1_570_221,
 		allowedIncreaseBytes: 10_000,
 	},
@@ -58,7 +58,7 @@ const budgets = {
 		],
 	},
 	surfaces: [
-		{ name: "trade-terminal-page", baselineGzipBytes: 119_207, allowedIncreaseBytes: 4_000 },
+		{ name: "trade-terminal-page", baselineGzipBytes: 123_242, allowedIncreaseBytes: 4_000 },
 		{ name: "token-selector-popup", baselineGzipBytes: 14_355, allowedIncreaseBytes: 1_500 },
 		{ name: "api-wallet", baselineGzipBytes: 17_967, allowedIncreaseBytes: 2_000 },
 		{ name: "fundingHistory._address", baselineGzipBytes: 6_820, allowedIncreaseBytes: 1_500 },
@@ -111,7 +111,8 @@ function resolveRouteAssets({ startManifest, routeIds, optionalRouteIds, field, 
 	);
 }
 
-export async function checkClientBundleBudget(assetsDirectoryArgument) {
+/** Reads the built client, the chunk graph and the TanStack manifest; no logging, no budget verdict. */
+export async function analyzeClientBundle(assetsDirectoryArgument) {
 	const assetsDirectory = resolve(assetsDirectoryArgument ?? "apps/terminal/.output/public/assets");
 	const publicGraphArtifacts = findPublicClientChunkGraphArtifacts(resolve(assetsDirectory, ".."));
 	if (publicGraphArtifacts.length > 0) {
@@ -203,6 +204,38 @@ export async function checkClientBundleBudget(assetsDirectoryArgument) {
 		const assets = sizes.filter(({ file }) => file.startsWith(`${surface.name}-`) && file.endsWith(".js"));
 		return { ...surface, assets };
 	});
+
+	return {
+		assetsDirectory,
+		assetFiles,
+		sizes,
+		sizesByFile,
+		largestChunk,
+		totalGzip,
+		violations,
+		tradeRoutePreloadFiles,
+		runtimeEntryFiles,
+		tradeStaticEntryFiles,
+		tradeStartupFiles,
+		tradeStartupGzip,
+		runtimeProfileSizes,
+		surfaceSizes,
+	};
+}
+
+export async function checkClientBundleBudget(assetsDirectoryArgument) {
+	const {
+		largestChunk,
+		totalGzip,
+		violations,
+		tradeRoutePreloadFiles,
+		runtimeEntryFiles,
+		tradeStaticEntryFiles,
+		tradeStartupFiles,
+		tradeStartupGzip,
+		runtimeProfileSizes,
+		surfaceSizes,
+	} = await analyzeClientBundle(assetsDirectoryArgument);
 
 	if (largestChunk.raw > budgets.largestChunkRawBytes) {
 		violations.push(`${largestChunk.file} raw ${largestChunk.raw} > ${budgets.largestChunkRawBytes} bytes`);

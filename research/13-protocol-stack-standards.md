@@ -4,9 +4,9 @@
 
 - Five protocols are converging into a coherent stack for AI agent applications: MCP (tools), AG-UI (transport/events), A2UI (UI specification), A2A (agent coordination), and Agent Spec (agent definitions). Together, they form what some are calling "the TCP/IP moment for agentic AI."
 - MCP has achieved decisive adoption: 97M+ monthly SDK downloads, supported by every major AI provider (Anthropic, OpenAI, Google, Microsoft, Amazon), and now governed by the Linux Foundation's Agentic AI Foundation (AAIF).
-- AG-UI (CopilotKit) is the clear winner for agent-frontend communication, with 120K weekly installs and integration by Microsoft Agent Framework, LangGraph, CrewAI, and Google ADK. It is the most directly relevant protocol for HypeTerminal.
+- AG-UI (CopilotKit) is the clear winner for agent-frontend communication, with 120K weekly installs and integration by Microsoft Agent Framework, LangGraph, CrewAI, and Google ADK. It is the most directly relevant protocol for gatu.
 - A2A (Google) and Agent Spec (Oracle) handle inter-agent communication and agent definitions respectively. Both are important for multi-agent architectures but are second-priority for a trading terminal.
-- For HypeTerminal, the implementation priority is: MCP (immediate) > AG-UI (immediate) > A2UI (near-term) > A2A (medium-term) > Agent Spec (long-term).
+- For gatu, the implementation priority is: MCP (immediate) > AG-UI (immediate) > A2UI (near-term) > A2A (medium-term) > Agent Spec (long-term).
 
 ---
 
@@ -72,12 +72,12 @@ The latest specification (2025-11-25) introduced:
 - Server identity for trust verification
 - Official extensions mechanism (MCP Apps is the first)
 
-### Relevance to HypeTerminal
+### Relevance to gatu
 
-MCP is the most immediately relevant protocol. HypeTerminal can:
+MCP is the most immediately relevant protocol. gatu can:
 - **Expose trading tools as MCP servers**: `place_order`, `cancel_order`, `get_positions`, `get_orderbook`
 - **Consume external MCP servers**: market data feeds, news sentiment, on-chain analytics
-- **Enable third-party agent integration**: any MCP-compatible agent can plug into HypeTerminal's tools
+- **Enable third-party agent integration**: any MCP-compatible agent can plug into gatu's tools
 - **Use MCP Apps**: return interactive trading UI components (charts, order forms) from agent tool calls
 
 ---
@@ -118,15 +118,15 @@ CopilotKit (the reference AG-UI implementation) provides:
 - Shared state between agent and frontend
 - Multi-agent support
 
-### Relevance to HypeTerminal
+### Relevance to gatu
 
-AG-UI is critically important for HypeTerminal because it defines how AI agents communicate with the React frontend:
+AG-UI is critically important for gatu because it defines how AI agents communicate with the React frontend:
 
 - **Streaming trade analysis**: Agent streams its market analysis to the UI in real-time
 - **Tool call visualization**: When the agent calls `place_order`, the UI shows the tool call lifecycle (pending, executing, complete)
 - **State synchronization**: Agent's internal state (current analysis, confidence levels, risk assessment) synced to the frontend
 - **Human-in-the-loop**: User approves or rejects agent trade proposals through structured AG-UI events
-- **Framework flexibility**: Any agent backend (LangGraph, CrewAI, custom) can communicate with HypeTerminal's React frontend via AG-UI
+- **Framework flexibility**: Any agent backend (LangGraph, CrewAI, custom) can communicate with gatu's React frontend via AG-UI
 
 ---
 
@@ -165,7 +165,7 @@ AG-UI and A2UI are complementary:
 
 An agent sends an A2UI payload as part of an AG-UI event stream. The frontend receives the A2UI description and renders the appropriate components.
 
-### Relevance to HypeTerminal
+### Relevance to gatu
 
 A2UI could enable agents to describe trading-specific UI:
 - Agent analysis rendered as structured cards with charts and metrics
@@ -173,7 +173,7 @@ A2UI could enable agents to describe trading-specific UI:
 - Risk dashboards generated on-the-fly based on current positions
 - Multi-step workflow UIs for complex trading operations
 
-However, HypeTerminal already has a sophisticated component library. The question is whether to use A2UI's generic component catalog or extend it with trading-specific components. The recommended approach: define a custom A2UI component catalog that maps to HypeTerminal's existing React components.
+However, gatu already has a sophisticated component library. The question is whether to use A2UI's generic component catalog or extend it with trading-specific components. The recommended approach: define a custom A2UI component catalog that maps to gatu's existing React components.
 
 ---
 
@@ -208,13 +208,13 @@ The relationship is clear:
 
 An agent uses MCP to call tools. It uses A2A to delegate tasks to other agents. These are orthogonal concerns.
 
-### Relevance to HypeTerminal
+### Relevance to gatu
 
-A2A becomes relevant when HypeTerminal supports multi-agent architectures:
+A2A becomes relevant when gatu supports multi-agent architectures:
 
 - **Specialist agents**: A market analysis agent delegates to a sentiment agent and a technical analysis agent via A2A
-- **Cross-platform agents**: An external portfolio management agent communicates with HypeTerminal's execution agent via A2A
-- **Agent marketplace**: Third-party agents advertise their capabilities via Agent Cards, and HypeTerminal's orchestrator discovers and delegates to them
+- **Cross-platform agents**: An external portfolio management agent communicates with gatu's execution agent via A2A
+- **Agent marketplace**: Third-party agents advertise their capabilities via Agent Cards, and gatu's orchestrator discovers and delegates to them
 - **Collaborative strategies**: Multiple agents coordinate on a complex strategy (e.g., one monitors funding rates, another manages hedges, a third executes entries)
 
 This is medium-term priority. Single-agent workflows should be solid before adding multi-agent coordination.
@@ -256,11 +256,11 @@ A joint integration standardizes three concerns:
 
 This integration means an Agent Spec definition can automatically expose an AG-UI endpoint and generate A2UI responses.
 
-### Relevance to HypeTerminal
+### Relevance to gatu
 
 Agent Spec is relevant for:
 - **Agent marketplace**: Trading agents defined in Agent Spec format can be shared, discovered, and deployed
-- **Portability**: Users bring agents from other platforms and run them in HypeTerminal
+- **Portability**: Users bring agents from other platforms and run them in gatu
 - **Configuration**: Declarative agent definitions are easier for non-developers to create and modify than code
 - **Interoperability**: Agent Spec agents automatically work with AG-UI frontends
 
@@ -273,14 +273,14 @@ This is long-term priority. Building custom agents first, then standardizing the
 ### The Full Stack for a Trading Agent
 
 ```
-User opens HypeTerminal
+User opens gatu
   |
   |-- AG-UI stream connects frontend to agent backend
   |     |
   |     |-- Agent is defined in Agent Spec (portable definition)
   |     |
   |     |-- Agent calls MCP tools:
-  |     |     |-- HypeTerminal MCP Server (place_order, get_positions)
+  |     |     |-- gatu MCP Server (place_order, get_positions)
   |     |     |-- Market Data MCP Server (get_candles, get_orderbook)
   |     |     |-- News Sentiment MCP Server (get_sentiment)
   |     |
@@ -315,7 +315,7 @@ User opens HypeTerminal
 
 ### Overview
 
-Microsoft's Agent Framework (Release Candidate as of February 2026) has built-in AG-UI support. This is significant because it means agents built with Microsoft's framework can communicate with any AG-UI-compatible frontend, including a potential HypeTerminal integration.
+Microsoft's Agent Framework (Release Candidate as of February 2026) has built-in AG-UI support. This is significant because it means agents built with Microsoft's framework can communicate with any AG-UI-compatible frontend, including a potential gatu integration.
 
 ### Key Features
 
@@ -334,7 +334,7 @@ Microsoft describes AG-UI + DevUI + OpenTelemetry as the "Golden Triangle" of ag
 
 ### Relevance
 
-This validates AG-UI as the emerging standard. If Microsoft is building native support, it is safe to invest in AG-UI for HypeTerminal. Agents built with any compatible framework (Microsoft, LangGraph, CrewAI, Google ADK) will be able to connect to HypeTerminal's frontend.
+This validates AG-UI as the emerging standard. If Microsoft is building native support, it is safe to invest in AG-UI for gatu. Agents built with any compatible framework (Microsoft, LangGraph, CrewAI, Google ADK) will be able to connect to gatu's frontend.
 
 ---
 
@@ -362,27 +362,27 @@ This validates AG-UI as the emerging standard. If Microsoft is building native s
 
 ### Tier 1: Must Have (Immediate)
 
-**MCP** --- This is the interface layer between AI agents and HypeTerminal's trading capabilities. Without MCP, every agent integration is custom. With MCP, any compatible agent can access HypeTerminal's tools.
+**MCP** --- This is the interface layer between AI agents and gatu's trading capabilities. Without MCP, every agent integration is custom. With MCP, any compatible agent can access gatu's tools.
 
-**AG-UI** --- This is how agents communicate with the React frontend. HypeTerminal needs streaming analysis, tool call visualization, state sync, and human-in-the-loop approval. AG-UI provides all of this with React components (via CopilotKit).
+**AG-UI** --- This is how agents communicate with the React frontend. gatu needs streaming analysis, tool call visualization, state sync, and human-in-the-loop approval. AG-UI provides all of this with React components (via CopilotKit).
 
 ### Tier 2: Should Have (Near-Term)
 
-**A2UI** --- As agents generate more complex outputs (trade proposals, risk reports, strategy comparisons), A2UI provides a structured way to describe these UIs. HypeTerminal can define a custom component catalog mapping A2UI types to its existing React components.
+**A2UI** --- As agents generate more complex outputs (trade proposals, risk reports, strategy comparisons), A2UI provides a structured way to describe these UIs. gatu can define a custom component catalog mapping A2UI types to its existing React components.
 
 ### Tier 3: Nice to Have (Medium-Term)
 
-**A2A** --- Becomes important when HypeTerminal supports multi-agent workflows. Not needed for single-agent use cases. Plan the architecture to support it, but do not implement until there are concrete multi-agent use cases.
+**A2A** --- Becomes important when gatu supports multi-agent workflows. Not needed for single-agent use cases. Plan the architecture to support it, but do not implement until there are concrete multi-agent use cases.
 
-**Agent Spec** --- Becomes important if HypeTerminal builds an agent marketplace. Provides a standard format for defining and sharing trading agents. Low priority until the marketplace is on the roadmap.
+**Agent Spec** --- Becomes important if gatu builds an agent marketplace. Provides a standard format for defining and sharing trading agents. Low priority until the marketplace is on the roadmap.
 
 ---
 
 ## Implementation Priority and Effort Estimation
 
-### Phase 1: MCP Server for HypeTerminal (2-4 weeks)
+### Phase 1: MCP Server for gatu (2-4 weeks)
 
-Build an MCP server that exposes HypeTerminal's trading capabilities:
+Build an MCP server that exposes gatu's trading capabilities:
 
 **Tools to expose**:
 - `place_order(asset, side, size, price, type)` --- place a limit/market order
@@ -411,11 +411,11 @@ Integrate AG-UI for agent-frontend communication:
 - State panel showing agent's current analysis/reasoning
 - Human-in-the-loop approval UI for trade proposals
 
-**Effort**: Medium-High. CopilotKit provides React components but they need to be adapted to HypeTerminal's design system and Zustand state management.
+**Effort**: Medium-High. CopilotKit provides React components but they need to be adapted to gatu's design system and Zustand state management.
 
 ### Phase 3: A2UI Component Catalog (2-3 weeks)
 
-Define HypeTerminal-specific A2UI components:
+Define gatu-specific A2UI components:
 
 **Custom components**:
 - `TradeProposal` --- entry, exit, stop loss, take profit, risk/reward
@@ -429,7 +429,7 @@ Define HypeTerminal-specific A2UI components:
 
 Enable multi-agent communication:
 
-**Agent Cards**: Define HypeTerminal's agent capabilities for external discovery
+**Agent Cards**: Define gatu's agent capabilities for external discovery
 **Task delegation**: Allow an orchestrator agent to delegate to specialist agents
 **Discovery**: Browse and connect to external agents
 
@@ -441,7 +441,7 @@ Support Agent Spec definitions for agent marketplace:
 
 **Features**:
 - Import Agent Spec YAML/JSON definitions
-- Export HypeTerminal agent configurations as Agent Spec
+- Export gatu agent configurations as Agent Spec
 - Agent marketplace UI
 
 **Effort**: Medium. Primarily parsing and rendering Agent Spec definitions.
@@ -458,7 +458,7 @@ The risk: protocol evolution may introduce breaking changes. A2UI is in v0.8 (pr
 
 ### Framework Compatibility
 
-HypeTerminal should be agent-framework-agnostic. AG-UI enables this: agents built with LangGraph, CrewAI, Microsoft Agent Framework, or Google ADK can all communicate with HypeTerminal's frontend via the same AG-UI protocol.
+gatu should be agent-framework-agnostic. AG-UI enables this: agents built with LangGraph, CrewAI, Microsoft Agent Framework, or Google ADK can all communicate with gatu's frontend via the same AG-UI protocol.
 
 ### Standards Body Alignment
 
@@ -476,17 +476,17 @@ Both MCP and A2A are now under the Linux Foundation (AAIF). This reduces the ris
 
 ---
 
-## Opportunities for HypeTerminal
+## Opportunities for gatu
 
-1. **First Hyperliquid terminal with MCP tools**: No Hyperliquid trading terminal exposes its capabilities via MCP. Being first creates a network effect as agent developers target HypeTerminal's tool interface.
+1. **First Hyperliquid terminal with MCP tools**: No Hyperliquid trading terminal exposes its capabilities via MCP. Being first creates a network effect as agent developers target gatu's tool interface.
 
 2. **AG-UI-native trading UX**: Build the most interactive agent-enhanced trading experience using AG-UI for real-time communication. Streaming analysis, live tool call visualization, and human-in-the-loop approval integrated into the terminal.
 
-3. **Agent framework agnostic**: By adopting AG-UI, HypeTerminal becomes compatible with every major agent framework. Users bring their own agents, regardless of what framework they were built with.
+3. **Agent framework agnostic**: By adopting AG-UI, gatu becomes compatible with every major agent framework. Users bring their own agents, regardless of what framework they were built with.
 
 4. **Custom A2UI trading components**: Define a trading-specific A2UI component catalog that becomes the standard for agent-generated trading UIs.
 
-5. **Early mover on protocol composability**: The MCP + AG-UI + A2UI stack is new enough that HypeTerminal can influence how these protocols are used in trading contexts.
+5. **Early mover on protocol composability**: The MCP + AG-UI + A2UI stack is new enough that gatu can influence how these protocols are used in trading contexts.
 
 ---
 
@@ -497,20 +497,20 @@ Both MCP and A2A are now under the Linux Foundation (AAIF). This reduces the ris
 - **Performance**: AG-UI event streaming adds latency. For latency-sensitive trading operations, direct execution paths may be needed alongside the protocol-based path.
 - **Security**: MCP servers expose powerful trading tools. Authentication, rate limiting, and permission scoping are critical. A compromised MCP client could drain an account.
 - **Adoption uncertainty**: While MCP and AG-UI have strong adoption, the crypto trading space may not adopt these protocols as quickly as enterprise software.
-- **Dependency on CopilotKit**: AG-UI's primary implementation is CopilotKit. If CopilotKit changes direction, HypeTerminal's AG-UI integration could be affected.
+- **Dependency on CopilotKit**: AG-UI's primary implementation is CopilotKit. If CopilotKit changes direction, gatu's AG-UI integration could be affected.
 
 ---
 
 ## Open Questions
 
-1. Should HypeTerminal build its own MCP server or use a hosted MCP service? Self-hosted gives control; hosted reduces infrastructure burden.
+1. Should gatu build its own MCP server or use a hosted MCP service? Self-hosted gives control; hosted reduces infrastructure burden.
 2. How does AG-UI performance compare to a custom WebSocket implementation for real-time trading data? Benchmark needed.
 3. Should A2UI adoption wait for v1.0, or is v0.8 stable enough to build on?
 4. When does multi-agent (A2A) become necessary? Single-agent with good MCP tools may be sufficient for a long time.
-5. Should HypeTerminal contribute to MCP/AG-UI specifications to ensure trading use cases are well-supported?
-6. How should MCP tool authentication work for HypeTerminal? Per-user API tokens? Wallet-based auth? OAuth?
-7. Can AG-UI event streaming coexist with HypeTerminal's existing WebSocket-based real-time data (order book, trades)?
-8. Is CopilotKit's React library compatible with HypeTerminal's design system (Base UI, Zustand, TanStack Router) without significant customization?
+5. Should gatu contribute to MCP/AG-UI specifications to ensure trading use cases are well-supported?
+6. How should MCP tool authentication work for gatu? Per-user API tokens? Wallet-based auth? OAuth?
+7. Can AG-UI event streaming coexist with gatu's existing WebSocket-based real-time data (order book, trades)?
+8. Is CopilotKit's React library compatible with gatu's design system (Base UI, Zustand, TanStack Router) without significant customization?
 
 ---
 

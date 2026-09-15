@@ -148,12 +148,7 @@ export function ApiWalletView({
 				) : null}
 			</header>
 
-			<div
-				className={cn(
-					"mb-4 flex items-start gap-3 rounded-24 border border-api-wallet-stroke-card bg-api-wallet-card px-3.5 py-3",
-					isMobile ? "mx-4" : "mx-5",
-				)}
-			>
+			<div className={cn("mb-4 flex items-start gap-3 py-3", isMobile ? "mx-4" : "mx-5")}>
 				<InfoIcon className="mt-0.5 size-4 shrink-0 text-api-wallet-subtle" />
 				<div className="min-w-0 space-y-1">
 					<p className="text-xs font-semibold text-api-wallet-fg">

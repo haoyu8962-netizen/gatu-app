@@ -52,6 +52,7 @@ const persister = createSyncStoragePersister({
 
 try {
 	localStorage.removeItem(STORAGE_KEYS.LEGACY_METADATA);
+	localStorage.removeItem(STORAGE_KEYS.LEGACY_RECENT_WALLETS);
 } catch {}
 
 interface Props {

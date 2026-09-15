@@ -39,7 +39,7 @@ function createMemoryStorage(): Storage {
 async function createSyncFixture() {
 	return createMobileAgentSyncUrl({
 		syncId: "A".repeat(22),
-		appOrigin: "https://app.hypeterminal.com",
+		appOrigin: "https://app.gatu.test",
 		env: "Mainnet",
 		userAddress: USER_ADDRESS,
 		agentPrivateKey: AGENT_PRIVATE_KEY,

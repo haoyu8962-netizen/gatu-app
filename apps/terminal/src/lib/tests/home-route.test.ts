@@ -1,7 +1,7 @@
 import { isRedirect } from "@tanstack/react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const testState = vi.hoisted(() => ({ bootstrap: vi.fn(), marketName: "BTC" }));
+const testState = vi.hoisted(() => ({ bootstrap: vi.fn(), bootOrderbook: vi.fn(), marketName: "BTC" }));
 const queryClient = {};
 
 vi.mock("@/stores/use-market-store", () => ({
@@ -13,6 +13,7 @@ vi.mock("@/config/seo", () => ({ ROUTE_SEO: { TRADE: {} } }));
 vi.mock("@/lib/hyperliquid/markets/market-catalog-bootstrap", () => ({
 	startMarketCatalogBootstrap: testState.bootstrap,
 }));
+vi.mock("@/lib/trade/orderbook-boot", () => ({ bootOrderbook: testState.bootOrderbook }));
 vi.mock("@/lib/lazy", () => ({
 	createLazyComponent: () => Object.assign(() => null, { preload: vi.fn(async () => undefined) }),
 }));
@@ -42,6 +43,7 @@ describe("home route boot contract", () => {
 	beforeEach(() => {
 		testState.marketName = "BTC";
 		testState.bootstrap.mockClear();
+		testState.bootOrderbook.mockClear();
 		for (const route of [TradeRoute, PerpRoute, SpotRoute, BuildersPerpIndexRoute, BuildersPerpDexRoute]) {
 			vi.mocked((route.options.component as { preload: () => Promise<void> }).preload).mockClear();
 		}
@@ -58,7 +60,7 @@ describe("home route boot contract", () => {
 			headers: { "cache-control": "no-store" },
 		});
 		expect(HomeRoute.options.component).toBeUndefined();
-		expect(HomeRoute.options.ssr).toBe(true);
+		expect(HomeRoute.options.ssr).toBe(false);
 	});
 
 	it("preserves a safe last-selected market in the redirect", () => {
@@ -79,21 +81,35 @@ describe("home route boot contract", () => {
 		runHomeBeforeLoad();
 		expect(testState.bootstrap).toHaveBeenCalledWith(queryClient);
 
-		(TradeRoute.options.beforeLoad as (options: { context: { queryClient: object } }) => void)({
+		(
+			TradeRoute.options.beforeLoad as (options: {
+				context: { queryClient: object };
+				location: { pathname: string };
+			}) => void
+		)({
 			context: { queryClient },
+			location: { pathname: "/trade/BTC" },
 		});
 		expect(testState.bootstrap).toHaveBeenCalledTimes(2);
+		expect(testState.bootOrderbook).toHaveBeenCalledWith("/trade/BTC");
 		expect((TradeRoute.options.component as { preload: () => Promise<void> }).preload).toHaveBeenCalledOnce();
 	});
 
 	it("starts the same bootstrap for every terminal entry route", () => {
 		for (const route of [PerpRoute, SpotRoute, BuildersPerpRoute, BuildersPerpIndexRoute, BuildersPerpDexRoute]) {
-			(route.options.beforeLoad as (options: { context: { queryClient: object } }) => void)({
+			(
+				route.options.beforeLoad as (options: {
+					context: { queryClient: object };
+					location: { pathname: string };
+				}) => void
+			)({
 				context: { queryClient },
+				location: { pathname: "/perp" },
 			});
 		}
 
 		expect(testState.bootstrap).toHaveBeenCalledTimes(5);
+		expect(testState.bootOrderbook).toHaveBeenCalledTimes(5);
 		for (const route of [PerpRoute, SpotRoute, BuildersPerpIndexRoute, BuildersPerpDexRoute]) {
 			expect(route.options.pendingMinMs).toBe(0);
 			expect(route.options.pendingComponent).toBe(AppShellSkeleton);

@@ -1,4 +1,6 @@
 export const MOBILE_BREAKPOINT_PX = 1000;
+/** Matches the desktop surface; the mobile query in `hooks/use-mobile.ts` is its complement. */
+export const DESKTOP_MEDIA_QUERY = `(min-width: ${MOBILE_BREAKPOINT_PX + 1}px)`;
 
 export const SIDEBAR_LAYOUT = {
 	WIDTH: "16rem",

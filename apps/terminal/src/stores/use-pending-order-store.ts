@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { create } from "zustand";
 import { STORAGE_KEYS } from "@/config/app";
 import {
@@ -8,6 +7,7 @@ import {
 	type OrderProcessingStatus,
 	type TrackedOrderChild,
 } from "@/domain/trade/order-tracking";
+import { z } from "@/lib/zod";
 
 const cloidSchema = z.string().regex(/^0x[a-fA-F0-9]{32}$/);
 const pendingOrderSubmissionSchema = z.object({

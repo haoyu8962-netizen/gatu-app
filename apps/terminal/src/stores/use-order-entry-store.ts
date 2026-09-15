@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { STORAGE_KEYS } from "@/config/app";
@@ -6,6 +5,7 @@ import { type LimitTif, ORDER_TYPES, type OrderType, SCALE_SKEW_DEFAULT } from "
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import { isScaleOrderType, isTriggerOrderType } from "@/lib/trade/order-types";
 import type { Side, SizeMode } from "@/lib/trade/types";
+import { z } from "@/lib/zod";
 
 interface PersistedState {
 	side: Side;

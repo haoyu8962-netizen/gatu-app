@@ -297,7 +297,7 @@ The system now includes 5 color themes, each with light and dark variants:
 Located in Settings dialog under "Appearance":
 - Grid of 5 color theme buttons with preview swatches
 - Light/dark mode toggle in the same section
-- Persisted to `localStorage` under `hypeterminal-color-theme`
+- Persisted to `localStorage` under `gatu-color-theme`
 
 ### Implementation
 

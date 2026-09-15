@@ -1,6 +1,6 @@
 # Funding Rate Arbitrage Automation: Manual Workflows, Pain Points & Blueprint
 
-Research into how traders currently monitor and execute funding rate arb manually across Hyperliquid & other DEXs, with real user examples from 2025-2026 and a blueprint for automated Funding Scanner + Executor in HypeTerminal.
+Research into how traders currently monitor and execute funding rate arb manually across Hyperliquid & other DEXs, with real user examples from 2025-2026 and a blueprint for automated Funding Scanner + Executor in gatu.
 
 ---
 
@@ -209,7 +209,7 @@ Funding Rate (F) = Average Premium Index (P) + clamp(Interest Rate - P, -0.0005,
 
 ---
 
-## 7. Blueprint: Automated Funding Scanner + Executor for HypeTerminal
+## 7. Blueprint: Automated Funding Scanner + Executor for gatu
 
 ### Core Problem Statement
 
@@ -312,7 +312,7 @@ Processing Layer
 ├── Risk engine (margin health, liquidation proximity)
 └── Alert engine (threshold monitoring)
 
-UI Layer (HypeTerminal components)
+UI Layer (gatu components)
 ├── Funding Heatmap (cross-venue matrix)
 ├── Opportunity Table (sorted by net APY)
 ├── Position Dashboard (delta, P&L, health)
@@ -334,7 +334,7 @@ UI Layer (HypeTerminal components)
 
 ### Competitive Positioning
 
-| Feature | CoinGlass | Loris | Hummingbot | **HypeTerminal** |
+| Feature | CoinGlass | Loris | Hummingbot | **gatu** |
 |---------|-----------|-------|------------|------------------|
 | Cross-venue rates | Yes | Yes | Limited | Yes |
 | Real-time updates | ~1min | ~1min | Real-time | Real-time (WS) |

@@ -64,6 +64,11 @@ Do not collapse these states into one boolean.
 - A Privy-authenticated session is not proof that the expected signing wallet
   is active. Email and reconnect flows must select the exact wallet associated
   with the current user and fail closed when that wallet is unavailable.
+- Before Privy reports ready, the header shows `Connect Wallet` unless this
+  browser holds a Privy session (`lib/wallet/privy-session-hint.ts` checks the
+  SDK's local-storage token keys) or auth-initialization recovery is due; only
+  those cases show `Connecting...`. The connect button may open `WalletModal`
+  before readiness because the modal itself waits for `ready` to launch Privy.
 - `WalletModal` owns the primary interactive Connect surface. Surfaces outside
   `MOBILE_QR_SURFACE_MEDIA_QUERY` launch Privy directly; matching surfaces use
   the application drawer first and must close it before launching Privy.
@@ -73,12 +78,15 @@ Do not collapse these states into one boolean.
   Reown/AppKit chooser or reimplement the catalog in application components.
 - `PRIVY_WALLET_LIST` is the single source for recommended-wallet ordering.
   Keep named wallets ahead of detected/fallback entries and use
-  `wallet_connect` for Privy's long-tail catalog.
+  `wallet_connect` for Privy's long-tail catalog; do not substitute
+  `wallet_connect_qr` or label an unrelated catalog identifier as SafePal.
 - Login methods remain `wallet` and `email`; Passkey login is intentionally
   disabled. Embedded Ethereum wallets are created only for users without a
   wallet, and Privy's embedded wallet UI remains hidden.
-- Dark/light Privy configuration changes appearance only. Preserve
-  `PwaInstallProvider > PrivyProvider > SmartWalletsProvider >`
+- Dark/light Privy configuration changes appearance and accent color only.
+  Wallet ordering and authentication behavior stay identical across themes,
+  and the authentication provider is never remounted merely to change theme.
+  Preserve `PwaInstallProvider > PrivyProvider > SmartWalletsProvider >`
   `PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
   Ethereum-only wallet selection, and customize radius through Privy's
   supported public CSS variables rather than generated DOM classes.
@@ -358,6 +366,22 @@ mobile regressions.
   `pointer-events: none` to the loaded TradingView iframe.
 - CSP changes must keep the main document strict while allowing the
   charting-library same-origin iframe mode.
+- The vendored library samples 2% of chart loads to insert a Google Analytics
+  loader from inside the iframe, gated by its internal feature flag `14851`.
+  Keep `"14851"` in `CHART_DISABLED_FEATURES` and never add
+  `www.google-analytics.com` to any policy; the chart CSP blocks the loader
+  as a second line. Re-check after every library upgrade with
+  `node apps/terminal/tests/browser/chart-analytics-probe.mjs <origin>`, which
+  forces `Math.random` to `0` in every frame so the sampled branch would run.
+- TradingView theme CSS runs inside the iframe, so application CSS variables
+  do not inherit into it. Define its semantic background variables inside
+  `apps/terminal/public/tradingview-theme-{dark,light}.css`: the canvas uses
+  the terminal dark background `#0F1A1F`; raised or interactive layers use
+  `#1D1E26` (the shared `bg-surface` dark value) and are never flattened into
+  the canvas color.
+- Keep the single theme-aware TradingView stylesheet used by runtime theme
+  switching; changing CSS URLs on theme changes would require rebuilding the
+  iframe.
 
 ### Important Files
 

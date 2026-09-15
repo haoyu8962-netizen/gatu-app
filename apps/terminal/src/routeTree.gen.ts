@@ -31,7 +31,10 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TradeRouteImport } from './routes/trade'
 import { Route as VaultsRouteImport } from './routes/vaults'
+import { Route as ApiClientErrorReportRouteImport } from './routes/api.client-error-report'
+import { Route as ApiGeoRouteImport } from './routes/api.geo'
 import { Route as ApiLeaderboardRouteImport } from './routes/api.leaderboard'
+import { Route as ApiReferralGeoRouteImport } from './routes/api.referral-geo'
 import { Route as BuildersPerpIndexRouteImport } from './routes/builders-perp.index'
 import { Route as BuildersPerpDexRouteImport } from './routes/builders-perp.$dex'
 import { Route as FundingHistoryAddressRouteImport } from './routes/fundingHistory.$address'
@@ -155,9 +158,24 @@ const VaultsRoute = VaultsRouteImport.update({
   path: '/vaults',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiClientErrorReportRoute = ApiClientErrorReportRouteImport.update({
+  id: '/api/client-error-report',
+  path: '/api/client-error-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGeoRoute = ApiGeoRouteImport.update({
+  id: '/api/geo',
+  path: '/api/geo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiLeaderboardRoute = ApiLeaderboardRouteImport.update({
   id: '/api/leaderboard',
   path: '/api/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReferralGeoRoute = ApiReferralGeoRouteImport.update({
+  id: '/api/referral-geo',
+  path: '/api/referral-geo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuildersPerpIndexRoute = BuildersPerpIndexRouteImport.update({
@@ -244,7 +262,10 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/trade': typeof TradeRouteWithChildren
   '/vaults': typeof VaultsRouteWithChildren
+  '/api/client-error-report': typeof ApiClientErrorReportRoute
+  '/api/geo': typeof ApiGeoRoute
   '/api/leaderboard': typeof ApiLeaderboardRoute
+  '/api/referral-geo': typeof ApiReferralGeoRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/fundingHistory/$address': typeof FundingHistoryAddressRoute
   '/historicalOrders/$address': typeof HistoricalOrdersAddressRoute
@@ -278,7 +299,10 @@ export interface FileRoutesByTo {
   '/staking': typeof StakingRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/api/client-error-report': typeof ApiClientErrorReportRoute
+  '/api/geo': typeof ApiGeoRoute
   '/api/leaderboard': typeof ApiLeaderboardRoute
+  '/api/referral-geo': typeof ApiReferralGeoRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/fundingHistory/$address': typeof FundingHistoryAddressRoute
   '/historicalOrders/$address': typeof HistoricalOrdersAddressRoute
@@ -316,7 +340,10 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/trade': typeof TradeRouteWithChildren
   '/vaults': typeof VaultsRouteWithChildren
+  '/api/client-error-report': typeof ApiClientErrorReportRoute
+  '/api/geo': typeof ApiGeoRoute
   '/api/leaderboard': typeof ApiLeaderboardRoute
+  '/api/referral-geo': typeof ApiReferralGeoRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/fundingHistory/$address': typeof FundingHistoryAddressRoute
   '/historicalOrders/$address': typeof HistoricalOrdersAddressRoute
@@ -355,7 +382,10 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trade'
     | '/vaults'
+    | '/api/client-error-report'
+    | '/api/geo'
     | '/api/leaderboard'
+    | '/api/referral-geo'
     | '/builders-perp/$dex'
     | '/fundingHistory/$address'
     | '/historicalOrders/$address'
@@ -389,7 +419,10 @@ export interface FileRouteTypes {
     | '/staking'
     | '/support'
     | '/terms'
+    | '/api/client-error-report'
+    | '/api/geo'
     | '/api/leaderboard'
+    | '/api/referral-geo'
     | '/builders-perp/$dex'
     | '/fundingHistory/$address'
     | '/historicalOrders/$address'
@@ -426,7 +459,10 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trade'
     | '/vaults'
+    | '/api/client-error-report'
+    | '/api/geo'
     | '/api/leaderboard'
+    | '/api/referral-geo'
     | '/builders-perp/$dex'
     | '/fundingHistory/$address'
     | '/historicalOrders/$address'
@@ -464,7 +500,10 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TradeRoute: typeof TradeRouteWithChildren
   VaultsRoute: typeof VaultsRouteWithChildren
+  ApiClientErrorReportRoute: typeof ApiClientErrorReportRoute
+  ApiGeoRoute: typeof ApiGeoRoute
   ApiLeaderboardRoute: typeof ApiLeaderboardRoute
+  ApiReferralGeoRoute: typeof ApiReferralGeoRoute
   FundingHistoryAddressRoute: typeof FundingHistoryAddressRoute
   HistoricalOrdersAddressRoute: typeof HistoricalOrdersAddressRoute
   JoinSplatRoute: typeof JoinSplatRoute
@@ -628,11 +667,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VaultsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/client-error-report': {
+      id: '/api/client-error-report'
+      path: '/api/client-error-report'
+      fullPath: '/api/client-error-report'
+      preLoaderRoute: typeof ApiClientErrorReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/geo': {
+      id: '/api/geo'
+      path: '/api/geo'
+      fullPath: '/api/geo'
+      preLoaderRoute: typeof ApiGeoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/leaderboard': {
       id: '/api/leaderboard'
       path: '/api/leaderboard'
       fullPath: '/api/leaderboard'
       preLoaderRoute: typeof ApiLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/referral-geo': {
+      id: '/api/referral-geo'
+      path: '/api/referral-geo'
+      fullPath: '/api/referral-geo'
+      preLoaderRoute: typeof ApiReferralGeoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/builders-perp/': {
@@ -786,7 +846,10 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TradeRoute: TradeRouteWithChildren,
   VaultsRoute: VaultsRouteWithChildren,
+  ApiClientErrorReportRoute: ApiClientErrorReportRoute,
+  ApiGeoRoute: ApiGeoRoute,
   ApiLeaderboardRoute: ApiLeaderboardRoute,
+  ApiReferralGeoRoute: ApiReferralGeoRoute,
   FundingHistoryAddressRoute: FundingHistoryAddressRoute,
   HistoricalOrdersAddressRoute: HistoricalOrdersAddressRoute,
   JoinSplatRoute: JoinSplatRoute,
@@ -798,10 +861,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

@@ -1,10 +1,10 @@
-# HypeTerminal — AI Agent Guide
+# gatu — AI Agent Guide
 
 This is the implementation map for this checkout. Read [AGENTS.md](AGENTS.md) first for durable product and safety contracts, and use the [documentation index](docs/README.md) to find design decisions, working records and delivery documentation. Update the relevant documentation alongside behavior changes.
 
 ## Repository boundaries
 
-HypeTerminal is a pnpm monorepo for a Hyperliquid trading terminal, its public website and shared packages. Paths below are relative to the repository root; the terminal's `@/` alias resolves to `apps/terminal/src/`.
+gatu is a pnpm monorepo for a Hyperliquid trading terminal, its public website and shared packages. Paths below are relative to the repository root; the terminal's `@/` alias resolves to `apps/terminal/src/`.
 
 | Location | Responsibility |
 |---|---|
@@ -41,7 +41,7 @@ Public trading links use `/trade/:symbol` or `/trade/:base/:quote`; `/` redirect
 
 ## Runtime and signing boundaries
 
-The SSR document shell owns Query, Lingui and direction context. Wallet dependencies load through `ClientRuntimeGate` after hydration. Document routes (`/docs`, `/support`, `/terms`, `/privacy`, `/risk`, `/cookies`) render without the wallet runtime. Browser globals belong behind a verified client-only import boundary; a component's client-only rendering alone does not make its imports SSR-safe. See [SSR rules](.claude/rules/ssr.md) and [runtime guardrails](docs/runtime-guardrails.md).
+The prerendered document shell (built once by the server renderer; no rendering at runtime) owns Query, Lingui and direction context. Wallet dependencies load through `ClientRuntimeGate` after hydration. Document routes (`/docs`, `/support`, `/terms`, `/privacy`, `/risk`, `/cookies`) render without the wallet runtime. Browser globals belong behind a verified client-only import boundary; a component's client-only rendering alone does not make its imports SSR-safe. See [SSR rules](.claude/rules/ssr.md) and [runtime guardrails](docs/runtime-guardrails.md).
 
 Privy owns authentication and the external-wallet catalog; `@privy-io/wagmi` supplies connector state. The active account must match the selected Hyperliquid owner before any user-signed client is created. Ordinary email trading uses that user's exact active embedded owner. External-wallet trading and Agent-only sessions use verified Agent/API wallets. Authentication, owner signer readiness, Agent approval, local key availability, legal acceptance and builder-fee approval are separate facts.
 

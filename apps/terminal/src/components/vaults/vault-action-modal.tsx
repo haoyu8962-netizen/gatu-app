@@ -120,7 +120,7 @@ export function VaultActionModal({
 
 				{stage === "review" ? (
 					<div className="space-y-3">
-						<dl className="divide-y divide-stroke-weak rounded-12 border border-stroke-weak px-3 text-xs">
+						<dl className="divide-y divide-stroke-weak py-2 text-xs">
 							<ReviewRow label={<Trans>Owner</Trans>} value={ownerAddress} mono />
 							<ReviewRow label={<Trans>Vault</Trans>} value={detail.vaultAddress} mono />
 							<ReviewRow label={<Trans>Amount</Trans>} value={`${amount} USDC`} />
@@ -294,16 +294,14 @@ function VaultActionResultView({
 				</p>
 				{transactionHash ? <p className="break-all font-mono text-2xs text-fg-muted">{transactionHash}</p> : null}
 				{finalAmount || commission || closingCost ? (
-					<dl className="w-full divide-y divide-stroke-weak rounded-12 border border-stroke-weak px-3 text-xs">
+					<dl className="w-full divide-y divide-stroke-weak py-2 text-xs">
 						{finalAmount ? <ReviewRow label={<Trans>Final amount</Trans>} value={`${finalAmount} USDC`} /> : null}
 						{commission ? <ReviewRow label={<Trans>Commission</Trans>} value={`${commission} USDC`} /> : null}
 						{closingCost ? <ReviewRow label={<Trans>Closing cost</Trans>} value={`${closingCost} USDC`} /> : null}
 					</dl>
 				) : null}
 				{operationReference ? (
-					<p className="break-all rounded-8 bg-fill-weak px-2 py-1.5 font-mono text-2xs text-fg-muted">
-						{operationReference}
-					</p>
+					<p className="break-all py-1.5 font-mono text-2xs text-fg-muted">{operationReference}</p>
 				) : null}
 			</div>
 		);
@@ -328,9 +326,7 @@ function VaultActionResultView({
 				)}
 			</p>
 			{operationReference ? (
-				<p className="break-all rounded-8 bg-fill-weak px-2 py-1.5 font-mono text-2xs text-fg-muted">
-					{operationReference}
-				</p>
+				<p className="break-all py-1.5 font-mono text-2xs text-fg-muted">{operationReference}</p>
 			) : null}
 		</div>
 	);

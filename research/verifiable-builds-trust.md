@@ -12,14 +12,14 @@ Users of crypto trading terminals are trusting frontend code with access to thei
 
 **Current state**: JS bundlers (Vite, Webpack) are non-deterministic by default — chunk hashing, source maps, timestamps, and dependency resolution order cause drift. This is the #1 blocker.
 
-**How to solve it for HypeTerminal**:
+**How to solve it for gatu**:
 - Pin the entire toolchain in a Nix flake or Docker image (Node version, pnpm version, OS)
 - Strip timestamps and randomized chunk suffixes from Vite output (custom Rollup plugin)
 - Publish a `BUILD_MANIFEST.json` with the git commit SHA, dependency lockfile hash, and SHA-256 of every output file
 - CI pipeline that builds twice (on separate runners) and asserts identical output before deploying
-- Provide a one-liner for users to reproduce locally: `nix build` or `docker run --rm hypeterminal-build` → compare hashes
+- Provide a one-liner for users to reproduce locally: `nix build` or `docker run --rm gatu-build` → compare hashes
 
-**Gold standard reference**: Uniswap's IPFS deployments (CID = content hash), but they never achieved true reproducibility. HypeTerminal can be the first to solve it for a Vite/React SPA.
+**Gold standard reference**: Uniswap's IPFS deployments (CID = content hash), but they never achieved true reproducibility. gatu can be the first to solve it for a Vite/React SPA.
 
 ---
 
@@ -32,9 +32,9 @@ Users of crypto trading terminals are trusting frontend code with access to thei
 - Users can verify: `ipfs cat <CID>` matches what they rebuilt locally
 - ENS resolution is on-chain and auditable — anyone can check which CID the name points to
 
-**HypeTerminal approach**:
+**gatu approach**:
 - Every release deployed to IPFS with CID published in the GitHub release notes
-- ENS name (e.g., `hypeterminal.eth`) resolving to the latest CID
+- ENS name (e.g., `gatu.eth`) resolving to the latest CID
 - Fallback: traditional CDN deployment, but IPFS version is the "canonical trust anchor"
 - On-chain registry contract storing historical CID → commit SHA mappings
 
@@ -82,7 +82,7 @@ Users of crypto trading terminals are trusting frontend code with access to thei
 - This is the most practical trust mechanism — it operates independently of the frontend code
 
 ### Self-Hosted Verification
-- One-command self-hosting: `npx hypeterminal` or `docker run hypeterminal`
+- One-command self-hosting: `npx gatu` or `docker run gatu`
 - Users who self-host trust their own build, not ours
 - Provide clear docs for self-hosting with SSL
 
@@ -105,7 +105,7 @@ Users of crypto trading terminals are trusting frontend code with access to thei
 - **Level 2**: Build service generates provenance attestation
 - **Level 3**: Hardened build platform (isolated, ephemeral runners)
 
-**HypeTerminal target: SLSA Level 3**
+**gatu target: SLSA Level 3**
 - GitHub Actions with reusable workflows (not self-hosted runners)
 - Sigstore-based attestation: every build produces a signed provenance document linking output hash → source commit → build logs
 - Publish attestations to Rekor (Sigstore's transparency log) — anyone can verify
@@ -133,7 +133,7 @@ The 2025-2026 trend: shift trust from "verify the frontend" to "verify the trans
 - **Blowfish / Blockaid / Pocket Universe**: Independent transaction screening
 - **WalletConnect Verify API**: Domain verification for connected dApps
 
-**HypeTerminal should**:
+**gatu should**:
 - Support all major transaction simulation APIs
 - Never ask users to disable wallet security features
 - Display transaction previews in the UI *before* sending to wallet
@@ -150,7 +150,7 @@ The 2025-2026 trend: shift trust from "verify the frontend" to "verify the trans
 
 ---
 
-## 10. Implementation Roadmap for HypeTerminal
+## 10. Implementation Roadmap for gatu
 
 ### Phase 1: Foundation (Immediate)
 - [ ] Add `pnpm install --frozen-lockfile` enforcement in CI
@@ -191,4 +191,4 @@ No single mechanism is sufficient. Trust is built through **layers**:
 5. **Transactions are simulated** → even if all else fails, the wallet catches malicious actions
 6. **History is on-chain** → every deployment is *permanently recorded*
 
-HypeTerminal can be the first trading terminal to implement all six layers. That's the trust moat.
+gatu can be the first trading terminal to implement all six layers. That's the trust moat.

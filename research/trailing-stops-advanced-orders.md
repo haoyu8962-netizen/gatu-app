@@ -15,7 +15,7 @@
 
 ## 1. Current State
 
-### HypeTerminal Order Types Today
+### gatu Order Types Today
 
 | Type | Status | Implementation |
 |------|--------|---------------|
@@ -131,7 +131,7 @@ Professionals want scale orders that Hyperliquid's native 2-20 uniform levels ca
 
 **Hyperliquid's gaps vs CEXes:** No trailing stop, no iceberg, no OCO, no GTD, no multi-TP/SL, no native grid/DCA.
 
-**HypeTerminal opportunity:** Bridge the gap between Hyperliquid's API capabilities and CEX-level order management — entirely client-side.
+**gatu opportunity:** Bridge the gap between Hyperliquid's API capabilities and CEX-level order management — entirely client-side.
 
 ---
 
@@ -628,7 +628,7 @@ Active strategies must survive page refresh:
 
 ## 8. Monetization
 
-Hyperliquid's builder fee system enables HypeTerminal to charge fees on advanced orders:
+Hyperliquid's builder fee system enables gatu to charge fees on advanced orders:
 
 - **Builder fee**: Up to 0.01% (1 bps) on perps, passed via `builder` param in `order()`.
 - **Where to apply**: Only on advanced strategy orders (trailing, iceberg, DCA, enhanced scale), not basic market/limit.

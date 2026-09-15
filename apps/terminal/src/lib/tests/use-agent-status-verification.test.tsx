@@ -137,7 +137,7 @@ describe("useAgentStatus definitive verification", () => {
 	});
 
 	it("fails closed instead of trusting cached data after an error", () => {
-		testState.data = [{ address: AGENT, name: "HypeTerminal", validUntil: null }];
+		testState.data = [{ address: AGENT, name: "gatu", validUntil: null }];
 		testState.error = new Error("network unavailable");
 		const probe = renderProbe();
 

@@ -5,7 +5,6 @@ import {
 	InfoClient,
 	type IRequestTransport,
 	type ISubscriptionTransport,
-	SubscriptionClient,
 	WebSocketTransport,
 	type WebSocketTransportOptions,
 } from "@nktkas/hyperliquid";
@@ -17,7 +16,9 @@ import { getSdkReconnectionDelayMs } from "./internal/websocket/reliability";
 import { createWsTransportMonitor, type WsTransportMonitor } from "./internal/websocket/transport-monitor";
 import { LRU } from "./lru";
 import { createL1AgentWallet } from "./signing/l1-agent-wallet";
+import { CompactSubscriptionClient } from "./subscriptions/compact-subscription-client";
 import { createL2BookTransportPool } from "./subscriptions/l2-book-transport-pool";
+import type { SubParams } from "./types/clients";
 
 const cache = new Map<string, unknown>();
 const bookTransports = createL2BookTransportPool(
@@ -96,7 +97,39 @@ export function getInfoClient(isTestnet: boolean): InfoClient {
 	return getOrCreate(`info:${isTestnet}`, () => new InfoClient({ transport: getHttpTransport(isTestnet) }));
 }
 
-export function getSubscriptionClient(isTestnet: boolean): SubscriptionClient {
+export const L2_BOOK_WARM_TTL_MS = 15_000;
+
+/**
+ * Opens the pooled full-book stream for `params` ahead of its first consumer and keeps it alive
+ * briefly, so the panel that subscribes next joins a confirmed subscription and receives the
+ * freshest snapshot at once instead of paying for a new connection and a subscribe round trip.
+ * Returns a release function; the warm lease also ends on its own after `ttlMs`.
+ */
+export function warmL2BookSubscription(
+	isTestnet: boolean,
+	params: SubParams<"l2Book">,
+	ttlMs = L2_BOOK_WARM_TTL_MS,
+): () => void {
+	let stopped = false;
+	let stop = () => {};
+	getSubscriptionClient(isTestnet)
+		.l2Book(params, () => {})
+		.then((subscription) => {
+			stop = () => void subscription.unsubscribe().catch(() => {});
+			if (stopped) stop();
+		})
+		.catch(() => {});
+	const timer = setTimeout(end, ttlMs);
+	function end() {
+		if (stopped) return;
+		stopped = true;
+		clearTimeout(timer);
+		stop();
+	}
+	return end;
+}
+
+export function getSubscriptionClient(isTestnet: boolean): CompactSubscriptionClient {
 	return getOrCreate(`subscription:${isTestnet}`, () => {
 		const primary = getWsTransport(isTestnet);
 		const transport: ISubscriptionTransport = {
@@ -105,7 +138,10 @@ export function getSubscriptionClient(isTestnet: boolean): SubscriptionClient {
 					? bookTransports.subscribe(isTestnet, payload, listener, options)
 					: primary.subscribe(channel, payload, listener, options),
 		};
-		return new SubscriptionClient({ transport });
+		return new CompactSubscriptionClient({
+			transport,
+			subscribeDisconnect: (listener) => subscribeWsDisconnect(isTestnet, listener),
+		});
 	});
 }
 

@@ -472,7 +472,7 @@ function SummaryMetric({
 	tone?: "positive" | "negative" | "neutral";
 }) {
 	return (
-		<div className="rounded-10 border border-stroke-weak bg-fill-weak px-3 py-2.5 min-[1001px]:rounded-12 min-[1001px]:py-3">
+		<div className="px-3 py-2.5 min-[1001px]:py-3">
 			<p className="text-2xs text-fg-muted min-[1001px]:text-xs">{label}</p>
 			<p className={cn("mt-1 truncate text-base font-bold tabular-nums min-[1001px]:text-xl", toneClass(tone))}>
 				<bdi dir="ltr">{value}</bdi>

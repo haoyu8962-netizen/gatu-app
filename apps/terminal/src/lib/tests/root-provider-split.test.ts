@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { isDocumentRoutePath } from "@/providers/client-runtime";
 
+const clientRootLoaderSource = readFileSync(resolve(process.cwd(), "src/providers/client-root-loader.ts"), "utf8");
 const rootProviderSource = readFileSync(resolve(process.cwd(), "src/providers/root.tsx"), "utf8");
 const clientRootProviderSource = readFileSync(resolve(process.cwd(), "src/providers/client-root.tsx"), "utf8");
 const rootRouteSource = readFileSync(resolve(process.cwd(), "src/routes/__root.tsx"), "utf8");
@@ -16,11 +17,13 @@ describe("root provider startup split", () => {
 	});
 
 	it("keeps wallet runtimes out of the statically imported root provider", () => {
-		expect(rootProviderSource).toContain('import("@/providers/client-root")');
-		expect(rootProviderSource).toContain("let clientRootProviderModule");
-		expect(rootProviderSource).toContain("void loadClientRootProvider()");
+		expect(clientRootLoaderSource).toContain('import("@/providers/client-root")');
+		expect(clientRootLoaderSource).toContain("publish({ Provider: null, error: error ?? new Error(");
+		expect(rootProviderSource).toContain("clientRootLoader.load().catch(() => {});");
 		expect(rootProviderSource).toContain("!isDocumentRoutePath(window.location.pathname)");
-		expect(rootProviderSource).toContain("lazy(() =>");
+		expect(rootProviderSource).toContain("useSyncExternalStore(");
+		expect(rootProviderSource).not.toContain("lazy(() =>");
+		expect(rootProviderSource).not.toContain("<Suspense");
 		expect(rootProviderSource).not.toContain('from "@privy-io/react-auth"');
 		expect(rootProviderSource).not.toContain('from "@privy-io/wagmi"');
 		expect(rootProviderSource).not.toContain('from "@gatu/hl-react"');
@@ -42,11 +45,13 @@ describe("root provider startup split", () => {
 		expect(rootProviderSource).toContain("useHydrated()");
 		expect(rootProviderSource).toContain("useRouterState({ select: getPresentedRoutePathname })");
 		expect(rootProviderSource).toContain("isDocumentRoutePath(pathname)");
-		expect(rootProviderSource).toContain("<Suspense fallback={fallback}>");
-		expect(rootProviderSource).not.toContain("fallback={children}");
 		expect(rootProviderSource).toContain(
-			"if (isServer || !hydrated || !LazyClientRootProvider) return <>{fallback}</>",
+			"<ClientRootProvider queryClient={queryClient}>{children}</ClientRootProvider>",
 		);
+		expect(rootProviderSource).not.toContain("fallback={children}");
+		expect(rootProviderSource).toContain("if (isServer || !hydrated) return <>{fallback}</>;");
+		expect(rootProviderSource).toContain("if (error) throw error;");
+		expect(rootProviderSource).toContain("clientRootLoader.getServerState,");
 		expect(rootRouteSource).toContain("<ClientRuntimeGate fallback={fallback}>");
 		expect(rootRouteSource).not.toContain("<ClientOnly");
 	});
@@ -57,9 +62,12 @@ describe("root provider startup split", () => {
 		expect(rootRouteSource).toMatch(
 			/if \(routeSurface === "document"\)[\s\S]*?<ApplicationErrorBoundary>[\s\S]*?<Outlet \/>/,
 		);
-		expect(rootRouteSource).toMatch(/if \(routeSurface === "document"\)[\s\S]*?<Outlet \/>[\s\S]*?<Toaster \/>/);
+		expect(rootRouteSource).toMatch(
+			/if \(routeSurface === "document"\)[\s\S]*?<Outlet \/>[\s\S]*?<DocumentOverlays \/>/,
+		);
+		expect(rootRouteSource).toContain("<AppRuntimeOverlays />");
 		expect(rootRouteSource).toContain(
-			'const fallback = routeSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />',
+			'const fallback = fallbackSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />',
 		);
 
 		const appRuntimeSource = rootRouteSource.slice(

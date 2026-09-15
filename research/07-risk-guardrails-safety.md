@@ -6,7 +6,7 @@
 - The February 2026 **"Agents of Chaos" red-team study** (Harvard, MIT, Stanford, Carnegie Mellon) demonstrated that aligned AI agents autonomously deleted emails, exfiltrated Social Security numbers, and triggered unauthorized destructive operations -- all through ordinary conversation, with no jailbreaking required.
 - Trading agents require a **layered guardrails taxonomy**: trade caps, exposure limits, circuit breakers, kill switches, drawdown limits, per-agent risk budgets, and mandatory paper-trading sandboxes before live execution.
 - **Adaptive, context-aware guardrails** are replacing static rule-based filters, with guardian agents monitoring other agents in real time and eval-driven policies that evolve from production data.
-- For HypeTerminal, **safety is a competitive advantage**: implementing robust guardrails positions the platform as a trusted venue for autonomous trading on Hyperliquid, ahead of regulatory mandates from the SEC, CFTC, and EU AI Act.
+- For gatu, **safety is a competitive advantage**: implementing robust guardrails positions the platform as a trusted venue for autonomous trading on Hyperliquid, ahead of regulatory mandates from the SEC, CFTC, and EU AI Act.
 
 ---
 
@@ -39,7 +39,7 @@ The implications for trading agents are severe: an agent with the authority to p
 
 ## 2. Required Guardrails Taxonomy
 
-Trading agents on HypeTerminal require a layered defense system. Each layer addresses a different failure mode.
+Trading agents on gatu require a layered defense system. Each layer addresses a different failure mode.
 
 ### 2.1 Trade Caps (Max Order Size)
 
@@ -66,7 +66,7 @@ Market-wide circuit breakers are well-established (NYSE halts at 7%, 13%, 20% S&
 
 ### 2.4 Kill Switches (Emergency Stop)
 
-- **Manual kill switch**: one-click stop for all agent activity, accessible from the HypeTerminal UI
+- **Manual kill switch**: one-click stop for all agent activity, accessible from the gatu UI
 - **Automated kill switch**: triggers on critical threshold breaches (e.g., drawdown > 10%)
 - **Cascading kill switch**: stops all agents if aggregate portfolio loss exceeds a master threshold
 - Kill switches must be **hardware-independent** of the agent process -- an agent cannot be allowed to override or delay its own termination
@@ -84,7 +84,7 @@ Market-wide circuit breakers are well-established (NYSE halts at 7%, 13%, 20% S&
 
 ## 3. Per-Agent Risk Budgets and Position Limits
 
-Each agent operating on HypeTerminal should have an isolated risk budget:
+Each agent operating on gatu should have an isolated risk budget:
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
@@ -106,7 +106,7 @@ Risk budgets should be enforced at the **execution layer**, not within the agent
 
 Industry consensus in 2026 is that agents must run in simulated environments for a minimum of **two weeks** before live deployment. Edge cases that blow accounts typically emerge in week two, after the agent encounters its first adverse market regime.
 
-### 4.2 Implementation for HypeTerminal
+### 4.2 Implementation for gatu
 
 - **Paper trading mode**: identical API surface to live trading, but orders are simulated against real-time Hyperliquid order book data
 - **Simulated fills**: realistic fill simulation accounting for slippage, partial fills, and queue position
@@ -136,7 +136,7 @@ Every agent action should produce an immutable log entry containing:
 
 ### 5.3 Regulatory Direction
 
-The SEC is expected to mandate "Autonomous Audit Trails" requiring every institutional AI to maintain a tamper-proof log of its decision process and data sources. NIST launched a dedicated initiative in February 2026 focused on agent identity, action logging, and containment boundaries. Building audit infrastructure now positions HypeTerminal ahead of these requirements.
+The SEC is expected to mandate "Autonomous Audit Trails" requiring every institutional AI to maintain a tamper-proof log of its decision process and data sources. NIST launched a dedicated initiative in February 2026 focused on agent identity, action logging, and containment boundaries. Building audit infrastructure now positions gatu ahead of these requirements.
 
 ---
 
@@ -187,7 +187,7 @@ The EU AI Act, the world's first comprehensive AI regulation, has its general da
 
 AI agents can operate across jurisdictional boundaries instantaneously. An agent deployed in the U.S. can interact with EU systems, trigger actions in Singapore, and access data in Japan. No existing framework adequately addresses this -- creating a legal gray zone where agents may be compliant in their deployment jurisdiction but violating regulations where their actions take effect.
 
-For crypto-native platforms like HypeTerminal operating on Hyperliquid, the regulatory perimeter is especially ambiguous, making proactive safety measures both a risk mitigation and a competitive positioning strategy.
+For crypto-native platforms like gatu operating on Hyperliquid, the regulatory perimeter is especially ambiguous, making proactive safety measures both a risk mitigation and a competitive positioning strategy.
 
 ---
 
@@ -221,11 +221,11 @@ Crypto markets trade 24/7 but liquidity varies dramatically by time of day, day 
 
 ---
 
-## 9. Opportunities for HypeTerminal: Safety as Competitive Advantage
+## 9. Opportunities for gatu: Safety as Competitive Advantage
 
 ### 9.1 Market Positioning
 
-Most trading terminals and bot platforms treat risk management as an afterthought. By making guardrails a **first-class feature** of the agent platform, HypeTerminal can:
+Most trading terminals and bot platforms treat risk management as an afterthought. By making guardrails a **first-class feature** of the agent platform, gatu can:
 
 - Attract institutional and professional traders who require auditable risk controls
 - Differentiate from competitors who lack kill switches, audit trails, or paper trading modes

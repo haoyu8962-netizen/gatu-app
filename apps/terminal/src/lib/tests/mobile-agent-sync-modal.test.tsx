@@ -28,7 +28,7 @@ const REVOKE_AGENT_PRIVATE_KEY = `0x${"cd".repeat(32)}`;
 const REVOKE_VALID_UNTIL_MS = NOW_MS + 10 * 60 * 1000;
 const REVOKE_AGENT_NAME = `Mobile valid_until ${REVOKE_VALID_UNTIL_MS}`;
 const SYNC_EXPIRES_AT_MS = NOW_MS + 5 * 60 * 1000;
-const PHONE_LINK = "https://app.hypeterminal.test/mobile-agent-sync#ht-mobile-sync=encoded-envelope&k=encoded-key";
+const PHONE_LINK = "https://app.gatu.test/mobile-agent-sync#ht-mobile-sync=encoded-envelope&k=encoded-key";
 const NO_BALANCE_MESSAGE = "No balance on Hyperliquid. Deposit first.";
 const NO_BALANCE_MESSAGE_AR = "لا يوجد رصيد في Hyperliquid. أودِع أولاً.";
 const APPROVAL_RECHECK_MESSAGE =
@@ -375,7 +375,7 @@ describe("MobileAgentSyncModal", () => {
 		testState.writeClipboard.mockReset();
 		Object.defineProperty(window, "location", {
 			configurable: true,
-			value: new URL("https://app.hypeterminal.test/trade"),
+			value: new URL("https://app.gatu.test/trade"),
 		});
 		Object.defineProperty(document, "visibilityState", {
 			configurable: true,
@@ -545,7 +545,7 @@ describe("MobileAgentSyncModal", () => {
 			agentName: AGENT_NAME,
 			agentPrivateKey: AGENT_PRIVATE_KEY,
 			agentValidUntilMs: AGENT_VALID_UNTIL_MS,
-			appOrigin: "https://app.hypeterminal.test",
+			appOrigin: "https://app.gatu.test",
 			env: "Mainnet",
 			nowMs: NOW_MS + 4_000,
 			userAddress: USER_ADDRESS,

@@ -375,7 +375,7 @@ Portfolio margin dramatically changes basis trade economics:
 
 ### 7.1 Delta Neutral Builder Panel
 
-Located as a dedicated route/tab in HypeTerminal.
+Located as a dedicated route/tab in gatu.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -512,7 +512,7 @@ Accessible from position context menu or dedicated tab.
 
 ## 11. Open Questions
 
-1. **Vault integration** — should HypeTerminal offer a shared vault where users can pool capital for basis strategies (like Liminal/Neutral Trade), or stay purely single-user?
+1. **Vault integration** — should gatu offer a shared vault where users can pool capital for basis strategies (like Liminal/Neutral Trade), or stay purely single-user?
 2. **Builder code revenue** — basis trades generate significant volume; should we integrate builder codes to capture fees as a revenue stream?
 3. **Notification infrastructure** — in-app only for v1, but should we plan for Telegram/Discord webhook alerts in the architecture?
 4. **Backtest engine** — should we offer historical backtesting of basis strategies using archived funding rates? High value but significant build cost.

@@ -1,4 +1,4 @@
-# Auto-Rebalancing Engine + Position Manager for HypeTerminal
+# Auto-Rebalancing Engine + Position Manager for gatu
 
 ## 1. Executive Summary
 
@@ -6,13 +6,13 @@ Perpetual futures traders on Hyperliquid perform a significant amount of manual,
 
 Existing tools address fragments of the problem. 3Commas and Shrimpy focus on spot rebalancing. goodcryptoX and Katoshi bring trailing stops and DCA bots to Hyperliquid. TradingView-to-execution bridges like Tickerly handle signal routing. But no tool provides an integrated **position-level rebalancing engine** that understands perpetual futures mechanics -- funding rates, margin modes, leverage tiers, cross-margin dependencies, and liquidation proximity -- while offering portfolio-wide adjustment logic.
 
-HypeTerminal already has the foundation: real-time position tracking via WebSocket subscriptions, a full order intent system (market, limit, trigger, scale, TWAP), batch order modification, and scheduled cancellation through the Hyperliquid SDK. The opportunity is to layer a rebalancing and position management engine on top of this infrastructure, giving traders automation that understands perps natively.
+gatu already has the foundation: real-time position tracking via WebSocket subscriptions, a full order intent system (market, limit, trigger, scale, TWAP), batch order modification, and scheduled cancellation through the Hyperliquid SDK. The opportunity is to layer a rebalancing and position management engine on top of this infrastructure, giving traders automation that understands perps natively.
 
 The proposed system has two core modules:
 1. **Auto-Rebalancing Engine** -- maintains target portfolio allocations across perp positions using threshold, time, drift, and signal-based triggers
 2. **Position Manager** -- handles per-position lifecycle automation: scaling in/out, trailing mechanisms, risk limits, and profit-taking schedules
 
-This document covers the daily workflows traders perform manually, the gaps in current tools, a detailed feature proposal, architecture considerations within HypeTerminal's codebase, and a prioritized implementation plan.
+This document covers the daily workflows traders perform manually, the gaps in current tools, a detailed feature proposal, architecture considerations within gatu's codebase, and a prioritized implementation plan.
 
 ---
 
@@ -150,7 +150,7 @@ This document covers the daily workflows traders perform manually, the gaps in c
 
 ### 3.8 Summary of Gaps
 
-| Capability | HL Native | goodcryptoX | Katoshi | 3Commas | Shrimpy | HypeTerminal (proposed) |
+| Capability | HL Native | goodcryptoX | Katoshi | 3Commas | Shrimpy | gatu (proposed) |
 |---|---|---|---|---|---|---|
 | Portfolio allocation targets | - | - | - | - | Spot only | Perp + Spot |
 | Threshold-based rebalancing | - | - | - | - | Spot only | Yes |
@@ -175,7 +175,7 @@ The system consists of two modules that share a common data layer:
 
 ```
 +------------------------------------------+
-|          HypeTerminal UI Layer           |
+|          gatu UI Layer           |
 |  (Portfolio View, Position Cards, Alerts)|
 +------------------------------------------+
          |                    |
@@ -339,11 +339,11 @@ Level 4: Trail remaining 25% with 8% trailing stop
 - Reduce on volatility spike (position size inversely proportional to recent volatility)
 - Time-based reduction: gradually close position over N hours (essentially a close-side TWAP)
 
-### 4.4 Architecture Considerations for HypeTerminal
+### 4.4 Architecture Considerations for gatu
 
 #### 4.4.1 Data Layer (Already Exists)
 
-HypeTerminal already subscribes to the necessary real-time data:
+gatu already subscribes to the necessary real-time data:
 - **Positions**: `useSubAllDexsClearinghouseState` provides all position data
 - **Mark prices**: `useSubAllMids` provides real-time mid prices for all assets
 - **Open orders**: `useSubOpenOrders` provides existing TP/SL and limit orders
@@ -358,7 +358,7 @@ HypeTerminal already subscribes to the necessary real-time data:
 
 **Location:** `src/domain/rebalance/` and `src/domain/position-manager/`
 
-Following HypeTerminal's pattern of keeping calculations out of components:
+Following gatu's pattern of keeping calculations out of components:
 
 ```
 src/domain/rebalance/
@@ -521,7 +521,7 @@ All automated actions must go through safety checks:
 
 ### 6.1 Perp-Native Design
 
-Every existing rebalancing tool was designed for spot portfolios and retrofitted for derivatives. HypeTerminal's engine would be built from the ground up for perpetual futures, understanding:
+Every existing rebalancing tool was designed for spot portfolios and retrofitted for derivatives. gatu's engine would be built from the ground up for perpetual futures, understanding:
 - Leverage amplifies notional exposure beyond collateral
 - Funding rates are a continuous cost/revenue stream that affects optimal holding periods
 - Cross-margin creates interdependencies between positions
@@ -530,15 +530,15 @@ Every existing rebalancing tool was designed for spot portfolios and retrofitted
 
 ### 6.2 Zero Custody Risk
 
-Unlike 3Commas, Shrimpy, or Katoshi, HypeTerminal runs client-side. The rebalancing engine computes locally and executes through signed transactions. No API keys leave the user's browser. No custodial risk. No server-side state that can be compromised.
+Unlike 3Commas, Shrimpy, or Katoshi, gatu runs client-side. The rebalancing engine computes locally and executes through signed transactions. No API keys leave the user's browser. No custodial risk. No server-side state that can be compromised.
 
 ### 6.3 Real-Time WebSocket Foundation
 
-HypeTerminal already maintains persistent WebSocket connections for positions, prices, and orders. The rebalancing engine piggybacks on this existing data flow with zero additional API calls. Competing tools poll REST endpoints, introducing latency and rate limit concerns.
+gatu already maintains persistent WebSocket connections for positions, prices, and orders. The rebalancing engine piggybacks on this existing data flow with zero additional API calls. Competing tools poll REST endpoints, introducing latency and rate limit concerns.
 
 ### 6.4 Integrated Experience
 
-Traders currently use Hyperliquid for execution, a spreadsheet for allocation tracking, a separate bot for trailing stops, and a Telegram alert for risk warnings. HypeTerminal can consolidate this into a single interface where the position table, rebalancing controls, risk dashboard, and execution engine coexist. Context switching is the enemy of good risk management.
+Traders currently use Hyperliquid for execution, a spreadsheet for allocation tracking, a separate bot for trailing stops, and a Telegram alert for risk warnings. gatu can consolidate this into a single interface where the position table, rebalancing controls, risk dashboard, and execution engine coexist. Context switching is the enemy of good risk management.
 
 ### 6.5 SDK Leverage
 
@@ -550,7 +550,7 @@ The Hyperliquid SDK (via `@nktkas/hyperliquid`) already exposes the full exchang
 - TWAP orders for large rebalancing trades that need execution smoothing
 - Vault and sub-account support for strategy isolation
 
-No additional infrastructure or API access is needed. The entire engine can be built on top of what HypeTerminal already uses.
+No additional infrastructure or API access is needed. The entire engine can be built on top of what gatu already uses.
 
 ### 6.6 Differentiation from AI Agents
 
@@ -558,7 +558,7 @@ The current trend in crypto trading tools is toward "AI agents" that make opaque
 
 ---
 
-## Appendix A: HypeTerminal Codebase Reference
+## Appendix A: gatu Codebase Reference
 
 ### Existing Infrastructure to Build On
 

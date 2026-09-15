@@ -2,7 +2,7 @@
 
 > **Core finding**: Each asset class requires fundamentally different information architecture. They're not just "different tickers in the same layout." Every major professional platform (IBKR, thinkorswim, MetaTrader, Bloomberg) uses asset-specific workspaces.
 
-## The Three Interface Modules HypeTerminal Needs
+## The Three Interface Modules gatu Needs
 
 ### 1. Crypto Perpetuals Interface
 

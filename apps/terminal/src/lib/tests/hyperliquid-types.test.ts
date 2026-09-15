@@ -1,3 +1,4 @@
+import type { CompactSubscriptionClient } from "@gatu/hl-react";
 import type {
 	AllMidsParameters,
 	AllMidsResponse,
@@ -55,6 +56,14 @@ describe("InfoClient mapped types", () => {
 	it("does not include non-method properties", () => {
 		type Methods = InfoMethod;
 		expectTypeOf<"config_">().not.toMatchTypeOf<Methods>();
+	});
+
+	it("includes the compact market context channels served next to the SDK methods", () => {
+		expectTypeOf<"pac">().toMatchTypeOf<SubMethod>();
+		expectTypeOf<"sac">().toMatchTypeOf<SubMethod>();
+		expectTypeOf<undefined>().toMatchTypeOf<SubParams<"pac">>();
+		expectTypeOf<SubEvent<"pac">>().toMatchTypeOf<[string, ({ markPx: string; prevDayPx: string } | undefined)[]][]>();
+		expectTypeOf<SubEvent<"sac">>().toMatchTypeOf<Record<string, { markPx: string; circulatingSupply: string }>>();
 	});
 
 	it("includes the Info methods added in SDK 0.33.3", () => {
@@ -154,7 +163,8 @@ describe("SubscriptionClient mapped types", () => {
 	});
 
 	it("covers all SubscriptionClient methods", () => {
-		type SDKMethods = Exclude<keyof SubscriptionClient, "config_">;
-		expectTypeOf<SubMethod>().toMatchTypeOf<SDKMethods>();
+		type ClientMethods = Exclude<keyof CompactSubscriptionClient, "config_">;
+		expectTypeOf<SubMethod>().toMatchTypeOf<ClientMethods>();
+		expectTypeOf<Exclude<keyof SubscriptionClient, "config_">>().toMatchTypeOf<SubMethod>();
 	});
 });

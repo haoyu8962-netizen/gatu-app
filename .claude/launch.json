@@ -20,6 +20,12 @@
       "port": 3006
     },
     {
+      "name": "terminal-spa",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve-spa-static.mjs", "apps/terminal/.output/public", "--port", "3030"],
+      "port": 3030
+    },
+    {
       "name": "website",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@gatu/website", "dev"],

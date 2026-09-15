@@ -63,23 +63,19 @@ export function PortfolioOverview() {
 			<div className="grid grid-cols-2 gap-2 min-[1001px]:grid-cols-1">
 				<MetricCard
 					label={<Trans>14 Day Volume</Trans>}
-					value={isFeesLoading || fourteenDayVolume === null ? "—" : formatUSD(fourteenDayVolume)}
+					value={formatUSD(isFeesLoading ? "0" : (fourteenDayVolume ?? "0"))}
 				/>
 				<MetricCard
 					label={<Trans>Fees (Taker / Maker)</Trans>}
-					value={
-						isFeesLoading || takerFee == null || makerFee == null
-							? "—"
-							: `${formatPercent(takerFee, {
-									minimumFractionDigits: 4,
-									maximumFractionDigits: 4,
-									signDisplay: "auto",
-								})} / ${formatPercent(makerFee, {
-									minimumFractionDigits: 4,
-									maximumFractionDigits: 4,
-									signDisplay: "auto",
-								})}`
-					}
+					value={`${formatPercent(isFeesLoading ? "0" : (takerFee ?? "0"), {
+						minimumFractionDigits: 4,
+						maximumFractionDigits: 4,
+						signDisplay: "auto",
+					})} / ${formatPercent(isFeesLoading ? "0" : (makerFee ?? "0"), {
+						minimumFractionDigits: 4,
+						maximumFractionDigits: 4,
+						signDisplay: "auto",
+					})}`}
 					control={
 						<Select
 							value={feeMarket}
@@ -121,28 +117,28 @@ export function PortfolioOverview() {
 				<div className="flex flex-1 flex-col justify-center px-3 py-2 text-xs">
 					<SummaryRow
 						label={<Trans>PNL</Trans>}
-						value={pnl === null ? "—" : formatUSD(pnl, { compact: false, signDisplay: "exceptZero" })}
+						value={formatUSD(pnl ?? "0", { compact: false, signDisplay: "exceptZero" })}
 						tone={pnl ?? undefined}
 					/>
-					<SummaryRow label={<Trans>Volume</Trans>} value={snapshot === null ? "—" : formatUSD(snapshot.vlm)} />
+					<SummaryRow label={<Trans>Volume</Trans>} value={formatUSD(snapshot?.vlm ?? "0")} />
 					<SummaryRow label={<Trans>Max Drawdown</Trans>} value="—" />
 					<SummaryRow
 						label={<Trans>Total Equity</Trans>}
-						value={data.totalEquity === null ? "—" : formatUSD(data.totalEquity, { compact: false })}
+						value={formatUSD(data.totalEquity ?? "0", { compact: false })}
 					/>
 					{!data.usesSharedQuoteBalance ? (
 						<SummaryRow
 							label={<Trans>Perps Account Equity</Trans>}
-							value={data.perpEquity === null ? "—" : formatUSD(data.perpEquity, { compact: false })}
+							value={formatUSD(data.perpEquity ?? "0", { compact: false })}
 						/>
 					) : null}
 					<SummaryRow
 						label={<Trans>Spot Account Equity</Trans>}
-						value={data.spotEquity === null ? "—" : formatUSD(data.spotEquity, { compact: false })}
+						value={formatUSD(data.spotEquity ?? "0", { compact: false })}
 					/>
 					<SummaryRow
 						label={<Trans>Lending Net Balance</Trans>}
-						value={data.earnBalance === null ? "—" : formatUSD(data.earnBalance, { compact: false })}
+						value={formatUSD(data.earnBalance ?? "0", { compact: false })}
 					/>
 				</div>
 			</section>

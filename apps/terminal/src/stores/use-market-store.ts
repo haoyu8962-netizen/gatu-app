@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { DEFAULT_FAVORITE_MARKETS, DEFAULT_MARKET_NAME, STORAGE_KEYS } from "@/config/app";
@@ -6,6 +5,7 @@ import { DEFAULT_SELECTED_MARKETS } from "@/config/markets";
 import type { ExchangeScope } from "@/domain/market";
 import { isSafeTradeRouteMarketName } from "@/lib/hyperliquid/market-route";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
+import { z } from "@/lib/zod";
 import { useExchangeScope } from "@/providers/exchange-scope";
 
 const safeMarketNameSchema = z.string().refine(isSafeTradeRouteMarketName);
@@ -86,6 +86,10 @@ export function useSelectedMarket(): string {
 
 export function useSelectedMarkets() {
 	return useMarketStore((state) => state.selectedMarkets);
+}
+
+export function getStoredSelectedMarket(scope: ExchangeScope): string | undefined {
+	return useMarketStore.getState().selectedMarkets[scope];
 }
 
 export function getTradeHomeMarketName(): string {

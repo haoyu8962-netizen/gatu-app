@@ -1,13 +1,13 @@
 import { useSyncExternalStore } from "react";
 import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { z } from "zod";
 import { evictAllAgentTradingClients, evictTradingClient } from "../clients";
 import {
 	invalidateAllExchangeRequestIdentities,
 	invalidateExchangeRequestIdentity,
 } from "../internal/exchange/request-scheduler";
 import { LRU } from "../lru";
+import { z } from "../zod";
 import { evictAgentSigner, evictAllAgentSigners } from "./agent-signer-cache";
 import { createMobileAgentName, MOBILE_AGENT_NAME_BASE } from "./mobile-agent";
 import type { AgentWallet, HyperliquidEnv } from "./types";

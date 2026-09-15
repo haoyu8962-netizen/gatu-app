@@ -1,11 +1,12 @@
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import { nitro } from 'nitro/vite'
-import { defineConfig, type Plugin, type PluginOption } from 'vite'
+import { defineConfig, loadEnv, type Plugin, type PluginOption } from 'vite'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import { lingui } from '@lingui/vite-plugin'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -15,8 +16,45 @@ import {
   resolveClientChunkGraphCacheFile,
   writeClientChunkGraphFile,
 } from '../../scripts/client-chunk-graph.mjs'
-import { chartingLibrarySecurityHeaders, securityHeaders } from './src/config/security-headers'
+import { BUILD_META_PATH } from './src/config/api-paths'
+import { type BuildMeta, createBuildMeta } from './src/config/build-meta'
+import { createHashedChartLibraryEntryPath } from './src/config/chart-library'
+import { DOCUMENT_ROUTE_PATHS } from './src/config/document-routes'
+import { resolveMobilePairingFeatureFlags } from './src/config/mobile-pairing-flags'
+import { chartingLibrarySecurityHeaders, referralJoinHeaders, securityHeaders } from './src/config/security-headers'
 import { hashCatalogMessageIds } from './src/lib/i18n-catalog'
+import { MOBILE_SYNC_TICKET_API_VERSION } from './src/lib/mobile-sync/one-time-ticket-policy'
+
+// SPA mode: the build prerenders one static shell for every client-rendered application route
+// and real HTML for the document routes, so the client output can be hosted without the Nitro
+// server. The mask path must match an application surface whose routes are all `ssr: false`;
+// `/` cannot be used because its server-side `beforeLoad` redirects.
+export const SPA_SHELL_MASK_PATH = '/trade'
+export const SPA_SHELL_OUTPUT_PATH = '/_shell'
+
+export function createStartPrerenderPages() {
+  return DOCUMENT_ROUTE_PATHS.map((path) => ({
+    path,
+    prerender: { enabled: true, crawlLinks: false },
+  }))
+}
+
+export function createTanstackStartOptions() {
+  return {
+    spa: {
+      enabled: true,
+      maskPath: SPA_SHELL_MASK_PATH,
+      prerender: { outputPath: SPA_SHELL_OUTPUT_PATH, crawlLinks: false },
+    },
+    pages: createStartPrerenderPages(),
+    prerender: {
+      enabled: true,
+      crawlLinks: false,
+      failOnError: true,
+      autoStaticPathsDiscovery: false,
+    },
+  }
+}
 
 const isAnalyze = process.env.ANALYZE === 'true'
 const repositoryRoot = fileURLToPath(new URL('../..', import.meta.url))
@@ -82,11 +120,50 @@ export function createOrderSummaryChunksPlugin(): Plugin {
 const buildSha = resolveBuildSha()
 const releaseId = process.env.GATU_RELEASE_ID?.trim() || 'local'
 const buildTime = process.env.GATU_BUILD_TIME?.trim() || new Date().toISOString()
-const referralJoinHeaders = {
-  ...securityHeaders,
-  'cache-control': 'no-store',
-  'referrer-policy': 'no-referrer',
-  'x-robots-tag': 'noindex, nofollow',
+const chartLibraryEntryPath = fileURLToPath(new URL('./public/charting_library/charting_library.js', import.meta.url))
+const chartLibraryEntry = existsSync(chartLibraryEntryPath) ? readFileSync(chartLibraryEntryPath) : undefined
+// Names the immutable copy of the TradingView loader; see `config/chart-library.ts`.
+const chartLibraryHash = chartLibraryEntry ? createHash('sha256').update(chartLibraryEntry).digest('hex').slice(0, 16) : ''
+
+/** Only a build emits the hashed loader copy; the dev server serves the plain file, versioned by the commit query instead. */
+export function resolveChartLibraryHashForCommand(command: 'build' | 'serve'): string {
+  return command === 'build' ? chartLibraryHash : ''
+}
+
+export const buildIdentity = Object.freeze({
+  version: terminalPackage.version,
+  commit: buildSha,
+  release: releaseId,
+  builtAt: buildTime,
+})
+
+// The same build identity that the `/build-meta.json` server route reports, written as a static
+// file so a CDN deployment without the Nitro server still exposes it. Flags come from the same
+// `VITE_*` environment the client bundle sees for this mode.
+export function createBuildMetaForMode(mode: string): BuildMeta {
+  return createBuildMeta({
+    version: terminalPackage.version,
+    commit: buildSha,
+    release: releaseId,
+    builtAt: buildTime,
+    ticketApiVersion: MOBILE_SYNC_TICKET_API_VERSION,
+    pairing: resolveMobilePairingFeatureFlags(loadEnv(mode, terminalDirectory, 'VITE_')),
+    chartLibraryHash,
+  })
+}
+
+export function createBuildMetaPlugin(meta: BuildMeta): Plugin {
+  return {
+    name: 'gatu-build-meta',
+    apply: 'build',
+    applyToEnvironment: (environment) => environment.name === 'client',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: BUILD_META_PATH.slice(1), source: `${JSON.stringify(meta)}\n` })
+      if (chartLibraryEntry && chartLibraryHash) {
+        this.emitFile({ type: 'asset', fileName: createHashedChartLibraryEntryPath(chartLibraryHash), source: chartLibraryEntry })
+      }
+    },
+  }
 }
 
 function createReferralJoinDevRequestGuard(): Plugin {
@@ -240,6 +317,9 @@ const config = defineConfig({
         '/charting_library/**': {
           headers: { ...chartingLibrarySecurityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
         },
+        '/charting_library/bundles/**': {
+          headers: { ...chartingLibrarySecurityHeaders, 'cache-control': 'public, max-age=31536000, immutable' },
+        },
         '/tradingview-theme-*.css': {
           headers: { ...securityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
         },
@@ -291,7 +371,7 @@ const config = defineConfig({
       projects: ['./tsconfig.json'],
     }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart(createTanstackStartOptions()),
     viteReact({
       babel: {
         plugins: ['@lingui/babel-plugin-lingui-macro', 'babel-plugin-react-compiler'],
@@ -308,4 +388,11 @@ const config = defineConfig({
   ].filter(Boolean),
 })
 
-export default config
+export default defineConfig(({ command, mode }) => ({
+  ...config,
+  define: {
+    ...config.define,
+    'import.meta.env.VITE_GATU_CHART_LIBRARY_HASH': JSON.stringify(resolveChartLibraryHashForCommand(command)),
+  },
+  plugins: [...(config.plugins ?? []), createBuildMetaPlugin(createBuildMetaForMode(mode))],
+}))

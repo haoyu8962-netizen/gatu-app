@@ -1,19 +1,41 @@
 # 部署:单台 EC2 + Caddy 双域名
 
-gatu 是 TanStack Start + Nitro 的 **SSR 应用**,必须有常驻 Node 进程运行
-`apps/terminal/.output/server/index.mjs`(`node-server` preset 产物,自包含)。
+gatu 是 TanStack Start + Nitro 应用，仍由常驻 Node 进程运行
+`apps/terminal/.output/server/index.mjs`(`node-server` preset 产物,自包含)，但**运行时不再服务端渲染**：
+导航请求由 Node 进程直接返回构建期产物（应用路由返回预渲染的 `_shell.html`，文档路由返回各自的
+`index.html`），Node 只执行 `/api/*` 与移动配对处理器。见 [ADR 0005](../docs/adr/0005-spa-static-shell.md)。
 本目录提供一台 EC2 上的完整部署:
 
 ```
 Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai + testnet.gatu.ai)
          → 反代 127.0.0.1:3000
          → systemd gatu.service → /opt/gatu/current referral URI guard → node server/index.mjs
+                                   ├─ 导航：public/_shell.html 或 public/<文档路由>/index.html
+                                   └─ /api/*、/mobile-agent-sync-ticket：服务端处理器
 ```
 
 > 行情 WebSocket、订单签名都由浏览器直连 Hyperliquid,**不经过本机**。
-> 服务端负责首屏 SSR、`getGeo`(IPdata 查询)、脱敏客户端错误接收，以及移动配对 QR 的
+> 服务端负责返回静态壳与文档页、`/api/geo` 与 `/api/referral-geo`(IPdata 查询)、
+> `/api/client-error-report` 脱敏客户端错误接收，以及移动配对 QR 的
 > 60 秒首次消费票据。移动配对 store 只保存 origin、服务端随机 `syncId`、随机消费者 ID 和过期时间，
 > 不接收或保存 Agent 私钥、QR 密钥、钱包地址。
+
+### 静态壳运行模式
+
+- `_shell.html` 与文档页 HTML 在 `pnpm build` 的预渲染阶段生成一次；运行时由
+  `apps/terminal/src/lib/static-pages/request-middleware.ts` 在路由器之前返回，Nitro 的 route rules
+  仍为这些响应附加 CSP 等安全头。`/join/*` 返回的壳会带上 `<meta name="gatu-route" content="referral-join">`
+  标记，供本目录的发布健康检查识别 referral 深链能力。
+- 进程从 `GATU_PUBLIC_DIR`、当前目录下的 `public/`、`.output/public/`、`apps/terminal/.output/public/`，以及服务器入口脚本（`process.argv[1]`）旁的 `../public/` 依次查找 `_shell.html`（发布目录里 `server/index.mjs` 与 `public/` 同级，仓库根目录启动时靠入口路径找到 `.output/public`）；
+  `WorkingDirectory=/opt/gatu/current` 下无需额外配置。找不到壳时导航返回 503（fail closed），
+  只有显式设置 `GATU_RUNTIME_SSR=true` 才回退到服务端渲染。
+- `/_serverFn/*` 已无调用方，运行时返回 404。旧的 `/client-error-report` 路径保留为 `POST` 别名，
+  直到没有旧版本客户端仍在浏览器中打开后再删除。
+- 目标部署形态是 CloudFront + S3 + Lambda 全静态，不再需要本机 EC2 与 Caddy；组件、官方终端托管实践的调试结论、执行步骤与日常发布命令见 [cloudfront/README.md](cloudfront/README.md)。本文其余部分描述现有 EC2 部署，在切换完成并观察一个发布周期前仍然有效。
+- `deploy.sh` 第 8 步在 Node 探针中新增 `verify_geo_provider`：以 `X-Forwarded-For: 8.8.8.8` 请求
+  `http://127.0.0.1:3000/api/geo`，要求返回 200 且 `country` 为 `US`。这一步用生产密钥证明
+  `/api/geo` 已挂载、可信代理链解析出客户端 IP、IPdata 密钥可用；密钥缺失或提供方故障会导致发布回滚。
+  回滚到旧版本时不执行该探针（旧版本没有 `/api/geo`）。
 
 `app.gatu.ai` 和 `testnet.gatu.ai` 共用同一 Caddy 站点、Node upstream 和 immutable release。
 部署脚本分别检查两个公网 origin，并比对 `/build-meta.json` 中的 commit/release。
@@ -525,8 +547,12 @@ Caddy 已直接对外可用。若要全球加速/抗量,在 Caddy 前再挂一�
 两个 distribution 分别指向 `app.gatu.ai` 与 `testnet.gatu.ai`，转发原始 `Host` 头，仅对
 `/assets/*` 走长缓存。`/join/**` 必须 bypass cache 并保留 no-store/no-referrer/noindex。
 当前 Charting Library v28
-在 iPad WebKit 热缓存下可能无法完成初始化,因此 `/charting_library/*` 和
-`/tradingview-theme.css` 必须每次重新验证,其余 SSR 路径不缓存(或极短 TTL)。
+在 iPad WebKit 热缓存下可能无法完成初始化，这一条在 Caddy 时代的处理是让 `/charting_library/*` 与
+`/tradingview-theme.css` 每次重新验证。CloudFront 目标改为：文件名带内容哈希的 `bundles/*` 与构建发出的
+内容哈希入口副本 `charting_library.<hash>.js` immutable，未哈希的 `charting_library.js`、`sameorigin.html` 与主题样式仍每次重新验证，
+`sync` 从不删除旧版文件（[ADR 0006](../docs/adr/0006-startup-preloads-and-edge-caching.md)）。该警告没有留下可复现
+的证据记录，因此 DNS 切换前仍要在 iPad WebKit 上做一次热缓存图表初始化回归；若复现，把入口与
+bundle 改回重新验证只需改 `deploy/cloudfront/deploy.mjs` 的 `objectCacheControl` 并执行 `reupload`。
 
 ### TradingView vendor 升级约束
 
@@ -539,16 +565,19 @@ hashed bundles。完成版本化、双目录保留和移动端热缓存回归前
 ### CSP(应用层已启用)
 
 CSP 由 `apps/terminal/src/config/security-headers.ts` 定义,并通过
-`apps/terminal/vite.config.ts` 的 Nitro `routeRules` 下发。主文档使用
+`apps/terminal/vite.config.ts` 的 Nitro `routeRules` 下发。CloudFront 目标由 viewer-response 函数下发同一策略，
+并把更严的候选策略作为 `Content-Security-Policy-Report-Only` 送到独立的报告接收器（[ADR 0007](../docs/adr/0007-csp-report-only-hardening.md)）；候选策略的 `script-src` 已不含 `'unsafe-inline'`，改为预渲染页内联脚本的哈希，由发布流程在边缘填入（[内联脚本哈希计划](../docs/csp-inline-script-hashes-plan.md)），Nitro 目标不参与。主文档使用
 `frame-ancestors 'none'`,TradingView 同源资源使用允许 `frame-ancestors 'self'` 的独立策略。
 Caddy 只补充 HSTS 等代理层响应头,不要再添加第二份 CSP;浏览器会同时执行多份 CSP,
 未经协调的重复策略会让钱包、Turnstile、TradingView iframe 或 SSR 启动过程白屏。
 
-当前 `script-src` 包含 `'unsafe-inline'`,用于兼容 TanStack Start SSR 注入的启动脚本;
-这会放宽对内联脚本注入的防护,属于已知限制,不应描述成严格 CSP。移除前必须把每请求 nonce
-贯穿 TanStack Router 的 `ssr.nonce`、`HeadContent`/`Scripts`、内联样式和第三方认证流程,
-并先在生产同等环境使用 `Content-Security-Policy-Report-Only`、钱包登录、下单、充值、桥和
-TradingView 回归测试验证。不要直接从当前策略删除 `'unsafe-inline'`。
+Nitro 目标的 `script-src` 仍包含 `'unsafe-inline'`，用于兼容 TanStack Start 注入的启动脚本；
+这会放宽对内联脚本注入的防护，属于已知限制，不应描述成严格 CSP，EC2 退役时随 `routeRules` 一并消失。
+CloudFront 目标自 2026-09-14 起改为按预渲染页内联脚本的哈希强制（`edge-config.json` 的
+`cspScriptHashes: enforce`，撤回改为 `report-only` 即可），每次发布必须先发布函数再上传 HTML，
+并跑 `apps/terminal/tests/browser/csp-coverage.mjs`。不要直接从 Nitro 策略删除 `'unsafe-inline'`。
+两种策略都没有 `'unsafe-eval'`：schema 模块一律经 `src/lib/zod.ts`（`hl-react` 经 `packages/hl-react/src/zod.ts`）导入 Zod，
+包装模块先关闭 Zod 4 的 JIT，否则第一个对象 schema 构建时的 `new Function("")` 探测会在每个页面产生一条 `eval` 违规报告。
 
 核对生产响应:
 

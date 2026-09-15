@@ -52,6 +52,49 @@ idle cleanup and repeated error callbacks must follow the same ownership rules.
 Capacity or rate-limit failure remains an unavailable subscription until recovery;
 another grouping's snapshot cannot serve as current data.
 
+### Warm-up and freshest-frame replay (2026-09-14)
+
+The first order-book frame used to arrive 240–370 ms after the terminal grid
+on a healthy network: the panel's subscription was the pool's first lease, so
+it paid for a new socket handshake and a subscribe round trip after mounting
+(task record checkpoint 26). Two additions remove that wait without changing
+stream identity:
+
+- The trade entry routes warm the full-book stream for the market the URL
+  names from `beforeLoad`, through the same `SubscriptionClient` and pool,
+  with a no-op listener that ends after 15 seconds or when a later navigation
+  warms another market. Perp, builder-perp and `@index` spot names are API
+  coins; a spot pair name waits for the catalog and keeps the old timing.
+- The pool remembers the freshest frame per physical transport and payload
+  with its monotonic receipt time, and replays it once to a subscriber that
+  joins an already confirmed subscription without having received a live
+  frame, provided the frame is at most 5 seconds old. The memory is dropped
+  when the payload's last lease releases or the transport closes.
+
+The replay is the current state of a live stream on the same transport
+(network + grouping + fast) for the same payload, never another grouping's or
+network's snapshot; consumers see the same status transitions as before and
+only skip the wait for the next server push. Two rules keep that true (added
+after the 2026-09-14 adversarial review, task record checkpoint 28):
+
+- The SDK dispatches every `l2Book` frame on a socket to every `l2Book`
+  listener and filters by coin only in its method wrapper, so the pool checks
+  the frame's coin before it counts as a payload's live frame or overwrites its
+  remembered snapshot. Otherwise another coin sharing the grouping transport
+  would poison the memory and suppress the replay.
+- The remembered frame keeps its wall-clock receipt time and hands it to the
+  consumer through `markFrameReceivedAt`; `useSub` stamps `lastMessageAt` and
+  the staleness watchdog with that time instead of the delivery time. A
+  replayed frame is therefore exactly as fresh as it would have been for a
+  subscriber that had been listening all along, and never extends a staleness
+  deadline.
+- The store keeps that receipt time through the subscription confirmation
+  (added after the 2026-09-15 review, task record checkpoint 29): a resolving
+  `subscribe` arms the watchdog with the runtime's `lastMessageAt` instead of
+  the present, and `setSubscriptionData` reads the watchdog's verdict after
+  marking the receipt, so a warmed stream whose last frame is already old is
+  stale from its first commit instead of gaining up to five seconds.
+
 ## Alternatives and tradeoffs
 
 | Alternative | Benefit | Reason not selected |
@@ -83,6 +126,16 @@ strings, cached/unavailable rows stay non-interactive, and initial or recovered
 snapshots establish a quiet animation baseline. Geometry and feedback remain in
 [order-book layout](../orderbook-layout.md) and
 [new-level animation](../orderbook-new-level-animation.md).
+
+The downstream snapshot cache therefore keys on `network + coin + grouping +
+actual feed source`, so a cached fast frame can never serve an incremental or
+full-depth view. Its expiry compares a `performance.now()` receipt time against
+a ten-second budget over at most twelve keys: the user's wall clock is never
+compared with exchange timestamps, and a live frame at or newer than the cached
+one supersedes it. Because the pinned SDK's `l2Book` callback filters only by
+coin, same-coin fast and full frames must also be matched against the requested
+feed source before they reach subscription state — a grouping-correct transport
+does not make an unrequested depth mode current data.
 
 ## Evidence and verification limits
 

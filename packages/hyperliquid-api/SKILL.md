@@ -1,7 +1,7 @@
 ---
 name: hyperliquid-api
 description: Use this skill when the user needs to work with the Hyperliquid API, Hyperliquid SDKs, common request and response shapes, signing, WebSocket subscriptions, rate limits, or when they ask which Hyperliquid API surface to use for a task. Especially use it when correctness about API-surface selection, core return patterns, action results, signing mode, or transport choice matters.
-license: Proprietary to HypeTerminal workspace unless replaced before publishing
+license: Proprietary to gatu workspace unless replaced before publishing
 compatibility: Designed for Agent Skills-compatible clients such as Codex and Claude Code. Requires filesystem access to bundled references; network access may be needed if live verification is requested.
 ---
 

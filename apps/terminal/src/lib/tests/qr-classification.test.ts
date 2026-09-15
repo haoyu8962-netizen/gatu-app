@@ -10,7 +10,7 @@ describe("QR classification", () => {
 	});
 
 	it("classifies gatu phone-access links", () => {
-		const origin = "https://app.hypeterminal.com";
+		const origin = "https://app.gatu.test";
 		const url = `${origin}/mobile-agent-sync#ht-mobile-sync=payload&k=key`;
 		expect(classifyQrValue(url, origin)).toEqual({
 			type: "phoneAccessLink",
@@ -19,7 +19,7 @@ describe("QR classification", () => {
 	});
 
 	it("rejects cross-origin, wrong-path, and incomplete phone-access links", () => {
-		const origin = "https://app.hypeterminal.com";
+		const origin = "https://app.gatu.test";
 		for (const value of [
 			"https://evil.example/mobile-agent-sync#ht-mobile-sync=payload&k=key",
 			`${origin}/trade#ht-mobile-sync=payload&k=key`,

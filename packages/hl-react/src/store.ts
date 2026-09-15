@@ -616,7 +616,9 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 							method === "activeAssetCtx" ||
 							method === "activeSpotAssetCtx"
 						) {
-							watchdog.arm(key);
+							// A frame that arrived before the confirmation (the order book replay) keeps its own
+							// receipt time; only a stream with no frame yet starts its first-frame deadline now.
+							watchdog.arm(key, runtime.lastMessageAt);
 						}
 
 						set((state) => {
@@ -735,7 +737,8 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			if (chaos.messageFrozenUntil > receivedAt) return;
 			const runtime = subscriptionRuntime.get(key);
 			if (runtime) runtime.lastMessageAt = receivedAt;
-			watchdog.markFresh(key);
+			watchdog.markFresh(key, receivedAt);
+			const isStale = watchdog.isStale(key);
 			if (getVisibilityState() === "hidden" && shouldPauseKey(key)) {
 				visibilityBuffer.set(key, { data, receivedAt });
 				return;
@@ -746,7 +749,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				if (
 					current.status === "active" &&
 					current.error === undefined &&
-					!current.isStale &&
+					current.isStale === isStale &&
 					current.lastMessageAt === receivedAt &&
 					Object.is(current.data, data)
 				) {
@@ -757,7 +760,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					data,
 					status: "active",
 					error: undefined,
-					isStale: false,
+					isStale,
 					lastMessageAt: receivedAt,
 				};
 				return setSubscriptionEntry(state, key, nextEntry);

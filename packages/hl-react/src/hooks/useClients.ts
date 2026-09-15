@@ -1,4 +1,4 @@
-import type { ExchangeClient, InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
+import type { ExchangeClient, InfoClient } from "@nktkas/hyperliquid";
 import { useMemo } from "react";
 import { useWalletClient } from "wagmi";
 import { createExchangeClient, getTradingClient } from "../clients";
@@ -6,11 +6,12 @@ import { useHyperliquid } from "../provider";
 import { getOwnerSignerClient } from "../signing/owner-signer-client";
 import { useHyperliquidOwnerSigner } from "../signing/owner-signer-provider";
 import { useAgentWallet } from "../signing/use-agent-wallet";
+import type { CompactSubscriptionClient } from "../subscriptions/compact-subscription-client";
 import { toHyperliquidWallet, walletClientMatchesAddress } from "../wallet";
 
 export interface HyperliquidClients {
 	info: InfoClient;
-	subscription: SubscriptionClient;
+	subscription: CompactSubscriptionClient;
 	trading: ExchangeClient | null;
 	/** Exchange client using user wallet - for EIP-712/user-signed actions such as approvals, transfers, and withdrawals. */
 	user: ExchangeClient | null;

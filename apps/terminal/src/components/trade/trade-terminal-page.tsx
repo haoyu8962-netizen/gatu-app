@@ -25,6 +25,11 @@ import { OrderToast } from "./tradebox/order-toast";
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 
+/** Resolves every lazy piece of the first terminal render for the current surface, so none suspends at boot. */
+export function preloadGlobalModals(): void {
+	void GlobalModals.preload?.();
+}
+
 export function TradeTerminalPage() {
 	const isTestnet = useIsTestnet();
 	const selectedMarketName = useSelectedMarket();
