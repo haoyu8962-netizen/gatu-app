@@ -45,6 +45,7 @@
 | 启动渲染 | [ADR 0010](adr/0010-blank-until-ready-startup.md)、[规则](../.claude/rules/startup-rendering.md)：统一空播报 → 持久语言真实 chrome → 市场内容；[ADR 0009](adr/0009-startup-placeholder-single-source.md) 的纯 runtime view 决策保留，占位决策已被部分取代 |
 | 启动性能对齐官方站 | [修复计划](terminal-startup-performance-plan.md)：壳内预加载交易页静态闭包、壳与图表包边缘缓存、地区判定预取与 Lambda 保温、分块整理；含同环境冷缓存对比数据与需要决策的事项；各项状态见文内 |
 | CSP 第二步：内联脚本哈希 | [计划](csp-inline-script-hashes-plan.md)：`script-src` 去掉 `'unsafe-inline'`，哈希随发布轮换并保留上一版集合，先 report-only 观察再强制；含现状数据、备选方案与需要决策的事项；B、C、D 阶段均已执行 |
+| 桌面 md 断点右列堆叠 | [计划](desktop-grid-stacked-right-column-plan.md)：1001–1420 px 时下单面板在上、订单簿在下、账户信息再下，图表列 10/14；含官方 fiber 实测几何、新默认几何、边界规则、v12 迁移与回归套件清单；拟议未实施 |
 
 ## 历史设计、调查与交付证据
 
