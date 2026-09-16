@@ -9,6 +9,10 @@ const TRIGGER_SOURCE = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/chart/token-selector-trigger.tsx"),
 	"utf8",
 );
+const DESKTOP_TRIGGER_SOURCE = readFileSync(
+	resolve(TEST_DIR, "../..", "components/trade/chart/token-selector-trigger-view.tsx"),
+	"utf8",
+);
 const MOBILE_MARKET_BAR_SOURCE = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/mobile/mobile-market-bar.tsx"),
 	"utf8",
@@ -45,11 +49,11 @@ describe("token selector visual contract", () => {
 	});
 
 	it("keeps every trigger state visible without changing selector behavior", () => {
-		expect(TRIGGER_SOURCE).toContain("inline-flex h-9");
-		expect(TRIGGER_SOURCE).toContain("hover:bg-trading-panel-hover");
-		expect(TRIGGER_SOURCE).toContain("active:bg-fill-press");
-		expect(TRIGGER_SOURCE).toContain("aria-expanded:bg-trading-panel-hover");
-		expect(TRIGGER_SOURCE).toContain("focus-visible:ring-stroke-focus");
-		expect(TRIGGER_SOURCE).toContain('open && "rotate-180"');
+		expect(DESKTOP_TRIGGER_SOURCE).toContain("inline-flex h-9");
+		expect(DESKTOP_TRIGGER_SOURCE).toContain("hover:bg-trading-panel-hover");
+		expect(DESKTOP_TRIGGER_SOURCE).toContain("active:bg-fill-press");
+		expect(DESKTOP_TRIGGER_SOURCE).toContain("aria-expanded:bg-trading-panel-hover");
+		expect(DESKTOP_TRIGGER_SOURCE).toContain("focus-visible:ring-stroke-focus");
+		expect(DESKTOP_TRIGGER_SOURCE).toContain('open && "rotate-180"');
 	});
 });

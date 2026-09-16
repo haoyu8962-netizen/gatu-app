@@ -7,7 +7,6 @@ import {
 	ListIcon,
 	MoonIcon,
 	SlidersHorizontalIcon,
-	StarIcon,
 	SunIcon,
 	WalletIcon,
 } from "@phosphor-icons/react";
@@ -19,7 +18,13 @@ import { MOBILE_NAV_ITEMS, type MobileTab } from "@/config/nav";
 import { MOBILE_POSITIONS_TABS, type MobilePositionsTabValue } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
+import { TokenSelectorTriggerView } from "../chart/token-selector-trigger-view";
+import { AssetIconSlotView } from "../components/asset-icon-slot-view";
+import { FavoritesStripView } from "../header/favorites-strip-view";
+import { MarketOverviewView } from "../market-overview-view";
 import { type DesktopGridLoadingPanelId, DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
+import { FAVORITES_PLACEHOLDER, MARKET_HEADER_PLACEHOLDER } from "./desktop-placeholders";
+import { MarketHeaderView } from "./market-header-view";
 
 // The boot placeholder is prerendered once for every market and hydrated before any catalog other
 // than English is active, so its labels are English source strings, never translations: a translated
@@ -29,7 +34,6 @@ const VALUE_PLACEHOLDER = "-";
 const NAME_PLACEHOLDER = "—";
 const NAV_LABELS = ["Trade", "Portfolio", "Earn", "Vaults", "Staking", "Referrals", "Leaderboard", "More"] as const;
 export interface PanelFrameLabels {
-	marketStats: readonly string[];
 	orderBook: string;
 	trades: string;
 	price: string;
@@ -52,7 +56,6 @@ export interface PanelFrameLabels {
 }
 
 export const DEFAULT_PANEL_FRAME_LABELS: PanelFrameLabels = {
-	marketStats: ["Mark", "ORACLE", "24h Change", "24H VOL", "OPEN INT", "FUNDING"],
 	orderBook: "Order Book",
 	trades: "Trades",
 	price: "Price",
@@ -89,7 +92,7 @@ export function AppShellSkeleton() {
 	return (
 		<div aria-busy="true" data-testid="app-shell-fallback">
 			<output className="sr-only">Loading GATU...</output>
-			<div aria-hidden="true">
+			<div aria-hidden="true" inert>
 				<style>{`
 					[data-shell-mobile]{display:flex}
 					[data-shell-desktop]{display:none}
@@ -104,7 +107,7 @@ export function AppShellSkeleton() {
 					<div className="min-h-0 flex-1 overflow-hidden bg-grid-container">
 						<DesktopGridLoadingSurface
 							markShellPanels
-							panelClassName="overflow-hidden bg-surface"
+							panelClassName="desktop-grid-panel overflow-hidden bg-surface"
 							renderPanel={renderDesktopPanelFrame}
 						/>
 					</div>
@@ -120,7 +123,7 @@ export function renderDesktopPanelFrame(panelId: DesktopGridLoadingPanelId, labe
 		case "favoriteCoins":
 			return <FavoritesFrame />;
 		case "coinInfo":
-			return <MarketHeaderFrame labels={labels} />;
+			return <MarketHeaderFrame />;
 		case "chart":
 			return <ChartFrame />;
 		case "marketData":
@@ -209,28 +212,22 @@ function DesktopFooterFrame() {
 }
 
 function FavoritesFrame() {
-	return (
-		<div className="flex h-full items-center px-3">
-			<StarIcon weight="fill" className="size-3 shrink-0 text-yellow" />
-		</div>
-	);
+	return <FavoritesStripView {...FAVORITES_PLACEHOLDER} />;
 }
 
-function MarketHeaderFrame({ labels }: FrameProps) {
+function MarketHeaderFrame() {
 	return (
-		<div className="flex h-full min-w-0 items-center gap-6 overflow-hidden px-4">
-			<div className="flex shrink-0 items-center gap-2">
-				<span className="size-6 rounded-full bg-fill-weak" />
-				<span className="text-sm font-semibold text-fg">{NAME_PLACEHOLDER}</span>
-				<CaretDownIcon className="size-3 text-fg-muted" />
-			</div>
-			{labels.marketStats.map((label) => (
-				<div key={label} className="flex shrink-0 flex-col gap-0.5">
-					<span className="text-2xs tracking-wide text-fg-muted">{label}</span>
-					<span className="text-xs font-medium tabular-nums text-fg">{VALUE_PLACEHOLDER}</span>
-				</div>
-			))}
-		</div>
+		<MarketHeaderView
+			head={
+				<>
+					<AssetIconSlotView interactive icon={<span className="size-[26px] rounded-full bg-fill-weak" />} />
+					<TokenSelectorTriggerView {...MARKET_HEADER_PLACEHOLDER.trigger} />
+				</>
+			}
+			overview={
+				<MarketOverviewView stats={MARKET_HEADER_PLACEHOLDER.stats} ariaLabel={MARKET_HEADER_PLACEHOLDER.ariaLabel} />
+			}
+		/>
 	);
 }
 

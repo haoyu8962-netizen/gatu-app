@@ -57,7 +57,7 @@ describe("boot placeholder contract", () => {
 		expect(shell).toContain("<DesktopGridLoadingSurface");
 		expect(shell).not.toContain("TopNav");
 		expect(shell).not.toContain("<nav");
-		expect(shell).not.toContain("<button");
+		expect(shell).toContain('<div aria-hidden="true" inert>');
 	});
 
 	it("uses an honest route-neutral frame for dashboard startup", () => {

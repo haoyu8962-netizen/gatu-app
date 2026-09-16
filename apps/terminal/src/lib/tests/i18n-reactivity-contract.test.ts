@@ -103,3 +103,17 @@ describe("live localization source contract", () => {
 		expect(source).toContain("@lingui/react/macro");
 	});
 });
+
+const PURE_HEADER_VIEWS = [
+	"header/favorites-strip-view.tsx",
+	"chart/token-selector-trigger-view.tsx",
+	"components/asset-icon-slot-view.tsx",
+	"market-overview-view.tsx",
+	"layout/market-header-view.tsx",
+];
+
+it.each(PURE_HEADER_VIEWS)("receives translated presentation props in %s", (path) => {
+	const source = readFileSync(resolve(__dirname, "../../components/trade", path), "utf8");
+	expect(source).toContain("interface Props");
+	expect(source).not.toMatch(/@lingui|use[A-Z]\w*\(|@\/stores|window|document|Date\.|Math\.random/);
+});

@@ -179,7 +179,7 @@ describe("MobileMarketBar", () => {
 	it("labels expanded spot notionals with the selected quote token", () => {
 		renderExpandedBar();
 
-		expect(container.textContent).toContain("24H VOL12,345.67 USDH");
+		expect(container.textContent).toContain("24h Volume12,345.67 USDH");
 		expect(container.textContent).toContain("Market Cap1,250 USDH");
 		expect(container.textContent).not.toContain("$12,345.67");
 	});
@@ -280,7 +280,7 @@ describe("MobileMarketBar", () => {
 		expect(expandButton?.getAttribute("aria-controls")).toBeTruthy();
 
 		const tooltipTrigger = [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
-			button.textContent?.includes("Mark/ORACLE"),
+			button.textContent?.includes("Mark/Oracle"),
 		);
 		expect(tooltipTrigger?.className).toContain("after:h-11");
 		expect(tooltipTrigger?.className).toContain("after:min-w-11");
@@ -300,7 +300,7 @@ describe("MobileMarketBar", () => {
 		renderExpandedBar();
 
 		const tooltipTrigger = [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
-			button.textContent?.includes("Mark/ORACLE"),
+			button.textContent?.includes("Mark/Oracle"),
 		);
 		expect(tooltipTrigger).not.toBeNull();
 		vi.spyOn(tooltipTrigger as HTMLButtonElement, "getBoundingClientRect")
@@ -368,8 +368,8 @@ describe("MobileMarketBar", () => {
 
 		renderExpandedBar();
 
-		expect(container.textContent).toContain(`FUNDING/Resets in${FALLBACK_VALUE_PLACEHOLDER}`);
-		expect(container.textContent).not.toMatch(/FUNDING\/Resets in—\d{2}:/);
+		expect(container.textContent).toContain(`Funding/Resets in${FALLBACK_VALUE_PLACEHOLDER}`);
+		expect(container.textContent).not.toMatch(/Funding\/Resets in—\d{2}:/);
 	});
 
 	it("keeps the mid price stable without replaying a flash when the tab bar remounts", () => {

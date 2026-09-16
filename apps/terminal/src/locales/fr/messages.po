@@ -188,12 +188,10 @@ msgid "24H"
 msgstr "24 h"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 msgid "24h Change"
 msgstr "Variation 24h"
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
+#: src/config/market-header.ts
 msgctxt "Market overview"
 msgid "24h Change"
 msgstr "Variation sur 24 h"
@@ -201,14 +199,18 @@ msgstr "Variation sur 24 h"
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
-msgid "24H VOL"
-msgstr "24H VOL"
+#~ msgid "24H VOL"
+#~ msgstr "24H VOL"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
-msgctxt "Market overview"
-msgid "24H VOL"
-msgstr "Volume sur 24 h"
+#~ msgctxt "Market overview"
+#~ msgid "24H VOL"
+#~ msgstr "Volume sur 24 h"
+
+#: src/config/market-header.ts
+msgid "24h Volume"
+msgstr "Volume 24h"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/vaults/vault-performance-chart.tsx
@@ -1939,7 +1941,7 @@ msgstr "Continuer en toute sécurité"
 msgid "Continuing hands this verified public operation to the shared funds-action flow. This page never signs or assembles an exchange request."
 msgstr "Continuer transmet cette opération publique vérifiée au flux partagé des actions sur les fonds. Cette page ne signe ni ne prépare jamais de demande destinée à la plateforme d’échange."
 
-#: src/components/trade/market-overview.tsx
+#: src/config/market-header.ts
 msgid "Contract"
 msgstr "Contrat"
 
@@ -3228,6 +3230,10 @@ msgstr "Les données extraAgents actualisées sont vérifiées avant l’accepta
 msgid "From"
 msgstr "De"
 
+#: src/config/market-header.ts
+msgid "Funding"
+msgstr "Financement"
+
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgctxt "Cumulative position funding"
@@ -3237,8 +3243,8 @@ msgstr "Financement"
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
-msgid "FUNDING"
-msgstr "FUNDING"
+#~ msgid "FUNDING"
+#~ msgstr "FUNDING"
 
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
@@ -4145,9 +4151,7 @@ msgstr "Marge req."
 msgid "Margin Used"
 msgstr "Marge utilisée"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Mark"
 msgstr "Mark"
 
@@ -4221,8 +4225,7 @@ msgid "Market and token information from local references and Hyperliquid metada
 msgstr "Informations sur le marché et le jeton provenant de références locales et des métadonnées Hyperliquid."
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Market Cap"
 msgstr "Capitalisation"
 
@@ -4946,8 +4949,8 @@ msgid "Offline"
 msgstr "Hors ligne"
 
 #: src/config/ui-text.ts
-msgid "OI"
-msgstr "OI"
+#~ msgid "OI"
+#~ msgstr "OI"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
@@ -5011,10 +5014,11 @@ msgstr "Ouvrez le dépôt pour préparer votre portefeuille associé à un e-mai
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
-msgid "OPEN INT"
-msgstr "OPEN INT"
+#~ msgid "OPEN INT"
+#~ msgstr "OPEN INT"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/config/market-header.ts
 msgid "Open Interest"
 msgstr "Intérêt ouvert"
 
@@ -5085,12 +5089,13 @@ msgstr "Opération vérifiée"
 msgid "OR"
 msgstr "OU"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
+msgid "Oracle"
+msgstr "Oracle"
+
 #: src/config/ui-text.ts
-msgid "ORACLE"
-msgstr "ORACLE"
+#~ msgid "ORACLE"
+#~ msgstr "ORACLE"
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5372,6 +5377,7 @@ msgstr "Lien de staking permanent"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
@@ -5672,8 +5678,6 @@ msgstr "Page précédente des coffres"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5682,7 +5686,6 @@ msgstr "Page précédente des coffres"
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -5701,6 +5704,7 @@ msgstr "Page précédente des coffres"
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/market-header.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
@@ -6208,9 +6212,7 @@ msgstr "Réinitialiser"
 msgid "Reset trading connection"
 msgstr "Réinitialiser la connexion de trading"
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Resets in"
 msgstr "Réinitialisation dans"
 
@@ -6674,7 +6676,7 @@ msgstr "Sélectionner tous les ordres"
 msgid "Select both items to continue."
 msgstr "Sélectionnez les deux options pour continuer."
 
-#: src/components/trade/header/favorites-strip.tsx
+#: src/config/market-header.ts
 msgid "Select favorite markets"
 msgstr "Sélectionner les marchés favoris"
 
@@ -7083,6 +7085,7 @@ msgstr "Source"
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -9371,8 +9374,8 @@ msgid "View on explorer"
 msgstr "Voir sur l'explorateur"
 
 #: src/config/ui-text.ts
-msgid "VOL"
-msgstr "VOL"
+#~ msgid "VOL"
+#~ msgstr "VOL"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx

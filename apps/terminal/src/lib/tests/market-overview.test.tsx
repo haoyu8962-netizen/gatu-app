@@ -263,7 +263,7 @@ describe("MarketOverview", () => {
 	}
 
 	it("gives the overview sole ownership of scrolling and resets it by market identity", () => {
-		expect(MAIN_WORKSPACE_SOURCE).toContain('className="ms-6 min-w-0 flex-1 overflow-hidden"');
+		expect(MAIN_WORKSPACE_SOURCE).toContain("<MarketHeaderView");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("<MarketOverview key={marketKey} />");
 
 		renderKeyedOverview();
@@ -296,9 +296,9 @@ describe("MarketOverview", () => {
 		expect(overview?.tabIndex).toBe(0);
 		expect(overview?.className).toContain("overflow-x-auto");
 		expect(overview?.className).toContain("overscroll-x-contain");
-		expect(row?.className).toContain("w-max");
-		expect(row?.className).toContain("min-w-full");
-		expect(row?.className).toContain("gap-6");
+		expect(row?.className).not.toContain("w-max");
+		expect(row?.className).not.toContain("min-w-full");
+		expect(row?.className).toContain("gap-8");
 		expect(getRenderedStatIds(container)).toEqual([
 			"price",
 			"oracle",
@@ -308,18 +308,8 @@ describe("MarketOverview", () => {
 			"funding",
 		]);
 
-		const widthClasses: Record<MarketStatId, string> = {
-			price: "min-w-[90px]",
-			oracle: "min-w-[90px]",
-			change24h: "min-w-[170px]",
-			volume24h: "min-w-[136px]",
-			openInterest: "min-w-[136px]",
-			funding: "min-w-[128px]",
-			marketCap: "min-w-[136px]",
-			contract: "min-w-[112px]",
-		};
 		for (const node of container.querySelectorAll<HTMLElement>("[data-market-stat]")) {
-			expect(node.className).toContain(widthClasses[node.dataset.marketStat as MarketStatId]);
+			expect(node.className).toBe("shrink-0");
 			expect(node.hasAttribute("aria-hidden")).toBe(false);
 			expect(node.hasAttribute("inert")).toBe(false);
 			expect(node.classList.contains("absolute")).toBe(false);
@@ -370,10 +360,10 @@ describe("MarketOverview", () => {
 
 		expect(getStat("price").textContent).toContain("Mark71.8");
 		expect(getStat("change24h").textContent).toBe("24h Change—");
-		expect(getStat("oracle").textContent).toBe("ORACLE-");
-		expect(getStat("volume24h").textContent).toBe("24H VOL-");
-		expect(getStat("openInterest").textContent).toBe("OPEN INT-");
-		expect(getStat("funding").textContent).toBe("FUNDING / Resets in—");
+		expect(getStat("oracle").textContent).toBe("Oracle-");
+		expect(getStat("volume24h").textContent).toBe("24h Volume-");
+		expect(getStat("openInterest").textContent).toBe("Open Interest-");
+		expect(getStat("funding").textContent).toBe("Funding / Resets in—");
 		expect(container.textContent).not.toContain("71.7");
 		expect(container.textContent).not.toContain("22,228,099.94");
 		expect(container.textContent).not.toContain("0.0000%");
@@ -399,7 +389,7 @@ describe("MarketOverview", () => {
 
 		expect(container.textContent).toContain("Mark80");
 		expect(container.textContent).toContain("24h Change+16.000 / +25.00%");
-		expect(container.textContent).toContain("ORACLE79");
+		expect(container.textContent).toContain("Oracle79");
 		expect(container.textContent).toContain("$10,000,000.00");
 		expect(container.textContent).toContain("$160.00");
 		expect(container.textContent).toContain("+0.0010%");
@@ -428,11 +418,11 @@ describe("MarketOverview", () => {
 		renderOverview();
 
 		expect(getStat("price").textContent).toContain("Mark71.8");
-		expect(getStat("oracle").textContent).toBe("ORACLE-");
-		expect(getStat("volume24h").textContent).toBe("24H VOL-");
-		expect(getStat("openInterest").textContent).toBe("OPEN INT-");
+		expect(getStat("oracle").textContent).toBe("Oracle-");
+		expect(getStat("volume24h").textContent).toBe("24h Volume-");
+		expect(getStat("openInterest").textContent).toBe("Open Interest-");
 		expect(container.textContent).not.toContain("Mark999");
-		expect(container.textContent).not.toContain("ORACLE998");
+		expect(container.textContent).not.toContain("Oracle998");
 	});
 
 	it.each([
@@ -499,9 +489,9 @@ describe("MarketOverview", () => {
 
 		expect(getStat("price").textContent).toBe("Mark-");
 		expect(getStat("change24h").textContent).toBe("24h Change—");
-		expect(getStat("openInterest").textContent).toBe("OPEN INT-");
-		expect(getStat("oracle").textContent).toBe("ORACLE-");
-		expect(getStat("volume24h").textContent).toBe("24H VOL-");
+		expect(getStat("openInterest").textContent).toBe("Open Interest-");
+		expect(getStat("oracle").textContent).toBe("Oracle-");
+		expect(getStat("volume24h").textContent).toBe("24h Volume-");
 	});
 
 	it("never carries a previous perpetual context across a same-instance market switch", () => {
@@ -531,7 +521,7 @@ describe("MarketOverview", () => {
 		};
 		renderOverview();
 		expect(getStat("price").textContent).toContain("Mark42");
-		expect(getStat("oracle").textContent).toBe("ORACLE-");
+		expect(getStat("oracle").textContent).toBe("Oracle-");
 		expect(container.textContent).not.toContain("Mark80");
 
 		mocks.perpCtxEvent = {
@@ -547,7 +537,7 @@ describe("MarketOverview", () => {
 		};
 		renderOverview();
 		expect(getStat("price").textContent).toContain("Mark43");
-		expect(getStat("oracle").textContent).toContain("ORACLE42.9");
+		expect(getStat("oracle").textContent).toContain("Oracle42.9");
 	});
 
 	it("replaces the full metric set when switching perp to spot and back in the same instance", () => {
@@ -660,7 +650,7 @@ describe("MarketOverview", () => {
 	it("keeps unavailable funding distinct from a real zero rate", () => {
 		renderOverview();
 
-		expect(container.textContent).toContain("FUNDING / Resets in—");
+		expect(container.textContent).toContain("Funding / Resets in—");
 		expect(container.textContent).not.toContain("0.0000%");
 	});
 
@@ -729,7 +719,7 @@ describe("MarketOverview", () => {
 
 		expect(container.textContent).toContain("Price1.2");
 		expect(container.textContent).toContain("24h Change+0.2000 / +20.00%");
-		expect(container.textContent).toContain("24H VOL12,345.67 USDH");
+		expect(container.textContent).toContain("24h Volume12,345.67 USDH");
 		expect(container.textContent).toContain("Market Cap1,250 USDH");
 		expect(container.textContent).not.toContain("$12,345.67");
 	});
@@ -751,7 +741,7 @@ describe("MarketOverview", () => {
 		renderOverview();
 
 		expect(getStat("price").textContent).toBe("Price-");
-		expect(getStat("volume24h").textContent).toBe("24H VOL—");
+		expect(getStat("volume24h").textContent).toBe("24h Volume—");
 		expect(getStat("marketCap").textContent).toBe("Market Cap—");
 		expect(container.textContent).not.toContain("Price9");
 	});

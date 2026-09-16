@@ -8,11 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { type UnifiedMarketInfo, useHyperliquid } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import {
-	MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME,
-	TOKEN_SELECTOR_TRIGGER_CLASSNAME,
-	TokenSelectorTriggerContent,
-} from "./token-selector-trigger";
+import { MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME, TokenSelectorTriggerContent } from "./token-selector-trigger";
 
 const TokenSelectorPopup = createLazyComponent(() => import("./token-selector-popup"), "TokenSelectorPopup");
 const MARKET_METADATA_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
@@ -112,23 +108,19 @@ export function TokenSelector({
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
 			<PopoverTrigger asChild>
-				<button
+				<TokenSelectorTriggerContent
+					selectedMarket={selectedMarket}
+					open={open}
+					showAssetIcon={showAssetIcon}
+					showMetadataBadge={showMetadataBadge}
 					type="button"
 					role="combobox"
 					aria-expanded={open}
 					aria-label={t`Select token`}
-					className={cn(TOKEN_SELECTOR_TRIGGER_CLASSNAME, showAssetIcon ? "pl-2" : "pl-1")}
 					onPointerEnter={preloadPopup}
 					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}
-				>
-					<TokenSelectorTriggerContent
-						selectedMarket={selectedMarket}
-						open={open}
-						showAssetIcon={showAssetIcon}
-						showMetadataBadge={showMetadataBadge}
-					/>
-				</button>
+				/>
 			</PopoverTrigger>
 			{popup}
 		</Popover>

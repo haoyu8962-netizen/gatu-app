@@ -188,12 +188,10 @@ msgid "24H"
 msgstr "24 घंटे"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 msgid "24h Change"
 msgstr "24h बदलाव"
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
+#: src/config/market-header.ts
 msgctxt "Market overview"
 msgid "24h Change"
 msgstr "24 घंटे का बदलाव"
@@ -201,14 +199,18 @@ msgstr "24 घंटे का बदलाव"
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
-msgid "24H VOL"
-msgstr "24H VOL"
+#~ msgid "24H VOL"
+#~ msgstr "24H VOL"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
-msgctxt "Market overview"
-msgid "24H VOL"
-msgstr "24 घंटे का वॉल्यूम"
+#~ msgctxt "Market overview"
+#~ msgid "24H VOL"
+#~ msgstr "24 घंटे का वॉल्यूम"
+
+#: src/config/market-header.ts
+msgid "24h Volume"
+msgstr "24 घंटे की मात्रा"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/vaults/vault-performance-chart.tsx
@@ -1939,7 +1941,7 @@ msgstr "सुरक्षित रूप से आगे बढ़ें"
 msgid "Continuing hands this verified public operation to the shared funds-action flow. This page never signs or assembles an exchange request."
 msgstr "आगे बढ़ने पर यह सत्यापित सार्वजनिक ऑपरेशन साझा फंड-कार्रवाई फ़्लो को सौंप दिया जाता है। यह पेज कभी भी एक्सचेंज अनुरोध पर हस्ताक्षर नहीं करता और न ही उसे तैयार करता है।"
 
-#: src/components/trade/market-overview.tsx
+#: src/config/market-header.ts
 msgid "Contract"
 msgstr "कॉन्ट्रैक्ट"
 
@@ -3228,6 +3230,10 @@ msgstr "परिणाम स्वीकार करने से पहल�
 msgid "From"
 msgstr "से"
 
+#: src/config/market-header.ts
+msgid "Funding"
+msgstr "फंडिंग"
+
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgctxt "Cumulative position funding"
@@ -3237,8 +3243,8 @@ msgstr "फंडिंग"
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
-msgid "FUNDING"
-msgstr "फंडिंग"
+#~ msgid "FUNDING"
+#~ msgstr "फंडिंग"
 
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
@@ -4145,9 +4151,7 @@ msgstr "मार्जिन आवश्यक"
 msgid "Margin Used"
 msgstr "उपयोग किया गया मार्जिन"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Mark"
 msgstr "मार्क"
 
@@ -4221,8 +4225,7 @@ msgid "Market and token information from local references and Hyperliquid metada
 msgstr "स्थानीय संदर्भों और Hyperliquid मेटाडेटा से मार्केट और टोकन की जानकारी।"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Market Cap"
 msgstr "बाज़ार पूंजीकरण"
 
@@ -4946,8 +4949,8 @@ msgid "Offline"
 msgstr "ऑफ़लाइन"
 
 #: src/config/ui-text.ts
-msgid "OI"
-msgstr "OI"
+#~ msgid "OI"
+#~ msgstr "OI"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
@@ -5011,10 +5014,11 @@ msgstr "अपना ईमेल वॉलेट तैयार करने �
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
-msgid "OPEN INT"
-msgstr "OPEN INT"
+#~ msgid "OPEN INT"
+#~ msgstr "OPEN INT"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/config/market-header.ts
 msgid "Open Interest"
 msgstr "ओपन इंटरेस्ट"
 
@@ -5085,12 +5089,13 @@ msgstr "ऑपरेशन सत्यापित हुआ"
 msgid "OR"
 msgstr "या"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
+msgid "Oracle"
+msgstr "ओरेकल"
+
 #: src/config/ui-text.ts
-msgid "ORACLE"
-msgstr "ऑरेकल"
+#~ msgid "ORACLE"
+#~ msgstr "ऑरेकल"
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5372,6 +5377,7 @@ msgstr "स्थायी स्टेकिंग लिंक"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
@@ -5672,8 +5678,6 @@ msgstr "वॉल्ट का पिछला पेज"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5682,7 +5686,6 @@ msgstr "वॉल्ट का पिछला पेज"
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -5701,6 +5704,7 @@ msgstr "वॉल्ट का पिछला पेज"
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/market-header.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
@@ -6208,9 +6212,7 @@ msgstr "रीसेट"
 msgid "Reset trading connection"
 msgstr "ट्रेडिंग कनेक्शन रीसेट करें"
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Resets in"
 msgstr "रीसेट होगा"
 
@@ -6674,7 +6676,7 @@ msgstr "सभी ऑर्डर चुनें"
 msgid "Select both items to continue."
 msgstr "जारी रखने के लिए दोनों विकल्प चुनें।"
 
-#: src/components/trade/header/favorites-strip.tsx
+#: src/config/market-header.ts
 msgid "Select favorite markets"
 msgstr "पसंदीदा बाज़ार चुनें"
 
@@ -7083,6 +7085,7 @@ msgstr "स्रोत"
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -9371,8 +9374,8 @@ msgid "View on explorer"
 msgstr "Explorer पर देखें"
 
 #: src/config/ui-text.ts
-msgid "VOL"
-msgstr "वॉल्यूम"
+#~ msgid "VOL"
+#~ msgstr "वॉल्यूम"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx

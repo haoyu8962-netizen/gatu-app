@@ -6,6 +6,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ## Unreleased
 
+### Changed
+
+- Desktop market headers and favorites now share their real display components with
+  startup placeholders. Unknown placeholder text now reserves typical value widths
+  invisibly, while runtime placeholders show known route names and market kinds
+  and select the matching favorite. Market statistics use title-case labels and content-sized
+  columns with 32px gaps to fit all six perpetual metrics at 1440px; horizontal
+  scrolling remains available at narrower widths. Mobile details use the same labels.
+
 ### Performance
 
 - Warm terminal visits save the query cache synchronously after restore when the page

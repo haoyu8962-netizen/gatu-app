@@ -4,6 +4,7 @@ import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState }
 import { createPortal } from "react-dom";
 import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { MARKET_HEADER_LABELS } from "@/config/market-header";
 import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { getSpotAssetSocials, hasSpotSocialLinks, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -183,24 +184,27 @@ export function MobileMarketBar({ className }: Props) {
 									<DetailCell
 										label={
 											<>
-												{t`Mark`}/{t`ORACLE`}
+												{t(MARKET_HEADER_LABELS.mark)}/{t(MARKET_HEADER_LABELS.oracle)}
 											</>
 										}
 										tooltipContent={t`Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details.`}
 										value={`${formatDisplayPrice(marketMarkPx, priceDecimals)} / ${formatDisplayPrice(oraclePx, priceDecimals)}`}
 									/>
-									<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
+									<DetailCell
+										label={t(MARKET_HEADER_LABELS.volume24h)}
+										value={formatUSD(dayNtlVlm, { compact: false })}
+									/>
 								</div>
 								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
 									<DetailCell
-										label={t`OPEN INT`}
+										label={t(MARKET_HEADER_LABELS.openInterest)}
 										tooltipContent={t`Two-sided open interest: the sum of long and short positions on this contract.`}
 										value={formatUSD(oiUsd, { compact: false })}
 									/>
 									<DetailCell
 										label={
 											<>
-												{t`FUNDING`}/{t`Resets in`}
+												{t(MARKET_HEADER_LABELS.funding)}/{t(MARKET_HEADER_LABELS.resetsIn)}
 											</>
 										}
 										tooltipContent={t`Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details.`}
@@ -226,11 +230,14 @@ export function MobileMarketBar({ className }: Props) {
 						{isSpot && (
 							<>
 								<div className="grid grid-cols-2 gap-x-4 py-2.5">
-									<DetailCell label={t`Price`} value={formatDisplayPrice(displayPrice, priceDecimals)} />
-									<DetailCell label={t`24H VOL`} value={spotVolumeText} />
+									<DetailCell
+										label={t(MARKET_HEADER_LABELS.price)}
+										value={formatDisplayPrice(displayPrice, priceDecimals)}
+									/>
+									<DetailCell label={t(MARKET_HEADER_LABELS.volume24h)} value={spotVolumeText} />
 								</div>
 								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
-									<DetailCell label={t`Market Cap`} value={spotMarketCapText} />
+									<DetailCell label={t(MARKET_HEADER_LABELS.marketCap)} value={spotMarketCapText} />
 									<DetailCell
 										label={t`More Info`}
 										value={createSpotTokenInfo(

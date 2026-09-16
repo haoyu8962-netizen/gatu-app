@@ -116,9 +116,13 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expectBusySurfaceWithImplicitStatus(fallback);
 		expect(fallback?.hasAttribute("aria-hidden")).toBe(false);
 		expect(fallback?.querySelector(':scope > div[aria-hidden="true"]')).not.toBeNull();
-		expect(
-			fallback?.querySelectorAll('a, button, input, select, textarea, [role="navigation"], [tabindex]'),
-		).toHaveLength(0);
+		const decorative = fallback?.querySelector('[aria-hidden="true"][inert]');
+		expect(decorative).not.toBeNull();
+		for (const control of fallback?.querySelectorAll(
+			'a, button, input, select, textarea, [role="button"], [tabindex]',
+		) ?? []) {
+			expect(control.closest("[inert]")).toBe(decorative);
+		}
 	});
 
 	it("hydrates the pre-locale startup status without changing its server markup", async () => {

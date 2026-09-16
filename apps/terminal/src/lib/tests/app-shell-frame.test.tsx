@@ -29,7 +29,7 @@ describe("AppShellSkeleton desktop frame", () => {
 			"Portfolio",
 			"Connect Wallet",
 			"Mark",
-			"24H VOL",
+			"24h Volume",
 			"Order Book",
 			"Trades",
 			"Spread",
@@ -49,13 +49,21 @@ describe("AppShellSkeleton desktop frame", () => {
 		]) {
 			expect(text, label).toContain(label);
 		}
-		expect(text).not.toMatch(/\d{2,}\.\d/);
+		const visibleDesktop = document.createElement("div");
+		visibleDesktop.innerHTML = desktop?.innerHTML ?? "";
+		for (const sample of visibleDesktop.querySelectorAll(".invisible")) sample.remove();
+		expect(visibleDesktop.textContent).not.toMatch(/\d{2,}\.\d/);
 		expect(container.querySelectorAll("[data-shell-panel]")).toHaveLength(7);
 		for (const panel of container.querySelectorAll("[data-shell-panel]")) expect(panel.childElementCount).toBe(1);
 	});
 
 	it("stays inert: nothing focusable, no links, no live regions besides the loading announcement", () => {
-		expect(container.querySelectorAll("button, a, input, select, textarea, [tabindex], nav, form")).toHaveLength(0);
+		const decorative = container.querySelector('[aria-hidden="true"][inert]');
+		expect(decorative).not.toBeNull();
+		expect(decorative?.querySelectorAll("button").length).toBeGreaterThan(0);
+		for (const control of container.querySelectorAll("button, a, input, select, textarea, [tabindex], nav, form")) {
+			expect(control.closest("[inert]")).toBe(decorative);
+		}
 		expect(container.querySelectorAll("[aria-hidden='true']").length).toBeGreaterThan(0);
 		expect(container.querySelectorAll("output")).toHaveLength(1);
 		expect(container.querySelectorAll('[class*="animate-"]')).toHaveLength(0);
