@@ -106,6 +106,13 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Default desktop geometry fits all eight ordinary order-entry types without internal scrolling; keep the order-type header outside the overflow region and validate real forms, not only synthetic tall content.
 - Order-entry content must not resize the desktop grid: Market/Limit, advanced-order fields and feedback adapt within the trading panel while chart, order-book and account boundaries, internal scrolling and user-selected grid geometry stay intact. The embedded mobile form must not own its own vertical scroll viewport, and market data must never drive measured height state.
 
+## Startup placeholder contract
+
+- `docs/adr/0009-startup-placeholder-single-source.md` and `.claude/rules/placeholder-parity.md` own this contract. The prerendered shell, the runtime loading placeholders and the real terminal render the same props-only view components; placeholders are the same views with placeholder props, never a second hand-written tree or copied class strings.
+- Views are pure and deterministic (no hooks, stores, Lingui runtime, `window` or clocks); the shell module imports only views, config, `cn`, icons and the brand logo, and a source-contract test pins that boundary.
+- The shell stays `aria-busy` with one screen-reader announcement, no animation and no timers; its decorative tree is `aria-hidden` and `inert` rather than stripped of real elements. Placeholder values are `-`/`—` and English source strings in the prerendered shell.
+- Every migrated surface ships a parity test (placeholder props versus sample real props) and a Playwright box comparison across the desktop and mobile viewports named in the rule; record the numbers in the task record.
+
 ## Verification
 
 Browser-fixture servers must use a Vite dependency cache separate from the application dev server, with neither cache nested inside the other. Follow `docs/runtime-guardrails.md` when changing browser-test configuration; a different root or port does not isolate Vite's default cache.
