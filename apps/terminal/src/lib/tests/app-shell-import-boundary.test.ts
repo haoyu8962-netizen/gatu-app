@@ -26,23 +26,37 @@ describe("app shell import boundary", () => {
 		expect([...infoRow.matchAll(/from\s+["']([^"']+)["']/g)].map((match) => match[1])).toEqual(["react", "@/lib/cn"]);
 	});
 
-	it("imports only views, pure configuration and used presentation helpers", () => {
-		for (const specifier of imports) {
-			const allowed =
-				specifier.endsWith("-view") ||
-				specifier.startsWith("@/config/") ||
-				[
-					"@/lib/cn",
-					"@/components/ui/input-styles",
-					"@/components/ui/info-row",
-					"@phosphor-icons/react",
-					"@/components/brand/gatu-logo",
-					"./desktop-grid-loading-surface",
-					...PLACEHOLDER_DATA_IMPORTS,
-				].includes(specifier);
-			expect(allowed, specifier).toBe(true);
-		}
-	});
+	it.each(["trade/layout/app-shell-skeleton.tsx", "dashboard/dashboard-shell-skeleton.tsx"])(
+		"%s imports only views, pure configuration and existing presentation helpers",
+		(file) => {
+			const filePath = resolve(__dirname, "../../components", file);
+			const text = readFileSync(filePath, "utf8");
+			const parsed = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+			for (const statement of parsed.statements.filter(ts.isImportDeclaration)) {
+				if (!ts.isStringLiteral(statement.moduleSpecifier)) throw new Error("Expected a static import");
+				const specifier = statement.moduleSpecifier.text;
+				const canonical = specifier.startsWith("@/")
+					? resolve(__dirname, "../..", specifier.slice(2))
+					: resolve(filePath, "..", specifier);
+				const allowedHelpers = [
+					"lib/cn",
+					"components/ui/input-styles",
+					"components/ui/info-row",
+					"components/brand/gatu-logo",
+					"components/trade/layout/desktop-grid-loading-surface",
+					"components/trade/layout/desktop-placeholders",
+					"components/trade/layout/mobile-placeholders",
+				].map((path) => resolve(__dirname, "../..", path));
+				expect(
+					specifier.endsWith("-view") ||
+						specifier.startsWith("@/config/") ||
+						specifier === "@phosphor-icons/react" ||
+						allowedHelpers.includes(canonical),
+					specifier,
+				).toBe(true);
+			}
+		},
+	);
 
 	it("imports the order book views directly without runtime primitives", () => {
 		expect(imports).toContain("../orderbook/orderbook-panel-view");

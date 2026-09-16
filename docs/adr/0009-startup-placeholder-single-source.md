@@ -1,6 +1,6 @@
 # ADR 0009：启动占位与真实界面共享同一展示组件
 
-- 状态：已接受（2026-09-16），迁移进行中：表面 1–6 已完成（2026-09-16，含 Playwright 盒子实测）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
+- 状态：已接受（2026-09-16），表面 1–7 迁移已完成并通过 Playwright 盒子实测（2026-09-16）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
 - 前置：[ADR 0005](0005-spa-static-shell.md)（预渲染 SPA 壳）、[ADR 0006](0006-startup-preloads-and-edge-caching.md)（启动预加载与边缘缓存）
 - 规则：[启动占位一致性规则](../../.claude/rules/placeholder-parity.md)
 - 证据：[移动占位壳与真实终端逐像素对齐](../work-memory/sessions/2026-09-15-mobile-shell-parity.md)、[热访问启动计划与实测](../work-memory/sessions/2026-09-16-warm-visit-startup-plan.md)、[本 ADR 的任务记录](../work-memory/sessions/2026-09-16-placeholder-single-source-adr.md)
@@ -36,6 +36,9 @@
 
 ## 后果与边界
 
+- 表面 7：dashboard 页面、运行时 fallback 共用 `DashboardFrameView`；`config/dashboard-frames.ts` 原样保存各页 canvas/main 类。桌面 TopNav 与 FooterBar 都是 fixed，保留 header/testnet offset 和 `pb-8`；移动 header 为文档流中的 sticky，移动不显示 footer。壳复用现有 TopNav/MobileHeader/FooterBar 视图与占位 props，导航激活态从路由和 `DESKTOP_NAV_ITEMS` 得出，装饰树整体 inert。页面继续持有数据 hooks、geo/wallet 守卫和 lazy 模态框，fixture 仍不显示 chrome。
+- Dashboard 内容依然是通用中性标题、四卡片和表格块，由 `DASHBOARD_CONTENT_PLACEHOLDER` 配置；共享范围是 frame 与 chrome，不承诺内容块与每页的数据 UI 等高。容器宽度和 padding 来自同一 preset，禁止为各页数据 UI 复制第二份占位树。未知应用路由采用三个历史页共有的 preset（`/funding-history`：`bg-grid-container`、1440px、移动 px-4/py-5、桌面 px-10/py-6）；Vault 详情共用 Vaults，`/join/*` 共用 Referrals，驼峰历史 URL 映射到对应 preset。首次水合仍按 ADR 0005 复现 terminal 壳，水合后才按已提交 pathname 选择 dashboard。配置来源、断言与待测表见[表面 7 任务记录](../work-memory/sessions/2026-09-16-dashboard-shell-view-migration.md)。
+
 - 表面 6：六个移动表面与终端外框共享 props-only 视图，`mobile-chrome-classes.ts` 已删除，类常量归拥有标记的视图。移动下单复用现有输入框、滑杆、多空、选项与 CTA 视图的显式变体；盘口仅抽取 chrome，运行时仍持有行、测量、悬停、脉冲和订阅。静态移动账户页签沿用表面 5 的 indicator 例外并以 xxs primitive SSR 钉住。运行时占位订阅翻译、数字格式与已验证持久页签，显示路由已知资产；壳只用英文默认值。两套浏览器服务均受沙箱 `listen EPERM` 阻止，验收数字尚未取得，见[接口、断言与验证记录](../work-memory/sessions/2026-09-16-mobile-views-migration.md)。
 
 - 表面 5：账户表 header、账户概览及外框共享纯视图，InfoRow/InfoRowGroup 是允许的纯 UI 组合；内容宽度页签的静态下划线放在激活按钮内，作为与 Base UI 测量 CSS 变量驱动的 sibling indicator 唯一结构例外，由去除双方 indicator 后的 SSR 对照与独立 class 断言固定；`renderDesktopPanel` 接收统一类型 props，运行时读取有效持久页签与数字格式版本，资金/签名/地区守卫不变；TradingView 在 iframe 内，ChartFrame 继续使用已约定的居中品牌占位，验证及待测范围见[迁移记录](../work-memory/sessions/2026-09-16-account-panels-view-migration.md)。
@@ -51,7 +54,7 @@
 - 展示组件必须确定：不读时钟、随机数或 `window`；页脚时钟这类运行时值由容器传入，壳传固定宽度占位。
 - 占位是展示，不是状态：签名、账户模式、资金、地区、新鲜度与动作可用性的守卫全部不变（`docs/mobile-data-presentation.md`）。
 - 迁移完成前，桌面 frame 的既有偏差（上文测量值）继续存在；每迁移一个表面消灭该表面的偏差。
-- 仪表盘壳沿用同一规则，但排在终端表面之后。
+- 仪表盘 frame 与 chrome 已沿用同一规则完成代码迁移；内容泛化例外和 reviewer 实测范围如上。
 
 ## 验证证据
 

@@ -1,10 +1,10 @@
 import { Suspense } from "react";
+import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { TopNav } from "@/components/trade/header/top-nav";
 import { MobileHeader } from "@/components/trade/mobile/mobile-header";
 import { TestnetBanner } from "@/components/trade/testnet-banner";
-import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
+import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { ApiWalletFixture, getApiWalletFixtureFromLocation } from "./api-wallet-fixture";
@@ -22,31 +22,31 @@ export function ApiWalletPage() {
 
 	return (
 		<>
-			<div
-				className={cn(
-					"min-h-dvh bg-dashboard-canvas font-sans text-fg",
-					!isMobile && "pb-8",
-					!isMobile && !isFixture && (isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS),
-					isTestnet && "testnet-bg",
-				)}
-			>
-				{isFixture ? null : isMobile ? (
-					<MobileHeader />
-				) : (
-					<>
-						<TestnetBanner />
-						<TopNav />
-					</>
-				)}
-				<main className="mx-auto w-full max-w-[var(--api-wallet-frame-max)] py-4 min-[1001px]:px-10 min-[1001px]:py-6">
-					{fixture ? <ApiWalletFixture fixture={fixture} /> : <ApiWalletLive />}
-				</main>
-				{!isFixture && !isMobile ? (
-					<Suspense fallback={null}>
-						<FooterBar />
-					</Suspense>
-				) : null}
-			</div>
+			<DashboardFrameView
+				{...DASHBOARD_FRAMES["/api-wallet"]}
+				isMobile={isMobile}
+				bannerOffset={isTestnet}
+				testnet={isTestnet}
+				headerOffset={!isFixture}
+				header={
+					isFixture ? null : isMobile ? (
+						<MobileHeader />
+					) : (
+						<>
+							<TestnetBanner />
+							<TopNav />
+						</>
+					)
+				}
+				main={fixture ? <ApiWalletFixture fixture={fixture} /> : <ApiWalletLive />}
+				footer={
+					!isFixture && !isMobile ? (
+						<Suspense fallback={null}>
+							<FooterBar />
+						</Suspense>
+					) : null
+				}
+			/>
 			{isFixture ? null : (
 				<Suspense fallback={null}>
 					<GlobalModals />

@@ -66,8 +66,10 @@ describe("root provider startup split", () => {
 			/if \(routeSurface === "document"\)[\s\S]*?<Outlet \/>[\s\S]*?<DocumentOverlays \/>/,
 		);
 		expect(rootRouteSource).toContain("<AppRuntimeOverlays />");
+		expect(rootRouteSource).toContain('fallbackSurface === "terminal"');
+		expect(rootRouteSource).toContain("<AppShellSkeleton />");
 		expect(rootRouteSource).toContain(
-			'const fallback = fallbackSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />',
+			"<DashboardShellSkeleton frame={getDashboardFrame(pathname)} pathname={pathname} />",
 		);
 
 		const appRuntimeSource = rootRouteSource.slice(

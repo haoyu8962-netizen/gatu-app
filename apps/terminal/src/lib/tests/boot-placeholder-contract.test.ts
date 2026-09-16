@@ -7,6 +7,8 @@ const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const COMPONENTS_DIR = resolve(TEST_DIR, "../../components");
 
 const BOOT_PLACEHOLDER_SOURCES = [
+	"dashboard/dashboard-frame-view.tsx",
+	"dashboard/dashboard-content-placeholder-view.tsx",
 	"trade/mobile/mobile-token-selector-view.tsx",
 	"trade/mobile/mobile-positions-tabs-view.tsx",
 	"trade/mobile/mobile-trade-available-view.tsx",
@@ -67,6 +69,7 @@ const BOOT_PLACEHOLDER_SOURCES = [
 ];
 
 const PHASE_ONE_LOADING_SOURCES = [
+	"dashboard/dashboard-shell-skeleton.tsx",
 	"trade/layout/app-shell-skeleton.tsx",
 	"trade/layout/desktop-terminal-surface.tsx",
 	"trade/layout/terminal-loading-workspace.tsx",
@@ -108,14 +111,18 @@ describe("boot placeholder contract", () => {
 		expect(shell).toContain('<div aria-hidden="true" inert>');
 	});
 
-	it("uses an honest route-neutral frame for dashboard startup", () => {
+	it("uses shared frame and inert chrome for dashboard startup", () => {
 		const shell = readComponent("dashboard/dashboard-shell-skeleton.tsx");
 
 		expect(shell).toContain('aria-busy="true"');
 		expect(shell).toContain('<output className="sr-only">');
-		expect(shell.match(/<main\b/g)).toHaveLength(1);
+		expect(shell).toContain("<DashboardFrameView");
+		expect(shell).toContain("<DashboardContentPlaceholderView");
+		expect(shell).toContain('<div aria-hidden="true" inert>');
 		expect(shell).not.toContain("DesktopGridLoadingSurface");
-		expect(shell).not.toContain("TopNav");
+		expect(shell).toContain("<TopNavView");
+		expect(shell).toContain("<MobileHeaderView");
+		expect(shell).toContain("<FooterBarView");
 		expect(shell).not.toContain("<nav");
 		expect(shell).not.toContain("<button");
 	});

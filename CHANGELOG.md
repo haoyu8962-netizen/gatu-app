@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Dashboard startup now shares each page’s frame, responsive navigation and fixed
+  desktop footer, preserving route-specific canvas colors, widths and padding.
+
 - Mobile startup placeholders now share the six real mobile surfaces and terminal
   frame, including route labels, persisted tabs and the disconnected order controls.
 

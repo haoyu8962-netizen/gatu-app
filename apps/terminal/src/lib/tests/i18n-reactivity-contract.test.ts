@@ -105,6 +105,8 @@ describe("live localization source contract", () => {
 });
 
 const PURE_PRESENTATION_VIEWS = [
+	"../dashboard/dashboard-frame-view.tsx",
+	"../dashboard/dashboard-content-placeholder-view.tsx",
 	"mobile/mobile-token-selector-view.tsx",
 	"mobile/mobile-positions-tabs-view.tsx",
 	"mobile/mobile-trade-available-view.tsx",

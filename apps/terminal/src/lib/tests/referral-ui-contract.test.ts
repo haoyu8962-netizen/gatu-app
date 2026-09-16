@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -118,9 +119,11 @@ describe("referral UI governance contract", () => {
 		const page = readReferralComponent("referrals-page.tsx");
 		const dashboard = readReferralComponent("referral-dashboard.tsx");
 
-		expect(page).toContain("bg-dashboard-canvas");
+		expect(page).toContain('DASHBOARD_FRAMES["/referrals"]');
+		expect(DASHBOARD_FRAMES["/referrals"].canvasClassName).toContain("bg-dashboard-canvas");
 		expect(dashboard).toContain("bg-dashboard-canvas/95");
 		expect(page).not.toContain("portfolio-canvas");
+		expect(DASHBOARD_FRAMES["/referrals"].canvasClassName).not.toContain("portfolio-canvas");
 		expect(dashboard).not.toContain("portfolio-canvas");
 	});
 

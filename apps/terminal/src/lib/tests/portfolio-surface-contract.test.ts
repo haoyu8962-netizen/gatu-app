@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_STYLES = readFileSync(resolve(TEST_DIR, "../..", "styles.css"), "utf8");
@@ -20,7 +21,8 @@ describe("portfolio surface contract", () => {
 		expect(readCssVariable(TERMINAL_STYLES, "@theme inline", "--color-portfolio-canvas")).toBe(
 			"var(--bg-portfolio-canvas)",
 		);
-		expect(PORTFOLIO_PAGE).toContain("bg-portfolio-canvas");
+		expect(PORTFOLIO_PAGE).toContain('{...DASHBOARD_FRAMES["/portfolio"]}');
+		expect(DASHBOARD_FRAMES["/portfolio"].canvasClassName).toContain("bg-portfolio-canvas");
 		expect(PORTFOLIO_PAGE).toContain("rounded-12 bg-surface");
 	});
 

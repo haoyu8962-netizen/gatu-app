@@ -16,6 +16,7 @@ import { NotFoundPage } from "@/components/pages/not-found-page";
 import { RouterErrorPage } from "@/components/pages/router-error-page";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import { getHydrationRouteSurface } from "@/config/app-route-surface";
+import { getDashboardFrame } from "@/config/dashboard-frames";
 import { isRtlLocale } from "@/config/i18n";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
@@ -76,7 +77,12 @@ function RootComponent() {
 		);
 	}
 
-	const fallback = fallbackSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />;
+	const fallback =
+		fallbackSurface === "terminal" ? (
+			<AppShellSkeleton />
+		) : (
+			<DashboardShellSkeleton frame={getDashboardFrame(pathname)} pathname={pathname} />
+		);
 
 	return (
 		<ApplicationErrorBoundary>

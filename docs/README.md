@@ -42,7 +42,7 @@
 | --- | --- |
 | Across 持久充值地址 | [接入设计](across-deposit-addresses.md)、[ADR 0004](adr/0004-across-deposit-addresses.md)：邮箱用户独立入口；生产权限、服务端身份/持久化、账户模式及资金验收待完成 |
 | 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：运行时不再 SSR，Node 进程用预渲染的 `_shell.html` 与文档页回答导航，只执行可移植的 `/api/*` 处理器；发布健康检查含真实 geo 探针；把 `public/` 搬到 CDN 与边缘运行时挂载待完成 |
-| 启动占位单一来源 | [ADR 0009](adr/0009-startup-placeholder-single-source.md)、[规则](../.claude/rules/placeholder-parity.md)：壳、运行时占位与真实界面共用同一展示组件，表面 1–6 迁移完成并实测，仪表盘壳待迁移 |
+| 启动占位单一来源 | [ADR 0009](adr/0009-startup-placeholder-single-source.md)、[规则](../.claude/rules/placeholder-parity.md)：壳、运行时占位与真实界面共用同一展示组件，表面 1–7 迁移完成并实测；[dashboard frame 配置与来源](work-memory/sessions/2026-09-16-dashboard-shell-view-migration.md) |
 | 启动性能对齐官方站 | [修复计划](terminal-startup-performance-plan.md)：壳内预加载交易页静态闭包、壳与图表包边缘缓存、地区判定预取与 Lambda 保温、分块整理；含同环境冷缓存对比数据与需要决策的事项；各项状态见文内 |
 | CSP 第二步：内联脚本哈希 | [计划](csp-inline-script-hashes-plan.md)：`script-src` 去掉 `'unsafe-inline'`，哈希随发布轮换并保留上一版集合，先 report-only 观察再强制；含现状数据、备选方案与需要决策的事项；B、C、D 阶段均已执行 |
 
@@ -55,7 +55,7 @@
 | 早期市场架构 | [market-system](architecture/market-system.md)、[markets-arch](architecture/markets-arch.md)、[实现草案](architecture/unified-markets-implementation.md) | Terminal Reference、单交易路由、当前 `domain/market` 实现 |
 | 早期 Provider / 签名 | [Provider 方案](hyperliquid-provider-architecture.md)、[签名方案](signing-architecture-proposal.md) | Runtime guardrails、签名 ADR |
 | 配对票据修复演进 | [票据修复方案](mobile-sync-ticket-remediation-plan.md)、[旧生产核查原文](mobile-sync-production-readiness-2026-09-11.md)、[实施记录](mobile-sync-implementation-verification.md)、[发布防护方案](mobile-sync-release-hardening-plan.md)、[防护验证](mobile-sync-release-hardening-verification.md) | 当前配对发布流程；旧的常规发布限制已替代 |
-| 产品页面交付 | [API Wallet](api-wallet-redesign-notes.md)、[Leaderboard / Vaults / Staking](leaderboard-vaults-staking-redesign-notes.md) | 对应代码与各记录内的验证范围 |
+| 产品页面交付 | [API Wallet](api-wallet-redesign-notes.md)、[Leaderboard / Vaults / Staking](leaderboard-vaults-staking-redesign-notes.md) | 对应代码与各记录内的验证范围；共用 frame 见 [ADR 0009](adr/0009-startup-placeholder-single-source.md) |
 | 终端专项审查 | [字段审查](order-entry-field-review.md)、[订单簿参考观察](orderbook-ui-reference-audit.md)、[回归修复](terminal-test-regression-repair.md)、[中性底色全量清单](neutral-surface-audit.md) | 对应当前主题契约；底色清单为源码审查，视觉精简尚未实施 |
 | API 与交易调查 | [集成审计](hyperliquid-integration-audit.md)、[订单验证排查](order-validation-analysis.md) | SDK 核对工作流、当前订单提交路径 |
 | 启动与性能建议 | [首次加载观察](architecture/hyperliquid-first-load-investigation.md)、[Web3 包优化](web3-bundle-optimization.md)、[并发渲染](concurrent-rendering.md)、[TanStack 优化](tanstack-start-optimization.md) | Runtime guardrails、性能基线；旧字节数字不能作当前预算 |

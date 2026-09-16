@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_ROOT = resolve(TEST_DIR, "../..");
@@ -15,7 +16,8 @@ describe("API wallet UI governance contract", () => {
 	it("uses the shared dashboard canvas, product typeface, and named radii", () => {
 		const page = readApiWalletComponent("api-wallet-page.tsx");
 
-		expect(page).toContain("min-h-dvh bg-dashboard-canvas font-sans text-fg");
+		expect(page).toContain('DASHBOARD_FRAMES["/api-wallet"]');
+		expect(DASHBOARD_FRAMES["/api-wallet"].canvasClassName).toBe("min-h-dvh bg-dashboard-canvas font-sans text-fg");
 		expect(page).not.toContain("bg-grid-container");
 		for (const source of API_WALLET_COMPONENTS) {
 			expect(source).not.toContain("font-market-close");
