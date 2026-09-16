@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { headerInner } from "@/components/trade/mobile/mobile-chrome-classes";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const COMPONENTS_DIR = resolve(TEST_DIR, "../..", "components");
@@ -14,8 +15,9 @@ describe("mobile landscape safe area", () => {
 	it("keeps the header background full width while insetting its controls", () => {
 		const header = readComponent("trade/mobile/mobile-header.tsx");
 
-		expect(header).toContain("pl-[max(0.625rem,var(--sal))]");
-		expect(header).toContain("pr-[max(0.625rem,var(--sar))]");
+		expect(header).toContain("mobileChrome.headerInner");
+		expect(headerInner).toContain("pl-[max(0.625rem,var(--sal))]");
+		expect(headerInner).toContain("pr-[max(0.625rem,var(--sar))]");
 	});
 
 	it("keeps alert backgrounds full width while insetting their content", () => {

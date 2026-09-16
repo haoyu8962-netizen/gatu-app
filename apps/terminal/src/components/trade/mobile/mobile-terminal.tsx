@@ -1,4 +1,5 @@
 import { Activity } from "react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -25,18 +26,12 @@ export function MobileTerminal({ className, orderEntryDraftReady = true }: Props
 	const disclosureStates = useMobilePositionsDisclosureStates(disclosureIdentity);
 
 	return (
-		<div
-			className={cn(
-				"mobile-terminal fixed inset-0 w-full flex flex-col bg-background text-fg font-sans",
-				"overflow-hidden overscroll-none",
-				className,
-			)}
-		>
+		<div className={cn(mobileChrome.terminal, "overflow-hidden overscroll-none", className)}>
 			<MobileHeader />
 			<GeoRestrictionBanner />
 			<OfflineBanner />
 			<MobileMarketBarProvider enabled={activeTab !== "account"}>
-				<main className="flex-1 min-h-0 flex flex-col overflow-hidden pl-[var(--sal)] pr-[var(--sar)]">
+				<main className={mobileChrome.workspace}>
 					<div className="relative flex-1 min-h-0 overflow-hidden">
 						<div
 							aria-hidden={activeTab !== "markets"}

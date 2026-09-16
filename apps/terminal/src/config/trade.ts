@@ -56,19 +56,19 @@ export const TRIGGER_MARKET_SLIPPAGE_BPS = 1000;
 export const DEFAULT_LEVERAGE_BY_MODE = { cross: 10, isolated: 10 } as const;
 
 export const POSITIONS_TABS = [
-	{ value: "balances", label: msg`Balances` },
-	{ value: "positions", label: msg`Positions` },
-	{ value: "orders", label: msg`Open Orders` },
-	{ value: "twap", label: msg`TWAP` },
-	{ value: "history", label: msg`Trade History` },
-	{ value: "funding", label: msg`Funding Payments` },
-	{ value: "orders-history", label: msg`Order History` },
+	{ value: "balances", label: { ...msg`Balances`, message: "Balances" } },
+	{ value: "positions", label: { ...msg`Positions`, message: "Positions" } },
+	{ value: "orders", label: { ...msg`Open Orders`, message: "Open Orders" } },
+	{ value: "twap", label: { ...msg`TWAP`, message: "TWAP" } },
+	{ value: "history", label: { ...msg`Trade History`, message: "Trade History" } },
+	{ value: "funding", label: { ...msg`Funding Payments`, message: "Funding Payments" } },
+	{ value: "orders-history", label: { ...msg`Order History`, message: "Order History" } },
 ] as const;
 
 export const MOBILE_POSITIONS_TABS = [
 	POSITIONS_TABS[0],
 	POSITIONS_TABS[1],
-	{ value: "orders", label: msg`Orders` },
+	{ value: "orders", label: { ...msg`Orders`, message: "Orders" } },
 	POSITIONS_TABS[3],
 	POSITIONS_TABS[4],
 	POSITIONS_TABS[5],

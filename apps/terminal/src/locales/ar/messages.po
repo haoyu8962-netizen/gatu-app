@@ -913,6 +913,7 @@ msgstr "فشل الإيداع التلقائي لـ USDC"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -921,6 +922,7 @@ msgstr "فشل الإيداع التلقائي لـ USDC"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Available"
 msgstr "متاح"
 
@@ -1805,9 +1807,11 @@ msgstr "ربط المحفظة"
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "ربط المحفظة"
@@ -2720,10 +2724,12 @@ msgstr "البيئة"
 msgid "Equity"
 msgstr "حقوق الملكية"
 
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Est. Fee"
 msgstr "الرسوم المقدرة"
 
@@ -3833,10 +3839,12 @@ msgid "Linked staking account: <0>{0}</0>."
 msgstr "حساب التخزين المرتبط: <0>{0}</0>."
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Liq. Price"
 msgstr "سعر التصفية"
 
@@ -4041,6 +4049,7 @@ msgstr "تسجيل الدخول بالبريد الإلكتروني"
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -4049,6 +4058,7 @@ msgstr "تسجيل الدخول بالبريد الإلكتروني"
 #: src/components/trade/positions/position-row.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-entry-data.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Long"
 msgstr "شراء"
 
@@ -4121,11 +4131,13 @@ msgid "Margin Ratio"
 msgstr "نسبة الهامش"
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Margin Req."
 msgstr "الهامش المطلوب"
 
@@ -5197,12 +5209,14 @@ msgid "Order type"
 msgstr "نوع الأمر"
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Order Value"
 msgstr "قيمة الطلب"
 
@@ -5667,6 +5681,7 @@ msgstr "صفحة الخزائن السابقة"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -5692,6 +5707,7 @@ msgstr "صفحة الخزائن السابقة"
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Price"
 msgstr "السعر"
 
@@ -5933,6 +5949,7 @@ msgid "Recovery could not be saved in this browser. Record the Arbitrum transact
 msgstr "تعذر حفظ بيانات الاسترداد في هذا المتصفح. دوّن معرّف معاملة Arbitrum قبل الإغلاق."
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -5943,6 +5960,7 @@ msgstr "تعذر حفظ بيانات الاسترداد في هذا المتصف
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Reduce Only"
 msgstr "تقليل فقط"
 
@@ -6804,6 +6822,7 @@ msgstr "مشاركة الأرباح والخسائر لـ {displayName}"
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -6812,6 +6831,7 @@ msgstr "مشاركة الأرباح والخسائر لـ {displayName}"
 #: src/components/trade/positions/position-row.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-entry-data.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Short"
 msgstr "بيع"
 
@@ -6874,7 +6894,7 @@ msgstr "حساب التوقيع"
 
 #: src/components/staking/staking-view.tsx
 msgid "Signing ready"
-msgstr "جاهز للتوقيع"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
@@ -6894,6 +6914,7 @@ msgstr "جاري التوقيع..."
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -6922,6 +6943,7 @@ msgstr "جاري التوقيع..."
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Size"
 msgstr "الحجم"
 
@@ -6950,7 +6972,7 @@ msgstr "انحراف الحجم"
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
-msgstr "انحراف الحجم مفرط بالنسبة إلى الحجم الإجمالي"
+msgstr ""
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -6967,11 +6989,13 @@ msgid "SL Price"
 msgstr "سعر SL"
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Slippage"
 msgstr "الانزلاق"
 
@@ -8402,10 +8426,12 @@ msgid "TP Price"
 msgstr "سعر TP"
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "TP/SL"
 msgstr "TP/SL"
 

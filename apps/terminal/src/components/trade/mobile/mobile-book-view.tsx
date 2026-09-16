@@ -2,6 +2,7 @@ import { Button, Dropdown, type DropdownItem } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowsClockwiseIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
@@ -549,12 +550,8 @@ export function CompactOrderbook({
 	);
 
 	return (
-		<div
-			ref={setPanelRef}
-			{...hover.containerProps}
-			className="orderbook-panel-container flex-1 min-h-0 flex flex-col overflow-hidden font-market-close text-trading-panel-fg [--orderbook-hover-gap:4px]"
-		>
-			<div className="grid h-[35px] shrink-0 grid-cols-2 items-center gap-1 border-b border-trading-panel-stroke-row pl-2 pr-3 text-xs tracking-normal orderbook-header-text uppercase">
+		<div ref={setPanelRef} {...hover.containerProps} className={mobileChrome.book}>
+			<div className={mobileChrome.bookHeader}>
 				<div className="min-w-0 truncate" title={`${t`Price`} (${priceToken})`}>
 					{t`Price`}{" "}
 					<span data-slot="compact-orderbook-price-token" className="orderbook-asset-heading normal-case">
@@ -643,11 +640,7 @@ export function CompactOrderbook({
 				</div>
 
 				{mode === "both" && (
-					<div
-						data-slot="compact-orderbook-mid"
-						data-direction={midDirection}
-						className="shrink-0 flex h-[24px] items-center justify-start px-2 gap-1.5"
-					>
+					<div data-slot="compact-orderbook-mid" data-direction={midDirection} className={mobileChrome.bookMid}>
 						<span className="sr-only">{t`Mid`}: </span>
 						<span
 							data-slot="compact-orderbook-mid-price"
@@ -730,7 +723,7 @@ export function CompactOrderbook({
 				/>
 			)}
 
-			<div className="shrink-0 h-[31px] border-t border-trading-panel-stroke-row flex items-center gap-1 text-trading-panel-muted pl-2 pr-1 text-xs max-[339px]:pl-1">
+			<div className={mobileChrome.bookFooter}>
 				<Dropdown
 					size="sm"
 					hideCaret

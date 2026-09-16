@@ -1,5 +1,6 @@
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { MOBILE_NAV_ITEMS, type MobileTab } from "@/config/nav";
 import { cn } from "@/lib/cn";
@@ -20,15 +21,10 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 
 	return (
 		<nav
-			className={cn(
-				"relative z-50 shrink-0 bg-surface border-t border-trading-panel-stroke-card",
-				"[touch-action:pan-x_pinch-zoom]",
-				"pb-[env(safe-area-inset-bottom)]",
-				className,
-			)}
+			className={cn(mobileChrome.nav, "[touch-action:pan-x_pinch-zoom]", mobileChrome.navSafeArea, className)}
 			aria-label={_(msg`Primary navigation`)}
 		>
-			<div className="flex items-stretch pl-[var(--sal)] pr-[var(--sar)]">
+			<div className={mobileChrome.navInner}>
 				{MOBILE_NAV_ITEMS.map((item) => {
 					const isActive = activeTab === item.id;
 					const badgeCount = badges?.[item.id];
@@ -41,10 +37,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 							type="button"
 							onClick={() => onTabChange(item.id)}
 							style={{ minHeight: `${MOBILE_BOTTOM_NAV_HEIGHT_PX}px` }}
-							className={cn(
-								"flex-1 flex flex-col items-center justify-center gap-[3px] rounded-none px-1",
-								isActive ? "text-trading-panel-fg" : "text-trading-panel-subtle",
-							)}
+							className={cn(mobileChrome.navItem, isActive ? "text-trading-panel-fg" : "text-trading-panel-subtle")}
 							aria-current={isActive ? "page" : undefined}
 							aria-label={_(item.label)}
 						>
@@ -63,9 +56,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 									</span>
 								)}
 							</span>
-							<span className={cn("text-3xs tracking-wide", isActive ? "font-bold" : "font-medium")}>
-								{_(item.label)}
-							</span>
+							<span className={cn(mobileChrome.navLabel, isActive ? "font-bold" : "font-medium")}>{_(item.label)}</span>
 						</button>
 					);
 				})}

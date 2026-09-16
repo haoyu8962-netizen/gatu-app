@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { cn } from "@/lib/cn";
 
 interface Props {
@@ -11,19 +12,13 @@ export function MobileTradeScrollArea({ children, embedded }: Props) {
 		<div
 			data-slot="mobile-order-entry-scroll"
 			className={cn(
-				"flex flex-1 flex-col",
+				mobileChrome.tradeScroll,
 				embedded
 					? "min-h-min"
 					: "min-h-0 overflow-x-hidden overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
-			<div
-				className={cn(
-					embedded
-						? "trade-panel-container flex-1 min-h-min flex flex-col gap-2 px-2.5 py-1.5 font-market-close"
-						: "trade-panel-container px-3 py-4 space-y-4",
-				)}
-			>
+			<div className={cn(embedded ? mobileChrome.tradeEmbeddedContent : "trade-panel-container px-3 py-4 space-y-4")}>
 				{children}
 			</div>
 		</div>

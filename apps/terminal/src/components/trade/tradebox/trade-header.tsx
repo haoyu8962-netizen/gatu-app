@@ -2,6 +2,7 @@ import { Dropdown } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import type { SideLabels } from "@/config/ui-text";
 import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
@@ -115,7 +116,7 @@ export function TradeHeader({
 	const controlLabelClass = "w-full min-w-0 truncate text-3xs leading-snug text-trading-panel-subtle";
 	const controlValueClass = "flex w-full min-w-0 items-center gap-0.5 text-2sm font-semibold text-trading-panel-fg";
 	const mobileControlClass = cn(
-		"relative flex h-[35px] min-w-0 items-center gap-3 whitespace-nowrap rounded-none bg-surface px-0 text-xs font-semibold text-trading-panel-fg",
+		mobileChrome.orderControl,
 		"transition-opacity active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-focus",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
 	);
@@ -135,7 +136,7 @@ export function TradeHeader({
 								<span className="truncate" title={orderTypeLabel}>
 									{orderTypeLabel}
 								</span>
-								<CaretDownIcon viewBox="32 72 192 128" className="h-1.5 w-[9px] shrink-0 text-trading-panel-subtle" />
+								<CaretDownIcon viewBox="32 72 192 128" className={mobileChrome.orderCaret} />
 							</span>
 						}
 						items={mobileOrderTypeItems}
@@ -157,7 +158,7 @@ export function TradeHeader({
 								aria-haspopup="dialog"
 							>
 								<span className="truncate">{marginLabel}</span>
-								<CaretDownIcon viewBox="32 72 192 128" className="h-1.5 w-[9px] shrink-0 text-trading-panel-subtle" />
+								<CaretDownIcon viewBox="32 72 192 128" className={mobileChrome.orderCaret} />
 							</button>
 							<button
 								type="button"
@@ -166,7 +167,7 @@ export function TradeHeader({
 								aria-haspopup="dialog"
 							>
 								<span className="truncate tabular-nums">{leverage ?? 1}x</span>
-								<CaretDownIcon viewBox="32 72 192 128" className="h-1.5 w-[9px] shrink-0 text-trading-panel-subtle" />
+								<CaretDownIcon viewBox="32 72 192 128" className={mobileChrome.orderCaret} />
 							</button>
 						</>
 					)}

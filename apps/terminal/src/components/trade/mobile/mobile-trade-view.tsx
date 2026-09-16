@@ -14,6 +14,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
@@ -800,7 +801,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const marginDialogError = marginDialogView === "leverage" ? leverageUpdateError : switchModeError;
 
 	return (
-		<div className={cn("flex min-h-0 flex-col self-stretch", !embedded && "h-full bg-background", className)}>
+		<div className={cn(mobileChrome.tradeView, !embedded && "h-full bg-background", className)}>
 			<MarginModeModal
 				open={showMarginDialog}
 				onOpenChange={handleMarginDialogOpenChange}
@@ -864,7 +865,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					type="button"
 					onClick={() => applySizeFromPercent(100)}
 					disabled={isFormDisabled || maxSize <= 0}
-					className="relative flex min-h-[15px] w-full min-w-0 items-center justify-between gap-2 text-xs leading-[15px] text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-6 after:w-full after:-translate-y-1/2 after:content-[''] disabled:cursor-default"
+					className={mobileChrome.available}
 				>
 					<span className="shrink-0 whitespace-nowrap">{t`Available`}</span>
 					<span
@@ -1014,10 +1015,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					/>
 				)}
 
-				<div
-					data-slot="mobile-order-summary"
-					className={cn("mt-auto border-t border-trading-panel-stroke-row pt-2", embedded ? "text-2xs" : "text-xs")}
-				>
+				<div data-slot="mobile-order-summary" className={cn(mobileChrome.summary, embedded ? "text-2xs" : "text-xs")}>
 					{twapOrder ? (
 						<TwapOrderSummary
 							compact
@@ -1067,10 +1065,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 								/>
 							)}
 							{orderType === "market" && (
-								<div
-									className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-1.5")}
-								>
-									<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
+								<div className={cn(mobileChrome.summaryRow, embedded ? "gap-1 py-1" : "gap-2 py-1.5")}>
+									<span className={mobileChrome.summaryLabel}>{t`Slippage`}</span>
 									<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap tabular-nums">
 										<span title={t`Est. Slippage`} className="text-trading-panel-muted">
 											<span className="sr-only">{t`Est. Slippage`}: </span>
@@ -1103,12 +1099,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				</div>
 			</MobileTradeScrollArea>
 
-			<div
-				className={cn(
-					"shrink-0 border-t border-trading-panel-stroke-card bg-surface",
-					embedded ? "px-2.5 py-2" : "px-3 py-3",
-				)}
-			>
+			<div className={cn(mobileChrome.ctaWrapper, embedded ? mobileChrome.ctaEmbeddedPadding : "px-3 py-3")}>
 				{validationSnapshot.text && (
 					<p id={validationErrorId} role="alert" className="text-xs text-error mb-2">
 						{validationSnapshot.text}
@@ -1131,8 +1122,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						disabled={buttonContent.disabled}
 						intent={getTradingCtaIntent(buttonContent.variant)}
 						className={cn(
-							"w-full rounded-[10px] text-sm font-bold whitespace-nowrap shadow-none",
-							embedded && "h-[38px]",
+							mobileChrome.ctaButton,
+							embedded && mobileChrome.ctaEmbeddedHeight,
 							getTradingCtaClass(buttonContent.variant),
 						)}
 						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
@@ -1184,16 +1175,9 @@ function SummaryRow({
 	compact?: boolean;
 }) {
 	return (
-		<div className={cn("flex min-w-0 items-center justify-between", compact ? "gap-1 py-0.5" : "gap-2 py-1.5")}>
-			<span className="min-w-0 truncate text-trading-panel-muted">{label}</span>
-			<span
-				className={cn(
-					"shrink-0 whitespace-nowrap text-right font-semibold tabular-nums",
-					valueClass ?? "text-trading-panel-fg",
-				)}
-			>
-				{value}
-			</span>
+		<div className={cn(mobileChrome.summaryRow, compact ? mobileChrome.summaryCompactRow : "gap-2 py-1.5")}>
+			<span className={mobileChrome.summaryLabel}>{label}</span>
+			<span className={cn(mobileChrome.summaryValue, valueClass ?? "text-trading-panel-fg")}>{value}</span>
 		</div>
 	);
 }

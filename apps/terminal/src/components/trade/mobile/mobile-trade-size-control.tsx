@@ -1,5 +1,6 @@
 import { CaretDownIcon } from "@phosphor-icons/react";
 import type { ChangeEvent } from "react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
 import type { Side } from "@/lib/trade/types";
@@ -53,8 +54,8 @@ export function MobileTradeSizeControl({
 }: Props) {
 	return (
 		<div className="space-y-2">
-			<div className={cn(tradingInputFrameClass, "h-8 px-2.5", disabled && "opacity-50")}>
-				<span className="me-2 shrink-0 whitespace-nowrap text-2xs text-trading-panel-subtle">{sizeLabel}</span>
+			<div className={cn(tradingInputFrameClass, mobileChrome.sizeFrame, disabled && "opacity-50")}>
+				<span className={mobileChrome.sizeLabel}>{sizeLabel}</span>
 				<NumberInput
 					aria-describedby={hasError ? errorId : undefined}
 					aria-invalid={hasError || undefined}
@@ -66,21 +67,16 @@ export function MobileTradeSizeControl({
 					value={sizeInput}
 					onChange={onSizeChange}
 					maxAllowedDecimals={maxAllowedDecimals}
-					className="h-7 min-w-0 flex-1 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
+					className={mobileChrome.sizeValue}
 					disabled={disabled}
 				/>
-				<button
-					type="button"
-					onClick={onSizeModeToggle}
-					disabled={disabled}
-					className="relative ms-2 inline-flex h-8 min-w-11 shrink-0 items-center justify-center gap-1 whitespace-nowrap text-xs font-semibold text-trading-panel-fg after:absolute after:inset-0 after:content-[''] disabled:cursor-not-allowed"
-				>
+				<button type="button" onClick={onSizeModeToggle} disabled={disabled} className={mobileChrome.sizeUnit}>
 					{sizeModeLabel}
 					<CaretDownIcon className="size-3 text-trading-panel-subtle" />
 				</button>
 			</div>
 
-			<div className="flex items-center gap-2 pt-0.5">
+			<div className={mobileChrome.sizeSliderRow}>
 				<div className="relative min-w-0 flex-1">
 					<TradeSizeSlider
 						value={sliderValue}
@@ -105,7 +101,7 @@ export function MobileTradeSizeControl({
 					ariaLabel={percentAriaLabel}
 					ariaDescribedBy={hasError ? errorId : undefined}
 					ariaInvalid={hasError || undefined}
-					frameClassName="h-[31px] w-20 shrink-0 rounded-[8px] px-2"
+					frameClassName={mobileChrome.sizePercent}
 					mobileSafe
 				/>
 			</div>

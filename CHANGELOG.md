@@ -124,6 +124,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The mobile startup placeholder now mirrors the real mobile terminal: the same
+  header controls, market bar, trade/book split, order-form frame, book chrome,
+  positions tab row and bottom nav, drawn from class constants the real
+  components also consume (`mobile-chrome-classes.ts`), so nothing moves when
+  the terminal mounts. It highlights Positions and Trade by default and stays
+  neutral for state it cannot know (side, market, values); the runtime loading
+  placeholder additionally uses the active locale and the saved tab selections.
+
 - The TradingView loader is served under a content-hashed file name
   (`charting_library.<hash>.js`) that the build emits and the shell preloads. The previous
   immutable `?v=<commit>` object could pin a stale library body for a year, because the edge

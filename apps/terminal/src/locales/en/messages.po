@@ -913,6 +913,7 @@ msgstr "Automatic USDC deposit failed"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -921,6 +922,7 @@ msgstr "Automatic USDC deposit failed"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Available"
 msgstr "Available"
 
@@ -1805,9 +1807,11 @@ msgstr "Connect wallet"
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "Connect Wallet"
@@ -2720,10 +2724,12 @@ msgstr "Environment"
 msgid "Equity"
 msgstr "Equity"
 
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Est. Fee"
 msgstr "Est. Fee"
 
@@ -3833,10 +3839,12 @@ msgid "Linked staking account: <0>{0}</0>."
 msgstr "Linked staking account: <0>{0}</0>."
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Liq. Price"
 msgstr "Liq. Price"
 
@@ -4041,6 +4049,7 @@ msgstr "Log in with Email"
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -4049,6 +4058,7 @@ msgstr "Log in with Email"
 #: src/components/trade/positions/position-row.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-entry-data.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Long"
 msgstr "Long"
 
@@ -4121,11 +4131,13 @@ msgid "Margin Ratio"
 msgstr "Margin Ratio"
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Margin Req."
 msgstr "Margin Req."
 
@@ -5197,12 +5209,14 @@ msgid "Order type"
 msgstr "Order type"
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Order Value"
 msgstr "Order Value"
 
@@ -5667,6 +5681,7 @@ msgstr "Previous Vault page"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -5692,6 +5707,7 @@ msgstr "Previous Vault page"
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Price"
 msgstr "Price"
 
@@ -5933,6 +5949,7 @@ msgid "Recovery could not be saved in this browser. Record the Arbitrum transact
 msgstr "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -5943,6 +5960,7 @@ msgstr "Recovery could not be saved in this browser. Record the Arbitrum transac
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Reduce Only"
 msgstr "Reduce Only"
 
@@ -6804,6 +6822,7 @@ msgstr "Share PNL for {displayName}"
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -6812,6 +6831,7 @@ msgstr "Share PNL for {displayName}"
 #: src/components/trade/positions/position-row.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-entry-data.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Short"
 msgstr "Short"
 
@@ -6874,7 +6894,7 @@ msgstr "Signing account"
 
 #: src/components/staking/staking-view.tsx
 msgid "Signing ready"
-msgstr "Signing ready"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
@@ -6894,6 +6914,7 @@ msgstr "Signing..."
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -6922,6 +6943,7 @@ msgstr "Signing..."
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Size"
 msgstr "Size"
 
@@ -6950,7 +6972,7 @@ msgstr "Size Skew"
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
-msgstr "Size skew is too aggressive for the total size"
+msgstr ""
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -6967,11 +6989,13 @@ msgid "SL Price"
 msgstr "SL Price"
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Slippage"
 msgstr "Slippage"
 
@@ -8402,10 +8426,12 @@ msgid "TP Price"
 msgstr "TP Price"
 
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
+#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "TP/SL"
 msgstr "TP/SL"
 

@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CaretDownIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { getSpotAssetSocials, hasSpotSocialLinks, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
@@ -114,38 +115,30 @@ export function MobileMarketBar({ className }: Props) {
 	});
 
 	return (
-		<div
-			className={cn(
-				"w-full max-w-full min-w-0 shrink-0 overflow-hidden border-b border-trading-panel-stroke-row bg-surface font-market-close text-trading-panel-fg",
-				className,
-			)}
-		>
+		<div className={cn(mobileChrome.marketBar, className)}>
 			<div className="min-w-0">
-				<div className="grid min-h-[61px] min-w-0 grid-cols-2 items-center gap-x-4 px-4 py-2.5 max-[360px]:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] max-[360px]:gap-x-1 max-[360px]:px-2.5">
+				<div className={mobileChrome.marketGrid}>
 					<div className="flex min-w-0 items-center gap-0">
-						<div className="flex shrink-0 [&>span]:size-11 [&_button]:size-11 [&_.relative.inline-flex]:size-7">
+						<div className={mobileChrome.marketAsset}>
 							<MarketAssetInfo key={market?.name} market={market} />
 						</div>
 						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} showAssetIcon={false} />
 					</div>
 
-					<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 overflow-visible max-[360px]:gap-1">
+					<div className={mobileChrome.marketQuote}>
 						<div data-boneyard="market-price" className="min-w-0 text-start">
 							<div className="flex min-w-0 flex-col items-start">
 								<span
 									key={priceFlash.sequence}
 									data-direction={visiblePriceDirection ?? undefined}
-									className={cn(
-										"block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[18px] leading-[22px] font-bold text-trading-panel-fg tabular-nums max-[360px]:text-base max-[360px]:leading-5",
-										visiblePriceDirection && "use-color-change",
-									)}
+									className={cn(mobileChrome.marketPrice, visiblePriceDirection && "use-color-change")}
 									title={priceText}
 								>
 									{priceText}
 								</span>
 								<div
 									className={cn(
-										"max-w-full whitespace-normal text-[11px] leading-[15px] font-semibold tabular-nums",
+										mobileChrome.marketChange,
 										changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
 											? "invisible text-trading-panel-subtle"
 											: changeColorClass,
@@ -163,7 +156,7 @@ export function MobileMarketBar({ className }: Props) {
 							type="button"
 							onClick={() => setExpanded((value) => !value)}
 							className={cn(
-								"relative flex h-[30px] w-9 shrink-0 items-center justify-center rounded-[8px] border bg-transparent after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-trading-panel-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+								mobileChrome.marketExpand,
 								expanded
 									? "border-trading-panel-control text-trading-panel-fg"
 									: "border-trading-panel-stroke-input text-trading-panel-muted",

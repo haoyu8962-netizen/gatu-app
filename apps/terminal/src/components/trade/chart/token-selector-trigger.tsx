@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon } from "@phosphor-icons/react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { AssetDisplay } from "../components/asset-display";
@@ -7,8 +8,7 @@ import { AssetDisplay } from "../components/asset-display";
 export const TOKEN_SELECTOR_TRIGGER_CLASSNAME =
 	"inline-flex h-9 shrink-0 select-none items-center gap-2 rounded-[9px] bg-transparent pr-2 font-market-close text-trading-panel-fg transition-[color,background-color] duration-150 ease-out hover:bg-trading-panel-hover active:bg-fill-press aria-expanded:bg-trading-panel-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-stroke-focus motion-reduce:transition-none cursor-pointer leading-none";
 
-export const MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME =
-	"inline-flex min-h-11 min-w-0 shrink-0 items-center rounded-[9px] bg-transparent py-1 pr-1 font-market-close hover:bg-trading-panel-hover active:bg-fill-press cursor-pointer leading-none";
+export const MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME = mobileChrome.marketSelector;
 
 function getMarketLeverageLabel(market: UnifiedMarketInfo | undefined): string | null {
 	if (!market || !("maxLeverage" in market) || !market.maxLeverage) return null;
@@ -52,8 +52,7 @@ export function TokenSelectorTriggerContent({
 	const leverageLabel = getMarketLeverageLabel(selectedMarket);
 	const pairName = selectedMarket?.pairName ?? selectedMarket?.name ?? "";
 	const pairNameParts = getPairNameParts(pairName);
-	const metadataBadgeClassName =
-		"inline-flex max-w-20 shrink-0 items-center truncate rounded-[4px] px-1.5 py-0.5 text-[10px] leading-none font-semibold whitespace-nowrap";
+	const metadataBadgeClassName = mobileChrome.marketBadge;
 	const kindBadgeClassName = cn(
 		metadataBadgeClassName,
 		isSpot
@@ -80,10 +79,7 @@ export function TokenSelectorTriggerContent({
 						) : null}
 						<span className="flex min-w-0 shrink-0 flex-col items-start gap-1">
 							<span className="flex min-w-0 items-center gap-1.5 max-[360px]:gap-1">
-								<span
-									className="whitespace-nowrap text-base leading-5 font-bold tracking-tight text-trading-panel-fg max-[360px]:text-[13px] max-[360px]:leading-4"
-									title={pairName}
-								>
+								<span className={mobileChrome.marketName} title={pairName}>
 									<span>{pairNameParts.main}</span>
 									{pairNameParts.suffix ? <span>{pairNameParts.suffix}</span> : null}
 								</span>

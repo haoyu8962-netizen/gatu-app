@@ -67,6 +67,6 @@ describe("AppShellSkeleton desktop frame", () => {
 		expect(text).toContain("Connect Wallet");
 		expect(text).toContain("Markets");
 		expect(text).toContain("Account");
-		expect(mobile?.lastElementChild?.querySelectorAll(".h-14")).toHaveLength(3);
+		expect(mobile?.lastElementChild?.querySelectorAll(".flex-1")).toHaveLength(3);
 	});
 });

@@ -9,6 +9,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { cn } from "@/lib/cn";
 
 export interface TradeSliderCommitDetails {
@@ -337,7 +338,7 @@ export function TradeSlider(props: Props) {
 			<div
 				ref={controlRef}
 				data-trade-slider-control=""
-				className="group/slider relative h-[33px] w-full touch-none cursor-pointer"
+				className={cn("group/slider", mobileChrome.sliderFrame, "touch-none cursor-pointer")}
 				onPointerDown={handlePointerDown}
 				onPointerMove={(event) => {
 					const session = dragRef.current;
@@ -349,7 +350,7 @@ export function TradeSlider(props: Props) {
 				onPointerCancel={(event) => finish(event.pointerId, false)}
 				onLostPointerCapture={(event) => finish(event.pointerId, false)}
 			>
-				<div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-trading-panel-stroke-card">
+				<div className={cn(mobileChrome.sliderTrack, "bg-trading-panel-stroke-card")}>
 					<div
 						ref={indicatorRef}
 						style={{

@@ -1,6 +1,7 @@
 import { Checkbox } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { cn } from "@/lib/cn";
 
 interface CheckboxOption {
@@ -19,21 +20,13 @@ interface Props {
 
 export function TradeOptionCheckboxes({ className, reduceOnly, tpSl, children, tradingPanel }: Props) {
 	const { t } = useLingui();
-	const controlClassName = tradingPanel
-		? "size-[17px] rounded-[5px] border-trading-panel-stroke-control data-checked:border-trading-panel-control data-checked:bg-trading-panel-control"
-		: undefined;
+	const controlClassName = tradingPanel ? mobileChrome.optionControl : undefined;
 	const indicatorClassName = tradingPanel ? "text-trading-panel-on-control" : undefined;
-	const optionClassName = tradingPanel ? "min-w-0 min-h-5 items-center gap-1.5 max-[1000px]:min-h-8" : undefined;
-	const labelClassName = tradingPanel ? "text-xs text-trading-panel-muted" : undefined;
+	const optionClassName = tradingPanel ? mobileChrome.option : undefined;
+	const labelClassName = tradingPanel ? mobileChrome.optionLabel : undefined;
 
 	return (
-		<div
-			data-slot="trade-order-options"
-			className={cn(
-				className,
-				tradingPanel && "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 max-[1000px]:gap-y-3",
-			)}
-		>
+		<div data-slot="trade-order-options" className={cn(className, tradingPanel && mobileChrome.optionsGrid)}>
 			{reduceOnly && (
 				<Checkbox
 					aria-label={t`Reduce Only`}

@@ -22,7 +22,7 @@ export interface MobileNavItem {
 }
 
 export const MOBILE_NAV_ITEMS: MobileNavItem[] = [
-	{ id: "markets", label: msg`Markets`, icon: ChartBarIcon },
-	{ id: "trade", label: msg`Trade`, icon: TrendUpIcon },
-	{ id: "account", label: msg`Account`, icon: CurrencyCircleDollarIcon },
+	{ id: "markets", label: { ...msg`Markets`, message: "Markets" }, icon: ChartBarIcon },
+	{ id: "trade", label: { ...msg`Trade`, message: "Trade" }, icon: TrendUpIcon },
+	{ id: "account", label: { ...msg`Account`, message: "Account" }, icon: CurrencyCircleDollarIcon },
 ];

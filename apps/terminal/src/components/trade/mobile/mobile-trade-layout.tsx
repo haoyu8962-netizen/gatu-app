@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { type KeyboardEvent, useId, useRef, useState } from "react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { cn } from "@/lib/cn";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { useExchangeScope } from "@/providers/exchange-scope";
@@ -69,12 +70,7 @@ function TradeOrderView({
 	const { setSizeMode } = useOrderEntryActions();
 
 	return (
-		<div
-			className={cn(
-				"h-full min-h-0 bg-background [overflow-anchor:none]",
-				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-			)}
-		>
+		<div className={cn(mobileChrome.pageSurface, mobileChrome.pageScroll)}>
 			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
 			<MobileTradeOrderSplit
@@ -96,7 +92,7 @@ function TradeOrderView({
 						embedded
 						sizeMode={sizeMode}
 						onSizeModeChange={setSizeMode}
-						className="flex-[1.53] min-w-0 border-r border-stroke-weak/60"
+						className={mobileChrome.tradeColumn}
 					/>
 				) : (
 					<div
@@ -108,7 +104,7 @@ function TradeOrderView({
 			</MobileTradeOrderSplit>
 
 			{active && (
-				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
+				<div className={mobileChrome.positionsWrapper}>
 					<MobilePositionsView
 						scrollMode="page"
 						includeBottomNavSpacer={false}
@@ -174,12 +170,7 @@ function MarketsDataView({
 	}
 
 	return (
-		<div
-			className={cn(
-				"h-full min-h-0 bg-background [overflow-anchor:none]",
-				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-			)}
-		>
+		<div className={cn(mobileChrome.pageSurface, mobileChrome.pageScroll)}>
 			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
 			<div
@@ -253,7 +244,7 @@ function MarketsDataView({
 			</div>
 
 			{active && (
-				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
+				<div className={mobileChrome.positionsWrapper}>
 					<MobilePositionsView
 						scrollMode="page"
 						includeBottomNavSpacer={false}

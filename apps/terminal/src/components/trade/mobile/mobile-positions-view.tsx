@@ -3,6 +3,7 @@ import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
 import { type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -274,13 +275,9 @@ export function MobilePositionsView({
 				)}
 			>
 				<div className="relative min-w-0 shrink-0">
-					<div
-						ref={tabScrollRef}
-						data-testid="mobile-account-tabs-scroll"
-						className="min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-					>
+					<div ref={tabScrollRef} data-testid="mobile-account-tabs-scroll" className={mobileChrome.positionsScroll}>
 						<TabsList
-							className="h-[47px] min-w-max gap-0 border-b border-market-close-stroke-card px-3.5 pr-7"
+							className={mobileChrome.positionsTabs}
 							indicatorClassName="bg-market-close-fg transition-[left] duration-[120ms] ease-linear"
 						>
 							{tabs.map((tab) => {
@@ -293,7 +290,7 @@ export function MobilePositionsView({
 										key={tab.value}
 										value={tab.value}
 										data-mobile-account-tab={tab.value}
-										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-focus data-active:text-market-close-fg"
+										className={mobileChrome.positionsTab}
 									>
 										<span>{_(tab.label)}</span>
 										{showCountSlot ? (
@@ -313,11 +310,7 @@ export function MobilePositionsView({
 							})}
 						</TabsList>
 					</div>
-					<div
-						data-testid="mobile-account-tabs-fade"
-						aria-hidden="true"
-						className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-linear-to-r from-transparent to-modal"
-					/>
+					<div data-testid="mobile-account-tabs-fade" aria-hidden="true" className={mobileChrome.positionsFade} />
 				</div>
 				{!isConnected ? (
 					<EmptyState activeTab={activeTab} description={emptyDescription} />

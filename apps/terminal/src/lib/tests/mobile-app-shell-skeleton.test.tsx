@@ -40,11 +40,51 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(headerItems?.className).toContain("h-14");
 		expect(headerItems?.className).toContain("pl-[max(0.625rem,var(--sal))]");
 		expect(headerItems?.className).toContain("pr-[max(0.625rem,var(--sar))]");
-		expect(workspace?.className).toContain("pl-[max(3px,var(--sal))]");
-		expect(workspace?.className).toContain("pr-[max(3px,var(--sar))]");
+		expect(workspace?.className).toContain("pl-[var(--sal)]");
+		expect(workspace?.className).toContain("pr-[var(--sar)]");
 		expect(navigationItems?.className).toContain("pl-[var(--sal)]");
 		expect(navigationItems?.className).toContain("pr-[var(--sar)]");
-		expect(mobileShell?.lastElementChild?.querySelectorAll(".h-14")).toHaveLength(3);
+		expect(mobileShell?.lastElementChild?.querySelectorAll(".flex-1")).toHaveLength(3);
+	});
+
+	it("matches the header, market bar, split, positions tabs and nav geometry", () => {
+		act(() => root.render(<AppShellSkeleton />));
+		const shell = container.querySelector("[data-shell-mobile]");
+		const actions = shell?.querySelector('[data-slot="mobile-header-actions"]');
+		expect(actions?.children).toHaveLength(4);
+		for (const iconSlot of Array.from(actions?.children ?? []).slice(1)) {
+			expect(iconSlot.className).toContain("size-11");
+			expect(iconSlot.className).toContain("min-h-11");
+		}
+		expect(shell?.querySelector('[data-slot="mobile-header-brand"]')?.children).toHaveLength(2);
+		expect(shell?.querySelector('[data-slot="mobile-header-account"] svg')?.getAttribute("class")).toBe("size-3.5");
+		expect(shell?.querySelector('[data-slot="mobile-market-bar"]')?.className).toContain("min-h-[61px]");
+		expect(shell?.querySelector('[data-slot="mobile-market-selector"]')?.classList.contains("pl-1")).toBe(true);
+		const sliderFrame = shell?.querySelector('[data-slot="mobile-size-slider-frame"]');
+		expect(sliderFrame?.classList.contains("h-[33px]")).toBe(true);
+		expect(sliderFrame?.firstElementChild?.classList.contains("bg-fill-weak")).toBe(true);
+		expect(shell?.querySelector('[data-slot="mobile-trade-order-split"]')?.className).toContain(
+			"min-h-[clamp(370px,60svh,480px)]",
+		);
+		expect(shell?.querySelector('[class*="bg-grid-container"]')).toBeNull();
+		const tabs = shell?.querySelector('[data-slot="mobile-positions-tabs"]');
+		expect(Array.from(tabs?.children ?? []).map((tab) => tab.textContent)).toEqual([
+			"Balances",
+			"Positions",
+			"Orders",
+			"TWAP",
+			"Trade History",
+			"Funding Payments",
+			"Order History",
+		]);
+		expect(tabs?.querySelectorAll("[data-active]")).toHaveLength(1);
+		expect(tabs?.children[1]?.hasAttribute("data-active")).toBe(true);
+		const sides = shell?.querySelector('[data-slot="mobile-side-toggle"]');
+		expect(sides?.textContent).toBe("LongShort");
+		expect(sides?.innerHTML).not.toMatch(/text-success|text-error|bg-trading-panel-(success|error)/);
+		expect(shell?.querySelector('[data-slot="mobile-header-theme"]')?.innerHTML).toContain("dark:block");
+		expect(shell?.querySelector('[data-slot="mobile-header-theme"]')?.innerHTML).toContain("dark:hidden");
+		expect(shell?.lastElementChild?.querySelectorAll('[class*="text-3xs tracking-wide"]')).toHaveLength(3);
 	});
 
 	it("renders a stable terminal frame without replaying a loading animation", () => {
@@ -65,8 +105,8 @@ describe("AppShellSkeleton mobile viewport", () => {
 
 		expect(brandMark?.getAttribute("class")).toContain("size-[22px]");
 		expect(brandMark?.querySelector("path")?.getAttribute("stroke-width")).toBe("6.5");
-		expect(brandSlot?.className).toContain("size-11");
-		expect(drawerSlot?.className).toContain("size-11");
+		expect(brandSlot?.className).toContain("touch-target");
+		expect(drawerSlot?.className).toContain("touch-target");
 	});
 
 	it("exposes one implicit status while keeping the decorative AppShell out of the accessibility tree", () => {
@@ -85,6 +125,7 @@ describe("AppShellSkeleton mobile viewport", () => {
 		const hydrationContainer = document.createElement("div");
 		hydrationContainer.innerHTML = renderToString(<AppShellSkeleton />);
 		document.body.appendChild(hydrationContainer);
+		const serverMarkup = hydrationContainer.innerHTML;
 		const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
 		let hydrationRoot: Root | undefined;
@@ -93,6 +134,7 @@ describe("AppShellSkeleton mobile viewport", () => {
 		});
 
 		expectBusySurfaceWithImplicitStatus(hydrationContainer.querySelector('[data-testid="app-shell-fallback"]'));
+		expect(hydrationContainer.innerHTML).toBe(serverMarkup);
 		expect(consoleError.mock.calls.flat().join(" ")).not.toMatch(/hydration|did not match/i);
 
 		act(() => hydrationRoot?.unmount());
@@ -137,9 +179,9 @@ describe("AppShellSkeleton mobile viewport", () => {
 		const navigationItems = mobileShell?.lastElementChild?.firstElementChild;
 		expect(headerItems?.className).toContain("h-14");
 		expect(headerItems?.className).toContain("pl-[max(0.625rem,var(--sal))]");
-		expect(workspace?.className).toContain("pl-[max(3px,var(--sal))]");
+		expect(workspace?.className).toContain("pl-[var(--sal)]");
 		expect(navigationItems?.className).toContain("pl-[var(--sal)]");
-		expect(mobileShell?.lastElementChild?.querySelectorAll(".flex-1.h-14")).toHaveLength(3);
+		expect(mobileShell?.lastElementChild?.querySelectorAll(".flex-1")).toHaveLength(3);
 		expect(mobileShell?.innerHTML).not.toContain("animate-pulse");
 	});
 
