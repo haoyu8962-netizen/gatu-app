@@ -124,7 +124,7 @@ for (const viewport of [
 		await expect(page.locator('[data-slot="trade-panel-header"]')).toBeVisible();
 		await expectPanelFits(page);
 		const initial = await geometry(page);
-		const savedLayout = await page.evaluate(() => localStorage.getItem("trade-desktop-grid-layout-v11"));
+		const savedLayout = await page.evaluate(() => localStorage.getItem("trade-desktop-grid-layout-v12"));
 		const sizeInput = page.getByRole("textbox", { name: "Size", exact: true });
 		await sizeInput.fill("0.25");
 		const originalSizeInput = await sizeInput.elementHandle();
@@ -233,7 +233,7 @@ for (const viewport of [
 		}
 		expect(await originalSizeInput?.evaluate((element) => element.isConnected)).toBe(true);
 		expect(await geometry(page)).toEqual(initial);
-		expect(await page.evaluate(() => localStorage.getItem("trade-desktop-grid-layout-v11"))).toBe(savedLayout);
+		expect(await page.evaluate(() => localStorage.getItem("trade-desktop-grid-layout-v12"))).toBe(savedLayout);
 		await page.getByRole("button", { name: "Fixture order action" }).click();
 		await expect(page.getByRole("status", { name: "Fixture action count" })).toHaveText("1");
 	});

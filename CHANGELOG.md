@@ -8,6 +8,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Desktop widths from 1001px to 1420px now stack the trading panel above the order book and
+  account information in a wider right column, with the account table beneath the chart column,
+  matching the reference terminal. Saved desktop layouts for that breakpoint reset to the new
+  default; wider layouts are kept.
 - Removed startup skeletons: refresh now waits for the persisted locale, then shows real chrome and market content without route or language flashes.
 - The market header metric row now appears once with the first market snapshot instead of
   reflowing from dashes to values, on refresh and on market switches.

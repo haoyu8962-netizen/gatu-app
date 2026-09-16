@@ -23,17 +23,36 @@ async function bounds(page: Page): Promise<Record<string, PanelBounds>> {
 	);
 }
 
+function stackedGaps(rects: Record<string, PanelBounds>) {
+	return [
+		rects.chart.bottom - rects.tradingInterface.bottom,
+		rects.accountTable.top - rects.chart.bottom - 3,
+		rects.marketData.top - rects.chart.bottom - 3,
+		rects.accountInfo.top - rects.marketData.bottom - 3,
+		rects.tradingInterface.left - rects.chart.right - 3,
+		rects.marketData.left - rects.tradingInterface.left,
+		rects.accountInfo.left - rects.tradingInterface.left,
+		rects.accountTable.right - rects.chart.right,
+	];
+}
+
+function sideBySideGaps(rects: Record<string, PanelBounds>) {
+	return [
+		rects.chart.bottom - rects.marketData.bottom,
+		rects.chart.bottom - rects.tradingInterface.bottom,
+		rects.accountTable.top - rects.accountInfo.top,
+		rects.accountTable.bottom - rects.accountInfo.bottom,
+		rects.accountTable.top - rects.chart.bottom - 3,
+	];
+}
+
 async function expectAligned(page: Page) {
+	const stacked = (page.viewportSize()?.width ?? 0) <= 1420;
 	await expect
 		.poll(async () => {
 			const rects = await bounds(page);
-			return Math.max(
-				Math.abs(rects.chart.bottom - rects.marketData.bottom),
-				Math.abs(rects.chart.bottom - rects.tradingInterface.bottom),
-				Math.abs(rects.accountTable.top - rects.accountInfo.top),
-				Math.abs(rects.accountTable.bottom - rects.accountInfo.bottom),
-				Math.abs(rects.accountTable.top - rects.chart.bottom - 3),
-			);
+			const gaps = stacked ? stackedGaps(rects) : sideBySideGaps(rects);
+			return Math.max(...gaps.map((gap) => Math.abs(gap)));
 		})
 		.toBeLessThanOrEqual(1);
 	const rects = Object.values(await bounds(page));
@@ -134,4 +153,53 @@ test("resizes the shared area in both directions and restores user geometry with
 	await dragHandle(page, "chart", "e", 97, 0);
 	await expectAligned(page);
 	await expect.poll(async () => (await bounds(page)).chart.width).toBe(resized.chart.width);
+});
+
+test("stacks the right column at the medium breakpoint and resizes its boundaries independently", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1316, height: 1391 });
+	await expectAligned(page);
+	const initial = await bounds(page);
+	expect(initial.tradingInterface.top).toBeLessThan(initial.marketData.top);
+	expect(initial.marketData.top).toBeLessThan(initial.accountInfo.top);
+	expect(Math.abs(initial.tradingInterface.height - 676.8)).toBeLessThanOrEqual(1);
+	expect(Math.abs(initial.marketData.height - 670.2)).toBeLessThanOrEqual(1);
+	expect(Math.abs(initial.accountTable.height - 459)).toBeLessThanOrEqual(1);
+	expect(Math.abs(initial.tradingInterface.width - initial.marketData.width)).toBeLessThanOrEqual(1);
+	expect(Math.abs(initial.chart.width - initial.accountTable.width)).toBeLessThanOrEqual(1);
+	expect(initial.chart.width / initial.tradingInterface.width).toBeGreaterThan(2.4);
+	await page.getByRole("button", { name: "Expand account" }).click();
+	await expect.poll(async () => (await bounds(page)).accountInfo.height).toBeGreaterThan(729);
+	await expectAligned(page);
+	expect(Math.abs((await bounds(page)).accountTable.height - initial.accountTable.height)).toBeLessThanOrEqual(1);
+	await page.getByRole("button", { name: "Contract content" }).click();
+	await expect.poll(async () => (await bounds(page)).accountInfo.height).toBe(initial.accountInfo.height);
+	await dragHandle(page, "chart", "s", 0, 66);
+	await expect.poll(async () => (await bounds(page)).chart.height).toBeGreaterThan(initial.chart.height + 40);
+	await expectAligned(page);
+	const taller = await bounds(page);
+	const initialOffset = initial.tradingInterface.height - initial.chart.height;
+	expect(Math.abs(taller.tradingInterface.height - taller.chart.height - initialOffset)).toBeLessThanOrEqual(1);
+	expect(Math.abs(taller.marketData.height - initial.marketData.height)).toBeLessThanOrEqual(1);
+	await dragHandle(page, "marketData", "s", 0, 66);
+	await expect.poll(async () => (await bounds(page)).marketData.height).toBeGreaterThan(taller.marketData.height + 40);
+	await expectAligned(page);
+	const deeperBook = await bounds(page);
+	expect(Math.abs(deeperBook.chart.height - taller.chart.height)).toBeLessThanOrEqual(1);
+	expect(Math.abs(deeperBook.accountTable.height - taller.accountTable.height)).toBeLessThanOrEqual(1);
+	await dragHandle(page, "chart", "e", -95, 0);
+	await expect.poll(async () => (await bounds(page)).chart.width).toBeLessThan(deeperBook.chart.width - 60);
+	await expectAligned(page);
+	const narrowed = await bounds(page);
+	expect(narrowed.tradingInterface.width).toBeGreaterThan(deeperBook.tradingInterface.width + 60);
+	await page.reload();
+	await expectAligned(page);
+	const restored = await bounds(page);
+	expect(Math.abs(restored.chart.width - narrowed.chart.width)).toBeLessThanOrEqual(1);
+	expect(Math.abs(restored.chart.height - narrowed.chart.height)).toBeLessThanOrEqual(1);
+	expect(Math.abs(restored.marketData.height - narrowed.marketData.height)).toBeLessThanOrEqual(1);
+	await page.setViewportSize({ width: 1545, height: 1391 });
+	await expectAligned(page);
+	expect((await bounds(page)).marketData.top).toBeLessThan((await bounds(page)).accountTable.top);
 });
