@@ -106,7 +106,6 @@ describe("live localization source contract", () => {
 
 const PURE_PRESENTATION_VIEWS = [
 	"../dashboard/dashboard-frame-view.tsx",
-	"../dashboard/dashboard-content-placeholder-view.tsx",
 	"mobile/mobile-token-selector-view.tsx",
 	"mobile/mobile-positions-tabs-view.tsx",
 	"mobile/mobile-trade-available-view.tsx",
@@ -115,7 +114,6 @@ const PURE_PRESENTATION_VIEWS = [
 	"mobile/mobile-terminal-frame-view.tsx",
 	"mobile/mobile-trade-frame-view.tsx",
 	"mobile/mobile-header-view.tsx",
-	"mobile/mobile-order-entry-placeholder-view.tsx",
 	"mobile/mobile-wallet-cta-view.tsx",
 	"mobile/mobile-market-bar-view.tsx",
 	"mobile/mobile-trade-header-view.tsx",
@@ -124,15 +122,12 @@ const PURE_PRESENTATION_VIEWS = [
 	"mobile/mobile-trade-cta-frame-view.tsx",
 
 	"positions/account-table-header-view.tsx",
-	"positions/account-tab-strip-view.tsx",
 	"tradebox/account-overview-view.tsx",
 	"tradebox/account-action-button-view.tsx",
 	"tradebox/account-panel-frame-view.tsx",
 	"components/trade-slider-view.tsx",
 	"tradebox/trade-input-frame-view.tsx",
 	"tradebox/trade-available-row-view.tsx",
-	"tradebox/side-toggle-view.tsx",
-	"tradebox/trade-checkbox-view.tsx",
 	"tradebox/trade-panel-body-view.tsx",
 	"tradebox/trade-control-button-view.tsx",
 	"tradebox/trade-percent-frame-view.tsx",
@@ -151,7 +146,6 @@ const PURE_PRESENTATION_VIEWS = [
 	"market-overview-view.tsx",
 	"layout/market-header-view.tsx",
 	"orderbook/orderbook-panel-view.tsx",
-	"orderbook/orderbook-tabs-view.tsx",
 	"orderbook/orderbook-grouping-trigger-view.tsx",
 ];
 

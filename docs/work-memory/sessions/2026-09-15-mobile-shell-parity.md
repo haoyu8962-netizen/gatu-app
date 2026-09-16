@@ -6,18 +6,23 @@
   "title": "移动占位壳与真实终端逐像素对齐",
   "kind": "task",
   "status": "verified",
-  "topics": ["market-recovery"],
+  "topics": [
+    "market-recovery"
+  ],
   "summary": "移动启动占位原与真实终端完全不同（头部缺三个控件、48px 市场栏、按比例分配的交易区、4 个标签）；改为复用真实组件的 class 常量绘制同一套 chrome，Playwright 在 360/390/430 三档视口、深浅主题、中英文下实测所有结构盒子一致；运行时回退改用翻译标签与持久化页签。",
   "thread": null,
   "baseCommit": "f5010ee7",
   "commits": [],
   "sources": [
-    { "path": "apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx" },
-    { "path": "docs/work-memory/sessions/2026-09-16-mobile-views-migration.md" },
-    { "path": "apps/terminal/src/components/trade/mobile/mobile-loading-fallback.tsx" },
-    { "path": "apps/terminal/src/lib/tests/mobile-chrome-parity.test.tsx" },
-    { "path": "apps/terminal/src/lib/tests/mobile-app-shell-skeleton.test.tsx" },
-    { "path": "docs/mobile-data-presentation.md" }
+    {
+      "path": "docs/work-memory/sessions/2026-09-16-mobile-views-migration.md"
+    },
+    {
+      "path": "docs/mobile-data-presentation.md"
+    },
+    {
+      "path": "docs/work-memory/sessions/2026-09-16-remove-startup-placeholders.md"
+    }
   ],
   "supersedes": []
 }
@@ -50,3 +55,12 @@
 ### 2026-09-16 来源路径更正
 
 表面 6 迁移已删除本记录原 sources 中的 `apps/terminal/src/components/trade/mobile/mobile-chrome-classes.ts`。为使活跃来源导航可解析，该项改指向[移动视图迁移记录](2026-09-16-mobile-views-migration.md)；上文历史实施与测量结论不变。旧文件可用 `git show b77a87909046a20469f71449525d619680daa4f1:apps/terminal/src/components/trade/mobile/mobile-chrome-classes.ts` 查看。当前实现由六个移动纯视图接管，新的 reviewer 实测尚未完成，不能沿用本记录的盒子数字。
+
+## ADR 0010 后的来源路径修正（2026-09-16）
+
+启动占位已由 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 取代；上文仍是旧方案当时的记录，不改写其验证结论。以下 source 在移除启动占位任务中删除，元数据改链到[后续任务记录](2026-09-16-remove-startup-placeholders.md)，避免索引将历史路径误作当前文件；原来源保留于此，可用 `git show 0f7e97acb95a4211195b1ac4dd742def7f72bbc0:<路径>` 检索：
+
+- `apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx`
+- `apps/terminal/src/components/trade/mobile/mobile-loading-fallback.tsx`
+- `apps/terminal/src/lib/tests/mobile-chrome-parity.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-app-shell-skeleton.test.tsx`

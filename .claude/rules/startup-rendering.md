@@ -1,0 +1,11 @@
+# Startup rendering
+
+Owner: `docs/adr/0010-blank-until-ready-startup.md`. Applies to application startup, route pending UI and trade market readiness.
+
+- All application routes prerender and hydrate the same visually empty `StartupFallback`: `aria-busy="true"` and one `<output className="sr-only">Loading GATU...</output>`. No visible nav, header, footer, market chrome, skeletons, animation or timers before runtime and the persisted locale catalog are ready.
+- Preserve the theme bootstrap, head/font/module preloads, Service Worker registration and shell caching. Document routes keep their independent prerendered content; never force an application route to reproduce terminal chrome for hydration.
+- Render real chrome first in the persisted locale/theme. Desktop uses `DesktopTerminalFrameView`, TopNav/FooterBar in market-loading mode and an empty busy workspace. Mobile uses the same `MobileTerminalFrameView`, MobileHeader and MobileBottomNav (validated persisted navigation state) in both phases. Replace only workspace contents when market data is ready; header/footer/nav DOM identity must survive.
+- Dashboard chunk pending UI is the same empty announcement. Each loaded page owns its real DashboardFrameView and preset. Never introduce route-specific or language-specific startup skeletons.
+- Real components keep props-only views as their single source of markup. Views remain pure and deterministic: no hooks, stores, subscriptions, Lingui runtime, browser globals, clocks or randomness. Translations and runtime state arrive as props.
+- Preserve financial calculations, signer gates, freshness checks, unavailable-action guards, drafts and ordinary mounted data-component fallback values. Empty startup presentation is not evidence of an empty account.
+- Regression tests: root-startup-fallback and root-route-transition cover route-independent empty output and hydration; trade-terminal-page-boot and top-nav cover chrome identity and Chinese first render; i18n-hot-switch and i18n-reactivity-contract protect live translations and pure views. Component tests retain keyboard, disabled, geometry and ref behavior. Measure empty fallback → real chrome → workspace with `tests/browser/boot-milestones.mjs`; report browser measurements separately from unit tests.

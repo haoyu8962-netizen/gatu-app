@@ -1063,12 +1063,12 @@ function installWaterfallProbe({ expectedOrigin, expectedLocale, expectedMarket 
 		let loadingWorkspace = null;
 		const inspect = () => {
 			const at = now();
-			const currentSkeleton = document.querySelector('[data-testid="app-shell-fallback"]');
+			const currentSkeleton = document.querySelector('[data-testid="startup-fallback"]');
 			if (!skeleton && currentSkeleton) {
 				skeleton = currentSkeleton;
 				state.originalSkeletonSeenAt = at;
 			}
-			const currentLoading = document.querySelector("[data-terminal-loading-workspace]");
+			const currentLoading = document.querySelector('main[aria-busy="true"]');
 			if (!loadingWorkspace && currentLoading) {
 				loadingWorkspace = currentLoading;
 				state.dom.loadingWorkspaceAt = at;

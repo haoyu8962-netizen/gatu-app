@@ -6,7 +6,6 @@ import { preloadTopNav, TopNav } from "../header/top-nav";
 import { TestnetBanner } from "../testnet-banner";
 import { DesktopTerminalFrameView } from "./desktop-terminal-frame-view";
 import { MainWorkspace, preloadMainWorkspacePanels } from "./main-workspace";
-import { TerminalLoadingWorkspace } from "./terminal-loading-workspace";
 
 const FooterBar = createLazyComponent(() => import("../footer/footer-bar"), "FooterBar");
 
@@ -33,7 +32,13 @@ export function DesktopTerminalSurface({ marketReady, orderEntryDraftReady = tru
 			header={<TopNav mode={mode} />}
 			notice={<GeoRestrictionBanner />}
 			workspace={
-				marketReady ? <MainWorkspace orderEntryDraftReady={orderEntryDraftReady} /> : <TerminalLoadingWorkspace />
+				marketReady ? (
+					<MainWorkspace orderEntryDraftReady={orderEntryDraftReady} />
+				) : (
+					<main className="min-h-0 flex-1 bg-grid-container" aria-busy="true">
+						<output className="sr-only">Loading GATU...</output>
+					</main>
+				)
 			}
 			footer={
 				<Suspense fallback={null}>

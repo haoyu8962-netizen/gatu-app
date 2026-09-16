@@ -1,22 +1,12 @@
 import { i18n } from "@lingui/core";
 import type { QueryClient } from "@tanstack/react-query";
-import {
-	createRootRouteWithContext,
-	HeadContent,
-	Outlet,
-	Scripts,
-	useHydrated,
-	useRouterState,
-} from "@tanstack/react-router";
+import { createRootRouteWithContext, HeadContent, Outlet, Scripts, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppRuntimeOverlays, DocumentOverlays } from "@/components/app-runtime-overlays";
 import { ApplicationErrorBoundary } from "@/components/application-error-boundary";
-import { DashboardShellSkeleton } from "@/components/dashboard/dashboard-shell-skeleton";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { RouterErrorPage } from "@/components/pages/router-error-page";
-import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
-import { getHydrationRouteSurface } from "@/config/app-route-surface";
-import { getDashboardFrame } from "@/config/dashboard-frames";
+import { StartupFallback } from "@/components/startup-fallback";
 import { isRtlLocale } from "@/config/i18n";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
@@ -54,15 +44,14 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	head: () => buildRootHead(FONT_PRELOAD_URLS),
 	shellComponent: RootDocument,
 	component: RootComponent,
+	pendingComponent: StartupFallback,
 	errorComponent: RouterErrorPage,
 	notFoundComponent: NotFoundPage,
 });
 
 function RootComponent() {
 	const pathname = useRouterState({ select: getPresentedRoutePathname });
-	const hydrated = useHydrated();
 	const routeSurface = getAppRouteSurface(pathname);
-	const fallbackSurface = getHydrationRouteSurface(pathname, hydrated);
 
 	useEffect(() => {
 		registerServiceWorker();
@@ -77,12 +66,7 @@ function RootComponent() {
 		);
 	}
 
-	const fallback =
-		fallbackSurface === "terminal" ? (
-			<AppShellSkeleton />
-		) : (
-			<DashboardShellSkeleton frame={getDashboardFrame(pathname)} pathname={pathname} />
-		);
+	const fallback = <StartupFallback />;
 
 	return (
 		<ApplicationErrorBoundary>

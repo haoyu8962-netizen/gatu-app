@@ -1,7 +1,11 @@
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
 import { describe, expect, it } from "vitest";
-import { createManualChunks, createOrderSummaryChunksPlugin } from "../../../vite.config";
+import {
+	createManualChunks,
+	createOrderSummaryChunksPlugin,
+	createTerminalViewChunksPlugin,
+} from "../../../vite.config";
 
 describe("Vite manual chunks", () => {
 	it.each([
@@ -25,9 +29,20 @@ describe("Vite manual chunks", () => {
 		expect(createManualChunks("/repo/apps/terminal/src/router.tsx")).toBeUndefined();
 	});
 
-	it("splits route summaries without extra client entries or reversed runtime dependencies", async () => {
-		const summaryIds = ["twap-order-summary", "scale-order-summary"].map((name) =>
-			fileURLToPath(new URL(`../../components/trade/tradebox/${name}.tsx`, import.meta.url)),
+	it.each([
+		{
+			label: "order summaries",
+			plugin: createOrderSummaryChunksPlugin,
+			modules: ["tradebox/twap-order-summary", "tradebox/scale-order-summary"],
+		},
+		{
+			label: "terminal views",
+			plugin: createTerminalViewChunksPlugin,
+			modules: ["mobile/mobile-book-chrome-view", "market-overview-view"],
+		},
+	])("splits $label without extra client entries or reversed runtime dependencies", async ({ plugin, modules }) => {
+		const summaryIds = modules.map((name) =>
+			fileURLToPath(new URL(`../../components/trade/${name}.tsx`, import.meta.url)),
 		);
 		const sources: Record<string, string> = {
 			"/fixture/entry.js": "globalThis.loadPage = () => import('/fixture/page.js');",
@@ -45,7 +60,7 @@ describe("Vite manual chunks", () => {
 			envFile: false,
 			logLevel: "silent",
 			plugins: [
-				createOrderSummaryChunksPlugin(),
+				plugin(),
 				{
 					name: "summary-fixture",
 					resolveId: (id) => (id in sources ? id : undefined),

@@ -1,7 +1,9 @@
 import { SegmentedControlItem, SegmentedControls } from "@gatu/ui";
-import { sideBox, sideMobile } from "@/components/trade/tradebox/side-toggle-view";
 import { cn } from "@/lib/cn";
 import type { Side } from "@/lib/trade/types";
+
+const sideBox = "rounded-[10px] border-trading-panel-stroke-card bg-surface";
+const sideMobile = "h-[31px] py-0 text-xs after:content-none";
 
 interface SideLabels {
 	buy: string;

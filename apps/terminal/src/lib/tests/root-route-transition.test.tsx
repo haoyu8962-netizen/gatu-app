@@ -10,11 +10,9 @@ import {
 	RouterProvider,
 	redirect,
 } from "@tanstack/react-router";
-import { act, type ComponentProps, type ReactNode, useEffect } from "react";
+import { act, type ReactNode, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { DashboardShellSkeleton } from "@/components/dashboard/dashboard-shell-skeleton";
-import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { useMarketsInfoContext } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { useClientRuntimeReady } from "@/providers/client-runtime";
 import { RootProvider } from "@/providers/root";
@@ -24,7 +22,6 @@ const runtime = vi.hoisted(() => {
 	window.history.replaceState(null, "", "/terms");
 	return {
 		ready: true,
-		dashboardFallback: vi.fn(),
 		walletModuleLoads: 0,
 		walletMounts: 0,
 		walletUnmounts: 0,
@@ -40,15 +37,6 @@ vi.mock("@/lib/i18n", () => ({ getPersistedLocale: () => "en", i18nReady: Promis
 vi.mock("@/bones/registry", () => ({}));
 vi.mock("@/components/ui/sonner", () => ({ Toaster: () => null }));
 vi.mock("@/components/funds-action/funds-action-recovery-host", () => ({ FundsActionRecoveryHost: () => null }));
-vi.mock("@/components/dashboard/dashboard-shell-skeleton", () => ({
-	DashboardShellSkeleton: (props: ComponentProps<typeof DashboardShellSkeleton>) => {
-		runtime.dashboardFallback(props);
-		return <span data-skeleton="dashboard">Dashboard loading</span>;
-	},
-}));
-vi.mock("@/components/trade/layout/app-shell-skeleton", () => ({
-	AppShellSkeleton: () => <span data-skeleton="terminal">Terminal loading</span>,
-}));
 vi.mock("@/components/pages/not-found-page", () => ({ NotFoundPage: () => <span>Not found</span> }));
 vi.mock("@/components/pages/router-error-page", () => ({
 	RouterErrorPage: () => <span role="alert">Router failed</span>,
@@ -122,7 +110,6 @@ describe("root route provider lifetime during committed route transitions", () =
 
 	beforeEach(() => {
 		runtime.ready = true;
-		runtime.dashboardFallback.mockClear();
 		runtime.walletMounts = 0;
 		runtime.walletUnmounts = 0;
 		runtime.marketMounts = 0;
@@ -325,24 +312,22 @@ describe("root route provider lifetime during committed route transitions", () =
 		expect(runtime.marketMounts).toBe(0);
 	});
 
-	it.each(["/portfolio", "/vaults"] as const)(
-		"passes the committed %s preset to the runtime fallback",
-		async (path) => {
-			runtime.ready = false;
-			await mount(path, false);
-			await vi.waitFor(() => {
-				expect(container.querySelector('[data-skeleton="dashboard"]')).not.toBeNull();
-				expect(runtime.dashboardFallback).toHaveBeenLastCalledWith({ frame: DASHBOARD_FRAMES[path], pathname: path });
-			});
-			const navigation = await startNavigation("/terms");
-			expect(runtime.dashboardFallback).toHaveBeenLastCalledWith({ frame: DASHBOARD_FRAMES[path], pathname: path });
-			await act(async () => {
-				navigation.loader.resolve();
-				await navigation.completion;
-			});
-			await expectPage("/terms");
-		},
-	);
+	it.each(["/trade/BTC", "/portfolio", "/vaults"] as const)("uses the same empty announcement on %s", async (path) => {
+		runtime.ready = false;
+		await mount(path, false);
+		await vi.waitFor(() => {
+			expect(container.querySelector('[data-testid="startup-fallback"]')?.getAttribute("aria-busy")).toBe("true");
+			expect(container.querySelector("nav, header, footer")).toBeNull();
+			expect(container.querySelector("output")?.className).toBe("sr-only");
+			expect(container.textContent).toBe("Loading GATU...");
+		});
+		const navigation = await startNavigation("/terms");
+		await act(async () => {
+			navigation.loader.resolve();
+			await navigation.completion;
+		});
+		await expectPage("/terms");
+	});
 
 	it("preserves dashboard providers until its document destination commits", async () => {
 		await mount("/portfolio");

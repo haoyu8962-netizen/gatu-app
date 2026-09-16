@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 
+import { setupI18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import { act, useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { renderDesktopPanel } from "@/components/trade/layout/app-shell-skeleton";
-import { DESKTOP_PANEL_PLACEHOLDER } from "@/components/trade/layout/desktop-placeholders";
 import { useGridContentHeight } from "@/components/trade/layout/use-grid-content-height";
+import { AccountPanelFrameView } from "@/components/trade/tradebox/account-panel-frame-view";
+import { DisconnectedAccountOverview } from "@/components/trade/tradebox/disconnected-account-overview";
 import type { DesktopGridBreakpoint, DesktopGridContentHeights } from "@/config/desktop-grid-layout";
 
 interface ObserverInstance {
@@ -83,7 +85,15 @@ function AccountPartsHarness({ onHeights }: { onHeights: (heights: DesktopGridCo
 function DisconnectedPartsHarness() {
 	const [, setHeights] = useState<DesktopGridContentHeights>({});
 	const ref = useGridContentHeight(true, "lg", "accountInfo", setHeights);
-	return <div ref={ref}>{renderDesktopPanel("accountInfo", DESKTOP_PANEL_PLACEHOLDER)}</div>;
+	return (
+		<div ref={ref}>
+			<I18nProvider i18n={setupI18n({ locale: "en", messages: { en: {} } })}>
+				<AccountPanelFrameView title="Account">
+					<DisconnectedAccountOverview depositEnabled={false} />
+				</AccountPanelFrameView>
+			</I18nProvider>
+		</div>
+	);
 }
 
 describe("grid content height observer", () => {

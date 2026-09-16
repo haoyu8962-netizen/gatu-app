@@ -729,7 +729,7 @@ function installActivationProbe({ expectedOrigin, expectedLocale, profileTitle }
 	function installDomProbe() {
 		const inspect = () => {
 			if (state.originalSkeletonSeenAt !== null) return;
-			if (document.querySelector('[data-testid="app-shell-fallback"]')) {
+			if (document.querySelector('[data-testid="startup-fallback"]')) {
 				state.originalSkeletonSeenAt = now();
 			}
 		};

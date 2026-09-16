@@ -27,40 +27,6 @@ export function MobilePositionsTabsView({ tabs, scrollRef }: Props) {
 export function MobilePositionsFrameView({ children }: { children: ReactNode }) {
 	return <div className={positionsWrapper}>{children}</div>;
 }
-export function MobilePositionsTabStripView({
-	tabs,
-	active,
-}: {
-	tabs: readonly { value: string; label: ReactNode }[];
-	active: string;
-}) {
-	return (
-		<div
-			data-slot="mobile-positions-tabs"
-			className={cn("relative flex items-center border-b border-stroke-weak", positionsTabs)}
-		>
-			{tabs.map((tab) => (
-				<button
-					type="button"
-					key={tab.value}
-					data-mobile-account-tab={tab.value}
-					data-active={active === tab.value ? "" : undefined}
-					className={cn(
-						"inline-flex items-center justify-center font-normal text-fg-muted cursor-pointer select-none whitespace-nowrap transition-colors duration-150 motion-reduce:transition-none data-active:text-fg hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus data-disabled:text-fg-disabled data-disabled:cursor-not-allowed bg-transparent py-1 px-1.5 text-2xs gap-1",
-						positionsTab,
-						"relative",
-					)}
-				>
-					<span>{tab.label}</span>
-					{active === tab.value ? (
-						<span role="presentation" className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-market-close-fg" />
-					) : null}
-				</button>
-			))}
-		</div>
-	);
-}
-
 interface PanelProps {
 	children: ReactNode;
 	isPageScroll: boolean;

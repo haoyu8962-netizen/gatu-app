@@ -12,11 +12,15 @@ function check() {
   if (!document.body) return;
   if (window.$_TSR !== undefined) barrierSeen = true;
   if (barrierSeen && window.$_TSR === undefined) mark("hydrated");
-  if (document.querySelector('[data-testid="app-shell-fallback"]') === null && document.body.childElementCount > 0) mark("fallbackGone");
+  const emptyFallback = document.querySelector('[data-testid="startup-fallback"]');
+  if (emptyFallback) mark("emptyFallback");
+  if (seen.emptyFallback && !emptyFallback) mark("fallbackGone");
   if (document.body && Object.keys(document.body).some((k) => k.startsWith("__reactFiber"))) mark("reactHydrated");
   if (document.querySelector("nav")) mark("nav");
   if (document.querySelector('iframe[src*="auth.privy.io"]')) mark("privyFrame");
-  if (document.querySelector("[data-terminal-loading-workspace]")) mark("loadingWorkspace");
+  if (document.querySelector('main[aria-busy="true"]')) mark("emptyWorkspace");
+  if (document.querySelector('header, footer, .mobile-terminal nav')) mark("chrome");
+  if (document.querySelector('.react-grid-item, .mobile-terminal main:not([aria-busy="true"])')) mark("workspace");
   if (document.querySelector('[data-testid="desktop-terminal-surface"]')) mark("surface");
   if (document.querySelector(".react-grid-item")) mark("grid");
   if (document.querySelector('[data-orderbook-side-container] > *')) mark("bookRow");

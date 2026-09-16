@@ -18,22 +18,10 @@
       "path": "docs/adr/0009-startup-placeholder-single-source.md"
     },
     {
-      "path": ".claude/rules/placeholder-parity.md"
-    },
-    {
       "path": "apps/terminal/src/components/trade/layout/main-workspace.tsx"
     },
     {
-      "path": "apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx"
-    },
-    {
-      "path": "apps/terminal/src/components/trade/layout/terminal-loading-workspace.tsx"
-    },
-    {
-      "path": "apps/terminal/src/lib/tests/market-header-view-parity.test.tsx"
-    },
-    {
-      "path": "apps/terminal/src/lib/tests/app-shell-import-boundary.test.ts"
+      "path": "docs/work-memory/sessions/2026-09-16-remove-startup-placeholders.md"
     }
   ],
   "supersedes": []
@@ -172,3 +160,13 @@ Checked 8 files in 84ms. No fixes applied.
 - 补充 `app-shell-import-boundary`、`i18n-reactivity-contract`、`token-selector-trigger-visual-contract`、`mobile-market-bar`：**4 files / 102 tests passed**（5.66s）。
 - `pnpm memory:test`：**8/8 passed**。
 - `pnpm memory:index && pnpm memory:check`：退出 0，输出 `Work-memory index updated.` 与 `Work-memory index verified.`；本条结果写入后再次串行复验。没有重跑全量 terminal 套件，前一 checkpoint 记载的全量失败仍保留，不将此次定向绿灯扩大为全量绿灯。
+
+## ADR 0010 后的来源路径修正（2026-09-16）
+
+启动占位已由 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 取代；上文仍是旧方案当时的记录，不改写其验证结论。以下 source 在移除启动占位任务中删除，元数据改链到[后续任务记录](2026-09-16-remove-startup-placeholders.md)，避免索引将历史路径误作当前文件；原来源保留于此，可用 `git show 0f7e97acb95a4211195b1ac4dd742def7f72bbc0:<路径>` 检索：
+
+- `.claude/rules/placeholder-parity.md`
+- `apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx`
+- `apps/terminal/src/components/trade/layout/terminal-loading-workspace.tsx`
+- `apps/terminal/src/lib/tests/market-header-view-parity.test.tsx`
+- `apps/terminal/src/lib/tests/app-shell-import-boundary.test.ts`

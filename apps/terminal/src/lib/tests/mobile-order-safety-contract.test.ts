@@ -99,7 +99,7 @@ describe("mobile order safety contract", () => {
 		expect(mobileTradeView).toContain("t`Slippage`");
 		expect(mobileTradeView).toContain("t(TRADE_PANEL_LABELS.estimatedFee)");
 		expect(readFileSync(new URL("../../config/trade-panel-labels.ts", import.meta.url), "utf8")).toContain(
-			"...msg`Est. Fee`",
+			"estimatedFee: msg`Est. Fee`",
 		);
 	});
 });

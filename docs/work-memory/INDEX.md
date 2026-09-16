@@ -31,6 +31,7 @@
 当前规范：[docs/mobile-data-presentation.md](../../docs/mobile-data-presentation.md) · [docs/price-source-audit.md](../../docs/price-source-audit.md) · [docs/terminal-loading-audit.md](../../docs/terminal-loading-audit.md)
 
 - [移动端六个表面迁移到共享占位视图](sessions/2026-09-16-mobile-views-migration.md) — 2026-09-16；已整理，验证见正文。表面 6 六个移动表面与外框改用共享纯视图；旧 class 模块删除，浏览器服务被 EPERM 阻止，盒子实测待 reviewer。
+- [移除启动占位体系](sessions/2026-09-16-remove-startup-placeholders.md) — 2026-09-16；已整理，验证见正文。按 ADR 0010 移除启动占位；类型、格式、翻译与全部产物预算通过，全量测试保留已知基线失败，完整构建受沙箱 preview 监听限制。
 - [热访问启动：为什么第 2..n 次仍出现占位壳，以及经核实的改进计划](sessions/2026-09-16-warm-visit-startup-plan.md) — 2026-09-16；已整理，验证见正文。三次连续访问实测：热访问壳 0.16–0.28 s、真实终端 0.43–0.65 s（4× CPU 1.36–1.42 s，全是 JS 求值与 provider 挂载）；官方站热访问空白 1.4–1.7 s（4× 3.1–3.6 s）且资源每次重验证，照抄是回归。真正多余的等待是持久化目录丢失（尾沿节流无隐藏时写回）、24 h 播种上限、壳 HTML 每次 304。P1 三项已实现；Round 2 修复 SW 响应体克隆竞态并实现 Markets Activity 与弹窗 matchMedia 两项 P2。未发布，性能与真机复测待完成。
 - [移动占位壳与真实终端逐像素对齐](sessions/2026-09-15-mobile-shell-parity.md) — 2026-09-15；已验证，范围见正文。移动启动占位原与真实终端完全不同（头部缺三个控件、48px 市场栏、按比例分配的交易区、4 个标签）；改为复用真实组件的 class 常量绘制同一套 chrome，Playwright 在 360/390/430 三档视口、深浅主题、中英文下实测所有结构盒子一致；运行时回退改用翻译标签与持久化页签。
 - [行情恢复：字段来源、静默占位与操作守卫](sessions/2026-09-12-market-recovery.md) — 2026-09-12；已整理，验证见正文。被动恢复不闪烁错误提示，展示回退与交易可用性分开，区分 midPx、markPx 和空快照。
@@ -79,6 +80,7 @@
 - [移动端六个表面迁移到共享占位视图](sessions/2026-09-16-mobile-views-migration.md) — 2026-09-16；已整理，验证见正文。表面 6 六个移动表面与外框改用共享纯视图；旧 class 模块删除，浏览器服务被 EPERM 阻止，盒子实测待 reviewer。
 - [桌面订单簿 chrome 单一来源迁移](sessions/2026-09-16-orderbook-chrome-view-migration.md) — 2026-09-16；已整理，验证见正文。表面 3：桌面订单簿列头、侧容器、价差共用纯视图，页签和分组按钮与真实 primitive 对照；数据前分组显示 —，Playwright 留给 reviewer。
 - [启动占位单一来源：ADR 0009 与展示组件规则](sessions/2026-09-16-placeholder-single-source-adr.md) — 2026-09-16；已整理，验证见正文。核对确认桌面壳九个 frame、移动壳与运行时占位是三份手写实现，唯一共享的是网格几何；采纳「展示组件是几何唯一来源」的架构：只接 props 的 *-view.tsx 由运行时容器与壳共同渲染，占位 props 单一来源，导入边界与一致性测试钉住，inert 取代禁止交互元素；本轮只落 ADR、规则与索引，迁移未开始。
+- [移除启动占位体系](sessions/2026-09-16-remove-startup-placeholders.md) — 2026-09-16；已整理，验证见正文。按 ADR 0010 移除启动占位；类型、格式、翻译与全部产物预算通过，全量测试保留已知基线失败，完整构建受沙箱 preview 监听限制。
 - [桌面顶栏、页脚与外框单一来源迁移](sessions/2026-09-16-top-nav-footer-view-migration.md) — 2026-09-16；已整理，验证见正文。表面 2：六个纯视图共享桌面顶栏、页脚、外框与按钮几何；Dropdown 增加 opt-in renderTrigger；匿名 CTA 144px、时钟占位及 compact 收折统一。自动验证见正文，Playwright 待 reviewer。
 - [桌面交易面板框架：单一来源展示组件迁移](sessions/2026-09-16-trade-panel-view-migration.md) — 2026-09-16；已整理，验证见正文。表面 4 桌面下单共享视图迁移；Round 2 删除 slider/percent 应用复制树、共用纯输入样式、同步持久化滑点；reviewer 前版几何测量与本轮验证范围分别记录。
 - [热访问启动：为什么第 2..n 次仍出现占位壳，以及经核实的改进计划](sessions/2026-09-16-warm-visit-startup-plan.md) — 2026-09-16；已整理，验证见正文。三次连续访问实测：热访问壳 0.16–0.28 s、真实终端 0.43–0.65 s（4× CPU 1.36–1.42 s，全是 JS 求值与 provider 挂载）；官方站热访问空白 1.4–1.7 s（4× 3.1–3.6 s）且资源每次重验证，照抄是回归。真正多余的等待是持久化目录丢失（尾沿节流无隐藏时写回）、24 h 播种上限、壳 HTML 每次 304。P1 三项已实现；Round 2 修复 SW 响应体克隆竞态并实现 Markets Activity 与弹窗 matchMedia 两项 P2。未发布，性能与真机复测待完成。
@@ -89,6 +91,7 @@
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md)
 
 - [启动占位单一来源：ADR 0009 与展示组件规则](sessions/2026-09-16-placeholder-single-source-adr.md) — 2026-09-16；已整理，验证见正文。核对确认桌面壳九个 frame、移动壳与运行时占位是三份手写实现，唯一共享的是网格几何；采纳「展示组件是几何唯一来源」的架构：只接 props 的 *-view.tsx 由运行时容器与壳共同渲染，占位 props 单一来源，导入边界与一致性测试钉住，inert 取代禁止交互元素；本轮只落 ADR、规则与索引，迁移未开始。
+- [移除启动占位体系](sessions/2026-09-16-remove-startup-placeholders.md) — 2026-09-16；已整理，验证见正文。按 ADR 0010 移除启动占位；类型、格式、翻译与全部产物预算通过，全量测试保留已知基线失败，完整构建受沙箱 preview 监听限制。
 - [Across 官方文档共享阅读入口](sessions/2026-09-13-across-docs-entry.md) — 2026-09-13；已整理，验证见正文。以官方索引和按需页面核验接入 Across 文档，Codex 与 Claude 共用项目入口；不安装交易工具，API Markdown 与 MCP 的覆盖缺口需回退正式页面。
 - [Across 地址方案：Claude 审查逐项复核与首期收缩](sessions/2026-09-13-across-plan-review-followup.md) — 2026-09-13；已整理，验证见正文。复核 P0/P1/P2 建议，补激活、首次账户和导出恢复，首期改两表与按需查询；纠正 recipient、request ID、index-0、最低额和部署状态推断，生产契约与真实资金验收仍待完成。
 - [Across 二轮复审：N1–N8 验收与恢复边界](sessions/2026-09-13-across-rereview-resolution.md) — 2026-09-13；已整理，验证见正文。补 legal 可判定验收、导出兼容、token、密钥和受控恢复；不采用 WebView 一律禁用、10 USDC 通用引导或交易 hash 主键，生产依赖仍未完成。
@@ -105,6 +108,7 @@
 | 2026-09-16 | [移动端六个表面迁移到共享占位视图](sessions/2026-09-16-mobile-views-migration.md) | 未取得任务标识，见正文 | `b77a87909046a20469f71449525d619680daa4f1` | 已整理，验证见正文 |
 | 2026-09-16 | [桌面订单簿 chrome 单一来源迁移](sessions/2026-09-16-orderbook-chrome-view-migration.md) | 未取得任务标识，见正文 | `7d80e46bbbf221a6f4256bf4008b9632c289627a` | 已整理，验证见正文 |
 | 2026-09-16 | [启动占位单一来源：ADR 0009 与展示组件规则](sessions/2026-09-16-placeholder-single-source-adr.md) | 未取得任务标识，见正文 | `ade94020` | 已整理，验证见正文 |
+| 2026-09-16 | [移除启动占位体系](sessions/2026-09-16-remove-startup-placeholders.md) | 未取得任务标识，见正文 | `0f7e97acb95a4211195b1ac4dd742def7f72bbc0` | 已整理，验证见正文 |
 | 2026-09-16 | [桌面顶栏、页脚与外框单一来源迁移](sessions/2026-09-16-top-nav-footer-view-migration.md) | 未取得任务标识，见正文 | `d43d50683a2641aa79d4a851d629e68568e3c4af` | 已整理，验证见正文 |
 | 2026-09-16 | [桌面交易面板框架：单一来源展示组件迁移](sessions/2026-09-16-trade-panel-view-migration.md) | 未取得任务标识，见正文 | `3ecb960e8df1e2360be9c62ac59881b9f56ec622` | 已整理，验证见正文 |
 | 2026-09-16 | [热访问启动：为什么第 2..n 次仍出现占位壳，以及经核实的改进计划](sessions/2026-09-16-warm-visit-startup-plan.md) | 未取得任务标识，见正文 | `f5010ee7` | 已整理，验证见正文 |

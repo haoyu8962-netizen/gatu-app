@@ -38,3 +38,7 @@ CloudFront 首发后与官方站同环境冷缓存对比：官方站把 45 个�
 - `analyzeClientBundle()` 若因 chunk 图与产物不一致而失败，注入会中止并让构建失败，与预算检查同一失败面。
 - `/api/health` 在 Nitro 宿主上不存在（过渡期 EC2 返回 404），只用于 CloudFront 目标。
 - 验证证据（同环境冷缓存、Playwright 全新浏览器上下文、单样本）记录在任务记录第九检查点；本文不复制数字。
+
+## ADR 0010 后的壳内容
+
+[ADR 0010](0010-blank-until-ready-startup.md) 将壳 body 改为 route-independent 的空播报；本 ADR 的 head/modulepreload 注入、字体预加载、边缘缓存、Service Worker 壳缓存及后台刷新决策不变。

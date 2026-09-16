@@ -29,7 +29,6 @@ import {
 	TOP_NAV_WORDMARK_CLASS,
 	TopNavView,
 } from "./top-nav-view";
-import { USER_MENU_BUTTON_MIN_WIDTH } from "./wallet-cta-view";
 
 const UserMenu = createLazyComponent(() => import("./user-menu"), "UserMenu");
 
@@ -193,7 +192,7 @@ export function TopNav({ mode = "default" }: Props) {
 				)
 			}
 			wallet={
-				<Suspense key="user-menu" fallback={<UserMenuSkeleton />}>
+				<Suspense key="user-menu" fallback={null}>
 					<UserMenu variant="desktop-nav" />
 				</Suspense>
 			}
@@ -212,18 +211,6 @@ export function TopNav({ mode = "default" }: Props) {
 			compactUtilities={
 				hasWalletAccess && <DesktopUtilitiesMenu disabled={isMarketLoading} onOpenSettings={openSettingsDialog} />
 			}
-		/>
-	);
-}
-
-function UserMenuSkeleton() {
-	return (
-		<div
-			className={cn(
-				APP_BAR_BUTTON_HEIGHT_CLASS,
-				USER_MENU_BUTTON_MIN_WIDTH,
-				"h-[34px] w-36 shrink-0 rounded-[10px] bg-market-close-hover",
-			)}
 		/>
 	);
 }

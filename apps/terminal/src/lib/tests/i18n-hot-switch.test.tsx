@@ -3,13 +3,14 @@
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
+import { useLingui } from "@lingui/react/macro";
 import { act, type ReactNode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageSwitcher } from "@/components/trade/header/language-switcher";
 import { ThemeToggle } from "@/components/trade/header/theme-toggle";
 import { MobileBottomNav } from "@/components/trade/mobile/mobile-bottom-nav";
-import { MobileLoadingFallback } from "@/components/trade/mobile/mobile-loading-fallback";
+import { MobileTradeSizeControl } from "@/components/trade/mobile/mobile-trade-size-control";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
 import { PositionsTab } from "@/components/trade/positions/positions-tab";
 import { AccountPanel } from "@/components/trade/tradebox/account-panel";
@@ -19,6 +20,7 @@ import { TradeFormTif } from "@/components/trade/tradebox/trade-form-tif";
 import { TradeHeader } from "@/components/trade/tradebox/trade-header";
 import { TradeOptionCheckboxes } from "@/components/trade/tradebox/trade-option-checkboxes";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
@@ -261,11 +263,37 @@ Object.assign(globalThis, {
 	},
 });
 
+function RuntimeSizeControl() {
+	const { t } = useLingui();
+	const [size, setSize] = useState("1.25");
+	return (
+		<MobileTradeSizeControl
+			canUsePercent={false}
+			disabled={false}
+			interactionIdentity="translation-test"
+			maxAllowedDecimals={4}
+			onPercentChange={() => {}}
+			onPercentCancel={() => {}}
+			onPercentCommit={() => {}}
+			onSizeChange={(event) => setSize(event.target.value)}
+			onSizeModeToggle={() => {}}
+			percentAriaLabel="Size (%)"
+			side="buy"
+			sizeAriaLabel={t(TRADE_PANEL_LABELS.size)}
+			sizeInput={size}
+			sizeLabel={t(TRADE_PANEL_LABELS.size)}
+			sizeModeLabel="BTC"
+			sliderValue={0}
+		/>
+	);
+}
+
 function TestSurface() {
 	const [reduceOnly, setReduceOnly] = useState(false);
 
 	return (
 		<>
+			<RuntimeSizeControl />
 			<LanguageSwitcher />
 			<MobileBottomNav activeTab="markets" onTabChange={() => {}} className="static" />
 			<TradeHeader
@@ -515,27 +543,6 @@ describe("language hot switching", () => {
 		vi.clearAllMocks();
 	});
 
-	it("keeps the mobile loading views and empty drafts mounted on hot switch", () => {
-		act(() =>
-			root.render(
-				<I18nProvider i18n={i18n}>
-					<MobileLoadingFallback />
-				</I18nProvider>,
-			),
-		);
-		const frame = container.querySelector("[data-shell-mobile]");
-		const size = container.querySelector<HTMLInputElement>('input[data-size="lg"]');
-		const nav = container.querySelector("nav");
-		expect(size?.value).toBe("");
-		expect(size?.getAttribute("aria-label")).toBe("Size");
-		act(() => activateLocale("zh"));
-		expect(container.querySelector("[data-shell-mobile]")).toBe(frame);
-		expect(container.querySelector('input[data-size="lg"]')).toBe(size);
-		expect(container.querySelector("nav")).toBe(nav);
-		expect(size?.getAttribute("aria-label")).toBe("数量");
-		expect(size?.value).toBe("");
-	});
-
 	it("updates labels and aria without remounting or losing checkbox state", () => {
 		act(() =>
 			root.render(
@@ -561,6 +568,8 @@ describe("language hot switching", () => {
 		const originalBook = container.querySelector(".orderbook-panel-container");
 		const originalGrouping = container.querySelector('[aria-label="Price grouping"]');
 		const originalCheckbox = checkbox;
+		const originalSize = container.querySelector<HTMLInputElement>('input[aria-label="Size"]');
+		expect(originalSize?.value).toBe("1.25");
 		const originalTradeControls = container.querySelector(".trade-control-grid");
 		const originalTradeTabs = [...container.querySelectorAll(".trade-order-type-button")];
 		const originalMobileNav = container.querySelector<HTMLElement>('[aria-label="Primary navigation"]');
@@ -570,6 +579,8 @@ describe("language hot switching", () => {
 		expect(container.querySelector('[aria-label="语言和数字格式"]')).not.toBeNull();
 		const localizedCheckbox = container.querySelector<HTMLElement>('[aria-label="只减仓"]');
 		expect(localizedCheckbox).toBe(originalCheckbox);
+		expect(container.querySelector('input[aria-label="数量"]')).toBe(originalSize);
+		expect(originalSize?.value).toBe("1.25");
 		expect(container.querySelector(".trade-control-grid")).toBe(originalTradeControls);
 		expect([...container.querySelectorAll(".trade-order-type-button")]).toEqual(originalTradeTabs);
 		expect(originalTradeTabs[0]?.textContent).toBe("市价");

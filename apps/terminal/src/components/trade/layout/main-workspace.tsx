@@ -13,7 +13,6 @@ import { SpotMarketSocialLinks } from "../components/spot-market-social-links";
 import { useFavoritesStripProps } from "../header/favorites-strip";
 import { FavoritesStripView } from "../header/favorites-strip-view";
 import { MarketOverview } from "../market-overview";
-import { DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
 import { MarketHeaderView } from "./market-header-view";
 import { useDesktopGridLayout } from "./use-desktop-grid-layout";
 
@@ -48,10 +47,6 @@ function preloadPrimaryWorkspacePanels() {
 
 preloadPrimaryWorkspacePanels();
 
-function DesktopWorkspaceSkeleton() {
-	return <DesktopGridLoadingSurface panelClassName="desktop-grid-panel bg-surface" />;
-}
-
 interface Props {
 	orderEntryDraftReady?: boolean;
 }
@@ -72,7 +67,7 @@ export function MainWorkspace({ orderEntryDraftReady = true }: Props) {
 	}
 
 	return (
-		<main ref={containerRef} data-main-workspace className="min-h-0 flex-1 bg-grid-container">
+		<main ref={containerRef} aria-busy={!mounted} data-main-workspace className="min-h-0 flex-1 bg-grid-container">
 			{mounted ? (
 				<Responsive className="desktop-terminal-grid" {...gridProps}>
 					<div key="favoriteCoins" className="desktop-grid-panel overflow-hidden bg-surface">
@@ -136,7 +131,7 @@ export function MainWorkspace({ orderEntryDraftReady = true }: Props) {
 					</div>
 				</Responsive>
 			) : (
-				<DesktopWorkspaceSkeleton />
+				<output className="sr-only">Loading GATU...</output>
 			)}
 		</main>
 	);

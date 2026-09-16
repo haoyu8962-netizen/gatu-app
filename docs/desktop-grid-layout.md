@@ -6,12 +6,13 @@ Default spans live in `apps/terminal/src/config/desktop-grid-layout.ts`: the 16-
 
 The grid underlay is the `bg-grid-container` token (`#F1F3F6` behind white panels in the light theme, `#1B2429` behind `#0F1A1F` panels in the dark theme). React Grid Layout itself stays transparent so the underlay shows through every gutter; do not replace that separation with panel borders.
 
-The real desktop surface and startup shell share `DesktopTerminalFrameView`: a
-`min-h-dvh` flex column with horizontal overflow hidden, `pb-8` for the fixed footer,
-and `pt-14` (or the testnet banner offset) for the fixed header. Both workspace
-wrappers use `min-h-0 flex-1 bg-grid-container`; the startup shell does not add a
-viewport-height cap or hide vertical overflow. The shell cannot determine testnet
-or geo state, so only the runtime supplies those banners. See [ADR 0009](adr/0009-startup-placeholder-single-source.md).
+The real desktop surface uses `DesktopTerminalFrameView`: a `min-h-dvh` flex column
+with horizontal overflow hidden, `pb-8` for the fixed footer and `pt-14` (or the
+testnet banner offset) for the fixed header. Before the market is ready, real
+TopNav/FooterBar and runtime banners surround an empty `min-h-0 flex-1
+bg-grid-container` busy workspace. Grid measurement also leaves the workspace
+empty until its width is known. Chrome remains mounted through readiness; the
+prerendered body has no grid or chrome. See [ADR 0010](adr/0010-blank-until-ready-startup.md).
 
 ## Shared boundaries
 
@@ -52,7 +53,7 @@ The account-action browser suite mounts the real AccountPanel in the real deskto
 
 At 1545×900, reference Market and Limit modes retain the same 670px trading panel and chart/account boundaries while reallocating space between the scrollable fields and bottom summary. Preserve this height-ownership boundary alongside GATU's grid resizing controls. Browser regressions must compare every panel rectangle and the outer scroll extent, preserve saved user geometry and field values, and verify that the last field, CTA and fees remain reachable.
 
-The desktop account tab header and disconnected overview share props-only views with startup placeholders under [ADR 0009](adr/0009-startup-placeholder-single-source.md); runtime Tabs, content measurement and funding guards retain their existing ownership.
+The desktop account tab header and disconnected overview retain their props-only views after startup placeholders were removed by [ADR 0010](adr/0010-blank-until-ready-startup.md); runtime Tabs, content measurement and funding guards retain their existing ownership.
 
 Account mode names, overview titles, ratio labels and leverage collateral follow [the shared account overview contract](account-overview.md). Locale and mode changes must update the existing desktop and mobile panels, including accessible progress labels, without remounting funds dialogs.
 

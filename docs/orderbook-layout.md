@@ -4,7 +4,7 @@
 
 桌面订单簿、移动端紧凑订单簿和移动端左右分栏订单簿，均按实际容器高度铺排档位，避免将不足一行的剩余高度积累为顶部或底部空白。本规范先于实现更新。价格、数量和累计量必须完整可读；不得以填满边缘为由裁切真实数据。
 
-桌面列头、侧容器与价差 chrome 来自与启动壳共用的 `OrderbookPanelView`，见 [ADR 0009](adr/0009-startup-placeholder-single-source.md)。
+桌面列头、侧容器与价差 chrome 由真实组件的纯视图 `OrderbookPanelView` 提供；启动阶段不渲染盘口占位树，见 [ADR 0010](adr/0010-blank-until-ready-startup.md)。
 
 ## 几何规则
 

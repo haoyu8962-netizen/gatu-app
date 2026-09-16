@@ -909,7 +909,6 @@ msgstr "Échec du dépôt automatique d'USDC"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Available"
 msgstr "Disponible"
 
@@ -1794,7 +1793,6 @@ msgstr "Connecter le portefeuille"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/desktop-nav.ts
 #: src/config/ui-text.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Connect Wallet"
 msgstr "Connecter le portefeuille"
 
@@ -2706,7 +2704,6 @@ msgstr "Capitaux propres"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Est. Fee"
 msgstr "Frais est."
 
@@ -3815,7 +3812,6 @@ msgstr "Compte de staking lié : <0>{0}</0>."
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Liq. Price"
 msgstr "Prix liq."
 
@@ -3900,8 +3896,6 @@ msgid "Loading leaderboard"
 msgstr "Chargement du classement"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 msgid "Loading markets..."
 msgstr "Chargement des marchés..."
 
@@ -4027,7 +4021,6 @@ msgstr "Se connecter par e-mail"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Long"
 msgstr "Achat"
 
@@ -4103,7 +4096,6 @@ msgstr "Ratio de marge"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Margin Req."
 msgstr "Marge req."
 
@@ -5168,7 +5160,6 @@ msgstr "Type d'ordre"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Order Value"
 msgstr "Valeur de l'ordre"
 
@@ -5322,8 +5313,6 @@ msgstr "Lien de staking permanent"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
@@ -5652,7 +5641,6 @@ msgstr "Page précédente des coffres"
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Price"
 msgstr "Prix"
 
@@ -5902,7 +5890,6 @@ msgstr "La récupération n’a pas pu être enregistrée dans ce navigateur. No
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Reduce Only"
 msgstr "Réduction uniquement"
 
@@ -6768,7 +6755,6 @@ msgstr "Partager le PNL de {displayName}"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Short"
 msgstr "Vente"
 
@@ -6874,7 +6860,6 @@ msgstr "Signature..."
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Size"
 msgstr "Taille"
 
@@ -6923,7 +6908,6 @@ msgstr "Prix SL"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Slippage"
 msgstr "Glissement"
 
@@ -7011,9 +6995,7 @@ msgstr "Source"
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -8357,7 +8339,6 @@ msgstr "Prix TP"
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "TP/SL"
 msgstr "TP/SL"
 

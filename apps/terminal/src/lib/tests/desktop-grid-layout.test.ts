@@ -1,12 +1,6 @@
 // @vitest-environment jsdom
 
-import { calcGridItemPosition } from "react-grid-layout";
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-	DEFAULT_DESKTOP_GRID_LOADING_LAYOUTS,
-	getDesktopGridLoadingContainerHeight,
-	getDesktopGridLoadingPanelRect,
-} from "@/components/trade/layout/desktop-grid-loading-surface";
 import {
 	DEFAULT_DESKTOP_GRID_LAYOUTS,
 	DESKTOP_GRID_BREAKPOINTS,
@@ -43,57 +37,6 @@ describe("desktop grid layout", () => {
 		expect(getDesktopGridBreakpoint(1000)).toBe("md");
 		expect(getDesktopGridBreakpoint(1420)).toBe("md");
 		expect(getDesktopGridBreakpoint(1420.01)).toBe("lg");
-	});
-
-	it("projects the exact default lg and md geometry into the loading surface", () => {
-		for (const breakpoint of ["lg", "md"] as const) {
-			expect(DEFAULT_DESKTOP_GRID_LOADING_LAYOUTS[breakpoint]).toEqual(
-				DEFAULT_DESKTOP_GRID_LAYOUTS[breakpoint].map(({ i, x, y, w, h }) => ({ i, x, y, w, h })),
-			);
-
-			const rows = Math.max(...DEFAULT_DESKTOP_GRID_LAYOUTS[breakpoint].map((item) => item.y + item.h));
-			const expectedHeight =
-				rows * DESKTOP_GRID_ROW_HEIGHT_PX + (rows - 1) * DESKTOP_GRID_GAP_PX + DESKTOP_GRID_GAP_PX * 2;
-			expect(getDesktopGridLoadingContainerHeight(breakpoint)).toBeCloseTo(expectedHeight);
-		}
-	});
-
-	it("keeps every default loading panel within one pixel of RGL at production desktop widths", () => {
-		const cases = [
-			{ breakpoint: "md", width: 1001 },
-			{ breakpoint: "md", width: 1280 },
-			{ breakpoint: "md", width: 1420 },
-			{ breakpoint: "lg", width: 1421 },
-			{ breakpoint: "lg", width: 1440 },
-			{ breakpoint: "lg", width: 1920 },
-		] as const;
-
-		for (const { breakpoint, width } of cases) {
-			for (const loadingItem of DEFAULT_DESKTOP_GRID_LOADING_LAYOUTS[breakpoint]) {
-				const expected = calcGridItemPosition(
-					{
-						cols: DESKTOP_GRID_COLS[breakpoint],
-						containerPadding: [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX],
-						containerWidth: width,
-						margin: [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX],
-						maxRows: Number.POSITIVE_INFINITY,
-						rowHeight: DESKTOP_GRID_ROW_HEIGHT_PX,
-					},
-					loadingItem.x,
-					loadingItem.y,
-					loadingItem.w,
-					loadingItem.h,
-				);
-				const actual = getDesktopGridLoadingPanelRect(breakpoint, width, loadingItem.i);
-
-				for (const dimension of ["left", "top", "width", "height"] as const) {
-					expect(
-						Math.abs(actual[dimension] - expected[dimension]),
-						`${breakpoint}/${width}/${loadingItem.i}/${dimension}`,
-					).toBeLessThanOrEqual(1);
-				}
-			}
-		}
 	});
 
 	it("removes saved geometry when the desktop layout is reset", () => {

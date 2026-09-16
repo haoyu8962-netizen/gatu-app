@@ -18,9 +18,6 @@
       "path": "docs/adr/0009-startup-placeholder-single-source.md"
     },
     {
-      "path": ".claude/rules/placeholder-parity.md"
-    },
-    {
       "path": "docs/order-entry-layout-audit.md"
     },
     {
@@ -30,10 +27,7 @@
       "path": "apps/terminal/src/components/trade/tradebox/trade-panel.tsx"
     },
     {
-      "path": "apps/terminal/src/components/trade/layout/desktop-placeholders.ts"
-    },
-    {
-      "path": "apps/terminal/src/lib/tests/trade-panel-view-parity.test.tsx"
+      "path": "docs/work-memory/sessions/2026-09-16-remove-startup-placeholders.md"
     }
   ],
   "supersedes": []
@@ -393,3 +387,11 @@ Playwright（Round 1 代码）：`playwright.config.ts` 107 例 106 通过，唯
 - Playwright：`playwright.config.ts` 下的 `trade-panel-layout`、`trade-panel-all-orders`、`trade-size-slider-performance`、`desktop-order-entry-layout` 四个规格 30/30 通过（1.6 min）；`mobile-trade-all-orders.playwright.config.ts` 29/29 通过（2.2 min）。
 - `pnpm --filter @gatu/terminal test`（568 文件 / 6308 用例）：13 文件失败。9 个是表面 2/3 记录的基线红文件（失败数不变）；`mobile-agent-sync-route`(18) 与 `establish-connection-modal`(1) 为并发/计时敏感（前者单独运行 20/20 通过）；另外两个是 Round 2 引入的真实回归，reviewer 已修复：`trade-terminal-page-boot` 的全局设置 store mock 缺少 `TerminalLoadingWorkspace` 新读取的 `useMarketOrderSlippagePercent`（补 mock 返回 2.5，13/13 通过），`trading-panel-theme-contract` 读取 `components/ui/input.tsx` 检查选择文本类而这些类已移入 `input-styles.ts`（改读该模块，8/8 通过）。
 - `pnpm build` 通过：客户端总预算 3,084,029 gzip 字节（较表面 3 提交后 +3,350，较基线 −70,678）；trade 静态启动闭包 1,577,230（+7,009，壳新增下单视图）；桌面运行时增量 195,055（+3,067）。预渲染壳核对（`grep -a`）：`trade-panel-container` 2、`data-slot="trade-panel-header"` 1、`trade-control-grid` 1、`data-trade-slider-thumb` 1、`data-slot="trade-order-options"` 1、`Fees` 1、`animate-spin` 0。构建不是发布。
+
+## ADR 0010 后的来源路径修正（2026-09-16）
+
+启动占位已由 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 取代；上文仍是旧方案当时的记录，不改写其验证结论。以下 source 在移除启动占位任务中删除，元数据改链到[后续任务记录](2026-09-16-remove-startup-placeholders.md)，避免索引将历史路径误作当前文件；原来源保留于此，可用 `git show 0f7e97acb95a4211195b1ac4dd742def7f72bbc0:<路径>` 检索：
+
+- `.claude/rules/placeholder-parity.md`
+- `apps/terminal/src/components/trade/layout/desktop-placeholders.ts`
+- `apps/terminal/src/lib/tests/trade-panel-view-parity.test.tsx`

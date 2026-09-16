@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
+import { StartupFallback } from "@/components/startup-fallback";
 import { ROUTE_SEO } from "@/config/seo";
 import { createLazyComponent } from "@/lib/lazy";
 import { buildPageHead } from "@/lib/seo";
@@ -13,7 +13,7 @@ const TradeTerminalPage = createLazyComponent(
 export const Route = createFileRoute("/builders-perp/$dex")({
 	ssr: false,
 	pendingMinMs: 0,
-	pendingComponent: AppShellSkeleton,
+	pendingComponent: StartupFallback,
 	beforeLoad: ({ context, location }) => {
 		void TradeTerminalPage.preload?.();
 		bootTradeRoute(context.queryClient, location.pathname);

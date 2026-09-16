@@ -6,17 +6,21 @@
   "title": "启动占位单一来源：ADR 0009 与展示组件规则",
   "kind": "task",
   "status": "recorded",
-  "topics": ["static-hosting", "docs-governance"],
+  "topics": [
+    "static-hosting",
+    "docs-governance"
+  ],
   "summary": "核对确认桌面壳九个 frame、移动壳与运行时占位是三份手写实现，唯一共享的是网格几何；采纳「展示组件是几何唯一来源」的架构：只接 props 的 *-view.tsx 由运行时容器与壳共同渲染，占位 props 单一来源，导入边界与一致性测试钉住，inert 取代禁止交互元素；本轮只落 ADR、规则与索引，迁移未开始。",
   "thread": null,
   "baseCommit": "ade94020",
   "commits": [],
   "sources": [
-    { "path": "docs/adr/0009-startup-placeholder-single-source.md" },
-    { "path": ".claude/rules/placeholder-parity.md" },
-    { "path": "apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx" },
-    { "path": "apps/terminal/src/components/trade/layout/terminal-loading-workspace.tsx" },
-    { "path": "apps/terminal/src/components/trade/mobile/mobile-loading-fallback.tsx" }
+    {
+      "path": "docs/adr/0009-startup-placeholder-single-source.md"
+    },
+    {
+      "path": "docs/work-memory/sessions/2026-09-16-remove-startup-placeholders.md"
+    }
   ],
   "supersedes": []
 }
@@ -43,3 +47,12 @@
 
 - 第一个迁移表面：桌面市场头与收藏条，同时采纳官方的列宽与标签大小写（决策 6），随提交更新 CHANGELOG。
 - 本记录不替代 2026-09-15 的移动对齐记录；`mobile-chrome-classes.ts` 在移动表面迁移完成后删除。
+
+## ADR 0010 后的来源路径修正（2026-09-16）
+
+启动占位已由 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 取代；上文仍是旧方案当时的记录，不改写其验证结论。以下 source 在移除启动占位任务中删除，元数据改链到[后续任务记录](2026-09-16-remove-startup-placeholders.md)，避免索引将历史路径误作当前文件；原来源保留于此，可用 `git show 0f7e97acb95a4211195b1ac4dd742def7f72bbc0:<路径>` 检索：
+
+- `.claude/rules/placeholder-parity.md`
+- `apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx`
+- `apps/terminal/src/components/trade/layout/terminal-loading-workspace.tsx`
+- `apps/terminal/src/components/trade/mobile/mobile-loading-fallback.tsx`

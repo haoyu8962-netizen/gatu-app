@@ -20,8 +20,12 @@ export function MobileTerminalFrameView({ header, content, nav, className, ...pr
 		</div>
 	);
 }
-export function MobileWorkspaceView({ children }: { children: ReactNode }) {
-	return <main className={workspace}>{children}</main>;
+export function MobileWorkspaceView({ children, busy = false }: { children: ReactNode; busy?: boolean }) {
+	return (
+		<main className={workspace} aria-busy={busy}>
+			{children}
+		</main>
+	);
 }
 export function MobilePageView({ children }: { children: ReactNode }) {
 	return <div className={cn(pageSurface, pageScroll)}>{children}</div>;

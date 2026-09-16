@@ -21,7 +21,7 @@
       "path": "apps/terminal/src/components/trade/orderbook/orderbook-panel-view.tsx"
     },
     {
-      "path": "apps/terminal/src/lib/tests/orderbook-panel-view-parity.test.tsx"
+      "path": "docs/work-memory/sessions/2026-09-16-remove-startup-placeholders.md"
     }
   ],
   "supersedes": []
@@ -176,3 +176,9 @@ Lingui 六份目录仅来源位置变动；既有缺译 ar/es/fr/hi 各 14、zh 
 本地输出保留在 Git 忽略的 `.worklog/2026-09-16/orderbook-chrome-view-migration/`，包含两轮完整列表超时、单文件复跑、最终 2 workers 完整组、补充 parity/i18n、Biome、typecheck 和 extract 日志；工作区绝对路径已脱敏。这些是工具输出，不是完整会话转录。最终记录写入后再次串行运行 memory 三命令及 diff 检查。
 
 未运行 pnpm install、git add/commit/stash/mv 或 branch switch；原 `.build/` 保留未跟踪。
+
+## ADR 0010 后的来源路径修正（2026-09-16）
+
+启动占位已由 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 取代；上文仍是旧方案当时的记录，不改写其验证结论。以下 source 在移除启动占位任务中删除，元数据改链到[后续任务记录](2026-09-16-remove-startup-placeholders.md)，避免索引将历史路径误作当前文件；原来源保留于此，可用 `git show 0f7e97acb95a4211195b1ac4dd742def7f72bbc0:<路径>` 检索：
+
+- `apps/terminal/src/lib/tests/orderbook-panel-view-parity.test.tsx`

@@ -909,7 +909,6 @@ msgstr "USDC 自动存款失败"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Available"
 msgstr "可用"
 
@@ -1794,7 +1793,6 @@ msgstr "连接钱包"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/desktop-nav.ts
 #: src/config/ui-text.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Connect Wallet"
 msgstr "连接钱包"
 
@@ -2706,7 +2704,6 @@ msgstr "净值"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Est. Fee"
 msgstr "预估费用"
 
@@ -3815,7 +3812,6 @@ msgstr "已关联质押账户：<0>{0}</0>。"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Liq. Price"
 msgstr "清算价"
 
@@ -3900,8 +3896,6 @@ msgid "Loading leaderboard"
 msgstr "正在加载排行榜"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 msgid "Loading markets..."
 msgstr "加载市场中..."
 
@@ -4027,7 +4021,6 @@ msgstr "使用邮箱登录"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Long"
 msgstr "多"
 
@@ -4103,7 +4096,6 @@ msgstr "保证金率"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Margin Req."
 msgstr "保证金要求"
 
@@ -5168,7 +5160,6 @@ msgstr "订单类型"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Order Value"
 msgstr "订单价值"
 
@@ -5322,8 +5313,6 @@ msgstr "永久质押关联"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
@@ -5652,7 +5641,6 @@ msgstr "上一页金库"
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Price"
 msgstr "价格"
 
@@ -5902,7 +5890,6 @@ msgstr "无法在此浏览器中保存恢复记录。关闭前请记下 Arbitrum
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Reduce Only"
 msgstr "只减仓"
 
@@ -6768,7 +6755,6 @@ msgstr "分享 {displayName} 的盈亏"
 #: src/components/trade/positions/position-row.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Short"
 msgstr "空"
 
@@ -6874,7 +6860,6 @@ msgstr "签名中..."
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Size"
 msgstr "数量"
 
@@ -6923,7 +6908,6 @@ msgstr "止损价"
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Slippage"
 msgstr "滑点"
 
@@ -7011,9 +6995,7 @@ msgstr "来源"
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -8357,7 +8339,6 @@ msgstr "止盈价"
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "TP/SL"
 msgstr "止盈止损"
 

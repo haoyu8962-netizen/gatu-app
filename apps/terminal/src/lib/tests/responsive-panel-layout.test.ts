@@ -28,18 +28,6 @@ const MAIN_WORKSPACE_SOURCE = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/layout/main-workspace.tsx"),
 	"utf8",
 );
-const APP_SHELL_SOURCE = readFileSync(
-	resolve(TEST_DIR, "../..", "components/trade/layout/app-shell-skeleton.tsx"),
-	"utf8",
-);
-const TERMINAL_LOADING_WORKSPACE_SOURCE = readFileSync(
-	resolve(TEST_DIR, "../..", "components/trade/layout/terminal-loading-workspace.tsx"),
-	"utf8",
-);
-const DESKTOP_GRID_LOADING_SURFACE_SOURCE = readFileSync(
-	resolve(TEST_DIR, "../..", "components/trade/layout/desktop-grid-loading-surface.tsx"),
-	"utf8",
-);
 const GRID_CONTENT_HEIGHT_SOURCE = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/layout/use-grid-content-height.ts"),
 	"utf8",
@@ -102,8 +90,7 @@ describe("responsive panel layout contract", () => {
 	});
 
 	it("keeps every desktop panel mounted once while responsive grid geometry changes", () => {
-		expect(MAIN_WORKSPACE_SOURCE).toContain("<main ref={containerRef} data-main-workspace");
-		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).toContain("<main");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("<main ref={containerRef} aria-busy={!mounted} data-main-workspace");
 		for (const panelKey of [
 			"favoriteCoins",
 			"coinInfo",
@@ -141,21 +128,10 @@ describe("responsive panel layout contract", () => {
 		expect(MAIN_WORKSPACE_SOURCE).toContain("TradePanel.preload?.()");
 	});
 
-	it("reuses one static desktop grid for the AppShell, market loading, and workspace measurement", () => {
-		expect(APP_SHELL_SOURCE).toContain("<DesktopGridLoadingSurface");
-		expect(APP_SHELL_SOURCE).toContain("markShellPanels");
-		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).toContain("<DesktopGridLoadingSurface");
-		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).toContain(
-			'panelClassName="desktop-grid-panel overflow-hidden bg-surface"',
-		);
-		expect(MAIN_WORKSPACE_SOURCE).toContain("<DesktopGridLoadingSurface");
-		expect(DESKTOP_GRID_LOADING_SURFACE_SOURCE).not.toContain('from "react-grid-layout"');
-
-		expect(MAIN_WORKSPACE_SOURCE).toContain('panelClassName="desktop-grid-panel bg-surface"');
-		expect(APP_SHELL_SOURCE).not.toContain("animate-pulse");
-		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).not.toContain("animate-pulse");
-		expect(MAIN_WORKSPACE_SOURCE).not.toContain("animate-pulse");
-		expect(MAIN_WORKSPACE_SOURCE).not.toContain("animate-spin");
+	it("keeps the workspace empty until it is measured", () => {
+		expect(MAIN_WORKSPACE_SOURCE).toContain("aria-busy={!mounted}");
+		expect(MAIN_WORKSPACE_SOURCE).toContain('<output className="sr-only">Loading GATU...</output>');
+		expect(MAIN_WORKSPACE_SOURCE).not.toContain("Skeleton");
 	});
 
 	it("batches border-box measurements and persists only committed layouts", () => {

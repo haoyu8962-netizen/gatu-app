@@ -2,7 +2,7 @@
 
 The desktop order-entry panel must show every ordinary order type in its default grid height without an internal scroll step. Shortened user layouts and unusually long action feedback may need local overflow, but the order-type header must remain visible and all fields, actions and summaries must remain reachable. Do not enlarge the chart, book or page when changing order type.
 
-The desktop header, default field frames, CTA and summary chrome now come from views shared with the startup shell; see [ADR 0009](adr/0009-startup-placeholder-single-source.md) and the [surface 4 migration record](work-memory/sessions/2026-09-16-trade-panel-view-migration.md).
+The desktop header, default field frames, CTA and summary chrome retain their pure runtime views; startup placeholders have been removed under [ADR 0010](adr/0010-blank-until-ready-startup.md) and the [surface 4 migration record](work-memory/sessions/2026-09-16-trade-panel-view-migration.md).
 
 ## Reference and initial findings
 

@@ -18,13 +18,10 @@
       "path": "docs/adr/0009-startup-placeholder-single-source.md"
     },
     {
-      "path": "apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx"
-    },
-    {
-      "path": "apps/terminal/src/lib/tests/top-nav-footer-view-parity.test.tsx"
-    },
-    {
       "path": "packages/ui/src/dropdown.tsx"
+    },
+    {
+      "path": "docs/work-memory/sessions/2026-09-16-remove-startup-placeholders.md"
     }
   ],
   "supersedes": []
@@ -169,3 +166,10 @@ Biome 的 25 个文件为上文全部 18 个变更实现/配置文件与 7 个�
 - `client-root-theme-lifecycle`(1) 单独运行也失败，根因是 `ade94020` 引入的 `QueryPersistenceFlush` 通过 `useQueryClient()` 取客户端，而该测试把 `PersistQueryClientProvider` 模拟为直通并只部分模拟 `@/lib/query-persistence`。修复：`QueryPersistenceFlush` 改为显式接收 `client` prop（`client-root.tsx` 传入 `queryClient`），`query-persistence-flush.test.tsx` 与该测试的模拟同步；三个相关测试文件 6/6 通过，terminal typecheck 通过。作为独立提交记录在[热访问启动记录](2026-09-16-warm-visit-startup-plan.md)。
 
 `pnpm build`（含 flush 修复后的代码）通过：客户端总预算 3,079,737 gzip 字节（较表面 1 提交后的 3,079,236 增加 501，较基线文件 −74,970）；trade 静态启动闭包 1,571,649（+1,428）；桌面运行时增量 196,279（+4,291）；chunk 循环检查通过；`_shell.html` 86 个共享启动资源预加载。预渲染壳核对（`grep -a`）：`<header>`/`<footer>` 各 1、`aria-label="Primary navigation"` 1、`Connect Wallet` 含 `min-w-[9rem]`、`max-[1181px]:hidden` 6 处、不可见时钟样本 `00:00 AM` 1、`inert=""` 1、Soon 仅出现在 `Earn<span class="sr-only"> — <!-- -->Soon</span>`（React SSR 的文本节点分隔注释）、`animate-spin` 0、`TestnetBanner` 0。构建不是发布，CloudFront 分发未更新。
+
+## ADR 0010 后的来源路径修正（2026-09-16）
+
+启动占位已由 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 取代；上文仍是旧方案当时的记录，不改写其验证结论。以下 source 在移除启动占位任务中删除，元数据改链到[后续任务记录](2026-09-16-remove-startup-placeholders.md)，避免索引将历史路径误作当前文件；原来源保留于此，可用 `git show 0f7e97acb95a4211195b1ac4dd742def7f72bbc0:<路径>` 检索：
+
+- `apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx`
+- `apps/terminal/src/lib/tests/top-nav-footer-view-parity.test.tsx`

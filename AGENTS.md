@@ -90,7 +90,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 ## Desktop trading layout contract
 
 - `docs/desktop-grid-layout.md` owns breakpoints, column counts, default spans, shared boundaries, height ownership, persistence and the underlay token; `apps/terminal/src/config/desktop-grid-layout.ts` is the single source of default geometry.
-- The terminal switches to its mobile surface at `1000px` and below. Keep the runtime media query, skeleton visibility, navigation visibility, mobile-only typography and bottom-navigation-aware overlays on the same inclusive breakpoint.
+- The terminal switches to its mobile surface at `1000px` and below. Keep the runtime media query, navigation visibility, mobile-only typography and bottom-navigation-aware overlays on the same inclusive breakpoint.
 - At every desktop width the chart, market data and trading panel remain visible together and share the upper region's bottom edge; the account table and account information share the lower region's top and bottom edges. Apply the same constraints during measurement, live resizing, breakpoint changes and saved-layout restoration, and keep natural content measurements separate from stretched panel geometry to avoid height feedback loops.
 - Keep favorites, market information, chart, market data, trading interface, account table and account information as stable keyed grid children. Responsive desktop changes move and resize those instances rather than conditionally remounting them.
 - Desktop disconnected accounts show a compact zero-value overview with disabled funding controls, preserving the sponsored email-deposit exception.
@@ -106,12 +106,12 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Default desktop geometry fits all eight ordinary order-entry types without internal scrolling; keep the order-type header outside the overflow region and validate real forms, not only synthetic tall content.
 - Order-entry content must not resize the desktop grid: Market/Limit, advanced-order fields and feedback adapt within the trading panel while chart, order-book and account boundaries, internal scrolling and user-selected grid geometry stay intact. The embedded mobile form must not own its own vertical scroll viewport, and market data must never drive measured height state.
 
-## Startup placeholder contract
+## Startup rendering contract
 
-- `docs/adr/0009-startup-placeholder-single-source.md` and `.claude/rules/placeholder-parity.md` own this contract. The prerendered shell, the runtime loading placeholders and the real terminal render the same props-only view components; placeholders are the same views with placeholder props, never a second hand-written tree or copied class strings.
-- Views are pure and deterministic (no hooks, stores, Lingui runtime, `window` or clocks); the shell module imports only views, config, `cn`, icons and the brand logo, and a source-contract test pins that boundary.
-- The shell stays `aria-busy` with one screen-reader announcement, no animation and no timers; its decorative tree is `aria-hidden` and `inert` rather than stripped of real elements. Placeholder values are `-`/`—` and English source strings in the prerendered shell.
-- Every migrated surface ships a parity test (placeholder props versus sample real props) and a Playwright box comparison across the desktop and mobile viewports named in the rule; record the numbers in the task record.
+- `docs/adr/0010-blank-until-ready-startup.md` and `.claude/rules/startup-rendering.md` own this contract. Every application route prerenders and hydrates the same visually empty `StartupFallback`: `aria-busy` and one screen-reader-only output, with no visible skeleton or chrome.
+- Keep theme bootstrap, head preloads, Service Worker registration and shell caching. Wait for the client runtime and persisted locale catalog before rendering real chrome; document routes retain independent prerendered content.
+- Desktop and mobile trade loading states use their real frame/header/navigation/footer with an empty busy workspace. Reveal market content inside the existing frame when ready, preserving chrome DOM identity and mobile navigation state. Dashboard pending routes use the empty announcement; loaded pages own their real frame.
+- Runtime views stay pure, deterministic and props-only. Preserve mounted component behavior, translated labels, drafts, protocol values and every signing/data-availability guard. Do not reintroduce placeholder trees, shell-specific English catalogs or hydration route-surface overrides.
 
 ## Verification
 
@@ -181,6 +181,14 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trade-form-twap-advanced.test.tsx \
   src/lib/tests/trade-form-compact-fields.test.tsx \
   src/lib/tests/trade-form-tp-sl.test.tsx
+
+# Startup rendering (see .claude/rules/startup-rendering.md)
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/root-startup-fallback.test.tsx \
+  src/lib/tests/root-route-transition.test.tsx \
+  src/lib/tests/trade-terminal-page-boot.test.tsx \
+  src/lib/tests/top-nav.test.tsx \
+  src/lib/tests/dashboard-frame-view.test.tsx
 
 # Runtime translation contract (Change discipline)
 pnpm --dir apps/terminal exec vitest run \

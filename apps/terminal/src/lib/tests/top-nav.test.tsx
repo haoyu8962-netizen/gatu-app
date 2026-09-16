@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
 import { act, cloneElement, createElement, isValidElement, type ReactNode, useEffect, useState } from "react";
 import type { Root } from "react-dom/client";
@@ -521,5 +522,45 @@ describe("TopNav", () => {
 
 		act(() => settingsButton?.click());
 		expect(testState.openSettingsDialog).toHaveBeenCalledOnce();
+	});
+	it("renders persisted Chinese from the first chrome render through market readiness", () => {
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: {
+				...Object.fromEntries(
+					DESKTOP_NAV_ITEMS.map((item, index) => [
+						item.label.id,
+						["交易", "投资组合", "收益", "金库", "质押", "推荐", "排行榜"][index],
+					]),
+				),
+				[DESKTOP_NAV_LABELS.primary.id]: "主导航",
+				[DESKTOP_NAV_LABELS.more.id]: "更多",
+				[DESKTOP_NAV_LABELS.soon.id]: "即将推出",
+				...Object.fromEntries(
+					[
+						["Statistics", "统计"],
+						["API Wallet", "API 钱包"],
+					].map(([message, translation]) => [
+						createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6),
+						translation,
+					]),
+				),
+			},
+		});
+		renderNav("market-loading");
+		const header = container.querySelector("header");
+		const nav = container.querySelector("nav");
+		expect(nav?.textContent).toContain("交易");
+		expect(nav?.textContent).not.toMatch(
+			/Trade|Portfolio|Earn|Vaults|Staking|Referrals|Leaderboard|More|Statistics|API Wallet/,
+		);
+		expect(nav?.textContent).not.toContain("Portfolio");
+		renderNav();
+		expect(container.querySelector("header")).toBe(header);
+		expect(container.querySelector("nav")).toBe(nav);
+		expect(nav?.textContent).not.toMatch(
+			/Trade|Portfolio|Earn|Vaults|Staking|Referrals|Leaderboard|More|Statistics|API Wallet/,
+		);
+		expect(container.textContent).not.toContain("Loading");
 	});
 });

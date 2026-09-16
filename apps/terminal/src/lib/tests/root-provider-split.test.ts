@@ -56,7 +56,7 @@ describe("root provider startup split", () => {
 		expect(rootRouteSource).not.toContain("<ClientOnly");
 	});
 
-	it("selects a route-matched startup frame before mounting route content", () => {
+	it("selects the same empty application fallback before mounting route content", () => {
 		expect(rootRouteSource).toContain("useRouterState({ select: getPresentedRoutePathname })");
 		expect(rootRouteSource).toContain("const routeSurface = getAppRouteSurface(pathname)");
 		expect(rootRouteSource).toMatch(
@@ -66,11 +66,8 @@ describe("root provider startup split", () => {
 			/if \(routeSurface === "document"\)[\s\S]*?<Outlet \/>[\s\S]*?<DocumentOverlays \/>/,
 		);
 		expect(rootRouteSource).toContain("<AppRuntimeOverlays />");
-		expect(rootRouteSource).toContain('fallbackSurface === "terminal"');
-		expect(rootRouteSource).toContain("<AppShellSkeleton />");
-		expect(rootRouteSource).toContain(
-			"<DashboardShellSkeleton frame={getDashboardFrame(pathname)} pathname={pathname} />",
-		);
+		expect(rootRouteSource).toContain("const fallback = <StartupFallback />");
+		expect(rootRouteSource).not.toContain("getHydrationRouteSurface");
 
 		const appRuntimeSource = rootRouteSource.slice(
 			rootRouteSource.indexOf("function AppRuntime"),

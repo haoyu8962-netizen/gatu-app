@@ -1,8 +1,9 @@
 # ADR 0009：启动占位与真实界面共享同一展示组件
 
-- 状态：已接受（2026-09-16），表面 1–7 迁移已完成并通过 Playwright 盒子实测（2026-09-16）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
+- 状态：已被 ADR 0010 部分取代（2026-09-16）：决策 2–5、7 被取代；决策 1 的 view 作为真实组件标记单一来源与纯度要求保留，决策 6 保留。下文为原决策与历史验证，当前启动行为见 [ADR 0010](0010-blank-until-ready-startup.md)。
+- 原状态：已接受（2026-09-16），表面 1–7 迁移已完成并通过 Playwright 盒子实测（2026-09-16）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
 - 前置：[ADR 0005](0005-spa-static-shell.md)（预渲染 SPA 壳）、[ADR 0006](0006-startup-preloads-and-edge-caching.md)（启动预加载与边缘缓存）
-- 规则：[启动占位一致性规则](../../.claude/rules/placeholder-parity.md)
+- 规则：[当前启动渲染规则](../../.claude/rules/startup-rendering.md)
 - 证据：[移动占位壳与真实终端逐像素对齐](../work-memory/sessions/2026-09-15-mobile-shell-parity.md)、[热访问启动计划与实测](../work-memory/sessions/2026-09-16-warm-visit-startup-plan.md)、[本 ADR 的任务记录](../work-memory/sessions/2026-09-16-placeholder-single-source-adr.md)
 
 ## 背景与约束

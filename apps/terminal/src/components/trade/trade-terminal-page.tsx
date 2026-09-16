@@ -19,7 +19,6 @@ import { useOrderEntryActions, useOrderEntryMarketIdentity } from "@/stores/use-
 import { AccountActivityFeedOwner } from "./account-activity-feed-owner";
 import { DesktopTerminalSurface } from "./layout/desktop-terminal-surface";
 import { TerminalBootError } from "./layout/terminal-boot-error";
-import { MobileLoadingFallback } from "./mobile/mobile-loading-fallback";
 import { MobileTerminal } from "./mobile/mobile-terminal";
 import { OrderToast } from "./tradebox/order-toast";
 
@@ -88,13 +87,7 @@ function TradeTerminalContent({ marketReady, marketIdentity }: Props & { marketI
 			<AccountActivityFeedOwner />
 			<MarketReadySynchronizers marketReady={marketReady} />
 			{isMobile ? (
-				marketReady ? (
-					<Suspense fallback={<MobileLoadingFallback />}>
-						<MobileTerminal orderEntryDraftReady={orderEntryDraftReady} />
-					</Suspense>
-				) : (
-					<MobileLoadingFallback />
-				)
+				<MobileTerminal marketReady={marketReady} orderEntryDraftReady={orderEntryDraftReady} />
 			) : (
 				<DesktopTerminalSurface marketReady={marketReady} orderEntryDraftReady={orderEntryDraftReady} />
 			)}

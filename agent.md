@@ -22,7 +22,7 @@ Dependency versions and runnable commands are authoritative in [package.json](pa
 | Path | Purpose |
 |---|---|
 | [apps/terminal/src/router.tsx](apps/terminal/src/router.tsx) | Router creation, per-router QueryClient and SSR query integration |
-| [apps/terminal/src/routes/__root.tsx](apps/terminal/src/routes/__root.tsx) | Stable HTML shell, route-specific skeletons and application runtime gate |
+| [apps/terminal/src/routes/__root.tsx](apps/terminal/src/routes/__root.tsx) | Stable HTML shell, route-independent empty announcement and application runtime gate |
 | [apps/terminal/src/providers/root.tsx](apps/terminal/src/providers/root.tsx) | SSR-safe providers and deferred client runtime import |
 | [apps/terminal/src/providers/client-root.tsx](apps/terminal/src/providers/client-root.tsx) | Privy, Smart Wallets, persisted Query, wagmi and Hyperliquid composition |
 | [apps/terminal/src/providers/hyperliquid-owner-signer-bridge.tsx](apps/terminal/src/providers/hyperliquid-owner-signer-bridge.tsx) | Exact Privy owner signer supplied to `hl-react` |

@@ -29,7 +29,7 @@ describe("mobile order risk summary contract", () => {
 		expect(mobileTradeView).toContain("estimatedSlippageText");
 		expect(mobileTradeView).toContain("t`Est. Slippage`");
 		expect(mobileTradeView).toContain("max: t(TRADE_PANEL_LABELS.max)");
-		expect(tradeLabels).toContain('max: { ...msg`Max`, message: "Max" }');
+		expect(tradeLabels).toContain("max: msg`Max`");
 		expect(mobileTradeView).toMatch(
 			/<MobileSlippageRowView[\s\S]*?value=\{estimatedSlippageText \?\? FALLBACK_VALUE_PLACEHOLDER\}[\s\S]*?onClick=\{openSettingsDialog\}/,
 		);

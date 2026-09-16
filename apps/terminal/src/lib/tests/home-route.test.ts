@@ -7,7 +7,7 @@ const queryClient = {};
 vi.mock("@/stores/use-market-store", () => ({
 	getTradeHomeMarketName: () => testState.marketName,
 }));
-vi.mock("@/components/trade/layout/app-shell-skeleton", () => ({ AppShellSkeleton: () => null }));
+vi.mock("@/components/startup-fallback", () => ({ StartupFallback: () => null }));
 vi.mock("@/components/trade/trade-terminal-page", () => ({ TradeTerminalPage: () => null }));
 vi.mock("@/config/seo", () => ({ ROUTE_SEO: { TRADE: {} } }));
 vi.mock("@/lib/hyperliquid/markets/market-catalog-bootstrap", () => ({
@@ -19,7 +19,7 @@ vi.mock("@/lib/lazy", () => ({
 }));
 vi.mock("@/lib/seo", () => ({ buildPageHead: () => ({}) }));
 
-import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
+import { StartupFallback } from "@/components/startup-fallback";
 import { Route as BuildersPerpRoute } from "@/routes/builders-perp";
 import { Route as BuildersPerpDexRoute } from "@/routes/builders-perp.$dex";
 import { Route as BuildersPerpIndexRoute } from "@/routes/builders-perp.index";
@@ -70,10 +70,10 @@ describe("home route boot contract", () => {
 		expect(result.options).toMatchObject({ to: "/trade/xyz:GOOGL", replace: true });
 	});
 
-	it("uses AppShellSkeleton directly with no artificial minimum for every pending terminal route", () => {
+	it("uses StartupFallback directly with no artificial minimum for every pending terminal route", () => {
 		for (const route of [HomeRoute, TradeRoute, PerpRoute, SpotRoute, BuildersPerpIndexRoute, BuildersPerpDexRoute]) {
 			expect(route.options.pendingMinMs).toBe(0);
-			expect(route.options.pendingComponent).toBe(AppShellSkeleton);
+			expect(route.options.pendingComponent).toBe(StartupFallback);
 		}
 	});
 
@@ -112,7 +112,7 @@ describe("home route boot contract", () => {
 		expect(testState.bootOrderbook).toHaveBeenCalledTimes(5);
 		for (const route of [PerpRoute, SpotRoute, BuildersPerpIndexRoute, BuildersPerpDexRoute]) {
 			expect(route.options.pendingMinMs).toBe(0);
-			expect(route.options.pendingComponent).toBe(AppShellSkeleton);
+			expect(route.options.pendingComponent).toBe(StartupFallback);
 			expect((route.options.component as { preload: () => Promise<void> }).preload).toHaveBeenCalledOnce();
 		}
 	});
