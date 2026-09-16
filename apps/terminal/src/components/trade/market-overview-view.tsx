@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cn } from "@/lib/cn";
 import { StatBlock } from "./chart/stat-block";
 
 interface Props {
@@ -12,19 +13,22 @@ interface Props {
 	}[];
 	ariaLabel: string;
 	dataset?: boolean;
+	pending?: boolean;
 }
 
 const KEYBOARD_SCROLL_REGION_PROPS = { tabIndex: 0 } as const;
 
-export function MarketOverviewView({ stats, ariaLabel, dataset = true }: Props) {
+export function MarketOverviewView({ stats, ariaLabel, dataset = true, pending = false }: Props) {
 	return (
 		<section
 			data-market-overview=""
+			data-market-overview-state={pending ? "pending" : "ready"}
 			aria-label={ariaLabel}
+			aria-busy={pending || undefined}
 			{...KEYBOARD_SCROLL_REGION_PROPS}
 			className="relative w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain font-market-close text-[13px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-stroke-focus [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 		>
-			<div data-market-overview-row="" className="relative flex items-center gap-8">
+			<div data-market-overview-row="" className={cn("relative flex items-center gap-8", pending && "invisible")}>
 				{stats.map(({ id, ...stat }) => (
 					<div key={id} data-market-stat={dataset ? id : undefined} className="shrink-0">
 						<StatBlock {...stat} />

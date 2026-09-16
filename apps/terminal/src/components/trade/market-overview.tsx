@@ -359,7 +359,13 @@ export function MarketOverview() {
 					},
 				]),
 	];
-	return <MarketOverviewView stats={stats} ariaLabel={selectedMarketInfo?.pairName ?? t(MARKET_HEADER_LABELS.price)} />;
+	return (
+		<MarketOverviewView
+			stats={stats}
+			ariaLabel={selectedMarketInfo?.pairName ?? t(MARKET_HEADER_LABELS.price)}
+			pending={liveCtx === undefined}
+		/>
+	);
 }
 
 function createSpotTokenContractValue(

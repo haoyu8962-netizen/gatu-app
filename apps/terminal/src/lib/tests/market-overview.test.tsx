@@ -369,6 +369,71 @@ describe("MarketOverview", () => {
 		expect(container.textContent).not.toContain("0.0000%");
 	});
 
+	it("keeps the metric row invisible and busy until the first fresh market context arrives", () => {
+		renderOverview();
+		const overview = container.querySelector("[data-market-overview]");
+		const row = container.querySelector("[data-market-overview-row]");
+		expect(overview?.getAttribute("aria-busy")).toBe("true");
+		expect(overview?.getAttribute("data-market-overview-state")).toBe("pending");
+		expect(row?.classList.contains("invisible")).toBe(true);
+		expect(getStat("price").textContent).toContain("Mark71.8");
+
+		mocks.perpCtxEvent = {
+			coin: "xyz:BRENTOIL",
+			ctx: {
+				markPx: "80",
+				prevDayPx: "64",
+				oraclePx: "79",
+				dayNtlVlm: "10000000",
+				openInterest: "2",
+				funding: "0.00001",
+			},
+		};
+		mocks.perpCtxStatus = "active";
+		renderOverview();
+
+		expect(container.querySelector("[data-market-overview]")).toBe(overview);
+		expect(overview?.hasAttribute("aria-busy")).toBe(false);
+		expect(overview?.getAttribute("data-market-overview-state")).toBe("ready");
+		expect(container.querySelector("[data-market-overview-row]")).toBe(row);
+		expect(row?.classList.contains("invisible")).toBe(false);
+	});
+
+	it("returns to the invisible pending state on a same-instance market switch until the new context arrives", () => {
+		mocks.perpCtxStatus = "active";
+		mocks.perpCtxEvent = {
+			coin: "xyz:BRENTOIL",
+			ctx: {
+				markPx: "80",
+				prevDayPx: "64",
+				oraclePx: "79",
+				dayNtlVlm: "10000000",
+				openInterest: "2",
+				funding: "0.00001",
+			},
+		};
+		renderOverview();
+		expect(container.querySelector("[data-market-overview-row]")?.classList.contains("invisible")).toBe(false);
+
+		mocks.selectedMarket = { ...mocks.selectedMarket, name: "xyz:SECOND", pairName: "SECOND-USDC", markPx: "42" };
+		mocks.perpCtxEvent = undefined;
+		mocks.perpCtxStatus = "idle";
+		renderOverview();
+		expect(container.querySelector("[data-market-overview]")?.getAttribute("data-market-overview-state")).toBe(
+			"pending",
+		);
+		expect(container.querySelector("[data-market-overview-row]")?.classList.contains("invisible")).toBe(true);
+
+		mocks.perpCtxEvent = {
+			coin: "xyz:SECOND",
+			ctx: { markPx: "42", prevDayPx: "40", oraclePx: "41.9", dayNtlVlm: "5000", openInterest: "1", funding: "0" },
+		};
+		mocks.perpCtxStatus = "active";
+		renderOverview();
+		expect(container.querySelector("[data-market-overview]")?.getAttribute("data-market-overview-state")).toBe("ready");
+		expect(container.querySelector("[data-market-overview-row]")?.classList.contains("invisible")).toBe(false);
+	});
+
 	it("uses realtime context after the subscription becomes available", () => {
 		renderOverview();
 		expect(getStat("price").textContent).toContain("Mark71.8");

@@ -272,3 +272,11 @@ ADR 0009 决策 2–5、7 被 ADR 0010 取代；历史迁移记录保留为证�
 | vite-development-cache | 1 | 沙箱 listen EPERM，非界面回归 |
 
 并发敏感的 mobile-agent-sync-route、establish-connection-modal、chart-store、portfolio-overview，以及初轮失败的 orderbook-boot、global-modals-hip3-disclaimer 在最终全量中通过。未为已知失败放宽断言；无浏览器实测结论，reviewer 栏保留空缺。最终 `pnpm memory:index && pnpm memory:check && pnpm memory:test` 退出 0（8/8）；`git diff --check` 退出 0。
+
+## 后续（2026-09-16）：市场头指标行抖动
+
+用户报告刷新时市场头抖动。`header-jitter.mjs`（每 40 ms 记录市场头各盒子）在生产构建上定位：挂载时六个指标值是可见的 `-`/`—`（Mark 22 px、Oracle 29、24h Change 54、Volume 54、OI 63、Funding 86），76 ms 后首条 `activeAssetCtx` 快照到达，列宽变为 43/43/85/117/117/122，Oracle 右移 20 px、24h Change 34、Volume 66、Open Interest 129、Funding 183；此后 `tabular-nums` 使盒子稳定。根因：`market-overview.tsx` 在快照前把短横线当值传入内容自适应宽度的列。
+
+官方终端核对（`hl-infobar.mjs`，`/trade/BTC` → 切换 ETH）：初始加载信息栏在 2,001 ms 出现时已完整带值，之前不存在；切换市场后旧值保留至约 1.6 s，信息栏消失约 0.4 s，再以 ETH 数据完整出现，过程中无短横线。
+
+修复：`MarketOverviewView` 新增 `pending` prop（section `aria-busy`、`data-market-overview-state`，指标行 `invisible`）；`MarketOverview` 以 `liveCtx === undefined` 为 pending，切换市场时随订阅重置回到 pending（不显示上一市场的值，比官方严格）。新增两条测试：首帧 pending/不可见、快照后 ready 且节点身份不变；同实例切换市场回到 pending 再就绪。`market-overview`(30)、`mobile-market-bar`、`i18n-reactivity-contract`、`hidden-horizontal-scrollbar-contract` 通过，terminal typecheck 通过。开发服务器复测：挂载帧 pending/hidden → 77 ms 后 ready/visible，各列直接为最终位置，之后 7 s 内零盒子变化。

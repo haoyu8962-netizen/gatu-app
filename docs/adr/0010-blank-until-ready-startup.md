@@ -32,3 +32,7 @@
 覆盖 trade/portfolio/vaults 同一空 fallback 与无 recoverable hydration error；持久中文首帧无英文导航；桌面/移动 chrome 在 busy→ready 保持 DOM identity；仅 sr-only 播报，不显示 Loading。保留原运行时交互、几何、热切语言断言，运行全量 Vitest、Biome、typecheck、i18n extract、build 和 memory 检查。实际结果与 reviewer 浏览器测量分开记录于[任务记录](../work-memory/sessions/2026-09-16-remove-startup-placeholders.md)。
 
 实测（2026-09-16，生产构建本地静态托管，热访问）：`/trade/BTC` 英文/中文 chrome 约 0.5 s、内容约 0.56–0.65 s；`/portfolio` 中文 0.22 s；阿拉伯语 `dir` 先于内容切换；4× CPU 下 chrome 0.9–1.3 s；六语刷新均无英文或路由闪现。完整表格见[任务记录](../work-memory/sessions/2026-09-16-remove-startup-placeholders.md)。
+
+## 补充（2026-09-16）：市场头指标行随首批快照一次性出现
+
+刷新时市场头（`MarketOverview`）曾在 `activeAssetCtx` 首条快照到达前把 `-`/`—` 当值渲染，列宽自适应，快照到达（挂载后约 80 ms）时六列被整体推开 20–183 px。官方终端实测：初始加载信息栏在数据到齐前不存在，出现时即完整；切换市场时旧值保留约 1.6 s，信息栏卸载约 0.4 s，再以新市场数据完整出现，从不显示短横线。本项目采用更严格的做法：`MarketOverviewView` 增加 `pending`（`aria-busy` + 指标行 `visibility: hidden`，高度保留），`MarketOverview` 在选中市场的新鲜资产快照（`liveCtx`）到达前保持 pending，切换市场时同样回到 pending，不显示上一市场的值。单个指标在快照后仍缺失时保留 `—` 作为真实的"不可用"值。实测修复后挂载帧 pending → 77 ms 后 ready，各列直接落在最终位置，之后零位移。
