@@ -36,3 +36,17 @@
 ## 补充（2026-09-16）：市场头指标行随首批快照一次性出现
 
 刷新时市场头（`MarketOverview`）曾在 `activeAssetCtx` 首条快照到达前把 `-`/`—` 当值渲染，列宽自适应，快照到达（挂载后约 80 ms）时六列被整体推开 20–183 px。官方终端实测：初始加载信息栏在数据到齐前不存在，出现时即完整；切换市场时旧值保留约 1.6 s，信息栏卸载约 0.4 s，再以新市场数据完整出现，从不显示短横线。本项目采用更严格的做法：`MarketOverviewView` 增加 `pending`（`aria-busy` + 指标行 `visibility: hidden`，高度保留），`MarketOverview` 在选中市场的新鲜资产快照（`liveCtx`）到达前保持 pending，切换市场时同样回到 pending，不显示上一市场的值。单个指标在快照后仍缺失时保留 `—` 作为真实的"不可用"值。实测修复后挂载帧 pending → 77 ms 后 ready，各列直接落在最终位置，之后零位移。
+
+## 补充（2026-09-16）：网页字体不做回退字体绘制
+
+指标行修复后，`header-jitter.mjs` 以 `FONT_DELAY=2500` 延迟字体文件仍能复现"Oracle / 24h Change / 24h Volume 左右缩"：字体到达瞬间，标签宽度从系统回退字体的度量收缩为 IBM Plex Sans 的度量（Funding 91.6→85.6 px、24h Volume 55.2→54.1、Open Interest 62.9→62.5），市场名 84.5→75.4，市场触发器 195.8→186.6，徽章与整个指标行的 x 从 274.8 移到 265.6。根因是 `@fontsource-variable/inter` 与本地 IBM Plex 声明均为 `font-display: swap`：首帧先以回退字体排版并绘制，webfont 到达后换字并重排（FOUT）。
+
+官方核对：`app.hyperliquid.xyz` 的 `@font-face`（OurFont/OurFontBold = Inter、LogoFont、Teodor）都不声明 `font-display`，按浏览器默认在字体可用前文本不可见（block 期约 3 s）；冷加载 trace 中 chrome 无文字帧约 0.75 s，文字随 Inter 一起在 1.43 s 出现，从未出现回退字体的绘制。
+
+决策：
+
+1. `styles.css` 不再 `@import` fontsource 样式，改为显式声明 Inter Variable 的七个子集与 IBM Plex Sans Variable，全部 `font-display: block`；head 对 latin 子集的预加载不变。
+2. 启动门控 `StartupReadyGate`（原 `I18nReadyGate`）除持久语言目录外，还通过 `document.fonts.load` 等待 Inter 与 IBM Plex 各一个规格，上限 `FONT_READY_TIMEOUT_MS`（3 s，与 block 期对齐）；字体已预加载时等待约为零。缺少 CSS Font Loading API 或加载失败时按就绪处理，不阻塞页面。
+3. `MarketOverview` 的 pending 叠加 IBM Plex 两个规格的就绪（`useFontsReady`），覆盖门控超时与切换市场的情况。
+
+后果：正常情况下首帧已按最终字体度量排版，不再因换字重排；字体极端缓慢时最多空白 3 s 后以回退字体显示，与 block 语义一致。实测记录在[任务记录](../work-memory/sessions/2026-09-16-remove-startup-placeholders.md)。

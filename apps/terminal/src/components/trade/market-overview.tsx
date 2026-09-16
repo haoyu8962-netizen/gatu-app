@@ -19,7 +19,9 @@ import {
 } from "@/domain/trade/market-price";
 import { useMarketPriceFlash } from "@/hooks/trade/use-market-price-flash";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useFontsReady } from "@/hooks/ui/use-fonts-ready";
 import { cn } from "@/lib/cn";
+import { MARKET_CLOSE_FONT_SPECS } from "@/lib/fonts/font-readiness";
 import {
 	formatClockDuration,
 	formatNumber,
@@ -149,6 +151,7 @@ export function MarketOverview() {
 	const { getMarketByName } = useMarketsInfo();
 	const isSpot = selectedMarketInfo?.kind === "spot";
 	const { copiedValue: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
+	const marketCloseFontReady = useFontsReady(MARKET_CLOSE_FONT_SPECS);
 
 	const perpCoin = getMarketApiCoin(selectedMarketInfo);
 	const spotCoin = getSpotMarketApiCoin(selectedMarketInfo);
@@ -363,7 +366,7 @@ export function MarketOverview() {
 		<MarketOverviewView
 			stats={stats}
 			ariaLabel={selectedMarketInfo?.pairName ?? t(MARKET_HEADER_LABELS.price)}
-			pending={liveCtx === undefined}
+			pending={liveCtx === undefined || !marketCloseFontReady}
 		/>
 	);
 }

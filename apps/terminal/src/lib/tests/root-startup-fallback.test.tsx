@@ -110,3 +110,37 @@ it.each(["/trade/BTC", "/portfolio", "/vaults"])(
 		}
 	},
 );
+
+it("keeps /trade/BTC empty until the persisted locale and the startup fonts are both usable", async () => {
+	state.pathname = "/trade/BTC";
+	state.gateReady = true;
+	state.runtimeReady = true;
+	const resolvers: Array<() => void> = [];
+	const load = vi.fn(
+		() =>
+			new Promise<void>((resolve) => {
+				resolvers.push(resolve);
+			}),
+	);
+	Object.defineProperty(document, "fonts", { configurable: true, value: { check: () => false, load } });
+	const host = document.createElement("div");
+	const root = createRoot(host);
+	try {
+		act(() => root.render(<RootComponent />));
+		expect(host.innerHTML).toBe(renderToString(<StartupFallback />));
+		expect(load).toHaveBeenCalledWith('400 14px "Inter Variable"');
+		expect(load).toHaveBeenCalledWith('400 13px "IBM Plex Sans Variable"');
+		act(() => {
+			i18n.loadAndActivate({ locale: "zh", messages: {} });
+			state.finishLocale();
+		});
+		expect(host.innerHTML).toBe(renderToString(<StartupFallback />));
+		await act(async () => {
+			for (const resolve of resolvers) resolve();
+		});
+		expect(host.textContent).toBe("交易");
+	} finally {
+		act(() => root.unmount());
+		Reflect.deleteProperty(document, "fonts");
+	}
+});

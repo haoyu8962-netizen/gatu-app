@@ -112,6 +112,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Keep theme bootstrap, head preloads, Service Worker registration and shell caching. Wait for the client runtime and persisted locale catalog before rendering real chrome; document routes retain independent prerendered content.
 - Desktop and mobile trade loading states use their real frame/header/navigation/footer with an empty busy workspace. Reveal market content inside the existing frame when ready, preserving chrome DOM identity and mobile navigation state. Dashboard pending routes use the empty announcement; loaded pages own their real frame.
 - Runtime views stay pure, deterministic and props-only. Preserve mounted component behavior, translated labels, drafts, protocol values and every signing/data-availability guard. Do not reintroduce placeholder trees, shell-specific English catalogs or hydration route-surface overrides.
+- Application webfonts use `font-display: block`, and the startup gate waits (bounded) for the persisted locale catalog and the preloaded startup fonts before the first real render, so text never paints in a fallback font and reflows.
 
 ## Verification
 

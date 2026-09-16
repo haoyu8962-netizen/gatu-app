@@ -8,6 +8,7 @@ import { NotFoundPage } from "@/components/pages/not-found-page";
 import { RouterErrorPage } from "@/components/pages/router-error-page";
 import { StartupFallback } from "@/components/startup-fallback";
 import { isRtlLocale } from "@/config/i18n";
+import { areFontsReady, STARTUP_FONT_SPECS, waitForFonts } from "@/lib/fonts/font-readiness";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
 import { buildRootHead } from "@/lib/seo";
@@ -83,27 +84,43 @@ function AppRuntime({ fallback }: { fallback: React.ReactNode }) {
 	if (!clientRuntimeReady) return <>{fallback}</>;
 
 	return (
-		<I18nReadyGate fallback={fallback}>
+		<StartupReadyGate fallback={fallback}>
 			<ExchangeScopeProvider>
 				<MarketsInfoProvider>
 					<Outlet />
 					<AppRuntimeOverlays />
 				</MarketsInfoProvider>
 			</ExchangeScopeProvider>
-		</I18nReadyGate>
+		</StartupReadyGate>
 	);
 }
 
-// Gates first render until the persisted language's catalog is active, so the page renders ONCE in
-// the persisted locale — no flash of English / LTR→RTL jump while the lazy catalog loads.
-function I18nReadyGate({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) {
-	const [ready, setReady] = useState(() => i18n.locale === getPersistedLocale());
+// Gates first render until the persisted language's catalog is active and the preloaded startup
+// fonts are usable, so the page renders ONCE in the persisted locale with final text metrics — no
+// flash of English / LTR→RTL jump while the lazy catalog loads, and no fallback-font reflow when the
+// webfonts arrive. The font wait is capped at FONT_READY_TIMEOUT_MS, matching font-display: block.
+function StartupReadyGate({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) {
+	const [ready, setReady] = useState(() => i18n.locale === getPersistedLocale() && areFontsReady(STARTUP_FONT_SPECS));
 	useEffect(() => {
 		if (ready) return;
 		let active = true;
-		i18nReady.finally(() => {
-			if (active) setReady(true);
-		});
+		let localeReady = i18n.locale === getPersistedLocale();
+		let fontsReady = areFontsReady(STARTUP_FONT_SPECS);
+		const reveal = () => {
+			if (active && localeReady && fontsReady) setReady(true);
+		};
+		if (!localeReady) {
+			i18nReady.finally(() => {
+				localeReady = true;
+				reveal();
+			});
+		}
+		if (!fontsReady) {
+			waitForFonts(STARTUP_FONT_SPECS).then(() => {
+				fontsReady = true;
+				reveal();
+			});
+		}
 		return () => {
 			active = false;
 		};

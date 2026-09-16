@@ -11,6 +11,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - Removed startup skeletons: refresh now waits for the persisted locale, then shows real chrome and market content without route or language flashes.
 - The market header metric row now appears once with the first market snapshot instead of
   reflowing from dashes to values, on refresh and on market switches.
+- Webfonts are now declared with `font-display: block`, and startup waits (bounded) for the
+  preloaded Inter and IBM Plex faces, so navigation, market names, badges and the market
+  metrics no longer shrink when the fonts arrive.
 
 - Dashboard startup now shares each page’s frame, responsive navigation and fixed
   desktop footer, preserving route-specific canvas colors, widths and padding.

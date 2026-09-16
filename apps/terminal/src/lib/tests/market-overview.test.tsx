@@ -434,6 +434,44 @@ describe("MarketOverview", () => {
 		expect(container.querySelector("[data-market-overview-row]")?.classList.contains("invisible")).toBe(false);
 	});
 
+	it("keeps the metric row pending until the market-close font faces have loaded", async () => {
+		const resolveLoads: Array<() => void> = [];
+		const load = vi.fn(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveLoads.push(resolve);
+				}),
+		);
+		Object.defineProperty(document, "fonts", { configurable: true, value: { check: () => false, load } });
+		try {
+			mocks.perpCtxStatus = "active";
+			mocks.perpCtxEvent = {
+				coin: "xyz:BRENTOIL",
+				ctx: {
+					markPx: "80",
+					prevDayPx: "64",
+					oraclePx: "79",
+					dayNtlVlm: "10000000",
+					openInterest: "2",
+					funding: "0.00001",
+				},
+			};
+			renderOverview();
+			expect(container.querySelector("[data-market-overview]")?.getAttribute("data-market-overview-state")).toBe(
+				"pending",
+			);
+			expect(load).toHaveBeenCalledWith('600 13px "IBM Plex Sans Variable"');
+			await act(async () => {
+				for (const resolve of resolveLoads) resolve();
+			});
+			expect(container.querySelector("[data-market-overview]")?.getAttribute("data-market-overview-state")).toBe(
+				"ready",
+			);
+		} finally {
+			Reflect.deleteProperty(document, "fonts");
+		}
+	});
+
 	it("uses realtime context after the subscription becomes available", () => {
 		renderOverview();
 		expect(getStat("price").textContent).toContain("Mark71.8");

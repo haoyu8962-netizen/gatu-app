@@ -280,3 +280,17 @@ ADR 0009 决策 2–5、7 被 ADR 0010 取代；历史迁移记录保留为证�
 官方终端核对（`hl-infobar.mjs`，`/trade/BTC` → 切换 ETH）：初始加载信息栏在 2,001 ms 出现时已完整带值，之前不存在；切换市场后旧值保留至约 1.6 s，信息栏消失约 0.4 s，再以 ETH 数据完整出现，过程中无短横线。
 
 修复：`MarketOverviewView` 新增 `pending` prop（section `aria-busy`、`data-market-overview-state`，指标行 `invisible`）；`MarketOverview` 以 `liveCtx === undefined` 为 pending，切换市场时随订阅重置回到 pending（不显示上一市场的值，比官方严格）。新增两条测试：首帧 pending/不可见、快照后 ready 且节点身份不变；同实例切换市场回到 pending 再就绪。`market-overview`(30)、`mobile-market-bar`、`i18n-reactivity-contract`、`hidden-horizontal-scrollbar-contract` 通过，terminal typecheck 通过。开发服务器复测：挂载帧 pending/hidden → 77 ms 后 ready/visible，各列直接为最终位置，之后 7 s 内零盒子变化。
+
+## 后续（2026-09-16）：字体换字导致的市场头横向收缩
+
+用户报告指标行修复后 Oracle / 24h Change / 24h Volume 等刷新时仍"左右缩"。`header-jitter.mjs` 加 `FONT_DELAY=2500`（`page.route` 把 woff/ttf 请求延迟 2.5 s）在修复前的生产构建复现：3,929 ms 字体到达时六个标签宽度 23.4→22.4、30.3→29.3、56.4→53.7、55.2→54.1、62.9→62.5、91.6→85.6 px，市场触发器 195.8→186.6，市场名 84.5→75.4，徽章与指标行 x 274.8→265.6；`document.fonts.status` 在 3,939 ms 由 loading 变 loaded。根因：`@fontsource-variable/inter` 的 index.css 与本地 IBM Plex Sans Variable 声明均为 `font-display: swap`，首帧以系统回退字体排版并绘制，webfont 到达后换字重排。
+
+官方核对：`app.hyperliquid.xyz` 的 `config-*.css` / `index-*.css` 中 OurFont/OurFontBold（Inter）、LogoFont、Teodor 的 `@font-face` 都不声明 `font-display`（浏览器默认 block 期），与此前冷加载 trace 中 chrome 无文字约 750 ms、文字随 Inter 在 1,427 ms 出现一致；未见回退字体绘制。
+
+修复：(1) `styles.css` 移除 fontsource `@import`，显式声明 Inter Variable 七个子集与 IBM Plex Sans Variable，全部 `font-display: block`；构建产物 `styles-Bx6CbX6Q.css` 含 8 处 `font-display:block`、0 处 swap，`_shell.html` 对两份 latin 文件的预加载不变。(2) 新增 `lib/fonts/font-readiness.ts`（`areFontsReady` / `waitForFonts`，上限 `FONT_READY_TIMEOUT_MS` 3 s，缺少 API 或加载失败按就绪）与 `hooks/ui/use-fonts-ready.ts`。(3) `__root.tsx` 的 `I18nReadyGate` 改为 `StartupReadyGate`，同时等待持久语言目录与 Inter / IBM Plex 各一规格。(4) `MarketOverview` 的 pending 叠加 IBM Plex 两规格就绪。
+
+测试：新增 `font-readiness`（6）、`startup-font-display-contract`（3）、`root-startup-fallback` 字体门控用例与 `market-overview` 字体 pending 用例；`root-provider-split` 改指向新门控名。定向运行 60/60 通过，terminal typecheck 与 Biome 通过。全量 `pnpm --filter @gatu/terminal test`（默认并发，163.7 s）：566 files = 555 passed / 10 failed / 1 skipped，6,285 tests = 6,234 passed / 50 failed / 1 skipped；失败的 9 个文件为前文列出的既有基线（desktop-positions-panel-shell、global-settings-slippage-effective、referral-ui-contract、adaptive-modal-swipe-dismissal、mobile-input-zoom-contract、position-market-close-modal、orders-table-visual-contract、mobile-trade-tp-sl-contract、mobile-order-risk-summary-contract），另一个 mobile-agent-sync-route 为并发敏感文件，单独重跑 20/20 通过；未放宽任何断言。`pnpm memory:index/check/test` 与 `pnpm i18n:extract` 均无变更。
+
+生产实测（本地静态 3030，热访问，headless Chromium 1440×900）：`FONT_DELAY=2500` 下市场头在 2,630 ms 挂载时 `document.fonts.status` 已为 loaded，市场名 75.4、触发器 186.6、徽章 162.4 / 204.1、指标行 x 265.6 即为最终值；2,844 ms pending→ready 指标行整体显现，之后 8 s 内只有数值文本变化，盒子零位移。无延迟三次：en chrome 483–576 ms、指标就绪 678–921 ms；zh chrome 493–508 ms、就绪 639–752 ms，首帧即中文标签（标记价 / 预言机 / 24小时变化 / 24小时成交量 / 未平仓量 / 资金费率），与字体门控前的 0.51–0.64 s 同量级。构建通过：总 gzip 3,081,390（基线 −73,317），trade 静态闭包 1,568,753（−12,463），移动增量 111,717（+1,137），桌面增量 199,778（+7,790），未改基线。
+
+限制：并发 `pnpm build` 写入 `.output/` 时 Vite 开发服务器会对每个产物触发整页 reload，本轮开发服务器测量因此无效，只采信生产构建；浏览器测量不代表真实设备验收。
