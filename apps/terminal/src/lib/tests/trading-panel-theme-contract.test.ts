@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_THEME_CSS = readFileSync(resolve(TEST_DIR, "../..", "styles.css"), "utf8");
-const INPUT_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "components/ui/input.tsx"), "utf8");
+const INPUT_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "components/ui/input-styles.ts"), "utf8");
 const TRADING_CTA_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "lib/ui/trading-cta.ts"), "utf8");
 
 describe("trading panel theme contract", () => {

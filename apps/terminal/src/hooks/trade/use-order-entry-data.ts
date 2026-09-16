@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { SIDE_LABELS } from "@/config/trade-panel-labels";
 import type { SideLabels } from "@/config/ui-text";
 import { getSpotAvailableValue, getSpotBalance } from "@/domain/trade/balances";
 import {
@@ -153,8 +154,13 @@ export function useOrderEntryData({
 		isBlocked: isAvailabilityBlocked,
 	} = getOrderAvailabilityFlags(isConnected, availabilityStatus);
 	const sideLabels: SideLabels = isSpotMarket
-		? { buy: t`Buy`, sell: t`Sell`, buyAria: t`Buy`, sellAria: t`Sell` }
-		: { buy: t`Long`, sell: t`Short`, buyAria: t`Buy Long`, sellAria: t`Sell Short` };
+		? { buy: t(SIDE_LABELS.buy), sell: t(SIDE_LABELS.sell), buyAria: t(SIDE_LABELS.buy), sellAria: t(SIDE_LABELS.sell) }
+		: {
+				buy: t(SIDE_LABELS.long),
+				sell: t(SIDE_LABELS.short),
+				buyAria: t(SIDE_LABELS.buyLong),
+				sellAria: t(SIDE_LABELS.sellShort),
+			};
 
 	const derived = deriveOrderEntry({
 		isConnected,

@@ -15,6 +15,7 @@ import { AccountPanel } from "@/components/trade/tradebox/account-panel";
 import { OrderConfirmationModal } from "@/components/trade/tradebox/order-confirmation-modal";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
 import { TradeFormTif } from "@/components/trade/tradebox/trade-form-tif";
+import { TradeHeader } from "@/components/trade/tradebox/trade-header";
 import { TradeOptionCheckboxes } from "@/components/trade/tradebox/trade-option-checkboxes";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
@@ -52,6 +53,8 @@ const zhTranslations: Record<string, string> = {
 	"Language and number format": "语言和数字格式",
 	"Primary navigation": "主导航",
 	Markets: "市场",
+	Market: "市价",
+	Limit: "限价",
 	Trade: "交易",
 	Account: "账户",
 	"Stop Market": "止损市价",
@@ -261,6 +264,17 @@ function TestSurface() {
 		<>
 			<LanguageSwitcher />
 			<MobileBottomNav activeTab="markets" onTabChange={() => {}} className="static" />
+			<TradeHeader
+				compact
+				orderType="market"
+				side="buy"
+				sideLabels={{ buy: "Long", sell: "Short", buyAria: "Buy Long", sellAria: "Sell Short" }}
+				marketKind="perp"
+				onOrderTypeChange={() => {}}
+				onSideChange={() => {}}
+				isLeveraged
+			/>
+
 			<TradeOptionCheckboxes
 				reduceOnly={{ checked: reduceOnly, disabled: false, onCheckedChange: setReduceOnly }}
 				tpSl={{ checked: false, disabled: false, onCheckedChange: () => {} }}
@@ -522,6 +536,8 @@ describe("language hot switching", () => {
 		const originalBook = container.querySelector(".orderbook-panel-container");
 		const originalGrouping = container.querySelector('[aria-label="Price grouping"]');
 		const originalCheckbox = checkbox;
+		const originalTradeControls = container.querySelector(".trade-control-grid");
+		const originalTradeTabs = [...container.querySelectorAll(".trade-order-type-button")];
 		const originalMobileNav = container.querySelector<HTMLElement>('[aria-label="Primary navigation"]');
 		const originalPath = window.location.pathname;
 		act(() => activateLocale("zh"));
@@ -529,6 +545,10 @@ describe("language hot switching", () => {
 		expect(container.querySelector('[aria-label="语言和数字格式"]')).not.toBeNull();
 		const localizedCheckbox = container.querySelector<HTMLElement>('[aria-label="只减仓"]');
 		expect(localizedCheckbox).toBe(originalCheckbox);
+		expect(container.querySelector(".trade-control-grid")).toBe(originalTradeControls);
+		expect([...container.querySelectorAll(".trade-order-type-button")]).toEqual(originalTradeTabs);
+		expect(originalTradeTabs[0]?.textContent).toBe("市价");
+		expect(originalTradeTabs[1]?.textContent).toBe("限价");
 		expect(localizedCheckbox?.getAttribute("aria-checked")).toBe("true");
 		expect(window.location.pathname).toBe(originalPath);
 		expect(container.textContent).toContain("只减仓");

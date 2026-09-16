@@ -2,6 +2,8 @@
 
 The desktop order-entry panel must show every ordinary order type in its default grid height without an internal scroll step. Shortened user layouts and unusually long action feedback may need local overflow, but the order-type header must remain visible and all fields, actions and summaries must remain reachable. Do not enlarge the chart, book or page when changing order type.
 
+The desktop header, default field frames, CTA and summary chrome now come from views shared with the startup shell; see [ADR 0009](adr/0009-startup-placeholder-single-source.md) and the [surface 4 migration record](work-memory/sessions/2026-09-16-trade-panel-view-migration.md).
+
 ## Reference and initial findings
 
 Inspected [Hyperliquid HYPE](https://app.hyperliquid.xyz/trade/HYPE) on 2026-09-08. At 2016×1358 its Scale panel stays 670px tall, with 33px inline fields and 8px spacing. Total Orders and Size Skew share one row. Its footer is 179px and shows Start Price, End Price, Order Value, Margin Required and Fees. Both order count and size skew remain in the form rather than being repeated in the footer.

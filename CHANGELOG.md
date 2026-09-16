@@ -8,6 +8,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Desktop order-entry startup placeholders now share the real panel header, default
+  field frames, action button and summary chrome, keeping their geometry stable as
+  the trading interface becomes ready.
+
 - Desktop order-book startup chrome now shares the real column headers, side
   containers, grouping trigger and spread row, with matching tab-strip geometry.
 

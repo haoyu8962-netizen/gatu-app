@@ -2,7 +2,9 @@ import { Checkbox } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
+import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { cn } from "@/lib/cn";
+import { TradeOptionCheckboxesView } from "./trade-option-checkboxes-view";
 
 interface CheckboxOption {
 	checked: boolean;
@@ -26,34 +28,41 @@ export function TradeOptionCheckboxes({ className, reduceOnly, tpSl, children, t
 	const labelClassName = tradingPanel ? mobileChrome.optionLabel : undefined;
 
 	return (
-		<div data-slot="trade-order-options" className={cn(className, tradingPanel && mobileChrome.optionsGrid)}>
-			{reduceOnly && (
-				<Checkbox
-					aria-label={t`Reduce Only`}
-					checked={reduceOnly.checked}
-					onCheckedChange={(checked: boolean | "indeterminate") => reduceOnly.onCheckedChange(checked === true)}
-					disabled={reduceOnly.disabled}
-					className={optionClassName}
-					label={t`Reduce Only`}
-					controlClassName={controlClassName}
-					indicatorClassName={indicatorClassName}
-					labelClassName={labelClassName}
-				/>
-			)}
-			{children && <div className="col-start-2">{children}</div>}
-			{tpSl && (
-				<Checkbox
-					aria-label={t`Take Profit / Stop Loss`}
-					checked={tpSl.checked}
-					onCheckedChange={(checked: boolean | "indeterminate") => tpSl.onCheckedChange(checked === true)}
-					disabled={tpSl.disabled}
-					className={cn(optionClassName, tradingPanel && "col-span-2")}
-					label={t`TP/SL`}
-					controlClassName={controlClassName}
-					indicatorClassName={indicatorClassName}
-					labelClassName={labelClassName}
-				/>
-			)}
-		</div>
+		<TradeOptionCheckboxesView
+			className={className}
+			tradingPanel={tradingPanel}
+			reduceOnly={
+				reduceOnly && (
+					<Checkbox
+						aria-label={t(TRADE_PANEL_LABELS.reduceOnly)}
+						checked={reduceOnly.checked}
+						onCheckedChange={(checked: boolean | "indeterminate") => reduceOnly.onCheckedChange(checked === true)}
+						disabled={reduceOnly.disabled}
+						className={optionClassName}
+						label={t(TRADE_PANEL_LABELS.reduceOnly)}
+						controlClassName={controlClassName}
+						indicatorClassName={indicatorClassName}
+						labelClassName={labelClassName}
+					/>
+				)
+			}
+			tpSl={
+				tpSl && (
+					<Checkbox
+						aria-label={t(TRADE_PANEL_LABELS.tpSlAria)}
+						checked={tpSl.checked}
+						onCheckedChange={(checked: boolean | "indeterminate") => tpSl.onCheckedChange(checked === true)}
+						disabled={tpSl.disabled}
+						className={cn(optionClassName, tradingPanel && "col-span-2")}
+						label={t(TRADE_PANEL_LABELS.tpSl)}
+						controlClassName={controlClassName}
+						indicatorClassName={indicatorClassName}
+						labelClassName={labelClassName}
+					/>
+				)
+			}
+		>
+			{children}
+		</TradeOptionCheckboxesView>
 	);
 }

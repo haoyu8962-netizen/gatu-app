@@ -325,15 +325,10 @@ msgid "Access restricted"
 msgstr "पहुँच प्रतिबंधित"
 
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
+#: src/config/trade-panel-labels.ts
 #: src/hooks/trade/use-account-mode-labels.ts
 #: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
@@ -366,8 +361,7 @@ msgid "Account Margin Ratio"
 msgstr "खाता मार्जिन अनुपात"
 
 #: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Account mode"
 msgstr "खाता मोड"
 
@@ -531,13 +525,11 @@ msgstr "लीवरेज समायोजित करें"
 msgid "Adjust Margin"
 msgstr "मार्जिन समायोजित करें"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Advanced"
 msgstr "उन्नत"
 
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Advanced order types"
 msgstr "उन्नत ऑर्डर प्रकार"
 
@@ -913,7 +905,6 @@ msgstr "USDC का स्वचालित जमा विफल रहा"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -921,7 +912,7 @@ msgstr "USDC का स्वचालित जमा विफल रहा"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -1091,11 +1082,10 @@ msgstr "बिल्डर पुरस्कार स्रोत के अ�
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-entry-data.ts
-#: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy"
 msgstr "खरीदें"
 
@@ -1104,7 +1094,7 @@ msgstr "खरीदें"
 msgid "Buy / Long"
 msgstr "खरीदें / लॉन्ग"
 
-#: src/hooks/trade/use-order-entry-data.ts
+#: src/config/trade-panel-labels.ts
 msgid "Buy Long"
 msgstr "लॉन्ग खरीदें"
 
@@ -1806,7 +1796,6 @@ msgid "Connect wallet"
 msgstr "वॉलेट कनेक्ट करें"
 
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
@@ -1815,7 +1804,6 @@ msgstr "वॉलेट कनेक्ट करें"
 #: src/config/desktop-nav.ts
 #: src/config/ui-text.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
-#: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "वॉलेट कनेक्ट करें"
 
@@ -2061,14 +2049,13 @@ msgstr "वॉल्ट बनाएँ"
 msgid "Creating your wallet. Please wait..."
 msgstr "आपका वॉलेट बनाया जा रहा है। कृपया प्रतीक्षा करें..."
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Cross"
 msgstr "क्रॉस"
@@ -2736,10 +2723,9 @@ msgstr "इक्विटी"
 msgid "Est. Fee"
 msgstr "अनु. शुल्क"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Est. Slippage"
 msgstr "अनु. स्लिपेज"
 
@@ -3083,9 +3069,8 @@ msgstr "शुल्क"
 msgid "Fee market for taker and maker rates"
 msgstr "टेकर और मेकर दरों के लिए फ़ीस मार्केट"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Fees"
 msgstr "फ़ीस"
 
@@ -3760,10 +3745,9 @@ msgstr "पुराना पुरस्कार इतिहास"
 msgid "Lending Net Balance"
 msgstr "शुद्ध उधार शेष"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/tradebox/leverage-editor.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Leverage"
 msgstr "Leverage"
@@ -3776,12 +3760,9 @@ msgstr "इस बाज़ार के लिए लीवरेज {currentLe
 msgid "Lifetime USDC rewards"
 msgstr "अब तक के कुल USDC पुरस्कार"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Limit"
 msgstr "लिमिट"
 
@@ -3845,10 +3826,9 @@ msgstr "मोबाइल डिवाइस लिंक करें"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "लिंक किया गया स्टेकिंग खाता: <0>{0}</0>।"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -4053,7 +4033,6 @@ msgstr "ईमेल से लॉग इन करें"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
@@ -4063,8 +4042,8 @@ msgstr "ईमेल से लॉग इन करें"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-entry-data.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Long"
 msgstr "लॉन्ग"
@@ -4094,7 +4073,7 @@ msgstr "Mainnet"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Maker"
 msgstr "मेकर"
 
@@ -4111,11 +4090,10 @@ msgstr "मैन्युअल"
 msgid "Manual Account Summary"
 msgstr "मैन्युअल खाते का सारांश"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Margin"
 msgstr "Margin"
 
@@ -4129,7 +4107,7 @@ msgstr "मार्जिन और खाता जोखिम एक नज�
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "Margin मोड"
 
@@ -4137,11 +4115,10 @@ msgstr "Margin मोड"
 msgid "Margin Ratio"
 msgstr "मार्जिन अनुपात"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -4187,7 +4164,6 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -4203,9 +4179,7 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Market"
 msgstr "बाज़ार"
@@ -5204,16 +5178,15 @@ msgstr "ऑर्डर सबमिट हो गया है। एक्स�
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Order type"
 msgstr "ऑर्डर प्रकार"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -5261,9 +5234,7 @@ msgstr "मूल आकार"
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Other"
 msgstr "अन्य"
 
@@ -5558,7 +5529,7 @@ msgstr "पोर्टफोलियो मूल्य"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Position"
 msgstr "पोजीशन"
 
@@ -5946,15 +5917,13 @@ msgstr "इस टैब में रिकवर हुआ। {expiresAtLabel}
 msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
 msgstr "इस ब्राउज़र में रिकवरी सहेजी नहीं जा सकी। बंद करने से पहले Arbitrum ट्रांज़ैक्शन हैश नोट कर लें।"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6720,11 +6689,10 @@ msgstr "चुनी गई अवधि का PNL"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-entry-data.ts
-#: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell"
 msgstr "बेचें"
 
@@ -6733,7 +6701,7 @@ msgstr "बेचें"
 msgid "Sell / Short"
 msgstr "बेचें / शॉर्ट"
 
-#: src/hooks/trade/use-order-entry-data.ts
+#: src/config/trade-panel-labels.ts
 msgid "Sell Short"
 msgstr "शॉर्ट बेचें"
 
@@ -6815,7 +6783,6 @@ msgstr "{displayName} का PNL साझा करें"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
@@ -6825,8 +6792,8 @@ msgstr "{displayName} का PNL साझा करें"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-entry-data.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Short"
 msgstr "शॉर्ट"
@@ -6903,7 +6870,6 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6932,9 +6898,6 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/order-toast.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -6984,11 +6947,10 @@ msgstr "SL एंट्री से नीचे होना चाहिए"
 msgid "SL Price"
 msgstr "SL मूल्य"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -7495,7 +7457,7 @@ msgstr "सिस्टम अंतिमकरण · हैश उपलब्
 msgid "Take Profit"
 msgstr "Take Profit"
 
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Take Profit / Stop Loss"
 msgstr "प्रॉफिट लें / स्टॉप लॉस"
 
@@ -7547,7 +7509,7 @@ msgstr "Take Profit ट्रिगर मार्क मूल्य से �
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Taker"
 msgstr "टेकर"
 
@@ -8420,11 +8382,10 @@ msgstr "TP एंट्री से नीचे होना चाहिए"
 msgid "TP Price"
 msgstr "TP मूल्य"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "TP/SL"
@@ -8565,8 +8526,7 @@ msgid "Trading in these markets may involve elevated risk, including low liquidi
 msgstr "इन बाज़ारों में ट्रेडिंग में अधिक जोखिम हो सकता है, जिसमें कम लिक्विडिटी, अधिक अस्थिरता, अधूरे दस्तावेज़ और लिक्विडेशन का बढ़ा हुआ जोखिम शामिल है। आगे बढ़ने से पहले जोखिमों का सावधानीपूर्वक आकलन करें और समझें कि प्रत्येक बाज़ार कैसे काम करता है।"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/trade-panel.tsx
-#: src/components/trade/tradebox/trade-panel.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Trading is not available in your region"
 msgstr "आपके क्षेत्र में ट्रेडिंग उपलब्ध नहीं है"
 

@@ -3,11 +3,7 @@ import { resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
-const LEGACY_SHELL_IMPORTS = [
-	"@/components/trade/mobile/mobile-chrome-classes",
-	"@/lib/ui/trading-input",
-	"./desktop-placeholders",
-] as const;
+const LEGACY_SHELL_IMPORTS = ["@/components/trade/mobile/mobile-chrome-classes", "./desktop-placeholders"] as const;
 
 const source = readFileSync(resolve(__dirname, "../../components/trade/layout/app-shell-skeleton.tsx"), "utf8");
 const parsed = ts.createSourceFile("app-shell-skeleton.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
@@ -24,6 +20,7 @@ describe("app shell import boundary", () => {
 				specifier.startsWith("@/config/") ||
 				[
 					"@/lib/cn",
+					"@/components/ui/input-styles",
 					"@phosphor-icons/react",
 					"@/components/brand/gatu-logo",
 					"./desktop-grid-loading-surface",
@@ -37,6 +34,33 @@ describe("app shell import boundary", () => {
 		expect(imports).toContain("../orderbook/orderbook-panel-view");
 		expect(imports).toContain("../orderbook/orderbook-tabs-view");
 		expect(imports).not.toContain("@gatu/ui");
+	});
+
+	it("imports the trade views without runtime primitives or the legacy input helper", () => {
+		expect(imports).toContain("../tradebox/trade-panel-body-view");
+		expect(imports).toContain("../tradebox/trade-header-view");
+		expect(imports).toContain("../tradebox/trade-input-frame-view");
+		expect(imports).toContain("../components/trade-slider-view");
+		expect(imports).toContain("@/components/ui/input-styles");
+		expect(imports).not.toContain("@/lib/ui/trading-input");
+	});
+
+	it("allows views to share the pure input styles without runtime input imports", () => {
+		for (const file of [
+			"trade/tradebox/trade-input-frame-view.tsx",
+			"trade/tradebox/trade-percent-frame-view.tsx",
+			"ui/input-styles.ts",
+		]) {
+			const text = readFileSync(resolve(__dirname, "../../components", file), "utf8");
+			const parsed = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+			for (const statement of parsed.statements.filter(ts.isImportDeclaration)) {
+				if (!ts.isStringLiteral(statement.moduleSpecifier)) throw new Error("Expected a static import");
+				const specifier = statement.moduleSpecifier.text;
+				if (file === "ui/input-styles.ts") expect(specifier).toBe("@/lib/cn");
+				else
+					expect(["react", "@/lib/cn", "@/lib/ui/trading-input", "@/components/ui/input-styles"]).toContain(specifier);
+			}
+		}
 	});
 
 	it("does not retain unused legacy exceptions", () => {

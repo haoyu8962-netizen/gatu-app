@@ -41,13 +41,13 @@ const sharedClasses = [
 	["sizeLabel", "mobile/mobile-trade-size-control.tsx", chrome.sizeLabel],
 	["sizeValue", "mobile/mobile-trade-size-control.tsx", chrome.sizeValue],
 	["sizeSliderRow", "mobile/mobile-trade-size-control.tsx", chrome.sizeSliderRow],
-	["sliderFrame", "components/trade-slider.tsx", chrome.sliderFrame],
+	["sliderFrame", "components/trade-slider-view.tsx", chrome.sliderFrame],
 	["navInner", "mobile/mobile-bottom-nav.tsx", chrome.navInner],
 ] as const;
 
 const composedClasses = [
-	["sliderTrack", "components/trade-slider.tsx", chrome.sliderTrack],
-	["optionsGrid", "tradebox/trade-option-checkboxes.tsx", chrome.optionsGrid],
+	["sliderTrack", "components/trade-slider-view.tsx", chrome.sliderTrack],
+	["optionsGrid", "tradebox/trade-option-checkboxes-view.tsx", chrome.optionsGrid],
 	["option", "tradebox/trade-option-checkboxes.tsx", chrome.option],
 	["optionControl", "tradebox/trade-option-checkboxes.tsx", chrome.optionControl],
 	["optionLabel", "tradebox/trade-option-checkboxes.tsx", chrome.optionLabel],
@@ -75,8 +75,13 @@ describe("mobile chrome parity", () => {
 				key,
 			).toBe(true);
 			const source = readFileSync(resolve(TEST_DIR, `../../components/trade/${file}`), "utf8");
-			expect(source, key).toContain(`mobileChrome.${key}`);
-			expect(source, key).not.toContain(`"${classes}"`);
+			if (key === "sliderFrame") {
+				expect(source).toContain(`export const sliderFrame = "${classes}"`);
+				expect(source).toContain('cn("group/slider", sliderFrame, "touch-none cursor-pointer")');
+			} else {
+				expect(source, key).toContain(`mobileChrome.${key}`);
+				expect(source, key).not.toContain(`"${classes}"`);
+			}
 		}
 		for (const [key, file, classes] of composedClasses) {
 			expect(
@@ -84,11 +89,21 @@ describe("mobile chrome parity", () => {
 				key,
 			).toBe(true);
 			expect(readFileSync(resolve(TEST_DIR, `../../components/trade/${file}`), "utf8"), key).toContain(
-				`mobileChrome.${key}`,
+				key === "optionsGrid"
+					? "tradingPanel && optionsGrid"
+					: key === "sliderTrack"
+						? "cn(sliderTrack,"
+						: `mobileChrome.${key}`,
 			);
 		}
 		const source = readFileSync(resolve(TEST_DIR, "../../components/trade/mobile/mobile-chrome-classes.ts"), "utf8");
 		expect(source).not.toMatch(/\bimport\b|\bfunction\b|=>/);
+		expect(source).toContain('export { optionsGrid } from "../tradebox/trade-option-checkboxes-view"');
+		expect(source).toContain('export { sideBox } from "../tradebox/side-toggle-view"');
+		expect(source).toContain('export { sliderFrame, sliderTrack } from "../components/trade-slider-view"');
+		expect(readFileSync(resolve(TEST_DIR, "../../components/trade/components/trade-slider.tsx"), "utf8")).toContain(
+			"<TradeSliderView",
+		);
 	});
 
 	it("uses the shared navigation sources without importing runtime UI into the shell", () => {

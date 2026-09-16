@@ -325,15 +325,10 @@ msgid "Access restricted"
 msgstr "访问受限"
 
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
+#: src/config/trade-panel-labels.ts
 #: src/hooks/trade/use-account-mode-labels.ts
 #: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
@@ -366,8 +361,7 @@ msgid "Account Margin Ratio"
 msgstr "账户保证金率"
 
 #: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Account mode"
 msgstr "账户模式"
 
@@ -531,13 +525,11 @@ msgstr "调整杠杆"
 msgid "Adjust Margin"
 msgstr "调整保证金"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Advanced"
 msgstr "专业"
 
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Advanced order types"
 msgstr "专业委托类型"
 
@@ -913,7 +905,6 @@ msgstr "USDC 自动存款失败"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -921,7 +912,7 @@ msgstr "USDC 自动存款失败"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -1091,11 +1082,10 @@ msgstr "Builder 奖励是累计的来源明细，并非额外的奖励余额。"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-entry-data.ts
-#: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy"
 msgstr "买入"
 
@@ -1104,7 +1094,7 @@ msgstr "买入"
 msgid "Buy / Long"
 msgstr "买入 / 做多"
 
-#: src/hooks/trade/use-order-entry-data.ts
+#: src/config/trade-panel-labels.ts
 msgid "Buy Long"
 msgstr "买入做多"
 
@@ -1806,7 +1796,6 @@ msgid "Connect wallet"
 msgstr "连接钱包"
 
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
@@ -1815,7 +1804,6 @@ msgstr "连接钱包"
 #: src/config/desktop-nav.ts
 #: src/config/ui-text.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
-#: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "连接钱包"
 
@@ -2061,14 +2049,13 @@ msgstr "创建金库"
 msgid "Creating your wallet. Please wait..."
 msgstr "正在创建你的钱包，请稍候..."
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Cross"
 msgstr "全仓"
@@ -2736,10 +2723,9 @@ msgstr "净值"
 msgid "Est. Fee"
 msgstr "预估费用"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Est. Slippage"
 msgstr "预估滑点"
 
@@ -3083,9 +3069,8 @@ msgstr "手续费"
 msgid "Fee market for taker and maker rates"
 msgstr "吃单与挂单费率市场"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Fees"
 msgstr "费用"
 
@@ -3760,10 +3745,9 @@ msgstr "旧版奖励历史"
 msgid "Lending Net Balance"
 msgstr "借贷净余额"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/tradebox/leverage-editor.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Leverage"
 msgstr "杠杆"
@@ -3776,12 +3760,9 @@ msgstr "该市场的杠杆固定为 {currentLeverage}×。"
 msgid "Lifetime USDC rewards"
 msgstr "累计 USDC 奖励"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Limit"
 msgstr "限价"
 
@@ -3845,10 +3826,9 @@ msgstr "关联移动设备"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "已关联质押账户：<0>{0}</0>。"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -4053,7 +4033,6 @@ msgstr "使用邮箱登录"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
@@ -4063,8 +4042,8 @@ msgstr "使用邮箱登录"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-entry-data.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Long"
 msgstr "多"
@@ -4094,7 +4073,7 @@ msgstr "主网"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Maker"
 msgstr "挂单方"
 
@@ -4111,11 +4090,10 @@ msgstr "手动"
 msgid "Manual Account Summary"
 msgstr "手动账户概要"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Margin"
 msgstr "保证金"
 
@@ -4129,7 +4107,7 @@ msgstr "保证金与账户风险一览"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "保证金模式"
 
@@ -4137,11 +4115,10 @@ msgstr "保证金模式"
 msgid "Margin Ratio"
 msgstr "保证金率"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -4187,7 +4164,6 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -4203,9 +4179,7 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Market"
 msgstr "市场"
@@ -5204,16 +5178,15 @@ msgstr "订单已提交，正在确认交易所状态；请勿重试。"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Order type"
 msgstr "订单类型"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -5261,9 +5234,7 @@ msgstr "原始大小"
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Other"
 msgstr "其他"
 
@@ -5558,7 +5529,7 @@ msgstr "投资组合价值"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Position"
 msgstr "仓位"
 
@@ -5946,15 +5917,13 @@ msgstr "已在此标签页中恢复。将于 {expiresAtLabel} 过期。"
 msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
 msgstr "无法在此浏览器中保存恢复记录。关闭前请记下 Arbitrum 交易哈希。"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6720,11 +6689,10 @@ msgstr "所选周期 PNL"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-entry-data.ts
-#: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell"
 msgstr "卖出"
 
@@ -6733,7 +6701,7 @@ msgstr "卖出"
 msgid "Sell / Short"
 msgstr "卖出 / 做空"
 
-#: src/hooks/trade/use-order-entry-data.ts
+#: src/config/trade-panel-labels.ts
 msgid "Sell Short"
 msgstr "卖出做空"
 
@@ -6815,7 +6783,6 @@ msgstr "分享 {displayName} 的盈亏"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
@@ -6825,8 +6792,8 @@ msgstr "分享 {displayName} 的盈亏"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-entry-data.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Short"
 msgstr "空"
@@ -6903,7 +6870,6 @@ msgstr "签名中..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6932,9 +6898,6 @@ msgstr "签名中..."
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/order-toast.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -6984,11 +6947,10 @@ msgstr "止损价须低于开仓价"
 msgid "SL Price"
 msgstr "止损价"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -7495,7 +7457,7 @@ msgstr "系统结算 · 无可用交易哈希"
 msgid "Take Profit"
 msgstr "止盈"
 
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Take Profit / Stop Loss"
 msgstr "止盈 / 止损"
 
@@ -7547,7 +7509,7 @@ msgstr "止盈触发价须低于标记价"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Taker"
 msgstr "吃单方"
 
@@ -8420,11 +8382,10 @@ msgstr "止盈价须低于开仓价"
 msgid "TP Price"
 msgstr "止盈价"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "TP/SL"
@@ -8565,8 +8526,7 @@ msgid "Trading in these markets may involve elevated risk, including low liquidi
 msgstr "交易这些市场可能涉及更高风险，包括流动性不足、高波动、文档不完整以及更高的强平风险。继续之前，请仔细评估风险并了解各市场的运作方式。"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/trade-panel.tsx
-#: src/components/trade/tradebox/trade-panel.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Trading is not available in your region"
 msgstr "您所在的地区暂不支持交易"
 

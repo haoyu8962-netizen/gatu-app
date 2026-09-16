@@ -7,6 +7,23 @@ const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const COMPONENTS_DIR = resolve(TEST_DIR, "../../components");
 
 const BOOT_PLACEHOLDER_SOURCES = [
+	"trade/components/trade-slider-view.tsx",
+	"trade/tradebox/trade-input-frame-view.tsx",
+	"trade/tradebox/trade-available-row-view.tsx",
+	"trade/tradebox/side-toggle-view.tsx",
+	"trade/tradebox/trade-checkbox-view.tsx",
+	"trade/tradebox/trade-panel-body-view.tsx",
+	"trade/tradebox/trade-control-button-view.tsx",
+	"trade/tradebox/trade-percent-frame-view.tsx",
+	"trade/tradebox/trade-header-view.tsx",
+	"trade/tradebox/trade-size-unit-view.tsx",
+	"trade/tradebox/trade-option-checkboxes-view.tsx",
+	"trade/tradebox/trade-panel-footer-view.tsx",
+	"trade/tradebox/trade-size-slider-row-view.tsx",
+	"trade/tradebox/trade-cta-view.tsx",
+	"trade/tradebox/order-type-tab-view.tsx",
+	"trade/tradebox/trade-form-fields-view.tsx",
+	"trade/components/summary-row-view.tsx",
 	"dashboard/dashboard-shell-skeleton.tsx",
 	"trade/layout/app-shell-skeleton.tsx",
 	"trade/layout/desktop-grid-loading-surface.tsx",

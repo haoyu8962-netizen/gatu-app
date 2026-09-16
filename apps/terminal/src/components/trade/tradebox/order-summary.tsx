@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { PencilIcon } from "@phosphor-icons/react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { OrderType } from "@/config/trade";
+import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import type { MarketSlippageEstimate } from "@/domain/trade/order/slippage";
 import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { cn } from "@/lib/cn";
@@ -9,7 +10,7 @@ import { formatPrice, formatSlippageBps, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { OrderFeeRatePairValue } from "../components/order-fee-summary-value";
-import { SummaryRow } from "../components/summary-row";
+import { SummaryRow } from "../components/summary-row-view";
 
 interface Props {
 	compact?: boolean;
@@ -53,7 +54,7 @@ export function OrderSummary({
 	return (
 		<div className="flex min-w-0 flex-col">
 			{isLeveraged && (
-				<SummaryRow compact={compact} label={t`Liq. Price`}>
+				<SummaryRow compact={compact} label={t(TRADE_PANEL_LABELS.liqPrice)}>
 					<span
 						className={cn(
 							"whitespace-nowrap",
@@ -64,13 +65,13 @@ export function OrderSummary({
 					</span>
 				</SummaryRow>
 			)}
-			<SummaryRow compact={compact} label={t`Order Value`}>
+			<SummaryRow compact={compact} label={t(TRADE_PANEL_LABELS.orderValue)}>
 				<span className={cn("whitespace-nowrap", orderValue <= 0 && "font-normal text-trading-panel-muted")}>
 					{orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{isLeveraged && (
-				<SummaryRow compact={compact} label={t`Margin Req.`}>
+				<SummaryRow compact={compact} label={t(TRADE_PANEL_LABELS.marginRequired)}>
 					<span className={cn("whitespace-nowrap", marginRequired <= 0 && "font-normal text-trading-panel-muted")}>
 						{marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
@@ -78,12 +79,12 @@ export function OrderSummary({
 			)}
 			{showSlippage && (
 				<>
-					<SummaryRow compact={compact} label={t`Est. Slippage`}>
+					<SummaryRow compact={compact} label={t(TRADE_PANEL_LABELS.estimatedSlippage)}>
 						<span className={cn("whitespace-nowrap", !estimatedSlippageText && "font-normal text-trading-panel-muted")}>
 							{estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
 						</span>
 					</SummaryRow>
-					<SummaryRow compact={compact} label={t`Slippage`}>
+					<SummaryRow compact={compact} label={t(TRADE_PANEL_LABELS.slippage)}>
 						<button
 							type="button"
 							onClick={onSlippageClick}
@@ -95,9 +96,9 @@ export function OrderSummary({
 					</SummaryRow>
 				</>
 			)}
-			<SummaryRow compact={compact} label={t`Fees`}>
+			<SummaryRow compact={compact} label={t(TRADE_PANEL_LABELS.fees)}>
 				<span
-					title={`${t`Taker`} / ${t`Maker`}`}
+					title={`${t(TRADE_PANEL_LABELS.taker)} / ${t(TRADE_PANEL_LABELS.maker)}`}
 					className="cursor-help whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control font-normal text-trading-panel-muted"
 				>
 					<OrderFeeRatePairValue takerQuote={takerFeeQuote} makerQuote={makerFeeQuote} />

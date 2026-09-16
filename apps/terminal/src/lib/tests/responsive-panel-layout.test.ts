@@ -74,8 +74,10 @@ describe("responsive panel layout contract", () => {
 		expect(ORDERBOOK_PANEL_SOURCE).toContain("orderbook-tab-label min-w-0 truncate");
 		expect(TERMINAL_STYLES).toContain(".orderbook-tab-label");
 
-		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container");
-		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container flex h-full flex-col bg-surface font-market-close");
+		expect(TRADE_PANEL_SOURCE).toContain("<TradePanelBodyView");
+		expect(
+			readFileSync(resolve(TEST_DIR, "../../components/trade/tradebox/trade-panel-body-view.tsx"), "utf8"),
+		).toContain("trade-panel-container flex h-full flex-col bg-surface font-market-close");
 		expect(TERMINAL_STYLES).toContain("container-name: trade-panel");
 		expect(TERMINAL_STYLES).toContain("@container trade-panel (max-width: 12.4375rem)");
 		expect(TERMINAL_STYLES).toContain(".trade-compact-label");

@@ -6,6 +6,8 @@ import { DEFAULT_LOCALE_NAME, DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/co
 import { FOOTER_LABELS, FOOTER_LINKS } from "@/config/footer-links";
 import { MARKET_HEADER_LABELS } from "@/config/market-header";
 import { ORDERBOOK_LABELS } from "@/config/orderbook-labels";
+import { DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT } from "@/config/trade";
+import { SIDE_LABELS, TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { HEADER_ICON_BUTTON_CLASS, HeaderIconButtonView } from "../header/header-icon-button-view";
 import { DESKTOP_LANGUAGE_TRIGGER_CLASS, NavMenuTriggerView } from "../header/nav-menu-trigger-view";
 import { TOP_NAV_LOGO_CLASS, TOP_NAV_WORDMARK_CLASS } from "../header/top-nav-view";
@@ -124,4 +126,35 @@ export const ORDERBOOK_PLACEHOLDER = {
 		createElement(OrderbookGroupingTriggerView, { label: "—" }),
 	),
 	active: "book" as const,
+};
+
+export const TRADE_PANEL_PLACEHOLDER = {
+	labels: Object.fromEntries(
+		Object.entries(TRADE_PANEL_LABELS).map(([key, descriptor]) => [key, descriptor.message]),
+	) as { [K in keyof typeof TRADE_PANEL_LABELS]: string },
+	margin: TRADE_PANEL_LABELS.cross.message,
+	leverage: "1x",
+	account: TRADE_PANEL_LABELS.account.message,
+	loading: false,
+	active: "market" as const,
+	side: "buy" as const,
+	sideLabels: {
+		buy: SIDE_LABELS.long.message,
+		sell: SIDE_LABELS.short.message,
+		buyAria: SIDE_LABELS.buyLong.message,
+		sellAria: SIDE_LABELS.sellShort.message,
+	},
+	sizeUnit: null as string | null,
+	available: null,
+	position: null,
+	optionsChecked: false as const,
+	cta: DESKTOP_NAV_LABELS.wallet.message,
+	summaryRows: [
+		{ id: "liqPrice", value: "-" },
+		{ id: "orderValue", value: "-" },
+		{ id: "marginRequired", value: "-" },
+		{ id: "estimatedSlippage", value: "-" },
+		{ id: "slippage", value: `${DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT}%` },
+		{ id: "fees", value: "0.0550% / 0.0250%" },
+	] satisfies readonly { id: keyof typeof TRADE_PANEL_LABELS; value: string }[],
 };

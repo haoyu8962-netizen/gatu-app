@@ -11,7 +11,7 @@ import { isPositive } from "@/lib/trade/numbers";
 import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
 import type { Side } from "@/lib/trade/types";
 import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
-import { SummaryRow } from "../components/summary-row";
+import { SummaryRow } from "../components/summary-row-view";
 
 interface Props {
 	compact?: boolean;

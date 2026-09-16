@@ -1,35 +1,30 @@
 import { Trans, useLingui } from "@lingui/react/macro";
+import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { MARKET_HEADER_LABELS } from "@/config/market-header";
 import { ORDERBOOK_LABELS } from "@/config/orderbook-labels";
+import { SIDE_LABELS, TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { SPOT_MARKET_NAME_SEPARATOR } from "@/domain/market/display";
 import { getBuilderPerpDisplayName, getMarketKindFromName, getPerpDisplayName } from "@/lib/hyperliquid/markets/helper";
 import { useExchangeScope } from "@/providers/exchange-scope";
+import { useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import { TokenSelectorTriggerView } from "../chart/token-selector-trigger-view";
 import { AssetIconSlotView } from "../components/asset-icon-slot-view";
 import { FavoritesStripView } from "../header/favorites-strip-view";
 import { MarketOverviewView } from "../market-overview-view";
 import { type PanelFrameLabels, renderDesktopPanelFrame } from "./app-shell-skeleton";
 import { type DesktopGridLoadingPanelId, DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
-import { FAVORITES_PLACEHOLDER, MARKET_HEADER_PLACEHOLDER, ORDERBOOK_PLACEHOLDER } from "./desktop-placeholders";
+import {
+	FAVORITES_PLACEHOLDER,
+	MARKET_HEADER_PLACEHOLDER,
+	ORDERBOOK_PLACEHOLDER,
+	TRADE_PANEL_PLACEHOLDER,
+} from "./desktop-placeholders";
 import { MarketHeaderView } from "./market-header-view";
 
 function useTranslatedPanelFrameLabels(): PanelFrameLabels {
 	const { t } = useLingui();
 	return {
-		size: t`Size`,
-		orderControls: [
-			[t`Margin`, t`Cross`],
-			[t`Leverage`, "—"],
-			[t`Account`, t`Account`],
-		],
-		orderTypeTabs: [t`Market`, t`Limit`, t`Advanced`],
-		long: t`Long`,
-		short: t`Short`,
-		available: t`Available`,
-		orderOptions: [t`Reduce Only`, t`TP/SL`],
-		connectWallet: t`Connect Wallet`,
-		orderSummaryRows: [t`Liq. Price`, t`Order Value`, t`Margin Req.`, t`Est. Slippage`, t`Slippage`, t`Fees`],
 		accountTabs: [
 			t`Balances`,
 			t`Positions`,
@@ -48,6 +43,7 @@ function useTranslatedPanelFrameLabels(): PanelFrameLabels {
 
 export function TerminalLoadingWorkspace() {
 	const labels = useTranslatedPanelFrameLabels();
+	const slippagePercent = useMarketOrderSlippagePercent();
 	const { t } = useLingui();
 	const { routeMarketName, routeDex } = useExchangeScope();
 	const kind = routeMarketName ? getMarketKindFromName(routeMarketName) : undefined;
@@ -86,6 +82,34 @@ export function TerminalLoadingWorkspace() {
 		assetLabel:
 			pairName && kind ? getBaseQuoteFromPairName(kind === "spot" ? routeMarketName : pairName, kind).baseToken : null,
 	};
+	const tradePanel = {
+		...TRADE_PANEL_PLACEHOLDER,
+		summaryRows: TRADE_PANEL_PLACEHOLDER.summaryRows.map((row) =>
+			row.id === "slippage" ? { ...row, value: `${slippagePercent}%` } : row,
+		),
+		labels: Object.fromEntries(
+			Object.entries(TRADE_PANEL_LABELS).map(([key, descriptor]) => [key, t(descriptor)]),
+		) as typeof TRADE_PANEL_PLACEHOLDER.labels,
+		margin: t(TRADE_PANEL_LABELS.cross),
+		account: t(TRADE_PANEL_LABELS.account),
+		cta: t(DESKTOP_NAV_LABELS.wallet),
+		sizeUnit: orderbook.assetLabel,
+		sideLabels:
+			kind === "spot"
+				? {
+						buy: t(SIDE_LABELS.buy),
+						sell: t(SIDE_LABELS.sell),
+						buyAria: t(SIDE_LABELS.buy),
+						sellAria: t(SIDE_LABELS.sell),
+					}
+				: {
+						buy: t(SIDE_LABELS.long),
+						sell: t(SIDE_LABELS.short),
+						buyAria: t(SIDE_LABELS.buyLong),
+						sellAria: t(SIDE_LABELS.sellShort),
+					},
+	};
+
 	function renderPanel(panelId: DesktopGridLoadingPanelId) {
 		if (panelId === "favoriteCoins") return <FavoritesStripView {...favorites} />;
 		if (panelId === "coinInfo")
@@ -106,7 +130,7 @@ export function TerminalLoadingWorkspace() {
 					overview={<MarketOverviewView stats={stats} ariaLabel={t(MARKET_HEADER_LABELS.price)} />}
 				/>
 			);
-		return renderDesktopPanelFrame(panelId, labels, orderbook);
+		return renderDesktopPanelFrame(panelId, labels, orderbook, tradePanel);
 	}
 	return (
 		<main

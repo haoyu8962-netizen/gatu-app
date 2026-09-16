@@ -1,13 +1,24 @@
-import { CaretDownIcon, GearIcon, GlobeIcon, ListIcon, MoonIcon, SunIcon, WalletIcon } from "@phosphor-icons/react";
+import {
+	CaretDownIcon,
+	GearIcon,
+	GlobeIcon,
+	ListIcon,
+	MoonIcon,
+	PencilIcon,
+	SunIcon,
+	WalletIcon,
+} from "@phosphor-icons/react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
 import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
+import { getInputClassName } from "@/components/ui/input-styles";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { MOBILE_NAV_ITEMS, type MobileTab } from "@/config/nav";
 import { MOBILE_POSITIONS_TABS, type MobilePositionsTabValue } from "@/config/trade";
 import { cn } from "@/lib/cn";
-import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 import { TokenSelectorTriggerView } from "../chart/token-selector-trigger-view";
 import { AssetIconSlotView } from "../components/asset-icon-slot-view";
+import { SummaryRow } from "../components/summary-row-view";
+import { TradeSliderView } from "../components/trade-slider-view";
 import { FooterBarView } from "../footer/footer-bar-view";
 import { FavoritesStripView } from "../header/favorites-strip-view";
 import { TopNavView } from "../header/top-nav-view";
@@ -18,6 +29,21 @@ import {
 	OrderbookPanelView,
 } from "../orderbook/orderbook-panel-view";
 import { OrderbookTabsView } from "../orderbook/orderbook-tabs-view";
+import { OrderTypeTabView } from "../tradebox/order-type-tab-view";
+import { SideToggleView } from "../tradebox/side-toggle-view";
+import { TradeAvailableRowView } from "../tradebox/trade-available-row-view";
+import { TradeCheckboxView } from "../tradebox/trade-checkbox-view";
+import { TradeControlButtonView } from "../tradebox/trade-control-button-view";
+import { TradeCtaView } from "../tradebox/trade-cta-view";
+import { TradeFormFieldsView } from "../tradebox/trade-form-fields-view";
+import { TradeHeaderView } from "../tradebox/trade-header-view";
+import { TradeInputFrameView, tradingInputFrameClass } from "../tradebox/trade-input-frame-view";
+import { TradeOptionCheckboxesView } from "../tradebox/trade-option-checkboxes-view";
+import { TradePanelBodyView } from "../tradebox/trade-panel-body-view";
+import { TradePanelFooterView } from "../tradebox/trade-panel-footer-view";
+import { TRADE_PERCENT_INPUT_CLASS, TradePercentFrameView } from "../tradebox/trade-percent-frame-view";
+import { TradeSizeSliderRowView } from "../tradebox/trade-size-slider-row-view";
+import { TradeSizeUnitView } from "../tradebox/trade-size-unit-view";
 import { type DesktopGridLoadingPanelId, DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
 import {
 	FAVORITES_PLACEHOLDER,
@@ -25,6 +51,7 @@ import {
 	MARKET_HEADER_PLACEHOLDER,
 	ORDERBOOK_PLACEHOLDER,
 	TOP_NAV_PLACEHOLDER,
+	TRADE_PANEL_PLACEHOLDER,
 } from "./desktop-placeholders";
 import { DesktopTerminalFrameView } from "./desktop-terminal-frame-view";
 import { MarketHeaderView } from "./market-header-view";
@@ -37,15 +64,6 @@ const VALUE_PLACEHOLDER = "-";
 const NAME_PLACEHOLDER = "—";
 
 export interface PanelFrameLabels {
-	size: string;
-	orderControls: readonly (readonly [label: string, value: string])[];
-	orderTypeTabs: readonly string[];
-	long: string;
-	short: string;
-	available: string;
-	orderOptions: readonly string[];
-	connectWallet: string;
-	orderSummaryRows: readonly string[];
 	accountTabs: readonly string[];
 	deposit: string;
 	withdraw: string;
@@ -54,27 +72,12 @@ export interface PanelFrameLabels {
 }
 
 export const DEFAULT_PANEL_FRAME_LABELS: PanelFrameLabels = {
-	size: "Size",
-	orderControls: [
-		["Margin", "Cross"],
-		["Leverage", NAME_PLACEHOLDER],
-		["Account", "Account"],
-	],
-	orderTypeTabs: ["Market", "Limit", "Advanced"],
-	long: "Long",
-	short: "Short",
-	available: "Available",
-	orderOptions: ["Reduce Only", "TP/SL"],
-	connectWallet: "Connect Wallet",
-	orderSummaryRows: ["Liq. Price", "Order Value", "Margin Req.", "Est. Slippage", "Slippage", "Fees"],
 	accountTabs: ["Balances", "Positions", "Open Orders", "TWAP", "Trade History", "Funding Payments", "Order History"],
 	deposit: "Deposit",
 	withdraw: "Withdraw",
 	accountSummary: "Account Summary",
 	accountSummaryRows: ["Account Margin Ratio", "Portfolio Value", "Cross Account Leverage"],
 };
-const CONTROL_BUTTON_CLASS =
-	"flex h-[34px] min-h-[34px] items-center justify-center rounded-[10px] px-4 font-market-close text-[13px] leading-[18px] font-bold";
 const UNDERLINE_TAB_CLASS = "whitespace-nowrap px-2.5 py-2 text-xs font-medium";
 const SUMMARY_ROW_CLASS = "flex items-center justify-between gap-2 text-xs";
 
@@ -116,6 +119,7 @@ export function renderDesktopPanelFrame(
 	panelId: DesktopGridLoadingPanelId,
 	labels = DEFAULT_PANEL_FRAME_LABELS,
 	orderbook = ORDERBOOK_PLACEHOLDER,
+	tradePanel = TRADE_PANEL_PLACEHOLDER,
 ) {
 	switch (panelId) {
 		case "favoriteCoins":
@@ -134,7 +138,184 @@ export function renderDesktopPanelFrame(
 				</div>
 			);
 		case "tradingInterface":
-			return <TradePanelFrame labels={labels} />;
+			return (
+				<TradePanelBodyView
+					header={
+						<TradeHeaderView
+							orderTypeIndex={["market", "limit", "advanced"].indexOf(tradePanel.active)}
+							controls={
+								<>
+									<TradeControlButtonView
+										labelFull={tradePanel.labels.marginMode}
+										labelCompact={tradePanel.labels.margin}
+										value={tradePanel.margin}
+										title={tradePanel.margin}
+										aria-haspopup="dialog"
+									/>
+									<TradeControlButtonView
+										labelFull={tradePanel.labels.leverage}
+										value={tradePanel.leverage}
+										valueClassName="tabular-nums text-trading-panel-fg"
+										title={tradePanel.leverage}
+										aria-haspopup="dialog"
+									/>
+									<TradeControlButtonView
+										labelFull={tradePanel.labels.accountMode}
+										labelCompact={tradePanel.labels.account}
+										value={tradePanel.account}
+										valueCompact={tradePanel.account}
+										loading={tradePanel.loading}
+										title={tradePanel.account}
+										aria-label={tradePanel.labels.accountMode}
+										aria-haspopup="dialog"
+									/>
+								</>
+							}
+							tabs={
+								<>
+									<OrderTypeTabView active={tradePanel.active === "market"} label={tradePanel.labels.market} />
+									<OrderTypeTabView active={false} label={tradePanel.labels.limit} />
+									<div className="min-w-0">
+										<OrderTypeTabView
+											active={false}
+											label={tradePanel.labels.advanced}
+											labelCompact={tradePanel.labels.other}
+											aria-label={tradePanel.labels.advancedOrderTypes}
+										/>
+									</div>
+								</>
+							}
+							sideToggle={<SideToggleView side={tradePanel.side} labels={tradePanel.sideLabels} />}
+						/>
+					}
+					fields={
+						<TradeFormFieldsView
+							available={
+								<TradeAvailableRowView
+									label={
+										<span className="cursor-default whitespace-nowrap text-trading-panel-muted">
+											{tradePanel.labels.available}
+										</span>
+									}
+									value={tradePanel.available}
+									positionValue={tradePanel.position}
+								/>
+							}
+							size={
+								<TradeInputFrameView
+									label={tradePanel.labels.size}
+									value=""
+									placeholder="0.00"
+									readOnly
+									disabled
+									frameClassName="opacity-50"
+									trailing={<TradeSizeUnitView unit={tradePanel.sizeUnit} disabled />}
+								/>
+							}
+							slider={
+								<TradeSizeSliderRowView
+									slider={
+										<TradeSliderView
+											dir="ltr"
+											ariaLabel={`${tradePanel.labels.size} (%)`}
+											inputId="trade-panel-size-slider"
+											progress={0}
+											rtl={false}
+											unavailable
+											showTicks
+											ticks={[0, 25, 50, 75, 100]}
+											inputProps={{
+												min: 0,
+												max: 100,
+												step: 1,
+												defaultValue: 0,
+												disabled: true,
+												"aria-valuetext": "0%",
+											}}
+										/>
+									}
+									percent={
+										<TradePercentFrameView
+											frameClassName="h-8 w-16 shrink-0 rounded-[8px] px-2 opacity-50"
+											input={
+												<input
+													type="text"
+													dir="ltr"
+													inputMode="numeric"
+													data-slot="input"
+													data-size="sm"
+													value="0"
+													readOnly
+													disabled
+													aria-label={`${tradePanel.labels.size} (%)`}
+													className={getInputClassName(
+														"sm",
+														cn("w-full", TRADE_PERCENT_INPUT_CLASS, "text-trading-panel-subtle"),
+													)}
+												/>
+											}
+										/>
+									}
+								/>
+							}
+							options={
+								<div className="space-y-2 py-0.5">
+									<TradeOptionCheckboxesView
+										tradingPanel
+										className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-xs"
+										reduceOnly={
+											<TradeCheckboxView
+												checked={tradePanel.optionsChecked}
+												label={tradePanel.labels.reduceOnly}
+												ariaLabel={tradePanel.labels.reduceOnly}
+											/>
+										}
+										tpSl={
+											<TradeCheckboxView
+												checked={tradePanel.optionsChecked}
+												label={tradePanel.labels.tpSl}
+												ariaLabel={tradePanel.labels.tpSlAria}
+												spanAll
+											/>
+										}
+									/>
+								</div>
+							}
+						/>
+					}
+					footer={
+						<TradePanelFooterView
+							actions={<TradeCtaView variant="cyan" label={tradePanel.cta} aria-label={tradePanel.cta} />}
+							summary={
+								<div className="flex min-w-0 flex-col">
+									{tradePanel.summaryRows.map((row) => (
+										<SummaryRow key={row.id} compact label={tradePanel.labels[row.id]}>
+											{row.id === "slippage" ? (
+												<button
+													type="button"
+													className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
+												>
+													<span className="tabular-nums text-trading-panel-error">{row.value}</span>
+													<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+												</button>
+											) : row.id === "fees" ? (
+												<span
+													title={`${tradePanel.labels.taker} / ${tradePanel.labels.maker}`}
+													className="cursor-help whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control font-normal text-trading-panel-muted"
+												>
+													<span className="whitespace-nowrap">{row.value}</span>
+												</span>
+											) : (
+												<span className="whitespace-nowrap font-normal text-trading-panel-muted">{row.value}</span>
+											)}
+										</SummaryRow>
+									))}
+								</div>
+							}
+						/>
+					}
+				/>
+			);
 		case "accountTable":
 			return <AccountTableFrame labels={labels} />;
 		case "accountInfo":
@@ -170,81 +351,6 @@ function ChartFrame() {
 	return (
 		<div className="flex h-full items-center justify-center">
 			<GatuLogo variant="mark" micro className="size-7 opacity-40" />
-		</div>
-	);
-}
-
-function TradePanelFrame({ labels }: FrameProps) {
-	return (
-		<div className="flex h-full flex-col gap-3 overflow-hidden p-3">
-			<div className="grid grid-cols-3 gap-1.5">
-				{labels.orderControls.map(([label, value]) => (
-					<div key={label} className="rounded-8 border border-trading-panel-stroke-card px-2 py-1.5">
-						<div className="text-3xs text-trading-panel-muted">{label}</div>
-						<div className="flex items-center justify-between gap-1 text-xs font-medium text-fg">
-							<span className="truncate">{value}</span>
-							<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
-						</div>
-					</div>
-				))}
-			</div>
-			<div className="flex border-b border-stroke-weak text-xs font-medium">
-				{labels.orderTypeTabs.map((label, index) => (
-					<span
-						key={label}
-						className={cn("flex-1 py-2 text-center", index === 0 ? "border-b-2 border-fg text-fg" : "text-fg-muted")}
-					>
-						{label}
-					</span>
-				))}
-			</div>
-			<div className="grid grid-cols-2 gap-1 rounded-8 border border-trading-panel-stroke-card p-1 text-xs font-semibold">
-				<span className="rounded-6 border border-stroke-success-strong py-1.5 text-center text-success">
-					{labels.long}
-				</span>
-				<span className="py-1.5 text-center text-fg-muted">{labels.short}</span>
-			</div>
-			<div className={SUMMARY_ROW_CLASS}>
-				<span className="text-trading-panel-muted">{labels.available}</span>
-				<span className="text-fg">{VALUE_PLACEHOLDER}</span>
-			</div>
-			<div className="flex items-center justify-between rounded-8 border border-trading-panel-stroke-input px-3 py-2 text-xs">
-				<span className="text-trading-panel-muted">{labels.size}</span>
-				<span className="flex items-center gap-1 text-fg-muted">
-					0.00
-					<span className="font-medium text-fg">{NAME_PLACEHOLDER}</span>
-					<CaretDownIcon className="size-3" />
-				</span>
-			</div>
-			<div className="flex items-center gap-3">
-				<span className="h-1 flex-1 rounded-full bg-fill-weak" />
-				<span className="rounded-6 border border-trading-panel-stroke-input px-2 py-1 text-xs text-fg-muted">0 %</span>
-			</div>
-			<div className="space-y-2 text-xs text-trading-panel-muted">
-				{labels.orderOptions.map((label) => (
-					<div key={label} className="flex items-center gap-2">
-						<span className="size-3.5 rounded-6 border border-trading-panel-stroke-control" />
-						{label}
-					</div>
-				))}
-			</div>
-			<div className="flex-1" />
-			<span
-				className={cn(
-					CONTROL_BUTTON_CLASS,
-					"h-10 min-h-10 bg-market-close-control text-2sm text-market-close-on-control",
-				)}
-			>
-				{labels.connectWallet}
-			</span>
-			<div className="space-y-1.5">
-				{labels.orderSummaryRows.map((label) => (
-					<div key={label} className={SUMMARY_ROW_CLASS}>
-						<span className="text-trading-panel-muted">{label}</span>
-						<span className="text-fg">{VALUE_PLACEHOLDER}</span>
-					</div>
-				))}
-			</div>
 		</div>
 	);
 }

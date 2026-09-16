@@ -105,6 +105,23 @@ describe("live localization source contract", () => {
 });
 
 const PURE_PRESENTATION_VIEWS = [
+	"components/trade-slider-view.tsx",
+	"tradebox/trade-input-frame-view.tsx",
+	"tradebox/trade-available-row-view.tsx",
+	"tradebox/side-toggle-view.tsx",
+	"tradebox/trade-checkbox-view.tsx",
+	"tradebox/trade-panel-body-view.tsx",
+	"tradebox/trade-control-button-view.tsx",
+	"tradebox/trade-percent-frame-view.tsx",
+	"tradebox/trade-header-view.tsx",
+	"tradebox/trade-size-unit-view.tsx",
+	"tradebox/trade-option-checkboxes-view.tsx",
+	"tradebox/trade-panel-footer-view.tsx",
+	"tradebox/trade-size-slider-row-view.tsx",
+	"tradebox/trade-cta-view.tsx",
+	"tradebox/order-type-tab-view.tsx",
+	"tradebox/trade-form-fields-view.tsx",
+	"components/summary-row-view.tsx",
 	"header/favorites-strip-view.tsx",
 	"chart/token-selector-trigger-view.tsx",
 	"components/asset-icon-slot-view.tsx",

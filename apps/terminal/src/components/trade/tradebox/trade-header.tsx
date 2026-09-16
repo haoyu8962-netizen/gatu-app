@@ -1,9 +1,9 @@
 import { Dropdown } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CaretDownIcon, SpinnerGapIcon } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
+import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import type { SideLabels } from "@/config/ui-text";
 import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
 import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
@@ -14,7 +14,10 @@ import type { MarginMode } from "@/lib/trade/margin-mode";
 import { getTabsOrderType } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
 import { tradingPanelDropdownPopupClass } from "@/lib/ui/trading-dropdown";
+import { OrderTypeTabView } from "./order-type-tab-view";
 import { SideToggle } from "./side-toggle";
+import { TradeControlButtonView } from "./trade-control-button-view";
+import { TradeHeaderView } from "./trade-header-view";
 
 interface Props {
 	orderType: OrderType;
@@ -64,10 +67,10 @@ export function TradeHeader({
 	const orderTypeIndex = tabsOrderType === "market" ? 0 : tabsOrderType === "limit" ? 1 : 2;
 	const orderTypeLabel =
 		tabsOrderType === "advanced"
-			? getAdvancedOrderLabel(orderType, t`Other`)
+			? getAdvancedOrderLabel(orderType, t(TRADE_PANEL_LABELS.other))
 			: tabsOrderType === "market"
-				? t`Market`
-				: t`Limit`;
+				? t(TRADE_PANEL_LABELS.market)
+				: t(TRADE_PANEL_LABELS.limit);
 
 	const isSpot = marketKind === "spot";
 	const advancedOrderTypeItems = ADVANCED_ORDER_TYPES.filter((type) => {
@@ -79,12 +82,16 @@ export function TradeHeader({
 		onSelect: () => onOrderTypeChange(type),
 	}));
 	const mobileOrderTypeItems = [
-		{ label: t`Market`, active: orderType === "market", onSelect: () => onOrderTypeChange("market") },
-		{ label: t`Limit`, active: orderType === "limit", onSelect: () => onOrderTypeChange("limit") },
+		{
+			label: t(TRADE_PANEL_LABELS.market),
+			active: orderType === "market",
+			onSelect: () => onOrderTypeChange("market"),
+		},
+		{ label: t(TRADE_PANEL_LABELS.limit), active: orderType === "limit", onSelect: () => onOrderTypeChange("limit") },
 		...advancedOrderTypeItems,
 	];
 
-	const marginLabel = marginMode === "isolated" ? t`Isolated` : t`Cross`;
+	const marginLabel = marginMode === "isolated" ? t`Isolated` : t(TRADE_PANEL_LABELS.cross);
 	const accountModeLabel =
 		accountMode === "portfolioMargin"
 			? modes.portfolio.short
@@ -93,28 +100,20 @@ export function TradeHeader({
 				: accountMode === "disabled"
 					? modes.manual.short
 					: isAccountModeLoading
-						? t`Account`
+						? t(TRADE_PANEL_LABELS.account)
 						: accountMode === "default"
 							? t`Select mode`
 							: accountMode === "dexAbstraction"
 								? t`Legacy DEX`
-								: t`Account`;
+								: t(TRADE_PANEL_LABELS.account);
 	const compactAccountModeLabel =
 		accountMode === "dexAbstraction"
 			? t`Legacy`
 			: accountMode === "default" || accountMode == null
-				? t`Account`
+				? t(TRADE_PANEL_LABELS.account)
 				: accountModeLabel;
 	const handleMarginModeClick = onMarginModeClick ?? onMarginLeverageClick;
 	const handleLeverageClick = onLeverageClick ?? onMarginLeverageClick;
-	const controlButtonClass = cn(
-		"trade-control-button group flex min-w-0 cursor-pointer flex-col items-start gap-px rounded-[10px] border border-trading-panel-stroke-card bg-surface py-1.5 text-start transition-colors",
-		"hover:border-trading-panel-stroke-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		"disabled:cursor-not-allowed disabled:text-fg-disabled",
-		compact && "py-1",
-	);
-	const controlLabelClass = "w-full min-w-0 truncate text-3xs leading-snug text-trading-panel-subtle";
-	const controlValueClass = "flex w-full min-w-0 items-center gap-0.5 text-2sm font-semibold text-trading-panel-fg";
 	const mobileControlClass = cn(
 		mobileChrome.orderControl,
 		"transition-opacity active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-focus",
@@ -144,7 +143,7 @@ export function TradeHeader({
 						align="start"
 						hideCaret
 						triggerVariant="minimal"
-						triggerAriaLabel={t`Order type`}
+						triggerAriaLabel={t(TRADE_PANEL_LABELS.orderType)}
 						triggerClassName={cn(mobileControlClass, "w-full justify-start")}
 						popupClassName={tradingPanelDropdownPopupClass}
 						className="min-w-0"
@@ -179,103 +178,94 @@ export function TradeHeader({
 	}
 
 	return (
-		<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-4"}>
-			<div className={cn("trade-control-grid grid min-w-0 grid-cols-3", compact && "gap-1.5")}>
-				{isLeveraged && (
-					<>
-						<button
-							type="button"
-							onClick={handleMarginModeClick}
-							className={controlButtonClass}
-							aria-haspopup="dialog"
-							title={marginLabel}
-						>
-							<span className={cn(controlLabelClass, "trade-card-label-full")}>{t`Margin mode`}</span>
-							<span className={cn(controlLabelClass, "trade-card-label-compact")}>{t`Margin`}</span>
-							<span className={controlValueClass}>
-								<span className="min-w-0 truncate">{marginLabel}</span>
-								<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
-							</span>
-						</button>
-						<button
-							type="button"
-							onClick={handleLeverageClick}
-							className={controlButtonClass}
-							aria-haspopup="dialog"
-							title={`${leverage ?? 1}x`}
-						>
-							<span className={controlLabelClass}>{t`Leverage`}</span>
-							<span className={controlValueClass}>
-								<span className={cn("min-w-0 truncate tabular-nums", getLeverageToneClass(leverage ?? 1))}>
-									{leverage ?? 1}x
-								</span>
-								<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
-							</span>
-						</button>
-					</>
-				)}
-				<button
-					type="button"
-					onClick={onAccountModeClick}
-					disabled={isAccountModeLoading || isAccountModeUpdating}
-					className={cn(controlButtonClass, !isLeveraged && "col-span-3")}
-					aria-label={t`Account mode`}
-					aria-haspopup="dialog"
-					title={accountModeLabel}
-				>
-					<span className={cn(controlLabelClass, "trade-card-label-full")}>{t`Account mode`}</span>
-					<span className={cn(controlLabelClass, "trade-card-label-compact")}>{t`Account`}</span>
-					<span className={controlValueClass}>
-						{(isAccountModeLoading || isAccountModeUpdating) && (
-							<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
-						)}
-						<span className="trade-account-value-full min-w-0 truncate">{accountModeLabel}</span>
-						<span className="trade-account-value-compact min-w-0 truncate">{compactAccountModeLabel}</span>
-						<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
-					</span>
-				</button>
-			</div>
-
-			<div className="relative grid min-w-0 grid-cols-3">
-				<div
-					className="pointer-events-none absolute bottom-0 left-0 z-10 h-0.5 w-1/3 bg-trading-panel-fg transition-transform duration-300 ease-out motion-reduce:transition-none"
-					style={{ transform: `translateX(${orderTypeIndex * 100}%)` }}
-				/>
-				<OrderTypeTabButton active={tabsOrderType === "market"} onClick={() => onOrderTypeChange("market")}>
-					{t`Market`}
-				</OrderTypeTabButton>
-				<OrderTypeTabButton active={tabsOrderType === "limit"} onClick={() => onOrderTypeChange("limit")}>
-					{t`Limit`}
-				</OrderTypeTabButton>
-				<Dropdown
-					trigger={
-						<span className="inline-flex min-w-0 items-center justify-center">
-							<span className="trade-full-label truncate">
-								{tabsOrderType === "advanced" ? getAdvancedOrderLabel(orderType, t`Advanced`) : t`Advanced`}
-							</span>
-							<span className="trade-compact-label truncate">
-								{tabsOrderType === "advanced" ? getAdvancedOrderLabel(orderType, t`Other`) : t`Other`}
-							</span>
-						</span>
-					}
-					items={advancedOrderTypeItems}
-					disabled={advancedOrderTypeItems.length === 0}
-					size="sm"
-					align="end"
-					hideCaret
-					triggerVariant="minimal"
-					triggerAriaLabel={t`Advanced order types`}
-					triggerClassName={cn(
-						orderTypeTabClass(tabsOrderType === "advanced"),
-						"w-full rounded-none hover:text-trading-panel-fg data-[popup-open]:text-trading-panel-fg",
+		<TradeHeaderView
+			compact={!!compact}
+			orderTypeIndex={orderTypeIndex}
+			controls={
+				<>
+					{isLeveraged && (
+						<>
+							<TradeControlButtonView
+								compact={!!compact}
+								labelFull={t(TRADE_PANEL_LABELS.marginMode)}
+								labelCompact={t(TRADE_PANEL_LABELS.margin)}
+								value={marginLabel}
+								onClick={handleMarginModeClick}
+								aria-haspopup="dialog"
+								title={marginLabel}
+							/>
+							<TradeControlButtonView
+								compact={!!compact}
+								labelFull={t(TRADE_PANEL_LABELS.leverage)}
+								value={`${leverage ?? 1}x`}
+								valueClassName={cn("tabular-nums", getLeverageToneClass(leverage ?? 1))}
+								onClick={handleLeverageClick}
+								aria-haspopup="dialog"
+								title={`${leverage ?? 1}x`}
+							/>
+						</>
 					)}
-					popupClassName={tradingPanelDropdownPopupClass}
-					className="min-w-0"
-				/>
-			</div>
-
-			<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel />
-		</div>
+					<TradeControlButtonView
+						compact={!!compact}
+						labelFull={t(TRADE_PANEL_LABELS.accountMode)}
+						labelCompact={t(TRADE_PANEL_LABELS.account)}
+						value={accountModeLabel}
+						valueCompact={compactAccountModeLabel}
+						loading={isAccountModeLoading || isAccountModeUpdating}
+						spinnerClassName="animate-spin"
+						spanAll={!isLeveraged}
+						onClick={onAccountModeClick}
+						disabled={isAccountModeLoading || isAccountModeUpdating}
+						aria-label={t(TRADE_PANEL_LABELS.accountMode)}
+						aria-haspopup="dialog"
+						title={accountModeLabel}
+					/>
+				</>
+			}
+			tabs={
+				<>
+					<OrderTypeTabView
+						active={tabsOrderType === "market"}
+						onClick={() => onOrderTypeChange("market")}
+						label={t(TRADE_PANEL_LABELS.market)}
+					/>
+					<OrderTypeTabView
+						active={tabsOrderType === "limit"}
+						onClick={() => onOrderTypeChange("limit")}
+						label={t(TRADE_PANEL_LABELS.limit)}
+					/>
+					<Dropdown
+						renderTrigger={
+							<OrderTypeTabView
+								active={tabsOrderType === "advanced"}
+								label={
+									tabsOrderType === "advanced"
+										? getAdvancedOrderLabel(orderType, t(TRADE_PANEL_LABELS.advanced))
+										: t(TRADE_PANEL_LABELS.advanced)
+								}
+								labelCompact={
+									tabsOrderType === "advanced"
+										? getAdvancedOrderLabel(orderType, t(TRADE_PANEL_LABELS.other))
+										: t(TRADE_PANEL_LABELS.other)
+								}
+							/>
+						}
+						items={advancedOrderTypeItems}
+						disabled={advancedOrderTypeItems.length === 0}
+						size="sm"
+						align="end"
+						hideCaret
+						triggerVariant="minimal"
+						triggerAriaLabel={t(TRADE_PANEL_LABELS.advancedOrderTypes)}
+						popupClassName={tradingPanelDropdownPopupClass}
+						className="min-w-0"
+					/>
+				</>
+			}
+			sideToggle={
+				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel />
+			}
+		/>
 	);
 }
 
@@ -283,28 +273,4 @@ function getLeverageToneClass(leverage: number): string {
 	if (leverage >= 20) return "text-trading-panel-error";
 	if (leverage > 10) return "text-trading-panel-warning";
 	return "text-trading-panel-fg";
-}
-
-function orderTypeTabClass(active: boolean) {
-	return cn(
-		"trade-order-type-button min-w-0 border-b border-trading-panel-stroke-card pt-1.5 pb-2 text-sm transition-colors",
-		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		active ? "font-bold text-trading-panel-fg" : "font-medium text-trading-panel-subtle hover:text-trading-panel-fg",
-	);
-}
-
-function OrderTypeTabButton({
-	active,
-	onClick,
-	children,
-}: {
-	active: boolean;
-	onClick: () => void;
-	children: ReactNode;
-}) {
-	return (
-		<button type="button" aria-pressed={active} onClick={onClick} className={orderTypeTabClass(active)}>
-			<span className="block truncate">{children}</span>
-		</button>
-	);
 }

@@ -297,7 +297,7 @@ describe("desktop order book chrome single-source parity", () => {
 		expect(shell).toContain("<OrderbookTabsView");
 		expect(loading).toContain("...ORDERBOOK_PLACEHOLDER");
 		expect(loading).toContain('getBaseQuoteFromPairName(kind === "spot" ? routeMarketName : pairName, kind).baseToken');
-		expect(loading).toContain("renderDesktopPanelFrame(panelId, labels, orderbook)");
+		expect(loading).toContain("renderDesktopPanelFrame(panelId, labels, orderbook, tradePanel)");
 		for (const label of ["orderBook", "trades", "price", "size", "total", "spread"])
 			expect(loading).toContain(`t(ORDERBOOK_LABELS.${label})`);
 	});

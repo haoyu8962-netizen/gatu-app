@@ -1,4 +1,3 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -6,6 +5,7 @@ import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
+import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { getPositionDex } from "@/domain/market";
 import { getBuilderPerpSwapTargetToken } from "@/domain/trade/collateral-acquisition";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -41,7 +41,6 @@ import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-or
 import { useProspectiveCrossMarginAccount } from "@/hooks/trade/use-prospective-cross-margin-account";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { cn } from "@/lib/cn";
 import {
 	useMarketsInfo,
 	useSelectedMarketInfo,
@@ -65,7 +64,6 @@ import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/l
 import type { ActiveModal } from "@/lib/trade/types";
 import { useButtonContent } from "@/lib/trade/use-button-content";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
-import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
 import {
 	useDepositModalActions,
 	useEstablishConnectionModalActions,
@@ -108,9 +106,11 @@ import { MarginModeModal } from "./margin-mode-modal";
 import { OrderConfirmationModal } from "./order-confirmation-modal";
 import { OrderSummary } from "./order-summary";
 import { ScaleOrderSummary } from "./scale-order-summary";
+import { TradeCtaView } from "./trade-cta-view";
 import { TradeFormFields } from "./trade-form-fields";
 import { TradeHeader } from "./trade-header";
-import { TradePanelBody } from "./trade-panel-body";
+import { TradePanelBodyView } from "./trade-panel-body-view";
+import { TradePanelFooterView } from "./trade-panel-footer-view";
 import { TwapOrderSummary } from "./twap-order-summary";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
@@ -747,128 +747,126 @@ export function TradePanel() {
 	}
 
 	return (
-		<div className="trade-panel-container flex h-full flex-col bg-surface font-market-close">
-			<MarginModeModal
-				open={activeModal === "marginMode"}
-				onOpenChange={handleMarginModalOpenChange}
-				currentMode={marginMode}
-				currentLeverage={currentLeverage}
-				pendingLeverage={pendingLeverage}
-				committedLeverage={committedLeverage}
-				maxLeverage={maxLeverage}
-				onPendingLeverageChange={setPendingLeverage}
-				hasPosition={hasPosition}
-				positionStateReady={positionStateReady}
-				allowsCrossMargin={capabilities.allowsCrossMargin}
-				allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
-				isUpdating={isSwitchingMode}
-				updateError={switchModeError}
-				showLeverage={false}
-				onApply={handleMarginApply}
-				marketIdentity={leverageInteractionIdentity}
-			/>
-			<LeverageModal
-				open={activeModal === "leverage"}
-				onOpenChange={handleLeverageModalOpenChange}
-				currentLeverage={currentLeverage}
-				pendingLeverage={pendingLeverage}
-				committedLeverage={committedLeverage}
-				maxLeverage={maxLeverage}
-				onPendingLeverageChange={setPendingLeverage}
-				isUpdating={isLeverageUpdating}
-				updateError={leverageUpdateError}
-				onApply={handleLeverageApply}
-				marketIdentity={leverageInteractionIdentity}
-			/>
-			<AccountModeModal
-				open={activeModal === "accountMode"}
-				onOpenChange={(open) => setActiveModal(open ? "accountMode" : null)}
-				currentMode={accountModeControl.accountAbstraction}
-				isLoading={accountModeControl.isLoading}
-				isUpdating={accountModeControl.isUpdating}
-				canChange={accountModeControl.canSet}
-				portfolioMarginActivationEnabled={accountModeControl.portfolioMarginActivationEnabled}
-				onConnect={() => setActiveModal("wallet")}
-				onApply={handleAccountModeChange}
-			/>
-			{confirmation.pending && (
-				<OrderConfirmationModal
-					open
-					draft={confirmation.pending.draft}
-					isSubmitting={confirmation.isConfirming}
-					dontShowAgain={confirmation.dontShowAgain}
-					onDontShowAgainChange={confirmation.setDontShowAgain}
-					onConfirm={confirmation.confirm}
-					onOpenChange={confirmation.cancel}
-				/>
-			)}
-
-			<TradePanelBody
-				header={
-					<TradeHeader
-						compact
-						orderType={orderType}
-						side={side}
-						sideLabels={sideLabels}
-						marketKind={market?.kind}
-						onOrderTypeChange={setOrderType}
-						onSideChange={setSide}
-						marginMode={marginMode}
-						leverage={leverage}
-						onMarginModeClick={() => setActiveModal("marginMode")}
-						onLeverageClick={() => setActiveModal("leverage")}
-						isLeveraged={capabilities.isLeveraged}
-						accountMode={accountModeControl.accountAbstraction}
-						isAccountModeLoading={accountModeControl.isLoading}
-						isAccountModeUpdating={accountModeControl.isUpdating}
-						onAccountModeClick={() => setActiveModal("accountMode")}
+		<TradePanelBodyView
+			overlays={
+				<>
+					<MarginModeModal
+						open={activeModal === "marginMode"}
+						onOpenChange={handleMarginModalOpenChange}
+						currentMode={marginMode}
+						currentLeverage={currentLeverage}
+						pendingLeverage={pendingLeverage}
+						committedLeverage={committedLeverage}
+						maxLeverage={maxLeverage}
+						onPendingLeverageChange={setPendingLeverage}
+						hasPosition={hasPosition}
+						positionStateReady={positionStateReady}
+						allowsCrossMargin={capabilities.allowsCrossMargin}
+						allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
+						isUpdating={isSwitchingMode}
+						updateError={switchModeError}
+						showLeverage={false}
+						onApply={handleMarginApply}
+						marketIdentity={leverageInteractionIdentity}
 					/>
-				}
-				footer={
-					<>
-						<div className="flex flex-col gap-3">
+					<LeverageModal
+						open={activeModal === "leverage"}
+						onOpenChange={handleLeverageModalOpenChange}
+						currentLeverage={currentLeverage}
+						pendingLeverage={pendingLeverage}
+						committedLeverage={committedLeverage}
+						maxLeverage={maxLeverage}
+						onPendingLeverageChange={setPendingLeverage}
+						isUpdating={isLeverageUpdating}
+						updateError={leverageUpdateError}
+						onApply={handleLeverageApply}
+						marketIdentity={leverageInteractionIdentity}
+					/>
+					<AccountModeModal
+						open={activeModal === "accountMode"}
+						onOpenChange={(open) => setActiveModal(open ? "accountMode" : null)}
+						currentMode={accountModeControl.accountAbstraction}
+						isLoading={accountModeControl.isLoading}
+						isUpdating={accountModeControl.isUpdating}
+						canChange={accountModeControl.canSet}
+						portfolioMarginActivationEnabled={accountModeControl.portfolioMarginActivationEnabled}
+						onConnect={() => setActiveModal("wallet")}
+						onApply={handleAccountModeChange}
+					/>
+					{confirmation.pending && (
+						<OrderConfirmationModal
+							open
+							draft={confirmation.pending.draft}
+							isSubmitting={confirmation.isConfirming}
+							dontShowAgain={confirmation.dontShowAgain}
+							onDontShowAgainChange={confirmation.setDontShowAgain}
+							onConfirm={confirmation.confirm}
+							onOpenChange={confirmation.cancel}
+						/>
+					)}
+					{activeModal === "wallet" && (
+						<Suspense fallback={null}>
+							<WalletModal open onOpenChange={(open) => setActiveModal(open ? "wallet" : null)} />
+						</Suspense>
+					)}
+				</>
+			}
+			header={
+				<TradeHeader
+					compact
+					orderType={orderType}
+					side={side}
+					sideLabels={sideLabels}
+					marketKind={market?.kind}
+					onOrderTypeChange={setOrderType}
+					onSideChange={setSide}
+					marginMode={marginMode}
+					leverage={leverage}
+					onMarginModeClick={() => setActiveModal("marginMode")}
+					onLeverageClick={() => setActiveModal("leverage")}
+					isLeveraged={capabilities.isLeveraged}
+					accountMode={accountModeControl.accountAbstraction}
+					isAccountModeLoading={accountModeControl.isLoading}
+					isAccountModeUpdating={accountModeControl.isUpdating}
+					onAccountModeClick={() => setActiveModal("accountMode")}
+				/>
+			}
+			footer={
+				<TradePanelFooterView
+					actions={
+						<>
 							{displayValidationError && <div className="text-xs text-error">{displayValidationError}</div>}
 
 							{approvalError && <div className="text-xs text-error">{approvalError}</div>}
 
 							{tradeRestricted && !buttonContent.disabledReason ? (
-								<Button
-									variant="filled"
-									size="xs"
-									intent="neutral"
+								<TradeCtaView
+									variant="restricted"
+									label={t(TRADE_PANEL_LABELS.regionRestricted)}
 									disabled
-									className="w-full rounded-[12px] px-3 py-2.5 text-sm font-bold whitespace-nowrap shadow-none data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled"
-									aria-label={t`Trading is not available in your region`}
-								>
-									{t`Trading is not available in your region`}
-								</Button>
+									aria-label={t(TRADE_PANEL_LABELS.regionRestricted)}
+								/>
 							) : (
-								<Button
-									variant="filled"
-									size="xs"
-									intent={getTradingCtaIntent(buttonContent.variant)}
+								<TradeCtaView
+									variant={buttonContent.variant}
+									label={buttonContent.text}
 									onClick={buttonContent.action}
 									disabled={buttonContent.disabled || isSizeInteracting}
-									className={cn(
-										"w-full rounded-[12px] px-3 py-2.5 text-sm font-bold whitespace-nowrap shadow-none focus-visible:outline-offset-1",
-										getTradingCtaClass(buttonContent.variant),
-									)}
 									aria-label={buttonContent.text}
 									iconLeft={
 										isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined
 									}
-								>
-									{buttonContent.text}
-								</Button>
+								/>
 							)}
 							{buttonContent.disabledReason ? (
 								<output className="text-center text-xs text-trading-panel-muted">{buttonContent.disabledReason}</output>
 							) : null}
-						</div>
-						<div className="border-t border-trading-panel-stroke-row pt-1">{renderSummary()}</div>
-					</>
-				}
-			>
+						</>
+					}
+					summary={renderSummary()}
+				/>
+			}
+			fields={
 				<TradeFormFields
 					orderEntryData={orderEntryData}
 					visibleValidationErrors={visibleValidationErrors}
@@ -883,13 +881,7 @@ export function TradePanel() {
 						if (swapTargetToken) openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken);
 					}}
 				/>
-			</TradePanelBody>
-
-			{activeModal === "wallet" && (
-				<Suspense fallback={null}>
-					<WalletModal open onOpenChange={(open) => setActiveModal(open ? "wallet" : null)} />
-				</Suspense>
-			)}
-		</div>
+			}
+		/>
 	);
 }

@@ -325,15 +325,10 @@ msgid "Access restricted"
 msgstr "Access restricted"
 
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
+#: src/config/trade-panel-labels.ts
 #: src/hooks/trade/use-account-mode-labels.ts
 #: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
@@ -366,8 +361,7 @@ msgid "Account Margin Ratio"
 msgstr "Account Margin Ratio"
 
 #: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Account mode"
 msgstr "Account mode"
 
@@ -531,13 +525,11 @@ msgstr "Adjust leverage"
 msgid "Adjust Margin"
 msgstr "Adjust Margin"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Advanced"
 msgstr "Advanced"
 
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Advanced order types"
 msgstr "Advanced order types"
 
@@ -913,7 +905,6 @@ msgstr "Automatic USDC deposit failed"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -921,7 +912,7 @@ msgstr "Automatic USDC deposit failed"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -1091,11 +1082,10 @@ msgstr "Builder rewards are a cumulative source breakdown, not an additional rew
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-entry-data.ts
-#: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy"
 msgstr "Buy"
 
@@ -1104,7 +1094,7 @@ msgstr "Buy"
 msgid "Buy / Long"
 msgstr "Buy / Long"
 
-#: src/hooks/trade/use-order-entry-data.ts
+#: src/config/trade-panel-labels.ts
 msgid "Buy Long"
 msgstr "Buy Long"
 
@@ -1806,7 +1796,6 @@ msgid "Connect wallet"
 msgstr "Connect wallet"
 
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
@@ -1815,7 +1804,6 @@ msgstr "Connect wallet"
 #: src/config/desktop-nav.ts
 #: src/config/ui-text.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
-#: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "Connect Wallet"
 
@@ -2061,14 +2049,13 @@ msgstr "Create Vault"
 msgid "Creating your wallet. Please wait..."
 msgstr "Creating your wallet. Please wait..."
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Cross"
 msgstr "Cross"
@@ -2736,10 +2723,9 @@ msgstr "Equity"
 msgid "Est. Fee"
 msgstr "Est. Fee"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Est. Slippage"
 msgstr "Est. Slippage"
 
@@ -3083,9 +3069,8 @@ msgstr "Fee"
 msgid "Fee market for taker and maker rates"
 msgstr "Fee market for taker and maker rates"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Fees"
 msgstr "Fees"
 
@@ -3760,10 +3745,9 @@ msgstr "Legacy reward history"
 msgid "Lending Net Balance"
 msgstr "Lending Net Balance"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/tradebox/leverage-editor.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Leverage"
 msgstr "Leverage"
@@ -3776,12 +3760,9 @@ msgstr "Leverage is fixed at {currentLeverage}× for this market."
 msgid "Lifetime USDC rewards"
 msgstr "Lifetime USDC rewards"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Limit"
 msgstr "Limit"
 
@@ -3845,10 +3826,9 @@ msgstr "Link mobile device"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "Linked staking account: <0>{0}</0>."
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -4053,7 +4033,6 @@ msgstr "Log in with Email"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
@@ -4063,8 +4042,8 @@ msgstr "Log in with Email"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-entry-data.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Long"
 msgstr "Long"
@@ -4094,7 +4073,7 @@ msgstr "Mainnet"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Maker"
 msgstr "Maker"
 
@@ -4111,11 +4090,10 @@ msgstr "Manual"
 msgid "Manual Account Summary"
 msgstr "Manual Account Summary"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Margin"
 msgstr "Margin"
 
@@ -4129,7 +4107,7 @@ msgstr "Margin and account risk at a glance"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "Margin mode"
 
@@ -4137,11 +4115,10 @@ msgstr "Margin mode"
 msgid "Margin Ratio"
 msgstr "Margin Ratio"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -4187,7 +4164,6 @@ msgstr "Mark price: used for margin calculations, unrealized PnL, liquidations, 
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -4203,9 +4179,7 @@ msgstr "Mark price: used for margin calculations, unrealized PnL, liquidations, 
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Market"
 msgstr "Market"
@@ -5204,16 +5178,15 @@ msgstr "Order submitted. Confirming exchange status; do not retry."
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Order type"
 msgstr "Order type"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -5261,9 +5234,7 @@ msgstr "Original Size"
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Other"
 msgstr "Other"
 
@@ -5558,7 +5529,7 @@ msgstr "Portfolio Value"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Position"
 msgstr "Position"
 
@@ -5946,15 +5917,13 @@ msgstr "Recovered in this tab. Expires {expiresAtLabel}."
 msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
 msgstr "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6720,11 +6689,10 @@ msgstr "Selected-period PNL"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-entry-data.ts
-#: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell"
 msgstr "Sell"
 
@@ -6733,7 +6701,7 @@ msgstr "Sell"
 msgid "Sell / Short"
 msgstr "Sell / Short"
 
-#: src/hooks/trade/use-order-entry-data.ts
+#: src/config/trade-panel-labels.ts
 msgid "Sell Short"
 msgstr "Sell Short"
 
@@ -6815,7 +6783,6 @@ msgstr "Share PNL for {displayName}"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
@@ -6825,8 +6792,8 @@ msgstr "Share PNL for {displayName}"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-entry-data.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Short"
 msgstr "Short"
@@ -6903,7 +6870,6 @@ msgstr "Signing..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6932,9 +6898,6 @@ msgstr "Signing..."
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/order-toast.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -6984,11 +6947,10 @@ msgstr "SL must be below entry"
 msgid "SL Price"
 msgstr "SL Price"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
@@ -7495,7 +7457,7 @@ msgstr "System finalization · hash unavailable"
 msgid "Take Profit"
 msgstr "Take Profit"
 
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Take Profit / Stop Loss"
 msgstr "Take Profit / Stop Loss"
 
@@ -7547,7 +7509,7 @@ msgstr "Take profit trigger must be below mark"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/tradebox/order-summary.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Taker"
 msgstr "Taker"
 
@@ -8420,11 +8382,10 @@ msgstr "TP must be below entry"
 msgid "TP Price"
 msgstr "TP Price"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-option-checkboxes.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "TP/SL"
@@ -8565,8 +8526,7 @@ msgid "Trading in these markets may involve elevated risk, including low liquidi
 msgstr "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/trade-panel.tsx
-#: src/components/trade/tradebox/trade-panel.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Trading is not available in your region"
 msgstr "Trading is not available in your region"
 

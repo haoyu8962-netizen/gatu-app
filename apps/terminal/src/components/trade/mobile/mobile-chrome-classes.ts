@@ -81,8 +81,7 @@ export const sizeValue =
 export const sizeUnit =
 	"relative ms-2 inline-flex h-8 min-w-11 shrink-0 items-center justify-center gap-1 whitespace-nowrap text-xs font-semibold text-trading-panel-fg after:absolute after:inset-0 after:content-[''] disabled:cursor-not-allowed";
 export const sizeSliderRow = "flex items-center gap-2 pt-0.5";
-export const sliderFrame = "relative h-[33px] w-full";
-export const sliderTrack = "absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full";
+export { sliderFrame, sliderTrack } from "../components/trade-slider-view";
 export const sizePercent = "h-[31px] w-20 shrink-0 rounded-[8px] px-2";
 export const buttonOutlineNeutralSm =
 	"inline-flex items-center justify-center gap-1.5 font-semibold select-none rounded-8 border bg-transparent shadow-raised py-1.5 text-xs text-fg";
@@ -92,12 +91,12 @@ export const buttonIconGhostNeutralSm =
 	"inline-flex items-center justify-center shrink-0 select-none rounded-8 bg-transparent text-fg";
 export const headerWalletFrame =
 	"h-11 min-h-11 min-w-0 max-w-full rounded-8 border-trading-panel-stroke-card px-2.5 text-xs";
-export const sideBox = "rounded-[10px] border-trading-panel-stroke-card bg-surface";
+export { sideBox } from "../tradebox/side-toggle-view";
 export const sideMobile = "h-[31px] py-0 text-xs after:content-none";
 export const ctaConnect =
 	"bg-trading-panel-control text-trading-panel-on-control hover:not-data-disabled:bg-trading-panel-control/90";
 export const ctaConnectDark = "dark:bg-fill-weak dark:text-action dark:hover:not-data-disabled:bg-fill-hover";
-export const optionsGrid = "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 max-[1000px]:gap-y-3";
+export { optionsGrid } from "../tradebox/trade-option-checkboxes-view";
 export const option = "min-w-0 min-h-5 items-center gap-1.5 max-[1000px]:min-h-8";
 export const optionLabel = "text-xs text-trading-panel-muted";
 export const optionControl =

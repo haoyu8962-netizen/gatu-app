@@ -23,6 +23,20 @@ describe("AppShellSkeleton desktop frame", () => {
 		container.remove();
 	});
 
+	it("renders the real trade root and regions with inert inputs and static chrome", () => {
+		const panel = container.querySelector("[data-shell-desktop] .trade-panel-container");
+		expect(panel?.className).toBe("trade-panel-container flex h-full flex-col bg-surface font-market-close");
+		expect(panel?.querySelector('[data-slot="trade-panel-header"]')?.className).toBe("shrink-0 px-3 pt-3");
+		expect(panel?.querySelector('[data-slot="trade-panel-footer"]')?.className).toBe(
+			"flex shrink-0 flex-col gap-2 px-3 py-3",
+		);
+		expect(panel?.querySelectorAll(".trade-control-button")).toHaveLength(3);
+		expect(panel?.querySelectorAll(".trade-order-type-button")).toHaveLength(3);
+		expect(panel?.querySelector('input[data-size="default"]')?.getAttribute("value")).toBe("");
+		expect(panel?.querySelector("[class*='animate-']")).toBeNull();
+		for (const input of panel?.querySelectorAll("input,button") ?? []) expect(input.closest("[inert]")).not.toBeNull();
+	});
+
 	it("draws the terminal chrome the real page replaces, with placeholders instead of data", () => {
 		const desktop = container.querySelector("[data-shell-desktop]");
 		const text = desktop?.textContent ?? "";
