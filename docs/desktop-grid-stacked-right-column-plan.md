@@ -38,24 +38,24 @@ md 布局（14 列）：
 | marketData | 10 | 20.6 | 4 | 20.4 | 670 px，与 lg 订单簿同高 |
 | accountInfo | 10 | 41 | 4 | 14 | `minH` 仍由内容测量决定 |
 
-网格总高 55 行（约 1815 px），页面纵向滚动，与官方 51 行同量级。备选：订单簿 h14 与账户表共底边、账户信息从 34.6 行开始（总高 48.6 行），少显示约四档盘口；不采用，记入 ADR 备选。
+网格总高 55 行（1818 px），页面纵向滚动，与官方 51 行同量级。备选：订单簿 h14 与账户表共底边、账户信息从 34.6 行开始（总高 48.6 行），少显示约四档盘口；不采用，记入 ADR 备选。
 
 ## 4. 代码改动
 
 ### 4.1 `apps/terminal/src/config/desktop-grid-layout.ts`
 
-- 对齐规则按拓扑分支。lg 沿用"上层共底边、下层共顶底边"。md 改为"两列"：唯一跨列共享边界 A = 图表列底边 = 下单面板底边 = 账户表顶边 = 订单簿顶边；右列内部依次贴合（`accountInfo.y` = 订单簿底边）；`accountInfo` 的内容 `minH` 只作用于自身，不再抬高账户表。拓扑由 `cols`（14 / 16）判定；compactor 拿不到 `cols` 时用布局的最大 `x + w` 推断，结果确定，可同时用于 compact、restore、resize。
+- 对齐规则按拓扑分支。lg 沿用"上层共底边、下层共顶底边"。md 改为"两列"：唯一跨列共享边界 A = 图表列底边 = 下单面板底边 = 账户表顶边 = 订单簿顶边；右列内部依次贴合（`accountInfo.y` = 订单簿底边）；`accountInfo` 的内容 `minH` 只作用于自身，不再抬高账户表。拓扑由 `cols`（14 / 16）判定：react-grid-layout 2.2.3 的 `Compactor.compact(layout, cols)` 已传入 `cols`，`alignDesktopGridLayout` 增加 `cols` 参数后，compact、restore、resize 三条路径共用同一判定。
 - `resizeDesktopGridLayout` 的 md 分支：宽度手柄（chart e/se、marketData w/sw、tradingInterface w、accountInfo w）只移动一条列边界，左列四个面板 `w = 边界`，右列三个面板 `x = 边界`；边界范围由 `minW` 约束（右列 ≥ 3，左列 ≥ 7）。高度手柄：chart s/se 改变 A（下单面板同步）；favoriteCoins/coinInfo 的高度变化沿用现有的 `boundary = max(下单面板底边, chart.y + chart.minH)` 逻辑；marketData s 只改订单簿高度；账户表保持 `resizeHandles: []`。
 - 存储键 `trade-desktop-grid-layout-v11 → v12`：迁移时保留合法的 lg 几何，md 一律回到新默认（拓扑已变，旧 md 几何不可复用）；v11 进入清理列表，更旧版本直接丢弃；设置里的重置路径不变。restore 后仍执行对齐与碰撞检查，旧拓扑的 md 存储被拒绝并回退默认。
 
 ### 4.2 `components/trade/layout/use-desktop-grid-layout.ts` 与 `main-workspace.tsx`
 
-若 react-grid-layout 的 `Compactor` 接口能拿到 `cols` 则透传，否则不改；网格键名不变，`main-workspace.tsx` 预计无需改动。
+`desktopGridCompactor.compact` 把库传入的 `cols` 转给对齐函数；网格键名不变，`main-workspace.tsx` 预计无需改动。
 
 ### 4.3 单元测试
 
-- `lib/tests/desktop-grid-layout.test.ts`：重写 md 用例——堆叠几何、A 边界、`accountInfo` 内容增长只影响自身、列边界联动、高度手柄、v11→v12 迁移、旧拓扑存储被拒绝；"keeps market data and trading beside the chart at both desktop breakpoints"改为只断言 lg。
-- `lib/tests/grid-content-height.test.tsx`：md 下账户表随账户信息增高的断言改为账户表不变。
+- `lib/tests/desktop-grid-layout.test.ts`：重写 md 用例——堆叠几何、A 边界、`accountInfo` 内容增长只影响自身、列边界联动、高度手柄、v11→v12 迁移、旧拓扑存储被拒绝；"keeps market data and trading beside the chart at both desktop breakpoints"改为只断言 lg；"uses an eleven-three lower row beneath the compact desktop workspace"与"resets a previously narrowed compact account table to the fixed column width"按新几何重写；md 账户表随账户信息增高到 21.31 行的断言改为账户表不变。
+- `lib/tests/grid-content-height.test.tsx` 只观测 `accountInfo` 的内容高度，不断言账户表几何，预计无需改动。
 
 ## 5. 契约与文档
 
@@ -65,10 +65,10 @@ md 布局（14 列）：
 
 ## 6. 对其他功能的影响与核对点
 
-- 订单簿：md 宽度从 214–304 px 变为 282–402 px，`orderbook-panel` 容器查询里 ≤279 px 的紧凑档在 md 不再出现；高度 670 px 与 lg 相同；桌面订单簿仍是默认 `l2Book` 完整盘，feed 选择不变。
+- 订单簿：md 宽度从 211–301 px 变为 282–402 px，`orderbook-panel` 容器查询里 ≤279 px 的紧凑档在 md 不再出现；高度 670 px 与 lg 相同；桌面订单簿仍是默认 `l2Book` 完整盘，feed 选择不变。
 - 下单面板：宽度 282–402 px，窗口约 1260 px 以上会离开 `trade-panel` ≤22.25rem 的紧凑标签档，属容器驱动的既有行为；高度 677 px 不变，八种订单类型仍需在 1001 / 1400 / 1420 px 无内部滚动。
-- 账户表：从 11 列变 10 列，需核对 1001 px（约 711 px 宽）下列表的横向滚动与列可见性。账户信息移到右列底部，需要滚动才可见，与官方相同。
-- 页面高度约 1815 px，`DesktopTerminalFrameView` 的 `min-h-dvh` 纵向滚动与固定页眉页脚已在 lg 900 px 视口下存在，无新机制。
+- 账户表：从 11 列变 10 列，需核对 1001 px（约 710 px 宽）下列表的横向滚动与列可见性。账户信息移到右列底部，需要滚动才可见，与官方相同。
+- 页面高度约 1818 px，`DesktopTerminalFrameView` 的 `min-h-dvh` 纵向滚动与固定页眉页脚已在 lg 900 px 视口下存在，无新机制。
 - 启动、chrome、market header、订阅、签名与数据守卫不触碰；包体只有配置常量变化，预算不受影响。
 
 ## 7. 浏览器套件更新
@@ -76,7 +76,7 @@ md 布局（14 列）：
 - `tests/browser/desktop-grid-layout.pw.ts`：`expectAligned` 按宽度分支，≤1420 断言 A 边界、订单簿与账户表顶边、`accountInfo` 贴合订单簿底边、无碰撞；拖拽用例补 md 的 chart s 与 marketData w/s。
 - `tests/browser/account-actions.pw.ts`：1001 / 1363 的配对边界改为与订单簿配对。
 - `tests/browser/desktop-order-entry-layout.pw.ts`：1001 / 1400 / 1420 的面板几何快照更新，保留"无内部滚动、CTA 与费用可达"断言。
-- `tests/browser/orderbook-level-pulse.pw.ts`："medium desktop 240 px"夹具宽度改为 282 / 350，反映新的 md 订单簿宽度。
+- `tests/browser/orderbook-level-pulse.pw.ts`："medium desktop"与"desktop breakpoint"夹具宽度按新的 md 网格项宽度重取（1238 px 约 350、1001 px 约 282）；现有 240 / 280 本身不是精确网格项宽度（对应 262 / 308），实施时以夹具实测为准。
 
 ## 8. 验证顺序
 
