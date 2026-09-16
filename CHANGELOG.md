@@ -6,6 +6,20 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ## Unreleased
 
+### Performance
+
+- Warm terminal visits save the query cache synchronously after restore when the page
+  hides or leaves, and can seed a complete market catalog up to seven days old while
+  normal freshness checks refetch it. The general client cache still expires after 24 hours.
+- Service Worker v9 serves a shared application shell and separately cached document
+  pages immediately while refreshing them in the background. Referral and server routes
+  bypass this cache; the first navigation after a release may use the previous shell.
+- Navigation refreshes clone cacheable HTML before awaiting cache storage, so a page
+  consuming its first network response cannot prevent the shell from being saved.
+- Mobile startup defers the retained Markets view with React Activity while Trade
+  renders synchronously. Adaptive modals share a media query for their 768px breakpoint,
+  avoiding viewport-width layout reads even when closed.
+
 ### Added
 
 - Email wallet export in the account menu and Settings, with exact-owner checks;

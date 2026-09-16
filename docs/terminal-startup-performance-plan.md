@@ -134,3 +134,7 @@ CloudWatch 告警：Lambda `Errors`、`Throttles`、`Duration p95`；CloudFront 
 3. P2 是否开启 Origin Shield（按请求计费）。
 4. P6 字体：是否接受 IBM Plex Sans 退出首屏预加载。
 5. P7 告警通知的邮箱与授权。
+
+## 2026-09-16：热访问 P1 补充
+
+热访问测量与实施见[工作记录](work-memory/sessions/2026-09-16-warm-visit-startup-plan.md)。本轮实现恢复成功后的页面隐藏/离开同步写回、独立 7 天完整目录播种窗口、SW v9 导航 SWR。目录正常 stale/refetch 与通用缓存 24 小时上限不变；应用共用壳条目，文档按 URL 独立缓存，referral、文件与服务端路径放行。设计与取舍归属 [ADR 0005](adr/0005-spa-static-shell.md)、[ADR 0006](adr/0006-startup-preloads-and-edge-caching.md)，部署次序与上一版壳兼容归属 [CloudFront 手册](../deploy/cloudfront/README.md)。这是未发布的代码变化，历史测量不能当作实施后的性能结果；连续访问与 iOS Safari 真机复测仍待完成。后续 Round 2 已实施两项 P2 渲染优化：Markets 外层用 Activity 延后隐藏树提交并保留状态，Trade 仍同步渲染；AdaptiveModal 复用 `(max-width: 767px)` 媒体查询读取快照，SSR 保持 false。同时修复 SW 在任何 await 前克隆可缓存响应，避免页面消费网络响应后无法写入壳缓存。其余 P2/P3 未实施；这两项收益仍需实施后复测。

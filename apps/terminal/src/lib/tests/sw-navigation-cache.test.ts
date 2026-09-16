@@ -1,0 +1,228 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { runInNewContext } from "node:vm";
+import { describe, expect, it, vi } from "vitest";
+import { DOCUMENT_ROUTE_PATHS } from "@/config/document-routes";
+import { classifyStaticPageRequest } from "@/lib/static-pages/static-pages";
+
+const terminalRoot = resolve(__dirname, "../../..");
+const serviceWorker = readFileSync(resolve(terminalRoot, "public/sw.js"), "utf8");
+const origin = "https://app.gatu.ai";
+
+function html(body: string) {
+	return new Response(body, {
+		headers: {
+			"content-type": "text/html; charset=utf-8",
+			"content-security-policy": "script-src 'sha256-old'",
+			"x-test-header": "preserved",
+		},
+	});
+}
+
+function createHarness() {
+	const stores = new Map<string, Map<string, Response>>();
+	const listeners = new Map<string, (event: Record<string, unknown>) => void>();
+	const fetch = vi.fn<(request: Request) => Promise<Response>>().mockResolvedValue(html("new"));
+	function keyOf(request: Request | string) {
+		return typeof request === "string" ? request : request.url;
+	}
+	const open = vi.fn(async (name: string) => {
+		let store = stores.get(name);
+		if (!store) {
+			store = new Map();
+			stores.set(name, store);
+		}
+		const entries = store;
+		return {
+			match: async (request: Request | string) => entries.get(keyOf(request))?.clone(),
+			put: async (request: Request | string, response: Response) => {
+				entries.set(keyOf(request), response);
+			},
+		};
+	});
+	const self = {
+		location: { origin },
+		addEventListener: (name: string, callback: (event: Record<string, unknown>) => void) => {
+			listeners.set(name, callback);
+		},
+	};
+	const context = { self, caches: { open }, fetch, Request, Response, URL, setTimeout, clearTimeout };
+	runInNewContext(serviceWorker, context);
+	function navigate(path: string) {
+		const request = new Request(new URL(path, origin));
+		Object.defineProperty(request, "mode", { value: "navigate" });
+		let response: Promise<Response> | undefined;
+		const background: Promise<unknown>[] = [];
+		listeners.get("fetch")?.({
+			request,
+			respondWith: (value: Promise<Response>) => {
+				response = value;
+			},
+			waitUntil: (value: Promise<unknown>) => {
+				background.push(value);
+			},
+		});
+		return { response, background, request };
+	}
+	return { stores, open, fetch, navigate, context };
+}
+
+describe("service worker navigation caching", () => {
+	it("stores the shell when the page consumes a network miss before the background refresh settles", async () => {
+		const harness = createHarness();
+		const network = html("first shell");
+		let finishFetch: ((response: Response) => void) | undefined;
+		harness.fetch.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finishFetch = resolve;
+				}),
+		);
+		const miss = harness.navigate("/trade/ETH");
+		let refreshed = false;
+		const refresh = Promise.all(miss.background).then(() => {
+			refreshed = true;
+		});
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		finishFetch?.(network);
+		const response = await miss.response;
+		expect(response).toBe(network);
+		if (!response) throw new Error("Navigation did not return a response");
+		const body = response.text();
+		expect(refreshed).toBe(false);
+		expect(network.bodyUsed).toBe(true);
+		expect(() => network.clone()).toThrow();
+		expect(await body).toBe("first shell");
+		await refresh;
+		expect(await harness.stores.get("shell-v9")?.get(`${origin}/shell-v9`)?.clone().text()).toBe("first shell");
+	});
+
+	it("serves one shared application shell immediately with intact headers and refreshes in the background", async () => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v9");
+		await cache.put(`${origin}/shell-v9`, html("old"));
+		let finishFetch: ((response: Response) => void) | undefined;
+		harness.fetch.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finishFetch = resolve;
+				}),
+		);
+		const navigation = harness.navigate("/trade/SOL");
+		const response = await navigation.response;
+		expect(await response?.text()).toBe("old");
+		expect(response?.headers.get("content-security-policy")).toBe("script-src 'sha256-old'");
+		expect(response?.headers.get("x-test-header")).toBe("preserved");
+		expect(navigation.background).toHaveLength(1);
+		expect(harness.fetch).toHaveBeenCalledWith(navigation.request);
+		finishFetch?.(html("new"));
+		await Promise.all(navigation.background);
+		const next = harness.navigate("/portfolio?tab=history");
+		expect(await (await next.response)?.text()).toBe("new");
+		await Promise.all(next.background);
+		expect([...(harness.stores.get("shell-v9")?.keys() ?? [])]).toEqual([`${origin}/shell-v9`]);
+	});
+
+	it("stores a network miss, then uses per-URL document SWR without mixing documents and the shell", async () => {
+		const harness = createHarness();
+		for (const path of ["/trade/ETH", "/docs", "/terms", "/docs/?lang=en"]) {
+			harness.fetch.mockResolvedValueOnce(html(path));
+			const miss = harness.navigate(path);
+			expect(await (await miss.response)?.text()).toBe(path);
+			await Promise.all(miss.background);
+		}
+		expect(harness.stores.get("documents-v9")?.size).toBe(3);
+		harness.fetch.mockResolvedValueOnce(html("updated docs"));
+		const hit = harness.navigate("/docs");
+		expect(await (await hit.response)?.text()).toBe("/docs");
+		await Promise.all(hit.background);
+		expect(await harness.stores.get("documents-v9")?.get(`${origin}/docs`)?.clone().text()).toBe("updated docs");
+		expect(await harness.stores.get("documents-v9")?.get(`${origin}/terms`)?.clone().text()).toBe("/terms");
+	});
+
+	it.each([
+		"/join",
+		"/join/",
+		"/join/abc",
+		"/join/abc/",
+		"/assets/app.js",
+		"/docs/index.html",
+		"/font.woff2/",
+		"/api",
+		"/api/geo",
+		"/client-error-report",
+		"/mobile-agent-sync-ticket",
+		"/mobile-agent-sync-ticket/abc",
+		"/_serverFn/id",
+		"https://other.example/trade/SOL",
+	])("bypasses %s", (path) => {
+		const harness = createHarness();
+		const navigation = harness.navigate(path);
+		expect(navigation.response).toBeUndefined();
+		expect(navigation.background).toHaveLength(0);
+		expect(harness.fetch).not.toHaveBeenCalled();
+		expect(harness.open).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[404, "text/html"],
+		[500, "text/html"],
+		[302, "text/html"],
+		[200, "application/json"],
+		[200, "text/html-malformed"],
+	])("does not store status %s with content-type %s", async (status, contentType) => {
+		const harness = createHarness();
+		const network = new Response("bad", { status, headers: { "content-type": contentType } });
+		harness.fetch.mockResolvedValue(network);
+		const navigation = harness.navigate("/trade/ETH");
+		expect(await navigation.response).toBe(network);
+		await Promise.all(navigation.background);
+		expect(harness.stores.get("shell-v9")?.size).toBe(0);
+	});
+
+	it("does not store redirected HTML or replace a good cached shell with an error", async () => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v9");
+		await cache.put(`${origin}/shell-v9`, html("old"));
+		const redirected = html("redirect destination");
+		Object.defineProperty(redirected, "redirected", { value: true });
+		for (const response of [redirected, new Response("missing", { status: 404 })]) {
+			harness.fetch.mockResolvedValueOnce(response);
+			const navigation = harness.navigate("/trade/ETH");
+			expect(await (await navigation.response)?.text()).toBe("old");
+			await Promise.all(navigation.background);
+			expect(await harness.stores.get("shell-v9")?.get(`${origin}/shell-v9`)?.clone().text()).toBe("old");
+		}
+	});
+
+	it("keeps cached HTML on a network failure and serves network HTML when CacheStorage fails", async () => {
+		const harness = createHarness();
+		const cache = await harness.open("shell-v9");
+		await cache.put(`${origin}/shell-v9`, html("old"));
+		harness.fetch.mockRejectedValueOnce(new Error("offline"));
+		const cached = harness.navigate("/trade/ETH");
+		expect(await (await cached.response)?.text()).toBe("old");
+		await Promise.all(cached.background);
+		harness.open.mockRejectedValueOnce(new Error("storage unavailable"));
+		const uncached = harness.navigate("/docs");
+		expect(await (await uncached.response)?.text()).toBe("new");
+		await Promise.all(uncached.background);
+	});
+
+	it("matches the canonical static-page document list and edge route classification", () => {
+		const { context } = createHarness();
+		const routes = runInNewContext("DOCUMENT_ROUTES", context) as string[];
+		expect([...routes]).toEqual([...DOCUMENT_ROUTE_PATHS]);
+		for (const route of routes) {
+			expect(classifyStaticPageRequest("GET", route)).toMatchObject({
+				kind: "page",
+				candidates: [`${route.slice(1)}/index.html`, "_shell.html"],
+			});
+		}
+		const edge = readFileSync(resolve(terminalRoot, "../../deploy/cloudfront/functions/terminal-request.js"), "utf8");
+		const edgeContext = {};
+		runInNewContext(edge, edgeContext);
+		expect([...runInNewContext("DOCUMENT_ROUTES", edgeContext)]).toEqual([...routes]);
+		expect(serviceWorker).not.toContain("navigationPreload");
+	});
+});

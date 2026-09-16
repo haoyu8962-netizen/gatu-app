@@ -33,21 +33,23 @@ export function MobileTerminal({ className, orderEntryDraftReady = true }: Props
 			<MobileMarketBarProvider enabled={activeTab !== "account"}>
 				<main className={mobileChrome.workspace}>
 					<div className="relative flex-1 min-h-0 overflow-hidden">
-						<div
-							aria-hidden={activeTab !== "markets"}
-							className={cn(
-								"absolute inset-0 min-h-0 w-full",
-								activeTab === "markets" ? "visible z-10 pointer-events-auto" : "invisible z-0 pointer-events-none",
-							)}
-						>
-							<MobileTradeLayout
-								orderEntryDraftReady={orderEntryDraftReady}
-								active={activeTab === "markets"}
-								showMarketBar={activeTab === "markets"}
-								showOrderForm={false}
-								disclosureStates={disclosureStates}
-							/>
-						</div>
+						<Activity mode={activeTab === "markets" ? "visible" : "hidden"}>
+							<div
+								aria-hidden={activeTab !== "markets"}
+								className={cn(
+									"absolute inset-0 min-h-0 w-full",
+									activeTab === "markets" ? "visible z-10 pointer-events-auto" : "invisible z-0 pointer-events-none",
+								)}
+							>
+								<MobileTradeLayout
+									orderEntryDraftReady={orderEntryDraftReady}
+									active={activeTab === "markets"}
+									showMarketBar={activeTab === "markets"}
+									showOrderForm={false}
+									disclosureStates={disclosureStates}
+								/>
+							</div>
+						</Activity>
 						<div
 							aria-hidden={activeTab !== "trade"}
 							className={cn(

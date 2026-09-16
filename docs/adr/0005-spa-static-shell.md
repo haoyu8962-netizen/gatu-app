@@ -43,6 +43,14 @@ Nitro 目前承担的服务端职责：
 
 14. **启动路径不经过 Suspense。** 2026-09-14 用 `tests/browser/boot-milestones.mjs` 逐段计时并配合 CPU 采样：React 水合完成到第一次真实渲染稳定相差 300–400 ms，其间主线程几乎空闲；面板首次提交又比工作区晚 200–560 ms。根因是 React 的 fallback 节流：只由重试车道触发、且树里仍有 Suspense fallback 的渲染，会推迟到上一次 fallback 提交后 300 ms 才提交。启动链上每一级都在触发它——`ClientRuntimeGate` 的 `React.lazy` 钱包运行时、`TopNav` 的 `UserMenu`、工作区的五个面板、`ChartPanel` 内的 TradingView、`PositionsPanel` 的默认页签、页脚、根覆盖层（Toaster、资金动作恢复宿主）。处理：`ClientRuntimeGate` 改为用 `useSyncExternalStore` 读取 `providers/client-root-loader.ts` 发布的不可变快照（模块求值时仍提前 `import()`，服务端快照为空、水合时先渲染占位；成功与失败都发布新的快照对象，所以加载失败一定触发重渲染并抛给错误边界——审查发现只改错误变量而不换快照时 React 不会重渲染，页面会永远停在静态壳），不再有 Suspense；交易入口路由的 `beforeLoad` 通过 `lib/trade/trade-route-boot.ts` 在启动市场目录请求的同时预解析当前表面的全部懒组件（`TradeTerminalPage` → `preloadTradeTerminalSurface` → 桌面表面/顶栏/工作区面板/图表/持仓默认页签/页脚；根覆盖层移到 `components/app-runtime-overlays.tsx` 并一并预解析），TanStack 的 `lazyRouteComponent` 解析后同步渲染；预解析只是提前发起、不等待完成，块本就在壳的预加载清单里，实测在目录返回前解析完毕，第一次真实渲染因此不再挂起（仍未解析的懒组件照旧挂起）。Suspense 边界保留给未预解析的情况。市场加载态的 `TerminalLoadingWorkspace` 也画决策 13 的真实框架，避免在目录慢时退回空格子；它运行在语言目录已就绪的运行时里，标签经 `useLingui` 响应式翻译，预渲染壳与路由 pending 骨架则保持英文源文以维持水合一致。
 
+## 2026-09-16：热访问目录持久化边界
+
+目标是缩短移动、桌面热访问的目录等待，保留完整目录校验、环境隔离与实时数据守卫。隐藏和离开页面时，在对应 QueryClient 恢复成功后同步写回 `hl-rq-cache-v1`；使用与 TanStack 相同的 `{ buster, timestamp, clientState }` JSON envelope，`clientState` 来自 `dehydrate` 与现有 `shouldPersistQuery`。直接 `localStorage.setItem`，不经尾沿 1000 ms 节流的 `persistClient`；重复事件只替换同一个快照，存储异常静默退出。恢复失败不放行生命周期 flush。
+
+目录播种年龄独立为 7 天，provider 的 `maxAge` 与查询 `gcTime` 仍为 24 小时，`staleTime` 与 buster 不变。路由 bootstrap 在 provider 挂载前同步播种；TanStack restore 删除过期的磁盘 envelope，不清理已播种的内存查询；既有 `onSuccess` → `saveCurrentCache` 再保存内存数据。保留原始 `dataUpdatedAt`，旧目录自然 stale 并沿原路径刷新。代价是下架/改名市场可能短暂用旧目录解析：预期正常网络下不到一秒，但慢网、离线或请求失败不保证这个时限；schema 变化仍依赖 `RQ_CACHE_BUSTER`。不播种缓存价格，不放松交易可用性条件。
+
+未采用缩短 persister throttle（仍会丢失离开前的尾沿写入）或延长整个客户端 cache maxAge（扩大了非目录缓存的恢复范围）。验收覆盖恢复前后事件、重复事件、真实 bootstrap/provider 的 envelope 互通、24 小时至 7 天数据播种与后台刷新、超过 7 天删除。实际运行结果见[实施检查点](../work-memory/sessions/2026-09-16-warm-visit-startup-plan.md)；本决定不代表上线或真机验收。
+
 ## 备选方案与取舍
 
 | 方案 | 判断 |

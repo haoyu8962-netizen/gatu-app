@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["static-hosting", "market-recovery"],
-  "summary": "三次连续访问实测：热访问壳 0.16–0.28 s、真实终端 0.43–0.65 s（4× CPU 1.36–1.42 s，全是 JS 求值与 provider 挂载）；官方站热访问空白 1.4–1.7 s（4× 3.1–3.6 s）且资源每次重验证，照抄是回归。真正多余的等待是持久化目录丢失（尾沿节流无隐藏时写回）、24 h 播种上限、壳 HTML 每次 304。计划 P1 三项已由代码复现核实，未实施。",
+  "summary": "三次连续访问实测：热访问壳 0.16–0.28 s、真实终端 0.43–0.65 s（4× CPU 1.36–1.42 s，全是 JS 求值与 provider 挂载）；官方站热访问空白 1.4–1.7 s（4× 3.1–3.6 s）且资源每次重验证，照抄是回归。真正多余的等待是持久化目录丢失（尾沿节流无隐藏时写回）、24 h 播种上限、壳 HTML 每次 304。P1 三项已实现；Round 2 修复 SW 响应体克隆竞态并实现 Markets Activity 与弹窗 matchMedia 两项 P2。未发布，性能与真机复测待完成。",
   "thread": null,
   "baseCommit": "f5010ee7",
   "commits": [],
@@ -71,8 +71,81 @@
 - 对抗验证代理未运行；P2 项的 CPU profile 数字（Activity、matchMedia）来自单次 4× profile，实施前应复测。
 - 未做 iOS 真机测量；bfcache 在无头 Chromium 下 `notRestoredReasons` 不可用。
 
+### 审查方复测（2026-09-16，生产构建 + `serve:spa` 静态服务器，无头 Chromium iPhone 14 仿真）
+
+脚本 `mobile-frames/warm-verify.mjs`（scratchpad，不在仓库）依次五次访问 `http://localhost:3030/trade/SOL`，每次离开后用另一页面读取 `hl-rq-cache-v1`：
+
+| 访问 | 条件 | 壳 | 回退帧 | 真实终端 | `/info` | 导航来源 | 离开后持久化 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 冷启动，渲染后 300 ms 导航离开 | 86 ms | 451 ms | 1,012 ms | 3 次 | 网络 | 三份目录 237 KB（写回生效） |
+| 2 | 热访问（上次快速离开） | 19 ms | 无 | 242 ms | 0 | 网络（SW 首次接管前） | 同上 |
+| 3 | 信封时间戳改为 2 天前 | 31 ms | 无 | 296 ms | 0（后台刷新在窗口外） | CacheStorage | 重新落盘 |
+| 4 | 信封时间戳改为 8 天前 | 27 ms | 214 ms | 419 ms | 3 次 | CacheStorage | 重新落盘 |
+| 5 | 热访问 | 22 ms | 无 | 248 ms | 0 | CacheStorage，TTFB 1 ms | 同上 |
+
+改动前同一脚本在开发服务器上的对照：快速离开后的下一次访问会重新请求三份目录并出现回退帧。局域网静态服务器上壳 HTML 往返本就只有几毫秒，SW 直出的 110–230 ms 收益要在 CloudFront 上才能体现，本记录不作声明。回归：`sw-navigation-cache`（含消费响应体后仍写入缓存的用例）、`query-persistence-flush`、`market-catalog-bootstrap`（24 h–7 天播种、8 天丢弃、provider 删除过期信封后重新持久化）等 10 个文件通过；更广的移动/弹窗子集只有基线已红的 `adaptive-modal-swipe-dismissal` 失败；`pnpm typecheck`、`pnpm build`（预算 3,077,259 gz，比基线低 77,448）通过。未做：CloudFront 上的复测、iOS Safari 真机、bfcache 核查、分片播种（等用户确认）。
+
 ## 后续与替代关系
 
 - 用户决定后按 P1 三项 → P2 顺序派 Codex 实施，本会话对抗审查并用同一脚本复测三次访问。
 - 与 `docs/terminal-startup-performance-plan.md` 的关系：该计划聚焦冷访问，本记录补充热访问；若 P1 落地，应把结论并入该文档与 ADR 0005/0006。
 - 相关记录：[移动占位壳与真实终端逐像素对齐](2026-09-15-mobile-shell-parity.md)。
+
+## P1 实施检查点（2026-09-16，进行中）
+
+- 本次用户授权仅实施 P1 三项；明确禁止安装依赖、暂存、提交、stash、移动 Git 文件与切换分支。基线 `70add4bdfe56e86588b99472ee8369dfc6dd4e56`，分支 `claude/warm-visit-startup`，初始存在未跟踪 `.build/`，保留不动。任务标识与原始会话导出未取得，不重建。
+- 已核对安装源码：sync persister 的 `src/index.ts` 用 `timeoutManager.setTimeout` 做尾沿 throttle（默认 1000 ms）并以 `JSON.stringify` 保存；persist-client-core `src/persist.ts` 声明 `{ timestamp, buster, clientState }`，过期时仅 `removeClient`；React provider 恢复完成后调用 `onSuccess` 再订阅。边缘 `buildSyncCommands` 不删除资源；响应函数 CURRENT/PREVIOUS 共同生成 CSP。
+- 设计先写入 ADR 0005/0006；验收计划为用户指定的 Vitest、Biome、typecheck、memory 三项与 diff check。尚未运行；不继承历史测试结果，不声称部署或真机通过。
+
+### 实施完成与验证（同一未提交工作区）
+
+- `query-persistence.ts` 增加与 persister 独立的同步 flush，按 QueryClient 的 WeakSet 成功恢复闩锁放行；`query-persistence-flush.tsx` 在持久化 provider 内监听 hidden/pagehide，卸载移除。重复事件只替换同一存储键，不追加、清空或变更查询；同步序列化和写入均在 try/catch 中，SSR 直接退出。
+- Envelope 精确为 `JSON.stringify({ buster: RQ_CACHE_BUSTER, timestamp: Date.now(), clientState: dehydrate(queryClient, { shouldDehydrateQuery: shouldPersistQuery }) })`，存储键仍 `hl-rq-cache-v1`，buster 仍 `v3`；SDK 查询键、dehydrated state（含 `queries`、`mutations`、`dataUpdatedAt`）保持 TanStack 原状。测试以真实 `seedPersistedMarketCatalog` 和 `persistQueryClientRestore` 往返验证三份目录。
+- `time.ts` 新增 7 天目录 seed age；bootstrap 只替换 envelope 的年龄检查并导出 seed 函数供真实互通测试，补 SSR guard。未改未来时间、buster、结构与跨目录完整性规则，未改 gcTime/staleTime/通用 24 小时 maxAge。测试证实旧目录先同步可用且 stale、正常重新拉取；provider 删除过期 envelope 后内存仍在，onSuccess 经真实节流 persister 重存。
+- `sw.js` v9 用 `shell-v9` cache 中的同源 `/shell-v9` 键跨应用路径共享，`documents-v9` 按完整 URL 区分；排除 join、文件扩展名、异源与边缘服务端路径。仅存非 redirected 的 200 `text/html`，完整 Response.clone 保留安全头；命中时 waitUntil 刷新、缺失时网络回答。激活清理含 shell/documents 的旧版本缓存；未启用 navigation preload，字体/图标行为不变（仅附带 Biome 格式调整）。
+- 同步更新 CHANGELOG、ADR 0005/0006、CloudFront README 与启动性能计划。当前状态为本地代码实现；未安装依赖、暂存、提交、部署或进行真实账户操作。原有 `.build/` 保留。
+
+已运行命令（适用基线 `70add4bdfe56e86588b99472ee8369dfc6dd4e56` 上的本次未提交改动）：
+
+```bash
+pnpm --filter @gatu/terminal exec vitest run src/lib/tests/query-persistence.test.ts src/lib/tests/market-catalog-bootstrap.test.ts src/lib/tests/market-catalog-query-policy.test.tsx src/lib/tests/chart-asset-cache-policy.test.ts src/lib/tests/query-persistence-flush.test.tsx src/lib/tests/sw-navigation-cache.test.ts src/lib/tests/pwa-manifest.test.ts src/lib/tests/trade-route-boot.test.ts
+pnpm exec biome check apps/terminal/src/lib/query-persistence.ts apps/terminal/src/providers/query-persistence-flush.tsx apps/terminal/src/providers/client-root.tsx apps/terminal/src/config/time.ts apps/terminal/src/lib/hyperliquid/markets/market-catalog-bootstrap.ts apps/terminal/public/sw.js apps/terminal/src/lib/tests/query-persistence-flush.test.tsx apps/terminal/src/lib/tests/market-catalog-bootstrap.test.ts apps/terminal/src/lib/tests/chart-asset-cache-policy.test.ts apps/terminal/src/lib/tests/sw-navigation-cache.test.ts
+pnpm exec biome check --config-path=/tmp/gatu-warm-visit-biome apps/terminal/public/sw.js
+node --check apps/terminal/public/sw.js
+pnpm --filter @gatu/terminal typecheck
+```
+
+结果：Vitest 8 files / 64 tests passed；Biome 检查 9 个 TS/TSX 文件通过（默认 includes 排除 public），额外以相同配置仅放宽 includes 到 `**` 检查 SW：退出 0，保留原有 `MAX_ICON_AGE_MS` 未使用警告；SW Node 语法检查退出 0；typecheck 退出 0。
+
+保留失败证据：初次新增测试误引用未安装的 `@testing-library/react`，Vitest 7 files / 59 tests passed、1 suite 加载失败，首轮 typecheck 同样 TS2307；已改为现有测试的 React `act`/`createRoot`，不新增依赖，复跑通过。SW 的 stdin 格式检查曾报内容未格式化；已格式化并用临时配置直接检查真实文件，上述警告为原有未使用常量。
+
+限制：没有实施后的性能采样、iOS Safari/桌面浏览器跨发布导航验收、完整 build 或部署。历史预期提升不是本轮实测；旧目录“一秒内更新”仅正常网络预期，慢网/离线不承诺。没有偏离三项功能要求；服务端路径排除是保持边缘分类一致所需。memory 三项与最终 diff check 的结果随后追加。
+
+最终记录校验：`pnpm memory:index && pnpm memory:check && pnpm memory:test` 依次退出 0（`Work-memory index updated.`、`Work-memory index verified.`、8 tests / 8 pass / 0 fail）；`git diff --check` 退出 0、无输出。追加本条后再次按同序运行，确保最终记录与 INDEX 一致。最终 Vitest 复跑仍为 8 files / 64 tests passed（SW 格式化后的版本）。全部改动留给 reviewer，未创建提交。
+
+## Round 2 检查点（2026-09-16）
+
+- 用户要求先修复 P1 SW 克隆时序，再实施两项 P2 渲染优化；禁止 install、git add/commit/stash/mv/分支切换。基线仍为 `70add4bdfe56e86588b99472ee8369dfc6dd4e56`、分支 `claude/warm-visit-startup`；起始 P1 未提交改动和 `.build/` 全部保留。当前任务标识及会话原始导出未取得。
+- `navigationStaleWhileRevalidate` 只将合格 HTML 的 `response.clone()` 移到首个 await 之前，后续 put 使用 copy，其他 handler 行为不变。新增真实 Response 回归：等缓存 miss 判定后完成网络请求，页面在 refresh 完成前读取 text，确认 bodyUsed 且原响应 clone 抛错，最后断言壳仍入库。旧代码 24 pass / 1 fail（壳值 undefined），修复后 25/25 通过。
+- Markets 外层新增与 Account 一致的 Activity visible/hidden 模式；保留原 wrapper classes、aria-hidden、子树 props、已有 key 和 disclosureStates，不改 Trade 同步渲染。现有 mobile-terminal、mobile-account-view、responsive-panel-layout、mobile-market-bar 测试已使用 act 或不依赖该树即时提交，本轮没有放宽断言或调整 act。
+- UI 原语用延迟初始化的共享 MediaQueryList 同时提供 change 订阅和 matches 快照，仍为 max-width 767px，SSR 快照仍 false；不引入应用逻辑。
+- 指定测试第一轮为 10 files：9 passed / 1 failed，97 tests passed / 3 failed。唯一红项是用户已标明的 `adaptive-modal-swipe-dismissal` 基线失败，3 项均在 DrawerContent 报 undefined element；其 Drawer mock 缺少当前 DrawerContent 使用的 Viewport，本轮不扩大修复范围。
+- 初次 Biome 因 return 内的 `??=` 赋值表达式失败，已拆为赋值语句再 return；最终复检、类型检查与 memory 结果随后追加。未进行本轮 CPU 性能采样、浏览器视觉或真机验收；历史 4× CPU 收益不是本轮实测。
+
+
+Round 2 实际验证命令（同一基线上的 P1 + Round 2 未提交工作区；不沿用 P1 验证结果）：
+
+```bash
+pnpm --dir apps/terminal exec vitest run src/lib/tests/sw-navigation-cache.test.ts src/lib/tests/mobile-terminal-disclosure-state.test.tsx src/lib/tests/mobile-terminal-market-bar-lifecycle.test.tsx src/lib/tests/mobile-account-view.test.tsx src/lib/tests/responsive-panel-layout.test.ts src/lib/tests/mobile-market-bar.test.tsx src/lib/tests/mobile-market-bar-provider.test.tsx src/lib/tests/adaptive-modal-dismissal.test.tsx src/lib/tests/adaptive-modal-swipe-dismissal.test.tsx src/lib/tests/modal-surface-contract.test.ts
+pnpm exec biome check apps/terminal/public/sw.js apps/terminal/src/lib/tests/sw-navigation-cache.test.ts apps/terminal/src/components/trade/mobile/mobile-terminal.tsx packages/ui/src/modal.tsx CHANGELOG.md docs/terminal-startup-performance-plan.md docs/work-memory/sessions/2026-09-16-warm-visit-startup-plan.md docs/work-memory/INDEX.md
+pnpm exec biome check --config-path=/tmp/gatu-warm-visit-biome apps/terminal/public/sw.js
+node --check apps/terminal/public/sw.js
+pnpm --filter @gatu/terminal typecheck
+pnpm typecheck
+pnpm memory:index && pnpm memory:check && pnpm memory:test
+git diff --check
+```
+
+Biome 最终复检退出 0（3 个 TS/TSX 文件）；默认配置排除 public 和 Markdown，因此沿用 P1 的临时配置单独检查真实 SW 文件，退出 0，只有原有 MAX_ICON_AGE_MS 未使用警告。Node 语法检查与 diff check 均退出 0。Terminal typecheck 退出 0。完整 `pnpm typecheck` 退出 0（hl-react、ui、terminal 全部通过）。memory:index / memory:check / memory:test 依次退出 0，8 tests / 8 pass / 0 fail；更新最终结果后按同序再次校验。
+
+本轮实际修改 8 个文件：`apps/terminal/public/sw.js`、`apps/terminal/src/lib/tests/sw-navigation-cache.test.ts`、`apps/terminal/src/components/trade/mobile/mobile-terminal.tsx`、`packages/ui/src/modal.tsx`、`CHANGELOG.md`、`docs/terminal-startup-performance-plan.md`、本记录和生成的 `docs/work-memory/INDEX.md`。仅 SW 测试新增消费响应体的回归用例；其他现有测试未修改。按用户要求不暂存、不提交。

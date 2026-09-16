@@ -20,6 +20,10 @@ CloudFront 首发后与官方站同环境冷缓存对比：官方站把 45 个�
 8. **排行榜 API 交给边缘缓存。** `/api/leaderboard` 的处理器本就输出 `public, max-age=60, s-maxage=300, stale-while-revalidate=60, stale-if-error=1800`，但 `/api/*` 行为用 CachingDisabled，每个请求都打到 Lambda；上游排行榜约 34 MB，刷新超过 10 s 的函数超时，页面得到空表。改为单独的 `/api/leaderboard` 行为（GET/HEAD，缓存策略 `gatu-terminal-api-cached`：TTL 0/0/1800、按完整查询串缓存、不含头与 Cookie、启用 gzip/brotli），由源的 `s-maxage` 决定新鲜期；函数超时同时提高到 30 s（CloudFront 源读取超时 30 s）。
 9. **不做边缘初判。** 用 `CloudFront-Viewer-Country` 在边缘直接回答 `/api/geo` 能把判定压到毫秒，但代理检测会从"先于交易"变为"随后收紧"；用户明确不采用，地区判定仍以 Lambda + IPdata 的完整判定为准。
 
+10. **热访问由 Service Worker 直接回答导航并后台刷新（2026-09-16）。** `sw.js` v9 对同源 GET navigate 分类：`/join`、`/join/*`、文件扩展名与边缘服务端路径不拦截；六个文档路由各按完整 URL 使用 `documents-v9` SWR；其它应用路由共用 `shell-v9` 中唯一的 `shell-v9` entry。命中立即返回完整 Response（包含 CSP 等头），由 `event.waitUntil` 延长后台刷新；未命中走网络并保存。仅保存未重定向的 200 `text/html`，失败不覆盖旧缓存。版本更新清理旧 shell/document cache，字体和图标策略不变，不启用 navigation preload。此方案替代延长浏览器 HTML max-age，HTTP/边缘缓存策略保持原值；网络与 CacheStorage 失败由测试覆盖，iOS Safari 导航行为仍需真机验证。
+
+发布后的第一次导航可能得到上一版壳，CloudFront 失效不会清掉浏览器 CacheStorage。源码已核对：`deploy.mjs` 的 `buildSyncCommands` 不带 `--delete`，旧哈希资源仍在 S3；`prepareResponseFunction` 轮换 CURRENT/PREVIOUS，`terminal-response.template.js` 合并两套内联脚本哈希，保留上一版一个周期。SW 同时保存旧 Response 自带的 CSP，不把新策略套在旧正文上。`sw.js` 仍由 `NO_STORE_FILES` 下发 `no-store`，注册保留 `updateViaCache: "none"`，故坏 SW 可在下次访问时检查并替换；新 SW 激活会清理退休缓存，不能承诺发现更新的那次导航已经切换。验收以 Node SW harness 的路由隔离、缓存命中/刷新、响应过滤、头保留及路由列表源码契约为准，发布/真机结果另记。
+
 ## 备选方案与取舍
 
 - 在 `__root.tsx` 的 `head()` 里写预加载：块名带哈希，只能在构建后得知，否决。

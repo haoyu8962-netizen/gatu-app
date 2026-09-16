@@ -13,6 +13,7 @@ export const TOAST_DEFAULT_DURATION_MS = 3_000;
 
 export const CHART_ALL_MIDS_TTL_MS = 10_000;
 export const RQ_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1_000;
+export const MARKET_CATALOG_SEED_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1_000;
 export const LAST_MARK_TTL_MS = 60 * 60 * 1_000;
 export const MARKETS_STATS_TTL_MS = 5 * 60 * 1_000;
 
