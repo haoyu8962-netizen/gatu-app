@@ -2,6 +2,7 @@ import { Dropdown, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { BookBookmarkIcon, ListDashesIcon } from "@phosphor-icons/react";
 import { useMemo, useRef, useState } from "react";
+import { ORDERBOOK_LABELS } from "@/config/orderbook-labels";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { useOrderbookHover } from "@/hooks/trade/use-orderbook-hover";
 import { useOrderbookLevelPulses } from "@/hooks/trade/use-orderbook-level-pulses";
@@ -22,7 +23,9 @@ import {
 } from "@/lib/trade/orderbook";
 import { getOrderbookLadderStyle, getOrderbookPlaceholderKeys } from "@/lib/ui/orderbook-layout";
 import { useSizeMode } from "@/stores/use-order-entry-store";
+import { OrderbookGroupingTriggerView } from "./orderbook-grouping-trigger-view";
 import { OrderbookHoverTooltip } from "./orderbook-hover-tooltip";
+import { ORDERBOOK_PANEL_CLASS, ORDERBOOK_TAB_CONTENT_CLASS, OrderbookPanelView } from "./orderbook-panel-view";
 import { OrderbookPlaceholderRow } from "./orderbook-placeholder-row";
 import { OrderbookRow } from "./orderbook-row";
 import { TradesPanel } from "./trades-panel";
@@ -151,7 +154,7 @@ export function OrderbookPanel() {
 			ref={panelRef}
 			value={tab}
 			onValueChange={setTab}
-			className="orderbook-panel-container h-full min-h-0 flex flex-col overflow-hidden bg-surface"
+			className={ORDERBOOK_PANEL_CLASS}
 			fullWidth
 			size="sm"
 			variant="underline"
@@ -160,19 +163,19 @@ export function OrderbookPanel() {
 				<TabsList className="w-full min-w-0">
 					<TabsTrigger
 						value="book"
-						aria-label={t`Order Book`}
+						aria-label={t(ORDERBOOK_LABELS.orderBook)}
 						icon={<BookBookmarkIcon className="size-3.5 shrink-0" />}
 						className="min-w-0"
 					>
-						<span className="orderbook-tab-label min-w-0 truncate">{t`Order Book`}</span>
+						<span className="orderbook-tab-label min-w-0 truncate">{t(ORDERBOOK_LABELS.orderBook)}</span>
 					</TabsTrigger>
 					<TabsTrigger
 						value="trades"
-						aria-label={t`Recent Trades`}
+						aria-label={t(ORDERBOOK_LABELS.recentTrades)}
 						icon={<ListDashesIcon className="size-3.5 shrink-0" />}
 						className="min-w-0"
 					>
-						<span className="orderbook-tab-label min-w-0 truncate">{t`Trades`}</span>
+						<span className="orderbook-tab-label min-w-0 truncate">{t(ORDERBOOK_LABELS.trades)}</span>
 					</TabsTrigger>
 				</TabsList>
 			</div>
@@ -182,54 +185,41 @@ export function OrderbookPanel() {
 				ref={hoverRootRef}
 				{...hover.containerProps}
 				aria-busy={!hasCurrentSnapshot && !hasFailure}
-				className="flex-1 min-h-0 mt-0 pt-0 flex flex-col"
+				className={ORDERBOOK_TAB_CONTENT_CLASS}
 			>
 				{!hasCurrentSnapshot && !hasFailure && (
 					<output aria-live="polite" className="sr-only">
-						{t`Waiting for order book...`}
+						{t(ORDERBOOK_LABELS.waiting)}
 					</output>
 				)}
-				<div className="orderbook-grid grid gap-1 px-2 py-1.5 items-center text-xs orderbook-header-text border-b border-stroke-weak shrink-0">
-					<div className="min-w-0 flex items-center gap-1 overflow-hidden">
-						<span className="orderbook-price-heading shrink-0">{t`Price`}</span>
+				<OrderbookPanelView
+					labels={{
+						price: t(ORDERBOOK_LABELS.price),
+						size: t(ORDERBOOK_LABELS.size),
+						total: t(ORDERBOOK_LABELS.total),
+						spread: t(ORDERBOOK_LABELS.spread),
+					}}
+					grouping={
 						<Dropdown
-							trigger={
-								<span className="block min-w-0 truncate text-xs tabular-nums">
-									{selectedOption?.label ?? priceGroupingOptions[0]?.label ?? "—"}
-								</span>
+							renderTrigger={
+								<OrderbookGroupingTriggerView label={selectedOption?.label ?? priceGroupingOptions[0]?.label ?? "—"} />
 							}
 							items={dropdownItems}
 							size="xxs"
 							align="start"
 							triggerVariant="minimal"
-							triggerAriaLabel={t`Price grouping`}
+							triggerAriaLabel={t(ORDERBOOK_LABELS.priceGrouping)}
 							triggerClassName="min-w-0 max-w-full"
 							className="min-w-0 flex-1 overflow-hidden"
 							popupClassName="min-w-0 w-max"
 						/>
-					</div>
-					<div className="min-w-0 truncate">
-						<span className="flex min-w-0 items-center justify-end gap-0.5">
-							{t`Size`}
-							<span className="orderbook-asset-heading text-fg truncate">({displayAsset})</span>
-						</span>
-					</div>
-					<div className="min-w-0 truncate">
-						<span className="flex min-w-0 items-center justify-end gap-0.5">
-							{t`Total`}
-							<span className="orderbook-asset-heading text-fg truncate">({displayAsset})</span>
-						</span>
-					</div>
-				</div>
-
-				<div ref={orderbookContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
-					<div
-						data-slot="orderbook-asks"
-						data-orderbook-side-container="ask"
-						style={getOrderbookLadderStyle(rowHeightPx, fullRowCount > 0)}
-						className="flex-1 min-h-0 overflow-hidden flex flex-col justify-end gap-[2px]"
-					>
-						{hasCurrentSnapshot && asks.length > 0 ? (
+					}
+					assetLabel={displayAsset || null}
+					spreadText={spreadText}
+					sideStyle={getOrderbookLadderStyle(rowHeightPx, fullRowCount > 0)}
+					ladderRef={orderbookContainerRef}
+					asks={
+						hasCurrentSnapshot && asks.length > 0 ? (
 							<>
 								{getOrderbookPlaceholderKeys(visibleRows - asks.length).map((key) => (
 									<OrderbookPlaceholderRow key={key} />
@@ -262,24 +252,10 @@ export function OrderbookPanel() {
 							<OrderbookSideEmpty />
 						) : (
 							getOrderbookPlaceholderKeys(visibleRows).map((key) => <OrderbookPlaceholderRow key={key} />)
-						)}
-					</div>
-
-					<div
-						data-slot="orderbook-spread"
-						className="orderbook-spread-bg shrink-0 px-2 py-1.5 border-y border-stroke-weak flex items-center justify-between text-xs text-fg"
-					>
-						<span>{t`Spread`}</span>
-						<span className="tabular-nums font-medium text-fg-muted">{spreadText}</span>
-					</div>
-
-					<div
-						data-slot="orderbook-bids"
-						data-orderbook-side-container="bid"
-						style={getOrderbookLadderStyle(rowHeightPx, fullRowCount > 0)}
-						className="flex-1 min-h-0 overflow-hidden flex flex-col gap-[2px]"
-					>
-						{hasCurrentSnapshot && bids.length > 0 ? (
+						)
+					}
+					bids={
+						hasCurrentSnapshot && bids.length > 0 ? (
 							<>
 								{bids.map((level, rank) => (
 									<OrderbookRow
@@ -308,9 +284,9 @@ export function OrderbookPanel() {
 							<OrderbookSideEmpty />
 						) : (
 							getOrderbookPlaceholderKeys(visibleRows).map((key) => <OrderbookPlaceholderRow key={key} />)
-						)}
-					</div>
-				</div>
+						)
+					}
+				/>
 				{hover.activeLevel && (
 					<OrderbookHoverTooltip
 						hover={hover}
@@ -323,7 +299,7 @@ export function OrderbookPanel() {
 				)}
 			</TabsContent>
 
-			<TabsContent value="trades" keepMounted className="flex-1 min-h-0 mt-0 pt-0 flex flex-col">
+			<TabsContent value="trades" keepMounted className={ORDERBOOK_TAB_CONTENT_CLASS}>
 				<TradesPanel showInQuote={showOrderbookInQuote} />
 			</TabsContent>
 		</Tabs>
@@ -332,5 +308,9 @@ export function OrderbookPanel() {
 
 function OrderbookSideEmpty() {
 	const { t } = useLingui();
-	return <div className="flex flex-1 items-center justify-center px-2 py-3 text-xs text-fg-muted">{t`No orders`}</div>;
+	return (
+		<div className="flex flex-1 items-center justify-center px-2 py-3 text-xs text-fg-muted">
+			{t(ORDERBOOK_LABELS.noOrders)}
+		</div>
+	);
 }

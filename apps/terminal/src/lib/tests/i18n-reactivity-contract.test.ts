@@ -104,15 +104,18 @@ describe("live localization source contract", () => {
 	});
 });
 
-const PURE_HEADER_VIEWS = [
+const PURE_PRESENTATION_VIEWS = [
 	"header/favorites-strip-view.tsx",
 	"chart/token-selector-trigger-view.tsx",
 	"components/asset-icon-slot-view.tsx",
 	"market-overview-view.tsx",
 	"layout/market-header-view.tsx",
+	"orderbook/orderbook-panel-view.tsx",
+	"orderbook/orderbook-tabs-view.tsx",
+	"orderbook/orderbook-grouping-trigger-view.tsx",
 ];
 
-it.each(PURE_HEADER_VIEWS)("receives translated presentation props in %s", (path) => {
+it.each(PURE_PRESENTATION_VIEWS)("receives translated presentation props in %s", (path) => {
 	const source = readFileSync(resolve(__dirname, "../../components/trade", path), "utf8");
 	expect(source).toContain("interface Props");
 	expect(source).not.toMatch(/@lingui|use[A-Z]\w*\(|@\/stores|window|document|Date\.|Math\.random/);

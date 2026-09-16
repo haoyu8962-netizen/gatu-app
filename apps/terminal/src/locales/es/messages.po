@@ -4774,7 +4774,7 @@ msgid "No order history found."
 msgstr "No se encontró historial de órdenes."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "No orders"
 msgstr "Sin órdenes"
 
@@ -5094,11 +5094,9 @@ msgstr "Oráculo"
 #~ msgid "ORACLE"
 #~ msgstr "ORÁCULO"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Order Book"
 msgstr "Libro de órdenes"
@@ -5674,7 +5672,6 @@ msgstr "Página anterior de bóvedas"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5688,7 +5685,6 @@ msgstr "Página anterior de bóvedas"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5702,6 +5698,7 @@ msgstr "Página anterior de bóvedas"
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/market-header.ts
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
@@ -5720,7 +5717,7 @@ msgstr "Precio superior a {price}"
 msgid "Price below {price}"
 msgstr "Precio inferior a {price}"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "Price grouping"
 msgstr "Agrupación de precios"
 
@@ -5895,7 +5892,7 @@ msgstr "Reclamaciones recientes de recompensas"
 msgid "Recent reward claims could not be verified."
 msgstr "No se pudieron verificar las reclamaciones recientes de recompensas."
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "Recent Trades"
 msgstr "Operaciones recientes"
 
@@ -6924,7 +6921,6 @@ msgstr "Firmando..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -6939,6 +6935,7 @@ msgstr "Firmando..."
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
@@ -7111,9 +7108,8 @@ msgstr "De Spot a staking"
 msgid "Spot to staking available"
 msgstr "Transferencia de Spot a staking disponible"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Spread"
 msgstr "Diferencial"
@@ -8356,15 +8352,14 @@ msgstr "No se pudieron cargar los metadatos del token."
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr "Demasiadas aprobaciones móviles esperan recuperación en esta pestaña. Resuelve o revoca una primero."
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Total"
 msgstr "Total"
@@ -8530,10 +8525,9 @@ msgstr "Traders"
 msgid "Traders referred"
 msgstr "Traders referidos"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "Operaciones"
@@ -9395,7 +9389,7 @@ msgid "Waiting for confirmation..."
 msgstr "Esperando confirmación..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Waiting for order book..."
 msgstr "Esperando libro de órdenes..."

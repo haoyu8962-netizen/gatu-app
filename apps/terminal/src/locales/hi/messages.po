@@ -4774,7 +4774,7 @@ msgid "No order history found."
 msgstr "कोई ऑर्डर हिस्ट्री नहीं मिली।"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "No orders"
 msgstr "कोई ऑर्डर नहीं"
 
@@ -5094,11 +5094,9 @@ msgstr "ओरेकल"
 #~ msgid "ORACLE"
 #~ msgstr "ऑरेकल"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Order Book"
 msgstr "ऑर्डर बुक"
@@ -5674,7 +5672,6 @@ msgstr "वॉल्ट का पिछला पेज"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5688,7 +5685,6 @@ msgstr "वॉल्ट का पिछला पेज"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5702,6 +5698,7 @@ msgstr "वॉल्ट का पिछला पेज"
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/market-header.ts
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
@@ -5720,7 +5717,7 @@ msgstr "कीमत {price} से ऊपर"
 msgid "Price below {price}"
 msgstr "कीमत {price} से नीचे"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "Price grouping"
 msgstr "प्राइस ग्रुपिंग"
 
@@ -5895,7 +5892,7 @@ msgstr "हाल के पुरस्कार प्राप्ति र�
 msgid "Recent reward claims could not be verified."
 msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड सत्यापित नहीं किए जा सके।"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "Recent Trades"
 msgstr "हाल के ट्रेड"
 
@@ -6924,7 +6921,6 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -6939,6 +6935,7 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
@@ -7111,9 +7108,8 @@ msgstr "स्पॉट से स्टेकिंग"
 msgid "Spot to staking available"
 msgstr "स्पॉट से स्टेकिंग के लिए उपलब्ध"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Spread"
 msgstr "स्प्रेड"
@@ -8356,15 +8352,14 @@ msgstr "टोकन मेटाडेटा लोड नहीं किय�
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr "इस टैब में बहुत सारी मोबाइल स्वीकृतियाँ पुनर्प्राप्ति की प्रतीक्षा में हैं। पहले किसी एक को हल करें या निरस्त करें।"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Total"
 msgstr "कुल"
@@ -8530,10 +8525,9 @@ msgstr "ट्रेडर्स"
 msgid "Traders referred"
 msgstr "रेफ़र किए गए ट्रेडर"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "ट्रेड्स"
@@ -9395,7 +9389,7 @@ msgid "Waiting for confirmation..."
 msgstr "पुष्टि की प्रतीक्षा है..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Waiting for order book..."
 msgstr "ऑर्डर बुक की प्रतीक्षा..."

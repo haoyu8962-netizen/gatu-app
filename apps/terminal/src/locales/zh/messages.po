@@ -4774,7 +4774,7 @@ msgid "No order history found."
 msgstr "未找到订单历史。"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "No orders"
 msgstr "暂无挂单"
 
@@ -5094,11 +5094,9 @@ msgstr "预言机"
 #~ msgid "ORACLE"
 #~ msgstr "预言机"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Order Book"
 msgstr "订单簿"
@@ -5674,7 +5672,6 @@ msgstr "上一页金库"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5688,7 +5685,6 @@ msgstr "上一页金库"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5702,6 +5698,7 @@ msgstr "上一页金库"
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/market-header.ts
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
@@ -5720,7 +5717,7 @@ msgstr "价格高于 {price}"
 msgid "Price below {price}"
 msgstr "价格低于 {price}"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "Price grouping"
 msgstr "价格合并"
 
@@ -5895,7 +5892,7 @@ msgstr "最近领取记录"
 msgid "Recent reward claims could not be verified."
 msgstr "无法验证最近的奖励领取记录。"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "Recent Trades"
 msgstr "最近成交"
 
@@ -6924,7 +6921,6 @@ msgstr "签名中..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -6939,6 +6935,7 @@ msgstr "签名中..."
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
@@ -7111,9 +7108,8 @@ msgstr "Spot 转入质押"
 msgid "Spot to staking available"
 msgstr "Spot 转入质押可用"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Spread"
 msgstr "价差"
@@ -8356,15 +8352,14 @@ msgstr "无法加载代币元数据。"
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr "此标签页中有过多移动授权等待恢复。请先解决或撤销其中一项。"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Total"
 msgstr "合计"
@@ -8530,10 +8525,9 @@ msgstr "交易者"
 msgid "Traders referred"
 msgstr "已推荐交易者"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "成交"
@@ -9395,7 +9389,7 @@ msgid "Waiting for confirmation..."
 msgstr "正在等待确认..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Waiting for order book..."
 msgstr "等待订单簿..."

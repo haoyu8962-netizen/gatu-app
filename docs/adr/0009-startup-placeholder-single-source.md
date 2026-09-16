@@ -1,6 +1,6 @@
 # ADR 0009：启动占位与真实界面共享同一展示组件
 
-- 状态：已接受（2026-09-16），迁移进行中：表面 1、2 已完成（2026-09-16，含 Playwright 盒子实测）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
+- 状态：已接受（2026-09-16），迁移进行中：表面 1、2、3 已完成（2026-09-16，含 Playwright 盒子实测）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
 - 前置：[ADR 0005](0005-spa-static-shell.md)（预渲染 SPA 壳）、[ADR 0006](0006-startup-preloads-and-edge-caching.md)（启动预加载与边缘缓存）
 - 规则：[启动占位一致性规则](../../.claude/rules/placeholder-parity.md)
 - 证据：[移动占位壳与真实终端逐像素对齐](../work-memory/sessions/2026-09-15-mobile-shell-parity.md)、[热访问启动计划与实测](../work-memory/sessions/2026-09-16-warm-visit-startup-plan.md)、[本 ADR 的任务记录](../work-memory/sessions/2026-09-16-placeholder-single-source-adr.md)
@@ -35,6 +35,8 @@
 - **直接在壳里渲染真实组件树。** 真实组件依赖 provider、订阅与客户端持久化状态，构建期不可渲染；即使 mock，水合闭包会变成整个终端，与预算和启动链目标冲突；否决。
 
 ## 后果与边界
+
+- 表面 3：桌面订单簿列头、侧容器和价差共用纯视图，页签与分组按钮以 primitive SSR 对照钉住几何；静态页签视图自带与 Base UI 指示条同类的下划线（两等宽页签，left 0%/50%、width 50%），避免真实面板挂载后下划线突然出现；数据前分组与价差显示 `—`，行渲染、测量、悬停、脉冲和订阅仍由运行时管理，验证范围见[迁移记录](../work-memory/sessions/2026-09-16-orderbook-chrome-view-migration.md)。
 
 - 表面 2：顶栏、页脚与桌面外框复用纯视图；Dropdown 增加可选 renderTrigger，将交互行为附到共享按钮，默认调用路径不变。占位只渲染匿名 Connect Wallet，真实匿名按钮与连接中/加载占位统一使用 min-w-[9rem]。预渲染壳无法知道 testnet 与地区状态，因此不显示 TestnetBanner/GeoRestrictionBanner，运行时仍保持原守卫与 banner offset。页脚 clock=null 使用不可见 00:00 AM 保留宽度，状态为不旋转的 Connecting。验收使用结构/class 一致性与 reviewer Playwright 盒子测量。
 - 展示组件进入壳的水合闭包，必须保持轻量：只含标记与 class，不引入新的依赖；预算脚本继续约束静态启动闭包。

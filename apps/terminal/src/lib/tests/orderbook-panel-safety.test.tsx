@@ -6,6 +6,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
+import { ORDERBOOK_PANEL_CLASS, ORDERBOOK_TAB_CONTENT_CLASS } from "@/components/trade/orderbook/orderbook-panel-view";
 import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
 
 const mocks = vi.hoisted(() => ({
@@ -148,6 +149,16 @@ describe("OrderbookPanel safety", () => {
 			renderPanel();
 
 			expect(container.querySelector("[aria-busy]")?.getAttribute("aria-busy")).toBe("true");
+			expect(container.querySelector(".orderbook-panel-container")?.className).toBe(ORDERBOOK_PANEL_CLASS);
+			const bookContent = container.querySelector("[aria-busy]");
+			for (const token of ORDERBOOK_TAB_CONTENT_CLASS.split(" "))
+				expect(bookContent?.classList.contains(token)).toBe(true);
+			for (const row of container.querySelectorAll('[data-slot="orderbook-placeholder-row"]'))
+				expect(row.querySelector("button, [tabindex]")).toBeNull();
+			const visibleContent = bookContent?.cloneNode(true) as HTMLElement;
+			visibleContent.querySelector("output.sr-only")?.remove();
+			expect(visibleContent.textContent).not.toContain("Waiting for order book...");
+
 			expect(container.querySelector("output.sr-only")?.textContent).toContain("Waiting for order book...");
 			expect(container.textContent).not.toContain("No orders");
 			expect(container.querySelector('button[aria-label*="limit price"]')).toBeNull();

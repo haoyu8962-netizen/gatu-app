@@ -1,14 +1,4 @@
-import {
-	BookBookmarkIcon,
-	CaretDownIcon,
-	GearIcon,
-	GlobeIcon,
-	ListDashesIcon,
-	ListIcon,
-	MoonIcon,
-	SunIcon,
-	WalletIcon,
-} from "@phosphor-icons/react";
+import { CaretDownIcon, GearIcon, GlobeIcon, ListIcon, MoonIcon, SunIcon, WalletIcon } from "@phosphor-icons/react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
 import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
@@ -22,11 +12,18 @@ import { FooterBarView } from "../footer/footer-bar-view";
 import { FavoritesStripView } from "../header/favorites-strip-view";
 import { TopNavView } from "../header/top-nav-view";
 import { MarketOverviewView } from "../market-overview-view";
+import {
+	ORDERBOOK_PANEL_CLASS,
+	ORDERBOOK_TAB_CONTENT_CLASS,
+	OrderbookPanelView,
+} from "../orderbook/orderbook-panel-view";
+import { OrderbookTabsView } from "../orderbook/orderbook-tabs-view";
 import { type DesktopGridLoadingPanelId, DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
 import {
 	FAVORITES_PLACEHOLDER,
 	FOOTER_PLACEHOLDER,
 	MARKET_HEADER_PLACEHOLDER,
+	ORDERBOOK_PLACEHOLDER,
 	TOP_NAV_PLACEHOLDER,
 } from "./desktop-placeholders";
 import { DesktopTerminalFrameView } from "./desktop-terminal-frame-view";
@@ -40,12 +37,7 @@ const VALUE_PLACEHOLDER = "-";
 const NAME_PLACEHOLDER = "—";
 
 export interface PanelFrameLabels {
-	orderBook: string;
-	trades: string;
-	price: string;
 	size: string;
-	total: string;
-	spread: string;
 	orderControls: readonly (readonly [label: string, value: string])[];
 	orderTypeTabs: readonly string[];
 	long: string;
@@ -62,12 +54,7 @@ export interface PanelFrameLabels {
 }
 
 export const DEFAULT_PANEL_FRAME_LABELS: PanelFrameLabels = {
-	orderBook: "Order Book",
-	trades: "Trades",
-	price: "Price",
 	size: "Size",
-	total: "Total",
-	spread: "Spread",
 	orderControls: [
 		["Margin", "Cross"],
 		["Leverage", NAME_PLACEHOLDER],
@@ -125,7 +112,11 @@ export function AppShellSkeleton() {
 	);
 }
 
-export function renderDesktopPanelFrame(panelId: DesktopGridLoadingPanelId, labels = DEFAULT_PANEL_FRAME_LABELS) {
+export function renderDesktopPanelFrame(
+	panelId: DesktopGridLoadingPanelId,
+	labels = DEFAULT_PANEL_FRAME_LABELS,
+	orderbook = ORDERBOOK_PLACEHOLDER,
+) {
 	switch (panelId) {
 		case "favoriteCoins":
 			return <FavoritesFrame />;
@@ -134,7 +125,14 @@ export function renderDesktopPanelFrame(panelId: DesktopGridLoadingPanelId, labe
 		case "chart":
 			return <ChartFrame />;
 		case "marketData":
-			return <OrderBookFrame labels={labels} />;
+			return (
+				<div className={ORDERBOOK_PANEL_CLASS}>
+					<OrderbookTabsView labels={orderbook.labels} active={orderbook.active} />
+					<div className={ORDERBOOK_TAB_CONTENT_CLASS}>
+						<OrderbookPanelView {...orderbook} />
+					</div>
+				</div>
+			);
 		case "tradingInterface":
 			return <TradePanelFrame labels={labels} />;
 		case "accountTable":
@@ -172,41 +170,6 @@ function ChartFrame() {
 	return (
 		<div className="flex h-full items-center justify-center">
 			<GatuLogo variant="mark" micro className="size-7 opacity-40" />
-		</div>
-	);
-}
-
-function OrderBookFrame({ labels }: FrameProps) {
-	return (
-		<div className="flex h-full flex-col">
-			<div className="flex border-b border-stroke-weak text-xs font-medium">
-				<span className="flex flex-1 items-center justify-center gap-1.5 border-b-2 border-fg px-2 py-2 text-fg">
-					<BookBookmarkIcon className="size-3.5 shrink-0" />
-					{labels.orderBook}
-				</span>
-				<span className="flex flex-1 items-center justify-center gap-1.5 px-2 py-2 text-fg-muted">
-					<ListDashesIcon className="size-3.5 shrink-0" />
-					{labels.trades}
-				</span>
-			</div>
-			<div className="grid grid-cols-3 gap-1 border-b border-stroke-weak px-2 py-1.5 text-xs text-fg-muted">
-				<span className="flex items-center gap-1">
-					{labels.price}
-					<CaretDownIcon className="size-3" />
-				</span>
-				<span className="text-right">
-					{labels.size} ({NAME_PLACEHOLDER})
-				</span>
-				<span className="text-right">
-					{labels.total} ({NAME_PLACEHOLDER})
-				</span>
-			</div>
-			<div className="flex-1" />
-			<div className="flex items-center justify-between bg-alternate px-2 py-1 text-xs text-fg-muted">
-				<span>{labels.spread}</span>
-				<span>{NAME_PLACEHOLDER}</span>
-			</div>
-			<div className="flex-1" />
 		</div>
 	);
 }

@@ -5,10 +5,12 @@ import { APP_VERSION, DEFAULT_FAVORITE_MARKETS } from "@/config/app";
 import { DEFAULT_LOCALE_NAME, DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { FOOTER_LABELS, FOOTER_LINKS } from "@/config/footer-links";
 import { MARKET_HEADER_LABELS } from "@/config/market-header";
+import { ORDERBOOK_LABELS } from "@/config/orderbook-labels";
 import { HEADER_ICON_BUTTON_CLASS, HeaderIconButtonView } from "../header/header-icon-button-view";
 import { DESKTOP_LANGUAGE_TRIGGER_CLASS, NavMenuTriggerView } from "../header/nav-menu-trigger-view";
 import { TOP_NAV_LOGO_CLASS, TOP_NAV_WORDMARK_CLASS } from "../header/top-nav-view";
 import { WalletCtaView } from "../header/wallet-cta-view";
+import { OrderbookGroupingTriggerView } from "../orderbook/orderbook-grouping-trigger-view";
 
 export const FAVORITES_PLACEHOLDER = {
 	items: DEFAULT_FAVORITE_MARKETS.map((name) => ({ name, label: `${name}-USDC`, active: false })),
@@ -103,4 +105,23 @@ export const FOOTER_PLACEHOLDER = {
 	linksLabel: FOOTER_LABELS.links.message,
 	clock: null,
 	version: APP_VERSION,
+};
+
+export const ORDERBOOK_PLACEHOLDER = {
+	labels: {
+		orderBook: ORDERBOOK_LABELS.orderBook.message,
+		trades: ORDERBOOK_LABELS.trades.message,
+		price: ORDERBOOK_LABELS.price.message,
+		size: ORDERBOOK_LABELS.size.message,
+		total: ORDERBOOK_LABELS.total.message,
+		spread: ORDERBOOK_LABELS.spread.message,
+	},
+	assetLabel: null as string | null,
+	spreadText: "—",
+	grouping: createElement(
+		"div",
+		{ className: "min-w-0 flex-1 overflow-hidden" },
+		createElement(OrderbookGroupingTriggerView, { label: "—" }),
+	),
+	active: "book" as const,
 };

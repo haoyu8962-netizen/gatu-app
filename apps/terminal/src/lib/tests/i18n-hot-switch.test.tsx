@@ -38,6 +38,10 @@ const zhTranslations: Record<string, string> = {
 	"Est. Slippage": "预估滑点",
 	Slippage: "滑点",
 	"Order Book": "订单簿",
+	Trades: "成交",
+	"Recent Trades": "最近成交",
+	Spread: "价差",
+	"Price grouping": "价格分组",
 	Price: "价格",
 	Size: "数量",
 	Total: "合计",
@@ -515,6 +519,8 @@ describe("language hot switching", () => {
 		act(() => checkbox?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 		expect(checkbox?.getAttribute("aria-checked")).toBe("true");
 
+		const originalBook = container.querySelector(".orderbook-panel-container");
+		const originalGrouping = container.querySelector('[aria-label="Price grouping"]');
 		const originalCheckbox = checkbox;
 		const originalMobileNav = container.querySelector<HTMLElement>('[aria-label="Primary navigation"]');
 		const originalPath = window.location.pathname;
@@ -536,6 +542,10 @@ describe("language hot switching", () => {
 		expect(container.textContent).toContain("投资组合价值");
 		expect(container.textContent).toContain("合约维持保证金");
 		expect(container.querySelector('[aria-label="订单簿"]')).not.toBeNull();
+		expect(container.querySelector(".orderbook-panel-container")).toBe(originalBook);
+		expect(container.querySelector('[aria-label="价格分组"]')).toBe(originalGrouping);
+		expect(originalBook?.querySelector('[aria-label="最近成交"]')?.textContent).toBe("成交");
+		expect(originalBook?.querySelector('[data-slot="orderbook-spread"]')?.textContent).toContain("价差");
 		expect(container.querySelector('[aria-label="提款"]')).not.toBeNull();
 		const localizedMobileNav = container.querySelector<HTMLElement>('[aria-label="主导航"]');
 		expect(localizedMobileNav).toBe(originalMobileNav);

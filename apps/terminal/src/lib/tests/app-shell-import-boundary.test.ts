@@ -33,6 +33,12 @@ describe("app shell import boundary", () => {
 		}
 	});
 
+	it("imports the order book views directly without runtime primitives", () => {
+		expect(imports).toContain("../orderbook/orderbook-panel-view");
+		expect(imports).toContain("../orderbook/orderbook-tabs-view");
+		expect(imports).not.toContain("@gatu/ui");
+	});
+
 	it("does not retain unused legacy exceptions", () => {
 		for (const specifier of LEGACY_SHELL_IMPORTS) expect(imports).toContain(specifier);
 	});

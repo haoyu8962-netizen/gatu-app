@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Desktop order-book startup chrome now shares the real column headers, side
+  containers, grouping trigger and spread row, with matching tab-strip geometry.
+
 - Desktop startup placeholders now share the real top navigation, footer and outer
   frame, including compact navigation, hidden Soon labels, footer dividers and an
   invisible clock slot. The anonymous Connect Wallet button now has the same

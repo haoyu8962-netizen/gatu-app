@@ -1,5 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { MARKET_HEADER_LABELS } from "@/config/market-header";
+import { ORDERBOOK_LABELS } from "@/config/orderbook-labels";
+import { getBaseQuoteFromPairName } from "@/domain/market";
 import { SPOT_MARKET_NAME_SEPARATOR } from "@/domain/market/display";
 import { getBuilderPerpDisplayName, getMarketKindFromName, getPerpDisplayName } from "@/lib/hyperliquid/markets/helper";
 import { useExchangeScope } from "@/providers/exchange-scope";
@@ -9,18 +11,13 @@ import { FavoritesStripView } from "../header/favorites-strip-view";
 import { MarketOverviewView } from "../market-overview-view";
 import { type PanelFrameLabels, renderDesktopPanelFrame } from "./app-shell-skeleton";
 import { type DesktopGridLoadingPanelId, DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
-import { FAVORITES_PLACEHOLDER, MARKET_HEADER_PLACEHOLDER } from "./desktop-placeholders";
+import { FAVORITES_PLACEHOLDER, MARKET_HEADER_PLACEHOLDER, ORDERBOOK_PLACEHOLDER } from "./desktop-placeholders";
 import { MarketHeaderView } from "./market-header-view";
 
 function useTranslatedPanelFrameLabels(): PanelFrameLabels {
 	const { t } = useLingui();
 	return {
-		orderBook: t`Order Book`,
-		trades: t`Trades`,
-		price: t`Price`,
 		size: t`Size`,
-		total: t`Total`,
-		spread: t`Spread`,
 		orderControls: [
 			[t`Margin`, t`Cross`],
 			[t`Leverage`, "—"],
@@ -76,6 +73,19 @@ export function TerminalLoadingWorkspace() {
 				? `${t(MARKET_HEADER_LABELS.funding)} / ${t(MARKET_HEADER_LABELS.resetsIn)}`
 				: t(MARKET_HEADER_LABELS[stat.id === "price" ? "mark" : stat.id]),
 	}));
+	const orderbook = {
+		...ORDERBOOK_PLACEHOLDER,
+		labels: {
+			orderBook: t(ORDERBOOK_LABELS.orderBook),
+			trades: t(ORDERBOOK_LABELS.trades),
+			price: t(ORDERBOOK_LABELS.price),
+			size: t(ORDERBOOK_LABELS.size),
+			total: t(ORDERBOOK_LABELS.total),
+			spread: t(ORDERBOOK_LABELS.spread),
+		},
+		assetLabel:
+			pairName && kind ? getBaseQuoteFromPairName(kind === "spot" ? routeMarketName : pairName, kind).baseToken : null,
+	};
 	function renderPanel(panelId: DesktopGridLoadingPanelId) {
 		if (panelId === "favoriteCoins") return <FavoritesStripView {...favorites} />;
 		if (panelId === "coinInfo")
@@ -96,7 +106,7 @@ export function TerminalLoadingWorkspace() {
 					overview={<MarketOverviewView stats={stats} ariaLabel={t(MARKET_HEADER_LABELS.price)} />}
 				/>
 			);
-		return renderDesktopPanelFrame(panelId, labels);
+		return renderDesktopPanelFrame(panelId, labels, orderbook);
 	}
 	return (
 		<main

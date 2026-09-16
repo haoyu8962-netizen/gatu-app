@@ -4774,7 +4774,7 @@ msgid "No order history found."
 msgstr "لم يُعثر على سجل أوامر."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "No orders"
 msgstr "لا توجد أوامر"
 
@@ -5094,11 +5094,9 @@ msgstr "أوراكل"
 #~ msgid "ORACLE"
 #~ msgstr "أوراكل"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Order Book"
 msgstr "دفتر الأوامر"
@@ -5674,7 +5672,6 @@ msgstr "صفحة الخزائن السابقة"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5688,7 +5685,6 @@ msgstr "صفحة الخزائن السابقة"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5702,6 +5698,7 @@ msgstr "صفحة الخزائن السابقة"
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/market-header.ts
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
@@ -5720,7 +5717,7 @@ msgstr "السعر أعلى من {price}"
 msgid "Price below {price}"
 msgstr "السعر أدنى من {price}"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "Price grouping"
 msgstr "تجميع الأسعار"
 
@@ -5895,7 +5892,7 @@ msgstr "المطالبات الحديثة بالمكافآت"
 msgid "Recent reward claims could not be verified."
 msgstr "تعذّر التحقق من المطالبات الحديثة بالمكافآت."
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 msgid "Recent Trades"
 msgstr "الصفقات الأخيرة"
 
@@ -6924,7 +6921,6 @@ msgstr "جاري التوقيع..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -6939,6 +6935,7 @@ msgstr "جاري التوقيع..."
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
@@ -7111,9 +7108,8 @@ msgstr "من الحساب الفوري إلى التخزين"
 msgid "Spot to staking available"
 msgstr "النقل من الحساب الفوري إلى التخزين متاح"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Spread"
 msgstr "الفارق"
@@ -8356,15 +8352,14 @@ msgstr "تعذر تحميل البيانات الوصفية للرمز."
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr "هناك عدد كبير جدًا من موافقات الهاتف بانتظار الاستعادة في علامة التبويب هذه. قم بحل إحداها أو إلغائها أولاً."
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Total"
 msgstr "الإجمالي"
@@ -8530,10 +8525,9 @@ msgstr "المتداولون"
 msgid "Traders referred"
 msgstr "المتداولون المُحالون"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "الصفقات"
@@ -9395,7 +9389,7 @@ msgid "Waiting for confirmation..."
 msgstr "في انتظار التأكيد..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 msgid "Waiting for order book..."
 msgstr "في انتظار دفتر الأوامر..."

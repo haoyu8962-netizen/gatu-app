@@ -3,6 +3,12 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { ORDERBOOK_PANEL_CLASS } from "@/components/trade/orderbook/orderbook-panel-view";
+
+const ORDERBOOK_VIEW_SOURCE = readFileSync(
+	resolve(__dirname, "../../components/trade/orderbook/orderbook-panel-view.tsx"),
+	"utf8",
+);
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_STYLES = readFileSync(resolve(TEST_DIR, "../..", "styles.css"), "utf8");
 const ORDERBOOK_PANEL_SOURCE = readFileSync(
@@ -41,9 +47,10 @@ const GRID_CONTENT_HEIGHT_SOURCE = readFileSync(
 
 describe("responsive panel layout contract", () => {
 	it("adapts order book columns and trade controls to their own container width", () => {
-		expect(ORDERBOOK_PANEL_SOURCE).toContain("orderbook-panel-container");
+		expect(ORDERBOOK_PANEL_SOURCE).toContain("className={ORDERBOOK_PANEL_CLASS}");
+		expect(ORDERBOOK_PANEL_CLASS).toContain("orderbook-panel-container");
 		expect(ORDERBOOK_PANEL_SOURCE).toContain("fullWidth");
-		expect(ORDERBOOK_PANEL_SOURCE).toContain("orderbook-grid");
+		expect(ORDERBOOK_VIEW_SOURCE).toContain("orderbook-grid");
 		expect(TERMINAL_STYLES).toContain("container-name: orderbook-panel");
 		expect(TERMINAL_STYLES).toContain("@container orderbook-panel (max-width: 11.1875rem)");
 		expect(TERMINAL_STYLES).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");

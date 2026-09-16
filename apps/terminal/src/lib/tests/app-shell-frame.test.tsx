@@ -5,6 +5,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 
+import { ORDERBOOK_PANEL_CLASS, ORDERBOOK_TAB_CONTENT_CLASS } from "@/components/trade/orderbook/orderbook-panel-view";
+
 describe("AppShellSkeleton desktop frame", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -78,6 +80,19 @@ describe("AppShellSkeleton desktop frame", () => {
 		expect(desktop?.querySelector("header")?.classList.contains("fixed")).toBe(true);
 		expect(desktop?.querySelector("footer")?.classList.contains("fixed")).toBe(true);
 		expect(desktop?.querySelector("footer .tabular-nums.invisible")?.textContent).toBe("00:00 AM");
+	});
+
+	it("renders the shared book chrome with empty sides and no visible waiting notice", () => {
+		const book = container.querySelector("[data-shell-desktop] .orderbook-panel-container");
+		expect(book?.className).toBe(ORDERBOOK_PANEL_CLASS);
+		expect(book?.lastElementChild?.className).toBe(ORDERBOOK_TAB_CONTENT_CLASS);
+		expect(book?.querySelectorAll(".orderbook-tab-label")).toHaveLength(2);
+		expect(book?.querySelectorAll(".orderbook-asset-heading.invisible")).toHaveLength(2);
+		expect(book?.querySelector('[data-slot="orderbook-spread"] .tabular-nums')?.textContent).toBe("—");
+		for (const side of book?.querySelectorAll("[data-orderbook-side-container]") ?? [])
+			expect(side.children).toHaveLength(0);
+		expect(book?.textContent).not.toContain("Waiting");
+		expect(book?.querySelector('[data-slot="trades-pending"]')).toBeNull();
 	});
 
 	it("keeps the mobile frame's connect entry and three-tab navigation", () => {
