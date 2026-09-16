@@ -13,7 +13,7 @@
   "commits": [],
   "sources": [
     { "path": "apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx" },
-    { "path": "apps/terminal/src/components/trade/mobile/mobile-chrome-classes.ts" },
+    { "path": "docs/work-memory/sessions/2026-09-16-mobile-views-migration.md" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-loading-fallback.tsx" },
     { "path": "apps/terminal/src/lib/tests/mobile-chrome-parity.test.tsx" },
     { "path": "apps/terminal/src/lib/tests/mobile-app-shell-skeleton.test.tsx" },
@@ -46,3 +46,7 @@
 - 桌面壳 P1–P4（Soon 徽标、stat min-width、Connect Wallet 宽度、页脚时钟）仍待修，见桌面审查记录。
 - 徽标占位若想更接近，可按 `market.kind` 在运行时回退里填入 Perp/Spot；预渲染壳保持中性。
 - 本记录取代本轮 Codex 生成的"默认及持久化页签高亮修正"记录（已合并）。
+
+### 2026-09-16 来源路径更正
+
+表面 6 迁移已删除本记录原 sources 中的 `apps/terminal/src/components/trade/mobile/mobile-chrome-classes.ts`。为使活跃来源导航可解析，该项改指向[移动视图迁移记录](2026-09-16-mobile-views-migration.md)；上文历史实施与测量结论不变。旧文件可用 `git show b77a87909046a20469f71449525d619680daa4f1:apps/terminal/src/components/trade/mobile/mobile-chrome-classes.ts` 查看。当前实现由六个移动纯视图接管，新的 reviewer 实测尚未完成，不能沿用本记录的盒子数字。

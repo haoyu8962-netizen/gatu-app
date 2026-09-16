@@ -1,6 +1,6 @@
 # ADR 0009：启动占位与真实界面共享同一展示组件
 
-- 状态：已接受（2026-09-16），迁移进行中：表面 1–5 已完成（2026-09-16，含 Playwright 盒子实测）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
+- 状态：已接受（2026-09-16），迁移进行中：表面 1–6 已完成（2026-09-16，含 Playwright 盒子实测）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
 - 前置：[ADR 0005](0005-spa-static-shell.md)（预渲染 SPA 壳）、[ADR 0006](0006-startup-preloads-and-edge-caching.md)（启动预加载与边缘缓存）
 - 规则：[启动占位一致性规则](../../.claude/rules/placeholder-parity.md)
 - 证据：[移动占位壳与真实终端逐像素对齐](../work-memory/sessions/2026-09-15-mobile-shell-parity.md)、[热访问启动计划与实测](../work-memory/sessions/2026-09-16-warm-visit-startup-plan.md)、[本 ADR 的任务记录](../work-memory/sessions/2026-09-16-placeholder-single-source-adr.md)
@@ -36,6 +36,8 @@
 
 ## 后果与边界
 
+- 表面 6：六个移动表面与终端外框共享 props-only 视图，`mobile-chrome-classes.ts` 已删除，类常量归拥有标记的视图。移动下单复用现有输入框、滑杆、多空、选项与 CTA 视图的显式变体；盘口仅抽取 chrome，运行时仍持有行、测量、悬停、脉冲和订阅。静态移动账户页签沿用表面 5 的 indicator 例外并以 xxs primitive SSR 钉住。运行时占位订阅翻译、数字格式与已验证持久页签，显示路由已知资产；壳只用英文默认值。两套浏览器服务均受沙箱 `listen EPERM` 阻止，验收数字尚未取得，见[接口、断言与验证记录](../work-memory/sessions/2026-09-16-mobile-views-migration.md)。
+
 - 表面 5：账户表 header、账户概览及外框共享纯视图，InfoRow/InfoRowGroup 是允许的纯 UI 组合；内容宽度页签的静态下划线放在激活按钮内，作为与 Base UI 测量 CSS 变量驱动的 sibling indicator 唯一结构例外，由去除双方 indicator 后的 SSR 对照与独立 class 断言固定；`renderDesktopPanel` 接收统一类型 props，运行时读取有效持久页签与数字格式版本，资金/签名/地区守卫不变；TradingView 在 iframe 内，ChartFrame 继续使用已约定的居中品牌占位，验证及待测范围见[迁移记录](../work-memory/sessions/2026-09-16-account-panels-view-migration.md)。
 
 - 表面 4：桌面下单框架、默认字段、CTA 与汇总行共享纯视图；滑杆与百分比输入由真实容器渲染共享视图，原生输入共用纯 input-styles；静态切换与 checkbox 以真实 SSR 输出钉住几何，输入和交易守卫仍由原运行时组件持有，验证与待实测项见[迁移记录](../work-memory/sessions/2026-09-16-trade-panel-view-migration.md)。
@@ -44,6 +46,7 @@
 
 - 表面 2：顶栏、页脚与桌面外框复用纯视图；Dropdown 增加可选 renderTrigger，将交互行为附到共享按钮，默认调用路径不变。占位只渲染匿名 Connect Wallet，真实匿名按钮与连接中/加载占位统一使用 min-w-[9rem]。预渲染壳无法知道 testnet 与地区状态，因此不显示 TestnetBanner/GeoRestrictionBanner，运行时仍保持原守卫与 banner offset。页脚 clock=null 使用不可见 00:00 AM 保留宽度，状态为不旋转的 Connecting。验收使用结构/class 一致性与 reviewer Playwright 盒子测量。
 - 展示组件进入壳的水合闭包，必须保持轻量：只含标记与 class，不引入新的依赖；预算脚本继续约束静态启动闭包。
+- 实际成本（2026-09-16，表面 1–6 全部迁移后）：trade 静态启动闭包较 `check-client-bundle-budget.mjs` 原基线 1,570,221 增加 10,995 gzip 字节（+0.7%），主要落在根路由/壳所在的 `vendor-tanstack-router` 块（占位 props 常量、壳组合、英文源串描述符），`trade-terminal-page` 块相应缩小约 1 KB；超出原 10,000 字节允许增量 995 字节，已把该项基线重设为 1,581,216 并保留 10,000 字节的后续允许增量。客户端总 gzip 3,086,273 仍低于总基线 68,434 字节。
 - 预渲染壳仍是英文源串（ADR 0005 决策 13 的理由不变）；运行时占位与真实界面用翻译标签，两者的几何由同一展示组件保证，文本宽度差异属预期。
 - 展示组件必须确定：不读时钟、随机数或 `window`；页脚时钟这类运行时值由容器传入，壳传固定宽度占位。
 - 占位是展示，不是状态：签名、账户模式、资金、地区、新鲜度与动作可用性的守卫全部不变（`docs/mobile-data-presentation.md`）。

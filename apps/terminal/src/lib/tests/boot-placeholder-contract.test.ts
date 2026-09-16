@@ -7,6 +7,22 @@ const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const COMPONENTS_DIR = resolve(TEST_DIR, "../../components");
 
 const BOOT_PLACEHOLDER_SOURCES = [
+	"trade/mobile/mobile-token-selector-view.tsx",
+	"trade/mobile/mobile-positions-tabs-view.tsx",
+	"trade/mobile/mobile-trade-available-view.tsx",
+	"trade/mobile/mobile-trade-summary-view.tsx",
+	"trade/mobile/mobile-trade-size-view.tsx",
+	"trade/mobile/mobile-terminal-frame-view.tsx",
+	"trade/mobile/mobile-trade-frame-view.tsx",
+	"trade/mobile/mobile-header-view.tsx",
+	"trade/mobile/mobile-order-entry-placeholder-view.tsx",
+	"trade/mobile/mobile-wallet-cta-view.tsx",
+	"trade/mobile/mobile-market-bar-view.tsx",
+	"trade/mobile/mobile-trade-header-view.tsx",
+	"trade/mobile/mobile-bottom-nav-view.tsx",
+	"trade/mobile/mobile-book-chrome-view.tsx",
+	"trade/mobile/mobile-trade-cta-frame-view.tsx",
+
 	"trade/positions/account-table-header-view.tsx",
 	"trade/positions/account-tab-strip-view.tsx",
 	"trade/tradebox/account-overview-view.tsx",

@@ -1,23 +1,13 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
-import {
-	type ChangeEvent,
-	type ReactNode,
-	Suspense,
-	useCallback,
-	useEffect,
-	useId,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
-import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
+import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { getOrderEntryReferencePrice, isLiveMarkPriceReady } from "@/domain/trade/market-price";
@@ -82,7 +72,6 @@ import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/l
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
-import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import {
 	useDepositModalActions,
@@ -123,6 +112,7 @@ import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
 import { OrderConfirmationModal } from "../tradebox/order-confirmation-modal";
 import { ScaleOrderSummary } from "../tradebox/scale-order-summary";
+import { TradeCtaView } from "../tradebox/trade-cta-view";
 import { TradeFormScale } from "../tradebox/trade-form-scale";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
 import { TradeFormTpSl } from "../tradebox/trade-form-tp-sl";
@@ -131,9 +121,13 @@ import { TradeHeader } from "../tradebox/trade-header";
 import { TradeOptionCheckboxes } from "../tradebox/trade-option-checkboxes";
 import { TwapOrderSummary } from "../tradebox/twap-order-summary";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
+import { MobileTradeAvailableView } from "./mobile-trade-available-view";
+import { MobileTradeCtaFrameView } from "./mobile-trade-cta-frame-view";
+import { MobileTradeFrameView } from "./mobile-trade-frame-view";
 import { MobileTradePriceField } from "./mobile-trade-price-field";
 import { MobileTradeScrollArea } from "./mobile-trade-scroll-area";
 import { MobileTradeSizeControl } from "./mobile-trade-size-control";
+import { MobileSlippageRowView, MobileSummaryRowView, MobileTradeSummaryView } from "./mobile-trade-summary-view";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
@@ -801,7 +795,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const marginDialogError = marginDialogView === "leverage" ? leverageUpdateError : switchModeError;
 
 	return (
-		<div className={cn(mobileChrome.tradeView, !embedded && "h-full bg-background", className)}>
+		<MobileTradeFrameView embedded={embedded} className={className}>
 			<MarginModeModal
 				open={showMarginDialog}
 				onOpenChange={handleMarginDialogOpenChange}
@@ -861,23 +855,13 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					layout="mobile"
 				/>
 
-				<button
-					type="button"
-					onClick={() => applySizeFromPercent(100)}
+				<MobileTradeAvailableView
+					label={t`Available`}
+					value={formatAvailableBalance()}
+					token={availableBalanceToken}
 					disabled={isFormDisabled || maxSize <= 0}
-					className={mobileChrome.available}
-				>
-					<span className="shrink-0 whitespace-nowrap">{t`Available`}</span>
-					<span
-						className={cn(
-							"inline-flex min-w-0 items-center justify-end gap-1 truncate whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control text-right font-semibold leading-[14px] tabular-nums text-trading-panel-fg",
-							(isFormDisabled || maxSize <= 0) && "border-transparent",
-						)}
-					>
-						<span className="tabular-nums text-trading-panel-fg">{formatAvailableBalance()}</span>
-						<span className="tabular-nums text-trading-panel-muted">{availableBalanceToken}</span>
-					</span>
-				</button>
+					onClick={() => applySizeFromPercent(100)}
+				/>
 
 				{usesTriggerPrice && (
 					<MobileTradePriceField
@@ -974,10 +958,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					usesLimitPrice ||
 					scaleOrder) && (
 					<TradeOptionCheckboxes
-						className={cn(
-							"flex flex-wrap items-center gap-y-1",
-							embedded ? "gap-x-2 text-2xs max-[379px]:gap-x-1" : "gap-x-4",
-						)}
+						mobile
+						embedded={embedded}
 						tradingPanel
 						reduceOnly={
 							capabilities.hasReduceOnly
@@ -1015,7 +997,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					/>
 				)}
 
-				<div data-slot="mobile-order-summary" className={cn(mobileChrome.summary, embedded ? "text-2xs" : "text-xs")}>
+				<MobileTradeSummaryView embedded={embedded}>
 					{twapOrder ? (
 						<TwapOrderSummary
 							compact
@@ -1043,20 +1025,20 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					) : (
 						<>
 							{capabilities.isLeveraged && (
-								<SummaryRow
+								<MobileSummaryRowView
 									label={t`Liq. Price`}
 									value={formatSummaryPrice(liqPrice, market?.szDecimals, marketType)}
 									valueClass={getLiquidationPriceClassName(liqPrice, liqWarning)}
 									compact={embedded}
 								/>
 							)}
-							<SummaryRow
+							<MobileSummaryRowView
 								label={t`Order Value`}
 								value={orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 								compact={embedded}
 							/>
 							{capabilities.isLeveraged && (
-								<SummaryRow
+								<MobileSummaryRowView
 									label={t`Margin Req.`}
 									value={
 										marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER
@@ -1065,41 +1047,30 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 								/>
 							)}
 							{orderType === "market" && (
-								<div className={cn(mobileChrome.summaryRow, embedded ? "gap-1 py-1" : "gap-2 py-1.5")}>
-									<span className={mobileChrome.summaryLabel}>{t`Slippage`}</span>
-									<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap tabular-nums">
-										<span title={t`Est. Slippage`} className="text-trading-panel-muted">
-											<span className="sr-only">{t`Est. Slippage`}: </span>
-											{estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
-										</span>
-										<span aria-hidden="true" className="text-trading-panel-subtle">
-											/
-										</span>
-										<button
-											type="button"
-											onClick={openSettingsDialog}
-											aria-label={t`Slippage`}
-											className="relative inline-flex cursor-pointer items-center gap-1 rounded-8 transition-opacity after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-										>
-											<span className="text-trading-panel-muted">{t`Max`}</span>
-											<span className="text-trading-panel-error">{slippagePercent}%</span>
-											<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-										</button>
-									</span>
-								</div>
+								<MobileSlippageRowView
+									labels={{
+										slippage: t`Slippage`,
+										estimatedSlippage: t`Est. Slippage`,
+										max: t(TRADE_PANEL_LABELS.max),
+									}}
+									value={estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
+									slippagePercent={slippagePercent}
+									onClick={openSettingsDialog}
+									embedded={embedded}
+								/>
 							)}
-							<SummaryRow
-								label={t`Est. Fee`}
+							<MobileSummaryRowView
+								label={t(TRADE_PANEL_LABELS.estimatedFee)}
 								value={<OrderFeeSummaryValue quote={feeQuote} />}
 								valueClass="min-w-0 flex-1 shrink whitespace-normal text-trading-panel-muted"
 								compact={embedded}
 							/>
 						</>
 					)}
-				</div>
+				</MobileTradeSummaryView>
 			</MobileTradeScrollArea>
 
-			<div className={cn(mobileChrome.ctaWrapper, embedded ? mobileChrome.ctaEmbeddedPadding : "px-3 py-3")}>
+			<MobileTradeCtaFrameView embedded={embedded}>
 				{validationSnapshot.text && (
 					<p id={validationErrorId} role="alert" className="text-xs text-error mb-2">
 						{validationSnapshot.text}
@@ -1115,27 +1086,21 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						{t`Trading is not available in your region`}
 					</Button>
 				) : (
-					<Button
-						variant="filled"
-						size={embedded ? "md" : "lg"}
+					<TradeCtaView
+						mobile
+						embedded={embedded}
+						label={buttonContent.text}
+						variant={buttonContent.variant}
 						onClick={buttonContent.action}
 						disabled={buttonContent.disabled}
-						intent={getTradingCtaIntent(buttonContent.variant)}
-						className={cn(
-							mobileChrome.ctaButton,
-							embedded && mobileChrome.ctaEmbeddedHeight,
-							getTradingCtaClass(buttonContent.variant),
-						)}
 						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
-					>
-						{buttonContent.text}
-					</Button>
+					/>
 				)}
 				{geoRestriction.isResolved && buttonContent.disabledReason ? (
 					<output className="mt-2 text-center text-xs text-trading-panel-muted">{buttonContent.disabledReason}</output>
 				) : null}
 				{!embedded && <MobileBottomNavSpacer />}
-			</div>
+			</MobileTradeCtaFrameView>
 
 			{confirmation.pending && (
 				<OrderConfirmationModal
@@ -1154,32 +1119,13 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					<WalletModal open onOpenChange={setWalletModalOpen} />
 				</Suspense>
 			)}
-		</div>
+		</MobileTradeFrameView>
 	);
 }
 
 export function MobileTradingApprovalErrorMessage({ cause }: { cause: unknown }) {
 	const { t } = useLingui();
 	return cause instanceof Error ? cause.message : t`Failed to enable trading`;
-}
-
-function SummaryRow({
-	label,
-	value,
-	valueClass,
-	compact,
-}: {
-	label: string;
-	value: ReactNode;
-	valueClass?: string;
-	compact?: boolean;
-}) {
-	return (
-		<div className={cn(mobileChrome.summaryRow, compact ? mobileChrome.summaryCompactRow : "gap-2 py-1.5")}>
-			<span className={mobileChrome.summaryLabel}>{label}</span>
-			<span className={cn(mobileChrome.summaryValue, valueClass ?? "text-trading-panel-fg")}>{value}</span>
-		</div>
-	);
 }
 
 function getLiquidationPriceClassName(liqPrice: number | null, liqWarning: boolean): string | undefined {

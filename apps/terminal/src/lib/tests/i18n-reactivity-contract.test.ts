@@ -105,6 +105,22 @@ describe("live localization source contract", () => {
 });
 
 const PURE_PRESENTATION_VIEWS = [
+	"mobile/mobile-token-selector-view.tsx",
+	"mobile/mobile-positions-tabs-view.tsx",
+	"mobile/mobile-trade-available-view.tsx",
+	"mobile/mobile-trade-summary-view.tsx",
+	"mobile/mobile-trade-size-view.tsx",
+	"mobile/mobile-terminal-frame-view.tsx",
+	"mobile/mobile-trade-frame-view.tsx",
+	"mobile/mobile-header-view.tsx",
+	"mobile/mobile-order-entry-placeholder-view.tsx",
+	"mobile/mobile-wallet-cta-view.tsx",
+	"mobile/mobile-market-bar-view.tsx",
+	"mobile/mobile-trade-header-view.tsx",
+	"mobile/mobile-bottom-nav-view.tsx",
+	"mobile/mobile-book-chrome-view.tsx",
+	"mobile/mobile-trade-cta-frame-view.tsx",
+
 	"positions/account-table-header-view.tsx",
 	"positions/account-tab-strip-view.tsx",
 	"tradebox/account-overview-view.tsx",

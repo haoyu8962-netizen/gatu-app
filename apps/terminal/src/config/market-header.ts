@@ -1,6 +1,9 @@
 import { msg } from "@lingui/core/macro";
 
 export const MARKET_HEADER_LABELS = {
+	expand: { ...msg`Expand market details`, message: "Expand market details" },
+	collapse: { ...msg`Collapse market details`, message: "Collapse market details" },
+
 	mark: { ...msg`Mark`, message: "Mark" },
 	price: { ...msg`Price`, message: "Price" },
 	oracle: { ...msg`Oracle`, message: "Oracle" },

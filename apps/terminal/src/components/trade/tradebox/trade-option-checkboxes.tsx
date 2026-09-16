@@ -1,7 +1,7 @@
 import { Checkbox } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
+import { option, optionControl, optionLabel } from "@/components/trade/tradebox/trade-option-checkboxes-view";
 import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { cn } from "@/lib/cn";
 import { TradeOptionCheckboxesView } from "./trade-option-checkboxes-view";
@@ -18,19 +18,31 @@ interface Props {
 	tpSl?: CheckboxOption;
 	children?: ReactNode;
 	tradingPanel?: boolean;
+	mobile?: boolean;
+	embedded?: boolean;
 }
 
-export function TradeOptionCheckboxes({ className, reduceOnly, tpSl, children, tradingPanel }: Props) {
+export function TradeOptionCheckboxes({
+	className,
+	reduceOnly,
+	tpSl,
+	children,
+	tradingPanel,
+	mobile,
+	embedded,
+}: Props) {
 	const { t } = useLingui();
-	const controlClassName = tradingPanel ? mobileChrome.optionControl : undefined;
+	const controlClassName = tradingPanel ? optionControl : undefined;
 	const indicatorClassName = tradingPanel ? "text-trading-panel-on-control" : undefined;
-	const optionClassName = tradingPanel ? mobileChrome.option : undefined;
-	const labelClassName = tradingPanel ? mobileChrome.optionLabel : undefined;
+	const optionClassName = tradingPanel ? option : undefined;
+	const labelClassName = tradingPanel ? optionLabel : undefined;
 
 	return (
 		<TradeOptionCheckboxesView
 			className={className}
 			tradingPanel={tradingPanel}
+			mobile={mobile}
+			embedded={embedded}
 			reduceOnly={
 				reduceOnly && (
 					<Checkbox

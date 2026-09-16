@@ -10,6 +10,8 @@ import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import { TerminalLoadingWorkspace } from "@/components/trade/layout/terminal-loading-workspace";
 import { MobileLoadingFallback } from "@/components/trade/mobile/mobile-loading-fallback";
 
+vi.mock("@/providers/exchange-scope", () => ({ useExchangeScope: () => ({ routeMarketName: undefined }) }));
+
 describe("AppShellSkeleton mobile viewport", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -52,17 +54,19 @@ describe("AppShellSkeleton mobile viewport", () => {
 		const shell = container.querySelector("[data-shell-mobile]");
 		const actions = shell?.querySelector('[data-slot="mobile-header-actions"]');
 		expect(actions?.children).toHaveLength(4);
-		for (const iconSlot of Array.from(actions?.children ?? []).slice(1)) {
-			expect(iconSlot.className).toContain("size-11");
-			expect(iconSlot.className).toContain("min-h-11");
+		for (const slot of Array.from(actions?.children ?? []).slice(1)) {
+			const iconSlot = slot.matches("button") ? slot : slot.querySelector("button");
+			expect(iconSlot).not.toBeNull();
+			expect(iconSlot?.className).toContain("size-11");
+			expect(iconSlot?.className).toContain("min-h-11");
 		}
 		expect(shell?.querySelector('[data-slot="mobile-header-brand"]')?.children).toHaveLength(2);
 		expect(shell?.querySelector('[data-slot="mobile-header-account"] svg')?.getAttribute("class")).toBe("size-3.5");
 		expect(shell?.querySelector('[data-slot="mobile-market-bar"]')?.className).toContain("min-h-[61px]");
 		expect(shell?.querySelector('[data-slot="mobile-market-selector"]')?.classList.contains("pl-1")).toBe(true);
-		const sliderFrame = shell?.querySelector('[data-slot="mobile-size-slider-frame"]');
+		const sliderFrame = shell?.querySelector("[data-trade-slider-control]");
 		expect(sliderFrame?.classList.contains("h-[33px]")).toBe(true);
-		expect(sliderFrame?.firstElementChild?.classList.contains("bg-fill-weak")).toBe(true);
+		expect(sliderFrame?.firstElementChild?.classList.contains("bg-trading-panel-stroke-card")).toBe(true);
 		expect(shell?.querySelector('[data-slot="mobile-trade-order-split"]')?.className).toContain(
 			"min-h-[clamp(370px,60svh,480px)]",
 		);
@@ -81,7 +85,8 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(tabs?.children[1]?.hasAttribute("data-active")).toBe(true);
 		const sides = shell?.querySelector('[data-slot="mobile-side-toggle"]');
 		expect(sides?.textContent).toBe("LongShort");
-		expect(sides?.innerHTML).not.toMatch(/text-success|text-error|bg-trading-panel-(success|error)/);
+		expect(sides?.querySelector("button[data-active]")?.textContent).toBe("Long");
+		expect(sides?.innerHTML).toContain("bg-trading-panel-success-fill");
 		expect(shell?.querySelector('[data-slot="mobile-header-theme"]')?.innerHTML).toContain("dark:block");
 		expect(shell?.querySelector('[data-slot="mobile-header-theme"]')?.innerHTML).toContain("dark:hidden");
 		expect(shell?.lastElementChild?.querySelectorAll('[class*="text-3xs tracking-wide"]')).toHaveLength(3);
@@ -121,7 +126,8 @@ describe("AppShellSkeleton mobile viewport", () => {
 		for (const control of fallback?.querySelectorAll(
 			'a, button, input, select, textarea, [role="button"], [tabindex]',
 		) ?? []) {
-			expect(control.closest("[inert]")).toBe(decorative);
+			expect(control.closest("[inert]")).not.toBeNull();
+			expect(decorative?.contains(control)).toBe(true);
 		}
 	});
 

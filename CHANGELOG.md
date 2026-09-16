@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Mobile startup placeholders now share the six real mobile surfaces and terminal
+  frame, including route labels, persisted tabs and the disconnected order controls.
+
 - Desktop account startup placeholders now share the real tab header and disconnected
   overview, including five formatted zero values and locale-aware runtime tabs.
 

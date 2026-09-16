@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageSwitcher } from "@/components/trade/header/language-switcher";
 import { ThemeToggle } from "@/components/trade/header/theme-toggle";
 import { MobileBottomNav } from "@/components/trade/mobile/mobile-bottom-nav";
+import { MobileLoadingFallback } from "@/components/trade/mobile/mobile-loading-fallback";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
 import { PositionsTab } from "@/components/trade/positions/positions-tab";
 import { AccountPanel } from "@/components/trade/tradebox/account-panel";
@@ -512,6 +513,27 @@ describe("language hot switching", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.clearAllMocks();
+	});
+
+	it("keeps the mobile loading views and empty drafts mounted on hot switch", () => {
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileLoadingFallback />
+				</I18nProvider>,
+			),
+		);
+		const frame = container.querySelector("[data-shell-mobile]");
+		const size = container.querySelector<HTMLInputElement>('input[data-size="lg"]');
+		const nav = container.querySelector("nav");
+		expect(size?.value).toBe("");
+		expect(size?.getAttribute("aria-label")).toBe("Size");
+		act(() => activateLocale("zh"));
+		expect(container.querySelector("[data-shell-mobile]")).toBe(frame);
+		expect(container.querySelector('input[data-size="lg"]')).toBe(size);
+		expect(container.querySelector("nav")).toBe(nav);
+		expect(size?.getAttribute("aria-label")).toBe("数量");
+		expect(size?.value).toBe("");
 	});
 
 	it("updates labels and aria without remounting or losing checkbox state", () => {

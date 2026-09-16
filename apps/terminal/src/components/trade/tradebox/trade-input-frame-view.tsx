@@ -13,24 +13,46 @@ interface Props extends Omit<ComponentPropsWithRef<"input">, "children"> {
 	trailing?: ReactNode;
 	input?: ReactNode;
 	frameClassName?: string;
+	mobile?: boolean;
+	labelClassName?: string;
 }
 
-export function TradeInputFrameView({ label, trailing, input, frameClassName, className, id, ...props }: Props) {
+export function TradeInputFrameView({
+	label,
+	trailing,
+	input,
+	frameClassName,
+	className,
+	id,
+	mobile,
+	labelClassName,
+	...props
+}: Props) {
 	return (
 		<div className={cn(TRADE_INPUT_FRAME_CLASS, frameClassName)}>
-			<label htmlFor={id} className="me-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle">
-				{label}
-			</label>
+			{mobile ? (
+				<span className={labelClassName}>{label}</span>
+			) : (
+				<label
+					htmlFor={id}
+					className={cn(
+						"me-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle",
+						labelClassName,
+					)}
+				>
+					{label}
+				</label>
+			)}
 			{input ?? (
 				<input
 					type="text"
 					dir="ltr"
 					inputMode="decimal"
 					data-slot="input"
-					data-size="default"
+					data-size={mobile ? "lg" : "default"}
 					id={id}
 					{...props}
-					className={getInputClassName("default", cn("w-full", TRADE_INPUT_CLASS, className))}
+					className={getInputClassName(mobile ? "lg" : "default", cn("w-full", TRADE_INPUT_CLASS, className), mobile)}
 				/>
 			)}
 			{trailing}

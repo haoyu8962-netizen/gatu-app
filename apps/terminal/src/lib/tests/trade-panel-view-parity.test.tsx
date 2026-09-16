@@ -16,7 +16,6 @@ import { TradeSliderView } from "@/components/trade/components/trade-slider-view
 import { renderDesktopPanel } from "@/components/trade/layout/app-shell-skeleton";
 import { DESKTOP_PANEL_PLACEHOLDER, TRADE_PANEL_PLACEHOLDER } from "@/components/trade/layout/desktop-placeholders";
 import { TerminalLoadingWorkspace } from "@/components/trade/layout/terminal-loading-workspace";
-import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
 import { OrderTypeTabView, orderTypeTabClass } from "@/components/trade/tradebox/order-type-tab-view";
 import { SideToggle } from "@/components/trade/tradebox/side-toggle";
@@ -27,6 +26,7 @@ import { TradeCtaView } from "@/components/trade/tradebox/trade-cta-view";
 import { TradeFormFields } from "@/components/trade/tradebox/trade-form-fields";
 import { TradeHeader } from "@/components/trade/tradebox/trade-header";
 import { TRADE_INPUT_CLASS, TradeInputFrameView } from "@/components/trade/tradebox/trade-input-frame-view";
+import { option, optionControl, optionLabel } from "@/components/trade/tradebox/trade-option-checkboxes-view";
 import { TRADE_PANEL_CLASS, TradePanelBodyView } from "@/components/trade/tradebox/trade-panel-body-view";
 import { TRADE_PERCENT_INPUT_CLASS } from "@/components/trade/tradebox/trade-percent-frame-view";
 import { NumberInput } from "@/components/ui/number-input";
@@ -226,10 +226,10 @@ describe("desktop trade panel single-source parity", () => {
 				disabled
 				aria-label={props.ariaLabel}
 				label={props.label}
-				className={cn(mobileChrome.option, spanAll && "col-span-2")}
-				controlClassName={mobileChrome.optionControl}
+				className={cn(option, spanAll && "col-span-2")}
+				controlClassName={optionControl}
 				indicatorClassName="text-trading-panel-on-control"
-				labelClassName={mobileChrome.optionLabel}
+				labelClassName={optionLabel}
 			/>
 		);
 		expect(geometry(dom(<TradeCheckboxView {...props} />))).toEqual(geometry(dom(runtime)));

@@ -2,6 +2,9 @@ import { msg } from "@lingui/core/macro";
 import { ORDERBOOK_LABELS } from "./orderbook-labels";
 
 export const TRADE_PANEL_LABELS = {
+	estimatedFee: { ...msg`Est. Fee`, message: "Est. Fee" },
+	max: { ...msg`Max`, message: "Max" },
+
 	regionRestricted: {
 		...msg`Trading is not available in your region`,
 		message: "Trading is not available in your region",

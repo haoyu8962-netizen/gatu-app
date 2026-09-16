@@ -5,6 +5,10 @@ const mobileTradeView = readFileSync(
 	new URL("../../components/trade/mobile/mobile-trade-view.tsx", import.meta.url),
 	"utf8",
 );
+const mobileSummaryView = readFileSync(
+	new URL("../../components/trade/mobile/mobile-trade-summary-view.tsx", import.meta.url),
+	"utf8",
+);
 const mobileTwapTab = readFileSync(
 	new URL("../../components/trade/mobile/mobile-twap-tab.tsx", import.meta.url),
 	"utf8",
@@ -79,9 +83,11 @@ describe("mobile order safety contract", () => {
 
 	it("keeps the slippage settings control interactive before wallet connection", () => {
 		expect(mobileTradeView).not.toContain("embedded && !isConnected ?");
-		expect(mobileTradeView).toMatch(
-			/<button\s+type="button"\s+onClick=\{openSettingsDialog\}\s+aria-label=\{t`Slippage`\}/,
-		);
+		expect(mobileTradeView).toMatch(/<MobileSlippageRowView[\s\S]*?onClick=\{openSettingsDialog\}/);
+		expect(mobileSummaryView).toMatch(/<button\s+type="button"\s+onClick=\{onClick\}\s+aria-label=\{labels.slippage\}/);
+		const button = mobileSummaryView.match(/<button[\s\S]*?<\/button>/)?.[0];
+		expect(button).toBeDefined();
+		expect(button).not.toContain("disabled");
 	});
 
 	it("restores mobile risk context without reviving a separate builder-fee row", () => {
@@ -91,6 +97,9 @@ describe("mobile order safety contract", () => {
 		expect(mobileTradeView).toContain("t`Order Value`");
 		expect(mobileTradeView).toContain("t`Margin Req.`");
 		expect(mobileTradeView).toContain("t`Slippage`");
-		expect(mobileTradeView).toContain("t`Est. Fee`");
+		expect(mobileTradeView).toContain("t(TRADE_PANEL_LABELS.estimatedFee)");
+		expect(readFileSync(new URL("../../config/trade-panel-labels.ts", import.meta.url), "utf8")).toContain(
+			"...msg`Est. Fee`",
+		);
 	});
 });

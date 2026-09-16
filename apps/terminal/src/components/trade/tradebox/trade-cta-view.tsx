@@ -1,14 +1,17 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { getTradingCtaClass, type TradingCtaVariant } from "@/lib/ui/trading-cta";
+import { ctaButton, ctaEmbeddedHeight } from "../mobile/mobile-trade-cta-frame-view";
 
 interface Props extends ComponentPropsWithRef<"button"> {
 	label: string;
 	variant: TradingCtaVariant | "restricted";
 	iconLeft?: ReactNode;
+	mobile?: boolean;
+	embedded?: boolean;
 }
 
-export function TradeCtaView({ label, variant, iconLeft, className, disabled, ...props }: Props) {
+export function TradeCtaView({ label, variant, iconLeft, className, disabled, mobile, embedded, ...props }: Props) {
 	return (
 		<button
 			type="button"
@@ -21,12 +24,18 @@ export function TradeCtaView({ label, variant, iconLeft, className, disabled, ..
 					? "bg-action text-on-action hover:bg-action-hover active:bg-action-active data-disabled:text-fg-disabled data-disabled:bg-fill-disabled"
 					: "text-fg-inverse hover:opacity-90 active:opacity-80 data-disabled:text-fg-disabled data-disabled:bg-fill-disabled",
 				variant !== "cyan" && (variant === "sell" ? "bg-error" : "bg-fill"),
-				"w-full rounded-[12px] px-3 py-2.5 text-sm font-bold whitespace-nowrap shadow-none",
+				mobile
+					? cn(
+							embedded ? "py-2 px-4 text-sm gap-2" : "py-3 px-6 text-base gap-2",
+							ctaButton,
+							embedded && ctaEmbeddedHeight,
+						)
+					: "w-full rounded-[12px] px-3 py-2.5 text-sm font-bold whitespace-nowrap shadow-none",
 				variant === "restricted"
 					? "data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled"
-					: cn("focus-visible:outline-offset-1", getTradingCtaClass(variant)),
+					: cn(!mobile && "focus-visible:outline-offset-1", getTradingCtaClass(variant)),
 				className,
-				iconLeft && "pl-1.5",
+				iconLeft && (mobile ? (embedded ? "pl-3.5" : "pl-5.5") : "pl-1.5"),
 			)}
 		>
 			{iconLeft}

@@ -35,7 +35,8 @@ const budgets = {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
 		optionalRouteIds: ["/trade"],
 		staticClosureChunkPrefixes: ["client-root", "trade-terminal-page", "early-prefetch", "preload-trade-terminal-surface"],
-		baselineGzipBytes: 1_570_221,
+		// Re-baselined 2026-09-16 after ADR 0009 moved the startup placeholders onto shared views (+10,995 gzip bytes over surfaces 1-6).
+		baselineGzipBytes: 1_581_216,
 		allowedIncreaseBytes: 10_000,
 	},
 	tradeRuntimeStartup: {

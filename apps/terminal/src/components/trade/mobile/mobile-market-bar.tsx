@@ -1,15 +1,13 @@
 import { useLingui } from "@lingui/react/macro";
-import { ArrowSquareOutIcon, CaretDownIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MARKET_HEADER_LABELS } from "@/config/market-header";
 import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { getSpotAssetSocials, hasSpotSocialLinks, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
-import { cn } from "@/lib/cn";
 import {
 	formatClockDuration,
 	formatNumber,
@@ -26,6 +24,7 @@ import { TokenSelector } from "../chart/token-selector";
 import { MarketAssetInfo } from "../components/market-asset-info";
 import { SpotMarketSocialIconLinks } from "../components/spot-market-social-links";
 import { useMobileMarketBarSnapshot } from "./mobile-market-bar-provider";
+import { MobileMarketBarView } from "./mobile-market-bar-view";
 
 const HOUR_MS = 3_600_000;
 const TOOLTIP_WIDTH_PX = 320;
@@ -116,67 +115,30 @@ export function MobileMarketBar({ className }: Props) {
 	});
 
 	return (
-		<div className={cn(mobileChrome.marketBar, className)}>
-			<div className="min-w-0">
-				<div className={mobileChrome.marketGrid}>
-					<div className="flex min-w-0 items-center gap-0">
-						<div className={mobileChrome.marketAsset}>
-							<MarketAssetInfo key={market?.name} market={market} />
-						</div>
-						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} showAssetIcon={false} />
-					</div>
-
-					<div className={mobileChrome.marketQuote}>
-						<div data-boneyard="market-price" className="min-w-0 text-start">
-							<div className="flex min-w-0 flex-col items-start">
-								<span
-									key={priceFlash.sequence}
-									data-direction={visiblePriceDirection ?? undefined}
-									className={cn(mobileChrome.marketPrice, visiblePriceDirection && "use-color-change")}
-									title={priceText}
-								>
-									{priceText}
-								</span>
-								<div
-									className={cn(
-										mobileChrome.marketChange,
-										changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
-											? "invisible text-trading-panel-subtle"
-											: changeColorClass,
-									)}
-									title={`${changeAmountText} / ${changePercentText}`}
-								>
-									{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
-										? `${changeAmountText} / ${changePercentText}`
-										: "0.00 / 0.00%"}
-								</div>
-							</div>
-						</div>
-
-						<button
-							type="button"
-							onClick={() => setExpanded((value) => !value)}
-							className={cn(
-								mobileChrome.marketExpand,
-								expanded
-									? "border-trading-panel-control text-trading-panel-fg"
-									: "border-trading-panel-stroke-input text-trading-panel-muted",
-							)}
-							aria-expanded={expanded}
-							aria-controls={detailsId}
-							aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
-						>
-							<CaretDownIcon
-								className={cn(
-									"size-3.5 transition-transform duration-200 ease-out motion-reduce:transition-none",
-									expanded && "rotate-180",
-								)}
-							/>
-						</button>
-					</div>
-				</div>
-
-				{expanded && (
+		<MobileMarketBarView
+			className={className}
+			asset={<MarketAssetInfo key={market?.name} market={market} />}
+			selector={<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} showAssetIcon={false} />}
+			priceSequence={priceFlash.sequence}
+			priceDirection={visiblePriceDirection}
+			priceText={priceText}
+			changeClassName={
+				changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
+					? "invisible text-trading-panel-subtle"
+					: changeColorClass
+			}
+			changeTitle={`${changeAmountText} / ${changePercentText}`}
+			changeText={
+				changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
+					? `${changeAmountText} / ${changePercentText}`
+					: "0.00 / 0.00%"
+			}
+			expanded={expanded}
+			detailsId={detailsId}
+			expandLabel={expanded ? t(MARKET_HEADER_LABELS.collapse) : t(MARKET_HEADER_LABELS.expand)}
+			onToggle={() => setExpanded((value) => !value)}
+			details={
+				expanded && (
 					<div id={detailsId} className="mx-4 border-t border-trading-panel-stroke-row">
 						{!isSpot && (
 							<>
@@ -255,9 +217,9 @@ export function MobileMarketBar({ className }: Props) {
 							</>
 						)}
 					</div>
-				)}
-			</div>
-		</div>
+				)
+			}
+		/>
 	);
 }
 

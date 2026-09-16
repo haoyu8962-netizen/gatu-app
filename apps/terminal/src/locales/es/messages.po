@@ -901,7 +901,6 @@ msgstr "Error en el depósito automático de USDC"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -1597,7 +1596,7 @@ msgstr "Contraer los detalles del historial de {marketName}"
 msgid "Collapse all"
 msgstr "Contraer todo"
 
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Collapse market details"
 msgstr "Contraer detalles del mercado"
 
@@ -1789,10 +1788,8 @@ msgstr "Conecta para ver las acciones de staking"
 msgid "Connect wallet"
 msgstr "Conectar monedero"
 
-#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/desktop-nav.ts
@@ -2705,16 +2702,14 @@ msgstr "Entorno"
 msgid "Equity"
 msgstr "Patrimonio"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Est. Fee"
 msgstr "Comisión est."
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Est. Slippage"
@@ -2816,7 +2811,7 @@ msgstr "Expandir los detalles del historial de {marketName}"
 msgid "Expand all"
 msgstr "Expandir todo"
 
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Expand market details"
 msgstr "Expandir detalles del mercado"
 
@@ -3816,7 +3811,6 @@ msgstr "Vincular dispositivo móvil"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "Cuenta de staking vinculada: <0>{0}</0>."
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
@@ -4025,7 +4019,6 @@ msgstr "Iniciar sesión con correo electrónico"
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -4105,7 +4098,6 @@ msgstr "Modo de margen"
 msgid "Margin Ratio"
 msgstr "Ratio de margen"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/trade-panel-labels.ts
@@ -4269,12 +4261,12 @@ msgstr "Monedero maestro verificado"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Max"
 msgstr "Máx"
 
@@ -4321,11 +4313,11 @@ msgstr "Máximo disponible para retirar: {0}"
 msgid "Meme"
 msgstr "Meme"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/ui/price-input.tsx
+#: src/config/orderbook-labels.ts
 msgid "Mid"
 msgstr "Mid"
 
@@ -4991,7 +4983,7 @@ msgstr "Interés abierto"
 msgid "Open Long"
 msgstr "Abrir largo"
 
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Open navigation"
 msgstr "Abrir navegación"
 
@@ -5074,7 +5066,7 @@ msgstr "Animaciones del libro de órdenes"
 msgid "Order book in quote asset"
 msgstr "Libro de órdenes en el activo de cotización"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Order book view"
 msgstr "Vista del libro de órdenes"
 
@@ -5170,7 +5162,6 @@ msgstr "Orden enviada. Confirmando el estado en el exchange; no vuelva a intenta
 msgid "Order type"
 msgstr "Tipo de orden"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
@@ -5332,6 +5323,7 @@ msgstr "Vínculo permanente de staking"
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
@@ -5633,10 +5625,8 @@ msgstr "Página anterior de bóvedas"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -5678,7 +5668,7 @@ msgstr "Precio inferior a {price}"
 msgid "Price grouping"
 msgstr "Agrupación de precios"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Price precision"
 msgstr "Precisión de precio"
 
@@ -5903,7 +5893,6 @@ msgstr "Recuperado en esta pestaña. Expira el {expiresAtLabel}."
 msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
 msgstr "No se pudo guardar la recuperación en este navegador. Anota el hash de la transacción de Arbitrum antes de cerrar."
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6771,7 +6760,6 @@ msgstr "Compartir PNL de {displayName}"
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -6788,15 +6776,15 @@ msgstr "Corto"
 msgid "Short position"
 msgstr "Posición corta"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Show asks only"
 msgstr "Mostrar solo ventas"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Show bids only"
 msgstr "Mostrar solo compras"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Show both sides"
 msgstr "Mostrar ambos lados"
 
@@ -6858,11 +6846,9 @@ msgstr "Firmando..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -6933,8 +6919,6 @@ msgstr "El SL debe estar por debajo de la entrada"
 msgid "SL Price"
 msgstr "Precio SL"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
@@ -7029,6 +7013,7 @@ msgstr "Origen"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -8368,7 +8353,6 @@ msgstr "El TP debe estar por debajo de la entrada"
 msgid "TP Price"
 msgstr "Precio TP"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts

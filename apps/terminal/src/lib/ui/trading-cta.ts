@@ -1,4 +1,4 @@
-import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
+import { ctaConnect, ctaConnectDark } from "@/components/trade/mobile/mobile-trade-cta-frame-view";
 import { cn } from "@/lib/cn";
 
 export type TradingCtaVariant = "buy" | "sell" | "cyan";
@@ -12,9 +12,9 @@ export function getTradingCtaIntent(variant: TradingCtaVariant): "brand" | "neut
 export function getTradingCtaClass(variant: TradingCtaVariant): string {
 	if (variant === "cyan") {
 		return cn(
-			mobileChrome.ctaConnect,
+			ctaConnect,
 			"data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled",
-			mobileChrome.ctaConnectDark,
+			ctaConnectDark,
 		);
 	}
 	if (variant === "buy") {

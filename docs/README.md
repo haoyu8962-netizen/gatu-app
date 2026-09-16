@@ -42,7 +42,7 @@
 | --- | --- |
 | Across 持久充值地址 | [接入设计](across-deposit-addresses.md)、[ADR 0004](adr/0004-across-deposit-addresses.md)：邮箱用户独立入口；生产权限、服务端身份/持久化、账户模式及资金验收待完成 |
 | 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：运行时不再 SSR，Node 进程用预渲染的 `_shell.html` 与文档页回答导航，只执行可移植的 `/api/*` 处理器；发布健康检查含真实 geo 探针；把 `public/` 搬到 CDN 与边缘运行时挂载待完成 |
-| 启动占位单一来源 | [ADR 0009](adr/0009-startup-placeholder-single-source.md)、[规则](../.claude/rules/placeholder-parity.md)：壳、运行时占位与真实界面共用同一展示组件，逐表面迁移，迁移未开始 |
+| 启动占位单一来源 | [ADR 0009](adr/0009-startup-placeholder-single-source.md)、[规则](../.claude/rules/placeholder-parity.md)：壳、运行时占位与真实界面共用同一展示组件，表面 1–6 迁移完成并实测，仪表盘壳待迁移 |
 | 启动性能对齐官方站 | [修复计划](terminal-startup-performance-plan.md)：壳内预加载交易页静态闭包、壳与图表包边缘缓存、地区判定预取与 Lambda 保温、分块整理；含同环境冷缓存对比数据与需要决策的事项；各项状态见文内 |
 | CSP 第二步：内联脚本哈希 | [计划](csp-inline-script-hashes-plan.md)：`script-src` 去掉 `'unsafe-inline'`，哈希随发布轮换并保留上一版集合，先 report-only 观察再强制；含现状数据、备选方案与需要决策的事项；B、C、D 阶段均已执行 |
 

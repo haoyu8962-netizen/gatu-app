@@ -1,7 +1,6 @@
 import { Dropdown } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CaretDownIcon } from "@phosphor-icons/react";
-import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
+import { orderControl } from "@/components/trade/mobile/mobile-trade-header-view";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import type { SideLabels } from "@/config/ui-text";
@@ -14,6 +13,7 @@ import type { MarginMode } from "@/lib/trade/margin-mode";
 import { getTabsOrderType } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
 import { tradingPanelDropdownPopupClass } from "@/lib/ui/trading-dropdown";
+import { MobileOrderTypeTriggerView, MobileTradeHeaderView } from "../mobile/mobile-trade-header-view";
 import { OrderTypeTabView } from "./order-type-tab-view";
 import { SideToggle } from "./side-toggle";
 import { TradeControlButtonView } from "./trade-control-button-view";
@@ -115,29 +115,22 @@ export function TradeHeader({
 	const handleMarginModeClick = onMarginModeClick ?? onMarginLeverageClick;
 	const handleLeverageClick = onLeverageClick ?? onMarginLeverageClick;
 	const mobileControlClass = cn(
-		mobileChrome.orderControl,
+		orderControl,
 		"transition-opacity active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-focus",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
 	);
 
-	if (layout === "mobile") {
+	if (layout === "mobile")
 		return (
-			<div className="min-w-0 space-y-0.5">
-				<div
-					className={cn(
-						"grid min-w-0 bg-surface",
-						isLeveraged ? "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]" : "grid-cols-1",
-					)}
-				>
+			<MobileTradeHeaderView
+				isLeveraged={isLeveraged}
+				marginLabel={marginLabel}
+				leverage={leverage}
+				onMarginClick={handleMarginModeClick}
+				onLeverageClick={handleLeverageClick}
+				orderTypeControl={
 					<Dropdown
-						trigger={
-							<span className="inline-flex min-w-0 items-center justify-center gap-3">
-								<span className="truncate" title={orderTypeLabel}>
-									{orderTypeLabel}
-								</span>
-								<CaretDownIcon viewBox="32 72 192 128" className={mobileChrome.orderCaret} />
-							</span>
-						}
+						renderTrigger={<MobileOrderTypeTriggerView label={orderTypeLabel} />}
 						items={mobileOrderTypeItems}
 						size="sm"
 						align="start"
@@ -148,34 +141,19 @@ export function TradeHeader({
 						popupClassName={tradingPanelDropdownPopupClass}
 						className="min-w-0"
 					/>
-					{isLeveraged && (
-						<>
-							<button
-								type="button"
-								onClick={handleMarginModeClick}
-								className={cn(mobileControlClass, "justify-start")}
-								aria-haspopup="dialog"
-							>
-								<span className="truncate">{marginLabel}</span>
-								<CaretDownIcon viewBox="32 72 192 128" className={mobileChrome.orderCaret} />
-							</button>
-							<button
-								type="button"
-								onClick={handleLeverageClick}
-								className={cn(mobileControlClass, "justify-start pr-4")}
-								aria-haspopup="dialog"
-							>
-								<span className="truncate tabular-nums">{leverage ?? 1}x</span>
-								<CaretDownIcon viewBox="32 72 192 128" className={mobileChrome.orderCaret} />
-							</button>
-						</>
-					)}
-				</div>
-
-				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel mobile />
-			</div>
+				}
+				sideToggle={
+					<SideToggle
+						side={side}
+						onSideChange={onSideChange}
+						labels={sideLabels}
+						compact={compact}
+						tradingPanel
+						mobile
+					/>
+				}
+			/>
 		);
-	}
 
 	return (
 		<TradeHeaderView

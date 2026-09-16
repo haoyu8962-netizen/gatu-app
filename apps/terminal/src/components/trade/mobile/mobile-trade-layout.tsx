@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { type KeyboardEvent, useId, useRef, useState } from "react";
-import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
+import { tradeColumn } from "@/components/trade/mobile/mobile-trade-frame-view";
 import { cn } from "@/lib/cn";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { useExchangeScope } from "@/providers/exchange-scope";
@@ -9,7 +9,9 @@ import { MobileBalancesTab } from "./mobile-balances-tab";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileChartView } from "./mobile-chart-view";
 import { MobileMarketBar } from "./mobile-market-bar";
+import { MobilePositionsFrameView } from "./mobile-positions-tabs-view";
 import { MobilePositionsView } from "./mobile-positions-view";
+import { MobilePageView } from "./mobile-terminal-frame-view";
 import { MobileTradeOrderSplit } from "./mobile-trade-order-split";
 import { MobileTradeView } from "./mobile-trade-view";
 import type { MobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
@@ -70,7 +72,7 @@ function TradeOrderView({
 	const { setSizeMode } = useOrderEntryActions();
 
 	return (
-		<div className={cn(mobileChrome.pageSurface, mobileChrome.pageScroll)}>
+		<MobilePageView>
 			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
 			<MobileTradeOrderSplit
@@ -92,7 +94,7 @@ function TradeOrderView({
 						embedded
 						sizeMode={sizeMode}
 						onSizeModeChange={setSizeMode}
-						className={mobileChrome.tradeColumn}
+						className={tradeColumn}
 					/>
 				) : (
 					<div
@@ -104,16 +106,16 @@ function TradeOrderView({
 			</MobileTradeOrderSplit>
 
 			{active && (
-				<div className={mobileChrome.positionsWrapper}>
+				<MobilePositionsFrameView>
 					<MobilePositionsView
 						scrollMode="page"
 						includeBottomNavSpacer={false}
 						balancesContent={<MobileBalancesTab />}
 						disclosureStates={disclosureStates}
 					/>
-				</div>
+				</MobilePositionsFrameView>
 			)}
-		</div>
+		</MobilePageView>
 	);
 }
 
@@ -170,7 +172,7 @@ function MarketsDataView({
 	}
 
 	return (
-		<div className={cn(mobileChrome.pageSurface, mobileChrome.pageScroll)}>
+		<MobilePageView>
 			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
 			<div
@@ -244,15 +246,15 @@ function MarketsDataView({
 			</div>
 
 			{active && (
-				<div className={mobileChrome.positionsWrapper}>
+				<MobilePositionsFrameView>
 					<MobilePositionsView
 						scrollMode="page"
 						includeBottomNavSpacer={false}
 						balancesContent={<MobileBalancesTab />}
 						disclosureStates={disclosureStates}
 					/>
-				</div>
+				</MobilePositionsFrameView>
 			)}
-		</div>
+		</MobilePageView>
 	);
 }

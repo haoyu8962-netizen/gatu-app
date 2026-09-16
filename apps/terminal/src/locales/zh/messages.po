@@ -901,7 +901,6 @@ msgstr "USDC 自动存款失败"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -1597,7 +1596,7 @@ msgstr "收起 {marketName} 历史详情"
 msgid "Collapse all"
 msgstr "全部收起"
 
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Collapse market details"
 msgstr "收起市场详情"
 
@@ -1789,10 +1788,8 @@ msgstr "连接后查看质押操作"
 msgid "Connect wallet"
 msgstr "连接钱包"
 
-#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/desktop-nav.ts
@@ -2705,16 +2702,14 @@ msgstr "环境"
 msgid "Equity"
 msgstr "净值"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Est. Fee"
 msgstr "预估费用"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Est. Slippage"
@@ -2816,7 +2811,7 @@ msgstr "展开 {marketName} 历史详情"
 msgid "Expand all"
 msgstr "全部展开"
 
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Expand market details"
 msgstr "展开市场详情"
 
@@ -3816,7 +3811,6 @@ msgstr "关联移动设备"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "已关联质押账户：<0>{0}</0>。"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
@@ -4025,7 +4019,6 @@ msgstr "使用邮箱登录"
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -4105,7 +4098,6 @@ msgstr "保证金模式"
 msgid "Margin Ratio"
 msgstr "保证金率"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/trade-panel-labels.ts
@@ -4269,12 +4261,12 @@ msgstr "主钱包已验证"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Max"
 msgstr "最大"
 
@@ -4321,11 +4313,11 @@ msgstr "最大可提取金额：{0}"
 msgid "Meme"
 msgstr "Meme"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/ui/price-input.tsx
+#: src/config/orderbook-labels.ts
 msgid "Mid"
 msgstr "中间价"
 
@@ -4991,7 +4983,7 @@ msgstr "未平仓量"
 msgid "Open Long"
 msgstr "开多"
 
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Open navigation"
 msgstr "打开导航"
 
@@ -5074,7 +5066,7 @@ msgstr "订单簿动画"
 msgid "Order book in quote asset"
 msgstr "以计价资产显示订单簿"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Order book view"
 msgstr "订单簿视图"
 
@@ -5170,7 +5162,6 @@ msgstr "订单已提交，正在确认交易所状态；请勿重试。"
 msgid "Order type"
 msgstr "订单类型"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
@@ -5332,6 +5323,7 @@ msgstr "永久质押关联"
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
@@ -5633,10 +5625,8 @@ msgstr "上一页金库"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -5678,7 +5668,7 @@ msgstr "价格低于 {price}"
 msgid "Price grouping"
 msgstr "价格合并"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Price precision"
 msgstr "价格精度"
 
@@ -5903,7 +5893,6 @@ msgstr "已在此标签页中恢复。将于 {expiresAtLabel} 过期。"
 msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
 msgstr "无法在此浏览器中保存恢复记录。关闭前请记下 Arbitrum 交易哈希。"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6771,7 +6760,6 @@ msgstr "分享 {displayName} 的盈亏"
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -6788,15 +6776,15 @@ msgstr "空"
 msgid "Short position"
 msgstr "空头仓位"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Show asks only"
 msgstr "仅显示卖盘"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Show bids only"
 msgstr "仅显示买盘"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Show both sides"
 msgstr "显示买卖盘"
 
@@ -6858,11 +6846,9 @@ msgstr "签名中..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -6933,8 +6919,6 @@ msgstr "止损价须低于开仓价"
 msgid "SL Price"
 msgstr "止损价"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
@@ -7029,6 +7013,7 @@ msgstr "来源"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -8368,7 +8353,6 @@ msgstr "止盈价须低于开仓价"
 msgid "TP Price"
 msgstr "止盈价"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts

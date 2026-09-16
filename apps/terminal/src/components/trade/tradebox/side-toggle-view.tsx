@@ -6,12 +6,14 @@ export const sideBox = "rounded-[10px] border-trading-panel-stroke-card bg-surfa
 interface Props {
 	side: "buy" | "sell";
 	labels: SideLabels;
+	mobile?: boolean;
 }
 
-export function SideToggleView({ side, labels }: Props) {
+export function SideToggleView({ side, labels, mobile }: Props) {
 	return (
 		<div>
 			<div
+				data-slot={mobile ? "mobile-side-toggle" : undefined}
 				className={cn(
 					"relative overflow-hidden inline-flex items-center bg-fill-weak border border-stroke-weak rounded-8 w-full mb-0",
 					sideBox,
@@ -41,6 +43,7 @@ export function SideToggleView({ side, labels }: Props) {
 								? "data-[active]:text-trading-panel-on-success"
 								: "data-[active]:text-trading-panel-on-error",
 							"py-1.5 text-2sm",
+							mobile && sideMobile,
 						)}
 					>
 						{labels[value]}
@@ -50,3 +53,5 @@ export function SideToggleView({ side, labels }: Props) {
 		</div>
 	);
 }
+
+export const sideMobile = "h-[31px] py-0 text-xs after:content-none";

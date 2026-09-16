@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
-const LEGACY_SHELL_IMPORTS = ["@/components/trade/mobile/mobile-chrome-classes", "./desktop-placeholders"] as const;
+const PLACEHOLDER_DATA_IMPORTS = ["./desktop-placeholders", "./mobile-placeholders"] as const;
 
 const source = readFileSync(resolve(__dirname, "../../components/trade/layout/app-shell-skeleton.tsx"), "utf8");
 const parsed = ts.createSourceFile("app-shell-skeleton.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
@@ -26,7 +26,7 @@ describe("app shell import boundary", () => {
 		expect([...infoRow.matchAll(/from\s+["']([^"']+)["']/g)].map((match) => match[1])).toEqual(["react", "@/lib/cn"]);
 	});
 
-	it("imports only views, pure configuration and the explicit migration exceptions", () => {
+	it("imports only views, pure configuration and used presentation helpers", () => {
 		for (const specifier of imports) {
 			const allowed =
 				specifier.endsWith("-view") ||
@@ -38,7 +38,7 @@ describe("app shell import boundary", () => {
 					"@phosphor-icons/react",
 					"@/components/brand/gatu-logo",
 					"./desktop-grid-loading-surface",
-					...LEGACY_SHELL_IMPORTS,
+					...PLACEHOLDER_DATA_IMPORTS,
 				].includes(specifier);
 			expect(allowed, specifier).toBe(true);
 		}
@@ -77,13 +77,13 @@ describe("app shell import boundary", () => {
 		}
 	});
 
-	it("does not retain unused legacy exceptions", () => {
-		for (const specifier of LEGACY_SHELL_IMPORTS) expect(imports).toContain(specifier);
+	it("keeps only used pure placeholder data imports", () => {
+		for (const specifier of PLACEHOLDER_DATA_IMPORTS) expect(imports).toContain(specifier);
 	});
 
-	it("keeps the placeholder data module pure", () => {
+	it.each(["desktop", "mobile"])("keeps the %s placeholder data module pure", (surface) => {
 		const placeholders = readFileSync(
-			resolve(__dirname, "../../components/trade/layout/desktop-placeholders.ts"),
+			resolve(__dirname, `../../components/trade/layout/${surface}-placeholders.ts`),
 			"utf8",
 		);
 		expect(placeholders).not.toMatch(/use[A-Z]|@lingui\/react|window|document|Date\.|Math\.random/);

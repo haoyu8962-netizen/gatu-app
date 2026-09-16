@@ -30,6 +30,8 @@ export const DESKTOP_NAV_ITEMS = [
 ] as const;
 
 export const DESKTOP_NAV_LABELS = {
+	openNavigation: { ...msg`Open navigation`, message: "Open navigation" },
+
 	primary: { ...msg`Primary navigation`, message: "Primary navigation" },
 	soon: { ...msg`Soon`, message: "Soon" },
 	more: { ...msg`More`, message: "More" },

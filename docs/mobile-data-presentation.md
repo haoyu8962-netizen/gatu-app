@@ -23,7 +23,7 @@
 
 ## 双端下单与账户概览
 
-移动占位壳（预渲染 `MobileShellSkeleton` 与运行时 `MobileLoadingFallback`）与真实终端共用 `mobile-chrome-classes.ts` 中的类名常量绘制同一套头部、市场栏、交易区、订单簿 chrome、标签行与底栏，状态未知处保持中性；预渲染壳默认高亮 Positions 和 Trade，按共享配置中的协议值定位选项，不依赖 store。运行时 `MobileLoadingFallback` 使用全局设置的持久化持仓页签与底部导航选择；分别验证其存在于 `MOBILE_POSITIONS_TABS` 和 `MOBILE_NAV_ITEMS`，未知值分别回退到 `positions` 和 `trade`。选中状态通过可选 props 传入占位壳，与翻译标签分开；占位期间不改写保存的偏好。
+移动占位壳（预渲染 `MobileShellSkeleton` 与运行时 `MobileLoadingFallback`）与真实终端共用 props-only 视图绘制同一套头部、市场栏、交易区、订单簿 chrome、标签行与底栏；`layout/mobile-placeholders.ts` 按表面保存默认 props，旧 `mobile-chrome-classes.ts` 已删除。数据前字符串以真实组件为准，未知名称、类型和资产单位用不可见样本文字留宽，运行时可显示路由已知名称和类型；预渲染壳默认高亮 Positions 和 Trade，按共享配置中的协议值定位选项，不依赖 store。运行时 `MobileLoadingFallback` 使用全局设置的持久化持仓页签与底部导航选择；分别验证其存在于 `MOBILE_POSITIONS_TABS` 和 `MOBILE_NAV_ITEMS`，未知值分别回退到 `positions` 和 `trade`。选中状态通过可选 props 传入占位壳，与翻译标签分开；占位期间不改写保存的偏好。
 
 桌面与移动下单面板共同遵循静默恢复规则。校验结果继续完整保留用于禁止提交；展示层只呈现依赖数据已经就绪的输入错误。行情、账户或钱包未就绪不得进入表单错误汇总；行情不可靠时不展示依赖其计算的金额、数量、止盈止损和 TWAP 价格方向判断。仓位未知不得展示“先开仓”。字段错误与汇总同步清除，不能在恢复、切换市场或语言后保留过时文案。
 

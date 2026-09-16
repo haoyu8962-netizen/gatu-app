@@ -93,7 +93,8 @@ describe("AppShellSkeleton desktop frame", () => {
 		expect(decorative).not.toBeNull();
 		expect(decorative?.querySelectorAll("button").length).toBeGreaterThan(0);
 		for (const control of container.querySelectorAll("button, a, input, select, textarea, [tabindex], nav, form")) {
-			expect(control.closest("[inert]")).toBe(decorative);
+			expect(control.closest("[inert]")).not.toBeNull();
+			expect(decorative?.contains(control)).toBe(true);
 		}
 		expect(container.querySelectorAll("[aria-hidden='true']").length).toBeGreaterThan(0);
 		expect(container.querySelectorAll("output")).toHaveLength(1);

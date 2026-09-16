@@ -1,5 +1,5 @@
 import { SegmentedControlItem, SegmentedControls } from "@gatu/ui";
-import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
+import { sideBox, sideMobile } from "@/components/trade/tradebox/side-toggle-view";
 import { cn } from "@/lib/cn";
 import type { Side } from "@/lib/trade/types";
 
@@ -36,7 +36,7 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel, 
 			value={side}
 			onValueChange={(v: string) => onSideChange(v as Side)}
 			fullWidth
-			className={cn(compact ? "mb-0" : "mb-2", tradingPanel && mobileChrome.sideBox, mobile && "mb-0")}
+			className={cn(compact ? "mb-0" : "mb-2", tradingPanel && sideBox, mobile && "mb-0")}
 			indicatorClassName={indicatorClassName}
 		>
 			<SegmentedControlItem
@@ -47,7 +47,7 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel, 
 					tradingPanel &&
 						"relative rounded-[9px] font-bold text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] data-[active]:text-trading-panel-on-success",
 					compact ? "py-1.5 text-2sm" : "py-[11px] text-sm",
-					mobile && mobileChrome.sideMobile,
+					mobile && sideMobile,
 				)}
 			>
 				{labels.buy}
@@ -60,7 +60,7 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel, 
 					tradingPanel &&
 						"relative rounded-[9px] font-bold text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] data-[active]:text-trading-panel-on-error",
 					compact ? "py-1.5 text-2sm" : "py-[11px] text-sm",
-					mobile && mobileChrome.sideMobile,
+					mobile && sideMobile,
 				)}
 			>
 				{labels.sell}

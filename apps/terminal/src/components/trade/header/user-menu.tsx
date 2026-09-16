@@ -23,6 +23,7 @@ import { shortenAddress } from "@/lib/format";
 import { createLazyComponent } from "@/lib/lazy";
 import { hasPersistedPrivySession } from "@/lib/wallet/privy-session-hint";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
+import { MobileWalletCtaView } from "../mobile/mobile-wallet-cta-view";
 import { UserMenuModalErrorBoundary, UserMenuModalLoadingFallback } from "./user-menu-modal-boundary";
 import { loadUserMenuModalModule } from "./user-menu-modal-load";
 import { USER_MENU_BUTTON_MIN_WIDTH, WalletCtaView } from "./wallet-cta-view";
@@ -165,24 +166,12 @@ export function UserMenu({ variant = "default" }: Props) {
 						onPointerEnter={() => void WalletModal.preload?.()}
 					/>
 				) : (
-					<Button
-						variant="outline"
-						intent="neutral"
-						size="sm"
+					<MobileWalletCtaView
+						label={t(DESKTOP_NAV_LABELS.wallet)}
 						onClick={() => setWalletModalOpen(true)}
 						onFocus={() => void WalletModal.preload?.()}
 						onPointerEnter={() => void WalletModal.preload?.()}
-						iconLeft={<WalletIcon className="size-3.5" />}
-						className={cn(
-							APP_BAR_BUTTON_HEIGHT_CLASS,
-							"min-w-0 max-w-full",
-							"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
-						)}
-					>
-						<span className="min-w-0 truncate">
-							<Trans>Connect Wallet</Trans>
-						</span>
-					</Button>
+					/>
 				)}
 				{walletModalOpen && (
 					<UserMenuModalErrorBoundary

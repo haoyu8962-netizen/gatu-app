@@ -901,7 +901,6 @@ msgstr "USDC का स्वचालित जमा विफल रहा"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -1597,7 +1596,7 @@ msgstr "{marketName} इतिहास विवरण समेटें"
 msgid "Collapse all"
 msgstr "सभी समेटें"
 
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Collapse market details"
 msgstr "बाज़ार विवरण समेटें"
 
@@ -1789,10 +1788,8 @@ msgstr "स्टेकिंग कार्रवाइयाँ देखन�
 msgid "Connect wallet"
 msgstr "वॉलेट कनेक्ट करें"
 
-#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/desktop-nav.ts
@@ -2705,16 +2702,14 @@ msgstr "एनवायरनमेंट"
 msgid "Equity"
 msgstr "इक्विटी"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 msgid "Est. Fee"
 msgstr "अनु. शुल्क"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Est. Slippage"
@@ -2816,7 +2811,7 @@ msgstr "{marketName} इतिहास विवरण विस्तृत �
 msgid "Expand all"
 msgstr "सभी विस्तृत करें"
 
-#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/config/market-header.ts
 msgid "Expand market details"
 msgstr "बाज़ार विवरण विस्तृत करें"
 
@@ -3816,7 +3811,6 @@ msgstr "मोबाइल डिवाइस लिंक करें"
 msgid "Linked staking account: <0>{0}</0>."
 msgstr "लिंक किया गया स्टेकिंग खाता: <0>{0}</0>।"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
@@ -4025,7 +4019,6 @@ msgstr "ईमेल से लॉग इन करें"
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -4105,7 +4098,6 @@ msgstr "Margin मोड"
 msgid "Margin Ratio"
 msgstr "मार्जिन अनुपात"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/trade-panel-labels.ts
@@ -4269,12 +4261,12 @@ msgstr "मास्टर वॉलेट सत्यापित है"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/config/trade-panel-labels.ts
 msgid "Max"
 msgstr "अधिकतम"
 
@@ -4321,11 +4313,11 @@ msgstr "अधिकतम निकासी योग्य राशि: {0}"
 msgid "Meme"
 msgstr "Meme"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/ui/price-input.tsx
+#: src/config/orderbook-labels.ts
 msgid "Mid"
 msgstr "Mid"
 
@@ -4991,7 +4983,7 @@ msgstr "ओपन इंटरेस्ट"
 msgid "Open Long"
 msgstr "ओपन लॉन्ग"
 
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Open navigation"
 msgstr "नेविगेशन खोलें"
 
@@ -5074,7 +5066,7 @@ msgstr "ऑर्डर बुक एनिमेशन"
 msgid "Order book in quote asset"
 msgstr "क्वोट एसेट में ऑर्डर बुक"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Order book view"
 msgstr "ऑर्डर बुक दृश्य"
 
@@ -5170,7 +5162,6 @@ msgstr "ऑर्डर सबमिट हो गया है। एक्स�
 msgid "Order type"
 msgstr "ऑर्डर प्रकार"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
@@ -5332,6 +5323,7 @@ msgstr "स्थायी स्टेकिंग लिंक"
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
@@ -5633,10 +5625,8 @@ msgstr "वॉल्ट का पिछला पेज"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -5678,7 +5668,7 @@ msgstr "कीमत {price} से नीचे"
 msgid "Price grouping"
 msgstr "प्राइस ग्रुपिंग"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Price precision"
 msgstr "मूल्य परिशुद्धता"
 
@@ -5903,7 +5893,6 @@ msgstr "इस टैब में रिकवर हुआ। {expiresAtLabel}
 msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
 msgstr "इस ब्राउज़र में रिकवरी सहेजी नहीं जा सकी। बंद करने से पहले Arbitrum ट्रांज़ैक्शन हैश नोट कर लें।"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6771,7 +6760,6 @@ msgstr "{displayName} का PNL साझा करें"
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -6788,15 +6776,15 @@ msgstr "शॉर्ट"
 msgid "Short position"
 msgstr "Short पोज़िशन"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Show asks only"
 msgstr "केवल आस्क दिखाएँ"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Show bids only"
 msgstr "केवल बिड दिखाएँ"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/config/orderbook-labels.ts
 msgid "Show both sides"
 msgstr "दोनों पक्ष दिखाएँ"
 
@@ -6858,11 +6846,9 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -6933,8 +6919,6 @@ msgstr "SL एंट्री से नीचे होना चाहिए"
 msgid "SL Price"
 msgstr "SL मूल्य"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
@@ -7029,6 +7013,7 @@ msgstr "स्रोत"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -8368,7 +8353,6 @@ msgstr "TP एंट्री से नीचे होना चाहिए"
 msgid "TP Price"
 msgstr "TP मूल्य"
 
-#: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade-panel-labels.ts
