@@ -326,11 +326,8 @@ msgstr "Access restricted"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
-#: src/hooks/trade/use-account-mode-labels.ts
-#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
 msgstr "Account"
 
@@ -354,8 +351,7 @@ msgstr "Account and wallet"
 msgid "Account data unavailable"
 msgstr "Account data unavailable"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "Account Margin Ratio"
@@ -383,8 +379,7 @@ msgstr "Account staking data unavailable"
 msgid "Account staking status"
 msgstr "Account staking status"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/hooks/trade/use-account-mode-labels.ts
+#: src/config/account-labels.ts
 msgid "Account Summary"
 msgstr "Account Summary"
 
@@ -1023,7 +1018,6 @@ msgstr "Balance changed before submission. Review the updated balance and try ag
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "Balance data is unavailable. Try again after the connection recovers."
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "Balances"
@@ -2060,8 +2054,7 @@ msgstr "Creating your wallet. Please wait..."
 msgid "Cross"
 msgstr "Cross"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "Cross Account Leverage"
@@ -2070,7 +2063,7 @@ msgstr "Cross Account Leverage"
 msgid "Cross Leverage"
 msgstr "Cross Leverage"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "Cross Maintenance Margin"
@@ -2197,7 +2190,6 @@ msgstr "Deployer"
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2218,7 +2210,6 @@ msgstr "Deployer"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -3241,7 +3232,6 @@ msgstr "Funding"
 msgid "Funding payments"
 msgstr "Funding payments"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Funding Payments"
 msgstr "Funding Payments"
@@ -5009,7 +4999,6 @@ msgstr "Open navigation"
 msgid "Open official link"
 msgstr "Open official link"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "Open Orders"
@@ -5117,7 +5106,6 @@ msgstr "Order filled"
 msgid "Order history"
 msgstr "Order history"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "Order History"
@@ -5516,8 +5504,7 @@ msgstr "Portfolio performance period"
 msgid "Portfolio summary"
 msgstr "Portfolio summary"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "Portfolio Value"
@@ -5570,7 +5557,6 @@ msgstr "Position TP/SL orders must be edited from the position controls."
 msgid "Position Value"
 msgstr "Position Value"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/config/trade.ts
 msgid "Positions"
@@ -8424,7 +8410,6 @@ msgstr "Trade"
 msgid "Trade history"
 msgstr "Trade history"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "Trade History"
@@ -8687,7 +8672,6 @@ msgstr "Try the PWA."
 msgid "TVL"
 msgstr "TVL"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -8976,7 +8960,7 @@ msgstr "Unlock your wallet and try again."
 msgid "Unrealized P&L"
 msgstr "Unrealized P&L"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -9456,7 +9440,6 @@ msgstr "Whole position"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -9466,9 +9449,9 @@ msgstr "Whole position"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/config/account-labels.ts
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "Withdraw"

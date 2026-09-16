@@ -13,6 +13,19 @@ const imports = parsed.statements.filter(ts.isImportDeclaration).map((statement)
 });
 
 describe("app shell import boundary", () => {
+	it("allows the pure account overview composition without runtime UI imports", () => {
+		expect(imports).toContain("../tradebox/account-overview-view");
+		expect(imports).toContain("../positions/account-table-header-view");
+		const overview = readFileSync(
+			resolve(__dirname, "../../components/trade/tradebox/account-overview-view.tsx"),
+			"utf8",
+		);
+		expect(overview).toContain('from "@/components/ui/info-row"');
+		const infoRow = readFileSync(resolve(__dirname, "../../components/ui/info-row.tsx"), "utf8");
+		expect(infoRow).not.toMatch(/use[A-Z]|@gatu\/ui|@lingui|window|document/);
+		expect([...infoRow.matchAll(/from\s+["']([^"']+)["']/g)].map((match) => match[1])).toEqual(["react", "@/lib/cn"]);
+	});
+
 	it("imports only views, pure configuration and the explicit migration exceptions", () => {
 		for (const specifier of imports) {
 			const allowed =
@@ -21,6 +34,7 @@ describe("app shell import boundary", () => {
 				[
 					"@/lib/cn",
 					"@/components/ui/input-styles",
+					"@/components/ui/info-row",
 					"@phosphor-icons/react",
 					"@/components/brand/gatu-logo",
 					"./desktop-grid-loading-surface",

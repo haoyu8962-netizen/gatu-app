@@ -7,6 +7,11 @@ const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const COMPONENTS_DIR = resolve(TEST_DIR, "../../components");
 
 const BOOT_PLACEHOLDER_SOURCES = [
+	"trade/positions/account-table-header-view.tsx",
+	"trade/positions/account-tab-strip-view.tsx",
+	"trade/tradebox/account-overview-view.tsx",
+	"trade/tradebox/account-action-button-view.tsx",
+	"trade/tradebox/account-panel-frame-view.tsx",
 	"trade/components/trade-slider-view.tsx",
 	"trade/tradebox/trade-input-frame-view.tsx",
 	"trade/tradebox/trade-available-row-view.tsx",

@@ -7,7 +7,7 @@ const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const SCROLL_CONTAINER_SOURCES = [
 	"components/trade/market-overview-view.tsx",
 	"components/trade/header/favorites-strip-view.tsx",
-	"components/trade/positions/positions-panel.tsx",
+	"components/trade/positions/account-table-header-view.tsx",
 ].map((relativePath) => readFileSync(resolve(TEST_DIR, "../..", relativePath), "utf8"));
 
 describe("hidden horizontal scrollbar contract", () => {

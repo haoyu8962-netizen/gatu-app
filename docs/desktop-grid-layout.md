@@ -52,6 +52,8 @@ The account-action browser suite mounts the real AccountPanel in the real deskto
 
 At 1545×900, reference Market and Limit modes retain the same 670px trading panel and chart/account boundaries while reallocating space between the scrollable fields and bottom summary. Preserve this height-ownership boundary alongside GATU's grid resizing controls. Browser regressions must compare every panel rectangle and the outer scroll extent, preserve saved user geometry and field values, and verify that the last field, CTA and fees remain reachable.
 
+The desktop account tab header and disconnected overview share props-only views with startup placeholders under [ADR 0009](adr/0009-startup-placeholder-single-source.md); runtime Tabs, content measurement and funding guards retain their existing ownership.
+
 Account mode names, overview titles, ratio labels and leverage collateral follow [the shared account overview contract](account-overview.md). Locale and mode changes must update the existing desktop and mobile panels, including accessible progress labels, without remounting funds dialogs.
 
 ## Mobile order-entry height

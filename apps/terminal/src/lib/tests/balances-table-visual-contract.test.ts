@@ -77,7 +77,10 @@ describe("balances table visual contract", () => {
 
 	it("keeps the positions toolbar dense and removes inherited tab-panel padding", () => {
 		expect(POSITIONS_PANEL_SOURCE).toContain('size="xs"');
-		expect(POSITIONS_PANEL_SOURCE).toContain("flex h-[45px] shrink-0");
+		expect(
+			readFileSync(resolve(TEST_DIR, "../..", "components/trade/positions/account-table-header-view.tsx"), "utf8"),
+		).toContain("flex h-[45px] shrink-0");
+		expect(POSITIONS_PANEL_SOURCE).toContain("<AccountTableHeaderView");
 		expect(POSITIONS_PANEL_SOURCE).toContain("flex-col pt-0");
 	});
 });

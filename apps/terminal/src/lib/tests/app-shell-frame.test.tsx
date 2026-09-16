@@ -37,6 +37,21 @@ describe("AppShellSkeleton desktop frame", () => {
 		for (const input of panel?.querySelectorAll("input,button") ?? []) expect(input.closest("[inert]")).not.toBeNull();
 	});
 
+	it("renders the shared account headers and five real disconnected zero values", () => {
+		const desktop = container.querySelector("[data-shell-desktop]");
+		const header = desktop?.querySelector('[data-testid="positions-toolbar-header"]');
+		expect(header?.className).toContain("h-[45px]");
+		expect(header?.querySelectorAll("button")).toHaveLength(7);
+		expect(header?.querySelector("[data-active]")?.getAttribute("data-positions-tab")).toBe("positions");
+		expect(header?.querySelector('[data-testid="positions-header-actions"]')?.childElementCount).toBe(0);
+		expect(header?.querySelector("[data-position-tab-count]")).toBeNull();
+		const overview = desktop?.querySelector('[data-slot="disconnected-account-overview"]');
+		expect(overview?.hasAttribute("data-grid-content-part")).toBe(true);
+		expect(
+			[...(overview?.querySelectorAll('[data-slot="info-row-value"]') ?? [])].map((node) => node.textContent),
+		).toEqual(["0.00%", "$0.00", "$0.00", "$0.00", "0.00x"]);
+	});
+
 	it("draws the terminal chrome the real page replaces, with placeholders instead of data", () => {
 		const desktop = container.querySelector("[data-shell-desktop]");
 		const text = desktop?.textContent ?? "";

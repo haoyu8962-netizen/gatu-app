@@ -1,18 +1,24 @@
 import { GlobeIcon, MoonIcon, SlidersHorizontalIcon, SpinnerGapIcon, SunIcon } from "@phosphor-icons/react";
-import { createElement } from "react";
+import { type ComponentProps, createElement } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
+import { ACCOUNT_LABELS } from "@/config/account-labels";
 import { APP_VERSION, DEFAULT_FAVORITE_MARKETS } from "@/config/app";
 import { DEFAULT_LOCALE_NAME, DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { FOOTER_LABELS, FOOTER_LINKS } from "@/config/footer-links";
 import { MARKET_HEADER_LABELS } from "@/config/market-header";
 import { ORDERBOOK_LABELS } from "@/config/orderbook-labels";
-import { DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT } from "@/config/trade";
+import { DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT, POSITIONS_TABS } from "@/config/trade";
 import { SIDE_LABELS, TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
+import type { TokenSelectorTriggerView } from "../chart/token-selector-trigger-view";
 import { HEADER_ICON_BUTTON_CLASS, HeaderIconButtonView } from "../header/header-icon-button-view";
 import { DESKTOP_LANGUAGE_TRIGGER_CLASS, NavMenuTriggerView } from "../header/nav-menu-trigger-view";
 import { TOP_NAV_LOGO_CLASS, TOP_NAV_WORDMARK_CLASS } from "../header/top-nav-view";
 import { WalletCtaView } from "../header/wallet-cta-view";
+import type { MarketOverviewView } from "../market-overview-view";
 import { OrderbookGroupingTriggerView } from "../orderbook/orderbook-grouping-trigger-view";
+import type { AccountTabStripView } from "../positions/account-tab-strip-view";
+import type { AccountActionButtonView } from "../tradebox/account-action-button-view";
+import type { AccountOverviewView } from "../tradebox/account-overview-view";
 
 export const FAVORITES_PLACEHOLDER = {
 	items: DEFAULT_FAVORITE_MARKETS.map((name) => ({ name, label: `${name}-USDC`, active: false })),
@@ -157,4 +163,58 @@ export const TRADE_PANEL_PLACEHOLDER = {
 		{ id: "slippage", value: `${DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT}%` },
 		{ id: "fees", value: "0.0550% / 0.0250%" },
 	] satisfies readonly { id: keyof typeof TRADE_PANEL_LABELS; value: string }[],
+};
+
+export const ACCOUNT_TABLE_PLACEHOLDER: ComponentProps<typeof AccountTabStripView> = {
+	tabs: POSITIONS_TABS.map((tab) => ({ value: tab.value, label: tab.label.message })),
+	active: "positions",
+};
+
+export const ACCOUNT_OVERVIEW_PLACEHOLDER = {
+	accountTitle: ACCOUNT_LABELS.account.message,
+	title: ACCOUNT_LABELS.summary.message,
+	deposit: {
+		variant: "filled",
+		label: ACCOUNT_LABELS.deposit.message,
+		disabled: true,
+		focusableWhenDisabled: true,
+	} satisfies ComponentProps<typeof AccountActionButtonView>,
+	withdraw: { variant: "outline", label: ACCOUNT_LABELS.withdraw.message, disabled: true } satisfies ComponentProps<
+		typeof AccountActionButtonView
+	>,
+	rows: [
+		{ key: "margin-ratio", label: ACCOUNT_LABELS.marginRatio.message, value: "0.00%" },
+		{ key: "portfolio-value", label: ACCOUNT_LABELS.portfolioValue.message, value: "$0.00" },
+		{ key: "unrealized-pnl", label: ACCOUNT_LABELS.unrealizedPnl.message, value: "$0.00" },
+		{ key: "maintenance-margin", label: ACCOUNT_LABELS.maintenanceMargin.message, value: "$0.00" },
+		{ key: "account-leverage", label: ACCOUNT_LABELS.accountLeverage.message, value: "0.00x" },
+	],
+};
+
+export interface DesktopPanelPlaceholderProps {
+	favorites: typeof FAVORITES_PLACEHOLDER;
+	marketHeader: {
+		trigger: ComponentProps<typeof TokenSelectorTriggerView>;
+		stats: ComponentProps<typeof MarketOverviewView>["stats"];
+		ariaLabel: string;
+	};
+	orderbook: typeof ORDERBOOK_PLACEHOLDER;
+	tradePanel: typeof TRADE_PANEL_PLACEHOLDER;
+	accountTable: ComponentProps<typeof AccountTabStripView>;
+	accountOverview: {
+		accountTitle: string;
+		title: string;
+		deposit: ComponentProps<typeof AccountActionButtonView>;
+		withdraw: ComponentProps<typeof AccountActionButtonView>;
+		rows: ComponentProps<typeof AccountOverviewView>["rows"];
+	};
+}
+
+export const DESKTOP_PANEL_PLACEHOLDER: DesktopPanelPlaceholderProps = {
+	favorites: FAVORITES_PLACEHOLDER,
+	marketHeader: MARKET_HEADER_PLACEHOLDER,
+	orderbook: ORDERBOOK_PLACEHOLDER,
+	tradePanel: TRADE_PANEL_PLACEHOLDER,
+	accountTable: ACCOUNT_TABLE_PLACEHOLDER,
+	accountOverview: ACCOUNT_OVERVIEW_PLACEHOLDER,
 };

@@ -326,11 +326,8 @@ msgstr "الوصول مقيّد"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
-#: src/hooks/trade/use-account-mode-labels.ts
-#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
 msgstr "الحساب"
 
@@ -354,8 +351,7 @@ msgstr "الحساب والمحفظة"
 msgid "Account data unavailable"
 msgstr "بيانات الحساب غير متاحة"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "نسبة هامش الحساب"
@@ -383,8 +379,7 @@ msgstr "بيانات تخزين الحساب غير متاحة"
 msgid "Account staking status"
 msgstr "حالة تخزين الحساب"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/hooks/trade/use-account-mode-labels.ts
+#: src/config/account-labels.ts
 msgid "Account Summary"
 msgstr "ملخص الحساب"
 
@@ -1023,7 +1018,6 @@ msgstr "تغيّر الرصيد قبل الإرسال. راجع الرصيد ا�
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "بيانات الرصيد غير متاحة. حاول مرة أخرى بعد استعادة الاتصال."
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "الأرصدة"
@@ -2060,8 +2054,7 @@ msgstr "جارٍ إنشاء محفظتك. يرجى الانتظار..."
 msgid "Cross"
 msgstr "متقاطع"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "رافعة هامش المحفظة"
@@ -2070,7 +2063,7 @@ msgstr "رافعة هامش المحفظة"
 msgid "Cross Leverage"
 msgstr "الرافعة المتقاطعة"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "هامش الصيانة المتقاطع"
@@ -2197,7 +2190,6 @@ msgstr "جهة النشر"
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2218,7 +2210,6 @@ msgstr "جهة النشر"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -3241,7 +3232,6 @@ msgstr "التمويل"
 msgid "Funding payments"
 msgstr "مدفوعات التمويل"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Funding Payments"
 msgstr "مدفوعات التمويل"
@@ -5009,7 +4999,6 @@ msgstr "فتح التنقل"
 msgid "Open official link"
 msgstr "فتح الرابط الرسمي"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "الأوامر المفتوحة"
@@ -5117,7 +5106,6 @@ msgstr "تم تنفيذ الأمر"
 msgid "Order history"
 msgstr "سجل الأوامر"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "سجل الأوامر"
@@ -5516,8 +5504,7 @@ msgstr "فترة أداء المحفظة الاستثمارية"
 msgid "Portfolio summary"
 msgstr "ملخص المحفظة الاستثمارية"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "قيمة المحفظة"
@@ -5570,7 +5557,6 @@ msgstr "يجب تعديل أوامر TP/SL الخاصة بالمركز من عن
 msgid "Position Value"
 msgstr "قيمة المركز"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/config/trade.ts
 msgid "Positions"
@@ -8424,7 +8410,6 @@ msgstr "تداول"
 msgid "Trade history"
 msgstr "سجل الصفقات"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "سجل التداول"
@@ -8687,7 +8672,6 @@ msgstr "جرّب تطبيق PWA."
 msgid "TVL"
 msgstr "إجمالي القيمة المقفلة"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -8976,7 +8960,7 @@ msgstr "افتح قفل محفظتك ثم أعد المحاولة."
 msgid "Unrealized P&L"
 msgstr "الأرباح والخسائر غير المحققة"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -9456,7 +9440,6 @@ msgstr "المركز بالكامل"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -9466,9 +9449,9 @@ msgstr "المركز بالكامل"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/config/account-labels.ts
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "سحب"

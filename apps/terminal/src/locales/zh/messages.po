@@ -326,11 +326,8 @@ msgstr "访问受限"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
-#: src/hooks/trade/use-account-mode-labels.ts
-#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
 msgstr "账户"
 
@@ -354,8 +351,7 @@ msgstr "账户与钱包"
 msgid "Account data unavailable"
 msgstr "账户数据不可用"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "账户保证金率"
@@ -383,8 +379,7 @@ msgstr "账户质押数据不可用"
 msgid "Account staking status"
 msgstr "账户质押状态"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/hooks/trade/use-account-mode-labels.ts
+#: src/config/account-labels.ts
 msgid "Account Summary"
 msgstr "账户概要"
 
@@ -1023,7 +1018,6 @@ msgstr "提交前余额已发生变化。请检查更新后的余额并重试。
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "余额数据不可用。请等待连接恢复后重试。"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "余额"
@@ -2060,8 +2054,7 @@ msgstr "正在创建你的钱包，请稍候..."
 msgid "Cross"
 msgstr "全仓"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "全仓账户杠杆"
@@ -2070,7 +2063,7 @@ msgstr "全仓账户杠杆"
 msgid "Cross Leverage"
 msgstr "全仓杠杆"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "全仓维持保证金"
@@ -2197,7 +2190,6 @@ msgstr "部署者"
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2218,7 +2210,6 @@ msgstr "部署者"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -3241,7 +3232,6 @@ msgstr "资金费"
 msgid "Funding payments"
 msgstr "资金费支付记录"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Funding Payments"
 msgstr "资金费用"
@@ -5009,7 +4999,6 @@ msgstr "打开导航"
 msgid "Open official link"
 msgstr "打开官方链接"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "当前委托"
@@ -5117,7 +5106,6 @@ msgstr "委托已成交"
 msgid "Order history"
 msgstr "委托历史"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "委托历史"
@@ -5516,8 +5504,7 @@ msgstr "投资组合表现周期"
 msgid "Portfolio summary"
 msgstr "投资组合摘要"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "投资组合价值"
@@ -5570,7 +5557,6 @@ msgstr "仓位止盈止损委托必须从仓位操作中编辑。"
 msgid "Position Value"
 msgstr "仓位价值"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/config/trade.ts
 msgid "Positions"
@@ -8424,7 +8410,6 @@ msgstr "交易"
 msgid "Trade history"
 msgstr "成交历史"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "成交历史"
@@ -8687,7 +8672,6 @@ msgstr "试用 PWA。"
 msgid "TVL"
 msgstr "TVL"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -8976,7 +8960,7 @@ msgstr "请解锁钱包后重试。"
 msgid "Unrealized P&L"
 msgstr "未实现盈亏"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -9456,7 +9440,6 @@ msgstr "全部仓位"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -9466,9 +9449,9 @@ msgstr "全部仓位"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/config/account-labels.ts
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "提款"

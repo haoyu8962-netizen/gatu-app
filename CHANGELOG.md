@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Desktop account startup placeholders now share the real tab header and disconnected
+  overview, including five formatted zero values and locale-aware runtime tabs.
+
 - Desktop order-entry startup placeholders now share the real panel header, default
   field frames, action button and summary chrome, keeping their geometry stable as
   the trading interface becomes ready.

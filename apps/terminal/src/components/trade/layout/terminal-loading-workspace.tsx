@@ -1,48 +1,30 @@
 import { Trans, useLingui } from "@lingui/react/macro";
+import { ACCOUNT_LABELS } from "@/config/account-labels";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { MARKET_HEADER_LABELS } from "@/config/market-header";
 import { ORDERBOOK_LABELS } from "@/config/orderbook-labels";
+import { POSITIONS_TABS } from "@/config/trade";
 import { SIDE_LABELS, TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { SPOT_MARKET_NAME_SEPARATOR } from "@/domain/market/display";
 import { getBuilderPerpDisplayName, getMarketKindFromName, getPerpDisplayName } from "@/lib/hyperliquid/markets/helper";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { getDisconnectedAccountOverviewRows } from "@/lib/trade/account-overview-presentation";
 import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
-import { TokenSelectorTriggerView } from "../chart/token-selector-trigger-view";
-import { AssetIconSlotView } from "../components/asset-icon-slot-view";
-import { FavoritesStripView } from "../header/favorites-strip-view";
-import { MarketOverviewView } from "../market-overview-view";
-import { type PanelFrameLabels, renderDesktopPanelFrame } from "./app-shell-skeleton";
+import { useMarketOrderSlippagePercent, usePositionsActiveTab } from "@/stores/use-global-settings-store";
+import { renderDesktopPanel } from "./app-shell-skeleton";
 import { type DesktopGridLoadingPanelId, DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
 import {
+	ACCOUNT_OVERVIEW_PLACEHOLDER,
 	FAVORITES_PLACEHOLDER,
 	MARKET_HEADER_PLACEHOLDER,
 	ORDERBOOK_PLACEHOLDER,
 	TRADE_PANEL_PLACEHOLDER,
 } from "./desktop-placeholders";
-import { MarketHeaderView } from "./market-header-view";
-
-function useTranslatedPanelFrameLabels(): PanelFrameLabels {
-	const { t } = useLingui();
-	return {
-		accountTabs: [
-			t`Balances`,
-			t`Positions`,
-			t`Open Orders`,
-			t`TWAP`,
-			t`Trade History`,
-			t`Funding Payments`,
-			t`Order History`,
-		],
-		deposit: t`Deposit`,
-		withdraw: t`Withdraw`,
-		accountSummary: t`Account Summary`,
-		accountSummaryRows: [t`Account Margin Ratio`, t`Portfolio Value`, t`Cross Account Leverage`],
-	};
-}
 
 export function TerminalLoadingWorkspace() {
-	const labels = useTranslatedPanelFrameLabels();
+	const numberFormatRevision = useNumberFormatRevision();
+	const storedActiveTab = usePositionsActiveTab();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const { t } = useLingui();
 	const { routeMarketName, routeDex } = useExchangeScope();
@@ -110,28 +92,39 @@ export function TerminalLoadingWorkspace() {
 					},
 	};
 
+	const accountTable = {
+		tabs: POSITIONS_TABS.map((tab) => ({ value: tab.value, label: t(tab.label) })),
+		active: POSITIONS_TABS.find((tab) => tab.value === storedActiveTab)?.value ?? "positions",
+	};
+	const accountOverview = {
+		...ACCOUNT_OVERVIEW_PLACEHOLDER,
+		accountTitle: t(ACCOUNT_LABELS.account),
+		title: t(ACCOUNT_LABELS.summary),
+		deposit: { ...ACCOUNT_OVERVIEW_PLACEHOLDER.deposit, label: t(ACCOUNT_LABELS.deposit) },
+		withdraw: { ...ACCOUNT_OVERVIEW_PLACEHOLDER.withdraw, label: t(ACCOUNT_LABELS.withdraw) },
+		rows: getDisconnectedAccountOverviewRows(t, numberFormatRevision),
+	};
 	function renderPanel(panelId: DesktopGridLoadingPanelId) {
-		if (panelId === "favoriteCoins") return <FavoritesStripView {...favorites} />;
-		if (panelId === "coinInfo")
-			return (
-				<MarketHeaderView
-					head={
-						<>
-							<AssetIconSlotView interactive icon={<span className="size-[26px] rounded-full bg-fill-weak" />} />
-							<TokenSelectorTriggerView
-								{...MARKET_HEADER_PLACEHOLDER.trigger}
-								pairName={pairName}
-								kindBadge={kindBadge}
-								isSpot={kind === "spot"}
-								aria-label={t(MARKET_HEADER_LABELS.price)}
-							/>
-						</>
-					}
-					overview={<MarketOverviewView stats={stats} ariaLabel={t(MARKET_HEADER_LABELS.price)} />}
-				/>
-			);
-		return renderDesktopPanelFrame(panelId, labels, orderbook, tradePanel);
+		return renderDesktopPanel(panelId, {
+			favorites,
+			marketHeader: {
+				trigger: {
+					...MARKET_HEADER_PLACEHOLDER.trigger,
+					pairName,
+					kindBadge,
+					isSpot: kind === "spot",
+					"aria-label": t(MARKET_HEADER_LABELS.price),
+				},
+				stats,
+				ariaLabel: t(MARKET_HEADER_LABELS.price),
+			},
+			orderbook,
+			tradePanel,
+			accountTable,
+			accountOverview,
+		});
 	}
+
 	return (
 		<main
 			aria-busy="true"

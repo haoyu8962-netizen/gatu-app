@@ -326,11 +326,8 @@ msgstr "Acceso restringido"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
-#: src/hooks/trade/use-account-mode-labels.ts
-#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
 msgstr "Cuenta"
 
@@ -354,8 +351,7 @@ msgstr "Cuenta y monedero"
 msgid "Account data unavailable"
 msgstr "Datos de la cuenta no disponibles"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "Ratio de margen de la cuenta"
@@ -383,8 +379,7 @@ msgstr "Datos de staking de la cuenta no disponibles"
 msgid "Account staking status"
 msgstr "Estado de staking de la cuenta"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/hooks/trade/use-account-mode-labels.ts
+#: src/config/account-labels.ts
 msgid "Account Summary"
 msgstr "Resumen de la cuenta"
 
@@ -1023,7 +1018,6 @@ msgstr "El saldo cambió antes del envío. Revisa el saldo actualizado y vuelve 
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "Los datos de saldo no están disponibles. Inténtalo de nuevo cuando se restablezca la conexión."
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "Saldos"
@@ -2060,8 +2054,7 @@ msgstr "Creando tu billetera. Espera..."
 msgid "Cross"
 msgstr "Cruzado"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "Apalancamiento de cuenta cruzada"
@@ -2070,7 +2063,7 @@ msgstr "Apalancamiento de cuenta cruzada"
 msgid "Cross Leverage"
 msgstr "Apalancamiento cruzado"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "Margen de mantenimiento cruzado"
@@ -2197,7 +2190,6 @@ msgstr "Desplegador"
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2218,7 +2210,6 @@ msgstr "Desplegador"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -3241,7 +3232,6 @@ msgstr "Financiación"
 msgid "Funding payments"
 msgstr "Pagos de financiación"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Funding Payments"
 msgstr "Pagos de financiamiento"
@@ -5009,7 +4999,6 @@ msgstr "Abrir navegación"
 msgid "Open official link"
 msgstr "Abrir enlace oficial"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "Órdenes abiertas"
@@ -5117,7 +5106,6 @@ msgstr "Orden ejecutada"
 msgid "Order history"
 msgstr "Historial de órdenes"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "Historial de órdenes"
@@ -5516,8 +5504,7 @@ msgstr "Período de rendimiento de la cartera"
 msgid "Portfolio summary"
 msgstr "Resumen de la cartera"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "Valor de la cartera"
@@ -5570,7 +5557,6 @@ msgstr "Las órdenes TP/SL de posición deben editarse desde los controles de la
 msgid "Position Value"
 msgstr "Valor de la posición"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/config/trade.ts
 msgid "Positions"
@@ -8424,7 +8410,6 @@ msgstr "Operar"
 msgid "Trade history"
 msgstr "Historial de operaciones"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "Historial de operaciones"
@@ -8687,7 +8672,6 @@ msgstr "Prueba la PWA."
 msgid "TVL"
 msgstr "TVL"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -8976,7 +8960,7 @@ msgstr "Desbloquea tu billetera y vuelve a intentarlo."
 msgid "Unrealized P&L"
 msgstr "P&L no realizado"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -9456,7 +9440,6 @@ msgstr "Posición completa"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -9466,9 +9449,9 @@ msgstr "Posición completa"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/config/account-labels.ts
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "Retirar"

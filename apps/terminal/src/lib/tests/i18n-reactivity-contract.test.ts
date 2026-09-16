@@ -105,6 +105,11 @@ describe("live localization source contract", () => {
 });
 
 const PURE_PRESENTATION_VIEWS = [
+	"positions/account-table-header-view.tsx",
+	"positions/account-tab-strip-view.tsx",
+	"tradebox/account-overview-view.tsx",
+	"tradebox/account-action-button-view.tsx",
+	"tradebox/account-panel-frame-view.tsx",
 	"components/trade-slider-view.tsx",
 	"tradebox/trade-input-frame-view.tsx",
 	"tradebox/trade-available-row-view.tsx",

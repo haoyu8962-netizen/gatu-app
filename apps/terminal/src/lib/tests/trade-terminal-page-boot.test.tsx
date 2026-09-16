@@ -87,6 +87,8 @@ vi.mock("@/components/trade/account-activity-feed-owner", () => ({
 vi.mock("@/stores/use-global-settings-store", () => ({
 	useIsTestnet: () => testState.isTestnet,
 	useMarketOrderSlippagePercent: () => 2.5,
+	usePositionsActiveTab: () => "positions",
+	getResolvedFormatLocale: () => "en-US",
 }));
 
 vi.mock("@/stores/use-market-store", () => ({

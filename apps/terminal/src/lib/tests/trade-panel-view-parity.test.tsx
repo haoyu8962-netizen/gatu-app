@@ -13,8 +13,8 @@ import { describe, expect, it, vi } from "vitest";
 import { SizePercentInput } from "@/components/trade/components/size-percent-input";
 import { TradeSlider } from "@/components/trade/components/trade-slider";
 import { TradeSliderView } from "@/components/trade/components/trade-slider-view";
-import { renderDesktopPanelFrame } from "@/components/trade/layout/app-shell-skeleton";
-import { TRADE_PANEL_PLACEHOLDER } from "@/components/trade/layout/desktop-placeholders";
+import { renderDesktopPanel } from "@/components/trade/layout/app-shell-skeleton";
+import { DESKTOP_PANEL_PLACEHOLDER, TRADE_PANEL_PLACEHOLDER } from "@/components/trade/layout/desktop-placeholders";
 import { TerminalLoadingWorkspace } from "@/components/trade/layout/terminal-loading-workspace";
 import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
@@ -166,7 +166,7 @@ describe("desktop trade panel single-source parity", () => {
 		);
 		expect(placeholder.innerHTML).toBe(runtime.innerHTML);
 		expect(source("components/trade/components/trade-slider.tsx")).toContain("<TradeSliderView");
-		const shell = dom(renderDesktopPanelFrame("tradingInterface"));
+		const shell = dom(renderDesktopPanel("tradingInterface", DESKTOP_PANEL_PLACEHOLDER));
 		const shellSlider = required(shell.querySelector("[data-trade-slider-control]")?.parentElement);
 		const runtimeSlider = required(runtime.firstElementChild).cloneNode(true) as Element;
 		runtimeSlider.querySelector("input")?.setAttribute("id", "trade-panel-size-slider");
@@ -188,7 +188,7 @@ describe("desktop trade panel single-source parity", () => {
 		}
 	});
 	it("shares the percent frame with SizePercentInput", () => {
-		const shell = dom(renderDesktopPanelFrame("tradingInterface"));
+		const shell = dom(renderDesktopPanel("tradingInterface", DESKTOP_PANEL_PLACEHOLDER));
 		const runtime = dom(
 			<SizePercentInput
 				value={0}
@@ -204,7 +204,7 @@ describe("desktop trade panel single-source parity", () => {
 		expect(source("components/trade/components/size-percent-input.tsx")).toContain("<TradePercentFrameView");
 	});
 	it.each(["default", "sm"] as const)("uses NumberInput's exact class list for static %s inputs", (inputSize) => {
-		const shell = dom(renderDesktopPanelFrame("tradingInterface"));
+		const shell = dom(renderDesktopPanel("tradingInterface", DESKTOP_PANEL_PLACEHOLDER));
 		const runtime = dom(
 			<NumberInput
 				value="0"
@@ -293,7 +293,7 @@ describe("desktop trade panel single-source parity", () => {
 		expect(geometry(dom(view).firstElementChild)).toEqual(geometry(after));
 	});
 	it("shares actual disconnected header and field geometry with the shell", () => {
-		const shell = dom(renderDesktopPanelFrame("tradingInterface"));
+		const shell = dom(renderDesktopPanel("tradingInterface", DESKTOP_PANEL_PLACEHOLDER));
 		const header = dom(
 			translated(
 				<TradeHeader
@@ -364,7 +364,7 @@ describe("desktop trade panel single-source parity", () => {
 				/>,
 			),
 		);
-		const shell = dom(renderDesktopPanelFrame("tradingInterface"));
+		const shell = dom(renderDesktopPanel("tradingInterface", DESKTOP_PANEL_PLACEHOLDER));
 		const summary = shell.querySelector('[data-slot="trade-panel-footer"]')?.lastElementChild?.firstElementChild;
 		expect(geometry(summary)).toEqual(geometry(runtime.firstElementChild));
 		expect(required(summary).textContent).toBe(runtime.textContent);
@@ -437,7 +437,9 @@ describe("desktop trade panel single-source parity", () => {
 			act(() => actions.setMarketOrderSlippagePercent(3));
 			expect(footer.textContent).toContain("Slippage3%");
 			expect(host.querySelector(".trade-panel-container")).toBe(panel);
-			expect(dom(renderDesktopPanelFrame("tradingInterface")).textContent).toContain("Slippage2.5%");
+			expect(dom(renderDesktopPanel("tradingInterface", DESKTOP_PANEL_PLACEHOLDER)).textContent).toContain(
+				"Slippage2.5%",
+			);
 		} finally {
 			act(() => root.unmount());
 			actions.setMarketOrderSlippagePercent(previous);
@@ -485,8 +487,8 @@ describe("desktop trade panel single-source parity", () => {
 			sizeUnit: "ETH",
 			labels: { ...TRADE_PANEL_PLACEHOLDER.labels, market: "市价", size: "数量" },
 		};
-		expect(geometry(dom(renderDesktopPanelFrame("tradingInterface")))).toEqual(
-			geometry(dom(renderDesktopPanelFrame("tradingInterface", undefined, undefined, sample))),
+		expect(geometry(dom(renderDesktopPanel("tradingInterface", DESKTOP_PANEL_PLACEHOLDER)))).toEqual(
+			geometry(dom(renderDesktopPanel("tradingInterface", { ...DESKTOP_PANEL_PLACEHOLDER, tradePanel: sample }))),
 		);
 	});
 	it("forwards control/CTA refs and events and Advanced keyboard behavior", async () => {

@@ -29,6 +29,16 @@ import {
 	OrderbookPanelView,
 } from "../orderbook/orderbook-panel-view";
 import { OrderbookTabsView } from "../orderbook/orderbook-tabs-view";
+import { AccountTabStripView } from "../positions/account-tab-strip-view";
+import {
+	ACCOUNT_TABLE_FIXED_CLASS,
+	ACCOUNT_TABLE_PANEL_CLASS,
+	ACCOUNT_TABLE_TABS_CLASS,
+	AccountTableHeaderView,
+} from "../positions/account-table-header-view";
+import { AccountActionButtonView } from "../tradebox/account-action-button-view";
+import { AccountOverviewView } from "../tradebox/account-overview-view";
+import { AccountPanelFrameView } from "../tradebox/account-panel-frame-view";
 import { OrderTypeTabView } from "../tradebox/order-type-tab-view";
 import { SideToggleView } from "../tradebox/side-toggle-view";
 import { TradeAvailableRowView } from "../tradebox/trade-available-row-view";
@@ -46,40 +56,13 @@ import { TradeSizeSliderRowView } from "../tradebox/trade-size-slider-row-view";
 import { TradeSizeUnitView } from "../tradebox/trade-size-unit-view";
 import { type DesktopGridLoadingPanelId, DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
 import {
-	FAVORITES_PLACEHOLDER,
+	DESKTOP_PANEL_PLACEHOLDER,
+	type DesktopPanelPlaceholderProps,
 	FOOTER_PLACEHOLDER,
-	MARKET_HEADER_PLACEHOLDER,
-	ORDERBOOK_PLACEHOLDER,
 	TOP_NAV_PLACEHOLDER,
-	TRADE_PANEL_PLACEHOLDER,
 } from "./desktop-placeholders";
 import { DesktopTerminalFrameView } from "./desktop-terminal-frame-view";
 import { MarketHeaderView } from "./market-header-view";
-
-// The boot placeholder is prerendered once for every market and hydrated before any catalog other
-// than English is active, so its labels are English source strings, never translations: a translated
-// label would differ from the prerendered HTML and force React to discard the shell. The real page
-// replaces the whole frame in the persisted locale as soon as the runtime mounts.
-const VALUE_PLACEHOLDER = "-";
-const NAME_PLACEHOLDER = "—";
-
-export interface PanelFrameLabels {
-	accountTabs: readonly string[];
-	deposit: string;
-	withdraw: string;
-	accountSummary: string;
-	accountSummaryRows: readonly string[];
-}
-
-export const DEFAULT_PANEL_FRAME_LABELS: PanelFrameLabels = {
-	accountTabs: ["Balances", "Positions", "Open Orders", "TWAP", "Trade History", "Funding Payments", "Order History"],
-	deposit: "Deposit",
-	withdraw: "Withdraw",
-	accountSummary: "Account Summary",
-	accountSummaryRows: ["Account Margin Ratio", "Portfolio Value", "Cross Account Leverage"],
-};
-const UNDERLINE_TAB_CLASS = "whitespace-nowrap px-2.5 py-2 text-xs font-medium";
-const SUMMARY_ROW_CLASS = "flex items-center justify-between gap-2 text-xs";
 
 export function AppShellSkeleton() {
 	return (
@@ -104,7 +87,7 @@ export function AppShellSkeleton() {
 							<DesktopGridLoadingSurface
 								markShellPanels
 								panelClassName="desktop-grid-panel overflow-hidden bg-surface"
-								renderPanel={renderDesktopPanelFrame}
+								renderPanel={(panelId) => renderDesktopPanel(panelId, DESKTOP_PANEL_PLACEHOLDER)}
 							/>
 						</main>
 					}
@@ -115,17 +98,23 @@ export function AppShellSkeleton() {
 	);
 }
 
-export function renderDesktopPanelFrame(
-	panelId: DesktopGridLoadingPanelId,
-	labels = DEFAULT_PANEL_FRAME_LABELS,
-	orderbook = ORDERBOOK_PLACEHOLDER,
-	tradePanel = TRADE_PANEL_PLACEHOLDER,
-) {
+export function renderDesktopPanel(panelId: DesktopGridLoadingPanelId, props: DesktopPanelPlaceholderProps) {
+	const { favorites, marketHeader, orderbook, tradePanel, accountTable, accountOverview } = props;
 	switch (panelId) {
 		case "favoriteCoins":
-			return <FavoritesFrame />;
+			return <FavoritesStripView {...favorites} />;
 		case "coinInfo":
-			return <MarketHeaderFrame />;
+			return (
+				<MarketHeaderView
+					head={
+						<>
+							<AssetIconSlotView interactive icon={<span className="size-[26px] rounded-full bg-fill-weak" />} />
+							<TokenSelectorTriggerView {...marketHeader.trigger} />
+						</>
+					}
+					overview={<MarketOverviewView stats={marketHeader.stats} ariaLabel={marketHeader.ariaLabel} />}
+				/>
+			);
 		case "chart":
 			return <ChartFrame />;
 		case "marketData":
@@ -317,79 +306,31 @@ export function renderDesktopPanelFrame(
 				/>
 			);
 		case "accountTable":
-			return <AccountTableFrame labels={labels} />;
+			return (
+				<div className={cn(ACCOUNT_TABLE_PANEL_CLASS, ACCOUNT_TABLE_FIXED_CLASS)}>
+					<div className={ACCOUNT_TABLE_TABS_CLASS}>
+						<AccountTableHeaderView tabs={<AccountTabStripView {...accountTable} />} />
+					</div>
+				</div>
+			);
 		case "accountInfo":
-			return <AccountInfoFrame labels={labels} />;
+			return (
+				<AccountPanelFrameView title={accountOverview.accountTitle}>
+					<AccountOverviewView
+						title={accountOverview.title}
+						rows={accountOverview.rows}
+						deposit={<AccountActionButtonView {...accountOverview.deposit} />}
+						withdraw={<AccountActionButtonView {...accountOverview.withdraw} />}
+					/>
+				</AccountPanelFrameView>
+			);
 	}
-}
-
-interface FrameProps {
-	labels: PanelFrameLabels;
-}
-
-function FavoritesFrame() {
-	return <FavoritesStripView {...FAVORITES_PLACEHOLDER} />;
-}
-
-function MarketHeaderFrame() {
-	return (
-		<MarketHeaderView
-			head={
-				<>
-					<AssetIconSlotView interactive icon={<span className="size-[26px] rounded-full bg-fill-weak" />} />
-					<TokenSelectorTriggerView {...MARKET_HEADER_PLACEHOLDER.trigger} />
-				</>
-			}
-			overview={
-				<MarketOverviewView stats={MARKET_HEADER_PLACEHOLDER.stats} ariaLabel={MARKET_HEADER_PLACEHOLDER.ariaLabel} />
-			}
-		/>
-	);
 }
 
 function ChartFrame() {
 	return (
 		<div className="flex h-full items-center justify-center">
 			<GatuLogo variant="mark" micro className="size-7 opacity-40" />
-		</div>
-	);
-}
-
-function AccountTableFrame({ labels }: FrameProps) {
-	return (
-		<div className="flex h-full flex-col">
-			<div className="flex gap-1 overflow-hidden border-b border-stroke-weak px-3">
-				{labels.accountTabs.map((label, index) => (
-					<span
-						key={label}
-						className={cn(UNDERLINE_TAB_CLASS, index === 1 ? "border-b-2 border-fg text-fg" : "text-fg-muted")}
-					>
-						{label}
-					</span>
-				))}
-			</div>
-		</div>
-	);
-}
-
-function AccountInfoFrame({ labels }: FrameProps) {
-	return (
-		<div className="flex h-full flex-col gap-3 overflow-hidden p-3">
-			<div className="grid grid-cols-2 gap-2 text-xs font-semibold">
-				<span className="rounded-8 bg-fill-weak py-2 text-center text-fg">{labels.deposit}</span>
-				<span className="rounded-8 border border-trading-panel-stroke-card py-2 text-center text-fg-muted">
-					{labels.withdraw}
-				</span>
-			</div>
-			<span className="text-2sm font-semibold text-fg">{labels.accountSummary}</span>
-			<div className="space-y-1.5">
-				{labels.accountSummaryRows.map((label) => (
-					<div key={label} className={SUMMARY_ROW_CLASS}>
-						<span className="text-fg-muted">{label}</span>
-						<span className="text-fg">{VALUE_PLACEHOLDER}</span>
-					</div>
-				))}
-			</div>
 		</div>
 	);
 }
@@ -423,7 +364,7 @@ export const DEFAULT_MOBILE_PANEL_FRAME_LABELS: MobilePanelFrameLabels = {
 	orderOptions: ["Reduce Only", "TP/SL"],
 	orderSummaryRows: ["Liq. Price", "Order Value", "Margin Req.", "Slippage", "Est. Fee"],
 	accountTabs: MOBILE_POSITIONS_TABS.map((tab) => tab.label.message),
-	nav: MOBILE_NAV_ITEMS.map((item) => item.label.message ?? NAME_PLACEHOLDER),
+	nav: MOBILE_NAV_ITEMS.map((item) => item.label.message ?? "—"),
 };
 
 export function MobileShellSkeleton({
@@ -490,14 +431,14 @@ export function MobileShellSkeleton({
 									<span data-slot="mobile-market-selector" className={cn(mobileChrome.marketSelector, "pl-1")}>
 										<span className="flex min-w-0 shrink-0 flex-col items-start gap-1">
 											<span className="flex min-w-0 items-center gap-1.5 max-[360px]:gap-1">
-												<span className={mobileChrome.marketName}>{NAME_PLACEHOLDER}</span>
+												<span className={mobileChrome.marketName}>{"—"}</span>
 												<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
 											</span>
 											<span className="flex min-w-0 items-center gap-1">
 												<span
 													className={cn(mobileChrome.marketBadge, "bg-trading-panel-hover text-trading-panel-muted")}
 												>
-													{NAME_PLACEHOLDER}
+													{"—"}
 												</span>
 												<span
 													className={cn(
@@ -505,7 +446,7 @@ export function MobileShellSkeleton({
 														"bg-trading-panel-hover text-trading-panel-muted tabular-nums",
 													)}
 												>
-													{VALUE_PLACEHOLDER}
+													{"-"}
 												</span>
 											</span>
 										</span>
@@ -514,10 +455,8 @@ export function MobileShellSkeleton({
 								<div className={mobileChrome.marketQuote}>
 									<div className="min-w-0 text-start">
 										<div className="flex min-w-0 flex-col items-start">
-											<span className={mobileChrome.marketPrice}>{VALUE_PLACEHOLDER}</span>
-											<div className={cn(mobileChrome.marketChange, "invisible text-trading-panel-subtle")}>
-												{VALUE_PLACEHOLDER}
-											</div>
+											<span className={mobileChrome.marketPrice}>{"-"}</span>
+											<div className={cn(mobileChrome.marketChange, "invisible text-trading-panel-subtle")}>{"-"}</div>
 										</div>
 									</div>
 									<span
@@ -543,7 +482,7 @@ export function MobileShellSkeleton({
 													key={index}
 													className={cn(mobileChrome.orderControl, "justify-start", index === 2 && "pr-4")}
 												>
-													<span className="truncate">{index === 2 ? VALUE_PLACEHOLDER : NAME_PLACEHOLDER}</span>
+													<span className="truncate">{index === 2 ? "-" : "—"}</span>
 													<CaretDownIcon viewBox="32 72 192 128" className={mobileChrome.orderCaret} />
 												</span>
 											))}
@@ -567,14 +506,14 @@ export function MobileShellSkeleton({
 									</div>
 									<div className={mobileChrome.available}>
 										<span className="shrink-0 whitespace-nowrap">{labels.available}</span>
-										<span className="tabular-nums text-trading-panel-fg">{VALUE_PLACEHOLDER}</span>
+										<span className="tabular-nums text-trading-panel-fg">{"-"}</span>
 									</div>
 									<div className="space-y-2">
 										<div className={cn(tradingInputFrameClass, mobileChrome.sizeFrame)}>
 											<span className={mobileChrome.sizeLabel}>{labels.size}</span>
-											<span className={mobileChrome.sizeValue}>{VALUE_PLACEHOLDER}</span>
+											<span className={mobileChrome.sizeValue}>{"-"}</span>
 											<span className={mobileChrome.sizeUnit}>
-												{NAME_PLACEHOLDER}
+												{"—"}
 												<CaretDownIcon className="size-3 text-trading-panel-subtle" />
 											</span>
 										</div>
@@ -591,7 +530,7 @@ export function MobileShellSkeleton({
 													"justify-end text-base tabular-nums text-trading-panel-fg",
 												)}
 											>
-												{VALUE_PLACEHOLDER}
+												{"-"}
 												<span className="text-2xs text-trading-panel-subtle">%</span>
 											</span>
 										</div>
@@ -619,9 +558,7 @@ export function MobileShellSkeleton({
 												)}
 											>
 												<span className={mobileChrome.summaryLabel}>{label}</span>
-												<span className={cn(mobileChrome.summaryValue, "text-trading-panel-muted")}>
-													{VALUE_PLACEHOLDER}
-												</span>
+												<span className={cn(mobileChrome.summaryValue, "text-trading-panel-muted")}>{"-"}</span>
 											</div>
 										))}
 									</div>
@@ -649,23 +586,21 @@ export function MobileShellSkeleton({
 								<div data-slot="compact-orderbook" className={mobileChrome.book}>
 									<div className={mobileChrome.bookHeader}>
 										<div className="min-w-0 truncate">
-											{labels.price} <span className="orderbook-asset-heading normal-case">({NAME_PLACEHOLDER})</span>
+											{labels.price} <span className="orderbook-asset-heading normal-case">({"—"})</span>
 										</div>
 										<div className="min-w-0 truncate text-right">
-											{labels.size} <span className="orderbook-asset-heading normal-case">({NAME_PLACEHOLDER})</span>
+											{labels.size} <span className="orderbook-asset-heading normal-case">({"—"})</span>
 										</div>
 									</div>
 									<div className="flex min-h-0 flex-1 flex-col">
 										<div className="relative min-h-0 flex-1 overflow-hidden" />
 										<div className={mobileChrome.bookMid}>
-											<span className="shrink-0 tabular-nums text-base text-trading-panel-fg">{VALUE_PLACEHOLDER}</span>
+											<span className="shrink-0 tabular-nums text-base text-trading-panel-fg">{"-"}</span>
 										</div>
 										<div className="relative min-h-0 flex-1 overflow-hidden" />
 									</div>
 									<div className={mobileChrome.bookFooter}>
-										<span className="relative min-h-6 px-2 text-xs tabular-nums text-trading-panel-muted">
-											{VALUE_PLACEHOLDER}
-										</span>
+										<span className="relative min-h-6 px-2 text-xs tabular-nums text-trading-panel-muted">{"-"}</span>
 										<span className="min-w-0 flex-1" />
 										<div className="flex shrink-0 items-center gap-1">
 											{[0, 1, 2].map((index) => (

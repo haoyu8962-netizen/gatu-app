@@ -71,6 +71,7 @@
 
 当前规范：[docs/adr/0005-spa-static-shell.md](../../docs/adr/0005-spa-static-shell.md) · [deploy/README.md](../../deploy/README.md)
 
+- [桌面账户面板：单一来源展示组件迁移](sessions/2026-09-16-account-panels-view-migration.md) — 2026-09-16；已整理，验证见正文。表面 5 共享账户页签、概览与按钮纯视图；394 项通过，18 项既有 mock 失败前后不变；类型、Biome 与 memory 检查通过，浏览器因沙箱 EPERM 待 reviewer。
 - [桌面市场头与收藏条：单一来源展示组件迁移](sessions/2026-09-16-market-header-view-migration.md) — 2026-09-16；已整理，验证见正文。表面 1 抽取五个纯视图，真实界面与静态及运行时占位共用标记；指标改为内容宽度和 32px 间距，标签统一首字母大写。初轮指定回归 207 项通过；round 2 改用隐形典型文本预留宽度及路由已知名称/类型，指定回归 81 项、补充回归 102 项通过，浏览器复测留给 reviewer。
 - [桌面订单簿 chrome 单一来源迁移](sessions/2026-09-16-orderbook-chrome-view-migration.md) — 2026-09-16；已整理，验证见正文。表面 3：桌面订单簿列头、侧容器、价差共用纯视图，页签和分组按钮与真实 primitive 对照；数据前分组显示 —，Playwright 留给 reviewer。
 - [启动占位单一来源：ADR 0009 与展示组件规则](sessions/2026-09-16-placeholder-single-source-adr.md) — 2026-09-16；已整理，验证见正文。核对确认桌面壳九个 frame、移动壳与运行时占位是三份手写实现，唯一共享的是网格几何；采纳「展示组件是几何唯一来源」的架构：只接 props 的 *-view.tsx 由运行时容器与壳共同渲染，占位 props 单一来源，导入边界与一致性测试钉住，inert 取代禁止交互元素；本轮只落 ADR、规则与索引，迁移未开始。
@@ -93,6 +94,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-16 | [桌面账户面板：单一来源展示组件迁移](sessions/2026-09-16-account-panels-view-migration.md) | 未取得任务标识，见正文 | `bfdae535adcb567dd8a763d71c31eb9b94b284bd` | 已整理，验证见正文 |
 | 2026-09-16 | [邮箱钱包标识、密钥导出入口及发送网络说明修复](sessions/2026-09-16-email-wallet-ui-fix.md) | 未取得任务标识，见正文 | `f5010ee7` | 已整理，验证见正文 |
 | 2026-09-16 | [桌面市场头与收藏条：单一来源展示组件迁移](sessions/2026-09-16-market-header-view-migration.md) | 未取得任务标识，见正文 | `0c8127456044390c95f7e5b4301fbbdd43a658e1` | 已整理，验证见正文 |
 | 2026-09-16 | [桌面订单簿 chrome 单一来源迁移](sessions/2026-09-16-orderbook-chrome-view-migration.md) | 未取得任务标识，见正文 | `7d80e46bbbf221a6f4256bf4008b9632c289627a` | 已整理，验证见正文 |

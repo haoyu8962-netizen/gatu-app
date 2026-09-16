@@ -49,6 +49,9 @@ const zhTranslations: Record<string, string> = {
 	"Portfolio Value": "投资组合价值",
 	"Perps Maintenance Margin": "合约维持保证金",
 	Withdraw: "提款",
+	Deposit: "充值",
+	"Account Summary": "账户概览",
+	"Account Margin Ratio": "账户保证金比率",
 	Language: "语言",
 	"Language and number format": "语言和数字格式",
 	"Primary navigation": "主导航",
@@ -593,6 +596,30 @@ describe("language hot switching", () => {
 		expect(orderLabels?.querySelector('[data-label="advanced"]')?.textContent).toBe("Stop Market");
 		expect(container.querySelector('[aria-label="Reduce Only"]')).toBe(originalCheckbox);
 		expect(originalCheckbox?.getAttribute("aria-checked")).toBe("true");
+	});
+
+	it("hot switches the disconnected account view without replacing its frame, buttons or rows", () => {
+		walletState.isConnected = false;
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountPanel />
+				</I18nProvider>,
+			),
+		);
+		const frame = container.firstElementChild;
+		const overview = container.querySelector('[data-slot="disconnected-account-overview"]');
+		const button = overview?.querySelector("button");
+		const row = overview?.querySelector('[data-slot="info-row"]');
+		expect(button?.textContent).toBe("Deposit");
+		act(() => activateLocale("zh"));
+		expect(container.firstElementChild).toBe(frame);
+		expect(container.querySelector('[data-slot="disconnected-account-overview"]')).toBe(overview);
+		expect(overview?.querySelector("button")).toBe(button);
+		expect(overview?.querySelector('[data-slot="info-row"]')).toBe(row);
+		expect(button?.textContent).toBe("充值");
+		expect(overview?.querySelector("h3")?.textContent).toBe("账户概览");
+		expect(row?.textContent).toContain("账户保证金比率");
 	});
 
 	it("hides the desktop bridge entry while creation is gated and restores it for an existing execution", () => {

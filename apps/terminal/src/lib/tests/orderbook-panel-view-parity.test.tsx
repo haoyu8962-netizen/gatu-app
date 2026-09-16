@@ -10,8 +10,8 @@ import { act, createRef, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { renderDesktopPanelFrame } from "@/components/trade/layout/app-shell-skeleton";
-import { ORDERBOOK_PLACEHOLDER } from "@/components/trade/layout/desktop-placeholders";
+import { renderDesktopPanel } from "@/components/trade/layout/app-shell-skeleton";
+import { DESKTOP_PANEL_PLACEHOLDER, ORDERBOOK_PLACEHOLDER } from "@/components/trade/layout/desktop-placeholders";
 import { TerminalLoadingWorkspace } from "@/components/trade/layout/terminal-loading-workspace";
 import { OrderbookGroupingTriggerView } from "@/components/trade/orderbook/orderbook-grouping-trigger-view";
 import {
@@ -156,7 +156,7 @@ describe("desktop order book chrome single-source parity", () => {
 	});
 
 	it("shares shell root and content classes with real Tabs primitives", () => {
-		const shell = dom(renderDesktopPanelFrame("marketData"));
+		const shell = dom(renderDesktopPanel("marketData", DESKTOP_PANEL_PLACEHOLDER));
 		const runtime = dom(runtimeTabs("book"));
 		expect(shell.firstElementChild?.className).toBe(ORDERBOOK_PANEL_CLASS);
 		expect(runtime.firstElementChild?.className).toBe(ORDERBOOK_PANEL_CLASS);
@@ -297,7 +297,7 @@ describe("desktop order book chrome single-source parity", () => {
 		expect(shell).toContain("<OrderbookTabsView");
 		expect(loading).toContain("...ORDERBOOK_PLACEHOLDER");
 		expect(loading).toContain('getBaseQuoteFromPairName(kind === "spot" ? routeMarketName : pairName, kind).baseToken');
-		expect(loading).toContain("renderDesktopPanelFrame(panelId, labels, orderbook, tradePanel)");
+		expect(loading).toContain("renderDesktopPanel(panelId, {");
 		for (const label of ["orderBook", "trades", "price", "size", "total", "spread"])
 			expect(loading).toContain(`t(ORDERBOOK_LABELS.${label})`);
 	});

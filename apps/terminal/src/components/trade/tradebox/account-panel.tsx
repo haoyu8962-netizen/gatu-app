@@ -4,6 +4,7 @@ import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
+import { ACCOUNT_LABELS } from "@/config/account-labels";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { useAccountOverview } from "@/hooks/trade/use-account-overview";
 import { useAccountOverviewLabels } from "@/hooks/trade/use-account-overview-labels";
@@ -15,7 +16,7 @@ import { formatNumber, formatPercent, formatUSD } from "@/lib/format";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
-
+import { AccountPanelFrameView } from "./account-panel-frame-view";
 import { DisconnectedAccountOverview } from "./disconnected-account-overview";
 
 type SummaryRow = {
@@ -176,9 +177,7 @@ export function AccountPanel() {
 	const showsEmailDeposit = !isConnected && depositAvailability.path === "sponsored";
 
 	return (
-		<div className="flex h-full min-h-[459px] min-w-0 flex-col bg-surface">
-			<h2 className="sr-only">{t`Account`}</h2>
-
+		<AccountPanelFrameView title={t(ACCOUNT_LABELS.account)}>
 			{!isConnected ? (
 				<DisconnectedAccountOverview
 					depositEnabled={showsEmailDeposit && depositAvailability.available}
@@ -319,6 +318,6 @@ export function AccountPanel() {
 					</div>
 				</div>
 			)}
-		</div>
+		</AccountPanelFrameView>
 	);
 }

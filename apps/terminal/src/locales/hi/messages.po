@@ -326,11 +326,8 @@ msgstr "पहुँच प्रतिबंधित"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/nav.tsx
 #: src/config/trade-panel-labels.ts
-#: src/hooks/trade/use-account-mode-labels.ts
-#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
 msgstr "खाता"
 
@@ -354,8 +351,7 @@ msgstr "खाता और वॉलेट"
 msgid "Account data unavailable"
 msgstr "खाता डेटा उपलब्ध नहीं है"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "खाता मार्जिन अनुपात"
@@ -383,8 +379,7 @@ msgstr "खाते का स्टेकिंग डेटा उपलब�
 msgid "Account staking status"
 msgstr "खाते की स्टेकिंग स्थिति"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/hooks/trade/use-account-mode-labels.ts
+#: src/config/account-labels.ts
 msgid "Account Summary"
 msgstr "खाते का सारांश"
 
@@ -1023,7 +1018,6 @@ msgstr "सबमिट करने से पहले बैलेंस ब�
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "शेष राशि का डेटा उपलब्ध नहीं है। कनेक्शन बहाल होने के बाद फिर से कोशिश करें।"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "बैलेंस"
@@ -2060,8 +2054,7 @@ msgstr "आपका वॉलेट बनाया जा रहा है। 
 msgid "Cross"
 msgstr "क्रॉस"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "क्रॉस खाता लेवरेज"
@@ -2070,7 +2063,7 @@ msgstr "क्रॉस खाता लेवरेज"
 msgid "Cross Leverage"
 msgstr "क्रॉस लीवरेज"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "क्रॉस मेंटेनेंस मार्जिन"
@@ -2197,7 +2190,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2218,7 +2210,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -3241,7 +3232,6 @@ msgstr "फंडिंग"
 msgid "Funding payments"
 msgstr "फंडिंग भुगतान"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Funding Payments"
 msgstr "फंडिंग भुगतान"
@@ -5009,7 +4999,6 @@ msgstr "नेविगेशन खोलें"
 msgid "Open official link"
 msgstr "आधिकारिक लिंक खोलें"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "खुले ऑर्डर"
@@ -5117,7 +5106,6 @@ msgstr "ऑर्डर भर गया"
 msgid "Order history"
 msgstr "ऑर्डर इतिहास"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "ऑर्डर हिस्ट्री"
@@ -5516,8 +5504,7 @@ msgstr "पोर्टफोलियो प्रदर्शन अवधि"
 msgid "Portfolio summary"
 msgstr "पोर्टफोलियो सारांश"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "पोर्टफोलियो मूल्य"
@@ -5570,7 +5557,6 @@ msgstr "पोज़िशन TP/SL ऑर्डर केवल पोज़ि
 msgid "Position Value"
 msgstr "पोज़िशन मूल्य"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/config/trade.ts
 msgid "Positions"
@@ -8424,7 +8410,6 @@ msgstr "ट्रेड"
 msgid "Trade history"
 msgstr "ट्रेड इतिहास"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "ट्रेड इतिहास"
@@ -8687,7 +8672,6 @@ msgstr "PWA आज़माएँ।"
 msgid "TVL"
 msgstr "TVL"
 
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -8976,7 +8960,7 @@ msgstr "अपना वॉलेट अनलॉक करें और फि�
 msgid "Unrealized P&L"
 msgstr "अवास्तविक P&L"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
+#: src/config/account-labels.ts
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -9456,7 +9440,6 @@ msgstr "पूरी पोज़िशन"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
-#: src/components/trade/layout/terminal-loading-workspace.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -9466,9 +9449,9 @@ msgstr "पूरी पोज़िशन"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/config/account-labels.ts
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "निकासी"

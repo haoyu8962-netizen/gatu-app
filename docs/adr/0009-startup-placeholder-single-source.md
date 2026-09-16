@@ -1,6 +1,6 @@
 # ADR 0009：启动占位与真实界面共享同一展示组件
 
-- 状态：已接受（2026-09-16），迁移进行中：表面 1、2、3、4 已完成（2026-09-16，含 Playwright 盒子实测）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
+- 状态：已接受（2026-09-16），迁移进行中：表面 1–5 已完成（2026-09-16，含 Playwright 盒子实测）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
 - 前置：[ADR 0005](0005-spa-static-shell.md)（预渲染 SPA 壳）、[ADR 0006](0006-startup-preloads-and-edge-caching.md)（启动预加载与边缘缓存）
 - 规则：[启动占位一致性规则](../../.claude/rules/placeholder-parity.md)
 - 证据：[移动占位壳与真实终端逐像素对齐](../work-memory/sessions/2026-09-15-mobile-shell-parity.md)、[热访问启动计划与实测](../work-memory/sessions/2026-09-16-warm-visit-startup-plan.md)、[本 ADR 的任务记录](../work-memory/sessions/2026-09-16-placeholder-single-source-adr.md)
@@ -35,6 +35,8 @@
 - **直接在壳里渲染真实组件树。** 真实组件依赖 provider、订阅与客户端持久化状态，构建期不可渲染；即使 mock，水合闭包会变成整个终端，与预算和启动链目标冲突；否决。
 
 ## 后果与边界
+
+- 表面 5：账户表 header、账户概览及外框共享纯视图，InfoRow/InfoRowGroup 是允许的纯 UI 组合；内容宽度页签的静态下划线放在激活按钮内，作为与 Base UI 测量 CSS 变量驱动的 sibling indicator 唯一结构例外，由去除双方 indicator 后的 SSR 对照与独立 class 断言固定；`renderDesktopPanel` 接收统一类型 props，运行时读取有效持久页签与数字格式版本，资金/签名/地区守卫不变；TradingView 在 iframe 内，ChartFrame 继续使用已约定的居中品牌占位，验证及待测范围见[迁移记录](../work-memory/sessions/2026-09-16-account-panels-view-migration.md)。
 
 - 表面 4：桌面下单框架、默认字段、CTA 与汇总行共享纯视图；滑杆与百分比输入由真实容器渲染共享视图，原生输入共用纯 input-styles；静态切换与 checkbox 以真实 SSR 输出钉住几何，输入和交易守卫仍由原运行时组件持有，验证与待实测项见[迁移记录](../work-memory/sessions/2026-09-16-trade-panel-view-migration.md)。
 
