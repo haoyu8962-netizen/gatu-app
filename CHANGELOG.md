@@ -8,6 +8,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Desktop startup placeholders now share the real top navigation, footer and outer
+  frame, including compact navigation, hidden Soon labels, footer dividers and an
+  invisible clock slot. The anonymous Connect Wallet button now has the same
+  144px minimum width as its connecting and loading states.
+
 - Desktop market headers and favorites now share their real display components with
   startup placeholders. Unknown placeholder text now reserves typical value widths
   invisibly, while runtime placeholders show known route names and market kinds

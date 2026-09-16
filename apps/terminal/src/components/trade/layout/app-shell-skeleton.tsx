@@ -6,24 +6,30 @@ import {
 	ListDashesIcon,
 	ListIcon,
 	MoonIcon,
-	SlidersHorizontalIcon,
 	SunIcon,
 	WalletIcon,
 } from "@phosphor-icons/react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
 import * as mobileChrome from "@/components/trade/mobile/mobile-chrome-classes";
-import { APP_VERSION } from "@/config/app";
-import { APP_FOOTER_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS, MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
+import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { MOBILE_NAV_ITEMS, type MobileTab } from "@/config/nav";
 import { MOBILE_POSITIONS_TABS, type MobilePositionsTabValue } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 import { TokenSelectorTriggerView } from "../chart/token-selector-trigger-view";
 import { AssetIconSlotView } from "../components/asset-icon-slot-view";
+import { FooterBarView } from "../footer/footer-bar-view";
 import { FavoritesStripView } from "../header/favorites-strip-view";
+import { TopNavView } from "../header/top-nav-view";
 import { MarketOverviewView } from "../market-overview-view";
 import { type DesktopGridLoadingPanelId, DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
-import { FAVORITES_PLACEHOLDER, MARKET_HEADER_PLACEHOLDER } from "./desktop-placeholders";
+import {
+	FAVORITES_PLACEHOLDER,
+	FOOTER_PLACEHOLDER,
+	MARKET_HEADER_PLACEHOLDER,
+	TOP_NAV_PLACEHOLDER,
+} from "./desktop-placeholders";
+import { DesktopTerminalFrameView } from "./desktop-terminal-frame-view";
 import { MarketHeaderView } from "./market-header-view";
 
 // The boot placeholder is prerendered once for every market and hydrated before any catalog other
@@ -32,7 +38,7 @@ import { MarketHeaderView } from "./market-header-view";
 // replaces the whole frame in the persisted locale as soon as the runtime mounts.
 const VALUE_PLACEHOLDER = "-";
 const NAME_PLACEHOLDER = "—";
-const NAV_LABELS = ["Trade", "Portfolio", "Earn", "Vaults", "Staking", "Referrals", "Leaderboard", "More"] as const;
+
 export interface PanelFrameLabels {
 	orderBook: string;
 	trades: string;
@@ -80,11 +86,8 @@ export const DEFAULT_PANEL_FRAME_LABELS: PanelFrameLabels = {
 	accountSummary: "Account Summary",
 	accountSummaryRows: ["Account Margin Ratio", "Portfolio Value", "Cross Account Leverage"],
 };
-const FOOTER_LINKS = ["Docs", "Support", "Terms", "Privacy Policy", "Risk Disclosure"] as const;
-
 const CONTROL_BUTTON_CLASS =
 	"flex h-[34px] min-h-[34px] items-center justify-center rounded-[10px] px-4 font-market-close text-[13px] leading-[18px] font-bold";
-const ICON_BUTTON_CLASS = "grid size-[34px] place-items-center rounded-[10px] text-market-close-muted";
 const UNDERLINE_TAB_CLASS = "whitespace-nowrap px-2.5 py-2 text-xs font-medium";
 const SUMMARY_ROW_CLASS = "flex items-center justify-between gap-2 text-xs";
 
@@ -102,17 +105,21 @@ export function AppShellSkeleton() {
 					}
 				`}</style>
 				<MobileShellSkeleton />
-				<div data-shell-desktop className="hidden h-screen w-full flex-col bg-background min-[1001px]:flex">
-					<DesktopHeaderFrame />
-					<div className="min-h-0 flex-1 overflow-hidden bg-grid-container">
-						<DesktopGridLoadingSurface
-							markShellPanels
-							panelClassName="desktop-grid-panel overflow-hidden bg-surface"
-							renderPanel={renderDesktopPanelFrame}
-						/>
-					</div>
-					<DesktopFooterFrame />
-				</div>
+				<DesktopTerminalFrameView
+					data-shell-desktop
+					className="hidden min-[1001px]:flex"
+					header={<TopNavView {...TOP_NAV_PLACEHOLDER} />}
+					workspace={
+						<main className="min-h-0 flex-1 bg-grid-container">
+							<DesktopGridLoadingSurface
+								markShellPanels
+								panelClassName="desktop-grid-panel overflow-hidden bg-surface"
+								renderPanel={renderDesktopPanelFrame}
+							/>
+						</main>
+					}
+					footer={<FooterBarView {...FOOTER_PLACEHOLDER} />}
+				/>
 			</div>
 		</div>
 	);
@@ -139,76 +146,6 @@ export function renderDesktopPanelFrame(panelId: DesktopGridLoadingPanelId, labe
 
 interface FrameProps {
 	labels: PanelFrameLabels;
-}
-
-function DesktopHeaderFrame() {
-	return (
-		<div
-			className={cn(
-				APP_HEADER_HEIGHT_CLASS,
-				"flex shrink-0 items-center border-b border-market-close-stroke-card bg-surface px-5 font-market-close",
-			)}
-		>
-			<GatuLogo className="me-6 h-[18px] w-auto shrink-0" />
-			<div className="flex items-center gap-0.5 text-[13px] leading-[18px] font-semibold">
-				{NAV_LABELS.map((label, index) => (
-					<span
-						key={label}
-						className={cn(
-							"flex items-center gap-1 whitespace-nowrap rounded-[8px] px-2.5 py-2",
-							index === 0 ? "text-market-close-fg" : "text-market-close-muted",
-						)}
-					>
-						{label}
-						{label === "Earn" && <span className="text-2xs font-medium">Soon</span>}
-						{label === "More" && <CaretDownIcon className="size-[10px]" />}
-					</span>
-				))}
-			</div>
-			<div className="ms-auto flex items-center gap-2">
-				<span className={cn(CONTROL_BUTTON_CLASS, "min-w-[9rem] bg-market-close-control text-market-close-on-control")}>
-					Connect Wallet
-				</span>
-				<span className={ICON_BUTTON_CLASS}>
-					<SunIcon className="size-[18px]" />
-				</span>
-				<span className="flex h-[34px] items-center gap-1.5 rounded-[10px] px-[9px] text-[13px] leading-[18px] font-semibold text-market-close-muted">
-					<GlobeIcon className="size-[18px]" />
-					English
-				</span>
-				<span className={ICON_BUTTON_CLASS}>
-					<SlidersHorizontalIcon className="size-[18px]" />
-				</span>
-			</div>
-		</div>
-	);
-}
-
-function DesktopFooterFrame() {
-	return (
-		<div
-			className={cn(
-				APP_FOOTER_HEIGHT_CLASS,
-				"relative flex shrink-0 items-center justify-between border-t border-stroke-weak bg-background px-4 text-3xs font-medium uppercase leading-none tracking-wide text-fg-muted",
-			)}
-		>
-			<span className="flex items-center gap-1.5">
-				<span className="size-1.5 rounded-full bg-fill-weak" />
-				{NAME_PLACEHOLDER}
-			</span>
-			<span className="absolute left-1/2 -translate-x-1/2 rounded-6 border border-stroke-weak bg-sunken px-1 py-px font-sans">
-				{"⌘K"}
-			</span>
-			<span className="flex items-center gap-2.5">
-				<span className="flex items-center gap-2.5 normal-case">
-					{FOOTER_LINKS.map((label) => (
-						<span key={label}>{label}</span>
-					))}
-				</span>
-				<span className="text-fg">{APP_VERSION}</span>
-			</span>
-		</div>
-	);
 }
 
 function FavoritesFrame() {

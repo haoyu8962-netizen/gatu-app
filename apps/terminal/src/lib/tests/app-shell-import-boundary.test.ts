@@ -43,6 +43,14 @@ describe("app shell import boundary", () => {
 			"utf8",
 		);
 		expect(placeholders).not.toMatch(/use[A-Z]|@lingui\/react|window|document|Date\.|Math\.random/);
-		for (const match of placeholders.matchAll(/from\s+["']([^"']+)["']/g)) expect(match[1]).toMatch(/^@\/config\//);
+		for (const match of placeholders.matchAll(/from\s+["']([^"']+)["']/g)) {
+			const specifier = match[1];
+			expect(
+				specifier.startsWith("@/config/") ||
+					specifier.endsWith("-view") ||
+					["react", "@phosphor-icons/react", "@/components/brand/gatu-logo"].includes(specifier),
+				specifier,
+			).toBe(true);
+		}
 	});
 });

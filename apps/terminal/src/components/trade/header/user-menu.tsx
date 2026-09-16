@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { Suspense, useEffect, useState } from "react";
 import { useEnsName } from "wagmi";
+import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useIsMobile, useIsMobileQrSurface } from "@/hooks/use-mobile";
@@ -24,6 +25,7 @@ import { hasPersistedPrivySession } from "@/lib/wallet/privy-session-hint";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import { UserMenuModalErrorBoundary, UserMenuModalLoadingFallback } from "./user-menu-modal-boundary";
 import { loadUserMenuModalModule } from "./user-menu-modal-load";
+import { USER_MENU_BUTTON_MIN_WIDTH, WalletCtaView } from "./wallet-cta-view";
 
 // Keep successful loads across UserMenu remounts; replace only a wrapper that cached a tagged import failure.
 let MobileAgentSyncModal = createLazyComponent(
@@ -36,7 +38,6 @@ let WalletModal = createLazyComponent(
 );
 let shouldKeepMobileSyncModalMounted = false;
 
-const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 interface Props {
@@ -156,26 +157,33 @@ export function UserMenu({ variant = "default" }: Props) {
 	if (!authenticated && !isConnected) {
 		return (
 			<>
-				<Button
-					variant={isDesktopNav ? "filled" : "outline"}
-					intent="neutral"
-					size="sm"
-					onClick={() => setWalletModalOpen(true)}
-					onFocus={() => void WalletModal.preload?.()}
-					onPointerEnter={() => void WalletModal.preload?.()}
-					iconLeft={isDesktopNav ? undefined : <WalletIcon className="size-3.5" />}
-					className={cn(
-						APP_BAR_BUTTON_HEIGHT_CLASS,
-						isDesktopNav ? "shrink-0" : "min-w-0 max-w-full",
-						"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
-						isDesktopNav &&
-							"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control",
-					)}
-				>
-					<span className={cn(!isDesktopNav && "min-w-0 truncate")}>
-						<Trans>Connect Wallet</Trans>
-					</span>
-				</Button>
+				{isDesktopNav ? (
+					<WalletCtaView
+						label={t(DESKTOP_NAV_LABELS.wallet)}
+						onClick={() => setWalletModalOpen(true)}
+						onFocus={() => void WalletModal.preload?.()}
+						onPointerEnter={() => void WalletModal.preload?.()}
+					/>
+				) : (
+					<Button
+						variant="outline"
+						intent="neutral"
+						size="sm"
+						onClick={() => setWalletModalOpen(true)}
+						onFocus={() => void WalletModal.preload?.()}
+						onPointerEnter={() => void WalletModal.preload?.()}
+						iconLeft={<WalletIcon className="size-3.5" />}
+						className={cn(
+							APP_BAR_BUTTON_HEIGHT_CLASS,
+							"min-w-0 max-w-full",
+							"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+						)}
+					>
+						<span className="min-w-0 truncate">
+							<Trans>Connect Wallet</Trans>
+						</span>
+					</Button>
+				)}
 				{walletModalOpen && (
 					<UserMenuModalErrorBoundary
 						key={walletModalLoadAttempt}

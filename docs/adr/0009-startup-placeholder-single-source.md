@@ -1,6 +1,6 @@
 # ADR 0009：启动占位与真实界面共享同一展示组件
 
-- 状态：已接受（2026-09-16），迁移进行中：表面 1 已完成（2026-09-16；代码迁移完成，Playwright 实测待 reviewer 填写）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
+- 状态：已接受（2026-09-16），迁移进行中：表面 1、2 已完成（2026-09-16，含 Playwright 盒子实测）；修订 [ADR 0005](0005-spa-static-shell.md) 决策 13 中"惰性标记"的实现方式，不改变壳的存在、预渲染与水合方式
 - 前置：[ADR 0005](0005-spa-static-shell.md)（预渲染 SPA 壳）、[ADR 0006](0006-startup-preloads-and-edge-caching.md)（启动预加载与边缘缓存）
 - 规则：[启动占位一致性规则](../../.claude/rules/placeholder-parity.md)
 - 证据：[移动占位壳与真实终端逐像素对齐](../work-memory/sessions/2026-09-15-mobile-shell-parity.md)、[热访问启动计划与实测](../work-memory/sessions/2026-09-16-warm-visit-startup-plan.md)、[本 ADR 的任务记录](../work-memory/sessions/2026-09-16-placeholder-single-source-adr.md)
@@ -36,6 +36,7 @@
 
 ## 后果与边界
 
+- 表面 2：顶栏、页脚与桌面外框复用纯视图；Dropdown 增加可选 renderTrigger，将交互行为附到共享按钮，默认调用路径不变。占位只渲染匿名 Connect Wallet，真实匿名按钮与连接中/加载占位统一使用 min-w-[9rem]。预渲染壳无法知道 testnet 与地区状态，因此不显示 TestnetBanner/GeoRestrictionBanner，运行时仍保持原守卫与 banner offset。页脚 clock=null 使用不可见 00:00 AM 保留宽度，状态为不旋转的 Connecting。验收使用结构/class 一致性与 reviewer Playwright 盒子测量。
 - 展示组件进入壳的水合闭包，必须保持轻量：只含标记与 class，不引入新的依赖；预算脚本继续约束静态启动闭包。
 - 预渲染壳仍是英文源串（ADR 0005 决策 13 的理由不变）；运行时占位与真实界面用翻译标签，两者的几何由同一展示组件保证，文本宽度差异属预期。
 - 展示组件必须确定：不读时钟、随机数或 `window`；页脚时钟这类运行时值由容器传入，壳传固定宽度占位。
@@ -48,3 +49,5 @@
 本记录只含决策，验证按决策 4 逐表面执行并写入对应任务记录；接受标准是一致性测试通过且 Playwright 实测位移为零。2026-09-16 的现状测量见前置的两份任务记录。
 
 表面 1 的实现及实际验证范围见[市场头与收藏条迁移记录](../work-memory/sessions/2026-09-16-market-header-view-migration.md)；该记录中的待测项不视为验收完成。
+
+表面 2 的接口、断言变更与验证范围见[顶栏、页脚与外框迁移记录](../work-memory/sessions/2026-09-16-top-nav-footer-view-migration.md)；代码完成不代表 Playwright 验收或发布完成。

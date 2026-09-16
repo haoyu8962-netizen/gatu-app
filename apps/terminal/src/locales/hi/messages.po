@@ -1812,6 +1812,7 @@ msgstr "वॉलेट कनेक्ट करें"
 #: src/components/trade/mobile/mobile-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/config/desktop-nav.ts
 #: src/config/ui-text.ts
 #: src/lib/tests/mobile-chrome-parity.test.tsx
 #: src/lib/trade/use-button-content.ts
@@ -1908,11 +1909,11 @@ msgstr "TWAP ऑर्डर देखने के लिए अपना व�
 msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "अपना खाता, पोज़िशन देखने और ट्रेडिंग शुरू करने के लिए अपना वॉलेट कनेक्ट करें।"
 
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Connected"
 msgstr "कनेक्टेड"
 
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Connecting"
 msgstr "कनेक्ट हो रहा है"
 
@@ -2445,7 +2446,7 @@ msgstr "स्थानीय कुंजी हटाएँ"
 msgid "Disconnect"
 msgstr "डिस्कनेक्ट करें"
 
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Disconnected"
 msgstr "डिस्कनेक्ट हो गया"
 
@@ -2496,12 +2497,12 @@ msgid "Do not submit this operation again."
 msgstr "यह ऑपरेशन दोबारा न भेजें।"
 
 #: src/components/legal/document-chrome.tsx
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Docs"
 msgstr "दस्तावेज़"
 
 #: src/components/legal/document-chrome.tsx
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "दस्तावेज़ और कानूनी जानकारी"
 
@@ -2544,9 +2545,9 @@ msgstr "प्रत्येक पोज़िशन केवल अपने
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
 msgstr "प्रत्येक पोज़िशन केवल उसे आवंटित मार्जिन का उपयोग करती है। यदि मार्जिन अनुपात 100% तक पहुँच जाता है, तो पोज़िशन लिक्विडेट हो जाती है। मार्जिन जोड़ा जा सकता है, लेकिन पोज़िशन खुली रहने तक इसे निकाला नहीं जा सकता।"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
+#: src/config/desktop-nav.ts
 msgid "Earn"
 msgstr "अर्न"
 
@@ -3678,7 +3679,7 @@ msgstr "Hyperliquid द्वारा अनुरोध संसाधित 
 msgid "Language"
 msgstr "भाषा"
 
-#: src/components/trade/header/language-switcher.tsx
+#: src/config/desktop-nav.ts
 msgid "Language and number format"
 msgstr "भाषा और संख्या प्रारूप"
 
@@ -3708,8 +3709,8 @@ msgstr "लीडर कमीशन"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Leaderboard"
 msgstr "लीडरबोर्ड"
 
@@ -4471,13 +4472,9 @@ msgstr "ऑर्डर संशोधित करें"
 msgid "Modifying..."
 msgstr "संशोधित किया जा रहा है..."
 
-#: src/components/trade/header/desktop-utilities-menu.tsx
-#: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "More"
 msgstr "और"
 
@@ -4944,7 +4941,7 @@ msgstr "आधिकारिक वॉल्ट"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Offline"
 msgstr "ऑफ़लाइन"
 
@@ -5001,7 +4998,7 @@ msgstr "खुला"
 msgid "Open a position before placing a trigger order"
 msgstr "ट्रिगर ऑर्डर देने से पहले पोज़िशन खोलें"
 
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Open command menu"
 msgstr "कमांड मेन्यू खोलें"
 
@@ -5500,8 +5497,8 @@ msgid "Popular"
 msgstr "लोकप्रिय"
 
 #: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 #: src/hooks/trade/use-account-mode-labels.ts
 msgid "Portfolio"
 msgstr "पोर्टफोलियो"
@@ -5737,9 +5734,9 @@ msgid "Price: Market"
 msgstr "कीमत: मार्केट"
 
 #: src/components/legal/document-chrome.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Primary navigation"
 msgstr "प्राथमिक नेविगेशन"
 
@@ -5748,7 +5745,7 @@ msgid "Priority Gas Auction Fee"
 msgstr "प्रायोरिटी गैस ऑक्शन शुल्क"
 
 #: src/components/legal/document-chrome.tsx
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "गोपनीयता नीति"
 
@@ -6039,8 +6036,8 @@ msgid "Referral volume"
 msgstr "रेफ़रल वॉल्यूम"
 
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Referrals"
 msgstr "रेफ़रल"
 
@@ -6457,7 +6454,7 @@ msgid "Rewards compound automatically"
 msgstr "पुरस्कार अपने-आप कंपाउंड होते हैं"
 
 #: src/components/legal/document-chrome.tsx
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "जोखिम प्रकटीकरण"
 
@@ -6790,9 +6787,9 @@ msgstr "{p}% पर सेट करें"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/desktop-utilities-menu.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-header.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 #: src/config/ui-text.ts
 msgid "Settings"
 msgstr "सेटिंग्स"
@@ -7045,8 +7042,8 @@ msgstr "कुछ ऑर्डर स्वीकार किए गए। प�
 msgid "Something went wrong"
 msgstr "कुछ गलत हो गया"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Soon"
 msgstr "जल्द ही"
 
@@ -7127,9 +7124,9 @@ msgstr "स्टेक करें"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
+#: src/config/desktop-nav.ts
 msgid "Staking"
 msgstr "स्टेकिंग"
 
@@ -7375,7 +7372,7 @@ msgid "Supply"
 msgstr "सप्लाई"
 
 #: src/components/legal/document-chrome.tsx
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Support"
 msgstr "सहायता"
 
@@ -7471,11 +7468,11 @@ msgstr "Arbitrum पर स्विच करें"
 msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
 msgstr "Hyperliquid में USDC जमा करने के लिए Arbitrum पर स्विच करें"
 
-#: src/components/trade/header/theme-toggle.tsx
+#: src/config/desktop-nav.ts
 msgid "Switch to dark mode"
 msgstr "डार्क मोड में बदलें"
 
-#: src/components/trade/header/theme-toggle.tsx
+#: src/config/desktop-nav.ts
 msgid "Switch to light mode"
 msgstr "लाइट मोड में बदलें"
 
@@ -7598,7 +7595,7 @@ msgid "Terminating..."
 msgstr "समाप्त किया जा रहा है..."
 
 #: src/components/legal/document-chrome.tsx
-#: src/components/trade/footer/footer-bar.tsx
+#: src/config/footer-links.ts
 msgid "Terms"
 msgstr "शर्तें"
 
@@ -8456,12 +8453,12 @@ msgid "Track on LI.FI Explorer"
 msgstr "LI.FI Explorer पर ट्रैक करें"
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/config/desktop-nav.ts
 #: src/config/nav.tsx
 msgid "Trade"
 msgstr "ट्रेड"
@@ -9293,12 +9290,12 @@ msgid "Vault Withdrawal"
 msgstr "वॉल्ट निकासी"
 
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
+#: src/config/desktop-nav.ts
 msgid "Vaults"
 msgstr "वॉल्ट"
 

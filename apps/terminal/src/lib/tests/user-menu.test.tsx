@@ -480,6 +480,16 @@ describe("UserMenu", () => {
 		expect(testState.mobileSyncModalOpen).toBe(false);
 	});
 
+	it("gives the anonymous desktop CTA the shared minimum width and wallet action", () => {
+		act(() => root.render(createElement(UserMenu, { variant: "desktop-nav" })));
+		const action = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Connect Wallet",
+		);
+		expect(action).toBeDefined();
+		expect(action?.className).toContain("min-w-[9rem]");
+		act(() => action?.click());
+	});
+
 	it("lets the mobile account trigger shrink and truncate without changing the desktop-nav contract", () => {
 		testState.authenticated = true;
 		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";

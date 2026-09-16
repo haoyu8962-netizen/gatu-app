@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 
 import { i18n } from "@lingui/core";
-import { act, createElement, type ReactNode, useEffect, useState } from "react";
+import { act, cloneElement, createElement, isValidElement, type ReactNode, useEffect, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TopNav, type TopNavMode } from "@/components/trade/header/top-nav";
+import { DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { HYPERSCREENER_URL } from "@/config/nav";
 import { createI18nRoot } from "./harness/react";
 
@@ -60,6 +61,7 @@ vi.mock("@gatu/ui", () => ({
 		className,
 		items = [],
 		trigger,
+		renderTrigger,
 		triggerAriaLabel,
 	}: {
 		className?: string;
@@ -73,15 +75,18 @@ vi.mock("@gatu/ui", () => ({
 			target?: string;
 		}>;
 		trigger?: ReactNode;
+		renderTrigger?: ReactNode;
 		triggerAriaLabel?: string;
 	}) =>
 		createElement(
 			"div",
 			{
-				"data-layout": className?.includes("max-[1181px]:hidden") ? "wide" : "compact",
+				className,
 				"data-testid": "more-dropdown",
 			},
-			createElement("button", { "aria-label": triggerAriaLabel, type: "button" }, trigger),
+			(isValidElement<Record<string, unknown>>(renderTrigger)
+				? cloneElement(renderTrigger, { "aria-label": triggerAriaLabel })
+				: null) ?? createElement("button", { "aria-label": triggerAriaLabel, type: "button" }, trigger),
 			createElement(
 				"div",
 				{ role: "menu" },
@@ -266,7 +271,7 @@ describe("TopNav", () => {
 
 	function findDesktopUtilitiesButton() {
 		return [...container.querySelectorAll<HTMLButtonElement>('button[aria-label="More"]')].find((button) =>
-			button.className.includes("max-[1181px]:inline-flex"),
+			button.parentElement?.className.includes("max-[1181px]:inline-flex"),
 		);
 	}
 
@@ -341,9 +346,9 @@ describe("TopNav", () => {
 	it("links Statistics externally while keeping API Wallet on the app router", () => {
 		renderNav();
 		for (const layout of ["wide", "compact"]) {
-			const statisticsItem = [...container.querySelectorAll<HTMLAnchorElement>(`[data-layout="${layout}"] a`)].find(
-				(item) => item.textContent?.trim() === "Statistics",
-			);
+			const statisticsItem = [
+				...container.querySelectorAll<HTMLAnchorElement>(`nav > div:nth-last-child(${layout === "wide" ? 2 : 1}) a`),
+			].find((item) => item.textContent?.trim() === "Statistics");
 			expect(statisticsItem?.href).toBe(HYPERSCREENER_URL);
 			expect(statisticsItem?.target).toBe("_blank");
 			expect(statisticsItem?.rel).toBe("noopener noreferrer");
@@ -353,7 +358,8 @@ describe("TopNav", () => {
 		expect(testState.navigate).not.toHaveBeenCalled();
 
 		const wideMenuItems = [
-			...(container.querySelector('[data-layout="wide"]')?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
+			...(container.querySelector("nav > div:nth-last-child(2)")?.querySelectorAll<HTMLElement>('[role="menuitem"]') ??
+				[]),
 		];
 		const apiWalletItem = wideMenuItems.find(
 			(item): item is HTMLButtonElement =>
@@ -369,17 +375,15 @@ describe("TopNav", () => {
 
 		function compactMenuLabels() {
 			return [
-				...(container.querySelector('[data-layout="compact"]')?.querySelectorAll<HTMLElement>('[role="menuitem"]') ??
-					[]),
+				...(container.querySelector("nav > div:last-child")?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
 			].map((item) => item.textContent?.trim());
 		}
 
 		expect(compactMenuLabels()).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API Wallet"]);
 		expect(findLink("Referrals")?.className).toContain("max-[1181px]:hidden");
 		const compactReferralsItem = [
-			...(container
-				.querySelector('[data-layout="compact"]')
-				?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []),
+			...(container.querySelector("nav > div:last-child")?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ??
+				[]),
 		].find((item) => item.textContent?.trim() === "Referrals");
 		act(() => compactReferralsItem?.click());
 		expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/referrals" });
@@ -479,6 +483,29 @@ describe("TopNav", () => {
 		expect(testState.userMenuUnmounts).toBe(0);
 		expect(testState.privyPopupOpen).toBe(true);
 		expect(container.querySelector('[data-testid="privy-popup"]')).not.toBeNull();
+	});
+
+	it("updates shared nav descriptors without remounting navigation or wallet controls", () => {
+		renderNav();
+		const trade = findLink("Trade");
+		const navigation = container.querySelector("nav");
+		const wallet = container.querySelector('[data-testid="UserMenu"]');
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: {
+					[DESKTOP_NAV_ITEMS[0].label.id ?? ""]: "交易",
+					[DESKTOP_NAV_LABELS.primary.id ?? ""]: "主导航",
+					[DESKTOP_NAV_LABELS.soon.id ?? ""]: "即将推出",
+				},
+			}),
+		);
+		expect(findLink("交易")).toBe(trade);
+		expect(navigation?.getAttribute("aria-label")).toBe("主导航");
+		expect(navigation?.querySelector(".sr-only")?.textContent).toBe(" — 即将推出");
+		expect(container.querySelector('[data-testid="UserMenu"]')).toBe(wallet);
+		act(() => i18n.activate("en"));
+		expect(findLink("Trade")).toBe(trade);
 	});
 
 	it("keeps account, theme, language, and settings controls mounted", () => {

@@ -103,6 +103,7 @@ interface DropdownGroup {
 
 interface DropdownBaseProps extends VariantProps<typeof dropdownTriggerVariants> {
 	trigger?: React.ReactNode;
+	renderTrigger?: React.ReactElement;
 	items?: DropdownItem[];
 	groups?: DropdownGroup[];
 	disabled?: boolean;
@@ -125,6 +126,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 			className,
 			size: sizeProp,
 			trigger,
+			renderTrigger,
 			items,
 			groups,
 			disabled = false,
@@ -221,26 +223,32 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 		return (
 			<div className={className} ref={ref}>
 				<Menu.Root disabled={disabled}>
-					<Menu.Trigger
-						aria-label={triggerAriaLabel}
-						className={cn(
-							isMinimalTrigger ? dropdownMinimalTriggerVariants({ size }) : dropdownTriggerVariants({ size }),
-							!isMinimalTrigger && "text-fg",
-							triggerClassName,
-						)}
-					>
-						{trigger ?? "Menu"}
-						{!hideCaret && (
-							<CaretDownIcon
-								size={caretSize}
-								weight={isMinimalTrigger ? "regular" : "bold"}
-								className={cn(
-									"shrink-0 transition-transform duration-150 motion-reduce:transition-none [[data-popup-open]>&]:rotate-180",
-									isMinimalTrigger ? "text-fg-muted group-hover:text-fg group-data-[popup-open]:text-fg" : "text-icon",
-								)}
-							/>
-						)}
-					</Menu.Trigger>
+					{renderTrigger ? (
+						<Menu.Trigger aria-label={triggerAriaLabel} render={renderTrigger} />
+					) : (
+						<Menu.Trigger
+							aria-label={triggerAriaLabel}
+							className={cn(
+								isMinimalTrigger ? dropdownMinimalTriggerVariants({ size }) : dropdownTriggerVariants({ size }),
+								!isMinimalTrigger && "text-fg",
+								triggerClassName,
+							)}
+						>
+							{trigger ?? "Menu"}
+							{!hideCaret && (
+								<CaretDownIcon
+									size={caretSize}
+									weight={isMinimalTrigger ? "regular" : "bold"}
+									className={cn(
+										"shrink-0 transition-transform duration-150 motion-reduce:transition-none [[data-popup-open]>&]:rotate-180",
+										isMinimalTrigger
+											? "text-fg-muted group-hover:text-fg group-data-[popup-open]:text-fg"
+											: "text-icon",
+									)}
+								/>
+							)}
+						</Menu.Trigger>
+					)}
 
 					<Menu.Portal>
 						<Menu.Positioner

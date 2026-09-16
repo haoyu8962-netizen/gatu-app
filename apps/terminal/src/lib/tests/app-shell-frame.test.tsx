@@ -57,7 +57,7 @@ describe("AppShellSkeleton desktop frame", () => {
 		for (const panel of container.querySelectorAll("[data-shell-panel]")) expect(panel.childElementCount).toBe(1);
 	});
 
-	it("stays inert: nothing focusable, no links, no live regions besides the loading announcement", () => {
+	it("keeps all controls and navigation inert with one loading announcement", () => {
 		const decorative = container.querySelector('[aria-hidden="true"][inert]');
 		expect(decorative).not.toBeNull();
 		expect(decorative?.querySelectorAll("button").length).toBeGreaterThan(0);
@@ -67,6 +67,17 @@ describe("AppShellSkeleton desktop frame", () => {
 		expect(container.querySelectorAll("[aria-hidden='true']").length).toBeGreaterThan(0);
 		expect(container.querySelectorAll("output")).toHaveLength(1);
 		expect(container.querySelectorAll('[class*="animate-"]')).toHaveLength(0);
+	});
+
+	it("uses the fixed shared chrome and scrolling desktop frame", () => {
+		const desktop = container.querySelector("[data-shell-desktop]");
+		for (const token of ["min-h-dvh", "overflow-x-hidden", "pb-8", "pt-14"])
+			expect(desktop?.classList.contains(token)).toBe(true);
+		expect(desktop?.classList.contains("h-screen")).toBe(false);
+		expect(desktop?.querySelector("main")?.className).toBe("min-h-0 flex-1 bg-grid-container");
+		expect(desktop?.querySelector("header")?.classList.contains("fixed")).toBe(true);
+		expect(desktop?.querySelector("footer")?.classList.contains("fixed")).toBe(true);
+		expect(desktop?.querySelector("footer .tabular-nums.invisible")?.textContent).toBe("00:00 AM");
 	});
 
 	it("keeps the mobile frame's connect entry and three-tab navigation", () => {

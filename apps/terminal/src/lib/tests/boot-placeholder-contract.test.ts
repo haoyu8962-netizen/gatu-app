@@ -10,6 +10,13 @@ const BOOT_PLACEHOLDER_SOURCES = [
 	"dashboard/dashboard-shell-skeleton.tsx",
 	"trade/layout/app-shell-skeleton.tsx",
 	"trade/layout/desktop-grid-loading-surface.tsx",
+	"trade/layout/desktop-placeholders.ts",
+	"trade/layout/desktop-terminal-frame-view.tsx",
+	"trade/header/top-nav-view.tsx",
+	"trade/header/nav-menu-trigger-view.tsx",
+	"trade/header/header-icon-button-view.tsx",
+	"trade/header/wallet-cta-view.tsx",
+	"trade/footer/footer-bar-view.tsx",
 	"trade/layout/desktop-terminal-surface.tsx",
 	"trade/layout/main-workspace.tsx",
 	"trade/layout/terminal-loading-workspace.tsx",
@@ -48,15 +55,15 @@ describe("boot placeholder contract", () => {
 		}
 	});
 
-	it("keeps the pre-runtime AppShell an honest branded frame instead of a fake application nav", () => {
+	it("keeps the shared pre-runtime navigation inside the inert decorative frame", () => {
 		const shell = readComponent("trade/layout/app-shell-skeleton.tsx");
 
 		expect(shell).toContain('aria-busy="true"');
 		expect(shell).toContain('<output className="sr-only">');
 		expect(shell).toContain("<MobileShellSkeleton />");
 		expect(shell).toContain("<DesktopGridLoadingSurface");
-		expect(shell).not.toContain("TopNav");
-		expect(shell).not.toContain("<nav");
+		expect(shell).toContain("<TopNavView");
+		expect(shell).toContain("<FooterBarView");
 		expect(shell).toContain('<div aria-hidden="true" inert>');
 	});
 

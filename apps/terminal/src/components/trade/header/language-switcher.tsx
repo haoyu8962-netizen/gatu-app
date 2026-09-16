@@ -2,20 +2,30 @@ import { Dropdown } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { GlobeIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { defaultLocale, defaultNumberFormatLocale, localeList, numberFormatLocaleList } from "@/config/i18n";
 import { cn } from "@/lib/cn";
 import { dynamicActivate } from "@/lib/i18n";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
+import { NavMenuTriggerView } from "./nav-menu-trigger-view";
 
 interface Props {
 	showLabel?: boolean;
+	compactLabel?: boolean;
 	className?: string;
 	labelClassName?: string;
 	sideOffset?: number;
 	alignOffset?: number;
 }
 
-export function LanguageSwitcher({ showLabel = false, className, labelClassName, sideOffset, alignOffset }: Props) {
+export function LanguageSwitcher({
+	showLabel = false,
+	compactLabel = false,
+	className,
+	labelClassName,
+	sideOffset,
+	alignOffset,
+}: Props) {
 	const { i18n, t } = useLingui();
 	const activeLocale = i18n.locale;
 	const activeLanguageName = localeList.find(({ code }) => code === activeLocale)?.name ?? activeLocale;
@@ -57,22 +67,17 @@ export function LanguageSwitcher({ showLabel = false, className, labelClassName,
 			sideOffset={sideOffset}
 			alignOffset={alignOffset}
 			triggerVariant="minimal"
-			triggerAriaLabel={t`Language and number format`}
+			triggerAriaLabel={t(DESKTOP_NAV_LABELS.language)}
 			hideCaret
-			triggerClassName={cn(
-				"h-8 min-h-8 shrink-0 justify-center !py-0 rounded-[10px] font-market-close text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg active:bg-market-close-hover data-[popup-open]:bg-market-close-hover data-[popup-open]:text-market-close-fg !duration-[120ms]",
-				showLabel ? "gap-1.5 px-2" : "w-8 !px-0 !gap-0",
-				className,
-			)}
-			trigger={
-				<>
-					<GlobeIcon className="size-[18px] shrink-0" />
-					{showLabel && (
-						<span className={cn("text-[13px] leading-[18px] font-semibold whitespace-nowrap", labelClassName)}>
-							{activeLanguageName}
-						</span>
-					)}
-				</>
+			renderTrigger={
+				<NavMenuTriggerView
+					variant="language"
+					label={showLabel ? activeLanguageName : undefined}
+					compactLabel={compactLabel}
+					labelClassName={labelClassName}
+					icon={<GlobeIcon className="size-[18px] shrink-0" />}
+					className={className}
+				/>
 			}
 			popupClassName={cn(
 				"w-[232px] min-w-[232px] max-h-[calc(100dvh-4rem)] overflow-y-auto !rounded-[12px] !border-market-close-stroke-card !p-[6px] font-market-close !shadow-language-settings focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-stroke-focus !transition-opacity !duration-[120ms] data-starting-style:!scale-100 data-ending-style:!scale-100 min-[1001px]:w-[224px] min-[1001px]:min-w-[224px]",

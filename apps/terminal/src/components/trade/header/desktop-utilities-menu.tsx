@@ -1,9 +1,11 @@
-import { Button, ButtonIcon } from "@gatu/ui";
+import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DotsThreeVerticalIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { cn } from "@/lib/cn";
+import { HEADER_ICON_BUTTON_CLASS, HeaderIconButtonView } from "./header-icon-button-view";
 import { LanguageSwitcher } from "./language-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -29,19 +31,14 @@ export function DesktopUtilitiesMenu({ className, disabled = false, onOpenSettin
 
 	return (
 		<Popover open={disabled ? false : open} onOpenChange={handleOpenChange}>
-			<PopoverTrigger asChild>
-				<ButtonIcon
-					variant="ghost"
-					intent="neutral"
+			<PopoverTrigger asChild disabled={disabled}>
+				<HeaderIconButtonView
 					disabled={disabled}
-					className={cn(
-						"size-[34px] rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg",
-						className,
-					)}
-					aria-label={t`More`}
+					className={cn(HEADER_ICON_BUTTON_CLASS, className)}
+					aria-label={t(DESKTOP_NAV_LABELS.more)}
 				>
 					<DotsThreeVerticalIcon className="size-[18px]" weight="bold" />
-				</ButtonIcon>
+				</HeaderIconButtonView>
 			</PopoverTrigger>
 			<PopoverContent
 				align="end"

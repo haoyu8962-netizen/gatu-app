@@ -6,6 +6,13 @@ Default spans live in `apps/terminal/src/config/desktop-grid-layout.ts`: the 16-
 
 The grid underlay is the `bg-grid-container` token (`#F1F3F6` behind white panels in the light theme, `#1B2429` behind `#0F1A1F` panels in the dark theme). React Grid Layout itself stays transparent so the underlay shows through every gutter; do not replace that separation with panel borders.
 
+The real desktop surface and startup shell share `DesktopTerminalFrameView`: a
+`min-h-dvh` flex column with horizontal overflow hidden, `pb-8` for the fixed footer,
+and `pt-14` (or the testnet banner offset) for the fixed header. Both workspace
+wrappers use `min-h-0 flex-1 bg-grid-container`; the startup shell does not add a
+viewport-height cap or hide vertical overflow. The shell cannot determine testnet
+or geo state, so only the runtime supplies those banners. See [ADR 0009](adr/0009-startup-placeholder-single-source.md).
+
 ## Shared boundaries
 
 - Favorites and market information remain above the chart. The chart, market-data panel and trading panel share the upper area's bottom boundary.
