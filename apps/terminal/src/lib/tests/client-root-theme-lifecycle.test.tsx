@@ -75,6 +75,7 @@ vi.mock("@/lib/network", () => ({
 }));
 vi.mock("@/lib/query-persistence", () => ({
 	createQueryPersistenceCallbacks: () => ({ onError: vi.fn(), onSuccess: vi.fn() }),
+	createQueryPersistenceFlush: () => vi.fn(),
 	createQueryPersistenceOptions: () => ({}),
 }));
 vi.mock("@/lib/wallet/privy-wagmi", () => ({

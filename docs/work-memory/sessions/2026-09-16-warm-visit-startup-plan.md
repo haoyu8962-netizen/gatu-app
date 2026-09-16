@@ -149,3 +149,7 @@ git diff --check
 Biome 最终复检退出 0（3 个 TS/TSX 文件）；默认配置排除 public 和 Markdown，因此沿用 P1 的临时配置单独检查真实 SW 文件，退出 0，只有原有 MAX_ICON_AGE_MS 未使用警告。Node 语法检查与 diff check 均退出 0。Terminal typecheck 退出 0。完整 `pnpm typecheck` 退出 0（hl-react、ui、terminal 全部通过）。memory:index / memory:check / memory:test 依次退出 0，8 tests / 8 pass / 0 fail；更新最终结果后按同序再次校验。
 
 本轮实际修改 8 个文件：`apps/terminal/public/sw.js`、`apps/terminal/src/lib/tests/sw-navigation-cache.test.ts`、`apps/terminal/src/components/trade/mobile/mobile-terminal.tsx`、`packages/ui/src/modal.tsx`、`CHANGELOG.md`、`docs/terminal-startup-performance-plan.md`、本记录和生成的 `docs/work-memory/INDEX.md`。仅 SW 测试新增消费响应体的回归用例；其他现有测试未修改。按用户要求不暂存、不提交。
+
+## 后续修正（2026-09-16，表面 2 复核时发现）
+
+全量 Vitest 暴露 `client-root-theme-lifecycle` 失败：`QueryPersistenceFlush` 用 `useQueryClient()` 取客户端，而该测试把 `PersistQueryClientProvider` 模拟为直通、且只部分模拟 `@/lib/query-persistence`，导致 "No QueryClient set"。改为由 `ClientRootProvider` 显式传入 `client` prop，组件不再依赖 Query context；`query-persistence-flush.test.tsx` 同步改为直接传 client，生命周期测试补 `createQueryPersistenceFlush` 模拟。运行时行为不变（同一个 `queryClient` 实例）。详见[顶栏、页脚与外框迁移记录](2026-09-16-top-nav-footer-view-migration.md)。

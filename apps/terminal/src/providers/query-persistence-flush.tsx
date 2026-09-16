@@ -1,13 +1,15 @@
-import { useQueryClient } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { createQueryPersistenceFlush } from "@/lib/query-persistence";
 
-export function QueryPersistenceFlush() {
-	const queryClient = useQueryClient();
+interface Props {
+	client: QueryClient;
+}
 
+export function QueryPersistenceFlush({ client }: Props) {
 	useEffect(() => {
 		if (typeof window === "undefined") return;
-		const flush = createQueryPersistenceFlush(queryClient);
+		const flush = createQueryPersistenceFlush(client);
 		function handleVisibilityChange() {
 			if (document.visibilityState === "hidden") flush();
 		}
@@ -17,7 +19,7 @@ export function QueryPersistenceFlush() {
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 			window.removeEventListener("pagehide", flush);
 		};
-	}, [queryClient]);
+	}, [client]);
 
 	return null;
 }

@@ -116,7 +116,7 @@ export function ClientRootProvider({ children, queryClient }: Props) {
 						onSuccess={persistenceCallbacks.onSuccess}
 						onError={persistenceCallbacks.onError}
 					>
-						<QueryPersistenceFlush />
+						<QueryPersistenceFlush client={queryClient} />
 						<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
 							<I18nProvider i18n={i18n}>
 								<BaseUiDirectionProvider>

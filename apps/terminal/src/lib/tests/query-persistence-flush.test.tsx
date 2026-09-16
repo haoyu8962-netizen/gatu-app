@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { dehydrate, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { dehydrate, QueryClient } from "@tanstack/react-query";
 import {
 	type PersistedClient,
 	PersistQueryClientProvider,
@@ -73,11 +73,7 @@ function setup() {
 		throttleTime: 1000,
 	});
 	const callbacks = createQueryPersistenceCallbacks(client, persister);
-	const view = render(
-		<QueryClientProvider client={client}>
-			<QueryPersistenceFlush />
-		</QueryClientProvider>,
-	);
+	const view = render(<QueryPersistenceFlush client={client} />);
 	return { client, persister, callbacks, ...view };
 }
 
@@ -171,7 +167,7 @@ describe("query persistence lifecycle flush", () => {
 				persistOptions={createQueryPersistenceOptions(persister)}
 				{...createQueryPersistenceCallbacks(client, persister)}
 			>
-				<QueryPersistenceFlush />
+				<QueryPersistenceFlush client={client} />
 			</PersistQueryClientProvider>,
 		);
 		fillCatalog(client);
