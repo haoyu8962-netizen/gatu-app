@@ -54,7 +54,18 @@
 - 未运行 EC2 脚本测试（已退出 CI，文件保留）；未验证 `pnpm serve` 在无预压缩副本时的本地预览（Nitro 在缺少副本时直接返回原文件，早前曾因旧进程引用被替换的 `.br` 报错，属旧进程问题）。
 - 本记录全部为仓库改动与本地检查；AWS 侧只做了只读查询，实例停机由用户执行。
 
+## AWS 资源清理（2026-09-17，用户指示后执行）
+
+执行前核对：区域 ap-northeast-1 仅此一台实例，`disableApiTermination=false`，根卷 `vol-032c323296cf98ab8` 随终止删除，EIP `18.182.219.124` 仅关联它，安全组 `launch-wizard-4`（`sg-0f3dbc84910144753`）仅被其网卡引用。执行顺序与结果：
+
+1. `disassociate-address eipassoc-09d8d17347ca34cf4` → `release-address eipalloc-029c6d39b3b71adeb`：账号内 EIP 数量 0。
+2. `terminate-instances i-058ca09d0533fc11d`（stopped → terminated），`wait instance-terminated` 完成；根卷随之删除，区域内卷数量 0。
+3. 撤销安全组 22/80/443 对 `0.0.0.0/0` 的入站规则（3 次 `Return: true`，规则数 0），随后 `delete-security-group` 成功。
+4. 终态：实例 `terminated`，EIP 0，卷 0，剩余安全组仅 VPC 默认组。
+
+不可恢复：机上 `/opt/gatu` 的历史发布目录与 Caddy 证书随根卷一并删除；仓库与 S3 桶版本是唯一的产物来源。
+
 ## 后续与替代关系
 
-- 待用户决定：终止实例、释放 EIP、收紧安全组、换 IAM 凭据。
+- 已完成：终止实例、释放 EIP、删除安全组（见上节）。仍待办：发布凭据换成受限 IAM 用户。
 - 后续代码清理：把 `routeRules` 的头部契约迁到 CloudFront 响应头策略测试后删除 Nitro 侧 CSP；确认无旧客户端后删除 `/client-error-report` 别名；可将 `deploy/` 下 EC2 文件移入 `deploy/legacy-ec2/`（需同步更新多份验证文档的路径）。
