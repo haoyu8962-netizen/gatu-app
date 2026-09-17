@@ -16,6 +16,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The mobile Markets view stays mounted after its first visit, so switching to Trade or
+  Account and back reuses the existing TradingView chart instead of rebuilding it.
 - Visitors without a stored Privy session now see `Connect Wallet` on the first rendered frame
   instead of a brief `Connecting...`, dashboard pages resolve the account menu before revealing,
   compact headers keep ENS names, the utilities menu has its own accessible name, and connected

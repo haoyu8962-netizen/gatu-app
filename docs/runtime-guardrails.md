@@ -429,6 +429,12 @@ not separate app sessions.
 - Do not use hidden mounted views if they continue expensive subscriptions or
   effects. If a view is mounted for continuity, guard its effects by active
   state.
+- React `Activity` in `hidden` mode unmounts effects, which destroys the
+  TradingView widget. The Markets view may start hidden to defer its first
+  render, but once it has been shown it stays `visible` and hides through the
+  existing wrapper classes, so the chart survives Markets/Trade/Account
+  switches (see `use-has-been-active.ts`). The official terminal keeps one
+  chart iframe across its Chart/Order Book/Trades tabs the same way.
 - Scroll behavior must be owned by one clear container. Avoid nested vertical
   overflow chains that fight each other.
 - Orderbook and chart transitions should retain the previous valid frame until
