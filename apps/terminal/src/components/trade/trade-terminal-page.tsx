@@ -11,7 +11,7 @@ import {
 } from "@/lib/hyperliquid/market-route";
 import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
 import { getTradeTerminalBootStatus } from "@/lib/hyperliquid/trade-terminal-boot";
-import { createLazyComponent } from "@/lib/lazy";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { useMarketActions, useSelectedMarket } from "@/stores/use-market-store";
@@ -25,8 +25,8 @@ import { OrderToast } from "./tradebox/order-toast";
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 
 /** Resolves every lazy piece of the first terminal render for the current surface, so none suspends at boot. */
-export function preloadGlobalModals(): void {
-	void GlobalModals.preload?.();
+export function preloadGlobalModals(): Promise<void> {
+	return preloadLazyComponents([GlobalModals]);
 }
 
 export function TradeTerminalPage() {

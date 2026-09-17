@@ -16,6 +16,7 @@ vi.mock("@/lib/hyperliquid/markets/market-catalog-bootstrap", () => ({
 vi.mock("@/lib/trade/orderbook-boot", () => ({ bootOrderbook: testState.bootOrderbook }));
 vi.mock("@/lib/lazy", () => ({
 	createLazyComponent: () => Object.assign(() => null, { preload: vi.fn(async () => undefined) }),
+	preloadLazyComponents: async () => undefined,
 }));
 vi.mock("@/lib/seo", () => ({ buildPageHead: () => ({}) }));
 

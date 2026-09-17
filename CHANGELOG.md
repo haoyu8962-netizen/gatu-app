@@ -8,6 +8,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Refreshing the trading terminal now reveals the page as soon as its first-render pieces
+  have loaded instead of about 300 ms later, on warm and cold loads alike.
 - Desktop widths from 1001px to 1420px now stack the trading panel above the order book and
   account information in a wider right column, with the account table beneath the chart column,
   matching the reference terminal. Saved desktop layouts for that breakpoint reset to the new

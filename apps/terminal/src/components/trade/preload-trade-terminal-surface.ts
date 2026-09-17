@@ -11,11 +11,12 @@ function matchesMobileViewport(): boolean {
 }
 
 /**
- * Starts resolving every lazy piece of the first terminal render. Lives outside the page chunk so
- * the boot helper does not count against the `trade-terminal-page` surface budget.
+ * Resolves every lazy piece of the first terminal render and settles once they are all loaded.
+ * Lives outside the page chunk so the boot helper does not count against the `trade-terminal-page`
+ * surface budget.
  */
-export function preloadTradeTerminalSurface(): void {
-	preloadGlobalModals();
-	if (matchesMobileViewport()) return;
-	preloadDesktopTerminalSurface();
+export function preloadTradeTerminalSurface(): Promise<void> {
+	const modals = preloadGlobalModals();
+	if (matchesMobileViewport()) return modals;
+	return Promise.all([modals, preloadDesktopTerminalSurface()]).then(() => undefined);
 }

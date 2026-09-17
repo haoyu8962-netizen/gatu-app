@@ -3,14 +3,14 @@ import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, useEffect, useRef } from "react";
 import { resolveChartLocale } from "@/config/chart";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { createLazyComponent } from "@/lib/lazy";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { useTheme } from "@/stores/use-global-settings-store";
 
 const TradingViewChart = createLazyComponent(() => import("./tradingview-chart"), "TradingViewChart");
 
-export function preloadChartPanel(): void {
-	void TradingViewChart.preload?.();
+export function preloadChartPanel(): Promise<void> {
+	return preloadLazyComponents([TradingViewChart]);
 }
 
 interface Props {

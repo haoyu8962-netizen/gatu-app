@@ -4,7 +4,7 @@ import { MOBILE_BREAKPOINT_PX } from "@/config/layout";
 import { getSpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { createLazyComponent } from "@/lib/lazy";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { TokenSelector } from "../chart/token-selector";
@@ -23,10 +23,12 @@ const PositionsPanel = createLazyComponent(() => import("../positions/positions-
 const TradePanel = createLazyComponent(() => import("../tradebox/trade-panel"), "TradePanel");
 
 // Resolved lazies render synchronously; a panel that suspends at boot makes React throttle the reveal.
-export function preloadMainWorkspacePanels(): void {
-	for (const panel of [AccountPanel, ChartPanel, OrderbookPanel, PositionsPanel, TradePanel]) void panel.preload?.();
-	void import("../chart/chart-panel").then((module) => module.preloadChartPanel()).catch(() => {});
-	void import("../positions/positions-panel").then((module) => module.preloadPositionsPanel()).catch(() => {});
+export function preloadMainWorkspacePanels(): Promise<void> {
+	return Promise.all([
+		preloadLazyComponents([AccountPanel, ChartPanel, OrderbookPanel, PositionsPanel, TradePanel]),
+		import("../chart/chart-panel").then((module) => module.preloadChartPanel()),
+		import("../positions/positions-panel").then((module) => module.preloadPositionsPanel()),
+	]).then(() => undefined);
 }
 
 const panelFallback = <div aria-hidden="true" className="h-full w-full bg-surface" />;

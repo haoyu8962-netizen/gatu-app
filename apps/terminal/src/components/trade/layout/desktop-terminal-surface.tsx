@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { createLazyComponent } from "@/lib/lazy";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { GeoRestrictionBanner } from "../geo/geo-restriction-banner";
 import { preloadTopNav, TopNav } from "../header/top-nav";
@@ -9,10 +9,10 @@ import { MainWorkspace, preloadMainWorkspacePanels } from "./main-workspace";
 
 const FooterBar = createLazyComponent(() => import("../footer/footer-bar"), "FooterBar");
 
-export function preloadDesktopTerminalSurface(): void {
-	void FooterBar.preload?.();
-	preloadTopNav();
-	preloadMainWorkspacePanels();
+export function preloadDesktopTerminalSurface(): Promise<void> {
+	return Promise.all([preloadLazyComponents([FooterBar]), preloadTopNav(), preloadMainWorkspacePanels()]).then(
+		() => undefined,
+	);
 }
 
 interface Props {

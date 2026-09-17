@@ -143,6 +143,18 @@ the realistic prerendered frame had already used 3,744 bytes. The baseline for
 that named surface moved to 123,242 bytes; the allowance is unchanged, and no
 other number or validation script changed.
 
+## Trade route reveal waits for the first-render lazies (2026-09-17)
+
+Measuring a warm third load of `app.gatu.ai/trade/HYPE` with a React commit hook showed the
+`/trade` match suspended from 147 ms (fallback commit) until 447 ms although `router.load()` had
+finished by about 221 ms: the retry render entered `TradeTerminalPage` while the panel, footer,
+navigation and modal lazies were still resolving, so React applied its 300 ms fallback throttle.
+[ADR 0012](adr/0012-trade-route-reveal-after-surface-preload.md) makes `bootTradeRoute` return a
+promise that the route's `beforeLoad` awaits: the reveal now happens once every first-render lazy
+has resolved (or after `TRADE_ROUTE_REVEAL_BUDGET_MS`), so the retry render commits without
+suspending. Chunk boundaries, preload lists and budgets are unchanged; the measured before/after
+timelines live in the [task record](work-memory/sessions/2026-09-17-trade-route-reveal.md).
+
 Evidence: clean worktree build `GATU_RELEASE_ID=cloudfront-2026-09-14-p14 pnpm
 build` with Node 22.13.0 and pnpm 10.21.0 (not the pinned CI Node 22.15.0;
 compression variance stays inside the allowance), released as p14 with build

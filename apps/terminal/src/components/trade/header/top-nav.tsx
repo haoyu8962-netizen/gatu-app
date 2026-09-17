@@ -11,7 +11,7 @@ import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { createLazyComponent } from "@/lib/lazy";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -32,8 +32,8 @@ import {
 
 const UserMenu = createLazyComponent(() => import("./user-menu"), "UserMenu");
 
-export function preloadTopNav(): void {
-	void UserMenu.preload?.();
+export function preloadTopNav(): Promise<void> {
+	return preloadLazyComponents([UserMenu]);
 }
 
 export type TopNavMode = "default" | "market-loading";

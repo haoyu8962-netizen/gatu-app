@@ -26,7 +26,7 @@
 ## 决策
 
 1. `bootTradeRoute` 返回 Promise：并行等待 `preloadAppRuntimeOverlays()` 与 `preloadTradeTerminalSurface()`，两者各自返回其 `lazyRouteComponent.preload()` 的 `Promise.all`。目录引导与订单簿流仍是即发即忘。`/trade` 路由的 `beforeLoad` 改为 `await bootTradeRoute(...)`，因此 `router.load()`（即 SPA 壳水合中的 `displayPendingPromise`）只在首屏每一个惰性片段解析完成后才落定；路由揭示时的重试渲染不再挂起，React 直接提交（`RootCompleted`），不触发 300 ms 节流。
-2. 等待集合只含首次渲染必然挂载的惰性片段：FooterBar、TopNav 的惰性片段、桌面工作区五个面板（Account、Chart、Orderbook、Positions、Trade）、GlobalModals、Toaster、FundsActionRecoveryHost。图表库、持仓面板内部的二级预加载（`preloadChartPanel`、`preloadPositionsPanel`）保持即发即忘，不进入等待集合。移动视口沿用现有分支：不等待桌面面板。
+2. 等待集合只含首次渲染必然挂载的惰性片段：FooterBar、TopNav 的惰性片段、桌面工作区五个面板（Account、Chart、Orderbook、Positions、Trade）及它们首屏必然渲染的二级片段（图表面板的 `TradingViewChart` 包装组件、持仓面板默认页 `PositionsTab`）、GlobalModals、Toaster、FundsActionRecoveryHost。首版曾把二级片段留作即发即忘，实测它们在网格出现后再次挂起并被节流到 fallback + 300 ms，故纳入。TradingView 图表库本身是 iframe 内的脚本，不在集合内；持仓面板其它页签按意图预加载。移动视口沿用现有分支：不等待桌面面板。
 3. 等待有上限 `TRADE_ROUTE_REVEAL_BUDGET_MS`（1500 ms）：超时或任一预加载失败时照旧揭示，由既有 Suspense 与 `lazyRouteComponent` 的模块缺失自动重载兜底。`lazyRouteComponent.preload()` 自身吞掉错误，等待不会抛出。
 4. `preloadDesktopTerminalSurface`、`preloadMainWorkspacePanels`、`preloadTopNav`、`preloadGlobalModals`、`preloadAppRuntimeOverlays` 的返回类型从 `void` 改为 `Promise<void>`；现有调用方继续 `void` 调用，不改行为。
 

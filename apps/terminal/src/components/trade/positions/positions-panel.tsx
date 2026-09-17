@@ -19,7 +19,7 @@ import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-avail
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useMarkets, useSelectedMarketInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
-import { createLazyComponent } from "@/lib/lazy";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
@@ -51,8 +51,8 @@ const OrdersTab = createLazyComponent(() => import("./orders-tab"), "OrdersTab")
 const PositionsTab = createLazyComponent(() => import("./positions-tab"), "PositionsTab");
 const TwapTab = createLazyComponent(() => import("./twap-tab"), "TwapTab");
 
-export function preloadPositionsPanel(): void {
-	void PositionsTab.preload?.();
+export function preloadPositionsPanel(): Promise<void> {
+	return preloadLazyComponents([PositionsTab]);
 }
 
 const HISTORY_TAB_PRELOADERS: Readonly<Record<string, () => void>> = {
