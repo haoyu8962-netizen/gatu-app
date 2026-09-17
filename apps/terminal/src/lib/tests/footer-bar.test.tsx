@@ -118,6 +118,14 @@ describe("FooterBar", () => {
 		expect(testState.openCommandMenu).toHaveBeenCalledTimes(1);
 	});
 
+	it("retains both divider rules and supplies a visible runtime clock", () => {
+		renderFooter("default");
+		expect(container.querySelectorAll("footer .border-l")).toHaveLength(2);
+		const clock = container.querySelector("footer .tabular-nums");
+		expect(clock?.classList.contains("invisible")).toBe(false);
+		expect(clock?.textContent).toMatch(/\d/);
+	});
+
 	it("retranslates the legal navigation landmark when the locale changes", () => {
 		renderFooter("default");
 		const navigation = container.querySelector("nav");

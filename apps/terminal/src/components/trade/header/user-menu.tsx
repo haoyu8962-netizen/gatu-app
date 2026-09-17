@@ -9,11 +9,13 @@ import {
 	SpinnerGapIcon,
 	WalletIcon,
 } from "@phosphor-icons/react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useEnsName } from "wagmi";
+import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useIsMobile, useIsMobileQrSurface } from "@/hooks/use-mobile";
+import { useEmailWalletExport } from "@/hooks/wallet/use-email-wallet-export";
 import { useWalletInitializationRecovery } from "@/hooks/wallet/use-wallet-initialization-recovery";
 import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -21,8 +23,10 @@ import { shortenAddress } from "@/lib/format";
 import { createLazyComponent } from "@/lib/lazy";
 import { hasPersistedPrivySession } from "@/lib/wallet/privy-session-hint";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
+import { MobileWalletCtaView } from "../mobile/mobile-wallet-cta-view";
 import { UserMenuModalErrorBoundary, UserMenuModalLoadingFallback } from "./user-menu-modal-boundary";
 import { loadUserMenuModalModule } from "./user-menu-modal-load";
+import { USER_MENU_BUTTON_MIN_WIDTH, WalletCtaView } from "./wallet-cta-view";
 
 // Keep successful loads across UserMenu remounts; replace only a wrapper that cached a tagged import failure.
 let MobileAgentSyncModal = createLazyComponent(
@@ -35,7 +39,6 @@ let WalletModal = createLazyComponent(
 );
 let shouldKeepMobileSyncModalMounted = false;
 
-const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 interface Props {
@@ -44,6 +47,7 @@ interface Props {
 
 export function UserMenu({ variant = "default" }: Props) {
 	const { t } = useLingui();
+	const walletExport = useEmailWalletExport();
 	const {
 		authenticationReady,
 		walletDirectoryReady,
@@ -65,17 +69,11 @@ export function UserMenu({ variant = "default" }: Props) {
 	const [mobileSyncLoadAttempt, setMobileSyncLoadAttempt] = useState(0);
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [walletModalLoadAttempt, setWalletModalLoadAttempt] = useState(0);
-	const [mounted, setMounted] = useState(false);
-	const [sessionHint, setSessionHint] = useState(false);
+	const [sessionHint] = useState(() => hasPersistedPrivySession());
 	const { copied, copy } = useCopyToClipboard();
 	const isMobile = useIsMobile();
 	const isMobileQrSurface = useIsMobileQrSurface();
 	const isDesktopNav = variant === "desktop-nav";
-
-	useEffect(() => {
-		setMounted(true);
-		setSessionHint(hasPersistedPrivySession());
-	}, []);
 
 	const initializationScope =
 		sessionMode === "agent-only"
@@ -122,7 +120,7 @@ export function UserMenu({ variant = "default" }: Props) {
 	const awaitsStoredSession =
 		!authenticationReady && sessionMode !== "agent-only" && (sessionHint || recoveryAvailable);
 
-	if (!mounted || awaitsStoredSession) {
+	if (awaitsStoredSession) {
 		return (
 			<Button
 				variant={isDesktopNav ? "filled" : "outline"}
@@ -154,26 +152,21 @@ export function UserMenu({ variant = "default" }: Props) {
 	if (!authenticated && !isConnected) {
 		return (
 			<>
-				<Button
-					variant={isDesktopNav ? "filled" : "outline"}
-					intent="neutral"
-					size="sm"
-					onClick={() => setWalletModalOpen(true)}
-					onFocus={() => void WalletModal.preload?.()}
-					onPointerEnter={() => void WalletModal.preload?.()}
-					iconLeft={isDesktopNav ? undefined : <WalletIcon className="size-3.5" />}
-					className={cn(
-						APP_BAR_BUTTON_HEIGHT_CLASS,
-						isDesktopNav ? "shrink-0" : "min-w-0 max-w-full",
-						"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
-						isDesktopNav &&
-							"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control",
-					)}
-				>
-					<span className={cn(!isDesktopNav && "min-w-0 truncate")}>
-						<Trans>Connect Wallet</Trans>
-					</span>
-				</Button>
+				{isDesktopNav ? (
+					<WalletCtaView
+						label={t(DESKTOP_NAV_LABELS.wallet)}
+						onClick={() => setWalletModalOpen(true)}
+						onFocus={() => void WalletModal.preload?.()}
+						onPointerEnter={() => void WalletModal.preload?.()}
+					/>
+				) : (
+					<MobileWalletCtaView
+						label={t(DESKTOP_NAV_LABELS.wallet)}
+						onClick={() => setWalletModalOpen(true)}
+						onFocus={() => void WalletModal.preload?.()}
+						onPointerEnter={() => void WalletModal.preload?.()}
+					/>
+				)}
 				{walletModalOpen && (
 					<UserMenuModalErrorBoundary
 						key={walletModalLoadAttempt}
@@ -200,9 +193,22 @@ export function UserMenu({ variant = "default" }: Props) {
 	}
 
 	const displayLabel = emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : t`Account`);
-	const compactDisplayLabel = displayAddress ? shortenAddress(displayAddress) : displayLabel;
+	const compactDisplayLabel =
+		emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : displayLabel);
 
 	const actionItems = [
+		...(walletExport.visible
+			? [
+					{
+						label: t`Export email wallet`,
+						icon: <WalletIcon className="size-3.5" />,
+						disabled: !walletExport.canExport,
+						onSelect: () => {
+							void walletExport.exportEmailWallet();
+						},
+					},
+				]
+			: []),
 		...(authenticated && sessionMode !== "agent-only" && !hasWalletAccess
 			? [
 					{
@@ -284,13 +290,13 @@ export function UserMenu({ variant = "default" }: Props) {
 							className={cn(
 								"min-w-0 truncate font-mono text-xs text-fg",
 								USER_MENU_LABEL_MAX_WIDTH,
-								isDesktopNav && "font-market-close text-[13px] leading-[18px] font-semibold max-[1181px]:hidden",
+								isDesktopNav && "font-market-close text-[13px] leading-[18px] font-semibold nav-compact:hidden",
 							)}
 						>
 							<bdi dir="ltr">{displayLabel}</bdi>
 						</span>
 						{isDesktopNav && (
-							<span className="hidden min-w-0 max-w-[8rem] truncate font-mono text-[13px] leading-[18px] font-semibold text-market-close-fg max-[1181px]:block">
+							<span className="hidden min-w-0 max-w-[8rem] truncate font-mono text-[13px] leading-[18px] font-semibold text-market-close-fg nav-compact:block">
 								<bdi dir="ltr">{compactDisplayLabel}</bdi>
 							</span>
 						)}

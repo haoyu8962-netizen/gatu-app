@@ -1,12 +1,6 @@
 // @vitest-environment jsdom
 
-import { calcGridItemPosition } from "react-grid-layout";
-import { beforeEach, describe, expect, it } from "vitest";
-import {
-	DEFAULT_DESKTOP_GRID_LOADING_LAYOUTS,
-	getDesktopGridLoadingContainerHeight,
-	getDesktopGridLoadingPanelRect,
-} from "@/components/trade/layout/desktop-grid-loading-surface";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	DEFAULT_DESKTOP_GRID_LAYOUTS,
 	DESKTOP_GRID_BREAKPOINTS,
@@ -36,64 +30,13 @@ describe("desktop grid layout", () => {
 		expect(MOBILE_QR_SURFACE_MEDIA_QUERY).toBe("(max-width: 1000px), (pointer: coarse), (display-mode: standalone)");
 		expect(DESKTOP_GRID_BREAKPOINTS).toEqual({ lg: 1420, md: 1000 });
 		expect(DESKTOP_GRID_COLS).toEqual({ lg: 16, md: 14 });
-		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v11");
+		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v12");
 	});
 
 	it("keeps 1420px in md and switches to lg only above the breakpoint", () => {
 		expect(getDesktopGridBreakpoint(1000)).toBe("md");
 		expect(getDesktopGridBreakpoint(1420)).toBe("md");
 		expect(getDesktopGridBreakpoint(1420.01)).toBe("lg");
-	});
-
-	it("projects the exact default lg and md geometry into the loading surface", () => {
-		for (const breakpoint of ["lg", "md"] as const) {
-			expect(DEFAULT_DESKTOP_GRID_LOADING_LAYOUTS[breakpoint]).toEqual(
-				DEFAULT_DESKTOP_GRID_LAYOUTS[breakpoint].map(({ i, x, y, w, h }) => ({ i, x, y, w, h })),
-			);
-
-			const rows = Math.max(...DEFAULT_DESKTOP_GRID_LAYOUTS[breakpoint].map((item) => item.y + item.h));
-			const expectedHeight =
-				rows * DESKTOP_GRID_ROW_HEIGHT_PX + (rows - 1) * DESKTOP_GRID_GAP_PX + DESKTOP_GRID_GAP_PX * 2;
-			expect(getDesktopGridLoadingContainerHeight(breakpoint)).toBeCloseTo(expectedHeight);
-		}
-	});
-
-	it("keeps every default loading panel within one pixel of RGL at production desktop widths", () => {
-		const cases = [
-			{ breakpoint: "md", width: 1001 },
-			{ breakpoint: "md", width: 1280 },
-			{ breakpoint: "md", width: 1420 },
-			{ breakpoint: "lg", width: 1421 },
-			{ breakpoint: "lg", width: 1440 },
-			{ breakpoint: "lg", width: 1920 },
-		] as const;
-
-		for (const { breakpoint, width } of cases) {
-			for (const loadingItem of DEFAULT_DESKTOP_GRID_LOADING_LAYOUTS[breakpoint]) {
-				const expected = calcGridItemPosition(
-					{
-						cols: DESKTOP_GRID_COLS[breakpoint],
-						containerPadding: [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX],
-						containerWidth: width,
-						margin: [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX],
-						maxRows: Number.POSITIVE_INFINITY,
-						rowHeight: DESKTOP_GRID_ROW_HEIGHT_PX,
-					},
-					loadingItem.x,
-					loadingItem.y,
-					loadingItem.w,
-					loadingItem.h,
-				);
-				const actual = getDesktopGridLoadingPanelRect(breakpoint, width, loadingItem.i);
-
-				for (const dimension of ["left", "top", "width", "height"] as const) {
-					expect(
-						Math.abs(actual[dimension] - expected[dimension]),
-						`${breakpoint}/${width}/${loadingItem.i}/${dimension}`,
-					).toBeLessThanOrEqual(1);
-				}
-			}
-		}
 	});
 
 	it("removes saved geometry when the desktop layout is reset", () => {
@@ -107,6 +50,8 @@ describe("desktop grid layout", () => {
 		window.localStorage.setItem("trade-desktop-grid-layout-v7", "legacy");
 		window.localStorage.setItem("trade-desktop-grid-layout-v8", "legacy");
 		window.localStorage.setItem("trade-desktop-grid-layout-v9", "legacy");
+		window.localStorage.setItem("trade-desktop-grid-layout-v10", "legacy");
+		window.localStorage.setItem("trade-desktop-grid-layout-v11", "legacy");
 
 		resetDesktopGridLayouts();
 
@@ -120,6 +65,8 @@ describe("desktop grid layout", () => {
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v7")).toBeNull();
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v8")).toBeNull();
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v9")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v10")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v11")).toBeNull();
 		expect(readDesktopGridLayouts()).toBe(DEFAULT_DESKTOP_GRID_LAYOUTS);
 	});
 
@@ -140,55 +87,91 @@ describe("desktop grid layout", () => {
 			expect(marketToolbar).toMatchObject({ y: 1.3, h: 1.4, minH: 1.4, maxH: 1.4 });
 			expect(chart?.y).toBe(2.7);
 			expect((chart?.y ?? 0) + (chart?.h ?? 0)).toBeCloseTo(topBoundary);
+			expectAligned(layout, DESKTOP_GRID_COLS[breakpoint]);
 		}
 	});
 
-	it("keeps market data and trading beside the chart at both desktop breakpoints", () => {
+	it("keeps market data and trading beside the chart at the lg desktop breakpoint", () => {
 		const wideMarketData = DEFAULT_DESKTOP_GRID_LAYOUTS.lg?.find((item) => item.i === "marketData");
 		const wideTrading = DEFAULT_DESKTOP_GRID_LAYOUTS.lg?.find((item) => item.i === "tradingInterface");
-		const compactMarketData = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "marketData");
-		const compactTrading = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "tradingInterface");
 
 		expect(wideMarketData).toMatchObject({ x: 10, y: 0, w: 3, h: 20.4 });
 		expect(wideTrading).toMatchObject({ x: 13, y: 0, w: 3, h: 20.4 });
-		expect(compactMarketData).toMatchObject({ x: 8, y: 0, w: 3, h: 20.6 });
-		expect(compactTrading).toMatchObject({ x: 11, y: 0, w: 3, h: 20.6 });
 	});
 
-	it("uses an eleven-three lower row beneath the compact desktop workspace", () => {
-		const compactAccountTable = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "accountTable");
-		const compactAccountInfo = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "accountInfo");
-		const compactMarketData = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "marketData");
-
-		expect(compactAccountTable).toMatchObject({
+	it("stacks trading, market data and account information in the md right column", () => {
+		const layout = DEFAULT_DESKTOP_GRID_LAYOUTS.md;
+		expect(layout.map((item) => item.i)).toEqual([
+			"favoriteCoins",
+			"coinInfo",
+			"chart",
+			"marketData",
+			"tradingInterface",
+			"accountTable",
+			"accountInfo",
+		]);
+		expect(layout.find((item) => item.i === "favoriteCoins")).toMatchObject({
 			x: 0,
-			y: 20.6,
-			w: 11,
-			h: 14,
-			minW: 11,
-			maxW: 11,
-			resizeHandles: [],
+			y: 0,
+			w: 10,
+			h: 1.3,
+			minH: 1.3,
+			maxH: 2,
+			minW: 7,
+			isDraggable: false,
 		});
-		expect(compactAccountInfo).toMatchObject({
-			x: 11,
+		expect(layout.find((item) => item.i === "coinInfo")).toMatchObject({
+			x: 0,
+			y: 1.3,
+			w: 10,
+			h: 1.4,
+			minH: 1.4,
+			maxH: 1.4,
+			minW: 7,
+			isDraggable: false,
+		});
+		expect(layout.find((item) => item.i === "chart")).toMatchObject({
+			x: 0,
+			y: 2.7,
+			w: 10,
+			h: 17.9,
+			minH: 16,
+			minW: 7,
+			resizeHandles: ["e", "s", "se"],
+		});
+		const trading = layout.find((item) => item.i === "tradingInterface");
+		const marketData = layout.find((item) => item.i === "marketData");
+		const table = layout.find((item) => item.i === "accountTable");
+		expect(trading).toMatchObject({ x: 10, y: 0, w: 4, h: 20.6, minH: 5, minW: 3, resizeHandles: ["w"] });
+		expect(marketData).toMatchObject({
+			x: 10,
 			y: 20.6,
-			w: 3,
+			w: 4,
+			h: 20.4,
+			minH: 10,
+			minW: 3,
+			resizeHandles: ["w", "s", "sw"],
+		});
+		expect(table).toMatchObject({ x: 0, y: 20.6, w: 10, h: 14, minH: 5, minW: 7, resizeHandles: [] });
+		expect(table).not.toHaveProperty("maxW");
+		expect(layout.find((item) => item.i === "accountInfo")).toMatchObject({
+			x: 10,
+			y: 41,
+			w: 4,
 			h: 14,
+			minH: 14,
 			minW: 3,
 			resizeHandles: ["w"],
 		});
-		expect((compactMarketData?.y ?? 0) + (compactMarketData?.h ?? 0)).toBeCloseTo(compactAccountInfo?.y ?? 0);
-		expect((compactAccountTable?.y ?? 0) + (compactAccountTable?.h ?? 0)).toBeCloseTo(
-			(compactAccountInfo?.y ?? 0) + (compactAccountInfo?.h ?? 0),
-		);
-
-		const gridSpan = Math.max(...(DEFAULT_DESKTOP_GRID_LAYOUTS.md ?? []).map((item) => item.y + item.h));
-		const spanHeight = (rows: number) => rows * DESKTOP_GRID_ROW_HEIGHT_PX + (rows - 1) * DESKTOP_GRID_GAP_PX;
-
-		expect(gridSpan).toBeCloseTo(34.6);
-		expect(spanHeight(compactAccountTable?.h ?? 0)).toBeCloseTo(459);
-		expect(spanHeight(compactMarketData?.h ?? 0)).toBeCloseTo(676.8);
-		expect(spanHeight(compactAccountInfo?.h ?? 0)).toBeCloseTo(459);
+		expect(Math.max(...layout.map((item) => item.y + item.h))).toBe(55);
+		expect(spanHeight(trading?.h ?? 0)).toBeCloseTo(676.8);
+		expect(spanHeight(marketData?.h ?? 0)).toBeCloseTo(670.2);
+		expect(spanHeight(table?.h ?? 0)).toBeCloseTo(459);
+		expectAligned(layout, 14);
+		const compacted = desktopGridCompactor.compact(layout, 14);
+		expect(compacted).toEqual(layout);
+		expect(desktopGridCompactor.compact(compacted, 14)).toEqual(layout);
+		expectAligned(compacted, 14);
 	});
 
 	it("restores valid geometry while retaining current constraints", () => {
@@ -201,14 +184,33 @@ describe("desktop grid layout", () => {
 		expect(restoredChart).toMatchObject({ x: 0, w: 9, minW: 4 });
 	});
 
-	it("resets a previously narrowed compact account table to the fixed column width", () => {
-		const md = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.map((item) =>
-			item.i === "accountTable" ? { ...item, w: 9, minW: 4 } : item,
-		);
+	it("rejects stored md geometry with inconsistent left column widths", () => {
+		const md = DEFAULT_DESKTOP_GRID_LAYOUTS.md.map((item) => {
+			if (["favoriteCoins", "coinInfo", "chart"].includes(item.i)) return { ...item, w: 9 };
+			if (["marketData", "tradingInterface", "accountInfo"].includes(item.i)) return { ...item, x: 9, w: 5 };
+			return item;
+		});
 		writeDesktopGridLayouts({ ...DEFAULT_DESKTOP_GRID_LAYOUTS, md });
 
-		const restoredAccountTable = readDesktopGridLayouts().md?.find((item) => item.i === "accountTable");
-		expect(restoredAccountTable).toMatchObject({ x: 0, w: 11, minW: 11, maxW: 11 });
+		const restored = readDesktopGridLayouts().md ?? [];
+		expect(restored).toEqual(DEFAULT_DESKTOP_GRID_LAYOUTS.md);
+		expectAligned(restored, 14);
+	});
+
+	it("restores and aligns stored md geometry with a consistent column boundary", () => {
+		const md = DEFAULT_DESKTOP_GRID_LAYOUTS.md.map((item) => {
+			if (["favoriteCoins", "coinInfo", "chart", "accountTable"].includes(item.i)) return { ...item, w: 9 };
+			if (item.i === "tradingInterface") return { ...item, x: 9, w: 5, h: 22 };
+			return { ...item, x: 9, w: 5 };
+		});
+		writeDesktopGridLayouts({ ...DEFAULT_DESKTOP_GRID_LAYOUTS, md });
+
+		const restored = readDesktopGridLayouts().md ?? [];
+		expectStackedColumns(restored, 9);
+		expect(restored.find((item) => item.i === "accountTable")?.y).toBe(22);
+		expect(restored.find((item) => item.i === "accountInfo")?.y).toBeCloseTo(42.4);
+		expectAligned(restored, 14);
+		expect(desktopGridCompactor.compact(restored, 14)).toEqual(restored);
 	});
 
 	it("rejects stored geometry that exceeds the active column bounds", () => {
@@ -222,8 +224,9 @@ describe("desktop grid layout", () => {
 			}),
 		);
 
-		const restoredTrading = readDesktopGridLayouts().md?.find((item) => item.i === "tradingInterface");
-		expect(restoredTrading).toMatchObject({ x: 11, w: 3 });
+		const restored = readDesktopGridLayouts().md ?? [];
+		expect(restored.find((item) => item.i === "tradingInterface")).toMatchObject({ x: 10, w: 4 });
+		expectAligned(restored, 14);
 	});
 
 	it("rejects stored geometry that causes panel collisions", () => {
@@ -232,13 +235,14 @@ describe("desktop grid layout", () => {
 			JSON.stringify({
 				...DEFAULT_DESKTOP_GRID_LAYOUTS,
 				md: DEFAULT_DESKTOP_GRID_LAYOUTS.md?.map((item) =>
-					item.i === "tradingInterface" ? { ...item, x: 10, w: 3 } : item,
+					item.i === "tradingInterface" ? { ...item, x: 9, w: 5 } : item,
 				),
 			}),
 		);
 
-		const restoredTrading = readDesktopGridLayouts().md?.find((item) => item.i === "tradingInterface");
-		expect(restoredTrading).toMatchObject({ x: 11, w: 3 });
+		const restored = readDesktopGridLayouts().md ?? [];
+		expect(restored.find((item) => item.i === "tradingInterface")).toMatchObject({ x: 10, w: 4 });
+		expectAligned(restored, 14);
 	});
 
 	it("rejects invalid or unknown resize results", () => {
@@ -248,6 +252,7 @@ describe("desktop grid layout", () => {
 
 		expect(syncGridItemResize(layouts, "md", { ...chart, w: 100 })).toBe(layouts);
 		expect(syncGridItemResize(layouts, "md", { ...chart, i: "missing", w: 9 })).toBe(layouts);
+		expectAligned(layouts.md, 14);
 	});
 	it.each(["lg", "md"] as const)("ignores trading content heights in %s", (breakpoint) => {
 		const layouts = cloneDefaultLayouts();
@@ -255,7 +260,7 @@ describe("desktop grid layout", () => {
 			const heights = { [breakpoint]: { accountInfo: 200, tradingInterface } };
 			const rendered = getDesktopGridLayouts(layouts, heights);
 			expect(rendered).toEqual(layouts);
-			expectAligned(rendered[breakpoint] ?? []);
+			expectAligned(rendered[breakpoint] ?? [], DESKTOP_GRID_COLS[breakpoint]);
 		}
 		expect(layouts).toEqual(cloneDefaultLayouts());
 	});
@@ -264,29 +269,31 @@ describe("desktop grid layout", () => {
 		const layouts = cloneDefaultLayouts();
 		const heights = syncGridItemContentHeight({}, "md", "accountInfo", 700);
 		const rendered = getDesktopGridLayouts(layouts, heights);
-		expect(rendered.md?.find((item) => item.i === "accountTable")?.h).toBe(21.31);
+		expect(rendered.md?.find((item) => item.i === "accountInfo")?.h).toBe(21.31);
+		expect(rendered.md?.find((item) => item.i === "accountTable")?.h).toBe(14);
 		expect(rendered.lg).toEqual(layouts.lg);
-		expectAligned(rendered.md ?? []);
+		expectAligned(rendered.md ?? [], 14);
 		writeDesktopGridLayouts(layouts);
 		expect(readDesktopGridLayouts()).toEqual(layouts);
 		const shrunk = getDesktopGridLayouts(layouts, syncGridItemContentHeight(heights, "md", "accountInfo", 100));
 		expect(shrunk.md?.find((item) => item.i === "accountTable")?.h).toBe(14);
+		expect(shrunk.md?.find((item) => item.i === "accountInfo")?.h).toBe(14);
+		expect(shrunk.lg).toEqual(layouts.lg);
+		expectAligned(shrunk.md ?? [], 14);
 		expect(syncGridItemContentHeight(heights, "md", "accountInfo", 700.2)).toBe(heights);
 		expect(syncGridItemContentHeight(heights, "md", "accountInfo", Number.NaN)).toBe(heights);
 	});
 
 	it("keeps shared boundaries through repeated library compaction and restored unequal heights", () => {
 		const layouts = cloneDefaultLayouts();
-		layouts.lg = layouts.lg.map((item) =>
-			item.i === "tradingInterface"
-				? { ...item, h: 19.6 }
-				: item.i === "accountInfo"
-					? { ...item, y: 19.6, h: 15 }
-					: item,
-		);
+		layouts.lg = layouts.lg.map((item) => {
+			if (item.i === "tradingInterface") return { ...item, h: 19.6 };
+			if (item.i === "accountInfo") return { ...item, y: 19.6, h: 15 };
+			return item;
+		});
 		writeDesktopGridLayouts(layouts);
 		const restored = readDesktopGridLayouts().lg ?? [];
-		expectAligned(restored);
+		expectAligned(restored, 16);
 		expect(restored.find((item) => item.i === "accountInfo")?.y).toBe(20.4);
 		expect(desktopGridCompactor.compact(restored, 16)).toEqual(restored);
 		expect(restored.find((item) => item.i === "accountTable")?.h).toBe(15);
@@ -300,14 +307,24 @@ describe("desktop grid layout", () => {
 			if (item.i === "accountInfo") return { ...item, y: 28, h: 23 };
 			return item;
 		});
-		window.localStorage.setItem("trade-desktop-grid-layout-v10", JSON.stringify(legacy));
+		legacy.md = legacy.md.map((item) => {
+			if (["favoriteCoins", "coinInfo", "chart"].includes(item.i)) return { ...item, w: 8, minW: 4 };
+			if (item.i === "marketData") return { ...item, x: 8, y: 0, w: 3, h: 20.6, minH: 16 };
+			if (item.i === "accountTable") return { ...item, w: 11, minW: 11, maxW: 11 };
+			if (item.i === "accountInfo") return { ...item, x: 11, y: 20.6, w: 3 };
+			return { ...item, x: 11, w: 3, y: 0 };
+		});
+		window.localStorage.setItem("trade-desktop-grid-layout-v11", JSON.stringify(legacy));
 		const migrated = readDesktopGridLayouts();
 		expect(migrated.lg?.find((item) => item.i === "chart")).toMatchObject({ w: 9, h: 21 });
 		expect(migrated.lg?.find((item) => item.i === "tradingInterface")?.h).toBe(23.7);
 		expect(migrated.lg?.find((item) => item.i === "accountInfo")?.h).toBe(14);
+		expect(migrated.md).toEqual(DEFAULT_DESKTOP_GRID_LAYOUTS.md);
+		expectAligned(migrated.md ?? [], 14);
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v11")).toBe(JSON.stringify(legacy));
 		expect(readDesktopGridLayouts()).toEqual(migrated);
 		writeDesktopGridLayouts(migrated);
-		expect(window.localStorage.getItem("trade-desktop-grid-layout-v10")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v11")).toBeNull();
 		expect(readDesktopGridLayouts()).toEqual(migrated);
 	});
 
@@ -316,10 +333,10 @@ describe("desktop grid layout", () => {
 		const chart = layouts.lg.find((item) => item.i === "chart");
 		if (!chart) throw new Error("Missing chart");
 		const larger = syncGridItemResize(layouts, "lg", { ...chart, h: 22 });
-		expectAligned(larger.lg ?? []);
+		expectAligned(larger.lg ?? [], 16);
 		expect(larger.lg?.find((item) => item.i === "marketData")?.h).toBe(24.7);
 		const smaller = syncGridItemResize(larger, "lg", { ...chart, h: 17 });
-		expectAligned(smaller.lg ?? []);
+		expectAligned(smaller.lg ?? [], 16);
 		expect(smaller.lg?.find((item) => item.i === "marketData")?.h).toBe(19.7);
 		writeDesktopGridLayouts(smaller);
 		expect(readDesktopGridLayouts()).toEqual(smaller);
@@ -346,10 +363,6 @@ describe("desktop grid layout", () => {
 		expect(narrower.find((item) => item.i === "marketData")).toMatchObject({ x: 9, w: 4 });
 		expect(resizeDesktopGridLayout(narrower, chart, 16)).toEqual(layout);
 		expect(resizeDesktopGridLayout(layout, { ...chart, w: 11 }, 16)).toBe(layout);
-		const compact = cloneDefaultLayouts().md;
-		const account = compact.find((item) => item.i === "accountInfo");
-		if (!account) throw new Error("Missing account");
-		expect(resizeDesktopGridLayout(compact, { ...account, x: 10, w: 4 }, 14)).toBe(compact);
 	});
 
 	it("preserves the existing favorite-toolbar height handle without moving the shared lower boundary", () => {
@@ -361,7 +374,93 @@ describe("desktop grid layout", () => {
 		expect(resized.find((item) => item.i === "coinInfo")?.y).toBe(2);
 		expect(resized.find((item) => item.i === "chart")?.y).toBe(3.4);
 		expect(resized.find((item) => item.i === "accountTable")?.y).toBe(20.4);
-		expectAligned(resized);
+		expectAligned(resized, 16);
+	});
+	it("discards v10 geometry without reading it", () => {
+		window.localStorage.setItem("trade-desktop-grid-layout-v10", JSON.stringify(cloneDefaultLayouts()));
+		const getItem = vi.spyOn(Storage.prototype, "getItem");
+		try {
+			const restored = readDesktopGridLayouts();
+			expect(restored).toBe(DEFAULT_DESKTOP_GRID_LAYOUTS);
+			expectAligned(restored.md ?? [], 14);
+			expect(getItem.mock.calls).toEqual([[DESKTOP_GRID_STORAGE_KEY], ["trade-desktop-grid-layout-v11"]]);
+		} finally {
+			getItem.mockRestore();
+		}
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v10")).toBeNull();
+	});
+
+	it("moves the md shared boundary when the chart height changes", () => {
+		const layout = cloneDefaultLayouts().md;
+		const chart = layout.find((item) => item.i === "chart");
+		if (!chart) throw new Error("Missing chart");
+		const resized = resizeDesktopGridLayout(layout, { ...chart, h: 20 }, 14);
+		expect(resized.find((item) => item.i === "chart")?.h).toBe(20);
+		expect(resized.find((item) => item.i === "tradingInterface")?.h).toBeCloseTo(22.7);
+		expect(resized.find((item) => item.i === "marketData")?.y).toBeCloseTo(22.7);
+		expect(resized.find((item) => item.i === "accountTable")?.y).toBeCloseTo(22.7);
+		expect(resized.find((item) => item.i === "accountInfo")?.y).toBeCloseTo(43.1);
+		expectAligned(resized, 14);
+		const smaller = resizeDesktopGridLayout(resized, chart, 14);
+		for (const item of layout) {
+			const restored = smaller.find((candidate) => candidate.i === item.i);
+			expect(restored).toMatchObject({ x: item.x, w: item.w });
+			expect(restored?.y).toBeCloseTo(item.y, 9);
+			expect(restored?.h).toBeCloseTo(item.h, 9);
+		}
+		expectAligned(smaller, 14);
+	});
+
+	it("resizes md market data height without changing the account table", () => {
+		const layout = cloneDefaultLayouts().md;
+		const marketData = layout.find((item) => item.i === "marketData");
+		if (!marketData) throw new Error("Missing market data");
+		const resized = resizeDesktopGridLayout(layout, { ...marketData, h: 25 }, 14);
+		expect(resized.find((item) => item.i === "marketData")?.h).toBe(25);
+		expect(resized.find((item) => item.i === "accountInfo")?.y).toBeCloseTo(45.6);
+		for (const item of layout.filter((item) => !["marketData", "accountInfo"].includes(item.i))) {
+			expect(resized.find((candidate) => candidate.i === item.i)).toEqual(item);
+		}
+		expectAligned(resized, 14);
+	});
+
+	it.each(["chart", "marketData", "tradingInterface", "accountInfo"])(
+		"moves every md column boundary when resizing %s width",
+		(id) => {
+			const layout = cloneDefaultLayouts().md;
+			const item = layout.find((item) => item.i === id);
+			if (!item) throw new Error("Missing resized item");
+			const geometry = id === "chart" ? { x: 0, w: 9 } : { x: 9, w: 5 };
+			const resized = resizeDesktopGridLayout(layout, { ...item, ...geometry }, 14);
+			expectStackedColumns(resized, 9);
+			expectAligned(resized, 14);
+			writeDesktopGridLayouts({ ...cloneDefaultLayouts(), md: resized });
+			const restored = readDesktopGridLayouts().md ?? [];
+			expect(restored).toEqual(resized);
+			expectAligned(restored, 14);
+		},
+	);
+
+	it.each([6, 12])("rejects the md chart width %s outside the shared column constraints", (w) => {
+		const layout = cloneDefaultLayouts().md;
+		const chart = layout.find((item) => item.i === "chart");
+		if (!chart) throw new Error("Missing chart");
+		const resized = resizeDesktopGridLayout(layout, { ...chart, w }, 14);
+		expect(resized).toBe(layout);
+		expectAligned(resized, 14);
+	});
+
+	it("preserves the md shared boundary when resizing the favorite toolbar height", () => {
+		const layout = cloneDefaultLayouts().md;
+		const favorites = layout.find((item) => item.i === "favoriteCoins");
+		if (!favorites) throw new Error("Missing favorites");
+		const resized = resizeDesktopGridLayout(layout, { ...favorites, h: 2 }, 14);
+		expect(resized.find((item) => item.i === "favoriteCoins")?.h).toBe(2);
+		expect(resized.find((item) => item.i === "coinInfo")?.y).toBe(2);
+		expect(resized.find((item) => item.i === "chart")?.y).toBe(3.4);
+		expect(resized.find((item) => item.i === "tradingInterface")?.h).toBe(20.6);
+		expect(resized.find((item) => item.i === "accountTable")?.y).toBe(20.6);
+		expectAligned(resized, 14);
 	});
 });
 
@@ -372,15 +471,38 @@ function cloneDefaultLayouts() {
 	};
 }
 
-function expectAligned(layout: ReadonlyArray<{ i: string; y: number; h: number }>) {
+function spanHeight(rows: number): number {
+	return rows * DESKTOP_GRID_ROW_HEIGHT_PX + (rows - 1) * DESKTOP_GRID_GAP_PX;
+}
+
+function expectStackedColumns(layout: ReadonlyArray<{ i: string; x: number; w: number }>, boundary: number) {
+	for (const item of layout) {
+		if (["favoriteCoins", "coinInfo", "chart", "accountTable"].includes(item.i)) {
+			expect(item).toMatchObject({ x: 0, w: boundary });
+		} else {
+			expect(item).toMatchObject({ x: boundary, w: DESKTOP_GRID_COLS.md - boundary });
+		}
+	}
+}
+
+function expectAligned(layout: ReadonlyArray<{ i: string; y: number; h: number }>, cols: number) {
 	const chart = layout.find((item) => item.i === "chart");
 	const upperBottom = (chart?.y ?? 0) + (chart?.h ?? 0);
+	const table = layout.find((item) => item.i === "accountTable");
+	const account = layout.find((item) => item.i === "accountInfo");
+	if (cols === DESKTOP_GRID_COLS.md) {
+		const trading = layout.find((item) => item.i === "tradingInterface");
+		const marketData = layout.find((item) => item.i === "marketData");
+		expect((trading?.y ?? 0) + (trading?.h ?? 0)).toBeCloseTo(upperBottom);
+		expect(table?.y).toBeCloseTo(upperBottom);
+		expect(marketData?.y).toBeCloseTo(upperBottom);
+		expect(account?.y).toBeCloseTo((marketData?.y ?? 0) + (marketData?.h ?? 0));
+		return;
+	}
 	for (const id of ["marketData", "tradingInterface"]) {
 		const item = layout.find((candidate) => candidate.i === id);
 		expect((item?.y ?? 0) + (item?.h ?? 0)).toBeCloseTo(upperBottom);
 	}
-	const table = layout.find((item) => item.i === "accountTable");
-	const account = layout.find((item) => item.i === "accountInfo");
 	expect(table?.y).toBeCloseTo(upperBottom);
 	expect(account?.y).toBeCloseTo(upperBottom);
 	expect(table?.h).toBe(account?.h);

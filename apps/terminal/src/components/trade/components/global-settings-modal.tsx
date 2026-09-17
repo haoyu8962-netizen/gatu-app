@@ -17,6 +17,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { resetDesktopGridLayouts } from "@/config/desktop-grid-layout";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useEmailWalletExport } from "@/hooks/wallet/use-email-wallet-export";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
 	readPositionMarketCloseConfirmationPreference,
@@ -36,6 +37,7 @@ export function GlobalSettingsModal() {
 	const open = useSettingsDialogOpen();
 	const { close } = useSettingsDialogActions();
 	const { t } = useLingui();
+	const walletExport = useEmailWalletExport();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const animateOrderbook = useAnimateOrderbook();
@@ -205,6 +207,20 @@ export function GlobalSettingsModal() {
 						</SettingRow>
 					</SettingsGroup>
 
+					{walletExport.visible && (
+						<SettingsGroup label={t`Wallet`}>
+							<p className="text-xs text-fg-muted">{t`Export your email wallet to use it in another wallet app. Never share your private key.`}</p>
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="xs"
+								disabled={!walletExport.canExport}
+								onClick={() => void walletExport.exportEmailWallet(close)}
+							>
+								{t`Export email wallet`}
+							</Button>
+						</SettingsGroup>
+					)}
 					<SettingsGroup label={t`Network`}>
 						<SettingRow label={t`Environment`} hint={t`Page reloads when changed`}>
 							<SegmentedControls

@@ -9,7 +9,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { cn } from "@/lib/cn";
+import { TradeSliderView } from "./trade-slider-view";
 
 export interface TradeSliderCommitDetails {
 	reason: "drag" | "track-press" | "keyboard" | "input-change";
@@ -326,88 +326,50 @@ export function TradeSlider(props: Props) {
 	useBrowserLayoutEffect(() => () => disposeRef.current?.(), []);
 
 	return (
-		<div
+		<TradeSliderView
 			dir={direction}
-			data-base-ui-swipe-ignore=""
-			className={cn("w-full select-none", unavailable && "cursor-not-allowed opacity-40", className)}
-		>
-			<label htmlFor={inputId} className="sr-only">
-				{ariaLabel}
-			</label>
-			<div
-				ref={controlRef}
-				data-trade-slider-control=""
-				className="group/slider relative h-[33px] w-full touch-none cursor-pointer"
-				onPointerDown={handlePointerDown}
-				onPointerMove={(event) => {
+			className={className}
+			unavailable={unavailable}
+			inputId={inputId}
+			ariaLabel={ariaLabel}
+			showTicks={showTicks}
+			ticks={TICKS}
+			progress={initialProgress.current}
+			rtl={initialRtl.current}
+			controlRef={controlRef}
+			indicatorRef={indicatorRef}
+			ticksRef={ticksRef}
+			thumbRef={thumbRef}
+			inputRef={inputRef}
+			controlProps={{
+				onPointerDown: handlePointerDown,
+				onPointerMove: (event) => {
 					const session = dragRef.current;
 					if (!session || session.pointerId !== event.pointerId || event.isPrimary === false) return;
 					session.didMove ||= event.clientX !== session.clientX;
 					schedule(session, event.clientX);
-				}}
-				onPointerUp={(event) => finish(event.pointerId, true, event.nativeEvent, event.clientX)}
-				onPointerCancel={(event) => finish(event.pointerId, false)}
-				onLostPointerCapture={(event) => finish(event.pointerId, false)}
-			>
-				<div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-trading-panel-stroke-card">
-					<div
-						ref={indicatorRef}
-						style={{
-							transform: `scaleX(${initialProgress.current})`,
-							transformOrigin: initialRtl.current ? "right center" : "left center",
-						}}
-						className="absolute inset-0 origin-left rounded-full bg-trading-panel-control/25"
-					/>
-				</div>
-				{showTicks && (
-					<div ref={ticksRef} aria-hidden="true" className="pointer-events-none absolute inset-0">
-						{TICKS.map((percent) => (
-							<span
-								key={percent}
-								data-percent={percent}
-								data-active={percent <= initialProgress.current * 100}
-								style={{ insetInlineStart: `clamp(4px, ${percent}%, calc(100% - 4px))` }}
-								className="absolute top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-trading-panel-stroke-input data-[active=true]:bg-trading-panel-control rtl:translate-x-1/2"
-							/>
-						))}
-					</div>
-				)}
-				<div
-					ref={thumbRef}
-					data-trade-slider-thumb=""
-					style={{
-						left: `clamp(9px, ${(initialRtl.current ? 1 - initialProgress.current : initialProgress.current) * 100}%, calc(100% - 9px))`,
-						transform: "translate3d(-50%, -50%, 0)",
-					}}
-					className="absolute top-1/2 size-[18px] rounded-full border-2 border-trading-panel-control bg-trading-panel-slider-thumb after:pointer-events-none after:absolute after:inset-0 after:rounded-full after:bg-trading-panel-slider-thumb after:content-[''] before:absolute before:-inset-[13px] before:content-[''] has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-stroke-focus"
-				>
-					<span
-						aria-hidden="true"
-						className="pointer-events-none absolute -inset-px rounded-full bg-trading-panel-control/30 transition-transform duration-200 ease-in-out group-hover/slider:scale-[1.7] group-data-[dragging=true]/slider:scale-[2.2] motion-reduce:transition-none motion-reduce:!scale-100"
-					/>
-					<input
-						ref={inputRef}
-						id={inputId}
-						type="range"
-						min={Number.isFinite(min) ? min : 0}
-						max={Number.isFinite(max) ? Math.max(Number.isFinite(min) ? min : 0, max) : Number.isFinite(min) ? min : 0}
-						step={1}
-						defaultValue={Math.round(clamp(value, min, max))}
-						disabled={unavailable}
-						aria-valuetext={ariaValueText}
-						aria-describedby={ariaDescribedBy}
-						aria-invalid={ariaInvalid || undefined}
-						onKeyDown={handleKeyDown}
-						onInput={handleNativeInput}
-						onBlur={() => {
-							keyboardIntentRef.current = null;
-							updateNativeValue(value);
-							if (dragRef.current) finish(dragRef.current.pointerId, false);
-						}}
-						className="absolute -inset-[13px] size-11 opacity-0"
-					/>
-				</div>
-			</div>
-		</div>
+				},
+				onPointerUp: (event) => finish(event.pointerId, true, event.nativeEvent, event.clientX),
+				onPointerCancel: (event) => finish(event.pointerId, false),
+				onLostPointerCapture: (event) => finish(event.pointerId, false),
+			}}
+			inputProps={{
+				min: Number.isFinite(min) ? min : 0,
+				max: Number.isFinite(max) ? Math.max(Number.isFinite(min) ? min : 0, max) : Number.isFinite(min) ? min : 0,
+				step: 1,
+				defaultValue: Math.round(clamp(value, min, max)),
+				disabled: unavailable,
+				"aria-valuetext": ariaValueText,
+				"aria-describedby": ariaDescribedBy,
+				"aria-invalid": ariaInvalid || undefined,
+				onKeyDown: handleKeyDown,
+				onInput: handleNativeInput,
+				onBlur: () => {
+					keyboardIntentRef.current = null;
+					updateNativeValue(value);
+					if (dragRef.current) finish(dragRef.current.pointerId, false);
+				},
+			}}
+		/>
 	);
 }

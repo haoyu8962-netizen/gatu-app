@@ -1,7 +1,8 @@
 import { Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { MARKET_HEADER_LABELS } from "@/config/market-header";
 import {
 	type FundingPeriodRates,
 	get24hChange,
@@ -18,7 +19,9 @@ import {
 } from "@/domain/trade/market-price";
 import { useMarketPriceFlash } from "@/hooks/trade/use-market-price-flash";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useFontsReady } from "@/hooks/ui/use-fonts-ready";
 import { cn } from "@/lib/cn";
+import { MARKET_CLOSE_FONT_SPECS } from "@/lib/fonts/font-readiness";
 import {
 	formatClockDuration,
 	formatNumber,
@@ -40,32 +43,9 @@ import {
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { type Numeric, toBig } from "@/lib/trade/numbers";
 import { getTradePriceDecimals } from "@/lib/trade/trades";
-import { StatBlock } from "./chart/stat-block";
+import { MarketOverviewView } from "./market-overview-view";
 
 const HOUR_MS = 3_600_000;
-
-type MarketOverviewStatId =
-	| "price"
-	| "oracle"
-	| "change24h"
-	| "volume24h"
-	| "openInterest"
-	| "funding"
-	| "marketCap"
-	| "contract";
-
-const MARKET_OVERVIEW_STAT_WIDTH_CLASS: Record<MarketOverviewStatId, string> = {
-	price: "min-w-[90px]",
-	oracle: "min-w-[90px]",
-	change24h: "min-w-[170px]",
-	volume24h: "min-w-[136px]",
-	openInterest: "min-w-[136px]",
-	funding: "min-w-[128px]",
-	marketCap: "min-w-[136px]",
-	contract: "min-w-[112px]",
-};
-
-const KEYBOARD_SCROLL_REGION_PROPS = { tabIndex: 0 } as const;
 
 function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates; remaining: number }) {
 	const { t } = useLingui();
@@ -79,7 +59,7 @@ function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates
 	return (
 		<div className="min-w-[9rem] space-y-2 font-market-close">
 			<div className="flex items-center justify-between gap-4">
-				<span className="text-2xs uppercase tracking-wide text-fg-muted">{t`Resets in`}</span>
+				<span className="text-2xs uppercase tracking-wide text-fg-muted">{t(MARKET_HEADER_LABELS.resetsIn)}</span>
 				<span className="font-mono text-xs tabular-nums text-fg">{formatClockDuration(remaining)}</span>
 			</div>
 			<div className="border-t border-stroke-weak pt-2 space-y-1.5">
@@ -96,7 +76,7 @@ function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates
 	);
 }
 
-function FundingStatBlock({ fundingRate }: { fundingRate: string | null }) {
+function useFundingStat(fundingRate: string | null) {
 	const { t } = useLingui();
 	useNumberFormatRevision();
 	const [remaining, setRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
@@ -113,39 +93,38 @@ function FundingStatBlock({ fundingRate }: { fundingRate: string | null }) {
 
 	const block = (
 		<span>
-			<StatBlock
-				label={
-					<>
-						{t`FUNDING`} / {t`Resets in`}
-					</>
-				}
-				labelClass="cursor-help border-b border-dashed border-trading-panel-stroke-control"
-				value={
-					fundingRate === null ? (
-						"—"
-					) : (
-						<>
-							<span className={getMarketValueColorClass(fundingRate)}>
-								{formatPercent(fundingRate, {
-									minimumFractionDigits: 4,
-									signDisplay: "exceptZero",
-								})}
-							</span>
-							<span className="ms-1 text-trading-panel-fg">{formatClockDuration(remaining)}</span>
-						</>
-					)
-				}
-			/>
+			{fundingRate === null ? (
+				"—"
+			) : (
+				<>
+					<span className={getMarketValueColorClass(fundingRate)}>
+						{formatPercent(fundingRate, { minimumFractionDigits: 4, signDisplay: "exceptZero" })}
+					</span>
+					<span className="ms-1 text-trading-panel-fg">{formatClockDuration(remaining)}</span>
+				</>
+			)}
 		</span>
 	);
 
-	if (!periodRates) return block;
-
-	return (
-		<Tooltip content={<FundingTooltipContent rates={periodRates} remaining={remaining} />} side="bottom">
-			{block}
-		</Tooltip>
+	const label = (
+		<span>
+			{t(MARKET_HEADER_LABELS.funding)} / {t(MARKET_HEADER_LABELS.resetsIn)}
+		</span>
 	);
+	if (!periodRates) return { label, value: block };
+	const content = <FundingTooltipContent rates={periodRates} remaining={remaining} />;
+	return {
+		label: (
+			<Tooltip content={content} side="bottom">
+				{label}
+			</Tooltip>
+		),
+		value: (
+			<Tooltip content={content} side="bottom">
+				{block}
+			</Tooltip>
+		),
+	};
 }
 
 function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | null {
@@ -172,6 +151,7 @@ export function MarketOverview() {
 	const { getMarketByName } = useMarketsInfo();
 	const isSpot = selectedMarketInfo?.kind === "spot";
 	const { copiedValue: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
+	const marketCloseFontReady = useFontsReady(MARKET_CLOSE_FONT_SPECS);
 
 	const perpCoin = getMarketApiCoin(selectedMarketInfo);
 	const spotCoin = getSpotMarketApiCoin(selectedMarketInfo);
@@ -271,6 +251,7 @@ export function MarketOverview() {
 	const prevDayForChange = liveCtx?.prevDayPx;
 
 	const fundingRate = toBig(funding)?.toString() ?? null;
+	const fundingStat = useFundingStat(isSpot ? null : fundingRate);
 	const change24h = get24hChange(prevDayForChange, displayPrice);
 	const priceChange24h = get24hPriceChange(prevDayForChange, displayPrice);
 	const oiUsd = getOiUsd(openInterest, markPx);
@@ -313,99 +294,80 @@ export function MarketOverview() {
 					maximumFractionDigits: 0,
 				})
 			: "—";
-	function renderStat(id: MarketOverviewStatId, content: ReactNode) {
-		return (
-			<div key={id} data-market-stat={id} className={cn("shrink-0", MARKET_OVERVIEW_STAT_WIDTH_CLASS[id])}>
-				{content}
-			</div>
-		);
-	}
-
+	const stats = [
+		{
+			id: "price",
+			label: t(isSpot ? MARKET_HEADER_LABELS.price : MARKET_HEADER_LABELS.mark),
+			value: (
+				<span
+					key={priceFlash.sequence}
+					data-direction={priceFlash.direction ?? undefined}
+					data-price-source={priceSource ?? undefined}
+					data-slot="market-overview-price-value"
+					className={cn(priceFlash.direction && "use-color-change")}
+				>
+					{priceText}
+				</span>
+			),
+			valueClass: "text-trading-panel-fg",
+		},
+		...(!isSpot
+			? [
+					{
+						id: "oracle",
+						label: t(MARKET_HEADER_LABELS.oracle),
+						value: formatMarketHeaderPrice(oraclePx, priceDecimals),
+					},
+				]
+			: []),
+		{
+			id: "change24h",
+			label: t(MARKET_HEADER_LABELS.change24h),
+			value: changeText,
+			valueClass: change24h === null ? "text-trading-panel-subtle" : getMarketValueColorClass(change24h),
+		},
+		{
+			id: "volume24h",
+			label: t(MARKET_HEADER_LABELS.volume24h),
+			value: isSpot ? spotVolumeText : formatUSD(dayNtlVlm, { compact: false }),
+		},
+		...(!isSpot
+			? [
+					{
+						id: "openInterest",
+						label: t(MARKET_HEADER_LABELS.openInterest),
+						value: formatUSD(oiUsd, { compact: false }),
+					},
+					{
+						id: "funding",
+						label: fundingStat.label,
+						labelClass: "cursor-help border-b border-dashed border-trading-panel-stroke-control",
+						value: fundingStat.value,
+					},
+				]
+			: [
+					{ id: "marketCap", label: t(MARKET_HEADER_LABELS.marketCap), value: spotMarketCapText },
+					{
+						id: "contract",
+						label: t(MARKET_HEADER_LABELS.contract),
+						value: createSpotTokenContractValue(
+							spotTokenAddress,
+							copiedSpotTokenAddress === spotTokenAddress,
+							copySpotTokenAddress,
+							{
+								copy: copiedSpotTokenAddress === spotTokenAddress ? t`Copied` : t`Copy token address`,
+								open: t`Open token in explorer`,
+							},
+						),
+					},
+				]),
+	];
 	return (
-		<section
-			data-market-overview=""
-			aria-label={selectedMarketInfo?.pairName ?? t`Price`}
-			{...KEYBOARD_SCROLL_REGION_PROPS}
-			className="relative w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain font-market-close text-[13px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-stroke-focus [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-		>
-			<div data-market-overview-row="" className="relative flex w-max min-w-full items-center gap-6">
-				{renderStat(
-					"price",
-					<StatBlock
-						label={isSpot ? t`Price` : t`Mark`}
-						value={
-							<span
-								key={priceFlash.sequence}
-								data-direction={priceFlash.direction ?? undefined}
-								data-price-source={priceSource ?? undefined}
-								data-slot="market-overview-price-value"
-								className={cn(priceFlash.direction && "use-color-change")}
-							>
-								{priceText}
-							</span>
-						}
-						valueClass="text-trading-panel-fg"
-					/>,
-				)}
-				{!isSpot && (
-					<>
-						{renderStat(
-							"oracle",
-							<StatBlock label={t`ORACLE`} value={formatMarketHeaderPrice(oraclePx, priceDecimals)} />,
-						)}
-						{renderStat(
-							"change24h",
-							<StatBlock
-								label={t({ message: "24h Change", context: "Market overview" })}
-								value={changeText}
-								valueClass={change24h === null ? "text-trading-panel-subtle" : getMarketValueColorClass(change24h)}
-							/>,
-						)}
-						{renderStat(
-							"volume24h",
-							<StatBlock
-								label={t({ message: "24H VOL", context: "Market overview" })}
-								value={formatUSD(dayNtlVlm, { compact: false })}
-							/>,
-						)}
-						{renderStat("openInterest", <StatBlock label={t`OPEN INT`} value={formatUSD(oiUsd, { compact: false })} />)}
-						{renderStat("funding", <FundingStatBlock fundingRate={fundingRate} />)}
-					</>
-				)}
-				{isSpot && (
-					<>
-						{renderStat(
-							"change24h",
-							<StatBlock
-								label={t({ message: "24h Change", context: "Market overview" })}
-								value={changeText}
-								valueClass={change24h === null ? "text-trading-panel-subtle" : getMarketValueColorClass(change24h)}
-							/>,
-						)}
-						{renderStat(
-							"volume24h",
-							<StatBlock label={t({ message: "24H VOL", context: "Market overview" })} value={spotVolumeText} />,
-						)}
-						{renderStat("marketCap", <StatBlock label={t`Market Cap`} value={spotMarketCapText} />)}
-						{renderStat(
-							"contract",
-							<StatBlock
-								label={t`Contract`}
-								value={createSpotTokenContractValue(
-									spotTokenAddress,
-									copiedSpotTokenAddress === spotTokenAddress,
-									copySpotTokenAddress,
-									{
-										copy: copiedSpotTokenAddress === spotTokenAddress ? t`Copied` : t`Copy token address`,
-										open: t`Open token in explorer`,
-									},
-								)}
-							/>,
-						)}
-					</>
-				)}
-			</div>
-		</section>
+		<MarketOverviewView
+			stats={stats}
+			ariaLabel={selectedMarketInfo?.pairName ?? t(MARKET_HEADER_LABELS.price)}
+			pending={liveCtx === undefined || !marketCloseFontReady}
+		/>
 	);
 }
 

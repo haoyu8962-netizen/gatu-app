@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
+import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { getOrderActionStage } from "@/domain/trade/order-action-stage";
 import type { RegistrationStatus } from "@/lib/hyperliquid";
 import type { ButtonContent, FormValidationResult, Side } from "@/lib/trade/types";
@@ -58,7 +59,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 
 		if (stage === "connect") {
 			return {
-				text: t`Connect Wallet`,
+				text: t(DESKTOP_NAV_LABELS.wallet),
 				action: input.onConnectWallet,
 				disabled: false,
 				variant: "cyan",

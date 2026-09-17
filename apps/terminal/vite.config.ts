@@ -95,26 +95,40 @@ function createClientChunkGraphPlugin(): Plugin {
   }
 }
 
-export function createOrderSummaryChunksPlugin(): Plugin {
+function createPresentationChunksPlugin(name: string, modules: string[]): Plugin {
   return {
-    name: 'gatu-order-summary-chunks',
+    name,
     apply: 'build',
     applyToEnvironment: (environment) => environment.name === 'client',
     buildStart(options) {
       const entries = typeof options.input === 'string'
         ? [options.input]
         : Array.isArray(options.input) ? options.input : Object.values(options.input)
-      for (const name of ['twap-order-summary', 'scale-order-summary']) {
+      for (const module of modules) {
         this.emitFile({
           type: 'chunk',
-          id: fileURLToPath(new URL(`./src/components/trade/tradebox/${name}.tsx`, import.meta.url)),
-          name,
+          id: fileURLToPath(new URL(`./src/components/trade/${module}.tsx`, import.meta.url)),
+          name: module.split('/').at(-1),
           preserveSignature: 'strict',
           implicitlyLoadedAfterOneOf: entries,
         })
       }
     },
   }
+}
+
+export function createOrderSummaryChunksPlugin(): Plugin {
+  return createPresentationChunksPlugin('gatu-order-summary-chunks', [
+    'tradebox/twap-order-summary',
+    'tradebox/scale-order-summary',
+  ])
+}
+
+export function createTerminalViewChunksPlugin(): Plugin {
+  return createPresentationChunksPlugin('gatu-terminal-view-chunks', [
+    'mobile/mobile-book-chrome-view',
+    'market-overview-view',
+  ])
 }
 
 const buildSha = resolveBuildSha()
@@ -297,8 +311,9 @@ const config = defineConfig({
     createReferralJoinDevRequestGuard(),
     createClientChunkGraphPlugin(),
     createOrderSummaryChunksPlugin(),
+    createTerminalViewChunksPlugin(),
     nitro({
-      compressPublicAssets: true,
+      compressPublicAssets: false,
       publicAssets: [
         {
           dir: './public/charting_library',

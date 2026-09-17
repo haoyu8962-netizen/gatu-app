@@ -41,13 +41,17 @@
 | `distribution-config.mjs` | 生成 DistributionConfig：S3 源（OAC）+ Lambda 源（OAC），`/api/leaderboard` 走 Lambda 但按源的 `s-maxage` 在边缘缓存（缓存策略 `gatu-terminal-api-cached`，按完整查询串区分），其余 `/api/*`、`/client-error-report`、`/mobile-agent-sync-ticket*` 走 Lambda 且不缓存，`/join*` 不缓存，所有静态行为挂 viewer-response 函数（CSP），导航行为再挂 viewer-request 函数，图表/资源路径 CachingOptimized，交易路径挂 trade 策略，404 映射到 `/404.html`。不传 `--alias`/`--certificate-arn` 时使用默认 `*.cloudfront.net` 证书，供证书签发前先行验证；`--api-origin-request-policy-config` 输出 Lambda 源请求策略（白名单 9 个头，CloudFront 上限 10，转发 viewer 地址但不转发 Host） |
 | `deploy.mjs` | `functions`（把提交的 `terminal-response.js` 填入本次构建的内联脚本哈希与线上函数的现行集合后写到 `apps/terminal/.output/edge/terminal-response.js`，再从文件更新并发布两个 CloudFront Functions；没有构建产物或哈希为空时拒绝）、`sync`（按缓存策略分组 `aws s3 sync`，资源先、HTML 与 `build-meta.json` 后，从不 `--delete`；`--execute` 时先用 `get-function` 核对线上策略已含本次构建的全部内联脚本哈希，否则拒绝上传）、`reupload --only <前缀>`（缓存策略变化时用 `aws s3 cp` 强制重写已有对象的元数据，`sync` 会跳过内容未变的文件）；`sync` 结束时核对 S3 上 `_shell.html` 与 `build-meta.json` 的字节数与本地构建一致，中途停下的同步会直接报错、`invalidate`（`/*`）、`lambda`（zip + `update-function-code` + 等待）、`verify`（经公网检查壳与文档页与本地构建逐字节一致、CSP 与网络专属 preconnect、`build-meta.json` 一致、`/api/geo` 真实判定、带 `x-amz-content-sha256` 的同源 `POST /api/referral-geo` 返回决策、`/join` 头与标记、缺失文件 404、壳内预加载的图表入口线上 immutable、壳内 ≥ 20 个 `modulepreload` 且都在本地构建中并在线上 `immutable`、`/api/health` 204、壳二次请求边缘命中、图表 bundle immutable 且边缘命中、线上 7 页的内联脚本哈希都在对应策略头里（`report-only` 看 report-only 头；`enforce` 看强制头且 `script-src` 不含 `'unsafe-inline'`）、`img-src` 按 `cspImageSources` 所指的头不再放行任意 `https:`、testnet `noindex`） |
 
-缓存策略（`objectCacheControl`）：`assets/*`、`charting_library/bundles/*`（TradingView 文件名自带 20 位内容哈希）与构建发出的入口副本 `charting_library/charting_library.<16 位内容哈希>.js` `immutable` 一年；壳与文档页 `public, max-age=0, s-maxage=60, stale-while-revalidate=300`，浏览器每次条件请求，边缘缓存一分钟并在后台刷新，发布时的 `/*` 失效保证新版本立即可见；未哈希的 `charting_library.js`、`sameorigin.html`、主题样式重新验证；`build-meta.json` 与 `sw.js` `no-store`。2026-09-15 入口改为内容哈希命名后，旧的 immutable 对象要执行一次 `reupload --only charting_library/charting_library.js`（`aws s3 sync` 不会重写内容未变的元数据），`verify` 会检查它已回到重新验证。改动策略后对受影响前缀跑 `node deploy/cloudfront/deploy.mjs reupload --bucket gatu-terminal-2026 --only charting_library/bundles/ --only _shell.html --execute`，再失效。
+缓存策略（`objectCacheControl`）：`assets/*`、`charting_library/bundles/*`（TradingView 文件名自带 20 位内容哈希）与构建发出的入口副本 `charting_library/charting_library.<16 位内容哈希>.js` `immutable` 一年；壳与文档页 `public, max-age=0, s-maxage=60, stale-while-revalidate=300`，网络导航与 SW 后台刷新使用条件请求，边缘缓存一分钟并在后台刷新，发布时的 `/*` 失效清除边缘旧版本（浏览器 SW 缓存见下文）；未哈希的 `charting_library.js`、`sameorigin.html`、主题样式重新验证；`build-meta.json` 与 `sw.js` `no-store`。2026-09-15 入口改为内容哈希命名后，旧的 immutable 对象要执行一次 `reupload --only charting_library/charting_library.js`（`aws s3 sync` 不会重写内容未变的元数据），`verify` 会检查它已回到重新验证。改动策略后对受影响前缀跑 `node deploy/cloudfront/deploy.mjs reupload --bucket gatu-terminal-2026 --only charting_library/bundles/ --only _shell.html --execute`，再失效。
+
+2026-09-16 热访问补充（SW v9，代码实现不代表已发布）：同源 GET 导航由 Service Worker 使用 stale-while-revalidate。应用路径共用 `shell-v9` 缓存中的唯一条目，六个文档路径各按完整 URL 存入 `documents-v9`；`/join`、`/join/*`、文件扩展名与边缘服务端路径始终放行。只存未重定向的 200 `text/html`，完整保留 CSP 和其它响应头；命中直接返回，`event.waitUntil` 在后台获取并替换；未命中走网络。不启用 navigation preload，字体/图标策略不变。
+
+发布时 `/*` 失效只影响 CloudFront，不清浏览器 CacheStorage，因此第一条导航可能仍显示上一版壳。已核对 `deploy.mjs` 的 `buildSyncCommands` 不包含 `--delete`：旧壳引用的哈希资源继续留在 S3；`prepareResponseFunction` 配合 `terminal-response.template.js` 合并 CURRENT/PREVIOUS 的内联脚本哈希，保留上一版一个发布周期。SW 保存的旧 Response 还自带当时的 CSP（不与新正文/新头混用）。保持现有“发布函数 → 上传资源和页面 → 失效 → 验证”顺序；不要在同步时清理旧哈希资源。`sw.js` 仍在 `NO_STORE_FILES` 中（`no-store`），`routes/__root.tsx` 注册仍用 `updateViaCache: "none"`；有问题的 SW 可在下次访问时更新替换，新版本激活会清理退休缓存，但发现更新的当次导航可能仍由旧 SW 回答。上线后需验证连续导航、离线后恢复、跨版本首次导航与 iOS Safari；本次 Node harness 不替代这些验收。
 
 `pnpm test:cloudfront` 运行以上生成器、函数与部署脚本的 node 测试。
 
 ## 执行步骤
 
-1. **IAM 身份**：用 root 创建受限用户或角色，`aws configure --profile gatu-edge`，以下命令均加 `--profile gatu-edge`。
+1. **IAM 身份**（已完成，2026-09-13 建用户、2026-09-17 收紧策略）：IAM 用户 `gatu-edge` 挂载客户管理策略 `gatu-edge-deploy`，策略正文即仓库中的 [iam/gatu-edge-release-policy.json](iam/gatu-edge-release-policy.json)（只含两个桶的对象读写、三个分发的失效与配置更新、两个 CloudFront 函数的更新发布、`gatu-terminal-api*` 的代码更新与日志读取、ACM 只读）；改策略时以该文件 `aws iam create-policy-version --set-as-default` 应用。本机 `aws configure --profile gatu-edge` 使用该用户的密钥。`deploy.mjs` 默认以 `gatu-edge` profile 执行每条 `aws` 命令（`--profile <name>` 或 `AWS_PROFILE` 可覆盖），带 `--execute` 时先 `sts get-caller-identity`，身份为账号 root 时拒绝发布。账号 root 的访问密钥已于 2026-09-17 停用。
 2. **证书（us-east-1）**：
    ```bash
    aws acm request-certificate --region us-east-1 --validation-method DNS \
@@ -101,8 +105,8 @@
    ```
 8b. **挂别名与证书**（证书 `ISSUED` 之后、切 DNS 之前，顺序不能颠倒——2026-09-15 曾先切 DNS，用户在这段时间里看到的是证书不匹配错误）：`node deploy/cloudfront/deploy.mjs aliases --distribution <mainnet-id> --alias app.gatu.ai --certificate-arn <arn> --execute`，测试网同理；命令读取现行配置、只改 `Aliases` 与 `ViewerCertificate`（`sni-only`、`TLSv1.2_2021`），`update-distribution` 后等待 `Deployed`（约 3–5 分钟）。
 9. **切换前验证**（分发 `Deployed` 后，DNS 未改）：用 `curl --resolve app.gatu.ai:443:<分发 IP>` 逐项检查，或临时把本机 hosts 指向分发后运行 `node deploy/cloudfront/deploy.mjs verify --origin https://app.gatu.ai --network mainnet`。特别确认畸形 `/join/%` 的响应状态，以及 `/api/geo` 在真实公网 IP 下返回 200。
-10. **切换 DNS**：Cloudflare 把 `app.gatu.ai`、`testnet.gatu.ai` 改为 CNAME 到各自分发（DNS-only）。回滚只需改回 EC2 的 A 记录，EC2 在确认稳定前保留。
-11. **退役 EC2**：连续观察一个发布周期后停掉 `gatu.service` 与 Caddy，`deploy/deploy.sh` 及其 Caddy/systemd 文件转为历史资料。
+10. **切换 DNS**（已完成，2026-09-15）：Cloudflare 把 `app.gatu.ai`、`testnet.gatu.ai` 改为 CNAME 到各自分发（DNS-only）。
+11. **退役 EC2**（已完成，2026-09-17）：发布 p21 后由用户停机 `i-058ca09d0533fc11d`；`deploy/deploy.sh` 及其 Caddy/systemd 文件转为历史资料，CI 不再校验 Caddyfile。回滚不再有 EC2 路径：以上一提交重新 `pnpm build` 后 `sync` + `invalidate`，或用 S3 桶版本恢复壳与文档页。
 
 ## 日常发布
 
@@ -119,7 +123,7 @@ node deploy/cloudfront/deploy.mjs verify --origin https://testnet.gatu.ai --netw
 
 顺序说明：CloudFront 函数最先发布，因为新页面的内联脚本哈希必须先进入线上策略（`sync` 会核对，见 4c），失效完成前的旧页面由函数里保留的上一版集合覆盖；Lambda 先于静态文件更新，因为新壳可能依赖新的 API 行为；`sync` 从不删除旧对象，正在打开旧壳的浏览器仍能取到旧资源；`invalidate` 用 `/*` 是为了让 `no-cache` 的壳与文档页立即刷新，资源本身是内容哈希不受影响。
 
-## 与 EC2 部署的差异
+## 与已退役 EC2 部署的差异
 
 - 移动配对票据依赖单进程内存做原子消费，无服务器版本返回 503；启用该功能前需要 DynamoDB 条件写实现，`build-meta.json` 的 `mobileSync.store` 届时改为对应值。
 - `verify_geo_provider` 的等价检查是 `deploy.mjs verify` 的 geo 项：它从执行机的公网 IP 发起，要求 200 与两位国家码。

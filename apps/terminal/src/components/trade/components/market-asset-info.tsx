@@ -22,6 +22,7 @@ import { getExplorerTokenUrl, type UnifiedMarketInfo, useInfo } from "@/lib/hype
 import { isTestnet } from "@/lib/network";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { AssetDisplay } from "./asset-display";
+import { AssetIconSlotView } from "./asset-icon-slot-view";
 
 const ANNOTATION_STALE_TIME_MS = 30 * 60 * 1_000;
 const ANNOTATION_GC_TIME_MS = 60 * 60 * 1_000;
@@ -272,7 +273,7 @@ export function MarketAssetInfo({ market }: Props) {
 	const assetIcon = <AssetDisplay coin={market.name} iconUrl={market.iconUrl} hideName iconClassName="size-5" />;
 
 	if (!canOpen) {
-		return <span className="inline-flex size-8 shrink-0 items-center justify-center">{assetIcon}</span>;
+		return <AssetIconSlotView icon={assetIcon} interactive={false} aria-label={market.pairName ?? market.name} />;
 	}
 
 	return (
@@ -286,16 +287,14 @@ export function MarketAssetInfo({ market }: Props) {
 				arrow={false}
 				className="px-2.5 py-1.5 text-2xs"
 			>
-				<button
-					type="button"
+				<AssetIconSlotView
+					icon={assetIcon}
+					interactive
 					aria-haspopup="dialog"
 					aria-expanded={open}
 					aria-label={t`View asset information`}
 					onClick={() => setOpen(true)}
-					className="inline-flex size-8 shrink-0 items-center justify-center rounded-8 text-fg transition-colors duration-150 hover:bg-fill-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
-				>
-					{assetIcon}
-				</button>
+				/>
 			</Tooltip>
 
 			<AdaptiveModal

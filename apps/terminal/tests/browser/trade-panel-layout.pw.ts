@@ -78,7 +78,7 @@ for (const width of [1001, 1238, 1740]) {
 		await expect(page.getByText("Fees", { exact: true })).toBeVisible();
 		await expectFooterAtBottom(page);
 		const initial = await geometry(page);
-		const savedLayout = await page.evaluate(() => localStorage.getItem("trade-desktop-grid-layout-v11"));
+		const savedLayout = await page.evaluate(() => localStorage.getItem("trade-desktop-grid-layout-v12"));
 		const lastField = await page.getByRole("textbox", { name: "Last field", exact: true }).elementHandle();
 		for (const mode of ["limit", "market", "limit", "tall", "market", "limit"]) {
 			await page.getByRole("button", { name: mode, exact: true }).click();
@@ -96,7 +96,7 @@ for (const width of [1001, 1238, 1740]) {
 		await expectFooterAtBottom(page);
 		await page.getByRole("button", { name: "Connect Wallet", exact: true }).click();
 		await expect(page.getByRole("status", { name: "Connection requests" })).toHaveText("1");
-		expect(await page.evaluate(() => localStorage.getItem("trade-desktop-grid-layout-v11"))).toBe(savedLayout);
+		expect(await page.evaluate(() => localStorage.getItem("trade-desktop-grid-layout-v12"))).toBe(savedLayout);
 	});
 }
 

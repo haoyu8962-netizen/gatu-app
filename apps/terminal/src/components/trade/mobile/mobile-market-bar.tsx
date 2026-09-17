@@ -1,13 +1,13 @@
 import { useLingui } from "@lingui/react/macro";
-import { ArrowSquareOutIcon, CaretDownIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { MARKET_HEADER_LABELS } from "@/config/market-header";
 import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { getSpotAssetSocials, hasSpotSocialLinks, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
-import { cn } from "@/lib/cn";
 import {
 	formatClockDuration,
 	formatNumber,
@@ -24,6 +24,7 @@ import { TokenSelector } from "../chart/token-selector";
 import { MarketAssetInfo } from "../components/market-asset-info";
 import { SpotMarketSocialIconLinks } from "../components/spot-market-social-links";
 import { useMobileMarketBarSnapshot } from "./mobile-market-bar-provider";
+import { MobileMarketBarView } from "./mobile-market-bar-view";
 
 const HOUR_MS = 3_600_000;
 const TOOLTIP_WIDTH_PX = 320;
@@ -114,75 +115,30 @@ export function MobileMarketBar({ className }: Props) {
 	});
 
 	return (
-		<div
-			className={cn(
-				"w-full max-w-full min-w-0 shrink-0 overflow-hidden border-b border-trading-panel-stroke-row bg-surface font-market-close text-trading-panel-fg",
-				className,
-			)}
-		>
-			<div className="min-w-0">
-				<div className="grid min-h-[61px] min-w-0 grid-cols-2 items-center gap-x-4 px-4 py-2.5 max-[360px]:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] max-[360px]:gap-x-1 max-[360px]:px-2.5">
-					<div className="flex min-w-0 items-center gap-0">
-						<div className="flex shrink-0 [&>span]:size-11 [&_button]:size-11 [&_.relative.inline-flex]:size-7">
-							<MarketAssetInfo key={market?.name} market={market} />
-						</div>
-						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} showAssetIcon={false} />
-					</div>
-
-					<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 overflow-visible max-[360px]:gap-1">
-						<div data-boneyard="market-price" className="min-w-0 text-start">
-							<div className="flex min-w-0 flex-col items-start">
-								<span
-									key={priceFlash.sequence}
-									data-direction={visiblePriceDirection ?? undefined}
-									className={cn(
-										"block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[18px] leading-[22px] font-bold text-trading-panel-fg tabular-nums max-[360px]:text-base max-[360px]:leading-5",
-										visiblePriceDirection && "use-color-change",
-									)}
-									title={priceText}
-								>
-									{priceText}
-								</span>
-								<div
-									className={cn(
-										"max-w-full whitespace-normal text-[11px] leading-[15px] font-semibold tabular-nums",
-										changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
-											? "invisible text-trading-panel-subtle"
-											: changeColorClass,
-									)}
-									title={`${changeAmountText} / ${changePercentText}`}
-								>
-									{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
-										? `${changeAmountText} / ${changePercentText}`
-										: "0.00 / 0.00%"}
-								</div>
-							</div>
-						</div>
-
-						<button
-							type="button"
-							onClick={() => setExpanded((value) => !value)}
-							className={cn(
-								"relative flex h-[30px] w-9 shrink-0 items-center justify-center rounded-[8px] border bg-transparent after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-trading-panel-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-								expanded
-									? "border-trading-panel-control text-trading-panel-fg"
-									: "border-trading-panel-stroke-input text-trading-panel-muted",
-							)}
-							aria-expanded={expanded}
-							aria-controls={detailsId}
-							aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
-						>
-							<CaretDownIcon
-								className={cn(
-									"size-3.5 transition-transform duration-200 ease-out motion-reduce:transition-none",
-									expanded && "rotate-180",
-								)}
-							/>
-						</button>
-					</div>
-				</div>
-
-				{expanded && (
+		<MobileMarketBarView
+			className={className}
+			asset={<MarketAssetInfo key={market?.name} market={market} />}
+			selector={<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} showAssetIcon={false} />}
+			priceSequence={priceFlash.sequence}
+			priceDirection={visiblePriceDirection}
+			priceText={priceText}
+			changeClassName={
+				changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
+					? "invisible text-trading-panel-subtle"
+					: changeColorClass
+			}
+			changeTitle={`${changeAmountText} / ${changePercentText}`}
+			changeText={
+				changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
+					? `${changeAmountText} / ${changePercentText}`
+					: "0.00 / 0.00%"
+			}
+			expanded={expanded}
+			detailsId={detailsId}
+			expandLabel={expanded ? t(MARKET_HEADER_LABELS.collapse) : t(MARKET_HEADER_LABELS.expand)}
+			onToggle={() => setExpanded((value) => !value)}
+			details={
+				expanded && (
 					<div id={detailsId} className="mx-4 border-t border-trading-panel-stroke-row">
 						{!isSpot && (
 							<>
@@ -190,24 +146,27 @@ export function MobileMarketBar({ className }: Props) {
 									<DetailCell
 										label={
 											<>
-												{t`Mark`}/{t`ORACLE`}
+												{t(MARKET_HEADER_LABELS.mark)}/{t(MARKET_HEADER_LABELS.oracle)}
 											</>
 										}
 										tooltipContent={t`Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details.`}
 										value={`${formatDisplayPrice(marketMarkPx, priceDecimals)} / ${formatDisplayPrice(oraclePx, priceDecimals)}`}
 									/>
-									<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
+									<DetailCell
+										label={t(MARKET_HEADER_LABELS.volume24h)}
+										value={formatUSD(dayNtlVlm, { compact: false })}
+									/>
 								</div>
 								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
 									<DetailCell
-										label={t`OPEN INT`}
+										label={t(MARKET_HEADER_LABELS.openInterest)}
 										tooltipContent={t`Two-sided open interest: the sum of long and short positions on this contract.`}
 										value={formatUSD(oiUsd, { compact: false })}
 									/>
 									<DetailCell
 										label={
 											<>
-												{t`FUNDING`}/{t`Resets in`}
+												{t(MARKET_HEADER_LABELS.funding)}/{t(MARKET_HEADER_LABELS.resetsIn)}
 											</>
 										}
 										tooltipContent={t`Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details.`}
@@ -233,11 +192,14 @@ export function MobileMarketBar({ className }: Props) {
 						{isSpot && (
 							<>
 								<div className="grid grid-cols-2 gap-x-4 py-2.5">
-									<DetailCell label={t`Price`} value={formatDisplayPrice(displayPrice, priceDecimals)} />
-									<DetailCell label={t`24H VOL`} value={spotVolumeText} />
+									<DetailCell
+										label={t(MARKET_HEADER_LABELS.price)}
+										value={formatDisplayPrice(displayPrice, priceDecimals)}
+									/>
+									<DetailCell label={t(MARKET_HEADER_LABELS.volume24h)} value={spotVolumeText} />
 								</div>
 								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
-									<DetailCell label={t`Market Cap`} value={spotMarketCapText} />
+									<DetailCell label={t(MARKET_HEADER_LABELS.marketCap)} value={spotMarketCapText} />
 									<DetailCell
 										label={t`More Info`}
 										value={createSpotTokenInfo(
@@ -255,9 +217,9 @@ export function MobileMarketBar({ className }: Props) {
 							</>
 						)}
 					</div>
-				)}
-			</div>
-		</div>
+				)
+			}
+		/>
 	);
 }
 

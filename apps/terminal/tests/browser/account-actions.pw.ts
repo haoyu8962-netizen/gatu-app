@@ -4,7 +4,7 @@ async function readGridGeometry(page: Page) {
 	return page.locator("[data-panel]").evaluateAll((panels) =>
 		panels.map((panel) => {
 			const { x, y, width, height } = panel.getBoundingClientRect();
-			return { name: panel.getAttribute("data-panel"), x, y, width, height };
+			return { name: panel.getAttribute("data-panel"), x: x + scrollX, y: y + scrollY, width, height };
 		}),
 	);
 }
@@ -28,12 +28,16 @@ async function expectTopActions(page: Page, locale: "en" | "zh") {
 				const section = element.querySelector("section");
 				const metrics = section?.closest("[data-grid-content-part]");
 				const table = document.querySelector('[data-panel="accountTable"]');
+				const book = document.querySelector('[data-panel="marketData"]');
 				const heading = element.querySelector("h2");
-				if (!buttons || buttons.length < 3 || !section || !metrics || !table || !heading) return ["missing regions"];
+				if (!buttons || buttons.length < 3 || !section || !metrics || !table || !book || !heading)
+					return ["missing regions"];
 				const [deposit, withdraw, transfer] = [...buttons].map((button) => button.getBoundingClientRect());
 				const metricRect = metrics.getBoundingClientRect();
 				const headingRect = heading.getBoundingClientRect();
 				const tableRect = table.getBoundingClientRect();
+				const bookRect = book.getBoundingClientRect();
+				const stacked = window.innerWidth <= 1420;
 				const errors: string[] = [];
 				if (Math.abs(deposit.y - withdraw.y) > 1) errors.push("primary actions not in one row");
 				if (Math.abs(deposit.width - withdraw.width) > 1) errors.push("primary action widths differ");
@@ -45,7 +49,9 @@ async function expectTopActions(page: Page, locale: "en" | "zh") {
 				if (Math.abs(section.getBoundingClientRect().top - metricRect.top - 13) > 1)
 					errors.push("divider bottom gap differs");
 				if (headingRect.width > 1 || headingRect.height > 1) errors.push("Account heading consumes visible height");
-				if (Math.abs(tableRect.y - panel.y) > 1 || Math.abs(tableRect.bottom - panel.bottom) > 1)
+				if (stacked && (Math.abs(panel.y - bookRect.bottom - 3) > 1 || Math.abs(tableRect.y - bookRect.y) > 1))
+					errors.push("account boundaries differ");
+				if (!stacked && (Math.abs(tableRect.y - panel.y) > 1 || Math.abs(tableRect.bottom - panel.bottom) > 1))
 					errors.push("account boundaries differ");
 				if (element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)
 					errors.push("panel overflows");

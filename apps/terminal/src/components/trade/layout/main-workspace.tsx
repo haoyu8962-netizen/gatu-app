@@ -4,15 +4,16 @@ import { MOBILE_BREAKPOINT_PX } from "@/config/layout";
 import { getSpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { createLazyComponent } from "@/lib/lazy";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { TokenSelector } from "../chart/token-selector";
 import { MarketAssetInfo } from "../components/market-asset-info";
 import { SpotMarketSocialLinks } from "../components/spot-market-social-links";
-import { FavoritesStrip } from "../header/favorites-strip";
+import { useFavoritesStripProps } from "../header/favorites-strip";
+import { FavoritesStripView } from "../header/favorites-strip-view";
 import { MarketOverview } from "../market-overview";
-import { DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
+import { MarketHeaderView } from "./market-header-view";
 import { useDesktopGridLayout } from "./use-desktop-grid-layout";
 
 const AccountPanel = createLazyComponent(() => import("../tradebox/account-panel"), "AccountPanel");
@@ -22,10 +23,12 @@ const PositionsPanel = createLazyComponent(() => import("../positions/positions-
 const TradePanel = createLazyComponent(() => import("../tradebox/trade-panel"), "TradePanel");
 
 // Resolved lazies render synchronously; a panel that suspends at boot makes React throttle the reveal.
-export function preloadMainWorkspacePanels(): void {
-	for (const panel of [AccountPanel, ChartPanel, OrderbookPanel, PositionsPanel, TradePanel]) void panel.preload?.();
-	void import("../chart/chart-panel").then((module) => module.preloadChartPanel()).catch(() => {});
-	void import("../positions/positions-panel").then((module) => module.preloadPositionsPanel()).catch(() => {});
+export function preloadMainWorkspacePanels(): Promise<void> {
+	return Promise.all([
+		preloadLazyComponents([AccountPanel, ChartPanel, OrderbookPanel, PositionsPanel, TradePanel]),
+		import("../chart/chart-panel").then((module) => module.preloadChartPanel()),
+		import("../positions/positions-panel").then((module) => module.preloadPositionsPanel()),
+	]).then(() => undefined);
 }
 
 const panelFallback = <div aria-hidden="true" className="h-full w-full bg-surface" />;
@@ -46,10 +49,6 @@ function preloadPrimaryWorkspacePanels() {
 
 preloadPrimaryWorkspacePanels();
 
-function DesktopWorkspaceSkeleton() {
-	return <DesktopGridLoadingSurface panelClassName="desktop-grid-panel bg-surface" />;
-}
-
 interface Props {
 	orderEntryDraftReady?: boolean;
 }
@@ -63,40 +62,34 @@ export function MainWorkspace({ orderEntryDraftReady = true }: Props) {
 	const navigateToMarket = useMarketNavigation();
 	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
 	const spotSocials = getSpotAssetSocials(selectedMarket);
+	const favoritesProps = useFavoritesStripProps();
 
 	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
 		navigateToMarket(marketName, nextMarket);
 	}
 
 	return (
-		<main ref={containerRef} data-main-workspace className="min-h-0 flex-1 bg-grid-container">
+		<main ref={containerRef} aria-busy={!mounted} data-main-workspace className="min-h-0 flex-1 bg-grid-container">
 			{mounted ? (
 				<Responsive className="desktop-terminal-grid" {...gridProps}>
-					<div
-						key="favoriteCoins"
-						className="desktop-grid-panel flex items-center overflow-hidden border-b border-stroke-weak bg-surface px-2"
-					>
-						<FavoritesStrip />
+					<div key="favoriteCoins" className="desktop-grid-panel overflow-hidden bg-surface">
+						<FavoritesStripView {...favoritesProps} />
 					</div>
-
-					<div
-						key="coinInfo"
-						className="desktop-grid-panel flex min-w-0 items-center overflow-hidden border-b border-trading-panel-stroke-row bg-surface px-4 font-market-close text-trading-panel-fg"
-					>
-						<div className="flex h-full shrink-0 items-center">
-							<div className="flex shrink-0 [&>span]:size-9 [&_button]:size-9 [&_.relative.inline-flex]:size-[26px]">
-								<MarketAssetInfo key={selectedMarket?.name} market={selectedMarket} />
-							</div>
-							<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} showAssetIcon={false} />
-						</div>
-						{spotSocials ? (
-							<div className="ms-6">
-								<SpotMarketSocialLinks socials={spotSocials} />
-							</div>
-						) : null}
-						<div className="ms-6 min-w-0 flex-1 overflow-hidden">
-							<MarketOverview key={marketKey} />
-						</div>
+					<div key="coinInfo" className="desktop-grid-panel overflow-hidden bg-surface">
+						<MarketHeaderView
+							head={
+								<>
+									<MarketAssetInfo key={selectedMarket?.name} market={selectedMarket} />
+									<TokenSelector
+										selectedMarket={selectedMarket}
+										onValueChange={handleMarketChange}
+										showAssetIcon={false}
+									/>
+								</>
+							}
+							socials={spotSocials ? <SpotMarketSocialLinks socials={spotSocials} /> : undefined}
+							overview={<MarketOverview key={marketKey} />}
+						/>
 					</div>
 
 					<div key="chart" className="desktop-grid-panel overflow-hidden bg-surface">
@@ -140,7 +133,7 @@ export function MainWorkspace({ orderEntryDraftReady = true }: Props) {
 					</div>
 				</Responsive>
 			) : (
-				<DesktopWorkspaceSkeleton />
+				<output className="sr-only">Loading GATU...</output>
 			)}
 		</main>
 	);

@@ -6,7 +6,83 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ## Unreleased
 
+### Changed
+
+- Desktop navigation keeps Vaults, Staking, Referrals and Leaderboard visible for disconnected
+  visitors down to 1101px, moves the Earn placeholder into More at compact widths, and drives the
+  More menu from one navigation configuration.
+
+### Fixed
+
+- Visitors without a stored Privy session now see `Connect Wallet` on the first rendered frame
+  instead of a brief `Connecting...`, dashboard pages resolve the account menu before revealing,
+  compact headers keep ENS names, the utilities menu has its own accessible name, and connected
+  headers no longer show duplicate theme, language and settings controls while the market loads.
+- The terminal no longer stays blank when the persisted locale and the startup fonts become
+  usable between its first render and its readiness effect, which reliably happened in
+  development builds where React runs effects twice.
+
+### Changed
+
+- Refreshing the trading terminal now reveals the page as soon as its first-render pieces
+  have loaded instead of about 300 ms later, on warm and cold loads alike.
+- Desktop widths from 1001px to 1420px now stack the trading panel above the order book and
+  account information in a wider right column, with the account table beneath the chart column,
+  matching the reference terminal. Saved desktop layouts for that breakpoint reset to the new
+  default; wider layouts are kept.
+- Removed startup skeletons: refresh now waits for the persisted locale, then shows real chrome and market content without route or language flashes.
+- The market header metric row now appears once with the first market snapshot instead of
+  reflowing from dashes to values, on refresh and on market switches.
+- Webfonts are now declared with `font-display: block`, and startup waits (bounded) for the
+  preloaded Inter and IBM Plex faces, so navigation, market names, badges and the market
+  metrics no longer shrink when the fonts arrive.
+
+- Dashboard startup now shares each page’s frame, responsive navigation and fixed
+  desktop footer, preserving route-specific canvas colors, widths and padding.
+
+- Mobile startup placeholders now share the six real mobile surfaces and terminal
+  frame, including route labels, persisted tabs and the disconnected order controls.
+
+- Desktop account startup placeholders now share the real tab header and disconnected
+  overview, including five formatted zero values and locale-aware runtime tabs.
+
+- Desktop order-entry startup placeholders now share the real panel header, default
+  field frames, action button and summary chrome, keeping their geometry stable as
+  the trading interface becomes ready.
+
+- Desktop order-book startup chrome now shares the real column headers, side
+  containers, grouping trigger and spread row, with matching tab-strip geometry.
+
+- Desktop startup placeholders now share the real top navigation, footer and outer
+  frame, including compact navigation, hidden Soon labels, footer dividers and an
+  invisible clock slot. The anonymous Connect Wallet button now has the same
+  144px minimum width as its connecting and loading states.
+
+- Desktop market headers and favorites now share their real display components with
+  startup placeholders. Unknown placeholder text now reserves typical value widths
+  invisibly, while runtime placeholders show known route names and market kinds
+  and select the matching favorite. Market statistics use title-case labels and content-sized
+  columns with 32px gaps to fit all six perpetual metrics at 1440px; horizontal
+  scrolling remains available at narrower widths. Mobile details use the same labels.
+
+### Performance
+
+- Warm terminal visits save the query cache synchronously after restore when the page
+  hides or leaves, and can seed a complete market catalog up to seven days old while
+  normal freshness checks refetch it. The general client cache still expires after 24 hours.
+- Service Worker v9 serves a shared application shell and separately cached document
+  pages immediately while refreshing them in the background. Referral and server routes
+  bypass this cache; the first navigation after a release may use the previous shell.
+- Navigation refreshes clone cacheable HTML before awaiting cache storage, so a page
+  consuming its first network response cannot prevent the shell from being saved.
+- Mobile startup defers the retained Markets view with React Activity while Trade
+  renders synchronously. Adaptive modals share a media query for their 768px breakpoint,
+  avoiding viewport-width layout reads even when closed.
+
 ### Added
+
+- Email wallet export in the account menu and Settings, with exact-owner checks;
+  compact layouts retain email identity, and Send identifies the Hyperliquid network.
 
 - Cumulative order-book depth tooltips for mouse, keyboard and touch selection,
   preserving ordinary click-to-fill and touch scrolling. See
@@ -120,6 +196,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
   startup.
 
 ### Fixed
+
+- The mobile startup placeholder now mirrors the real mobile terminal: the same
+  header controls, market bar, trade/book split, order-form frame, book chrome,
+  positions tab row and bottom nav, drawn from class constants the real
+  components also consume (`mobile-chrome-classes.ts`), so nothing moves when
+  the terminal mounts. It highlights Positions and Trade by default and stays
+  neutral for state it cannot know (side, market, values); the runtime loading
+  placeholder additionally uses the active locale and the saved tab selections.
 
 - The TradingView loader is served under a content-hashed file name
   (`charting_library.<hash>.js`) that the build emits and the shell preloads. The previous

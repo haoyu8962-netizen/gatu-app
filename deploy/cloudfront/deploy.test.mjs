@@ -6,6 +6,7 @@ import test from "node:test";
 import { cspHash } from "../../scripts/collect-inline-script-hashes.mjs";
 import { parseScriptHashes } from "./function-code.mjs";
 import {
+	assertReleaseIdentity,
 	assertReleaseMarkersUploaded,
 	buildFunctionUpdateCommands,
 	buildInvalidationCommand,
@@ -19,6 +20,7 @@ import {
 	planUpload,
 	prepareResponseFunction,
 	releaseFunctionPath,
+	resolveAwsProfile,
 	REVALIDATE_CACHE_CONTROL,
 	verifyDeployment,
 } from "./deploy.mjs";
@@ -277,4 +279,25 @@ test("a release fills the committed function with the build's hashes and keeps t
 	assert.deepEqual(parseScriptHashes(migrated.code), { current: [A], previous: [] });
 	assert.throws(() => prepareResponseFunction({ committedCode: committed, buildHashes: [] }), /no inline scripts/);
 	assert.ok(releaseFunctionPath("/repo/apps/terminal/.output/public").endsWith(join(".output", "edge", "terminal-response.js")));
+});
+
+test("every aws command runs as the release profile unless one is chosen explicitly", () => {
+	assert.equal(resolveAwsProfile({ env: {} }), "gatu-edge");
+	assert.equal(resolveAwsProfile({ env: { AWS_PROFILE: "ci-release" } }), "ci-release");
+	assert.equal(resolveAwsProfile({ profile: "other", env: { AWS_PROFILE: "ci-release" } }), "other");
+	assert.throws(() => resolveAwsProfile({ profile: "  ", env: {} }), /profile name/);
+});
+
+test("an executing release refuses the account root and unknown identities", () => {
+	assert.equal(
+		assertReleaseIdentity("arn:aws:iam::018252911946:user/gatu-edge"),
+		"arn:aws:iam::018252911946:user/gatu-edge",
+	);
+	assert.equal(
+		assertReleaseIdentity("arn:aws:sts::018252911946:assumed-role/release/ci"),
+		"arn:aws:sts::018252911946:assumed-role/release/ci",
+	);
+	assert.throws(() => assertReleaseIdentity("arn:aws:iam::018252911946:root"), /account root/);
+	assert.throws(() => assertReleaseIdentity(""), /caller identity/);
+	assert.throws(() => assertReleaseIdentity("arn:aws:iam::018252911946:group/ops"), /Unexpected/);
 });

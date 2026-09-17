@@ -2,12 +2,15 @@
 
 import { infoPersistedKey } from "@gatu/hl-react/query/info";
 import type { InfoClient, MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { dehydrate, hydrate, onlineManager, QueryClient } from "@tanstack/react-query";
+import { persistQueryClientRestore } from "@tanstack/react-query-persist-client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
-import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
+import { MARKET_CATALOG_SEED_MAX_AGE_MS, RQ_CACHE_MAX_AGE_MS } from "@/config/time";
 import {
 	bootstrapMarketCatalog,
+	seedPersistedMarketCatalog,
 	startMarketCatalogBootstrap,
 } from "@/lib/hyperliquid/markets/market-catalog-bootstrap";
 import {
@@ -15,6 +18,7 @@ import {
 	MARKET_CATALOG_DEXS_STALE_TIME_MS,
 	MARKET_CATALOG_META_STALE_TIME_MS,
 } from "@/lib/hyperliquid/markets/market-catalog-query";
+import { createQueryPersistenceCallbacks, createQueryPersistenceOptions } from "@/lib/query-persistence";
 
 const mocks = vi.hoisted(() => ({
 	getMarketCatalogInfoClient: vi.fn(),
@@ -134,6 +138,75 @@ describe("market catalog bootstrap", () => {
 		expect(info.perpDexs).not.toHaveBeenCalled();
 		expect(info.allPerpMetas).not.toHaveBeenCalled();
 		expect(queryClient.getQueryData(infoPersistedKey("spotMeta", undefined, "Mainnet"))).toEqual(QUERY_DATA.spotMeta);
+	});
+
+	it("seeds a catalog older than 24 hours but younger than 7 days, preserves stale timestamps and refetches", async () => {
+		const oldTimestamp = Date.now() - RQ_CACHE_MAX_AGE_MS - 1_000;
+		persistCatalog("Mainnet", QUERY_DATA, oldTimestamp);
+		const envelope = JSON.parse(localStorage.getItem(STORAGE_KEYS.RQ_CACHE) ?? "null");
+		envelope.timestamp = oldTimestamp;
+		localStorage.setItem(STORAGE_KEYS.RQ_CACHE, JSON.stringify(envelope));
+		const info = createInfoClient();
+		mocks.getMarketCatalogInfoClient.mockReturnValue(info);
+		const queryClient = new QueryClient();
+		const bootstrap = bootstrapMarketCatalog(queryClient);
+		const options = createMarketCatalogQueryOptions(info, "Mainnet");
+		for (const option of options) {
+			const query = queryClient.getQueryCache().find({ queryKey: option.queryKey });
+			expect(query?.state.dataUpdatedAt).toBe(oldTimestamp);
+			expect(query?.isStaleByTime(option.staleTime)).toBe(true);
+		}
+		expect(queryClient.getQueryData(options[0].queryKey)).toEqual(QUERY_DATA.spotMeta);
+		await bootstrap;
+		expect(info.spotMeta).toHaveBeenCalledTimes(1);
+		expect(info.perpDexs).toHaveBeenCalledTimes(1);
+		expect(info.allPerpMetas).toHaveBeenCalledTimes(1);
+		queryClient.clear();
+	});
+
+	it("keeps seeded data when the 24-hour provider restore removes the envelope and re-persists it on success", async () => {
+		vi.useFakeTimers();
+		const queryClient = new QueryClient();
+		try {
+			const oldTimestamp = Date.now() - RQ_CACHE_MAX_AGE_MS - 1_000;
+			persistCatalog("Mainnet", QUERY_DATA, oldTimestamp);
+			const envelope = JSON.parse(localStorage.getItem(STORAGE_KEYS.RQ_CACHE) ?? "null");
+			envelope.timestamp = oldTimestamp;
+			localStorage.setItem(STORAGE_KEYS.RQ_CACHE, JSON.stringify(envelope));
+			seedPersistedMarketCatalog(queryClient, "Mainnet");
+			const persister = createSyncStoragePersister({ storage: localStorage, key: STORAGE_KEYS.RQ_CACHE });
+			const options = createQueryPersistenceOptions(persister);
+			expect(options.maxAge).toBe(RQ_CACHE_MAX_AGE_MS);
+			await persistQueryClientRestore({ queryClient, ...options });
+			expect(localStorage.getItem(STORAGE_KEYS.RQ_CACHE)).toBeNull();
+			expect(queryClient.getQueryData(infoPersistedKey("spotMeta", undefined, "Mainnet"))).toEqual(QUERY_DATA.spotMeta);
+			await createQueryPersistenceCallbacks(queryClient, persister).onSuccess();
+			await vi.advanceTimersByTimeAsync(1000);
+			const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.RQ_CACHE) ?? "null");
+			expect(saved.timestamp).toBeGreaterThan(oldTimestamp);
+			expect(saved.clientState.queries).toHaveLength(3);
+			expect(
+				saved.clientState.queries.every(
+					(query: { state: { dataUpdatedAt: number } }) => query.state.dataUpdatedAt === oldTimestamp,
+				),
+			).toBe(true);
+		} finally {
+			queryClient.clear();
+			vi.useRealTimers();
+		}
+	});
+
+	it("removes a catalog older than 7 days without seeding it", () => {
+		const oldTimestamp = Date.now() - MARKET_CATALOG_SEED_MAX_AGE_MS - 1_000;
+		persistCatalog("Mainnet", QUERY_DATA, oldTimestamp);
+		const envelope = JSON.parse(localStorage.getItem(STORAGE_KEYS.RQ_CACHE) ?? "null");
+		envelope.timestamp = oldTimestamp;
+		localStorage.setItem(STORAGE_KEYS.RQ_CACHE, JSON.stringify(envelope));
+		const queryClient = new QueryClient();
+		seedPersistedMarketCatalog(queryClient, "Mainnet");
+		expect(localStorage.getItem(STORAGE_KEYS.RQ_CACHE)).toBeNull();
+		expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
+		queryClient.clear();
 	});
 
 	it("revalidates a fresh persisted catalog when its structure is incomplete", async () => {

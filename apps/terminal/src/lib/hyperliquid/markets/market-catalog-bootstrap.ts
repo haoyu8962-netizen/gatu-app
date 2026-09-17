@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
-import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
+import { MARKET_CATALOG_SEED_MAX_AGE_MS } from "@/config/time";
 import { getNetwork } from "@/lib/network";
 import {
 	createMarketCatalogQueryOptions,
@@ -23,7 +23,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
-function seedPersistedMarketCatalog(queryClient: QueryClient, env: HyperliquidEnv): void {
+export function seedPersistedMarketCatalog(queryClient: QueryClient, env: HyperliquidEnv): void {
+	if (typeof window === "undefined") return;
 	try {
 		const now = Date.now();
 		const serialized = window.localStorage.getItem(STORAGE_KEYS.RQ_CACHE);
@@ -36,7 +37,7 @@ function seedPersistedMarketCatalog(queryClient: QueryClient, env: HyperliquidEn
 			typeof timestamp !== "number" ||
 			!timestamp ||
 			timestamp > now + MARKET_CATALOG_DEXS_STALE_TIME_MS ||
-			now - timestamp > RQ_CACHE_MAX_AGE_MS ||
+			now - timestamp > MARKET_CATALOG_SEED_MAX_AGE_MS ||
 			persisted.buster !== RQ_CACHE_BUSTER ||
 			!isRecord(persisted.clientState) ||
 			!Array.isArray(persisted.clientState.queries)

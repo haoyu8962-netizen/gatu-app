@@ -2,6 +2,8 @@
 
 The desktop order-entry panel must show every ordinary order type in its default grid height without an internal scroll step. Shortened user layouts and unusually long action feedback may need local overflow, but the order-type header must remain visible and all fields, actions and summaries must remain reachable. Do not enlarge the chart, book or page when changing order type.
 
+The desktop header, default field frames, CTA and summary chrome retain their pure runtime views; startup placeholders have been removed under [ADR 0010](adr/0010-blank-until-ready-startup.md) and the [surface 4 migration record](work-memory/sessions/2026-09-16-trade-panel-view-migration.md).
+
 ## Reference and initial findings
 
 Inspected [Hyperliquid HYPE](https://app.hyperliquid.xyz/trade/HYPE) on 2026-09-08. At 2016×1358 its Scale panel stays 670px tall, with 33px inline fields and 8px spacing. Total Orders and Size Skew share one row. Its footer is 179px and shows Start Price, End Price, Order Value, Margin Required and Fees. Both order count and size skew remain in the form rather than being repeated in the footer.
@@ -53,7 +55,7 @@ The real MobileTradeView fixture has a separate sibling Vite dependency cache. C
 
 ## Validation feedback and combined form height
 
-At 1400×1330, the production Chinese Limit panel with empty size and newly opened TP/SL previously overflowed its field viewport by 5px; empty Scale overflowed by 15px. The immediate size error occupied a field row while the empty TP/SL or Scale error occupied the footer. The nested field and body scrollers could also compete in reduced user layouts. At the same viewport, the inspected Hyperliquid Limit/TP/SL form showed no immediate required-field errors and fitted its panel. Its right column was 396px wide versus GATU's 296px, so its dimensions are not interchangeable with this project's three-column grid.
+At 1400×1330, the production Chinese Limit panel with empty size and newly opened TP/SL previously overflowed its field viewport by 5px; empty Scale overflowed by 15px. The immediate size error occupied a field row while the empty TP/SL or Scale error occupied the footer. The nested field and body scrollers could also compete in reduced user layouts. At the same viewport, the inspected Hyperliquid Limit/TP/SL form showed no immediate required-field errors and fitted its panel. Its right column was 396px wide versus GATU's 296px at the time, so its dimensions were not interchangeable with the earlier three-column grid. Since [ADR 0011](adr/0011-desktop-md-stacked-right-column.md) the md right column spans 4 of 14 columns (282px at 1001px, 396px at 1400px, 402px at 1420px), so the reference widths now apply directly.
 
 - Keep empty required drafts quiet, including when a user clears a field. A nonempty invalid value such as `0` still receives feedback. An incomplete Scale range is quiet only when every populated endpoint is valid. These are display rules: raw validation and `canSubmit` remain unchanged.
 - Show each TP/SL direction/return error beside its inputs without repeating the same error in the footer. Share the protocol normalization and direction result when deciding whether local feedback covers an error. A positive price that rounds to zero still needs the footer error when local direction feedback cannot describe it.

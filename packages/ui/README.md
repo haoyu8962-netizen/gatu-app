@@ -40,6 +40,16 @@ packages/ui/src/
 └── ...
 ```
 
+## Custom dropdown triggers
+
+`Dropdown` accepts an optional `renderTrigger: ReactElement`. Base UI attaches its
+trigger state, keyboard/pointer behavior, accessible attributes and ref to that
+element. The custom component must forward its ref and native button props. It
+owns the complete button markup, classes, label and caret; `trigger`,
+`triggerClassName`, `hideCaret` and trigger size styling apply to the default path.
+`triggerAriaLabel`, disabled state and popup configuration still apply to both
+paths. Existing callers without `renderTrigger` retain their original rendering.
+
 ## Design tokens
 
 All tokens live in `src/globals.css` as Tailwind v4 `@theme` CSS variables. Three layers:

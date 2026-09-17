@@ -35,6 +35,7 @@ import { ClientRuntimeProvider } from "@/providers/client-runtime";
 import { HyperliquidOwnerSignerBridge } from "@/providers/hyperliquid-owner-signer-bridge";
 import { PrivyLoginMethodObserver } from "@/providers/privy-login-method-observer";
 import { PwaInstallProvider } from "@/providers/pwa-install";
+import { QueryPersistenceFlush } from "@/providers/query-persistence-flush";
 
 const network = getNetwork();
 const env = network === "testnet" ? "Testnet" : "Mainnet";
@@ -115,6 +116,7 @@ export function ClientRootProvider({ children, queryClient }: Props) {
 						onSuccess={persistenceCallbacks.onSuccess}
 						onError={persistenceCallbacks.onError}
 					>
+						<QueryPersistenceFlush client={queryClient} />
 						<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
 							<I18nProvider i18n={i18n}>
 								<BaseUiDirectionProvider>

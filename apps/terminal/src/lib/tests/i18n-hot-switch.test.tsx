@@ -3,20 +3,24 @@
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
+import { useLingui } from "@lingui/react/macro";
 import { act, type ReactNode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageSwitcher } from "@/components/trade/header/language-switcher";
 import { ThemeToggle } from "@/components/trade/header/theme-toggle";
 import { MobileBottomNav } from "@/components/trade/mobile/mobile-bottom-nav";
+import { MobileTradeSizeControl } from "@/components/trade/mobile/mobile-trade-size-control";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
 import { PositionsTab } from "@/components/trade/positions/positions-tab";
 import { AccountPanel } from "@/components/trade/tradebox/account-panel";
 import { OrderConfirmationModal } from "@/components/trade/tradebox/order-confirmation-modal";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
 import { TradeFormTif } from "@/components/trade/tradebox/trade-form-tif";
+import { TradeHeader } from "@/components/trade/tradebox/trade-header";
 import { TradeOptionCheckboxes } from "@/components/trade/tradebox/trade-option-checkboxes";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
@@ -38,16 +42,25 @@ const zhTranslations: Record<string, string> = {
 	"Est. Slippage": "预估滑点",
 	Slippage: "滑点",
 	"Order Book": "订单簿",
+	Trades: "成交",
+	"Recent Trades": "最近成交",
+	Spread: "价差",
+	"Price grouping": "价格分组",
 	Price: "价格",
 	Size: "数量",
 	Total: "合计",
 	"Portfolio Value": "投资组合价值",
 	"Perps Maintenance Margin": "合约维持保证金",
 	Withdraw: "提款",
+	Deposit: "充值",
+	"Account Summary": "账户概览",
+	"Account Margin Ratio": "账户保证金比率",
 	Language: "语言",
 	"Language and number format": "语言和数字格式",
 	"Primary navigation": "主导航",
 	Markets: "市场",
+	Market: "市价",
+	Limit: "限价",
 	Trade: "交易",
 	Account: "账户",
 	"Stop Market": "止损市价",
@@ -250,13 +263,50 @@ Object.assign(globalThis, {
 	},
 });
 
+function RuntimeSizeControl() {
+	const { t } = useLingui();
+	const [size, setSize] = useState("1.25");
+	return (
+		<MobileTradeSizeControl
+			canUsePercent={false}
+			disabled={false}
+			interactionIdentity="translation-test"
+			maxAllowedDecimals={4}
+			onPercentChange={() => {}}
+			onPercentCancel={() => {}}
+			onPercentCommit={() => {}}
+			onSizeChange={(event) => setSize(event.target.value)}
+			onSizeModeToggle={() => {}}
+			percentAriaLabel="Size (%)"
+			side="buy"
+			sizeAriaLabel={t(TRADE_PANEL_LABELS.size)}
+			sizeInput={size}
+			sizeLabel={t(TRADE_PANEL_LABELS.size)}
+			sizeModeLabel="BTC"
+			sliderValue={0}
+		/>
+	);
+}
+
 function TestSurface() {
 	const [reduceOnly, setReduceOnly] = useState(false);
 
 	return (
 		<>
+			<RuntimeSizeControl />
 			<LanguageSwitcher />
 			<MobileBottomNav activeTab="markets" onTabChange={() => {}} className="static" />
+			<TradeHeader
+				compact
+				orderType="market"
+				side="buy"
+				sideLabels={{ buy: "Long", sell: "Short", buyAria: "Buy Long", sellAria: "Sell Short" }}
+				marketKind="perp"
+				onOrderTypeChange={() => {}}
+				onSideChange={() => {}}
+				isLeveraged
+			/>
+
 			<TradeOptionCheckboxes
 				reduceOnly={{ checked: reduceOnly, disabled: false, onCheckedChange: setReduceOnly }}
 				tpSl={{ checked: false, disabled: false, onCheckedChange: () => {} }}
@@ -515,7 +565,13 @@ describe("language hot switching", () => {
 		act(() => checkbox?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 		expect(checkbox?.getAttribute("aria-checked")).toBe("true");
 
+		const originalBook = container.querySelector(".orderbook-panel-container");
+		const originalGrouping = container.querySelector('[aria-label="Price grouping"]');
 		const originalCheckbox = checkbox;
+		const originalSize = container.querySelector<HTMLInputElement>('input[aria-label="Size"]');
+		expect(originalSize?.value).toBe("1.25");
+		const originalTradeControls = container.querySelector(".trade-control-grid");
+		const originalTradeTabs = [...container.querySelectorAll(".trade-order-type-button")];
 		const originalMobileNav = container.querySelector<HTMLElement>('[aria-label="Primary navigation"]');
 		const originalPath = window.location.pathname;
 		act(() => activateLocale("zh"));
@@ -523,6 +579,12 @@ describe("language hot switching", () => {
 		expect(container.querySelector('[aria-label="语言和数字格式"]')).not.toBeNull();
 		const localizedCheckbox = container.querySelector<HTMLElement>('[aria-label="只减仓"]');
 		expect(localizedCheckbox).toBe(originalCheckbox);
+		expect(container.querySelector('input[aria-label="数量"]')).toBe(originalSize);
+		expect(originalSize?.value).toBe("1.25");
+		expect(container.querySelector(".trade-control-grid")).toBe(originalTradeControls);
+		expect([...container.querySelectorAll(".trade-order-type-button")]).toEqual(originalTradeTabs);
+		expect(originalTradeTabs[0]?.textContent).toBe("市价");
+		expect(originalTradeTabs[1]?.textContent).toBe("限价");
 		expect(localizedCheckbox?.getAttribute("aria-checked")).toBe("true");
 		expect(window.location.pathname).toBe(originalPath);
 		expect(container.textContent).toContain("只减仓");
@@ -536,6 +598,10 @@ describe("language hot switching", () => {
 		expect(container.textContent).toContain("投资组合价值");
 		expect(container.textContent).toContain("合约维持保证金");
 		expect(container.querySelector('[aria-label="订单簿"]')).not.toBeNull();
+		expect(container.querySelector(".orderbook-panel-container")).toBe(originalBook);
+		expect(container.querySelector('[aria-label="价格分组"]')).toBe(originalGrouping);
+		expect(originalBook?.querySelector('[aria-label="最近成交"]')?.textContent).toBe("成交");
+		expect(originalBook?.querySelector('[data-slot="orderbook-spread"]')?.textContent).toContain("价差");
 		expect(container.querySelector('[aria-label="提款"]')).not.toBeNull();
 		const localizedMobileNav = container.querySelector<HTMLElement>('[aria-label="主导航"]');
 		expect(localizedMobileNav).toBe(originalMobileNav);
@@ -563,6 +629,30 @@ describe("language hot switching", () => {
 		expect(orderLabels?.querySelector('[data-label="advanced"]')?.textContent).toBe("Stop Market");
 		expect(container.querySelector('[aria-label="Reduce Only"]')).toBe(originalCheckbox);
 		expect(originalCheckbox?.getAttribute("aria-checked")).toBe("true");
+	});
+
+	it("hot switches the disconnected account view without replacing its frame, buttons or rows", () => {
+		walletState.isConnected = false;
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountPanel />
+				</I18nProvider>,
+			),
+		);
+		const frame = container.firstElementChild;
+		const overview = container.querySelector('[data-slot="disconnected-account-overview"]');
+		const button = overview?.querySelector("button");
+		const row = overview?.querySelector('[data-slot="info-row"]');
+		expect(button?.textContent).toBe("Deposit");
+		act(() => activateLocale("zh"));
+		expect(container.firstElementChild).toBe(frame);
+		expect(container.querySelector('[data-slot="disconnected-account-overview"]')).toBe(overview);
+		expect(overview?.querySelector("button")).toBe(button);
+		expect(overview?.querySelector('[data-slot="info-row"]')).toBe(row);
+		expect(button?.textContent).toBe("充值");
+		expect(overview?.querySelector("h3")?.textContent).toBe("账户概览");
+		expect(row?.textContent).toContain("账户保证金比率");
 	});
 
 	it("hides the desktop bridge entry while creation is gated and restores it for an existing execution", () => {

@@ -421,8 +421,9 @@ describe("MarketAssetInfo", () => {
 		expect(header?.className).toContain("items-center");
 		expect(icon?.className).toContain("size-14");
 		expect(container.querySelector("h2")?.className).toContain("text-[18px]");
-		expect(card?.className).toContain("rounded-[12px]");
-		expect(card?.className).toContain("bg-trading-panel-card");
+		expect(card?.className).toContain("flex flex-col gap-2 py-3");
+		expect(card?.className).not.toContain("rounded-[12px]");
+		expect(card?.className).not.toContain("bg-trading-panel-card");
 		expect(container.textContent).toContain("Perp");
 		expect(container.textContent).toContain("Underlying asset");
 		expect(container.textContent).toContain("Maximum leverage");

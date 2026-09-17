@@ -26,6 +26,18 @@ export function createLazyComponent<T extends Record<string, unknown>, K extends
  * @example
  * const Modal = createLazyDefault(() => import("./modal"));
  */
+interface PreloadableComponent {
+	preload?: () => Promise<void>;
+}
+
+/**
+ * Resolves once every given lazy component has finished (or failed) loading, so a caller can wait
+ * for a set of `createLazyComponent` pieces before revealing a tree that renders them.
+ */
+export function preloadLazyComponents(components: ReadonlyArray<PreloadableComponent>): Promise<void> {
+	return Promise.all(components.map((component) => component.preload?.())).then(() => undefined);
+}
+
 export function createLazyDefault<T extends { default: React.ComponentType<unknown> }>(importer: () => Promise<T>) {
 	return lazyRouteComponent(importer, "default");
 }

@@ -3,6 +3,7 @@ import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
 import { type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { positionsTab, positionsTabs } from "@/components/trade/mobile/mobile-positions-tabs-view";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -21,6 +22,7 @@ import { MobileHistoryTab } from "./mobile-history-tab";
 import { MobileOrdersHistoryTab } from "./mobile-orders-history-tab";
 import { MobileOrdersTab } from "./mobile-orders-tab";
 import { MobilePositionsTab } from "./mobile-positions-tab";
+import { MobilePositionsPanelView, MobilePositionsTabsView } from "./mobile-positions-tabs-view";
 import { MobileTwapTab } from "./mobile-twap-tab";
 import { type MobilePositionsDisclosureStates, useMobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
 
@@ -256,104 +258,83 @@ export function MobilePositionsView({
 	const tabContentClass = cn(isPageScroll ? "min-h-0 flex flex-col mt-0" : "flex-1 min-h-0 flex flex-col mt-0");
 
 	return (
-		<div
-			className={cn(
-				"font-market-close",
-				isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col",
-				className,
-			)}
+		<MobilePositionsPanelView
+			isPageScroll={isPageScroll}
+			className={className}
+			renderTabs={(props) => <Tabs value={activeTab} onValueChange={handleTabChange} size="xxs" {...props} />}
 		>
-			<Tabs
-				value={activeTab}
-				onValueChange={handleTabChange}
-				size="xxs"
-				className={cn(
-					isPageScroll
-						? "min-h-0 flex flex-col"
-						: "flex-1 min-h-0 flex flex-col overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-				)}
-			>
-				<div className="relative min-w-0 shrink-0">
-					<div
-						ref={tabScrollRef}
-						data-testid="mobile-account-tabs-scroll"
-						className="min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+			<MobilePositionsTabsView
+				scrollRef={tabScrollRef}
+				tabs={
+					<TabsList
+						className={positionsTabs}
+						indicatorClassName="bg-market-close-fg transition-[left] duration-[120ms] ease-linear"
 					>
-						<TabsList
-							className="h-[47px] min-w-max gap-0 border-b border-market-close-stroke-card px-3.5 pr-7"
-							indicatorClassName="bg-market-close-fg transition-[left] duration-[120ms] ease-linear"
-						>
-							{tabs.map((tab) => {
-								const count = getTabCount(tab.value);
-								const loading = isTabLoading(tab.value);
-								const showCountSlot = isConnected && COUNTED_MOBILE_POSITION_TABS.has(tab.value);
+						{tabs.map((tab) => {
+							const count = getTabCount(tab.value);
+							const loading = isTabLoading(tab.value);
+							const showCountSlot = isConnected && COUNTED_MOBILE_POSITION_TABS.has(tab.value);
 
-								return (
-									<TabsTrigger
-										key={tab.value}
-										value={tab.value}
-										data-mobile-account-tab={tab.value}
-										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-focus data-active:text-market-close-fg"
-									>
-										<span>{_(tab.label)}</span>
-										{showCountSlot ? (
-											<span
-												data-mobile-position-tab-count={tab.value}
-												className="inline-flex min-w-[3ch] shrink-0 justify-center tabular-nums"
-											>
-												{loading ? (
-													<Spinner className="size-3 shrink-0" />
-												) : typeof count === "number" ? (
-													`(${count})`
-												) : null}
-											</span>
-										) : null}
-									</TabsTrigger>
-								);
-							})}
-						</TabsList>
-					</div>
-					<div
-						data-testid="mobile-account-tabs-fade"
-						aria-hidden="true"
-						className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-linear-to-r from-transparent to-modal"
-					/>
-				</div>
-				{!isConnected ? (
-					<EmptyState activeTab={activeTab} description={emptyDescription} />
-				) : (
-					<>
-						<TabsContent value="balances" className={tabContentClass}>
-							{balancesContent}
+							return (
+								<TabsTrigger
+									key={tab.value}
+									value={tab.value}
+									data-mobile-account-tab={tab.value}
+									className={positionsTab}
+								>
+									<span>{_(tab.label)}</span>
+									{showCountSlot ? (
+										<span
+											data-mobile-position-tab-count={tab.value}
+											className="inline-flex min-w-[3ch] shrink-0 justify-center tabular-nums"
+										>
+											{loading ? (
+												<Spinner className="size-3 shrink-0" />
+											) : typeof count === "number" ? (
+												`(${count})`
+											) : null}
+										</span>
+									) : null}
+								</TabsTrigger>
+							);
+						})}
+					</TabsList>
+				}
+			/>
+			{!isConnected ? (
+				<EmptyState activeTab={activeTab} description={emptyDescription} />
+			) : (
+				<>
+					<TabsContent value="balances" className={tabContentClass}>
+						{balancesContent}
+					</TabsContent>
+					<TabsContent value="positions" className={tabContentClass}>
+						<MobilePositionsTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.positions} />
+					</TabsContent>
+					<TabsContent value="orders" className={tabContentClass}>
+						<MobileOrdersTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orders} />
+					</TabsContent>
+					<TabsContent value="twap" className={tabContentClass}>
+						<MobileTwapTab scrollMode={scrollMode} />
+					</TabsContent>
+					<TabsContent value="history" className={tabContentClass}>
+						<MobileHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.tradeHistory} />
+					</TabsContent>
+					<TabsContent value="orders-history" className={tabContentClass}>
+						<MobileOrdersHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orderHistory} />
+					</TabsContent>
+					<TabsContent value="funding" className={tabContentClass}>
+						<MobileFundingTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.fundingHistory} />
+					</TabsContent>
+					{transfersContent != null ? (
+						<TabsContent value="transfers" className={tabContentClass}>
+							{transfersContent}
 						</TabsContent>
-						<TabsContent value="positions" className={tabContentClass}>
-							<MobilePositionsTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.positions} />
-						</TabsContent>
-						<TabsContent value="orders" className={tabContentClass}>
-							<MobileOrdersTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orders} />
-						</TabsContent>
-						<TabsContent value="twap" className={tabContentClass}>
-							<MobileTwapTab scrollMode={scrollMode} />
-						</TabsContent>
-						<TabsContent value="history" className={tabContentClass}>
-							<MobileHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.tradeHistory} />
-						</TabsContent>
-						<TabsContent value="orders-history" className={tabContentClass}>
-							<MobileOrdersHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orderHistory} />
-						</TabsContent>
-						<TabsContent value="funding" className={tabContentClass}>
-							<MobileFundingTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.fundingHistory} />
-						</TabsContent>
-						{transfersContent != null ? (
-							<TabsContent value="transfers" className={tabContentClass}>
-								{transfersContent}
-							</TabsContent>
-						) : null}
-					</>
-				)}
-				{includeBottomNavSpacer ? <MobileBottomNavSpacer /> : null}
-			</Tabs>
-		</div>
+					) : null}
+				</>
+			)}
+			{includeBottomNavSpacer ? <MobileBottomNavSpacer /> : null}
+		</MobilePositionsPanelView>
 	);
 }
 

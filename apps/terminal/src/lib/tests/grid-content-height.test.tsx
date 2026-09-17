@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
 
+import { setupI18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import { act, useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useGridContentHeight } from "@/components/trade/layout/use-grid-content-height";
+import { AccountPanelFrameView } from "@/components/trade/tradebox/account-panel-frame-view";
+import { DisconnectedAccountOverview } from "@/components/trade/tradebox/disconnected-account-overview";
 import type { DesktopGridBreakpoint, DesktopGridContentHeights } from "@/config/desktop-grid-layout";
 
 interface ObserverInstance {
@@ -78,6 +82,20 @@ function AccountPartsHarness({ onHeights }: { onHeights: (heights: DesktopGridCo
 	);
 }
 
+function DisconnectedPartsHarness() {
+	const [, setHeights] = useState<DesktopGridContentHeights>({});
+	const ref = useGridContentHeight(true, "lg", "accountInfo", setHeights);
+	return (
+		<div ref={ref}>
+			<I18nProvider i18n={setupI18n({ locale: "en", messages: { en: {} } })}>
+				<AccountPanelFrameView title="Account">
+					<DisconnectedAccountOverview depositEnabled={false} />
+				</AccountPanelFrameView>
+			</I18nProvider>
+		</div>
+	);
+}
+
 describe("grid content height observer", () => {
 	let container: HTMLDivElement;
 	let root: Root | null;
@@ -142,6 +160,14 @@ describe("grid content height observer", () => {
 		act(() => root?.unmount());
 		root = null;
 		expect(lgObserver?.disconnect).toHaveBeenCalledTimes(1);
+	});
+
+	it("observes the shared disconnected overview's natural content part rather than its stretched panel", () => {
+		act(() => root?.render(<DisconnectedPartsHarness />));
+		const overview = container.querySelector('[data-slot="disconnected-account-overview"]');
+		expect(overview).not.toBeNull();
+		expect(overview?.hasAttribute("data-grid-content-part")).toBe(true);
+		expect(observers[0]?.observe.mock.calls.map(([node]) => node)).toEqual([overview]);
 	});
 
 	it("observes only once the measured node is mounted so Suspense fallbacks never size the grid", () => {

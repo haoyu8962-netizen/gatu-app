@@ -110,6 +110,9 @@ describe("TradesPanel", () => {
 
 		expect(mocks.subscriptionMethods.filter((method) => method === "l2Book")).toHaveLength(1);
 		expect(mocks.subscriptionMethods.filter((method) => method === "trades")).toHaveLength(1);
+		expect(
+			container.querySelector('[data-slot="trades-pending"]')?.closest('[role="tabpanel"]')?.hasAttribute("hidden"),
+		).toBe(true);
 	});
 
 	it("distinguishes an active empty snapshot from a pending subscription", () => {

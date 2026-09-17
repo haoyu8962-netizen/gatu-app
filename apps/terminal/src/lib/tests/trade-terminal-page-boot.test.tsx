@@ -1,9 +1,10 @@
 /** @vitest-environment jsdom */
 
 import { i18n } from "@lingui/core";
-import { act, useEffect, useState } from "react";
+import { act, type ReactNode, useEffect, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MOBILE_NAV_ITEMS } from "@/config/nav";
 import type { MarketCatalogState } from "@/lib/hyperliquid/markets/market-catalog-state";
 import { useOrderEntryActions, useOrderSize } from "@/stores/use-order-entry-store";
 import { createI18nRoot } from "./harness/react";
@@ -19,6 +20,7 @@ const testState = vi.hoisted(() => ({
 	footerMounts: 0,
 	footerUnmounts: 0,
 	isMobile: false,
+	mobileTab: "trade",
 	isTestnet: false,
 	markets: [] as TestMarket[],
 	navigate: vi.fn(async (_options?: unknown) => undefined),
@@ -42,11 +44,20 @@ const CXMT_MARKET: TestMarket = { name: "xyz:CXMT", pairName: "CXMT-USDC", kind:
 let draftActions: ReturnType<typeof useOrderEntryActions>;
 
 vi.mock("@tanstack/react-router", () => ({
-	useLocation: () => ({ pathname: testState.pathname }),
+	useLocation: () => ({ pathname: testState.pathname, state: { displayedContent: testState.mobileTab } }),
+	Link: ({ children, to, ...props }: { children: ReactNode; to: string; search?: unknown }) => {
+		const { search: _search, ...attributes } = props;
+		return (
+			<a href={to} {...attributes}>
+				{children}
+			</a>
+		);
+	},
 	useNavigate: () => testState.navigate,
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useHyperliquid: () => ({ env: "Mainnet" }),
 	useMarketsInfo: () => ({
 		getMarketByName: (name: string) => testState.markets.find((market) => market.name === name),
 		getMarketInfo: (name: string) =>
@@ -86,6 +97,9 @@ vi.mock("@/components/trade/account-activity-feed-owner", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	useIsTestnet: () => testState.isTestnet,
+	useMarketOrderSlippagePercent: () => 2.5,
+	usePositionsActiveTab: () => "positions",
+	getResolvedFormatLocale: () => "en-US",
 }));
 
 vi.mock("@/stores/use-market-store", () => ({
@@ -177,13 +191,22 @@ vi.mock("@/components/trade/testnet-banner", () => ({
 	TestnetBanner: () => <aside data-testid="testnet-banner" />,
 }));
 
-vi.mock("@/components/trade/mobile/mobile-loading-fallback", () => ({
-	MobileLoadingFallback: () => <main aria-busy="true" data-testid="mobile-loading-fallback" />,
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({ useWalletSession: () => ({ isConnected: false }) }));
+vi.mock("@/hooks/trade/use-trade-home-path", () => ({ useTradeHomePath: () => "/trade/BTC" }));
+vi.mock("@/components/trade/header/theme-toggle", () => ({ ThemeToggle: () => null }));
+vi.mock("@/components/trade/header/language-switcher", () => ({ LanguageSwitcher: () => null }));
+vi.mock("@/components/trade/header/user-menu", () => ({ UserMenu: () => null }));
+vi.mock("@/components/trade/mobile/mobile-nav-drawer", () => ({ MobileNavDrawer: () => null }));
+vi.mock("@/components/trade/mobile/mobile-market-bar-provider", () => ({
+	MobileMarketBarProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
-
-vi.mock("@/components/trade/mobile/mobile-terminal", () => ({
-	MobileTerminal: () => <main data-testid="mobile-terminal" />,
+vi.mock("@/components/trade/mobile/mobile-trade-layout", () => ({
+	MobileTradeLayout: () => <section data-testid="mobile-content" />,
 }));
+vi.mock("@/components/trade/mobile/mobile-account-view", () => ({
+	MobileAccountView: () => <section data-testid="mobile-account" />,
+}));
+vi.mock("@/components/trade/mobile/offline-banner", () => ({ OfflineBanner: () => null }));
 
 vi.mock("@/components/trade/tradebox/order-toast", () => ({
 	OrderToast: () => <div data-testid="order-toast" />,
@@ -216,6 +239,7 @@ describe("trade terminal page boot", () => {
 		testState.footerMounts = 0;
 		testState.footerUnmounts = 0;
 		testState.isMobile = false;
+		testState.mobileTab = "trade";
 		testState.isTestnet = false;
 		testState.markets = [];
 		testState.navigate.mockClear();
@@ -244,6 +268,9 @@ describe("trade terminal page boot", () => {
 
 	function renderPage() {
 		act(() => root.render(<TradeTerminalPage />));
+		const visible = container.cloneNode(true) as HTMLElement;
+		for (const output of visible.querySelectorAll(".sr-only")) output.remove();
+		expect(visible.textContent).not.toContain("Loading");
 	}
 
 	function expectNoReadyOnlyRuntime() {
@@ -260,9 +287,11 @@ describe("trade terminal page boot", () => {
 		expect(container.querySelector('[data-testid="desktop-terminal-surface"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="top-nav"]')?.getAttribute("data-mode")).toBe("market-loading");
 		expect(container.querySelector('[data-testid="footer-bar"]')?.getAttribute("data-mode")).toBe("market-loading");
-		expect(container.querySelector('[data-testid="terminal-loading-workspace"]')?.getAttribute("aria-busy")).toBe(
-			"true",
-		);
+		expect(container.querySelector('main[aria-busy="true"]')?.getAttribute("aria-busy")).toBe("true");
+		const workspace = container.querySelector('main[aria-busy="true"]');
+		expect(workspace?.children).toHaveLength(1);
+		expect(workspace?.firstElementChild?.tagName).toBe("OUTPUT");
+		expect(workspace?.firstElementChild?.className).toBe("sr-only");
 		expectNoReadyOnlyRuntime();
 	}
 
@@ -327,7 +356,7 @@ describe("trade terminal page boot", () => {
 		renderPage();
 
 		expect(container.querySelector('[data-testid="main-workspace"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="terminal-loading-workspace"]')).toBeNull();
+		expect(container.querySelector('main[aria-busy="true"]')).toBeNull();
 		expect(testState.selectedMarketInfoReads).toBe(1);
 		expect(testState.setScope).toHaveBeenCalledOnce();
 		expect(testState.setScope).toHaveBeenCalledWith("all", "xyz", "xyz:CXMT");
@@ -393,27 +422,36 @@ describe("trade terminal page boot", () => {
 		renderPage();
 
 		expect(container.querySelector('[data-testid="main-workspace"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="terminal-loading-workspace"]')).toBeNull();
+		expect(container.querySelector('main[aria-busy="true"]')).toBeNull();
 		expect(testState.selectedMarketInfoReads).toBe(1);
 		expect(testState.setScope).not.toHaveBeenCalled();
 		expect(testState.setSelectedMarket).not.toHaveBeenCalled();
 	});
 
-	it("keeps mobile loading isolated from every desktop and ready-only surface", () => {
+	it("retains mobile chrome around an empty busy workspace until the market is ready", () => {
 		testState.isMobile = true;
 		renderPage();
 
-		expect(container.querySelector('[data-testid="mobile-loading-fallback"]')).not.toBeNull();
+		expect(container.querySelector('main[aria-busy="true"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="desktop-terminal-surface"]')).toBeNull();
-		expect(container.querySelector('[data-testid="mobile-terminal"]')).toBeNull();
+		expect(container.querySelector('[data-testid="mobile-content"]')).toBeNull();
 		expectNoReadyOnlyRuntime();
+		const header = container.querySelector("header");
+		const nav = container.querySelector("nav");
+		expect(header).not.toBeNull();
+		expect(nav).not.toBeNull();
+		expect(container.querySelector('main[aria-busy="true"]')?.innerHTML).toBe(
+			'<output class="sr-only">Loading GATU...</output>',
+		);
 
 		testState.catalogState = catalogState();
 		testState.markets = [BTC_MARKET];
 		renderPage();
 
-		expect(container.querySelector('[data-testid="mobile-loading-fallback"]')).toBeNull();
-		expect(container.querySelector('[data-testid="mobile-terminal"]')).not.toBeNull();
+		expect(container.querySelector('main[aria-busy="true"]')).toBeNull();
+		expect(container.querySelector('[data-testid="mobile-content"]')).not.toBeNull();
+		expect(container.querySelector("header")).toBe(header);
+		expect(container.querySelector("nav")).toBe(nav);
 		expect(container.querySelector('[data-testid="desktop-terminal-surface"]')).toBeNull();
 		expect(container.querySelector('[data-testid="tab-title-sync"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="order-toast"]')).not.toBeNull();
@@ -478,7 +516,36 @@ describe("trade terminal page boot", () => {
 		renderPage();
 
 		expect(container.querySelector('[data-testid="main-workspace"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="terminal-loading-workspace"]')).toBeNull();
+		expect(container.querySelector('main[aria-busy="true"]')).toBeNull();
 		expect(container.querySelector('[data-testid="top-nav"]')?.getAttribute("data-mode")).toBe("default");
+	});
+	it("renders Chinese mobile navigation on its first loading frame and keeps it through readiness", () => {
+		testState.isMobile = true;
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: Object.fromEntries(
+				MOBILE_NAV_ITEMS.map((item, index) => [item.label.id, ["市场", "交易", "账户"][index]]),
+			),
+		});
+		renderPage();
+		const nav = container.querySelector("nav");
+		expect(nav?.textContent).toContain("交易");
+		expect(nav?.textContent).not.toMatch(/Markets|Trade|Account/);
+		testState.markets = [BTC_MARKET];
+		testState.catalogState = catalogState();
+		renderPage();
+		expect(container.querySelector("nav")).toBe(nav);
+		expect(nav?.textContent).not.toMatch(/Markets|Trade|Account/);
+	});
+	it.each(["markets", "trade", "account"])("preserves the stored %s mobile tab through readiness", (tab) => {
+		testState.isMobile = true;
+		testState.mobileTab = tab;
+		renderPage();
+		const active = container.querySelector('nav [aria-current="page"]');
+		expect(active?.textContent?.toLowerCase()).toBe(tab);
+		testState.markets = [BTC_MARKET];
+		testState.catalogState = catalogState();
+		renderPage();
+		expect(container.querySelector('nav [aria-current="page"]')).toBe(active);
 	});
 });

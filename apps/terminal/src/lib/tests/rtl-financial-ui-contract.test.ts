@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { headerActions } from "@/components/trade/mobile/mobile-header-view";
 
 const LOGICAL_NAVIGATION_SOURCES = [
 	"components/funding-history/funding-history-page.tsx",
@@ -125,9 +126,11 @@ describe("RTL financial UI contract", () => {
 	});
 
 	it("uses logical spacing between mobile header groups", () => {
-		const source = readSource("components/trade/mobile/mobile-header.tsx");
+		const source = readSource("components/trade/mobile/mobile-header-view.tsx");
 
-		expect(source).toContain("ms-auto");
+		expect(source).toContain("headerActions");
+		expect(headerActions).toContain("ms-auto");
+		expect(headerActions).not.toContain("ml-auto");
 		expect(source).not.toContain("ml-auto");
 		expect(source).not.toContain("ml-2");
 	});

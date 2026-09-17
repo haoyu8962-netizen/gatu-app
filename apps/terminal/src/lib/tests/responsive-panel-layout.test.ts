@@ -3,6 +3,12 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { ORDERBOOK_PANEL_CLASS } from "@/components/trade/orderbook/orderbook-panel-view";
+
+const ORDERBOOK_VIEW_SOURCE = readFileSync(
+	resolve(__dirname, "../../components/trade/orderbook/orderbook-panel-view.tsx"),
+	"utf8",
+);
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_STYLES = readFileSync(resolve(TEST_DIR, "../..", "styles.css"), "utf8");
 const ORDERBOOK_PANEL_SOURCE = readFileSync(
@@ -22,18 +28,6 @@ const MAIN_WORKSPACE_SOURCE = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/layout/main-workspace.tsx"),
 	"utf8",
 );
-const APP_SHELL_SOURCE = readFileSync(
-	resolve(TEST_DIR, "../..", "components/trade/layout/app-shell-skeleton.tsx"),
-	"utf8",
-);
-const TERMINAL_LOADING_WORKSPACE_SOURCE = readFileSync(
-	resolve(TEST_DIR, "../..", "components/trade/layout/terminal-loading-workspace.tsx"),
-	"utf8",
-);
-const DESKTOP_GRID_LOADING_SURFACE_SOURCE = readFileSync(
-	resolve(TEST_DIR, "../..", "components/trade/layout/desktop-grid-loading-surface.tsx"),
-	"utf8",
-);
 const GRID_CONTENT_HEIGHT_SOURCE = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/layout/use-grid-content-height.ts"),
 	"utf8",
@@ -41,9 +35,10 @@ const GRID_CONTENT_HEIGHT_SOURCE = readFileSync(
 
 describe("responsive panel layout contract", () => {
 	it("adapts order book columns and trade controls to their own container width", () => {
-		expect(ORDERBOOK_PANEL_SOURCE).toContain("orderbook-panel-container");
+		expect(ORDERBOOK_PANEL_SOURCE).toContain("className={ORDERBOOK_PANEL_CLASS}");
+		expect(ORDERBOOK_PANEL_CLASS).toContain("orderbook-panel-container");
 		expect(ORDERBOOK_PANEL_SOURCE).toContain("fullWidth");
-		expect(ORDERBOOK_PANEL_SOURCE).toContain("orderbook-grid");
+		expect(ORDERBOOK_VIEW_SOURCE).toContain("orderbook-grid");
 		expect(TERMINAL_STYLES).toContain("container-name: orderbook-panel");
 		expect(TERMINAL_STYLES).toContain("@container orderbook-panel (max-width: 11.1875rem)");
 		expect(TERMINAL_STYLES).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
@@ -67,8 +62,10 @@ describe("responsive panel layout contract", () => {
 		expect(ORDERBOOK_PANEL_SOURCE).toContain("orderbook-tab-label min-w-0 truncate");
 		expect(TERMINAL_STYLES).toContain(".orderbook-tab-label");
 
-		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container");
-		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container flex h-full flex-col bg-surface font-market-close");
+		expect(TRADE_PANEL_SOURCE).toContain("<TradePanelBodyView");
+		expect(
+			readFileSync(resolve(TEST_DIR, "../../components/trade/tradebox/trade-panel-body-view.tsx"), "utf8"),
+		).toContain("trade-panel-container flex h-full flex-col bg-surface font-market-close");
 		expect(TERMINAL_STYLES).toContain("container-name: trade-panel");
 		expect(TERMINAL_STYLES).toContain("@container trade-panel (max-width: 12.4375rem)");
 		expect(TERMINAL_STYLES).toContain(".trade-compact-label");
@@ -93,8 +90,7 @@ describe("responsive panel layout contract", () => {
 	});
 
 	it("keeps every desktop panel mounted once while responsive grid geometry changes", () => {
-		expect(MAIN_WORKSPACE_SOURCE).toContain("<main ref={containerRef} data-main-workspace");
-		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).toContain("<main");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("<main ref={containerRef} aria-busy={!mounted} data-main-workspace");
 		for (const panelKey of [
 			"favoriteCoins",
 			"coinInfo",
@@ -132,21 +128,10 @@ describe("responsive panel layout contract", () => {
 		expect(MAIN_WORKSPACE_SOURCE).toContain("TradePanel.preload?.()");
 	});
 
-	it("reuses one static desktop grid for the AppShell, market loading, and workspace measurement", () => {
-		expect(APP_SHELL_SOURCE).toContain("<DesktopGridLoadingSurface");
-		expect(APP_SHELL_SOURCE).toContain("markShellPanels");
-		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).toContain("<DesktopGridLoadingSurface");
-		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).toContain(
-			'panelClassName="desktop-grid-panel overflow-hidden bg-surface"',
-		);
-		expect(MAIN_WORKSPACE_SOURCE).toContain("<DesktopGridLoadingSurface");
-		expect(DESKTOP_GRID_LOADING_SURFACE_SOURCE).not.toContain('from "react-grid-layout"');
-
-		expect(MAIN_WORKSPACE_SOURCE).toContain('panelClassName="desktop-grid-panel bg-surface"');
-		expect(APP_SHELL_SOURCE).not.toContain("animate-pulse");
-		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).not.toContain("animate-pulse");
-		expect(MAIN_WORKSPACE_SOURCE).not.toContain("animate-pulse");
-		expect(MAIN_WORKSPACE_SOURCE).not.toContain("animate-spin");
+	it("keeps the workspace empty until it is measured", () => {
+		expect(MAIN_WORKSPACE_SOURCE).toContain("aria-busy={!mounted}");
+		expect(MAIN_WORKSPACE_SOURCE).toContain('<output className="sr-only">Loading GATU...</output>');
+		expect(MAIN_WORKSPACE_SOURCE).not.toContain("Skeleton");
 	});
 
 	it("batches border-box measurements and persists only committed layouts", () => {

@@ -6,6 +6,12 @@ const mobileTradeView = readFileSync(
 	"utf8",
 );
 
+const summaryView = readFileSync(
+	new URL("../../components/trade/mobile/mobile-trade-summary-view.tsx", import.meta.url),
+	"utf8",
+);
+const tradeLabels = readFileSync(new URL("../../config/trade-panel-labels.ts", import.meta.url), "utf8");
+
 describe("mobile order risk summary contract", () => {
 	it("shows prospective liquidation only for ordinary leveraged orders", () => {
 		expect(mobileTradeView).toMatch(
@@ -22,9 +28,13 @@ describe("mobile order risk summary contract", () => {
 		expect(mobileTradeView).toContain('orderType === "market"');
 		expect(mobileTradeView).toContain("estimatedSlippageText");
 		expect(mobileTradeView).toContain("t`Est. Slippage`");
-		expect(mobileTradeView).toContain("t`Max`");
+		expect(mobileTradeView).toContain("max: t(TRADE_PANEL_LABELS.max)");
+		expect(tradeLabels).toContain("max: msg`Max`");
 		expect(mobileTradeView).toMatch(
-			/<button\s+type="button"\s+onClick=\{openSettingsDialog\}\s+aria-label=\{t`Slippage`\}/,
+			/<MobileSlippageRowView[\s\S]*?value=\{estimatedSlippageText \?\? FALLBACK_VALUE_PLACEHOLDER\}[\s\S]*?onClick=\{openSettingsDialog\}/,
 		);
+		expect(summaryView).toMatch(/<button\s+type="button"\s+onClick=\{onClick\}\s+aria-label=\{labels.slippage\}/);
+		expect(summaryView).toContain("{slippagePercent}%");
+		expect(summaryView).not.toContain("disabled=");
 	});
 });

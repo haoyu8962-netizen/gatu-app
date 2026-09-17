@@ -1,5 +1,6 @@
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
+import { StartupFallback } from "@/components/startup-fallback";
 import { getRootProviderContext, RootProvider } from "@/providers/root";
 import { routeTree } from "./routeTree.gen";
 
@@ -11,6 +12,7 @@ export function getRouter() {
 		context: { ...rqContext },
 		defaultPreload: "intent",
 		defaultPendingMinMs: 0,
+		defaultPendingComponent: StartupFallback,
 		InnerWrap: (props: { children: React.ReactNode }) => {
 			return <RootProvider {...rqContext}>{props.children}</RootProvider>;
 		},

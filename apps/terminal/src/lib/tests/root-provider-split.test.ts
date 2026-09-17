@@ -56,7 +56,7 @@ describe("root provider startup split", () => {
 		expect(rootRouteSource).not.toContain("<ClientOnly");
 	});
 
-	it("selects a route-matched startup frame before mounting route content", () => {
+	it("selects the same empty application fallback before mounting route content", () => {
 		expect(rootRouteSource).toContain("useRouterState({ select: getPresentedRoutePathname })");
 		expect(rootRouteSource).toContain("const routeSurface = getAppRouteSurface(pathname)");
 		expect(rootRouteSource).toMatch(
@@ -66,9 +66,8 @@ describe("root provider startup split", () => {
 			/if \(routeSurface === "document"\)[\s\S]*?<Outlet \/>[\s\S]*?<DocumentOverlays \/>/,
 		);
 		expect(rootRouteSource).toContain("<AppRuntimeOverlays />");
-		expect(rootRouteSource).toContain(
-			'const fallback = fallbackSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />',
-		);
+		expect(rootRouteSource).toContain("const fallback = <StartupFallback />");
+		expect(rootRouteSource).not.toContain("getHydrationRouteSurface");
 
 		const appRuntimeSource = rootRouteSource.slice(
 			rootRouteSource.indexOf("function AppRuntime"),
@@ -77,7 +76,7 @@ describe("root provider startup split", () => {
 
 		expect(appRuntimeSource).toContain("const clientRuntimeReady = useClientRuntimeReady()");
 		expect(appRuntimeSource).toContain("if (!clientRuntimeReady) return <>{fallback}</>");
-		expect(appRuntimeSource).toContain("<I18nReadyGate fallback={fallback}>");
+		expect(appRuntimeSource).toContain("<StartupReadyGate fallback={fallback}>");
 		expect(appRuntimeSource).toContain("<Outlet />");
 		expect(rootRouteSource).toContain("i18n.locale === getPersistedLocale()");
 		expect(rootRouteSource).toContain("i18nReady.finally(() =>");

@@ -4,8 +4,8 @@ const pulseSelector = '[data-slot="orderbook-level-pulse"]';
 const quantityFeedbackSelector = '[data-slot="orderbook-size-value"].orderbook-color-change';
 const fixtures = [
 	{ name: "wide desktop", view: "desktop", width: 280, height: 677, viewport: { width: 1661, height: 1265 } },
-	{ name: "medium desktop", view: "desktop", width: 240, height: 677.5, viewport: { width: 1238, height: 1305 } },
-	{ name: "desktop breakpoint", view: "desktop", width: 240, height: 577, viewport: { width: 1001, height: 844 } },
+	{ name: "medium desktop", view: "desktop", width: 350, height: 670, viewport: { width: 1238, height: 1305 } },
+	{ name: "desktop breakpoint", view: "desktop", width: 282, height: 577, viewport: { width: 1001, height: 844 } },
 	{ name: "mobile breakpoint", view: "split", width: 390, height: 425.5, viewport: { width: 1000, height: 844 } },
 	{ name: "mobile split", view: "split", width: 390, height: 425, viewport: { width: 390, height: 844 } },
 	{

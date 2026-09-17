@@ -22,7 +22,7 @@ Dependency versions and runnable commands are authoritative in [package.json](pa
 | Path | Purpose |
 |---|---|
 | [apps/terminal/src/router.tsx](apps/terminal/src/router.tsx) | Router creation, per-router QueryClient and SSR query integration |
-| [apps/terminal/src/routes/__root.tsx](apps/terminal/src/routes/__root.tsx) | Stable HTML shell, route-specific skeletons and application runtime gate |
+| [apps/terminal/src/routes/__root.tsx](apps/terminal/src/routes/__root.tsx) | Stable HTML shell, route-independent empty announcement and application runtime gate |
 | [apps/terminal/src/providers/root.tsx](apps/terminal/src/providers/root.tsx) | SSR-safe providers and deferred client runtime import |
 | [apps/terminal/src/providers/client-root.tsx](apps/terminal/src/providers/client-root.tsx) | Privy, Smart Wallets, persisted Query, wagmi and Hyperliquid composition |
 | [apps/terminal/src/providers/hyperliquid-owner-signer-bridge.tsx](apps/terminal/src/providers/hyperliquid-owner-signer-bridge.tsx) | Exact Privy owner signer supplied to `hl-react` |
@@ -79,7 +79,7 @@ pnpm install --frozen-lockfile
 pnpm dev --port 3000                   # Explicit local terminal port
 pnpm dev:browser --port 3006           # System browser; requested port must be free
 pnpm build                            # Terminal build + chunk-cycle and bundle-budget checks
-pnpm serve                            # Serve the built Nitro application
+pnpm serve                            # Local preview of the built Nitro output; production is CloudFront + S3 + Lambda
 pnpm --filter @gatu/terminal typecheck
 pnpm typecheck                        # hl-react, ui and terminal
 pnpm --filter @gatu/terminal test      # Terminal Vitest run

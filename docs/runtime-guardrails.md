@@ -91,6 +91,28 @@ Do not collapse these states into one boolean.
   Ethereum-only wallet selection, and customize radius through Privy's
   supported public CSS variables rather than generated DOM classes.
 
+### Email Wallet Identity And Export
+
+Email sessions retain their email label at desktop, compact and mobile widths;
+truncate the label instead of substituting the wallet address. Copy Address still
+copies the account address. Accounts without email retain their ENS/address labels.
+
+The account menu and Settings expose Export email wallet independently of Across,
+funding, account mode and trading approval. The shared export hook requires a ready,
+authenticated email session with embedded intent and an unambiguous exact owner
+matching the current Privy user. Agent-only/external/ambiguous sessions cannot export.
+Only explicit clicks call Privy's `exportWallet({ address: owner })`; never omit the
+address or read, return, log or store the private key. Settings closes before opening
+Privy. Privy owns verification/MFA and the isolated export interface. Closing that
+interface is not proof that a key was copied or funds recovered. Duplicate clicks
+are blocked and late failures after an identity change or unmount remain silent.
+
+Use the same GATU origin in a system browser if the export interface cannot open.
+An independent recovery entry is preferred over moving unverified Across funding
+features into this runtime. Verify owner mismatch, logout, stale completion,
+repeated clicks, settings dismissal and English/Chinese reactivity with mocks;
+inspect entry visibility at 375, 1100 and 1440 pixels without exposing a real key.
+
 ### Provider Lifetime During Navigation
 
 - The root route and client runtime gate must classify their surface using
@@ -629,6 +651,52 @@ wallet, legal, funding, freshness, market identity, or SDK-boundary validation.
 Market orders round protective prices inward to valid ticks, and the final
 execution guard compares against the exact Big.js slippage bound. Rounding the
 guard's bound outward would silently permit a price beyond the user's tolerance.
+
+## 11. Desktop Top Navigation
+
+[ADR 0013](adr/0013-desktop-navigation-collapse.md) owns these rules.
+
+### Rules
+
+- `config/desktop-nav.ts` is the single source of the desktop entries: `placement` is `primary`
+  (always top level), `lower` (collapsible) or `more` (menu only); an entry has a router `path`,
+  an external `href`, or `soon: true` for a disabled placeholder. Statistics and API Wallet live
+  there too. `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
+  `resolveDesktopNavLayout` and the current entry with `isDesktopNavItemActive`; `TopNav` only
+  renders that result and mounts one More dropdown.
+- Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
+  `DESKTOP_NAV_NARROW_MAX_PX` (1100). The `nav-compact` Tailwind variant in `styles.css` must equal
+  the compact constant (`desktop-nav-layout` pins it); never write `max-[1181px]` again.
+- Collapse rule: at or below the compact width the Soon placeholder leaves the top level and appears
+  disabled in More; the lower entries move into More when the account chip is visible at the compact
+  width or for every state at the narrow width. "Account chip visible" means `authenticated ||
+  isConnected` from `useWalletSession`, the same condition under which `UserMenu` renders an
+  identity instead of the Connect CTA, so Agent-only sessions collapse like wallet sessions;
+  `hasWalletAccess` stays reserved for deposit and signing guards. Hidden links and More items
+  always come from the same layout result. Headers with a visible account chip also shrink the
+  logo, deposit button, address and utilities at the compact width through `nav-compact:*` classes,
+  independently of market loading; while the market loads only the Settings entry of the utilities
+  menu is disabled so theme and language stay reachable.
+- The utilities menu trigger is named `Display and language` (`DESKTOP_NAV_LABELS.utilities`), never
+  `More`, so it stays distinguishable from the navigation More button for assistive technology.
+- `UserMenu` decides its first frame from `useState(() => hasPersistedPrivySession())`, not from a
+  mount effect: visitors without a stored Privy session see `Connect Wallet` on the first rendered
+  frame, and the compact label keeps the ENS name for accounts without email. Dashboard routes
+  await `bootDashboardRoute()` in `beforeLoad` so the account menu chunk is resolved before reveal.
+- Evidence for the narrow width (2026-09-17, local production build, disconnected, 1001px viewport,
+  gap between the navigation and the wallet controls after removing Earn): en 78px, zh 189px,
+  hi 185px, es 53px, fr 2px, ar 109px. French leaves no margin, so every state collapses at
+  1100px. Re-run that measurement before adding a locale or lengthening a label.
+
+### Important Files
+
+- `apps/terminal/src/config/desktop-nav.ts`
+- `apps/terminal/src/config/layout.ts`
+- `apps/terminal/src/lib/navigation/desktop-nav.ts`
+- `apps/terminal/src/components/trade/header/top-nav.tsx`
+- `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
+- `apps/terminal/src/lib/navigation/boot-dashboard-route.ts`
+- `apps/terminal/src/lib/tests/preload-trade-terminal-surface.test.ts`
 
 ## Required Review Checklist
 

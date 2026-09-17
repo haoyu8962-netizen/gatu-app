@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 // @vitest-environment jsdom
 
 import { act, createElement, Fragment, type ReactNode, useEffect } from "react";
@@ -6,6 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
+	exportVisible: false,
+	exportWallet: vi.fn(async (beforeOpen?: () => void) => {
+		beforeOpen?.();
+	}),
 	authenticated: false,
 	displayAddress: undefined as `0x${string}` | undefined,
 	emailAddress: undefined as string | undefined,
@@ -46,6 +52,14 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 type TestLazyComponent = ((props: Record<string, unknown>) => ReactNode) & {
 	preload?: () => Promise<unknown>;
 };
+
+vi.mock("@/hooks/wallet/use-email-wallet-export", () => ({
+	useEmailWalletExport: () => ({
+		visible: testState.exportVisible,
+		canExport: true,
+		exportEmailWallet: testState.exportWallet,
+	}),
+}));
 
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
@@ -268,6 +282,8 @@ describe("UserMenu", () => {
 	let root: Root;
 
 	beforeEach(async () => {
+		testState.exportVisible = false;
+		testState.exportWallet.mockClear();
 		testState.authenticated = false;
 		testState.displayAddress = undefined;
 		testState.emailAddress = undefined;
@@ -315,6 +331,19 @@ describe("UserMenu", () => {
 		container.remove();
 		vi.clearAllMocks();
 		vi.useRealTimers();
+	});
+
+	it("offers an explicit email export action in the account menu", async () => {
+		testState.authenticated = true;
+		testState.emailAddress = "owner@example.test";
+		testState.exportVisible = true;
+		act(() => root.render(createElement(UserMenu)));
+		const button = [...container.querySelectorAll("button")].find((item) => item.textContent === "Export email wallet");
+		expect(button).toBeDefined();
+		await act(async () => {
+			button?.click();
+		});
+		expect(testState.exportWallet).toHaveBeenCalledOnce();
 	});
 
 	it("loads the shared wallet modal on demand without waiting for unauthenticated wallet connectors", async () => {
@@ -453,6 +482,40 @@ describe("UserMenu", () => {
 		expect(testState.mobileSyncModalOpen).toBe(false);
 	});
 
+	it("gives the anonymous desktop CTA the shared minimum width and wallet action", () => {
+		act(() => root.render(createElement(UserMenu, { variant: "desktop-nav" })));
+		const action = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Connect Wallet",
+		);
+		expect(action).toBeDefined();
+		expect(action?.className).toContain("min-w-[9rem]");
+		act(() => action?.click());
+	});
+
+	it("decides the first frame from the persisted session hint without a mount effect", () => {
+		const source = readFileSync(resolve(__dirname, "../../components/trade/header/user-menu.tsx"), "utf8");
+		expect(source).toContain("useState(() => hasPersistedPrivySession())");
+		expect(source).not.toMatch(/setMounted|\[mounted,|useEffect\(/);
+	});
+
+	it("keeps the ENS name in the compact desktop-nav label for accounts without email", () => {
+		testState.authenticated = false;
+		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
+		testState.emailAddress = undefined;
+		testState.ensName = "vitalik.eth";
+		testState.hasWalletAccess = true;
+		testState.isConnected = true;
+		testState.sessionMode = "wallet";
+		act(() => {
+			root.render(createElement(UserMenu, { variant: "desktop-nav" }));
+		});
+		const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Account and wallet"]');
+		expect([...(trigger?.querySelectorAll("bdi") ?? [])].map((label) => label.textContent)).toEqual([
+			"vitalik.eth",
+			"vitalik.eth",
+		]);
+	});
+
 	it("lets the mobile account trigger shrink and truncate without changing the desktop-nav contract", () => {
 		testState.authenticated = true;
 		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
@@ -483,14 +546,18 @@ describe("UserMenu", () => {
 		trigger = dropdown?.querySelector<HTMLButtonElement>('button[aria-label="Account and wallet"]');
 		const desktopLabels = [...(trigger?.querySelectorAll<HTMLElement>("span.truncate") ?? [])];
 		const desktopLabelClasses = desktopLabels.map((item) => item.className);
+		expect([...(trigger?.querySelectorAll("bdi") ?? [])].map((label) => label.textContent)).toEqual([
+			testState.emailAddress,
+			testState.emailAddress,
+		]);
 		expect(dropdown?.className).toContain("shrink-0");
 		expect(trigger?.className).toContain("shrink-0");
 		expect(
-			desktopLabelClasses.some((className) => className.includes("max-[1181px]:hidden")),
+			desktopLabelClasses.some((className) => className.includes("nav-compact:hidden")),
 			desktopLabelClasses.join("\n"),
 		).toBe(true);
 		expect(
-			desktopLabelClasses.some((className) => className.includes("max-[1181px]:block")),
+			desktopLabelClasses.some((className) => className.includes("nav-compact:block")),
 			desktopLabelClasses.join("\n"),
 		).toBe(true);
 	});

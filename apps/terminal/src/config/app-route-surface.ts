@@ -23,18 +23,6 @@ export function isDocumentRoutePath(pathname: string) {
 	return getAppRouteSurface(pathname) === "document";
 }
 
-/**
- * The prerendered shell is rendered at the trade mask path, so during hydration every application
- * route must reproduce the terminal skeleton; choosing the dashboard skeleton before hydration
- * finishes makes React discard the server HTML and report a recoverable error on every dashboard
- * navigation. Document routes hydrate their own prerendered page and keep their surface.
- */
-export function getHydrationRouteSurface(pathname: string, hydrated: boolean): AppRouteSurface {
-	const surface = getAppRouteSurface(pathname);
-	if (surface === "document" || hydrated) return surface;
-	return "terminal";
-}
-
 function normalizePathname(pathname: string): string {
 	if (!pathname) return "/";
 	return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;

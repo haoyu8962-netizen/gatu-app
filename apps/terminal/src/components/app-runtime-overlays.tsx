@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { createLazyComponent } from "@/lib/lazy";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 
 const Toaster = createLazyComponent(() => import("@/components/ui/sonner"), "Toaster");
 const FundsActionRecoveryHost = createLazyComponent(
@@ -7,9 +7,8 @@ const FundsActionRecoveryHost = createLazyComponent(
 	"FundsActionRecoveryHost",
 );
 
-export function preloadAppRuntimeOverlays(): void {
-	void Toaster.preload?.();
-	void FundsActionRecoveryHost.preload?.();
+export function preloadAppRuntimeOverlays(): Promise<void> {
+	return preloadLazyComponents([Toaster, FundsActionRecoveryHost]);
 }
 
 export function AppRuntimeOverlays() {

@@ -4,7 +4,7 @@ import type { InputSize } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import { formatSliderPercent } from "@/domain/trade/order/size";
 import { cn } from "@/lib/cn";
-import { tradingInputFrameClass } from "@/lib/ui/trading-input";
+import { TRADE_PERCENT_INPUT_CLASS, TradePercentFrameView } from "../tradebox/trade-percent-frame-view";
 
 interface Props {
 	interactionIdentity?: string;
@@ -57,28 +57,30 @@ export function SizePercentInput({
 	}
 
 	return (
-		<div className={cn(tradingInputFrameClass, frameClassName)}>
-			<NumberInput
-				aria-describedby={ariaDescribedBy}
-				aria-invalid={ariaInvalid || undefined}
-				aria-label={ariaLabel}
-				inputMode="numeric"
-				inputSize={inputSize}
-				mobileSafe={mobileSafe}
-				value={displayPercent}
-				onBlur={handlePercentBlur}
-				onChange={handlePercentChange}
-				allowDecimals={false}
-				min={0}
-				max={100}
-				className={cn(
-					"h-7 min-w-0 bg-transparent px-0 text-right font-semibold tabular-nums",
-					displayPercent === "0" ? "text-trading-panel-subtle" : "text-trading-panel-fg",
-					inputClassName,
-				)}
-				disabled={disabled}
-			/>
-			<span className="ms-1 shrink-0 text-2xs text-trading-panel-subtle">%</span>
-		</div>
+		<TradePercentFrameView
+			frameClassName={frameClassName}
+			input={
+				<NumberInput
+					aria-describedby={ariaDescribedBy}
+					aria-invalid={ariaInvalid || undefined}
+					aria-label={ariaLabel}
+					inputMode="numeric"
+					inputSize={inputSize}
+					mobileSafe={mobileSafe}
+					value={displayPercent}
+					onBlur={handlePercentBlur}
+					onChange={handlePercentChange}
+					allowDecimals={false}
+					min={0}
+					max={100}
+					className={cn(
+						TRADE_PERCENT_INPUT_CLASS,
+						displayPercent === "0" ? "text-trading-panel-subtle" : "text-trading-panel-fg",
+						inputClassName,
+					)}
+					disabled={disabled}
+				/>
+			}
+		/>
 	);
 }

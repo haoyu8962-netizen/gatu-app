@@ -4,6 +4,7 @@ import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
+import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
@@ -12,6 +13,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { type PreloadableGlobalModal, preloadGlobalModal } from "../components/lazy-global-modals";
+import { HeaderIconButtonView } from "../header/header-icon-button-view";
 import { ThemeToggle } from "../header/theme-toggle";
 
 export function MobileNavDrawer() {
@@ -107,19 +109,17 @@ export function MobileNavDrawer() {
 
 	return (
 		<>
-			<ButtonIcon
-				variant="ghost"
-				intent="neutral"
+			<HeaderIconButtonView
 				size="md"
 				className="touch-target"
-				aria-label={t`Open navigation`}
+				aria-label={t(DESKTOP_NAV_LABELS.openNavigation)}
 				onClick={() => {
 					cancelPendingModal();
 					setOpen(true);
 				}}
 			>
 				<ListIcon className="size-4.5 text-trading-panel-fg" />
-			</ButtonIcon>
+			</HeaderIconButtonView>
 
 			<Drawer side="left" open={open} onOpenChange={handleOpenChange} onOpenChangeComplete={handleOpenChangeComplete}>
 				<DrawerContent className="w-[80vw] max-w-72 flex flex-col p-0 pl-[env(safe-area-inset-left)]">

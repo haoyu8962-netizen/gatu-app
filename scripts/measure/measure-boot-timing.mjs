@@ -894,7 +894,7 @@ function installBootProbe({ expectedOrigin, expectedLocale, expectedMarket }) {
 
 		const inspect = () => {
 			const at = clock();
-			const skeleton = document.querySelector('[data-testid="app-shell-fallback"]');
+			const skeleton = document.querySelector('[data-testid="startup-fallback"]');
 			if (!originalSkeleton && skeleton) {
 				originalSkeleton = skeleton;
 				previousSkeleton = skeleton;
@@ -910,10 +910,10 @@ function installBootProbe({ expectedOrigin, expectedLocale, expectedMarket }) {
 			if (target.persistedLocaleReadyAt === null && document.documentElement?.lang === expectedLocale) {
 				target.persistedLocaleReadyAt = at;
 			}
-			if (target.dom.topNavAt === null && document.querySelector('header a[aria-label="gatu"]')) {
+			if (target.dom.topNavAt === null && document.querySelector('header a[aria-label="GATU"]')) {
 				target.dom.topNavAt = at;
 			}
-			const currentLoadingWorkspace = document.querySelector("[data-terminal-loading-workspace]");
+			const currentLoadingWorkspace = document.querySelector('main[aria-busy="true"]');
 			if (!loadingWorkspace && currentLoadingWorkspace) {
 				loadingWorkspace = currentLoadingWorkspace;
 				target.dom.loadingWorkspaceAt = at;

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Responsive, useContainerWidth } from "react-grid-layout";
 import { useDesktopGridLayout } from "@/components/trade/layout/use-desktop-grid-layout";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
-import { TradePanelBody } from "@/components/trade/tradebox/trade-panel-body";
+import { TradePanelBodyView } from "@/components/trade/tradebox/trade-panel-body-view";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import "react-grid-layout/css/styles.css";
@@ -60,8 +60,8 @@ function Fixture() {
 						</div>
 						<div key="tradingInterface" data-panel="tradingInterface">
 							<div style={{ height: "100%" }}>
-								<div className="trade-panel-container flex h-full flex-col bg-surface">
-									<TradePanelBody
+								<div className="h-full">
+									<TradePanelBodyView
 										header={
 											<div data-slot="fixture-trade-header" style={{ height: 150 }}>
 												Trade controls
@@ -98,7 +98,7 @@ function Fixture() {
 												</div>
 											</>
 										}
-									>
+									fields={
 										<div
 											data-slot="fixture-trade-fields"
 											className="flex flex-col"
@@ -121,7 +121,7 @@ function Fixture() {
 												<input aria-label="Last field" />
 											</label>
 										</div>
-									</TradePanelBody>
+									} />
 								</div>
 							</div>
 						</div>

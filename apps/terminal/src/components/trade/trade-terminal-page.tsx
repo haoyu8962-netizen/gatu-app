@@ -11,7 +11,7 @@ import {
 } from "@/lib/hyperliquid/market-route";
 import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
 import { getTradeTerminalBootStatus } from "@/lib/hyperliquid/trade-terminal-boot";
-import { createLazyComponent } from "@/lib/lazy";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { useMarketActions, useSelectedMarket } from "@/stores/use-market-store";
@@ -19,15 +19,14 @@ import { useOrderEntryActions, useOrderEntryMarketIdentity } from "@/stores/use-
 import { AccountActivityFeedOwner } from "./account-activity-feed-owner";
 import { DesktopTerminalSurface } from "./layout/desktop-terminal-surface";
 import { TerminalBootError } from "./layout/terminal-boot-error";
-import { MobileLoadingFallback } from "./mobile/mobile-loading-fallback";
 import { MobileTerminal } from "./mobile/mobile-terminal";
 import { OrderToast } from "./tradebox/order-toast";
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 
 /** Resolves every lazy piece of the first terminal render for the current surface, so none suspends at boot. */
-export function preloadGlobalModals(): void {
-	void GlobalModals.preload?.();
+export function preloadGlobalModals(): Promise<void> {
+	return preloadLazyComponents([GlobalModals]);
 }
 
 export function TradeTerminalPage() {
@@ -88,13 +87,7 @@ function TradeTerminalContent({ marketReady, marketIdentity }: Props & { marketI
 			<AccountActivityFeedOwner />
 			<MarketReadySynchronizers marketReady={marketReady} />
 			{isMobile ? (
-				marketReady ? (
-					<Suspense fallback={<MobileLoadingFallback />}>
-						<MobileTerminal orderEntryDraftReady={orderEntryDraftReady} />
-					</Suspense>
-				) : (
-					<MobileLoadingFallback />
-				)
+				<MobileTerminal marketReady={marketReady} orderEntryDraftReady={orderEntryDraftReady} />
 			) : (
 				<DesktopTerminalSurface marketReady={marketReady} orderEntryDraftReady={orderEntryDraftReady} />
 			)}

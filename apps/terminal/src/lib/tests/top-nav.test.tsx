@@ -1,15 +1,19 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
-import { act, createElement, type ReactNode, useEffect, useState } from "react";
+import { act, cloneElement, createElement, isValidElement, type ReactNode, useEffect, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TopNav, type TopNavMode } from "@/components/trade/header/top-nav";
+import { DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { HYPERSCREENER_URL } from "@/config/nav";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
 	hasWalletAccess: true,
+	authenticated: true,
+	isConnected: true,
 	depositAvailable: true,
 	depositPath: "external" as "external" | "sponsored",
 	depositUnavailableReason: null as string | null,
@@ -60,6 +64,7 @@ vi.mock("@gatu/ui", () => ({
 		className,
 		items = [],
 		trigger,
+		renderTrigger,
 		triggerAriaLabel,
 	}: {
 		className?: string;
@@ -73,15 +78,18 @@ vi.mock("@gatu/ui", () => ({
 			target?: string;
 		}>;
 		trigger?: ReactNode;
+		renderTrigger?: ReactNode;
 		triggerAriaLabel?: string;
 	}) =>
 		createElement(
 			"div",
 			{
-				"data-layout": className?.includes("max-[1181px]:hidden") ? "wide" : "compact",
+				className,
 				"data-testid": "more-dropdown",
 			},
-			createElement("button", { "aria-label": triggerAriaLabel, type: "button" }, trigger),
+			(isValidElement<Record<string, unknown>>(renderTrigger)
+				? cloneElement(renderTrigger, { "aria-label": triggerAriaLabel })
+				: null) ?? createElement("button", { "aria-label": triggerAriaLabel, type: "button" }, trigger),
 			createElement(
 				"div",
 				{ role: "menu" },
@@ -177,7 +185,11 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ hasWalletAccess: testState.hasWalletAccess }),
+	useWalletSession: () => ({
+		hasWalletAccess: testState.hasWalletAccess,
+		authenticated: testState.authenticated,
+		isConnected: testState.isConnected,
+	}),
 }));
 
 vi.mock("@/lib/lazy", () => ({
@@ -230,6 +242,8 @@ describe("TopNav", () => {
 		vi.clearAllMocks();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.hasWalletAccess = true;
+		testState.authenticated = true;
+		testState.isConnected = true;
 		testState.depositAvailable = true;
 		testState.depositPath = "external";
 		testState.depositUnavailableReason = null;
@@ -264,10 +278,37 @@ describe("TopNav", () => {
 		return [...container.querySelectorAll<HTMLAnchorElement>("a")].find((link) => link.textContent?.trim() === label);
 	}
 
-	function findDesktopUtilitiesButton() {
-		return [...container.querySelectorAll<HTMLButtonElement>('button[aria-label="More"]')].find((button) =>
-			button.className.includes("max-[1181px]:inline-flex"),
+	function stubViewportWidth(width: number) {
+		Object.defineProperty(window, "matchMedia", {
+			configurable: true,
+			writable: true,
+			value: (query: string) => {
+				const maxWidth = /max-width:\s*(\d+)px/.exec(query);
+				return {
+					matches: maxWidth ? width <= Number(maxWidth[1]) : false,
+					media: query,
+					addEventListener() {},
+					removeEventListener() {},
+				};
+			},
+		});
+	}
+
+	function moreMenuLabels() {
+		return [...container.querySelectorAll<HTMLElement>('[data-testid="more-dropdown"] [role="menuitem"]')].map((item) =>
+			item.textContent?.trim(),
 		);
+	}
+
+	function topLevelLabels() {
+		const primaryNavigation = container.querySelector<HTMLElement>('nav[aria-label="Primary navigation"]');
+		return [...(primaryNavigation?.querySelectorAll<HTMLElement>(":scope > a, :scope > button") ?? [])].map((item) =>
+			item.textContent?.replace(/\s+/g, " ").trim(),
+		);
+	}
+
+	function findDesktopUtilitiesButton() {
+		return container.querySelector<HTMLButtonElement>('button[aria-label="Display and language"]') ?? undefined;
 	}
 
 	it.each([
@@ -340,22 +381,20 @@ describe("TopNav", () => {
 
 	it("links Statistics externally while keeping API Wallet on the app router", () => {
 		renderNav();
-		for (const layout of ["wide", "compact"]) {
-			const statisticsItem = [...container.querySelectorAll<HTMLAnchorElement>(`[data-layout="${layout}"] a`)].find(
-				(item) => item.textContent?.trim() === "Statistics",
-			);
-			expect(statisticsItem?.href).toBe(HYPERSCREENER_URL);
-			expect(statisticsItem?.target).toBe("_blank");
-			expect(statisticsItem?.rel).toBe("noopener noreferrer");
-			statisticsItem?.addEventListener("click", (event) => event.preventDefault(), { once: true });
-			act(() => statisticsItem?.click());
-		}
+		expect(container.querySelectorAll('[data-testid="more-dropdown"]')).toHaveLength(1);
+		const statisticsItem = [
+			...container.querySelectorAll<HTMLAnchorElement>('[data-testid="more-dropdown"] a[role="menuitem"]'),
+		].find((item) => item.textContent?.trim() === "Statistics");
+		expect(statisticsItem?.href).toBe(HYPERSCREENER_URL);
+		expect(statisticsItem?.target).toBe("_blank");
+		expect(statisticsItem?.rel).toBe("noopener noreferrer");
+		statisticsItem?.addEventListener("click", (event) => event.preventDefault(), { once: true });
+		act(() => statisticsItem?.click());
 		expect(testState.navigate).not.toHaveBeenCalled();
 
-		const wideMenuItems = [
-			...(container.querySelector('[data-layout="wide"]')?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
-		];
-		const apiWalletItem = wideMenuItems.find(
+		const apiWalletItem = [
+			...container.querySelectorAll<HTMLElement>('[data-testid="more-dropdown"] [role="menuitem"]'),
+		].find(
 			(item): item is HTMLButtonElement =>
 				item instanceof HTMLButtonElement && item.textContent?.trim() === "API Wallet",
 		);
@@ -364,29 +403,101 @@ describe("TopNav", () => {
 		expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/api-wallet" });
 	});
 
-	it("moves lower-priority entries into More for each compact wallet state", () => {
-		renderNav();
+	it("collapses navigation entries by header width and wallet state", () => {
+		try {
+			stubViewportWidth(1440);
+			renderNav();
+			expect(topLevelLabels()).toEqual([
+				"Trade",
+				"Portfolio",
+				"Earn — Soon",
+				"Vaults",
+				"Staking",
+				"Referrals",
+				"Leaderboard",
+			]);
+			expect(moreMenuLabels()).toEqual(["Statistics", "API Wallet"]);
 
-		function compactMenuLabels() {
-			return [
-				...(container.querySelector('[data-layout="compact"]')?.querySelectorAll<HTMLElement>('[role="menuitem"]') ??
-					[]),
-			].map((item) => item.textContent?.trim());
+			stubViewportWidth(1181);
+			renderNav();
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio"]);
+			expect(moreMenuLabels()).toEqual([
+				"Earn — Soon",
+				"Vaults",
+				"Staking",
+				"Referrals",
+				"Leaderboard",
+				"Statistics",
+				"API Wallet",
+			]);
+			const menuItems = [...container.querySelectorAll<HTMLElement>('[data-testid="more-dropdown"] [role="menuitem"]')];
+			const earnItem = menuItems.find((item) => item.textContent?.trim() === "Earn — Soon");
+			expect(earnItem).toBeInstanceOf(HTMLButtonElement);
+			expect((earnItem as HTMLButtonElement).disabled).toBe(true);
+			const referralsItem = menuItems.find((item) => item.textContent?.trim() === "Referrals");
+			act(() => referralsItem?.click());
+			expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/referrals" });
+
+			testState.hasWalletAccess = false;
+			testState.authenticated = false;
+			testState.isConnected = true;
+			renderNav();
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio"]);
+			expect(findDesktopUtilitiesButton()).not.toBeUndefined();
+
+			testState.isConnected = false;
+			renderNav();
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Vaults", "Staking", "Referrals", "Leaderboard"]);
+			expect(moreMenuLabels()).toEqual(["Earn — Soon", "Statistics", "API Wallet"]);
+			expect(findDesktopUtilitiesButton()).toBeUndefined();
+
+			stubViewportWidth(1100);
+			renderNav();
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio"]);
+			expect(moreMenuLabels()).toEqual([
+				"Earn — Soon",
+				"Vaults",
+				"Staking",
+				"Referrals",
+				"Leaderboard",
+				"Statistics",
+				"API Wallet",
+			]);
+		} finally {
+			Reflect.deleteProperty(window, "matchMedia");
 		}
+	});
 
-		expect(compactMenuLabels()).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API Wallet"]);
-		expect(findLink("Referrals")?.className).toContain("max-[1181px]:hidden");
-		const compactReferralsItem = [
-			...(container
-				.querySelector('[data-layout="compact"]')
-				?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []),
-		].find((item) => item.textContent?.trim() === "Referrals");
-		act(() => compactReferralsItem?.click());
-		expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/referrals" });
+	it("keeps the compact utilities menu and hidden utility icons consistent while the market loads", () => {
+		try {
+			stubViewportWidth(1181);
+			renderNav("market-loading");
+			const utilities = findDesktopUtilitiesButton();
+			expect(utilities?.disabled).toBe(false);
+			const hiddenGroup = container.querySelector('[data-testid="theme-toggle"]')?.parentElement;
+			expect(hiddenGroup?.className).toContain("nav-compact:hidden");
+			act(() => utilities?.click());
+			expect(testState.openSettingsDialog).not.toHaveBeenCalled();
+		} finally {
+			Reflect.deleteProperty(window, "matchMedia");
+		}
+	});
 
-		testState.hasWalletAccess = false;
-		renderNav();
-		expect(compactMenuLabels()).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API Wallet"]);
+	it("highlights More when a collapsed entry is the current route", () => {
+		try {
+			stubViewportWidth(1181);
+			testState.pathname = "/vaults/0x123";
+			renderNav();
+			const trigger = container.querySelector<HTMLElement>('[data-testid="more-dropdown"] button[aria-label="More"]');
+			expect(trigger?.className).toContain("text-market-close-fg");
+			expect(
+				[...container.querySelectorAll<HTMLElement>('[role="menuitem"][aria-current="true"]')].map((item) =>
+					item.textContent?.trim(),
+				),
+			).toEqual(["Vaults"]);
+		} finally {
+			Reflect.deleteProperty(window, "matchMedia");
+		}
 	});
 
 	it("uses the selected all-scope market for both logo and Trade links", () => {
@@ -439,7 +550,8 @@ describe("TopNav", () => {
 		const desktopUtilitiesButton = findDesktopUtilitiesButton();
 		expect(depositButton?.disabled).toBe(true);
 		expect(settingsButton?.disabled).toBe(true);
-		expect(desktopUtilitiesButton?.disabled).toBe(true);
+		expect(desktopUtilitiesButton?.disabled).toBe(false);
+		expect(desktopUtilitiesButton?.parentElement?.className).toContain("nav-compact:inline-flex");
 
 		act(() => {
 			depositButton?.focus();
@@ -451,14 +563,13 @@ describe("TopNav", () => {
 		});
 		expect(document.activeElement).not.toBe(depositButton);
 		expect(document.activeElement).not.toBe(settingsButton);
-		expect(document.activeElement).not.toBe(desktopUtilitiesButton);
 		expect(testState.openDepositModal).not.toHaveBeenCalled();
 		expect(testState.openSettingsDialog).not.toHaveBeenCalled();
 
 		expect(container.querySelector<HTMLAnchorElement>('a[aria-label="GATU"]')).not.toBeNull();
 		expect(findLink("Trade")).not.toBeUndefined();
 		const moreTriggers = container.querySelectorAll<HTMLButtonElement>('[data-testid="more-dropdown"] > button');
-		expect(moreTriggers).toHaveLength(2);
+		expect(moreTriggers).toHaveLength(1);
 		for (const trigger of moreTriggers) expect(trigger.disabled).toBe(false);
 		expect(container.querySelector('[data-testid="theme-toggle"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="language-switcher"]')).not.toBeNull();
@@ -481,6 +592,29 @@ describe("TopNav", () => {
 		expect(container.querySelector('[data-testid="privy-popup"]')).not.toBeNull();
 	});
 
+	it("updates shared nav descriptors without remounting navigation or wallet controls", () => {
+		renderNav();
+		const trade = findLink("Trade");
+		const navigation = container.querySelector("nav");
+		const wallet = container.querySelector('[data-testid="UserMenu"]');
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: {
+					[DESKTOP_NAV_ITEMS[0].label.id ?? ""]: "交易",
+					[DESKTOP_NAV_LABELS.primary.id ?? ""]: "主导航",
+					[DESKTOP_NAV_LABELS.soon.id ?? ""]: "即将推出",
+				},
+			}),
+		);
+		expect(findLink("交易")).toBe(trade);
+		expect(navigation?.getAttribute("aria-label")).toBe("主导航");
+		expect(navigation?.querySelector(".sr-only")?.textContent).toBe(" — 即将推出");
+		expect(container.querySelector('[data-testid="UserMenu"]')).toBe(wallet);
+		act(() => i18n.activate("en"));
+		expect(findLink("Trade")).toBe(trade);
+	});
+
 	it("keeps account, theme, language, and settings controls mounted", () => {
 		renderNav();
 
@@ -494,5 +628,45 @@ describe("TopNav", () => {
 
 		act(() => settingsButton?.click());
 		expect(testState.openSettingsDialog).toHaveBeenCalledOnce();
+	});
+	it("renders persisted Chinese from the first chrome render through market readiness", () => {
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: {
+				...Object.fromEntries(
+					DESKTOP_NAV_ITEMS.map((item, index) => [
+						item.label.id,
+						["交易", "投资组合", "收益", "金库", "质押", "推荐", "排行榜"][index],
+					]),
+				),
+				[DESKTOP_NAV_LABELS.primary.id]: "主导航",
+				[DESKTOP_NAV_LABELS.more.id]: "更多",
+				[DESKTOP_NAV_LABELS.soon.id]: "即将推出",
+				...Object.fromEntries(
+					[
+						["Statistics", "统计"],
+						["API Wallet", "API 钱包"],
+					].map(([message, translation]) => [
+						createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6),
+						translation,
+					]),
+				),
+			},
+		});
+		renderNav("market-loading");
+		const header = container.querySelector("header");
+		const nav = container.querySelector("nav");
+		expect(nav?.textContent).toContain("交易");
+		expect(nav?.textContent).not.toMatch(
+			/Trade|Portfolio|Earn|Vaults|Staking|Referrals|Leaderboard|More|Statistics|API Wallet/,
+		);
+		expect(nav?.textContent).not.toContain("Portfolio");
+		renderNav();
+		expect(container.querySelector("header")).toBe(header);
+		expect(container.querySelector("nav")).toBe(nav);
+		expect(nav?.textContent).not.toMatch(
+			/Trade|Portfolio|Earn|Vaults|Staking|Referrals|Leaderboard|More|Statistics|API Wallet/,
+		);
+		expect(container.textContent).not.toContain("Loading");
 	});
 });

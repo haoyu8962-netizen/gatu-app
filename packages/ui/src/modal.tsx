@@ -8,17 +8,23 @@ import { cn } from "./utils";
 // ─── Mobile detection ────────────────────────────────────────────────────────
 
 const MOBILE_BREAKPOINT = 768;
+let mobileQuery: MediaQueryList | undefined;
+
+function getMobileQuery(): MediaQueryList | undefined {
+	if (typeof window === "undefined") return undefined;
+	mobileQuery ??= window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+	return mobileQuery;
+}
 
 function subscribeToMobileQuery(callback: () => void): () => void {
-	if (typeof window === "undefined") return () => {};
-	const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+	const mql = getMobileQuery();
+	if (!mql) return () => {};
 	mql.addEventListener("change", callback);
 	return () => mql.removeEventListener("change", callback);
 }
 
 function getIsMobile(): boolean {
-	if (typeof window === "undefined") return false;
-	return window.innerWidth < MOBILE_BREAKPOINT;
+	return getMobileQuery()?.matches ?? false;
 }
 
 function useMobile(): boolean {

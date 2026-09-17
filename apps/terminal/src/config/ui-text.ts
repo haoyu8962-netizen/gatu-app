@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { SizeMode } from "@/lib/trade/types";
+import { MARKET_HEADER_LABELS } from "./market-header";
 
 export interface SideLabels {
 	buy: string;
@@ -24,13 +25,13 @@ export const UI_TEXT = {
 	},
 	MARKET_OVERVIEW: {
 		get LABEL_ORACLE() {
-			return t`ORACLE`;
+			return t(MARKET_HEADER_LABELS.oracle);
 		},
 		get LABEL_VOLUME() {
-			return t`VOL`;
+			return t(MARKET_HEADER_LABELS.volume24h);
 		},
 		get LABEL_OPEN_INTEREST() {
-			return t`OI`;
+			return t(MARKET_HEADER_LABELS.openInterest);
 		},
 	},
 	ORDERBOOK: {

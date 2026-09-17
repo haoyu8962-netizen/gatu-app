@@ -90,8 +90,8 @@ This file contains durable project instructions for coding agents. Read `agent.m
 ## Desktop trading layout contract
 
 - `docs/desktop-grid-layout.md` owns breakpoints, column counts, default spans, shared boundaries, height ownership, persistence and the underlay token; `apps/terminal/src/config/desktop-grid-layout.ts` is the single source of default geometry.
-- The terminal switches to its mobile surface at `1000px` and below. Keep the runtime media query, skeleton visibility, navigation visibility, mobile-only typography and bottom-navigation-aware overlays on the same inclusive breakpoint.
-- At every desktop width the chart, market data and trading panel remain visible together and share the upper region's bottom edge; the account table and account information share the lower region's top and bottom edges. Apply the same constraints during measurement, live resizing, breakpoint changes and saved-layout restoration, and keep natural content measurements separate from stretched panel geometry to avoid height feedback loops.
+- The terminal switches to its mobile surface at `1000px` and below. Keep the runtime media query, navigation visibility, mobile-only typography and bottom-navigation-aware overlays on the same inclusive breakpoint.
+- Above `1420px` (lg) the chart, market data and trading panel remain visible together and share the upper region's bottom edge, and the account table and account information share the lower region's top and bottom edges. From `1001px` to `1420px` (md) the right column stacks the trading panel above the order book and the account information: the chart column bottom, trading panel bottom, account table top and order book top share one boundary, the account information starts at the order book bottom, and account content growth affects only the account information (`docs/adr/0011-desktop-md-stacked-right-column.md`). Apply the same constraints during measurement, live resizing, breakpoint changes and saved-layout restoration, and keep natural content measurements separate from stretched panel geometry to avoid height feedback loops.
 - Keep favorites, market information, chart, market data, trading interface, account table and account information as stable keyed grid children. Responsive desktop changes move and resize those instances rather than conditionally remounting them.
 - Desktop disconnected accounts show a compact zero-value overview with disabled funding controls, preserving the sponsored email-deposit exception.
 - Persist desktop grid geometry in grid units and validate stored geometry against current panel constraints before restoring it; stale persisted data never overrides panel identities or min/max constraints. Manual resizing works in the same units and preserves those constraints and container-aware compact order-book behavior, so it cannot reintroduce panel overlap.
@@ -105,6 +105,14 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - TWAP trigger and side-aware Max/Min Price fields stay behind the default-off Advanced Settings checkbox. Retain hidden price drafts but exclude them from validation, summaries, confirmation and submission while advanced settings are off; the toggle is transient draft state under the existing revision/reset guards.
 - Default desktop geometry fits all eight ordinary order-entry types without internal scrolling; keep the order-type header outside the overflow region and validate real forms, not only synthetic tall content.
 - Order-entry content must not resize the desktop grid: Market/Limit, advanced-order fields and feedback adapt within the trading panel while chart, order-book and account boundaries, internal scrolling and user-selected grid geometry stay intact. The embedded mobile form must not own its own vertical scroll viewport, and market data must never drive measured height state.
+
+## Startup rendering contract
+
+- `docs/adr/0010-blank-until-ready-startup.md` and `.claude/rules/startup-rendering.md` own this contract. Every application route prerenders and hydrates the same visually empty `StartupFallback`: `aria-busy` and one screen-reader-only output, with no visible skeleton or chrome.
+- Keep theme bootstrap, head preloads, Service Worker registration and shell caching. Wait for the client runtime and persisted locale catalog before rendering real chrome; document routes retain independent prerendered content.
+- Desktop and mobile trade loading states use their real frame/header/navigation/footer with an empty busy workspace. Reveal market content inside the existing frame when ready, preserving chrome DOM identity and mobile navigation state. Dashboard pending routes use the empty announcement; loaded pages own their real frame.
+- Runtime views stay pure, deterministic and props-only. Preserve mounted component behavior, translated labels, drafts, protocol values and every signing/data-availability guard. Do not reintroduce placeholder trees, shell-specific English catalogs or hydration route-surface overrides.
+- Application webfonts use `font-display: block`, and the startup gate waits (bounded) for the persisted locale catalog and the preloaded startup fonts before the first real render, so text never paints in a fallback font and reflows.
 
 ## Verification
 
@@ -174,6 +182,14 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trade-form-twap-advanced.test.tsx \
   src/lib/tests/trade-form-compact-fields.test.tsx \
   src/lib/tests/trade-form-tp-sl.test.tsx
+
+# Startup rendering (see .claude/rules/startup-rendering.md)
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/root-startup-fallback.test.tsx \
+  src/lib/tests/root-route-transition.test.tsx \
+  src/lib/tests/trade-terminal-page-boot.test.tsx \
+  src/lib/tests/top-nav.test.tsx \
+  src/lib/tests/dashboard-frame-view.test.tsx
 
 # Runtime translation contract (Change discipline)
 pnpm --dir apps/terminal exec vitest run \

@@ -3,7 +3,6 @@ import { createContext, type ReactNode, use } from "react";
 export {
 	type AppRouteSurface,
 	getAppRouteSurface,
-	getHydrationRouteSurface,
 	isDocumentRoutePath,
 } from "@/config/app-route-surface";
 

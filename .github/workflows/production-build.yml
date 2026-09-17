@@ -41,13 +41,6 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Validate production Caddyfile
-        run: >-
-          docker run --rm
-          --volume "${{ github.workspace }}/deploy:/etc/caddy:ro"
-          caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
-          caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
-
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.4.0
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -57,29 +50,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Test production deployment validators
+      - name: Test build and release validators
         run: >-
           node --test
-          deploy/deploy-bootstrap.test.mjs
-          deploy/deploy-health-check.test.mjs
-          deploy/validate-caddy-forwarded-headers.test.mjs
-          deploy/validate-production-env.test.mjs
-          deploy/mobile-sync-release.test.mjs
-          deploy/mobile-sync-candidate.test.mjs
           scripts/validate-mobile-phone-access-device-validation.test.js
-          deploy/resolve-client-asset.test.mjs
           scripts/check-client-bundle-budget.test.mjs
           scripts/inject-shell-preloads.test.mjs
           scripts/collect-inline-script-hashes.test.mjs
 
-      - name: Verify Caddy ticket block and forwarded IP handling over HTTP
-        run: |
-          set -euo pipefail
-          container_id=$(docker create caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648)
-          trap 'docker rm "$container_id" >/dev/null' EXIT
-          docker cp "$container_id:/usr/bin/caddy" "$RUNNER_TEMP/caddy"
-          chmod +x "$RUNNER_TEMP/caddy"
-          CADDY_BINARY="$RUNNER_TEMP/caddy" node --test deploy/mobile-sync-caddy.test.mjs
+      - name: Test the CloudFront release tooling
+        run: pnpm test:cloudfront
 
       - name: Test Hyperliquid API resource hints
         working-directory: apps/terminal
@@ -206,21 +186,6 @@ jobs:
           NITRO_PRESET: node-server
           VITE_MOBILE_PAIRING_CREATE_ENABLED: ${{ matrix.pairing.create }}
           VITE_MOBILE_PAIRING_IMPORT_ENABLED: ${{ matrix.pairing.import }}
-
-      - name: Verify actual mobile ticket HTTP protocol and process restart
-        run: node deploy/mobile-sync-release.mjs attest apps/terminal/.output "${{ matrix.pairing.create }}" "${{ matrix.pairing.import }}"
-
-      - name: Verify actual Nitro proxy aliases and same-artifact promotion
-        run: |
-          CADDY_BINARY="$RUNNER_TEMP/caddy" MOBILE_SYNC_OUTPUT=apps/terminal/.output node --test deploy/mobile-sync-caddy.test.mjs deploy/mobile-sync-candidate.test.mjs
-
-      - name: Record verified mobile artifact identity
-        run: |
-          node --input-type=module - <<'NODE'
-          import { readFileSync, appendFileSync } from 'node:fs';
-          const { commit, release, mobileSync, verification, verifiedAt, sha256 } = JSON.parse(readFileSync('apps/terminal/.output/.gatu-mobile-sync.json', 'utf8'));
-          appendFileSync(process.env.GITHUB_STEP_SUMMARY, '```json\n' + JSON.stringify({ commit, release, mobileSync, verification, verifiedAt, sha256 }, null, 2) + '\n```\n');
-          NODE
 
       - name: Measure client-root startup closure
         run: pnpm --filter @gatu/terminal perf:startup

@@ -76,13 +76,13 @@
 
 验证：新增产物级测试，读取 `client-chunk-graph.json` 断言 React 与 SDK 落在声明的块中；文件数目标 ≤ 60。
 
-### P6 · 首屏字体与小项 — 字体保留，其余等 EC2 退役
+### P6 · 首屏字体与小项 — 字体保留，其余随 EC2 退役处理（2026-09-17）
 
 复核后 IBM Plex Sans 并非只用于一处：`font-market-close` 用在交易页头部、市场概览、代币选择器与历史订单表，都在首屏可见，去掉预加载会造成首屏字体闪换，因此两套预加载保留。
 
 - 首屏同时预加载 Inter 与 IBM Plex Sans 两套可变字体（94 KB gzip）。IBM Plex Sans 只用于 `--font-market-close`；改为不预加载、`font-display: swap` 按需加载，`FONT_PRELOAD_URLS` 只留 Inter。若设计上坚持两套，改为只预加载首屏可见的那一套。
 - Radix 与 Base UI 并存来自 `cmdk` 与 `vaul` 的依赖，替换成本高于收益，本轮不动，记入观察项。
-- `nitro({ compressPublicAssets: true })` 每次构建生成 915 个 `.gz/.br/.zst`，CloudFront 用不到；EC2 退役后关闭。
+- `nitro({ compressPublicAssets: true })` 每次构建生成 915 个 `.gz/.br/.zst`，CloudFront 用不到；2026-09-17 已改为 `false`。
 
 ### P7 · 可观测性（最小集）
 
@@ -90,7 +90,7 @@ CloudWatch 告警：Lambda `Errors`、`Throttles`、`Duration p95`；CloudFront 
 
 ### P8 · 过渡期与文档
 
-- 证书签发后给两条分发挂别名与证书，用户切 DNS，稳定一个周期后退役 EC2，随后删除 `/client-error-report` 别名、关闭预压缩产物。
+- 证书签发后给两条分发挂别名与证书，用户切 DNS，稳定一个周期后退役 EC2，随后删除 `/client-error-report` 别名、关闭预压缩产物。（DNS 2026-09-15 已切，EC2 2026-09-17 已停机，预压缩已关闭；`/client-error-report` 别名仍保留，待确认无旧客户端后删除。）
 - 壳 head：`lib/seo.ts` 为所有路由输出 `canonical`，壳里因此固定指向 `/trade`；改为只有文档路由输出 `canonical`，应用壳不带。
 - 文档：`agent.md` 第 44 行与 `apps/terminal/README.md` 第 50、52、117 行的 SSR 表述改为"预渲染壳"；`deploy/README.md` 开头改为指向 CloudFront 手册并把 EC2/Caddy 部分标为过渡期；`docs/README.md` 部署入口指向 CloudFront 手册；新增 ADR 0006 记录壳预加载、边缘缓存策略、图表 immutable 与地区预取的取舍；按规则重新基线 `terminal-performance-baseline.md`。
 
@@ -134,3 +134,7 @@ CloudWatch 告警：Lambda `Errors`、`Throttles`、`Duration p95`；CloudFront 
 3. P2 是否开启 Origin Shield（按请求计费）。
 4. P6 字体：是否接受 IBM Plex Sans 退出首屏预加载。
 5. P7 告警通知的邮箱与授权。
+
+## 2026-09-16：热访问 P1 补充
+
+热访问测量与实施见[工作记录](work-memory/sessions/2026-09-16-warm-visit-startup-plan.md)。本轮实现恢复成功后的页面隐藏/离开同步写回、独立 7 天完整目录播种窗口、SW v9 导航 SWR。目录正常 stale/refetch 与通用缓存 24 小时上限不变；应用共用壳条目，文档按 URL 独立缓存，referral、文件与服务端路径放行。设计与取舍归属 [ADR 0005](adr/0005-spa-static-shell.md)、[ADR 0006](adr/0006-startup-preloads-and-edge-caching.md)，部署次序与上一版壳兼容归属 [CloudFront 手册](../deploy/cloudfront/README.md)。这是未发布的代码变化，历史测量不能当作实施后的性能结果；连续访问与 iOS Safari 真机复测仍待完成。后续 Round 2 已实施两项 P2 渲染优化：Markets 外层用 Activity 延后隐藏树提交并保留状态，Trade 仍同步渲染；AdaptiveModal 复用 `(max-width: 767px)` 媒体查询读取快照，SSR 保持 false。同时修复 SW 在任何 await 前克隆可缓存响应，避免页面消费网络响应后无法写入壳缓存。其余 P2/P3 未实施；这两项收益仍需实施后复测。

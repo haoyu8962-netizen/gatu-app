@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ReferralsPage } from "@/components/referrals/referrals-page";
+import { bootDashboardRoute } from "@/lib/navigation/boot-dashboard-route";
 import { buildPageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/referrals")({
+	beforeLoad: () => bootDashboardRoute(),
 	ssr: false,
 	head: () =>
 		buildPageHead({

@@ -21,6 +21,7 @@ import { Route } from "@/routes/__root";
 const runtime = vi.hoisted(() => {
 	window.history.replaceState(null, "", "/terms");
 	return {
+		ready: true,
 		walletModuleLoads: 0,
 		walletMounts: 0,
 		walletUnmounts: 0,
@@ -36,12 +37,6 @@ vi.mock("@/lib/i18n", () => ({ getPersistedLocale: () => "en", i18nReady: Promis
 vi.mock("@/bones/registry", () => ({}));
 vi.mock("@/components/ui/sonner", () => ({ Toaster: () => null }));
 vi.mock("@/components/funds-action/funds-action-recovery-host", () => ({ FundsActionRecoveryHost: () => null }));
-vi.mock("@/components/dashboard/dashboard-shell-skeleton", () => ({
-	DashboardShellSkeleton: () => <span data-skeleton="dashboard">Dashboard loading</span>,
-}));
-vi.mock("@/components/trade/layout/app-shell-skeleton", () => ({
-	AppShellSkeleton: () => <span data-skeleton="terminal">Terminal loading</span>,
-}));
 vi.mock("@/components/pages/not-found-page", () => ({ NotFoundPage: () => <span>Not found</span> }));
 vi.mock("@/components/pages/router-error-page", () => ({
 	RouterErrorPage: () => <span role="alert">Router failed</span>,
@@ -61,7 +56,7 @@ vi.mock("@/providers/client-root", async () => {
 					runtime.walletUnmounts += 1;
 				};
 			}, []);
-			return <ClientRuntimeProvider>{children}</ClientRuntimeProvider>;
+			return <ClientRuntimeProvider ready={runtime.ready}>{children}</ClientRuntimeProvider>;
 		},
 	};
 });
@@ -114,6 +109,7 @@ describe("root route provider lifetime during committed route transitions", () =
 	let loaders: Map<string, ReturnType<typeof createDeferredLoader>>;
 
 	beforeEach(() => {
+		runtime.ready = true;
 		runtime.walletMounts = 0;
 		runtime.walletUnmounts = 0;
 		runtime.marketMounts = 0;
@@ -140,13 +136,20 @@ describe("root route provider lifetime during committed route transitions", () =
 		vi.restoreAllMocks();
 	});
 
-	async function mount(initialPath: string) {
+	async function mount(initialPath: string, expectContent = true) {
 		const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
 			component: Route.options.component,
 			errorComponent: Route.options.errorComponent,
 			notFoundComponent: Route.options.notFoundComponent,
 		});
-		const children = [...DOCUMENT_PATHS, "/trade/HYPE", "/trade/BTC", "/portfolio", "/redirect-to-terms"].map((path) =>
+		const children = [
+			...DOCUMENT_PATHS,
+			"/trade/HYPE",
+			"/trade/BTC",
+			"/portfolio",
+			"/vaults",
+			"/redirect-to-terms",
+		].map((path) =>
 			createRoute({
 				getParentRoute: () => rootRoute,
 				path,
@@ -159,7 +162,7 @@ describe("root route provider lifetime during committed route transitions", () =
 				},
 				component: path.startsWith("/trade/")
 					? TradeProbe
-					: path === "/portfolio"
+					: ["/portfolio", "/vaults"].includes(path)
 						? DashboardProbe
 						: () => <main data-page={path}>{path}</main>,
 			}),
@@ -178,6 +181,7 @@ describe("root route provider lifetime during committed route transitions", () =
 			await router.load();
 			root.render(<RouterProvider router={router} />);
 		});
+		if (!expectContent) return;
 		await expectPage(
 			initialPath.startsWith("/trade/") ? "trade" : initialPath === "/portfolio" ? "dashboard" : initialPath,
 		);
@@ -306,6 +310,23 @@ describe("root route provider lifetime during committed route transitions", () =
 		await expectPage("/privacy");
 		expect(runtime.walletMounts).toBe(0);
 		expect(runtime.marketMounts).toBe(0);
+	});
+
+	it.each(["/trade/BTC", "/portfolio", "/vaults"] as const)("uses the same empty announcement on %s", async (path) => {
+		runtime.ready = false;
+		await mount(path, false);
+		await vi.waitFor(() => {
+			expect(container.querySelector('[data-testid="startup-fallback"]')?.getAttribute("aria-busy")).toBe("true");
+			expect(container.querySelector("nav, header, footer")).toBeNull();
+			expect(container.querySelector("output")?.className).toBe("sr-only");
+			expect(container.textContent).toBe("Loading GATU...");
+		});
+		const navigation = await startNavigation("/terms");
+		await act(async () => {
+			navigation.loader.resolve();
+			await navigation.completion;
+		});
+		await expectPage("/terms");
 	});
 
 	it("preserves dashboard providers until its document destination commits", async () => {

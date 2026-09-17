@@ -3,7 +3,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, PaperPlaneTiltIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { Suspense, useCallback, useId, useState } from "react";
 import { toast } from "sonner";
-import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
+import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
+import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import {
@@ -116,161 +117,163 @@ export function PortfolioPage() {
 	return (
 		<>
 			<AccountActivityFeedOwner />
-			<div
-				className={cn(
-					"min-h-dvh bg-portfolio-canvas text-fg font-sans",
-					!isMobile && "pb-8",
-					!isMobile && (isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS),
-					isTestnet && "testnet-bg",
-				)}
-			>
-				{isMobile ? (
-					<MobileHeader />
-				) : (
+			<DashboardFrameView
+				{...DASHBOARD_FRAMES["/portfolio"]}
+				isMobile={isMobile}
+				bannerOffset={isTestnet}
+				testnet={isTestnet}
+				header={
+					isMobile ? (
+						<MobileHeader />
+					) : (
+						<>
+							<TestnetBanner />
+							<TopNav />
+						</>
+					)
+				}
+				main={
 					<>
-						<TestnetBanner />
-						<TopNav />
-					</>
-				)}
-
-				<main className="mx-auto w-full max-w-[1440px] px-4 py-6 min-[1001px]:px-8 min-[1200px]:px-16 min-[1001px]:py-8">
-					<div className="mb-6 flex flex-wrap items-start justify-between gap-4 min-[1001px]:mb-8">
-						<h1 className="text-2xl font-normal tracking-tight text-fg">
-							<Trans>Portfolio</Trans>
-						</h1>
-						<div className="flex max-w-full flex-col items-end gap-2">
-							<div className="flex flex-wrap items-center justify-end gap-2">
-								<Button variant="outline" intent="neutral" size="sm" onClick={() => setAccountModeModalOpen(true)}>
-									<Trans>Account mode</Trans>
-								</Button>
-								<Button
-									variant="outline"
-									intent="brand"
-									size="sm"
-									disabled={modeDependentFundsActionsDisabled}
-									aria-describedby={getUnavailableReasonId(modeDependentFundsActionsDisabledReason)}
-									onClick={openStablecoinSwapModal}
-									iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
-								>
-									<Trans>Swap Stablecoins</Trans>
-								</Button>
-								<Tooltip content={internalTransferDisabledReason} side="top">
-									<span className="inline-flex">
-										<Button
-											variant="outline"
-											intent="brand"
-											size="sm"
-											disabled={transferDisabled}
-											aria-describedby={getUnavailableReasonId(internalTransferDisabledReason)}
-											onClick={
-												fundsActionAvailability.internalTransfer.available
-													? () => openTransferModal("toPerp")
-													: undefined
-											}
-											iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
-										>
-											<Trans>Perps / Spot</Trans>
-										</Button>
-									</span>
-								</Tooltip>
-								<Button
-									variant="outline"
-									intent="brand"
-									size="sm"
-									disabled={modeDependentFundsActionsDisabled}
-									aria-describedby={getUnavailableReasonId(modeDependentFundsActionsDisabledReason)}
-									onClick={() => openSendModal()}
-									iconLeft={<PaperPlaneTiltIcon className="size-3.5" />}
-								>
-									<Trans>Send</Trans>
-								</Button>
-								<Tooltip content={withdrawalNotice} side="top">
-									<span className="inline-flex">
-										<Button
-											variant="outline"
-											intent="brand"
-											size="sm"
-											disabled={!fundsActionAvailability.withdrawal.available}
-											aria-describedby={getUnavailableReasonId(fundsActionAvailability.withdrawal.unavailableReason)}
-											onClick={
-												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
-											}
-											iconLeft={<UploadSimpleIcon className="size-3.5" />}
-										>
-											<Trans>Withdraw</Trans>
-										</Button>
-									</span>
-								</Tooltip>
-								<Tooltip content={depositNotice} side="top">
-									<span className="inline-flex">
-										<Button
-											variant="filled"
-											intent="brand"
-											size="sm"
-											disabled={depositDisabled}
-											aria-describedby={getUnavailableReasonId(depositAvailability.unavailableReason)}
-											onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-											aria-label={
-												depositAvailability.available || isMobile ? undefined : depositAvailability.unavailableLabel
-											}
-											title={depositNotice ?? undefined}
-											iconLeft={<DownloadSimpleIcon className="size-3.5" />}
-										>
-											{depositAvailability.available || isMobile ? (
-												<Trans>Deposit</Trans>
-											) : (
-												depositAvailability.unavailableLabel
-											)}
-										</Button>
-									</span>
-								</Tooltip>
-							</div>
-							{!isMobile && unavailableActionGroups.length ? (
-								<div
-									aria-live="polite"
-									className="max-w-2xl space-y-0.5 text-start text-2xs leading-4 text-fg-muted min-[1001px]:text-end"
-								>
-									<p className="font-semibold text-fg-muted">
-										<Trans>Unavailable actions</Trans>
-									</p>
-									{unavailableActionGroups.map((group, index) => (
-										<p id={`${unavailableActionsId}-${index}`} key={group.reason}>
-											<span className="font-semibold">{actionListFormatter.format(group.actions)}:</span> {group.reason}
-										</p>
-									))}
+						<div className="mb-6 flex flex-wrap items-start justify-between gap-4 min-[1001px]:mb-8">
+							<h1 className="text-2xl font-normal tracking-tight text-fg">
+								<Trans>Portfolio</Trans>
+							</h1>
+							<div className="flex max-w-full flex-col items-end gap-2">
+								<div className="flex flex-wrap items-center justify-end gap-2">
+									<Button variant="outline" intent="neutral" size="sm" onClick={() => setAccountModeModalOpen(true)}>
+										<Trans>Account mode</Trans>
+									</Button>
+									<Button
+										variant="outline"
+										intent="brand"
+										size="sm"
+										disabled={modeDependentFundsActionsDisabled}
+										aria-describedby={getUnavailableReasonId(modeDependentFundsActionsDisabledReason)}
+										onClick={openStablecoinSwapModal}
+										iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
+									>
+										<Trans>Swap Stablecoins</Trans>
+									</Button>
+									<Tooltip content={internalTransferDisabledReason} side="top">
+										<span className="inline-flex">
+											<Button
+												variant="outline"
+												intent="brand"
+												size="sm"
+												disabled={transferDisabled}
+												aria-describedby={getUnavailableReasonId(internalTransferDisabledReason)}
+												onClick={
+													fundsActionAvailability.internalTransfer.available
+														? () => openTransferModal("toPerp")
+														: undefined
+												}
+												iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
+											>
+												<Trans>Perps / Spot</Trans>
+											</Button>
+										</span>
+									</Tooltip>
+									<Button
+										variant="outline"
+										intent="brand"
+										size="sm"
+										disabled={modeDependentFundsActionsDisabled}
+										aria-describedby={getUnavailableReasonId(modeDependentFundsActionsDisabledReason)}
+										onClick={() => openSendModal()}
+										iconLeft={<PaperPlaneTiltIcon className="size-3.5" />}
+									>
+										<Trans>Send</Trans>
+									</Button>
+									<Tooltip content={withdrawalNotice} side="top">
+										<span className="inline-flex">
+											<Button
+												variant="outline"
+												intent="brand"
+												size="sm"
+												disabled={!fundsActionAvailability.withdrawal.available}
+												aria-describedby={getUnavailableReasonId(fundsActionAvailability.withdrawal.unavailableReason)}
+												onClick={
+													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+												}
+												iconLeft={<UploadSimpleIcon className="size-3.5" />}
+											>
+												<Trans>Withdraw</Trans>
+											</Button>
+										</span>
+									</Tooltip>
+									<Tooltip content={depositNotice} side="top">
+										<span className="inline-flex">
+											<Button
+												variant="filled"
+												intent="brand"
+												size="sm"
+												disabled={depositDisabled}
+												aria-describedby={getUnavailableReasonId(depositAvailability.unavailableReason)}
+												onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+												aria-label={
+													depositAvailability.available || isMobile ? undefined : depositAvailability.unavailableLabel
+												}
+												title={depositNotice ?? undefined}
+												iconLeft={<DownloadSimpleIcon className="size-3.5" />}
+											>
+												{depositAvailability.available || isMobile ? (
+													<Trans>Deposit</Trans>
+												) : (
+													depositAvailability.unavailableLabel
+												)}
+											</Button>
+										</span>
+									</Tooltip>
 								</div>
-							) : null}
-						</div>
-					</div>
-
-					<PortfolioOverview />
-
-					<section className="mt-2 overflow-hidden rounded-12 bg-surface" aria-label={t`Account activity`}>
-						{isMobile ? (
-							<MobilePositionsView
-								className="min-h-80 py-1"
-								scrollMode="page"
-								includeBottomNavSpacer={false}
-								balancesContent={<MobileBalancesTab />}
-								transfersContent={<MobileAccountTransfersTab scrollMode="page" />}
-								emptyDescription={<Trans>Connect wallet to view portfolio</Trans>}
-							/>
-						) : (
-							<div className={cn(!isConnected && "h-24")}>
-								<Suspense fallback={<AccountPanelSkeleton />}>
-									<PositionsPanel includeTransfers autoHeight={isConnected} />
-								</Suspense>
+								{!isMobile && unavailableActionGroups.length ? (
+									<div
+										aria-live="polite"
+										className="max-w-2xl space-y-0.5 text-start text-2xs leading-4 text-fg-muted min-[1001px]:text-end"
+									>
+										<p className="font-semibold text-fg-muted">
+											<Trans>Unavailable actions</Trans>
+										</p>
+										{unavailableActionGroups.map((group, index) => (
+											<p id={`${unavailableActionsId}-${index}`} key={group.reason}>
+												<span className="font-semibold">{actionListFormatter.format(group.actions)}:</span>{" "}
+												{group.reason}
+											</p>
+										))}
+									</div>
+								) : null}
 							</div>
-						)}
-					</section>
-				</main>
+						</div>
 
-				{!isMobile && (
-					<Suspense fallback={null}>
-						<FooterBar />
-					</Suspense>
-				)}
-			</div>
+						<PortfolioOverview />
+
+						<section className="mt-2 overflow-hidden rounded-12 bg-surface" aria-label={t`Account activity`}>
+							{isMobile ? (
+								<MobilePositionsView
+									className="min-h-80 py-1"
+									scrollMode="page"
+									includeBottomNavSpacer={false}
+									balancesContent={<MobileBalancesTab />}
+									transfersContent={<MobileAccountTransfersTab scrollMode="page" />}
+									emptyDescription={<Trans>Connect wallet to view portfolio</Trans>}
+								/>
+							) : (
+								<div className={cn(!isConnected && "h-24")}>
+									<Suspense fallback={<AccountPanelSkeleton />}>
+										<PositionsPanel includeTransfers autoHeight={isConnected} />
+									</Suspense>
+								</div>
+							)}
+						</section>
+					</>
+				}
+				footer={
+					!isMobile && (
+						<Suspense fallback={null}>
+							<FooterBar />
+						</Suspense>
+					)
+				}
+			/>
 			<AccountModeModal
 				open={accountModeModalOpen}
 				onOpenChange={setAccountModeModalOpen}

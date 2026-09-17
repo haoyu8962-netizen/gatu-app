@@ -19,6 +19,13 @@ submission preflight and route changes still require visible feedback; do not
 infer whether the user submitted from the query status alone. Follow
 [mobile data presentation](mobile-data-presentation.md).
 
+## Sending and withdrawing
+
+Send transfers tokens between accounts on Hyperliquid (HyperCore). Its dialog names
+the network and directs users wanting Arbitrum USDC to Withdraw. It does not bridge
+to Arbitrum; `signatureChainId` identifies the signing domain, not the destination
+network. Withdraw keeps its route-selected Arbitrum behavior described below.
+
 ## Account funding entries and amount units
 
 Desktop account actions open the existing shared surfaces; opening Deposit,

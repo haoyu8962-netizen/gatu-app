@@ -6,6 +6,7 @@ const REACTIVE_COMPONENTS = [
 	"components/pages/application-error-page.tsx",
 	"components/pages/not-found-page.tsx",
 	"components/trade/chart/chart-panel.tsx",
+	"components/trade/header/desktop-utilities-menu.tsx",
 	"components/trade/chart/token-selector.tsx",
 	"components/trade/header/top-nav.tsx",
 	"components/trade/header/language-switcher.tsx",
@@ -102,4 +103,61 @@ describe("live localization source contract", () => {
 		expect(source).not.toContain("UI_TEXT");
 		expect(source).toContain("@lingui/react/macro");
 	});
+});
+
+const PURE_PRESENTATION_VIEWS = [
+	"../dashboard/dashboard-frame-view.tsx",
+	"mobile/mobile-token-selector-view.tsx",
+	"mobile/mobile-positions-tabs-view.tsx",
+	"mobile/mobile-trade-available-view.tsx",
+	"mobile/mobile-trade-summary-view.tsx",
+	"mobile/mobile-trade-size-view.tsx",
+	"mobile/mobile-terminal-frame-view.tsx",
+	"mobile/mobile-trade-frame-view.tsx",
+	"mobile/mobile-header-view.tsx",
+	"mobile/mobile-wallet-cta-view.tsx",
+	"mobile/mobile-market-bar-view.tsx",
+	"mobile/mobile-trade-header-view.tsx",
+	"mobile/mobile-bottom-nav-view.tsx",
+	"mobile/mobile-book-chrome-view.tsx",
+	"mobile/mobile-trade-cta-frame-view.tsx",
+
+	"positions/account-table-header-view.tsx",
+	"tradebox/account-overview-view.tsx",
+	"tradebox/account-action-button-view.tsx",
+	"tradebox/account-panel-frame-view.tsx",
+	"components/trade-slider-view.tsx",
+	"tradebox/trade-input-frame-view.tsx",
+	"tradebox/trade-available-row-view.tsx",
+	"tradebox/trade-panel-body-view.tsx",
+	"tradebox/trade-control-button-view.tsx",
+	"tradebox/trade-percent-frame-view.tsx",
+	"tradebox/trade-header-view.tsx",
+	"tradebox/trade-size-unit-view.tsx",
+	"tradebox/trade-option-checkboxes-view.tsx",
+	"tradebox/trade-panel-footer-view.tsx",
+	"tradebox/trade-size-slider-row-view.tsx",
+	"tradebox/trade-cta-view.tsx",
+	"tradebox/order-type-tab-view.tsx",
+	"tradebox/trade-form-fields-view.tsx",
+	"components/summary-row-view.tsx",
+	"header/favorites-strip-view.tsx",
+	"header/top-nav-view.tsx",
+	"header/nav-menu-trigger-view.tsx",
+	"header/header-icon-button-view.tsx",
+	"header/wallet-cta-view.tsx",
+	"footer/footer-bar-view.tsx",
+	"layout/desktop-terminal-frame-view.tsx",
+	"chart/token-selector-trigger-view.tsx",
+	"components/asset-icon-slot-view.tsx",
+	"market-overview-view.tsx",
+	"layout/market-header-view.tsx",
+	"orderbook/orderbook-panel-view.tsx",
+	"orderbook/orderbook-grouping-trigger-view.tsx",
+];
+
+it.each(PURE_PRESENTATION_VIEWS)("receives translated presentation props in %s", (path) => {
+	const source = readFileSync(resolve(__dirname, "../../components/trade", path), "utf8");
+	expect(source).toContain("interface Props");
+	expect(source).not.toMatch(/@lingui|use[A-Z]\w*\(|@\/stores|window|document|Date\.|Math\.random/);
 });

@@ -8,7 +8,7 @@ import { OrderSummary } from "@/components/trade/tradebox/order-summary";
 import { ScaleOrderSummary } from "@/components/trade/tradebox/scale-order-summary";
 import { TradeFormFields } from "@/components/trade/tradebox/trade-form-fields";
 import { TradeHeader } from "@/components/trade/tradebox/trade-header";
-import { TradePanelBody } from "@/components/trade/tradebox/trade-panel-body";
+import { TradePanelBodyView } from "@/components/trade/tradebox/trade-panel-body-view";
 import { TwapOrderSummary } from "@/components/trade/tradebox/twap-order-summary";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { resolveTwapPriceInputs } from "@/domain/trade/twap-details";
@@ -143,10 +143,10 @@ function FixtureTradePanel({ feedback, hasPosition }: { feedback: boolean; hasPo
 
 	return (
 		<div
-			className="trade-panel-container flex h-full flex-col bg-surface font-market-close"
+			className="h-full"
 			data-order-type={orderType}
 		>
-			<TradePanelBody
+			<TradePanelBodyView
 				header={
 					<TradeHeader
 						compact
@@ -189,7 +189,7 @@ function FixtureTradePanel({ feedback, hasPosition }: { feedback: boolean; hasPo
 						</div>
 					</>
 				}
-			>
+			fields={
 				<TradeFormFields
 					orderEntryData={orderEntryData}
 					visibleValidationErrors={[]}
@@ -200,7 +200,7 @@ function FixtureTradePanel({ feedback, hasPosition }: { feedback: boolean; hasPo
 					onSizePercentApply={(percent) => actions.setSize(String(percent / 10))}
 					onSwapClick={() => {}}
 				/>
-			</TradePanelBody>
+			} />
 		</div>
 	);
 }

@@ -1,6 +1,9 @@
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 const FONT_CACHE = `fonts-${CACHE_VERSION}`;
 const ICON_CACHE = `icons-${CACHE_VERSION}`;
+const SHELL_CACHE = `shell-${CACHE_VERSION}`;
+const DOCUMENT_CACHE = `documents-${CACHE_VERSION}`;
+const DOCUMENT_ROUTES = ["/cookies", "/docs", "/privacy", "/risk", "/support", "/terms"];
 const RETIRED_CACHE_CLEANUP_TIMEOUT_MS = 1_500;
 
 const MAX_ICON_ENTRIES = 500;
@@ -13,17 +16,16 @@ self.addEventListener("activate", (event) => {
 		.catch(() => undefined);
 	const cleanupRetiredCaches = Promise.resolve()
 		.then(() => caches.keys())
-		.then((keys) =>
-			Promise.allSettled(
-				keys.filter(isRetiredManagedCache).map((key) => caches.delete(key)),
-			),
-		)
+		.then((keys) => Promise.allSettled(keys.filter(isRetiredManagedCache).map((key) => caches.delete(key))))
 		.catch(() => undefined);
 	event.waitUntil(settleWithin(Promise.all([claimClients, cleanupRetiredCaches]), RETIRED_CACHE_CLEANUP_TIMEOUT_MS));
 });
 
 function isRetiredManagedCache(key) {
-	return /^(?:charting|fonts|icons)-/.test(key) && ![FONT_CACHE, ICON_CACHE].includes(key);
+	return (
+		/^(?:charting|fonts|icons|shell|documents)-/.test(key) &&
+		![FONT_CACHE, ICON_CACHE, SHELL_CACHE, DOCUMENT_CACHE].includes(key)
+	);
 }
 
 function settleWithin(promise, timeoutMs) {
@@ -46,19 +48,62 @@ self.addEventListener("fetch", (event) => {
 
 	if (request.method !== "GET") return;
 
+	if (request.mode === "navigate") {
+		if (url.origin !== self.location.origin) return;
+		const pathname = url.pathname.replace(/\/+$/, "") || "/";
+		const segment = pathname.slice(pathname.lastIndexOf("/") + 1);
+		const dot = segment.lastIndexOf(".");
+		if (
+			pathname === "/join" ||
+			pathname.startsWith("/join/") ||
+			pathname === "/api" ||
+			pathname.startsWith("/api/") ||
+			pathname === "/client-error-report" ||
+			pathname === "/mobile-agent-sync-ticket" ||
+			pathname.startsWith("/mobile-agent-sync-ticket/") ||
+			pathname.startsWith("/_serverFn/") ||
+			(dot > 0 && /^[A-Za-z0-9]{1,8}$/.test(segment.slice(dot + 1)))
+		)
+			return;
+		const isDocument = DOCUMENT_ROUTES.includes(pathname);
+		const cacheName = isDocument ? DOCUMENT_CACHE : SHELL_CACHE;
+		const cacheKey = isDocument ? request : new URL(SHELL_CACHE, self.location.origin).href;
+		event.respondWith(navigationStaleWhileRevalidate(request, cacheName, cacheKey, event));
+		return;
+	}
+
 	if (request.destination === "font") {
 		event.respondWith(cacheFirst(request, FONT_CACHE, event));
 		return;
 	}
 
-	if (
-		url.hostname === "app.hyperliquid.xyz" &&
-		url.pathname.startsWith("/coins/")
-	) {
+	if (url.hostname === "app.hyperliquid.xyz" && url.pathname.startsWith("/coins/")) {
 		event.respondWith(staleWhileRevalidate(request, ICON_CACHE, event));
 		return;
 	}
 });
+
+function navigationStaleWhileRevalidate(request, cacheName, cacheKey, event) {
+	const cache = caches.open(cacheName).catch(() => undefined);
+	const cached = cache.then((value) => value?.match(cacheKey)).catch(() => undefined);
+	const fetched = fetch(request);
+	const refresh = fetched
+		.then(async (response) => {
+			const contentType = response.headers.get("content-type") ?? "";
+			if (
+				response.status !== 200 ||
+				response.redirected ||
+				contentType.split(";")[0].trim().toLowerCase() !== "text/html"
+			)
+				return;
+			const copy = response.clone();
+			const value = await cache;
+			if (value) await value.put(cacheKey, copy);
+		})
+		.catch(() => undefined);
+	event.waitUntil(refresh);
+	return cached.then((value) => value || fetched);
+}
 
 async function cacheFirst(request, cacheName, event) {
 	const cached = await caches.match(request).catch(() => undefined);

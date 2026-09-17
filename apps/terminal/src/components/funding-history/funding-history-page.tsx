@@ -3,11 +3,12 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, ArrowLeftIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, Suspense, useMemo, useState } from "react";
+import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
 import { TopNav } from "@/components/trade/header/top-nav";
 import { MobileHeader } from "@/components/trade/mobile/mobile-header";
 import { TestnetBanner } from "@/components/trade/testnet-banner";
-import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
+import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { getToolbarAbsoluteSize } from "@/domain/trade/trading-toolbar-metrics";
 import { useFundingHistory } from "@/hooks/trade/use-funding-history";
 import { useFundingHistoryCsvExport } from "@/hooks/trade/use-history-csv-export";
@@ -429,94 +430,97 @@ export function FundingHistoryPage({ address }: Props) {
 
 	return (
 		<>
-			<div
-				className={cn(
-					"min-h-dvh bg-grid-container font-sans text-fg",
-					!isMobile && "pb-8",
-					!isMobile && (isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS),
-					isTestnet && "testnet-bg",
-				)}
-			>
-				{isMobile ? (
-					<MobileHeader />
-				) : (
+			<DashboardFrameView
+				{...DASHBOARD_FRAMES["/funding-history"]}
+				isMobile={isMobile}
+				bannerOffset={isTestnet}
+				testnet={isTestnet}
+				header={
+					isMobile ? (
+						<MobileHeader />
+					) : (
+						<>
+							<TestnetBanner />
+							<TopNav />
+						</>
+					)
+				}
+				main={
 					<>
-						<TestnetBanner />
-						<TopNav />
-					</>
-				)}
-				<main className="mx-auto w-full max-w-[1440px] px-4 py-5 min-[1001px]:px-10 min-[1001px]:py-6">
-					<div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-						<div>
-							<Button
-								nativeButton={false}
-								variant="ghost"
-								intent="neutral"
-								size="xs"
-								className="-ms-2 mb-2"
-								iconLeft={<ArrowLeftIcon className="size-3.5 rtl:rotate-180" />}
-								render={<Link to="/trade" search={{ scope: "all" }} />}
-							>
-								<Trans>Back to trade</Trans>
-							</Button>
-							<h1 className="text-2xl font-bold tracking-tight text-fg">
-								<Trans>Funding payments</Trans>
-							</h1>
-							<p className="mt-1 text-xs text-fg-muted">
-								<bdi dir="ltr">{shortenAddress(address, 8, 6)}</bdi> ·{" "}
-								<Trans>{FUNDING_HISTORY_WINDOW_DAYS}-day API window</Trans>
-							</p>
-							{rangeLabel ? <p className="mt-1 text-2xs text-fg-muted">{rangeLabel}</p> : null}
-						</div>
-						<div className="flex items-center gap-2">
-							{exportAddress ? (
+						<div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+							<div>
+								<Button
+									nativeButton={false}
+									variant="ghost"
+									intent="neutral"
+									size="xs"
+									className="-ms-2 mb-2"
+									iconLeft={<ArrowLeftIcon className="size-3.5 rtl:rotate-180" />}
+									render={<Link to="/trade" search={{ scope: "all" }} />}
+								>
+									<Trans>Back to trade</Trans>
+								</Button>
+								<h1 className="text-2xl font-bold tracking-tight text-fg">
+									<Trans>Funding payments</Trans>
+								</h1>
+								<p className="mt-1 text-xs text-fg-muted">
+									<bdi dir="ltr">{shortenAddress(address, 8, 6)}</bdi> ·{" "}
+									<Trans>{FUNDING_HISTORY_WINDOW_DAYS}-day API window</Trans>
+								</p>
+								{rangeLabel ? <p className="mt-1 text-2xs text-fg-muted">{rangeLabel}</p> : null}
+							</div>
+							<div className="flex items-center gap-2">
+								{exportAddress ? (
+									<Button
+										variant="outline"
+										intent="neutral"
+										size="xs"
+										disabled={isExporting || history.isRefreshing || history.isOffline || history.status === "loading"}
+										onClick={() => void exportCsv()}
+									>
+										<Trans>Export CSV</Trans>
+									</Button>
+								) : null}
 								<Button
 									variant="outline"
 									intent="neutral"
 									size="xs"
-									disabled={isExporting || history.isRefreshing || history.isOffline || history.status === "loading"}
-									onClick={() => void exportCsv()}
+									disabled={
+										history.isRefreshing ||
+										history.isOffline ||
+										history.status === "disabled" ||
+										history.status === "loading"
+									}
+									onClick={history.refresh}
+									iconLeft={<ArrowClockwiseIcon className={cn("size-3.5", history.isRefreshing && "animate-spin")} />}
 								>
-									<Trans>Export CSV</Trans>
+									<Trans>Refresh</Trans>
 								</Button>
-							) : null}
-							<Button
-								variant="outline"
-								intent="neutral"
-								size="xs"
-								disabled={
-									history.isRefreshing ||
-									history.isOffline ||
-									history.status === "disabled" ||
-									history.status === "loading"
-								}
-								onClick={history.refresh}
-								iconLeft={<ArrowClockwiseIcon className={cn("size-3.5", history.isRefreshing && "animate-spin")} />}
-							>
-								<Trans>Refresh</Trans>
-							</Button>
+							</div>
 						</div>
-					</div>
-					<p className="mb-3 text-xs leading-5 text-fg-muted">
-						<Trans>
-							Only this requested time window is shown. Older payments have not been loaded and are not included in this
-							count.
-						</Trans>
-					</p>
-					<section
-						data-testid="funding-history-page"
-						data-state={history.status}
-						className="overflow-hidden rounded-12 bg-surface shadow-raised"
-					>
-						{content}
-					</section>
-				</main>
-				{!isMobile ? (
-					<Suspense fallback={null}>
-						<FooterBar />
-					</Suspense>
-				) : null}
-			</div>
+						<p className="mb-3 text-xs leading-5 text-fg-muted">
+							<Trans>
+								Only this requested time window is shown. Older payments have not been loaded and are not included in
+								this count.
+							</Trans>
+						</p>
+						<section
+							data-testid="funding-history-page"
+							data-state={history.status}
+							className="overflow-hidden rounded-12 bg-surface shadow-raised"
+						>
+							{content}
+						</section>
+					</>
+				}
+				footer={
+					!isMobile ? (
+						<Suspense fallback={null}>
+							<FooterBar />
+						</Suspense>
+					) : null
+				}
+			/>
 			<Suspense fallback={null}>
 				<GlobalModals enableLegalGate />
 			</Suspense>

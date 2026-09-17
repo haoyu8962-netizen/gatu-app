@@ -263,7 +263,7 @@ describe("MarketOverview", () => {
 	}
 
 	it("gives the overview sole ownership of scrolling and resets it by market identity", () => {
-		expect(MAIN_WORKSPACE_SOURCE).toContain('className="ms-6 min-w-0 flex-1 overflow-hidden"');
+		expect(MAIN_WORKSPACE_SOURCE).toContain("<MarketHeaderView");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("<MarketOverview key={marketKey} />");
 
 		renderKeyedOverview();
@@ -296,9 +296,9 @@ describe("MarketOverview", () => {
 		expect(overview?.tabIndex).toBe(0);
 		expect(overview?.className).toContain("overflow-x-auto");
 		expect(overview?.className).toContain("overscroll-x-contain");
-		expect(row?.className).toContain("w-max");
-		expect(row?.className).toContain("min-w-full");
-		expect(row?.className).toContain("gap-6");
+		expect(row?.className).not.toContain("w-max");
+		expect(row?.className).not.toContain("min-w-full");
+		expect(row?.className).toContain("gap-8");
 		expect(getRenderedStatIds(container)).toEqual([
 			"price",
 			"oracle",
@@ -308,18 +308,8 @@ describe("MarketOverview", () => {
 			"funding",
 		]);
 
-		const widthClasses: Record<MarketStatId, string> = {
-			price: "min-w-[90px]",
-			oracle: "min-w-[90px]",
-			change24h: "min-w-[170px]",
-			volume24h: "min-w-[136px]",
-			openInterest: "min-w-[136px]",
-			funding: "min-w-[128px]",
-			marketCap: "min-w-[136px]",
-			contract: "min-w-[112px]",
-		};
 		for (const node of container.querySelectorAll<HTMLElement>("[data-market-stat]")) {
-			expect(node.className).toContain(widthClasses[node.dataset.marketStat as MarketStatId]);
+			expect(node.className).toBe("shrink-0");
 			expect(node.hasAttribute("aria-hidden")).toBe(false);
 			expect(node.hasAttribute("inert")).toBe(false);
 			expect(node.classList.contains("absolute")).toBe(false);
@@ -370,13 +360,116 @@ describe("MarketOverview", () => {
 
 		expect(getStat("price").textContent).toContain("Mark71.8");
 		expect(getStat("change24h").textContent).toBe("24h Change—");
-		expect(getStat("oracle").textContent).toBe("ORACLE-");
-		expect(getStat("volume24h").textContent).toBe("24H VOL-");
-		expect(getStat("openInterest").textContent).toBe("OPEN INT-");
-		expect(getStat("funding").textContent).toBe("FUNDING / Resets in—");
+		expect(getStat("oracle").textContent).toBe("Oracle-");
+		expect(getStat("volume24h").textContent).toBe("24h Volume-");
+		expect(getStat("openInterest").textContent).toBe("Open Interest-");
+		expect(getStat("funding").textContent).toBe("Funding / Resets in—");
 		expect(container.textContent).not.toContain("71.7");
 		expect(container.textContent).not.toContain("22,228,099.94");
 		expect(container.textContent).not.toContain("0.0000%");
+	});
+
+	it("keeps the metric row invisible and busy until the first fresh market context arrives", () => {
+		renderOverview();
+		const overview = container.querySelector("[data-market-overview]");
+		const row = container.querySelector("[data-market-overview-row]");
+		expect(overview?.getAttribute("aria-busy")).toBe("true");
+		expect(overview?.getAttribute("data-market-overview-state")).toBe("pending");
+		expect(row?.classList.contains("invisible")).toBe(true);
+		expect(getStat("price").textContent).toContain("Mark71.8");
+
+		mocks.perpCtxEvent = {
+			coin: "xyz:BRENTOIL",
+			ctx: {
+				markPx: "80",
+				prevDayPx: "64",
+				oraclePx: "79",
+				dayNtlVlm: "10000000",
+				openInterest: "2",
+				funding: "0.00001",
+			},
+		};
+		mocks.perpCtxStatus = "active";
+		renderOverview();
+
+		expect(container.querySelector("[data-market-overview]")).toBe(overview);
+		expect(overview?.hasAttribute("aria-busy")).toBe(false);
+		expect(overview?.getAttribute("data-market-overview-state")).toBe("ready");
+		expect(container.querySelector("[data-market-overview-row]")).toBe(row);
+		expect(row?.classList.contains("invisible")).toBe(false);
+	});
+
+	it("returns to the invisible pending state on a same-instance market switch until the new context arrives", () => {
+		mocks.perpCtxStatus = "active";
+		mocks.perpCtxEvent = {
+			coin: "xyz:BRENTOIL",
+			ctx: {
+				markPx: "80",
+				prevDayPx: "64",
+				oraclePx: "79",
+				dayNtlVlm: "10000000",
+				openInterest: "2",
+				funding: "0.00001",
+			},
+		};
+		renderOverview();
+		expect(container.querySelector("[data-market-overview-row]")?.classList.contains("invisible")).toBe(false);
+
+		mocks.selectedMarket = { ...mocks.selectedMarket, name: "xyz:SECOND", pairName: "SECOND-USDC", markPx: "42" };
+		mocks.perpCtxEvent = undefined;
+		mocks.perpCtxStatus = "idle";
+		renderOverview();
+		expect(container.querySelector("[data-market-overview]")?.getAttribute("data-market-overview-state")).toBe(
+			"pending",
+		);
+		expect(container.querySelector("[data-market-overview-row]")?.classList.contains("invisible")).toBe(true);
+
+		mocks.perpCtxEvent = {
+			coin: "xyz:SECOND",
+			ctx: { markPx: "42", prevDayPx: "40", oraclePx: "41.9", dayNtlVlm: "5000", openInterest: "1", funding: "0" },
+		};
+		mocks.perpCtxStatus = "active";
+		renderOverview();
+		expect(container.querySelector("[data-market-overview]")?.getAttribute("data-market-overview-state")).toBe("ready");
+		expect(container.querySelector("[data-market-overview-row]")?.classList.contains("invisible")).toBe(false);
+	});
+
+	it("keeps the metric row pending until the market-close font faces have loaded", async () => {
+		const resolveLoads: Array<() => void> = [];
+		const load = vi.fn(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveLoads.push(resolve);
+				}),
+		);
+		Object.defineProperty(document, "fonts", { configurable: true, value: { check: () => false, load } });
+		try {
+			mocks.perpCtxStatus = "active";
+			mocks.perpCtxEvent = {
+				coin: "xyz:BRENTOIL",
+				ctx: {
+					markPx: "80",
+					prevDayPx: "64",
+					oraclePx: "79",
+					dayNtlVlm: "10000000",
+					openInterest: "2",
+					funding: "0.00001",
+				},
+			};
+			renderOverview();
+			expect(container.querySelector("[data-market-overview]")?.getAttribute("data-market-overview-state")).toBe(
+				"pending",
+			);
+			expect(load).toHaveBeenCalledWith('600 13px "IBM Plex Sans Variable"');
+			await act(async () => {
+				for (const resolve of resolveLoads) resolve();
+			});
+			expect(container.querySelector("[data-market-overview]")?.getAttribute("data-market-overview-state")).toBe(
+				"ready",
+			);
+		} finally {
+			Reflect.deleteProperty(document, "fonts");
+		}
 	});
 
 	it("uses realtime context after the subscription becomes available", () => {
@@ -399,7 +492,7 @@ describe("MarketOverview", () => {
 
 		expect(container.textContent).toContain("Mark80");
 		expect(container.textContent).toContain("24h Change+16.000 / +25.00%");
-		expect(container.textContent).toContain("ORACLE79");
+		expect(container.textContent).toContain("Oracle79");
 		expect(container.textContent).toContain("$10,000,000.00");
 		expect(container.textContent).toContain("$160.00");
 		expect(container.textContent).toContain("+0.0010%");
@@ -428,11 +521,11 @@ describe("MarketOverview", () => {
 		renderOverview();
 
 		expect(getStat("price").textContent).toContain("Mark71.8");
-		expect(getStat("oracle").textContent).toBe("ORACLE-");
-		expect(getStat("volume24h").textContent).toBe("24H VOL-");
-		expect(getStat("openInterest").textContent).toBe("OPEN INT-");
+		expect(getStat("oracle").textContent).toBe("Oracle-");
+		expect(getStat("volume24h").textContent).toBe("24h Volume-");
+		expect(getStat("openInterest").textContent).toBe("Open Interest-");
 		expect(container.textContent).not.toContain("Mark999");
-		expect(container.textContent).not.toContain("ORACLE998");
+		expect(container.textContent).not.toContain("Oracle998");
 	});
 
 	it.each([
@@ -499,9 +592,9 @@ describe("MarketOverview", () => {
 
 		expect(getStat("price").textContent).toBe("Mark-");
 		expect(getStat("change24h").textContent).toBe("24h Change—");
-		expect(getStat("openInterest").textContent).toBe("OPEN INT-");
-		expect(getStat("oracle").textContent).toBe("ORACLE-");
-		expect(getStat("volume24h").textContent).toBe("24H VOL-");
+		expect(getStat("openInterest").textContent).toBe("Open Interest-");
+		expect(getStat("oracle").textContent).toBe("Oracle-");
+		expect(getStat("volume24h").textContent).toBe("24h Volume-");
 	});
 
 	it("never carries a previous perpetual context across a same-instance market switch", () => {
@@ -531,7 +624,7 @@ describe("MarketOverview", () => {
 		};
 		renderOverview();
 		expect(getStat("price").textContent).toContain("Mark42");
-		expect(getStat("oracle").textContent).toBe("ORACLE-");
+		expect(getStat("oracle").textContent).toBe("Oracle-");
 		expect(container.textContent).not.toContain("Mark80");
 
 		mocks.perpCtxEvent = {
@@ -547,7 +640,7 @@ describe("MarketOverview", () => {
 		};
 		renderOverview();
 		expect(getStat("price").textContent).toContain("Mark43");
-		expect(getStat("oracle").textContent).toContain("ORACLE42.9");
+		expect(getStat("oracle").textContent).toContain("Oracle42.9");
 	});
 
 	it("replaces the full metric set when switching perp to spot and back in the same instance", () => {
@@ -660,7 +753,7 @@ describe("MarketOverview", () => {
 	it("keeps unavailable funding distinct from a real zero rate", () => {
 		renderOverview();
 
-		expect(container.textContent).toContain("FUNDING / Resets in—");
+		expect(container.textContent).toContain("Funding / Resets in—");
 		expect(container.textContent).not.toContain("0.0000%");
 	});
 
@@ -729,7 +822,7 @@ describe("MarketOverview", () => {
 
 		expect(container.textContent).toContain("Price1.2");
 		expect(container.textContent).toContain("24h Change+0.2000 / +20.00%");
-		expect(container.textContent).toContain("24H VOL12,345.67 USDH");
+		expect(container.textContent).toContain("24h Volume12,345.67 USDH");
 		expect(container.textContent).toContain("Market Cap1,250 USDH");
 		expect(container.textContent).not.toContain("$12,345.67");
 	});
@@ -751,7 +844,7 @@ describe("MarketOverview", () => {
 		renderOverview();
 
 		expect(getStat("price").textContent).toBe("Price-");
-		expect(getStat("volume24h").textContent).toBe("24H VOL—");
+		expect(getStat("volume24h").textContent).toBe("24h Volume—");
 		expect(getStat("marketCap").textContent).toBe("Market Cap—");
 		expect(container.textContent).not.toContain("Price9");
 	});

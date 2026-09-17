@@ -6,7 +6,7 @@ import { formatPrice, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
-import { SummaryRow } from "../components/summary-row";
+import { SummaryRow } from "../components/summary-row-view";
 
 interface Props {
 	compact?: boolean;

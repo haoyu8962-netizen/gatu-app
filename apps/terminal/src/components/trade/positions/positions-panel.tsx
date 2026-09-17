@@ -19,11 +19,26 @@ import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-avail
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useMarkets, useSelectedMarketInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
-import { createLazyComponent } from "@/lib/lazy";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
-import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
+import {
+	getPositionsActiveTab,
+	useGlobalSettingsActions,
+	usePositionsActiveTab,
+} from "@/stores/use-global-settings-store";
+import {
+	ACCOUNT_TAB_COUNT_CLASS,
+	ACCOUNT_TAB_INDICATOR_CLASS,
+	ACCOUNT_TAB_LIST_CLASS,
+	ACCOUNT_TAB_TRIGGER_CLASS,
+	ACCOUNT_TABLE_AUTO_HEIGHT_CLASS,
+	ACCOUNT_TABLE_FIXED_CLASS,
+	ACCOUNT_TABLE_PANEL_CLASS,
+	ACCOUNT_TABLE_TABS_CLASS,
+	AccountTableHeaderView,
+} from "./account-table-header-view";
 import { PositionFilterToolbar } from "./position-filter-toolbar";
 import type { PositionMarketOption } from "./position-market-filter";
 
@@ -40,8 +55,20 @@ const OrdersTab = createLazyComponent(() => import("./orders-tab"), "OrdersTab")
 const PositionsTab = createLazyComponent(() => import("./positions-tab"), "PositionsTab");
 const TwapTab = createLazyComponent(() => import("./twap-tab"), "TwapTab");
 
-export function preloadPositionsPanel(): void {
-	void PositionsTab.preload?.();
+const TAB_COMPONENTS = {
+	balances: BalancesTab,
+	positions: PositionsTab,
+	orders: OrdersTab,
+	twap: TwapTab,
+	history: HistoryTab,
+	funding: FundingTab,
+	"orders-history": OrdersHistoryTab,
+} as const;
+
+export function preloadPositionsPanel(): Promise<void> {
+	const restoredTab = resolvePositionsTab(getPositionsActiveTab(), false);
+	const restored = TAB_COMPONENTS[restoredTab as keyof typeof TAB_COMPONENTS] ?? PositionsTab;
+	return preloadLazyComponents(restored === PositionsTab ? [PositionsTab] : [PositionsTab, restored]);
 }
 
 const HISTORY_TAB_PRELOADERS: Readonly<Record<string, () => void>> = {
@@ -279,27 +306,25 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	}
 
 	return (
-		<div className={cn("flex flex-col bg-surface", autoHeight ? "min-h-64" : "h-full overflow-hidden")}>
+		<div
+			className={cn(
+				ACCOUNT_TABLE_PANEL_CLASS,
+				autoHeight ? ACCOUNT_TABLE_AUTO_HEIGHT_CLASS : ACCOUNT_TABLE_FIXED_CLASS,
+			)}
+		>
 			<Tabs
 				value={activeTab}
 				onValueChange={handleTabChange}
-				className="flex-1 min-h-0 flex flex-col"
+				className={ACCOUNT_TABLE_TABS_CLASS}
 				size="xs"
 				variant="underline"
 			>
-				<div
-					data-testid="positions-toolbar-header"
-					className="font-market-close flex h-[45px] shrink-0 items-stretch overflow-hidden border-b border-market-close-stroke-card px-5"
-				>
-					<div
-						ref={tabScrollRef}
-						data-testid="positions-tabs-scroll"
-						className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-					>
-						<TabsList
-							className="h-full min-w-max gap-0.5 border-b-0"
-							indicatorClassName="bg-market-close-fg transition-[left] duration-[120ms] ease-linear"
-						>
+				<AccountTableHeaderView
+					scrollRef={tabScrollRef}
+					actionsRef={setToolbarTarget}
+					hasActions={hasHeaderActions}
+					tabs={
+						<TabsList className={ACCOUNT_TAB_LIST_CLASS} indicatorClassName={ACCOUNT_TAB_INDICATOR_CLASS}>
 							{tabs.map((tab) => {
 								const count = getTabCount(tab.value);
 								const showCountSlot = isConnected && COUNTED_POSITION_TABS.has(tab.value);
@@ -312,14 +337,11 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 										onPointerEnter={() => preloadHistoryTab(tab.value)}
 										onPointerDown={() => preloadHistoryTab(tab.value)}
 										onFocus={() => preloadHistoryTab(tab.value)}
-										className="inline-flex h-full items-center gap-1 px-3 py-0 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-focus data-active:text-market-close-fg"
+										className={ACCOUNT_TAB_TRIGGER_CLASS}
 									>
 										<span>{_(tab.label)}</span>
 										{showCountSlot ? (
-											<span
-												data-position-tab-count={tab.value}
-												className="inline-flex min-w-[3ch] shrink-0 justify-center tabular-nums"
-											>
+											<span data-position-tab-count={tab.value} className={ACCOUNT_TAB_COUNT_CLASS}>
 												{typeof count === "number" ? `(${count})` : null}
 											</span>
 										) : null}
@@ -327,66 +349,64 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 								);
 							})}
 						</TabsList>
-					</div>
-					<div
-						ref={setToolbarTarget}
-						data-testid="positions-header-actions"
-						className={cn("flex shrink-0 items-center gap-2", hasHeaderActions && "pl-3")}
-					>
-						{showsFundsActions ? (
-							<>
-								<Tooltip content={depositAvailability.unavailableReason} side="top">
-									<span className="inline-flex">
-										<Button
-											variant="filled"
-											intent="neutral"
-											size="xxs"
-											disabled={!depositAvailability.available}
-											onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-											aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
-											title={depositAvailability.unavailableReason ?? undefined}
-											className="h-[25px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
-										>
-											<Trans context="Trading toolbar action">Deposit</Trans>
-										</Button>
-									</span>
-								</Tooltip>
-								{withdrawDisabledReason ? (
-									<span id={withdrawUnavailableId} className="sr-only">
-										{withdrawDisabledReason}
-									</span>
-								) : null}
-								<Tooltip content={withdrawDisabledReason} side="top">
-									<span className="inline-flex">
-										<Button
-											variant="outline"
-											intent="neutral"
-											size="xxs"
-											disabled={!!withdrawDisabledReason}
-											focusableWhenDisabled
-											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
-											onClick={
-												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
-											}
-											className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
-										>
-											<Trans context="Trading toolbar action">Withdraw</Trans>
-										</Button>
-									</span>
-								</Tooltip>
-							</>
-						) : null}
-						{showsPositionToolbar ? (
-							<PositionFilterToolbar
-								direction={positionDirectionFilter}
-								market={positionMarketFilter}
-								marketOptions={positionMarketOptions}
-								onDirectionChange={handlePositionDirectionChange}
-								onMarketChange={handlePositionMarketChange}
-							/>
-						) : null}
-					</div>
-				</div>
+					}
+					actions={
+						<>
+							{showsFundsActions ? (
+								<>
+									<Tooltip content={depositAvailability.unavailableReason} side="top">
+										<span className="inline-flex">
+											<Button
+												variant="filled"
+												intent="neutral"
+												size="xxs"
+												disabled={!depositAvailability.available}
+												onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+												aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
+												title={depositAvailability.unavailableReason ?? undefined}
+												className="h-[25px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
+											>
+												<Trans context="Trading toolbar action">Deposit</Trans>
+											</Button>
+										</span>
+									</Tooltip>
+									{withdrawDisabledReason ? (
+										<span id={withdrawUnavailableId} className="sr-only">
+											{withdrawDisabledReason}
+										</span>
+									) : null}
+									<Tooltip content={withdrawDisabledReason} side="top">
+										<span className="inline-flex">
+											<Button
+												variant="outline"
+												intent="neutral"
+												size="xxs"
+												disabled={!!withdrawDisabledReason}
+												focusableWhenDisabled
+												aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
+												onClick={
+													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+												}
+												className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
+											>
+												<Trans context="Trading toolbar action">Withdraw</Trans>
+											</Button>
+										</span>
+									</Tooltip>
+								</>
+							) : null}
+							{showsPositionToolbar ? (
+								<PositionFilterToolbar
+									direction={positionDirectionFilter}
+									market={positionMarketFilter}
+									marketOptions={positionMarketOptions}
+									onDirectionChange={handlePositionDirectionChange}
+									onMarketChange={handlePositionMarketChange}
+								/>
+							) : null}
+						</>
+					}
+				/>
 				<TabsContent value="balances" className={tabContentBaseClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<BalancesTab toolbarTarget={activeTab === "balances" ? toolbarTarget : null} />

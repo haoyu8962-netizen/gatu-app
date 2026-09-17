@@ -3,12 +3,13 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, ArrowLeftIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, Suspense, useMemo, useState } from "react";
+import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
 import { HistoricalOrderPrice } from "@/components/trade/components/historical-order-price";
 import { TopNav } from "@/components/trade/header/top-nav";
 import { MobileHeader } from "@/components/trade/mobile/mobile-header";
 import { TestnetBanner } from "@/components/trade/testnet-banner";
-import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
+import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { useHistoricalOrdersCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
@@ -537,110 +538,113 @@ export function HistoricalOrdersPage({ address }: Props) {
 
 	return (
 		<>
-			<div
-				className={cn(
-					"min-h-dvh bg-grid-container font-sans text-fg",
-					!isMobile && "pb-8",
-					!isMobile && (isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS),
-					isTestnet && "testnet-bg",
-				)}
-			>
-				{isMobile ? (
-					<MobileHeader />
-				) : (
+			<DashboardFrameView
+				{...DASHBOARD_FRAMES["/historical-orders"]}
+				isMobile={isMobile}
+				bannerOffset={isTestnet}
+				testnet={isTestnet}
+				header={
+					isMobile ? (
+						<MobileHeader />
+					) : (
+						<>
+							<TestnetBanner />
+							<TopNav />
+						</>
+					)
+				}
+				main={
 					<>
-						<TestnetBanner />
-						<TopNav />
-					</>
-				)}
-				<main className="mx-auto w-full max-w-[1440px] px-4 py-5 min-[1001px]:px-10 min-[1001px]:py-6">
-					<div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-						<div>
-							<Button
-								nativeButton={false}
-								variant="ghost"
-								intent="neutral"
-								size="xs"
-								className="-ms-2 mb-2"
-								iconLeft={<ArrowLeftIcon className="size-3.5 rtl:rotate-180" />}
-								render={<Link to="/trade" search={{ scope: "all" }} />}
-							>
-								<Trans>Back to trade</Trans>
-							</Button>
-							<h1 className="text-2xl font-bold tracking-tight text-fg">
-								<Trans>Order history</Trans>
-							</h1>
-							<p className="mt-1 text-xs text-fg-muted">
-								<bdi dir="ltr">{shortenAddress(address, 8, 6)}</bdi> ·{" "}
-								<Trans>Up to {ORDER_HISTORY_API_LIMIT} most recent ordinary orders</Trans>
-							</p>
-						</div>
-						<div className="flex items-center gap-2">
-							{exportAddress ? (
+						<div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+							<div>
+								<Button
+									nativeButton={false}
+									variant="ghost"
+									intent="neutral"
+									size="xs"
+									className="-ms-2 mb-2"
+									iconLeft={<ArrowLeftIcon className="size-3.5 rtl:rotate-180" />}
+									render={<Link to="/trade" search={{ scope: "all" }} />}
+								>
+									<Trans>Back to trade</Trans>
+								</Button>
+								<h1 className="text-2xl font-bold tracking-tight text-fg">
+									<Trans>Order history</Trans>
+								</h1>
+								<p className="mt-1 text-xs text-fg-muted">
+									<bdi dir="ltr">{shortenAddress(address, 8, 6)}</bdi> ·{" "}
+									<Trans>Up to {ORDER_HISTORY_API_LIMIT} most recent ordinary orders</Trans>
+								</p>
+							</div>
+							<div className="flex items-center gap-2">
+								{exportAddress ? (
+									<Button
+										variant="outline"
+										intent="neutral"
+										size="xs"
+										disabled={isExporting || history.isRefreshing || history.isOffline || history.status === "loading"}
+										onClick={() => void exportCsv()}
+									>
+										<Trans>Export CSV</Trans>
+									</Button>
+								) : null}
 								<Button
 									variant="outline"
 									intent="neutral"
 									size="xs"
-									disabled={isExporting || history.isRefreshing || history.isOffline || history.status === "loading"}
-									onClick={() => void exportCsv()}
+									disabled={
+										history.isRefreshing ||
+										history.isOffline ||
+										history.status === "disabled" ||
+										history.status === "loading"
+									}
+									onClick={history.refresh}
+									iconLeft={<ArrowClockwiseIcon className={cn("size-3.5", history.isRefreshing && "animate-spin")} />}
 								>
-									<Trans>Export CSV</Trans>
+									<Trans>Refresh</Trans>
 								</Button>
-							) : null}
-							<Button
-								variant="outline"
-								intent="neutral"
-								size="xs"
-								disabled={
-									history.isRefreshing ||
-									history.isOffline ||
-									history.status === "disabled" ||
-									history.status === "loading"
-								}
-								onClick={history.refresh}
-								iconLeft={<ArrowClockwiseIcon className={cn("size-3.5", history.isRefreshing && "animate-spin")} />}
-							>
-								<Trans>Refresh</Trans>
-							</Button>
-						</div>
-					</div>
-					<p className="mb-3 text-xs leading-5 text-fg-muted">
-						<Trans>
-							Hyperliquid returns at most the most recent {ORDER_HISTORY_API_LIMIT} ordinary orders. TWAP history is
-							separate and is not included.
-						</Trans>
-					</p>
-					<section
-						data-testid="historical-orders-page"
-						data-state={history.status}
-						className="overflow-hidden rounded-12 bg-surface shadow-raised"
-					>
-						{history.status === "ready" && (history.error || history.isOffline) ? (
-							<div role="alert" className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">
-								{history.isOffline ? (
-									<Trans>You are offline. Previously loaded order history remains visible.</Trans>
-								) : (
-									<Trans>Refresh failed. Previously loaded order history remains visible.</Trans>
-								)}
 							</div>
-						) : null}
-						{history.status === "ready" && history.reachedLimit ? (
-							<output className="block border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">
-								<Trans>
-									This account reached the {ORDER_HISTORY_API_LIMIT}-order API limit. Older orders are not available
-									from this endpoint.
-								</Trans>
-							</output>
-						) : null}
-						{content}
-					</section>
-				</main>
-				{!isMobile ? (
-					<Suspense fallback={null}>
-						<FooterBar />
-					</Suspense>
-				) : null}
-			</div>
+						</div>
+						<p className="mb-3 text-xs leading-5 text-fg-muted">
+							<Trans>
+								Hyperliquid returns at most the most recent {ORDER_HISTORY_API_LIMIT} ordinary orders. TWAP history is
+								separate and is not included.
+							</Trans>
+						</p>
+						<section
+							data-testid="historical-orders-page"
+							data-state={history.status}
+							className="overflow-hidden rounded-12 bg-surface shadow-raised"
+						>
+							{history.status === "ready" && (history.error || history.isOffline) ? (
+								<div role="alert" className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">
+									{history.isOffline ? (
+										<Trans>You are offline. Previously loaded order history remains visible.</Trans>
+									) : (
+										<Trans>Refresh failed. Previously loaded order history remains visible.</Trans>
+									)}
+								</div>
+							) : null}
+							{history.status === "ready" && history.reachedLimit ? (
+								<output className="block border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">
+									<Trans>
+										This account reached the {ORDER_HISTORY_API_LIMIT}-order API limit. Older orders are not available
+										from this endpoint.
+									</Trans>
+								</output>
+							) : null}
+							{content}
+						</section>
+					</>
+				}
+				footer={
+					!isMobile ? (
+						<Suspense fallback={null}>
+							<FooterBar />
+						</Suspense>
+					) : null
+				}
+			/>
 			<Suspense fallback={null}>
 				<GlobalModals enableLegalGate />
 			</Suspense>

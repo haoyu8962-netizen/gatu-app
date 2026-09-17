@@ -23,7 +23,7 @@
 
 1. 流屏障脚本的哈希每次构建都变，策略必须随每次发布更新；函数发布到失效完成之间（加上壳的 `s-maxage=60`）新旧 HTML 与新旧策略会交叉，策略必须同时含上一版与本版的哈希。
 2. CloudFront Functions 上限 10 KB，不能改响应体；静态托管没有 nonce。
-3. Nitro/EC2 过渡目标由 `vite.config.ts` 的 `routeRules` 在构建期静态下发策略，拿不到产物哈希，保持 `'unsafe-inline'`，退役时一并消失。
+3. Nitro/EC2 过渡目标由 `vite.config.ts` 的 `routeRules` 在构建期静态下发策略，拿不到产物哈希，保持 `'unsafe-inline'`，退役时一并消失。（2026-09-17 EC2 已退役；`routeRules` 暂保留给 `pnpm serve` 本地预览，`chart-asset-cache-policy` 与 `security-policy-docs` 两个契约测试仍钉住它，删除需连同契约迁移，见退役记录。）
 4. 正式域名尚未切换，report-only 阶段没有真实流量；但内联脚本集合可以从产物穷举，不像 `img-src` 依赖真实用户会话。
 5. 本步只改 `script-src`；`img-src` 收窄继续留在 report-only，等 DNS 切换后有真实流量再决定。
 
