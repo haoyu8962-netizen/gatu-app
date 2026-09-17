@@ -30,9 +30,8 @@ const testState = vi.hoisted(() => ({
 	legalGateHook: vi.fn(),
 	openCommandMenu: vi.fn(),
 	closeSendModal: vi.fn(),
-	marketClosePresentation: "confirmation" as "confirmation" | "direct",
+	marketClosePresentation: "confirmation" as "confirmation" | "dismissed" | "direct",
 	marketClosePhase: "idle" as "idle" | "validating" | "submitting" | "reconciling",
-	marketCloseError: null as string | null,
 	lazySuspension: new Promise<never>(() => {}),
 	suspendedLazyComponent: null as string | null,
 }));
@@ -115,7 +114,6 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 					sessionId: "close-session",
 					presentation: testState.marketClosePresentation,
 					phase: testState.marketClosePhase,
-					error: testState.marketCloseError,
 					position: { coin: "xyz:CXMT" },
 				}
 			: null,
@@ -163,7 +161,6 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.openCommandMenu.mockReset();
 		testState.marketClosePresentation = "confirmation";
 		testState.marketClosePhase = "idle";
-		testState.marketCloseError = null;
 		testState.lazySuspension = new Promise<never>(() => {});
 		testState.suspendedLazyComponent = null;
 	});
@@ -351,18 +348,18 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(testState.discardPositionMarketCloseModal).toHaveBeenCalledOnce();
 	});
 
-	it("keeps a direct close hidden unless it needs error or reconciliation attention", async () => {
+	it("never mounts a direct close but keeps a dismissed close mounted while it runs", async () => {
 		testState.activeModal = "positionMarketClose";
 		testState.marketClosePresentation = "direct";
-		testState.marketClosePhase = "submitting";
+		testState.marketClosePhase = "reconciling";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
 		act(() => root.render(createElement(GlobalModals, { enablePositionMarketClose: true })));
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).toBeNull();
 
-		testState.marketClosePhase = "idle";
-		testState.marketCloseError = "Order rejected";
-		act(() => root.render(createElement(GlobalModals, { key: "direct-error", enablePositionMarketClose: true })));
+		testState.marketClosePresentation = "dismissed";
+		testState.marketClosePhase = "submitting";
+		act(() => root.render(createElement(GlobalModals, { key: "dismissed", enablePositionMarketClose: true })));
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).not.toBeNull();
 	});
 

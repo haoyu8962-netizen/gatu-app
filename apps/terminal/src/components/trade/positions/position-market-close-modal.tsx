@@ -47,7 +47,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	const sizingInteractionActiveRef = useRef(false);
 	const session = usePositionMarketCloseSession();
 	const actions = usePositionMarketCloseActions();
-	const { submit, isPending, isReconciling, error, resetError } = usePositionMarketCloseSubmit();
+	const { submit } = usePositionMarketCloseSubmit();
 	const userPositions = useUserPositions();
 	const { clientKey, env } = useHyperliquid();
 	const { getMarketInfo } = useMarketsInfo();
@@ -113,11 +113,10 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 		clientKey.toLowerCase(),
 		env,
 	]);
-	const canDismiss = phase === "idle" || phase === "reconciling";
-	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatus === null;
+	const canEdit = phase === "idle" && positionStatus === null;
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
-	const visibleError = positionStatusMessage ?? error ?? (positionStatus === null ? visibleSizingError : null);
+	const visibleError = positionStatusMessage ?? (positionStatus === null ? visibleSizingError : null);
 	const canSubmit = canEdit && !isSizingInteractionActive && sizing.errors.length === 0;
 	const confirmationPreferenceAlreadyDismissed =
 		readPositionMarketCloseConfirmationPreference({ owner: session.owner, env: session.env }) === "dismissed";
@@ -177,7 +176,6 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	function setSizingIntent(nextIntent: PositionMarketCloseSizingIntent) {
 		if (!canEdit) return;
 		actions.setSizingIntent(sessionId, nextIntent);
-		resetError();
 	}
 
 	function handleOpenChange(open: boolean) {
@@ -194,21 +192,12 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 		return submit({ sessionId, dismissFutureConfirmation });
 	}
 
-	const progressLabel =
-		phase === "validating"
-			? t`Validating...`
-			: phase === "submitting"
-				? t`Submitting...`
-				: phase === "reconciling"
-					? t`Confirming...`
-					: null;
-
 	return (
 		<PositionCloseDialogShell
-			open
+			open={session.presentation === "confirmation"}
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
-			dismissible={canDismiss}
+			dismissible
 			closeLabel={t`Close`}
 		>
 			<PositionCloseDialogHeader>
@@ -269,21 +258,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 					/>
 				</PositionCloseSizingControls>
 
-				{phase === "reconciling" && (
-					<output
-						id={errorId}
-						aria-live="polite"
-						className="flex items-start gap-2 rounded-8 bg-warning-soft p-2.5 text-xs text-warning"
-					>
-						<WarningIcon className="mt-0.5 size-3.5 shrink-0" weight="fill" aria-hidden="true" />
-						<span className="flex flex-col gap-1">
-							<span>{error ?? t`The order is still being confirmed.`}</span>
-							<span>{t`Closing this dialog will not cancel it.`}</span>
-						</span>
-					</output>
-				)}
-
-				{visibleError && phase !== "reconciling" && (
+				{visibleError && (
 					<div
 						id={errorId}
 						role={userPositions.isLoading ? "status" : "alert"}
@@ -304,10 +279,6 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 						<span className="leading-relaxed">{visibleError}</span>
 					</div>
 				)}
-
-				<p className="sr-only" aria-live="polite">
-					{progressLabel}
-				</p>
 			</PositionCloseDialogContent>
 
 			<PositionCloseDialogFooter>
@@ -321,14 +292,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 					containerClassName="w-full items-stretch"
 					className="relative min-h-0 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger py-[15px] text-[15px] leading-[21px] font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-none hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted min-[1001px]:py-[14px]"
 				>
-					{progressLabel ? (
-						<>
-							<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-							{progressLabel}
-						</>
-					) : (
-						t`Market Close ${formattedCloseSize} ${sizeSymbol}`
-					)}
+					{t`Market Close ${formattedCloseSize} ${sizeSymbol}`}
 				</TradingActionButton>
 				<p id={helperId} className="text-center text-xs leading-[17px] text-market-close-subtle">
 					{t`Click to submit · Filled trades cannot be reversed`}

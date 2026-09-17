@@ -213,11 +213,7 @@ function SharedGlobalModals({
 			{activeModal === "positionMarketClose" &&
 				enablePositionMarketClose &&
 				marketCloseSession &&
-				(marketCloseSession.presentation === "confirmation" ||
-					marketCloseSession.error !== null ||
-					marketCloseSession.phase === "reconciling") && (
-					<PositionMarketCloseModal key={marketCloseSession.sessionId} />
-				)}
+				marketCloseSession.presentation !== "direct" && <PositionMarketCloseModal key={marketCloseSession.sessionId} />}
 		</Suspense>
 	);
 }

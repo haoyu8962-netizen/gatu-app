@@ -100,6 +100,7 @@
 - [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) — 2026-09-17；已整理，验证见正文。按 ADR 0011 把 1001–1420 px 桌面网格改为图表列 10/14 + 右列堆叠（下单面板、订单簿、账户信息），存储键升到 v12；验证结果与限制见正文。
 - [桌面顶部导航：命名断点、收纳规则与单一配置（ADR 0013）](sessions/2026-09-17-desktop-nav-collapse.md) — 2026-09-17；已整理，验证见正文。1181 魔法数改为 DESKTOP_NAV_COMPACT/NARROW 常量与 nav-compact 变体；Earn（Soon）紧凑时进 More，低优先级入口仅在已连接且 ≤1181 或 ≤1100 时收纳；入口与 More 由 DESKTOP_NAV_ITEMS 单一派生；官方对照与六语言余量实测见正文。
 - [退役 EC2 + Caddy + Nitro 常驻进程，仓库切换为 CloudFront 单一架构](sessions/2026-09-17-ec2-retirement.md) — 2026-09-17；已整理，验证见正文。用户 2026-09-17 10:35Z 停机 EC2 i-058ca09d0533fc11d；仓库随之关闭 Nitro 预压缩、CI 去掉 Caddyfile 校验与 EC2 发布脚本测试并改跑 CloudFront 工具测试、deploy/README.md 标为历史资料、ADR 0005 与计划文档补退役状态；routeRules CSP 因两个契约测试仍钉住而留待后续。
+- [市价平仓确认后立即关闭弹窗，结果只用通知](sessions/2026-09-17-market-close-submit-and-dismiss.md) — 2026-09-17；已整理，验证见正文。按 ADR 0014 实施：submit 先 dismiss 会话再校验，弹窗组件在 dismissed 期间保持挂载但对话框关闭；删除会话 error 字段与 setError/resetError；失败与被锁走通知并关闭会话，对账在任何结局释放会话；7 个测试文件 112 pass，唯一红项为分支既有的 440px 摘要样式断言。
 - [移动端 Markets 页切换后保留 TradingView 图表](sessions/2026-09-17-mobile-chart-retention.md) — 2026-09-17；已整理，验证见正文。实测确认 Markets→Trade→Markets 每次重建 TradingView iframe，根因是 ade94020 引入的 Activity hidden 卸载效果；改为首次展示后常驻 visible，单测红绿与无头探针均确认同一 iframe 贯穿切换，与官方终端做法一致。
 - [非模态表面改用 bg-surface 并补齐移动端按压反馈](sessions/2026-09-17-surface-tokens-touch-feedback.md) — 2026-09-17；已整理，验证见正文。盘点 bg-modal 语义误用（16 文件 36 处，终端两主题下视觉零变化）与 6 处无按压反馈的可点击表面；换为 bg-surface、加共享 active 类，契约测试与设计规则同步；双色卡结构保留并记录。
 - [启动占位单一来源：ADR 0009 与展示组件规则](sessions/2026-09-16-placeholder-single-source-adr.md) — 2026-09-16；已整理，验证见正文。核对确认桌面壳九个 frame、移动壳与运行时占位是三份手写实现，唯一共享的是网格几何；采纳「展示组件是几何唯一来源」的架构：只接 props 的 *-view.tsx 由运行时容器与壳共同渲染，占位 props 单一来源，导入边界与一致性测试钉住，inert 取代禁止交互元素；本轮只落 ADR、规则与索引，迁移未开始。
@@ -119,6 +120,7 @@
 | 2026-09-17 | [退役 EC2 + Caddy + Nitro 常驻进程，仓库切换为 CloudFront 单一架构](sessions/2026-09-17-ec2-retirement.md) | 未取得任务标识，见正文 | `bde33928b43c1823ddd716d728accce71ef979e5` | 已整理，验证见正文 |
 | 2026-09-17 | [旧架构（EC2 + Caddy + Nitro）到新架构（CloudFront + S3 + Lambda）迁移完成度核对](sessions/2026-09-17-ec2-to-cloudfront-migration-audit.md) | 未取得任务标识，见正文 | `74c80c1a9e61d2045848dca2389e1af627c23609` | 已整理，验证见正文 |
 | 2026-09-17 | [Grok 对抗审查 PR #26（启动、md 堆叠、路由揭示、导航收纳）](sessions/2026-09-17-grok-pr26-review.md) | 未取得任务标识，见正文 | `e4c0c4129f1c48cda50d365f347bacc5b6a9893c` | 已整理，验证见正文 |
+| 2026-09-17 | [市价平仓确认后立即关闭弹窗，结果只用通知](sessions/2026-09-17-market-close-submit-and-dismiss.md) | 未取得任务标识，见正文 | `44a4d411b859c06827a8fd4c4675e487938e3231` | 已整理，验证见正文 |
 | 2026-09-17 | [移动端 Markets 页切换后保留 TradingView 图表](sessions/2026-09-17-mobile-chart-retention.md) | 未取得任务标识，见正文 | `0ad17aea771213eae608d5d0dff78de0e249b94b` | 已整理，验证见正文 |
 | 2026-09-17 | [非模态表面改用 bg-surface 并补齐移动端按压反馈](sessions/2026-09-17-surface-tokens-touch-feedback.md) | 未取得任务标识，见正文 | `3a80b36081648b8bb3a8b5efa1087fd24c69fcec` | 已整理，验证见正文 |
 | 2026-09-17 | [交易路由在首屏惰性片段解析后揭示（ADR 0012）](sessions/2026-09-17-trade-route-reveal.md) | 未取得任务标识，见正文 | `b80bd533bbf7c66e41817615a441e0cd973989ab` | 已整理，验证见正文 |

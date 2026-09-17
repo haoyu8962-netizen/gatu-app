@@ -1556,7 +1556,6 @@ msgid "Closing cost"
 msgstr "平仓成本"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Closing this dialog will not cancel it."
 msgstr "关闭此弹窗不会取消该订单。"
@@ -1716,7 +1715,6 @@ msgid "Confirming order status. Do not retry."
 msgstr "正在确认订单状态，请勿重试。"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Confirming..."
 msgstr "确认中..."
 
@@ -7269,7 +7267,6 @@ msgid "Submitting to Hyperliquid"
 msgstr "正在提交至 Hyperliquid"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Submitting..."
@@ -7713,7 +7710,6 @@ msgid "The order changed before the requested modification was confirmed. Review
 msgstr "委托在本次修改确认前已发生变化。重试前请检查最新委托。"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "The order is still being confirmed."
 msgstr "订单仍在确认中。"
 
@@ -9061,7 +9057,6 @@ msgid "Validating positions..."
 msgstr "正在校验持仓..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Validating..."
 msgstr "验证中..."
 

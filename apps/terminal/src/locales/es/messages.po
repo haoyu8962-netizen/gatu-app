@@ -1556,7 +1556,6 @@ msgid "Closing cost"
 msgstr "Costo de cierre"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Closing this dialog will not cancel it."
 msgstr "Cerrar este cuadro de diálogo no cancelará la orden."
@@ -1716,7 +1715,6 @@ msgid "Confirming order status. Do not retry."
 msgstr "Confirmando el estado de la orden. No vuelva a intentarlo."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Confirming..."
 msgstr "Confirmando..."
 
@@ -7269,7 +7267,6 @@ msgid "Submitting to Hyperliquid"
 msgstr "Enviando a Hyperliquid"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Submitting..."
@@ -7713,7 +7710,6 @@ msgid "The order changed before the requested modification was confirmed. Review
 msgstr "La orden cambió antes de que se confirmara la modificación solicitada. Revisa la orden más reciente antes de volver a intentarlo."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "The order is still being confirmed."
 msgstr "La orden todavía se está confirmando."
 
@@ -9061,7 +9057,6 @@ msgid "Validating positions..."
 msgstr "Validando posiciones..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Validating..."
 msgstr "Validando..."
 
