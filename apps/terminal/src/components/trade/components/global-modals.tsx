@@ -4,6 +4,7 @@ import { Suspense, useEffect } from "react";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { type Hip3DisclaimerRequirement, useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
 import { useLegalGate } from "@/hooks/trade/use-legal-gate";
+import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
@@ -27,9 +28,12 @@ import {
 	SendModal,
 	SpotSwapModal,
 	TransferModal,
+	useIdleGlobalModalPreload,
 } from "./lazy-global-modals";
 import { LegalAcceptanceModal } from "./legal-acceptance-modal";
 import { TradingOnboardingGate } from "./trading-onboarding-gate";
+
+const GLOBAL_MODAL_EXIT_MS = 250;
 
 interface Props {
 	enableHip3Disclaimer?: boolean;
@@ -139,6 +143,7 @@ function SharedGlobalModals({
 	enablePositionMarketClose: boolean;
 }) {
 	const activeModal = useGlobalModalType();
+	const displayedModal = useLingeringValue(activeModal, GLOBAL_MODAL_EXIT_MS);
 	const marketCloseSession = usePositionMarketCloseSession();
 	const isHip3DisclaimerRequired = hip3Disclaimer?.isRequired === true;
 	const { open: openCommandMenu, close: closeCommandMenu } = useCommandMenuActions();
@@ -150,6 +155,7 @@ function SharedGlobalModals({
 	const { clientKey, env, sessionMode } = useHyperliquid();
 	const { walletAddress, walletIntent } = useWalletSession();
 	const fundsSessionKey = `${env}:${clientKey.toLowerCase()}:${sessionMode}:${walletAddress?.toLowerCase() ?? "disconnected"}:${walletIntent}`;
+	useIdleGlobalModalPreload(enablePositionMarketClose);
 
 	useEffect(() => {
 		if (!enablePositionMarketClose && activeModal === "positionMarketClose") {
@@ -185,32 +191,34 @@ function SharedGlobalModals({
 		);
 	}
 
-	if (!activeModal) return null;
+	if (!displayedModal) return null;
 
 	return (
-		<Suspense fallback={activeModal === "deposit" ? <DepositModalSuspenseFallback /> : <GlobalModalLoadingFallback />}>
-			{activeModal === "deposit" && <DepositModal key={`deposit:${fundsSessionKey}`} />}
-			{activeModal === "internalTransfer" && (
+		<Suspense
+			fallback={displayedModal === "deposit" ? <DepositModalSuspenseFallback /> : <GlobalModalLoadingFallback />}
+		>
+			{displayedModal === "deposit" && <DepositModal key={`deposit:${fundsSessionKey}`} />}
+			{displayedModal === "internalTransfer" && (
 				<TransferModal
 					key={`transfer:${fundsSessionKey}`}
-					open
+					open={activeModal === "internalTransfer"}
 					onOpenChange={(open) => !open && closeTransferModal()}
 					initialDirection={transferDirection}
 				/>
 			)}
-			{activeModal === "send" && (
+			{displayedModal === "send" && (
 				<SendModal
 					key={`send:${fundsSessionKey}`}
-					open
+					open={activeModal === "send"}
 					onOpenChange={(open) => !open && closeSendModal()}
 					initialAsset={sendModalAsset}
 					initialAccountType={sendAccountType}
 				/>
 			)}
-			{activeModal === "settings" && <GlobalSettingsModal />}
-			{activeModal === "swap" && <SpotSwapModal key={`swap:${fundsSessionKey}`} />}
-			{activeModal === "commandMenu" && <CommandMenu />}
-			{activeModal === "positionMarketClose" &&
+			{displayedModal === "settings" && <GlobalSettingsModal />}
+			{displayedModal === "swap" && <SpotSwapModal key={`swap:${fundsSessionKey}`} />}
+			{displayedModal === "commandMenu" && <CommandMenu />}
+			{displayedModal === "positionMarketClose" &&
 				enablePositionMarketClose &&
 				marketCloseSession &&
 				marketCloseSession.presentation !== "direct" && <PositionMarketCloseModal key={marketCloseSession.sessionId} />}

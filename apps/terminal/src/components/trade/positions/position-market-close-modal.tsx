@@ -43,6 +43,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const [dismissFutureConfirmation, setDismissFutureConfirmation] = useState(false);
+	const [isClosing, setIsClosing] = useState(false);
 	const [isSizingInteractionActive, setIsSizingInteractionActive] = useState(false);
 	const sizingInteractionActiveRef = useRef(false);
 	const session = usePositionMarketCloseSession();
@@ -179,7 +180,11 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	}
 
 	function handleOpenChange(open: boolean) {
-		if (!open) actions.close(sessionId);
+		if (!open) setIsClosing(true);
+	}
+
+	function handleOpenChangeComplete(open: boolean) {
+		if (!open && isClosing) actions.close(sessionId);
 	}
 
 	function handleSizingInteractionChange(interacting: boolean) {
@@ -194,8 +199,9 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 
 	return (
 		<PositionCloseDialogShell
-			open={session.presentation === "confirmation"}
+			open={session.presentation === "confirmation" && !isClosing}
 			onOpenChange={handleOpenChange}
+			onOpenChangeComplete={handleOpenChangeComplete}
 			isMobile={isMobile}
 			dismissible
 			closeLabel={t`Close`}

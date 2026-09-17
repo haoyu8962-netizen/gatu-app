@@ -575,6 +575,18 @@ describe("PositionMarketCloseModal", () => {
 		expectEditingLocked();
 	});
 
+	it("animates out on cancel and releases the session only once the exit completes", () => {
+		render();
+		expect(testState.adaptiveProps?.open).toBe(true);
+
+		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
+		expect(testState.adaptiveProps?.open).toBe(false);
+		expect(testState.close).not.toHaveBeenCalled();
+
+		act(() => (testState.adaptiveProps?.onOpenChangeComplete as (open: boolean) => void)(false));
+		expect(testState.close).toHaveBeenCalledWith("session-1");
+	});
+
 	it("closes the dialog as soon as the session is dismissed and never shows progress copy", () => {
 		testState.session.presentation = "dismissed";
 		testState.session.phase = "validating";

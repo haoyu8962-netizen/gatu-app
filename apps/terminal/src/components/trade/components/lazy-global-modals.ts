@@ -1,4 +1,5 @@
-import { createLazyComponent } from "@/lib/lazy";
+import { useEffect } from "react";
+import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 
 export const DepositModal = createLazyComponent(() => import("../tradebox/deposit-modal"), "DepositModal");
 export const GlobalSettingsModal = createLazyComponent(() => import("./global-settings-modal"), "GlobalSettingsModal");
@@ -20,4 +21,34 @@ const preloaders: Record<PreloadableGlobalModal, () => Promise<unknown>> = {
 
 export async function preloadGlobalModal(modal: PreloadableGlobalModal): Promise<void> {
 	await preloaders[modal]();
+}
+
+/**
+ * Warms the lazy modal chunks after the surface has settled, so the first open of a global modal
+ * mounts its content directly instead of showing the shared Suspense fallback for React's minimum
+ * 300 ms. Deposit keeps its dedicated fallback and is not warmed here.
+ */
+export function useIdleGlobalModalPreload(includePositionMarketClose: boolean): void {
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+
+		const browserWindow = window;
+		function preload() {
+			void preloadLazyComponents([
+				GlobalSettingsModal,
+				SpotSwapModal,
+				CommandMenu,
+				TransferModal,
+				SendModal,
+				...(includePositionMarketClose ? [PositionMarketCloseModal] : []),
+			]);
+		}
+		if (browserWindow.requestIdleCallback) {
+			const idleId = browserWindow.requestIdleCallback(preload, { timeout: 2_000 });
+			return () => browserWindow.cancelIdleCallback(idleId);
+		}
+
+		const timeoutId = browserWindow.setTimeout(preload, 1_000);
+		return () => browserWindow.clearTimeout(timeoutId);
+	}, [includePositionMarketClose]);
 }

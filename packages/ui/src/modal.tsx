@@ -3,6 +3,7 @@ import { XIcon } from "@phosphor-icons/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { Drawer, DrawerClose, DrawerContent } from "./drawer";
+import { usePresentedOpen } from "./use-presented-open";
 import { cn } from "./utils";
 
 // ─── Mobile detection ────────────────────────────────────────────────────────
@@ -46,7 +47,13 @@ const modalPopupVariants = cva(["relative w-full bg-modal shadow-overlay rounded
 	},
 });
 
-const Modal = Dialog.Root;
+type ModalProps = React.ComponentPropsWithoutRef<typeof Dialog.Root>;
+
+function Modal({ open, ...props }: ModalProps) {
+	const presented = usePresentedOpen(open);
+	return <Dialog.Root open={presented} {...props} />;
+}
+Modal.displayName = "Modal";
 
 const ModalTrigger = Dialog.Trigger;
 
@@ -94,7 +101,7 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 						className={cn(
 							modalPopupVariants({ size, className }),
 							"max-h-[calc(100dvh-3rem)] overflow-y-auto",
-							"transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
+							"transition-[opacity,scale] duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
 						)}
 						ref={ref}
 						{...props}
@@ -176,6 +183,7 @@ ModalFooter.displayName = "ModalFooter";
 interface AdaptiveModalProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	onOpenChangeComplete?: (open: boolean) => void;
 	size?: VariantProps<typeof modalPopupVariants>["size"];
 	showClose?: boolean;
 	showHandle?: boolean;
@@ -192,6 +200,7 @@ interface AdaptiveModalProps {
 function AdaptiveModal({
 	open,
 	onOpenChange,
+	onOpenChangeComplete,
 	size,
 	showClose = true,
 	showHandle = true,
@@ -217,7 +226,13 @@ function AdaptiveModal({
 
 	if (useDrawer) {
 		return (
-			<Drawer side="bottom" open={open} onOpenChange={handleOpenChange} disablePointerDismissal={!dismissible}>
+			<Drawer
+				side="bottom"
+				open={open}
+				onOpenChange={handleOpenChange}
+				onOpenChangeComplete={onOpenChangeComplete}
+				disablePointerDismissal={!dismissible}
+			>
 				<DrawerContent
 					overlayClassName={cn(layer === "blocking" && "z-[var(--z-blocking-overlay)]", overlayClassName)}
 					className={cn(
@@ -258,7 +273,12 @@ function AdaptiveModal({
 	}
 
 	return (
-		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={!dismissible}>
+		<Modal
+			open={open}
+			onOpenChange={handleOpenChange}
+			onOpenChangeComplete={onOpenChangeComplete}
+			disablePointerDismissal={!dismissible}
+		>
 			<ModalPopup
 				size={size}
 				showClose={showClose}

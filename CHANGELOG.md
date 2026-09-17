@@ -20,6 +20,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Modals and drawers now animate in even when a store change mounts them already open, and
+  store-driven global modals stay mounted for their exit transition instead of vanishing;
+  the position, order-confirmation and cancel-all dialogs no longer suppress those transitions.
+- The lazy global modal chunks warm during idle time after the terminal settles, so the first
+  Market Close, settings, swap, transfer, send or command-menu open no longer shows the
+  shared loading spinner.
 - The mobile Markets view stays mounted after its first visit, so switching to Trade or
   Account and back reuses the existing TradingView chart instead of rebuilding it.
 - Visitors without a stored Privy session now see `Connect Wallet` on the first rendered frame

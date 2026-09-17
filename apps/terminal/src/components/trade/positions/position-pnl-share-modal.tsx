@@ -181,8 +181,8 @@ function PositionPnlShareDialog({ position, onOpenChange }: PositionPnlShareDial
 			<ModalPopup
 				size="sm"
 				showClose={false}
-				overlayClassName="!bg-scrim/60 !backdrop-blur-none !transition-none data-starting-style:!opacity-100 data-ending-style:!opacity-100"
-				className="font-market-close !w-[calc(100vw-2rem)] !max-w-[360px] shrink-0 !overflow-visible !rounded-none !bg-transparent !shadow-none !transition-none data-starting-style:!scale-100 data-starting-style:!opacity-100 data-ending-style:!scale-100 data-ending-style:!opacity-100 min-[1001px]:!w-[360px]"
+				overlayClassName="!bg-scrim/60 !backdrop-blur-none"
+				className="font-market-close !w-[calc(100vw-2rem)] !max-w-[360px] shrink-0 !overflow-visible !rounded-none !bg-transparent !shadow-none min-[1001px]:!w-[360px]"
 				data-testid="position-pnl-share-modal"
 			>
 				<ModalTitle className="sr-only">{t`Share PNL`}</ModalTitle>

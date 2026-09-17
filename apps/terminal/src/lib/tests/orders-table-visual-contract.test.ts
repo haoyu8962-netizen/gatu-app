@@ -23,10 +23,10 @@ describe("orders toolbar visual contract", () => {
 		);
 		expect(DESKTOP_SOURCE).toContain("gap-x-3 px-5");
 		expect(DESKTOP_SOURCE).toContain("min-w-[1280px]");
-		expect(DESKTOP_SOURCE).toContain("block bg-modal [&_tr]:border-t-0");
+		expect(DESKTOP_SOURCE).toContain("block bg-surface [&_tr]:border-stroke-weak [&_tr]:border-t-0");
 		expect(DESKTOP_SOURCE).not.toContain("<AssetBadge");
 		expect(DESKTOP_SOURCE).toContain("group-hover/order-row:opacity-100");
-		expect(DESKTOP_SOURCE).toContain("border-market-close-stroke-input bg-modal");
+		expect(DESKTOP_SOURCE).toContain("border-market-close-stroke-input bg-surface");
 		expect(DESKTOP_SOURCE).toContain("text-market-close-warning");
 		expect(DESKTOP_SOURCE).toContain('to="/portfolio"');
 		expect(DESKTOP_SOURCE).toContain("h-[38px] min-w-[1280px]");
