@@ -67,6 +67,10 @@
 
 追加（同日，用户指示）：删除遗留的 EC2 Instance Connect Endpoint `eice-08b8c8b3812084477`（`create-complete` → `delete-in-progress` → `delete-complete`，约 30 s），随后删除 `launch-wizard-1`（`sg-0bf4583629084af39`，曾被该端点引用且全协议对全网开放）、`launch-wizard-2`（`sg-0ea49dcbdd294d561`，未引用，全协议开放）、`launch-wizard-3`（`sg-0d865661671af658d`，未引用，开放 22）。终态：ap-northeast-1 安全组仅剩 VPC `default`，网卡 0，Instance Connect Endpoint 0，实例 0（terminated 记录会在约一小时后消失），EIP 0，卷 0。
 
+## CI 修正（2026-09-17，eec4d2d3 的 Production Builds 失败后）
+
+首轮 CI 改动漏掉了后续三个 EC2 时代的步骤：`mobile-sync-release.mjs attest`（对 Nitro 产物做票据协议与进程重启验收）、`mobile-sync-caddy.test.mjs` + `mobile-sync-candidate.test.mjs`（需要已删除步骤提取的 `CADDY_BINARY`，四个矩阵作业在此失败）、`Record verified mobile artifact identity`（读取前者生成的 `.gatu-mobile-sync.json`）。三步一并移除：它们验收的是 EC2 上的 Nitro 常驻进程与 Caddy 代理别名，线上已由 Lambda 处理票据端点，`deploy.mjs verify` 的"signed lambda post"覆盖线上协议，`src/lib/tests/mobile-sync-*` 覆盖协议单元。保留"Verify production lazy client graph"（对构建产物起 Nitro 校验客户端图，与托管无关）与"Verify TradingView package and compressed build assets"（`verify-chart-build.mjs` 在无预压缩副本时本地通过，退出码 0）。
+
 ## 发布凭据切换到受限 IAM 用户（2026-09-17，用户指示后执行）
 
 - 现状核对：IAM 用户 `gatu-edge` 与本机 `gatu-edge` profile 早在 2026-09-13 已建立，但策略 `gatu-edge-deploy` v1 含 `cloudfront:*`/S3 桶管理/Lambda 创建等建站期权限，且 `deploy.mjs` 未指定 profile，当天 p21 发布实际以 root 密钥执行。

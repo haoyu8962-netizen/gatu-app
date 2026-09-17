@@ -187,21 +187,6 @@ jobs:
           VITE_MOBILE_PAIRING_CREATE_ENABLED: ${{ matrix.pairing.create }}
           VITE_MOBILE_PAIRING_IMPORT_ENABLED: ${{ matrix.pairing.import }}
 
-      - name: Verify actual mobile ticket HTTP protocol and process restart
-        run: node deploy/mobile-sync-release.mjs attest apps/terminal/.output "${{ matrix.pairing.create }}" "${{ matrix.pairing.import }}"
-
-      - name: Verify actual Nitro proxy aliases and same-artifact promotion
-        run: |
-          CADDY_BINARY="$RUNNER_TEMP/caddy" MOBILE_SYNC_OUTPUT=apps/terminal/.output node --test deploy/mobile-sync-caddy.test.mjs deploy/mobile-sync-candidate.test.mjs
-
-      - name: Record verified mobile artifact identity
-        run: |
-          node --input-type=module - <<'NODE'
-          import { readFileSync, appendFileSync } from 'node:fs';
-          const { commit, release, mobileSync, verification, verifiedAt, sha256 } = JSON.parse(readFileSync('apps/terminal/.output/.gatu-mobile-sync.json', 'utf8'));
-          appendFileSync(process.env.GITHUB_STEP_SUMMARY, '```json\n' + JSON.stringify({ commit, release, mobileSync, verification, verifiedAt, sha256 }, null, 2) + '\n```\n');
-          NODE
-
       - name: Measure client-root startup closure
         run: pnpm --filter @gatu/terminal perf:startup
 
