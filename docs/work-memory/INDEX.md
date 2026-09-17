@@ -77,6 +77,7 @@
 当前规范：[docs/adr/0005-spa-static-shell.md](../../docs/adr/0005-spa-static-shell.md) · [deploy/README.md](../../deploy/README.md)
 
 - [生产发布 cloudfront-2026-09-17-p21（PR #26 分支 c59d13a8）](sessions/2026-09-17-cloudfront-release-p21.md) — 2026-09-17；已验证，范围见正文。按 CloudFront 日常发布 runbook 把 claude/placeholder-parity@c59d13a8 发布到 app.gatu.ai 与 testnet.gatu.ai：函数、Lambda、S3 同步、两个失效、两个 verify 全部通过；发布前后线上加载与几何对比见正文。
+- [退役 EC2 + Caddy + Nitro 常驻进程，仓库切换为 CloudFront 单一架构](sessions/2026-09-17-ec2-retirement.md) — 2026-09-17；已整理，验证见正文。用户 2026-09-17 10:35Z 停机 EC2 i-058ca09d0533fc11d；仓库随之关闭 Nitro 预压缩、CI 去掉 Caddyfile 校验与 EC2 发布脚本测试并改跑 CloudFront 工具测试、deploy/README.md 标为历史资料、ADR 0005 与计划文档补退役状态；routeRules CSP 因两个契约测试仍钉住而留待后续。
 - [旧架构（EC2 + Caddy + Nitro）到新架构（CloudFront + S3 + Lambda）迁移完成度核对](sessions/2026-09-17-ec2-to-cloudfront-migration-audit.md) — 2026-09-17；已整理，验证见正文。流量层已完全切到 CloudFront/S3/Lambda（DNS、分发源、Lambda、verify 全部核实）；旧 EC2 仍在运行且其 Caddy 已被改为代理到 CloudFront、22/80/443 对全网开放，尚未按 runbook 第 11 步退役；deploy/README.md 与两份计划文档仍把 EC2 描述为现状。
 - [交易路由在首屏惰性片段解析后揭示（ADR 0012）](sessions/2026-09-17-trade-route-reveal.md) — 2026-09-17；已整理，验证见正文。热刷新路由揭示被 React 300 ms fallback 节流拖到 447 ms；bootTradeRoute 改为返回等待首屏惰性片段的 Promise 并由 beforeLoad await，带 1500 ms 上限；改动前后本地时间线与验证见正文。
 - [二三次刷新对照：app.gatu.ai 与官方终端](sessions/2026-09-17-warm-reload-comparison.md) — 2026-09-17；已整理，验证见正文。热刷新时 app.gatu.ai 零网络字节（SW 回壳 + immutable 资源），官方每次刷新约 61 个 304 条件请求；两站网格就绪都约 0.45–0.7 s，时间花在 JS 编译执行与初始化；我们的导航栏要等钱包运行时块，是可见的优化点。
@@ -98,6 +99,7 @@
 
 - [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) — 2026-09-17；已整理，验证见正文。按 ADR 0011 把 1001–1420 px 桌面网格改为图表列 10/14 + 右列堆叠（下单面板、订单簿、账户信息），存储键升到 v12；验证结果与限制见正文。
 - [桌面顶部导航：命名断点、收纳规则与单一配置（ADR 0013）](sessions/2026-09-17-desktop-nav-collapse.md) — 2026-09-17；已整理，验证见正文。1181 魔法数改为 DESKTOP_NAV_COMPACT/NARROW 常量与 nav-compact 变体；Earn（Soon）紧凑时进 More，低优先级入口仅在已连接且 ≤1181 或 ≤1100 时收纳；入口与 More 由 DESKTOP_NAV_ITEMS 单一派生；官方对照与六语言余量实测见正文。
+- [退役 EC2 + Caddy + Nitro 常驻进程，仓库切换为 CloudFront 单一架构](sessions/2026-09-17-ec2-retirement.md) — 2026-09-17；已整理，验证见正文。用户 2026-09-17 10:35Z 停机 EC2 i-058ca09d0533fc11d；仓库随之关闭 Nitro 预压缩、CI 去掉 Caddyfile 校验与 EC2 发布脚本测试并改跑 CloudFront 工具测试、deploy/README.md 标为历史资料、ADR 0005 与计划文档补退役状态；routeRules CSP 因两个契约测试仍钉住而留待后续。
 - [启动占位单一来源：ADR 0009 与展示组件规则](sessions/2026-09-16-placeholder-single-source-adr.md) — 2026-09-16；已整理，验证见正文。核对确认桌面壳九个 frame、移动壳与运行时占位是三份手写实现，唯一共享的是网格几何；采纳「展示组件是几何唯一来源」的架构：只接 props 的 *-view.tsx 由运行时容器与壳共同渲染，占位 props 单一来源，导入边界与一致性测试钉住，inert 取代禁止交互元素；本轮只落 ADR、规则与索引，迁移未开始。
 - [移除启动占位体系](sessions/2026-09-16-remove-startup-placeholders.md) — 2026-09-16；已整理，验证见正文。按 ADR 0010 移除启动占位；类型、格式、翻译与全部产物预算通过，全量测试保留已知基线失败，完整构建受沙箱 preview 监听限制。
 - [Across 官方文档共享阅读入口](sessions/2026-09-13-across-docs-entry.md) — 2026-09-13；已整理，验证见正文。以官方索引和按需页面核验接入 Across 文档，Codex 与 Claude 共用项目入口；不安装交易工具，API Markdown 与 MCP 的覆盖缺口需回退正式页面。
@@ -112,6 +114,7 @@
 | 2026-09-17 | [生产发布 cloudfront-2026-09-17-p21（PR #26 分支 c59d13a8）](sessions/2026-09-17-cloudfront-release-p21.md) | 未取得任务标识，见正文 | `c59d13a8188093e1de0c5f247a9bc625f4a18a34` | 已验证，范围见正文 |
 | 2026-09-17 | [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) | 未取得任务标识，见正文 | `a7fb284656651e6f8440cdfd584ed056ed158ff1` | 已整理，验证见正文 |
 | 2026-09-17 | [桌面顶部导航：命名断点、收纳规则与单一配置（ADR 0013）](sessions/2026-09-17-desktop-nav-collapse.md) | 未取得任务标识，见正文 | `8dd0f1a9b5ebf65c190067755b9403336e2ef27f` | 已整理，验证见正文 |
+| 2026-09-17 | [退役 EC2 + Caddy + Nitro 常驻进程，仓库切换为 CloudFront 单一架构](sessions/2026-09-17-ec2-retirement.md) | 未取得任务标识，见正文 | `bde33928b43c1823ddd716d728accce71ef979e5` | 已整理，验证见正文 |
 | 2026-09-17 | [旧架构（EC2 + Caddy + Nitro）到新架构（CloudFront + S3 + Lambda）迁移完成度核对](sessions/2026-09-17-ec2-to-cloudfront-migration-audit.md) | 未取得任务标识，见正文 | `74c80c1a9e61d2045848dca2389e1af627c23609` | 已整理，验证见正文 |
 | 2026-09-17 | [Grok 对抗审查 PR #26（启动、md 堆叠、路由揭示、导航收纳）](sessions/2026-09-17-grok-pr26-review.md) | 未取得任务标识，见正文 | `e4c0c4129f1c48cda50d365f347bacc5b6a9893c` | 已整理，验证见正文 |
 | 2026-09-17 | [交易路由在首屏惰性片段解析后揭示（ADR 0012）](sessions/2026-09-17-trade-route-reveal.md) | 未取得任务标识，见正文 | `b80bd533bbf7c66e41817615a441e0cd973989ab` | 已整理，验证见正文 |

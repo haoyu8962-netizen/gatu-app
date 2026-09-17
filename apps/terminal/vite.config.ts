@@ -313,7 +313,7 @@ const config = defineConfig({
     createOrderSummaryChunksPlugin(),
     createTerminalViewChunksPlugin(),
     nitro({
-      compressPublicAssets: true,
+      compressPublicAssets: false,
       publicAssets: [
         {
           dir: './public/charting_library',

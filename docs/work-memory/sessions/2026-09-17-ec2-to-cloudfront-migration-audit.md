@@ -48,6 +48,10 @@
 3. 文档漂移：`deploy/README.md` 标题与开头仍把"单台 EC2 + Caddy"描述为当前部署（第 34 行才说明目标形态）；`docs/csp-inline-script-hashes-plan.md`、`docs/terminal-startup-performance-plan.md` 仍保留"EC2 退役后再做"的待办；ADR 0005 状态行已正确写明 2026-09-15 切换。
 4. 代码遗留（有意保留、待退役时清理）：`deploy/deploy.sh`、`Caddyfile`、`gatu.service`、`runtime-listener.mjs` 等 EC2 部署文件；`scripts/serve-nitro.mjs` 与 `pnpm serve` 仍用于本地预览；`vite.config.ts` 的 Nitro `routeRules` CSP（计划文档说退役时删除）；`nitro({ compressPublicAssets: true })` 每次构建生成约 900 个 CloudFront 用不到的压缩副本。
 
+## 修订（2026-09-17，同日稍后）
+
+第 1 条中"机上 Caddy 的上游已被改为 CloudFront"是误判：当时的 `curl --resolve` 探测经过了本机 HTTP 代理（curl 日志显示连到 `127.0.0.1:6152`），`--resolve` 未生效，响应实际来自 CloudFront。改用 `--noproxy '*'` 重测：实例停机前后对旧 IP 的直连均无法得出该结论；停机后直连超时。Caddyfile 漂移一说随之撤回。用户已于 2026-09-17 10:35Z 停机该实例，退役收尾见[退役记录](2026-09-17-ec2-retirement.md)。
+
 ## 验证与限制
 
 以上基于 AWS CLI 只读查询、权威 DNS 查询、对旧 IP 的 HTTPS 探测和仓库检索；未登录 EC2，无法确认机上 Caddy 配置的具体内容与是否还有 Node 进程。未做任何变更。

@@ -76,13 +76,13 @@
 
 验证：新增产物级测试，读取 `client-chunk-graph.json` 断言 React 与 SDK 落在声明的块中；文件数目标 ≤ 60。
 
-### P6 · 首屏字体与小项 — 字体保留，其余等 EC2 退役
+### P6 · 首屏字体与小项 — 字体保留，其余随 EC2 退役处理（2026-09-17）
 
 复核后 IBM Plex Sans 并非只用于一处：`font-market-close` 用在交易页头部、市场概览、代币选择器与历史订单表，都在首屏可见，去掉预加载会造成首屏字体闪换，因此两套预加载保留。
 
 - 首屏同时预加载 Inter 与 IBM Plex Sans 两套可变字体（94 KB gzip）。IBM Plex Sans 只用于 `--font-market-close`；改为不预加载、`font-display: swap` 按需加载，`FONT_PRELOAD_URLS` 只留 Inter。若设计上坚持两套，改为只预加载首屏可见的那一套。
 - Radix 与 Base UI 并存来自 `cmdk` 与 `vaul` 的依赖，替换成本高于收益，本轮不动，记入观察项。
-- `nitro({ compressPublicAssets: true })` 每次构建生成 915 个 `.gz/.br/.zst`，CloudFront 用不到；EC2 退役后关闭。
+- `nitro({ compressPublicAssets: true })` 每次构建生成 915 个 `.gz/.br/.zst`，CloudFront 用不到；2026-09-17 已改为 `false`。
 
 ### P7 · 可观测性（最小集）
 
@@ -90,7 +90,7 @@ CloudWatch 告警：Lambda `Errors`、`Throttles`、`Duration p95`；CloudFront 
 
 ### P8 · 过渡期与文档
 
-- 证书签发后给两条分发挂别名与证书，用户切 DNS，稳定一个周期后退役 EC2，随后删除 `/client-error-report` 别名、关闭预压缩产物。
+- 证书签发后给两条分发挂别名与证书，用户切 DNS，稳定一个周期后退役 EC2，随后删除 `/client-error-report` 别名、关闭预压缩产物。（DNS 2026-09-15 已切，EC2 2026-09-17 已停机，预压缩已关闭；`/client-error-report` 别名仍保留，待确认无旧客户端后删除。）
 - 壳 head：`lib/seo.ts` 为所有路由输出 `canonical`，壳里因此固定指向 `/trade`；改为只有文档路由输出 `canonical`，应用壳不带。
 - 文档：`agent.md` 第 44 行与 `apps/terminal/README.md` 第 50、52、117 行的 SSR 表述改为"预渲染壳"；`deploy/README.md` 开头改为指向 CloudFront 手册并把 EC2/Caddy 部分标为过渡期；`docs/README.md` 部署入口指向 CloudFront 手册；新增 ADR 0006 记录壳预加载、边缘缓存策略、图表 immutable 与地区预取的取舍；按规则重新基线 `terminal-performance-baseline.md`。
 

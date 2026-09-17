@@ -1,6 +1,6 @@
 # ADR 0005：交易终端以预渲染 SPA 壳交付，Nitro 服务端退为可选
 
-状态：已实现并发布；2026-09-15 起 `app.gatu.ai`、`testnet.gatu.ai` 已切到 CloudFront 分发（证书与别名见 `deploy/cloudfront/README.md` 8b 步），EC2 保留一个发布周期作回滚。运行时服务端渲染已关闭（决策 9），服务端点已改为可移植的 `/api/*` 处理器（决策 5–7）；把 `public/` 搬到 CDN 与边缘运行时挂载仍是后续任务。建立日期：2026-09-13。验证证据见文末，工作记录见 [SPA 壳验证记录](../work-memory/sessions/2026-09-13-spa-shell-spike.md)。
+状态：已实现并发布；2026-09-15 起 `app.gatu.ai`、`testnet.gatu.ai` 已切到 CloudFront 分发（证书与别名见 `deploy/cloudfront/README.md` 8b 步），EC2 保留一个发布周期作回滚；2026-09-17 发布 `cloudfront-2026-09-17-p21` 后 EC2 已停机退役，回滚改为重建上一提交或 S3 桶版本。运行时服务端渲染已关闭（决策 9），服务端点已改为可移植的 `/api/*` 处理器（决策 5–7）；把 `public/` 搬到 CDN 与边缘运行时挂载仍是后续任务。建立日期：2026-09-13。验证证据见文末，工作记录见 [SPA 壳验证记录](../work-memory/sessions/2026-09-13-spa-shell-spike.md)。
 
 ## 背景与约束
 

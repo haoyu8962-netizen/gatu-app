@@ -79,7 +79,7 @@ pnpm install --frozen-lockfile
 pnpm dev --port 3000                   # Explicit local terminal port
 pnpm dev:browser --port 3006           # System browser; requested port must be free
 pnpm build                            # Terminal build + chunk-cycle and bundle-budget checks
-pnpm serve                            # Serve the built Nitro application
+pnpm serve                            # Local preview of the built Nitro output; production is CloudFront + S3 + Lambda
 pnpm --filter @gatu/terminal typecheck
 pnpm typecheck                        # hl-react, ui and terminal
 pnpm --filter @gatu/terminal test      # Terminal Vitest run
