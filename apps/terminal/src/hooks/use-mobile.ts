@@ -5,18 +5,24 @@ export const MOBILE_MEDIA_QUERY = `(max-width: ${MOBILE_BREAKPOINT_PX}px)`;
 export const MOBILE_QR_SURFACE_MEDIA_QUERY = `${MOBILE_MEDIA_QUERY}, (pointer: coarse), (display-mode: standalone)`;
 
 function subscribeToMediaQuery(query: string, callback: () => void): () => void {
+	if (typeof window.matchMedia !== "function") return () => {};
 	const mql = window.matchMedia(query);
 	mql.addEventListener("change", callback);
 	return () => mql.removeEventListener("change", callback);
 }
 
 function getMediaQueryMatch(query: string): boolean {
-	if (typeof window === "undefined") return false;
+	if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
 	return window.matchMedia(query).matches;
 }
 
 function getServerSnapshot(): boolean {
 	return false;
+}
+
+export function useMediaQuery(query: string): boolean {
+	const subscribe = useCallback((callback: () => void) => subscribeToMediaQuery(query, callback), [query]);
+	return useSyncExternalStore(subscribe, () => getMediaQueryMatch(query), getServerSnapshot);
 }
 
 export function useIsMobile(): boolean {

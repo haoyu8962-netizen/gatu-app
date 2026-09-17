@@ -652,6 +652,39 @@ Market orders round protective prices inward to valid ticks, and the final
 execution guard compares against the exact Big.js slippage bound. Rounding the
 guard's bound outward would silently permit a price beyond the user's tolerance.
 
+## 11. Desktop Top Navigation
+
+[ADR 0013](adr/0013-desktop-navigation-collapse.md) owns these rules.
+
+### Rules
+
+- `config/desktop-nav.ts` is the single source of the desktop entries: `placement` is `primary`
+  (always top level), `lower` (collapsible) or `more` (menu only); an entry has a router `path`,
+  an external `href`, or `soon: true` for a disabled placeholder. Statistics and API Wallet live
+  there too. `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
+  `resolveDesktopNavLayout` and the current entry with `isDesktopNavItemActive`; `TopNav` only
+  renders that result and mounts one More dropdown.
+- Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
+  `DESKTOP_NAV_NARROW_MAX_PX` (1100). The `nav-compact` Tailwind variant in `styles.css` must equal
+  the compact constant (`desktop-nav-layout` pins it); never write `max-[1181px]` again.
+- Collapse rule: at or below the compact width the Soon placeholder leaves the top level and appears
+  disabled in More; the lower entries move into More when a wallet is connected at the compact width
+  or for every state at the narrow width. Hidden links and More items always come from the same
+  layout result. Connected headers also shrink the logo, deposit button, address and utilities at
+  the compact width through `nav-compact:*` classes.
+- Evidence for the narrow width (2026-09-17, local production build, disconnected, 1001px viewport,
+  gap between the navigation and the wallet controls after removing Earn): en 78px, zh 189px,
+  hi 185px, es 53px, fr 2px, ar 109px. French leaves no margin, so every state collapses at
+  1100px. Re-run that measurement before adding a locale or lengthening a label.
+
+### Important Files
+
+- `apps/terminal/src/config/desktop-nav.ts`
+- `apps/terminal/src/config/layout.ts`
+- `apps/terminal/src/lib/navigation/desktop-nav.ts`
+- `apps/terminal/src/components/trade/header/top-nav.tsx`
+- `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
+
 ## Required Review Checklist
 
 Before merging any change that touches the areas above:

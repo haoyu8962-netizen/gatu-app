@@ -730,8 +730,8 @@ msgid "Anyone who scans or captures the QR can trade as this Agent."
 msgstr "任何扫描或截取此二维码的人都能使用该交易密钥进行交易。"
 
 #: src/components/api-wallet/api-wallet-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "API Wallet"
 msgstr "API 钱包"
 
@@ -3675,7 +3675,6 @@ msgid "Leader commission"
 msgstr "管理者佣金"
 
 #: src/components/leaderboard/leaderboard-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "Leaderboard"
@@ -5963,7 +5962,6 @@ msgstr "推荐概览"
 msgid "Referral volume"
 msgstr "推荐成交量"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "Referrals"
@@ -7034,7 +7032,6 @@ msgid "Stake"
 msgstr "质押"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 #: src/config/desktop-nav.ts
@@ -7139,8 +7136,8 @@ msgstr "启动从质押余额转入 Spot 的测试网转账队列，耗时约 5 
 msgid "Starts the seven-day transfer queue from staking balance to Spot."
 msgstr "启动从质押余额转入 Spot 的 7 天转账队列。"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Statistics"
 msgstr "统计"
 
@@ -9192,7 +9189,6 @@ msgstr "金库提取"
 msgid "Vault Withdrawal"
 msgstr "金库提款"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

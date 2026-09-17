@@ -527,11 +527,11 @@ describe("UserMenu", () => {
 		expect(dropdown?.className).toContain("shrink-0");
 		expect(trigger?.className).toContain("shrink-0");
 		expect(
-			desktopLabelClasses.some((className) => className.includes("max-[1181px]:hidden")),
+			desktopLabelClasses.some((className) => className.includes("nav-compact:hidden")),
 			desktopLabelClasses.join("\n"),
 		).toBe(true);
 		expect(
-			desktopLabelClasses.some((className) => className.includes("max-[1181px]:block")),
+			desktopLabelClasses.some((className) => className.includes("nav-compact:block")),
 			desktopLabelClasses.join("\n"),
 		).toBe(true);
 	});

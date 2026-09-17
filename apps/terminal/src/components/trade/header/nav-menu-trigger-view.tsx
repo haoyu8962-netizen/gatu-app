@@ -48,7 +48,7 @@ export function NavMenuTriggerView({
 						<span
 							className={cn(
 								"text-[13px] leading-[18px] font-semibold whitespace-nowrap",
-								compactLabel && "max-[1181px]:hidden",
+								compactLabel && "nav-compact:hidden",
 								labelClassName,
 							)}
 						>

@@ -730,8 +730,8 @@ msgid "Anyone who scans or captures the QR can trade as this Agent."
 msgstr "जो भी QR को स्कैन या कैप्चर करता है, वह इस एजेंट के रूप में ट्रेड कर सकता है।"
 
 #: src/components/api-wallet/api-wallet-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "API Wallet"
 msgstr "API वॉलेट"
 
@@ -3675,7 +3675,6 @@ msgid "Leader commission"
 msgstr "लीडर कमीशन"
 
 #: src/components/leaderboard/leaderboard-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "Leaderboard"
@@ -5963,7 +5962,6 @@ msgstr "रेफ़रल सारांश"
 msgid "Referral volume"
 msgstr "रेफ़रल वॉल्यूम"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "Referrals"
@@ -7034,7 +7032,6 @@ msgid "Stake"
 msgstr "स्टेक करें"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 #: src/config/desktop-nav.ts
@@ -7139,8 +7136,8 @@ msgstr "स्टेकिंग बैलेंस से स्पॉट म�
 msgid "Starts the seven-day transfer queue from staking balance to Spot."
 msgstr "स्टेकिंग बैलेंस से स्पॉट में सात-दिन की ट्रांसफ़र कतार शुरू करता है।"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Statistics"
 msgstr "आँकड़े"
 
@@ -9192,7 +9189,6 @@ msgstr "वॉल्ट निकासी"
 msgid "Vault Withdrawal"
 msgstr "वॉल्ट निकासी"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

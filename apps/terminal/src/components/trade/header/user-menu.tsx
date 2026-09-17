@@ -295,13 +295,13 @@ export function UserMenu({ variant = "default" }: Props) {
 							className={cn(
 								"min-w-0 truncate font-mono text-xs text-fg",
 								USER_MENU_LABEL_MAX_WIDTH,
-								isDesktopNav && "font-market-close text-[13px] leading-[18px] font-semibold max-[1181px]:hidden",
+								isDesktopNav && "font-market-close text-[13px] leading-[18px] font-semibold nav-compact:hidden",
 							)}
 						>
 							<bdi dir="ltr">{displayLabel}</bdi>
 						</span>
 						{isDesktopNav && (
-							<span className="hidden min-w-0 max-w-[8rem] truncate font-mono text-[13px] leading-[18px] font-semibold text-market-close-fg max-[1181px]:block">
+							<span className="hidden min-w-0 max-w-[8rem] truncate font-mono text-[13px] leading-[18px] font-semibold text-market-close-fg nav-compact:block">
 								<bdi dir="ltr">{compactDisplayLabel}</bdi>
 							</span>
 						)}

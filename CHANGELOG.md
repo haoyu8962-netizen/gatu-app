@@ -6,6 +6,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ## Unreleased
 
+### Changed
+
+- Desktop navigation keeps Vaults, Staking, Referrals and Leaderboard visible for disconnected
+  visitors down to 1101px, moves the Earn placeholder into More at compact widths, and drives the
+  More menu from one navigation configuration.
+
 ### Fixed
 
 - The terminal no longer stays blank when the persisted locale and the startup fonts become

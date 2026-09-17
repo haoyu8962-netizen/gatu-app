@@ -730,8 +730,8 @@ msgid "Anyone who scans or captures the QR can trade as this Agent."
 msgstr "Anyone who scans or captures the QR can trade as this Agent."
 
 #: src/components/api-wallet/api-wallet-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "API Wallet"
 msgstr "API Wallet"
 
@@ -3675,7 +3675,6 @@ msgid "Leader commission"
 msgstr "Leader commission"
 
 #: src/components/leaderboard/leaderboard-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "Leaderboard"
@@ -5963,7 +5962,6 @@ msgstr "Referral summary"
 msgid "Referral volume"
 msgstr "Referral volume"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "Referrals"
@@ -7034,7 +7032,6 @@ msgid "Stake"
 msgstr "Stake"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 #: src/config/desktop-nav.ts
@@ -7139,8 +7136,8 @@ msgstr "Starts the approximately five-minute Testnet transfer queue from staking
 msgid "Starts the seven-day transfer queue from staking balance to Spot."
 msgstr "Starts the seven-day transfer queue from staking balance to Spot."
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Statistics"
 msgstr "Statistics"
 
@@ -9192,7 +9189,6 @@ msgstr "Vault withdrawal"
 msgid "Vault Withdrawal"
 msgstr "Vault Withdrawal"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

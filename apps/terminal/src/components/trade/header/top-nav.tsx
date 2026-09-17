@@ -5,13 +5,18 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
 import { DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
-import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
-import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
+import {
+	APP_BAR_BUTTON_HEIGHT_CLASS,
+	DESKTOP_NAV_COMPACT_MEDIA_QUERY,
+	DESKTOP_NAV_NARROW_MEDIA_QUERY,
+} from "@/config/layout";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
+import { useMediaQuery } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
+import { isDesktopNavItemActive, resolveDesktopNavLayout } from "@/lib/navigation/desktop-nav";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -56,60 +61,29 @@ export function TopNav({ mode = "default" }: Props) {
 	const showsDepositEntry = hasWalletAccess || depositAvailability.path === "sponsored";
 	const isMarketLoading = mode === "market-loading";
 
-	const tradeActive = isTradeRoutePath(pathname);
-	const referralsActive = pathname === "/referrals";
-	const apiWalletActive = pathname === "/api-wallet";
-	const vaultsActive = pathname === "/vaults" || pathname.startsWith("/vaults/");
-	const stakingActive = pathname === "/staking";
-	const leaderboardActive = pathname === "/leaderboard";
-	const moreItems = [
-		{
-			label: t`Statistics`,
-			href: HYPERSCREENER_URL,
-			target: "_blank" as const,
-			rel: "noopener noreferrer",
-		},
-		{
-			label: t`API Wallet`,
-			active: apiWalletActive,
-			onSelect: () => void navigate({ to: "/api-wallet" }),
-		},
-	];
-	const compactMoreItems = [
-		{
-			label: t`Vaults`,
-			active: vaultsActive,
-			onSelect: () => void navigate({ to: "/vaults" }),
-		},
-		{
-			label: t`Staking`,
-			active: stakingActive,
-			onSelect: () => void navigate({ to: "/staking" }),
-		},
-		{
-			label: t`Referrals`,
-			active: referralsActive,
-			onSelect: () => void navigate({ to: "/referrals" }),
-		},
-		{
-			label: t`Leaderboard`,
-			active: leaderboardActive,
-			onSelect: () => void navigate({ to: "/leaderboard" }),
-		},
-		...moreItems,
-	];
-
-	const items = DESKTOP_NAV_ITEMS.map((item) => ({
+	const compact = useMediaQuery(DESKTOP_NAV_COMPACT_MEDIA_QUERY);
+	const narrow = useMediaQuery(DESKTOP_NAV_NARROW_MEDIA_QUERY);
+	const layout = resolveDesktopNavLayout({ compact, narrow, connected: hasWalletAccess });
+	const soonLabel = t(DESKTOP_NAV_LABELS.soon);
+	const items = layout.topLevel.map((item) => ({
 		id: item.id,
 		label: t(item.label),
-		soon: item.soon,
-		soonLabel: t(DESKTOP_NAV_LABELS.soon),
-		compactHidden: item.compactHidden,
-		active:
-			item.id === "trade"
-				? tradeActive
-				: !!item.path && (pathname === item.path || (item.id === "vaults" && vaultsActive)),
+		soon: "soon" in item && item.soon === true,
+		soonLabel,
+		active: isDesktopNavItemActive(item, pathname),
 	}));
+	const moreItems = layout.more.map((item) => {
+		const label = t(item.label);
+		if ("href" in item) return { label, href: item.href, target: "_blank" as const, rel: "noopener noreferrer" };
+		if (!("path" in item)) return { label: `${label} — ${soonLabel}`, disabled: true };
+		const destination = item.path;
+		return {
+			label,
+			active: isDesktopNavItemActive(item, pathname),
+			onSelect: () => void navigate({ to: destination }),
+		};
+	});
+	const moreActive = layout.more.some((item) => isDesktopNavItemActive(item, pathname));
 	return (
 		<TopNavView
 			items={items}
@@ -125,7 +99,8 @@ export function TopNav({ mode = "default" }: Props) {
 							{item.label}
 						</Link>
 					);
-				const destination = DESKTOP_NAV_ITEMS.find((entry) => entry.id === item.id)?.path;
+				const entry = DESKTOP_NAV_ITEMS.find((candidate) => candidate.id === item.id);
+				const destination = entry && "path" in entry ? entry.path : undefined;
 				if (!destination) return null;
 				return (
 					<Link to={destination} aria-current={item.active ? "page" : undefined} className={className}>
@@ -150,25 +125,9 @@ export function TopNav({ mode = "default" }: Props) {
 					size="md"
 					triggerVariant="minimal"
 					triggerAriaLabel={t(DESKTOP_NAV_LABELS.more)}
-					renderTrigger={<NavMenuTriggerView label={t(DESKTOP_NAV_LABELS.more)} active={apiWalletActive} />}
+					renderTrigger={<NavMenuTriggerView label={t(DESKTOP_NAV_LABELS.more)} active={moreActive} />}
 					popupClassName="max-h-[calc(100vh-4.5rem)] min-w-[148px] rounded-[10px] border-market-close-stroke-card bg-overlay p-1 font-market-close shadow-overlay [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px] [&_[role=menuitem]]:font-medium"
 					items={moreItems}
-				/>
-			}
-			compactMoreTrigger={
-				<Dropdown
-					align="start"
-					size="md"
-					triggerVariant="minimal"
-					triggerAriaLabel={t(DESKTOP_NAV_LABELS.more)}
-					renderTrigger={
-						<NavMenuTriggerView
-							label={t(DESKTOP_NAV_LABELS.more)}
-							active={referralsActive || apiWalletActive || vaultsActive || stakingActive || leaderboardActive}
-						/>
-					}
-					popupClassName="max-h-[calc(100vh-4.5rem)] min-w-[148px] rounded-[10px] border-market-close-stroke-card bg-overlay p-1 font-market-close shadow-overlay [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px] [&_[role=menuitem]]:font-medium"
-					items={compactMoreItems}
 				/>
 			}
 			pairing={

@@ -34,7 +34,7 @@ describe("modal surface contract", () => {
 		expect(POPOVER_SOURCE).toContain("font-sans bg-overlay text-fg");
 		expect(ORDER_TOAST_SOURCE).toContain('"bg-overlay/95 backdrop-blur-sm"');
 		expect(DESKTOP_UTILITIES_MENU_SOURCE).toContain("bg-overlay p-2");
-		expect(TOP_NAV_SOURCE.match(/popupClassName="[^"]*bg-overlay[^"]*"/g)).toHaveLength(2);
+		expect(TOP_NAV_SOURCE.match(/popupClassName="[^"]*bg-overlay[^"]*"/g)).toHaveLength(1);
 		expect(USER_MENU_SOURCE).toContain("bg-overlay p-1");
 		expect(TOKEN_SELECTOR_POPUP_SOURCE).toContain("bg-modal p-0");
 		expect(TOKEN_SELECTOR_POPUP_SOURCE).toContain("bg-overlay p-0");

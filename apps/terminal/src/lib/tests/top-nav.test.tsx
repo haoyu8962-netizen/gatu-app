@@ -270,9 +270,38 @@ describe("TopNav", () => {
 		return [...container.querySelectorAll<HTMLAnchorElement>("a")].find((link) => link.textContent?.trim() === label);
 	}
 
+	function stubViewportWidth(width: number) {
+		Object.defineProperty(window, "matchMedia", {
+			configurable: true,
+			writable: true,
+			value: (query: string) => {
+				const maxWidth = /max-width:\s*(\d+)px/.exec(query);
+				return {
+					matches: maxWidth ? width <= Number(maxWidth[1]) : false,
+					media: query,
+					addEventListener() {},
+					removeEventListener() {},
+				};
+			},
+		});
+	}
+
+	function moreMenuLabels() {
+		return [...container.querySelectorAll<HTMLElement>('[data-testid="more-dropdown"] [role="menuitem"]')].map((item) =>
+			item.textContent?.trim(),
+		);
+	}
+
+	function topLevelLabels() {
+		const primaryNavigation = container.querySelector<HTMLElement>('nav[aria-label="Primary navigation"]');
+		return [...(primaryNavigation?.querySelectorAll<HTMLElement>(":scope > a, :scope > button") ?? [])].map((item) =>
+			item.textContent?.replace(/\s+/g, " ").trim(),
+		);
+	}
+
 	function findDesktopUtilitiesButton() {
 		return [...container.querySelectorAll<HTMLButtonElement>('button[aria-label="More"]')].find((button) =>
-			button.parentElement?.className.includes("max-[1181px]:inline-flex"),
+			button.parentElement?.className.includes("nav-compact:inline-flex"),
 		);
 	}
 
@@ -346,23 +375,20 @@ describe("TopNav", () => {
 
 	it("links Statistics externally while keeping API Wallet on the app router", () => {
 		renderNav();
-		for (const layout of ["wide", "compact"]) {
-			const statisticsItem = [
-				...container.querySelectorAll<HTMLAnchorElement>(`nav > div:nth-last-child(${layout === "wide" ? 2 : 1}) a`),
-			].find((item) => item.textContent?.trim() === "Statistics");
-			expect(statisticsItem?.href).toBe(HYPERSCREENER_URL);
-			expect(statisticsItem?.target).toBe("_blank");
-			expect(statisticsItem?.rel).toBe("noopener noreferrer");
-			statisticsItem?.addEventListener("click", (event) => event.preventDefault(), { once: true });
-			act(() => statisticsItem?.click());
-		}
+		expect(container.querySelectorAll('[data-testid="more-dropdown"]')).toHaveLength(1);
+		const statisticsItem = [
+			...container.querySelectorAll<HTMLAnchorElement>('[data-testid="more-dropdown"] a[role="menuitem"]'),
+		].find((item) => item.textContent?.trim() === "Statistics");
+		expect(statisticsItem?.href).toBe(HYPERSCREENER_URL);
+		expect(statisticsItem?.target).toBe("_blank");
+		expect(statisticsItem?.rel).toBe("noopener noreferrer");
+		statisticsItem?.addEventListener("click", (event) => event.preventDefault(), { once: true });
+		act(() => statisticsItem?.click());
 		expect(testState.navigate).not.toHaveBeenCalled();
 
-		const wideMenuItems = [
-			...(container.querySelector("nav > div:nth-last-child(2)")?.querySelectorAll<HTMLElement>('[role="menuitem"]') ??
-				[]),
-		];
-		const apiWalletItem = wideMenuItems.find(
+		const apiWalletItem = [
+			...container.querySelectorAll<HTMLElement>('[data-testid="more-dropdown"] [role="menuitem"]'),
+		].find(
 			(item): item is HTMLButtonElement =>
 				item instanceof HTMLButtonElement && item.textContent?.trim() === "API Wallet",
 		);
@@ -371,27 +397,78 @@ describe("TopNav", () => {
 		expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/api-wallet" });
 	});
 
-	it("moves lower-priority entries into More for each compact wallet state", () => {
-		renderNav();
+	it("collapses navigation entries by header width and wallet state", () => {
+		try {
+			stubViewportWidth(1440);
+			renderNav();
+			expect(topLevelLabels()).toEqual([
+				"Trade",
+				"Portfolio",
+				"Earn — Soon",
+				"Vaults",
+				"Staking",
+				"Referrals",
+				"Leaderboard",
+			]);
+			expect(moreMenuLabels()).toEqual(["Statistics", "API Wallet"]);
 
-		function compactMenuLabels() {
-			return [
-				...(container.querySelector("nav > div:last-child")?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
-			].map((item) => item.textContent?.trim());
+			stubViewportWidth(1181);
+			renderNav();
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio"]);
+			expect(moreMenuLabels()).toEqual([
+				"Earn — Soon",
+				"Vaults",
+				"Staking",
+				"Referrals",
+				"Leaderboard",
+				"Statistics",
+				"API Wallet",
+			]);
+			const menuItems = [...container.querySelectorAll<HTMLElement>('[data-testid="more-dropdown"] [role="menuitem"]')];
+			const earnItem = menuItems.find((item) => item.textContent?.trim() === "Earn — Soon");
+			expect(earnItem).toBeInstanceOf(HTMLButtonElement);
+			expect((earnItem as HTMLButtonElement).disabled).toBe(true);
+			const referralsItem = menuItems.find((item) => item.textContent?.trim() === "Referrals");
+			act(() => referralsItem?.click());
+			expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/referrals" });
+
+			testState.hasWalletAccess = false;
+			renderNav();
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Vaults", "Staking", "Referrals", "Leaderboard"]);
+			expect(moreMenuLabels()).toEqual(["Earn — Soon", "Statistics", "API Wallet"]);
+
+			stubViewportWidth(1100);
+			renderNav();
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio"]);
+			expect(moreMenuLabels()).toEqual([
+				"Earn — Soon",
+				"Vaults",
+				"Staking",
+				"Referrals",
+				"Leaderboard",
+				"Statistics",
+				"API Wallet",
+			]);
+		} finally {
+			Reflect.deleteProperty(window, "matchMedia");
 		}
+	});
 
-		expect(compactMenuLabels()).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API Wallet"]);
-		expect(findLink("Referrals")?.className).toContain("max-[1181px]:hidden");
-		const compactReferralsItem = [
-			...(container.querySelector("nav > div:last-child")?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ??
-				[]),
-		].find((item) => item.textContent?.trim() === "Referrals");
-		act(() => compactReferralsItem?.click());
-		expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/referrals" });
-
-		testState.hasWalletAccess = false;
-		renderNav();
-		expect(compactMenuLabels()).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API Wallet"]);
+	it("highlights More when a collapsed entry is the current route", () => {
+		try {
+			stubViewportWidth(1181);
+			testState.pathname = "/vaults/0x123";
+			renderNav();
+			const trigger = container.querySelector<HTMLElement>('[data-testid="more-dropdown"] button[aria-label="More"]');
+			expect(trigger?.className).toContain("text-market-close-fg");
+			expect(
+				[...container.querySelectorAll<HTMLElement>('[role="menuitem"][aria-current="true"]')].map((item) =>
+					item.textContent?.trim(),
+				),
+			).toEqual(["Vaults"]);
+		} finally {
+			Reflect.deleteProperty(window, "matchMedia");
+		}
 	});
 
 	it("uses the selected all-scope market for both logo and Trade links", () => {
@@ -463,7 +540,7 @@ describe("TopNav", () => {
 		expect(container.querySelector<HTMLAnchorElement>('a[aria-label="GATU"]')).not.toBeNull();
 		expect(findLink("Trade")).not.toBeUndefined();
 		const moreTriggers = container.querySelectorAll<HTMLButtonElement>('[data-testid="more-dropdown"] > button');
-		expect(moreTriggers).toHaveLength(2);
+		expect(moreTriggers).toHaveLength(1);
 		for (const trigger of moreTriggers) expect(trigger.disabled).toBe(false);
 		expect(container.querySelector('[data-testid="theme-toggle"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="language-switcher"]')).not.toBeNull();

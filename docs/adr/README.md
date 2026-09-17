@@ -16,5 +16,6 @@ ADR 记录采用某个方案的理由、备选方案和后果，完整实现契�
 | [0010](0010-blank-until-ready-startup.md) | 已接受（2026-09-16） | 统一空播报，持久语言/主题的真实 chrome 优先，市场就绪后内容；删除启动骨架 |
 | [0011](0011-desktop-md-stacked-right-column.md) | 已接受并实施（2026-09-17） | 桌面 md 断点右列改为下单面板在上、订单簿在下、账户信息再下，图表列 10/14，账户表在图表列下方；存储键升到 v12 |
 | [0012](0012-trade-route-reveal-after-surface-preload.md) | 已接受（2026-09-17） | `/trade` 路由的 `beforeLoad` 等待首屏惰性片段（面板、页脚、导航片段、全局弹层）预加载完成再揭示，避免重试渲染再次挂起触发 React 300 ms fallback 节流；等待上限 1500 ms |
+| [0013](0013-desktop-navigation-collapse.md) | 已接受（2026-09-17） | 桌面导航断点命名为 1181/1100 常量并以 `nav-compact` 变体钉住；Earn（Soon）在紧凑宽度进 More，低优先级入口仅在“已连接且 ≤1181”或“≤1100”时收纳；入口与 More 由同一配置派生 |
 
 新 ADR 至少包含：状态与日期、上下文、目标/约束、决策、备选方案及利弊、后果与边界、代码/测试/Reference 证据。验证命令与本次执行结果分别标明。文档维护要求见[文档体系](../documentation-system.md)。

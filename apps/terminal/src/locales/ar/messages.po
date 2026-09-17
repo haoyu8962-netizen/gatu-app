@@ -730,8 +730,8 @@ msgid "Anyone who scans or captures the QR can trade as this Agent."
 msgstr "يمكن لأي شخص يمسح رمز QR أو يلتقطه أن يتداول بصفته هذا الوكيل."
 
 #: src/components/api-wallet/api-wallet-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "API Wallet"
 msgstr "محفظة API"
 
@@ -3675,7 +3675,6 @@ msgid "Leader commission"
 msgstr "عمولة القائد"
 
 #: src/components/leaderboard/leaderboard-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "Leaderboard"
@@ -5963,7 +5962,6 @@ msgstr "ملخص الإحالة"
 msgid "Referral volume"
 msgstr "حجم تداول الإحالة"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "Referrals"
@@ -7034,7 +7032,6 @@ msgid "Stake"
 msgstr "رهن"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 #: src/config/desktop-nav.ts
@@ -7139,8 +7136,8 @@ msgstr "يبدأ طابور التحويل على شبكة الاختبار، و
 msgid "Starts the seven-day transfer queue from staking balance to Spot."
 msgstr "يبدأ طابور التحويل لمدة سبعة أيام من رصيد التخزين إلى الحساب الفوري."
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
 msgid "Statistics"
 msgstr "الإحصاءات"
 
@@ -9192,7 +9189,6 @@ msgstr "سحب من الخزنة"
 msgid "Vault Withdrawal"
 msgstr "سحب من الخزنة"
 
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

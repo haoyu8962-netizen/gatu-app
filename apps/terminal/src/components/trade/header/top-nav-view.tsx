@@ -9,7 +9,6 @@ export interface TopNavItem {
 	active: boolean;
 	soon?: boolean;
 	soonLabel?: string;
-	compactHidden?: boolean;
 }
 
 interface Props {
@@ -17,7 +16,6 @@ interface Props {
 	renderItem?: (item: TopNavItem, className: string) => ReactNode;
 	moreLabel: string;
 	navigationLabel: string;
-	compactMoreTrigger?: ReactNode;
 	moreTrigger?: ReactNode;
 	logo: ReactNode;
 	logoClassName?: string;
@@ -33,23 +31,22 @@ interface Props {
 }
 
 export const TOP_NAV_DEPOSIT_CLASS =
-	"h-[34px] min-h-[34px] shrink-0 gap-[7px] rounded-[10px] bg-market-close-control px-3.5 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control max-[1181px]:size-[34px] max-[1181px]:px-0";
-export const TOP_NAV_DEPOSIT_LABEL_CLASS = "max-[1181px]:sr-only";
+	"h-[34px] min-h-[34px] shrink-0 gap-[7px] rounded-[10px] bg-market-close-control px-3.5 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control nav-compact:size-[34px] nav-compact:px-0";
+export const TOP_NAV_DEPOSIT_LABEL_CLASS = "nav-compact:sr-only";
 
 export const TOP_NAV_ITEM_CLASS =
 	"rounded-[8px] px-2.5 py-2 font-semibold whitespace-nowrap transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg";
 export const TOP_NAV_LOGO_CLASS =
 	"flex shrink-0 items-center gap-2 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus";
 export const TOP_NAV_WORDMARK_CLASS = "h-[18px] w-auto shrink-0";
-export const TOP_NAV_CONNECTED_WORDMARK_CLASS = "max-[1181px]:hidden";
-export const TOP_NAV_MARK_CLASS = "hidden size-[22px] shrink-0 max-[1181px]:block";
+export const TOP_NAV_CONNECTED_WORDMARK_CLASS = "nav-compact:hidden";
+export const TOP_NAV_MARK_CLASS = "hidden size-[22px] shrink-0 nav-compact:block";
 
 export function TopNavView({
 	items,
 	renderItem,
 	moreLabel,
 	navigationLabel,
-	compactMoreTrigger,
 	moreTrigger,
 	logo,
 	logoClassName,
@@ -75,7 +72,7 @@ export function TopNavView({
 				<div
 					className={cn(
 						"me-6 flex shrink-0 items-center",
-						connected ? "max-[1181px]:me-7" : "max-[1181px]:me-8",
+						connected ? "nav-compact:me-7" : "nav-compact:me-8",
 						logoClassName,
 					)}
 				>
@@ -87,7 +84,6 @@ export function TopNavView({
 							const className = cn(
 								TOP_NAV_ITEM_CLASS,
 								item.active ? "text-market-close-fg" : "text-market-close-muted",
-								item.compactHidden && "max-[1181px]:hidden",
 							);
 							if (item.soon)
 								return (
@@ -96,10 +92,7 @@ export function TopNavView({
 										type="button"
 										disabled
 										title={item.soonLabel}
-										className={cn(
-											"cursor-default rounded-[8px] px-2.5 py-2 font-semibold whitespace-nowrap text-market-close-muted disabled:hover:bg-transparent disabled:hover:text-market-close-muted",
-											item.compactHidden && "max-[1181px]:hidden",
-										)}
+										className="cursor-default rounded-[8px] px-2.5 py-2 font-semibold whitespace-nowrap text-market-close-muted disabled:hover:bg-transparent disabled:hover:text-market-close-muted"
 									>
 										{item.label}
 										<span className="sr-only"> — {item.soonLabel}</span>
@@ -111,15 +104,8 @@ export function TopNavView({
 								</Fragment>
 							);
 						})}
-						<div className="max-[1181px]:hidden">
+						<div>
 							{moreTrigger ?? (
-								<div>
-									<NavMenuTriggerView label={moreLabel} aria-label={moreLabel} />
-								</div>
-							)}
-						</div>
-						<div className="hidden max-[1181px]:block">
-							{compactMoreTrigger ?? (
 								<div>
 									<NavMenuTriggerView label={moreLabel} aria-label={moreLabel} />
 								</div>
@@ -131,12 +117,12 @@ export function TopNavView({
 			<div className="ms-auto flex min-h-[34px] items-center gap-2">
 				{pairing}
 				{wallet}
-				<div className={cn("contents", compactHiddenWhenConnected && "max-[1181px]:hidden")}>
+				<div className={cn("contents", compactHiddenWhenConnected && "nav-compact:hidden")}>
 					{theme}
 					{language}
 					{settings}
 				</div>
-				{compactUtilities && <div className="hidden max-[1181px]:inline-flex">{compactUtilities}</div>}
+				{compactUtilities && <div className="hidden nav-compact:inline-flex">{compactUtilities}</div>}
 			</div>
 		</header>
 	);

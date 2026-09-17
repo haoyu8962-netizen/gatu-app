@@ -1,33 +1,33 @@
+import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
+import { HYPERSCREENER_URL } from "./external-links";
 import { defaultLocale, locales } from "./i18n";
 
+export type DesktopNavPlacement = "primary" | "lower" | "more";
+
+export interface DesktopNavItemConfig {
+	id: string;
+	label: MessageDescriptor;
+	placement: DesktopNavPlacement;
+	path?: string;
+	href?: string;
+	soon?: boolean;
+	matchPrefix?: boolean;
+}
+
 export const DESKTOP_NAV_ITEMS = [
-	{ id: "trade", label: msg`Trade`, path: "/", soon: false, compactHidden: false },
-	{
-		id: "portfolio",
-		label: msg`Portfolio`,
-		path: "/portfolio",
-		soon: false,
-		compactHidden: false,
-	},
-	{ id: "earn", label: msg`Earn`, path: null, soon: true, compactHidden: false },
-	{ id: "vaults", label: msg`Vaults`, path: "/vaults", soon: false, compactHidden: true },
-	{ id: "staking", label: msg`Staking`, path: "/staking", soon: false, compactHidden: true },
-	{
-		id: "referrals",
-		label: msg`Referrals`,
-		path: "/referrals",
-		soon: false,
-		compactHidden: true,
-	},
-	{
-		id: "leaderboard",
-		label: msg`Leaderboard`,
-		path: "/leaderboard",
-		soon: false,
-		compactHidden: true,
-	},
-] as const;
+	{ id: "trade", label: msg`Trade`, placement: "primary", path: "/" },
+	{ id: "portfolio", label: msg`Portfolio`, placement: "primary", path: "/portfolio" },
+	{ id: "earn", label: msg`Earn`, placement: "primary", soon: true },
+	{ id: "vaults", label: msg`Vaults`, placement: "lower", path: "/vaults", matchPrefix: true },
+	{ id: "staking", label: msg`Staking`, placement: "lower", path: "/staking" },
+	{ id: "referrals", label: msg`Referrals`, placement: "lower", path: "/referrals" },
+	{ id: "leaderboard", label: msg`Leaderboard`, placement: "lower", path: "/leaderboard" },
+	{ id: "statistics", label: msg`Statistics`, placement: "more", href: HYPERSCREENER_URL },
+	{ id: "api-wallet", label: msg`API Wallet`, placement: "more", path: "/api-wallet" },
+] as const satisfies readonly DesktopNavItemConfig[];
+
+export type DesktopNavItem = (typeof DESKTOP_NAV_ITEMS)[number];
 
 export const DESKTOP_NAV_LABELS = {
 	openNavigation: msg`Open navigation`,
