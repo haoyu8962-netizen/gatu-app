@@ -315,6 +315,10 @@ export function usePositionsActiveTab() {
 	return useGlobalSettingsStore((state) => state.positionsActiveTab);
 }
 
+export function getPositionsActiveTab(): string {
+	return useGlobalSettingsStore.getState().positionsActiveTab;
+}
+
 export function useMobileActiveTab() {
 	return useGlobalSettingsStore((state) => state.mobileActiveTab);
 }

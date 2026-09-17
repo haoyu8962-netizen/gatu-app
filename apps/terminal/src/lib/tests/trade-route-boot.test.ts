@@ -21,9 +21,17 @@ function controlled() {
 }
 
 async function settled(promise: Promise<void>): Promise<boolean> {
-	const marker = Symbol("pending");
-	const outcome = await Promise.race([promise.then(() => true), Promise.resolve(marker)]);
-	return outcome === true;
+	let done = false;
+	promise.then(
+		() => {
+			done = true;
+		},
+		() => {
+			done = true;
+		},
+	);
+	await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+	return done;
 }
 
 describe("bootTradeRoute", () => {
@@ -68,8 +76,12 @@ describe("bootTradeRoute", () => {
 		preloadTradeTerminalSurface.mockReturnValue(new Promise<void>(() => {}));
 		const { bootTradeRoute, TRADE_ROUTE_REVEAL_BUDGET_MS } = await import("@/lib/trade/trade-route-boot");
 		const reveal = bootTradeRoute({} as never, "/trade/HYPE");
+		let revealed = false;
+		reveal.then(() => {
+			revealed = true;
+		});
 		await vi.advanceTimersByTimeAsync(TRADE_ROUTE_REVEAL_BUDGET_MS - 1);
-		expect(await settled(reveal)).toBe(false);
+		expect(revealed).toBe(false);
 		await vi.advanceTimersByTimeAsync(1);
 		await expect(reveal).resolves.toBeUndefined();
 	});

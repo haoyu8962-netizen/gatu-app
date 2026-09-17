@@ -79,6 +79,19 @@ Grok 明确排查且未发现问题的类别：启动死锁、水合、v11→v12
 
 验证（2026-09-17，本地）：Biome 与 typecheck 通过；定向单测 top-nav（30）、user-menu（20）、desktop-nav-layout（17）、boot-dashboard-route（12）、preload-trade-terminal-surface（4）、i18n-reactivity-contract（126）、trade-route-boot（3）、home-route（5）、modal-surface-contract（7）全部通过。首版 `boot-dashboard-route.ts` 静态引入 `header/top-nav` 使 10 个路由模块把 header 模块图拉进路由 vendor 块（`vendor-tanstack-router` 1.1 MB gzip，启动闭包 +72 KB，`pnpm build` 预算失败）；改为动态 `import()` 后构建通过：总 gzip 3,085,410 B（较基线 −69,297），trade 静态闭包 1,571,981 B（−9,235），`trade-terminal-page` 127,046 B；新增源码契约禁止路由与该模块静态引入 header。生产构建探测（未连接，6 语言 × 6 宽度）36 组无裁切，入口数 7/7/6/6/2/2；`/portfolio` 与 `/trade/HYPE` 首个 header 快照即含 `Connect Wallet`（198 / 166 ms），无 `Connecting...`。全量 `pnpm --filter @gatu/terminal test`（动态导入修正前一轮）：569 文件 = 559 通过 / 9 失败 / 1 跳过，6,342 用例 = 6,309 通过 / 32 失败；失败文件与今早基线名单相同，无新增。已连接与 Agent-only 的紧凑宽度仍未做像素实测（需真实会话）。
 
+## Codex 复审（2026-09-17，实施提交 8cb1b98a 之后）
+
+调用：`codex exec -m gpt-6-astra -s read-only -c approval_policy='"never"' -c model_reasoning_effort='"high"'`，在 worktree 内只读运行，提示词要求核对 HEAD 与分支整体，对照 AGENTS.md、守则 §1/§11、ADR 0012/0013。原始报告与提示词存于本地 `.worklog/2026-09-17/codex-pr26-review/`。Codex 未能启动定向 Vitest（只读沙箱拒绝写 `.vite-temp`），结论仅来自阅读。
+
+保留 2 项，本会话核实均成立并已修复：
+
+| # | 严重度 | 问题 | 修复 |
+| --- | --- | --- | --- |
+| 1 | P2 | `preloadPositionsPanel()` 固定等待 `PositionsTab`，但面板从持久化的 `positionsActiveTab` 恢复页签；用户停留在 Orders/Balances/History 等页签刷新时，揭示后仍会二次挂起显示 `TabLoadingFallback` | 新增 `getPositionsActiveTab()`（store 的 `getState()` 读取），`preloadPositionsPanel()` 经同一 `resolvePositionsTab(…, false)` 求出恢复页签并与默认页签一起预加载；`positions-panel-preload.test.ts` 覆盖 positions/orders/balances/orders-history/transfers/未知值六种 |
+| 2 | P3 | 新增测试的 `settled()` 用 `Promise.race([p.then(), Promise.resolve(marker)])`，marker 总先胜出，"尚未完成"断言恒真；同样的助手也在 `trade-route-boot.test.ts`，`boot-dashboard-route.test.ts` 的单微任务等待同样不可靠 | 改为记录完成回调后等待一个宏任务；增加助手自检用例（已完成 → true，挂起 → false）；假定时器用例改用完成标志 |
+
+Codex 明确检查且未发现新增缺陷：账户芯片收纳与加载态解耦、Agent-only、ENS、工具菜单名称与 Settings 禁用、Deposit/sponsored 入口、重连与签名守卫、`UserMenu` 客户端边界与可重复的存储初始化、新增视图的翻译依赖。
+
 ## 后续与替代关系
 
 修复候选（待用户决策）：(1) `compactHiddenWhenConnected` 改为按账户芯片存在判定，kebab 内只禁用 Settings；(2) `UserMenu` 用惰性初始值同步读 session hint 去掉 `mounted` 门，仪表盘路由也预加载 `UserMenu`；(3) 紧凑标签保留 ENS；(4) 工具菜单改用独立无障碍名；(5) 收纳与 `connected` 改用账户芯片可见性；(6) 为 `preloadTradeTerminalSurface` 增加钉住等待集合的单测；(7) 补齐 i18n 契约名单。

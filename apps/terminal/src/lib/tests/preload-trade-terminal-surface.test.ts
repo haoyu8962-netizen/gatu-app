@@ -41,14 +41,28 @@ function controlled() {
 }
 
 async function settled(promise: Promise<unknown>): Promise<boolean> {
-	const marker = Symbol("pending");
-	return (await Promise.race([promise.then(() => true), Promise.resolve(marker)])) === true;
+	let done = false;
+	promise.then(
+		() => {
+			done = true;
+		},
+		() => {
+			done = true;
+		},
+	);
+	await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+	return done;
 }
 
 const tradeDir = resolve(__dirname, "../../components/trade");
 const source = (path: string) => readFileSync(resolve(tradeDir, path), "utf8");
 
 describe("first-render preload set (ADR 0012)", () => {
+	it("distinguishes settled from pending promises in this suite's helper", async () => {
+		expect(await settled(Promise.resolve())).toBe(true);
+		expect(await settled(new Promise(() => {}))).toBe(false);
+	});
+
 	beforeEach(() => {
 		lazies.names.length = 0;
 		lazies.resolvers.clear();
@@ -120,7 +134,9 @@ describe("first-render preload set (ADR 0012)", () => {
 			/Promise\.all\(\[[\s\S]*preloadChartPanel\(\)[\s\S]*preloadPositionsPanel\(\)[\s\S]*\]\)/,
 		);
 		expect(source("chart/chart-panel.tsx")).toContain("preloadLazyComponents([TradingViewChart])");
-		expect(source("positions/positions-panel.tsx")).toContain("preloadLazyComponents([PositionsTab])");
+		expect(source("positions/positions-panel.tsx")).toContain(
+			"preloadLazyComponents(restored === PositionsTab ? [PositionsTab] : [PositionsTab, restored])",
+		);
 		expect(source("header/top-nav.tsx")).toContain("preloadLazyComponents([UserMenu])");
 		expect(source("trade-terminal-page.tsx")).toContain("preloadLazyComponents([GlobalModals])");
 	});

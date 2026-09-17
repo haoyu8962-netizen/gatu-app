@@ -34,7 +34,7 @@ describe("bootDashboardRoute", () => {
 			settled = true;
 		});
 		await vi.waitFor(() => expect(preloadTopNav).toHaveBeenCalledTimes(1));
-		await Promise.resolve();
+		await new Promise((resolveTick) => setTimeout(resolveTick, 0));
 		expect(settled).toBe(false);
 		release();
 		await boot;

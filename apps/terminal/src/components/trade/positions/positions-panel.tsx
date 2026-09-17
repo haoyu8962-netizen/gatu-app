@@ -23,7 +23,11 @@ import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
-import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
+import {
+	getPositionsActiveTab,
+	useGlobalSettingsActions,
+	usePositionsActiveTab,
+} from "@/stores/use-global-settings-store";
 import {
 	ACCOUNT_TAB_COUNT_CLASS,
 	ACCOUNT_TAB_INDICATOR_CLASS,
@@ -51,8 +55,20 @@ const OrdersTab = createLazyComponent(() => import("./orders-tab"), "OrdersTab")
 const PositionsTab = createLazyComponent(() => import("./positions-tab"), "PositionsTab");
 const TwapTab = createLazyComponent(() => import("./twap-tab"), "TwapTab");
 
+const TAB_COMPONENTS = {
+	balances: BalancesTab,
+	positions: PositionsTab,
+	orders: OrdersTab,
+	twap: TwapTab,
+	history: HistoryTab,
+	funding: FundingTab,
+	"orders-history": OrdersHistoryTab,
+} as const;
+
 export function preloadPositionsPanel(): Promise<void> {
-	return preloadLazyComponents([PositionsTab]);
+	const restoredTab = resolvePositionsTab(getPositionsActiveTab(), false);
+	const restored = TAB_COMPONENTS[restoredTab as keyof typeof TAB_COMPONENTS] ?? PositionsTab;
+	return preloadLazyComponents(restored === PositionsTab ? [PositionsTab] : [PositionsTab, restored]);
 }
 
 const HISTORY_TAB_PRELOADERS: Readonly<Record<string, () => void>> = {
