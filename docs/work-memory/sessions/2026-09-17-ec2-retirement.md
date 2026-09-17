@@ -65,6 +65,8 @@
 
 不可恢复：机上 `/opt/gatu` 的历史发布目录与 Caddy 证书随根卷一并删除；仓库与 S3 桶版本是唯一的产物来源。
 
+追加（同日，用户指示）：删除遗留的 EC2 Instance Connect Endpoint `eice-08b8c8b3812084477`（`create-complete` → `delete-in-progress` → `delete-complete`，约 30 s），随后删除 `launch-wizard-1`（`sg-0bf4583629084af39`，曾被该端点引用且全协议对全网开放）、`launch-wizard-2`（`sg-0ea49dcbdd294d561`，未引用，全协议开放）、`launch-wizard-3`（`sg-0d865661671af658d`，未引用，开放 22）。终态：ap-northeast-1 安全组仅剩 VPC `default`，网卡 0，Instance Connect Endpoint 0，实例 0（terminated 记录会在约一小时后消失），EIP 0，卷 0。
+
 ## 后续与替代关系
 
 - 已完成：终止实例、释放 EIP、删除安全组（见上节）。仍待办：发布凭据换成受限 IAM 用户。
