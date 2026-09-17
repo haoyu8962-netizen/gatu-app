@@ -75,6 +75,7 @@
 
 当前规范：[docs/adr/0005-spa-static-shell.md](../../docs/adr/0005-spa-static-shell.md) · [deploy/README.md](../../deploy/README.md)
 
+- [二三次刷新对照：app.gatu.ai 与官方终端](sessions/2026-09-17-warm-reload-comparison.md) — 2026-09-17；已整理，验证见正文。热刷新时 app.gatu.ai 零网络字节（SW 回壳 + immutable 资源），官方每次刷新约 61 个 304 条件请求；两站网格就绪都约 0.45–0.7 s，时间花在 JS 编译执行与初始化；我们的导航栏要等钱包运行时块，是可见的优化点。
 - [桌面账户面板：单一来源展示组件迁移](sessions/2026-09-16-account-panels-view-migration.md) — 2026-09-16；已整理，验证见正文。表面 5 共享账户页签、概览与按钮纯视图；394 项通过，18 项既有 mock 失败前后不变；类型、Biome 与 memory 检查通过，浏览器因沙箱 EPERM 待 reviewer。
 - [Dashboard 壳：单一来源 frame 迁移](sessions/2026-09-16-dashboard-shell-view-migration.md) — 2026-09-16；已整理，验证见正文。表面 7 统一 dashboard 页面与占位 frame、路由 preset 和 chrome；341 项自动回归及类型、格式检查通过，盒子实测留给 reviewer。
 - [桌面市场头与收藏条：单一来源展示组件迁移](sessions/2026-09-16-market-header-view-migration.md) — 2026-09-16；已整理，验证见正文。表面 1 抽取五个纯视图，真实界面与静态及运行时占位共用标记；指标改为内容宽度和 32px 间距，标签统一首字母大写。初轮指定回归 207 项通过；round 2 改用隐形典型文本预留宽度及路由已知名称/类型，指定回归 81 项、补充回归 102 项通过，浏览器复测留给 reviewer。
@@ -104,6 +105,7 @@
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
 | 2026-09-17 | [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) | 未取得任务标识，见正文 | `a7fb284656651e6f8440cdfd584ed056ed158ff1` | 已整理，验证见正文 |
+| 2026-09-17 | [二三次刷新对照：app.gatu.ai 与官方终端](sessions/2026-09-17-warm-reload-comparison.md) | 未取得任务标识，见正文 | `4fca2b34d91d75aa18c596017301bacf268f19f7` | 已整理，验证见正文 |
 | 2026-09-16 | [桌面账户面板：单一来源展示组件迁移](sessions/2026-09-16-account-panels-view-migration.md) | 未取得任务标识，见正文 | `bfdae535adcb567dd8a763d71c31eb9b94b284bd` | 已整理，验证见正文 |
 | 2026-09-16 | [Dashboard 壳：单一来源 frame 迁移](sessions/2026-09-16-dashboard-shell-view-migration.md) | 未取得任务标识，见正文 | `cde152e54ae32ed6dd63e9d7a3cc08d787bd73e1` | 已整理，验证见正文 |
 | 2026-09-16 | [邮箱钱包标识、密钥导出入口及发送网络说明修复](sessions/2026-09-16-email-wallet-ui-fix.md) | 未取得任务标识，见正文 | `f5010ee7` | 已整理，验证见正文 |
