@@ -75,7 +75,7 @@ md 布局（14 列）：
 
 - `tests/browser/desktop-grid-layout.pw.ts`：`expectAligned` 按宽度分支，≤1420 断言 A 边界、订单簿与账户表顶边、`accountInfo` 贴合订单簿底边、无碰撞；拖拽用例补 md 的 chart s 与 marketData w/s。
 - `tests/browser/account-actions.pw.ts`：1001 / 1363 的配对边界改为与订单簿配对。
-- `tests/browser/desktop-order-entry-layout.pw.ts`：1001 / 1400 / 1420 的面板几何快照更新，保留"无内部滚动、CTA 与费用可达"断言。
+- `tests/browser/desktop-order-entry-layout.pw.ts`：1001 / 1400 / 1420 的面板几何快照更新，保留"无内部滚动、CTA 与费用可达"断言。实施结果：该套件在运行时捕获几何并与自身比较，无需改动，7/7 直接通过。
 - `tests/browser/orderbook-level-pulse.pw.ts`："medium desktop"与"desktop breakpoint"夹具宽度按新的 md 网格项宽度重取（1238 px 约 350、1001 px 约 282）；现有 240 / 280 本身不是精确网格项宽度（对应 262 / 308），实施时以夹具实测为准。
 
 ## 8. 验证顺序
