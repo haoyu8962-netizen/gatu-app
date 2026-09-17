@@ -8,6 +8,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Tappable mobile surfaces (position, order and history cards, market rows, the trade summary
+  and size-unit toggles) now show press feedback on touch screens.
 - Desktop navigation keeps Vaults, Staking, Referrals and Leaderboard visible for disconnected
   visitors down to 1101px, moves the Earn placeholder into More at compact widths, and drives the
   More menu from one navigation configuration.

@@ -76,7 +76,7 @@ export function MobileTwapHistoryList({ className, scrollMode = "contained" }: P
 				return (
 					<article
 						key={eventKey}
-						className="flex flex-col gap-3 rounded-[14px] border border-market-close-stroke-card bg-modal px-3.5 py-3"
+						className="flex flex-col gap-3 rounded-[14px] border border-market-close-stroke-card bg-surface px-3.5 py-3"
 					>
 						<div className="flex min-w-0 items-start justify-between gap-3">
 							<button

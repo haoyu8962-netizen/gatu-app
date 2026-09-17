@@ -69,8 +69,8 @@ export function PositionMarketFilterControl({ value, options, onChange, mobile =
 					className={cn(
 						"min-h-0 gap-1 font-normal focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100",
 						mobile
-							? "relative max-w-24 rounded-[7px] border border-market-close-stroke-card bg-modal px-[9px] py-1 text-xs leading-4 text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:border-market-close-control hover:bg-modal hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg"
-							: "h-[27px] max-w-40 rounded-[7px] border border-market-close-stroke-card bg-modal px-2.5 py-1 text-xs text-market-close-muted transition-colors duration-[120ms] hover:border-market-close-control hover:bg-modal hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg",
+							? "relative max-w-24 rounded-[7px] border border-market-close-stroke-card bg-surface px-[9px] py-1 text-xs leading-4 text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:border-market-close-control hover:bg-surface hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg"
+							: "h-[27px] max-w-40 rounded-[7px] border border-market-close-stroke-card bg-surface px-2.5 py-1 text-xs text-market-close-muted transition-colors duration-[120ms] hover:border-market-close-control hover:bg-surface hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg",
 					)}
 				>
 					<span className="truncate">{mobile ? triggerLabel : desktopTriggerLabel}</span>

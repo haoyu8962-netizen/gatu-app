@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TOUCH_PRESS_CLASS } from "@/components/ui/touch-press";
 import { cn } from "@/lib/cn";
 
 interface Props {
@@ -19,7 +20,10 @@ export function MobileDisclosureHeader({ expanded, label, onToggle, children, cl
 				aria-label={label}
 				aria-controls={controls}
 				onClick={onToggle}
-				className="absolute inset-0 z-0 cursor-pointer rounded-[inherit] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
+				className={cn(
+					"absolute inset-0 z-0 cursor-pointer rounded-[inherit] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus",
+					TOUCH_PRESS_CLASS,
+				)}
 			/>
 			<div className="contents pointer-events-none">{children}</div>
 			<svg

@@ -12,7 +12,7 @@ export function TradeSizeUnitView({ unit, className, ...props }: Props) {
 			type="button"
 			{...props}
 			className={cn(
-				"ms-2 inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap text-2sm font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed",
+				"ms-2 inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-xs text-2sm font-semibold text-trading-panel-fg transition-colors duration-[120ms] active:bg-fill-weak focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed",
 				className,
 			)}
 		>

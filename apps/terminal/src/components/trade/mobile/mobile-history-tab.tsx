@@ -40,7 +40,7 @@ type TradeHistoryRoleFilter = "all" | "maker" | "taker";
 type UserFill = UserFillsResponse[number];
 
 const filterTriggerClassName =
-	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
+	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-surface text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
 const footerActionClassName =
 	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle";
 
@@ -302,7 +302,7 @@ function MobileHistoryTabContent({
 								return (
 									<article
 										key={cardKey}
-										className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal"
+										className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface"
 									>
 										<MobileDisclosureHeader
 											expanded={isExpanded}

@@ -1027,7 +1027,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 								{ value: "limit", label: t`Limit` },
 								{ value: "trigger", label: t`Trigger` },
 							]}
-							triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
+							triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-surface px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
 							popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
 							className="w-auto shrink-0 [&>label]:sr-only"
 						/>
@@ -1041,7 +1041,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 								{ value: "buy", label: t`Buy` },
 								{ value: "sell", label: t`Sell` },
 							]}
-							triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
+							triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-surface px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
 							popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
 							className="w-auto shrink-0 [&>label]:sr-only"
 						/>
@@ -1253,7 +1253,7 @@ function MobileOrderCard({
 	const isNearMark = isToolbarOrderNearMark(metrics.markDistanceRatio);
 
 	return (
-		<article className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal">
+		<article className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface">
 			<MobileDisclosureHeader
 				expanded={expanded}
 				label={expanded ? t`Collapse ${marketLabel} order details` : t`Expand ${marketLabel} order details`}

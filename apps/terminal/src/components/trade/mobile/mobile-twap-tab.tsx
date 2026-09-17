@@ -147,7 +147,7 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 					return (
 						<article
 							key={twapId}
-							className="flex flex-col gap-2.5 rounded-[14px] border border-market-close-stroke-card bg-modal px-3.5 py-3"
+							className="flex flex-col gap-2.5 rounded-[14px] border border-market-close-stroke-card bg-surface px-3.5 py-3"
 						>
 							<div className="flex min-w-0 items-center justify-between gap-3">
 								<div className="flex min-w-0 items-center gap-2">
@@ -225,7 +225,7 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 									disabled
 									aria-label={t`Pause unavailable: Hyperliquid does not support pausing active TWAP orders.`}
 									title={t`Hyperliquid does not support pausing active TWAP orders.`}
-									className="min-h-11 rounded-8 border border-market-close-stroke-card bg-modal px-3 text-xs font-semibold text-market-close-subtle disabled:cursor-not-allowed"
+									className="min-h-11 rounded-8 border border-market-close-stroke-card bg-surface px-3 text-xs font-semibold text-market-close-subtle disabled:cursor-not-allowed"
 								>
 									{t`Pause`}
 								</button>
@@ -235,7 +235,7 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 									aria-busy={isCancelling}
 									disabled={cancellingTwapId !== null}
 									onClick={() => void cancelTwap(state.coin, twapId)}
-									className="min-h-11 rounded-8 border border-stroke-error-weak bg-modal px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] active:bg-market-close-hover focus-visible:border-market-close-focus focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-fg-disabled"
+									className="min-h-11 rounded-8 border border-stroke-error-weak bg-surface px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] active:bg-market-close-hover focus-visible:border-market-close-focus focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-fg-disabled"
 								>
 									{isCancelling ? t`Terminating...` : t`Terminate`}
 								</button>
