@@ -2433,6 +2433,10 @@ msgstr "Descartar"
 msgid "Display"
 msgstr "Pantalla"
 
+#: src/config/desktop-nav.ts
+msgid "Display and language"
+msgstr ""
+
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
 msgstr "Distancia al precio medio"

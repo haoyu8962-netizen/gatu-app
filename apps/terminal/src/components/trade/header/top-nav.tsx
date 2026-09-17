@@ -55,15 +55,16 @@ export function TopNav({ mode = "default" }: Props) {
 	const { open: openDepositModal } = useDepositModalActions();
 	const depositAvailability = useDepositAvailability();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
-	const { hasWalletAccess } = useWalletSession();
+	const { hasWalletAccess, authenticated, isConnected } = useWalletSession();
 	const isTestnet = useIsTestnet();
 	const tradeHomePath = useTradeHomePath();
 	const showsDepositEntry = hasWalletAccess || depositAvailability.path === "sponsored";
 	const isMarketLoading = mode === "market-loading";
+	const accountChipVisible = authenticated || isConnected;
 
 	const compact = useMediaQuery(DESKTOP_NAV_COMPACT_MEDIA_QUERY);
 	const narrow = useMediaQuery(DESKTOP_NAV_NARROW_MEDIA_QUERY);
-	const layout = resolveDesktopNavLayout({ compact, narrow, connected: hasWalletAccess });
+	const layout = resolveDesktopNavLayout({ compact, narrow, connected: accountChipVisible });
 	const soonLabel = t(DESKTOP_NAV_LABELS.soon);
 	const items = layout.topLevel.map((item) => ({
 		id: item.id,
@@ -111,12 +112,12 @@ export function TopNav({ mode = "default" }: Props) {
 			moreLabel={t(DESKTOP_NAV_LABELS.more)}
 			navigationLabel={t(DESKTOP_NAV_LABELS.primary)}
 			bannerOffset={isTestnet}
-			connected={hasWalletAccess}
-			compactHiddenWhenConnected={hasWalletAccess && !isMarketLoading}
+			connected={accountChipVisible}
+			compactHiddenWhenConnected={accountChipVisible}
 			logo={
 				<Link to={tradeHomePath} search={{ scope: "all" }} aria-label="GATU" className={TOP_NAV_LOGO_CLASS}>
-					<GatuLogo className={cn(TOP_NAV_WORDMARK_CLASS, hasWalletAccess && TOP_NAV_CONNECTED_WORDMARK_CLASS)} />
-					{hasWalletAccess ? <GatuLogo variant="mark" micro className={TOP_NAV_MARK_CLASS} /> : null}
+					<GatuLogo className={cn(TOP_NAV_WORDMARK_CLASS, accountChipVisible && TOP_NAV_CONNECTED_WORDMARK_CLASS)} />
+					{accountChipVisible ? <GatuLogo variant="mark" micro className={TOP_NAV_MARK_CLASS} /> : null}
 				</Link>
 			}
 			moreTrigger={
@@ -168,7 +169,9 @@ export function TopNav({ mode = "default" }: Props) {
 				</HeaderIconButtonView>
 			}
 			compactUtilities={
-				hasWalletAccess && <DesktopUtilitiesMenu disabled={isMarketLoading} onOpenSettings={openSettingsDialog} />
+				accountChipVisible && (
+					<DesktopUtilitiesMenu settingsDisabled={isMarketLoading} onOpenSettings={openSettingsDialog} />
+				)
 			}
 		/>
 	);

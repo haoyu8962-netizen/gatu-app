@@ -9,7 +9,7 @@ import {
 	SpinnerGapIcon,
 	WalletIcon,
 } from "@phosphor-icons/react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useEnsName } from "wagmi";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
@@ -69,17 +69,11 @@ export function UserMenu({ variant = "default" }: Props) {
 	const [mobileSyncLoadAttempt, setMobileSyncLoadAttempt] = useState(0);
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [walletModalLoadAttempt, setWalletModalLoadAttempt] = useState(0);
-	const [mounted, setMounted] = useState(false);
-	const [sessionHint, setSessionHint] = useState(false);
+	const [sessionHint] = useState(() => hasPersistedPrivySession());
 	const { copied, copy } = useCopyToClipboard();
 	const isMobile = useIsMobile();
 	const isMobileQrSurface = useIsMobileQrSurface();
 	const isDesktopNav = variant === "desktop-nav";
-
-	useEffect(() => {
-		setMounted(true);
-		setSessionHint(hasPersistedPrivySession());
-	}, []);
 
 	const initializationScope =
 		sessionMode === "agent-only"
@@ -126,7 +120,7 @@ export function UserMenu({ variant = "default" }: Props) {
 	const awaitsStoredSession =
 		!authenticationReady && sessionMode !== "agent-only" && (sessionHint || recoveryAvailable);
 
-	if (!mounted || awaitsStoredSession) {
+	if (awaitsStoredSession) {
 		return (
 			<Button
 				variant={isDesktopNav ? "filled" : "outline"}
@@ -199,7 +193,8 @@ export function UserMenu({ variant = "default" }: Props) {
 	}
 
 	const displayLabel = emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : t`Account`);
-	const compactDisplayLabel = emailAddress ?? (displayAddress ? shortenAddress(displayAddress) : displayLabel);
+	const compactDisplayLabel =
+		emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : displayLabel);
 
 	const actionItems = [
 		...(walletExport.visible

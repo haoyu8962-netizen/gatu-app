@@ -12,6 +12,8 @@ import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
 	hasWalletAccess: true,
+	authenticated: true,
+	isConnected: true,
 	depositAvailable: true,
 	depositPath: "external" as "external" | "sponsored",
 	depositUnavailableReason: null as string | null,
@@ -183,7 +185,11 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ hasWalletAccess: testState.hasWalletAccess }),
+	useWalletSession: () => ({
+		hasWalletAccess: testState.hasWalletAccess,
+		authenticated: testState.authenticated,
+		isConnected: testState.isConnected,
+	}),
 }));
 
 vi.mock("@/lib/lazy", () => ({
@@ -236,6 +242,8 @@ describe("TopNav", () => {
 		vi.clearAllMocks();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.hasWalletAccess = true;
+		testState.authenticated = true;
+		testState.isConnected = true;
 		testState.depositAvailable = true;
 		testState.depositPath = "external";
 		testState.depositUnavailableReason = null;
@@ -300,9 +308,7 @@ describe("TopNav", () => {
 	}
 
 	function findDesktopUtilitiesButton() {
-		return [...container.querySelectorAll<HTMLButtonElement>('button[aria-label="More"]')].find((button) =>
-			button.parentElement?.className.includes("nav-compact:inline-flex"),
-		);
+		return container.querySelector<HTMLButtonElement>('button[aria-label="Display and language"]') ?? undefined;
 	}
 
 	it.each([
@@ -433,9 +439,17 @@ describe("TopNav", () => {
 			expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/referrals" });
 
 			testState.hasWalletAccess = false;
+			testState.authenticated = false;
+			testState.isConnected = true;
+			renderNav();
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio"]);
+			expect(findDesktopUtilitiesButton()).not.toBeUndefined();
+
+			testState.isConnected = false;
 			renderNav();
 			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Vaults", "Staking", "Referrals", "Leaderboard"]);
 			expect(moreMenuLabels()).toEqual(["Earn — Soon", "Statistics", "API Wallet"]);
+			expect(findDesktopUtilitiesButton()).toBeUndefined();
 
 			stubViewportWidth(1100);
 			renderNav();
@@ -449,6 +463,21 @@ describe("TopNav", () => {
 				"Statistics",
 				"API Wallet",
 			]);
+		} finally {
+			Reflect.deleteProperty(window, "matchMedia");
+		}
+	});
+
+	it("keeps the compact utilities menu and hidden utility icons consistent while the market loads", () => {
+		try {
+			stubViewportWidth(1181);
+			renderNav("market-loading");
+			const utilities = findDesktopUtilitiesButton();
+			expect(utilities?.disabled).toBe(false);
+			const hiddenGroup = container.querySelector('[data-testid="theme-toggle"]')?.parentElement;
+			expect(hiddenGroup?.className).toContain("nav-compact:hidden");
+			act(() => utilities?.click());
+			expect(testState.openSettingsDialog).not.toHaveBeenCalled();
 		} finally {
 			Reflect.deleteProperty(window, "matchMedia");
 		}
@@ -521,7 +550,8 @@ describe("TopNav", () => {
 		const desktopUtilitiesButton = findDesktopUtilitiesButton();
 		expect(depositButton?.disabled).toBe(true);
 		expect(settingsButton?.disabled).toBe(true);
-		expect(desktopUtilitiesButton?.disabled).toBe(true);
+		expect(desktopUtilitiesButton?.disabled).toBe(false);
+		expect(desktopUtilitiesButton?.parentElement?.className).toContain("nav-compact:inline-flex");
 
 		act(() => {
 			depositButton?.focus();
@@ -533,7 +563,6 @@ describe("TopNav", () => {
 		});
 		expect(document.activeElement).not.toBe(depositButton);
 		expect(document.activeElement).not.toBe(settingsButton);
-		expect(document.activeElement).not.toBe(desktopUtilitiesButton);
 		expect(testState.openDepositModal).not.toHaveBeenCalled();
 		expect(testState.openSettingsDialog).not.toHaveBeenCalled();
 

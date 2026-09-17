@@ -2433,6 +2433,10 @@ msgstr "تجاهل"
 msgid "Display"
 msgstr "العرض"
 
+#: src/config/desktop-nav.ts
+msgid "Display and language"
+msgstr ""
+
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
 msgstr "البُعد عن السعر الوسطي"

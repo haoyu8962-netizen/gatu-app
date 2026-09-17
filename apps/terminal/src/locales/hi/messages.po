@@ -2433,6 +2433,10 @@ msgstr "खारिज करें"
 msgid "Display"
 msgstr "डिस्प्ले"
 
+#: src/config/desktop-nav.ts
+msgid "Display and language"
+msgstr ""
+
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
 msgstr "मध्य मूल्य से दूरी"

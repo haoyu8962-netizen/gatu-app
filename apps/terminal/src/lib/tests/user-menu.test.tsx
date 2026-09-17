@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 // @vitest-environment jsdom
 
 import { act, createElement, Fragment, type ReactNode, useEffect } from "react";
@@ -488,6 +490,30 @@ describe("UserMenu", () => {
 		expect(action).toBeDefined();
 		expect(action?.className).toContain("min-w-[9rem]");
 		act(() => action?.click());
+	});
+
+	it("decides the first frame from the persisted session hint without a mount effect", () => {
+		const source = readFileSync(resolve(__dirname, "../../components/trade/header/user-menu.tsx"), "utf8");
+		expect(source).toContain("useState(() => hasPersistedPrivySession())");
+		expect(source).not.toMatch(/setMounted|\[mounted,|useEffect\(/);
+	});
+
+	it("keeps the ENS name in the compact desktop-nav label for accounts without email", () => {
+		testState.authenticated = false;
+		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
+		testState.emailAddress = undefined;
+		testState.ensName = "vitalik.eth";
+		testState.hasWalletAccess = true;
+		testState.isConnected = true;
+		testState.sessionMode = "wallet";
+		act(() => {
+			root.render(createElement(UserMenu, { variant: "desktop-nav" }));
+		});
+		const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Account and wallet"]');
+		expect([...(trigger?.querySelectorAll("bdi") ?? [])].map((label) => label.textContent)).toEqual([
+			"vitalik.eth",
+			"vitalik.eth",
+		]);
 	});
 
 	it("lets the mobile account trigger shrink and truncate without changing the desktop-nav contract", () => {

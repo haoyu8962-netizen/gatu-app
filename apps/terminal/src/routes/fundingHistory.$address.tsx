@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { FundingHistoryPage } from "@/components/funding-history/funding-history-page";
+import { bootDashboardRoute } from "@/lib/navigation/boot-dashboard-route";
 import { buildPageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/fundingHistory/$address")({
+	beforeLoad: () => bootDashboardRoute(),
 	ssr: false,
 	remountDeps: ({ params }) => ({ address: params.address.toLowerCase() }),
 	head: ({ params }) =>

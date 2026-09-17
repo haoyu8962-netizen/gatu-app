@@ -65,6 +65,20 @@ Grok 明确排查且未发现问题的类别：启动死锁、水合、v11→v12
 
 实施顺序：1 与 5（同一处判定）→ 3、4 → 2（含仪表盘预加载）→ 6、7；每步跑 top-nav / user-menu / desktop-nav-layout / i18n 契约 / trade-route-boot 单测，最后 typecheck、Biome、`i18n:extract`、构建与 header 探测，再让 Grok 复审第二轮。
 
+## 实施（2026-09-17）
+
+按核对后的顺序实施，全部在本记录之后的提交中：
+
+- 1、5：`top-nav.tsx` 以 `accountChipVisible = authenticated || isConnected` 驱动收纳、`connected`、`compactHiddenWhenConnected`、Logo 与工具菜单，`hasWalletAccess` 只留给 Deposit 入口；`DesktopUtilitiesMenu` 的 `disabled` 改为 `settingsDisabled`，弹层可开、仅 Settings 禁用。`top-nav.test.tsx` 新增 Agent-only（`isConnected` 而非 `authenticated`）收纳与加载期工具菜单用例。
+- 3：`compactDisplayLabel` 保留 `ensName`；`user-menu.test.tsx` 新增 ENS 场景。
+- 4：`DESKTOP_NAV_LABELS.utilities = msg\`Display and language\``，工具菜单 `aria-label` 改用它；zh 目录补译"显示与语言"，其它语言暂回退英文。
+- 2：`UserMenu` 去掉 `mounted`/effect，改 `useState(() => hasPersistedPrivySession())`；新增 `lib/navigation/boot-dashboard-route.ts`，10 个仪表盘路由的 `beforeLoad` 等待它（服务端直接 resolve）；`boot-dashboard-route.test.ts` 钉住 await 与路由源码；`user-menu.test.tsx` 增加源码契约（无 `setMounted`/`useEffect`）。
+- 6：`preload-trade-terminal-surface.test.ts`：受控 Promise 验证桌面表面/页面/移动分支的合流，源码契约钉住五个面板 + `preloadChartPanel`/`preloadPositionsPanel` 在 `Promise.all` 内、`TradingViewChart`、`PositionsTab`、`UserMenu`、`GlobalModals`。
+- 7：六个纯视图入 `PURE_PRESENTATION_VIEWS`，`desktop-utilities-menu` 入 `REACTIVE_COMPONENTS`（126/126）。
+- 文档：`docs/runtime-guardrails.md` §11、ADR 0013 补充、CHANGELOG。
+
+验证（2026-09-17，本地）：Biome 与 typecheck 通过；定向单测 top-nav（30）、user-menu（20）、desktop-nav-layout（17）、boot-dashboard-route（12）、preload-trade-terminal-surface（4）、i18n-reactivity-contract（126）、trade-route-boot（3）、home-route（5）、modal-surface-contract（7）全部通过。首版 `boot-dashboard-route.ts` 静态引入 `header/top-nav` 使 10 个路由模块把 header 模块图拉进路由 vendor 块（`vendor-tanstack-router` 1.1 MB gzip，启动闭包 +72 KB，`pnpm build` 预算失败）；改为动态 `import()` 后构建通过：总 gzip 3,085,410 B（较基线 −69,297），trade 静态闭包 1,571,981 B（−9,235），`trade-terminal-page` 127,046 B；新增源码契约禁止路由与该模块静态引入 header。生产构建探测（未连接，6 语言 × 6 宽度）36 组无裁切，入口数 7/7/6/6/2/2；`/portfolio` 与 `/trade/HYPE` 首个 header 快照即含 `Connect Wallet`（198 / 166 ms），无 `Connecting...`。全量 `pnpm --filter @gatu/terminal test`（动态导入修正前一轮）：569 文件 = 559 通过 / 9 失败 / 1 跳过，6,342 用例 = 6,309 通过 / 32 失败；失败文件与今早基线名单相同，无新增。已连接与 Agent-only 的紧凑宽度仍未做像素实测（需真实会话）。
+
 ## 后续与替代关系
 
 修复候选（待用户决策）：(1) `compactHiddenWhenConnected` 改为按账户芯片存在判定，kebab 内只禁用 Settings；(2) `UserMenu` 用惰性初始值同步读 session hint 去掉 `mounted` 门，仪表盘路由也预加载 `UserMenu`；(3) 紧凑标签保留 ENS；(4) 工具菜单改用独立无障碍名；(5) 收纳与 `connected` 改用账户芯片可见性；(6) 为 `preloadTradeTerminalSurface` 增加钉住等待集合的单测；(7) 补齐 i18n 契约名单。

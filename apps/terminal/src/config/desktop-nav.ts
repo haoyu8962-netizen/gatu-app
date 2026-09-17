@@ -35,6 +35,7 @@ export const DESKTOP_NAV_LABELS = {
 	primary: msg`Primary navigation`,
 	soon: msg`Soon`,
 	more: msg`More`,
+	utilities: msg`Display and language`,
 	wallet: msg`Connect Wallet`,
 	language: msg`Language and number format`,
 	settings: msg`Settings`,

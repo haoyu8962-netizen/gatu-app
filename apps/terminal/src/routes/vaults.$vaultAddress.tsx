@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { isVaultAddress } from "@/components/vaults/domain/vaults";
 import { VaultDetailPage } from "@/components/vaults/vaults-page";
+import { bootDashboardRoute } from "@/lib/navigation/boot-dashboard-route";
 import { buildPageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/vaults/$vaultAddress")({
+	beforeLoad: () => bootDashboardRoute(),
 	ssr: false,
 	head: ({ params }) =>
 		buildPageHead({

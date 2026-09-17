@@ -2433,6 +2433,10 @@ msgstr "Dismiss"
 msgid "Display"
 msgstr "Display"
 
+#: src/config/desktop-nav.ts
+msgid "Display and language"
+msgstr "Display and language"
+
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
 msgstr "Distance from mid"

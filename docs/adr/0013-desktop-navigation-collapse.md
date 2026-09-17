@@ -21,6 +21,10 @@
 2. **收纳规则。** 视口 ≤1181 px 时 Earn（Soon）离开一级并以禁用项出现在 More；Vaults、Staking、Referrals、Leaderboard 在"已连接且 ≤1181 px"或"任何状态且 ≤1100 px"时进入 More。1100 的依据是法语在 1001 px 去掉 Earn 后仅余 2 px，1100 为其留出约 100 px；未连接用户在 1101–1181 px 保留全部功能入口。低优先级入口的显隐由 `useMediaQuery` 与连接状态在 JS 中共同决定（chrome 在水合后才渲染，`matchMedia` 首帧即可用，不产生 SSR 不一致），保证隐藏的链接与 More 中的菜单项永远一致。
 3. **单一配置来源。** `DESKTOP_NAV_ITEMS` 带 `placement`（`primary` / `lower` / `more`）、`path` 或外链 `href`、`soon` 与前缀匹配标记，Statistics 与 API Wallet 并入其中；`lib/navigation/desktop-nav.ts` 提供纯函数 `resolveDesktopNavLayout({ compact, narrow, connected })` 与 `isDesktopNavItemActive(item, pathname)`，`TopNav` 只渲染其结果。两份手写 More 列表与两个 Dropdown 合并为一个由布局结果驱动的 More；它在任一收纳项处于当前路由时高亮。
 
+## 补充（2026-09-17，PR #26 对抗审查后）
+
+"已连接"改为按账户芯片是否显示判定（`authenticated || isConnected`，与 `UserMenu` 渲染身份的条件一致），使 Agent-only 会话与钱包会话同样收纳，并与市场加载态解耦；`hasWalletAccess` 只用于资金与签名守卫。工具菜单触发器改名 `Display and language`，加载期只禁用其中的 Settings。依据见[审查记录](../work-memory/sessions/2026-09-17-grok-pr26-review.md)。
+
 ## 备选方案
 
 - 未连接时一律显示全部入口直到 1001 px：法语溢出，否决。

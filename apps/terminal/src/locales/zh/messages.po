@@ -2433,6 +2433,10 @@ msgstr "关闭"
 msgid "Display"
 msgstr "显示"
 
+#: src/config/desktop-nav.ts
+msgid "Display and language"
+msgstr "显示与语言"
+
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
 msgstr "距中间价"
