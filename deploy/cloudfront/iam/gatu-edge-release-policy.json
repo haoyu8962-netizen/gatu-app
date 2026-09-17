@@ -1,0 +1,85 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "ReleaseIdentity",
+			"Effect": "Allow",
+			"Action": ["sts:GetCallerIdentity"],
+			"Resource": "*"
+		},
+		{
+			"Sid": "TerminalBucketList",
+			"Effect": "Allow",
+			"Action": ["s3:ListBucket", "s3:GetBucketLocation", "s3:ListBucketVersions", "s3:GetBucketVersioning"],
+			"Resource": ["arn:aws:s3:::gatu-terminal-2026", "arn:aws:s3:::gatu-dist-2026"]
+		},
+		{
+			"Sid": "TerminalBucketObjects",
+			"Effect": "Allow",
+			"Action": ["s3:GetObject", "s3:GetObjectVersion", "s3:PutObject", "s3:DeleteObject"],
+			"Resource": ["arn:aws:s3:::gatu-terminal-2026/*", "arn:aws:s3:::gatu-dist-2026/*"]
+		},
+		{
+			"Sid": "DistributionsRelease",
+			"Effect": "Allow",
+			"Action": [
+				"cloudfront:GetDistribution",
+				"cloudfront:GetDistributionConfig",
+				"cloudfront:UpdateDistribution",
+				"cloudfront:CreateInvalidation",
+				"cloudfront:GetInvalidation",
+				"cloudfront:ListInvalidations"
+			],
+			"Resource": [
+				"arn:aws:cloudfront::018252911946:distribution/ET9CNVE6L1GWN",
+				"arn:aws:cloudfront::018252911946:distribution/E3Q2SAX402CR9F",
+				"arn:aws:cloudfront::018252911946:distribution/EP2DIBP3T7M3G"
+			]
+		},
+		{
+			"Sid": "EdgeFunctionsRelease",
+			"Effect": "Allow",
+			"Action": [
+				"cloudfront:DescribeFunction",
+				"cloudfront:GetFunction",
+				"cloudfront:UpdateFunction",
+				"cloudfront:PublishFunction"
+			],
+			"Resource": [
+				"arn:aws:cloudfront::018252911946:function/gatu-terminal-request",
+				"arn:aws:cloudfront::018252911946:function/gatu-terminal-response"
+			]
+		},
+		{
+			"Sid": "CloudFrontReadLists",
+			"Effect": "Allow",
+			"Action": ["cloudfront:ListDistributions", "cloudfront:ListFunctions"],
+			"Resource": "*"
+		},
+		{
+			"Sid": "LambdaCodeRelease",
+			"Effect": "Allow",
+			"Action": [
+				"lambda:GetFunction",
+				"lambda:GetFunctionConfiguration",
+				"lambda:UpdateFunctionCode",
+				"lambda:PublishVersion",
+				"lambda:ListVersionsByFunction"
+			],
+			"Resource": "arn:aws:lambda:ap-northeast-1:018252911946:function:gatu-terminal-api*"
+		},
+		{
+			"Sid": "LambdaLogsRead",
+			"Effect": "Allow",
+			"Action": ["logs:DescribeLogGroups", "logs:DescribeLogStreams", "logs:FilterLogEvents", "logs:GetLogEvents"],
+			"Resource": "arn:aws:logs:ap-northeast-1:018252911946:log-group:/aws/lambda/gatu-terminal-api*"
+		},
+		{
+			"Sid": "CertificateStatusRead",
+			"Effect": "Allow",
+			"Action": ["acm:DescribeCertificate", "acm:ListCertificates"],
+			"Resource": "*",
+			"Condition": { "StringEquals": { "aws:RequestedRegion": "us-east-1" } }
+		}
+	]
+}

@@ -404,6 +404,25 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 	return results;
 }
 
+export const DEFAULT_RELEASE_PROFILE = "gatu-edge";
+
+/** The AWS CLI profile for every command: `--profile`, else `AWS_PROFILE`, else the release user. */
+export function resolveAwsProfile({ profile, env = process.env }) {
+	const chosen = (profile ?? env.AWS_PROFILE ?? DEFAULT_RELEASE_PROFILE).trim();
+	if (!chosen) throw new Error("An AWS profile name is required");
+	return chosen;
+}
+
+/** Releases run as the restricted IAM user, never as the account root; see deploy/cloudfront/iam/. */
+export function assertReleaseIdentity(identityArn) {
+	if (typeof identityArn !== "string" || identityArn.length === 0) throw new Error("Could not read the AWS caller identity");
+	if (/:root$/.test(identityArn)) throw new Error(`Refusing to release as the account root (${identityArn}); use the ${DEFAULT_RELEASE_PROFILE} IAM user`);
+	if (!/:(user|assumed-role)\//.test(identityArn)) throw new Error(`Unexpected release identity ${identityArn}`);
+	return identityArn;
+}
+
+let awsProfile;
+
 function readArgs(argv) {
 	const [command, ...rest] = argv;
 	const options = {
@@ -455,6 +474,9 @@ function readArgs(argv) {
 			case "--certificate-arn":
 				options.certificateArn = value();
 				break;
+			case "--profile":
+				options.profile = value();
+				break;
 			default:
 				throw new Error(`Unknown argument ${argument}`);
 		}
@@ -462,14 +484,21 @@ function readArgs(argv) {
 	return options;
 }
 
+function awsArgs(args) {
+	return awsProfile ? [...args, "--profile", awsProfile] : args;
+}
+
 function runAws(args, execute) {
-	console.log(`aws ${args.map((arg) => (/[\s*]/.test(arg) ? JSON.stringify(arg) : arg)).join(" ")}`);
+	const full = awsArgs(args);
+	console.log(`aws ${full.map((arg) => (/[\s*]/.test(arg) ? JSON.stringify(arg) : arg)).join(" ")}`);
 	if (!execute) return;
-	execFileSync("aws", args, { stdio: ["ignore", "inherit", "inherit"] });
+	execFileSync("aws", full, { stdio: ["ignore", "inherit", "inherit"] });
 }
 
 function readAwsJson(args) {
-	return JSON.parse(execFileSync("aws", [...args, "--output", "json"], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] }));
+	return JSON.parse(
+		execFileSync("aws", [...awsArgs(args), "--output", "json"], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] }),
+	);
 }
 
 /** The code CloudFront currently runs for a function; `get-function` writes it to a file. */
@@ -516,6 +545,11 @@ function requireOption(options, name) {
 async function main() {
 	const options = readArgs(process.argv.slice(2));
 	const publicDir = resolve(options.publicDir);
+	if (options.command !== "verify") {
+		awsProfile = resolveAwsProfile({ profile: options.profile });
+		console.log(`aws profile: ${awsProfile}`);
+		if (options.execute) assertReleaseIdentity(readAwsJson(["sts", "get-caller-identity"]).Arn);
+	}
 	switch (options.command) {
 		case "sync": {
 			const bucket = requireOption(options, "bucket");

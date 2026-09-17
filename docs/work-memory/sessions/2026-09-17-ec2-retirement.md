@@ -67,7 +67,16 @@
 
 追加（同日，用户指示）：删除遗留的 EC2 Instance Connect Endpoint `eice-08b8c8b3812084477`（`create-complete` → `delete-in-progress` → `delete-complete`，约 30 s），随后删除 `launch-wizard-1`（`sg-0bf4583629084af39`，曾被该端点引用且全协议对全网开放）、`launch-wizard-2`（`sg-0ea49dcbdd294d561`，未引用，全协议开放）、`launch-wizard-3`（`sg-0d865661671af658d`，未引用，开放 22）。终态：ap-northeast-1 安全组仅剩 VPC `default`，网卡 0，Instance Connect Endpoint 0，实例 0（terminated 记录会在约一小时后消失），EIP 0，卷 0。
 
+## 发布凭据切换到受限 IAM 用户（2026-09-17，用户指示后执行）
+
+- 现状核对：IAM 用户 `gatu-edge` 与本机 `gatu-edge` profile 早在 2026-09-13 已建立，但策略 `gatu-edge-deploy` v1 含 `cloudfront:*`/S3 桶管理/Lambda 创建等建站期权限，且 `deploy.mjs` 未指定 profile，当天 p21 发布实际以 root 密钥执行。
+- 策略收紧：以仓库文件 `deploy/cloudfront/iam/gatu-edge-release-policy.json` 创建 `gatu-edge-deploy` v2 并设为默认：`sts:GetCallerIdentity`；`gatu-terminal-2026` 与 `gatu-dist-2026` 的桶列举与对象读写删；三个分发（ET9CNVE6L1GWN、E3Q2SAX402CR9F、EP2DIBP3T7M3G）的配置读写与失效；两个 CloudFront 函数的 describe/get/update/publish；`gatu-terminal-api*` 的代码更新、版本发布与只读；Lambda 日志只读；ACM 只读（us-east-1）。去掉了 `cloudfront:*`、桶管理、Lambda 创建/配置/URL/权限、`iam:PassRole`、ACM 申请与删除。
+- 工具：`deploy.mjs` 新增 `--profile`（默认 `AWS_PROFILE`，再默认 `gatu-edge`），每条 `aws` 命令附加 `--profile`；带 `--execute` 时先 `sts get-caller-identity`，ARN 为 `:root` 时拒绝发布（`assertReleaseIdentity`）。`deploy.test.mjs` 新增两组用例，`pnpm test:cloudfront` 36/36。
+- 验证（`--profile gatu-edge`）：允许——三个分发 `get-distribution-config`、`describe-function`、`s3api head-object`、`s3 ls gatu-dist-2026`、`lambda get-function-configuration`、`list-invalidations`；拒绝——`ec2 describe-instances`（UnauthorizedOperation）、`iam list-users`、`s3 ls`（全桶）、`lambda update-function-configuration`（AccessDenied）。
+- root 密钥：`aws iam update-access-key --status Inactive`（未删除；如需可在控制台以 root 身份重新启用或删除）。停用后 `--profile default` 返回 InvalidClientTokenId，`gatu-edge` 正常。此后本机需要账号级权限的操作（IAM、EC2 清理等）不再可用，需以 root 登录控制台或另建管理员用户。
+- 网站发布（`gatu-dist-2026` + EP2DIBP3T7M3G）同样改用 `--profile gatu-edge`，已记入记忆。
+
 ## 后续与替代关系
 
-- 已完成：终止实例、释放 EIP、删除安全组（见上节）。仍待办：发布凭据换成受限 IAM 用户。
+- 已完成：终止实例、释放 EIP、删除安全组、发布凭据切换到受限 IAM 用户（见上文）。旧架构相关待办已清零。
 - 后续代码清理：把 `routeRules` 的头部契约迁到 CloudFront 响应头策略测试后删除 Nitro 侧 CSP；确认无旧客户端后删除 `/client-error-report` 别名；可将 `deploy/` 下 EC2 文件移入 `deploy/legacy-ec2/`（需同步更新多份验证文档的路径）。

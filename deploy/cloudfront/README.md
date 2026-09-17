@@ -51,7 +51,7 @@
 
 ## 执行步骤
 
-1. **IAM 身份**：用 root 创建受限用户或角色，`aws configure --profile gatu-edge`，以下命令均加 `--profile gatu-edge`。
+1. **IAM 身份**（已完成，2026-09-13 建用户、2026-09-17 收紧策略）：IAM 用户 `gatu-edge` 挂载客户管理策略 `gatu-edge-deploy`，策略正文即仓库中的 [iam/gatu-edge-release-policy.json](iam/gatu-edge-release-policy.json)（只含两个桶的对象读写、三个分发的失效与配置更新、两个 CloudFront 函数的更新发布、`gatu-terminal-api*` 的代码更新与日志读取、ACM 只读）；改策略时以该文件 `aws iam create-policy-version --set-as-default` 应用。本机 `aws configure --profile gatu-edge` 使用该用户的密钥。`deploy.mjs` 默认以 `gatu-edge` profile 执行每条 `aws` 命令（`--profile <name>` 或 `AWS_PROFILE` 可覆盖），带 `--execute` 时先 `sts get-caller-identity`，身份为账号 root 时拒绝发布。账号 root 的访问密钥已于 2026-09-17 停用。
 2. **证书（us-east-1）**：
    ```bash
    aws acm request-certificate --region us-east-1 --validation-method DNS \
