@@ -40,6 +40,7 @@ import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { useProspectiveCrossMarginAccount } from "@/hooks/trade/use-prospective-cross-margin-account";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import {
 	useMarketsInfo,
@@ -112,6 +113,8 @@ import { TradeHeader } from "./trade-header";
 import { TradePanelBodyView } from "./trade-panel-body-view";
 import { TradePanelFooterView } from "./trade-panel-footer-view";
 import { TwapOrderSummary } from "./twap-order-summary";
+
+const ORDER_CONFIRMATION_EXIT_MS = 250;
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
@@ -477,6 +480,7 @@ export function TradePanel() {
 	}
 
 	const confirmation = useOrderConfirmation({ execute: submitWithLivePrices, canExecute: canExecuteOrder });
+	const displayedConfirmation = useLingeringValue(confirmation.pending, ORDER_CONFIRMATION_EXIT_MS);
 
 	function handleSizeModeToggle() {
 		const newMode = sizeMode === "base" ? "quote" : "base";
@@ -793,10 +797,10 @@ export function TradePanel() {
 						onConnect={() => setActiveModal("wallet")}
 						onApply={handleAccountModeChange}
 					/>
-					{confirmation.pending && (
+					{displayedConfirmation && (
 						<OrderConfirmationModal
-							open
-							draft={confirmation.pending.draft}
+							open={confirmation.pending !== null}
+							draft={displayedConfirmation.draft}
 							isSubmitting={confirmation.isConfirming}
 							dontShowAgain={confirmation.dontShowAgain}
 							onDontShowAgainChange={confirmation.setDontShowAgain}

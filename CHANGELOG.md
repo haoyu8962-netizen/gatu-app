@@ -21,8 +21,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 ### Fixed
 
 - Modals and drawers now animate in even when a store change mounts them already open, and
-  store-driven global modals stay mounted for their exit transition instead of vanishing;
-  the position, order-confirmation and cancel-all dialogs no longer suppress those transitions.
+  store-driven global modals, the order confirmation, reverse and close-all dialogs stay mounted
+  for their exit transition instead of vanishing; the position, order-confirmation and cancel-all
+  dialogs no longer suppress those transitions.
 - The lazy global modal chunks warm during idle time after the terminal settles, so the first
   Market Close, settings, swap, transfer, send or command-menu open no longer shows the
   shared loading spinner.

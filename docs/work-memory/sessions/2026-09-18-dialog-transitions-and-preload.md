@@ -57,9 +57,9 @@
 - `pnpm typecheck` 通过；Biome 通过；新增 `global-modals-idle-preload`、`use-lingering-value` 测试，宿主测试新增「关闭中的弹窗保留到退场结束」（该文件的 `useGlobalModalType` mock 改为 `useSyncExternalStore` 订阅，否则 React Compiler 记忆化下改 mock 变量不会触发重渲染），市价平仓弹窗测试新增「取消先动画后释放会话」。
 - 既有基线红（HEAD 临时 worktree 复跑同样失败，未修）：`position-market-close-modal.test.tsx › uses the 440px desktop modal…`（摘要区样式断言）与 `adaptive-modal-swipe-dismissal.test.tsx` 三例（Drawer mock 缺 Viewport）。
 - 本轮顺手修正：`positions-table-visual-contract` 对移动持仓卡的 `bg-modal` 断言改为 `bg-surface`（0ad17aea 换令牌时漏改，之前即红）。
-- 未做：下单确认弹窗（`confirmation.pending` 条件挂载）、反手与全部平仓控制器（`target` / `snapshot` 为空即返回 null）在关闭时仍是直接卸载，只有进场动画得到修复；如需退场需在各自持有方引入同样的保留机制。未实测官方终端弹窗动画。全量 Vitest（改动后第二轮，574 文件）：11 文件 / 34 用例失败，逐一在 `origin/main`（3a80b360）临时 worktree 复跑归类——`desktop-positions-panel-shell`（18，mock 缺 `useInfo`）、`global-settings-slippage-effective`（2）、`mobile-order-risk-summary-contract`、`mobile-trade-tp-sl-contract`、`referral-ui-contract`（3）、`mobile-input-zoom-contract`（2）、`adaptive-modal-swipe-dismissal`（3）、市价平仓 440px 断言均为 main 或分支既有红；`client-bootstrap-error` 单跑与 main 均通过，全量中偶发；`balances-table-visual-contract` 与 `orders-table-visual-contract` 各 1 例是 0ad17aea 换 `bg-surface` 时漏改的断言，本轮已改为期望 `bg-surface`，单跑通过。本轮改动没有引入新的失败。
+- 用户随后要求把下单确认、反手、全部平仓的退场一并修掉：三处持有方改用 `useLingeringValue`（250 ms）保留最后一个 `pending` / `target` / `snapshot`，内容组件接收 `open={value !== null}`，值清空后先跑退场再卸载。反手与全部平仓控制器各加一条「值清空后保持挂载且 `open=false`，250 ms 后卸载」测试；8 个相关文件 59 用例通过。开发服务器逐帧采样：反手抽屉进场 100% → 0、遮罩取消退场约 200 ms 后卸载。全部平仓与下单确认未做实机采样：桌面 1300 px 视口下未找到全部平仓入口，下单确认若偏好已关闭会直接下真单，不在自主执行范围；两者与反手共用同一保留机制与单测。未实测官方终端弹窗动画。全量 Vitest（改动后第二轮，574 文件）：11 文件 / 34 用例失败，逐一在 `origin/main`（3a80b360）临时 worktree 复跑归类——`desktop-positions-panel-shell`（18，mock 缺 `useInfo`）、`global-settings-slippage-effective`（2）、`mobile-order-risk-summary-contract`、`mobile-trade-tp-sl-contract`、`referral-ui-contract`（3）、`mobile-input-zoom-contract`（2）、`adaptive-modal-swipe-dismissal`（3）、市价平仓 440px 断言均为 main 或分支既有红；`client-bootstrap-error` 单跑与 main 均通过，全量中偶发；`balances-table-visual-contract` 与 `orders-table-visual-contract` 各 1 例是 0ad17aea 换 `bg-surface` 时漏改的断言，本轮已改为期望 `bg-surface`，单跑通过。本轮改动没有引入新的失败。
 
 ## 后续与替代关系
 
 - 补充 ADR 0014 的实施记录 `2026-09-17-market-close-submit-and-dismiss.md`，不替代。
-- 后续可选：下单确认、反手、全部平仓的退场保留；`adaptive-modal-swipe-dismissal` 基线红修复。
+- 后续可选：`adaptive-modal-swipe-dismissal` 基线红修复；全部平仓与下单确认的实机退场采样。

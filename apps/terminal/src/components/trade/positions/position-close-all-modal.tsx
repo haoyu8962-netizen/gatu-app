@@ -4,6 +4,7 @@ import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { getPositionCloseAllSnapshotKey, type PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
 import { usePositionCloseAllSubmit } from "@/hooks/trade/use-position-close-all-submit";
+import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { formatQuoteAmount } from "@/lib/format";
@@ -24,12 +25,16 @@ interface Props {
 	onOpenChange: (open: boolean) => void;
 }
 
+const DIALOG_EXIT_MS = 250;
+
 export function PositionCloseAllController({ snapshot, onOpenChange }: Props) {
-	if (!snapshot) return null;
+	const displayedSnapshot = useLingeringValue(snapshot, DIALOG_EXIT_MS);
+	if (!displayedSnapshot) return null;
 	return (
 		<PositionCloseAllContent
-			key={getPositionCloseAllSnapshotKey(snapshot)}
-			snapshot={snapshot}
+			key={getPositionCloseAllSnapshotKey(displayedSnapshot)}
+			snapshot={displayedSnapshot}
+			open={snapshot !== null}
 			onOpenChange={onOpenChange}
 		/>
 	);
@@ -37,10 +42,11 @@ export function PositionCloseAllController({ snapshot, onOpenChange }: Props) {
 
 interface ContentProps {
 	snapshot: PositionCloseAllSnapshot;
+	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
-function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
+function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
@@ -138,7 +144,7 @@ function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
 
 	return (
 		<PositionCloseDialogShell
-			open
+			open={open}
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
 			dismissible={isDismissible}

@@ -88,6 +88,25 @@ describe("PositionReverseConfirmationController", () => {
 		container.remove();
 	});
 
+	it("keeps the dialog mounted closed for its exit transition after the target clears", () => {
+		vi.useFakeTimers();
+		try {
+			act(() => root.render(<PositionReverseConfirmationController target={target} onOpenChange={vi.fn()} />));
+			expect(mocks.modalProps?.open).toBe(true);
+
+			act(() => root.render(<PositionReverseConfirmationController target={null} onOpenChange={vi.fn()} />));
+			expect(container.querySelector('[role="dialog"]')).not.toBeNull();
+			expect(mocks.modalProps?.open).toBe(false);
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[role="dialog"]')).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("formats the exact 2x string size and closes only after a confirmed fill", async () => {
 		const onOpenChange = vi.fn();
 		mocks.submit.mockResolvedValue({
