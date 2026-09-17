@@ -6,6 +6,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ## Unreleased
 
+### Fixed
+
+- The terminal no longer stays blank when the persisted locale and the startup fonts become
+  usable between its first render and its readiness effect, which reliably happened in
+  development builds where React runs effects twice.
+
 ### Changed
 
 - Refreshing the trading terminal now reveals the page as soon as its first-render pieces

@@ -121,6 +121,7 @@ function StartupReadyGate({ children, fallback }: { children: React.ReactNode; f
 				reveal();
 			});
 		}
+		reveal();
 		return () => {
 			active = false;
 		};

@@ -111,6 +111,35 @@ it.each(["/trade/BTC", "/portfolio", "/vaults"])(
 	},
 );
 
+it("reveals /trade/BTC when the locale and fonts became usable between the first render and its effect", () => {
+	state.pathname = "/trade/BTC";
+	state.gateReady = true;
+	state.runtimeReady = true;
+	i18n.loadAndActivate({ locale: "zh", messages: {} });
+	let checks = 0;
+	const load = vi.fn(() => new Promise<void>(() => {}));
+	Object.defineProperty(document, "fonts", {
+		configurable: true,
+		value: {
+			check: () => {
+				checks += 1;
+				return checks > 1;
+			},
+			load,
+		},
+	});
+	const host = document.createElement("div");
+	const root = createRoot(host);
+	try {
+		act(() => root.render(<RootComponent />));
+		expect(host.textContent).toBe("交易");
+		expect(load).not.toHaveBeenCalled();
+	} finally {
+		act(() => root.unmount());
+		Reflect.deleteProperty(document, "fonts");
+	}
+});
+
 it("keeps /trade/BTC empty until the persisted locale and the startup fonts are both usable", async () => {
 	state.pathname = "/trade/BTC";
 	state.gateReady = true;

@@ -50,6 +50,7 @@
 
 - 一次自伤教训：重建脚本用 `pnpm build | grep | head -8` 截断输出，`head` 退出后 vite 收到 SIGPIPE 提前终止，`.output/server` 为空、`pipestatus` 仍显示 0；改为完整写入日志后再 grep。
 - 全量 `pnpm --filter @gatu/terminal test`（默认并发，与构建串行）：566 文件 = 553 通过 / 12 失败 / 1 跳过；6,298 用例 = 6,245 通过 / 52 失败 / 1 跳过。其中 9 个文件为今早记录的既有基线红（desktop-positions-panel-shell 18 项的首个错误是 `@/lib/hyperliquid` mock 缺 `useInfo`，与本次无关）；`mobile-agent-sync-route`（18）与 `orderbook-boot`（1）为 09-16 记录的并发敏感文件，单独复跑 20/20、5/5 通过；`home-route.test.ts` 1 项是本次引入的真实回归——它整体 mock 了 `@/lib/lazy` 而缺少新导出 `preloadLazyComponents`，补上后 5/5 通过；另有 1 个文件 2 项未被日志过滤捕获。其余 10 个 mock 该模块的测试文件（221 项）复跑通过。未放宽任何断言。
+- 顺带修复的真实 bug（用户在自己的 Chrome 打开开发服务器 3016 黑屏）：`StartupReadyGate` 的 effect 只在条件"尚未满足"时注册回调，若语言目录与字体在首次渲染与 effect 之间都已就绪（开发构建 StrictMode 第二次 effect 必然如此；生产构建为小概率竞争），既无回调也无 `reveal()`，页面永远停在空播报。修复为 effect 末尾无条件调用一次 `reveal()`；新增 `root-startup-fallback` 用例（`document.fonts.check` 首次 false、之后 true），去掉修复行验证为红、恢复为绿；修复后 3016 开发服务器在内置浏览器中正常渲染（导航栏、7 面板、22 档盘口）。这也解释了此前"内置浏览器面板开发模式停在门控"的现象。
 - 未做：线上部署后的复测（本记录全部为本地生产构建数据）；真机与多浏览器验收；内置浏览器面板在开发模式下停在 `StartupReadyGate` 的问题未查明，与本改动无关（对照服务器同样如此），生产构建在面板中正常。
 
 ## 后续与替代关系
