@@ -9,7 +9,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 ### Changed
 
 - Confirming a market close now closes the dialog immediately and runs the order in the
-  background; the result arrives as a single notification, failures release the session so the
+  background; the outcome arrives as a notification (an unconfirmed fill warns first and the shared
+  reconciliation reports the final result), failures release the session so the
   position can be retried at once, and unconfirmed fills are reported by the shared order
   reconciliation notifications instead of reopening the dialog (ADR 0014).
 - Tappable mobile surfaces (position, order and history cards, market rows, the trade summary

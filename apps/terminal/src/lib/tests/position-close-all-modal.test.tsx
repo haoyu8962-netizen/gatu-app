@@ -153,6 +153,11 @@ describe("PositionCloseAllController", () => {
 			);
 			expect(testState.shellProps?.open).toBe(false);
 			expect(container.textContent).not.toBe("");
+			expect(testState.actionButtonProps?.disabled).toBe(true);
+			act(() => {
+				void (testState.actionButtonProps?.onClick as () => Promise<void>)();
+			});
+			expect(testState.submit).not.toHaveBeenCalled();
 
 			act(() => {
 				vi.advanceTimersByTime(250);

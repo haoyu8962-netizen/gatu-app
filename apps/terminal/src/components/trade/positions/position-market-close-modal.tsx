@@ -114,7 +114,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 		clientKey.toLowerCase(),
 		env,
 	]);
-	const canEdit = phase === "idle" && positionStatus === null;
+	const canEdit = phase === "idle" && !isClosing && positionStatus === null;
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
 	const visibleError = positionStatusMessage ?? (positionStatus === null ? visibleSizingError : null);

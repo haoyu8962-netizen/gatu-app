@@ -28,6 +28,8 @@ describe("useIdleGlobalModalPreload", () => {
 
 	beforeEach(() => {
 		vi.useFakeTimers();
+		Object.defineProperty(window, "requestIdleCallback", { value: undefined, configurable: true, writable: true });
+		Object.defineProperty(window, "cancelIdleCallback", { value: undefined, configurable: true, writable: true });
 		mocks.preloadLazyComponents.mockClear();
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -58,6 +60,44 @@ describe("useIdleGlobalModalPreload", () => {
 			"SendModal",
 			"PositionMarketCloseModal",
 		]);
+	});
+
+	it("prefers requestIdleCallback with a bounded timeout and cancels it on unmount", () => {
+		const idleCallbacks = new Map<number, () => void>();
+		const cancelIdleCallback = vi.fn((id: number) => idleCallbacks.delete(id));
+		let nextId = 0;
+		Object.defineProperty(window, "requestIdleCallback", {
+			value: vi.fn((callback: () => void, options?: { timeout?: number }) => {
+				expect(options?.timeout).toBe(2_000);
+				nextId += 1;
+				idleCallbacks.set(nextId, callback);
+				return nextId;
+			}),
+			configurable: true,
+			writable: true,
+		});
+		Object.defineProperty(window, "cancelIdleCallback", {
+			value: cancelIdleCallback,
+			configurable: true,
+			writable: true,
+		});
+
+		act(() => root.render(<Probe includePositionMarketClose />));
+		act(() => {
+			vi.advanceTimersByTime(5_000);
+		});
+		expect(mocks.preloadLazyComponents).not.toHaveBeenCalled();
+		expect(idleCallbacks.size).toBe(1);
+
+		act(() => {
+			for (const callback of idleCallbacks.values()) callback();
+		});
+		expect(mocks.preloadLazyComponents).toHaveBeenCalledOnce();
+
+		act(() => root.render(<Probe includePositionMarketClose={false} />));
+		act(() => root.unmount());
+		expect(cancelIdleCallback).toHaveBeenCalled();
+		root = createRoot(container);
 	});
 
 	it("skips the market close modal where that flow is disabled and cancels on unmount", () => {

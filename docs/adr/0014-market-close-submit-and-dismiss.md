@@ -1,7 +1,7 @@
 # ADR 0014：市价平仓确认后立即关闭弹窗，结果只用通知
 
 - 状态：已接受（产品负责人，2026-09-17）；实施与验证记录见[任务记录](../work-memory/sessions/2026-09-17-market-close-submit-and-dismiss.md)。
-- 关联：`AGENTS.md`「Mobile data presentation contract」（用户主动请求的动作必须保留反馈，包括不确定结果）；`docs/runtime-guardrails.md` §6（下单后的对账规则）；`docs/trading-toolbar-redesign.md`（市价平仓的订单参数）。
+- 关联：`AGENTS.md`「Mobile data presentation contract」（用户主动请求的动作必须保留反馈，包括不确定结果）；`apps/terminal/src/components/trade/order-reconciliation.tsx`（共享对账及其结局通知）；`docs/trading-toolbar-redesign.md`（市价平仓的订单参数）。
 
 ## 背景与约束
 
@@ -43,6 +43,7 @@
 - 对账期间（最长 2 分钟）市价平仓会话仍占用全局弹窗槽位，与此前直提路径行为一致；该资产的持仓操作被禁用，其他资产不受影响。
 - 弹窗不再有「校验中 / 提交中 / 确认中」状态，相关测试改为断言「提交即关闭且不重复提交」。
 - 关闭全仓（Close All）与反手（Reverse）流程仍等待结果后关闭，本决策不改它们；如需一致化另立任务。
+- 已知限制（2026-09-18 Grok 审查 F3）：确认路径的后台执行仍由 `PositionMarketCloseModal` 实例驱动，用户在校验或提交阶段离开 `/trade` 会触发宿主卸载的 `discardPositionMarketCloseModal`，执行守卫以 `trading-data-changed` 失败关闭；这与直提路径依赖持仓面板实例的既有行为一致。把执行搬到常驻宿主需要另立决策。
 
 ## 证据
 

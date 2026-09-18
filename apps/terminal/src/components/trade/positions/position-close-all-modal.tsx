@@ -52,7 +52,7 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 	const isMobile = useIsMobile();
 	const submission = usePositionCloseAllSubmit(snapshot);
 	const positionCount = snapshot.targets.length;
-	const isActionDisabled = submission.isPending || submission.isReconciling || submission.isPartial;
+	const isActionDisabled = !open || submission.isPending || submission.isReconciling || submission.isPartial;
 	const isDismissible = !submission.isPending;
 	const errorId = `position-close-all-error-${getPositionCloseAllSnapshotKey(snapshot)}`;
 	const summaryItems: PositionCloseSummaryItem[] = [
@@ -98,6 +98,7 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 	];
 
 	async function handleConfirm() {
+		if (!open) return;
 		try {
 			const outcome = await submission.submit();
 			if (outcome.state === "blocked") {

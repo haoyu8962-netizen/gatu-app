@@ -582,6 +582,9 @@ describe("PositionMarketCloseModal", () => {
 		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
 		expect(testState.adaptiveProps?.open).toBe(false);
 		expect(testState.close).not.toHaveBeenCalled();
+		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click());
+		expect(testState.submit).not.toHaveBeenCalled();
 
 		act(() => (testState.adaptiveProps?.onOpenChangeComplete as (open: boolean) => void)(false));
 		expect(testState.close).toHaveBeenCalledWith("session-1");

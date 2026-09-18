@@ -84,10 +84,13 @@ function PositionReverseConfirmationContent({ target, open, onOpenChange }: Cont
 			currentDirection={currentDirection}
 			reverseSizeLabel={reverseSizeLabel}
 			isSubmitting={submission.isPending}
-			isConfirmDisabled={submission.isPending || submission.isReconciling}
+			isConfirmDisabled={!open || submission.isPending || submission.isReconciling}
 			errorMessage={submission.error}
 			onOpenChange={handleOpenChange}
-			onConfirm={() => void handleConfirm()}
+			onConfirm={() => {
+				if (!open) return;
+				void handleConfirm();
+			}}
 		/>
 	);
 }

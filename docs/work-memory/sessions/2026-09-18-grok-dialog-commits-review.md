@@ -3,10 +3,10 @@
   "schemaVersion": 1,
   "id": "2026-09-18-grok-dialog-commits-review",
   "date": "2026-09-18",
-  "title": "Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实，待修",
+  "title": "Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复",
   "kind": "task",
   "status": "recorded",
-  "summary": "grok-4.6 只读审查 0ad17aea…08e2057d 冻结快照，报告 2 P1 / 2 P2 / 3 P3；逐条核实：反手与全部平仓退场窗口内确认按钮仍可点（P1）、市价平仓取消退场期间 canSubmit 未含 isClosing（P1）属实；后台执行绑在随路由卸载的弹窗实例（P2）与 PnL 分享退场仍直接卸载（P2）属实；ADR §6 引用、CHANGELOG「一条通知」措辞、idle 预热测试不覆盖 requestIdleCallback 三条 P3 属实。其「无过渡时 onOpenChangeComplete 同步触发会卡会话」的存疑项经 Base UI 源码核实不成立。未修改代码。",
+  "summary": "grok-4.6 只读审查 0ad17aea…08e2057d 冻结快照，报告 2 P1 / 2 P2 / 3 P3；F1/F2/F4/F5/F6/F7 已修（守卫经变异检查钉住），F3 记为 ADR 已知限制；逐条核实：反手与全部平仓退场窗口内确认按钮仍可点（P1）、市价平仓取消退场期间 canSubmit 未含 isClosing（P1）属实；后台执行绑在随路由卸载的弹窗实例（P2）与 PnL 分享退场仍直接卸载（P2）属实；ADR §6 引用、CHANGELOG「一条通知」措辞、idle 预热测试不覆盖 requestIdleCallback 三条 P3 属实。其「无过渡时 onOpenChangeComplete 同步触发会卡会话」的存疑项经 Base UI 源码核实不成立。未修改代码。",
   "topics": [
     "pr-review"
   ],
@@ -23,7 +23,7 @@
   "supersedes": []
 }
 -->
-# Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实，待修
+# Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复
 
 ## 背景与范围
 
@@ -47,7 +47,14 @@ Grok 认为成立的安全面（会话 idle 门、dismiss/close 相位限制、�
 ## 验证与限制
 
 - 复核过程中在内置浏览器观察到「取消后弹窗停留 >1 s、进场 starting 状态持续 >1 s」，追查为浏览器面板处于 `document.hidden`，定时器与 rAF 被节流（空闲 100 ms 定时器实际 1 s 触发一次），不是代码缺陷；面板可见时取消 300 ms 内卸载。
-- 本记录只做核实与归档，未修改代码；修复计划：F1/F2 用 `open`/`isClosing` 关闭提交入口并补「退场期间点确认不提交」测试；F4 给 PnL 分享持有方加 `useLingeringValue`；F5/F6 改文档；F7 测试补 RIC 分支；F3 需把确认路径的执行搬到常驻宿主，另立决策。
+- 用户确认后按顺序修复（同分支后续提交）：
+  - F1：反手 `isConfirmDisabled` 与 `onConfirm` 加 `!open` 守卫；全部平仓 `isActionDisabled` 加 `!open`，`handleConfirm` 在 `!open` 时早返回。两个控制器的退场测试增加「`open=false` 时按钮禁用且点击不提交」断言。
+  - F2：市价平仓 `canEdit` 加 `!isClosing`；取消测试增加「退场期间提交按钮禁用且点击不提交」断言。
+  - F4：PnL 分享持有方用 `useLingeringValue` 保留 `position`，`Modal` 改为 `open={position !== null}`；`open` 变假时递增保存操作 epoch 并清 `isSaving`，既有「卸载期间不下载不提示」测试语义保持；新增退场保留测试（Modal mock 暴露 `data-open`）。
+  - F5：ADR 关联改指 `order-reconciliation.tsx`；并把 F3 记为 ADR「后果与边界」的已知限制。F6：CHANGELOG 改为「通知报告结果，未确认成交先警告、对账再报最终结果」。F7：预热测试在 `beforeEach` 显式清除 `requestIdleCallback`，新增 RIC 分支测试（2 s 上限、卸载取消）。
+  - 变异检查：分别回退三处守卫，对应测试各自变红（反手 1/3、全部平仓 1/5、市价平仓 1/17）；恢复后通过。`style-ui-guide.md` 新增「退场中的弹窗视 `open=false` 为已取消，禁止提交」规则。
+  - 教训：在 `act(() => …)` 里直接返回异步 handler 会让 act 进入异步作用域且不关闭，后续渲染与定时器不再被 flush，整份测试文件后续用例全部读到空内容；改为 `act(() => { void handler(); })`。
+  - F3 未实施（另立决策）。
 
 ## 后续与替代关系
 

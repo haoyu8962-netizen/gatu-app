@@ -97,6 +97,9 @@ describe("PositionReverseConfirmationController", () => {
 			act(() => root.render(<PositionReverseConfirmationController target={null} onOpenChange={vi.fn()} />));
 			expect(container.querySelector('[role="dialog"]')).not.toBeNull();
 			expect(mocks.modalProps?.open).toBe(false);
+			expect(mocks.modalProps?.isConfirmDisabled).toBe(true);
+			act(() => (mocks.modalProps?.onConfirm as () => void)());
+			expect(mocks.submit).not.toHaveBeenCalled();
 
 			act(() => {
 				vi.advanceTimersByTime(250);
