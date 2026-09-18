@@ -16,6 +16,7 @@
   "commits": [],
   "sources": [
     { "path": "docs/adr/0015-link-device-alignment.md" },
+    { "path": "docs/mobile-sync-ticketless-transfer-plan.md" },
     { "path": "apps/terminal/src/components/trade/components/mobile-agent-sync-modal.tsx" },
     { "path": "apps/terminal/src/components/trade/components/mobile-agent-qr-scanner.tsx" },
     { "path": "apps/terminal/src/routes/mobile-agent-sync.tsx" },
@@ -61,7 +62,7 @@
 
 ## 后续与替代关系
 
-- D7 决定后另起记录：A 需 DynamoDB 表、IAM、Lambda 挂载与 `MobileSyncTicketStore` 异步化；B 需删除票据客户端/服务端/部署探针并缩短信封 TTL；决定前生产开关保持关闭。
+- 2026-09-18 用户决定采用 B；实施规划写入 `docs/mobile-sync-ticketless-transfer-plan.md`（仅文档，代码未改）。实施时另起记录：A 需 DynamoDB 表、IAM、Lambda 挂载与 `MobileSyncTicketStore` 异步化；B 需删除票据客户端/服务端/部署探针并缩短信封 TTL；决定前生产开关保持关闭。
 - 资金分类改用 domain 的全 dex 分类器；`docs/mobile-sync-production-readiness.md` 加退役横幅并重指 `deploy/cloudfront/README.md`，`docs/README.md`、`INDEX.md`、`agent.md`、`trading-onboarding.md`、`email-trading-signing.md`、ADR 0002、终端 README 的现行引用一并重指；`docs/hyperliquid-signing.md` 补「Mobile Agent QR 传输与 Agent-only 会话」节。
 - 真机矩阵（`docs/mobile-phone-access-device-validation.md`）仍为未执行。
 - 不替代任何记录。
