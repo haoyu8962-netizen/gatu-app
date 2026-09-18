@@ -53,6 +53,15 @@
 - `pnpm i18n:extract`：新增 2 条、废弃 4 条票据文案；zh 已补 2 条译文，zh 余 5 条、其余四语各 32 条缺失为既有状态。
 - 未执行：`serve:spa` 静态托管实测、真机矩阵（全部 Not run）、对抗安全复核、浏览器预览。未推送、未部署。
 
+## 验收补充（2026-09-18，同日第二阶段，提交 `a2e27468` 的干净工作区）
+
+用户要求先完成方案 B，并确认改动落在新架构（CloudFront + S3 + Lambda、SPA 静态壳）的文件上。
+
+- 新架构核对：`750a5113` 的运行时改动在 `src/edge/lambda-handler.ts`（Lambda）、`deploy/cloudfront/distribution-config.mjs` 与 `functions/terminal-request.js`（CloudFront）、客户端协议/弹窗/导入路由与 `build-meta`（静态 `build-meta.json` 由 vite 插件发出）。被删除的是旧运行时的 Nitro 服务端路由 `routes/mobile-agent-sync-ticket.ts`、`one-time-ticket-server.ts` 与 EC2 时代的 `deploy/mobile-sync-*` 脚本；`vite.config.ts` 的 Nitro route rules、`static-pages.ts` 与 `routes/build-meta[.]json.ts` 只服务本地 `pnpm serve` 预览，已保持一致。`deploy/README.md`、`deploy/deploy.sh`、`Caddyfile` 属已退役的 EC2 资料，只在 README 顶部加了退役说明，没有在其上继续开发。`.github/workflows` 与 CloudFront 发布脚本不引用任何被删文件。`pnpm --filter @gatu/terminal build:lambda` 通过（225.75 kB），产物内票据相关字符串为 0。
+- 静态托管验收、真机模板改写与各项结果见 [方案 B 规划](../../mobile-sync-ticketless-transfer-plan.md) 的「验收执行记录」。本阶段新增改动：`scripts/serve-spa-static.mjs`（退役路径及子路径 404、不转发 API 源）及其测试；`scripts/validate-mobile-phone-access-device-validation.js`、`deploy/fixtures/mobile-device-evidence.mjs`、`docs/mobile-phone-access-device-validation.md`（`Envelope version = 3`、RD-2/TC-2 新语义、构建身份取自 `build-meta.json`、去掉 EC2 `prepare`/`promote`）。`node --test` 两个脚本 29 通过，`pnpm test:cloudfront` 36 通过，`git diff --check` 通过。
+- 顺带发现但未处理：`serve-spa-static.mjs` 仍把 `/build-meta.json` 归为 server-only（404 或转发），而新架构里它是随客户端产物发出的静态文件（CloudFront 函数按文件扩展名放行到 S3）；该模拟器条目早于静态 `build-meta.json`（`fe22fb61` 对 `5944465d`），与方案 B 无关，留待单独处理。
+- 预算修复半成品已从工作区移出，保存在 Git 忽略的 `.worklog/2026-09-18/budget-lazy-modals/wip.patch`（`git apply` 可恢复，当前不能通过类型检查），不属于本任务。
+
 ## 后续与替代关系
 
 - 打开 `VITE_MOBILE_PAIRING_*` 之前：改写 `scripts/validate-mobile-phone-access-device-validation.js`、`deploy/fixtures/mobile-device-evidence.mjs` 与 `docs/mobile-phone-access-device-validation.md`（仍含 Ticket API 字段，已加「协议已被替代」提示），再按规划完成静态托管实测、Testnet 真机矩阵与安全复核。

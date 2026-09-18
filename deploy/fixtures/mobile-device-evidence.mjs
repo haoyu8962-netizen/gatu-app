@@ -9,7 +9,7 @@ export const EXPECTED_MATRIX_ROWS = {
 	"RD-2": {
 		deviceAndBrowser: "iOS Safari",
 		requiredResult:
-			"Reload retains the bounded draft and consumer; rejected tickets clear the draft without activating access.",
+			"Reload retains the bounded draft; an expired or already-imported QR clears the draft without activating access.",
 	},
 	"RD-3": {
 		deviceAndBrowser: "Installed iOS PWA",
@@ -95,7 +95,7 @@ function createEvidenceSections() {
 | Date and time | 2026-05-25T12:00:00Z |
 | Git commit | abc1234 |
 | Release ID | preview-v2 |
-| Ticket API version | 2 |
+| Envelope version | 3 |
 | Mobile create gate | true |
 | Mobile import gate | true |
 | App origin | https://preview.example |

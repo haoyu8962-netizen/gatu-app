@@ -1,6 +1,6 @@
 # 移动配对方案 B：去服务端票据的纯客户端传输（实施规划）
 
-状态：已选定（2026-09-18，用户决定）；实施顺序 1–4 已于 2026-09-18 完成（任务记录 [2026-09-18-mobile-sync-ticketless-implementation](work-memory/sessions/2026-09-18-mobile-sync-ticketless-implementation.md)），第 5 步（打开生产开关）与验收中的静态托管实测、真机矩阵、对抗安全复核尚未执行。归属决策见 [ADR 0015](adr/0015-link-device-alignment.md) D7。实施偏差：退役路径 `/mobile-agent-sync-ticket*` 由 CloudFront viewer-request 函数与静态页分类器直接返回 404（而非落入 SPA 壳），Service Worker 与 `serve:spa` 继续把它当作非导航路径；`scripts/validate-mobile-phone-access-device-validation.js` 与真机矩阵模板仍含 “Ticket API version” 字段，留待真机验收前改写。
+状态：已选定（2026-09-18，用户决定）；实施顺序 1–4 已于 2026-09-18 完成（任务记录 [2026-09-18-mobile-sync-ticketless-implementation](work-memory/sessions/2026-09-18-mobile-sync-ticketless-implementation.md)），静态托管实测已执行（见下方「验收执行记录」）；对抗安全复核的结论待补入任务记录；真机矩阵、第 5 步（打开生产开关）与线上发布尚未执行。归属决策见 [ADR 0015](adr/0015-link-device-alignment.md) D7。实施偏差：退役路径 `/mobile-agent-sync-ticket*` 由 CloudFront viewer-request 函数与静态页分类器直接返回 404（而非落入 SPA 壳），Service Worker 与 `serve:spa` 继续把它当作非导航路径；真机矩阵模板与 `scripts/validate-mobile-phone-access-device-validation.js` 已于同日改写为无票据协议。
 
 ## 目标与不变量
 
@@ -53,6 +53,23 @@
 - 静态托管：`pnpm build` 后用 `serve:spa` 打开 `/mobile-agent-sync`，直接加载带片段的 URL 能擦除地址栏并进入 Import；`/mobile-agent-sync-ticket` 返回 404。
 - 真机：按 `docs/mobile-phone-access-device-validation.md` 在 Testnet 用隔离 owner 跑 RD-1…RD-8（去掉票据相关行），记录不含二维码内容的证据；未跑真机不得声称可发布。
 - 安全复核：一次对抗审查确认没有任何路径把信封或密钥写入查询串、日志、遥测或非片段 URL；信封 TTL 与可见窗口以本地单调时钟为准。
+
+## 验收执行记录（2026-09-18，本地，提交 `a2e27468` 的干净工作区）
+
+以下是实际执行的结果；没有执行的项目明确标为未执行，单元测试与本地静态托管不能替代真机验收或发布。
+
+- 单元：通过。定向 32 文件 511 用例与全量 `pnpm --filter @gatu/terminal test` 572 文件 6,356 用例通过；`pnpm test:cloudfront` 36 通过；`pnpm --filter @gatu/terminal typecheck` 与改动文件的 Biome 通过（任务记录有逐项数字）。
+- 新架构产物：`pnpm --filter @gatu/terminal build:lambda` 通过（`dist-lambda/index.mjs` 225.75 kB），产物内没有任何票据代码，路由常量只有 `/api/geo`、`/api/referral-geo`、`/api/client-error-report`、`/client-error-report`、`/api/leaderboard`、`/api/health`；`.github/workflows` 与 `deploy/cloudfront/` 的发布脚本不引用任何被删除的文件。
+- 静态托管：通过。以两个配对开关开启的本地构建（`build-meta.json` 为 `{"createAndReveal":true,"importFromQr":true}`，只剩两个字段）经 `scripts/serve-spa-static.mjs` 托管，用 Playwright（390 px、文档可见）验证：
+  - `GET`/`POST`/`HEAD /mobile-agent-sync-ticket` 与子路径 `/consume` 均返回 JSON 404。验收中发现模拟器对子路径仍回 SPA 壳、且配置 `--api` 时会把该路径转发到 API 源，与 CloudFront viewer-request 函数不一致；已改为与边缘函数相同的「退役路径一律 404、不转发」，并补了测试。
+  - 直接加载带片段的 v3 链接：地址栏被擦除为 `/mobile-agent-sync`（hash、query 为空），页面显示已载入与到期时间，Import 可用；草稿只在 sessionStorage，DOM 与全部资源请求 URL 中均不含信封或密钥。浏览器的 Navigation Timing 条目仍保留原始片段（浏览器行为）；全仓没有代码读取该条目。
+  - 点击 Import（测试密钥未经主钱包审批）：只向 `https://api.hyperliquid.xyz/info` 发请求、没有任何票据请求；第一次因一次 `extraAgents` 请求超过 1 秒得到「无法核验、可重试」并保留草稿，第二次得到「不是当前已审批的 Mobile Agent」；两次都没有写入 Agent 密钥或已导入记录。
+  - 信封到期（2 分钟）：页面自动显示已过期、Import 置灰、草稿被清除。
+  - 已挂载页面收到仅片段变化的新链接（`location.hash` 与同标签 `goto` 两种方式）：新鲜 v3 链接被擦除并载入；v1/v2 信封显示「两端刷新」。有一次「计时到期后同标签打开 v2 样本」页面仍停留在「已过期」提示，随后按相同步骤复现 1 次与其余 4 次同类操作均正常，未能再现，原因未查明。
+- 真机：未执行。`docs/mobile-phone-access-device-validation.md`、`scripts/validate-mobile-phone-access-device-validation.js` 与夹具已改写为无票据协议（字段 `Envelope version = 3`、RD-2 与 TC-2 改为重复导入与第二部手机语义、构建身份取自已发布的 `build-meta.json`、删除 EC2 `prepare` / `promote` 流程）；校验器测试 22 通过，仓库模板结构校验通过，11 行全部 Not run。
+- 安全复核：已启动一次只读对抗审查，结论补入任务记录之前不视为已完成。
+- 第 5 步（打开生产开关）：未执行。真机矩阵未跑之前，两个 `VITE_MOBILE_PAIRING_*` 开关必须保持关闭。
+- 部署：未执行。线上 CloudFront 分发与函数仍是旧配置（仍把 `/mobile-agent-sync-ticket*` 转发给返回 503 的旧 Lambda）；需要按 `deploy/cloudfront/README.md` 重新发布函数、分发配置与 Lambda 才会变为 404。客户端已不再调用该路径，因此发布前后对用户无差别。
 
 ## 风险与缓解
 

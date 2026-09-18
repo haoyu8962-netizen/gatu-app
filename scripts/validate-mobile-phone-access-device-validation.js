@@ -17,7 +17,7 @@ const EXPECTED_MATRIX_ROWS = {
 	"RD-2": {
 		deviceAndBrowser: "iOS Safari",
 		requiredResult:
-			"Reload retains the bounded draft and consumer; rejected tickets clear the draft without activating access.",
+			"Reload retains the bounded draft; an expired or already-imported QR clears the draft without activating access.",
 	},
 	"RD-3": {
 		deviceAndBrowser: "Installed iOS PWA",
@@ -68,7 +68,7 @@ const REQUIRED_EVIDENCE_FIELDS = [
 	"Date and time",
 	"Git commit",
 	"Release ID",
-	"Ticket API version",
+	"Envelope version",
 	"Mobile create gate",
 	"Mobile import gate",
 	"App origin",
@@ -166,7 +166,7 @@ function parseFieldTable(section) {
 function validateEvidenceField(id, field, value, problems) {
 	if (field === "Git commit" && getArgValue("--commit", "") && value !== getArgValue("--commit", ""))
 		problems.push(`${id} evidence commit does not match the release commit.`);
-	if (field === "Ticket API version" && value !== "2") problems.push(`${id} evidence must verify ticket API v2.`);
+	if (field === "Envelope version" && value !== "3") problems.push(`${id} evidence must verify envelope v3.`);
 	if (field === "Release ID" && getArgValue("--release", "") && value !== getArgValue("--release", ""))
 		problems.push(`${id} evidence release does not match the candidate.`);
 	if (
@@ -278,7 +278,7 @@ function renderEvidenceTemplate(id) {
 | Date and time | <YYYY-MM-DDTHH:mm:ssZ> |
 | Git commit | <7-40 character commit hash> |
 | Release ID | <verified build release ID> |
-| Ticket API version | 2 |
+| Envelope version | 3 |
 | Mobile create gate | true |
 | Mobile import gate | true |
 | App origin | <https://preview.example> |
