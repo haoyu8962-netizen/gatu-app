@@ -6004,6 +6004,7 @@ msgstr "पहले $1B वॉल्यूम पर, रेफ़रर अभ
 msgid "Refresh"
 msgstr "रीफ़्रेश करें"
 
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "फ़ोन ऐक्सेस अपडेट करने के लिए दोनों डिवाइस पर पेज रीफ़्रेश करें, फिर नया QR कोड बनाएँ।"
@@ -8163,6 +8164,10 @@ msgstr "यह QR किसी अन्य नेटवर्क के लि�
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR was created for a different site."
 msgstr "यह QR किसी अन्य साइट के लिए बनाया गया था।"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR's time does not match this phone. Check the date and time on both devices, then create a new QR."
+msgstr ""
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "This record predates baseline verification. It cannot be completed automatically. Verify account history and state independently before clearing it."

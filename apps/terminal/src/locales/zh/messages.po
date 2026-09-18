@@ -6004,6 +6004,7 @@ msgstr "在被推荐交易者前 $1B 成交量内，推荐人目前可获得交�
 msgid "Refresh"
 msgstr "刷新"
 
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "请在两台设备上刷新页面以更新手机访问功能，然后生成新的二维码。"
@@ -8163,6 +8164,10 @@ msgstr "此二维码是为其他网络创建的。"
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR was created for a different site."
 msgstr "此二维码是为其他站点创建的。"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR's time does not match this phone. Check the date and time on both devices, then create a new QR."
+msgstr "此二维码的时间与这部手机不一致。请核对两台设备的日期和时间，然后在电脑端生成新的二维码。"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "This record predates baseline verification. It cannot be completed automatically. Verify account history and state independently before clearing it."

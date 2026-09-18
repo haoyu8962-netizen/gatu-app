@@ -6004,6 +6004,7 @@ msgstr "يكسب المُحيلون حاليًا 10% من رسوم المُحا�
 msgid "Refresh"
 msgstr "تحديث"
 
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "حدّث الصفحة على كلا الجهازين لتحديث وصول الهاتف، ثم أنشئ رمز QR جديدًا."
@@ -8163,6 +8164,10 @@ msgstr "أُنشئ رمز QR هذا لشبكة مختلفة."
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR was created for a different site."
 msgstr "أُنشئ رمز QR هذا لموقع مختلف."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR's time does not match this phone. Check the date and time on both devices, then create a new QR."
+msgstr ""
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "This record predates baseline verification. It cannot be completed automatically. Verify account history and state independently before clearing it."
