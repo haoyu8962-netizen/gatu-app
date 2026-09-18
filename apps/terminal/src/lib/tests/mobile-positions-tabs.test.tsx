@@ -268,7 +268,7 @@ describe("MobilePositionsView tabs", () => {
 		expect(scroller?.className).toContain("[scrollbar-width:none]");
 		expect(scroller?.className).toContain("[&::-webkit-scrollbar]:hidden");
 		const tabList = scroller?.querySelector<HTMLElement>('[role="tablist"]');
-		expect(tabList?.className).toContain("h-[47px]");
+		expect(tabList?.className).toContain("h-[40px]");
 		const indicator = Array.from(tabList?.children ?? []).find((element) =>
 			element.className.includes("bg-market-close-fg"),
 		) as HTMLElement | undefined;
@@ -290,7 +290,8 @@ describe("MobilePositionsView tabs", () => {
 		const tabs = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]'));
 		expect(tabs).toHaveLength(7);
 		for (const tab of tabs) {
-			expect(tab.className).toContain("min-h-11");
+			expect(tab.className).toContain("h-[40px]");
+			expect(tab.className).toContain("after:h-11");
 			expect(tab.className).toContain("font-medium");
 			expect(tab.className).not.toContain("data-active:font-bold");
 			expect(tab.className).toContain("text-market-close-subtle");

@@ -45,9 +45,13 @@
 - 工具栏行：持仓 `py-2.5` → `py-[5px]`；委托 `h-12 py-2.5` → `h-9`；成交历史、资金费用、委托历史 `h-12` → `h-9`。芯片 26 px、`after:h-11` 热区、横向 `px-3.5` 不变。
 - 契约测试同步：`mobile-position-filter-row`（2b 行 className）、`orders-table-visual-contract`（移动端行 `h-9`）、`mobile-history-cards`（三处 `h-9`）。
 
+### 第二轮：标签行 47 → 40 px（用户决定）
+
+用户在看到 85 vs 67 的余差后决定把标签行压到 40 px：`mobile-positions-tabs-view.tsx` 的 `positionsTabs` `h-[47px]` → `h-[40px]`，标签文字与下划线不变，44 px 触控热区由标签自身的伪元素/最小高度保证（改前核对）。同步 `mobile-positions-tabs` 测试里的高度断言。实施：`positionsTabs` `h-[47px]` → `h-[40px]`；标签触发器 `min-h-11` 改为 `relative h-[40px] min-h-0` 加 `after:h-11` 伪元素（与筛选芯片同一热区做法），否则 44 px 的触发器会溢出 40 px 的列表并让下划线错位；测试「gives every tab a minimum 44px touch target」改为断言 `h-[40px]` 与 `after:h-11`。同时把持仓工具栏行从 `py-[5px]`（38 px）改为与其余标签一致的 `h-9`（36 px）。
+
 ## 验证与限制
 
-- 改后实测（同一脚本）：标签行 47、面板顶距 0、工具栏行 38（持仓：5 + 26 + 5 + 1 px 底线）、芯片 26；合计 85 px，较改前 103 px 少 18 px，与官方 67 px 的余差全部来自标签行 47 vs 36。
+- 第一轮改后实测：标签行 47、面板顶距 0、工具栏行 38、芯片 26；合计 85 px。第二轮改后：标签行 40、面板顶距 0、工具栏行 36；合计 76 px（官方 67）。
 - 7 个测试文件通过；typecheck、Biome 通过。未做真机验收；委托等 `h-9` 行内 Select 触发器 27 px 加 `after:h-11` 伪元素，热区仍为 44 px。
 
 ## 后续与替代关系

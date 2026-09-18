@@ -4,9 +4,9 @@ import { cn } from "@/lib/cn";
 export const positionsWrapper = "w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60";
 export const positionsScroll =
 	"min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
-export const positionsTabs = "h-[47px] min-w-max gap-0 border-b border-market-close-stroke-card px-3.5 pr-7";
+export const positionsTabs = "h-[40px] min-w-max gap-0 border-b border-market-close-stroke-card px-3.5 pr-7";
 export const positionsTab =
-	"min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-focus data-active:text-market-close-fg";
+	"relative h-[40px] min-h-0 shrink-0 px-2.5 after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-focus data-active:text-market-close-fg";
 export const positionsFade =
 	"pointer-events-none absolute inset-y-0 right-0 w-7 bg-linear-to-r from-transparent to-modal";
 
