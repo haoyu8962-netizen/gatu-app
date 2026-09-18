@@ -7,7 +7,6 @@ export interface BuildMetaInput {
 	commit: string;
 	release: string;
 	builtAt: string;
-	ticketApiVersion: number;
 	pairing: { createAndReveal: boolean; importFromQr: boolean };
 	/** Content hash of the TradingView loader the build emitted under a hashed name; empty in development. */
 	chartLibraryHash?: string;
@@ -22,9 +21,6 @@ export interface BuildMeta {
 	/** The TradingView loader URL this build requests, so the shell can preload the same one. */
 	chartLibraryScript: string;
 	mobileSync: {
-		ticketApiVersion: number;
-		legacyRegisterDisabled: true;
-		store: "single-process";
 		createAndReveal: boolean;
 		importFromQr: boolean;
 	};
@@ -44,9 +40,6 @@ export function createBuildMeta(input: BuildMetaInput): BuildMeta {
 		builtAt: input.builtAt,
 		chartLibraryScript: createChartLibraryScriptUrl(input.chartLibraryHash || input.commit),
 		mobileSync: {
-			ticketApiVersion: input.ticketApiVersion,
-			legacyRegisterDisabled: true,
-			store: "single-process",
 			createAndReveal: input.pairing.createAndReveal,
 			importFromQr: input.pairing.importFromQr,
 		},

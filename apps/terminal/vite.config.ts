@@ -23,7 +23,6 @@ import { DOCUMENT_ROUTE_PATHS } from './src/config/document-routes'
 import { resolveMobilePairingFeatureFlags } from './src/config/mobile-pairing-flags'
 import { chartingLibrarySecurityHeaders, referralJoinHeaders, securityHeaders } from './src/config/security-headers'
 import { hashCatalogMessageIds } from './src/lib/i18n-catalog'
-import { MOBILE_SYNC_TICKET_API_VERSION } from './src/lib/mobile-sync/one-time-ticket-policy'
 
 // SPA mode: the build prerenders one static shell for every client-rendered application route
 // and real HTML for the document routes, so the client output can be hosted without the Nitro
@@ -160,7 +159,6 @@ export function createBuildMetaForMode(mode: string): BuildMeta {
     commit: buildSha,
     release: releaseId,
     builtAt: buildTime,
-    ticketApiVersion: MOBILE_SYNC_TICKET_API_VERSION,
     pairing: resolveMobilePairingFeatureFlags(loadEnv(mode, terminalDirectory, 'VITE_')),
     chartLibraryHash,
   })
@@ -349,20 +347,6 @@ const config = defineConfig({
         },
         '/join/**': {
           headers: referralJoinHeaders,
-        },
-        '/mobile-agent-sync-ticket': {
-          headers: {
-            ...securityHeaders,
-            'cache-control': 'no-store',
-            'referrer-policy': 'no-referrer',
-          },
-        },
-        '/mobile-agent-sync-ticket/**': {
-          headers: {
-            ...securityHeaders,
-            'cache-control': 'no-store',
-            'referrer-policy': 'no-referrer',
-          },
         },
         '/mobile-agent-sync': {
           headers: {

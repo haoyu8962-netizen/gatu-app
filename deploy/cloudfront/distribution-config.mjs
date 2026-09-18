@@ -19,7 +19,7 @@ export const API_ORIGIN_ID = "gatu-terminal-api";
 export const API_ORIGIN_REQUEST_POLICY_NAME = "gatu-terminal-api";
 export const NOT_FOUND_PAGE = "/404.html";
 
-export const API_PATH_PATTERNS = Object.freeze(["/api/*", "/client-error-report", "/mobile-agent-sync-ticket*"]);
+export const API_PATH_PATTERNS = Object.freeze(["/api/*", "/client-error-report"]);
 /** Read-only API whose handler sets `s-maxage`; it gets its own behavior ahead of the uncached `/api/*` one. */
 export const LEADERBOARD_PATH_PATTERN = "/api/leaderboard";
 export const API_CACHE_POLICY_NAME = "gatu-terminal-api-cached";

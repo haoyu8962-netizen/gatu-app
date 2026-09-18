@@ -8,6 +8,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Linking a phone no longer uses a server ticket. The desktop creates the QR entirely in the
+  browser, the QR stays visible for 60 seconds after reveal and its encrypted payload expires after
+  2 minutes (previously 10). A phone refuses a QR it already imported, QR codes created by an older
+  page are rejected with a prompt to refresh both devices, and the success panel reminds the user
+  to revoke from desktop if they did not import it themselves. A second phone scanning the same
+  code within those 2 minutes is no longer rejected. `/mobile-agent-sync-ticket` is removed and
+  answers 404.
 - Every desktop navigation control (Deposit, More, language, display menu, account chip, `Connect`
   and reconnect) is 36px tall, and the header account chip, `Connect` button and reconnect button
   share that height on mobile; mobile keeps a 44px touch area through a pseudo element, drops the chip shadow and shows
@@ -48,7 +55,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
   do, and adds phone instructions (open gatu on the phone, tap Connect, then Link Desktop
   Wallet); the screen-sharing warning now appears before `Hold to reveal QR`.
 - `Hold to reveal QR` draws its progress as a ring inside the button, and the revealed panel
-  shows a visible seconds countdown to auto-close derived from the envelope and ticket lifetimes.
+  shows a visible seconds countdown to auto-close derived from the envelope expiry and the
+  60-second reveal window.
 - On a phone using a desktop-authorised trading key, Deposit, Withdraw and Transfer stay visible
   but disabled with one reason that the master wallet must be connected on desktop.
 - The Link Desktop scanner selects the back camera after the stream starts and tells the user to
@@ -76,9 +84,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Known
 
-- Mobile pairing is not reachable on the CloudFront deployment: `POST /mobile-agent-sync-ticket`
-  answers 503 from the Lambda handler and both `VITE_MOBILE_PAIRING_*` flags stay off, so the
-  entries above are compiled out there until the transport decision in ADR 0015 D7 lands.
+- Mobile pairing stays compiled out in production: both `VITE_MOBILE_PAIRING_*` flags remain off
+  until the physical-device acceptance for the client-only transfer (ADR 0015 D7, option B) has
+  been run.
 
 ### Changed
 

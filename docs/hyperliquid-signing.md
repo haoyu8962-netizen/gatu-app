@@ -434,12 +434,16 @@ the product decisions and the official comparison are in
   missing or mismatched server record fails closed.
 - The key travels in an AES-GCM envelope carried in the URL fragment of
   `/mobile-agent-sync` (`apps/terminal/src/lib/mobile-sync/sync-core.ts`,
-  envelope TTL `MOBILE_SYNC_PAYLOAD_TTL_MS` = 10 minutes). The fragment never
-  reaches a server, is scrubbed on bootstrap and is bound to the origin,
-  network and owner. Reveal requires a 4 s hold and a server-issued one-time
-  ticket (`POST /mobile-agent-sync-ticket`, 60 s, origin-scoped, first
-  consumer wins); the CloudFront + Lambda deployment answers that route with
-  503, so pairing is currently unreachable in production (ADR 0015 D7 pending).
+  envelope v3, TTL `MOBILE_SYNC_PAYLOAD_TTL_MS` = 2 minutes). The fragment
+  never reaches a server, is scrubbed on bootstrap and is bound to the origin,
+  network and owner. Reveal requires a 4 s hold; the desktop generates the
+  16-byte `syncId` locally and shows the QR for `MOBILE_SYNC_QR_VISIBLE_MS` =
+  60 s on the local monotonic clock. The transfer uses no server state
+  (ADR 0015 D7, option B): the former one-time ticket endpoint is removed, so
+  a second phone scanning the same code within the envelope lifetime is not
+  rejected. The phone refuses a `syncId` it already imported
+  (`apps/terminal/src/lib/mobile-sync/imported-sync-ids.ts`) and rejects v1/v2
+  envelopes with a refresh-both-devices message.
 - The phone performs an explicit Import step after decrypting the envelope and
   stores the Agent record in the local storage scope on that device
   (`persistAgentForRegistration(..., { scope: "local" })`; the underlying
@@ -460,7 +464,7 @@ the product decisions and the official comparison are in
   expires at `validUntil`.
 
 For comparison, the official terminal encodes the raw Agent private key as
-base64 JSON in a `?link=` query string with no encryption, ticket or expiry,
+base64 JSON in a `?link=` query string with no encryption or expiry,
 and approves a permanent `Mobile QR` agent that each re-link replaces. gatu
 keeps the stricter client-side boundary (exact owner, 30-day expiry,
 `extraAgents` verification, fragment envelope, explicit Import, desktop

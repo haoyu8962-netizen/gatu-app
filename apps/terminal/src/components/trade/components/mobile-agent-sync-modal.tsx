@@ -40,9 +40,8 @@ import {
 	hasDesktopApprovalRecovery,
 	updateDesktopApprovalRecovery,
 } from "@/lib/mobile-sync/desktop-approval-recovery";
-import { issueMobileSyncTicket } from "@/lib/mobile-sync/one-time-ticket-client";
 import { waitForExpectedMobileAgent } from "@/lib/mobile-sync/remote-verification";
-import { createMobileAgentSyncUrl } from "@/lib/mobile-sync/sync-core";
+import { createMobileAgentSyncUrl, MOBILE_SYNC_QR_VISIBLE_MS } from "@/lib/mobile-sync/sync-core";
 
 interface MobileAgentSyncModalProps {
 	open: boolean;
@@ -57,8 +56,7 @@ interface MobileAgentSyncSessionProps extends MobileAgentSyncModalProps {
 
 interface QrDeadlines {
 	expiresAtMs: number;
-	ticketExpiresAtMonotonicMs: number;
-	ticketExpiresAtWallClockMs: number;
+	visibleUntilMonotonicMs: number;
 }
 
 interface QrPayload extends QrDeadlines {
@@ -115,9 +113,6 @@ const LOCALIZED_MESSAGE_CODES = [
 	"qr-creation-unavailable",
 	"qr-render-failed",
 	"qr-reveal-unavailable",
-	"qr-service-unavailable",
-	"qr-upgrade-required",
-	"qr-ticket-rejected",
 	"recovery-capacity",
 	"review-before-approve",
 	"revocation-expired",
@@ -140,11 +135,7 @@ const HOLD_RING_CIRCUMFERENCE = 2 * Math.PI * HOLD_RING_RADIUS;
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 function remainingQrLifetimeMs(deadlines: QrDeadlines): number {
-	return Math.min(
-		deadlines.expiresAtMs - Date.now(),
-		deadlines.ticketExpiresAtMonotonicMs - performance.now(),
-		deadlines.ticketExpiresAtWallClockMs - Date.now(),
-	);
+	return Math.min(deadlines.expiresAtMs - Date.now(), deadlines.visibleUntilMonotonicMs - performance.now());
 }
 
 function remainingQrLifetimeSeconds(deadlines: QrDeadlines): number {
@@ -328,10 +319,7 @@ function MobileAgentSyncSession({
 	const visibleExpiresAtMs = syncState.status === "visible" ? syncState.payload.expiresAtMs : null;
 	const visiblePageSafetyEpoch = syncState.status === "visible" ? syncState.payload.pageSafetyEpoch : null;
 	const visibleQrRendered = syncState.status === "visible" && syncState.payload.rendered;
-	const visibleTicketExpiresAtMonotonicMs =
-		syncState.status === "visible" ? syncState.payload.ticketExpiresAtMonotonicMs : null;
-	const visibleTicketExpiresAtWallClockMs =
-		syncState.status === "visible" ? syncState.payload.ticketExpiresAtWallClockMs : null;
+	const visibleUntilMonotonicMs = syncState.status === "visible" ? syncState.payload.visibleUntilMonotonicMs : null;
 	const hasUnsettledWalletAction =
 		syncState.status === "approving" ||
 		syncState.status === "verifying" ||
@@ -409,19 +397,11 @@ function MobileAgentSyncSession({
 
 	useEffect(() => {
 		const canvas = qrCanvasRef.current;
-		if (
-			!canvas ||
-			!visibleUrl ||
-			visibleExpiresAtMs === null ||
-			visibleTicketExpiresAtMonotonicMs === null ||
-			visibleTicketExpiresAtWallClockMs === null
-		) {
+		if (!canvas || !visibleUrl || visibleExpiresAtMs === null || visibleUntilMonotonicMs === null) {
 			clearQrCanvas(canvas);
 			return;
 		}
-		const envelopeExpiresAtMs = visibleExpiresAtMs;
-		const ticketExpiresAtMonotonicMs = visibleTicketExpiresAtMonotonicMs;
-		const ticketExpiresAtWallClockMs = visibleTicketExpiresAtWallClockMs;
+		const deadlines: QrDeadlines = { expiresAtMs: visibleExpiresAtMs, visibleUntilMonotonicMs };
 		if (!isQrPageActive() || visiblePageSafetyEpoch !== pageSafetyEpochRef.current) {
 			clearQrCanvas(canvas);
 			return;
@@ -447,10 +427,7 @@ function MobileAgentSyncSession({
 					clearQrCanvas(canvas);
 					return;
 				}
-				if (
-					Date.now() >= Math.min(envelopeExpiresAtMs, ticketExpiresAtWallClockMs) ||
-					performance.now() >= ticketExpiresAtMonotonicMs
-				) {
+				if (remainingQrLifetimeMs(deadlines) <= 0) {
 					clearQrCanvas(canvas);
 					return;
 				}
@@ -475,13 +452,7 @@ function MobileAgentSyncSession({
 			cancelled = true;
 			clearQrCanvas(canvas);
 		};
-	}, [
-		visibleExpiresAtMs,
-		visiblePageSafetyEpoch,
-		visibleTicketExpiresAtMonotonicMs,
-		visibleTicketExpiresAtWallClockMs,
-		visibleUrl,
-	]);
+	}, [visibleExpiresAtMs, visiblePageSafetyEpoch, visibleUntilMonotonicMs, visibleUrl]);
 
 	useEffect(() => {
 		if (!walletAddress || !visibleAgentAddress || !visibleQrRendered) return;
@@ -491,19 +462,8 @@ function MobileAgentSyncSession({
 	}, [env, visibleAgentAddress, visibleQrRendered, walletAddress]);
 
 	useBrowserLayoutEffect(() => {
-		if (
-			!visibleUrl ||
-			visibleExpiresAtMs === null ||
-			visibleTicketExpiresAtMonotonicMs === null ||
-			visibleTicketExpiresAtWallClockMs === null
-		) {
-			return;
-		}
-		const deadlines: QrDeadlines = {
-			expiresAtMs: visibleExpiresAtMs,
-			ticketExpiresAtMonotonicMs: visibleTicketExpiresAtMonotonicMs,
-			ticketExpiresAtWallClockMs: visibleTicketExpiresAtWallClockMs,
-		};
+		if (!visibleUrl || visibleExpiresAtMs === null || visibleUntilMonotonicMs === null) return;
+		const deadlines: QrDeadlines = { expiresAtMs: visibleExpiresAtMs, visibleUntilMonotonicMs };
 
 		function expireQr() {
 			activeOperationRef.current?.abort();
@@ -534,14 +494,7 @@ function MobileAgentSyncSession({
 			window.removeEventListener("blur", expireQr);
 			window.removeEventListener("pagehide", expireQr);
 		};
-	}, [
-		onOpenChange,
-		visibleExpiresAtMs,
-		visiblePageSafetyEpoch,
-		visibleTicketExpiresAtMonotonicMs,
-		visibleTicketExpiresAtWallClockMs,
-		visibleUrl,
-	]);
+	}, [onOpenChange, visibleExpiresAtMs, visiblePageSafetyEpoch, visibleUntilMonotonicMs, visibleUrl]);
 
 	function startOperation() {
 		activeOperationRef.current?.abort();
@@ -922,37 +875,8 @@ function MobileAgentSyncSession({
 				return;
 			}
 
-			const ticketResult = await issueMobileSyncTicket(operation.signal);
-			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
-			if (operation.signal.aborted || !isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
-				setSyncState({ status: "concealed", approval });
-				return;
-			}
-			if (ticketResult.status !== "accepted") {
-				setSyncState({
-					status: "concealed",
-					approval,
-					message:
-						ticketResult.status === "rejected"
-							? localizedMessage("qr-ticket-rejected")
-							: ticketResult.status === "incompatible"
-								? localizedMessage("qr-upgrade-required")
-								: localizedMessage("qr-service-unavailable"),
-				});
-				return;
-			}
-			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
-			if (operation.signal.aborted || !isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
-				setSyncState({ status: "concealed", approval });
-				return;
-			}
-			if (ticketResult.expiresAtWallClockMs <= Date.now() || ticketResult.expiresAtMonotonicMs <= performance.now()) {
-				setSyncState({ status: "concealed", approval, message: localizedMessage("qr-ticket-rejected") });
-				return;
-			}
 			const syncCreatedAtMs = Date.now();
 			const syncUrl = await createMobileAgentSyncUrl({
-				syncId: ticketResult.syncId,
 				appOrigin: window.location.origin,
 				env,
 				userAddress: walletAddress,
@@ -966,15 +890,8 @@ function MobileAgentSyncSession({
 				setSyncState({ status: "concealed", approval });
 				return;
 			}
-			if (
-				Math.min(syncUrl.expiresAtMs, ticketResult.expiresAtWallClockMs) <= Date.now() ||
-				ticketResult.expiresAtMonotonicMs <= performance.now()
-			) {
-				setSyncState({
-					status: "concealed",
-					approval,
-					message: localizedMessage("qr-ticket-rejected"),
-				});
+			if (syncUrl.expiresAtMs <= Date.now()) {
+				setSyncState({ status: "concealed", approval });
 				return;
 			}
 
@@ -986,8 +903,7 @@ function MobileAgentSyncSession({
 					expiresAtMs: syncUrl.expiresAtMs,
 					pageSafetyEpoch,
 					rendered: false,
-					ticketExpiresAtMonotonicMs: ticketResult.expiresAtMonotonicMs,
-					ticketExpiresAtWallClockMs: ticketResult.expiresAtWallClockMs,
+					visibleUntilMonotonicMs: performance.now() + MOBILE_SYNC_QR_VISIBLE_MS,
 				},
 			});
 		} catch (error) {
@@ -1331,12 +1247,6 @@ function MobileAgentSyncMessageText({ message }: { message: MobileAgentSyncMessa
 			return t`Could not render QR. Create a new key.`;
 		case "qr-reveal-unavailable":
 			return t`Mobile QR reveal is temporarily unavailable. Revoke this key if you no longer need it.`;
-		case "qr-upgrade-required":
-			return t`Refresh both devices to update phone access, then create a new QR.`;
-		case "qr-service-unavailable":
-			return t`The one-time QR service is unavailable. Check your connection and retry.`;
-		case "qr-ticket-rejected":
-			return t`This one-time QR could not be created. Try revealing a new QR.`;
 		case "recovery-capacity":
 			return t`Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first.`;
 		case "review-before-approve":
@@ -1580,16 +1490,16 @@ function VisibleQrPanel({
 	const { t } = useLingui();
 	const [announcedSeconds] = useState(() => remainingQrLifetimeSeconds(payload));
 	const [remainingSeconds, setRemainingSeconds] = useState(announcedSeconds);
-	const { expiresAtMs, ticketExpiresAtMonotonicMs, ticketExpiresAtWallClockMs } = payload;
+	const { expiresAtMs, visibleUntilMonotonicMs } = payload;
 
 	useEffect(() => {
-		const deadlines: QrDeadlines = { expiresAtMs, ticketExpiresAtMonotonicMs, ticketExpiresAtWallClockMs };
+		const deadlines: QrDeadlines = { expiresAtMs, visibleUntilMonotonicMs };
 		setRemainingSeconds(remainingQrLifetimeSeconds(deadlines));
 		const intervalId = window.setInterval(() => {
 			setRemainingSeconds(remainingQrLifetimeSeconds(deadlines));
 		}, 1_000);
 		return () => window.clearInterval(intervalId);
-	}, [expiresAtMs, ticketExpiresAtMonotonicMs, ticketExpiresAtWallClockMs]);
+	}, [expiresAtMs, visibleUntilMonotonicMs]);
 
 	return (
 		<div className="space-y-3">

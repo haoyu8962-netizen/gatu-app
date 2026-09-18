@@ -1,6 +1,6 @@
 # ADR 0015：链接移动设备体验对齐官方，保留更严格的凭证边界
 
-状态：D1–D6 已接受并实施（2026-09-18）；D7 于 2026-09-18 由用户选定方案 B（去服务端票据的纯客户端传输），尚未实施，实施规划见 [方案 B 规划](../mobile-sync-ticketless-transfer-plan.md)。作者：Claude Fable 5.1 会话（工作记录 `docs/work-memory/sessions/2026-09-18-link-device-alignment.md`）。
+状态：D1–D6 已接受并实施（2026-09-18）；D7 于 2026-09-18 由用户选定方案 B（去服务端票据的纯客户端传输）并于同日完成代码实施（信封 v3、TTL 2 分钟、揭示后 60 秒单调时钟窗口、手机端 `syncId` 本地去重、票据端点与 EC2 时代发布脚本删除）；真机验收未执行，生产开关保持关闭，范围与验收见 [方案 B 规划](../mobile-sync-ticketless-transfer-plan.md)。作者：Claude Fable 5.1 会话（工作记录 `docs/work-memory/sessions/2026-09-18-link-device-alignment.md`）。
 
 ## 上下文
 
@@ -27,7 +27,7 @@
 - D4 按住显示：4 秒与取消语义不变；进度改为按钮内圆环（官方形态）并保留 `progressbar` 语义。
 - D5 倒计时：可见面板显示「{n} 秒后关闭」，从现有 `remainingQrLifetimeMs()`（信封、票据单调时钟、票据墙钟三者取小）每秒重算，`role="timer"` + `tabular-nums`，不做每秒 `aria-live` 播报；揭示时一次性 sr-only 说明。
 - D6 手机端：(a) 资金动作可用性新增 `agent-only-session` 原因（Deposit / Withdraw / Transfer 在 Agent-only 会话显示为禁用并给出「此手机使用桌面授权的交易密钥。存款、提款和划转需要在桌面连接主钱包。」），先在 `docs/mobile-data-presentation.md` 登记为已确认会话限制，不进入被动数据原因集合；(b) 扫描器删除无效的 constraints 参数，`start()` 后再 `listCameras` 选择非超广/长焦的后置相机，文案提示桌面右上角二维码图标；(c) 导入时显式传 `{ scope: "local" }`（原为隐式默认）并在成功面板披露「保留在此手机直到 {日期} 过期或从桌面撤销」。
-- D7 凭证传输（拟议，未实施）：三个备选。A 保留票据并交付共享 CAS+TTL 存储（DynamoDB 条件写，两分支 consume：首次 `attribute_not_exists(consumerId) AND consumeExpiresAtMs > :now`，胜者重试 `consumerId = :c AND tombstoneExpiresAtMs > :now`；`MobileSyncTicketStore` 改为异步；Lambda 挂载处理器并移除 503 桩；限速改由 WAF）。B 去掉票据，改为与官方一致的纯客户端传输，信封 TTL 缩到 2 分钟，其余加固全部保留；失去「第二部手机兑换同一码被拒」和「重启失效」两个属性，但这两个属性都不阻止二维码被截取，且不再依赖任何服务端状态。C 手机生成密钥、只把公钥地址回传桌面（票据修复方案 §7），是唯一让截图无用的设计，但桌面需摄像头或人工输入，与官方体验相反。已选定 B；实施前 `createAndReveal` / `importFromQr` 在 CloudFront 构建中保持关闭。
+- D7 凭证传输（已选定 B 并实施代码，真机验收未执行）：三个备选。A 保留票据并交付共享 CAS+TTL 存储（DynamoDB 条件写，两分支 consume：首次 `attribute_not_exists(consumerId) AND consumeExpiresAtMs > :now`，胜者重试 `consumerId = :c AND tombstoneExpiresAtMs > :now`；`MobileSyncTicketStore` 改为异步；Lambda 挂载处理器并移除 503 桩；限速改由 WAF）。B 去掉票据，改为与官方一致的纯客户端传输，信封 TTL 缩到 2 分钟，其余加固全部保留；失去「第二部手机兑换同一码被拒」和「重启失效」两个属性，但这两个属性都不阻止二维码被截取，且不再依赖任何服务端状态。C 手机生成密钥、只把公钥地址回传桌面（票据修复方案 §7），是唯一让截图无用的设计，但桌面需摄像头或人工输入，与官方体验相反。已选定 B 并实施；真机验收完成前 `createAndReveal` / `importFromQr` 在 CloudFront 构建中保持关闭。
 
 ## 备选方案
 
@@ -40,7 +40,7 @@
 - 桌面入口有三处（图标、紧凑菜单、用户菜单）共享一个弹窗实例；`user-menu` 测试的模块加载与挂载计数保持有效。
 - 弹窗打开即发只读请求；这些查询原本就在 `open && hasWalletAccess` 时启用，不新增签名。
 - `agent-only-session` 是已确认限制，允许展示原因；`PASSIVE_DATA_REASONS` 不变。
-- 生产可达性仍由 D7 决定；本 ADR 不改变生产开关或 Lambda 桩。
+- D7 实施后 Lambda 503 桩与 CloudFront 票据转发已删除，退役路径返回 404；生产开关仍未改变，需真机验收后另行打开。
 
 ## 证据
 

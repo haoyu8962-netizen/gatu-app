@@ -3506,6 +3506,10 @@ msgid "Identity epoch"
 msgstr "Époque de l’identité"
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
 msgstr "Importer l'accès mobile"
@@ -6000,7 +6004,6 @@ msgstr "Les parrains gagnent actuellement 10 % des frais générés par les trad
 msgid "Refresh"
 msgstr "Actualiser"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "Actualisez la page sur les deux appareils pour mettre à jour l’accès mobile, puis créez un nouveau code QR."
@@ -7718,12 +7721,12 @@ msgid "The network-matched public dataset could not be verified. Your account an
 msgstr "Le jeu de données public correspondant au réseau n’a pas pu être vérifié. Votre compte et votre activité de trading ne sont pas affectés."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "The one-time QR could not be verified. Check your connection and retry."
-msgstr "Le QR à usage unique n'a pas pu être vérifié. Vérifiez votre connexion et réessayez."
+#~ msgid "The one-time QR could not be verified. Check your connection and retry."
+#~ msgstr "Le QR à usage unique n'a pas pu être vérifié. Vérifiez votre connexion et réessayez."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The one-time QR service is unavailable. Check your connection and retry."
-msgstr "Le service de QR à usage unique est indisponible. Vérifiez votre connexion et réessayez."
+#~ msgid "The one-time QR service is unavailable. Check your connection and retry."
+#~ msgstr "Le service de QR à usage unique est indisponible. Vérifiez votre connexion et réessayez."
 
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "The order can continue, but this confirmation preference could not be saved."
@@ -8081,12 +8084,12 @@ msgstr "Cette clé de trading mobile a expiré."
 #~ msgstr "Ce QR à usage unique se ferme automatiquement dans les 60 secondes."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This one-time QR could not be created. Try revealing a new QR."
-msgstr "Impossible de créer ce QR à usage unique. Essayez d'en générer un nouveau."
+#~ msgid "This one-time QR could not be created. Try revealing a new QR."
+#~ msgstr "Impossible de créer ce QR à usage unique. Essayez d'en générer un nouveau."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This one-time QR was already used or is no longer active. Scan a new QR."
-msgstr "Ce QR à usage unique a déjà été utilisé ou n'est plus actif. Scannez un nouveau QR."
+#~ msgid "This one-time QR was already used or is no longer active. Scan a new QR."
+#~ msgstr "Ce QR à usage unique a déjà été utilisé ou n'est plus actif. Scannez un nouveau QR."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8148,6 +8151,10 @@ msgstr "Ce QR est invalide ou incomplet. Créez un nouveau QR sur l'ordinateur."
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This QR is not a valid desktop wallet link."
 msgstr "Ce QR n'est pas un lien de portefeuille de bureau valide."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR was already imported on this phone. Create a new desktop QR to link again."
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR was created for a different network."

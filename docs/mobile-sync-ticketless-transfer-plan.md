@@ -1,6 +1,6 @@
 # 移动配对方案 B：去服务端票据的纯客户端传输（实施规划）
 
-状态：已选定（2026-09-18，用户决定），尚未实施。归属决策见 [ADR 0015](adr/0015-link-device-alignment.md) D7；本文只规划改动范围、顺序与验收，代码未改。实施前先在 `docs/work-memory/` 建立任务记录。
+状态：已选定（2026-09-18，用户决定）；实施顺序 1–4 已于 2026-09-18 完成（任务记录 [2026-09-18-mobile-sync-ticketless-implementation](work-memory/sessions/2026-09-18-mobile-sync-ticketless-implementation.md)），第 5 步（打开生产开关）与验收中的静态托管实测、真机矩阵、对抗安全复核尚未执行。归属决策见 [ADR 0015](adr/0015-link-device-alignment.md) D7。实施偏差：退役路径 `/mobile-agent-sync-ticket*` 由 CloudFront viewer-request 函数与静态页分类器直接返回 404（而非落入 SPA 壳），Service Worker 与 `serve:spa` 继续把它当作非导航路径；`scripts/validate-mobile-phone-access-device-validation.js` 与真机矩阵模板仍含 “Ticket API version” 字段，留待真机验收前改写。
 
 ## 目标与不变量
 

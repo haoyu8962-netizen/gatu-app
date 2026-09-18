@@ -3506,6 +3506,10 @@ msgid "Identity epoch"
 msgstr "身份版本"
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
+msgstr "如果这不是你本人导入的，请立即在电脑端用主钱包撤销手机访问权限。"
+
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
 msgstr "导入手机访问权限"
@@ -6000,7 +6004,6 @@ msgstr "在被推荐交易者前 $1B 成交量内，推荐人目前可获得交�
 msgid "Refresh"
 msgstr "刷新"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "请在两台设备上刷新页面以更新手机访问功能，然后生成新的二维码。"
@@ -7718,12 +7721,12 @@ msgid "The network-matched public dataset could not be verified. Your account an
 msgstr "无法验证与当前网络匹配的公开数据集。您的账户和交易不受影响。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "The one-time QR could not be verified. Check your connection and retry."
-msgstr "无法校验一次性二维码。请检查网络连接后重试。"
+#~ msgid "The one-time QR could not be verified. Check your connection and retry."
+#~ msgstr "无法校验一次性二维码。请检查网络连接后重试。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The one-time QR service is unavailable. Check your connection and retry."
-msgstr "一次性二维码服务不可用。请检查网络连接后重试。"
+#~ msgid "The one-time QR service is unavailable. Check your connection and retry."
+#~ msgstr "一次性二维码服务不可用。请检查网络连接后重试。"
 
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "The order can continue, but this confirmation preference could not be saved."
@@ -8081,12 +8084,12 @@ msgstr "此移动交易密钥已过期。"
 #~ msgstr "此一次性二维码会在 60 秒内自动关闭。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This one-time QR could not be created. Try revealing a new QR."
-msgstr "无法生成此一次性二维码。请尝试重新生成。"
+#~ msgid "This one-time QR could not be created. Try revealing a new QR."
+#~ msgstr "无法生成此一次性二维码。请尝试重新生成。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This one-time QR was already used or is no longer active. Scan a new QR."
-msgstr "此一次性二维码已被使用或已失效。请扫描新的二维码。"
+#~ msgid "This one-time QR was already used or is no longer active. Scan a new QR."
+#~ msgstr "此一次性二维码已被使用或已失效。请扫描新的二维码。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8148,6 +8151,10 @@ msgstr "此二维码无效或不完整。请在桌面端创建新二维码。"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This QR is not a valid desktop wallet link."
 msgstr "此二维码不是有效的桌面钱包关联码。"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR was already imported on this phone. Create a new desktop QR to link again."
+msgstr "此二维码已在这部手机上导入。如需重新关联，请在电脑端生成新的二维码。"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR was created for a different network."

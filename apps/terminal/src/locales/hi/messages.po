@@ -3506,6 +3506,10 @@ msgid "Identity epoch"
 msgstr "पहचान epoch"
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
 msgstr "फ़ोन एक्सेस इम्पोर्ट करें"
@@ -6000,7 +6004,6 @@ msgstr "पहले $1B वॉल्यूम पर, रेफ़रर अभ
 msgid "Refresh"
 msgstr "रीफ़्रेश करें"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "फ़ोन ऐक्सेस अपडेट करने के लिए दोनों डिवाइस पर पेज रीफ़्रेश करें, फिर नया QR कोड बनाएँ।"
@@ -7718,12 +7721,12 @@ msgid "The network-matched public dataset could not be verified. Your account an
 msgstr "नेटवर्क से मेल खाने वाला सार्वजनिक डेटासेट सत्यापित नहीं किया जा सका। आपका खाता और ट्रेडिंग अप्रभावित हैं।"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "The one-time QR could not be verified. Check your connection and retry."
-msgstr "वन-टाइम QR सत्यापित नहीं किया जा सका। अपना कनेक्शन जांचें और पुनः प्रयास करें।"
+#~ msgid "The one-time QR could not be verified. Check your connection and retry."
+#~ msgstr "वन-टाइम QR सत्यापित नहीं किया जा सका। अपना कनेक्शन जांचें और पुनः प्रयास करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The one-time QR service is unavailable. Check your connection and retry."
-msgstr "वन-टाइम QR सेवा अनुपलब्ध है। अपना कनेक्शन जांचें और पुनः प्रयास करें।"
+#~ msgid "The one-time QR service is unavailable. Check your connection and retry."
+#~ msgstr "वन-टाइम QR सेवा अनुपलब्ध है। अपना कनेक्शन जांचें और पुनः प्रयास करें।"
 
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "The order can continue, but this confirmation preference could not be saved."
@@ -8081,12 +8084,12 @@ msgstr "इस मोबाइल ट्रेडिंग कुंजी क�
 #~ msgstr "यह वन-टाइम QR 60 सेकंड के भीतर अपने आप बंद हो जाता है।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This one-time QR could not be created. Try revealing a new QR."
-msgstr "यह वन-टाइम QR नहीं बनाया जा सका। नया QR बनाने का प्रयास करें।"
+#~ msgid "This one-time QR could not be created. Try revealing a new QR."
+#~ msgstr "यह वन-टाइम QR नहीं बनाया जा सका। नया QR बनाने का प्रयास करें।"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This one-time QR was already used or is no longer active. Scan a new QR."
-msgstr "यह वन-टाइम QR पहले ही उपयोग हो चुका है या अब सक्रिय नहीं है। नया QR स्कैन करें।"
+#~ msgid "This one-time QR was already used or is no longer active. Scan a new QR."
+#~ msgstr "यह वन-टाइम QR पहले ही उपयोग हो चुका है या अब सक्रिय नहीं है। नया QR स्कैन करें।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8148,6 +8151,10 @@ msgstr "यह QR अमान्य या अधूरा है। डेस�
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This QR is not a valid desktop wallet link."
 msgstr "यह QR मान्य डेस्कटॉप वॉलेट लिंक नहीं है।"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR was already imported on this phone. Create a new desktop QR to link again."
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR was created for a different network."

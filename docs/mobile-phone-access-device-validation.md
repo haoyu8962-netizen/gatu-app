@@ -2,6 +2,8 @@
 
 Updated: 2026-09-11. Protocol: ticket API v2, envelope v2, draft v1.
 
+> **Superseded protocol (2026-09-18).** The ticket endpoint was removed and the transfer is now client-only with envelope v3 ([ADR 0015](adr/0015-link-device-alignment.md) D7, option B; [plan](mobile-sync-ticketless-transfer-plan.md)). The ticket-specific rows and fields below (`Ticket API version`, ticket rejection, 409/410, server restart) and the `deploy.sh prepare` / `promote` workflow no longer apply. This template and `scripts/validate-mobile-phone-access-device-validation.js` must be rewritten for the client-only flow before the matrix is run; every row remains Not run.
+
 ## Release Rule
 
 All 11 physical rows remain **Not run**. Automation and simulated cameras cannot mark them Pass. These rows are mandatory for the optional `prepare` / `promote` workflow when pairing is enabled. Ordinary `deploy.sh main` uses automated release verification without requiring this file; it does not claim device acceptance. See the [production release procedure](mobile-sync-production-readiness.md).

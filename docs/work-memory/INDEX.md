@@ -65,6 +65,7 @@
 当前规范：[docs/adr/0015-link-device-alignment.md](../../docs/adr/0015-link-device-alignment.md) · [deploy/cloudfront/README.md](../../deploy/cloudfront/README.md)
 
 - [链接移动设备：官方机制实测、17 项差距图与体验对齐实施](sessions/2026-09-18-link-device-alignment.md) — 2026-09-18；已验证，范围见正文。从官方产物实测「Link Mobile Device」：右上角图标一键 approveAgent（永久 Mobile QR）、4 秒按住显示、60 秒自动关闭、二维码为 /trade?link= 明文私钥、手机解析后以 API 钱包身份连接。我方实现更严格但生产不可达（Lambda 对票据路由固定 503、开关关闭）。41 代理工作流产出 17 项差距并逐项对抗核验；按 ADR 0015 实施 D1–D6（顶栏入口、单步审批、官方文案、圆环按住、倒计时、手机端 Agent-only 原因、扫描器相机选择、显式 local scope），D7 票据存储三备选待用户决定。
+- [移动配对方案 B 实施：去服务端票据的纯客户端传输（信封 v3）](sessions/2026-09-18-mobile-sync-ticketless-implementation.md) — 2026-09-18；已整理，验证见正文。按 ADR 0015 D7 方案 B 完成代码与文档：信封 v3、TTL 2 分钟、揭示后 60 秒单调时钟窗口、桌面本地 syncId、手机端 syncId 本地去重、v1/v2 信封提示刷新；删除票据客户端/服务端/路由、Lambda 503 桩、CloudFront 转发与 EC2 时代 mobile-sync 发布脚本。定向测试与 typecheck 通过；pnpm build 因既有 trade-terminal-page 预算超限失败（改动不在该 chunk）；全量 vitest 余 8 个文件 32 项基线红（干净 HEAD 同样失败）。静态托管实测、真机矩阵、对抗安全复核未执行，生产开关保持关闭。
 - [部署第 2 步：已安装 Caddy 配置与仓库不一致](sessions/2026-09-12-caddy-config-mismatch.md) — 2026-09-12；已整理，验证见正文。Caddy 转发头警告不是中止原因；管理员依次验证、安装、reload 仓库配置后重跑部署，服务器恢复尚待验证。
 - [部署包预算：订单队列去重与固定参数复验](sessions/2026-09-12-deploy-bundle-margin.md) — 2026-09-12；已验证，范围见正文。服务器交易页面 gzip 超限 11 字节；统一订单队列计数与徽标渲染，保留预算和状态优先级，本地完整构建通过，交易页面距上限 227 字节，线上待验证。
 - [移动配对：常规发布自动门控与可选真机晋级](sessions/2026-09-12-pairing-release.md) — 2026-09-12；已整理，验证见正文。普通部署允许配对开关开启；自动边缘门控与可选 promote 真机验收是不同路径。
@@ -132,6 +133,7 @@
 | 2026-09-18 | [移动端订单簿头部：36 px 芯片行、单位下拉、价差并入列头、列头带单位](sessions/2026-09-18-mobile-book-header.md) | 未取得任务标识，见正文 | `6a96f9b7` | 已整理，验证见正文 |
 | 2026-09-18 | [移动端未登录状态对齐官方：账户零值概览与持仓工具栏常驻](sessions/2026-09-18-mobile-disconnected-alignment.md) | 未取得任务标识，见正文 | `6df02047` | 已整理，验证见正文 |
 | 2026-09-18 | [移动端顶部导航对齐官方：主题移出头部、品牌填充 Connect、图标统一](sessions/2026-09-18-mobile-header-alignment.md) | 未取得任务标识，见正文 | `22a1d566` | 已整理，验证见正文 |
+| 2026-09-18 | [移动配对方案 B 实施：去服务端票据的纯客户端传输（信封 v3）](sessions/2026-09-18-mobile-sync-ticketless-implementation.md) | 未取得任务标识，见正文 | `2242015f` | 已整理，验证见正文 |
 | 2026-09-18 | [移动端账户标签筛选芯片统一：同一规格、占位式文案、TWAP 子视图行同高](sessions/2026-09-18-mobile-toolbar-chip-unification.md) | 未取得任务标识，见正文 | `707657d5` | 已整理，验证见正文 |
 | 2026-09-17 | [生产发布 cloudfront-2026-09-17-p21（PR #26 分支 c59d13a8）](sessions/2026-09-17-cloudfront-release-p21.md) | 未取得任务标识，见正文 | `c59d13a8188093e1de0c5f247a9bc625f4a18a34` | 已验证，范围见正文 |
 | 2026-09-17 | [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) | 未取得任务标识，见正文 | `a7fb284656651e6f8440cdfd584ed056ed158ff1` | 已整理，验证见正文 |

@@ -529,14 +529,16 @@ have an install capability.
   stay in `UserMenu`, so opening from any surface mounts one modal.
 - Opening the modal runs read-only preflight only (funding snapshot, builder
   fee, reserved slot); the single approval button is the only signing action.
-  Reveal keeps the 4 s hold, the visible countdown derives from the existing
-  envelope and ticket lifetimes, and a phone in an Agent-only session shows
+  Reveal keeps the 4 s hold, the visible countdown derives from the envelope
+  expiry and the 60 s reveal window on the local monotonic clock, and a phone in an Agent-only session shows
   Deposit / Withdraw / Transfer disabled with the `agent-only-session` reason
   instead of hiding them ([ADR 0015](adr/0015-link-device-alignment.md)).
-- The pairing ticket route is unavailable on the CloudFront + Lambda host
-  (503) and both `VITE_MOBILE_PAIRING_*` build flags stay off until ADR 0015
-  D7 is decided; do not enable either flag for that host without the
-  replacement transport.
+- Pairing is a client-only transfer with no server route
+  (`docs/trading-onboarding.md`, ADR 0015 D7 option B); the retired
+  `/mobile-agent-sync-ticket` path answers 404 everywhere and must not be
+  reintroduced. Both `VITE_MOBILE_PAIRING_*` build flags stay off in
+  production until the physical-device acceptance in
+  `docs/mobile-sync-ticketless-transfer-plan.md` has been run and recorded.
 - The mobile Email and WalletConnect entries launch Privy with explicit login
   methods; wallet selection remains Ethereum-only. An authenticated user takes
   the explicit reconnect path instead of starting a new login flow.

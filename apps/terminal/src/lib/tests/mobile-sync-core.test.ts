@@ -36,7 +36,6 @@ function expectMobileSyncError(error: unknown, code: string) {
 
 async function createSyncFixture() {
 	const sync = await createMobileAgentSyncUrl({
-		syncId: "A".repeat(22),
 		appOrigin: APP_ORIGIN,
 		env: "Mainnet",
 		userAddress: USER_ADDRESS,
@@ -112,7 +111,6 @@ describe("mobile sync core", () => {
 		const approvedAgentName = createMobileAgentName(approvedAgentValidUntilMs);
 
 		const sync = await createMobileAgentSyncUrl({
-			syncId: "A".repeat(22),
 			appOrigin: APP_ORIGIN,
 			env: "Mainnet",
 			userAddress: USER_ADDRESS,
@@ -319,7 +317,7 @@ describe("mobile sync core", () => {
 	it("rejects stale plaintext versions, invalid agent keys, and overlong validity", async () => {
 		const sync = await createSyncFixture();
 		const plaintext: MobileAgentSyncPlaintext = {
-			v: 2,
+			v: 3,
 			issuerOrigin: APP_ORIGIN,
 			env: "Mainnet",
 			userAddress: USER_ADDRESS,
@@ -328,7 +326,7 @@ describe("mobile sync core", () => {
 		};
 
 		expect(() =>
-			validateMobileAgentSyncPlaintext({ ...plaintext, v: 1 }, sync.envelope, {
+			validateMobileAgentSyncPlaintext({ ...plaintext, v: 2 }, sync.envelope, {
 				currentOrigin: APP_ORIGIN,
 				nowMs: NOW_MS,
 			}),
@@ -365,25 +363,64 @@ describe("mobile sync core", () => {
 	});
 });
 
-it("binds the required server ticket ID into authenticated encryption", async () => {
-	const sync = await createSyncFixture();
-	expect(sync.syncId).toBe("A".repeat(22));
+it("generates a fresh local sync ID and binds it into authenticated encryption", async () => {
+	const first = await createSyncFixture();
+	const second = await createSyncFixture();
+	expect(first.syncId).toMatch(/^[A-Za-z0-9_-]{21}[AQgw]$/);
+	expect(second.syncId).not.toBe(first.syncId);
+	expect(first.envelope.syncId).toBe(first.syncId);
+
 	await expect(
-		decryptMobileAgentSyncEnvelope({ ...sync.envelope, syncId: `${"B".repeat(21)}A` }, sync.keyBytes, {
+		decryptMobileAgentSyncEnvelope({ ...first.envelope, syncId: second.syncId }, first.keyBytes, {
 			currentOrigin: APP_ORIGIN,
 			expectedEnv: "Mainnet",
 			nowMs: NOW_MS,
 		}),
 	).rejects.toMatchObject({ code: "decrypt_failed" });
-	for (const syncId of ["", "B".repeat(22)])
-		await expect(
-			createMobileAgentSyncUrl({
-				syncId,
-				appOrigin: APP_ORIGIN,
-				env: "Mainnet",
-				userAddress: USER_ADDRESS,
-				agentPrivateKey: AGENT_PRIVATE_KEY,
-				nowMs: NOW_MS,
-			}),
-		).rejects.toMatchObject({ code: "invalid_envelope" });
+});
+
+it("rejects envelopes from the retired ticket protocol with an upgrade error", async () => {
+	const sync = await createSyncFixture();
+	const url = new URL(sync.url);
+	const params = new URLSearchParams(url.hash.slice(1));
+	const bytes = Buffer.from(params.get(MOBILE_SYNC_FRAGMENT_KEY) ?? "", "base64url");
+	expect(bytes[0]).toBe(3);
+
+	for (const [version, code] of [
+		[2, "unsupported_version"],
+		[1, "unsupported_version"],
+		[0, "invalid_envelope"],
+		[4, "invalid_envelope"],
+	] as const) {
+		bytes[0] = version;
+		params.set(MOBILE_SYNC_FRAGMENT_KEY, bytes.toString("base64url"));
+		url.hash = params.toString();
+		expect(() => parseMobileSyncUrl(url)).toThrow(expect.objectContaining({ code }));
+	}
+});
+
+it("keeps the envelope usable for two minutes plus clock skew and no longer", async () => {
+	expect(MOBILE_SYNC_PAYLOAD_TTL_MS).toBe(2 * 60 * 1000);
+	const sync = await createSyncFixture();
+	expect(sync.expiresAtMs).toBe(NOW_MS + MOBILE_SYNC_PAYLOAD_TTL_MS);
+	const options = { currentOrigin: APP_ORIGIN, expectedEnv: "Mainnet" as const };
+
+	await expect(
+		decryptMobileAgentSyncEnvelope(sync.envelope, sync.keyBytes, {
+			...options,
+			nowMs: sync.expiresAtMs + MOBILE_SYNC_CLOCK_SKEW_MS,
+		}),
+	).resolves.toMatchObject({ syncId: sync.syncId });
+	await expect(
+		decryptMobileAgentSyncEnvelope(sync.envelope, sync.keyBytes, {
+			...options,
+			nowMs: sync.expiresAtMs + MOBILE_SYNC_CLOCK_SKEW_MS + 1,
+		}),
+	).rejects.toMatchObject({ code: "expired_payload" });
+	await expect(
+		decryptMobileAgentSyncEnvelope({ ...sync.envelope, expiresAtMs: sync.expiresAtMs + 1 }, sync.keyBytes, {
+			...options,
+			nowMs: NOW_MS,
+		}),
+	).rejects.toMatchObject({ code: "invalid_envelope" });
 });

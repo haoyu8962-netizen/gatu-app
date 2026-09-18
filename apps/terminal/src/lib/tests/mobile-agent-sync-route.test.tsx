@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 
-import { createHash, webcrypto } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { webcrypto } from "node:crypto";
 import { i18n } from "@lingui/core";
 import { act, type ComponentType, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MOBILE_SYNC_DRAFT_STORAGE_KEY } from "../mobile-sync/draft-storage";
+import { MOBILE_SYNC_IMPORTED_STORAGE_KEY, recordImportedMobileSyncId } from "../mobile-sync/imported-sync-ids";
 import { createMobileAgentSyncUrl, MOBILE_SYNC_ROUTE_PATH } from "../mobile-sync/sync-core";
 import { createI18nRoot } from "./harness/react";
 
@@ -23,9 +23,7 @@ const testState = vi.hoisted(() => ({
 	activateAgentOwnerForRegistration: vi.fn(),
 	cancelAgentRegistrationEpochAndRemove: vi.fn(),
 	captureAgentRegistrationEpoch: vi.fn(),
-	consumeMobileSyncTicket: vi.fn(),
 	fullNavigate: vi.fn(),
-	getOrCreateMobileSyncConsumerId: vi.fn(),
 	importEnabled: true,
 	extraAgents: [] as Array<{ address: string; name: string; validUntil: number | null }>,
 	infoExtraAgents: vi.fn(),
@@ -91,11 +89,6 @@ vi.mock("@/lib/mobile-sync/remote-verification", () => ({
 	waitForExpectedMobileAgent: testState.waitForExpectedMobileAgent,
 }));
 
-vi.mock("@/lib/mobile-sync/one-time-ticket-client", () => ({
-	consumeMobileSyncTicket: testState.consumeMobileSyncTicket,
-	getOrCreateMobileSyncConsumerId: testState.getOrCreateMobileSyncConsumerId,
-}));
-
 vi.mock("@/lib/mobile-sync/sync-core", async () => {
 	const actual = await vi.importActual<typeof import("../mobile-sync/sync-core")>("@/lib/mobile-sync/sync-core");
 	return {
@@ -135,7 +128,6 @@ async function createSyncFixture({
 	env?: "Mainnet" | "Testnet";
 } = {}) {
 	return createMobileAgentSyncUrl({
-		syncId: "A".repeat(22),
 		appOrigin,
 		env,
 		userAddress: USER_ADDRESS,
@@ -175,11 +167,7 @@ describe("MobileAgentSyncRoute", () => {
 			status: "ready",
 			epoch: REGISTRATION_EPOCH,
 		});
-		testState.consumeMobileSyncTicket.mockReset();
-		testState.consumeMobileSyncTicket.mockResolvedValue("accepted");
 		testState.fullNavigate.mockReset();
-		testState.getOrCreateMobileSyncConsumerId.mockReset();
-		testState.getOrCreateMobileSyncConsumerId.mockReturnValue("11".repeat(16));
 		testState.extraAgents = [];
 		testState.infoExtraAgents.mockReset();
 		testState.infoExtraAgents.mockImplementation(async () => testState.extraAgents);
@@ -330,6 +318,7 @@ describe("MobileAgentSyncRoute", () => {
 	});
 
 	it("verifies the exact base name and expiry before strict storage and owner activation", async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
 		const sync = await createSyncFixture();
 		testState.extraAgents = [
 			{
@@ -367,16 +356,8 @@ describe("MobileAgentSyncRoute", () => {
 			{ signal: expect.any(AbortSignal) },
 		);
 		expect(testState.captureAgentRegistrationEpoch).toHaveBeenCalledWith("Mainnet", USER_ADDRESS.toLowerCase());
-		expect(testState.consumeMobileSyncTicket).toHaveBeenCalledWith(
-			sync.syncId,
-			"11".repeat(16),
-			expect.any(AbortSignal),
-		);
-		expect(testState.captureAgentRegistrationEpoch.mock.invocationCallOrder[0]).toBeLessThan(
-			testState.consumeMobileSyncTicket.mock.invocationCallOrder[0] ?? 0,
-		);
 		expect(testState.persistAgentForRegistration).toHaveBeenCalledTimes(1);
-		expect(testState.consumeMobileSyncTicket.mock.invocationCallOrder[0]).toBeLessThan(
+		expect(testState.captureAgentRegistrationEpoch.mock.invocationCallOrder[0]).toBeLessThan(
 			testState.persistAgentForRegistration.mock.invocationCallOrder[0] ?? 0,
 		);
 		expect(testState.persistAgentForRegistration.mock.calls[0]?.[0]).toEqual(REGISTRATION_EPOCH);
@@ -398,6 +379,12 @@ describe("MobileAgentSyncRoute", () => {
 		);
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
 		expect(container.textContent).toContain("Phone access ready");
+		expect(container.textContent).toContain("If you did not import this yourself, revoke phone access");
+		const importedRecord = window.localStorage.getItem(MOBILE_SYNC_IMPORTED_STORAGE_KEY) ?? "";
+		expect(importedRecord).toContain(sync.syncId);
+		expect(importedRecord).not.toContain(AGENT_PRIVATE_KEY.slice(2));
+		expect(fetchSpy).not.toHaveBeenCalled();
+		fetchSpy.mockRestore();
 	});
 
 	it("pins the imported key to local storage scope and discloses how long it stays on the phone", async () => {
@@ -423,10 +410,17 @@ describe("MobileAgentSyncRoute", () => {
 		);
 	});
 
-	it("fails closed before local persistence when another device consumed the QR", async () => {
+	it("refuses a QR that this phone already imported, before local persistence", async () => {
 		const sync = await createSyncFixture();
 		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-		testState.consumeMobileSyncTicket.mockResolvedValue("rejected");
+		expect(
+			recordImportedMobileSyncId({
+				env: "Mainnet",
+				userAddress: USER_ADDRESS,
+				syncId: sync.syncId,
+				expiresAtMs: sync.expiresAtMs,
+			}),
+		).toBe(true);
 		const url = new URL(sync.url);
 		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
 		const { Route } = await import("@/routes/mobile-agent-sync");
@@ -437,63 +431,30 @@ describe("MobileAgentSyncRoute", () => {
 		act(() => findButton(container, "Import phone access")?.click());
 		await flushAsyncWork(20);
 
-		expect(testState.consumeMobileSyncTicket).toHaveBeenCalledTimes(1);
 		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
 		expect(testState.activateAgentOwnerForRegistration).not.toHaveBeenCalled();
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).toContain("already used or is no longer active");
+		expect(container.textContent).toContain("already imported on this phone");
 	});
 
-	it.each(["unavailable", "incompatible"] as const)(
-		"retains the draft without activating on %s tickets",
-		async (result) => {
-			const sync = await createSyncFixture();
-			testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-			testState.consumeMobileSyncTicket.mockResolvedValue(result);
-			const url = new URL(sync.url);
-			window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-			const { Route } = await import("@/routes/mobile-agent-sync");
-			const Component = (Route as unknown as { component: ComponentType }).component;
-			act(() => root.render(createElement(Component)));
-			await flushAsyncWork();
-			act(() => findButton(container, "Import phone access")?.click());
-			await flushAsyncWork(20);
-			expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
-			expect(testState.activateAgentOwnerForRegistration).not.toHaveBeenCalled();
-			expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
-			expect(container.textContent).toContain(
-				result === "incompatible" ? "Refresh both devices" : "Check your connection and retry",
-			);
-			if (result === "incompatible") {
-				const message = "Refresh both devices to update phone access, then create a new QR.";
-				const translated = "请在两台设备上刷新页面以更新手机访问功能，然后生成新的二维码。";
-				expect(readFileSync("src/locales/zh/messages.po", "utf8")).toContain(
-					`msgid "${message}"\nmsgstr "${translated}"`,
-				);
-				const id = createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
-				const alert = container.querySelector('[role="alert"]');
-				const button = findButton(container, "Import phone access");
-				act(() => i18n.loadAndActivate({ locale: "zh", messages: { [id]: translated } }));
-				expect(alert?.textContent).toContain(translated);
-				expect(container.querySelector('[role="alert"]')).toBe(alert);
-				act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
-				expect(alert?.textContent).toContain(message);
-				expect(findButton(container, "Import phone access")).toBe(button);
-				expect(testState.consumeMobileSyncTicket).toHaveBeenCalledTimes(1);
-				expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
-			}
+	it("asks both devices to refresh when the QR comes from the retired ticket protocol", async () => {
+		const sync = await createSyncFixture();
+		const url = new URL(sync.url);
+		const params = new URLSearchParams(url.hash.slice(1));
+		const bytes = Buffer.from(params.get("ht-mobile-sync") ?? "", "base64url");
+		bytes[0] = 2;
+		params.set("ht-mobile-sync", bytes.toString("base64url"));
+		window.history.replaceState(null, "", `${url.pathname}#${params.toString()}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
 
-			if (result === "unavailable") {
-				testState.consumeMobileSyncTicket.mockResolvedValue("accepted");
-				act(() => findButton(container, "Import phone access")?.click());
-				await flushAsyncWork(20);
-				expect(testState.consumeMobileSyncTicket.mock.calls[1]?.slice(0, 2)).toEqual(
-					testState.consumeMobileSyncTicket.mock.calls[0]?.slice(0, 2),
-				);
-				expect(container.textContent).toContain("Phone access ready");
-			}
-		},
-	);
+		expect(container.textContent).toContain("Refresh both devices to update phone access, then create a new QR.");
+		expect(findButton(container, "Import phone access")?.disabled).toBe(true);
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+		expect(window.location.hash).toBe("");
+	});
 
 	it("retains the bounded draft and never writes when remote approval is not exact", async () => {
 		const sync = await createSyncFixture();

@@ -27,7 +27,7 @@ const REVOKE_AGENT_ADDRESS = "0x4444444444444444444444444444444444444444";
 const REVOKE_AGENT_PRIVATE_KEY = `0x${"cd".repeat(32)}`;
 const REVOKE_VALID_UNTIL_MS = NOW_MS + 10 * 60 * 1000;
 const REVOKE_AGENT_NAME = `Mobile valid_until ${REVOKE_VALID_UNTIL_MS}`;
-const SYNC_EXPIRES_AT_MS = NOW_MS + 5 * 60 * 1000;
+const SYNC_EXPIRES_AT_MS = NOW_MS + 4_000 + 2 * 60 * 1000;
 const PHONE_LINK = "https://app.gatu.test/mobile-agent-sync#ht-mobile-sync=encoded-envelope&k=encoded-key";
 const NO_BALANCE_MESSAGE = "No balance on Hyperliquid. Deposit first.";
 const NO_BALANCE_MESSAGE_AR = "لا يوجد رصيد في Hyperliquid. أودِع أولاً.";
@@ -66,7 +66,6 @@ const testState = vi.hoisted(() => ({
 	isMobile: false,
 	localAgent: null as Record<string, unknown> | null,
 	qrToCanvas: vi.fn(),
-	issueMobileSyncTicket: vi.fn(),
 	registrationLeaseCurrent: true,
 	spotRefetch: vi.fn(),
 	spotState: { balances: [] as Array<{ hold?: string; total?: string }> },
@@ -243,10 +242,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 vi.mock("@/lib/mobile-sync/sync-core", () => ({
 	createMobileAgentSyncUrl: testState.createMobileAgentSyncUrl,
-}));
-
-vi.mock("@/lib/mobile-sync/one-time-ticket-client", () => ({
-	issueMobileSyncTicket: testState.issueMobileSyncTicket,
+	MOBILE_SYNC_QR_VISIBLE_MS: 60_000,
 }));
 
 vi.mock("qrcode", () => ({
@@ -359,13 +355,6 @@ describe("MobileAgentSyncModal", () => {
 		}));
 		testState.localAgent = null;
 		testState.qrToCanvas.mockReset();
-		testState.issueMobileSyncTicket.mockReset();
-		testState.issueMobileSyncTicket.mockImplementation(async () => ({
-			status: "accepted",
-			syncId: "A".repeat(22),
-			expiresAtMonotonicMs: performance.now() + 60_000,
-			expiresAtWallClockMs: Date.now() + 60_000,
-		}));
 		testState.registrationLeaseCurrent = true;
 		testState.qrToCanvas.mockResolvedValue(undefined);
 		testState.spotState = { balances: [] };
@@ -591,6 +580,7 @@ describe("MobileAgentSyncModal", () => {
 	});
 
 	it("reveals only after a continuous four-second hold and renders directly to canvas", async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
 		await import("qrcode");
 		await renderModal();
 		await approve();
@@ -619,7 +609,6 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(testState.extraAgentsRefetch.mock.calls.length).toBeGreaterThanOrEqual(2);
 		expect(testState.createMobileAgentSyncUrl).toHaveBeenCalledWith({
-			syncId: "A".repeat(22),
 			agentName: AGENT_NAME,
 			agentPrivateKey: AGENT_PRIVATE_KEY,
 			agentValidUntilMs: AGENT_VALID_UNTIL_MS,
@@ -637,13 +626,7 @@ describe("MobileAgentSyncModal", () => {
 				width: 320,
 			}),
 		);
-		expect(testState.issueMobileSyncTicket).toHaveBeenCalledWith(expect.any(AbortSignal));
-		expect(testState.issueMobileSyncTicket.mock.invocationCallOrder[0]).toBeLessThan(
-			testState.createMobileAgentSyncUrl.mock.invocationCallOrder[0] ?? 0,
-		);
-		expect(testState.issueMobileSyncTicket.mock.invocationCallOrder[0]).toBeLessThan(
-			testState.qrToCanvas.mock.invocationCallOrder[0] ?? 0,
-		);
+		expect(fetchSpy).not.toHaveBeenCalled();
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).not.toBeNull();
 		expect(container.querySelector("a[href]")).toBeNull();
 		expect(container.innerHTML).not.toContain(PHONE_LINK);
@@ -668,21 +651,6 @@ describe("MobileAgentSyncModal", () => {
 		await advanceTime(58_000);
 		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 1s");
 		expect(testState.qrToCanvas).toHaveBeenCalledTimes(1);
-	});
-
-	it("never renders an unregistered one-time QR", async () => {
-		testState.issueMobileSyncTicket.mockResolvedValue({ status: "unavailable" });
-		await renderModal();
-		await approve();
-
-		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
-		await advanceTime(4_000);
-
-		expect(testState.issueMobileSyncTicket).toHaveBeenCalledTimes(1);
-		expect(testState.qrToCanvas).not.toHaveBeenCalled();
-		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
-		expect(container.textContent).toContain("one-time QR service is unavailable");
-		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
 	});
 
 	it("cancels the reveal hold on pointer leave, blur, Escape, and hidden visibility", async () => {
@@ -748,25 +716,8 @@ describe("MobileAgentSyncModal", () => {
 		expect(testState.createMobileAgentSyncUrl).toHaveBeenCalledTimes(1);
 	});
 
-	it("deducts registration and rendering delays from the ticket's 60-second lifetime", async () => {
-		let finishRegistration:
-			| ((result: {
-					status: "accepted";
-					syncId: string;
-					expiresAtMonotonicMs: number;
-					expiresAtWallClockMs: number;
-			  }) => void)
-			| undefined;
+	it("starts the 60-second window at reveal and deducts the rendering delay", async () => {
 		let finishQrRender: (() => void) | undefined;
-		let ticketExpiresAtMonotonicMs = 0;
-		let ticketExpiresAtWallClockMs = 0;
-		testState.issueMobileSyncTicket.mockImplementationOnce(() => {
-			ticketExpiresAtMonotonicMs = performance.now() + 60_000;
-			ticketExpiresAtWallClockMs = Date.now() + 60_000;
-			return new Promise((resolve) => {
-				finishRegistration = resolve;
-			});
-		});
 		testState.qrToCanvas.mockImplementationOnce(
 			() =>
 				new Promise<void>((resolve) => {
@@ -777,20 +728,6 @@ describe("MobileAgentSyncModal", () => {
 		await approve();
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
-
-		expect(testState.issueMobileSyncTicket).toHaveBeenCalledTimes(1);
-		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
-
-		await advanceTime(5_000);
-		act(() =>
-			finishRegistration?.({
-				status: "accepted",
-				syncId: "A".repeat(22),
-				expiresAtMonotonicMs: ticketExpiresAtMonotonicMs,
-				expiresAtWallClockMs: ticketExpiresAtWallClockMs,
-			}),
-		);
-		await flushAsyncWork();
 		expect(testState.qrToCanvas).toHaveBeenCalledTimes(1);
 		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
 
@@ -798,9 +735,9 @@ describe("MobileAgentSyncModal", () => {
 		act(() => finishQrRender?.());
 		await flushAsyncWork();
 		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(false);
-		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 50s");
+		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 55s");
 
-		await advanceTime(49_999);
+		await advanceTime(54_999);
 		expect(onOpenChange).not.toHaveBeenCalledWith(false);
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).not.toBeNull();
 		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 1s");
@@ -811,16 +748,11 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.innerHTML).not.toContain(PHONE_LINK);
 	});
 
-	it("does not encrypt a QR when the page becomes hidden while issuance is pending", async () => {
-		let complete:
-			| ((result: {
-					status: "accepted";
-					syncId: string;
-					expiresAtMonotonicMs: number;
-					expiresAtWallClockMs: number;
-			  }) => void)
-			| undefined;
-		testState.issueMobileSyncTicket.mockImplementationOnce(
+	it("does not render a QR when the page becomes hidden while the envelope is being encrypted", async () => {
+		let complete: ((result: Awaited<ReturnType<typeof testState.createMobileAgentSyncUrl>>) => void) | undefined;
+		const result = await testState.createMobileAgentSyncUrl();
+		testState.createMobileAgentSyncUrl.mockClear();
+		testState.createMobileAgentSyncUrl.mockImplementationOnce(
 			() =>
 				new Promise((resolve) => {
 					complete = resolve;
@@ -830,29 +762,19 @@ describe("MobileAgentSyncModal", () => {
 		await approve();
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
-		expect(testState.issueMobileSyncTicket).toHaveBeenCalledTimes(1);
+		expect(testState.createMobileAgentSyncUrl).toHaveBeenCalledTimes(1);
 		Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
 		act(() => document.dispatchEvent(new Event("visibilitychange")));
-		act(() =>
-			complete?.({
-				status: "accepted",
-				syncId: "A".repeat(22),
-				expiresAtMonotonicMs: performance.now() + 60_000,
-				expiresAtWallClockMs: Date.now() + 60_000,
-			}),
-		);
+		act(() => complete?.(result));
 		await flushAsyncWork();
-		expect(testState.createMobileAgentSyncUrl).not.toHaveBeenCalled();
 		expect(testState.qrToCanvas).not.toHaveBeenCalled();
+		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
 	});
 
-	it("closes at the wall-clock ticket deadline when the monotonic clock lags", async () => {
-		testState.issueMobileSyncTicket.mockImplementationOnce(async () => ({
-			status: "accepted",
-			syncId: "A".repeat(22),
-			expiresAtMonotonicMs: performance.now() + 60_000,
-			expiresAtWallClockMs: Date.now() + 20_000,
-		}));
+	it("closes at the envelope deadline when it is earlier than the visible window", async () => {
+		const result = await testState.createMobileAgentSyncUrl();
+		testState.createMobileAgentSyncUrl.mockClear();
+		testState.createMobileAgentSyncUrl.mockResolvedValueOnce({ ...result, expiresAtMs: NOW_MS + 4_000 + 20_000 });
 		const onOpenChange = await renderModal();
 		await approve();
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
@@ -864,8 +786,24 @@ describe("MobileAgentSyncModal", () => {
 
 		await advanceTime(19_999);
 		expect(onOpenChange).not.toHaveBeenCalledWith(false);
-		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 1s");
+		await advanceTime(1);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
+	});
 
+	it("keeps the 60-second window on the monotonic clock when the wall clock jumps backwards", async () => {
+		const onOpenChange = await renderModal();
+		await approve();
+		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
+		await advanceTime(4_000);
+		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 60s");
+
+		vi.setSystemTime(Date.now() - 10 * 60 * 1000);
+		await advanceTime(1_000);
+		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 59s");
+
+		await advanceTime(58_999);
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
 		await advanceTime(1);
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
