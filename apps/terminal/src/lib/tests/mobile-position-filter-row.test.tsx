@@ -12,10 +12,10 @@ import { ALL_POSITION_MARKETS } from "@/domain/trade/position-toolbar";
 import { createI18nRoot } from "./harness/react";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
-const MOBILE_POSITIONS_TAB_SOURCE = readFileSync(
-	resolve(TEST_DIR, "../..", "components/trade/mobile/mobile-positions-tab.tsx"),
-	"utf8",
-);
+function readMobileSource(file: string): string {
+	return readFileSync(resolve(TEST_DIR, "../..", `components/trade/mobile/${file}`), "utf8");
+}
+const MOBILE_POSITIONS_TAB_SOURCE = readMobileSource("mobile-positions-tab.tsx");
 
 describe("mobile position filter row", () => {
 	let container: HTMLDivElement;
@@ -101,6 +101,20 @@ describe("mobile position filter row", () => {
 		);
 		expect(disconnectedBranch).toContain("renderFilterRow(true)");
 		expect(MOBILE_POSITIONS_TAB_SOURCE).not.toContain("Connect your wallet to view positions.");
+		for (const file of [
+			"mobile-positions-view.tsx",
+			"mobile-balances-tab.tsx",
+			"mobile-orders-tab.tsx",
+			"mobile-twap-tab.tsx",
+			"mobile-twap-history-list.tsx",
+			"mobile-twap-fill-history-list.tsx",
+			"mobile-history-tab.tsx",
+			"mobile-funding-tab.tsx",
+			"mobile-orders-history-tab.tsx",
+			"mobile-account-transfers-tab.tsx",
+		]) {
+			expect(readMobileSource(file)).not.toContain("Connect your wallet");
+		}
 	});
 
 	it("keeps expand-all and collapse-all as independent actions", () => {

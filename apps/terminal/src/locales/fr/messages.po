@@ -1785,7 +1785,6 @@ msgstr "Connectez-vous pour afficher les actions de staking"
 msgid "Connect wallet"
 msgstr "Connecter le portefeuille"
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/desktop-nav.ts
 #: src/config/ui-text.ts
@@ -1793,8 +1792,8 @@ msgid "Connect Wallet"
 msgstr "Connecter le portefeuille"
 
 #: src/components/portfolio/portfolio-page.tsx
-msgid "Connect wallet to view portfolio"
-msgstr "Connectez votre portefeuille pour afficher le portefeuille"
+#~ msgid "Connect wallet to view portfolio"
+#~ msgstr "Connectez votre portefeuille pour afficher le portefeuille"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Connect wallet to view positions"
@@ -1820,59 +1819,42 @@ msgstr "Connectez votre portefeuille pour envoyer des fonds."
 msgid "Connect your wallet to transfer funds."
 msgstr "Connectez votre portefeuille pour transférer des fonds."
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "Connectez votre portefeuille pour voir les soldes."
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Connect your wallet to view deposits and withdrawals."
 msgstr "Connectez votre portefeuille pour afficher les dépôts et retraits."
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Connect your wallet to view funding payments."
 msgstr "Connectez votre portefeuille pour voir les paiements de financement."
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Connect your wallet to view open orders."
 msgstr "Connectez votre portefeuille pour voir les ordres ouverts."
 
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Connect your wallet to view order history."
 msgstr "Connectez votre portefeuille pour voir l'historique des ordres."
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
 msgstr "Connectez votre portefeuille pour voir les positions."
 
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Connect your wallet to view trade history."
 msgstr "Connectez votre portefeuille pour voir l'historique des transactions."
 
-#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Connect your wallet to view TWAP fill history."
 msgstr "Connectez votre portefeuille pour afficher l’historique des exécutions TWAP."
 
-#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Connect your wallet to view TWAP history."
 msgstr "Connectez votre portefeuille pour afficher l’historique TWAP."
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Connect your wallet to view TWAP orders."
 msgstr "Connectez votre portefeuille pour voir les ordres TWAP."

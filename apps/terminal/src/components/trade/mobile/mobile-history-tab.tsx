@@ -194,10 +194,67 @@ function MobileHistoryTabContent({
 		</div>
 	);
 
+	function renderFilterRow(disabled: boolean) {
+		return (
+			<div
+				data-testid="mobile-trade-history-filter-row"
+				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+			>
+				<span className="sr-only" aria-live="polite">
+					{headerCount}
+				</span>
+				<div className="flex shrink-0 items-center gap-1.5">
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Type`}
+						value={typeFilter}
+						onValueChange={(value) => {
+							if (isTradeHistoryTypeFilter(value)) setTypeFilter(value);
+						}}
+						options={typeOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Direction`}
+						value={directionFilter}
+						onValueChange={(value) => {
+							if (isTradeHistoryDirectionFilter(value)) setDirectionFilter(value);
+						}}
+						options={directionOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Role`}
+						value={roleFilter}
+						onValueChange={(value) => {
+							if (isTradeHistoryRoleFilter(value)) setRoleFilter(value);
+						}}
+						options={roleOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+				</div>
+				<MobileBulkDisclosureActions
+					keys={disabled ? [] : filteredFillKeys}
+					controller={disclosure}
+					className="ms-auto ps-3"
+				/>
+			</div>
+		);
+	}
+
 	if (!isConnected) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
-				{t`Connect your wallet to view trade history.`}
+			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
+				{renderFilterRow(true)}
+				<div className={cn("min-h-0", !isPageScroll && "flex-1")} />
 			</div>
 		);
 	}
@@ -224,50 +281,7 @@ function MobileHistoryTabContent({
 
 	return (
 		<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-			<div
-				data-testid="mobile-trade-history-filter-row"
-				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-			>
-				<span className="sr-only" aria-live="polite">
-					{headerCount}
-				</span>
-				<div className="flex shrink-0 items-center gap-1.5">
-					<Select
-						size="xxs"
-						label={t`Type`}
-						value={typeFilter}
-						onValueChange={(value) => {
-							if (isTradeHistoryTypeFilter(value)) setTypeFilter(value);
-						}}
-						options={typeOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-					<Select
-						size="xxs"
-						label={t`Direction`}
-						value={directionFilter}
-						onValueChange={(value) => {
-							if (isTradeHistoryDirectionFilter(value)) setDirectionFilter(value);
-						}}
-						options={directionOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-					<Select
-						size="xxs"
-						label={t`Role`}
-						value={roleFilter}
-						onValueChange={(value) => {
-							if (isTradeHistoryRoleFilter(value)) setRoleFilter(value);
-						}}
-						options={roleOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-				</div>
-				<MobileBulkDisclosureActions keys={filteredFillKeys} controller={disclosure} className="ms-auto ps-3" />
-			</div>
+			{renderFilterRow(false)}
 			<div
 				data-testid="mobile-trade-history-list"
 				className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}

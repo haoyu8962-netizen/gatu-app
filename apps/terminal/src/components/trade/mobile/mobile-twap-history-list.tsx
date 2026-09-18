@@ -34,9 +34,7 @@ export function MobileTwapHistoryList({ className, scrollMode = "contained" }: P
 	}
 
 	if (!isConnected) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">{t`Connect your wallet to view TWAP history.`}</div>
-		);
+		return <div className="flex-1" />;
 	}
 
 	if (status !== "ready" || (isRealtimeDegraded && history.length === 0)) {

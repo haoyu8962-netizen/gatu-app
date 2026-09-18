@@ -133,10 +133,47 @@ function MobileFundingTabContent({
 		</div>
 	);
 
+	function renderFilterRow(disabled: boolean) {
+		return (
+			<div
+				data-testid="mobile-funding-history-filter-row"
+				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+			>
+				<div className="flex shrink-0 items-center gap-1.5">
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Direction`}
+						value={directionFilter}
+						onValueChange={(value) => {
+							if (isFundingHistorySideFilter(value)) setDirectionFilter(value);
+						}}
+						options={[
+							{ value: "all", label: t`All Directions` },
+							{ value: "long", label: t`Long` },
+							{ value: "short", label: t`Short` },
+						]}
+						className="w-28 shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+				</div>
+				<span className="sr-only" aria-live="polite">
+					{t`Funding shown`} <span className={cn("font-semibold tabular-nums", headerClass)}>{headerTotal}</span>
+				</span>
+				<MobileBulkDisclosureActions
+					keys={disabled ? [] : filteredUpdateKeys}
+					controller={disclosure}
+					className="ms-auto ps-3"
+				/>
+			</div>
+		);
+	}
+
 	if (!isConnected) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
-				{t`Connect your wallet to view funding payments.`}
+			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
+				{renderFilterRow(true)}
+				<div className={cn("min-h-0", !isPageScroll && "flex-1")} />
 			</div>
 		);
 	}
@@ -163,32 +200,7 @@ function MobileFundingTabContent({
 
 	return (
 		<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-			<div
-				data-testid="mobile-funding-history-filter-row"
-				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-			>
-				<div className="flex shrink-0 items-center gap-1.5">
-					<Select
-						size="xxs"
-						label={t`Direction`}
-						value={directionFilter}
-						onValueChange={(value) => {
-							if (isFundingHistorySideFilter(value)) setDirectionFilter(value);
-						}}
-						options={[
-							{ value: "all", label: t`All Directions` },
-							{ value: "long", label: t`Long` },
-							{ value: "short", label: t`Short` },
-						]}
-						className="w-28 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-				</div>
-				<span className="sr-only" aria-live="polite">
-					{t`Funding shown`} <span className={cn("font-semibold tabular-nums", headerClass)}>{headerTotal}</span>
-				</span>
-				<MobileBulkDisclosureActions keys={filteredUpdateKeys} controller={disclosure} className="ms-auto ps-3" />
-			</div>
+			{renderFilterRow(false)}
 			<div className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}>
 				<div className="flex flex-col gap-2.5 px-3.5 pt-3">
 					{filteredUpdates.length === 0 ? (

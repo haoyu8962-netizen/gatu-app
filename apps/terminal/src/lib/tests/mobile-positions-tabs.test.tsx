@@ -318,22 +318,15 @@ describe("MobilePositionsView tabs", () => {
 		}
 	});
 
-	it("uses the active tab's wallet prompt while disconnected", () => {
+	it("renders every tab's own inert content instead of a wallet prompt while disconnected", () => {
 		storeState.isConnected = false;
-		storeState.activeTab = "balances";
-		render();
-		expect(container.textContent).toContain("Connect your wallet to view balances.");
-		expect(container.textContent).not.toContain("Connect your wallet to view positions.");
-
-		storeState.activeTab = "orders";
-		render();
-		expect(container.textContent).toContain("Connect your wallet to view open orders.");
-
-		storeState.activeTab = "positions";
-		render();
-		expect(container.textContent).not.toContain("Connect your wallet");
-		expect(container.textContent).not.toContain("Connect Wallet");
-		expect(container.querySelector('[data-tab-content="positions"]')).not.toBeNull();
+		for (const tab of ["balances", "positions", "orders", "twap", "history", "orders-history", "funding"] as const) {
+			storeState.activeTab = tab;
+			render(<div data-tab-content="balances" />);
+			expect(container.textContent).not.toContain("Connect your wallet");
+			expect(container.textContent).not.toContain("Connect Wallet");
+			expect(container.querySelector(`[data-tab-content="${tab}"]`)).not.toBeNull();
+		}
 	});
 
 	it("keeps a restored history tab visible without touching the page scroll axis", () => {

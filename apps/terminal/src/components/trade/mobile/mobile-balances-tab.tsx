@@ -71,7 +71,7 @@ export function MobileBalancesTab() {
 				/>
 			);
 		}
-		return <MobileBalancesState label={t`Connect your wallet to view balances.`} />;
+		return <div className="flex min-h-0 flex-1" />;
 	}
 	const isDataReady = !hasError && !isLoading && !isDataStale && accountModeReady && accountDataReady;
 	return (

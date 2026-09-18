@@ -54,11 +54,20 @@
 - 市场页 / 交易页持仓区：标签行 + 禁用的 Direction ▾、Margin ▾、Expand all、Collapse all，列表留空，无提示文案。
 - Account 页：Account Summary 零值（0.00%、$0.00×3、0.00x）+ 底部禁用的 Deposit / Withdraw，无 Connect 文案；顶栏 Connect Wallet 保留。
 
+### 第二轮：其余标签
+
+用户指出 Trade History 等标签仍有「Connect your wallet to view …」加 Connect Wallet 引导。官方各标签未登录时的工具栏：Balances「Asset / Hide Small Balances」，Open Orders「Type / Side / Market / Cancel All」，TWAP「Active / History / Fill History / Market」，Trade History「Type / Side / Role / Market / Expand All」，Funding History「Side / Market」，Order History 无工具栏，列表一律留空。改动：
+
+- `mobile-positions-view.tsx` 删除共享的 `EmptyState` 与逐标签提示文案（含内嵌 `WalletModal`），未登录时始终渲染各标签内容；`emptyDescription` prop 删除，`portfolio-page.tsx` 同步。
+- `mobile-orders-tab.tsx`、`mobile-history-tab.tsx`、`mobile-funding-tab.tsx`、`mobile-orders-history-tab.tsx`：筛选行抽成 `renderFilterToolbar / renderFilterRow(disabled)`，`Select` 透传 `disabled`，Expand / Collapse 传空键；未登录渲染惰性筛选行加空列表。
+- `mobile-twap-tab.tsx` 保留子视图切换（Active / History / Fill History），三处提示改为空面板；`mobile-balances-tab.tsx` 普通钱包路径改为空容器（邮箱赞助路径不变）；`mobile-account-transfers-tab.tsx` 改为空容器。
+- 测试：`mobile-positions-tabs` 未登录用例改为遍历七个标签断言各自内容渲染且无 Connect 文案；`mobile-position-filter-row` 源码契约扩展到十个移动端文件不含「Connect your wallet」。`i18n-reactivity-contract` 对「Connect your wallet to view positions.」的目录断言仍由桌面 `positions-tab.tsx` 维持。
+
 ## 验证与限制
 
 - 新增测试：`mobile-account-view` 「未登录显示零值概览与惰性资金按钮、不出现 Connect 文案」；`mobile-position-filter-row` 「disabled 时全部控件惰性」加源码契约（`!isConnected` 分支调用 `renderFilterRow(true)`、源码不再含提示文案）；`mobile-positions-tabs` 未登录用例增加 positions 标签渲染真实内容的断言。
-- 7 个相关文件 67 用例通过；typecheck、Biome 通过。既有邮箱赞助用例「does not invite an email deposit while its action is unavailable」在改动后仍通过（禁用态依赖原生 `disabled`，首轮用 `focusableWhenDisabled` 时该用例读到 `aria-disabled` 而失败，已改回）。
-- 官方 Account 页在未登录时显示 Deposit / Withdraw 两个按钮，本次同样禁用；官方是否也禁用未能从截图判定（被公告卡遮挡）。桌面 `positions-tab.tsx` 的未登录占位、移动端其他标签的提示未改。未做真机验收。
+- 第一轮 7 个相关文件 67 用例通过；第二轮 15 个文件（含各标签卡片、portfolio、i18n 契约）310 用例通过；typecheck、Biome 通过。既有邮箱赞助用例「does not invite an email deposit while its action is unavailable」在改动后仍通过（禁用态依赖原生 `disabled`，首轮用 `focusableWhenDisabled` 时该用例读到 `aria-disabled` 而失败，已改回）。
+- 官方 Account 页在未登录时显示 Deposit / Withdraw 两个按钮，本次同样禁用；官方是否也禁用未能从截图判定（被公告卡遮挡）。桌面 `positions-tab.tsx` 的未登录占位未改；我们没有官方的 Balances「Asset / Hide Small Balances」与 TWAP「Market」筛选，因此这两个标签未登录时只有空容器或子视图切换。未做真机验收。
 
 ## 后续与替代关系
 

@@ -94,11 +94,7 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 	}
 
 	if (!isConnected) {
-		return renderSubview(
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
-				{t`Connect your wallet to view TWAP orders.`}
-			</div>,
-		);
+		return renderSubview(<div className="flex-1" />);
 	}
 
 	if (viewState !== "ready" || status !== "active") {

@@ -225,10 +225,72 @@ function MobileOrdersHistoryTabContent({
 		</div>
 	);
 
+	function renderFilterRow(disabled: boolean) {
+		return (
+			<div
+				data-testid="mobile-order-history-filter-row"
+				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+			>
+				<span className="sr-only" aria-live="polite">
+					{headerCount}
+				</span>
+				<div className="flex shrink-0 items-center gap-1.5">
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Order type`}
+						value={typeFilter}
+						onValueChange={(value) => {
+							if (value === "all") setTypeFilter("all");
+							else if (isOrderHistoryType(value, availableTypeFilters)) setTypeFilter(value);
+						}}
+						options={typeOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Direction`}
+						value={directionFilter}
+						onValueChange={(value) => {
+							if (isOrderHistoryDirectionFilter(value)) setDirectionFilter(value);
+						}}
+						options={[
+							{ value: "all", label: t`All Directions` },
+							{ value: "buy", label: t`Buy` },
+							{ value: "sell", label: t`Sell` },
+						]}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Order status`}
+						value={statusFilter}
+						onValueChange={(value) => {
+							if (isOrderHistoryStatusFilter(value)) setStatusFilter(value);
+						}}
+						options={statusOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+				</div>
+				<MobileBulkDisclosureActions
+					keys={disabled ? [] : filteredOrderKeys}
+					controller={disclosure}
+					className="ms-auto ps-3"
+				/>
+			</div>
+		);
+	}
+
 	if (!isConnected) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
-				{t`Connect your wallet to view order history.`}
+			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
+				{renderFilterRow(true)}
+				<div className={cn("min-h-0", !isPageScroll && "flex-1")} />
 			</div>
 		);
 	}
@@ -255,55 +317,7 @@ function MobileOrdersHistoryTabContent({
 
 	return (
 		<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-			<div
-				data-testid="mobile-order-history-filter-row"
-				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-			>
-				<span className="sr-only" aria-live="polite">
-					{headerCount}
-				</span>
-				<div className="flex shrink-0 items-center gap-1.5">
-					<Select
-						size="xxs"
-						label={t`Order type`}
-						value={typeFilter}
-						onValueChange={(value) => {
-							if (value === "all") setTypeFilter("all");
-							else if (isOrderHistoryType(value, availableTypeFilters)) setTypeFilter(value);
-						}}
-						options={typeOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-					<Select
-						size="xxs"
-						label={t`Direction`}
-						value={directionFilter}
-						onValueChange={(value) => {
-							if (isOrderHistoryDirectionFilter(value)) setDirectionFilter(value);
-						}}
-						options={[
-							{ value: "all", label: t`All Directions` },
-							{ value: "buy", label: t`Buy` },
-							{ value: "sell", label: t`Sell` },
-						]}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-					<Select
-						size="xxs"
-						label={t`Order status`}
-						value={statusFilter}
-						onValueChange={(value) => {
-							if (isOrderHistoryStatusFilter(value)) setStatusFilter(value);
-						}}
-						options={statusOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-				</div>
-				<MobileBulkDisclosureActions keys={filteredOrderKeys} controller={disclosure} className="ms-auto ps-3" />
-			</div>
+			{renderFilterRow(false)}
 			<div className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}>
 				<div className="flex flex-col gap-2.5 px-3.5 pt-3">
 					{filteredEntries.length === 0 ? (

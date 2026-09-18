@@ -9,9 +9,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 ### Changed
 
 - The mobile Account tab now shows the zero-value overview with inert Deposit / Withdraw while
-  disconnected, and the mobile positions list keeps its filter toolbar inert above an empty list,
-  matching the desktop disconnected presentation; the Connect prompt stays with the header and
-  order entry.
+  disconnected, and every mobile account tab (positions, balances, orders, TWAP and history)
+  keeps its filter toolbar inert above an empty list, matching the desktop disconnected
+  presentation; the Connect prompt stays with the header and order entry.
 - Confirming a market close now closes the dialog immediately and runs the order in the
   background; the outcome arrives as a notification (an unconfirmed fill warns first and the shared
   reconciliation reports the final result), failures release the session so the

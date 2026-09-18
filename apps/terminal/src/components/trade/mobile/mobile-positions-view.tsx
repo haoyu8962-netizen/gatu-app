@@ -1,8 +1,6 @@
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
-import { Trans } from "@lingui/react/macro";
-import { WalletIcon } from "@phosphor-icons/react";
-import { type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { positionsTab, positionsTabs } from "@/components/trade/mobile/mobile-positions-tabs-view";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
@@ -13,7 +11,6 @@ import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useHyperliquid, useSubscription, useUserPositions } from "@/lib/hyperliquid";
-import { createLazyComponent } from "@/lib/lazy";
 import { toBig } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
@@ -29,7 +26,6 @@ import { type MobilePositionsDisclosureStates, useMobilePositionsDisclosureState
 type TabValue = MobilePositionsTabValue | "transfers";
 export type MobileDataScrollMode = "contained" | "page";
 
-const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 const MOBILE_POSITIONS_TAB_VALUES = new Set<string>(MOBILE_POSITIONS_TABS.map((tab) => tab.value));
 const COUNTED_MOBILE_POSITION_TABS = new Set<TabValue>(["balances", "positions", "orders", "twap"]);
 const MOBILE_TAB_PREFERENCE_DELAY_MS = 120;
@@ -41,7 +37,6 @@ interface Props {
 	includeBottomNavSpacer?: boolean;
 	balancesContent?: ReactNode;
 	transfersContent?: ReactNode;
-	emptyDescription?: ReactNode;
 	disclosureStates?: MobilePositionsDisclosureStates;
 }
 
@@ -51,7 +46,6 @@ export function MobilePositionsView({
 	includeBottomNavSpacer = true,
 	balancesContent,
 	transfersContent,
-	emptyDescription,
 	disclosureStates,
 }: Props) {
 	const { _ } = useLingui();
@@ -301,38 +295,34 @@ export function MobilePositionsView({
 					</TabsList>
 				}
 			/>
-			{!isConnected && activeTab !== "positions" ? (
-				<EmptyState activeTab={activeTab} description={emptyDescription} />
-			) : (
-				<>
-					<TabsContent value="balances" className={tabContentClass}>
-						{balancesContent}
-					</TabsContent>
-					<TabsContent value="positions" className={tabContentClass}>
-						<MobilePositionsTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.positions} />
-					</TabsContent>
-					<TabsContent value="orders" className={tabContentClass}>
-						<MobileOrdersTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orders} />
-					</TabsContent>
-					<TabsContent value="twap" className={tabContentClass}>
-						<MobileTwapTab scrollMode={scrollMode} />
-					</TabsContent>
-					<TabsContent value="history" className={tabContentClass}>
-						<MobileHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.tradeHistory} />
-					</TabsContent>
-					<TabsContent value="orders-history" className={tabContentClass}>
-						<MobileOrdersHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orderHistory} />
-					</TabsContent>
-					<TabsContent value="funding" className={tabContentClass}>
-						<MobileFundingTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.fundingHistory} />
-					</TabsContent>
-					{transfersContent != null ? (
-						<TabsContent value="transfers" className={tabContentClass}>
-							{transfersContent}
-						</TabsContent>
-					) : null}
-				</>
-			)}
+
+			<TabsContent value="balances" className={tabContentClass}>
+				{balancesContent}
+			</TabsContent>
+			<TabsContent value="positions" className={tabContentClass}>
+				<MobilePositionsTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.positions} />
+			</TabsContent>
+			<TabsContent value="orders" className={tabContentClass}>
+				<MobileOrdersTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orders} />
+			</TabsContent>
+			<TabsContent value="twap" className={tabContentClass}>
+				<MobileTwapTab scrollMode={scrollMode} />
+			</TabsContent>
+			<TabsContent value="history" className={tabContentClass}>
+				<MobileHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.tradeHistory} />
+			</TabsContent>
+			<TabsContent value="orders-history" className={tabContentClass}>
+				<MobileOrdersHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orderHistory} />
+			</TabsContent>
+			<TabsContent value="funding" className={tabContentClass}>
+				<MobileFundingTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.fundingHistory} />
+			</TabsContent>
+			{transfersContent != null ? (
+				<TabsContent value="transfers" className={tabContentClass}>
+					{transfersContent}
+				</TabsContent>
+			) : null}
+
 			{includeBottomNavSpacer ? <MobileBottomNavSpacer /> : null}
 		</MobilePositionsPanelView>
 	);
@@ -341,39 +331,4 @@ export function MobilePositionsView({
 function resolveMobilePositionsTab(value: string, hasTransfersTab: boolean): TabValue {
 	if (hasTransfersTab && value === PORTFOLIO_TRANSFERS_TAB.value) return PORTFOLIO_TRANSFERS_TAB.value;
 	return MOBILE_POSITIONS_TAB_VALUES.has(value) ? (value as TabValue) : "positions";
-}
-
-function EmptyState({ activeTab, description }: { activeTab: TabValue; description?: ReactNode }) {
-	const [walletModalOpen, setWalletModalOpen] = useState(false);
-	const defaultDescription = getDisconnectedDescription(activeTab);
-
-	return (
-		<>
-			<div className="h-full flex flex-col items-center justify-center gap-2.5 p-3 text-center">
-				<div className="size-10 rounded-full flex items-center justify-center bg-surface">
-					<WalletIcon className="size-5 text-fg-muted" />
-				</div>
-				<p className="text-xs text-fg-muted max-w-xs text-pretty">{description ?? defaultDescription}</p>
-				<Button variant="outline" intent="brand" size="sm" onClick={() => setWalletModalOpen(true)}>
-					<Trans>Connect Wallet</Trans>
-				</Button>
-			</div>
-			{walletModalOpen && (
-				<Suspense fallback={null}>
-					<WalletModal open onOpenChange={setWalletModalOpen} />
-				</Suspense>
-			)}
-		</>
-	);
-}
-
-function getDisconnectedDescription(activeTab: TabValue): ReactNode {
-	if (activeTab === "balances") return <Trans>Connect your wallet to view balances.</Trans>;
-	if (activeTab === "orders") return <Trans>Connect your wallet to view open orders.</Trans>;
-	if (activeTab === "twap") return <Trans>Connect your wallet to view TWAP orders.</Trans>;
-	if (activeTab === "history") return <Trans>Connect your wallet to view trade history.</Trans>;
-	if (activeTab === "funding") return <Trans>Connect your wallet to view funding payments.</Trans>;
-	if (activeTab === "orders-history") return <Trans>Connect your wallet to view order history.</Trans>;
-	if (activeTab === "transfers") return <Trans>Connect your wallet to view deposits and withdrawals.</Trans>;
-	return <Trans>Connect your wallet to view positions.</Trans>;
 }

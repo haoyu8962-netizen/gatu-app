@@ -43,11 +43,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 	);
 
 	if (!isConnected) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-fg-muted">
-				{t`Connect your wallet to view deposits and withdrawals.`}
-			</div>
-		);
+		return <div className={cn("flex min-h-0 flex-1", className)} />;
 	}
 
 	if (status !== "ready") {

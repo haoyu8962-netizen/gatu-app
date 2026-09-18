@@ -994,10 +994,65 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		: null;
 	const modifyMarketLabel = modifyOrder ? (markets.getMarket(modifyOrder.coin)?.shortName ?? modifyOrder.coin) : "";
 
+	function renderFilterToolbar(disabled: boolean) {
+		return (
+			<div
+				data-testid="mobile-orders-filter-toolbar"
+				className="flex h-12 shrink-0 items-center gap-1.5 border-b border-market-close-stroke-card px-3.5 py-2.5"
+			>
+				<Select
+					disabled={disabled}
+					size="xxs"
+					label={t`Order type`}
+					value={typeFilter}
+					onValueChange={handleTypeFilterChange}
+					options={[
+						{ value: "all", label: t`Type` },
+						{ value: "limit", label: t`Limit` },
+						{ value: "trigger", label: t`Trigger` },
+					]}
+					triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-surface px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
+					popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
+					className="w-auto shrink-0 [&>label]:sr-only"
+				/>
+				<Select
+					disabled={disabled}
+					size="xxs"
+					label={t`Direction`}
+					value={directionFilter}
+					onValueChange={handleDirectionFilterChange}
+					options={[
+						{ value: "all", label: t`Direction` },
+						{ value: "buy", label: t`Buy` },
+						{ value: "sell", label: t`Sell` },
+					]}
+					triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-surface px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
+					popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
+					className="w-auto shrink-0 [&>label]:sr-only"
+				/>
+				{openOrders.length > 0 ? (
+					<Button
+						variant="link"
+						intent="error"
+						size="sm"
+						className="relative ms-auto h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:not-data-disabled:scale-100"
+						onClick={handleRequestCancelAll}
+						disabled={pendingScopes.size > 0 || isModifyBusy}
+					>
+						{pendingScopes.has("all")
+							? t`Canceling...`
+							: t({ message: "Cancel all", context: "Current orders toolbar" })}
+					</Button>
+				) : null}
+			</div>
+		);
+	}
+
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
-				{t`Connect your wallet to view open orders.`}
+			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
+				{renderFilterToolbar(true)}
+				<div className={cn("px-3.5 py-3", !isPageScroll && "flex-1 min-h-0")} />
 			</div>
 		);
 	}
@@ -1013,53 +1068,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			)}
 			{isDataReady ? (
 				<>
-					<div
-						data-testid="mobile-orders-filter-toolbar"
-						className="flex h-12 shrink-0 items-center gap-1.5 border-b border-market-close-stroke-card px-3.5 py-2.5"
-					>
-						<Select
-							size="xxs"
-							label={t`Order type`}
-							value={typeFilter}
-							onValueChange={handleTypeFilterChange}
-							options={[
-								{ value: "all", label: t`Type` },
-								{ value: "limit", label: t`Limit` },
-								{ value: "trigger", label: t`Trigger` },
-							]}
-							triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-surface px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
-							popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
-							className="w-auto shrink-0 [&>label]:sr-only"
-						/>
-						<Select
-							size="xxs"
-							label={t`Direction`}
-							value={directionFilter}
-							onValueChange={handleDirectionFilterChange}
-							options={[
-								{ value: "all", label: t`Direction` },
-								{ value: "buy", label: t`Buy` },
-								{ value: "sell", label: t`Sell` },
-							]}
-							triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-surface px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
-							popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
-							className="w-auto shrink-0 [&>label]:sr-only"
-						/>
-						{openOrders.length > 0 ? (
-							<Button
-								variant="link"
-								intent="error"
-								size="sm"
-								className="relative ms-auto h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:not-data-disabled:scale-100"
-								onClick={handleRequestCancelAll}
-								disabled={pendingScopes.size > 0 || isModifyBusy}
-							>
-								{pendingScopes.has("all")
-									? t`Canceling...`
-									: t({ message: "Cancel all", context: "Current orders toolbar" })}
-							</Button>
-						) : null}
-					</div>
+					{renderFilterToolbar(false)}
 					<div className={cn("space-y-2.5 px-3.5 py-3", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 						{openOrders.length === 0 ? (
 							<div className="flex min-h-44 flex-col items-center justify-center gap-2 py-11 text-center">
