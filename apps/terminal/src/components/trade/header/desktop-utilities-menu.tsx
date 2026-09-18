@@ -45,7 +45,7 @@ export function DesktopUtilitiesMenu({ className, settingsDisabled = false, onOp
 						<Trans>Display</Trans>
 					</span>
 					<ThemeToggle
-						className="size-[34px] rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg"
+						className="size-9 rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg"
 						iconClassName="size-[18px]"
 					/>
 				</div>
@@ -53,7 +53,7 @@ export function DesktopUtilitiesMenu({ className, settingsDisabled = false, onOp
 					<span>
 						<Trans>Language</Trans>
 					</span>
-					<LanguageSwitcher className="size-[34px] rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg" />
+					<LanguageSwitcher className="size-9 rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg" />
 				</div>
 				<Button
 					variant="ghost"

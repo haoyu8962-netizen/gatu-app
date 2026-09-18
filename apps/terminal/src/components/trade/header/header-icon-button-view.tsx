@@ -8,7 +8,7 @@ interface Props extends ComponentPropsWithRef<"button"> {
 }
 
 export const HEADER_ICON_BUTTON_CLASS =
-	"size-[34px] rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg";
+	"size-9 rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg";
 
 export function HeaderIconButtonView({ className, children, disabled, tabIndex, size = "sm", ...rest }: Props) {
 	return (

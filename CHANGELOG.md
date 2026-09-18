@@ -8,8 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
-- The header account chip, `Connect` button and reconnect button are 36px tall on both mobile and
-  desktop; mobile keeps a 44px touch area through a pseudo element, drops the chip shadow and shows
+- Every desktop navigation control (Deposit, More, language, display menu, account chip, `Connect`
+  and reconnect) is 36px tall, and the header account chip, `Connect` button and reconnect button
+  share that height on mobile; mobile keeps a 44px touch area through a pseudo element, drops the chip shadow and shows
   the email local part in the chip with the full address as its tooltip.
 - The mobile header drops its theme toggle (the navigation drawer keeps it), shows a brand-filled
   `Connect` button that no longer truncates at 390px, and gives the language and settings icons

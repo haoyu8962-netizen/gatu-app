@@ -40,10 +40,15 @@
 - 桌面导航其余 34 px 控件（More、语言、设置、Deposit）未改，与 36 px 芯片在 `items-center` 下各差 1 px，肉眼不可辨；如需整排统一另议。
 - 测试：`mobile-header-layout` 改为断言槽位不再强制 `h-11`；`user-menu` 初始化态用例改为期望本地名「owner」且 `title` 为完整邮箱；`mobile-view-controls` SSR 钉住改用两个新常量。
 
+### 第二轮：桌面导航整排统一 36 px（用户决定）
+
+芯片改 36 后，桌面导航其余控件仍为 34 px（More 触发器、语言、设置、工具菜单图标、Deposit、`HeaderIconButtonView` sm 尺寸、`NavMenuTriggerView`、`top-nav-view.tsx` 的按钮与行容器 `min-h-[34px]`）。用户决定整排统一到 36 px：把这些 `h-[34px]` / `min-h-[34px]` / `size-[34px]` 全部改为 36，圆角与内边距不变，钉住 34 的测试同步更新。
+
 ## 验证与限制
 
 - 内置浏览器 375×812 登录态实测：芯片 117 × 36（改前 149 × 44），`::after` 高 44 px，文字「haoyu8962」不再截断；头部 56 px 上下各 10 px。1300 px 桌面：芯片 197 × 36，More 60 × 34。
 - 6 个测试文件通过（用户菜单、头部布局、SSR 钉住、顶部导航、页脚）；typecheck、Biome 通过。未做真机验收。
+- 第二轮：`nav-menu-trigger-view.tsx`（3 处）、`top-nav-view.tsx`（Deposit 按钮与行容器，4 处）、`header-icon-button-view.tsx`（sm 尺寸）、`desktop-utilities-menu.tsx`（设置与语言图标）共 10 处 `[34px]` 改为 `h-9` / `min-h-9` / `size-9`；`stat-block.tsx` 与 `spot-market-social-links.tsx` 的 `h-[34px]` 属市场头统计块，不在导航范围，未动。9 个测试文件 96 用例通过（顶部导航、导航布局、用户菜单、i18n 热切换、SSR 钉住等），typecheck、Biome 通过。内置浏览器 1090 px 紧凑导航登录态实测：Deposit 36 × 36、账户芯片 183 × 36、显示与语言 36 × 36，整排同高。
 
 ## 后续与替代关系
 
