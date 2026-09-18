@@ -1,4 +1,5 @@
 import { Activity, Suspense } from "react";
+import { useHasBeenActive } from "@/hooks/ui/use-has-been-active";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -10,7 +11,6 @@ import { MobileMarketBarProvider } from "./mobile-market-bar-provider";
 import { MobileTerminalFrameView, MobileWorkspaceView } from "./mobile-terminal-frame-view";
 import { MobileTradeLayout } from "./mobile-trade-layout";
 import { OfflineBanner } from "./offline-banner";
-import { useHasBeenActive } from "./use-has-been-active";
 import { useMobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 

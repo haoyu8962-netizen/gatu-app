@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The margin mode, leverage and account mode dialogs of the order form load when first needed instead of with the
+  terminal. If one cannot be loaded, the order form stays as it is and the dialog offers `Try again` and
+  `Reload page`; the page never reloads on its own.
 - Linking a phone no longer uses a server ticket. The desktop creates the QR entirely in the
   browser, the QR stays visible for 60 seconds after reveal and phones accept it for 2 minutes after
   it was created (previously 10). A phone refuses a QR it already imported without disturbing the

@@ -1124,6 +1124,7 @@ msgstr "Vista previa de la cámara para el QR del monedero de escritorio"
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Cancel"
 msgstr "Cancelar"
@@ -1393,6 +1394,7 @@ msgstr "Haz clic para enviar · Las operaciones ejecutadas no se pueden revertir
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/ui/command.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Close"
@@ -3990,6 +3992,8 @@ msgstr "Cargando billetera..."
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Loading..."
@@ -6055,6 +6059,7 @@ msgstr "Rechazada"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Reload page"
 msgstr "Recargar página"
 
@@ -6971,6 +6976,7 @@ msgstr "Se aceptaron algunas órdenes. Revise las órdenes abiertas antes de vol
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Something went wrong"
 msgstr "Algo salió mal"
 
@@ -8112,6 +8118,10 @@ msgstr "Esta orden tiene datos incompletos y no se puede modificar. Actualiza y 
 msgid "This order type cannot be modified safely. Cancel and replace it instead."
 msgstr "Este tipo de orden no se puede modificar de forma segura. Cancélala y reemplázala en su lugar."
 
+#: src/components/ui/lazy-dialog-boundary.tsx
+msgid "This panel could not be loaded. Try again, or reload the page. Reloading clears an order you have not sent."
+msgstr ""
+
 #: src/hooks/trade/use-deposit-availability.ts
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop."
@@ -8665,6 +8675,7 @@ msgstr "Activada"
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Try again"
 msgstr "Intentar de nuevo"
 

@@ -16,7 +16,7 @@
   "sources": [
     { "path": "docs/runtime-guardrails.md" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-terminal.tsx" },
-    { "path": "apps/terminal/src/components/trade/mobile/use-has-been-active.ts" },
+    { "path": "apps/terminal/src/hooks/ui/use-has-been-active.ts" },
     { "path": "apps/terminal/src/lib/tests/mobile-terminal-markets-retention.test.tsx" }
   ],
   "supersedes": []

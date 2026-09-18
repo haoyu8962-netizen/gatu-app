@@ -23,6 +23,7 @@
 
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
+- [PR #27 预算超限：下单表单三个弹窗改为按意图懒加载](sessions/2026-09-18-trade-terminal-page-budget.md) — 2026-09-18；已整理，验证见正文。PR #27 的四个 Build terminal 任务因 trade-terminal-page 128,778 B 超出 127,242 B 上限而失败（main 为 127,085）；增量来自 MobileAccountView 去掉提前 return 后被 React Compiler 编译，以及移动端订单簿表头芯片。未重定基线，改为把保证金模式、杠杆、账户模式三个弹窗移出启动 chunk：首次打开才加载、指针或焦点到达下单表单时按意图预热，失败时不刷新页面而是给出重试与显式刷新。trade-terminal-page 降到 126,255 B，桌面与移动端总启动分别减少 5.7 KB 与 4.1 KB。最初的空闲预热版本按基线文档的计数规则会让桌面运行时预算超限，已弃用。
 - [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) — 2026-09-17；已整理，验证见正文。按 ADR 0011 把 1001–1420 px 桌面网格改为图表列 10/14 + 右列堆叠（下单面板、订单簿、账户信息），存储键升到 v12；验证结果与限制见正文。
 - [移动端六个表面迁移到共享占位视图](sessions/2026-09-16-mobile-views-migration.md) — 2026-09-16；已整理，验证见正文。表面 6 六个移动表面与外框改用共享纯视图；旧 class 模块删除，浏览器服务被 EPERM 阻止，盒子实测待 reviewer。
 - [中性卡片底色与相邻弱填充全量源码审查](sessions/2026-09-12-neutral-surface-audit.md) — 2026-09-12；已整理，验证见正文。同色卡片 43 次引用涉及 28 文件；扩展 hover 与弱填充后覆盖 106 文件，区分只读精简候选、交互状态、共享覆盖和未启用分支；未修改 UI、未逐页视觉验收。
@@ -135,6 +136,7 @@
 | 2026-09-18 | [移动端顶部导航对齐官方：主题移出头部、品牌填充 Connect、图标统一](sessions/2026-09-18-mobile-header-alignment.md) | 未取得任务标识，见正文 | `22a1d566` | 已整理，验证见正文 |
 | 2026-09-18 | [移动配对方案 B 实施：去服务端票据的纯客户端传输（信封 v3）](sessions/2026-09-18-mobile-sync-ticketless-implementation.md) | 未取得任务标识，见正文 | `2242015f` | 已整理，验证见正文 |
 | 2026-09-18 | [移动端账户标签筛选芯片统一：同一规格、占位式文案、TWAP 子视图行同高](sessions/2026-09-18-mobile-toolbar-chip-unification.md) | 未取得任务标识，见正文 | `707657d5` | 已整理，验证见正文 |
+| 2026-09-18 | [PR #27 预算超限：下单表单三个弹窗改为按意图懒加载](sessions/2026-09-18-trade-terminal-page-budget.md) | 未取得任务标识，见正文 | `35146f69` | 已整理，验证见正文 |
 | 2026-09-17 | [生产发布 cloudfront-2026-09-17-p21（PR #26 分支 c59d13a8）](sessions/2026-09-17-cloudfront-release-p21.md) | 未取得任务标识，见正文 | `c59d13a8188093e1de0c5f247a9bc625f4a18a34` | 已验证，范围见正文 |
 | 2026-09-17 | [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) | 未取得任务标识，见正文 | `a7fb284656651e6f8440cdfd584ed056ed158ff1` | 已整理，验证见正文 |
 | 2026-09-17 | [桌面顶部导航：命名断点、收纳规则与单一配置（ADR 0013）](sessions/2026-09-17-desktop-nav-collapse.md) | 未取得任务标识，见正文 | `8dd0f1a9b5ebf65c190067755b9403336e2ef27f` | 已整理，验证见正文 |

@@ -3,6 +3,7 @@ import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
+import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
 import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
@@ -101,9 +102,12 @@ import {
 	getSelectedPriceForMarket,
 	useSelectedPrice,
 } from "@/stores/use-orderbook-actions-store";
-import { AccountModeModal } from "./account-mode-modal";
-import { LeverageModal } from "./leverage-modal";
-import { MarginModeModal } from "./margin-mode-modal";
+import {
+	AccountModeModal,
+	LeverageModal,
+	MarginModeModal,
+	warmTradeSettingsModals,
+} from "./lazy-trade-settings-modals";
 import { OrderConfirmationModal } from "./order-confirmation-modal";
 import { OrderSummary } from "./order-summary";
 import { ScaleOrderSummary } from "./scale-order-summary";
@@ -117,6 +121,10 @@ import { TwapOrderSummary } from "./twap-order-summary";
 const ORDER_CONFIRMATION_EXIT_MS = 250;
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
+
+function warmDesktopTradeSettingsModals() {
+	warmTradeSettingsModals("desktop");
+}
 
 export function TradePanel() {
 	const { t } = useLingui();
@@ -309,6 +317,9 @@ export function TradePanel() {
 
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 	const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+	function handleAccountModeModalOpenChange(open: boolean) {
+		setActiveModal(open ? "accountMode" : null);
+	}
 	const [isSizeInteracting, setIsSizeInteracting] = useState(false);
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
@@ -752,51 +763,70 @@ export function TradePanel() {
 
 	return (
 		<TradePanelBodyView
+			onIntent={warmDesktopTradeSettingsModals}
 			overlays={
 				<>
-					<MarginModeModal
+					<LazyDialogHost
 						open={activeModal === "marginMode"}
 						onOpenChange={handleMarginModalOpenChange}
-						currentMode={marginMode}
-						currentLeverage={currentLeverage}
-						pendingLeverage={pendingLeverage}
-						committedLeverage={committedLeverage}
-						maxLeverage={maxLeverage}
-						onPendingLeverageChange={setPendingLeverage}
-						hasPosition={hasPosition}
-						positionStateReady={positionStateReady}
-						allowsCrossMargin={capabilities.allowsCrossMargin}
-						allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
-						isUpdating={isSwitchingMode}
-						updateError={switchModeError}
-						showLeverage={false}
-						onApply={handleMarginApply}
-						marketIdentity={leverageInteractionIdentity}
-					/>
-					<LeverageModal
+						presentation="modal"
+					>
+						<MarginModeModal
+							open={activeModal === "marginMode"}
+							onOpenChange={handleMarginModalOpenChange}
+							currentMode={marginMode}
+							currentLeverage={currentLeverage}
+							pendingLeverage={pendingLeverage}
+							committedLeverage={committedLeverage}
+							maxLeverage={maxLeverage}
+							onPendingLeverageChange={setPendingLeverage}
+							hasPosition={hasPosition}
+							positionStateReady={positionStateReady}
+							allowsCrossMargin={capabilities.allowsCrossMargin}
+							allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
+							isUpdating={isSwitchingMode}
+							updateError={switchModeError}
+							showLeverage={false}
+							onApply={handleMarginApply}
+							marketIdentity={leverageInteractionIdentity}
+						/>
+					</LazyDialogHost>
+					<LazyDialogHost
 						open={activeModal === "leverage"}
 						onOpenChange={handleLeverageModalOpenChange}
-						currentLeverage={currentLeverage}
-						pendingLeverage={pendingLeverage}
-						committedLeverage={committedLeverage}
-						maxLeverage={maxLeverage}
-						onPendingLeverageChange={setPendingLeverage}
-						isUpdating={isLeverageUpdating}
-						updateError={leverageUpdateError}
-						onApply={handleLeverageApply}
-						marketIdentity={leverageInteractionIdentity}
-					/>
-					<AccountModeModal
+						presentation="modal"
+					>
+						<LeverageModal
+							open={activeModal === "leverage"}
+							onOpenChange={handleLeverageModalOpenChange}
+							currentLeverage={currentLeverage}
+							pendingLeverage={pendingLeverage}
+							committedLeverage={committedLeverage}
+							maxLeverage={maxLeverage}
+							onPendingLeverageChange={setPendingLeverage}
+							isUpdating={isLeverageUpdating}
+							updateError={leverageUpdateError}
+							onApply={handleLeverageApply}
+							marketIdentity={leverageInteractionIdentity}
+						/>
+					</LazyDialogHost>
+					<LazyDialogHost
 						open={activeModal === "accountMode"}
-						onOpenChange={(open) => setActiveModal(open ? "accountMode" : null)}
-						currentMode={accountModeControl.accountAbstraction}
-						isLoading={accountModeControl.isLoading}
-						isUpdating={accountModeControl.isUpdating}
-						canChange={accountModeControl.canSet}
-						portfolioMarginActivationEnabled={accountModeControl.portfolioMarginActivationEnabled}
-						onConnect={() => setActiveModal("wallet")}
-						onApply={handleAccountModeChange}
-					/>
+						onOpenChange={handleAccountModeModalOpenChange}
+						presentation="modal"
+					>
+						<AccountModeModal
+							open={activeModal === "accountMode"}
+							onOpenChange={handleAccountModeModalOpenChange}
+							currentMode={accountModeControl.accountAbstraction}
+							isLoading={accountModeControl.isLoading}
+							isUpdating={accountModeControl.isUpdating}
+							canChange={accountModeControl.canSet}
+							portfolioMarginActivationEnabled={accountModeControl.portfolioMarginActivationEnabled}
+							onConnect={() => setActiveModal("wallet")}
+							onApply={handleAccountModeChange}
+						/>
+					</LazyDialogHost>
 					{displayedConfirmation && (
 						<OrderConfirmationModal
 							open={confirmation.pending !== null}
