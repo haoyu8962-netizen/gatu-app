@@ -12,7 +12,7 @@
   "summary": "按 ADR 0015 D7 方案 B 完成代码与文档：信封 v3、TTL 2 分钟、揭示后 60 秒单调时钟窗口、桌面本地 syncId、手机端 syncId 本地去重、v1/v2 信封提示刷新；删除票据客户端/服务端/路由、Lambda 503 桩、CloudFront 转发与 EC2 时代 mobile-sync 发布脚本。定向测试与 typecheck 通过；pnpm build 因既有 trade-terminal-page 预算超限失败（改动不在该 chunk）；全量 vitest 余 8 个文件 32 项基线红（干净 HEAD 同样失败）。静态托管实测、真机矩阵、对抗安全复核未执行，生产开关保持关闭。",
   "thread": null,
   "baseCommit": "2242015f",
-  "commits": [],
+  "commits": ["750a5113"],
   "sources": [
     { "path": "docs/mobile-sync-ticketless-transfer-plan.md" },
     { "path": "docs/adr/0015-link-device-alignment.md" },
