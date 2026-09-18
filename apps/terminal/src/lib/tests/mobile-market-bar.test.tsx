@@ -196,7 +196,8 @@ describe("MobileMarketBar", () => {
 
 		const tokenInfo = container.querySelector<HTMLElement>('[data-slot="mobile-spot-token-info"]');
 		expect(tokenInfo?.className).toContain("items-center");
-		expect(tokenInfo?.className).not.toContain("flex-wrap");
+		expect(tokenInfo?.className).toContain("flex-wrap");
+		expect(tokenInfo?.querySelector(`span[title="${BASE_TOKEN_ID}"]`)?.className).toContain("whitespace-nowrap");
 		expect(tokenInfo?.querySelector(`span[title="${BASE_TOKEN_ID}"]`)?.textContent).toBe("0x1111...1111");
 		const actionGroup = tokenInfo?.querySelector<HTMLElement>('[data-slot="mobile-spot-token-actions"]');
 		const explorerLink = tokenInfo?.querySelector<HTMLAnchorElement>('a[aria-label="Open token in explorer"]');

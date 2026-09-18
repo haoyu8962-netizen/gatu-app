@@ -238,9 +238,9 @@ function createSpotTokenInfo(
 	}
 
 	return (
-		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full items-center gap-x-1">
+		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full flex-wrap items-center gap-x-1">
 			{address ? (
-				<span className="min-w-0 shrink truncate tabular-nums" title={address}>
+				<span className="shrink-0 whitespace-nowrap tabular-nums" title={address}>
 					<bdi dir="ltr">{shortenAddress(address, 4, 4)}</bdi>
 				</span>
 			) : null}
