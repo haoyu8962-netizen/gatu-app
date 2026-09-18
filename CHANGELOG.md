@@ -8,6 +8,7 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The expanded mobile market bar no longer draws a divider between its two detail rows.
 - The mobile order book header is a single 36px chip row: price grouping on the left, the
   spread in the middle and a display-unit dropdown on the right; the separate spread row is gone
   and the ladder headings read `Total (unit)`, so the ladder starts about 47px higher.

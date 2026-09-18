@@ -157,7 +157,7 @@ export function MobileMarketBar({ className }: Props) {
 										value={formatUSD(dayNtlVlm, { compact: false })}
 									/>
 								</div>
-								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
+								<div className="grid grid-cols-2 gap-x-4 pb-3.5">
 									<DetailCell
 										label={t(MARKET_HEADER_LABELS.openInterest)}
 										tooltipContent={t`Two-sided open interest: the sum of long and short positions on this contract.`}
@@ -198,7 +198,7 @@ export function MobileMarketBar({ className }: Props) {
 									/>
 									<DetailCell label={t(MARKET_HEADER_LABELS.volume24h)} value={spotVolumeText} />
 								</div>
-								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
+								<div className="grid grid-cols-2 gap-x-4 pb-3.5">
 									<DetailCell label={t(MARKET_HEADER_LABELS.marketCap)} value={spotMarketCapText} />
 									<DetailCell
 										label={t`More Info`}
