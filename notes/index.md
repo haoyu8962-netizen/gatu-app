@@ -12,7 +12,7 @@
 | 布局演进 | [2026-05-21 原始笔记](session-logs/2026-05-21-trade-layout-resize-notes.md) | 旧 react-resizable-panels 方案不作当前架构依据；以[桌面网格](../docs/desktop-grid-layout.md)为准 |
 | 下单、资金和账户 | [字段复核](../docs/order-entry-field-review.md)、[双端核对](../docs/order-entry-surface-parity.md)、[账户 ADR](../docs/adr/0001-account-overview-cross-shell-model.md) | [草稿生命周期](../docs/order-draft-lifecycle.md)、[账户概要](../docs/account-overview.md)、[充值](../docs/cctp-deposits.md)、[提现](../docs/withdrawals.md) |
 | 被动加载与回归 | [加载审查](../docs/terminal-loading-audit.md)、[测试修复](../docs/terminal-test-regression-repair.md) | [数据展示](../docs/mobile-data-presentation.md)、[运行时翻译](../docs/i18n-presentation.md)；已执行结果仅覆盖记录中的版本和场景 |
-| 配对票据 v2 | [原修复计划](../docs/mobile-sync-ticket-remediation-plan.md)、[实施记录](../docs/mobile-sync-implementation-verification.md)、[后续防护计划](../docs/mobile-sync-release-hardening-plan.md)、[后续记录](../docs/mobile-sync-release-hardening-verification.md) | [当前发布流程](../docs/mobile-sync-production-readiness.md)覆盖旧常规发布门槛；原始修复证据保留，不能拿旧验证当当前候选通过 |
+| 配对票据 v2 | 原修复计划、实施记录、后续防护计划、后续记录（`docs/mobile-sync-ticket-remediation-plan.md`、`mobile-sync-implementation-verification.md`、`mobile-sync-release-hardening-plan.md`、`mobile-sync-release-hardening-verification.md`）。2026-09-18 更正：服务端票据与 EC2 宿主均已退役，这四份连同 EC2 时期的发布流程 `mobile-sync-production-readiness.md` 已从工作树移除，原文保留在提交 `5d393572` | [无票据传输方案](../docs/mobile-sync-ticketless-transfer-plan.md)、[ADR 0015](../docs/adr/0015-link-device-alignment.md) D7；旧验证不能当作当前候选通过 |
 | API 与产品页交付 | [SDK 升级 review](../review-sdk-0333-upgrade.md)、[API Wallet](../docs/api-wallet-redesign-notes.md)、[Leaderboard/Vaults/Staking](../docs/leaderboard-vaults-staking-redesign-notes.md) | [SDK 核对工作流](../docs/hyperliquid-sdk-reference.md)、当前代码与各记录的验证边界 |
 
 ## 仍需证据或产品决定
@@ -26,7 +26,7 @@
 
 ## 保留的原始 review 与会话记录
 
-另外从 Git 恢复了[2026-09-11 配对生产核查原文](../docs/mobile-sync-production-readiness-2026-09-11.md)，保留后来改写当前流程时消失的实测与测试章节，修复旧计划的三个断裂锚点。来源提交与适用限制写在归档文件开头；它不属于下方 26 份基线未改动文件。
+另外从 Git 恢复过 2026-09-11 配对生产核查原文（`docs/mobile-sync-production-readiness-2026-09-11.md`），保留后来改写当前流程时消失的实测与测试章节，修复旧计划的三个断裂锚点。来源提交与适用限制写在归档文件开头；它不属于下方 26 份基线未改动文件。2026-09-18 更正：该归档随票据时期文档一并从工作树移除，原文保留在提交 `5d393572`。
 
 以下清单枚举本轮起始提交中仓库根目录的 review 文档与既有 `notes/session-logs/` 笔记，原路径与正文保持不变。标题直接取自文件；可能含当时的判断，不代表现在仍成立。标题无日期的记录不补造日期；需要准确时点时使用该文件的 Git 历史。`docs/` 中的专题审查另见上表及[文档地图](../docs/README.md)。
 

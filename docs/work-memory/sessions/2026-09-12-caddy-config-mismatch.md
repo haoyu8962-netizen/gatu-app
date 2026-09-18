@@ -12,9 +12,9 @@
   "baseCommit": "42349cb1",
   "commits": [],
   "sources": [
-    { "path": "deploy/deploy.sh" },
-    { "path": "deploy/Caddyfile" },
-    { "path": "deploy/README.md" }
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/5d3935721f070075c5d976d61a3c27d12b5dc607/deploy/deploy.sh" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/5d3935721f070075c5d976d61a3c27d12b5dc607/deploy/Caddyfile" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/5d3935721f070075c5d976d61a3c27d12b5dc607/deploy/README.md" }
   ],
   "supersedes": []
 }

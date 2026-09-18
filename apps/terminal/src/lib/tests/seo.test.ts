@@ -7,7 +7,6 @@ import { buildMarketDocumentTitle, buildPageHead, buildRootHead, mergeHead, SEO_
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_ROOT = resolve(TEST_DIR, "../../..");
-const REPOSITORY_ROOT = resolve(TERMINAL_ROOT, "../..");
 
 function getMetaContent(head: ReturnType<typeof buildPageHead>, attribute: "name" | "property", value: string) {
 	return head.meta.find((meta) => meta[attribute] === value)?.content;
@@ -115,9 +114,6 @@ describe("seo", () => {
 		expect(image.toString("ascii", 12, 16)).toBe("IHDR");
 		expect(image.readUInt32BE(16)).toBe(SEO_DEFAULTS.ogImageWidth);
 		expect(image.readUInt32BE(20)).toBe(SEO_DEFAULTS.ogImageHeight);
-
-		const deployScript = readFileSync(resolve(REPOSITORY_ROOT, "deploy/deploy.sh"), "utf8");
-		expect(deployScript).toContain(`SOCIAL_IMAGE_PATH="${SEO_DEFAULTS.ogImagePath}"`);
 	});
 
 	it("adds robots tag when noIndex is set", () => {

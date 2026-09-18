@@ -14,7 +14,7 @@ pnpm --filter @gatu/website preview
 
 ## Deploying to Vercel (apex domain)
 
-The website's Vercel configuration points at this directory. The terminal has a separate [Node/systemd/Caddy deployment workflow](../../deploy/README.md); do not infer its deployment target from the website configuration. Domain assignments below describe the intended website setup, not a live DNS verification.
+The website's Vercel configuration points at this directory. The terminal has a separate [CloudFront + S3 + Lambda deployment workflow](../../deploy/cloudfront/README.md); do not infer its deployment target from the website configuration. Domain assignments below describe the intended website setup, not a live DNS verification.
 
 ### One-time setup
 
@@ -32,7 +32,7 @@ The website's Vercel configuration points at this directory. The terminal has a 
 At your registrar:
 
 - For `gatu.ai` and `www.gatu.ai`, use the exact record types and targets shown by the website project's Domains configuration. This repository does not establish the current DNS targets.
-- Configure only the website domains here; terminal domain and proxy configuration belong to the [terminal deployment workflow](../../deploy/README.md).
+- Configure only the website domains here; terminal domain and CDN configuration belong to the [terminal deployment workflow](../../deploy/cloudfront/README.md).
 
 ### Why two projects, not one?
 

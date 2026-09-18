@@ -6,7 +6,7 @@ Updated: 2026-09-18. Protocol: client-only transfer, envelope v3, draft v1 ([ADR
 
 ## Release Rule
 
-All 11 physical rows remain **Not run**. Automation and simulated cameras cannot mark them Pass. These rows are mandatory before either pairing build flag (`VITE_MOBILE_PAIRING_CREATE_ENABLED`, `VITE_MOBILE_PAIRING_IMPORT_ENABLED`) is enabled for a production build; see the acceptance list in the [implementation plan](mobile-sync-ticketless-transfer-plan.md). A release with both flags off does not need this file and does not claim device acceptance. Production is served by CloudFront + S3 + Lambda ([release procedure](../deploy/cloudfront/README.md)); the former EC2 [release procedure](mobile-sync-production-readiness.md) is retired history.
+All 11 physical rows remain **Not run**. Automation and simulated cameras cannot mark them Pass. These rows are mandatory before either pairing build flag (`VITE_MOBILE_PAIRING_CREATE_ENABLED`, `VITE_MOBILE_PAIRING_IMPORT_ENABLED`) is enabled for a production build; see the acceptance list in the [implementation plan](mobile-sync-ticketless-transfer-plan.md). A release with both flags off does not need this file and does not claim device acceptance. Production is served by CloudFront + S3 + Lambda ([release procedure](../deploy/cloudfront/README.md)).
 
 ## Required Evidence
 

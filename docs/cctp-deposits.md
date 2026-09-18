@@ -38,9 +38,8 @@ flags authorize a release to expose a controlled path; they are not themselves
 user consent to move funds. In particular, enabling the sponsored Mainnet flag
 must not make the application-wide recovery host sign or broadcast a deposit.
 
-Production supports two explicit Mainnet release modes. External is enabled in
-both, and the deployment validator requires the mode to match the sponsored
-Mainnet flag exactly:
+Production supports two Mainnet release modes. External is enabled in both, and
+the sponsored Mainnet build flag alone selects the mode:
 
 | Release mode | External | Sponsored flag |
 |---|---:|---:|
@@ -48,14 +47,19 @@ Mainnet flag exactly:
 | `both` | always enabled | `true` |
 
 The application ignores the retired
-`VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED` build switch. Older production
-hosts may retain its exact value `true` as a compatible acknowledgement, but
-an empty or false legacy value cannot disable Mainnet external deposits. The
-validator cannot prove that a funded end-to-end exercise has been completed.
-Operators should still review funded testnet evidence and run controlled,
-small-value Mainnet deposit and recovery exercises. The current host can expose
-both paths by setting `VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true` and
-`GATU_CCTP_MAINNET_RELEASE_MODE=both` before rebuilding and deploying.
+`VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED` build switch; an empty or false
+legacy value cannot disable Mainnet external deposits. Operators should still
+review funded testnet evidence and run controlled, small-value Mainnet deposit
+and recovery exercises before exposing the sponsored path with
+`VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true`, then rebuild and publish.
+
+Known gap (2026-09-18): the former EC2 release script refused a build whose
+sponsored flag disagreed with a second operator acknowledgement,
+`GATU_CCTP_MAINNET_RELEASE_MODE`, in the host's runtime environment file. That
+validator was bound to the EC2 host files and was removed with them; the
+[CloudFront release](../deploy/cloudfront/README.md) has no equivalent
+build-environment check, so nothing but the build flag itself guards the
+sponsored Mainnet path at release time.
 
 Every deposit entry point uses the same fail-closed capability decision before
 opening the modal or starting empty-account onboarding. That decision first
