@@ -348,7 +348,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   `pnpm dev:browser --port 3006`. See [local development](docs/tutorials/local-development.md).
 - Mobile pairing rejects ticket re-registration and protects release switches
   with verified edge gating. Standard deployment and optional strict promotion
-  have distinct evidence requirements. See [production release procedure](docs/mobile-sync-production-readiness.md).
+  have distinct evidence requirements. (Superseded: the server ticket and that
+  EC2 release procedure were later removed; see the client-only pairing
+  transfer entries above.)
 
 ### Notes
 

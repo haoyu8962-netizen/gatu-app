@@ -79,8 +79,9 @@
 
 ### 静态托管与 SPA 壳
 
-当前规范：[docs/adr/0005-spa-static-shell.md](../../docs/adr/0005-spa-static-shell.md) · [deploy/README.md](../../deploy/README.md)
+当前规范：[docs/adr/0005-spa-static-shell.md](../../docs/adr/0005-spa-static-shell.md) · [deploy/cloudfront/README.md](../../deploy/cloudfront/README.md)
 
+- [从仓库移除已退役的 EC2 部署代码与票据时期文档](sessions/2026-09-18-retire-ec2-deploy-files.md) — 2026-09-18；已整理，验证见正文。EC2 宿主 2026-09-17 停机、服务端票据 2026-09-18 移除之后，仓库里仍留着 12 个 EC2 部署文件和 6 份票据时期文档。本次把它们从工作树移除（原文保留在提交 5d393572），四个读取这些文件的 Vitest 契约改为钉住 CloudFront 模块或去掉已无对象的断言，现行文档的链接改指 CloudFront 手册，四份旧工作记录的 sources 改为该提交的永久链接。核对中发现一处迁移遗留缺口：旧脚本对 CCTP 主网赞助开关的二次确认校验在 CloudFront 发布流程里没有等价物，已在 cctp-deposits.md 如实写明，未补实现。
 - [生产发布 cloudfront-2026-09-17-p21（PR #26 分支 c59d13a8）](sessions/2026-09-17-cloudfront-release-p21.md) — 2026-09-17；已验证，范围见正文。按 CloudFront 日常发布 runbook 把 claude/placeholder-parity@c59d13a8 发布到 app.gatu.ai 与 testnet.gatu.ai：函数、Lambda、S3 同步、两个失效、两个 verify 全部通过；发布前后线上加载与几何对比见正文。
 - [退役 EC2 + Caddy + Nitro 常驻进程，仓库切换为 CloudFront 单一架构](sessions/2026-09-17-ec2-retirement.md) — 2026-09-17；已整理，验证见正文。用户 2026-09-17 10:35Z 停机 EC2 i-058ca09d0533fc11d；仓库随之关闭 Nitro 预压缩、CI 去掉 Caddyfile 校验与 EC2 发布脚本测试并改跑 CloudFront 工具测试、deploy/README.md 标为历史资料、ADR 0005 与计划文档补退役状态；routeRules CSP 因两个契约测试仍钉住而留待后续。
 - [旧架构（EC2 + Caddy + Nitro）到新架构（CloudFront + S3 + Lambda）迁移完成度核对](sessions/2026-09-17-ec2-to-cloudfront-migration-audit.md) — 2026-09-17；已整理，验证见正文。流量层已完全切到 CloudFront/S3/Lambda（DNS、分发源、Lambda、verify 全部核实）；旧 EC2 仍在运行且其 Caddy 已被改为代理到 CloudFront、22/80/443 对全网开放，尚未按 runbook 第 11 步退役；deploy/README.md 与两份计划文档仍把 EC2 描述为现状。
@@ -109,6 +110,7 @@
 - [移动端未登录状态对齐官方：账户零值概览与持仓工具栏常驻](sessions/2026-09-18-mobile-disconnected-alignment.md) — 2026-09-18；已整理，验证见正文。核对确认 7f2f66ac 只对齐了桌面未登录账户面板，移动端 Account 页与持仓区仍是引导文案加 Connect 按钮；无头对比官方 390 px 后按三条实施：Account 页改为零值概览加禁用 Deposit/Withdraw（保留邮箱赞助充值例外），持仓区未登录保留禁用的筛选工具栏与空列表，规则写入 AGENTS.md 与 desktop-grid-layout.md。
 - [移动端顶部导航对齐官方：主题移出头部、品牌填充 Connect、图标统一](sessions/2026-09-18-mobile-header-alignment.md) — 2026-09-18；已整理，验证见正文。390 px 实测：头部五个 44 px 控件只给 CTA 留 112 px，「Connect Wallet」被截成「Connect …」；语言按钮圆角 10 与其余 4 不一致；连接按钮描边加投影而官方用品牌填充。用户决定全部实施：主题切换移出移动端头部（抽屉已有）、移动端 CTA 改短标签「Connect」并品牌填充、桌面端连接按钮同步品牌填充、三个图标按钮统一令牌与圆角、清理 redesign.md 过期条目；Logo 链接指向所选「全部」市场为既有设计，保留。
 - [移动端账户标签筛选芯片统一：同一规格、占位式文案、TWAP 子视图行同高](sessions/2026-09-18-mobile-toolbar-chip-unification.md) — 2026-09-18；已整理，验证见正文。逐标签实测发现持仓用 Dropdown 芯片（26 px、内边距 9、自适应宽）、历史类用 Select（27 px、内边距 6、固定 96/112 px 宽、「All …」文案）、TWAP 子视图行 44 px；按用户决定抽共享芯片类（27 px、7 px 圆角、9 px 内边距、自适应宽）套到六个标签，历史类改为「Type / Direction / Role / Status」占位式文案，TWAP 子视图行改 36 px 并用 before 伪元素保住 44 px 热区。Market 筛选与余额工具栏另立任务。
+- [从仓库移除已退役的 EC2 部署代码与票据时期文档](sessions/2026-09-18-retire-ec2-deploy-files.md) — 2026-09-18；已整理，验证见正文。EC2 宿主 2026-09-17 停机、服务端票据 2026-09-18 移除之后，仓库里仍留着 12 个 EC2 部署文件和 6 份票据时期文档。本次把它们从工作树移除（原文保留在提交 5d393572），四个读取这些文件的 Vitest 契约改为钉住 CloudFront 模块或去掉已无对象的断言，现行文档的链接改指 CloudFront 手册，四份旧工作记录的 sources 改为该提交的永久链接。核对中发现一处迁移遗留缺口：旧脚本对 CCTP 主网赞助开关的二次确认校验在 CloudFront 发布流程里没有等价物，已在 cctp-deposits.md 如实写明，未补实现。
 - [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) — 2026-09-17；已整理，验证见正文。按 ADR 0011 把 1001–1420 px 桌面网格改为图表列 10/14 + 右列堆叠（下单面板、订单簿、账户信息），存储键升到 v12；验证结果与限制见正文。
 - [桌面顶部导航：命名断点、收纳规则与单一配置（ADR 0013）](sessions/2026-09-17-desktop-nav-collapse.md) — 2026-09-17；已整理，验证见正文。1181 魔法数改为 DESKTOP_NAV_COMPACT/NARROW 常量与 nav-compact 变体；Earn（Soon）紧凑时进 More，低优先级入口仅在已连接且 ≤1181 或 ≤1100 时收纳；入口与 More 由 DESKTOP_NAV_ITEMS 单一派生；官方对照与六语言余量实测见正文。
 - [退役 EC2 + Caddy + Nitro 常驻进程，仓库切换为 CloudFront 单一架构](sessions/2026-09-17-ec2-retirement.md) — 2026-09-17；已整理，验证见正文。用户 2026-09-17 10:35Z 停机 EC2 i-058ca09d0533fc11d；仓库随之关闭 Nitro 预压缩、CI 去掉 Caddyfile 校验与 EC2 发布脚本测试并改跑 CloudFront 工具测试、deploy/README.md 标为历史资料、ADR 0005 与计划文档补退役状态；routeRules CSP 因两个契约测试仍钉住而留待后续。
@@ -136,6 +138,7 @@
 | 2026-09-18 | [移动端顶部导航对齐官方：主题移出头部、品牌填充 Connect、图标统一](sessions/2026-09-18-mobile-header-alignment.md) | 未取得任务标识，见正文 | `22a1d566` | 已整理，验证见正文 |
 | 2026-09-18 | [移动配对方案 B 实施：去服务端票据的纯客户端传输（信封 v3）](sessions/2026-09-18-mobile-sync-ticketless-implementation.md) | 未取得任务标识，见正文 | `2242015f` | 已整理，验证见正文 |
 | 2026-09-18 | [移动端账户标签筛选芯片统一：同一规格、占位式文案、TWAP 子视图行同高](sessions/2026-09-18-mobile-toolbar-chip-unification.md) | 未取得任务标识，见正文 | `707657d5` | 已整理，验证见正文 |
+| 2026-09-18 | [从仓库移除已退役的 EC2 部署代码与票据时期文档](sessions/2026-09-18-retire-ec2-deploy-files.md) | 未取得任务标识，见正文 | `5d393572` | 已整理，验证见正文 |
 | 2026-09-18 | [PR #27 预算超限：下单表单三个弹窗改为按意图懒加载](sessions/2026-09-18-trade-terminal-page-budget.md) | 未取得任务标识，见正文 | `35146f69` | 已整理，验证见正文 |
 | 2026-09-17 | [生产发布 cloudfront-2026-09-17-p21（PR #26 分支 c59d13a8）](sessions/2026-09-17-cloudfront-release-p21.md) | 未取得任务标识，见正文 | `c59d13a8188093e1de0c5f247a9bc625f4a18a34` | 已验证，范围见正文 |
 | 2026-09-17 | [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) | 未取得任务标识，见正文 | `a7fb284656651e6f8440cdfd584ed056ed158ff1` | 已整理，验证见正文 |

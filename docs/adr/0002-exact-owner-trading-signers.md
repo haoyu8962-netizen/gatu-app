@@ -72,12 +72,12 @@ This decision changes signer selection, not funds eligibility, legal policy,
 account modes, confirmation requirements or deployment gates. Complete funding
 snapshots are still necessary before an empty-account deposit suggestion.
 Detailed runtime behavior belongs in [trading onboarding](../trading-onboarding.md)
-and [email signing](../email-trading-signing.md). Pairing is not reachable in
-production: the CloudFront Lambda answers the ticket route with 503 and both
-pairing flags stay off (see the [CloudFront deployment](../../deploy/cloudfront/README.md));
-the replacement transport is [ADR 0015](0015-link-device-alignment.md) D7
-(pending), and the former EC2 [release procedure](../mobile-sync-production-readiness.md)
-is retired history.
+and [email signing](../email-trading-signing.md). Pairing is a client-only
+encrypted-fragment transfer with no server route
+([ADR 0015](0015-link-device-alignment.md) D7, option B); both pairing flags
+stay off in production until the device acceptance in the
+[ticketless transfer plan](../mobile-sync-ticketless-transfer-plan.md) is
+complete (see the [CloudFront deployment](../../deploy/cloudfront/README.md)).
 
 ## Evidence and verification limits
 

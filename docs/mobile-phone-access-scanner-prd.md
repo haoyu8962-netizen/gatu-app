@@ -1,5 +1,7 @@
 # Mobile phone access and scanner requirements
 
+> Correction, 2026-09-18: the server ticket (ticket API v2, envelope v2) described below was removed. Pairing is now a client-only encrypted-fragment transfer with envelope v3; the [ticketless transfer plan](mobile-sync-ticketless-transfer-plan.md) and [ADR 0015](adr/0015-link-device-alignment.md) D7 own the current protocol, and statements here about server issuance, ticket re-registration or proxy trust are history.
+
 Updated: 2026-09-11. This document replaces the retired pairing-code and application-owned WalletConnect scanner design. Current implementation uses a desktop-approved Agent QR, Privy as the wallet directory, ticket API v2, envelope v2 and draft v1.
 
 ## Product flow
@@ -31,4 +33,4 @@ The full QR remains a bearer credential containing the encrypted key and decrypt
 
 Use [the real-device runbook](mobile-phone-access-device-validation.md) for TC-1–TC-6, RD-1–RD-8 and TW-1–TW-3. All 11 physical rows currently remain Not run. Historical pairing-code/jsdom/scanner mock observations are not current physical acceptance evidence.
 
-Use [the remediation plan](mobile-sync-ticket-remediation-plan.md) and [production readiness procedure](mobile-sync-production-readiness.md) for build flags, proxy origin/IP trust, artifact evidence, the closed v2 baseline and rollback requirements. Production feature enablement is distinct from shipping the closed safety baseline.
+The ticket remediation plan and the EC2 production readiness procedure that this section used to cite were removed from the working tree on 2026-09-18 with the server ticket and the EC2 host (commit `5d393572` still holds them). Build flags and acceptance now follow the [ticketless transfer plan](mobile-sync-ticketless-transfer-plan.md); releases follow the [CloudFront deployment](../deploy/cloudfront/README.md). Production feature enablement is distinct from shipping with both flags off.
