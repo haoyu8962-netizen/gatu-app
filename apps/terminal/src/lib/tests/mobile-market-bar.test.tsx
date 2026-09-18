@@ -195,16 +195,17 @@ describe("MobileMarketBar", () => {
 		renderExpandedBar();
 
 		const tokenInfo = container.querySelector<HTMLElement>('[data-slot="mobile-spot-token-info"]');
-		expect(tokenInfo?.className).toContain("flex-col");
-		expect(tokenInfo?.className).toContain("items-start");
+		expect(tokenInfo?.className).toContain("items-center");
+		expect(tokenInfo?.className).not.toContain("flex-wrap");
 		expect(tokenInfo?.querySelector(`span[title="${BASE_TOKEN_ID}"]`)?.textContent).toBe("0x1111...1111");
 		const actionGroup = tokenInfo?.querySelector<HTMLElement>('[data-slot="mobile-spot-token-actions"]');
 		const explorerLink = tokenInfo?.querySelector<HTMLAnchorElement>('a[aria-label="Open token in explorer"]');
 		const copyButton = tokenInfo?.querySelector<HTMLButtonElement>('button[aria-label="Copy token address"]');
-		expect(actionGroup?.className).toContain("flex-wrap");
-		expect(explorerLink?.className).toContain("size-11");
+		expect(actionGroup?.className).toContain("-my-3");
+		expect(actionGroup?.className).not.toContain("flex-wrap");
+		expect(explorerLink?.className).toContain("h-11 w-9");
 		expect(explorerLink?.className).not.toContain("after:size-11");
-		expect(copyButton?.className).toContain("size-11");
+		expect(copyButton?.className).toContain("h-11 w-9");
 		expect(copyButton?.className).not.toContain("after:size-11");
 		expect(tokenInfo?.querySelector('[data-slot="mock-social-links"]')?.getAttribute("data-target-size")).toBe("touch");
 	});
@@ -342,7 +343,7 @@ describe("MobileMarketBar", () => {
 
 		const tokenInfo = container.querySelector<HTMLElement>('[data-slot="mobile-spot-token-info"]');
 		expect(tokenInfo?.querySelector("[title]")).toBeNull();
-		expect(tokenInfo?.querySelector('[data-slot="mobile-spot-token-actions"]')?.className).toContain("flex-wrap");
+		expect(tokenInfo?.querySelector('[data-slot="mobile-spot-token-actions"]')?.className).toContain("-my-3");
 		expect(tokenInfo?.querySelector('a[aria-label="Open token in explorer"]')).toBeNull();
 		expect(tokenInfo?.querySelector('button[aria-label="Copy token address"]')).toBeNull();
 		expect(tokenInfo?.querySelector('[data-slot="mock-social-links"]')).not.toBeNull();

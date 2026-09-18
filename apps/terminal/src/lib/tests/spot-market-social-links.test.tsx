@@ -86,7 +86,7 @@ describe("SpotMarketSocialLinks", () => {
 		const links = [...container.querySelectorAll("a")];
 		expect(links.map((link) => link.getAttribute("aria-label"))).toEqual(["X", "Telegram", "Website"]);
 		for (const link of links) {
-			expect(link.className).toContain("size-11");
+			expect(link.className).toContain("h-11 w-9");
 			expect(link.className).not.toContain("after:size-11");
 			expect(link.querySelector("svg")?.getAttribute("class")).toContain("size-3.5");
 		}
