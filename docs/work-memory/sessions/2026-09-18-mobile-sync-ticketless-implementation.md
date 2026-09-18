@@ -12,7 +12,7 @@
   "summary": "按 ADR 0015 D7 方案 B 完成代码与文档：信封 v3、TTL 2 分钟、揭示后 60 秒单调时钟窗口、桌面本地 syncId、手机端 syncId 本地去重、v1/v2 信封提示刷新；删除票据客户端/服务端/路由、Lambda 503 桩、CloudFront 转发与 EC2 时代 mobile-sync 发布脚本。定向测试与 typecheck 通过；pnpm build 因既有 trade-terminal-page 预算超限失败（改动不在该 chunk）；全量 vitest 余 8 个文件 32 项基线红（干净 HEAD 同样失败）。静态托管实测、真机矩阵、对抗安全复核未执行，生产开关保持关闭。",
   "thread": null,
   "baseCommit": "2242015f",
-  "commits": ["750a5113"],
+  "commits": ["750a5113", "e8ac17d7", "9b589891"],
   "sources": [
     { "path": "docs/mobile-sync-ticketless-transfer-plan.md" },
     { "path": "docs/adr/0015-link-device-alignment.md" },
@@ -71,6 +71,7 @@
 - F4：解密时拒绝 `createdAtMs` 超前本机超过 skew 的信封（`not_yet_valid`）；`draft-storage.ts` 新增 `getMobileSyncRemainingLifetimeMs`，手机持有已载入二维码与 sessionStorage 草稿的上限为 TTL + skew，路由到期计时改用同一规则（此前不含 skew）。
 - 小项：应用内扫码对 `unsupported_version` 显示「两端刷新」；桌面弹窗 `VisibleQrPanel` 的 React key 由含密钥的 URL 改为 `syncId`。
 - 未处理并需要决策或另行立项：F1（系统相机路径会把完整链接留在浏览器历史 / 历史同步，既有设计，未在真机证实）、F5（片段擦除在产物里并非零依赖最先执行）、CloudFront 对 `/mobile-agent-sync` 缺 `no-store` / `no-referrer`、擦除失败无兜底、路径大小写、Import 前不显示 owner、dev StrictMode。
+- 提交说明：`9b589891` 引入的新文案的本地化目录（含中文译文）被 lefthook 的 `lingui-extract` 钩子自动暂存进了前一个提交 `909999d0`（`orderbook-boot` 测试预热），HEAD 上内容一致，仅提交分组偏了一格；未推送，未改写历史。
 - 验证（2026-09-18，本地，修复后的工作区）：`pnpm --filter @gatu/terminal typecheck` 通过；改动的 9 个 TS/TSX 文件 Biome 通过；全量 `pnpm --filter @gatu/terminal test` 572 文件 6,360 用例通过、1 跳过（首次运行只有 `orderbook-boot` 的冷导入在全并发下超过 5 秒，单跑通过，与本任务无关；已另行提交文件级 `beforeAll` 预热后全绿）；`scripts` 两个 node 测试 29 通过，校验器对仓库模板的结构检查通过；`pnpm i18n:extract` 新增 1 条文案并补了中文译文，zh 余 5 条缺失为既有状态。修复后的产物未重新构建，也没有在浏览器里复测重复导入与未来时间戳两条路径，依据是单测与变异测试。
 
 ## 后续与替代关系
