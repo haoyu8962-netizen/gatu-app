@@ -324,7 +324,7 @@ describe("MobileTwapTab card", () => {
 
 		const tabs = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
 		expect(tabs.map((tab) => tab.textContent)).toEqual(["Current", "History", "Fill History"]);
-		expect(tabs.every((tab) => tab.className.includes("min-h-11"))).toBe(true);
+		expect(tabs.every((tab) => tab.className.includes("before:h-11"))).toBe(true);
 
 		act(() => tabs[1]?.click());
 		expect(container.textContent).toContain("Total Size");

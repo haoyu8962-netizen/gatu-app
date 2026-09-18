@@ -1,6 +1,7 @@
 import { Dropdown } from "@gatu/ui";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
+import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
 import type {
 	PositionDirectionFilter,
 	PositionMarginFilter,
@@ -72,7 +73,7 @@ export function PositionFilterToolbar({
 				size="xxs"
 				trigger={mobileDirectionTrigger}
 				triggerAriaLabel={_(msg`Filter positions by direction: ${directionLabel}`)}
-				triggerClassName="relative min-h-0 rounded-[7px] border border-market-close-stroke-card bg-surface px-[9px] py-1 text-xs leading-4 text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none hover:border-market-close-control hover:bg-surface hover:text-market-close-fg active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg"
+				triggerClassName={MOBILE_FILTER_CHIP_CLASS}
 				popupClassName="min-w-32"
 				align="start"
 				items={[
@@ -88,7 +89,7 @@ export function PositionFilterToolbar({
 				size="xxs"
 				trigger={mobileMarginTrigger}
 				triggerAriaLabel={_(msg`Filter positions by margin mode: ${marginLabel}`)}
-				triggerClassName="relative min-h-0 rounded-[7px] border border-market-close-stroke-card bg-surface px-[9px] py-1 text-xs leading-4 text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none hover:border-market-close-control hover:bg-surface hover:text-market-close-fg active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg"
+				triggerClassName={MOBILE_FILTER_CHIP_CLASS}
 				popupClassName="min-w-32"
 				align="start"
 				items={[

@@ -2,6 +2,7 @@ import { Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
@@ -34,8 +35,7 @@ interface Props {
 	scrollMode?: MobileDataScrollMode;
 }
 
-const filterTriggerClassName =
-	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-surface text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
+const filterTriggerClassName = MOBILE_FILTER_CHIP_CLASS;
 const footerActionClassName =
 	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle";
 export function MobileFundingTab(props: Props) {
@@ -149,11 +149,11 @@ function MobileFundingTabContent({
 							if (isFundingHistorySideFilter(value)) setDirectionFilter(value);
 						}}
 						options={[
-							{ value: "all", label: t`All Directions` },
+							{ value: "all", label: t`Direction` },
 							{ value: "long", label: t`Long` },
 							{ value: "short", label: t`Short` },
 						]}
-						className="w-28 shrink-0 [&>label]:sr-only"
+						className="w-auto shrink-0 [&>label]:sr-only"
 						triggerClassName={filterTriggerClassName}
 					/>
 				</div>

@@ -4,6 +4,7 @@ import type { UserFillsResponse } from "@nktkas/hyperliquid";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
@@ -39,8 +40,7 @@ type TradeHistoryDirectionFilter = "all" | "buy" | "sell";
 type TradeHistoryRoleFilter = "all" | "maker" | "taker";
 type UserFill = UserFillsResponse[number];
 
-const filterTriggerClassName =
-	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-surface text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
+const filterTriggerClassName = MOBILE_FILTER_CHIP_CLASS;
 const footerActionClassName =
 	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle";
 
@@ -107,16 +107,16 @@ function MobileHistoryTabContent({
 	);
 	const { expandedKeys, setExpanded } = disclosure;
 	const typeOptions = [
-		{ value: "all", label: t`All types` },
+		{ value: "all", label: t`Type` },
 		...(["trade", "liquidation"] as const).map((value) => ({ value, label: getTypeFilterLabel(value) })),
 	];
 	const directionOptions = [
-		{ value: "all", label: t`All Directions` },
+		{ value: "all", label: t`Direction` },
 		{ value: "buy", label: t`Buy` },
 		{ value: "sell", label: t`Sell` },
 	];
 	const roleOptions = [
-		{ value: "all", label: t`All roles` },
+		{ value: "all", label: t`Role` },
 		{ value: "maker", label: t`Maker` },
 		{ value: "taker", label: t`Taker` },
 	];
@@ -213,7 +213,7 @@ function MobileHistoryTabContent({
 							if (isTradeHistoryTypeFilter(value)) setTypeFilter(value);
 						}}
 						options={typeOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
+						className="w-auto shrink-0 [&>label]:sr-only"
 						triggerClassName={filterTriggerClassName}
 					/>
 					<Select
@@ -225,7 +225,7 @@ function MobileHistoryTabContent({
 							if (isTradeHistoryDirectionFilter(value)) setDirectionFilter(value);
 						}}
 						options={directionOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
+						className="w-auto shrink-0 [&>label]:sr-only"
 						triggerClassName={filterTriggerClassName}
 					/>
 					<Select
@@ -237,7 +237,7 @@ function MobileHistoryTabContent({
 							if (isTradeHistoryRoleFilter(value)) setRoleFilter(value);
 						}}
 						options={roleOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
+						className="w-auto shrink-0 [&>label]:sr-only"
 						triggerClassName={filterTriggerClassName}
 					/>
 				</div>

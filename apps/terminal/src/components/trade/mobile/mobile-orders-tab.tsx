@@ -3,6 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ListIcon } from "@phosphor-icons/react";
 import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
@@ -1011,7 +1012,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 						{ value: "limit", label: t`Limit` },
 						{ value: "trigger", label: t`Trigger` },
 					]}
-					triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-surface px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
+					triggerClassName={MOBILE_FILTER_CHIP_CLASS}
 					popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
 					className="w-auto shrink-0 [&>label]:sr-only"
 				/>
@@ -1026,7 +1027,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 						{ value: "buy", label: t`Buy` },
 						{ value: "sell", label: t`Sell` },
 					]}
-					triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-surface px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
+					triggerClassName={MOBILE_FILTER_CHIP_CLASS}
 					popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
 					className="w-auto shrink-0 [&>label]:sr-only"
 				/>

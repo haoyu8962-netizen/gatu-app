@@ -61,7 +61,7 @@ describe("mobile position filter row", () => {
 		for (const chip of [direction, margin]) {
 			expect(chip?.className).toContain("rounded-[7px]");
 			expect(chip?.className).toContain("px-[9px]");
-			expect(chip?.className).toContain("py-1");
+			expect(chip?.className).toContain("!h-[27px]");
 			expect(chip?.className).toContain("text-xs");
 			expect(chip?.className).toContain("after:h-11");
 		}

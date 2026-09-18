@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Mobile account tabs share one 36px toolbar row and one filter-chip style (27px, 7px radius,
+  auto width, placeholder labels such as Type / Direction / Role / Status), the tab row is 40px
+  with a 44px touch area, and the TWAP sub-view row matches the toolbar height.
 - The mobile Account tab now shows the zero-value overview with inert Deposit / Withdraw while
   disconnected, and every mobile account tab (positions, balances, orders, TWAP and history)
   keeps its filter toolbar inert above an empty list, matching the desktop disconnected
