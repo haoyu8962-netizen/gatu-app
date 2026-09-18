@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 // @vitest-environment jsdom
 
-import { act, createElement, Fragment, type ReactNode, useEffect } from "react";
+import { act, createElement, Fragment, type ReactNode, useEffect, useSyncExternalStore } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
@@ -46,6 +46,27 @@ const testState = vi.hoisted(() => ({
 	walletModalWrapperFailures: 0,
 	walletsReady: true,
 }));
+
+const mobileSyncStore = vi.hoisted(() => {
+	let open = false;
+	const listeners = new Set<() => void>();
+	return {
+		get open() {
+			return open;
+		},
+		set(next: boolean) {
+			if (open === next) return;
+			open = next;
+			for (const listener of listeners) listener();
+		},
+		subscribe(listener: () => void) {
+			listeners.add(listener);
+			return () => {
+				listeners.delete(listener);
+			};
+		},
+	};
+});
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -196,6 +217,14 @@ vi.mock("@/lib/wallet/privy-wagmi", () => ({
 	getPrivyEmailAddress: () => testState.emailAddress,
 }));
 
+vi.mock("@/stores/use-global-modal-store", () => ({
+	useMobileSyncModalOpen: () => useSyncExternalStore(mobileSyncStore.subscribe, () => mobileSyncStore.open),
+	useMobileSyncModalActions: () => ({
+		open: () => mobileSyncStore.set(true),
+		close: () => mobileSyncStore.set(false),
+	}),
+}));
+
 vi.mock("@/lib/error-reporting/client", () => ({
 	reportClientError: vi.fn(),
 }));
@@ -304,6 +333,7 @@ describe("UserMenu", () => {
 		testState.mobileSyncModalMounts = 0;
 		testState.mobileSyncModalOpen = false;
 		testState.mobileSyncModalUnmounts = 0;
+		mobileSyncStore.set(false);
 		testState.ready = true;
 		testState.sessionMode = "disconnected";
 		window.localStorage.clear();
@@ -481,6 +511,56 @@ describe("UserMenu", () => {
 		expect(testState.mobileSyncModalModuleLoads).toBe(1);
 		expect(testState.mobileSyncModalMounts).toBe(2);
 		expect(testState.mobileSyncModalOpen).toBe(false);
+	});
+
+	it("mounts the single mobile sync host when the shared modal store opens it from outside the menu", async () => {
+		testState.authenticated = true;
+		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
+		testState.hasWalletAccess = true;
+		testState.isConnected = true;
+		testState.sessionMode = "wallet";
+		let markModuleReady: (() => void) | undefined;
+		const moduleReady = new Promise<void>((resolve) => {
+			markModuleReady = resolve;
+		});
+		testState.mobileSyncModalModuleReady = () => markModuleReady?.();
+
+		await act(async () => {
+			root.render(createElement(UserMenu, { variant: "desktop-nav" }));
+		});
+		expect(testState.mobileSyncModalModuleLoads).toBe(0);
+		expect(container.querySelector('[role="dialog"]')).toBeNull();
+
+		await act(async () => {
+			mobileSyncStore.set(true);
+			await moduleReady;
+		});
+		await vi.waitFor(() => expect(testState.mobileSyncModalMounts).toBe(1));
+		expect(testState.mobileSyncModalModuleLoads).toBe(1);
+		expect(testState.mobileSyncModalOpen).toBe(true);
+		expect(container.querySelectorAll('[data-testid="mobile-sync-modal"]')).toHaveLength(1);
+
+		const linkMobileButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Link mobile device",
+		);
+		await act(async () => linkMobileButton?.click());
+		expect(testState.mobileSyncModalMounts).toBe(1);
+		expect(testState.mobileSyncModalUnmounts).toBe(0);
+		expect(container.querySelectorAll('[data-testid="mobile-sync-modal"]')).toHaveLength(1);
+
+		await act(async () => {
+			container.querySelector<HTMLButtonElement>('[data-testid="mobile-sync-modal"]')?.click();
+		});
+		expect(mobileSyncStore.open).toBe(false);
+		expect(testState.mobileSyncModalOpen).toBe(false);
+		expect(testState.mobileSyncModalUnmounts).toBe(0);
+
+		await act(async () => {
+			mobileSyncStore.set(true);
+		});
+		expect(testState.mobileSyncModalMounts).toBe(1);
+		expect(testState.mobileSyncModalOpen).toBe(true);
+		expect(container.querySelectorAll('[data-testid="mobile-sync-modal"]')).toHaveLength(1);
 	});
 
 	it("gives the anonymous desktop CTA the shared minimum width and wallet action", () => {

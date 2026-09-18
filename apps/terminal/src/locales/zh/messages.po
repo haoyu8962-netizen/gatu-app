@@ -779,17 +779,25 @@ msgstr "等待验证授权"
 msgid "Approve a mobile trading key"
 msgstr "授权移动交易密钥"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
+msgstr "在此桌面授权一个交易密钥，并仅通过二维码将其转移到手机。"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
 msgstr "在钱包中批准"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Approve in wallet..."
-msgstr "在钱包中授权…"
+#~ msgid "Approve in wallet..."
+#~ msgstr "在钱包中授权…"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve mobile trading key"
 msgstr "授权移动交易密钥"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Approve QR code with wallet..."
+msgstr "使用钱包批准二维码..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approving a new mobile key replaces the previous mobile key."
@@ -1547,6 +1555,10 @@ msgstr "已关闭"
 msgid "Closed PNL"
 msgstr "已平仓盈亏"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Closes in {remainingSeconds}s"
+msgstr "{remainingSeconds} 秒后关闭"
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Closing cost"
 msgstr "平仓成本"
@@ -1670,8 +1682,8 @@ msgid "Confirm revoke in wallet"
 msgstr "在钱包中确认撤销"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Confirm the approval only in the selected master wallet."
-msgstr "仅在所选主钱包中确认授权。"
+#~ msgid "Confirm the approval only in the selected master wallet."
+#~ msgstr "仅在所选主钱包中确认授权。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Confirm the exact public operation in your master wallet."
@@ -1980,8 +1992,8 @@ msgid "Create a code after Hyperliquid confirms your eligibility. It cannot be c
 msgstr "Hyperliquid 确认您符合条件后即可创建推荐码；之后无法在此页面更改。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Create a desktop trading key and transfer it only through a QR code."
-msgstr "创建桌面交易密钥，并仅通过二维码传输。"
+#~ msgid "Create a desktop trading key and transfer it only through a QR code."
+#~ msgstr "创建桌面交易密钥，并仅通过二维码传输。"
 
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Create a TWAP order from Advanced order settings to execute it in smaller batches."
@@ -1992,8 +2004,8 @@ msgid "Create code"
 msgstr "创建推荐码"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Create phone access"
-msgstr "创建手机访问权限"
+#~ msgid "Create phone access"
+#~ msgstr "创建手机访问权限"
 
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-code-card.tsx
@@ -2417,7 +2429,7 @@ msgstr "显示与语言"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Display units"
-msgstr ""
+msgstr "显示单位"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -2432,8 +2444,8 @@ msgid "Distance to mark {markDistanceLabel}"
 msgstr "距标记价 {markDistanceLabel}"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Do not photograph, copy, share, or screen-record the QR code."
-msgstr "请勿拍照、复制、分享或录屏保存此二维码。"
+#~ msgid "Do not photograph, copy, share, or screen-record the QR code."
+#~ msgstr "请勿拍照、复制、分享或录屏保存此二维码。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Do not submit again while Hyperliquid history is checked."
@@ -3780,6 +3792,8 @@ msgid "Link Desktop Wallet"
 msgstr "关联桌面钱包"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/header/desktop-utilities-menu.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Link mobile device"
 msgstr "关联移动设备"
@@ -4885,6 +4899,10 @@ msgstr "离线"
 #: src/components/trade/components/wallet-modal.tsx
 msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
 msgstr "在 iPhone 或 iPad 上，打开“分享”菜单，选择“添加到主屏幕”，然后从主屏幕启动 gatu。"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code, or scan it with your phone camera."
+msgstr "在手机上打开 gatu，点击 Connect，再点「关联桌面钱包」扫描此码，或直接用手机相机扫描。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "One-day validator lock"
@@ -6094,6 +6112,10 @@ msgstr "偿还"
 msgid "Replaces the current mobile Agent with a temporary inaccessible key."
 msgstr "使用一个临时且不可访问的密钥替换当前移动交易密钥。"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
+msgstr "将替换当前移动密钥 <0>{existingMobileAgentLabel}</0>"
+
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Request not confirmed"
 msgstr "请求尚未确认"
@@ -6186,6 +6208,10 @@ msgid "Retry account data"
 msgstr "重试账户数据"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Retry check"
+msgstr "重新检查"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Retry read-only verification"
 msgstr "重试只读验证"
 
@@ -6251,7 +6277,6 @@ msgid "Review"
 msgstr "核对"
 
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Review again"
 msgstr "重新检查"
@@ -6273,12 +6298,12 @@ msgid "Review only"
 msgstr "仅查看"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Review phone access"
-msgstr "检查手机访问权限"
+#~ msgid "Review phone access"
+#~ msgstr "检查手机访问权限"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Review phone access with the selected master wallet before approving it."
-msgstr "授权前，请使用所选主钱包检查手机访问权限。"
+#~ msgid "Review phone access with the selected master wallet before approving it."
+#~ msgstr "授权前，请使用所选主钱包检查手机访问权限。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Review request"
@@ -6500,8 +6525,12 @@ msgid "Scan only with your phone. Anyone who captures this QR can use the tradin
 msgstr "请仅使用您的手机扫描。任何截取此二维码的人都能使用该交易密钥。"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
-msgid "Scan the QR shown by Link Mobile Device on your desktop."
-msgstr "扫描桌面端“关联移动设备”显示的二维码。"
+msgid "Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device)."
+msgstr "扫描桌面端 gatu 右上角二维码图标（关联移动设备）显示的二维码。"
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+#~ msgid "Scan the QR shown by Link Mobile Device on your desktop."
+#~ msgstr "扫描桌面端“关联移动设备”显示的二维码。"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -7153,6 +7182,10 @@ msgstr "状态未确认"
 msgid "Stay Connected"
 msgstr "保持连接"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Stays on this phone until {validUntilLabel} unless you disconnect it here or revoke it from the master wallet on desktop."
+msgstr "该密钥将保留在此手机直到 {validUntilLabel}，除非在此断开或在桌面用主钱包撤销。"
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Step {currentStep} of 3"
 msgstr "第 {currentStep} 步，共 3 步"
@@ -7655,6 +7688,10 @@ msgstr "Hyperliquid 充值路由在签名前已变化。请检查更新后的路
 msgid "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
 msgstr "Hyperliquid 提现路由已更改。请检查更新后的路由和费用，然后再次提交。"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The key can trade on this account (orders, cancels, leverage, vault and sub-account moves) but cannot withdraw or send funds out of Hyperliquid; withdrawals and sends still need this master wallet."
+msgstr "该密钥可在此账户交易（下单、撤单、杠杆、金库与子账户划转），但不能提现或把资金转出 Hyperliquid；提现与发送仍需此主钱包。"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "The leader receives the commission shown above from profits."
 msgstr "管理者会从利润中收取上方显示的佣金。"
@@ -7746,6 +7783,10 @@ msgstr "私钥在此桌面设备上创建，并嵌入二维码中。"
 #: src/components/vaults/vaults-list.tsx
 msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
 msgstr "无法验证公开金库数据源。不会改为显示缓存数据或其他网络的数据行。"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR closes automatically in about {announcedSeconds} seconds"
+msgstr "二维码将在约 {announcedSeconds} 秒后自动关闭"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR stays hidden until you deliberately reveal it."
@@ -8036,8 +8077,8 @@ msgid "This mobile trading key has expired."
 msgstr "此移动交易密钥已过期。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This one-time QR closes automatically within 60 seconds."
-msgstr "此一次性二维码会在 60 秒内自动关闭。"
+#~ msgid "This one-time QR closes automatically within 60 seconds."
+#~ msgstr "此一次性二维码会在 60 秒内自动关闭。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This one-time QR could not be created. Try revealing a new QR."
@@ -8067,6 +8108,11 @@ msgstr "该委托数据不完整，无法修改。请刷新后重试。"
 msgid "This order type cannot be modified safely. Cancel and replace it instead."
 msgstr "无法安全修改此类委托，请取消后重新下单。"
 
+#: src/hooks/trade/use-deposit-availability.ts
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop."
+msgstr "此手机使用桌面授权的交易密钥。存款、提款和划转需要在桌面连接主钱包。"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "This position changed sides. Close and reopen this dialog before submitting."
@@ -8090,6 +8136,10 @@ msgstr "该仓位已不再使用逐仓保证金。"
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR belongs to a different owner account."
 msgstr "此二维码属于其他所有者账户。"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This QR enables trading on your phone, but not deposits or withdrawals. Do not share the QR or screenshots of it with anyone. Make sure you are not sharing your screen."
+msgstr "此二维码支持在手机上交易，但不支持存款和提款。不要与他人分享此二维码或其截图。确保您没有共享您的屏幕。"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This QR is invalid or incomplete. Create a new QR on desktop."
@@ -8264,7 +8314,7 @@ msgstr "合计"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Total ({sizeToken})"
-msgstr ""
+msgstr "合计 ({sizeToken})"
 
 #: src/components/referrals/referral-rewards-card.tsx
 #~ msgid "Total claimable"
@@ -9272,6 +9322,10 @@ msgstr "在区块浏览器中查看"
 msgid "Volume"
 msgstr "成交量"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Wait for the account check to finish before approving a mobile trading key."
+msgstr "请等待账户检查完成后再授权移动交易密钥。"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Waiting for chain confirmation"
 msgstr "等待链上确认"
@@ -9623,8 +9677,8 @@ msgid "Your funds were successfully deposited."
 msgstr "您的资金已成功充值。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
-msgstr "您的主钱包将授权一个交易密钥。该密钥无法提取资金。"
+#~ msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
+#~ msgstr "您的主钱包将授权一个交易密钥。该密钥无法提取资金。"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Your referral"

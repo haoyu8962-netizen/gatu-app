@@ -23,6 +23,7 @@ interface Props {
 	wallet: ReactNode;
 	theme: ReactNode;
 	language: ReactNode;
+	linkMobile?: ReactNode;
 	settings: ReactNode;
 	compactUtilities?: ReactNode;
 	compactHiddenWhenConnected: boolean;
@@ -54,6 +55,7 @@ export function TopNavView({
 	wallet,
 	theme,
 	language,
+	linkMobile,
 	settings,
 	compactUtilities,
 	compactHiddenWhenConnected,
@@ -120,6 +122,7 @@ export function TopNavView({
 				<div className={cn("contents", compactHiddenWhenConnected && "nav-compact:hidden")}>
 					{theme}
 					{language}
+					{linkMobile}
 					{settings}
 				</div>
 				{compactUtilities && <div className="hidden nav-compact:inline-flex">{compactUtilities}</div>}

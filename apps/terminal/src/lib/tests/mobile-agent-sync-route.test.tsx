@@ -400,6 +400,29 @@ describe("MobileAgentSyncRoute", () => {
 		expect(container.textContent).toContain("Phone access ready");
 	});
 
+	it("pins the imported key to local storage scope and discloses how long it stays on the phone", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const { formatDateTime } = await import("@/lib/format");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(testState.persistAgentForRegistration).toHaveBeenCalledTimes(1);
+		expect(testState.persistAgentForRegistration.mock.calls[0]).toHaveLength(5);
+		expect(testState.persistAgentForRegistration.mock.calls[0]?.[4]).toEqual({ scope: "local" });
+		expect(container.textContent).toContain("Phone access ready");
+		expect(container.textContent).toContain(
+			`Stays on this phone until ${formatDateTime(sync.agentValidUntilMs)} unless you disconnect it here or revoke it from the master wallet on desktop.`,
+		);
+	});
+
 	it("fails closed before local persistence when another device consumed the QR", async () => {
 		const sync = await createSyncFixture();
 		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];

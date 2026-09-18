@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { classifyQrValue, shouldShowQrFeedback } from "../mobile-sync/qr-classification";
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
 
 describe("QR classification", () => {
 	it("classifies WalletConnect URIs", () => {
@@ -29,6 +33,16 @@ describe("QR classification", () => {
 				type: "unsupported",
 			});
 		}
+	});
+
+	it("rejects an official-style same-origin ?link= query without decoding it", () => {
+		const origin = "https://app.gatu.test";
+		const decode = vi.spyOn(globalThis, "atob");
+		const link = Buffer.from(JSON.stringify({ address: "0x1111", key: "0xsecret" })).toString("base64");
+
+		expect(classifyQrValue(`${origin}/trade?link=${link}`, origin)).toEqual({ type: "unsupported" });
+		expect(classifyQrValue(`${origin}/mobile-agent-sync?link=${link}`, origin)).toEqual({ type: "unsupported" });
+		expect(decode).not.toHaveBeenCalled();
 	});
 
 	it("classifies unrelated values as unsupported without exposing them as a supported link", () => {

@@ -32,6 +32,7 @@ type GlobalModal =
 	| { type: "internalTransfer"; direction: TransferDirection }
 	| { type: "send"; asset: string; accountType: SendAccountType }
 	| { type: "settings" }
+	| { type: "mobileSync" }
 	| { type: "swap"; fromToken: string; toToken?: string; mode: SwapMode }
 	| { type: "commandMenu" }
 	| { type: "positionMarketClose"; session: PositionMarketCloseSession }
@@ -62,6 +63,11 @@ interface SendActions {
 }
 
 interface SettingsActions {
+	open: () => void;
+	close: () => void;
+}
+
+interface MobileSyncActions {
 	open: () => void;
 	close: () => void;
 }
@@ -105,6 +111,7 @@ interface GlobalModalState {
 	transferActions: TransferActions;
 	sendActions: SendActions;
 	settingsActions: SettingsActions;
+	mobileSyncActions: MobileSyncActions;
 	swapActions: SwapActions;
 	commandMenuActions: CommandMenuActions;
 	positionMarketCloseActions: PositionMarketCloseStoreActions;
@@ -153,6 +160,10 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 		settingsActions: {
 			open: () => open({ type: "settings" }),
 			close: () => close("settings"),
+		},
+		mobileSyncActions: {
+			open: () => open({ type: "mobileSync" }),
+			close: () => close("mobileSync"),
 		},
 		swapActions: {
 			open: (fromToken = DEFAULT_QUOTE_TOKEN, toToken) => open({ type: "swap", fromToken, toToken, mode: "spot" }),
@@ -289,6 +300,13 @@ export function useSettingsDialogOpen() {
 }
 export function useSettingsDialogActions() {
 	return useGlobalModalStore((s) => s.settingsActions);
+}
+
+export function useMobileSyncModalOpen() {
+	return useGlobalModalStore((s) => s.modal?.type === "mobileSync");
+}
+export function useMobileSyncModalActions() {
+	return useGlobalModalStore((s) => s.mobileSyncActions);
 }
 
 export function useSwapModalOpen() {

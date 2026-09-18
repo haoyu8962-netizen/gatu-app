@@ -1,4 +1,6 @@
-# 移动配对票据：生产发布流程
+# 移动配对票据：生产发布流程（历史资料）
+
+> **已退役（2026-09-17）。** 本文描述的 EC2 + Caddy + `deploy.sh` 发布流程、`/opt/gatu/mobile-sync-edge-ready` 入口文件与 `prepare` / `promote` 严格发布随 EC2 停机一起退役，退役核对见[退役记录](work-memory/sessions/2026-09-17-ec2-retirement.md)。当前生产与测试网由 CloudFront + S3 + Lambda 提供服务（见 [CloudFront 发布](../deploy/cloudfront/README.md)）：Lambda 处理器（`apps/terminal/src/edge/lambda-handler.ts`）对 `POST /mobile-agent-sync-ticket` 固定返回 503（无共享票据存储），且两个构建开关 `VITE_MOBILE_PAIRING_CREATE_ENABLED` / `VITE_MOBILE_PAIRING_IMPORT_ENABLED` 均未开启，因此移动配对在生产环境不可达。替代方案由 [ADR 0015](adr/0015-link-device-alignment.md) D7 决定（拟议、待定）；决定前生产开关保持关闭。以下正文保留为历史记录，不再描述现状。
 
 更新：2026-09-12。常规部署允许直接开启配对；原先“必须先关闭基线、完成外部真机证明再开启”的发布限制已调整。自动化协议校验、精确 owner 签名、Agent 对账、法律/地区限制及失败关闭的应用行为不变。
 

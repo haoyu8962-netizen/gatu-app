@@ -9,11 +9,13 @@ import {
 } from "@gatu/hl-react";
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { CheckCircleIcon, DeviceMobileIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { type FormEvent, forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
+import { formatDateTime } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
 	consumeBootstrappedMobileAgentSyncUrl,
@@ -82,6 +84,7 @@ type ImportStatus =
 			state: "success";
 			userAddress: string;
 			agentAddress: string;
+			agentValidUntilMs: number;
 			localCleanupIncomplete: boolean;
 	  };
 
@@ -303,7 +306,9 @@ function MobileAgentSyncRoute() {
 			if (abortController.signal.aborted) throw new MobileAgentStorageError();
 
 			registrationToRollback.persistenceAttempted = true;
-			const storageResult = await persistAgentForRegistration(registration.epoch, privateKey, publicKey, metadata);
+			const storageResult = await persistAgentForRegistration(registration.epoch, privateKey, publicKey, metadata, {
+				scope: "local",
+			});
 			if (storageResult.status !== "stored") throw new MobileAgentStorageError();
 			if (abortController.signal.aborted) throw new MobileAgentStorageError();
 
@@ -325,6 +330,7 @@ function MobileAgentSyncRoute() {
 				state: "success",
 				userAddress: imported.userAddress,
 				agentAddress: imported.agentAddress,
+				agentValidUntilMs: imported.agentValidUntilMs,
 				localCleanupIncomplete,
 			});
 		} catch (caughtError) {
@@ -441,6 +447,7 @@ function MobileAgentSyncRoute() {
 							<SuccessPanel
 								userAddress={status.userAddress}
 								agentAddress={status.agentAddress}
+								agentValidUntilMs={status.agentValidUntilMs}
 								localCleanupIncomplete={status.localCleanupIncomplete}
 							/>
 						) : (
@@ -570,12 +577,17 @@ function MobileSyncTicketErrorText({ result }: { result: Exclude<MobileSyncTicke
 function SuccessPanel({
 	userAddress,
 	agentAddress,
+	agentValidUntilMs,
 	localCleanupIncomplete,
 }: {
 	userAddress: string;
 	agentAddress: string;
+	agentValidUntilMs: number;
 	localCleanupIncomplete: boolean;
 }) {
+	useLingui();
+	const validUntilLabel = formatDateTime(agentValidUntilMs);
+
 	return (
 		<div className="space-y-3">
 			<div className="flex items-start gap-2 rounded-8 border border-stroke-weak bg-fill-weak p-3">
@@ -587,6 +599,12 @@ function SuccessPanel({
 					<p className="mt-1 truncate font-mono text-xs text-fg-muted">{agentAddress}</p>
 				</div>
 			</div>
+			<p className="text-xs text-fg-muted">
+				<Trans>
+					Stays on this phone until {validUntilLabel} unless you disconnect it here or revoke it from the master wallet
+					on desktop.
+				</Trans>
+			</p>
 			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3 text-xs">
 				<p className="text-fg-muted">
 					<Trans>Owner account</Trans>

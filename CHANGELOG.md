@@ -38,6 +38,22 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - Desktop navigation keeps Vaults, Staking, Referrals and Leaderboard visible for disconnected
   visitors down to 1101px, moves the Earn placeholder into More at compact widths, and drives the
   More menu from one navigation configuration.
+- Link mobile device gains a header QR icon beside settings and a matching compact utilities
+  menu entry; both share the user-menu modal instance and appear only for an exact-owner session
+  with the create-and-reveal flag enabled (ADR 0015).
+- The Link mobile device modal approves in one step: opening runs read-only checks, the single
+  `Approve mobile trading key` button signs, and the pending label reads
+  `Approve QR code with wallet...`.
+- The pre-approval panel merges the create and review points, lists what the key can and cannot
+  do, and adds phone instructions (open gatu on the phone, tap Connect, then Link Desktop
+  Wallet); the screen-sharing warning now appears before `Hold to reveal QR`.
+- `Hold to reveal QR` draws its progress as a ring inside the button, and the revealed panel
+  shows a visible seconds countdown to auto-close derived from the envelope and ticket lifetimes.
+- On a phone using a desktop-authorised trading key, Deposit, Withdraw and Transfer stay visible
+  but disabled with one reason that the master wallet must be connected on desktop.
+- The Link Desktop scanner selects the back camera after the stream starts and tells the user to
+  tap the QR icon in the desktop header; importing stores the key in this phone's local scope and
+  says so, together with the expiry date and the desktop revoke path.
 
 ### Fixed
 
@@ -57,6 +73,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - The terminal no longer stays blank when the persisted locale and the startup fonts become
   usable between its first render and its readiness effect, which reliably happened in
   development builds where React runs effects twice.
+
+### Known
+
+- Mobile pairing is not reachable on the CloudFront deployment: `POST /mobile-agent-sync-ticket`
+  answers 503 from the Lambda handler and both `VITE_MOBILE_PAIRING_*` flags stay off, so the
+  entries above are compiled out there until the transport decision in ADR 0015 D7 lands.
 
 ### Changed
 

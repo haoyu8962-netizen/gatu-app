@@ -23,6 +23,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const overviewTitleId = useId();
+	const depositUnavailableId = useId();
 	const transferDescriptionId = useId();
 	const transferUnavailableId = useId();
 	const withdrawUnavailableId = useId();
@@ -69,8 +70,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		: transferDescriptionId;
 	const depositGeoBlocked =
 		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
-	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
-	const showsSecondaryFundsActions = !depositGeoBlocked && showsFundsActions;
+	const showsSecondaryFundsActions = isConnected && !depositGeoBlocked;
 
 	const showsEmailDeposit = !isConnected && depositAvailability.path === "sponsored";
 	const disconnectedDepositNotice = showsEmailDeposit
@@ -99,6 +99,11 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 				{showsSecondaryFundsActions && withdrawDisabledReason ? (
 					<span id={withdrawUnavailableId} className="sr-only">
 						{withdrawDisabledReason}
+					</span>
+				) : null}
+				{showsSecondaryFundsActions && depositNotice ? (
+					<span id={depositUnavailableId} className="sr-only">
+						{depositNotice}
 					</span>
 				) : null}
 
@@ -210,22 +215,27 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					{isConnected && depositGeoBlocked && depositNotice ? (
 						<p className="text-center text-sm text-fg-muted">{depositNotice}</p>
 					) : null}
-					{isConnected && !depositGeoBlocked && showsFundsActions ? (
+					{showsSecondaryFundsActions ? (
 						<div className="space-y-2">
 							{depositNotice ? <output className="text-center text-xs text-fg-muted">{depositNotice}</output> : null}
 							<div className="grid grid-cols-2 gap-2">
-								<Button
-									variant="filled"
-									intent="brand"
-									size="md"
-									disabled={!depositAvailability.available}
-									onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-									aria-label={t`Deposit`}
-									title={depositNotice ?? undefined}
-									className="min-h-11 w-full"
-								>
-									{t`Deposit`}
-								</Button>
+								<Tooltip content={depositNotice} side="top">
+									<span className="inline-flex w-full">
+										<Button
+											variant="filled"
+											intent="brand"
+											size="md"
+											disabled={!depositAvailability.available}
+											focusableWhenDisabled
+											aria-describedby={depositNotice ? depositUnavailableId : undefined}
+											onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+											aria-label={t`Deposit`}
+											className="min-h-11 w-full"
+										>
+											{t`Deposit`}
+										</Button>
+									</span>
+								</Tooltip>
 								<Tooltip content={withdrawDisabledReason} side="top">
 									<span className="inline-flex w-full">
 										<Button

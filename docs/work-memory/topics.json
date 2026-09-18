@@ -31,7 +31,7 @@
 	{
 		"id": "pairing-release",
 		"title": "移动配对与发布校验",
-		"documents": ["docs/mobile-sync-production-readiness.md", "deploy/README.md"]
+		"documents": ["docs/adr/0015-link-device-alignment.md", "deploy/cloudfront/README.md"]
 	},
 	{
 		"id": "work-memory",

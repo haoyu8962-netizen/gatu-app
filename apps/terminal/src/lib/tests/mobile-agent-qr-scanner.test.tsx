@@ -16,11 +16,40 @@ const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 const featureState = vi.hoisted(() => ({ importEnabled: true }));
 
 const scannerState = {
-	callback: null as Parameters<QrScannerStart>[2] | null,
+	callback: null as Parameters<QrScannerStart>[1] | null,
 	startScanner: vi.fn<QrScannerStart>(),
 	controlsStop: vi.fn(),
 	trackStop: vi.fn(),
 };
+
+const qrScannerLibrary = vi.hoisted(() => ({
+	constructorCalls: [] as Array<{ video: HTMLVideoElement; options: Record<string, unknown> | undefined }>,
+	destroy: vi.fn(),
+	listCameras: vi.fn<(requestLabels?: boolean) => Promise<Array<{ id: string; label: string }>>>(),
+	onDecode: null as ((result: { data: string }) => void) | null,
+	setCamera: vi.fn<(deviceId: string) => Promise<void>>(),
+	start: vi.fn<() => Promise<void>>(),
+	stop: vi.fn(),
+}));
+
+vi.mock("qr-scanner", () => {
+	class MockQrScanner {
+		static listCameras = qrScannerLibrary.listCameras;
+		start = qrScannerLibrary.start;
+		stop = qrScannerLibrary.stop;
+		destroy = qrScannerLibrary.destroy;
+		setCamera = qrScannerLibrary.setCamera;
+		constructor(
+			video: HTMLVideoElement,
+			onDecode: (result: { data: string }) => void,
+			options?: Record<string, unknown>,
+		) {
+			qrScannerLibrary.constructorCalls.push({ video, options });
+			qrScannerLibrary.onDecode = onDecode;
+		}
+	}
+	return { default: MockQrScanner };
+});
 
 vi.mock("@lingui/react/macro", () => ({
 	Trans: ({ children }: { children: ReactNode }) => createElement(Fragment, null, children),
@@ -90,7 +119,7 @@ describe("MobileAgentQrScanner", () => {
 		root = createI18nRoot(container);
 		scannerState.callback = null;
 		scannerState.startScanner.mockReset();
-		scannerState.startScanner.mockImplementation(async (_constraints, video, callback) => {
+		scannerState.startScanner.mockImplementation(async (video, callback) => {
 			scannerState.callback = callback;
 			Object.defineProperty(video, "srcObject", {
 				value: { getTracks: () => [{ stop: scannerState.trackStop }] },
@@ -131,18 +160,15 @@ describe("MobileAgentQrScanner", () => {
 			);
 		});
 		expect(scannerState.startScanner).not.toHaveBeenCalled();
+		expect(container.textContent).toContain(
+			"Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device).",
+		);
 
 		act(() => findButton(container, "Start camera")?.click());
 		await flushAsyncWork();
 
-		expect(scannerState.startScanner).toHaveBeenCalledWith(
-			{
-				audio: false,
-				video: { facingMode: { ideal: "environment" } },
-			},
-			expect.any(HTMLVideoElement),
-			expect.any(Function),
-		);
+		expect(scannerState.startScanner).toHaveBeenCalledWith(expect.any(HTMLVideoElement), expect.any(Function));
+		expect(scannerState.startScanner.mock.calls[0]).toHaveLength(2);
 
 		act(() => {
 			scannerState.callback?.(sync.url, { stop: scannerState.controlsStop });
@@ -285,5 +311,127 @@ describe("MobileAgentQrScanner", () => {
 		expect(scannerState.startScanner).not.toHaveBeenCalled();
 		expect(container.textContent).toContain("temporarily unavailable");
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+	});
+});
+
+describe("startBrowserQrScanner", () => {
+	function createVideo(activeDeviceId: string | undefined): HTMLVideoElement {
+		const video = document.createElement("video");
+		Object.defineProperty(video, "srcObject", {
+			value:
+				activeDeviceId === undefined
+					? null
+					: { getVideoTracks: () => [{ getSettings: () => ({ deviceId: activeDeviceId }) }] },
+			writable: true,
+			configurable: true,
+		});
+		return video;
+	}
+
+	beforeEach(() => {
+		qrScannerLibrary.constructorCalls.length = 0;
+		qrScannerLibrary.onDecode = null;
+		qrScannerLibrary.destroy.mockReset();
+		qrScannerLibrary.listCameras.mockReset();
+		qrScannerLibrary.listCameras.mockResolvedValue([]);
+		qrScannerLibrary.setCamera.mockReset();
+		qrScannerLibrary.setCamera.mockResolvedValue(undefined);
+		qrScannerLibrary.start.mockReset();
+		qrScannerLibrary.start.mockResolvedValue(undefined);
+		qrScannerLibrary.stop.mockReset();
+	});
+
+	it("starts with the environment camera first and lists cameras only after start", async () => {
+		const { startBrowserQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
+		const video = createVideo("main-back");
+		qrScannerLibrary.listCameras.mockResolvedValue([
+			{ id: "front", label: "Front Camera" },
+			{ id: "main-back", label: "Back Camera" },
+		]);
+		const onDecode = vi.fn();
+
+		const controls = await startBrowserQrScanner(video, onDecode);
+
+		expect(qrScannerLibrary.constructorCalls).toHaveLength(1);
+		expect(qrScannerLibrary.constructorCalls[0]?.video).toBe(video);
+		expect(qrScannerLibrary.constructorCalls[0]?.options).toEqual({
+			preferredCamera: "environment",
+			maxScansPerSecond: 10,
+			returnDetailedScanResult: true,
+		});
+		expect(qrScannerLibrary.start).toHaveBeenCalledTimes(1);
+		expect(qrScannerLibrary.listCameras).toHaveBeenCalledExactlyOnceWith(true);
+		expect(qrScannerLibrary.start.mock.invocationCallOrder[0]).toBeLessThan(
+			qrScannerLibrary.listCameras.mock.invocationCallOrder[0] ?? 0,
+		);
+		expect(qrScannerLibrary.setCamera).not.toHaveBeenCalled();
+
+		qrScannerLibrary.onDecode?.({ data: "wc:abc" });
+		expect(onDecode).toHaveBeenCalledWith("wc:abc", controls);
+
+		controls.stop();
+		controls.stop();
+		expect(qrScannerLibrary.stop).toHaveBeenCalledTimes(1);
+		expect(qrScannerLibrary.destroy).toHaveBeenCalledTimes(1);
+	});
+
+	it("switches to the primary back camera when the active one is an ultra-wide or front lens", async () => {
+		const { startBrowserQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
+		qrScannerLibrary.listCameras.mockResolvedValue([
+			{ id: "front", label: "Front Camera" },
+			{ id: "ultra", label: "Back Ultra Wide Camera" },
+			{ id: "tele", label: "Back Telephoto Camera" },
+			{ id: "main-back", label: "Back Camera" },
+		]);
+
+		await startBrowserQrScanner(createVideo("ultra"), vi.fn());
+
+		expect(qrScannerLibrary.setCamera).toHaveBeenCalledExactlyOnceWith("main-back");
+		expect(qrScannerLibrary.listCameras.mock.invocationCallOrder[0]).toBeLessThan(
+			qrScannerLibrary.setCamera.mock.invocationCallOrder[0] ?? 0,
+		);
+	});
+
+	it("keeps scanning when no active camera id or no better back camera is known", async () => {
+		const { startBrowserQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
+		qrScannerLibrary.listCameras.mockResolvedValue([
+			{ id: "front", label: "Front Camera" },
+			{ id: "ultra", label: "Back Ultra Wide Camera" },
+		]);
+
+		await startBrowserQrScanner(createVideo("ultra"), vi.fn());
+		await startBrowserQrScanner(createVideo(undefined), vi.fn());
+
+		expect(qrScannerLibrary.setCamera).not.toHaveBeenCalled();
+	});
+
+	it("never fails the scan when camera listing or selection rejects", async () => {
+		const { startBrowserQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
+		qrScannerLibrary.listCameras.mockRejectedValueOnce(new Error("enumerateDevices blocked"));
+		await expect(startBrowserQrScanner(createVideo("ultra"), vi.fn())).resolves.toMatchObject({
+			stop: expect.any(Function),
+		});
+
+		qrScannerLibrary.listCameras.mockResolvedValue([{ id: "main-back", label: "Back Camera" }]);
+		qrScannerLibrary.setCamera.mockRejectedValueOnce(new Error("camera busy"));
+		await expect(startBrowserQrScanner(createVideo("ultra"), vi.fn())).resolves.toMatchObject({
+			stop: expect.any(Function),
+		});
+		expect(qrScannerLibrary.setCamera).toHaveBeenCalledExactlyOnceWith("main-back");
+	});
+
+	it("skips camera selection once the controls were stopped during listing", async () => {
+		const { startBrowserQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
+		const onDecode = vi.fn((_value: string, controls: { stop: () => void }) => controls.stop());
+		qrScannerLibrary.listCameras.mockImplementation(async () => {
+			qrScannerLibrary.onDecode?.({ data: "decoded-during-listing" });
+			return [{ id: "main-back", label: "Back Camera" }];
+		});
+
+		await startBrowserQrScanner(createVideo("ultra"), onDecode);
+
+		expect(onDecode).toHaveBeenCalledTimes(1);
+		expect(qrScannerLibrary.stop).toHaveBeenCalledTimes(1);
+		expect(qrScannerLibrary.setCamera).not.toHaveBeenCalled();
 	});
 });

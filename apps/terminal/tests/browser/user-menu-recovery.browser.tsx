@@ -64,6 +64,22 @@ export function useDisconnectWallet() {
 	};
 }
 
+let mobileSyncOpen = false;
+
+function setMobileSyncOpen(next: boolean) {
+	if (mobileSyncOpen === next) return;
+	mobileSyncOpen = next;
+	for (const listener of listeners) listener();
+}
+
+export function useMobileSyncModalOpen() {
+	return useSyncExternalStore(subscribe, () => mobileSyncOpen);
+}
+
+export function useMobileSyncModalActions() {
+	return { open: () => setMobileSyncOpen(true), close: () => setMobileSyncOpen(false) };
+}
+
 export function useEnsName() {
 	return { data: undefined };
 }

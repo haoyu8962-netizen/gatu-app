@@ -23,6 +23,7 @@ import { shortenAddress } from "@/lib/format";
 import { createLazyComponent } from "@/lib/lazy";
 import { hasPersistedPrivySession } from "@/lib/wallet/privy-session-hint";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
+import { useMobileSyncModalActions, useMobileSyncModalOpen } from "@/stores/use-global-modal-store";
 import { MobileWalletCtaView } from "../mobile/mobile-wallet-cta-view";
 import { UserMenuModalErrorBoundary, UserMenuModalLoadingFallback } from "./user-menu-modal-boundary";
 import { loadUserMenuModalModule } from "./user-menu-modal-load";
@@ -64,8 +65,10 @@ export function UserMenu({ variant = "default" }: Props) {
 	const { reconnectWallet, isReconnecting } = useReconnectWallet();
 	const emailAddress = authenticationReady && authenticated ? getPrivyEmailAddress(user) : undefined;
 	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
-	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
+	const mobileSyncOpen = useMobileSyncModalOpen();
+	const { open: openMobileSync, close: closeMobileSync } = useMobileSyncModalActions();
 	const [hasOpenedMobileSync, setHasOpenedMobileSync] = useState(() => shouldKeepMobileSyncModalMounted);
+	if (mobileSyncOpen && !hasOpenedMobileSync) setHasOpenedMobileSync(true);
 	const [mobileSyncLoadAttempt, setMobileSyncLoadAttempt] = useState(0);
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [walletModalLoadAttempt, setWalletModalLoadAttempt] = useState(0);
@@ -96,8 +99,14 @@ export function UserMenu({ variant = "default" }: Props) {
 		if (!open) resetWalletModalLoad();
 	}
 
+	function handleMobileSyncOpenChange(open: boolean) {
+		shouldKeepMobileSyncModalMounted = true;
+		if (open) openMobileSync();
+		else closeMobileSync();
+	}
+
 	function handleMobileSyncErrorOpenChange(open: boolean) {
-		setMobileSyncOpen(open);
+		handleMobileSyncOpenChange(open);
 		if (!open) resetMobileSyncLoad();
 	}
 
@@ -246,7 +255,7 @@ export function UserMenu({ variant = "default" }: Props) {
 						onSelect: () => {
 							shouldKeepMobileSyncModalMounted = true;
 							setHasOpenedMobileSync(true);
-							setMobileSyncOpen(true);
+							openMobileSync();
 						},
 					},
 				]
@@ -332,13 +341,13 @@ export function UserMenu({ variant = "default" }: Props) {
 					<Suspense
 						fallback={
 							<UserMenuModalLoadingFallback
-								onOpenChange={setMobileSyncOpen}
+								onOpenChange={handleMobileSyncOpenChange}
 								open={mobileSyncOpen}
 								presentation={isMobile ? "drawer" : "modal"}
 							/>
 						}
 					>
-						<MobileAgentSyncModal open={mobileSyncOpen} onOpenChange={setMobileSyncOpen} />
+						<MobileAgentSyncModal open={mobileSyncOpen} onOpenChange={handleMobileSyncOpenChange} />
 					</Suspense>
 				</UserMenuModalErrorBoundary>
 			)}

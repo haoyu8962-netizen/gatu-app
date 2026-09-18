@@ -515,7 +515,28 @@ have an install capability.
   standalone display mode; do not use it to switch the terminal layout.
 - The Link Desktop scanner is optional and fail closed. Render it only when
   `MOBILE_PAIRING_FEATURES.importFromQr` is enabled, and accept only the
-  terminal's validated desktop-approved Agent payload.
+  terminal's validated desktop-approved Agent payload. The scanner selects a
+  back camera after `start()` (never before, which would open an unconstrained
+  stream) and excludes ultra-wide and telephoto labels.
+- The desktop Link mobile device entry has three surfaces that share one modal
+  instance through the global modal store (`useMobileSyncModalOpen` /
+  `useMobileSyncModalActions` in `stores/use-global-modal-store.ts`): the
+  header QR icon beside settings, the compact `DesktopUtilitiesMenu` item at
+  connected widths at or below the compact breakpoint, and the `UserMenu` item.
+  The icon and compact item render only when `hasWalletAccess &&
+  MOBILE_PAIRING_FEATURES.createAndReveal`; the user-menu item remains because
+  it is also the verify/revoke entry. The lazy host, error boundary and retry
+  stay in `UserMenu`, so opening from any surface mounts one modal.
+- Opening the modal runs read-only preflight only (funding snapshot, builder
+  fee, reserved slot); the single approval button is the only signing action.
+  Reveal keeps the 4 s hold, the visible countdown derives from the existing
+  envelope and ticket lifetimes, and a phone in an Agent-only session shows
+  Deposit / Withdraw / Transfer disabled with the `agent-only-session` reason
+  instead of hiding them ([ADR 0015](adr/0015-link-device-alignment.md)).
+- The pairing ticket route is unavailable on the CloudFront + Lambda host
+  (503) and both `VITE_MOBILE_PAIRING_*` build flags stay off until ADR 0015
+  D7 is decided; do not enable either flag for that host without the
+  replacement transport.
 - The mobile Email and WalletConnect entries launch Privy with explicit login
   methods; wallet selection remains Ethereum-only. An authenticated user takes
   the explicit reconnect path instead of starting a new login flow.
@@ -538,6 +559,13 @@ have an install capability.
 - `apps/terminal/src/config/privy.ts`
 - `apps/terminal/src/components/trade/components/wallet-modal.tsx`
 - `apps/terminal/src/components/trade/components/mobile-agent-qr-scanner.tsx`
+- `apps/terminal/src/components/trade/components/mobile-agent-sync-modal.tsx`
+- `apps/terminal/src/components/trade/header/top-nav.tsx`
+- `apps/terminal/src/components/trade/header/desktop-utilities-menu.tsx`
+- `apps/terminal/src/components/trade/header/user-menu.tsx`
+- `apps/terminal/src/stores/use-global-modal-store.ts`
+- `apps/terminal/src/routes/mobile-agent-sync.tsx`
+- `apps/terminal/src/edge/lambda-handler.ts`
 - `apps/terminal/src/providers/pwa-install.tsx`
 - `apps/terminal/src/config/seo.ts`
 - `apps/terminal/public/manifest.json`
@@ -550,6 +578,11 @@ have an install capability.
 - `apps/terminal/src/lib/tests/pwa-install.test.tsx`
 - `apps/terminal/src/lib/tests/pwa-manifest.test.ts`
 - `apps/terminal/src/lib/tests/privy-config.test.ts`
+- `apps/terminal/src/lib/tests/top-nav.test.tsx`
+- `apps/terminal/src/lib/tests/user-menu.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-agent-sync-modal.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-agent-qr-scanner.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-agent-sync-route.test.tsx`
 
 ## 9. Development And Browser Test Caches
 

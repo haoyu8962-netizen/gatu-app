@@ -1,6 +1,6 @@
 import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DotsThreeVerticalIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
+import { DotsThreeVerticalIcon, QrCodeIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
@@ -9,13 +9,26 @@ import { HEADER_ICON_BUTTON_CLASS, HeaderIconButtonView } from "./header-icon-bu
 import { LanguageSwitcher } from "./language-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
+const UTILITY_ROW_BUTTON_CLASS =
+	"h-9 w-full justify-start rounded-[8px] px-3 font-market-close text-[13px] leading-[18px] font-medium text-market-close-fg shadow-none hover:bg-market-close-hover";
+
 interface Props {
 	className?: string;
 	settingsDisabled?: boolean;
 	onOpenSettings: () => void;
+	linkMobileVisible?: boolean;
+	linkMobileDisabled?: boolean;
+	onLinkMobile?: () => void;
 }
 
-export function DesktopUtilitiesMenu({ className, settingsDisabled = false, onOpenSettings }: Props) {
+export function DesktopUtilitiesMenu({
+	className,
+	settingsDisabled = false,
+	onOpenSettings,
+	linkMobileVisible = false,
+	linkMobileDisabled = false,
+	onLinkMobile,
+}: Props) {
 	const { t } = useLingui();
 	const [open, setOpen] = useState(false);
 
@@ -23,6 +36,12 @@ export function DesktopUtilitiesMenu({ className, settingsDisabled = false, onOp
 		if (settingsDisabled) return;
 		setOpen(false);
 		onOpenSettings();
+	}
+
+	function handleLinkMobile() {
+		if (linkMobileDisabled || !onLinkMobile) return;
+		setOpen(false);
+		onLinkMobile();
 	}
 
 	return (
@@ -55,12 +74,25 @@ export function DesktopUtilitiesMenu({ className, settingsDisabled = false, onOp
 					</span>
 					<LanguageSwitcher className="size-9 rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg" />
 				</div>
+				{linkMobileVisible && (
+					<Button
+						variant="ghost"
+						intent="neutral"
+						size="sm"
+						disabled={linkMobileDisabled}
+						className={UTILITY_ROW_BUTTON_CLASS}
+						onClick={linkMobileDisabled ? undefined : handleLinkMobile}
+						iconLeft={<QrCodeIcon className="size-[18px] text-market-close-muted" />}
+					>
+						<Trans>Link mobile device</Trans>
+					</Button>
+				)}
 				<Button
 					variant="ghost"
 					intent="neutral"
 					size="sm"
 					disabled={settingsDisabled}
-					className="h-9 w-full justify-start rounded-[8px] px-3 font-market-close text-[13px] leading-[18px] font-medium text-market-close-fg shadow-none hover:bg-market-close-hover"
+					className={UTILITY_ROW_BUTTON_CLASS}
 					onClick={settingsDisabled ? undefined : handleOpenSettings}
 					iconLeft={<SlidersHorizontalIcon className="size-[18px] text-market-close-muted" />}
 				>
