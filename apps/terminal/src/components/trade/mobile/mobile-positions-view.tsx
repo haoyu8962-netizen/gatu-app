@@ -249,7 +249,7 @@ export function MobilePositionsView({
 		return false;
 	}
 
-	const tabContentClass = cn(isPageScroll ? "min-h-0 flex flex-col mt-0" : "flex-1 min-h-0 flex flex-col mt-0");
+	const tabContentClass = cn("pt-0", isPageScroll ? "min-h-0 flex flex-col mt-0" : "flex-1 min-h-0 flex flex-col mt-0");
 
 	return (
 		<MobilePositionsPanelView

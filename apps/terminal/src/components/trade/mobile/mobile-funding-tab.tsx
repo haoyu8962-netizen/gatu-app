@@ -137,7 +137,7 @@ function MobileFundingTabContent({
 		return (
 			<div
 				data-testid="mobile-funding-history-filter-row"
-				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+				className="flex h-9 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 			>
 				<div className="flex shrink-0 items-center gap-1.5">
 					<Select

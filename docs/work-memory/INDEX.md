@@ -99,6 +99,7 @@
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md)
 
 - [弹窗首开转圈与关闭闪现：预热惰性弹窗并恢复进出场过渡](sessions/2026-09-18-dialog-transitions-and-preload.md) — 2026-09-18；已整理，验证见正文。实测确认首开转圈是全局弹窗惰性块的 Suspense 回退（被 React 至少保留 300 ms），关闭闪现是七个对话框壳强制 !transition-none 加上 Base UI 对「挂载即打开 / 关闭即卸载」不跑过渡；修复为空闲预热弹窗块、去掉壳的过渡覆盖、@gatu/ui Modal/Drawer 首帧门控、宿主为关闭中的弹窗保留 250 ms、市价平仓取消先动画再释放会话；开发服务器逐帧采样确认抽屉与模态均有 200 ms 进出场。
+- [移动端账户标签工具栏纵向密度：去掉面板顶距并压缩工具栏行高](sessions/2026-09-18-mobile-account-toolbar-density.md) — 2026-09-18；已整理，验证见正文。实测 390 px 下我们标签行 47 + 面板顶距 8 + 工具栏 48 = 103 px，官方 36 + 0 + 31 = 67 px；用户决定先做两项：移动端账户面板去掉共享 TabsPanel 的 pt-2，五个标签的工具栏行从 48 px 压到 36 px（触控热区仍由 after:h-11 伪元素保证 44 px）；标签行高度另行决策。
 - [移动端未登录状态对齐官方：账户零值概览与持仓工具栏常驻](sessions/2026-09-18-mobile-disconnected-alignment.md) — 2026-09-18；已整理，验证见正文。核对确认 7f2f66ac 只对齐了桌面未登录账户面板，移动端 Account 页与持仓区仍是引导文案加 Connect 按钮；无头对比官方 390 px 后按三条实施：Account 页改为零值概览加禁用 Deposit/Withdraw（保留邮箱赞助充值例外），持仓区未登录保留禁用的筛选工具栏与空列表，规则写入 AGENTS.md 与 desktop-grid-layout.md。
 - [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) — 2026-09-17；已整理，验证见正文。按 ADR 0011 把 1001–1420 px 桌面网格改为图表列 10/14 + 右列堆叠（下单面板、订单簿、账户信息），存储键升到 v12；验证结果与限制见正文。
 - [桌面顶部导航：命名断点、收纳规则与单一配置（ADR 0013）](sessions/2026-09-17-desktop-nav-collapse.md) — 2026-09-17；已整理，验证见正文。1181 魔法数改为 DESKTOP_NAV_COMPACT/NARROW 常量与 nav-compact 变体；Earn（Soon）紧凑时进 More，低优先级入口仅在已连接且 ≤1181 或 ≤1100 时收纳；入口与 More 由 DESKTOP_NAV_ITEMS 单一派生；官方对照与六语言余量实测见正文。
@@ -119,6 +120,7 @@
 | --- | --- | --- | --- | --- |
 | 2026-09-18 | [弹窗首开转圈与关闭闪现：预热惰性弹窗并恢复进出场过渡](sessions/2026-09-18-dialog-transitions-and-preload.md) | 未取得任务标识，见正文 | `82d81313` | 已整理，验证见正文 |
 | 2026-09-18 | [Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复](sessions/2026-09-18-grok-dialog-commits-review.md) | 未取得任务标识，见正文 | `08e2057d` | 已整理，验证见正文 |
+| 2026-09-18 | [移动端账户标签工具栏纵向密度：去掉面板顶距并压缩工具栏行高](sessions/2026-09-18-mobile-account-toolbar-density.md) | 未取得任务标识，见正文 | `ba5a580b` | 已整理，验证见正文 |
 | 2026-09-18 | [移动端未登录状态对齐官方：账户零值概览与持仓工具栏常驻](sessions/2026-09-18-mobile-disconnected-alignment.md) | 未取得任务标识，见正文 | `6df02047` | 已整理，验证见正文 |
 | 2026-09-17 | [生产发布 cloudfront-2026-09-17-p21（PR #26 分支 c59d13a8）](sessions/2026-09-17-cloudfront-release-p21.md) | 未取得任务标识，见正文 | `c59d13a8188093e1de0c5f247a9bc625f4a18a34` | 已验证，范围见正文 |
 | 2026-09-17 | [桌面 md 断点右列堆叠实施](sessions/2026-09-17-desktop-md-stacked-right-column.md) | 未取得任务标识，见正文 | `a7fb284656651e6f8440cdfd584ed056ed158ff1` | 已整理，验证见正文 |

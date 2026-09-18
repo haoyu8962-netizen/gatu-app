@@ -998,7 +998,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		return (
 			<div
 				data-testid="mobile-orders-filter-toolbar"
-				className="flex h-12 shrink-0 items-center gap-1.5 border-b border-market-close-stroke-card px-3.5 py-2.5"
+				className="flex h-9 shrink-0 items-center gap-1.5 border-b border-market-close-stroke-card px-3.5"
 			>
 				<Select
 					disabled={disabled}

@@ -249,7 +249,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 		return (
 			<div
 				data-testid="mobile-position-filter-row"
-				className="flex shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5 py-2.5"
+				className="flex shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5 py-[5px]"
 			>
 				<PositionFilterToolbar
 					direction={positionDirectionFilter}

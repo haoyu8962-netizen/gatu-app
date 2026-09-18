@@ -67,7 +67,7 @@ describe("mobile position filter row", () => {
 		}
 
 		expect(MOBILE_POSITIONS_TAB_SOURCE).toContain(
-			'className="flex shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5 py-2.5"',
+			'className="flex shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5 py-[5px]"',
 		);
 		expect(MOBILE_POSITIONS_TAB_SOURCE).toContain('cn("space-y-2.5 px-3.5 py-3"');
 	});

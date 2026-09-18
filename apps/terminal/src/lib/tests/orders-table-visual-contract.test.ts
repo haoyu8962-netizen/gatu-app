@@ -48,7 +48,7 @@ describe("orders toolbar visual contract", () => {
 	});
 
 	it("keeps mobile cards on the 48px filter and 10px list rhythm with safe targets", () => {
-		expect(MOBILE_SOURCE).toContain("flex h-12 shrink-0 items-center");
+		expect(MOBILE_SOURCE).toContain("flex h-9 shrink-0 items-center");
 		expect(MOBILE_SOURCE).toContain('data-testid="mobile-orders-filter-toolbar"');
 		expect(MOBILE_SOURCE).not.toContain('className="flex h-10 shrink-0 items-center');
 		expect(MOBILE_SOURCE).toContain("space-y-2.5 px-3.5");

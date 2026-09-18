@@ -409,7 +409,7 @@ describe("mobile history disclosure cards", () => {
 		viewAllPath?: string,
 	) {
 		const filterRow = container.querySelector<HTMLElement>(`[data-testid="${filterRowTestId}"]`);
-		expect(filterRow?.className).toContain("h-12");
+		expect(filterRow?.className).toContain("h-9");
 		expect(filterRow?.className).toContain("px-3.5");
 		expect(filterRow?.className).toContain("overflow-x-auto");
 
