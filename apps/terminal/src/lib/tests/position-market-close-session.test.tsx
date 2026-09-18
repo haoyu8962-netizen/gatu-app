@@ -116,36 +116,36 @@ describe("position market close session", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, presentation: "direct", position: POSITION });
 	});
 
-	it("permanently reveals a direct session after an error or reconciliation requires attention", () => {
-		let errorSessionId = "";
+	it("never reveals a direct session and only dismisses an idle confirmation session", () => {
+		let directSessionId = "";
 		act(() => {
-			errorSessionId = closeActions.open(POSITION, "direct") ?? "";
+			directSessionId = closeActions.open(POSITION, "direct") ?? "";
 		});
 		const actions = getPositionMarketCloseActions();
 
 		act(() => {
-			actions.setError(errorSessionId, "Order rejected");
-			actions.setError(errorSessionId, null);
-			actions.setSizingIntent(errorSessionId, { kind: "percent", value: "50" });
+			actions.updatePhase(directSessionId, "reconciling");
+			actions.updatePhase(directSessionId, "idle");
+			actions.dismiss(directSessionId);
 		});
-		expect(getPositionMarketCloseModal()).toMatchObject({
-			presentation: "confirmation",
-			phase: "idle",
-			error: null,
-			sizingIntent: { kind: "percent", value: "50" },
-		});
+		expect(getPositionMarketCloseModal()).toMatchObject({ presentation: "direct", phase: "idle" });
 
-		act(() => actions.close(errorSessionId));
-		let reconcilingSessionId = "";
+		act(() => actions.close(directSessionId));
+		let confirmationSessionId = "";
 		act(() => {
-			reconcilingSessionId = closeActions.open(POSITION, "direct") ?? "";
-			actions.updatePhase(reconcilingSessionId, "reconciling");
-			actions.updatePhase(reconcilingSessionId, "idle");
+			confirmationSessionId = closeActions.open(POSITION) ?? "";
+			actions.updatePhase(confirmationSessionId, "validating");
+			actions.dismiss(confirmationSessionId);
 		});
-		expect(getPositionMarketCloseModal()).toMatchObject({
-			presentation: "confirmation",
-			phase: "idle",
+		expect(getPositionMarketCloseModal()?.presentation).toBe("confirmation");
+
+		act(() => {
+			actions.updatePhase(confirmationSessionId, "idle");
+			actions.dismiss("stale-session");
+			actions.dismiss(confirmationSessionId);
+			actions.updatePhase(confirmationSessionId, "reconciling");
 		});
+		expect(getPositionMarketCloseModal()).toMatchObject({ presentation: "dismissed", phase: "reconciling" });
 	});
 
 	it("rejects late close callbacks and locks validating and submitting sessions", () => {
@@ -206,7 +206,7 @@ describe("position market close session", () => {
 		const initialSession = getPositionMarketCloseModal();
 
 		act(() => {
-			getPositionMarketCloseActions().setError(sessionId, null);
+			getPositionMarketCloseActions().dismiss("stale-session");
 			getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "max" });
 		});
 

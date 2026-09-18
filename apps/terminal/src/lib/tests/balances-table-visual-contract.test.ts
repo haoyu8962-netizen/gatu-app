@@ -25,7 +25,8 @@ const MOBILE_BALANCES_TAB_SOURCE = readFileSync(
 
 describe("balances table visual contract", () => {
 	it("matches the latest desktop header and row rhythm without a redundant summary", () => {
-		expect(balancesTableHeaderClass).toContain("bg-modal");
+		expect(balancesTableHeaderClass).toContain("bg-surface");
+		expect(balancesTableHeaderClass).not.toContain("bg-modal");
 		expect(balancesTableHeadClass).toContain("h-[33px]");
 		expect(balancesTableHeadClass).toContain("text-[11px]");
 		expect(balancesTableHeadClass).toContain("font-semibold");

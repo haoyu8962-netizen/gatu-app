@@ -8,12 +8,76 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The margin mode, leverage and account mode dialogs of the order form load when first needed instead of with the
+  terminal. If one cannot be loaded, the order form stays as it is and the dialog offers `Try again` and
+  `Reload page`; the page never reloads on its own.
+- Linking a phone no longer uses a server ticket. The desktop creates the QR entirely in the
+  browser, the QR stays visible for 60 seconds after reveal and phones accept it for 2 minutes after
+  it was created (previously 10). A phone refuses a QR it already imported without disturbing the
+  access it already holds, refuses a QR whose time is ahead of the phone, QR codes created by an
+  older page are rejected with a prompt to refresh both devices, and the success panel reminds the user
+  to revoke from desktop if they did not import it themselves. A second phone scanning the same
+  code within those 2 minutes is no longer rejected. `/mobile-agent-sync-ticket` is removed and
+  answers 404.
+- Every desktop navigation control (Deposit, More, language, display menu, account chip, `Connect`
+  and reconnect) is 36px tall, and the header account chip, `Connect` button and reconnect button
+  share that height on mobile; mobile keeps a 44px touch area through a pseudo element, drops the chip shadow and shows
+  the email local part in the chip with the full address as its tooltip.
+- The mobile header drops its theme toggle (the navigation drawer keeps it), shows a brand-filled
+  `Connect` button that no longer truncates at 390px, and gives the language and settings icons
+  one radius and token set; the desktop `Connect Wallet` button uses the same brand fill.
+- The expanded mobile market bar no longer draws a divider between its two detail rows, and the
+  spot `More Info` cell keeps the full shortened token address on one row with its explorer, copy
+  and social actions beside it instead of clipping the address and wrapping the actions below.
+- The mobile order book header is a single 36px chip row: price grouping on the left, the
+  spread in the middle and a display-unit dropdown on the right; the separate spread row is gone
+  and the ladder headings read `Total (unit)`, so the ladder starts about 47px higher.
+- Mobile account tabs share one 36px toolbar row and one filter-chip style (27px, 7px radius,
+  auto width, placeholder labels such as Type / Direction / Role / Status), the tab row is 40px
+  with a 44px touch area, and the TWAP sub-view row matches the toolbar height.
+- The mobile Account tab now shows the zero-value overview with inert Deposit / Withdraw while
+  disconnected, and every mobile account tab (positions, balances, orders, TWAP and history)
+  keeps its filter toolbar inert above an empty list, matching the desktop disconnected
+  presentation; the Connect prompt stays with the header and order entry.
+- Confirming a market close now closes the dialog immediately and runs the order in the
+  background; the outcome arrives as a notification (an unconfirmed fill warns first and the shared
+  reconciliation reports the final result), failures release the session so the
+  position can be retried at once, and unconfirmed fills are reported by the shared order
+  reconciliation notifications instead of reopening the dialog (ADR 0014).
+- Tappable mobile surfaces (position, order and history cards, market rows, the trade summary
+  and size-unit toggles) now show press feedback on touch screens.
 - Desktop navigation keeps Vaults, Staking, Referrals and Leaderboard visible for disconnected
   visitors down to 1101px, moves the Earn placeholder into More at compact widths, and drives the
   More menu from one navigation configuration.
+- Link mobile device gains a header QR icon beside settings and a matching compact utilities
+  menu entry; both share the user-menu modal instance and appear only for an exact-owner session
+  with the create-and-reveal flag enabled (ADR 0015).
+- The Link mobile device modal approves in one step: opening runs read-only checks, the single
+  `Approve mobile trading key` button signs, and the pending label reads
+  `Approve QR code with wallet...`.
+- The pre-approval panel merges the create and review points, lists what the key can and cannot
+  do, and adds phone instructions (open gatu on the phone, tap Connect, then Link Desktop
+  Wallet); the screen-sharing warning now appears before `Hold to reveal QR`.
+- `Hold to reveal QR` draws its progress as a ring inside the button, and the revealed panel
+  shows a visible seconds countdown to auto-close derived from the envelope expiry and the
+  60-second reveal window.
+- On a phone using a desktop-authorised trading key, Deposit, Withdraw and Transfer stay visible
+  but disabled with one reason that the master wallet must be connected on desktop.
+- The Link Desktop scanner selects the back camera after the stream starts and tells the user to
+  tap the QR icon in the desktop header; importing stores the key in this phone's local scope and
+  says so, together with the expiry date and the desktop revoke path.
 
 ### Fixed
 
+- Modals and drawers now animate in even when a store change mounts them already open, and
+  store-driven global modals, the order confirmation, reverse and close-all dialogs stay mounted
+  for their exit transition instead of vanishing; the position, order-confirmation and cancel-all
+  dialogs no longer suppress those transitions.
+- The lazy global modal chunks warm during idle time after the terminal settles, so the first
+  Market Close, settings, swap, transfer, send or command-menu open no longer shows the
+  shared loading spinner.
+- The mobile Markets view stays mounted after its first visit, so switching to Trade or
+  Account and back reuses the existing TradingView chart instead of rebuilding it.
 - Visitors without a stored Privy session now see `Connect Wallet` on the first rendered frame
   instead of a brief `Connecting...`, dashboard pages resolve the account menu before revealing,
   compact headers keep ENS names, the utilities menu has its own accessible name, and connected
@@ -21,6 +85,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - The terminal no longer stays blank when the persisted locale and the startup fonts become
   usable between its first render and its readiness effect, which reliably happened in
   development builds where React runs effects twice.
+
+### Known
+
+- Mobile pairing stays compiled out in production: both `VITE_MOBILE_PAIRING_*` flags remain off
+  until the physical-device acceptance for the client-only transfer (ADR 0015 D7, option B) has
+  been run.
 
 ### Changed
 

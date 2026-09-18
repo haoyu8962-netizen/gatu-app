@@ -128,9 +128,7 @@ The new `styles.css` will use shadcn's zinc theme which maps Tailwind's native Z
 
 | Issue | Files | Fix |
 |-------|-------|-----|
-| Mobile header logo color mismatch | `mobile-header.tsx:29` uses `bg-market-up-bg border-market-up/40` vs desktop `bg-accent-blue/10 border-accent-blue/30` | Use same tokens as desktop |
 | Price displays use `text-warning` | `mobile-chart-view.tsx:51`, `mobile-book-view.tsx:292,322`, `mobile-trade-view.tsx:331` | Use `text-foreground` |
-| Button variant misuse | `mobile-header.tsx:43,52` uses `variant="link"` with `active:bg-muted/50` | Use `variant="ghost"` |
 
 ### Hardcoded Colors
 
@@ -259,11 +257,9 @@ focus-visible:ring-2 focus-visible:ring-ring/50
 
 **Critical fixes:**
 
-- [ ] `mobile-header.tsx:29` — Change `bg-market-up-bg border-market-up/40` to `bg-accent-blue/10 border-accent-blue/30`
 - [ ] `mobile-chart-view.tsx:51` — Change `text-warning` to `text-foreground`
 - [ ] `mobile-book-view.tsx:292,322` — Change `text-warning` to `text-foreground`
 - [ ] `mobile-trade-view.tsx:331` — Change `text-warning` to `text-foreground`
-- [ ] `mobile-header.tsx:43,52` — Change `variant="link"` to `variant="ghost"`
 
 **Standardize alert/warning/error boxes:**
 
@@ -299,7 +295,7 @@ Apply to: `token-selector.tsx`, `price-input-with-percent.tsx`, all NumberInput/
 
 ### 3.4 Reset Priority Order
 
-1. Fix critical bugs (mobile header, price colors, button variants)
+1. Fix critical bugs (price colors, button variants)
 2. Fix hardcoded `text-white` everywhere
 3. Fix old Radix `data-[state=...]` patterns
 4. Standardize ring sizes

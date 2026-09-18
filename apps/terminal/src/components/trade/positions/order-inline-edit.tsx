@@ -65,7 +65,7 @@ export function OrderInlineEdit({
 		<div
 			ref={rootRef}
 			className={cn(
-				"absolute top-1/2 z-10 inline-flex min-w-0 -translate-y-1/2 items-center gap-1.5 rounded-[10px] bg-modal p-1 shadow-market-close-inline-edit",
+				"absolute top-1/2 z-10 inline-flex min-w-0 -translate-y-1/2 items-center gap-1.5 rounded-[10px] bg-surface p-1 shadow-market-close-inline-edit",
 				align === "right" ? "-right-1" : "-left-1",
 			)}
 			aria-busy={disabled || undefined}
@@ -81,7 +81,7 @@ export function OrderInlineEdit({
 				aria-invalid={invalid || undefined}
 				aria-describedby={describedBy}
 				className={cn(
-					"h-[29px] min-w-0 rounded-[8px] border-[1.5px] border-market-close-control bg-modal px-2 text-right text-[13px] font-semibold tabular-nums text-market-close-fg outline-none transition-colors duration-[120ms]",
+					"h-[29px] min-w-0 rounded-[8px] border-[1.5px] border-market-close-control bg-surface px-2 text-right text-[13px] font-semibold tabular-nums text-market-close-fg outline-none transition-colors duration-[120ms]",
 					"focus:border-market-close-control focus:ring-1 focus:ring-market-close-control/15",
 					"disabled:cursor-not-allowed disabled:opacity-70",
 					invalid && "border-market-close-danger focus:border-market-close-danger focus:ring-market-close-danger/15",

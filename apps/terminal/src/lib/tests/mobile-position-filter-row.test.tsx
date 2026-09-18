@@ -12,10 +12,10 @@ import { ALL_POSITION_MARKETS } from "@/domain/trade/position-toolbar";
 import { createI18nRoot } from "./harness/react";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
-const MOBILE_POSITIONS_TAB_SOURCE = readFileSync(
-	resolve(TEST_DIR, "../..", "components/trade/mobile/mobile-positions-tab.tsx"),
-	"utf8",
-);
+function readMobileSource(file: string): string {
+	return readFileSync(resolve(TEST_DIR, "../..", `components/trade/mobile/${file}`), "utf8");
+}
+const MOBILE_POSITIONS_TAB_SOURCE = readMobileSource("mobile-positions-tab.tsx");
 
 describe("mobile position filter row", () => {
 	let container: HTMLDivElement;
@@ -61,15 +61,60 @@ describe("mobile position filter row", () => {
 		for (const chip of [direction, margin]) {
 			expect(chip?.className).toContain("rounded-[7px]");
 			expect(chip?.className).toContain("px-[9px]");
-			expect(chip?.className).toContain("py-1");
+			expect(chip?.className).toContain("!h-[27px]");
 			expect(chip?.className).toContain("text-xs");
 			expect(chip?.className).toContain("after:h-11");
 		}
 
 		expect(MOBILE_POSITIONS_TAB_SOURCE).toContain(
-			'className="flex shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5 py-2.5"',
+			'className="flex h-9 shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5"',
 		);
 		expect(MOBILE_POSITIONS_TAB_SOURCE).toContain('cn("space-y-2.5 px-3.5 py-3"');
+	});
+
+	it("renders every filter control inert while disconnected and drops the connect prompt", () => {
+		act(() => {
+			root.render(
+				<PositionFilterToolbar
+					direction="all"
+					margin="all"
+					market={ALL_POSITION_MARKETS}
+					marketOptions={[]}
+					onDirectionChange={vi.fn()}
+					onMarginChange={vi.fn()}
+					onMarketChange={vi.fn()}
+					mobile
+					disabled
+				/>,
+			);
+		});
+
+		const controls = [...container.querySelectorAll<HTMLButtonElement>("button")];
+		expect(controls.length).toBeGreaterThan(0);
+		expect(controls.every((control) => control.disabled || control.getAttribute("aria-disabled") === "true")).toBe(
+			true,
+		);
+
+		const disconnectedBranch = MOBILE_POSITIONS_TAB_SOURCE.slice(
+			MOBILE_POSITIONS_TAB_SOURCE.indexOf("if (!isConnected) {"),
+			MOBILE_POSITIONS_TAB_SOURCE.indexOf("if (positionsLoading"),
+		);
+		expect(disconnectedBranch).toContain("renderFilterRow(true)");
+		expect(MOBILE_POSITIONS_TAB_SOURCE).not.toContain("Connect your wallet to view positions.");
+		for (const file of [
+			"mobile-positions-view.tsx",
+			"mobile-balances-tab.tsx",
+			"mobile-orders-tab.tsx",
+			"mobile-twap-tab.tsx",
+			"mobile-twap-history-list.tsx",
+			"mobile-twap-fill-history-list.tsx",
+			"mobile-history-tab.tsx",
+			"mobile-funding-tab.tsx",
+			"mobile-orders-history-tab.tsx",
+			"mobile-account-transfers-tab.tsx",
+		]) {
+			expect(readMobileSource(file)).not.toContain("Connect your wallet");
+		}
 	});
 
 	it("keeps expand-all and collapse-all as independent actions", () => {

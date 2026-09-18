@@ -1,6 +1,6 @@
 # 部署（历史资料）：单台 EC2 + Caddy 双域名
 
-> **已退役（2026-09-17）。** 生产与测试网自 2026-09-15 起由 CloudFront + S3 + Lambda 提供服务，EC2 `i-058ca09d0533fc11d` 已于 2026-09-17 停机。当前发布流程见 [cloudfront/README.md](cloudfront/README.md)；本文件与 `deploy.sh`、`Caddyfile`、`gatu.service`、各 `mobile-sync-*`/`validate-*` 脚本及其测试保留为历史资料，不再由 CI 运行，也不再描述现状。退役核对见 [迁移审计](../docs/work-memory/sessions/2026-09-17-ec2-to-cloudfront-migration-audit.md)与[退役记录](../docs/work-memory/sessions/2026-09-17-ec2-retirement.md)。
+> **已退役（2026-09-17）。** 生产与测试网自 2026-09-15 起由 CloudFront + S3 + Lambda 提供服务，EC2 `i-058ca09d0533fc11d` 已于 2026-09-17 停机。当前发布流程见 [cloudfront/README.md](cloudfront/README.md)；本文件与 `deploy.sh`、`Caddyfile`、`gatu.service`、各 `mobile-sync-*`/`validate-*` 脚本及其测试保留为历史资料，不再由 CI 运行，也不再描述现状。`mobile-sync-release.mjs`、`mobile-sync-candidate.mjs`、`mobile-sync-caddy.test.mjs`、旧票据夹具及其测试已于 2026-09-18 随票据端点一并删除（[ADR 0015](../docs/adr/0015-link-device-alignment.md) D7 方案 B），因此下文引用它们的 `deploy.sh` 步骤不可再执行。退役核对见 [迁移审计](../docs/work-memory/sessions/2026-09-17-ec2-to-cloudfront-migration-audit.md)与[退役记录](../docs/work-memory/sessions/2026-09-17-ec2-retirement.md)。
 
 
 gatu 是 TanStack Start + Nitro 应用，仍由常驻 Node 进程运行

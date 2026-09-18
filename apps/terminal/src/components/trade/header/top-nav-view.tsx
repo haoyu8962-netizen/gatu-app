@@ -23,6 +23,7 @@ interface Props {
 	wallet: ReactNode;
 	theme: ReactNode;
 	language: ReactNode;
+	linkMobile?: ReactNode;
 	settings: ReactNode;
 	compactUtilities?: ReactNode;
 	compactHiddenWhenConnected: boolean;
@@ -31,7 +32,7 @@ interface Props {
 }
 
 export const TOP_NAV_DEPOSIT_CLASS =
-	"h-[34px] min-h-[34px] shrink-0 gap-[7px] rounded-[10px] bg-market-close-control px-3.5 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control nav-compact:size-[34px] nav-compact:px-0";
+	"h-9 min-h-9 shrink-0 gap-[7px] rounded-[10px] bg-market-close-control px-3.5 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control nav-compact:size-9 nav-compact:px-0";
 export const TOP_NAV_DEPOSIT_LABEL_CLASS = "nav-compact:sr-only";
 
 export const TOP_NAV_ITEM_CLASS =
@@ -54,6 +55,7 @@ export function TopNavView({
 	wallet,
 	theme,
 	language,
+	linkMobile,
 	settings,
 	compactUtilities,
 	compactHiddenWhenConnected,
@@ -114,12 +116,13 @@ export function TopNavView({
 					</nav>
 				</div>
 			</div>
-			<div className="ms-auto flex min-h-[34px] items-center gap-2">
+			<div className="ms-auto flex min-h-9 items-center gap-2">
 				{pairing}
 				{wallet}
 				<div className={cn("contents", compactHiddenWhenConnected && "nav-compact:hidden")}>
 					{theme}
 					{language}
+					{linkMobile}
 					{settings}
 				</div>
 				{compactUtilities && <div className="hidden nav-compact:inline-flex">{compactUtilities}</div>}

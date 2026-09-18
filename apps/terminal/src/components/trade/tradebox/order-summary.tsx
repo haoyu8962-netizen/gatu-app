@@ -88,7 +88,7 @@ export function OrderSummary({
 						<button
 							type="button"
 							onClick={onSlippageClick}
-							className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
+							className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80 active:opacity-60"
 						>
 							<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
 							<PencilIcon className="size-2.5 text-trading-panel-subtle" />

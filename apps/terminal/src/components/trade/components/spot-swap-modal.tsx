@@ -41,6 +41,7 @@ import {
 } from "@/lib/trade/order-submission-feedback";
 import {
 	type SwapMode,
+	useGlobalModalType,
 	useSwapModalActions,
 	useSwapModalFromToken,
 	useSwapModalMode,
@@ -374,9 +375,10 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		Boolean(spotMarket) &&
 		Boolean(quote);
 	const isDisabled = !accountDataReady || isSubmitting || showSuccess;
+	const isOpen = useGlobalModalType() === "swap";
 
 	return (
-		<Modal open onOpenChange={handleOpenChange}>
+		<Modal open={isOpen} onOpenChange={handleOpenChange}>
 			<ModalPopup size={isStablecoinSwap ? "md" : "sm"} closeLabel={t`Close`}>
 				<ModalHeader
 					divider={!isStablecoinSwap}

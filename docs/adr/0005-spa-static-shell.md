@@ -14,7 +14,7 @@ Nitro 目前承担的服务端职责：
 | `POST /client-error-report` | 限流后写日志 |
 | `GET /api/leaderboard` | 对 stats-data 的缓存代理（5 分钟新鲜、stale-if-error、体积上限） |
 | `GET /build-meta.json` | 运行时拼装构建身份 |
-| `POST /mobile-agent-sync-ticket` | 默认 fail-closed 关闭；启用时依赖单进程内存做一次性票据原子判定 |
+| `POST /mobile-agent-sync-ticket` | 默认 fail-closed 关闭；启用时依赖单进程内存做一次性票据原子判定（该端点已按 [ADR 0015](0015-link-device-alignment.md) D7 方案 B 于 2026-09-18 移除，路径现返回 404；下文涉及票据的条目均为历史描述） |
 | 安全头、`no-store`、按 host 的 API `preconnect` | Nitro `routeRules` 与 Caddy |
 
 [官方站首次加载调研](../architecture/hyperliquid-first-load-investigation.md)显示 Hyperliquid 官方终端是空 `#root` 的纯静态 SPA（S3 + CloudFront），代价是弱网下长时间空白。本决策要保留 gatu 的静态骨架壳，同时去掉对常驻服务端的依赖。

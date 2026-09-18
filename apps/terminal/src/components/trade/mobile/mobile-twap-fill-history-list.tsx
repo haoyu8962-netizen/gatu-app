@@ -41,9 +41,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 	}
 
 	if (!isConnected) {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">{t`Connect your wallet to view TWAP fill history.`}</div>
-		);
+		return <div className="flex-1" />;
 	}
 
 	if (status !== "ready" || (isRealtimeDegraded && fills.length === 0)) {
@@ -79,7 +77,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 				return (
 					<article
 						key={`${fill.twapId}:${fill.tid}:${fill.oid}:${fill.time}`}
-						className="flex flex-col gap-3 rounded-[14px] border border-market-close-stroke-card bg-modal px-3.5 py-3"
+						className="flex flex-col gap-3 rounded-[14px] border border-market-close-stroke-card bg-surface px-3.5 py-3"
 					>
 						<div className="flex min-w-0 items-start justify-between gap-3">
 							<button

@@ -429,6 +429,12 @@ not separate app sessions.
 - Do not use hidden mounted views if they continue expensive subscriptions or
   effects. If a view is mounted for continuity, guard its effects by active
   state.
+- React `Activity` in `hidden` mode unmounts effects, which destroys the
+  TradingView widget. The Markets view may start hidden to defer its first
+  render, but once it has been shown it stays `visible` and hides through the
+  existing wrapper classes, so the chart survives Markets/Trade/Account
+  switches (see `use-has-been-active.ts`). The official terminal keeps one
+  chart iframe across its Chart/Order Book/Trades tabs the same way.
 - Scroll behavior must be owned by one clear container. Avoid nested vertical
   overflow chains that fight each other.
 - Orderbook and chart transitions should retain the previous valid frame until
@@ -509,7 +515,30 @@ have an install capability.
   standalone display mode; do not use it to switch the terminal layout.
 - The Link Desktop scanner is optional and fail closed. Render it only when
   `MOBILE_PAIRING_FEATURES.importFromQr` is enabled, and accept only the
-  terminal's validated desktop-approved Agent payload.
+  terminal's validated desktop-approved Agent payload. The scanner selects a
+  back camera after `start()` (never before, which would open an unconstrained
+  stream) and excludes ultra-wide and telephoto labels.
+- The desktop Link mobile device entry has three surfaces that share one modal
+  instance through the global modal store (`useMobileSyncModalOpen` /
+  `useMobileSyncModalActions` in `stores/use-global-modal-store.ts`): the
+  header QR icon beside settings, the compact `DesktopUtilitiesMenu` item at
+  connected widths at or below the compact breakpoint, and the `UserMenu` item.
+  The icon and compact item render only when `hasWalletAccess &&
+  MOBILE_PAIRING_FEATURES.createAndReveal`; the user-menu item remains because
+  it is also the verify/revoke entry. The lazy host, error boundary and retry
+  stay in `UserMenu`, so opening from any surface mounts one modal.
+- Opening the modal runs read-only preflight only (funding snapshot, builder
+  fee, reserved slot); the single approval button is the only signing action.
+  Reveal keeps the 4 s hold, the visible countdown derives from the envelope
+  expiry and the 60 s reveal window on the local monotonic clock, and a phone in an Agent-only session shows
+  Deposit / Withdraw / Transfer disabled with the `agent-only-session` reason
+  instead of hiding them ([ADR 0015](adr/0015-link-device-alignment.md)).
+- Pairing is a client-only transfer with no server route
+  (`docs/trading-onboarding.md`, ADR 0015 D7 option B); the retired
+  `/mobile-agent-sync-ticket` path answers 404 everywhere and must not be
+  reintroduced. Both `VITE_MOBILE_PAIRING_*` build flags stay off in
+  production until the physical-device acceptance in
+  `docs/mobile-sync-ticketless-transfer-plan.md` has been run and recorded.
 - The mobile Email and WalletConnect entries launch Privy with explicit login
   methods; wallet selection remains Ethereum-only. An authenticated user takes
   the explicit reconnect path instead of starting a new login flow.
@@ -532,6 +561,13 @@ have an install capability.
 - `apps/terminal/src/config/privy.ts`
 - `apps/terminal/src/components/trade/components/wallet-modal.tsx`
 - `apps/terminal/src/components/trade/components/mobile-agent-qr-scanner.tsx`
+- `apps/terminal/src/components/trade/components/mobile-agent-sync-modal.tsx`
+- `apps/terminal/src/components/trade/header/top-nav.tsx`
+- `apps/terminal/src/components/trade/header/desktop-utilities-menu.tsx`
+- `apps/terminal/src/components/trade/header/user-menu.tsx`
+- `apps/terminal/src/stores/use-global-modal-store.ts`
+- `apps/terminal/src/routes/mobile-agent-sync.tsx`
+- `apps/terminal/src/edge/lambda-handler.ts`
 - `apps/terminal/src/providers/pwa-install.tsx`
 - `apps/terminal/src/config/seo.ts`
 - `apps/terminal/public/manifest.json`
@@ -544,6 +580,11 @@ have an install capability.
 - `apps/terminal/src/lib/tests/pwa-install.test.tsx`
 - `apps/terminal/src/lib/tests/pwa-manifest.test.ts`
 - `apps/terminal/src/lib/tests/privy-config.test.ts`
+- `apps/terminal/src/lib/tests/top-nav.test.tsx`
+- `apps/terminal/src/lib/tests/user-menu.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-agent-sync-modal.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-agent-qr-scanner.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-agent-sync-route.test.tsx`
 
 ## 9. Development And Browser Test Caches
 

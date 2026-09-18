@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const warmL2BookSubscription = vi.fn();
 const isTestnet = vi.fn(() => false);
@@ -13,6 +13,12 @@ vi.mock("@/lib/network", () => ({ isTestnet }));
 vi.mock("@/stores/use-market-store", () => ({
 	getStoredSelectedMarket: (scope: string) => storedMarkets[scope],
 }));
+
+// The first import pays the cold transform of hl-react; under a full parallel run it can exceed the
+// per-test timeout, so it is warmed once for every suite in this file.
+beforeAll(async () => {
+	await import("@/lib/trade/orderbook-boot");
+}, 60_000);
 
 describe("getBootOrderbookCoin", () => {
 	beforeEach(() => {

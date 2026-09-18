@@ -15,7 +15,7 @@ import { MobileTradeSizeControl } from "@/components/trade/mobile/mobile-trade-s
 import { MobileWalletCtaView } from "@/components/trade/mobile/mobile-wallet-cta-view";
 import { OrderbookGroupingTriggerView } from "@/components/trade/orderbook/orderbook-grouping-trigger-view";
 import { TradeCtaView } from "@/components/trade/tradebox/trade-cta-view";
-import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
+import { HEADER_ACCOUNT_CONTROL_HEIGHT_CLASS, HEADER_TOUCH_HIT_AREA_CLASS } from "@/config/layout";
 import { cn } from "@/lib/cn";
 import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
 
@@ -127,21 +127,16 @@ it("keeps pending CTA spinner padding identical to Button", () => {
 	}
 });
 it("pins the anonymous wallet frame and drawer icon against Button SSR", () => {
-	expect(primitive(dom(<MobileWalletCtaView label="Connect Wallet" />))).toEqual(
+	expect(primitive(dom(<MobileWalletCtaView label="Connect" />))).toEqual(
 		primitive(
 			dom(
 				<Button
-					variant="outline"
-					intent="neutral"
+					variant="filled"
+					intent="brand"
 					size="sm"
-					iconLeft={<WalletIcon className="size-3.5" />}
-					className={cn(
-						APP_BAR_BUTTON_HEIGHT_CLASS,
-						"min-w-0 max-w-full",
-						"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
-					)}
+					className={cn(HEADER_ACCOUNT_CONTROL_HEIGHT_CLASS, HEADER_TOUCH_HIT_AREA_CLASS, "min-w-0 max-w-full px-3.5")}
 				>
-					<span className="min-w-0 truncate">Connect Wallet</span>
+					<span className="min-w-0 truncate">Connect</span>
 				</Button>,
 			),
 		),

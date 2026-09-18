@@ -11,7 +11,6 @@ const viteConfig = readFileSync(resolve(TERMINAL_ROOT, "vite.config.ts"), "utf8"
 const serviceWorker = readFileSync(resolve(TERMINAL_ROOT, "public/sw.js"), "utf8");
 const caddyfile = readFileSync(resolve(REPOSITORY_ROOT, "deploy/Caddyfile"), "utf8");
 const deployScript = readFileSync(resolve(REPOSITORY_ROOT, "deploy/deploy.sh"), "utf8");
-const releaseVerifier = readFileSync(resolve(REPOSITORY_ROOT, "deploy/mobile-sync-release.mjs"), "utf8");
 const systemdUnit = readFileSync(resolve(REPOSITORY_ROOT, "deploy/gatu.service"), "utf8");
 const referralUriGuard = readFileSync(resolve(REPOSITORY_ROOT, "deploy/referral-uri-guard.cjs"), "utf8");
 const rootRoute = readFileSync(resolve(TERMINAL_ROOT, "src/routes/__root.tsx"), "utf8");
@@ -118,11 +117,6 @@ describe("TradingView asset cache policy", () => {
 		expect(deployScript).toContain("flock -n 9");
 		expect(deployScript).toContain("GATU_DEPLOY_LOCK_FD=9");
 		expect(deployScript).toContain('readlink -f "/proc/$$/fd/9"');
-		expect(deployScript).toContain("node deploy/mobile-sync-release.mjs attest-env apps/terminal/.output");
-		expect(releaseVerifier).toContain(
-			'await copyFile(resolve("deploy/referral-uri-guard.cjs"), resolve(directory, "referral-uri-guard.cjs"))',
-		);
-		expect(releaseVerifier).toContain('manifest.files.includes("referral-uri-guard.cjs")');
 		expect(deployScript).toContain(`cp -a "\${candidate}/artifact/." "$release_tmp"/`);
 		expect(systemdUnit).toContain("--require=./referral-uri-guard.cjs server/index.mjs");
 		expect(systemdUnit).toContain(".gatu-release-capabilities");

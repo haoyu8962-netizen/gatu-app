@@ -3,6 +3,7 @@ import {
 	createMobileAgentApproval,
 	createMobileAgentRevocationApproval,
 	type ExpectedMobileAgentVerification,
+	getMobileAgentNameBase,
 	isStoredMobileAgent,
 	MOBILE_AGENT_NAME_BASE,
 	type MobileAgentApproval,
@@ -10,14 +11,7 @@ import {
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ExtraAgentsResponse } from "@nktkas/hyperliquid";
-import {
-	CheckIcon,
-	DeviceMobileIcon,
-	QrCodeIcon,
-	ShieldCheckIcon,
-	SpinnerGapIcon,
-	WarningCircleIcon,
-} from "@phosphor-icons/react";
+import { CheckIcon, DeviceMobileIcon, ShieldCheckIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { zeroAddress } from "viem";
@@ -46,9 +40,8 @@ import {
 	hasDesktopApprovalRecovery,
 	updateDesktopApprovalRecovery,
 } from "@/lib/mobile-sync/desktop-approval-recovery";
-import { issueMobileSyncTicket } from "@/lib/mobile-sync/one-time-ticket-client";
 import { waitForExpectedMobileAgent } from "@/lib/mobile-sync/remote-verification";
-import { createMobileAgentSyncUrl } from "@/lib/mobile-sync/sync-core";
+import { createMobileAgentSyncUrl, MOBILE_SYNC_QR_VISIBLE_MS } from "@/lib/mobile-sync/sync-core";
 
 interface MobileAgentSyncModalProps {
 	open: boolean;
@@ -61,13 +54,16 @@ interface MobileAgentSyncSessionProps extends MobileAgentSyncModalProps {
 	walletAddress: Address | undefined;
 }
 
-interface QrPayload {
-	agentAddress: Address;
+interface QrDeadlines {
 	expiresAtMs: number;
+	visibleUntilMonotonicMs: number;
+}
+
+interface QrPayload extends QrDeadlines {
+	agentAddress: Address;
+	syncId: string;
 	pageSafetyEpoch: number;
 	rendered: boolean;
-	ticketExpiresAtMonotonicMs: number;
-	ticketExpiresAtWallClockMs: number;
 	url: string;
 }
 
@@ -80,7 +76,7 @@ interface ExpectedRevocationAgent {
 type SyncState =
 	| { status: "idle" }
 	| { status: "checking" }
-	| { status: "review" }
+	| { status: "ready" }
 	| { status: "approving" }
 	| { status: "verifying" }
 	| { status: "pending-verification"; approval: MobileAgentApproval; message: MobileAgentSyncMessage }
@@ -118,9 +114,6 @@ const LOCALIZED_MESSAGE_CODES = [
 	"qr-creation-unavailable",
 	"qr-render-failed",
 	"qr-reveal-unavailable",
-	"qr-service-unavailable",
-	"qr-upgrade-required",
-	"qr-ticket-rejected",
 	"recovery-capacity",
 	"review-before-approve",
 	"revocation-expired",
@@ -138,7 +131,23 @@ type MobileAgentSyncMessage =
 const RECOVERY_MESSAGE_CODE_PREFIX = "\u0000gatu-mobile-sync-message:v1:";
 
 const QR_REVEAL_HOLD_MS = 4_000;
+const HOLD_RING_RADIUS = 10;
+const HOLD_RING_CIRCUMFERENCE = 2 * Math.PI * HOLD_RING_RADIUS;
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+function remainingQrLifetimeMs(deadlines: QrDeadlines): number {
+	return Math.min(deadlines.expiresAtMs - Date.now(), deadlines.visibleUntilMonotonicMs - performance.now());
+}
+
+function remainingQrLifetimeSeconds(deadlines: QrDeadlines): number {
+	return Math.max(0, Math.ceil(remainingQrLifetimeMs(deadlines) / 1_000));
+}
+
+function findExistingMobileAgentAddress(extraAgents: ExtraAgentsResponse | undefined, error: unknown): Address | null {
+	if (error || !extraAgents) return null;
+	const existing = extraAgents.find((agent) => getMobileAgentNameBase(agent.name) === MOBILE_AGENT_NAME_BASE);
+	return existing?.address ?? null;
+}
 
 function normalizeError(error: unknown): Error {
 	return error instanceof Error ? error : new Error(String(error));
@@ -302,6 +311,7 @@ function MobileAgentSyncSession({
 	const [resetState, setResetState] = useState<ResetState>({ status: "idle" });
 	const [, setRecoveryRevision] = useState(0);
 	const activeOperationRef = useRef<AbortController | null>(null);
+	const runPreflightRef = useRef<() => void>(() => {});
 	const pageSafetyEpochRef = useRef(0);
 	const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -310,10 +320,7 @@ function MobileAgentSyncSession({
 	const visibleExpiresAtMs = syncState.status === "visible" ? syncState.payload.expiresAtMs : null;
 	const visiblePageSafetyEpoch = syncState.status === "visible" ? syncState.payload.pageSafetyEpoch : null;
 	const visibleQrRendered = syncState.status === "visible" && syncState.payload.rendered;
-	const visibleTicketExpiresAtMonotonicMs =
-		syncState.status === "visible" ? syncState.payload.ticketExpiresAtMonotonicMs : null;
-	const visibleTicketExpiresAtWallClockMs =
-		syncState.status === "visible" ? syncState.payload.ticketExpiresAtWallClockMs : null;
+	const visibleUntilMonotonicMs = syncState.status === "visible" ? syncState.payload.visibleUntilMonotonicMs : null;
 	const hasUnsettledWalletAction =
 		syncState.status === "approving" ||
 		syncState.status === "verifying" ||
@@ -391,19 +398,11 @@ function MobileAgentSyncSession({
 
 	useEffect(() => {
 		const canvas = qrCanvasRef.current;
-		if (
-			!canvas ||
-			!visibleUrl ||
-			visibleExpiresAtMs === null ||
-			visibleTicketExpiresAtMonotonicMs === null ||
-			visibleTicketExpiresAtWallClockMs === null
-		) {
+		if (!canvas || !visibleUrl || visibleExpiresAtMs === null || visibleUntilMonotonicMs === null) {
 			clearQrCanvas(canvas);
 			return;
 		}
-		const envelopeExpiresAtMs = visibleExpiresAtMs;
-		const ticketExpiresAtMonotonicMs = visibleTicketExpiresAtMonotonicMs;
-		const ticketExpiresAtWallClockMs = visibleTicketExpiresAtWallClockMs;
+		const deadlines: QrDeadlines = { expiresAtMs: visibleExpiresAtMs, visibleUntilMonotonicMs };
 		if (!isQrPageActive() || visiblePageSafetyEpoch !== pageSafetyEpochRef.current) {
 			clearQrCanvas(canvas);
 			return;
@@ -429,10 +428,7 @@ function MobileAgentSyncSession({
 					clearQrCanvas(canvas);
 					return;
 				}
-				if (
-					Date.now() >= Math.min(envelopeExpiresAtMs, ticketExpiresAtWallClockMs) ||
-					performance.now() >= ticketExpiresAtMonotonicMs
-				) {
+				if (remainingQrLifetimeMs(deadlines) <= 0) {
 					clearQrCanvas(canvas);
 					return;
 				}
@@ -457,13 +453,7 @@ function MobileAgentSyncSession({
 			cancelled = true;
 			clearQrCanvas(canvas);
 		};
-	}, [
-		visibleExpiresAtMs,
-		visiblePageSafetyEpoch,
-		visibleTicketExpiresAtMonotonicMs,
-		visibleTicketExpiresAtWallClockMs,
-		visibleUrl,
-	]);
+	}, [visibleExpiresAtMs, visiblePageSafetyEpoch, visibleUntilMonotonicMs, visibleUrl]);
 
 	useEffect(() => {
 		if (!walletAddress || !visibleAgentAddress || !visibleQrRendered) return;
@@ -473,17 +463,8 @@ function MobileAgentSyncSession({
 	}, [env, visibleAgentAddress, visibleQrRendered, walletAddress]);
 
 	useBrowserLayoutEffect(() => {
-		if (
-			!visibleUrl ||
-			visibleExpiresAtMs === null ||
-			visibleTicketExpiresAtMonotonicMs === null ||
-			visibleTicketExpiresAtWallClockMs === null
-		) {
-			return;
-		}
-		const envelopeExpiresAtMs = visibleExpiresAtMs;
-		const ticketExpiresAtMonotonicMs = visibleTicketExpiresAtMonotonicMs;
-		const ticketExpiresAtWallClockMs = visibleTicketExpiresAtWallClockMs;
+		if (!visibleUrl || visibleExpiresAtMs === null || visibleUntilMonotonicMs === null) return;
+		const deadlines: QrDeadlines = { expiresAtMs: visibleExpiresAtMs, visibleUntilMonotonicMs };
 
 		function expireQr() {
 			activeOperationRef.current?.abort();
@@ -494,18 +475,10 @@ function MobileAgentSyncSession({
 			onOpenChange(false);
 		}
 
-		function remainingQrLifetimeMs() {
-			return Math.min(
-				envelopeExpiresAtMs - Date.now(),
-				ticketExpiresAtMonotonicMs - performance.now(),
-				ticketExpiresAtWallClockMs - Date.now(),
-			);
-		}
-
-		const timeoutId = window.setTimeout(expireQr, Math.max(0, remainingQrLifetimeMs()));
+		const timeoutId = window.setTimeout(expireQr, Math.max(0, remainingQrLifetimeMs(deadlines)));
 
 		function handleVisibilityChange() {
-			if (document.visibilityState !== "visible" || remainingQrLifetimeMs() <= 0) expireQr();
+			if (document.visibilityState !== "visible" || remainingQrLifetimeMs(deadlines) <= 0) expireQr();
 		}
 
 		if (!isQrPageActive() || visiblePageSafetyEpoch !== pageSafetyEpochRef.current) {
@@ -522,14 +495,7 @@ function MobileAgentSyncSession({
 			window.removeEventListener("blur", expireQr);
 			window.removeEventListener("pagehide", expireQr);
 		};
-	}, [
-		onOpenChange,
-		visibleExpiresAtMs,
-		visiblePageSafetyEpoch,
-		visibleTicketExpiresAtMonotonicMs,
-		visibleTicketExpiresAtWallClockMs,
-		visibleUrl,
-	]);
+	}, [onOpenChange, visibleExpiresAtMs, visiblePageSafetyEpoch, visibleUntilMonotonicMs, visibleUrl]);
 
 	function startOperation() {
 		activeOperationRef.current?.abort();
@@ -658,7 +624,7 @@ function MobileAgentSyncSession({
 		}
 	}
 
-	async function handleReviewSync() {
+	async function runPreflight() {
 		if (!MOBILE_PAIRING_FEATURES.createAndReveal) {
 			setSyncState({ status: "error", message: localizedMessage("qr-creation-unavailable") });
 			return;
@@ -685,7 +651,6 @@ function MobileAgentSyncSession({
 
 		const operation = startOperation();
 		setSyncState({ status: "checking" });
-		setResetState({ status: "idle" });
 
 		try {
 			const [clearinghouseResult, spotResult, builderFeeResult] = await Promise.all([
@@ -714,7 +679,7 @@ function MobileAgentSyncSession({
 				return;
 			}
 
-			setSyncState({ status: "review" });
+			setSyncState({ status: "ready" });
 		} catch (error) {
 			if (!operation.signal.aborted) {
 				setSyncState({ status: "error", message: externalErrorMessage(error) });
@@ -729,7 +694,7 @@ function MobileAgentSyncSession({
 			setSyncState({ status: "error", message: localizedMessage("qr-creation-unavailable") });
 			return;
 		}
-		if (!walletAddress || !hasWalletAccess || syncState.status !== "review") {
+		if (!walletAddress || !hasWalletAccess || syncState.status !== "ready") {
 			setSyncState({
 				status: "error",
 				message: localizedMessage("review-before-approve"),
@@ -911,37 +876,8 @@ function MobileAgentSyncSession({
 				return;
 			}
 
-			const ticketResult = await issueMobileSyncTicket(operation.signal);
-			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
-			if (operation.signal.aborted || !isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
-				setSyncState({ status: "concealed", approval });
-				return;
-			}
-			if (ticketResult.status !== "accepted") {
-				setSyncState({
-					status: "concealed",
-					approval,
-					message:
-						ticketResult.status === "rejected"
-							? localizedMessage("qr-ticket-rejected")
-							: ticketResult.status === "incompatible"
-								? localizedMessage("qr-upgrade-required")
-								: localizedMessage("qr-service-unavailable"),
-				});
-				return;
-			}
-			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
-			if (operation.signal.aborted || !isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
-				setSyncState({ status: "concealed", approval });
-				return;
-			}
-			if (ticketResult.expiresAtWallClockMs <= Date.now() || ticketResult.expiresAtMonotonicMs <= performance.now()) {
-				setSyncState({ status: "concealed", approval, message: localizedMessage("qr-ticket-rejected") });
-				return;
-			}
 			const syncCreatedAtMs = Date.now();
 			const syncUrl = await createMobileAgentSyncUrl({
-				syncId: ticketResult.syncId,
 				appOrigin: window.location.origin,
 				env,
 				userAddress: walletAddress,
@@ -955,15 +891,8 @@ function MobileAgentSyncSession({
 				setSyncState({ status: "concealed", approval });
 				return;
 			}
-			if (
-				Math.min(syncUrl.expiresAtMs, ticketResult.expiresAtWallClockMs) <= Date.now() ||
-				ticketResult.expiresAtMonotonicMs <= performance.now()
-			) {
-				setSyncState({
-					status: "concealed",
-					approval,
-					message: localizedMessage("qr-ticket-rejected"),
-				});
+			if (syncUrl.expiresAtMs <= Date.now()) {
+				setSyncState({ status: "concealed", approval });
 				return;
 			}
 
@@ -971,12 +900,12 @@ function MobileAgentSyncSession({
 				status: "visible",
 				payload: {
 					agentAddress: approval.publicKey,
+					syncId: syncUrl.syncId,
 					url: syncUrl.url,
 					expiresAtMs: syncUrl.expiresAtMs,
 					pageSafetyEpoch,
 					rendered: false,
-					ticketExpiresAtMonotonicMs: ticketResult.expiresAtMonotonicMs,
-					ticketExpiresAtWallClockMs: ticketResult.expiresAtWallClockMs,
+					visibleUntilMonotonicMs: performance.now() + MOBILE_SYNC_QR_VISIBLE_MS,
 				},
 			});
 		} catch (error) {
@@ -1164,6 +1093,25 @@ function MobileAgentSyncSession({
 		syncState.status !== "concealed" &&
 		syncState.status !== "revalidating" &&
 		syncState.status !== "visible";
+	const shouldRunPreflight =
+		open &&
+		MOBILE_PAIRING_FEATURES.createAndReveal &&
+		!!walletAddress &&
+		hasWalletAccess &&
+		syncState.status === "idle" &&
+		!resetBlocksSync;
+	const canRetryPreflight = syncState.status === "error";
+	const canApprove = syncState.status === "ready" && !resetBlocksSync && !!walletAddress && hasWalletAccess;
+	const existingMobileAgentAddress = findExistingMobileAgentAddress(extraAgentsQuery.data, extraAgentsQuery.error);
+
+	useEffect(() => {
+		runPreflightRef.current = runPreflight;
+	});
+
+	useEffect(() => {
+		if (!shouldRunPreflight) return;
+		runPreflightRef.current();
+	}, [shouldRunPreflight]);
 
 	return (
 		<AdaptiveModal
@@ -1182,7 +1130,7 @@ function MobileAgentSyncSession({
 					</ModalTitle>
 				</div>
 				<ModalDescription>
-					<Trans>Create a desktop trading key and transfer it only through a QR code.</Trans>
+					<Trans>Approve a trading key on this desktop and move it to your phone only through the QR code.</Trans>
 				</ModalDescription>
 			</ModalHeader>
 
@@ -1217,14 +1165,12 @@ function MobileAgentSyncSession({
 					<PendingApprovalVerificationPanel state={syncState} onRetry={handleRetryApprovalVerification} />
 				) : !MOBILE_PAIRING_FEATURES.createAndReveal ? (
 					<PairingUnavailablePanel />
-				) : syncState.status === "review" ? (
-					<ApprovalReviewPanel />
 				) : syncState.status === "concealed" || syncState.status === "revalidating" ? (
 					<ConcealedQrPanel state={syncState} onReveal={handleRevealQr} />
 				) : syncState.status === "visible" ? (
-					<VisibleQrPanel payload={syncState.payload} canvasRef={qrCanvasRef} />
+					<VisibleQrPanel key={syncState.payload.syncId} payload={syncState.payload} canvasRef={qrCanvasRef} />
 				) : (
-					<CreateAccessPanel />
+					<PreApprovalPanel existingMobileAgentAddress={existingMobileAgentAddress} />
 				)}
 
 				<ResetMobileAccessPanel
@@ -1243,15 +1189,13 @@ function MobileAgentSyncSession({
 						variant="filled"
 						intent="brand"
 						size="sm"
-						onClick={syncState.status === "review" ? handleApproveSync : handleReviewSync}
-						disabled={isSyncPending || resetBlocksSync || !walletAddress || !hasWalletAccess}
+						onClick={canRetryPreflight ? runPreflight : handleApproveSync}
+						disabled={!(canApprove || canRetryPreflight)}
 						iconLeft={
 							isSyncPending ? (
 								<SpinnerGapIcon className="size-3.5 animate-spin" />
-							) : syncState.status === "review" ? (
-								<ShieldCheckIcon className="size-3.5" />
 							) : (
-								<DeviceMobileIcon className="size-3.5" />
+								<ShieldCheckIcon className="size-3.5" />
 							)
 						}
 					>
@@ -1266,11 +1210,10 @@ function MobileAgentSyncSession({
 function PrimaryButtonLabel({ status }: { status: SyncState["status"] }) {
 	const { t } = useLingui();
 	if (status === "checking") return t`Checking account...`;
-	if (status === "review") return t`Approve mobile trading key`;
-	if (status === "approving") return t`Approve in wallet...`;
+	if (status === "approving") return t`Approve QR code with wallet...`;
 	if (status === "verifying") return t`Verifying approval...`;
-	if (status === "error") return t`Review again`;
-	return t`Review phone access`;
+	if (status === "error") return t`Retry check`;
+	return t`Approve mobile trading key`;
 }
 
 function MobileAgentSyncMessageText({ message }: { message: MobileAgentSyncMessage }) {
@@ -1306,16 +1249,10 @@ function MobileAgentSyncMessageText({ message }: { message: MobileAgentSyncMessa
 			return t`Could not render QR. Create a new key.`;
 		case "qr-reveal-unavailable":
 			return t`Mobile QR reveal is temporarily unavailable. Revoke this key if you no longer need it.`;
-		case "qr-upgrade-required":
-			return t`Refresh both devices to update phone access, then create a new QR.`;
-		case "qr-service-unavailable":
-			return t`The one-time QR service is unavailable. Check your connection and retry.`;
-		case "qr-ticket-rejected":
-			return t`This one-time QR could not be created. Try revealing a new QR.`;
 		case "recovery-capacity":
 			return t`Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first.`;
 		case "review-before-approve":
-			return t`Review phone access with the selected master wallet before approving it.`;
+			return t`Wait for the account check to finish before approving a mobile trading key.`;
 		case "revocation-expired":
 			return t`The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation.`;
 		case "revocation-pending":
@@ -1375,25 +1312,9 @@ function PairingUnavailablePanel() {
 	);
 }
 
-function CreateAccessPanel() {
-	return (
-		<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
-			<div className="flex items-start gap-3">
-				<ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-signal" weight="duotone" aria-hidden />
-				<div className="min-w-0 space-y-1">
-					<p className="text-sm font-semibold text-fg">
-						<Trans>Create phone access</Trans>
-					</p>
-					<p className="text-xs text-fg-muted">
-						<Trans>Your master wallet approves one trading key. The key cannot withdraw funds.</Trans>
-					</p>
-				</div>
-			</div>
-		</div>
-	);
-}
+function PreApprovalPanel({ existingMobileAgentAddress }: { existingMobileAgentAddress: Address | null }) {
+	const existingMobileAgentLabel = existingMobileAgentAddress ? shortenAddress(existingMobileAgentAddress) : null;
 
-function ApprovalReviewPanel() {
 	return (
 		<div className="space-y-3 rounded-8 border border-stroke-weak bg-fill-weak p-3">
 			<div className="flex items-start gap-3">
@@ -1403,22 +1324,77 @@ function ApprovalReviewPanel() {
 						<Trans>Approve a mobile trading key</Trans>
 					</p>
 					<p className="text-xs text-fg-muted">
-						<Trans>The private key is created on this desktop and embedded in the QR code.</Trans>
+						<Trans>
+							The key can trade on this account (orders, cancels, leverage, vault and sub-account moves) but cannot
+							withdraw or send funds out of Hyperliquid; withdrawals and sends still need this master wallet.
+						</Trans>
 					</p>
 				</div>
 			</div>
 			<ul className="list-disc space-y-1 ps-5 text-xs text-fg-muted">
+				<li>
+					<Trans>The private key is created on this desktop and embedded in the QR code.</Trans>
+				</li>
 				<li>
 					<Trans>Anyone who scans or captures the QR can trade as this Agent.</Trans>
 				</li>
 				<li>
 					<Trans>Approving a new mobile key replaces the previous mobile key.</Trans>
 				</li>
-				<li>
-					<Trans>Confirm the approval only in the selected master wallet.</Trans>
-				</li>
 			</ul>
+			{existingMobileAgentLabel && (
+				<p className="text-xs text-fg-muted">
+					<Trans>
+						Replaces the current mobile key{" "}
+						<bdi dir="ltr" className="font-mono text-fg">
+							{existingMobileAgentLabel}
+						</bdi>
+					</Trans>
+				</p>
+			)}
 		</div>
+	);
+}
+
+function PhoneJourneyInstruction() {
+	return (
+		<p className="text-xs text-fg-muted">
+			<Trans>
+				On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code, or scan it with your phone
+				camera.
+			</Trans>
+		</p>
+	);
+}
+
+function HoldProgressRing({ progressPercent }: { progressPercent: number }) {
+	const { t } = useLingui();
+
+	return (
+		<span
+			role="progressbar"
+			aria-label={t`QR reveal progress`}
+			aria-valuemin={0}
+			aria-valuemax={100}
+			aria-valuenow={Math.round(progressPercent)}
+			className="inline-flex size-3.5 shrink-0"
+		>
+			<svg viewBox="0 0 24 24" aria-hidden="true" className="size-full origin-center -rotate-90">
+				<circle cx={12} cy={12} r={HOLD_RING_RADIUS} fill="none" stroke="currentColor" strokeWidth={3} opacity={0.25} />
+				<circle
+					cx={12}
+					cy={12}
+					r={HOLD_RING_RADIUS}
+					fill="none"
+					stroke="currentColor"
+					strokeWidth={3}
+					strokeLinecap="round"
+					strokeDasharray={HOLD_RING_CIRCUMFERENCE}
+					strokeDashoffset={HOLD_RING_CIRCUMFERENCE * (1 - progressPercent / 100)}
+					className="text-signal transition-[stroke-dashoffset] duration-100"
+				/>
+			</svg>
+		</span>
 	);
 }
 
@@ -1456,6 +1432,18 @@ function ConcealedQrPanel({
 
 			{state.status === "concealed" && state.message && <InlineError message={state.message} />}
 
+			<PhoneJourneyInstruction />
+
+			<div className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error">
+				<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
+				<p>
+					<Trans>
+						This QR enables trading on your phone, but not deposits or withdrawals. Do not share the QR or screenshots
+						of it with anyone. Make sure you are not sharing your screen.
+					</Trans>
+				</p>
+			</div>
+
 			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
 				<p className="text-sm font-semibold text-fg">
 					<Trans>Hold to reveal QR</Trans>
@@ -1473,7 +1461,11 @@ function ConcealedQrPanel({
 					aria-label={t`Hold for 4 seconds to reveal phone access QR`}
 					className="mt-3 w-full touch-none select-none"
 					iconLeft={
-						isRevalidating ? <SpinnerGapIcon className="size-3.5 animate-spin" /> : <QrCodeIcon className="size-3.5" />
+						isRevalidating ? (
+							<SpinnerGapIcon className="size-3.5 animate-spin" />
+						) : (
+							<HoldProgressRing progressPercent={progressPercent} />
+						)
 					}
 					{...handlers}
 				>
@@ -1485,23 +1477,6 @@ function ConcealedQrPanel({
 						<Trans>Press and hold for 4 seconds</Trans>
 					)}
 				</Button>
-				<div
-					role="progressbar"
-					aria-label={t`QR reveal progress`}
-					aria-valuemin={0}
-					aria-valuemax={100}
-					aria-valuenow={Math.round(progressPercent)}
-					className="mt-2 h-1 overflow-hidden rounded-full bg-fill"
-				>
-					<div className="h-full bg-signal transition-[width] duration-100" style={{ width: `${progressPercent}%` }} />
-				</div>
-			</div>
-
-			<div className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error">
-				<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
-				<p>
-					<Trans>Do not photograph, copy, share, or screen-record the QR code.</Trans>
-				</p>
 			</div>
 		</div>
 	);
@@ -1515,6 +1490,19 @@ function VisibleQrPanel({
 	canvasRef: RefObject<HTMLCanvasElement | null>;
 }) {
 	const { t } = useLingui();
+	const [announcedSeconds] = useState(() => remainingQrLifetimeSeconds(payload));
+	const [remainingSeconds, setRemainingSeconds] = useState(announcedSeconds);
+	const { expiresAtMs, visibleUntilMonotonicMs } = payload;
+
+	useEffect(() => {
+		const deadlines: QrDeadlines = { expiresAtMs, visibleUntilMonotonicMs };
+		setRemainingSeconds(remainingQrLifetimeSeconds(deadlines));
+		const intervalId = window.setInterval(() => {
+			setRemainingSeconds(remainingQrLifetimeSeconds(deadlines));
+		}, 1_000);
+		return () => window.clearInterval(intervalId);
+	}, [expiresAtMs, visibleUntilMonotonicMs]);
+
 	return (
 		<div className="space-y-3">
 			<div className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error">
@@ -1524,15 +1512,20 @@ function VisibleQrPanel({
 				</p>
 			</div>
 
+			<PhoneJourneyInstruction />
+
 			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
 				<div className="flex items-center justify-between gap-3">
 					<div>
 						<p className="text-sm font-semibold text-fg">
 							<Trans>Scan on your phone</Trans>
 						</p>
-						<p className="mt-0.5 text-xs text-fg-muted">
-							<Trans>This one-time QR closes automatically within 60 seconds.</Trans>
+						<p role="timer" className="mt-0.5 text-xs text-fg-muted tabular-nums">
+							<Trans>Closes in {remainingSeconds}s</Trans>
 						</p>
+						<output className="sr-only">
+							<Trans>The QR closes automatically in about {announcedSeconds} seconds</Trans>
+						</output>
 					</div>
 					{!payload.rendered && (
 						<SpinnerGapIcon className="size-4 animate-spin text-signal" aria-label={t`Rendering QR`} />

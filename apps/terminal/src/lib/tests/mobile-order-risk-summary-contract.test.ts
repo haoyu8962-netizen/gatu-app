@@ -13,10 +13,11 @@ const summaryView = readFileSync(
 const tradeLabels = readFileSync(new URL("../../config/trade-panel-labels.ts", import.meta.url), "utf8");
 
 describe("mobile order risk summary contract", () => {
-	it("shows prospective liquidation only for ordinary leveraged orders", () => {
+	it("estimates prospective liquidation only for ordinary leveraged orders", () => {
 		expect(mobileTradeView).toMatch(
-			/\{capabilities\.isLeveraged && \(orderType === "market" \|\| orderType === "limit"\) && \([\s\S]*?label=\{t`Liq\. Price`\}/,
+			/\{capabilities\.isLeveraged && \(\s*<MobileSummaryRowView\s+label=\{t`Liq\. Price`\}/,
 		);
+		expect(mobileTradeView).toMatch(/dataReady:\s*\(orderType === "market" \|\| orderType === "limit"\) &&/);
 		expect(mobileTradeView).toContain("estimateProspectiveLiquidation({");
 		expect(mobileTradeView).toContain("canEstimateProspectiveLiquidationDraft({");
 		expect(mobileTradeView).toContain("liqWarning");

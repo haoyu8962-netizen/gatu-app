@@ -387,7 +387,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 												onClick={
 													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
 												}
-												className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
+												className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-surface px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
 											>
 												<Trans context="Trading toolbar action">Withdraw</Trans>
 											</Button>

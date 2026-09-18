@@ -62,11 +62,12 @@ describe("static pages responder", () => {
 		const gone = await respond(request("/_serverFn/abc"));
 		expect(gone?.status).toBe(404);
 		expect(gone?.headers.get("content-type")).toContain("application/json");
-		const wrongMethod = await respond(request("/mobile-agent-sync-ticket"));
+		const wrongMethod = await respond(request("/client-error-report"));
 		expect(wrongMethod?.status).toBe(405);
 		expect(wrongMethod?.headers.get("allow")).toBe("POST");
 		expect(wrongMethod?.headers.get("cache-control")).toBe("no-store");
 		expect((await respond(request("/api/unknown")))?.status).toBe(404);
+		expect((await respond(request("/mobile-agent-sync-ticket")))?.status).toBe(404);
 		expect(readFile).not.toHaveBeenCalled();
 	});
 

@@ -11,14 +11,13 @@ export const STATIC_SHELL_FILE = "_shell.html";
 export const SERVER_FUNCTION_PATH_PREFIX = "/_serverFn/";
 export const REFERRAL_JOIN_ROUTE_MARKER = '<meta name="gatu-route" content="referral-join"/>';
 export const LEGACY_CLIENT_ERROR_REPORT_PATH = "/client-error-report";
-export const MOBILE_SYNC_TICKET_PATH = "/mobile-agent-sync-ticket";
+export const RETIRED_MOBILE_SYNC_TICKET_PATH = "/mobile-agent-sync-ticket";
 
 const NAVIGATION_API_PATHS = new Set<string>([GEO_API_PATH, LEADERBOARD_API_PATH]);
 const POST_ONLY_SERVER_PATHS = new Set<string>([
 	REFERRAL_GEO_API_PATH,
 	CLIENT_ERROR_REPORT_API_PATH,
 	LEGACY_CLIENT_ERROR_REPORT_PATH,
-	MOBILE_SYNC_TICKET_PATH,
 ]);
 const DOCUMENT_PATHS = new Set<string>(DOCUMENT_ROUTE_PATHS);
 const FILE_EXTENSION = /\.[A-Za-z0-9]{1,8}$/;
@@ -50,7 +49,10 @@ function trimTrailingSlash(pathname: string): string {
 function classifyServerPath(pathname: string): StaticPageDecision | null {
 	if (pathname.startsWith(SERVER_FUNCTION_PATH_PREFIX)) return { kind: "gone" };
 	if (NAVIGATION_API_PATHS.has(pathname)) return { kind: "pass" };
-	if (POST_ONLY_SERVER_PATHS.has(pathname) || pathname.startsWith(`${MOBILE_SYNC_TICKET_PATH}/`)) {
+	if (pathname === RETIRED_MOBILE_SYNC_TICKET_PATH || pathname.startsWith(`${RETIRED_MOBILE_SYNC_TICKET_PATH}/`)) {
+		return { kind: "not-found" };
+	}
+	if (POST_ONLY_SERVER_PATHS.has(pathname)) {
 		return { kind: "method-not-allowed", allow: "POST" };
 	}
 	if (pathname === API_PATH_PREFIX.slice(0, -1) || pathname.startsWith(API_PATH_PREFIX)) return { kind: "not-found" };

@@ -9,6 +9,7 @@ import {
 	getWithdrawalAvailability,
 } from "@/domain/trade/funds-action-availability";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import type { AccountAbstraction } from "./use-account-balances";
 
 export type FundsActionAvailabilityPresentation = FundsActionAvailability & {
@@ -49,6 +50,7 @@ export function useFundsActionAvailability({
 }: FundsActionAvailabilityInput): FundsActionAvailabilityState {
 	const { t } = useLingui();
 	const geo = useGeoRestriction();
+	const { sessionMode } = useWalletSession();
 	const geoStatus = getFundsActionGeoStatus(geo);
 	const accountModeStatus = getAccountModeAvailability(accountAbstraction);
 	const withdrawal = getWithdrawalAvailability({
@@ -57,6 +59,7 @@ export function useFundsActionAvailability({
 		fundsActionsEnabled,
 		geoStatus,
 		hasWalletAccess,
+		sessionMode,
 	});
 	const internalTransfer = getInternalTransferAvailability({
 		accountDataReady,
@@ -64,9 +67,13 @@ export function useFundsActionAvailability({
 		geoStatus,
 		hasWalletAccess,
 		internalTransfersEnabled,
+		sessionMode,
 	});
 
 	function getUnavailableReason(reason: FundsActionAvailabilityReason | null): string | null {
+		if (reason === "agent-only-session") {
+			return t`This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop.`;
+		}
 		if (reason === "wallet-session-required") return t`Connect the owner wallet before moving funds.`;
 		if (reason === "geo-restricted") return t`Funds actions are not available in your region.`;
 		if (reason === "geo-unresolved") {

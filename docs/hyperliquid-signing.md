@@ -416,6 +416,65 @@ with older callers. Product entry points must pass the user's stored
 `Stay Connected` preference explicitly; omitting it is not an acceptable UI
 default.
 
+### Mobile Agent QR transfer and Agent-only sessions
+
+Link mobile device reuses the Agent Wallet Pattern to move a trading-only key
+from the desktop to a phone. This section describes the implemented behavior;
+the product decisions and the official comparison are in
+[ADR 0015](adr/0015-link-device-alignment.md).
+
+- The desktop generates the Agent private key locally and the exact owner
+  wallet signs `approveAgent` (User-Signed, `0x66eee`) with the name
+  `Mobile valid_until <ms>`, where `<ms>` is the expiry 30 days after approval
+  (`packages/hl-react/src/signing/mobile-agent.ts`, `MOBILE_AGENT_VALIDITY_MS`).
+  Approval is an explicit action; opening the modal runs read-only checks only.
+- Before and after approval the desktop verifies the Agent through `extraAgents`
+  (`apps/terminal/src/lib/mobile-sync/remote-verification.ts`): the address,
+  name base and unexpired `validUntil` must match the expected record, and a
+  missing or mismatched server record fails closed.
+- The key travels in an AES-GCM envelope carried in the URL fragment of
+  `/mobile-agent-sync` (`apps/terminal/src/lib/mobile-sync/sync-core.ts`,
+  envelope v3, TTL `MOBILE_SYNC_PAYLOAD_TTL_MS` = 2 minutes). The fragment
+  never reaches a server, is scrubbed on bootstrap and is bound to the origin,
+  network and owner. Reveal requires a 4 s hold; the desktop generates the
+  16-byte `syncId` locally and shows the QR for `MOBILE_SYNC_QR_VISIBLE_MS` =
+  60 s on the local monotonic clock. The transfer uses no server state
+  (ADR 0015 D7, option B): the former one-time ticket endpoint is removed, so
+  a second phone scanning the same code within the envelope lifetime is not
+  rejected. The phone refuses a `syncId` it already imported
+  (`apps/terminal/src/lib/mobile-sync/imported-sync-ids.ts`) before it captures
+  a registration epoch, refuses an envelope dated ahead of it beyond the clock
+  skew, and rejects v2 envelopes with a refresh-both-devices message (older
+  JSON envelopes are simply invalid). These limits bind honest clients only:
+  the fragment carries the ciphertext and its AES key together, so a captured
+  complete QR or URL exposes the Agent key until it expires or the desktop
+  revokes it.
+- The phone performs an explicit Import step after decrypting the envelope and
+  stores the Agent record in the local storage scope on that device
+  (`persistAgentForRegistration(..., { scope: "local" })`; the underlying
+  `agent-storage.ts` default is also `local`), then activates the owner in an
+  `agent-only` session mode (`packages/hl-react/src/signing/agent-session.ts`).
+- An Agent-only session can sign L1 actions only: orders, cancels, leverage,
+  vault transfers and sub-account transfers. It cannot construct any
+  User-Signed call, so deposit, `withdraw3`, `usdSend`, `spotSend` and other
+  master-wallet actions need the master wallet on desktop; the phone surfaces
+  those actions disabled with a single desktop-required reason
+  (`agent-only-session`, see `docs/mobile-data-presentation.md`).
+- Revocation happens on desktop from the same modal: the owner signs
+  `approveAgent` for a replacement Agent under the same name base whose key is
+  discarded and whose validity is 10 minutes
+  (`createMobileAgentRevocationApproval`, `MOBILE_AGENT_REVOKE_VALIDITY_MS`),
+  so the server replaces the phone's Agent; the desktop then confirms through
+  `extraAgents` that the old address is gone. The phone record otherwise
+  expires at `validUntil`.
+
+For comparison, the official terminal encodes the raw Agent private key as
+base64 JSON in a `?link=` query string with no encryption or expiry,
+and approves a permanent `Mobile QR` agent that each re-link replaces. gatu
+keeps the stricter client-side boundary (exact owner, 30-day expiry,
+`extraAgents` verification, fragment envelope, explicit Import, desktop
+revoke) while matching the official entry, single-step approval and copy.
+
 ---
 
 ## Implementation Strategy

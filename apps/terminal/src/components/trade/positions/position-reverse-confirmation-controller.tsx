@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { toast } from "sonner";
 import { type PositionReverseTarget, usePositionReverseSubmit } from "@/hooks/trade/use-position-reverse-submit";
+import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { formatToken } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -12,17 +13,28 @@ interface Props {
 	onOpenChange: (open: boolean) => void;
 }
 
+const DIALOG_EXIT_MS = 250;
+
 export function PositionReverseConfirmationController({ target, onOpenChange }: Props) {
-	if (!target) return null;
-	return <PositionReverseConfirmationContent key={getTargetKey(target)} target={target} onOpenChange={onOpenChange} />;
+	const displayedTarget = useLingeringValue(target, DIALOG_EXIT_MS);
+	if (!displayedTarget) return null;
+	return (
+		<PositionReverseConfirmationContent
+			key={getTargetKey(displayedTarget)}
+			target={displayedTarget}
+			open={target !== null}
+			onOpenChange={onOpenChange}
+		/>
+	);
 }
 
 interface ContentProps {
 	target: PositionReverseTarget;
+	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
-function PositionReverseConfirmationContent({ target, onOpenChange }: ContentProps) {
+function PositionReverseConfirmationContent({ target, open, onOpenChange }: ContentProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const markets = useMarkets();
@@ -67,15 +79,18 @@ function PositionReverseConfirmationContent({ target, onOpenChange }: ContentPro
 
 	return (
 		<PositionReverseConfirmationModal
-			open
+			open={open}
 			marketLabel={marketLabel}
 			currentDirection={currentDirection}
 			reverseSizeLabel={reverseSizeLabel}
 			isSubmitting={submission.isPending}
-			isConfirmDisabled={submission.isPending || submission.isReconciling}
+			isConfirmDisabled={!open || submission.isPending || submission.isReconciling}
 			errorMessage={submission.error}
 			onOpenChange={handleOpenChange}
-			onConfirm={() => void handleConfirm()}
+			onConfirm={() => {
+				if (!open) return;
+				void handleConfirm();
+			}}
 		/>
 	);
 }

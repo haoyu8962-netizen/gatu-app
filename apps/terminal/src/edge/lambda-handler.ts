@@ -16,7 +16,6 @@ export const VIEWER_ADDRESS_HEADER = "cloudfront-viewer-address";
 /** Internal header the adapter sets from the trusted source; incoming values are always discarded. */
 const CLIENT_IP_HEADER = "x-gatu-client-ip";
 const LEGACY_CLIENT_ERROR_REPORT_PATH = "/client-error-report";
-const MOBILE_SYNC_TICKET_PATH = "/mobile-agent-sync-ticket";
 const NO_STORE_JSON = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } as const;
 
 export interface LambdaFunctionUrlEvent {
@@ -147,11 +146,6 @@ export function createApiRouter(environment: LambdaEnvironment): (request: Reque
 				return jsonResponse({ error: "Method not allowed" }, 405, { allow: "GET" });
 			}
 			return handleLeaderboardApiRequest(request);
-		}
-		if (pathname === MOBILE_SYNC_TICKET_PATH || pathname.startsWith(`${MOBILE_SYNC_TICKET_PATH}/`)) {
-			return jsonResponse({ error: "Mobile pairing is not available on this deployment" }, 503, {
-				"retry-after": "3600",
-			});
 		}
 		return jsonResponse({ error: "Not found" }, 404);
 	};

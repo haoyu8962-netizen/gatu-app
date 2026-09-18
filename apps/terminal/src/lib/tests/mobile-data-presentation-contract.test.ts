@@ -18,6 +18,7 @@ describe("mobile passive data presentation contract", () => {
 
 	it.each([
 		"account-mode-unsupported",
+		"agent-only-session",
 		"geo-restricted",
 		"external-deposit-disabled",
 		"internal-transfers-unavailable",

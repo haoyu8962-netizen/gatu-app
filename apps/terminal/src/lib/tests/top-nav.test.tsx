@@ -18,8 +18,10 @@ const testState = vi.hoisted(() => ({
 	depositPath: "external" as "external" | "sponsored",
 	depositUnavailableReason: null as string | null,
 	isTestnet: false,
+	mobilePairingCreateAndReveal: true,
 	navigate: vi.fn(),
 	openDepositModal: vi.fn(),
+	openMobileSyncModal: vi.fn(),
 	openSettingsDialog: vi.fn(),
 	pathname: "/trade/HYPE",
 	privyPopupOpen: false,
@@ -165,6 +167,18 @@ vi.mock("@/components/trade/header/theme-toggle", () => ({
 	ThemeToggle: () => createElement("div", { "data-testid": "theme-toggle" }),
 }));
 
+vi.mock("@/config/mobile-pairing", () => ({
+	MOBILE_PAIRING_FEATURES: {
+		get createAndReveal() {
+			return testState.mobilePairingCreateAndReveal;
+		},
+		get importFromQr() {
+			return testState.mobilePairingCreateAndReveal;
+		},
+		legacyLinkInput: false,
+	},
+}));
+
 vi.mock("@/hooks/trade/use-trade-home-path", () => ({
 	useTradeHomePath: () => testState.tradeHomePath,
 }));
@@ -225,6 +239,7 @@ vi.mock("@/lib/lazy", () => ({
 
 vi.mock("@/stores/use-global-modal-store", () => ({
 	useDepositModalActions: () => ({ open: testState.openDepositModal }),
+	useMobileSyncModalActions: () => ({ open: testState.openMobileSyncModal }),
 	useSettingsDialogActions: () => ({ open: testState.openSettingsDialog }),
 }));
 
@@ -248,6 +263,7 @@ describe("TopNav", () => {
 		testState.depositPath = "external";
 		testState.depositUnavailableReason = null;
 		testState.isTestnet = false;
+		testState.mobilePairingCreateAndReveal = true;
 		testState.pathname = "/trade/HYPE";
 		testState.privyPopupOpen = false;
 		testState.tradeHomePath = "/trade/HYPE";
@@ -309,6 +325,22 @@ describe("TopNav", () => {
 
 	function findDesktopUtilitiesButton() {
 		return container.querySelector<HTMLButtonElement>('button[aria-label="Display and language"]') ?? undefined;
+	}
+
+	function findLinkMobileIcon() {
+		return container.querySelector<HTMLButtonElement>('button[aria-label="Link mobile device"]') ?? undefined;
+	}
+
+	function remountNav(mode?: TopNavMode) {
+		act(() => root.unmount());
+		root = createI18nRoot(container);
+		renderNav(mode);
+	}
+
+	function findUtilitiesMenuItem(label: string) {
+		return [...document.body.querySelectorAll<HTMLButtonElement>('[data-slot="popover-content"] button')].find(
+			(button) => button.textContent?.trim() === label,
+		);
 	}
 
 	it.each([
@@ -613,6 +645,82 @@ describe("TopNav", () => {
 		expect(container.querySelector('[data-testid="UserMenu"]')).toBe(wallet);
 		act(() => i18n.activate("en"));
 		expect(findLink("Trade")).toBe(trade);
+	});
+
+	it("shows the Link mobile device icon only for wallet sessions with pairing enabled", () => {
+		renderNav();
+		const icon = findLinkMobileIcon();
+		expect(icon?.disabled).toBe(false);
+		expect(icon?.parentElement?.className).toContain("nav-compact:hidden");
+		expect(icon?.nextElementSibling).toBe(container.querySelector('button[aria-label="Settings"]'));
+		act(() => icon?.click());
+		expect(testState.openMobileSyncModal).toHaveBeenCalledOnce();
+		expect(testState.openSettingsDialog).not.toHaveBeenCalled();
+
+		testState.hasWalletAccess = false;
+		renderNav();
+		expect(findLinkMobileIcon()).toBeUndefined();
+
+		testState.hasWalletAccess = true;
+		testState.mobilePairingCreateAndReveal = false;
+		renderNav();
+		expect(findLinkMobileIcon()).toBeUndefined();
+		expect(container.querySelector('button[aria-label="Settings"]')).not.toBeNull();
+	});
+
+	it("disables the Link mobile device icon with the settings icon while the market loads", () => {
+		renderNav("market-loading");
+		const icon = findLinkMobileIcon();
+		expect(icon?.disabled).toBe(true);
+		act(() => {
+			icon?.focus();
+			icon?.click();
+		});
+		expect(document.activeElement).not.toBe(icon);
+		expect(testState.openMobileSyncModal).not.toHaveBeenCalled();
+	});
+
+	it("offers Link mobile device from the compact utilities menu under the same visibility rule", async () => {
+		try {
+			stubViewportWidth(1181);
+			renderNav();
+			await act(async () => findDesktopUtilitiesButton()?.click());
+			const linkMobileItem = findUtilitiesMenuItem("Link mobile device");
+			expect(linkMobileItem?.disabled).toBe(false);
+			expect(findUtilitiesMenuItem("Settings")).not.toBeUndefined();
+			await act(async () => linkMobileItem?.click());
+			expect(testState.openMobileSyncModal).toHaveBeenCalledOnce();
+			expect(testState.openSettingsDialog).not.toHaveBeenCalled();
+
+			testState.mobilePairingCreateAndReveal = false;
+			remountNav();
+			await act(async () => findDesktopUtilitiesButton()?.click());
+			expect(findUtilitiesMenuItem("Link mobile device")).toBeUndefined();
+			expect(findUtilitiesMenuItem("Settings")).not.toBeUndefined();
+
+			testState.mobilePairingCreateAndReveal = true;
+			testState.hasWalletAccess = false;
+			remountNav();
+			await act(async () => findDesktopUtilitiesButton()?.click());
+			expect(findUtilitiesMenuItem("Link mobile device")).toBeUndefined();
+			expect(findUtilitiesMenuItem("Settings")).not.toBeUndefined();
+		} finally {
+			Reflect.deleteProperty(window, "matchMedia");
+		}
+	});
+
+	it("keeps the compact Link mobile device entry inert while the market loads", async () => {
+		try {
+			stubViewportWidth(1181);
+			renderNav("market-loading");
+			await act(async () => findDesktopUtilitiesButton()?.click());
+			const linkMobileItem = findUtilitiesMenuItem("Link mobile device");
+			expect(linkMobileItem?.disabled).toBe(true);
+			await act(async () => linkMobileItem?.click());
+			expect(testState.openMobileSyncModal).not.toHaveBeenCalled();
+		} finally {
+			Reflect.deleteProperty(window, "matchMedia");
+		}
 	});
 
 	it("keeps account, theme, language, and settings controls mounted", () => {

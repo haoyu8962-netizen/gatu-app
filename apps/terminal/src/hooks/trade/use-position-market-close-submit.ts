@@ -27,11 +27,9 @@ import {
 } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { getOrderAssetReservationState, runWithAvailableOrderAssetLocks } from "@/lib/trade/order-asset-lock";
-import { formatOrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import { dismissPositionMarketCloseConfirmation } from "@/lib/trade/position-market-close-confirmation-preference";
 import {
 	formatPositionSubmitFeedback,
-	formatTrackedPositionSubmitError,
 	getPositionMarketClosePlanFeedback,
 	localizedPositionSubmitFeedback,
 	PositionSubmitFeedbackCause,
@@ -42,8 +40,6 @@ import {
 	getPositionMarketCloseActions,
 	getPositionMarketCloseModal,
 	type PositionMarketCloseSession,
-	usePositionMarketCloseError,
-	usePositionMarketClosePhase,
 } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBpsString } from "@/stores/use-global-settings-store";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
@@ -89,8 +85,6 @@ interface LiveContext {
 
 export function usePositionMarketCloseSubmit() {
 	const { t } = useLingui();
-	const phase = usePositionMarketClosePhase();
-	const sessionError = usePositionMarketCloseError();
 	const { clientKey, env, info } = useHyperliquid();
 	const markets = useMarkets();
 	const userPositions = useUserPositions();
@@ -135,8 +129,8 @@ export function usePositionMarketCloseSubmit() {
 		const currentSession = getPositionMarketCloseModal();
 		if (!currentSession || currentSession.sessionId !== input.sessionId || currentSession.phase !== "idle") return;
 
+		actions.dismiss(input.sessionId);
 		actions.updatePhase(input.sessionId, "validating");
-		actions.setError(input.sessionId, null);
 		executionContextRef.current = null;
 
 		try {
@@ -247,13 +241,22 @@ export function usePositionMarketCloseSubmit() {
 						},
 					);
 					if (submission.state === "blocked") {
+						toast.error(
+							formatPositionSubmitFeedback(localizedPositionSubmitFeedback("blocked-market"), (descriptor) =>
+								t(descriptor),
+							),
+						);
 						actions.updatePhase(input.sessionId, "idle");
-						actions.setError(input.sessionId, localizedPositionSubmitFeedback("blocked-market"));
+						actions.close(input.sessionId);
 						return;
 					}
 					if (submission.state === "reconciling") {
+						toast.warning(
+							formatPositionSubmitFeedback(localizedPositionSubmitFeedback("reconciling-order"), (descriptor) =>
+								t(descriptor),
+							),
+						);
 						actions.updatePhase(input.sessionId, "reconciling");
-						actions.setError(input.sessionId, localizedPositionSubmitFeedback("reconciling-order"));
 						return;
 					}
 
@@ -281,38 +284,18 @@ export function usePositionMarketCloseSubmit() {
 			}
 		} catch (error) {
 			const feedback = positionSubmitFeedbackFromCause(error, "failed-market-close");
-			const message = formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor));
+			toast.error(formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor)));
 			const activeSession = getPositionMarketCloseModal();
 			if (activeSession?.sessionId === input.sessionId) {
 				actions.updatePhase(input.sessionId, "idle");
-				actions.setError(input.sessionId, feedback.kind === "raw" ? feedback.message : feedback);
+				actions.close(input.sessionId);
 			}
-			toast.error(message);
 		} finally {
 			executionContextRef.current = null;
 		}
 	}
 
-	function resetError(): void {
-		const currentSession = getPositionMarketCloseModal();
-		if (!currentSession || currentSession.phase !== "idle") return;
-		if (currentSession.error !== null) getPositionMarketCloseActions().setError(currentSession.sessionId, null);
-		if (trackedOrder.error) trackedOrder.reset();
-	}
-
-	return {
-		submit,
-		isPending: phase === "validating" || phase === "submitting",
-		isReconciling: phase === "reconciling",
-		error: sessionError
-			? typeof sessionError === "string"
-				? sessionError
-				: sessionError.kind === "order-reconciliation"
-					? formatOrderReconciliationError(sessionError.code, (descriptor) => t(descriptor))
-					: formatPositionSubmitFeedback(sessionError, (descriptor) => t(descriptor))
-			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => t(descriptor)),
-		resetError,
-	};
+	return { submit };
 }
 
 function assertSessionIdentity(

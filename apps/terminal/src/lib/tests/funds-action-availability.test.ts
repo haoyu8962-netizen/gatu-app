@@ -60,6 +60,36 @@ describe("funds action availability", () => {
 		});
 	});
 
+	it.each([
+		{ get: getWithdrawalAvailability, name: "withdrawal" },
+		{ get: getInternalTransferAvailability, name: "internal transfer" },
+	])("reports an agent-only session as a confirmed restriction for $name", ({ get }) => {
+		const agentOnlyInput = {
+			...allowedInput,
+			fundsActionsEnabled: true,
+			hasWalletAccess: false,
+			internalTransfersEnabled: true,
+			sessionMode: "agent-only" as const,
+		};
+		expect(get(agentOnlyInput)).toEqual({ available: false, reason: "agent-only-session" });
+		expect(get({ ...agentOnlyInput, geoStatus: "restricted" })).toEqual({
+			available: false,
+			reason: "geo-restricted",
+		});
+		expect(get({ ...agentOnlyInput, geoStatus: "unresolved" })).toEqual({
+			available: false,
+			reason: "geo-unresolved",
+		});
+		expect(get({ ...agentOnlyInput, sessionMode: "disconnected" })).toEqual({
+			available: false,
+			reason: "wallet-session-required",
+		});
+		expect(get({ ...agentOnlyInput, hasWalletAccess: true, sessionMode: "wallet" })).toEqual({
+			available: true,
+			reason: null,
+		});
+	});
+
 	it("reports geo restrictions before asking for a wallet connection", () => {
 		expect(
 			getWithdrawalAvailability({

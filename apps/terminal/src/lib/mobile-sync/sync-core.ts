@@ -6,17 +6,16 @@ import {
 import { type Address, getAddress, type Hex, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-import { isMobileSyncTicketId } from "./one-time-ticket-policy";
-
 export const MOBILE_SYNC_FRAGMENT_KEY = "ht-mobile-sync";
 export const MOBILE_SYNC_KEY_FRAGMENT_KEY = "k";
 export const MOBILE_SYNC_ROUTE_PATH = "/mobile-agent-sync";
-export const MOBILE_SYNC_PAYLOAD_TTL_MS = 10 * 60 * 1000;
+export const MOBILE_SYNC_PAYLOAD_TTL_MS = 2 * 60 * 1000;
+export const MOBILE_SYNC_QR_VISIBLE_MS = 60 * 1000;
 export const MOBILE_SYNC_CLOCK_SKEW_MS = 60 * 1000;
 export { createMobileAgentName, MOBILE_AGENT_NAME_BASE, MOBILE_AGENT_VALIDITY_MS };
 
 const MOBILE_SYNC_ENVELOPE_TYPE = "gatu.mobile-agent-sync";
-const MOBILE_SYNC_VERSION = 2;
+const MOBILE_SYNC_VERSION = 3;
 const SYNC_ID_BYTES = 16;
 const SYNC_KEY_BYTES = 32;
 const AES_GCM_IV_BYTES = 12;
@@ -42,7 +41,9 @@ export type MobileSyncErrorCode =
 	| "unknown_fragment_key"
 	| "invalid_payload_encoding"
 	| "invalid_envelope"
+	| "unsupported_version"
 	| "expired_payload"
+	| "not_yet_valid"
 	| "decrypt_failed"
 	| "invalid_plaintext"
 	| "origin_mismatch"
@@ -100,7 +101,6 @@ export interface ImportedMobileAgent {
 }
 
 export interface CreateMobileAgentSyncUrlInput {
-	syncId: string;
 	appOrigin: string;
 	env: HyperliquidEnvName;
 	userAddress: string;
@@ -166,7 +166,6 @@ type JsonRecord = Record<string, unknown>;
 export async function createMobileAgentSyncUrl(
 	input: CreateMobileAgentSyncUrlInput,
 ): Promise<CreateMobileAgentSyncUrlResult> {
-	if (!isMobileSyncTicketId(input.syncId)) throw new MobileSyncError("invalid_envelope");
 	const nowMs = input.nowMs ?? Date.now();
 	const expiresAtMs = nowMs + MOBILE_SYNC_PAYLOAD_TTL_MS;
 	const appOrigin = normalizeOrigin(input.appOrigin);
@@ -179,7 +178,7 @@ export async function createMobileAgentSyncUrl(
 	const crypto = getCrypto();
 
 	const keyBytes = createSyncKeyBytes(crypto);
-	const envelopeWithoutCiphertext = createEnvelopeWithoutCiphertext(input.syncId, nowMs, expiresAtMs, crypto);
+	const envelopeWithoutCiphertext = createEnvelopeWithoutCiphertext(nowMs, expiresAtMs, crypto);
 	const plaintext: MobileAgentSyncPlaintext = {
 		v: MOBILE_SYNC_VERSION,
 		issuerOrigin: appOrigin,
@@ -451,6 +450,9 @@ export function decodeMobileSyncEnvelope(encoded: string): MobileSyncEnvelope {
 	if (bytes.length <= ENVELOPE_HEADER_BYTES + AES_GCM_TAG_LENGTH / 8) {
 		throw new MobileSyncError("invalid_envelope");
 	}
+	if (bytes[0] > 0 && bytes[0] < MOBILE_SYNC_VERSION) {
+		throw new MobileSyncError("unsupported_version");
+	}
 	if (bytes[0] !== MOBILE_SYNC_VERSION) {
 		throw new MobileSyncError("invalid_envelope");
 	}
@@ -487,18 +489,19 @@ function buildMobileSyncUrl(
 }
 
 function createEnvelopeWithoutCiphertext(
-	syncId: string,
 	createdAtMs: number,
 	expiresAtMs: number,
 	crypto: Crypto,
 ): Omit<MobileSyncEnvelope, "ciphertext"> {
 	const ivBytes = new Uint8Array(AES_GCM_IV_BYTES);
 	crypto.getRandomValues(ivBytes);
+	const syncIdBytes = new Uint8Array(SYNC_ID_BYTES);
+	crypto.getRandomValues(syncIdBytes);
 
 	return {
 		v: MOBILE_SYNC_VERSION,
 		type: MOBILE_SYNC_ENVELOPE_TYPE,
-		syncId,
+		syncId: bytesToBase64Url(syncIdBytes),
 		createdAtMs,
 		expiresAtMs,
 		cipher: {
@@ -583,6 +586,9 @@ function validateMobileSyncEnvelope(envelopeInput: unknown): MobileSyncEnvelope 
 function assertEnvelopeNotExpired(envelope: MobileSyncEnvelope, nowMs: number): void {
 	if (nowMs > envelope.expiresAtMs + MOBILE_SYNC_CLOCK_SKEW_MS) {
 		throw new MobileSyncError("expired_payload");
+	}
+	if (envelope.createdAtMs > nowMs + MOBILE_SYNC_CLOCK_SKEW_MS) {
+		throw new MobileSyncError("not_yet_valid");
 	}
 }
 

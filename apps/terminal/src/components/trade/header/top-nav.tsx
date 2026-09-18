@@ -1,6 +1,6 @@
 import { Button, Dropdown } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DownloadSimpleIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
+import { DownloadSimpleIcon, QrCodeIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
@@ -10,6 +10,7 @@ import {
 	DESKTOP_NAV_COMPACT_MEDIA_QUERY,
 	DESKTOP_NAV_NARROW_MEDIA_QUERY,
 } from "@/config/layout";
+import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useMediaQuery } from "@/hooks/use-mobile";
@@ -18,7 +19,11 @@ import { cn } from "@/lib/cn";
 import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { isDesktopNavItemActive, resolveDesktopNavLayout } from "@/lib/navigation/desktop-nav";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
-import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
+import {
+	useDepositModalActions,
+	useMobileSyncModalActions,
+	useSettingsDialogActions,
+} from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { DesktopUtilitiesMenu } from "./desktop-utilities-menu";
 import { HEADER_ICON_BUTTON_CLASS, HeaderIconButtonView } from "./header-icon-button-view";
@@ -55,10 +60,12 @@ export function TopNav({ mode = "default" }: Props) {
 	const { open: openDepositModal } = useDepositModalActions();
 	const depositAvailability = useDepositAvailability();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
+	const { open: openMobileSyncModal } = useMobileSyncModalActions();
 	const { hasWalletAccess, authenticated, isConnected } = useWalletSession();
 	const isTestnet = useIsTestnet();
 	const tradeHomePath = useTradeHomePath();
 	const showsDepositEntry = hasWalletAccess || depositAvailability.path === "sponsored";
+	const showsLinkMobileEntry = hasWalletAccess && MOBILE_PAIRING_FEATURES.createAndReveal;
 	const isMarketLoading = mode === "market-loading";
 	const accountChipVisible = authenticated || isConnected;
 
@@ -158,6 +165,18 @@ export function TopNav({ mode = "default" }: Props) {
 			}
 			theme={<ThemeToggle className={HEADER_ICON_BUTTON_CLASS} iconClassName="size-[18px]" />}
 			language={<LanguageSwitcher showLabel compactLabel className={DESKTOP_LANGUAGE_TRIGGER_CLASS} />}
+			linkMobile={
+				showsLinkMobileEntry && (
+					<HeaderIconButtonView
+						className={HEADER_ICON_BUTTON_CLASS}
+						disabled={isMarketLoading}
+						onClick={isMarketLoading ? undefined : openMobileSyncModal}
+						aria-label={t`Link mobile device`}
+					>
+						<QrCodeIcon className="size-[18px]" />
+					</HeaderIconButtonView>
+				)
+			}
 			settings={
 				<HeaderIconButtonView
 					className={HEADER_ICON_BUTTON_CLASS}
@@ -170,7 +189,13 @@ export function TopNav({ mode = "default" }: Props) {
 			}
 			compactUtilities={
 				accountChipVisible && (
-					<DesktopUtilitiesMenu settingsDisabled={isMarketLoading} onOpenSettings={openSettingsDialog} />
+					<DesktopUtilitiesMenu
+						settingsDisabled={isMarketLoading}
+						onOpenSettings={openSettingsDialog}
+						linkMobileVisible={showsLinkMobileEntry}
+						linkMobileDisabled={isMarketLoading}
+						onLinkMobile={openMobileSyncModal}
+					/>
 				)
 			}
 		/>

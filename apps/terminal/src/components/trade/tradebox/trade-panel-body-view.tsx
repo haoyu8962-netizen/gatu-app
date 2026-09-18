@@ -5,13 +5,19 @@ interface Props {
 	fields: ReactNode;
 	overlays?: ReactNode;
 	footer: ReactNode;
+	onIntent?: () => void;
 }
 
 export const TRADE_PANEL_CLASS = "trade-panel-container flex h-full flex-col bg-surface font-market-close";
 
-export function TradePanelBodyView({ header, fields, footer, overlays }: Props) {
+export function TradePanelBodyView({ header, fields, footer, overlays, onIntent }: Props) {
 	return (
-		<div className={TRADE_PANEL_CLASS}>
+		<div
+			className={TRADE_PANEL_CLASS}
+			onPointerEnter={onIntent}
+			onPointerDownCapture={onIntent}
+			onFocusCapture={onIntent}
+		>
 			{overlays}
 			<div className="flex min-h-0 flex-1 flex-col">
 				<div data-slot="trade-panel-header" className="shrink-0 px-3 pt-3">

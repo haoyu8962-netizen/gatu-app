@@ -3,8 +3,6 @@ import type { PositionMarketCloseRef } from "@/components/trade/positions/positi
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import type { PositionCloseSizingIntent } from "@/domain/trade/position-market-close";
 import { type HyperliquidEnv, useHyperliquid } from "@/lib/hyperliquid";
-import type { OrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
-import type { PositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
 
 export type { PositionMarketCloseRef } from "@/components/trade/positions/position-dialog-types";
 
@@ -16,8 +14,7 @@ export type SendAccountType = "perp" | "spot";
 export type PositionMarketCloseSizingIntent = PositionCloseSizingIntent;
 
 export type PositionMarketClosePhase = "idle" | "validating" | "submitting" | "reconciling";
-export type PositionMarketClosePresentation = "confirmation" | "direct";
-export type PositionMarketCloseError = string | OrderReconciliationError | PositionSubmitFeedback;
+export type PositionMarketClosePresentation = "confirmation" | "dismissed" | "direct";
 
 export interface PositionMarketCloseSession {
 	sessionId: string;
@@ -27,7 +24,6 @@ export interface PositionMarketCloseSession {
 	sizingIntent: PositionMarketCloseSizingIntent;
 	presentation: PositionMarketClosePresentation;
 	phase: PositionMarketClosePhase;
-	error: PositionMarketCloseError | null;
 }
 
 type GlobalModal =
@@ -36,6 +32,7 @@ type GlobalModal =
 	| { type: "internalTransfer"; direction: TransferDirection }
 	| { type: "send"; asset: string; accountType: SendAccountType }
 	| { type: "settings" }
+	| { type: "mobileSync" }
 	| { type: "swap"; fromToken: string; toToken?: string; mode: SwapMode }
 	| { type: "commandMenu" }
 	| { type: "positionMarketClose"; session: PositionMarketCloseSession }
@@ -70,6 +67,11 @@ interface SettingsActions {
 	close: () => void;
 }
 
+interface MobileSyncActions {
+	open: () => void;
+	close: () => void;
+}
+
 interface SwapActions {
 	open: (fromToken?: string, toToken?: string) => void;
 	openStablecoins: () => void;
@@ -95,7 +97,7 @@ export interface PositionMarketCloseStoreActions {
 	close: (sessionId: string) => void;
 	setSizingIntent: (sessionId: string, sizingIntent: PositionMarketCloseSizingIntent) => void;
 	updatePhase: (sessionId: string, phase: PositionMarketClosePhase) => void;
-	setError: (sessionId: string, error: PositionMarketCloseError | null) => void;
+	dismiss: (sessionId: string) => void;
 }
 
 export interface PositionMarketCloseActions extends Omit<PositionMarketCloseStoreActions, "open"> {
@@ -109,6 +111,7 @@ interface GlobalModalState {
 	transferActions: TransferActions;
 	sendActions: SendActions;
 	settingsActions: SettingsActions;
+	mobileSyncActions: MobileSyncActions;
 	swapActions: SwapActions;
 	commandMenuActions: CommandMenuActions;
 	positionMarketCloseActions: PositionMarketCloseStoreActions;
@@ -158,6 +161,10 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 			open: () => open({ type: "settings" }),
 			close: () => close("settings"),
 		},
+		mobileSyncActions: {
+			open: () => open({ type: "mobileSync" }),
+			close: () => close("mobileSync"),
+		},
 		swapActions: {
 			open: (fromToken = DEFAULT_QUOTE_TOKEN, toToken) => open({ type: "swap", fromToken, toToken, mode: "spot" }),
 			openStablecoins: () => open({ type: "swap", fromToken: DEFAULT_QUOTE_TOKEN, mode: "stablecoin" }),
@@ -187,7 +194,6 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 								sizingIntent: { kind: "max" },
 								presentation,
 								phase: "idle",
-								error: null,
 							},
 						},
 					};
@@ -214,13 +220,11 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 						currentSizingIntent.kind === sizingIntent.kind &&
 						(currentSizingIntent.kind === "max" ||
 							(sizingIntent.kind !== "max" && currentSizingIntent.value === sizingIntent.value));
-					if (state.modal.session.error === null && isSameSizingIntent) {
-						return state;
-					}
+					if (isSameSizingIntent) return state;
 					return {
 						modal: {
 							...state.modal,
-							session: { ...state.modal.session, sizingIntent, error: null },
+							session: { ...state.modal.session, sizingIntent },
 						},
 					};
 				}),
@@ -230,27 +234,18 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 					return {
 						modal: {
 							...state.modal,
-							session: {
-								...state.modal.session,
-								phase,
-								presentation: phase === "reconciling" ? "confirmation" : state.modal.session.presentation,
-							},
+							session: { ...state.modal.session, phase },
 						},
 					};
 				}),
-			setError: (sessionId, error) =>
+			dismiss: (sessionId) =>
 				set((state) => {
 					if (!isPositionMarketCloseModal(state.modal) || state.modal.session.sessionId !== sessionId) return state;
-					const presentation = error === null ? state.modal.session.presentation : "confirmation";
-					if (state.modal.session.error === error && state.modal.session.presentation === presentation) return state;
+					if (state.modal.session.phase !== "idle" || state.modal.session.presentation !== "confirmation") return state;
 					return {
 						modal: {
 							...state.modal,
-							session: {
-								...state.modal.session,
-								error,
-								presentation,
-							},
+							session: { ...state.modal.session, presentation: "dismissed" },
 						},
 					};
 				}),
@@ -307,6 +302,13 @@ export function useSettingsDialogActions() {
 	return useGlobalModalStore((s) => s.settingsActions);
 }
 
+export function useMobileSyncModalOpen() {
+	return useGlobalModalStore((s) => s.modal?.type === "mobileSync");
+}
+export function useMobileSyncModalActions() {
+	return useGlobalModalStore((s) => s.mobileSyncActions);
+}
+
 export function useSwapModalOpen() {
 	return useGlobalModalStore((s) => s.modal?.type === "swap");
 }
@@ -337,12 +339,6 @@ export function usePositionMarketCloseSession(): PositionMarketCloseSession | nu
 export function usePositionMarketClosePhase(): PositionMarketClosePhase {
 	return useGlobalModalStore((state) =>
 		state.modal?.type === "positionMarketClose" ? state.modal.session.phase : "idle",
-	);
-}
-
-export function usePositionMarketCloseError(): PositionMarketCloseError | null {
-	return useGlobalModalStore((state) =>
-		state.modal?.type === "positionMarketClose" ? state.modal.session.error : null,
 	);
 }
 

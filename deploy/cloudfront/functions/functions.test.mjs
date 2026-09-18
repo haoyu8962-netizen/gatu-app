@@ -61,8 +61,6 @@ test("server paths and file-like paths pass through untouched", () => {
 		"/api/leaderboard",
 		"/api/client-error-report",
 		"/client-error-report",
-		"/mobile-agent-sync-ticket",
-		"/mobile-agent-sync-ticket/consume",
 		"/assets/app-abc.js",
 		"/build-meta.json",
 		"/charting_library/charting_library.js",
@@ -73,6 +71,13 @@ test("server paths and file-like paths pass through untouched", () => {
 	const gone = onRequest(viewerRequest("/_serverFn/abc"));
 	assert.equal(gone.statusCode, 404);
 	assert.equal(gone.headers["cache-control"].value, "no-store");
+	for (const uri of ["/mobile-agent-sync-ticket", "/mobile-agent-sync-ticket/", "/mobile-agent-sync-ticket/consume"]) {
+		const retired = onRequest(viewerRequest(uri));
+		assert.equal(retired.statusCode, 404, uri);
+		assert.equal(retired.headers["cache-control"].value, "no-store");
+		assert.equal(retired.uri, undefined);
+	}
+	assert.equal(onRequest(viewerRequest("/mobile-agent-sync")).uri, "/_shell.html");
 });
 
 test("the response function sets the terminal or chart content security policy", () => {

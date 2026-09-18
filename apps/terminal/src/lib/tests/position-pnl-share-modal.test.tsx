@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, type ReactNode } from "react";
+import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PositionPnlShareData } from "@/components/trade/positions/position-dialog-types";
@@ -30,7 +30,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@gatu/ui", () => ({
-	Modal: ({ children, open }: { children: ReactNode; open: boolean }) => (open ? children : null),
+	Modal: ({ children, open }: { children: ReactNode; open: boolean }) =>
+		createElement("div", { "data-testid": "modal", "data-open": String(open) }, open ? children : null),
 	ModalPopup: ({
 		children,
 		showClose: _showClose,
@@ -227,3 +228,30 @@ function getButton(container: HTMLElement, label: string): HTMLButtonElement {
 	if (!button) throw new Error(`${label} button was not rendered`);
 	return button;
 }
+
+describe("PositionPnlShareModal exit", () => {
+	it("keeps the dialog mounted closed for its exit transition and then unmounts it", () => {
+		vi.useFakeTimers();
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createI18nRoot(container);
+		try {
+			act(() => root.render(<PositionPnlShareModal position={position} onOpenChange={vi.fn()} />));
+			expect(
+				container.querySelector('[role="dialog"], [data-testid="modal"]') ?? container.firstElementChild,
+			).not.toBeNull();
+
+			act(() => root.render(<PositionPnlShareModal position={null} onOpenChange={vi.fn()} />));
+			expect(container.firstElementChild).not.toBeNull();
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.firstElementChild).toBeNull();
+		} finally {
+			act(() => root.unmount());
+			container.remove();
+			vi.useRealTimers();
+		}
+	});
+});

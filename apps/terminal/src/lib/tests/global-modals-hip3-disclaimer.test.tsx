@@ -2,11 +2,12 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { act, createElement, type ReactNode } from "react";
+import { act, createElement, type ReactNode, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
+	activeModalListeners: new Set<() => void>(),
 	activeModal: "deposit" as string | null,
 	closeCommandMenu: vi.fn(),
 	closeDepositModal: vi.fn(),
@@ -30,9 +31,8 @@ const testState = vi.hoisted(() => ({
 	legalGateHook: vi.fn(),
 	openCommandMenu: vi.fn(),
 	closeSendModal: vi.fn(),
-	marketClosePresentation: "confirmation" as "confirmation" | "direct",
+	marketClosePresentation: "confirmation" as "confirmation" | "dismissed" | "direct",
 	marketClosePhase: "idle" as "idle" | "validating" | "submitting" | "reconciling",
-	marketCloseError: null as string | null,
 	lazySuspension: new Promise<never>(() => {}),
 	suspendedLazyComponent: null as string | null,
 }));
@@ -103,7 +103,14 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 	useCommandMenuActions: () => ({ open: testState.openCommandMenu, close: testState.closeCommandMenu }),
 	useDepositModalActions: () => ({ close: testState.closeDepositModal }),
 	useDepositModalTab: () => testState.depositModalTab,
-	useGlobalModalType: () => testState.activeModal,
+	useGlobalModalType: () =>
+		useSyncExternalStore(
+			(listener) => {
+				testState.activeModalListeners.add(listener);
+				return () => testState.activeModalListeners.delete(listener);
+			},
+			() => testState.activeModal,
+		),
 	useSendModalAccountType: () => "spot",
 	useSendModalActions: () => ({ close: testState.closeSendModal }),
 	useSendModalAsset: () => "USDC",
@@ -115,7 +122,6 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 					sessionId: "close-session",
 					presentation: testState.marketClosePresentation,
 					phase: testState.marketClosePhase,
-					error: testState.marketCloseError,
 					position: { coin: "xyz:CXMT" },
 				}
 			: null,
@@ -163,7 +169,6 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.openCommandMenu.mockReset();
 		testState.marketClosePresentation = "confirmation";
 		testState.marketClosePhase = "idle";
-		testState.marketCloseError = null;
 		testState.lazySuspension = new Promise<never>(() => {});
 		testState.suspendedLazyComponent = null;
 	});
@@ -351,19 +356,43 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(testState.discardPositionMarketCloseModal).toHaveBeenCalledOnce();
 	});
 
-	it("keeps a direct close hidden unless it needs error or reconciliation attention", async () => {
+	it("never mounts a direct close but keeps a dismissed close mounted while it runs", async () => {
 		testState.activeModal = "positionMarketClose";
 		testState.marketClosePresentation = "direct";
-		testState.marketClosePhase = "submitting";
+		testState.marketClosePhase = "reconciling";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
 		act(() => root.render(createElement(GlobalModals, { enablePositionMarketClose: true })));
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).toBeNull();
 
-		testState.marketClosePhase = "idle";
-		testState.marketCloseError = "Order rejected";
-		act(() => root.render(createElement(GlobalModals, { key: "direct-error", enablePositionMarketClose: true })));
+		testState.marketClosePresentation = "dismissed";
+		testState.marketClosePhase = "submitting";
+		act(() => root.render(createElement(GlobalModals, { key: "dismissed", enablePositionMarketClose: true })));
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).not.toBeNull();
+	});
+
+	it("keeps a closing global modal mounted for its exit transition and then unmounts it", async () => {
+		vi.useFakeTimers();
+		try {
+			testState.activeModal = "settings";
+			const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+			act(() => root.render(createElement(GlobalModals)));
+			expect(container.querySelector('[data-testid="GlobalSettingsModal"]')).not.toBeNull();
+
+			act(() => {
+				testState.activeModal = null;
+				for (const listener of testState.activeModalListeners) listener();
+			});
+			expect(container.querySelector('[data-testid="GlobalSettingsModal"]')).not.toBeNull();
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[data-testid="GlobalSettingsModal"]')).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("binds the HIP-3 gate to the market-close target instead of the selected terminal market", async () => {

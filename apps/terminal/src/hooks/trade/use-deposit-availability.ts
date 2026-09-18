@@ -29,6 +29,9 @@ export function useDepositAvailability(): DepositAvailabilityPresentation {
 		sessionMode,
 	});
 	const unavailableReason = (() => {
+		if (availability.reason === "agent-only-session") {
+			return t`This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop.`;
+		}
 		if (availability.reason === "wallet-session-required") return t`Connect the owner wallet to deposit.`;
 		if (availability.reason === "geo-restricted") return t`Deposits are not available in your region.`;
 		if (availability.reason === "geo-unresolved") {

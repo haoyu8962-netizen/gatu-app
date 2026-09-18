@@ -9,11 +9,13 @@ import {
 } from "@gatu/hl-react";
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { CheckCircleIcon, DeviceMobileIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { type FormEvent, forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
+import { formatDateTime } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
 	consumeBootstrappedMobileAgentSyncUrl,
@@ -21,15 +23,12 @@ import {
 } from "@/lib/mobile-sync/bootstrap-fragment";
 import {
 	clearMobileSyncDraft,
+	getMobileSyncRemainingLifetimeMs,
 	isMobileSyncEnvelopeExpired,
 	readMobileSyncDraft,
 	saveMobileSyncDraft,
 } from "@/lib/mobile-sync/draft-storage";
-import {
-	consumeMobileSyncTicket,
-	getOrCreateMobileSyncConsumerId,
-	type MobileSyncTicketResult,
-} from "@/lib/mobile-sync/one-time-ticket-client";
+import { hasImportedMobileSyncId, recordImportedMobileSyncId } from "@/lib/mobile-sync/imported-sync-ids";
 import { waitForExpectedMobileAgent } from "@/lib/mobile-sync/remote-verification";
 import {
 	decodeSyncKey,
@@ -46,12 +45,30 @@ import {
 } from "@/lib/mobile-sync/sync-core";
 import { buildPageHead } from "@/lib/seo";
 
-type MobileSyncImportMessage = string | { ticketResult: Exclude<MobileSyncTicketResult, "accepted"> };
+type MobileSyncImportMessage = string;
 
 type InitialHashCapture =
 	| { status: "loaded"; sync: ParsedMobileSync }
 	| { status: "error"; message: MobileSyncImportMessage }
 	| null;
+
+class MobileAgentRemoteVerificationError extends Error {
+	constructor(readonly hadNetworkError: boolean) {
+		super("Mobile Agent remote verification failed");
+	}
+}
+
+class MobileAgentStorageError extends Error {
+	constructor(readonly cleanupIncomplete = false) {
+		super("Mobile Agent storage verification failed");
+	}
+}
+
+class MobileAgentAlreadyImportedError extends Error {
+	constructor() {
+		super("Mobile Agent QR was already imported on this device");
+	}
+}
 
 // Direct-load fragments are captured and removed by the zero-dependency client
 // bootstrap before React/providers hydrate. This route consumes that value once.
@@ -82,6 +99,7 @@ type ImportStatus =
 			state: "success";
 			userAddress: string;
 			agentAddress: string;
+			agentValidUntilMs: number;
 			localCleanupIncomplete: boolean;
 	  };
 
@@ -91,24 +109,6 @@ type LoadState =
 	| { state: "empty" }
 	| { state: "loaded"; sync: ParsedMobileSync; source: EnvelopeSource }
 	| { state: "error"; message: MobileSyncImportMessage };
-
-class MobileAgentRemoteVerificationError extends Error {
-	constructor(readonly hadNetworkError: boolean) {
-		super("Mobile Agent remote verification failed");
-	}
-}
-
-class MobileAgentStorageError extends Error {
-	constructor(readonly cleanupIncomplete = false) {
-		super("Mobile Agent storage verification failed");
-	}
-}
-
-class MobileAgentOneTimeTicketError extends Error {
-	constructor(readonly result: Exclude<MobileSyncTicketResult, "accepted">) {
-		super("Mobile Agent one-time ticket verification failed");
-	}
-}
 
 function MobileAgentSyncRoute() {
 	const { env, info } = useHyperliquid();
@@ -213,7 +213,7 @@ function MobileAgentSyncRoute() {
 	useEffect(() => {
 		if (!loadedSync || status.state === "success") return;
 
-		const expiresInMs = loadedSync.envelope.expiresAtMs - Date.now();
+		const expiresInMs = getMobileSyncRemainingLifetimeMs(loadedSync.envelope);
 		if (expiresInMs <= 0) {
 			clearExpiredSync(loadedSync);
 			return;
@@ -258,6 +258,9 @@ function MobileAgentSyncRoute() {
 			});
 			if (abortController.signal.aborted) return;
 
+			const importIdentity = { env: imported.env, userAddress: imported.userAddress, syncId: imported.syncId };
+			if (hasImportedMobileSyncId(importIdentity)) throw new MobileAgentAlreadyImportedError();
+
 			const remoteVerification = await waitForExpectedMobileAgent(
 				(attemptSignal) => info.extraAgents({ user: imported.userAddress }, attemptSignal),
 				{
@@ -289,8 +292,6 @@ function MobileAgentSyncRoute() {
 			if (registration.status !== "ready") {
 				throw new MobileAgentStorageError();
 			}
-			const consumerId = getOrCreateMobileSyncConsumerId();
-			if (!consumerId) throw new MobileAgentStorageError();
 			registrationToRollback = {
 				epoch: registration.epoch,
 				publicKey,
@@ -298,12 +299,10 @@ function MobileAgentSyncRoute() {
 			};
 			if (abortController.signal.aborted) throw new MobileAgentStorageError();
 
-			const ticketResult = await consumeMobileSyncTicket(imported.syncId, consumerId, abortController.signal);
-			if (ticketResult !== "accepted") throw new MobileAgentOneTimeTicketError(ticketResult);
-			if (abortController.signal.aborted) throw new MobileAgentStorageError();
-
 			registrationToRollback.persistenceAttempted = true;
-			const storageResult = await persistAgentForRegistration(registration.epoch, privateKey, publicKey, metadata);
+			const storageResult = await persistAgentForRegistration(registration.epoch, privateKey, publicKey, metadata, {
+				scope: "local",
+			});
 			if (storageResult.status !== "stored") throw new MobileAgentStorageError();
 			if (abortController.signal.aborted) throw new MobileAgentStorageError();
 
@@ -318,6 +317,7 @@ function MobileAgentSyncRoute() {
 			if (abortController.signal.aborted) throw new MobileAgentStorageError();
 
 			registrationToRollback = undefined;
+			recordImportedMobileSyncId({ ...importIdentity, expiresAtMs: loadedSync.envelope.expiresAtMs });
 			loadedSync.keyBytes.fill(0);
 			const localCleanupIncomplete = !clearMobileSyncDraft();
 			setLoadState({ state: "empty" });
@@ -325,6 +325,7 @@ function MobileAgentSyncRoute() {
 				state: "success",
 				userAddress: imported.userAddress,
 				agentAddress: imported.agentAddress,
+				agentValidUntilMs: imported.agentValidUntilMs,
 				localCleanupIncomplete,
 			});
 		} catch (caughtError) {
@@ -334,10 +335,7 @@ function MobileAgentSyncRoute() {
 				if (cleanupIncomplete) error = new MobileAgentStorageError(true);
 			}
 			if (abortController.signal.aborted) return;
-			if (
-				isMobileSyncError(error) ||
-				(caughtError instanceof MobileAgentOneTimeTicketError && caughtError.result === "rejected")
-			) {
+			if (isMobileSyncError(error) || error instanceof MobileAgentAlreadyImportedError) {
 				loadedSync.keyBytes.fill(0);
 				const draftCleared = clearMobileSyncDraft();
 				setLoadState({
@@ -441,6 +439,7 @@ function MobileAgentSyncRoute() {
 							<SuccessPanel
 								userAddress={status.userAddress}
 								agentAddress={status.agentAddress}
+								agentValidUntilMs={status.agentValidUntilMs}
 								localCleanupIncomplete={status.localCleanupIncomplete}
 							/>
 						) : (
@@ -554,28 +553,25 @@ const ErrorCallout = forwardRef<HTMLDivElement, { message: MobileSyncImportMessa
 			className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error"
 		>
 			<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
-			<p>{typeof message === "string" ? message : <MobileSyncTicketErrorText result={message.ticketResult} />}</p>
+			<p>{message}</p>
 		</div>
 	);
 });
 
-function MobileSyncTicketErrorText({ result }: { result: Exclude<MobileSyncTicketResult, "accepted"> }) {
-	if (result === "incompatible")
-		return <Trans>Refresh both devices to update phone access, then create a new QR.</Trans>;
-	if (result === "rejected")
-		return <Trans>This one-time QR was already used or is no longer active. Scan a new QR.</Trans>;
-	return <Trans>The one-time QR could not be verified. Check your connection and retry.</Trans>;
-}
-
 function SuccessPanel({
 	userAddress,
 	agentAddress,
+	agentValidUntilMs,
 	localCleanupIncomplete,
 }: {
 	userAddress: string;
 	agentAddress: string;
+	agentValidUntilMs: number;
 	localCleanupIncomplete: boolean;
 }) {
+	useLingui();
+	const validUntilLabel = formatDateTime(agentValidUntilMs);
+
 	return (
 		<div className="space-y-3">
 			<div className="flex items-start gap-2 rounded-8 border border-stroke-weak bg-fill-weak p-3">
@@ -587,6 +583,15 @@ function SuccessPanel({
 					<p className="mt-1 truncate font-mono text-xs text-fg-muted">{agentAddress}</p>
 				</div>
 			</div>
+			<p className="text-xs text-fg-muted">
+				<Trans>
+					Stays on this phone until {validUntilLabel} unless you disconnect it here or revoke it from the master wallet
+					on desktop.
+				</Trans>
+			</p>
+			<p className="text-xs text-fg-muted">
+				<Trans>If you did not import this yourself, revoke phone access from the master wallet on desktop now.</Trans>
+			</p>
 			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3 text-xs">
 				<p className="text-fg-muted">
 					<Trans>Owner account</Trans>
@@ -794,7 +799,9 @@ function createInitialLoadState(): LoadState {
 }
 
 function getMobileSyncImportErrorMessage(error: unknown): MobileSyncImportMessage {
-	if (error instanceof MobileAgentOneTimeTicketError) return { ticketResult: error.result };
+	if (error instanceof MobileAgentAlreadyImportedError) {
+		return t`This QR was already imported on this phone. Create a new desktop QR to link again.`;
+	}
 	if (error instanceof MobileAgentRemoteVerificationError) {
 		return error.hadNetworkError
 			? t`Hyperliquid approval could not be checked. Check your connection and retry.`
@@ -818,8 +825,12 @@ function getMobileSyncImportErrorMessage(error: unknown): MobileSyncImportMessag
 			case "invalid_plaintext":
 			case "agent_key_mismatch":
 				return t`This is not a valid gatu desktop wallet QR.`;
+			case "unsupported_version":
+				return t`Refresh both devices to update phone access, then create a new QR.`;
 			case "expired_payload":
 				return t`This desktop wallet QR expired.`;
+			case "not_yet_valid":
+				return t`This QR's time does not match this phone. Check the date and time on both devices, then create a new QR.`;
 			case "decrypt_failed":
 				return t`This desktop wallet QR is damaged or incomplete. Scan a new QR.`;
 			case "origin_mismatch":

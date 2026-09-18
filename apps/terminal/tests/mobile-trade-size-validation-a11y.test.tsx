@@ -220,7 +220,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 }));
 
-vi.mock("@/lib/lazy", () => ({ createLazyComponent: () => () => null }));
+vi.mock("@/lib/lazy", () => ({
+	createLazyComponent: () => () => null,
+	createRetryableLazyComponent: () => () => null,
+	preloadLazyComponents: () => Promise.resolve(),
+}));
 vi.mock("@/lib/number-format-reactivity", () => ({ useNumberFormatRevision: () => 0 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({

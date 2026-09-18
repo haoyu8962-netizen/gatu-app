@@ -13,11 +13,7 @@ import {
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { releaseOrderAssetReservations } from "@/lib/trade/order-asset-lock";
-import {
-	formatOrderReconciliationError,
-	type OrderReconciliationError,
-	orderReconciliationError,
-} from "@/lib/trade/order-reconciliation-feedback";
+import { formatOrderReconciliationError, orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import { getPositionMarketCloseActions, getPositionMarketCloseModal } from "@/stores/use-global-modal-store";
 import { hasOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import {
@@ -369,7 +365,7 @@ function markExpiredSubmissions(submissions: PendingOrderSubmission[], now: numb
 function completeUnconfirmedReconciliation(submission: PendingOrderSubmission): void {
 	releaseSubmissionAssetReservations(submission);
 	const error = orderReconciliationError("status-unconfirmed");
-	updatePositionMarketCloseReconciliation(submission, "unconfirmed", error);
+	releasePositionMarketCloseSession(submission);
 	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
 
 	if (submission.queueId && queueVisible) {
@@ -392,13 +388,7 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
 	const canceledError = orderReconciliationError("accepted-orders-canceled");
 	const canceledMessage = formatOrderReconciliationError(canceledError.code, (descriptor) => i18n._(descriptor));
-	let marketCloseOutcome: "canceled" | "filled" | "rejected" = "rejected";
-	if (allAccepted && statuses.every((status) => status === "filled")) marketCloseOutcome = "filled";
-	else if (hasCanceled) marketCloseOutcome = "canceled";
-	let marketCloseError: OrderReconciliationError | undefined;
-	if (hasCanceled) marketCloseError = canceledError;
-	else if (!allAccepted) marketCloseError = orderReconciliationError("order-rejected");
-	updatePositionMarketCloseReconciliation(submission, marketCloseOutcome, marketCloseError);
+	releasePositionMarketCloseSession(submission);
 
 	if (submission.queueId && queueVisible) {
 		if (allAccepted) {
@@ -440,22 +430,13 @@ function releaseSubmissionAssetReservations(submission: PendingOrderSubmission):
 	);
 }
 
-function updatePositionMarketCloseReconciliation(
-	submission: PendingOrderSubmission,
-	outcome: "canceled" | "filled" | "rejected" | "unconfirmed",
-	error?: OrderReconciliationError,
-): void {
+function releasePositionMarketCloseSession(submission: PendingOrderSubmission): void {
 	if (submission.origin?.type !== "positionMarketClose") return;
 	const session = getPositionMarketCloseModal();
 	if (!session || session.sessionId !== submission.origin.sessionId) return;
 	const actions = getPositionMarketCloseActions();
-	if (outcome === "filled") {
-		actions.updatePhase(session.sessionId, "idle");
-		actions.close(session.sessionId);
-		return;
-	}
-	if (outcome === "canceled" || outcome === "rejected") actions.updatePhase(session.sessionId, "idle");
-	actions.setError(session.sessionId, error ?? orderReconciliationError("order-rejected"));
+	actions.updatePhase(session.sessionId, "idle");
+	actions.close(session.sessionId);
 }
 
 function getReconciledOutcome(statuses: OrderProcessingStatus[]) {

@@ -25,12 +25,23 @@ export function MobileTradeFrameView({
 	children,
 	embedded,
 	className,
+	onIntent,
 }: {
 	children: ReactNode;
 	embedded?: boolean;
 	className?: string;
+	onIntent?: () => void;
 }) {
-	return <div className={cn(tradeView, !embedded && "h-full bg-background", className)}>{children}</div>;
+	return (
+		<div
+			className={cn(tradeView, !embedded && "h-full bg-background", className)}
+			onPointerEnter={onIntent}
+			onPointerDownCapture={onIntent}
+			onFocusCapture={onIntent}
+		>
+			{children}
+		</div>
+	);
 }
 export function MobileTradeScrollAreaView({ children, embedded }: { children: ReactNode; embedded?: boolean }) {
 	return (

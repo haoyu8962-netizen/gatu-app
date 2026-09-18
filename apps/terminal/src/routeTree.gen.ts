@@ -19,7 +19,6 @@ import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as MobileAgentSyncRouteImport } from './routes/mobile-agent-sync'
-import { Route as MobileAgentSyncTicketRouteImport } from './routes/mobile-agent-sync-ticket'
 import { Route as PerpRouteImport } from './routes/perp'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -96,11 +95,6 @@ const LeaderboardRoute = LeaderboardRouteImport.update({
 const MobileAgentSyncRoute = MobileAgentSyncRouteImport.update({
   id: '/mobile-agent-sync',
   path: '/mobile-agent-sync',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MobileAgentSyncTicketRoute = MobileAgentSyncTicketRouteImport.update({
-  id: '/mobile-agent-sync-ticket',
-  path: '/mobile-agent-sync-ticket',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerpRoute = PerpRouteImport.update({
@@ -250,7 +244,6 @@ export interface FileRoutesByFullPath {
   '/docs': typeof DocsRoute
   '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
-  '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
@@ -289,7 +282,6 @@ export interface FileRoutesByTo {
   '/docs': typeof DocsRoute
   '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
-  '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
@@ -328,7 +320,6 @@ export interface FileRoutesById {
   '/docs': typeof DocsRoute
   '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
-  '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
@@ -370,7 +361,6 @@ export interface FileRouteTypes {
     | '/docs'
     | '/leaderboard'
     | '/mobile-agent-sync'
-    | '/mobile-agent-sync-ticket'
     | '/perp'
     | '/portfolio'
     | '/privacy'
@@ -409,7 +399,6 @@ export interface FileRouteTypes {
     | '/docs'
     | '/leaderboard'
     | '/mobile-agent-sync'
-    | '/mobile-agent-sync-ticket'
     | '/perp'
     | '/portfolio'
     | '/privacy'
@@ -447,7 +436,6 @@ export interface FileRouteTypes {
     | '/docs'
     | '/leaderboard'
     | '/mobile-agent-sync'
-    | '/mobile-agent-sync-ticket'
     | '/perp'
     | '/portfolio'
     | '/privacy'
@@ -488,7 +476,6 @@ export interface RootRouteChildren {
   DocsRoute: typeof DocsRoute
   LeaderboardRoute: typeof LeaderboardRoute
   MobileAgentSyncRoute: typeof MobileAgentSyncRoute
-  MobileAgentSyncTicketRoute: typeof MobileAgentSyncTicketRoute
   PerpRoute: typeof PerpRoute
   PortfolioRoute: typeof PortfolioRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -581,13 +568,6 @@ declare module '@tanstack/react-router' {
       path: '/mobile-agent-sync'
       fullPath: '/mobile-agent-sync'
       preLoaderRoute: typeof MobileAgentSyncRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mobile-agent-sync-ticket': {
-      id: '/mobile-agent-sync-ticket'
-      path: '/mobile-agent-sync-ticket'
-      fullPath: '/mobile-agent-sync-ticket'
-      preLoaderRoute: typeof MobileAgentSyncTicketRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perp': {
@@ -834,7 +814,6 @@ const rootRouteChildren: RootRouteChildren = {
   DocsRoute: DocsRoute,
   LeaderboardRoute: LeaderboardRoute,
   MobileAgentSyncRoute: MobileAgentSyncRoute,
-  MobileAgentSyncTicketRoute: MobileAgentSyncTicketRoute,
   PerpRoute: PerpRoute,
   PortfolioRoute: PortfolioRoute,
   PrivacyRoute: PrivacyRoute,

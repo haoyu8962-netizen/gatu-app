@@ -2,6 +2,7 @@ import { Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
@@ -34,8 +35,7 @@ interface Props {
 	scrollMode?: MobileDataScrollMode;
 }
 
-const filterTriggerClassName =
-	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
+const filterTriggerClassName = MOBILE_FILTER_CHIP_CLASS;
 const footerActionClassName =
 	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle";
 export function MobileFundingTab(props: Props) {
@@ -133,10 +133,47 @@ function MobileFundingTabContent({
 		</div>
 	);
 
+	function renderFilterRow(disabled: boolean) {
+		return (
+			<div
+				data-testid="mobile-funding-history-filter-row"
+				className="flex h-9 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+			>
+				<div className="flex shrink-0 items-center gap-1.5">
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Direction`}
+						value={directionFilter}
+						onValueChange={(value) => {
+							if (isFundingHistorySideFilter(value)) setDirectionFilter(value);
+						}}
+						options={[
+							{ value: "all", label: t`Direction` },
+							{ value: "long", label: t`Long` },
+							{ value: "short", label: t`Short` },
+						]}
+						className="w-auto shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+				</div>
+				<span className="sr-only" aria-live="polite">
+					{t`Funding shown`} <span className={cn("font-semibold tabular-nums", headerClass)}>{headerTotal}</span>
+				</span>
+				<MobileBulkDisclosureActions
+					keys={disabled ? [] : filteredUpdateKeys}
+					controller={disclosure}
+					className="ms-auto ps-3"
+				/>
+			</div>
+		);
+	}
+
 	if (!isConnected) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
-				{t`Connect your wallet to view funding payments.`}
+			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
+				{renderFilterRow(true)}
+				<div className={cn("min-h-0", !isPageScroll && "flex-1")} />
 			</div>
 		);
 	}
@@ -163,32 +200,7 @@ function MobileFundingTabContent({
 
 	return (
 		<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-			<div
-				data-testid="mobile-funding-history-filter-row"
-				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-			>
-				<div className="flex shrink-0 items-center gap-1.5">
-					<Select
-						size="xxs"
-						label={t`Direction`}
-						value={directionFilter}
-						onValueChange={(value) => {
-							if (isFundingHistorySideFilter(value)) setDirectionFilter(value);
-						}}
-						options={[
-							{ value: "all", label: t`All Directions` },
-							{ value: "long", label: t`Long` },
-							{ value: "short", label: t`Short` },
-						]}
-						className="w-28 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-				</div>
-				<span className="sr-only" aria-live="polite">
-					{t`Funding shown`} <span className={cn("font-semibold tabular-nums", headerClass)}>{headerTotal}</span>
-				</span>
-				<MobileBulkDisclosureActions keys={filteredUpdateKeys} controller={disclosure} className="ms-auto ps-3" />
-			</div>
+			{renderFilterRow(false)}
 			<div className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}>
 				<div className="flex flex-col gap-2.5 px-3.5 pt-3">
 					{filteredUpdates.length === 0 ? (
@@ -217,7 +229,7 @@ function MobileFundingTabContent({
 								return (
 									<article
 										key={cardKey}
-										className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal"
+										className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface"
 									>
 										<MobileDisclosureHeader
 											expanded={isExpanded}

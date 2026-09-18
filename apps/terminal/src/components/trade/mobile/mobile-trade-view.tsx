@@ -4,6 +4,7 @@ import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
+import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
@@ -109,7 +110,8 @@ import {
 } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
-import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
+import { MarginModeModal, warmTradeSettingsModals } from "../tradebox/lazy-trade-settings-modals";
+import type { MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
 import { OrderConfirmationModal } from "../tradebox/order-confirmation-modal";
 import { ScaleOrderSummary } from "../tradebox/scale-order-summary";
 import { TradeCtaView } from "../tradebox/trade-cta-view";
@@ -137,6 +139,10 @@ interface Props {
 	embedded?: boolean;
 	sizeMode: SizeMode;
 	onSizeModeChange: (sizeMode: SizeMode) => void;
+}
+
+function warmMobileTradeSettingsModals() {
+	warmTradeSettingsModals("mobile");
 }
 
 export function MobileTradeView({ active = true, className, embedded, sizeMode, onSizeModeChange }: Props) {
@@ -795,32 +801,34 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const marginDialogError = marginDialogView === "leverage" ? leverageUpdateError : switchModeError;
 
 	return (
-		<MobileTradeFrameView embedded={embedded} className={className}>
-			<MarginModeModal
-				open={showMarginDialog}
-				onOpenChange={handleMarginDialogOpenChange}
-				currentMode={marginMode}
-				currentLeverage={currentLeverage}
-				pendingLeverage={pendingLeverage}
-				committedLeverage={committedLeverage}
-				maxLeverage={maxLeverage}
-				onPendingLeverageChange={setPendingLeverage}
-				hasPosition={hasPosition}
-				positionStateReady={positionStateReady}
-				allowsCrossMargin={capabilities.allowsCrossMargin}
-				allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
-				isUpdating={isMarginDialogUpdating}
-				updateError={marginDialogError}
-				showLeverage={capabilities.isLeveraged}
-				onApply={handleLeverageApply}
-				presentation="drawer"
-				mobileView={marginDialogView}
-				marketIdentity={leverageInteractionIdentity}
-				marketLabel={market?.pairName ?? market?.name}
-				settingsTab={settingsTab}
-				onSettingsTabChange={setSettingsTab}
-				accountModeForm={accountModeForm}
-			/>
+		<MobileTradeFrameView embedded={embedded} className={className} onIntent={warmMobileTradeSettingsModals}>
+			<LazyDialogHost open={showMarginDialog} onOpenChange={handleMarginDialogOpenChange} presentation="drawer">
+				<MarginModeModal
+					open={showMarginDialog}
+					onOpenChange={handleMarginDialogOpenChange}
+					currentMode={marginMode}
+					currentLeverage={currentLeverage}
+					pendingLeverage={pendingLeverage}
+					committedLeverage={committedLeverage}
+					maxLeverage={maxLeverage}
+					onPendingLeverageChange={setPendingLeverage}
+					hasPosition={hasPosition}
+					positionStateReady={positionStateReady}
+					allowsCrossMargin={capabilities.allowsCrossMargin}
+					allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
+					isUpdating={isMarginDialogUpdating}
+					updateError={marginDialogError}
+					showLeverage={capabilities.isLeveraged}
+					onApply={handleLeverageApply}
+					presentation="drawer"
+					mobileView={marginDialogView}
+					marketIdentity={leverageInteractionIdentity}
+					marketLabel={market?.pairName ?? market?.name}
+					settingsTab={settingsTab}
+					onSettingsTabChange={setSettingsTab}
+					accountModeForm={accountModeForm}
+				/>
+			</LazyDialogHost>
 			<div className={cn("shrink-0 border-b border-stroke-weak/60 bg-surface px-4 py-2", embedded && "hidden")}>
 				<div className="flex min-w-0 items-center justify-between gap-2">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />

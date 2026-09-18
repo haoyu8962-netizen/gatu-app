@@ -16,6 +16,7 @@ const testState = vi.hoisted(() => ({
 	hasWalletAccess: false,
 	pathname: "/api-wallet",
 	preloadGlobalModal: vi.fn(async (): Promise<void> => undefined),
+	sessionMode: "disconnected" as "wallet" | "agent-only" | "disconnected",
 	settingsOpen: vi.fn(),
 }));
 
@@ -138,7 +139,7 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ hasWalletAccess: testState.hasWalletAccess }),
+	useWalletSession: () => ({ hasWalletAccess: testState.hasWalletAccess, sessionMode: testState.sessionMode }),
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
@@ -166,6 +167,7 @@ describe("MobileNavDrawer", () => {
 		testState.pathname = "/api-wallet";
 		testState.preloadGlobalModal.mockReset();
 		testState.preloadGlobalModal.mockResolvedValue(undefined);
+		testState.sessionMode = "disconnected";
 		testState.settingsOpen.mockReset();
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -324,6 +326,40 @@ describe("MobileNavDrawer", () => {
 		act(() => container.querySelector<HTMLButtonElement>('[data-testid="drawer-close-complete"]')?.click());
 		expect(testState.depositOpen).toHaveBeenCalledWith("deposit");
 		expect(testState.settingsOpen).not.toHaveBeenCalled();
+	});
+
+	it("shows a disabled Deposit entry with the desktop reason in an agent-only session", async () => {
+		const reason =
+			"This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop.";
+		testState.hasWalletAccess = false;
+		testState.sessionMode = "agent-only";
+		testState.depositAvailable = false;
+		testState.depositUnavailableReason = reason;
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+
+		const depositButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Deposit",
+		);
+		expect(depositButton).toBeDefined();
+		expect(depositButton?.disabled).toBe(true);
+		expect(container.querySelector("output")?.textContent).toBe(reason);
+		await act(async () => depositButton?.click());
+		expect(testState.preloadGlobalModal).not.toHaveBeenCalled();
+		expect(testState.depositOpen).not.toHaveBeenCalled();
+	});
+
+	it("hides the Deposit entry for a disconnected external session", () => {
+		testState.hasWalletAccess = false;
+		testState.sessionMode = "disconnected";
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+
+		expect(
+			Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+				(button) => button.textContent === "Deposit",
+			),
+		).toBeUndefined();
 	});
 
 	it("does not preload an unavailable Deposit path and shows its reason", async () => {

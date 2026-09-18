@@ -27,13 +27,15 @@ const REVOKE_AGENT_ADDRESS = "0x4444444444444444444444444444444444444444";
 const REVOKE_AGENT_PRIVATE_KEY = `0x${"cd".repeat(32)}`;
 const REVOKE_VALID_UNTIL_MS = NOW_MS + 10 * 60 * 1000;
 const REVOKE_AGENT_NAME = `Mobile valid_until ${REVOKE_VALID_UNTIL_MS}`;
-const SYNC_EXPIRES_AT_MS = NOW_MS + 5 * 60 * 1000;
+const SYNC_EXPIRES_AT_MS = NOW_MS + 4_000 + 2 * 60 * 1000;
 const PHONE_LINK = "https://app.gatu.test/mobile-agent-sync#ht-mobile-sync=encoded-envelope&k=encoded-key";
 const NO_BALANCE_MESSAGE = "No balance on Hyperliquid. Deposit first.";
 const NO_BALANCE_MESSAGE_AR = "لا يوجد رصيد في Hyperliquid. أودِع أولاً.";
 const APPROVAL_RECHECK_MESSAGE =
 	"The approval could not be rechecked. The QR remains hidden until read-only verification succeeds.";
 const APPROVAL_RECHECK_MESSAGE_AR = "تعذّرت إعادة التحقق من الموافقة. سيظل رمز QR مخفيًا حتى ينجح التحقق للقراءة فقط.";
+const PHONE_JOURNEY_INSTRUCTION =
+	"On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code, or scan it with your phone camera.";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -64,7 +66,6 @@ const testState = vi.hoisted(() => ({
 	isMobile: false,
 	localAgent: null as Record<string, unknown> | null,
 	qrToCanvas: vi.fn(),
-	issueMobileSyncTicket: vi.fn(),
 	registrationLeaseCurrent: true,
 	spotRefetch: vi.fn(),
 	spotState: { balances: [] as Array<{ hold?: string; total?: string }> },
@@ -241,10 +242,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 vi.mock("@/lib/mobile-sync/sync-core", () => ({
 	createMobileAgentSyncUrl: testState.createMobileAgentSyncUrl,
-}));
-
-vi.mock("@/lib/mobile-sync/one-time-ticket-client", () => ({
-	issueMobileSyncTicket: testState.issueMobileSyncTicket,
+	MOBILE_SYNC_QR_VISIBLE_MS: 60_000,
 }));
 
 vi.mock("qrcode", () => ({
@@ -357,13 +355,6 @@ describe("MobileAgentSyncModal", () => {
 		}));
 		testState.localAgent = null;
 		testState.qrToCanvas.mockReset();
-		testState.issueMobileSyncTicket.mockReset();
-		testState.issueMobileSyncTicket.mockImplementation(async () => ({
-			status: "accepted",
-			syncId: "A".repeat(22),
-			expiresAtMonotonicMs: performance.now() + 60_000,
-			expiresAtWallClockMs: Date.now() + 60_000,
-		}));
 		testState.registrationLeaseCurrent = true;
 		testState.qrToCanvas.mockResolvedValue(undefined);
 		testState.spotState = { balances: [] };
@@ -401,14 +392,14 @@ describe("MobileAgentSyncModal", () => {
 		act(() => {
 			root.render(createElement(MobileAgentSyncModal, { open: true, onOpenChange }));
 		});
+		await flushAsyncWork();
 		return onOpenChange;
 	}
 
-	async function reviewAndApprove() {
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
+	async function approve() {
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 		expect(container.textContent).toContain("Approve a mobile trading key");
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
 
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
@@ -422,11 +413,22 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.querySelector('[role="dialog"]')?.getAttribute("data-presentation")).toBe("drawer");
 	});
 
-	it("requires a separate review and explicit master-wallet approval before concealing the QR", async () => {
+	it("runs the read-only preflight on open and signs only after the explicit approval click", async () => {
 		await renderModal();
 
+		expect(testState.clearinghouseRefetch).toHaveBeenCalledTimes(1);
+		expect(testState.spotRefetch).toHaveBeenCalledTimes(1);
+		expect(testState.builderFeeRefetch).toHaveBeenCalledTimes(1);
 		expect(testState.approveAgent).not.toHaveBeenCalled();
-		await reviewAndApprove();
+		expect(container.textContent).toContain(
+			"Approve a trading key on this desktop and move it to your phone only through the QR code.",
+		);
+		expect(container.textContent).toContain("cannot withdraw or send funds out of Hyperliquid");
+		expect(container.textContent).toContain("The private key is created on this desktop and embedded in the QR code.");
+		expect(container.textContent).toContain("Anyone who scans or captures the QR can trade as this Agent.");
+		expect(container.textContent).toContain("Approving a new mobile key replaces the previous mobile key.");
+		expect(container.textContent).toContain("Replaces the current mobile key 0x2222...2222");
+		await approve();
 
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 		expect(testState.approveAgent).toHaveBeenCalledWith(
@@ -450,9 +452,6 @@ describe("MobileAgentSyncModal", () => {
 		};
 		await renderModal();
 
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
-
 		expect(container.textContent).toContain("No balance on Hyperliquid. Deposit first.");
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 	});
@@ -464,9 +463,6 @@ describe("MobileAgentSyncModal", () => {
 			withdrawable: "0",
 		};
 		await renderModal();
-
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
 
 		const alert = container.querySelector('[role="alert"]');
 		expect(alert?.textContent).toContain(NO_BALANCE_MESSAGE);
@@ -487,10 +483,8 @@ describe("MobileAgentSyncModal", () => {
 		testState.maxBuilderFee = 9;
 		await renderModal();
 
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
-
 		expect(testState.builderFeeRefetch).toHaveBeenCalledTimes(1);
+		expect(getButton(container, "Retry check").hasAttribute("disabled")).toBe(false);
 		expect(container.textContent).toContain(
 			"Enable trading and approve the builder fee on this desktop before linking a phone.",
 		);
@@ -500,8 +494,6 @@ describe("MobileAgentSyncModal", () => {
 
 	it("rechecks the builder fee immediately before creating the approval", async () => {
 		await renderModal();
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
 		expect(container.textContent).toContain("Approve a mobile trading key");
 
 		testState.maxBuilderFee = 0;
@@ -522,15 +514,91 @@ describe("MobileAgentSyncModal", () => {
 		await renderModal();
 
 		expect(container.textContent).toContain("Wallet approval unavailable");
-		expect(getButton(container, "Review phone access").hasAttribute("disabled")).toBe(true);
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(true);
+		expect(testState.clearinghouseRefetch).not.toHaveBeenCalled();
+		expect(testState.builderFeeRefetch).not.toHaveBeenCalled();
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+	});
+
+	it("shows no replacement line when the extraAgents snapshot is missing or failed", async () => {
+		testState.extraAgents = [];
+		await renderModal();
+		expect(container.textContent).not.toContain("Replaces the current mobile key");
+
+		act(() => root.unmount());
+		root = createI18nRoot(container);
+		testState.extraAgents = [approvedRemoteAgent()];
+		testState.extraAgentsError = new Error("network unavailable");
+		await renderModal();
+		expect(container.textContent).not.toContain("Replaces the current mobile key");
+		expect(container.textContent).not.toContain("network unavailable");
+	});
+
+	it("labels the primary button with the wallet prompt while the signature is pending", async () => {
+		let resolveApproval: (() => void) | undefined;
+		testState.approveAgent.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveApproval = resolve;
+				}),
+		);
+		await renderModal();
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+
+		const pendingButton = getButton(container, "Approve QR code with wallet...");
+		expect(pendingButton.hasAttribute("disabled")).toBe(true);
+		expect(container.textContent).not.toContain("Approve in wallet...");
+
+		act(() => resolveApproval?.());
+		await flushAsyncWork();
+		expect(container.textContent).toContain("Trading key approved");
+	});
+
+	it("retries the read-only preflight from the primary button after a failed check", async () => {
+		testState.clearinghouseState = {
+			assetPositions: [],
+			marginSummary: { accountValue: "0", totalNtlPos: "0", totalRawUsd: "0" },
+			withdrawable: "0",
+		};
+		await renderModal();
+		expect(container.textContent).toContain(NO_BALANCE_MESSAGE);
+		expect(testState.clearinghouseRefetch).toHaveBeenCalledTimes(1);
+
+		testState.clearinghouseState = {
+			assetPositions: [],
+			marginSummary: { accountValue: "1", totalNtlPos: "0", totalRawUsd: "1" },
+			withdrawable: "1",
+		};
+		act(() => getButton(container, "Retry check").click());
+		await flushAsyncWork();
+
+		expect(testState.clearinghouseRefetch).toHaveBeenCalledTimes(2);
+		expect(container.textContent).not.toContain(NO_BALANCE_MESSAGE);
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 	});
 
 	it("reveals only after a continuous four-second hold and renders directly to canvas", async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
 		await import("qrcode");
 		await renderModal();
-		await reviewAndApprove();
+		await approve();
+		expect(container.textContent).toContain(
+			"This QR enables trading on your phone, but not deposits or withdrawals. Do not share the QR or screenshots of it with anyone. Make sure you are not sharing your screen.",
+		);
+		expect(container.textContent).toContain(PHONE_JOURNEY_INSTRUCTION);
+		expect(container.textContent).not.toContain("Do not photograph");
 		const holdButton = getButton(container, "Press and hold for 4 seconds");
+		const ring = holdButton.querySelector('[role="progressbar"]');
+		expect(ring?.getAttribute("aria-valuenow")).toBe("0");
+		expect(ring?.getAttribute("aria-valuemax")).toBe("100");
+		const ringSvg = ring?.querySelector("svg");
+		expect(ringSvg?.getAttribute("aria-hidden")).toBe("true");
+		const ringCircles = ringSvg?.querySelectorAll("circle") ?? [];
+		expect(ringCircles).toHaveLength(2);
+		expect(Number(ringCircles[1]?.getAttribute("stroke-dashoffset"))).toBeCloseTo(2 * Math.PI * 10, 5);
+		expect(container.querySelector('[role="timer"]')).toBeNull();
 
 		act(() => dispatchPointer(holdButton, "pointerdown"));
 		await advanceTime(3_999);
@@ -541,7 +609,6 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(testState.extraAgentsRefetch.mock.calls.length).toBeGreaterThanOrEqual(2);
 		expect(testState.createMobileAgentSyncUrl).toHaveBeenCalledWith({
-			syncId: "A".repeat(22),
 			agentName: AGENT_NAME,
 			agentPrivateKey: AGENT_PRIVATE_KEY,
 			agentValidUntilMs: AGENT_VALID_UNTIL_MS,
@@ -559,39 +626,36 @@ describe("MobileAgentSyncModal", () => {
 				width: 320,
 			}),
 		);
-		expect(testState.issueMobileSyncTicket).toHaveBeenCalledWith(expect.any(AbortSignal));
-		expect(testState.issueMobileSyncTicket.mock.invocationCallOrder[0]).toBeLessThan(
-			testState.createMobileAgentSyncUrl.mock.invocationCallOrder[0] ?? 0,
-		);
-		expect(testState.issueMobileSyncTicket.mock.invocationCallOrder[0]).toBeLessThan(
-			testState.qrToCanvas.mock.invocationCallOrder[0] ?? 0,
-		);
+		expect(fetchSpy).not.toHaveBeenCalled();
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).not.toBeNull();
 		expect(container.querySelector("a[href]")).toBeNull();
 		expect(container.innerHTML).not.toContain(PHONE_LINK);
 		expect(container.textContent).not.toContain("Copy phone link");
 		expect(testState.writeClipboard).not.toHaveBeenCalled();
 		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(false);
-	});
+		expect(container.textContent).toContain(PHONE_JOURNEY_INSTRUCTION);
+		expect(container.textContent).not.toContain("closes automatically within 60 seconds");
+		const timer = container.querySelector('[role="timer"]');
+		expect(timer?.textContent).toBe("Closes in 60s");
+		expect(timer?.hasAttribute("aria-live")).toBe(false);
+		const announcement = container.querySelector("output.sr-only");
+		expect(announcement?.textContent).toBe("The QR closes automatically in about 60 seconds");
 
-	it("never renders an unregistered one-time QR", async () => {
-		testState.issueMobileSyncTicket.mockResolvedValue({ status: "unavailable" });
-		await renderModal();
-		await reviewAndApprove();
+		await advanceTime(1_000);
+		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 59s");
+		expect(container.querySelector("output.sr-only")?.textContent).toBe(
+			"The QR closes automatically in about 60 seconds",
+		);
+		expect(testState.qrToCanvas).toHaveBeenCalledTimes(1);
 
-		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
-		await advanceTime(4_000);
-
-		expect(testState.issueMobileSyncTicket).toHaveBeenCalledTimes(1);
-		expect(testState.qrToCanvas).not.toHaveBeenCalled();
-		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
-		expect(container.textContent).toContain("one-time QR service is unavailable");
-		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
+		await advanceTime(58_000);
+		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 1s");
+		expect(testState.qrToCanvas).toHaveBeenCalledTimes(1);
 	});
 
 	it("cancels the reveal hold on pointer leave, blur, Escape, and hidden visibility", async () => {
 		await renderModal();
-		await reviewAndApprove();
+		await approve();
 		const holdButton = getButton(container, "Press and hold for 4 seconds");
 
 		act(() => {
@@ -622,7 +686,7 @@ describe("MobileAgentSyncModal", () => {
 
 	it("cancels on pointer release/cancel/lost capture and supports a continuous keyboard hold", async () => {
 		await renderModal();
-		await reviewAndApprove();
+		await approve();
 		const holdButton = getButton(container, "Press and hold for 4 seconds");
 
 		for (const cancelEvent of ["pointerup", "pointercancel", "lostpointercapture"]) {
@@ -652,25 +716,8 @@ describe("MobileAgentSyncModal", () => {
 		expect(testState.createMobileAgentSyncUrl).toHaveBeenCalledTimes(1);
 	});
 
-	it("deducts registration and rendering delays from the ticket's 60-second lifetime", async () => {
-		let finishRegistration:
-			| ((result: {
-					status: "accepted";
-					syncId: string;
-					expiresAtMonotonicMs: number;
-					expiresAtWallClockMs: number;
-			  }) => void)
-			| undefined;
+	it("starts the 60-second window at reveal and deducts the rendering delay", async () => {
 		let finishQrRender: (() => void) | undefined;
-		let ticketExpiresAtMonotonicMs = 0;
-		let ticketExpiresAtWallClockMs = 0;
-		testState.issueMobileSyncTicket.mockImplementationOnce(() => {
-			ticketExpiresAtMonotonicMs = performance.now() + 60_000;
-			ticketExpiresAtWallClockMs = Date.now() + 60_000;
-			return new Promise((resolve) => {
-				finishRegistration = resolve;
-			});
-		});
 		testState.qrToCanvas.mockImplementationOnce(
 			() =>
 				new Promise<void>((resolve) => {
@@ -678,23 +725,9 @@ describe("MobileAgentSyncModal", () => {
 				}),
 		);
 		const onOpenChange = await renderModal();
-		await reviewAndApprove();
+		await approve();
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
-
-		expect(testState.issueMobileSyncTicket).toHaveBeenCalledTimes(1);
-		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
-
-		await advanceTime(5_000);
-		act(() =>
-			finishRegistration?.({
-				status: "accepted",
-				syncId: "A".repeat(22),
-				expiresAtMonotonicMs: ticketExpiresAtMonotonicMs,
-				expiresAtWallClockMs: ticketExpiresAtWallClockMs,
-			}),
-		);
-		await flushAsyncWork();
 		expect(testState.qrToCanvas).toHaveBeenCalledTimes(1);
 		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
 
@@ -702,10 +735,12 @@ describe("MobileAgentSyncModal", () => {
 		act(() => finishQrRender?.());
 		await flushAsyncWork();
 		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(false);
+		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 55s");
 
-		await advanceTime(49_999);
+		await advanceTime(54_999);
 		expect(onOpenChange).not.toHaveBeenCalledWith(false);
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).not.toBeNull();
+		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 1s");
 
 		await advanceTime(1);
 		expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -713,56 +748,62 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.innerHTML).not.toContain(PHONE_LINK);
 	});
 
-	it("does not encrypt a QR when the page becomes hidden while issuance is pending", async () => {
-		let complete:
-			| ((result: {
-					status: "accepted";
-					syncId: string;
-					expiresAtMonotonicMs: number;
-					expiresAtWallClockMs: number;
-			  }) => void)
-			| undefined;
-		testState.issueMobileSyncTicket.mockImplementationOnce(
+	it("does not render a QR when the page becomes hidden while the envelope is being encrypted", async () => {
+		let complete: ((result: Awaited<ReturnType<typeof testState.createMobileAgentSyncUrl>>) => void) | undefined;
+		const result = await testState.createMobileAgentSyncUrl();
+		testState.createMobileAgentSyncUrl.mockClear();
+		testState.createMobileAgentSyncUrl.mockImplementationOnce(
 			() =>
 				new Promise((resolve) => {
 					complete = resolve;
 				}),
 		);
 		await renderModal();
-		await reviewAndApprove();
+		await approve();
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
-		expect(testState.issueMobileSyncTicket).toHaveBeenCalledTimes(1);
+		expect(testState.createMobileAgentSyncUrl).toHaveBeenCalledTimes(1);
 		Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
 		act(() => document.dispatchEvent(new Event("visibilitychange")));
-		act(() =>
-			complete?.({
-				status: "accepted",
-				syncId: "A".repeat(22),
-				expiresAtMonotonicMs: performance.now() + 60_000,
-				expiresAtWallClockMs: Date.now() + 60_000,
-			}),
-		);
+		act(() => complete?.(result));
 		await flushAsyncWork();
-		expect(testState.createMobileAgentSyncUrl).not.toHaveBeenCalled();
 		expect(testState.qrToCanvas).not.toHaveBeenCalled();
+		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
 	});
 
-	it("closes at the wall-clock ticket deadline when the monotonic clock lags", async () => {
-		testState.issueMobileSyncTicket.mockImplementationOnce(async () => ({
-			status: "accepted",
-			syncId: "A".repeat(22),
-			expiresAtMonotonicMs: performance.now() + 60_000,
-			expiresAtWallClockMs: Date.now() + 20_000,
-		}));
+	it("closes at the envelope deadline when it is earlier than the visible window", async () => {
+		const result = await testState.createMobileAgentSyncUrl();
+		testState.createMobileAgentSyncUrl.mockClear();
+		testState.createMobileAgentSyncUrl.mockResolvedValueOnce({ ...result, expiresAtMs: NOW_MS + 4_000 + 20_000 });
 		const onOpenChange = await renderModal();
-		await reviewAndApprove();
+		await approve();
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
+		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 20s");
+		expect(container.querySelector("output.sr-only")?.textContent).toBe(
+			"The QR closes automatically in about 20 seconds",
+		);
 
 		await advanceTime(19_999);
 		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+		await advanceTime(1);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
+	});
 
+	it("keeps the 60-second window on the monotonic clock when the wall clock jumps backwards", async () => {
+		const onOpenChange = await renderModal();
+		await approve();
+		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
+		await advanceTime(4_000);
+		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 60s");
+
+		vi.setSystemTime(Date.now() - 10 * 60 * 1000);
+		await advanceTime(1_000);
+		expect(container.querySelector('[role="timer"]')?.textContent).toBe("Closes in 59s");
+
+		await advanceTime(58_999);
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
 		await advanceTime(1);
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
@@ -770,7 +811,7 @@ describe("MobileAgentSyncModal", () => {
 
 	it("immediately clears and closes a visible QR when the document becomes hidden", async () => {
 		const onOpenChange = await renderModal();
-		await reviewAndApprove();
+		await approve();
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
 		const canvas = container.querySelector('canvas[aria-label="Phone access QR code"]');
@@ -787,7 +828,7 @@ describe("MobileAgentSyncModal", () => {
 
 	it("keeps the QR concealed when the document becomes hidden during reveal revalidation", async () => {
 		await renderModal();
-		await reviewAndApprove();
+		await approve();
 		let finishRefetch: ((result: { data: typeof testState.extraAgents; error: null }) => void) | undefined;
 		testState.extraAgentsRefetch.mockImplementationOnce(
 			() =>
@@ -814,7 +855,7 @@ describe("MobileAgentSyncModal", () => {
 		let pageHasFocus = true;
 		vi.mocked(document.hasFocus).mockImplementation(() => pageHasFocus);
 		await renderModal();
-		await reviewAndApprove();
+		await approve();
 		let finishRefetch: ((result: { data: typeof testState.extraAgents; error: null }) => void) | undefined;
 		testState.extraAgentsRefetch.mockImplementationOnce(
 			() =>
@@ -849,7 +890,7 @@ describe("MobileAgentSyncModal", () => {
 				}),
 		);
 		const onOpenChange = await renderModal();
-		await reviewAndApprove();
+		await approve();
 
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
@@ -868,7 +909,7 @@ describe("MobileAgentSyncModal", () => {
 	it("keeps approved recovery when QR canvas rendering fails before visibility starts", async () => {
 		testState.qrToCanvas.mockRejectedValue(new Error("canvas unavailable"));
 		const onOpenChange = await renderModal();
-		await reviewAndApprove();
+		await approve();
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
 
@@ -905,8 +946,6 @@ describe("MobileAgentSyncModal", () => {
 	it("never reveals when post-approval extraAgents does not match the exact tuple", async () => {
 		testState.extraAgents = [];
 		await renderModal();
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
 		await advanceTime(3_750);
@@ -920,7 +959,7 @@ describe("MobileAgentSyncModal", () => {
 	it("recovers an ambiguous approval response when extraAgents confirms the exact key", async () => {
 		testState.approveAgent.mockRejectedValue(new Error("network response lost"));
 		await renderModal();
-		await reviewAndApprove();
+		await approve();
 
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 		expect(container.textContent).toContain("Trading key approved");
@@ -932,8 +971,6 @@ describe("MobileAgentSyncModal", () => {
 		testState.approveAgent.mockRejectedValue(new Error("network response lost"));
 		testState.extraAgents = [];
 		await renderModal();
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
 		await advanceTime(3_750);
@@ -961,8 +998,6 @@ describe("MobileAgentSyncModal", () => {
 			},
 		];
 		await renderModal();
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
 		await advanceTime(3_750);
@@ -980,7 +1015,7 @@ describe("MobileAgentSyncModal", () => {
 
 	it("rechecks extraAgents after the hold and keeps a replaced key concealed", async () => {
 		await renderModal();
-		await reviewAndApprove();
+		await approve();
 		testState.extraAgents = [];
 
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
@@ -1014,8 +1049,6 @@ describe("MobileAgentSyncModal", () => {
 	it("does not trust matching stale extraAgents data when refetch reports an error", async () => {
 		testState.extraAgentsError = new Error("network unavailable");
 		await renderModal();
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
 		await advanceTime(3_750);
@@ -1034,8 +1067,6 @@ describe("MobileAgentSyncModal", () => {
 				}),
 		);
 		await renderModal();
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
 
@@ -1047,7 +1078,7 @@ describe("MobileAgentSyncModal", () => {
 		act(() => resolveApproval?.());
 		await flushAsyncWork();
 
-		expect(container.textContent).toContain("Review phone access");
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
 		expect(container.textContent).not.toContain("Trading key approved");
 		expect(testState.createMobileAgentSyncUrl).not.toHaveBeenCalled();
 	});
@@ -1062,8 +1093,6 @@ describe("MobileAgentSyncModal", () => {
 		);
 		testState.extraAgents = [];
 		await renderModal();
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
@@ -1073,7 +1102,7 @@ describe("MobileAgentSyncModal", () => {
 		await renderModal();
 
 		expect(container.textContent).toContain("Approval verification pending");
-		expect(container.textContent).not.toContain("Review phone access");
+		expect(container.textContent).not.toContain("Approve mobile trading key");
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 
 		testState.extraAgents = [approvedRemoteAgent()];
@@ -1088,7 +1117,7 @@ describe("MobileAgentSyncModal", () => {
 
 	it("recovers an approved but unrevealed key after the modal closes and reopens", async () => {
 		const onOpenChange = await renderModal();
-		await reviewAndApprove();
+		await approve();
 		act(() => getButton(container, "Close modal").click());
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 
@@ -1118,8 +1147,6 @@ describe("MobileAgentSyncModal", () => {
 				}),
 		);
 		const onOpenChange = await renderModal();
-		act(() => getButton(container, "Review phone access").click());
-		await flushAsyncWork();
 		act(() => getButton(container, "Approve mobile trading key").click());
 		await flushAsyncWork();
 
@@ -1187,7 +1214,7 @@ describe("MobileAgentSyncModal", () => {
 
 	it("clears an approved desktop recovery only after revoke is remotely confirmed", async () => {
 		await renderModal();
-		await reviewAndApprove();
+		await approve();
 		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
 
 		// A temporarily empty read must not be treated as proof that the
@@ -1400,7 +1427,8 @@ describe("MobileAgentSyncModal", () => {
 		await renderModal();
 
 		expect(container.textContent).toContain("New mobile pairing is temporarily unavailable");
-		expect(container.textContent).not.toContain("Review phone access");
+		expect(container.textContent).not.toContain("Approve mobile trading key");
+		expect(testState.clearinghouseRefetch).not.toHaveBeenCalled();
 		act(() => getButton(container, "Review revoke").click());
 		await flushAsyncWork();
 

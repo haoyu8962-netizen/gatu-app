@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
 
 vi.mock("@gatu/ui", () => ({
+	buttonVariants: () => "",
 	ButtonIcon: ({
 		"aria-label": ariaLabel,
 		children,
@@ -121,14 +122,11 @@ describe("MobileHeader layout", () => {
 		expect(account?.className).toContain("min-w-0");
 		expect(account?.className).toContain("flex-1");
 		expect(account?.className).toContain("justify-end");
-		expect(account?.className).toContain("[&_button]:h-11");
-		expect(account?.className).toContain("[&_button]:min-h-11");
+		expect(account?.className).not.toContain("[&_button]:h-11");
+		expect(account?.className).not.toContain("[&_button]:min-h-11");
 		expect(actions?.className).toContain("ms-auto");
-		expect(theme?.className).not.toContain("ms-2");
-		expect(theme?.className).not.toContain("ml-2");
-		expect(theme?.className).toContain("size-11");
 		expect(account?.querySelector('[data-testid="account"]')).not.toBeNull();
-		expect(theme).not.toBeNull();
+		expect(theme).toBeNull();
 		expect(actions?.querySelector('[data-testid="language"]')?.className).toContain("size-11");
 		expect(actions?.querySelector('button[aria-label="Settings"]')?.className).toContain("size-11");
 	});

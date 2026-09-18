@@ -19,7 +19,6 @@ describe("chart library preload contract", () => {
 			commit: APP_BUILD_COMMIT,
 			release: "r",
 			builtAt: "2026-09-13T00:00:00.000Z",
-			ticketApiVersion: 2,
 			pairing: { createAndReveal: false, importFromQr: false },
 			chartLibraryHash: APP_CHART_LIBRARY_HASH,
 		});
@@ -44,7 +43,6 @@ describe("chart library preload contract", () => {
 			commit: "abc123",
 			release: "r",
 			builtAt: "2026-09-13T00:00:00.000Z",
-			ticketApiVersion: 2,
 			pairing: { createAndReveal: false, importFromQr: false },
 			chartLibraryHash: "0123456789abcdef",
 		});

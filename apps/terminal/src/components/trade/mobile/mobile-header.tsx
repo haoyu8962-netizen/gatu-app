@@ -2,12 +2,11 @@ import { useLingui } from "@lingui/react/macro";
 import { GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { GatuLogo } from "@/components/brand/gatu-logo";
-import { headerLanguage, headerLogo, headerSettings, headerTheme } from "@/components/trade/mobile/mobile-header-view";
+import { headerLanguage, headerLogo, headerSettings } from "@/components/trade/mobile/mobile-header-view";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { HeaderIconButtonView } from "../header/header-icon-button-view";
 import { LanguageSwitcher } from "../header/language-switcher";
-import { ThemeToggle } from "../header/theme-toggle";
 import { UserMenu } from "../header/user-menu";
 import { MobileHeaderView } from "./mobile-header-view";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
@@ -31,7 +30,6 @@ export function MobileHeader({ className }: Props) {
 				</Link>
 			}
 			account={<UserMenu />}
-			theme={<ThemeToggle className={headerTheme} iconClassName="size-4.5" />}
 			language={<LanguageSwitcher sideOffset={14} alignOffset={-36} className={headerLanguage} />}
 			settings={
 				<HeaderIconButtonView className={headerSettings} onClick={openSettingsDialog} aria-label={t`Settings`}>

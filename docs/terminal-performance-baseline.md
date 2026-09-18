@@ -227,6 +227,37 @@ value stays at 123,242 bytes; this record is the compliant measurement.
   `index-Bs6QSD5q-BqDTMEGU.js` 434,360). Every other named surface stayed
   within its limit; the budget script reported no violations.
 
+## Order-form dialogs leave `trade-terminal-page` (2026-09-18)
+
+On `claude/surface-tokens-touch-feedback` the named surface reached 128,778 gzip bytes (pairing flags off; 128,807 with
+them on), 5,536 above the 123,242-byte baseline and over the 4,000-byte allowance; `origin/main` (`3a80b360`) measured
+127,085 in an isolated worktree. The growth was not a new feature: removing the early return from `MobileAccountView`
+made it compilable by React Compiler (about 3.7 kB of memoization in the minified chunk), and the mobile order-book
+header gained its chip row. The baseline is unchanged; the regression was removed instead.
+
+- The margin-mode, leverage and account-mode dialogs of the order form load on first open
+  (`components/trade/tradebox/lazy-trade-settings-modals.ts`, mounted through `components/ui/lazy-dialog-host.tsx`).
+  They are warmed on intent, when the pointer enters the order form or a press or focus lands inside it, not at idle.
+  A deterministic idle download would still be startup weight under the runtime-profile rule above, and counting the
+  idle-warmed variant honestly put the desktop increment near 211.6 kB against its 201,988-byte limit with a larger
+  combined total. No semantic root changed, because nothing new is fetched on a load without interaction.
+- These dialogs use `createRetryableLazyComponent`, never `createLazyComponent`: the latter answers a missing chunk with
+  `window.location.reload()` on the next render, which would discard an unsent order draft. A failed import shows an
+  error shell with Try again and an explicit Reload page; a failed warm-up is forgotten.
+- Measurement (local, Node 22.15.0, pnpm 10.21.0, pairing flags off, working tree on top of `35146f69`, so this is a
+  diagnostic record and not a re-baseline): `trade-terminal-page` 126,255 (-2,523); static trade startup 1,567,919
+  (-4,108); mobile increment 112,456 and combined 1,680,375 (-4,115); desktop increment 199,118 (-1,624) and combined
+  1,767,037 (-5,732); total client gzip 3,092,895 (+8,426, the cost of four more chunks; 61,812 below its baseline);
+  401 chunks, no static cycles. Every budget passed.
+- Browser evidence (production build through `scripts/serve-spa-static.mjs`, Playwright with a visible document): no
+  dialog chunk is requested during 6 s (desktop) or 5 s (390 px) without interaction; the first pointer contact with the
+  order form fetches them; the dialogs then open in 6-22 ms on desktop with their enter transition, and 123 ms after
+  touch-down on the phone layout with the drawer slide and no loading shell. With the chunk removed from disk the click
+  shows the loading shell, then the error shell, in the same document and with no repeated requests. Chromium does not
+  refetch a module whose load failed in the same document, so Try again cannot recover a missing chunk there; Reload page
+  is the recovery and stays the user's decision. Latency was local; a slow mobile network can show the loading shell on
+  the first open.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:

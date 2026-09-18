@@ -2,6 +2,7 @@ import { Select } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
@@ -34,8 +35,7 @@ type OrderHistoryType = OrdinaryOrderHistoryEntry["type"];
 type OrderHistoryTypeFilter = "all" | OrderHistoryType;
 type OrderHistoryStatusFilter = "all" | OrderHistoryStatusCategory;
 
-const filterTriggerClassName =
-	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
+const filterTriggerClassName = MOBILE_FILTER_CHIP_CLASS;
 const footerActionClassName =
 	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle";
 
@@ -124,7 +124,7 @@ function MobileOrdersHistoryTabContent({
 	const availableTypeFilters = new Set(entries.map((entry) => entry.type));
 	if (typeFilter !== "all") availableTypeFilters.add(typeFilter);
 	const typeOptions = [
-		{ value: "all", label: t`All types` },
+		{ value: "all", label: t`Type` },
 		...Array.from(availableTypeFilters).map((value) => ({
 			value,
 			label: getOrderTypeLabel(value),
@@ -133,7 +133,7 @@ function MobileOrdersHistoryTabContent({
 	const availableStatusFilters = new Set(entries.map(getOrderHistoryStatusCategory));
 	if (statusFilter !== "all") availableStatusFilters.add(statusFilter);
 	const statusOptions = [
-		{ value: "all", label: t`All statuses` },
+		{ value: "all", label: t`Status` },
 		...(["open", "filled", "triggered", "canceled", "rejected", "other"] as const)
 			.filter((value) => availableStatusFilters.has(value))
 			.map((value) => ({ value, label: getStatusFilterLabel(value) })),
@@ -225,10 +225,72 @@ function MobileOrdersHistoryTabContent({
 		</div>
 	);
 
+	function renderFilterRow(disabled: boolean) {
+		return (
+			<div
+				data-testid="mobile-order-history-filter-row"
+				className="flex h-9 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+			>
+				<span className="sr-only" aria-live="polite">
+					{headerCount}
+				</span>
+				<div className="flex shrink-0 items-center gap-1.5">
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Order type`}
+						value={typeFilter}
+						onValueChange={(value) => {
+							if (value === "all") setTypeFilter("all");
+							else if (isOrderHistoryType(value, availableTypeFilters)) setTypeFilter(value);
+						}}
+						options={typeOptions}
+						className="w-auto shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Direction`}
+						value={directionFilter}
+						onValueChange={(value) => {
+							if (isOrderHistoryDirectionFilter(value)) setDirectionFilter(value);
+						}}
+						options={[
+							{ value: "all", label: t`Direction` },
+							{ value: "buy", label: t`Buy` },
+							{ value: "sell", label: t`Sell` },
+						]}
+						className="w-auto shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Order status`}
+						value={statusFilter}
+						onValueChange={(value) => {
+							if (isOrderHistoryStatusFilter(value)) setStatusFilter(value);
+						}}
+						options={statusOptions}
+						className="w-auto shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+				</div>
+				<MobileBulkDisclosureActions
+					keys={disabled ? [] : filteredOrderKeys}
+					controller={disclosure}
+					className="ms-auto ps-3"
+				/>
+			</div>
+		);
+	}
+
 	if (!isConnected) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
-				{t`Connect your wallet to view order history.`}
+			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
+				{renderFilterRow(true)}
+				<div className={cn("min-h-0", !isPageScroll && "flex-1")} />
 			</div>
 		);
 	}
@@ -255,55 +317,7 @@ function MobileOrdersHistoryTabContent({
 
 	return (
 		<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-			<div
-				data-testid="mobile-order-history-filter-row"
-				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-			>
-				<span className="sr-only" aria-live="polite">
-					{headerCount}
-				</span>
-				<div className="flex shrink-0 items-center gap-1.5">
-					<Select
-						size="xxs"
-						label={t`Order type`}
-						value={typeFilter}
-						onValueChange={(value) => {
-							if (value === "all") setTypeFilter("all");
-							else if (isOrderHistoryType(value, availableTypeFilters)) setTypeFilter(value);
-						}}
-						options={typeOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-					<Select
-						size="xxs"
-						label={t`Direction`}
-						value={directionFilter}
-						onValueChange={(value) => {
-							if (isOrderHistoryDirectionFilter(value)) setDirectionFilter(value);
-						}}
-						options={[
-							{ value: "all", label: t`All Directions` },
-							{ value: "buy", label: t`Buy` },
-							{ value: "sell", label: t`Sell` },
-						]}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-					<Select
-						size="xxs"
-						label={t`Order status`}
-						value={statusFilter}
-						onValueChange={(value) => {
-							if (isOrderHistoryStatusFilter(value)) setStatusFilter(value);
-						}}
-						options={statusOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-				</div>
-				<MobileBulkDisclosureActions keys={filteredOrderKeys} controller={disclosure} className="ms-auto ps-3" />
-			</div>
+			{renderFilterRow(false)}
 			<div className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}>
 				<div className="flex flex-col gap-2.5 px-3.5 pt-3">
 					{filteredEntries.length === 0 ? (
@@ -330,7 +344,7 @@ function MobileOrdersHistoryTabContent({
 								return (
 									<article
 										key={cardKey}
-										className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal"
+										className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface"
 									>
 										<MobileDisclosureHeader
 											expanded={isExpanded}

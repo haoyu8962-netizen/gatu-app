@@ -24,7 +24,7 @@ export function TwapSubviewTabs({ idPrefix, mobile = false, onValueChange, value
 			aria-label={t`TWAP activity`}
 			className={cn(
 				"flex shrink-0 items-stretch overflow-x-auto border-b border-market-close-stroke-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-				mobile ? "h-11 px-2" : "h-10 px-3",
+				mobile ? "h-9 px-2" : "h-10 px-3",
 			)}
 		>
 			{tabs.map((tab, index) => {
@@ -55,7 +55,8 @@ export function TwapSubviewTabs({ idPrefix, mobile = false, onValueChange, value
 						}}
 						className={cn(
 							"relative inline-flex min-h-10 shrink-0 items-center justify-center px-3 text-xs font-semibold outline-none transition-colors duration-[120ms] after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-transparent after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus",
-							mobile && "min-h-11 px-3.5",
+							mobile &&
+								"h-9 min-h-0 px-3.5 before:absolute before:top-1/2 before:left-0 before:h-11 before:w-full before:-translate-y-1/2 before:content-['']",
 							selected
 								? "text-market-close-fg after:bg-market-close-control"
 								: "text-market-close-muted active:text-market-close-fg",

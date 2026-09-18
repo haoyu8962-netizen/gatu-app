@@ -49,7 +49,8 @@ describe("referral UI governance contract", () => {
 
 		expect(dashboard).toContain("text-lg font-bold text-fg");
 		expect(summary).toContain("grid grid-cols-2 gap-2 min-[1001px]:grid-cols-4");
-		expect(summary).toContain("min-h-[62px] rounded-20 border border-stroke-weak bg-fill-weaker");
+		expect(summary).toContain("min-h-[62px] px-3 py-2.5 min-[1001px]:min-h-[74px]");
+		expect(summary).not.toContain("bg-fill-weaker");
 		expect(summary).toContain("min-[1001px]:text-lg");
 		expect(code).toContain('role="progressbar"');
 		expect(code).toContain("aria-valuenow={activationProgress ?? 0}");
@@ -109,7 +110,8 @@ describe("referral UI governance contract", () => {
 		expect(code).toContain("rounded-20 border border-stroke-weak bg-surface");
 		expect(rewards).toContain("rounded-20 border border-stroke-weak bg-surface");
 		expect(code).toContain("rounded-16 bg-fill-weaker");
-		expect(rewards).toContain("group mt-3 rounded-20 bg-fill-weaker");
+		expect(rewards).toContain('<details className="group mt-3">');
+		expect(rewards).not.toContain("group mt-3 rounded-20 bg-fill-weaker");
 		expect(rewards).toContain("divide-y divide-stroke-weak border-y border-stroke-weak");
 		expect(rewards).toContain("min-[1200px]:grid-cols-4");
 		expect(rewards).not.toContain("min-[1001px]:grid-cols-4");
@@ -160,7 +162,7 @@ describe("referral UI governance contract", () => {
 		expect(joinRoute).toContain("remountDeps: ({ params }) => ({ code: params.code })");
 		expect(joinRoute).toContain("if (!isSafeReferralJoinCode(params.code)) throw notFound()");
 		expect(joinRoute).toContain('{ name: "gatu-route", content: "referral-join" }');
-		expect(joinRoute).not.toContain("ssr: false");
+		expect(joinRoute).toContain("ssr: false");
 		expect(joinFallback).toContain("throw notFound()");
 		expect(viteConfig).toContain("name: 'gatu-referral-join-dev-request-guard'");
 		expect(viteConfig).toContain("decodeURI(pathname)");

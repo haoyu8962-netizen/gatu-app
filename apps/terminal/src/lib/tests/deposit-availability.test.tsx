@@ -134,7 +134,36 @@ describe("getDepositAvailability", () => {
 		});
 	});
 
-	it("keeps external agent-only sessions behind the owner-wallet gate", () => {
+	it.each([false, true])(
+		"reports agent-only sessions as a desktop-required restriction (embedded=%s)",
+		(isEmbeddedWallet) => {
+			expect(
+				getDepositAvailability({
+					featureFlags: ENABLED_FEATURES,
+					geoStatus: "allowed",
+					hasWalletAccess: false,
+					isEmbeddedWallet,
+					network: "mainnet",
+					sessionMode: "agent-only",
+				}),
+			).toMatchObject({ available: false, reason: "agent-only-session", signerReady: false });
+		},
+	);
+
+	it("keeps geo verdicts ahead of the agent-only restriction", () => {
+		expect(
+			getDepositAvailability({
+				featureFlags: ENABLED_FEATURES,
+				geoStatus: "unresolved",
+				hasWalletAccess: false,
+				isEmbeddedWallet: false,
+				network: "mainnet",
+				sessionMode: "agent-only",
+			}),
+		).toMatchObject({ available: false, reason: "geo-unresolved" });
+	});
+
+	it("keeps a disconnected external session behind the owner-wallet gate", () => {
 		expect(
 			getDepositAvailability({
 				featureFlags: ENABLED_FEATURES,
@@ -142,7 +171,7 @@ describe("getDepositAvailability", () => {
 				hasWalletAccess: false,
 				isEmbeddedWallet: false,
 				network: "mainnet",
-				sessionMode: "agent-only",
+				sessionMode: "disconnected",
 			}),
 		).toMatchObject({ available: false, reason: "wallet-session-required", signerReady: false });
 	});
@@ -263,6 +292,19 @@ describe("useDepositAvailability", () => {
 			available: false,
 			path: "external",
 			reason: "wallet-session-required",
+		});
+	});
+
+	it("explains an agent-only session with the desktop-required reason", () => {
+		hookState.hasWalletAccess = false;
+		hookState.sessionMode = "agent-only";
+
+		expect(renderHook()).toMatchObject({
+			available: false,
+			reason: "agent-only-session",
+			signerReady: false,
+			unavailableReason:
+				"This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop.",
 		});
 	});
 

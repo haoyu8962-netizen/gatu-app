@@ -1069,7 +1069,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 							{ value: "limit", label: t`Limit` },
 							{ value: "trigger", label: t`Trigger` },
 						]}
-						triggerClassName="h-[27px] min-w-14 max-w-32 !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted duration-[120ms] [&>*]:text-market-close-muted hover:border-market-close-control hover:[&>*]:text-market-close-fg focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
+						triggerClassName="h-[27px] min-w-14 max-w-32 !rounded-[7px] border-market-close-stroke-card bg-surface px-2.5 text-xs text-market-close-muted duration-[120ms] [&>*]:text-market-close-muted hover:border-market-close-control hover:[&>*]:text-market-close-fg focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
 						popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
 						className="w-auto [&>label]:sr-only"
 					/>
@@ -1084,7 +1084,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 							{ value: "buy", label: t`Buy` },
 							{ value: "sell", label: t`Sell` },
 						]}
-						triggerClassName="h-[27px] min-w-14 max-w-32 !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted duration-[120ms] [&>*]:text-market-close-muted hover:border-market-close-control hover:[&>*]:text-market-close-fg focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
+						triggerClassName="h-[27px] min-w-14 max-w-32 !rounded-[7px] border-market-close-stroke-card bg-surface px-2.5 text-xs text-market-close-muted duration-[120ms] [&>*]:text-market-close-muted hover:border-market-close-control hover:[&>*]:text-market-close-fg focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
 						popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
 						className="w-auto [&>label]:sr-only"
 					/>
@@ -1264,7 +1264,7 @@ function OrdersTableHeader({ allSelected, someSelected, disabled, onToggleAll }:
 	];
 
 	return (
-		<TableHeader className="block bg-modal [&_tr]:border-stroke-weak [&_tr]:border-t-0">
+		<TableHeader className="block bg-surface [&_tr]:border-stroke-weak [&_tr]:border-t-0">
 			<TableRow
 				className={cn(
 					positionsPanelTableHeaderRowClass,
@@ -1623,7 +1623,7 @@ function OrderRow({
 					aria-label={t`Cancel order`}
 					onClick={() => onCancel([order])}
 					disabled={isCancelling || cancelDisabled}
-					className="h-[27px] min-h-0 rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-modal hover:text-market-close-danger focus-visible:border-market-close-focus focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-focus active:not-data-disabled:scale-100 disabled:cursor-not-allowed"
+					className="h-[27px] min-h-0 rounded-[7px] border-market-close-stroke-input bg-surface px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-surface hover:text-market-close-danger focus-visible:border-market-close-focus focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-focus active:not-data-disabled:scale-100 disabled:cursor-not-allowed"
 				>
 					{isCancelling ? t`Canceling...` : t`Cancel`}
 				</Button>
