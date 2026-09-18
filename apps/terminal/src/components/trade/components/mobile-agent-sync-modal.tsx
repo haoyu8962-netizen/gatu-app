@@ -61,6 +61,7 @@ interface QrDeadlines {
 
 interface QrPayload extends QrDeadlines {
 	agentAddress: Address;
+	syncId: string;
 	pageSafetyEpoch: number;
 	rendered: boolean;
 	url: string;
@@ -899,6 +900,7 @@ function MobileAgentSyncSession({
 				status: "visible",
 				payload: {
 					agentAddress: approval.publicKey,
+					syncId: syncUrl.syncId,
 					url: syncUrl.url,
 					expiresAtMs: syncUrl.expiresAtMs,
 					pageSafetyEpoch,
@@ -1166,7 +1168,7 @@ function MobileAgentSyncSession({
 				) : syncState.status === "concealed" || syncState.status === "revalidating" ? (
 					<ConcealedQrPanel state={syncState} onReveal={handleRevealQr} />
 				) : syncState.status === "visible" ? (
-					<VisibleQrPanel key={syncState.payload.url} payload={syncState.payload} canvasRef={qrCanvasRef} />
+					<VisibleQrPanel key={syncState.payload.syncId} payload={syncState.payload} canvasRef={qrCanvasRef} />
 				) : (
 					<PreApprovalPanel existingMobileAgentAddress={existingMobileAgentAddress} />
 				)}

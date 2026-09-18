@@ -23,6 +23,7 @@ import {
 } from "@/lib/mobile-sync/bootstrap-fragment";
 import {
 	clearMobileSyncDraft,
+	getMobileSyncRemainingLifetimeMs,
 	isMobileSyncEnvelopeExpired,
 	readMobileSyncDraft,
 	saveMobileSyncDraft,
@@ -212,7 +213,7 @@ function MobileAgentSyncRoute() {
 	useEffect(() => {
 		if (!loadedSync || status.state === "success") return;
 
-		const expiresInMs = loadedSync.envelope.expiresAtMs - Date.now();
+		const expiresInMs = getMobileSyncRemainingLifetimeMs(loadedSync.envelope);
 		if (expiresInMs <= 0) {
 			clearExpiredSync(loadedSync);
 			return;
@@ -257,6 +258,9 @@ function MobileAgentSyncRoute() {
 			});
 			if (abortController.signal.aborted) return;
 
+			const importIdentity = { env: imported.env, userAddress: imported.userAddress, syncId: imported.syncId };
+			if (hasImportedMobileSyncId(importIdentity)) throw new MobileAgentAlreadyImportedError();
+
 			const remoteVerification = await waitForExpectedMobileAgent(
 				(attemptSignal) => info.extraAgents({ user: imported.userAddress }, attemptSignal),
 				{
@@ -294,9 +298,6 @@ function MobileAgentSyncRoute() {
 				persistenceAttempted: false,
 			};
 			if (abortController.signal.aborted) throw new MobileAgentStorageError();
-
-			const importIdentity = { env: imported.env, userAddress: imported.userAddress, syncId: imported.syncId };
-			if (hasImportedMobileSyncId(importIdentity)) throw new MobileAgentAlreadyImportedError();
 
 			registrationToRollback.persistenceAttempted = true;
 			const storageResult = await persistAgentForRegistration(registration.epoch, privateKey, publicKey, metadata, {
@@ -828,6 +829,8 @@ function getMobileSyncImportErrorMessage(error: unknown): MobileSyncImportMessag
 				return t`Refresh both devices to update phone access, then create a new QR.`;
 			case "expired_payload":
 				return t`This desktop wallet QR expired.`;
+			case "not_yet_valid":
+				return t`This QR's time does not match this phone. Check the date and time on both devices, then create a new QR.`;
 			case "decrypt_failed":
 				return t`This desktop wallet QR is damaged or incomplete. Scan a new QR.`;
 			case "origin_mismatch":

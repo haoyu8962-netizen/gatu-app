@@ -437,10 +437,14 @@ describe("MobileAgentSyncRoute", () => {
 		act(() => findButton(container, "Import phone access")?.click());
 		await flushAsyncWork(20);
 
+		expect(testState.waitForExpectedMobileAgent).not.toHaveBeenCalled();
+		expect(testState.captureAgentRegistrationEpoch).not.toHaveBeenCalled();
+		expect(testState.cancelAgentRegistrationEpochAndRemove).not.toHaveBeenCalled();
 		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
 		expect(testState.activateAgentOwnerForRegistration).not.toHaveBeenCalled();
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
 		expect(container.textContent).toContain("already imported on this phone");
+		expect(container.textContent).not.toContain("Clear this site's data");
 	});
 
 	it("asks both devices to refresh when the QR comes from the retired ticket protocol", async () => {

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	armMobileSyncDraftExpiryCleanup,
 	clearMobileSyncDraft,
+	getMobileSyncRemainingLifetimeMs,
 	MOBILE_SYNC_DRAFT_STORAGE_KEY,
 	readMobileSyncDraft,
 	saveMobileSyncDraft,
@@ -80,5 +81,41 @@ describe("mobile sync draft expiry cleanup", () => {
 		await vi.advanceTimersByTimeAsync(MOBILE_SYNC_PAYLOAD_TTL_MS + MOBILE_SYNC_CLOCK_SKEW_MS + 1);
 
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+	});
+
+	it("never holds a future-dated QR longer than an honest envelope can live", async () => {
+		vi.useFakeTimers({ now: NOW_MS });
+		const dayAheadMs = 24 * 60 * 60 * 1000;
+		const sync = await createMobileAgentSyncUrl({
+			appOrigin: "https://app.gatu.test",
+			env: "Mainnet",
+			userAddress: USER_ADDRESS,
+			agentPrivateKey: AGENT_PRIVATE_KEY,
+			nowMs: NOW_MS + dayAheadMs,
+		});
+		const maxHoldMs = MOBILE_SYNC_PAYLOAD_TTL_MS + MOBILE_SYNC_CLOCK_SKEW_MS;
+
+		expect(getMobileSyncRemainingLifetimeMs(sync.envelope)).toBe(maxHoldMs);
+		expect(saveMobileSyncDraft(sync.envelope, sync.encodedKey)).toBe(true);
+
+		await vi.advanceTimersByTimeAsync(maxHoldMs);
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).not.toBeNull();
+		await vi.advanceTimersByTimeAsync(1);
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+
+		const storage = createMemoryStorage();
+		expect(saveMobileSyncDraft(sync.envelope, sync.encodedKey, { storage, nowMs: NOW_MS })).toBe(true);
+		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS + maxHoldMs }).status).toBe("found");
+		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS + maxHoldMs + 1 }).status).toBe("expired");
+	});
+
+	it("keeps an honest QR for its deadline plus the clock skew and no longer", async () => {
+		const sync = await createSyncFixture();
+
+		expect(getMobileSyncRemainingLifetimeMs(sync.envelope, NOW_MS)).toBe(
+			MOBILE_SYNC_PAYLOAD_TTL_MS + MOBILE_SYNC_CLOCK_SKEW_MS,
+		);
+		expect(getMobileSyncRemainingLifetimeMs(sync.envelope, sync.expiresAtMs)).toBe(MOBILE_SYNC_CLOCK_SKEW_MS);
+		expect(getMobileSyncRemainingLifetimeMs(sync.envelope, sync.expiresAtMs + MOBILE_SYNC_CLOCK_SKEW_MS + 1)).toBe(-1);
 	});
 });

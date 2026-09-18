@@ -43,6 +43,7 @@ export type MobileSyncErrorCode =
 	| "invalid_envelope"
 	| "unsupported_version"
 	| "expired_payload"
+	| "not_yet_valid"
 	| "decrypt_failed"
 	| "invalid_plaintext"
 	| "origin_mismatch"
@@ -585,6 +586,9 @@ function validateMobileSyncEnvelope(envelopeInput: unknown): MobileSyncEnvelope 
 function assertEnvelopeNotExpired(envelope: MobileSyncEnvelope, nowMs: number): void {
 	if (nowMs > envelope.expiresAtMs + MOBILE_SYNC_CLOCK_SKEW_MS) {
 		throw new MobileSyncError("expired_payload");
+	}
+	if (envelope.createdAtMs > nowMs + MOBILE_SYNC_CLOCK_SKEW_MS) {
+		throw new MobileSyncError("not_yet_valid");
 	}
 }
 

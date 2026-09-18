@@ -442,8 +442,13 @@ the product decisions and the official comparison are in
   (ADR 0015 D7, option B): the former one-time ticket endpoint is removed, so
   a second phone scanning the same code within the envelope lifetime is not
   rejected. The phone refuses a `syncId` it already imported
-  (`apps/terminal/src/lib/mobile-sync/imported-sync-ids.ts`) and rejects v1/v2
-  envelopes with a refresh-both-devices message.
+  (`apps/terminal/src/lib/mobile-sync/imported-sync-ids.ts`) before it captures
+  a registration epoch, refuses an envelope dated ahead of it beyond the clock
+  skew, and rejects v2 envelopes with a refresh-both-devices message (older
+  JSON envelopes are simply invalid). These limits bind honest clients only:
+  the fragment carries the ciphertext and its AES key together, so a captured
+  complete QR or URL exposes the Agent key until it expires or the desktop
+  revokes it.
 - The phone performs an explicit Import step after decrypting the envelope and
   stores the Agent record in the local storage scope on that device
   (`persistAgentForRegistration(..., { scope: "local" })`; the underlying

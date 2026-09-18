@@ -9,7 +9,7 @@ import {
 	saveMobileSyncDraft,
 } from "@/lib/mobile-sync/draft-storage";
 import { classifyQrValue, shouldShowQrFeedback } from "@/lib/mobile-sync/qr-classification";
-import { MOBILE_SYNC_ROUTE_PATH, parseMobileSyncUrl } from "@/lib/mobile-sync/sync-core";
+import { isMobileSyncError, MOBILE_SYNC_ROUTE_PATH, parseMobileSyncUrl } from "@/lib/mobile-sync/sync-core";
 
 type ScannerStatus = "idle" | "starting" | "scanning";
 type ScannerFeedback =
@@ -19,6 +19,7 @@ type ScannerFeedback =
 	| "invalid-link"
 	| "invalid-payload"
 	| "storage-unavailable"
+	| "upgrade-required"
 	| "wallet-connect";
 
 interface MobileAgentQrScannerProps {
@@ -143,9 +144,11 @@ export function MobileAgentQrScanner({
 						stopVideoTracks(videoRef.current);
 					}
 					onSyncReady();
-				} catch {
+				} catch (error) {
 					clearMobileSyncDraft();
-					showFeedback("invalid-payload");
+					showFeedback(
+						isMobileSyncError(error) && error.code === "unsupported_version" ? "upgrade-required" : "invalid-payload",
+					);
 				}
 			});
 
@@ -189,6 +192,7 @@ export function MobileAgentQrScanner({
 		if (code === "storage-unavailable") {
 			return t`This device could not securely hold the QR. Check browser storage and retry.`;
 		}
+		if (code === "upgrade-required") return t`Refresh both devices to update phone access, then create a new QR.`;
 		return t`This is a WalletConnect QR. Scan the Link Desktop Wallet QR instead.`;
 	}
 

@@ -25,7 +25,7 @@
 - D2 单步审批：弹窗打开且无恢复记录时自动执行只读预检（资金快照、builder fee、reserved slot），落到 `ready` 状态；主按钮唯一「Approve mobile trading key」，签名中标签为官方同款「Approve QR code with wallet...」。保留签名前 builder-fee 复查、注册租约、恢复记录与审批后核验。不采用官方「打开即签名」：打开菜单不是替换现有 Mobile Agent 的明确意图（ADR 0002 要求签名跟随显式动作）。
 - D3 文案：审批前面板合并「创建」与「审阅」要点；能力范围按 `docs/hyperliquid-signing.md`：可下单、撤单、调杠杆、vault 与子账户划转，不能提现或对外发送。隐藏面板与可见面板加入手机操作指引：在手机打开 gatu，点 Connect → Link Desktop Wallet 扫描（或用系统相机）。官方警告语（含「确保您没有共享您的屏幕」）放在按住显示之前，因为揭示后已来不及处理。
 - D4 按住显示：4 秒与取消语义不变；进度改为按钮内圆环（官方形态）并保留 `progressbar` 语义。
-- D5 倒计时：可见面板显示「{n} 秒后关闭」，从现有 `remainingQrLifetimeMs()`（信封、票据单调时钟、票据墙钟三者取小）每秒重算，`role="timer"` + `tabular-nums`，不做每秒 `aria-live` 播报；揭示时一次性 sr-only 说明。
+- D5 倒计时：可见面板显示「{n} 秒后关闭」，从现有 `remainingQrLifetimeMs()`（信封、票据单调时钟、票据墙钟三者取小；D7 实施后改为信封墙钟到期与揭示后 60 秒单调时钟两者取小）每秒重算，`role="timer"` + `tabular-nums`，不做每秒 `aria-live` 播报；揭示时一次性 sr-only 说明。
 - D6 手机端：(a) 资金动作可用性新增 `agent-only-session` 原因（Deposit / Withdraw / Transfer 在 Agent-only 会话显示为禁用并给出「此手机使用桌面授权的交易密钥。存款、提款和划转需要在桌面连接主钱包。」），先在 `docs/mobile-data-presentation.md` 登记为已确认会话限制，不进入被动数据原因集合；(b) 扫描器删除无效的 constraints 参数，`start()` 后再 `listCameras` 选择非超广/长焦的后置相机，文案提示桌面右上角二维码图标；(c) 导入时显式传 `{ scope: "local" }`（原为隐式默认）并在成功面板披露「保留在此手机直到 {日期} 过期或从桌面撤销」。
 - D7 凭证传输（已选定 B 并实施代码，真机验收未执行）：三个备选。A 保留票据并交付共享 CAS+TTL 存储（DynamoDB 条件写，两分支 consume：首次 `attribute_not_exists(consumerId) AND consumeExpiresAtMs > :now`，胜者重试 `consumerId = :c AND tombstoneExpiresAtMs > :now`；`MobileSyncTicketStore` 改为异步；Lambda 挂载处理器并移除 503 桩；限速改由 WAF）。B 去掉票据，改为与官方一致的纯客户端传输，信封 TTL 缩到 2 分钟，其余加固全部保留；失去「第二部手机兑换同一码被拒」和「重启失效」两个属性，但这两个属性都不阻止二维码被截取，且不再依赖任何服务端状态。C 手机生成密钥、只把公钥地址回传桌面（票据修复方案 §7），是唯一让截图无用的设计，但桌面需摄像头或人工输入，与官方体验相反。已选定 B 并实施；真机验收完成前 `createAndReveal` / `importFromQr` 在 CloudFront 构建中保持关闭。
 

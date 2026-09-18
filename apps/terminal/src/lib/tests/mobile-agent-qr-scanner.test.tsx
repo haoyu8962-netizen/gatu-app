@@ -208,6 +208,38 @@ describe("MobileAgentQrScanner", () => {
 		expect(container.textContent).not.toContain("secret");
 	});
 
+	it("asks both devices to refresh when the scanned QR comes from the retired ticket protocol", async () => {
+		const onSyncReady = vi.fn();
+		const sync = await createSyncFixture();
+		const url = new URL(sync.url);
+		const params = new URLSearchParams(url.hash.slice(1));
+		const bytes = Buffer.from(params.get("ht-mobile-sync") ?? "", "base64url");
+		bytes[0] = 2;
+		params.set("ht-mobile-sync", bytes.toString("base64url"));
+		const { MobileAgentQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
+
+		act(() => {
+			root.render(
+				createElement(MobileAgentQrScanner, {
+					onCancel: vi.fn(),
+					onSyncReady,
+					startScanner: scannerState.startScanner,
+				}),
+			);
+		});
+		act(() => findButton(container, "Start camera")?.click());
+		await flushAsyncWork();
+
+		act(() => {
+			scannerState.callback?.(`${url.origin}${url.pathname}#${params.toString()}`, { stop: scannerState.controlsStop });
+		});
+
+		expect(onSyncReady).not.toHaveBeenCalled();
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+		expect(container.textContent).toContain("Refresh both devices to update phone access, then create a new QR.");
+		expect(container.textContent).not.toContain("invalid or incomplete");
+	});
+
 	it("retranslates visible scan feedback when the active locale changes", async () => {
 		const { MobileAgentQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
 		act(() => {

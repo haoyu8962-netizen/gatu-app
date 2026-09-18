@@ -9,9 +9,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 ### Changed
 
 - Linking a phone no longer uses a server ticket. The desktop creates the QR entirely in the
-  browser, the QR stays visible for 60 seconds after reveal and its encrypted payload expires after
-  2 minutes (previously 10). A phone refuses a QR it already imported, QR codes created by an older
-  page are rejected with a prompt to refresh both devices, and the success panel reminds the user
+  browser, the QR stays visible for 60 seconds after reveal and phones accept it for 2 minutes after
+  it was created (previously 10). A phone refuses a QR it already imported without disturbing the
+  access it already holds, refuses a QR whose time is ahead of the phone, QR codes created by an
+  older page are rejected with a prompt to refresh both devices, and the success panel reminds the user
   to revoke from desktop if they did not import it themselves. A second phone scanning the same
   code within those 2 minutes is no longer rejected. `/mobile-agent-sync-ticket` is removed and
   answers 404.

@@ -62,6 +62,17 @@
 - 顺带发现但未处理：`serve-spa-static.mjs` 仍把 `/build-meta.json` 归为 server-only（404 或转发），而新架构里它是随客户端产物发出的静态文件（CloudFront 函数按文件扩展名放行到 S3）；该模拟器条目早于静态 `build-meta.json`（`fe22fb61` 对 `5944465d`），与方案 B 无关，留待单独处理。
 - 预算修复半成品已从工作区移出，保存在 Git 忽略的 `.worklog/2026-09-18/budget-lazy-modals/wip.patch`（`git apply` 可恢复，当前不能通过类型检查），不属于本任务。
 
+## 安全复核与修复（2026-09-18，第三阶段，基线 `e8ac17d7`）
+
+一次只读对抗审查（子代理，约 27 分钟、129 次工具调用；在 `a2e27468` 上跑了 5 个指定测试文件 90 用例通过，并用真实 `hl-react` / `sync-core` 代码写了两个一次性复现脚本）。完整结论表在 [方案 B 规划](../../mobile-sync-ticketless-transfer-plan.md) 的「安全复核结论」。要点：
+
+- F3 是本任务引入的真实缺陷：`750a5113` 把 `syncId` 去重放在 `captureAgentRegistrationEpoch` 之后，重复导入命中去重后走回滚，`cancelAgentRegistrationEpochAndRemove(epoch, undefined)` 先把会话写成 `closing`，再因槽位里是有效 Agent 返回 `unsafe_cleanup_target`，结果原本可用的手机访问失效、私钥滞留在 localStorage。实施时我注意到了回滚会被触发，但错误地判断为与旧票据拒绝路径等价，没有核对 `cancel` 在「槽位已有有效 Agent」时的行为；路由单测把该函数 mock 成 `cancelled`，所以全绿。修复：去重移到解密之后、`extraAgents` 核验与 epoch 捕获之前。新增断言：重复路径不调用 `waitForExpectedMobileAgent`、`captureAgentRegistrationEpoch`、`cancelAgentRegistrationEpochAndRemove`；把去重挪回旧位置该用例即失败（变异测试），恢复后 20/20。
+- F2 是本任务写错的文档：把 2 分钟 TTL 写成持有者凭据的暴露上限。片段同时含密文与 AES 密钥，TTL、60 秒窗口与去重只约束诚实客户端；真实暴露期到 Agent 过期（30 天）或桌面撤销。已改正四份文档与 CHANGELOG；用户当初选定方案 B 时看到的「截图后 2 分钟内」风险描述不准确，已在规划文档注明。
+- F4：解密时拒绝 `createdAtMs` 超前本机超过 skew 的信封（`not_yet_valid`）；`draft-storage.ts` 新增 `getMobileSyncRemainingLifetimeMs`，手机持有已载入二维码与 sessionStorage 草稿的上限为 TTL + skew，路由到期计时改用同一规则（此前不含 skew）。
+- 小项：应用内扫码对 `unsupported_version` 显示「两端刷新」；桌面弹窗 `VisibleQrPanel` 的 React key 由含密钥的 URL 改为 `syncId`。
+- 未处理并需要决策或另行立项：F1（系统相机路径会把完整链接留在浏览器历史 / 历史同步，既有设计，未在真机证实）、F5（片段擦除在产物里并非零依赖最先执行）、CloudFront 对 `/mobile-agent-sync` 缺 `no-store` / `no-referrer`、擦除失败无兜底、路径大小写、Import 前不显示 owner、dev StrictMode。
+- 验证（2026-09-18，本地，修复后的工作区）：`pnpm --filter @gatu/terminal typecheck` 通过；改动的 9 个 TS/TSX 文件 Biome 通过；全量 `pnpm --filter @gatu/terminal test` 572 文件 6,360 用例通过、1 跳过（首次运行只有 `orderbook-boot` 的冷导入在全并发下超过 5 秒，单跑通过，与本任务无关；已另行提交文件级 `beforeAll` 预热后全绿）；`scripts` 两个 node 测试 29 通过，校验器对仓库模板的结构检查通过；`pnpm i18n:extract` 新增 1 条文案并补了中文译文，zh 余 5 条缺失为既有状态。修复后的产物未重新构建，也没有在浏览器里复测重复导入与未来时间戳两条路径，依据是单测与变异测试。
+
 ## 后续与替代关系
 
 - 打开 `VITE_MOBILE_PAIRING_*` 之前：改写 `scripts/validate-mobile-phone-access-device-validation.js`、`deploy/fixtures/mobile-device-evidence.mjs` 与 `docs/mobile-phone-access-device-validation.md`（仍含 Ticket API 字段，已加「协议已被替代」提示），再按规划完成静态托管实测、Testnet 真机矩阵与安全复核。

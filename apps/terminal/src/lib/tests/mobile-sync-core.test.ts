@@ -424,3 +424,21 @@ it("keeps the envelope usable for two minutes plus clock skew and no longer", as
 		}),
 	).rejects.toMatchObject({ code: "invalid_envelope" });
 });
+
+it("refuses an envelope whose creation time is ahead of this device beyond the clock skew", async () => {
+	const sync = await createSyncFixture();
+	const options = { currentOrigin: APP_ORIGIN, expectedEnv: "Mainnet" as const };
+
+	await expect(
+		decryptMobileAgentSyncEnvelope(sync.envelope, sync.keyBytes, {
+			...options,
+			nowMs: sync.envelope.createdAtMs - MOBILE_SYNC_CLOCK_SKEW_MS,
+		}),
+	).resolves.toMatchObject({ syncId: sync.syncId });
+	await expect(
+		decryptMobileAgentSyncEnvelope(sync.envelope, sync.keyBytes, {
+			...options,
+			nowMs: sync.envelope.createdAtMs - MOBILE_SYNC_CLOCK_SKEW_MS - 1,
+		}),
+	).rejects.toMatchObject({ code: "not_yet_valid" });
+});
