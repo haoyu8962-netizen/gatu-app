@@ -12,7 +12,7 @@
   "summary": "PR #27 的四个 Build terminal 任务因 trade-terminal-page 128,778 B 超出 127,242 B 上限而失败（main 为 127,085）；增量来自 MobileAccountView 去掉提前 return 后被 React Compiler 编译，以及移动端订单簿表头芯片。未重定基线，改为把保证金模式、杠杆、账户模式三个弹窗移出启动 chunk：首次打开才加载、指针或焦点到达下单表单时按意图预热，失败时不刷新页面而是给出重试与显式刷新。trade-terminal-page 降到 126,255 B，桌面与移动端总启动分别减少 5.7 KB 与 4.1 KB。最初的空闲预热版本按基线文档的计数规则会让桌面运行时预算超限，已弃用。",
   "thread": null,
   "baseCommit": "35146f69",
-  "commits": [],
+  "commits": ["652cfa1e"],
   "sources": [
     { "path": "docs/terminal-performance-baseline.md" },
     { "path": "apps/terminal/src/lib/lazy.ts" },
@@ -50,7 +50,7 @@ PR [#27](https://github.com/zora4523-bot/gatu-app/pull/27)（`claude/surface-tok
 - 新增/更新测试：`lazy-dialog-host`（6）、`lazy-trade-settings-modals`（4）、`use-has-been-active`（1）；`mobile-trade-size-validation-a11y` 的 `@/lib/lazy` mock 补上新导出。
 - `pnpm build`（配对开关关闭）通过全部预算，数字见 `docs/terminal-performance-baseline.md` 的「Order-form dialogs leave `trade-terminal-page`」一节。
 - 浏览器（生产构建经 `scripts/serve-spa-static.mjs`，Playwright，文档可见）：桌面静置 6 秒、390 px 静置 5 秒均无弹窗 chunk 请求；指针进入下单面板后四个 chunk 返回 200，三个弹窗 6–22 ms 打开；390 px 模拟点按（按下后 90 ms 点击）123 ms 出现抽屉，滑入 13 个位置，无加载外壳。把 chunk 从磁盘挪走后：先出现加载外壳，再出现错误外壳，同一文档、无重复请求、无 TanStack 重载标记。
-- 限制：网络为本机零延迟，真实移动网络首次打开可能出现加载外壳；失败路径只测了 404，未能模拟纯网络错误；应用内浏览器面板处于隐藏状态时动画不推进，动画相关结论来自 Playwright。全量 Vitest 结果见提交前的最后一次运行。
+- 限制：网络为本机零延迟，真实移动网络首次打开可能出现加载外壳；失败路径只测了 404，未能模拟纯网络错误；应用内浏览器面板处于隐藏状态时动画不推进，动画相关结论来自 Playwright。提交前最后一次全量 Vitest：576 个文件中 574 通过、1 跳过，6,370 用例通过，唯一失败的 `portfolio-overview`「uses market direction colors only for directional values」与本次改动无关，单独重跑 20/20 通过（全并发下偶发）；此前一轮全量中偶发的 `chart-store` 单跑同样通过。
 
 ## 后续与替代关系
 
