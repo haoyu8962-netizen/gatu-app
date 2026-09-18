@@ -1715,6 +1715,7 @@ msgid "Confirming..."
 msgstr "جارٍ التأكيد..."
 
 #: src/components/trade/components/wallet-modal.tsx
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Connect"
 msgstr "ربط"

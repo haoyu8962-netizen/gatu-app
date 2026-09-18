@@ -127,21 +127,16 @@ it("keeps pending CTA spinner padding identical to Button", () => {
 	}
 });
 it("pins the anonymous wallet frame and drawer icon against Button SSR", () => {
-	expect(primitive(dom(<MobileWalletCtaView label="Connect Wallet" />))).toEqual(
+	expect(primitive(dom(<MobileWalletCtaView label="Connect" />))).toEqual(
 		primitive(
 			dom(
 				<Button
-					variant="outline"
-					intent="neutral"
+					variant="filled"
+					intent="brand"
 					size="sm"
-					iconLeft={<WalletIcon className="size-3.5" />}
-					className={cn(
-						APP_BAR_BUTTON_HEIGHT_CLASS,
-						"min-w-0 max-w-full",
-						"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
-					)}
+					className={cn(APP_BAR_BUTTON_HEIGHT_CLASS, "min-w-0 max-w-full px-3.5")}
 				>
-					<span className="min-w-0 truncate">Connect Wallet</span>
+					<span className="min-w-0 truncate">Connect</span>
 				</Button>,
 			),
 		),

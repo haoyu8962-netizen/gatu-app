@@ -62,6 +62,7 @@ vi.mock("@/hooks/wallet/use-email-wallet-export", () => ({
 }));
 
 vi.mock("@gatu/ui", () => ({
+	buttonVariants: () => "",
 	AdaptiveModal: ({
 		children,
 		closeLabel,
@@ -401,7 +402,7 @@ describe("UserMenu", () => {
 			);
 		});
 
-		const connectWallet = findButtonByText(container, "Connect Wallet");
+		const connectWallet = findButtonByText(container, "Connect");
 		act(() => connectWallet.focus());
 		expect(testState.walletModalPreloads).toBe(1);
 
@@ -579,7 +580,7 @@ describe("UserMenu", () => {
 			root.render(createElement(UserMenu));
 		});
 
-		action = findButtonByText(container, "Connect Wallet");
+		action = findButtonByText(container, "Connect");
 		expect(action.className).toContain("min-w-0");
 		expect(action.className).toContain("max-w-full");
 		expect(action.querySelector("span.truncate")).not.toBeNull();
@@ -620,7 +621,7 @@ describe("UserMenu", () => {
 			root.render(createElement(UserMenu));
 		});
 		expect(container.textContent).not.toContain("Connecting...");
-		const connect = findButtonByText(container, "Connect Wallet");
+		const connect = findButtonByText(container, "Connect");
 		expect(connect.disabled).toBe(false);
 		await act(async () => connect.click());
 		await vi.waitFor(() => expect(testState.walletModalMounts).toBe(1));
@@ -657,7 +658,7 @@ describe("UserMenu", () => {
 
 		testState.ready = true;
 		act(() => root.render(createElement(UserMenu)));
-		expect(findButtonByText(container, "Connect Wallet").disabled).toBe(false);
+		expect(findButtonByText(container, "Connect").disabled).toBe(false);
 		expect(container.textContent).not.toContain("Reload page");
 	});
 
@@ -721,7 +722,7 @@ describe("UserMenu", () => {
 		testState.authenticated = false;
 		act(() => root.render(createElement(UserMenu)));
 		expect(container.textContent).not.toContain("Reload page");
-		expect(findButtonByText(container, "Connect Wallet").disabled).toBe(false);
+		expect(findButtonByText(container, "Connect").disabled).toBe(false);
 	});
 
 	it.each(["isConnecting", "isWalletReconnecting", "isReconnecting"] as const)(

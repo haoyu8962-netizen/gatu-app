@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileHeader } from "@/components/trade/mobile/mobile-header";
 
 vi.mock("@gatu/ui", () => ({
+	buttonVariants: () => "",
 	ButtonIcon: ({
 		"aria-label": ariaLabel,
 		children,

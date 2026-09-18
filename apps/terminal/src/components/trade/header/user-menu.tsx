@@ -161,7 +161,7 @@ export function UserMenu({ variant = "default" }: Props) {
 					/>
 				) : (
 					<MobileWalletCtaView
-						label={t(DESKTOP_NAV_LABELS.wallet)}
+						label={t`Connect`}
 						onClick={() => setWalletModalOpen(true)}
 						onFocus={() => void WalletModal.preload?.()}
 						onPointerEnter={() => void WalletModal.preload?.()}

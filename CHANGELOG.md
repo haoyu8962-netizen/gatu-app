@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The mobile header drops its theme toggle (the navigation drawer keeps it), shows a brand-filled
+  `Connect` button that no longer truncates at 390px, and gives the language and settings icons
+  one radius and token set; the desktop `Connect Wallet` button uses the same brand fill.
 - The expanded mobile market bar no longer draws a divider between its two detail rows, and the
   spot `More Info` cell keeps the full shortened token address on one row with its explorer, copy
   and social actions beside it instead of clipping the address and wrapping the actions below.

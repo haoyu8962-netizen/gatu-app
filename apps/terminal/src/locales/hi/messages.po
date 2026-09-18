@@ -1715,6 +1715,7 @@ msgid "Confirming..."
 msgstr "पुष्टि की जा रही है..."
 
 #: src/components/trade/components/wallet-modal.tsx
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Connect"
 msgstr "कनेक्ट करें"
