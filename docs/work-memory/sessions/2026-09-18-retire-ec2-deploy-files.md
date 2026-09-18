@@ -13,7 +13,7 @@
   "summary": "EC2 宿主 2026-09-17 停机、服务端票据 2026-09-18 移除之后，仓库里仍留着 12 个 EC2 部署文件和 6 份票据时期文档。本次把它们从工作树移除（原文保留在提交 5d393572），四个读取这些文件的 Vitest 契约改为钉住 CloudFront 模块或去掉已无对象的断言，现行文档的链接改指 CloudFront 手册，四份旧工作记录的 sources 改为该提交的永久链接。核对中发现一处迁移遗留缺口：旧脚本对 CCTP 主网赞助开关的二次确认校验在 CloudFront 发布流程里没有等价物，已在 cctp-deposits.md 如实写明，未补实现。",
   "thread": null,
   "baseCommit": "5d393572",
-  "commits": [],
+  "commits": ["87d6e51e"],
   "sources": [
     { "path": "deploy/cloudfront/README.md" },
     { "path": "deploy/cloudfront/response-headers-policies.mjs" },
