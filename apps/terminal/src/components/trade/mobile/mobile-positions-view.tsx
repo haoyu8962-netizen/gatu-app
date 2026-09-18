@@ -301,7 +301,7 @@ export function MobilePositionsView({
 					</TabsList>
 				}
 			/>
-			{!isConnected ? (
+			{!isConnected && activeTab !== "positions" ? (
 				<EmptyState activeTab={activeTab} description={emptyDescription} />
 			) : (
 				<>

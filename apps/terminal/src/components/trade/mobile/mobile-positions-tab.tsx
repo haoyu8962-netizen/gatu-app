@@ -245,11 +245,33 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 		</>
 	);
 
+	function renderFilterRow(disabled: boolean) {
+		return (
+			<div
+				data-testid="mobile-position-filter-row"
+				className="flex shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5 py-2.5"
+			>
+				<PositionFilterToolbar
+					direction={positionDirectionFilter}
+					margin={positionMarginFilter}
+					market={positionMarketFilter}
+					marketOptions={positionMarketOptions}
+					onDirectionChange={handlePositionDirectionChange}
+					onMarginChange={handlePositionMarginChange}
+					onMarketChange={handlePositionMarketChange}
+					mobile
+					disabled={disabled}
+				/>
+				<MobileBulkDisclosureActions keys={disabled ? [] : filteredPositionKeys} controller={positionsDisclosure} />
+			</div>
+		);
+	}
+
 	if (!isConnected) {
 		return (
 			<>
-				<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
-					{t`Connect your wallet to view positions.`}
+				<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col")}>
+					{renderFilterRow(true)}
 				</div>
 				{pnlShareModal}
 			</>
@@ -293,22 +315,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 	return (
 		<>
 			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col")}>
-				<div
-					data-testid="mobile-position-filter-row"
-					className="flex shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5 py-2.5"
-				>
-					<PositionFilterToolbar
-						direction={positionDirectionFilter}
-						margin={positionMarginFilter}
-						market={positionMarketFilter}
-						marketOptions={positionMarketOptions}
-						onDirectionChange={handlePositionDirectionChange}
-						onMarginChange={handlePositionMarginChange}
-						onMarketChange={handlePositionMarketChange}
-						mobile
-					/>
-					<MobileBulkDisclosureActions keys={filteredPositionKeys} controller={positionsDisclosure} />
-				</div>
+				{renderFilterRow(false)}
 				<div className={cn("space-y-2.5 px-3.5 py-3", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 					{filteredPositions.length === 0 ? (
 						<div className="flex min-h-28 items-center justify-center px-4 text-center text-xs text-fg-muted">

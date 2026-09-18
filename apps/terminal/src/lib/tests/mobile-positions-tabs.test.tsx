@@ -328,6 +328,12 @@ describe("MobilePositionsView tabs", () => {
 		storeState.activeTab = "orders";
 		render();
 		expect(container.textContent).toContain("Connect your wallet to view open orders.");
+
+		storeState.activeTab = "positions";
+		render();
+		expect(container.textContent).not.toContain("Connect your wallet");
+		expect(container.textContent).not.toContain("Connect Wallet");
+		expect(container.querySelector('[data-tab-content="positions"]')).not.toBeNull();
 	});
 
 	it("keeps a restored history tab visible without touching the page scroll axis", () => {

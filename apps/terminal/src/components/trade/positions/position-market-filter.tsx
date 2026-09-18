@@ -23,6 +23,7 @@ interface Props {
 	options: readonly PositionMarketOption[];
 	onChange: (value: PositionMarketFilter) => void;
 	mobile?: boolean;
+	disabled?: boolean;
 }
 
 const allMessage = msg`All`;
@@ -40,7 +41,7 @@ function getMarketFilterFallbackLabel(value: PositionMarketFilter): string | und
 	return value.market.dex ? `${marketName} (${value.market.dex})` : marketName;
 }
 
-export function PositionMarketFilterControl({ value, options, onChange, mobile = false }: Props) {
+export function PositionMarketFilterControl({ value, options, onChange, mobile = false, disabled = false }: Props) {
 	const { _ } = useLingui();
 	const [open, setOpen] = useState(false);
 	const selectedOption =
@@ -65,6 +66,7 @@ export function PositionMarketFilterControl({ value, options, onChange, mobile =
 					variant="ghost"
 					intent="neutral"
 					size="xxs"
+					disabled={disabled}
 					aria-label={_(msg`Filter positions by market: ${ariaValue}`)}
 					className={cn(
 						"min-h-0 gap-1 font-normal focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100",

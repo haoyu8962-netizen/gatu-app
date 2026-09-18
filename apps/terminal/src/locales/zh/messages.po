@@ -1785,8 +1785,6 @@ msgstr "连接后查看质押操作"
 msgid "Connect wallet"
 msgstr "连接钱包"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/desktop-nav.ts
@@ -1852,7 +1850,6 @@ msgstr "连接钱包查看未成交订单。"
 msgid "Connect your wallet to view order history."
 msgstr "连接钱包以查看订单历史。"
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
@@ -1881,8 +1878,8 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "连接钱包查看 TWAP 订单。"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Connect your wallet to view your account, positions, and start trading."
-msgstr "连接钱包以查看账户、仓位并开始交易。"
+#~ msgid "Connect your wallet to view your account, positions, and start trading."
+#~ msgstr "连接钱包以查看账户、仓位并开始交易。"
 
 #: src/config/footer-links.ts
 msgid "Connected"
@@ -2186,6 +2183,7 @@ msgstr "部署者"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -2269,8 +2267,8 @@ msgid "Deposit unavailable"
 msgstr "存款不可用"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Deposit USDC"
-msgstr "存入 USDC"
+#~ msgid "Deposit USDC"
+#~ msgstr "存入 USDC"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -9400,6 +9398,8 @@ msgstr "全部仓位"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx

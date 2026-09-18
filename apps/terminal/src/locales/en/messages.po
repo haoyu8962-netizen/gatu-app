@@ -1785,8 +1785,6 @@ msgstr "Connect to view staking actions"
 msgid "Connect wallet"
 msgstr "Connect wallet"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/desktop-nav.ts
@@ -1852,7 +1850,6 @@ msgstr "Connect your wallet to view open orders."
 msgid "Connect your wallet to view order history."
 msgstr "Connect your wallet to view order history."
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
@@ -1881,8 +1878,8 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "Connect your wallet to view TWAP orders."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Connect your wallet to view your account, positions, and start trading."
-msgstr "Connect your wallet to view your account, positions, and start trading."
+#~ msgid "Connect your wallet to view your account, positions, and start trading."
+#~ msgstr "Connect your wallet to view your account, positions, and start trading."
 
 #: src/config/footer-links.ts
 msgid "Connected"
@@ -2186,6 +2183,7 @@ msgstr "Deployer"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -2269,8 +2267,8 @@ msgid "Deposit unavailable"
 msgstr "Deposit unavailable"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Deposit USDC"
-msgstr "Deposit USDC"
+#~ msgid "Deposit USDC"
+#~ msgstr "Deposit USDC"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -9400,6 +9398,8 @@ msgstr "Whole position"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx

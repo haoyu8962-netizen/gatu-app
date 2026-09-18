@@ -1785,8 +1785,6 @@ msgstr "स्टेकिंग कार्रवाइयाँ देखन�
 msgid "Connect wallet"
 msgstr "वॉलेट कनेक्ट करें"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/desktop-nav.ts
@@ -1852,7 +1850,6 @@ msgstr "खुले ऑर्डर देखने के लिए अपन�
 msgid "Connect your wallet to view order history."
 msgstr "ऑर्डर इतिहास देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
@@ -1881,8 +1878,8 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "TWAP ऑर्डर देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Connect your wallet to view your account, positions, and start trading."
-msgstr "अपना खाता, पोज़िशन देखने और ट्रेडिंग शुरू करने के लिए अपना वॉलेट कनेक्ट करें।"
+#~ msgid "Connect your wallet to view your account, positions, and start trading."
+#~ msgstr "अपना खाता, पोज़िशन देखने और ट्रेडिंग शुरू करने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/config/footer-links.ts
 msgid "Connected"
@@ -2186,6 +2183,7 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -2269,8 +2267,8 @@ msgid "Deposit unavailable"
 msgstr "जमा उपलब्ध नहीं है"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Deposit USDC"
-msgstr "USDC जमा करें"
+#~ msgid "Deposit USDC"
+#~ msgstr "USDC जमा करें"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -9400,6 +9398,8 @@ msgstr "पूरी पोज़िशन"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx

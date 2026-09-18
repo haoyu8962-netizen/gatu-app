@@ -1,7 +1,7 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon, WalletIcon } from "@phosphor-icons/react";
-import { Suspense, useId, useState } from "react";
+import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
+import { useId } from "react";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useAccountOverview } from "@/hooks/trade/use-account-overview";
@@ -11,12 +11,9 @@ import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-avail
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatNumber, formatPercent, formatUSD } from "@/lib/format";
-import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
-
-const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 interface MobileAccountViewProps {
 	className?: string;
@@ -50,7 +47,6 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const overviewLabels = useAccountOverviewLabels({ accountMode, usesSharedQuoteBalance });
 	const metricLoading = accountOverviewStatus === "loading";
 
-	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
 	const fundsActionAvailability = useFundsActionAvailability({
@@ -76,48 +72,10 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
 	const showsSecondaryFundsActions = !depositGeoBlocked && showsFundsActions;
 
-	if (!isConnected) {
-		const showsEmailDeposit = depositAvailability.path === "sponsored";
-		let description: string | null = t`Connect your wallet to view your account, positions, and start trading.`;
-		if (showsEmailDeposit) {
-			description = depositNotice;
-			if (depositAvailability.available) description ??= t`Open Deposit to prepare your email wallet.`;
-		}
-		return (
-			<div className={cn("flex h-full min-h-0 flex-col bg-background", className)}>
-				<div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
-					<div className="flex size-20 items-center justify-center rounded-full bg-surface">
-						<WalletIcon className="size-10 text-fg-muted" />
-					</div>
-					<div className="max-w-xs space-y-2 text-center">
-						<h2 className="text-lg font-semibold">{showsEmailDeposit ? t`Deposit USDC` : t`Connect Wallet`}</h2>
-						{description ? <p className="text-sm text-fg-muted">{description}</p> : null}
-					</div>
-					<Button
-						variant="outline"
-						intent="brand"
-						size="md"
-						disabled={showsEmailDeposit && !depositAvailability.available}
-						onClick={
-							showsEmailDeposit
-								? depositAvailability.available
-									? () => openDepositModal("deposit")
-									: undefined
-								: () => setWalletModalOpen(true)
-						}
-						title={showsEmailDeposit ? (depositNotice ?? undefined) : undefined}
-					>
-						{showsEmailDeposit ? t`Deposit` : t`Connect Wallet`}
-					</Button>
-				</div>
-				{walletModalOpen ? (
-					<Suspense fallback={null}>
-						<WalletModal open onOpenChange={setWalletModalOpen} />
-					</Suspense>
-				) : null}
-			</div>
-		);
-	}
+	const showsEmailDeposit = !isConnected && depositAvailability.path === "sponsored";
+	const disconnectedDepositNotice = showsEmailDeposit
+		? (depositNotice ?? (depositAvailability.available ? t`Open Deposit to prepare your email wallet.` : null))
+		: null;
 
 	const marginRatioLabel = formatPercent(marginRatioReady ? maintenanceMarginRatio : "0", {
 		maximumFractionDigits: 2,
@@ -216,10 +174,43 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 				</section>
 
 				<div data-slot="mobile-account-actions" className="mt-auto pt-3">
-					{depositGeoBlocked && depositNotice ? (
+					{!isConnected ? (
+						<div className="space-y-2">
+							{disconnectedDepositNotice ? (
+								<output className="block text-center text-xs text-fg-muted">{disconnectedDepositNotice}</output>
+							) : null}
+							<div className="grid grid-cols-2 gap-2">
+								<Button
+									variant="filled"
+									intent="brand"
+									size="md"
+									disabled={!showsEmailDeposit || !depositAvailability.available}
+									onClick={
+										showsEmailDeposit && depositAvailability.available ? () => openDepositModal("deposit") : undefined
+									}
+									aria-label={t`Deposit`}
+									title={disconnectedDepositNotice ?? undefined}
+									className="min-h-11 w-full"
+								>
+									{t`Deposit`}
+								</Button>
+								<Button
+									variant="outline"
+									intent="neutral"
+									size="md"
+									disabled
+									aria-label={t`Withdraw`}
+									className="min-h-11 w-full"
+								>
+									{t`Withdraw`}
+								</Button>
+							</div>
+						</div>
+					) : null}
+					{isConnected && depositGeoBlocked && depositNotice ? (
 						<p className="text-center text-sm text-fg-muted">{depositNotice}</p>
 					) : null}
-					{!depositGeoBlocked && showsFundsActions ? (
+					{isConnected && !depositGeoBlocked && showsFundsActions ? (
 						<div className="space-y-2">
 							{depositNotice ? <output className="text-center text-xs text-fg-muted">{depositNotice}</output> : null}
 							<div className="grid grid-cols-2 gap-2">

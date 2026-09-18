@@ -513,6 +513,30 @@ describe("mobile account view", () => {
 		expect(modalActions.openDeposit).not.toHaveBeenCalled();
 	});
 
+	it("shows the zero-value overview with inert funding actions instead of a connect prompt while disconnected", () => {
+		testState.isConnected = false;
+		testState.hasWalletAccess = false;
+		testState.depositPath = "external";
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileAccountView />
+				</I18nProvider>,
+			),
+		);
+
+		expect(container.textContent).not.toContain("Connect Wallet");
+		expect(container.textContent).not.toContain("Connect your wallet");
+		expect(container.querySelector("section[aria-labelledby]")).not.toBeNull();
+		expect(container.textContent).toContain("$0.00");
+		expect(container.textContent).toContain("0.00x");
+		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
+		expect(buttons.map((button) => button.getAttribute("aria-label"))).toEqual(["Deposit", "Withdraw"]);
+		expect(buttons.every((button) => button.disabled)).toBe(true);
+		act(() => buttons[0]?.click());
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
+	});
+
 	it("does not invite an email deposit while its action is unavailable", () => {
 		testState.isConnected = false;
 		testState.hasWalletAccess = false;

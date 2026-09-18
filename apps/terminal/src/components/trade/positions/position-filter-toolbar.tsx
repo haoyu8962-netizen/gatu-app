@@ -17,6 +17,7 @@ interface Props {
 	onMarginChange?: (value: PositionMarginFilter) => void;
 	onMarketChange: (value: PositionMarketFilter) => void;
 	mobile?: boolean;
+	disabled?: boolean;
 }
 
 const directionMessage = msg`Direction`;
@@ -36,6 +37,7 @@ export function PositionFilterToolbar({
 	onMarginChange,
 	onMarketChange,
 	mobile = false,
+	disabled = false,
 }: Props) {
 	const { _ } = useLingui();
 	const directionLabels: Record<PositionDirectionFilter, string> = {
@@ -64,6 +66,7 @@ export function PositionFilterToolbar({
 	return (
 		<div data-testid="position-filter-toolbar" className="flex min-w-0 flex-1 shrink-0 items-center gap-1.5">
 			<Dropdown
+				disabled={disabled}
 				className="flex min-w-0 items-center"
 				triggerVariant="minimal"
 				size="xxs"
@@ -79,6 +82,7 @@ export function PositionFilterToolbar({
 				]}
 			/>
 			<Dropdown
+				disabled={disabled}
 				className="flex min-w-0 items-center"
 				triggerVariant="minimal"
 				size="xxs"

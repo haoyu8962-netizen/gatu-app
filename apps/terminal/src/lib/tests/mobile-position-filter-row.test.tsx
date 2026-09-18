@@ -72,6 +72,37 @@ describe("mobile position filter row", () => {
 		expect(MOBILE_POSITIONS_TAB_SOURCE).toContain('cn("space-y-2.5 px-3.5 py-3"');
 	});
 
+	it("renders every filter control inert while disconnected and drops the connect prompt", () => {
+		act(() => {
+			root.render(
+				<PositionFilterToolbar
+					direction="all"
+					margin="all"
+					market={ALL_POSITION_MARKETS}
+					marketOptions={[]}
+					onDirectionChange={vi.fn()}
+					onMarginChange={vi.fn()}
+					onMarketChange={vi.fn()}
+					mobile
+					disabled
+				/>,
+			);
+		});
+
+		const controls = [...container.querySelectorAll<HTMLButtonElement>("button")];
+		expect(controls.length).toBeGreaterThan(0);
+		expect(controls.every((control) => control.disabled || control.getAttribute("aria-disabled") === "true")).toBe(
+			true,
+		);
+
+		const disconnectedBranch = MOBILE_POSITIONS_TAB_SOURCE.slice(
+			MOBILE_POSITIONS_TAB_SOURCE.indexOf("if (!isConnected) {"),
+			MOBILE_POSITIONS_TAB_SOURCE.indexOf("if (positionsLoading"),
+		);
+		expect(disconnectedBranch).toContain("renderFilterRow(true)");
+		expect(MOBILE_POSITIONS_TAB_SOURCE).not.toContain("Connect your wallet to view positions.");
+	});
+
 	it("keeps expand-all and collapse-all as independent actions", () => {
 		const onExpandAll = vi.fn();
 		const onCollapseAll = vi.fn();
