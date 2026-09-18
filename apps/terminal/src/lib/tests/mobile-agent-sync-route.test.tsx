@@ -4,7 +4,7 @@ import { webcrypto } from "node:crypto";
 import { i18n } from "@lingui/core";
 import { act, type ComponentType, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { MOBILE_SYNC_DRAFT_STORAGE_KEY } from "../mobile-sync/draft-storage";
 import { MOBILE_SYNC_IMPORTED_STORAGE_KEY, recordImportedMobileSyncId } from "../mobile-sync/imported-sync-ids";
 import { createMobileAgentSyncUrl, MOBILE_SYNC_ROUTE_PATH } from "../mobile-sync/sync-core";
@@ -143,6 +143,12 @@ function findButton(container: HTMLElement, label: string): HTMLButtonElement | 
 describe("MobileAgentSyncRoute", () => {
 	let container: HTMLDivElement;
 	let root: Root;
+
+	// The first import pays the cold transform of the wallet runtime; under a full parallel run it
+	// exceeds the per-test timeout and the late import then corrupts the following tests.
+	beforeAll(async () => {
+		await import("@/routes/mobile-agent-sync");
+	}, 60_000);
 
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });

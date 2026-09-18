@@ -120,6 +120,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 					status: testState.snapshotsReady ? "active" : "subscribing",
 					isStale: false,
 				},
+	useInfo: () => ({
+		data: undefined,
+		dataUpdatedAt: 0,
+		isSuccess: false,
+		isPlaceholderData: false,
+		isFetchedAfterMount: false,
+	}),
 	useUserPositions: () => ({
 		positions: [{ coin: "xyz:GOOGL", dex: "xyz" }],
 		isLoading: !testState.snapshotsReady,
@@ -495,7 +502,7 @@ describe("desktop positions panel shell", () => {
 		);
 	});
 
-	it("does not apply the desktop chip labels or dimensions to the mobile filter", () => {
+	it("gives the mobile filter placeholder labels, the shared 27px chip and a 44px touch area", () => {
 		renderNode(
 			<PositionFilterToolbar
 				direction="all"
@@ -519,9 +526,9 @@ describe("desktop positions panel shell", () => {
 		expect(directionFilter?.textContent).not.toContain("Direction: All");
 		expect(marginFilter?.textContent).toContain("Margin");
 		for (const filter of [directionFilter, marginFilter]) {
-			expect(filter?.className).toContain("py-1");
+			expect(filter?.className).toContain("!h-[27px]");
+			expect(filter?.className).toContain("px-[9px]");
 			expect(filter?.className).toContain("after:h-11");
-			expect(filter?.className).not.toContain("h-[27px]");
 		}
 	});
 });

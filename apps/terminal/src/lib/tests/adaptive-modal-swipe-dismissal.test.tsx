@@ -60,6 +60,7 @@ vi.mock("@base-ui/react/drawer", async () => {
 			Root,
 			Title,
 			Trigger: Button,
+			Viewport: Backdrop,
 		},
 	};
 });

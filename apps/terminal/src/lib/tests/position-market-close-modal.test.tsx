@@ -323,12 +323,9 @@ describe("PositionMarketCloseModal", () => {
 		expect(getSummaryValue("Mark price")?.textContent).toBe("$101,000");
 		expect(getSummaryValue("Estimated PnL")?.textContent).toBe("-$25.00");
 		expect(getSummaryValue("Estimated PnL")?.className).toContain("text-market-close-danger");
-		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.className).toMatch(
-			/rounded-\[12px\].*border.*bg-market-close-card/,
-		);
-		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.className).not.toContain(
-			"rounded-12",
-		);
+		const summaryClassName = container.querySelector('[data-testid="position-market-close-summary"]')?.className;
+		expect(summaryClassName).toBe("py-3 min-[1001px]:py-3.5");
+		expect(summaryClassName).not.toMatch(/rounded|border|bg-/);
 		expect(testState.numberInputs.get("Close size")?.className).toContain("!rounded-[10px]");
 		expect(testState.numberInputs.get("Close percentage")?.className).toContain("!rounded-[10px]");
 		expect(testState.numberInputs.get("Close size")?.suffixClassName).toContain("right-3");
