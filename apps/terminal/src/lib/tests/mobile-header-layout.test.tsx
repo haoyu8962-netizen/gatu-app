@@ -122,8 +122,8 @@ describe("MobileHeader layout", () => {
 		expect(account?.className).toContain("min-w-0");
 		expect(account?.className).toContain("flex-1");
 		expect(account?.className).toContain("justify-end");
-		expect(account?.className).toContain("[&_button]:h-11");
-		expect(account?.className).toContain("[&_button]:min-h-11");
+		expect(account?.className).not.toContain("[&_button]:h-11");
+		expect(account?.className).not.toContain("[&_button]:min-h-11");
 		expect(actions?.className).toContain("ms-auto");
 		expect(account?.querySelector('[data-testid="account"]')).not.toBeNull();
 		expect(theme).toBeNull();

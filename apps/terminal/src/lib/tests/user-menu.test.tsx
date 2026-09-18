@@ -671,7 +671,8 @@ describe("UserMenu", () => {
 
 		const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Account and wallet"]');
 		expect(trigger?.disabled).toBe(false);
-		expect(trigger?.textContent).toBe("owner@example.test");
+		expect(trigger?.textContent).toBe("owner");
+		expect(trigger?.querySelector("span.font-mono")?.getAttribute("title")).toBe("owner@example.test");
 		expect(trigger?.querySelector("span.bg-fg-muted")).not.toBeNull();
 		expect(findButtonByText(container, "Reconnect wallet").disabled).toBe(true);
 		expect(findButtonByText(container, "Disconnect").disabled).toBe(true);

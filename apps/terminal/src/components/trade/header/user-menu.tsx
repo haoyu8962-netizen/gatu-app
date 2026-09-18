@@ -12,7 +12,7 @@ import {
 import { Suspense, useState } from "react";
 import { useEnsName } from "wagmi";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
-import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
+import { HEADER_ACCOUNT_CONTROL_HEIGHT_CLASS, HEADER_TOUCH_HIT_AREA_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useIsMobile, useIsMobileQrSurface } from "@/hooks/use-mobile";
 import { useEmailWalletExport } from "@/hooks/wallet/use-email-wallet-export";
@@ -127,12 +127,12 @@ export function UserMenu({ variant = "default" }: Props) {
 				intent="neutral"
 				size="sm"
 				className={cn(
-					APP_BAR_BUTTON_HEIGHT_CLASS,
+					HEADER_ACCOUNT_CONTROL_HEIGHT_CLASS,
 					isDesktopNav && USER_MENU_BUTTON_MIN_WIDTH,
-					isDesktopNav ? "shrink-0" : "min-w-0 max-w-full",
+					isDesktopNav ? "shrink-0" : cn("min-w-0 max-w-full", HEADER_TOUCH_HIT_AREA_CLASS),
 					"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
 					isDesktopNav &&
-						"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none",
+						"rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none",
 				)}
 				disabled={!recoveryAvailable}
 				onClick={handleReloadPage}
@@ -195,6 +195,7 @@ export function UserMenu({ variant = "default" }: Props) {
 	const displayLabel = emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : t`Account`);
 	const compactDisplayLabel =
 		emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : displayLabel);
+	const mobileDisplayLabel = emailAddress ? getEmailLocalPart(emailAddress) : displayLabel;
 
 	const actionItems = [
 		...(walletExport.visible
@@ -260,16 +261,16 @@ export function UserMenu({ variant = "default" }: Props) {
 				triggerVariant="minimal"
 				className={cn("flex items-center", isDesktopNav ? "shrink-0" : "min-w-0 max-w-full")}
 				triggerClassName={cn(
-					APP_BAR_BUTTON_HEIGHT_CLASS,
-					"max-h-8 !rounded-8 border border-stroke-weak bg-transparent px-3 shadow-raised",
+					HEADER_ACCOUNT_CONTROL_HEIGHT_CLASS,
+					"!rounded-8 border border-stroke-weak bg-transparent px-3 shadow-none",
 					"!py-0 text-xs gap-1.5",
 					"items-center justify-start font-semibold text-fg",
 					"hover:bg-fill-hover active:bg-fill-press",
 					"data-[popup-open]:border-stroke-action/40 data-[popup-open]:bg-fill-hover",
 					"transition-[color,background-color,border-color] duration-150 ease-out",
-					isDesktopNav ? "shrink-0" : "min-w-0 max-w-full",
+					isDesktopNav ? "shrink-0" : cn("min-w-0 max-w-full", HEADER_TOUCH_HIT_AREA_CLASS),
 					isDesktopNav &&
-						"h-[34px] min-h-[34px] max-h-[34px] !rounded-[10px] border-market-close-stroke-input px-3 font-market-close text-[13px] leading-[18px] shadow-none hover:border-market-close-fg hover:bg-market-close-hover data-[popup-open]:border-market-close-fg data-[popup-open]:bg-transparent [&>svg]:size-[10px]",
+						"!rounded-[10px] border-market-close-stroke-input px-3 font-market-close text-[13px] leading-[18px] shadow-none hover:border-market-close-fg hover:bg-market-close-hover data-[popup-open]:border-market-close-fg data-[popup-open]:bg-transparent [&>svg]:size-[10px]",
 				)}
 				popupClassName={cn(
 					isDesktopNav &&
@@ -292,8 +293,9 @@ export function UserMenu({ variant = "default" }: Props) {
 								USER_MENU_LABEL_MAX_WIDTH,
 								isDesktopNav && "font-market-close text-[13px] leading-[18px] font-semibold nav-compact:hidden",
 							)}
+							title={!isDesktopNav && emailAddress ? emailAddress : undefined}
 						>
-							<bdi dir="ltr">{displayLabel}</bdi>
+							<bdi dir="ltr">{isDesktopNav ? displayLabel : mobileDisplayLabel}</bdi>
 						</span>
 						{isDesktopNav && (
 							<span className="hidden min-w-0 max-w-[8rem] truncate font-mono text-[13px] leading-[18px] font-semibold text-market-close-fg nav-compact:block">
@@ -342,4 +344,9 @@ export function UserMenu({ variant = "default" }: Props) {
 			)}
 		</>
 	);
+}
+
+function getEmailLocalPart(email: string): string {
+	const at = email.indexOf("@");
+	return at > 0 ? email.slice(0, at) : email;
 }

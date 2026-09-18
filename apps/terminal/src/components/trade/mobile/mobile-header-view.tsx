@@ -10,7 +10,7 @@ export const headerLogo =
 	"touch-target grid shrink-0 place-items-center rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus max-[359px]:hidden";
 export const headerActions = "ms-auto flex min-w-0 flex-1 items-center justify-end gap-1 min-[360px]:gap-2";
 export const headerAccount =
-	"flex min-w-0 flex-1 justify-end [&_button]:h-11 [&_button]:min-h-11 [&_button]:min-w-0 [&_button]:rounded-8 [&_button]:border-trading-panel-stroke-card [&_button]:px-2.5 [&_button]:text-xs";
+	"flex min-w-0 flex-1 justify-end [&_button]:min-w-0 [&_button]:rounded-8 [&_button]:border-trading-panel-stroke-card [&_button]:px-2.5 [&_button]:text-xs";
 export const headerIconButton =
 	"size-11 min-h-11 shrink-0 !rounded-8 text-trading-panel-muted hover:text-trading-panel-fg";
 export const headerLanguage = headerIconButton;
