@@ -2414,6 +2414,10 @@ msgstr "Affichage"
 msgid "Display and language"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Display units"
+msgstr ""
+
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
 msgstr "Écart au prix médian"
@@ -5632,6 +5636,7 @@ msgstr "Prix supérieur à {price}"
 msgid "Price below {price}"
 msgstr "Prix inférieur à {price}"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/config/orderbook-labels.ts
 msgid "Price grouping"
 msgstr "Regroupement des prix"
@@ -8222,8 +8227,8 @@ msgid "To Spot"
 msgstr "Vers Spot"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-msgid "Toggle display units"
-msgstr "Changer les unités d'affichage"
+#~ msgid "Toggle display units"
+#~ msgstr "Changer les unités d'affichage"
 
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 msgid "Toggle profit and loss unit"
@@ -8246,8 +8251,6 @@ msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or r
 msgstr "Trop d'approbations mobiles attendent une récupération dans cet onglet. Résolvez-en ou révoquez-en une d'abord."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -8256,6 +8259,11 @@ msgstr "Trop d'approbations mobiles attendent une récupération dans cet onglet
 #: src/config/ui-text.ts
 msgid "Total"
 msgstr "Total"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Total ({sizeToken})"
+msgstr ""
 
 #: src/components/referrals/referral-rewards-card.tsx
 #~ msgid "Total claimable"

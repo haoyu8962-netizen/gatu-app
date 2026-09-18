@@ -8,6 +8,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The mobile order book header is a single 36px chip row: price grouping on the left, the
+  spread in the middle and a display-unit dropdown on the right; the separate spread row is gone
+  and the ladder headings read `Total (unit)`, so the ladder starts about 47px higher.
 - Mobile account tabs share one 36px toolbar row and one filter-chip style (27px, 7px radius,
   auto width, placeholder labels such as Type / Direction / Role / Status), the tab row is 40px
   with a 44px touch area, and the TWAP sub-view row matches the toolbar height.
