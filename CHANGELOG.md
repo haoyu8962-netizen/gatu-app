@@ -73,6 +73,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- In the dark terminal, dropdown menus, tooltips, toasts and the desktop market selector use a raised
+  surface in the terminal's own hue (`#212d33`) instead of the shared purple-grey default, and the
+  scrim behind an open dialog no longer tints the page navy. The new surface has the same luminance
+  as the old one, so text contrast is unchanged. The disabled `Reset` entry of the language menu is
+  legible in dark mode (60% white instead of 12%).
 - Modals and drawers now animate in even when a store change mounts them already open, and
   store-driven global modals, the order confirmation, reverse and close-all dialogs stay mounted
   for their exit transition instead of vanishing; the position, order-confirmation and cancel-all

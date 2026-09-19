@@ -32,12 +32,14 @@ Never cause **literal doubling** of the Tailwind property prefix. If a token is 
 - `bg-dashboard-canvas` branded data-dashboard canvas behind raised page content (light: `#f1f3f6`, terminal dark: `#04251f`)
 - `bg-portfolio-canvas` compatibility alias for the portfolio page; new dashboard pages should use `bg-dashboard-canvas`
 - `bg-surface` elevated surfaces, cards (light: `#ffffff`, shared dark default: `#1d1e26`)
-- `bg-overlay` lightweight raised overlays such as tooltips, toasts, and selection indicators (light: `#ffffff`, dark: `#292b33`)
+- `bg-overlay` lightweight raised overlays such as tooltips, toasts, dropdown menus and selection indicators (light: `#ffffff`, shared dark default: `#292b33`, terminal dark: `#212d33`)
 - `bg-modal` blocking modal and drawer surfaces (light: `#ffffff`, shared dark default: `#292b33`); also the inputs, checkboxes and option cards rendered inside those modals. List cards, table headers and in-panel filter triggers use `bg-surface`, never `bg-modal`, even where the two resolve to the same color in the terminal (`modal-surface-contract` pins this)
 - `bg-alternate` alternating rows (light: `#f5f6fa`, shared dark default: `#1d1e26`)
 - `bg-inverse-surface` inverse background
 
-> **Terminal dark-theme override**: `apps/terminal/src/styles.css` intentionally sets `bg-background`, `bg-surface`, `bg-alternate`, and `bg-modal` to `#0f1a1f` so the terminal, order book, chart, and blocking dialogs share one continuous background. `bg-overlay` remains a distinct raised color for tooltips, toasts, and selection indicators. Do not restore the shared defaults in the terminal without an explicit design change.
+> **Terminal dark-theme override**: `apps/terminal/src/styles.css` intentionally sets `bg-background`, `bg-surface`, `bg-alternate`, and `bg-modal` to `#0f1a1f` so the terminal, order book, chart, and blocking dialogs share one continuous background. `bg-overlay` remains a distinct raised color for tooltips, toasts, dropdown menus and selection indicators. Do not restore the shared defaults in the terminal without an explicit design change.
+
+> **Terminal dark hue family**: the terminal's raised overlay (`#212d33`) and modal scrim (`--fill-overlay: #03090ca8`) stay in the same hue family as `#0f1a1f` (≈199°). `#212d33` has the same relative luminance as the shared navy-grey default `#292b33`, so every text and raised-contrast ratio measured against the old value still holds. The shared defaults (`#292b33`, `#000626a8`) are tuned for the shared navy base `#12131a`; using them over the terminal base makes menus read purple-grey and turns the page navy behind an open modal. `modal-surface-contract` pins both pairs.
 
 > **Light mode gotcha**: `bg-background` and `bg-surface` are both `#ffffff` in light mode. Use `bg-sunken` as the container whenever you need a visually distinct inset (e.g. tab switchers, pill groups) so that `bg-surface` children appear elevated.
 

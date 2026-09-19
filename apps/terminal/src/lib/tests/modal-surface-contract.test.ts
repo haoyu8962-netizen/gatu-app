@@ -75,8 +75,17 @@ describe("modal surface contract", () => {
 
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--bg-modal")).toBe("#ffffff");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--bg-modal")).toBe("#0f1a1f");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--bg-overlay")).toBe("#292b33");
 		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-modal")).toBe("var(--bg-modal)");
+	});
+
+	it("keeps the terminal dark overlay and scrim in the terminal hue family instead of the shared navy defaults", () => {
+		expect(readCssVariable(SHARED_THEME_CSS, ".dark", "--bg-overlay")).toBe("#292b33");
+		expect(readCssVariable(SHARED_THEME_CSS, ".dark", "--fill-overlay")).toBe("#000626a8");
+
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--bg-overlay")).toBe("#212d33");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--fill-overlay")).toBe("#03090ca8");
+		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-overlay")).toBe("var(--bg-overlay)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-scrim")).toBe("var(--fill-overlay)");
 	});
 
 	it("keeps market-close status colors exact while separating action and focus roles", () => {
@@ -120,7 +129,7 @@ describe("modal surface contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--language-settings-shadow")).toBe(
 			"0 16px 40px rgba(20, 30, 45, 0.18)",
 		);
-		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--language-settings-disabled")).toBe("var(--text-disabled)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--language-settings-disabled")).toBe("var(--icon-neutral)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--language-settings-divider")).toBe("var(--stroke-weak)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--shadow-language-settings")).toBe(
 			"var(--language-settings-shadow)",
