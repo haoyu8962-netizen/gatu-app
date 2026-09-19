@@ -12,7 +12,7 @@
 | 看用户可见变化 | [Changelog / Unreleased](../CHANGELOG.md)，不代表已经发布 |
 | 部署、入口保护与回滚 | [CloudFront 发布](../deploy/cloudfront/README.md)（现行宿主；移动配对为纯客户端传输、无服务端路由，两个配对开关在真机验收前保持关闭，见 [ADR 0015](adr/0015-link-device-alignment.md) D7）、[产物清单](../deploy/manifests/README.md)、[部署夹具](../deploy/fixtures/README.md) |
 | 接手续作与查历史证据 | 持续任务使用项目 `docs/work-memory/` 入口；[历史资料说明](../notes/README.md)、[历史与文档审查索引](../notes/index.md)补足原始 review |
-| 理解决策利弊 | [ADR 索引](adr/README.md)；移动配对去票据实施规划见 [方案 B 规划](mobile-sync-ticketless-transfer-plan.md) |
+| 理解决策利弊 | [ADR 索引](adr/README.md)；移动配对去票据实施规划见 [方案 B 规划](mobile-sync-ticketless-transfer-plan.md)，其后续加固见 [配对页加固规划](pairing-page-hardening-plan.md)（未实施） |
 
 ## 当前设计与 Reference
 
