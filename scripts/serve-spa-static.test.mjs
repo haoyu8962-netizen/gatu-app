@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
-import { acceptsHtmlNavigation, readArgs, resolveStaticRequest, SHELL_FILE } from "./serve-spa-static.mjs";
+import {
+	acceptsHtmlNavigation,
+	createStaticHandler,
+	readArgs,
+	resolveStaticRequest,
+	SHELL_FILE,
+} from "./serve-spa-static.mjs";
 
 test("arguments select the public directory, port, host and optional API origin", () => {
 	const defaults = readArgs([], {});
@@ -49,12 +59,37 @@ test("server-only routes never receive the shell", () => {
 	const resolve = resolver([SHELL_FILE]);
 	assert.equal(resolve("/_serverFn/abc").kind, "server-only");
 	assert.equal(resolve("/api/leaderboard").kind, "server-only");
-	assert.equal(resolve("/build-meta.json").kind, "server-only");
 	assert.equal(resolve("/client-error-report").kind, "server-only");
 	for (const path of ["/mobile-agent-sync-ticket", "/mobile-agent-sync-ticket/", "/mobile-agent-sync-ticket/consume"]) {
 		assert.deepEqual(resolve(path), { kind: "retired" }, path);
 	}
 	assert.equal(resolve("/mobile-agent-sync").kind, "shell");
+});
+
+test("build metadata is a static file of the client build, not an API route", () => {
+	assert.deepEqual(resolver([SHELL_FILE, "build-meta.json"], false)("/build-meta.json"), {
+		kind: "file",
+		file: "build-meta.json",
+	});
+	assert.deepEqual(resolver([SHELL_FILE], false)("/build-meta.json"), { kind: "not-found" });
+});
+
+test("build metadata is served uncached without an API origin, as the CDN serves it", async () => {
+	const publicDir = mkdtempSync(join(tmpdir(), "gatu-spa-static-"));
+	writeFileSync(join(publicDir, SHELL_FILE), "<html></html>");
+	writeFileSync(join(publicDir, "build-meta.json"), '{"commit":"abc"}');
+	const server = createServer(createStaticHandler(publicDir));
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	try {
+		const response = await fetch(`http://127.0.0.1:${server.address().port}/build-meta.json`, {
+			headers: { accept: "application/json" },
+		});
+		assert.equal(response.status, 200);
+		assert.equal(response.headers.get("cache-control"), "no-store");
+		assert.deepEqual(await response.json(), { commit: "abc" });
+	} finally {
+		await new Promise((resolve) => server.close(resolve));
+	}
 });
 
 test("missing assets and non-navigation requests are 404, not the shell", () => {

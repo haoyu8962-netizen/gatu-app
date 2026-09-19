@@ -11,7 +11,9 @@ import { fileURLToPath } from "node:url";
 
 export const SHELL_FILE = "_shell.html";
 export const SERVER_ONLY_PREFIXES = ["/_serverFn/", "/api/"];
-export const SERVER_ONLY_PATHS = ["/build-meta.json", "/client-error-report"];
+export const SERVER_ONLY_PATHS = ["/client-error-report"];
+// The build writes these next to the shell and the CDN serves them uncached, like deploy.mjs uploads them.
+const NO_STORE_FILES = new Set(["build-meta.json", "sw.js"]);
 // Retired with the pairing ticket endpoint: the CDN answers 404 at the edge and never forwards it.
 export const RETIRED_PATH = "/mobile-agent-sync-ticket";
 
@@ -81,7 +83,7 @@ export function resolveStaticRequest(rawPathname, { acceptsHtml, isFile }) {
 }
 
 function cacheControlFor(file) {
-	if (file === "sw.js") return "no-store";
+	if (NO_STORE_FILES.has(file)) return "no-store";
 	if (file.startsWith("assets/")) return "public, max-age=31536000, immutable";
 	if (file.endsWith(".html")) return "no-cache";
 	return "public, max-age=0, must-revalidate";
