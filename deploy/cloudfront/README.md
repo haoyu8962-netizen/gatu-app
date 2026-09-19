@@ -39,7 +39,7 @@
 | `apps/terminal/tests/browser/csp-coverage.mjs` | 浏览器覆盖：`node apps/terminal/tests/browser/csp-coverage.mjs <origin>` 用 Playwright 全新上下文在页面脚本之前注册 `securitypolicyviolation` 监听，遍历桌面与移动交易页、连接与充值弹窗、`/portfolio`、`/leaderboard`、`/join`、文档页，输出每步违规、`script-src` 的内联/`eval` 报告与控制台错误。发布哈希策略后必须跑：`verify` 与收集器共用同一实现，只有浏览器能证明哈希算法与解析器一致 |
 | `response-headers-policies.mjs` | 从 `security-headers.ts` 生成四个策略（不含 CSP）：base、trade（带该网络的 Hyperliquid API `preconnect`）、join（`no-store`/`no-referrer`/`noindex`）、chart（`X-Frame-Options: SAMEORIGIN`，缓存由对象元数据决定：未哈希入口重新验证、哈希 bundle 与内容哈希入口副本 immutable）；testnet 版本全部附加 `noindex` |
 | `distribution-config.mjs` | 生成 DistributionConfig：S3 源（OAC）+ Lambda 源（OAC），`/api/leaderboard` 走 Lambda 但按源的 `s-maxage` 在边缘缓存（缓存策略 `gatu-terminal-api-cached`，按完整查询串区分），其余 `/api/*`、`/client-error-report` 走 Lambda 且不缓存，`/join*` 不缓存，所有静态行为挂 viewer-response 函数（CSP），导航行为再挂 viewer-request 函数，图表/资源路径 CachingOptimized，交易路径挂 trade 策略，404 映射到 `/404.html`。不传 `--alias`/`--certificate-arn` 时使用默认 `*.cloudfront.net` 证书，供证书签发前先行验证；`--api-origin-request-policy-config` 输出 Lambda 源请求策略（白名单 9 个头，CloudFront 上限 10，转发 viewer 地址但不转发 Host） |
-| `deploy.mjs` | `functions`（把提交的 `terminal-response.js` 填入本次构建的内联脚本哈希与线上函数的现行集合后写到 `apps/terminal/.output/edge/terminal-response.js`，再从文件更新并发布两个 CloudFront Functions；没有构建产物或哈希为空时拒绝）、`sync`（按缓存策略分组 `aws s3 sync`，资源先、HTML 与 `build-meta.json` 后，从不 `--delete`；`--execute` 时先用 `get-function` 核对线上策略已含本次构建的全部内联脚本哈希，否则拒绝上传）、`reupload --only <前缀>`（缓存策略变化时用 `aws s3 cp` 强制重写已有对象的元数据，`sync` 会跳过内容未变的文件）；`sync` 结束时核对 S3 上 `_shell.html` 与 `build-meta.json` 的字节数与本地构建一致，中途停下的同步会直接报错、`invalidate`（`/*`）、`lambda`（zip + `update-function-code` + 等待）、`verify`（经公网检查壳与文档页与本地构建逐字节一致、CSP 与网络专属 preconnect、`build-meta.json` 一致、`/api/geo` 真实判定、带 `x-amz-content-sha256` 的同源 `POST /api/referral-geo` 返回决策、`/join` 头与标记、缺失文件 404、壳内预加载的图表入口线上 immutable、壳内 ≥ 20 个 `modulepreload` 且都在本地构建中并在线上 `immutable`、`/api/health` 204、壳二次请求边缘命中、图表 bundle immutable 且边缘命中、线上 7 页的内联脚本哈希都在对应策略头里（`report-only` 看 report-only 头；`enforce` 看强制头且 `script-src` 不含 `'unsafe-inline'`）、`img-src` 按 `cspImageSources` 所指的头不再放行任意 `https:`、testnet `noindex`） |
+| `deploy.mjs` | `functions`（把提交的 `terminal-response.js` 填入本次构建的内联脚本哈希与线上函数的现行集合后写到 `apps/terminal/.output/edge/terminal-response.js`，再从文件更新并发布两个 CloudFront Functions；没有构建产物或哈希为空时拒绝）、`sync`（按缓存策略分组 `aws s3 sync`，资源先、HTML 与 `build-meta.json` 后，从不 `--delete`；先按下文「发布闸门」核对 `build-meta.json` 记录的开关与运营方的确认参数，`--execute` 时不一致即拒绝、演练时只打印警告；`--execute` 时再用 `get-function` 核对线上策略已含本次构建的全部内联脚本哈希，否则拒绝上传）、`reupload --only <前缀>`（缓存策略变化时用 `aws s3 cp` 强制重写已有对象的元数据，`sync` 会跳过内容未变的文件）；`sync` 结束时核对 S3 上 `_shell.html` 与 `build-meta.json` 的字节数与本地构建一致，中途停下的同步会直接报错、`invalidate`（`/*`）、`lambda`（zip + `update-function-code` + 等待）、`verify`（经公网检查壳与文档页与本地构建逐字节一致、CSP 与网络专属 preconnect、`build-meta.json` 的提交、release 与发布闸门状态都与本地构建一致、`/api/geo` 真实判定、带 `x-amz-content-sha256` 的同源 `POST /api/referral-geo` 返回决策、`/join` 头与标记、缺失文件 404、壳内预加载的图表入口线上 immutable、壳内 ≥ 20 个 `modulepreload` 且都在本地构建中并在线上 `immutable`、`/api/health` 204、壳二次请求边缘命中、图表 bundle immutable 且边缘命中、线上 7 页的内联脚本哈希都在对应策略头里（`report-only` 看 report-only 头；`enforce` 看强制头且 `script-src` 不含 `'unsafe-inline'`）、`img-src` 按 `cspImageSources` 所指的头不再放行任意 `https:`、testnet `noindex`） |
 
 缓存策略（`objectCacheControl`）：`assets/*`、`charting_library/bundles/*`（TradingView 文件名自带 20 位内容哈希）与构建发出的入口副本 `charting_library/charting_library.<16 位内容哈希>.js` `immutable` 一年；壳与文档页 `public, max-age=0, s-maxage=60, stale-while-revalidate=300`，网络导航与 SW 后台刷新使用条件请求，边缘缓存一分钟并在后台刷新，发布时的 `/*` 失效清除边缘旧版本（浏览器 SW 缓存见下文）；未哈希的 `charting_library.js`、`sameorigin.html`、主题样式重新验证；`build-meta.json` 与 `sw.js` `no-store`。2026-09-15 入口改为内容哈希命名后，旧的 immutable 对象要执行一次 `reupload --only charting_library/charting_library.js`（`aws s3 sync` 不会重写内容未变的元数据），`verify` 会检查它已回到重新验证。改动策略后对受影响前缀跑 `node deploy/cloudfront/deploy.mjs reupload --bucket gatu-terminal-2026 --only charting_library/bundles/ --only _shell.html --execute`，再失效。
 
@@ -120,6 +120,19 @@ node deploy/cloudfront/deploy.mjs invalidate --distribution <testnet-id> --execu
 node deploy/cloudfront/deploy.mjs verify --origin https://app.gatu.ai --network mainnet
 node deploy/cloudfront/deploy.mjs verify --origin https://testnet.gatu.ai --network testnet
 ```
+
+### 发布闸门
+
+会暴露资金或凭证路径的构建开关，上传时需要运营方再确认一次；只在 `apps/terminal/.env.local` 里打开不算确认。构建把实际生效的值写进 `build-meta.json`（`cctpDeposits`、`mobileSync`，与应用运行时用同一个解析函数），`sync` 读的是构建产物而不是环境文件，所以构建之后再改环境文件不会影响判断。
+
+| 闸门 | `build-meta.json` 字段 | 确认参数 | 何时可以打开 |
+| --- | --- | --- | --- |
+| 主网赞助充值 | `cctpDeposits.mainnetSponsoredWallet` | `--allow-sponsored-mainnet-deposits` | 见 [CCTP 充值](../../docs/cctp-deposits.md) 的发布模式 |
+| 移动配对 | `mobileSync.importFromQr` 或 `createAndReveal` | `--allow-mobile-pairing` | 仅在 [真机矩阵](../../docs/mobile-phone-access-device-validation.md) 验收完成之后；此前两个开关必须保持关闭 |
+
+规则是双向精确匹配：构建打开了闸门而没有带参数，拒绝；带了参数而构建没有打开，也拒绝（说明运营方以为在发的版本和实际产物不一致）；`build-meta.json` 没有这些字段（旧构建）同样拒绝，需用当前源码重新构建。`sync` 每次都会打印一行 `release gates: …`；不带 `--execute` 的演练只给出警告。`verify` 会比较线上与本地构建的闸门状态。测试网的两个充值开关只记录、不需要确认。
+
+未从旧 EC2 校验器移植的部分：`VITE_PRIVY_APP_ID` 非空、`VITE_HYPERLIQUID_AGENT_NAME=gatu`、`VITE_HYPERLIQUID_TESTNET` 为空、禁止 `.env.production*` 这几条属于环境文件拼写检查而不是暴露确认；其中「哪个文件生效」已由读取构建产物覆盖，其余仍靠发布前人工核对 [`env.build.example`](../env.build.example)。
 
 顺序说明：CloudFront 函数最先发布，因为新页面的内联脚本哈希必须先进入线上策略（`sync` 会核对，见 4c），失效完成前的旧页面由函数里保留的上一版集合覆盖；Lambda 先于静态文件更新，因为新壳可能依赖新的 API 行为；`sync` 从不删除旧对象，正在打开旧壳的浏览器仍能取到旧资源；`invalidate` 用 `/*` 是为了让 `no-cache` 的壳与文档页立即刷新，资源本身是内容哈希不受影响。
 

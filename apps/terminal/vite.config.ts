@@ -18,6 +18,7 @@ import {
 } from '../../scripts/client-chunk-graph.mjs'
 import { BUILD_META_PATH } from './src/config/api-paths'
 import { type BuildMeta, createBuildMeta } from './src/config/build-meta'
+import { resolveCctpDepositFeatureFlags } from './src/config/cctp-deposit-flags'
 import { createHashedChartLibraryEntryPath } from './src/config/chart-library'
 import { DOCUMENT_ROUTE_PATHS } from './src/config/document-routes'
 import { resolveMobilePairingFeatureFlags } from './src/config/mobile-pairing-flags'
@@ -154,12 +155,14 @@ export const buildIdentity = Object.freeze({
 // file so a CDN deployment without the Nitro server still exposes it. Flags come from the same
 // `VITE_*` environment the client bundle sees for this mode.
 export function createBuildMetaForMode(mode: string): BuildMeta {
+  const env = loadEnv(mode, terminalDirectory, 'VITE_')
   return createBuildMeta({
     version: terminalPackage.version,
     commit: buildSha,
     release: releaseId,
     builtAt: buildTime,
-    pairing: resolveMobilePairingFeatureFlags(loadEnv(mode, terminalDirectory, 'VITE_')),
+    pairing: resolveMobilePairingFeatureFlags(env),
+    cctpDeposits: resolveCctpDepositFeatureFlags(env),
     chartLibraryHash,
   })
 }

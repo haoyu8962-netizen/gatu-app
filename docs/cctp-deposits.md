@@ -38,28 +38,34 @@ flags authorize a release to expose a controlled path; they are not themselves
 user consent to move funds. In particular, enabling the sponsored Mainnet flag
 must not make the application-wide recovery host sign or broadcast a deposit.
 
-Production supports two Mainnet release modes. External is enabled in both, and
-the sponsored Mainnet build flag alone selects the mode:
+Production supports two Mainnet release modes. External is enabled in both. The
+sponsored Mainnet build flag selects the mode, and the release upload requires a
+matching acknowledgement:
 
-| Release mode | External | Sponsored flag |
-|---|---:|---:|
-| `external-only` | always enabled | empty |
-| `both` | always enabled | `true` |
+| Release mode | External | Sponsored flag | `deploy.mjs sync --execute` |
+|---|---:|---:|---|
+| `external-only` | always enabled | empty | no extra option; `--allow-sponsored-mainnet-deposits` is refused |
+| `both` | always enabled | `true` | requires `--allow-sponsored-mainnet-deposits` |
+
+The build records the three gated paths in `build-meta.json` under
+`cctpDeposits`, resolved by the same `resolveCctpDepositFeatureFlags` the
+application uses, so the record describes what was baked into the bundle rather
+than what an environment file says at upload time. The
+[CloudFront release](../deploy/cloudfront/README.md) reads that record:
+`sync --execute` refuses a build whose sponsored Mainnet gate and the operator's
+option disagree in either direction, refuses a build that records no gates, and
+`verify` fails when the live origin's gates differ from the local build. This
+replaces the second acknowledgement (`GATU_CCTP_MAINNET_RELEASE_MODE`) that the
+retired EC2 release script enforced; the Testnet gates are recorded and compared
+but need no acknowledgement.
 
 The application ignores the retired
 `VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED` build switch; an empty or false
-legacy value cannot disable Mainnet external deposits. Operators should still
-review funded testnet evidence and run controlled, small-value Mainnet deposit
-and recovery exercises before exposing the sponsored path with
+legacy value cannot disable Mainnet external deposits. The release gate cannot
+prove that a funded end-to-end exercise has been completed: operators should
+still review funded testnet evidence and run controlled, small-value Mainnet
+deposit and recovery exercises before exposing the sponsored path with
 `VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true`, then rebuild and publish.
-
-Known gap (2026-09-18): the former EC2 release script refused a build whose
-sponsored flag disagreed with a second operator acknowledgement,
-`GATU_CCTP_MAINNET_RELEASE_MODE`, in the host's runtime environment file. That
-validator was bound to the EC2 host files and was removed with them; the
-[CloudFront release](../deploy/cloudfront/README.md) has no equivalent
-build-environment check, so nothing but the build flag itself guards the
-sponsored Mainnet path at release time.
 
 Every deposit entry point uses the same fail-closed capability decision before
 opening the modal or starting empty-account onboarding. That decision first

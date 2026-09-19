@@ -8,6 +8,7 @@ export interface BuildMetaInput {
 	release: string;
 	builtAt: string;
 	pairing: { createAndReveal: boolean; importFromQr: boolean };
+	cctpDeposits: { mainnetSponsoredWallet: boolean; testnetExternalWallet: boolean; testnetSponsoredWallet: boolean };
 	/** Content hash of the TradingView loader the build emitted under a hashed name; empty in development. */
 	chartLibraryHash?: string;
 }
@@ -23,6 +24,12 @@ export interface BuildMeta {
 	mobileSync: {
 		createAndReveal: boolean;
 		importFromQr: boolean;
+	};
+	/** The gated deposit paths this build exposes; the release tooling refuses an unacknowledged sponsored Mainnet path. */
+	cctpDeposits: {
+		mainnetSponsoredWallet: boolean;
+		testnetExternalWallet: boolean;
+		testnetSponsoredWallet: boolean;
 	};
 }
 
@@ -42,6 +49,11 @@ export function createBuildMeta(input: BuildMetaInput): BuildMeta {
 		mobileSync: {
 			createAndReveal: input.pairing.createAndReveal,
 			importFromQr: input.pairing.importFromQr,
+		},
+		cctpDeposits: {
+			mainnetSponsoredWallet: input.cctpDeposits.mainnetSponsoredWallet,
+			testnetExternalWallet: input.cctpDeposits.testnetExternalWallet,
+			testnetSponsoredWallet: input.cctpDeposits.testnetSponsoredWallet,
 		},
 	};
 }

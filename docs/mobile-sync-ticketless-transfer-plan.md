@@ -45,7 +45,7 @@
 2. 桌面弹窗与手机路由去票据；更新两端测试。
 3. 删除服务端、边缘与部署脚本残留；重新生成路由树；`pnpm build` 校验 chunk 与预算。
 4. 文档与 CHANGELOG 同步；ADR 0015 D7 状态改为「已实施」。
-5. 在 `deploy/env.build.example` 与生产构建环境将 `VITE_MOBILE_PAIRING_CREATE_ENABLED` / `VITE_MOBILE_PAIRING_IMPORT_ENABLED` 置为 `true` 前，先完成下方验收。
+5. 在 `deploy/env.build.example` 与生产构建环境将 `VITE_MOBILE_PAIRING_CREATE_ENABLED` / `VITE_MOBILE_PAIRING_IMPORT_ENABLED` 置为 `true` 前，先完成下方验收。发布工具把这条顺序变成了闸门：任一开关打开的构建，`deploy.mjs sync --execute` 必须带 `--allow-mobile-pairing` 才会上传（见 [CloudFront 发布](../deploy/cloudfront/README.md) 的「发布闸门」）；该参数只应在验收记录完成后使用。
 
 ## 验收标准
 

@@ -7,6 +7,7 @@ import {
 	APP_RELEASE_VERSION,
 } from "@/config/app";
 import { createBuildMeta } from "@/config/build-meta";
+import { CCTP_DEPOSIT_FEATURES } from "@/config/cctp-deposit";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 
 export const Route = createFileRoute("/build-meta.json")({
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/build-meta.json")({
 						release: APP_RELEASE_ID,
 						builtAt: APP_BUILD_TIME,
 						pairing: MOBILE_PAIRING_FEATURES,
+						cctpDeposits: CCTP_DEPOSIT_FEATURES,
 						chartLibraryHash: APP_CHART_LIBRARY_HASH,
 					}),
 					{ headers: { "cache-control": "no-store" } },
