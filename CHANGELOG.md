@@ -84,6 +84,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   the order-type menus opened in Inter under an IBM Plex Sans trigger. The language menu now uses
   the standard menu shadow and open animation, and its disabled `Reset` entry is legible in light
   mode as well.
+- Every desktop dialog has 16px corners and a 1px edge. Settings, leverage, margin mode, account
+  mode, wallet, connection and asset-information dialogs previously had 6 or 8px corners, and most
+  dialogs had no edge at all, so in the dark theme they blended into the page. Phone sheets without
+  their own design default to 16px top corners instead of 6px.
 - Modals and drawers now animate in even when a store change mounts them already open, and
   store-driven global modals, the order confirmation, reverse and close-all dialogs stay mounted
   for their exit transition instead of vanishing; the position, order-confirmation and cancel-all

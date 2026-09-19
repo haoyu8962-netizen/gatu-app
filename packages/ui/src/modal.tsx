@@ -34,18 +34,21 @@ function useMobile(): boolean {
 
 // ─── Modal (centered overlay) ─────────────────────────────────────────────────
 
-const modalPopupVariants = cva(["relative w-full bg-modal shadow-overlay rounded-12", "flex flex-col outline-none"], {
-	variants: {
-		size: {
-			sm: "max-w-sm",
-			md: "max-w-md",
-			lg: "max-w-lg",
+const modalPopupVariants = cva(
+	["relative w-full bg-modal border border-stroke-weak shadow-overlay rounded-32", "flex flex-col outline-none"],
+	{
+		variants: {
+			size: {
+				sm: "max-w-sm",
+				md: "max-w-md",
+				lg: "max-w-lg",
+			},
+		},
+		defaultVariants: {
+			size: "md",
 		},
 	},
-	defaultVariants: {
-		size: "md",
-	},
-});
+);
 
 type ModalProps = React.ComponentPropsWithoutRef<typeof Dialog.Root>;
 

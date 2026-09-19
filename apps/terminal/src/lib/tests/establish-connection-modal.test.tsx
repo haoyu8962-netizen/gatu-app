@@ -158,7 +158,7 @@ describe("EstablishConnectionModal", () => {
 
 		const dialog = container.querySelector('[role="dialog"]');
 		expect(dialog?.getAttribute("data-presentation")).toBe("drawer");
-		expect(dialog?.className).toContain("min-[1001px]:rounded-16");
+		expect(dialog?.className).not.toMatch(/rounded-(t-)?(\d+|\[)/);
 		expect(dialog?.className).not.toContain("min-[1000px]");
 		const connect = [...container.querySelectorAll("button")].find(
 			(button) => button.textContent === "Establish Connection",
