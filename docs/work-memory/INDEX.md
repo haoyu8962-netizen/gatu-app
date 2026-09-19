@@ -82,6 +82,7 @@
 当前规范：[docs/adr/0005-spa-static-shell.md](../../docs/adr/0005-spa-static-shell.md) · [deploy/cloudfront/README.md](../../deploy/cloudfront/README.md)
 
 - [CloudFront 发布闸门：暴露资金或凭证路径的构建需要上传时再确认](sessions/2026-09-19-cloudfront-release-gates.md) — 2026-09-19；已整理，验证见正文。补上 2026-09-18 清理 EC2 部署代码时发现的缺口：旧脚本会拒绝「主网赞助充值开关」与运营方二次确认不一致的构建，CloudFront 流程没有等价检查。现在构建把实际生效的赞助充值开关写进 build-meta.json（cctpDeposits，与应用同一个解析函数），deploy.mjs sync 读取构建产物：开了主网赞助充值或移动配对而没带 --allow-* 参数、带了参数而构建没开、或构建没有记录闸门，--execute 一律拒绝；verify 比较线上与本地的闸门状态。环境文件拼写类检查（Privy ID、Agent 名、默认网络）未移植并已写明。只在本地分支实现，未推送、未发布。
+- [Link Device 续作：配对预检覆盖 builder dex，本地静态服务按 CDN 方式提供 build-meta.json](sessions/2026-09-19-link-device-followups.md) — 2026-09-19；已整理，验证见正文。用户要求继续 Link Device 对齐、界面调整与弹窗过渡这批工作。逐份核对 15 份任务记录后，剩余项大多卡在真机、线上权限或产品决策；无需决策即可做的完成了两项：配对预检原先只读默认 dex，余额全在 builder dex 的账户被误报 No balance，现在默认 dex 与现货为空时逐个读取 perpDexs 列出的 dex，列表或任一 dex 读取失败时报错而不判空；scripts/serve-spa-static.mjs 不再把 /build-meta.json 当成仅服务端路径，改为静态文件并带 no-store，与 CloudFront 一致。/mobile-agent-sync 的 no-store / no-referrer 响应头评估后未实施：AWS 文档未说明响应头策略与 viewer-response 函数的先后顺序，无法实测。未推送。
 - [从仓库移除已退役的 EC2 部署代码与票据时期文档](sessions/2026-09-18-retire-ec2-deploy-files.md) — 2026-09-18；已整理，验证见正文。EC2 宿主 2026-09-17 停机、服务端票据 2026-09-18 移除之后，仓库里仍留着 12 个 EC2 部署文件和 6 份票据时期文档。本次把它们从工作树移除（原文保留在提交 5d393572），四个读取这些文件的 Vitest 契约改为钉住 CloudFront 模块或去掉已无对象的断言，现行文档的链接改指 CloudFront 手册，四份旧工作记录的 sources 改为该提交的永久链接。核对中发现一处迁移遗留缺口：旧脚本对 CCTP 主网赞助开关的二次确认校验在 CloudFront 发布流程里没有等价物，已在 cctp-deposits.md 如实写明，未补实现。
 - [生产发布 cloudfront-2026-09-17-p21（PR #26 分支 c59d13a8）](sessions/2026-09-17-cloudfront-release-p21.md) — 2026-09-17；已验证，范围见正文。按 CloudFront 日常发布 runbook 把 claude/placeholder-parity@c59d13a8 发布到 app.gatu.ai 与 testnet.gatu.ai：函数、Lambda、S3 同步、两个失效、两个 verify 全部通过；发布前后线上加载与几何对比见正文。
 - [退役 EC2 + Caddy + Nitro 常驻进程，仓库切换为 CloudFront 单一架构](sessions/2026-09-17-ec2-retirement.md) — 2026-09-17；已整理，验证见正文。用户 2026-09-17 10:35Z 停机 EC2 i-058ca09d0533fc11d；仓库随之关闭 Nitro 预压缩、CI 去掉 Caddyfile 校验与 EC2 发布脚本测试并改跑 CloudFront 工具测试、deploy/README.md 标为历史资料、ADR 0005 与计划文档补退役状态；routeRules CSP 因两个契约测试仍钉住而留待后续。
@@ -130,6 +131,7 @@
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
 | 2026-09-19 | [CloudFront 发布闸门：暴露资金或凭证路径的构建需要上传时再确认](sessions/2026-09-19-cloudfront-release-gates.md) | 未取得任务标识，见正文 | `a7cef26a` | 已整理，验证见正文 |
+| 2026-09-19 | [Link Device 续作：配对预检覆盖 builder dex，本地静态服务按 CDN 方式提供 build-meta.json](sessions/2026-09-19-link-device-followups.md) | 未取得任务标识，见正文 | `0af67e47` | 已整理，验证见正文 |
 | 2026-09-18 | [弹窗首开转圈与关闭闪现：预热惰性弹窗并恢复进出场过渡](sessions/2026-09-18-dialog-transitions-and-preload.md) | 未取得任务标识，见正文 | `82d81313` | 已整理，验证见正文 |
 | 2026-09-18 | [Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复](sessions/2026-09-18-grok-dialog-commits-review.md) | 未取得任务标识，见正文 | `08e2057d` | 已整理，验证见正文 |
 | 2026-09-18 | [头部账户芯片与 Connect 统一 36 px：可见高度与 44 px 热区分离](sessions/2026-09-18-header-chip-height.md) | 未取得任务标识，见正文 | `67d4212e` | 已整理，验证见正文 |
