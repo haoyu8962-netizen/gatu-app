@@ -14,8 +14,8 @@
   "sources": [
     { "path": ".github/workflows/production-build.yml" },
     { "path": ".github/workflows/slider-browser.yml" },
-    { "path": ".github/workflows/typecheck.yml" },
-    { "path": ".github/workflows/i18n-check.yml" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/d76b12f99b4ccd1a837a3717a1844f87e445ea5e/.github/workflows/typecheck.yml" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/d76b12f99b4ccd1a837a3717a1844f87e445ea5e/.github/workflows/i18n-check.yml" },
     { "path": ".github/workflows/claude-code-review.yml" },
     { "path": "docs/work-memory/sessions/2026-09-13-spa-shell-spike.md" }
   ],

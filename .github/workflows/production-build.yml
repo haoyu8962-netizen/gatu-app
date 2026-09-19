@@ -2,15 +2,11 @@ name: Production Builds
 
 on:
   pull_request:
-    branches:
-      - main
     paths:
       - ".github/workflows/production-build.yml"
       - "apps/**"
       - "deploy/**"
-      - "designs/og-cards/**"
       - "packages/**"
-      - "tests/**"
       - "scripts/validate-mobile-phone-access-device-validation*"
       - "docs/mobile-phone-access-device-validation.md"
       - "scripts/check-client-bundle-budget.mjs"
@@ -22,14 +18,21 @@ on:
       - "scripts/check-client-chunk-cycles.mjs"
       - "scripts/client-chunk-graph.*"
       - "scripts/measure/analyze-client-root-deps.mjs"
-      - "scripts/generate-og-cards.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+  # Release tags and manual runs build every pairing combination (see the build job's strategy).
+  # The patterns require a digit after the prefix (`v0.1.0`, `cloudfront-2026-09-17-p21`), so an
+  # `archive/**` tag or any other tag that merely starts with `v` never starts four builds.
+  # `tags` and `tags-ignore` cannot be combined, which is why the patterns themselves are narrow.
+  push:
+    tags:
+      - "v[0-9]*"
+      - "cloudfront-[0-9]*"
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -37,11 +40,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pairing:
-          - { create: "false", import: "false" }
-          - { create: "false", import: "true" }
-          - { create: "true", import: "false" }
-          - { create: "true", import: "true" }
+        # Pull requests build only the production default, with both pairing switches off.
+        # Pull requests into main (the dev to main promotion), release tags and manual runs build
+        # every combination. A job-level `if` cannot do this because it cannot read `matrix`. The
+        # lines of the expression share one indent so that YAML folds them into a single line.
+        pairing: >-
+          ${{ fromJSON(
+          (github.event_name == 'pull_request' && github.base_ref != 'main')
+          && '[{"create":"false","import":"false"}]'
+          || '[{"create":"false","import":"false"},{"create":"false","import":"true"},{"create":"true","import":"false"},{"create":"true","import":"true"}]'
+          ) }}
     name: Build terminal (${{ matrix.pairing.create }}/${{ matrix.pairing.import }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -60,7 +68,7 @@ jobs:
       - name: Build production terminal and enforce bundle budget
         run: pnpm --filter @gatu/terminal build
         env:
-          GATU_BUILD_SHA: ${{ github.event.pull_request.head.sha }}
+          GATU_BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GATU_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
           NODE_ENV: production
           NITRO_PRESET: node-server
@@ -114,28 +122,3 @@ jobs:
 
       - name: Verify TradingView package and compressed build assets
         run: node deploy/verify-chart-build.mjs apps/terminal/public apps/terminal/.output/public deploy/manifests/tradingview-charting-library.json
-
-  website:
-    name: Build website
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.4.0
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22.15.0
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Install Chromium for brand card verification
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Test brand contracts
-        run: pnpm test:brand
-
-      - name: Build marketing website
-        run: pnpm --filter @gatu/website build

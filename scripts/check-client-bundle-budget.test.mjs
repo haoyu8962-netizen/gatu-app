@@ -439,7 +439,7 @@ test("keeps graph helpers and tests in the production workflow path filter", () 
 
 test("runs the budget tests once from the terminal test workflow, outside the build matrix", () => {
 	const tests = readFileSync(new URL("../.github/workflows/terminal-tests.yml", import.meta.url), "utf8");
-	assert.equal(tests.includes('- ".github/workflows/production-build.yml"'), true);
+	assert.equal(tests.includes('- ".github/workflows/**"'), true);
 	assert.equal(tests.includes('- "scripts/check-client-bundle-budget.mjs"'), true);
 	assert.equal(tests.includes('- "scripts/check-client-bundle-budget.test.mjs"'), true);
 	assert.equal(tests.includes('- "scripts/client-chunk-graph.*"'), true);

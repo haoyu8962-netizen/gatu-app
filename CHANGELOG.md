@@ -228,15 +228,16 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
-- The pull-request workflows (production builds, browser regressions, type check,
-  translation catalogs, Claude review) now cancel their own in-progress run for the
-  same pull request when a newer push arrives, so superseded commits no longer
-  consume GitHub Actions minutes.
-- Pull requests target `dev`, and only `dev` is promoted into `main`. The four production builds and
-  the browser regressions now run only for pull requests into `main` (or on demand through
-  `workflow_dispatch`); the unit and release-tooling tests moved out of the build matrix into
-  `Terminal Tests`, which runs them once on every pull request instead of four times
-  ([ADR 0016](docs/adr/0016-dev-first-pull-requests-and-ci-tiers.md)).
+- Pull requests target `dev`, and only `dev` is promoted into `main`. Pull request checks use
+  about half the GitHub Actions minutes and finish sooner
+  ([ADR 0016](docs/adr/0016-dev-first-pull-requests-and-ci-tiers.md)): a newer push cancels the
+  superseded run of the same pull request; the unit and release-tooling tests moved out of the
+  build matrix into `Terminal Tests`, which runs them once instead of four times; type check, Biome
+  and the translation catalog check share one `Static Checks` job; the website and brand job runs
+  only when its inputs change; browser regressions run as two parallel shards. Pull requests
+  build the terminal once with both pairing switches off, and the other three switch combinations
+  build for pull requests into `main`, for `v[0-9]*` or `cloudfront-[0-9]*` tags, and on a manual run of
+  `Production Builds`.
 - All-market statistics now arrive on the public WebSocket's compact `pac`/`sac` channels (one
   compressed frame each, about a sixth of the bytes of `allDexsAssetCtxs`/`spotAssetCtxs`) whenever
   the browser can inflate them; a stream that cannot be decoded falls back to the plain channels for

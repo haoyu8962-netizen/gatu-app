@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [按四条方案改造 PR 检查，并与同日的首版 CI 分层合并整理](sessions/2026-09-19-ci-restructure.md) — 2026-09-19；已整理，验证见正文。同一天有两个会话各自改造 CI：首版（ADR 0016 原 D2）把构建与浏览器回归只留给进 main 的 PR，本任务按用户的四条方案改造。用户决定以四条为准：保留首版的分支流向、独立的 terminal-tests.yml 与测试钉子，把 D2 改为 D2′（每个 PR 构建默认配对组合并跑两片浏览器回归，其余三组只在进 main 的 PR、v[0-9]* 或 cloudfront-[0-9]* 标签和手动运行时构建），并合并静态检查、给网站工作流加路径过滤。预估每次推送计费约 33 分钟、等待约 8 分钟；工作流未在 GitHub 上运行，改动已提交、未推送。
 - [工作分支先进 dev、CI 按目标分支分层与测试移出矩阵](sessions/2026-09-19-ci-tiers-dev-first-flow.md) — 2026-09-19；已整理，验证见正文。修复 portfolio-overview 的时钟竞态后评估 Worker→dev→main 闸门：4 路矩阵重复跑同一批测试、全量单测并行下 45 红、main/dev 无保护。落地 ADR 0016：PR 目标写明 dev，4 路构建与浏览器回归只对进 main 的 PR 运行，测试移入 terminal-tests.yml 只跑一次，合入 concurrency；main 保护规则未执行，GitHub 侧触发行为待首个 PR 验证。
 - [Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复](sessions/2026-09-18-grok-dialog-commits-review.md) — 2026-09-18；已整理，验证见正文。grok-4.6 只读审查 0ad17aea…08e2057d 冻结快照，报告 2 P1 / 2 P2 / 3 P3；F1/F2/F4/F5/F6/F7 已修（守卫经变异检查钉住），F3 记为 ADR 已知限制；逐条核实：反手与全部平仓退场窗口内确认按钮仍可点（P1）、市价平仓取消退场期间 canSubmit 未含 isClosing（P1）属实；后台执行绑在随路由卸载的弹窗实例（P2）与 PnL 分享退场仍直接卸载（P2）属实；ADR §6 引用、CHANGELOG「一条通知」措辞、idle 预热测试不覆盖 requestIdleCallback 三条 P3 属实。其「无过渡时 onOpenChangeComplete 同步触发会卡会话」的存疑项经 Base UI 源码核实不成立。未修改代码。
 - [Grok 对抗审查 PR #26（启动、md 堆叠、路由揭示、导航收纳）](sessions/2026-09-17-grok-pr26-review.md) — 2026-09-17；已整理，验证见正文。grok-4.6-build 只读审查 PR #26 冻结快照，报告 2 P1 / 4 P2 / 1 P3；本会话逐条核实全部成立，其中 5 条为 PR 之前既有、被首帧真实 chrome 放大；未修改代码，修复待决策。
@@ -132,6 +133,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-19 | [按四条方案改造 PR 检查，并与同日的首版 CI 分层合并整理](sessions/2026-09-19-ci-restructure.md) | 未取得任务标识，见正文 | `9f875c65` | 已整理，验证见正文 |
 | 2026-09-19 | [工作分支先进 dev、CI 按目标分支分层与测试移出矩阵](sessions/2026-09-19-ci-tiers-dev-first-flow.md) | 未取得任务标识，见正文 | `d6cc4f3e` | 已整理，验证见正文 |
 | 2026-09-19 | [CloudFront 发布闸门：暴露资金或凭证路径的构建需要上传时再确认](sessions/2026-09-19-cloudfront-release-gates.md) | 未取得任务标识，见正文 | `a7cef26a` | 已整理，验证见正文 |
 | 2026-09-18 | [弹窗首开转圈与关闭闪现：预热惰性弹窗并恢复进出场过渡](sessions/2026-09-18-dialog-transitions-and-preload.md) | 未取得任务标识，见正文 | `82d81313` | 已整理，验证见正文 |

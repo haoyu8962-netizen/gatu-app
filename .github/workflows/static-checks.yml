@@ -1,20 +1,33 @@
-name: Check Translations
+name: Static Checks
 
+# Type checking, Biome and the translation catalog check each took one to two and a half
+# minutes on a runner of their own, most of it checkout and install. They share one job now.
 on:
   pull_request:
     paths:
-      - "apps/terminal/src/**/*.ts"
-      - "apps/terminal/src/**/*.tsx"
+      - ".github/workflows/static-checks.yml"
+      - "apps/terminal/**/*.ts"
+      - "apps/terminal/**/*.tsx"
       - "apps/terminal/src/locales/**/*.po"
+      - "packages/hl-react/**/*.ts"
+      - "packages/hl-react/**/*.tsx"
+      - "packages/ui/**/*.ts"
+      - "packages/ui/**/*.tsx"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "**/package.json"
+      - "**/tsconfig.json"
+      - "tsconfig.base.json"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: Validate translation catalogs
+  static-checks:
+    name: Validate TypeScript, lint and translation catalogs
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
@@ -27,10 +40,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: pnpm typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - run: pnpm check
+
+      # The catalog check used to report independently of the type check, so it still runs
+      # when an earlier step failed.
       - name: Extract translations
+        if: ${{ !cancelled() }}
         run: pnpm i18n:extract
 
       - name: Check for uncommitted changes
+        if: ${{ !cancelled() }}
         run: |
           if ! git diff --quiet apps/terminal/src/locales/**/*.po; then
             echo "::error::Translation catalogs are out of date."

@@ -3,8 +3,7 @@ name: Terminal Tests
 on:
   pull_request:
     paths:
-      - ".github/workflows/terminal-tests.yml"
-      - ".github/workflows/production-build.yml"
+      - ".github/workflows/**"
       - "apps/**"
       - "deploy/**"
       - "packages/**"
@@ -12,6 +11,7 @@ on:
       - "docs/mobile-phone-access-device-validation.md"
       - "scripts/check-client-bundle-budget.mjs"
       - "scripts/check-client-bundle-budget.test.mjs"
+      - "scripts/ci-workflows.test.mjs"
       - "scripts/inject-shell-preloads.mjs"
       - "scripts/inject-shell-preloads.test.mjs"
       - "scripts/collect-inline-script-hashes.mjs"
@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -51,6 +51,7 @@ jobs:
           node --test
           scripts/validate-mobile-phone-access-device-validation.test.js
           scripts/check-client-bundle-budget.test.mjs
+          scripts/ci-workflows.test.mjs
           scripts/inject-shell-preloads.test.mjs
           scripts/collect-inline-script-hashes.test.mjs
 
@@ -172,3 +173,14 @@ jobs:
           src/lib/tests/use-geo-restriction.test.tsx
           src/lib/tests/use-usdc-routing.test.ts
           src/lib/tests/unit-deposit-info.test.tsx
+
+      # `pnpm test:brand` in the Website and Brand workflow also runs these, but that workflow
+      # only starts when the website or a brand asset changes. Terminal changes are covered here.
+      - name: Test terminal brand contracts
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/brand-semantics-contract.test.ts
+          src/lib/tests/gatu-logo.test.tsx
+          src/lib/tests/root-startup-fallback.test.tsx
+          src/lib/tests/mobile-header-brand.test.tsx

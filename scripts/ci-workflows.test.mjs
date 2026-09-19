@@ -1,0 +1,117 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import test from "node:test";
+
+const CONCURRENCY_GROUP = "group: ${{ github.workflow }}-${{ github.ref }}";
+const SHARD_FLAGS = "--fully-parallel --shard=${{ matrix.shard }}/2";
+const PULL_REQUEST_WORKFLOWS = [
+	"production-build.yml",
+	"terminal-tests.yml",
+	"static-checks.yml",
+	"website-build.yml",
+	"slider-browser.yml",
+	"claude-code-review.yml",
+];
+
+function readWorkflow(name) {
+	return readFileSync(new URL(`../.github/workflows/${name}`, import.meta.url), "utf8");
+}
+
+function countOccurrences(source, needle) {
+	return source.split(needle).length - 1;
+}
+
+test("cancels superseded runs in pull request workflows and never in the comment-driven one", () => {
+	for (const name of PULL_REQUEST_WORKFLOWS) {
+		const workflow = readWorkflow(name);
+		assert.equal(workflow.includes(CONCURRENCY_GROUP), true, `${name} is missing the concurrency group`);
+		assert.equal(workflow.includes("cancel-in-progress: true"), true, `${name} does not cancel superseded runs`);
+	}
+	assert.equal(/^concurrency:/m.test(readWorkflow("claude.yml")), false);
+});
+
+test("builds the default pairing on pull requests and every pairing for main, release tags and manual runs", () => {
+	const builds = readWorkflow("production-build.yml");
+	const [, defaultPairings, allPairings] =
+		/github\.event_name == 'pull_request' && github\.base_ref != 'main'\)\s+&& '(\[[^']+\])'\s+\|\| '(\[[^']+\])'/.exec(
+			builds,
+		) ?? [];
+
+	assert.deepEqual(JSON.parse(defaultPairings), [{ create: "false", import: "false" }]);
+	const combinations = JSON.parse(allPairings).map((pairing) => `${pairing.create}/${pairing.import}`);
+	assert.deepEqual(combinations.sort(), ["false/false", "false/true", "true/false", "true/true"]);
+
+	assert.equal(/^\s+branches:/m.test(builds), false, "a base-branch filter would stop pull requests into dev from building");
+	assert.equal(/^  workflow_dispatch:/m.test(builds), true);
+});
+
+test("starts the release builds for release tags only, never for archive tags", () => {
+	const builds = readWorkflow("production-build.yml");
+	const tagPatterns = [.../^  push:\n    tags:\n((?:      - .+\n)+)/m.exec(builds)[1].matchAll(/- "([^"]+)"/g)].map(
+		(match) => match[1],
+	);
+
+	assert.deepEqual(tagPatterns, ["v[0-9]*", "cloudfront-[0-9]*"]);
+	assert.equal(/^\s+tags-ignore:/m.test(builds), false, "tags and tags-ignore cannot be combined");
+
+	const matchesAnyPattern = (tag) =>
+		tagPatterns.some((pattern) =>
+			new RegExp(`^${pattern.replace(/[.+?^${}()|\\]/g, "\\$&").replace(/\*/g, "[^/]*")}$`).test(tag),
+		);
+	for (const tag of ["v0.1.0", "v1", "cloudfront-2026-09-17-p21"]) {
+		assert.equal(matchesAnyPattern(tag), true, `${tag} should start the release builds`);
+	}
+	for (const tag of ["archive/2026-09-10/huagan", "archive/v1", "vault-backup", "cloudfront-draft", "v"]) {
+		assert.equal(matchesAnyPattern(tag), false, `${tag} must not start four production builds`);
+	}
+});
+
+test("shards every browser invocation by test, in two jobs", () => {
+	const browser = readWorkflow("slider-browser.yml");
+
+	assert.equal(browser.includes("shard: [1, 2]"), true);
+	assert.equal(/^\s+branches:/m.test(browser), false);
+	const invocations = countOccurrences(browser, "exec playwright test");
+	assert.equal(invocations >= 4, true);
+	assert.equal(countOccurrences(browser, SHARD_FLAGS), invocations, "an unsharded invocation runs in full in both jobs");
+	assert.equal(/pnpm --dir apps\/terminal test:browser/.test(browser), false, "package scripts bypass the shard flags");
+});
+
+test("keeps the merged static checks in one job", () => {
+	const staticChecks = readWorkflow("static-checks.yml");
+
+	for (const command of ["pnpm typecheck", "pnpm check", "pnpm i18n:extract"]) {
+		assert.equal(staticChecks.includes(`run: ${command}`), true, `static checks no longer run ${command}`);
+	}
+	assert.equal(countOccurrences(staticChecks, "runs-on:"), 1);
+	assert.equal(staticChecks.includes('- "apps/terminal/src/locales/**/*.po"'), true);
+	for (const replaced of ["typecheck.yml", "i18n-check.yml"]) {
+		assert.equal(existsSync(new URL(`../.github/workflows/${replaced}`, import.meta.url)), false);
+	}
+});
+
+test("keeps brand coverage when the website workflow only starts for its own inputs", () => {
+	const website = readWorkflow("website-build.yml");
+	const terminalTests = readWorkflow("terminal-tests.yml");
+	const packageScripts = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).scripts;
+
+	assert.equal(website.includes("run: pnpm test:brand"), true);
+	for (const path of [
+		"apps/website/**",
+		"designs/og-cards/**",
+		"scripts/generate-og-cards.mjs",
+		"tests/**",
+		"apps/terminal/public/og-terminal-1200x630.png",
+		"apps/terminal/src/styles.css",
+		"packages/ui/src/globals.css",
+	]) {
+		assert.equal(website.includes(`- "${path}"`), true, `website workflow does not start for ${path}`);
+	}
+
+	const terminalBrandTests = packageScripts["test:brand"].match(/src\/lib\/tests\/\S+\.test\.tsx?/g) ?? [];
+	assert.equal(terminalBrandTests.length >= 5, true);
+	for (const file of terminalBrandTests) {
+		assert.equal(terminalTests.includes(file), true, `${file} only runs when the website workflow starts`);
+	}
+	assert.equal(/vitest run|pnpm test:brand/.test(readWorkflow("production-build.yml")), false);
+});
