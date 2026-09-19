@@ -8,7 +8,9 @@
 // limit with two releases' inline script hashes: the TradingView package gets the frame policy,
 // everything else the terminal policy plus the stricter report-only policy. The static shell cannot
 // carry a per-path route marker in its body either, so the viewer-request function tags join paths
-// on the request and this function surfaces the tag as a response header for the health check.
+// on the request and this function surfaces the tag as a response header for the health check. The
+// pairing page shares the cached shell, so its `no-store` / `no-referrer` are written here: the
+// response headers policy is applied before this function runs, which lets these values win.
 var CSP_TEMPLATE = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors {FA}; form-action 'self'; img-src {IMG}; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src {SCRIPT}; connect-src 'self' https://api.hyperliquid.xyz https://api.hyperliquid-testnet.xyz https://app.hyperliquid.xyz https://stats-data.hyperliquid.xyz https://rpc.hyperliquid.xyz https://rpc.hyperliquid-testnet.xyz wss://api.hyperliquid.xyz wss://api.hyperliquid-testnet.xyz https://auth.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://*.rpc.privy.systems https://explorer-api.walletconnect.com https://relay.walletconnect.com https://relay.walletconnect.org https://api.web3modal.com https://api.web3modal.org https://pulse.walletconnect.org https://rpc.zerodev.app https://iris-api.circle.com https://iris-api-sandbox.circle.com https://li.quest https://api.tenderly.co https://gas.api.infura.io https://ethereum-rpc.publicnode.com https://arb1.arbitrum.io https://sepolia-rollup.arbitrum.io https://eth.merkle.io https://polygon-rpc.com https://mainnet.optimism.io https://mainnet.base.org https://56.rpc.thirdweb.com https://api.avax.network https://250.rpc.thirdweb.com https://rpc.gnosischain.com https://mainnet.era.zksync.io https://rpc.scroll.io https://rpc.linea.build https://mainnet.mode.network https://rpc.blast.io https://rpc.mantle.xyz https://forno.celo.org https://moonbeam.public.blastapi.io https://mainnet.aurora.dev https://zkevm-rpc.com; worker-src 'self' blob:; child-src 'self' blob: https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com; frame-src 'self' blob: https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://secure.walletconnect.com; manifest-src 'self'";
 var IMG_SRC = "'self' data: blob: https:";
 var STRICT_IMG_SRC = "'self' data: blob: https://app.hyperliquid.xyz https://*.privy.io https://explorer-api.walletconnect.com https://*.walletconnect.com https://*.coinbase.com";
@@ -51,6 +53,10 @@ function handler(event) {
 	var route = request.headers['x-gatu-route'];
 	if (route && route.value) {
 		response.headers['x-gatu-route'] = { value: route.value };
+	}
+	if (route && route.value === 'mobile-agent-sync') {
+		response.headers['cache-control'] = { value: 'no-store' };
+		response.headers['referrer-policy'] = { value: 'no-referrer' };
 	}
 	if (isChartAsset(request.uri)) {
 		response.headers['content-security-policy'] = { value: CHART_CSP };

@@ -182,6 +182,10 @@ test("verification passes when the edge serves the build with the expected heade
 				body: SHELL_HTML,
 				headers: { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-robots-tag": "noindex, nofollow", "x-gatu-route": "referral-join" },
 			},
+			"/mobile-agent-sync": {
+				body: SHELL_HTML,
+				headers: { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-gatu-route": "mobile-agent-sync" },
+			},
 			[CHART_ENTRY]: { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
 			"/charting_library/charting_library.js": { body: "js", headers: { "cache-control": REVALIDATE_CACHE_CONTROL } },
 			"*": { status: 404, body: "missing" },
@@ -191,7 +195,7 @@ test("verification passes when the edge serves the build with the expected heade
 		results.filter((result) => !result.ok),
 		[],
 	);
-	assert.equal(results.length, 14);
+	assert.equal(results.length, 15);
 	assert.equal(results.find((result) => result.name === "shell preloads the startup closure")?.detail, "24 links");
 	assert.equal(results.find((result) => result.name === "inline scripts are allowed by the edge policy")?.detail, "2 pages, 1 inline scripts, report-only");
 	assert.equal(results.find((result) => result.name === "image sources follow the edge config")?.detail, "3 sources, report-only");
@@ -276,6 +280,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 		"geo endpoint answers with a real verdict",
 		"signed lambda post with a payload hash",
 		"referral deep link headers",
+		"pairing page headers",
 		"missing files stay 404",
 		"chart entry is immutable and preloaded by the shell",
 		"shell preloads the startup closure",
