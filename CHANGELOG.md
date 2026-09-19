@@ -73,6 +73,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Linking a phone no longer refuses an account whose whole balance sits on a builder dex: the
+  desktop check reads every perp dex before it reports `No balance on Hyperliquid`, and a dex it
+  could not read shows the error instead of that message.
 - Modals and drawers now animate in even when a store change mounts them already open, and
   store-driven global modals, the order confirmation, reverse and close-all dialogs stay mounted
   for their exit transition instead of vanishing; the position, order-confirmation and cancel-all

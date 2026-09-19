@@ -82,7 +82,7 @@
 | F3（P1，已确认） | 同一手机重复导入同一码会触发 epoch 回滚，把已导入成功的访问置为 `closing`、密钥滞留且不可用；单测因 mock 了回滚函数未发现 | 方案 B 新引入 | 已修复：去重移到捕获 epoch 之前；路由测试断言重复路径不调用核验、epoch 捕获与回滚，变异测试确认该断言能抓住旧写法 |
 | F4（P2，已确认） | 创建时间在未来的信封被接受，桌面时钟偏快会拉长诚实客户端的可用期与手机草稿保留期 | 代码既有，去掉票据后墙钟成为唯一边界 | 已修复：解密时拒绝 `createdAtMs` 超前本机超过 60 秒的信封（新错误码 `not_yet_valid`，提示核对两端日期时间）；手机持有已载入二维码与草稿的时间上限为 TTL + skew，与信封时间戳无关 |
 | F5（P2，已确认） | 生产产物里片段擦除被打进约 1.19 MB 的路由 vendor chunk，要等约 1.75 MB JS 下载解析后才执行；当前擦除前没有任何代码读取 URL，但顺序只在源码层被测试钉住 | 既有 | **未处理**：建议改为 head 内联脚本并加产物级断言，涉及 CSP 内联哈希与启动契约，另行处理 |
-| P3 | CloudFront 对 `/mobile-agent-sync` 没有 Nitro 路由规则里的 `no-store` / `no-referrer`（片段不进 Referer，仅影响凭据被错放进 query 的畸形链接）；引导阶段擦除失败时没有兜底；路由匹配不区分大小写而擦除按精确路径；Import 之前不显示 owner / Agent 地址；开发模式 StrictMode 可能让导入必定 `decrypt_failed` | 既有 | **未处理**，已记入任务记录 |
+| P3 | CloudFront 对 `/mobile-agent-sync` 没有 Nitro 路由规则里的 `no-store` / `no-referrer`（片段不进 Referer，仅影响凭据被错放进 query 的畸形链接）；引导阶段擦除失败时没有兜底；路由匹配不区分大小写而擦除按精确路径；Import 之前不显示 owner / Agent 地址；开发模式 StrictMode 可能让导入必定 `decrypt_failed` | 既有 | **未处理**，已记入任务记录。2026-09-19 补充：响应头一项评估过放进 viewer-response 函数（免改分发配置），但基础策略已用 `Override: true` 写 `Referrer-Policy`，而 AWS 文档（`understanding-response-headers-policies`、`modifying-response-headers` 两页）没有说明响应头策略与 viewer-response 函数的先后顺序，无线上权限也无法实测，故未实施；要做需先在测试网分发上实测顺序，或改为新增 `/mobile-agent-sync*` 行为并更新线上分发 |
 | P3 | 手机页到期计时不含 skew；弹窗用含密钥的 URL 作 React key；应用内扫码对 v2 信封只给通用提示；本文与 ADR 的几处表述错误 | 前两项既有、后两项方案 B 新增 | 已修复 |
 
 ## 风险与缓解
