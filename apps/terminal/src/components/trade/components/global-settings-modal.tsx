@@ -9,6 +9,8 @@ import {
 	SegmentedControls,
 	Toggle,
 } from "@gatu/ui";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { ChangeEvent, ReactNode } from "react";
 import { useId, useReducer, useState } from "react";
@@ -20,6 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailWalletExport } from "@/hooks/wallet/use-email-wallet-export";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
+	type PositionMarketCloseConfirmationPreferenceStatus,
 	readPositionMarketCloseConfirmationPreference,
 	resetPositionMarketCloseConfirmation,
 } from "@/lib/trade/position-market-close-confirmation-preference";
@@ -32,6 +35,12 @@ import {
 	useNetwork,
 	useSkipOrderConfirmation,
 } from "@/stores/use-global-settings-store";
+
+const MARKET_CLOSE_CONFIRMATION_HINTS: Record<PositionMarketCloseConfirmationPreferenceStatus, MessageDescriptor> = {
+	dismissed: msg`Market clicks currently close the full position immediately for this account and network.`,
+	required: msg`A confirmation is shown before each market close.`,
+	unavailable: msg`Connect an account with browser storage available to manage this preference.`,
+};
 
 export function GlobalSettingsModal() {
 	const open = useSettingsDialogOpen();
@@ -161,13 +170,7 @@ export function GlobalSettingsModal() {
 						</SettingRow>
 						<SettingRow
 							label={t`Market close confirmation`}
-							hint={
-								confirmationPreference === "dismissed"
-									? t`Market clicks currently close the full position immediately for this account and network.`
-									: confirmationPreference === "required"
-										? t`A confirmation is shown before each market close.`
-										: t`Connect an account with browser storage available to manage this preference.`
-							}
+							hint={t(MARKET_CLOSE_CONFIRMATION_HINTS[confirmationPreference])}
 						>
 							<Button
 								variant="outline"
