@@ -78,6 +78,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
   scrim behind an open dialog no longer tints the page navy. The new surface has the same luminance
   as the old one, so text contrast is unchanged. The disabled `Reset` entry of the language menu is
   legible in dark mode (60% white instead of 12%).
+- The header `More`, account and language menus, the display menu and the order-type menus share
+  one look: 12px corners, 4px padding, 34px entries with 8px corners in IBM Plex Sans, and 44px
+  entries on phones. Previously the corner radius was 10 or 12px, entries were 34 or 36px tall and
+  the order-type menus opened in Inter under an IBM Plex Sans trigger. The language menu now uses
+  the standard menu shadow and open animation, and its disabled `Reset` entry is legible in light
+  mode as well.
 - Modals and drawers now animate in even when a store change mounts them already open, and
   store-driven global modals, the order confirmation, reverse and close-all dialogs stay mounted
   for their exit transition instead of vanishing; the position, order-confirmation and cancel-all

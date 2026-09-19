@@ -21,6 +21,7 @@ import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hoo
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { createLazyComponent } from "@/lib/lazy";
+import { menuPopupSkinClass } from "@/lib/ui/menu-popup-skin";
 import { hasPersistedPrivySession } from "@/lib/wallet/privy-session-hint";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import { useMobileSyncModalActions, useMobileSyncModalOpen } from "@/stores/use-global-modal-store";
@@ -281,10 +282,7 @@ export function UserMenu({ variant = "default" }: Props) {
 					isDesktopNav &&
 						"!rounded-[10px] border-market-close-stroke-input px-3 font-market-close text-[13px] leading-[18px] shadow-none hover:border-market-close-fg hover:bg-market-close-hover data-[popup-open]:border-market-close-fg data-[popup-open]:bg-transparent [&>svg]:size-[10px]",
 				)}
-				popupClassName={cn(
-					isDesktopNav &&
-						"min-w-[268px] rounded-[12px] border-market-close-stroke-card bg-overlay p-1 font-market-close shadow-overlay [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px]",
-				)}
+				popupClassName={cn(menuPopupSkinClass, isDesktopNav && "min-w-[268px]")}
 				triggerAriaLabel={t`Account and wallet`}
 				trigger={
 					<>
