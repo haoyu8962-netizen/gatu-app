@@ -106,6 +106,7 @@ type ResetState =
 	| { status: "error"; message: MobileAgentSyncMessage };
 
 const LOCALIZED_MESSAGE_CODES = [
+	"account-check-failed",
 	"approval-already-in-progress",
 	"approval-already-preparing",
 	"approval-recheck-failed",
@@ -653,9 +654,9 @@ function MobileAgentSyncSession({
 			}
 
 			setSyncState({ status: "ready" });
-		} catch (error) {
+		} catch {
 			if (!operation.signal.aborted) {
-				setSyncState({ status: "error", message: externalErrorMessage(error) });
+				setSyncState({ status: "error", message: localizedMessage("account-check-failed") });
 			}
 		} finally {
 			finishOperation(operation);
@@ -1196,6 +1197,8 @@ function MobileAgentSyncMessageText({ message }: { message: MobileAgentSyncMessa
 	}
 
 	switch (message.code) {
+		case "account-check-failed":
+			return t`Could not check this account on Hyperliquid. Nothing was signed. Retry the check.`;
 		case "approval-already-in-progress":
 			return t`Another mobile approval is already in progress for this wallet.`;
 		case "approval-already-preparing":

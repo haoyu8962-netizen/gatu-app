@@ -1969,6 +1969,10 @@ msgstr "نسخ رابط الإحالة"
 msgid "Copy token address"
 msgstr "نسخ عنوان الرمز"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Could not check this account on Hyperliquid. Nothing was signed. Retry the check."
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Could not fetch your token balances"
 msgstr "تعذّر جلب أرصدة رموزك"

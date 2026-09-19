@@ -30,6 +30,8 @@ const REVOKE_AGENT_NAME = `Mobile valid_until ${REVOKE_VALID_UNTIL_MS}`;
 const SYNC_EXPIRES_AT_MS = NOW_MS + 4_000 + 2 * 60 * 1000;
 const PHONE_LINK = "https://app.gatu.test/mobile-agent-sync#ht-mobile-sync=encoded-envelope&k=encoded-key";
 const NO_BALANCE_MESSAGE = "No balance on Hyperliquid. Deposit first.";
+const ACCOUNT_CHECK_FAILED_MESSAGE =
+	"Could not check this account on Hyperliquid. Nothing was signed. Retry the check.";
 const NO_BALANCE_MESSAGE_AR = "لا يوجد رصيد في Hyperliquid. أودِع أولاً.";
 const APPROVAL_RECHECK_MESSAGE =
 	"The approval could not be rechecked. The QR remains hidden until read-only verification succeeds.";
@@ -478,37 +480,82 @@ describe("MobileAgentSyncModal", () => {
 		);
 		await renderModal();
 
-		expect(container.textContent).not.toContain("No balance on Hyperliquid. Deposit first.");
 		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
 	});
 
-	it("skips the builder dex reads when the default dex or spot already shows a balance", async () => {
+	it("skips the builder dex reads when the default dex already shows a balance", async () => {
 		await renderModal();
 
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
 		expect(testState.perpDexs).not.toHaveBeenCalled();
 		expect(testState.builderDexClearinghouseState).not.toHaveBeenCalled();
 	});
 
-	it("never reports an empty account when a builder dex could not be read", async () => {
+	it("skips the builder dex reads when only spot shows a balance", async () => {
 		testState.clearinghouseState = EMPTY_CLEARINGHOUSE_STATE;
-		testState.builderDexClearinghouseState.mockImplementation(async ({ dex }: { dex: string }) => {
-			if (dex === "flx") throw new Error("builder dex unavailable");
-			return EMPTY_CLEARINGHOUSE_STATE;
-		});
+		testState.spotState = { balances: [{ hold: "0", total: "12.5" }] };
+		await renderModal();
+
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
+		expect(testState.perpDexs).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["a builder dex request fails", () => testState.builderDexClearinghouseState.mockRejectedValue(new Error("boom"))],
+		["the dex list request fails", () => testState.perpDexs.mockRejectedValue(new Error("boom"))],
+		["a builder dex answers without a snapshot", () => testState.builderDexClearinghouseState.mockResolvedValue(null)],
+		["a builder dex answers with an empty object", () => testState.builderDexClearinghouseState.mockResolvedValue({})],
+		[
+			"a builder dex answers with an amount that is not a decimal",
+			() =>
+				testState.builderDexClearinghouseState.mockResolvedValue({ ...EMPTY_CLEARINGHOUSE_STATE, withdrawable: "bad" }),
+		],
+		["the dex list is not a list", () => testState.perpDexs.mockResolvedValue({})],
+	])("never reports an empty account when %s", async (_name, arrange) => {
+		testState.clearinghouseState = EMPTY_CLEARINGHOUSE_STATE;
+		arrange();
 		await renderModal();
 
 		expect(container.textContent).not.toContain("No balance on Hyperliquid. Deposit first.");
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("builder dex unavailable");
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(ACCOUNT_CHECK_FAILED_MESSAGE);
+		expect(container.textContent).not.toContain("boom");
+		expect(getButton(container, "Retry check").hasAttribute("disabled")).toBe(false);
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 	});
 
-	it("never reports an empty account when the dex list could not be read", async () => {
-		testState.clearinghouseState = EMPTY_CLEARINGHOUSE_STATE;
-		testState.perpDexs.mockRejectedValue(new Error("dex list unavailable"));
+	it("never reports an empty account when the default dex answers without a usable snapshot", async () => {
+		testState.clearinghouseState = { assetPositions: [], withdrawable: "0" } as typeof testState.clearinghouseState;
 		await renderModal();
 
 		expect(container.textContent).not.toContain("No balance on Hyperliquid. Deposit first.");
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("dex list unavailable");
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(ACCOUNT_CHECK_FAILED_MESSAGE);
+	});
+
+	it("drops a builder dex answer that arrives after the dialog closed", async () => {
+		testState.clearinghouseState = EMPTY_CLEARINGHOUSE_STATE;
+		const answers: Array<(state: typeof EMPTY_CLEARINGHOUSE_STATE) => void> = [];
+		testState.builderDexClearinghouseState.mockImplementation(
+			() =>
+				new Promise<typeof EMPTY_CLEARINGHOUSE_STATE>((resolve) => {
+					answers.push(resolve);
+				}),
+		);
+		const onOpenChange = await renderModal();
+		const signal = testState.perpDexs.mock.calls[0]?.[0] as AbortSignal;
+		expect(signal.aborted).toBe(false);
+
+		const { MobileAgentSyncModal } = await import("@/components/trade/components/mobile-agent-sync-modal");
+		act(() => {
+			root.render(createElement(MobileAgentSyncModal, { open: false, onOpenChange }));
+		});
+		expect(signal.aborted).toBe(true);
+
+		expect(answers).toHaveLength(2);
+		for (const answer of answers) answer(EMPTY_CLEARINGHOUSE_STATE);
+		await flushAsyncWork();
+		expect(container.textContent).not.toContain("No balance on Hyperliquid. Deposit first.");
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 	});
 

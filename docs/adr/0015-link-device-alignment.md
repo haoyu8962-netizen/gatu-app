@@ -22,7 +22,7 @@
 ## 决策
 
 - D1 桌面入口：顶部导航在设置图标旁新增二维码图标按钮（`nav-compact:hidden` 簇内），仅当 `hasWalletAccess && MOBILE_PAIRING_FEATURES.createAndReveal` 时显示；紧凑宽度（≤1181 px 已连接）由 `DesktopUtilitiesMenu` 增加同名条目承接。弹窗开关状态迁入全局 modal store（`useMobileSyncModalOpen` / `useMobileSyncModalActions`），懒加载宿主、错误边界与重试仍留在 `UserMenu`。用户菜单条目保留（也是校验/撤销入口），移动端 drawer 呈现不变。
-- D2 单步审批：弹窗打开且无恢复记录时自动执行只读预检（资金快照、builder fee、reserved slot），落到 `ready` 状态；资金快照先读默认 dex 与现货，两者都为空时再逐个读取 `perpDexs` 列出的 builder dex（`lib/mobile-sync/account-funding.ts`），dex 列表或任一 dex 读取失败时报错而不判为无余额（2026-09-19 补充，此前只读默认 dex，余额全在 builder dex 的账户会被误拦）；主按钮唯一「Approve mobile trading key」，签名中标签为官方同款「Approve QR code with wallet...」。保留签名前 builder-fee 复查、注册租约、恢复记录与审批后核验。不采用官方「打开即签名」：打开菜单不是替换现有 Mobile Agent 的明确意图（ADR 0002 要求签名跟随显式动作）。
+- D2 单步审批：弹窗打开且无恢复记录时自动执行只读预检（资金快照、builder fee、reserved slot），落到 `ready` 状态；资金快照先读默认 dex 与现货，两者都为空时再逐个读取 `perpDexs` 列出的 builder dex（`lib/mobile-sync/account-funding.ts`），dex 列表或任一 dex 读取失败、或成功响应里缺字段/金额不是十进制字符串时，显示「无法检查账户、未签名、可重试」的本地化提示而不判为无余额，也不显示原始传输错误（2026-09-19 补充，此前只读默认 dex，余额全在 builder dex 的账户会被误拦）；主按钮唯一「Approve mobile trading key」，签名中标签为官方同款「Approve QR code with wallet...」。保留签名前 builder-fee 复查、注册租约、恢复记录与审批后核验。不采用官方「打开即签名」：打开菜单不是替换现有 Mobile Agent 的明确意图（ADR 0002 要求签名跟随显式动作）。
 - D3 文案：审批前面板合并「创建」与「审阅」要点；能力范围按 `docs/hyperliquid-signing.md`：可下单、撤单、调杠杆、vault 与子账户划转，不能提现或对外发送。隐藏面板与可见面板加入手机操作指引：在手机打开 gatu，点 Connect → Link Desktop Wallet 扫描（或用系统相机）。官方警告语（含「确保您没有共享您的屏幕」）放在按住显示之前，因为揭示后已来不及处理。
 - D4 按住显示：4 秒与取消语义不变；进度改为按钮内圆环（官方形态）并保留 `progressbar` 语义。
 - D5 倒计时：可见面板显示「{n} 秒后关闭」，从现有 `remainingQrLifetimeMs()`（信封、票据单调时钟、票据墙钟三者取小；D7 实施后改为信封墙钟到期与揭示后 60 秒单调时钟两者取小）每秒重算，`role="timer"` + `tabular-nums`，不做每秒 `aria-live` 播报；揭示时一次性 sr-only 说明。
