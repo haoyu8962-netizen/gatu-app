@@ -10,8 +10,8 @@ const ARBITRARY_FONT_SIZE = /(?<![\w-])!?text-\[\d+(?:\.\d+)?px\]/g;
 const ARBITRARY_RADIUS = /(?<![\w-])!?rounded(?:-[a-z]{1,2})?-\[\d+(?:\.\d+)?px\]/g;
 const IMPORTANT_MENU_OR_DIALOG_SURFACE = /(?<![\w-])!(?:bg-modal|bg-overlay|shadow-overlay)(?![\w-])/g;
 
-const ARBITRARY_FONT_SIZE_BASELINE = 241;
-const ARBITRARY_RADIUS_BASELINE = 228;
+const ARBITRARY_FONT_SIZE_BASELINE = 240;
+const ARBITRARY_RADIUS_BASELINE = 227;
 const IMPORTANT_SURFACE_BASELINE = 18;
 
 function listSourceFiles(directory: string): string[] {

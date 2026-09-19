@@ -41,3 +41,9 @@
 - The `@gatu/ui` primitives own dialog chrome: a centered `ModalPopup` is `rounded-32` (16px) with `border border-stroke-weak`, `bg-modal` and `shadow-overlay`; a bottom `Drawer` is `rounded-t-32` with the same border. In the dark terminal `bg-modal` equals the page colour, so the border is the dialog's edge; do not remove it on desktop.
 - A dialog that flattens its phone sheet scopes that to the sheet: `max-[1000px]:!border-0`, never an unscoped `!border-0`.
 - Do not pass a smaller named radius (`rounded-t-16`, `min-[1001px]:rounded-16`) to `AdaptiveModal`; take the primitive default. The remaining off-scale sheet radii (`!rounded-t-[18px]`, `!rounded-t-[20px]`) and `min-[1001px]:!rounded-[16px]` come from the market-close design handoff and are pinned by its tests; replacing them needs a design decision because 18px and 20px are not on the named scale.
+
+### Button states
+
+- A filled button moves through its state tokens (`bg-action` → `bg-action-hover` → `bg-action-active`); never add `hover:opacity-*` or `active:opacity-*` on top. In the dark theme `--action-hover` is brighter than `--action`, so fading the element cancels the hover and dims the label with it.
+- Guard hover and press with `not-data-disabled` so a disabled button cannot take a hover fill by stylesheet order, and list every property a state changes (`scale` for the press) in the `transition-[…]` list or it snaps.
+- A resting fill and its hover fill must resolve to different values in both themes: `--fill-weak` and `--fill-hover` are both 6% white in the dark theme, so a `bg-fill-weak` button hovers to `bg-fill-press`. `connect-cta-state-contract` pins this for the Connect buttons.

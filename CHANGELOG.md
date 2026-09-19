@@ -88,6 +88,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   mode, wallet, connection and asset-information dialogs previously had 6 or 8px corners, and most
   dialogs had no edge at all, so in the dark theme they blended into the page. Phone sheets without
   their own design default to 16px top corners instead of 6px.
+- Hovering the header `Connect Wallet` button changes only its fill. It used to fade the whole
+  button to 90% as well, which in the dark theme cancelled the brighter hover fill (the button got
+  slightly dimmer instead) and snapped instead of animating; the press scale now animates too. The
+  order form's `Connect Wallet` button now brightens on hover in the dark theme, where its hover
+  fill used to equal its resting fill.
 - Modals and drawers now animate in even when a store change mounts them already open, and
   store-driven global modals, the order confirmation, reverse and close-all dialogs stay mounted
   for their exit transition instead of vanishing; the position, order-confirmation and cancel-all
