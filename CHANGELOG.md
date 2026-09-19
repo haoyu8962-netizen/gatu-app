@@ -80,6 +80,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   or a raw network error.
 - The pairing page is served with `no-store` and `no-referrer` on the CloudFront host, as it was on
   the previous host (takes effect with the next release of the edge functions).
+- A scanned pairing link leaves the address bar as soon as the page starts loading instead of after
+  the application code has downloaded, including links whose path uses different letter case. The
+  pairing page always loads from the network rather than from the offline shell cache. When a link
+  cannot be removed from the address bar, the page now explains what to do in the user's language
+  instead of staying blank.
 - Modals and drawers now animate in even when a store change mounts them already open, and
   store-driven global modals, the order confirmation, reverse and close-all dialogs stay mounted
   for their exit transition instead of vanishing; the position, order-confirmation and cancel-all

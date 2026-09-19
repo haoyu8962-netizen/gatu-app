@@ -1,6 +1,6 @@
 # 配对页加固规划（A 批）
 
-状态：规划第 2 版（2026-09-19），未实施。第 1 版经 Codex `gpt-6-astra`（只读，`medium`，约 10 万 token）对抗审查后判为「不能按原样实施」；本版逐条核实后修订，变更见文末「审查与修订」。范围是 [无票据方案](mobile-sync-ticketless-transfer-plan.md) 安全复核里无需产品决策的遗留项。两个 `VITE_MOBILE_PAIRING_*` 开关保持关闭；本批不发布、不改协议（信封 v3、TTL、去重、导入顺序不动）。
+状态：已实施、未推送、未发布（2026-09-20，分支 `fix/pairing-page-hardening`，结果见文末「实施结果」）。规划第 2 版（2026-09-19）；第 1 版经 Codex `gpt-6-astra`（只读，`medium`，约 10 万 token）对抗审查后判为「不能按原样实施」；本版逐条核实后修订，变更见文末「审查与修订」。范围是 [无票据方案](mobile-sync-ticketless-transfer-plan.md) 安全复核里无需产品决策的遗留项。两个 `VITE_MOBILE_PAIRING_*` 开关保持关闭；本批不发布、不改协议（信封 v3、TTL、去重、导入顺序不动）。
 
 ## 现状（2026-09-19 读源码与本地生产产物确认）
 
@@ -122,3 +122,21 @@ Codex 报告 1 项条件性 P0、5 项 P1、4 项 P2、1 项 P3。逐条核实�
 11. **对等测试证明不了共同正确（P3，采纳）**：改为单一实现 + 生成后提交。
 
 第 1 版里我自己写错、已更正的两处：把入口包说成约 1.5 MB（实际 4.6 KB，擦除代码在 1.19 MB 的 `vendor-tanstack-router` 里）；把 CSP 说成 report-only。
+
+## 实施结果（2026-09-20）
+
+按第 2 版实施，任务记录见 [2026-09-20-pairing-page-hardening](work-memory/sessions/2026-09-20-pairing-page-hardening.md)。与规划的出入：
+
+- **路径规范化**：规划写「写回地址栏的永远是规范小写路径」。实现保留了原有行为——路径恰好是 `/mobile-agent-sync` 或带尾斜杠时原样保留，其它被接受的写法（大小写、百分号编码）才改写为规范路径。这样不改变已有直达链接的表现。
+- **产物级断言放行无脚本文档**：第一次真实构建时断言报 `404.html has no script element`。该页是纯静态未找到页，没有任何脚本，不存在「别的脚本先执行」的问题，规则改为：文档里有脚本时，第一个脚本必须是擦除脚本。
+- **跳转目标的循环防护**：规划认为清洁导航后不会再次 `blocked`。对「交接对象损坏」这类在新页面上依然存在的原因并不成立，所以加了一条无存储的防护：浏览器已经在提示页地址上时不再跳转。
+- **清零测试少于规划**：规划列了四类清零用例。实际新增的是「StrictMode 重放后仍可导入」与「真实卸载后字节为零」两条；切换到另一份 sync、过期、丢弃这三条走的是原有的显式清零路径，本次没有改动它们，也没有为它们新增用例。
+- **StrictMode 的复现条件**：React 只在 StrictMode 位于挂载时被放置的那个 fiber 之上（或就是它）时才重放 effect。测试工具把 `I18nProvider` 包在外层会让重放不发生，第一版测试因此在未修复的代码上也能通过；改为 StrictMode 在最外层后，两条用例在未修复的代码上为红、修复后为绿。
+
+验证（本地，生产构建用的是本机 `.env.local`，两个配对开关为开）：
+
+- 单元与组件：`mobile-sync-pairing-location`（45）、`mobile-sync-bootstrap-fragment`（25）、`mobile-agent-sync-route`（24）、`bootstrap-error-page`、`client-bootstrap-error`、`sw-navigation-cache` 等通过；`typecheck` 通过。全量 Vitest 单独运行两次：第一次 578 个文件里 `portfolio-overview` 有 2 个用例断言失败（`$0.00` 对 `$100.00`），该文件单独运行 20/20 通过、与配对无关，此前记录里它就是全量并发下的偶发文件；第二次 577 通过、1 跳过，6,484 用例通过、0 失败。
+- `pnpm test:cloudfront` 41 通过；`scripts/` 下四个 node 测试文件 23 通过。
+- `pnpm build`：预算全部通过（`trade-terminal-page` 126,297 B，上限 127,242 B）；内联脚本哈希由 10 个变为 11 个；用两组各 11 个不重叠哈希填充 viewer-response 函数为 7,379 B（上限 10,240 B）；`check-shell-head-scrub` 对 8 个预渲染页通过。
+- 浏览器因果验证（`apps/terminal/tests/browser/pairing-head-scrub.mjs`，Chromium，生产构建经 `serve-spa-static.mjs`，无 Service Worker 的新上下文，一次性测试链接）9 项全过：入口模块的响应被暂停时地址栏已无片段、头部脚本状态为 `captured`；放行后进入「Desktop QR loaded」；无 CSP 违规事件；链接被页面脚本抢先 `take()` 时应用被阻断、给出说明且没有载入任何内容，随后到达干净的配对页；入口永不加载时地址栏保持干净。
+- 未验证：线上 enforce 模式下新内联脚本是否被放行（本地静态服务不下发 CSP；需下一次 `functions` 发布后由 `verify` 与 `csp-coverage.mjs` 确认）；真机系统相机路径；旧 Service Worker 迁移窗口内的表现；说明页的印地语、西班牙语、法语、阿拉伯语文案未经母语者校对。
