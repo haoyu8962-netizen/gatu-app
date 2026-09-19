@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [工作分支先进 dev、CI 按目标分支分层与测试移出矩阵](sessions/2026-09-19-ci-tiers-dev-first-flow.md) — 2026-09-19；已整理，验证见正文。修复 portfolio-overview 的时钟竞态后评估 Worker→dev→main 闸门：4 路矩阵重复跑同一批测试、全量单测并行下 45 红、main/dev 无保护。落地 ADR 0016：PR 目标写明 dev，4 路构建与浏览器回归只对进 main 的 PR 运行，测试移入 terminal-tests.yml 只跑一次，合入 concurrency；main 保护规则未执行，GitHub 侧触发行为待首个 PR 验证。
 - [Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复](sessions/2026-09-18-grok-dialog-commits-review.md) — 2026-09-18；已整理，验证见正文。grok-4.6 只读审查 0ad17aea…08e2057d 冻结快照，报告 2 P1 / 2 P2 / 3 P3；F1/F2/F4/F5/F6/F7 已修（守卫经变异检查钉住），F3 记为 ADR 已知限制；逐条核实：反手与全部平仓退场窗口内确认按钮仍可点（P1）、市价平仓取消退场期间 canSubmit 未含 isClosing（P1）属实；后台执行绑在随路由卸载的弹窗实例（P2）与 PnL 分享退场仍直接卸载（P2）属实；ADR §6 引用、CHANGELOG「一条通知」措辞、idle 预热测试不覆盖 requestIdleCallback 三条 P3 属实。其「无过渡时 onOpenChangeComplete 同步触发会卡会话」的存疑项经 Base UI 源码核实不成立。未修改代码。
 - [Grok 对抗审查 PR #26（启动、md 堆叠、路由揭示、导航收纳）](sessions/2026-09-17-grok-pr26-review.md) — 2026-09-17；已整理，验证见正文。grok-4.6-build 只读审查 PR #26 冻结快照，报告 2 P1 / 4 P2 / 1 P3；本会话逐条核实全部成立，其中 5 条为 PR 之前既有、被首帧真实 chrome 放大；未修改代码，修复待决策。
 - [CI 分钟耗尽：账单锁定诊断与同 PR 并发取消](sessions/2026-09-15-ci-minutes-concurrency.md) — 2026-09-15；已验证，范围见正文。PR #24 八项检查 3 秒内失败且无步骤，根因是 GitHub Pro 月度 3,000 分钟用尽而 Actions 预算为 0；每次推送约 90 计费分钟；设预算后重跑全绿并合并；五个 PR 工作流加 concurrency 取消被取代的运行，构建矩阵保留。
@@ -105,6 +106,7 @@
 
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md)
 
+- [工作分支先进 dev、CI 按目标分支分层与测试移出矩阵](sessions/2026-09-19-ci-tiers-dev-first-flow.md) — 2026-09-19；已整理，验证见正文。修复 portfolio-overview 的时钟竞态后评估 Worker→dev→main 闸门：4 路矩阵重复跑同一批测试、全量单测并行下 45 红、main/dev 无保护。落地 ADR 0016：PR 目标写明 dev，4 路构建与浏览器回归只对进 main 的 PR 运行，测试移入 terminal-tests.yml 只跑一次，合入 concurrency；main 保护规则未执行，GitHub 侧触发行为待首个 PR 验证。
 - [弹窗首开转圈与关闭闪现：预热惰性弹窗并恢复进出场过渡](sessions/2026-09-18-dialog-transitions-and-preload.md) — 2026-09-18；已整理，验证见正文。实测确认首开转圈是全局弹窗惰性块的 Suspense 回退（被 React 至少保留 300 ms），关闭闪现是七个对话框壳强制 !transition-none 加上 Base UI 对「挂载即打开 / 关闭即卸载」不跑过渡；修复为空闲预热弹窗块、去掉壳的过渡覆盖、@gatu/ui Modal/Drawer 首帧门控、宿主为关闭中的弹窗保留 250 ms、市价平仓取消先动画再释放会话；开发服务器逐帧采样确认抽屉与模态均有 200 ms 进出场。
 - [头部账户芯片与 Connect 统一 36 px：可见高度与 44 px 热区分离](sessions/2026-09-18-header-chip-height.md) — 2026-09-18；已整理，验证见正文。375 px 登录态实测账户芯片 149×44、描边加投影，56 px 头部里上下只剩 6 px；根因是 headerAccount 槽位用 [&_button]:h-11 把可见高度和触控热区绑在一起，桌面芯片 34、设计系统 32、移动端 44 三种高度并存。用户决定移动端与桌面端都统一到 36 px 可见高度，热区用伪元素保住 44 px，去掉移动端芯片投影，邮箱标签优先显示本地名。
 - [移动端账户标签工具栏纵向密度：去掉面板顶距并压缩工具栏行高](sessions/2026-09-18-mobile-account-toolbar-density.md) — 2026-09-18；已整理，验证见正文。实测 390 px 下我们标签行 47 + 面板顶距 8 + 工具栏 48 = 103 px，官方 36 + 0 + 31 = 67 px；用户决定先做两项：移动端账户面板去掉共享 TabsPanel 的 pt-2，五个标签的工具栏行从 48 px 压到 36 px（触控热区仍由 after:h-11 伪元素保证 44 px）；标签行高度另行决策。
@@ -130,6 +132,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-19 | [工作分支先进 dev、CI 按目标分支分层与测试移出矩阵](sessions/2026-09-19-ci-tiers-dev-first-flow.md) | 未取得任务标识，见正文 | `d6cc4f3e` | 已整理，验证见正文 |
 | 2026-09-19 | [CloudFront 发布闸门：暴露资金或凭证路径的构建需要上传时再确认](sessions/2026-09-19-cloudfront-release-gates.md) | 未取得任务标识，见正文 | `a7cef26a` | 已整理，验证见正文 |
 | 2026-09-18 | [弹窗首开转圈与关闭闪现：预热惰性弹窗并恢复进出场过渡](sessions/2026-09-18-dialog-transitions-and-preload.md) | 未取得任务标识，见正文 | `82d81313` | 已整理，验证见正文 |
 | 2026-09-18 | [Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复](sessions/2026-09-18-grok-dialog-commits-review.md) | 未取得任务标识，见正文 | `08e2057d` | 已整理，验证见正文 |

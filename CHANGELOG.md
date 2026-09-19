@@ -232,6 +232,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   translation catalogs, Claude review) now cancel their own in-progress run for the
   same pull request when a newer push arrives, so superseded commits no longer
   consume GitHub Actions minutes.
+- Pull requests target `dev`, and only `dev` is promoted into `main`. The four production builds and
+  the browser regressions now run only for pull requests into `main` (or on demand through
+  `workflow_dispatch`); the unit and release-tooling tests moved out of the build matrix into
+  `Terminal Tests`, which runs them once on every pull request instead of four times
+  ([ADR 0016](docs/adr/0016-dev-first-pull-requests-and-ci-tiers.md)).
 - All-market statistics now arrive on the public WebSocket's compact `pac`/`sac` channels (one
   compressed frame each, about a sixth of the bytes of `allDexsAssetCtxs`/`spotAssetCtxs`) whenever
   the browser can inflate them; a stream that cannot be decoded falls back to the plain channels for

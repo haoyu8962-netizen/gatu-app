@@ -436,3 +436,16 @@ test("keeps graph helpers and tests in the production workflow path filter", () 
 	assert.equal(workflow.includes("scripts/check-client-bundle-budget.test.mjs"), true);
 	assert.equal(workflow.includes("pnpm --filter @gatu/terminal perf:startup"), true);
 });
+
+test("runs the budget tests once from the terminal test workflow, outside the build matrix", () => {
+	const tests = readFileSync(new URL("../.github/workflows/terminal-tests.yml", import.meta.url), "utf8");
+	assert.equal(tests.includes('- ".github/workflows/production-build.yml"'), true);
+	assert.equal(tests.includes('- "scripts/check-client-bundle-budget.mjs"'), true);
+	assert.equal(tests.includes('- "scripts/check-client-bundle-budget.test.mjs"'), true);
+	assert.equal(tests.includes('- "scripts/client-chunk-graph.*"'), true);
+	assert.match(tests, /node --test\n(?:[ \t]+scripts\/\S+\n)*[ \t]+scripts\/check-client-bundle-budget\.test\.mjs/);
+	assert.equal(/\bmatrix\b/.test(tests), false);
+
+	const builds = readFileSync(new URL("../.github/workflows/production-build.yml", import.meta.url), "utf8");
+	assert.equal(/vitest run|node --test|pnpm test:cloudfront/.test(builds), false);
+});
