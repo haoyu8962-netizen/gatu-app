@@ -8,7 +8,9 @@
 // limit with two releases' inline script hashes: the TradingView package gets the frame policy,
 // everything else the terminal policy plus the stricter report-only policy. The static shell cannot
 // carry a per-path route marker in its body either, so the viewer-request function tags join paths
-// on the request and this function surfaces the tag as a response header for the health check.
+// on the request and this function surfaces the tag as a response header for the health check. The
+// pairing page shares the cached shell, so its `no-store` / `no-referrer` are written here: the
+// response headers policy is applied before this function runs, which lets these values win.
 var CSP_TEMPLATE = "__CSP_TEMPLATE__";
 var IMG_SRC = "__IMG_SRC__";
 var STRICT_IMG_SRC = "__STRICT_IMG_SRC__";
@@ -51,6 +53,10 @@ function handler(event) {
 	var route = request.headers['x-gatu-route'];
 	if (route && route.value) {
 		response.headers['x-gatu-route'] = { value: route.value };
+	}
+	if (route && route.value === 'mobile-agent-sync') {
+		response.headers['cache-control'] = { value: 'no-store' };
+		response.headers['referrer-policy'] = { value: 'no-referrer' };
 	}
 	if (isChartAsset(request.uri)) {
 		response.headers['content-security-policy'] = { value: CHART_CSP };

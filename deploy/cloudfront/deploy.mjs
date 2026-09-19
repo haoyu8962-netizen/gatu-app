@@ -317,6 +317,13 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect((response.headers.get("x-robots-tag") ?? "").includes("noindex"), "x-robots-tag must be noindex");
 		expect(response.headers.get("x-gatu-route") === "referral-join", "x-gatu-route marker missing");
 	});
+	await check("pairing page headers", async () => {
+		const response = await fetchImpl(`${base}/mobile-agent-sync`, { headers: { accept: "text/html" } });
+		expect(response.status === 200, `status ${response.status}`);
+		expect(response.headers.get("cache-control") === "no-store", "cache-control must be no-store");
+		expect(response.headers.get("referrer-policy") === "no-referrer", "referrer-policy must be no-referrer");
+		expect(response.headers.get("x-gatu-route") === "mobile-agent-sync", "x-gatu-route marker missing");
+	});
 	await check("missing files stay 404", async () => {
 		const asset = await fetchImpl(`${base}/assets/missing-${Date.now()}.js`);
 		expect(asset.status === 404, `asset status ${asset.status}`);

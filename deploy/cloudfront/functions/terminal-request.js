@@ -4,12 +4,15 @@
 // map to their prerendered index.html, every other application path maps to the SPA shell, and
 // server paths are left untouched so their cache behaviors route them to the API origin. Missing
 // files stay 404 (custom error response) instead of becoming HTML. The public host is copied
-// into x-gatu-forwarded-host so the API origin can rebuild the public origin, and join paths are
-// tagged so the viewer-response function can expose the referral route marker as a header.
+// into x-gatu-forwarded-host so the API origin can rebuild the public origin. Join paths and the
+// pairing path are tagged so the viewer-response function can expose the route marker and give the
+// pairing page its uncached, referrer-free headers; a tag the viewer sent itself is dropped first.
 var DOCUMENT_ROUTES = ['/cookies', '/docs', '/privacy', '/risk', '/support', '/terms'];
 var SERVER_PATHS = ['/api', '/client-error-report'];
 var SERVER_PREFIXES = ['/api/'];
 var RETIRED_PATH = '/mobile-agent-sync-ticket';
+// The router matches this path in any letter case, so the tag does too.
+var PAIRING_PATH = '/mobile-agent-sync';
 var SERVER_FUNCTION_PREFIX = '/_serverFn/';
 var SHELL = '/_shell.html';
 var EXTENSION = /^[A-Za-z0-9]{1,8}$/;
@@ -56,6 +59,7 @@ function handler(event) {
 	var request = event.request;
 	var host = request.headers.host ? request.headers.host.value : '';
 	request.headers['x-gatu-forwarded-host'] = { value: host };
+	delete request.headers['x-gatu-route'];
 
 	var uri = trimTrailingSlash(request.uri);
 	if (uri.indexOf(SERVER_FUNCTION_PREFIX) === 0) return notFound('Server functions are not available');
@@ -65,6 +69,8 @@ function handler(event) {
 
 	if (uri === '/join' || uri.indexOf('/join/') === 0) {
 		request.headers['x-gatu-route'] = { value: 'referral-join' };
+	} else if (uri.toLowerCase() === PAIRING_PATH) {
+		request.headers['x-gatu-route'] = { value: 'mobile-agent-sync' };
 	}
 	request.uri = includes(DOCUMENT_ROUTES, uri) ? uri + '/index.html' : SHELL;
 	return request;
