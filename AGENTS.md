@@ -201,5 +201,5 @@ pnpm --dir apps/terminal exec vitest run \
 Layout contracts also have browser suites: `docs/desktop-grid-layout.md` and `docs/runtime-guardrails.md` §9 name the Playwright configs under `apps/terminal/tests/browser/`. When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.
 
 <!-- BEGIN CODEX AUTO-COMMIT -->
-For every task that may modify repository files, use the `$auto-commit` skill from the beginning of the task. After completing and validating the requested work, create a Git commit before the final response. Do not commit only when the user explicitly says not to commit or when the skill's safety exceptions apply. Never push unless the user explicitly requests it.
+For every task that may modify repository files, use the `$auto-commit` skill from the beginning of the task. After completing and validating the requested work, create a Git commit before the final response. Do not commit only when the user explicitly says not to commit or when the skill's safety exceptions apply. Never push unless the user explicitly requests it. Pull requests target `dev`, and only `dev` is promoted into `main`; `.claude/rules/git.md` owns the branch flow and the CI tiers.
 <!-- END CODEX AUTO-COMMIT -->
