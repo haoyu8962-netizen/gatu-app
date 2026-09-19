@@ -10,9 +10,9 @@
 | 查目录、路由、Provider、命令 | [Terminal Reference](../apps/terminal/README.md)、[开发约定](../agent.md) |
 | 查共享包与营销站点 | [hl-react](../packages/hl-react/README.md)、[UI](../packages/ui/README.md)、[Website](../apps/website/README.md) |
 | 看用户可见变化 | [Changelog / Unreleased](../CHANGELOG.md)，不代表已经发布 |
-| 部署、入口保护与回滚 | [部署手册](../deploy/README.md)、[配对发布流程](mobile-sync-production-readiness.md)、[产物清单](../deploy/manifests/README.md)、[部署夹具](../deploy/fixtures/README.md) |
+| 部署、入口保护与回滚 | [CloudFront 发布](../deploy/cloudfront/README.md)（现行宿主；移动配对为纯客户端传输、无服务端路由，两个配对开关在真机验收前保持关闭，见 [ADR 0015](adr/0015-link-device-alignment.md) D7）、[产物清单](../deploy/manifests/README.md)、[部署夹具](../deploy/fixtures/README.md) |
 | 接手续作与查历史证据 | 持续任务使用项目 `docs/work-memory/` 入口；[历史资料说明](../notes/README.md)、[历史与文档审查索引](../notes/index.md)补足原始 review |
-| 理解决策利弊 | [ADR 索引](adr/README.md) |
+| 理解决策利弊 | [ADR 索引](adr/README.md)；移动配对去票据实施规划见 [方案 B 规划](mobile-sync-ticketless-transfer-plan.md) |
 
 ## 当前设计与 Reference
 
@@ -55,7 +55,7 @@
 | --- | --- | --- |
 | 早期市场架构 | [market-system](architecture/market-system.md)、[markets-arch](architecture/markets-arch.md)、[实现草案](architecture/unified-markets-implementation.md) | Terminal Reference、单交易路由、当前 `domain/market` 实现 |
 | 早期 Provider / 签名 | [Provider 方案](hyperliquid-provider-architecture.md)、[签名方案](signing-architecture-proposal.md) | Runtime guardrails、签名 ADR |
-| 配对票据修复演进 | [票据修复方案](mobile-sync-ticket-remediation-plan.md)、[旧生产核查原文](mobile-sync-production-readiness-2026-09-11.md)、[实施记录](mobile-sync-implementation-verification.md)、[发布防护方案](mobile-sync-release-hardening-plan.md)、[防护验证](mobile-sync-release-hardening-verification.md) | 当前配对发布流程；旧的常规发布限制已替代 |
+| 配对票据修复演进（原文已移除） | 票据时期的六份文档（票据修复方案、旧生产核查原文、实施记录、发布防护方案、防护验证、EC2 时期配对发布流程）随服务端票据与 EC2 宿主退役，2026-09-18 从工作树移除；需要原文时从提交 `5d393572` 的 `docs/mobile-sync-*.md` 取回 | [无票据传输方案](mobile-sync-ticketless-transfer-plan.md)、[ADR 0015](adr/0015-link-device-alignment.md) D7（方案 B，已实施，开关仍关闭）、[CloudFront 发布](../deploy/cloudfront/README.md) |
 | 产品页面交付 | [API Wallet](api-wallet-redesign-notes.md)、[Leaderboard / Vaults / Staking](leaderboard-vaults-staking-redesign-notes.md) | 对应代码与各记录内的验证范围；共用 frame 见 [ADR 0009](adr/0009-startup-placeholder-single-source.md) |
 | 终端专项审查 | [字段审查](order-entry-field-review.md)、[订单簿参考观察](orderbook-ui-reference-audit.md)、[回归修复](terminal-test-regression-repair.md)、[中性底色全量清单](neutral-surface-audit.md) | 对应当前主题契约；底色清单为源码审查，视觉精简尚未实施 |
 | API 与交易调查 | [集成审计](hyperliquid-integration-audit.md)、[订单验证排查](order-validation-analysis.md) | SDK 核对工作流、当前订单提交路径 |

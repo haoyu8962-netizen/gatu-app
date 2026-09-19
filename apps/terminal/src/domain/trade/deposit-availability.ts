@@ -1,6 +1,7 @@
 import type { CctpDepositFeatureFlags } from "@/config/cctp-deposit";
 
 export type DepositAvailabilityReason =
+	| "agent-only-session"
 	| "external-deposit-disabled"
 	| "geo-restricted"
 	| "geo-unresolved"
@@ -46,6 +47,7 @@ export function getDepositAvailability({
 
 	if (geoStatus === "restricted") return { ...state, available: false, reason: "geo-restricted" };
 	if (geoStatus === "unresolved") return { ...state, available: false, reason: "geo-unresolved" };
+	if (sessionMode === "agent-only") return { ...state, available: false, reason: "agent-only-session" };
 	if (!isEmbeddedWallet && !signerReady) {
 		return { ...state, available: false, reason: "wallet-session-required" };
 	}

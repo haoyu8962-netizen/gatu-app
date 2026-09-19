@@ -136,6 +136,38 @@ describe("PositionCloseAllController", () => {
 		container.remove();
 	});
 
+	it("keeps the dialog mounted closed for its exit transition after the snapshot clears", () => {
+		vi.useFakeTimers();
+		try {
+			render();
+			expect(testState.shellProps?.open).toBe(true);
+
+			act(() =>
+				root.render(
+					createElement(
+						I18nProvider,
+						{ i18n },
+						createElement(PositionCloseAllController, { snapshot: null, onOpenChange: testState.onOpenChange }),
+					),
+				),
+			);
+			expect(testState.shellProps?.open).toBe(false);
+			expect(container.textContent).not.toBe("");
+			expect(testState.actionButtonProps?.disabled).toBe(true);
+			act(() => {
+				void (testState.actionButtonProps?.onClick as () => Promise<void>)();
+			});
+			expect(testState.submit).not.toHaveBeenCalled();
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.textContent).toBe("");
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("submits on a single click while preserving the trading-readiness confirmation", async () => {
 		render();
 		expect(testState.actionButtonProps?.holdDurationMs).toBeUndefined();

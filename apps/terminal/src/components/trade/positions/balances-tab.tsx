@@ -278,7 +278,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 					onCheckedChange={(checked: boolean | "indeterminate") => setHideSmallBalances(Boolean(checked))}
 					label={t`Hide small`}
 					className="shrink-0 items-center gap-[7px]"
-					controlClassName="size-3.5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-focus focus-visible:outline-none data-checked:border-market-close-control data-checked:bg-market-close-control"
+					controlClassName="size-3.5 !rounded-[5px] border-market-close-stroke-control bg-surface transition-all duration-[120ms] focus-visible:border-market-close-focus focus-visible:outline-none data-checked:border-market-close-control data-checked:bg-market-close-control"
 					indicatorClassName="text-market-close-on-control [&>svg]:size-2.5"
 					labelClassName="whitespace-nowrap text-[13px] leading-[18px] font-normal normal-case tracking-normal text-market-close-muted"
 				/>

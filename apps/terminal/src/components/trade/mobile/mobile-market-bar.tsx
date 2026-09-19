@@ -157,7 +157,7 @@ export function MobileMarketBar({ className }: Props) {
 										value={formatUSD(dayNtlVlm, { compact: false })}
 									/>
 								</div>
-								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
+								<div className="grid grid-cols-2 gap-x-4 pb-3.5">
 									<DetailCell
 										label={t(MARKET_HEADER_LABELS.openInterest)}
 										tooltipContent={t`Two-sided open interest: the sum of long and short positions on this contract.`}
@@ -198,7 +198,7 @@ export function MobileMarketBar({ className }: Props) {
 									/>
 									<DetailCell label={t(MARKET_HEADER_LABELS.volume24h)} value={spotVolumeText} />
 								</div>
-								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
+								<div className="grid grid-cols-2 gap-x-4 pb-3.5">
 									<DetailCell label={t(MARKET_HEADER_LABELS.marketCap)} value={spotMarketCapText} />
 									<DetailCell
 										label={t`More Info`}
@@ -238,13 +238,13 @@ function createSpotTokenInfo(
 	}
 
 	return (
-		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full flex-col items-start">
+		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full flex-wrap items-center gap-x-1">
 			{address ? (
-				<span className="block min-w-0 max-w-20 truncate text-[12px] font-semibold tabular-nums" title={address}>
+				<span className="shrink-0 whitespace-nowrap tabular-nums" title={address}>
 					<bdi dir="ltr">{shortenAddress(address, 4, 4)}</bdi>
 				</span>
 			) : null}
-			<span data-slot="mobile-spot-token-actions" className="flex min-w-0 max-w-full flex-wrap items-center">
+			<span data-slot="mobile-spot-token-actions" className="-my-3 flex min-w-0 shrink-0 items-center">
 				{address ? (
 					<>
 						<a
@@ -252,17 +252,17 @@ function createSpotTokenInfo(
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label={labels.open}
-							className="inline-flex size-11 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+							className="inline-flex h-11 w-9 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
 						>
-							<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
+							<ArrowSquareOutIcon className="size-3.5" aria-hidden="true" />
 						</a>
 						<button
 							type="button"
 							onClick={handleCopy}
 							aria-label={labels.copy}
-							className="inline-flex size-11 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+							className="inline-flex h-11 w-9 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
 						>
-							{copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
+							{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
 						</button>
 					</>
 				) : null}

@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@gatu/ui", () => ({
+	buttonVariants: () => "",
 	Button: ({ children, disabled, onClick }: { children?: ReactNode; disabled?: boolean; onClick?: () => void }) => (
 		<button type="button" disabled={disabled} onClick={onClick}>
 			{children}

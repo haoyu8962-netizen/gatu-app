@@ -1,4 +1,5 @@
 import { ARBITRUM_MAINNET_CHAIN_ID, ARBITRUM_SEPOLIA_CHAIN_ID } from "@/config/contracts";
+import { type CctpDepositFeatureEnv, resolveCctpDepositFeatureFlags } from "./cctp-deposit-flags";
 
 export const CCTP_ARBITRUM_DOMAIN = 3;
 export const CCTP_HYPEREVM_DOMAIN = 19;
@@ -7,35 +8,10 @@ export const CCTP_AUTHORIZATION_WINDOW_SECONDS = 60 * 60;
 export const CCTP_MAX_DEPOSIT_USDC = 10_000_000n * 10n ** 6n;
 export const CCTP_TESTNET_MAX_DEPOSIT_USDC = 1_000n * 10n ** 6n;
 
-export interface CctpDepositFeatureEnv {
-	VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED?: string;
-	VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED?: string;
-	VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED?: string;
-}
+export type { CctpDepositFeatureEnv, CctpDepositFeatureFlags } from "./cctp-deposit-flags";
+export { resolveCctpDepositFeatureFlags } from "./cctp-deposit-flags";
 
-export interface CctpDepositFeatureFlags {
-	mainnetSponsoredWallet: boolean;
-	testnetExternalWallet: boolean;
-	testnetSponsoredWallet: boolean;
-}
-
-/**
- * Direct Mainnet deposits from an external owner wallet are a permanent product
- * capability. Testnet and sponsored deposits remain independently gated, while
- * every path still passes the runtime routing, geo, signer, fee, allowance,
- * balance, receipt, and recovery guards before funds can move.
- */
-export function resolveCctpDepositFeatureFlags(
-	env: CctpDepositFeatureEnv = import.meta.env as CctpDepositFeatureEnv,
-): CctpDepositFeatureFlags {
-	return {
-		mainnetSponsoredWallet: env.VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED === "true",
-		testnetExternalWallet: env.VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED === "true",
-		testnetSponsoredWallet: env.VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED === "true",
-	};
-}
-
-export const CCTP_DEPOSIT_FEATURES = resolveCctpDepositFeatureFlags();
+export const CCTP_DEPOSIT_FEATURES = resolveCctpDepositFeatureFlags(import.meta.env as CctpDepositFeatureEnv);
 
 export function isCctpExternalDepositEnabled(isTestnet: boolean): boolean {
 	return isTestnet ? CCTP_DEPOSIT_FEATURES.testnetExternalWallet : true;

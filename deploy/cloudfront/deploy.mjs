@@ -277,7 +277,10 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(response.status === 200, `status ${response.status}`);
 		const remote = await response.json();
 		expect(remote.commit === buildMeta.commit && remote.release === buildMeta.release, "remote build-meta differs");
-		return `${remote.commit.slice(0, 8)} / ${remote.release}`;
+		const localGates = describeGateState(releaseGateState(buildMeta));
+		const remoteGates = describeGateState(releaseGateState(remote));
+		expect(remoteGates === localGates, `remote release gates (${remoteGates}) differ from the local build (${localGates})`);
+		return `${remote.commit.slice(0, 8)} / ${remote.release} / ${remoteGates}`;
 	});
 	await check("geo endpoint answers with a real verdict", async () => {
 		const response = await fetchImpl(`${base}/api/geo`, { headers: { accept: "application/json" } });
@@ -432,6 +435,7 @@ function readArgs(argv) {
 		lambdaDir: "apps/terminal/dist-lambda",
 		lambdaEntry: "index.mjs",
 		network: "mainnet",
+		acknowledged: [],
 	};
 	for (let index = 0; index < rest.length; index += 1) {
 		const argument = rest[index];
@@ -476,6 +480,10 @@ function readArgs(argv) {
 				break;
 			case "--profile":
 				options.profile = value();
+				break;
+			case "--allow-sponsored-mainnet-deposits":
+			case "--allow-mobile-pairing":
+				options.acknowledged.push(RELEASE_GATES.find((gate) => gate.option === flag).id);
 				break;
 			default:
 				throw new Error(`Unknown argument ${argument}`);
@@ -524,6 +532,59 @@ function assertLivePolicyAllowsBuild(publicDir) {
 	console.log(`The live edge policy allows all ${build.hashes.length} inline script hashes of this build`);
 }
 
+/**
+ * Build flags that expose a funds or credential path. `build-meta.json` records what the build
+ * actually baked in, and an upload that turns one on needs the operator to say so again: the value
+ * in `.env.local` alone is not an acknowledgement. Naming a gate the build does not expose is
+ * refused too, because the operator and the artifact then disagree about what is being released.
+ */
+export const RELEASE_GATES = Object.freeze([
+	{
+		id: "sponsored-mainnet-deposits",
+		option: "--allow-sponsored-mainnet-deposits",
+		label: "sponsored Mainnet CCTP deposits",
+		read: (buildMeta) => buildMeta.cctpDeposits?.mainnetSponsoredWallet,
+	},
+	{
+		id: "mobile-pairing",
+		option: "--allow-mobile-pairing",
+		label: "Mobile Agent pairing",
+		read: (buildMeta) => {
+			const pairing = buildMeta.mobileSync;
+			if (typeof pairing?.createAndReveal !== "boolean" || typeof pairing?.importFromQr !== "boolean") return undefined;
+			return pairing.createAndReveal || pairing.importFromQr;
+		},
+	},
+]);
+
+/** The gate state of a build, compared between the local artifact and the live origin. */
+export function releaseGateState(buildMeta) {
+	return Object.fromEntries(
+		RELEASE_GATES.map((gate) => {
+			const exposed = gate.read(buildMeta);
+			if (typeof exposed !== "boolean") throw new Error(`build-meta.json does not record ${gate.label}; rebuild with the current source`);
+			return [gate.id, exposed];
+		}),
+	);
+}
+
+export function evaluateReleaseGates({ buildMeta, acknowledged = [] }) {
+	const state = releaseGateState(buildMeta);
+	const problems = [];
+	for (const gate of RELEASE_GATES) {
+		const named = acknowledged.includes(gate.id);
+		if (state[gate.id] && !named) problems.push(`This build exposes ${gate.label}; pass ${gate.option} to acknowledge it, or rebuild with the flag off`);
+		if (!state[gate.id] && named) problems.push(`${gate.option} was passed but this build does not expose ${gate.label}; rebuild with the flag on, or drop the option`);
+	}
+	return { state, problems };
+}
+
+function describeGateState(state) {
+	return Object.entries(state)
+		.map(([id, exposed]) => `${id}=${exposed ? "on" : "off"}`)
+		.join(" ");
+}
+
 /** The files a viewer receives first; a sync that stopped early must never look like a release. */
 export const RELEASE_MARKER_FILES = ["_shell.html", "build-meta.json"];
 
@@ -554,6 +615,15 @@ async function main() {
 		case "sync": {
 			const bucket = requireOption(options, "bucket");
 			if (!existsSync(join(publicDir, "_shell.html"))) throw new Error(`No _shell.html in ${publicDir}; run pnpm build first`);
+			const gates = evaluateReleaseGates({
+				buildMeta: JSON.parse(readFileSync(join(publicDir, "build-meta.json"), "utf8")),
+				acknowledged: options.acknowledged,
+			});
+			console.log(`release gates: ${describeGateState(gates.state)}`);
+			if (gates.problems.length > 0) {
+				if (options.execute) throw new Error(gates.problems.join("\n"));
+				for (const problem of gates.problems) console.warn(`An executing sync would refuse this build: ${problem}`);
+			}
 			if (options.execute) assertLivePolicyAllowsBuild(publicDir);
 			for (const command of buildSyncCommands({ publicDir, bucket, files: listPublicFiles(publicDir) })) {
 				runAws(command, options.execute);
@@ -647,7 +717,7 @@ async function main() {
 			break;
 		}
 		default:
-			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|aliases|lambda|functions|verify> [--execute] [--bucket B] [--only PREFIX]... [--alias HOST]... [--certificate-arn ARN] [--distribution ID] [--function-name F] [--lambda-entry index.mjs] [--origin URL] [--network mainnet|testnet]");
+			console.error("usage: node deploy/cloudfront/deploy.mjs <sync|reupload|invalidate|aliases|lambda|functions|verify> [--execute] [--bucket B] [--only PREFIX]... [--alias HOST]... [--certificate-arn ARN] [--distribution ID] [--function-name F] [--lambda-entry index.mjs] [--origin URL] [--network mainnet|testnet] [--allow-sponsored-mainnet-deposits] [--allow-mobile-pairing]");
 			process.exit(2);
 	}
 }

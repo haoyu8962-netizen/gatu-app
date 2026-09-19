@@ -32,3 +32,6 @@ export const APP_HEADER_OFFSET_CLASS = "pt-14";
 // = header + banner stack height (h-14 + h-8 = 3.5rem + 2rem)
 export const APP_HEADER_PLUS_BANNER_OFFSET_CLASS = "pt-[5.5rem]";
 export const APP_BAR_BUTTON_HEIGHT_CLASS = "h-8 min-h-8";
+export const HEADER_ACCOUNT_CONTROL_HEIGHT_CLASS = "h-9 min-h-9 max-h-9";
+export const HEADER_TOUCH_HIT_AREA_CLASS =
+	"relative after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-['']";

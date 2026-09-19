@@ -581,8 +581,8 @@ msgstr "جميع الاتجاهات"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-msgid "All Directions"
-msgstr "جميع الاتجاهات"
+#~ msgid "All Directions"
+#~ msgstr "جميع الاتجاهات"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -591,7 +591,6 @@ msgid "All markets"
 msgstr "جميع الأسواق"
 
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "All roles"
 msgstr "جميع الأدوار"
 
@@ -600,7 +599,6 @@ msgid "All sides"
 msgstr "جميع الجوانب"
 
 #: src/components/historical-orders/historical-orders-page.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "All statuses"
 msgstr "جميع الحالات"
@@ -615,8 +613,6 @@ msgstr "كل الوقت"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "All types"
 msgstr "جميع الأنواع"
@@ -783,17 +779,25 @@ msgstr "التحقق من الموافقة قيد الانتظار"
 msgid "Approve a mobile trading key"
 msgstr "الموافقة على مفتاح تداول للهاتف"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
+msgstr ""
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
 msgstr "وافق في المحفظة"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Approve in wallet..."
-msgstr "وافق في المحفظة..."
+#~ msgid "Approve in wallet..."
+#~ msgstr "وافق في المحفظة..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve mobile trading key"
 msgstr "الموافقة على مفتاح تداول الهاتف"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Approve QR code with wallet..."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approving a new mobile key replaces the previous mobile key."
@@ -1120,6 +1124,7 @@ msgstr "معاينة الكاميرا لرمز QR الخاص بمحفظة سطح
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Cancel"
 msgstr "إلغاء"
@@ -1389,6 +1394,7 @@ msgstr "انقر للإرسال · لا يمكن التراجع عن الصفق�
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/ui/command.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Close"
@@ -1551,12 +1557,15 @@ msgstr "مغلقة"
 msgid "Closed PNL"
 msgstr "الأرباح والخسائر المغلقة"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Closes in {remainingSeconds}s"
+msgstr ""
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Closing cost"
 msgstr "تكلفة الإغلاق"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Closing this dialog will not cancel it."
 msgstr "لن يؤدي إغلاق مربع الحوار هذا إلى إلغائه."
@@ -1675,8 +1684,8 @@ msgid "Confirm revoke in wallet"
 msgstr "أكّد الإبطال في المحفظة"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Confirm the approval only in the selected master wallet."
-msgstr "أكّد الموافقة فقط في المحفظة الرئيسية المحددة."
+#~ msgid "Confirm the approval only in the selected master wallet."
+#~ msgstr "أكّد الموافقة فقط في المحفظة الرئيسية المحددة."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Confirm the exact public operation in your master wallet."
@@ -1716,11 +1725,11 @@ msgid "Confirming order status. Do not retry."
 msgstr "جارٍ تأكيد حالة الطلب. لا تحاول مرة أخرى."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Confirming..."
 msgstr "جارٍ التأكيد..."
 
 #: src/components/trade/components/wallet-modal.tsx
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Connect"
 msgstr "ربط"
@@ -1787,9 +1796,6 @@ msgstr "اتصل لعرض إجراءات التخزين"
 msgid "Connect wallet"
 msgstr "ربط المحفظة"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/desktop-nav.ts
 #: src/config/ui-text.ts
@@ -1797,8 +1803,8 @@ msgid "Connect Wallet"
 msgstr "ربط المحفظة"
 
 #: src/components/portfolio/portfolio-page.tsx
-msgid "Connect wallet to view portfolio"
-msgstr "اربط محفظتك لعرض المحفظة الاستثمارية"
+#~ msgid "Connect wallet to view portfolio"
+#~ msgstr "اربط محفظتك لعرض المحفظة الاستثمارية"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Connect wallet to view positions"
@@ -1824,67 +1830,49 @@ msgstr "وصّل محفظتك لإرسال الأموال."
 msgid "Connect your wallet to transfer funds."
 msgstr "وصّل محفظتك لتحويل الأموال."
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "اربط محفظتك لعرض الأرصدة."
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Connect your wallet to view deposits and withdrawals."
 msgstr "صِل محفظتك لعرض الإيداعات والسحوبات."
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Connect your wallet to view funding payments."
 msgstr "اربط محفظتك لعرض مدفوعات التمويل."
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Connect your wallet to view open orders."
 msgstr "اربط محفظتك لعرض الأوامر المفتوحة."
 
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Connect your wallet to view order history."
 msgstr "اربط محفظتك لعرض سجل الأوامر."
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
 msgstr "قم بتوصيل محفظتك لعرض المراكز."
 
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Connect your wallet to view trade history."
 msgstr "اربط محفظتك لعرض سجل التداول."
 
-#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Connect your wallet to view TWAP fill history."
 msgstr "اربط محفظتك لعرض سجل تنفيذات TWAP."
 
-#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Connect your wallet to view TWAP history."
 msgstr "اربط محفظتك لعرض سجل TWAP."
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Connect your wallet to view TWAP orders."
 msgstr "اربط محفظتك لعرض أوامر TWAP."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Connect your wallet to view your account, positions, and start trading."
-msgstr "اربط محفظتك لعرض حسابك ومراكزك وبدء التداول."
+#~ msgid "Connect your wallet to view your account, positions, and start trading."
+#~ msgstr "اربط محفظتك لعرض حسابك ومراكزك وبدء التداول."
 
 #: src/config/footer-links.ts
 msgid "Connected"
@@ -2006,8 +1994,8 @@ msgid "Create a code after Hyperliquid confirms your eligibility. It cannot be c
 msgstr "أنشئ رمزًا بعد أن يؤكد Hyperliquid أهليتك. لا يمكن تغييره من هذه الصفحة لاحقًا."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Create a desktop trading key and transfer it only through a QR code."
-msgstr "أنشئ مفتاح تداول لسطح المكتب وانقله فقط عبر رمز QR."
+#~ msgid "Create a desktop trading key and transfer it only through a QR code."
+#~ msgstr "أنشئ مفتاح تداول لسطح المكتب وانقله فقط عبر رمز QR."
 
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Create a TWAP order from Advanced order settings to execute it in smaller batches."
@@ -2018,8 +2006,8 @@ msgid "Create code"
 msgstr "إنشاء رمز"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Create phone access"
-msgstr "إنشاء وصول الهاتف"
+#~ msgid "Create phone access"
+#~ msgstr "إنشاء وصول الهاتف"
 
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-code-card.tsx
@@ -2188,6 +2176,7 @@ msgstr "جهة النشر"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -2271,8 +2260,8 @@ msgid "Deposit unavailable"
 msgstr "الإيداع غير متاح"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Deposit USDC"
-msgstr "إيداع USDC"
+#~ msgid "Deposit USDC"
+#~ msgstr "إيداع USDC"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -2383,10 +2372,13 @@ msgstr "عنوان الوجهة"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -2437,6 +2429,10 @@ msgstr "العرض"
 msgid "Display and language"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Display units"
+msgstr ""
+
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
 msgstr "البُعد عن السعر الوسطي"
@@ -2450,8 +2446,8 @@ msgid "Distance to mark {markDistanceLabel}"
 msgstr "المسافة إلى سعر العلامة {markDistanceLabel}"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Do not photograph, copy, share, or screen-record the QR code."
-msgstr "لا تلتقط صورة لرمز QR ولا تنسخه أو تشاركه أو تسجّل الشاشة أثناء عرضه."
+#~ msgid "Do not photograph, copy, share, or screen-record the QR code."
+#~ msgstr "لا تلتقط صورة لرمز QR ولا تنسخه أو تشاركه أو تسجّل الشاشة أثناء عرضه."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Do not submit again while Hyperliquid history is checked."
@@ -3512,6 +3508,10 @@ msgid "Identity epoch"
 msgstr "حقبة الهوية"
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
 msgstr "استيراد وصول الهاتف"
@@ -3798,6 +3798,8 @@ msgid "Link Desktop Wallet"
 msgstr "ربط محفظة سطح المكتب"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/header/desktop-utilities-menu.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Link mobile device"
 msgstr "ربط جهاز الجوال"
@@ -3990,6 +3992,8 @@ msgstr "جاري تحميل المحفظة..."
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Loading..."
@@ -4904,6 +4908,10 @@ msgstr "غير متصل"
 msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
 msgstr "على iPhone أو iPad، افتح قائمة المشاركة واختر إضافة إلى الشاشة الرئيسية، ثم شغّل gatu من الشاشة الرئيسية."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code, or scan it with your phone camera."
+msgstr ""
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "One-day validator lock"
 msgstr "قفل جهة التحقق ليوم واحد"
@@ -5655,6 +5663,7 @@ msgstr "السعر أعلى من {price}"
 msgid "Price below {price}"
 msgstr "السعر أدنى من {price}"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/config/orderbook-labels.ts
 msgid "Price grouping"
 msgstr "تجميع الأسعار"
@@ -5999,7 +6008,7 @@ msgstr "يكسب المُحيلون حاليًا 10% من رسوم المُحا�
 msgid "Refresh"
 msgstr "تحديث"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Refresh both devices to update phone access, then create a new QR."
 msgstr "حدّث الصفحة على كلا الجهازين لتحديث وصول الهاتف، ثم أنشئ رمز QR جديدًا."
@@ -6050,6 +6059,7 @@ msgstr "مرفوض"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Reload page"
 msgstr "إعادة تحميل الصفحة"
 
@@ -6110,6 +6120,10 @@ msgstr "سداد"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Replaces the current mobile Agent with a temporary inaccessible key."
 msgstr "يستبدل وكيل الهاتف الحالي بمفتاح مؤقت غير قابل للوصول."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
+msgstr ""
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Request not confirmed"
@@ -6203,6 +6217,10 @@ msgid "Retry account data"
 msgstr "إعادة محاولة تحميل بيانات الحساب"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Retry check"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Retry read-only verification"
 msgstr "إعادة محاولة التحقق للقراءة فقط"
 
@@ -6268,7 +6286,6 @@ msgid "Review"
 msgstr "مراجعة"
 
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Review again"
 msgstr "المراجعة مرة أخرى"
@@ -6290,12 +6307,12 @@ msgid "Review only"
 msgstr "للمراجعة فقط"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Review phone access"
-msgstr "مراجعة وصول الهاتف"
+#~ msgid "Review phone access"
+#~ msgstr "مراجعة وصول الهاتف"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Review phone access with the selected master wallet before approving it."
-msgstr "راجع وصول الهاتف باستخدام المحفظة الرئيسية المحددة قبل الموافقة عليه."
+#~ msgid "Review phone access with the selected master wallet before approving it."
+#~ msgstr "راجع وصول الهاتف باستخدام المحفظة الرئيسية المحددة قبل الموافقة عليه."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Review request"
@@ -6403,6 +6420,7 @@ msgstr "العائد على الاستثمار"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Role"
 msgstr "الدور"
@@ -6516,8 +6534,12 @@ msgid "Scan only with your phone. Anyone who captures this QR can use the tradin
 msgstr "امسح الرمز بهاتفك فقط. يمكن لأي شخص يلتقط رمز QR هذا استخدام مفتاح التداول."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
-msgid "Scan the QR shown by Link Mobile Device on your desktop."
-msgstr "امسح رمز QR الذي يعرضه خيار ربط الجهاز المحمول على سطح المكتب."
+msgid "Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device)."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+#~ msgid "Scan the QR shown by Link Mobile Device on your desktop."
+#~ msgstr "امسح رمز QR الذي يعرضه خيار ربط الجهاز المحمول على سطح المكتب."
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -6954,6 +6976,7 @@ msgstr "تم قبول بعض الأوامر. راجع الأوامر المفت�
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Something went wrong"
 msgstr "حدث خطأ ما"
 
@@ -7153,6 +7176,7 @@ msgstr "الإحصاءات"
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -7167,6 +7191,10 @@ msgstr "الحالة غير مؤكدة"
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Stay Connected"
 msgstr "البقاء على اتصال"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Stays on this phone until {validUntilLabel} unless you disconnect it here or revoke it from the master wallet on desktop."
+msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Step {currentStep} of 3"
@@ -7269,7 +7297,6 @@ msgid "Submitting to Hyperliquid"
 msgstr "جارٍ الإرسال إلى Hyperliquid"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Submitting..."
@@ -7671,6 +7698,10 @@ msgstr "تغير مسار إيداع Hyperliquid قبل التوقيع. راجع
 msgid "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
 msgstr "تغيّر مسار السحب في Hyperliquid. راجع المسار المحدّث والرسوم المحدّثة، ثم أرسل الطلب مرة أخرى."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The key can trade on this account (orders, cancels, leverage, vault and sub-account moves) but cannot withdraw or send funds out of Hyperliquid; withdrawals and sends still need this master wallet."
+msgstr ""
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "The leader receives the commission shown above from profits."
 msgstr "يتلقى القائد العمولة الموضحة أعلاه من الأرباح."
@@ -7697,12 +7728,12 @@ msgid "The network-matched public dataset could not be verified. Your account an
 msgstr "تعذر التحقق من مجموعة البيانات العامة المطابقة للشبكة. لا يتأثر حسابك ولا تداولك."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "The one-time QR could not be verified. Check your connection and retry."
-msgstr "تعذر التحقق من رمز QR لمرة واحدة. تحقق من اتصالك وأعد المحاولة."
+#~ msgid "The one-time QR could not be verified. Check your connection and retry."
+#~ msgstr "تعذر التحقق من رمز QR لمرة واحدة. تحقق من اتصالك وأعد المحاولة."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The one-time QR service is unavailable. Check your connection and retry."
-msgstr "خدمة رمز QR لمرة واحدة غير متاحة. تحقق من اتصالك وأعد المحاولة."
+#~ msgid "The one-time QR service is unavailable. Check your connection and retry."
+#~ msgstr "خدمة رمز QR لمرة واحدة غير متاحة. تحقق من اتصالك وأعد المحاولة."
 
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "The order can continue, but this confirmation preference could not be saved."
@@ -7713,7 +7744,6 @@ msgid "The order changed before the requested modification was confirmed. Review
 msgstr "تغيّر الأمر قبل تأكيد التعديل المطلوب. راجع أحدث حالة للأمر قبل إعادة المحاولة."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "The order is still being confirmed."
 msgstr "لا يزال تأكيد الأمر جارياً."
 
@@ -7763,6 +7793,10 @@ msgstr "يُنشأ المفتاح الخاص على جهاز سطح المكتب
 #: src/components/vaults/vaults-list.tsx
 msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
 msgstr "تعذر التحقق من موجز الخزائن العام. لا تُعرض بدلًا منه صفوف مخزنة مؤقتًا أو من شبكة أخرى."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR closes automatically in about {announcedSeconds} seconds"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR stays hidden until you deliberately reveal it."
@@ -8053,16 +8087,16 @@ msgid "This mobile trading key has expired."
 msgstr "انتهت صلاحية مفتاح التداول الخاص بالهاتف."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This one-time QR closes automatically within 60 seconds."
-msgstr "يُغلق رمز QR لمرة واحدة هذا تلقائيًا خلال 60 ثانية."
+#~ msgid "This one-time QR closes automatically within 60 seconds."
+#~ msgstr "يُغلق رمز QR لمرة واحدة هذا تلقائيًا خلال 60 ثانية."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This one-time QR could not be created. Try revealing a new QR."
-msgstr "تعذر إنشاء رمز QR هذا. حاول إظهار رمز جديد."
+#~ msgid "This one-time QR could not be created. Try revealing a new QR."
+#~ msgstr "تعذر إنشاء رمز QR هذا. حاول إظهار رمز جديد."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This one-time QR was already used or is no longer active. Scan a new QR."
-msgstr "رمز QR لمرة واحدة هذا استُخدم بالفعل أو لم يعد نشطًا. امسح رمز QR جديدًا."
+#~ msgid "This one-time QR was already used or is no longer active. Scan a new QR."
+#~ msgstr "رمز QR لمرة واحدة هذا استُخدم بالفعل أو لم يعد نشطًا. امسح رمز QR جديدًا."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8083,6 +8117,15 @@ msgstr "بيانات هذا الأمر غير مكتملة ولا يمكن تع�
 #: src/components/trade/positions/orders-tab.tsx
 msgid "This order type cannot be modified safely. Cancel and replace it instead."
 msgstr "لا يمكن تعديل هذا النوع من الأوامر بأمان. ألغِه واستبدله بدلاً من ذلك."
+
+#: src/components/ui/lazy-dialog-boundary.tsx
+msgid "This panel could not be loaded. Try again, or reload the page. Reloading clears an order you have not sent."
+msgstr ""
+
+#: src/hooks/trade/use-deposit-availability.ts
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop."
+msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -8108,6 +8151,10 @@ msgstr "لم يعد هذا المركز يستخدم الهامش المعزول
 msgid "This QR belongs to a different owner account."
 msgstr "ينتمي رمز QR هذا إلى حساب مالك مختلف."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This QR enables trading on your phone, but not deposits or withdrawals. Do not share the QR or screenshots of it with anyone. Make sure you are not sharing your screen."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This QR is invalid or incomplete. Create a new QR on desktop."
 msgstr "رمز QR هذا غير صالح أو غير مكتمل. أنشئ رمز QR جديدًا على سطح المكتب."
@@ -8117,12 +8164,20 @@ msgid "This QR is not a valid desktop wallet link."
 msgstr "رمز QR هذا ليس رابط محفظة سطح مكتب صالحًا."
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "This QR was already imported on this phone. Create a new desktop QR to link again."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
 msgid "This QR was created for a different network."
 msgstr "أُنشئ رمز QR هذا لشبكة مختلفة."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR was created for a different site."
 msgstr "أُنشئ رمز QR هذا لموقع مختلف."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR's time does not match this phone. Check the date and time on both devices, then create a new QR."
+msgstr ""
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "This record predates baseline verification. It cannot be completed automatically. Verify account history and state independently before clearing it."
@@ -8245,8 +8300,8 @@ msgid "To Spot"
 msgstr "إلى Spot"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-msgid "Toggle display units"
-msgstr "تبديل وحدات العرض"
+#~ msgid "Toggle display units"
+#~ msgstr "تبديل وحدات العرض"
 
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 msgid "Toggle profit and loss unit"
@@ -8269,8 +8324,6 @@ msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or r
 msgstr "هناك عدد كبير جدًا من موافقات الهاتف بانتظار الاستعادة في علامة التبويب هذه. قم بحل إحداها أو إلغائها أولاً."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -8279,6 +8332,11 @@ msgstr "هناك عدد كبير جدًا من موافقات الهاتف با�
 #: src/config/ui-text.ts
 msgid "Total"
 msgstr "الإجمالي"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Total ({sizeToken})"
+msgstr ""
 
 #: src/components/referrals/referral-rewards-card.tsx
 #~ msgid "Total claimable"
@@ -8617,6 +8675,7 @@ msgstr "تم التفعيل"
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Try again"
 msgstr "حاول مرة أخرى"
 
@@ -8713,7 +8772,9 @@ msgstr "الفائدة المفتوحة ثنائية الجانب: مجموع ا
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -9061,7 +9122,6 @@ msgid "Validating positions..."
 msgstr "جارٍ التحقق من المراكز..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Validating..."
 msgstr "جارٍ التحقق من الصحة..."
 
@@ -9285,6 +9345,10 @@ msgstr "العرض على المستكشف"
 msgid "Volume"
 msgstr "الحجم"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Wait for the account check to finish before approving a mobile trading key."
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Waiting for chain confirmation"
 msgstr "بانتظار التأكيد على الشبكة"
@@ -9405,6 +9469,8 @@ msgstr "المركز بالكامل"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -9634,8 +9700,8 @@ msgid "Your funds were successfully deposited."
 msgstr "تم إيداع أموالك بنجاح."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
-msgstr "توافق محفظتك الرئيسية على مفتاح تداول واحد. لا يمكن للمفتاح سحب الأموال."
+#~ msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
+#~ msgstr "توافق محفظتك الرئيسية على مفتاح تداول واحد. لا يمكن للمفتاح سحب الأموال."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Your referral"

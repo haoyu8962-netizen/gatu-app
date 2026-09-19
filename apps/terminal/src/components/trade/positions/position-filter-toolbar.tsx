@@ -1,6 +1,7 @@
 import { Dropdown } from "@gatu/ui";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
+import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
 import type {
 	PositionDirectionFilter,
 	PositionMarginFilter,
@@ -17,6 +18,7 @@ interface Props {
 	onMarginChange?: (value: PositionMarginFilter) => void;
 	onMarketChange: (value: PositionMarketFilter) => void;
 	mobile?: boolean;
+	disabled?: boolean;
 }
 
 const directionMessage = msg`Direction`;
@@ -36,6 +38,7 @@ export function PositionFilterToolbar({
 	onMarginChange,
 	onMarketChange,
 	mobile = false,
+	disabled = false,
 }: Props) {
 	const { _ } = useLingui();
 	const directionLabels: Record<PositionDirectionFilter, string> = {
@@ -64,12 +67,13 @@ export function PositionFilterToolbar({
 	return (
 		<div data-testid="position-filter-toolbar" className="flex min-w-0 flex-1 shrink-0 items-center gap-1.5">
 			<Dropdown
+				disabled={disabled}
 				className="flex min-w-0 items-center"
 				triggerVariant="minimal"
 				size="xxs"
 				trigger={mobileDirectionTrigger}
 				triggerAriaLabel={_(msg`Filter positions by direction: ${directionLabel}`)}
-				triggerClassName="relative min-h-0 rounded-[7px] border border-market-close-stroke-card bg-modal px-[9px] py-1 text-xs leading-4 text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none hover:border-market-close-control hover:bg-modal hover:text-market-close-fg active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg"
+				triggerClassName={MOBILE_FILTER_CHIP_CLASS}
 				popupClassName="min-w-32"
 				align="start"
 				items={[
@@ -79,12 +83,13 @@ export function PositionFilterToolbar({
 				]}
 			/>
 			<Dropdown
+				disabled={disabled}
 				className="flex min-w-0 items-center"
 				triggerVariant="minimal"
 				size="xxs"
 				trigger={mobileMarginTrigger}
 				triggerAriaLabel={_(msg`Filter positions by margin mode: ${marginLabel}`)}
-				triggerClassName="relative min-h-0 rounded-[7px] border border-market-close-stroke-card bg-modal px-[9px] py-1 text-xs leading-4 text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none hover:border-market-close-control hover:bg-modal hover:text-market-close-fg active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg"
+				triggerClassName={MOBILE_FILTER_CHIP_CLASS}
 				popupClassName="min-w-32"
 				align="start"
 				items={[

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { APP_NAME } from "@/config/app";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPercent, formatQuoteAmount, szDecimalsToPriceDecimals } from "@/lib/format";
@@ -27,8 +28,11 @@ interface PositionPnlShareModalProps {
 
 interface PositionPnlShareDialogProps {
 	position: PositionPnlShareData;
+	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
+
+const DIALOG_EXIT_MS = 250;
 
 interface QrState {
 	shareUrl: string;
@@ -36,11 +40,12 @@ interface QrState {
 }
 
 export function PositionPnlShareModal({ position, onOpenChange }: PositionPnlShareModalProps) {
-	if (!position) return null;
-	return <PositionPnlShareDialog position={position} onOpenChange={onOpenChange} />;
+	const displayedPosition = useLingeringValue(position, DIALOG_EXIT_MS);
+	if (!displayedPosition) return null;
+	return <PositionPnlShareDialog position={displayedPosition} open={position !== null} onOpenChange={onOpenChange} />;
 }
 
-function PositionPnlShareDialog({ position, onOpenChange }: PositionPnlShareDialogProps) {
+function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlShareDialogProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
@@ -95,6 +100,12 @@ function PositionPnlShareDialog({ position, onOpenChange }: PositionPnlShareDial
 			saveOperationRef.current = { epoch: saveOperationRef.current.epoch + 1, mounted: false };
 		};
 	}, []);
+
+	useEffect(() => {
+		if (open) return;
+		saveOperationRef.current.epoch += 1;
+		setIsSaving(false);
+	}, [open]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -177,12 +188,12 @@ function PositionPnlShareDialog({ position, onOpenChange }: PositionPnlShareDial
 	}
 
 	return (
-		<Modal open onOpenChange={onOpenChange}>
+		<Modal open={open} onOpenChange={onOpenChange}>
 			<ModalPopup
 				size="sm"
 				showClose={false}
-				overlayClassName="!bg-scrim/60 !backdrop-blur-none !transition-none data-starting-style:!opacity-100 data-ending-style:!opacity-100"
-				className="font-market-close !w-[calc(100vw-2rem)] !max-w-[360px] shrink-0 !overflow-visible !rounded-none !bg-transparent !shadow-none !transition-none data-starting-style:!scale-100 data-starting-style:!opacity-100 data-ending-style:!scale-100 data-ending-style:!opacity-100 min-[1001px]:!w-[360px]"
+				overlayClassName="!bg-scrim/60 !backdrop-blur-none"
+				className="font-market-close !w-[calc(100vw-2rem)] !max-w-[360px] shrink-0 !overflow-visible !rounded-none !bg-transparent !shadow-none min-[1001px]:!w-[360px]"
 				data-testid="position-pnl-share-modal"
 			>
 				<ModalTitle className="sr-only">{t`Share PNL`}</ModalTitle>

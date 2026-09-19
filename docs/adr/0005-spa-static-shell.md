@@ -4,7 +4,7 @@
 
 ## 背景与约束
 
-终端的 22 个应用路由已全部声明 `ssr: false`，服务端对它们只渲染 `AppShellSkeleton`、head 与主题脚本；只有 6 个文档路由（`/docs`、`/support`、`/terms`、`/privacy`、`/risk`、`/cookies`）真正服务端渲染。为此仍需一台常驻 Node 进程（Nitro `node-server` 产物、EC2 + Caddy + systemd，见 [部署手册](../../deploy/README.md)），以及围绕 hydration 的 [SSR 规则](../../.claude/rules/ssr.md)、`ClientRuntimeGate` 和 [Provider 生命周期规则](../runtime-guardrails.md#provider-lifetime-during-navigation)。
+终端的 22 个应用路由已全部声明 `ssr: false`，服务端对它们只渲染 `AppShellSkeleton`、head 与主题脚本；只有 6 个文档路由（`/docs`、`/support`、`/terms`、`/privacy`、`/risk`、`/cookies`）真正服务端渲染。为此仍需一台常驻 Node 进程（Nitro `node-server` 产物、EC2 + Caddy + systemd；该部署手册与脚本已于 2026-09-18 随宿主退役移除），以及围绕 hydration 的 [SSR 规则](../../.claude/rules/ssr.md)、`ClientRuntimeGate` 和 [Provider 生命周期规则](../runtime-guardrails.md#provider-lifetime-during-navigation)。
 
 Nitro 目前承担的服务端职责：
 
@@ -14,7 +14,7 @@ Nitro 目前承担的服务端职责：
 | `POST /client-error-report` | 限流后写日志 |
 | `GET /api/leaderboard` | 对 stats-data 的缓存代理（5 分钟新鲜、stale-if-error、体积上限） |
 | `GET /build-meta.json` | 运行时拼装构建身份 |
-| `POST /mobile-agent-sync-ticket` | 默认 fail-closed 关闭；启用时依赖单进程内存做一次性票据原子判定 |
+| `POST /mobile-agent-sync-ticket` | 默认 fail-closed 关闭；启用时依赖单进程内存做一次性票据原子判定（该端点已按 [ADR 0015](0015-link-device-alignment.md) D7 方案 B 于 2026-09-18 移除，路径现返回 404；下文涉及票据的条目均为历史描述） |
 | 安全头、`no-store`、按 host 的 API `preconnect` | Nitro `routeRules` 与 Caddy |
 
 [官方站首次加载调研](../architecture/hyperliquid-first-load-investigation.md)显示 Hyperliquid 官方终端是空 `#root` 的纯静态 SPA（S3 + CloudFront），代价是弱网下长时间空白。本决策要保留 gatu 的静态骨架壳，同时去掉对常驻服务端的依赖。
@@ -73,7 +73,7 @@ Nitro 目前承担的服务端职责：
 - 旧路径 `POST /client-error-report` 以别名保留一个发布周期，避免仍打开旧包的浏览器丢失错误上报；确认无旧客户端后删除。
 - 现有部署（Caddy → Node）已经是"静态壳 + API"形态：安全头由 Nitro route rules 附加，`preconnect` 由 Caddy 附加，无需改动。只有把 `public/` 搬到对象存储 + CDN 时才需要在 CDN 层重建这些头；`serve-spa-static.mjs` 只模拟回写与缓存，不下发 CSP。
 - 壳的 head 来自 `/trade` 掩码路由（标题、描述、`canonical=/trade`），客户端 hydration 后由路由 head 覆盖。所有应用路径共用这份静态 head，若需要更中性的壳 head，应新增专用掩码路由或在 CDN 层禁止缓存壳。
-- 配对票据在多实例前必须迁到共享 CAS+TTL 存储，与 [部署手册](../../deploy/README.md) 的既有要求一致；本决策不改变该门槛。
+- 配对票据在多实例前必须迁到共享 CAS+TTL 存储，与当时 EC2 部署手册的既有要求一致；本决策不改变该门槛。（2026-09-18 更正：服务端票据已由 ADR 0015 D7 方案 B 移除，该手册也已随 EC2 退役移除。）
 - `deploy/` 脚本、健康检查与 CI 仍按 Nitro 部署，不包含静态托管流程。
 - 壳只有默认英文与 LTR；持久化非英文语言仍由客户端热切换处理，与现状一致。
 

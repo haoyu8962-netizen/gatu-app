@@ -30,6 +30,31 @@ describe("modal surface contract", () => {
 		expect(tooltipPopupVariants()).not.toContain("bg-modal");
 	});
 
+	it("keeps list cards, table headers and in-panel filters on bg-surface instead of bg-modal", () => {
+		const nonModalSources = [
+			"mobile/mobile-position-card.tsx",
+			"mobile/mobile-orders-tab.tsx",
+			"mobile/mobile-twap-tab.tsx",
+			"mobile/mobile-twap-history-list.tsx",
+			"mobile/mobile-twap-fill-history-list.tsx",
+			"mobile/mobile-history-tab.tsx",
+			"mobile/mobile-funding-tab.tsx",
+			"mobile/mobile-orders-history-tab.tsx",
+			"positions/orders-tab.tsx",
+			"positions/orders-history-tab.tsx",
+			"positions/positions-panel.tsx",
+			"positions/position-filter-toolbar.tsx",
+			"positions/position-market-filter.tsx",
+			"positions/balances-table-styles.ts",
+			"positions/balances-tab.tsx",
+			"positions/order-inline-edit.tsx",
+		];
+		for (const path of nonModalSources) {
+			const source = readFileSync(resolve(__dirname, "../../components/trade", path), "utf8");
+			expect(source, path).not.toContain("bg-modal");
+		}
+	});
+
 	it("keeps transient terminal layers raised without flattening modal and drawer surfaces", () => {
 		expect(POPOVER_SOURCE).toContain("font-sans bg-overlay text-fg");
 		expect(ORDER_TOAST_SOURCE).toContain('"bg-overlay/95 backdrop-blur-sm"');

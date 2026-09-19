@@ -25,6 +25,10 @@ const TRADE_FORM_TWAP = readFileSync(
 	"utf8",
 );
 const TP_SL_SECTION = readFileSync(resolve(TEST_DIR, "../..", "components/trade/tradebox/tp-sl-section.tsx"), "utf8");
+const PRICE_INPUT_WITH_PERCENT = readFileSync(
+	resolve(TEST_DIR, "../..", "components/trade/tradebox/price-input-with-percent.tsx"),
+	"utf8",
+);
 const SPOT_SWAP_MODAL = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/components/spot-swap-modal.tsx"),
 	"utf8",
@@ -60,6 +64,14 @@ function countForwardedMobileSafe(source: string): number {
 	return source.match(/mobileSafe=\{mobileSafe\}/g)?.length ?? 0;
 }
 
+function countMatches(source: string, pattern: RegExp): number {
+	return source.match(pattern)?.length ?? 0;
+}
+
+function findElement(source: string, name: string): string {
+	return source.match(new RegExp(`<${name}\\b[\\s\\S]*?\\/>`))?.[0] ?? "";
+}
+
 describe("mobile input zoom contract", () => {
 	it("raises only mobile input text to the iOS-safe size", () => {
 		const className = getInputClassName("lg", undefined, true);
@@ -76,7 +88,15 @@ describe("mobile input zoom contract", () => {
 		expect(MOBILE_TRADE_VIEW).not.toContain("<NumberInput");
 		expect(MOBILE_TRADE_VIEW).not.toContain("<PriceInput");
 		expect(MOBILE_TRADE_VIEW).toContain("disabled={isFormDisabled || maxSize <= 0}");
-		expect(countMobileSafeInputs(TP_SL_SECTION)).toBe(15);
+		expect(countTradeInputs(TP_SL_SECTION)).toBe(2);
+		expect(countForwardedMobileSafe(TP_SL_SECTION)).toBe(countTradeInputs(TP_SL_SECTION));
+		expect(countMatches(TP_SL_SECTION, /<FramedTpSlRow\b/g)).toBe(2);
+		expect(countMatches(TP_SL_SECTION, /mobileSafe=\{mobileTouchSafe\}/g)).toBe(2);
+		expect(countMatches(TP_SL_SECTION, /<PriceInputWithPercent\b/g)).toBe(2);
+		expect(countMatches(TP_SL_SECTION, /mobileTouchSafe=\{mobileTouchSafe\}/g)).toBe(2);
+		expect(countMatches(PRICE_INPUT_WITH_PERCENT, /<Input\b/g)).toBe(3);
+		expect(countMatches(PRICE_INPUT_WITH_PERCENT, /mobileSafe=\{mobileTouchSafe\}/g)).toBe(3);
+		expect(findElement(MOBILE_TRADE_VIEW, "TradeFormTpSl")).toMatch(/\bmobileTouchSafe\b/);
 	});
 
 	it("covers the shared scale and twap fields the mobile panel reuses", () => {
@@ -84,8 +104,8 @@ describe("mobile input zoom contract", () => {
 		expect(countForwardedMobileSafe(TRADE_FORM_SCALE)).toBe(countTradeInputs(TRADE_FORM_SCALE));
 		expect(countTradeInputs(TRADE_FORM_TWAP)).toBe(4);
 		expect(countForwardedMobileSafe(TRADE_FORM_TWAP)).toBe(countTradeInputs(TRADE_FORM_TWAP));
-		expect(MOBILE_TRADE_VIEW).toMatch(/<TradeFormTwap[\s\S]{0,300}mobileSafe/);
-		expect(MOBILE_TRADE_VIEW).toMatch(/<TradeFormScale[\s\S]{0,300}mobileSafe/);
+		expect(findElement(MOBILE_TRADE_VIEW, "TradeFormTwap")).toMatch(/\bmobileSafe\b/);
+		expect(findElement(MOBILE_TRADE_VIEW, "TradeFormScale")).toMatch(/\bmobileSafe\b/);
 	});
 
 	it("covers the responsive spot swap amount input", () => {

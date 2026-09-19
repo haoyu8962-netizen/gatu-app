@@ -51,7 +51,10 @@ test("server-only routes never receive the shell", () => {
 	assert.equal(resolve("/api/leaderboard").kind, "server-only");
 	assert.equal(resolve("/build-meta.json").kind, "server-only");
 	assert.equal(resolve("/client-error-report").kind, "server-only");
-	assert.equal(resolve("/mobile-agent-sync-ticket").kind, "server-only");
+	for (const path of ["/mobile-agent-sync-ticket", "/mobile-agent-sync-ticket/", "/mobile-agent-sync-ticket/consume"]) {
+		assert.deepEqual(resolve(path), { kind: "retired" }, path);
+	}
+	assert.equal(resolve("/mobile-agent-sync").kind, "shell");
 });
 
 test("missing assets and non-navigation requests are 404, not the shell", () => {

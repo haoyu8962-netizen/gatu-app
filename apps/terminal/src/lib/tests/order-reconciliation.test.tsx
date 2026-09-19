@@ -153,7 +153,7 @@ describe("OrderReconciliation", () => {
 		expect(mocks.successToast).toHaveBeenCalledOnce();
 	});
 
-	it("returns a rejected reconciled market close to an actionable error state", () => {
+	it("releases a rejected reconciled market close session", () => {
 		const cloid = "0x00000000000000000000000000000042" as const;
 		const sessionId = openReconcilingMarketCloseSession();
 		getPendingOrderActions().add({
@@ -169,11 +169,8 @@ describe("OrderReconciliation", () => {
 
 		act(() => root.render(createElement(OrderReconciliation)));
 
-		expect(getPositionMarketCloseModal()).toMatchObject({
-			sessionId,
-			phase: "idle",
-			error: { kind: "order-reconciliation", code: "order-rejected" },
-		});
+		expect(getPositionMarketCloseModal()).toBeNull();
+		expect(mocks.errorToast).toHaveBeenCalledOnce();
 	});
 
 	it("warns when an accepted market close is later canceled instead of reporting a placement rejection", () => {
@@ -196,11 +193,7 @@ describe("OrderReconciliation", () => {
 		expect(mocks.warningToast).toHaveBeenCalledWith(
 			"Canceled. Some orders were accepted. Review open orders before retrying.",
 		);
-		expect(getPositionMarketCloseModal()).toMatchObject({
-			sessionId,
-			phase: "idle",
-			error: { kind: "order-reconciliation", code: "accepted-orders-canceled" },
-		});
+		expect(getPositionMarketCloseModal()).toBeNull();
 	});
 
 	it("consumes a batch child update only once while other children remain pending", () => {
@@ -308,11 +301,7 @@ describe("OrderReconciliation", () => {
 		expect(mocks.infoOrderStatus).not.toHaveBeenCalled();
 		expect(hasPendingOrderForAssets("Mainnet", USER, [30])).toBe(false);
 		expect(mocks.warningToast).toHaveBeenCalledOnce();
-		expect(getPositionMarketCloseModal()).toMatchObject({
-			sessionId,
-			phase: "reconciling",
-			error: { kind: "order-reconciliation", code: "status-unconfirmed" },
-		});
+		expect(getPositionMarketCloseModal()).toBeNull();
 	});
 
 	it("releases the local lock while the wallet is disconnected", () => {

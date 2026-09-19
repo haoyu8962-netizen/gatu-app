@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 // @vitest-environment jsdom
 
-import { act, createElement, Fragment, type ReactNode, useEffect } from "react";
+import { act, createElement, Fragment, type ReactNode, useEffect, useSyncExternalStore } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
@@ -47,6 +47,27 @@ const testState = vi.hoisted(() => ({
 	walletsReady: true,
 }));
 
+const mobileSyncStore = vi.hoisted(() => {
+	let open = false;
+	const listeners = new Set<() => void>();
+	return {
+		get open() {
+			return open;
+		},
+		set(next: boolean) {
+			if (open === next) return;
+			open = next;
+			for (const listener of listeners) listener();
+		},
+		subscribe(listener: () => void) {
+			listeners.add(listener);
+			return () => {
+				listeners.delete(listener);
+			};
+		},
+	};
+});
+
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 type TestLazyComponent = ((props: Record<string, unknown>) => ReactNode) & {
@@ -62,6 +83,7 @@ vi.mock("@/hooks/wallet/use-email-wallet-export", () => ({
 }));
 
 vi.mock("@gatu/ui", () => ({
+	buttonVariants: () => "",
 	AdaptiveModal: ({
 		children,
 		closeLabel,
@@ -195,6 +217,14 @@ vi.mock("@/lib/wallet/privy-wagmi", () => ({
 	getPrivyEmailAddress: () => testState.emailAddress,
 }));
 
+vi.mock("@/stores/use-global-modal-store", () => ({
+	useMobileSyncModalOpen: () => useSyncExternalStore(mobileSyncStore.subscribe, () => mobileSyncStore.open),
+	useMobileSyncModalActions: () => ({
+		open: () => mobileSyncStore.set(true),
+		close: () => mobileSyncStore.set(false),
+	}),
+}));
+
 vi.mock("@/lib/error-reporting/client", () => ({
 	reportClientError: vi.fn(),
 }));
@@ -303,6 +333,7 @@ describe("UserMenu", () => {
 		testState.mobileSyncModalMounts = 0;
 		testState.mobileSyncModalOpen = false;
 		testState.mobileSyncModalUnmounts = 0;
+		mobileSyncStore.set(false);
 		testState.ready = true;
 		testState.sessionMode = "disconnected";
 		window.localStorage.clear();
@@ -401,7 +432,7 @@ describe("UserMenu", () => {
 			);
 		});
 
-		const connectWallet = findButtonByText(container, "Connect Wallet");
+		const connectWallet = findButtonByText(container, "Connect");
 		act(() => connectWallet.focus());
 		expect(testState.walletModalPreloads).toBe(1);
 
@@ -480,6 +511,56 @@ describe("UserMenu", () => {
 		expect(testState.mobileSyncModalModuleLoads).toBe(1);
 		expect(testState.mobileSyncModalMounts).toBe(2);
 		expect(testState.mobileSyncModalOpen).toBe(false);
+	});
+
+	it("mounts the single mobile sync host when the shared modal store opens it from outside the menu", async () => {
+		testState.authenticated = true;
+		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
+		testState.hasWalletAccess = true;
+		testState.isConnected = true;
+		testState.sessionMode = "wallet";
+		let markModuleReady: (() => void) | undefined;
+		const moduleReady = new Promise<void>((resolve) => {
+			markModuleReady = resolve;
+		});
+		testState.mobileSyncModalModuleReady = () => markModuleReady?.();
+
+		await act(async () => {
+			root.render(createElement(UserMenu, { variant: "desktop-nav" }));
+		});
+		expect(testState.mobileSyncModalModuleLoads).toBe(0);
+		expect(container.querySelector('[role="dialog"]')).toBeNull();
+
+		await act(async () => {
+			mobileSyncStore.set(true);
+			await moduleReady;
+		});
+		await vi.waitFor(() => expect(testState.mobileSyncModalMounts).toBe(1));
+		expect(testState.mobileSyncModalModuleLoads).toBe(1);
+		expect(testState.mobileSyncModalOpen).toBe(true);
+		expect(container.querySelectorAll('[data-testid="mobile-sync-modal"]')).toHaveLength(1);
+
+		const linkMobileButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Link mobile device",
+		);
+		await act(async () => linkMobileButton?.click());
+		expect(testState.mobileSyncModalMounts).toBe(1);
+		expect(testState.mobileSyncModalUnmounts).toBe(0);
+		expect(container.querySelectorAll('[data-testid="mobile-sync-modal"]')).toHaveLength(1);
+
+		await act(async () => {
+			container.querySelector<HTMLButtonElement>('[data-testid="mobile-sync-modal"]')?.click();
+		});
+		expect(mobileSyncStore.open).toBe(false);
+		expect(testState.mobileSyncModalOpen).toBe(false);
+		expect(testState.mobileSyncModalUnmounts).toBe(0);
+
+		await act(async () => {
+			mobileSyncStore.set(true);
+		});
+		expect(testState.mobileSyncModalMounts).toBe(1);
+		expect(testState.mobileSyncModalOpen).toBe(true);
+		expect(container.querySelectorAll('[data-testid="mobile-sync-modal"]')).toHaveLength(1);
 	});
 
 	it("gives the anonymous desktop CTA the shared minimum width and wallet action", () => {
@@ -579,7 +660,7 @@ describe("UserMenu", () => {
 			root.render(createElement(UserMenu));
 		});
 
-		action = findButtonByText(container, "Connect Wallet");
+		action = findButtonByText(container, "Connect");
 		expect(action.className).toContain("min-w-0");
 		expect(action.className).toContain("max-w-full");
 		expect(action.querySelector("span.truncate")).not.toBeNull();
@@ -620,7 +701,7 @@ describe("UserMenu", () => {
 			root.render(createElement(UserMenu));
 		});
 		expect(container.textContent).not.toContain("Connecting...");
-		const connect = findButtonByText(container, "Connect Wallet");
+		const connect = findButtonByText(container, "Connect");
 		expect(connect.disabled).toBe(false);
 		await act(async () => connect.click());
 		await vi.waitFor(() => expect(testState.walletModalMounts).toBe(1));
@@ -657,7 +738,7 @@ describe("UserMenu", () => {
 
 		testState.ready = true;
 		act(() => root.render(createElement(UserMenu)));
-		expect(findButtonByText(container, "Connect Wallet").disabled).toBe(false);
+		expect(findButtonByText(container, "Connect").disabled).toBe(false);
 		expect(container.textContent).not.toContain("Reload page");
 	});
 
@@ -670,7 +751,8 @@ describe("UserMenu", () => {
 
 		const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Account and wallet"]');
 		expect(trigger?.disabled).toBe(false);
-		expect(trigger?.textContent).toBe("owner@example.test");
+		expect(trigger?.textContent).toBe("owner");
+		expect(trigger?.querySelector("span.font-mono")?.getAttribute("title")).toBe("owner@example.test");
 		expect(trigger?.querySelector("span.bg-fg-muted")).not.toBeNull();
 		expect(findButtonByText(container, "Reconnect wallet").disabled).toBe(true);
 		expect(findButtonByText(container, "Disconnect").disabled).toBe(true);
@@ -721,7 +803,7 @@ describe("UserMenu", () => {
 		testState.authenticated = false;
 		act(() => root.render(createElement(UserMenu)));
 		expect(container.textContent).not.toContain("Reload page");
-		expect(findButtonByText(container, "Connect Wallet").disabled).toBe(false);
+		expect(findButtonByText(container, "Connect").disabled).toBe(false);
 	});
 
 	it.each(["isConnecting", "isWalletReconnecting", "isReconnecting"] as const)(

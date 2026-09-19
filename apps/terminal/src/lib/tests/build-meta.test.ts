@@ -14,15 +14,15 @@ const terminalPackage = JSON.parse(
 };
 
 describe("build metadata", () => {
-	it("describes the build identity with the fail-closed pairing flags", () => {
+	it("describes the build identity with the fail-closed pairing and deposit gates", () => {
 		expect(
 			createBuildMeta({
 				version: "1.2.3",
 				commit: "abc123",
 				release: "release-1",
 				builtAt: "2026-09-13T00:00:00.000Z",
-				ticketApiVersion: 2,
 				pairing: { createAndReveal: false, importFromQr: true },
+				cctpDeposits: { mainnetSponsoredWallet: true, testnetExternalWallet: false, testnetSponsoredWallet: true },
 			}),
 		).toEqual({
 			name: APP_NAME,
@@ -32,11 +32,13 @@ describe("build metadata", () => {
 			builtAt: "2026-09-13T00:00:00.000Z",
 			chartLibraryScript: "/charting_library/charting_library.js?v=abc123",
 			mobileSync: {
-				ticketApiVersion: 2,
-				legacyRegisterDisabled: true,
-				store: "single-process",
 				createAndReveal: false,
 				importFromQr: true,
+			},
+			cctpDeposits: {
+				mainnetSponsoredWallet: true,
+				testnetExternalWallet: false,
+				testnetSponsoredWallet: true,
 			},
 		});
 	});
@@ -46,9 +48,13 @@ describe("build metadata", () => {
 		expect(meta.name).toBe(APP_NAME);
 		expect(meta.version).toBe(terminalPackage.version);
 		expect(meta.commit).not.toBe("");
-		expect(meta.mobileSync.ticketApiVersion).toBe(2);
-		expect(meta.mobileSync.store).toBe("single-process");
+		expect(Object.keys(meta.mobileSync).sort()).toEqual(["createAndReveal", "importFromQr"]);
 		if (meta.mobileSync.createAndReveal) expect(meta.mobileSync.importFromQr).toBe(true);
+		expect(Object.keys(meta.cctpDeposits).sort()).toEqual([
+			"mainnetSponsoredWallet",
+			"testnetExternalWallet",
+			"testnetSponsoredWallet",
+		]);
 	});
 
 	it("emits build-meta.json into the client output only", () => {

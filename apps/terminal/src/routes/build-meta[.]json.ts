@@ -7,8 +7,8 @@ import {
 	APP_RELEASE_VERSION,
 } from "@/config/app";
 import { createBuildMeta } from "@/config/build-meta";
+import { CCTP_DEPOSIT_FEATURES } from "@/config/cctp-deposit";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
-import { MOBILE_SYNC_TICKET_API_VERSION } from "@/lib/mobile-sync/one-time-ticket-policy";
 
 export const Route = createFileRoute("/build-meta.json")({
 	server: {
@@ -20,8 +20,8 @@ export const Route = createFileRoute("/build-meta.json")({
 						commit: APP_BUILD_COMMIT,
 						release: APP_RELEASE_ID,
 						builtAt: APP_BUILD_TIME,
-						ticketApiVersion: MOBILE_SYNC_TICKET_API_VERSION,
 						pairing: MOBILE_PAIRING_FEATURES,
+						cctpDeposits: CCTP_DEPOSIT_FEATURES,
 						chartLibraryHash: APP_CHART_LIBRARY_HASH,
 					}),
 					{ headers: { "cache-control": "no-store" } },

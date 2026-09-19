@@ -2,10 +2,13 @@ import type { AccountModeAvailability } from "./account-abstraction";
 
 export type FundsActionGeoStatus = "allowed" | "restricted" | "unresolved";
 
+export type FundsActionSessionMode = "wallet" | "agent-only" | "disconnected";
+
 export type FundsActionAvailabilityReason =
 	| "account-data-unavailable"
 	| "account-mode-unresolved"
 	| "account-mode-unsupported"
+	| "agent-only-session"
 	| "funds-actions-unavailable"
 	| "geo-restricted"
 	| "geo-unresolved"
@@ -22,6 +25,7 @@ interface BaseFundsActionAvailabilityInput {
 	accountModeStatus: AccountModeAvailability;
 	geoStatus: FundsActionGeoStatus;
 	hasWalletAccess: boolean;
+	sessionMode?: FundsActionSessionMode;
 }
 
 interface WithdrawalAvailabilityInput extends BaseFundsActionAvailabilityInput {
@@ -69,12 +73,14 @@ export function getWithdrawalAvailability({
 	fundsActionsEnabled,
 	geoStatus,
 	hasWalletAccess,
+	sessionMode,
 }: WithdrawalAvailabilityInput): FundsActionAvailability {
 	const baseReason = getBaseFundsActionUnavailableReason({
 		accountDataReady,
 		accountModeStatus,
 		geoStatus,
 		hasWalletAccess,
+		sessionMode,
 	});
 	if (baseReason) return { available: false, reason: baseReason };
 	if (!fundsActionsEnabled) return { available: false, reason: "funds-actions-unavailable" };
@@ -87,12 +93,14 @@ export function getInternalTransferAvailability({
 	geoStatus,
 	hasWalletAccess,
 	internalTransfersEnabled,
+	sessionMode,
 }: InternalTransferAvailabilityInput): FundsActionAvailability {
 	const baseReason = getBaseFundsActionUnavailableReason({
 		accountDataReady,
 		accountModeStatus,
 		geoStatus,
 		hasWalletAccess,
+		sessionMode,
 	});
 	if (baseReason) return { available: false, reason: baseReason };
 	if (!internalTransfersEnabled) return { available: false, reason: "internal-transfers-unavailable" };
@@ -135,9 +143,11 @@ function getBaseFundsActionUnavailableReason({
 	accountModeStatus,
 	geoStatus,
 	hasWalletAccess,
+	sessionMode,
 }: BaseFundsActionAvailabilityInput): FundsActionAvailabilityReason | null {
 	if (geoStatus === "restricted") return "geo-restricted";
 	if (geoStatus === "unresolved") return "geo-unresolved";
+	if (sessionMode === "agent-only") return "agent-only-session";
 	if (!hasWalletAccess) return "wallet-session-required";
 	if (accountModeStatus === "unsupported") return "account-mode-unsupported";
 	if (accountModeStatus !== "supported") return "account-mode-unresolved";

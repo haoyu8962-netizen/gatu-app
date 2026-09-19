@@ -2,8 +2,12 @@ import {
 	decodeMobileSyncEnvelope,
 	encodeMobileSyncEnvelope,
 	MOBILE_SYNC_CLOCK_SKEW_MS,
+	MOBILE_SYNC_PAYLOAD_TTL_MS,
 	type MobileSyncEnvelope,
 } from "./sync-core";
+
+// A phone never holds a QR longer than an honest envelope can live, whatever timestamps it carries.
+const MOBILE_SYNC_MAX_HOLD_MS = MOBILE_SYNC_PAYLOAD_TTL_MS + MOBILE_SYNC_CLOCK_SKEW_MS;
 
 const MOBILE_SYNC_DRAFT_STORAGE_KEY = "gatu.mobile-sync.import-draft.v1";
 let draftExpiryTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
@@ -66,7 +70,7 @@ export function saveMobileSyncDraft(
 			return false;
 		}
 		if (isBrowserSessionStorage(storage)) {
-			scheduleMobileSyncDraftExpiry(storage, envelope.expiresAtMs, options.nowMs ?? Date.now());
+			scheduleMobileSyncDraftExpiry(storage, storedDraft, options.nowMs ?? Date.now());
 		}
 		return true;
 	} catch {
@@ -102,7 +106,7 @@ export function readMobileSyncDraft(options: MobileSyncDraftStorageOptions = {})
 			return { status: "invalid" };
 		}
 
-		if (isMobileSyncEnvelopeExpiredAt(parsed.expiresAtMs, options.nowMs ?? Date.now())) {
+		if (getDraftRemainingLifetimeMs(parsed.expiresAtMs, parsed.storedAtMs, options.nowMs ?? Date.now()) < 0) {
 			clearMobileSyncDraft({ storage });
 			return { status: "expired" };
 		}
@@ -117,7 +121,11 @@ export function readMobileSyncDraft(options: MobileSyncDraftStorageOptions = {})
 			return { status: "invalid" };
 		}
 		if (isBrowserSessionStorage(storage)) {
-			scheduleMobileSyncDraftExpiry(storage, parsed.expiresAtMs, options.nowMs ?? Date.now());
+			scheduleMobileSyncDraftExpiry(
+				storage,
+				{ expiresAtMs: parsed.expiresAtMs, storedAtMs: parsed.storedAtMs },
+				options.nowMs ?? Date.now(),
+			);
 		}
 
 		return {
@@ -155,6 +163,11 @@ export function isMobileSyncEnvelopeExpired(envelope: MobileSyncEnvelope, nowMs 
 	return isMobileSyncEnvelopeExpiredAt(envelope.expiresAtMs, nowMs);
 }
 
+/** How long a QR loaded right now may stay in memory: its skew-adjusted deadline, capped at the honest maximum. */
+export function getMobileSyncRemainingLifetimeMs(envelope: MobileSyncEnvelope, nowMs = Date.now()): number {
+	return getDraftRemainingLifetimeMs(envelope.expiresAtMs, nowMs, nowMs);
+}
+
 /** Arms cleanup for a draft left by a previous route or full-page navigation. */
 export function armMobileSyncDraftExpiryCleanup(): void {
 	readMobileSyncDraft();
@@ -162,6 +175,10 @@ export function armMobileSyncDraftExpiryCleanup(): void {
 
 function isMobileSyncEnvelopeExpiredAt(expiresAtMs: number, nowMs: number): boolean {
 	return nowMs > expiresAtMs + MOBILE_SYNC_CLOCK_SKEW_MS;
+}
+
+function getDraftRemainingLifetimeMs(expiresAtMs: number, storedAtMs: number, nowMs: number): number {
+	return Math.min(expiresAtMs + MOBILE_SYNC_CLOCK_SKEW_MS, storedAtMs + MOBILE_SYNC_MAX_HOLD_MS) - nowMs;
 }
 
 function getDraftStorage(storage?: Storage | null): Storage | null {
@@ -183,10 +200,14 @@ function isBrowserSessionStorage(storage: Storage): boolean {
 	}
 }
 
-function scheduleMobileSyncDraftExpiry(storage: Storage, expiresAtMs: number, nowMs: number): void {
+function scheduleMobileSyncDraftExpiry(
+	storage: Storage,
+	draft: Pick<StoredMobileSyncDraft, "expiresAtMs" | "storedAtMs">,
+	nowMs: number,
+): void {
 	if (draftExpiryTimer !== null) globalThis.clearTimeout(draftExpiryTimer);
 	scheduledDraftStorage = storage;
-	const delayMs = Math.max(0, expiresAtMs + MOBILE_SYNC_CLOCK_SKEW_MS - nowMs + 1);
+	const delayMs = Math.max(0, getDraftRemainingLifetimeMs(draft.expiresAtMs, draft.storedAtMs, nowMs) + 1);
 	draftExpiryTimer = globalThis.setTimeout(() => {
 		draftExpiryTimer = null;
 		scheduledDraftStorage = null;

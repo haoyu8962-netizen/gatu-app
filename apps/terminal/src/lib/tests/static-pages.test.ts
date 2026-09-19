@@ -59,18 +59,19 @@ describe("static page classification", () => {
 	});
 
 	it("never renders a page for server paths that are requested with the wrong method", () => {
+		for (const path of ["/api/referral-geo", "/api/client-error-report", "/client-error-report"]) {
+			expect(classifyStaticPageRequest("GET", path), path).toEqual({ kind: "method-not-allowed", allow: "POST" });
+			expect(classifyStaticPageRequest("HEAD", path), path).toEqual({ kind: "method-not-allowed", allow: "POST" });
+		}
 		for (const path of [
-			"/api/referral-geo",
-			"/api/client-error-report",
-			"/client-error-report",
+			"/api",
+			"/api/",
+			"/api/unknown",
+			"/api/geo/extra",
 			"/mobile-agent-sync-ticket",
 			"/mobile-agent-sync-ticket/",
 			"/mobile-agent-sync-ticket/consume",
 		]) {
-			expect(classifyStaticPageRequest("GET", path), path).toEqual({ kind: "method-not-allowed", allow: "POST" });
-			expect(classifyStaticPageRequest("HEAD", path), path).toEqual({ kind: "method-not-allowed", allow: "POST" });
-		}
-		for (const path of ["/api", "/api/", "/api/unknown", "/api/geo/extra"]) {
 			expect(classifyStaticPageRequest("GET", path), path).toEqual({ kind: "not-found" });
 		}
 	});

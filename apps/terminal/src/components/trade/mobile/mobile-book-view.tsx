@@ -1,6 +1,6 @@
 import { Button, Dropdown, type DropdownItem } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsClockwiseIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
+import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ORDERBOOK_LABELS } from "@/config/orderbook-labels";
@@ -50,6 +50,7 @@ import { TradesPanel } from "../orderbook/trades-panel";
 import { CompactOrderbookRowPosition } from "./compact-orderbook-row-position";
 import { MobileBookChromeView, MobileBookFrameView, MobileBookModeControlsView } from "./mobile-book-chrome-view";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
+import { MOBILE_FILTER_CHIP_CLASS } from "./mobile-filter-chip";
 import {
 	COMPACT_ORDERBOOK_DEFAULT_SLOT_COUNT,
 	getCompactOrderbookLayout,
@@ -326,8 +327,13 @@ export function MobileBookView({
 
 	return (
 		<MobileBookFrameView className={className}>
-			<div className={cn("shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-surface", compact && "hidden")}>
-				<div className="flex items-center justify-between">
+			<div
+				className={cn(
+					"flex min-h-9 shrink-0 items-center justify-between gap-2 border-b border-stroke-weak/60 bg-surface px-3",
+					compact && "hidden",
+				)}
+			>
+				<div className="flex min-w-0 items-center gap-2">
 					{!inTabLayout && (
 						<div className="flex items-center gap-1 bg-surface rounded-8 p-0.5">
 							<Button
@@ -350,36 +356,47 @@ export function MobileBookView({
 							</Button>
 						</div>
 					)}
-
-					<div className="flex items-center gap-2">
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="sm"
-							onClick={() => setShowOrderbookInQuote(!showOrderbookInQuote)}
-							className="min-h-11"
-							aria-label={t`Toggle display units`}
-							iconRight={<ArrowsLeftRightIcon className="size-3" />}
-						>
-							{showOrderbookInQuote ? quoteToken : baseToken}
-						</Button>
-
-						{view === "book" && (
-							<Dropdown
-								size="sm"
-								trigger={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
-								align="end"
-								className="font-mono"
-								items={priceGroupingOptions.map(
-									(option): DropdownItem => ({
-										label: option.label,
-										onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
-									}),
-								)}
-							/>
-						)}
-					</div>
+					{view === "book" && (
+						<Dropdown
+							triggerVariant="minimal"
+							size="xxs"
+							trigger={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
+							triggerAriaLabel={t`Price grouping`}
+							triggerClassName={cn(MOBILE_FILTER_CHIP_CLASS, "tabular-nums")}
+							popupClassName="min-w-28"
+							align="start"
+							items={priceGroupingOptions.map(
+								(option): DropdownItem => ({
+									label: option.label,
+									active: getPriceGroupingKey(option) === selectedOptionKey,
+									onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
+								}),
+							)}
+						/>
+					)}
 				</div>
+				{view === "book" && (
+					<span
+						data-slot="mobile-orderbook-spread"
+						className="flex min-w-0 items-center gap-1 truncate text-2xs orderbook-header-text"
+					>
+						<span>{t`Spread`}</span>
+						<span className="tabular-nums">{spreadText}</span>
+					</span>
+				)}
+				<Dropdown
+					triggerVariant="minimal"
+					size="xxs"
+					trigger={showOrderbookInQuote ? quoteToken : baseToken}
+					triggerAriaLabel={t`Display units`}
+					triggerClassName={MOBILE_FILTER_CHIP_CLASS}
+					popupClassName="min-w-28"
+					align="end"
+					items={[
+						{ label: baseToken, active: !showOrderbookInQuote, onSelect: () => setShowOrderbookInQuote(false) },
+						{ label: quoteToken, active: showOrderbookInQuote, onSelect: () => setShowOrderbookInQuote(true) },
+					]}
+				/>
 			</div>
 
 			{view === "book" ? (
@@ -423,7 +440,6 @@ export function MobileBookView({
 						priceDecimals={displayPriceDecimals}
 						showOrderbookInQuote={showOrderbookInQuote}
 						szDecimals={szDecimals}
-						spreadText={spreadText}
 						baseToken={baseToken}
 						quoteToken={quoteToken}
 					/>
@@ -737,7 +753,6 @@ interface SplitOrderbookProps extends OrderbookLayoutProps {
 	baseToken: string;
 	quoteToken: string;
 	enabled: boolean;
-	spreadText: string;
 }
 
 function SplitOrderbook({
@@ -755,7 +770,6 @@ function SplitOrderbook({
 	priceDecimals,
 	showOrderbookInQuote,
 	szDecimals,
-	spreadText,
 }: SplitOrderbookProps) {
 	const { t } = useLingui();
 	const [{ rowCount: askLevelCount, fullRowCount: askFullRowCount, rowHeightPx: askRowHeightPx }, askLadderRef] =
@@ -766,6 +780,7 @@ function SplitOrderbook({
 	const visibleBids = useMemo(() => bids.slice(0, bidLevelCount), [bids, bidLevelCount]);
 	const hasAsks = visibleAsks.length > 0;
 	const hasBids = visibleBids.length > 0;
+	const sizeToken = showOrderbookInQuote ? quoteToken : baseToken;
 	const askMaxTotal = getVisibleMaxTotal(visibleAsks, askLevelCount, showOrderbookInQuote);
 	const bidMaxTotal = getVisibleMaxTotal(visibleBids, bidLevelCount, showOrderbookInQuote);
 	const visiblePulseLevels = useMemo(
@@ -803,19 +818,15 @@ function SplitOrderbook({
 	return (
 		<div ref={setPanelRef} {...hover.containerProps} className="flex-1 min-h-0 flex flex-col overflow-hidden">
 			<div className="shrink-0 border-b border-stroke-weak/40 bg-background">
-				<div className="flex items-center justify-between gap-2 px-3 py-1.5 text-2xs orderbook-header-text">
-					<span>{t`Spread`}</span>
-					<span className="tabular-nums">{spreadText}</span>
-				</div>
 				<div
 					data-slot="split-orderbook-column-headings"
-					className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px pb-1.5 text-2xs uppercase tracking-wider orderbook-header-text"
+					className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px py-1.5 text-2xs orderbook-header-text"
 				>
 					<div
 						data-slot="split-orderbook-bid-headings"
 						className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1 px-2"
 					>
-						<div>{t`Total`}</div>
+						<div className="truncate">{t`Total (${sizeToken})`}</div>
 						<div data-slot="split-orderbook-bid-price-heading" className="text-right">
 							{t`Price`}
 						</div>
@@ -825,7 +836,7 @@ function SplitOrderbook({
 						className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1 px-2"
 					>
 						<div data-slot="split-orderbook-ask-price-heading">{t`Price`}</div>
-						<div className="text-right">{t`Total`}</div>
+						<div className="truncate text-right">{t`Total (${sizeToken})`}</div>
 					</div>
 				</div>
 			</div>

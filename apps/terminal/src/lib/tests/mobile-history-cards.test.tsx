@@ -409,7 +409,7 @@ describe("mobile history disclosure cards", () => {
 		viewAllPath?: string,
 	) {
 		const filterRow = container.querySelector<HTMLElement>(`[data-testid="${filterRowTestId}"]`);
-		expect(filterRow?.className).toContain("h-12");
+		expect(filterRow?.className).toContain("h-9");
 		expect(filterRow?.className).toContain("px-3.5");
 		expect(filterRow?.className).toContain("overflow-x-auto");
 
@@ -500,9 +500,9 @@ describe("mobile history disclosure cards", () => {
 			"Direction",
 			"Role",
 		]);
-		expect(container.textContent).toContain("All types");
-		expect(container.textContent).toContain("All Directions");
-		expect(container.textContent).toContain("All roles");
+		expect(container.textContent).toContain("Type");
+		expect(container.textContent).toContain("Direction");
+		expect(container.textContent).toContain("Role");
 		expect(container.textContent).toContain("Realized PNL");
 		expect(container.textContent).toContain("Fee");
 		const explorer = container.querySelector<HTMLAnchorElement>('a[href="https://explorer.test/0xaaa"]');
@@ -598,7 +598,7 @@ describe("mobile history disclosure cards", () => {
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(Array.from(container.querySelectorAll("label"), (label) => label.textContent)).toEqual(["Direction"]);
-		expect(container.textContent).toContain("All Directions");
+		expect(container.textContent).toContain("Direction");
 		expect(container.textContent).toContain("Position");
 		expect(container.textContent).toContain("Payment");
 		expect(container.textContent).toContain("Rate");
@@ -680,9 +680,9 @@ describe("mobile history disclosure cards", () => {
 		expect(container.textContent).toContain("Buy");
 		expect(container.textContent).toContain("Filled");
 		expect(container.textContent).toContain("Updated");
-		expect(container.textContent).toContain("All types");
-		expect(container.textContent).toContain("All Directions");
-		expect(container.textContent).toContain("All statuses");
+		expect(container.textContent).toContain("Type");
+		expect(container.textContent).toContain("Direction");
+		expect(container.textContent).toContain("Status");
 		expect(Array.from(container.querySelectorAll("label"), (label) => label.textContent)).toEqual([
 			"Order type",
 			"Direction",
@@ -736,13 +736,13 @@ describe("mobile history disclosure cards", () => {
 		await selectOption("Type", "Trade");
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(container.textContent).not.toContain("TWAP");
-		await selectOption("Type", "All types");
+		await selectOption("Type", "Type");
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 
 		await selectOption("Direction", "Sell");
 		expect(container.querySelectorAll("article")).toHaveLength(1);
 		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
-		await selectOption("Direction", "All Directions");
+		await selectOption("Direction", "Direction");
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 
 		await selectOption("Role", "Taker");
@@ -755,7 +755,7 @@ describe("mobile history disclosure cards", () => {
 		expect(exportRows?.flat()).not.toContain("BTC");
 
 		clickButton("Collapse all");
-		await selectOption("Role", "All roles");
+		await selectOption("Role", "Role");
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
 		clickButton("Expand all");
 		mocks.address = OWNER_B;
@@ -763,9 +763,9 @@ describe("mobile history disclosure cards", () => {
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(Array.from(container.querySelectorAll('[role="combobox"]'), (trigger) => trigger.textContent)).toEqual([
-			"All types",
-			"All Directions",
-			"All roles",
+			"Type",
+			"Direction",
+			"Role",
 		]);
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
 	});
@@ -789,14 +789,14 @@ describe("mobile history disclosure cards", () => {
 		expect(exportRows?.flat()).toContain("BTC");
 
 		clickButton("Collapse all");
-		await selectOption("Direction", "All Directions");
+		await selectOption("Direction", "Direction");
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "true"]);
 		clickButton("Expand all");
 		mocks.address = OWNER_B;
 		render(<MobileFundingTab scrollMode="page" />);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
-		expect(container.querySelector('[role="combobox"]')?.textContent).toBe("All Directions");
+		expect(container.querySelector('[role="combobox"]')?.textContent).toBe("Direction");
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
 	});
 
@@ -812,13 +812,13 @@ describe("mobile history disclosure cards", () => {
 		await selectOption("Order type", "Stop Market");
 		expect(container.querySelectorAll("article")).toHaveLength(1);
 		expect(container.querySelector('[aria-label="Switch to ETH market, Close Long order"]')).not.toBeNull();
-		await selectOption("Order type", "All types");
+		await selectOption("Order type", "Type");
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 
 		await selectOption("Direction", "Sell");
 		expect(container.querySelectorAll("article")).toHaveLength(1);
 		expect(container.querySelector('[aria-label="Switch to ETH market, Close Long order"]')).not.toBeNull();
-		await selectOption("Direction", "All Directions");
+		await selectOption("Direction", "Direction");
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 
 		await selectOption("Order status", "Canceled");
@@ -831,7 +831,7 @@ describe("mobile history disclosure cards", () => {
 		expect(exportRows?.flat()).not.toContain("BTC");
 
 		clickButton("Collapse all");
-		await selectOption("Order status", "All statuses");
+		await selectOption("Order status", "Status");
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
 		clickButton("Expand all");
 		mocks.address = OWNER_B;
@@ -839,9 +839,9 @@ describe("mobile history disclosure cards", () => {
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(Array.from(container.querySelectorAll('[role="combobox"]'), (trigger) => trigger.textContent)).toEqual([
-			"All types",
-			"All Directions",
-			"All statuses",
+			"Type",
+			"Direction",
+			"Status",
 		]);
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
 	});

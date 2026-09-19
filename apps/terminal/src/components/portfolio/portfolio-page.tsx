@@ -254,7 +254,6 @@ export function PortfolioPage() {
 									includeBottomNavSpacer={false}
 									balancesContent={<MobileBalancesTab />}
 									transfersContent={<MobileAccountTransfersTab scrollMode="page" />}
-									emptyDescription={<Trans>Connect wallet to view portfolio</Trans>}
 								/>
 							) : (
 								<div className={cn(!isConnected && "h-24")}>

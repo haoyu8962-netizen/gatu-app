@@ -207,7 +207,8 @@ describe("positions table visual contract", () => {
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_16px]");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("rounded-[14px]");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("border-market-close-stroke-card");
-		expect(MOBILE_POSITION_CARD_SOURCE).toContain("bg-modal");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("bg-surface");
+		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain("bg-modal");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain('context: "Cumulative position funding"');
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("formatQuoteAmount(p.positionValue, quoteSymbol");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Entry Price`");

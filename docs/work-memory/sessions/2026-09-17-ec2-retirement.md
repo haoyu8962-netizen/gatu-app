@@ -16,7 +16,7 @@
   "commits": [],
   "sources": [
     { "path": "deploy/cloudfront/README.md" },
-    { "path": "deploy/README.md" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/5d3935721f070075c5d976d61a3c27d12b5dc607/deploy/README.md" },
     { "path": ".github/workflows/production-build.yml" },
     { "path": "docs/work-memory/sessions/2026-09-17-ec2-to-cloudfront-migration-audit.md" }
   ],

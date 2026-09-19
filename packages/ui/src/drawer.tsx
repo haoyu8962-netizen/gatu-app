@@ -1,6 +1,7 @@
 import { Drawer as BaseDrawer } from "@base-ui/react/drawer";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
+import { usePresentedOpen } from "./use-presented-open";
 import { cn } from "./utils";
 
 type DrawerSide = "right" | "left" | "top" | "bottom";
@@ -19,10 +20,11 @@ interface DrawerProps extends React.ComponentPropsWithoutRef<typeof BaseDrawer.R
 	children?: React.ReactNode;
 }
 
-function Drawer({ side = "right", swipeDirection, children, ...props }: DrawerProps) {
+function Drawer({ side = "right", swipeDirection, open, children, ...props }: DrawerProps) {
+	const presented = usePresentedOpen(open);
 	return (
 		<DrawerSideContext.Provider value={side}>
-			<BaseDrawer.Root swipeDirection={swipeDirection ?? sideToSwipeDirection[side]} {...props}>
+			<BaseDrawer.Root swipeDirection={swipeDirection ?? sideToSwipeDirection[side]} {...props} open={presented}>
 				{children}
 			</BaseDrawer.Root>
 		</DrawerSideContext.Provider>

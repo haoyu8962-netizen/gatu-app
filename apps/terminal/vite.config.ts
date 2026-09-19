@@ -18,12 +18,12 @@ import {
 } from '../../scripts/client-chunk-graph.mjs'
 import { BUILD_META_PATH } from './src/config/api-paths'
 import { type BuildMeta, createBuildMeta } from './src/config/build-meta'
+import { resolveCctpDepositFeatureFlags } from './src/config/cctp-deposit-flags'
 import { createHashedChartLibraryEntryPath } from './src/config/chart-library'
 import { DOCUMENT_ROUTE_PATHS } from './src/config/document-routes'
 import { resolveMobilePairingFeatureFlags } from './src/config/mobile-pairing-flags'
 import { chartingLibrarySecurityHeaders, referralJoinHeaders, securityHeaders } from './src/config/security-headers'
 import { hashCatalogMessageIds } from './src/lib/i18n-catalog'
-import { MOBILE_SYNC_TICKET_API_VERSION } from './src/lib/mobile-sync/one-time-ticket-policy'
 
 // SPA mode: the build prerenders one static shell for every client-rendered application route
 // and real HTML for the document routes, so the client output can be hosted without the Nitro
@@ -155,13 +155,14 @@ export const buildIdentity = Object.freeze({
 // file so a CDN deployment without the Nitro server still exposes it. Flags come from the same
 // `VITE_*` environment the client bundle sees for this mode.
 export function createBuildMetaForMode(mode: string): BuildMeta {
+  const env = loadEnv(mode, terminalDirectory, 'VITE_')
   return createBuildMeta({
     version: terminalPackage.version,
     commit: buildSha,
     release: releaseId,
     builtAt: buildTime,
-    ticketApiVersion: MOBILE_SYNC_TICKET_API_VERSION,
-    pairing: resolveMobilePairingFeatureFlags(loadEnv(mode, terminalDirectory, 'VITE_')),
+    pairing: resolveMobilePairingFeatureFlags(env),
+    cctpDeposits: resolveCctpDepositFeatureFlags(env),
     chartLibraryHash,
   })
 }
@@ -349,20 +350,6 @@ const config = defineConfig({
         },
         '/join/**': {
           headers: referralJoinHeaders,
-        },
-        '/mobile-agent-sync-ticket': {
-          headers: {
-            ...securityHeaders,
-            'cache-control': 'no-store',
-            'referrer-policy': 'no-referrer',
-          },
-        },
-        '/mobile-agent-sync-ticket/**': {
-          headers: {
-            ...securityHeaders,
-            'cache-control': 'no-store',
-            'referrer-policy': 'no-referrer',
-          },
         },
         '/mobile-agent-sync': {
           headers: {

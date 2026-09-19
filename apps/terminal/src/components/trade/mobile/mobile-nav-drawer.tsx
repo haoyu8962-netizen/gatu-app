@@ -25,7 +25,7 @@ export function MobileNavDrawer() {
 	const pendingModalRef = useRef<PreloadableGlobalModal | null>(null);
 	const preloadRequestRef = useRef(0);
 	const closingForModalRef = useRef(false);
-	const { hasWalletAccess } = useWalletSession();
+	const { hasWalletAccess, sessionMode } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
 	const depositNotice = getFundsAvailabilityNotice(depositAvailability);
 	const { open: openDepositModal } = useDepositModalActions();
@@ -34,7 +34,7 @@ export function MobileNavDrawer() {
 	const tradeActive = isTradeRoutePath(pathname);
 	const vaultsActive = pathname === "/vaults" || pathname.startsWith("/vaults/");
 	const soonLabel = t`Soon`;
-	const showsDepositEntry = hasWalletAccess || depositAvailability.path === "sponsored";
+	const showsDepositEntry = hasWalletAccess || sessionMode === "agent-only" || depositAvailability.path === "sponsored";
 
 	function getNavLinkClass(active: boolean): string {
 		return cn(

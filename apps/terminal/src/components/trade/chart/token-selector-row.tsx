@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { ArrowsClockwiseIcon, StarIcon } from "@phosphor-icons/react";
+import { TOUCH_PRESS_CLASS } from "@/components/ui/touch-press";
 import { get24hChange, get24hPriceChange, getEightHourFundingRate, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatNumber, formatPercent, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
@@ -163,7 +164,10 @@ export function TokenSelectorRow({
 			onClick={() => onSelect(market.name)}
 			aria-label={displayPairName}
 			aria-current={isSelected ? "true" : undefined}
-			className="absolute inset-0 z-0 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-stroke-focus"
+			className={cn(
+				"absolute inset-0 z-0 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-stroke-focus",
+				TOUCH_PRESS_CLASS,
+			)}
 		/>
 	);
 	let secondaryMobileMetric: { text: string; title?: string } = { text: "--" };

@@ -10,25 +10,18 @@ function readRepositoryFile(path: string): string {
 }
 
 describe("security policy documentation", () => {
-	it("keeps application route rules as the CSP owner", () => {
+	it("keeps the application header definitions as the CSP owner", () => {
 		const viteConfig = readRepositoryFile("apps/terminal/vite.config.ts");
-		const caddyfile = readRepositoryFile("deploy/Caddyfile");
-		const deployReadme = readRepositoryFile("deploy/README.md");
+		const edgePolicies = readRepositoryFile("deploy/cloudfront/response-headers-policies.mjs");
+		const edgeReadme = readRepositoryFile("deploy/cloudfront/README.md");
 
 		expect(viteConfig).toContain("headers: securityHeaders");
 		expect(viteConfig).toContain("headers: { ...chartingLibrarySecurityHeaders");
-		expect(caddyfile).toContain("Nitro route rules emit the path-specific Content-Security-Policy");
-		expect(caddyfile).not.toContain("Content-Security-Policy is intentionally NOT");
-		expect(deployReadme).toContain("CSP(应用层已启用)");
-		expect(deployReadme).toContain("apps/terminal/src/config/security-headers.ts");
-		expect(deployReadme).not.toContain("CSP(默认未开)");
+		expect(edgePolicies).toContain('from "../../apps/terminal/src/config/security-headers.ts"');
+		expect(edgeReadme).toContain("src/config/security-headers.ts");
 	});
 
-	it("documents the current inline-script exception without weakening iframe isolation", () => {
-		const deployReadme = readRepositoryFile("deploy/README.md");
-		const allowsInlineScripts = cspDirectives["script-src"].includes("'unsafe-inline'");
-
-		expect(deployReadme.includes("`'unsafe-inline'`")).toBe(allowsInlineScripts);
+	it("keeps the main document unframeable and the chart package same-origin only", () => {
 		expect(securityHeaders["content-security-policy"]).toContain("frame-ancestors 'none'");
 		expect(chartingLibrarySecurityHeaders["content-security-policy"]).toContain("frame-ancestors 'self'");
 	});

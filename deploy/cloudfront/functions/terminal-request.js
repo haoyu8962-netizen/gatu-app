@@ -7,8 +7,9 @@
 // into x-gatu-forwarded-host so the API origin can rebuild the public origin, and join paths are
 // tagged so the viewer-response function can expose the referral route marker as a header.
 var DOCUMENT_ROUTES = ['/cookies', '/docs', '/privacy', '/risk', '/support', '/terms'];
-var SERVER_PATHS = ['/api', '/client-error-report', '/mobile-agent-sync-ticket'];
-var SERVER_PREFIXES = ['/api/', '/mobile-agent-sync-ticket/'];
+var SERVER_PATHS = ['/api', '/client-error-report'];
+var SERVER_PREFIXES = ['/api/'];
+var RETIRED_PATH = '/mobile-agent-sync-ticket';
 var SERVER_FUNCTION_PREFIX = '/_serverFn/';
 var SHELL = '/_shell.html';
 var EXTENSION = /^[A-Za-z0-9]{1,8}$/;
@@ -39,23 +40,26 @@ function hasFileExtension(uri) {
 	return dot > 0 && EXTENSION.test(segment.slice(dot + 1));
 }
 
+function notFound(message) {
+	return {
+		statusCode: 404,
+		statusDescription: 'Not Found',
+		headers: {
+			'content-type': { value: 'application/json; charset=utf-8' },
+			'cache-control': { value: 'no-store' },
+		},
+		body: JSON.stringify({ error: message }),
+	};
+}
+
 function handler(event) {
 	var request = event.request;
 	var host = request.headers.host ? request.headers.host.value : '';
 	request.headers['x-gatu-forwarded-host'] = { value: host };
 
 	var uri = trimTrailingSlash(request.uri);
-	if (uri.indexOf(SERVER_FUNCTION_PREFIX) === 0) {
-		return {
-			statusCode: 404,
-			statusDescription: 'Not Found',
-			headers: {
-				'content-type': { value: 'application/json; charset=utf-8' },
-				'cache-control': { value: 'no-store' },
-			},
-			body: '{"error":"Server functions are not available"}',
-		};
-	}
+	if (uri.indexOf(SERVER_FUNCTION_PREFIX) === 0) return notFound('Server functions are not available');
+	if (uri === RETIRED_PATH || uri.indexOf(RETIRED_PATH + '/') === 0) return notFound('Not found');
 	if (includes(SERVER_PATHS, uri) || startsWithAny(uri, SERVER_PREFIXES)) return request;
 	if (hasFileExtension(uri)) return request;
 

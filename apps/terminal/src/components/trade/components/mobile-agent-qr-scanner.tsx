@@ -9,7 +9,7 @@ import {
 	saveMobileSyncDraft,
 } from "@/lib/mobile-sync/draft-storage";
 import { classifyQrValue, shouldShowQrFeedback } from "@/lib/mobile-sync/qr-classification";
-import { MOBILE_SYNC_ROUTE_PATH, parseMobileSyncUrl } from "@/lib/mobile-sync/sync-core";
+import { isMobileSyncError, MOBILE_SYNC_ROUTE_PATH, parseMobileSyncUrl } from "@/lib/mobile-sync/sync-core";
 
 type ScannerStatus = "idle" | "starting" | "scanning";
 type ScannerFeedback =
@@ -19,6 +19,7 @@ type ScannerFeedback =
 	| "invalid-link"
 	| "invalid-payload"
 	| "storage-unavailable"
+	| "upgrade-required"
 	| "wallet-connect";
 
 interface MobileAgentQrScannerProps {
@@ -32,12 +33,12 @@ interface QrScannerControls {
 }
 
 export type QrScannerStart = (
-	constraints: MediaStreamConstraints,
 	video: HTMLVideoElement,
 	onDecode: (value: string, controls: QrScannerControls) => void,
 ) => Promise<QrScannerControls>;
 
 const QR_FEEDBACK_THROTTLE_MS = 1_800;
+const NON_PRIMARY_CAMERA_LABEL = /front|user|face|selfie|ultra|wide|tele|macro|zoom/i;
 
 export function MobileAgentQrScanner({
 	onCancel,
@@ -104,59 +105,52 @@ export function MobileAgentQrScanner({
 		try {
 			if (generation !== scanGenerationRef.current || !videoRef.current) return;
 
-			const controls = await startScanner(
-				{
-					audio: false,
-					video: {
-						facingMode: { ideal: "environment" },
-					},
-				},
-				videoRef.current,
-				(value, callbackControls) => {
-					if (didCompleteRef.current || generation !== scanGenerationRef.current) return;
+			const controls = await startScanner(videoRef.current, (value, callbackControls) => {
+				if (didCompleteRef.current || generation !== scanGenerationRef.current) return;
 
-					const classification = classifyQrValue(value, window.location.origin);
-					if (classification.type === "walletconnect") {
-						showFeedback("wallet-connect");
-						return;
-					}
-					if (classification.type !== "phoneAccessLink") {
-						showFeedback("invalid-link");
-						return;
-					}
+				const classification = classifyQrValue(value, window.location.origin);
+				if (classification.type === "walletconnect") {
+					showFeedback("wallet-connect");
+					return;
+				}
+				if (classification.type !== "phoneAccessLink") {
+					showFeedback("invalid-link");
+					return;
+				}
 
-					try {
-						const parsed = parseMobileSyncUrl(classification.url);
-						if (isMobileSyncEnvelopeExpired(parsed.envelope)) {
-							parsed.keyBytes.fill(0);
-							clearMobileSyncDraft();
-							showFeedback("expired");
-							return;
-						}
-						if (!saveMobileSyncDraft(parsed.envelope, parsed.encodedKey)) {
-							parsed.keyBytes.fill(0);
-							showFeedback("storage-unavailable");
-							return;
-						}
+				try {
+					const parsed = parseMobileSyncUrl(classification.url);
+					if (isMobileSyncEnvelopeExpired(parsed.envelope)) {
 						parsed.keyBytes.fill(0);
-
-						didCompleteRef.current = true;
-						scanGenerationRef.current++;
-						controlsRef.current = null;
-						try {
-							callbackControls.stop();
-						} catch {
-							// The camera tracks are still stopped below.
-						} finally {
-							stopVideoTracks(videoRef.current);
-						}
-						onSyncReady();
-					} catch {
 						clearMobileSyncDraft();
-						showFeedback("invalid-payload");
+						showFeedback("expired");
+						return;
 					}
-				},
-			);
+					if (!saveMobileSyncDraft(parsed.envelope, parsed.encodedKey)) {
+						parsed.keyBytes.fill(0);
+						showFeedback("storage-unavailable");
+						return;
+					}
+					parsed.keyBytes.fill(0);
+
+					didCompleteRef.current = true;
+					scanGenerationRef.current++;
+					controlsRef.current = null;
+					try {
+						callbackControls.stop();
+					} catch {
+						// The camera tracks are still stopped below.
+					} finally {
+						stopVideoTracks(videoRef.current);
+					}
+					onSyncReady();
+				} catch (error) {
+					clearMobileSyncDraft();
+					showFeedback(
+						isMobileSyncError(error) && error.code === "unsupported_version" ? "upgrade-required" : "invalid-payload",
+					);
+				}
+			});
 
 			if (generation !== scanGenerationRef.current || didCompleteRef.current) {
 				try {
@@ -198,6 +192,7 @@ export function MobileAgentQrScanner({
 		if (code === "storage-unavailable") {
 			return t`This device could not securely hold the QR. Check browser storage and retry.`;
 		}
+		if (code === "upgrade-required") return t`Refresh both devices to update phone access, then create a new QR.`;
 		return t`This is a WalletConnect QR. Scan the Link Desktop Wallet QR instead.`;
 	}
 
@@ -216,7 +211,7 @@ export function MobileAgentQrScanner({
 						<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-modal px-6 text-center">
 							<QrCodeIcon className="size-12 text-signal" weight="duotone" aria-hidden />
 							<p className="text-xs text-fg-muted">
-								<Trans>Scan the QR shown by Link Mobile Device on your desktop.</Trans>
+								<Trans>Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device).</Trans>
 							</p>
 						</div>
 					)}
@@ -299,8 +294,7 @@ function openMobileSyncRoute(): void {
 	window.location.assign(MOBILE_SYNC_ROUTE_PATH);
 }
 
-async function startBrowserQrScanner(
-	_constraints: MediaStreamConstraints,
+export async function startBrowserQrScanner(
 	video: HTMLVideoElement,
 	onDecode: (value: string, controls: QrScannerControls) => void,
 ): Promise<QrScannerControls> {
@@ -321,5 +315,29 @@ async function startBrowserQrScanner(
 		returnDetailedScanResult: true,
 	});
 	await scanner.start();
+
+	try {
+		const cameras = await QrScanner.listCameras(true);
+		const primaryCameraId = selectPrimaryEnvironmentCameraId(cameras, getActiveCameraId(video));
+		if (primaryCameraId !== null && !stopped) await scanner.setCamera(primaryCameraId);
+	} catch {
+		// Camera selection is best-effort; the environment camera that already started keeps scanning.
+	}
 	return controls;
+}
+
+function selectPrimaryEnvironmentCameraId(
+	cameras: ReadonlyArray<{ id: string; label: string }>,
+	activeCameraId: string | undefined,
+): string | null {
+	if (activeCameraId === undefined) return null;
+	const candidates = cameras.filter((camera) => !NON_PRIMARY_CAMERA_LABEL.test(camera.label));
+	if (candidates.some((camera) => camera.id === activeCameraId)) return null;
+	return candidates[0]?.id ?? null;
+}
+
+function getActiveCameraId(video: HTMLVideoElement): string | undefined {
+	const stream = video.srcObject;
+	if (!stream || !("getVideoTracks" in stream)) return undefined;
+	return stream.getVideoTracks()[0]?.getSettings().deviceId;
 }

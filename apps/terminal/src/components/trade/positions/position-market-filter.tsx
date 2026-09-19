@@ -23,6 +23,7 @@ interface Props {
 	options: readonly PositionMarketOption[];
 	onChange: (value: PositionMarketFilter) => void;
 	mobile?: boolean;
+	disabled?: boolean;
 }
 
 const allMessage = msg`All`;
@@ -40,7 +41,7 @@ function getMarketFilterFallbackLabel(value: PositionMarketFilter): string | und
 	return value.market.dex ? `${marketName} (${value.market.dex})` : marketName;
 }
 
-export function PositionMarketFilterControl({ value, options, onChange, mobile = false }: Props) {
+export function PositionMarketFilterControl({ value, options, onChange, mobile = false, disabled = false }: Props) {
 	const { _ } = useLingui();
 	const [open, setOpen] = useState(false);
 	const selectedOption =
@@ -65,12 +66,13 @@ export function PositionMarketFilterControl({ value, options, onChange, mobile =
 					variant="ghost"
 					intent="neutral"
 					size="xxs"
+					disabled={disabled}
 					aria-label={_(msg`Filter positions by market: ${ariaValue}`)}
 					className={cn(
 						"min-h-0 gap-1 font-normal focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100",
 						mobile
-							? "relative max-w-24 rounded-[7px] border border-market-close-stroke-card bg-modal px-[9px] py-1 text-xs leading-4 text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:border-market-close-control hover:bg-modal hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg"
-							: "h-[27px] max-w-40 rounded-[7px] border border-market-close-stroke-card bg-modal px-2.5 py-1 text-xs text-market-close-muted transition-colors duration-[120ms] hover:border-market-close-control hover:bg-modal hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg",
+							? "relative max-w-24 rounded-[7px] border border-market-close-stroke-card bg-surface px-[9px] py-1 text-xs leading-4 text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:border-market-close-control hover:bg-surface hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg"
+							: "h-[27px] max-w-40 rounded-[7px] border border-market-close-stroke-card bg-surface px-2.5 py-1 text-xs text-market-close-muted transition-colors duration-[120ms] hover:border-market-close-control hover:bg-surface hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg",
 					)}
 				>
 					<span className="truncate">{mobile ? triggerLabel : desktopTriggerLabel}</span>

@@ -33,7 +33,7 @@ Never cause **literal doubling** of the Tailwind property prefix. If a token is 
 - `bg-portfolio-canvas` compatibility alias for the portfolio page; new dashboard pages should use `bg-dashboard-canvas`
 - `bg-surface` elevated surfaces, cards (light: `#ffffff`, shared dark default: `#1d1e26`)
 - `bg-overlay` lightweight raised overlays such as tooltips, toasts, and selection indicators (light: `#ffffff`, dark: `#292b33`)
-- `bg-modal` blocking modal and drawer surfaces (light: `#ffffff`, shared dark default: `#292b33`)
+- `bg-modal` blocking modal and drawer surfaces (light: `#ffffff`, shared dark default: `#292b33`); also the inputs, checkboxes and option cards rendered inside those modals. List cards, table headers and in-panel filter triggers use `bg-surface`, never `bg-modal`, even where the two resolve to the same color in the terminal (`modal-surface-contract` pins this)
 - `bg-alternate` alternating rows (light: `#f5f6fa`, shared dark default: `#1d1e26`)
 - `bg-inverse-surface` inverse background
 

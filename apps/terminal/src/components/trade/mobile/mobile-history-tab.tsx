@@ -4,6 +4,7 @@ import type { UserFillsResponse } from "@nktkas/hyperliquid";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
@@ -39,8 +40,7 @@ type TradeHistoryDirectionFilter = "all" | "buy" | "sell";
 type TradeHistoryRoleFilter = "all" | "maker" | "taker";
 type UserFill = UserFillsResponse[number];
 
-const filterTriggerClassName =
-	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
+const filterTriggerClassName = MOBILE_FILTER_CHIP_CLASS;
 const footerActionClassName =
 	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle";
 
@@ -107,16 +107,16 @@ function MobileHistoryTabContent({
 	);
 	const { expandedKeys, setExpanded } = disclosure;
 	const typeOptions = [
-		{ value: "all", label: t`All types` },
+		{ value: "all", label: t`Type` },
 		...(["trade", "liquidation"] as const).map((value) => ({ value, label: getTypeFilterLabel(value) })),
 	];
 	const directionOptions = [
-		{ value: "all", label: t`All Directions` },
+		{ value: "all", label: t`Direction` },
 		{ value: "buy", label: t`Buy` },
 		{ value: "sell", label: t`Sell` },
 	];
 	const roleOptions = [
-		{ value: "all", label: t`All roles` },
+		{ value: "all", label: t`Role` },
 		{ value: "maker", label: t`Maker` },
 		{ value: "taker", label: t`Taker` },
 	];
@@ -194,10 +194,67 @@ function MobileHistoryTabContent({
 		</div>
 	);
 
+	function renderFilterRow(disabled: boolean) {
+		return (
+			<div
+				data-testid="mobile-trade-history-filter-row"
+				className="flex h-9 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+			>
+				<span className="sr-only" aria-live="polite">
+					{headerCount}
+				</span>
+				<div className="flex shrink-0 items-center gap-1.5">
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Type`}
+						value={typeFilter}
+						onValueChange={(value) => {
+							if (isTradeHistoryTypeFilter(value)) setTypeFilter(value);
+						}}
+						options={typeOptions}
+						className="w-auto shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Direction`}
+						value={directionFilter}
+						onValueChange={(value) => {
+							if (isTradeHistoryDirectionFilter(value)) setDirectionFilter(value);
+						}}
+						options={directionOptions}
+						className="w-auto shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+					<Select
+						disabled={disabled}
+						size="xxs"
+						label={t`Role`}
+						value={roleFilter}
+						onValueChange={(value) => {
+							if (isTradeHistoryRoleFilter(value)) setRoleFilter(value);
+						}}
+						options={roleOptions}
+						className="w-auto shrink-0 [&>label]:sr-only"
+						triggerClassName={filterTriggerClassName}
+					/>
+				</div>
+				<MobileBulkDisclosureActions
+					keys={disabled ? [] : filteredFillKeys}
+					controller={disclosure}
+					className="ms-auto ps-3"
+				/>
+			</div>
+		);
+	}
+
 	if (!isConnected) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
-				{t`Connect your wallet to view trade history.`}
+			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
+				{renderFilterRow(true)}
+				<div className={cn("min-h-0", !isPageScroll && "flex-1")} />
 			</div>
 		);
 	}
@@ -224,50 +281,7 @@ function MobileHistoryTabContent({
 
 	return (
 		<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-			<div
-				data-testid="mobile-trade-history-filter-row"
-				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-			>
-				<span className="sr-only" aria-live="polite">
-					{headerCount}
-				</span>
-				<div className="flex shrink-0 items-center gap-1.5">
-					<Select
-						size="xxs"
-						label={t`Type`}
-						value={typeFilter}
-						onValueChange={(value) => {
-							if (isTradeHistoryTypeFilter(value)) setTypeFilter(value);
-						}}
-						options={typeOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-					<Select
-						size="xxs"
-						label={t`Direction`}
-						value={directionFilter}
-						onValueChange={(value) => {
-							if (isTradeHistoryDirectionFilter(value)) setDirectionFilter(value);
-						}}
-						options={directionOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-					<Select
-						size="xxs"
-						label={t`Role`}
-						value={roleFilter}
-						onValueChange={(value) => {
-							if (isTradeHistoryRoleFilter(value)) setRoleFilter(value);
-						}}
-						options={roleOptions}
-						className="w-24 shrink-0 [&>label]:sr-only"
-						triggerClassName={filterTriggerClassName}
-					/>
-				</div>
-				<MobileBulkDisclosureActions keys={filteredFillKeys} controller={disclosure} className="ms-auto ps-3" />
-			</div>
+			{renderFilterRow(false)}
 			<div
 				data-testid="mobile-trade-history-list"
 				className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}
@@ -302,7 +316,7 @@ function MobileHistoryTabContent({
 								return (
 									<article
 										key={cardKey}
-										className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal"
+										className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface"
 									>
 										<MobileDisclosureHeader
 											expanded={isExpanded}

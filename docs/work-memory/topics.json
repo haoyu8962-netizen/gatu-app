@@ -31,7 +31,7 @@
 	{
 		"id": "pairing-release",
 		"title": "移动配对与发布校验",
-		"documents": ["docs/mobile-sync-production-readiness.md", "deploy/README.md"]
+		"documents": ["docs/adr/0015-link-device-alignment.md", "deploy/cloudfront/README.md"]
 	},
 	{
 		"id": "work-memory",
@@ -41,7 +41,7 @@
 	{
 		"id": "static-hosting",
 		"title": "静态托管与 SPA 壳",
-		"documents": ["docs/adr/0005-spa-static-shell.md", "deploy/README.md"]
+		"documents": ["docs/adr/0005-spa-static-shell.md", "deploy/cloudfront/README.md"]
 	},
 	{
 		"id": "docs-governance",

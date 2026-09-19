@@ -213,7 +213,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 						}}
 						options={typeOptions}
 						className="min-w-[7rem] [&>label]:sr-only"
-						triggerClassName="h-[27px] !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted hover:border-market-close-control focus-visible:border-market-close-focus"
+						triggerClassName="h-[27px] !rounded-[7px] border-market-close-stroke-card bg-surface px-2.5 text-xs text-market-close-muted hover:border-market-close-control focus-visible:border-market-close-focus"
 					/>
 					<Select
 						size="xxs"
@@ -224,7 +224,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 						}}
 						options={statusOptions}
 						className="min-w-[7rem] [&>label]:sr-only"
-						triggerClassName="h-[27px] !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted hover:border-market-close-control focus-visible:border-market-close-focus"
+						triggerClassName="h-[27px] !rounded-[7px] border-market-close-stroke-card bg-surface px-2.5 text-xs text-market-close-muted hover:border-market-close-control focus-visible:border-market-close-focus"
 					/>
 					{headerCount ? (
 						<span className="shrink-0 text-xs text-market-close-subtle tabular-nums">{headerCount}</span>

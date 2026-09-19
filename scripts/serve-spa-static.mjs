@@ -11,7 +11,9 @@ import { fileURLToPath } from "node:url";
 
 export const SHELL_FILE = "_shell.html";
 export const SERVER_ONLY_PREFIXES = ["/_serverFn/", "/api/"];
-export const SERVER_ONLY_PATHS = ["/build-meta.json", "/client-error-report", "/mobile-agent-sync-ticket"];
+export const SERVER_ONLY_PATHS = ["/build-meta.json", "/client-error-report"];
+// Retired with the pairing ticket endpoint: the CDN answers 404 at the edge and never forwards it.
+export const RETIRED_PATH = "/mobile-agent-sync-ticket";
 
 const CONTENT_TYPES = new Map([
 	[".html", "text/html; charset=utf-8"],
@@ -63,6 +65,7 @@ export function resolveStaticRequest(rawPathname, { acceptsHtml, isFile }) {
 	if (decoded === null || decoded.includes("\0")) return { kind: "not-found" };
 	const pathname = normalize(decoded).replaceAll("\\", "/");
 	if (!pathname.startsWith("/") || pathname.split("/").includes("..")) return { kind: "not-found" };
+	if (pathname === RETIRED_PATH || pathname.startsWith(`${RETIRED_PATH}/`)) return { kind: "retired" };
 	if (isServerOnlyPath(pathname)) return { kind: "server-only", pathname };
 
 	const candidates = pathname.endsWith("/")
@@ -119,6 +122,11 @@ export function createStaticHandler(publicDir, { apiOrigin } = {}) {
 		const acceptsHtml = acceptsHtmlNavigation(request.headers.accept);
 		const result = resolveStaticRequest(url.pathname, { acceptsHtml, isFile });
 
+		if (result.kind === "retired") {
+			response.writeHead(404, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+			response.end(JSON.stringify({ error: "Not found" }));
+			return;
+		}
 		if (result.kind === "server-only") {
 			if (apiOrigin) {
 				proxyToApiOrigin(request, response, apiOrigin, url);

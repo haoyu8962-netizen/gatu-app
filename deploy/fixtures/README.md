@@ -1,5 +1,5 @@
-# Legacy mobile ticket client
+# Deploy fixtures
 
-`mobile-sync-legacy-client.mjs` is the actual client module from commit `4639917c`, transformed from TypeScript to ES2022 with the locked Vite/esbuild toolchain. Its sole policy import is inlined as the original `60_000` constant. It retains the old request bodies and response handling.
+`mobile-device-evidence.mjs` builds the device-validation evidence document used by `scripts/validate-mobile-phone-access-device-validation.test.js`.
 
-The production HTTP checker runs its registration and consumption functions against the real new server, including the default-closed build. Both fail closed with their original unavailable result. This fixture tests the shipped old transport semantics; physical old-page refresh, PWA and wallet UX remain in the device runbook.
+The legacy one-time-ticket client and server fixtures were removed together with the ticket endpoint when phone pairing became a client-only transfer ([ADR 0015](../../docs/adr/0015-link-device-alignment.md) D7, [plan](../../docs/mobile-sync-ticketless-transfer-plan.md)).

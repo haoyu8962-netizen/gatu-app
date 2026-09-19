@@ -16,8 +16,6 @@ const testState = vi.hoisted(() => ({
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	error: null as string | null,
 	isMobile: false,
-	isPending: false,
-	isReconciling: false,
 	livePosition: {
 		szi: "2.5",
 		entryPx: "100000",
@@ -29,7 +27,6 @@ const testState = vi.hoisted(() => ({
 	positionIsLoading: false,
 	positionIsStale: false,
 	preferenceStatus: "required" as "dismissed" | "required" | "unavailable",
-	resetError: vi.fn(),
 	session: {
 		sessionId: "session-1",
 		owner: "0xabc",
@@ -48,7 +45,7 @@ const testState = vi.hoisted(() => ({
 			| { kind: "percent"; value: string }
 			| { kind: "size"; value: string },
 		phase: "idle" as "idle" | "validating" | "submitting" | "reconciling",
-		error: null as string | null,
+		presentation: "confirmation" as "confirmation" | "dismissed" | "direct",
 	},
 	setSizingIntent: vi.fn(),
 	sliderProps: null as Record<string, unknown> | null,
@@ -179,13 +176,7 @@ vi.mock("@/hooks/use-mobile", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-position-market-close-submit", () => ({
-	usePositionMarketCloseSubmit: () => ({
-		submit: testState.submit,
-		isPending: testState.isPending,
-		isReconciling: testState.isReconciling,
-		error: testState.error,
-		resetError: testState.resetError,
-	}),
+	usePositionMarketCloseSubmit: () => ({ submit: testState.submit }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -214,7 +205,7 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 		close: testState.close,
 		setSizingIntent: testState.setSizingIntent,
 		updatePhase: vi.fn(),
-		setError: vi.fn(),
+		dismiss: vi.fn(),
 	}),
 }));
 
@@ -266,10 +257,7 @@ describe("PositionMarketCloseModal", () => {
 		testState.close.mockReset();
 		testState.clientKey = "0xabc";
 		testState.env = "Mainnet";
-		testState.error = null;
 		testState.isMobile = false;
-		testState.isPending = false;
-		testState.isReconciling = false;
 		testState.livePosition = { szi: "2.5", entryPx: "100000", unrealizedPnl: "-50" };
 		testState.marketsInfo = { markPx: "101000", shortName: "BTC" };
 		testState.numberInputs.clear();
@@ -280,10 +268,9 @@ describe("PositionMarketCloseModal", () => {
 		testState.session.position.signedPositionSize = "2.5";
 		testState.session.position.szDecimals = 4;
 		testState.session.position.markPx = "100000";
-		testState.resetError.mockReset();
 		testState.session.sizingIntent = { kind: "max" };
 		testState.session.phase = "idle";
-		testState.session.error = null;
+		testState.session.presentation = "confirmation";
 		testState.setSizingIntent.mockReset();
 		testState.sliderProps = null;
 		testState.submit.mockClear();
@@ -336,12 +323,9 @@ describe("PositionMarketCloseModal", () => {
 		expect(getSummaryValue("Mark price")?.textContent).toBe("$101,000");
 		expect(getSummaryValue("Estimated PnL")?.textContent).toBe("-$25.00");
 		expect(getSummaryValue("Estimated PnL")?.className).toContain("text-market-close-danger");
-		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.className).toMatch(
-			/rounded-\[12px\].*border.*bg-market-close-card/,
-		);
-		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.className).not.toContain(
-			"rounded-12",
-		);
+		const summaryClassName = container.querySelector('[data-testid="position-market-close-summary"]')?.className;
+		expect(summaryClassName).toBe("py-3 min-[1001px]:py-3.5");
+		expect(summaryClassName).not.toMatch(/rounded|border|bg-/);
 		expect(testState.numberInputs.get("Close size")?.className).toContain("!rounded-[10px]");
 		expect(testState.numberInputs.get("Close percentage")?.className).toContain("!rounded-[10px]");
 		expect(testState.numberInputs.get("Close size")?.suffixClassName).toContain("right-3");
@@ -466,7 +450,6 @@ describe("PositionMarketCloseModal", () => {
 			["session-1", { kind: "max" }],
 			["session-1", { kind: "percent", value: "75" }],
 		]);
-		expect(testState.resetError).toHaveBeenCalledTimes(4);
 	});
 
 	it("keeps the opt-out selectable for a partial close and submits the preference", async () => {
@@ -589,37 +572,34 @@ describe("PositionMarketCloseModal", () => {
 		expectEditingLocked();
 	});
 
-	it("locks editing while reconciling and locks both dismissal and editing while submitting", () => {
-		testState.isReconciling = true;
-		testState.session.phase = "reconciling";
-		testState.error = "Order submitted. Confirming exchange status; do not retry.";
+	it("animates out on cancel and releases the session only once the exit completes", () => {
 		render();
-
-		expect(testState.adaptiveProps).toMatchObject({
-			dismissible: true,
-			showClose: true,
-			showHandle: false,
-		});
-		expect(container.textContent).toContain("Closing this dialog will not cancel it.");
-		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.disabled).toBe(true);
-		expectEditingLocked();
+		expect(testState.adaptiveProps?.open).toBe(true);
 
 		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
-		expect(testState.close).toHaveBeenCalledWith("session-1");
+		expect(testState.adaptiveProps?.open).toBe(false);
+		expect(testState.close).not.toHaveBeenCalled();
+		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click());
+		expect(testState.submit).not.toHaveBeenCalled();
 
-		testState.isReconciling = false;
-		testState.isPending = true;
-		testState.error = null;
-		testState.session.phase = "submitting";
+		act(() => (testState.adaptiveProps?.onOpenChangeComplete as (open: boolean) => void)(false));
+		expect(testState.close).toHaveBeenCalledWith("session-1");
+	});
+
+	it("closes the dialog as soon as the session is dismissed and never shows progress copy", () => {
+		testState.session.presentation = "dismissed";
+		testState.session.phase = "validating";
 		render();
 
-		expect(testState.adaptiveProps).toMatchObject({
-			dismissible: false,
-			showClose: false,
-			showHandle: false,
-		});
-		expectEditingLocked();
-		expect(container.textContent).toContain("Submitting...");
+		expect(testState.adaptiveProps).toMatchObject({ open: false, dismissible: true });
+		expect(container.textContent).not.toContain("Validating...");
+		expect(container.textContent).not.toContain("Submitting...");
+
+		testState.session.phase = "reconciling";
+		render();
+		expect(testState.adaptiveProps).toMatchObject({ open: false });
+		expect(container.textContent).not.toContain("Confirming...");
 	});
 
 	it("reactively switches visible and ARIA copy without remounting or losing opt-out state", () => {

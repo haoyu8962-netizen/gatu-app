@@ -132,7 +132,7 @@ describe("lambda function url adapter", () => {
 		write.mockRestore();
 
 		expect((await handler(event({ rawPath: "/api/client-error-report" }))).statusCode).toBe(405);
-		expect((await handler(event({ rawPath: "/mobile-agent-sync-ticket", method: "POST" }))).statusCode).toBe(503);
+		expect((await handler(event({ rawPath: "/mobile-agent-sync-ticket", method: "POST" }))).statusCode).toBe(404);
 		expect((await handler(event({ rawPath: "/api/unknown" }))).statusCode).toBe(404);
 		const health = await handler(event({ rawPath: "/api/health" }));
 		expect(health.statusCode).toBe(204);

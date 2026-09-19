@@ -59,6 +59,9 @@ const balanceSnapshot = {
 	withdrawable: "0",
 };
 
+const AGENT_ONLY_REASON =
+	"This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop.";
+
 const testState = {
 	accountAbstraction: "unifiedAccount" as string | null,
 	depositAvailable: true,
@@ -71,6 +74,7 @@ const testState = {
 	isDataStale: false,
 	isLoading: false,
 	perpStateStatus: "success",
+	sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
 	snapshotsReady: true,
 	spotStateStatus: "success",
 };
@@ -147,7 +151,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
 		hasWalletAccess: testState.hasWalletAccess,
 		isConnected: testState.isConnected,
-		sessionMode: "wallet",
+		sessionMode: testState.sessionMode,
 		walletAddress: "0x1111111111111111111111111111111111111111",
 	}),
 }));
@@ -155,6 +159,15 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 	useDepositAvailability: () => {
 		const geoReason = testState.geoStatus === "allowed" ? null : `geo-${testState.geoStatus}`;
+		if (geoReason === null && testState.sessionMode === "agent-only") {
+			return {
+				available: false,
+				path: testState.depositPath,
+				reason: "agent-only-session",
+				unavailableLabel: "Deposit unavailable",
+				unavailableReason: AGENT_ONLY_REASON,
+			};
+		}
 		return {
 			available: testState.depositAvailable && geoReason === null,
 			path: testState.depositPath,
@@ -205,6 +218,7 @@ describe("mobile account view", () => {
 		testState.isDataStale = false;
 		testState.isLoading = false;
 		testState.perpStateStatus = "success";
+		testState.sessionMode = "wallet";
 		testState.snapshotsReady = true;
 		testState.spotStateStatus = "success";
 		bridgeState.hasExistingExecution = false;
@@ -507,9 +521,67 @@ describe("mobile account view", () => {
 		const depositButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 			(button) => button.textContent === "Deposit",
 		);
-		expect(depositButton?.disabled).toBe(true);
+		expect(depositButton?.getAttribute("aria-disabled")).toBe("true");
+		if (!depositButton) throw new Error("Missing Deposit control");
+		expect(getDescriptionText(depositButton)).toContain("Deposits from external wallets are not enabled on Mainnet.");
 		expect(container.textContent).toContain("Deposits from external wallets are not enabled on Mainnet.");
 		act(() => depositButton?.click());
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
+	});
+
+	it("keeps Deposit, Withdraw and Perps / Spot visible but inert with the desktop reason in an agent-only session", () => {
+		testState.accountAbstraction = "disabled";
+		testState.hasWalletAccess = false;
+		testState.sessionMode = "agent-only";
+		bridgeState.hasExistingExecution = true;
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileAccountView />
+				</I18nProvider>,
+			);
+		});
+
+		const actions = container.querySelector('[data-slot="mobile-account-actions"]');
+		if (!actions) throw new Error("Missing mobile account actions");
+		const buttons = Array.from(actions.querySelectorAll<HTMLButtonElement>("button"));
+		expect(buttons.map((button) => button.textContent)).toEqual(["Deposit", "Withdraw", "Perps / Spot"]);
+		for (const button of buttons) {
+			expect(button.getAttribute("aria-disabled")).toBe("true");
+			expect(getDescriptionText(button)).toContain(AGENT_ONLY_REASON);
+		}
+		expect(container.textContent).toContain(AGENT_ONLY_REASON);
+		expect(container.textContent).not.toContain("Connect the owner wallet");
+		expect(container.querySelector("button[aria-label='Bridge']")).toBeNull();
+
+		act(() => {
+			for (const button of buttons) button.click();
+		});
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
+		expect(modalActions.openTransfer).not.toHaveBeenCalled();
+	});
+
+	it("shows the zero-value overview with inert funding actions instead of a connect prompt while disconnected", () => {
+		testState.isConnected = false;
+		testState.hasWalletAccess = false;
+		testState.depositPath = "external";
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileAccountView />
+				</I18nProvider>,
+			),
+		);
+
+		expect(container.textContent).not.toContain("Connect Wallet");
+		expect(container.textContent).not.toContain("Connect your wallet");
+		expect(container.querySelector("section[aria-labelledby]")).not.toBeNull();
+		expect(container.textContent).toContain("$0.00");
+		expect(container.textContent).toContain("0.00x");
+		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
+		expect(buttons.map((button) => button.getAttribute("aria-label"))).toEqual(["Deposit", "Withdraw"]);
+		expect(buttons.every((button) => button.disabled)).toBe(true);
+		act(() => buttons[0]?.click());
 		expect(modalActions.openDeposit).not.toHaveBeenCalled();
 	});
 

@@ -1,4 +1,5 @@
 import { Activity, Suspense } from "react";
+import { useHasBeenActive } from "@/hooks/ui/use-has-been-active";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -21,6 +22,7 @@ interface Props {
 
 export function MobileTerminal({ className, marketReady = true, orderEntryDraftReady = true }: Props) {
 	const { activeTab, setActiveTab } = useMobileTerminalTab();
+	const marketsRetained = useHasBeenActive(activeTab === "markets");
 	const { address, isConnected } = useWalletSession();
 	const { env } = useHyperliquid();
 	const disclosureIdentity = isConnected && address ? `${env}:${address.toLowerCase()}` : null;
@@ -48,7 +50,7 @@ export function MobileTerminal({ className, marketReady = true, orderEntryDraftR
 						<MobileMarketBarProvider enabled={activeTab !== "account"}>
 							<MobileWorkspaceView>
 								<div className="relative flex-1 min-h-0 overflow-hidden">
-									<Activity mode={activeTab === "markets" ? "visible" : "hidden"}>
+									<Activity mode={marketsRetained ? "visible" : "hidden"}>
 										<div
 											aria-hidden={activeTab !== "markets"}
 											className={cn(
