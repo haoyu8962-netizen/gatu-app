@@ -68,6 +68,13 @@ describe("bootstrap error page", () => {
 		expect(document.documentElement.dir).toBe("ltr");
 		expect(document.body.textContent).toContain("The terminal could not start safely.");
 	});
+
+	it("stays on system fonts so the recovery text never waits for a blocked webfont", () => {
+		renderBootstrapErrorPage();
+
+		const fallback = document.querySelector<HTMLElement>("[data-terminal-bootstrap-error]");
+		expect(fallback?.style.fontFamily).toBe("system-ui, sans-serif");
+	});
 });
 
 function getContrastRatio(foreground: string, background: string): number {
