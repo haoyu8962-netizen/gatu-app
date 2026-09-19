@@ -3,7 +3,7 @@
 // would: existing files win, application routes fall back to the prerendered SPA shell, and the
 // paths that only the Nitro server can answer return a JSON 404 instead of the shell so a client
 // never parses HTML as an API response.
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, existsSync, readdirSync, statSync } from "node:fs";
 import { createServer, request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { extname, join, normalize, resolve, sep } from "node:path";
@@ -34,6 +34,11 @@ const CONTENT_TYPES = new Map([
 	[".webmanifest", "application/manifest+json"],
 	[".wasm", "application/wasm"],
 ]);
+
+/** The edge functions give the pairing page these headers in any letter case, with or without a trailing slash. */
+export function isPairingPath(pathname) {
+	return pathname.replace(/\/+$/, "").toLowerCase() === "/mobile-agent-sync";
+}
 
 function isServerOnlyPath(pathname) {
 	if (SERVER_ONLY_PATHS.includes(pathname)) return true;
@@ -111,12 +116,25 @@ function proxyToApiOrigin(request, response, apiOrigin, url) {
 	request.pipe(upstream);
 }
 
+/**
+ * S3 object keys are case-sensitive, while the local disk may not be: every path segment must be
+ * spelled exactly as the directory lists it, so `/Build-Meta.json` is as missing here as on the CDN.
+ */
+export function hasExactPath(root, relative, listDirectory = readdirSync) {
+	let directory = root;
+	for (const segment of relative.split("/")) {
+		if (!listDirectory(directory).includes(segment)) return false;
+		directory = join(directory, segment);
+	}
+	return true;
+}
+
 export function createStaticHandler(publicDir, { apiOrigin } = {}) {
 	const root = resolve(publicDir);
 	const isFile = (relative) => {
 		const target = resolve(root, relative);
 		if (target !== root && !target.startsWith(root + sep)) return false;
-		return existsSync(target) && statSync(target).isFile();
+		return existsSync(target) && statSync(target).isFile() && hasExactPath(root, relative);
 	};
 
 	return (request, response) => {
@@ -146,7 +164,12 @@ export function createStaticHandler(publicDir, { apiOrigin } = {}) {
 
 		const file = result.file;
 		const contentType = CONTENT_TYPES.get(extname(file)) ?? "application/octet-stream";
-		response.writeHead(200, { "content-type": contentType, "cache-control": cacheControlFor(file) });
+		response.writeHead(
+			200,
+			isPairingPath(url.pathname)
+				? { "content-type": contentType, "cache-control": "no-store", "referrer-policy": "no-referrer" }
+				: { "content-type": contentType, "cache-control": cacheControlFor(file) },
+		);
 		if (request.method === "HEAD") {
 			response.end();
 			return;

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,6 +7,7 @@ import test from "node:test";
 import {
 	acceptsHtmlNavigation,
 	createStaticHandler,
+	hasExactPath,
 	readArgs,
 	resolveStaticRequest,
 	SHELL_FILE,
@@ -74,22 +75,49 @@ test("build metadata is a static file of the client build, not an API route", ()
 	assert.deepEqual(resolver([SHELL_FILE], false)("/build-meta.json"), { kind: "not-found" });
 });
 
-test("build metadata is served uncached without an API origin, as the CDN serves it", async () => {
+test("build metadata is served uncached without an API origin, as the CDN serves it", async (context) => {
 	const publicDir = mkdtempSync(join(tmpdir(), "gatu-spa-static-"));
+	context.after(() => rmSync(publicDir, { recursive: true, force: true }));
 	writeFileSync(join(publicDir, SHELL_FILE), "<html></html>");
 	writeFileSync(join(publicDir, "build-meta.json"), '{"commit":"abc"}');
 	const server = createServer(createStaticHandler(publicDir));
-	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-	try {
-		const response = await fetch(`http://127.0.0.1:${server.address().port}/build-meta.json`, {
-			headers: { accept: "application/json" },
-		});
-		assert.equal(response.status, 200);
-		assert.equal(response.headers.get("cache-control"), "no-store");
-		assert.deepEqual(await response.json(), { commit: "abc" });
-	} finally {
-		await new Promise((resolve) => server.close(resolve));
+	context.after(() => new Promise((resolve) => server.close(resolve)));
+	await new Promise((resolve, reject) => {
+		server.once("error", reject);
+		server.listen(0, "127.0.0.1", resolve);
+	});
+	const origin = `http://127.0.0.1:${server.address().port}`;
+
+	const response = await fetch(`${origin}/build-meta.json`, { headers: { accept: "application/json" } });
+	assert.equal(response.status, 200);
+	assert.equal(response.headers.get("cache-control"), "no-store");
+	assert.deepEqual(await response.json(), { commit: "abc" });
+
+	const alias = await fetch(`${origin}/Build-Meta.json`, { headers: { accept: "application/json" } });
+	assert.equal(alias.status, 404);
+	await alias.text();
+
+	for (const path of ["/mobile-agent-sync", "/Mobile-Agent-Sync/"]) {
+		const pairing = await fetch(`${origin}${path}`, { headers: { accept: "text/html" } });
+		assert.equal(pairing.status, 200, path);
+		assert.equal(pairing.headers.get("cache-control"), "no-store", path);
+		assert.equal(pairing.headers.get("referrer-policy"), "no-referrer", path);
+		await pairing.text();
 	}
+	const trade = await fetch(`${origin}/trade/HYPE`, { headers: { accept: "text/html" } });
+	assert.equal(trade.headers.get("cache-control"), "no-cache");
+	assert.equal(trade.headers.get("referrer-policy"), null);
+	await trade.text();
+});
+
+test("a path is a file only when every segment is spelled as the directory lists it", () => {
+	const listing = { "/public": ["assets", "build-meta.json"], "/public/assets": ["App.js"] };
+	const listDirectory = (directory) => listing[directory] ?? [];
+	assert.equal(hasExactPath("/public", "build-meta.json", listDirectory), true);
+	assert.equal(hasExactPath("/public", "assets/App.js", listDirectory), true);
+	assert.equal(hasExactPath("/public", "Build-Meta.json", listDirectory), false);
+	assert.equal(hasExactPath("/public", "assets/app.js", listDirectory), false);
+	assert.equal(hasExactPath("/public", "Assets/App.js", listDirectory), false);
 });
 
 test("missing assets and non-navigation requests are 404, not the shell", () => {
