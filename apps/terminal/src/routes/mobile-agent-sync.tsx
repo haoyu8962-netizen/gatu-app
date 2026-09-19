@@ -119,6 +119,7 @@ function MobileAgentSyncRoute() {
 	const [status, setStatus] = useState<ImportStatus>({ state: "idle" });
 	const errorAlertRef = useRef<HTMLDivElement | null>(null);
 	const importAbortRef = useRef<AbortController | null>(null);
+	const pendingKeyWipeRef = useRef<ParsedMobileSync | null>(null);
 
 	const clearExpiredSync = useCallback((syncToClear?: ParsedMobileSync) => {
 		syncToClear?.keyBytes.fill(0);
@@ -207,8 +208,14 @@ function MobileAgentSyncRoute() {
 
 	useEffect(() => {
 		if (!loadedSync) return;
+		if (pendingKeyWipeRef.current === loadedSync) pendingKeyWipeRef.current = null;
 		return () => {
-			loadedSync.keyBytes.fill(0);
+			pendingKeyWipeRef.current = loadedSync;
+			queueMicrotask(() => {
+				if (pendingKeyWipeRef.current !== loadedSync) return;
+				pendingKeyWipeRef.current = null;
+				loadedSync.keyBytes.fill(0);
+			});
 		};
 	}, [loadedSync]);
 
