@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [字体实践审查：对照官方终端，修复图表字体栈、共享字号刻度与错误页字体](sessions/2026-09-20-font-practice-review.md) — 2026-09-20；已验证，范围见正文。webfont 加载契约合规；图表 iframe 里的 IBM Plex 从未生效，改为系统字体栈（iframe 内新旧栈 measureText 80 组完全相同）；packages/ui 字号刻度对齐规范并加契约测试；bootstrap 错误页不再依赖 webfont；相对单位字号纳入棘轮。250 处任意 px 字号按现行规则不横扫，仍是受控债务。移动端图表与生产构建未验证。
 - [Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复](sessions/2026-09-18-grok-dialog-commits-review.md) — 2026-09-18；已整理，验证见正文。grok-4.6 只读审查 0ad17aea…08e2057d 冻结快照，报告 2 P1 / 2 P2 / 3 P3；F1/F2/F4/F5/F6/F7 已修（守卫经变异检查钉住），F3 记为 ADR 已知限制；逐条核实：反手与全部平仓退场窗口内确认按钮仍可点（P1）、市价平仓取消退场期间 canSubmit 未含 isClosing（P1）属实；后台执行绑在随路由卸载的弹窗实例（P2）与 PnL 分享退场仍直接卸载（P2）属实；ADR §6 引用、CHANGELOG「一条通知」措辞、idle 预热测试不覆盖 requestIdleCallback 三条 P3 属实。其「无过渡时 onOpenChangeComplete 同步触发会卡会话」的存疑项经 Base UI 源码核实不成立。未修改代码。
 - [Grok 对抗审查 PR #26（启动、md 堆叠、路由揭示、导航收纳）](sessions/2026-09-17-grok-pr26-review.md) — 2026-09-17；已整理，验证见正文。grok-4.6-build 只读审查 PR #26 冻结快照，报告 2 P1 / 4 P2 / 1 P3；本会话逐条核实全部成立，其中 5 条为 PR 之前既有、被首帧真实 chrome 放大；未修改代码，修复待决策。
 - [部署包预算：订单队列去重与固定参数复验](sessions/2026-09-12-deploy-bundle-margin.md) — 2026-09-12；已验证，范围见正文。服务器交易页面 gzip 超限 11 字节；统一订单队列计数与徽标渲染，保留预算和状态优先级，本地完整构建通过，交易页面距上限 227 字节，线上待验证。
@@ -104,6 +105,7 @@
 
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md)
 
+- [字体实践审查：对照官方终端，修复图表字体栈、共享字号刻度与错误页字体](sessions/2026-09-20-font-practice-review.md) — 2026-09-20；已验证，范围见正文。webfont 加载契约合规；图表 iframe 里的 IBM Plex 从未生效，改为系统字体栈（iframe 内新旧栈 measureText 80 组完全相同）；packages/ui 字号刻度对齐规范并加契约测试；bootstrap 错误页不再依赖 webfont；相对单位字号纳入棘轮。250 处任意 px 字号按现行规则不横扫，仍是受控债务。移动端图表与生产构建未验证。
 - [Connect Wallet 按钮悬停态：去掉整体淡出，补上暗色面板按钮的悬停反馈](sessions/2026-09-19-connect-cta-hover-states.md) — 2026-09-19；已整理，验证见正文。头部 Connect Wallet 同时用 hover:bg-action-hover 和 hover:opacity-90，暗色下两者抵消（#edeef2 → 合成约 #e7e8e9，反而略暗）且 opacity 不在过渡列表里会跳变；订单面板同名按钮暗色下静止与悬停填充同为 6% 白。改为只走 action 令牌、过渡含 scale，面板暗色悬停用 fill-press（12% 白）。暗色下两个同名按钮一实心一幽灵的层级差异未动，待设计决定。
 - [暗色浮层与遮罩改为终端色相，并修复语言菜单禁用文字](sessions/2026-09-19-dark-overlay-hue-family.md) — 2026-09-19；已整理，验证见正文。实测暗色下菜单 bg-overlay 仍是共享库紫灰 #292b33（色相 228°）、遮罩仍是藏蓝 #000626，而终端基色是青黑 #0f1a1f（199°）；改为等亮度的 #212d33 与 #03090ca8，语言菜单禁用文字由 12% 白改为 60% 白（1.46:1 → 6.09:1）。圆角、字体、菜单皮肤重复等其余审查项未处理。
 - [菜单共享皮肤、弹窗统一圆角与边框，并让 cn() 认识项目刻度](sessions/2026-09-19-popup-skin-and-dialog-chrome.md) — 2026-09-19；已整理，验证见正文。根因是 tailwind-merge 不认识项目的圆角、阴影、字体刻度，覆盖基础组件时两个类都保留、由样式表顺序决定，于是各处堆 !important；修复 cn() 后把 5 份菜单皮肤收敛为一份、桌面弹窗统一 16px 圆角加 1px 边、底部抽屉默认 16px，并用棘轮测试钉住 241 处任意字号、228 处任意圆角、18 处 ! 表面覆盖。全仓批量替换与 market-close 令牌改名未做。
@@ -132,6 +134,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-20 | [字体实践审查：对照官方终端，修复图表字体栈、共享字号刻度与错误页字体](sessions/2026-09-20-font-practice-review.md) | 未取得任务标识，见正文 | `3b0a84cb91dd322725c7c0b16a4403dae36fe29a` | 已验证，范围见正文 |
 | 2026-09-19 | [CloudFront 发布闸门：暴露资金或凭证路径的构建需要上传时再确认](sessions/2026-09-19-cloudfront-release-gates.md) | 未取得任务标识，见正文 | `a7cef26a` | 已整理，验证见正文 |
 | 2026-09-19 | [Connect Wallet 按钮悬停态：去掉整体淡出，补上暗色面板按钮的悬停反馈](sessions/2026-09-19-connect-cta-hover-states.md) | 未取得任务标识，见正文 | `e837e8ce` | 已整理，验证见正文 |
 | 2026-09-19 | [暗色浮层与遮罩改为终端色相，并修复语言菜单禁用文字](sessions/2026-09-19-dark-overlay-hue-family.md) | 未取得任务标识，见正文 | `0af67e47722409bb350f61500d58ab0f0bac30c1` | 已整理，验证见正文 |
