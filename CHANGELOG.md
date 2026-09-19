@@ -228,6 +228,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The pull-request workflows (production builds, browser regressions, type check,
+  translation catalogs, Claude review) now cancel their own in-progress run for the
+  same pull request when a newer push arrives, so superseded commits no longer
+  consume GitHub Actions minutes.
 - All-market statistics now arrive on the public WebSocket's compact `pac`/`sac` channels (one
   compressed frame each, about a sixth of the bytes of `allDexsAssetCtxs`/`spotAssetCtxs`) whenever
   the browser can inflate them; a stream that cannot be decoded falls back to the plain channels for

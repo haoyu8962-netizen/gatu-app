@@ -7,6 +7,10 @@ on:
       - "apps/terminal/src/**/*.tsx"
       - "apps/terminal/src/locales/**/*.po"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     name: Validate translation catalogs
