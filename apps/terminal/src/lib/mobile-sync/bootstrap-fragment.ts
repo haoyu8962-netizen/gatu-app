@@ -1,10 +1,16 @@
 import {
+	classifyPairingPath,
 	PAIRING_BOOTSTRAP_GLOBAL,
 	PAIRING_BOOTSTRAP_VERSION,
 	type PairingBootstrapHandoff,
 	type PairingScrubResult,
 	scrubPairingLocation,
 } from "./pairing-location";
+
+const UNSAFE_LINK_NOTICE_KEY = "notice";
+const UNSAFE_LINK_NOTICE = "unsafe-link";
+/** Where the blocked page sends the browser: a clean pairing page that says why nothing was loaded. */
+export const MOBILE_AGENT_SYNC_UNSAFE_LINK_URL = `/mobile-agent-sync?${UNSAFE_LINK_NOTICE_KEY}=${UNSAFE_LINK_NOTICE}`;
 
 export type MobileAgentSyncBootstrapScrubStatus = "not_applicable" | "scrubbed" | "blocked";
 
@@ -75,4 +81,37 @@ export function consumeInvalidBootstrappedMobileAgentSyncLocation(): boolean {
 	const invalid = pendingInvalidMobileAgentSyncLocation;
 	pendingInvalidMobileAgentSyncLocation = false;
 	return invalid;
+}
+
+/**
+ * Replaces the blocked entry with the clean pairing page so the link leaves the address bar even
+ * when the history entry could not be rewritten. A cause that survives the navigation blocks the
+ * target again; staying put once the browser is already there ends that loop.
+ */
+export function leaveBlockedMobileAgentSyncLink(
+	location: Pick<Location, "hash" | "pathname" | "replace" | "search"> = window.location,
+): void {
+	try {
+		if (`${location.pathname}${location.search}` === MOBILE_AGENT_SYNC_UNSAFE_LINK_URL && location.hash === "") return;
+		location.replace(MOBILE_AGENT_SYNC_UNSAFE_LINK_URL);
+	} catch {}
+}
+
+/** Reads the marker the blocked page navigated with, once, and takes it out of the address bar. */
+export function consumeUnsafeMobileAgentSyncLinkNotice(): boolean {
+	if (typeof window === "undefined") return false;
+	const { location, history } = window;
+	const params = new URLSearchParams(location.search);
+	if (
+		classifyPairingPath(location.pathname) !== "pairing" ||
+		params.get(UNSAFE_LINK_NOTICE_KEY) !== UNSAFE_LINK_NOTICE
+	) {
+		return false;
+	}
+	try {
+		params.delete(UNSAFE_LINK_NOTICE_KEY);
+		const search = params.toString();
+		history.replaceState(history.state, "", `${location.pathname}${search ? `?${search}` : ""}`);
+	} catch {}
+	return true;
 }

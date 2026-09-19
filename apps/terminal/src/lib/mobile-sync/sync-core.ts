@@ -5,6 +5,7 @@ import {
 } from "@gatu/hl-react/signing/mobile-agent";
 import { type Address, getAddress, type Hex, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { canonicalPairingPath } from "./pairing-location";
 
 export const MOBILE_SYNC_FRAGMENT_KEY = "ht-mobile-sync";
 export const MOBILE_SYNC_KEY_FRAGMENT_KEY = "k";
@@ -289,10 +290,7 @@ export function readAndClearMobileSyncEnvelope(
 }
 
 export function getMobileSyncCleanUrl(location: Pick<MobileSyncLocationLike, "pathname" | "search">): string {
-	const pathname =
-		location.pathname === MOBILE_SYNC_ROUTE_PATH || location.pathname === `${MOBILE_SYNC_ROUTE_PATH}/`
-			? location.pathname
-			: MOBILE_SYNC_ROUTE_PATH;
+	const pathname = canonicalPairingPath(location.pathname);
 	const searchParams = new URLSearchParams(location.search);
 	searchParams.delete(MOBILE_SYNC_FRAGMENT_KEY);
 	searchParams.delete(MOBILE_SYNC_KEY_FRAGMENT_KEY);

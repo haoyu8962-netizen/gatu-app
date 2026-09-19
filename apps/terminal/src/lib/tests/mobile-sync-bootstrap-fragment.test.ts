@@ -206,15 +206,59 @@ describe("mobile Agent pre-bootstrap fragment scrub", () => {
 		});
 	});
 
+	it("reads the unsafe-link notice once and removes it from the address bar", async () => {
+		window.history.replaceState(null, "", "/Mobile-Agent-Sync?from=qr&notice=unsafe-link");
+		const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+
+		expect(bootstrap.consumeUnsafeMobileAgentSyncLinkNotice()).toBe(true);
+		expect(`${window.location.pathname}${window.location.search}`).toBe("/Mobile-Agent-Sync?from=qr");
+		expect(bootstrap.consumeUnsafeMobileAgentSyncLinkNotice()).toBe(false);
+	});
+
+	it.each([
+		"/trade?notice=unsafe-link",
+		"/mobile-agent-sync?notice=other",
+		"/mobile-agent-sync-ticket?notice=unsafe-link",
+	])("ignores the notice on %s", async (url) => {
+		window.history.replaceState(null, "", url);
+		const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+
+		expect(bootstrap.consumeUnsafeMobileAgentSyncLinkNotice()).toBe(false);
+	});
+
+	it("leaves a blocked link for the clean pairing page once, and never loops on it", async () => {
+		const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+		const replace = vi.fn();
+
+		bootstrap.leaveBlockedMobileAgentSyncLink({ hash: "#bearer", pathname: "/mobile-agent-sync", replace, search: "" });
+		expect(replace).toHaveBeenCalledExactlyOnceWith("/mobile-agent-sync?notice=unsafe-link");
+
+		replace.mockClear();
+		bootstrap.leaveBlockedMobileAgentSyncLink({
+			hash: "",
+			pathname: "/mobile-agent-sync",
+			replace,
+			search: "?notice=unsafe-link",
+		});
+		expect(replace).not.toHaveBeenCalled();
+
+		const throwing = vi.fn(() => {
+			throw new DOMException("blocked", "SecurityError");
+		});
+		expect(() =>
+			bootstrap.leaveBlockedMobileAgentSyncLink({ hash: "#bearer", pathname: "/trade", replace: throwing, search: "" }),
+		).not.toThrow();
+	});
+
 	it("keeps the client entry dependency-free until the scrub runs", () => {
 		const clientSource = readFileSync(resolve(process.cwd(), "src/client.ts"), "utf8");
 		const hydrationSource = readFileSync(resolve(process.cwd(), "src/client-hydrate.tsx"), "utf8");
-		const staticImports = clientSource.match(/^import\s+(?!\()[^\n]+$/gm) ?? [];
+		const staticImportSources = [...clientSource.matchAll(/^import\s[^;]*?from\s+"([^"]+)";$/gms)].map(
+			([, source]) => source,
+		);
 
-		expect(staticImports).toEqual([
-			'import { renderBootstrapErrorPage } from "./lib/bootstrap-error-page";',
-			'import { canHydrateAfterMobileAgentSyncScrub } from "./lib/mobile-sync/bootstrap-fragment";',
-		]);
+		expect(staticImportSources).toEqual(["./lib/bootstrap-error-page", "./lib/mobile-sync/bootstrap-fragment"]);
+		expect(clientSource).toContain('variant: "pairing-blocked"');
 		expect(clientSource.indexOf('import("./lib/error-reporting/client")')).toBeLessThan(
 			clientSource.indexOf('import("./client-hydrate")'),
 		);

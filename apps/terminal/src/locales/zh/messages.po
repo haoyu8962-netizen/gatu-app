@@ -7565,6 +7565,10 @@ msgstr "测试网预览；市场链接已禁用"
 msgid "Testnet queue: approximately five minutes"
 msgstr "测试网队列：约 5 分钟"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "That link could not be opened safely, so nothing was loaded. Create a new QR on your desktop and scan it again."
+msgstr "该链接无法安全打开，因此未载入任何内容。请在桌面重新生成二维码，再扫描一次。"
+
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "账户激活费用在签名前已变化。请检查更新后的费用并重试。"
@@ -7884,6 +7888,7 @@ msgstr "签名请求可能已成功，但对账已超时。请勿重复提交；
 msgid "The start and end values are unchanged."
 msgstr "起始值与结束值相同。"
 
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx

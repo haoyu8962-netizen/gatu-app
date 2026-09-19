@@ -244,6 +244,47 @@ describe("MobileAgentSyncRoute", () => {
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
 	});
 
+	it("imports from a differently cased direct-load path the router still matches", async () => {
+		const sync = await createSyncFixture();
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `/Mobile-Agent-Sync${url.hash}`);
+
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		expect(`${window.location.pathname}${window.location.hash}`).toBe(MOBILE_SYNC_ROUTE_PATH);
+
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("Desktop QR loaded");
+	});
+
+	it("explains an unsafe link and never brings back an earlier QR draft", async () => {
+		const sync = await createSyncFixture();
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const first = await import("@/routes/mobile-agent-sync");
+		const FirstRoute = (first.Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(FirstRoute)));
+		await flushAsyncWork();
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
+		act(() => root.unmount());
+		root = createI18nRoot(container);
+
+		vi.resetModules();
+		window.history.replaceState(null, "", `${MOBILE_SYNC_ROUTE_PATH}?notice=unsafe-link`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("That link could not be opened safely, so nothing was loaded.");
+		expect(container.textContent).not.toContain("Desktop QR loaded");
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+		expect(window.location.search).toBe("");
+		expect(findButton(container, "Import phone access")?.disabled).toBe(true);
+	});
+
 	it("captures and scrubs at beforeLoad when a preloaded route receives an SPA fragment", async () => {
 		window.history.replaceState(null, "", "/");
 		const { Route } = await import("@/routes/mobile-agent-sync");
