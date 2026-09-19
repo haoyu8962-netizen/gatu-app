@@ -14,7 +14,7 @@ const terminalPackage = JSON.parse(
 };
 
 describe("build metadata", () => {
-	it("describes the build identity with the fail-closed pairing flags", () => {
+	it("describes the build identity with the fail-closed pairing and deposit gates", () => {
 		expect(
 			createBuildMeta({
 				version: "1.2.3",
@@ -22,6 +22,7 @@ describe("build metadata", () => {
 				release: "release-1",
 				builtAt: "2026-09-13T00:00:00.000Z",
 				pairing: { createAndReveal: false, importFromQr: true },
+				cctpDeposits: { mainnetSponsoredWallet: true, testnetExternalWallet: false, testnetSponsoredWallet: true },
 			}),
 		).toEqual({
 			name: APP_NAME,
@@ -34,6 +35,11 @@ describe("build metadata", () => {
 				createAndReveal: false,
 				importFromQr: true,
 			},
+			cctpDeposits: {
+				mainnetSponsoredWallet: true,
+				testnetExternalWallet: false,
+				testnetSponsoredWallet: true,
+			},
 		});
 	});
 
@@ -44,6 +50,11 @@ describe("build metadata", () => {
 		expect(meta.commit).not.toBe("");
 		expect(Object.keys(meta.mobileSync).sort()).toEqual(["createAndReveal", "importFromQr"]);
 		if (meta.mobileSync.createAndReveal) expect(meta.mobileSync.importFromQr).toBe(true);
+		expect(Object.keys(meta.cctpDeposits).sort()).toEqual([
+			"mainnetSponsoredWallet",
+			"testnetExternalWallet",
+			"testnetSponsoredWallet",
+		]);
 	});
 
 	it("emits build-meta.json into the client output only", () => {

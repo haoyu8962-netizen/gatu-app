@@ -8,6 +8,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- `/build-meta.json` also reports which gated deposit paths the build exposes (`cctpDeposits`). The
+  CloudFront release refuses to upload a build that exposes sponsored Mainnet deposits or Mobile
+  Agent pairing unless the operator acknowledges it with `--allow-sponsored-mainnet-deposits` or
+  `--allow-mobile-pairing`, and `verify` compares those gates between the live site and the build.
 - The margin mode, leverage and account mode dialogs of the order form load when first needed instead of with the
   terminal. If one cannot be loaded, the order form stays as it is and the dialog offers `Try again` and
   `Reload page`; the page never reloads on its own.

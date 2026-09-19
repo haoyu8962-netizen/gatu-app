@@ -20,6 +20,7 @@ describe("chart library preload contract", () => {
 			release: "r",
 			builtAt: "2026-09-13T00:00:00.000Z",
 			pairing: { createAndReveal: false, importFromQr: false },
+			cctpDeposits: { mainnetSponsoredWallet: false, testnetExternalWallet: false, testnetSponsoredWallet: false },
 			chartLibraryHash: APP_CHART_LIBRARY_HASH,
 		});
 		expect(meta.chartLibraryScript).toBe(TRADINGVIEW_SCRIPT_SRC);
@@ -44,6 +45,7 @@ describe("chart library preload contract", () => {
 			release: "r",
 			builtAt: "2026-09-13T00:00:00.000Z",
 			pairing: { createAndReveal: false, importFromQr: false },
+			cctpDeposits: { mainnetSponsoredWallet: false, testnetExternalWallet: false, testnetSponsoredWallet: false },
 			chartLibraryHash: "0123456789abcdef",
 		});
 		expect(meta.chartLibraryScript).toBe("/charting_library/charting_library.0123456789abcdef.js");

@@ -13,6 +13,7 @@ import {
 	buildLambdaCommands,
 	buildReuploadCommands,
 	buildSyncCommands,
+	evaluateReleaseGates,
 	HTML_CACHE_CONTROL,
 	IMMUTABLE_CACHE_CONTROL,
 	NO_STORE,
@@ -20,6 +21,7 @@ import {
 	planUpload,
 	prepareResponseFunction,
 	releaseFunctionPath,
+	releaseGateState,
 	resolveAwsProfile,
 	REVALIDATE_CACHE_CONTROL,
 	verifyDeployment,
@@ -86,7 +88,7 @@ test("reupload rewrites the metadata of the selected objects in the bucket, neve
 
 test("a sync that stopped before the shell is reported instead of passing silently", () => {
 	const publicDir = createPublicDir();
-	const sizes = { "_shell.html": SHELL_HTML.length, "build-meta.json": JSON.stringify({ commit: "abc", release: "r1" }).length };
+	const sizes = { "_shell.html": SHELL_HTML.length, "build-meta.json": JSON.stringify(BUILD_META).length };
 	assert.doesNotThrow(() => assertReleaseMarkersUploaded({ bucket: "b", publicDir, headObject: (_, key) => sizes[key] }));
 	assert.throws(
 		() => assertReleaseMarkersUploaded({ bucket: "b", publicDir, headObject: (_, key) => (key === "_shell.html" ? 12_677 : sizes[key]) }),
@@ -121,6 +123,11 @@ const CHART_ENTRY = "/charting_library/charting_library.0123456789abcdef.js";
 const THEME_SCRIPT = '(()=>{document.documentElement.classList.add("dark")})();';
 const THEME_HASH = cspHash(THEME_SCRIPT);
 const SHELL_HTML = `<html><head><script>${THEME_SCRIPT}</script>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/><meta name="gatu-preload-desktop" content="/assets/chunk-1.js"/><meta name="gatu-preload-mobile" content=""/><meta name="gatu-chart-prefetch" content="/charting_library/sameorigin.html"/></head></html>`;
+const GATES_OFF = {
+	mobileSync: { createAndReveal: false, importFromQr: false },
+	cctpDeposits: { mainnetSponsoredWallet: false, testnetExternalWallet: false, testnetSponsoredWallet: false },
+};
+const BUILD_META = { commit: "abc", release: "r1", ...GATES_OFF };
 const REPORT_ONLY_HEADER = `default-src 'self'; img-src 'self' data: https://app.hyperliquid.xyz; script-src 'self' 'report-sample' '${THEME_HASH}'; report-uri https://reports.example/`;
 
 function createPublicDir() {
@@ -130,7 +137,7 @@ function createPublicDir() {
 	for (const href of SHELL_PRELOADS) writeFileSync(join(dir, href.slice(1)), "js");
 	writeFileSync(join(dir, "_shell.html"), SHELL_HTML);
 	writeFileSync(join(dir, "docs", "index.html"), "<html>docs</html>");
-	writeFileSync(join(dir, "build-meta.json"), JSON.stringify({ commit: "abc", release: "r1" }));
+	writeFileSync(join(dir, "build-meta.json"), JSON.stringify(BUILD_META));
 	mkdirSync(join(dir, "charting_library", "bundles"), { recursive: true });
 	writeFileSync(join(dir, "charting_library", "bundles", "runtime.4d986d07cb97d8edacba.js"), "js");
 	writeFileSync(join(dir, CHART_ENTRY.slice(1)), "js");
@@ -165,7 +172,7 @@ test("verification passes when the edge serves the build with the expected heade
 			"/api/health": { status: 204, body: null, headers: { "cache-control": NO_STORE } },
 			"/charting_library/bundles/runtime.4d986d07cb97d8edacba.js": edgeSequence({ body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } }),
 			"/docs": { body: "<html>docs</html>", headers: { "content-security-policy": "x", "content-security-policy-report-only": REPORT_ONLY_HEADER } },
-			"/build-meta.json": { body: JSON.stringify({ commit: "abc", release: "r1" }) },
+			"/build-meta.json": { body: JSON.stringify(BUILD_META) },
 			"/api/geo": { body: JSON.stringify({ country: "GB", proxy: false, tradeRestricted: false }) },
 			"/api/referral-geo": (init) => ({
 				status: init?.method === "POST" && /^[0-9a-f]{64}$/.test(init.headers?.["x-amz-content-sha256"] ?? "") ? 200 : 403,
@@ -191,6 +198,59 @@ test("verification passes when the edge serves the build with the expected heade
 	assert.equal(results.find((result) => result.name.startsWith("chart entry"))?.detail, CHART_ENTRY);
 	assert.equal(results.find((result) => result.name === "shell repeats from the edge")?.detail, "Hit from cloudfront");
 	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
+	assert.equal(results.find((result) => result.name === "build metadata parity")?.detail, "abc / r1 / sponsored-mainnet-deposits=off mobile-pairing=off");
+});
+
+test("verification fails when the live origin exposes a gate the local build does not", async () => {
+	const publicDir = createPublicDir();
+	const live = { ...BUILD_META, cctpDeposits: { ...GATES_OFF.cctpDeposits, mainnetSponsoredWallet: true } };
+	const results = await verifyDeployment({
+		origin: "https://app.gatu.ai",
+		publicDir,
+		network: "mainnet",
+		fetchImpl: fakeFetch({ "/build-meta.json": { body: JSON.stringify(live) }, "*": { status: 404, body: "missing" } }),
+	});
+	const parity = results.find((result) => result.name === "build metadata parity");
+	assert.equal(parity.ok, false);
+	assert.match(parity.detail, /sponsored-mainnet-deposits=on mobile-pairing=off\) differ from the local build \(sponsored-mainnet-deposits=off/);
+});
+
+test("an upload that exposes a funds or credential path needs its own acknowledgement", () => {
+	assert.deepEqual(evaluateReleaseGates({ buildMeta: BUILD_META }), {
+		state: { "sponsored-mainnet-deposits": false, "mobile-pairing": false },
+		problems: [],
+	});
+
+	const sponsored = { ...BUILD_META, cctpDeposits: { ...GATES_OFF.cctpDeposits, mainnetSponsoredWallet: true } };
+	assert.match(evaluateReleaseGates({ buildMeta: sponsored }).problems.join("\n"), /exposes sponsored Mainnet CCTP deposits; pass --allow-sponsored-mainnet-deposits/);
+	assert.deepEqual(evaluateReleaseGates({ buildMeta: sponsored, acknowledged: ["sponsored-mainnet-deposits"] }).problems, []);
+
+	for (const mobileSync of [
+		{ createAndReveal: false, importFromQr: true },
+		{ createAndReveal: true, importFromQr: true },
+	]) {
+		const pairing = { ...BUILD_META, mobileSync };
+		assert.match(evaluateReleaseGates({ buildMeta: pairing }).problems.join("\n"), /exposes Mobile Agent pairing; pass --allow-mobile-pairing/);
+		assert.deepEqual(evaluateReleaseGates({ buildMeta: pairing, acknowledged: ["mobile-pairing"] }).problems, []);
+	}
+
+	const both = evaluateReleaseGates({ buildMeta: { ...sponsored, mobileSync: { createAndReveal: true, importFromQr: true } }, acknowledged: ["mobile-pairing"] });
+	assert.equal(both.problems.length, 1);
+	assert.match(both.problems[0], /sponsored Mainnet/);
+});
+
+test("an acknowledgement the build does not match is refused, and so is a build that records no gates", () => {
+	const mismatch = evaluateReleaseGates({ buildMeta: BUILD_META, acknowledged: ["sponsored-mainnet-deposits", "mobile-pairing"] });
+	assert.equal(mismatch.problems.length, 2);
+	assert.match(mismatch.problems[0], /--allow-sponsored-mainnet-deposits was passed but this build does not expose/);
+	assert.match(mismatch.problems[1], /--allow-mobile-pairing was passed but this build does not expose/);
+
+	assert.throws(() => releaseGateState({ commit: "abc", release: "r1", mobileSync: GATES_OFF.mobileSync }), /does not record sponsored Mainnet CCTP deposits; rebuild/);
+	assert.throws(() => releaseGateState({ commit: "abc", release: "r1", cctpDeposits: GATES_OFF.cctpDeposits }), /does not record Mobile Agent pairing; rebuild/);
+	assert.throws(
+		() => releaseGateState({ ...BUILD_META, cctpDeposits: { ...GATES_OFF.cctpDeposits, mainnetSponsoredWallet: "true" } }),
+		/does not record sponsored Mainnet CCTP deposits/,
+	);
 });
 
 test("verification reports a stale shell, a wrong preconnect and a failed geo verdict", async () => {
@@ -202,7 +262,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 		fetchImpl: fakeFetch({
 			"/trade/HYPE": { body: "<html>old shell</html>", headers: { "content-security-policy": "x", link: "<https://api.hyperliquid.xyz>; rel=preconnect" } },
 			"/docs": { body: "<html>docs</html>" },
-			"/build-meta.json": { body: JSON.stringify({ commit: "old", release: "r0" }) },
+			"/build-meta.json": { body: JSON.stringify({ ...BUILD_META, commit: "old", release: "r0" }) },
 			"/api/geo": { status: 503, body: JSON.stringify({ error: "unavailable", reason: "missing_config" }) },
 			"/join/__gatu_healthcheck__": { body: "x", headers: { "cache-control": "no-store" } },
 			[CHART_ENTRY]: { body: "js", headers: { "cache-control": "max-age=0" } },
