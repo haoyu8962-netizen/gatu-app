@@ -1,74 +1,61 @@
-const MOBILE_AGENT_SYNC_ROUTE_PATH = "/mobile-agent-sync";
-const MOBILE_AGENT_SYNC_FRAGMENT_KEY = "ht-mobile-sync";
-const MOBILE_AGENT_SYNC_KEY_FRAGMENT_KEY = "k";
+import {
+	PAIRING_BOOTSTRAP_GLOBAL,
+	PAIRING_BOOTSTRAP_VERSION,
+	type PairingBootstrapHandoff,
+	type PairingScrubResult,
+	scrubPairingLocation,
+} from "./pairing-location";
 
 export type MobileAgentSyncBootstrapScrubStatus = "not_applicable" | "scrubbed" | "blocked";
 
-let pendingMobileAgentSyncUrl: string | null = null;
-let pendingInvalidMobileAgentSyncLocation = false;
+const BLOCKED: PairingScrubResult = { status: "blocked", capturedUrl: null };
+const HANDOFF_STATUSES = ["none", "captured", "invalid", "blocked"];
 
-function isMobileAgentSyncPath(pathname: string): boolean {
-	return pathname === MOBILE_AGENT_SYNC_ROUTE_PATH || pathname === `${MOBILE_AGENT_SYNC_ROUTE_PATH}/`;
+function isHandoff(value: unknown): value is PairingBootstrapHandoff {
+	if (typeof value !== "object" || value === null) return false;
+	const handoff = value as Partial<PairingBootstrapHandoff>;
+	return (
+		handoff.v === PAIRING_BOOTSTRAP_VERSION &&
+		typeof handoff.status === "string" &&
+		HANDOFF_STATUSES.includes(handoff.status) &&
+		typeof handoff.take === "function"
+	);
 }
 
-function isUnexpectedMobileAgentSyncPath(pathname: string): boolean {
+/**
+ * The shell's first script normally scrubbed the address already and left its outcome behind. A
+ * missing handoff (the inline script was blocked, or the shell predates it) means nothing ran yet,
+ * so the same scrub runs here. A handoff this build cannot read, or one that captured a URL it can
+ * no longer hand over, means the credential went somewhere unknown: that blocks hydration.
+ */
+function resolveBootstrapScrub(): PairingScrubResult {
+	if (typeof window === "undefined") return { status: "none", capturedUrl: null };
+
+	const handoff: unknown = Reflect.get(window, PAIRING_BOOTSTRAP_GLOBAL);
+	if (handoff === undefined) return scrubPairingLocation(window);
+	if (!isHandoff(handoff)) return BLOCKED;
+	if (handoff.status === "none") return scrubPairingLocation(window);
+	if (handoff.status !== "captured") return { status: handoff.status, capturedUrl: null };
+
 	try {
-		const decodedPathname = decodeURIComponent(pathname);
-		return decodedPathname.startsWith(`${MOBILE_AGENT_SYNC_ROUTE_PATH}/`) && !isMobileAgentSyncPath(decodedPathname);
+		const capturedUrl = handoff.take();
+		return typeof capturedUrl === "string" && capturedUrl !== "" ? { status: "captured", capturedUrl } : BLOCKED;
 	} catch {
-		return pathname.startsWith(MOBILE_AGENT_SYNC_ROUTE_PATH);
+		return BLOCKED;
 	}
 }
 
-function scrubMobileAgentSyncFragment(): MobileAgentSyncBootstrapScrubStatus {
-	if (typeof window === "undefined") return "not_applicable";
-
-	try {
-		const { location, history } = window;
-		const isExactPath = isMobileAgentSyncPath(location.pathname);
-		const isUnexpectedNestedPath = isUnexpectedMobileAgentSyncPath(location.pathname);
-		const searchParams = new URLSearchParams(location.search);
-		const hasCredentialQuery =
-			searchParams.has(MOBILE_AGENT_SYNC_FRAGMENT_KEY) || searchParams.has(MOBILE_AGENT_SYNC_KEY_FRAGMENT_KEY);
-
-		if (isUnexpectedNestedPath || (isExactPath && hasCredentialQuery)) {
-			searchParams.delete(MOBILE_AGENT_SYNC_FRAGMENT_KEY);
-			searchParams.delete(MOBILE_AGENT_SYNC_KEY_FRAGMENT_KEY);
-			const sanitizedSearch = searchParams.toString();
-			const cleanUrl = `${MOBILE_AGENT_SYNC_ROUTE_PATH}${sanitizedSearch ? `?${sanitizedSearch}` : ""}`;
-			history.replaceState(history.state, "", cleanUrl);
-			if (
-				location.hash !== "" ||
-				location.pathname !== MOBILE_AGENT_SYNC_ROUTE_PATH ||
-				new URLSearchParams(location.search).has(MOBILE_AGENT_SYNC_FRAGMENT_KEY) ||
-				new URLSearchParams(location.search).has(MOBILE_AGENT_SYNC_KEY_FRAGMENT_KEY)
-			) {
-				return "blocked";
-			}
-			pendingInvalidMobileAgentSyncLocation = true;
-			return "scrubbed";
-		}
-
-		if (!isExactPath || location.hash === "") {
-			return "not_applicable";
-		}
-
-		const capturedUrl = location.href;
-		const cleanUrl = `${location.pathname}${location.search}`;
-
-		// Do not retain the bearer URL until the address bar has been scrubbed.
-		history.replaceState(history.state, "", cleanUrl);
-		if (location.hash !== "") return "blocked";
-
-		pendingMobileAgentSyncUrl = capturedUrl;
-		return "scrubbed";
-	} catch {
-		pendingMobileAgentSyncUrl = null;
-		return "blocked";
-	}
+function toBootstrapStatus(result: PairingScrubResult): MobileAgentSyncBootstrapScrubStatus {
+	if (result.status === "blocked") return "blocked";
+	return result.status === "none" ? "not_applicable" : "scrubbed";
 }
 
-export const mobileAgentSyncBootstrapScrubStatus = scrubMobileAgentSyncFragment();
+const bootstrapScrub = resolveBootstrapScrub();
+let pendingMobileAgentSyncUrl = bootstrapScrub.capturedUrl;
+let pendingInvalidMobileAgentSyncLocation = bootstrapScrub.status === "invalid";
+bootstrapScrub.capturedUrl = null;
+
+export const mobileAgentSyncBootstrapScrubStatus = toBootstrapStatus(bootstrapScrub);
 
 /**
  * A failed scrub blocks application hydration so providers, telemetry, and the
