@@ -12,7 +12,7 @@
   "summary": "补上 2026-09-18 清理 EC2 部署代码时发现的缺口：旧脚本会拒绝「主网赞助充值开关」与运营方二次确认不一致的构建，CloudFront 流程没有等价检查。现在构建把实际生效的赞助充值开关写进 build-meta.json（cctpDeposits，与应用同一个解析函数），deploy.mjs sync 读取构建产物：开了主网赞助充值或移动配对而没带 --allow-* 参数、带了参数而构建没开、或构建没有记录闸门，--execute 一律拒绝；verify 比较线上与本地的闸门状态。环境文件拼写类检查（Privy ID、Agent 名、默认网络）未移植并已写明。只在本地分支实现，未推送、未发布。",
   "thread": null,
   "baseCommit": "a7cef26a",
-  "commits": [],
+  "commits": ["a59dfca8"],
   "sources": [
     { "path": "deploy/cloudfront/deploy.mjs" },
     { "path": "deploy/cloudfront/README.md" },
