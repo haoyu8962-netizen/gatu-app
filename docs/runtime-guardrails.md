@@ -404,6 +404,13 @@ mobile regressions.
 - Keep the single theme-aware TradingView stylesheet used by runtime theme
   switching; changing CSS URLs on theme changes would require rebuilding the
   iframe.
+- Fonts are scoped to a document, so the `@font-face` rules in the application
+  stylesheet do not reach the chart iframe. `CHART_CUSTOM_FONT_FAMILY` and the
+  theme stylesheets use a system font stack and must not name an application
+  webfont: a family the iframe cannot resolve silently falls through to the
+  rest of the stack. Using a webfont in the chart requires declaring its
+  `@font-face` inside both theme stylesheets with a stable URL;
+  `chart-font-family-contract` pins this.
 
 ### Important Files
 

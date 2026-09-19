@@ -57,7 +57,7 @@ const chartLocaleByAppLocale: Record<LocaleCode, LanguageCode> = {
 export function resolveChartLocale(locale: string): LanguageCode {
 	return isValidLocale(locale) ? chartLocaleByAppLocale[locale] : CHART_LOCALE;
 }
-export const CHART_CUSTOM_FONT_FAMILY = "'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif";
+export const CHART_CUSTOM_FONT_FAMILY = "ui-sans-serif, system-ui, sans-serif";
 
 export const CHART_ENABLED_FEATURES = [
 	// Load the chart from a real same-origin iframe (charting_library/sameorigin.html) instead of
