@@ -8,6 +8,17 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The remaining trading dialogs no longer show progress in their buttons. TP/SL, Adjust Isolated
+  Margin, Cancel All Orders, the phone's Modify Order sheet, Swap and Account type close as soon as
+  you confirm, and the result arrives as a notification in the bottom-right corner: updated,
+  blocked by another pending action, submitted and still being confirmed, or failed. Their buttons
+  keep their names instead of turning into `Submitting...`, `Updating...`, `Canceling...`,
+  `Modifying...`, `Waiting for confirmation...`, `Swapping...` or `Switching...`, and submit errors
+  no longer appear inside these dialogs. In the open orders list `Cancel all`, `Cancel selected`,
+  the row `Cancel` button and the TWAP `Terminate` button also keep their names while a request is
+  pending, the desktop inline size and trigger editor collapses when you confirm, and a confirmed
+  cancellation now shows `Order cancellation confirmed.` The Account type dialog can be closed
+  while a wallet signature is still pending.
 - Limit Close, Reverse Position and the order confirmation now behave like Market Close and Close
   All Positions. Their confirm buttons keep their names (`Place Limit Close`, `Buy / Long` or
   `Sell / Short`, the order side) instead of turning into `Validating...`, `Submitting...`,

@@ -152,6 +152,13 @@ jobs:
           src/lib/tests/position-reverse-confirmation-modal.test.tsx
           src/lib/tests/position-dialog-session-ownership.test.tsx
           src/lib/tests/order-confirmation-modal.test.tsx
+          src/lib/tests/position-isolated-margin-modal.test.tsx
+          src/lib/tests/cancel-all-orders-modal.test.tsx
+          src/lib/tests/desktop-orders-cancel-all.test.tsx
+          src/lib/tests/mobile-orders-card.test.tsx
+          src/lib/tests/mobile-order-modification.test.tsx
+          src/lib/tests/spot-swap-modal.test.tsx
+          src/lib/tests/account-mode-modal.test.tsx
           src/lib/tests/dialog-dismiss-control-contract.test.ts
 
       - name: Test slider gesture lifecycles
