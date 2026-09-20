@@ -147,6 +147,8 @@ jobs:
           src/lib/tests/position-tpsl-modal.test.tsx
           src/lib/tests/leverage-modal.test.tsx
           src/lib/tests/margin-mode-modal.test.tsx
+          src/lib/tests/position-close-all-modal.test.tsx
+          src/lib/tests/dialog-dismiss-control-contract.test.ts
 
       - name: Test slider gesture lifecycles
         working-directory: apps/terminal
