@@ -415,8 +415,8 @@ describe("MarketAssetInfo", () => {
 
 		expect(dialog?.className).toContain("min-[1001px]:max-w-[30rem]");
 		expect(dialog?.className).toContain("font-market-close");
-		expect(dialog?.className).toContain("min-[1001px]:border");
 		expect(dialog?.className).toContain("border-trading-panel-stroke-card");
+		expect(dialog?.className).not.toMatch(/rounded-(t-)?(\d+|\[)/);
 		expect(dialog?.className).toContain("min-[1001px]:[&>button]:size-[30px]");
 		expect(header?.className).toContain("items-center");
 		expect(icon?.className).toContain("size-14");

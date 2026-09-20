@@ -137,7 +137,7 @@ function MobileWalletChooser({
 			size="sm"
 			closeLabel={t`Close`}
 			showHandle={false}
-			className="max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-t-16"
+			className="max-h-[calc(100dvh-1rem)] overflow-y-auto"
 		>
 			<ModalHeader divider={view !== "choice"} className={view === "choice" ? "px-4 pt-5 pb-2" : undefined}>
 				<ModalTitle className={view === "choice" ? "text-xl" : undefined}>

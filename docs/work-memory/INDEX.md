@@ -106,6 +106,9 @@
 
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md)
 
+- [Connect Wallet 按钮悬停态：去掉整体淡出，补上暗色面板按钮的悬停反馈](sessions/2026-09-19-connect-cta-hover-states.md) — 2026-09-19；已整理，验证见正文。头部 Connect Wallet 同时用 hover:bg-action-hover 和 hover:opacity-90，暗色下两者抵消（#edeef2 → 合成约 #e7e8e9，反而略暗）且 opacity 不在过渡列表里会跳变；订单面板同名按钮暗色下静止与悬停填充同为 6% 白。改为只走 action 令牌、过渡含 scale，面板暗色悬停用 fill-press（12% 白）。暗色下两个同名按钮一实心一幽灵的层级差异未动，待设计决定。
+- [暗色浮层与遮罩改为终端色相，并修复语言菜单禁用文字](sessions/2026-09-19-dark-overlay-hue-family.md) — 2026-09-19；已整理，验证见正文。实测暗色下菜单 bg-overlay 仍是共享库紫灰 #292b33（色相 228°）、遮罩仍是藏蓝 #000626，而终端基色是青黑 #0f1a1f（199°）；改为等亮度的 #212d33 与 #03090ca8，语言菜单禁用文字由 12% 白改为 60% 白（1.46:1 → 6.09:1）。圆角、字体、菜单皮肤重复等其余审查项未处理。
+- [菜单共享皮肤、弹窗统一圆角与边框，并让 cn() 认识项目刻度](sessions/2026-09-19-popup-skin-and-dialog-chrome.md) — 2026-09-19；已整理，验证见正文。根因是 tailwind-merge 不认识项目的圆角、阴影、字体刻度，覆盖基础组件时两个类都保留、由样式表顺序决定，于是各处堆 !important；修复 cn() 后把 5 份菜单皮肤收敛为一份、桌面弹窗统一 16px 圆角加 1px 边、底部抽屉默认 16px，并用棘轮测试钉住 241 处任意字号、228 处任意圆角、18 处 ! 表面覆盖。全仓批量替换与 market-close 令牌改名未做。
 - [弹窗首开转圈与关闭闪现：预热惰性弹窗并恢复进出场过渡](sessions/2026-09-18-dialog-transitions-and-preload.md) — 2026-09-18；已整理，验证见正文。实测确认首开转圈是全局弹窗惰性块的 Suspense 回退（被 React 至少保留 300 ms），关闭闪现是七个对话框壳强制 !transition-none 加上 Base UI 对「挂载即打开 / 关闭即卸载」不跑过渡；修复为空闲预热弹窗块、去掉壳的过渡覆盖、@gatu/ui Modal/Drawer 首帧门控、宿主为关闭中的弹窗保留 250 ms、市价平仓取消先动画再释放会话；开发服务器逐帧采样确认抽屉与模态均有 200 ms 进出场。
 - [头部账户芯片与 Connect 统一 36 px：可见高度与 44 px 热区分离](sessions/2026-09-18-header-chip-height.md) — 2026-09-18；已整理，验证见正文。375 px 登录态实测账户芯片 149×44、描边加投影，56 px 头部里上下只剩 6 px；根因是 headerAccount 槽位用 [&_button]:h-11 把可见高度和触控热区绑在一起，桌面芯片 34、设计系统 32、移动端 44 三种高度并存。用户决定移动端与桌面端都统一到 36 px 可见高度，热区用伪元素保住 44 px，去掉移动端芯片投影，邮箱标签优先显示本地名。
 - [移动端账户标签工具栏纵向密度：去掉面板顶距并压缩工具栏行高](sessions/2026-09-18-mobile-account-toolbar-density.md) — 2026-09-18；已整理，验证见正文。实测 390 px 下我们标签行 47 + 面板顶距 8 + 工具栏 48 = 103 px，官方 36 + 0 + 31 = 67 px；用户决定先做两项：移动端账户面板去掉共享 TabsPanel 的 pt-2，五个标签的工具栏行从 48 px 压到 36 px（触控热区仍由 after:h-11 伪元素保证 44 px）；标签行高度另行决策。
@@ -133,7 +136,10 @@
 | --- | --- | --- | --- | --- |
 | 2026-09-20 | [配对页加固（A 批）：头部内联擦除、阻断说明页、路径规范、Service Worker 放行、StrictMode](sessions/2026-09-20-pairing-page-hardening.md) | 未取得任务标识，见正文 | `ab2874e1` | 已整理，验证见正文 |
 | 2026-09-19 | [CloudFront 发布闸门：暴露资金或凭证路径的构建需要上传时再确认](sessions/2026-09-19-cloudfront-release-gates.md) | 未取得任务标识，见正文 | `a7cef26a` | 已整理，验证见正文 |
+| 2026-09-19 | [Connect Wallet 按钮悬停态：去掉整体淡出，补上暗色面板按钮的悬停反馈](sessions/2026-09-19-connect-cta-hover-states.md) | 未取得任务标识，见正文 | `e837e8ce` | 已整理，验证见正文 |
+| 2026-09-19 | [暗色浮层与遮罩改为终端色相，并修复语言菜单禁用文字](sessions/2026-09-19-dark-overlay-hue-family.md) | 未取得任务标识，见正文 | `0af67e47722409bb350f61500d58ab0f0bac30c1` | 已整理，验证见正文 |
 | 2026-09-19 | [Link Device 续作：配对预检覆盖 builder dex，本地静态服务按 CDN 方式提供 build-meta.json](sessions/2026-09-19-link-device-followups.md) | 未取得任务标识，见正文 | `0af67e47` | 已整理，验证见正文 |
+| 2026-09-19 | [菜单共享皮肤、弹窗统一圆角与边框，并让 cn() 认识项目刻度](sessions/2026-09-19-popup-skin-and-dialog-chrome.md) | 未取得任务标识，见正文 | `c8d3031f` | 已整理，验证见正文 |
 | 2026-09-18 | [弹窗首开转圈与关闭闪现：预热惰性弹窗并恢复进出场过渡](sessions/2026-09-18-dialog-transitions-and-preload.md) | 未取得任务标识，见正文 | `82d81313` | 已整理，验证见正文 |
 | 2026-09-18 | [Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复](sessions/2026-09-18-grok-dialog-commits-review.md) | 未取得任务标识，见正文 | `08e2057d` | 已整理，验证见正文 |
 | 2026-09-18 | [头部账户芯片与 Connect 统一 36 px：可见高度与 44 px 热区分离](sessions/2026-09-18-header-chip-height.md) | 未取得任务标识，见正文 | `67d4212e` | 已整理，验证见正文 |

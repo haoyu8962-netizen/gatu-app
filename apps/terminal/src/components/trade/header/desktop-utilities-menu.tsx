@@ -5,12 +5,17 @@ import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { cn } from "@/lib/cn";
+import { menuPopupSurfaceClass } from "@/lib/ui/menu-popup-skin";
 import { HEADER_ICON_BUTTON_CLASS, HeaderIconButtonView } from "./header-icon-button-view";
 import { LanguageSwitcher } from "./language-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
 const UTILITY_ROW_BUTTON_CLASS =
-	"h-9 w-full justify-start rounded-[8px] px-3 font-market-close text-[13px] leading-[18px] font-medium text-market-close-fg shadow-none hover:bg-market-close-hover";
+	"h-9 w-full justify-start rounded-16 px-3 font-market-close text-2sm font-medium text-trading-panel-fg shadow-none hover:bg-trading-panel-hover";
+const UTILITY_ROW_CLASS =
+	"flex items-center justify-between rounded-16 px-3 py-1 text-2sm font-medium text-trading-panel-fg";
+const UTILITY_ROW_CONTROL_CLASS =
+	"size-9 rounded-20 text-trading-panel-muted hover:bg-trading-panel-hover hover:text-trading-panel-fg";
 
 interface Props {
 	className?: string;
@@ -54,25 +59,18 @@ export function DesktopUtilitiesMenu({
 					<DotsThreeVerticalIcon className="size-[18px]" weight="bold" />
 				</HeaderIconButtonView>
 			</PopoverTrigger>
-			<PopoverContent
-				align="end"
-				sideOffset={6}
-				className="w-52 rounded-[12px] border-market-close-stroke-card bg-overlay p-2 font-market-close shadow-overlay"
-			>
-				<div className="flex items-center justify-between rounded-[8px] px-3 py-1 text-[13px] leading-[18px] font-medium text-market-close-fg">
+			<PopoverContent align="end" sideOffset={6} className={cn(menuPopupSurfaceClass, "w-52")}>
+				<div className={UTILITY_ROW_CLASS}>
 					<span>
 						<Trans>Display</Trans>
 					</span>
-					<ThemeToggle
-						className="size-9 rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg"
-						iconClassName="size-[18px]"
-					/>
+					<ThemeToggle className={UTILITY_ROW_CONTROL_CLASS} iconClassName="size-[18px]" />
 				</div>
-				<div className="flex items-center justify-between rounded-[8px] px-3 py-1 text-[13px] leading-[18px] font-medium text-market-close-fg">
+				<div className={UTILITY_ROW_CLASS}>
 					<span>
 						<Trans>Language</Trans>
 					</span>
-					<LanguageSwitcher className="size-9 rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg" />
+					<LanguageSwitcher className={UTILITY_ROW_CONTROL_CLASS} />
 				</div>
 				{linkMobileVisible && (
 					<Button
@@ -82,7 +80,7 @@ export function DesktopUtilitiesMenu({
 						disabled={linkMobileDisabled}
 						className={UTILITY_ROW_BUTTON_CLASS}
 						onClick={linkMobileDisabled ? undefined : handleLinkMobile}
-						iconLeft={<QrCodeIcon className="size-[18px] text-market-close-muted" />}
+						iconLeft={<QrCodeIcon className="size-[18px] text-trading-panel-muted" />}
 					>
 						<Trans>Link mobile device</Trans>
 					</Button>
@@ -94,7 +92,7 @@ export function DesktopUtilitiesMenu({
 					disabled={settingsDisabled}
 					className={UTILITY_ROW_BUTTON_CLASS}
 					onClick={settingsDisabled ? undefined : handleOpenSettings}
-					iconLeft={<SlidersHorizontalIcon className="size-[18px] text-market-close-muted" />}
+					iconLeft={<SlidersHorizontalIcon className="size-[18px] text-trading-panel-muted" />}
 				>
 					<Trans>Settings</Trans>
 				</Button>

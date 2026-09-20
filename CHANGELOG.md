@@ -73,6 +73,26 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- In the dark terminal, dropdown menus, tooltips, toasts and the desktop market selector use a raised
+  surface in the terminal's own hue (`#212d33`) instead of the shared purple-grey default, and the
+  scrim behind an open dialog no longer tints the page navy. The new surface has the same luminance
+  as the old one, so text contrast is unchanged. The disabled `Reset` entry of the language menu is
+  legible in dark mode (60% white instead of 12%).
+- The header `More`, account and language menus, the display menu and the order-type menus share
+  one look: 12px corners, 4px padding, 34px entries with 8px corners in IBM Plex Sans, and 44px
+  entries on phones. Previously the corner radius was 10 or 12px, entries were 34 or 36px tall and
+  the order-type menus opened in Inter under an IBM Plex Sans trigger. The language menu now uses
+  the standard menu shadow and open animation, and its disabled `Reset` entry is legible in light
+  mode as well.
+- Every desktop dialog has 16px corners and a 1px edge. Settings, leverage, margin mode, account
+  mode, wallet, connection and asset-information dialogs previously had 6 or 8px corners, and most
+  dialogs had no edge at all, so in the dark theme they blended into the page. Phone sheets without
+  their own design default to 16px top corners instead of 6px.
+- Hovering the header `Connect Wallet` button changes only its fill. It used to fade the whole
+  button to 90% as well, which in the dark theme cancelled the brighter hover fill (the button got
+  slightly dimmer instead) and snapped instead of animating; the press scale now animates too. The
+  order form's `Connect Wallet` button now brightens on hover in the dark theme, where its hover
+  fill used to equal its resting fill.
 - Linking a phone no longer refuses an account whose whole balance sits on a builder dex: the
   desktop check reads every perp dex before it reports `No balance on Hyperliquid`. When a balance
   cannot be read, or Hyperliquid answers with an incomplete snapshot, the dialog says the account

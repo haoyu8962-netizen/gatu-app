@@ -395,9 +395,6 @@
     --legal-acceptance-disabled-fill: #edf1f5;
     --legal-acceptance-pending-fill: #33505e;
     --legal-acceptance-shadow: 0 24px 64px rgba(20, 30, 45, 0.2);
-    --language-settings-disabled: #c6cfd9;
-    --language-settings-divider: #eef1f5;
-    --language-settings-shadow: 0 16px 40px rgba(20, 30, 45, 0.18);
 
     /* Trading panel surfaces and controls — mobile redesign semantic colors. */
     --trading-panel-text-strong: #1a2330;
@@ -455,7 +452,7 @@
     /* Background */
     --bg-base: #0f1a1f;
     --bg-raised: #0f1a1f;
-    --bg-overlay: #292b33;
+    --bg-overlay: #212d33;
     --bg-modal: #0f1a1f;
     --bg-sunken: #000000;
     --bg-alternate: #0f1a1f;
@@ -499,7 +496,7 @@
     --fill-press: #ffffff1f;
     --fill-selected: var(--action);
     --fill-disabled: #ffffff1f;
-    --fill-overlay: #000626a8;
+    --fill-overlay: #03090ca8;
     --fill-brand-strong: var(--action);
     --fill-brand-weak: var(--fill-weak);
     --fill-error-strong: #ff9c9c;
@@ -592,9 +589,6 @@
     --legal-acceptance-disabled-fill: var(--fill-disabled);
     --legal-acceptance-pending-fill: var(--bg-overlay);
     --legal-acceptance-shadow: 0 24px 64px rgba(0, 0, 0, 0.48);
-    --language-settings-disabled: var(--text-disabled);
-    --language-settings-divider: var(--stroke-weak);
-    --language-settings-shadow: 0 16px 40px rgba(0, 0, 0, 0.48);
 
     --trading-panel-text-strong: var(--text-strong);
     --trading-panel-text-muted: var(--text-weak);
@@ -733,9 +727,6 @@
   --color-legal-acceptance-disabled: var(--legal-acceptance-disabled-fill);
   --color-legal-acceptance-pending: var(--legal-acceptance-pending-fill);
   --shadow-legal-acceptance: var(--legal-acceptance-shadow);
-  --color-language-settings-disabled: var(--language-settings-disabled);
-  --color-language-settings-divider: var(--language-settings-divider);
-  --shadow-language-settings: var(--language-settings-shadow);
 
   /* Trading panel surfaces and controls */
   --color-trading-panel-fg: var(--trading-panel-text-strong);

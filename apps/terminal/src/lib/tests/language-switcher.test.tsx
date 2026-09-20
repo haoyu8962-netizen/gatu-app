@@ -152,9 +152,11 @@ describe("LanguageSwitcher", () => {
 		const menu = document.body.querySelector<HTMLElement>('[role="menu"]');
 		expect(menu?.classList).toContain("w-[232px]");
 		expect(menu?.classList).toContain("min-[1001px]:w-[224px]");
-		expect(menu?.classList).toContain("!rounded-[12px]");
-		expect(menu?.classList).toContain("!shadow-language-settings");
-		expect(menu?.classList).toContain("data-starting-style:!scale-100");
+		expect(menu?.classList).toContain("rounded-24");
+		expect(menu?.classList).not.toContain("rounded-12");
+		expect(menu?.classList).toContain("shadow-overlay");
+		expect([...(menu?.classList ?? [])].filter((token) => token.includes("!"))).toEqual([]);
+		expect(menu?.classList).toContain("[&_[role^=menuitem][data-disabled]]:text-fg-disabled");
 		expect(menu?.classList).toContain("max-[1000px]:[&_[role^=menuitem]]:min-h-11");
 		expect(menu?.classList).toContain("[&>[role=group]:first-child_[role^=menuitem]>span]:[direction:ltr]");
 
