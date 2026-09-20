@@ -199,7 +199,14 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/position-market-close-modal.test.tsx \
   src/lib/tests/position-market-close-action.test.tsx \
   src/lib/tests/position-market-close.test.ts \
-  src/lib/tests/trading-action-button-label-contract.test.ts
+  src/lib/tests/trading-action-button-label-contract.test.ts \
+  src/lib/tests/trading-action-button.test.tsx \
+  src/lib/tests/position-limit-close-modal.test.tsx \
+  src/lib/tests/position-tpsl-modal.test.tsx \
+  src/lib/tests/leverage-modal.test.tsx \
+  src/lib/tests/margin-mode-modal.test.tsx \
+  src/lib/tests/order-submission-wiring.test.ts \
+  tests/mobile-trade-size-validation-a11y.test.tsx
 
 # Startup rendering (see .claude/rules/startup-rendering.md)
 pnpm --dir apps/terminal exec vitest run \
