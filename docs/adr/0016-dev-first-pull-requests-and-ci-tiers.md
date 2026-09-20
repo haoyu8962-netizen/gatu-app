@@ -1,0 +1,58 @@
+# ADR 0016：工作分支先进 `dev`，CI 按目标分支分层
+
+- 状态：D1、D3、D4 已接受并实施（产品负责人，2026-09-19）；D2 在同日、推送之前由产品负责人改为 D2′，并新增 D6、D7；D5 已规划，未执行。实施与验证记录见[分支流向与首版分层](../work-memory/sessions/2026-09-19-ci-tiers-dev-first-flow.md)和[按四条方案的改造](../work-memory/sessions/2026-09-19-ci-restructure.md)。
+- 关联：`.claude/rules/git.md`（分支与 PR 规则）、`AGENTS.md` 末段、`.github/workflows/`、[CI 分钟耗尽记录](../work-memory/sessions/2026-09-15-ci-minutes-concurrency.md)。
+
+## 背景与约束
+
+- 仓库是个人账户下的私有仓库，实际只有一位维护者合并，同时有多个 AI 会话在各自的 worktree 里并行改动。各自验证通过、合在一起才出问题（体积预算、翻译目录、锁文件、布局契约）是真实风险，需要一个汇合点。
+- GitHub Actions 额度为每月 3,000 分钟。`main` 近 60 天的主线只有合并提交，没有直接提交；`main` 与 `dev` 均无保护规则，`gh pr create` 默认以 `main` 为目标。
+- 发布是本地构建后手动上传，仓库没有部署工作流，进 `main` 不等于上线；真机验收属于发布闸门。
+- 实测（PR #30，head `0af67e47`，2026-09-19）：`Production Builds` 的 4 路配对矩阵每路 10.8–12.5 分钟，其中 10 个测试步骤占 3.4–4.3 分钟、构建占约 6.2 分钟；矩阵变量只被构建步骤读取，所以 4 路跑的是同一批测试。浏览器回归 12.5 分钟，类型检查 2.4 分钟，翻译检查 1.5 分钟，网站构建 1.8 分钟。按任务向上取整约 68 计费分钟/次推送（不含 Claude 审查任务，未测），每次推送实际等待约 12.5 分钟。
+- CI 列出的 76 个 vitest 参数展开为 88 个存在的测试文件，终端全量为 576 个文件。全量在 12 核本机并行运行 386 秒，5 个文件共 45 个用例失败；其中 4 个文件单独运行全部通过，`establish-connection-modal` 的 1 个用例单独运行仍然超时。
+
+## 决策
+
+- **D1 分支流向。** 工作分支只向 `dev` 开 PR；`main` 只接受来自 `dev` 的 PR，用 merge commit 合并（任务记录与 ADR 会引用分支上的提交哈希，squash 会让它们失效）。紧急修复从 `main` 切分支、向 `main` 开 PR，合并后立即把 `main` 合回 `dev`。规则写入 `.claude/rules/git.md`，`AGENTS.md` 保留一句指针。
+- **D2（已被 D2′ 取代）重型工作流只对进 `main` 的 PR 触发。** 首版给 `production-build.yml` 与 `slider-browser.yml` 加了 `branches: [main]`。该版本只存在于本地提交 `cdc4d3d2`，没有推送或运行过。
+- **D2′ 每个 PR 构建生产默认组合，其余三组只在晋升时构建。** `production-build.yml` 去掉 `branches: [main]`，矩阵改为按事件取值的表达式：`pull_request` 且目标分支不是 `main` 时只构建 `false/false`（两个配对开关都关闭，即生产默认）；进 `main` 的 PR（D1 下即 `dev → main` 的晋升）、`v[0-9]*` 或 `cloudfront-[0-9]*` 标签、`workflow_dispatch` 构建全部 4 组。job 级 `if` 读不到 `matrix`；拆成独立的发版工作流要么复制约 70 行构建与校验步骤，要么引入复合 action 并使现有对 `production-build.yml` 内容的断言失效，所以用单文件表达式，job 定义只有一份，检查名 `Build terminal (false/false)` 等不变。
+- **D3 测试移出矩阵，只跑一次。** 10 个与矩阵无关的测试步骤原样移入新的 `terminal-tests.yml`，对所有 PR 触发。`test:brand` 里只在网站 job 中运行的 4 个终端品牌单测也并入这里（见 D7）。
+- **D4 同一 PR 的新推送取消旧运行。** 六个由 `pull_request` 触发的工作流顶层加 `group: ${{ github.workflow }}-${{ github.ref }}`、`cancel-in-progress: true`；`pull_request` 事件的 `github.ref` 是 `refs/pull/N/merge`，即按 PR 分组，与 2026-09-15 提交 `d76b12f9` 里的 `pull_request.number || github.ref` 等价。`claude.yml` 不加：每条评论都会启动它（不含 @claude 的由 job 级 `if` 跳过），评论与 issue 事件的 `github.ref` 是默认分支，共用分组会让任何一条评论取消仍在运行的请求；`cancel-in-progress: false` 也只保留最新一个排队请求。原因写在该文件里。
+- **D5（未执行）`main` 的保护规则。** 计划：必须经 PR、禁止 force push 与删除。必选状态检查推迟到全量单测稳定之后，否则每次晋升都会被不稳定的用例卡住。属于仓库设置变更，需维护者确认后执行。
+- **D6 浏览器回归每个 PR 都跑，分两片并行。** `slider-browser.yml` 去掉 `branches: [main]`，用 `shard: [1, 2]` 的矩阵，每次 Playwright 调用带 `--fully-parallel --shard=N/2`。三份 Playwright 配置都是 `fullyParallel: false`，此时 Playwright 1.59.1 按文件分片，实测会把订单录入和账户两套测试全部分给 1/2、2/2 为 0 个测试；`--fully-parallel` 让它按测试分片（共享配置 23/23，订单录入 15/14，账户 12/12）。配置里的 `workers: 1` 不变，分片内仍逐个执行；相关 7 个 spec 只用 `{ page }` 夹具和 `beforeEach`，没有跨测试共享状态。滑杆 spec 单独作为第一步，保持“最先遇到夹具服务器冷启动的是它”的既有顺序；其余三个共享配置 spec 合成一次调用，避免只有 1 个测试的 CLS 调用产生空分片。
+- **D7 合并小 job，网站工作流按输入过滤。** `typecheck.yml` 与 `i18n-check.yml` 合并为 `static-checks.yml`（类型检查、Biome、翻译目录），翻译目录两步加 `if: ${{ !cancelled() }}`，保留它原先独立于类型检查出结果的行为。`paths` 只能过滤整个工作流，所以网站 job 移到 `website-build.yml`；它运行的是 `pnpm test:brand`，路径过滤覆盖其全部非单测输入：`apps/website/**`、`designs/og-cards/**`、`scripts/generate-og-cards.mjs`、`tests/**`、终端 OG 图、`apps/terminal/src/styles.css`、`packages/ui/src/globals.css` 与锁文件。
+
+## 未采用的方案
+
+| 方案 | 未采用的原因 |
+| --- | --- |
+| 重型工作流只对进 `main` 的 PR 触发（原 D2） | 每次推送约 11 计费分钟，但体积预算、chunk 环与浏览器回归要到 `dev → main` 才由 CI 发现，届时批量更大、归因更难。产品负责人选择每次推送保留默认组合的构建与浏览器回归（约 33 计费分钟、等待约 8 分钟） |
+| 其余三组构建拆成独立的发版工作流 | 见 D2′：复制步骤或引入复合 action，且让现有断言失效 |
+| 只加 `--shard`、不加 `--fully-parallel` | 按文件分片，实测一片约 556 秒、另一片约 95 秒外加两次空调用，等待时间几乎不变 |
+| 分片用 `--pass-with-no-tests` 容忍空分片 | 会掩盖路径写错导致的“零测试通过” |
+| 测试 job 放进 `production-build.yml` | 标签与手动运行只为构建全矩阵，不应重跑测试；独立工作流有自己的路径过滤，且“构建工作流内没有测试步骤”可以被断言钉住 |
+| 把类型检查、Biome、翻译目录并进测试 job | 产品负责人要求测试保持独立 job；合并后类型错误会挡住测试结果 |
+| 新建聚合用的 `gate.yml` 顺序重跑全部检查 | 与现有工作流重复，计费分钟翻倍；它要解决的“路径过滤导致必选检查一直 pending”只在纯文档发版时出现，维护者放行即可 |
+| 用必选 job 校验 PR 来源分支 | 成因是 `gh pr create` 的默认目标；一条规则即可，不值得多维护一个检查 |
+| `dev` 也设必选检查 | 同一套闸门设两遍；`dev` 的作用是让工作分支尽快汇合 |
+| 现在就把全量单测设为闸门 | 并行运行下尚有 45 个失败用例，需先修稳 |
+| 测试留在矩阵内 | 同一批测试每次推送重复 4 遍，每次约多花 10 计费分钟，且没有额外覆盖 |
+| 合并 9 次 vitest 调用或提高 `--maxWorkers` | 不在本次方案内；本机同时有其他会话在跑测试，计时不可靠，需在 CI 上实测 |
+| 给 `pull_request` 加 `edited` 类型以便改目标分支后重跑 | 改标题和正文也会触发，并取消进行中的运行 |
+| 把仓库默认分支改为 `dev` | 能从根上修正 PR 默认目标，但对桌面端新建 worktree 的基点、issue 自动关闭的影响未验证，留待单独评估 |
+
+## 后果与边界
+
+- 估算（由上面一次实测的步骤耗时推算，未经推送后的真实运行验证）：进 `dev` 的 PR 每次推送约 33 计费分钟（原约 68）——测试 6、单组构建 8、静态检查 3、浏览器两片各 8，网站工作流通常不触发——等待约 8 分钟（原约 12.5）；进 `main` 的 PR 另加三组构建约 24 分钟。
+- 其余三种配对组合的构建、体积预算与懒加载图要到 `dev → main` 才由 CI 验证；配对开关打开时才出现的体积超限会晚一步暴露。缓解：改动涉及配对代码或其体积时，在该分支用 `workflow_dispatch` 手动运行 `Production Builds`，它构建全部 4 组。
+- 标签模式为 `v[0-9]*` 与 `cloudfront-[0-9]*`（产品负责人确认，2026-09-19），例如 `v0.1.0`、`cloudfront-2026-09-17-p21`。仓库现有标签只有 `archive/2026-09-10/*`；`tags` 与 `tags-ignore` 不能同时使用，所以不靠排除，而是要求前缀后紧跟数字，`archive/**` 或其他只是以 `v` 开头的标签都不会触发 4 次生产构建。`scripts/ci-workflows.test.mjs` 用样例标签钉住这一点。
+- 测试与构建并行、不设 `needs`：等待时间取两者较大值，代价是测试失败时构建不再被跳过。
+- `production-build.yml` 的路径过滤仍包含已移走测试的脚本路径；这是无害的超集，且被既有断言钉住。随网站 job 移走的三项（`designs/og-cards/**`、`tests/**`、`scripts/generate-og-cards.mjs`）已从中删除。
+- CI 的手选测试清单里 `src/lib/tests/geo-server-functions.test.ts` 已不存在（`5944465d` 删除），vitest 会静默忽略不匹配的参数。本次按原样搬移，未清理；全量单测成为闸门后这份清单应整体移除。
+- 本地实跑两个分片时，99 个测试中有 1 个失败过一次（`drawer-interactions` 的 bottom drawer swipe，当轮分片 1 的第一个测试）；之后原始调用方式、分片方式和清空 Vite 缓存后的冷启动各重跑 2 次均全部通过，未能复现或归因。首次 CI 运行后需观察它。
+
+## 证据
+
+- 工作流：`.github/workflows/production-build.yml`、`terminal-tests.yml`、`static-checks.yml`、`website-build.yml`、`slider-browser.yml`、`claude-code-review.yml`、`claude.yml`。
+- 回归：`scripts/ci-workflows.test.mjs` 钉住并发分组（含 `claude.yml` 不得有）、按事件取值的矩阵与无 `branches` 过滤、发版标签模式（用样例标签验证，`archive/**` 不匹配）、每次浏览器调用都带分片参数、静态检查合并为一个 job、`test:brand` 里的终端单测全部出现在 `terminal-tests.yml`；逐条变异确认会失败。`scripts/check-client-bundle-budget.test.mjs` 钉住“预算测试在 `terminal-tests.yml` 运行、构建工作流内不再有测试步骤、测试工作流不含矩阵”。两个文件都由 `terminal-tests.yml` 运行，工作流目录的任何改动都会触发它。
+- 验证命令与结果见两份任务记录；CI 在 GitHub 上的实际触发、矩阵取值、标签触发与取消行为需在推送后的第一个 PR 上观察，本 ADR 不包含该证据。

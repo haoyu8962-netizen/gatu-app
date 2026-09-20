@@ -6,9 +6,7 @@ on:
       - ".github/workflows/production-build.yml"
       - "apps/**"
       - "deploy/**"
-      - "designs/og-cards/**"
       - "packages/**"
-      - "tests/**"
       - "scripts/validate-mobile-phone-access-device-validation*"
       - "docs/mobile-phone-access-device-validation.md"
       - "scripts/check-client-bundle-budget.mjs"
@@ -24,21 +22,38 @@ on:
       - "scripts/check-client-chunk-cycles.mjs"
       - "scripts/client-chunk-graph.*"
       - "scripts/measure/analyze-client-root-deps.mjs"
-      - "scripts/generate-og-cards.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+  # Release tags and manual runs build every pairing combination (see the build job's strategy).
+  # The patterns require a digit after the prefix (`v0.1.0`, `cloudfront-2026-09-17-p21`), so an
+  # `archive/**` tag or any other tag that merely starts with `v` never starts four builds.
+  # `tags` and `tags-ignore` cannot be combined, which is why the patterns themselves are narrow.
+  push:
+    tags:
+      - "v[0-9]*"
+      - "cloudfront-[0-9]*"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   terminal:
     strategy:
       fail-fast: false
       matrix:
-        pairing:
-          - { create: "false", import: "false" }
-          - { create: "false", import: "true" }
-          - { create: "true", import: "false" }
-          - { create: "true", import: "true" }
+        # Pull requests build only the production default, with both pairing switches off.
+        # Pull requests into main (the dev to main promotion), release tags and manual runs build
+        # every combination. A job-level `if` cannot do this because it cannot read `matrix`. The
+        # lines of the expression share one indent so that YAML folds them into a single line.
+        pairing: >-
+          ${{ fromJSON(
+          (github.event_name == 'pull_request' && github.base_ref != 'main')
+          && '[{"create":"false","import":"false"}]'
+          || '[{"create":"false","import":"false"},{"create":"false","import":"true"},{"create":"true","import":"false"},{"create":"true","import":"true"}]'
+          ) }}
     name: Build terminal (${{ matrix.pairing.create }}/${{ matrix.pairing.import }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -54,139 +69,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Test build and release validators
-        run: >-
-          node --test
-          scripts/validate-mobile-phone-access-device-validation.test.js
-          scripts/check-client-bundle-budget.test.mjs
-          scripts/inject-shell-preloads.test.mjs
-          scripts/collect-inline-script-hashes.test.mjs
-          scripts/check-shell-head-scrub.test.mjs
-          scripts/serve-spa-static.test.mjs
-
-      - name: Test the CloudFront release tooling
-        run: pnpm test:cloudfront
-
-      - name: Test Hyperliquid API resource hints
-        working-directory: apps/terminal
-        run: >-
-          pnpm exec vitest run --maxWorkers=1
-          src/lib/tests/seo.test.ts
-          src/lib/tests/hyperliquid-resource-hints.test.ts
-
-      - name: Test terminal interaction and mounting contracts
-        working-directory: apps/terminal
-        run: >-
-          pnpm exec vitest run --maxWorkers=1
-          src/lib/tests/user-menu.test.tsx
-          src/lib/tests/top-nav.test.tsx
-          src/lib/tests/wallet-modal.test.tsx
-          src/lib/tests/mobile-agent-sync-modal.test.tsx
-          src/lib/tests/modal-surface-contract.test.ts
-          src/lib/tests/trades.test.ts
-          src/lib/tests/orderbook-panel-safety.test.tsx
-          src/lib/tests/mobile-bottom-nav.test.tsx
-          src/lib/tests/mobile-terminal-market-bar-lifecycle.test.tsx
-          src/lib/tests/mobile-terminal-disclosure-state.test.tsx
-          src/lib/tests/mobile-trade-layout-market-reset.test.tsx
-          src/lib/tests/market-overview.test.tsx
-
-      - name: Test mobile ticket protocol and import lifecycle
-        working-directory: apps/terminal
-        run: >-
-          pnpm exec vitest run --maxWorkers=1
-          src/lib/tests/mobile-sync-*.test.ts
-          src/lib/tests/mobile-agent-sync-route.test.tsx
-          src/lib/tests/mobile-agent-qr-scanner.test.tsx
-          src/lib/tests/mobile-pairing-feature-gate.test.ts
-
-      - name: Test route provider lifecycles
-        working-directory: apps/terminal
-        run: >-
-          pnpm exec vitest run --maxWorkers=1
-          src/lib/tests/app-route-surface.test.ts
-          src/lib/tests/document-title.test.tsx
-          src/lib/tests/root-provider-split.test.ts
-          src/lib/tests/root-provider-runtime.test.tsx
-          src/lib/tests/root-route-transition.test.tsx
-          src/lib/tests/application-error-boundary.test.tsx
-
-      - name: Test order draft and exchange session lifecycles
-        working-directory: apps/terminal
-        run: >-
-          pnpm exec vitest run --maxWorkers=1
-          src/lib/tests/account-activity-feed-owner.test.tsx
-          src/lib/tests/fast-asset-ctxs-subscription.test.tsx
-          src/lib/tests/limit-price-prefill-contract.test.ts
-          src/lib/tests/mobile-order-safety-contract.test.ts
-          src/lib/tests/order-confirmation-gate.test.tsx
-          src/lib/tests/order-entry-store.test.tsx
-          src/lib/tests/order-slider-sdk-contract.test.tsx
-          src/lib/tests/order-submission-wiring.test.ts
-          src/lib/tests/order-submit-surface-reset.test.tsx
-          src/lib/tests/order-submit-surface-lifecycle-integration.test.tsx
-          src/lib/tests/order-submit-twap-details.test.tsx
-          src/lib/tests/order-validation.test.ts
-          src/lib/tests/provider-address.test.tsx
-          src/lib/tests/trade-terminal-page-boot.test.tsx
-          src/lib/tests/twap-details.test.ts
-          src/lib/tests/use-sub.test.tsx
-          src/lib/tests/vite-cache-isolation.test.ts
-          tests/mobile-trade-size-validation-a11y.test.tsx
-          tests/trade-size-error-a11y.test.tsx
-
-      - name: Test TradingView integration
-        working-directory: apps/terminal
-        run: >-
-          pnpm exec vitest run --maxWorkers=1
-          src/lib/tests/chart-*.test.ts
-          src/lib/tests/chart-*.test.tsx
-          src/lib/tests/load-tradingview.test.ts
-          src/lib/tests/mobile-chart-view.test.tsx
-          src/lib/tests/tradingview-*.test.ts
-          src/lib/tests/tradingview-*.test.tsx
-
-      - name: Test recent trade rendering contracts
-        working-directory: apps/terminal
-        run: >-
-          pnpm exec vitest run --maxWorkers=1
-          src/lib/tests/number-format-reactivity-contract.test.ts
-          src/lib/tests/responsive-panel-layout.test.ts
-          src/lib/tests/trade-row.test.tsx
-          src/lib/tests/trades-panel.test.tsx
-
-      - name: Test Deposit, CCTP, routing, and geo guards
-        working-directory: apps/terminal
-        run: >-
-          pnpm exec vitest run --maxWorkers=1
-          src/lib/tests/cctp-deposit-catalogs.test.ts
-          src/lib/tests/cctp-deposit-tracking.test.ts
-          src/lib/tests/cctp-deposit.test.ts
-          src/lib/tests/deposit-availability.test.tsx
-          src/lib/tests/deposit-broadcast.test.ts
-          src/lib/tests/deposit-empty-balances-entry.test.tsx
-          src/lib/tests/deposit-execution-state.test.ts
-          src/lib/tests/deposit-form-routing.test.tsx
-          src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx
-          src/lib/tests/deposit-order-cta.test.tsx
-          src/lib/tests/development-geo.test.ts
-          src/lib/tests/embedded-deposit-auto-bridge.test.tsx
-          src/lib/tests/funding-address-card.test.tsx
-          src/lib/tests/geo-server-functions.test.ts
-          src/lib/tests/referral-action-geo.test.ts
-          src/lib/tests/trading-onboarding-gate.test.tsx
-          src/lib/tests/usdc-routing.test.ts
-          src/lib/tests/use-cctp-deposit-tracking.test.tsx
-          src/lib/tests/use-deposit-routing-guard.test.tsx
-          src/lib/tests/use-email-embedded-wallet.test.tsx
-          src/lib/tests/use-geo-restriction.test.tsx
-          src/lib/tests/use-usdc-routing.test.ts
-          src/lib/tests/unit-deposit-info.test.tsx
-
       - name: Build production terminal and enforce bundle budget
         run: pnpm --filter @gatu/terminal build
         env:
-          GATU_BUILD_SHA: ${{ github.event.pull_request.head.sha }}
+          GATU_BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GATU_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
           NODE_ENV: production
           NITRO_PRESET: node-server
@@ -240,28 +126,3 @@ jobs:
 
       - name: Verify TradingView package and compressed build assets
         run: node deploy/verify-chart-build.mjs apps/terminal/public apps/terminal/.output/public deploy/manifests/tradingview-charting-library.json
-
-  website:
-    name: Build website
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.4.0
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22.15.0
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Install Chromium for brand card verification
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Test brand contracts
-        run: pnpm test:brand
-
-      - name: Build marketing website
-        run: pnpm --filter @gatu/website build

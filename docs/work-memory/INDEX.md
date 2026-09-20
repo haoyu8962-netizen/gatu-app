@@ -13,8 +13,11 @@
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
 - [字体实践审查：对照官方终端，修复图表字体栈、共享字号刻度、错误页字体并迁移等值任意字号](sessions/2026-09-20-font-practice-review.md) — 2026-09-20；已验证，范围见正文。webfont 加载契约合规；图表 iframe 里的 IBM Plex 从未生效，改为系统字体栈（iframe 内新旧栈 measureText 80 组完全相同）；packages/ui 字号刻度对齐规范并加契约测试；bootstrap 错误页不再依赖 webfont；相对单位字号纳入棘轮。经用户授权，同一字面量内带显式 leading-* 的 127 处任意 px 字号迁移为命名刻度（棘轮 240→113，浏览器前后计算样式零差异）；其余 87 处无显式行高、26 处无等值刻度仍是受控债务。移动端图表与生产构建未验证。
+- [按四条方案改造 PR 检查，并与同日的首版 CI 分层合并整理](sessions/2026-09-19-ci-restructure.md) — 2026-09-19；已整理，验证见正文。同一天有两个会话各自改造 CI：首版（ADR 0016 原 D2）把构建与浏览器回归只留给进 main 的 PR，本任务按用户的四条方案改造。用户决定以四条为准：保留首版的分支流向、独立的 terminal-tests.yml 与测试钉子，把 D2 改为 D2′（每个 PR 构建默认配对组合并跑两片浏览器回归，其余三组只在进 main 的 PR、v[0-9]* 或 cloudfront-[0-9]* 标签和手动运行时构建），并合并静态检查、给网站工作流加路径过滤。预估每次推送计费约 33 分钟、等待约 8 分钟；工作流未在 GitHub 上运行，改动已提交、未推送。
+- [工作分支先进 dev、CI 按目标分支分层与测试移出矩阵](sessions/2026-09-19-ci-tiers-dev-first-flow.md) — 2026-09-19；已整理，验证见正文。修复 portfolio-overview 的时钟竞态后评估 Worker→dev→main 闸门：4 路矩阵重复跑同一批测试、全量单测并行下 45 红、main/dev 无保护。落地 ADR 0016：PR 目标写明 dev，4 路构建与浏览器回归只对进 main 的 PR 运行，测试移入 terminal-tests.yml 只跑一次，合入 concurrency；main 保护规则未执行，GitHub 侧触发行为待首个 PR 验证。
 - [Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复](sessions/2026-09-18-grok-dialog-commits-review.md) — 2026-09-18；已整理，验证见正文。grok-4.6 只读审查 0ad17aea…08e2057d 冻结快照，报告 2 P1 / 2 P2 / 3 P3；F1/F2/F4/F5/F6/F7 已修（守卫经变异检查钉住），F3 记为 ADR 已知限制；逐条核实：反手与全部平仓退场窗口内确认按钮仍可点（P1）、市价平仓取消退场期间 canSubmit 未含 isClosing（P1）属实；后台执行绑在随路由卸载的弹窗实例（P2）与 PnL 分享退场仍直接卸载（P2）属实；ADR §6 引用、CHANGELOG「一条通知」措辞、idle 预热测试不覆盖 requestIdleCallback 三条 P3 属实。其「无过渡时 onOpenChangeComplete 同步触发会卡会话」的存疑项经 Base UI 源码核实不成立。未修改代码。
 - [Grok 对抗审查 PR #26（启动、md 堆叠、路由揭示、导航收纳）](sessions/2026-09-17-grok-pr26-review.md) — 2026-09-17；已整理，验证见正文。grok-4.6-build 只读审查 PR #26 冻结快照，报告 2 P1 / 4 P2 / 1 P3；本会话逐条核实全部成立，其中 5 条为 PR 之前既有、被首帧真实 chrome 放大；未修改代码，修复待决策。
+- [CI 分钟耗尽：账单锁定诊断与同 PR 并发取消](sessions/2026-09-15-ci-minutes-concurrency.md) — 2026-09-15；已验证，范围见正文。PR #24 八项检查 3 秒内失败且无步骤，根因是 GitHub Pro 月度 3,000 分钟用尽而 Actions 预算为 0；每次推送约 90 计费分钟；设预算后重跑全绿并合并；五个 PR 工作流加 concurrency 取消被取代的运行，构建矩阵保留。
 - [部署包预算：订单队列去重与固定参数复验](sessions/2026-09-12-deploy-bundle-margin.md) — 2026-09-12；已验证，范围见正文。保留部署超预算及订单队列去重的固定参数复验；2026-09-14 核对 PR #23 已合并且对应 head 八项 CI 通过，实际服务器部署仍未核验。
 - [中性卡片底色与相邻弱填充全量源码审查](sessions/2026-09-12-neutral-surface-audit.md) — 2026-09-12；已整理，验证见正文。原审查后已有五批 UI/零占位实现，实际提交已补齐；截图和测试为来源任务报告，专题文档“待实施”及旧清单仅适用于原基线。
 - [PR #22 合并前校验：清理成交旧提示与重复订单标签](sessions/2026-09-12-pr22-merge-validation.md) — 2026-09-12；已整理，验证见正文。删除旧成交提示并共用订单标签；2026-09-14 复核确认修复 head 的八项 CI 通过且 PR #22 已合并，原失败与本地构建中止保留。
@@ -113,6 +116,7 @@
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md)
 
 - [字体实践审查：对照官方终端，修复图表字体栈、共享字号刻度、错误页字体并迁移等值任意字号](sessions/2026-09-20-font-practice-review.md) — 2026-09-20；已验证，范围见正文。webfont 加载契约合规；图表 iframe 里的 IBM Plex 从未生效，改为系统字体栈（iframe 内新旧栈 measureText 80 组完全相同）；packages/ui 字号刻度对齐规范并加契约测试；bootstrap 错误页不再依赖 webfont；相对单位字号纳入棘轮。经用户授权，同一字面量内带显式 leading-* 的 127 处任意 px 字号迁移为命名刻度（棘轮 240→113，浏览器前后计算样式零差异）；其余 87 处无显式行高、26 处无等值刻度仍是受控债务。移动端图表与生产构建未验证。
+- [工作分支先进 dev、CI 按目标分支分层与测试移出矩阵](sessions/2026-09-19-ci-tiers-dev-first-flow.md) — 2026-09-19；已整理，验证见正文。修复 portfolio-overview 的时钟竞态后评估 Worker→dev→main 闸门：4 路矩阵重复跑同一批测试、全量单测并行下 45 红、main/dev 无保护。落地 ADR 0016：PR 目标写明 dev，4 路构建与浏览器回归只对进 main 的 PR 运行，测试移入 terminal-tests.yml 只跑一次，合入 concurrency；main 保护规则未执行，GitHub 侧触发行为待首个 PR 验证。
 - [Connect Wallet 按钮悬停态：去掉整体淡出，补上暗色面板按钮的悬停反馈](sessions/2026-09-19-connect-cta-hover-states.md) — 2026-09-19；已整理，验证见正文。头部 Connect Wallet 同时用 hover:bg-action-hover 和 hover:opacity-90，暗色下两者抵消（#edeef2 → 合成约 #e7e8e9，反而略暗）且 opacity 不在过渡列表里会跳变；订单面板同名按钮暗色下静止与悬停填充同为 6% 白。改为只走 action 令牌、过渡含 scale，面板暗色悬停用 fill-press（12% 白）。暗色下两个同名按钮一实心一幽灵的层级差异未动，待设计决定。
 - [暗色浮层与遮罩改为终端色相，并修复语言菜单禁用文字](sessions/2026-09-19-dark-overlay-hue-family.md) — 2026-09-19；已整理，验证见正文。实测暗色下菜单 bg-overlay 仍是共享库紫灰 #292b33（色相 228°）、遮罩仍是藏蓝 #000626，而终端基色是青黑 #0f1a1f（199°）；改为等亮度的 #212d33 与 #03090ca8，语言菜单禁用文字由 12% 白改为 60% 白（1.46:1 → 6.09:1）。圆角、字体、菜单皮肤重复等其余审查项未处理。
 - [菜单共享皮肤、弹窗统一圆角与边框，并让 cn() 认识项目刻度](sessions/2026-09-19-popup-skin-and-dialog-chrome.md) — 2026-09-19；已整理，验证见正文。根因是 tailwind-merge 不认识项目的圆角、阴影、字体刻度，覆盖基础组件时两个类都保留、由样式表顺序决定，于是各处堆 !important；修复 cn() 后把 5 份菜单皮肤收敛为一份、桌面弹窗统一 16px 圆角加 1px 边、底部抽屉默认 16px，并用棘轮测试钉住 241 处任意字号、228 处任意圆角、18 处 ! 表面覆盖。全仓批量替换与 market-close 令牌改名未做。
@@ -144,6 +148,8 @@
 | 2026-09-20 | [字体实践审查：对照官方终端，修复图表字体栈、共享字号刻度、错误页字体并迁移等值任意字号](sessions/2026-09-20-font-practice-review.md) | 未取得任务标识，见正文 | `3b0a84cb91dd322725c7c0b16a4403dae36fe29a` | 已验证，范围见正文 |
 | 2026-09-20 | [配对页加固（A 批）：头部内联擦除、阻断说明页、路径规范、Service Worker 放行、StrictMode](sessions/2026-09-20-pairing-page-hardening.md) | 未取得任务标识，见正文 | `ab2874e1` | 已整理，验证见正文 |
 | 2026-09-20 | [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) | 未取得任务标识，见正文 | `d6cc4f3e9ffed0a7ba0092493fa161846be8c52f` | 已整理，验证见正文 |
+| 2026-09-19 | [按四条方案改造 PR 检查，并与同日的首版 CI 分层合并整理](sessions/2026-09-19-ci-restructure.md) | 未取得任务标识，见正文 | `9f875c65` | 已整理，验证见正文 |
+| 2026-09-19 | [工作分支先进 dev、CI 按目标分支分层与测试移出矩阵](sessions/2026-09-19-ci-tiers-dev-first-flow.md) | 未取得任务标识，见正文 | `d6cc4f3e` | 已整理，验证见正文 |
 | 2026-09-19 | [CloudFront 发布闸门：暴露资金或凭证路径的构建需要上传时再确认](sessions/2026-09-19-cloudfront-release-gates.md) | 未取得任务标识，见正文 | `a7cef26a` | 已整理，验证见正文 |
 | 2026-09-19 | [Connect Wallet 按钮悬停态：去掉整体淡出，补上暗色面板按钮的悬停反馈](sessions/2026-09-19-connect-cta-hover-states.md) | 未取得任务标识，见正文 | `e837e8ce` | 已整理，验证见正文 |
 | 2026-09-19 | [暗色浮层与遮罩改为终端色相，并修复语言菜单禁用文字](sessions/2026-09-19-dark-overlay-hue-family.md) | 未取得任务标识，见正文 | `0af67e47722409bb350f61500d58ab0f0bac30c1` | 已整理，验证见正文 |
@@ -186,6 +192,7 @@
 | 2026-09-16 | [桌面交易面板框架：单一来源展示组件迁移](sessions/2026-09-16-trade-panel-view-migration.md) | 未取得任务标识，见正文 | `3ecb960e8df1e2360be9c62ac59881b9f56ec622` | 已整理，验证见正文 |
 | 2026-09-16 | [本地 3005 钱包会话失败与手动刷新恢复](sessions/2026-09-16-wallet-session-recovery.md) | 未取得任务标识，见正文 | `99766205` | 已整理，验证见正文 |
 | 2026-09-16 | [热访问启动：为什么第 2..n 次仍出现占位壳，以及经核实的改进计划](sessions/2026-09-16-warm-visit-startup-plan.md) | 未取得任务标识，见正文 | `f5010ee7` | 已整理，验证见正文 |
+| 2026-09-15 | [CI 分钟耗尽：账单锁定诊断与同 PR 并发取消](sessions/2026-09-15-ci-minutes-concurrency.md) | 未取得任务标识，见正文 | `f5010ee7` | 已验证，范围见正文 |
 | 2026-09-15 | [移动占位壳与真实终端逐像素对齐](sessions/2026-09-15-mobile-shell-parity.md) | 未取得任务标识，见正文 | `f5010ee7` | 已验证，范围见正文 |
 | 2026-09-13 | [Across 持久充值地址接入规划](sessions/2026-09-13-across-deposit-address-plan.md) | 未取得任务标识，见正文 | `9750ccffd051e2b49bb4f90ba2a8f5afb5c7f961` | 已整理，验证见正文 |
 | 2026-09-13 | [Across 官方文档共享阅读入口](sessions/2026-09-13-across-docs-entry.md) | 未取得任务标识，见正文 | `0662cae1d921ef71a3e60edef9f9c736ceacccb5` | 已整理，验证见正文 |

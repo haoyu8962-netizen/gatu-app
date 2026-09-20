@@ -1,0 +1,49 @@
+name: Website and Brand
+
+# `paths` can only filter a whole workflow, not one job, so the website job lives in its own
+# workflow. The list covers every input of `pnpm test:brand` that is not a terminal unit test:
+# the Terminal Tests workflow runs those for terminal changes.
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/website-build.yml"
+      - "apps/website/**"
+      - "designs/og-cards/**"
+      - "scripts/generate-og-cards.mjs"
+      - "tests/**"
+      - "apps/terminal/public/og-terminal-1200x630.png"
+      - "apps/terminal/src/styles.css"
+      - "packages/ui/src/globals.css"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  website:
+    name: Build website
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.15.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium for brand card verification
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test brand contracts
+        run: pnpm test:brand
+
+      - name: Build marketing website
+        run: pnpm --filter @gatu/website build
