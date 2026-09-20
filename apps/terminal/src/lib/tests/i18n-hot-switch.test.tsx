@@ -145,16 +145,7 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({ useMarketNavigation: () 
 vi.mock("@/hooks/trade/use-position-market-close-action", () => ({
 	usePositionMarketCloseAction: () => ({ open: vi.fn(), pendingAssetId: null }),
 }));
-vi.mock("@/components/trade/positions/position-close-all-modal", () => ({ PositionCloseAllController: () => null }));
-vi.mock("@/components/trade/positions/position-isolated-margin-modal", () => ({
-	PositionIsolatedMarginModal: () => null,
-}));
-vi.mock("@/components/trade/positions/position-limit-close-modal", () => ({ PositionLimitCloseModal: () => null }));
 vi.mock("@/components/trade/positions/position-pnl-share-modal", () => ({ PositionPnlShareModal: () => null }));
-vi.mock("@/components/trade/positions/position-reverse-confirmation-controller", () => ({
-	PositionReverseConfirmationController: () => null,
-}));
-vi.mock("@/components/trade/positions/position-tpsl-modal", () => ({ PositionTpSlModal: () => null }));
 vi.mock("@/components/trade/components/trading-action-button", () => ({
 	TradingActionButton: ({ children, onClick }: { children: ReactNode; onClick: () => void }) => (
 		<button type="button" onClick={onClick}>

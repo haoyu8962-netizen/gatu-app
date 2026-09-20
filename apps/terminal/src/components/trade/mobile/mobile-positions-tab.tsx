@@ -30,19 +30,15 @@ import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { usePositionDialogActions } from "@/stores/use-position-dialog-store";
 import type {
 	IsolatedMarginPositionRef,
-	IsolatedMarginPositionTarget,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
 	PositionPnlShareData,
 	PositionReverseRef,
 	TpSlPositionRef,
-	TpSlPositionTarget,
 } from "../positions/position-dialog-types";
 import { PositionFilterToolbar } from "../positions/position-filter-toolbar";
-import { PositionIsolatedMarginModal } from "../positions/position-isolated-margin-modal";
 import type { PositionMarketOption } from "../positions/position-market-filter";
 import { PositionPnlShareModal } from "../positions/position-pnl-share-modal";
-import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -81,12 +77,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 		setSide(side);
 		setActiveTab("trade");
 	}
-	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
-	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionTarget | null>(null);
-	const [isolatedMarginModalOpen, setIsolatedMarginModalOpen] = useState(false);
-	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
-		useState<IsolatedMarginPositionTarget | null>(null);
-	const { openLimitClose, openReverse } = usePositionDialogActions();
+	const { openIsolatedMargin, openLimitClose, openReverse, openTpSl } = usePositionDialogActions();
 	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
 		ownerKey,
@@ -203,31 +194,18 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 
 	function handleOpenTpSlModal(data: TpSlPositionRef) {
 		if (!address || clientKey === "disconnected" || address.toLowerCase() !== clientKey.toLowerCase()) return;
-		setSelectedTpSlPosition({ ...data, owner: clientKey.toLowerCase(), env });
-		setTpSlModalOpen(true);
+		openTpSl({ ...data, owner: clientKey.toLowerCase(), env });
 	}
 
 	function handleOpenIsolatedMarginModal(data: IsolatedMarginPositionRef) {
 		if (!address || clientKey === "disconnected" || address.toLowerCase() !== clientKey.toLowerCase()) return;
-		setSelectedIsolatedMarginPosition({ ...data, owner: clientKey.toLowerCase(), env });
-		setIsolatedMarginModalOpen(true);
+		openIsolatedMargin({ ...data, owner: clientKey.toLowerCase(), env });
 	}
 
 	function handleOpenPnlShare(data: PositionPnlShareData) {
 		if (!address) return;
 		setSelectedPnlShare({ ownerKey: `${env}:${address.toLowerCase()}`, position: data });
 	}
-
-	const positionModals = (
-		<>
-			<PositionTpSlModal open={tpSlModalOpen} onOpenChange={setTpSlModalOpen} position={selectedTpSlPosition} />
-			<PositionIsolatedMarginModal
-				open={isolatedMarginModalOpen}
-				onOpenChange={setIsolatedMarginModalOpen}
-				position={selectedIsolatedMarginPosition}
-			/>
-		</>
-	);
 
 	function renderFilterRow(disabled: boolean) {
 		return (
@@ -266,7 +244,6 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 		return (
 			<>
 				<DataPendingState loading={positionsLoading} />
-				{positionModals}
 				{pnlShareModal}
 			</>
 		);
@@ -290,7 +267,6 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 						{t`Go to Trade`}
 					</Button>
 				</div>
-				{positionModals}
 				{pnlShareModal}
 			</>
 		);
@@ -337,7 +313,6 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 					})}
 				</div>
 			</div>
-			{positionModals}
 			{pnlShareModal}
 		</>
 	);

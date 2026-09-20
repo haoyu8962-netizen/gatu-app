@@ -27,15 +27,12 @@ import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
 import type {
 	IsolatedMarginPositionRef,
-	IsolatedMarginPositionTarget,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
 	PositionPnlShareData,
 	PositionReverseRef,
 	TpSlPositionRef,
-	TpSlPositionTarget,
 } from "./position-dialog-types";
-import { PositionIsolatedMarginModal } from "./position-isolated-margin-modal";
 import { PositionPnlShareModal } from "./position-pnl-share-modal";
 import { type PositionPnlMode, PositionRow } from "./position-row";
 import {
@@ -45,7 +42,6 @@ import {
 	positionTableHeadClass,
 	positionTableHeaderClass,
 } from "./position-table-styles";
-import { PositionTpSlModal } from "./position-tpsl-modal";
 import {
 	positionsPanelTableBodyClass,
 	positionsPanelTableHeaderRowClass,
@@ -77,13 +73,8 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 		navigateToMarket(name);
 		setSide(side);
 	}
-	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
-	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionTarget | null>(null);
-	const [isolatedMarginModalOpen, setIsolatedMarginModalOpen] = useState(false);
-	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
-		useState<IsolatedMarginPositionTarget | null>(null);
 	const closeAllSession = usePositionCloseAllSession();
-	const { openCloseAll, openLimitClose, openReverse } = usePositionDialogActions();
+	const { openCloseAll, openIsolatedMargin, openLimitClose, openReverse, openTpSl } = usePositionDialogActions();
 	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [pnlMode, setPnlMode] = useState<PositionPnlMode>("roe");
 
@@ -180,14 +171,12 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 
 	function handleOpenTpSlModal(data: TpSlPositionRef) {
 		if (!address || clientKey === "disconnected" || address.toLowerCase() !== clientKey.toLowerCase()) return;
-		setSelectedTpSlPosition({ ...data, owner: clientKey.toLowerCase(), env });
-		setTpSlModalOpen(true);
+		openTpSl({ ...data, owner: clientKey.toLowerCase(), env });
 	}
 
 	function handleOpenIsolatedMarginModal(data: IsolatedMarginPositionRef) {
 		if (!address || clientKey === "disconnected" || address.toLowerCase() !== clientKey.toLowerCase()) return;
-		setSelectedIsolatedMarginPosition({ ...data, owner: clientKey.toLowerCase(), env });
-		setIsolatedMarginModalOpen(true);
+		openIsolatedMargin({ ...data, owner: clientKey.toLowerCase(), env });
 	}
 
 	function handleOpenPnlShare(data: PositionPnlShareData) {
@@ -367,12 +356,6 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 				)}
 			</div>
 
-			<PositionTpSlModal open={tpSlModalOpen} onOpenChange={setTpSlModalOpen} position={selectedTpSlPosition} />
-			<PositionIsolatedMarginModal
-				open={isolatedMarginModalOpen}
-				onOpenChange={setIsolatedMarginModalOpen}
-				position={selectedIsolatedMarginPosition}
-			/>
 			<PositionPnlShareModal
 				position={
 					address && selectedPnlShare?.ownerKey === `${env}:${address.toLowerCase()}` ? selectedPnlShare.position : null

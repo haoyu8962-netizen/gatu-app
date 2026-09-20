@@ -40,16 +40,7 @@ vi.mock("@/hooks/trade/use-position-market-close-action", () => ({
 }));
 vi.mock("@/stores/use-order-entry-store", () => ({ useOrderEntryActions: () => ({ setSide: vi.fn() }) }));
 vi.mock("@/components/trade/positions/position-row", () => ({ PositionRow: () => null }));
-vi.mock("@/components/trade/positions/position-close-all-modal", () => ({ PositionCloseAllController: () => null }));
-vi.mock("@/components/trade/positions/position-isolated-margin-modal", () => ({
-	PositionIsolatedMarginModal: () => null,
-}));
-vi.mock("@/components/trade/positions/position-limit-close-modal", () => ({ PositionLimitCloseModal: () => null }));
 vi.mock("@/components/trade/positions/position-pnl-share-modal", () => ({ PositionPnlShareModal: () => null }));
-vi.mock("@/components/trade/positions/position-reverse-confirmation-controller", () => ({
-	PositionReverseConfirmationController: () => null,
-}));
-vi.mock("@/components/trade/positions/position-tpsl-modal", () => ({ PositionTpSlModal: () => null }));
 
 describe("desktop positions snapshot presentation", () => {
 	let container: HTMLDivElement;

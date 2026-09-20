@@ -1175,8 +1175,8 @@ msgstr "ملغي"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Canceling..."
-msgstr "جارٍ الإلغاء..."
+#~ msgid "Canceling..."
+#~ msgstr "جارٍ الإلغاء..."
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
@@ -1429,8 +1429,8 @@ msgid "Close all positions summary"
 msgstr "ملخص إغلاق جميع المراكز"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Close and reopen this dialog after the position data refreshes."
-msgstr "أغلق مربع الحوار هذا وأعد فتحه بعد تحديث بيانات المركز."
+#~ msgid "Close and reopen this dialog after the position data refreshes."
+#~ msgstr "أغلق مربع الحوار هذا وأعد فتحه بعد تحديث بيانات المركز."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Close API wallet action"
@@ -4436,8 +4436,8 @@ msgid "Modify Order"
 msgstr "تعديل الطلب"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
-msgid "Modifying..."
-msgstr "جارٍ التعديل..."
+#~ msgid "Modifying..."
+#~ msgstr "جارٍ التعديل..."
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -5084,6 +5084,11 @@ msgstr "دفتر الأوامر بعملة التسعير"
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
 msgstr "عرض دفتر الأوامر"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Order cancellation confirmed."
+msgstr "تم تأكيد إلغاء الأمر."
 
 #: src/hooks/trade/use-order-confirmation.ts
 #: src/lib/trade/order-submission-feedback.ts
@@ -7308,8 +7313,8 @@ msgid "Submitting to Hyperliquid"
 msgstr "جارٍ الإرسال إلى Hyperliquid"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Submitting..."
-msgstr "جارٍ الإرسال..."
+#~ msgid "Submitting..."
+#~ msgstr "جارٍ الإرسال..."
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -7351,8 +7356,8 @@ msgid "Swap submitted"
 msgstr "تم إرسال المبادلة"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Swapping..."
-msgstr "جارٍ المبادلة..."
+#~ msgid "Swapping..."
+#~ msgstr "جارٍ المبادلة..."
 
 #. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
@@ -7429,7 +7434,6 @@ msgid "Switch to Mainnet"
 msgstr "التبديل إلى Mainnet"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
@@ -7539,8 +7543,8 @@ msgstr "إنهاء أمر TWAP"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
-msgid "Terminating..."
-msgstr "جارٍ الإنهاء..."
+#~ msgid "Terminating..."
+#~ msgstr "جارٍ الإنهاء..."
 
 #: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
@@ -9066,8 +9070,8 @@ msgid "Updated to {displayLeverage}x"
 msgstr "تم التحديث إلى {displayLeverage}x"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Updating..."
-msgstr "جارٍ التحديث..."
+#~ msgid "Updating..."
+#~ msgstr "جارٍ التحديث..."
 
 #: src/components/staking/staking-view.tsx
 msgid "Uptime"
@@ -9380,8 +9384,8 @@ msgid "Waiting for confirmation"
 msgstr "في انتظار التأكيد"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
-msgid "Waiting for confirmation..."
-msgstr "في انتظار التأكيد..."
+#~ msgid "Waiting for confirmation..."
+#~ msgstr "في انتظار التأكيد..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/config/orderbook-labels.ts

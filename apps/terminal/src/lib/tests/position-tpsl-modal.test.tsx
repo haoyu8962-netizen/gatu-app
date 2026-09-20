@@ -3,6 +3,7 @@
 import { ApiRequestError, type FrontendOpenOrdersResponse, HttpRequestError } from "@nktkas/hyperliquid";
 import { act, type ComponentProps, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
+import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TradeSizeSlider } from "@/components/trade/components/trade-size-slider";
 import type { TpSlPositionTarget } from "@/components/trade/positions/position-dialog-types";
@@ -137,7 +138,7 @@ vi.mock("@gatu/ui", () => ({
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 }));
 
-vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), info: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
@@ -504,9 +505,27 @@ describe("PositionTpSlModal live data", () => {
 		vi.clearAllMocks();
 	});
 
+	function modalElement(
+		position: TpSlPositionTarget,
+		onOpenChange: (open: boolean) => void = vi.fn(),
+		sessionId = "tpsl-1",
+	) {
+		return createElement(PositionTpSlModal, {
+			session: { sessionId, position },
+			onSessionEnd: () => onOpenChange(false),
+		});
+	}
+
+	function expectDismissedWith(notify: unknown, message: string) {
+		expect(notify).toHaveBeenCalledTimes(1);
+		expect(notify).toHaveBeenCalledWith(expect.stringContaining(message));
+		expect(container.textContent).not.toContain(message);
+		expect(container.querySelector('[data-testid="position-risk-dialog"]')).toBeNull();
+	}
+
 	function renderModal(onOpenChange = vi.fn()) {
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange, position: { ...positionRef } }));
+			root.render(modalElement({ ...positionRef }, onOpenChange));
 		});
 		return onOpenChange;
 	}
@@ -524,7 +543,7 @@ describe("PositionTpSlModal live data", () => {
 
 		testState.isMobile = false;
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 		dialog = container.querySelector<HTMLElement>('[data-testid="position-risk-dialog"]');
 		expect(dialog?.dataset.presentation).toBe("modal");
@@ -814,7 +833,7 @@ describe("PositionTpSlModal live data", () => {
 
 			expect(testState.amountSliderProps?.disabled).toBe(true);
 			expect(getInput(container, "Configured TP/SL amount").value).toBe("0.099");
-			expect(getButton(container, change === "submitting" ? "Submitting..." : "Confirm").disabled).toBe(true);
+			expect(getButton(container, "Confirm").disabled).toBe(true);
 			expect(testState.placeOrder).not.toHaveBeenCalled();
 			expect(testState.cancelOrders).not.toHaveBeenCalled();
 		},
@@ -875,7 +894,7 @@ describe("PositionTpSlModal live data", () => {
 		testState.markPx = "28001.25";
 		if (testState.position) testState.position = { ...testState.position, unrealizedPnl: "10.5" };
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 
 		expect(container.textContent).toContain("28,001.25");
@@ -890,7 +909,7 @@ describe("PositionTpSlModal live data", () => {
 
 		testState.orders = [openOrder({ oid: 8, triggerPx: "29500" })];
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 
 		expect(container.textContent).toContain("Trading data changed while this dialog was open.");
@@ -997,8 +1016,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).not.toHaveBeenCalled();
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expect(container.textContent).toContain("Trading data changed while this dialog was open.");
-		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expectDismissedWith(toast.error, "Trading data changed while this dialog was open.");
 	});
 
 	it("fails closed when the lock-time REST position size differs from the confirmed dialog size", async () => {
@@ -1018,8 +1036,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).not.toHaveBeenCalled();
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expect(container.textContent).toContain("Trading data changed while this dialog was open.");
-		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expectDismissedWith(toast.error, "Trading data changed while this dialog was open.");
 	});
 
 	it("fails closed when the live position size changes while the dialog remains open", () => {
@@ -1028,7 +1045,7 @@ describe("PositionTpSlModal live data", () => {
 		if (testState.position) testState.position = { ...testState.position, szi: "-0.2" };
 
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 
 		expect(container.textContent).toContain("Trading data changed while this dialog was open.");
@@ -1050,7 +1067,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.frontendOpenOrders).not.toHaveBeenCalled();
 		expect(testState.cancelOrders).not.toHaveBeenCalled();
-		expect(container.textContent).toContain("Another order for this market is still being confirmed.");
+		expectDismissedWith(toast.warning, "Another order for this market is still being confirmed.");
 	});
 
 	it("does not place a replacement and blocks retries when the cancel response is lost", async () => {
@@ -1063,36 +1080,17 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expect(container.textContent).toContain("Confirming exchange status; do not retry.");
-		expect(getButton(container, "Confirm").disabled).toBe(true);
-		await act(async () => getButton(container, "Confirm").click());
-		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
-		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
 
 		act(() => {
-			root.render(
-				createElement(PositionTpSlModal, {
-					open: false,
-					onOpenChange: vi.fn(),
-					position: positionRef,
-				}),
-			);
-		});
-		act(() => {
-			root.render(
-				createElement(PositionTpSlModal, {
-					open: true,
-					onOpenChange: vi.fn(),
-					position: positionRef,
-				}),
-			);
+			root.render(modalElement(positionRef, vi.fn(), "tpsl-2"));
 		});
 		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
 		await act(async () => getButton(container, "Confirm").click());
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expect(container.textContent).toContain("Another order for this market is still being confirmed.");
+		expect(toast.warning).toHaveBeenCalledWith("Another order for this market is still being confirmed.");
 	});
 
 	it("does not place replacements after a partial cancel response", async () => {
@@ -1119,8 +1117,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expect(container.textContent).toContain("Confirming exchange status; do not retry.");
-		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
 	});
 
 	it("treats a single cancel error as a definitive whole-batch rejection and permits a safe retry", async () => {
@@ -1150,9 +1147,13 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expect(container.textContent).toContain("batch rejected");
-		expect(getButton(container, "Confirm").disabled).toBe(false);
+		expectDismissedWith(toast.error, "batch rejected");
 
+		act(() => {
+			root.render(modalElement(positionRef, vi.fn(), "tpsl-2"));
+		});
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		act(() => setInputValue(getInput(container, "Stop Loss"), "32000"));
 		await act(async () => getButton(container, "Confirm").click());
 		await vi.waitFor(() => expect(testState.placeOrder).toHaveBeenCalledTimes(1));
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(2);
@@ -1170,8 +1171,7 @@ describe("PositionTpSlModal live data", () => {
 
 			expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 			expect(testState.placeOrder).not.toHaveBeenCalled();
-			expect(container.textContent).toContain("Confirming exchange status; do not retry.");
-			expect(getButton(container, "Confirm").disabled).toBe(true);
+			expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
 		},
 	);
 
@@ -1215,7 +1215,7 @@ describe("PositionTpSlModal live data", () => {
 			testState.env = "Testnet";
 		}
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 
 		expect(container.textContent).toContain("Trading data changed while this dialog was open.");
@@ -1238,7 +1238,7 @@ describe("PositionTpSlModal live data", () => {
 				testState.openOrdersStatus = "subscribing";
 			}
 			act(() => {
-				root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+				root.render(modalElement(positionRef));
 			});
 
 			expect(getButton(container, "Confirm").disabled).toBe(true);
@@ -1260,7 +1260,7 @@ describe("PositionTpSlModal live data", () => {
 		if (snapshot === "mark") testState.markStale = true;
 		else testState.openOrdersStale = true;
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 
 		expect(getButton(container, "Confirm").disabled).toBe(true);
@@ -1312,7 +1312,7 @@ describe("PositionTpSlModal live data", () => {
 		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
 		Object.assign(testState, change);
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 
 		expect(getButton(container, "Confirm").disabled).toBe(true);
@@ -1324,7 +1324,7 @@ describe("PositionTpSlModal live data", () => {
 		const executionGuard = testState.executionGuards.order;
 		if (testState.position) testState.position = { ...testState.position, szi: "-0.05" };
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 
 		expect(() =>
@@ -1352,7 +1352,7 @@ describe("PositionTpSlModal live data", () => {
 
 		testState.markPx = "85";
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 
 		expect(() =>
@@ -1435,12 +1435,17 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
-		expect(onOpenChange).not.toHaveBeenCalledWith(false);
-		expect(container.textContent).toContain("Confirming exchange status; do not retry.");
-		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
+
+		act(() => {
+			root.render(modalElement(positionRef, vi.fn(), "tpsl-2"));
+		});
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
 		await act(async () => getButton(container, "Confirm").click());
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
+		expect(toast.warning).toHaveBeenCalledWith("Another order for this market is still being confirmed.");
 	});
 
 	it("replaces an existing position TP without the unsafe batch-modify flag", async () => {
@@ -1492,7 +1497,8 @@ describe("PositionTpSlModal live data", () => {
 
 		await vi.waitFor(() => expect(testState.cancelOrders).toHaveBeenCalledTimes(1));
 		expect(onOpenChange).not.toHaveBeenCalled();
-		expect(getInput(container, "Take Profit").disabled).toBe(true);
+		expect(container.querySelector('[data-testid="position-risk-dialog"]')).toBeNull();
+		expect(container.textContent).not.toContain("Submitting");
 		await act(async () => {
 			resolveCancel?.({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } });
 			await Promise.resolve();
@@ -1501,7 +1507,7 @@ describe("PositionTpSlModal live data", () => {
 		await vi.waitFor(() => expect(onOpenChange, container.textContent ?? undefined).toHaveBeenCalledWith(false));
 	});
 
-	it("keeps the dialog open and blocks retries when placement fails after successful cancellation", async () => {
+	it("reports a failed placement after a successful cancellation and ends the session", async () => {
 		testState.orders = [
 			openOrder(),
 			openOrder({
@@ -1523,10 +1529,10 @@ describe("PositionTpSlModal live data", () => {
 		expect(testState.cancelOrders.mock.invocationCallOrder[0]).toBeLessThan(
 			testState.placeOrder.mock.invocationCallOrder[0],
 		);
-		expect(onOpenChange).not.toHaveBeenCalledWith(false);
-		expect(container.textContent).toContain("Confirming exchange status; do not retry.");
-		expect(container.textContent).toContain("Close and reopen it before submitting.");
-		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expect(onOpenChange).toHaveBeenCalledTimes(1);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
+		expect(toast.success).not.toHaveBeenCalled();
 	});
 
 	it("allows placement to observe the subscription update caused by successful cancellation", async () => {
@@ -1555,7 +1561,7 @@ describe("PositionTpSlModal live data", () => {
 
 		testState.orders = [];
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange, position: { ...positionRef } }));
+			root.render(modalElement({ ...positionRef }, onOpenChange));
 		});
 		await act(async () => {
 			resolveCancel?.({
@@ -1602,7 +1608,7 @@ describe("PositionTpSlModal live data", () => {
 			}),
 		];
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange, position: positionRef }));
+			root.render(modalElement(positionRef, onOpenChange));
 		});
 		await act(async () => {
 			resolveCancel?.({
@@ -1612,9 +1618,10 @@ describe("PositionTpSlModal live data", () => {
 			await Promise.resolve();
 		});
 
-		await vi.waitFor(() => expect(container.textContent).toContain("Close and reopen it before submitting."));
+		await vi.waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+		expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
+		expect(toast.success).not.toHaveBeenCalled();
 	});
 
 	it("shows a stable disconnected state instead of an endless loading screen", () => {
@@ -1632,7 +1639,7 @@ describe("PositionTpSlModal live data", () => {
 		testState.openOrdersStatus = "subscribing";
 		testState.positionLoading = true;
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 
 		expect(getInput(container, "Take Profit").value).toBe("27500");
@@ -1647,7 +1654,7 @@ describe("PositionTpSlModal live data", () => {
 		testState.openOrdersStatus = "error";
 		testState.positionError = true;
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(modalElement(positionRef));
 		});
 
 		expect(getInput(container, "Take Profit").value).toBe("27500");

@@ -1175,8 +1175,8 @@ msgstr "Canceled"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Canceling..."
-msgstr "Canceling..."
+#~ msgid "Canceling..."
+#~ msgstr "Canceling..."
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
@@ -1429,8 +1429,8 @@ msgid "Close all positions summary"
 msgstr "Close all positions summary"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Close and reopen this dialog after the position data refreshes."
-msgstr "Close and reopen this dialog after the position data refreshes."
+#~ msgid "Close and reopen this dialog after the position data refreshes."
+#~ msgstr "Close and reopen this dialog after the position data refreshes."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Close API wallet action"
@@ -4436,8 +4436,8 @@ msgid "Modify Order"
 msgstr "Modify Order"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
-msgid "Modifying..."
-msgstr "Modifying..."
+#~ msgid "Modifying..."
+#~ msgstr "Modifying..."
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -5084,6 +5084,11 @@ msgstr "Order book in quote asset"
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
 msgstr "Order book view"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Order cancellation confirmed."
+msgstr "Order cancellation confirmed."
 
 #: src/hooks/trade/use-order-confirmation.ts
 #: src/lib/trade/order-submission-feedback.ts
@@ -7308,8 +7313,8 @@ msgid "Submitting to Hyperliquid"
 msgstr "Submitting to Hyperliquid"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Submitting..."
-msgstr "Submitting..."
+#~ msgid "Submitting..."
+#~ msgstr "Submitting..."
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -7351,8 +7356,8 @@ msgid "Swap submitted"
 msgstr "Swap submitted"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Swapping..."
-msgstr "Swapping..."
+#~ msgid "Swapping..."
+#~ msgstr "Swapping..."
 
 #. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
@@ -7429,7 +7434,6 @@ msgid "Switch to Mainnet"
 msgstr "Switch to Mainnet"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
@@ -7539,8 +7543,8 @@ msgstr "Terminate TWAP order"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
-msgid "Terminating..."
-msgstr "Terminating..."
+#~ msgid "Terminating..."
+#~ msgstr "Terminating..."
 
 #: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
@@ -9066,8 +9070,8 @@ msgid "Updated to {displayLeverage}x"
 msgstr "Updated to {displayLeverage}x"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Updating..."
-msgstr "Updating..."
+#~ msgid "Updating..."
+#~ msgstr "Updating..."
 
 #: src/components/staking/staking-view.tsx
 msgid "Uptime"
@@ -9380,8 +9384,8 @@ msgid "Waiting for confirmation"
 msgstr "Waiting for confirmation"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
-msgid "Waiting for confirmation..."
-msgstr "Waiting for confirmation..."
+#~ msgid "Waiting for confirmation..."
+#~ msgstr "Waiting for confirmation..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/config/orderbook-labels.ts

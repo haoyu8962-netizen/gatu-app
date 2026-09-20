@@ -5,7 +5,11 @@ import { resolve } from "node:path";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LimitClosePositionData } from "@/components/trade/positions/position-dialog-types";
+import type {
+	IsolatedMarginPositionTarget,
+	LimitClosePositionData,
+	TpSlPositionTarget,
+} from "@/components/trade/positions/position-dialog-types";
 import type { PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
 import type { PositionReverseTarget } from "@/hooks/trade/use-position-reverse-submit";
 
@@ -19,6 +23,8 @@ const rendered = vi.hoisted(() => ({
 	closeAll: null as Record<string, unknown> | null,
 	reverse: null as Record<string, unknown> | null,
 	limitClose: null as Record<string, unknown> | null,
+	tpSl: null as Record<string, unknown> | null,
+	isolatedMargin: null as Record<string, unknown> | null,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -42,6 +48,18 @@ vi.mock("@/components/trade/positions/position-reverse-confirmation-controller",
 vi.mock("@/components/trade/positions/position-limit-close-modal", () => ({
 	PositionLimitCloseModal: (props: Record<string, unknown>) => {
 		rendered.limitClose = props;
+		return null;
+	},
+}));
+vi.mock("@/components/trade/positions/position-tpsl-modal", () => ({
+	PositionTpSlModal: (props: Record<string, unknown>) => {
+		rendered.tpSl = props;
+		return null;
+	},
+}));
+vi.mock("@/components/trade/positions/position-isolated-margin-modal", () => ({
+	PositionIsolatedMarginModal: (props: Record<string, unknown>) => {
+		rendered.isolatedMargin = props;
 		return null;
 	},
 }));
@@ -76,6 +94,14 @@ function reverseTarget(coin: string, owner = OWNER): PositionReverseTarget {
 
 const limitPosition = { coin: "HYPE", dex: "", assetId: 1 } as unknown as LimitClosePositionData;
 
+function tpSlTarget(coin: string, owner = OWNER): TpSlPositionTarget {
+	return { coin, dex: "", assetId: 1, owner, env: "Mainnet" } as unknown as TpSlPositionTarget;
+}
+
+function marginTarget(coin: string, owner = OWNER): IsolatedMarginPositionTarget {
+	return { coin, dex: "", assetId: 1, owner, env: "Mainnet" } as unknown as IsolatedMarginPositionTarget;
+}
+
 describe("position dialog sessions live above the position lists", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -90,7 +116,7 @@ describe("position dialog sessions live above the position lists", () => {
 
 	beforeEach(() => {
 		Object.assign(identity, { address: OWNER, clientKey: OWNER, env: "Mainnet", isConnected: true });
-		Object.assign(rendered, { closeAll: null, reverse: null, limitClose: null });
+		Object.assign(rendered, { closeAll: null, reverse: null, limitClose: null, tpSl: null, isolatedMargin: null });
 		resetPositionDialogSessions();
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -104,7 +130,7 @@ describe("position dialog sessions live above the position lists", () => {
 		resetPositionDialogSessions();
 	});
 
-	function sessionId(slot: "closeAll" | "reverse" | "limitClose"): string | undefined {
+	function sessionId(slot: keyof typeof rendered): string | undefined {
 		return (rendered[slot]?.session as { sessionId: string } | null)?.sessionId;
 	}
 
@@ -126,6 +152,34 @@ describe("position dialog sessions live above the position lists", () => {
 		const closeAll = sessionId("closeAll");
 		act(() => actions.openCloseAll(snapshot()));
 		expect(sessionId("closeAll")).toBe(closeAll);
+
+		act(() => actions.openTpSl(tpSlTarget("HYPE")));
+		const tpSl = sessionId("tpSl");
+		act(() => actions.openTpSl(tpSlTarget("BTC")));
+		expect(sessionId("tpSl")).toBe(tpSl);
+		expect((rendered.tpSl?.session as { position: TpSlPositionTarget }).position.coin).toBe("HYPE");
+
+		act(() => actions.openIsolatedMargin(marginTarget("HYPE")));
+		const margin = sessionId("isolatedMargin");
+		act(() => actions.openIsolatedMargin(marginTarget("BTC")));
+		expect(sessionId("isolatedMargin")).toBe(margin);
+	});
+
+	it.each([
+		["tpSl", "openTpSl", "endTpSl", tpSlTarget],
+		["isolatedMargin", "openIsolatedMargin", "endIsolatedMargin", marginTarget],
+	] as const)("scopes the end of a %s session to its own id", (slot, open, end, target) => {
+		act(() => actions[open](target("HYPE") as never));
+		const first = sessionId(slot) ?? "";
+		act(() => (rendered[slot]?.onSessionEnd as (id: string) => void)(first));
+		expect(rendered[slot]?.session).toBeNull();
+
+		act(() => actions[open](target("HYPE") as never));
+		const second = sessionId(slot);
+		expect(second).not.toBe(first);
+		act(() => actions[end](first));
+		expect(sessionId(slot)).toBe(second);
+		expect(hasSession).toBe(true);
 	});
 
 	it("gives a reopened target a new session instead of reusing the finished instance", () => {
@@ -170,6 +224,8 @@ describe("position dialog sessions live above the position lists", () => {
 			expect(source).not.toContain("position-close-all-modal");
 			expect(source).not.toContain("position-limit-close-modal");
 			expect(source).not.toContain("position-reverse-confirmation-controller");
+			expect(source).not.toContain("position-tpsl-modal");
+			expect(source).not.toContain("position-isolated-margin-modal");
 		},
 	);
 
