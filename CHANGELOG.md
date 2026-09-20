@@ -19,6 +19,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
   pending, the desktop inline size and trigger editor collapses when you confirm, and a confirmed
   cancellation now shows `Order cancellation confirmed.` The Account type dialog can be closed
   while a wallet signature is still pending.
+- Adjust leverage and Margin mode close as soon as you confirm. The button no longer spins or turns
+  into `Updated to 10x` before closing by itself; a notification reports `Leverage updated to 10x`,
+  `Margin mode updated` or the reason the update failed, and it always states the leverage that was
+  actually applied. Both dialogs can be closed while a request is pending. The desktop order button
+  no longer spins while an order is being sent.
+- Transfer, Send, Deposit and Withdraw buttons keep their names while a request is pending instead
+  of turning into `Transferring...`, `Sending...` or `Processing...`. These dialogs still stay open
+  until the request settles, because their checks, retry and recovery screens live there.
 - Limit Close, Reverse Position and the order confirmation now behave like Market Close and Close
   All Positions. Their confirm buttons keep their names (`Place Limit Close`, `Buy / Long` or
   `Sell / Short`, the order side) instead of turning into `Validating...`, `Submitting...`,

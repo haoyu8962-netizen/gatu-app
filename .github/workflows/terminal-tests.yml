@@ -159,6 +159,9 @@ jobs:
           src/lib/tests/mobile-order-modification.test.tsx
           src/lib/tests/spot-swap-modal.test.tsx
           src/lib/tests/account-mode-modal.test.tsx
+          src/lib/tests/use-asset-leverage.test.tsx
+          src/lib/tests/action-progress-label-contract.test.ts
+          tests/slider-effective-leverage-regression.test.tsx
           src/lib/tests/dialog-dismiss-control-contract.test.ts
 
       - name: Test slider gesture lifecycles
