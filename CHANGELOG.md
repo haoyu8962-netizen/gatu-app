@@ -16,6 +16,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
   typed size is sent as typed and is still rejected when the remaining position is smaller. While
   the dialog is open it says when the position size differs from when it was opened, and a line
   under the button states that the estimated PnL excludes fees.
+- A slider grabbed while its dialog was still opening no longer snaps back to where it started. The
+  dialog's 200 ms scale animation made the slider believe it had been resized and cancel the drag.
+- The Market Close and Limit Close dialogs no longer show the `25% / 50% / 75% / Max` quick buttons. The
+  slider already marks those stops, the percentage field accepts any value, and dragging or typing
+  `100` still selects Max. This matches the order form, which dropped its quick percentage buttons
+  earlier.
 - Submit buttons no longer grey out while a slider is being dragged. This applies to the desktop and
   mobile order forms, Market Close, Limit Close, TP/SL, and the leverage and margin mode dialogs.
   Dragging no longer affects whether a button looks enabled; everything else that disables it (no
