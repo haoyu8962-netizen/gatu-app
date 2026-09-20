@@ -8,6 +8,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The Close All Positions confirmation works like Market Close. Its button always reads
+  `Close All Positions`: the number of positions stays in the summary above it, and it no longer
+  turns into `Validating positions...`, `Submitting close orders...`, `Confirming exchange status...`
+  or `Partial result`. The dialog closes as soon as you confirm and the outcome arrives as a
+  notification in the bottom-right corner: all filled, submitted and still being confirmed, partly
+  accepted, blocked by another pending order, or failed. While that runs the `Close All Positions`
+  entry in the positions table is disabled.
 - The Market Close confirmation button always reads `Market Close`; the size being closed stays in
   the `Close size` field above it (and in the button's accessible description). The size shown when
   you click is now a ceiling: the close size is still recalculated from the latest position, and if

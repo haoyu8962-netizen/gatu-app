@@ -172,7 +172,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	}
 
 	function handleOpenCloseAll() {
-		if (!closeAllDataReady) return;
+		if (!closeAllDataReady || closeAllSnapshot) return;
 		const resolution = resolveCurrentCloseAllSnapshot(Date.now());
 		if (resolution.snapshot) setCloseAllSnapshot(resolution.snapshot);
 	}
@@ -319,7 +319,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 													variant="ghost"
 													intent="brand"
 													size="xxs"
-													disabled={!closeAllPreview}
+													disabled={!closeAllPreview || closeAllSnapshot !== null}
 													focusableWhenDisabled
 													onClick={closeAllPreview ? handleOpenCloseAll : undefined}
 													aria-describedby={closeAllUnavailableReason ? closeAllUnavailableId : undefined}

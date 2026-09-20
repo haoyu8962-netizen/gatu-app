@@ -131,8 +131,8 @@ msgid "{positionCount, plural, one {# position} other {# positions}}"
 msgstr "{positionCount, plural, one {# posición} other {# posiciones}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
-msgstr "{positionCount, plural, one {Cerrar # posición} other {Cerrar # posiciones}}"
+#~ msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
+#~ msgstr "{positionCount, plural, one {Cerrar # posición} other {Cerrar # posiciones}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
@@ -1418,6 +1418,7 @@ msgid "Close all is unavailable until every position market has loaded."
 msgstr "Cerrar todo no está disponible hasta que se haya cargado el mercado de cada posición."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "Cerrar todas las posiciones"
@@ -1721,8 +1722,8 @@ msgid "confirming"
 msgstr "confirmando"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Confirming exchange status..."
-msgstr "Confirmando el estado en el exchange..."
+#~ msgid "Confirming exchange status..."
+#~ msgstr "Confirmando el estado en el exchange..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Confirming order status. Do not retry."
@@ -5266,8 +5267,8 @@ msgid "Partial amount"
 msgstr "Cantidad parcial"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Partial result — reopen to retry"
-msgstr "Resultado parcial — vuelve a abrir para reintentar"
+#~ msgid "Partial result — reopen to retry"
+#~ msgstr "Resultado parcial — vuelve a abrir para reintentar"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -7299,8 +7300,8 @@ msgid "Submitted limit and trigger orders will appear here."
 msgstr "Las órdenes límite y de activación enviadas aparecerán aquí."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Submitting close orders..."
-msgstr "Enviando órdenes de cierre..."
+#~ msgid "Submitting close orders..."
+#~ msgstr "Enviando órdenes de cierre..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Submitting to Hyperliquid"
@@ -9141,8 +9142,8 @@ msgid "Valid until"
 msgstr "Válido hasta"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Validating positions..."
-msgstr "Validando posiciones..."
+#~ msgid "Validating positions..."
+#~ msgstr "Validando posiciones..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Validating..."

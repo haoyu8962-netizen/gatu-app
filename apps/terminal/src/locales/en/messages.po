@@ -131,8 +131,8 @@ msgid "{positionCount, plural, one {# position} other {# positions}}"
 msgstr "{positionCount, plural, one {# position} other {# positions}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
-msgstr "{positionCount, plural, one {Close # position} other {Close # positions}}"
+#~ msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
+#~ msgstr "{positionCount, plural, one {Close # position} other {Close # positions}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
@@ -1418,6 +1418,7 @@ msgid "Close all is unavailable until every position market has loaded."
 msgstr "Close all is unavailable until every position market has loaded."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "Close All Positions"
@@ -1721,8 +1722,8 @@ msgid "confirming"
 msgstr "confirming"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Confirming exchange status..."
-msgstr "Confirming exchange status..."
+#~ msgid "Confirming exchange status..."
+#~ msgstr "Confirming exchange status..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Confirming order status. Do not retry."
@@ -5266,8 +5267,8 @@ msgid "Partial amount"
 msgstr "Partial amount"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Partial result — reopen to retry"
-msgstr "Partial result — reopen to retry"
+#~ msgid "Partial result — reopen to retry"
+#~ msgstr "Partial result — reopen to retry"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -7299,8 +7300,8 @@ msgid "Submitted limit and trigger orders will appear here."
 msgstr "Submitted limit and trigger orders will appear here."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Submitting close orders..."
-msgstr "Submitting close orders..."
+#~ msgid "Submitting close orders..."
+#~ msgstr "Submitting close orders..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Submitting to Hyperliquid"
@@ -9141,8 +9142,8 @@ msgid "Valid until"
 msgstr "Valid until"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Validating positions..."
-msgstr "Validating positions..."
+#~ msgid "Validating positions..."
+#~ msgstr "Validating positions..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Validating..."

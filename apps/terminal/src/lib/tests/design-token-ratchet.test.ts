@@ -12,7 +12,7 @@ const IMPORTANT_MENU_OR_DIALOG_SURFACE = /(?<![\w-])!(?:bg-modal|bg-overlay|shad
 const RELATIVE_FONT_SIZE = /(?<![\w-])!?text-\[\d+(?:\.\d+)?(?:em|rem)\]/g;
 
 const ARBITRARY_FONT_SIZE_BASELINE = 113;
-const ARBITRARY_RADIUS_BASELINE = 226;
+const ARBITRARY_RADIUS_BASELINE = 225;
 const IMPORTANT_SURFACE_BASELINE = 14;
 const RELATIVE_FONT_SIZE_BASELINE = 1;
 

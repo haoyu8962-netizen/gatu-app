@@ -131,8 +131,8 @@ msgid "{positionCount, plural, one {# position} other {# positions}}"
 msgstr "{positionCount, plural, one {# 个仓位} other {# 个仓位}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
-msgstr "{positionCount, plural, one {平掉 # 个仓位} other {平掉 # 个仓位}}"
+#~ msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
+#~ msgstr "{positionCount, plural, one {平掉 # 个仓位} other {平掉 # 个仓位}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
@@ -1418,6 +1418,7 @@ msgid "Close all is unavailable until every position market has loaded."
 msgstr "所有持仓市场加载完成前，一键全平不可用。"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "一键全平"
@@ -1721,8 +1722,8 @@ msgid "confirming"
 msgstr "确认中"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Confirming exchange status..."
-msgstr "正在确认交易所状态..."
+#~ msgid "Confirming exchange status..."
+#~ msgstr "正在确认交易所状态..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Confirming order status. Do not retry."
@@ -5266,8 +5267,8 @@ msgid "Partial amount"
 msgstr "部分数量"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Partial result — reopen to retry"
-msgstr "部分成功 — 重新打开后可重试"
+#~ msgid "Partial result — reopen to retry"
+#~ msgstr "部分成功 — 重新打开后可重试"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -7299,8 +7300,8 @@ msgid "Submitted limit and trigger orders will appear here."
 msgstr "已提交的限价单与触发单将显示在这里"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Submitting close orders..."
-msgstr "正在提交平仓委托..."
+#~ msgid "Submitting close orders..."
+#~ msgstr "正在提交平仓委托..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Submitting to Hyperliquid"
@@ -9141,8 +9142,8 @@ msgid "Valid until"
 msgstr "有效期至"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Validating positions..."
-msgstr "正在校验持仓..."
+#~ msgid "Validating positions..."
+#~ msgstr "正在校验持仓..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Validating..."
