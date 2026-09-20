@@ -79,6 +79,26 @@ describe("order submission wiring", () => {
 		}
 	});
 
+	it("keeps the slider gesture lock in the submit path and off the submit control on both surfaces", () => {
+		for (const path of ORDER_ENTRY_SURFACES) {
+			const source = readFileSync(resolve(SOURCE_ROOT, path), "utf8");
+			expect(source, path).toMatch(
+				/function canExecuteOrder\(input\?: OrderSubmitDraftInput\) \{\s*if \(input && !isDraftResetTokenCurrent\(input\.draftResetToken\)\) return false;\s*if \(sizeInteractionRef\.current\) return false;/,
+			);
+			expect(source, path).toMatch(
+				/function handleSizeInteractionChange\(active: boolean\) \{\s*sizeInteractionRef\.current = active;\s*\}/,
+			);
+			expect(source, path).toMatch(
+				/function handleCtaClick\(\) \{\s*if \(sizeInteractionRef\.current\) return;\s*buttonContent\.action\(\);\s*\}/,
+			);
+			expect(source, path).toContain("onClick={handleCtaClick}");
+			expect(source, path).not.toContain("onClick={buttonContent.action}");
+			expect(source, path).toMatch(/on(?:Size)?InteractionChange[=:] ?\{?handleSizeInteractionChange/);
+			expect(source, path).not.toMatch(/\b(?:disabled|canSubmit)\b[^\n]*Interacti/);
+			expect(source, path).not.toMatch(/useState[^\n]*Interacti|\[is\w*Interacti\w*, set/);
+		}
+	});
+
 	it("binds both confirmation surfaces to the captured session and draft revision", () => {
 		for (const path of ORDER_ENTRY_SURFACES) {
 			const source = readFileSync(resolve(SOURCE_ROOT, path), "utf8");

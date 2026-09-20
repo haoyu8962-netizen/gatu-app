@@ -389,41 +389,69 @@ describe("PositionLimitCloseModal", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
-	it.each(["cancel", "commit", "no-move"])("locks submit throughout a slider gesture ending with %s", (ending) => {
-		render();
-		act(() => {
-			(testState.priceInputProps?.onChange as (event: { target: { value: string } }) => void)({
-				target: { value: "101" },
-			});
-			(testState.numberInputs.get("Close size")?.onChange as (event: { target: { value: string } }) => void)({
-				target: { value: "1.0000" },
-			});
-		});
-		const submitBeforeStart = testState.actionButtonProps?.onClick as () => void;
-		act(() => {
-			(testState.sliderProps?.onPercentInteractionStart as () => void)();
-			submitBeforeStart();
-		});
-		expect(testState.submit).not.toHaveBeenCalled();
-		expect(testState.actionButtonProps?.disabled).toBe(true);
-		expect(testState.sliderProps?.disabled).toBe(false);
-
-		if (ending !== "no-move") {
-			act(() => (testState.sliderProps?.onPercentChange as (value: number) => void)(75));
+	it.each(["cancel", "commit", "no-move"])(
+		"ignores confirm during a slider gesture ending with %s without greying the button",
+		async (ending) => {
+			render();
 			act(() => {
-				const callback = ending === "cancel" ? "onPercentCancel" : "onPercentCommit";
-				(testState.sliderProps?.[callback] as (value: number) => void)(75);
+				(testState.priceInputProps?.onChange as (event: { target: { value: string } }) => void)({
+					target: { value: "101" },
+				});
+				(testState.numberInputs.get("Close size")?.onChange as (event: { target: { value: string } }) => void)({
+					target: { value: "1.0000" },
+				});
 			});
-			if (ending === "cancel") {
-				expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("1.0000");
-			}
-			expect(testState.actionButtonProps?.disabled).toBe(true);
-		}
+			const submitBeforeStart = testState.actionButtonProps?.onClick as () => void;
+			const getSubmitButton = () => container.querySelector<HTMLButtonElement>('[data-testid="submit"]');
+			const isLocked = () => (testState.actionButtonProps?.isActivationLocked as () => boolean)();
+			expect(isLocked()).toBe(false);
 
-		act(() => (testState.sliderProps?.onPercentInteractionEnd as () => void)());
-		expect(testState.actionButtonProps?.disabled).toBe(false);
-		expect(testState.submit).not.toHaveBeenCalled();
-	});
+			act(() => {
+				(testState.sliderProps?.onPercentInteractionStart as () => void)();
+				submitBeforeStart();
+			});
+			await act(async () => {
+				getSubmitButton()?.click();
+			});
+			expect(testState.submit).not.toHaveBeenCalled();
+			expect(testState.actionButtonProps?.disabled).toBe(false);
+			expect(isLocked()).toBe(true);
+			expect(testState.sliderProps?.disabled).toBe(false);
+
+			if (ending !== "no-move") {
+				act(() => (testState.sliderProps?.onPercentChange as (value: number) => void)(75));
+				await act(async () => {
+					getSubmitButton()?.click();
+				});
+				act(() => {
+					const callback = ending === "cancel" ? "onPercentCancel" : "onPercentCommit";
+					(testState.sliderProps?.[callback] as (value: number) => void)(75);
+				});
+				if (ending === "cancel") {
+					expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("1.0000");
+				}
+				await act(async () => {
+					getSubmitButton()?.click();
+				});
+				expect(testState.submit).not.toHaveBeenCalled();
+				expect(testState.actionButtonProps?.disabled).toBe(false);
+			}
+
+			act(() => (testState.sliderProps?.onPercentInteractionEnd as () => void)());
+			expect(testState.actionButtonProps?.disabled).toBe(false);
+			expect(isLocked()).toBe(false);
+			expect(testState.submit).not.toHaveBeenCalled();
+
+			await act(async () => {
+				getSubmitButton()?.click();
+			});
+			expect(testState.submit).toHaveBeenCalledTimes(1);
+			expect(testState.submit).toHaveBeenCalledWith({
+				price: "101",
+				size: ending === "commit" ? "1.875" : "1",
+			});
+		},
+	);
 
 	it("includes the live account and network in the slider identity and rejects the old drag", () => {
 		render();

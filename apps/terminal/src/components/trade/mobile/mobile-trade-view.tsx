@@ -208,11 +208,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const twapTriggerPriceInput = useTwapTriggerPrice();
 	const twapStopPriceInput = useTwapStopPrice();
 	const sizeInput = useOrderSize();
-	const [isSizeInteracting, setIsSizeInteracting] = useState(false);
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
 		sizeInteractionRef.current = active;
-		setIsSizeInteracting(active);
 	}
 	const limitPriceInput = useLimitPrice();
 	const reduceOnlyChecked = useReduceOnly();
@@ -765,7 +763,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		needsApproval: validation.needsApproval,
 		isSignerReady,
 		isApprovalLoading,
-		canSubmit: validation.canSubmit && !isSizeInteracting,
+		canSubmit: validation.canSubmit,
 		isRegistering,
 		canApprove,
 		isSubmitting,
@@ -785,6 +783,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		onApprove: handleApprove,
 		onSubmit: handleSubmit,
 	});
+
+	function handleCtaClick() {
+		if (sizeInteractionRef.current) return;
+		buttonContent.action();
+	}
 
 	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
@@ -1099,7 +1102,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						embedded={embedded}
 						label={buttonContent.text}
 						variant={buttonContent.variant}
-						onClick={buttonContent.action}
+						onClick={handleCtaClick}
 						disabled={buttonContent.disabled}
 						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
 					/>

@@ -111,7 +111,6 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	const livePosition = userPositions.getPosition(position.coin, position.dex);
 	const { submit, phase, isPending, isReconciling, error, resetError } = usePositionLimitCloseSubmit(openingTarget);
 	const [sizingIntent, setSizingIntentState] = useState<PositionCloseSizingIntent>({ kind: "max" });
-	const [isSizingInteractionActive, setIsSizingInteractionActive] = useState(false);
 	const sizingInteractionActiveRef = useRef(false);
 	const [priceInput, setPriceInput] = useState("");
 	const [showPriceError, setShowPriceError] = useState(false);
@@ -183,7 +182,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatus === null;
 	const visibleError =
 		positionStatusMessage ?? error ?? (positionStatus === null ? (priceError ?? visibleSizingError) : null);
-	const canSubmit = canEdit && !isSizingInteractionActive && priceValid && sizing.errors.length === 0;
+	const canSubmit = canEdit && priceValid && sizing.errors.length === 0;
 	const errorId = `position-limit-close-error-${position.assetId}`;
 	const helperId = `position-limit-close-helper-${position.assetId}`;
 	const priceInputId = `position-limit-close-price-${position.assetId}`;
@@ -264,7 +263,10 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 
 	function handleSizingInteractionChange(interacting: boolean) {
 		sizingInteractionActiveRef.current = interacting;
-		setIsSizingInteractionActive(interacting);
+	}
+
+	function isSizingGestureActive() {
+		return sizingInteractionActiveRef.current;
 	}
 
 	async function handleSubmit() {
@@ -425,6 +427,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 			<PositionCloseDialogFooter>
 				<TradingActionButton
 					onClick={handleSubmit}
+					isActivationLocked={isSizingGestureActive}
 					requireReadyConfirmation
 					disabled={!canSubmit}
 					intent="error"

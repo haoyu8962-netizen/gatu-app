@@ -320,11 +320,9 @@ export function TradePanel() {
 	function handleAccountModeModalOpenChange(open: boolean) {
 		setActiveModal(open ? "accountMode" : null);
 	}
-	const [isSizeInteracting, setIsSizeInteracting] = useState(false);
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
 		sizeInteractionRef.current = active;
-		setIsSizeInteracting(active);
 	}
 
 	const { open: openDepositModal } = useDepositModalActions();
@@ -711,6 +709,11 @@ export function TradePanel() {
 		onSubmit: handleSubmit,
 	});
 
+	function handleCtaClick() {
+		if (sizeInteractionRef.current) return;
+		buttonContent.action();
+	}
+
 	function renderSummary() {
 		if (twapOrder) {
 			return (
@@ -884,8 +887,8 @@ export function TradePanel() {
 								<TradeCtaView
 									variant={buttonContent.variant}
 									label={buttonContent.text}
-									onClick={buttonContent.action}
-									disabled={buttonContent.disabled || isSizeInteracting}
+									onClick={handleCtaClick}
+									disabled={buttonContent.disabled}
 									aria-label={buttonContent.text}
 									iconLeft={
 										isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined
