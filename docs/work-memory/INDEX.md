@@ -53,8 +53,12 @@
 
 当前规范：[docs/account-overview.md](../../docs/account-overview.md) · [docs/withdrawals.md](../../docs/withdrawals.md) · [docs/cctp-deposits.md](../../docs/cctp-deposits.md)
 
+- [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) — 2026-09-20；已整理，验证见正文。基于最新 main 迁移会话恢复、邮箱 UI 与发送/提款三份历史记录，复核已合并修复；保留旧 Across 历史及根目录未提交改动。
 - [链接移动设备：官方机制实测、17 项差距图与体验对齐实施](sessions/2026-09-18-link-device-alignment.md) — 2026-09-18；已验证，范围见正文。从官方产物实测「Link Mobile Device」：右上角图标一键 approveAgent（永久 Mobile QR）、4 秒按住显示、60 秒自动关闭、二维码为 /trade?link= 明文私钥、手机解析后以 API 钱包身份连接。我方实现更严格但生产不可达（Lambda 对票据路由固定 503、开关关闭）。41 代理工作流产出 17 项差距并逐项对抗核验；按 ADR 0015 实施 D1–D6（顶栏入口、单步审批、官方文案、圆环按住、倒计时、手机端 Agent-only 原因、扫描器相机选择、显式 local scope），D7 票据存储三备选待用户决定。
 - [邮箱钱包标识、密钥导出入口及发送网络说明修复](sessions/2026-09-16-email-wallet-ui-fix.md) — 2026-09-16；已整理，验证见正文。修复紧凑布局邮箱身份显示，补齐精确所有者邮箱钱包导出入口，区分 HyperCore 发送与 Arbitrum 提款；真实密钥导出未执行。
+- [邮箱钱包标识、提现链与密钥导出入口审查](sessions/2026-09-16-email-wallet-ui-review.md) — 2026-09-16；已整理，验证见正文。2026-09-16 审查发现紧凑邮箱标识与导出入口缺口，实测提现为 Arbitrum CCTP；UI 已由 df4ed89f 修复并进入 main，见迁移补记。
+- [账户指定流水的发送与跨链提款区分](sessions/2026-09-16-send-versus-withdrawal.md) — 2026-09-16；已整理，验证见正文。实际账户流水与官方交易详情一致为 sendAsset、spot→spot；signatureChainId 仅用于签名，不代表 Arbitrum 收款。未执行资金操作。
+- [本地 3005 钱包会话失败与手动刷新恢复](sessions/2026-09-16-wallet-session-recovery.md) — 2026-09-16；已整理，验证见正文。旧页出现 Privy token 刷新与认证失败；手动刷新后 sessions/钱包 iframe 200、余额持仓及资金入口恢复。3005 来自另一工作树，非 Across 分支。
 - [Across 持久充值地址接入规划](sessions/2026-09-13-across-deposit-address-plan.md) — 2026-09-13；已整理，验证见正文。规划邮箱用户的 Across 持久充值地址入口，保留外部 CCTP 与旧余额恢复；权限、持久存储、资金落点和真实转账验证仍是实施前置条件。
 - [Across 官方文档共享阅读入口](sessions/2026-09-13-across-docs-entry.md) — 2026-09-13；已整理，验证见正文。以官方索引和按需页面核验接入 Across 文档，Codex 与 Claude 共用项目入口；不安装交易工具，API Markdown 与 MCP 的覆盖缺口需回退正式页面。
 - [Across 地址方案：Claude 审查逐项复核与首期收缩](sessions/2026-09-13-across-plan-review-followup.md) — 2026-09-13；已整理，验证见正文。复核 P0/P1/P2 建议，补激活、首次账户和导出恢复，首期改两表与按需查询；纠正 recipient、request ID、index-0、最低额和部署状态推断，生产契约与真实资金验收仍待完成。
@@ -76,6 +80,7 @@
 
 当前规范：[docs/work-memory/README.md](../../docs/work-memory/README.md)
 
+- [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) — 2026-09-20；已整理，验证见正文。基于最新 main 迁移会话恢复、邮箱 UI 与发送/提款三份历史记录，复核已合并修复；保留旧 Across 历史及根目录未提交改动。
 - [建立可追溯工作记录与定期索引](sessions/2026-09-12-work-memory.md) — 2026-09-12；已验证，范围见正文。三份本地可见记录快照、六个历史议题、生成与校验脚本，以及每周维护任务。
 
 ### 静态托管与 SPA 壳
@@ -138,6 +143,7 @@
 | --- | --- | --- | --- | --- |
 | 2026-09-20 | [字体实践审查：对照官方终端，修复图表字体栈、共享字号刻度、错误页字体并迁移等值任意字号](sessions/2026-09-20-font-practice-review.md) | 未取得任务标识，见正文 | `3b0a84cb91dd322725c7c0b16a4403dae36fe29a` | 已验证，范围见正文 |
 | 2026-09-20 | [配对页加固（A 批）：头部内联擦除、阻断说明页、路径规范、Service Worker 放行、StrictMode](sessions/2026-09-20-pairing-page-hardening.md) | 未取得任务标识，见正文 | `ab2874e1` | 已整理，验证见正文 |
+| 2026-09-20 | [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) | 未取得任务标识，见正文 | `d6cc4f3e9ffed0a7ba0092493fa161846be8c52f` | 已整理，验证见正文 |
 | 2026-09-19 | [CloudFront 发布闸门：暴露资金或凭证路径的构建需要上传时再确认](sessions/2026-09-19-cloudfront-release-gates.md) | 未取得任务标识，见正文 | `a7cef26a` | 已整理，验证见正文 |
 | 2026-09-19 | [Connect Wallet 按钮悬停态：去掉整体淡出，补上暗色面板按钮的悬停反馈](sessions/2026-09-19-connect-cta-hover-states.md) | 未取得任务标识，见正文 | `e837e8ce` | 已整理，验证见正文 |
 | 2026-09-19 | [暗色浮层与遮罩改为终端色相，并修复语言菜单禁用文字](sessions/2026-09-19-dark-overlay-hue-family.md) | 未取得任务标识，见正文 | `0af67e47722409bb350f61500d58ab0f0bac30c1` | 已整理，验证见正文 |
@@ -169,13 +175,16 @@
 | 2026-09-16 | [桌面账户面板：单一来源展示组件迁移](sessions/2026-09-16-account-panels-view-migration.md) | 未取得任务标识，见正文 | `bfdae535adcb567dd8a763d71c31eb9b94b284bd` | 已整理，验证见正文 |
 | 2026-09-16 | [Dashboard 壳：单一来源 frame 迁移](sessions/2026-09-16-dashboard-shell-view-migration.md) | 未取得任务标识，见正文 | `cde152e54ae32ed6dd63e9d7a3cc08d787bd73e1` | 已整理，验证见正文 |
 | 2026-09-16 | [邮箱钱包标识、密钥导出入口及发送网络说明修复](sessions/2026-09-16-email-wallet-ui-fix.md) | 未取得任务标识，见正文 | `f5010ee7` | 已整理，验证见正文 |
+| 2026-09-16 | [邮箱钱包标识、提现链与密钥导出入口审查](sessions/2026-09-16-email-wallet-ui-review.md) | 未取得任务标识，见正文 | `f8911794` | 已整理，验证见正文 |
 | 2026-09-16 | [桌面市场头与收藏条：单一来源展示组件迁移](sessions/2026-09-16-market-header-view-migration.md) | 未取得任务标识，见正文 | `0c8127456044390c95f7e5b4301fbbdd43a658e1` | 已整理，验证见正文 |
 | 2026-09-16 | [移动端六个表面迁移到共享占位视图](sessions/2026-09-16-mobile-views-migration.md) | 未取得任务标识，见正文 | `b77a87909046a20469f71449525d619680daa4f1` | 已整理，验证见正文 |
 | 2026-09-16 | [桌面订单簿 chrome 单一来源迁移](sessions/2026-09-16-orderbook-chrome-view-migration.md) | 未取得任务标识，见正文 | `7d80e46bbbf221a6f4256bf4008b9632c289627a` | 已整理，验证见正文 |
 | 2026-09-16 | [启动占位单一来源：ADR 0009 与展示组件规则](sessions/2026-09-16-placeholder-single-source-adr.md) | 未取得任务标识，见正文 | `ade94020` | 已整理，验证见正文 |
 | 2026-09-16 | [移除启动占位体系](sessions/2026-09-16-remove-startup-placeholders.md) | 未取得任务标识，见正文 | `0f7e97acb95a4211195b1ac4dd742def7f72bbc0` | 已整理，验证见正文 |
+| 2026-09-16 | [账户指定流水的发送与跨链提款区分](sessions/2026-09-16-send-versus-withdrawal.md) | 未取得任务标识，见正文 | `5912ee63` | 已整理，验证见正文 |
 | 2026-09-16 | [桌面顶栏、页脚与外框单一来源迁移](sessions/2026-09-16-top-nav-footer-view-migration.md) | 未取得任务标识，见正文 | `d43d50683a2641aa79d4a851d629e68568e3c4af` | 已整理，验证见正文 |
 | 2026-09-16 | [桌面交易面板框架：单一来源展示组件迁移](sessions/2026-09-16-trade-panel-view-migration.md) | 未取得任务标识，见正文 | `3ecb960e8df1e2360be9c62ac59881b9f56ec622` | 已整理，验证见正文 |
+| 2026-09-16 | [本地 3005 钱包会话失败与手动刷新恢复](sessions/2026-09-16-wallet-session-recovery.md) | 未取得任务标识，见正文 | `99766205` | 已整理，验证见正文 |
 | 2026-09-16 | [热访问启动：为什么第 2..n 次仍出现占位壳，以及经核实的改进计划](sessions/2026-09-16-warm-visit-startup-plan.md) | 未取得任务标识，见正文 | `f5010ee7` | 已整理，验证见正文 |
 | 2026-09-15 | [移动占位壳与真实终端逐像素对齐](sessions/2026-09-15-mobile-shell-parity.md) | 未取得任务标识，见正文 | `f5010ee7` | 已验证，范围见正文 |
 | 2026-09-13 | [Across 持久充值地址接入规划](sessions/2026-09-13-across-deposit-address-plan.md) | 未取得任务标识，见正文 | `9750ccffd051e2b49bb4f90ba2a8f5afb5c7f961` | 已整理，验证见正文 |
