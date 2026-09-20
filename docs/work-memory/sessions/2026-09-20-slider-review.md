@@ -22,7 +22,10 @@
     "fd347838",
     "0b4ee1ef",
     "cf028e99",
-    "ed8a54d1"
+    "ed8a54d1",
+    "4463d12c",
+    "e819af41",
+    "affb1644"
   ],
   "sources": [
     { "path": "docs/slider-interactions.md" },
@@ -174,6 +177,22 @@
 4. 机械防线：单测与浏览器用例钉住物理输入给出的事件顺序；`terminal-tests.yml` 新增「Test slider gesture lifecycles」步骤（此前这些单测不在 CI 里，只有浏览器套件在）；组件自带 `data-gesture-end`。
 5. 证据与时间线留在本记录，不进 `AGENTS.md`。
 
+### 三项规范清理（2026-09-21，产品负责人批示「做三项规范清理」）
+
+审查时登记的三项代码规范问题，均为不改行为的整理：
+
+1. **拆分 `position-close-dialog-ui.tsx`**（`4463d12c`）。原文件导出 6 个组件和 1 个视图模型工厂，违反「一个文件一个组件」。拆为 `position-close-dialog-shell.tsx`、`-header.tsx`、`-content.tsx`、`-footer.tsx`、`position-close-summary.tsx`、`position-close-sizing-controls.tsx`（git 识别为原文件的重命名），各自的属性接口改名为 `Props`；视图模型工厂是计算而不是组件，移到 `lib/trade/position-close-sizing-presentation.ts`，其中一处嵌套三元改为提前返回的 `getRequestedPercent()`。不保留转发用的旧文件（仓库规则禁止 barrel）。三个弹窗、四个测试文件的导入与 mock、国际化响应契约里的路径、六种语言目录的来源注释随之更新。
+   - 逐行核对：新文件里不是原样来自旧文件的只有导入语句、`Props` 改名与上述提前返回；旧文件的每一行非空内容都能在新文件里找到，只少了被改名的接口行与那条嵌套三元。
+   - 新增 `position-close-sizing-presentation.test.ts` 覆盖三种意图与 0–100 的钳制。我第一次写的期望值把百分比框写成向下取整（46），实际行为是四舍五入（47），按既有行为改了期望，没有改实现。
+   - 语言目录只有来源注释变化，没有任何文案或译文变化。
+2. **去掉 `use-size-slider-interaction.ts` 的三个手写 `useCallback`**（`affb1644`）。回调只作为属性传给滑杆，滑杆经 `latestRef` 读最新属性，没有任何依赖数组或测试依赖它们的引用稳定；项目启用 React Compiler，规则要求不为性能手写 memo。差异只是去掉包装。
+3. **删除 `config/trade.ts` 里无人使用的 `ORDER_LEVERAGE_STEPS`**（`e819af41`）。全仓检索只有定义处和本记录提到它。
+
+过程中的两件事：
+
+- 工作记忆校验要求记录里的 `sources` 路径存在。旧文件被删除后，`2026-09-12-neutral-surface-audit` 与本记录的来源指针改指新文件，并在前者末尾与 `docs/neutral-surface-audit.md` 开头追加说明：原文里的文件名、行号仍指基线 `43ce177c`，作为当时的证据保留。
+- 第一次提交时把「删常量」排在最前并用了限定路径的提交，提交钩子的 `lingui extract` 按工作区（已含拆分）更新了来源注释，被带进了「删常量」这个提交。三个提交都未推送，我撤回后改为先提交拆分、再提交另外两项，目录更新归入拆分提交。教训：改动会影响语言目录来源路径时，让它所在的提交最先落地。
+
 ## 验证与限制
 
 均为 2026-09-20 在本机（macOS）对本分支执行。
@@ -198,6 +217,8 @@
 
 提示行与文档这一轮（同日收尾，最终工作树）：`pnpm --filter @gatu/terminal typecheck` 通过；`pnpm --filter @gatu/terminal test` 584 文件通过、1 跳过，6,623 项通过、1 跳过（111 秒）；浏览器套件 `trade-panel-all-orders.pw.ts` 与 `trade-size-slider-performance.pw.ts` 共 29 项通过；`node --test scripts/ci-workflows.test.mjs` 6 项通过；Biome、`git diff --check`、记忆索引检查通过。此前与 Codex 评审同时运行的一次全量里有 4 个文件因超时失败（`positions-panel-preload`、`chart-build-assets`、`chart-store`、`global-modals-hip3-disclaimer`，全量耗时 160 秒），单独运行 51 项全过，无竞争负载的这一次全量也全过，与本次改动无关。限制：提示行改动的真实页面验证用的是脚本派发事件，浏览器用例用的是协议注入的鼠标，没有物理输入验证；它不涉及事件顺序或指针捕获，但按新规则如实写明输入路径。
 
+规范清理这一轮（2026-09-21，最终工作树 `affb1644`）：`pnpm --filter @gatu/terminal typecheck` 通过；`pnpm --filter @gatu/terminal test` 585 文件通过、1 跳过，6,627 项通过、1 跳过（109 秒）；Biome、`git diff --check`、记忆索引检查通过。按 CI 条件在临时工作树里做了一次生产构建（Node 22.15.0、`pnpm install --frozen-lockfile`、没有本地环境文件、两个移动配对开关为 false、`NODE_ENV=production`、`NITRO_PRESET=node-server`）：构建通过，401 个客户端 chunk 无循环静态导入，包体积预算检查通过，`trade-terminal-page` 126,044 字节 gzip，与本分支此前的测量相同；临时工作树已删除。这次构建同时覆盖了本分支此前全部滑杆改动，那些改动之后还没有跑过生产构建。未跑：其余三种配对组合的构建；平仓弹窗没有浏览器套件，拆分由单测、类型检查与逐行核对保证；另在登录态真实页面（开发服务器，移动布局 790px）点开市价平仓确认弹窗复看一次：外壳、标题与 `Price: Market`、四项摘要、数量与百分比输入、带刻度的滑杆、勾选框、静态 `Market Close` 按钮与两行脚注均正常渲染，字体为 IBM Plex Sans；用 Esc 关闭，未点击确认，持仓数与挂单数不变，事后把页面视图恢复到原来的 Account。限价平仓与全部平仓弹窗未在真实页面复看。
+
 - 评审中登记、未处理的既有风险：手势开始时记录的 `left` / `width` 在祖先缩放动画期间不更新，动画内开始的拖动前 200ms 指针与滑块可能有几个像素的偏差；不可用时外层的 `cursor-not-allowed` 被内层的 `cursor-pointer` 盖住。
 
 ## 后续与替代关系
@@ -205,6 +226,7 @@
 - 不替代任何记录；与同日的 `2026-09-20-market-close-confirmed-size.md` 在同一分支上。
 - 待产品负责人决定：预览改节流；松手是否吸附到实际百分比；数据状态翻转时是否丢弃正在进行的拖动；是否拆分 `position-close-dialog-ui.tsx`、去掉多余的 `useCallback`、删除 `ORDER_LEVERAGE_STEPS`。
 - 待产品负责人决定：桌面下单面板拖动期间是否暂缓显示数量校验提示，以消除滑杆行 24px 的上下位移。（同日已决定并实施，见上。）
+- 三项规范清理已于 2026-09-21 完成，见上。同目录的 `position-risk-dialog-ui.tsx` 也是一个文件多个组件，未在本次批示范围内，未动。
 - 待办：平仓弹窗内错误提示出现时滑杆是否位移，需要实测；独立浏览器、Safari、Firefox 与真实触屏上的事件顺序未验证。
 - 同日已决定并实施：预览改节流、数据暂不可用时暂停手势；松手吸附不改。节流是有意偏离官方的改进，单独成一个提交，可以单独回退。其余三项（拆分文件、`useCallback`、`ORDER_LEVERAGE_STEPS`）仍待决定。
 - 下一次先查：`docs/slider-interactions.md`、`tests/browser/trade-size-slider-performance.pw.ts`、`trade-slider.tsx` 的 `schedule()` 与 `finish()`。
