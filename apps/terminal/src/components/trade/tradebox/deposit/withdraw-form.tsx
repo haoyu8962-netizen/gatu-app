@@ -1,6 +1,6 @@
 import { Button, TextInput } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useId } from "react";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
@@ -319,16 +319,7 @@ export function WithdrawForm({
 				disabled={!canSubmit || isPending || prerequisitesPending}
 				className="mt-auto min-h-11 w-full !rounded-[10px] !bg-market-close-control text-[13px] font-bold !text-market-close-on-control !shadow-none active:not-data-disabled:!scale-100 data-disabled:!bg-market-close-stroke-control data-disabled:!text-market-close-on-control"
 			>
-				{isPending ? (
-					<>
-						<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" />
-						<Trans>Processing...</Trans>
-					</>
-				) : destinationRequired ? (
-					<Trans>Withdraw to Arbitrum</Trans>
-				) : (
-					<Trans>Withdraw</Trans>
-				)}
+				{destinationRequired ? <Trans>Withdraw to Arbitrum</Trans> : <Trans>Withdraw</Trans>}
 			</Button>
 		</div>
 	);

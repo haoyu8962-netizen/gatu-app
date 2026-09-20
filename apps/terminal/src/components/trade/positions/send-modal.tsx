@@ -1,7 +1,7 @@
 import { ExchangeRequestInvalidatedError } from "@gatu/hl-react/internal/exchange/request-scheduler";
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select, TextInput } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { PaperPlaneTiltIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
@@ -508,9 +508,8 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 					)}
 
 					<Button variant="filled" intent="neutral" onClick={handleSend} disabled={!canSend} className="w-full">
-						{isPending && <SpinnerGapIcon className="me-2 size-3.5 animate-spin" />}
 						<PaperPlaneTiltIcon className="me-2 size-3.5" />
-						{isPending ? t`Sending...` : t`Send`}
+						{t`Send`}
 					</Button>
 				</div>
 			</ModalContent>

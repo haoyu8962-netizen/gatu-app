@@ -1,7 +1,7 @@
 import { ExchangeRequestInvalidatedError } from "@gatu/hl-react/internal/exchange/request-scheduler";
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, USDC_TRANSFER_DECIMALS } from "@/config/app";
@@ -361,8 +361,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 						disabled={!isValidAmount || isPending}
 						className="w-full"
 					>
-						{isPending && <SpinnerGapIcon className="me-2 size-3.5 animate-spin" />}
-						{isPending ? t`Transferring...` : t`Transfer`}
+						{t`Transfer`}
 					</Button>
 				</div>
 			</ModalContent>

@@ -199,10 +199,12 @@ describe("WithdrawForm UI", () => {
 		expect(getButton("Withdraw").disabled).toBe(true);
 	});
 
-	it("shows Processing only for an actual withdrawal attempt", async () => {
+	it("keeps the button name and only disables it during an actual withdrawal attempt", async () => {
 		const { onSubmit } = await renderForm({ isPending: true });
-		expect(getButton("Processing").disabled).toBe(true);
-		act(() => getButton("Processing").click());
+		expect(container.textContent).not.toContain("Processing");
+		expect(container.querySelector(".animate-spin")).toBeNull();
+		expect(getButton("Withdraw").disabled).toBe(true);
+		act(() => getButton("Withdraw").click());
 		expect(onSubmit).not.toHaveBeenCalled();
 	});
 
