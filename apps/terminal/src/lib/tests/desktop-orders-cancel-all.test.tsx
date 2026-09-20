@@ -443,7 +443,11 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(params.modifies).toEqual([
 			expect.objectContaining({ oid: 42, order: expect.objectContaining({ a: 120_001, s: "1" }) }),
 		]);
-		expect(input?.disabled).toBe(true);
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
+		expect(container.querySelector(".animate-spin")).toBeNull();
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]')?.disabled).toBe(
+			true,
+		);
 		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
 		expect(pendingModification?.phase).toBe("awaiting");
 		expect(mocks.toastInfo).toHaveBeenCalledWith("Order modification submitted. Waiting for the open-orders update.", {
@@ -612,7 +616,7 @@ describe("desktop cancel all orders confirmation", () => {
 			pressKey(input, "Enter");
 			await Promise.resolve();
 		});
-		expect(input?.disabled).toBe(true);
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
 
 		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
 		await act(async () => {
@@ -741,8 +745,11 @@ describe("desktop cancel all orders confirmation", () => {
 			{ cancels: [{ a: 120_001, o: 42 }] },
 			expect.objectContaining({ onSuccess: expect.any(Function), onSettled: expect.any(Function) }),
 		);
-		expect(confirmButton?.disabled).toBe(true);
-		expect(confirmButton?.getAttribute("aria-busy")).toBe("true");
+		expect(document.body.textContent).not.toContain("Cancel All Orders");
+		expect(document.body.textContent).not.toContain("Canceling");
+		expect(document.body.querySelector("[aria-busy]")).toBeNull();
+		expect(requestButton?.disabled).toBe(true);
+		expect(requestButton?.textContent).toBe("Cancel all");
 
 		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as
 			| { onSuccess: (response: unknown) => void; onSettled: () => void }
@@ -753,6 +760,9 @@ describe("desktop cancel all orders confirmation", () => {
 		});
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
 		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
+		expect(mocks.toastSuccess).toHaveBeenCalledWith("Order cancellation confirmed.", { id: expect.any(String) });
+		expect(mocks.toastError).not.toHaveBeenCalled();
+		expect(mocks.toastWarning).not.toHaveBeenCalled();
 	});
 
 	it("keeps row cancellation on the existing immediate path", () => {
@@ -1048,6 +1058,8 @@ describe("desktop cancel all orders confirmation", () => {
 
 		expect(mocks.cancelOrders).not.toHaveBeenCalled();
 		expect(document.body.textContent).toContain("Open orders changed. Reopen the confirmation and try again.");
+		expect(document.body.textContent).not.toContain("Cancel All Orders");
+		expect(mocks.toastWarning).toHaveBeenCalledWith("Open orders changed. Reopen the confirmation and try again.");
 	});
 
 	it("fails closed when any order market cannot be mapped", () => {
@@ -1063,6 +1075,7 @@ describe("desktop cancel all orders confirmation", () => {
 
 		expect(mocks.cancelOrders).not.toHaveBeenCalled();
 		expect(document.body.textContent).toContain("Some order markets are unavailable");
-		expect(document.body.textContent).toContain("Cancel All Orders");
+		expect(document.body.textContent).not.toContain("Cancel All Orders");
+		expect(mocks.toastError).toHaveBeenCalledWith(expect.stringContaining("Some order markets are unavailable"));
 	});
 });

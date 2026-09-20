@@ -1,4 +1,3 @@
-import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { type KeyboardEvent, useEffect, useRef } from "react";
 import { cn } from "@/lib/cn";
 
@@ -68,7 +67,6 @@ export function OrderInlineEdit({
 				"absolute top-1/2 z-10 inline-flex min-w-0 -translate-y-1/2 items-center gap-1.5 rounded-[10px] bg-surface p-1 shadow-market-close-inline-edit",
 				align === "right" ? "-right-1" : "-left-1",
 			)}
-			aria-busy={disabled || undefined}
 		>
 			<input
 				ref={inputRef}
@@ -97,9 +95,6 @@ export function OrderInlineEdit({
 				disabled={disabled}
 				onClick={onConfirm}
 			>
-				{disabled ? (
-					<SpinnerGapIcon className="size-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-				) : null}
 				<span>{confirmText}</span>
 			</button>
 		</div>

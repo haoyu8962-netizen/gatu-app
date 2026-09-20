@@ -13,8 +13,6 @@ interface Props {
 	triggerPriceValue?: string;
 	sizeInvalid: boolean;
 	triggerPriceInvalid: boolean;
-	isSubmitting: boolean;
-	isAwaitingConfirmation: boolean;
 	isInteractionLocked: boolean;
 	isConfirmDisabled: boolean;
 	errorMessage?: string | null;
@@ -34,8 +32,6 @@ export function MobileOrderModificationModal({
 	triggerPriceValue,
 	sizeInvalid,
 	triggerPriceInvalid,
-	isSubmitting,
-	isAwaitingConfirmation,
 	isInteractionLocked,
 	isConfirmDisabled,
 	errorMessage,
@@ -49,13 +45,13 @@ export function MobileOrderModificationModal({
 	const sizeInputRef = useRef<HTMLInputElement>(null);
 
 	function handleOpenChange(nextOpen: boolean) {
-		if (isSubmitting || isAwaitingConfirmation) return;
+		if (!open) return;
 		onOpenChange(nextOpen);
 	}
 
 	function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (isConfirmDisabled) return;
+		if (!open || isConfirmDisabled) return;
 		onConfirm();
 	}
 
@@ -63,7 +59,7 @@ export function MobileOrderModificationModal({
 		if (event.nativeEvent.isComposing) return;
 		if (event.key === "Enter") {
 			event.preventDefault();
-			if (!isConfirmDisabled) onConfirm();
+			if (open && !isConfirmDisabled) onConfirm();
 			return;
 		}
 		if (event.key === "Escape") {
@@ -73,16 +69,14 @@ export function MobileOrderModificationModal({
 	}
 
 	const describedBy = errorMessage ? errorId : undefined;
-	const busy = isSubmitting || isAwaitingConfirmation;
-
 	return (
 		<AdaptiveModal
 			open={open}
 			onOpenChange={handleOpenChange}
 			presentation="drawer"
 			size="sm"
-			dismissible={!busy}
-			showClose={!busy}
+			dismissible
+			showClose
 			showHandle
 			closeLabel={t`Close order modification`}
 			handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
@@ -167,10 +161,9 @@ export function MobileOrderModificationModal({
 					<button
 						type="submit"
 						className="min-h-11 w-full rounded-[12px] bg-market-close-control px-3 text-sm font-bold text-market-close-on-control transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:bg-market-close-stroke-control disabled:text-market-close-muted"
-						aria-busy={busy || undefined}
-						disabled={isConfirmDisabled}
+						disabled={!open || isConfirmDisabled}
 					>
-						{isSubmitting ? t`Modifying...` : isAwaitingConfirmation ? t`Waiting for confirmation...` : t`Modify Order`}
+						{t`Modify Order`}
 					</button>
 				</ModalFooter>
 			</form>

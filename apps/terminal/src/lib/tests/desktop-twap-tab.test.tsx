@@ -270,7 +270,7 @@ describe("desktop TWAP toolbar", () => {
 		const busyTerminate = container.querySelector<HTMLButtonElement>('button[aria-label="Terminate TWAP order"]');
 		expect(busyTerminate?.disabled).toBe(true);
 		expect(busyTerminate?.getAttribute("aria-busy")).toBe("true");
-		expect(busyTerminate?.textContent).toBe("Terminating...");
+		expect(busyTerminate?.textContent).toBe("Terminate");
 	});
 
 	it("reuses the existing order-entry action for the empty-state CTA", () => {

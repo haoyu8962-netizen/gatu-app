@@ -54,15 +54,7 @@ describe("CancelAllOrdersModal", () => {
 		const onOpenChange = vi.fn();
 		const onConfirm = vi.fn();
 		act(() =>
-			root.render(
-				<CancelAllOrdersModal
-					open
-					orderCount={3}
-					isSubmitting={false}
-					onOpenChange={onOpenChange}
-					onConfirm={onConfirm}
-				/>,
-			),
+			root.render(<CancelAllOrdersModal open orderCount={3} onOpenChange={onOpenChange} onConfirm={onConfirm} />),
 		);
 
 		expect(testState.adaptiveProps?.presentation).toBe("modal");
@@ -82,29 +74,26 @@ describe("CancelAllOrdersModal", () => {
 		expect(onConfirm).toHaveBeenCalledOnce();
 	});
 
-	it("uses a locked mobile drawer while cancellation is pending", () => {
+	it("stays a dismissible mobile drawer with a static confirm label and no submission status", () => {
 		testState.isMobile = true;
-		act(() =>
-			root.render(
-				<CancelAllOrdersModal
-					open
-					orderCount={3}
-					isSubmitting
-					errorMessage="Network failed"
-					onOpenChange={vi.fn()}
-					onConfirm={vi.fn()}
-				/>,
-			),
-		);
+		act(() => root.render(<CancelAllOrdersModal open orderCount={3} onOpenChange={vi.fn()} onConfirm={vi.fn()} />));
 
 		expect(testState.adaptiveProps?.presentation).toBe("drawer");
-		expect(testState.adaptiveProps?.dismissible).toBe(false);
-		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Network failed");
-		const buttons = container.querySelectorAll<HTMLButtonElement>("button");
-		expect([...buttons].every((button) => button.disabled)).toBe(true);
-		const canceling = [...buttons].find((button) => button.textContent === "Canceling...");
-		expect(canceling?.getAttribute("aria-busy")).toBe("true");
-		expect(canceling?.className).toContain("disabled:bg-market-close-danger-disabled");
-		expect(canceling?.className).toContain("disabled:text-market-close-muted");
+		expect(testState.adaptiveProps?.dismissible).toBe(true);
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.querySelector("[aria-busy]")).toBeNull();
+		const labels = [...container.querySelectorAll<HTMLButtonElement>("button")].map((button) => button.textContent);
+		expect(labels).toEqual(["Back", "Cancel All"]);
+	});
+
+	it("ignores the confirm control while the dialog is closing or has nothing to cancel", () => {
+		const onConfirm = vi.fn();
+		act(() => root.render(<CancelAllOrdersModal open orderCount={0} onOpenChange={vi.fn()} onConfirm={onConfirm} />));
+		const confirm = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === "Cancel All",
+		);
+		expect(confirm?.disabled).toBe(true);
+		act(() => confirm?.click());
+		expect(onConfirm).not.toHaveBeenCalled();
 	});
 });
