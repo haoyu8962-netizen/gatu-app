@@ -102,6 +102,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Dragging a size or leverage slider no longer snaps back to where it started. In an embedded
+  browser a real mouse could report that the slider lost the pointer a few milliseconds before the
+  button was released, and the slider treated that as a cancelled drag, so most drags were thrown
+  away. Losing the pointer is no longer a cancellation: the drag keeps following and the release
+  applies the value as usual. The slider also records why its last drag ended, to make any further
+  report of a jump answerable from the page.
 - In the dark terminal, dropdown menus, tooltips, toasts and the desktop market selector use a raised
   surface in the terminal's own hue (`#212d33`) instead of the shared purple-grey default, and the
   scrim behind an open dialog no longer tints the page navy. The new surface has the same luminance

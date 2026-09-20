@@ -723,7 +723,10 @@ grey or otherwise restyle the submit control (`docs/slider-interactions.md`).
 A value source that is only temporarily unreadable pauses an active gesture (`paused`):
 nothing is published or committed until it recovers, and the gesture is not thrown
 away. Reasons that end the editing context (`disabled`, identity, range or direction
-changes) still cancel it at once.
+changes) still cancel it at once. `lostpointercapture` never cancels: embedded
+webviews report it a few milliseconds before `pointerup` with a real mouse, and the
+release that follows must still commit. The control keeps the reason the last gesture
+ended in `data-gesture-end`.
 Slippage persistence requires explicit confirmation. These controls never replace
 wallet, legal, funding, freshness, market identity, or SDK-boundary validation.
 Market orders round protective prices inward to valid ticks, and the final

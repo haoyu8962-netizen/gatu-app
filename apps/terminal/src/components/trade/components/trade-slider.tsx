@@ -36,6 +36,18 @@ interface Props {
 	className?: string;
 }
 
+type GestureEnd =
+	| "release"
+	| "pointer-cancel"
+	| "window-blur"
+	| "window-resize"
+	| "control-resize"
+	| "document-hidden"
+	| "input-blur"
+	| "escape"
+	| "context-change"
+	| "unmount";
+
 interface DragSession {
 	pointerId: number;
 	identity: string | undefined;
@@ -51,6 +63,7 @@ interface DragSession {
 	clientX: number;
 	didChange: boolean;
 	didMove: boolean;
+	captureLost: boolean;
 }
 
 const TICKS = [0, 25, 50, 75, 100];
@@ -69,6 +82,20 @@ function progressFor(value: number, min: number, max: number): number {
 
 function isRangeUnavailable(disabled: boolean | undefined, paused: boolean | undefined, min: number, max: number) {
 	return !!disabled || !!paused || !Number.isFinite(min) || !Number.isFinite(max) || max <= min;
+}
+
+function getGestureOutcome(
+	end: GestureEnd,
+	committed: boolean,
+	didChange: boolean,
+	disabled: boolean,
+	paused: boolean,
+) {
+	if (committed) return didChange ? "commit" : "unchanged";
+	if (end !== "release" && end !== "context-change") return `cancel:${end}`;
+	if (disabled) return "cancel:disabled";
+	if (paused) return "cancel:paused";
+	return "cancel:context-change";
 }
 
 function getKeyboardTarget(key: string, previous: number, min: number, max: number, rtl: boolean): number {
@@ -112,6 +139,8 @@ export function TradeSlider(props: Props) {
 	const initialProgress = useRef(progressFor(value, min, max));
 	const initialRtl = useRef(direction === "rtl");
 	const unavailable = isRangeUnavailable(disabled, paused, min, max);
+	const inputMin = Number.isFinite(min) ? min : 0;
+	const inputMax = Number.isFinite(max) ? Math.max(inputMin, max) : inputMin;
 
 	function paint(progress: number, rtl: boolean, width?: number) {
 		const normalized = clamp(progress, 0, 1);
@@ -196,9 +225,10 @@ export function TradeSlider(props: Props) {
 		}, PREVIEW_INTERVAL_MS);
 	}
 
-	function finish(pointerId: number, commit: boolean, event?: Event, clientX?: number) {
+	function finish(pointerId: number, end: GestureEnd, event?: Event, clientX?: number) {
 		const session = dragRef.current;
 		if (!session || session.pointerId !== pointerId) return;
+		const commit = end === "release";
 		const valid = isCurrent(session) && !latestRef.current.paused;
 		if (commit && valid && clientX !== undefined && clientX !== session.clientX) {
 			session.didMove = true;
@@ -212,6 +242,10 @@ export function TradeSlider(props: Props) {
 		controlRef.current?.removeAttribute("data-dragging");
 		if (controlRef.current?.hasPointerCapture?.(pointerId)) controlRef.current.releasePointerCapture(pointerId);
 		const current = latestRef.current;
+		controlRef.current?.setAttribute(
+			"data-gesture-end",
+			getGestureOutcome(end, commit && valid && !!event, session.didChange, !!current.disabled, !!current.paused),
+		);
 		if (commit && valid && event) {
 			const committed = session.didChange ? session.draftValue : current.value;
 			updateNativeValue(committed);
@@ -251,31 +285,46 @@ export function TradeSlider(props: Props) {
 			clientX: event.clientX,
 			didChange: false,
 			didMove: false,
+			captureLost: false,
 		};
 		dragRef.current = session;
 		props.onInteractionStart?.(value);
 		event.currentTarget.setPointerCapture?.(event.pointerId);
 		event.currentTarget.dataset.dragging = "true";
+		event.currentTarget.removeAttribute("data-gesture-end");
 		inputRef.current?.focus({ preventScroll: true });
 		const ownerDocument = event.currentTarget.ownerDocument;
 		const ownerWindow = ownerDocument.defaultView;
 		function onUp(e: globalThis.PointerEvent) {
-			finish(e.pointerId, true, e, e.clientX);
+			finish(e.pointerId, "release", e, e.clientX);
 		}
 		function onCancel(e: globalThis.PointerEvent) {
-			finish(e.pointerId, false);
+			finish(e.pointerId, "pointer-cancel");
 		}
-		function onBlur() {
-			finish(session.pointerId, false);
+		function onMove(e: globalThis.PointerEvent) {
+			if (e.pointerId !== session.pointerId || e.isPrimary === false) return;
+			if (session.captureLost && e.buttons === 0) {
+				finish(e.pointerId, "release", e);
+				return;
+			}
+			session.didMove ||= e.clientX !== session.clientX;
+			schedule(session, e.clientX);
+		}
+		function onWindowBlur() {
+			finish(session.pointerId, "window-blur");
+		}
+		function onWindowResize() {
+			finish(session.pointerId, "window-resize");
 		}
 		function onVisibility() {
-			if (ownerDocument.visibilityState === "hidden") onBlur();
+			if (ownerDocument.visibilityState === "hidden") finish(session.pointerId, "document-hidden");
 		}
+		ownerDocument.addEventListener("pointermove", onMove);
 		ownerDocument.addEventListener("pointerup", onUp);
 		ownerDocument.addEventListener("pointercancel", onCancel);
 		ownerDocument.addEventListener("visibilitychange", onVisibility);
-		ownerWindow?.addEventListener("blur", onBlur);
-		ownerWindow?.addEventListener("resize", onBlur);
+		ownerWindow?.addEventListener("blur", onWindowBlur);
+		ownerWindow?.addEventListener("resize", onWindowResize);
 		let observedWidth: number | null = null;
 		const observer =
 			typeof ResizeObserver === "undefined"
@@ -284,17 +333,18 @@ export function TradeSlider(props: Props) {
 						for (const entry of entries) {
 							const width = entry.contentRect.width;
 							observedWidth ??= width;
-							if (Math.abs(width - observedWidth) > 0.5) onBlur();
+							if (Math.abs(width - observedWidth) > 0.5) finish(session.pointerId, "control-resize");
 						}
 					});
 		observer?.observe(event.currentTarget);
 		cleanupRef.current = () => {
 			observer?.disconnect();
+			ownerDocument.removeEventListener("pointermove", onMove);
 			ownerDocument.removeEventListener("pointerup", onUp);
 			ownerDocument.removeEventListener("pointercancel", onCancel);
 			ownerDocument.removeEventListener("visibilitychange", onVisibility);
-			ownerWindow?.removeEventListener("blur", onBlur);
-			ownerWindow?.removeEventListener("resize", onBlur);
+			ownerWindow?.removeEventListener("blur", onWindowBlur);
+			ownerWindow?.removeEventListener("resize", onWindowResize);
 		};
 		if (!(event.target instanceof Element) || !event.target.closest("[data-trade-slider-thumb]"))
 			schedule(session, event.clientX);
@@ -314,7 +364,7 @@ export function TradeSlider(props: Props) {
 		if (event.key === "Escape" && dragRef.current) {
 			event.preventDefault();
 			event.stopPropagation();
-			finish(dragRef.current.pointerId, false);
+			finish(dragRef.current.pointerId, "escape");
 			return;
 		}
 		if (!KEYS.has(event.key)) return;
@@ -333,13 +383,13 @@ export function TradeSlider(props: Props) {
 	useBrowserLayoutEffect(() => {
 		disposeRef.current = () => {
 			const active = dragRef.current;
-			if (active) finish(active.pointerId, false);
+			if (active) finish(active.pointerId, "unmount");
 			else clearTasks();
 		};
 		const previous = latestRef.current;
 		latestRef.current = { ...props, direction };
 		const session = dragRef.current;
-		if (session && !isCurrent(session)) finish(session.pointerId, false);
+		if (session && !isCurrent(session)) finish(session.pointerId, "context-change");
 		else if (session && paused && timerRef.current !== null) {
 			clearTimeout(timerRef.current);
 			timerRef.current = null;
@@ -383,19 +433,16 @@ export function TradeSlider(props: Props) {
 			inputRef={inputRef}
 			controlProps={{
 				onPointerDown: handlePointerDown,
-				onPointerMove: (event) => {
+				onPointerUp: (event) => finish(event.pointerId, "release", event.nativeEvent, event.clientX),
+				onPointerCancel: (event) => finish(event.pointerId, "pointer-cancel"),
+				onLostPointerCapture: (event) => {
 					const session = dragRef.current;
-					if (!session || session.pointerId !== event.pointerId || event.isPrimary === false) return;
-					session.didMove ||= event.clientX !== session.clientX;
-					schedule(session, event.clientX);
+					if (session?.pointerId === event.pointerId) session.captureLost = true;
 				},
-				onPointerUp: (event) => finish(event.pointerId, true, event.nativeEvent, event.clientX),
-				onPointerCancel: (event) => finish(event.pointerId, false),
-				onLostPointerCapture: (event) => finish(event.pointerId, false),
 			}}
 			inputProps={{
-				min: Number.isFinite(min) ? min : 0,
-				max: Number.isFinite(max) ? Math.max(Number.isFinite(min) ? min : 0, max) : Number.isFinite(min) ? min : 0,
+				min: inputMin,
+				max: inputMax,
 				step: 1,
 				defaultValue: Math.round(clamp(value, min, max)),
 				disabled: unavailable,
@@ -407,7 +454,7 @@ export function TradeSlider(props: Props) {
 				onBlur: () => {
 					keyboardIntentRef.current = null;
 					updateNativeValue(value);
-					if (dragRef.current) finish(dragRef.current.pointerId, false);
+					if (dragRef.current) finish(dragRef.current.pointerId, "input-blur");
 				},
 			}}
 		/>

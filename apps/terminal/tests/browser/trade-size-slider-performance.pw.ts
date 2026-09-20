@@ -166,6 +166,28 @@ test("keeps focus and the gesture when the value source pauses mid-drag, then re
 	expect((await stopAudit(page)).commitCallbacks).toBe(1);
 });
 
+test("commits the drag when lost pointer capture is reported just before the release", async ({ page }) => {
+	const geometry = await getControlGeometry(page);
+	const y = geometry.top + geometry.height / 2;
+	const control = page.locator("[data-trade-slider-control]").first();
+	await resetAudit(page);
+	await page.mouse.move(percentX(geometry, 25), y);
+	await page.mouse.down();
+	await page.mouse.move(percentX(geometry, 70), y, { steps: 6 });
+	await control.evaluate((element) => {
+		element.dispatchEvent(
+			new PointerEvent("lostpointercapture", { bubbles: true, pointerId: 1, pointerType: "mouse", isPrimary: true }),
+		);
+	});
+	await expect(control).toHaveAttribute("data-dragging", "true");
+
+	await page.mouse.up();
+	await expect(control).not.toHaveAttribute("data-dragging", "true");
+	await expect(control).toHaveAttribute("data-gesture-end", "commit");
+	expect(await readValue(page)).toBeCloseTo(70, 0);
+	expect((await stopAudit(page)).commitCallbacks).toBe(1);
+});
+
 test("commits the final position after a rapid same-frame reversal", async ({ page }) => {
 	const geometry = await getControlGeometry(page);
 	const session = await page.context().newCDPSession(page);

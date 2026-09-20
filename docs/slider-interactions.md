@@ -101,10 +101,32 @@ gesture, never with `getBoundingClientRect()`: an ancestor transform, such as th
 layout width, and comparing the two cancelled any drag that began during the
 animation and snapped the thumb back to where it started.
 
-Pointer cancellation, lost capture, window blur, hidden document, a window resize,
+Pointer cancellation, window blur, hidden document, a window resize,
 a change of the control's layout width, unmount, `disabled`, invalid ranges, and
 changed identity/direction cancel pending RAF/timers/listeners. Other pointer IDs
-cannot replace the active gesture. What a cancellation restores belongs to the
+cannot replace the active gesture.
+
+`lostpointercapture` is not a cancellation. With a real mouse in an embedded webview
+the browser was observed to report it 6 to 11 ms before `pointerup` in most gestures
+(14 of 23 recorded on 2026-09-20 in the Claude desktop browser pane, Chrome 152); the
+slider treated it as a cancellation until then, so most real drags were thrown away
+and the thumb went back to where it started. Mouse events injected through the
+DevTools protocol never produce that order, which is why tool-driven and Playwright
+drags passed. Losing capture now only marks the session. Moves, the release and
+`pointercancel` are handled by document listeners for the life of the gesture, so a
+drag keeps following without capture and the release that follows commits as usual.
+If capture was lost and the release itself never reached the document, for example
+because the button was let go over an iframe, the next move of that pointer with no
+button pressed commits the last draft that was seen while the button was down. That
+fallback applies only after a reported capture loss.
+
+The control records how the last gesture ended in `data-gesture-end`: `commit`,
+`unchanged` for a press that changed nothing, or `cancel:<reason>` with one of
+`pointer-cancel`, `window-blur`, `window-resize`, `control-resize`,
+`document-hidden`, `input-blur`, `escape`, `context-change`, `disabled`, `paused` and
+`unmount`. The attribute is removed when the next gesture starts. It exists so that
+a report of a thumb jumping back can be answered from the page instead of guessed:
+read it on `[data-trade-slider-control]` right after the jump. What a cancellation restores belongs to the
 caller, and a changed identity never receives an old snapshot. The order forms put
 back the exact starting size string whenever the identity still matches, whether or
 not the form is available at that moment. The close dialogs route the restore through
