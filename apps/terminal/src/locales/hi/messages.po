@@ -1969,6 +1969,10 @@ msgstr "रेफ़रल लिंक कॉपी करें"
 msgid "Copy token address"
 msgstr "टोकन पता कॉपी करें"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Could not check this account on Hyperliquid. Nothing was signed. Retry the check."
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Could not fetch your token balances"
 msgstr "आपके टोकन बैलेंस प्राप्त नहीं हो सके"
@@ -7561,6 +7565,10 @@ msgstr "Testnet पूर्वावलोकन; बाज़ार लिं�
 msgid "Testnet queue: approximately five minutes"
 msgstr "टेस्टनेट कतार: लगभग पाँच मिनट"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "That link could not be opened safely, so nothing was loaded. Create a new QR on your desktop and scan it again."
+msgstr ""
+
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "साइन करने से पहले खाता सक्रियण शुल्क बदल गया। अपडेट किए गए शुल्क की समीक्षा करके फिर से कोशिश करें।"
@@ -7880,6 +7888,7 @@ msgstr "हस्ताक्षरित अनुरोध सफल हो �
 msgid "The start and end values are unchanged."
 msgstr "आरंभ और अंत के मान समान हैं।"
 
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx

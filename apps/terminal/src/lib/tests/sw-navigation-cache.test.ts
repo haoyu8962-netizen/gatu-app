@@ -153,6 +153,10 @@ describe("service worker navigation caching", () => {
 		"/client-error-report",
 		"/mobile-agent-sync-ticket",
 		"/mobile-agent-sync-ticket/abc",
+		"/mobile-agent-sync",
+		"/mobile-agent-sync/",
+		"/Mobile-Agent-Sync",
+		"/mobile-agent-sync/nested",
 		"/_serverFn/id",
 		"https://other.example/trade/SOL",
 	])("bypasses %s", (path) => {

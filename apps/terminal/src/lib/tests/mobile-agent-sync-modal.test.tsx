@@ -30,6 +30,8 @@ const REVOKE_AGENT_NAME = `Mobile valid_until ${REVOKE_VALID_UNTIL_MS}`;
 const SYNC_EXPIRES_AT_MS = NOW_MS + 4_000 + 2 * 60 * 1000;
 const PHONE_LINK = "https://app.gatu.test/mobile-agent-sync#ht-mobile-sync=encoded-envelope&k=encoded-key";
 const NO_BALANCE_MESSAGE = "No balance on Hyperliquid. Deposit first.";
+const ACCOUNT_CHECK_FAILED_MESSAGE =
+	"Could not check this account on Hyperliquid. Nothing was signed. Retry the check.";
 const NO_BALANCE_MESSAGE_AR = "لا يوجد رصيد في Hyperliquid. أودِع أولاً.";
 const APPROVAL_RECHECK_MESSAGE =
 	"The approval could not be rechecked. The QR remains hidden until read-only verification succeeds.";
@@ -41,10 +43,17 @@ function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
 }
 
+const EMPTY_CLEARINGHOUSE_STATE = {
+	assetPositions: [],
+	marginSummary: { accountValue: "0", totalNtlPos: "0", totalRawUsd: "0" },
+	withdrawable: "0",
+};
+
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
 	captureRegistrationLease: vi.fn(),
 	cleanupAgentRegistrationIfMatches: vi.fn(),
+	builderDexClearinghouseState: vi.fn(),
 	builderFeeRefetch: vi.fn(),
 	maxBuilderFee: 10,
 	clearinghouseRefetch: vi.fn(),
@@ -65,6 +74,7 @@ const testState = vi.hoisted(() => ({
 	hasWalletAccess: true,
 	isMobile: false,
 	localAgent: null as Record<string, unknown> | null,
+	perpDexs: vi.fn(),
 	qrToCanvas: vi.fn(),
 	registrationLeaseCurrent: true,
 	spotRefetch: vi.fn(),
@@ -209,6 +219,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => ({
 		env: "Mainnet",
 		builderConfig: { b: BUILDER_ADDRESS, f: 10 },
+		info: { clearinghouseState: testState.builderDexClearinghouseState, perpDexs: testState.perpDexs },
 	}),
 	useInfo: (method: string) => {
 		if (method === "extraAgents") {
@@ -319,6 +330,10 @@ describe("MobileAgentSyncModal", () => {
 			activeOwnerCleanupIncomplete: false,
 		});
 		testState.maxBuilderFee = 10;
+		testState.perpDexs.mockReset();
+		testState.perpDexs.mockResolvedValue([null, { name: "xyz" }, { name: "flx" }]);
+		testState.builderDexClearinghouseState.mockReset();
+		testState.builderDexClearinghouseState.mockResolvedValue(EMPTY_CLEARINGHOUSE_STATE);
 		testState.builderFeeRefetch.mockReset();
 		testState.builderFeeRefetch.mockImplementation(async () => ({
 			data: testState.maxBuilderFee,
@@ -445,14 +460,102 @@ describe("MobileAgentSyncModal", () => {
 	});
 
 	it("never signs after a failed balance preflight", async () => {
-		testState.clearinghouseState = {
-			assetPositions: [],
-			marginSummary: { accountValue: "0", totalNtlPos: "0", totalRawUsd: "0" },
-			withdrawable: "0",
-		};
+		testState.clearinghouseState = EMPTY_CLEARINGHOUSE_STATE;
 		await renderModal();
 
 		expect(container.textContent).toContain("No balance on Hyperliquid. Deposit first.");
+		expect(testState.builderDexClearinghouseState.mock.calls.map(([params]) => params)).toEqual([
+			{ user: USER_ADDRESS, dex: "xyz" },
+			{ user: USER_ADDRESS, dex: "flx" },
+		]);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+	});
+
+	it("accepts an owner whose only balance sits on a builder dex", async () => {
+		testState.clearinghouseState = EMPTY_CLEARINGHOUSE_STATE;
+		testState.builderDexClearinghouseState.mockImplementation(async ({ dex }: { dex: string }) =>
+			dex === "flx"
+				? { ...EMPTY_CLEARINGHOUSE_STATE, marginSummary: { accountValue: "25", totalNtlPos: "0", totalRawUsd: "25" } }
+				: EMPTY_CLEARINGHOUSE_STATE,
+		);
+		await renderModal();
+
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+	});
+
+	it("skips the builder dex reads when the default dex already shows a balance", async () => {
+		await renderModal();
+
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
+		expect(testState.perpDexs).not.toHaveBeenCalled();
+		expect(testState.builderDexClearinghouseState).not.toHaveBeenCalled();
+	});
+
+	it("skips the builder dex reads when only spot shows a balance", async () => {
+		testState.clearinghouseState = EMPTY_CLEARINGHOUSE_STATE;
+		testState.spotState = { balances: [{ hold: "0", total: "12.5" }] };
+		await renderModal();
+
+		expect(getButton(container, "Approve mobile trading key").hasAttribute("disabled")).toBe(false);
+		expect(testState.perpDexs).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["a builder dex request fails", () => testState.builderDexClearinghouseState.mockRejectedValue(new Error("boom"))],
+		["the dex list request fails", () => testState.perpDexs.mockRejectedValue(new Error("boom"))],
+		["a builder dex answers without a snapshot", () => testState.builderDexClearinghouseState.mockResolvedValue(null)],
+		["a builder dex answers with an empty object", () => testState.builderDexClearinghouseState.mockResolvedValue({})],
+		[
+			"a builder dex answers with an amount that is not a decimal",
+			() =>
+				testState.builderDexClearinghouseState.mockResolvedValue({ ...EMPTY_CLEARINGHOUSE_STATE, withdrawable: "bad" }),
+		],
+		["the dex list is not a list", () => testState.perpDexs.mockResolvedValue({})],
+	])("never reports an empty account when %s", async (_name, arrange) => {
+		testState.clearinghouseState = EMPTY_CLEARINGHOUSE_STATE;
+		arrange();
+		await renderModal();
+
+		expect(container.textContent).not.toContain("No balance on Hyperliquid. Deposit first.");
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(ACCOUNT_CHECK_FAILED_MESSAGE);
+		expect(container.textContent).not.toContain("boom");
+		expect(getButton(container, "Retry check").hasAttribute("disabled")).toBe(false);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+	});
+
+	it("never reports an empty account when the default dex answers without a usable snapshot", async () => {
+		testState.clearinghouseState = { assetPositions: [], withdrawable: "0" } as typeof testState.clearinghouseState;
+		await renderModal();
+
+		expect(container.textContent).not.toContain("No balance on Hyperliquid. Deposit first.");
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(ACCOUNT_CHECK_FAILED_MESSAGE);
+	});
+
+	it("drops a builder dex answer that arrives after the dialog closed", async () => {
+		testState.clearinghouseState = EMPTY_CLEARINGHOUSE_STATE;
+		const answers: Array<(state: typeof EMPTY_CLEARINGHOUSE_STATE) => void> = [];
+		testState.builderDexClearinghouseState.mockImplementation(
+			() =>
+				new Promise<typeof EMPTY_CLEARINGHOUSE_STATE>((resolve) => {
+					answers.push(resolve);
+				}),
+		);
+		const onOpenChange = await renderModal();
+		const signal = testState.perpDexs.mock.calls[0]?.[0] as AbortSignal;
+		expect(signal.aborted).toBe(false);
+
+		const { MobileAgentSyncModal } = await import("@/components/trade/components/mobile-agent-sync-modal");
+		act(() => {
+			root.render(createElement(MobileAgentSyncModal, { open: false, onOpenChange }));
+		});
+		expect(signal.aborted).toBe(true);
+
+		expect(answers).toHaveLength(2);
+		for (const answer of answers) answer(EMPTY_CLEARINGHOUSE_STATE);
+		await flushAsyncWork();
+		expect(container.textContent).not.toContain("No balance on Hyperliquid. Deposit first.");
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 	});
 

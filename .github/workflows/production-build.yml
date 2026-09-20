@@ -17,6 +17,10 @@ on:
       - "scripts/inject-shell-preloads.test.mjs"
       - "scripts/collect-inline-script-hashes.mjs"
       - "scripts/collect-inline-script-hashes.test.mjs"
+      - "scripts/check-shell-head-scrub.mjs"
+      - "scripts/check-shell-head-scrub.test.mjs"
+      - "scripts/serve-spa-static.mjs"
+      - "scripts/serve-spa-static.test.mjs"
       - "scripts/check-client-chunk-cycles.mjs"
       - "scripts/client-chunk-graph.*"
       - "scripts/measure/analyze-client-root-deps.mjs"
@@ -57,6 +61,8 @@ jobs:
           scripts/check-client-bundle-budget.test.mjs
           scripts/inject-shell-preloads.test.mjs
           scripts/collect-inline-script-hashes.test.mjs
+          scripts/check-shell-head-scrub.test.mjs
+          scripts/serve-spa-static.test.mjs
 
       - name: Test the CloudFront release tooling
         run: pnpm test:cloudfront

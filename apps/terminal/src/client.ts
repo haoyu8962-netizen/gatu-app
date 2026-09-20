@@ -1,5 +1,8 @@
 import { renderBootstrapErrorPage } from "./lib/bootstrap-error-page";
-import { canHydrateAfterMobileAgentSyncScrub } from "./lib/mobile-sync/bootstrap-fragment";
+import {
+	canHydrateAfterMobileAgentSyncScrub,
+	leaveBlockedMobileAgentSyncLink,
+} from "./lib/mobile-sync/bootstrap-fragment";
 
 if (canHydrateAfterMobileAgentSyncScrub) {
 	void import("./lib/bootstrap/early-prefetch")
@@ -16,4 +19,7 @@ if (canHydrateAfterMobileAgentSyncScrub) {
 		.catch(() => {
 			renderBootstrapErrorPage();
 		});
+} else {
+	renderBootstrapErrorPage({ onReload: () => leaveBlockedMobileAgentSyncLink(), variant: "pairing-blocked" });
+	leaveBlockedMobileAgentSyncLink();
 }
