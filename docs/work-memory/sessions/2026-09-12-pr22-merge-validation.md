@@ -11,13 +11,13 @@
     "market-recovery",
     "order-entry"
   ],
-  "summary": "核对构建中断与包预算失败，删除未使用的成交错误分支、共用订单类型消息描述并修复过期语言测试夹具；保留快照与交互检查。",
+  "summary": "删除旧成交提示并共用订单标签；2026-09-14 复核确认修复 head 的八项 CI 通过且 PR #22 已合并，原失败与本地构建中止保留。",
   "thread": {
     "id": "01a08f6b-26ae-7642-a9a5-a074d906c899",
     "title": "启动3006端口开发服务器"
   },
   "baseCommit": "e2affd06",
-  "commits": [],
+  "commits": ["42349cb1", "177c68c9"],
   "sources": [
     {
       "url": "https://github.com/zora4523-bot/gatu-app/pull/22"
@@ -78,3 +78,11 @@
 对早期 PR 审查记录的追加核对：四个红色 job 不代表四个相同代码错误，需区分构建中断与真正的包预算超限。原始失败事实保留。
 
 修复提交推送后等待当前 head 的完整 CI。仅在对应检查通过且仍无冲突时合并；最终合并提交和时间以 GitHub PR 状态及本地合并结果证据为准。
+
+## 周整理追加：完成证据（2026-09-14）
+
+本次于 2026-09-14 01:04:35 UTC 只读查询 `zora4523-bot/gatu-app`。PR #22 的实际 head 为 `42349cb11b53668a5120d2d5f21095061754e415`，于 2026-09-12 10:20:37 UTC 合并，合并提交为 `177c68c96327728fbaae42ab104edf74d855728f`。该 head 的八项 check-run 均为 completed/success：[四组生产构建与网站](https://github.com/zora4523-bot/gatu-app/actions/runs/34687413938)、[浏览器](https://github.com/zora4523-bot/gatu-app/actions/runs/34687413952)、[类型](https://github.com/zora4523-bot/gatu-app/actions/runs/34687413947)、[翻译](https://github.com/zora4523-bot/gatu-app/actions/runs/34687413988)。这是重新读取历史结果，未在本轮重跑业务验证，也不能外推到当前 Across 分支。
+
+同一来源任务的本地脱敏结果和可见对话确认：最终本地构建在客户端/SSR 编译后，因主机交换空间压力主动终止 Nitro 阶段（exit 143）；不能称本地完整构建通过。原来 155 项应用测试、8 项记忆测试等结果仍绑定当时修复；完整构建结果由上述远端 CI 补充。源码与预算均未在本次整理修改。
+
+上文“等待当前 head CI/合并”为提交时状态，现已由这次追加关闭；早期失败事实保留。PR #22 的 CI 通过也不保证部署形态的 gzip 余量，后续服务器超限及独立修复见 [部署包预算记录](2026-09-12-deploy-bundle-margin.md)。本次证据归档及范围见 [周整理记录](2026-09-14-weekly-memory-review.md)。

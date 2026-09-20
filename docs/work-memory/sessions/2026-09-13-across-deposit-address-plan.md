@@ -10,7 +10,7 @@
   "summary": "规划邮箱用户的 Across 持久充值地址入口，保留外部 CCTP 与旧余额恢复；权限、持久存储、资金落点和真实转账验证仍是实施前置条件。",
   "thread": null,
   "baseCommit": "9750ccffd051e2b49bb4f90ba2a8f5afb5c7f961",
-  "commits": [],
+  "commits": ["0662cae1"],
   "sources": [{"path": "docs/across-deposit-addresses.md"}, {"path": "docs/adr/0004-across-deposit-addresses.md"}, {"path": "docs/cctp-deposits.md"}, {"url": "https://docs.across.to/introduction/persistent-deposit-addresses"}],
   "supersedes": []
 }

@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review", "pairing-release"],
-  "summary": "服务器交易页面 gzip 超限 11 字节；统一订单队列计数与徽标渲染，保留预算和状态优先级，本地完整构建通过，交易页面距上限 227 字节，线上待验证。",
+  "summary": "保留部署超预算及订单队列去重的固定参数复验；2026-09-14 核对 PR #23 已合并且对应 head 八项 CI 通过，实际服务器部署仍未核验。",
   "thread": null,
   "baseCommit": "23966794",
-  "commits": [],
+  "commits": ["ed663f05", "43ce177c"],
   "sources": [
     { "path": "docs/terminal-performance-baseline.md" },
     { "path": "apps/terminal/src/components/trade/tradebox/order-toast.tsx" },
@@ -111,3 +111,9 @@ pnpm --filter @gatu/terminal build
 
 没有执行远程部署、服务切换或真实钱包操作。此修复不构成上线或真机验收证据。
 按用户此前提交和更新 PR 的授权推送补充 PR；原 PR #22 已合并，需要新 PR 承载本修复及上一轮 Caddy 文档。合并到 main 后才重跑服务器部署。
+
+## 周整理追加：PR #23（2026-09-14）
+
+于 2026-09-14 01:04:35 UTC 只读核对 `zora4523-bot/gatu-app`：[PR #23](https://github.com/zora4523-bot/gatu-app/pull/23) 的 head 为 `ed663f0518d44b287fb0adcafd89ff40bfe8d827`，于 2026-09-12 13:17:26 UTC 合并为 `43ce177c384377c3f1f84a92623d4892b0859624`。该 head 的八项 check-run 均为 success：[生产构建](https://github.com/zora4523-bot/gatu-app/actions/runs/34694687240)、[浏览器](https://github.com/zora4523-bot/gatu-app/actions/runs/34694687127)、[类型](https://github.com/zora4523-bot/gatu-app/actions/runs/34694687070)、[翻译](https://github.com/zora4523-bot/gatu-app/actions/runs/34694687100)。
+
+这关闭了上文“需要新 PR、合并后才重跑部署”的代码交付待办；未读取实际服务器的新部署结果，不将合并、CI 或旧本地产物当作线上验收。本次未重新执行上述固定参数构建。归档与余下事项见[周整理记录](2026-09-14-weekly-memory-review.md)。
