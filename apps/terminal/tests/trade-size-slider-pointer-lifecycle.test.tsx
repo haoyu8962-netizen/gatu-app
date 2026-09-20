@@ -264,6 +264,26 @@ describe("TradeSlider lifecycle isolation", () => {
 		expect(props.onCancel).toHaveBeenCalledTimes(1);
 	});
 
+	it("keeps the gesture when an ancestor transform makes the visual width differ from the layout width", () => {
+		const slider = render();
+		Object.defineProperty(slider.control, "getBoundingClientRect", {
+			configurable: true,
+			value: () => ({ left: 12.5, width: 95, height: 31.35, top: 0, bottom: 31.35, right: 107.5, x: 12.5, y: 0 }),
+		});
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 36.25)));
+		const notify = resizeCallbacks[0];
+		if (!notify) throw new Error("Expected a control ResizeObserver");
+
+		act(() => notify([{ contentRect: { width: 100 } } as ResizeObserverEntry], {} as ResizeObserver));
+		act(() => notify([{ contentRect: { width: 100 } } as ResizeObserverEntry], {} as ResizeObserver));
+		expect(props.onCancel).not.toHaveBeenCalled();
+		expect(slider.control.dataset.dragging).toBe("true");
+
+		act(() => notify([{ contentRect: { width: 80 } } as ResizeObserverEntry], {} as ResizeObserver));
+		expect(props.onCancel).toHaveBeenCalledTimes(1);
+		expect(slider.control.dataset.dragging).toBeUndefined();
+	});
+
 	it("uses the latest callback after a same-identity rerender", () => {
 		const slider = drag();
 		const previousPreview = props.onPreview;

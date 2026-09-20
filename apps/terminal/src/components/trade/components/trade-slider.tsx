@@ -236,11 +236,16 @@ export function TradeSlider(props: Props) {
 		ownerDocument.addEventListener("visibilitychange", onVisibility);
 		ownerWindow?.addEventListener("blur", onBlur);
 		ownerWindow?.addEventListener("resize", onBlur);
+		let observedWidth: number | null = null;
 		const observer =
 			typeof ResizeObserver === "undefined"
 				? null
 				: new ResizeObserver((entries) => {
-						if (entries.some((entry) => Math.abs(entry.contentRect.width - session.width) > 0.5)) onBlur();
+						for (const entry of entries) {
+							const width = entry.contentRect.width;
+							observedWidth ??= width;
+							if (Math.abs(width - observedWidth) > 0.5) onBlur();
+						}
 					});
 		observer?.observe(event.currentTarget);
 		cleanupRef.current = () => {

@@ -86,6 +86,13 @@ conditions still disable the control as before. The lock ends with the gesture:
 moving focus off the slider cancels the gesture and restores the starting value, so
 a confirm after that acts on the restored value that is then on screen.
 
+A resize cancels the gesture only when the control's layout width changes. The
+observer compares each `contentRect.width` with the first one it reports for that
+gesture, never with `getBoundingClientRect()`: an ancestor transform, such as the
+`scale` of a dialog's 200 ms open animation, changes the visual width but not the
+layout width, and comparing the two cancelled any drag that began during the
+animation and snapped the thumb back to where it started.
+
 Pointer cancellation, lost capture, window blur, hidden document, resizing,
 unmount, disable, invalid ranges, and changed identity/direction cancel pending
 RAF/timers/listeners. Other pointer IDs cannot replace the active gesture. Callers
