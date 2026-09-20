@@ -190,6 +190,37 @@ test("join paths carry the referral marker through to the response headers", () 
 	assert.equal(untouched.headers["x-gatu-route"], undefined);
 });
 
+test("the pairing page is never stored and never sends a referrer, in any letter case", () => {
+	for (const uri of ["/mobile-agent-sync", "/mobile-agent-sync/", "/Mobile-Agent-Sync"]) {
+		const request = onRequest(viewerRequest(uri));
+		assert.equal(request.uri, "/_shell.html", uri);
+		assert.equal(request.headers["x-gatu-route"].value, "mobile-agent-sync", uri);
+		const policyHeaders = { "referrer-policy": { value: "strict-origin-when-cross-origin" } };
+		const response = onResponse({ request, response: { statusCode: 200, headers: policyHeaders } });
+		assert.equal(response.headers["cache-control"].value, "no-store", uri);
+		assert.equal(response.headers["referrer-policy"].value, "no-referrer", uri);
+		assert.ok(response.headers["content-security-policy"].value.length > 0, uri);
+	}
+
+	for (const uri of ["/mobile-agent-syncs", "/mobile-agent-sync/extra", "/trade/HYPE", "/join/abc"]) {
+		const response = onResponse({ request: onRequest(viewerRequest(uri)), response: { statusCode: 200, headers: {} } });
+		assert.equal(response.headers["cache-control"], undefined, uri);
+		assert.equal(response.headers["referrer-policy"], undefined, uri);
+	}
+});
+
+test("a route tag sent by the viewer never reaches the response", () => {
+	const forged = { host: { value: "app.gatu.ai" }, "x-gatu-route": { value: "mobile-agent-sync" } };
+	const request = onRequest(viewerRequest("/trade/HYPE", forged));
+	assert.equal(request.headers["x-gatu-route"], undefined);
+	const response = onResponse({ request, response: { statusCode: 200, headers: {} } });
+	assert.equal(response.headers["x-gatu-route"], undefined);
+	assert.equal(response.headers["cache-control"], undefined);
+
+	const asset = onRequest(viewerRequest("/assets/app.js", forged));
+	assert.equal(asset.headers["x-gatu-route"], undefined);
+});
+
 test("the report-only policy is emitted only when a report receiver is configured", () => {
 	const withReceiver = renderWith({ scriptHashesMode: "report-only", reportUri: "https://reports.example/" });
 	assert.equal(headersFor(withReceiver, "/trade/BTC").reportOnly, `${contentSecurityPolicyReportOnly}; report-uri https://reports.example/`);

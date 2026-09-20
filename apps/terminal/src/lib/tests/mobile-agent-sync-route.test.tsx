@@ -2,8 +2,9 @@
 
 import { webcrypto } from "node:crypto";
 import { i18n } from "@lingui/core";
-import { act, type ComponentType, createElement, type ReactNode } from "react";
-import type { Root } from "react-dom/client";
+import { I18nProvider } from "@lingui/react";
+import { act, type ComponentType, createElement, type ReactNode, StrictMode } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { MOBILE_SYNC_DRAFT_STORAGE_KEY } from "../mobile-sync/draft-storage";
 import { MOBILE_SYNC_IMPORTED_STORAGE_KEY, recordImportedMobileSyncId } from "../mobile-sync/imported-sync-ids";
@@ -210,6 +211,20 @@ describe("MobileAgentSyncRoute", () => {
 		vi.unstubAllGlobals();
 	});
 
+	// React replays effects only when StrictMode is at or above the fiber it places on mount, so
+	// StrictMode has to wrap the provider here instead of sitting under the shared harness root.
+	function renderStrict(component: ComponentType): Root {
+		const host = document.createElement("div");
+		container.appendChild(host);
+		const strictRoot = createRoot(host);
+		act(() =>
+			strictRoot.render(
+				createElement(StrictMode, null, createElement(I18nProvider, { i18n }, createElement(component))),
+			),
+		);
+		return strictRoot;
+	}
+
 	it("has no manual paste surface and keeps Import disabled without a QR", async () => {
 		const { Route } = await import("@/routes/mobile-agent-sync");
 		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
@@ -242,6 +257,47 @@ describe("MobileAgentSyncRoute", () => {
 		expect(testState.infoExtraAgents).not.toHaveBeenCalled();
 		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
+	});
+
+	it("imports from a differently cased direct-load path the router still matches", async () => {
+		const sync = await createSyncFixture();
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `/Mobile-Agent-Sync${url.hash}`);
+
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		expect(`${window.location.pathname}${window.location.hash}`).toBe(MOBILE_SYNC_ROUTE_PATH);
+
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("Desktop QR loaded");
+	});
+
+	it("explains an unsafe link and never brings back an earlier QR draft", async () => {
+		const sync = await createSyncFixture();
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const first = await import("@/routes/mobile-agent-sync");
+		const FirstRoute = (first.Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(FirstRoute)));
+		await flushAsyncWork();
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
+		act(() => root.unmount());
+		root = createI18nRoot(container);
+
+		vi.resetModules();
+		window.history.replaceState(null, "", `${MOBILE_SYNC_ROUTE_PATH}?notice=unsafe-link`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("That link could not be opened safely, so nothing was loaded.");
+		expect(container.textContent).not.toContain("Desktop QR loaded");
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+		expect(window.location.search).toBe("");
+		expect(findButton(container, "Import phone access")?.disabled).toBe(true);
 	});
 
 	it("captures and scrubs at beforeLoad when a preloaded route receives an SPA fragment", async () => {
@@ -414,6 +470,49 @@ describe("MobileAgentSyncRoute", () => {
 		expect(container.textContent).toContain(
 			`Stays on this phone until ${formatDateTime(sync.agentValidUntilMs)} unless you disconnect it here or revoke it from the master wallet on desktop.`,
 		);
+	});
+
+	it("still imports after StrictMode replays the route's effects", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		const strictRoot = renderStrict(MobileAgentSyncRoute);
+		await flushAsyncWork();
+
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(container.textContent).toContain("Phone access ready");
+		expect(testState.persistAgentForRegistration).toHaveBeenCalledTimes(1);
+		act(() => strictRoot.unmount());
+	});
+
+	it("wipes the key bytes once the route really unmounts", async () => {
+		const sync = await createSyncFixture();
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const core = await import("../mobile-sync/sync-core");
+		const parsed: Array<{ keyBytes: Uint8Array }> = [];
+		const parseMobileSyncUrl = core.parseMobileSyncUrl;
+		vi.spyOn(core, "parseMobileSyncUrl").mockImplementation((input) => {
+			const result = parseMobileSyncUrl(input);
+			parsed.push(result);
+			return result;
+		});
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		const strictRoot = renderStrict(MobileAgentSyncRoute);
+		await flushAsyncWork();
+		expect(parsed).toHaveLength(1);
+		expect(parsed[0]?.keyBytes.some((byte) => byte !== 0)).toBe(true);
+
+		act(() => strictRoot.unmount());
+		await flushAsyncWork();
+
+		expect(parsed[0]?.keyBytes.every((byte) => byte === 0)).toBe(true);
 	});
 
 	it("refuses a QR that this phone already imported, before local persistence", async () => {
