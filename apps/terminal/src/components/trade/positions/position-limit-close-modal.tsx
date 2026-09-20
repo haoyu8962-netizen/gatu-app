@@ -307,16 +307,13 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 			closeLabel={t`Close`}
 		>
 			<PositionCloseDialogHeader>
-				<div className="flex min-w-0 items-center justify-between gap-3">
+				<div className="flex min-w-0 items-center max-[1000px]:pe-10">
 					<ModalTitle className="flex h-6 min-w-0 items-baseline gap-1.5 text-[17px] leading-6 font-bold text-market-close-fg min-[1001px]:h-auto min-[1001px]:text-[18px] min-[1001px]:leading-[25px]">
 						<span>{t`Limit Close`}</span>
 						<span className="truncate text-[13px] font-medium text-market-close-muted min-[1001px]:hidden">
 							{sizeSymbol}
 						</span>
 					</ModalTitle>
-					<span className="shrink-0 text-2sm leading-[18px] text-market-close-muted min-[1001px]:hidden">
-						{t({ message: "Limit", context: "Order type" })}
-					</span>
 				</div>
 				<ModalDescription className="sr-only max-w-sm text-2sm leading-[18px] text-market-close-muted min-[1001px]:not-sr-only">
 					{t`Order will rest until filled or canceled.`}

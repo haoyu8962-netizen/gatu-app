@@ -187,9 +187,9 @@ describe("PositionCloseAllController", () => {
 		expect(testState.actionButtonProps?.requireReadyConfirmation).toBe(true);
 		expect(testState.shellProps).toMatchObject({
 			dismissible: true,
-			showMobileClose: true,
 			closeLabel: "Close close-all confirmation",
 		});
+		expect(testState.shellProps).not.toHaveProperty("showMobileClose");
 		expect(container.textContent).toContain("Close 1 position");
 		expect(container.textContent).not.toContain("Hold");
 		expect(container.textContent).not.toContain("Back");

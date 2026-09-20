@@ -146,7 +146,6 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
 			dismissible={isDismissible}
-			showMobileClose
 			closeLabel={t`Close close-all confirmation`}
 		>
 			<PositionCloseDialogHeader>

@@ -282,25 +282,30 @@ describe("PositionMarketCloseModal", () => {
 		container.remove();
 	});
 
-	it("supports an explicit mobile close control without changing the default drawer contract", () => {
+	it.each([
+		{ dismissible: true, showClose: true, showHandle: true },
+		{ dismissible: false, showClose: false, showHandle: false },
+	])("gives the mobile drawer a close control exactly while it can be dismissed ($dismissible)", (expected) => {
 		act(() =>
 			root.render(
 				createElement(
 					I18nProvider,
 					{ i18n },
-					<PositionCloseDialogShell open onOpenChange={vi.fn()} isMobile dismissible showMobileClose closeLabel="Close">
+					<PositionCloseDialogShell
+						open
+						onOpenChange={vi.fn()}
+						isMobile
+						dismissible={expected.dismissible}
+						closeLabel="Close"
+					>
 						<div />
 					</PositionCloseDialogShell>,
 				),
 			),
 		);
 
-		expect(testState.adaptiveProps).toMatchObject({
-			presentation: "drawer",
-			dismissible: true,
-			showClose: true,
-			showHandle: true,
-		});
+		expect(testState.adaptiveProps).toMatchObject({ presentation: "drawer", ...expected });
+		expect(testState.adaptiveProps?.className).toContain("max-[1000px]:[&>button]:top-6");
 	});
 
 	it("uses the 440px desktop modal and scales the four-line summary PnL", () => {
@@ -378,10 +383,14 @@ describe("PositionMarketCloseModal", () => {
 		expect(testState.adaptiveProps).toMatchObject({
 			presentation: "drawer",
 			dismissible: true,
-			showClose: false,
+			showClose: true,
 			showHandle: true,
 			handleClassName: "top-2.5 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input",
 		});
+		const titleRow = container.querySelector("h2")?.parentElement;
+		expect(titleRow?.children).toHaveLength(1);
+		expect(titleRow?.className).toContain("max-[1000px]:pe-10");
+		expect(container.textContent?.match(/Price: Market/g)).toHaveLength(1);
 		const preference = container.querySelector<HTMLInputElement>(
 			'[data-testid="position-market-close-confirmation-preference"]',
 		);

@@ -332,9 +332,12 @@ describe("PositionLimitCloseModal", () => {
 		expect(testState.adaptiveProps).toMatchObject({
 			presentation: "drawer",
 			dismissible: true,
-			showClose: false,
+			showClose: true,
 			showHandle: true,
 		});
+		const titleRow = container.querySelector("h2")?.parentElement;
+		expect(titleRow?.children).toHaveLength(1);
+		expect(titleRow?.className).toContain("max-[1000px]:pe-10");
 		expect(container.querySelector('[data-testid="position-limit-close-summary"]')?.textContent).toContain("2.5000");
 	});
 

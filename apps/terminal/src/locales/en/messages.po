@@ -3764,7 +3764,6 @@ msgid "Limit"
 msgstr "Limit"
 
 #: src/components/trade/positions/position-inline-actions.tsx
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -5684,7 +5683,6 @@ msgstr "Price grouping"
 msgid "Price precision"
 msgstr "Price precision"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Price: Market"
 msgstr "Price: Market"

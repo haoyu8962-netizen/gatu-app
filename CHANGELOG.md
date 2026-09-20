@@ -102,6 +102,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- On phones the Market Close and Limit Close sheets have a close button again. Since the redesign
+  they could only be left by swiping down, tapping outside or pressing Esc, and the only button on
+  the sheet was the confirm button. The close button takes the place of the `Price: Market` and
+  `Limit` labels in the sheet header, which repeated the title.
 - On the desktop order form the size slider no longer jumps up or down while it is being dragged.
   The size message under the quantity field (`Min order $10`, `Enter size`, `Exceeds max size`)
   used to appear or disappear in the middle of a drag and move the slider row by 24px. A message
