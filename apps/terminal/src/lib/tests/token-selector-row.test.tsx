@@ -109,7 +109,7 @@ describe("TokenSelectorRow", () => {
 		expect(leverage.className).toContain("tabular-nums");
 
 		if (mobile) {
-			expect(metadataRow?.className).toContain("text-[10px]");
+			expect(metadataRow?.className).toContain("text-3xs");
 			expect(leverage.className).toContain("rounded-[4px]");
 			expect(leverage.className).toContain("bg-trading-panel-stroke-row");
 			expect(leverage.className).toContain("px-[5px]");
@@ -162,12 +162,12 @@ describe("TokenSelectorRow", () => {
 		expect(spot.className).toContain("font-semibold");
 		expect(spot.className).toContain("text-trading-panel-success");
 		if (mobile) {
-			expect(metadataRow?.className).toContain("text-[10px]");
+			expect(metadataRow?.className).toContain("text-3xs");
 			expect(metadataRow?.className).toContain("leading-none");
 		} else {
 			expect(metadataRow?.className).toContain("text-[11px]");
 			expect(metadataRow?.className).toContain("text-trading-panel-subtle");
-			expect(spot.className).toContain("text-[10px]");
+			expect(spot.className).toContain("text-3xs");
 			expect(spot.className).toContain("leading-none");
 		}
 	});

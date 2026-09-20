@@ -158,7 +158,7 @@ export function LegalAcceptanceModal({
 					<ModalTitle className="text-[17px] leading-[1.35] font-bold text-market-close-fg text-pretty">
 						<Trans>Terms of Use, Privacy Policy, and Cookie Policy</Trans>
 					</ModalTitle>
-					<ModalDescription className="text-[13px] leading-[1.6] text-market-close-muted">
+					<ModalDescription className="text-2sm leading-[1.6] text-market-close-muted">
 						<Trans>To proceed, review and accept the following:</Trans>
 					</ModalDescription>
 				</ModalHeader>
@@ -176,7 +176,7 @@ export function LegalAcceptanceModal({
 							)}
 							controlClassName="mt-0.5 size-[17px] rounded-[5px] border-market-close-stroke-control bg-modal data-checked:border-market-close-control data-checked:bg-market-close-control"
 							indicatorClassName="text-market-close-on-control"
-							labelClassName="text-[13px] leading-[1.65] text-market-close-fg text-pretty"
+							labelClassName="text-2sm leading-[1.65] text-market-close-fg text-pretty"
 							label={
 								<Trans>
 									I have read and agree to the Gatu{" "}
@@ -212,7 +212,7 @@ export function LegalAcceptanceModal({
 							)}
 							controlClassName="mt-0.5 size-[17px] rounded-[5px] border-market-close-stroke-control bg-modal data-checked:border-market-close-control data-checked:bg-market-close-control"
 							indicatorClassName="text-market-close-on-control"
-							labelClassName="text-[13px] leading-[1.65] text-market-close-fg text-pretty"
+							labelClassName="text-2sm leading-[1.65] text-market-close-fg text-pretty"
 							label={
 								<Trans>
 									I understand that Gatu uses essential cookies and browser storage for authentication, security,
@@ -256,7 +256,7 @@ export function LegalAcceptanceModal({
 					</p>
 				</ModalFooter>
 
-				<p className="border-t border-trading-panel-stroke-row pt-3 text-[11px] leading-[1.6] text-market-close-subtle max-[1000px]:border-0 max-[1000px]:pt-0 max-[1000px]:text-center">
+				<p className="border-t border-trading-panel-stroke-row pt-3 text-2xs leading-[1.6] text-market-close-subtle max-[1000px]:border-0 max-[1000px]:pt-0 max-[1000px]:text-center">
 					<Trans>Terms acceptance is linked to the selected wallet.</Trans>
 				</p>
 			</div>
@@ -274,7 +274,7 @@ export function LegalAcceptanceModal({
 			presentation={isMobile ? "drawer" : "modal"}
 			layer="blocking"
 			overlayClassName="!bg-trading-panel-scrim !backdrop-blur-none duration-100"
-			className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] !border-0 !shadow-none font-market-close min-[1001px]:!max-w-[30rem] min-[1001px]:!rounded-[16px] min-[1001px]:!border min-[1001px]:!border-market-close-stroke-card min-[1001px]:!shadow-legal-acceptance"
+			className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] max-[1000px]:!border-0 !shadow-none font-market-close min-[1001px]:!max-w-[30rem] min-[1001px]:!rounded-[16px] min-[1001px]:!border min-[1001px]:!border-market-close-stroke-card min-[1001px]:!shadow-legal-acceptance"
 		>
 			{content}
 		</AdaptiveModal>

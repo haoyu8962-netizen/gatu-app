@@ -10,7 +10,7 @@
   "summary": "Caddy 转发头警告不是中止原因；管理员依次验证、安装、reload 仓库配置后重跑部署，服务器恢复尚待验证。",
   "thread": null,
   "baseCommit": "42349cb1",
-  "commits": [],
+  "commits": ["23966794"],
   "sources": [
     { "url": "https://github.com/zora4523-bot/gatu-app/blob/5d3935721f070075c5d976d61a3c27d12b5dc607/deploy/deploy.sh" },
     { "url": "https://github.com/zora4523-bot/gatu-app/blob/5d3935721f070075c5d976d61a3c27d12b5dc607/deploy/Caddyfile" },

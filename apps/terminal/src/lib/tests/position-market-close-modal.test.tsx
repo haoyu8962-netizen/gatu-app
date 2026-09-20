@@ -350,7 +350,7 @@ describe("PositionMarketCloseModal", () => {
 		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).not.toBeNull();
 		expect(testState.checkboxProps).toMatchObject({
 			controlClassName: expect.stringContaining("size-5 !rounded-[5px]"),
-			labelClassName: expect.stringContaining("text-[13px]"),
+			labelClassName: expect.stringContaining("text-2sm"),
 		});
 		expect(testState.actionButtonProps?.className).toContain("!rounded-[12px]");
 		expect(testState.actionButtonProps?.className).toContain("!text-market-close-danger-text");

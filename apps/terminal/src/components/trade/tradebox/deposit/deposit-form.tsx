@@ -175,7 +175,7 @@ export function DepositForm({
 	})();
 	const transferSelectors = (
 		<div className="space-y-1.5">
-			<div className="flex items-baseline justify-between gap-3 text-[11px] leading-4 text-market-close-subtle">
+			<div className="flex items-baseline justify-between gap-3 text-2xs leading-4 text-market-close-subtle">
 				<span className="whitespace-nowrap">
 					<Trans>You send</Trans>
 				</span>
@@ -454,7 +454,7 @@ export function DepositForm({
 					<h3 className="text-[15px] leading-[21px] font-bold text-market-close-fg">
 						<Trans>Deposit USDC from Arbitrum</Trans>
 					</h3>
-					<p className="min-h-[18px] text-[11px] leading-[18px] text-market-close-subtle">
+					<p className="min-h-[18px] text-2xs leading-[18px] text-market-close-subtle">
 						{cctpRoutingReady ? (
 							!cctpFeeError && !cctpFeeLoading && cctpFee ? (
 								<Trans>Up to {cctpFee} USDC in fees will be deducted from your deposit.</Trans>

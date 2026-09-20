@@ -214,11 +214,11 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 							{sizeSymbol}
 						</span>
 					</ModalTitle>
-					<span className="shrink-0 text-[13px] leading-[18px] text-market-close-muted tabular-nums min-[1001px]:hidden">
+					<span className="shrink-0 text-2sm leading-[18px] text-market-close-muted tabular-nums min-[1001px]:hidden">
 						{t`Price: Market`}
 					</span>
 				</div>
-				<ModalDescription className="sr-only max-w-sm text-[13px] leading-[18px] text-market-close-muted min-[1001px]:not-sr-only">
+				<ModalDescription className="sr-only max-w-sm text-2sm leading-[18px] text-market-close-muted min-[1001px]:not-sr-only">
 					{t`Reduce this position at the current market price. Filled trades cannot be reversed.`}
 				</ModalDescription>
 			</PositionCloseDialogHeader>
@@ -259,7 +259,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 						)}
 						controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-focus focus-visible:outline-none data-checked:border-market-close-control data-checked:bg-market-close-control"
 						indicatorClassName="text-market-close-on-control [&>svg]:size-3"
-						labelClassName="whitespace-nowrap text-[13px] leading-[18px] font-normal text-market-close-muted"
+						labelClassName="whitespace-nowrap text-2sm leading-[18px] font-normal text-market-close-muted"
 						label={t`Don't show this confirmation again`}
 					/>
 				</PositionCloseSizingControls>

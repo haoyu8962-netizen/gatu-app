@@ -72,10 +72,10 @@ function PositionMetric({
 }: PositionMetricProps) {
 	return (
 		<div className={cn("min-w-0", className)}>
-			<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{label}</div>
+			<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{label}</div>
 			<div
 				className={cn(
-					"min-w-0 text-[13px] font-semibold leading-[18px] tabular-nums text-market-close-fg",
+					"min-w-0 text-2sm font-semibold leading-[18px] tabular-nums text-market-close-fg",
 					wrapValue ? "whitespace-normal" : "truncate",
 					valueClassName,
 				)}
@@ -289,7 +289,7 @@ export function MobilePositionCard({
 						)}
 					/>
 					<div className="min-w-0">
-						<div className="break-words text-[10px] leading-[14px] whitespace-normal text-market-close-subtle">
+						<div className="break-words text-3xs leading-[14px] whitespace-normal text-market-close-subtle">
 							{t`Market`}
 						</div>
 						<button
@@ -302,12 +302,12 @@ export function MobilePositionCard({
 							}
 							className="pointer-events-auto relative z-10 flex max-w-full min-w-0 flex-wrap items-baseline gap-x-1 rounded-xs text-start after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 						>
-							<span className="max-w-full shrink-0 break-words text-[13px] font-bold leading-[18px] text-market-close-fg">
+							<span className="max-w-full shrink-0 break-words text-2sm font-bold leading-[18px] text-market-close-fg">
 								{sizeSymbol}
 							</span>
 							<span
 								className={cn(
-									"shrink-0 text-[11px] font-semibold leading-4",
+									"shrink-0 text-2xs font-semibold leading-4",
 									isLong ? "text-market-close-success" : "text-market-close-danger",
 								)}
 							>
@@ -317,7 +317,7 @@ export function MobilePositionCard({
 					</div>
 				</div>
 				<div className="min-w-0">
-					<div className="break-words text-[10px] leading-[14px] whitespace-normal text-market-close-subtle">{t`Size`}</div>
+					<div className="break-words text-3xs leading-[14px] whitespace-normal text-market-close-subtle">{t`Size`}</div>
 					<div
 						className="break-words text-xs font-semibold leading-[17px] whitespace-normal tabular-nums text-market-close-fg"
 						title={sizeDisplay}
@@ -327,7 +327,7 @@ export function MobilePositionCard({
 				</div>
 				<div className="flex min-w-0 items-center gap-1">
 					<div className="min-w-0 flex-1">
-						<div className="break-words text-[10px] leading-[14px] whitespace-normal text-market-close-subtle">
+						<div className="break-words text-3xs leading-[14px] whitespace-normal text-market-close-subtle">
 							{t`PNL`} (ROE %)
 						</div>
 						<div
@@ -417,7 +417,7 @@ export function MobilePositionCard({
 						<div className="flex min-w-0 items-center gap-4">
 							<button
 								type="button"
-								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-fg transition-colors duration-[120ms] min-[1001px]:hover:text-fg-muted focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
+								className="min-h-11 shrink-0 text-2sm font-semibold leading-[18px] text-market-close-fg transition-colors duration-[120ms] min-[1001px]:hover:text-fg-muted focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 								onClick={handleLimitClose}
 								disabled={!canClose || isRowClosing}
 							>
@@ -425,7 +425,7 @@ export function MobilePositionCard({
 							</button>
 							<button
 								type="button"
-								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
+								className="min-h-11 shrink-0 text-2sm font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 								onClick={handleMarketClose}
 								disabled={!canClose || isRowClosing}
 							>
@@ -433,7 +433,7 @@ export function MobilePositionCard({
 							</button>
 							<button
 								type="button"
-								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
+								className="min-h-11 shrink-0 text-2sm font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 								onClick={handleReverse}
 								disabled={!canReverse || isRowClosing}
 							>

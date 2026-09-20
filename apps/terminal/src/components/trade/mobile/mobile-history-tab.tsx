@@ -333,19 +333,19 @@ function MobileHistoryTabContent({
 												aria-label={t`Switch to ${marketName} market`}
 												className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
 											>
-												<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
+												<span className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Market`}</span>
 												<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">
 													{marketName}
 												</span>
 											</button>
 											<div className="min-w-0">
-												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Time`}</div>
+												<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Time`}</div>
 												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
 													{formatDateTimeShort(fill.time)}
 												</div>
 											</div>
 											<div className="min-w-0">
-												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Size`}</div>
+												<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Size`}</div>
 												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
 													{sizeDisplay} {marketName}
 												</div>
@@ -356,7 +356,7 @@ function MobileHistoryTabContent({
 											<div id={detailsId} className="flex flex-col gap-2.5 px-3.5 py-3">
 												<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-x-2.5 gap-y-3">
 													<div className="min-w-0">
-														<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">
+														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">
 															{t`Direction`}
 														</div>
 														<div
@@ -373,19 +373,19 @@ function MobileHistoryTabContent({
 														</div>
 													</div>
 													<div className="min-w-0">
-														<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Price`}</div>
+														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Price`}</div>
 														<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
 															{formatUSD(fill.px)}
 														</div>
 													</div>
 													<div className="min-w-0">
-														<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Size`}</div>
+														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Size`}</div>
 														<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
 															{sizeDisplay}
 														</div>
 													</div>
 													<div className="min-w-0">
-														<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Realized PNL`}</div>
+														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Realized PNL`}</div>
 														<div
 															className={cn(
 																"truncate whitespace-nowrap text-xs font-semibold leading-[17px] tabular-nums",
@@ -398,7 +398,7 @@ function MobileHistoryTabContent({
 														</div>
 													</div>
 													<div className="min-w-0">
-														<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Fee`}</div>
+														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Fee`}</div>
 														<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
 															{formatToken(fill.fee, { symbol: fill.feeToken })}
 														</div>

@@ -259,7 +259,7 @@ export function PositionRow({
 			<span className="text-[13px] font-semibold text-market-close-fg">{marginDisplay}</span>
 			<span
 				className={cn(
-					"rounded-[4px] px-1.5 text-[10px] leading-[14px] font-semibold text-market-close-subtle",
+					"rounded-[4px] px-1.5 text-3xs leading-[14px] font-semibold text-market-close-subtle",
 					p.leverage.type === "isolated"
 						? "bg-fill-weak"
 						: "border border-market-close-stroke-card bg-transparent leading-3",
@@ -291,8 +291,8 @@ export function PositionRow({
 						fit
 						onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
 						className="border-0 bg-transparent p-0 hover:bg-transparent active:bg-transparent"
-						nameClassName="text-[13px] leading-4 font-bold text-market-close-fg"
-						subtitleClassName="text-[11px] leading-[14px] font-semibold"
+						nameClassName="text-2sm leading-4 font-bold text-market-close-fg"
+						subtitleClassName="text-2xs leading-[14px] font-semibold"
 						aria-label={
 							isLong
 								? t`Switch to ${displayName} market, long position`
@@ -300,7 +300,7 @@ export function PositionRow({
 						}
 					/>
 					{p.dex ? (
-						<span className="shrink-0 rounded-[4px] bg-fill-weak px-1 py-0.5 text-[10px] leading-3 font-semibold text-market-close-muted">
+						<span className="shrink-0 rounded-[4px] bg-fill-weak px-1 py-0.5 text-3xs leading-3 font-semibold text-market-close-muted">
 							{p.dex}
 						</span>
 					) : null}
@@ -333,7 +333,7 @@ export function PositionRow({
 				<div className="flex min-w-0 items-center justify-end gap-1">
 					<span className="flex flex-col items-end gap-px tabular-nums" title={`${pnlDisplay} (${pnlPercentDisplay})`}>
 						<span className="text-[13px] font-bold">{pnlDisplay}</span>
-						<span className="text-[11px] leading-[14px] font-semibold opacity-75">{pnlPercentDisplay}</span>
+						<span className="text-2xs leading-[14px] font-semibold opacity-75">{pnlPercentDisplay}</span>
 					</span>
 					<Tooltip content={t`Share PNL`} side="top">
 						<button

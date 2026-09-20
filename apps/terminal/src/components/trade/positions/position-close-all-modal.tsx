@@ -154,7 +154,7 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 		>
 			<PositionCloseDialogHeader>
 				<ModalTitle className="text-[17px] leading-6 font-bold text-market-close-fg">{t`Close All Positions`}</ModalTitle>
-				<ModalDescription className="text-[13px] leading-[18px] text-market-close-muted">
+				<ModalDescription className="text-2sm leading-[18px] text-market-close-muted">
 					<Plural
 						value={positionCount}
 						one="This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed."
@@ -196,7 +196,7 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 					aria-describedby={submission.error ? errorId : undefined}
 					aria-busy={submission.isPending || submission.isReconciling}
 					containerClassName="w-full items-stretch"
-					className="relative min-h-11 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger px-3 py-[13px] text-[14px] leading-5 font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-none hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted"
+					className="relative min-h-11 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger px-3 py-[13px] text-sm leading-5 font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-none hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted"
 				>
 					{progressLabel ? (
 						<>

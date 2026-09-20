@@ -5,9 +5,9 @@ import { cn } from "@/lib/cn";
 export const marketSelector =
 	"inline-flex min-h-11 min-w-0 shrink-0 items-center rounded-[9px] bg-transparent py-1 pr-1 font-market-close hover:bg-trading-panel-hover active:bg-fill-press cursor-pointer leading-none";
 export const marketName =
-	"whitespace-nowrap text-base leading-5 font-bold tracking-tight text-trading-panel-fg max-[360px]:text-[13px] max-[360px]:leading-4";
+	"whitespace-nowrap text-base leading-5 font-bold tracking-tight text-trading-panel-fg max-[360px]:text-2sm max-[360px]:leading-4";
 export const marketBadge =
-	"inline-flex max-w-20 shrink-0 items-center truncate rounded-[4px] px-1.5 py-0.5 text-[10px] leading-none font-semibold whitespace-nowrap";
+	"inline-flex max-w-20 shrink-0 items-center truncate rounded-[4px] px-1.5 py-0.5 text-3xs leading-none font-semibold whitespace-nowrap";
 
 interface Props {
 	pairName: string | null;

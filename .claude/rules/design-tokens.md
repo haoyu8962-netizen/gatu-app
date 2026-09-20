@@ -2,6 +2,7 @@
 
 - **No hardcoded colors** - Never use hex values like `text-[#2b2e48]` or `bg-[#f1f3f4]`. Always use token utilities from `packages/ui/src/globals.css` + `apps/terminal/src/styles.css`.
 - **No arbitrary font sizes** - Never use `text-[10px]` etc. Use the named scale: `text-3xs` (10px), `text-2xs` (11px), `text-xs` (12px), `text-2sm` (13px, trading-panel body per design handoff), `text-sm` (14px), `text-base` (16px)+.
+- **Existing arbitrary values are a ratcheted debt** - `design-token-ratchet.test.ts` pins how many `text-[Npx]`, `rounded-[Npx]` and `!bg-modal` / `!bg-overlay` / `!shadow-overlay` usages remain in `apps/terminal/src`. Adding one fails the test; when you remove some, lower the baseline in the same change. Replace them file by file as you touch a file, not in one sweep: a named font size also sets its line-height, so `text-[13px]` equals `text-2sm` only where an explicit `leading-*` is present, and a sweep across ~130 files conflicts with every branch in flight. With `--radius-factor: 0.5` the named equivalents are `rounded-4`=2px, `rounded-8`=4px, `rounded-12`=6px, `rounded-16`=8px, `rounded-20`=10px, `rounded-24`=12px, `rounded-32`=16px; 3, 5, 7, 9, 14, 18 and 20px have no named equivalent and need a design decision.
 
 ### Naming rule for NEW tokens
 
@@ -32,12 +33,14 @@ Never cause **literal doubling** of the Tailwind property prefix. If a token is 
 - `bg-dashboard-canvas` branded data-dashboard canvas behind raised page content (light: `#f1f3f6`, terminal dark: `#04251f`)
 - `bg-portfolio-canvas` compatibility alias for the portfolio page; new dashboard pages should use `bg-dashboard-canvas`
 - `bg-surface` elevated surfaces, cards (light: `#ffffff`, shared dark default: `#1d1e26`)
-- `bg-overlay` lightweight raised overlays such as tooltips, toasts, and selection indicators (light: `#ffffff`, dark: `#292b33`)
+- `bg-overlay` raised overlays that open without a scrim: tooltips, toasts, dropdown menus, selection indicators and anchored popovers of any size, including the desktop market selector (light: `#ffffff`, shared dark default: `#292b33`, terminal dark: `#212d33`). The choice follows the scrim, not the size: without a scrim a `bg-modal` popup would be the page colour in the dark terminal and disappear, which is why the same market selector uses `bg-modal` as a full-screen phone sheet and `bg-overlay` as a desktop popover
 - `bg-modal` blocking modal and drawer surfaces (light: `#ffffff`, shared dark default: `#292b33`); also the inputs, checkboxes and option cards rendered inside those modals. List cards, table headers and in-panel filter triggers use `bg-surface`, never `bg-modal`, even where the two resolve to the same color in the terminal (`modal-surface-contract` pins this)
 - `bg-alternate` alternating rows (light: `#f5f6fa`, shared dark default: `#1d1e26`)
 - `bg-inverse-surface` inverse background
 
-> **Terminal dark-theme override**: `apps/terminal/src/styles.css` intentionally sets `bg-background`, `bg-surface`, `bg-alternate`, and `bg-modal` to `#0f1a1f` so the terminal, order book, chart, and blocking dialogs share one continuous background. `bg-overlay` remains a distinct raised color for tooltips, toasts, and selection indicators. Do not restore the shared defaults in the terminal without an explicit design change.
+> **Terminal dark-theme override**: `apps/terminal/src/styles.css` intentionally sets `bg-background`, `bg-surface`, `bg-alternate`, and `bg-modal` to `#0f1a1f` so the terminal, order book, chart, and blocking dialogs share one continuous background. `bg-overlay` remains a distinct raised color for tooltips, toasts, dropdown menus and selection indicators. Do not restore the shared defaults in the terminal without an explicit design change.
+
+> **Terminal dark hue family**: the terminal's raised overlay (`#212d33`) and modal scrim (`--fill-overlay: #03090ca8`) stay in the same hue family as `#0f1a1f` (≈199°). `#212d33` has the same relative luminance as the shared navy-grey default `#292b33`, so every text and raised-contrast ratio measured against the old value still holds. The shared defaults (`#292b33`, `#000626a8`) are tuned for the shared navy base `#12131a`; using them over the terminal base makes menus read purple-grey and turns the page navy behind an open modal. `modal-surface-contract` pins both pairs.
 
 > **Light mode gotcha**: `bg-background` and `bg-surface` are both `#ffffff` in light mode. Use `bg-sunken` as the container whenever you need a visually distinct inset (e.g. tab switchers, pill groups) so that `bg-surface` children appear elevated.
 
@@ -74,6 +77,7 @@ Use these with `border-*`, `ring-*`, `outline-*`, `divide-*` prefixes. The strok
 - `border-stroke-focus` focus ring / border
 - `border-stroke-disabled` disabled border
 - Trading panel (app-level, `apps/terminal/src/styles.css`): `border-trading-panel-stroke-card` (#e3e8ee 卡边), `border-trading-panel-stroke-input` (#d8dfe7 输入边), `border-trading-panel-stroke-control` (#c6cfd9 复选/虚线), `border-trading-panel-stroke-row` (#eef1f5 行分隔; dark 均映射语义令牌)
+- `market-close-*` is a second family with the same values as `trading-panel-*` for text (`fg` / `muted` / `subtle`), strokes (`stroke-card` / `stroke-input` / `stroke-control`), surfaces (`card` / `hover`) and the control and focus colours; it started in the Market Close dialog and spread to 60+ files. New code uses `trading-panel-*` (and the shared menu skin already does); keep `market-close-*` only for the tokens that family alone defines (`danger*`, `success`, `warning`, the inline-edit shadow) until a rename is scheduled. `font-market-close` is the IBM Plex Sans family of every redesigned surface, not a dialog-specific font.
 - Semantic (each at 80% alpha): `border-stroke-brand-strong`, `border-stroke-error-strong`, `border-stroke-warning-strong`, `border-stroke-success-strong`, `border-stroke-info-strong`
 - Semantic soft (20% alpha): `border-stroke-brand-weak`, `border-stroke-error-weak`, etc.
 - Inverse: `border-stroke-inverse-strong` / `border-stroke-inverse-weak` / `border-stroke-inverse-disabled`
@@ -85,6 +89,13 @@ All the above also work as `ring-stroke-*`, `outline-stroke-*`, `divide-stroke-*
 - `text-icon-brand` brand icon
 - `text-icon-error` / `text-icon-warning` / `text-icon-success` / `text-icon-info` semantic icons
 - `text-icon-inverse` / `text-icon-inverse-strong` / `text-icon-inverse-disabled` inverse icons
+
+### Typography — families and scale
+- `font-sans` is Inter Variable and the default for every surface. `font-market-close` is IBM Plex Sans Variable for the redesigned trading surfaces (header, market overview, token selector, account tables, funds dialogs); the token name is historical and stays until a rename is scheduled. `font-mono` is the system monospace stack for addresses and keys. Do not add a third webfont or an arbitrary `font-[…]` family.
+- The terminal declares its webfonts in `apps/terminal/src/styles.css`; `.claude/rules/startup-rendering.md` owns their `font-display`, preload and startup-gate rules. Surfaces that cannot wait for a webfont stay on system fonts: the bootstrap error page, and the chart iframe, whose document cannot see the application `@font-face` rules (`docs/runtime-guardrails.md` §4).
+- The named size scale pairs each size with a line height: `text-3xs` 10/14, `text-2xs` 11/16, `text-xs` 12/16, `text-2sm` 13/18, `text-sm` 14/20, `text-base` 16/24, `text-lg` 20/28, `text-xl` 28/36, `text-2xl` 40/48, `text-3xl` 56/64. `packages/ui/src/globals.css` and the terminal `@theme` declare the same values and `typography-scale-contract` keeps them equal; the terminal alone shrinks `xl` / `2xl` / `3xl` at 1000px. Relative sizes such as `text-[0.9em]` are ratcheted separately from `text-[Npx]` and are only for text that must scale with its parent, like inline code.
+- Every `text-[Npx]` that carried its own `leading-*` in the same class string now uses the named size. What the ratchet still counts either inherits its line height, so the named size would change it and its children and needs a visual check, or has no named equivalent (7, 8, 9, 15, 17, 18, 32px) and needs a design decision. `text-[28px]`, `text-[40px]` and `text-[56px]` are not `text-xl` / `text-2xl` / `text-3xl`, because those three shrink at 1000px.
+- Write `leading-*` after the font size it belongs to. `cn()` treats a font size as replacing any earlier `leading-*` of the same variant, so `cn("leading-5 text-2sm")` renders `text-2sm` with its default 18px line height while `cn("text-2sm leading-5")` keeps 20px.
 
 ### Market / Trading Extensions
 - Order-book tokens are scoped to `apps/terminal/src/styles.css`: `--orderbook-depth-bid/ask` for 15% solid depth fills, `--orderbook-price-bid/ask` for price text, `--orderbook-flash-bid/ask` for quantity changes, `--orderbook-level-pulse-bid/ask` for full-row pulses, and `--orderbook-muted` for secondary text. Do not replace these with global market colors. Both themes and all desktop/mobile layouts share their semantic roles; palettes and composed contrast requirements are documented in `docs/orderbook-new-level-animation.md`.

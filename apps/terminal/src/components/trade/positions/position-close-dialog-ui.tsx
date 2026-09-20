@@ -47,7 +47,7 @@ export function PositionCloseDialogShell({
 			closeLabel={closeLabel}
 			handleClassName="top-2.5 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
 			overlayClassName="!bg-scrim/60 !backdrop-blur-none"
-			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[20px] !border-0 !shadow-none min-[1001px]:max-w-[27.5rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button]:!rounded-[8px] min-[1001px]:[&>button]:text-market-close-muted min-[1001px]:[&>button:hover]:bg-market-close-hover min-[1001px]:[&>button:hover]:text-market-close-fg min-[1001px]:[&>button:active]:bg-market-close-hover min-[1001px]:[&>button>svg]:size-[18px]"
+			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[20px] max-[1000px]:!border-0 !shadow-none min-[1001px]:max-w-[27.5rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button]:!rounded-[8px] min-[1001px]:[&>button]:text-market-close-muted min-[1001px]:[&>button:hover]:bg-market-close-hover min-[1001px]:[&>button:hover]:text-market-close-fg min-[1001px]:[&>button:active]:bg-market-close-hover min-[1001px]:[&>button>svg]:size-[18px]"
 		>
 			{children}
 		</AdaptiveModal>
@@ -118,12 +118,12 @@ export function PositionCloseSummary({ testId, ariaLabel, items }: PositionClose
 								"min-[1001px]:border-t min-[1001px]:border-dashed min-[1001px]:border-market-close-stroke-card min-[1001px]:pt-2.5",
 						)}
 					>
-						<span className="max-w-full truncate text-[11px] leading-4 text-market-close-muted min-[1001px]:text-[13px] min-[1001px]:leading-[18px]">
+						<span className="max-w-full truncate text-2xs leading-4 text-market-close-muted min-[1001px]:text-2sm min-[1001px]:leading-[18px]">
 							{item.label}
 						</span>
 						<span
 							className={cn(
-								"max-w-full truncate text-sm leading-[18px] tabular-nums min-[1001px]:text-[13px]",
+								"max-w-full truncate text-sm leading-[18px] tabular-nums min-[1001px]:text-2sm",
 								item.valueClassName,
 							)}
 						>
@@ -264,7 +264,7 @@ export function PositionCloseSizingControls({
 	return (
 		<section data-testid={testId} aria-label={t`Close size`} className="flex flex-col gap-3.5 min-[1001px]:gap-2.5">
 			<div className="hidden items-center justify-between gap-3 min-[1001px]:flex">
-				<span className="text-[13px] leading-[18px] font-semibold text-market-close-fg">{t`Close size`}</span>
+				<span className="text-2sm leading-[18px] font-semibold text-market-close-fg">{t`Close size`}</span>
 				<span className="text-xs leading-[18px] text-market-close-muted">{priceLabel}</span>
 			</div>
 
@@ -283,7 +283,7 @@ export function PositionCloseSizingControls({
 					mobileSafe
 					dir="ltr"
 					className="h-[46px] !rounded-[10px] border-market-close-stroke-input bg-modal px-3 pr-12 text-base leading-5 font-semibold text-market-close-fg tabular-nums transition-[border-color] duration-[120ms] focus-visible:border-market-close-focus focus-visible:ring-0 min-[1001px]:h-11"
-					suffixClassName="right-3 text-[13px] leading-[18px] font-normal text-market-close-muted min-[1001px]:font-medium"
+					suffixClassName="right-3 text-2sm leading-[18px] font-normal text-market-close-muted min-[1001px]:font-medium"
 				/>
 
 				<NumberInput
@@ -303,7 +303,7 @@ export function PositionCloseSizingControls({
 					mobileSafe
 					dir="ltr"
 					className="h-[46px] !rounded-[10px] border-market-close-stroke-input bg-modal px-2.5 pr-[22px] text-right text-base leading-5 font-semibold text-market-close-fg tabular-nums transition-[border-color] duration-[120ms] focus-visible:border-market-close-focus focus-visible:ring-0 min-[1001px]:h-11"
-					suffixClassName="right-2.5 text-[13px] leading-[18px] font-normal text-market-close-muted"
+					suffixClassName="right-2.5 text-2sm leading-[18px] font-normal text-market-close-muted"
 				/>
 			</div>
 
@@ -324,7 +324,7 @@ export function PositionCloseSizingControls({
 								onIntentChange(percent === 100 ? { kind: "max" } : { kind: "percent", value: String(percent) })
 							}
 							className={cn(
-								"h-auto min-h-0 !rounded-[8px] px-0 py-2 text-[13px] leading-[18px] font-semibold tabular-nums !shadow-none transition-all duration-[120ms] focus-visible:!border-market-close-focus focus-visible:!outline-none active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!border-market-close-stroke-card data-disabled:!bg-modal data-disabled:!text-market-close-subtle min-[1001px]:py-[7px]",
+								"h-auto min-h-0 !rounded-[8px] px-0 py-2 text-2sm leading-[18px] font-semibold tabular-nums !shadow-none transition-all duration-[120ms] focus-visible:!border-market-close-focus focus-visible:!outline-none active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!border-market-close-stroke-card data-disabled:!bg-modal data-disabled:!text-market-close-subtle min-[1001px]:py-[7px]",
 								selected
 									? "!border-market-close-control !bg-market-close-control !text-market-close-on-control hover:!bg-market-close-control active:!bg-market-close-control"
 									: "!border-market-close-stroke-card !bg-modal !text-market-close-muted hover:!bg-modal active:!bg-modal min-[1001px]:hover:!border-market-close-control min-[1001px]:hover:!text-market-close-control",

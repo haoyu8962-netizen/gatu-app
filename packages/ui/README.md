@@ -60,11 +60,11 @@ All tokens live in `src/globals.css` as Tailwind v4 `@theme` CSS variables. Thre
 - **Greys**: 6 solid values (white → black).
 - **Radius**: 8 values (0–32 px), all scaled by `--radius-factor` — adjust once, everything resizes.
 - **Shadows**: 3 levels.
-- **Font**: Inter Variable (`@fontsource-variable/inter`).
+- **Font**: `--font-sans` names Inter Variable; the package ships no font files, so the consuming app declares the `@font-face` rules and owns loading.
 
 ### Typography scale
 
-`text-3xs` · `text-2xs` · `text-xs` · `text-sm` · `text-base` · `text-lg` · `text-xl` · `text-2xl` · `text-3xl` — with paired `--line-height-*` tokens and mobile overrides.
+`text-3xs` (10/14) · `text-2xs` (11/16) · `text-xs` (12/16) · `text-2sm` (13/18) · `text-sm` (14/20) · `text-base` (16/24) · `text-lg` (20/28) · `text-xl` (28/36) · `text-2xl` (40/48) · `text-3xl` (56/64) — each `--text-<name>` has a paired `--text-<name>--line-height`. The terminal declares the same values and `typography-scale-contract` keeps the two equal; its 1000px overrides of `xl` / `2xl` / `3xl` live in the terminal stylesheet, not here. The website keeps its own copy without `2sm` and with an extra `4xl`.
 
 ### Semantic tokens (light + dark)
 

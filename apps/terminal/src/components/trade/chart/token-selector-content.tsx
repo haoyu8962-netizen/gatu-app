@@ -191,7 +191,7 @@ export function TokenSelectorContent({
 						)}
 						inputClassName={cn(
 							"font-medium text-trading-panel-fg placeholder:text-trading-panel-subtle",
-							mobile ? "text-base leading-5" : "text-[13px] leading-5",
+							mobile ? "text-base leading-5" : "text-2sm leading-5",
 						)}
 						aria-labelledby={headingId}
 					/>

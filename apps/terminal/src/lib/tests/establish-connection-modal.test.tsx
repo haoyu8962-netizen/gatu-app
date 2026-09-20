@@ -3,7 +3,7 @@
 import { i18n } from "@lingui/core";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
@@ -111,6 +111,10 @@ vi.mock("@gatu/ui", () => ({
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+beforeAll(async () => {
+	await import("@/components/trade/components/establish-connection-modal");
+}, 60_000);
+
 describe("EstablishConnectionModal", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -158,7 +162,7 @@ describe("EstablishConnectionModal", () => {
 
 		const dialog = container.querySelector('[role="dialog"]');
 		expect(dialog?.getAttribute("data-presentation")).toBe("drawer");
-		expect(dialog?.className).toContain("min-[1001px]:rounded-16");
+		expect(dialog?.className).not.toMatch(/rounded-(t-)?(\d+|\[)/);
 		expect(dialog?.className).not.toContain("min-[1000px]");
 		const connect = [...container.querySelectorAll("button")].find(
 			(button) => button.textContent === "Establish Connection",

@@ -184,7 +184,7 @@ export function WithdrawForm({
 								</span>
 							}
 							onMaxClick={() => onAmountChange(maximumAmount)}
-							className="h-11 rounded-none border-0 bg-transparent px-3 pr-[7.75rem] text-right text-base leading-5 font-semibold text-market-close-fg tabular-nums shadow-none focus-visible:border-transparent focus-visible:ring-0 min-[1001px]:text-[13px] min-[1001px]:leading-[18px]"
+							className="h-11 rounded-none border-0 bg-transparent px-3 pr-[7.75rem] text-right text-base leading-5 font-semibold text-market-close-fg tabular-nums shadow-none focus-visible:border-transparent focus-visible:ring-0 min-[1001px]:text-2sm min-[1001px]:leading-[18px]"
 						/>
 					</div>
 				</div>
@@ -223,7 +223,7 @@ export function WithdrawForm({
 						"min-h-11 !rounded-[10px] !border-market-close-stroke-input !bg-modal px-3 py-0 font-mono tabular-nums focus-within:!outline-market-close-focus",
 						destinationError && "!border-market-close-danger focus-within:!outline-market-close-danger",
 					)}
-					inputClassName="text-base leading-5 font-semibold text-market-close-fg placeholder:text-market-close-muted min-[1001px]:text-[13px] min-[1001px]:leading-[18px]"
+					inputClassName="text-base leading-5 font-semibold text-market-close-fg placeholder:text-market-close-muted min-[1001px]:text-2sm min-[1001px]:leading-[18px]"
 				/>
 				<p
 					id={destinationErrorId}

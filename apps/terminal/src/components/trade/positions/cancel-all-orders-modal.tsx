@@ -31,7 +31,7 @@ export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMess
 			showHandle={isMobile}
 			handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
 			overlayClassName="!bg-scrim/60 !backdrop-blur-none"
-			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[18px] !border-0 !bg-modal !shadow-none min-[1001px]:max-w-[21.25rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay"
+			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[18px] max-[1000px]:!border-0 !bg-modal !shadow-none min-[1001px]:max-w-[21.25rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay"
 		>
 			<ModalHeader
 				divider={false}
@@ -40,7 +40,7 @@ export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMess
 				<ModalTitle className="text-base leading-[22px] font-bold text-market-close-fg min-[1001px]:text-[17px] min-[1001px]:leading-6">
 					{t`Cancel All Orders`}
 				</ModalTitle>
-				<ModalDescription className="text-[13px] leading-5 text-market-close-muted">
+				<ModalDescription className="text-2sm leading-5 text-market-close-muted">
 					<Plural
 						value={orderCount}
 						one="This will cancel the open order, including protective stop orders. Your position may no longer be protected."
