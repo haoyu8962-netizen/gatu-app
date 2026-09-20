@@ -40,7 +40,7 @@ export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMess
 				<ModalTitle className="text-base leading-[22px] font-bold text-market-close-fg min-[1001px]:text-[17px] min-[1001px]:leading-6">
 					{t`Cancel All Orders`}
 				</ModalTitle>
-				<ModalDescription className="text-[13px] leading-5 text-market-close-muted">
+				<ModalDescription className="text-2sm leading-5 text-market-close-muted">
 					<Plural
 						value={orderCount}
 						one="This will cancel the open order, including protective stop orders. Your position may no longer be protected."

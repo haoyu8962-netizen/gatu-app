@@ -65,13 +65,13 @@ export function PositionReverseConfirmationModal({
 				<ModalTitle className="text-base leading-[22px] font-bold text-market-close-fg min-[1001px]:text-[17px] min-[1001px]:leading-6">
 					{t`Reverse Position`}
 				</ModalTitle>
-				<ModalDescription className="text-[13px] leading-5 text-market-close-muted">
+				<ModalDescription className="text-2sm leading-5 text-market-close-muted">
 					{t`This will close the current position and open an equal position in the opposite direction at market price.`}
 				</ModalDescription>
 			</ModalHeader>
 
 			<ModalContent className="flex flex-col gap-3 px-4 pt-4 pb-0 min-[1001px]:gap-4 min-[1001px]:px-6">
-				<dl className="flex flex-col gap-2.5 text-[13px] leading-[18px]">
+				<dl className="flex flex-col gap-2.5 text-2sm leading-[18px]">
 					<ReverseDetailRow label={t`Market`} value={marketLabel} emphasized />
 					<ReverseDetailRow
 						label={t`Direction`}
@@ -135,7 +135,7 @@ export function PositionReverseConfirmationModal({
 				>
 					{isSubmitting ? t`Reversing...` : targetDirection === "long" ? t`Buy / Long` : t`Sell / Short`}
 				</TradingActionButton>
-				<p className="text-center text-[11px] leading-4 text-market-close-subtle">
+				<p className="text-center text-2xs leading-4 text-market-close-subtle">
 					{t`This action cannot be undone after execution.`}
 				</p>
 			</ModalFooter>

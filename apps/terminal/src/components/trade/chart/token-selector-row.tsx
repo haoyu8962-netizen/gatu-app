@@ -200,7 +200,7 @@ export function TokenSelectorRow({
 							</span>
 							{favoriteButton}
 						</div>
-						<div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] leading-none">
+						<div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-3xs leading-none">
 							{maxLeverage !== null ? (
 								<span className="whitespace-nowrap rounded-[4px] bg-trading-panel-stroke-row px-[5px] py-px font-semibold text-trading-panel-muted tabular-nums">
 									{maxLeverage}x
@@ -267,7 +267,7 @@ export function TokenSelectorRow({
 					<div className="flex min-w-0 items-center gap-1">
 						<span
 							title={displayPairName}
-							className="min-w-0 truncate whitespace-nowrap text-[13px] font-bold leading-snug tracking-tight text-trading-panel-fg"
+							className="min-w-0 truncate whitespace-nowrap text-2sm font-bold leading-snug tracking-tight text-trading-panel-fg"
 						>
 							{displayPairName}
 						</span>
@@ -275,7 +275,7 @@ export function TokenSelectorRow({
 					<div className="flex items-center gap-1.5 text-[11px] text-trading-panel-subtle">
 						{maxLeverage !== null && <span className="whitespace-nowrap tabular-nums">{maxLeverage}x</span>}
 						{isSpot ? (
-							<span className="whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-[5px] py-px text-[10px] font-semibold leading-none text-trading-panel-success">
+							<span className="whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-[5px] py-px text-3xs font-semibold leading-none text-trading-panel-success">
 								{t`Spot`}
 							</span>
 						) : null}

@@ -95,7 +95,7 @@ export function MobileOrderModificationModal({
 				</ModalHeader>
 
 				<ModalContent className="flex flex-col gap-3 px-4 pt-4 pb-0">
-					<dl className="flex flex-col gap-[9px] text-[13px] leading-[18px]">
+					<dl className="flex flex-col gap-[9px] text-2sm leading-[18px]">
 						<DetailRow label={t`Market`} value={marketLabel} emphasized />
 						<DetailRow
 							label={t`Direction`}

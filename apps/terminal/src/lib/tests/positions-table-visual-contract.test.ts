@@ -39,7 +39,7 @@ describe("positions table visual contract", () => {
 	it("uses the compact official-style hierarchy with a sticky table header", () => {
 		expect(positionTableHeadClass).toContain("sticky top-0");
 		expect(positionTableHeadClass).toContain("h-[33px]");
-		expect(positionTableHeadClass).toContain("text-[11px]");
+		expect(positionTableHeadClass).toContain("text-2xs");
 		expect(positionTableHeadClass).toContain("font-semibold");
 		expect(positionTableHeadClass).not.toContain("overflow-hidden");
 		expect(positionTableCellClass).toContain("h-14");

@@ -32,7 +32,7 @@ export function TokenSelectorTriggerView({
 	...rest
 }: Props) {
 	const badgeClassName =
-		"inline-flex max-w-20 shrink-0 items-center truncate rounded-[4px] px-1.5 py-0.5 text-[10px] leading-none font-semibold whitespace-nowrap";
+		"inline-flex max-w-20 shrink-0 items-center truncate rounded-[4px] px-1.5 py-0.5 text-3xs leading-none font-semibold whitespace-nowrap";
 	return (
 		<button
 			type="button"

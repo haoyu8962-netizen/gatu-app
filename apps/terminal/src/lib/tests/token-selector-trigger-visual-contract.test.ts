@@ -40,7 +40,7 @@ describe("token selector visual contract", () => {
 		expect(MOBILE_TRIGGER_SOURCE).toContain("marketName");
 		expect(marketName).toContain("whitespace-nowrap text-base leading-5 font-bold");
 		expect(MOBILE_TRIGGER_SOURCE).toContain("marketName");
-		expect(marketName).toContain("max-[360px]:text-[13px]");
+		expect(marketName).toContain("max-[360px]:text-2sm");
 		expect(TRIGGER_SOURCE).not.toContain("max-w-[42vw] truncate");
 		expect(TRIGGER_SOURCE).not.toContain("max-[340px]:text-sm");
 		expect(MOBILE_MARKET_BAR_SOURCE).toContain("marketGrid");
@@ -48,7 +48,7 @@ describe("token selector visual contract", () => {
 		expect(MOBILE_MARKET_BAR_SOURCE).toContain("marketQuote");
 		expect(marketQuote).toContain("grid-cols-[minmax(0,1fr)_36px]");
 		expect(MOBILE_MARKET_BAR_SOURCE).toContain("marketChange");
-		expect(marketChange).toContain("whitespace-normal text-[11px] leading-[15px] font-semibold");
+		expect(marketChange).toContain("whitespace-normal text-2xs leading-[15px] font-semibold");
 		expect(MOBILE_MARKET_BAR_SOURCE).toContain("marketExpand");
 		expect(marketExpand).toContain("h-[30px] w-9");
 	});
