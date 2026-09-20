@@ -7,6 +7,7 @@ import { LeverageModal } from "@/components/trade/tradebox/leverage-modal";
 import { createI18nRoot } from "./harness/react";
 
 const modalHarness = vi.hoisted(() => ({
+	isActivationLocked: undefined as (() => boolean) | undefined,
 	autoCloseResets: 0,
 	autoCloseTriggers: 0,
 	disablePointerDismissal: false,
@@ -66,9 +67,13 @@ vi.mock("@/components/trade/components/trading-action-button", () => ({
 	TradingActionButton: ({
 		children,
 		containerClassName: _containerClassName,
+		isActivationLocked,
 		requiresBuilderFee: _requiresBuilderFee,
 		...props
-	}: Record<string, unknown>) => createElement("button", { ...props, type: "button" }, children as ReactNode),
+	}: Record<string, unknown>) => {
+		modalHarness.isActivationLocked = isActivationLocked as (() => boolean) | undefined;
+		return createElement("button", { ...props, type: "button" }, children as ReactNode);
+	},
 }));
 
 vi.mock("@/components/trade/tradebox/leverage-editor", () => ({
@@ -212,12 +217,31 @@ describe("LeverageModal", () => {
 		expect(getButton(container, "Confirm").disabled).toBe(false);
 	});
 
-	it("never enables submission for a transient slider display", async () => {
+	it("locks Confirm in the same tick a leverage drag starts, before any render", async () => {
 		renderModal(6);
 		const onDraftChange = modalHarness.editorProps?.onDraftChange as ((value: number | null) => void) | undefined;
+		const confirm = getButton(container, "Confirm");
+
+		await act(async () => {
+			onDraftChange?.(8);
+			expect(modalHarness.isActivationLocked?.()).toBe(true);
+			confirm.click();
+		});
+		expect(onApply).not.toHaveBeenCalled();
+
+		act(() => onDraftChange?.(null));
+		await act(async () => getButton(container, "Confirm").click());
+		expect(onApply).toHaveBeenCalledWith(6);
+	});
+
+	it("never submits a transient slider display and does not grey Confirm while it is shown", async () => {
+		renderModal(6);
+		const onDraftChange = modalHarness.editorProps?.onDraftChange as ((value: number | null) => void) | undefined;
+		expect(modalHarness.isActivationLocked?.()).toBe(false);
 		act(() => onDraftChange?.(8));
 		expect(modalHarness.editorProps?.value).toBe(8);
-		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+		expect(modalHarness.isActivationLocked?.()).toBe(true);
 
 		await act(async () => getButton(container, "Confirm").click());
 		expect(onApply).not.toHaveBeenCalled();
@@ -225,6 +249,7 @@ describe("LeverageModal", () => {
 		act(() => onDraftChange?.(null));
 		expect(modalHarness.editorProps?.value).toBe(6);
 		expect(getButton(container, "Confirm").disabled).toBe(false);
+		expect(modalHarness.isActivationLocked?.()).toBe(false);
 		await act(async () => getButton(container, "Confirm").click());
 
 		expect(onApply).toHaveBeenCalledWith(6);

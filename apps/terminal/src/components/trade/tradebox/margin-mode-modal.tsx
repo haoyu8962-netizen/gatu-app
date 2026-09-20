@@ -384,6 +384,7 @@ function MarginModeForm({
 	const [submittedLeverage, setSubmittedLeverage] = useState<number | null>(null);
 	const [leverageInputValid, setLeverageInputValid] = useState(true);
 	const applyInFlightRef = useRef(false);
+	const leverageGestureActiveRef = useRef(false);
 	const mountedRef = useRef(false);
 	const {
 		showSuccess,
@@ -401,6 +402,7 @@ function MarginModeForm({
 	useEffect(() => {
 		if (sessionOpen) return;
 		resetAutoClose();
+		leverageGestureActiveRef.current = false;
 		setSubmittedLeverage(null);
 		setLeverageInputValid(true);
 		onLeverageDraftChange?.(null);
@@ -413,8 +415,14 @@ function MarginModeForm({
 
 	function handleLeverageChange(value: number) {
 		if (showSuccess) return;
+		leverageGestureActiveRef.current = false;
 		onLeverageDraftChange?.(null);
 		onPendingLeverageChange(value);
+	}
+
+	function handleLeverageGestureDraftChange(value: number | null) {
+		leverageGestureActiveRef.current = value !== null;
+		onLeverageDraftChange?.(value);
 	}
 
 	const showMarginControls = !mobileLayout || mobileView === "margin";
@@ -427,9 +435,14 @@ function MarginModeForm({
 	const cannotSwitch = hasPosition && selectedMode === "isolated" && currentMode === "cross";
 	const positionStateUnavailable = !positionStateReady && selectedMode === "isolated" && currentMode === "cross";
 
+	function isLeverageDraftActive() {
+		return leverageGestureActiveRef.current || hasLeverageDraft;
+	}
+
 	async function handleConfirm(): Promise<void> {
 		if (
 			!isDirty ||
+			leverageGestureActiveRef.current ||
 			hasLeverageDraft ||
 			leverageInputInvalid ||
 			isUpdating ||
@@ -507,7 +520,7 @@ function MarginModeForm({
 						max={maxLeverage}
 						disabled={isUpdating || showSuccess || !sessionOpen}
 						onChange={handleLeverageChange}
-						onDraftChange={onLeverageDraftChange}
+						onDraftChange={handleLeverageGestureDraftChange}
 						onInputValidityChange={setLeverageInputValid}
 						variant={mobileLayout ? "sheet" : "modal"}
 					/>
@@ -587,9 +600,10 @@ function MarginModeForm({
 					<TradingActionButton
 						requiresBuilderFee={false}
 						onClick={handleConfirm}
+						isActivationLocked={isLeverageDraftActive}
 						disabled={
 							!isDirty ||
-							hasLeverageDraft ||
+							submittedLeverage !== null ||
 							leverageInputInvalid ||
 							isUpdating ||
 							cannotSwitch ||

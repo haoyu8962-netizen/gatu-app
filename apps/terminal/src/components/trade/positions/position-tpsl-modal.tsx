@@ -502,7 +502,6 @@ function PositionTpSlForm({
 	const workflowSubmittingRef = useRef(false);
 	const [isWorkflowSubmitting, setIsWorkflowSubmitting] = useState(false);
 	const amountInteractionSnapshotRef = useRef<{ identity: string; sizeInput: string } | null>(null);
-	const [isAmountInteracting, setIsAmountInteracting] = useState(false);
 	const amountErrorId = useId();
 
 	function getSubmitErrorMessage(error: PositionTpSlSubmitError): string {
@@ -889,7 +888,6 @@ function PositionTpSlForm({
 		!dataChanged &&
 		!requiresRefresh &&
 		liveDataReady &&
-		!isAmountInteracting &&
 		!isSubmitting;
 
 	let tpError: string | null = null;
@@ -953,12 +951,14 @@ function PositionTpSlForm({
 		if (!canEditConfiguredAmount()) return;
 		const current = amountEditingRef.current;
 		amountInteractionSnapshotRef.current = { identity: current.identity, sizeInput: current.sizeInput };
-		setIsAmountInteracting(true);
 	}
 
 	function handleAmountPercentEnd() {
 		amountInteractionSnapshotRef.current = null;
-		setIsAmountInteracting(false);
+	}
+
+	function isAmountGestureActive() {
+		return amountInteractionSnapshotRef.current !== null;
 	}
 
 	function handleAmountPercentCommit(percent: number) {
@@ -1483,6 +1483,7 @@ function PositionTpSlForm({
 				</Button>
 				<TradingActionButton
 					onClick={handleSubmit}
+					isActivationLocked={isAmountGestureActive}
 					disabled={!canSubmit}
 					containerClassName="max-[1000px]:w-full"
 					className="min-w-24 max-[1000px]:min-h-11 max-[1000px]:w-full max-[1000px]:rounded-[10px]"

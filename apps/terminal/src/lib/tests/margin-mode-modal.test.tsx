@@ -7,6 +7,7 @@ import { MarginModeModal } from "@/components/trade/tradebox/margin-mode-modal";
 import { createI18nRoot } from "./harness/react";
 
 const modalHarness = vi.hoisted(() => ({
+	isActivationLocked: undefined as (() => boolean) | undefined,
 	adaptiveClassName: "",
 	adaptiveModalRenders: 0,
 	adaptiveOpenChange: undefined as ((open: boolean) => void) | undefined,
@@ -136,13 +137,18 @@ vi.mock("@/components/trade/components/trading-action-button", () => ({
 	TradingActionButton: ({
 		children,
 		containerClassName: _containerClassName,
+		isActivationLocked,
 		requiresBuilderFee: _requiresBuilderFee,
 		...props
 	}: {
 		children: ReactNode;
 		containerClassName?: string;
+		isActivationLocked?: () => boolean;
 		[key: string]: unknown;
-	}) => createElement("button", { ...props, type: "button" }, children),
+	}) => {
+		modalHarness.isActivationLocked = isActivationLocked;
+		return createElement("button", { ...props, type: "button" }, children);
+	},
 }));
 
 vi.mock("@/components/trade/tradebox/leverage-slider", () => ({
@@ -500,6 +506,52 @@ describe("MarginModeModal", () => {
 
 		await act(async () => getButton(container, "Confirm").click());
 
+		expect(onApply).toHaveBeenCalledWith("cross", 7);
+	});
+
+	it("locks Confirm in the same tick a leverage drag starts, before any render", async () => {
+		renderModal({
+			presentation: "drawer",
+			pendingLeverage: 7,
+			mobileView: "leverage",
+		});
+		const slider = modalHarness.leverageSliderProps;
+		if (!slider) throw new Error("Expected the leverage slider");
+		const confirm = getButton(container, "Confirm");
+
+		await act(async () => {
+			(slider.onInteractionStart as (value: number) => void)(7);
+			expect(modalHarness.isActivationLocked?.()).toBe(true);
+			confirm.click();
+		});
+		expect(onApply).not.toHaveBeenCalled();
+
+		act(() => (modalHarness.leverageSliderProps?.onInteractionEnd as () => void)());
+		await act(async () => getButton(container, "Confirm").click());
+		expect(onApply).toHaveBeenCalledTimes(1);
+	});
+
+	it("ignores Confirm while the leverage slider is held without greying it", async () => {
+		renderModal({
+			presentation: "drawer",
+			pendingLeverage: 7,
+			mobileView: "leverage",
+		});
+		const slider = modalHarness.leverageSliderProps;
+		if (!slider) throw new Error("Expected the leverage slider");
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+		expect(modalHarness.isActivationLocked?.()).toBe(false);
+
+		act(() => (slider.onInteractionStart as (value: number) => void)(7));
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+		expect(modalHarness.isActivationLocked?.()).toBe(true);
+		await act(async () => getButton(container, "Confirm").click());
+		expect(onApply).not.toHaveBeenCalled();
+
+		act(() => (modalHarness.leverageSliderProps?.onInteractionEnd as () => void)());
+		expect(modalHarness.isActivationLocked?.()).toBe(false);
+		await act(async () => getButton(container, "Confirm").click());
+		expect(onApply).toHaveBeenCalledTimes(1);
 		expect(onApply).toHaveBeenCalledWith("cross", 7);
 	});
 

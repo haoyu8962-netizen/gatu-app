@@ -82,6 +82,7 @@ function LeverageModalContent({
 		reset: resetAutoClose,
 	} = useAutoCloseSuccess(() => onOpenChange(false), MARGIN_MODE_SUCCESS_DURATION_MS);
 	const [dragLeverage, setDragLeverage] = useState<number | null>(null);
+	const leverageDragActiveRef = useRef(false);
 	const [submittedLeverage, setSubmittedLeverage] = useState<number | null>(null);
 	const [leverageInputValid, setLeverageInputValid] = useState(true);
 	const applyInFlightRef = useRef(false);
@@ -97,6 +98,7 @@ function LeverageModalContent({
 	useEffect(() => {
 		if (open) return;
 		resetAutoClose();
+		leverageDragActiveRef.current = false;
 		setDragLeverage(null);
 		setSubmittedLeverage(null);
 		setLeverageInputValid(true);
@@ -110,14 +112,25 @@ function LeverageModalContent({
 
 	function handleLeverageChange(value: number) {
 		if (showSuccess) return;
+		leverageDragActiveRef.current = false;
 		setDragLeverage(null);
 		onPendingLeverageChange(value);
+	}
+
+	function handleLeverageDraftChange(value: number | null) {
+		leverageDragActiveRef.current = value !== null;
+		setDragLeverage(value);
+	}
+
+	function isLeverageDragActive() {
+		return leverageDragActiveRef.current;
 	}
 
 	async function handleConfirm(): Promise<void> {
 		if (
 			showSuccess ||
 			!isDirty ||
+			leverageDragActiveRef.current ||
 			dragLeverage !== null ||
 			!leverageInputValid ||
 			isUpdating ||
@@ -155,7 +168,7 @@ function LeverageModalContent({
 					max={maxLeverage}
 					disabled={isUpdating || !open || showSuccess}
 					onChange={handleLeverageChange}
-					onDraftChange={setDragLeverage}
+					onDraftChange={handleLeverageDraftChange}
 					onInputValidityChange={setLeverageInputValid}
 					variant="modal"
 				/>
@@ -185,7 +198,8 @@ function LeverageModalContent({
 				<TradingActionButton
 					requiresBuilderFee={false}
 					onClick={handleConfirm}
-					disabled={!isDirty || dragLeverage !== null || !leverageInputValid || isUpdating || showSuccess}
+					isActivationLocked={isLeverageDragActive}
+					disabled={!isDirty || !leverageInputValid || isUpdating || showSuccess}
 					containerClassName="flex-1"
 					className="gap-1.5 min-h-10 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control hover:opacity-90"
 				>

@@ -14,6 +14,7 @@ import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
+	isActivationLocked: undefined as (() => boolean) | undefined,
 	connected: true,
 	walletAddress: "0x1111111111111111111111111111111111111111",
 	clientKey: "0x1111111111111111111111111111111111111111",
@@ -172,12 +173,17 @@ vi.mock("@/components/trade/components/trading-action-button", () => ({
 	TradingActionButton: ({
 		children,
 		containerClassName: _containerClassName,
+		isActivationLocked,
 		...props
 	}: {
 		children: ReactNode;
 		containerClassName?: string;
+		isActivationLocked?: () => boolean;
 		[key: string]: unknown;
-	}) => createElement("button", { ...props, type: "button" }, children),
+	}) => {
+		testState.isActivationLocked = isActivationLocked;
+		return createElement("button", { ...props, type: "button" }, children);
+	},
 }));
 
 vi.mock("@/components/trade/tradebox/tp-sl-section", () => ({
@@ -735,28 +741,32 @@ describe("PositionTpSlModal live data", () => {
 		expect(testState.cancelOrders).not.toHaveBeenCalled();
 	});
 
-	it("blocks confirmation synchronously until a quantity gesture ends", async () => {
+	it("ignores confirmation until a quantity gesture ends without greying the button", async () => {
 		renderModal();
 		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
 		act(() => getInput(container, "Configure amount").click());
 		const slider = testState.amountSliderProps;
 		if (!slider) throw new Error("Expected the configured amount slider");
 		const confirm = getButton(container, "Confirm");
-		act(() => {
+		expect(testState.isActivationLocked?.()).toBe(false);
+		await act(async () => {
 			slider.onPercentInteractionStart?.(slider.value);
 			confirm.click();
 		});
 
-		expect(confirm.disabled).toBe(true);
+		expect(confirm.disabled).toBe(false);
+		expect(testState.isActivationLocked?.()).toBe(true);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
 		act(() => slider.onPercentChange(50));
-		act(() => confirm.click());
+		await act(async () => confirm.click());
+		expect(confirm.disabled).toBe(false);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
 		expect(testState.cancelOrders).not.toHaveBeenCalled();
 
 		act(() => testState.amountSliderProps?.onPercentCommit(25, { reason: "drag", event: new Event("pointerup") }));
 		act(() => testState.amountSliderProps?.onPercentInteractionEnd?.());
 		expect(confirm.disabled).toBe(false);
+		expect(testState.isActivationLocked?.()).toBe(false);
 		expect(getInput(container, "Configured TP/SL amount").value).toBe("0.075");
 		await act(async () => confirm.click());
 		expect(testState.placeOrder).toHaveBeenCalledExactlyOnceWith({
@@ -772,10 +782,12 @@ describe("PositionTpSlModal live data", () => {
 		const slider = testState.amountSliderProps;
 		if (!slider) throw new Error("Expected the configured amount slider");
 		act(() => slider.onPercentInteractionStart?.(slider.value));
-		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+		expect(testState.isActivationLocked?.()).toBe(true);
 		act(() => slider.onPercentInteractionEnd?.());
 
 		expect(getButton(container, "Confirm").disabled).toBe(false);
+		expect(testState.isActivationLocked?.()).toBe(false);
 		expect(getInput(container, "Configured TP/SL amount").value).toBe("0.301");
 		expect(testState.placeOrder).not.toHaveBeenCalled();
 	});
