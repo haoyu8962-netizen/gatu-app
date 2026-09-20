@@ -16,6 +16,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
   typed size is sent as typed and is still rejected when the remaining position is smaller. While
   the dialog is open it says when the position size differs from when it was opened, and a line
   under the button states that the estimated PnL excludes fees.
+- A slider drag is no longer thrown away when balance or position data briefly goes stale or reloads
+  in the middle of it, for example around a reconnect. The drag pauses: nothing is applied while
+  the data is unreadable, the held value is applied as soon as it is readable again, and releasing
+  while it is still unreadable cancels. This covers the desktop and mobile order forms, Market
+  Close and Limit Close. Closing a dialog, submitting, disconnecting or a changed market still
+  cancel the drag at once.
 - Size, percentage and order value now follow a slider continuously on 120Hz and faster displays.
   Previews used to wait for a 15 ms pause in pointer movement, which never came during a smooth drag
   on those displays, so the numbers froze until release. They are now published at most once every

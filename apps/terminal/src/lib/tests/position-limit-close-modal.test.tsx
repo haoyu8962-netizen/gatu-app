@@ -529,12 +529,14 @@ describe("PositionLimitCloseModal", () => {
 		render();
 		expect(container.textContent).not.toContain("Live position data is stale");
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
+		expect(testState.sliderProps).toMatchObject({ paused: true, disabled: false });
 
 		testState.positionIsStale = false;
 		testState.livePosition = { szi: "-2.5", entryPx: "100", unrealizedPnl: "2.5" };
 		render();
 		expect(container.querySelector('[role="alert"]')?.textContent).toContain("This position changed sides");
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
+		expect(testState.sliderProps).toMatchObject({ paused: false, disabled: true });
 	});
 
 	it("shows the target HIP-3 disclaimer before mounting the order controller", () => {

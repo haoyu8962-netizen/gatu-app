@@ -115,6 +115,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 		env,
 	]);
 	const canEdit = phase === "idle" && !isClosing && positionStatus === null;
+	const isSizingPaused = phase === "idle" && !isClosing && isPositionDataPending(positionStatus);
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
 	const visibleError = positionStatusMessage ?? (positionStatus === null ? visibleSizingError : null);
@@ -248,6 +249,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 					szDecimals={position.szDecimals}
 					symbol={sizeSymbol}
 					disabled={!canEdit}
+					paused={isSizingPaused}
 					errorId={errorId}
 					hasDescribedError={visibleError !== null}
 					visibleSizingError={visibleSizingError}
@@ -348,6 +350,10 @@ interface PositionStatusInput {
 	isStale: boolean;
 	hasValidLivePosition: boolean;
 	liveDirectionMatches: boolean;
+}
+
+function isPositionDataPending(status: PositionStatus): boolean {
+	return status === "loading" || status === "unavailable" || status === "stale";
 }
 
 function getPositionStatus({

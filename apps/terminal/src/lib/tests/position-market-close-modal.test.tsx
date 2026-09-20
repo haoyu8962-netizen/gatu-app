@@ -239,10 +239,11 @@ describe("PositionMarketCloseModal", () => {
 		return labelElement?.parentElement?.querySelectorAll<HTMLElement>("span").item(1) ?? null;
 	}
 
-	function expectEditingLocked() {
+	function expectEditingLocked(slider: "paused" | "disabled") {
 		expect(testState.numberInputs.get("Close size")?.disabled).toBe(true);
 		expect(testState.numberInputs.get("Close percentage")?.disabled).toBe(true);
-		expect(testState.sliderProps?.disabled).toBe(true);
+		expect(testState.sliderProps?.paused).toBe(slider === "paused");
+		expect(testState.sliderProps?.disabled).toBe(slider === "disabled");
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
 	}
 
@@ -673,30 +674,35 @@ describe("PositionMarketCloseModal", () => {
 		testState.positionIsLoading = true;
 		render();
 		expect(container.textContent).not.toContain("Loading the latest position");
-		expectEditingLocked();
+		expectEditingLocked("paused");
 
 		testState.positionIsLoading = false;
 		testState.positionHasError = true;
 		render();
 		expect(container.textContent).not.toContain("Live position data is unavailable");
-		expectEditingLocked();
+		expectEditingLocked("paused");
 
 		testState.positionHasError = false;
 		testState.positionIsStale = true;
 		render();
 		expect(container.textContent).not.toContain("Live position data is stale");
-		expectEditingLocked();
+		expectEditingLocked("paused");
+
+		testState.session.phase = "validating";
+		render();
+		expectEditingLocked("disabled");
+		testState.session.phase = "idle";
 
 		testState.positionIsStale = false;
 		testState.livePosition = null;
 		render();
 		expect(container.querySelector('[role="alert"]')?.textContent).toContain("This position is no longer open");
-		expectEditingLocked();
+		expectEditingLocked("disabled");
 
 		testState.livePosition = { szi: "-2.5", entryPx: "100000", unrealizedPnl: "-50" };
 		render();
 		expect(container.querySelector('[role="alert"]')?.textContent).toContain("This position changed sides");
-		expectEditingLocked();
+		expectEditingLocked("disabled");
 	});
 
 	it("animates out on cancel and releases the session only once the exit completes", () => {

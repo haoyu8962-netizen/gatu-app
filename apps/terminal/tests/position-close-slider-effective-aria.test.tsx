@@ -234,6 +234,7 @@ describe("position close slider effective aria contract", () => {
 					szDecimals={4}
 					symbol="BTC"
 					disabled={false}
+					paused={false}
 					hasDescribedError={false}
 					visibleSizingError={null}
 					priceLabel="$100,000"
@@ -292,6 +293,7 @@ function renderSizingControls(
 				szDecimals={3}
 				symbol="BTC"
 				disabled={false}
+				paused={false}
 				hasDescribedError={false}
 				visibleSizingError={null}
 				priceLabel="$100,000"

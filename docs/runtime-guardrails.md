@@ -720,6 +720,10 @@ Quantity/close/TP-SL gestures must lock confirmation synchronously from pointer
 start through end; leverage gestures edit drafts and never invoke an API directly.
 The lock is a ref checked first in the submit path, not a disabled state: it must not
 grey or otherwise restyle the submit control (`docs/slider-interactions.md`).
+A value source that is only temporarily unreadable pauses an active gesture (`paused`):
+nothing is published or committed until it recovers, and the gesture is not thrown
+away. Reasons that end the editing context (`disabled`, identity, range or direction
+changes) still cancel it at once.
 Slippage persistence requires explicit confirmation. These controls never replace
 wallet, legal, funding, freshness, market identity, or SDK-boundary validation.
 Market orders round protective prices inward to valid ticks, and the final

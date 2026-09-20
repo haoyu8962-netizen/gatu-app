@@ -101,12 +101,43 @@ gesture, never with `getBoundingClientRect()`: an ancestor transform, such as th
 layout width, and comparing the two cancelled any drag that began during the
 animation and snapped the thumb back to where it started.
 
-Pointer cancellation, lost capture, window blur, hidden document, resizing,
-unmount, disable, invalid ranges, and changed identity/direction cancel pending
-RAF/timers/listeners. Other pointer IDs cannot replace the active gesture. Callers
-restore the exact starting string/intent only in the same eligible session; an
-unavailable or changed session cannot receive an old snapshot. No synthetic
+Pointer cancellation, lost capture, window blur, hidden document, a window resize,
+a change of the control's layout width, unmount, `disabled`, invalid ranges, and
+changed identity/direction cancel pending RAF/timers/listeners. Other pointer IDs
+cannot replace the active gesture. What a cancellation restores belongs to the
+caller, and a changed identity never receives an old snapshot. The order forms put
+back the exact starting size string whenever the identity still matches, whether or
+not the form is available at that moment. The close dialogs route the restore through
+the same `canEdit` guard as every other edit, so a gesture cancelled while the
+position data is unreadable keeps the last intent that was published before the pause
+instead of the starting one; the thumb is repainted from that value. In both cases a
+move made during a pause was never published and is simply dropped. No synthetic
 pointerup, forced React flush, or duplicate Base UI gesture engine is used.
+
+`disabled` and `paused` are different reasons and end a gesture differently. Both make
+an idle slider unavailable: no gesture can start, keyboard and native-range input are
+refused and the control is dimmed. `disabled` is for reasons that end the editing
+context (closing or submitting dialog, disconnected wallet, a balance or position that
+is really zero, a closed or flipped position) and cancels an active gesture at once.
+`paused` is for value sources that are temporarily unreadable (balance or position data
+loading, stale or failed, typically around a reconnect) and must not throw away a drag
+the user is in the middle of: the gesture survives, the thumb keeps following the
+pointer, no business preview is published and any pending preview timer is dropped.
+When the source recovers, the slider publishes the held draft once through the same
+15ms timer without waiting for another move, because the same percentage may now mean
+a different quantity; a thumb that was only pressed publishes nothing. Releasing while
+still paused cancels. The submit lock stays held for the whole gesture, paused or not.
+
+While a gesture is held and the slider is unavailable, the hidden native range input
+stays focusable with `aria-disabled="true"` instead of the native `disabled`
+attribute, which the component writes back after every render and at the end of the
+gesture. A natively disabled input would lose focus, and losing focus is one of the
+cancellation paths. The desktop and mobile order forms pass `paused` for blocked
+availability, Market Close and Limit Close for position data that is loading, stale or
+failed; TP/SL and the leverage dialogs pass only `disabled`. The official terminal's
+slider has no cancellation path and no disabled state at all, so a drag there always
+ends by committing; `paused` keeps that for data hiccups without giving up the
+cancellations that protect a changed editing context.
 
 Unmount clears pending work during layout cleanup, before a replacement form can
 run its layout effects. A disposed quantity hook cannot restore or commit into the

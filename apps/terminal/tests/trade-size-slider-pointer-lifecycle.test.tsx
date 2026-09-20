@@ -297,6 +297,112 @@ describe("TradeSlider lifecycle isolation", () => {
 		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
 	});
 
+	it("keeps a gesture alive while paused, publishes nothing, and cancels if released while paused", () => {
+		const slider = drag();
+		render({ paused: true });
+		expect(slider.control.dataset.dragging).toBe("true");
+		expect(props.onCancel).not.toHaveBeenCalled();
+		expect(slider.input.disabled).toBe(false);
+		expect(slider.input.getAttribute("aria-disabled")).toBe("true");
+
+		advance(100);
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 60)));
+		advance(100);
+		expect(props.onPreview).not.toHaveBeenCalled();
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35, 2)));
+		expect(props.onInteractionStart).toHaveBeenCalledTimes(1);
+
+		act(() => document.dispatchEvent(pointer("pointerup", 60)));
+		expect(props.onCommit).not.toHaveBeenCalled();
+		expect(props.onCancel).toHaveBeenCalledExactlyOnceWith(25);
+		expect(props.onInteractionEnd).toHaveBeenCalledTimes(1);
+		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
+		expect(slider.input.disabled).toBe(true);
+		expect(slider.input.hasAttribute("aria-disabled")).toBe(false);
+	});
+
+	it("drops a pending preview when paused and republishes the held value once it resumes", () => {
+		const slider = drag();
+		render({ paused: true });
+		advance(100);
+		expect(props.onPreview).not.toHaveBeenCalled();
+
+		render({ paused: false });
+		expect(props.onPreview).not.toHaveBeenCalled();
+		advance(15);
+		expect(props.onPreview).toHaveBeenCalledExactlyOnceWith(80);
+		advance(100);
+		expect(props.onPreview).toHaveBeenCalledTimes(1);
+
+		act(() => document.dispatchEvent(pointer("pointerup", 90)));
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(80, expect.objectContaining({ reason: "drag" }));
+		expect(props.onCancel).not.toHaveBeenCalled();
+		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
+	});
+
+	it("republishes an already published value after a pause, because the same percent may mean a new size", () => {
+		drag(true);
+		render({ paused: true });
+		render({ paused: false });
+		advance(15);
+		expect(props.onPreview).toHaveBeenCalledTimes(2);
+		expect(props.onPreview).toHaveBeenLastCalledWith(80);
+	});
+
+	it("does not publish after a pause when the thumb was only pressed", () => {
+		const slider = render();
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
+		render({ paused: true });
+		render({ paused: false });
+		advance(100);
+		expect(props.onPreview).not.toHaveBeenCalled();
+		act(() => document.dispatchEvent(pointer("pointerup", 35)));
+		expect(props.onCommit).not.toHaveBeenCalled();
+	});
+
+	it("commits once and publishes no late preview when released right after a pause ends", () => {
+		const slider = drag();
+		render({ paused: true });
+		render({ paused: false });
+		advance(14);
+		act(() => document.dispatchEvent(pointer("pointerup", 90)));
+		advance(100);
+		expect(props.onPreview).not.toHaveBeenCalled();
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(80, expect.objectContaining({ reason: "drag" }));
+		expect(notifications).toEqual(["commit", "end"]);
+		expect(slider.input.disabled).toBe(false);
+	});
+
+	it.each(["input blur", "Escape", "disabled flip"])("still cancels a paused gesture on %s", (boundary) => {
+		const slider = drag();
+		render({ paused: true });
+		if (boundary === "disabled flip") render({ paused: true, disabled: true });
+		else
+			act(() => {
+				if (boundary === "input blur") slider.input.blur();
+				else slider.input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+			});
+		expectEnded(slider.control, 0);
+		expect(slider.input.disabled).toBe(true);
+		expect(slider.input.hasAttribute("aria-disabled")).toBe(false);
+	});
+
+	it("does not start a gesture or accept keyboard and native input while paused and idle", () => {
+		const slider = render({ paused: true });
+		expect(slider.input.disabled).toBe(true);
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
+		expect(props.onInteractionStart).not.toHaveBeenCalled();
+		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
+		act(() => {
+			slider.input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+		});
+		act(() => {
+			slider.input.value = "60";
+			slider.input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+		expect(props.onCommit).not.toHaveBeenCalled();
+	});
+
 	it("can start a fresh interaction after a disabled session recovers", () => {
 		const slider = drag();
 		render({ disabled: true });

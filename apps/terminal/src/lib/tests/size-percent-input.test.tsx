@@ -185,7 +185,12 @@ describe("size percent input wiring", () => {
 	it("keeps the desktop slider and tick marks without percentage shortcut buttons", () => {
 		expect(DESKTOP_SLIDER_USAGE).toContain("value={sliderValue}");
 		expect(DESKTOP_SLIDER_USAGE).toContain("onPercentChange={handleSizePercentApply}");
-		expect(DESKTOP_SLIDER_USAGE).toContain("disabled={isFormDisabled || maxSize <= 0}");
+		expect(DESKTOP_SLIDER_USAGE).toContain("disabled={isSizeSliderDisabled}");
+		expect(DESKTOP_SLIDER_USAGE).toContain("paused={isSizeSliderPaused}");
+		expect(TRADE_FORM_FIELDS_SOURCE).toContain("const isSizeSliderPaused = isConnected && isAvailabilityBlocked;");
+		expect(TRADE_FORM_FIELDS_SOURCE).toContain(
+			"const isSizeSliderDisabled = !isSizeSliderPaused && (isFormDisabled || maxSize <= 0);",
+		);
 		expect(TRADE_FORM_FIELDS_SOURCE).not.toContain("SliderTickMarks");
 		expect(TRADE_FORM_FIELDS_SOURCE).not.toContain("Math.abs(sliderValue - pct)");
 		expect(TRADE_FORM_FIELDS_SOURCE).not.toContain("{pct}%");

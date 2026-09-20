@@ -914,6 +914,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				<MobileTradeSizeControl
 					canUsePercent={!isFormDisabled && maxSize > 0}
 					disabled={isFormDisabled}
+					sliderPaused={isConnected && isAvailabilityBlocked}
 					errorId={validationSnapshot.hasSizeError ? validationErrorId : undefined}
 					hasError={validationSnapshot.hasSizeError}
 					interactionIdentity={sliderInteractionIdentity}

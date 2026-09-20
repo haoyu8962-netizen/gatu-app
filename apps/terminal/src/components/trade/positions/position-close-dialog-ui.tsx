@@ -168,6 +168,7 @@ interface PositionCloseSizingControlsProps {
 	szDecimals: number;
 	symbol: string;
 	disabled: boolean;
+	paused: boolean;
 	errorId?: string;
 	hasDescribedError: boolean;
 	visibleSizingError: string | null;
@@ -187,6 +188,7 @@ export function PositionCloseSizingControls({
 	szDecimals,
 	symbol,
 	disabled,
+	paused,
 	errorId,
 	hasDescribedError,
 	visibleSizingError,
@@ -314,7 +316,8 @@ export function PositionCloseSizingControls({
 					onPercentCommit={handleSliderCommit}
 					onPercentInteractionStart={handleSliderInteractionStart}
 					onPercentInteractionEnd={handleSliderInteractionEnd}
-					disabled={disabled}
+					disabled={disabled && !paused}
+					paused={paused}
 					ariaLabel={t`Close percentage slider`}
 					ariaDescribedBy={hasDescribedError ? errorId : undefined}
 					ariaInvalid={visibleSizingError !== null}

@@ -180,6 +180,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
 	const canDismiss = phase === "idle" || phase === "reconciling";
 	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatus === null;
+	const isSizingPaused = phase === "idle" && !isPending && !isReconciling && isPositionDataPending(positionStatus);
 	const visibleError =
 		positionStatusMessage ?? error ?? (positionStatus === null ? (priceError ?? visibleSizingError) : null);
 	const canSubmit = canEdit && priceValid && sizing.errors.length === 0;
@@ -375,6 +376,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 					szDecimals={position.szDecimals}
 					symbol={sizeSymbol}
 					disabled={!canEdit}
+					paused={isSizingPaused}
 					errorId={errorId}
 					hasDescribedError={visibleError !== null}
 					visibleSizingError={visibleSizingError}
@@ -467,6 +469,10 @@ interface PositionStatusInput {
 	isStale: boolean;
 	hasValidLivePosition: boolean;
 	liveDirectionMatches: boolean;
+}
+
+function isPositionDataPending(status: PositionStatus): boolean {
+	return status === "loading" || status === "unavailable" || status === "stale";
 }
 
 function getPositionStatus({

@@ -26,6 +26,7 @@ type SliderAuditWindow = Window & {
 		stop: () => SliderAuditSnapshot;
 	};
 	__gatuSliderPointerId?: number;
+	__gatuSliderSetPaused: (paused: boolean) => void;
 };
 
 test.beforeEach(async ({ page }) => {
@@ -127,6 +128,41 @@ test("keeps publishing previews while the pointer moves faster than the preview 
 
 	await dispatchPointer(session, "mouseReleased", percentX(geometry, 90), y, 0);
 	expect(await readValue(page)).toBeCloseTo(90, 0);
+	expect((await stopAudit(page)).commitCallbacks).toBe(1);
+});
+
+test("keeps focus and the gesture when the value source pauses mid-drag, then resumes and commits", async ({ page }) => {
+	const geometry = await getControlGeometry(page);
+	const y = geometry.top + geometry.height / 2;
+	const control = page.locator("[data-trade-slider-control]").first();
+	const input = page.getByRole("slider", { name: "Size percentage", exact: true });
+	await resetAudit(page);
+	await page.mouse.move(percentX(geometry, 25), y);
+	await page.mouse.down();
+	await page.mouse.move(percentX(geometry, 60), y, { steps: 6 });
+	await expect.poll(async () => (await stopAuditSnapshot(page)).previewCallbacks).toBeGreaterThanOrEqual(1);
+	const previewsBeforePause = (await stopAuditSnapshot(page)).previewCallbacks;
+
+	await page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderSetPaused(true));
+	await page.waitForTimeout(80);
+	await expect(control).toHaveAttribute("data-dragging", "true");
+	await expect(input).toBeFocused();
+	expect(await input.evaluate((element) => (element as HTMLInputElement).disabled)).toBe(false);
+	await expect(input).toHaveAttribute("aria-disabled", "true");
+
+	await page.mouse.move(percentX(geometry, 80), y, { steps: 6 });
+	await page.waitForTimeout(80);
+	expect((await stopAuditSnapshot(page)).previewCallbacks).toBe(previewsBeforePause);
+	expect(await readThumbPercent(page)).toBeCloseTo(80, 0);
+	await expect(control).toHaveAttribute("data-dragging", "true");
+
+	await page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderSetPaused(false));
+	await expect.poll(async () => (await stopAuditSnapshot(page)).previewCallbacks).toBe(previewsBeforePause + 1);
+	await expect(input).not.toHaveAttribute("aria-disabled", "true");
+
+	await page.mouse.up();
+	await expect(control).not.toHaveAttribute("data-dragging", "true");
+	expect(await readValue(page)).toBeCloseTo(80, 0);
 	expect((await stopAudit(page)).commitCallbacks).toBe(1);
 });
 
@@ -313,6 +349,10 @@ async function resetAudit(page: Page): Promise<void> {
 
 async function stopAudit(page: Page): Promise<SliderAuditSnapshot> {
 	return page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPerf.stop());
+}
+
+async function stopAuditSnapshot(page: Page): Promise<SliderAuditSnapshot> {
+	return page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPerf.snapshot());
 }
 
 async function readValue(page: Page): Promise<number> {

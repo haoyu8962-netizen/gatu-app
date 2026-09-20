@@ -27,6 +27,7 @@ interface Props {
 	onInteractionEnd?: () => void;
 	interactionIdentity?: string;
 	disabled?: boolean;
+	paused?: boolean;
 	showTicks?: boolean;
 	ariaLabel: string;
 	ariaValueText?: string;
@@ -66,9 +67,33 @@ function progressFor(value: number, min: number, max: number): number {
 	return max > min ? (clamp(value, min, max) - min) / (max - min) : 0;
 }
 
+function isRangeUnavailable(disabled: boolean | undefined, paused: boolean | undefined, min: number, max: number) {
+	return !!disabled || !!paused || !Number.isFinite(min) || !Number.isFinite(max) || max <= min;
+}
+
+function getKeyboardTarget(key: string, previous: number, min: number, max: number, rtl: boolean): number {
+	if (key === "Home") return min;
+	if (key === "End") return max;
+	if (key === "PageUp") return previous + 10;
+	if (key === "PageDown") return previous - 10;
+	if (key === "ArrowUp" || key === (rtl ? "ArrowLeft" : "ArrowRight")) return previous + 1;
+	return previous - 1;
+}
+
 export function TradeSlider(props: Props) {
-	const { value, min, max, disabled, showTicks, ariaLabel, ariaValueText, ariaDescribedBy, ariaInvalid, className } =
-		props;
+	const {
+		value,
+		min,
+		max,
+		disabled,
+		paused,
+		showTicks,
+		ariaLabel,
+		ariaValueText,
+		ariaDescribedBy,
+		ariaInvalid,
+		className,
+	} = props;
 	const direction = useDirection();
 	const inputId = useId();
 	const controlRef = useRef<HTMLDivElement>(null);
@@ -86,7 +111,7 @@ export function TradeSlider(props: Props) {
 	const latestRef = useRef({ ...props, direction });
 	const initialProgress = useRef(progressFor(value, min, max));
 	const initialRtl = useRef(direction === "rtl");
-	const unavailable = disabled || !Number.isFinite(min) || !Number.isFinite(max) || max <= min;
+	const unavailable = isRangeUnavailable(disabled, paused, min, max);
 
 	function paint(progress: number, rtl: boolean, width?: number) {
 		const normalized = clamp(progress, 0, 1);
@@ -111,6 +136,15 @@ export function TradeSlider(props: Props) {
 		const current = latestRef.current;
 		const normalized = Math.round(clamp(nextValue, current.min, current.max));
 		if (inputRef.current) inputRef.current.value = String(normalized);
+	}
+
+	function syncInputAvailability(isUnavailable: boolean) {
+		const input = inputRef.current;
+		if (!input) return;
+		const heldWhileUnavailable = isUnavailable && dragRef.current !== null;
+		input.disabled = isUnavailable && !heldWhileUnavailable;
+		if (heldWhileUnavailable) input.setAttribute("aria-disabled", "true");
+		else input.removeAttribute("aria-disabled");
 	}
 
 	function clearTasks() {
@@ -146,10 +180,15 @@ export function TradeSlider(props: Props) {
 				paint(session.progress, session.rtl, session.width);
 			});
 		}
-		if (timerRef.current !== null || session.draftValue === session.lastPublishedValue) return;
+		armPreview(session);
+	}
+
+	function armPreview(session: DragSession) {
+		if (latestRef.current.paused || timerRef.current !== null) return;
+		if (session.draftValue === session.lastPublishedValue) return;
 		timerRef.current = setTimeout(() => {
 			timerRef.current = null;
-			if (dragRef.current !== session || !isCurrent(session)) return;
+			if (dragRef.current !== session || !isCurrent(session) || latestRef.current.paused) return;
 			if (session.draftValue === session.lastPublishedValue) return;
 			session.lastPublishedValue = session.draftValue;
 			updateNativeValue(session.draftValue);
@@ -160,7 +199,7 @@ export function TradeSlider(props: Props) {
 	function finish(pointerId: number, commit: boolean, event?: Event, clientX?: number) {
 		const session = dragRef.current;
 		if (!session || session.pointerId !== pointerId) return;
-		const valid = isCurrent(session);
+		const valid = isCurrent(session) && !latestRef.current.paused;
 		if (commit && valid && clientX !== undefined && clientX !== session.clientX) {
 			session.didMove = true;
 			schedule(session, clientX);
@@ -187,6 +226,7 @@ export function TradeSlider(props: Props) {
 			paint(progressFor(restored, current.min, current.max), current.direction === "rtl");
 			current.onCancel(session.startValue);
 		}
+		syncInputAvailability(isRangeUnavailable(current.disabled, current.paused, current.min, current.max));
 		current.onInteractionEnd?.();
 	}
 
@@ -282,20 +322,7 @@ export function TradeSlider(props: Props) {
 		event.stopPropagation();
 		const previous = keyboardIntentRef.current ?? Math.round(clamp(value, min, max));
 		const rtl = direction === "rtl";
-		const next =
-			event.key === "Home"
-				? min
-				: event.key === "End"
-					? max
-					: previous +
-						(event.key === "PageUp"
-							? 10
-							: event.key === "PageDown"
-								? -10
-								: event.key === "ArrowUp" || event.key === (rtl ? "ArrowLeft" : "ArrowRight")
-									? 1
-									: -1);
-		commitDiscrete(next, event.nativeEvent, "keyboard");
+		commitDiscrete(getKeyboardTarget(event.key, previous, min, max, rtl), event.nativeEvent, "keyboard");
 	}
 
 	function handleNativeInput(event: FormEvent<HTMLInputElement>) {
@@ -313,6 +340,13 @@ export function TradeSlider(props: Props) {
 		latestRef.current = { ...props, direction };
 		const session = dragRef.current;
 		if (session && !isCurrent(session)) finish(session.pointerId, false);
+		else if (session && paused && timerRef.current !== null) {
+			clearTimeout(timerRef.current);
+			timerRef.current = null;
+		} else if (session?.didChange && previous.paused && !paused) {
+			session.lastPublishedValue = Number.NaN;
+			armPreview(session);
+		}
 		if (
 			previous.interactionIdentity !== props.interactionIdentity ||
 			previous.min !== min ||
@@ -326,6 +360,7 @@ export function TradeSlider(props: Props) {
 		if (!active) {
 			paint(progressFor(value, min, max), direction === "rtl");
 		}
+		syncInputAvailability(unavailable);
 	});
 
 	useBrowserLayoutEffect(() => () => disposeRef.current?.(), []);

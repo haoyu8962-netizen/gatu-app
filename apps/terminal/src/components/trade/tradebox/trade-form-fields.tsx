@@ -137,6 +137,8 @@ export function TradeFormFields({
 		useOrderEntryActions();
 
 	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
+	const isSizeSliderPaused = isConnected && isAvailabilityBlocked;
+	const isSizeSliderDisabled = !isSizeSliderPaused && (isFormDisabled || maxSize <= 0);
 
 	const twapOrder = isTwapOrderType(orderType);
 	const scaleOrder = isScaleOrderType(orderType);
@@ -353,7 +355,8 @@ export function TradeFormFields({
 							onPercentCommit={sliderInteraction.onPercentCommit}
 							onPercentInteractionStart={sliderInteraction.onPercentInteractionStart}
 							onPercentInteractionEnd={sliderInteraction.onPercentInteractionEnd}
-							disabled={isFormDisabled || maxSize <= 0}
+							disabled={isSizeSliderDisabled}
+							paused={isSizeSliderPaused}
 							ariaLabel={`${t(TRADE_PANEL_LABELS.size)} (%)`}
 							ariaDescribedBy={hasDisplayedSizeError ? sizeErrorId : undefined}
 							ariaInvalid={hasDisplayedSizeError || undefined}
