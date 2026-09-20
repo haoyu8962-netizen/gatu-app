@@ -50,3 +50,7 @@
 - 代码：`stores/use-global-modal-store.ts`、`hooks/trade/use-position-market-close-submit.ts`、`components/trade/positions/position-market-close-modal.tsx`、`components/trade/components/global-modals.tsx`、`components/trade/order-reconciliation.tsx`。
 - 测试：`position-market-close-session.test.tsx`、`position-market-close-submit.test.tsx`、`position-market-close-modal.test.tsx`、`position-market-close-action.test.tsx`、`order-reconciliation.test.tsx`、`global-modals-hip3-disclaimer.test.tsx`。
 - 验证命令与本次执行结果见任务记录。
+
+## 后续
+
+- 2026-09-20：[ADR 0017](0017-market-close-confirmed-size-ceiling.md) 在不改变本决策的前提下，把确认按钮改为静态动词，并以点击时展示的数量作为执行上限；提交入口因此多了一个必填的 `confirmedCloseSize`。

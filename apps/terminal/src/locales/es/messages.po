@@ -1540,6 +1540,10 @@ msgstr "El tamaño de cierre debe ser un número decimal"
 msgid "Close size must be greater than zero"
 msgstr "El tamaño de cierre debe ser mayor que cero"
 
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close size: {formattedCloseSize} {sizeSymbol}"
+msgstr "Tamaño de cierre: {formattedCloseSize} {sizeSymbol}"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Close staking action"
 msgstr "Cerrar la acción de staking"
@@ -2748,6 +2752,10 @@ msgstr "PnL estimado"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Estimated PnL after trigger"
 msgstr "PnL estimado tras la activación"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Estimated PnL excludes fees"
+msgstr "El PnL estimado no incluye comisiones"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4196,12 +4204,13 @@ msgstr "Actualmente, los clics de mercado cierran de inmediato la posición comp
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Cierre a mercado"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Market Close {formattedCloseSize} {sizeSymbol}"
-msgstr "Cerrar a mercado {formattedCloseSize} {sizeSymbol}"
+#~ msgid "Market Close {formattedCloseSize} {sizeSymbol}"
+#~ msgstr "Cerrar a mercado {formattedCloseSize} {sizeSymbol}"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Market close confirmation"
@@ -7776,6 +7785,14 @@ msgstr "La página carga una instantánea de ejecuciones recientes. Exporta el C
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "La página que buscas no existe."
+
+#: src/lib/trade/position-submit-feedback.ts
+msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
+msgstr "La posición aumentó después de su confirmación, por lo que no se cerró nada. Vuelva a abrir Cierre a mercado para revisar el nuevo tamaño."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "The position size has changed since you opened this dialog. Review the close size before submitting."
+msgstr "El tamaño de la posición cambió desde que abrió este cuadro. Revise el tamaño de cierre antes de enviar."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

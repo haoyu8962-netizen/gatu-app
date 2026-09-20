@@ -38,6 +38,7 @@
 
 当前规范：[docs/mobile-data-presentation.md](../../docs/mobile-data-presentation.md) · [docs/price-source-audit.md](../../docs/price-source-audit.md) · [docs/terminal-loading-audit.md](../../docs/terminal-loading-audit.md)
 
+- [市价平仓：点击时展示的数量作为执行上限，确认按钮改为静态动词](sessions/2026-09-20-market-close-confirmed-size.md) — 2026-09-20；已验证，范围见正文。在 dev 5ea5d625 上用测试复现：确认弹窗展示 2.5，点击后实时仓位在规划前增长到 2.6，Max 意图发出 2.6（50% 展示 1.25 发出 1.3），既有守卫全部通过。按 ADR 0017 修复：按钮改为静态 Market Close，弹窗把该次渲染展示的数量作为必填上限传入提交，重算结果超出即以 close-size-exceeds-confirmed 失败关闭；弹窗期间仓位数量与开窗时不同给出提示；预估盈亏注明不含手续费。新增跨展示与承诺边界的测试和 TradingActionButton 标签契约测试，九个变异体全部被杀死；全量单测、类型检查、两个生产构建通过。确立确认面契约，目前只有市价平仓完整满足。
 - [移动端六个表面迁移到共享占位视图](sessions/2026-09-16-mobile-views-migration.md) — 2026-09-16；已整理，验证见正文。表面 6 六个移动表面与外框改用共享纯视图；旧 class 模块删除，浏览器服务被 EPERM 阻止，盒子实测待 reviewer。
 - [移除启动占位体系](sessions/2026-09-16-remove-startup-placeholders.md) — 2026-09-16；已整理，验证见正文。按 ADR 0010 移除启动占位；类型、格式、翻译与全部产物预算通过，全量测试保留已知基线失败，完整构建受沙箱 preview 监听限制。
 - [热访问启动：为什么第 2..n 次仍出现占位壳，以及经核实的改进计划](sessions/2026-09-16-warm-visit-startup-plan.md) — 2026-09-16；已整理，验证见正文。三次连续访问实测：热访问壳 0.16–0.28 s、真实终端 0.43–0.65 s（4× CPU 1.36–1.42 s，全是 JS 求值与 provider 挂载）；官方站热访问空白 1.4–1.7 s（4× 3.1–3.6 s）且资源每次重验证，照抄是回归。真正多余的等待是持久化目录丢失（尾沿节流无隐藏时写回）、24 h 播种上限、壳 HTML 每次 304。P1 三项已实现；Round 2 修复 SW 响应体克隆竞态并实现 Markets Activity 与弹窗 matchMedia 两项 P2。未发布，性能与真机复测待完成。
@@ -116,6 +117,7 @@
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md)
 
 - [字体实践审查：对照官方终端，修复图表字体栈、共享字号刻度、错误页字体并迁移等值任意字号](sessions/2026-09-20-font-practice-review.md) — 2026-09-20；已验证，范围见正文。webfont 加载契约合规；图表 iframe 里的 IBM Plex 从未生效，改为系统字体栈（iframe 内新旧栈 measureText 80 组完全相同）；packages/ui 字号刻度对齐规范并加契约测试；bootstrap 错误页不再依赖 webfont；相对单位字号纳入棘轮。经用户授权，同一字面量内带显式 leading-* 的 127 处任意 px 字号迁移为命名刻度（棘轮 240→113，浏览器前后计算样式零差异）；其余 87 处无显式行高、26 处无等值刻度仍是受控债务。移动端图表与生产构建未验证。
+- [市价平仓：点击时展示的数量作为执行上限，确认按钮改为静态动词](sessions/2026-09-20-market-close-confirmed-size.md) — 2026-09-20；已验证，范围见正文。在 dev 5ea5d625 上用测试复现：确认弹窗展示 2.5，点击后实时仓位在规划前增长到 2.6，Max 意图发出 2.6（50% 展示 1.25 发出 1.3），既有守卫全部通过。按 ADR 0017 修复：按钮改为静态 Market Close，弹窗把该次渲染展示的数量作为必填上限传入提交，重算结果超出即以 close-size-exceeds-confirmed 失败关闭；弹窗期间仓位数量与开窗时不同给出提示；预估盈亏注明不含手续费。新增跨展示与承诺边界的测试和 TradingActionButton 标签契约测试，九个变异体全部被杀死；全量单测、类型检查、两个生产构建通过。确立确认面契约，目前只有市价平仓完整满足。
 - [工作分支先进 dev、CI 按目标分支分层与测试移出矩阵](sessions/2026-09-19-ci-tiers-dev-first-flow.md) — 2026-09-19；已整理，验证见正文。修复 portfolio-overview 的时钟竞态后评估 Worker→dev→main 闸门：4 路矩阵重复跑同一批测试、全量单测并行下 45 红、main/dev 无保护。落地 ADR 0016：PR 目标写明 dev，4 路构建与浏览器回归只对进 main 的 PR 运行，测试移入 terminal-tests.yml 只跑一次，合入 concurrency；main 保护规则未执行，GitHub 侧触发行为待首个 PR 验证。
 - [Connect Wallet 按钮悬停态：去掉整体淡出，补上暗色面板按钮的悬停反馈](sessions/2026-09-19-connect-cta-hover-states.md) — 2026-09-19；已整理，验证见正文。头部 Connect Wallet 同时用 hover:bg-action-hover 和 hover:opacity-90，暗色下两者抵消（#edeef2 → 合成约 #e7e8e9，反而略暗）且 opacity 不在过渡列表里会跳变；订单面板同名按钮暗色下静止与悬停填充同为 6% 白。改为只走 action 令牌、过渡含 scale，面板暗色悬停用 fill-press（12% 白）。暗色下两个同名按钮一实心一幽灵的层级差异未动，待设计决定。
 - [暗色浮层与遮罩改为终端色相，并修复语言菜单禁用文字](sessions/2026-09-19-dark-overlay-hue-family.md) — 2026-09-19；已整理，验证见正文。实测暗色下菜单 bg-overlay 仍是共享库紫灰 #292b33（色相 228°）、遮罩仍是藏蓝 #000626，而终端基色是青黑 #0f1a1f（199°）；改为等亮度的 #212d33 与 #03090ca8，语言菜单禁用文字由 12% 白改为 60% 白（1.46:1 → 6.09:1）。圆角、字体、菜单皮肤重复等其余审查项未处理。
@@ -146,6 +148,7 @@
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
 | 2026-09-20 | [字体实践审查：对照官方终端，修复图表字体栈、共享字号刻度、错误页字体并迁移等值任意字号](sessions/2026-09-20-font-practice-review.md) | 未取得任务标识，见正文 | `3b0a84cb91dd322725c7c0b16a4403dae36fe29a` | 已验证，范围见正文 |
+| 2026-09-20 | [市价平仓：点击时展示的数量作为执行上限，确认按钮改为静态动词](sessions/2026-09-20-market-close-confirmed-size.md) | 未取得任务标识，见正文 | `5ea5d625f9e91705aa53d1511419b26d674112d4` | 已验证，范围见正文 |
 | 2026-09-20 | [配对页加固（A 批）：头部内联擦除、阻断说明页、路径规范、Service Worker 放行、StrictMode](sessions/2026-09-20-pairing-page-hardening.md) | 未取得任务标识，见正文 | `ab2874e1` | 已整理，验证见正文 |
 | 2026-09-20 | [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) | 未取得任务标识，见正文 | `d6cc4f3e9ffed0a7ba0092493fa161846be8c52f` | 已整理，验证见正文 |
 | 2026-09-19 | [按四条方案改造 PR 检查，并与同日的首版 CI 分层合并整理](sessions/2026-09-19-ci-restructure.md) | 未取得任务标识，见正文 | `9f875c65` | 已整理，验证见正文 |

@@ -8,6 +8,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The Market Close confirmation button always reads `Market Close`; the size being closed stays in
+  the `Close size` field above it (and in the button's accessible description). The size shown when
+  you click is now a ceiling: the close size is still recalculated from the latest position, and if
+  that result is larger than what was shown, nothing is closed and a notice asks you to reopen
+  Market Close and review the new size. Max and percentage closes follow a position that shrank; a
+  typed size is sent as typed and is still rejected when the remaining position is smaller. While
+  the dialog is open it says when the position size differs from when it was opened, and a line
+  under the button states that the estimated PnL excludes fees.
 - `/build-meta.json` also reports which gated deposit paths the build exposes (`cctpDeposits`). The
   CloudFront release refuses to upload a build that exposes sponsored Mainnet deposits or Mobile
   Agent pairing unless the operator acknowledges it with `--allow-sponsored-mainnet-deposits` or

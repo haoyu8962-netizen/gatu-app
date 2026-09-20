@@ -21,6 +21,7 @@ export type PositionSubmitFeedbackCode =
 	| "close-percent-range"
 	| "close-size-below-precision"
 	| "close-size-decimal"
+	| "close-size-exceeds-confirmed"
 	| "close-size-exceeds-position"
 	| "close-size-positive"
 	| "coordination-unavailable"
@@ -70,6 +71,7 @@ const messages: Record<PositionSubmitFeedbackCode, MessageDescriptor> = {
 	"close-percent-range": msg`Close percentage must be between 0 and 100`,
 	"close-size-below-precision": msg`Close size is below market precision`,
 	"close-size-decimal": msg`Close size must be a decimal number`,
+	"close-size-exceeds-confirmed": msg`The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size.`,
 	"close-size-exceeds-position": msg`Close size exceeds current position`,
 	"close-size-positive": msg`Close size must be greater than zero`,
 	"coordination-unavailable": msg`Safe order coordination across tabs is unavailable in this browser.`,
@@ -241,6 +243,8 @@ function getDefaultPositionSubmitFeedbackMessage(feedback: PositionSubmitFeedbac
 			return "Close size is below market precision";
 		case "close-size-decimal":
 			return "Close size must be a decimal number";
+		case "close-size-exceeds-confirmed":
+			return "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size.";
 		case "close-size-exceeds-position":
 			return "Close size exceeds current position";
 		case "close-size-positive":

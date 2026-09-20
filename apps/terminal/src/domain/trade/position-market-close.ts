@@ -46,6 +46,19 @@ export function formatPositionMarketClosePercent(percent: string): string {
 	return value.round(1, Big.roundDown).toFixed(1).replace(/\.0$/, "");
 }
 
+export function hasPositionMarketCloseSizeChanged(
+	openedSignedPositionSize: string,
+	liveSignedPositionSize: string | undefined,
+): boolean {
+	const openedSize = SIGNED_DECIMAL_PATTERN.test(openedSignedPositionSize) ? toBig(openedSignedPositionSize) : null;
+	const liveSize =
+		liveSignedPositionSize !== undefined && SIGNED_DECIMAL_PATTERN.test(liveSignedPositionSize)
+			? toBig(liveSignedPositionSize)
+			: null;
+	if (!openedSize || !liveSize) return false;
+	return !openedSize.eq(liveSize);
+}
+
 export function estimatePositionMarketClosePnl(input: PositionMarketClosePnlEstimateInput): string | null {
 	const positionSize = SIGNED_DECIMAL_PATTERN.test(input.signedPositionSize) ? toBig(input.signedPositionSize) : null;
 	const closeSize = UNSIGNED_DECIMAL_INPUT_PATTERN.test(input.normalizedCloseSize)

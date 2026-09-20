@@ -60,6 +60,9 @@ const zhTranslations: Record<string, string> = {
 	"Close percentage": "平仓比例",
 	"Close percentage slider": "平仓比例滑杆",
 	"Don't show this confirmation again": "以后不再提示",
+	"Estimated PnL excludes fees": "预估盈亏不含手续费",
+	"The position size has changed since you opened this dialog. Review the close size before submitting.":
+		"自打开此弹窗以来仓位数量已变化，请在提交前核对平仓数量。",
 };
 
 function getMessageId(message: string): string {
@@ -344,9 +347,8 @@ describe("PositionMarketCloseModal", () => {
 			max: 100,
 			step: 1,
 		});
-		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.textContent).toContain(
-			"Market Close 1.2500 BTC",
-		);
+		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.textContent).toBe("Market Close");
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("1.2500");
 		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).not.toBeNull();
 		expect(testState.checkboxProps).toMatchObject({
 			controlClassName: expect.stringContaining("size-5 !rounded-[5px]"),
@@ -369,6 +371,7 @@ describe("PositionMarketCloseModal", () => {
 		});
 		expect(testState.submit).toHaveBeenCalledWith({
 			sessionId: "session-1",
+			confirmedCloseSize: "2.5",
 			dismissFutureConfirmation: false,
 		});
 	});
@@ -466,6 +469,7 @@ describe("PositionMarketCloseModal", () => {
 		});
 		expect(testState.submit).toHaveBeenCalledWith({
 			sessionId: "session-1",
+			confirmedCloseSize: "1.25",
 			dismissFutureConfirmation: true,
 		});
 	});
@@ -528,8 +532,115 @@ describe("PositionMarketCloseModal", () => {
 		});
 		expect(testState.submit).toHaveBeenCalledWith({
 			sessionId: "session-1",
+			confirmedCloseSize: "2.5",
 			dismissFutureConfirmation: false,
 		});
+	});
+
+	it.each([
+		["Max", { kind: "max" } as const, "2.6000", "2.6"],
+		["a percentage", { kind: "percent", value: "50" } as const, "1.3000", "1.3"],
+		["a manual size", { kind: "size", value: "1.1" } as const, "1.1", "1.1"],
+	])(
+		"keeps a static confirm label and confirms the size shown for %s as the live position moves",
+		async (_label, sizingIntent, shownSize, confirmedCloseSize) => {
+			testState.session.sizingIntent = sizingIntent;
+			render();
+			testState.livePosition = { szi: "2.6", entryPx: "100000", unrealizedPnl: "-50" };
+			render();
+
+			const submitButton = container.querySelector<HTMLButtonElement>('[data-testid="submit"]');
+			expect(submitButton?.textContent).toBe("Market Close");
+			expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe(shownSize);
+
+			await act(async () => {
+				submitButton?.click();
+			});
+			expect(testState.submit).toHaveBeenCalledTimes(1);
+			expect(testState.submit).toHaveBeenCalledWith({
+				sessionId: "session-1",
+				confirmedCloseSize,
+				dismissFutureConfirmation: false,
+			});
+		},
+	);
+
+	it("describes the confirm control with the shown size instead of naming it after the size", () => {
+		testState.session.sizingIntent = { kind: "percent", value: "50" };
+		render();
+
+		const describedBy = String(testState.actionButtonProps?.["aria-describedby"]).split(" ");
+		expect(describedBy).toHaveLength(2);
+		const [sizeDescription, helper] = describedBy.map((id) => container.querySelector<HTMLElement>(`#${id}`));
+		expect(sizeDescription?.textContent).toBe("Close size: 1.2500 BTC");
+		expect(sizeDescription?.className).toBe("sr-only");
+		expect(sizeDescription?.getAttribute("aria-live")).toBeNull();
+		expect(helper?.textContent).toBe("Click to submit · Filled trades cannot be reversed");
+	});
+
+	it("states that the PnL estimate excludes fees only while the estimate is shown", () => {
+		render();
+		expect(container.textContent).toContain("Estimated PnL excludes fees");
+		expect(getSummaryValue("Estimated PnL")).not.toBeNull();
+
+		render({ showPnl: false });
+		expect(container.textContent).not.toContain("Estimated PnL excludes fees");
+		expect(getSummaryValue("Estimated PnL")).toBeNull();
+	});
+
+	it("announces a changed position size without gating submit on the notice", () => {
+		const getNotice = () => container.querySelector<HTMLElement>('[data-testid="position-market-close-size-changed"]');
+		render();
+		expect(getNotice()).toBeNull();
+
+		testState.livePosition = { szi: "2.5000", entryPx: "100000", unrealizedPnl: "-50" };
+		render();
+		expect(getNotice()).toBeNull();
+
+		testState.livePosition = { szi: "2.6", entryPx: "100000", unrealizedPnl: "-50" };
+		render();
+		expect(getNotice()?.tagName).toBe("OUTPUT");
+		expect(getNotice()?.getAttribute("aria-live")).toBe("polite");
+		expect(getNotice()?.textContent).toBe(
+			"The position size has changed since you opened this dialog. Review the close size before submitting.",
+		);
+		expect(getSummaryValue("Available to close")?.textContent).toBe("2.6000 BTC");
+		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(false);
+
+		testState.livePosition = { szi: "2.5", entryPx: "100000", unrealizedPnl: "-50" };
+		render();
+		expect(getNotice()).toBeNull();
+	});
+
+	it("keeps the changed-size notice out of closed, flipped, unreadable, dismissed and closing dialogs", () => {
+		const getNotice = () => container.querySelector<HTMLElement>('[data-testid="position-market-close-size-changed"]');
+
+		testState.livePosition = null;
+		render();
+		expect(getNotice()).toBeNull();
+
+		testState.livePosition = { szi: "-2.6", entryPx: "100000", unrealizedPnl: "-50" };
+		render();
+		expect(getNotice()).toBeNull();
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain("This position changed sides");
+
+		testState.livePosition = { szi: "2.6", entryPx: "100000", unrealizedPnl: "-50" };
+		testState.positionIsStale = true;
+		render();
+		expect(getNotice()).toBeNull();
+
+		testState.positionIsStale = false;
+		testState.session.presentation = "dismissed";
+		testState.session.phase = "validating";
+		render();
+		expect(getNotice()).toBeNull();
+
+		testState.session.presentation = "confirmation";
+		testState.session.phase = "idle";
+		render();
+		expect(getNotice()).not.toBeNull();
+		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
+		expect(getNotice()).toBeNull();
 	});
 
 	it("keeps zero disabled without presenting it as an error", () => {
@@ -615,10 +726,20 @@ describe("PositionMarketCloseModal", () => {
 
 		act(() => checkbox?.click());
 		expect(checkbox?.checked).toBe(true);
+		testState.livePosition = { szi: "2.6", entryPx: "100000", unrealizedPnl: "-50" };
+		render();
+		const notice = container.querySelector<HTMLElement>('[data-testid="position-market-close-size-changed"]');
+		const submitButton = container.querySelector<HTMLButtonElement>('[data-testid="submit"]');
+		expect(notice).not.toBeNull();
 		act(() => activateLocale("zh"));
 
 		expect(container.querySelector("h2 span")).toBe(title);
 		expect(title?.textContent).toBe("市价平仓");
+		expect(container.querySelector('[data-testid="position-market-close-size-changed"]')).toBe(notice);
+		expect(notice?.textContent).toBe("自打开此弹窗以来仓位数量已变化，请在提交前核对平仓数量。");
+		expect(container.querySelector('[data-testid="submit"]')).toBe(submitButton);
+		expect(submitButton?.textContent).toBe("市价平仓");
+		expect(container.textContent).toContain("预估盈亏不含手续费");
 		expect(container.querySelector('[data-testid="position-market-close-summary"]')).toBe(summary);
 		expect(summary?.getAttribute("aria-label")).toBe("持仓摘要");
 		expect(container.querySelector('[role="slider"]')).toBe(slider);

@@ -107,6 +107,14 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Default desktop geometry fits all eight ordinary order-entry types without internal scrolling; keep the order-type header outside the overflow region and validate real forms, not only synthetic tall content.
 - Order-entry content must not resize the desktop grid: Market/Limit, advanced-order fields and feedback adapt within the trading panel while chart, order-book and account boundaries, internal scrolling and user-selected grid geometry stay intact. The embedded mobile form must not own its own vertical scroll viewport, and market data must never drive measured height state.
 
+## Confirmation surface contract
+
+- `docs/confirmation-surfaces.md` owns this contract, its review checklist and the list of surfaces that do not meet it yet; `docs/adr/0017-market-close-confirmed-size-ceiling.md` records the tradeoffs. Check that list before assuming a dialog complies.
+- Execution may recompute from fresher data, but never beyond what the user saw at the click. A confirmation surface passes the value it displayed into the submit path as a bound and fails closed when the recomputed value exceeds it. The direction of the bound belongs to each action; for close size it is executed ≤ displayed.
+- The ready-state name of a confirm control is a static verb. Runtime quantities, prices and counts belong in the dialog body, from the same render value that is submitted; an accessible description may repeat it, the control's name may not.
+- When the object being confirmed differs from what the dialog opened with, say so next to the value to review, only while the confirmation is visible and editable, and never gate submission on the notice.
+- A redesign that changes what a confirm control displays or commits to is a behavior change: document it and keep a test that renders the real dialog with the real submit path and compares the displayed value with the value sent. Testing the dialog and the submit hook separately does not cover this.
+
 ## Startup rendering contract
 
 - `docs/adr/0010-blank-until-ready-startup.md` and `.claude/rules/startup-rendering.md` own this contract. Every application route prerenders and hydrates the same visually empty `StartupFallback`: `aria-busy` and one screen-reader-only output, with no visible skeleton or chrome.
@@ -183,6 +191,15 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trade-form-twap-advanced.test.tsx \
   src/lib/tests/trade-form-compact-fields.test.tsx \
   src/lib/tests/trade-form-tp-sl.test.tsx
+
+# Confirmation surfaces (see docs/confirmation-surfaces.md)
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/position-market-close-display-commit.test.tsx \
+  src/lib/tests/position-market-close-submit.test.tsx \
+  src/lib/tests/position-market-close-modal.test.tsx \
+  src/lib/tests/position-market-close-action.test.tsx \
+  src/lib/tests/position-market-close.test.ts \
+  src/lib/tests/trading-action-button-label-contract.test.ts
 
 # Startup rendering (see .claude/rules/startup-rendering.md)
 pnpm --dir apps/terminal exec vitest run \

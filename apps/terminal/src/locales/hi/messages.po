@@ -1540,6 +1540,10 @@ msgstr "क्लोज़ आकार एक दशमलव संख्य�
 msgid "Close size must be greater than zero"
 msgstr "क्लोज़ आकार शून्य से अधिक होना चाहिए"
 
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close size: {formattedCloseSize} {sizeSymbol}"
+msgstr "क्लोज़ आकार: {formattedCloseSize} {sizeSymbol}"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Close staking action"
 msgstr "स्टेकिंग कार्रवाई बंद करें"
@@ -2748,6 +2752,10 @@ msgstr "अनुमानित PnL"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Estimated PnL after trigger"
 msgstr "ट्रिगर के बाद अनुमानित PnL"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Estimated PnL excludes fees"
+msgstr "अनुमानित PnL में फ़ीस शामिल नहीं है"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4196,12 +4204,13 @@ msgstr "इस खाते और नेटवर्क के लिए मा
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Market क्लोज़"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Market Close {formattedCloseSize} {sizeSymbol}"
-msgstr "मार्केट क्लोज़ {formattedCloseSize} {sizeSymbol}"
+#~ msgid "Market Close {formattedCloseSize} {sizeSymbol}"
+#~ msgstr "मार्केट क्लोज़ {formattedCloseSize} {sizeSymbol}"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Market close confirmation"
@@ -7776,6 +7785,14 @@ msgstr "पेज हाल के फ़िल का एक स्नैपश
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।"
+
+#: src/lib/trade/position-submit-feedback.ts
+msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
+msgstr "आपकी पुष्टि के बाद पोज़िशन बढ़ गई, इसलिए कुछ भी क्लोज़ नहीं किया गया। नया आकार देखने के लिए Market क्लोज़ फिर से खोलें।"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "The position size has changed since you opened this dialog. Review the close size before submitting."
+msgstr "इस संवाद को खोलने के बाद से पोज़िशन का आकार बदल गया है। सबमिट करने से पहले क्लोज़ आकार जाँचें।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

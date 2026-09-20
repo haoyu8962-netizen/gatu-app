@@ -4,6 +4,7 @@ import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import {
 	estimatePositionMarketClosePnl,
+	hasPositionMarketCloseSizeChanged,
 	resolvePositionMarketClosePercent,
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
@@ -119,10 +120,15 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
 	const visibleError = positionStatusMessage ?? (positionStatus === null ? visibleSizingError : null);
 	const canSubmit = canEdit && !isSizingInteractionActive && sizing.errors.length === 0;
+	const showPositionSizeChanged =
+		canEdit &&
+		session.presentation === "confirmation" &&
+		hasPositionMarketCloseSizeChanged(position.signedPositionSize, livePosition?.szi);
 	const confirmationPreferenceAlreadyDismissed =
 		readPositionMarketCloseConfirmationPreference({ owner: session.owner, env: session.env }) === "dismissed";
 	const errorId = `position-market-close-error-${sessionId}`;
 	const helperId = `position-market-close-helper-${sessionId}`;
+	const closeSizeDescriptionId = `position-market-close-size-${sessionId}`;
 	const marketInfo = getMarketInfo(position.coin);
 	const sizeSymbol = marketInfo?.shortName ?? position.coin.split(":").pop() ?? position.coin;
 	const displayMarkPx = marketInfo?.markPx ?? position.markPx;
@@ -194,7 +200,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 
 	function handleSubmit() {
 		if (!canSubmit || sizingInteractionActiveRef.current) return;
-		return submit({ sessionId, dismissFutureConfirmation });
+		return submit({ sessionId, confirmedCloseSize: sizing.normalizedSize, dismissFutureConfirmation });
 	}
 
 	return (
@@ -264,6 +270,19 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 					/>
 				</PositionCloseSizingControls>
 
+				{showPositionSizeChanged && (
+					<output
+						data-testid="position-market-close-size-changed"
+						aria-live="polite"
+						className="flex items-start gap-2 rounded-8 bg-warning-soft p-2.5 text-xs text-warning"
+					>
+						<WarningIcon className="mt-0.5 size-3.5 shrink-0" weight="fill" aria-hidden="true" />
+						<span className="leading-relaxed">
+							{t`The position size has changed since you opened this dialog. Review the close size before submitting.`}
+						</span>
+					</output>
+				)}
+
 				{visibleError && (
 					<div
 						id={errorId}
@@ -294,15 +313,19 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 					disabled={!canSubmit}
 					intent="error"
 					size="lg"
-					aria-describedby={helperId}
+					aria-describedby={`${closeSizeDescriptionId} ${helperId}`}
 					containerClassName="w-full items-stretch"
 					className="relative min-h-0 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger py-[15px] text-[15px] leading-[21px] font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-none hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted min-[1001px]:py-[14px]"
 				>
-					{t`Market Close ${formattedCloseSize} ${sizeSymbol}`}
+					{t`Market Close`}
 				</TradingActionButton>
-				<p id={helperId} className="text-center text-xs leading-[17px] text-market-close-subtle">
-					{t`Click to submit · Filled trades cannot be reversed`}
-				</p>
+				<span id={closeSizeDescriptionId} className="sr-only">
+					{t`Close size: ${formattedCloseSize} ${sizeSymbol}`}
+				</span>
+				<div className="flex flex-col gap-0.5 text-center text-xs leading-[17px] text-market-close-subtle">
+					<p id={helperId}>{t`Click to submit · Filled trades cannot be reversed`}</p>
+					{showPnl && <p>{t`Estimated PnL excludes fees`}</p>}
+				</div>
 			</PositionCloseDialogFooter>
 		</PositionCloseDialogShell>
 	);

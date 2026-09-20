@@ -171,7 +171,7 @@ describe("usePositionMarketCloseAction", () => {
 			sizingIntent: { kind: "max" },
 		});
 		expect(mocks.submit).toHaveBeenCalledOnce();
-		expect(mocks.submit).toHaveBeenCalledWith({ sessionId: firstSessionId });
+		expect(mocks.submit).toHaveBeenCalledWith({ sessionId: firstSessionId, confirmedCloseSize: null });
 	});
 
 	it("honors the dismissed confirmation preference on mobile when every gate is ready", () => {
@@ -186,7 +186,7 @@ describe("usePositionMarketCloseAction", () => {
 			presentation: "direct",
 			sizingIntent: { kind: "max" },
 		});
-		expect(mocks.submit).toHaveBeenCalledWith({ sessionId: session?.sessionId });
+		expect(mocks.submit).toHaveBeenCalledWith({ sessionId: session?.sessionId, confirmedCloseSize: null });
 	});
 
 	it.each([

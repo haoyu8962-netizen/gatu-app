@@ -1540,6 +1540,10 @@ msgstr "يجب أن يكون حجم الإغلاق رقماً عشرياً"
 msgid "Close size must be greater than zero"
 msgstr "يجب أن يكون حجم الإغلاق أكبر من صفر"
 
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close size: {formattedCloseSize} {sizeSymbol}"
+msgstr "حجم الإغلاق: {formattedCloseSize} {sizeSymbol}"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Close staking action"
 msgstr "إغلاق إجراء التخزين"
@@ -2748,6 +2752,10 @@ msgstr "الأرباح والخسائر المقدرة"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Estimated PnL after trigger"
 msgstr "الأرباح والخسائر المتوقعة بعد التفعيل"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Estimated PnL excludes fees"
+msgstr "الأرباح والخسائر المقدرة لا تشمل الرسوم"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4196,12 +4204,13 @@ msgstr "يؤدي النقر على الإغلاق بسعر السوق حاليً
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "إغلاق بسعر السوق"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Market Close {formattedCloseSize} {sizeSymbol}"
-msgstr "إغلاق بسعر السوق {formattedCloseSize} {sizeSymbol}"
+#~ msgid "Market Close {formattedCloseSize} {sizeSymbol}"
+#~ msgstr "إغلاق بسعر السوق {formattedCloseSize} {sizeSymbol}"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Market close confirmation"
@@ -7776,6 +7785,14 @@ msgstr "تحمّل الصفحة لقطة واحدة لعمليات التنفي�
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "الصفحة التي تبحث عنها غير موجودة."
+
+#: src/lib/trade/position-submit-feedback.ts
+msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
+msgstr "زاد حجم المركز بعد تأكيدك، لذلك لم يتم إغلاق أي شيء. أعد فتح إغلاق بسعر السوق لمراجعة الحجم الجديد."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "The position size has changed since you opened this dialog. Review the close size before submitting."
+msgstr "تغيّر حجم المركز منذ فتح مربع الحوار هذا. راجع حجم الإغلاق قبل الإرسال."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
