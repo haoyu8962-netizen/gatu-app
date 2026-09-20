@@ -7565,6 +7565,10 @@ msgstr "Testnet preview; market link disabled"
 msgid "Testnet queue: approximately five minutes"
 msgstr "Testnet queue: approximately five minutes"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "That link could not be opened safely, so nothing was loaded. Create a new QR on your desktop and scan it again."
+msgstr "That link could not be opened safely, so nothing was loaded. Create a new QR on your desktop and scan it again."
+
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "The account activation fee changed before signing. Review the updated fee and try again."
@@ -7884,6 +7888,7 @@ msgstr "The signed request may have succeeded, but reconciliation timed out. Do 
 msgid "The start and end values are unchanged."
 msgstr "The start and end values are unchanged."
 
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx

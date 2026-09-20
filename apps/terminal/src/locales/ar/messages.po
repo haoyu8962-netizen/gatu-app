@@ -7565,6 +7565,10 @@ msgstr "معاينة Testnet؛ رابط السوق معطّل"
 msgid "Testnet queue: approximately five minutes"
 msgstr "طابور شبكة الاختبار: نحو خمس دقائق"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "That link could not be opened safely, so nothing was loaded. Create a new QR on your desktop and scan it again."
+msgstr ""
+
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "تغيرت رسوم تفعيل الحساب قبل التوقيع. راجع الرسوم المحدّثة وحاول مرة أخرى."
@@ -7884,6 +7888,7 @@ msgstr "ربما نجح الطلب الموقّع، لكن انتهت مهلة �
 msgid "The start and end values are unchanged."
 msgstr "لم تتغير قيمتا البداية والنهاية."
 
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx

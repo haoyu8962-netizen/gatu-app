@@ -7565,6 +7565,10 @@ msgstr "Vista previa de testnet; enlace del mercado deshabilitado"
 msgid "Testnet queue: approximately five minutes"
 msgstr "Cola Testnet: aproximadamente cinco minutos"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "That link could not be opened safely, so nothing was loaded. Create a new QR on your desktop and scan it again."
+msgstr ""
+
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "La comisión de activación de la cuenta cambió antes de la firma. Revisa la comisión actualizada e inténtalo de nuevo."
@@ -7884,6 +7888,7 @@ msgstr "Es posible que la solicitud firmada se haya completado, pero la concilia
 msgid "The start and end values are unchanged."
 msgstr "Los valores inicial y final no cambian."
 
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx

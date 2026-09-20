@@ -539,6 +539,22 @@ have an install capability.
   reintroduced. Both `VITE_MOBILE_PAIRING_*` build flags stay off in
   production until the physical-device acceptance in
   `docs/mobile-sync-ticketless-transfer-plan.md` has been run and recorded.
+- The pairing fragment leaves the address bar from the shell's first script
+  element (`docs/pairing-page-hardening-plan.md`). That inline script is
+  rendered from `lib/mobile-sync/pairing-location.ts` by
+  `apps/terminal/scripts/render-pairing-head-scrub.mjs` and committed; never
+  edit `head-scrub-script.generated.ts` by hand, keep the source file free of
+  imports, and keep the script ahead of every other script in `RootDocument`
+  (`scripts/check-shell-head-scrub.mjs` fails the build otherwise). The client
+  entry runs the same function as the second line of defence and alone decides
+  whether the application may hydrate: a scrub that failed, or a captured link
+  that can no longer be handed over, shows the multilingual notice instead.
+- Every path spelling the router accepts for the pairing page is scrubbed
+  (ASCII case, one percent-decoding); deeper or undecodable paths are scrubbed
+  and refused. `classifyPairingPath` is the only place that decides this.
+- The service worker never answers a pairing navigation: the shared cached
+  shell would carry another route's response headers and could be a release
+  behind. The edge functions give that page `no-store` and `no-referrer`.
 - The mobile Email and WalletConnect entries launch Privy with explicit login
   methods; wallet selection remains Ethereum-only. An authenticated user takes
   the explicit reconnect path instead of starting a new login flow.
@@ -567,6 +583,9 @@ have an install capability.
 - `apps/terminal/src/components/trade/header/user-menu.tsx`
 - `apps/terminal/src/stores/use-global-modal-store.ts`
 - `apps/terminal/src/routes/mobile-agent-sync.tsx`
+- `apps/terminal/src/lib/mobile-sync/pairing-location.ts`
+- `apps/terminal/src/lib/mobile-sync/bootstrap-fragment.ts`
+- `apps/terminal/src/client.ts`
 - `apps/terminal/src/edge/lambda-handler.ts`
 - `apps/terminal/src/providers/pwa-install.tsx`
 - `apps/terminal/src/config/seo.ts`
@@ -585,6 +604,11 @@ have an install capability.
 - `apps/terminal/src/lib/tests/mobile-agent-sync-modal.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-agent-qr-scanner.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-agent-sync-route.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-sync-pairing-location.test.ts`
+- `apps/terminal/src/lib/tests/mobile-sync-bootstrap-fragment.test.ts`
+- `apps/terminal/src/lib/tests/client-bootstrap-error.test.ts`
+- `apps/terminal/src/lib/tests/sw-navigation-cache.test.ts`
+- `scripts/check-shell-head-scrub.test.mjs`
 
 ## 9. Development And Browser Test Caches
 
