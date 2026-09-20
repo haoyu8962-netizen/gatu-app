@@ -148,6 +148,19 @@ jobs:
           src/lib/tests/leverage-modal.test.tsx
           src/lib/tests/margin-mode-modal.test.tsx
 
+      - name: Test slider gesture lifecycles
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          tests/trade-size-slider-pointer-lifecycle.test.tsx
+          tests/trade-size-slider-deferred-commit-race.test.tsx
+          tests/position-close-slider-effective-aria.test.tsx
+          src/lib/tests/trade-size-slider.test.tsx
+          src/lib/tests/trade-size-slider-a11y.test.tsx
+          src/lib/tests/leverage-slider.test.tsx
+          src/lib/tests/use-size-slider-interaction.test.tsx
+          src/lib/tests/size-percent-input.test.tsx
+
       - name: Test TradingView integration
         working-directory: apps/terminal
         run: >-
