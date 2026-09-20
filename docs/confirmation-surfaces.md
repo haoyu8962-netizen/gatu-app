@@ -23,7 +23,7 @@
 
 | 不变量 | 实现 | 回归 |
 | --- | --- | --- |
-| 1 | 确认按钮文案为静态 `Market Close`；数量通过 `aria-describedby` 指向的 sr-only 描述提供给辅助技术，不进入按钮名称，也不使用 assertive 播报（`components/trade/positions/position-market-close-modal.tsx`） | `trading-action-button-label-contract.test.ts`、`position-market-close-modal.test.tsx` |
+| 1 | 确认按钮文案为静态 `Market Close`；数量通过 `aria-describedby` 指向的 sr-only 描述提供给辅助技术，不进入按钮名称，也不使用 assertive 播报。滑杆手势期间的提交锁用 ref 实现：`handleSubmit()` 里拦截，同一个 ref 作为 `isActivationLocked` 交给 `TradingActionButton`，连未就绪时的 `Enable` 分支一并拦住；手势锁本身不改变按钮的 `disabled` 与样式（数量为零、仓位不可读时仍照常禁用）。这是应产品负责人对本弹窗的要求做的，与其余三个带滑杆的交易面不同，见下节（`components/trade/positions/position-market-close-modal.tsx`） | `trading-action-button-label-contract.test.ts`、`position-market-close-modal.test.tsx`、`position-market-close-display-commit.test.tsx`（手势期间的点击不关闭弹窗、不发平仓请求）、`trading-action-button.test.tsx`（真实按钮在锁定时既不启用交易也不执行动作） |
 | 2 | `Close size` 输入框、sr-only 描述与 `handleSubmit()` 传出的 `confirmedCloseSize` 都来自同一次渲染的 `sizing.normalizedSize` | `position-market-close-modal.test.tsx`（实时仓位移动后，三种意图下传出的值等于输入框所示） |
 | 3 | `usePositionMarketCloseSubmit().submit()` 的必填参数 `confirmedCloseSize: string \| null`：确认会话必须是正数，直提会话（不出弹窗）必须是 `null`，`dismissed` 会话不是合法入口；校验在 `try` 内、取锁与任何请求之前，失败走统一的通知与会话释放。用最新仓位重算后若大于上限，以 `close-size-exceeds-confirmed` 失败关闭；小于等于放行。固定数量意图在仓位不足时仍按原规则拒绝，不自动缩量 | `position-market-close-submit.test.tsx`、`position-market-close-display-commit.test.tsx` |
 | 4 | `hasPositionMarketCloseSizeChanged`（`domain/trade/position-market-close.ts`）用开窗快照与当前仓位纯推导，无 effect、无历史状态；数量回到开窗值时提示消失。只在 `presentation === "confirmation"`、`phase === "idle"`、未开始关闭且仓位状态正常时渲染 `<output aria-live="polite">` | `position-market-close.test.ts`、`position-market-close-modal.test.tsx` |
@@ -39,10 +39,26 @@
 | --- | --- |
 | 全部平仓 `position-close-all-modal.tsx` | 就绪态名称含实时仓位数（`Close # positions`），不满足第 1 条；已在标签契约测试里登记为已知例外。展示 → 承诺的核对未做 |
 | 杠杆调整 `tradebox/leverage-modal.tsx` | 成功态 `Updated to {n}x` 是事后反馈，按第 1 条豁免，已登记 |
-| 限价平仓、反手、下单确认、TP/SL、逐仓保证金、保证金模式、现货兑换 | 就绪态名称为静态动词或经由已登记的变量。展示 → 承诺的核对未做；下单确认的 `useOrderConfirmation` 同时快照输入与草稿并在确认时复核，属于另一种满足第 3 条的方式，但没有第 5 条那样的测试 |
+| 限价平仓 `position-limit-close-modal.tsx` | 展示 → 承诺的核对未做 |
+| 反手、下单确认、TP/SL、逐仓保证金、保证金模式、现货兑换 | 就绪态名称为静态动词或经由已登记的变量。展示 → 承诺的核对未做；下单确认的 `useOrderConfirmation` 同时快照输入与草稿并在确认时复核，属于另一种满足第 3 条的方式，但没有第 5 条那样的测试 |
 | 发送、划转、充值、提现、撤单 | 使用普通 `Button` 或各自的组件，**不在**标签契约测试的发现范围内，未核对 |
 
 `trading-action-button-label-contract.test.ts` 只覆盖渲染 `TradingActionButton` 的文件，名称如此，覆盖范围也如此。它用 TypeScript AST 检查该按钮子节点里的插值模板、`<Plural>`、带值的 `<Trans>` 与字符串拼接，并登记经由变量给出的名称；变量、属性、函数调用等它无法判断的表达式按源码文本登记，内容要靠人审查。发现按文件聚合：一个文件开始或停止渲染该按钮、或者登记的表达式集合变化时测试失败，借此要求对照本文审查一次；在已登记文件里再加一个只用静态动词的按钮不会触发。
+
+## 手势期间是否把提交按钮置灰（待产品决定）
+
+「滑杆手势期间锁定提交」是[滑杆交互契约](slider-interactions.md)的要求，四个带滑杆的交易面都用 ref 在提交路径里实现。区别只在外观：
+
+| 交易面 | 手势期间的按钮 |
+| --- | --- |
+| 桌面下单 `tradebox/trade-panel.tsx` | 置灰（`disabled={… \|\| isSizeInteracting}`） |
+| 移动下单 `mobile/mobile-trade-view.tsx` | 置灰（`canSubmit: … && !isSizeInteracting`） |
+| 限价平仓 `positions/position-limit-close-modal.tsx` | 置灰（`isSizingInteractionActive` 进入 `canSubmit`） |
+| 市价平仓 `positions/position-market-close-modal.tsx` | 不置灰（ADR 0017 追加） |
+
+单指操作时拖动中点不到按钮，置灰不携带信息，只让主按钮在每次触碰滑杆时闪一下；按 2026-09-20 对官方前端包的静态阅读，其平仓按钮的禁用条件里没有手势项。是否把另外三个交易面也改成不置灰，涉及主下单表单，需要产品负责人决定后另立任务；在此之前四个面不一致是已知状态。
+
+手势锁属于输入协调，不是可用性：资金、行情、签名、地区等可用性仍然必须用显式布尔值禁用按钮（[移动端数据展示规范](mobile-data-presentation.md)），不能改成这种静默的 ref。锁随手势结束而解除；焦点离开滑杆会取消手势并恢复起始值，此后的确认针对的是当时屏幕上已恢复的值。
 
 ## 审查清单
 

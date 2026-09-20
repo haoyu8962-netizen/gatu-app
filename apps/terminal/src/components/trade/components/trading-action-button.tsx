@@ -15,6 +15,7 @@ interface Props extends Omit<ButtonProps, "onClick"> {
 	containerClassName?: string;
 	holdDurationMs?: number;
 	holdProgressClassName?: string;
+	isActivationLocked?: () => boolean;
 	requireReadyConfirmation?: boolean;
 	requiresBuilderFee?: boolean;
 }
@@ -25,6 +26,7 @@ export function TradingActionButton({
 	containerClassName,
 	holdDurationMs,
 	holdProgressClassName,
+	isActivationLocked,
 	requireReadyConfirmation = false,
 	requiresBuilderFee = true,
 	disabled,
@@ -50,12 +52,13 @@ export function TradingActionButton({
 	const buttonDisabled = disabled || isEnabling || (!isReady && !needsTrading);
 
 	const runProtectedAction = useCallback(() => {
+		if (isActivationLocked?.()) return;
 		if (requireReadyConfirmation && !isReady) {
 			enableTrading();
 			return;
 		}
 		guardAction(onClick);
-	}, [enableTrading, guardAction, isReady, onClick, requireReadyConfirmation]);
+	}, [enableTrading, guardAction, isActivationLocked, isReady, onClick, requireReadyConfirmation]);
 	const {
 		handlers: holdHandlers,
 		isHolding,

@@ -39,6 +39,7 @@ const mocks = vi.hoisted(() => ({
 	executeOrder: vi.fn(),
 	executionGuard: undefined as ((params: unknown) => void) | undefined,
 	guardCalls: 0,
+	sliderProps: null as Record<string, unknown> | null,
 	toastSuccess: vi.fn(),
 	toastError: vi.fn(),
 	toastWarning: vi.fn(),
@@ -135,14 +136,23 @@ vi.mock("@/components/ui/number-input", () => ({
 }));
 
 vi.mock("@/components/trade/components/trade-size-slider", () => ({
-	TradeSizeSlider: () => null,
+	TradeSizeSlider: (props: Record<string, unknown>) => {
+		mocks.sliderProps = props;
+		return null;
+	},
 }));
 
 vi.mock("@/components/trade/components/trading-action-button", () => ({
-	TradingActionButton: (props: { children: ReactNode; onClick: () => void; disabled?: boolean }) =>
+	TradingActionButton: (props: { children: ReactNode; className?: string; onClick: () => void; disabled?: boolean }) =>
 		createElement(
 			"button",
-			{ type: "button", "data-testid": "submit", disabled: Boolean(props.disabled), onClick: props.onClick },
+			{
+				type: "button",
+				"data-testid": "submit",
+				className: props.className,
+				disabled: Boolean(props.disabled),
+				onClick: props.onClick,
+			},
 			props.children,
 		),
 }));
@@ -254,6 +264,7 @@ describe("market close: the size shown at the click bounds the size that is sent
 		mocks.restSize = "2.500";
 		mocks.guardCalls = 0;
 		mocks.executionGuard = undefined;
+		mocks.sliderProps = null;
 		Object.defineProperty(window.navigator, "locks", {
 			configurable: true,
 			value: {
@@ -351,6 +362,33 @@ describe("market close: the size shown at the click bounds the size that is sent
 		expect(Big(sent).lte(Big(shown))).toBe(true);
 		expect(mocks.toastError).not.toHaveBeenCalled();
 		expect(mocks.toastSuccess).toHaveBeenCalledTimes(1);
+	});
+
+	it("sends nothing for a tap that lands while the size slider is being dragged", async () => {
+		openDialog({ kind: "max" });
+		const classNameAtRest = getSubmitButton().className;
+		expect(classNameAtRest).toContain("bg-market-close-danger");
+
+		act(() => (mocks.sliderProps?.onPercentInteractionStart as () => void)());
+		act(() => (mocks.sliderProps?.onPercentChange as (value: number) => void)(40));
+		expect(getShownCloseSize()).toBe("1.000");
+		expect(getSubmitButton().disabled).toBe(false);
+		expect(getSubmitButton().className).toBe(classNameAtRest);
+
+		await act(async () => {
+			getSubmitButton().click();
+			await Promise.resolve();
+		});
+		expect(getPositionMarketCloseModal()).toMatchObject({ presentation: "confirmation", phase: "idle" });
+		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+		expect(mocks.mutateOrder).not.toHaveBeenCalled();
+
+		act(() => (mocks.sliderProps?.onPercentCommit as (value: number) => void)(40));
+		act(() => (mocks.sliderProps?.onPercentInteractionEnd as () => void)());
+		await confirmThenMovePosition("2.500");
+
+		expect(getSentSizes()).toEqual(["1"]);
+		expect(mocks.toastError).not.toHaveBeenCalled();
 	});
 
 	it("confirms the repriced size when the live position moved before the click", async () => {

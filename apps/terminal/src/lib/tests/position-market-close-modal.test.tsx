@@ -474,34 +474,57 @@ describe("PositionMarketCloseModal", () => {
 		});
 	});
 
-	it.each(["cancel", "commit", "no-move"])("locks submit throughout a slider gesture ending with %s", (ending) => {
-		testState.session.sizingIntent = { kind: "size", value: "1.0000" };
-		render();
-		const submitBeforeStart = testState.actionButtonProps?.onClick as () => void;
-		act(() => {
-			(testState.sliderProps?.onPercentInteractionStart as () => void)();
-			submitBeforeStart();
-		});
-		expect(testState.submit).not.toHaveBeenCalled();
-		expect(testState.actionButtonProps?.disabled).toBe(true);
-		expect(testState.sliderProps?.disabled).toBe(false);
+	it.each(["cancel", "commit", "no-move"])(
+		"ignores confirm during a slider gesture ending with %s without greying the button",
+		async (ending) => {
+			testState.session.sizingIntent = { kind: "size", value: "1.0000" };
+			render();
+			const submitBeforeStart = testState.actionButtonProps?.onClick as () => void;
+			const getSubmitButton = () => container.querySelector<HTMLButtonElement>('[data-testid="submit"]');
+			const classNameBeforeStart = getSubmitButton()?.className;
 
-		if (ending !== "no-move") {
-			act(() => (testState.sliderProps?.onPercentChange as (value: number) => void)(75));
 			act(() => {
-				const callback = ending === "cancel" ? "onPercentCancel" : "onPercentCommit";
-				(testState.sliderProps?.[callback] as (value: number) => void)(75);
+				(testState.sliderProps?.onPercentInteractionStart as () => void)();
+				submitBeforeStart();
 			});
-			if (ending === "cancel") {
-				expect(testState.setSizingIntent).toHaveBeenLastCalledWith("session-1", { kind: "size", value: "1.0000" });
-			}
-			expect(testState.actionButtonProps?.disabled).toBe(true);
-		}
+			act(() => getSubmitButton()?.click());
+			expect(testState.submit).not.toHaveBeenCalled();
+			expect(testState.actionButtonProps?.disabled).toBe(false);
+			expect((testState.actionButtonProps?.isActivationLocked as () => boolean)()).toBe(true);
+			expect(getSubmitButton()?.className).toBe(classNameBeforeStart);
+			expect(testState.sliderProps?.disabled).toBe(false);
 
-		act(() => (testState.sliderProps?.onPercentInteractionEnd as () => void)());
-		expect(testState.actionButtonProps?.disabled).toBe(false);
-		expect(testState.submit).not.toHaveBeenCalled();
-	});
+			if (ending !== "no-move") {
+				act(() => (testState.sliderProps?.onPercentChange as (value: number) => void)(75));
+				act(() => getSubmitButton()?.click());
+				act(() => {
+					const callback = ending === "cancel" ? "onPercentCancel" : "onPercentCommit";
+					(testState.sliderProps?.[callback] as (value: number) => void)(75);
+				});
+				if (ending === "cancel") {
+					expect(testState.setSizingIntent).toHaveBeenLastCalledWith("session-1", { kind: "size", value: "1.0000" });
+				}
+				act(() => getSubmitButton()?.click());
+				expect(testState.submit).not.toHaveBeenCalled();
+				expect(testState.actionButtonProps?.disabled).toBe(false);
+			}
+
+			act(() => (testState.sliderProps?.onPercentInteractionEnd as () => void)());
+			expect(testState.actionButtonProps?.disabled).toBe(false);
+			expect((testState.actionButtonProps?.isActivationLocked as () => boolean)()).toBe(false);
+			expect(testState.submit).not.toHaveBeenCalled();
+
+			await act(async () => {
+				getSubmitButton()?.click();
+			});
+			expect(testState.submit).toHaveBeenCalledTimes(1);
+			expect(testState.submit).toHaveBeenCalledWith({
+				sessionId: "session-1",
+				confirmedCloseSize: "1",
+				dismissFutureConfirmation: false,
+			});
+		},
+	);
 
 	it("includes the live account and network in the slider identity and rejects the old drag", () => {
 		render();

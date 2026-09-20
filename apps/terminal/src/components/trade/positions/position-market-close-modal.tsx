@@ -45,7 +45,6 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	const isMobile = useIsMobile();
 	const [dismissFutureConfirmation, setDismissFutureConfirmation] = useState(false);
 	const [isClosing, setIsClosing] = useState(false);
-	const [isSizingInteractionActive, setIsSizingInteractionActive] = useState(false);
 	const sizingInteractionActiveRef = useRef(false);
 	const session = usePositionMarketCloseSession();
 	const actions = usePositionMarketCloseActions();
@@ -119,7 +118,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
 	const visibleError = positionStatusMessage ?? (positionStatus === null ? visibleSizingError : null);
-	const canSubmit = canEdit && !isSizingInteractionActive && sizing.errors.length === 0;
+	const canSubmit = canEdit && sizing.errors.length === 0;
 	const showPositionSizeChanged =
 		canEdit &&
 		session.presentation === "confirmation" &&
@@ -195,7 +194,10 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 
 	function handleSizingInteractionChange(interacting: boolean) {
 		sizingInteractionActiveRef.current = interacting;
-		setIsSizingInteractionActive(interacting);
+	}
+
+	function isSizingGestureActive() {
+		return sizingInteractionActiveRef.current;
 	}
 
 	function handleSubmit() {
@@ -309,6 +311,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 			<PositionCloseDialogFooter>
 				<TradingActionButton
 					onClick={handleSubmit}
+					isActivationLocked={isSizingGestureActive}
 					requireReadyConfirmation
 					disabled={!canSubmit}
 					intent="error"

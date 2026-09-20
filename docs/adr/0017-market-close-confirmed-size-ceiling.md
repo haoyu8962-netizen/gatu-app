@@ -59,3 +59,15 @@
 - 测试：`position-market-close-display-commit.test.tsx`（新增，跨边界）、`position-market-close-submit.test.tsx`、`position-market-close-modal.test.tsx`、`position-market-close-action.test.tsx`、`position-market-close.test.ts`、`trading-action-button-label-contract.test.ts`（新增）、`i18n-reactivity-contract.test.ts`（补登记弹窗与共享尺寸控件）。
 - 方案评审：2026-09-20 由 Codex（`gpt-6-astra`，只读）评审；它纠正了最初方案里的复现时序、入口校验的位置、提示的生命周期、失败文案，并要求收窄契约的覆盖声明，均已采纳。
 - 验证命令、变异自检与本次执行结果见任务记录。
+
+## 追加（2026-09-20，同一分支，合并前）
+
+产品负责人查看弹窗后指出：拖动滑杆时确认按钮会变灰，不符合确认控件的做法。
+
+核对结果：「手势期间锁定提交」是[滑杆交互契约](../slider-interactions.md)的要求。四个带滑杆的交易面——桌面下单（`trade-panel.tsx`）、移动下单（`mobile-trade-view.tsx`）、限价平仓、市价平仓——都用 ref 在提交路径里拦截，**并且都**另有一个 state 让提交按钮在手势期间禁用，所以每次触碰滑杆按钮都会闪成禁用态。这是全站一致的既有做法，不是市价平仓独有的缺陷。（本节初稿曾写「主下单表单只用 ref、按钮外观不变」，依据的是一次漏掉 `isSizeInteracting` 的检索，是错的；Codex 审查指出后已更正。）单指操作时拖动中点不到按钮，置灰不携带信息；按本会话对官方前端包的静态阅读，其平仓按钮的禁用条件只有数量为零或超量，没有手势项（未经账户实测）。
+
+决策 7：市价平仓弹窗的手势锁不再改变按钮外观。删除 `isSizingInteractionActive` 状态，按钮是否可用只取决于内容能否提交；锁保留为 ref，在 `handleSubmit()` 里拦截，并通过 `TradingActionButton` 新增的可选属性 `isActivationLocked` 在按钮内部最先检查，因此未就绪时的 `Enable`（可能触发授权签名）在手势期间同样被忽略。其余九个使用该按钮的文件不传此属性，行为不变。
+
+边界：另外三个交易面仍然置灰，四个面因此暂时不一致；是否统一涉及主下单表单，由产品负责人决定后另立任务，登记在[确认面契约](../confirmation-surfaces.md)。锁随手势结束而解除：焦点离开滑杆会取消手势并恢复起始值，此后的确认针对的是当时屏幕上已恢复的值，仍受决策 3 的上限约束。
+
+回归：`position-market-close-modal.test.tsx`（三种手势结局下按钮不禁用、类名不变、手势中点击不提交、`isActivationLocked` 在手势中为真、结束后点击提交）、`position-market-close-display-commit.test.tsx`（真实提交流程下手势中的点击不关闭弹窗、不发平仓请求）、`trading-action-button.test.tsx`（真实按钮在锁定时既不调用启用交易也不执行动作，解锁后恢复）。变异自检：删除 `handleSubmit()` 里的 ref 守卫，四个用例变红；删除按钮里的锁检查，两个用例变红。Codex 对本追加做了只读审查：未发现 P0/P1，指出的授权分支缺口、上述事实错误与一条空断言均已修复。

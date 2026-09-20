@@ -71,6 +71,16 @@ without changing quantity or issuing a commit.
 once after commit/cancel, including stationary release. Trading forms use these
 boundaries to lock submission while a gesture is active, including the interval
 before the first preview. Keyboard and native-range input commit synchronously.
+Every surface keeps the lock in its submit path through a ref. The desktop order
+form (`trade-panel.tsx`), the mobile order form (`mobile-trade-view.tsx`) and the
+Limit Close dialog also disable their submit control for the duration, so it greys
+out while the slider is held. Market Close does not: it keeps the ref guard in
+`handleSubmit()` and passes the same ref to `TradingActionButton` as
+`isActivationLocked`, which also covers the button's Enable step, and leaves the
+button's enabled state and appearance alone (ADR 0017 addendum). Whether the other
+three surfaces follow is an open product decision. The lock ends with the gesture:
+moving focus off the slider cancels the gesture and restores the starting value, so
+a confirm after that acts on the restored value that is then on screen.
 
 Pointer cancellation, lost capture, window blur, hidden document, resizing,
 unmount, disable, invalid ranges, and changed identity/direction cancel pending
