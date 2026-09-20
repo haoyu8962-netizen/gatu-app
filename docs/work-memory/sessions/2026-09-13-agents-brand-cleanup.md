@@ -10,17 +10,7 @@
   "summary": "AGENTS.md 由 24.7KB 压到 17.7KB：细节回归归属文档，新增 recent-trades.md 与 Order entry 节，每个契约配回归入口；全仓文档、测试夹具、bin 名、死存储键与 deepsec id 的旧品牌清理完成，仅保留两处刻意残留。",
   "thread": null,
   "baseCommit": "32b73f6892fc6882692c8a0964471a26ab63f272",
-  "commits": [
-    "d736df7bf8bdeeb35413f56995d11031ca2f8b60",
-    "80c2361975ab1a6fb4137a96b57e883e302161f2",
-    "61d44a8fc4d793b368989e4b0af3d4a5b004cce7",
-    "683dc7ac6c9b6331f5b3ffd0d4db4d287ca090ad",
-    "f6d850b065add669b29029ddde014b374d5765dd",
-    "95b9e082ca4b9d6e389e1898bafb39de8bd9e644",
-    "7ef764037086731bfd55666b02c01ec72a3e0bb3",
-    "d4794bceab64c17cfa84de8fd44dc6981f995964",
-    "6c4875041533f0b62bb65aeb3816126fb0ce4259"
-  ],
+  "commits": ["d736df7bf8bdeeb35413f56995d11031ca2f8b60", "80c2361975ab1a6fb4137a96b57e883e302161f2", "61d44a8fc4d793b368989e4b0af3d4a5b004cce7", "683dc7ac6c9b6331f5b3ffd0d4db4d287ca090ad", "f6d850b065add669b29029ddde014b374d5765dd", "95b9e082ca4b9d6e389e1898bafb39de8bd9e644", "7ef764037086731bfd55666b02c01ec72a3e0bb3", "d4794bceab64c17cfa84de8fd44dc6981f995964", "6c4875041533f0b62bb65aeb3816126fb0ce4259", "e6221ebb"],
   "sources": [
     { "path": "AGENTS.md" },
     { "path": "docs/recent-trades.md" },

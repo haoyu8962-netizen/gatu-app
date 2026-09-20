@@ -10,7 +10,7 @@
   "summary": "复核 P0/P1/P2 建议，补激活、首次账户和导出恢复，首期改两表与按需查询；纠正 recipient、request ID、index-0、最低额和部署状态推断，生产契约与真实资金验收仍待完成。",
   "thread": null,
   "baseCommit": "8153b7b74cd3bf02d91f9a0eb79a2688b123de9d",
-  "commits": [],
+  "commits": ["965e0590"],
   "sources": [
     {"path": "docs/across-deposit-addresses.md"},
     {"path": "docs/adr/0004-across-deposit-addresses.md"},
