@@ -51,12 +51,20 @@ specified in [`order-draft-lifecycle.md`](./order-draft-lifecycle.md).
 
 ## Scheduling and cleanup
 
-Pointer movement schedules at most one RAF to paint transforms and marks. It resets
-one **15ms trailing timer** for the business preview. RAF never dispatches financial
-calculations, and the timer never waits for RAF. A continuous stream closer than
-15ms apart may produce no intermediate business previews. Release reads its own
-final coordinate, cancels pending work, and synchronously commits that value once.
-A stationary thumb press does not publish a value or commit.
+Pointer movement schedules at most one RAF to paint transforms and marks. It arms
+one **15ms preview timer** unless one is already pending; when the timer fires it
+publishes the draft value of that moment, so consecutive business previews are at
+least 15ms apart and a continuous stream of moves keeps publishing (a throttle).
+RAF never dispatches financial calculations, and the timer never waits for RAF.
+Moves dispatched inside one task cannot publish before that task ends. Release reads
+its own final coordinate, cancels pending work, and synchronously commits that value
+once. A stationary thumb press does not publish a value or commit.
+
+Until 2026-09-20 the timer was reset on every move, as in the official terminal's
+slider. On displays that deliver pointer moves faster than 15ms apart (120Hz and up)
+a continuous drag then published nothing until the pointer paused or released, so
+the size, percentage and order value froze while the thumb moved. The throttle is a
+deliberate improvement over that behaviour, not an alignment with it.
 
 While a pointer session is active, its draft owns both the thumb and the native
 range value. Parent renders, including unchanged or quantity-rounded previews,
@@ -156,7 +164,8 @@ and [Pointer Events](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_ev
 
 Regression coverage includes:
 
-- Exact 14/15ms preview timing, independent painting, final-coordinate flush,
+- Exact 14/15ms preview timing, continued publishing under moves faster than the
+  preview interval, independent painting, final-coordinate flush,
   same-frame reversals, multiple pointers, stationary focus, and all cancellation
   boundaries, including resize and unmount.
 - Held track presses across old-value and quantity-rounded parent renders, plus

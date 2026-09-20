@@ -708,7 +708,7 @@ Do not introduce a lazy/Suspense boundary solely to shrink a measured form's bun
 
 Follow [slider-interactions.md](slider-interactions.md) for the shared quantity and
 leverage interaction contract. A pointer session separates local visual position,
-15ms trailing business previews, and the final synchronous commit. Every terminal
+business previews throttled to one per 15ms, and the final synchronous commit. Every terminal
 path clears pending work on cancellation, invalidation, and unmount. Preserve exact
 business snapshots only in their original eligible identity. End callbacks run even
 when a thumb was pressed without moving, so submission locks cannot remain stuck.

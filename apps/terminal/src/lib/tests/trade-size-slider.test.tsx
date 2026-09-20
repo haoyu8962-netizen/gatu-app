@@ -100,34 +100,49 @@ describe("TradeSlider pointer previews and commits", () => {
 		expect(props.onPreview).toHaveBeenCalledExactlyOnceWith(63);
 	});
 
-	it("publishes only the latest integer value after 15 quiet milliseconds", () => {
+	it("publishes the latest integer value 15 milliseconds after the first unpublished move", () => {
 		const slider = render();
 		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
 		act(() => slider.control.dispatchEvent(pointer("pointermove", 70)));
 		advance(14);
 		expect(props.onPreview).not.toHaveBeenCalled();
 		act(() => slider.control.dispatchEvent(pointer("pointermove", 90)));
-		advance(14);
-		expect(props.onPreview).not.toHaveBeenCalled();
 		advance(1);
 		expect(props.onPreview).toHaveBeenCalledExactlyOnceWith(80);
 		advance(100);
 		expect(props.onPreview).toHaveBeenCalledTimes(1);
 	});
 
-	it("keeps high-frequency movement visual without publishing an unfinished preview", () => {
+	it("skips the pending preview when the pointer returns to the published value", () => {
 		const slider = render();
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 90)));
+		advance(15);
+		expect(props.onPreview).toHaveBeenCalledExactlyOnceWith(80);
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 70)));
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 90)));
+		advance(100);
+		expect(props.onPreview).toHaveBeenCalledTimes(1);
+	});
+
+	it("keeps publishing during movement faster than the preview interval, never closer than 15 ms apart", () => {
+		const slider = render();
+		const publishedAt: number[] = [];
+		vi.mocked(props.onPreview).mockImplementation(() => publishedAt.push(Date.now()));
 		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
 		for (let value = 30; value <= 90; value += 10) {
 			act(() => slider.control.dispatchEvent(pointer("pointermove", 10 + value)));
 			paintFrame();
 			advance(10);
 		}
-		expect(props.onPreview).not.toHaveBeenCalled();
+		expect(vi.mocked(props.onPreview).mock.calls.map(([value]) => value)).toEqual([40, 60, 80]);
+		for (let index = 1; index < publishedAt.length; index++) {
+			expect((publishedAt[index] ?? 0) - (publishedAt[index - 1] ?? 0)).toBeGreaterThanOrEqual(15);
+		}
 		expect(slider.thumb.style.transform).toContain("90px");
 		act(() => document.dispatchEvent(pointer("pointerup", 100)));
 		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(90, expect.objectContaining({ reason: "drag" }));
-		expect(props.onPreview).not.toHaveBeenCalled();
+		expect(props.onPreview).toHaveBeenCalledTimes(3);
 		advance(100);
 		expect(props.onCommit).toHaveBeenCalledTimes(1);
 		expect(frames.size).toBe(0);

@@ -53,6 +53,7 @@ interface DragSession {
 }
 
 const TICKS = [0, 25, 50, 75, 100];
+const PREVIEW_INTERVAL_MS = 15;
 const KEYS = new Set(["ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp", "End", "Home", "PageDown", "PageUp"]);
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -145,16 +146,15 @@ export function TradeSlider(props: Props) {
 				paint(session.progress, session.rtl, session.width);
 			});
 		}
-		if (timerRef.current !== null) clearTimeout(timerRef.current);
-		timerRef.current = null;
-		if (session.draftValue === session.lastPublishedValue) return;
+		if (timerRef.current !== null || session.draftValue === session.lastPublishedValue) return;
 		timerRef.current = setTimeout(() => {
 			timerRef.current = null;
 			if (dragRef.current !== session || !isCurrent(session)) return;
+			if (session.draftValue === session.lastPublishedValue) return;
 			session.lastPublishedValue = session.draftValue;
 			updateNativeValue(session.draftValue);
 			latestRef.current.onPreview(session.draftValue);
-		}, 15);
+		}, PREVIEW_INTERVAL_MS);
 	}
 
 	function finish(pointerId: number, commit: boolean, event?: Event, clientX?: number) {

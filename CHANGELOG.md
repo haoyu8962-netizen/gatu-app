@@ -16,6 +16,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   typed size is sent as typed and is still rejected when the remaining position is smaller. While
   the dialog is open it says when the position size differs from when it was opened, and a line
   under the button states that the estimated PnL excludes fees.
+- Size, percentage and order value now follow a slider continuously on 120Hz and faster displays.
+  Previews used to wait for a 15 ms pause in pointer movement, which never came during a smooth drag
+  on those displays, so the numbers froze until release. They are now published at most once every
+  15 ms while the pointer keeps moving.
 - A slider grabbed while its dialog was still opening no longer snaps back to where it started. The
   dialog's 200 ms scale animation made the slider believe it had been resized and cancel the drag.
 - The Market Close and Limit Close dialogs no longer show the `25% / 50% / 75% / Max` quick buttons. The
