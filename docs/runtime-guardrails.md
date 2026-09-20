@@ -718,6 +718,8 @@ keyed market change must preserve the new form's reset and subsequent edits.
 
 Quantity/close/TP-SL gestures must lock confirmation synchronously from pointer
 start through end; leverage gestures edit drafts and never invoke an API directly.
+The lock is a ref checked first in the submit path, not a disabled state: it must not
+grey or otherwise restyle the submit control (`docs/slider-interactions.md`).
 Slippage persistence requires explicit confirmation. These controls never replace
 wallet, legal, funding, freshness, market identity, or SDK-boundary validation.
 Market orders round protective prices inward to valid ticks, and the final

@@ -15,8 +15,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
   Market Close and review the new size. Max and percentage closes follow a position that shrank; a
   typed size is sent as typed and is still rejected when the remaining position is smaller. While
   the dialog is open it says when the position size differs from when it was opened, and a line
-  under the button states that the estimated PnL excludes fees. The button no longer greys out
-  while the size slider is being dragged; a confirm that lands mid-drag is still ignored.
+  under the button states that the estimated PnL excludes fees.
+- Submit buttons no longer grey out while a slider is being dragged. This applies to the desktop and
+  mobile order forms, Market Close, Limit Close, TP/SL, and the leverage and margin mode dialogs.
+  Dragging no longer affects whether a button looks enabled; everything else that disables it (no
+  size, too large, missing price, unavailable data, a request in flight) is unchanged, and a
+  confirm that lands in the middle of a drag is still ignored.
 - `/build-meta.json` also reports which gated deposit paths the build exposes (`cctpDeposits`). The
   CloudFront release refuses to upload a build that exposes sponsored Mainnet deposits or Mobile
   Agent pairing unless the operator acknowledges it with `--allow-sponsored-mainnet-deposits` or

@@ -71,14 +71,18 @@ without changing quantity or issuing a commit.
 once after commit/cancel, including stationary release. Trading forms use these
 boundaries to lock submission while a gesture is active, including the interval
 before the first preview. Keyboard and native-range input commit synchronously.
-Every surface keeps the lock in its submit path through a ref. The desktop order
-form (`trade-panel.tsx`), the mobile order form (`mobile-trade-view.tsx`) and the
-Limit Close dialog also disable their submit control for the duration, so it greys
-out while the slider is held. Market Close does not: it keeps the ref guard in
-`handleSubmit()` and passes the same ref to `TradingActionButton` as
-`isActivationLocked`, which also covers the button's Enable step, and leaves the
-button's enabled state and appearance alone (ADR 0017 addendum). Whether the other
-three surfaces follow is an open product decision. The lock ends with the gesture:
+The lock is a ref set in the gesture callback, so it takes effect at pointer down
+without waiting for a render. The desktop and mobile order forms read it in
+`handleCtaClick()`, which wraps every action of the submit button, and again in
+`canExecuteOrder()`; Market Close, Limit Close and TP/SL read it in `handleSubmit()`;
+the leverage and margin mode dialogs read a dedicated ref in `handleConfirm()` next to
+the drag draft they display. Dialogs built on `TradingActionButton` also pass it as
+`isActivationLocked`, which the button checks before its Enable step. The gesture
+takes no part in a submit control's `disabled` state or appearance: a single pointer
+cannot reach the button mid-drag, so greying it on every slider touch carried no
+information, and the official terminal's submit conditions have no gesture term (ADR
+0017 addendum, `docs/confirmation-surfaces.md`). Validity, availability and in-flight
+conditions still disable the control as before. The lock ends with the gesture:
 moving focus off the slider cancels the gesture and restores the starting value, so
 a confirm after that acts on the restored value that is then on screen.
 

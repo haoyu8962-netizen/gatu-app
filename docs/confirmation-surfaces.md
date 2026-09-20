@@ -23,7 +23,7 @@
 
 | 不变量 | 实现 | 回归 |
 | --- | --- | --- |
-| 1 | 确认按钮文案为静态 `Market Close`；数量通过 `aria-describedby` 指向的 sr-only 描述提供给辅助技术，不进入按钮名称，也不使用 assertive 播报。滑杆手势期间的提交锁用 ref 实现：`handleSubmit()` 里拦截，同一个 ref 作为 `isActivationLocked` 交给 `TradingActionButton`，连未就绪时的 `Enable` 分支一并拦住；手势锁本身不改变按钮的 `disabled` 与样式（数量为零、仓位不可读时仍照常禁用）。这是应产品负责人对本弹窗的要求做的，与其余三个带滑杆的交易面不同，见下节（`components/trade/positions/position-market-close-modal.tsx`） | `trading-action-button-label-contract.test.ts`、`position-market-close-modal.test.tsx`、`position-market-close-display-commit.test.tsx`（手势期间的点击不关闭弹窗、不发平仓请求）、`trading-action-button.test.tsx`（真实按钮在锁定时既不启用交易也不执行动作） |
+| 1 | 确认按钮文案为静态 `Market Close`；数量通过 `aria-describedby` 指向的 sr-only 描述提供给辅助技术，不进入按钮名称，也不使用 assertive 播报。滑杆手势期间的提交锁用 ref 实现：`handleSubmit()` 里拦截，同一个 ref 作为 `isActivationLocked` 交给 `TradingActionButton`，连未就绪时的 `Enable` 分支一并拦住；手势锁本身不改变按钮的 `disabled` 与样式（数量为零、仓位不可读时仍照常禁用）。全站六个带滑杆的交易面做法一致，见下文「滑杆手势期间不把提交按钮置灰」（`components/trade/positions/position-market-close-modal.tsx`） | `trading-action-button-label-contract.test.ts`、`position-market-close-modal.test.tsx`、`position-market-close-display-commit.test.tsx`（手势期间的点击不关闭弹窗、不发平仓请求）、`trading-action-button.test.tsx`（真实按钮在锁定时既不启用交易也不执行动作） |
 | 2 | `Close size` 输入框、sr-only 描述与 `handleSubmit()` 传出的 `confirmedCloseSize` 都来自同一次渲染的 `sizing.normalizedSize` | `position-market-close-modal.test.tsx`（实时仓位移动后，三种意图下传出的值等于输入框所示） |
 | 3 | `usePositionMarketCloseSubmit().submit()` 的必填参数 `confirmedCloseSize: string \| null`：确认会话必须是正数，直提会话（不出弹窗）必须是 `null`，`dismissed` 会话不是合法入口；校验在 `try` 内、取锁与任何请求之前，失败走统一的通知与会话释放。用最新仓位重算后若大于上限，以 `close-size-exceeds-confirmed` 失败关闭；小于等于放行。固定数量意图在仓位不足时仍按原规则拒绝，不自动缩量 | `position-market-close-submit.test.tsx`、`position-market-close-display-commit.test.tsx` |
 | 4 | `hasPositionMarketCloseSizeChanged`（`domain/trade/position-market-close.ts`）用开窗快照与当前仓位纯推导，无 effect、无历史状态；数量回到开窗值时提示消失。只在 `presentation === "confirmation"`、`phase === "idle"`、未开始关闭且仓位状态正常时渲染 `<output aria-live="polite">` | `position-market-close.test.ts`、`position-market-close-modal.test.tsx` |
@@ -45,29 +45,32 @@
 
 `trading-action-button-label-contract.test.ts` 只覆盖渲染 `TradingActionButton` 的文件，名称如此，覆盖范围也如此。它用 TypeScript AST 检查该按钮子节点里的插值模板、`<Plural>`、带值的 `<Trans>` 与字符串拼接，并登记经由变量给出的名称；变量、属性、函数调用等它无法判断的表达式按源码文本登记，内容要靠人审查。发现按文件聚合：一个文件开始或停止渲染该按钮、或者登记的表达式集合变化时测试失败，借此要求对照本文审查一次；在已登记文件里再加一个只用静态动词的按钮不会触发。
 
-## 手势期间是否把提交按钮置灰（待产品决定）
+## 滑杆手势期间不把提交按钮置灰（2026-09-20 产品负责人决定）
 
-「滑杆手势期间锁定提交」是[滑杆交互契约](slider-interactions.md)的要求，四个带滑杆的交易面都用 ref 在提交路径里实现。区别只在外观：
+「滑杆手势期间锁定提交」是[滑杆交互契约](slider-interactions.md)与 [Runtime guardrails](runtime-guardrails.md) §10 的要求。此前六类带滑杆的交易面（七个组件入口：杠杆与保证金模式共用一种滑杆）除了拦截提交，还让提交按钮在手势期间禁用，于是每次触碰滑杆（包括只点一下轨道）主按钮都闪成禁用态。产品负责人判断这是过度设计，要求对齐官方终端；现在手势状态本身不再参与任何按钮的禁用，原有的有效性、可用性与提交中条件保持不变。
 
-| 交易面 | 手势期间的按钮 |
-| --- | --- |
-| 桌面下单 `tradebox/trade-panel.tsx` | 置灰（`disabled={… \|\| isSizeInteracting}`） |
-| 移动下单 `mobile/mobile-trade-view.tsx` | 置灰（`canSubmit: … && !isSizeInteracting`） |
-| 限价平仓 `positions/position-limit-close-modal.tsx` | 置灰（`isSizingInteractionActive` 进入 `canSubmit`） |
-| 市价平仓 `positions/position-market-close-modal.tsx` | 不置灰（ADR 0017 追加） |
+| 交易面 | 锁的位置 | 改动前的可见禁用 |
+| --- | --- | --- |
+| 桌面下单 `tradebox/trade-panel.tsx` | `handleCtaClick()`（包住按钮的全部动作：连接、启用交易、充值、提交）与 `canExecuteOrder()` 里的 `sizeInteractionRef` | `disabled={… \|\| isSizeInteracting}`，覆盖按钮的全部动作 |
+| 移动下单 `mobile/mobile-trade-view.tsx` | 同上 | `canSubmit: … && !isSizeInteracting`，只覆盖提交；启用交易等分支此前不受锁，现在与桌面一致 |
+| 市价平仓 `positions/position-market-close-modal.tsx` | `handleSubmit()` 里的 ref + `isActivationLocked` | `isSizingInteractionActive` 进入 `canSubmit` |
+| 限价平仓 `positions/position-limit-close-modal.tsx` | 同上 | 同上 |
+| TP/SL `positions/position-tpsl-modal.tsx` | `handleSubmit()` 里的 `amountInteractionSnapshotRef` + `isActivationLocked` | `isAmountInteracting` 进入 `canSubmit` |
+| 杠杆 `tradebox/leverage-modal.tsx`、保证金模式 `tradebox/margin-mode-modal.tsx` | `handleConfirm()` 里专用的手势 ref（外加原有的拖动草稿判断）+ `isActivationLocked` | 拖动草稿进入 `disabled`；锁读的是渲染闭包里的 state，手势开始后要等一次渲染才生效 |
 
-单指操作时拖动中点不到按钮，置灰不携带信息，只让主按钮在每次触碰滑杆时闪一下；按 2026-09-20 对官方前端包的静态阅读，其平仓按钮的禁用条件里没有手势项（官方主下单按钮未核对）。是否把另外三个交易面也改成不置灰，涉及主下单表单，需要产品负责人决定后另立任务；在此之前四个面不一致是已知状态。
+保证金模式弹窗里，拖动草稿同时被用作「已提交的杠杆」标记；它的 `disabled` 改用 `submittedLeverage !== null`，所以提交期间的外观不变，只有手势不再置灰。
 
-供决策用的取证（2026-09-20）：
+依据：
 
-- **来历**：可见禁用与 ref 守卫都出自同一次提交 `178661c3`（2026-09-10，滑杆交互重构，提交信息无正文）。仓库里对它的书面理由只有滑杆交互契约里的一句「lock submission while a gesture is active, including the interval before the first preview」；没有任务记录或 ADR 记载它对应过某次真实事故。
-- **它防的是什么**：拖动期间表单里的数量是预览值——滑块位置按帧绘制，数量经 15 ms 防抖才发布，松手才提交；Esc、失焦、`pointercancel`、窗口失焦、resize 都会回滚到起始值。锁的含义是「不提交一个可能被回滚、也可能落后于滑块位置的预览值」。
-- **真实用户能否触发**：同一指针不能（指针被滑杆捕获到松手）；键盘不能（拖动时焦点在滑杆的原生 range 输入上，回车不提交，Tab 移走焦点会先取消手势并恢复起始值，锁随之解除）；第二根手指通常也不能（浏览器只为单指点按序列合成 `click`，这一点未在真机上验证）。剩下的是程序化点击、辅助技术和混合输入这类边缘路径。
-- **两层保护的成本不同**：ref 守卫在提交路径里拦截，没有界面代价；可见禁用在此之上不增加任何保护，却让整个表单在每次触碰滑杆（包括只点一下轨道）时多渲染两次、主按钮闪成禁用态。
-
-结论：ref 守卫是便宜的保险，值得保留；叠在上面的可见禁用属于过度设计，建议三个交易面都去掉，做法与市价平仓相同（删除进入 `disabled` / `canSubmit` 的手势 state，保留提交路径里的 ref 判断，限价平仓同样传 `isActivationLocked`）。
+- **官方做法**（2026-09-20 对 `app.hyperliquid.xyz` 前端包的静态阅读，未经账户实测）：主下单按钮的禁用条件是 `b===0 || at || nt===0 || Number(f)===0 || …`——滑杆百分比为零、超量或余额不足、数量为零、缺价格，以及各订单类型自身的有效性；平仓按钮是数量为零或超量；杠杆确认是杠杆为零。三处都没有拖动或手势项，按钮组件里也没有任何 drag 相关代码。
+- **来历**：可见禁用与 ref 守卫都出自同一次提交 `178661c3`（2026-09-10，滑杆交互重构，提交信息无正文）。仓库里对它的书面理由只有滑杆交互契约里的一句话；没有任务记录或 ADR 记载它对应过某次真实事故。
+- **它防的是什么**：拖动期间表单里的数量是预览值——滑块位置按帧绘制，数量经 15 ms 防抖才发布，松手才提交；Esc、失焦、`pointercancel`、窗口失焦、resize 都会回滚到起始值。锁的含义是「不提交一个可能被回滚、也可能落后于滑块位置的预览值」。杠杆弹窗同理：拖动中显示的是草稿杠杆，确认应用的却是已提交的那个值。
+- **真实用户能否触发**：同一指针不能（指针被滑杆捕获到松手）；键盘不能（拖动时焦点在滑杆的原生 range 输入上，Tab 移走焦点会先取消手势并恢复起始值）；第二根手指通常也不能（浏览器只为单指点按序列合成 `click`，未在真机上验证）。剩下的是程序化点击、辅助技术和混合输入这类边缘路径。
+- **两层保护的成本不同**：ref 在指针按下的同一刻生效，没有界面代价；可见禁用要等一次渲染才生效，不增加任何保护，却让整个表单在每次触碰滑杆时多渲染两次。杠杆与保证金模式此前连提交路径里的判断也读的是 state，本次改为同步的 ref，锁比改动前更早生效。
 
 手势锁属于输入协调，不是可用性：资金、行情、签名、地区等可用性仍然必须用显式布尔值禁用按钮（[移动端数据展示规范](mobile-data-presentation.md)），不能改成这种静默的 ref。锁随手势结束而解除；焦点离开滑杆会取消手势并恢复起始值，此后的确认针对的是当时屏幕上已恢复的值。
+
+回归：`order-submission-wiring.test.ts`（两个下单表单的锁在提交路径里、`disabled` 与 `canSubmit` 不含手势项）、`tests/mobile-trade-size-validation-a11y.test.tsx`（真实移动下单表单 + 真实滑杆指针事件）、`position-market-close-modal.test.tsx`、`position-market-close-display-commit.test.tsx`、`position-limit-close-modal.test.tsx`、`position-tpsl-modal.test.tsx`、`leverage-modal.test.tsx`、`margin-mode-modal.test.tsx`、`trading-action-button.test.tsx`。桌面下单表单没有渲染级的单元测试（仓库里只有源码契约与浏览器夹具覆盖它），它与移动端共用同一段 `canExecuteOrder()` 结构。
 
 ## 审查清单
 
