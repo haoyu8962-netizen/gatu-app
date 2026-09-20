@@ -151,8 +151,7 @@ describe("position close slider effective aria contract", () => {
 		expect(input?.max).toBe("100");
 		expect(input?.step).toBe("1");
 		expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuenow")).toBe("99.6");
-		const maxButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Max");
-		expect(maxButton?.getAttribute("aria-pressed")).toBe("false");
+		expect(container.querySelectorAll("button[aria-pressed]")).toHaveLength(0);
 
 		act(() => input?.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
 		expect(onIntentChange).not.toHaveBeenCalled();

@@ -243,9 +243,6 @@ describe("PositionMarketCloseModal", () => {
 		expect(testState.numberInputs.get("Close size")?.disabled).toBe(true);
 		expect(testState.numberInputs.get("Close percentage")?.disabled).toBe(true);
 		expect(testState.sliderProps?.disabled).toBe(true);
-		expect(
-			[...container.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].every((button) => button.disabled),
-		).toBe(true);
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
 	}
 
@@ -333,11 +330,8 @@ describe("PositionMarketCloseModal", () => {
 		expect(testState.numberInputs.get("Close percentage")?.className).toContain("!rounded-[10px]");
 		expect(testState.numberInputs.get("Close size")?.suffixClassName).toContain("right-3");
 		expect(testState.numberInputs.get("Close percentage")?.suffixClassName).toContain("right-2.5");
-		const quickChip = container.querySelector<HTMLButtonElement>('button[aria-pressed="false"]');
-		const selectedChip = container.querySelector<HTMLButtonElement>('button[aria-pressed="true"]');
-		expect(quickChip?.className).toContain("!rounded-[8px]");
-		expect(selectedChip?.className).toContain("!bg-market-close-control");
-		expect(selectedChip?.className).toContain("!text-market-close-on-control");
+		expect(container.querySelectorAll("button[aria-pressed]")).toHaveLength(0);
+		expect(container.querySelector('[data-testid="position-market-close-sizing"]')?.textContent).not.toMatch(/25%|Max/);
 		expect(testState.sliderProps?.interactionIdentity).toContain("session-1");
 		expect(testState.sliderProps?.thumbClassName).toBeUndefined();
 		expect(testState.sliderProps?.controlClassName).toBeUndefined();
@@ -432,19 +426,17 @@ describe("PositionMarketCloseModal", () => {
 		});
 	});
 
-	it("routes quantity, percentage, quick-chip, and slider edits through one sizing intent", () => {
+	it("routes quantity, percentage and slider edits through one sizing intent, reaching Max from 100%", () => {
 		render();
 		const sizeInput = testState.numberInputs.get("Close size");
 		const percentInput = testState.numberInputs.get("Close percentage");
-		const maxChip = [...container.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
-			(button) => button.textContent === "Max",
-		);
 
 		act(() => {
 			(sizeInput?.onChange as (event: { target: { value: string } }) => void)({ target: { value: "1.25" } });
 			(percentInput?.onChange as (event: { target: { value: string } }) => void)({ target: { value: "50" } });
-			maxChip?.click();
+			(percentInput?.onChange as (event: { target: { value: string } }) => void)({ target: { value: "100" } });
 			(testState.sliderProps?.onPercentChange as (value: number) => void)(75);
+			(testState.sliderProps?.onPercentChange as (value: number) => void)(100);
 		});
 
 		expect(testState.setSizingIntent.mock.calls).toEqual([
@@ -452,6 +444,7 @@ describe("PositionMarketCloseModal", () => {
 			["session-1", { kind: "percent", value: "50" }],
 			["session-1", { kind: "max" }],
 			["session-1", { kind: "percent", value: "75" }],
+			["session-1", { kind: "max" }],
 		]);
 	});
 

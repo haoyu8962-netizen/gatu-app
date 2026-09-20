@@ -1,4 +1,4 @@
-import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader } from "@gatu/ui";
+import { AdaptiveModal, ModalContent, ModalFooter, ModalHeader } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { type ChangeEvent, type ReactNode, useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
@@ -10,8 +10,6 @@ import {
 import { cn } from "@/lib/cn";
 import { toBig, toFixed } from "@/lib/trade/numbers";
 import { TradeSizeSlider } from "../components/trade-size-slider";
-
-const QUICK_PERCENTAGES = [25, 50, 75, 100] as const;
 
 interface PositionCloseDialogShellProps {
 	open: boolean;
@@ -307,35 +305,6 @@ export function PositionCloseSizingControls({
 				/>
 			</div>
 
-			<div className="grid grid-cols-4 gap-2">
-				{QUICK_PERCENTAGES.map((percent) => {
-					const selected =
-						percent === 100 ? intent.kind === "max" : isSelectedPercentage(viewModel.requestedPercent, percent);
-					return (
-						<Button
-							key={percent}
-							type="button"
-							variant="outline"
-							intent="neutral"
-							size="xs"
-							aria-pressed={selected}
-							disabled={disabled}
-							onClick={() =>
-								onIntentChange(percent === 100 ? { kind: "max" } : { kind: "percent", value: String(percent) })
-							}
-							className={cn(
-								"h-auto min-h-0 !rounded-[8px] px-0 py-2 text-2sm leading-[18px] font-semibold tabular-nums !shadow-none transition-all duration-[120ms] focus-visible:!border-market-close-focus focus-visible:!outline-none active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!border-market-close-stroke-card data-disabled:!bg-modal data-disabled:!text-market-close-subtle min-[1001px]:py-[7px]",
-								selected
-									? "!border-market-close-control !bg-market-close-control !text-market-close-on-control hover:!bg-market-close-control active:!bg-market-close-control"
-									: "!border-market-close-stroke-card !bg-modal !text-market-close-muted hover:!bg-modal active:!bg-modal min-[1001px]:hover:!border-market-close-control min-[1001px]:hover:!text-market-close-control",
-							)}
-						>
-							{percent === 100 ? t`Max` : `${percent}%`}
-						</Button>
-					);
-				})}
-			</div>
-
 			<div className="min-h-0 min-[1001px]:mt-0.5" data-testid={sliderTestId}>
 				<TradeSizeSlider
 					value={viewModel.sliderValue}
@@ -371,9 +340,4 @@ function formatPercentInput(value: string): string {
 	if (!parsed || parsed.lte(0)) return "0";
 	if (parsed.gte(100)) return "100";
 	return parsed.round(0, 1).toFixed(0);
-}
-
-function isSelectedPercentage(value: string, percentage: number): boolean {
-	const parsed = toBig(value);
-	return parsed?.eq(percentage) ?? false;
 }

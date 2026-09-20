@@ -360,10 +360,12 @@ describe("PositionLimitCloseModal", () => {
 		});
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("50");
 
-		const chip75 = [...container.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
-			(button) => button.textContent === "75%",
-		);
-		act(() => chip75?.click());
+		expect(container.querySelectorAll("button[aria-pressed]")).toHaveLength(0);
+		act(() => {
+			(testState.numberInputs.get("Close percentage")?.onChange as (event: { target: { value: string } }) => void)({
+				target: { value: "75" },
+			});
+		});
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("1.8750");
 
 		act(() => (testState.sliderProps?.onPercentChange as (value: number) => void)(25));
