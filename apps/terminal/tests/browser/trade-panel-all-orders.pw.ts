@@ -239,6 +239,48 @@ for (const viewport of [
 	});
 }
 
+test("keeps the size slider still while its message row would change during a drag", async ({ page }) => {
+	type SizeMessageWindow = Window & { __gatuSetSizeMessage: (message: string) => void };
+	const longMessage =
+		"The order value is below the ten dollar minimum for this market, so increase the size or choose a larger share of the available balance before submitting.";
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/trade-panel-all-orders.html");
+	const panel = page.locator('[data-panel="tradingInterface"]');
+	const control = panel.locator("[data-trade-slider-control]").first();
+	const row = panel.locator('p[role="alert"]');
+	await control.waitFor();
+
+	const resting = await control.boundingBox();
+	if (!resting) throw new Error("Expected the size slider");
+	const y = resting.y + resting.height / 2;
+	await page.mouse.move(resting.x + 30, y);
+	await page.mouse.down();
+	await page.evaluate((message) => (window as unknown as SizeMessageWindow).__gatuSetSizeMessage(message), longMessage);
+	await page.mouse.move(resting.x + 90, y, { steps: 5 });
+	await expect(row).toHaveCount(0);
+	expect((await control.boundingBox())?.y).toBe(resting.y);
+	await page.mouse.up();
+	await expect(row).toHaveText(longMessage);
+
+	const rowBox = await row.boundingBox();
+	const pushed = await control.boundingBox();
+	if (!rowBox || !pushed) throw new Error("Expected the size message row");
+	expect(rowBox.height).toBeGreaterThan(20);
+	expect(pushed.y).toBeGreaterThan(resting.y);
+
+	const pushedY = pushed.y + pushed.height / 2;
+	await page.mouse.move(pushed.x + 90, pushedY);
+	await page.mouse.down();
+	await page.evaluate(() => (window as unknown as SizeMessageWindow).__gatuSetSizeMessage(""));
+	await page.mouse.move(pushed.x + 40, pushedY, { steps: 5 });
+	await expect(row).toHaveText("");
+	expect((await row.boundingBox())?.height).toBe(rowBox.height);
+	expect((await control.boundingBox())?.y).toBe(pushed.y);
+	await page.mouse.up();
+	await expect(row).toHaveCount(0);
+	expect((await control.boundingBox())?.y).toBe(resting.y);
+});
+
 test("keeps order tabs pinned and real fields reachable after reducing the grid height", async ({ page }) => {
 	await page.setViewportSize({ width: 1001, height: 900 });
 	await page.goto("/trade-panel-all-orders.html");

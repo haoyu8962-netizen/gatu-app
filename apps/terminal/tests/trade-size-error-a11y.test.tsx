@@ -154,6 +154,108 @@ describe("order-size error accessibility wiring", () => {
 		},
 	);
 
+	it("does not add the size message row during a slider gesture and shows it once the gesture ends", async () => {
+		setValidSize();
+		await renderDesktop(root);
+		expect(findOptionalError(container, "Exceeds max size")).toBeNull();
+
+		await pressSlider(container);
+		setOversize();
+		await renderDesktop(root);
+		expect(findOptionalError(container, "Exceeds max size")).toBeNull();
+		expectErrorFrame(getSizeInput(container), false);
+		expectClearedDescription(getSlider(container));
+		expectClearedDescription(getSizeInput(container));
+
+		await releaseSlider();
+		const error = findError(container, "Exceeds max size");
+		expectErrorFrame(getSizeInput(container), true);
+		expectInvalidDescription(getSlider(container), error.id);
+	});
+
+	it("keeps the size message row at its measured height through a gesture that clears the error", async () => {
+		await renderDesktop(root);
+		const row = findError(container, "Exceeds max size");
+		Object.defineProperty(row, "offsetHeight", { configurable: true, value: 32 });
+
+		await pressSlider(container);
+		setValidSize();
+		await renderDesktop(root);
+		expect(findRow(container, row.id)).toBe(row);
+		expect(row.textContent).toBe("");
+		expect(row.style.height).toBe("32px");
+		expect(row.classList.contains("overflow-hidden")).toBe(true);
+		expectErrorFrame(getSizeInput(container), false);
+		expectClearedDescription(getSlider(container));
+		expectClearedDescription(getPercentInput(container));
+		expectClearedDescription(getSizeInput(container));
+
+		await releaseSlider();
+		expect(findRow(container, row.id)).toBeNull();
+	});
+
+	it("shows a different size message in the same held row while the gesture continues", async () => {
+		await renderDesktop(root);
+		const row = findError(container, "Exceeds max size");
+
+		await pressSlider(container);
+		setValidSize();
+		desktopState.orderValue = 5;
+		await renderDesktop(root);
+		expect(findRow(container, row.id)).toBe(row);
+		expect(row.textContent).toBe("Min order $10");
+		expectInvalidDescription(getSlider(container), row.id);
+		expectInvalidDescription(getPercentInput(container), row.id);
+		expectInvalidDescription(getSizeInput(container), row.id);
+
+		await releaseSlider();
+		expect(row.style.height).toBe("");
+		expect(row.classList.contains("overflow-hidden")).toBe(false);
+	});
+
+	it("returns to the live message when the gesture is cancelled", async () => {
+		setValidSize();
+		await renderDesktop(root);
+		await pressSlider(container);
+		setOversize();
+		await renderDesktop(root);
+		expect(findOptionalError(container, "Exceeds max size")).toBeNull();
+
+		await act(async () => {
+			document.dispatchEvent(sliderPointer("pointercancel", 20));
+		});
+		findError(container, "Exceeds max size");
+	});
+
+	it("takes a new snapshot for each gesture", async () => {
+		setValidSize();
+		await renderDesktop(root);
+		await pressSlider(container);
+		setOversize();
+		await renderDesktop(root);
+		await releaseSlider();
+		const row = findError(container, "Exceeds max size");
+
+		await pressSlider(container);
+		setValidSize();
+		await renderDesktop(root);
+		expect(findRow(container, row.id)).toBe(row);
+		expect(row.textContent).toBe("");
+		await releaseSlider();
+		expect(findRow(container, row.id)).toBeNull();
+	});
+
+	it("does not hold the row for keyboard input on the slider", async () => {
+		setValidSize();
+		await renderDesktop(root);
+		await act(async () => {
+			getSlider(container).dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+		});
+		setOversize();
+		await renderDesktop(root);
+		findError(container, "Exceeds max size");
+	});
+
 	it("uses the same filtered result for limit and trigger field error frames and accessible states", async () => {
 		desktopState.orderType = "stopLimit";
 		desktopState.maxSize = 3;
@@ -179,6 +281,50 @@ describe("order-size error accessibility wiring", () => {
 		expect(priceInput.disabled).toBe(true);
 	});
 });
+
+function setValidSize() {
+	desktopState.maxSize = 3;
+	desktopState.orderValue = 50;
+	desktopState.sizeInput = "0.5";
+	desktopState.sizeValue = 0.5;
+}
+
+function setOversize() {
+	desktopState.maxSize = 1;
+	desktopState.orderValue = 200;
+	desktopState.sizeInput = "2";
+	desktopState.sizeValue = 2;
+}
+
+function sliderPointer(type: string, clientX: number): MouseEvent {
+	const event = new MouseEvent(type, { bubbles: true, button: 0, buttons: type === "pointerup" ? 0 : 1, clientX });
+	Object.defineProperties(event, {
+		pointerId: { value: 1 },
+		pointerType: { value: "mouse" },
+		isPrimary: { value: true },
+	});
+	return event;
+}
+
+async function pressSlider(container: HTMLElement) {
+	const control = container.querySelector<HTMLDivElement>("[data-trade-slider-control]");
+	const thumb = container.querySelector<HTMLDivElement>("[data-trade-slider-thumb]");
+	if (!control || !thumb) throw new Error("Expected the size slider control");
+	Object.defineProperty(control, "getBoundingClientRect", {
+		configurable: true,
+		value: () => ({ left: 0, width: 100, height: 33, top: 0, bottom: 33, right: 100, x: 0, y: 0 }),
+	});
+	await act(async () => {
+		thumb.dispatchEvent(sliderPointer("pointerdown", 20));
+	});
+	expect(control.dataset.dragging).toBe("true");
+}
+
+async function releaseSlider() {
+	await act(async () => {
+		document.dispatchEvent(sliderPointer("pointerup", 20));
+	});
+}
 
 async function renderDesktop(root: Root) {
 	const errors = runValidators(orderInputValidators, {
@@ -258,6 +404,10 @@ function findOptionalError(container: HTMLElement, message: string): HTMLParagra
 		[...container.querySelectorAll<HTMLParagraphElement>("p")].find((candidate) => candidate.textContent === message) ??
 		null
 	);
+}
+
+function findRow(container: HTMLElement, id: string): HTMLParagraphElement | null {
+	return container.querySelector<HTMLParagraphElement>(`[id="${id}"]`);
 }
 
 function getSlider(container: HTMLElement): HTMLInputElement {

@@ -1,6 +1,6 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
@@ -155,10 +155,15 @@ export function TradeFormFields({
 	const sliderValue = getSliderValue(sizeValue, maxSize);
 	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${side}:${orderType}:${reduceOnly}:${sizeMode}:${szDecimals}`;
 
-	const displaySizeError = visibleValidationErrors
+	const sizeErrorRowRef = useRef<HTMLParagraphElement>(null);
+	const [sizeErrorRowHeld, setSizeErrorRowHeld] = useState<boolean | null>(null);
+	const [sizeErrorRowHeight, setSizeErrorRowHeight] = useState<number | null>(null);
+	const sizeErrorMessage = visibleValidationErrors
 		.filter(isOrderSizeValidationError)
 		.map((error) => error.message)
 		.join(" \u2022 ");
+	const showSizeErrorRow = sizeErrorRowHeld ?? sizeErrorMessage !== "";
+	const displaySizeError = showSizeErrorRow ? sizeErrorMessage : "";
 	const hasDisplayedSizeError = displaySizeError !== "";
 	const midReferencePrice = getOrderEntryReferencePrice(market);
 	const formattedMid = getFormattedMidPrice(midReferencePrice, szDecimals, marketType, market?.assetId);
@@ -173,9 +178,15 @@ export function TradeFormFields({
 		onSizePercentApply(pct);
 	}
 
+	function handleSizeInteractionChange(active: boolean) {
+		setSizeErrorRowHeld(active ? sizeErrorMessage !== "" : null);
+		setSizeErrorRowHeight(active ? (sizeErrorRowRef.current?.offsetHeight ?? null) : null);
+		onSizeInteractionChange?.(active);
+	}
+
 	const sliderInteraction = useSizeSliderInteraction({
 		applyPercent: handleSizePercentApply,
-		onInteractionChange: onSizeInteractionChange,
+		onInteractionChange: handleSizeInteractionChange,
 		interactionIdentity: sliderInteractionIdentity,
 		setSizeInput: setSize,
 		sizeInput,
@@ -338,8 +349,14 @@ export function TradeFormFields({
 				/>
 			}
 			sizeError={
-				displaySizeError && (
-					<p id={sizeErrorId} role="alert" className="text-2xs text-trading-panel-error">
+				showSizeErrorRow && (
+					<p
+						ref={sizeErrorRowRef}
+						id={sizeErrorId}
+						role="alert"
+						style={sizeErrorRowHeight ? { height: sizeErrorRowHeight } : undefined}
+						className={cn("min-h-4 text-2xs text-trading-panel-error", sizeErrorRowHeld && "overflow-hidden")}
+					>
 						{displaySizeError}
 					</p>
 				)

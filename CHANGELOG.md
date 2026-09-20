@@ -102,6 +102,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- On the desktop order form the size slider no longer jumps up or down while it is being dragged.
+  The size message under the quantity field (`Min order $10`, `Enter size`, `Exceeds max size`)
+  used to appear or disappear in the middle of a drag and move the slider row by 24px. A message
+  that was not showing when the drag began now waits until the slider is released, and one that
+  was showing keeps its line, at the same height, until then. Whether the order can be submitted is unchanged.
 - Dragging a size or leverage slider no longer snaps back to where it started. In an embedded
   browser a real mouse could report that the slider lost the pointer a few milliseconds before the
   button was released, and the slider treated that as a cancelled drag, so most drags were thrown
