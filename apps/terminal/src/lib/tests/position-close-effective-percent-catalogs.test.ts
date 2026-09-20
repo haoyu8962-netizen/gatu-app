@@ -9,13 +9,13 @@ const EXPECTED_TRANSLATIONS = {
 	hi: "{requestedPercent}% अनुरोध किया गया; साइज़ की सटीकता लागू करने के बाद {effectivePercent}%",
 } as const;
 
-const LEVERAGE_SUCCESS_MESSAGE = "Updated to {displayLeverage}x";
+const LEVERAGE_SUCCESS_MESSAGE = "Leverage updated to {leverage}x";
 const EXPECTED_LEVERAGE_SUCCESS_TRANSLATIONS = {
-	ar: "تم التحديث إلى {displayLeverage}x",
-	es: "Actualizado a {displayLeverage}x",
-	fr: "Mis à jour à {displayLeverage}x",
-	hi: "{displayLeverage}x पर अपडेट किया गया",
-	zh: "已更新为 {displayLeverage}x",
+	ar: "تم تحديث الرافعة المالية إلى {leverage}x",
+	es: "Apalancamiento actualizado a {leverage}x",
+	fr: "Effet de levier mis à jour à {leverage}x",
+	hi: "लीवरेज {leverage}x पर अपडेट किया गया",
+	zh: "杠杆已更新为 {leverage}x",
 } as const;
 
 describe("position-close effective-percent catalogs", () => {
@@ -36,7 +36,7 @@ describe("leverage-success catalogs", () => {
 		(locale, expected) => {
 			const catalog = readFileSync(new URL(`../../locales/${locale}/messages.po`, import.meta.url), "utf8");
 			expect(catalog).toContain(`msgid "${LEVERAGE_SUCCESS_MESSAGE}"\nmsgstr "${expected}"`);
-			expect(expected).toContain("{displayLeverage}");
+			expect(expected).toContain("{leverage}");
 		},
 	);
 });

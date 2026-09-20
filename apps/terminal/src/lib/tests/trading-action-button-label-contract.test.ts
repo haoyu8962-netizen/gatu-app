@@ -21,7 +21,7 @@ const REVIEWED_LABELS: Record<string, LabelReview> = {
 	"trade/positions/position-market-close-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/positions/position-reverse-confirmation-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/positions/position-tpsl-modal.tsx": { dynamic: [], indirect: [] },
-	"trade/tradebox/leverage-modal.tsx": { dynamic: ["<Trans> with a value"], indirect: [] },
+	"trade/tradebox/leverage-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/tradebox/margin-mode-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/tradebox/order-confirmation-modal.tsx": { dynamic: [], indirect: ["sideLabel"] },
 };

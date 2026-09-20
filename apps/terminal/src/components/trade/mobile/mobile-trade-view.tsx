@@ -299,9 +299,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		resetPendingLeverage,
 		applyMarginAndLeverage,
 		isLeverageUpdating,
-		leverageUpdateError,
 		isSwitchingMode,
-		switchModeError,
 		allowsIsolatedMarginRemoval,
 	} = useOrderEntryData({
 		market,
@@ -801,7 +799,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const change24h = get24hChange(market?.prevDayPx, market?.markPx);
 	const priceColorClass = change24h !== null ? getValueColorClass(change24h) : "text-fg";
 	const isMarginDialogUpdating = marginDialogView === "leverage" ? isLeverageUpdating : isSwitchingMode;
-	const marginDialogError = marginDialogView === "leverage" ? leverageUpdateError : switchModeError;
 
 	return (
 		<MobileTradeFrameView embedded={embedded} className={className} onIntent={warmMobileTradeSettingsModals}>
@@ -820,7 +817,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					allowsCrossMargin={capabilities.allowsCrossMargin}
 					allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
 					isUpdating={isMarginDialogUpdating}
-					updateError={marginDialogError}
 					showLeverage={capabilities.isLeveraged}
 					onApply={handleLeverageApply}
 					presentation="drawer"

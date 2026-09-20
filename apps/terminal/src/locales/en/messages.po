@@ -3754,6 +3754,11 @@ msgstr "Leverage"
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "Leverage is fixed at {currentLeverage}× for this market."
 
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Leverage updated to {leverage}x"
+msgstr "Leverage updated to {leverage}x"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
 msgstr "Lifetime USDC rewards"
@@ -4105,6 +4110,11 @@ msgstr "Margin and account risk at a glance"
 #: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "Margin mode"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin mode updated"
+msgstr "Margin mode updated"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -5732,8 +5742,8 @@ msgstr "Processing time"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Processing..."
-msgstr "Processing..."
+#~ msgid "Processing..."
+#~ msgstr "Processing..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Processing…"
@@ -6736,8 +6746,8 @@ msgid "Send USDC to your wallet address below."
 msgstr "Send USDC to your wallet address below."
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Sending..."
-msgstr "Sending..."
+#~ msgid "Sending..."
+#~ msgstr "Sending..."
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -8630,8 +8640,8 @@ msgid "Transfer USDC"
 msgstr "Transfer USDC"
 
 #: src/components/trade/positions/transfer-modal.tsx
-msgid "Transferring..."
-msgstr "Transferring..."
+#~ msgid "Transferring..."
+#~ msgstr "Transferring..."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
@@ -9056,7 +9066,6 @@ msgstr "Update failed"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "Updated"
 
@@ -9066,8 +9075,8 @@ msgstr "Updated live"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Updated to {displayLeverage}x"
-msgstr "Updated to {displayLeverage}x"
+#~ msgid "Updated to {displayLeverage}x"
+#~ msgstr "Updated to {displayLeverage}x"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #~ msgid "Updating..."

@@ -3754,6 +3754,11 @@ msgstr "Apalancamiento"
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "El apalancamiento está fijado en {currentLeverage}× para este mercado."
 
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Leverage updated to {leverage}x"
+msgstr "Apalancamiento actualizado a {leverage}x"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
 msgstr "Recompensas acumuladas en USDC"
@@ -4105,6 +4110,11 @@ msgstr "Margen y riesgo de la cuenta de un vistazo"
 #: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "Modo de margen"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin mode updated"
+msgstr "Modo de margen actualizado"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -5732,8 +5742,8 @@ msgstr "Tiempo de procesamiento"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Processing..."
-msgstr "Procesando..."
+#~ msgid "Processing..."
+#~ msgstr "Procesando..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Processing…"
@@ -6736,8 +6746,8 @@ msgid "Send USDC to your wallet address below."
 msgstr "Envía USDC a la dirección de tu billetera que aparece abajo."
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Sending..."
-msgstr "Enviando..."
+#~ msgid "Sending..."
+#~ msgstr "Enviando..."
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -8630,8 +8640,8 @@ msgid "Transfer USDC"
 msgstr "Transferir USDC"
 
 #: src/components/trade/positions/transfer-modal.tsx
-msgid "Transferring..."
-msgstr "Transfiriendo..."
+#~ msgid "Transferring..."
+#~ msgstr "Transfiriendo..."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
@@ -9056,7 +9066,6 @@ msgstr "Error al actualizar"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "Actualizado"
 
@@ -9066,8 +9075,8 @@ msgstr "Actualizado en vivo"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Updated to {displayLeverage}x"
-msgstr "Actualizado a {displayLeverage}x"
+#~ msgid "Updated to {displayLeverage}x"
+#~ msgstr "Actualizado a {displayLeverage}x"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #~ msgid "Updating..."

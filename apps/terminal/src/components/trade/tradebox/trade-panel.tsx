@@ -199,9 +199,7 @@ export function TradePanel() {
 		resetPendingLeverage,
 		applyMarginAndLeverage,
 		isLeverageUpdating,
-		leverageUpdateError,
 		isSwitchingMode,
-		switchModeError,
 		allowsIsolatedMarginRemoval,
 	} = orderEntryData;
 	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, orderType === "market");
@@ -510,9 +508,7 @@ export function TradePanel() {
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
 
 	const handleMarginApply = useCallback(
-		async (mode: MarginMode, leverageValue: number) => {
-			await applyMarginAndLeverage(mode, leverageValue);
-		},
+		(mode: MarginMode, leverageValue: number) => applyMarginAndLeverage(mode, leverageValue),
 		[applyMarginAndLeverage],
 	);
 
@@ -788,7 +784,6 @@ export function TradePanel() {
 							allowsCrossMargin={capabilities.allowsCrossMargin}
 							allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
 							isUpdating={isSwitchingMode}
-							updateError={switchModeError}
 							showLeverage={false}
 							onApply={handleMarginApply}
 							marketIdentity={leverageInteractionIdentity}
@@ -808,7 +803,6 @@ export function TradePanel() {
 							maxLeverage={maxLeverage}
 							onPendingLeverageChange={setPendingLeverage}
 							isUpdating={isLeverageUpdating}
-							updateError={leverageUpdateError}
 							onApply={handleLeverageApply}
 							marketIdentity={leverageInteractionIdentity}
 						/>
@@ -889,9 +883,7 @@ export function TradePanel() {
 									onClick={handleCtaClick}
 									disabled={buttonContent.disabled}
 									aria-label={buttonContent.text}
-									iconLeft={
-										isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined
-									}
+									iconLeft={isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
 								/>
 							)}
 							{buttonContent.disabledReason ? (

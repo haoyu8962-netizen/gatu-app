@@ -3754,6 +3754,11 @@ msgstr "Leverage"
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "इस बाज़ार के लिए लीवरेज {currentLeverage}× पर निर्धारित है।"
 
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Leverage updated to {leverage}x"
+msgstr "लीवरेज {leverage}x पर अपडेट किया गया"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
 msgstr "अब तक के कुल USDC पुरस्कार"
@@ -4105,6 +4110,11 @@ msgstr "मार्जिन और खाता जोखिम एक नज�
 #: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "Margin मोड"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin mode updated"
+msgstr "Margin मोड अपडेट किया गया"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -5732,8 +5742,8 @@ msgstr "प्रोसेसिंग समय"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Processing..."
-msgstr "प्रोसेसिंग..."
+#~ msgid "Processing..."
+#~ msgstr "प्रोसेसिंग..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Processing…"
@@ -6736,8 +6746,8 @@ msgid "Send USDC to your wallet address below."
 msgstr "नीचे दिए गए अपने वॉलेट पते पर USDC भेजें।"
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Sending..."
-msgstr "भेजा जा रहा है..."
+#~ msgid "Sending..."
+#~ msgstr "भेजा जा रहा है..."
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -8630,8 +8640,8 @@ msgid "Transfer USDC"
 msgstr "USDC ट्रांसफ़र करें"
 
 #: src/components/trade/positions/transfer-modal.tsx
-msgid "Transferring..."
-msgstr "ट्रांसफ़र किया जा रहा है..."
+#~ msgid "Transferring..."
+#~ msgstr "ट्रांसफ़र किया जा रहा है..."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
@@ -9056,7 +9066,6 @@ msgstr "अपडेट विफल रहा"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "अपडेट किया गया"
 
@@ -9066,8 +9075,8 @@ msgstr "लाइव अपडेट"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Updated to {displayLeverage}x"
-msgstr "{displayLeverage}x पर अपडेट किया गया"
+#~ msgid "Updated to {displayLeverage}x"
+#~ msgstr "{displayLeverage}x पर अपडेट किया गया"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #~ msgid "Updating..."

@@ -13,10 +13,9 @@ import {
 	TabsTrigger,
 } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { CaretDownIcon, CheckIcon, ShieldIcon, SpinnerGapIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CheckIcon, ShieldIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { MARGIN_MODE_SUCCESS_DURATION_MS } from "@/config/time";
-import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
+import { toast } from "sonner";
 import { cn } from "@/lib/cn";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { TradingActionButton } from "../components/trading-action-button";
@@ -66,9 +65,8 @@ interface Props {
 	allowsCrossMargin: boolean;
 	allowsIsolatedMarginRemoval: boolean;
 	isUpdating: boolean;
-	updateError: Error | null;
 	showLeverage: boolean;
-	onApply: (mode: MarginMode, leverage: number) => Promise<void>;
+	onApply: (mode: MarginMode, leverage: number) => Promise<number | null>;
 	presentation?: "modal" | "drawer";
 	marketIdentity?: string;
 	marketLabel?: string;
@@ -99,7 +97,7 @@ type FormProps = Omit<
 	mobileView?: MobileTradeSettingsView;
 	leverageDraft?: number | null;
 	onLeverageDraftChange?: (value: number | null) => void;
-	onSubmissionLockChange?: (locked: boolean) => void;
+	isSessionCurrent: () => boolean;
 };
 
 const MODE_OPTIONS: Array<{
@@ -180,20 +178,20 @@ function MarginModeModalComponent({
 	...formProps
 }: Props) {
 	const { t } = useLingui();
-	const [submissionLocked, setSubmissionLocked] = useState(false);
+	const identityRef = useRef(marketIdentity);
+
+	useLayoutEffect(() => {
+		identityRef.current = marketIdentity;
+	}, [marketIdentity]);
+
+	function isSessionCurrent() {
+		return identityRef.current === marketIdentity;
+	}
+
 	const marketFormKey = marketIdentity ?? "market";
 	const capabilityKey = `${formProps.maxLeverage}:${formProps.showLeverage ? "leveraged" : "fixed"}`;
 	const formKey = `${open}:${marketFormKey}:${capabilityKey}`;
 	const actionPending = formProps.isUpdating || !!accountModeForm?.isUpdating;
-	const dismissBlocked = actionPending || submissionLocked;
-
-	function handleOpenChange(nextOpen: boolean, eventDetails?: { cancel: () => void }) {
-		if (!nextOpen && dismissBlocked) {
-			eventDetails?.cancel();
-			return;
-		}
-		onOpenChange(nextOpen);
-	}
 
 	if (presentation === "drawer") {
 		const title =
@@ -207,20 +205,19 @@ function MarginModeModalComponent({
 			);
 
 		function handleTabChange(value: string) {
-			if (dismissBlocked) return;
 			if (value === "margin" || value === "account") onSettingsTabChange?.(value);
 		}
 
 		return (
 			<AdaptiveModal
 				open={open}
-				onOpenChange={handleOpenChange}
+				onOpenChange={onOpenChange}
 				presentation="drawer"
 				size="sm"
-				dismissible={!dismissBlocked}
-				showClose={!dismissBlocked && mobileView !== "leverage"}
+				dismissible
+				showClose={mobileView !== "leverage"}
 				closeLabel={t`Close`}
-				showHandle={!dismissBlocked}
+				showHandle
 				handleClassName="top-2 h-1 w-9 bg-trading-panel-stroke-input"
 				overlayClassName="bg-trading-panel-scrim"
 				className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] border-trading-panel-stroke-card font-market-close"
@@ -229,10 +226,10 @@ function MarginModeModalComponent({
 					<MobileLeverageDrawerContent
 						key={`${marketFormKey}:leverage:${capabilityKey}`}
 						{...formProps}
-						isUpdating={dismissBlocked || !open}
-						onClose={() => handleOpenChange(false)}
+						isUpdating={actionPending || !open}
+						onClose={() => onOpenChange(false)}
 						sessionOpen={open}
-						onSubmissionLockChange={setSubmissionLocked}
+						isSessionCurrent={isSessionCurrent}
 					/>
 				) : (
 					<>
@@ -240,7 +237,7 @@ function MarginModeModalComponent({
 							<ModalTitle className="text-trading-panel-fg">{title}</ModalTitle>
 						</ModalHeader>
 						{accountModeForm ? (
-							<Tabs value={settingsTab} onValueChange={handleTabChange} size="md" fullWidth disabled={dismissBlocked}>
+							<Tabs value={settingsTab} onValueChange={handleTabChange} size="md" fullWidth>
 								<div className="px-4">
 									<TabsList
 										className="w-full border-trading-panel-stroke-card"
@@ -266,10 +263,10 @@ function MarginModeModalComponent({
 										<MarginModeForm
 											key={formKey}
 											{...formProps}
-											isUpdating={dismissBlocked}
-											onClose={() => handleOpenChange(false)}
+											isUpdating={actionPending}
+											onClose={() => onOpenChange(false)}
 											sessionOpen={open}
-											onSubmissionLockChange={setSubmissionLocked}
+											isSessionCurrent={isSessionCurrent}
 											mobileLayout
 											mobileView="margin"
 										/>
@@ -280,8 +277,8 @@ function MarginModeModalComponent({
 										<AccountModeForm
 											key={`${open}:${accountModeForm.currentMode ?? "unavailable"}`}
 											{...accountModeForm}
-											isUpdating={dismissBlocked}
-											onClose={() => handleOpenChange(false)}
+											isUpdating={actionPending}
+											onClose={() => onOpenChange(false)}
 											mobileLayout
 										/>
 									) : null}
@@ -291,10 +288,10 @@ function MarginModeModalComponent({
 							<MarginModeForm
 								key={formKey}
 								{...formProps}
-								isUpdating={dismissBlocked}
-								onClose={() => handleOpenChange(false)}
+								isUpdating={actionPending}
+								onClose={() => onOpenChange(false)}
 								sessionOpen={open}
-								onSubmissionLockChange={setSubmissionLocked}
+								isSessionCurrent={isSessionCurrent}
 								mobileLayout
 								mobileView="margin"
 							/>
@@ -306,10 +303,10 @@ function MarginModeModalComponent({
 	}
 
 	return (
-		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={dismissBlocked}>
+		<Modal open={open} onOpenChange={onOpenChange}>
 			<ModalPopup
 				size="sm"
-				showClose={!dismissBlocked}
+				showClose
 				closeLabel={t`Close`}
 				overlayClassName="bg-trading-panel-scrim"
 				className="font-market-close"
@@ -322,10 +319,10 @@ function MarginModeModalComponent({
 				<MarginModeForm
 					key={formKey}
 					{...formProps}
-					isUpdating={dismissBlocked}
-					onClose={() => handleOpenChange(false)}
+					isUpdating={actionPending}
+					onClose={() => onOpenChange(false)}
 					sessionOpen={open}
-					onSubmissionLockChange={setSubmissionLocked}
+					isSessionCurrent={isSessionCurrent}
 				/>
 			</ModalPopup>
 		</Modal>
@@ -369,51 +366,32 @@ function MarginModeForm({
 	allowsCrossMargin,
 	allowsIsolatedMarginRemoval,
 	isUpdating,
-	updateError,
 	showLeverage,
 	onApply,
 	mobileLayout = false,
 	mobileView = "margin",
 	leverageDraft = null,
 	onLeverageDraftChange,
-	onSubmissionLockChange,
+	isSessionCurrent,
 }: FormProps) {
 	const { t } = useLingui();
 	const [selectedMode, setSelectedMode] = useState<MarginMode>(currentMode);
-	const [submittedLeverage, setSubmittedLeverage] = useState<number | null>(null);
 	const [leverageInputValid, setLeverageInputValid] = useState(true);
 	const applyInFlightRef = useRef(false);
 	const leverageGestureActiveRef = useRef(false);
-	const mountedRef = useRef(false);
-	const {
-		showSuccess,
-		trigger: triggerAutoClose,
-		reset: resetAutoClose,
-	} = useAutoCloseSuccess(onClose, MARGIN_MODE_SUCCESS_DURATION_MS);
-
-	useLayoutEffect(() => {
-		mountedRef.current = true;
-		return () => {
-			mountedRef.current = false;
-		};
-	}, []);
 
 	useEffect(() => {
 		if (sessionOpen) return;
-		resetAutoClose();
 		leverageGestureActiveRef.current = false;
-		setSubmittedLeverage(null);
 		setLeverageInputValid(true);
 		onLeverageDraftChange?.(null);
-	}, [onLeverageDraftChange, resetAutoClose, sessionOpen]);
+	}, [onLeverageDraftChange, sessionOpen]);
 
 	const effectiveLeverage = appliedLeverage ?? currentLeverage;
 	const canonicalLeverage = pendingLeverage ?? effectiveLeverage;
-	const successfulLeverage = appliedLeverage ?? submittedLeverage ?? canonicalLeverage;
-	const displayLeverage = showSuccess ? successfulLeverage : (leverageDraft ?? canonicalLeverage);
+	const displayLeverage = leverageDraft ?? canonicalLeverage;
 
 	function handleLeverageChange(value: number) {
-		if (showSuccess) return;
 		leverageGestureActiveRef.current = false;
 		onLeverageDraftChange?.(null);
 		onPendingLeverageChange(value);
@@ -440,6 +418,7 @@ function MarginModeForm({
 
 	async function handleConfirm(): Promise<void> {
 		if (
+			!sessionOpen ||
 			!isDirty ||
 			leverageGestureActiveRef.current ||
 			hasLeverageDraft ||
@@ -447,30 +426,29 @@ function MarginModeForm({
 			isUpdating ||
 			cannotSwitch ||
 			positionStateUnavailable ||
-			showSuccess ||
 			applyInFlightRef.current
 		)
 			return;
 		applyInFlightRef.current = true;
-		onSubmissionLockChange?.(true);
 		const mode = showMarginControls ? selectedMode : currentMode;
-		const lev = showLeverageControls ? canonicalLeverage : effectiveLeverage;
-		if (showLeverageControls) {
-			setSubmittedLeverage(lev);
-			onLeverageDraftChange?.(lev);
-		}
+		onClose();
 		try {
-			await onApply(mode, lev);
-			applyInFlightRef.current = false;
-			onSubmissionLockChange?.(false);
-			if (mountedRef.current) triggerAutoClose();
-		} catch {
-			applyInFlightRef.current = false;
-			onSubmissionLockChange?.(false);
-			if (mountedRef.current && showLeverageControls) {
-				setSubmittedLeverage(null);
-				onLeverageDraftChange?.(null);
+			const leverage = await onApply(mode, showLeverageControls ? canonicalLeverage : effectiveLeverage);
+			if (leverage === null || !isSessionCurrent()) return;
+			const leverageNotice = t`Leverage updated to ${leverage}x`;
+			if (!modeDirty) {
+				toast.success(leverageNotice);
+			} else if (leverageDirty) {
+				toast.success(t`Margin mode updated`, { description: leverageNotice });
+			} else {
+				toast.success(t`Margin mode updated`);
 			}
+		} catch (error) {
+			if (isSessionCurrent()) {
+				toast.error(error instanceof Error && error.message ? error.message : t`Update failed`);
+			}
+		} finally {
+			applyInFlightRef.current = false;
 		}
 	}
 
@@ -501,10 +479,8 @@ function MarginModeForm({
 									isSelected={selectedMode === option.id}
 									isCurrent={currentMode === option.id}
 									isDisabled={!allowsCrossMargin && option.id === "cross"}
-									isUpdating={isUpdating || showSuccess}
-									onSelect={() => {
-										if (!showSuccess) setSelectedMode(option.id);
-									}}
+									isUpdating={isUpdating}
+									onSelect={() => setSelectedMode(option.id)}
 								/>
 							))}
 						</div>
@@ -515,9 +491,9 @@ function MarginModeForm({
 					<LeverageEditor
 						key={maxLeverage}
 						value={displayLeverage}
-						riskValue={showSuccess ? successfulLeverage : (leverageDraft ?? canonicalLeverage)}
+						riskValue={leverageDraft ?? canonicalLeverage}
 						max={maxLeverage}
-						disabled={isUpdating || showSuccess || !sessionOpen}
+						disabled={isUpdating || !sessionOpen}
 						onChange={handleLeverageChange}
 						onDraftChange={handleLeverageGestureDraftChange}
 						onInputValidityChange={setLeverageInputValid}
@@ -556,65 +532,32 @@ function MarginModeForm({
 						<Trans>This market only supports isolated margin mode.</Trans>
 					</p>
 				)}
-
-				{updateError && (
-					<div
-						role="alert"
-						className="flex items-center gap-2 rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error"
-					>
-						<WarningIcon className="size-3.5 shrink-0" />
-						<span className="min-w-0 flex-1">{updateError.message || t`Update failed`}</span>
-					</div>
-				)}
 			</ModalContent>
 
 			<ModalFooter className={cn(mobileLayout && "px-4 pt-0 pb-4")}>
-				{!showSuccess && mobileView === "leverage" && (
+				{mobileView === "leverage" && (
 					<Button
 						variant="outline"
 						intent="neutral"
 						size="sm"
 						onClick={handleCancel}
-						disabled={isUpdating}
 						className="min-h-11 flex-1 rounded-[10px] border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none"
 					>
 						<Trans>Cancel</Trans>
 					</Button>
 				)}
-				{showSuccess ? (
-					<Button
-						variant="filled"
-						intent="neutral"
-						size="sm"
-						disabled
-						className={cn(
-							"gap-1.5 border-stroke-success-strong/30 bg-success-soft text-success disabled:opacity-100",
-							mobileLayout && "min-h-11 w-full flex-1",
-						)}
-						iconLeft={<CheckIcon className="size-3.5" weight="bold" />}
-					>
-						{showLeverageControls ? <Trans>Updated to {displayLeverage}x</Trans> : <Trans>Updated</Trans>}
-					</Button>
-				) : (
-					<TradingActionButton
-						requiresBuilderFee={false}
-						onClick={handleConfirm}
-						isActivationLocked={isLeverageDraftActive}
-						disabled={
-							!isDirty ||
-							submittedLeverage !== null ||
-							leverageInputInvalid ||
-							isUpdating ||
-							cannotSwitch ||
-							positionStateUnavailable
-						}
-						containerClassName={cn(mobileLayout && "w-full flex-1")}
-						className="gap-1.5 min-h-11 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control hover:opacity-90"
-					>
-						{isUpdating && <SpinnerGapIcon className="size-3.5 animate-spin" />}
-						<Trans>Confirm</Trans>
-					</TradingActionButton>
-				)}
+				<TradingActionButton
+					requiresBuilderFee={false}
+					onClick={handleConfirm}
+					isActivationLocked={isLeverageDraftActive}
+					disabled={
+						!sessionOpen || !isDirty || leverageInputInvalid || isUpdating || cannotSwitch || positionStateUnavailable
+					}
+					containerClassName={cn(mobileLayout && "w-full flex-1")}
+					className="gap-1.5 min-h-11 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control hover:opacity-90"
+				>
+					<Trans>Confirm</Trans>
+				</TradingActionButton>
 			</ModalFooter>
 		</>
 	);

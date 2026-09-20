@@ -3754,6 +3754,11 @@ msgstr "الرافعة المالية"
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "الرافعة المالية ثابتة عند {currentLeverage}× لهذا السوق."
 
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Leverage updated to {leverage}x"
+msgstr "تم تحديث الرافعة المالية إلى {leverage}x"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
 msgstr "إجمالي مكافآت USDC التراكمية"
@@ -4105,6 +4110,11 @@ msgstr "نظرة سريعة على الهامش ومخاطر الحساب"
 #: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "وضع الهامش"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin mode updated"
+msgstr "تم تحديث وضع الهامش"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -5732,8 +5742,8 @@ msgstr "وقت المعالجة"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Processing..."
-msgstr "جارٍ المعالجة..."
+#~ msgid "Processing..."
+#~ msgstr "جارٍ المعالجة..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Processing…"
@@ -6736,8 +6746,8 @@ msgid "Send USDC to your wallet address below."
 msgstr "أرسل USDC إلى عنوان محفظتك أدناه."
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Sending..."
-msgstr "جارٍ الإرسال..."
+#~ msgid "Sending..."
+#~ msgstr "جارٍ الإرسال..."
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -8630,8 +8640,8 @@ msgid "Transfer USDC"
 msgstr "تحويل USDC"
 
 #: src/components/trade/positions/transfer-modal.tsx
-msgid "Transferring..."
-msgstr "جارٍ التحويل..."
+#~ msgid "Transferring..."
+#~ msgstr "جارٍ التحويل..."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
@@ -9056,7 +9066,6 @@ msgstr "فشل التحديث"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "تم التحديث"
 
@@ -9066,8 +9075,8 @@ msgstr "تحديث مباشر"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Updated to {displayLeverage}x"
-msgstr "تم التحديث إلى {displayLeverage}x"
+#~ msgid "Updated to {displayLeverage}x"
+#~ msgstr "تم التحديث إلى {displayLeverage}x"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #~ msgid "Updating..."

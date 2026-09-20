@@ -3754,6 +3754,11 @@ msgstr "Levier"
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "L'effet de levier est fixé à {currentLeverage}× pour ce marché."
 
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Leverage updated to {leverage}x"
+msgstr "Effet de levier mis à jour à {leverage}x"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
 msgstr "Récompenses USDC cumulées"
@@ -4105,6 +4110,11 @@ msgstr "Marge et risque du compte en un coup d'œil"
 #: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "Mode de marge"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin mode updated"
+msgstr "Mode de marge mis à jour"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -5732,8 +5742,8 @@ msgstr "Délai de traitement"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Processing..."
-msgstr "Traitement en cours..."
+#~ msgid "Processing..."
+#~ msgstr "Traitement en cours..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Processing…"
@@ -6736,8 +6746,8 @@ msgid "Send USDC to your wallet address below."
 msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Sending..."
-msgstr "Envoi en cours..."
+#~ msgid "Sending..."
+#~ msgstr "Envoi en cours..."
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -8630,8 +8640,8 @@ msgid "Transfer USDC"
 msgstr "Transférer des USDC"
 
 #: src/components/trade/positions/transfer-modal.tsx
-msgid "Transferring..."
-msgstr "Transfert en cours..."
+#~ msgid "Transferring..."
+#~ msgstr "Transfert en cours..."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
@@ -9056,7 +9066,6 @@ msgstr "Échec de la mise à jour"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "Mis à jour"
 
@@ -9066,8 +9075,8 @@ msgstr "Mise à jour en direct"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Updated to {displayLeverage}x"
-msgstr "Mis à jour à {displayLeverage}x"
+#~ msgid "Updated to {displayLeverage}x"
+#~ msgstr "Mis à jour à {displayLeverage}x"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #~ msgid "Updating..."

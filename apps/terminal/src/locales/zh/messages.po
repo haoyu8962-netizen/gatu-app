@@ -3754,6 +3754,11 @@ msgstr "杠杆"
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "该市场的杠杆固定为 {currentLeverage}×。"
 
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Leverage updated to {leverage}x"
+msgstr "杠杆已更新为 {leverage}x"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
 msgstr "累计 USDC 奖励"
@@ -4105,6 +4110,11 @@ msgstr "保证金与账户风险一览"
 #: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "保证金模式"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin mode updated"
+msgstr "保证金模式已更新"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -5732,8 +5742,8 @@ msgstr "处理时间"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Processing..."
-msgstr "处理中…"
+#~ msgid "Processing..."
+#~ msgstr "处理中…"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Processing…"
@@ -6736,8 +6746,8 @@ msgid "Send USDC to your wallet address below."
 msgstr "将 USDC 转入下方的钱包地址。"
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Sending..."
-msgstr "发送中..."
+#~ msgid "Sending..."
+#~ msgstr "发送中..."
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -8630,8 +8640,8 @@ msgid "Transfer USDC"
 msgstr "划转 USDC"
 
 #: src/components/trade/positions/transfer-modal.tsx
-msgid "Transferring..."
-msgstr "划转中..."
+#~ msgid "Transferring..."
+#~ msgstr "划转中..."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
@@ -9056,7 +9066,6 @@ msgstr "更新失败"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "已更新"
 
@@ -9066,8 +9075,8 @@ msgstr "实时更新"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Updated to {displayLeverage}x"
-msgstr "已更新为 {displayLeverage}x"
+#~ msgid "Updated to {displayLeverage}x"
+#~ msgstr "已更新为 {displayLeverage}x"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #~ msgid "Updating..."
