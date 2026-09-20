@@ -115,6 +115,15 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - When the object being confirmed differs from what the dialog opened with, say so next to the value to review, only while the confirmation is visible and editable, and never gate submission on the notice.
 - A redesign that changes what a confirm control displays or commits to is a behavior change: document it and keep a test that renders the real dialog with the real submit path and compares the displayed value with the value sent. Testing the dialog and the submit hook separately does not cover this.
 
+## Slider gesture contract
+
+- `docs/slider-interactions.md` owns the shared `TradeSlider` behaviour, its cancellation list, the verification rules and the diagnosis procedure; `docs/adr/0018-slider-gestures-end-on-release.md` records why. Read both before touching pointer capture, gesture listeners or a cancellation path.
+- A gesture ends on `pointerup` (commit while the session is still valid and not paused, otherwise cancel), on `pointercancel` (cancel) or when its editing context ends (`disabled`, identity, range or direction change, unmount); the owning document lists the remaining cancellation paths. `lostpointercapture` and other browser bookkeeping never cancel. Moves, the release and the cancel are handled on the document for the life of the gesture, so correctness does not depend on capture.
+- Every ending is named and recorded on the control in `data-gesture-end`. Do not add a cancellation path as hardening: it needs a reason name, a real situation in which the user wants the drag discarded, evidence from physical input that ordinary drags do not reach it, and a test.
+- Script-dispatched and protocol-injected pointer events (jsdom, Playwright, DevTools, the desktop browser tools) cannot prove operating-system event order, capture or focus behaviour. State the input path in every interaction verification claim; a gesture-lifecycle change is not verified until a person has dragged the real control.
+- Diagnose a reported slider problem from the page first (`data-gesture-end`, the recorder in `docs/slider-interactions.md`), then change code. A reported defect is fixed when the reporter's scenario is confirmed, not when some defect has been found and fixed.
+- A surface must not move its slider under the pointer during a gesture; hold layout that depends on the previewed value until the gesture ends, as presentation only.
+
 ## Startup rendering contract
 
 - `docs/adr/0010-blank-until-ready-startup.md` and `.claude/rules/startup-rendering.md` own this contract. Every application route prerenders and hydrates the same visually empty `StartupFallback`: `aria-busy` and one screen-reader-only output, with no visible skeleton or chrome.
@@ -207,6 +216,18 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/margin-mode-modal.test.tsx \
   src/lib/tests/order-submission-wiring.test.ts \
   tests/mobile-trade-size-validation-a11y.test.tsx
+
+# Slider gestures (see docs/slider-interactions.md; browser suite: pnpm --dir apps/terminal run test:browser:slider)
+pnpm --dir apps/terminal exec vitest run \
+  tests/trade-size-slider-pointer-lifecycle.test.tsx \
+  tests/trade-size-slider-deferred-commit-race.test.tsx \
+  tests/trade-size-error-a11y.test.tsx \
+  tests/position-close-slider-effective-aria.test.tsx \
+  src/lib/tests/trade-size-slider.test.tsx \
+  src/lib/tests/trade-size-slider-a11y.test.tsx \
+  src/lib/tests/leverage-slider.test.tsx \
+  src/lib/tests/use-size-slider-interaction.test.tsx \
+  src/lib/tests/size-percent-input.test.tsx
 
 # Startup rendering (see .claude/rules/startup-rendering.md)
 pnpm --dir apps/terminal exec vitest run \

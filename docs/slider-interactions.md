@@ -173,6 +173,14 @@ minimum positioning were not copied. Its vibration path required a native Androi
 Capacitor platform; Android browser emulation still reported platform `web` and no
 vibration calls. This web/PWA implementation adds neither haptics nor a setting for it.
 
+A surface must not move its slider under the pointer during a gesture. Business
+previews now land while the pointer is still moving, so a message that appears or
+disappears between the quantity field and the slider would shift the slider row in
+the middle of a drag. The desktop order form therefore holds the presence and the
+measured height of its size message row for the whole gesture and applies the current
+validation result when the gesture ends (`docs/order-entry-surface-parity.md`). Holding the row is presentation
+only: submit availability and execution checks keep using the real validation result.
+
 ## Quantity and execution boundaries
 
 Quantity arithmetic stays in domain modules and uses Big.js. Multiply the precise
@@ -232,6 +240,10 @@ Regression coverage includes:
 - Real Chromium pointer/touch interactions, 390/1000/1001/1333/1920px layouts in both
   themes, exact geometry, no horizontal clipping, and the existing all-order-form
   desktop layout suite.
+- Lost pointer capture reported before the release, moves followed without capture, a
+  missed release after a capture loss, and the outcome every ending records in
+  `data-gesture-end`. These pin the order of events that physical input produced; they
+  cannot discover a new one (see "Changing the gesture lifecycle").
 
 The browser fixture explicitly scans application CSS and uses the existing separate
 `node_modules/.vite-browser` cache. Its performance attachment records callback
@@ -239,6 +251,115 @@ intervals, parent commits and timing. Bounds validate scheduling and final value
 they do not establish device-wide latency, mainnet execution, or a measured speedup
 against the old implementation. Wallet/signature/real order actions are tested
 through existing controlled test doubles, without creating live orders.
+
+## Changing the gesture lifecycle
+
+[ADR 0018](adr/0018-slider-gestures-end-on-release.md) records why these rules exist:
+a cancellation on `lostpointercapture` was added three times as lifecycle hardening,
+passed every test, and threw away most real mouse drags for weeks.
+
+A gesture ends on `pointerup` (commit), on `pointercancel` (cancel), or when its
+editing context ends (cancel). Browser bookkeeping such as `lostpointercapture` is not
+an ending. Before adding or keeping any other cancellation path, write down all four:
+
+1. the reason name it records in `data-gesture-end`;
+2. a concrete situation in which a user would want the drag thrown away;
+3. evidence from physical input that ordinary drags do not reach it;
+4. the test that pins it.
+
+If the third item cannot be produced, do not add the path. "More defensive" is not a
+reason: every extra cancellation is a way to lose a drag the user meant.
+
+Say which input path a verification used. They prove different things:
+
+| Input path | Proves | Does not prove |
+| --- | --- | --- |
+| Script-dispatched events (jsdom, `dispatchEvent` in a page) | the behaviour for the order of events the test chose | which order a browser produces |
+| Protocol-injected events (Playwright, DevTools `Input.dispatchMouseEvent`, the desktop app's browser tools) | real hit testing, layout, focus and timers in a real engine | operating-system mouse capture, the order of `lostpointercapture` and `pointerup`, embedder quirks |
+| Physical input by a person | the event order, capture and focus behaviour of that browser, embedder and device | other browsers, embedders and devices |
+
+A change to pointer capture, to the listeners that start or end a gesture, or to the
+cancellation list is not verified until a person has dragged the real control in the
+environments that matter, and the record names them. "Checked on the real page" with
+injected events is not that.
+
+## Diagnosing a reported jump
+
+Do not start from the code. A thumb that returns to where it started is a cancelled
+gesture, a commit the business layer rejected, or a value that was re-derived after
+the release, and the page can say which.
+
+1. Ask the reporter to reproduce on a page you can read, or to read the attribute for
+   you right after the jump, on the slider that jumped. In the order form that is
+   `document.querySelector("[data-trade-slider-control]").dataset.gestureEnd`; with a
+   dialog open use `document.querySelector("[role=dialog] [data-trade-slider-control]")`.
+   `cancel:<reason>` names the path; `commit` or `unchanged` means the slider did its
+   part and the cause is in the caller or in the data.
+2. For more than the last gesture, paste the recorder below into the console before
+   reproducing. It survives nothing but the current page load, so install it after
+   any reload. It records outcomes, the slider's label and event order, no values.
+   Each press on a slider starts its own record, kept per control and per pointer, so a
+   quick second press or a press elsewhere cannot be written onto the previous gesture.
+
+```js
+(() => {
+	const byPointer = new Map();
+	const byControl = new WeakMap();
+	for (const type of ["pointerdown", "pointerup", "pointercancel", "lostpointercapture"]) {
+		document.addEventListener(
+			type,
+			(event) => {
+				if (type === "pointerdown") {
+					const control = event.target.closest?.("[data-trade-slider-control]");
+					byPointer.delete(event.pointerId);
+					if (!control) return;
+					const gesture = { trusted: event.isTrusted, order: [] };
+					byPointer.set(event.pointerId, gesture);
+					byControl.set(control, gesture);
+				}
+				byPointer.get(event.pointerId)?.order.push(type);
+			},
+			true,
+		);
+	}
+	new MutationObserver((records) => {
+		for (const record of records) {
+			const end = record.target.getAttribute("data-gesture-end");
+			const finished = byControl.get(record.target);
+			if (!end || !finished) continue;
+			const slider = record.target.querySelector("input[type=range]");
+			const label = slider?.getAttribute("aria-label") ?? slider?.labels?.[0]?.textContent ?? null;
+			setTimeout(() => {
+				const log = JSON.parse(sessionStorage.getItem("sliderGestures") ?? "[]");
+				log.push({ end, label, trusted: finished.trusted, order: finished.order.join(" > "), at: new Date().toISOString() });
+				sessionStorage.setItem("sliderGestures", JSON.stringify(log.slice(-300)));
+			}, 60);
+		}
+	}).observe(document.body, { attributes: true, subtree: true, attributeFilter: ["data-gesture-end"] });
+})();
+```
+
+   Read it back with `JSON.parse(sessionStorage.getItem("sliderGestures"))`.
+3. `trusted` is true for protocol-injected events too. Only gestures made by a person
+   count as evidence about event order.
+4. When measuring with script-dispatched events on a page someone is also using, block
+   physical moves for the measurement only and always remove the block: the mouse and
+   the script share pointer id 1, and the slider follows both.
+
+```js
+const blockPhysicalMoves = (event) => {
+	if (event.isTrusted) event.stopImmediatePropagation();
+};
+window.addEventListener("pointermove", blockPhysicalMoves, true);
+try {
+	await runScriptedDrag();
+} finally {
+	window.removeEventListener("pointermove", blockPhysicalMoves, true);
+}
+```
+
+5. A fix is confirmed by the reporter's scenario, not by finding and fixing a defect.
+   Two real defects were fixed before the reported one was looked at (ADR 0018).
 
 ## SDK request verification
 

@@ -29,7 +29,7 @@
 | 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md) |
 | 确认弹窗：展示与执行 | [确认面契约](confirmation-surfaces.md)、[ADR 0017](adr/0017-market-close-confirmed-size-ceiling.md)、[ADR 0014](adr/0014-market-close-submit-and-dismiss.md)；目前只有市价平仓完整满足 |
 | 订单簿数据、交互与动画 | [分组隔离修复依据](terminal-review-remediation.md)、[传输 ADR](adr/0003-orderbook-transport-isolation.md)、[累计悬浮](orderbook-hover.md)、[行几何](orderbook-layout.md)、[新增档位及数量反馈](orderbook-new-level-animation.md)、[最近成交面板](recent-trades.md) |
-| 响应式布局与控件 | [桌面网格](desktop-grid-layout.md)、[交易滑杆](slider-interactions.md)、[工具栏](trading-toolbar-redesign.md) |
+| 响应式布局与控件 | [桌面网格](desktop-grid-layout.md)、[交易滑杆](slider-interactions.md)（含手势改动的验证规则与「滑杆跳回」的诊断步骤；缘由见 [ADR 0018](adr/0018-slider-gestures-end-on-release.md)）、[工具栏](trading-toolbar-redesign.md) |
 | 被动加载与语言切换 | [数据展示契约](mobile-data-presentation.md)、[加载审查与证据](terminal-loading-audit.md)、[运行时翻译](i18n-presentation.md) |
 | 视觉与启动性能 | [UI 入口及优先级](ui-ux-guidelines.md)、[启动性能基线](terminal-performance-baseline.md)、[OG 资产](../designs/og-cards/README.md) |
 | Hyperliquid API 核对 | [核对工作流](hyperliquid-sdk-reference.md)、[方法目录](hyperliquid-sdk-directory.md)、[独立 API Skill 资料](../packages/hyperliquid-api/README.md) |

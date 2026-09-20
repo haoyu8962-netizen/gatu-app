@@ -726,7 +726,10 @@ away. Reasons that end the editing context (`disabled`, identity, range or direc
 changes) still cancel it at once. `lostpointercapture` never cancels: embedded
 webviews report it a few milliseconds before `pointerup` with a real mouse, and the
 release that follows must still commit. The control keeps the reason the last gesture
-ended in `data-gesture-end`.
+ended in `data-gesture-end`. Adding a cancellation path, and verifying any change to
+the gesture lifecycle, follow [ADR 0018](adr/0018-slider-gestures-end-on-release.md):
+injected pointer events do not prove operating-system event order, so such a change
+is verified with physical input and a reported jump is diagnosed from the page first.
 Slippage persistence requires explicit confirmation. These controls never replace
 wallet, legal, funding, freshness, market identity, or SDK-boundary validation.
 Market orders round protective prices inward to valid ticks, and the final
