@@ -32,7 +32,7 @@ interface Props {
 }
 
 export const TOP_NAV_DEPOSIT_CLASS =
-	"h-9 min-h-9 shrink-0 gap-[7px] rounded-[10px] bg-market-close-control px-3.5 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control nav-compact:size-9 nav-compact:px-0";
+	"h-9 min-h-9 shrink-0 gap-[7px] rounded-[10px] bg-market-close-control px-3.5 font-market-close text-2sm leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control nav-compact:size-9 nav-compact:px-0";
 export const TOP_NAV_DEPOSIT_LABEL_CLASS = "nav-compact:sr-only";
 
 export const TOP_NAV_ITEM_CLASS =
@@ -81,7 +81,7 @@ export function TopNavView({
 					{logo}
 				</div>
 				<div className="hidden min-[1001px]:flex min-w-0 items-center">
-					<nav className="flex items-center gap-0.5 text-[13px] leading-[18px]" aria-label={navigationLabel}>
+					<nav className="flex items-center gap-0.5 text-2sm leading-[18px]" aria-label={navigationLabel}>
 						{items.map((item) => {
 							const className = cn(
 								TOP_NAV_ITEM_CLASS,

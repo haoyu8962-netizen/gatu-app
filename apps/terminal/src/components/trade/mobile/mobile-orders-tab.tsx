@@ -1077,7 +1077,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 									<ListIcon className="size-4 text-market-close-subtle" aria-hidden="true" />
 								</div>
 								<div className="space-y-0.5">
-									<p className="text-[13px] font-semibold leading-[18px] text-market-close-muted">{t`No open orders.`}</p>
+									<p className="text-2sm font-semibold leading-[18px] text-market-close-muted">{t`No open orders.`}</p>
 									<p className="text-xs leading-4 text-market-close-subtle">
 										{t`Submitted limit and trigger orders will appear here.`}
 									</p>
@@ -1197,7 +1197,7 @@ interface OrderMetricProps {
 function OrderMetric({ label, value, valueClassName }: OrderMetricProps) {
 	return (
 		<div className="flex min-w-0 flex-col gap-0.5">
-			<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{label}</div>
+			<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{label}</div>
 			<div
 				className={cn(
 					"truncate text-xs font-semibold leading-[17px] tabular-nums text-market-close-fg",
@@ -1272,7 +1272,7 @@ function MobileOrderCard({
 				className="grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_16px] gap-2.5 px-3.5 py-[11px]"
 			>
 				<div className="flex min-w-0 flex-col gap-0.5">
-					<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</div>
+					<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Market`}</div>
 					<button
 						type="button"
 						onClick={() => onSelectMarket(order.coin, side)}
@@ -1313,7 +1313,7 @@ function MobileOrderCard({
 						<div className="flex items-center gap-4">
 							<button
 								type="button"
-								className="relative inline-flex h-[18px] items-center rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-fg after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus aria-disabled:text-market-close-subtle disabled:cursor-not-allowed disabled:text-market-close-subtle"
+								className="relative inline-flex h-[18px] items-center rounded-xs text-2sm leading-[18px] font-semibold whitespace-nowrap text-market-close-fg after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus aria-disabled:text-market-close-subtle disabled:cursor-not-allowed disabled:text-market-close-subtle"
 								onClick={() => {
 									if (!canModify) {
 										if (modifyUnavailableReason) onModifyUnavailable(modifyUnavailableReason);
@@ -1330,7 +1330,7 @@ function MobileOrderCard({
 							</button>
 							<button
 								type="button"
-								className="relative inline-flex h-[18px] items-center gap-1.5 rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-danger after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
+								className="relative inline-flex h-[18px] items-center gap-1.5 rounded-xs text-2sm leading-[18px] font-semibold whitespace-nowrap text-market-close-danger after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 								onClick={() => onCancel([order])}
 								disabled={isCancelling || actionsDisabled}
 							>

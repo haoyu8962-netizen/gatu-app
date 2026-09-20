@@ -314,11 +314,11 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 							{sizeSymbol}
 						</span>
 					</ModalTitle>
-					<span className="shrink-0 text-[13px] leading-[18px] text-market-close-muted min-[1001px]:hidden">
+					<span className="shrink-0 text-2sm leading-[18px] text-market-close-muted min-[1001px]:hidden">
 						{t({ message: "Limit", context: "Order type" })}
 					</span>
 				</div>
-				<ModalDescription className="sr-only max-w-sm text-[13px] leading-[18px] text-market-close-muted min-[1001px]:not-sr-only">
+				<ModalDescription className="sr-only max-w-sm text-2sm leading-[18px] text-market-close-muted min-[1001px]:not-sr-only">
 					{t`Order will rest until filled or canceled.`}
 				</ModalDescription>
 			</PositionCloseDialogHeader>
@@ -338,7 +338,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 					<label
 						id={`${priceInputId}-label`}
 						htmlFor={priceInputId}
-						className="text-[13px] leading-[18px] font-semibold text-market-close-fg"
+						className="text-2sm leading-[18px] font-semibold text-market-close-fg"
 					>
 						{t`Limit Price`}
 					</label>

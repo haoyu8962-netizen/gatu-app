@@ -30,7 +30,7 @@ export function renderBootstrapErrorPage({
 		container.lang = locale;
 		container.dir = direction;
 		container.style.cssText =
-			"min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0F1A1F;color:#fff;font-family:Inter,system-ui,sans-serif;text-align:center";
+			"min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0F1A1F;color:#fff;font-family:system-ui,sans-serif;text-align:center";
 
 		const content = document.createElement("div");
 		content.setAttribute("role", "alert");

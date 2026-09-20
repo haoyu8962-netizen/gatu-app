@@ -1453,7 +1453,7 @@ function PositionTpSlForm({
 					) : null}
 
 					{planError ? <p className="text-xs text-error">{planError}</p> : null}
-					<p className="text-[11px] leading-relaxed text-market-close-subtle">
+					<p className="text-2xs leading-relaxed text-market-close-subtle">
 						{t`By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price.`}
 					</p>
 				</div>

@@ -9,10 +9,12 @@ const SOURCE_ROOT = resolve(TEST_DIR, "../..");
 const ARBITRARY_FONT_SIZE = /(?<![\w-])!?text-\[\d+(?:\.\d+)?px\]/g;
 const ARBITRARY_RADIUS = /(?<![\w-])!?rounded(?:-[a-z]{1,2})?-\[\d+(?:\.\d+)?px\]/g;
 const IMPORTANT_MENU_OR_DIALOG_SURFACE = /(?<![\w-])!(?:bg-modal|bg-overlay|shadow-overlay)(?![\w-])/g;
+const RELATIVE_FONT_SIZE = /(?<![\w-])!?text-\[\d+(?:\.\d+)?(?:em|rem)\]/g;
 
-const ARBITRARY_FONT_SIZE_BASELINE = 240;
+const ARBITRARY_FONT_SIZE_BASELINE = 113;
 const ARBITRARY_RADIUS_BASELINE = 227;
 const IMPORTANT_SURFACE_BASELINE = 18;
+const RELATIVE_FONT_SIZE_BASELINE = 1;
 
 function listSourceFiles(directory: string): string[] {
 	return readdirSync(directory).flatMap((name) => {
@@ -58,6 +60,13 @@ describe("design token ratchet", () => {
 		const total = countMatches(IMPORTANT_MENU_OR_DIALOG_SURFACE);
 		expect(total, describeRatchet("Important surface override usage", IMPORTANT_SURFACE_BASELINE, total)).toBe(
 			IMPORTANT_SURFACE_BASELINE,
+		);
+	});
+
+	it("does not add relative font sizes beyond text that scales with its parent", () => {
+		const total = countMatches(RELATIVE_FONT_SIZE);
+		expect(total, describeRatchet("Relative text-[Nem] usage", RELATIVE_FONT_SIZE_BASELINE, total)).toBe(
+			RELATIVE_FONT_SIZE_BASELINE,
 		);
 	});
 });

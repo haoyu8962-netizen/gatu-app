@@ -101,14 +101,11 @@
   --font-mono: ui-monospace, "SF Mono", monospace;
 
   /* ---- Typography Scale (Desktop) ----
-     Figma name      → Tailwind class
-     Tiny     14/20  → text-xs
-     Small    16/24  → text-sm
-     Heading4 20/28  → text-base
-     Heading3 24/32  → text-lg
-     Heading2 32/40  → text-xl
-     Heading1 40/48  → text-2xl
-     Display  56/64  → text-3xl
+     Equal to the @gatu/ui scale (typography-scale-contract); Layer 4 shrinks xl/2xl/3xl at 1000px.
+     size/line-height → Tailwind class
+     10/14 → text-3xs    11/16 → text-2xs    12/16 → text-xs     13/18 → text-2sm
+     14/20 → text-sm     16/24 → text-base   20/28 → text-lg     28/36 → text-xl
+     40/48 → text-2xl    56/64 → text-3xl
   */
   --text-3xs: 10px;
   --text-3xs--line-height: 14px;

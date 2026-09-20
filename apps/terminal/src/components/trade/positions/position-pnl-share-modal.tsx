@@ -215,7 +215,7 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 							</div>
 							<time
 								dateTime={new Date(position.capturedAtMs).toISOString()}
-								className="whitespace-nowrap text-[10px] leading-[14px] text-position-share-muted tabular-nums min-[1001px]:text-[11px] min-[1001px]:leading-4"
+								className="whitespace-nowrap text-3xs leading-[14px] text-position-share-muted tabular-nums min-[1001px]:text-2xs min-[1001px]:leading-4"
 							>
 								{timestamp}
 							</time>
@@ -232,7 +232,7 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 							) : null}
 							<span
 								className={cn(
-									"shrink-0 rounded-[4px] px-2 py-0.5 text-[11px] leading-4 font-bold whitespace-nowrap text-position-share-fg",
+									"shrink-0 rounded-[4px] px-2 py-0.5 text-2xs leading-4 font-bold whitespace-nowrap text-position-share-fg",
 									isLong ? "bg-position-share-long" : "bg-position-share-short",
 								)}
 							>
@@ -241,7 +241,7 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 						</div>
 
 						<div className="flex flex-col gap-0.5">
-							<span className="text-[10px] leading-[14px] text-position-share-muted min-[1001px]:text-[11px] min-[1001px]:leading-4">
+							<span className="text-3xs leading-[14px] text-position-share-muted min-[1001px]:text-2xs min-[1001px]:leading-4">
 								{roeLabel}
 							</span>
 							<strong
@@ -254,7 +254,7 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 							</strong>
 							<span
 								className={cn(
-									"text-[13px] leading-[18px] font-semibold tabular-nums min-[1001px]:text-sm min-[1001px]:leading-5",
+									"text-2sm leading-[18px] font-semibold tabular-nums min-[1001px]:text-sm min-[1001px]:leading-5",
 									pnlToneClass,
 								)}
 							>
@@ -331,10 +331,10 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 function SharePrice({ label, value }: { label: string; value: string }) {
 	return (
 		<div className="min-w-0">
-			<div className="overflow-hidden text-[9px] leading-[13px] text-ellipsis whitespace-nowrap text-position-share-muted min-[1001px]:text-[10px] min-[1001px]:leading-[14px]">
+			<div className="overflow-hidden text-[9px] leading-[13px] text-ellipsis whitespace-nowrap text-position-share-muted min-[1001px]:text-3xs min-[1001px]:leading-[14px]">
 				{label}
 			</div>
-			<div className="overflow-hidden text-xs leading-[17px] font-semibold text-ellipsis whitespace-nowrap text-position-share-fg tabular-nums min-[1001px]:text-[13px] min-[1001px]:leading-[18px]">
+			<div className="overflow-hidden text-xs leading-[17px] font-semibold text-ellipsis whitespace-nowrap text-position-share-fg tabular-nums min-[1001px]:text-2sm min-[1001px]:leading-[18px]">
 				{value}
 			</div>
 		</div>

@@ -30,8 +30,8 @@ import {
 } from "./positions-panel-table-styles";
 
 const fundingTableHeadClass =
-	"sticky top-0 z-[1] h-[33px] bg-surface px-2 py-0 text-[11px] leading-4 font-semibold normal-case tracking-normal text-market-close-subtle";
-const fundingTableCellClass = "h-10 px-2 py-0 text-[13px] leading-[18px]";
+	"sticky top-0 z-[1] h-[33px] bg-surface px-2 py-0 text-2xs leading-4 font-semibold normal-case tracking-normal text-market-close-subtle";
+const fundingTableCellClass = "h-10 px-2 py-0 text-2sm leading-[18px]";
 const fundingAssetClass =
 	"h-auto min-h-0 rounded-[4px] border-0 bg-transparent p-0 shadow-none hover:bg-transparent active:not-data-disabled:scale-100";
 const fundingFooterActionClass =
@@ -179,7 +179,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 													onClick={() => navigateToMarket(update.coin)}
 													aria-label={t`Switch to ${update.coin} market`}
 													className={fundingAssetClass}
-													nameClassName="text-[13px] leading-[18px] font-bold text-market-close-fg"
+													nameClassName="text-2sm leading-[18px] font-bold text-market-close-fg"
 													fit
 												/>
 											</TableCell>

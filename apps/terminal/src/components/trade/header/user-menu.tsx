@@ -142,7 +142,7 @@ export function UserMenu({ variant = "default" }: Props) {
 					isDesktopNav ? "shrink-0" : cn("min-w-0 max-w-full", HEADER_TOUCH_HIT_AREA_CLASS),
 					"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
 					isDesktopNav &&
-						"rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none",
+						"rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-2sm leading-[18px] font-bold text-market-close-on-control shadow-none",
 				)}
 				disabled={!recoveryAvailable}
 				onClick={handleReloadPage}
@@ -280,7 +280,7 @@ export function UserMenu({ variant = "default" }: Props) {
 					"transition-[color,background-color,border-color] duration-150 ease-out",
 					isDesktopNav ? "shrink-0" : cn("min-w-0 max-w-full", HEADER_TOUCH_HIT_AREA_CLASS),
 					isDesktopNav &&
-						"!rounded-[10px] border-market-close-stroke-input px-3 font-market-close text-[13px] leading-[18px] shadow-none hover:border-market-close-fg hover:bg-market-close-hover data-[popup-open]:border-market-close-fg data-[popup-open]:bg-transparent [&>svg]:size-[10px]",
+						"!rounded-[10px] border-market-close-stroke-input px-3 font-market-close text-2sm leading-[18px] shadow-none hover:border-market-close-fg hover:bg-market-close-hover data-[popup-open]:border-market-close-fg data-[popup-open]:bg-transparent [&>svg]:size-[10px]",
 				)}
 				popupClassName={cn(menuPopupSkinClass, isDesktopNav && "min-w-[268px]")}
 				triggerAriaLabel={t`Account and wallet`}
@@ -298,14 +298,14 @@ export function UserMenu({ variant = "default" }: Props) {
 							className={cn(
 								"min-w-0 truncate font-mono text-xs text-fg",
 								USER_MENU_LABEL_MAX_WIDTH,
-								isDesktopNav && "font-market-close text-[13px] leading-[18px] font-semibold nav-compact:hidden",
+								isDesktopNav && "font-market-close text-2sm leading-[18px] font-semibold nav-compact:hidden",
 							)}
 							title={!isDesktopNav && emailAddress ? emailAddress : undefined}
 						>
 							<bdi dir="ltr">{isDesktopNav ? displayLabel : mobileDisplayLabel}</bdi>
 						</span>
 						{isDesktopNav && (
-							<span className="hidden min-w-0 max-w-[8rem] truncate font-mono text-[13px] leading-[18px] font-semibold text-market-close-fg nav-compact:block">
+							<span className="hidden min-w-0 max-w-[8rem] truncate font-mono text-2sm leading-[18px] font-semibold text-market-close-fg nav-compact:block">
 								<bdi dir="ltr">{compactDisplayLabel}</bdi>
 							</span>
 						)}

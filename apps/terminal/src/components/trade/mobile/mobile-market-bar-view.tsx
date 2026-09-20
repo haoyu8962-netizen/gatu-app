@@ -11,7 +11,7 @@ export const marketQuote =
 	"grid min-w-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 overflow-visible max-[360px]:gap-1";
 export const marketPrice =
 	"block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[18px] leading-[22px] font-bold text-trading-panel-fg tabular-nums max-[360px]:text-base max-[360px]:leading-5";
-export const marketChange = "max-w-full whitespace-normal text-[11px] leading-[15px] font-semibold tabular-nums";
+export const marketChange = "max-w-full whitespace-normal text-2xs leading-[15px] font-semibold tabular-nums";
 export const marketExpand =
 	"relative flex h-[30px] w-9 shrink-0 items-center justify-center rounded-[8px] border bg-transparent after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-trading-panel-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus";
 
