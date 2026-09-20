@@ -198,7 +198,7 @@ describe("order confirmation gate", () => {
 		expect(mocks.toastError).toHaveBeenCalledTimes(1);
 	});
 
-	it("keeps the pending order while the submission is in flight", async () => {
+	it("closes the confirmation at the click and executes once in the background", async () => {
 		let releaseExecute: (() => void) | null = null;
 		execute = (input: string) =>
 			new Promise<void>((resolve) => {
@@ -216,10 +216,16 @@ describe("order confirmation gate", () => {
 			confirmed = currentHook().confirm();
 		});
 
+		expect(currentHook().pending).toBeNull();
 		expect(currentHook().isConfirming).toBe(true);
+		expect(executed).toEqual(["order-1"]);
 
-		act(() => currentHook().cancel());
-		expect(currentHook().pending).not.toBeNull();
+		await act(async () => {
+			await currentHook().confirm();
+			await currentHook().requestSubmit("order-2", DRAFT);
+		});
+		expect(executed).toEqual(["order-1"]);
+		expect(currentHook().pending).toBeNull();
 
 		await act(async () => {
 			releaseExecute?.();
@@ -227,8 +233,44 @@ describe("order confirmation gate", () => {
 		});
 
 		expect(executed).toEqual(["order-1"]);
-		expect(currentHook().pending).toBeNull();
 		expect(currentHook().isConfirming).toBe(false);
+
+		await act(async () => {
+			await currentHook().requestSubmit("order-3", DRAFT);
+		});
+		expect(currentHook().pending?.input).toBe("order-3");
+	});
+
+	it("executes once when the confirm control is activated twice in the same tick", async () => {
+		act(() => root.render(<Probe />));
+		await act(async () => {
+			await currentHook().requestSubmit("order-1", DRAFT);
+		});
+		await act(async () => {
+			const hook = currentHook();
+			await Promise.all([hook.confirm(), hook.confirm()]);
+		});
+		expect(executed).toEqual(["order-1"]);
+	});
+
+	it("reopens for the next order after a failed execution", async () => {
+		execute = async () => {
+			throw new Error("rejected");
+		};
+		act(() => root.render(<Probe />));
+		await act(async () => {
+			await currentHook().requestSubmit("order-1", DRAFT);
+		});
+		await act(async () => {
+			await currentHook()
+				.confirm()
+				.catch(() => undefined);
+		});
+		expect(currentHook().isConfirming).toBe(false);
+		await act(async () => {
+			await currentHook().requestSubmit("order-2", DRAFT);
+		});
+		expect(currentHook().pending?.input).toBe("order-2");
 	});
 });
 

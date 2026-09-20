@@ -14,7 +14,6 @@ import {
 } from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
-import type { PositionReverseTarget } from "@/hooks/trade/use-position-reverse-submit";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import {
@@ -28,6 +27,7 @@ import {
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
+import { usePositionDialogActions } from "@/stores/use-position-dialog-store";
 import type {
 	IsolatedMarginPositionRef,
 	IsolatedMarginPositionTarget,
@@ -40,10 +40,8 @@ import type {
 } from "../positions/position-dialog-types";
 import { PositionFilterToolbar } from "../positions/position-filter-toolbar";
 import { PositionIsolatedMarginModal } from "../positions/position-isolated-margin-modal";
-import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
 import type { PositionMarketOption } from "../positions/position-market-filter";
 import { PositionPnlShareModal } from "../positions/position-pnl-share-modal";
-import { PositionReverseConfirmationController } from "../positions/position-reverse-confirmation-controller";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
 import { MobilePositionCard } from "./mobile-position-card";
@@ -85,12 +83,10 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 	}
 	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
 	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionTarget | null>(null);
-	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
-	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
 	const [isolatedMarginModalOpen, setIsolatedMarginModalOpen] = useState(false);
 	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
 		useState<IsolatedMarginPositionTarget | null>(null);
-	const [selectedReverseTarget, setSelectedReverseTarget] = useState<PositionReverseTarget | null>(null);
+	const { openLimitClose, openReverse } = usePositionDialogActions();
 	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
 		ownerKey,
@@ -198,12 +194,11 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 
 	function handleReverse(data: PositionReverseRef) {
 		if (!address) return;
-		setSelectedReverseTarget({ ...data, owner: address.toLowerCase(), env });
+		openReverse({ ...data, owner: address.toLowerCase(), env });
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {
-		setSelectedLimitClosePosition(data);
-		setLimitCloseModalOpen(true);
+		openLimitClose(data);
 	}
 
 	function handleOpenTpSlModal(data: TpSlPositionRef) {
@@ -226,21 +221,10 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 	const positionModals = (
 		<>
 			<PositionTpSlModal open={tpSlModalOpen} onOpenChange={setTpSlModalOpen} position={selectedTpSlPosition} />
-			<PositionLimitCloseModal
-				open={limitCloseModalOpen}
-				onOpenChange={setLimitCloseModalOpen}
-				position={selectedLimitClosePosition}
-			/>
 			<PositionIsolatedMarginModal
 				open={isolatedMarginModalOpen}
 				onOpenChange={setIsolatedMarginModalOpen}
 				position={selectedIsolatedMarginPosition}
-			/>
-			<PositionReverseConfirmationController
-				target={selectedReverseTarget}
-				onOpenChange={(open) => {
-					if (!open) setSelectedReverseTarget(null);
-				}}
 			/>
 		</>
 	);

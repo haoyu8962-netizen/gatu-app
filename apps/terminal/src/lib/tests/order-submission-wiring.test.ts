@@ -117,10 +117,16 @@ describe("order submission wiring", () => {
 		expect(confirmationHook).toMatch(
 			/if \(!canExecute\(input\)\) \{\s*rejectChangedOrder\(\);\s*return;\s*\}\s*if \(getSkipOrderConfirmation\(\)\)/,
 		);
-		expect(confirmationHook).toMatch(/if \(!canExecute\(pending\.input\)\) \{\s*rejectChangedOrder\(\);\s*return;/);
+		expect(confirmationHook).toMatch(
+			/const \{ input \} = pending;\s*if \(!canExecute\(input\)\) \{\s*rejectChangedOrder\(\);\s*return;/,
+		);
 		expect(confirmationHook).toMatch(/function rejectChangedOrder\(\) \{[\s\S]*?setPending\(null\);/);
 		expect(confirmationHook).toMatch(
-			/if \(dontShowAgain\) setSkipOrderConfirmation\(true\);\s*setIsConfirming\(true\);/,
+			/if \(dontShowAgain\) setSkipOrderConfirmation\(true\);\s*confirmingRef\.current = true;\s*setIsConfirming\(true\);/,
+		);
+		expect(confirmationHook).toMatch(/setPending\(null\);\s*try \{\s*await execute\(input\);/);
+		expect(confirmationHook).toMatch(
+			/async function requestSubmit\([^)]*\) \{\s*if \(confirmingRef\.current\) return;/,
 		);
 
 		const skipMatches = collectSourceFiles(SOURCE_ROOT)

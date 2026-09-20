@@ -26,6 +26,7 @@ import { toBig } from "@/lib/trade/numbers";
 import { createPositionCloseSizingViewModel } from "@/lib/trade/position-close-sizing-presentation";
 import { getPositionMarketCloseErrorMessage } from "@/lib/trade/position-market-close-errors";
 import { getValueColorClass } from "@/lib/ui/value-color";
+import type { PositionLimitCloseSession } from "@/stores/use-position-dialog-store";
 import { Hip3DeployerDisclaimer } from "../components/hip3-deployer-disclaimer";
 import { TradingActionButton } from "../components/trading-action-button";
 import { PositionCloseDialogContent } from "./position-close-dialog-content";
@@ -37,18 +38,19 @@ import { PositionCloseSummary, type PositionCloseSummaryItem } from "./position-
 import type { LimitClosePositionData } from "./position-dialog-types";
 
 interface Props {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	position: LimitClosePositionData | null;
+	session: PositionLimitCloseSession | null;
+	onSessionEnd: (sessionId: string) => void;
 }
 
-export function PositionLimitCloseModal({ open, onOpenChange, position }: Props) {
-	if (!open || !position) return null;
+export function PositionLimitCloseModal({ session, onSessionEnd }: Props) {
+	if (!session) return null;
 	return (
 		<PositionLimitCloseModalSession
-			key={`${position.dex}:${position.assetId}:open`}
-			position={position}
-			onOpenChange={onOpenChange}
+			key={session.sessionId}
+			position={session.position}
+			onOpenChange={(open) => {
+				if (!open) onSessionEnd(session.sessionId);
+			}}
 		/>
 	);
 }
@@ -106,9 +108,11 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 		? (marketInfo?.midPx ?? undefined)
 		: undefined;
 	const livePosition = userPositions.getPosition(position.coin, position.dex);
-	const { submit, phase, isPending, isReconciling, error, resetError } = usePositionLimitCloseSubmit(openingTarget);
+	const { submit } = usePositionLimitCloseSubmit(openingTarget);
 	const [sizingIntent, setSizingIntentState] = useState<PositionCloseSizingIntent>({ kind: "max" });
 	const sizingInteractionActiveRef = useRef(false);
+	const submittedRef = useRef(false);
+	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [priceInput, setPriceInput] = useState("");
 	const [showPriceError, setShowPriceError] = useState(false);
 
@@ -175,11 +179,9 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	const priceError = showPriceError && !priceValid ? t`Enter limit price` : null;
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
-	const canDismiss = phase === "idle" || phase === "reconciling";
-	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatus === null;
-	const isSizingPaused = phase === "idle" && !isPending && !isReconciling && isPositionDataPending(positionStatus);
-	const visibleError =
-		positionStatusMessage ?? error ?? (positionStatus === null ? (priceError ?? visibleSizingError) : null);
+	const canEdit = !isSubmitted && positionStatus === null;
+	const isSizingPaused = !isSubmitted && isPositionDataPending(positionStatus);
+	const visibleError = positionStatusMessage ?? (positionStatus === null ? (priceError ?? visibleSizingError) : null);
 	const canSubmit = canEdit && priceValid && sizing.errors.length === 0;
 	const errorId = `position-limit-close-error-${position.assetId}`;
 	const helperId = `position-limit-close-helper-${position.assetId}`;
@@ -230,13 +232,11 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 
 	function setSizingIntent(nextIntent: PositionCloseSizingIntent) {
 		if (!canEdit) return;
-		resetError();
 		setSizingIntentState(nextIntent);
 	}
 
 	function setPrice(nextPrice: string) {
 		if (!canEdit) return;
-		resetError();
 		setShowPriceError(false);
 		setPriceInput(nextPrice);
 	}
@@ -256,7 +256,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	}
 
 	function handleOpenChange(nextOpen: boolean) {
-		if (!nextOpen && canDismiss) onOpenChange(false);
+		if (!nextOpen && !submittedRef.current) onOpenChange(false);
 	}
 
 	function handleSizingInteractionChange(interacting: boolean) {
@@ -268,42 +268,34 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	}
 
 	async function handleSubmit() {
-		if (!canSubmit || sizingInteractionActiveRef.current) return;
+		if (!canSubmit || sizingInteractionActiveRef.current || submittedRef.current) return;
+		submittedRef.current = true;
+		setIsSubmitted(true);
+		const submittedSize = sizing.normalizedSize;
 		try {
-			const outcome = await submit({ price: priceInput, size: sizing.normalizedSize });
+			const outcome = await submit({ price: priceInput, size: submittedSize });
 			if (outcome.state === "reconciling") {
 				toast.info(t`Order submitted. Confirming exchange status; do not retry.`);
-				onOpenChange(false);
-				return;
+			} else if (outcome.state === "blocked") {
+				toast.warning(t`Another order for this market is still being confirmed.`);
+			} else {
+				toast.success(t`Limit close order placed`, {
+					description: formatToken(submittedSize, { decimals: position.szDecimals, symbol: sizeSymbol }),
+				});
 			}
-			if (outcome.state !== "confirmed") return;
-			toast.success(t`Limit close order placed`, {
-				description: formatToken(sizing.normalizedSize, {
-					decimals: position.szDecimals,
-					symbol: sizeSymbol,
-				}),
-			});
-			onOpenChange(false);
 		} catch (cause) {
 			toast.error(cause instanceof Error ? cause.message : t`Failed to place limit close order`);
+		} finally {
+			onOpenChange(false);
 		}
 	}
 
-	const progressLabel =
-		phase === "validating"
-			? t`Validating...`
-			: phase === "submitting"
-				? t`Submitting...`
-				: phase === "reconciling"
-					? t`Confirming...`
-					: null;
-
 	return (
 		<PositionCloseDialogShell
-			open
+			open={!isSubmitted}
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
-			dismissible={canDismiss}
+			dismissible
 			closeLabel={t`Close`}
 		>
 			<PositionCloseDialogHeader>
@@ -379,21 +371,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 					onInteractionChange={handleSizingInteractionChange}
 				/>
 
-				{phase === "reconciling" && (
-					<output
-						id={errorId}
-						aria-live="polite"
-						className="flex items-start gap-2 rounded-8 bg-warning-soft p-2.5 text-xs text-warning"
-					>
-						<WarningIcon className="mt-0.5 size-3.5 shrink-0" weight="fill" aria-hidden="true" />
-						<span className="flex flex-col gap-1">
-							<span>{error ?? t`The order is still being confirmed.`}</span>
-							<span>{t`Closing this dialog will not cancel it.`}</span>
-						</span>
-					</output>
-				)}
-
-				{visibleError && phase !== "reconciling" && (
+				{visibleError && (
 					<div
 						id={errorId}
 						role={userPositions.isLoading ? "status" : "alert"}
@@ -414,10 +392,6 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 						<span className="leading-relaxed">{visibleError}</span>
 					</div>
 				)}
-
-				<p className="sr-only" aria-live="polite">
-					{progressLabel}
-				</p>
 			</PositionCloseDialogContent>
 
 			<PositionCloseDialogFooter>
@@ -432,14 +406,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 					containerClassName="w-full items-stretch"
 					className="relative min-h-0 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger py-[15px] text-[15px] leading-[21px] font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-none hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted min-[1001px]:py-[14px]"
 				>
-					{progressLabel ? (
-						<>
-							<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-							{progressLabel}
-						</>
-					) : (
-						t`Place Limit Close`
-					)}
+					{t`Place Limit Close`}
 				</TradingActionButton>
 				<p id={helperId} className="text-center text-xs leading-[17px] text-market-close-subtle">
 					{t`Order will rest until filled or canceled.`}

@@ -42,6 +42,7 @@ const testState = vi.hoisted(() => ({
 	toastError: vi.fn(),
 	toastInfo: vi.fn(),
 	toastSuccess: vi.fn(),
+	toastWarning: vi.fn(),
 }));
 
 vi.mock("@gatu/ui", () => ({
@@ -178,6 +179,7 @@ vi.mock("sonner", () => ({
 		error: testState.toastError,
 		info: testState.toastInfo,
 		success: testState.toastSuccess,
+		warning: testState.toastWarning,
 	},
 }));
 
@@ -196,18 +198,19 @@ const position: LimitClosePositionData = {
 	marginMode: "cross",
 };
 
+const SESSION_ID = "limit-close:1";
+
 describe("PositionLimitCloseModal", () => {
 	let container: HTMLDivElement;
 	let root: Root;
-	let onOpenChange: ReturnType<typeof vi.fn<(open: boolean) => void>>;
+	let onSessionEnd: ReturnType<typeof vi.fn<(sessionId: string) => void>>;
 
 	function render() {
 		act(() => {
 			root.render(
 				createElement(PositionLimitCloseModal, {
-					open: true,
-					onOpenChange,
-					position: { ...position },
+					session: { sessionId: SESSION_ID, position: { ...position } },
+					onSessionEnd,
 				}),
 			);
 		});
@@ -217,7 +220,7 @@ describe("PositionLimitCloseModal", () => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
-		onOpenChange = vi.fn<(open: boolean) => void>();
+		onSessionEnd = vi.fn<(sessionId: string) => void>();
 		testState.actionButtonProps = null;
 		testState.adaptiveProps = null;
 		testState.clientKey = "0x1111111111111111111111111111111111111111";
@@ -247,7 +250,31 @@ describe("PositionLimitCloseModal", () => {
 		testState.toastError.mockReset();
 		testState.toastInfo.mockReset();
 		testState.toastSuccess.mockReset();
+		testState.toastWarning.mockReset();
 	});
+
+	function enterPrice(value: string) {
+		act(() => {
+			(testState.priceInputProps?.onChange as (event: { target: { value: string } }) => void)({ target: { value } });
+		});
+	}
+
+	function getSubmitButton(): HTMLButtonElement {
+		const button = container.querySelector<HTMLButtonElement>('[data-testid="submit"]');
+		if (!button) throw new Error("Expected the submit button");
+		return button;
+	}
+
+	function holdSubmission(): (outcome: Record<string, unknown>) => void {
+		let settle: (outcome: Record<string, unknown>) => void = () => {};
+		testState.submit.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					settle = resolve;
+				}),
+		);
+		return (outcome) => settle(outcome);
+	}
 
 	afterEach(() => {
 		act(() => root.unmount());
@@ -374,24 +401,38 @@ describe("PositionLimitCloseModal", () => {
 		act(() => (testState.sliderProps?.onPercentChange as (value: number) => void)(25));
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("0.6250");
 		expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuetext")).toBe("25%");
-		expect(testState.resetError).toHaveBeenCalled();
 	});
 
-	it("submits exact strings once and closes only after a confirmed resting or filled response", async () => {
+	it("closes at the click, submits exact strings once and reports the placed order through a notification", async () => {
+		const settle = holdSubmission();
 		render();
-		act(() => {
-			(testState.priceInputProps?.onChange as (event: { target: { value: string } }) => void)({
-				target: { value: "101" },
-			});
-		});
+		enterPrice("101");
 
-		await act(async () => {
-			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
-		});
+		await act(async () => getSubmitButton().click());
+		expect(testState.submit).toHaveBeenCalledExactlyOnceWith({ price: "101", size: "2.5" });
+		expect(testState.adaptiveProps?.open).toBe(false);
+		expect(onSessionEnd).not.toHaveBeenCalled();
+		expect(testState.toastSuccess).not.toHaveBeenCalled();
 
-		expect(testState.submit).toHaveBeenCalledWith({ price: "101", size: "2.5" });
+		await act(async () => getSubmitButton().click());
+		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
+		expect(testState.submit).toHaveBeenCalledTimes(1);
+		expect(onSessionEnd).not.toHaveBeenCalled();
+
+		await act(async () => settle({ state: "confirmed", result: {} }));
 		expect(testState.toastSuccess).toHaveBeenCalledOnce();
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
+	});
+
+	it("submits once when the submit control is activated twice in the same tick", async () => {
+		render();
+		enterPrice("101");
+		await act(async () => {
+			const onClick = testState.actionButtonProps?.onClick as () => Promise<void>;
+			void onClick();
+			void onClick();
+		});
+		expect(testState.submit).toHaveBeenCalledTimes(1);
 	});
 
 	it.each(["cancel", "commit", "no-move"])(
@@ -473,7 +514,6 @@ describe("PositionLimitCloseModal", () => {
 			(testState.sliderProps?.onPercentInteractionEnd as () => void)();
 		});
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("2.5000");
-		expect(testState.resetError).not.toHaveBeenCalled();
 	});
 
 	it("normalizes the Mid shortcut to the exact protocol price before displaying or submitting", async () => {
@@ -489,42 +529,43 @@ describe("PositionLimitCloseModal", () => {
 		expect(testState.submit).toHaveBeenCalledWith({ price: "123.46", size: "2.5" });
 	});
 
-	it("hands ambiguous submissions to global reconciliation and closes the local dialog", async () => {
-		testState.submit.mockResolvedValue({ state: "reconciling", submissionId: "submission-1" });
+	it.each([
+		[{ state: "reconciling", submissionId: "submission-1" }, "toastInfo"],
+		[{ state: "blocked" }, "toastWarning"],
+		[{ state: "confirmed", result: {} }, "toastSuccess"],
+	] as const)("reports %o only through %s and ends the session", async (outcome, expectedToast) => {
+		testState.submit.mockResolvedValue({ ...outcome });
 		render();
-		act(() => {
-			(testState.priceInputProps?.onChange as (event: { target: { value: string } }) => void)({
-				target: { value: "101" },
-			});
-		});
+		enterPrice("101");
+		await act(async () => getSubmitButton().click());
 
-		await act(async () => {
-			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
-		});
-
-		expect(testState.toastInfo).toHaveBeenCalledOnce();
-		expect(testState.toastSuccess).not.toHaveBeenCalled();
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		for (const name of ["toastError", "toastInfo", "toastSuccess", "toastWarning"] as const) {
+			expect(testState[name]).toHaveBeenCalledTimes(name === expectedToast ? 1 : 0);
+		}
+		expect(testState.adaptiveProps?.open).toBe(false);
+		expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 
-	it("locks edits and dismissal while submitting, but allows closing a reconciling notice", () => {
-		testState.phase = "submitting";
-		testState.isPending = true;
+	it("reports a failed submission through an error notification and ends the session", async () => {
+		testState.submit.mockRejectedValue(new Error("Trading data changed"));
 		render();
-		expect(testState.adaptiveProps).toMatchObject({ dismissible: false, showClose: false, showHandle: false });
-		expect(container.querySelector<HTMLInputElement>('input[aria-label="Limit Price"]')?.disabled).toBe(true);
-		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
-		expect(onOpenChange).not.toHaveBeenCalled();
+		enterPrice("101");
+		await act(async () => getSubmitButton().click());
 
-		testState.phase = "reconciling";
-		testState.isPending = false;
-		testState.isReconciling = true;
+		expect(testState.toastError).toHaveBeenCalledExactlyOnceWith("Trading data changed");
+		expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
+	});
+
+	it.each(["validating", "submitting", "reconciling"] as const)("never shows the %s phase in the dialog", (phase) => {
+		testState.phase = phase;
+		testState.isPending = phase !== "reconciling";
+		testState.isReconciling = phase === "reconciling";
 		testState.error = "Order submitted. Confirming exchange status; do not retry.";
 		render();
-		expect(testState.adaptiveProps).toMatchObject({ dismissible: true, showClose: true });
-		expect(container.textContent).toContain("Closing this dialog will not cancel it.");
-		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(getSubmitButton().textContent).toBe("Place Limit Close");
+		expect(testState.adaptiveProps).toMatchObject({ open: true, dismissible: true, showClose: true });
+		expect(container.textContent).not.toContain("Confirming exchange status");
+		expect(container.textContent).not.toContain("Closing this dialog will not cancel it.");
 	});
 
 	it("fails closed when the live position is stale or changes direction", () => {
@@ -548,7 +589,7 @@ describe("PositionLimitCloseModal", () => {
 
 		expect(testState.submitTarget).toBeNull();
 		act(() => container.querySelector<HTMLButtonElement>('[data-testid="hip3-cancel"]')?.click());
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(onSessionEnd).toHaveBeenCalledWith(SESSION_ID);
 	});
 
 	it("captures owner and environment before the HIP-3 disclaimer can switch accounts", () => {

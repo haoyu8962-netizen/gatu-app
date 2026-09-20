@@ -1118,7 +1118,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				<OrderConfirmationModal
 					open
 					draft={confirmation.pending.draft}
-					isSubmitting={confirmation.isConfirming}
 					dontShowAgain={confirmation.dontShowAgain}
 					onDontShowAgainChange={confirmation.setDontShowAgain}
 					onConfirm={confirmation.confirm}

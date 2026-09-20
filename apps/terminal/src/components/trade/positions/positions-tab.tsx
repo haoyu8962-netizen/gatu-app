@@ -5,7 +5,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
 import {
 	getPositionCloseAllQuoteSymbol,
-	type PositionCloseAllSnapshot,
 	type PositionCloseAllSnapshotIssue,
 	resolvePositionCloseAllSnapshot,
 } from "@/domain/trade/position-close-all";
@@ -17,16 +16,15 @@ import {
 } from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
-import type { PositionReverseTarget } from "@/hooks/trade/use-position-reverse-submit";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useHyperliquid, useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
+import { usePositionCloseAllSession, usePositionDialogActions } from "@/stores/use-position-dialog-store";
 import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
-import { PositionCloseAllController } from "./position-close-all-modal";
 import type {
 	IsolatedMarginPositionRef,
 	IsolatedMarginPositionTarget,
@@ -38,9 +36,7 @@ import type {
 	TpSlPositionTarget,
 } from "./position-dialog-types";
 import { PositionIsolatedMarginModal } from "./position-isolated-margin-modal";
-import { PositionLimitCloseModal } from "./position-limit-close-modal";
 import { PositionPnlShareModal } from "./position-pnl-share-modal";
-import { PositionReverseConfirmationController } from "./position-reverse-confirmation-controller";
 import { type PositionPnlMode, PositionRow } from "./position-row";
 import {
 	POSITION_TABLE_COLUMNS,
@@ -83,13 +79,11 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	}
 	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
 	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionTarget | null>(null);
-	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
-	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
 	const [isolatedMarginModalOpen, setIsolatedMarginModalOpen] = useState(false);
 	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
 		useState<IsolatedMarginPositionTarget | null>(null);
-	const [selectedReverseTarget, setSelectedReverseTarget] = useState<PositionReverseTarget | null>(null);
-	const [closeAllSnapshot, setCloseAllSnapshot] = useState<PositionCloseAllSnapshot | null>(null);
+	const closeAllSession = usePositionCloseAllSession();
+	const { openCloseAll, openLimitClose, openReverse } = usePositionDialogActions();
 	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [pnlMode, setPnlMode] = useState<PositionPnlMode>("roe");
 
@@ -143,10 +137,8 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	const closeAllResolution = resolveCurrentCloseAllSnapshot();
 	const closeAllPreview = closeAllDataReady ? closeAllResolution.snapshot : null;
 	const closeAllIssues: readonly PositionCloseAllSnapshotIssue[] = closeAllResolution.issues;
-	const visibleCloseAllSnapshot =
-		signingIdentityReady && address && closeAllSnapshot?.owner === address.toLowerCase() && closeAllSnapshot.env === env
-			? closeAllSnapshot
-			: null;
+	const hasCloseAllSession =
+		!!address && closeAllSession?.snapshot.owner === address.toLowerCase() && closeAllSession.snapshot.env === env;
 
 	function getCloseAllUnavailableReason() {
 		if (closeAllPreview) return null;
@@ -172,19 +164,18 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	}
 
 	function handleOpenCloseAll() {
-		if (!closeAllDataReady || closeAllSnapshot) return;
+		if (!closeAllDataReady || hasCloseAllSession) return;
 		const resolution = resolveCurrentCloseAllSnapshot(Date.now());
-		if (resolution.snapshot) setCloseAllSnapshot(resolution.snapshot);
+		if (resolution.snapshot) openCloseAll(resolution.snapshot);
 	}
 
 	function handleReverse(data: PositionReverseRef) {
 		if (!address) return;
-		setSelectedReverseTarget({ ...data, owner: address.toLowerCase(), env });
+		openReverse({ ...data, owner: address.toLowerCase(), env });
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {
-		setSelectedLimitClosePosition(data);
-		setLimitCloseModalOpen(true);
+		openLimitClose(data);
 	}
 
 	function handleOpenTpSlModal(data: TpSlPositionRef) {
@@ -319,7 +310,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 													variant="ghost"
 													intent="brand"
 													size="xxs"
-													disabled={!closeAllPreview || closeAllSnapshot !== null}
+													disabled={!closeAllPreview || hasCloseAllSession}
 													focusableWhenDisabled
 													onClick={closeAllPreview ? handleOpenCloseAll : undefined}
 													aria-describedby={closeAllUnavailableReason ? closeAllUnavailableId : undefined}
@@ -377,27 +368,10 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 			</div>
 
 			<PositionTpSlModal open={tpSlModalOpen} onOpenChange={setTpSlModalOpen} position={selectedTpSlPosition} />
-			<PositionLimitCloseModal
-				open={limitCloseModalOpen}
-				onOpenChange={setLimitCloseModalOpen}
-				position={selectedLimitClosePosition}
-			/>
 			<PositionIsolatedMarginModal
 				open={isolatedMarginModalOpen}
 				onOpenChange={setIsolatedMarginModalOpen}
 				position={selectedIsolatedMarginPosition}
-			/>
-			<PositionReverseConfirmationController
-				target={selectedReverseTarget}
-				onOpenChange={(open) => {
-					if (!open) setSelectedReverseTarget(null);
-				}}
-			/>
-			<PositionCloseAllController
-				snapshot={visibleCloseAllSnapshot}
-				onOpenChange={(open) => {
-					if (!open) setCloseAllSnapshot(null);
-				}}
 			/>
 			<PositionPnlShareModal
 				position={

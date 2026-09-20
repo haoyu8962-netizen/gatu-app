@@ -706,6 +706,7 @@ msgid "Another order for one of these markets is still being confirmed."
 msgstr "Todavía se está confirmando otra orden para uno de estos mercados."
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -1570,7 +1571,6 @@ msgstr ""
 msgid "Closing cost"
 msgstr "Costo de cierre"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Closing this dialog will not cancel it."
 msgstr "Cerrar este cuadro de diálogo no cancelará la orden."
@@ -1730,8 +1730,8 @@ msgid "Confirming order status. Do not retry."
 msgstr "Confirmando el estado de la orden. No vuelva a intentarlo."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Confirming..."
-msgstr "Confirmando..."
+#~ msgid "Confirming..."
+#~ msgstr "Confirmando..."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -6283,8 +6283,8 @@ msgid "Reverse quantity (2× position)"
 msgstr "Cantidad a invertir (2× la posición)"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
-msgid "Reversing..."
-msgstr "Invirtiendo..."
+#~ msgid "Reversing..."
+#~ msgstr "Invirtiendo..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/funds-action/funds-action-recovery-host.tsx
@@ -7307,9 +7307,7 @@ msgstr "Las órdenes límite y de activación enviadas aparecerán aquí."
 msgid "Submitting to Hyperliquid"
 msgstr "Enviando a Hyperliquid"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Submitting..."
 msgstr "Enviando..."
 
@@ -7759,8 +7757,8 @@ msgid "The order changed before the requested modification was confirmed. Review
 msgstr "La orden cambió antes de que se confirmara la modificación solicitada. Revisa la orden más reciente antes de volver a intentarlo."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "The order is still being confirmed."
-msgstr "La orden todavía se está confirmando."
+#~ msgid "The order is still being confirmed."
+#~ msgstr "La orden todavía se está confirmando."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
@@ -9146,8 +9144,8 @@ msgstr "Válido hasta"
 #~ msgstr "Validando posiciones..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Validating..."
-msgstr "Validando..."
+#~ msgid "Validating..."
+#~ msgstr "Validando..."
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-view.tsx

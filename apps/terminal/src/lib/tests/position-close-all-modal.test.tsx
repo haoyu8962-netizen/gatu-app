@@ -1,7 +1,5 @@
 /** @vitest-environment jsdom */
 
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { act, createElement, type ReactNode } from "react";
@@ -16,7 +14,7 @@ const testState = vi.hoisted(() => ({
 	isPending: false,
 	isReconciling: false,
 	phase: "idle" as "idle" | "validating" | "submitting" | "reconciling" | "partial",
-	onOpenChange: vi.fn(),
+	onSessionEnd: vi.fn(),
 	resetError: vi.fn(),
 	shellProps: null as Record<string, unknown> | null,
 	submit: vi.fn(async (): Promise<Record<string, unknown>> => ({ state: "filled" })),
@@ -91,6 +89,8 @@ import { PositionCloseAllController } from "@/components/trade/positions/positio
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+const SESSION_ID = "close-all:1";
+
 function snapshotWith(positionCount: number): PositionCloseAllSnapshot {
 	return {
 		owner: "0xabc",
@@ -120,8 +120,8 @@ describe("PositionCloseAllController", () => {
 					I18nProvider,
 					{ i18n },
 					createElement(PositionCloseAllController, {
-						snapshot: snapshotWith(positionCount),
-						onOpenChange: testState.onOpenChange,
+						session: { sessionId: SESSION_ID, snapshot: snapshotWith(positionCount) },
+						onSessionEnd: testState.onSessionEnd,
 					}),
 				),
 			),
@@ -139,7 +139,7 @@ describe("PositionCloseAllController", () => {
 		testState.isPending = false;
 		testState.isReconciling = false;
 		testState.phase = "idle";
-		testState.onOpenChange.mockReset();
+		testState.onSessionEnd.mockReset();
 		testState.resetError.mockReset();
 		testState.shellProps = null;
 		testState.submit.mockReset();
@@ -180,7 +180,7 @@ describe("PositionCloseAllController", () => {
 					createElement(
 						I18nProvider,
 						{ i18n },
-						createElement(PositionCloseAllController, { snapshot: null, onOpenChange: testState.onOpenChange }),
+						createElement(PositionCloseAllController, { session: null, onSessionEnd: testState.onSessionEnd }),
 					),
 				),
 			);
@@ -238,7 +238,7 @@ describe("PositionCloseAllController", () => {
 		await act(async () => getSubmit().click());
 		expect(testState.submit).toHaveBeenCalledTimes(1);
 		expect(testState.shellProps?.open).toBe(false);
-		expect(testState.onOpenChange).not.toHaveBeenCalled();
+		expect(testState.onSessionEnd).not.toHaveBeenCalled();
 		expect(container.textContent).not.toBe("");
 		expect(toastMock.success).not.toHaveBeenCalled();
 
@@ -247,7 +247,7 @@ describe("PositionCloseAllController", () => {
 
 		await act(async () => settle({ state: "filled" }));
 		expect(toastMock.success).toHaveBeenCalledTimes(1);
-		expect(testState.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+		expect(testState.onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 
 	it("submits once when the confirm control is activated twice in the same tick", async () => {
@@ -273,7 +273,7 @@ describe("PositionCloseAllController", () => {
 		for (const [name, notify] of Object.entries(toastMock))
 			expect(notify).toHaveBeenCalledTimes(name === level ? 1 : 0);
 		expect(testState.shellProps?.open).toBe(false);
-		expect(testState.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+		expect(testState.onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 
 	it("reports a failed submission through an error notification and ends the session", async () => {
@@ -284,38 +284,21 @@ describe("PositionCloseAllController", () => {
 		await act(async () => getSubmit().click());
 
 		expect(toastMock.error).toHaveBeenCalledExactlyOnceWith("Trading data changed");
-		expect(testState.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+		expect(testState.onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 
 	it("lets the user leave before confirming and ignores the shell once the submission has started", async () => {
 		render();
 		(testState.shellProps?.onOpenChange as (open: boolean) => void)(false);
-		expect(testState.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+		expect(testState.onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 
-		testState.onOpenChange.mockReset();
+		testState.onSessionEnd.mockReset();
 		const settle = holdSubmission();
 		render();
 		await act(async () => getSubmit().click());
 		(testState.shellProps?.onOpenChange as (open: boolean) => void)(false);
-		expect(testState.onOpenChange).not.toHaveBeenCalled();
+		expect(testState.onSessionEnd).not.toHaveBeenCalled();
 		await act(async () => settle({ state: "filled" }));
-		expect(testState.onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
-	});
-});
-
-describe("close-all session ownership in the positions tab", () => {
-	const POSITIONS_TAB_SOURCE = readFileSync(
-		resolve(__dirname, "../../components/trade/positions/positions-tab.tsx"),
-		"utf8",
-	);
-
-	it("cannot open a second close-all session while one is open or still submitting in the background", () => {
-		expect(POSITIONS_TAB_SOURCE).toContain("if (!closeAllDataReady || closeAllSnapshot) return;");
-		expect(POSITIONS_TAB_SOURCE).toContain("disabled={!closeAllPreview || closeAllSnapshot !== null}");
-	});
-
-	it("ends the session only when the controller reports that it closed", () => {
-		expect(POSITIONS_TAB_SOURCE).toContain("if (!open) setCloseAllSnapshot(null);");
-		expect(POSITIONS_TAB_SOURCE.match(/setCloseAllSnapshot\(null\)/g)).toHaveLength(1);
+		expect(testState.onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 });

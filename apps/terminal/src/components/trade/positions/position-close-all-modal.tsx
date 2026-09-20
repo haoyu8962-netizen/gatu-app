@@ -2,13 +2,14 @@ import { ModalDescription, ModalTitle } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { getPositionCloseAllSnapshotKey, type PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
+import type { PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
 import { usePositionCloseAllSubmit } from "@/hooks/trade/use-position-close-all-submit";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatQuoteAmount } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
+import type { PositionCloseAllSession } from "@/stores/use-position-dialog-store";
 import { TradingActionButton } from "../components/trading-action-button";
 import { PositionCloseDialogContent } from "./position-close-dialog-content";
 import { PositionCloseDialogFooter } from "./position-close-dialog-footer";
@@ -17,21 +18,23 @@ import { PositionCloseDialogShell } from "./position-close-dialog-shell";
 import { PositionCloseSummary, type PositionCloseSummaryItem } from "./position-close-summary";
 
 interface Props {
-	snapshot: PositionCloseAllSnapshot | null;
-	onOpenChange: (open: boolean) => void;
+	session: PositionCloseAllSession | null;
+	onSessionEnd: (sessionId: string) => void;
 }
 
 const DIALOG_EXIT_MS = 250;
 
-export function PositionCloseAllController({ snapshot, onOpenChange }: Props) {
-	const displayedSnapshot = useLingeringValue(snapshot, DIALOG_EXIT_MS);
-	if (!displayedSnapshot) return null;
+export function PositionCloseAllController({ session, onSessionEnd }: Props) {
+	const displayedSession = useLingeringValue(session, DIALOG_EXIT_MS);
+	if (!displayedSession) return null;
 	return (
 		<PositionCloseAllContent
-			key={getPositionCloseAllSnapshotKey(displayedSnapshot)}
-			snapshot={displayedSnapshot}
-			open={snapshot !== null}
-			onOpenChange={onOpenChange}
+			key={displayedSession.sessionId}
+			snapshot={displayedSession.snapshot}
+			open={session?.sessionId === displayedSession.sessionId}
+			onOpenChange={(open) => {
+				if (!open) onSessionEnd(displayedSession.sessionId);
+			}}
 		/>
 	);
 }

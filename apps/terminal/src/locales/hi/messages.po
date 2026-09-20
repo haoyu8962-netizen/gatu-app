@@ -706,6 +706,7 @@ msgid "Another order for one of these markets is still being confirmed."
 msgstr "इनमें से एक बाज़ार के लिए एक अन्य ऑर्डर की पुष्टि अभी जारी है।"
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -1570,7 +1571,6 @@ msgstr ""
 msgid "Closing cost"
 msgstr "बंद करने की लागत"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Closing this dialog will not cancel it."
 msgstr "इस डायलॉग को बंद करने से ऑर्डर रद्द नहीं होगा।"
@@ -1730,8 +1730,8 @@ msgid "Confirming order status. Do not retry."
 msgstr "ऑर्डर की स्थिति की पुष्टि की जा रही है। दोबारा प्रयास न करें।"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Confirming..."
-msgstr "पुष्टि की जा रही है..."
+#~ msgid "Confirming..."
+#~ msgstr "पुष्टि की जा रही है..."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -6283,8 +6283,8 @@ msgid "Reverse quantity (2× position)"
 msgstr "रिवर्स मात्रा (2× पोज़िशन)"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
-msgid "Reversing..."
-msgstr "रिवर्स हो रहा है..."
+#~ msgid "Reversing..."
+#~ msgstr "रिवर्स हो रहा है..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/funds-action/funds-action-recovery-host.tsx
@@ -7307,9 +7307,7 @@ msgstr "सबमिट किए गए लिमिट और ट्रिग�
 msgid "Submitting to Hyperliquid"
 msgstr "Hyperliquid को भेजा जा रहा है"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Submitting..."
 msgstr "सबमिट किया जा रहा है..."
 
@@ -7759,8 +7757,8 @@ msgid "The order changed before the requested modification was confirmed. Review
 msgstr "अनुरोधित संशोधन की पुष्टि होने से पहले ऑर्डर बदल गया। फिर से प्रयास करने से पहले नवीनतम ऑर्डर की समीक्षा करें।"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "The order is still being confirmed."
-msgstr "ऑर्डर की पुष्टि अभी जारी है।"
+#~ msgid "The order is still being confirmed."
+#~ msgstr "ऑर्डर की पुष्टि अभी जारी है।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
@@ -9146,8 +9144,8 @@ msgstr "इस समय तक मान्य"
 #~ msgstr "पोज़िशन जाँची जा रही हैं..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Validating..."
-msgstr "जाँच हो रही है..."
+#~ msgid "Validating..."
+#~ msgstr "जाँच हो रही है..."
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-view.tsx

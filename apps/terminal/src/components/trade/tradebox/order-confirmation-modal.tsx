@@ -10,7 +10,6 @@ import {
 } from "@gatu/ui";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-import { SpinnerGapIcon } from "@phosphor-icons/react";
 import {
 	buildOrderConfirmationRows,
 	getOrderConfirmationSideLabel,
@@ -27,7 +26,6 @@ import { TradingActionButton } from "../components/trading-action-button";
 interface Props {
 	open: boolean;
 	draft: OrderConfirmationDraft;
-	isSubmitting: boolean;
 	dontShowAgain: boolean;
 	onDontShowAgainChange: (next: boolean) => void;
 	onConfirm: () => void;
@@ -37,7 +35,6 @@ interface Props {
 export function OrderConfirmationModal({
 	open,
 	draft,
-	isSubmitting,
 	dontShowAgain,
 	onDontShowAgainChange,
 	onConfirm,
@@ -49,19 +46,17 @@ export function OrderConfirmationModal({
 	const rows = buildOrderConfirmationRows(draft, _);
 	const sideLabel = getOrderConfirmationSideLabel(draft, _);
 
-	function handleOpenChange(nextOpen: boolean) {
-		if (isSubmitting && !nextOpen) return;
-		onOpenChange(nextOpen);
+	function handleConfirm() {
+		if (!open) return;
+		onConfirm();
 	}
 
 	return (
 		<AdaptiveModal
 			open={open}
-			onOpenChange={handleOpenChange}
+			onOpenChange={onOpenChange}
 			presentation={isMobile ? "drawer" : "modal"}
 			size="sm"
-			dismissible={!isSubmitting}
-			showClose={!isSubmitting}
 			showHandle={isMobile}
 			closeLabel={_(msg`Close order confirmation`)}
 			handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
@@ -97,7 +92,7 @@ export function OrderConfirmationModal({
 					size="md"
 					checked={dontShowAgain}
 					onCheckedChange={onDontShowAgainChange}
-					disabled={isSubmitting}
+					disabled={!open}
 					className="w-fit shrink-0 items-center gap-2"
 					controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-focus focus-visible:outline-none data-checked:border-market-close-control data-checked:bg-market-close-control"
 					indicatorClassName="text-market-close-on-control [&>svg]:size-3"
@@ -111,7 +106,7 @@ export function OrderConfirmationModal({
 					variant="outline"
 					intent="neutral"
 					size="lg"
-					disabled={isSubmitting}
+					disabled={!open}
 					onClick={() => onOpenChange(false)}
 					className="min-h-11 w-full rounded-[10px] border-market-close-stroke-input text-2sm font-bold text-market-close-fg hover:not-data-disabled:border-market-close-control min-[1001px]:min-h-10"
 				>
@@ -119,8 +114,8 @@ export function OrderConfirmationModal({
 				</Button>
 				<TradingActionButton
 					requiresBuilderFee={!isTwapOrderType(draft.orderType)}
-					onClick={onConfirm}
-					disabled={isSubmitting}
+					onClick={handleConfirm}
+					disabled={!open}
 					intent={getTradingCtaIntent(draft.side)}
 					size="lg"
 					containerClassName="w-full items-stretch"
@@ -129,14 +124,7 @@ export function OrderConfirmationModal({
 						getTradingCtaClass(draft.side),
 					)}
 				>
-					{isSubmitting ? (
-						<>
-							<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-							{_(msg`Submitting...`)}
-						</>
-					) : (
-						sideLabel
-					)}
+					{sideLabel}
 				</TradingActionButton>
 			</ModalFooter>
 		</AdaptiveModal>

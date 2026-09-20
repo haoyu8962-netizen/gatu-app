@@ -706,6 +706,7 @@ msgid "Another order for one of these markets is still being confirmed."
 msgstr "لا يزال تأكيد أمر آخر لأحد هذه الأسواق جارياً."
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -1570,7 +1571,6 @@ msgstr ""
 msgid "Closing cost"
 msgstr "تكلفة الإغلاق"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Closing this dialog will not cancel it."
 msgstr "لن يؤدي إغلاق مربع الحوار هذا إلى إلغائه."
@@ -1730,8 +1730,8 @@ msgid "Confirming order status. Do not retry."
 msgstr "جارٍ تأكيد حالة الطلب. لا تحاول مرة أخرى."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Confirming..."
-msgstr "جارٍ التأكيد..."
+#~ msgid "Confirming..."
+#~ msgstr "جارٍ التأكيد..."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -6283,8 +6283,8 @@ msgid "Reverse quantity (2× position)"
 msgstr "كمية العكس (2× المركز)"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
-msgid "Reversing..."
-msgstr "جارٍ العكس..."
+#~ msgid "Reversing..."
+#~ msgstr "جارٍ العكس..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/funds-action/funds-action-recovery-host.tsx
@@ -7307,9 +7307,7 @@ msgstr "ستظهر هنا الأوامر المحددة والأوامر الم�
 msgid "Submitting to Hyperliquid"
 msgstr "جارٍ الإرسال إلى Hyperliquid"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Submitting..."
 msgstr "جارٍ الإرسال..."
 
@@ -7759,8 +7757,8 @@ msgid "The order changed before the requested modification was confirmed. Review
 msgstr "تغيّر الأمر قبل تأكيد التعديل المطلوب. راجع أحدث حالة للأمر قبل إعادة المحاولة."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "The order is still being confirmed."
-msgstr "لا يزال تأكيد الأمر جارياً."
+#~ msgid "The order is still being confirmed."
+#~ msgstr "لا يزال تأكيد الأمر جارياً."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
@@ -9146,8 +9144,8 @@ msgstr "صالح حتى"
 #~ msgstr "جارٍ التحقق من المراكز..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Validating..."
-msgstr "جارٍ التحقق من الصحة..."
+#~ msgid "Validating..."
+#~ msgstr "جارٍ التحقق من الصحة..."
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-view.tsx

@@ -17,7 +17,7 @@ const REVIEWED_LABELS: Record<string, LabelReview> = {
 	"trade/components/spot-swap-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/positions/position-close-all-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/positions/position-isolated-margin-modal.tsx": { dynamic: [], indirect: ["submitLabel"] },
-	"trade/positions/position-limit-close-modal.tsx": { dynamic: [], indirect: ["progressLabel"] },
+	"trade/positions/position-limit-close-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/positions/position-market-close-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/positions/position-reverse-confirmation-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/positions/position-tpsl-modal.tsx": { dynamic: [], indirect: [] },
@@ -50,12 +50,14 @@ describe("TradingActionButton label contract", () => {
 		).toEqual(REVIEWED_LABELS[file]?.indirect);
 	});
 
-	it.each(["trade/positions/position-market-close-modal.tsx", "trade/positions/position-close-all-modal.tsx"])(
-		"keeps the %s confirm control a static verb",
-		(file) => {
-			expect(found[file]).toEqual({ dynamic: [], indirect: [] });
-		},
-	);
+	it.each([
+		"trade/positions/position-market-close-modal.tsx",
+		"trade/positions/position-close-all-modal.tsx",
+		"trade/positions/position-limit-close-modal.tsx",
+		"trade/positions/position-reverse-confirmation-modal.tsx",
+	])("keeps the %s confirm control a static verb", (file) => {
+		expect(found[file]).toEqual({ dynamic: [], indirect: [] });
+	});
 });
 
 describe("TradingActionButton label scanner", () => {

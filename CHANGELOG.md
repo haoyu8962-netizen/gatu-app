@@ -8,6 +8,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Limit Close, Reverse Position and the order confirmation now behave like Market Close and Close
+  All Positions. Their confirm buttons keep their names (`Place Limit Close`, `Buy / Long` or
+  `Sell / Short`, the order side) instead of turning into `Validating...`, `Submitting...`,
+  `Confirming...` or `Reversing...`. The dialog closes as soon as you confirm, the order is sent in the
+  background and the outcome arrives as a notification in the bottom-right corner, including an
+  order that is still being confirmed, one blocked by another pending order, and a failure. Submit
+  errors and the `still being confirmed` notice no longer appear inside these dialogs.
 - The Close All Positions confirmation works like Market Close. Its button always reads
   `Close All Positions`: the number of positions stays in the summary above it, and it no longer
   turns into `Validating positions...`, `Submitting close orders...`, `Confirming exchange status...`

@@ -113,6 +113,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Execution may recompute from fresher data, but never beyond what the user saw at the click. A confirmation surface passes the value it displayed into the submit path as a bound and fails closed when the recomputed value exceeds it. The direction of the bound belongs to each action; for close size it is executed ≤ displayed.
 - The ready-state name of a confirm control is a static verb. Runtime quantities, prices and counts belong in the dialog body, from the same render value that is submitted; an accessible description may repeat it, the control's name may not.
 - When the object being confirmed differs from what the dialog opened with, say so next to the value to review, only while the confirmation is visible and editable, and never gate submission on the notice.
+- Order confirmations (Market Close, Close All, Limit Close, Reverse, the order confirmation) never show submission status in the confirm control or the dialog body. Confirming closes the dialog at once, the submission runs in the background and every outcome is reported through a notification. Guard the click with a synchronous ref and keep the component that owns the submit hook mounted until the submission settles. A dismissed dialog no longer blocks the page, so that owner must not live inside a tab panel or a layout branch: position dialog sessions live in `use-position-dialog-store` and are mounted by the page-level `PositionDialogHost`, each open gets a new session id, and a second open is ignored while a session exists.
 - A redesign that changes what a confirm control displays or commits to is a behavior change: document it and keep a test that renders the real dialog with the real submit path and compares the displayed value with the value sent. Testing the dialog and the submit hook separately does not cover this.
 
 ## Slider gesture contract
@@ -215,6 +216,13 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/leverage-modal.test.tsx \
   src/lib/tests/margin-mode-modal.test.tsx \
   src/lib/tests/order-submission-wiring.test.ts \
+  src/lib/tests/position-close-all-modal.test.tsx \
+  src/lib/tests/position-reverse-confirmation-controller.test.tsx \
+  src/lib/tests/position-reverse-confirmation-modal.test.tsx \
+  src/lib/tests/position-dialog-session-ownership.test.tsx \
+  src/lib/tests/order-confirmation-gate.test.tsx \
+  src/lib/tests/order-confirmation-modal.test.tsx \
+  src/lib/tests/dialog-dismiss-control-contract.test.ts \
   tests/mobile-trade-size-validation-a11y.test.tsx
 
 # Slider gestures (see docs/slider-interactions.md; browser suite: pnpm --dir apps/terminal run test:browser:slider)

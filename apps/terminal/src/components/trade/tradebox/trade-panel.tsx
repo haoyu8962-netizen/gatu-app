@@ -834,7 +834,6 @@ export function TradePanel() {
 						<OrderConfirmationModal
 							open={confirmation.pending !== null}
 							draft={displayedConfirmation.draft}
-							isSubmitting={confirmation.isConfirming}
 							dontShowAgain={confirmation.dontShowAgain}
 							onDontShowAgainChange={confirmation.setDontShowAgain}
 							onConfirm={confirmation.confirm}

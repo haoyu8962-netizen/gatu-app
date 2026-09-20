@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { getSkipOrderConfirmation, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
@@ -30,6 +30,8 @@ export interface UseOrderConfirmationResult<T> {
  * so `canExecute` re-asserts the request-path gates (region, connection, availability, validation,
  * live mark price) before the order is replayed, and the surface re-derives its live execution
  * price at confirm time so the exchange guard still compares two prices from the same instant.
+ * Confirming closes the review first and executes in the background: the submitter reports the
+ * outcome through its notifications, and a second request is ignored until it settles.
  */
 export function useOrderConfirmation<T>({
 	execute,
@@ -39,8 +41,10 @@ export function useOrderConfirmation<T>({
 	const [pending, setPending] = useState<PendingOrderConfirmation<T> | null>(null);
 	const [dontShowAgain, setDontShowAgain] = useState(false);
 	const [isConfirming, setIsConfirming] = useState(false);
+	const confirmingRef = useRef(false);
 
 	async function requestSubmit(input: T, draft: OrderConfirmationDraft) {
+		if (confirmingRef.current) return;
 		if (!canExecute(input)) {
 			rejectChangedOrder();
 			return;
@@ -54,19 +58,22 @@ export function useOrderConfirmation<T>({
 	}
 
 	async function confirm() {
-		if (!pending || isConfirming) return;
-		if (!canExecute(pending.input)) {
+		if (!pending || confirmingRef.current) return;
+		const { input } = pending;
+		if (!canExecute(input)) {
 			rejectChangedOrder();
 			return;
 		}
 		if (dontShowAgain) setSkipOrderConfirmation(true);
+		confirmingRef.current = true;
 		setIsConfirming(true);
+		setDontShowAgain(false);
+		setPending(null);
 		try {
-			await execute(pending.input);
+			await execute(input);
 		} finally {
+			confirmingRef.current = false;
 			setIsConfirming(false);
-			setDontShowAgain(false);
-			setPending(null);
 		}
 	}
 

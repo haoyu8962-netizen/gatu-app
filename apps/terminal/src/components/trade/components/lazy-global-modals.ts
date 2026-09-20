@@ -12,6 +12,11 @@ export const PositionMarketCloseModal = createLazyComponent(
 	"PositionMarketCloseModal",
 );
 
+export const PositionDialogHost = createLazyComponent(
+	() => import("../positions/position-dialog-host"),
+	"PositionDialogHost",
+);
+
 export type PreloadableGlobalModal = "deposit" | "settings";
 
 const preloaders: Record<PreloadableGlobalModal, () => Promise<unknown>> = {
@@ -40,7 +45,7 @@ export function useIdleGlobalModalPreload(includePositionMarketClose: boolean): 
 				CommandMenu,
 				TransferModal,
 				SendModal,
-				...(includePositionMarketClose ? [PositionMarketCloseModal] : []),
+				...(includePositionMarketClose ? [PositionMarketCloseModal, PositionDialogHost] : []),
 			]);
 		}
 		if (browserWindow.requestIdleCallback) {

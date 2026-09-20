@@ -506,7 +506,6 @@ describe("language hot switching", () => {
 						<OrderConfirmationModal
 							open
 							draft={draft}
-							isSubmitting={false}
 							dontShowAgain={false}
 							onDontShowAgainChange={() => {}}
 							onConfirm={onConfirm}
