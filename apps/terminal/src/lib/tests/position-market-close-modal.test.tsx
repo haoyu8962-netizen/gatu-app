@@ -212,7 +212,7 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 	}),
 }));
 
-import { PositionCloseDialogShell } from "@/components/trade/positions/position-close-dialog-ui";
+import { PositionCloseDialogShell } from "@/components/trade/positions/position-close-dialog-shell";
 import { PositionMarketCloseModal } from "@/components/trade/positions/position-market-close-modal";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });

@@ -142,7 +142,7 @@ msgstr "{positionCount, plural, one {يرسل هذا أمر إغلاق بسعر 
 msgid "{positionCount} positions were closed at market."
 msgstr "تم إغلاق {positionCount} من المراكز بسعر السوق."
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
 msgstr "طُلب {requestedPercent}٪؛ {effectivePercent}٪ بعد تطبيق دقة الحجم"
 
@@ -1476,7 +1476,7 @@ msgstr "تم إرسال أوامر الإغلاق. جارٍ تأكيد حالت�
 msgid "Close pending operation details"
 msgstr "إغلاق تفاصيل العملية المعلّقة"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close percentage"
 msgstr "نسبة الإغلاق"
 
@@ -1490,7 +1490,7 @@ msgstr "يجب أن تكون نسبة الإغلاق رقماً عشرياً"
 msgid "Close percentage must be between 0 and 100"
 msgstr "يجب أن تكون نسبة الإغلاق بين 0 و100"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close percentage slider"
 msgstr "شريط تمرير نسبة الإغلاق"
 
@@ -1514,9 +1514,9 @@ msgstr "إغلاق تأكيد عكس المركز"
 msgid "Close Short"
 msgstr "إغلاق قصير"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
-#: src/components/trade/positions/position-close-dialog-ui.tsx
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close size"
 msgstr "حجم الإغلاق"
 

@@ -5,16 +5,14 @@ import { i18n, type Messages } from "@lingui/core";
 import { act, createElement, type ReactNode, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	createPositionCloseSizingViewModel,
-	PositionCloseSizingControls,
-} from "@/components/trade/positions/position-close-dialog-ui";
+import { PositionCloseSizingControls } from "@/components/trade/positions/position-close-sizing-controls";
 import {
 	type PositionCloseSizingIntent,
 	resolvePositionMarketClosePercent,
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
 import { createI18nRoot } from "@/lib/tests/harness/react";
+import { createPositionCloseSizingViewModel } from "@/lib/trade/position-close-sizing-presentation";
 
 const sliderState = vi.hoisted(() => ({
 	props: null as null | {

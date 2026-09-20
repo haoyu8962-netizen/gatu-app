@@ -15,6 +15,7 @@ import { formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useHyperliquid, useMarketsInfo, useUserPositions } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
+import { createPositionCloseSizingViewModel } from "@/lib/trade/position-close-sizing-presentation";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import { getPositionMarketCloseErrorMessage } from "@/lib/trade/position-market-close-errors";
 import { getValueColorClass } from "@/lib/ui/value-color";
@@ -24,16 +25,12 @@ import {
 	usePositionMarketCloseSession,
 } from "@/stores/use-global-modal-store";
 import { TradingActionButton } from "../components/trading-action-button";
-import {
-	createPositionCloseSizingViewModel,
-	PositionCloseDialogContent,
-	PositionCloseDialogFooter,
-	PositionCloseDialogHeader,
-	PositionCloseDialogShell,
-	PositionCloseSizingControls,
-	PositionCloseSummary,
-	type PositionCloseSummaryItem,
-} from "./position-close-dialog-ui";
+import { PositionCloseDialogContent } from "./position-close-dialog-content";
+import { PositionCloseDialogFooter } from "./position-close-dialog-footer";
+import { PositionCloseDialogHeader } from "./position-close-dialog-header";
+import { PositionCloseDialogShell } from "./position-close-dialog-shell";
+import { PositionCloseSizingControls } from "./position-close-sizing-controls";
+import { PositionCloseSummary, type PositionCloseSummaryItem } from "./position-close-summary";
 
 interface Props {
 	showPnl?: boolean;

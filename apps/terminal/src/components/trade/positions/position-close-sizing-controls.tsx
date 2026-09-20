@@ -1,4 +1,3 @@
-import { AdaptiveModal, ModalContent, ModalFooter, ModalHeader } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { type ChangeEvent, type ReactNode, useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
@@ -7,158 +6,11 @@ import {
 	type PositionCloseSizingIntent,
 	type PositionMarketCloseResolution,
 } from "@/domain/trade/position-market-close";
-import { cn } from "@/lib/cn";
 import { toBig, toFixed } from "@/lib/trade/numbers";
+import type { PositionCloseSizingViewModel } from "@/lib/trade/position-close-sizing-presentation";
 import { TradeSizeSlider } from "../components/trade-size-slider";
 
-interface PositionCloseDialogShellProps {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	onOpenChangeComplete?: (open: boolean) => void;
-	isMobile: boolean;
-	dismissible: boolean;
-	showMobileClose?: boolean;
-	closeLabel: string;
-	children: ReactNode;
-}
-
-export function PositionCloseDialogShell({
-	open,
-	onOpenChange,
-	onOpenChangeComplete,
-	isMobile,
-	dismissible,
-	showMobileClose = false,
-	closeLabel,
-	children,
-}: PositionCloseDialogShellProps) {
-	return (
-		<AdaptiveModal
-			open={open}
-			onOpenChange={onOpenChange}
-			onOpenChangeComplete={onOpenChangeComplete}
-			presentation={isMobile ? "drawer" : "modal"}
-			size="lg"
-			dismissible={dismissible}
-			showClose={dismissible && (!isMobile || showMobileClose)}
-			showHandle={isMobile && dismissible}
-			closeLabel={closeLabel}
-			handleClassName="top-2.5 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
-			overlayClassName="!bg-scrim/60 !backdrop-blur-none"
-			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[20px] max-[1000px]:!border-0 !shadow-none min-[1001px]:max-w-[27.5rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button]:!rounded-[8px] min-[1001px]:[&>button]:text-market-close-muted min-[1001px]:[&>button:hover]:bg-market-close-hover min-[1001px]:[&>button:hover]:text-market-close-fg min-[1001px]:[&>button:active]:bg-market-close-hover min-[1001px]:[&>button>svg]:size-[18px]"
-		>
-			{children}
-		</AdaptiveModal>
-	);
-}
-
-interface PositionCloseDialogHeaderProps {
-	children: ReactNode;
-}
-
-export function PositionCloseDialogHeader({ children }: PositionCloseDialogHeaderProps) {
-	return (
-		<ModalHeader divider={false} className="gap-1 px-5 pt-7 pb-0 text-start min-[1001px]:px-6 min-[1001px]:pt-6">
-			{children}
-		</ModalHeader>
-	);
-}
-
-interface PositionCloseDialogContentProps {
-	children: ReactNode;
-}
-
-export function PositionCloseDialogContent({ children }: PositionCloseDialogContentProps) {
-	return (
-		<ModalContent className="flex flex-col gap-3.5 px-5 pt-3.5 pb-0 min-[1001px]:gap-5 min-[1001px]:px-6 min-[1001px]:pt-5">
-			{children}
-		</ModalContent>
-	);
-}
-
-interface PositionCloseDialogFooterProps {
-	children: ReactNode;
-}
-
-export function PositionCloseDialogFooter({ children }: PositionCloseDialogFooterProps) {
-	return (
-		<ModalFooter className="flex-col items-stretch gap-2 px-5 pt-3.5 pb-5 min-[1001px]:px-6 min-[1001px]:pt-5 min-[1001px]:pb-6">
-			{children}
-		</ModalFooter>
-	);
-}
-
-export interface PositionCloseSummaryItem {
-	key: string;
-	label: ReactNode;
-	value: ReactNode;
-	valueClassName?: string;
-	emphasized?: boolean;
-}
-
-interface PositionCloseSummaryProps {
-	testId: string;
-	ariaLabel: string;
-	items: PositionCloseSummaryItem[];
-}
-
-export function PositionCloseSummary({ testId, ariaLabel, items }: PositionCloseSummaryProps) {
-	return (
-		<section data-testid={testId} aria-label={ariaLabel} className="py-3 min-[1001px]:py-3.5">
-			<div className="flex justify-between gap-2 min-[1001px]:block min-[1001px]:space-y-2.5">
-				{items.map((item) => (
-					<div
-						key={item.key}
-						className={cn(
-							"flex min-w-0 flex-col gap-[3px] text-start min-[1001px]:flex-row min-[1001px]:items-center min-[1001px]:justify-between min-[1001px]:gap-4",
-							item.emphasized && "items-end text-right min-[1001px]:items-center min-[1001px]:text-start",
-							item.emphasized &&
-								"min-[1001px]:border-t min-[1001px]:border-dashed min-[1001px]:border-market-close-stroke-card min-[1001px]:pt-2.5",
-						)}
-					>
-						<span className="max-w-full truncate text-2xs leading-4 text-market-close-muted min-[1001px]:text-2sm min-[1001px]:leading-[18px]">
-							{item.label}
-						</span>
-						<span
-							className={cn(
-								"max-w-full truncate text-sm leading-[18px] tabular-nums min-[1001px]:text-2sm",
-								item.valueClassName,
-							)}
-						>
-							{item.value}
-						</span>
-					</div>
-				))}
-			</div>
-		</section>
-	);
-}
-
-export interface PositionCloseSizingViewModel {
-	effectivePercent: string;
-	requestedPercent: string;
-	sizeInput: string;
-	percentInput: string;
-	sliderValue: number;
-}
-
-export function createPositionCloseSizingViewModel(
-	intent: PositionCloseSizingIntent,
-	resolution: PositionMarketCloseResolution,
-	szDecimals: number,
-): PositionCloseSizingViewModel {
-	const effectivePercent = formatPositionMarketClosePercent(resolution.effectivePercent);
-	const requestedPercent = intent.kind === "max" ? "100" : intent.kind === "percent" ? intent.value : effectivePercent;
-	return {
-		effectivePercent,
-		requestedPercent,
-		sizeInput: intent.kind === "size" ? intent.value : toFixed(resolution.normalizedSize, szDecimals),
-		percentInput: formatPercentInput(resolution.effectivePercent),
-		sliderValue: getSliderValue(resolution.effectivePercent),
-	};
-}
-
-interface PositionCloseSizingControlsProps {
+interface Props {
 	testId: string;
 	sliderTestId: string;
 	interactionIdentity: string;
@@ -196,7 +48,7 @@ export function PositionCloseSizingControls({
 	onIntentChange,
 	onInteractionChange,
 	children,
-}: PositionCloseSizingControlsProps) {
+}: Props) {
 	const { t } = useLingui();
 	const requestedPercent = formatPositionMarketClosePercent(viewModel.requestedPercent);
 	const effectivePercent = viewModel.effectivePercent;
@@ -328,19 +180,4 @@ export function PositionCloseSizingControls({
 			{children}
 		</section>
 	);
-}
-
-function getSliderValue(value: string): number {
-	const parsed = toBig(value);
-	if (!parsed) return 0;
-	if (parsed.lte(0)) return 0;
-	if (parsed.gte(100)) return 100;
-	return parsed.toNumber();
-}
-
-function formatPercentInput(value: string): string {
-	const parsed = toBig(value);
-	if (!parsed || parsed.lte(0)) return "0";
-	if (parsed.gte(100)) return "100";
-	return parsed.round(0, 1).toFixed(0);
 }

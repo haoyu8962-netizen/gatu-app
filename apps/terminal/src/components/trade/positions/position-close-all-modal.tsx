@@ -11,14 +11,11 @@ import { formatQuoteAmount } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { TradingActionButton } from "../components/trading-action-button";
-import {
-	PositionCloseDialogContent,
-	PositionCloseDialogFooter,
-	PositionCloseDialogHeader,
-	PositionCloseDialogShell,
-	PositionCloseSummary,
-	type PositionCloseSummaryItem,
-} from "./position-close-dialog-ui";
+import { PositionCloseDialogContent } from "./position-close-dialog-content";
+import { PositionCloseDialogFooter } from "./position-close-dialog-footer";
+import { PositionCloseDialogHeader } from "./position-close-dialog-header";
+import { PositionCloseDialogShell } from "./position-close-dialog-shell";
+import { PositionCloseSummary, type PositionCloseSummaryItem } from "./position-close-summary";
 
 interface Props {
 	snapshot: PositionCloseAllSnapshot | null;

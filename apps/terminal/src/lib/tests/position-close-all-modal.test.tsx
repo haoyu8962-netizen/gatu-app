@@ -27,14 +27,26 @@ vi.mock("@gatu/ui", () => ({
 		createElement("h2", props, children),
 }));
 
-vi.mock("@/components/trade/positions/position-close-dialog-ui", () => ({
+vi.mock("@/components/trade/positions/position-close-dialog-shell", () => ({
 	PositionCloseDialogShell: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) => {
 		testState.shellProps = props;
 		return createElement("div", { "data-testid": "shell" }, children);
 	},
+}));
+
+vi.mock("@/components/trade/positions/position-close-dialog-header", () => ({
 	PositionCloseDialogHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
+}));
+
+vi.mock("@/components/trade/positions/position-close-dialog-content", () => ({
 	PositionCloseDialogContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
+}));
+
+vi.mock("@/components/trade/positions/position-close-dialog-footer", () => ({
 	PositionCloseDialogFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
+}));
+
+vi.mock("@/components/trade/positions/position-close-summary", () => ({
 	PositionCloseSummary: ({ testId }: { testId: string }) => createElement("dl", { "data-testid": testId }),
 }));
 

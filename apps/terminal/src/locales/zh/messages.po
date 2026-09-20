@@ -142,7 +142,7 @@ msgstr "{positionCount, plural, one {这将为当前仓位提交市价平仓委�
 msgid "{positionCount} positions were closed at market."
 msgstr "{positionCount} 个仓位已按市价平仓。"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
 msgstr "设定 {requestedPercent}%；受数量精度限制，实际为 {effectivePercent}%"
 
@@ -1476,7 +1476,7 @@ msgstr "平仓委托已提交，正在确认交易所状态，请勿重试。"
 msgid "Close pending operation details"
 msgstr "关闭待处理操作详情"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close percentage"
 msgstr "平仓比例"
 
@@ -1490,7 +1490,7 @@ msgstr "平仓比例必须为十进制数"
 msgid "Close percentage must be between 0 and 100"
 msgstr "平仓比例必须在 0 到 100 之间"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close percentage slider"
 msgstr "平仓比例滑块"
 
@@ -1514,9 +1514,9 @@ msgstr "关闭反向仓位确认"
 msgid "Close Short"
 msgstr "平空"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
-#: src/components/trade/positions/position-close-dialog-ui.tsx
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close size"
 msgstr "平仓数量"
 

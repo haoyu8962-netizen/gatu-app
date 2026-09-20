@@ -43,7 +43,7 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/positions/history-tab.tsx",
 	"components/trade/positions/orders-history-tab.tsx",
 	"components/trade/positions/orders-tab.tsx",
-	"components/trade/positions/position-close-dialog-ui.tsx",
+	"components/trade/positions/position-close-sizing-controls.tsx",
 	"components/trade/positions/position-inline-actions.tsx",
 	"components/trade/positions/position-isolated-margin-modal.tsx",
 	"components/trade/positions/position-market-close-modal.tsx",

@@ -16,7 +16,7 @@
     { "path": "apps/terminal/src/styles.css" },
     { "path": "apps/terminal/src/components/trade/components/market-asset-info.tsx" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-disclosure-header.tsx" },
-    { "path": "apps/terminal/src/components/trade/positions/position-close-dialog-ui.tsx" },
+    { "path": "apps/terminal/src/components/trade/positions/position-close-summary.tsx" },
     { "path": "docs/ui-ux-guidelines.md" }
   ],
   "supersedes": []
@@ -77,3 +77,7 @@
 本次核对 Git 文件变更确认，上述五批追加依次对应 `8a2283bf`、`540cfc54`、`dce07587`、`a8fc8962`、`9750ccff`；原审查文档提交为 `32b73f68`。因此索引继续概括为“未修改 UI”会漏掉后续工作，现仅修正摘要和提交引用，不覆盖上文原审查范围。测试、截图及真实组件检查仍属于上述来源任务报告，本次没有重新打开页面或读取这些任务的未关联原始会话。
 
 当前 `docs/neutral-surface-audit.md` 开头仍写“视觉简化建议待实施”，正文建议及行号按 `43ce177c` 固定；它作为原始审查证据保留，但不能用作当前未完成事项清单。尤其旧 TP/SL compact 分支已在 `8a2283bf` 删除。需要专题文档维护任务追加实施状态或历史范围提示，不能将整个文档和所有保留交互状态一起判废。本轮只维护记忆文件，冲突与边界亦见[周整理记录](2026-09-14-weekly-memory-review.md)。
+
+## 来源路径更新（2026-09-21）
+
+`sources` 里的 `position-close-dialog-ui.tsx` 已在 2026-09-21 按「一个文件一个组件」拆分并删除，本记录关注的平仓确认摘要 `PositionCloseSummary` 现在位于 `position-close-summary.tsx`，来源路径随之更新（索引工具要求路径存在）。上文与 `docs/neutral-surface-audit.md` 里的文件名和行号仍指基线 `43ce177c` 的旧文件，作为当时的证据保留，不代表当前位置。
