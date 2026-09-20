@@ -8,6 +8,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountModeModal } from "@/components/trade/tradebox/account-mode-modal";
 
+const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
+vi.mock("sonner", () => ({ toast: toastMocks }));
+
 const zhTranslations: Record<string, string> = {
 	"Account type": "账户类型",
 	"Unified account": "统一账户",
@@ -48,6 +51,8 @@ describe("AccountModeModal", () => {
 	});
 
 	afterEach(() => {
+		toastMocks.error.mockReset();
+		toastMocks.success.mockReset();
 		act(() => root.unmount());
 		container.remove();
 	});
@@ -88,7 +93,7 @@ describe("AccountModeModal", () => {
 		expect(document.body.querySelector(".bg-trading-panel-scrim")).not.toBeNull();
 	});
 
-	it("allows only one account-mode mutation and blocks dismissal until it settles", async () => {
+	it("allows only one account-mode mutation and closes at the click without a progress label", async () => {
 		let resolveApply: (() => void) | undefined;
 		const onApply = vi.fn(
 			() =>
@@ -118,12 +123,14 @@ describe("AccountModeModal", () => {
 		});
 
 		expect(onApply).toHaveBeenCalledTimes(1);
-		act(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
-		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(onOpenChange).toHaveBeenCalledOnce();
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(document.body.textContent).not.toContain("Switching");
+		expect(document.body.querySelector(".animate-spin")).toBeNull();
 
 		await act(async () => resolveApply?.());
 		expect(onOpenChange).toHaveBeenCalledOnce();
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(toastMocks.error).not.toHaveBeenCalled();
 	});
 
 	it("requires an explicit supported selection for the protocol default", async () => {
@@ -181,12 +188,16 @@ describe("AccountModeModal", () => {
 		expect(unifiedOption?.getAttribute("aria-pressed")).toBe("true");
 	});
 
-	it("retranslates a fallback submission error without losing the selected mode", async () => {
-		const onApply = vi.fn().mockRejectedValue(undefined);
+	it.each([
+		[undefined, "Failed to update account mode"],
+		[new Error("Wallet is not ready to update account mode"), "Wallet is not ready to update account mode"],
+	])("reports a failed switch through a notification after the dialog closed", async (cause, message) => {
+		const onApply = vi.fn().mockRejectedValue(cause);
+		const onOpenChange = vi.fn();
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<AccountModeModal open onOpenChange={() => {}} currentMode="disabled" canChange onApply={onApply} />
+					<AccountModeModal open onOpenChange={onOpenChange} currentMode="disabled" canChange onApply={onApply} />
 				</I18nProvider>,
 			),
 		);
@@ -202,11 +213,9 @@ describe("AccountModeModal", () => {
 			confirmButton?.click();
 			await Promise.resolve();
 		});
-		expect(document.body.textContent).toContain("Failed to update account mode");
-
-		act(() => activateLocale("zh"));
-		expect(document.body.textContent).toContain("更新账户模式失败");
-		expect(unifiedOption?.getAttribute("aria-pressed")).toBe("true");
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(toastMocks.error).toHaveBeenCalledWith(message);
+		expect(document.body.textContent).not.toContain(message);
 		expect(onApply).toHaveBeenCalledOnce();
 	});
 

@@ -744,7 +744,8 @@ describe("MarginModeModal", () => {
 		expect(modalHarness.dismissible).toBe(false);
 		expect(getButton(container, "Position margin").disabled).toBe(true);
 		expect(getButton(container, "Account type").disabled).toBe(true);
-		expect(getButton(container, "Switching...").disabled).toBe(true);
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expect(container.textContent).not.toContain("Switching");
 		expect(container.querySelector('[role="tabpanel"]:not([hidden])')).not.toBeNull();
 	});
 

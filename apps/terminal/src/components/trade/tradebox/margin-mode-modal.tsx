@@ -282,7 +282,6 @@ function MarginModeModalComponent({
 											{...accountModeForm}
 											isUpdating={dismissBlocked}
 											onClose={() => handleOpenChange(false)}
-											onSubmissionLockChange={setSubmissionLocked}
 											mobileLayout
 										/>
 									) : null}
