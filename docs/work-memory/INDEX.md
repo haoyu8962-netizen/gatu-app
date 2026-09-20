@@ -53,7 +53,7 @@
 
 当前规范：[docs/account-overview.md](../../docs/account-overview.md) · [docs/withdrawals.md](../../docs/withdrawals.md) · [docs/cctp-deposits.md](../../docs/cctp-deposits.md)
 
-- [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) — 2026-09-20；已整理，验证见正文。基于最新 main 迁移会话恢复、邮箱 UI 与发送/提款三份历史记录，复核已合并修复；保留旧 Across 历史及根目录未提交改动。
+- [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) — 2026-09-20；已整理，验证见正文。迁移会话恢复、邮箱 UI 与发送/提款三份历史记录并复核已合并修复；分支先基于 main、复核后改为基于 dev，旧 Across 历史与根目录 17 个未提交修订均已用归档标签推送保存。
 - [链接移动设备：官方机制实测、17 项差距图与体验对齐实施](sessions/2026-09-18-link-device-alignment.md) — 2026-09-18；已验证，范围见正文。从官方产物实测「Link Mobile Device」：右上角图标一键 approveAgent（永久 Mobile QR）、4 秒按住显示、60 秒自动关闭、二维码为 /trade?link= 明文私钥、手机解析后以 API 钱包身份连接。我方实现更严格但生产不可达（Lambda 对票据路由固定 503、开关关闭）。41 代理工作流产出 17 项差距并逐项对抗核验；按 ADR 0015 实施 D1–D6（顶栏入口、单步审批、官方文案、圆环按住、倒计时、手机端 Agent-only 原因、扫描器相机选择、显式 local scope），D7 票据存储三备选待用户决定。
 - [邮箱钱包标识、密钥导出入口及发送网络说明修复](sessions/2026-09-16-email-wallet-ui-fix.md) — 2026-09-16；已整理，验证见正文。修复紧凑布局邮箱身份显示，补齐精确所有者邮箱钱包导出入口，区分 HyperCore 发送与 Arbitrum 提款；真实密钥导出未执行。
 - [邮箱钱包标识、提现链与密钥导出入口审查](sessions/2026-09-16-email-wallet-ui-review.md) — 2026-09-16；已整理，验证见正文。2026-09-16 审查发现紧凑邮箱标识与导出入口缺口，实测提现为 Arbitrum CCTP；UI 已由 df4ed89f 修复并进入 main，见迁移补记。
@@ -80,7 +80,7 @@
 
 当前规范：[docs/work-memory/README.md](../../docs/work-memory/README.md)
 
-- [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) — 2026-09-20；已整理，验证见正文。基于最新 main 迁移会话恢复、邮箱 UI 与发送/提款三份历史记录，复核已合并修复；保留旧 Across 历史及根目录未提交改动。
+- [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) — 2026-09-20；已整理，验证见正文。迁移会话恢复、邮箱 UI 与发送/提款三份历史记录并复核已合并修复；分支先基于 main、复核后改为基于 dev，旧 Across 历史与根目录 17 个未提交修订均已用归档标签推送保存。
 - [建立可追溯工作记录与定期索引](sessions/2026-09-12-work-memory.md) — 2026-09-12；已验证，范围见正文。三份本地可见记录快照、六个历史议题、生成与校验脚本，以及每周维护任务。
 
 ### 静态托管与 SPA 壳
