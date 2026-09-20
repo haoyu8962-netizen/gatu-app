@@ -132,6 +132,17 @@ jobs:
           tests/mobile-trade-size-validation-a11y.test.tsx
           tests/trade-size-error-a11y.test.tsx
 
+      - name: Test confirmation surface contracts
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/position-market-close-display-commit.test.tsx
+          src/lib/tests/position-market-close-submit.test.tsx
+          src/lib/tests/position-market-close-modal.test.tsx
+          src/lib/tests/position-market-close-action.test.tsx
+          src/lib/tests/position-market-close.test.ts
+          src/lib/tests/trading-action-button-label-contract.test.ts
+
       - name: Test TradingView integration
         working-directory: apps/terminal
         run: >-
