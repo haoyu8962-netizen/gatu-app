@@ -12,7 +12,7 @@
   "summary": "热刷新时 app.gatu.ai 零网络字节（SW 回壳 + immutable 资源），官方每次刷新约 61 个 304 条件请求；两站网格就绪都约 0.45–0.7 s，时间花在 JS 编译执行与初始化；我们的导航栏要等钱包运行时块，是可见的优化点。",
   "thread": null,
   "baseCommit": "4fca2b34d91d75aa18c596017301bacf268f19f7",
-  "commits": [],
+  "commits": ["ee5dd28a"],
   "sources": [
     { "path": "docs/adr/0006-startup-preloads-and-edge-caching.md" },
     { "path": "apps/terminal/tests/browser/boot-milestones.mjs" },

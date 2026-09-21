@@ -10,10 +10,10 @@
     "pairing-release",
     "account-funding"
   ],
-  "summary": "从官方产物实测「Link Mobile Device」：右上角图标一键 approveAgent（永久 Mobile QR）、4 秒按住显示、60 秒自动关闭、二维码为 /trade?link= 明文私钥、手机解析后以 API 钱包身份连接。我方实现更严格但生产不可达（Lambda 对票据路由固定 503、开关关闭）。41 代理工作流产出 17 项差距并逐项对抗核验；按 ADR 0015 实施 D1–D6（顶栏入口、单步审批、官方文案、圆环按住、倒计时、手机端 Agent-only 原因、扫描器相机选择、显式 local scope），D7 票据存储三备选待用户决定。",
+  "summary": "Link Device D1–D6 已实现，D7 后续选定并实现无票据方案 B；静态托管与安全复核见后续记录，真机矩阵及生产启用仍未完成。",
   "thread": null,
   "baseCommit": "d6225648",
-  "commits": [],
+  "commits": ["07b7ac24", "2242015f"],
   "sources": [
     { "path": "docs/adr/0015-link-device-alignment.md" },
     { "path": "docs/mobile-sync-ticketless-transfer-plan.md" },
@@ -66,3 +66,7 @@
 - 资金分类改用 domain 的全 dex 分类器；`docs/mobile-sync-production-readiness.md` 加退役横幅并重指 `deploy/cloudfront/README.md`，`docs/README.md`、`INDEX.md`、`agent.md`、`trading-onboarding.md`、`email-trading-signing.md`、ADR 0002、终端 README 的现行引用一并重指；`docs/hyperliquid-signing.md` 补「Mobile Agent QR 传输与 Agent-only 会话」节。
 - 真机矩阵（`docs/mobile-phone-access-device-validation.md`）仍为未执行。
 - 不替代任何记录。
+
+## 周整理追加（2026-09-21）
+
+“D7 三备选待决定”由 [方案 B 实施](2026-09-18-mobile-sync-ticketless-implementation.md) 接续。原官方观察与 D1–D6 结论仍保留；后续方案选择不等于真机或资金验收通过。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

@@ -11,10 +11,10 @@
     "market-recovery",
     "static-hosting"
   ],
-  "summary": "表面 6 六个移动表面与外框改用共享纯视图；旧 class 模块删除，浏览器服务被 EPERM 阻止，盒子实测待 reviewer。",
+  "summary": "移动表面共享视图迁移及后续 reviewer 验证已记录；启动占位部分已由 ADR 0010 取代，真实展示组件继续使用，历史失败和验证边界保留。",
   "thread": null,
   "baseCommit": "b77a87909046a20469f71449525d619680daa4f1",
-  "commits": [],
+  "commits": ["cde152e5"],
   "sources": [
     {
       "path": "docs/adr/0009-startup-placeholder-single-source.md"
@@ -434,3 +434,7 @@ reviewer 修改一项：`MobilePositionsTabStripView` 静态下划线原用 `-bo
 - `pnpm --filter @gatu/terminal test`（570 文件 / 6386 用例）：10 文件失败，均为已记录项——9 个基线红文件失败数不变，`mobile-agent-sync-route`(2) 为并发敏感。本表面未引入新失败。
 - 第一次 `pnpm build` 在预算检查失败：trade 静态启动闭包 1,581,216 gzip 字节，较基线 1,570,221 增加 10,995，超过 10,000 的允许增量 995 字节。按各表面构建日志，增量落在根路由/壳所在的 `vendor-tanstack-router` 块（s4→s5 +2.19 KB、s5→s6 +4.10 KB），`trade-terminal-page` 块反而缩小 1.0 KB；这是占位 props 常量、壳组合与英文源串描述符的固有成本。处理：把 `check-client-bundle-budget.mjs` 的 `tradeStartup.baselineGzipBytes` 重设为 1,581,216（允许增量不变），并在 ADR 0009 后果中记录。重设后的构建结果见下。
 - 重设基线并加入下划线修正后的 `pnpm build` 通过：trade 静态启动闭包 1,581,243（较新基线 +27）；客户端总 gzip 3,086,297（较总基线 −68,410）；移动运行时增量 111,636（+1,056）；桌面运行时增量 194,018（+2,030）。预渲染壳核对（`grep -a`）：`data-slot="mobile-header-inner"`/`mobile-market-bar`/`mobile-order-entry-scroll`/`compact-orderbook`/`mobile-positions-tabs` 各 1，静态页签下划线 `-bottom-0.5` 1，`mobile-chrome` 0，`animate-spin` 0，`Primary navigation` 导航地标 2（桌面 + 移动）。构建不是发布。
+
+## 周整理追加（2026-09-21）
+
+初轮待 reviewer 的状态不代表最终记录，正文已有后续复核与检查。当前 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 移除启动占位，但保留 props-only 真实视图；本次只更新检索摘要，不把旧占位几何测量当成新启动流程的验收。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

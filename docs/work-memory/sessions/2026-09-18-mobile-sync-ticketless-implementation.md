@@ -9,10 +9,10 @@
   "topics": [
     "pairing-release"
   ],
-  "summary": "按 ADR 0015 D7 方案 B 完成代码与文档：信封 v3、TTL 2 分钟、揭示后 60 秒单调时钟窗口、桌面本地 syncId、手机端 syncId 本地去重、v1/v2 信封提示刷新；删除票据客户端/服务端/路由、Lambda 503 桩、CloudFront 转发与 EC2 时代 mobile-sync 发布脚本。定向测试与 typecheck 通过；pnpm build 因既有 trade-terminal-page 预算超限失败（改动不在该 chunk）；全量 vitest 余 8 个文件 32 项基线红（干净 HEAD 同样失败）。静态托管实测、真机矩阵、对抗安全复核未执行，生产开关保持关闭。",
+  "summary": "信封 v3 无票据方案已有静态托管与安全复核报告，重复导入及生命周期缺陷已修；后续全量测试和包预算修复有独立版本证据，真机验收及生产启用仍待完成。",
   "thread": null,
   "baseCommit": "2242015f",
-  "commits": ["750a5113", "e8ac17d7", "9b589891"],
+  "commits": ["750a5113", "e8ac17d7", "9b589891", "3d0718b3", "35146f69"],
   "sources": [
     { "path": "docs/mobile-sync-ticketless-transfer-plan.md" },
     { "path": "docs/adr/0015-link-device-alignment.md" },
@@ -79,3 +79,7 @@
 - 打开 `VITE_MOBILE_PAIRING_*` 之前：改写 `scripts/validate-mobile-phone-access-device-validation.js`、`deploy/fixtures/mobile-device-evidence.mjs` 与 `docs/mobile-phone-access-device-validation.md`（仍含 Ticket API 字段，已加「协议已被替代」提示），再按规划完成静态托管实测、Testnet 真机矩阵与安全复核。
 - `trade-terminal-page` 预算超限与 8 个基线红文件需另行处理。
 - 本记录延续 [2026-09-18-link-device-alignment](2026-09-18-link-device-alignment.md) 的 D7；不替代其 D1–D6 结论。
+
+## 周整理追加（2026-09-21）
+
+原末尾待办中的模板改写、静态托管和安全复核已在同文第二、三阶段记录，原“8 文件 32 红”是早期运行；第三阶段报告 6,360 项通过，不能外推为当前工作树全量通过。包预算后由 [独立修复](2026-09-18-trade-terminal-page-budget.md) 处理。本文保留首轮失败和未再构建/浏览器复测的边界。片段擦除、响应头与 StrictMode 等后续修复在 dev 的 PR #33/#34，尚不在本次基线；真机矩阵、系统相机历史风险与生产启用不能据此宣告完成。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

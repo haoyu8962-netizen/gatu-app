@@ -9,10 +9,10 @@
   "topics": [
     "static-hosting"
   ],
-  "summary": "表面 3：桌面订单簿列头、侧容器、价差共用纯视图，页签和分组按钮与真实 primitive 对照；数据前分组显示 —，Playwright 留给 reviewer。",
+  "summary": "订单簿 chrome 共享视图迁移及后续 reviewer 验证已记录；启动占位部分已由 ADR 0010 取代，真实展示组件继续使用，历史失败和验证边界保留。",
   "thread": null,
   "baseCommit": "7d80e46bbbf221a6f4256bf4008b9632c289627a",
-  "commits": [],
+  "commits": ["3ecb960e", "998515a5"],
   "sources": [
     {
       "path": "docs/adr/0009-startup-placeholder-single-source.md"
@@ -182,3 +182,7 @@ Lingui 六份目录仅来源位置变动；既有缺译 ar/es/fr/hi 各 14、zh 
 启动占位已由 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 取代；上文仍是旧方案当时的记录，不改写其验证结论。以下 source 在移除启动占位任务中删除，元数据改链到[后续任务记录](2026-09-16-remove-startup-placeholders.md)，避免索引将历史路径误作当前文件；原来源保留于此，可用 `git show 0f7e97acb95a4211195b1ac4dd742def7f72bbc0:<路径>` 检索：
 
 - `apps/terminal/src/lib/tests/orderbook-panel-view-parity.test.tsx`
+
+## 周整理追加（2026-09-21）
+
+初轮待 reviewer 的状态不代表最终记录，正文已有后续复核与检查。当前 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 移除启动占位，但保留 props-only 真实视图；本次只更新检索摘要，不把旧占位几何测量当成新启动流程的验收。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

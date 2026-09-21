@@ -9,10 +9,10 @@
   "topics": [
     "market-recovery"
   ],
-  "summary": "移动启动占位原与真实终端完全不同（头部缺三个控件、48px 市场栏、按比例分配的交易区、4 个标签）；改为复用真实组件的 class 常量绘制同一套 chrome，Playwright 在 360/390/430 三档视口、深浅主题、中英文下实测所有结构盒子一致；运行时回退改用翻译标签与持久化页签。",
+  "summary": "保留旧移动占位与真实终端的几何测量；启动占位已由 ADR 0010 移除，历史盒子一致性不是当前启动行为的验收。",
   "thread": null,
   "baseCommit": "f5010ee7",
-  "commits": [],
+  "commits": ["70add4bd", "cde152e5", "998515a5"],
   "sources": [
     {
       "path": "docs/work-memory/sessions/2026-09-16-mobile-views-migration.md"
@@ -64,3 +64,7 @@
 - `apps/terminal/src/components/trade/mobile/mobile-loading-fallback.tsx`
 - `apps/terminal/src/lib/tests/mobile-chrome-parity.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-app-shell-skeleton.test.tsx`
+
+## 周整理追加（2026-09-21）
+
+本记录已有 ADR 0010 来源路径修正；本次仅将该部分替代关系带入索引，旧测量、失败及来源正文保留。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

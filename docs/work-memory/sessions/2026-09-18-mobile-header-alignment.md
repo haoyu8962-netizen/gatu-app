@@ -12,7 +12,7 @@
   ],
   "thread": null,
   "baseCommit": "22a1d566",
-  "commits": [],
+  "commits": ["67d4212e"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/mobile/mobile-header.tsx" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-header-view.tsx" },
