@@ -58,7 +58,7 @@
 | TP/SL、逐仓保证金、现货兑换 | 2026-09-21 第二批起满足第 1、6 条：按钮为静态动词（逐仓保证金经由已登记的 `submitLabel`），点击即关闭，结果走通知。展示 → 承诺的核对未做。取舍：取消成功但补单失败这类不确定结果原先常驻在弹层里，现在只有一条会自动消失的通知；资产占位仍然拦住重复提交，但解释不再常驻 |
 | 撤单、改单、TWAP 终止、账户模式 | 2026-09-21 第二批起满足第 6 条，见上文。它们使用普通 `button` / `Button`，**不在**标签契约测试的发现范围内，由各自的渲染测试钉住（`cancel-all-orders-modal`、`desktop-orders-cancel-all`、`mobile-orders-card`、`mobile-order-modification`、`desktop-twap-tab`、`account-mode-modal`） |
 | 保证金模式、杠杆 `tradebox/margin-mode-modal.tsx`、`tradebox/leverage-modal.tsx` | 2026-09-21 第二批起满足第 1、6 条，见上文；杠杆弹层在标签契约里登记为静态 |
-| 发送、划转、充值、提现 | 2026-09-21 起按钮名称静态；**有意不**点击即关闭，原因见第 6 条末尾。展示 → 承诺的核对未做 |
+| 发送、划转、充值、提现 | 2026-09-21 起按钮名称静态；**有意不**点击即关闭，原因见第 6 条末尾。官方终端对这四个面的做法与后续方案见 [资金类弹层的结果反馈](funds-dialog-outcome-plan.md)（拟议，未实施）。展示 → 承诺的核对未做 |
 | API 钱包操作 `api-wallet/api-wallet-action-modal.tsx` | 不在 `components/trade` 下，未核对；提交期间显示 `Processing…` |
 
 `trading-action-button-label-contract.test.ts` 只覆盖渲染 `TradingActionButton` 的文件，名称如此，覆盖范围也如此。它用 TypeScript AST 检查该按钮子节点里的插值模板、`<Plural>`、带值的 `<Trans>` 与字符串拼接，并登记经由变量给出的名称；变量、属性、函数调用等它无法判断的表达式按源码文本登记，内容要靠人审查。发现按文件聚合：一个文件开始或停止渲染该按钮、或者登记的表达式集合变化时测试失败，借此要求对照本文审查一次；在已登记文件里再加一个只用静态动词的按钮不会触发。
