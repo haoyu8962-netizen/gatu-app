@@ -32,6 +32,8 @@ interface OrderEntryData extends OrderEntryDerived {
 	executionAvailability: EntryOrderExecutionAvailability;
 	isAvailabilityLoading: boolean;
 	isAvailabilityBlocked: boolean;
+	isBalanceAvailabilityBlocked: boolean;
+	conversionPrice: number;
 	isAvailabilityStale: boolean;
 	hasAvailabilityError: boolean;
 	sideLabels: SideLabels;
@@ -260,6 +262,8 @@ export function useOrderEntryData({
 		executionAvailability,
 		isAvailabilityLoading,
 		isAvailabilityBlocked: isAvailabilityBlocked || derived.reduceOnlyCapacity.status === "unavailable",
+		isBalanceAvailabilityBlocked: isAvailabilityBlocked,
+		conversionPrice,
 		isAvailabilityStale,
 		hasAvailabilityError,
 		...derived,

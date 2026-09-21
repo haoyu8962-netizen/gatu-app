@@ -9137,9 +9137,15 @@ msgstr "USDC वॉल्यूम"
 msgid "Use {priceText} as limit price"
 msgstr "{priceText} को लिमिट मूल्य के रूप में उपयोग करें"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Use max available balance"
 msgstr "अधिकतम उपलब्ध शेष राशि का उपयोग करें"
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+msgid "Use max reducible size"
+msgstr "अधिकतम घटाने योग्य मात्रा इस्तेमाल करें"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/mobile/mobile-trade-price-field.tsx

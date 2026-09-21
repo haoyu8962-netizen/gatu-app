@@ -9137,9 +9137,15 @@ msgstr "Volumen en USDC"
 msgid "Use {priceText} as limit price"
 msgstr "Usar {priceText} como precio límite"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Use max available balance"
 msgstr "Usar el saldo máximo disponible"
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+msgid "Use max reducible size"
+msgstr "Usar la cantidad máxima reducible"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/mobile/mobile-trade-price-field.tsx

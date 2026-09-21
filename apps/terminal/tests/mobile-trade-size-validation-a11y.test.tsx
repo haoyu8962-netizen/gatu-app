@@ -130,6 +130,8 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 		hasAvailabilityError: testState.availabilityStatus === "error",
 		hasPosition: false,
 		isAvailabilityBlocked: testState.availabilityStatus !== "success",
+		isBalanceAvailabilityBlocked: testState.availabilityStatus !== "success",
+		conversionPrice: 100,
 		isAvailabilityLoading: testState.availabilityStatus === "loading",
 		isAvailabilityStale: testState.availabilityStatus === "stale",
 		isSpotMarket: testState.kind === "spot",

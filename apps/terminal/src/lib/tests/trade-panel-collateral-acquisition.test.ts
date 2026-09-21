@@ -18,8 +18,8 @@ describe("trade panel collateral acquisition wiring", () => {
 		expect(TRADE_PANEL_SOURCE).toContain("openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken)");
 	});
 
-	it("hides the contextual action when account availability is blocked", () => {
-		expect(TRADE_FORM_FIELDS_SOURCE).toContain("isConnected && !isAvailabilityBlocked && swapTargetToken");
+	it("hides the contextual action when balance availability is blocked", () => {
+		expect(TRADE_FORM_FIELDS_SOURCE).toContain("isConnected && !isBalanceAvailabilityBlocked && swapTargetToken");
 		expect(TRADE_FORM_FIELDS_SOURCE).toMatch(/aria-label=\{`\$\{t`Swap`\} \$\{swapTargetToken\}`\}/);
 	});
 });

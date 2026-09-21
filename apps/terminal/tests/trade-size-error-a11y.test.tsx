@@ -373,6 +373,7 @@ async function renderDesktop(root: Root) {
 						displayAvailableBalance: 100,
 						displayAvailableBalanceToken: "USDC",
 						isAvailabilityBlocked: !desktopState.accountReady,
+						isBalanceAvailabilityBlocked: !desktopState.accountReady,
 						isSpotMarket: false,
 						leverage: 10,
 						leverageInteractionIdentity: "BTC:perp:50",

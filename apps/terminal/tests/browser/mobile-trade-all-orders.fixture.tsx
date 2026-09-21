@@ -45,9 +45,10 @@ function DesktopFields() {
 		marketOrderSizing: null,
 		reduceOnly,
 		positionSnapshot: {
-			ready: !positions.isLoading,
+			ready: !positions.isLoading && !positions.hasError && !positions.isStale,
 			receivedAt: positions.receivedAt,
-			signedSize: positions.getPosition()?.szi ?? "0",
+			signedSize:
+				positions.getPosition(market.name, market.kind === "builderPerp" ? market.dex : undefined)?.szi ?? "0",
 		},
 	});
 	return (
@@ -120,6 +121,11 @@ function Fixture() {
 						<button type="button" onClick={() => setFixtureState({ positionPending: !state.positionPending })}>
 							Positions pending
 						</button>
+						{(["success", "loading", "stale", "error"] as const).map((positionStatus) => (
+							<button type="button" key={positionStatus} onClick={() => setFixtureState({ positionStatus })}>
+								Positions {positionStatus}
+							</button>
+						))}
 					</>
 				)}
 				<button type="button" onClick={() => actions.resetForm()}>

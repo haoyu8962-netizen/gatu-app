@@ -113,7 +113,7 @@ async function expectHeaderHitTargets(page: Page) {
 		balanceHeight: 15,
 		totalHeight: 93,
 	});
-	const available = page.getByRole("button", { name: /^(Available|可用)/ });
+	const available = page.getByRole("button", { name: /^(Use max available balance|使用全部可用余额)/ });
 	expect(
 		await available.evaluate((node) => {
 			const rect = node.getBoundingClientRect();
@@ -203,7 +203,7 @@ for (const viewport of [
 				await expect(tab).toHaveAttribute("aria-selected", "true");
 				await expect(size).toHaveValue("1");
 			}
-			const available = page.getByRole("button", { name: /^Available/ });
+			const available = page.getByRole("button", { name: /^Use max available balance/ });
 			const bounds = await available.boundingBox();
 			if (!bounds) throw new Error("Missing available balance");
 			await page.touchscreen.tap(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2 - 11);

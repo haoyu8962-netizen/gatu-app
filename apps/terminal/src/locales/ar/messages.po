@@ -9137,9 +9137,15 @@ msgstr "حجم تداول USDC"
 msgid "Use {priceText} as limit price"
 msgstr "استخدام {priceText} كسعر حد"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Use max available balance"
 msgstr "استخدام الحد الأقصى للرصيد المتاح"
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+msgid "Use max reducible size"
+msgstr "استخدام أقصى كمية قابلة للتخفيض"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/mobile/mobile-trade-price-field.tsx

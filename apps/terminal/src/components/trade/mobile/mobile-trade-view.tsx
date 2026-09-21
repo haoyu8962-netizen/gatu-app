@@ -285,6 +285,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		availableBalance,
 		isAvailabilityLoading,
 		isAvailabilityBlocked,
+		isBalanceAvailabilityBlocked,
+		conversionPrice,
 		isAvailabilityStale,
 		hasAvailabilityError,
 		availableBalanceToken,
@@ -430,7 +432,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	});
 	const { marginRequired } = getOrderMetrics({
 		sizeValue,
-		price,
+		price: conversionPrice,
 		leverage: capabilities.isLeveraged ? leverage : null,
 		reduceOnly,
 	});
@@ -809,12 +811,13 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	}
 
 	const isFormDisabled = !isConnected || isAvailabilityBlocked || (!reduceOnly && availableBalance <= 0);
+	const maxSizeLabel = reduceOnly ? t`Use max reducible size` : t`Use max available balance`;
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
 	const priceUnitLabel = quoteToken || "USDC";
 
 	function formatAvailableBalance(): string {
 		const decimals = isSpotMarket && side === "sell" ? szDecimals : 2;
-		return formatToken(!isConnected || isAvailabilityBlocked ? "0" : availableBalance, decimals);
+		return formatToken(!isConnected || isBalanceAvailabilityBlocked ? "0" : availableBalance, decimals);
 	}
 
 	const change24h = get24hChange(market?.prevDayPx, market?.markPx);
@@ -885,6 +888,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 				<MobileTradeAvailableView
 					label={t`Available`}
+					aria-label={maxSizeLabel}
+					title={maxSizeLabel}
 					value={formatAvailableBalance()}
 					token={availableBalanceToken}
 					disabled={isFormDisabled || maxSize <= 0}

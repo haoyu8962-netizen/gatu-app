@@ -17,6 +17,7 @@ let state = {
 	status: "success" as MarkPriceStatus,
 	accountStatus: undefined as MarkPriceStatus | undefined,
 	positionPending: false,
+	positionStatus: "success" as MarkPriceStatus,
 	positionSize: new URLSearchParams(window.location.search).get("position") ?? "0",
 	submissions: [] as OrderSubmitDraftInput[],
 };
@@ -171,13 +172,15 @@ export function useTradingGuard() {
 export function useUserPositions() {
 	const current = useFixtureState();
 	return {
-		getPosition: () =>
-			current.positionSize === "0"
+		getPosition: (coin: string, dex?: string) =>
+			current.positionSize === "0" ||
+			coin !== (builderUsdh ? "xyz:BTC" : "BTC") ||
+			(dex ?? "") !== (builderUsdh ? "xyz" : "")
 				? null
 				: {
 						szi: current.positionSize,
-						coin: "BTC",
-						dex: "",
+						coin: builderUsdh ? "xyz:BTC" : "BTC",
+						dex: builderUsdh ? "xyz" : "",
 						entryPx: "100",
 						positionValue: "715",
 						unrealizedPnl: "0",
@@ -188,10 +191,10 @@ export function useUserPositions() {
 						leverage: { type: "cross", value: 10 },
 						cumFunding: { allTime: "0", sinceOpen: "0", sinceChange: "0" },
 					},
-		hasError: false,
-		isLoading: current.positionPending,
-		isStale: false,
-		receivedAt: Date.now(),
+		hasError: current.positionStatus === "error",
+		isLoading: current.positionPending || current.positionStatus === "loading",
+		isStale: current.positionStatus === "stale",
+		receivedAt: current.positionStatus === "stale" ? Date.now() - 60_001 : Date.now(),
 	};
 }
 export function useInfo() {

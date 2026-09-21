@@ -90,6 +90,7 @@ function FixtureTradePanel({ feedback, hasPosition, sizeMessage }: FixtureTradeP
 		displayAvailableBalanceToken: "USDC",
 		hasAvailabilityError: false,
 		isAvailabilityBlocked: false,
+		isBalanceAvailabilityBlocked: false,
 		isAvailabilityLoading: false,
 		isAvailabilityStale: false,
 		isSpotMarket: false,

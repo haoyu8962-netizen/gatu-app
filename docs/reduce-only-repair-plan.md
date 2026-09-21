@@ -83,6 +83,18 @@
 
 让 `getOrderMetrics` 的保证金结果可表达“不适用”，同步桌面、移动及确认摘要的类型和显示；只减仓显示现有 `—`，不显示 $0、开仓保证金或被动错误词。普通订单保证金计算保持原样。订单价值、手续费和滑点仍有意义，保留计算。
 
+### 对抗审查后的补修设计（2026-09-21）
+
+范围限定为[复核保留的三项问题](work-memory/sessions/2026-09-21-reduce-only-opus5-review.md)。以下设计先于代码更新，现已实施；实际验证和失败记录见[补修任务记录](work-memory/sessions/2026-09-21-reduce-only-review-fixes.md)。
+
+1. `useOrderEntryData` 单独返回余额流的 `isBalanceAvailabilityBlocked`；现有 `isAvailabilityBlocked` 仍组合余额和只减仓持仓门槛，用于输入、滑杆和提交。两端余额展示及桌面 Swap 仅依据余额状态，持仓缺失/错误/陈旧不覆盖成功余额。不采用直接解除组合门槛的方案，避免放松交易保护。
+2. Hook 暴露已经计算的 `conversionPrice`，手机保证金继续由 Big.js 域函数计算，以原来的订单价值价格为输入：限价类使用有效限价，其余类型使用标记价。只减仓仍为 `—`。不将触发价或 Scale 区间中点顺带用于普通手机保证金，不扩大修改桌面估算模型。
+3. 两端余额 Max 入口根据有效只减仓模式使用 `Use max reducible size` 或原 `Use max available balance`，添加同义 tooltip/title，并通过 reactive Lingui 翻译六种语言。保持余额数值、点击后的基础币数量及草稿生命周期不变。
+
+验收：真实 Hook + 桌面/手机组件在成功余额叠加持仓 loading/error/stale 时保留余额并禁用交易；恢复后同一草稿可用。普通手机八类订单的保证金计算不受触发价、区间价误导；Max 在零开仓余额、双端及语言切换下名称和动作一致。浏览器夹具补齐持仓错误/陈旧状态并使用隔离 Vite 缓存。
+
+核对来源：[Hyperliquid Margining](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/margining) 定义开仓初始保证金基于标记价；[Exchange API](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint) 与本地 `@nktkas/hyperliquid@0.33.3` 仍以 `r` 表示只减仓、`s` 表示数量，本次无需更改协议字段。[WAI-ARIA Button Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/button/) 要求按钮具备可访问名称，支持用描述补充动作语义。余额/持仓独立展示属于本项目数据依赖约定，并非由协议推导的余额算法。
+
 错误信息区分无持仓、方向不匹配、超过可减仓量、提交时持仓变化；渲染订阅 locale，helper 显式接收翻译依赖。发送 `r=true` 不应被描述为保证成交。
 
 ## 实施顺序与交付

@@ -13,6 +13,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   blocked across ordinary, trigger, TWAP and Scale orders; Scale checks the combined size.
   Quote-unit selections preserve their exact base quantity through confirmation and submission,
   and Reduce Only displays no opening-margin requirement.
+  Follow-up fixes preserve valid available balances while position data is unavailable,
+  label the Reduce Only Max action accurately in both layouts, and restore the original
+  price basis for ordinary mobile order margin estimates.
 
 - The remaining trading dialogs no longer show progress in their buttons. TP/SL, Adjust Isolated
   Margin, Cancel All Orders, the phone's Modify Order sheet, Swap and Account type close as soon as

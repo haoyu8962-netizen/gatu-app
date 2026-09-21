@@ -54,6 +54,7 @@ type TradeFormOrderEntryData = Pick<
 	ReturnType<typeof useOrderEntryData>,
 	| "isSpotMarket"
 	| "isAvailabilityBlocked"
+	| "isBalanceAvailabilityBlocked"
 	| "baseToken"
 	| "quoteToken"
 	| "capabilities"
@@ -122,6 +123,7 @@ export function TradeFormFields({
 	const {
 		isSpotMarket,
 		isAvailabilityBlocked,
+		isBalanceAvailabilityBlocked,
 		baseToken,
 		quoteToken,
 		capabilities,
@@ -143,6 +145,8 @@ export function TradeFormFields({
 		!isConnected || isAvailabilityBlocked || (!(capabilities.hasReduceOnly && reduceOnly) && availableBalance <= 0);
 	const isSizeSliderPaused = isConnected && isAvailabilityBlocked;
 	const isSizeSliderDisabled = !isSizeSliderPaused && (isFormDisabled || maxSize <= 0);
+	const maxSizeLabel =
+		capabilities.hasReduceOnly && reduceOnly ? t`Use max reducible size` : t`Use max available balance`;
 
 	const twapOrder = isTwapOrderType(orderType);
 	const scaleOrder = isScaleOrderType(orderType);
@@ -201,7 +205,7 @@ export function TradeFormFields({
 	function formatAvailableBalance(): string {
 		const isBaseToken = isSpotMarket && side === "sell";
 		const decimals = isBaseToken ? szDecimals : 2;
-		return formatToken(!isConnected || isAvailabilityBlocked ? "0" : displayAvailableBalance, {
+		return formatToken(!isConnected || isBalanceAvailabilityBlocked ? "0" : displayAvailableBalance, {
 			decimals,
 			symbol: displayAvailableBalanceToken ?? undefined,
 		});
@@ -224,7 +228,8 @@ export function TradeFormFields({
 								type="button"
 								onClick={() => handleSizePercentApply(100)}
 								disabled={isFormDisabled || maxSize <= 0}
-								aria-label={t`Use max available balance`}
+								aria-label={maxSizeLabel}
+								title={maxSizeLabel}
 								className="min-w-0 cursor-pointer truncate border-b border-dashed border-trading-panel-stroke-control font-semibold whitespace-nowrap tabular-nums text-trading-panel-fg transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-default disabled:border-transparent disabled:hover:opacity-100"
 							>
 								{formatAvailableBalance()}
@@ -232,7 +237,7 @@ export function TradeFormFields({
 						) : null
 					}
 					action={
-						isConnected && !isAvailabilityBlocked && swapTargetToken ? (
+						isConnected && !isBalanceAvailabilityBlocked && swapTargetToken ? (
 							<Button
 								variant="link"
 								intent="brand"
