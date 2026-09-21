@@ -8,7 +8,9 @@ import { init, parse } from "es-module-lexer";
 const CLIENT_ASSET_PATH = /^\/assets\/[A-Za-z0-9_][A-Za-z0-9._-]*\.js$/;
 const TARGET_NAME = /^[a-z0-9][a-z0-9-]*$/;
 const DEFAULT_MAX_DEPTH = 4;
-const DEFAULT_MAX_NODES = 96;
+// A crawl bound, not a performance budget: the first layer is every module the shell preloads
+// (99 on 2026-09-21), and check-client-bundle-budget.mjs owns startup weight.
+const DEFAULT_MAX_NODES = 128;
 const DEFAULT_MAX_FILE_BYTES = 5 * 1024 * 1024;
 const DEFAULT_MAX_TOTAL_BYTES = 24 * 1024 * 1024;
 const DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
