@@ -76,12 +76,16 @@
 
 ### 官方对照与证据边界
 
-实际页面只打开并关闭了[官方全部平仓确认面](https://app.hyperliquid.xyz/trade/HYPE)，没有点击最终确认。后续流程依据当前页面加载的[公开配置脚本](https://app.hyperliquid.xyz/assets/config-DWLPMyx3.js)静态核对：
+初次复审只打开并关闭了[官方全部平仓确认面](https://app.hyperliquid.xyz/trade/HYPE)，没有点击最终确认。当时对后续流程的结论依据页面加载的[公开配置脚本](https://app.hyperliquid.xyz/assets/config-DWLPMyx3.js)静态核对；同日后续用户自行操作时的实际通知观察补充在下方：
 
 - `s2` 的确认处理先关闭弹窗，再调用 `i7`，传入 `notifications: "errorsOnly"` 与 `grouping: "na"`。
 - `i7` 仅在 `notifications === "all"` 时创建普通下单的 loading toast。全部平仓跳过这一步，因此在这条路径没有发现持续的加载通知或逐仓进度队列。
 - 内部按每批最多 50 个订单顺序发送请求并遍历 `statuses`，逐项错误走错误通知；存在成功结果时返回 `kind: "ok"`，外层显示「已提交全部平仓订单」类汇总通知。部分子单错误与汇总成功通知可以并存；这个汇总不证明每个仓位已归零。
-- 公开通知封装的成功/错误时长为 6 秒。[主脚本](https://app.hyperliquid.xyz/assets/index-58uVNh8f.js)将普通通知放在移动/平板左上、桌面右下。这是公开实现证据，未通过真实交易观察提交后的显示位置和过程。
+- 公开通知封装的成功/错误时长为 6 秒。[主脚本](https://app.hyperliquid.xyz/assets/index-58uVNh8f.js)将普通通知放在移动/平板左上、桌面右下。位置规则来自公开实现，本轮未做双端截图验收。
+
+同日后续监听中，用户确认自行操作「全部关闭 → 确认市价平仓」，代理只观察 DOM。采样记录先出现确认控件，控件消失后约 0.7 秒新增「以市场价格下单以平掉所有仓位。」汇总通知，约 7 秒后该通知节点移除；7 秒包含退出及延迟移除，不能当作精确可见时长。该次确认前已有的普通成交通知短暂与汇总通知并存，不能把它算作本批次的等待或成交阶段。该确认过程没有捕获新增「订单已提交」或持续进度通知，与上述 `errorsOnly` 路径一致。
+
+这是一次实际界面反馈观察，不是逐笔成交、全部仓位归零、TP/SL 清理或多市场部分失败的验证。监听中另有「订单已提交 → 买入/卖出成交」的通用通知序列，仅凭文案不能确定其具体入口或归属。完整观察范围和失败记录见[官方反馈监听记录](work-memory/sessions/2026-09-21-official-trade-feedback-observation.md)。
 
 [Exchange 文档](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint)定义订单数组与逐项 `filled / resting / error` 结果，[WebSocket 文档](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions)定义 `orderUpdates`。可见进度属于应用层设计，不能把「已提交」「已被接受」「已成交」「仓位归零」合并成一个成功结论。
 
