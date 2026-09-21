@@ -59,8 +59,6 @@ function byKey(rows: OrderConfirmationRow[], key: string): OrderConfirmationRow 
 
 describe("buildOrderConfirmationRows", () => {
 	it.each([
-		["market", "Market"],
-		["limit", "Limit · GTC"],
 		["stopMarket", "Stop Market"],
 		["stopLimit", "Stop Limit"],
 		["takeProfitMarket", "Take Profit Market"],
@@ -73,50 +71,36 @@ describe("buildOrderConfirmationRows", () => {
 		expect(byKey(rows, "orderType")?.value).toBe(`translated:${label}`);
 	});
 
-	it("describes a perp market order with slippage and the leveraged cost block", () => {
+	it("limits a perp market order to the action, size, price and estimated liquidation price", () => {
 		const rows = buildOrderConfirmationRows(BASE_DRAFT);
 
-		expect(rows.map((row) => row.key)).toEqual([
-			"market",
-			"side",
-			"orderType",
-			"size",
-			"price",
-			"slippage",
-			"leverage",
-			"orderValue",
-			"marginRequired",
-			"liqPrice",
-			"fee",
-		]);
-		expect(byKey(rows, "market")?.value).toBe("BTC-USD");
-		expect(byKey(rows, "orderType")?.value).toBe("Market");
+		expect(rows.map((row) => row.key)).toEqual(["action", "size", "price", "liqPrice"]);
 		expect(byKey(rows, "price")?.value).toBe("Market");
-		expect(byKey(rows, "slippage")?.value).toBe("2.5%");
-		expect(byKey(rows, "size")?.value).toBe("0.5000 BTC ($50,000.00)");
-		expect(byKey(rows, "leverage")?.value).toBe("Cross · 10x");
-		expect(byKey(rows, "marginRequired")?.value).toBe("$5,000.00");
-		expect(byKey(rows, "fee")?.value).toBe("0.0550% ($27.50)");
-		expect(byKey(rows, "protocolFee")).toBeUndefined();
-		expect(byKey(rows, "gatuFee")).toBeUndefined();
+		expect(byKey(rows, "size")?.value).toBe("0.5000 BTC");
+		expect(byKey(rows, "liqPrice")?.label).toBe("Estimated Liquidation Price");
 	});
 
-	it("colors the side row by direction", () => {
-		expect(byKey(buildOrderConfirmationRows(BASE_DRAFT), "side")?.tone).toBe("up");
-		expect(byKey(buildOrderConfirmationRows(draft({ side: "sell" })), "side")).toEqual({
-			key: "side",
-			label: "Side",
-			value: "Short",
-			tone: "down",
-		});
+	it("limits a good-till-cancelled limit order to the same four rows", () => {
+		const rows = buildOrderConfirmationRows(draft({ orderType: "limit", tif: "Gtc", limitPrice: 99_000 }));
+
+		expect(rows.map((row) => row.key)).toEqual(["action", "size", "price", "liqPrice"]);
 	});
 
-	it("shows the limit price with its time in force and no slippage", () => {
+	it("colors the action and the size by direction", () => {
+		const long = buildOrderConfirmationRows(BASE_DRAFT);
+		const short = buildOrderConfirmationRows(draft({ side: "sell" }));
+
+		expect(byKey(long, "action")?.tone).toBe("up");
+		expect(byKey(long, "size")?.tone).toBe("up");
+		expect(byKey(short, "action")).toEqual({ key: "action", label: "Action", value: "Short", tone: "down" });
+		expect(byKey(short, "size")?.tone).toBe("down");
+	});
+
+	it("keeps the time in force of a limit order that is not good-till-cancelled", () => {
 		const rows = buildOrderConfirmationRows(draft({ orderType: "limit", tif: "Alo", limitPrice: 99_000 }));
 
 		expect(byKey(rows, "orderType")?.value).toBe("Limit · Post Only");
 		expect(byKey(rows, "price")?.value).toBe("$99,000");
-		expect(byKey(rows, "slippage")).toBeUndefined();
 	});
 
 	it("shows the trigger price plus the resting limit price for stop-limit orders", () => {
@@ -135,7 +119,6 @@ describe("buildOrderConfirmationRows", () => {
 		expect(byKey(rows, "orderType")?.value).toBe("Take Profit Market");
 		expect(byKey(rows, "trigger")?.value).toBe("$105,000");
 		expect(byKey(rows, "price")?.value).toBe("Market");
-		expect(byKey(rows, "slippage")).toBeUndefined();
 	});
 
 	it("describes the scale ladder instead of a single price", () => {
@@ -203,20 +186,18 @@ describe("buildOrderConfirmationRows", () => {
 		expect(byKey(buildOrderConfirmationRows(BASE_DRAFT), "reduceOnly")).toBeUndefined();
 	});
 
-	it("drops leverage and margin rows on spot markets", () => {
+	it("drops the liquidation row on spot markets", () => {
 		const rows = buildOrderConfirmationRows(draft({ marketKind: "spot", isLeveraged: false, leverage: null }));
 
-		expect(byKey(rows, "leverage")).toBeUndefined();
-		expect(byKey(rows, "marginRequired")).toBeUndefined();
-		expect(byKey(rows, "liqPrice")).toBeUndefined();
-		expect(byKey(rows, "orderValue")?.value).toBe("$50,000.00");
+		expect(rows.map((row) => row.key)).toEqual(["action", "size", "price"]);
+		expect(byKey(rows, "action")?.value).toBe("Buy");
 	});
 
 	it("flags a liquidation price that sits too close to the entry", () => {
 		expect(byKey(buildOrderConfirmationRows(draft({ liqWarning: true })), "liqPrice")?.tone).toBe("down");
 		expect(byKey(buildOrderConfirmationRows(draft({ liqWarning: true, liqPrice: null })), "liqPrice")).toEqual({
 			key: "liqPrice",
-			label: "Liq. Price",
+			label: "Estimated Liquidation Price",
 			value: FALLBACK_VALUE_PLACEHOLDER,
 			tone: undefined,
 		});
@@ -237,30 +218,9 @@ describe("buildOrderConfirmationRows", () => {
 		expect(byKey(rows, "size")?.value).toBe("0.1111 BTC");
 	});
 
-	it("falls back to placeholders and the bare fee rate for an empty draft", () => {
-		const rows = buildOrderConfirmationRows(
-			draft({
-				sizeValue: 0,
-				orderValue: 0,
-				marginRequired: 0,
-				leverage: 0,
-				feeQuote: buildOrderFeeQuote({
-					orderValue: 0,
-					protocolRate: 0.00045,
-					builderFeeTenthsBps: 10,
-					marketKind: "perp",
-					side: "buy",
-					execution: "order",
-				}),
-			}),
-		);
+	it("falls back to a placeholder for an empty size", () => {
+		const rows = buildOrderConfirmationRows(draft({ sizeValue: 0, orderValue: 0 }));
 
 		expect(byKey(rows, "size")?.value).toBe(FALLBACK_VALUE_PLACEHOLDER);
-		expect(byKey(rows, "orderValue")?.value).toBe(FALLBACK_VALUE_PLACEHOLDER);
-		expect(byKey(rows, "marginRequired")?.value).toBe(FALLBACK_VALUE_PLACEHOLDER);
-		expect(byKey(rows, "leverage")?.value).toBe(`Cross · ${FALLBACK_VALUE_PLACEHOLDER}`);
-		expect(byKey(rows, "fee")?.value).toBe("0.0550%");
-		expect(byKey(rows, "protocolFee")).toBeUndefined();
-		expect(byKey(rows, "gatuFee")).toBeUndefined();
 	});
 });

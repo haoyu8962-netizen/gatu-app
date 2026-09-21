@@ -40,6 +40,7 @@
 
 - The `@gatu/ui` primitives own dialog chrome: a centered `ModalPopup` is `rounded-32` (16px) with `border border-stroke-weak`, `bg-modal` and `shadow-overlay`; a bottom `Drawer` is `rounded-t-32` with the same border. In the dark terminal `bg-modal` equals the page colour, so the border is the dialog's edge; do not remove it on desktop.
 - A dialog that flattens its phone sheet scopes that to the sheet: `max-[1000px]:!border-0`, never an unscoped `!border-0`.
+- A dialog that can be dismissed always offers an explicit, focusable way out on the phone sheet: the close button, or a Cancel / Back / Close button in its body. The drawer handle is decoration (`aria-hidden`, not a control), and swipe, scrim tap and Esc are shortcuts, not the exit: with the keyboard open the scrim can be fully covered, and a screen reader cannot reach any of them. Hide the close button only while an action is pending. A `showClose` that depends on the layout, or is `false`, must be registered with its explicit exit in `dialog-dismiss-control-contract.test.ts`. Do not put a second label in a sheet header where the close button belongs.
 - Do not pass a smaller named radius (`rounded-t-16`, `min-[1001px]:rounded-16`) to `AdaptiveModal`; take the primitive default. The remaining off-scale sheet radii (`!rounded-t-[18px]`, `!rounded-t-[20px]`) and `min-[1001px]:!rounded-[16px]` come from the market-close design handoff and are pinned by its tests; replacing them needs a design decision because 18px and 20px are not on the named scale.
 
 ### Button states

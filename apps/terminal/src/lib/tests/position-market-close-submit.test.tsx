@@ -16,6 +16,7 @@ import {
 import {
 	getPositionMarketCloseActions,
 	getPositionMarketCloseModal,
+	type PositionMarketClosePresentation,
 	type PositionMarketCloseRef,
 } from "@/stores/use-global-modal-store";
 import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
@@ -229,13 +230,30 @@ function currentHook(): ReturnType<typeof usePositionMarketCloseSubmit> {
 	return hookValue;
 }
 
-function openSession(overrides: Partial<PositionMarketCloseRef> = {}): string {
+function openSession(
+	overrides: Partial<PositionMarketCloseRef> = {},
+	presentation: PositionMarketClosePresentation = "confirmation",
+): string {
 	let sessionId: string | null = null;
 	act(() => {
-		sessionId = getPositionMarketCloseActions().open({ ...positionRef, ...overrides }, { owner: USER, env: "Mainnet" });
+		sessionId = getPositionMarketCloseActions().open(
+			{ ...positionRef, ...overrides },
+			{ owner: USER, env: "Mainnet" },
+			presentation,
+		);
 	});
 	if (!sessionId) throw new Error("Expected market close session");
 	return sessionId;
+}
+
+interface SubmitConfirmedOptions {
+	confirmedCloseSize?: string | null;
+	dismissFutureConfirmation?: boolean;
+}
+
+function submitConfirmed(sessionId: string, options: SubmitConfirmedOptions = {}): Promise<void> {
+	const { confirmedCloseSize = "2.5", dismissFutureConfirmation } = options;
+	return currentHook().submit({ sessionId, confirmedCloseSize, dismissFutureConfirmation });
 }
 
 function createExecutionGate() {
@@ -255,6 +273,16 @@ function createExecutionGate() {
 			await gate;
 		},
 	};
+}
+
+function holdFreshPositionRequest() {
+	const gate = createExecutionGate();
+	const respond = mocks.clearinghouseState.getMockImplementation();
+	mocks.clearinghouseState.mockImplementation(async (...args: unknown[]) => {
+		await gate.wait();
+		return respond?.(...args);
+	});
+	return gate;
 }
 
 describe("usePositionMarketCloseSubmit", () => {
@@ -355,7 +383,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession({ signedPositionSize: "2.400", markPx: "90" });
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).toHaveBeenCalledWith({ user: USER, dex: "xyz" });
@@ -401,7 +429,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		);
 		expect(exchange.signTypedData).not.toHaveBeenCalled();
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId, { confirmedCloseSize: sample.expectedSize });
 		});
 
 		expect(exchange.request).toHaveBeenCalledOnce();
@@ -441,7 +469,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		);
 		const sessionId = openSession();
 
-		await act(async () => currentHook().submit({ sessionId }));
+		await act(async () => submitConfirmed(sessionId));
 
 		expect(mocks.toastError).toHaveBeenCalledWith(BLOCKED_MESSAGE);
 		expect(getPositionMarketCloseModal()).toBeNull();
@@ -454,7 +482,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		mocks.clearinghouseState.mockRejectedValueOnce(new Error(sdkMessage));
 		const sessionId = openSession();
 
-		await act(async () => currentHook().submit({ sessionId }));
+		await act(async () => submitConfirmed(sessionId));
 
 		expect(mocks.toastError).toHaveBeenCalledWith(sdkMessage);
 		expect(getPositionMarketCloseModal()).toBeNull();
@@ -471,7 +499,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		let submission!: Promise<void>;
 
 		await act(async () => {
-			submission = currentHook().submit({ sessionId });
+			submission = submitConfirmed(sessionId);
 			await gate.entered;
 		});
 		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, presentation: "dismissed", phase: "validating" });
@@ -504,11 +532,11 @@ describe("usePositionMarketCloseSubmit", () => {
 		let firstSubmission!: Promise<void>;
 
 		await act(async () => {
-			firstSubmission = currentHook().submit({ sessionId });
+			firstSubmission = submitConfirmed(sessionId);
 			await gate.entered;
 		});
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
@@ -527,7 +555,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
@@ -538,7 +566,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId, dismissFutureConfirmation: true });
+			await submitConfirmed(sessionId, { dismissFutureConfirmation: true });
 		});
 
 		expect(readPositionMarketCloseConfirmationPreference({ owner: USER, env: "Mainnet" })).toBe("dismissed");
@@ -550,7 +578,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		act(() => getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "percent", value: "50" }));
 
 		await act(async () => {
-			await currentHook().submit({ sessionId, dismissFutureConfirmation: true });
+			await submitConfirmed(sessionId, { confirmedCloseSize: "1.25", dismissFutureConfirmation: true });
 		});
 
 		expect(readPositionMarketCloseConfirmationPreference({ owner: USER, env: "Mainnet" })).toBe("dismissed");
@@ -562,7 +590,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
@@ -579,7 +607,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
@@ -601,7 +629,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
@@ -620,7 +648,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
@@ -648,7 +676,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
@@ -669,7 +697,7 @@ describe("usePositionMarketCloseSubmit", () => {
 
 		try {
 			await act(async () => {
-				await currentHook().submit({ sessionId });
+				await submitConfirmed(sessionId);
 			});
 		} finally {
 			if (localStorageDescriptor) Object.defineProperty(window, "localStorage", localStorageDescriptor);
@@ -687,7 +715,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
@@ -702,7 +730,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
@@ -716,7 +744,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
@@ -745,7 +773,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		let submitPromise!: Promise<void>;
 
 		await act(async () => {
-			submitPromise = currentHook().submit({ sessionId });
+			submitPromise = submitConfirmed(sessionId);
 			await gate.entered;
 		});
 		getPendingOrderActions().add({
@@ -771,7 +799,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
@@ -780,20 +808,23 @@ describe("usePositionMarketCloseSubmit", () => {
 	});
 
 	it.each([
-		["manual size", { kind: "size", value: "1.100" } as const, "1.1"],
-		["percentage", { kind: "percent", value: "50" } as const, "1.2"],
-	])("re-resolves %s from the current intent and fresh REST position", async (_label, intent, expectedSize) => {
-		mocks.restPositionSize = "2.400";
-		const sessionId = openSession();
-		act(() => getPositionMarketCloseActions().setSizingIntent(sessionId, intent));
+		["manual size", { kind: "size", value: "1.100" } as const, "1.1", "1.1"],
+		["percentage", { kind: "percent", value: "50" } as const, "1.25", "1.2"],
+	])(
+		"re-resolves %s from the current intent and fresh REST position",
+		async (_label, intent, confirmedCloseSize, expectedSize) => {
+			mocks.restPositionSize = "2.400";
+			const sessionId = openSession();
+			act(() => getPositionMarketCloseActions().setSizingIntent(sessionId, intent));
 
-		await act(async () => {
-			await currentHook().submit({ sessionId });
-		});
+			await act(async () => {
+				await submitConfirmed(sessionId, { confirmedCloseSize });
+			});
 
-		const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
-		expect(submitted.orders[0]?.s).toBe(expectedSize);
-	});
+			const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
+			expect(submitted.orders[0]?.s).toBe(expectedSize);
+		},
+	);
 
 	it("fails closed when a fresh percentage close would exceed that percentage of the live position", async () => {
 		mocks.livePosition = createLivePosition("1.500");
@@ -801,10 +832,153 @@ describe("usePositionMarketCloseSubmit", () => {
 		act(() => getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "percent", value: "50" }));
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId, { confirmedCloseSize: "0.75" });
 		});
 
 		expect(mocks.executeOrder).not.toHaveBeenCalled();
+		expect(getPositionMarketCloseModal()).toBeNull();
+		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
+	});
+
+	it.each([
+		["Max", { kind: "max" } as const, "2.5"],
+		["percentage", { kind: "percent", value: "50" } as const, "1.25"],
+	])(
+		"rejects a %s close that outgrew the confirmed size while the fresh position was loading",
+		async (_label, intent, confirmedCloseSize) => {
+			const sessionId = openSession();
+			act(() => getPositionMarketCloseActions().setSizingIntent(sessionId, intent));
+			const freshPosition = holdFreshPositionRequest();
+			let submitPromise!: Promise<void>;
+
+			await act(async () => {
+				submitPromise = submitConfirmed(sessionId, { confirmedCloseSize });
+				await freshPosition.entered;
+			});
+
+			mocks.livePosition = createLivePosition("2.600");
+			mocks.restPositionSize = "2.600";
+			act(() => root.render(createElement(Probe)));
+
+			await act(async () => {
+				freshPosition.release();
+				await submitPromise;
+			});
+
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+			expect(mocks.executeOrder).not.toHaveBeenCalled();
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(mocks.toastError).toHaveBeenCalledTimes(1);
+			expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("close-size-exceeds-confirmed"));
+		},
+	);
+
+	it.each([
+		["equal to", "2.500", "2.5", "2.5"],
+		["equal to a differently formatted", "2.500", "2.5000", "2.5"],
+		["below", "2.400", "2.5", "2.4"],
+	])(
+		"sends a Max close exactly once when the fresh size is %s confirmed size",
+		async (_label, restPositionSize, confirmedCloseSize, expectedSize) => {
+			mocks.restPositionSize = restPositionSize;
+			mocks.executeOrder.mockResolvedValueOnce(createConfirmedResponse(expectedSize));
+			const sessionId = openSession();
+
+			await act(async () => {
+				await submitConfirmed(sessionId, { confirmedCloseSize });
+			});
+
+			expect(mocks.executeOrder).toHaveBeenCalledTimes(1);
+			const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
+			expect(submitted.orders[0]?.s).toBe(expectedSize);
+			expect(mocks.toastError).not.toHaveBeenCalled();
+		},
+	);
+
+	it("keeps a confirmed manual size when the position grows while the fresh position is loading", async () => {
+		const sessionId = openSession();
+		act(() => getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "size", value: "1.100" }));
+		mocks.executeOrder.mockResolvedValueOnce(createConfirmedResponse("1.1"));
+		const freshPosition = holdFreshPositionRequest();
+		let submitPromise!: Promise<void>;
+
+		await act(async () => {
+			submitPromise = submitConfirmed(sessionId, { confirmedCloseSize: "1.1" });
+			await freshPosition.entered;
+		});
+
+		mocks.livePosition = createLivePosition("2.600");
+		mocks.restPositionSize = "2.600";
+		act(() => root.render(createElement(Probe)));
+
+		await act(async () => {
+			freshPosition.release();
+			await submitPromise;
+		});
+
+		expect(mocks.executeOrder).toHaveBeenCalledTimes(1);
+		const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
+		expect(submitted.orders[0]?.s).toBe("1.1");
+		expect(mocks.toastError).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["null", null],
+		["missing", undefined],
+		["zero", "0"],
+		["negative", "-2.5"],
+		["empty", ""],
+		["non-numeric", "2.5 BTC"],
+	])(
+		"fails closed before any request when a confirmation session carries a %s confirmed size",
+		async (_label, value) => {
+			const sessionId = openSession();
+
+			await act(async () => {
+				await currentHook().submit({
+					sessionId,
+					confirmedCloseSize: value as string | null,
+					dismissFutureConfirmation: true,
+				});
+			});
+
+			expect(mocks.lockRequest).not.toHaveBeenCalled();
+			expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+			expect(mocks.metaAndAssetCtxs).not.toHaveBeenCalled();
+			expect(mocks.mutateOrder).not.toHaveBeenCalled();
+			expect(readPositionMarketCloseConfirmationPreference({ owner: USER, env: "Mainnet" })).toBe("required");
+			expect(getPositionMarketCloseModal()).toBeNull();
+			expect(mocks.toastError).toHaveBeenCalledTimes(1);
+			expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
+		},
+	);
+
+	it("lets a direct session close from the fresh position without a confirmed size", async () => {
+		mocks.restPositionSize = "2.600";
+		mocks.livePosition = createLivePosition("2.600");
+		mocks.executeOrder.mockResolvedValueOnce(createConfirmedResponse("2.6"));
+		const sessionId = openSession({}, "direct");
+
+		await act(async () => {
+			await submitConfirmed(sessionId, { confirmedCloseSize: null });
+		});
+
+		expect(mocks.executeOrder).toHaveBeenCalledTimes(1);
+		const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
+		expect(submitted.orders[0]?.s).toBe("2.6");
+		expect(getPositionMarketCloseModal()).toBeNull();
+	});
+
+	it("fails closed when a direct session claims a confirmed size it never displayed", async () => {
+		const sessionId = openSession({}, "direct");
+
+		await act(async () => {
+			await submitConfirmed(sessionId, { confirmedCloseSize: "2.5" });
+		});
+
+		expect(mocks.lockRequest).not.toHaveBeenCalled();
+		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
 		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
 	});
@@ -814,7 +988,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
@@ -829,7 +1003,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
@@ -843,7 +1017,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "reconciling", presentation: "dismissed" });
@@ -852,7 +1026,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const mutationCalls = mocks.mutateOrder.mock.calls.length;
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(mocks.clearinghouseState).toHaveBeenCalledTimes(restCalls);
@@ -868,7 +1042,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		const sessionId = openSession();
 
 		await act(async () => {
-			await currentHook().submit({ sessionId });
+			await submitConfirmed(sessionId);
 		});
 
 		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "reconciling", presentation: "dismissed" });
@@ -884,7 +1058,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		let submitPromise!: Promise<void>;
 
 		await act(async () => {
-			submitPromise = currentHook().submit({ sessionId });
+			submitPromise = submitConfirmed(sessionId);
 			await gate.entered;
 		});
 		expect(mocks.guardCalls).toBe(1);
@@ -911,7 +1085,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		let submitPromise!: Promise<void>;
 
 		await act(async () => {
-			submitPromise = currentHook().submit({ sessionId });
+			submitPromise = submitConfirmed(sessionId, { confirmedCloseSize: "1.25" });
 			await gate.entered;
 		});
 		expect(mocks.guardCalls).toBe(1);
@@ -937,7 +1111,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		let submitPromise!: Promise<void>;
 
 		await act(async () => {
-			submitPromise = currentHook().submit({ sessionId });
+			submitPromise = submitConfirmed(sessionId);
 			await gate.entered;
 		});
 		expect(mocks.guardCalls).toBe(1);
@@ -963,7 +1137,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		let submitPromise!: Promise<void>;
 
 		await act(async () => {
-			submitPromise = currentHook().submit({ sessionId });
+			submitPromise = submitConfirmed(sessionId);
 			await gate.entered;
 		});
 		expect(mocks.guardCalls).toBe(1);

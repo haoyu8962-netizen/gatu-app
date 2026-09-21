@@ -9,6 +9,7 @@ import { MobileTradeSizeView } from "./mobile-trade-size-view";
 interface Props {
 	canUsePercent: boolean;
 	disabled: boolean;
+	sliderPaused?: boolean;
 	errorId?: string;
 	hasError?: boolean;
 	interactionIdentity: string;
@@ -32,6 +33,7 @@ interface Props {
 export function MobileTradeSizeControl({
 	canUsePercent,
 	disabled,
+	sliderPaused = false,
 	errorId,
 	hasError = false,
 	interactionIdentity,
@@ -81,7 +83,8 @@ export function MobileTradeSizeControl({
 					onPercentCommit={onPercentCommit}
 					onPercentInteractionStart={onPercentInteractionStart}
 					onPercentInteractionEnd={onPercentInteractionEnd}
-					disabled={!canUsePercent}
+					disabled={!canUsePercent && !sliderPaused}
+					paused={sliderPaused}
 					ariaLabel={percentAriaLabel}
 					ariaDescribedBy={hasError ? errorId : undefined}
 					ariaInvalid={hasError || undefined}

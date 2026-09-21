@@ -51,12 +51,20 @@ specified in [`order-draft-lifecycle.md`](./order-draft-lifecycle.md).
 
 ## Scheduling and cleanup
 
-Pointer movement schedules at most one RAF to paint transforms and marks. It resets
-one **15ms trailing timer** for the business preview. RAF never dispatches financial
-calculations, and the timer never waits for RAF. A continuous stream closer than
-15ms apart may produce no intermediate business previews. Release reads its own
-final coordinate, cancels pending work, and synchronously commits that value once.
-A stationary thumb press does not publish a value or commit.
+Pointer movement schedules at most one RAF to paint transforms and marks. It arms
+one **15ms preview timer** unless one is already pending; when the timer fires it
+publishes the draft value of that moment, so consecutive business previews are at
+least 15ms apart and a continuous stream of moves keeps publishing (a throttle).
+RAF never dispatches financial calculations, and the timer never waits for RAF.
+Moves dispatched inside one task cannot publish before that task ends. Release reads
+its own final coordinate, cancels pending work, and synchronously commits that value
+once. A stationary thumb press does not publish a value or commit.
+
+Until 2026-09-20 the timer was reset on every move, as in the official terminal's
+slider. On displays that deliver pointer moves faster than 15ms apart (120Hz and up)
+a continuous drag then published nothing until the pointer paused or released, so
+the size, percentage and order value froze while the thumb moved. The throttle is a
+deliberate improvement over that behaviour, not an alignment with it.
 
 While a pointer session is active, its draft owns both the thumb and the native
 range value. Parent renders, including unchanged or quantity-rounded previews,
@@ -71,13 +79,91 @@ without changing quantity or issuing a commit.
 once after commit/cancel, including stationary release. Trading forms use these
 boundaries to lock submission while a gesture is active, including the interval
 before the first preview. Keyboard and native-range input commit synchronously.
+The lock is a ref set in the gesture callback, so it takes effect at pointer down
+without waiting for a render. The desktop and mobile order forms read it in
+`handleCtaClick()`, which wraps every action of the submit button, and again in
+`canExecuteOrder()`; Market Close, Limit Close and TP/SL read it in `handleSubmit()`;
+the leverage and margin mode dialogs read a dedicated ref in `handleConfirm()` next to
+the drag draft they display. Dialogs built on `TradingActionButton` also pass it as
+`isActivationLocked`, which the button checks before its Enable step. The gesture
+takes no part in a submit control's `disabled` state or appearance: a single pointer
+cannot reach the button mid-drag, so greying it on every slider touch carried no
+information, and the official terminal's submit conditions have no gesture term (ADR
+0017 addendum, `docs/confirmation-surfaces.md`). Validity, availability and in-flight
+conditions still disable the control as before. The lock ends with the gesture:
+moving focus off the slider cancels the gesture and restores the starting value, so
+a confirm after that acts on the restored value that is then on screen.
 
-Pointer cancellation, lost capture, window blur, hidden document, resizing,
-unmount, disable, invalid ranges, and changed identity/direction cancel pending
-RAF/timers/listeners. Other pointer IDs cannot replace the active gesture. Callers
-restore the exact starting string/intent only in the same eligible session; an
-unavailable or changed session cannot receive an old snapshot. No synthetic
+A resize cancels the gesture only when the control's layout width changes. The
+observer compares each `contentRect.width` with the first one it reports for that
+gesture, never with `getBoundingClientRect()`: an ancestor transform, such as the
+`scale` of a dialog's 200 ms open animation, changes the visual width but not the
+layout width, and comparing the two cancelled any drag that began during the
+animation and snapped the thumb back to where it started.
+
+Pointer cancellation, window blur, hidden document, a window resize,
+a change of the control's layout width, unmount, `disabled`, invalid ranges, and
+changed identity/direction cancel pending RAF/timers/listeners. Other pointer IDs
+cannot replace the active gesture.
+
+`lostpointercapture` is not a cancellation. With a real mouse in an embedded webview
+the browser was observed to report it 6 to 11 ms before `pointerup` in most gestures
+(14 of 23 recorded on 2026-09-20 in the Claude desktop browser pane, Chrome 152); the
+slider treated it as a cancellation until then, so most real drags were thrown away
+and the thumb went back to where it started. Mouse events injected through the
+DevTools protocol never produce that order, which is why tool-driven and Playwright
+drags passed. Losing capture now only marks the session. Moves, the release and
+`pointercancel` are handled by document listeners for the life of the gesture, so a
+drag keeps following without capture and the release that follows commits as usual.
+If capture was lost and the release itself never reached the document, for example
+because the button was let go over an iframe, the next move of that pointer with no
+button pressed commits the last draft that was seen while the button was down. That
+fallback applies only after a reported capture loss.
+
+The control records how the last gesture ended in `data-gesture-end`: `commit`,
+`unchanged` for a press that changed nothing, or `cancel:<reason>` with one of
+`pointer-cancel`, `window-blur`, `window-resize`, `control-resize`,
+`document-hidden`, `input-blur`, `escape`, `context-change`, `disabled`, `paused` and
+`unmount`. The attribute is removed when the next gesture starts. It exists so that
+a report of a thumb jumping back can be answered from the page instead of guessed:
+read it on `[data-trade-slider-control]` right after the jump. What a cancellation restores belongs to the
+caller, and a changed identity never receives an old snapshot. The order forms put
+back the exact starting size string whenever the identity still matches, whether or
+not the form is available at that moment. The close dialogs route the restore through
+the same `canEdit` guard as every other edit, so a gesture cancelled while the
+position data is unreadable keeps the last intent that was published before the pause
+instead of the starting one; the thumb is repainted from that value. In both cases a
+move made during a pause was never published and is simply dropped. No synthetic
 pointerup, forced React flush, or duplicate Base UI gesture engine is used.
+
+`disabled` and `paused` are different reasons and end a gesture differently. Both make
+an idle slider unavailable: no gesture can start, keyboard and native-range input are
+refused and the control is dimmed. `disabled` is for reasons that end the editing
+context (closing or submitting dialog, disconnected wallet, a balance or position that
+is really zero, a closed or flipped position) and cancels an active gesture at once.
+`paused` is for value sources that are temporarily unreadable (balance or position data
+loading, stale or failed, typically around a reconnect) and must not throw away a drag
+the user is in the middle of: the gesture survives, the thumb keeps following the
+pointer, no business preview is published and any pending preview timer is dropped.
+When the source recovers, the slider publishes the held draft once through the same
+15ms timer without waiting for another move, because the same percentage may now mean
+a different quantity; a thumb that was only pressed publishes nothing. Releasing while
+still paused cancels. The submit lock stays held for the whole gesture, paused or not.
+
+While a gesture is held and the slider is unavailable, the hidden native range input
+stays focusable with `aria-disabled="true"` instead of the native `disabled`
+attribute, which the component writes back after every render and at the end of the
+gesture. A natively disabled input would lose focus, and losing focus is one of the
+cancellation paths. The component is the only writer of `disabled`: it is not a
+React prop on the input, because React would set it during commit and the layout effect
+would clear it a moment later, and the Chromium build CI uses (unlike current branded
+Chrome) drops focus in that instant. `trade-size-slider-pointer-lifecycle` watches the
+attribute with a `MutationObserver`; run the browser suite with `CI=1` to use that build. The desktop and mobile order forms pass `paused` for blocked
+availability, Market Close and Limit Close for position data that is loading, stale or
+failed; TP/SL and the leverage dialogs pass only `disabled`. The official terminal's
+slider has no cancellation path and no disabled state at all, so a drag there always
+ends by committing; `paused` keeps that for data hiccups without giving up the
+cancellations that protect a changed editing context.
 
 Unmount clears pending work during layout cleanup, before a replacement form can
 run its layout effects. A disposed quantity hook cannot restore or commit into the
@@ -90,6 +176,14 @@ The official web implementation's missing touch-cancel cleanup and leverage
 minimum positioning were not copied. Its vibration path required a native Android
 Capacitor platform; Android browser emulation still reported platform `web` and no
 vibration calls. This web/PWA implementation adds neither haptics nor a setting for it.
+
+A surface must not move its slider under the pointer during a gesture. Business
+previews now land while the pointer is still moving, so a message that appears or
+disappears between the quantity field and the slider would shift the slider row in
+the middle of a drag. The desktop order form therefore holds the presence and the
+measured height of its size message row for the whole gesture and applies the current
+validation result when the gesture ends (`docs/order-entry-surface-parity.md`). Holding the row is presentation
+only: submit availability and execution checks keep using the real validation result.
 
 ## Quantity and execution boundaries
 
@@ -135,7 +229,8 @@ and [Pointer Events](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_ev
 
 Regression coverage includes:
 
-- Exact 14/15ms preview timing, independent painting, final-coordinate flush,
+- Exact 14/15ms preview timing, continued publishing under moves faster than the
+  preview interval, independent painting, final-coordinate flush,
   same-frame reversals, multiple pointers, stationary focus, and all cancellation
   boundaries, including resize and unmount.
 - Held track presses across old-value and quantity-rounded parent renders, plus
@@ -149,6 +244,10 @@ Regression coverage includes:
 - Real Chromium pointer/touch interactions, 390/1000/1001/1333/1920px layouts in both
   themes, exact geometry, no horizontal clipping, and the existing all-order-form
   desktop layout suite.
+- Lost pointer capture reported before the release, moves followed without capture, a
+  missed release after a capture loss, and the outcome every ending records in
+  `data-gesture-end`. These pin the order of events that physical input produced; they
+  cannot discover a new one (see "Changing the gesture lifecycle").
 
 The browser fixture explicitly scans application CSS and uses the existing separate
 `node_modules/.vite-browser` cache. Its performance attachment records callback
@@ -156,6 +255,115 @@ intervals, parent commits and timing. Bounds validate scheduling and final value
 they do not establish device-wide latency, mainnet execution, or a measured speedup
 against the old implementation. Wallet/signature/real order actions are tested
 through existing controlled test doubles, without creating live orders.
+
+## Changing the gesture lifecycle
+
+[ADR 0018](adr/0018-slider-gestures-end-on-release.md) records why these rules exist:
+a cancellation on `lostpointercapture` was added three times as lifecycle hardening,
+passed every test, and threw away most real mouse drags for weeks.
+
+A gesture ends on `pointerup` (commit), on `pointercancel` (cancel), or when its
+editing context ends (cancel). Browser bookkeeping such as `lostpointercapture` is not
+an ending. Before adding or keeping any other cancellation path, write down all four:
+
+1. the reason name it records in `data-gesture-end`;
+2. a concrete situation in which a user would want the drag thrown away;
+3. evidence from physical input that ordinary drags do not reach it;
+4. the test that pins it.
+
+If the third item cannot be produced, do not add the path. "More defensive" is not a
+reason: every extra cancellation is a way to lose a drag the user meant.
+
+Say which input path a verification used. They prove different things:
+
+| Input path | Proves | Does not prove |
+| --- | --- | --- |
+| Script-dispatched events (jsdom, `dispatchEvent` in a page) | the behaviour for the order of events the test chose | which order a browser produces |
+| Protocol-injected events (Playwright, DevTools `Input.dispatchMouseEvent`, the desktop app's browser tools) | real hit testing, layout, focus and timers in a real engine | operating-system mouse capture, the order of `lostpointercapture` and `pointerup`, embedder quirks |
+| Physical input by a person | the event order, capture and focus behaviour of that browser, embedder and device | other browsers, embedders and devices |
+
+A change to pointer capture, to the listeners that start or end a gesture, or to the
+cancellation list is not verified until a person has dragged the real control in the
+environments that matter, and the record names them. "Checked on the real page" with
+injected events is not that.
+
+## Diagnosing a reported jump
+
+Do not start from the code. A thumb that returns to where it started is a cancelled
+gesture, a commit the business layer rejected, or a value that was re-derived after
+the release, and the page can say which.
+
+1. Ask the reporter to reproduce on a page you can read, or to read the attribute for
+   you right after the jump, on the slider that jumped. In the order form that is
+   `document.querySelector("[data-trade-slider-control]").dataset.gestureEnd`; with a
+   dialog open use `document.querySelector("[role=dialog] [data-trade-slider-control]")`.
+   `cancel:<reason>` names the path; `commit` or `unchanged` means the slider did its
+   part and the cause is in the caller or in the data.
+2. For more than the last gesture, paste the recorder below into the console before
+   reproducing. It survives nothing but the current page load, so install it after
+   any reload. It records outcomes, the slider's label and event order, no values.
+   Each press on a slider starts its own record, kept per control and per pointer, so a
+   quick second press or a press elsewhere cannot be written onto the previous gesture.
+
+```js
+(() => {
+	const byPointer = new Map();
+	const byControl = new WeakMap();
+	for (const type of ["pointerdown", "pointerup", "pointercancel", "lostpointercapture"]) {
+		document.addEventListener(
+			type,
+			(event) => {
+				if (type === "pointerdown") {
+					const control = event.target.closest?.("[data-trade-slider-control]");
+					byPointer.delete(event.pointerId);
+					if (!control) return;
+					const gesture = { trusted: event.isTrusted, order: [] };
+					byPointer.set(event.pointerId, gesture);
+					byControl.set(control, gesture);
+				}
+				byPointer.get(event.pointerId)?.order.push(type);
+			},
+			true,
+		);
+	}
+	new MutationObserver((records) => {
+		for (const record of records) {
+			const end = record.target.getAttribute("data-gesture-end");
+			const finished = byControl.get(record.target);
+			if (!end || !finished) continue;
+			const slider = record.target.querySelector("input[type=range]");
+			const label = slider?.getAttribute("aria-label") ?? slider?.labels?.[0]?.textContent ?? null;
+			setTimeout(() => {
+				const log = JSON.parse(sessionStorage.getItem("sliderGestures") ?? "[]");
+				log.push({ end, label, trusted: finished.trusted, order: finished.order.join(" > "), at: new Date().toISOString() });
+				sessionStorage.setItem("sliderGestures", JSON.stringify(log.slice(-300)));
+			}, 60);
+		}
+	}).observe(document.body, { attributes: true, subtree: true, attributeFilter: ["data-gesture-end"] });
+})();
+```
+
+   Read it back with `JSON.parse(sessionStorage.getItem("sliderGestures"))`.
+3. `trusted` is true for protocol-injected events too. Only gestures made by a person
+   count as evidence about event order.
+4. When measuring with script-dispatched events on a page someone is also using, block
+   physical moves for the measurement only and always remove the block: the mouse and
+   the script share pointer id 1, and the slider follows both.
+
+```js
+const blockPhysicalMoves = (event) => {
+	if (event.isTrusted) event.stopImmediatePropagation();
+};
+window.addEventListener("pointermove", blockPhysicalMoves, true);
+try {
+	await runScriptedDrag();
+} finally {
+	window.removeEventListener("pointermove", blockPhysicalMoves, true);
+}
+```
+
+5. A fix is confirmed by the reporter's scenario, not by finding and fixing a defect.
+   Two real defects were fixed before the reported one was looked at (ADR 0018).
 
 ## SDK request verification
 

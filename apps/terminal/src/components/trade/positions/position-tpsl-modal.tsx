@@ -1,6 +1,5 @@
 import { Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DataPendingState } from "@/components/ui/data-pending-state";
@@ -24,6 +23,7 @@ import {
 } from "@/domain/trade/order-tracking";
 import { getPositionTpSlSizeForPercent, getPositionTpSlSizePercent } from "@/domain/trade/position-tpsl-size";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
+import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -59,7 +59,6 @@ import {
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
 import {
-	formatOrderSubmissionCause,
 	formatOrderSubmissionFeedback,
 	getOrderSubmissionFeedback,
 	type OrderSubmissionFeedback,
@@ -75,6 +74,7 @@ import {
 	validateTpPrice,
 } from "@/lib/trade/tpsl";
 import { getValueColorClass } from "@/lib/ui/value-color";
+import type { PositionTpSlSession } from "@/stores/use-position-dialog-store";
 import { AssetDisplay } from "../components/asset-display";
 import { SizePercentInput } from "../components/size-percent-input";
 import { TradeSizeSlider } from "../components/trade-size-slider";
@@ -84,21 +84,25 @@ import type { TpSlPositionTarget } from "./position-dialog-types";
 import { PositionRiskDialogShell } from "./position-risk-dialog-ui";
 
 interface Props {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	position: TpSlPositionTarget | null;
+	session: PositionTpSlSession | null;
+	onSessionEnd: (sessionId: string) => void;
 }
 
-export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
+const DIALOG_EXIT_MS = 250;
+
+export function PositionTpSlModal({ session, onSessionEnd }: Props) {
 	const isMobile = useIsMobile();
-	if (!position) return null;
+	const displayedSession = useLingeringValue(session, DIALOG_EXIT_MS);
+	if (!displayedSession) return null;
 	return (
 		<PositionTpSlModalBody
-			key={`${position.owner}:${position.env}:${position.dex}:${position.assetId}:${open ? "open" : "closed"}`}
-			open={open}
-			position={position}
+			key={displayedSession.sessionId}
+			open={session?.sessionId === displayedSession.sessionId}
+			position={displayedSession.position}
 			isMobile={isMobile}
-			onOpenChange={onOpenChange}
+			onOpenChange={(open) => {
+				if (!open) onSessionEnd(displayedSession.sessionId);
+			}}
 		/>
 	);
 }
@@ -495,14 +499,12 @@ function PositionTpSlForm({
 	const [returnUnit, setReturnUnit] = useState<"pnl" | "roe">("roe");
 	const [tpReturnDraft, setTpReturnDraft] = useState<string | null>(null);
 	const [slReturnDraft, setSlReturnDraft] = useState<string | null>(null);
-	const [submitError, setSubmitError] = useState<PositionTpSlSubmitError | null>(null);
-	const [requiresRefresh, setRequiresRefresh] = useState(false);
+	const [isSubmitted, setIsSubmitted] = useState(false);
 	const allowedTpSlSnapshotsRef = useRef<Array<TpSlOrderInfo | undefined>>([initialTpSlInfo]);
 	const expectedTpSlSnapshotRef = useRef<TpSlOrderInfo | undefined>(initialTpSlInfo);
 	const workflowSubmittingRef = useRef(false);
 	const [isWorkflowSubmitting, setIsWorkflowSubmitting] = useState(false);
 	const amountInteractionSnapshotRef = useRef<{ identity: string; sizeInput: string } | null>(null);
-	const [isAmountInteracting, setIsAmountInteracting] = useState(false);
 	const amountErrorId = useId();
 
 	function getSubmitErrorMessage(error: PositionTpSlSubmitError): string {
@@ -720,18 +722,10 @@ function PositionTpSlForm({
 		}
 	}
 
-	const {
-		submitOrder,
-		isPending: isPlacing,
-		error: placeError,
-	} = useTrackedOrder({
+	const { submitOrder, isPending: isPlacing } = useTrackedOrder({
 		executionGuard: assertOrderExecution,
 	});
-	const {
-		mutateAsync: cancelOrders,
-		isPending: isCancelling,
-		error: cancelError,
-	} = useExchange("cancel", {
+	const { mutateAsync: cancelOrders, isPending: isCancelling } = useExchange("cancel", {
 		executionGuard: assertCancelExecution,
 	});
 	const isSubmitting = isWorkflowSubmitting || isPlacing || isCancelling;
@@ -857,13 +851,7 @@ function PositionTpSlForm({
 		open,
 	].join(":");
 	const amountEditingAvailable =
-		open &&
-		configureAmount &&
-		liveDataReady &&
-		!dataChanged &&
-		!configurationConflict &&
-		!requiresRefresh &&
-		!isSubmitting;
+		open && configureAmount && liveDataReady && !dataChanged && !configurationConflict && !isSubmitting;
 	const amountEditingRef = useRef({
 		identity: amountInteractionIdentity,
 		available: amountEditingAvailable,
@@ -874,6 +862,7 @@ function PositionTpSlForm({
 	}, [amountInteractionIdentity, amountEditingAvailable, sizeInput]);
 	const amountPercent = getPositionTpSlSizePercent(sizeInput, size);
 	const canSubmit =
+		open &&
 		updatePlan.hasChanges &&
 		updatePlan.errors.length === 0 &&
 		tpValid &&
@@ -887,9 +876,7 @@ function PositionTpSlForm({
 		!slReturnDraftInvalid &&
 		!configurationConflict &&
 		!dataChanged &&
-		!requiresRefresh &&
 		liveDataReady &&
-		!isAmountInteracting &&
 		!isSubmitting;
 
 	let tpError: string | null = null;
@@ -946,19 +933,20 @@ function PositionTpSlForm({
 		const snapshot = amountInteractionSnapshotRef.current;
 		if (snapshot && snapshot.identity !== amountEditingRef.current.identity) return;
 		setSizeInput(getPositionTpSlSizeForPercent(size, percent, positionRef.szDecimals));
-		setSubmitError(null);
 	}
 
 	function handleAmountPercentStart() {
 		if (!canEditConfiguredAmount()) return;
 		const current = amountEditingRef.current;
 		amountInteractionSnapshotRef.current = { identity: current.identity, sizeInput: current.sizeInput };
-		setIsAmountInteracting(true);
 	}
 
 	function handleAmountPercentEnd() {
 		amountInteractionSnapshotRef.current = null;
-		setIsAmountInteracting(false);
+	}
+
+	function isAmountGestureActive() {
+		return amountInteractionSnapshotRef.current !== null;
 	}
 
 	function handleAmountPercentCommit(percent: number) {
@@ -999,14 +987,12 @@ function PositionTpSlForm({
 			setSlReturnDraft(null);
 			setSlPriceInput(value);
 		}
-		setSubmitError(null);
 	}
 
 	function handleLinkedReturnChange(type: "tp" | "sl", value: string) {
 		if (!/^\d*\.?\d*$/.test(value)) return;
 		if (type === "tp") setTpReturnDraft(value);
 		else setSlReturnDraft(value);
-		setSubmitError(null);
 	}
 
 	function handleLinkedReturnBlur(type: "tp" | "sl") {
@@ -1037,16 +1023,14 @@ function PositionTpSlForm({
 			if (!toBig(tpLimitPriceInput)?.gt(0) && hasTp) setTpLimitPriceInput(effectiveTpPriceInput);
 			if (!toBig(slLimitPriceInput)?.gt(0) && hasSl) setSlLimitPriceInput(effectiveSlPriceInput);
 		}
-		setSubmitError(null);
 	}
 
 	async function handleSubmit() {
 		if (!canSubmit || workflowSubmittingRef.current || amountInteractionSnapshotRef.current) return;
 		workflowSubmittingRef.current = true;
 		setIsWorkflowSubmitting(true);
+		setIsSubmitted(true);
 
-		setSubmitError(null);
-		let shouldClose = false;
 		try {
 			const lockIdentity = {
 				env: sessionIdentity.env,
@@ -1146,46 +1130,25 @@ function PositionTpSlForm({
 			});
 
 			if (!lockResult.supported) {
-				const error = { kind: "coordination-unavailable" } as const;
-				setSubmitError(error);
-				toast.error(getSubmitErrorMessage(error));
-				return;
+				toast.error(getSubmitErrorMessage({ kind: "coordination-unavailable" }));
+			} else if (!lockResult.acquired) {
+				toast.warning(getSubmitErrorMessage({ kind: "blocked" }));
+			} else if (lockResult.value.state === "coordination-unavailable") {
+				toast.error(getSubmitErrorMessage({ kind: "coordination-unavailable" }));
+			} else if (lockResult.value.state === "blocked") {
+				toast.warning(getSubmitErrorMessage({ kind: "blocked" }));
+			} else if (lockResult.value.state === "uncertain") {
+				toast.info(getSubmitErrorMessage({ kind: "reconciling" }));
+			} else if (lockResult.value.state === "failed") {
+				toast.error(getSubmitErrorMessage(toSubmitError(lockResult.value.error, lockResult.value.uncertain)));
+			} else {
+				toast.success(t`TP/SL orders updated`);
 			}
-			if (!lockResult.acquired || lockResult.value.state === "blocked") {
-				setSubmitError({ kind: "blocked" });
-				return;
-			}
-			if (lockResult.value.state === "coordination-unavailable") {
-				const error = { kind: "coordination-unavailable" } as const;
-				setSubmitError(error);
-				toast.error(getSubmitErrorMessage(error));
-				return;
-			}
-			if (lockResult.value.state === "uncertain") {
-				setSubmitError({ kind: "reconciling" });
-				setRequiresRefresh(true);
-				return;
-			}
-			if (lockResult.value.state === "failed") {
-				const error = toSubmitError(lockResult.value.error, lockResult.value.uncertain);
-				const message = getSubmitErrorMessage(error);
-				setSubmitError(error);
-				if (lockResult.value.requiresRefresh) setRequiresRefresh(true);
-				toast.error(message);
-				return;
-			}
-			shouldClose = true;
 		} catch (err) {
-			const error = toSubmitError(err);
-			const message = getSubmitErrorMessage(error);
-			setSubmitError(error);
-			toast.error(message);
+			toast.error(getSubmitErrorMessage(toSubmitError(err)));
 		} finally {
 			workflowSubmittingRef.current = false;
 			setIsWorkflowSubmitting(false);
-		}
-		if (shouldClose) {
-			toast.success(t`TP/SL orders updated`);
 			onOpenChange(false);
 		}
 	}
@@ -1202,16 +1165,13 @@ function PositionTpSlForm({
 	let guardMessage: string | null = null;
 	if (configurationConflict) {
 		guardMessage = t`Existing TP/SL orders use an unsupported mixed or duplicate configuration. Cancel them individually before creating a new pair.`;
-	} else if (requiresRefresh || dataChanged) {
+	} else if (dataChanged) {
 		guardMessage = t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
 	} else if (liveDataMessage) {
 		guardMessage = liveDataMessage;
 	} else if ((tpNeedsMark || slNeedsMark) && !markReady) {
 		guardMessage = t`Loading...`;
 	}
-	const visibleError = submitError
-		? getSubmitErrorMessage(submitError)
-		: (formatOrderSubmissionCause(placeError, (descriptor) => t(descriptor)) ?? cancelError?.message);
 	const returnUnitLabel = returnUnit === "roe" ? "%" : quoteSymbol;
 	const unrealizedPnlDisplay =
 		quoteSymbol === DEFAULT_QUOTE_TOKEN
@@ -1220,7 +1180,7 @@ function PositionTpSlForm({
 
 	return (
 		<PositionRiskDialogShell
-			open={open}
+			open={open && !isSubmitted}
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
 			dismissible={!isSubmitting}
@@ -1359,7 +1319,6 @@ function PositionTpSlForm({
 								value={sizeInput}
 								onChange={(event) => {
 									setSizeInput(event.target.value);
-									setSubmitError(null);
 								}}
 								maxAllowedDecimals={positionRef.szDecimals}
 								min={0}
@@ -1424,7 +1383,6 @@ function PositionTpSlForm({
 									value={tpLimitPriceInput}
 									onChange={(event) => {
 										setTpLimitPriceInput(event.target.value);
-										setSubmitError(null);
 									}}
 									min={0}
 									mobileSafe
@@ -1440,7 +1398,6 @@ function PositionTpSlForm({
 									value={slLimitPriceInput}
 									onChange={(event) => {
 										setSlLimitPriceInput(event.target.value);
-										setSubmitError(null);
 									}}
 									min={0}
 									mobileSafe
@@ -1463,11 +1420,6 @@ function PositionTpSlForm({
 						{guardMessage}
 					</div>
 				)}
-				{visibleError && (
-					<div className="mt-3 px-2 py-1.5 rounded-8 bg-error-soft border border-stroke-error-weak text-xs text-error">
-						{visibleError}
-					</div>
-				)}
 			</div>
 
 			<ModalFooter className="max-[1000px]:grid max-[1000px]:grid-cols-2 max-[1000px]:gap-2 max-[1000px]:px-4 max-[1000px]:pt-0 max-[1000px]:pb-4">
@@ -1483,18 +1435,12 @@ function PositionTpSlForm({
 				</Button>
 				<TradingActionButton
 					onClick={handleSubmit}
+					isActivationLocked={isAmountGestureActive}
 					disabled={!canSubmit}
 					containerClassName="max-[1000px]:w-full"
 					className="min-w-24 max-[1000px]:min-h-11 max-[1000px]:w-full max-[1000px]:rounded-[10px]"
 				>
-					{isSubmitting ? (
-						<>
-							<SpinnerGapIcon className="size-3.5 animate-spin" />
-							{t`Submitting...`}
-						</>
-					) : (
-						t`Confirm`
-					)}
+					{t`Confirm`}
 				</TradingActionButton>
 			</ModalFooter>
 		</PositionRiskDialogShell>

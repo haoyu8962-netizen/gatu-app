@@ -1,41 +1,40 @@
 import { ModalDescription, ModalTitle } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { getPositionCloseAllSnapshotKey, type PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
+import type { PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
 import { usePositionCloseAllSubmit } from "@/hooks/trade/use-position-close-all-submit";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/cn";
 import { formatQuoteAmount } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
+import type { PositionCloseAllSession } from "@/stores/use-position-dialog-store";
 import { TradingActionButton } from "../components/trading-action-button";
-import {
-	PositionCloseDialogContent,
-	PositionCloseDialogFooter,
-	PositionCloseDialogHeader,
-	PositionCloseDialogShell,
-	PositionCloseSummary,
-	type PositionCloseSummaryItem,
-} from "./position-close-dialog-ui";
+import { PositionCloseDialogContent } from "./position-close-dialog-content";
+import { PositionCloseDialogFooter } from "./position-close-dialog-footer";
+import { PositionCloseDialogHeader } from "./position-close-dialog-header";
+import { PositionCloseDialogShell } from "./position-close-dialog-shell";
+import { PositionCloseSummary, type PositionCloseSummaryItem } from "./position-close-summary";
 
 interface Props {
-	snapshot: PositionCloseAllSnapshot | null;
-	onOpenChange: (open: boolean) => void;
+	session: PositionCloseAllSession | null;
+	onSessionEnd: (sessionId: string) => void;
 }
 
 const DIALOG_EXIT_MS = 250;
 
-export function PositionCloseAllController({ snapshot, onOpenChange }: Props) {
-	const displayedSnapshot = useLingeringValue(snapshot, DIALOG_EXIT_MS);
-	if (!displayedSnapshot) return null;
+export function PositionCloseAllController({ session, onSessionEnd }: Props) {
+	const displayedSession = useLingeringValue(session, DIALOG_EXIT_MS);
+	if (!displayedSession) return null;
 	return (
 		<PositionCloseAllContent
-			key={getPositionCloseAllSnapshotKey(displayedSnapshot)}
-			snapshot={displayedSnapshot}
-			open={snapshot !== null}
-			onOpenChange={onOpenChange}
+			key={displayedSession.sessionId}
+			snapshot={displayedSession.snapshot}
+			open={session?.sessionId === displayedSession.sessionId}
+			onOpenChange={(open) => {
+				if (!open) onSessionEnd(displayedSession.sessionId);
+			}}
 		/>
 	);
 }
@@ -51,10 +50,9 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const submission = usePositionCloseAllSubmit(snapshot);
+	const submittedRef = useRef(false);
+	const [isSubmitted, setIsSubmitted] = useState(false);
 	const positionCount = snapshot.targets.length;
-	const isActionDisabled = !open || submission.isPending || submission.isReconciling || submission.isPartial;
-	const isDismissible = !submission.isPending;
-	const errorId = `position-close-all-error-${getPositionCloseAllSnapshotKey(snapshot)}`;
 	const summaryItems: PositionCloseSummaryItem[] = [
 		{
 			key: "count",
@@ -98,58 +96,42 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 	];
 
 	async function handleConfirm() {
-		if (!open) return;
+		if (!open || submittedRef.current) return;
+		submittedRef.current = true;
+		setIsSubmitted(true);
 		try {
 			const outcome = await submission.submit();
 			if (outcome.state === "blocked") {
 				toast.warning(t`Another order for one of these markets is still being confirmed.`);
-				return;
-			}
-			if (outcome.state === "reconciling") {
+			} else if (outcome.state === "reconciling") {
 				toast.info(t`Close orders submitted. Confirming exchange status; do not retry.`);
-				onOpenChange(false);
-				return;
-			}
-			if (outcome.state === "partial") {
+			} else if (outcome.state === "partial") {
 				toast.warning(
 					t`${outcome.acceptedCount} of ${outcome.totalCount} close orders were accepted. Review positions before retrying.`,
 				);
-				return;
+			} else {
+				toast.success(t`All close orders filled`, {
+					description: t`${positionCount} positions were closed at market.`,
+				});
 			}
-
-			toast.success(t`All close orders filled`, {
-				description: t`${positionCount} positions were closed at market.`,
-			});
-			onOpenChange(false);
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : t`Failed to submit close orders`);
+		} finally {
+			onOpenChange(false);
 		}
 	}
 
-	function handleOpenChange(open: boolean) {
-		if (!open && submission.isPending) return;
-		if (!open) submission.resetError();
-		onOpenChange(open);
+	function handleOpenChange(nextOpen: boolean) {
+		if (submittedRef.current) return;
+		onOpenChange(nextOpen);
 	}
-
-	const progressLabel =
-		submission.phase === "validating"
-			? t`Validating positions...`
-			: submission.phase === "submitting"
-				? t`Submitting close orders...`
-				: submission.phase === "reconciling"
-					? t`Confirming exchange status...`
-					: submission.phase === "partial"
-						? t`Partial result — reopen to retry`
-						: null;
 
 	return (
 		<PositionCloseDialogShell
-			open={open}
+			open={open && !isSubmitted}
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
-			dismissible={isDismissible}
-			showMobileClose
+			dismissible
 			closeLabel={t`Close close-all confirmation`}
 		>
 			<PositionCloseDialogHeader>
@@ -169,45 +151,19 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 					ariaLabel={t`Close all positions summary`}
 					items={summaryItems}
 				/>
-
-				{submission.error ? (
-					<p
-						id={errorId}
-						role={submission.isReconciling ? "status" : "alert"}
-						aria-live={submission.isReconciling ? "polite" : "assertive"}
-						className={cn(
-							"flex items-start gap-2 rounded-[8px] p-2.5 text-xs leading-[17px]",
-							submission.isReconciling ? "bg-warning-soft text-warning" : "bg-error-soft text-market-close-danger",
-						)}
-					>
-						<WarningIcon className="mt-0.5 size-3.5 shrink-0" weight="fill" aria-hidden="true" />
-						<span>{submission.error}</span>
-					</p>
-				) : null}
 			</PositionCloseDialogContent>
 
 			<PositionCloseDialogFooter>
 				<TradingActionButton
 					onClick={handleConfirm}
 					requireReadyConfirmation
-					disabled={isActionDisabled}
+					disabled={!open || isSubmitted}
 					intent="error"
 					size="lg"
-					aria-describedby={submission.error ? errorId : undefined}
-					aria-busy={submission.isPending || submission.isReconciling}
 					containerClassName="w-full items-stretch"
 					className="relative min-h-11 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger px-3 py-[13px] text-sm leading-5 font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-none hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted"
 				>
-					{progressLabel ? (
-						<>
-							{!submission.isPartial ? (
-								<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-							) : null}
-							{progressLabel}
-						</>
-					) : (
-						<Plural value={positionCount} one="Close # position" other="Close # positions" />
-					)}
+					{t`Close All Positions`}
 				</TradingActionButton>
 			</PositionCloseDialogFooter>
 		</PositionCloseDialogShell>

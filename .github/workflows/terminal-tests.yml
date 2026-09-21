@@ -132,6 +132,59 @@ jobs:
           tests/mobile-trade-size-validation-a11y.test.tsx
           tests/trade-size-error-a11y.test.tsx
 
+      - name: Test confirmation surface contracts
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/position-market-close-display-commit.test.tsx
+          src/lib/tests/position-market-close-submit.test.tsx
+          src/lib/tests/position-market-close-modal.test.tsx
+          src/lib/tests/position-market-close-action.test.tsx
+          src/lib/tests/position-market-close.test.ts
+          src/lib/tests/trading-action-button-label-contract.test.ts
+          src/lib/tests/trading-action-button.test.tsx
+          src/lib/tests/position-limit-close-modal.test.tsx
+          src/lib/tests/position-tpsl-modal.test.tsx
+          src/lib/tests/leverage-modal.test.tsx
+          src/lib/tests/margin-mode-modal.test.tsx
+          src/lib/tests/position-close-all-modal.test.tsx
+          src/lib/tests/position-reverse-confirmation-controller.test.tsx
+          src/lib/tests/position-reverse-confirmation-modal.test.tsx
+          src/lib/tests/position-dialog-session-ownership.test.tsx
+          src/lib/tests/order-confirmation-modal.test.tsx
+          src/lib/tests/position-isolated-margin-modal.test.tsx
+          src/lib/tests/cancel-all-orders-modal.test.tsx
+          src/lib/tests/desktop-orders-cancel-all.test.tsx
+          src/lib/tests/mobile-orders-card.test.tsx
+          src/lib/tests/mobile-order-modification.test.tsx
+          src/lib/tests/spot-swap-modal.test.tsx
+          src/lib/tests/account-mode-modal.test.tsx
+          src/lib/tests/use-asset-leverage.test.tsx
+          src/lib/tests/funds-action-balances.test.tsx
+          src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx
+          src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
+          src/lib/tests/referral-action-modal.test.tsx
+          src/lib/tests/api-wallet-action-modal.test.tsx
+          src/lib/tests/vault-action-modal.test.tsx
+          src/lib/tests/vault-detail-page-outcomes.test.tsx
+          src/components/staking/__tests__/staking-view.test.tsx
+          src/lib/tests/action-progress-label-contract.test.ts
+          tests/slider-effective-leverage-regression.test.tsx
+          src/lib/tests/dialog-dismiss-control-contract.test.ts
+
+      - name: Test slider gesture lifecycles
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          tests/trade-size-slider-pointer-lifecycle.test.tsx
+          tests/trade-size-slider-deferred-commit-race.test.tsx
+          tests/position-close-slider-effective-aria.test.tsx
+          src/lib/tests/trade-size-slider.test.tsx
+          src/lib/tests/trade-size-slider-a11y.test.tsx
+          src/lib/tests/leverage-slider.test.tsx
+          src/lib/tests/use-size-slider-interaction.test.tsx
+          src/lib/tests/size-percent-input.test.tsx
+
       - name: Test TradingView integration
         working-directory: apps/terminal
         run: >-

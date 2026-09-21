@@ -259,7 +259,7 @@ export function TwapTab() {
 																disabled={cancellingTwapId !== null}
 																onClick={() => void cancelTwap(state.coin, twapId)}
 															>
-																{cancellingTwapId === twapId ? t`Terminating...` : t`Terminate`}
+																{t`Terminate`}
 															</button>
 														</td>
 													</tr>

@@ -64,6 +64,9 @@ const target: PositionReverseTarget = {
 	marginMode: "isolated",
 };
 
+const SESSION_ID = "reverse:1";
+const session = { sessionId: SESSION_ID, target };
+
 describe("PositionReverseConfirmationController", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -91,10 +94,10 @@ describe("PositionReverseConfirmationController", () => {
 	it("keeps the dialog mounted closed for its exit transition after the target clears", () => {
 		vi.useFakeTimers();
 		try {
-			act(() => root.render(<PositionReverseConfirmationController target={target} onOpenChange={vi.fn()} />));
+			act(() => root.render(<PositionReverseConfirmationController session={session} onSessionEnd={vi.fn()} />));
 			expect(mocks.modalProps?.open).toBe(true);
 
-			act(() => root.render(<PositionReverseConfirmationController target={null} onOpenChange={vi.fn()} />));
+			act(() => root.render(<PositionReverseConfirmationController session={null} onSessionEnd={vi.fn()} />));
 			expect(container.querySelector('[role="dialog"]')).not.toBeNull();
 			expect(mocks.modalProps?.open).toBe(false);
 			expect(mocks.modalProps?.isConfirmDisabled).toBe(true);
@@ -110,48 +113,93 @@ describe("PositionReverseConfirmationController", () => {
 		}
 	});
 
-	it("formats the exact 2x string size and closes only after a confirmed fill", async () => {
-		const onOpenChange = vi.fn();
-		mocks.submit.mockResolvedValue({
-			state: "confirmed",
-			result: { response: { data: { statuses: [{ filled: { totalSz: "5.125" } }] } } },
-		});
-		act(() => root.render(<PositionReverseConfirmationController target={target} onOpenChange={onOpenChange} />));
+	function holdSubmission(): (outcome: Record<string, unknown>) => void {
+		let settle: (outcome: Record<string, unknown>) => void = () => {};
+		mocks.submit.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					settle = resolve;
+				}),
+		);
+		return (outcome) => settle(outcome);
+	}
+
+	it("formats the exact 2x string size, closes at the click and reports the fill through a notification", async () => {
+		const onSessionEnd = vi.fn();
+		const settle = holdSubmission();
+		act(() => root.render(<PositionReverseConfirmationController session={session} onSessionEnd={onSessionEnd} />));
 
 		expect(mocks.modalProps).toMatchObject({
+			open: true,
 			marketLabel: "CXMT-USDC",
 			currentDirection: "long",
 			reverseSizeLabel: "5.000 CXMT",
-			isSubmitting: false,
 			isConfirmDisabled: false,
 		});
+		expect(mocks.modalProps).not.toHaveProperty("isSubmitting");
+		expect(mocks.modalProps).not.toHaveProperty("errorMessage");
 
 		await act(async () => {
 			(mocks.modalProps?.onConfirm as () => void)();
 		});
 		expect(mocks.submit).toHaveBeenCalledOnce();
-		expect(mocks.success).toHaveBeenCalledWith("Position reversed — CXMT-USDC", {
+		expect(mocks.modalProps).toMatchObject({ open: false, isConfirmDisabled: true });
+		expect(onSessionEnd).not.toHaveBeenCalled();
+
+		await act(async () => {
+			(mocks.modalProps?.onConfirm as () => void)();
+			(mocks.modalProps?.onOpenChange as (open: boolean) => void)(false);
+		});
+		expect(mocks.submit).toHaveBeenCalledOnce();
+		expect(onSessionEnd).not.toHaveBeenCalled();
+
+		await act(async () =>
+			settle({ state: "confirmed", result: { response: { data: { statuses: [{ filled: { totalSz: "5.125" } }] } } } }),
+		);
+		expect(mocks.success).toHaveBeenCalledExactlyOnceWith("Position reversed — CXMT-USDC", {
 			description: "Reverse order filled for 5.125 CXMT.",
 		});
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 
-	it("keeps the dialog open for blocked work and closes after an ambiguous submitted response", async () => {
-		const onOpenChange = vi.fn();
+	it("submits once when the confirm control is activated twice in the same tick", async () => {
 		mocks.submit.mockResolvedValue({ state: "blocked" });
-		act(() => root.render(<PositionReverseConfirmationController target={target} onOpenChange={onOpenChange} />));
+		act(() => root.render(<PositionReverseConfirmationController session={session} onSessionEnd={vi.fn()} />));
+		await act(async () => {
+			const onConfirm = mocks.modalProps?.onConfirm as () => void;
+			onConfirm();
+			onConfirm();
+		});
+		expect(mocks.submit).toHaveBeenCalledOnce();
+	});
+
+	it.each([
+		[{ state: "blocked" }, "warning"],
+		[{ state: "reconciling", submissionId: "pending-1" }, "info"],
+	] as const)("reports %o only through a %s notification and ends the session", async (outcome, level) => {
+		const onSessionEnd = vi.fn();
+		mocks.submit.mockResolvedValue({ ...outcome });
+		act(() => root.render(<PositionReverseConfirmationController session={session} onSessionEnd={onSessionEnd} />));
 
 		await act(async () => {
 			(mocks.modalProps?.onConfirm as () => void)();
 		});
-		expect(mocks.warning).toHaveBeenCalledOnce();
-		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(mocks.warning).toHaveBeenCalledTimes(level === "warning" ? 1 : 0);
+		expect(mocks.info).toHaveBeenCalledTimes(level === "info" ? 1 : 0);
+		expect(mocks.success).not.toHaveBeenCalled();
+		expect(mocks.errorToast).not.toHaveBeenCalled();
+		expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
+	});
 
-		mocks.submit.mockResolvedValue({ state: "reconciling", submissionId: "pending-1" });
+	it("reports a failed submission through an error notification and ends the session", async () => {
+		const onSessionEnd = vi.fn();
+		mocks.submit.mockRejectedValue(new Error("Trading data changed"));
+		act(() => root.render(<PositionReverseConfirmationController session={session} onSessionEnd={onSessionEnd} />));
+
 		await act(async () => {
 			(mocks.modalProps?.onConfirm as () => void)();
 		});
-		expect(mocks.info).toHaveBeenCalledWith("Order submitted. Confirming exchange status; do not retry.");
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(mocks.errorToast).toHaveBeenCalledExactlyOnceWith("Trading data changed");
+		expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 });

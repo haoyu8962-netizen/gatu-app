@@ -2,12 +2,14 @@ import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
-import { type ReactNode, Suspense } from "react";
+import { type ReactNode, Suspense, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { TopNav } from "@/components/trade/header/top-nav";
 import { MobileHeader } from "@/components/trade/mobile/mobile-header";
 import { TestnetBanner } from "@/components/trade/testnet-banner";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
+import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createLazyComponent } from "@/lib/lazy";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -76,6 +78,49 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 		owner: controller.owner,
 	});
 	const activeAction = vaultAction.action;
+	const reportedOutcomeRef = useRef<string | null>(null);
+	useEffect(() => {
+		const settledResult = activeAction?.state.stage === "done" ? activeAction.state.result : null;
+		if (!activeAction || !settledResult || settledResult === "unknown") {
+			reportedOutcomeRef.current = null;
+			return;
+		}
+		const outcomeKey = `${activeAction.id}:${settledResult}`;
+		if (reportedOutcomeRef.current === outcomeKey) return;
+		reportedOutcomeRef.current = outcomeKey;
+		if (settledResult === "success") {
+			const receipt = activeAction.receipt;
+			const amounts = [
+				{ label: t`Final amount`, value: receipt?.finalAmount },
+				{ label: t`Commission`, value: receipt?.commission },
+				{ label: t`Closing cost`, value: receipt?.closingCost },
+			].filter((amount) => !!amount.value);
+			toast.success(t`Vault transfer confirmed`, {
+				description: (
+					<span className="flex flex-col gap-1">
+						{amounts.map((amount) => (
+							<span key={amount.label} className="tabular-nums">
+								{amount.label}: <bdi dir="ltr">{amount.value} USDC</bdi>
+							</span>
+						))}
+						{receipt?.hash ? (
+							<bdi dir="ltr" className="break-all font-mono">
+								{receipt.hash}
+							</bdi>
+						) : null}
+					</span>
+				),
+				duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
+			});
+			vaultAction.close();
+			return;
+		}
+		toast.error(settledResult === "rejected" ? t`Authorization rejected` : t`Vault request failed`, {
+			description: activeAction.errorMessage,
+			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
+		});
+		vaultAction.retry();
+	});
 	const markerReference = activeAction?.marker
 		? formatVaultOperationReference({
 				env: activeAction.marker.env,
@@ -127,17 +172,12 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 					availableAmount={vaultAction.availableAmount}
 					errorMessage={activeAction.errorMessage}
 					operationReference={activeAction.receipt?.operationReference ?? markerReference}
-					transactionHash={activeAction.receipt?.hash}
-					finalAmount={activeAction.receipt?.finalAmount}
-					commission={activeAction.receipt?.commission}
-					closingCost={activeAction.receipt?.closingCost}
 					canReview={vaultAction.canReview}
 					canConfirm={vaultAction.canConfirm}
 					onAmountChange={vaultAction.setAmount}
 					onReview={vaultAction.review}
 					onBack={vaultAction.back}
 					onConfirm={() => void vaultAction.confirm()}
-					onRetry={vaultAction.retry}
 					onVerifyAgain={() => void vaultAction.verifyAgain()}
 					onClose={vaultAction.close}
 				/>

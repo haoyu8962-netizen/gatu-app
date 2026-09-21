@@ -103,7 +103,8 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_PANEL_SOURCE).not.toContain("positionsAccountSummary");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("Account Equity");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("Maintenance Margin Ratio");
-		expect(POSITIONS_TAB_SOURCE).toContain("PositionCloseAllController");
+		expect(POSITIONS_TAB_SOURCE).toContain("openCloseAll(resolution.snapshot)");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("PositionCloseAllController");
 		expect(POSITIONS_TAB_SOURCE).toContain("Close All Positions");
 		expect(POSITIONS_TAB_SOURCE).toContain("candidates: positions.map");
 		expect(POSITIONS_TAB_SOURCE).toContain("focusableWhenDisabled");

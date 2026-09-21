@@ -39,7 +39,7 @@ export function usePositionMarketCloseAction() {
 			(market?.kind !== "builderPerp" || hasAcceptedHip3);
 
 		const sessionId = actions.open(position, direct ? "direct" : "confirmation");
-		if (sessionId && direct) void submit({ sessionId });
+		if (sessionId && direct) void submit({ sessionId, confirmedCloseSize: null });
 		return sessionId;
 	}
 

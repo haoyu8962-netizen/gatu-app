@@ -1,22 +1,20 @@
-import { AdaptiveModal, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
+import { AdaptiveModal, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Props {
 	open: boolean;
 	orderCount: number;
-	isSubmitting: boolean;
-	errorMessage?: string | null;
 	onOpenChange: (open: boolean) => void;
 	onConfirm: () => void;
 }
 
-export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMessage, onOpenChange, onConfirm }: Props) {
+export function CancelAllOrdersModal({ open, orderCount, onOpenChange, onConfirm }: Props) {
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 
 	function handleConfirm() {
-		if (isSubmitting || orderCount === 0) return;
+		if (!open || orderCount === 0) return;
 		onConfirm();
 	}
 
@@ -26,7 +24,7 @@ export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMess
 			onOpenChange={onOpenChange}
 			presentation={isMobile ? "drawer" : "modal"}
 			size="sm"
-			dismissible={!isSubmitting}
+			dismissible
 			showClose={false}
 			showHandle={isMobile}
 			handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
@@ -48,18 +46,11 @@ export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMess
 					/>
 				</ModalDescription>
 			</ModalHeader>
-			{errorMessage ? (
-				<ModalContent className="px-4 pt-3 pb-0 min-[1001px]:px-6">
-					<p role="alert" className="text-xs leading-[17px] text-market-close-danger">
-						{errorMessage}
-					</p>
-				</ModalContent>
-			) : null}
 			<ModalFooter className="grid grid-cols-2 gap-2 px-4 pt-3 pb-4 min-[1001px]:px-6 min-[1001px]:pt-4 min-[1001px]:pb-6">
 				<button
 					type="button"
 					className="min-h-11 rounded-[10px] border border-market-close-stroke-input bg-modal px-3 text-[13px] font-semibold text-market-close-fg transition-colors duration-[120ms] hover:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle min-[1001px]:min-h-10"
-					disabled={isSubmitting}
+					disabled={!open}
 					onClick={() => onOpenChange(false)}
 				>
 					{t`Back`}
@@ -67,11 +58,10 @@ export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMess
 				<button
 					type="button"
 					className="min-h-11 rounded-[10px] bg-market-close-danger px-3 text-[13px] font-bold text-market-close-danger-text transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:bg-market-close-danger-disabled disabled:text-market-close-muted min-[1001px]:min-h-10"
-					aria-busy={isSubmitting}
-					disabled={isSubmitting || orderCount === 0}
+					disabled={!open || orderCount === 0}
 					onClick={handleConfirm}
 				>
-					{isSubmitting ? t`Canceling...` : t`Cancel All`}
+					{t`Cancel All`}
 				</button>
 			</ModalFooter>
 		</AdaptiveModal>

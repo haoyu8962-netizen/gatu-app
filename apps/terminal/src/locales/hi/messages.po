@@ -131,8 +131,8 @@ msgid "{positionCount, plural, one {# position} other {# positions}}"
 msgstr "{positionCount, plural, one {# पोज़िशन} other {# पोज़िशन}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
-msgstr "{positionCount, plural, one {# पोज़िशन बंद करें} other {# पोज़िशन बंद करें}}"
+#~ msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
+#~ msgstr "{positionCount, plural, one {# पोज़िशन बंद करें} other {# पोज़िशन बंद करें}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
@@ -142,7 +142,7 @@ msgstr "{positionCount, plural, one {इससे खुली पोज़ि�
 msgid "{positionCount} positions were closed at market."
 msgstr "{positionCount} पोज़िशन मार्केट मूल्य पर बंद की गईं।"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
 msgstr "{requestedPercent}% अनुरोध किया गया; साइज़ की सटीकता लागू करने के बाद {effectivePercent}%"
 
@@ -418,6 +418,7 @@ msgstr "खाता-स्तरीय Agent स्वीकृति"
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Action"
 msgstr "कार्रवाई"
@@ -706,6 +707,7 @@ msgid "Another order for one of these markets is still being confirmed."
 msgstr "इनमें से एक बाज़ार के लिए एक अन्य ऑर्डर की पुष्टि अभी जारी है।"
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -871,8 +873,8 @@ msgstr "एटॉमिक राशि"
 msgid "Atomic decimals"
 msgstr "एटॉमिक दशमलव"
 
-#: src/components/staking/staking-action-modal.tsx
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "अधिकृत करने का अनुरोध अस्वीकार हुआ"
 
@@ -1087,6 +1089,7 @@ msgstr "खरीदें"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Buy / Long"
 msgstr "खरीदें / लॉन्ग"
 
@@ -1119,11 +1122,8 @@ msgstr "डेस्कटॉप वॉलेट QR के लिए कैम�
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/components/trade/tradebox/order-confirmation-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Cancel"
@@ -1174,8 +1174,8 @@ msgstr "रद्द"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Canceling..."
-msgstr "रद्द हो रहा है..."
+#~ msgid "Canceling..."
+#~ msgstr "रद्द हो रहा है..."
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
@@ -1289,11 +1289,12 @@ msgstr "सबमिशन से पहले Circle शुल्क बदल 
 msgid "Circle fees changed. Review the updated fee, then submit again."
 msgstr "Circle शुल्क बदल गए हैं। अपडेट किए गए शुल्क की समीक्षा करें और फिर दोबारा सबमिट करें।"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
 msgstr "Circle USDC मिंट करके Hyperliquid को फ़ॉरवर्ड कर रहा है। उसी ट्रांसफ़र को दोबारा सबमिट न करें।"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
 msgstr "Circle ने HyperEVM फ़ॉरवर्डिंग ट्रांज़ैक्शन सबमिट कर दिया है। HyperCore में क्रेडिट होने में अतिरिक्त समय लग सकता है।"
@@ -1364,8 +1365,6 @@ msgstr "सबमिट करने के लिए क्लिक करे�
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
-#: src/components/referrals/referral-action-modal.tsx
-#: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
@@ -1384,8 +1383,6 @@ msgstr "सबमिट करने के लिए क्लिक करे�
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
@@ -1418,6 +1415,7 @@ msgid "Close all is unavailable until every position market has loaded."
 msgstr "जब तक हर पोज़िशन का बाज़ार लोड नहीं हो जाता, तब तक सभी बंद करना उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "सभी पोज़िशन बंद करें"
@@ -1427,8 +1425,8 @@ msgid "Close all positions summary"
 msgstr "सभी पोज़िशन बंद करने का सारांश"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Close and reopen this dialog after the position data refreshes."
-msgstr "पोज़िशन डेटा रीफ़्रेश होने के बाद इस डायलॉग को बंद करके फिर से खोलें।"
+#~ msgid "Close and reopen this dialog after the position data refreshes."
+#~ msgstr "पोज़िशन डेटा रीफ़्रेश होने के बाद इस डायलॉग को बंद करके फिर से खोलें।"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Close API wallet action"
@@ -1476,7 +1474,7 @@ msgstr "क्लोज़ ऑर्डर सबमिट हो गए। ए�
 msgid "Close pending operation details"
 msgstr "लंबित ऑपरेशन का विवरण बंद करें"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close percentage"
 msgstr "क्लोज़ प्रतिशत"
 
@@ -1490,7 +1488,7 @@ msgstr "क्लोज़ प्रतिशत एक दशमलव सं�
 msgid "Close percentage must be between 0 and 100"
 msgstr "क्लोज़ प्रतिशत 0 और 100 के बीच होना चाहिए"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close percentage slider"
 msgstr "क्लोज़ प्रतिशत स्लाइडर"
 
@@ -1514,9 +1512,9 @@ msgstr "रिवर्स पुष्टि बंद करें"
 msgid "Close Short"
 msgstr "शॉर्ट क्लोज़"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
-#: src/components/trade/positions/position-close-dialog-ui.tsx
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close size"
 msgstr "क्लोज़ आकार"
 
@@ -1540,6 +1538,10 @@ msgstr "क्लोज़ आकार एक दशमलव संख्य�
 msgid "Close size must be greater than zero"
 msgstr "क्लोज़ आकार शून्य से अधिक होना चाहिए"
 
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close size: {formattedCloseSize} {sizeSymbol}"
+msgstr "क्लोज़ आकार: {formattedCloseSize} {sizeSymbol}"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Close staking action"
 msgstr "स्टेकिंग कार्रवाई बंद करें"
@@ -1561,11 +1563,10 @@ msgstr "बंद PNL"
 msgid "Closes in {remainingSeconds}s"
 msgstr ""
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Closing cost"
 msgstr "बंद करने की लागत"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Closing this dialog will not cancel it."
 msgstr "इस डायलॉग को बंद करने से ऑर्डर रद्द नहीं होगा।"
@@ -1609,7 +1610,7 @@ msgid "Collapse market details"
 msgstr "बाज़ार विवरण समेटें"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Commission"
 msgstr "कमीशन"
 
@@ -1663,6 +1664,8 @@ msgstr "अपठनीय रिकॉर्ड साफ़ करने क�
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "वॉलेट में पुष्टि करें"
@@ -1717,16 +1720,16 @@ msgid "confirming"
 msgstr "पुष्टि जारी"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Confirming exchange status..."
-msgstr "एक्सचेंज की स्थिति की पुष्टि की जा रही है..."
+#~ msgid "Confirming exchange status..."
+#~ msgstr "एक्सचेंज की स्थिति की पुष्टि की जा रही है..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Confirming order status. Do not retry."
 msgstr "ऑर्डर की स्थिति की पुष्टि की जा रही है। दोबारा प्रयास न करें।"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Confirming..."
-msgstr "पुष्टि की जा रही है..."
+#~ msgid "Confirming..."
+#~ msgstr "पुष्टि की जा रही है..."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -2037,7 +2040,6 @@ msgstr "आपका वॉलेट बनाया जा रहा है। 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/config/trade-panel-labels.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Cross"
 msgstr "क्रॉस"
 
@@ -2192,9 +2194,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -2225,6 +2224,7 @@ msgstr "जमा पते का QR कोड"
 msgid "Deposit amount"
 msgstr "राशि"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "डिपॉज़िट विफल"
@@ -2490,10 +2490,6 @@ msgstr "यह पुष्टि दोबारा न दिखाएं"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "पूर्ण"
@@ -2707,7 +2703,6 @@ msgstr "इक्विटी"
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Est. Fee"
 msgstr "अनु. शुल्क"
 
@@ -2735,6 +2730,7 @@ msgid "Estimated fee"
 msgstr "अनुमानित शुल्क"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Estimated Liquidation Price"
 msgstr "अनुमानित लिक्विडेशन मूल्य"
 
@@ -2748,6 +2744,10 @@ msgstr "अनुमानित PnL"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Estimated PnL after trigger"
 msgstr "ट्रिगर के बाद अनुमानित PnL"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Estimated PnL excludes fees"
+msgstr "अनुमानित PnL में फ़ीस शामिल नहीं है"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -3151,7 +3151,7 @@ msgstr "ट्रेड इतिहास को प्रकार के अ�
 msgid "Filter validators"
 msgstr "वैलिडेटर फ़िल्टर करें"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Final amount"
 msgstr "अंतिम राशि"
 
@@ -3176,11 +3176,12 @@ msgstr "उन उन्नत उपयोगकर्ताओं के ल�
 msgid "For example: grid-bot"
 msgstr "उदाहरण: grid-bot"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forward transaction submitted"
 msgstr "फ़ॉरवर्ड ट्रांज़ैक्शन सबमिट किया गया"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forwarding deposit"
@@ -3194,6 +3195,10 @@ msgstr "आवृत्ति"
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Fresh API wallet data could not be verified before signing."
 msgstr "हस्ताक्षर से पहले नया API वॉलेट डेटा सत्यापित नहीं किया जा सका।"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Fresh eligibility or account data could not be verified. Review and try again."
+msgstr "नवीनतम पात्रता या खाता डेटा सत्यापित नहीं हो सका। समीक्षा करें और पुनः प्रयास करें।"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Fresh extraAgents data is being checked before the result is accepted."
@@ -3458,6 +3463,10 @@ msgstr "Hyperliquid अभी इस खाते को रेफ़रल क�
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid सक्रिय TWAP ऑर्डर को पॉज़ करने का समर्थन नहीं करता।"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Hyperliquid history has not confirmed this operation. Do not submit it again."
+msgstr "Hyperliquid के इतिहास ने इस ऑपरेशन की पुष्टि नहीं की है। इसे दोबारा सबमिट न करें।"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid जमाकर्ताओं का केवल एक उपसमूह लौटा सकता है।"
@@ -3465,6 +3474,10 @@ msgstr "Hyperliquid जमाकर्ताओं का केवल एक �
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
 msgstr "Hyperliquid ने अनुरोध अस्वीकार कर दिया"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Hyperliquid rejected the verified public request."
+msgstr "Hyperliquid ने सत्यापित सार्वजनिक अनुरोध अस्वीकार कर दिया।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
@@ -3608,7 +3621,6 @@ msgstr "IOC (Immediate Or Cancel)"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/domain/trade/order-confirmation.ts
 msgid "Isolated"
 msgstr "आइसोलेटेड"
 
@@ -3646,8 +3658,8 @@ msgid "Keep this window open until Hyperliquid finishes checking the wallet acti
 msgstr "जब तक Hyperliquid वॉलेट कार्रवाई की जांच पूरी न कर ले, यह विंडो खुली रखें।"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Keep this window open while Hyperliquid processes the request."
-msgstr "Hyperliquid द्वारा अनुरोध संसाधित किए जाने तक यह विंडो खुली रखें।"
+#~ msgid "Keep this window open while Hyperliquid processes the request."
+#~ msgstr "Hyperliquid द्वारा अनुरोध संसाधित किए जाने तक यह विंडो खुली रखें।"
 
 #: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -3737,13 +3749,17 @@ msgstr "शुद्ध उधार शेष"
 #: src/components/trade/tradebox/leverage-editor.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
 #: src/config/trade-panel-labels.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Leverage"
 msgstr "Leverage"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "इस बाज़ार के लिए लीवरेज {currentLeverage}× पर निर्धारित है।"
+
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Leverage updated to {leverage}x"
+msgstr "लीवरेज {leverage}x पर अपडेट किया गया"
 
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
@@ -3756,7 +3772,6 @@ msgid "Limit"
 msgstr "लिमिट"
 
 #: src/components/trade/positions/position-inline-actions.tsx
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -3820,7 +3835,6 @@ msgstr "लिंक किया गया स्टेकिंग खात�
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Liq. Price"
 msgstr "लिक्विडेशन प्राइस"
 
@@ -4098,6 +4112,11 @@ msgstr "मार्जिन और खाता जोखिम एक नज�
 msgid "Margin mode"
 msgstr "Margin मोड"
 
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin mode updated"
+msgstr "Margin मोड अपडेट किया गया"
+
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
 msgstr "मार्जिन अनुपात"
@@ -4106,7 +4125,6 @@ msgstr "मार्जिन अनुपात"
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Margin Req."
 msgstr "मार्जिन आवश्यक"
 
@@ -4165,7 +4183,6 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/config/trade-panel-labels.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Market"
 msgstr "बाज़ार"
 
@@ -4196,12 +4213,13 @@ msgstr "इस खाते और नेटवर्क के लिए मा
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Market क्लोज़"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Market Close {formattedCloseSize} {sizeSymbol}"
-msgstr "मार्केट क्लोज़ {formattedCloseSize} {sizeSymbol}"
+#~ msgid "Market Close {formattedCloseSize} {sizeSymbol}"
+#~ msgstr "मार्केट क्लोज़ {formattedCloseSize} {sizeSymbol}"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Market close confirmation"
@@ -4264,7 +4282,6 @@ msgstr "मास्टर वॉलेट सत्यापित है"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
@@ -4428,8 +4445,8 @@ msgid "Modify Order"
 msgstr "ऑर्डर संशोधित करें"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
-msgid "Modifying..."
-msgstr "संशोधित किया जा रहा है..."
+#~ msgid "Modifying..."
+#~ msgstr "संशोधित किया जा रहा है..."
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -4719,7 +4736,7 @@ msgstr "कोई मेल खाता वॉल्ट नहीं"
 msgid "No open orders."
 msgstr "कोई खुला ऑर्डर नहीं।"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "No operation was submitted."
 msgstr "कोई ऑपरेशन भेजा नहीं गया।"
 
@@ -5037,10 +5054,10 @@ msgid "Open token in explorer"
 msgstr "एक्सप्लोरर में टोकन खोलें"
 
 #: src/components/staking/staking-action-modal.tsx
-msgid "Operation in progress"
-msgstr "ऑपरेशन जारी है"
+#~ msgid "Operation in progress"
+#~ msgstr "ऑपरेशन जारी है"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Operation verified"
 msgstr "ऑपरेशन सत्यापित हुआ"
 
@@ -5076,6 +5093,11 @@ msgstr "क्वोट एसेट में ऑर्डर बुक"
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
 msgstr "ऑर्डर बुक दृश्य"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Order cancellation confirmed."
+msgstr "ऑर्डर रद्दीकरण की पुष्टि हो गई।"
 
 #: src/hooks/trade/use-order-confirmation.ts
 #: src/lib/trade/order-submission-feedback.ts
@@ -5174,7 +5196,6 @@ msgstr "ऑर्डर प्रकार"
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Order Value"
 msgstr "ऑर्डर वैल्यू"
 
@@ -5259,8 +5280,8 @@ msgid "Partial amount"
 msgstr "आंशिक राशि"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Partial result — reopen to retry"
-msgstr "आंशिक परिणाम — पुनः प्रयास के लिए फिर से खोलें"
+#~ msgid "Partial result — reopen to retry"
+#~ msgstr "आंशिक परिणाम — पुनः प्रयास के लिए फिर से खोलें"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -5677,7 +5698,6 @@ msgid "Price precision"
 msgstr "मूल्य परिशुद्धता"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Price: Market"
 msgstr "कीमत: मार्केट"
 
@@ -5720,12 +5740,12 @@ msgstr "प्रोसेसिंग समय"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Processing..."
-msgstr "प्रोसेसिंग..."
+#~ msgid "Processing..."
+#~ msgstr "प्रोसेसिंग..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
-msgid "Processing…"
-msgstr "प्रोसेस हो रहा है…"
+#~ msgid "Processing…"
+#~ msgstr "प्रोसेस हो रहा है…"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
@@ -6130,10 +6150,11 @@ msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
 msgstr ""
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/referrals/referral-action-modal.tsx
 msgid "Request not confirmed"
 msgstr "अनुरोध की पुष्टि नहीं हुई"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Request rejected"
 msgstr "अनुरोध अस्वीकार हुआ"
 
@@ -6199,8 +6220,6 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -6276,8 +6295,8 @@ msgid "Reverse quantity (2× position)"
 msgstr "रिवर्स मात्रा (2× पोज़िशन)"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
-msgid "Reversing..."
-msgstr "रिवर्स हो रहा है..."
+#~ msgid "Reversing..."
+#~ msgstr "रिवर्स हो रहा है..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/funds-action/funds-action-recovery-host.tsx
@@ -6291,8 +6310,8 @@ msgstr "समीक्षा करें"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
-msgid "Review again"
-msgstr "फिर से समीक्षा करें"
+#~ msgid "Review again"
+#~ msgstr "फिर से समीक्षा करें"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Review and import the desktop-approved trading key. No phone wallet is required."
@@ -6346,7 +6365,7 @@ msgstr "ट्रेडिंग से पहले डिप्लॉयर �
 msgid "Review the order before it is sent to the exchange."
 msgstr "एक्सचेंज को भेजने से पहले ऑर्डर की समीक्षा करें।"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Review the public fields and try again."
 msgstr "सार्वजनिक फ़ील्ड की समीक्षा करके फिर प्रयास करें।"
 
@@ -6688,6 +6707,7 @@ msgstr "बेचें"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Sell / Short"
 msgstr "बेचें / शॉर्ट"
 
@@ -6724,8 +6744,12 @@ msgid "Send USDC to your wallet address below."
 msgstr "नीचे दिए गए अपने वॉलेट पते पर USDC भेजें।"
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Sending..."
-msgstr "भेजा जा रहा है..."
+#~ msgid "Sending..."
+#~ msgstr "भेजा जा रहा है..."
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Sent {sentAmount} {sentToken}"
+msgstr "{sentAmount} {sentToken} भेजा गया"
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -6815,7 +6839,6 @@ msgid "Shows reward claims reported in the last 30 days. Claims can include refe
 msgstr "पिछले 30 दिनों में रिपोर्ट किए गए पुरस्कार प्राप्ति रिकॉर्ड दिखाता है। इनमें रेफ़रल और बिल्डर पुरस्कार शामिल हो सकते हैं।"
 
 #: src/components/funding-history/funding-history-page.tsx
-#: src/domain/trade/order-confirmation.ts
 msgid "Side"
 msgstr "साइड"
 
@@ -6935,7 +6958,6 @@ msgstr "SL मूल्य"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Slippage"
 msgstr "स्लिपेज"
 
@@ -7293,18 +7315,16 @@ msgid "Submitted limit and trigger orders will appear here."
 msgstr "सबमिट किए गए लिमिट और ट्रिगर ऑर्डर यहाँ दिखाई देंगे।"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Submitting close orders..."
-msgstr "क्लोज़ ऑर्डर सबमिट किए जा रहे हैं..."
+#~ msgid "Submitting close orders..."
+#~ msgstr "क्लोज़ ऑर्डर सबमिट किए जा रहे हैं..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Submitting to Hyperliquid"
 msgstr "Hyperliquid को भेजा जा रहा है"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/tradebox/order-confirmation-modal.tsx
-msgid "Submitting..."
-msgstr "सबमिट किया जा रहा है..."
+#~ msgid "Submitting..."
+#~ msgstr "सबमिट किया जा रहा है..."
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -7346,8 +7366,8 @@ msgid "Swap submitted"
 msgstr "स्वैप सबमिट किया गया"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Swapping..."
-msgstr "स्वैप किया जा रहा है..."
+#~ msgid "Swapping..."
+#~ msgstr "स्वैप किया जा रहा है..."
 
 #. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
@@ -7424,7 +7444,6 @@ msgid "Switch to Mainnet"
 msgstr "Mainnet पर स्विच करें"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
@@ -7534,8 +7553,8 @@ msgstr "TWAP ऑर्डर समाप्त करें"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
-msgid "Terminating..."
-msgstr "समाप्त किया जा रहा है..."
+#~ msgid "Terminating..."
+#~ msgstr "समाप्त किया जा रहा है..."
 
 #: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
@@ -7618,13 +7637,14 @@ msgstr "स्वीकृति परिणाम की पुष्टि �
 #~ msgstr "स्वीकृत Hyperliquid Agent इस अनुरोध पर हस्ताक्षर करता है। हस्ताक्षरित अनुरोधों का अपने-आप दोबारा प्रयास कभी नहीं किया जाता।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
-msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आप यह विंडो बंद कर सकते हैं; आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
+#~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
+#~ msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आप यह विंडो बंद कर सकते हैं; आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
-msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है। Circle USDC मिंट करके Hyperliquid को फ़ॉरवर्ड कर रहा है।"
+#~ msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
+#~ msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है। Circle USDC मिंट करके Hyperliquid को फ़ॉरवर्ड कर रहा है।"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume when you return."
 msgstr "Arbitrum ट्रांज़ैक्शन सबमिट हो गया है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
@@ -7718,6 +7738,10 @@ msgstr "लीडर को लाभ में से ऊपर दिखाय
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "मार्जिन अपडेट लागू हो चुका हो सकता है। फिर से प्रयास करने से पहले पोज़िशन डेटा रीफ़्रेश करें।"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "The master wallet rejected the authorization."
+msgstr "मास्टर वॉलेट ने प्राधिकरण अस्वीकार कर दिया।"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr "मेल खाता मास्टर वॉलेट इस खाता-स्तरीय Agent स्वीकृति पर हस्ताक्षर करता है।"
@@ -7752,8 +7776,8 @@ msgid "The order changed before the requested modification was confirmed. Review
 msgstr "अनुरोधित संशोधन की पुष्टि होने से पहले ऑर्डर बदल गया। फिर से प्रयास करने से पहले नवीनतम ऑर्डर की समीक्षा करें।"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "The order is still being confirmed."
-msgstr "ऑर्डर की पुष्टि अभी जारी है।"
+#~ msgid "The order is still being confirmed."
+#~ msgstr "ऑर्डर की पुष्टि अभी जारी है।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
@@ -7776,6 +7800,14 @@ msgstr "पेज हाल के फ़िल का एक स्नैपश
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।"
+
+#: src/lib/trade/position-submit-feedback.ts
+msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
+msgstr "आपकी पुष्टि के बाद पोज़िशन बढ़ गई, इसलिए कुछ भी क्लोज़ नहीं किया गया। नया आकार देखने के लिए Market क्लोज़ फिर से खोलें।"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "The position size has changed since you opened this dialog. Review the close size before submitting."
+msgstr "इस संवाद को खोलने के बाद से पोज़िशन का आकार बदल गया है। सबमिट करने से पहले क्लोज़ आकार जाँचें।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8605,6 +8637,10 @@ msgid "Transfer between Perps and Spot"
 msgstr "परपेचुअल और स्पॉट के बीच ट्रांसफ़र करें"
 
 #: src/components/trade/positions/transfer-modal.tsx
+msgid "Transfer confirmed"
+msgstr "ट्रांसफ़र की पुष्टि हो गई"
+
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
 msgstr "ट्रांसफ़र विफल रहा"
 
@@ -8613,8 +8649,8 @@ msgid "Transfer USDC"
 msgstr "USDC ट्रांसफ़र करें"
 
 #: src/components/trade/positions/transfer-modal.tsx
-msgid "Transferring..."
-msgstr "ट्रांसफ़र किया जा रहा है..."
+#~ msgid "Transferring..."
+#~ msgstr "ट्रांसफ़र किया जा रहा है..."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
@@ -8794,6 +8830,7 @@ msgstr "दो-तरफ़ा ओपन इंटरेस्ट: इस कॉ
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Type"
 msgstr "प्रकार"
@@ -9039,7 +9076,6 @@ msgstr "अपडेट विफल रहा"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "अपडेट किया गया"
 
@@ -9049,12 +9085,12 @@ msgstr "लाइव अपडेट"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Updated to {displayLeverage}x"
-msgstr "{displayLeverage}x पर अपडेट किया गया"
+#~ msgid "Updated to {displayLeverage}x"
+#~ msgstr "{displayLeverage}x पर अपडेट किया गया"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Updating..."
-msgstr "अपडेट हो रहा है..."
+#~ msgid "Updating..."
+#~ msgstr "अपडेट हो रहा है..."
 
 #: src/components/staking/staking-view.tsx
 msgid "Uptime"
@@ -9127,12 +9163,12 @@ msgid "Valid until"
 msgstr "इस समय तक मान्य"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Validating positions..."
-msgstr "पोज़िशन जाँची जा रही हैं..."
+#~ msgid "Validating positions..."
+#~ msgstr "पोज़िशन जाँची जा रही हैं..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Validating..."
-msgstr "जाँच हो रही है..."
+#~ msgid "Validating..."
+#~ msgstr "जाँच हो रही है..."
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-view.tsx
@@ -9238,7 +9274,7 @@ msgstr "वॉल्ट पेज नेविगेशन"
 msgid "Vault performance"
 msgstr "वॉल्ट प्रदर्शन"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Vault request failed"
 msgstr "वॉल्ट अनुरोध विफल रहा"
 
@@ -9246,7 +9282,7 @@ msgstr "वॉल्ट अनुरोध विफल रहा"
 msgid "Vault risk"
 msgstr "वॉल्ट जोखिम"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Vault transfer confirmed"
 msgstr "वॉल्ट ट्रांसफ़र की पुष्टि हुई"
 
@@ -9338,6 +9374,8 @@ msgstr "सभी देखें"
 msgid "View asset information"
 msgstr "परिसंपत्ति की जानकारी देखें"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "View on explorer"
 msgstr "Explorer पर देखें"
@@ -9363,12 +9401,12 @@ msgid "Waiting for chain confirmation"
 msgstr "ऑन-चेन पुष्टि की प्रतीक्षा है"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Waiting for confirmation"
-msgstr "पुष्टि की प्रतीक्षा है"
+#~ msgid "Waiting for confirmation"
+#~ msgstr "पुष्टि की प्रतीक्षा है"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
-msgid "Waiting for confirmation..."
-msgstr "पुष्टि की प्रतीक्षा है..."
+#~ msgid "Waiting for confirmation..."
+#~ msgstr "पुष्टि की प्रतीक्षा है..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/config/orderbook-labels.ts
@@ -9486,8 +9524,6 @@ msgstr "पूरी पोज़िशन"
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -9525,7 +9561,6 @@ msgstr "निकासी ऑर्डर रद्द कर सकती ह�
 msgid "Withdrawal conditions changed before signing. Review the withdrawal and submit it again."
 msgstr "हस्ताक्षर से पहले निकासी की शर्तें बदल गईं। निकासी की समीक्षा करें और उसे फिर से सबमिट करें।"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"
 msgstr "निकासी विफल रही"

@@ -192,13 +192,41 @@ describe("LeverageSlider", () => {
 		expect(input.value).toBe("4");
 	});
 
-	it.each(["lostpointercapture", "window blur", "hidden document"])(
+	it("keeps an active drag when pointer capture is lost and commits on the release that follows", () => {
+		const onChange = vi.fn();
+		const onCommit = vi.fn();
+		const onCancel = vi.fn();
+		const { control, hasPointerCapture, releasePointerCapture } = renderSlider({
+			onCancel,
+			onChange,
+			onCommit,
+			value: 4,
+		});
+
+		act(() => {
+			control.dispatchEvent(createPointerEvent("pointerdown", { clientX: 43 }));
+			control.dispatchEvent(createPointerEvent("pointermove", { clientX: 98 }));
+		});
+		hasPointerCapture.mockReturnValue(false);
+		act(() => control.dispatchEvent(createPointerEvent("lostpointercapture", { clientX: 98 })));
+		expect(onCancel).not.toHaveBeenCalled();
+		expect(control.dataset.dragging).toBe("true");
+
+		act(() => document.dispatchEvent(createPointerEvent("pointerup", { clientX: 98 })));
+		expect(onCommit).toHaveBeenCalledTimes(1);
+		expect(onCommit).toHaveBeenCalledWith(9);
+		expect(onCancel).not.toHaveBeenCalled();
+		expect(releasePointerCapture).not.toHaveBeenCalled();
+		expect(control.hasAttribute("data-dragging")).toBe(false);
+	});
+
+	it.each(["window blur", "hidden document"])(
 		"cancels an active drag on %s and removes all active-drag listeners",
 		(boundary) => {
 			const onChange = vi.fn();
 			const onCommit = vi.fn();
 			const onCancel = vi.fn();
-			const { control, hasPointerCapture, input, releasePointerCapture } = renderSlider({
+			const { control, input, releasePointerCapture } = renderSlider({
 				onCancel,
 				onChange,
 				onCommit,
@@ -214,10 +242,7 @@ describe("LeverageSlider", () => {
 			});
 			expect(onChange).toHaveBeenCalledWith(9);
 
-			if (boundary === "lostpointercapture") {
-				hasPointerCapture.mockReturnValue(false);
-				act(() => control.dispatchEvent(createPointerEvent("lostpointercapture", { clientX: 110 })));
-			} else if (boundary === "window blur") {
+			if (boundary === "window blur") {
 				act(() => window.dispatchEvent(new Event("blur")));
 			} else {
 				vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
@@ -228,8 +253,7 @@ describe("LeverageSlider", () => {
 			expect(onCancel).toHaveBeenCalledTimes(1);
 			expect(onCommit).not.toHaveBeenCalled();
 			expect(input.value).toBe("4");
-			if (boundary === "lostpointercapture") expect(releasePointerCapture).not.toHaveBeenCalled();
-			else expect(releasePointerCapture).toHaveBeenCalledWith(1);
+			expect(releasePointerCapture).toHaveBeenCalledWith(1);
 
 			act(() => {
 				animationFrames.shift()?.(32);

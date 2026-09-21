@@ -708,7 +708,7 @@ Do not introduce a lazy/Suspense boundary solely to shrink a measured form's bun
 
 Follow [slider-interactions.md](slider-interactions.md) for the shared quantity and
 leverage interaction contract. A pointer session separates local visual position,
-15ms trailing business previews, and the final synchronous commit. Every terminal
+business previews throttled to one per 15ms, and the final synchronous commit. Every terminal
 path clears pending work on cancellation, invalidation, and unmount. Preserve exact
 business snapshots only in their original eligible identity. End callbacks run even
 when a thumb was pressed without moving, so submission locks cannot remain stuck.
@@ -718,6 +718,18 @@ keyed market change must preserve the new form's reset and subsequent edits.
 
 Quantity/close/TP-SL gestures must lock confirmation synchronously from pointer
 start through end; leverage gestures edit drafts and never invoke an API directly.
+The lock is a ref checked first in the submit path, not a disabled state: it must not
+grey or otherwise restyle the submit control (`docs/slider-interactions.md`).
+A value source that is only temporarily unreadable pauses an active gesture (`paused`):
+nothing is published or committed until it recovers, and the gesture is not thrown
+away. Reasons that end the editing context (`disabled`, identity, range or direction
+changes) still cancel it at once. `lostpointercapture` never cancels: embedded
+webviews report it a few milliseconds before `pointerup` with a real mouse, and the
+release that follows must still commit. The control keeps the reason the last gesture
+ended in `data-gesture-end`. Adding a cancellation path, and verifying any change to
+the gesture lifecycle, follow [ADR 0018](adr/0018-slider-gestures-end-on-release.md):
+injected pointer events do not prove operating-system event order, so such a change
+is verified with physical input and a reported jump is diagnosed from the page first.
 Slippage persistence requires explicit confirmation. These controls never replace
 wallet, legal, funding, freshness, market identity, or SDK-boundary validation.
 Market orders round protective prices inward to valid ticks, and the final

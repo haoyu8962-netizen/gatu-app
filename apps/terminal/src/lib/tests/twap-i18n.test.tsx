@@ -166,7 +166,6 @@ describe("TWAP price label locale dependencies", () => {
 					<OrderConfirmationModal
 						open
 						draft={draft}
-						isSubmitting={false}
 						dontShowAgain={false}
 						onDontShowAgainChange={() => {}}
 						onConfirm={onConfirm}

@@ -7,6 +7,7 @@ import { LeverageModal } from "@/components/trade/tradebox/leverage-modal";
 import { createI18nRoot } from "./harness/react";
 
 const modalHarness = vi.hoisted(() => ({
+	isActivationLocked: undefined as (() => boolean) | undefined,
 	autoCloseResets: 0,
 	autoCloseTriggers: 0,
 	disablePointerDismissal: false,
@@ -16,9 +17,9 @@ const modalHarness = vi.hoisted(() => ({
 	popupClassName: "",
 	popupOverlayClassName: "",
 	popupRenders: 0,
-	showSuccess: false,
 	showClose: true,
 }));
+const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 
 vi.mock("@gatu/ui", () => ({
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
@@ -66,9 +67,13 @@ vi.mock("@/components/trade/components/trading-action-button", () => ({
 	TradingActionButton: ({
 		children,
 		containerClassName: _containerClassName,
+		isActivationLocked,
 		requiresBuilderFee: _requiresBuilderFee,
 		...props
-	}: Record<string, unknown>) => createElement("button", { ...props, type: "button" }, children as ReactNode),
+	}: Record<string, unknown>) => {
+		modalHarness.isActivationLocked = isActivationLocked as (() => boolean) | undefined;
+		return createElement("button", { ...props, type: "button" }, children as ReactNode);
+	},
 }));
 
 vi.mock("@/components/trade/tradebox/leverage-editor", () => ({
@@ -78,19 +83,7 @@ vi.mock("@/components/trade/tradebox/leverage-editor", () => ({
 	},
 }));
 
-vi.mock("@/hooks/ui/use-auto-close-success", () => ({
-	useAutoCloseSuccess: () => ({
-		showSuccess: modalHarness.showSuccess,
-		trigger: () => {
-			modalHarness.autoCloseTriggers += 1;
-			modalHarness.showSuccess = true;
-		},
-		reset: () => {
-			modalHarness.autoCloseResets += 1;
-			modalHarness.showSuccess = false;
-		},
-	}),
-}));
+vi.mock("sonner", () => ({ toast: toastMocks }));
 
 function getButton(container: HTMLElement, label: string): HTMLButtonElement {
 	const button = [...container.querySelectorAll("button")].find((candidate) => candidate.textContent?.includes(label));
@@ -102,7 +95,7 @@ describe("LeverageModal", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 	let onPendingLeverageChange: ReturnType<typeof vi.fn<(value: number) => void>>;
-	let onApply: ReturnType<typeof vi.fn<(value: number) => Promise<void>>>;
+	let onApply: ReturnType<typeof vi.fn<(value: number) => Promise<number | null>>>;
 	let onOpenChange: ReturnType<typeof vi.fn<(open: boolean) => void>>;
 
 	beforeEach(() => {
@@ -110,18 +103,15 @@ describe("LeverageModal", () => {
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
 		onPendingLeverageChange = vi.fn<(value: number) => void>();
-		onApply = vi.fn<(value: number) => Promise<void>>().mockResolvedValue(undefined);
+		onApply = vi.fn<(value: number) => Promise<number | null>>().mockImplementation(async (value) => value);
 		onOpenChange = vi.fn<(open: boolean) => void>();
 		modalHarness.editorProps = null;
 		modalHarness.keepMounted = false;
-		modalHarness.autoCloseResets = 0;
-		modalHarness.autoCloseTriggers = 0;
 		modalHarness.disablePointerDismissal = false;
 		modalHarness.modalOpenChange = undefined;
 		modalHarness.popupClassName = "";
 		modalHarness.popupOverlayClassName = "";
 		modalHarness.popupRenders = 0;
-		modalHarness.showSuccess = false;
 		modalHarness.showClose = true;
 	});
 
@@ -136,7 +126,6 @@ describe("LeverageModal", () => {
 		open = true,
 		marketIdentity = "HYPE",
 		committedLeverage: number | null = null,
-		updateError: Error | null = null,
 	) {
 		act(() => {
 			root.render(
@@ -149,7 +138,6 @@ describe("LeverageModal", () => {
 					maxLeverage={10}
 					onPendingLeverageChange={onPendingLeverageChange}
 					isUpdating={false}
-					updateError={updateError}
 					onApply={onApply}
 					marketIdentity={marketIdentity}
 				/>,
@@ -212,12 +200,31 @@ describe("LeverageModal", () => {
 		expect(getButton(container, "Confirm").disabled).toBe(false);
 	});
 
-	it("never enables submission for a transient slider display", async () => {
+	it("locks Confirm in the same tick a leverage drag starts, before any render", async () => {
 		renderModal(6);
 		const onDraftChange = modalHarness.editorProps?.onDraftChange as ((value: number | null) => void) | undefined;
+		const confirm = getButton(container, "Confirm");
+
+		await act(async () => {
+			onDraftChange?.(8);
+			expect(modalHarness.isActivationLocked?.()).toBe(true);
+			confirm.click();
+		});
+		expect(onApply).not.toHaveBeenCalled();
+
+		act(() => onDraftChange?.(null));
+		await act(async () => getButton(container, "Confirm").click());
+		expect(onApply).toHaveBeenCalledWith(6);
+	});
+
+	it("never submits a transient slider display and does not grey Confirm while it is shown", async () => {
+		renderModal(6);
+		const onDraftChange = modalHarness.editorProps?.onDraftChange as ((value: number | null) => void) | undefined;
+		expect(modalHarness.isActivationLocked?.()).toBe(false);
 		act(() => onDraftChange?.(8));
 		expect(modalHarness.editorProps?.value).toBe(8);
-		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+		expect(modalHarness.isActivationLocked?.()).toBe(true);
 
 		await act(async () => getButton(container, "Confirm").click());
 		expect(onApply).not.toHaveBeenCalled();
@@ -225,6 +232,7 @@ describe("LeverageModal", () => {
 		act(() => onDraftChange?.(null));
 		expect(modalHarness.editorProps?.value).toBe(6);
 		expect(getButton(container, "Confirm").disabled).toBe(false);
+		expect(modalHarness.isActivationLocked?.()).toBe(false);
 		await act(async () => getButton(container, "Confirm").click());
 
 		expect(onApply).toHaveBeenCalledWith(6);
@@ -233,9 +241,9 @@ describe("LeverageModal", () => {
 	it("submits at most once before the pending state can rerender", async () => {
 		let resolveApply: (() => void) | undefined;
 		onApply.mockImplementation(
-			() =>
-				new Promise<void>((resolve) => {
-					resolveApply = resolve;
+			(value) =>
+				new Promise<number | null>((resolve) => {
+					resolveApply = () => resolve(value);
 				}),
 		);
 		renderModal(6);
@@ -252,21 +260,27 @@ describe("LeverageModal", () => {
 		await act(async () => resolveApply?.());
 	});
 
-	it("locks the editor and successful action against duplicate submissions", async () => {
+	it("closes at the click, keeps a static label and reports success through a notification", async () => {
+		let resolveApply: (() => void) | undefined;
+		onApply.mockImplementation(
+			(value) =>
+				new Promise<number | null>((resolve) => {
+					resolveApply = () => resolve(value);
+				}),
+		);
 		renderModal(6);
-		await act(async () => getButton(container, "Confirm").click());
-		renderModal(null);
 
-		const successButton = getButton(container, "Updated");
-		expect(successButton.disabled).toBe(true);
-		expect(modalHarness.editorProps?.disabled).toBe(true);
+		act(() => getButton(container, "Confirm").click());
 
-		const onChange = modalHarness.editorProps?.onChange as ((value: number) => void) | undefined;
-		act(() => onChange?.(8));
-		act(() => successButton.click());
+		expect(onOpenChange).toHaveBeenCalledOnce();
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(getButton(container, "Confirm").textContent).toBe("Confirm");
+		expect(container.querySelector(".animate-spin")).toBeNull();
+		expect(toastMocks.success).not.toHaveBeenCalled();
 
-		expect(onPendingLeverageChange).not.toHaveBeenCalled();
-		expect(onApply).toHaveBeenCalledTimes(1);
+		await act(async () => resolveApply?.());
+		expect(toastMocks.success).toHaveBeenCalledWith("Leverage updated to 6x");
+		expect(container.textContent).not.toContain("Updated to");
 	});
 
 	it("lets a new draft override an earlier commit while its subscription is still pending", () => {
@@ -282,41 +296,38 @@ describe("LeverageModal", () => {
 		expect(modalHarness.editorProps?.riskValue).toBe(8);
 	});
 
-	it("shows a failed leverage update and allows retrying it", async () => {
+	it("reports a failed leverage update through a notification and allows retrying it", async () => {
 		onApply.mockRejectedValueOnce(new Error("Leverage request failed"));
 		renderModal(6);
 		await act(async () => getButton(container, "Confirm").click());
 
-		renderModal(6, true, "HYPE", null, new Error("Leverage request failed"));
-		expect(container.textContent).toContain("Leverage request failed");
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Leverage request failed");
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(toastMocks.error).toHaveBeenCalledWith("Leverage request failed");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
 
-		onApply.mockResolvedValueOnce(undefined);
+		onApply.mockResolvedValueOnce(6);
 		await act(async () => getButton(container, "Confirm").click());
 		expect(onApply).toHaveBeenCalledTimes(2);
 	});
 
-	it("blocks every dismissal path while the leverage request is in flight", async () => {
+	it("stays dismissible while a leverage request is in flight", async () => {
 		let resolveApply: (() => void) | undefined;
 		onApply.mockImplementation(
-			() =>
-				new Promise<void>((resolve) => {
-					resolveApply = resolve;
+			(value) =>
+				new Promise<number | null>((resolve) => {
+					resolveApply = () => resolve(value);
 				}),
 		);
 		renderModal(6);
 
 		act(() => getButton(container, "Confirm").click());
 
-		expect(modalHarness.disablePointerDismissal).toBe(true);
-		expect(modalHarness.showClose).toBe(false);
-		const cancel = vi.fn();
-		act(() => modalHarness.modalOpenChange?.(false, { cancel }));
-		expect(cancel).toHaveBeenCalledTimes(1);
-		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(modalHarness.disablePointerDismissal).toBe(false);
+		expect(modalHarness.showClose).toBe(true);
+		act(() => modalHarness.modalOpenChange?.(false));
+		expect(onOpenChange).toHaveBeenCalledTimes(2);
 
 		await act(async () => resolveApply?.());
-		expect(modalHarness.disablePointerDismissal).toBe(false);
 	});
 
 	it("does not rerender the popup when a parent rerenders with unchanged leverage props", () => {
@@ -340,22 +351,12 @@ describe("LeverageModal", () => {
 		expect(onPendingLeverageChange).not.toHaveBeenCalled();
 	});
 
-	it("keeps the submitted leverage visible until the success state closes", async () => {
-		renderModal(6);
-
-		await act(async () => getButton(container, "Confirm").click());
-		renderModal(null);
-
-		expect(modalHarness.autoCloseTriggers).toBe(1);
-		expect(modalHarness.editorProps?.value).toBe(6);
-	});
-
 	it("does not let an old account request succeed or close the new same-market session", async () => {
 		let resolveApply: (() => void) | undefined;
 		onApply.mockImplementation(
-			() =>
-				new Promise<void>((resolve) => {
-					resolveApply = resolve;
+			(value) =>
+				new Promise<number | null>((resolve) => {
+					resolveApply = () => resolve(value);
 				}),
 		);
 		renderModal(6, true, "mainnet:0x1111:perp:1:HYPE");
@@ -364,21 +365,22 @@ describe("LeverageModal", () => {
 		renderModal(7, true, "mainnet:0x2222:perp:1:HYPE");
 		await act(async () => resolveApply?.());
 
-		expect(modalHarness.autoCloseTriggers).toBe(0);
+		expect(toastMocks.success).not.toHaveBeenCalled();
+		expect(toastMocks.error).not.toHaveBeenCalled();
 		expect(modalHarness.editorProps?.value).toBe(7);
-		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(onOpenChange).toHaveBeenCalledOnce();
 	});
 
-	it("resets the success session when closing content remains mounted", async () => {
+	it("drops an uncommitted drag when closing content remains mounted", () => {
 		modalHarness.keepMounted = true;
-		renderModal(6);
-		await act(async () => getButton(container, "Confirm").click());
-		expect(modalHarness.editorProps?.value).toBe(6);
+		renderModal(null);
+		const onDraftChange = modalHarness.editorProps?.onDraftChange as ((value: number | null) => void) | undefined;
+		act(() => onDraftChange?.(8));
+		expect(modalHarness.editorProps?.value).toBe(8);
 
 		renderModal(null, false);
 		renderModal(null, true);
 
-		expect(modalHarness.autoCloseResets).toBeGreaterThan(0);
 		expect(modalHarness.editorProps?.value).toBe(3);
 	});
 });

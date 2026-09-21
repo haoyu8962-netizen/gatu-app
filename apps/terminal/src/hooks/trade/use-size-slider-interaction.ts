@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 interface Params {
 	onInteractionChange?: (active: boolean) => void;
@@ -31,28 +31,25 @@ export function useSizeSliderInteraction({
 		};
 	}, []);
 
-	const onPercentInteractionStart = useCallback(() => {
+	function onPercentInteractionStart() {
 		if (!mountedRef.current) return;
 		snapshotRef.current = { identity: interactionIdentity, sizeInput };
 		onInteractionChange?.(true);
-	}, [interactionIdentity, sizeInput, onInteractionChange]);
+	}
 
-	const onPercentCancel = useCallback(() => {
+	function onPercentCancel() {
 		const snapshot = snapshotRef.current;
 		snapshotRef.current = null;
 		if (mountedRef.current && snapshot?.identity === interactionIdentity) setSizeInput(snapshot.sizeInput);
-	}, [interactionIdentity, setSizeInput]);
+	}
 
-	const onPercentCommit = useCallback(
-		(percent: number) => {
-			if (!mountedRef.current) return;
-			const snapshot = snapshotRef.current;
-			snapshotRef.current = null;
-			if (snapshot && snapshot.identity !== interactionIdentity) return;
-			applyPercent(percent);
-		},
-		[applyPercent, interactionIdentity],
-	);
+	function onPercentCommit(percent: number) {
+		if (!mountedRef.current) return;
+		const snapshot = snapshotRef.current;
+		snapshotRef.current = null;
+		if (snapshot && snapshot.identity !== interactionIdentity) return;
+		applyPercent(percent);
+	}
 
 	function onPercentInteractionEnd() {
 		snapshotRef.current = null;

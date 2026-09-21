@@ -8,6 +8,100 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The remaining trading dialogs no longer show progress in their buttons. TP/SL, Adjust Isolated
+  Margin, Cancel All Orders, the phone's Modify Order sheet, Swap and Account type close as soon as
+  you confirm, and the result arrives as a notification in the bottom-right corner: updated,
+  blocked by another pending action, submitted and still being confirmed, or failed. Their buttons
+  keep their names instead of turning into `Submitting...`, `Updating...`, `Canceling...`,
+  `Modifying...`, `Waiting for confirmation...`, `Swapping...` or `Switching...`, and submit errors
+  no longer appear inside these dialogs. In the open orders list `Cancel all`, `Cancel selected`,
+  the row `Cancel` button and the TWAP `Terminate` button also keep their names while a request is
+  pending, the desktop inline size and trigger editor collapses when you confirm, and a confirmed
+  cancellation now shows `Order cancellation confirmed.` The Account type dialog can be closed
+  while a wallet signature is still pending.
+- Adjust leverage and Margin mode close as soon as you confirm. The button no longer spins or turns
+  into `Updated to 10x` before closing by itself; a notification reports `Leverage updated to 10x`,
+  `Margin mode updated` or the reason the update failed, and it always states the leverage that was
+  actually applied. Both dialogs can be closed while a request is pending. The desktop order button
+  no longer spins while an order is being sent.
+- Transfer, Send, Deposit and Withdraw buttons keep their names while a request is pending instead
+  of turning into `Transferring...`, `Sending...` or `Processing...`; with an external wallet they
+  read `Confirm in wallet` while the signature is pending. These dialogs stay open until the request
+  settles, then close, and the result arrives as a notification in the bottom-right corner:
+  `Transfer confirmed`, `Sent 25 USDC`, `Withdrawal submitted` with the net amount and fees, or the
+  reason it failed. A withdrawal whose status could not be confirmed stays on screen as a warning
+  until you dismiss it. A failed Send keeps the destination and amount for the next time you open
+  Send. A deposit that fails before it is broadcast returns to the form so you can retry.
+- Referral dialogs (enter a code, create a code, claim rewards) close as soon as you confirm and
+  report the result as a notification; a request whose status could not be confirmed stays on
+  screen as a warning until you dismiss it.
+- Vault deposits and withdrawals and staking operations still show their progress while the
+  request is signed, submitted and verified, but a verified result now closes the dialog and
+  arrives as a notification (a vault transfer lists the final amount, commission and closing cost),
+  and a rejected request shows a notification and returns to the review step. A result that could
+  not be verified stays in the dialog with `Verify again`, as before. The staking dialog no longer
+  shows a disabled `Operation in progress` button, and its error explanations, which were rendering
+  empty, are now shown and translated.
+- The API wallet dialog keeps its buttons named `Sign and authorize` and `Confirm removal` while
+  fresh data is checked, and no longer shows a `Processing…` placeholder button. The rest of that
+  dialog is unchanged because it has to show the one-time key.
+- The order confirmation (desktop dialog and phone sheet) now lists only the action, size, price and
+  estimated liquidation price, with the action and size coloured by direction. Market, slippage,
+  leverage, order value, margin and fee rows were removed; they remain in the order form summary.
+  Rows that define an advanced order still appear when they apply: the order type (advanced types
+  and limit orders that are not good-till-cancelled), trigger, scale and TWAP parameters, take
+  profit / stop loss and reduce only. The dialog has a single action button (`Buy / Long` or
+  `Sell / Short`; `Buy` or `Sell` on spot) and no Cancel button, because the close button already
+  dismisses it, and its rows are spaced further apart.
+- Amounts and transaction hashes in transfer, swap, deposit, withdrawal, vault and staking
+  notifications keep their left-to-right order when the interface language is Arabic.
+- After a USDC deposit is confirmed on Arbitrum the Deposit dialog closes. While Circle forwards it
+  to Hyperliquid, a single notification with an explorer link shows the progress, keeps tracking
+  after you close the dialog or reload the page, and turns into the result. Reopening Deposit while
+  a transfer is still forwarding shows its status instead of the form, as before.
+- Limit Close, Reverse Position and the order confirmation now behave like Market Close and Close
+  All Positions. Their confirm buttons keep their names (`Place Limit Close`, `Buy / Long` or
+  `Sell / Short`, the order side) instead of turning into `Validating...`, `Submitting...`,
+  `Confirming...` or `Reversing...`. The dialog closes as soon as you confirm, the order is sent in the
+  background and the outcome arrives as a notification in the bottom-right corner, including an
+  order that is still being confirmed, one blocked by another pending order, and a failure. Submit
+  errors and the `still being confirmed` notice no longer appear inside these dialogs.
+- The Close All Positions confirmation works like Market Close. Its button always reads
+  `Close All Positions`: the number of positions stays in the summary above it, and it no longer
+  turns into `Validating positions...`, `Submitting close orders...`, `Confirming exchange status...`
+  or `Partial result`. The dialog closes as soon as you confirm and the outcome arrives as a
+  notification in the bottom-right corner: all filled, submitted and still being confirmed, partly
+  accepted, blocked by another pending order, or failed. While that runs the `Close All Positions`
+  entry in the positions table is disabled.
+- The Market Close confirmation button always reads `Market Close`; the size being closed stays in
+  the `Close size` field above it (and in the button's accessible description). The size shown when
+  you click is now a ceiling: the close size is still recalculated from the latest position, and if
+  that result is larger than what was shown, nothing is closed and a notice asks you to reopen
+  Market Close and review the new size. Max and percentage closes follow a position that shrank; a
+  typed size is sent as typed and is still rejected when the remaining position is smaller. While
+  the dialog is open it says when the position size differs from when it was opened, and a line
+  under the button states that the estimated PnL excludes fees.
+- A slider drag is no longer thrown away when balance or position data briefly goes stale or reloads
+  in the middle of it, for example around a reconnect. The drag pauses: nothing is applied while
+  the data is unreadable, the held value is applied as soon as it is readable again, and releasing
+  while it is still unreadable cancels. This covers the desktop and mobile order forms, Market
+  Close and Limit Close. Closing a dialog, submitting, disconnecting or a changed market still
+  cancel the drag at once.
+- Size, percentage and order value now follow a slider continuously on 120Hz and faster displays.
+  Previews used to wait for a 15 ms pause in pointer movement, which never came during a smooth drag
+  on those displays, so the numbers froze until release. They are now published at most once every
+  15 ms while the pointer keeps moving.
+- A slider grabbed while its dialog was still opening no longer snaps back to where it started. The
+  dialog's 200 ms scale animation made the slider believe it had been resized and cancel the drag.
+- The Market Close and Limit Close dialogs no longer show the `25% / 50% / 75% / Max` quick buttons. The
+  slider already marks those stops, the percentage field accepts any value, and dragging or typing
+  `100` still selects Max. This matches the order form, which dropped its quick percentage buttons
+  earlier.
+- Submit buttons no longer grey out while a slider is being dragged. This applies to the desktop and
+  mobile order forms, Market Close, Limit Close, TP/SL, and the leverage and margin mode dialogs.
+  Dragging no longer affects whether a button looks enabled; everything else that disables it (no
+  size, too large, missing price, unavailable data, a request in flight) is unchanged, and a
+  confirm that lands in the middle of a drag is still ignored.
 - `/build-meta.json` also reports which gated deposit paths the build exposes (`cctpDeposits`). The
   CloudFront release refuses to upload a build that exposes sponsored Mainnet deposits or Mobile
   Agent pairing unless the operator acknowledges it with `--allow-sponsored-mainnet-deposits` or
@@ -73,6 +167,21 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- On phones the Market Close and Limit Close sheets have a close button again. Since the redesign
+  they could only be left by swiping down, tapping outside or pressing Esc, and the only button on
+  the sheet was the confirm button. The close button takes the place of the `Price: Market` and
+  `Limit` labels in the sheet header, which repeated the title.
+- On the desktop order form the size slider no longer jumps up or down while it is being dragged.
+  The size message under the quantity field (`Min order $10`, `Enter size`, `Exceeds max size`)
+  used to appear or disappear in the middle of a drag and move the slider row by 24px. A message
+  that was not showing when the drag began now waits until the slider is released, and one that
+  was showing keeps its line, at the same height, until then. Whether the order can be submitted is unchanged.
+- Dragging a size or leverage slider no longer snaps back to where it started. In an embedded
+  browser a real mouse could report that the slider lost the pointer a few milliseconds before the
+  button was released, and the slider treated that as a cancelled drag, so most drags were thrown
+  away. Losing the pointer is no longer a cancellation: the drag keeps following and the release
+  applies the value as usual. The slider also records why its last drag ended, to make any further
+  report of a jump answerable from the page.
 - In the dark terminal, dropdown menus, tooltips, toasts and the desktop market selector use a raised
   surface in the terminal's own hue (`#212d33`) instead of the shared purple-grey default, and the
   scrim behind an open dialog no longer tints the page navy. The new surface has the same luminance

@@ -1,6 +1,6 @@
 import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
@@ -81,14 +81,7 @@ export function AmountInput({
 				disabled={isSubmitDisabled}
 				className="mt-auto min-h-11 w-full rounded-[12px] bg-market-close-control text-[13px] font-bold text-market-close-on-control shadow-none hover:opacity-90 data-disabled:bg-market-close-stroke-control data-disabled:text-market-close-on-control"
 			>
-				{isPending ? (
-					<>
-						<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" />
-						<Trans>Processing...</Trans>
-					</>
-				) : (
-					<Trans>Deposit</Trans>
-				)}
+				<Trans>Deposit</Trans>
 			</Button>
 		</div>
 	);

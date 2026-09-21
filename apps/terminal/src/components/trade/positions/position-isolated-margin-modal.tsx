@@ -13,7 +13,7 @@ import type {
 	TopUpIsolatedOnlyMarginParameters,
 	UpdateIsolatedMarginParameters,
 } from "@nktkas/hyperliquid/api/exchange";
-import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
+import { WarningIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { InfoRow } from "@/components/ui/info-row";
@@ -29,6 +29,7 @@ import {
 	validateIsolatedMarginTarget,
 } from "@/domain/trade/isolated-margin";
 import { createClientOrderId, isAmbiguousExchangeRequestError } from "@/domain/trade/order-tracking";
+import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatLiquidationPrice, formatNumber, formatUSD } from "@/lib/format";
@@ -47,6 +48,7 @@ import {
 	positionSubmitFeedbackCause,
 	positionSubmitFeedbackFromCause,
 } from "@/lib/trade/position-submit-feedback";
+import type { PositionIsolatedMarginSession } from "@/stores/use-position-dialog-store";
 import { TradingActionButton } from "../components/trading-action-button";
 import type { IsolatedMarginPositionTarget } from "./position-dialog-types";
 import { PositionRiskDialogShell } from "./position-risk-dialog-ui";
@@ -54,22 +56,26 @@ import { PositionRiskDialogShell } from "./position-risk-dialog-ui";
 type AdjustmentMode = "amount" | "target";
 
 interface Props {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	position: IsolatedMarginPositionTarget | null;
+	session: PositionIsolatedMarginSession | null;
+	onSessionEnd: (sessionId: string) => void;
 }
 
-export function PositionIsolatedMarginModal({ open, onOpenChange, position }: Props) {
+const DIALOG_EXIT_MS = 250;
+
+export function PositionIsolatedMarginModal({ session, onSessionEnd }: Props) {
 	const isMobile = useIsMobile();
-	if (!position) return null;
+	const displayedSession = useLingeringValue(session, DIALOG_EXIT_MS);
+	if (!displayedSession) return null;
 
 	return (
 		<PositionIsolatedMarginModalBody
-			key={`${position.owner}:${position.env}:${position.dex}:${position.assetId}:${open ? "open" : "closed"}`}
-			open={open}
+			key={displayedSession.sessionId}
+			open={session?.sessionId === displayedSession.sessionId}
 			isMobile={isMobile}
-			position={position}
-			onOpenChange={onOpenChange}
+			position={displayedSession.position}
+			onOpenChange={(open) => {
+				if (!open) onSessionEnd(displayedSession.sessionId);
+			}}
 		/>
 	);
 }
@@ -97,8 +103,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 	const [direction, setDirection] = useState<IsolatedMarginDirection>("add");
 	const [amountInput, setAmountInput] = useState("");
 	const [targetLeverageInput, setTargetLeverageInput] = useState("");
-	const [submitError, setSubmitError] = useState<PositionSubmitFeedback | null>(null);
-	const [requiresRefresh, setRequiresRefresh] = useState(false);
+	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [isCoordinating, setIsCoordinating] = useState(false);
 	const coordinatingRef = useRef(false);
 
@@ -267,21 +272,20 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 	const inputValid = mode === "amount" ? amountParams !== null : targetValidation === "valid";
 	const actionAllowed =
 		(mode !== "target" || supportsTargetLeverage) && (mode !== "amount" || direction !== "remove" || allowsRemoval);
-	const canSubmit = hasLivePosition && inputValid && actionAllowed && !requiresRefresh && !isSubmitting;
-	const submitErrorMessage = submitError
-		? formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor))
-		: null;
+	const canSubmit = open && hasLivePosition && inputValid && actionAllowed && !isSubmitting;
 
 	function handleModeChange(value: string) {
 		setMode(value as AdjustmentMode);
-		setSubmitError(null);
 	}
 
 	function handleDirectionChange(value: string) {
 		const nextDirection = value as IsolatedMarginDirection;
 		if (nextDirection === "remove" && !allowsRemoval) return;
 		setDirection(nextDirection);
-		setSubmitError(null);
+	}
+
+	function formatFeedback(feedback: PositionSubmitFeedback): string {
+		return formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor));
 	}
 
 	async function handleSubmit() {
@@ -289,7 +293,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 		if (mode === "amount" && direction === "remove" && !allowsRemoval) return;
 		coordinatingRef.current = true;
 		setIsCoordinating(true);
-		setSubmitError(null);
+		setIsSubmitted(true);
 
 		try {
 			const params = mode === "amount" ? amountParams : targetParams;
@@ -339,37 +343,31 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 				throw positionSubmitFeedbackCause("isolated-margin-coordination-unavailable");
 			}
 			if (!lockResult.acquired || lockResult.value.state === "blocked") {
-				throw positionSubmitFeedbackCause("isolated-margin-blocked");
+				toast.warning(formatFeedback(localizedPositionSubmitFeedback("isolated-margin-blocked")));
+				return;
 			}
 			if (lockResult.value.state === "coordination-unavailable") {
 				throw positionSubmitFeedbackCause("isolated-margin-coordination-unavailable");
 			}
 			if (lockResult.value.state === "ambiguous") {
-				const feedback = localizedPositionSubmitFeedback("isolated-margin-ambiguous");
-				const message = formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor));
-				setRequiresRefresh(true);
-				setSubmitError(feedback);
-				toast.error(message);
+				toast.warning(formatFeedback(localizedPositionSubmitFeedback("isolated-margin-ambiguous")));
 				return;
 			}
 
 			toast.success(t`Isolated margin updated`, {
 				description: position.coin,
 			});
-			onOpenChange(false);
 		} catch (error) {
-			const feedback = positionSubmitFeedbackFromCause(error, "failed-update-isolated-margin");
-			const message = formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor));
-			setSubmitError(feedback);
-			toast.error(message);
+			toast.error(formatFeedback(positionSubmitFeedbackFromCause(error, "failed-update-isolated-margin")));
 		} finally {
 			coordinatingRef.current = false;
 			setIsCoordinating(false);
+			onOpenChange(false);
 		}
 	}
 
 	function handleOpenChange(nextOpen: boolean) {
-		if (!nextOpen && isSubmitting) return;
+		if (!nextOpen && (isSubmitting || coordinatingRef.current)) return;
 		onOpenChange(nextOpen);
 	}
 
@@ -403,7 +401,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 
 	return (
 		<PositionRiskDialogShell
-			open={open}
+			open={open && !isSubmitted}
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
 			dismissible={!isSubmitting}
@@ -464,10 +462,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 							label={t`Amount`}
 							aria-label={t`Margin amount`}
 							value={amountInput}
-							onChange={(event) => {
-								setAmountInput(event.target.value);
-								setSubmitError(null);
-							}}
+							onChange={(event) => setAmountInput(event.target.value)}
 							placeholder="0.00"
 							maxAllowedDecimals={6}
 							min={0}
@@ -508,10 +503,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 							}
 							aria-label={t`Target leverage`}
 							value={targetLeverageInput}
-							onChange={(event) => {
-								setTargetLeverageInput(event.target.value);
-								setSubmitError(null);
-							}}
+							onChange={(event) => setTargetLeverageInput(event.target.value)}
 							placeholder="5"
 							maxAllowedDecimals={6}
 							min={0}
@@ -532,19 +524,9 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 					</div>
 				)}
 
-				{requiresRefresh ? (
-					<div className="rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error">
-						{t`Close and reopen this dialog after the position data refreshes.`}
-					</div>
-				) : positionStatus ? (
+				{positionStatus ? (
 					<div className="rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error">
 						{positionStatus}
-					</div>
-				) : null}
-
-				{submitErrorMessage ? (
-					<div className="rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error">
-						{submitErrorMessage}
 					</div>
 				) : null}
 			</ModalContent>
@@ -567,14 +549,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 					containerClassName="max-[1000px]:w-full"
 					className="min-w-24 max-[1000px]:min-h-11 max-[1000px]:w-full max-[1000px]:rounded-[10px]"
 				>
-					{isSubmitting ? (
-						<>
-							<SpinnerGapIcon className="size-3.5 animate-spin" />
-							{t`Updating...`}
-						</>
-					) : (
-						submitLabel
-					)}
+					{submitLabel}
 				</TradingActionButton>
 			</ModalFooter>
 		</PositionRiskDialogShell>

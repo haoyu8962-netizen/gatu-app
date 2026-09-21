@@ -233,7 +233,7 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 									onClick={() => void cancelTwap(state.coin, twapId)}
 									className="min-h-11 rounded-8 border border-stroke-error-weak bg-surface px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] active:bg-market-close-hover focus-visible:border-market-close-focus focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-fg-disabled"
 								>
-									{isCancelling ? t`Terminating...` : t`Terminate`}
+									{t`Terminate`}
 								</button>
 							</div>
 						</article>

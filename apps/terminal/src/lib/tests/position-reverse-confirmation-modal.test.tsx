@@ -89,7 +89,6 @@ describe("PositionReverseConfirmationModal", () => {
 					marketLabel="AAPL"
 					currentDirection="long"
 					reverseSizeLabel="10.000 AAPL"
-					isSubmitting={false}
 					onOpenChange={onOpenChange}
 					onConfirm={onConfirm}
 				/>,
@@ -97,8 +96,8 @@ describe("PositionReverseConfirmationModal", () => {
 		);
 
 		expect(testState.adaptiveProps?.presentation).toBe("modal");
-		expect(testState.adaptiveProps?.dismissible).toBe(true);
-		expect(testState.adaptiveProps?.showClose).toBe(true);
+		expect(testState.adaptiveProps?.dismissible).not.toBe(false);
+		expect(testState.adaptiveProps?.showClose).not.toBe(false);
 		expect(container.textContent).toContain("AAPL");
 		expect(container.textContent).toContain("Long");
 		expect(container.textContent).toContain("Short");
@@ -132,7 +131,6 @@ describe("PositionReverseConfirmationModal", () => {
 					marketLabel="TSLA"
 					currentDirection="short"
 					reverseSizeLabel="4.000 TSLA"
-					isSubmitting={false}
 					onOpenChange={vi.fn()}
 					onConfirm={vi.fn()}
 				/>,
@@ -153,7 +151,6 @@ describe("PositionReverseConfirmationModal", () => {
 					marketLabel="BTC"
 					currentDirection="long"
 					reverseSizeLabel="0.020 BTC"
-					isSubmitting={false}
 					onOpenChange={vi.fn()}
 					onConfirm={onConfirm}
 				/>,
@@ -166,7 +163,7 @@ describe("PositionReverseConfirmationModal", () => {
 		expect(onConfirm).not.toHaveBeenCalled();
 	});
 
-	it("locks the mobile bottom sheet and actions while submitting", () => {
+	it("keeps the mobile bottom sheet dismissible and never shows a submitting state", () => {
 		testState.isMobile = true;
 		const onOpenChange = vi.fn();
 		const onConfirm = vi.fn();
@@ -178,8 +175,6 @@ describe("PositionReverseConfirmationModal", () => {
 					marketLabel="BTC"
 					currentDirection="long"
 					reverseSizeLabel="0.020 BTC"
-					isSubmitting
-					errorMessage="Network failed"
 					onOpenChange={onOpenChange}
 					onConfirm={onConfirm}
 				/>,
@@ -187,24 +182,18 @@ describe("PositionReverseConfirmationModal", () => {
 		);
 
 		expect(testState.adaptiveProps?.presentation).toBe("drawer");
-		expect(testState.adaptiveProps?.dismissible).toBe(false);
-		expect(testState.adaptiveProps?.showClose).toBe(false);
+		expect(testState.adaptiveProps?.dismissible).not.toBe(false);
+		expect(testState.adaptiveProps?.showClose).not.toBe(false);
 		expect(testState.adaptiveProps?.showHandle).toBe(true);
-		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Network failed");
-		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
-		expect(buttons.every((button) => button.disabled)).toBe(true);
-		expect(getButton(container, "Reversing...").getAttribute("aria-busy")).toBe("true");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.textContent).not.toContain("Reversing");
+		expect(getButton(container, "Sell / Short").getAttribute("aria-busy")).toBeNull();
 
-		act(() => {
-			(testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false);
-			getButton(container, "Reversing...").click();
-		});
-		expect(onOpenChange).not.toHaveBeenCalled();
-		expect(onConfirm).not.toHaveBeenCalled();
+		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
+		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
 	});
 
-	it("allows dismissal but keeps confirmation disabled while reconciling", () => {
-		const onOpenChange = vi.fn();
+	it("does not confirm while the confirm control is disabled", () => {
 		const onConfirm = vi.fn();
 
 		act(() =>
@@ -214,24 +203,16 @@ describe("PositionReverseConfirmationModal", () => {
 					marketLabel="BTC"
 					currentDirection="long"
 					reverseSizeLabel="0.020 BTC"
-					isSubmitting={false}
 					isConfirmDisabled
-					errorMessage="Order submitted. Confirming exchange status; do not retry."
-					onOpenChange={onOpenChange}
+					onOpenChange={vi.fn()}
 					onConfirm={onConfirm}
 				/>,
 			),
 		);
 
-		expect(testState.adaptiveProps?.dismissible).toBe(true);
-		expect(testState.adaptiveProps?.showClose).toBe(true);
 		const confirm = getButton(container, "Sell / Short");
 		expect(confirm.disabled).toBe(true);
-		act(() => {
-			(testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false);
-			confirm.click();
-		});
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		act(() => confirm.click());
 		expect(onConfirm).not.toHaveBeenCalled();
 	});
 });

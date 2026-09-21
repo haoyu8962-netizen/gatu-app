@@ -1,7 +1,7 @@
 import { Button } from "@gatu/ui";
 import { i18n } from "@lingui/core";
 import { useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Responsive, useContainerWidth } from "react-grid-layout";
 import { useDesktopGridLayout } from "@/components/trade/layout/use-desktop-grid-layout";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
@@ -44,7 +44,15 @@ const feeQuote = buildOrderFeeQuote({
 	execution: "order",
 });
 
-function FixtureTradePanel({ feedback, hasPosition }: { feedback: boolean; hasPosition: boolean }) {
+type SizeMessageWindow = Window & { __gatuSetSizeMessage?: (message: string) => void };
+
+interface FixtureTradePanelProps {
+	feedback: boolean;
+	hasPosition: boolean;
+	sizeMessage: string;
+}
+
+function FixtureTradePanel({ feedback, hasPosition, sizeMessage }: FixtureTradePanelProps) {
 	const { t } = useLingui();
 	const actions = useOrderEntryActions();
 	const orderType = useOrderType();
@@ -192,7 +200,20 @@ function FixtureTradePanel({ feedback, hasPosition }: { feedback: boolean; hasPo
 			fields={
 				<TradeFormFields
 					orderEntryData={orderEntryData}
-					visibleValidationErrors={[]}
+					visibleValidationErrors={
+						sizeMessage
+							? [
+									{
+										id: "fixture-size-message",
+										code: "INP_004",
+										severity: "error",
+										category: "input",
+										priority: 1,
+										message: sizeMessage,
+									},
+								]
+							: []
+					}
 					price={100.05}
 					positionSize={hasPosition ? 0.25 : 0}
 					swapTargetToken={null}
@@ -210,6 +231,14 @@ function Fixture() {
 	const { gridProps } = useDesktopGridLayout(width, mounted);
 	const [feedback, setFeedback] = useState(false);
 	const [hasPosition, setHasPosition] = useState(false);
+	const [sizeMessage, setSizeMessage] = useState("");
+	useEffect(() => {
+		const fixtureWindow = window as SizeMessageWindow;
+		fixtureWindow.__gatuSetSizeMessage = setSizeMessage;
+		return () => {
+			delete fixtureWindow.__gatuSetSizeMessage;
+		};
+	}, []);
 	return (
 		<>
 			<nav>
@@ -242,7 +271,7 @@ function Fixture() {
 							Market data
 						</div>
 						<div key="tradingInterface" data-panel="tradingInterface">
-							<FixtureTradePanel feedback={feedback} hasPosition={hasPosition} />
+							<FixtureTradePanel feedback={feedback} hasPosition={hasPosition} sizeMessage={sizeMessage} />
 						</div>
 						<div key="accountTable" data-panel="accountTable">
 							Account table

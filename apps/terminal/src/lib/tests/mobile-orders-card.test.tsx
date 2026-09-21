@@ -12,6 +12,10 @@ import {
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	toastError: vi.fn(),
+	toastInfo: vi.fn(),
+	toastSuccess: vi.fn(),
+	toastWarning: vi.fn(),
 	address: "0x1111111111111111111111111111111111111111",
 	assetId: 120_001 as number | undefined,
 	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
@@ -88,6 +92,15 @@ vi.mock("@gatu/ui", async () => {
 		),
 	};
 });
+
+vi.mock("sonner", () => ({
+	toast: {
+		error: mocks.toastError,
+		info: mocks.toastInfo,
+		success: mocks.toastSuccess,
+		warning: mocks.toastWarning,
+	},
+}));
 
 vi.mock("boneyard-js/react", () => ({
 	Skeleton: ({ children }: { children: React.ReactNode }) => children,
@@ -202,6 +215,10 @@ describe("MobileOrdersTab disclosure card", () => {
 
 	beforeEach(() => {
 		getPendingTradingActionActions().reset();
+		mocks.toastError.mockReset();
+		mocks.toastInfo.mockReset();
+		mocks.toastSuccess.mockReset();
+		mocks.toastWarning.mockReset();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -641,8 +658,10 @@ describe("MobileOrdersTab disclosure card", () => {
 			{ cancels: [{ a: 120_001, o: 42 }] },
 			expect.objectContaining({ onSuccess: expect.any(Function), onSettled: expect.any(Function) }),
 		);
-		expect(confirmButton?.disabled).toBe(true);
-		expect(confirmButton?.getAttribute("aria-busy")).toBe("true");
+		expect(document.body.textContent).not.toContain("Cancel All Orders");
+		expect(document.body.textContent).not.toContain("Canceling");
+		expect(requestButton?.disabled).toBe(true);
+		expect(requestButton?.textContent?.trim()).toBe("Cancel all");
 
 		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as
 			| { onSuccess: (response: unknown) => void; onSettled: () => void }
@@ -653,9 +672,12 @@ describe("MobileOrdersTab disclosure card", () => {
 		});
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
 		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
+		expect(mocks.toastSuccess).toHaveBeenCalledWith("Order cancellation confirmed.", { id: expect.any(String) });
+		expect(mocks.toastError).not.toHaveBeenCalled();
+		expect(mocks.toastWarning).not.toHaveBeenCalled();
 	});
 
-	it("does not close the confirmation for a malformed cancellation response", async () => {
+	it("reports a malformed cancellation response through a notification after the confirmation closed", async () => {
 		renderOrders();
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel all",
@@ -673,8 +695,12 @@ describe("MobileOrdersTab disclosure card", () => {
 			callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: [{}] } } });
 			await Promise.resolve();
 		});
-		expect(document.body.textContent).toContain("Cancel All Orders");
+		expect(document.body.textContent).not.toContain("Cancel All Orders");
 		expect(document.body.textContent).toContain("The cancellation response could not be confirmed.");
+		expect(mocks.toastWarning).toHaveBeenCalledWith(
+			expect.stringContaining("The cancellation response could not be confirmed."),
+			{ id: expect.any(String) },
+		);
 		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
 	});
 
@@ -734,6 +760,7 @@ describe("MobileOrdersTab disclosure card", () => {
 
 		expect(mocks.cancelOrders).not.toHaveBeenCalled();
 		expect(document.body.textContent).toContain("Some order markets are unavailable");
-		expect(document.body.textContent).toContain("Cancel All Orders");
+		expect(document.body.textContent).not.toContain("Cancel All Orders");
+		expect(mocks.toastError).toHaveBeenCalledWith(expect.stringContaining("Some order markets are unavailable"));
 	});
 });

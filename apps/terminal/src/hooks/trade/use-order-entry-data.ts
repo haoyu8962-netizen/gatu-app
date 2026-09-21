@@ -44,7 +44,7 @@ interface OrderEntryData extends OrderEntryDerived {
 	hasPosition: boolean;
 	positionStateReady: boolean;
 	switchMarginMode: (mode: "cross" | "isolated") => Promise<void>;
-	applyMarginAndLeverage: (mode: "cross" | "isolated", leverageValue: number) => Promise<void>;
+	applyMarginAndLeverage: (mode: "cross" | "isolated", leverageValue: number) => Promise<number | null>;
 	isLeverageUpdating: boolean;
 	leverageUpdateError: Error | null;
 	isSwitchingMode: boolean;

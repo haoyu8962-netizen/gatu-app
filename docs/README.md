@@ -27,8 +27,9 @@
 | 账户共享模型 | [账户 ADR](adr/0001-account-overview-cross-shell-model.md)；账户概要与 Portfolio 的就绪条件不同 |
 | 市场身份、路由与展示价格 | [单交易路由迁移](architecture/trade-single-route-migration.md)、[价格来源审查](price-source-audit.md)、[资产资料来源](spot-asset-information.md) |
 | 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md) |
+| 确认弹窗：展示与执行 | [确认面契约](confirmation-surfaces.md)、[ADR 0017](adr/0017-market-close-confirmed-size-ceiling.md)、[ADR 0014](adr/0014-market-close-submit-and-dismiss.md)；目前只有市价平仓完整满足 |
 | 订单簿数据、交互与动画 | [分组隔离修复依据](terminal-review-remediation.md)、[传输 ADR](adr/0003-orderbook-transport-isolation.md)、[累计悬浮](orderbook-hover.md)、[行几何](orderbook-layout.md)、[新增档位及数量反馈](orderbook-new-level-animation.md)、[最近成交面板](recent-trades.md) |
-| 响应式布局与控件 | [桌面网格](desktop-grid-layout.md)、[交易滑杆](slider-interactions.md)、[工具栏](trading-toolbar-redesign.md) |
+| 响应式布局与控件 | [桌面网格](desktop-grid-layout.md)、[交易滑杆](slider-interactions.md)（含手势改动的验证规则与「滑杆跳回」的诊断步骤；缘由见 [ADR 0018](adr/0018-slider-gestures-end-on-release.md)）、[工具栏](trading-toolbar-redesign.md) |
 | 被动加载与语言切换 | [数据展示契约](mobile-data-presentation.md)、[加载审查与证据](terminal-loading-audit.md)、[运行时翻译](i18n-presentation.md) |
 | 视觉与启动性能 | [UI 入口及优先级](ui-ux-guidelines.md)、[启动性能基线](terminal-performance-baseline.md)、[OG 资产](../designs/og-cards/README.md) |
 | Hyperliquid API 核对 | [核对工作流](hyperliquid-sdk-reference.md)、[方法目录](hyperliquid-sdk-directory.md)、[独立 API Skill 资料](../packages/hyperliquid-api/README.md) |
@@ -46,6 +47,7 @@
 | 启动性能对齐官方站 | [修复计划](terminal-startup-performance-plan.md)：壳内预加载交易页静态闭包、壳与图表包边缘缓存、地区判定预取与 Lambda 保温、分块整理；含同环境冷缓存对比数据与需要决策的事项；各项状态见文内 |
 | CSP 第二步：内联脚本哈希 | [计划](csp-inline-script-hashes-plan.md)：`script-src` 去掉 `'unsafe-inline'`，哈希随发布轮换并保留上一版集合，先 report-only 观察再强制；含现状数据、备选方案与需要决策的事项；B、C、D 阶段均已执行 |
 | 桌面 md 断点右列堆叠 | [计划](desktop-grid-stacked-right-column-plan.md)：1001–1420 px 时下单面板在上、订单簿在下、账户信息再下，图表列 10/14；含官方 fiber 实测几何、新默认几何、边界规则、v12 迁移与回归套件清单；已实施，决策见 ADR 0011 |
+| 资金类弹层的结果反馈 | [方案](funds-dialog-outcome-plan.md)：划转、发送、提现、充值对照官方终端的做法（保持打开到请求结束、无论成败都关闭、结果走通知、长时间状态放在通知与持久化的待处理列表）；分三步，含官方前端包取证、gatu 现状、三项需要决策的事项与验收标准；三步均已实施，未发布，未做真实钱包验收，偏差见文内「实施记录」 |
 
 ## 历史设计、调查与交付证据
 

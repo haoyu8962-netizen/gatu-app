@@ -131,8 +131,8 @@ msgid "{positionCount, plural, one {# position} other {# positions}}"
 msgstr "{positionCount, plural, one {# position} other {# positions}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
-msgstr "{positionCount, plural, one {Fermer # position} other {Fermer # positions}}"
+#~ msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
+#~ msgstr "{positionCount, plural, one {Fermer # position} other {Fermer # positions}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
@@ -142,7 +142,7 @@ msgstr "{positionCount, plural, one {Cette action envoie une clôture au marché
 msgid "{positionCount} positions were closed at market."
 msgstr "{positionCount} positions ont été fermées au marché."
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
 msgstr "{requestedPercent} % demandé ; {effectivePercent} % après application de la précision de taille"
 
@@ -418,6 +418,7 @@ msgstr "Autorisation de l’agent au niveau du compte"
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Action"
 msgstr "Action"
@@ -706,6 +707,7 @@ msgid "Another order for one of these markets is still being confirmed."
 msgstr "Un autre ordre sur l'un de ces marchés est toujours en cours de confirmation."
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
@@ -871,8 +873,8 @@ msgstr "Montant atomique"
 msgid "Atomic decimals"
 msgstr "Décimales atomiques"
 
-#: src/components/staking/staking-action-modal.tsx
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "Autorisation refusée"
 
@@ -1087,6 +1089,7 @@ msgstr "Acheter"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Buy / Long"
 msgstr "Achat / Long"
 
@@ -1119,11 +1122,8 @@ msgstr "Aperçu caméra pour le QR du portefeuille de bureau"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/components/trade/tradebox/order-confirmation-modal.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Cancel"
@@ -1174,8 +1174,8 @@ msgstr "Annulé"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Canceling..."
-msgstr "Annulation..."
+#~ msgid "Canceling..."
+#~ msgstr "Annulation..."
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
@@ -1289,11 +1289,12 @@ msgstr "Les frais Circle ont changé avant l’envoi. Vérifiez les frais actual
 msgid "Circle fees changed. Review the updated fee, then submit again."
 msgstr "Les frais Circle ont changé. Vérifiez les frais actualisés, puis soumettez à nouveau."
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
 msgstr "Circle émet et transfère les USDC vers Hyperliquid. Ne renvoyez pas le même transfert."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
 msgstr "Circle a soumis la transaction de transfert HyperEVM. Le crédit sur HyperCore peut prendre plus de temps."
@@ -1364,8 +1365,6 @@ msgstr "Cliquez pour envoyer · Les transactions exécutées sont irréversibles
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
-#: src/components/referrals/referral-action-modal.tsx
-#: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
@@ -1384,8 +1383,6 @@ msgstr "Cliquez pour envoyer · Les transactions exécutées sont irréversibles
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
@@ -1418,6 +1415,7 @@ msgid "Close all is unavailable until every position market has loaded."
 msgstr "Tout fermer est indisponible tant que tous les marchés des positions ne sont pas chargés."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "Fermer toutes les positions"
@@ -1427,8 +1425,8 @@ msgid "Close all positions summary"
 msgstr "Résumé de la fermeture de toutes les positions"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Close and reopen this dialog after the position data refreshes."
-msgstr "Fermez et rouvrez cette boîte de dialogue après l'actualisation des données de position."
+#~ msgid "Close and reopen this dialog after the position data refreshes."
+#~ msgstr "Fermez et rouvrez cette boîte de dialogue après l'actualisation des données de position."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Close API wallet action"
@@ -1476,7 +1474,7 @@ msgstr "Ordres de fermeture envoyés. Confirmation du statut par la plateforme ;
 msgid "Close pending operation details"
 msgstr "Fermer les détails de l’opération en attente"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close percentage"
 msgstr "Pourcentage de fermeture"
 
@@ -1490,7 +1488,7 @@ msgstr "Le pourcentage de fermeture doit être un nombre décimal"
 msgid "Close percentage must be between 0 and 100"
 msgstr "Le pourcentage de fermeture doit être compris entre 0 et 100"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close percentage slider"
 msgstr "Curseur du pourcentage de fermeture"
 
@@ -1514,9 +1512,9 @@ msgstr "Fermer la confirmation d'inversion"
 msgid "Close Short"
 msgstr "Fermer Short"
 
-#: src/components/trade/positions/position-close-dialog-ui.tsx
-#: src/components/trade/positions/position-close-dialog-ui.tsx
-#: src/components/trade/positions/position-close-dialog-ui.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
+#: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "Close size"
 msgstr "Taille de fermeture"
 
@@ -1540,6 +1538,10 @@ msgstr "La taille de fermeture doit être un nombre décimal"
 msgid "Close size must be greater than zero"
 msgstr "La taille de fermeture doit être supérieure à zéro"
 
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close size: {formattedCloseSize} {sizeSymbol}"
+msgstr "Taille de fermeture : {formattedCloseSize} {sizeSymbol}"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Close staking action"
 msgstr "Fermer l’action de staking"
@@ -1561,11 +1563,10 @@ msgstr "PnL clôturé"
 msgid "Closes in {remainingSeconds}s"
 msgstr ""
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Closing cost"
 msgstr "Coût de clôture"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Closing this dialog will not cancel it."
 msgstr "Fermer cette boîte de dialogue ne l'annulera pas."
@@ -1609,7 +1610,7 @@ msgid "Collapse market details"
 msgstr "Réduire les détails du marché"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Commission"
 msgstr "Commission"
 
@@ -1663,6 +1664,8 @@ msgstr "Confirmer l’effacement de l’enregistrement illisible"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "Confirmer dans le portefeuille"
@@ -1717,16 +1720,16 @@ msgid "confirming"
 msgstr "confirmation"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Confirming exchange status..."
-msgstr "Confirmation du statut par la plateforme..."
+#~ msgid "Confirming exchange status..."
+#~ msgstr "Confirmation du statut par la plateforme..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Confirming order status. Do not retry."
 msgstr "Confirmation du statut de l'ordre. Ne réessayez pas."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Confirming..."
-msgstr "Confirmation..."
+#~ msgid "Confirming..."
+#~ msgstr "Confirmation..."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -2037,7 +2040,6 @@ msgstr "Création de votre portefeuille. Veuillez patienter..."
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/config/trade-panel-labels.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Cross"
 msgstr "Croisé"
 
@@ -2192,9 +2194,6 @@ msgstr "Déployeur"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -2225,6 +2224,7 @@ msgstr "Code QR de l'adresse de dépôt"
 msgid "Deposit amount"
 msgstr "Montant"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "Échec du dépôt"
@@ -2490,10 +2490,6 @@ msgstr "Ne plus afficher cette confirmation"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "Terminé"
@@ -2707,7 +2703,6 @@ msgstr "Capitaux propres"
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Est. Fee"
 msgstr "Frais est."
 
@@ -2735,6 +2730,7 @@ msgid "Estimated fee"
 msgstr "Frais estimés"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Estimated Liquidation Price"
 msgstr "Prix de liquidation estimé"
 
@@ -2748,6 +2744,10 @@ msgstr "PnL estimé"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Estimated PnL after trigger"
 msgstr "PnL estimé après déclenchement"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Estimated PnL excludes fees"
+msgstr "Le PnL estimé n’inclut pas les frais"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -3151,7 +3151,7 @@ msgstr "Filtrer l’historique des transactions par type"
 msgid "Filter validators"
 msgstr "Filtrer les validateurs"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Final amount"
 msgstr "Montant final"
 
@@ -3176,11 +3176,12 @@ msgstr "Pour les utilisateurs avancés qui veulent plus de flexibilité et d'eff
 msgid "For example: grid-bot"
 msgstr "Par exemple : grid-bot"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forward transaction submitted"
 msgstr "Transaction de transfert soumise"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forwarding deposit"
@@ -3194,6 +3195,10 @@ msgstr "Fréquence"
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Fresh API wallet data could not be verified before signing."
 msgstr "Les données actualisées du portefeuille API n’ont pas pu être vérifiées avant la signature."
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Fresh eligibility or account data could not be verified. Review and try again."
+msgstr "Impossible de vérifier les données récentes d’éligibilité ou de compte. Vérifiez puis réessayez."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Fresh extraAgents data is being checked before the result is accepted."
@@ -3458,6 +3463,10 @@ msgstr "Hyperliquid n’indique pas actuellement que ce compte est éligible à 
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid ne permet pas de mettre en pause les ordres TWAP actifs."
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Hyperliquid history has not confirmed this operation. Do not submit it again."
+msgstr "L’historique d’Hyperliquid n’a pas confirmé cette opération. Ne la soumettez pas à nouveau."
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid peut ne renvoyer qu’un sous-ensemble des déposants."
@@ -3465,6 +3474,10 @@ msgstr "Hyperliquid peut ne renvoyer qu’un sous-ensemble des déposants."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
 msgstr "Hyperliquid a refusé la demande"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Hyperliquid rejected the verified public request."
+msgstr "Hyperliquid a rejeté la requête publique vérifiée."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
@@ -3608,7 +3621,6 @@ msgstr "IOC (Immediate Or Cancel)"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/domain/trade/order-confirmation.ts
 msgid "Isolated"
 msgstr "Isolé"
 
@@ -3646,8 +3658,8 @@ msgid "Keep this window open until Hyperliquid finishes checking the wallet acti
 msgstr "Gardez cette fenêtre ouverte jusqu'à ce qu'Hyperliquid ait fini de vérifier l'action du portefeuille."
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Keep this window open while Hyperliquid processes the request."
-msgstr "Laissez cette fenêtre ouverte pendant que Hyperliquid traite la demande."
+#~ msgid "Keep this window open while Hyperliquid processes the request."
+#~ msgstr "Laissez cette fenêtre ouverte pendant que Hyperliquid traite la demande."
 
 #: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -3737,13 +3749,17 @@ msgstr "Solde net des prêts"
 #: src/components/trade/tradebox/leverage-editor.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
 #: src/config/trade-panel-labels.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Leverage"
 msgstr "Levier"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "L'effet de levier est fixé à {currentLeverage}× pour ce marché."
+
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Leverage updated to {leverage}x"
+msgstr "Effet de levier mis à jour à {leverage}x"
 
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
@@ -3756,7 +3772,6 @@ msgid "Limit"
 msgstr "Limite"
 
 #: src/components/trade/positions/position-inline-actions.tsx
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -3820,7 +3835,6 @@ msgstr "Compte de staking lié : <0>{0}</0>."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Liq. Price"
 msgstr "Prix liq."
 
@@ -4098,6 +4112,11 @@ msgstr "Marge et risque du compte en un coup d'œil"
 msgid "Margin mode"
 msgstr "Mode de marge"
 
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin mode updated"
+msgstr "Mode de marge mis à jour"
+
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
 msgstr "Ratio de marge"
@@ -4106,7 +4125,6 @@ msgstr "Ratio de marge"
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Margin Req."
 msgstr "Marge req."
 
@@ -4165,7 +4183,6 @@ msgstr "Prix de marque : utilisé pour les calculs de marge, le PnL non réalis�
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/config/trade-panel-labels.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Market"
 msgstr "Marché"
 
@@ -4196,12 +4213,13 @@ msgstr "Les clics sur Marché ferment actuellement la position entière immédia
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Clôture au marché"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Market Close {formattedCloseSize} {sizeSymbol}"
-msgstr "Clôture au marché {formattedCloseSize} {sizeSymbol}"
+#~ msgid "Market Close {formattedCloseSize} {sizeSymbol}"
+#~ msgstr "Clôture au marché {formattedCloseSize} {sizeSymbol}"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Market close confirmation"
@@ -4264,7 +4282,6 @@ msgstr "Portefeuille principal vérifié"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
@@ -4428,8 +4445,8 @@ msgid "Modify Order"
 msgstr "Modifier l’ordre"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
-msgid "Modifying..."
-msgstr "Modification..."
+#~ msgid "Modifying..."
+#~ msgstr "Modification..."
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -4719,7 +4736,7 @@ msgstr "Aucun coffre correspondant"
 msgid "No open orders."
 msgstr "Aucun ordre ouvert."
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "No operation was submitted."
 msgstr "Aucune opération n’a été soumise."
 
@@ -5037,10 +5054,10 @@ msgid "Open token in explorer"
 msgstr "Ouvrir le jeton dans l’explorateur"
 
 #: src/components/staking/staking-action-modal.tsx
-msgid "Operation in progress"
-msgstr "Opération en cours"
+#~ msgid "Operation in progress"
+#~ msgstr "Opération en cours"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Operation verified"
 msgstr "Opération vérifiée"
 
@@ -5076,6 +5093,11 @@ msgstr "Carnet d'ordres en actif de cotation"
 #: src/config/orderbook-labels.ts
 msgid "Order book view"
 msgstr "Vue du carnet d'ordres"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Order cancellation confirmed."
+msgstr "Annulation de l’ordre confirmée."
 
 #: src/hooks/trade/use-order-confirmation.ts
 #: src/lib/trade/order-submission-feedback.ts
@@ -5174,7 +5196,6 @@ msgstr "Type d'ordre"
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Order Value"
 msgstr "Valeur de l'ordre"
 
@@ -5259,8 +5280,8 @@ msgid "Partial amount"
 msgstr "Montant partiel"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Partial result — reopen to retry"
-msgstr "Résultat partiel — rouvrez pour réessayer"
+#~ msgid "Partial result — reopen to retry"
+#~ msgstr "Résultat partiel — rouvrez pour réessayer"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -5677,7 +5698,6 @@ msgid "Price precision"
 msgstr "Précision du prix"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Price: Market"
 msgstr "Prix : Marché"
 
@@ -5720,12 +5740,12 @@ msgstr "Délai de traitement"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Processing..."
-msgstr "Traitement en cours..."
+#~ msgid "Processing..."
+#~ msgstr "Traitement en cours..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
-msgid "Processing…"
-msgstr "Traitement en cours…"
+#~ msgid "Processing…"
+#~ msgstr "Traitement en cours…"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
@@ -6130,10 +6150,11 @@ msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
 msgstr ""
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/referrals/referral-action-modal.tsx
 msgid "Request not confirmed"
 msgstr "Demande non confirmée"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Request rejected"
 msgstr "Demande refusée"
 
@@ -6199,8 +6220,6 @@ msgstr "Reprendre le suivi"
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -6276,8 +6295,8 @@ msgid "Reverse quantity (2× position)"
 msgstr "Quantité d'inversion (2× la position)"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
-msgid "Reversing..."
-msgstr "Inversion..."
+#~ msgid "Reversing..."
+#~ msgstr "Inversion..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/funds-action/funds-action-recovery-host.tsx
@@ -6291,8 +6310,8 @@ msgstr "Vérifier"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
-msgid "Review again"
-msgstr "Examiner à nouveau"
+#~ msgid "Review again"
+#~ msgstr "Examiner à nouveau"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Review and import the desktop-approved trading key. No phone wallet is required."
@@ -6346,7 +6365,7 @@ msgstr "Avant de négocier, consultez la <0>documentation</0> du déployeur et n
 msgid "Review the order before it is sent to the exchange."
 msgstr "Vérifiez l’ordre avant son envoi à la plateforme d’échange."
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Review the public fields and try again."
 msgstr "Vérifiez les champs publics et réessayez."
 
@@ -6688,6 +6707,7 @@ msgstr "Vendre"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Sell / Short"
 msgstr "Vendre / Short"
 
@@ -6724,8 +6744,12 @@ msgid "Send USDC to your wallet address below."
 msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
 
 #: src/components/trade/positions/send-modal.tsx
-msgid "Sending..."
-msgstr "Envoi en cours..."
+#~ msgid "Sending..."
+#~ msgstr "Envoi en cours..."
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Sent {sentAmount} {sentToken}"
+msgstr "{sentAmount} {sentToken} envoyés"
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -6815,7 +6839,6 @@ msgid "Shows reward claims reported in the last 30 days. Claims can include refe
 msgstr "Affiche les réclamations de récompenses signalées au cours des 30 derniers jours. Elles peuvent inclure des récompenses de parrainage et de Builder."
 
 #: src/components/funding-history/funding-history-page.tsx
-#: src/domain/trade/order-confirmation.ts
 msgid "Side"
 msgstr "Côté"
 
@@ -6935,7 +6958,6 @@ msgstr "Prix SL"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/trade-panel-labels.ts
 #: src/config/ui-text.ts
-#: src/domain/trade/order-confirmation.ts
 msgid "Slippage"
 msgstr "Glissement"
 
@@ -7293,18 +7315,16 @@ msgid "Submitted limit and trigger orders will appear here."
 msgstr "Les ordres limite et à déclenchement soumis apparaîtront ici."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Submitting close orders..."
-msgstr "Envoi des ordres de fermeture..."
+#~ msgid "Submitting close orders..."
+#~ msgstr "Envoi des ordres de fermeture..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Submitting to Hyperliquid"
 msgstr "Envoi à Hyperliquid"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/tradebox/order-confirmation-modal.tsx
-msgid "Submitting..."
-msgstr "Envoi en cours..."
+#~ msgid "Submitting..."
+#~ msgstr "Envoi en cours..."
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -7346,8 +7366,8 @@ msgid "Swap submitted"
 msgstr "Échange soumis"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Swapping..."
-msgstr "Échange en cours..."
+#~ msgid "Swapping..."
+#~ msgstr "Échange en cours..."
 
 #. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
@@ -7424,7 +7444,6 @@ msgid "Switch to Mainnet"
 msgstr "Passer sur le Mainnet"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
@@ -7534,8 +7553,8 @@ msgstr "Terminer l'ordre TWAP"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
-msgid "Terminating..."
-msgstr "Terminaison en cours..."
+#~ msgid "Terminating..."
+#~ msgstr "Terminaison en cours..."
 
 #: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
@@ -7618,13 +7637,14 @@ msgstr "Le résultat de l'approbation n'est pas confirmé. Réessayez la vérifi
 #~ msgstr "L’Agent Hyperliquid approuvé signe cette demande. Les demandes signées ne sont jamais réessayées automatiquement."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
-msgstr "La transaction Arbitrum est confirmée, mais le statut Circle est temporairement indisponible. Vous pouvez fermer cette fenêtre ; le suivi reprendra à votre retour."
+#~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
+#~ msgstr "La transaction Arbitrum est confirmée, mais le statut Circle est temporairement indisponible. Vous pouvez fermer cette fenêtre ; le suivi reprendra à votre retour."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
-msgstr "La transaction Arbitrum est confirmée. Circle émet et transfère les USDC vers Hyperliquid."
+#~ msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
+#~ msgstr "La transaction Arbitrum est confirmée. Circle émet et transfère les USDC vers Hyperliquid."
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume when you return."
 msgstr "La transaction Arbitrum a été soumise, mais le statut Circle est temporairement indisponible. Le suivi reprendra à votre retour."
@@ -7718,6 +7738,10 @@ msgstr "Le gestionnaire reçoit sur les bénéfices la commission indiquée ci-d
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "La mise à jour de la marge a peut-être été appliquée. Actualisez les données de la position avant de réessayer."
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "The master wallet rejected the authorization."
+msgstr "Le portefeuille principal a refusé l’autorisation."
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr "Le portefeuille principal correspondant signe cette autorisation de l’agent au niveau du compte."
@@ -7752,8 +7776,8 @@ msgid "The order changed before the requested modification was confirmed. Review
 msgstr "L'ordre a changé avant que la modification demandée ne soit confirmée. Vérifiez le dernier état de l'ordre avant de réessayer."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "The order is still being confirmed."
-msgstr "L'ordre est toujours en cours de confirmation."
+#~ msgid "The order is still being confirmed."
+#~ msgstr "L'ordre est toujours en cours de confirmation."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
@@ -7776,6 +7800,14 @@ msgstr "La page charge un instantané des exécutions récentes. Exportez un fic
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "La page que vous recherchez n'existe pas."
+
+#: src/lib/trade/position-submit-feedback.ts
+msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
+msgstr "La position a augmenté après votre confirmation, rien n’a donc été clôturé. Rouvrez Clôture au marché pour vérifier la nouvelle taille."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "The position size has changed since you opened this dialog. Review the close size before submitting."
+msgstr "La taille de la position a changé depuis l’ouverture de cette fenêtre. Vérifiez la taille de fermeture avant de confirmer."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8605,6 +8637,10 @@ msgid "Transfer between Perps and Spot"
 msgstr "Transférer entre perpétuels et spot"
 
 #: src/components/trade/positions/transfer-modal.tsx
+msgid "Transfer confirmed"
+msgstr "Transfert confirmé"
+
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
 msgstr "Échec du transfert"
 
@@ -8613,8 +8649,8 @@ msgid "Transfer USDC"
 msgstr "Transférer des USDC"
 
 #: src/components/trade/positions/transfer-modal.tsx
-msgid "Transferring..."
-msgstr "Transfert en cours..."
+#~ msgid "Transferring..."
+#~ msgstr "Transfert en cours..."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
@@ -8794,6 +8830,7 @@ msgstr "Intérêt ouvert bilatéral : somme des positions longues et courtes sur
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Type"
 msgstr "Type"
@@ -9039,7 +9076,6 @@ msgstr "Échec de la mise à jour"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "Mis à jour"
 
@@ -9049,12 +9085,12 @@ msgstr "Mise à jour en direct"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Updated to {displayLeverage}x"
-msgstr "Mis à jour à {displayLeverage}x"
+#~ msgid "Updated to {displayLeverage}x"
+#~ msgstr "Mis à jour à {displayLeverage}x"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Updating..."
-msgstr "Mise à jour..."
+#~ msgid "Updating..."
+#~ msgstr "Mise à jour..."
 
 #: src/components/staking/staking-view.tsx
 msgid "Uptime"
@@ -9127,12 +9163,12 @@ msgid "Valid until"
 msgstr "Valide jusqu’au"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Validating positions..."
-msgstr "Validation des positions..."
+#~ msgid "Validating positions..."
+#~ msgstr "Validation des positions..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Validating..."
-msgstr "Validation..."
+#~ msgid "Validating..."
+#~ msgstr "Validation..."
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-view.tsx
@@ -9238,7 +9274,7 @@ msgstr "Pagination des coffres"
 msgid "Vault performance"
 msgstr "Performance du coffre"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Vault request failed"
 msgstr "Échec de la demande relative au coffre"
 
@@ -9246,7 +9282,7 @@ msgstr "Échec de la demande relative au coffre"
 msgid "Vault risk"
 msgstr "Risque du coffre"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Vault transfer confirmed"
 msgstr "Transfert du coffre confirmé"
 
@@ -9338,6 +9374,8 @@ msgstr "Tout afficher"
 msgid "View asset information"
 msgstr "Afficher les informations sur l'actif"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "View on explorer"
 msgstr "Voir sur l'explorateur"
@@ -9363,12 +9401,12 @@ msgid "Waiting for chain confirmation"
 msgstr "En attente de confirmation on-chain"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Waiting for confirmation"
-msgstr "En attente de confirmation"
+#~ msgid "Waiting for confirmation"
+#~ msgstr "En attente de confirmation"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
-msgid "Waiting for confirmation..."
-msgstr "En attente de confirmation..."
+#~ msgid "Waiting for confirmation..."
+#~ msgstr "En attente de confirmation..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/config/orderbook-labels.ts
@@ -9486,8 +9524,6 @@ msgstr "Position entière"
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -9525,7 +9561,6 @@ msgstr "Un retrait peut annuler des ordres, clôturer des positions, entraîner 
 msgid "Withdrawal conditions changed before signing. Review the withdrawal and submit it again."
 msgstr "Les conditions de retrait ont changé avant la signature. Vérifiez le retrait, puis soumettez-le à nouveau."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"
 msgstr "Échec du retrait"

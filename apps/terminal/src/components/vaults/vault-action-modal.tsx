@@ -9,7 +9,7 @@ import {
 	TextInput,
 } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { CheckCircleIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatVaultRatio, formatVaultUsd, type VaultDetail } from "./domain/vaults";
 
@@ -27,17 +27,12 @@ export interface VaultActionModalProps {
 	availableAmount: string | null;
 	errorMessage?: string;
 	operationReference?: string;
-	transactionHash?: string;
-	finalAmount?: string;
-	commission?: string;
-	closingCost?: string;
 	canReview: boolean;
 	canConfirm: boolean;
 	onAmountChange: (value: string) => void;
 	onReview: () => void;
 	onBack: () => void;
 	onConfirm: () => void;
-	onRetry: () => void;
 	onVerifyAgain: () => void;
 	onClose: () => void;
 }
@@ -53,23 +48,20 @@ export function VaultActionModal({
 	availableAmount,
 	errorMessage,
 	operationReference,
-	transactionHash,
-	finalAmount,
-	commission,
-	closingCost,
 	canReview,
 	canConfirm,
 	onAmountChange,
 	onReview,
 	onBack,
 	onConfirm,
-	onRetry,
 	onVerifyAgain,
 	onClose,
 }: VaultActionModalProps) {
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
-	const locked = stage === "awaiting" || stage === "submitted" || stage === "reconciling";
+	const showsResult = stage === "done" && result === "unknown";
+	const isSettling = stage === "done" && !showsResult;
+	const locked = stage === "awaiting" || stage === "submitted" || stage === "reconciling" || isSettling;
 	const title = action === "deposit" ? t`Deposit to Vault` : t`Withdraw from Vault`;
 
 	return (
@@ -135,19 +127,9 @@ export function VaultActionModal({
 					</div>
 				) : null}
 
-				{locked ? <VaultPendingStage stage={stage} action={action} /> : null}
+				{locked ? <VaultPendingStage stage={stage === "done" ? "reconciling" : stage} action={action} /> : null}
 
-				{stage === "done" ? (
-					<VaultActionResultView
-						result={result}
-						errorMessage={errorMessage}
-						operationReference={operationReference}
-						transactionHash={transactionHash}
-						finalAmount={finalAmount}
-						commission={commission}
-						closingCost={closingCost}
-					/>
-				) : null}
+				{showsResult ? <VaultActionUnknownResult operationReference={operationReference} /> : null}
 			</ModalContent>
 			<ModalFooter className="gap-2 px-4 pt-0 pb-5 min-[1001px]:px-6">
 				{stage === "input" ? (
@@ -168,18 +150,11 @@ export function VaultActionModal({
 							<Trans>Confirm</Trans>
 						</Button>
 					</>
-				) : stage === "done" ? (
+				) : showsResult ? (
 					<>
-						{result === "rejected" || result === "apiError" ? (
-							<Button variant="outline" intent="neutral" className="flex-1" onClick={onRetry}>
-								<Trans>Review again</Trans>
-							</Button>
-						) : null}
-						{result === "unknown" ? (
-							<Button variant="outline" intent="neutral" className="flex-1" onClick={onVerifyAgain}>
-								<Trans>Verify again</Trans>
-							</Button>
-						) : null}
+						<Button variant="outline" intent="neutral" className="flex-1" onClick={onVerifyAgain}>
+							<Trans>Verify again</Trans>
+						</Button>
 						<Button className="flex-1" onClick={onClose}>
 							<Trans>Close</Trans>
 						</Button>
@@ -272,58 +247,15 @@ function VaultPendingStage({
 	);
 }
 
-function VaultActionResultView({
-	result,
-	errorMessage,
-	operationReference,
-	transactionHash,
-	finalAmount,
-	commission,
-	closingCost,
-}: Pick<
-	VaultActionModalProps,
-	"result" | "errorMessage" | "operationReference" | "transactionHash" | "finalAmount" | "commission" | "closingCost"
->) {
-	if (result === "success") {
-		return (
-			// biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content in this status panel.
-			<div role="status" className="flex flex-col items-center gap-3 py-8 text-center">
-				<CheckCircleIcon className="size-9 text-success" weight="fill" />
-				<p className="text-sm font-bold text-fg">
-					<Trans>Vault transfer confirmed</Trans>
-				</p>
-				{transactionHash ? <p className="break-all font-mono text-2xs text-fg-muted">{transactionHash}</p> : null}
-				{finalAmount || commission || closingCost ? (
-					<dl className="w-full divide-y divide-stroke-weak py-2 text-xs">
-						{finalAmount ? <ReviewRow label={<Trans>Final amount</Trans>} value={`${finalAmount} USDC`} /> : null}
-						{commission ? <ReviewRow label={<Trans>Commission</Trans>} value={`${commission} USDC`} /> : null}
-						{closingCost ? <ReviewRow label={<Trans>Closing cost</Trans>} value={`${closingCost} USDC`} /> : null}
-					</dl>
-				) : null}
-				{operationReference ? (
-					<p className="break-all py-1.5 font-mono text-2xs text-fg-muted">{operationReference}</p>
-				) : null}
-			</div>
-		);
-	}
+function VaultActionUnknownResult({ operationReference }: Pick<VaultActionModalProps, "operationReference">) {
 	return (
 		<div role="alert" className="flex flex-col items-center gap-3 py-7 text-center">
 			<WarningCircleIcon className="size-9 text-error" weight="fill" />
 			<p className="text-sm font-bold text-fg">
-				{result === "rejected" ? (
-					<Trans>Authorization rejected</Trans>
-				) : result === "apiError" ? (
-					<Trans>Vault request failed</Trans>
-				) : (
-					<Trans>Result not yet known</Trans>
-				)}
+				<Trans>Result not yet known</Trans>
 			</p>
 			<p className="text-xs leading-5 text-fg-muted">
-				{result === "unknown" ? (
-					<Trans>Do not submit again. Verify this operation against the public ledger first.</Trans>
-				) : (
-					errorMessage
-				)}
+				<Trans>Do not submit again. Verify this operation against the public ledger first.</Trans>
 			</p>
 			{operationReference ? (
 				<p className="break-all py-1.5 font-mono text-2xs text-fg-muted">{operationReference}</p>

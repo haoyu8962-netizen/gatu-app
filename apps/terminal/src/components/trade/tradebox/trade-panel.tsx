@@ -199,9 +199,7 @@ export function TradePanel() {
 		resetPendingLeverage,
 		applyMarginAndLeverage,
 		isLeverageUpdating,
-		leverageUpdateError,
 		isSwitchingMode,
-		switchModeError,
 		allowsIsolatedMarginRemoval,
 	} = orderEntryData;
 	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, orderType === "market");
@@ -320,11 +318,9 @@ export function TradePanel() {
 	function handleAccountModeModalOpenChange(open: boolean) {
 		setActiveModal(open ? "accountMode" : null);
 	}
-	const [isSizeInteracting, setIsSizeInteracting] = useState(false);
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
 		sizeInteractionRef.current = active;
-		setIsSizeInteracting(active);
 	}
 
 	const { open: openDepositModal } = useDepositModalActions();
@@ -512,9 +508,7 @@ export function TradePanel() {
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
 
 	const handleMarginApply = useCallback(
-		async (mode: MarginMode, leverageValue: number) => {
-			await applyMarginAndLeverage(mode, leverageValue);
-		},
+		(mode: MarginMode, leverageValue: number) => applyMarginAndLeverage(mode, leverageValue),
 		[applyMarginAndLeverage],
 	);
 
@@ -711,6 +705,11 @@ export function TradePanel() {
 		onSubmit: handleSubmit,
 	});
 
+	function handleCtaClick() {
+		if (sizeInteractionRef.current) return;
+		buttonContent.action();
+	}
+
 	function renderSummary() {
 		if (twapOrder) {
 			return (
@@ -785,7 +784,6 @@ export function TradePanel() {
 							allowsCrossMargin={capabilities.allowsCrossMargin}
 							allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
 							isUpdating={isSwitchingMode}
-							updateError={switchModeError}
 							showLeverage={false}
 							onApply={handleMarginApply}
 							marketIdentity={leverageInteractionIdentity}
@@ -805,7 +803,6 @@ export function TradePanel() {
 							maxLeverage={maxLeverage}
 							onPendingLeverageChange={setPendingLeverage}
 							isUpdating={isLeverageUpdating}
-							updateError={leverageUpdateError}
 							onApply={handleLeverageApply}
 							marketIdentity={leverageInteractionIdentity}
 						/>
@@ -831,7 +828,6 @@ export function TradePanel() {
 						<OrderConfirmationModal
 							open={confirmation.pending !== null}
 							draft={displayedConfirmation.draft}
-							isSubmitting={confirmation.isConfirming}
 							dontShowAgain={confirmation.dontShowAgain}
 							onDontShowAgainChange={confirmation.setDontShowAgain}
 							onConfirm={confirmation.confirm}
@@ -884,12 +880,10 @@ export function TradePanel() {
 								<TradeCtaView
 									variant={buttonContent.variant}
 									label={buttonContent.text}
-									onClick={buttonContent.action}
-									disabled={buttonContent.disabled || isSizeInteracting}
+									onClick={handleCtaClick}
+									disabled={buttonContent.disabled}
 									aria-label={buttonContent.text}
-									iconLeft={
-										isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined
-									}
+									iconLeft={isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
 								/>
 							)}
 							{buttonContent.disabledReason ? (

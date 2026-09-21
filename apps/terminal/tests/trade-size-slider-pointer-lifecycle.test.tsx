@@ -147,18 +147,17 @@ describe("TradeSlider lifecycle isolation", () => {
 	}
 
 	it.each([
-		"pointercancel",
-		"lostpointercapture",
-		"window blur",
-		"input blur",
-		"hidden document",
-		"window resize",
-		"Escape",
-	])("cancels an unpublished preview on %s and leaves no asynchronous writes", (boundary) => {
+		["pointercancel", "cancel:pointer-cancel"],
+		["window blur", "cancel:window-blur"],
+		["input blur", "cancel:input-blur"],
+		["hidden document", "cancel:document-hidden"],
+		["window resize", "cancel:window-resize"],
+		["Escape", "cancel:escape"],
+	])("cancels an unpublished preview on %s, records %s and leaves no asynchronous writes", (boundary, outcome) => {
 		const slider = drag();
+		expect(slider.control.hasAttribute("data-gesture-end")).toBe(false);
 		act(() => {
 			if (boundary === "pointercancel") document.dispatchEvent(pointer("pointercancel", 90));
-			else if (boundary === "lostpointercapture") slider.control.dispatchEvent(pointer("lostpointercapture", 90));
 			else if (boundary === "window blur") window.dispatchEvent(new Event("blur"));
 			else if (boundary === "input blur") slider.input.blur();
 			else if (boundary === "window resize") window.dispatchEvent(new Event("resize"));
@@ -170,7 +169,69 @@ describe("TradeSlider lifecycle isolation", () => {
 			}
 		});
 		expect(slider.input.value).toBe("25");
+		expect(slider.control.dataset.gestureEnd).toBe(outcome);
 		expectEnded(slider.control, 0);
+	});
+
+	it("commits when the browser reports lost pointer capture just before the release", () => {
+		const slider = drag();
+		act(() => slider.control.dispatchEvent(pointer("lostpointercapture", 90)));
+		expect(slider.control.dataset.dragging).toBe("true");
+		expect(props.onCancel).not.toHaveBeenCalled();
+
+		act(() => document.dispatchEvent(pointer("pointerup", 90)));
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(80, expect.objectContaining({ reason: "drag" }));
+		expect(props.onCancel).not.toHaveBeenCalled();
+		expect(slider.control.dataset.gestureEnd).toBe("commit");
+		expect(notifications.slice(-2)).toEqual(["commit", "end"]);
+	});
+
+	it("keeps following the pointer from the document after pointer capture is lost", () => {
+		const slider = drag();
+		act(() => slider.control.dispatchEvent(pointer("lostpointercapture", 90)));
+		act(() => document.dispatchEvent(pointer("pointermove", 60)));
+		advance(15);
+		expect(props.onPreview).toHaveBeenLastCalledWith(50);
+		act(() => document.dispatchEvent(pointer("pointerup", 60)));
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(50, expect.objectContaining({ reason: "drag" }));
+	});
+
+	it("commits the held draft when the release was missed after a capture loss", () => {
+		const slider = drag();
+		act(() => slider.control.dispatchEvent(pointer("lostpointercapture", 90)));
+		const buttonless = pointer("pointermove", 10);
+		Object.defineProperty(buttonless, "buttons", { value: 0 });
+		act(() => document.dispatchEvent(buttonless));
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(80, expect.objectContaining({ reason: "drag" }));
+		expect(props.onCancel).not.toHaveBeenCalled();
+		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
+		expect(slider.control.dataset.gestureEnd).toBe("commit");
+	});
+
+	it("does not read a buttonless move as a release while pointer capture is intact", () => {
+		const slider = drag();
+		const buttonless = pointer("pointermove", 60);
+		Object.defineProperty(buttonless, "buttons", { value: 0 });
+		act(() => slider.control.dispatchEvent(buttonless));
+		expect(props.onCommit).not.toHaveBeenCalled();
+		expect(slider.control.dataset.dragging).toBe("true");
+		act(() => document.dispatchEvent(pointer("pointerup", 60)));
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(50, expect.objectContaining({ reason: "drag" }));
+	});
+
+	it("records how the last gesture ended and clears the record when the next one starts", () => {
+		const slider = drag();
+		act(() => document.dispatchEvent(pointer("pointerup", 90)));
+		expect(slider.control.dataset.gestureEnd).toBe("commit");
+
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 90, 2)));
+		expect(slider.control.hasAttribute("data-gesture-end")).toBe(false);
+		act(() => document.dispatchEvent(pointer("pointerup", 90, 2)));
+		expect(slider.control.dataset.gestureEnd).toBe("unchanged");
+
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 90, 3)));
+		render({ interactionIdentity: "mainnet:owner-a:BTC:buy:base" });
+		expect(slider.control.dataset.gestureEnd).toBe("cancel:context-change");
 	});
 
 	it("restores the starting value and cancels exactly once after publishing a preview", () => {
@@ -264,6 +325,26 @@ describe("TradeSlider lifecycle isolation", () => {
 		expect(props.onCancel).toHaveBeenCalledTimes(1);
 	});
 
+	it("keeps the gesture when an ancestor transform makes the visual width differ from the layout width", () => {
+		const slider = render();
+		Object.defineProperty(slider.control, "getBoundingClientRect", {
+			configurable: true,
+			value: () => ({ left: 12.5, width: 95, height: 31.35, top: 0, bottom: 31.35, right: 107.5, x: 12.5, y: 0 }),
+		});
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 36.25)));
+		const notify = resizeCallbacks[0];
+		if (!notify) throw new Error("Expected a control ResizeObserver");
+
+		act(() => notify([{ contentRect: { width: 100 } } as ResizeObserverEntry], {} as ResizeObserver));
+		act(() => notify([{ contentRect: { width: 100 } } as ResizeObserverEntry], {} as ResizeObserver));
+		expect(props.onCancel).not.toHaveBeenCalled();
+		expect(slider.control.dataset.dragging).toBe("true");
+
+		act(() => notify([{ contentRect: { width: 80 } } as ResizeObserverEntry], {} as ResizeObserver));
+		expect(props.onCancel).toHaveBeenCalledTimes(1);
+		expect(slider.control.dataset.dragging).toBeUndefined();
+	});
+
 	it("uses the latest callback after a same-identity rerender", () => {
 		const slider = drag();
 		const previousPreview = props.onPreview;
@@ -275,6 +356,132 @@ describe("TradeSlider lifecycle isolation", () => {
 		act(() => document.dispatchEvent(pointer("pointerup", 90)));
 		expect(props.onCommit).toHaveBeenCalledTimes(1);
 		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
+	});
+
+	it("keeps a gesture alive while paused, publishes nothing, and cancels if released while paused", () => {
+		const slider = drag();
+		render({ paused: true });
+		expect(slider.control.dataset.dragging).toBe("true");
+		expect(props.onCancel).not.toHaveBeenCalled();
+		expect(slider.input.disabled).toBe(false);
+		expect(slider.input.getAttribute("aria-disabled")).toBe("true");
+
+		advance(100);
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 60)));
+		advance(100);
+		expect(props.onPreview).not.toHaveBeenCalled();
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35, 2)));
+		expect(props.onInteractionStart).toHaveBeenCalledTimes(1);
+
+		act(() => document.dispatchEvent(pointer("pointerup", 60)));
+		expect(slider.control.dataset.gestureEnd).toBe("cancel:paused");
+		expect(props.onCommit).not.toHaveBeenCalled();
+		expect(props.onCancel).toHaveBeenCalledExactlyOnceWith(25);
+		expect(props.onInteractionEnd).toHaveBeenCalledTimes(1);
+		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
+		expect(slider.input.disabled).toBe(true);
+		expect(slider.input.hasAttribute("aria-disabled")).toBe(false);
+	});
+
+	it("never disables the focused input, even for an instant, when paused mid-gesture", () => {
+		const slider = drag();
+		const observer = new MutationObserver(() => {});
+		observer.observe(slider.input, { attributes: true, attributeFilter: ["disabled"], attributeOldValue: true });
+		const records: MutationRecord[] = [];
+
+		render({ paused: true });
+		records.push(...observer.takeRecords());
+		render({ paused: false });
+		records.push(...observer.takeRecords());
+		observer.disconnect();
+
+		expect(records).toEqual([]);
+		expect(slider.input.disabled).toBe(false);
+	});
+
+	it("drops a pending preview when paused and republishes the held value once it resumes", () => {
+		const slider = drag();
+		render({ paused: true });
+		advance(100);
+		expect(props.onPreview).not.toHaveBeenCalled();
+
+		render({ paused: false });
+		expect(props.onPreview).not.toHaveBeenCalled();
+		advance(15);
+		expect(props.onPreview).toHaveBeenCalledExactlyOnceWith(80);
+		advance(100);
+		expect(props.onPreview).toHaveBeenCalledTimes(1);
+
+		act(() => document.dispatchEvent(pointer("pointerup", 90)));
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(80, expect.objectContaining({ reason: "drag" }));
+		expect(props.onCancel).not.toHaveBeenCalled();
+		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
+	});
+
+	it("republishes an already published value after a pause, because the same percent may mean a new size", () => {
+		drag(true);
+		render({ paused: true });
+		render({ paused: false });
+		advance(15);
+		expect(props.onPreview).toHaveBeenCalledTimes(2);
+		expect(props.onPreview).toHaveBeenLastCalledWith(80);
+	});
+
+	it("does not publish after a pause when the thumb was only pressed", () => {
+		const slider = render();
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
+		render({ paused: true });
+		render({ paused: false });
+		advance(100);
+		expect(props.onPreview).not.toHaveBeenCalled();
+		act(() => document.dispatchEvent(pointer("pointerup", 35)));
+		expect(props.onCommit).not.toHaveBeenCalled();
+	});
+
+	it("commits once and publishes no late preview when released right after a pause ends", () => {
+		const slider = drag();
+		render({ paused: true });
+		render({ paused: false });
+		advance(14);
+		act(() => document.dispatchEvent(pointer("pointerup", 90)));
+		advance(100);
+		expect(props.onPreview).not.toHaveBeenCalled();
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(80, expect.objectContaining({ reason: "drag" }));
+		expect(notifications).toEqual(["commit", "end"]);
+		expect(slider.input.disabled).toBe(false);
+	});
+
+	it.each(["input blur", "Escape", "disabled flip"])("still cancels a paused gesture on %s", (boundary) => {
+		const slider = drag();
+		render({ paused: true });
+		if (boundary === "disabled flip") {
+			render({ paused: true, disabled: true });
+			expect(slider.control.dataset.gestureEnd).toBe("cancel:disabled");
+		}
+		else
+			act(() => {
+				if (boundary === "input blur") slider.input.blur();
+				else slider.input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+			});
+		expectEnded(slider.control, 0);
+		expect(slider.input.disabled).toBe(true);
+		expect(slider.input.hasAttribute("aria-disabled")).toBe(false);
+	});
+
+	it("does not start a gesture or accept keyboard and native input while paused and idle", () => {
+		const slider = render({ paused: true });
+		expect(slider.input.disabled).toBe(true);
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
+		expect(props.onInteractionStart).not.toHaveBeenCalled();
+		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
+		act(() => {
+			slider.input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+		});
+		act(() => {
+			slider.input.value = "60";
+			slider.input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+		expect(props.onCommit).not.toHaveBeenCalled();
 	});
 
 	it("can start a fresh interaction after a disabled session recovers", () => {

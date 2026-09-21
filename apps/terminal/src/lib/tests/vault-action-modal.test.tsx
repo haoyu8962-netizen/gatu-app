@@ -42,16 +42,18 @@ describe("Vault action modal", () => {
 		container.remove();
 	});
 
-	it.each(["rejected", "apiError"] as const)("exposes the done/%s retry transition as Review again", (result) => {
-		const onRetry = vi.fn();
-		act(() => root.render(<VaultActionModal {...props({ result, onRetry })} />));
+	it.each(["success", "rejected", "apiError"] as const)(
+		"keeps the pending panel for a settled done/%s result that the page reports through a notification",
+		(result) => {
+			act(() => root.render(<VaultActionModal {...props({ result })} />));
 
-		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Review again");
-		expect(retry).toBeDefined();
-		act(() => retry?.click());
-		expect(onRetry).toHaveBeenCalledOnce();
-		expect(container.textContent).not.toContain("Verify again");
-	});
+			expect(container.querySelector('[role="status"]')).not.toBeNull();
+			expect(container.querySelector('[role="alert"]')).toBeNull();
+			expect(container.querySelector("footer button, button")).toBeNull();
+			expect(container.textContent).not.toContain("Review again");
+			expect(container.textContent).not.toContain("Vault transfer confirmed");
+		},
+	);
 
 	it("keeps unknown results on the read-only verification path", () => {
 		const onVerifyAgain = vi.fn();
@@ -98,7 +100,6 @@ function props(overrides: Partial<VaultActionModalProps> = {}): VaultActionModal
 		onReview: vi.fn(),
 		onBack: vi.fn(),
 		onConfirm: vi.fn(),
-		onRetry: vi.fn(),
 		onVerifyAgain: vi.fn(),
 		onClose: vi.fn(),
 		...overrides,
