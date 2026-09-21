@@ -25,8 +25,17 @@ changes, not evidence that a build has been deployed or accepted on real devices
   actually applied. Both dialogs can be closed while a request is pending. The desktop order button
   no longer spins while an order is being sent.
 - Transfer, Send, Deposit and Withdraw buttons keep their names while a request is pending instead
-  of turning into `Transferring...`, `Sending...` or `Processing...`. These dialogs still stay open
-  until the request settles, because their checks, retry and recovery screens live there.
+  of turning into `Transferring...`, `Sending...` or `Processing...`; with an external wallet they
+  read `Confirm in wallet` while the signature is pending. These dialogs stay open until the request
+  settles, then close, and the result arrives as a notification in the bottom-right corner:
+  `Transfer confirmed`, `Sent 25 USDC`, `Withdrawal submitted` with the net amount and fees, or the
+  reason it failed. A withdrawal whose status could not be confirmed stays on screen as a warning
+  until you dismiss it. A failed Send keeps the destination and amount for the next time you open
+  Send. A deposit that fails before it is broadcast returns to the form so you can retry.
+- After a USDC deposit is confirmed on Arbitrum the Deposit dialog closes. While Circle forwards it
+  to Hyperliquid, a single notification with an explorer link shows the progress, keeps tracking
+  after you close the dialog or reload the page, and turns into the result. Reopening Deposit while
+  a transfer is still forwarding shows its status instead of the form, as before.
 - Limit Close, Reverse Position and the order confirmation now behave like Market Close and Close
   All Positions. Their confirm buttons keep their names (`Place Limit Close`, `Buy / Long` or
   `Sell / Short`, the order side) instead of turning into `Validating...`, `Submitting...`,

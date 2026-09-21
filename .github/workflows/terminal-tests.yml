@@ -160,6 +160,9 @@ jobs:
           src/lib/tests/spot-swap-modal.test.tsx
           src/lib/tests/account-mode-modal.test.tsx
           src/lib/tests/use-asset-leverage.test.tsx
+          src/lib/tests/funds-action-balances.test.tsx
+          src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx
+          src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
           src/lib/tests/action-progress-label-contract.test.ts
           tests/slider-effective-leverage-regression.test.tsx
           src/lib/tests/dialog-dismiss-control-contract.test.ts
