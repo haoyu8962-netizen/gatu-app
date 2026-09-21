@@ -228,7 +228,14 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 		submissionRef.current = submission;
 		const isCurrentSubmission = () =>
 			submissionIdentityRef.current === submissionIdentity && submissionSequenceRef.current === submissionSequence;
-		const transferSummary = `${amount} ${DEFAULT_QUOTE_TOKEN} · ${fromLabel} → ${toLabel}`;
+		const transferSummary = (
+			<span>
+				<bdi dir="ltr">
+					{amount} {DEFAULT_QUOTE_TOKEN}
+				</bdi>{" "}
+				· {fromLabel} → {toLabel}
+			</span>
+		);
 		try {
 			await usdClassTransfer({ amount, toPerp: direction === "toPerp" });
 			if (isCurrentSubmission()) toast.success(t`Transfer confirmed`, { description: transferSummary });

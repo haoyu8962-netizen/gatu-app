@@ -15,6 +15,8 @@ const INACTIVE = "0x4444444444444444444444444444444444444444" as const;
 const HASH = `0x${"ab".repeat(32)}` as const;
 const SYSTEM_FINALIZATION_HASH = `0x${"0".repeat(64)}` as const;
 
+const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
+vi.mock("sonner", () => ({ toast: toastMocks }));
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 
 function validator(
@@ -146,6 +148,65 @@ describe("StakingView", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.restoreAllMocks();
+		toastMocks.error.mockReset();
+		toastMocks.success.mockReset();
+	});
+
+	function settledSession(result: "success" | "rejected" | "apiError" | "unknown"): StakingViewProps["actionSession"] {
+		return {
+			submission: { request: { kind: "cDeposit" }, amount: "1", wei: 100_000_000 },
+			identityKey: "mainnet:owner",
+			state: { stage: "done", result },
+			errorMessage: result === "success" || result === "unknown" ? null : result,
+			match: result === "success" ? { hash: HASH, time: 1 } : null,
+			reference: null,
+			recoveredFromMarker: false,
+		} as StakingViewProps["actionSession"];
+	}
+
+	it("reports a verified staking operation once through a notification and closes the dialog", () => {
+		const onActionClose = vi.fn();
+		const onActionRetry = vi.fn();
+		const viewProps = props({ actionSession: settledSession("success"), onActionClose, onActionRetry });
+		act(() => root.render(<StakingView {...viewProps} />));
+		act(() => root.render(<StakingView {...viewProps} />));
+
+		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Operation verified", expect.anything());
+		expect(onActionClose).toHaveBeenCalledOnce();
+		expect(onActionRetry).not.toHaveBeenCalled();
+		expect(document.body.textContent).not.toContain("Operation in progress");
+	});
+
+	it.each([
+		["rejected", "Authorization rejected", "The master wallet rejected the authorization."],
+		["apiError", "Request rejected", "Hyperliquid rejected the verified public request."],
+	] as const)("reports a %s staking request and returns to the review step", (result, title, description) => {
+		const onActionClose = vi.fn();
+		const onActionRetry = vi.fn();
+		act(() =>
+			root.render(<StakingView {...props({ actionSession: settledSession(result), onActionClose, onActionRetry })} />),
+		);
+
+		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(title, expect.objectContaining({ description }));
+		expect(onActionRetry).toHaveBeenCalledOnce();
+		expect(onActionClose).not.toHaveBeenCalled();
+	});
+
+	it("leaves an unconfirmed staking operation to the in-dialog verification path", () => {
+		const onActionClose = vi.fn();
+		const onActionRetry = vi.fn();
+		act(() =>
+			root.render(
+				<StakingView {...props({ actionSession: settledSession("unknown"), onActionClose, onActionRetry })} />,
+			),
+		);
+
+		expect(toastMocks.success).not.toHaveBeenCalled();
+		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(onActionClose).not.toHaveBeenCalled();
+		expect(onActionRetry).not.toHaveBeenCalled();
+		expect(document.body.textContent).toContain("Status not confirmed");
+		expect(document.body.textContent).toContain("Verify again");
 	});
 
 	it("renders official validator states, aggregate pending data, and four distinct action entry points", () => {

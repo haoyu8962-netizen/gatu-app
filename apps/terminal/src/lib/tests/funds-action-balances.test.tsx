@@ -612,9 +612,14 @@ describe("funds action balance wiring", () => {
 
 		await act(async () => settleMutation());
 		await vi.waitFor(() => expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false));
-		expect(toastMocks.success).toHaveBeenCalledWith("Transfer confirmed", {
-			description: expect.stringContaining("1 USDC"),
-		});
+		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Transfer confirmed", expect.anything());
+		const options = toastMocks.success.mock.calls[0]?.[1] as { description: ReactNode };
+		const host = document.createElement("div");
+		const descriptionRoot = createI18nRoot(host);
+		act(() => descriptionRoot.render(createElement(Fragment, null, options.description)));
+		expect(host.textContent).toContain("1 USDC");
+		expect(host.querySelector('bdi[dir="ltr"]')?.textContent).toBe("1 USDC");
+		act(() => descriptionRoot.unmount());
 	});
 
 	it("reports a confirmed send with the amount and token it sent", async () => {

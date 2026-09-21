@@ -196,9 +196,13 @@ describe("SpotSwapModal submission", () => {
 			await Promise.resolve();
 		});
 
-		expect(mocks.toastSuccess).toHaveBeenCalledWith("Swap submitted", {
-			description: expect.stringContaining("100 USDC"),
-		});
+		expect(mocks.toastSuccess).toHaveBeenCalledExactlyOnceWith("Swap submitted", expect.anything());
+		const options = mocks.toastSuccess.mock.calls[0]?.[1] as { description: ReactNode };
+		const host = document.createElement("div");
+		const descriptionRoot = createI18nRoot(host);
+		act(() => descriptionRoot.render(createElement("span", null, options.description)));
+		expect(host.querySelector('bdi[dir="ltr"]')?.textContent).toContain("100 USDC");
+		act(() => descriptionRoot.unmount());
 		expect(mocks.closeSwap).toHaveBeenCalledOnce();
 	});
 

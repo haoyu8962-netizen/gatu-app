@@ -1073,16 +1073,20 @@ export function DepositModal() {
 	function notifyWithdrawalSubmitted(amount: string, routeFee: string, activationFee: string) {
 		const netReceived = getWithdrawalNetReceived(amount, routeFee);
 		const amounts = [
-			`${t`Net received`}: $${formatNumber(netReceived ?? "0", 2)}`,
-			`${t`Withdrawal fee`}: $${formatNumber(routeFee, 2)}`,
+			{ label: t`Net received`, value: formatNumber(netReceived ?? "0", 2) },
+			{ label: t`Withdrawal fee`, value: formatNumber(routeFee, 2) },
 		];
 		if (isPositiveDecimal(activationFee)) {
-			amounts.push(`${t`One-time account activation fee`}: $${formatNumber(activationFee, 2)}`);
+			amounts.push({ label: t`One-time account activation fee`, value: formatNumber(activationFee, 2) });
 		}
 		toast.success(t`Withdrawal submitted`, {
 			description: (
 				<span className="flex flex-col gap-1">
-					<span className="tabular-nums">{amounts.join(" · ")}</span>
+					{amounts.map((amount) => (
+						<span key={amount.label} className="tabular-nums">
+							{amount.label}: <bdi dir="ltr">${amount.value}</bdi>
+						</span>
+					))}
 					<span>
 						{t`Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt.`}
 					</span>
@@ -1234,7 +1238,9 @@ export function DepositModal() {
 					description: (
 						<span className="flex flex-col gap-1">
 							<span>
-								<span className="tabular-nums">{displayedDepositAmount} USDC</span>{" "}
+								<bdi dir="ltr" className="tabular-nums">
+									{displayedDepositAmount} USDC
+								</bdi>{" "}
 								{t`confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute.`}
 							</span>
 							{explorerLink}
@@ -1249,7 +1255,9 @@ export function DepositModal() {
 							<span>
 								{t`Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing.`}
 							</span>
-							<span className="break-all font-mono">{depositHash}</span>
+							<bdi dir="ltr" className="break-all font-mono">
+								{depositHash}
+							</bdi>
 							{explorerLink}
 						</span>
 					),

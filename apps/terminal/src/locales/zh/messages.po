@@ -872,8 +872,8 @@ msgstr "原子单位金额"
 msgid "Atomic decimals"
 msgstr "原子单位小数位"
 
-#: src/components/staking/staking-action-modal.tsx
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "授权已拒绝"
 
@@ -1365,7 +1365,6 @@ msgstr "点击提交 · 成交后不可撤销"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
@@ -1563,7 +1562,7 @@ msgstr "已平仓盈亏"
 msgid "Closes in {remainingSeconds}s"
 msgstr "{remainingSeconds} 秒后关闭"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Closing cost"
 msgstr "平仓成本"
 
@@ -1610,7 +1609,7 @@ msgid "Collapse market details"
 msgstr "收起市场详情"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Commission"
 msgstr "佣金"
 
@@ -2491,7 +2490,6 @@ msgstr "以后不再提示"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "完成"
@@ -3153,7 +3151,7 @@ msgstr "按类型筛选成交历史"
 msgid "Filter validators"
 msgstr "筛选验证者"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Final amount"
 msgstr "最终金额"
 
@@ -3197,6 +3195,10 @@ msgstr "频率"
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Fresh API wallet data could not be verified before signing."
 msgstr "签名前无法验证最新的 API 钱包数据。"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Fresh eligibility or account data could not be verified. Review and try again."
+msgstr "无法核验最新的资格或账户数据。请复核后重试。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Fresh extraAgents data is being checked before the result is accepted."
@@ -3461,6 +3463,10 @@ msgstr "Hyperliquid 当前未将此账户标记为符合创建推荐码的条件
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid 不支持暂停正在执行的 TWAP 委托。"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Hyperliquid history has not confirmed this operation. Do not submit it again."
+msgstr "Hyperliquid 的历史记录尚未确认这笔操作。请勿重复提交。"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid 可能只返回部分存款人数据。"
@@ -3468,6 +3474,10 @@ msgstr "Hyperliquid 可能只返回部分存款人数据。"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
 msgstr "Hyperliquid 已拒绝请求"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Hyperliquid rejected the verified public request."
+msgstr "Hyperliquid 拒绝了这笔已核验的公开请求。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
@@ -4731,7 +4741,7 @@ msgstr "没有匹配的金库"
 msgid "No open orders."
 msgstr "暂无当前委托"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "No operation was submitted."
 msgstr "未提交任何操作。"
 
@@ -5049,10 +5059,10 @@ msgid "Open token in explorer"
 msgstr "在浏览器中打开代币"
 
 #: src/components/staking/staking-action-modal.tsx
-msgid "Operation in progress"
-msgstr "操作进行中"
+#~ msgid "Operation in progress"
+#~ msgstr "操作进行中"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Operation verified"
 msgstr "操作已验证"
 
@@ -6150,7 +6160,7 @@ msgstr "将替换当前移动密钥 <0>{existingMobileAgentLabel}</0>"
 msgid "Request not confirmed"
 msgstr "请求尚未确认"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Request rejected"
 msgstr "请求已拒绝"
 
@@ -6306,8 +6316,8 @@ msgstr "核对"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
-msgid "Review again"
-msgstr "重新检查"
+#~ msgid "Review again"
+#~ msgstr "重新检查"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Review and import the desktop-approved trading key. No phone wallet is required."
@@ -6361,7 +6371,7 @@ msgstr "交易前，请查看部署者的<0>文档</0>及我们的<1>使用条�
 msgid "Review the order before it is sent to the exchange."
 msgstr "在提交到交易所之前检查该订单。"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Review the public fields and try again."
 msgstr "请检查公开字段后重试。"
 
@@ -7734,6 +7744,10 @@ msgstr "管理者会从利润中收取上方显示的佣金。"
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "保证金更新可能已生效。请刷新持仓数据后再试。"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "The master wallet rejected the authorization."
+msgstr "主钱包拒绝了授权。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The matching master wallet signs this account-level agent approval."
@@ -9266,7 +9280,7 @@ msgstr "金库分页"
 msgid "Vault performance"
 msgstr "金库表现"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Vault request failed"
 msgstr "金库请求失败"
 
@@ -9274,7 +9288,7 @@ msgstr "金库请求失败"
 msgid "Vault risk"
 msgstr "金库风险"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Vault transfer confirmed"
 msgstr "金库转账已确认"
 

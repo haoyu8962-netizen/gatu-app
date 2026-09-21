@@ -872,8 +872,8 @@ msgstr "Atomic amount"
 msgid "Atomic decimals"
 msgstr "Atomic decimals"
 
-#: src/components/staking/staking-action-modal.tsx
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "Authorization rejected"
 
@@ -1365,7 +1365,6 @@ msgstr "Click to submit · Filled trades cannot be reversed"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
@@ -1563,7 +1562,7 @@ msgstr "Closed PNL"
 msgid "Closes in {remainingSeconds}s"
 msgstr "Closes in {remainingSeconds}s"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Closing cost"
 msgstr "Closing cost"
 
@@ -1610,7 +1609,7 @@ msgid "Collapse market details"
 msgstr "Collapse market details"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Commission"
 msgstr "Commission"
 
@@ -2491,7 +2490,6 @@ msgstr "Don't show this confirmation again"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "Done"
@@ -3153,7 +3151,7 @@ msgstr "Filter trade history by type"
 msgid "Filter validators"
 msgstr "Filter validators"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Final amount"
 msgstr "Final amount"
 
@@ -3197,6 +3195,10 @@ msgstr "Frequency"
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Fresh API wallet data could not be verified before signing."
 msgstr "Fresh API wallet data could not be verified before signing."
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Fresh eligibility or account data could not be verified. Review and try again."
+msgstr "Fresh eligibility or account data could not be verified. Review and try again."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Fresh extraAgents data is being checked before the result is accepted."
@@ -3461,6 +3463,10 @@ msgstr "Hyperliquid does not currently show this account as eligible to create a
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid does not support pausing active TWAP orders."
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Hyperliquid history has not confirmed this operation. Do not submit it again."
+msgstr "Hyperliquid history has not confirmed this operation. Do not submit it again."
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid may return only a subset of depositors."
@@ -3468,6 +3474,10 @@ msgstr "Hyperliquid may return only a subset of depositors."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
 msgstr "Hyperliquid rejected the request"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Hyperliquid rejected the verified public request."
+msgstr "Hyperliquid rejected the verified public request."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
@@ -4731,7 +4741,7 @@ msgstr "No matching Vaults"
 msgid "No open orders."
 msgstr "No open orders."
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "No operation was submitted."
 msgstr "No operation was submitted."
 
@@ -5049,10 +5059,10 @@ msgid "Open token in explorer"
 msgstr "Open token in explorer"
 
 #: src/components/staking/staking-action-modal.tsx
-msgid "Operation in progress"
-msgstr "Operation in progress"
+#~ msgid "Operation in progress"
+#~ msgstr "Operation in progress"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Operation verified"
 msgstr "Operation verified"
 
@@ -6150,7 +6160,7 @@ msgstr "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
 msgid "Request not confirmed"
 msgstr "Request not confirmed"
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Request rejected"
 msgstr "Request rejected"
 
@@ -6306,8 +6316,8 @@ msgstr "Review"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
-msgid "Review again"
-msgstr "Review again"
+#~ msgid "Review again"
+#~ msgstr "Review again"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Review and import the desktop-approved trading key. No phone wallet is required."
@@ -6361,7 +6371,7 @@ msgstr "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> b
 msgid "Review the order before it is sent to the exchange."
 msgstr "Review the order before it is sent to the exchange."
 
-#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Review the public fields and try again."
 msgstr "Review the public fields and try again."
 
@@ -7734,6 +7744,10 @@ msgstr "The leader receives the commission shown above from profits."
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "The margin update may have been applied. Refresh position data before trying again."
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "The master wallet rejected the authorization."
+msgstr "The master wallet rejected the authorization."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The matching master wallet signs this account-level agent approval."
@@ -9266,7 +9280,7 @@ msgstr "Vault pagination"
 msgid "Vault performance"
 msgstr "Vault performance"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Vault request failed"
 msgstr "Vault request failed"
 
@@ -9274,7 +9288,7 @@ msgstr "Vault request failed"
 msgid "Vault risk"
 msgstr "Vault risk"
 
-#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Vault transfer confirmed"
 msgstr "Vault transfer confirmed"
 

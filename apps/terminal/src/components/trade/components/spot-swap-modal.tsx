@@ -318,7 +318,11 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 			executionStateRef.current.active &&
 			submissionSequenceRef.current === submissionSequence &&
 			executionSessionIdentityRef.current === submissionIdentity;
-		const swapSummary = `${amount} ${fromToken} → ~${formatToken(estimatedReceive, 6)} ${toToken}`;
+		const swapSummary = (
+			<bdi dir="ltr">
+				{amount} {fromToken} → ~{formatToken(estimatedReceive, 6)} {toToken}
+			</bdi>
+		);
 
 		submittedRef.current = true;
 		setIsSubmitted(true);
