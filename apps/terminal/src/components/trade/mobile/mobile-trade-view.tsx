@@ -21,6 +21,7 @@ import {
 	canEstimateProspectiveLiquidationDraft,
 	estimateProspectiveLiquidation,
 } from "@/domain/trade/order/liquidation";
+import { getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import { getOrderActionStage } from "@/domain/trade/order-action-stage";
@@ -49,6 +50,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
 import {
+	getMarketCapabilities,
 	type UnifiedMarketInfo,
 	useSelectedMarketInfo,
 	useTradingAuthorization,
@@ -85,6 +87,7 @@ import {
 	useOrderEntryActions,
 	useOrderSide,
 	useOrderSize,
+	useOrderSizeSource,
 	useOrderType,
 	useReduceOnly,
 	useScaleEnd,
@@ -208,12 +211,16 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const twapTriggerPriceInput = useTwapTriggerPrice();
 	const twapStopPriceInput = useTwapStopPrice();
 	const sizeInput = useOrderSize();
+	const sizeSource = useOrderSizeSource();
+	const { setSizeSelection } = useOrderEntryActions();
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
 		sizeInteractionRef.current = active;
 	}
 	const limitPriceInput = useLimitPrice();
 	const reduceOnlyChecked = useReduceOnly();
+	const capabilities = getMarketCapabilities(market);
+	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
 	const [approvalError, setApprovalError] = useState<{ cause: unknown } | null>(null);
 
 	const canUseTpSl = canUseTpSlForOrder(orderType);
@@ -262,6 +269,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setLimitPriceFromPrefill(limitPrefillIdentity, formattedMidForPrefill);
 	}, [active, usesLimitPrice, limitPrefillIdentity, formattedMidForPrefill, setLimitPriceFromPrefill]);
 
+	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
+	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
+	const validatedPositionSize = positionSnapshotReady ? (position?.szi ?? "0") : null;
 	const {
 		accountAbstraction,
 		availabilityStatus,
@@ -271,7 +281,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		isSpotMarket,
 		baseToken,
 		quoteToken,
-		capabilities,
 		szDecimals,
 		availableBalance,
 		isAvailabilityLoading,
@@ -282,10 +291,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		spotBalance,
 		maxSize,
 		sizeValue,
+		sizeForOrder,
 		orderValue,
 		sideLabels,
-		getSizeForPercent,
-		convertSizeForModeToggle,
+		applySizePercent,
+		toggleSizeDenomination,
 		leverage,
 		leverageInteractionIdentity,
 		marginMode,
@@ -308,17 +318,19 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		sizeMode,
 		sizeInput,
 		limitPx: usesLimitPrice ? toNumberOrZero(limitPriceInput) : undefined,
+		reduceOnly,
+		positionSnapshot: {
+			ready: positionSnapshotReady,
+			receivedAt: userPositions.receivedAt,
+			signedSize: validatedPositionSize ?? undefined,
+		},
 		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
 	});
 	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, active && orderType === "market");
 	const estimatedSlippageText = formatSlippageBps(slippageEstimate?.slippageBps, {
 		lowerBound: slippageEstimate?.exceedsVisibleDepth,
 	});
-	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
-	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
-	const positionSize = toNumberOrZero(position?.szi);
-	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
-	const validatedPositionSize = positionSnapshotReady ? positionSize : null;
+
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
 		active,
 		assetId: market?.assetId,
@@ -329,7 +341,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		availability: executionAvailability,
 		positionStateReady: positionSnapshotReady,
 		positionReceivedAt: userPositions.receivedAt,
-		positionSignedSize: position?.szi,
+		positionSignedSize: validatedPositionSize ?? undefined,
 		markPriceStatus,
 		markPx: market?.markPx,
 		markPriceReceivedAt: market?.markPriceReceivedAt,
@@ -347,7 +359,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		availability: executionAvailability,
 		positionStateReady: positionSnapshotReady,
 		positionReceivedAt: userPositions.receivedAt,
-		positionSignedSize: position?.szi,
+		positionSignedSize: validatedPositionSize ?? undefined,
 		markPriceStatus,
 		markPx: market?.markPx,
 		markPriceReceivedAt: market?.markPriceReceivedAt,
@@ -416,7 +428,12 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		side,
 		execution: twapOrder ? "twap" : "order",
 	});
-	const marginRequired = capabilities.isLeveraged && leverage > 0 ? orderValue / leverage : 0;
+	const { marginRequired } = getOrderMetrics({
+		sizeValue,
+		price,
+		leverage: capabilities.isLeveraged ? leverage : null,
+		reduceOnly,
+	});
 	const isolatedExistingPosition = position
 		? {
 				signedSize: position.szi,
@@ -494,6 +511,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					stopOrder: isStopOrderType(orderType),
 					takeProfitOrder: isTakeProfitOrderType(orderType),
 					positionSize: validatedPositionSize,
+					sizeForOrder,
 					reduceOnly,
 					tpSlEnabled,
 					canUseTpSl,
@@ -507,7 +525,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		accountReady:
 			isConnected &&
 			!isWalletLoading &&
-			availableBalance > 0 &&
+			(reduceOnly || availableBalance > 0) &&
 			!validation.needsApproval &&
 			!isAvailabilityBlocked &&
 			!tradeActionsBlocked,
@@ -545,11 +563,13 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	function applySizeFromPercent(pct: number) {
 		if (maxSize <= 0) return;
-		setSizeInput(getSizeForPercent(pct));
+		applySizePercent(pct);
 	}
 
 	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${side}:${orderType}:${reduceOnly}:${sizeMode}:${szDecimals}`;
 	const sliderInteraction = useSizeSliderInteraction({
+		sizeSource,
+		restoreSizeSelection: setSizeSelection,
 		onInteractionChange: handleSizeInteractionChange,
 		applyPercent: applySizeFromPercent,
 		interactionIdentity: sliderInteractionIdentity,
@@ -558,10 +578,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	});
 
 	function handleSizeModeToggle() {
-		const newMode = sizeMode === "base" ? "quote" : "base";
-		const convertedSize = convertSizeForModeToggle();
-		onSizeModeChange(newMode);
-		if (convertedSize) setSizeInput(convertedSize);
+		toggleSizeDenomination();
+		onSizeModeChange(sizeMode === "base" ? "quote" : "base");
 	}
 
 	function handleSizeInputChange(event: ChangeEvent<HTMLInputElement>) {
@@ -676,6 +694,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			baseToken,
 			szDecimals: market.szDecimals,
 			sizeValue,
+			sizeForOrder,
 			orderValue,
 			limitPrice: toNumber(limitPriceInput),
 			triggerPrice: toNumber(triggerPrice),
@@ -713,6 +732,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				side,
 				orderType,
 				sizeValue,
+				sizeForOrder,
 				marginMode,
 				slippageBps,
 				reduceOnly,
@@ -753,7 +773,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		needsChainSwitch,
 		isSwitchingChain,
 		availableBalance,
-		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale,
+		reduceOnly,
+		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale || isAvailabilityBlocked,
 		hasBalanceError: hasAvailabilityError,
 		canDeposit: depositAvailability.available,
 		depositUnavailableReason: getFundsAvailabilityNotice(depositAvailability),
@@ -761,7 +782,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		needsApproval: validation.needsApproval,
 		isSignerReady,
 		isApprovalLoading,
-		canSubmit: validation.canSubmit,
+		canSubmit: validation.canSubmit && !isAvailabilityBlocked,
 		isRegistering,
 		canApprove,
 		isSubmitting,
@@ -787,7 +808,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		buttonContent.action();
 	}
 
-	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
+	const isFormDisabled = !isConnected || isAvailabilityBlocked || (!reduceOnly && availableBalance <= 0);
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
 	const priceUnitLabel = quoteToken || "USDC";
 
@@ -947,7 +968,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					<TradeFormTwap
 						reduceOnly={
 							capabilities.hasReduceOnly
-								? { checked: reduceOnlyChecked, onCheckedChange: setReduceOnlyChecked }
+								? { checked: reduceOnlyChecked, disabled: !isConnected, onCheckedChange: setReduceOnlyChecked }
 								: undefined
 						}
 						disabled={isFormDisabled}
@@ -973,7 +994,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							capabilities.hasReduceOnly
 								? {
 										checked: reduceOnlyChecked,
-										disabled: isFormDisabled,
+										disabled: !isConnected,
 										onCheckedChange: setReduceOnlyChecked,
 									}
 								: undefined
@@ -1049,7 +1070,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 								<MobileSummaryRowView
 									label={t`Margin Req.`}
 									value={
-										marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER
+										marginRequired !== null && marginRequired > 0
+											? formatUSD(marginRequired, { compact: false })
+											: FALLBACK_VALUE_PLACEHOLDER
 									}
 									compact={embedded}
 								/>
@@ -1150,6 +1173,7 @@ interface MobileButtonContentInput {
 	needsChainSwitch: boolean;
 	isSwitchingChain: boolean;
 	availableBalance: number;
+	reduceOnly?: boolean;
 	isBalanceLoading: boolean;
 	hasBalanceError: boolean;
 	canDeposit: boolean;
@@ -1190,6 +1214,7 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 		hasBalanceError: input.hasBalanceError,
 		isBalanceLoading: input.isBalanceLoading,
 		availableBalance: input.availableBalance,
+		reduceOnly: input.reduceOnly,
 	});
 
 	if (stage === "connect") {

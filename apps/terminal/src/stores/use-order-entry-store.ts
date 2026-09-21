@@ -13,7 +13,13 @@ interface PersistedState {
 	sizeMode: SizeMode;
 }
 
+export interface OrderSizeSource {
+	context: string;
+	baseSize: string;
+}
+
 interface FormState {
+	sizeSource: OrderSizeSource | null;
 	size: string;
 	limitPrice: string;
 	triggerPrice: string;
@@ -47,6 +53,7 @@ interface OrderEntryActions {
 	toggleSizeMode: () => void;
 
 	setSize: (size: string) => void;
+	setSizeSelection: (size: string, source: OrderSizeSource, mode?: SizeMode) => void;
 	setLimitPrice: (price: string) => void;
 	setLimitPriceFromPrefill: (identity: string, price: string) => void;
 	setLimitPriceFromUser: (identity: string, price: string) => void;
@@ -89,6 +96,7 @@ const DEFAULT_PERSISTED: PersistedState = {
 };
 
 const DEFAULT_FORM: FormState = {
+	sizeSource: null,
 	size: "",
 	limitPrice: "",
 	triggerPrice: "",
@@ -155,7 +163,7 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()((rawSet) => {
 	function setPreferences(patch: Partial<PersistedState>) {
 		const previous = usePersistedOrderEntryStore.getState();
 		if (!Object.entries(patch).some(([key, value]) => previous[key as keyof PersistedState] !== value)) return;
-		rawSet((state) => ({ draftRevision: state.draftRevision + 1 }));
+		rawSet((state) => ({ sizeSource: null, draftRevision: state.draftRevision + 1 }));
 		usePersistedOrderEntryStore.setState(patch);
 	}
 	return {
@@ -197,8 +205,12 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()((rawSet) => {
 				setPreferences({ sizeMode: sizeMode === "base" ? "quote" : "base" });
 			},
 
-			setSize: (size) => set({ size }),
-			setLimitPrice: (limitPrice) => set({ limitPrice }),
+			setSize: (size) => set({ size, sizeSource: null }),
+			setSizeSelection: (size, sizeSource, mode) => {
+				if (mode) setPreferences({ sizeMode: mode });
+				set({ size, sizeSource });
+			},
+			setLimitPrice: (limitPrice) => set({ limitPrice, sizeSource: null }),
 			setLimitPriceFromPrefill: (identity, limitPrice) =>
 				set((state) => {
 					if (state.limitPricePrefillIdentity === identity) return state;
@@ -210,6 +222,7 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()((rawSet) => {
 			setLimitPriceFromUser: (identity, limitPrice) =>
 				set({
 					limitPrice,
+					sizeSource: null,
 					limitPricePrefillIdentity: identity,
 				}),
 			setTriggerPrice: (triggerPrice) => set({ triggerPrice }),
@@ -222,7 +235,7 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()((rawSet) => {
 			setTwapAdvancedEnabled: (twapAdvancedEnabled) => set({ twapAdvancedEnabled }),
 			setTwapTriggerPrice: (twapTriggerPrice) => set({ twapTriggerPrice }),
 			setTwapStopPrice: (twapStopPrice) => set({ twapStopPrice }),
-			setReduceOnly: (reduceOnly) => set({ reduceOnly }),
+			setReduceOnly: (reduceOnly) => set({ reduceOnly, sizeSource: null }),
 			setTpSlEnabled: (tpSlEnabled) =>
 				set((state) => ({
 					tpSlEnabled,
@@ -362,3 +375,5 @@ export function useTif() {
 export function useOrderEntryActions() {
 	return useOrderEntryFormStore((s) => s.actions);
 }
+
+export const useOrderSizeSource = () => useOrderEntryFormStore((state) => state.sizeSource);

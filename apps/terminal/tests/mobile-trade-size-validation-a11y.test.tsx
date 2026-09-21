@@ -123,10 +123,10 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 			isLeveraged: testState.kind === "perp",
 		},
 		committedLeverage: null,
-		convertSizeForModeToggle: () => "",
+		toggleSizeDenomination: vi.fn(),
 		currentLeverage: 10,
 		executionAvailability: {},
-		getSizeForPercent: () => "1",
+		applySizePercent: vi.fn(),
 		hasAvailabilityError: testState.availabilityStatus === "error",
 		hasPosition: false,
 		isAvailabilityBlocked: testState.availabilityStatus !== "success",
@@ -191,6 +191,12 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	getMarketCapabilities: () => ({
+		allowsCrossMargin: true,
+		hasReduceOnly: false,
+		hasTpSl: false,
+		isLeveraged: testState.kind === "perp",
+	}),
 	useTradingStatus: () => ({
 		isSignerLoading: false,
 		isSignerReady: true,
@@ -246,6 +252,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useOrderEntryActions: () => testState.actions,
 	useOrderSide: () => testState.side,
 	useOrderSize: () => String(testState.sizeValue),
+	useOrderSizeSource: () => null,
 	useOrderType: () => testState.orderType,
 	useReduceOnly: () => testState.reduceOnly,
 	useScaleEnd: () => "",

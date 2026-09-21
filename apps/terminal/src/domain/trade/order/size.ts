@@ -97,16 +97,17 @@ export function getMaxSize(input: MaxSizeInput): number {
 	return 0;
 }
 
-export function getSizeValueFromInput(input: SizeValueInput): number {
+export function getSizeStringFromInput(input: SizeValueInput): string {
 	const inputVal = toBig(input.sizeInput);
-	if (!inputVal || inputVal.lte(0)) return 0;
-
-	if (input.sizeMode === "base") return inputVal.toNumber();
-
+	if (!inputVal || inputVal.lte(0)) return "0";
+	if (input.sizeMode === "base") return inputVal.toFixed();
 	const px = toBig(input.price);
-	if (!px || px.lte(0)) return 0;
-	const converted = inputVal.div(px).round(input.szDecimals, Big.roundDown).toNumber();
-	return Number.isFinite(converted) ? converted : 0;
+	if (!px || px.lte(0)) return "0";
+	return inputVal.div(px).round(input.szDecimals, Big.roundDown).toFixed();
+}
+export function getSizeValueFromInput(input: SizeValueInput): number {
+	const value = Number(getSizeStringFromInput(input));
+	return Number.isFinite(value) ? value : 0;
 }
 
 export function getOrderValue(sizeValue: number, price: number): number {
@@ -182,4 +183,26 @@ export function formatSliderPercent(value: number): string {
 
 export function getSizeInputMaxDecimals(sizeMode: SizeMode, szDecimals: number): number {
 	return sizeMode === "quote" ? QUOTE_SIZE_INPUT_MAX_DECIMALS : szDecimals;
+}
+
+/** Select in base first. The rounded quote string is presentation, never the execution source. */
+export function getReduceOnlySizeSelection(
+	maxBase: string,
+	pct: number,
+	sizeMode: SizeMode,
+	price: number,
+	szDecimals: number,
+) {
+	const max = toBig(maxBase);
+	if (!max?.gt(0) || !Number.isFinite(pct) || pct < 0 || pct > 100) return null;
+	const baseSize = max.times(pct).div(100).round(szDecimals, Big.roundDown).toFixed();
+	const size = getSelectedSizeDisplay(baseSize, sizeMode, price);
+	return size === null ? null : { size, baseSize };
+}
+export function getSelectedSizeDisplay(baseSize: string, sizeMode: SizeMode, price: number): string | null {
+	const base = toBig(baseSize);
+	if (!base || base.lt(0)) return null;
+	if (sizeMode === "base") return base.toFixed();
+	const px = toBig(price);
+	return px?.gt(0) ? base.times(px).toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown) : null;
 }

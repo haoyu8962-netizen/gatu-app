@@ -9,10 +9,17 @@ import {
 } from "@/domain/trade/order/availability";
 import { deriveOrderEntry, type MarketOrderSizingInput, type OrderEntryDerived } from "@/domain/trade/order/derive";
 import type { EntryOrderExecutionAvailability } from "@/domain/trade/order/entry-execution-guard";
-import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle } from "@/domain/trade/order/size";
+import type { EntryPositionSnapshot } from "@/domain/trade/order/reduce-only";
+import {
+	getReduceOnlySizeSelection,
+	getSelectedSizeDisplay,
+	getSizeForPercent as getSizeForPercentCalc,
+	getSizeValueForModeToggle,
+} from "@/domain/trade/order/size";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
+import { useOrderEntryActions, useOrderSizeSource, useOrderType } from "@/stores/use-order-entry-store";
 import { type AccountAbstraction, isSupportedAccountAbstraction, useDefaultDexBalances } from "./use-account-balances";
 import { useAssetLeverage } from "./use-asset-leverage";
 
@@ -29,8 +36,8 @@ interface OrderEntryData extends OrderEntryDerived {
 	hasAvailabilityError: boolean;
 	sideLabels: SideLabels;
 
-	getSizeForPercent: (pct: number) => string;
-	convertSizeForModeToggle: () => string;
+	applySizePercent: (pct: number) => void;
+	toggleSizeDenomination: () => void;
 
 	leverage: number;
 	leverageInteractionIdentity: string;
@@ -56,6 +63,8 @@ interface OrderEntryData extends OrderEntryDerived {
 }
 
 interface UseOrderEntryDataOptions {
+	reduceOnly?: boolean;
+	positionSnapshot?: EntryPositionSnapshot;
 	market: UnifiedMarketInfo | undefined;
 	side: Side;
 	markPx: number;
@@ -74,6 +83,8 @@ export function useOrderEntryData({
 	sizeInput,
 	limitPx,
 	marketOrderSizing,
+	reduceOnly = false,
+	positionSnapshot,
 }: UseOrderEntryDataOptions): OrderEntryData {
 	const { t } = useLingui();
 	const { isConnected } = useWalletSession();
@@ -162,7 +173,17 @@ export function useOrderEntryData({
 				sellAria: t(SIDE_LABELS.sellShort),
 			};
 
+	const sizeSource = useOrderSizeSource();
+	const orderType = useOrderType();
+	const { setSize, setSizeSelection, setSizeMode } = useOrderEntryActions();
+	const effectiveReduceOnly = reduceOnly && !isSpotMarket;
+	const sizeContext = `${leverageInteractionIdentity}:${market?.assetId}:${side}:${orderType}:${effectiveReduceOnly}`;
+	const selectedBaseSize =
+		effectiveReduceOnly && sizeSource?.context === `${sizeContext}:${sizeMode}` ? sizeSource.baseSize : undefined;
 	const derived = deriveOrderEntry({
+		reduceOnly: effectiveReduceOnly,
+		positionSnapshot,
+		selectedBaseSize,
 		isConnected,
 		market,
 		side,
@@ -198,7 +219,39 @@ export function useOrderEntryData({
 		});
 	}
 
+	function applySizePercent(pct: number) {
+		if (effectiveReduceOnly) {
+			const selection = getReduceOnlySizeSelection(
+				derived.reduceOnlyCapacity.maxBase,
+				pct,
+				sizeMode,
+				conversionPrice,
+				derived.szDecimals,
+			);
+			if (selection)
+				setSizeSelection(selection.size, { context: `${sizeContext}:${sizeMode}`, baseSize: selection.baseSize });
+		} else {
+			const size = getSizeForPercent(pct);
+			if (size) setSize(size);
+		}
+	}
+	function toggleSizeDenomination() {
+		const mode = sizeMode === "base" ? "quote" : "base";
+		if (effectiveReduceOnly && sizeInput.trim()) {
+			const baseSize = derived.sizeForOrder;
+			const size = getSelectedSizeDisplay(baseSize, mode, conversionPrice);
+			if (size !== null) {
+				setSizeSelection(size, { context: `${sizeContext}:${mode}`, baseSize }, mode);
+				return;
+			}
+		}
+		const size = convertSizeForModeToggle();
+		setSizeMode(mode);
+		if (size) setSize(size);
+	}
 	return {
+		applySizePercent,
+		toggleSizeDenomination,
 		accountAbstraction,
 		isConnected,
 		availabilityStatus,
@@ -206,13 +259,11 @@ export function useOrderEntryData({
 		availabilityMaxAgeMs,
 		executionAvailability,
 		isAvailabilityLoading,
-		isAvailabilityBlocked,
+		isAvailabilityBlocked: isAvailabilityBlocked || derived.reduceOnlyCapacity.status === "unavailable",
 		isAvailabilityStale,
 		hasAvailabilityError,
 		...derived,
 		sideLabels,
-		getSizeForPercent,
-		convertSizeForModeToggle,
 		leverage,
 		leverageInteractionIdentity,
 		currentLeverage,

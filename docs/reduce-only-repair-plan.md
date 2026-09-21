@@ -1,6 +1,12 @@
 # 只减仓修复方案
 
-状态：拟实施，尚未修改业务代码。2026-09-21 制定；代码基线 `7342b7f3`。本方案承接[首次审查](work-memory/sessions/2026-09-21-reduce-only-review.md)，有仓位官方终端实测见[补充记录](work-memory/sessions/2026-09-21-reduce-only-official-followup.md)。
+状态：2026-09-21 已实施；实施基线 `0fafbc7f`，最终检查与限制见[实施记录](work-memory/sessions/2026-09-21-reduce-only-implementation.md)。以下保留制定时的设计与验收标准，实际交付范围见下节。2026-09-21 制定时的代码基线为 `7342b7f3`。本方案承接[首次审查](work-memory/sessions/2026-09-21-reduce-only-review.md)，有仓位官方终端实测见[补充记录](work-memory/sessions/2026-09-21-reduce-only-official-followup.md)。
+
+## 实际交付
+
+共享容量模型、桌面/手机表单、通用校验器、八类主单执行守卫、精确数量来源和保证金占位均已接入。百分比先生成精确基础币量，确认到 SDK 请求复用该字符串；Scale 合计检查，normalTpsl 只检查主单。零开仓余额不再强制跳转充值，所有会话、市场和数据可用性门槛保留。持仓订阅拒绝错 owner、非法数量和畸形/重复身份快照。
+
+未实施额外的强平价估算、小额平仓最低价值豁免或真实账户订单；官方现场观察仍只覆盖此前补充记录。真实签名、成交、零可用余额实盘和手机真机不属于已通过的自动化验证。
 
 ## 目标与范围
 

@@ -6,6 +6,11 @@ import {
 	minOrderNotionalValidator,
 } from "@/lib/errors/definitions/order-input";
 import {
+	reduceOnlyPositionDirectionValidator,
+	reduceOnlyPositionExistsValidator,
+	reduceOnlyPositionSizeValidator,
+} from "@/lib/errors/definitions/reduce-only";
+import {
 	scaleLevelMinNotionalValidator,
 	scaleSizeAllocationValidator,
 	scaleSkewAllocationValidator,
@@ -26,9 +31,6 @@ import {
 	stopTriggerBelowMarkValidator,
 	tpTriggerAboveMarkValidator,
 	tpTriggerBelowMarkValidator,
-	triggerPositionDirectionValidator,
-	triggerPositionExistsValidator,
-	triggerPositionSizeValidator,
 } from "@/lib/errors/definitions/trigger";
 import {
 	twapMinNotionalValidator,
@@ -587,7 +589,7 @@ describe("quiet order validation presentation", () => {
 		scaleLevelMinNotionalValidator,
 		scaleSizeAllocationValidator,
 		scaleSkewAllocationValidator,
-		triggerPositionSizeValidator,
+		reduceOnlyPositionSizeValidator,
 		twapMinNotionalValidator,
 		enterTpSlPriceValidator,
 		tpPriceValidator,
@@ -613,7 +615,7 @@ describe("quiet order validation presentation", () => {
 		expect(errors).toEqual([error]);
 	});
 
-	it.each([triggerPositionExistsValidator, triggerPositionDirectionValidator, triggerPositionSizeValidator])(
+	it.each([reduceOnlyPositionExistsValidator, reduceOnlyPositionDirectionValidator, reduceOnlyPositionSizeValidator])(
 		"keeps $id feedback quiet until positions arrive",
 		(validator) => {
 			const error = { ...validator.error, message: validator.id };
@@ -904,5 +906,57 @@ describe("order draft feedback timing and ownership", () => {
 			side: "buy",
 		});
 		expect(priceErrors).toEqual({ tp: true, sl: true });
+	});
+});
+
+describe("shared reduce-only form validation", () => {
+	it.each(["market", "limit", "stopMarket", "stopLimit", "takeProfitMarket", "takeProfitLimit", "twap", "scale"])(
+		"validates %s with zero opening balance",
+		(orderType) => {
+			const trigger = orderType.startsWith("stop") || orderType.startsWith("takeProfit");
+			const context = perpContext({
+				orderType,
+				reduceOnly: true,
+				availableBalance: 0,
+				maxSize: 0,
+				positionSize: "-2",
+				sizeValue: 2,
+				orderValue: 200,
+				usesTriggerPrice: trigger,
+				triggerPriceNum: orderType.startsWith("stop") ? 110 : 90,
+				stopOrder: orderType.startsWith("stop"),
+				takeProfitOrder: orderType.startsWith("takeProfit"),
+				twapOrder: orderType === "twap",
+				twapMinutesNum: 30,
+				scaleOrder: orderType === "scale",
+				scaleStartPriceNum: 90,
+				scaleEndPriceNum: 110,
+				scaleLevelsNum: 4,
+				scaleSkewNum: 1,
+			});
+			expect(validatePerpOrder(context).errors).toEqual([]);
+			for (const positionSize of [null, "0", "2", "-1.99", "NaN"])
+				expect(validatePerpOrder({ ...context, positionSize }).canSubmit).toBe(false);
+			expect(
+				validatePerpOrder({
+					...context,
+					side: "sell",
+					positionSize: "2",
+					triggerPriceNum: orderType.startsWith("stop") ? 90 : 110,
+				}).canSubmit,
+			).toBe(true);
+		},
+	);
+	it("compares the exact intended decimal instead of its Number projection", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				reduceOnly: true,
+				side: "sell",
+				positionSize: "1234567890.12345677",
+				sizeValue: Number("1234567890.12345678"),
+				sizeForOrder: "1234567890.12345678",
+			}),
+		);
+		expect(result.errors.map((e) => e.code)).toContain("TRG_007");
 	});
 });

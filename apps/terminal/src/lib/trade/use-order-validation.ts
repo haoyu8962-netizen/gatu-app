@@ -48,7 +48,8 @@ export interface PerpOrderFields {
 	maxSize: number;
 	stopOrder: boolean;
 	takeProfitOrder: boolean;
-	positionSize: number | null;
+	positionSize: number | string | null;
+	sizeForOrder?: string;
 	reduceOnly: boolean;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;

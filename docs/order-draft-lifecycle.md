@@ -80,3 +80,9 @@ opportunity. Rendering another surface does neither.
 
 Slider gesture ownership and resize cancellation remain specified separately in
 [`slider-interactions.md`](./slider-interactions.md).
+
+## 只减仓百分比数量来源（2026-09-21）
+
+百分比先用 Big.js 对原始可减仓基础币量计算并量化，再生成当前单位的显示字符串。短期 `sizeSource` 保存同一基础币字符串，绑定账户/网络/市场、方向、订单类型、只减仓状态及单位；不写本地持久化。报价变化不会重新反算这笔选择的基础币量。手动修改数量、切方向/类型/只减仓、用户修改限价或重置草稿会使来源失效；单位转换显式转移同一个基础币量。原 draftRevision、marketIdentity 和提交 reset token 仍生效。
+
+`sizeForOrder` 从共享推导进入确认草稿与提交意图；确认行及普通单、TWAP、Scale 分配器均使用它，不能将舍入后的金额或 Number 展示值反算回协议数量。手动金额输入仍按当前选价向下量化；确认后数量冻结，实时持仓缩小/消失/翻向/变旧拒绝旧意图，增长也不增加确认数量。

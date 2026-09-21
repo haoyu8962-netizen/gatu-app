@@ -42,6 +42,7 @@ export interface OrderSubmitInput {
 	side: Side;
 	orderType: OrderType;
 	sizeValue: number;
+	sizeForOrder?: string;
 	price: number;
 	executionReferencePx: number;
 	markPx: number;
@@ -178,7 +179,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 		} = input;
 
 		const szDecimals = market.szDecimals ?? 0;
-		const formattedSize = formatSizeForOrder(sizeValue, szDecimals);
+		const formattedSize = formatSizeForOrder(input.sizeForOrder ?? sizeValue, szDecimals);
 		const formattedPrice = formatPriceForOrder(price, { assetId: market.assetId, szDecimals });
 		const riskContext =
 			market.kind === "spot" ? ({ marketKind: "spot" } as const) : ({ marketKind: "perp", marginMode } as const);
@@ -253,7 +254,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					assetId: market.assetId,
 					side,
 					orderType,
-					sizeValue,
+					sizeValue: input.sizeForOrder ?? sizeValue,
 					szDecimals,
 					markPx: executionReferencePx,
 					price,

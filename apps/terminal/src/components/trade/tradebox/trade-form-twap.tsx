@@ -27,7 +27,7 @@ interface Props {
 	compact?: boolean;
 	desktop?: boolean;
 	mobileSafe?: boolean;
-	reduceOnly?: { checked: boolean; onCheckedChange: (checked: boolean) => void };
+	reduceOnly?: { disabled?: boolean; checked: boolean; onCheckedChange: (checked: boolean) => void };
 }
 
 const labelClass = "text-2xs leading-none text-trading-panel-subtle";
@@ -167,7 +167,7 @@ export function TradeFormTwap({
 					{reduceOnly && (
 						<Checkbox
 							{...optionProps}
-							disabled={disabled}
+							disabled={reduceOnly.disabled ?? disabled}
 							checked={reduceOnly.checked}
 							onCheckedChange={(checked) => reduceOnly.onCheckedChange(checked === true)}
 							label={t`Reduce Only`}

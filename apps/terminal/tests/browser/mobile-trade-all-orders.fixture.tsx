@@ -15,10 +15,16 @@ import {
 	useOrderSide,
 	useOrderSize,
 	useOrderType,
+	useReduceOnly,
 	useSizeMode,
 } from "@/stores/use-order-entry-store";
 import { DesktopOrderEntryGrid } from "./desktop-order-entry-grid.fixture";
-import { setFixtureState, useFixtureState, useSelectedMarketInfo } from "./mobile-trade-all-orders.browser";
+import {
+	setFixtureState,
+	useFixtureState,
+	useSelectedMarketInfo,
+	useUserPositions,
+} from "./mobile-trade-all-orders.browser";
 import "./mobile-orderbook-cls.css";
 
 function DesktopFields() {
@@ -27,7 +33,8 @@ function DesktopFields() {
 	const sizeMode = useSizeMode();
 	const sizeInput = useOrderSize();
 	const limitPrice = useLimitPrice();
-	const actions = useOrderEntryActions();
+	const reduceOnly = useReduceOnly();
+	const positions = useUserPositions();
 	const data = useOrderEntryData({
 		market,
 		side,
@@ -36,6 +43,12 @@ function DesktopFields() {
 		sizeInput,
 		limitPx: toNumberOrZero(limitPrice),
 		marketOrderSizing: null,
+		reduceOnly,
+		positionSnapshot: {
+			ready: !positions.isLoading,
+			receivedAt: positions.receivedAt,
+			signedSize: positions.getPosition()?.szi ?? "0",
+		},
 	});
 	return (
 		<div data-fixture-desktop className="trade-panel-container w-[300px] p-3">
@@ -45,12 +58,8 @@ function DesktopFields() {
 				price={toNumberOrZero(limitPrice)}
 				positionSize={0}
 				swapTargetToken={null}
-				onSizeModeToggle={() => {
-					const converted = data.convertSizeForModeToggle();
-					actions.toggleSizeMode();
-					if (converted) actions.setSize(converted);
-				}}
-				onSizePercentApply={(percent) => actions.setSize(data.getSizeForPercent(percent))}
+				onSizeModeToggle={data.toggleSizeDenomination}
+				onSizePercentApply={data.applySizePercent}
 				onSwapClick={() => {}}
 			/>
 		</div>

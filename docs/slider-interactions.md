@@ -128,8 +128,11 @@ The control records how the last gesture ended in `data-gesture-end`: `commit`,
 a report of a thumb jumping back can be answered from the page instead of guessed:
 read it on `[data-trade-slider-control]` right after the jump. What a cancellation restores belongs to the
 caller, and a changed identity never receives an old snapshot. The order forms put
-back the exact starting size string whenever the identity still matches, whether or
-not the form is available at that moment. The close dialogs route the restore through
+back the exact starting size string and its transient base-quantity source whenever
+the identity still matches, whether or not the form is available at that moment.
+This preserves a Reduce Only percentage selection across cancellation even when
+its displayed quote amount was rounded; cancellation never reinterprets that amount
+as a new base quantity. The close dialogs route the restore through
 the same `canEdit` guard as every other edit, so a gesture cancelled while the
 position data is unreadable keeps the last intent that was published before the pause
 instead of the starting one; the thumb is repainted from that value. In both cases a

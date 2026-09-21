@@ -4974,10 +4974,6 @@ msgstr "Solo esta transferencia inicia la cola de Testnet, que tarda unos cinco 
 msgid "Open"
 msgstr "Abierta"
 
-#: src/lib/errors/definitions/trigger.ts
-msgid "Open a position before placing a trigger order"
-msgstr "Abra una posición antes de colocar una orden de activación"
-
 #: src/config/footer-links.ts
 msgid "Open command menu"
 msgstr "Abrir menú de comandos"
@@ -5160,6 +5156,10 @@ msgstr "Modificación de la orden confirmada."
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Order modification submitted. Waiting for the open-orders update."
 msgstr "Modificación de la orden enviada. Esperando la actualización de órdenes abiertas."
+
+#: src/lib/errors/definitions/reduce-only.ts
+msgid "Order must reduce your current position"
+msgstr "La orden debe reducir tu posición actual"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/order-toast.tsx
@@ -5536,6 +5536,10 @@ msgstr "Valor de la cartera"
 #: src/config/trade-panel-labels.ts
 msgid "Position"
 msgstr "Posición"
+
+#: src/lib/trade/order-submission-feedback.ts
+msgid "Position changed before submission. Review the Reduce Only quantity and direction."
+msgstr "La posición cambió antes del envío. Revisa la cantidad y la dirección de Solo reducir."
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
@@ -5928,6 +5932,14 @@ msgstr "No se pudo guardar la recuperación en este navegador. Anota el hash de 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "Solo reducir"
+
+#: src/lib/errors/definitions/reduce-only.ts
+msgid "Reduce Only requires an open position"
+msgstr "Solo reducir requiere una posición abierta"
+
+#: src/lib/errors/definitions/reduce-only.ts
+msgid "Reduce Only size exceeds position size"
+msgstr "La cantidad de Solo reducir supera la posición"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
@@ -8680,10 +8692,6 @@ msgstr "Disparador"
 msgid "Trigger Condition"
 msgstr "Condición de activación"
 
-#: src/lib/errors/definitions/trigger.ts
-msgid "Trigger order must reduce your current position"
-msgstr "La orden de activación debe reducir su posición actual"
-
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -8705,10 +8713,6 @@ msgstr "Precio de disparo"
 #: src/lib/errors/definitions/twap.ts
 msgid "Trigger price must differ from mark"
 msgstr "El precio de activación debe ser distinto del precio de marca"
-
-#: src/lib/errors/definitions/trigger.ts
-msgid "Trigger size exceeds position size"
-msgstr "El tamaño de activación supera el tamaño de la posición"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx

@@ -81,6 +81,39 @@ function getWithdrawable(event: AllDexsClearinghouseStateWsEvent | undefined): s
 	return mainDex?.[1]?.withdrawable ?? "0";
 }
 
+function isValidPositionSnapshot(event: AllDexsClearinghouseStateWsEvent, address: string | undefined): boolean {
+	if (
+		!event ||
+		!address ||
+		typeof event.user !== "string" ||
+		event.user.toLowerCase() !== address.toLowerCase() ||
+		!Array.isArray(event.clearinghouseStates)
+	)
+		return false;
+	const identities = new Set<string>();
+	const dexIdentities = new Set<string>();
+	return event.clearinghouseStates.every((entry) => {
+		if (!Array.isArray(entry) || entry.length !== 2) return false;
+		const [dex, state] = entry;
+		if (typeof dex !== "string" || dexIdentities.has(dex) || !Array.isArray(state?.assetPositions)) return false;
+		dexIdentities.add(dex);
+		return state.assetPositions.every((assetPosition) => {
+			const position = assetPosition?.position;
+			if (
+				!position ||
+				typeof position.coin !== "string" ||
+				typeof position.szi !== "string" ||
+				!SIGNED_DECIMAL_PATTERN.test(position.szi)
+			)
+				return false;
+			const identity = `${dex}:${position.coin}`;
+			if (identities.has(identity)) return false;
+			identities.add(identity);
+			return true;
+		});
+	});
+}
+
 const EMPTY: UserPositions = {
 	positions: [],
 	getPosition: () => null,
@@ -106,12 +139,14 @@ export function useUserPositions(): UserPositions {
 	);
 
 	const isLoading = enabled && (status === "subscribing" || status === "idle" || data === undefined);
-	const hasError = status === "error";
+	// Never turn another owner or a malformed position into a confirmed empty account.
+	const snapshotInvalid = data !== undefined && !isValidPositionSnapshot(data, address);
+	const hasError = status === "error" || snapshotInvalid;
 
 	if (!enabled) return EMPTY;
 
-	const positions = normalizePositions(data);
-	const withdrawable = getWithdrawable(data);
+	const positions = normalizePositions(snapshotInvalid ? undefined : data);
+	const withdrawable = getWithdrawable(snapshotInvalid ? undefined : data);
 
 	return {
 		positions,

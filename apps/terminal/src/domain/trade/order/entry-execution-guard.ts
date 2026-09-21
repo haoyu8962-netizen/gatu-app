@@ -10,7 +10,9 @@ import { isLiveMarkPriceReady, type MarkPriceStatus } from "@/domain/trade/marke
 import { isValidSizeDecimalsForAsset } from "@/domain/trade/orders";
 import type { AssetAvailabilityStatus } from "./availability";
 
-export const ENTRY_POSITION_MAX_AGE_MS = 60_000;
+import { getReduceOnlyCapacity } from "./reduce-only";
+
+export { ENTRY_POSITION_MAX_AGE_MS } from "./reduce-only";
 
 export type EntryExecutionErrorReason =
 	| "execution-price-unavailable"
@@ -36,7 +38,7 @@ const ENTRY_EXECUTION_ERROR_MESSAGES: Record<EntryExecutionErrorReason, string> 
 	"market-context-mismatch": "Order no longer matches the selected market",
 	"order-request-invalid": "Order request is invalid",
 	"position-data-unavailable": "Live position data is unavailable",
-	"reduce-only-position-changed": "Reduce-only trigger no longer matches the current position",
+	"reduce-only-position-changed": "Reduce-only order no longer matches the current position",
 	"slippage-limit-exceeded": "Market price moved beyond the confirmed slippage limit",
 	"slippage-setting-invalid": "Market slippage setting is invalid",
 	"stop-price-invalidated": "Stop price is no longer valid against the live mark price",
@@ -100,28 +102,32 @@ function isEntryTriggerOrder(params: OrderParameters): boolean {
 	return params.grouping === "na" && params.orders.length === 1 && "trigger" in params.orders[0].t;
 }
 
-function assertReduceOnlyTriggerPosition(
-	order: OrderParameters["orders"][number],
+function assertReduceOnlyPosition(
+	orders: readonly { b: boolean; r: boolean; s: string | number }[],
 	state: EntryOrderExecutionState,
 	now: number,
 ): void {
-	if (order.r !== true) return;
-	const positionAge =
-		state.positionReceivedAt === undefined ? Number.POSITIVE_INFINITY : now - state.positionReceivedAt;
-	if (
-		!state.positionStateReady ||
-		positionAge < 0 ||
-		positionAge > ENTRY_POSITION_MAX_AGE_MS ||
-		state.positionSignedSize === undefined
-	) {
-		failEntryExecution("position-data-unavailable");
-	}
-
-	const positionSize = readEntryBig(state.positionSignedSize, "position-data-unavailable");
-	const orderSize = readEntryBig(order.s, "order-request-invalid");
-	const reducesPosition = order.b ? positionSize.lt(0) : positionSize.gt(0);
-	if (positionSize.eq(0) || !orderSize.gt(0) || !reducesPosition || orderSize.gt(positionSize.abs())) {
-		failEntryExecution("reduce-only-position-changed");
+	let total = Big(0);
+	for (const order of orders) {
+		if (!order.r) continue;
+		if (state.availability.kind !== "perp") failEntryExecution("order-request-invalid");
+		const capacity = getReduceOnlyCapacity(
+			true,
+			order.b ? "buy" : "sell",
+			{
+				ready: state.positionStateReady,
+				receivedAt: state.positionReceivedAt,
+				signedSize: state.positionSignedSize,
+			},
+			state.szDecimals ?? -1,
+			now,
+		);
+		if (capacity.status === "unavailable") failEntryExecution("position-data-unavailable");
+		const size = readEntryBig(order.s, "order-request-invalid");
+		if (!size.gt(0) || !size.eq(size.round(state.szDecimals, Big.roundDown)))
+			failEntryExecution("order-request-invalid");
+		total = total.plus(size);
+		if (capacity.status !== "ready" || total.gt(capacity.maxBase)) failEntryExecution("reduce-only-position-changed");
 	}
 }
 
@@ -216,6 +222,7 @@ function assertOrderSizesWithinCurrentAvailability(params: OrderParameters, stat
 		const size = readEntryBig(order.s, "order-request-invalid");
 		const price = readEntryBig(order.p, "order-request-invalid");
 		if (!size.gt(0) || !price.gt(0)) failEntryExecution("order-request-invalid");
+		if (order.r && state.availability.kind === "perp") continue;
 		const side = order.b ? "buy" : "sell";
 		totals[side] = totals[side].plus(size);
 		quoteTotals[side] = quoteTotals[side].plus(size.times(price));
@@ -263,12 +270,12 @@ export function assertEntryOrderExecutionAllowed(
 	) {
 		failEntryExecution("trading-availability-unavailable");
 	}
+	assertReduceOnlyPosition(getPrimaryOrders(params), state, now);
 	assertOrderSizesWithinCurrentAvailability(params, state);
 
 	const marketOrders = params.orders.filter(isFrontendMarketOrder);
 	const entryTrigger = isEntryTriggerOrder(params);
 	const hasAttachedTriggers = params.grouping === "normalTpsl";
-	if (entryTrigger) assertReduceOnlyTriggerPosition(params.orders[0], state, now);
 	if (marketOrders.length === 0 && !entryTrigger && !hasAttachedTriggers) return;
 	if (
 		(marketOrders.length > 0 || entryTrigger) &&
@@ -373,6 +380,7 @@ export function assertEntryTwapExecutionAllowed(
 	}
 	const markPx = getFreshTwapMark(state, now);
 	assertTwapProtocolLimits(params, markPx);
-	assertTwapSizeWithinCurrentAvailability(params, state, markPx);
+	assertReduceOnlyPosition([params.twap], state, now);
+	if (!params.twap.r) assertTwapSizeWithinCurrentAvailability(params, state, markPx);
 	assertTwapDetailsStillValid(params, state, now);
 }

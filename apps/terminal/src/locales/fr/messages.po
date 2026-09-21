@@ -4974,10 +4974,6 @@ msgstr "Seul ce transfert lance la file d’attente du Testnet, d’environ cinq
 msgid "Open"
 msgstr "Ouvert"
 
-#: src/lib/errors/definitions/trigger.ts
-msgid "Open a position before placing a trigger order"
-msgstr "Ouvrez une position avant de placer un ordre à déclenchement"
-
 #: src/config/footer-links.ts
 msgid "Open command menu"
 msgstr "Ouvrir le menu de commandes"
@@ -5160,6 +5156,10 @@ msgstr "Modification de l'ordre confirmée."
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Order modification submitted. Waiting for the open-orders update."
 msgstr "Modification de l'ordre soumise. En attente de la mise à jour des ordres ouverts."
+
+#: src/lib/errors/definitions/reduce-only.ts
+msgid "Order must reduce your current position"
+msgstr "L’ordre doit réduire votre position actuelle"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/order-toast.tsx
@@ -5536,6 +5536,10 @@ msgstr "Valeur du portefeuille"
 #: src/config/trade-panel-labels.ts
 msgid "Position"
 msgstr "Position"
+
+#: src/lib/trade/order-submission-feedback.ts
+msgid "Position changed before submission. Review the Reduce Only quantity and direction."
+msgstr "La position a changé avant l’envoi. Vérifiez la quantité et le sens de l’ordre en réduction seule."
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
@@ -5928,6 +5932,14 @@ msgstr "La récupération n’a pas pu être enregistrée dans ce navigateur. No
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "Réduction uniquement"
+
+#: src/lib/errors/definitions/reduce-only.ts
+msgid "Reduce Only requires an open position"
+msgstr "Réduction seule nécessite une position ouverte"
+
+#: src/lib/errors/definitions/reduce-only.ts
+msgid "Reduce Only size exceeds position size"
+msgstr "La quantité en réduction seule dépasse la position"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
@@ -8680,10 +8692,6 @@ msgstr "Déclencheur"
 msgid "Trigger Condition"
 msgstr "Condition de déclenchement"
 
-#: src/lib/errors/definitions/trigger.ts
-msgid "Trigger order must reduce your current position"
-msgstr "L'ordre à déclenchement doit réduire votre position actuelle"
-
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -8705,10 +8713,6 @@ msgstr "Prix de déclenchement"
 #: src/lib/errors/definitions/twap.ts
 msgid "Trigger price must differ from mark"
 msgstr "Le prix de déclenchement doit différer du prix mark"
-
-#: src/lib/errors/definitions/trigger.ts
-msgid "Trigger size exceeds position size"
-msgstr "La taille de l'ordre à déclenchement dépasse celle de la position"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx

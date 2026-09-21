@@ -63,6 +63,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useOrderEntryActions: () => orderActions,
 	useOrderSide: () => "buy",
 	useOrderSize: () => desktopState.sizeInput,
+	useOrderSizeSource: () => null,
 	useOrderType: () => desktopState.orderType,
 	useReduceOnly: () => false,
 	useSizeMode: () => "base",

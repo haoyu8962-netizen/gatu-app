@@ -16,6 +16,7 @@ interface OrderActionStageInput {
 	hasBalanceError: boolean;
 	isBalanceLoading: boolean;
 	availableBalance: number;
+	reduceOnly?: boolean;
 }
 
 export function getOrderActionStage(input: OrderActionStageInput): OrderActionStage {
@@ -24,7 +25,7 @@ export function getOrderActionStage(input: OrderActionStageInput): OrderActionSt
 	if (input.needsApproval && !input.isSignerReady) return "agent";
 	if (input.hasBalanceError) return "balanceError";
 	if (input.isBalanceLoading) return "balanceLoading";
-	if (input.availableBalance <= 0) return "deposit";
+	if (!input.reduceOnly && input.availableBalance <= 0) return "deposit";
 	if (input.needsApproval) return "builder";
 	return "submit";
 }

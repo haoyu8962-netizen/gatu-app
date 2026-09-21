@@ -8,6 +8,8 @@ import {
 	getOrderEntryDraftResetToken,
 	useOrderEntryActions as useActions,
 	useLimitPrice,
+	useOrderSize,
+	useOrderSizeSource,
 	useOrderType,
 	useReduceOnly,
 	useScaleSkew,
@@ -54,6 +56,31 @@ describe("order entry store persistence", () => {
 		act(() => root.unmount());
 		container.remove();
 		localStorage.clear();
+	});
+
+	it("keeps selected base quantity transient and invalidates it on manual/context edits", () => {
+		let source: ReturnType<typeof useOrderSizeSource> = null;
+		let size = "";
+		function Probe() {
+			source = useOrderSizeSource();
+			size = useOrderSize();
+			return null;
+		}
+		act(() => root.render(createElement(Probe)));
+		for (const invalidate of [
+			() => actions.setSize("686.37"),
+			() => actions.setReduceOnly(false),
+			() => actions.setSide("sell"),
+			() => actions.setOrderType("twap"),
+			() => actions.setLimitPriceFromUser("BTC|limit", "99"),
+		]) {
+			act(() => actions.setSizeSelection("686.37", { context: "synthetic", baseSize: "7.15" }));
+			expect(source).toEqual({ context: "synthetic", baseSize: "7.15" });
+			act(invalidate);
+			expect(source).toBeNull();
+			expect(size).toBe("686.37");
+		}
+		expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.ORDER_ENTRY) ?? "{}").state?.sizeSource).toBeUndefined();
 	});
 
 	it("does not write storage when transient order inputs change", () => {

@@ -253,14 +253,14 @@ describe("entry order SDK execution guard", () => {
 		).toThrow("Live position data is unavailable");
 		expect(() =>
 			assertEntryOrderExecutionAllowed(reducing, executionState({ positionSignedSize: "-2" }), 1_001),
-		).toThrow("Reduce-only trigger no longer matches");
+		).toThrow("Reduce-only order no longer matches");
 		expect(() =>
 			assertEntryOrderExecutionAllowed(
 				{ ...reducing, orders: [{ ...reducing.orders[0], s: "3" }] },
 				executionState({ positionSignedSize: "2" }),
 				1_001,
 			),
-		).toThrow("Reduce-only trigger no longer matches");
+		).toThrow("Reduce-only order no longer matches");
 	});
 
 	it("validates attached limit TP/SL against the parent price without requiring a live mark", () => {
@@ -506,5 +506,103 @@ describe("entry TWAP SDK execution guard", () => {
 		expect(() => assertEntryTwapExecutionAllowed(sellStop, executionState({ markPx: "89" }), 1_001)).toThrow(
 			"Stop price is no longer valid against the live mark price",
 		);
+	});
+});
+
+describe("all reduce-only entry paths", () => {
+	const now = 1001;
+	const zeroAvailability = { kind: "perp", maxBaseBySide: { buy: "0", sell: "0" } } as const;
+	for (const kind of ["market", "limit", "stop", "takeProfit", "scale", "twap"] as const) {
+		for (const buy of [false, true]) {
+			const size = "2";
+			const base = { a: 0, b: buy, s: size, r: true };
+			const t: OrderParameters["orders"][number]["t"] =
+				kind === "stop" || kind === "takeProfit"
+					? {
+							trigger: {
+								isMarket: true,
+								triggerPx: kind === "stop" ? (buy ? "110" : "90") : buy ? "90" : "110",
+								tpsl: kind === "stop" ? "sl" : "tp",
+							},
+						}
+					: { limit: { tif: kind === "market" ? "FrontendMarket" : "Gtc" } };
+			const order = { ...base, p: "100", t };
+			const params: OrderParameters = {
+				orders:
+					kind === "scale"
+						? [
+								{ ...order, s: "1" },
+								{ ...order, s: "1" },
+							]
+						: [order],
+				grouping: "na",
+			};
+			function execute(state: EntryOrderExecutionState) {
+				if (kind === "twap") return assertEntryTwapExecutionAllowed({ twap: { ...base, m: 30, t: true } }, state, now);
+				return assertEntryOrderExecutionAllowed(params, state, now);
+			}
+			it(`${kind} ${buy ? "buy" : "sell"} closes without opening capacity and never resizes confirmed intent`, () => {
+				const state = executionState({ positionSignedSize: buy ? "-2" : "2", availability: zeroAvailability });
+				expect(() => execute(state)).not.toThrow();
+				expect(() => execute({ ...state, positionSignedSize: buy ? "-3" : "3" })).not.toThrow();
+				expect(params.orders.reduce((sum, o) => sum + Number(o.s), 0)).toBe(2);
+				for (const positionSignedSize of ["0", buy ? "2" : "-2", buy ? "-1.999" : "1.999"]) {
+					expect(() => execute({ ...state, positionSignedSize })).toThrow("Reduce-only order no longer matches");
+				}
+				for (const patch of [
+					{ positionStateReady: false },
+					{ positionReceivedAt: undefined },
+					{ positionReceivedAt: -60000 },
+					{ positionSignedSize: "NaN" },
+					{ positionSignedSize: undefined },
+				]) {
+					expect(() => execute({ ...state, ...patch })).toThrow("Live position data is unavailable");
+				}
+				expect(() => execute({ ...state, availabilityStatus: "stale" })).toThrow(
+					"Trading availability data is unavailable",
+				);
+			});
+		}
+	}
+	it("rejects malformed precision, mixed opposite reduce directions and total Scale oversize", () => {
+		const order = { a: 0, b: true, p: "100", s: "1.0001", r: true, t: { limit: { tif: "Gtc" } } } as const;
+		expect(() => assertEntryOrderExecutionAllowed({ orders: [order], grouping: "na" }, executionState(), now)).toThrow(
+			"Order request is invalid",
+		);
+		expect(() =>
+			assertEntryOrderExecutionAllowed(
+				{
+					orders: [
+						{ ...order, s: "1.1" },
+						{ ...order, s: "1.1" },
+					],
+					grouping: "na",
+				},
+				executionState(),
+				now,
+			),
+		).toThrow("Reduce-only order no longer matches");
+		expect(() =>
+			assertEntryOrderExecutionAllowed(
+				{
+					orders: [
+						{ ...order, s: "1" },
+						{ ...order, s: "1", b: false },
+					],
+					grouping: "na",
+				},
+				executionState(),
+				now,
+			),
+		).toThrow("Reduce-only order no longer matches");
+	});
+	it("excludes attached protection orders from current-position capacity", () => {
+		expect(() =>
+			assertEntryOrderExecutionAllowed(
+				limitWithAttachedTpSl(),
+				executionState({ positionStateReady: false, positionSignedSize: undefined }),
+				now,
+			),
+		).not.toThrow();
 	});
 });

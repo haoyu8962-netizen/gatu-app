@@ -5,10 +5,11 @@ interface OrderMetricsInput {
 	sizeValue: number;
 	price: number;
 	leverage: number | null;
+	reduceOnly?: boolean;
 }
 
 interface OrderMetricsResult {
-	marginRequired: number;
+	marginRequired: number | null;
 }
 
 export function getOrderMetrics(input: OrderMetricsInput): OrderMetricsResult {
@@ -16,5 +17,5 @@ export function getOrderMetrics(input: OrderMetricsInput): OrderMetricsResult {
 	const px = toBig(input.price);
 	const orderValue = sz && px ? sz.times(px).toNumber() : 0;
 	const marginRequired = input.leverage ? Big(orderValue).div(input.leverage).toNumber() : 0;
-	return { marginRequired };
+	return { marginRequired: input.reduceOnly ? null : marginRequired };
 }

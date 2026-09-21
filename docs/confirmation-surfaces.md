@@ -115,3 +115,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/position-market-close.test.ts \
   src/lib/tests/trading-action-button-label-contract.test.ts
 ```
+
+## 普通入口只减仓补充（2026-09-21）
+
+本次修复为普通入口只减仓增加 `sizeForOrder` 确认来源：显示和发送使用相同基础币字符串，百分比/单位转换不会经金额舍入反算增减承诺量。提交守卫对最新仓位重新判断，原确认数量超出最新容量时拒绝而不静默缩单，仓位增长不扩单。此补充仅声明只减仓数量链路，不将其他尚未核对确认面的状态升级为已验收。

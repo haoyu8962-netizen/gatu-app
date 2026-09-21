@@ -8,6 +8,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Reduce Only now sizes percentages and Max from the current opposite position on desktop and
+  mobile, including when opening availability is zero. Oversized or wrong-direction orders are
+  blocked across ordinary, trigger, TWAP and Scale orders; Scale checks the combined size.
+  Quote-unit selections preserve their exact base quantity through confirmation and submission,
+  and Reduce Only displays no opening-margin requirement.
+
 - The remaining trading dialogs no longer show progress in their buttons. TP/SL, Adjust Isolated
   Margin, Cancel All Orders, the phone's Modify Order sheet, Swap and Account type close as soon as
   you confirm, and the result arrives as a notification in the bottom-right corner: updated,

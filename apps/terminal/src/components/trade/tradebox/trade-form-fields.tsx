@@ -30,6 +30,7 @@ import {
 	useOrderEntryActions,
 	useOrderSide,
 	useOrderSize,
+	useOrderSizeSource,
 	useOrderType,
 	useReduceOnly,
 	useSizeMode,
@@ -108,6 +109,8 @@ export function TradeFormFields({
 	const side = useOrderSide();
 	const sizeMode = useSizeMode();
 	const sizeInput = useOrderSize();
+	const sizeSource = useOrderSizeSource();
+	const { setSizeSelection } = useOrderEntryActions();
 	const orderType = useOrderType();
 	const limitPriceInput = useLimitPrice();
 	const triggerPriceInput = useTriggerPrice();
@@ -136,7 +139,8 @@ export function TradeFormFields({
 	const { setSize, setLimitPriceFromPrefill, setLimitPriceFromUser, setTriggerPrice, setReduceOnly, setTpSlEnabled } =
 		useOrderEntryActions();
 
-	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
+	const isFormDisabled =
+		!isConnected || isAvailabilityBlocked || (!(capabilities.hasReduceOnly && reduceOnly) && availableBalance <= 0);
 	const isSizeSliderPaused = isConnected && isAvailabilityBlocked;
 	const isSizeSliderDisabled = !isSizeSliderPaused && (isFormDisabled || maxSize <= 0);
 
@@ -185,6 +189,8 @@ export function TradeFormFields({
 	}
 
 	const sliderInteraction = useSizeSliderInteraction({
+		sizeSource,
+		restoreSizeSelection: setSizeSelection,
 		applyPercent: handleSizePercentApply,
 		onInteractionChange: handleSizeInteractionChange,
 		interactionIdentity: sliderInteractionIdentity,
@@ -412,7 +418,9 @@ export function TradeFormFields({
 					{twapOrder && (
 						<TradeFormTwap
 							reduceOnly={
-								capabilities.hasReduceOnly ? { checked: reduceOnly, onCheckedChange: setReduceOnly } : undefined
+								capabilities.hasReduceOnly
+									? { checked: reduceOnly, disabled: !isConnected, onCheckedChange: setReduceOnly }
+									: undefined
 							}
 							desktop
 							disabled={isFormDisabled}
@@ -438,7 +446,7 @@ export function TradeFormFields({
 								capabilities.hasReduceOnly
 									? {
 											checked: reduceOnly,
-											disabled: isFormDisabled,
+											disabled: !isConnected,
 											onCheckedChange: setReduceOnly,
 										}
 									: undefined

@@ -10,6 +10,7 @@ describe("order submission feedback", () => {
 		[new EntryExecutionError("mark-price-unavailable"), "live-trading-data-unavailable"],
 		[new EntryExecutionError("position-data-unavailable"), "live-position-unavailable"],
 		[new EntryExecutionError("slippage-limit-exceeded"), "order-conditions-changed"],
+		[new EntryExecutionError("reduce-only-position-changed"), "reduce-only-position-changed"],
 		[new EntryExecutionError("twap-duration-invalid"), "twap-minutes-range"],
 		[new EntryExecutionError("twap-notional-too-small"), "twap-min-notional"],
 		[new SpotSwapExecutionError("balance-changed"), "balance-changed"],

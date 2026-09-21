@@ -289,7 +289,8 @@ for (const viewport of [
 		}
 		await page.getByRole("button", { name: "Funding", exact: true }).click();
 		await expect(checks.nth(0)).toBeDisabled();
-		await expect(checks.nth(1)).toBeDisabled();
+		// Reduce Only remains an available recovery path when opening balance is zero.
+		await expect(checks.nth(1)).toBeEnabled();
 		await expect(checks.nth(2)).toBeEnabled();
 		await expect(page.getByRole("status", { name: "Captured orders", exact: true })).toHaveText("[]");
 	});
@@ -618,12 +619,12 @@ for (const desktop of [false, true]) {
 		} else await selectOrder(page, "Stop Market");
 		const reduceOnly = form.getByRole("checkbox", { name: "Reduce Only", exact: true });
 		await reduceOnly.check();
-		await expect(form).toContainText("Open a position before placing a trigger order");
+		await expect(form).toContainText("Reduce Only requires an open position");
 		await page.getByRole("button", { name: "Positions pending", exact: true }).click();
-		await expect(form).not.toContainText("Open a position before placing a trigger order", { timeout: 500 });
+		await expect(form).not.toContainText("Reduce Only requires an open position", { timeout: 500 });
 		await expect(form.getByRole("button", { name: desktop ? "Place Long Order" : "Long", exact: true })).toBeDisabled();
 		await page.getByRole("button", { name: "Positions pending", exact: true }).click();
-		await expect(form).toContainText("Open a position before placing a trigger order");
+		await expect(form).toContainText("Reduce Only requires an open position");
 		await reduceOnly.uncheck();
 		if (desktop) await form.getByRole("button", { name: "Market", exact: true }).click();
 		else await selectOrder(page, "Market");
