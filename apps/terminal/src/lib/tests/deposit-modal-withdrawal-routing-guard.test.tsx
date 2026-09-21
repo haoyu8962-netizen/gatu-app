@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
+import { HttpRequestError } from "@nktkas/hyperliquid";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type ButtonHTMLAttributes, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -42,6 +43,10 @@ const WITHDRAWAL_MESSAGES_AR: Record<keyof typeof WITHDRAWAL_MESSAGES, string> =
 	routeChanged: "تغيّر مسار السحب في Hyperliquid. راجع المسار المحدّث والرسوم المحدّثة، ثم أرسل الطلب مرة أخرى.",
 	routeUnavailable: "تعذّر التحقق من مسار السحب الحالي في Hyperliquid.",
 };
+
+const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning: vi.fn() }));
+vi.mock("sonner", () => ({ toast: toastMocks }));
+const closeDepositModal = vi.hoisted(() => vi.fn());
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -359,7 +364,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 			isPending: false,
 			isSuccess: false,
 			mutateAsync,
-			reset: vi.fn(() => testState.exchangeErrors.delete(method)),
+			reset: vi.fn(),
 		};
 	},
 	useHyperliquid: () => ({
@@ -443,13 +448,14 @@ vi.mock("@/lib/wallet/privy-wagmi", () => ({
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
-	useDepositModalActions: () => ({ close: vi.fn() }),
+	useDepositModalActions: () => ({ close: closeDepositModal }),
 	useDepositModalOpen: () => testState.modalOpen,
 	useDepositModalTab: () => testState.activeTab,
 	useTransferModalActions: () => ({ open: vi.fn() }),
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
+	getResolvedFormatLocale: () => "en-US",
 	useIsTestnet: () => false,
 }));
 
@@ -601,6 +607,10 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.exchangeGuards.clear();
 		testState.exchangeErrors.clear();
+		toastMocks.error.mockReset();
+		toastMocks.success.mockReset();
+		toastMocks.warning.mockReset();
+		closeDepositModal.mockReset();
 		testState.exchangeMutations.clear();
 		testState.exchangeSdkCalls.clear();
 		testState.exchangeSignal = new AbortController().signal;
@@ -738,23 +748,12 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await act(async () => getButton("Submit withdrawal").click());
 	}
 
-	async function expectWithdrawalErrorRetranslates(
-		messageKey: keyof typeof WITHDRAWAL_MESSAGES,
-		staleMessage?: string,
-	) {
-		await vi.waitFor(() =>
-			expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(
-				WITHDRAWAL_MESSAGES[messageKey],
-			),
-		);
-		if (staleMessage) expect(container.textContent).not.toContain(staleMessage);
-
-		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
-		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(
-			WITHDRAWAL_MESSAGES_AR[messageKey],
-		);
-		expect(container.textContent).not.toContain(WITHDRAWAL_MESSAGES[messageKey]);
-		if (staleMessage) expect(container.textContent).not.toContain(staleMessage);
+	async function expectWithdrawalErrorNotified(messageKey: keyof typeof WITHDRAWAL_MESSAGES, staleMessage?: string) {
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith(WITHDRAWAL_MESSAGES[messageKey]));
+		expect(toastMocks.error).toHaveBeenCalledOnce();
+		if (staleMessage) expect(toastMocks.error).not.toHaveBeenCalledWith(expect.stringContaining(staleMessage));
+		expect(container.querySelector('[data-testid="status-screen"]')).toBeNull();
+		expect(closeDepositModal).toHaveBeenCalledOnce();
 	}
 
 	it.each([null, "unknown", "default", "dexAbstraction"])(
@@ -955,7 +954,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			},
 		);
 
-		it("renders a final guard rejection as failed and lets Retry restore the form", async () => {
+		it("reports a final guard rejection through a notification and closes the dialog", async () => {
 			const { release, submission } = await pauseAfterPreflight();
 			testState.withdrawable = "1";
 			await rerender();
@@ -963,18 +962,30 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 				release();
 				await submission;
 			});
-			expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Withdrawal failed");
-			expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(
-				WITHDRAWAL_MESSAGES.balanceChanged,
-			);
-			expect(container.textContent).not.toContain("Withdrawal status unknown");
-			expect(testState.exchangeSdkCalls.get(method)).not.toHaveBeenCalled();
-
-			await act(async () => getButton("Retry").click());
+			expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(WITHDRAWAL_MESSAGES.balanceChanged);
+			expect(toastMocks.warning).not.toHaveBeenCalled();
+			expect(toastMocks.success).not.toHaveBeenCalled();
 			expect(container.querySelector('[data-testid="status-screen"]')).toBeNull();
-			expect(container.querySelector('[data-testid="withdraw-routing-status"]')).not.toBeNull();
-			expect(testState.exchangeErrors.get(method)).toBeUndefined();
+			expect(closeDepositModal).toHaveBeenCalledOnce();
+			expect(testState.exchangeSdkCalls.get(method)).not.toHaveBeenCalled();
 			expect(testState.exchangeMutations.get(method)).toHaveBeenCalledOnce();
+		});
+
+		it("reports a submitted withdrawal with its fees and closes the dialog", async () => {
+			const { release, submission } = await pauseAfterPreflight();
+			await rerender();
+			await act(async () => {
+				release();
+				await submission;
+			});
+			expect(testState.exchangeSdkCalls.get(method)).toHaveBeenCalledOnce();
+			expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith(
+				"Withdrawal submitted",
+				expect.objectContaining({ description: expect.anything() }),
+			);
+			expect(toastMocks.error).not.toHaveBeenCalled();
+			expect(container.querySelector('[data-testid="status-screen"]')).toBeNull();
+			expect(closeDepositModal).toHaveBeenCalledOnce();
 		});
 
 		it.each([
@@ -1089,11 +1100,16 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			});
 			expect(testState.exchangeSdkCalls.get(method)).not.toHaveBeenCalled();
 			expect(testState.exchangeErrors.get(method)).toMatchObject({ code: "withdrawal-conditions-changed" });
+			expect(toastMocks.error).not.toHaveBeenCalled();
+			expect(closeDepositModal).not.toHaveBeenCalled();
 			await act(async () => {
 				releaseSecond();
 				await secondSubmission;
 			});
 			expect(testState.exchangeSdkCalls.get(method)).toHaveBeenCalledOnce();
+			expect(toastMocks.success).toHaveBeenCalledOnce();
+			expect(toastMocks.error).not.toHaveBeenCalled();
+			expect(closeDepositModal).toHaveBeenCalledOnce();
 		});
 	});
 
@@ -1155,7 +1171,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.deposit).not.toHaveBeenCalled();
 	});
 
-	it("rejects a CCTP fee change at the SDK boundary and retranslates the cached feedback", async () => {
+	it("rejects a CCTP fee change at the SDK boundary and reports it from its stable code", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
 		testState.cctpWithdrawalFeeRefetch
@@ -1166,7 +1182,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 		expect(testState.exchangeMutations.get("sendToEvmWithData")).toHaveBeenCalledOnce();
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-		await expectWithdrawalErrorRetranslates("feeChanged");
+		await expectWithdrawalErrorNotified("feeChanged");
 	});
 
 	it("rejects an unavailable CCTP fee at the SDK boundary", async () => {
@@ -1180,7 +1196,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 		expect(testState.exchangeMutations.get("sendToEvmWithData")).toHaveBeenCalledOnce();
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-		await expectWithdrawalErrorRetranslates("feeUnavailable");
+		await expectWithdrawalErrorNotified("feeUnavailable");
 	});
 
 	it("keeps an ambiguous Privy identity out of both embedded and external deposit execution", async () => {
@@ -1211,7 +1227,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
 	});
 
-	it("retranslates a cached withdrawal-route availability guard after an en-to-ar switch", async () => {
+	it("reports a withdrawal-route availability guard from its stable code", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
 		testState.fetchFreshRouting
@@ -1222,10 +1238,10 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await submitWithdrawal();
 
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-		await expectWithdrawalErrorRetranslates("routeUnavailable", "raw route HTTP failure");
+		await expectWithdrawalErrorNotified("routeUnavailable", "raw route HTTP failure");
 	});
 
-	it("retranslates a cached withdrawal-route change guard after an en-to-ar switch", async () => {
+	it("reports a withdrawal-route change guard from its stable code", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
 		testState.fetchFreshRouting
@@ -1236,10 +1252,10 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await submitWithdrawal();
 
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-		await expectWithdrawalErrorRetranslates("routeChanged");
+		await expectWithdrawalErrorNotified("routeChanged");
 	});
 
-	it("retranslates a cached account-mode guard after an en-to-ar switch", async () => {
+	it("reports a account-mode guard from its stable code", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
 		testState.accountGuard.mockRejectedValueOnce(new AccountAbstractionExecutionError("changed"));
@@ -1247,10 +1263,10 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await submitWithdrawal();
 
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-		await expectWithdrawalErrorRetranslates("accountModeChanged");
+		await expectWithdrawalErrorNotified("accountModeChanged");
 	});
 
-	it("retranslates a cached geo guard after an en-to-ar switch", async () => {
+	it("reports a geo guard from its stable code", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
 		testState.assertFreshGeoAllowed.mockRejectedValueOnce(new FundsActionGeoExecutionError("unavailable"));
@@ -1258,7 +1274,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await submitWithdrawal();
 
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-		await expectWithdrawalErrorRetranslates("geoUnavailable");
+		await expectWithdrawalErrorNotified("geoUnavailable");
 	});
 
 	it.each([
@@ -1283,19 +1299,16 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 				testState.preTransferInfo.mockRejectedValueOnce(new Error("raw eligibility HTTP failure"));
 			},
 		},
-	] as const)(
-		"retranslates a cached pre-transfer $name guard after an en-to-ar switch",
-		async ({ messageKey, prepare }) => {
-			testState.modalOpen = true;
-			testState.activeTab = "withdraw";
-			prepare();
+	] as const)("reports a pre-transfer $name guard from its stable code", async ({ messageKey, prepare }) => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		prepare();
 
-			await submitWithdrawal();
+		await submitWithdrawal();
 
-			expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-			await expectWithdrawalErrorRetranslates(messageKey);
-		},
-	);
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		await expectWithdrawalErrorNotified(messageKey);
+	});
 
 	it.each([
 		{
@@ -1312,7 +1325,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 				testState.withdrawable = "1";
 			},
 		},
-	] as const)("retranslates a cached $name balance guard after an en-to-ar switch", async ({ messageKey, update }) => {
+	] as const)("reports a $name balance guard from its stable code", async ({ messageKey, update }) => {
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
 		let releaseAccountGuard!: () => void;
@@ -1338,22 +1351,54 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		});
 
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-		await expectWithdrawalErrorRetranslates(messageKey);
+		await expectWithdrawalErrorNotified(messageKey);
 	});
 
-	it("preserves a raw exchange error across an en-to-ar switch", async () => {
+	it("reports a raw exchange error unchanged in any locale", async () => {
 		const rawExchangeMessage = "Hyperliquid SDK rejected withdrawal TEST-RAW";
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
 		testState.exchangeSdkCalls.get("sendToEvmWithData")?.mockRejectedValueOnce(new Error(rawExchangeMessage));
 
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		await submitWithdrawal();
+
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(rawExchangeMessage));
+		expect(closeDepositModal).toHaveBeenCalledOnce();
+	});
+
+	it("formats a guard rejection from its stable code in the locale that is active when it fails", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.cctpWithdrawalFeeRefetch
+			.mockResolvedValueOnce({ data: "1", isError: false })
+			.mockResolvedValueOnce({ data: "2", isError: false });
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		await submitWithdrawal();
+
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(WITHDRAWAL_MESSAGES_AR.feeChanged));
+	});
+
+	it("keeps an unconfirmed withdrawal on screen as a warning until it is dismissed", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.exchangeSdkCalls
+			.get("sendToEvmWithData")
+			?.mockRejectedValueOnce(new HttpRequestError({ detail: "Request timed out" }));
+
 		await submitWithdrawal();
 
 		await vi.waitFor(() =>
-			expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(rawExchangeMessage),
+			expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith("Withdrawal status unknown", {
+				closeButton: true,
+				description: "Request status could not be confirmed. Check balances and transfer history before retrying.",
+				duration: Number.POSITIVE_INFINITY,
+			}),
 		);
-		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
-		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(rawExchangeMessage);
+		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(closeDepositModal).toHaveBeenCalledOnce();
 	});
 
 	it("does not expose cached Spot funds when the balance snapshot is stale", async () => {
