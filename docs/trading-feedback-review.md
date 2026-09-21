@@ -77,3 +77,30 @@
 3. 修正 R6，再按既有方案补 R7 的即时状态与批次明细。验收包括慢响应、部分成交、超时后成功、切账户/网络/路由、刷新恢复和语言切换；不把通知成功当作真实成交验收。
 
 本次没有修改业务实现；以上顺序是审查建议，不代表修复已完成。
+
+## 官方组件数量与统一建议：同日后续核对
+
+状态：架构建议，未实施。仓库基线 `eeec5c67`。本次在用户已打开的官方交易页检查 DOM 与当前资源清单，确认顶层有 **1 个 `.toaster` 容器**，当前无通知子节点，也没有 Sonner 的 `[data-sonner-toaster]`。这说明当前挂载情况；订单和平仓共用同一管道的结论还依赖以下代码证据，而非只数空 DOM：
+
+- 当前仍加载 [index-58uVNh8f.js](https://app.hyperliquid.xyz/assets/index-58uVNh8f.js) 和 [config-DWLPMyx3.js](https://app.hyperliquid.xyz/assets/config-DWLPMyx3.js)。主脚本唯一的 `containerClassName: "toaster"` 挂载使用配置脚本导出的同一个 Toaster；移动/平板设 `top-left`，桌面设 `bottom-right`。
+- 配置脚本的通知函数统一接收内容、类型和可选 ID，调用同一个 toast store 的 `success / error / loading`；都渲染同一个自定义通知内容组件，改变图标、内容与持续时间。其底层 API、store、ToastBar 和 Toaster 结构与 [react-hot-toast 源码](https://raw.githubusercontent.com/timolins/react-hot-toast/v2.4.1/src/components/toaster.tsx)相符，据此识别为该库体系；没有 package manifest，不能确定官方精确版本。
+- 普通订单提交器 `i7` 在 `notifications === "all"` 时创建 loading，保存通知 ID；成功、失败都使用这个 ID 更新同一条通知。全部平仓调用 `errorsOnly`，跳过普通 loading，由外层在结果后调用相同入口显示汇总。不同调用策略不等于第二套通知系统。
+- 同一自定义内容组件提供图标、关闭与触摸退出；成功/错误配置 6 秒，加载配置 300 秒。此前用户操作时的普通通知与全部平仓汇总也在同一个 `.toaster` 内被捕获，详见[已记录的实际监听](work-memory/sessions/2026-09-21-official-trade-feedback-observation.md)。本次没有为了观察而提交新交易。
+
+结论限定为本次核对的交易页订单/平仓浮动反馈：**一套通知管道，多个状态和内容**。确认弹窗、表单错误、资金待处理列表和 TradingView iframe 属于不同交互表面，未纳入数量，也未遍历全站所有懒加载页面。
+
+两套宿主本身不是反模式；[react-hot-toast 的多 Toaster 文档](https://react-hot-toast.com/docs/multi-toaster)明确支持不同区域独立通知。但 gatu 的两套浮层处理的是相邻交易流程、占用同一显示区域，已发生遮挡与生命周期遗漏，因此没有必要继续保留两套独立定位、堆叠和计时系统。
+
+建议保留现有 Sonner，统一为一个根级稳定宿主：
+
+| 层次 | 建议边界 |
+| --- | --- |
+| 执行与对账 | 保留提交守卫、资产锁、pending store、cloid 与 WS/REST；通知关闭不能删除交易事实或解锁未知订单 |
+| 反馈状态 | 操作使用稳定 ID、owner/env；批次关联各市场子项，区分 accepted、filled、partial、unknown 与仓位归零；完整状态转换清除过期错误 |
+| 通知宿主 | 一个全局 Sonner Toaster 负责位置、堆叠和显示生命周期，跨交易路由保持 |
+| 内容组件 | 普通提示用标准 toast；订单/全部平仓用自定义任务内容，可复用 OrderToast 的行、计数与明细，移除其独立 portal/固定定位/重复计时外壳 |
+| 持续时间与语言 | 等待、未知和部分结果按业务规则持续可查；终态更新同一 ID；保存语义数据，内容组件订阅 Lingui，切语言不重建任务 |
+
+锁定的 Sonner 2.0.7 声明及[同版本实现](https://raw.githubusercontent.com/emilkowalski/sonner/v2.0.7/src/state.ts)已支持 `custom`、稳定 ID 更新、duration 和 dismiss 回调，无需为了统一通知引入另一套库。`toast.promise` 不能替代交易状态机：HTTP Promise 成功不是成交或仓位归零。合并宿主也不会自动修复 R1–R3，必须同时修正状态转换、身份归属与可见性判断。
+
+如果产品继续要求一个可滚动的汇总队列，可把队列内容保留在统一宿主中；不必把每个子单拆成一条短 toast。上述是推荐结构，具体并发数量、收起/重开及刷新恢复策略应在实施前补齐验收条件。[本次核对记录](work-memory/sessions/2026-09-21-feedback-host-consolidation-review.md)保留证据与查询限制。

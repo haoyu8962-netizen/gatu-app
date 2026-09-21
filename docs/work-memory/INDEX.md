@@ -13,6 +13,7 @@
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
 - [全部平仓提交后的队列与官方通知实践复审](sessions/2026-09-21-close-all-queue-review.md) — 2026-09-21；已验证，范围见正文。全部平仓有内部阶段、持久订单跟踪与对账，但未接入可见 Order Queue，等待无即时反馈，3 秒通知短于 2 分钟核对窗口。官方公开实现使用 errorsOnly 加汇总通知，同样没有持续进度队列；本轮仅审查及建议，69 项定向测试通过，未真实交易。
+- [官方通知宿主数量核对与项目统一建议](sessions/2026-09-21-feedback-host-consolidation-review.md) — 2026-09-21；已验证，范围见正文。官方当前交易页有一个 toaster；普通订单以同 ID 更新 loading/结果，全部平仓以 errorsOnly 后汇总调用同一通知入口。建议 gatu 保留交易状态与对账，用一个 Sonner 宿主管理普通及任务内容；多宿主不是天然错误，但当前两套同区浮层没有必要。仅文档建议，未实施。
 - [移动持仓全部平仓入口缺失：官方对照与实施规划](sessions/2026-09-21-mobile-close-all-audit.md) — 2026-09-21；已整理，验证见正文。确认移动持仓只接展开/收起，桌面已有全部平仓；官方全部关闭打开含市价/中间价限价的确认面。拟共享桌面全账户市价链路并明示筛选范围，批量限价和 TP/SL 清理另验；本轮仅审查规划，未修改交易代码或真实提交。
 - [移动持仓全部平仓入口实施](sessions/2026-09-21-mobile-close-all-implementation.md) — 2026-09-21；已验证，范围见正文。移动全部平仓入口已接入共享全账户市价链路，确认面明示筛选隐藏仓位和逐仓目标；冷缓存 38 项浏览器通过，最终标签 18 项与 153 项定向回归通过，全量 6805 通过、1 跳过、1 项既有 SSR 失败。
 - [官方全部平仓反馈的实际 DOM 监听](sessions/2026-09-21-official-trade-feedback-observation.md) — 2026-09-21；已验证，范围见正文。用户自行确认官方全部平仓，DOM 监听捕获确认面消失后新增市价平仓汇总通知，约 7 秒后节点移除；本次未捕获新增等待通知或持续队列。区分先前普通成交提示与本次汇总，不以通知证明全部成交或仓位归零；仅更新审查文档。
@@ -33,6 +34,7 @@
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
 - [全部平仓提交后的队列与官方通知实践复审](sessions/2026-09-21-close-all-queue-review.md) — 2026-09-21；已验证，范围见正文。全部平仓有内部阶段、持久订单跟踪与对账，但未接入可见 Order Queue，等待无即时反馈，3 秒通知短于 2 分钟核对窗口。官方公开实现使用 errorsOnly 加汇总通知，同样没有持续进度队列；本轮仅审查及建议，69 项定向测试通过，未真实交易。
+- [官方通知宿主数量核对与项目统一建议](sessions/2026-09-21-feedback-host-consolidation-review.md) — 2026-09-21；已验证，范围见正文。官方当前交易页有一个 toaster；普通订单以同 ID 更新 loading/结果，全部平仓以 errorsOnly 后汇总调用同一通知入口。建议 gatu 保留交易状态与对账，用一个 Sonner 宿主管理普通及任务内容；多宿主不是天然错误，但当前两套同区浮层没有必要。仅文档建议，未实施。
 - [移动持仓全部平仓入口缺失：官方对照与实施规划](sessions/2026-09-21-mobile-close-all-audit.md) — 2026-09-21；已整理，验证见正文。确认移动持仓只接展开/收起，桌面已有全部平仓；官方全部关闭打开含市价/中间价限价的确认面。拟共享桌面全账户市价链路并明示筛选范围，批量限价和 TP/SL 清理另验；本轮仅审查规划，未修改交易代码或真实提交。
 - [移动持仓全部平仓入口实施](sessions/2026-09-21-mobile-close-all-implementation.md) — 2026-09-21；已验证，范围见正文。移动全部平仓入口已接入共享全账户市价链路，确认面明示筛选隐藏仓位和逐仓目标；冷缓存 38 项浏览器通过，最终标签 18 项与 153 项定向回归通过，全量 6805 通过、1 跳过、1 项既有 SSR 失败。
 - [官方全部平仓反馈的实际 DOM 监听](sessions/2026-09-21-official-trade-feedback-observation.md) — 2026-09-21；已验证，范围见正文。用户自行确认官方全部平仓，DOM 监听捕获确认面消失后新增市价平仓汇总通知，约 7 秒后节点移除；本次未捕获新增等待通知或持续队列。区分先前普通成交提示与本次汇总，不以通知证明全部成交或仓位归零；仅更新审查文档。
@@ -179,6 +181,7 @@
 | --- | --- | --- | --- | --- |
 | 2026-09-21 | [全部平仓提交后的队列与官方通知实践复审](sessions/2026-09-21-close-all-queue-review.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `8770d86de2fbf71d4a13318933369ca67c501619` | 已验证，范围见正文 |
 | 2026-09-21 | [全部平仓：确认按钮改为静态动词，点击即关闭弹窗，结果只走右下角通知](sessions/2026-09-21-close-all-submit-and-dismiss.md) | 未取得任务标识，见正文 | `cbdadae9` | 已验证，范围见正文 |
+| 2026-09-21 | [官方通知宿主数量核对与项目统一建议](sessions/2026-09-21-feedback-host-consolidation-review.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `eeec5c67b32fda7f98cb5fde02efd027f9ee598f` | 已验证，范围见正文 |
 | 2026-09-21 | [资金类弹层：官方终端前端包取证与修复方案（未实施）](sessions/2026-09-21-funds-dialog-official-practice.md) | 未取得任务标识，见正文 | `e15ee0de` | 已整理，验证见正文 |
 | 2026-09-21 | [资金类弹层的结果反馈：划转、发送、提现、充值三步实施](sessions/2026-09-21-funds-dialog-outcomes.md) | 未取得任务标识，见正文 | `951125e0` | 已验证，范围见正文 |
 | 2026-09-21 | [本地 3006 邮箱身份可见但钱包不可用，普通刷新恢复](sessions/2026-09-21-local-email-session-recovery.md) | 未取得任务标识，见正文 | `246c57bc` | 已整理，验证见正文 |
