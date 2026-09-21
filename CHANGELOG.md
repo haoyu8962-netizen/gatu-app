@@ -45,6 +45,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - The API wallet dialog keeps its buttons named `Sign and authorize` and `Confirm removal` while
   fresh data is checked, and no longer shows a `Processing…` placeholder button. The rest of that
   dialog is unchanged because it has to show the one-time key.
+- The order confirmation (desktop dialog and phone sheet) now lists only the action, size, price and
+  estimated liquidation price, with the action and size coloured by direction. Market, slippage,
+  leverage, order value, margin and fee rows were removed; they remain in the order form summary.
+  Rows that define an advanced order still appear when they apply: the order type (advanced types
+  and limit orders that are not good-till-cancelled), trigger, scale and TWAP parameters, take
+  profit / stop loss and reduce only.
 - Amounts and transaction hashes in transfer, swap, deposit, withdrawal, vault and staking
   notifications keep their left-to-right order when the interface language is Arabic.
 - After a USDC deposit is confirmed on Arbitrum the Deposit dialog closes. While Circle forwards it

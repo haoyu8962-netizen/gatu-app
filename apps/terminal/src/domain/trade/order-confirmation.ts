@@ -2,8 +2,8 @@ import { i18n, type MessageDescriptor } from "@lingui/core";
 import { msg, t } from "@lingui/core/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { type LimitTif, ORDER_TYPE_MESSAGES, type OrderType } from "@/config/trade";
-import { formatOrderFeeRatePercent, type OrderFeeQuote } from "@/domain/trade/order-fee-quote";
-import { formatDuration, formatPrice, formatToken, formatUSD } from "@/lib/format";
+import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
+import { formatDuration, formatPrice, formatToken } from "@/lib/format";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive } from "@/lib/trade/numbers";
 import {
@@ -65,23 +65,15 @@ export function buildOrderConfirmationRows(
 	draft: OrderConfirmationDraft,
 	translate: (message: MessageDescriptor) => string = translateOrderMessage,
 ): OrderConfirmationRow[] {
+	const tone: OrderConfirmationTone = draft.side === "buy" ? "up" : "down";
 	return [
-		{ key: "market", label: t`Market`, value: draft.marketLabel },
-		{
-			key: "side",
-			label: t`Side`,
-			value: getOrderConfirmationSideLabel(draft, translate),
-			tone: draft.side === "buy" ? "up" : "down",
-		},
-		{ key: "orderType", label: t`Type`, value: getOrderTypeValue(draft, translate) },
-		{ key: "size", label: t`Size`, value: getSizeValue(draft) },
+		{ key: "action", label: t`Action`, value: getOrderConfirmationSideLabel(draft, translate), tone },
+		...getOrderTypeRows(draft, translate),
+		{ key: "size", label: t`Size`, value: getSizeValue(draft), tone },
 		...getPriceRows(draft, translate),
 		...getTpSlRows(draft),
 		...getReduceOnlyRows(draft),
-		...getLeverageRows(draft),
-		{ key: "orderValue", label: t`Order Value`, value: formatAmount(draft.orderValue) },
-		...getMarginRows(draft),
-		...getFeeRows(draft),
+		...getLiquidationRows(draft),
 	];
 }
 
@@ -97,10 +89,16 @@ export function getOrderConfirmationSideLabel(
 	return translate(draft.side === "buy" ? msg`Long` : msg`Short`);
 }
 
-function getOrderTypeValue(draft: OrderConfirmationDraft, translate: (message: MessageDescriptor) => string): string {
+function getOrderTypeRows(
+	draft: OrderConfirmationDraft,
+	translate: (message: MessageDescriptor) => string,
+): OrderConfirmationRow[] {
+	if (draft.orderType === "market") return [];
 	const label = translate(ORDER_TYPE_MESSAGES[draft.orderType]);
-	if (draft.orderType !== "limit") return label;
-	return `${label} · ${getTifOptionLabel(draft.tif, translate(msg`Post Only`))}`;
+	if (draft.orderType !== "limit") return [{ key: "orderType", label: t`Type`, value: label }];
+	if (draft.tif === "Gtc") return [];
+	const tifLabel = getTifOptionLabel(draft.tif, translate(msg`Post Only`));
+	return [{ key: "orderType", label: t`Type`, value: `${label} · ${tifLabel}` }];
 }
 
 function getMarketExecutionLabel(): string {
@@ -110,9 +108,7 @@ function getMarketExecutionLabel(): string {
 function getSizeValue(draft: OrderConfirmationDraft): string {
 	if (!isPositive(draft.sizeValue)) return FALLBACK_VALUE_PLACEHOLDER;
 	const submittedSize = formatSizeForOrder(draft.sizeValue, draft.szDecimals ?? 0);
-	const size = formatToken(submittedSize, { decimals: draft.szDecimals, symbol: draft.baseToken });
-	if (!isPositive(draft.orderValue)) return size;
-	return `${size} (${formatUSD(draft.orderValue, { compact: false })})`;
+	return formatToken(submittedSize, { decimals: draft.szDecimals, symbol: draft.baseToken });
 }
 
 function getPriceRows(
@@ -125,10 +121,7 @@ function getPriceRows(
 	if (usesLimitPriceForOrder(draft.orderType)) {
 		return [{ key: "price", label: t`Price`, value: formatSubmittedPrice(draft, draft.limitPrice) }];
 	}
-	return [
-		{ key: "price", label: t`Price`, value: getMarketExecutionLabel() },
-		{ key: "slippage", label: t`Slippage`, value: `${draft.slippagePercent}%` },
-	];
+	return [{ key: "price", label: t`Price`, value: getMarketExecutionLabel() }];
 }
 
 function getTwapPriceRows(
@@ -193,44 +186,21 @@ function getReduceOnlyRows(draft: OrderConfirmationDraft): OrderConfirmationRow[
 	return [{ key: "reduceOnly", label: t`Reduce Only`, value: t`Yes` }];
 }
 
-function getLeverageRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
-	if (!draft.isLeveraged) return [];
-	const marginLabel = draft.marginMode === "isolated" ? t`Isolated` : t`Cross`;
-	const leverageLabel = isPositive(draft.leverage) ? `${draft.leverage}x` : FALLBACK_VALUE_PLACEHOLDER;
-	return [{ key: "leverage", label: t`Leverage`, value: `${marginLabel} · ${leverageLabel}` }];
-}
-
-function getMarginRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
+function getLiquidationRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
 	if (!draft.isLeveraged) return [];
 	return [
-		{ key: "marginRequired", label: t`Margin Req.`, value: formatAmount(draft.marginRequired) },
 		{
 			key: "liqPrice",
-			label: t`Liq. Price`,
+			label: t`Estimated Liquidation Price`,
 			value: formatEstimatedPrice(draft, draft.liqPrice),
 			tone: draft.liqWarning && isPositive(draft.liqPrice) ? "down" : undefined,
 		},
 	];
 }
 
-function getFeeRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
-	return [{ key: "fee", label: t`Est. Fee`, value: getTotalFeeValue(draft) }];
-}
-
-function getTotalFeeValue(draft: OrderConfirmationDraft): string {
-	const rate = formatOrderFeeRatePercent(draft.feeQuote.totalRate);
-	if (!isPositive(draft.feeQuote.orderValue)) return rate;
-	return `${rate} (${formatUSD(draft.feeQuote.totalAmount)})`;
-}
-
 function getRuntimeValue(minutes: number | null): string {
 	if (!isPositive(minutes)) return FALLBACK_VALUE_PLACEHOLDER;
 	return formatDuration(Math.round(minutes));
-}
-
-function formatAmount(value: number): string {
-	if (!isPositive(value)) return FALLBACK_VALUE_PLACEHOLDER;
-	return formatUSD(value, { compact: false });
 }
 
 function formatCount(value: number | null): string {

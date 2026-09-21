@@ -29,6 +29,7 @@ import { useOrderEntryActions, useTif } from "@/stores/use-order-entry-store";
 const zhTranslations: Record<string, string> = {
 	Type: "类型",
 	Side: "方向",
+	Action: "操作",
 	Long: "多",
 	Short: "空",
 	"Post Only": "只挂单",
@@ -507,19 +508,19 @@ describe("language hot switching", () => {
 			);
 			const rows = document.querySelector('[data-testid="order-confirmation-rows"]');
 			expect(rows?.textContent).toContain("Limit · Post Only");
-			expect(rows?.textContent).toContain(`Side${english}`);
+			expect(rows?.textContent).toContain(`Action${english}`);
 			const cta = [...document.querySelectorAll("button")].find((button) => button.textContent === english);
 			expect(cta).not.toBeUndefined();
 			act(() => activateLocale("zh"));
 			expect(document.querySelector('[data-testid="order-confirmation-rows"]')).toBe(rows);
 			expect(rows?.textContent).toContain("类型限价 · 只挂单");
-			expect(rows?.textContent).toContain(`方向${chinese}`);
+			expect(rows?.textContent).toContain(`操作${chinese}`);
 			expect(cta?.textContent).toBe(chinese);
-			expect(rows?.textContent).toContain("$50,000.00");
+			expect(rows?.textContent).toContain("$100,000");
 			act(() => activateLocale("en"));
 			expect(document.querySelector('[data-testid="order-confirmation-rows"]')).toBe(rows);
 			expect(rows?.textContent).toContain("TypeLimit · Post Only");
-			expect(rows?.textContent).toContain(`Side${english}`);
+			expect(rows?.textContent).toContain(`Action${english}`);
 			expect(cta?.textContent).toBe(english);
 			expect(draft.tif).toBe("Alo");
 			expect(draft.side).toBe(side);
