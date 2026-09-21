@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [移动持仓全部平仓入口缺失：官方对照与实施规划](sessions/2026-09-21-mobile-close-all-audit.md) — 2026-09-21；已整理，验证见正文。确认移动持仓只接展开/收起，桌面已有全部平仓；官方全部关闭打开含市价/中间价限价的确认面。拟共享桌面全账户市价链路并明示筛选范围，批量限价和 TP/SL 清理另验；本轮仅审查规划，未修改交易代码或真实提交。
 - [字体实践审查：对照官方终端，修复图表字体栈、共享字号刻度、错误页字体并迁移等值任意字号](sessions/2026-09-20-font-practice-review.md) — 2026-09-20；已验证，范围见正文。webfont 加载契约合规；图表 iframe 里的 IBM Plex 从未生效，改为系统字体栈（iframe 内新旧栈 measureText 80 组完全相同）；packages/ui 字号刻度对齐规范并加契约测试；bootstrap 错误页不再依赖 webfont；相对单位字号纳入棘轮。经用户授权，同一字面量内带显式 leading-* 的 127 处任意 px 字号迁移为命名刻度（棘轮 240→113，浏览器前后计算样式零差异）；其余 87 处无显式行高、26 处无等值刻度仍是受控债务。移动端图表与生产构建未验证。
 - [按四条方案改造 PR 检查，并与同日的首版 CI 分层合并整理](sessions/2026-09-19-ci-restructure.md) — 2026-09-19；已整理，验证见正文。同一天有两个会话各自改造 CI：首版（ADR 0016 原 D2）把构建与浏览器回归只留给进 main 的 PR，本任务按用户的四条方案改造。用户决定以四条为准：保留首版的分支流向、独立的 terminal-tests.yml 与测试钉子，把 D2 改为 D2′（每个 PR 构建默认配对组合并跑两片浏览器回归，其余三组只在进 main 的 PR、v[0-9]* 或 cloudfront-[0-9]* 标签和手动运行时构建），并合并静态检查、给网站工作流加路径过滤。预估每次推送计费约 33 分钟、等待约 8 分钟；工作流未在 GitHub 上运行，改动已提交、未推送。
 - [工作分支先进 dev、CI 按目标分支分层与测试移出矩阵](sessions/2026-09-19-ci-tiers-dev-first-flow.md) — 2026-09-19；已整理，验证见正文。修复 portfolio-overview 的时钟竞态后评估 Worker→dev→main 闸门：4 路矩阵重复跑同一批测试、全量单测并行下 45 红、main/dev 无保护。落地 ADR 0016：PR 目标写明 dev，4 路构建与浏览器回归只对进 main 的 PR 运行，测试移入 terminal-tests.yml 只跑一次，合入 concurrency；main 保护规则未执行，GitHub 侧触发行为待首个 PR 验证。
@@ -27,6 +28,7 @@
 
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
+- [移动持仓全部平仓入口缺失：官方对照与实施规划](sessions/2026-09-21-mobile-close-all-audit.md) — 2026-09-21；已整理，验证见正文。确认移动持仓只接展开/收起，桌面已有全部平仓；官方全部关闭打开含市价/中间价限价的确认面。拟共享桌面全账户市价链路并明示筛选范围，批量限价和 TP/SL 清理另验；本轮仅审查规划，未修改交易代码或真实提交。
 - [只减仓容量、表单与执行边界修复](sessions/2026-09-21-reduce-only-implementation.md) — 2026-09-21；已整理，验证见正文。按官方表单审查计划实施共享持仓容量、精确数量草稿、零开仓余额流程、全入口执行守卫和保证金占位，已完成实现；自动化验证与已知基线失败见正文。
 - [官方已登录只减仓表单实测与修复规划](sessions/2026-09-21-reduce-only-official-followup.md) — 2026-09-21；已整理，验证见正文。用户提供已登录且有仓位的官方终端：实测50/100%以反方向持仓为基准，超额和同向提示不可用，开关保留数量，无仓位不能生成减仓量，保证金N/A。形成五步修复计划，业务代码未改、未发单。
 - [372460f2 只减仓修复的 Claude Opus 5 对抗审查](sessions/2026-09-21-reduce-only-opus5-review.md) — 2026-09-21；已整理，验证见正文。终端实际调用 claude-opus-5 审查 372460f2；复核后保留 Max 命名、有效余额被置零、普通手机订单保证金口径改变三项，排除未证实精度拒单及既定金额重输取舍；未改业务代码。
@@ -171,6 +173,7 @@
 | 2026-09-21 | [资金类弹层：官方终端前端包取证与修复方案（未实施）](sessions/2026-09-21-funds-dialog-official-practice.md) | 未取得任务标识，见正文 | `e15ee0de` | 已整理，验证见正文 |
 | 2026-09-21 | [资金类弹层的结果反馈：划转、发送、提现、充值三步实施](sessions/2026-09-21-funds-dialog-outcomes.md) | 未取得任务标识，见正文 | `951125e0` | 已验证，范围见正文 |
 | 2026-09-21 | [本地 3006 邮箱身份可见但钱包不可用，普通刷新恢复](sessions/2026-09-21-local-email-session-recovery.md) | 未取得任务标识，见正文 | `246c57bc` | 已整理，验证见正文 |
+| 2026-09-21 | [移动持仓全部平仓入口缺失：官方对照与实施规划](sessions/2026-09-21-mobile-close-all-audit.md) | 未取得任务标识，见正文 | `307cc26f1485861d1046d980692ed6a22073b3c5` | 已整理，验证见正文 |
 | 2026-09-21 | [移动端市价与限价平仓弹层没有任何明确的退出控件：恢复关闭按钮，移除标题栏里重复的标识](sessions/2026-09-21-mobile-close-dialog-dismiss.md) | 未取得任务标识，见正文 | `c0a9e8bd` | 已验证，范围见正文 |
 | 2026-09-21 | [只减仓容量、表单与执行边界修复](sessions/2026-09-21-reduce-only-implementation.md) | 未取得任务标识，见正文 | `0fafbc7f` | 已整理，验证见正文 |
 | 2026-09-21 | [官方已登录只减仓表单实测与修复规划](sessions/2026-09-21-reduce-only-official-followup.md) | 未取得任务标识，见正文 | `7342b7f3` | 已整理，验证见正文 |
