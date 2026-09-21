@@ -145,6 +145,42 @@ describe("API wallet action modal", () => {
 		expect(container.textContent).toContain("Discard local key");
 	});
 
+	function renderAction(action: ApiWalletActionView) {
+		act(() =>
+			root.render(
+				<ApiWalletActionModal
+					action={action}
+					onClose={vi.fn()}
+					onConfirm={vi.fn()}
+					onVerifyAgain={vi.fn()}
+					onTogglePrivateKey={vi.fn()}
+					onDownloadCredential={vi.fn()}
+					onCredentialSavedChange={vi.fn()}
+					onFinish={vi.fn()}
+				/>,
+			),
+		);
+	}
+
+	it("keeps the confirm control named after its action while fresh data is checked", () => {
+		renderAction(createAction({ stage: "review", locked: true }));
+
+		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
+		const confirm = buttons.find((button) => button.textContent === "Sign and authorize");
+		expect(confirm?.disabled).toBe(true);
+		expect(container.querySelector("footer button")).not.toBeNull();
+		expect(buttons.some((button) => button.textContent?.includes("Checking"))).toBe(false);
+		expect(container.querySelector("output")?.textContent).toContain("Checking fresh API wallet data");
+	});
+
+	it("shows progress in the dialog body without a placeholder button", () => {
+		renderAction(createAction({ stage: "submitted", locked: true }));
+
+		expect(container.querySelector("footer button")).toBeNull();
+		expect(container.textContent).toContain("Submitting to Hyperliquid");
+		expect(container.textContent).not.toContain("Processing…");
+	});
+
 	it("announces the current, completed, and failed action steps", () => {
 		act(() =>
 			root.render(

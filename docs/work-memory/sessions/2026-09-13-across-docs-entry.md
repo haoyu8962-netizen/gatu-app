@@ -10,7 +10,7 @@
   "summary": "以官方索引和按需页面核验接入 Across 文档，Codex 与 Claude 共用项目入口；不安装交易工具，API Markdown 与 MCP 的覆盖缺口需回退正式页面。",
   "thread": null,
   "baseCommit": "0662cae1d921ef71a3e60edef9f9c736ceacccb5",
-  "commits": [],
+  "commits": ["8153b7b7"],
   "sources": [{"path": "docs/across-reference.md"}, {"path": "CLAUDE.md"}, {"path": "AGENTS.md"}, {"url": "https://docs.across.to/ai-agents"}, {"url": "https://docs.across.to/ai-agents/llms-txt"}, {"url": "https://docs.across.to/ai-agents/mcp-server"}],
   "supersedes": []
 }

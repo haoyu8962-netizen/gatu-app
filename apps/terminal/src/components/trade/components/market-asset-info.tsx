@@ -305,7 +305,7 @@ export function MarketAssetInfo({ market }: Props) {
 				presentation={isMobile ? "drawer" : "modal"}
 				handleClassName="top-2.5 h-1 w-9 !rounded-[2px] bg-trading-panel-stroke-input"
 				overlayClassName="!bg-trading-panel-scrim backdrop-blur-[2px] duration-200"
-				className="min-h-[166px] max-h-[calc(100dvh-1rem)] rounded-t-16 border-trading-panel-stroke-card font-market-close min-[1001px]:min-h-0 min-[1001px]:max-w-[30rem] min-[1001px]:rounded-16 min-[1001px]:border min-[1001px]:[&>button]:top-[14px] min-[1001px]:[&>button]:right-[14px] min-[1001px]:[&>button]:size-[30px]"
+				className="min-h-[166px] max-h-[calc(100dvh-1rem)] border-trading-panel-stroke-card font-market-close min-[1001px]:min-h-0 min-[1001px]:max-w-[30rem] min-[1001px]:[&>button]:top-[14px] min-[1001px]:[&>button]:right-[14px] min-[1001px]:[&>button]:size-[30px]"
 			>
 				<ModalHeader divider={false} className="items-center px-12 pt-9 pb-0 min-[1001px]:px-6 min-[1001px]:pt-8">
 					<div
@@ -323,14 +323,14 @@ export function MarketAssetInfo({ market }: Props) {
 								<span
 									className={
 										market.kind === "spot"
-											? "shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-1.5 py-0.5 text-[10px] leading-3 font-semibold text-trading-panel-success"
-											: "shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-hover px-1.5 py-0.5 text-[10px] leading-3 font-semibold text-trading-panel-muted"
+											? "shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-1.5 py-0.5 text-3xs leading-3 font-semibold text-trading-panel-success"
+											: "shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-hover px-1.5 py-0.5 text-3xs leading-3 font-semibold text-trading-panel-muted"
 									}
 								>
 									{marketType}
 								</span>
 								{market.kind !== "spot" && typeof market.maxLeverage === "number" ? (
-									<span className="shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-hover px-1.5 py-0.5 text-[10px] leading-3 font-semibold text-trading-panel-muted tabular-nums">
+									<span className="shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-hover px-1.5 py-0.5 text-3xs leading-3 font-semibold text-trading-panel-muted tabular-nums">
 										{market.maxLeverage}x
 									</span>
 								) : null}
@@ -347,7 +347,7 @@ export function MarketAssetInfo({ market }: Props) {
 
 				<ModalContent className="space-y-4 px-6 pt-4 pb-6">
 					{!spotDescriptionLoading && (description || providerDescription) ? (
-						<div className="space-y-3 text-[13px] leading-[1.65] text-trading-panel-muted text-pretty">
+						<div className="space-y-3 text-2sm leading-[1.65] text-trading-panel-muted text-pretty">
 							{description ? <p className="whitespace-pre-wrap">{description}</p> : null}
 							{providerDescription ? <p>{providerDescription}</p> : null}
 						</div>

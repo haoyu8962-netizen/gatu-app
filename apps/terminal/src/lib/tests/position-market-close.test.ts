@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
 	estimatePositionMarketClosePnl,
 	formatPositionMarketClosePercent,
+	hasPositionMarketCloseSizeChanged,
 	resolvePositionMarketClosePercent,
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
@@ -321,5 +322,30 @@ describe("position market close PnL estimate", () => {
 		},
 	])("returns null for $name", ({ input }) => {
 		expect(estimatePositionMarketClosePnl(input)).toBeNull();
+	});
+});
+
+describe("position market close size change", () => {
+	it.each([
+		["a larger long", "2.5", "2.6"],
+		["a smaller long", "2.5", "2.4"],
+		["a larger short", "-2.5", "-2.6"],
+		["a flipped side", "2.5", "-2.5"],
+	])("reports %s as changed", (_label, opened, live) => {
+		expect(hasPositionMarketCloseSizeChanged(opened, live)).toBe(true);
+	});
+
+	it("compares decimal values rather than their formatting", () => {
+		expect(hasPositionMarketCloseSizeChanged("2.5", "2.5000")).toBe(false);
+		expect(hasPositionMarketCloseSizeChanged("-0.10", "-0.1")).toBe(false);
+	});
+
+	it.each([
+		["a missing live size", "2.5", undefined],
+		["an empty live size", "2.5", ""],
+		["a non-decimal live size", "2.5", "1e3"],
+		["a non-decimal opened size", "abc", "2.5"],
+	])("stays quiet for %s", (_label, opened, live) => {
+		expect(hasPositionMarketCloseSizeChanged(opened, live)).toBe(false);
 	});
 });

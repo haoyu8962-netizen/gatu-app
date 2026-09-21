@@ -1,8 +1,9 @@
 import { ExchangeRequestInvalidatedError } from "@gatu/hl-react/internal/exchange/request-scheduler";
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useLayoutEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
@@ -21,7 +22,6 @@ import { formatExchangeActionError } from "@/lib/errors/format";
 import { type ExchangeParams, useExchange, useHyperliquid } from "@/lib/hyperliquid";
 import {
 	FundsActionFeedbackCause,
-	type FundsActionFeedbackCode,
 	formatFundsActionFeedback,
 	fundsActionFeedbackCause,
 } from "@/lib/trade/funds-action-feedback";
@@ -29,8 +29,6 @@ import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { PendingActionModal } from "../components/pending-action-modal";
 
 type TransferDirection = "toSpot" | "toPerp";
-
-type TransferError = { kind: "local"; code: FundsActionFeedbackCode } | { kind: "raw"; cause: unknown };
 
 interface TransferSubmission {
 	identity: object;
@@ -70,14 +68,8 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	const requestSubmissionsRef = useRef(new WeakMap<object, TransferSubmission>());
 	const [direction, setDirection] = useState<TransferDirection>(initialDirection);
 	const [amount, setAmount] = useState("");
-	const [error, setError] = useState<TransferError | null>(null);
-	const errorMessage = error
-		? error.kind === "local"
-			? formatFundsActionFeedback(error.code, (descriptor) => t(descriptor))
-			: formatExchangeActionError(error.cause, t`Transfer failed`)
-		: null;
 
-	const { address, hasWalletAccess, sessionMode: walletSessionMode, walletAddress } = useWalletSession();
+	const { address, hasWalletAccess, sessionMode: walletSessionMode, walletAddress, walletIntent } = useWalletSession();
 	const {
 		spotBalances,
 		accountAbstraction,
@@ -236,20 +228,28 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 		submissionRef.current = submission;
 		const isCurrentSubmission = () =>
 			submissionIdentityRef.current === submissionIdentity && submissionSequenceRef.current === submissionSequence;
-		setError(null);
+		const transferSummary = (
+			<span>
+				<bdi dir="ltr">
+					{amount} {DEFAULT_QUOTE_TOKEN}
+				</bdi>{" "}
+				· {fromLabel} → {toLabel}
+			</span>
+		);
 		try {
 			await usdClassTransfer({ amount, toPerp: direction === "toPerp" });
-			if (isCurrentSubmission()) {
-				setAmount("");
-				onOpenChange(false);
-			}
+			if (isCurrentSubmission()) toast.success(t`Transfer confirmed`, { description: transferSummary });
 		} catch (err) {
-			if (!isCurrentSubmission()) return;
-			setError(
-				err instanceof FundsActionFeedbackCause ? { kind: "local", code: err.code } : { kind: "raw", cause: err },
-			);
+			if (isCurrentSubmission()) {
+				toast.error(
+					err instanceof FundsActionFeedbackCause
+						? formatFundsActionFeedback(err.code, (descriptor) => t(descriptor))
+						: formatExchangeActionError(err, t`Transfer failed`),
+				);
+			}
 		} finally {
 			if (submissionRef.current === submission) submissionRef.current = null;
+			if (isCurrentSubmission()) onOpenChange(false);
 		}
 	}
 
@@ -344,16 +344,6 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 						</>
 					) : null}
 
-					{errorMessage && (
-						<div
-							role="alert"
-							className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-weak text-xs text-error"
-						>
-							<WarningCircleIcon className="size-3.5 shrink-0" />
-							<span className="flex-1">{errorMessage}</span>
-						</div>
-					)}
-
 					<Button
 						variant="filled"
 						intent="neutral"
@@ -361,8 +351,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 						disabled={!isValidAmount || isPending}
 						className="w-full"
 					>
-						{isPending && <SpinnerGapIcon className="me-2 size-3.5 animate-spin" />}
-						{isPending ? t`Transferring...` : t`Transfer`}
+						{isPending && walletIntent === "external" ? t`Confirm in wallet` : t`Transfer`}
 					</Button>
 				</div>
 			</ModalContent>

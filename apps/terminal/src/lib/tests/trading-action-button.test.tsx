@@ -111,6 +111,35 @@ describe("TradingActionButton", () => {
 		expect(testState.guardAction).toHaveBeenCalledWith(onClick);
 	});
 
+	it.each([
+		["the enable step before readiness", false],
+		["the guarded action once ready", true],
+	])("ignores an activation of %s while the caller reports a lock", (_label, isReady) => {
+		testState.isReady = isReady;
+		testState.needsTrading = !isReady;
+		let locked = true;
+		const onClick = vi.fn();
+		act(() => {
+			root.render(
+				<TradingActionButton onClick={onClick} requireReadyConfirmation isActivationLocked={() => locked}>
+					Market Close
+				</TradingActionButton>,
+			);
+		});
+		const button = container.querySelector("button");
+		expect(button?.disabled).toBe(false);
+
+		act(() => button?.click());
+		expect(testState.enableTrading).not.toHaveBeenCalled();
+		expect(testState.guardAction).not.toHaveBeenCalled();
+
+		locked = false;
+		act(() => button?.click());
+		expect(testState.enableTrading).toHaveBeenCalledTimes(isReady ? 0 : 1);
+		expect(testState.guardAction).toHaveBeenCalledTimes(isReady ? 1 : 0);
+		if (isReady) expect(testState.guardAction).toHaveBeenCalledWith(onClick);
+	});
+
 	it("keeps ordinary click behavior until an optional hold is armed", () => {
 		const onClick = vi.fn();
 		act(() => {

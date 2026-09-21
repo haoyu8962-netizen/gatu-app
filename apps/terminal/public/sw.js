@@ -61,6 +61,7 @@ self.addEventListener("fetch", (event) => {
 			pathname === "/client-error-report" ||
 			pathname === "/mobile-agent-sync-ticket" ||
 			pathname.startsWith("/mobile-agent-sync-ticket/") ||
+			/^\/mobile-agent-sync(\/|$)/i.test(pathname) ||
 			pathname.startsWith("/_serverFn/") ||
 			(dot > 0 && /^[A-Za-z0-9]{1,8}$/.test(segment.slice(dot + 1)))
 		)

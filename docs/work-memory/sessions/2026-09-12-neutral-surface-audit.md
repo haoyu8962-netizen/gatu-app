@@ -7,16 +7,16 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["pr-review", "order-entry", "account-funding"],
-  "summary": "同色卡片 43 次引用涉及 28 文件；扩展 hover 与弱填充后覆盖 106 文件，区分只读精简候选、交互状态、共享覆盖和未启用分支；未修改 UI、未逐页视觉验收。",
+  "summary": "原审查后已有五批 UI/零占位实现，实际提交已补齐；截图和测试为来源任务报告，专题文档“待实施”及旧清单仅适用于原基线。",
   "thread": null,
   "baseCommit": "43ce177c384377c3f1f84a92623d4892b0859624",
-  "commits": [],
+  "commits": ["32b73f68", "8a2283bf", "540cfc54", "dce07587", "a8fc8962", "9750ccff"],
   "sources": [
     { "path": "docs/neutral-surface-audit.md" },
     { "path": "apps/terminal/src/styles.css" },
     { "path": "apps/terminal/src/components/trade/components/market-asset-info.tsx" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-disclosure-header.tsx" },
-    { "path": "apps/terminal/src/components/trade/positions/position-close-dialog-ui.tsx" },
+    { "path": "apps/terminal/src/components/trade/positions/position-close-summary.tsx" },
     { "path": "docs/ui-ux-guidelines.md" }
   ],
   "supersedes": []
@@ -71,3 +71,13 @@
 2026-09-14 更正（对抗审查 C，见 [2026-09-13-spa-shell-spike.md](2026-09-13-spa-shell-spike.md) 第二十九检查点）：最大回撤在 `docs/portfolio-statistics.md` 里是有意不可用的指标，缺少现金流调整证据时不得输出数值，上面的 `0.00%` 占位违反该规则，已回退为 `—`，三条断言恒定零的测试改为断言不出现数值。
 
 2026-09-13 追加结果（基线 `b73e37d2`）：完成第 5 行推荐奖励、质押确认、金库和现货兑换共 11 个组件文件的装饰底色/外框精简；pnpm typecheck、修改文件 Biome check、完整构建（含循环依赖与包体积检查）通过，Biome 首轮格式问题已修正，memory:index/check/test 通过（8/8）；375px/1440px 金库列表和详情、推荐指标及确认、质押确认、金库确认和两种兑换摘要已用真实组件固定示例检查，无横向溢出，推荐码确认保留了提交前源码的两尺寸截图对比，截图及独立缓存预览位于 `.worklog/2026-09-13/row5/`；预览首轮缺依赖、示例字段和样式扫描范围已修复并重验；未新增测试、未逐一复现所有错误/成功分支，未执行签名或资金操作。
+
+## 周整理追加：索引状态与文档冲突（2026-09-14）
+
+本次核对 Git 文件变更确认，上述五批追加依次对应 `8a2283bf`、`540cfc54`、`dce07587`、`a8fc8962`、`9750ccff`；原审查文档提交为 `32b73f68`。因此索引继续概括为“未修改 UI”会漏掉后续工作，现仅修正摘要和提交引用，不覆盖上文原审查范围。测试、截图及真实组件检查仍属于上述来源任务报告，本次没有重新打开页面或读取这些任务的未关联原始会话。
+
+当前 `docs/neutral-surface-audit.md` 开头仍写“视觉简化建议待实施”，正文建议及行号按 `43ce177c` 固定；它作为原始审查证据保留，但不能用作当前未完成事项清单。尤其旧 TP/SL compact 分支已在 `8a2283bf` 删除。需要专题文档维护任务追加实施状态或历史范围提示，不能将整个文档和所有保留交互状态一起判废。本轮只维护记忆文件，冲突与边界亦见[周整理记录](2026-09-14-weekly-memory-review.md)。
+
+## 来源路径更新（2026-09-21）
+
+`sources` 里的 `position-close-dialog-ui.tsx` 已在 2026-09-21 按「一个文件一个组件」拆分并删除，本记录关注的平仓确认摘要 `PositionCloseSummary` 现在位于 `position-close-summary.tsx`，来源路径随之更新（索引工具要求路径存在）。上文与 `docs/neutral-surface-audit.md` 里的文件名和行号仍指基线 `43ce177c` 的旧文件，作为当时的证据保留，不代表当前位置。

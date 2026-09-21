@@ -9,6 +9,7 @@ interface Props {
 	onPercentInteractionEnd?: () => void;
 	interactionIdentity?: string;
 	disabled?: boolean;
+	paused?: boolean;
 	ariaLabel: string;
 	ariaValueText?: string;
 	ariaDescribedBy?: string;

@@ -20,7 +20,7 @@ export const positionTableHeaderClass = "bg-surface [&_tr]:border-stroke-weak [&
 export const positionTableBodyClass = "[&_tr]:border-0";
 
 export const positionTableHeadClass =
-	"sticky top-0 z-[1] h-[33px] whitespace-nowrap bg-surface px-[7px] py-0 text-right text-[11px] leading-4 font-semibold normal-case tracking-normal text-market-close-subtle";
+	"sticky top-0 z-[1] h-[33px] whitespace-nowrap bg-surface px-[7px] py-0 text-right text-2xs leading-4 font-semibold normal-case tracking-normal text-market-close-subtle";
 
 export const positionTableCellClass = "h-14 whitespace-nowrap px-[7px] py-2 text-right text-xs leading-4";
 

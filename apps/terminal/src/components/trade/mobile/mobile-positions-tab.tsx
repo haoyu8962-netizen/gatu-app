@@ -14,7 +14,6 @@ import {
 } from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
-import type { PositionReverseTarget } from "@/hooks/trade/use-position-reverse-submit";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import {
@@ -28,23 +27,18 @@ import {
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
+import { usePositionDialogActions } from "@/stores/use-position-dialog-store";
 import type {
 	IsolatedMarginPositionRef,
-	IsolatedMarginPositionTarget,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
 	PositionPnlShareData,
 	PositionReverseRef,
 	TpSlPositionRef,
-	TpSlPositionTarget,
 } from "../positions/position-dialog-types";
 import { PositionFilterToolbar } from "../positions/position-filter-toolbar";
-import { PositionIsolatedMarginModal } from "../positions/position-isolated-margin-modal";
-import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
 import type { PositionMarketOption } from "../positions/position-market-filter";
 import { PositionPnlShareModal } from "../positions/position-pnl-share-modal";
-import { PositionReverseConfirmationController } from "../positions/position-reverse-confirmation-controller";
-import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -83,14 +77,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 		setSide(side);
 		setActiveTab("trade");
 	}
-	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
-	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionTarget | null>(null);
-	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
-	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
-	const [isolatedMarginModalOpen, setIsolatedMarginModalOpen] = useState(false);
-	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
-		useState<IsolatedMarginPositionTarget | null>(null);
-	const [selectedReverseTarget, setSelectedReverseTarget] = useState<PositionReverseTarget | null>(null);
+	const { openIsolatedMargin, openLimitClose, openReverse, openTpSl } = usePositionDialogActions();
 	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
 		ownerKey,
@@ -198,52 +185,27 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 
 	function handleReverse(data: PositionReverseRef) {
 		if (!address) return;
-		setSelectedReverseTarget({ ...data, owner: address.toLowerCase(), env });
+		openReverse({ ...data, owner: address.toLowerCase(), env });
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {
-		setSelectedLimitClosePosition(data);
-		setLimitCloseModalOpen(true);
+		openLimitClose(data);
 	}
 
 	function handleOpenTpSlModal(data: TpSlPositionRef) {
 		if (!address || clientKey === "disconnected" || address.toLowerCase() !== clientKey.toLowerCase()) return;
-		setSelectedTpSlPosition({ ...data, owner: clientKey.toLowerCase(), env });
-		setTpSlModalOpen(true);
+		openTpSl({ ...data, owner: clientKey.toLowerCase(), env });
 	}
 
 	function handleOpenIsolatedMarginModal(data: IsolatedMarginPositionRef) {
 		if (!address || clientKey === "disconnected" || address.toLowerCase() !== clientKey.toLowerCase()) return;
-		setSelectedIsolatedMarginPosition({ ...data, owner: clientKey.toLowerCase(), env });
-		setIsolatedMarginModalOpen(true);
+		openIsolatedMargin({ ...data, owner: clientKey.toLowerCase(), env });
 	}
 
 	function handleOpenPnlShare(data: PositionPnlShareData) {
 		if (!address) return;
 		setSelectedPnlShare({ ownerKey: `${env}:${address.toLowerCase()}`, position: data });
 	}
-
-	const positionModals = (
-		<>
-			<PositionTpSlModal open={tpSlModalOpen} onOpenChange={setTpSlModalOpen} position={selectedTpSlPosition} />
-			<PositionLimitCloseModal
-				open={limitCloseModalOpen}
-				onOpenChange={setLimitCloseModalOpen}
-				position={selectedLimitClosePosition}
-			/>
-			<PositionIsolatedMarginModal
-				open={isolatedMarginModalOpen}
-				onOpenChange={setIsolatedMarginModalOpen}
-				position={selectedIsolatedMarginPosition}
-			/>
-			<PositionReverseConfirmationController
-				target={selectedReverseTarget}
-				onOpenChange={(open) => {
-					if (!open) setSelectedReverseTarget(null);
-				}}
-			/>
-		</>
-	);
 
 	function renderFilterRow(disabled: boolean) {
 		return (
@@ -282,7 +244,6 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 		return (
 			<>
 				<DataPendingState loading={positionsLoading} />
-				{positionModals}
 				{pnlShareModal}
 			</>
 		);
@@ -306,7 +267,6 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 						{t`Go to Trade`}
 					</Button>
 				</div>
-				{positionModals}
 				{pnlShareModal}
 			</>
 		);
@@ -353,7 +313,6 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 					})}
 				</div>
 			</div>
-			{positionModals}
 			{pnlShareModal}
 		</>
 	);

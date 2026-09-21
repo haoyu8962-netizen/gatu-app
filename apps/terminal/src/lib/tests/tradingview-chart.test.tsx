@@ -2906,6 +2906,19 @@ describe("TradingViewChart", () => {
 		expect(widgetConstructor.mock.calls[0]?.[0]).not.toHaveProperty("toolbar_bg");
 	});
 
+	it("draws the chart with a system font stack instead of a parent-document webfont", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledWith(
+			expect.objectContaining({
+				custom_font_family: "ui-sans-serif, system-ui, sans-serif",
+			}),
+		);
+	});
+
 	it("uses canonical market symbols for TradingView while preserving display metadata", async () => {
 		const spotMarket = {
 			kind: "spot",

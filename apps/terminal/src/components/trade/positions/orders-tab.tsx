@@ -108,7 +108,6 @@ const ordersTableGridClass =
 
 type CancelScope = "row" | "selected" | "all";
 interface CancelCallbacks {
-	onSuccess?: () => void;
 	onSettled?: () => void;
 }
 
@@ -303,6 +302,18 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	function setCancelValidationError(error: OrderValidationError | null, actionId: string | null = null) {
 		setCancelValidationErrorState(error);
 		setCancelValidationActionId(actionId);
+	}
+
+	function reportCancelFeedback(error: OrderValidationError, actionId: string | null = null) {
+		setCancelValidationError(error, actionId);
+		const message = getValidationErrorMessage(error) ?? "";
+		if (actionId) {
+			toast.warning(message, { id: getPendingTradingActionToastId(actionId) });
+		} else if (error.kind === "cancel-block") {
+			toast.warning(message);
+		} else {
+			toast.error(message);
+		}
 	}
 
 	function setModifyValidationError(error: OrderValidationError | null, actionId: string | null = null) {
@@ -671,13 +682,13 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		const fresh = ordersToCancel.filter((order) => !sharedCancellingOids.has(order.oid));
 		if (fresh.length === 0) return false;
 		if (nextScope === "all" && fresh.length !== ordersToCancel.length) {
-			setCancelValidationError({ kind: "cancel-block", reason: "orders-changed" });
+			reportCancelFeedback({ kind: "cancel-block", reason: "orders-changed" });
 			return false;
 		}
 
 		const cancels = buildOpenOrderCancelActions(fresh, markets.getAssetId);
 		if (!cancels) {
-			setCancelValidationError({ kind: "code", code: "order-markets-unavailable" });
+			reportCancelFeedback({ kind: "code", code: "order-markets-unavailable" });
 			return false;
 		}
 
@@ -690,7 +701,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			orders: fresh,
 		});
 		if (confirmation.status === "blocked") {
-			setCancelValidationError({ kind: "cancel-block", reason: confirmation.reason });
+			reportCancelFeedback({ kind: "cancel-block", reason: confirmation.reason });
 			return false;
 		}
 
@@ -730,28 +741,28 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			if (!isConfirmedOpenOrderCancelResponse(response, execution.params.cancels.length)) {
 				getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
+					reportCancelFeedback({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
 				}
 				return;
 			}
 			getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
 			if (!mountedRef.current || !isCancelExecutionCurrent(execution)) return;
+			toast.success(t`Order cancellation confirmed.`, { id: getPendingTradingActionToastId(execution.actionId) });
 			setSelectedOrderIds((prev) => {
 				const next = new Set(prev);
 				for (const order of fresh) next.delete(order.oid);
 				return next;
 			});
-			callbacks?.onSuccess?.();
 		} catch (cause) {
 			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
+					reportCancelFeedback({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
 				}
 			} else {
 				getPendingTradingActionActions().releaseOrderCancellation(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError(getValidationErrorFromCause(cause, "failed-to-cancel"));
+					reportCancelFeedback(getValidationErrorFromCause(cause, "failed-to-cancel"));
 				}
 			}
 		} finally {
@@ -803,7 +814,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		setCancelValidationError(null);
 		const result = createCancelAllConfirmationSnapshot(getCancelAllConfirmationInput());
 		if (result.status === "blocked") {
-			setCancelValidationError({ kind: "cancel-block", reason: result.reason });
+			reportCancelFeedback({ kind: "cancel-block", reason: result.reason });
 			return;
 		}
 		setCancelAllSnapshot({ confirmation: result.snapshot, orders: [...openOrders] });
@@ -812,21 +823,18 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 
 	function handleConfirmCancelAll() {
 		if (cancelAllSubmittingRef.current || pendingScopes.size > 0) return;
-		if (!cancelAllSnapshot) return;
+		if (!cancelAllOpen || !cancelAllSnapshot) return;
+		setCancelAllOpen(false);
 		const reason = validateCancelAllConfirmationSnapshot(
 			cancelAllSnapshot.confirmation,
 			getCancelAllConfirmationInput(),
 		);
 		if (reason) {
-			setCancelValidationError({ kind: "cancel-block", reason });
+			reportCancelFeedback({ kind: "cancel-block", reason });
 			return;
 		}
 		cancelAllSubmittingRef.current = true;
 		const started = handleCancel([...cancelAllSnapshot.orders], "all", {
-			onSuccess: () => {
-				setCancelAllOpen(false);
-				setCancelAllSnapshot(null);
-			},
 			onSettled: () => {
 				cancelAllSubmittingRef.current = false;
 			},
@@ -837,16 +845,15 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	function handleCancelAllOpenChange(open: boolean) {
 		if (cancelAllSubmittingRef.current || pendingScopes.size > 0) return;
 		setCancelAllOpen(open);
-		if (!open) setCancelAllSnapshot(null);
 	}
 
-	function clearEditSession() {
+	function clearEditSession(error: OrderValidationError | null = null, actionId: string | null = null) {
 		editTargetRef.current = null;
 		editValueRef.current = "";
 		modifyExecutionRef.current = null;
 		setEditTarget(null);
 		setEditValue("");
-		setModifyValidationError(null);
+		setModifyValidationError(error, actionId);
 		setModifyPhase("idle");
 	}
 
@@ -979,9 +986,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 				}
 				const validationError = { kind: "code", code: "modification-unconfirmed" } as const;
 				const message = getValidationErrorMessage(validationError) ?? "";
-				modifyExecutionRef.current = null;
-				setModifyPhase("idle");
-				setModifyValidationError(validationError, execution.actionId);
+				clearEditSession(validationError, execution.actionId);
 				toast.warning(message, { id: getPendingTradingActionToastId(execution.actionId) });
 				return;
 			} else {
@@ -1001,9 +1006,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			}
 			const validationError = getValidationErrorFromCause(cause, "failed-to-modify");
 			const message = getValidationErrorMessage(validationError) ?? "";
-			modifyExecutionRef.current = null;
-			setModifyPhase("idle");
-			setModifyValidationError(validationError);
+			clearEditSession(validationError);
 			toast.error(message);
 		}
 	}
@@ -1102,7 +1105,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 							disabled={disableCancelSelected}
 							className="h-[27px] min-h-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none transition-colors duration-[120ms] hover:text-market-close-danger/80 hover:no-underline active:not-data-disabled:scale-100"
 						>
-							{pendingScopes.has("selected") ? t`Canceling...` : t`Cancel selected`}
+							{t`Cancel selected`}
 						</Button>
 					) : null}
 					{openOrders.length > 0 ? (
@@ -1114,9 +1117,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 							disabled={disableCancelAll}
 							className="ms-1.5 h-[27px] min-h-0 px-0 text-xs font-semibold text-market-close-danger no-underline shadow-none transition-colors duration-[120ms] hover:text-market-close-danger/80 hover:no-underline active:not-data-disabled:scale-100"
 						>
-							{pendingScopes.has("all")
-								? t`Canceling...`
-								: t({ message: "Cancel all", context: "Current orders toolbar" })}
+							{t({ message: "Cancel all", context: "Current orders toolbar" })}
 						</Button>
 					) : null}
 				</div>
@@ -1184,7 +1185,9 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 												quoteSymbol={quoteSymbol}
 												isSelected={validSelectedIds.has(order.oid)}
 												isCancelling={sharedCancellingOids.has(order.oid)}
-												editField={editTarget?.order.oid === order.oid ? editTarget.field : null}
+												editField={
+													modifyPhase === "idle" && editTarget?.order.oid === order.oid ? editTarget.field : null
+												}
 												editValue={editValue}
 												editDisabled={
 													isModifyLocked ||
@@ -1215,8 +1218,6 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			<CancelAllOrdersModal
 				open={cancelAllOpen}
 				orderCount={cancelAllSnapshot?.orders.length ?? 0}
-				isSubmitting={pendingScopes.has("all")}
-				errorMessage={cancelAllOpen ? actionError : null}
 				onOpenChange={handleCancelAllOpenChange}
 				onConfirm={handleConfirmCancelAll}
 			/>
@@ -1625,7 +1626,7 @@ function OrderRow({
 					disabled={isCancelling || cancelDisabled}
 					className="h-[27px] min-h-0 rounded-[7px] border-market-close-stroke-input bg-surface px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-surface hover:text-market-close-danger focus-visible:border-market-close-focus focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-focus active:not-data-disabled:scale-100 disabled:cursor-not-allowed"
 				>
-					{isCancelling ? t`Canceling...` : t`Cancel`}
+					{t`Cancel`}
 				</Button>
 			</TableCell>
 		</TableRow>

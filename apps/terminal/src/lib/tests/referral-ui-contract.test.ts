@@ -145,7 +145,9 @@ describe("referral UI governance contract", () => {
 		expect(actionModal).toContain("rounded-t-32");
 		expect(actionModal).toContain("min-[1001px]:rounded-32");
 		expect(actionModal).toContain('handleClassName="top-2 h-1 w-9 !rounded-4 bg-fill/30"');
-		expect(actionModal).toContain("dismissible={!isSubmitting}");
+		expect(actionModal).toContain("dismissible\n");
+		expect(actionModal).not.toContain("isSubmitting");
+		expect(actionModal).not.toContain("SpinnerGapIcon");
 	});
 
 	it("remounts referral state when a deep-linked code changes", () => {

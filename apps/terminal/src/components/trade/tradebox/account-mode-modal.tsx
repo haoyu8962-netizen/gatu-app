@@ -1,7 +1,8 @@
 import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { CheckIcon, SpinnerGapIcon } from "@phosphor-icons/react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { CheckIcon } from "@phosphor-icons/react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import {
 	type SelectableAccountAbstraction,
 	toSelectableAccountAbstraction,
@@ -20,7 +21,6 @@ export interface AccountModeFormProps {
 	onConnect?: () => void;
 	onClose: () => void;
 	onApply: (mode: SelectableAccountAbstraction) => Promise<void>;
-	onSubmissionLockChange?: (locked: boolean) => void;
 }
 
 interface Props extends Omit<AccountModeFormProps, "onClose"> {
@@ -35,28 +35,14 @@ interface AccountModeOption {
 	description: string;
 }
 
-interface AccountModeSubmitError {
-	cause: unknown;
-}
-
 export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
 	const { t } = useLingui();
-	const [submissionLocked, setSubmissionLocked] = useState(false);
-	const actionPending = !!formProps.isUpdating || submissionLocked;
-
-	function handleOpenChange(nextOpen: boolean, eventDetails?: { cancel: () => void }) {
-		if (!nextOpen && actionPending) {
-			eventDetails?.cancel();
-			return;
-		}
-		onOpenChange(nextOpen);
-	}
 
 	return (
-		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={actionPending}>
+		<Modal open={open} onOpenChange={onOpenChange}>
 			<ModalPopup
 				size="sm"
-				showClose={!actionPending}
+				showClose
 				closeLabel={t`Close`}
 				overlayClassName="bg-trading-panel-scrim"
 				className="max-h-[min(90dvh,42rem)] font-market-close"
@@ -69,9 +55,8 @@ export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
 				<AccountModeForm
 					key={`${open}:${formProps.currentMode ?? "unavailable"}`}
 					{...formProps}
-					isUpdating={actionPending}
-					onClose={() => handleOpenChange(false)}
-					onSubmissionLockChange={setSubmissionLocked}
+					isUpdating={!!formProps.isUpdating || !open}
+					onClose={() => onOpenChange(false)}
 				/>
 			</ModalPopup>
 		</Modal>
@@ -88,23 +73,13 @@ export function AccountModeForm({
 	onConnect,
 	onClose,
 	onApply,
-	onSubmissionLockChange,
 }: AccountModeFormProps) {
 	const { t } = useLingui();
 	const modes = useAccountModeLabels();
 	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(() =>
 		toSelectableAccountAbstraction(currentMode),
 	);
-	const [submitError, setSubmitError] = useState<AccountModeSubmitError | null>(null);
 	const applyInFlightRef = useRef(false);
-	const mountedRef = useRef(false);
-
-	useLayoutEffect(() => {
-		mountedRef.current = true;
-		return () => {
-			mountedRef.current = false;
-		};
-	}, []);
 	const accountModeOptions: AccountModeOption[] = [
 		{
 			id: "unifiedAccount",
@@ -127,12 +102,6 @@ export function AccountModeForm({
 	const isBusy = !!isLoading || !!isUpdating;
 	const isModeUnavailable = !!canChange && !isLoading && currentMode === null;
 	const requiresExplicitSelection = currentMode === "default" || currentMode === "dexAbstraction";
-	const submitErrorMessage = submitError
-		? submitError.cause instanceof Error && submitError.cause.message
-			? submitError.cause.message
-			: t`Failed to update account mode`
-		: null;
-
 	async function handleApply() {
 		if (applyInFlightRef.current) return;
 		if (!canChange) {
@@ -143,17 +112,13 @@ export function AccountModeForm({
 		if (!selectedMode || !isDirty || isBusy || isModeUnavailable) return;
 
 		applyInFlightRef.current = true;
-		onSubmissionLockChange?.(true);
-		setSubmitError(null);
+		onClose();
 		try {
 			await onApply(selectedMode);
-			applyInFlightRef.current = false;
-			onSubmissionLockChange?.(false);
-			if (mountedRef.current) onClose();
 		} catch (error) {
+			toast.error(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
+		} finally {
 			applyInFlightRef.current = false;
-			onSubmissionLockChange?.(false);
-			if (mountedRef.current) setSubmitError({ cause: error });
 		}
 	}
 
@@ -222,8 +187,6 @@ export function AccountModeForm({
 						<Trans>Select a supported account mode before using balances or moving funds.</Trans>
 					</p>
 				) : null}
-
-				{submitErrorMessage ? <p className="text-xs text-error">{submitErrorMessage}</p> : null}
 			</ModalContent>
 
 			<ModalFooter className={cn(mobileLayout && "px-4 pt-0 pb-3")}>
@@ -233,10 +196,9 @@ export function AccountModeForm({
 					intent="neutral"
 					onClick={handleApply}
 					disabled={canChange ? isBusy || isModeUnavailable || !isDirty : false}
-					iconLeft={isUpdating ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
 					className="min-h-11 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:opacity-90"
 				>
-					{!canChange ? <Trans>Connect</Trans> : isUpdating ? <Trans>Switching...</Trans> : <Trans>Confirm</Trans>}
+					{canChange ? <Trans>Confirm</Trans> : <Trans>Connect</Trans>}
 				</Button>
 			</ModalFooter>
 			<div className={cn("space-y-2 text-xs text-trading-panel-muted", mobileLayout ? "mx-4 mb-4" : "mx-5 mb-5")}>

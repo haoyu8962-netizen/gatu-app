@@ -24,6 +24,8 @@ const testState = vi.hoisted(() => ({
 	sizeValue: 1,
 	requestSubmit: vi.fn(),
 	submitOrder: vi.fn(),
+	tradingReady: true,
+	authorize: vi.fn(async () => {}),
 	actions: {
 		markDraftEdited: vi.fn(),
 		setLimitPriceFromPrefill: vi.fn(),
@@ -193,7 +195,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		isSignerLoading: false,
 		isSignerReady: true,
 		isBuilderFeeLoading: false,
-		isReady: true,
+		isReady: testState.tradingReady,
 	}),
 	useSelectedMarketInfo: () => ({
 		data: {
@@ -211,7 +213,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		},
 	}),
 	useInfo: () => ({ data: undefined }),
-	useTradingAuthorization: () => ({ authorize: vi.fn(), status: "idle" }),
+	useTradingAuthorization: () => ({ authorize: testState.authorize, status: "idle" }),
 	useUserPositions: () => ({
 		getPosition: () => null,
 		hasError: false,
@@ -353,6 +355,60 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		await expectSubmissionBlocked(container);
 	});
 
+	it("ignores the order button while the size slider is held without disabling it", async () => {
+		activateLocale("en");
+		await renderView(root);
+		const control = container.querySelector<HTMLElement>("[data-trade-slider-control]");
+		if (!control) throw new Error("Expected the size slider control");
+		control.getBoundingClientRect = () => new DOMRect(0, 0, 200, 20);
+		const classNameAtRest = getOrderButton(container).className;
+
+		await act(async () => {
+			control.dispatchEvent(sliderPointer("pointerdown", 100));
+		});
+		expect(control.dataset.dragging).toBe("true");
+		expect(getOrderButton(container).disabled).toBe(false);
+		expect(getOrderButton(container).className).toBe(classNameAtRest);
+		await act(async () => getOrderButton(container).click());
+		expect(testState.requestSubmit).not.toHaveBeenCalled();
+		expect(testState.submitOrder).not.toHaveBeenCalled();
+
+		await act(async () => {
+			document.dispatchEvent(sliderPointer("pointercancel", 100));
+		});
+		expect(control.dataset.dragging).toBeUndefined();
+		await act(async () => getOrderButton(container).click());
+		expect(testState.requestSubmit).toHaveBeenCalledTimes(1);
+	});
+
+	it("ignores the Enable Trading step while the size slider is held", async () => {
+		activateLocale("en");
+		testState.tradingReady = false;
+		await renderView(root);
+		const control = container.querySelector<HTMLElement>("[data-trade-slider-control]");
+		if (!control) throw new Error("Expected the size slider control");
+		control.getBoundingClientRect = () => new DOMRect(0, 0, 200, 20);
+		const enable = Array.from(container.querySelectorAll<HTMLButtonElement>("button.w-full")).find(
+			(candidate) => candidate.textContent?.trim() === "Enable Trading",
+		);
+		if (!enable) throw new Error("Expected the Enable Trading button");
+		expect(enable.disabled).toBe(false);
+
+		await act(async () => {
+			control.dispatchEvent(sliderPointer("pointerdown", 100));
+		});
+		expect(control.dataset.dragging).toBe("true");
+		expect(enable.disabled).toBe(false);
+		await act(async () => enable.click());
+		expect(testState.authorize).not.toHaveBeenCalled();
+
+		await act(async () => {
+			document.dispatchEvent(sliderPointer("pointercancel", 100));
+		});
+		await act(async () => enable.click());
+		expect(testState.authorize).toHaveBeenCalledTimes(1);
+	});
+
 	it("opens confirmation for a valid spot limit without an unsupported shared reduce-only flag", async () => {
 		activateLocale("en");
 		testState.kind = "spot";
@@ -461,6 +517,16 @@ describe("MobileTradeView order-size validation accessibility", () => {
 	);
 });
 
+function sliderPointer(type: string, clientX: number): MouseEvent {
+	const event = new MouseEvent(type, { bubbles: true, button: 0, buttons: type === "pointerdown" ? 1 : 0, clientX });
+	Object.defineProperties(event, {
+		pointerId: { value: 1 },
+		pointerType: { value: "touch" },
+		isPrimary: { value: true },
+	});
+	return event;
+}
+
 function activateLocale(locale: Locale) {
 	i18n.loadAndActivate({ locale, messages: getLocaleMessages(locale) });
 }
@@ -528,6 +594,7 @@ function expectDescriptionCleared(control: HTMLInputElement) {
 }
 
 function setValidPerpScenario() {
+	testState.tradingReady = true;
 	testState.availableBalance = 100;
 	testState.baseAvailable = 100;
 	testState.availabilityStatus = "success";

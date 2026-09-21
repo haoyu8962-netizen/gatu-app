@@ -31,6 +31,7 @@ import {
 	useIdleGlobalModalPreload,
 } from "./lazy-global-modals";
 import { LegalAcceptanceModal } from "./legal-acceptance-modal";
+import { PositionDialogHostGate } from "./position-dialog-host-gate";
 import { TradingOnboardingGate } from "./trading-onboarding-gate";
 
 const GLOBAL_MODAL_EXIT_MS = 250;
@@ -43,7 +44,16 @@ interface Props {
 	enableTradingOnboarding?: boolean;
 }
 
-export function GlobalModals({
+export function GlobalModals(props: Props) {
+	return (
+		<>
+			<PrioritizedGlobalModals {...props} />
+			{props.enablePositionMarketClose && <PositionDialogHostGate />}
+		</>
+	);
+}
+
+function PrioritizedGlobalModals({
 	enableHip3Disclaimer = false,
 	enableLegalGate = false,
 	enablePositionMarketClose = false,

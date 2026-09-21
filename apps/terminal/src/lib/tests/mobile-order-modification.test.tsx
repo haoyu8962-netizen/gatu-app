@@ -291,7 +291,10 @@ describe("mobile order modification", () => {
 			id: getPendingTradingActionToastId(pendingModification?.id ?? ""),
 		});
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
-		expect(size?.disabled).toBe(true);
+		expect(document.body.querySelector('input[aria-label="Size"]')).toBeNull();
+		expect(document.body.textContent).not.toContain("Modifying");
+		expect(document.body.textContent).not.toContain("Waiting for confirmation");
+		expect(findButton("Modify Order", container)?.disabled).toBe(true);
 
 		await act(async () => {
 			if (pendingModification) getPendingTradingActionActions().resolveModification(pendingModification.id);

@@ -119,8 +119,13 @@ function SliderPerformanceFixture() {
 	const [leverage, setLeverage] = useState(1);
 	const [size, setSize] = useState(precision ? "0.001" : "0.24");
 	const [interacting, setInteracting] = useState(false);
+	const [paused, setPaused] = useState(false);
 	const gallery = new URLSearchParams(window.location.search).has("gallery");
 	const sliderValue = precision ? getSliderValue(Number(size), 0.003) : value;
+
+	useLayoutEffect(() => {
+		Object.assign(window, { __gatuSliderSetPaused: setPaused });
+	}, []);
 
 	useLayoutEffect(() => {
 		valueRef.current = value;
@@ -186,6 +191,7 @@ function SliderPerformanceFixture() {
 					onPercentCommit={handleCommit}
 					onPercentInteractionStart={precision ? interaction.onPercentInteractionStart : undefined}
 					onPercentInteractionEnd={precision ? interaction.onPercentInteractionEnd : undefined}
+					paused={paused}
 					ariaLabel="Size percentage"
 				/>
 				<output data-slider-value className="mt-8 block text-sm tabular-nums">

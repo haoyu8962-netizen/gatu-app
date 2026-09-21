@@ -99,7 +99,7 @@ describe("RTL financial UI contract", () => {
 		expect(viewSource).toContain('<bdi dir="ltr">{formatStakingAmount(entry.action.amount, 8)} HYPE</bdi>');
 		expect(viewSource).toContain('<bdi dir="ltr">{formatStakingRatio(validator.commission)}</bdi>');
 		expect(modalSource).toContain('<bdi dir="ltr">{formatStakingAmount(action.maxAmount)} HYPE</bdi>');
-		expect(modalSource).toContain('<bdi dir="ltr">{shortenAddress(match.hash, 6, 6)}</bdi>');
+		expect(viewSource).toContain('<bdi dir="ltr">{shortenAddress(hash, 6, 6)}</bdi>');
 		expect(modalSource).toContain('mono || ltr ? <bdi dir="ltr">{value}</bdi> : value');
 	});
 

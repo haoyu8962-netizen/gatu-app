@@ -59,6 +59,7 @@ describe("useIdleGlobalModalPreload", () => {
 			"TransferModal",
 			"SendModal",
 			"PositionMarketCloseModal",
+			"PositionDialogHost",
 		]);
 	});
 

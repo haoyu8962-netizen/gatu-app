@@ -5,16 +5,14 @@ import { i18n, type Messages } from "@lingui/core";
 import { act, createElement, type ReactNode, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	createPositionCloseSizingViewModel,
-	PositionCloseSizingControls,
-} from "@/components/trade/positions/position-close-dialog-ui";
+import { PositionCloseSizingControls } from "@/components/trade/positions/position-close-sizing-controls";
 import {
 	type PositionCloseSizingIntent,
 	resolvePositionMarketClosePercent,
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
 import { createI18nRoot } from "@/lib/tests/harness/react";
+import { createPositionCloseSizingViewModel } from "@/lib/trade/position-close-sizing-presentation";
 
 const sliderState = vi.hoisted(() => ({
 	props: null as null | {
@@ -151,8 +149,7 @@ describe("position close slider effective aria contract", () => {
 		expect(input?.max).toBe("100");
 		expect(input?.step).toBe("1");
 		expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuenow")).toBe("99.6");
-		const maxButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Max");
-		expect(maxButton?.getAttribute("aria-pressed")).toBe("false");
+		expect(container.querySelectorAll("button[aria-pressed]")).toHaveLength(0);
 
 		act(() => input?.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
 		expect(onIntentChange).not.toHaveBeenCalled();
@@ -235,6 +232,7 @@ describe("position close slider effective aria contract", () => {
 					szDecimals={4}
 					symbol="BTC"
 					disabled={false}
+					paused={false}
 					hasDescribedError={false}
 					visibleSizingError={null}
 					priceLabel="$100,000"
@@ -293,6 +291,7 @@ function renderSizingControls(
 				szDecimals={3}
 				symbol="BTC"
 				disabled={false}
+				paused={false}
 				hasDescribedError={false}
 				visibleSizingError={null}
 				priceLabel="$100,000"

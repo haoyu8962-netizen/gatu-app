@@ -82,7 +82,7 @@ const drawerContentVariants = cva(
 					"data-starting-style:-translate-y-full data-ending-style:-translate-y-full",
 				],
 				bottom: [
-					"bottom-0 left-[env(safe-area-inset-left)] right-[env(safe-area-inset-right)] max-h-[85dvh] overflow-y-auto rounded-t-12",
+					"bottom-0 left-[env(safe-area-inset-left)] right-[env(safe-area-inset-right)] max-h-[85dvh] overflow-y-auto rounded-t-32",
 					"data-starting-style:translate-y-full data-ending-style:translate-y-full",
 				],
 			},

@@ -39,8 +39,8 @@ type OrderHistoryTypeFilter = "all" | OrderHistoryType;
 type OrderHistoryStatusFilter = "all" | OrderHistoryStatusCategory;
 
 const orderHistoryTableHeadClass =
-	"sticky top-0 z-[1] h-[33px] bg-surface px-2 py-0 text-[11px] leading-4 font-semibold normal-case tracking-normal text-market-close-subtle";
-const orderHistoryTableCellClass = "h-[58px] px-2 py-0 text-[13px] leading-[18px]";
+	"sticky top-0 z-[1] h-[33px] bg-surface px-2 py-0 text-2xs leading-4 font-semibold normal-case tracking-normal text-market-close-subtle";
+const orderHistoryTableCellClass = "h-[58px] px-2 py-0 text-2sm leading-[18px]";
 const orderHistoryAssetClass =
 	"h-auto min-h-0 rounded-[4px] border-0 bg-transparent p-0 shadow-none hover:bg-transparent active:not-data-disabled:scale-100";
 const orderHistoryToolbarButtonClass =
@@ -312,7 +312,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 													onClick={() => navigateToMarket(entry.coin)}
 													aria-label={t`Switch to ${entry.coin} market, ${sideLabel} order`}
 													className={orderHistoryAssetClass}
-													nameClassName="text-[13px] leading-[18px] font-bold text-market-close-fg"
+													nameClassName="text-2sm leading-[18px] font-bold text-market-close-fg"
 													fit
 												/>
 											</TableCell>
@@ -349,7 +349,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, orderHistoryTableCellClass)}>
 												<span
 													className={cn(
-														"inline-flex w-fit whitespace-nowrap rounded-[4px] px-2 py-0.5 text-[11px] leading-[14px] font-semibold capitalize",
+														"inline-flex w-fit whitespace-nowrap rounded-[4px] px-2 py-0.5 text-2xs leading-[14px] font-semibold capitalize",
 														getOrderHistoryStatusBadgeClass(statusCategory),
 													)}
 												>

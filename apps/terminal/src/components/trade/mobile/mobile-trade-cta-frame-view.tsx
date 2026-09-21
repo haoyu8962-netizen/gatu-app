@@ -7,7 +7,7 @@ export const ctaButton = "w-full rounded-[10px] text-sm font-bold whitespace-now
 export const ctaEmbeddedHeight = "h-[38px]";
 export const ctaConnect =
 	"bg-trading-panel-control text-trading-panel-on-control hover:not-data-disabled:bg-trading-panel-control/90";
-export const ctaConnectDark = "dark:bg-fill-weak dark:text-action dark:hover:not-data-disabled:bg-fill-hover";
+export const ctaConnectDark = "dark:bg-fill-weak dark:text-action dark:hover:not-data-disabled:bg-fill-press";
 export const buttonFilledBrandMd =
 	"inline-flex items-center justify-center gap-2 select-none py-2 px-4 bg-action text-on-action";
 

@@ -443,7 +443,7 @@ describe("useAssetLeverage", () => {
 		};
 		renderHook();
 
-		let updatePromise!: Promise<void>;
+		let updatePromise!: Promise<number | null>;
 		act(() => {
 			updatePromise = currentHook().applyMarginAndLeverage("cross", 5);
 		});
@@ -468,7 +468,7 @@ describe("useAssetLeverage", () => {
 		};
 		renderHook();
 
-		let updatePromise!: Promise<void>;
+		let updatePromise!: Promise<number | null>;
 		act(() => {
 			updatePromise = currentHook().applyMarginAndLeverage("isolated", 10);
 		});
@@ -525,12 +525,26 @@ describe("useAssetLeverage", () => {
 	it("switches a position-free market to isolated with an integer target leverage", async () => {
 		renderHook();
 
+		let applied: number | null = null;
 		await act(async () => {
-			await currentHook().applyMarginAndLeverage("isolated", 5.5);
+			applied = await currentHook().applyMarginAndLeverage("isolated", 5.5);
 		});
 
 		expect(mocks.updateLeverage).toHaveBeenCalledWith({ asset: 1, isCross: false, leverage: 6 });
 		expect(mocks.setStoredMarginMode).toHaveBeenCalledWith("isolated");
+		expect(applied).toBe(6);
+	});
+
+	it("reports nothing applied when the requested settings already hold", async () => {
+		renderHook();
+
+		let applied: number | null = 0;
+		await act(async () => {
+			applied = await currentHook().applyMarginAndLeverage(currentHook().marginMode, currentHook().currentLeverage);
+		});
+
+		expect(applied).toBeNull();
+		expect(mocks.updateLeverage).not.toHaveBeenCalled();
 	});
 
 	it("keeps the successful leverage and margin mode effective until the subscription confirms both", async () => {
@@ -766,7 +780,7 @@ describe("useAssetLeverage", () => {
 		renderHook();
 		const resetCallsBeforeRequest = mocks.resetMutation.mock.calls.length;
 
-		let firstRequest!: Promise<void>;
+		let firstRequest!: Promise<number | null>;
 		act(() => {
 			firstRequest = currentHook().applyMarginAndLeverage("cross", 5);
 		});

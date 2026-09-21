@@ -10,6 +10,7 @@ import { SendModal } from "@/components/trade/positions/send-modal";
 import { TransferModal } from "@/components/trade/positions/transfer-modal";
 import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
 import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
+import { clearSendDraft } from "@/stores/use-send-draft-store";
 import { createI18nRoot } from "./harness/react";
 
 const BALANCE_UNAVAILABLE = "Balance data is unavailable. Try again after the connection recovers.";
@@ -36,7 +37,11 @@ const arabicMessages: Messages = {
 	[getMessageId(INVALID_DESTINATION)]: INVALID_DESTINATION_AR,
 };
 
+const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
+vi.mock("sonner", () => ({ toast: toastMocks }));
+
 const testState = vi.hoisted(() => ({
+	pendingMethods: new Set<string>(),
 	exchangeIdentity: {
 		clientKey: "0x1111111111111111111111111111111111111111",
 		env: "Mainnet" as "Mainnet" | "Testnet",
@@ -48,6 +53,7 @@ const testState = vi.hoisted(() => ({
 		hasWalletAccess: true,
 		sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
 		walletAddress: "0x1111111111111111111111111111111111111111" as string | undefined,
+		walletIntent: "embedded" as "embedded" | "external",
 	},
 	balances: {
 		accountAbstraction: "disabled" as string | null,
@@ -208,7 +214,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	) => {
 		if (options?.preExecutionGuard) testState.exchangeGuards.set(method, options.preExecutionGuard);
 		return {
-			isPending: false,
+			isPending: testState.pendingMethods.has(method),
 			mutateAsync: (params: unknown) => {
 				if (!testState.runGuardsOnMutation) return testState.exchangeMutations[method](params);
 				return (async () => {
@@ -269,6 +275,9 @@ describe("funds action balance wiring", () => {
 		testState.walletSession.hasWalletAccess = true;
 		testState.walletSession.sessionMode = "wallet";
 		testState.walletSession.walletAddress = "0x1111111111111111111111111111111111111111";
+		testState.walletSession.walletIntent = "embedded";
+		testState.pendingMethods.clear();
+		clearSendDraft();
 		testState.balances.accountAbstraction = "disabled";
 		testState.balances.hasError = false;
 		testState.balances.isDataStale = false;
@@ -573,14 +582,118 @@ describe("funds action balance wiring", () => {
 			releaseLegal();
 		});
 		expect(testState.exchangeMutations[method]).not.toHaveBeenCalled();
-		expect(onOpenChange).not.toHaveBeenCalled();
-		await vi.waitFor(() => expect(container.textContent).toContain(BALANCE_CHANGED));
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith(BALANCE_CHANGED));
+		expect(container.textContent).not.toContain(BALANCE_CHANGED);
+		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
 		if (method === "spotSend") testState.balances.spotBalances[0].total = "8105.34686269";
 		else testState.balances.withdrawable = "40";
 		rerenderGuardedModal(method, onOpenChange);
 		await clickAndFlush(getGuardedSubmitButton(method));
 		expect(testState.exchangeMutations[method]).toHaveBeenCalledOnce();
+		expect(toastMocks.success).toHaveBeenCalledOnce();
+		expect(onOpenChange).toHaveBeenCalledTimes(2);
+	});
+
+	it("reports a confirmed transfer through a notification and closes only after it settles", async () => {
+		let settleMutation!: () => void;
+		testState.exchangeMutations.usdClassTransfer.mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					settleMutation = resolve;
+				}),
+		);
+		const onOpenChange = vi.fn();
+		renderValidTransfer(root, container, onOpenChange);
+
+		act(() => getGuardedSubmitButton("usdClassTransfer").click());
+		await vi.waitFor(() => expect(testState.exchangeMutations.usdClassTransfer).toHaveBeenCalledOnce());
+		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(toastMocks.success).not.toHaveBeenCalled();
+
+		await act(async () => settleMutation());
+		await vi.waitFor(() => expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false));
+		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Transfer confirmed", expect.anything());
+		const options = toastMocks.success.mock.calls[0]?.[1] as { description: ReactNode };
+		const host = document.createElement("div");
+		const descriptionRoot = createI18nRoot(host);
+		act(() => descriptionRoot.render(createElement(Fragment, null, options.description)));
+		expect(host.textContent).toContain("1 USDC");
+		expect(host.querySelector('bdi[dir="ltr"]')?.textContent).toBe("1 USDC");
+		act(() => descriptionRoot.unmount());
+	});
+
+	it("reports a confirmed send with the amount and token it sent", async () => {
+		const onOpenChange = vi.fn();
+		renderValidSend(root, container, onOpenChange);
+
+		await clickAndFlush(getGuardedSubmitButton("spotSend"));
+
+		await vi.waitFor(() => expect(toastMocks.success).toHaveBeenCalledWith("Sent 1 USDC"));
 		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+	});
+
+	it("restores the destination and amount of a failed send for the same account only", async () => {
+		testState.exchangeMutations.spotSend.mockRejectedValueOnce(new Error(RAW_EXCHANGE_ERROR));
+		renderValidSend(root, container);
+		await clickAndFlush(getGuardedSubmitButton("spotSend"));
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledOnce());
+
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: false })));
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const restored = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+		expect(restored?.value).toBe("0x2222222222222222222222222222222222222222");
+		expect(getAmountInput(container).value).toBe("1");
+
+		testState.exchangeIdentity.clientKey = "0x3333333333333333333333333333333333333333";
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: false })));
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const otherAccount = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+		expect(otherAccount?.value).toBe("");
+		expect(getAmountInput(container).value).toBe("");
+	});
+
+	it("forgets the send draft once a send is confirmed", async () => {
+		testState.exchangeMutations.spotSend.mockRejectedValueOnce(new Error(RAW_EXCHANGE_ERROR));
+		renderValidSend(root, container);
+		await clickAndFlush(getGuardedSubmitButton("spotSend"));
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledOnce());
+
+		await clickAndFlush(getGuardedSubmitButton("spotSend"));
+		await vi.waitFor(() => expect(toastMocks.success).toHaveBeenCalledOnce());
+
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: false })));
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const destination = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+		expect(destination?.value).toBe("");
+	});
+
+	it.each([
+		["external", "Confirm in wallet"],
+		["embedded", "Transfer"],
+	] as const)("names the pending transfer control for an %s wallet", (walletIntent, label) => {
+		testState.walletSession.walletIntent = walletIntent;
+		testState.pendingMethods.add("usdClassTransfer");
+		renderValidTransfer(root, container);
+
+		const control = [...container.querySelectorAll<HTMLButtonElement>("button")].at(-1);
+		expect(control?.textContent?.trim()).toBe(label);
+		expect(control?.disabled).toBe(true);
+		expect(container.textContent).not.toContain("Transferring");
+		expect(container.querySelector(".animate-spin")).toBeNull();
+	});
+
+	it.each([
+		["external", "Confirm in wallet"],
+		["embedded", "Send"],
+	] as const)("names the pending send control for an %s wallet", (walletIntent, label) => {
+		testState.walletSession.walletIntent = walletIntent;
+		testState.pendingMethods.add("spotSend");
+		renderValidSend(root, container);
+
+		const control = [...container.querySelectorAll<HTMLButtonElement>("button")].at(-1);
+		expect(control?.textContent?.trim()).toBe(label);
+		expect(control?.disabled).toBe(true);
+		expect(container.textContent).not.toContain("Sending");
 	});
 
 	it.each(guardedMethods)("blocks %s if its surface unmounts during the final legal check", async (method) => {
@@ -674,15 +787,17 @@ describe("funds action balance wiring", () => {
 		renderGuardedModal(method, onOpenChange);
 		await clickAndFlush(getGuardedSubmitButton(method));
 		expect(testState.exchangeMutations[method]).not.toHaveBeenCalled();
-		expect(onOpenChange).not.toHaveBeenCalled();
-		expect(getAmountInput(container).value).toBe("1");
+		expect(toastMocks.error).toHaveBeenCalledOnce();
+		expect(toastMocks.success).not.toHaveBeenCalled();
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
 	});
 
 	it.each([
 		["send", () => renderValidSend(root, container), "spotSend"],
 		["transfer", () => renderValidTransfer(root, container), "usdClassTransfer"],
 	] as const)(
-		"retranslates an existing %s balance-change guard after an en-to-ar switch",
+		"reports a %s balance-change guard in the locale that is active when it fails",
 		async (_, render, method) => {
 			let releasePreflight!: () => void;
 			const preflight = new Promise<void>((resolve) => {
@@ -707,6 +822,7 @@ describe("funds action balance wiring", () => {
 						: createElement(TransferModal, { onOpenChange: vi.fn(), open: true }),
 				);
 			});
+			act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
 			await act(async () => {
 				releasePreflight();
 				await preflight;
@@ -714,53 +830,48 @@ describe("funds action balance wiring", () => {
 				await Promise.resolve();
 			});
 
-			await vi.waitFor(() => expect(container.textContent).toContain(BALANCE_CHANGED));
-			act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
-			expect(container.textContent).toContain(BALANCE_CHANGED_AR);
-			expect(container.textContent).not.toContain(BALANCE_CHANGED);
+			await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith(BALANCE_CHANGED_AR));
+			expect(toastMocks.error).not.toHaveBeenCalledWith(BALANCE_CHANGED);
 		},
 	);
 
-	it("retranslates a stable send account-mode guard code instead of retaining its old Error.message", async () => {
+	it("reports a send account-mode guard from its stable code instead of its Error.message", async () => {
 		testState.assertAccountAbstraction.mockRejectedValueOnce(new AccountAbstractionExecutionError("changed"));
 		testState.runGuardsOnMutation = true;
 		renderValidSend(root, container);
-
-		await clickAndFlush(getButton(container, "Send"));
-		await vi.waitFor(() => expect(container.textContent).toContain(ACCOUNT_MODE_CHANGED));
-
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
-		expect(container.textContent).toContain(ACCOUNT_MODE_CHANGED_AR);
-		expect(container.textContent).not.toContain(ACCOUNT_MODE_CHANGED);
+
+		await clickAndFlush(getGuardedSubmitButton("spotSend"));
+
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith(ACCOUNT_MODE_CHANGED_AR));
+		expect(toastMocks.error).not.toHaveBeenCalledWith(ACCOUNT_MODE_CHANGED);
 	});
 
-	it("retranslates a stable transfer geo-guard code instead of retaining its old Error.message", async () => {
+	it("reports a transfer geo guard from its stable code instead of its Error.message", async () => {
 		testState.assertFreshGeoAllowed.mockRejectedValueOnce(new FundsActionGeoExecutionError("unavailable"));
 		testState.runGuardsOnMutation = true;
 		renderValidTransfer(root, container);
-
-		await clickAndFlush(getButton(container, "Transfer"));
-		await vi.waitFor(() => expect(container.textContent).toContain(GEO_UNAVAILABLE));
-
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
-		expect(container.textContent).toContain(GEO_UNAVAILABLE_AR);
-		expect(container.textContent).not.toContain(GEO_UNAVAILABLE);
+
+		await clickAndFlush(getGuardedSubmitButton("usdClassTransfer"));
+
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith(GEO_UNAVAILABLE_AR));
+		expect(toastMocks.error).not.toHaveBeenCalledWith(GEO_UNAVAILABLE);
 	});
 
 	it.each([
 		["send", () => renderValidSend(root, container), "spotSend"],
 		["transfer", () => renderValidTransfer(root, container), "usdClassTransfer"],
-	] as const)("preserves a raw %s exchange error across a locale switch", async (_, render, method) => {
+	] as const)("reports a raw %s exchange error unchanged in any locale", async (_, render, method) => {
 		testState.exchangeMutations[method].mockRejectedValueOnce(new Error(RAW_EXCHANGE_ERROR));
 		testState.runGuardsOnMutation = true;
 		render();
-
-		await clickAndFlush(getButton(container, method === "spotSend" ? "Send" : "Transfer"));
-		await vi.waitFor(() => expect(container.textContent).toContain(RAW_EXCHANGE_ERROR));
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain(RAW_EXCHANGE_ERROR);
-
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
-		expect(container.textContent).toContain(RAW_EXCHANGE_ERROR);
+
+		await clickAndFlush(getGuardedSubmitButton(method));
+
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith(expect.stringContaining(RAW_EXCHANGE_ERROR)));
+		expect(container.querySelector('[role="alert"]')).toBeNull();
 	});
 
 	it.each([

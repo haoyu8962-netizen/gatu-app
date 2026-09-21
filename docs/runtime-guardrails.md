@@ -404,6 +404,13 @@ mobile regressions.
 - Keep the single theme-aware TradingView stylesheet used by runtime theme
   switching; changing CSS URLs on theme changes would require rebuilding the
   iframe.
+- Fonts are scoped to a document, so the `@font-face` rules in the application
+  stylesheet do not reach the chart iframe. `CHART_CUSTOM_FONT_FAMILY` and the
+  theme stylesheets use a system font stack and must not name an application
+  webfont: a family the iframe cannot resolve silently falls through to the
+  rest of the stack. Using a webfont in the chart requires declaring its
+  `@font-face` inside both theme stylesheets with a stable URL;
+  `chart-font-family-contract` pins this.
 
 ### Important Files
 
@@ -539,6 +546,22 @@ have an install capability.
   reintroduced. Both `VITE_MOBILE_PAIRING_*` build flags stay off in
   production until the physical-device acceptance in
   `docs/mobile-sync-ticketless-transfer-plan.md` has been run and recorded.
+- The pairing fragment leaves the address bar from the shell's first script
+  element (`docs/pairing-page-hardening-plan.md`). That inline script is
+  rendered from `lib/mobile-sync/pairing-location.ts` by
+  `apps/terminal/scripts/render-pairing-head-scrub.mjs` and committed; never
+  edit `head-scrub-script.generated.ts` by hand, keep the source file free of
+  imports, and keep the script ahead of every other script in `RootDocument`
+  (`scripts/check-shell-head-scrub.mjs` fails the build otherwise). The client
+  entry runs the same function as the second line of defence and alone decides
+  whether the application may hydrate: a scrub that failed, or a captured link
+  that can no longer be handed over, shows the multilingual notice instead.
+- Every path spelling the router accepts for the pairing page is scrubbed
+  (ASCII case, one percent-decoding); deeper or undecodable paths are scrubbed
+  and refused. `classifyPairingPath` is the only place that decides this.
+- The service worker never answers a pairing navigation: the shared cached
+  shell would carry another route's response headers and could be a release
+  behind. The edge functions give that page `no-store` and `no-referrer`.
 - The mobile Email and WalletConnect entries launch Privy with explicit login
   methods; wallet selection remains Ethereum-only. An authenticated user takes
   the explicit reconnect path instead of starting a new login flow.
@@ -567,6 +590,9 @@ have an install capability.
 - `apps/terminal/src/components/trade/header/user-menu.tsx`
 - `apps/terminal/src/stores/use-global-modal-store.ts`
 - `apps/terminal/src/routes/mobile-agent-sync.tsx`
+- `apps/terminal/src/lib/mobile-sync/pairing-location.ts`
+- `apps/terminal/src/lib/mobile-sync/bootstrap-fragment.ts`
+- `apps/terminal/src/client.ts`
 - `apps/terminal/src/edge/lambda-handler.ts`
 - `apps/terminal/src/providers/pwa-install.tsx`
 - `apps/terminal/src/config/seo.ts`
@@ -585,6 +611,11 @@ have an install capability.
 - `apps/terminal/src/lib/tests/mobile-agent-sync-modal.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-agent-qr-scanner.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-agent-sync-route.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-sync-pairing-location.test.ts`
+- `apps/terminal/src/lib/tests/mobile-sync-bootstrap-fragment.test.ts`
+- `apps/terminal/src/lib/tests/client-bootstrap-error.test.ts`
+- `apps/terminal/src/lib/tests/sw-navigation-cache.test.ts`
+- `scripts/check-shell-head-scrub.test.mjs`
 
 ## 9. Development And Browser Test Caches
 
@@ -677,7 +708,7 @@ Do not introduce a lazy/Suspense boundary solely to shrink a measured form's bun
 
 Follow [slider-interactions.md](slider-interactions.md) for the shared quantity and
 leverage interaction contract. A pointer session separates local visual position,
-15ms trailing business previews, and the final synchronous commit. Every terminal
+business previews throttled to one per 15ms, and the final synchronous commit. Every terminal
 path clears pending work on cancellation, invalidation, and unmount. Preserve exact
 business snapshots only in their original eligible identity. End callbacks run even
 when a thumb was pressed without moving, so submission locks cannot remain stuck.
@@ -687,6 +718,18 @@ keyed market change must preserve the new form's reset and subsequent edits.
 
 Quantity/close/TP-SL gestures must lock confirmation synchronously from pointer
 start through end; leverage gestures edit drafts and never invoke an API directly.
+The lock is a ref checked first in the submit path, not a disabled state: it must not
+grey or otherwise restyle the submit control (`docs/slider-interactions.md`).
+A value source that is only temporarily unreadable pauses an active gesture (`paused`):
+nothing is published or committed until it recovers, and the gesture is not thrown
+away. Reasons that end the editing context (`disabled`, identity, range or direction
+changes) still cancel it at once. `lostpointercapture` never cancels: embedded
+webviews report it a few milliseconds before `pointerup` with a real mouse, and the
+release that follows must still commit. The control keeps the reason the last gesture
+ended in `data-gesture-end`. Adding a cancellation path, and verifying any change to
+the gesture lifecycle, follow [ADR 0018](adr/0018-slider-gestures-end-on-release.md):
+injected pointer events do not prove operating-system event order, so such a change
+is verified with physical input and a reported jump is diagnosed from the page first.
 Slippage persistence requires explicit confirmation. These controls never replace
 wallet, legal, funding, freshness, market identity, or SDK-boundary validation.
 Market orders round protective prices inward to valid ticks, and the final

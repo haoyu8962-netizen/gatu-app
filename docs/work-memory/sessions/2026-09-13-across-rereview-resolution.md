@@ -10,7 +10,7 @@
   "summary": "补 legal 可判定验收、导出兼容、token、密钥和受控恢复；不采用 WebView 一律禁用、10 USDC 通用引导或交易 hash 主键，生产依赖仍未完成。",
   "thread": null,
   "baseCommit": "965e05900e4f4252d592beaf158967fb2fe74a6e",
-  "commits": [],
+  "commits": ["2c44be20"],
   "sources": [
     {"path": "docs/across-deposit-addresses.md"},
     {"path": "docs/adr/0004-across-deposit-addresses.md"},

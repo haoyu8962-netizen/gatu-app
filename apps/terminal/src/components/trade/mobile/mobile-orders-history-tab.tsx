@@ -361,19 +361,19 @@ function MobileOrdersHistoryTabContent({
 												aria-label={t`Switch to ${marketName} market, ${sideLabel} order`}
 												className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
 											>
-												<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
+												<span className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Market`}</span>
 												<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">
 													{marketName}
 												</span>
 											</button>
 											<div className="min-w-0">
-												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Time`}</div>
+												<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Time`}</div>
 												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
 													{formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" })}
 												</div>
 											</div>
 											<div className="min-w-0">
-												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Type`}</div>
+												<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Type`}</div>
 												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg">
 													{orderTypeLabel}
 												</div>
@@ -384,7 +384,7 @@ function MobileOrdersHistoryTabContent({
 											<div id={detailsId} className="flex flex-col gap-2.5 px-3.5 py-3">
 												<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-x-2.5 gap-y-3">
 													<div className="min-w-0">
-														<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">
+														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">
 															{t`Direction`}
 														</div>
 														<div
@@ -397,19 +397,19 @@ function MobileOrdersHistoryTabContent({
 														</div>
 													</div>
 													<div className="min-w-0">
-														<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Price`}</div>
+														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Price`}</div>
 														<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
 															<HistoricalOrderPrice align="start" order={entry.order.order} />
 														</div>
 													</div>
 													<div className="min-w-0">
-														<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Size`}</div>
+														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Size`}</div>
 														<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
 															{formatToken(entry.size, market?.szDecimals)}
 														</div>
 													</div>
 													<div className="min-w-0">
-														<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Status`}</div>
+														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Status`}</div>
 														<div
 															className={cn(
 																"inline-flex max-w-full truncate rounded-[4px] px-[7px] py-0.5 text-[10px] font-bold",
@@ -424,7 +424,7 @@ function MobileOrdersHistoryTabContent({
 														</div>
 													</div>
 													<div className="col-span-2 min-w-0">
-														<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Updated`}</div>
+														<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Updated`}</div>
 														<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
 															{formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" })}
 														</div>

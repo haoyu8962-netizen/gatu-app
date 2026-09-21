@@ -13,8 +13,6 @@ interface Props {
 	triggerPriceValue?: string;
 	sizeInvalid: boolean;
 	triggerPriceInvalid: boolean;
-	isSubmitting: boolean;
-	isAwaitingConfirmation: boolean;
 	isInteractionLocked: boolean;
 	isConfirmDisabled: boolean;
 	errorMessage?: string | null;
@@ -34,8 +32,6 @@ export function MobileOrderModificationModal({
 	triggerPriceValue,
 	sizeInvalid,
 	triggerPriceInvalid,
-	isSubmitting,
-	isAwaitingConfirmation,
 	isInteractionLocked,
 	isConfirmDisabled,
 	errorMessage,
@@ -49,13 +45,13 @@ export function MobileOrderModificationModal({
 	const sizeInputRef = useRef<HTMLInputElement>(null);
 
 	function handleOpenChange(nextOpen: boolean) {
-		if (isSubmitting || isAwaitingConfirmation) return;
+		if (!open) return;
 		onOpenChange(nextOpen);
 	}
 
 	function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (isConfirmDisabled) return;
+		if (!open || isConfirmDisabled) return;
 		onConfirm();
 	}
 
@@ -63,7 +59,7 @@ export function MobileOrderModificationModal({
 		if (event.nativeEvent.isComposing) return;
 		if (event.key === "Enter") {
 			event.preventDefault();
-			if (!isConfirmDisabled) onConfirm();
+			if (open && !isConfirmDisabled) onConfirm();
 			return;
 		}
 		if (event.key === "Escape") {
@@ -73,21 +69,19 @@ export function MobileOrderModificationModal({
 	}
 
 	const describedBy = errorMessage ? errorId : undefined;
-	const busy = isSubmitting || isAwaitingConfirmation;
-
 	return (
 		<AdaptiveModal
 			open={open}
 			onOpenChange={handleOpenChange}
 			presentation="drawer"
 			size="sm"
-			dismissible={!busy}
-			showClose={!busy}
+			dismissible
+			showClose
 			showHandle
 			closeLabel={t`Close order modification`}
 			handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
 			overlayClassName="!transition-none data-starting-style:!opacity-100 data-ending-style:!opacity-100"
-			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[18px] !border-0 !bg-modal !shadow-none !transition-none data-starting-style:!translate-y-0 data-starting-style:!scale-100 data-starting-style:!opacity-100 data-ending-style:!translate-y-0 data-ending-style:!scale-100 data-ending-style:!opacity-100 [&>button]:!top-5 [&>button]:!right-4 [&>button]:size-11 [&>button]:rounded-[8px] [&>button]:text-market-close-muted [&>button:active]:bg-market-close-hover"
+			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[18px] max-[1000px]:!border-0 !bg-modal !shadow-none !transition-none data-starting-style:!translate-y-0 data-starting-style:!scale-100 data-starting-style:!opacity-100 data-ending-style:!translate-y-0 data-ending-style:!scale-100 data-ending-style:!opacity-100 [&>button]:!top-5 [&>button]:!right-4 [&>button]:size-11 [&>button]:rounded-[8px] [&>button]:text-market-close-muted [&>button:active]:bg-market-close-hover"
 		>
 			<form onSubmit={handleSubmit} noValidate>
 				<ModalHeader divider={false} className="px-4 pt-7 pb-0 text-start">
@@ -95,7 +89,7 @@ export function MobileOrderModificationModal({
 				</ModalHeader>
 
 				<ModalContent className="flex flex-col gap-3 px-4 pt-4 pb-0">
-					<dl className="flex flex-col gap-[9px] text-[13px] leading-[18px]">
+					<dl className="flex flex-col gap-[9px] text-2sm leading-[18px]">
 						<DetailRow label={t`Market`} value={marketLabel} emphasized />
 						<DetailRow
 							label={t`Direction`}
@@ -167,10 +161,9 @@ export function MobileOrderModificationModal({
 					<button
 						type="submit"
 						className="min-h-11 w-full rounded-[12px] bg-market-close-control px-3 text-sm font-bold text-market-close-on-control transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:bg-market-close-stroke-control disabled:text-market-close-muted"
-						aria-busy={busy || undefined}
-						disabled={isConfirmDisabled}
+						disabled={!open || isConfirmDisabled}
 					>
-						{isSubmitting ? t`Modifying...` : isAwaitingConfirmation ? t`Waiting for confirmation...` : t`Modify Order`}
+						{t`Modify Order`}
 					</button>
 				</ModalFooter>
 			</form>

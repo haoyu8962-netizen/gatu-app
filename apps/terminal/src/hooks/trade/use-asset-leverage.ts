@@ -150,7 +150,7 @@ interface UseAssetLeverageReturn {
 	hasPosition: boolean;
 	positionStateReady: boolean;
 	switchMarginMode: (mode: MarginMode) => Promise<void>;
-	applyMarginAndLeverage: (mode: MarginMode, leverageValue: number) => Promise<void>;
+	applyMarginAndLeverage: (mode: MarginMode, leverageValue: number) => Promise<number | null>;
 	isSwitchingMode: boolean;
 	switchModeError: Error | null;
 	isOnlyIsolated: boolean;
@@ -491,7 +491,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 
 	const applyMarginAndLeverage = useCallback(
 		async (mode: MarginMode, leverageValue: number) => {
-			if (!isPerpMarket || typeof assetId !== "number") return;
+			if (!isPerpMarket || typeof assetId !== "number") return null;
 			if (!Number.isFinite(leverageValue)) throw new Error("Invalid leverage");
 			if (requestInFlightRef.current) throw leverageUpdateInProgressError();
 
@@ -500,7 +500,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 			const leverageChanged = clamped !== effectiveLeverage;
 			if (!modeChanged && !leverageChanged) {
 				setPendingLeverageState(null);
-				return;
+				return null;
 			}
 
 			if (isOnlyIsolated && mode === "cross") {
@@ -511,7 +511,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 				setStoredMarginMode(mode);
 				setDisconnectedLeverageState({ transactionIdentity, value: clamped });
 				setPendingLeverageState(null);
-				return;
+				return clamped;
 			}
 
 			if (mode === "isolated" && marginMode === "cross") {
@@ -531,7 +531,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 					leverage: clamped,
 				});
 
-				if (leverageExecutionStateRef.current.transactionIdentity !== requestIdentity) return;
+				if (leverageExecutionStateRef.current.transactionIdentity !== requestIdentity) return null;
 				setStoredMarginMode(mode);
 				setCommittedLeverageSettingsState({
 					transactionIdentity: requestIdentity,
@@ -541,6 +541,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 					observedReceivedAt: leverageExecutionStateRef.current.activeAssetReceivedAt,
 				});
 				setPendingLeverageState(null);
+				return clamped;
 			} finally {
 				requestInFlightRef.current = false;
 			}

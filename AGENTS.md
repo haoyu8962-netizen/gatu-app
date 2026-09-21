@@ -107,6 +107,24 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Default desktop geometry fits all eight ordinary order-entry types without internal scrolling; keep the order-type header outside the overflow region and validate real forms, not only synthetic tall content.
 - Order-entry content must not resize the desktop grid: Market/Limit, advanced-order fields and feedback adapt within the trading panel while chart, order-book and account boundaries, internal scrolling and user-selected grid geometry stay intact. The embedded mobile form must not own its own vertical scroll viewport, and market data must never drive measured height state.
 
+## Confirmation surface contract
+
+- `docs/confirmation-surfaces.md` owns this contract, its review checklist and the list of surfaces that do not meet it yet; `docs/adr/0017-market-close-confirmed-size-ceiling.md` records the tradeoffs. Check that list before assuming a dialog complies.
+- Execution may recompute from fresher data, but never beyond what the user saw at the click. A confirmation surface passes the value it displayed into the submit path as a bound and fails closed when the recomputed value exceeds it. The direction of the bound belongs to each action; for close size it is executed ≤ displayed.
+- The ready-state name of a confirm control is a static verb. Runtime quantities, prices and counts belong in the dialog body, from the same render value that is submitted; an accessible description may repeat it, the control's name may not.
+- When the object being confirmed differs from what the dialog opened with, say so next to the value to review, only while the confirmation is visible and editable, and never gate submission on the notice.
+- Trading confirmations and editors (Market Close, Close All, Limit Close, Reverse, the order confirmation, TP/SL, isolated margin, Cancel All Orders, order modification, Swap, account type, leverage, margin mode) never show submission status in the confirm control or the dialog body, and order-list buttons (`Cancel`, `Cancel selected`, `Cancel all`, `Terminate`) keep their names while a request is pending. Confirming closes the dialog at once, the submission runs in the background and every outcome is reported through a notification. Guard the click with a synchronous ref and keep the component that owns the submit hook mounted until the submission settles. A dismissed dialog no longer blocks the page, so that owner must not live inside a tab panel or a layout branch: position dialog sessions live in `use-position-dialog-store` and are mounted by the page-level `PositionDialogHost`, each open gets a new session id, and a second open is ignored while a session exists. A success notification states the value the exchange call actually applied, never the value the dialog remembered. Funds dialogs (Transfer, Send, Deposit, Withdraw) keep static button names (an external wallet shows the handshake hint `Confirm in wallet`) and deliberately stay open until the request settles, then close and report the outcome through a notification; closing the dialog is what invalidates a queued funds request, so never turn them into close-at-click. Report an outcome only for the attempt that is still current by object identity, not by comparing context strings. Long-running deposit progress belongs to the page-level `CctpDepositTrackingNotifier`, not to the dialog. `docs/funds-dialog-outcome-plan.md` owns the comparison with the official terminal and the deviations; `docs/confirmation-surfaces.md` lists the surfaces that do not follow this yet. `action-progress-label-contract.test.ts` registers every remaining label that ends in an ellipsis.
+- A redesign that changes what a confirm control displays or commits to is a behavior change: document it and keep a test that renders the real dialog with the real submit path and compares the displayed value with the value sent. Testing the dialog and the submit hook separately does not cover this.
+
+## Slider gesture contract
+
+- `docs/slider-interactions.md` owns the shared `TradeSlider` behaviour, its cancellation list, the verification rules and the diagnosis procedure; `docs/adr/0018-slider-gestures-end-on-release.md` records why. Read both before touching pointer capture, gesture listeners or a cancellation path.
+- A gesture ends on `pointerup` (commit while the session is still valid and not paused, otherwise cancel), on `pointercancel` (cancel) or when its editing context ends (`disabled`, identity, range or direction change, unmount); the owning document lists the remaining cancellation paths. `lostpointercapture` and other browser bookkeeping never cancel. Moves, the release and the cancel are handled on the document for the life of the gesture, so correctness does not depend on capture.
+- Every ending is named and recorded on the control in `data-gesture-end`. Do not add a cancellation path as hardening: it needs a reason name, a real situation in which the user wants the drag discarded, evidence from physical input that ordinary drags do not reach it, and a test.
+- Script-dispatched and protocol-injected pointer events (jsdom, Playwright, DevTools, the desktop browser tools) cannot prove operating-system event order, capture or focus behaviour. State the input path in every interaction verification claim; a gesture-lifecycle change is not verified until a person has dragged the real control.
+- Diagnose a reported slider problem from the page first (`data-gesture-end`, the recorder in `docs/slider-interactions.md`), then change code. A reported defect is fixed when the reporter's scenario is confirmed, not when some defect has been found and fixed.
+- A surface must not move its slider under the pointer during a gesture; hold layout that depends on the previewed value until the gesture ends, as presentation only.
+
 ## Startup rendering contract
 
 - `docs/adr/0010-blank-until-ready-startup.md` and `.claude/rules/startup-rendering.md` own this contract. Every application route prerenders and hydrates the same visually empty `StartupFallback`: `aria-busy` and one screen-reader-only output, with no visible skeleton or chrome.
@@ -184,6 +202,59 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trade-form-compact-fields.test.tsx \
   src/lib/tests/trade-form-tp-sl.test.tsx
 
+# Confirmation surfaces (see docs/confirmation-surfaces.md)
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/position-market-close-display-commit.test.tsx \
+  src/lib/tests/position-market-close-submit.test.tsx \
+  src/lib/tests/position-market-close-modal.test.tsx \
+  src/lib/tests/position-market-close-action.test.tsx \
+  src/lib/tests/position-market-close.test.ts \
+  src/lib/tests/trading-action-button-label-contract.test.ts \
+  src/lib/tests/trading-action-button.test.tsx \
+  src/lib/tests/position-limit-close-modal.test.tsx \
+  src/lib/tests/position-tpsl-modal.test.tsx \
+  src/lib/tests/leverage-modal.test.tsx \
+  src/lib/tests/margin-mode-modal.test.tsx \
+  src/lib/tests/order-submission-wiring.test.ts \
+  src/lib/tests/position-close-all-modal.test.tsx \
+  src/lib/tests/position-reverse-confirmation-controller.test.tsx \
+  src/lib/tests/position-reverse-confirmation-modal.test.tsx \
+  src/lib/tests/position-dialog-session-ownership.test.tsx \
+  src/lib/tests/order-confirmation-gate.test.tsx \
+  src/lib/tests/order-confirmation-modal.test.tsx \
+  src/lib/tests/position-isolated-margin-modal.test.tsx \
+  src/lib/tests/cancel-all-orders-modal.test.tsx \
+  src/lib/tests/desktop-orders-cancel-all.test.tsx \
+  src/lib/tests/mobile-orders-card.test.tsx \
+  src/lib/tests/mobile-order-modification.test.tsx \
+  src/lib/tests/spot-swap-modal.test.tsx \
+  src/lib/tests/account-mode-modal.test.tsx \
+  src/lib/tests/use-asset-leverage.test.tsx \
+  src/lib/tests/funds-action-balances.test.tsx \
+  src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx \
+  src/lib/tests/cctp-deposit-tracking-notifier.test.tsx \
+  src/lib/tests/referral-action-modal.test.tsx \
+  src/lib/tests/api-wallet-action-modal.test.tsx \
+  src/lib/tests/vault-action-modal.test.tsx \
+  src/lib/tests/vault-detail-page-outcomes.test.tsx \
+  src/components/staking/__tests__/staking-view.test.tsx \
+  src/lib/tests/action-progress-label-contract.test.ts \
+  tests/slider-effective-leverage-regression.test.tsx \
+  src/lib/tests/dialog-dismiss-control-contract.test.ts \
+  tests/mobile-trade-size-validation-a11y.test.tsx
+
+# Slider gestures (see docs/slider-interactions.md; browser suite: pnpm --dir apps/terminal run test:browser:slider)
+pnpm --dir apps/terminal exec vitest run \
+  tests/trade-size-slider-pointer-lifecycle.test.tsx \
+  tests/trade-size-slider-deferred-commit-race.test.tsx \
+  tests/trade-size-error-a11y.test.tsx \
+  tests/position-close-slider-effective-aria.test.tsx \
+  src/lib/tests/trade-size-slider.test.tsx \
+  src/lib/tests/trade-size-slider-a11y.test.tsx \
+  src/lib/tests/leverage-slider.test.tsx \
+  src/lib/tests/use-size-slider-interaction.test.tsx \
+  src/lib/tests/size-percent-input.test.tsx
+
 # Startup rendering (see .claude/rules/startup-rendering.md)
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/root-startup-fallback.test.tsx \
@@ -201,5 +272,5 @@ pnpm --dir apps/terminal exec vitest run \
 Layout contracts also have browser suites: `docs/desktop-grid-layout.md` and `docs/runtime-guardrails.md` §9 name the Playwright configs under `apps/terminal/tests/browser/`. When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.
 
 <!-- BEGIN CODEX AUTO-COMMIT -->
-For every task that may modify repository files, use the `$auto-commit` skill from the beginning of the task. After completing and validating the requested work, create a Git commit before the final response. Do not commit only when the user explicitly says not to commit or when the skill's safety exceptions apply. Never push unless the user explicitly requests it.
+For every task that may modify repository files, use the `$auto-commit` skill from the beginning of the task. After completing and validating the requested work, create a Git commit before the final response. Do not commit only when the user explicitly says not to commit or when the skill's safety exceptions apply. Never push unless the user explicitly requests it. Pull requests target `dev`, and only `dev` is promoted into `main`; `.claude/rules/git.md` owns the branch flow and the CI tiers.
 <!-- END CODEX AUTO-COMMIT -->

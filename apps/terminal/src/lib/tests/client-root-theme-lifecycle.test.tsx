@@ -46,6 +46,9 @@ vi.mock("@tanstack/react-query-persist-client", () => ({
 }));
 
 vi.mock("@/components/trade/order-reconciliation", () => ({ OrderReconciliation: () => null }));
+vi.mock("@/components/trade/tradebox/cctp-deposit-tracking-notifier", () => ({
+	CctpDepositTrackingNotifier: () => null,
+}));
 vi.mock("@/components/trade/tradebox/embedded-deposit-auto-bridge", () => ({
 	EmbeddedDepositAutoBridge: () => null,
 }));

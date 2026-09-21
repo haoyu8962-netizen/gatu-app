@@ -23,7 +23,9 @@ import {
 	SpinnerGapIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
-import { type ReactNode, useId, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDateTime, shortenAddress } from "@/lib/format";
 import { getExplorerTxUrl } from "@/lib/hyperliquid";
@@ -39,6 +41,7 @@ import {
 	type StakingLink,
 	type StakingValidatorStatus,
 } from "./domain/staking";
+import { formatStakingActionError } from "./domain/staking-action-feedback";
 import { StakingActionModal } from "./staking-action-modal";
 import type { StakingActionSession } from "./use-staking-actions";
 import type { StakingController } from "./use-staking-controller";
@@ -66,6 +69,43 @@ export function StakingView(props: StakingViewProps) {
 	const [activeTab, setActiveTab] = useState<StakingTab>("validators");
 	const [validatorFilter, setValidatorFilter] = useState<ValidatorFilter>("all");
 	const [activeAction, setActiveAction] = useState<StakingActionRequest | null>(null);
+	const reportedOutcomeRef = useRef<string | null>(null);
+	useEffect(() => {
+		const session = props.actionSession;
+		const settledResult = session?.state.stage === "done" ? session.state.result : null;
+		if (!session || !settledResult || settledResult === "unknown") {
+			reportedOutcomeRef.current = null;
+			return;
+		}
+		const outcomeKey = `${session.identityKey}:${session.reference?.id ?? "no-reference"}:${settledResult}`;
+		if (reportedOutcomeRef.current === outcomeKey) return;
+		reportedOutcomeRef.current = outcomeKey;
+		if (settledResult === "success") {
+			const hash = session.match?.hash;
+			toast.success(t`Operation verified`, {
+				description: hash ? (
+					<a
+						href={getExplorerTxUrl(hash, props.env === "Testnet")}
+						target="_blank"
+						rel="noopener"
+						className="text-signal hover:text-signal-hover hover:underline"
+					>
+						<bdi dir="ltr">{shortenAddress(hash, 6, 6)}</bdi>
+					</a>
+				) : undefined,
+				duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
+			});
+			props.onActionClose?.();
+			return;
+		}
+		const fallback =
+			settledResult === "rejected" ? t`No operation was submitted.` : t`Review the public fields and try again.`;
+		toast.error(settledResult === "rejected" ? t`Authorization rejected` : t`Request rejected`, {
+			description: formatStakingActionError(session.errorMessage, (descriptor) => t(descriptor)) ?? fallback,
+			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
+		});
+		props.onActionRetry?.();
+	});
 	const account = props.account;
 	const canOpenActions = Boolean(
 		account &&
@@ -345,7 +385,6 @@ export function StakingView(props: StakingViewProps) {
 					submission={props.actionSession.submission}
 					fundsState={props.actionSession.state}
 					errorMessage={props.actionSession.errorMessage}
-					match={props.actionSession.match}
 					reference={props.actionSession.reference}
 					locked={props.actionLocked}
 					isTestnet={props.env === "Testnet"}
@@ -354,7 +393,6 @@ export function StakingView(props: StakingViewProps) {
 					}}
 					onBack={props.onActionBack}
 					onConfirm={props.onActionConfirm}
-					onRetry={props.onActionRetry}
 					onVerify={props.onActionVerify}
 					onSubmit={() => {}}
 				/>

@@ -57,6 +57,28 @@ describe("bootstrap error page", () => {
 		expect(fallback?.textContent).toContain("إعادة تحميل المنصة");
 	});
 
+	it.each([
+		["en", "ltr", "This link could not be opened safely", "Open the scan page"],
+		["zh", "ltr", "无法安全打开此链接", "打开扫码页面"],
+		["hi", "ltr", "यह लिंक सुरक्षित रूप से नहीं खोला जा सका", "स्कैन पेज खोलें"],
+		["es", "ltr", "Este enlace no se pudo abrir de forma segura", "Abrir la página de escaneo"],
+		["fr", "ltr", "Ce lien n’a pas pu être ouvert en toute sécurité", "Ouvrir la page de scan"],
+		["ar", "rtl", "تعذّر فتح هذا الرابط بأمان", "فتح صفحة المسح"],
+	])("explains a blocked pairing link in %s", (locale, direction, heading, action) => {
+		window.localStorage.setItem("locale-v1", locale);
+		const onReload = vi.fn();
+
+		renderBootstrapErrorPage({ onReload, variant: "pairing-blocked" });
+
+		const fallback = document.querySelector<HTMLElement>("[data-terminal-bootstrap-error]");
+		expect(fallback?.dir).toBe(direction);
+		expect(fallback?.querySelector("h1")?.textContent).toBe(heading);
+		expect(fallback?.querySelector("button")?.textContent).toBe(action);
+		expect(fallback?.textContent).not.toContain("The terminal could not start safely.");
+		fallback?.querySelector("button")?.click();
+		expect(onReload).toHaveBeenCalledOnce();
+	});
+
 	it("fails closed to English when persisted locale storage cannot be read", () => {
 		vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
 			throw new Error("storage unavailable");
@@ -67,6 +89,13 @@ describe("bootstrap error page", () => {
 		expect(document.documentElement.lang).toBe("en");
 		expect(document.documentElement.dir).toBe("ltr");
 		expect(document.body.textContent).toContain("The terminal could not start safely.");
+	});
+
+	it("stays on system fonts so the recovery text never waits for a blocked webfont", () => {
+		renderBootstrapErrorPage();
+
+		const fallback = document.querySelector<HTMLElement>("[data-terminal-bootstrap-error]");
+		expect(fallback?.style.fontFamily).toBe("system-ui, sans-serif");
 	});
 });
 

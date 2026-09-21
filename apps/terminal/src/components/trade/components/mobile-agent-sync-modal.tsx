@@ -33,6 +33,11 @@ import {
 	useInfo,
 } from "@/lib/hyperliquid";
 import {
+	hasBuilderDexAccountFunding,
+	hasPerpAccountFunding,
+	hasSpotAccountFunding,
+} from "@/lib/mobile-sync/account-funding";
+import {
 	beginDesktopApprovalSubmission,
 	clearDesktopApprovalRecovery,
 	type DesktopApprovalRecovery,
@@ -101,6 +106,7 @@ type ResetState =
 	| { status: "error"; message: MobileAgentSyncMessage };
 
 const LOCALIZED_MESSAGE_CODES = [
+	"account-check-failed",
 	"approval-already-in-progress",
 	"approval-already-preparing",
 	"approval-recheck-failed",
@@ -176,42 +182,6 @@ function deserializeRecoveryMessage(value: string | undefined): MobileAgentSyncM
 	return { kind: "external-error", rawMessage: value };
 }
 
-function parseNumeric(value: unknown): number | null {
-	if (typeof value !== "string" && typeof value !== "number") return null;
-	const numeric = Number(value);
-	return Number.isFinite(numeric) ? numeric : null;
-}
-
-function hasNonZeroNumeric(value: unknown): boolean {
-	const numeric = parseNumeric(value);
-	return numeric !== null && numeric !== 0;
-}
-
-function hasPositiveNumeric(value: unknown): boolean {
-	const numeric = parseNumeric(value);
-	return numeric !== null && numeric > 0;
-}
-
-function hasHyperliquidAccountFunding(clearinghouseState: unknown, spotState: unknown): boolean {
-	const clearinghouse = clearinghouseState as
-		| {
-				assetPositions?: unknown[];
-				marginSummary?: { accountValue?: unknown; totalRawUsd?: unknown; totalNtlPos?: unknown };
-				withdrawable?: unknown;
-		  }
-		| undefined;
-	const spot = spotState as { balances?: Array<{ total?: unknown; hold?: unknown }> } | undefined;
-
-	return (
-		hasNonZeroNumeric(clearinghouse?.marginSummary?.accountValue) ||
-		hasNonZeroNumeric(clearinghouse?.marginSummary?.totalRawUsd) ||
-		hasNonZeroNumeric(clearinghouse?.marginSummary?.totalNtlPos) ||
-		hasNonZeroNumeric(clearinghouse?.withdrawable) ||
-		(clearinghouse?.assetPositions?.length ?? 0) > 0 ||
-		(spot?.balances ?? []).some((balance) => hasPositiveNumeric(balance.total) || hasPositiveNumeric(balance.hold))
-	);
-}
-
 function toExpectedAgent(approval: MobileAgentApproval) {
 	return {
 		agentAddress: approval.publicKey,
@@ -282,7 +252,7 @@ function MobileAgentSyncSession({
 }: MobileAgentSyncSessionProps) {
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
-	const { builderConfig } = useHyperliquid();
+	const { builderConfig, info } = useHyperliquid();
 	const localAgent = useAgentWalletStorage(env, walletAddress);
 	const approveAgent = useExplicitAgentApproval();
 	const clearinghouseStateQuery = useInfo(
@@ -663,7 +633,11 @@ function MobileAgentSyncSession({
 			if (spotResult.error) throw spotResult.error;
 			if (builderFeeResult?.error) throw builderFeeResult.error;
 
-			const hasFunding = hasHyperliquidAccountFunding(clearinghouseResult.data, spotResult.data);
+			const hasFunding =
+				hasPerpAccountFunding(clearinghouseResult.data) ||
+				hasSpotAccountFunding(spotResult.data) ||
+				(await hasBuilderDexAccountFunding(info, walletAddress, operation.signal));
+			if (operation.signal.aborted) return;
 			if (!hasFunding) {
 				setSyncState({
 					status: "error",
@@ -680,9 +654,9 @@ function MobileAgentSyncSession({
 			}
 
 			setSyncState({ status: "ready" });
-		} catch (error) {
+		} catch {
 			if (!operation.signal.aborted) {
-				setSyncState({ status: "error", message: externalErrorMessage(error) });
+				setSyncState({ status: "error", message: localizedMessage("account-check-failed") });
 			}
 		} finally {
 			finishOperation(operation);
@@ -1223,6 +1197,8 @@ function MobileAgentSyncMessageText({ message }: { message: MobileAgentSyncMessa
 	}
 
 	switch (message.code) {
+		case "account-check-failed":
+			return t`Could not check this account on Hyperliquid. Nothing was signed. Retry the check.`;
 		case "approval-already-in-progress":
 			return t`Another mobile approval is already in progress for this wallet.`;
 		case "approval-already-preparing":

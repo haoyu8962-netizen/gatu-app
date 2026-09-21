@@ -20,6 +20,7 @@ import { useHyperliquid } from "@/lib/hyperliquid";
 import {
 	consumeBootstrappedMobileAgentSyncUrl,
 	consumeInvalidBootstrappedMobileAgentSyncLocation,
+	consumeUnsafeMobileAgentSyncLinkNotice,
 } from "@/lib/mobile-sync/bootstrap-fragment";
 import {
 	clearMobileSyncDraft,
@@ -29,6 +30,7 @@ import {
 	saveMobileSyncDraft,
 } from "@/lib/mobile-sync/draft-storage";
 import { hasImportedMobileSyncId, recordImportedMobileSyncId } from "@/lib/mobile-sync/imported-sync-ids";
+import { classifyPairingPath } from "@/lib/mobile-sync/pairing-location";
 import { waitForExpectedMobileAgent } from "@/lib/mobile-sync/remote-verification";
 import {
 	decodeSyncKey,
@@ -117,6 +119,7 @@ function MobileAgentSyncRoute() {
 	const [status, setStatus] = useState<ImportStatus>({ state: "idle" });
 	const errorAlertRef = useRef<HTMLDivElement | null>(null);
 	const importAbortRef = useRef<AbortController | null>(null);
+	const pendingKeyWipeRef = useRef<ParsedMobileSync | null>(null);
 
 	const clearExpiredSync = useCallback((syncToClear?: ParsedMobileSync) => {
 		syncToClear?.keyBytes.fill(0);
@@ -205,8 +208,14 @@ function MobileAgentSyncRoute() {
 
 	useEffect(() => {
 		if (!loadedSync) return;
+		if (pendingKeyWipeRef.current === loadedSync) pendingKeyWipeRef.current = null;
 		return () => {
-			loadedSync.keyBytes.fill(0);
+			pendingKeyWipeRef.current = loadedSync;
+			queueMicrotask(() => {
+				if (pendingKeyWipeRef.current !== loadedSync) return;
+				pendingKeyWipeRef.current = null;
+				loadedSync.keyBytes.fill(0);
+			});
 		};
 	}, [loadedSync]);
 
@@ -624,6 +633,14 @@ function SuccessPanel({
 }
 
 function captureBootstrappedLocationHash(): InitialHashCapture {
+	if (consumeUnsafeMobileAgentSyncLinkNotice()) {
+		return {
+			status: "error",
+			message: clearMobileSyncDraft()
+				? t`That link could not be opened safely, so nothing was loaded. Create a new QR on your desktop and scan it again.`
+				: t`The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again.`,
+		};
+	}
 	if (consumeInvalidBootstrappedMobileAgentSyncLocation()) {
 		return {
 			status: "error",
@@ -695,22 +712,13 @@ function captureSpaLocationHash(): InitialHashCapture {
 function getSpaLocationScrubState(): { isRouteLocation: boolean; shouldScrub: boolean } {
 	if (typeof window === "undefined") return { isRouteLocation: false, shouldScrub: false };
 
-	let decodedPathname: string;
-	try {
-		decodedPathname = decodeURIComponent(window.location.pathname);
-	} catch {
-		const isRouteLocation = window.location.pathname.startsWith(MOBILE_SYNC_ROUTE_PATH);
-		return { isRouteLocation, shouldScrub: isRouteLocation };
-	}
-
-	const isExactPath = decodedPathname === MOBILE_SYNC_ROUTE_PATH || decodedPathname === `${MOBILE_SYNC_ROUTE_PATH}/`;
-	const isNestedPath = decodedPathname.startsWith(`${MOBILE_SYNC_ROUTE_PATH}/`) && !isExactPath;
+	const kind = classifyPairingPath(window.location.pathname);
 	const searchParams = new URLSearchParams(window.location.search);
 	const hasCredentialQuery =
 		searchParams.has(MOBILE_SYNC_FRAGMENT_KEY) || searchParams.has(MOBILE_SYNC_KEY_FRAGMENT_KEY);
 	return {
-		isRouteLocation: isExactPath || isNestedPath,
-		shouldScrub: isNestedPath || (isExactPath && (window.location.hash !== "" || hasCredentialQuery)),
+		isRouteLocation: kind !== "other",
+		shouldScrub: kind === "rejected" || (kind === "pairing" && (window.location.hash !== "" || hasCredentialQuery)),
 	};
 }
 

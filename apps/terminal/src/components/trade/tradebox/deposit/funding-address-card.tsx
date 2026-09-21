@@ -80,7 +80,7 @@ export function FundingAddressCard(props: Props) {
 				) : null}
 
 				<div className="w-full space-y-1.5">
-					<p className="text-[11px] leading-4 text-market-close-subtle">
+					<p className="text-2xs leading-4 text-market-close-subtle">
 						<Trans>Deposit address</Trans>
 					</p>
 					<div
@@ -113,7 +113,7 @@ export function FundingAddressCard(props: Props) {
 			</div>
 
 			<div className="w-full space-y-1.5">
-				<p className="text-[11px] leading-4 text-market-close-subtle">
+				<p className="text-2xs leading-4 text-market-close-subtle">
 					<Trans>Deposit address</Trans>
 				</p>
 				<div className="flex min-h-12 items-center gap-2.5 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2">

@@ -39,7 +39,7 @@ describe("positions table visual contract", () => {
 	it("uses the compact official-style hierarchy with a sticky table header", () => {
 		expect(positionTableHeadClass).toContain("sticky top-0");
 		expect(positionTableHeadClass).toContain("h-[33px]");
-		expect(positionTableHeadClass).toContain("text-[11px]");
+		expect(positionTableHeadClass).toContain("text-2xs");
 		expect(positionTableHeadClass).toContain("font-semibold");
 		expect(positionTableHeadClass).not.toContain("overflow-hidden");
 		expect(positionTableCellClass).toContain("h-14");
@@ -103,7 +103,8 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_PANEL_SOURCE).not.toContain("positionsAccountSummary");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("Account Equity");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("Maintenance Margin Ratio");
-		expect(POSITIONS_TAB_SOURCE).toContain("PositionCloseAllController");
+		expect(POSITIONS_TAB_SOURCE).toContain("openCloseAll(resolution.snapshot)");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("PositionCloseAllController");
 		expect(POSITIONS_TAB_SOURCE).toContain("Close All Positions");
 		expect(POSITIONS_TAB_SOURCE).toContain("candidates: positions.map");
 		expect(POSITIONS_TAB_SOURCE).toContain("focusableWhenDisabled");

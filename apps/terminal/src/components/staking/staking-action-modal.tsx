@@ -2,9 +2,7 @@ import { AdaptiveModal, Alert, Button, ModalContent, ModalFooter, ModalHeader, M
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useState } from "react";
 import { formatDateTime, shortenAddress } from "@/lib/format";
-import { getExplorerTxUrl } from "@/lib/hyperliquid";
 import type { FundsActionReference } from "../funds-action/funds-action-marker";
-import type { FundsActionMatch } from "../funds-action/funds-action-reconciliation";
 import { type FundsActionState, getFundsActionSteps } from "../funds-action/funds-action-state";
 import {
 	createStakingActionSubmission,
@@ -14,6 +12,7 @@ import {
 	type StakingActionSubmission,
 	validateHypeActionAmount,
 } from "./domain/staking";
+import { formatStakingActionError } from "./domain/staking-action-feedback";
 
 interface StakingActionModalProps {
 	action: StakingActionRequest;
@@ -25,13 +24,11 @@ interface StakingActionModalProps {
 	submission?: StakingActionSubmission;
 	fundsState?: FundsActionState;
 	errorMessage?: string | null;
-	match?: FundsActionMatch | null;
 	reference?: FundsActionReference | null;
 	locked?: boolean;
 	isTestnet?: boolean;
 	onBack?: () => void;
 	onConfirm?: () => void;
-	onRetry?: () => void;
 	onVerify?: () => void;
 }
 
@@ -45,13 +42,11 @@ export function StakingActionModal({
 	submission: controlledSubmission,
 	fundsState,
 	errorMessage,
-	match,
 	reference,
 	locked = false,
 	isTestnet = false,
 	onBack,
 	onConfirm,
-	onRetry,
 	onVerify,
 }: StakingActionModalProps) {
 	const { t } = useLingui();
@@ -151,13 +146,7 @@ export function StakingActionModal({
 						/>
 					</>
 				) : (
-					<ActionStatus
-						state={fundsState}
-						errorMessage={errorMessage}
-						match={match}
-						reference={reference}
-						isTestnet={isTestnet}
-					/>
+					<ActionStatus state={fundsState} errorMessage={errorMessage} reference={reference} />
 				)}
 			</ModalContent>
 			<ModalFooter>
@@ -166,7 +155,6 @@ export function StakingActionModal({
 						state={fundsState}
 						onBack={onBack}
 						onConfirm={onConfirm}
-						onRetry={onRetry}
 						onVerify={onVerify}
 						onClose={resetAndClose}
 					/>
@@ -219,18 +207,14 @@ function getStageLabel(stage: FundsActionState["stage"]) {
 function ActionStatus({
 	state,
 	errorMessage,
-	match,
 	reference,
-	isTestnet,
 }: {
 	state: FundsActionState | undefined;
 	errorMessage?: string | null;
-	match?: FundsActionMatch | null;
 	reference?: FundsActionReference | null;
-	isTestnet: boolean;
 }) {
 	const { t } = useLingui();
-	const safeError = getSafeActionError(errorMessage, t);
+	const safeError = formatStakingActionError(errorMessage, (descriptor) => t(descriptor));
 	if (!state) return null;
 	if (state.stage === "awaiting") {
 		return (
@@ -241,32 +225,7 @@ function ActionStatus({
 			/>
 		);
 	}
-	if (state.stage === "submitted" || state.stage === "reconciling") {
-		return (
-			<Alert
-				tone="information"
-				title={t`Verifying from history`}
-				description={t`Do not submit again while Hyperliquid history is checked.`}
-			/>
-		);
-	}
-	if (state.result === "success" && match) {
-		return (
-			<Alert tone="success" title={t`Operation verified`}>
-				<p className="text-xs text-fg-muted">
-					<a
-						href={getExplorerTxUrl(match.hash, isTestnet)}
-						target="_blank"
-						rel="noopener"
-						className="text-signal hover:text-signal-hover hover:underline"
-					>
-						<bdi dir="ltr">{shortenAddress(match.hash, 6, 6)}</bdi>
-					</a>
-				</p>
-			</Alert>
-		);
-	}
-	if (state.result === "unknown") {
+	if (state.stage === "done" && state.result === "unknown") {
 		return (
 			<div className="space-y-3">
 				<Alert
@@ -278,22 +237,16 @@ function ActionStatus({
 			</div>
 		);
 	}
-	if (state.result === "rejected") {
+	if (state.stage === "submitted" || state.stage === "reconciling" || state.stage === "done") {
 		return (
 			<Alert
-				tone="warning"
-				title={t`Authorization rejected`}
-				description={safeError ?? t`No operation was submitted.`}
+				tone="information"
+				title={t`Verifying from history`}
+				description={t`Do not submit again while Hyperliquid history is checked.`}
 			/>
 		);
 	}
-	return (
-		<Alert
-			tone="error"
-			title={t`Request rejected`}
-			description={safeError ?? t`Review the public fields and try again.`}
-		/>
-	);
+	return null;
 }
 
 function StakingOperationReference({ reference }: { reference: FundsActionReference }) {
@@ -340,27 +293,16 @@ function DirectionLabel({ direction }: { direction: FundsActionReference["direct
 	return <Trans>Undelegate</Trans>;
 }
 
-function getSafeActionError(code: string | null | undefined, t: ReturnType<typeof useLingui>["t"]): string | undefined {
-	if (code === "rejected") return t`The master wallet rejected the authorization.`;
-	if (code === "preflightFailed")
-		return t`Fresh eligibility or account data could not be verified. Review and try again.`;
-	if (code === "apiError") return t`Hyperliquid rejected the verified public request.`;
-	if (code === "statusUnknown") return t`Hyperliquid history has not confirmed this operation. Do not submit it again.`;
-	return undefined;
-}
-
 function ControlledFooter({
 	state,
 	onBack,
 	onConfirm,
-	onRetry,
 	onVerify,
 	onClose,
 }: {
 	state: FundsActionState;
 	onBack?: () => void;
 	onConfirm?: () => void;
-	onRetry?: () => void;
 	onVerify?: () => void;
 	onClose: () => void;
 }) {
@@ -376,40 +318,16 @@ function ControlledFooter({
 			</>
 		);
 	}
-	if (state.stage !== "done")
-		return (
-			<Button disabled>
-				<Trans>Operation in progress</Trans>
-			</Button>
-		);
-	if (state.result === "unknown") {
-		return (
-			<>
-				<Button variant="outline" intent="neutral" onClick={onClose}>
-					<Trans>Close</Trans>
-				</Button>
-				<Button onClick={onVerify}>
-					<Trans>Verify again</Trans>
-				</Button>
-			</>
-		);
-	}
-	if (state.result === "rejected" || state.result === "apiError") {
-		return (
-			<>
-				<Button variant="outline" intent="neutral" onClick={onClose}>
-					<Trans>Close</Trans>
-				</Button>
-				<Button onClick={onRetry}>
-					<Trans>Review again</Trans>
-				</Button>
-			</>
-		);
-	}
+	if (state.stage !== "done" || state.result !== "unknown") return null;
 	return (
-		<Button onClick={onClose}>
-			<Trans>Done</Trans>
-		</Button>
+		<>
+			<Button variant="outline" intent="neutral" onClick={onClose}>
+				<Trans>Close</Trans>
+			</Button>
+			<Button onClick={onVerify}>
+				<Trans>Verify again</Trans>
+			</Button>
+		</>
 	);
 }
 

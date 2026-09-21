@@ -357,7 +357,7 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 
 	return (
 		<div className="min-w-0">
-			<div className="text-[10px] leading-4 text-trading-panel-subtle">
+			<div className="text-3xs leading-4 text-trading-panel-subtle">
 				{tooltipContent ? (
 					<>
 						<button
@@ -379,7 +379,7 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 				)}
 			</div>
 			<div
-				className="whitespace-normal break-words text-[13px] leading-5 font-semibold text-trading-panel-fg tabular-nums [overflow-wrap:anywhere]"
+				className="whitespace-normal break-words text-2sm leading-5 font-semibold text-trading-panel-fg tabular-nums [overflow-wrap:anywhere]"
 				title={typeof value === "string" ? value : undefined}
 			>
 				{value}

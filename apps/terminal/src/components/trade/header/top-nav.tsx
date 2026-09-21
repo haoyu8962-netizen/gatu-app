@@ -19,6 +19,7 @@ import { cn } from "@/lib/cn";
 import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { isDesktopNavItemActive, resolveDesktopNavLayout } from "@/lib/navigation/desktop-nav";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
+import { menuPopupSkinClass } from "@/lib/ui/menu-popup-skin";
 import {
 	useDepositModalActions,
 	useMobileSyncModalActions,
@@ -134,7 +135,7 @@ export function TopNav({ mode = "default" }: Props) {
 					triggerVariant="minimal"
 					triggerAriaLabel={t(DESKTOP_NAV_LABELS.more)}
 					renderTrigger={<NavMenuTriggerView label={t(DESKTOP_NAV_LABELS.more)} active={moreActive} />}
-					popupClassName="max-h-[calc(100vh-4.5rem)] min-w-[148px] rounded-[10px] border-market-close-stroke-card bg-overlay p-1 font-market-close shadow-overlay [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px] [&_[role=menuitem]]:font-medium"
+					popupClassName={cn(menuPopupSkinClass, "max-h-[calc(100vh-4.5rem)] min-w-[148px]")}
 					items={moreItems}
 				/>
 			}

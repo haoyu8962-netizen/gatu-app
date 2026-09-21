@@ -5,7 +5,6 @@ import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } f
 import { toast } from "sonner";
 import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
 import { DataPendingState } from "@/components/ui/data-pending-state";
-import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import {
 	type CancelAllConfirmationBlockReason,
@@ -102,7 +101,6 @@ class OrderValidationErrorCause extends Error {
 }
 
 interface CancelCallbacks {
-	onSuccess?: () => void;
 	onSettled?: () => void;
 }
 
@@ -287,6 +285,18 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	function setCancelValidationError(error: OrderValidationError | null, actionId: string | null = null) {
 		setCancelValidationErrorState(error);
 		setCancelValidationActionId(actionId);
+	}
+
+	function reportCancelFeedback(error: OrderValidationError, actionId: string | null = null) {
+		setCancelValidationError(error, actionId);
+		const message = getValidationErrorMessage(error) ?? "";
+		if (actionId) {
+			toast.warning(message, { id: getPendingTradingActionToastId(actionId) });
+		} else if (error.kind === "cancel-block") {
+			toast.warning(message);
+		} else {
+			toast.error(message);
+		}
 	}
 
 	function setModifyValidationError(error: OrderValidationError | null, actionId: string | null = null) {
@@ -594,7 +604,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		resetModifyError();
 	}, [tradingSessionKey, resetCancelError, resetModifyError]);
 
-	function clearModifyModal(error: OrderValidationError | null = null) {
+	function clearModifyModal(error: OrderValidationError | null = null, actionId: string | null = null) {
 		modifyTargetRef.current = null;
 		modifySizeRef.current = "";
 		modifyTriggerPriceRef.current = undefined;
@@ -602,7 +612,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		setModifyTarget(null);
 		setModifySize("");
 		setModifyTriggerPrice(undefined);
-		setModifyValidationError(error);
+		setModifyValidationError(error, actionId);
 		setModifyPhase("idle");
 	}
 
@@ -736,9 +746,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 				}
 				const validationError = { kind: "code", code: "modification-unconfirmed" } as const;
 				const message = getValidationErrorMessage(validationError) ?? "";
-				modifyExecutionRef.current = null;
-				setModifyPhase("idle");
-				setModifyValidationError(validationError, execution.actionId);
+				clearModifyModal(validationError, execution.actionId);
 				toast.warning(message, { id: getPendingTradingActionToastId(execution.actionId) });
 				return;
 			} else {
@@ -753,9 +761,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			}
 			const validationError = getValidationErrorFromCause(cause, "failed-to-modify");
 			const message = getValidationErrorMessage(validationError) ?? "";
-			modifyExecutionRef.current = null;
-			setModifyPhase("idle");
-			setModifyValidationError(validationError);
+			clearModifyModal(validationError);
 			toast.error(message);
 		}
 	}
@@ -791,13 +797,13 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		const fresh = ordersToCancel.filter((order) => !sharedCancellingOids.has(order.oid));
 		if (fresh.length === 0) return false;
 		if (nextScope === "all" && fresh.length !== ordersToCancel.length) {
-			setCancelValidationError({ kind: "cancel-block", reason: "orders-changed" });
+			reportCancelFeedback({ kind: "cancel-block", reason: "orders-changed" });
 			return false;
 		}
 
 		const cancels = buildOpenOrderCancelActions(fresh, markets.getAssetId);
 		if (!cancels) {
-			setCancelValidationError({ kind: "code", code: "order-markets-unavailable" });
+			reportCancelFeedback({ kind: "code", code: "order-markets-unavailable" });
 			return false;
 		}
 
@@ -810,7 +816,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			orders: fresh,
 		});
 		if (confirmation.status === "blocked") {
-			setCancelValidationError({ kind: "cancel-block", reason: confirmation.reason });
+			reportCancelFeedback({ kind: "cancel-block", reason: confirmation.reason });
 			return false;
 		}
 		const pendingAction = getPendingTradingActionActions().claimOrderCancellation({
@@ -848,22 +854,23 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			if (!isConfirmedOpenOrderCancelResponse(response, execution.params.cancels.length)) {
 				getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
+					reportCancelFeedback({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
 				}
 				return;
 			}
 			getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
-			if (mountedRef.current && isCancelExecutionCurrent(execution)) callbacks?.onSuccess?.();
+			if (!mountedRef.current || !isCancelExecutionCurrent(execution)) return;
+			toast.success(t`Order cancellation confirmed.`, { id: getPendingTradingActionToastId(execution.actionId) });
 		} catch (cause) {
 			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
+					reportCancelFeedback({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
 				}
 			} else {
 				getPendingTradingActionActions().releaseOrderCancellation(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError(getValidationErrorFromCause(cause, "failed-to-cancel"));
+					reportCancelFeedback(getValidationErrorFromCause(cause, "failed-to-cancel"));
 				}
 			}
 		} finally {
@@ -882,7 +889,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	function handleCancelRow(ordersToCancel: OpenOrder[]) {
 		const reason = getCancelRowBlockReason(ordersToCancel);
 		if (reason) {
-			setCancelValidationError({ kind: "cancel-block", reason });
+			reportCancelFeedback({ kind: "cancel-block", reason });
 			return;
 		}
 		handleCancel(ordersToCancel, "row");
@@ -940,7 +947,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		setCancelValidationError(null);
 		const result = createCancelAllConfirmationSnapshot(getCancelAllConfirmationInput());
 		if (result.status === "blocked") {
-			setCancelValidationError({ kind: "cancel-block", reason: result.reason });
+			reportCancelFeedback({ kind: "cancel-block", reason: result.reason });
 			return;
 		}
 		setCancelAllSnapshot({ confirmation: result.snapshot, orders: [...openOrders] });
@@ -949,21 +956,18 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 
 	function handleConfirmCancelAll() {
 		if (cancelAllSubmittingRef.current || pendingScopes.size > 0 || modifyPhaseRef.current !== "idle") return;
-		if (!cancelAllSnapshot) return;
+		if (!cancelAllOpen || !cancelAllSnapshot) return;
+		setCancelAllOpen(false);
 		const reason = validateCancelAllConfirmationSnapshot(
 			cancelAllSnapshot.confirmation,
 			getCancelAllConfirmationInput(),
 		);
 		if (reason) {
-			setCancelValidationError({ kind: "cancel-block", reason });
+			reportCancelFeedback({ kind: "cancel-block", reason });
 			return;
 		}
 		cancelAllSubmittingRef.current = true;
 		const started = handleCancel([...cancelAllSnapshot.orders], "all", {
-			onSuccess: () => {
-				setCancelAllOpen(false);
-				setCancelAllSnapshot(null);
-			},
 			onSettled: () => {
 				cancelAllSubmittingRef.current = false;
 			},
@@ -974,7 +978,6 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	function handleCancelAllOpenChange(open: boolean) {
 		if (cancelAllSubmittingRef.current || pendingScopes.size > 0 || modifyPhaseRef.current !== "idle") return;
 		setCancelAllOpen(open);
-		if (!open) setCancelAllSnapshot(null);
 	}
 
 	const draftModifyPlan = modifyTarget ? buildPlanFromLive(modifyTarget, modifySize, modifyTriggerPrice) : null;
@@ -1040,9 +1043,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 						onClick={handleRequestCancelAll}
 						disabled={pendingScopes.size > 0 || isModifyBusy}
 					>
-						{pendingScopes.has("all")
-							? t`Canceling...`
-							: t({ message: "Cancel all", context: "Current orders toolbar" })}
+						{t({ message: "Cancel all", context: "Current orders toolbar" })}
 					</Button>
 				) : null}
 			</div>
@@ -1077,7 +1078,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 									<ListIcon className="size-4 text-market-close-subtle" aria-hidden="true" />
 								</div>
 								<div className="space-y-0.5">
-									<p className="text-[13px] font-semibold leading-[18px] text-market-close-muted">{t`No open orders.`}</p>
+									<p className="text-2sm font-semibold leading-[18px] text-market-close-muted">{t`No open orders.`}</p>
 									<p className="text-xs leading-4 text-market-close-subtle">
 										{t`Submitted limit and trigger orders will appear here.`}
 									</p>
@@ -1138,14 +1139,12 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			<CancelAllOrdersModal
 				open={cancelAllOpen}
 				orderCount={cancelAllSnapshot?.orders.length ?? 0}
-				isSubmitting={pendingScopes.has("all")}
-				errorMessage={cancelAllOpen ? actionError : null}
 				onOpenChange={handleCancelAllOpenChange}
 				onConfirm={handleConfirmCancelAll}
 			/>
 			{modifyOrder ? (
 				<MobileOrderModificationModal
-					open
+					open={modifyPhase === "idle"}
 					marketLabel={modifyMarketLabel}
 					directionLabel={getOrderSideLabel(modifyOrder.side, modifyOrder.reduceOnly)}
 					directionTone={modifyOrder.side === "B" ? "positive" : "negative"}
@@ -1154,8 +1153,6 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 					triggerPriceValue={modifyTriggerPrice}
 					sizeInvalid={draftInvalidField === "size"}
 					triggerPriceInvalid={draftInvalidField === "triggerPrice"}
-					isSubmitting={modifyPhase === "submitting"}
-					isAwaitingConfirmation={modifyPhase === "awaiting"}
 					isInteractionLocked={isModifyBusy}
 					isConfirmDisabled={isModifyConfirmDisabled}
 					errorMessage={modalError}
@@ -1197,7 +1194,7 @@ interface OrderMetricProps {
 function OrderMetric({ label, value, valueClassName }: OrderMetricProps) {
 	return (
 		<div className="flex min-w-0 flex-col gap-0.5">
-			<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{label}</div>
+			<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{label}</div>
 			<div
 				className={cn(
 					"truncate text-xs font-semibold leading-[17px] tabular-nums text-market-close-fg",
@@ -1272,7 +1269,7 @@ function MobileOrderCard({
 				className="grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_16px] gap-2.5 px-3.5 py-[11px]"
 			>
 				<div className="flex min-w-0 flex-col gap-0.5">
-					<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</div>
+					<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Market`}</div>
 					<button
 						type="button"
 						onClick={() => onSelectMarket(order.coin, side)}
@@ -1313,7 +1310,7 @@ function MobileOrderCard({
 						<div className="flex items-center gap-4">
 							<button
 								type="button"
-								className="relative inline-flex h-[18px] items-center rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-fg after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus aria-disabled:text-market-close-subtle disabled:cursor-not-allowed disabled:text-market-close-subtle"
+								className="relative inline-flex h-[18px] items-center rounded-xs text-2sm leading-[18px] font-semibold whitespace-nowrap text-market-close-fg after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus aria-disabled:text-market-close-subtle disabled:cursor-not-allowed disabled:text-market-close-subtle"
 								onClick={() => {
 									if (!canModify) {
 										if (modifyUnavailableReason) onModifyUnavailable(modifyUnavailableReason);
@@ -1330,11 +1327,10 @@ function MobileOrderCard({
 							</button>
 							<button
 								type="button"
-								className="relative inline-flex h-[18px] items-center gap-1.5 rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-danger after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
+								className="relative inline-flex h-[18px] items-center gap-1.5 rounded-xs text-2sm leading-[18px] font-semibold whitespace-nowrap text-market-close-danger after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 								onClick={() => onCancel([order])}
 								disabled={isCancelling || actionsDisabled}
 							>
-								{isCancelling ? <Spinner className="size-3" /> : null}
 								{t`Cancel`}
 							</button>
 						</div>

@@ -30,8 +30,8 @@ import {
 } from "./positions-panel-table-styles";
 
 const historyTableHeadClass =
-	"sticky top-0 z-[1] h-[33px] bg-surface px-2 py-0 text-[11px] leading-4 font-semibold normal-case tracking-normal text-market-close-subtle";
-const historyTableCellClass = "h-[43px] px-2 py-0 text-[13px] leading-[18px]";
+	"sticky top-0 z-[1] h-[33px] bg-surface px-2 py-0 text-2xs leading-4 font-semibold normal-case tracking-normal text-market-close-subtle";
+const historyTableCellClass = "h-[43px] px-2 py-0 text-2sm leading-[18px]";
 const historyAssetClass =
 	"h-auto min-h-0 rounded-[4px] border-0 bg-transparent p-0 shadow-none hover:bg-transparent active:not-data-disabled:scale-100";
 const historyFooterButtonClass =
@@ -159,14 +159,14 @@ export function HistoryTab() {
 													onClick={() => navigateToMarket(fill.coin)}
 													aria-label={t`Switch to ${fill.coin} market`}
 													className={historyAssetClass}
-													nameClassName="text-[13px] leading-[18px] font-bold text-market-close-fg"
+													nameClassName="text-2sm leading-[18px] font-bold text-market-close-fg"
 													fit
 												/>
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, historyTableCellClass)}>
 												<span
 													className={cn(
-														"inline-flex w-fit whitespace-nowrap rounded-[4px] px-2 py-0.5 text-[11px] leading-[14px] font-semibold",
+														"inline-flex w-fit whitespace-nowrap rounded-[4px] px-2 py-0.5 text-2xs leading-[14px] font-semibold",
 														fill.liquidation
 															? "bg-error-soft text-market-close-danger"
 															: fill.dir === "Open Long" || fill.dir === "Open Short"

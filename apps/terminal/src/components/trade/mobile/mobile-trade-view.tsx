@@ -208,11 +208,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const twapTriggerPriceInput = useTwapTriggerPrice();
 	const twapStopPriceInput = useTwapStopPrice();
 	const sizeInput = useOrderSize();
-	const [isSizeInteracting, setIsSizeInteracting] = useState(false);
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
 		sizeInteractionRef.current = active;
-		setIsSizeInteracting(active);
 	}
 	const limitPriceInput = useLimitPrice();
 	const reduceOnlyChecked = useReduceOnly();
@@ -301,9 +299,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		resetPendingLeverage,
 		applyMarginAndLeverage,
 		isLeverageUpdating,
-		leverageUpdateError,
 		isSwitchingMode,
-		switchModeError,
 		allowsIsolatedMarginRemoval,
 	} = useOrderEntryData({
 		market,
@@ -765,7 +761,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		needsApproval: validation.needsApproval,
 		isSignerReady,
 		isApprovalLoading,
-		canSubmit: validation.canSubmit && !isSizeInteracting,
+		canSubmit: validation.canSubmit,
 		isRegistering,
 		canApprove,
 		isSubmitting,
@@ -786,6 +782,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		onSubmit: handleSubmit,
 	});
 
+	function handleCtaClick() {
+		if (sizeInteractionRef.current) return;
+		buttonContent.action();
+	}
+
 	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
 	const priceUnitLabel = quoteToken || "USDC";
@@ -798,7 +799,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const change24h = get24hChange(market?.prevDayPx, market?.markPx);
 	const priceColorClass = change24h !== null ? getValueColorClass(change24h) : "text-fg";
 	const isMarginDialogUpdating = marginDialogView === "leverage" ? isLeverageUpdating : isSwitchingMode;
-	const marginDialogError = marginDialogView === "leverage" ? leverageUpdateError : switchModeError;
 
 	return (
 		<MobileTradeFrameView embedded={embedded} className={className} onIntent={warmMobileTradeSettingsModals}>
@@ -817,7 +817,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					allowsCrossMargin={capabilities.allowsCrossMargin}
 					allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
 					isUpdating={isMarginDialogUpdating}
-					updateError={marginDialogError}
 					showLeverage={capabilities.isLeveraged}
 					onApply={handleLeverageApply}
 					presentation="drawer"
@@ -911,6 +910,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				<MobileTradeSizeControl
 					canUsePercent={!isFormDisabled && maxSize > 0}
 					disabled={isFormDisabled}
+					sliderPaused={isConnected && isAvailabilityBlocked}
 					errorId={validationSnapshot.hasSizeError ? validationErrorId : undefined}
 					hasError={validationSnapshot.hasSizeError}
 					interactionIdentity={sliderInteractionIdentity}
@@ -1099,7 +1099,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						embedded={embedded}
 						label={buttonContent.text}
 						variant={buttonContent.variant}
-						onClick={buttonContent.action}
+						onClick={handleCtaClick}
 						disabled={buttonContent.disabled}
 						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
 					/>
@@ -1114,7 +1114,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				<OrderConfirmationModal
 					open
 					draft={confirmation.pending.draft}
-					isSubmitting={confirmation.isConfirming}
 					dontShowAgain={confirmation.dontShowAgain}
 					onDontShowAgainChange={confirmation.setDontShowAgain}
 					onConfirm={confirmation.confirm}

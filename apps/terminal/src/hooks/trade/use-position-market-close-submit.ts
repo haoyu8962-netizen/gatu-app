@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import type Big from "big.js";
 import { useRef } from "react";
 import { toast } from "sonner";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -39,6 +40,7 @@ import {
 import {
 	getPositionMarketCloseActions,
 	getPositionMarketCloseModal,
+	type PositionMarketClosePresentation,
 	type PositionMarketCloseSession,
 } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBpsString } from "@/stores/use-global-settings-store";
@@ -48,6 +50,7 @@ import { getPersistedPendingTwapAssetState } from "@/stores/use-pending-twap-sto
 
 interface SubmitInput {
 	sessionId: string;
+	confirmedCloseSize: string | null;
 	dismissFutureConfirmation?: boolean;
 }
 
@@ -129,11 +132,13 @@ export function usePositionMarketCloseSubmit() {
 		const currentSession = getPositionMarketCloseModal();
 		if (!currentSession || currentSession.sessionId !== input.sessionId || currentSession.phase !== "idle") return;
 
+		const openedPresentation = currentSession.presentation;
 		actions.dismiss(input.sessionId);
 		actions.updatePhase(input.sessionId, "validating");
 		executionContextRef.current = null;
 
 		try {
+			const confirmedCloseSize = resolveConfirmedCloseSize(openedPresentation, input.confirmedCloseSize);
 			const lockResult = await runWithAvailableOrderAssetLocks(
 				{
 					env: currentSession.env,
@@ -192,6 +197,7 @@ export function usePositionMarketCloseSubmit() {
 					}
 					const closeResolution = resolveCurrentCloseSize(refreshedSession, fresh.signedPositionSize);
 					assertPercentageCloseWithinLiveIntent(refreshedSession, plannedLivePosition.szi, closeResolution);
+					assertCloseSizeWithinConfirmedSize(closeResolution, confirmedCloseSize);
 
 					const plan = buildOrderPlan({
 						kind: "marketClose",
@@ -392,6 +398,27 @@ function assertPercentageCloseWithinLiveIntent(
 		plannedCloseSize.gt(liveIntentLimit)
 	) {
 		throw positionSubmitFeedbackCause("trading-data-changed");
+	}
+}
+
+function resolveConfirmedCloseSize(
+	openedPresentation: PositionMarketClosePresentation,
+	confirmedCloseSize: string | null,
+): Big | null {
+	if (openedPresentation === "direct" && confirmedCloseSize === null) return null;
+	const confirmed = openedPresentation === "confirmation" ? toBig(confirmedCloseSize) : null;
+	if (!confirmed?.gt(0)) throw positionSubmitFeedbackCause("trading-data-changed");
+	return confirmed;
+}
+
+function assertCloseSizeWithinConfirmedSize(
+	closeResolution: PositionMarketCloseResolution,
+	confirmedCloseSize: Big | null,
+): void {
+	if (!confirmedCloseSize) return;
+	const plannedCloseSize = toBig(closeResolution.normalizedSize);
+	if (!plannedCloseSize || plannedCloseSize.gt(confirmedCloseSize)) {
+		throw positionSubmitFeedbackCause("close-size-exceeds-confirmed");
 	}
 }
 

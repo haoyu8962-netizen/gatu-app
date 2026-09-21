@@ -10,6 +10,12 @@ on:
   pull_request_review:
     types: [submitted]
 
+# No `concurrency` group here, unlike the pull request workflows. Every comment starts this
+# workflow (the job-level `if` skips the ones without an @claude mention), and for comment and
+# issue events `github.ref` is the default branch, so a shared group would let any comment
+# anywhere in the repository cancel a request that is still running. Each request is independent
+# work, and even `cancel-in-progress: false` would drop all but the newest pending request.
+
 jobs:
   claude:
     if: |

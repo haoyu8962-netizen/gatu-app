@@ -323,10 +323,10 @@ function ResultContent({ action }: { action: ApiWalletActionView }) {
 
 function ReviewPreflightStatus() {
 	return (
-		<span className="inline-flex items-center gap-1.5">
-			<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" />
+		<output className="flex items-center justify-center gap-1.5 text-xs leading-5 text-api-wallet-muted">
+			<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
 			<Trans>Checking fresh API wallet data…</Trans>
-		</span>
+		</output>
 	);
 }
 
@@ -389,6 +389,7 @@ export function ApiWalletActionModal({
 			<ModalContent className="space-y-4 px-4 py-3" aria-busy={action.locked || undefined}>
 				<ActionStepper action={action} />
 				{action.stage === "review" ? <ReviewContent action={action} /> : null}
+				{action.stage === "review" && action.locked ? <ReviewPreflightStatus /> : null}
 				{isProgress ? <ProgressContent stage={action.stage} isMobile={isMobile} /> : null}
 				{action.stage === "done" ? (
 					<div>
@@ -436,26 +437,10 @@ export function ApiWalletActionModal({
 							disabled={action.locked}
 							onClick={onConfirm}
 						>
-							{action.locked ? (
-								<ReviewPreflightStatus />
-							) : action.kind === "remove" ? (
-								<Trans>Confirm removal</Trans>
-							) : (
-								<Trans>Sign and authorize</Trans>
-							)}
+							{action.kind === "remove" ? <Trans>Confirm removal</Trans> : <Trans>Sign and authorize</Trans>}
 						</Button>
 					</>
-				) : isProgress ? (
-					<Button
-						type="button"
-						size={isMobile ? "lg" : "md"}
-						className="w-full rounded-20 bg-api-wallet-control text-api-wallet-on-control active:scale-100"
-						disabled
-						iconLeft={<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" />}
-					>
-						<Trans>Processing…</Trans>
-					</Button>
-				) : result === "success" ? (
+				) : isProgress ? null : result === "success" ? (
 					<Button
 						type="button"
 						size={isMobile ? "lg" : "md"}

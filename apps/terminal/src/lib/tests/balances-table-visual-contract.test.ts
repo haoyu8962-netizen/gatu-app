@@ -32,7 +32,7 @@ describe("balances table visual contract", () => {
 		expect(balancesTableHeadClass).toContain("font-semibold");
 		expect(balancesTableHeadClass).toContain("normal-case");
 		expect(balancesTableCellClass).toContain("h-12");
-		expect(balancesTableCellClass).toContain("text-[13px]");
+		expect(balancesTableCellClass).toContain("text-2sm");
 		expect(BALANCES_TAB_SOURCE).not.toContain('data-testid="balances-summary-bar"');
 		expect(MOBILE_BALANCES_TAB_SOURCE).not.toContain('data-testid="mobile-balances-summary-bar"');
 		expect(BALANCES_TAB_SOURCE).toContain("DesktopTabToolbarPortal");

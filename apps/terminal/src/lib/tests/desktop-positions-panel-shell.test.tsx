@@ -321,7 +321,7 @@ describe("desktop positions panel shell", () => {
 		expect(tabList?.className).toContain("gap-0.5");
 		const tabs = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]'));
 		for (const tab of tabs) {
-			expect(tab.className).toContain("text-[13px]");
+			expect(tab.className).toContain("text-2sm");
 			expect(tab.className).toContain("px-3");
 			expect(tab.className).toContain("duration-[120ms]");
 			expect(tab.className).toContain("font-medium");

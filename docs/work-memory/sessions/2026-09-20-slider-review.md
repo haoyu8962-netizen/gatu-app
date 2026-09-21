@@ -1,0 +1,232 @@
+<!-- work-memory
+{
+  "schemaVersion": 1,
+  "id": "2026-09-20-slider-review",
+  "date": "2026-09-20",
+  "title": "滑杆审查：移除平仓弹窗的快捷百分比按钮，修复弹窗打开动画期间拖动被取消，登记其余交互与规范问题",
+  "kind": "task",
+  "status": "verified",
+  "topics": [
+    "order-entry",
+    "docs-governance"
+  ],
+  "summary": "平仓弹窗的 25/50/75/Max 快捷按钮是旧方案的遗留（下单表单早已改用带刻度的滑杆，config 里还留着两个无人使用的百分比常量），已移除。滑杆审查在真实页面上复现并修复了一个跳回起点的缺陷：桌面弹窗 200ms 的 scale 打开动画期间按住滑杆，ResizeObserver 把布局宽度与 getBoundingClientRect 的可视宽度相比，误判为尺寸变化而取消手势。另实测确认预览的 15ms 尾部防抖在约 7ms 间隔的指针事件下整段拖动不发布任何预览，数字冻住到松手才跳；该行为与松手吸附到实际百分比、数据状态翻转取消手势同属有测试钉住的既有设计，登记为待产品决定。性能在开发构建下实测无长任务。同日更正：官方滑杆同样使用重置式 15ms 防抖、同样把百分比重新推导为实际值，审查中「官方不从数量反推」的说法是错的；随后按产品负责人的决定把预览改为节流、为数据暂不可用新增暂停语义，松手吸附保持不变。产品负责人随后报告下单面板拖动仍回到起点：在其真实鼠标操作上录得 23 次手势里 14 次 lostpointercapture 早于 pointerup 6–11ms，滑杆把捕获丢失当取消；已改为不取消并记录手势结束原因，修复后产品负责人 20 次真实手势全部落值。缘由、规则与诊断步骤沉淀为 ADR 0018、滑杆契约新增两节与 AGENTS.md 的滑杆手势契约；桌面下单面板在手势期间冻结数量校验提示行，消除滑杆行 24px 的上下位移。",
+  "thread": null,
+  "baseCommit": "cd68260a",
+  "commits": [
+    "178661c3",
+    "928cebf1",
+    "2f6411b5",
+    "057679b7",
+    "4bb06d7a",
+    "fd347838",
+    "0b4ee1ef",
+    "cf028e99",
+    "ed8a54d1",
+    "4463d12c",
+    "e819af41",
+    "affb1644"
+  ],
+  "sources": [
+    { "path": "docs/slider-interactions.md" },
+    { "path": "docs/runtime-guardrails.md" },
+    { "path": "apps/terminal/src/components/trade/components/trade-slider.tsx" },
+    { "path": "apps/terminal/src/components/trade/components/trade-slider-view.tsx" },
+    { "path": "apps/terminal/src/components/trade/positions/position-close-sizing-controls.tsx" },
+    { "path": "apps/terminal/src/lib/trade/position-close-sizing-presentation.ts" },
+    { "path": "apps/terminal/src/hooks/trade/use-size-slider-interaction.ts" },
+    { "path": "apps/terminal/tests/browser/trade-size-slider-performance.pw.ts" },
+    { "path": "apps/terminal/tests/trade-size-slider-pointer-lifecycle.test.tsx" },
+    { "path": "docs/adr/0018-slider-gestures-end-on-release.md" },
+    { "path": "apps/terminal/src/components/trade/tradebox/trade-form-fields.tsx" },
+    { "path": "apps/terminal/tests/trade-size-error-a11y.test.tsx" }
+  ],
+  "supersedes": []
+}
+-->
+# 滑杆审查：移除平仓弹窗的快捷百分比按钮，修复弹窗打开动画期间拖动被取消，登记其余交互与规范问题
+
+## 背景与范围
+
+同步记录。用户指着平仓弹窗里的 `25% / 50% / 75% / Max` 一排按钮，认为是旧的 UI 方案、可以移除；同时要求审查所有滑杆的性能、交互与代码规范问题，特别点名「滑动滑杆会不会跳回到起点」。任务标识未取得（`thread: null`）。
+
+范围：`TradeSlider` 及其全部使用方——桌面与移动下单的数量滑杆、市价与限价平仓、TP/SL 的数量滑杆、杠杆与保证金模式的杠杆滑杆。工作树 `.claude/worktrees/worktree-05`，分支 `fix/market-close-confirmed-size`，起点 `cd68260a`，开始时工作区干净。本次改了两处代码（移除按钮、修复一个缺陷），其余发现只登记。
+
+## 结论与依据
+
+### 快捷百分比按钮：是旧方案的遗留，已移除
+
+- 这排按钮只存在于两个平仓弹窗共用的 `PositionCloseSizingControls`（`QUICK_PERCENTAGES`），由 2026-08-04 的重设计提交 `928cebf1`、`2f6411b5` 加入。
+- 下单表单没有这排按钮，用的是带刻度的滑杆加百分比输入；滑杆自己在 0/25/50/75/100 有刻度（`TICKS`，2026-09-10 的 `178661c3` 加入）。`config/trade.ts` 里的 `ORDER_SIZE_PERCENT_STEPS` 与 `SIZE_PERCENT_OPTIONS` 在整个 `apps/terminal/src` 与 `packages` 里没有任何使用方，是更早的快捷百分比方案留下的死配置。
+- 移除后仍能到达每一个取值：拖到或输入 100 即 Max（`handleSliderChange` 与 `handlePercentChange` 都把 100 映射为 `{ kind: "max" }`），百分比输入框接受任意整数。
+- 顺带删除那两个死常量。按钮带的任意圆角与 `!bg-modal` 覆盖随之消失，设计令牌棘轮的基线按规则同步调低：任意圆角 227→226，important 表面覆盖 18→14。
+
+### 会跳回起点吗：复现并修复了一个缺陷
+
+`trade-slider.tsx` 在指针按下时记录 `getBoundingClientRect().width`（可视宽度，受祖先 transform 影响），随后用 ResizeObserver 的 `contentRect.width`（布局宽度，不受 transform 影响）与它比较，相差超过 0.5px 就取消手势并恢复到手势起点。桌面弹窗有 200ms 的 `scale-95 → 1` 打开动画（`packages/ui/src/modal.tsx`），动画期间两者不相等。
+
+在登录态的真实页面上复现（1440×900 模拟视口，打开市价平仓弹窗后立刻在滑杆元素上派发 `pointerId=1` 的指针事件）：按下时可视宽度 370.5px、布局宽度 390px；按下后 `data-dragging=true`，80ms 后变为 `false`，拖到 50% 的操作被丢弃，百分比仍是 100。
+
+修复：观察器只拿本次手势收到的第一个 `contentRect.width` 作基线，与之后的布局宽度比较，不再与可视宽度比较。修复后同样的操作：80ms 后仍在拖动，松手后百分比为 50。窗口 `resize` 监听保持不变。单元测试新增「祖先 transform 使可视宽度不等于布局宽度时手势不取消、布局宽度真的变化时仍取消」；把比较改回可视宽度，该用例变红。
+
+### 其余会表现为「跳回」的行为：既有设计，待产品决定
+
+1. **松手吸附到实际百分比**。滑杆位置由「数量 ÷ 最大数量」推导，松手后吸附到手数取整后的实际百分比。最大值相对一手很小时吸附幅度很大：浏览器套件钉住了「最大 0.003、一手 0.001 时按住 63% 或 66%，松手回到 33%」与「点击 20% 提交为 0，滑块回到起点」。官方终端把百分比单独存为状态（`setPercentage` / `percentage`），不从数量反推。当前账户规模下一手约占 0.1%–0.6%，看不出来；极小仓位或极小余额才明显。
+2. **取消路径恢复到手势起点**（`docs/slider-interactions.md`）：Esc、滑杆失焦、窗口失焦、页面隐藏、窗口 resize、`disabled` 翻转、身份或取值范围变化。其中 `disabled` 来自数据状态：下单表单是 `!isConnected || isAvailabilityBlocked || availableBalance <= 0 || maxSize <= 0`，平仓弹窗是仓位数据 loading / stale / error。订阅重连或数据短暂失效时正在进行的拖动会被丢弃。
+3. **滑块会随行情自己漂移**：下单表单的 `sliderValue = 数量 ÷ 最大数量`，最大数量随价格变化，数量不变时滑块位置缓慢移动。
+
+### 性能
+
+开发构建、实时行情下，在真实页面上用约 16ms 间隔的指针事件慢拖 2.5 秒并逐帧采样：
+
+| 位置 | 帧间隔 p50 / p95 / 最大 | 超过 33ms 的帧 | 长任务 | 拖动中显示过的不同百分比 | 向起点方向的回跳 |
+| --- | --- | --- | --- | --- | --- |
+| 桌面下单 | 16.7 / 17.6 / 50.1 ms | 5 / 144 | 0 | 78 | 0 |
+| 市价平仓弹窗 | 16.7 / 17.2 / 66.7 ms | 4 / 141 | 0 | 75 | 0 |
+
+滑块与刻度由 `requestAnimationFrame` 直接写样式，不经过 React；业务预览单独发布。仓库的浏览器套件 `tests/browser/trade-size-slider-performance.pw.ts` 在本分支 19 项全过（含「每帧父级提交不超过 2 次」「预览次数不超过帧数 + 2」「相邻预览间隔不小于 14ms」）。
+
+**高刷新率下数字会冻住**：预览是「每次移动都重置的 15ms 尾部防抖」（`schedule()` 先清掉未触发的定时器再重设）。实测指针事件中位间隔 6.9ms（120/144Hz 设备的节奏）、持续 1.5 秒从 60% 拖到 10%：拖动中百分比只显示过 1 个值（一直是 60），松手才变成 10；间隔 21.9ms 时显示过 53 个值。松手时会冲刷最终值，提交的数量是对的，问题只在拖动过程中数量、百分比、订单价值不跟手。浏览器套件的「paints a rapid burst without a business preview and flushes the last value on release」钉住了这一行为，属有意取舍（限制 React 提交次数）。改成节流（已有定时器时不重置，让它带着最新草稿值触发）即可在保持不小于 15ms 间隔的同时持续跟手，代价是高刷新率设备上每秒最多约 66 次表单渲染；需要产品与性能预算一起决定，并同步改那条测试。
+
+### 代码规范
+
+- `positions/position-close-dialog-ui.tsx` 一个文件导出 6 个组件和 1 个视图模型工厂，违反「一个文件一个组件」；移除按钮之后文件内仍有 12 处任意 px/rem 值与 13 处 `!` 覆盖（设计稿交接留下的债务，其中圆角、字号与表面覆盖已被棘轮计数）。
+- `hooks/trade/use-size-slider-interaction.ts` 手写了 3 个 `useCallback`。项目启用了 React Compiler，规则要求只在语义需要时手写；`TradeSlider` 通过 `latestRef` 读取回调，不依赖回调引用稳定，而且其中一个的依赖含 `sizeInput`，每次输入都会变。
+- `config/trade.ts` 的 `ORDER_LEVERAGE_STEPS` 同样没有任何使用方（本次未删，与百分比无关）。
+- `trade-slider-view.tsx` 有 4 处任意像素值（`h-[33px]`、`size-[18px]` 等），同属棘轮债务。
+- `trade-slider.tsx` 把 `clamp`、`progressFor` 两个纯函数放在组件文件里，按「计算移到 lib」可移出；手势逻辑以闭包形式写在约 300 行的组件体内（全文件 380 行），可读性一般，但 ref 的使用符合滑杆契约「手势几何放在 ref、业务草稿归 React」。
+- 未发现：组件内注释、嵌套三元、`type Props`、箭头函数组件、用 effect 推导状态、对数量做浮点乘法（百分比换算在 `domain/trade/order/size.ts` 里用 Big.js，边界处才转成展示用的 number）。
+
+### 交互细节
+
+- 指针到取值的映射用控件全宽，滑块中心却被限制在距两端 9px 以内，所以靠近 0% 与 100% 时滑块最多偏离指针 9px；0 与 100 的刻度点内缩 4px。25/50/75 处对齐。
+- 触控：控件上有 `touch-action: none`，隐藏的原生 range 输入提供 44px 的命中区，移动端抽屉通过 `data-base-ui-swipe-ignore` 不把滑杆拖动当作下滑关闭；键盘、RTL、`aria-valuetext` 均有覆盖。
+
+### 更正与后续（2026-09-20，同一会话稍后）
+
+产品负责人看完审查后批示「三项都做，对齐官方实践，先让 codex 审方案」。动手前我读了官方终端前端包里滑杆本身的实现（`config-C5R5bd2i.js`，静态阅读，未经账户实测，Codex 无网络未能复核），结论与上文两处说法不符，在此更正，上文保留原样：
+
+- **上文「官方终端把百分比单独存为状态，不从数量反推」是错的。** 官方的 `xX` hook 在 `setPercentage(p)` 里先按精度向下取整算出数量，随后有一个 effect 在数量、最大可交易量、标记价或限价变化时执行 `setPercentage(prev => prev === null ? null : CX(sz, max, …))`，其中 `CX = sz / (max + 1e-7) * 100`。也就是官方同样吸附到取整后的实际百分比（而且每次发布都吸附，不只在松手时），同样随行情漂移。
+- **官方滑杆 `bh` 用的就是每次移动都重置的 15ms 尾部防抖**（`clearTimeout` 后 `setTimeout(…, 15)`），松手时冲刷最终值；高刷新率下数字冻住在官方同样存在。
+- **官方滑杆没有任何取消路径，也没有 `disabled`**：没有 `touchcancel`、失焦、resize、visibility、Esc 处理，手势一定以提交最后的值结束。
+- 上文「未发现嵌套三元」也不准确：`trade-slider.tsx` 的 `handleKeyDown` 里有一个多行的嵌套三元，我的单行正则没有匹配到。
+
+因此三项里只有「数据状态翻转取消拖动」是我们偏离官方；另外两项我们本来就与官方一致。Codex 对方案的只读评审结论：节流支持做（理由是连续输入下预览饥饿本身就是缺陷，不必借官方证明）；吸附不改成立，但不应说成与官方完全一致，也不应说保留请求值必然违反确认面契约；暂停不能把所有 `disabled` 一概改成暂停，必须区分数据暂不可用与编辑上下文结束，并处理被禁用的原生输入丢焦点、恢复后补发、待触发定时器这三件事。实施结果：
+
+1. **预览改节流**（`057679b7`，有意偏离官方）：已有定时器时不再重置，触发时发布当下的草稿值，相邻预览间隔仍不小于 15ms。两条钉住重置式防抖的单测改写，浏览器套件新增「指针移动快于预览间隔时持续发布」。把写法改回重置式，两条单测变红。
+2. **松手吸附**：不改代码。
+3. **数据暂不可用时暂停手势**（`4bb06d7a`）：`TradeSlider` 新增可选属性 `paused`，`disabled` 保持「立即取消」的原语义。暂停期间手势存活、滑块跟手、不发布预览、清掉待触发的定时器；恢复后经同一节流定时器补发一次当前草稿（纯静止按压不补发）；仍暂停时松手走取消。手势存活期间隐藏的原生 range 输入用 `aria-disabled` 而不是原生 `disabled`，由组件在每次渲染后与手势结束时写回，否则输入丢焦点会触发失焦取消。桌面与移动下单把「可用性数据被阻塞」传给 `paused`，市价与限价平仓把仓位数据 loading / stale / error 传给 `paused`；关闭、提交阶段、断开、余额或仓位确实为零、已平仓、方向变化仍走 `disabled`。TP/SL 与杠杆弹窗不传 `paused`。
+4. 顺带把 `handleKeyDown` 的嵌套三元抽成纯函数 `getKeyboardTarget()`，行为不变。
+
+### 下单面板拖动仍回到起点：根因是捕获丢失早于松手（2026-09-20，同一会话更晚）
+
+产品负责人在开发服务器上测试后报告「下单面板拖动滑杆还是回到起点」。
+
+- 我先在同一登录态的真实页面上尝试复现，全部正常：桌面 lg（1440）与 md（1280）、移动（503）布局，Long 与 Short，工具注入的真实（`isTrusted`）快拖、连续四次拖动与点按，以及脚本派发的 2–4 秒慢拖。期间没有出现禁用翻转、失焦、窗口失焦或尺寸变化。
+- 为了不再猜，我给滑杆加了「上一次手势为何结束」的记录（`data-gesture-end`），并在页面里装了一个只读的事件记录器。此时产品负责人正好在同一个浏览器面板标签页里用真实鼠标拖动，记录器录到 23 次手势：**14 次是 `lostpointercapture` 先到、`pointerup` 晚 6–11ms 才到**，结束原因全部是 `cancel:lost-capture`，滑块回到手势起点；另外 9 次顺序正常（`pointerup` 先到，`lostpointercapture` 晚 2–7ms），全部 `commit`。环境是 Claude 桌面应用的内置浏览器面板（UA 含 `Claude/2.2553.1 Chrome/152`），桌面应用内嵌的 webview。
+- 我此前复现不了的原因：经 DevTools 协议注入的鼠标事件不走系统级鼠标捕获那条路径，事件顺序永远正常；Playwright 同理。此前桌面下单面板我只用脚本事件验证过，真实指针捕获的路径没有覆盖到，这是我的验证缺口。嵌入方为什么会先报告捕获丢失，没有查证，只记录现象。
+- 修复（`fd347838`）：`lostpointercapture` 不再取消手势，只在会话上做标记。移动、松手与 `pointercancel` 改由手势存活期间挂在 `document` 上的监听处理（原先移动走控件上的 React 处理器，依赖捕获），所以没有捕获时拖动仍然跟手，随后的 `pointerup` 照常提交。若捕获丢失后松手事件本身没有到达文档（例如在 iframe 上方松开），该指针下一次不带按键的移动会提交按键按下期间最后看到的草稿值；这个兜底只在报告过捕获丢失之后生效。其余取消路径不变。
+- `use-press-and-hold.ts` 也监听 `lostpointercapture`，但它的动作在计时完成时触发，松手与捕获丢失同样是取消未完成的长按，事件先后不影响结果，未改。
+- 顺带：`trade-slider.tsx` 里 `inputProps.max` 的另一个嵌套三元抽成 `inputMin` / `inputMax`，行为不变；`finish()` 的布尔参数换成结束原因。
+- 测试：生命周期单测里把「`lostpointercapture` 取消」改为四条新用例（捕获丢失后松手照常提交、无捕获时继续跟手、漏掉松手时提交最后草稿、捕获完好时不把无按键移动当松手），并逐条断言各取消路径写入的 `data-gesture-end`；杠杆滑杆单测同步改写；浏览器套件新增「松手前先报告捕获丢失仍然提交」（真实鼠标按下与移动，中途派发 `lostpointercapture`，再真实松手）。变异检查：把捕获丢失改回取消，4 条单测与该浏览器用例变红，还原后逐字节一致。
+- 在真实页面上按录到的事件顺序重放（按下、移动、`lostpointercapture`、8ms 后 `pointerup`）：手势保持到松手，提交 60%，`data-gesture-end` 为 `commit`。
+
+### 修复后的全表面流畅度复测与这段代码的来历（2026-09-20，同一会话最后）
+
+**这段代码什么时候写进来的。** 把 `lostpointercapture` 当取消，最早见于 `e4afed7b`（2026-08-11，`fix(terminal): harden chart and leverage lifecycles`，杠杆滑杆 `onLostPointerCapture → finishPointer(id, false)`），`9af3bb69`（2026-08-19，`fix(trading): harden slider pointer lifecycle`）加到数量滑杆，`178661c3`（2026-09-10）合并为 `trade-slider.tsx` 并把「lost capture」写进 `docs/slider-interactions.md` 的取消路径。三次都是以「加固生命周期」的名义加的，单测也钉住了「捕获丢失即取消」，测试与实现共享同一个错误假设：捕获丢失只会出现在手势被真正打断时。Git 作者字段均为仓库的统一提交身份，不能据此判断是谁写的。
+
+**产品负责人的复测。** 我装的页内记录器在复测前被一次页面刷新清掉（页面在 23:07 左右重新加载，晚于安装时间；Vite 日志里这段时间只有 HMR 更新，没有服务器触发的整页重载），所以没有读到逐次记录。刷新后表单里有 21% / 1.34 HYPE，说明至少有一次拖动成功落值；是否每次都成功，要以产品负责人的观察为准。记录器已改为把结果写入 `sessionStorage` 并区分真实输入。
+
+**流畅度复测**（开发构建、登录态真实页面、实时行情；脚本派发的指针事件，3 秒慢拖约 46–48 次/秒与 1.2–1.5 秒快拖约 96–119 次/秒；逐帧采样）：
+
+| 表面 | 慢拖超 25ms 帧 | 快拖超 25ms 帧 | 长任务 | 滑块落后指针 p95 |
+|---|---|---|---|---|
+| 移动下单（503px） | 1 / 181 | 0 / 91 | 0 | 1.6px / 2.8px |
+| 桌面下单（1440） | 3 / 176 | 3 / 84 | 0 | 1.2px / 2.2px |
+| 桌面页面静置基线（不操作） | 4 / 172、4 / 169 | — | — | — |
+| 杠杆弹窗 | 0 / 151 | 0 / 73 | 0 | 2.7px / 8.9px |
+| 市价平仓弹窗 | 2 / 150 | 0 / 73 | 0 | 3.9px / 7.5px |
+| 限价平仓弹窗 | 1 / 151 | 0 / 75 | 0 | 5.5px / 7.5px |
+| 止盈止损弹窗（勾选数量后） | 0 / 151 | 1 / 71 | 0 | 3.5px / 6.8px |
+
+帧间隔 p50 均为 16.7ms、p95 不超过 17.6ms。桌面页面不操作时的掉帧与拖动时相同，来自图表与盘口的后台渲染，不是滑杆。滑块落后量约等于一帧内指针走过的距离（采样回调先于滑杆的绘制回调执行，测到的是上界）。各弹窗只拖动草稿，用 Esc 关闭，没有点击任何确认按钮，持仓数与挂单数不变。
+
+**测量时踩到的坑。** 移动改由 `document` 监听后，脚本事件与真实鼠标共用指针编号 1：产品负责人的鼠标在面板上移动时，滑块跟着真实鼠标走，第一次市价平仓弹窗的测量因此出现上百像素的「落后」。真实使用时同一编号只有一个输入流，不是缺陷；测量时要在捕获阶段拦掉 `isTrusted` 的 `pointermove`。
+
+**本轮新发现、未处理。** 桌面下单面板从 0 开始拖时，第一次预览落在 1%（订单价值低于最小 10 美元）会在数量框下方显示校验提示，滑杆行下移 24px，约 2% 时提示消失又上移（实测控件顶部 276 ↔ 300）。手势不受影响，但滑杆在指针下方上下跳一次；移动布局没有这个位移。是否在拖动期间暂缓显示数量校验提示，待产品负责人决定。
+
+### 真实输入确认、校验提示行与防止复发的文档（2026-09-20，同一会话收尾）
+
+**真实输入确认。** 产品负责人答复「没有弹回了」。写入 `sessionStorage` 的记录器读到其 20 次真实鼠标手势（23:30:08–23:30:18）：全部 `commit`，其中 12 次是修复前必然被取消的顺序（`pointerdown > lostpointercapture > pointerup`），8 次为正常顺序。环境仍是 Claude 桌面应用的内置浏览器面板。
+
+**桌面下单面板的数量校验提示行**（产品负责人批示「也做」；`0b4ee1ef`，防止复发的文档 `cf028e99`，CI 步骤 `ed8a54d1`）。提示行渲染在数量框与滑杆之间，预览落值使它出现或消失，滑杆行上下移动 24px。实现：`trade-form-fields.tsx` 用一个 `boolean | null` 状态在手势开始时记下这一行当时是否显示，手势期间按这个状态决定是否渲染该行；显示着的行内容随当前校验更新，没有错误时留空占位（`min-h-4`）；手势结束（提交或取消都会触发 `onInteractionEnd`）后复位，按当前校验结果显示。红框与 `aria-invalid` / `aria-describedby` 只跟随实际显示的内容；提交可用性与执行前校验不读这个状态。我向产品负责人提的方案是「拖动期间不显示」，实现时改为「冻结有无」，因为已显示的提示若在按下瞬间消失，滑杆会在指针下反向跳 24px。
+
+- 单测（`tests/trade-size-error-a11y.test.tsx`，真实 `TradeFormFields` 与真实滑杆）新增六条：手势期间不新增提示行、松手后出现；手势期间保留已显示的行、固定为按下时量到的高度并留空，松手后移除；保留的同一个节点里显示当前的另一条提示（`Min order $10`），三个输入的无障碍关联随之更新；取消手势后回到实时展示；每次手势重新取快照；键盘操作滑杆不冻结。
+- Codex 对这批改动的只读评审（未运行测试）结论是「需要先改几处」，均已处理：只冻结「有无」时多行提示清空会缩回一行、滑杆仍会动，改为同时冻结按下时量到的高度并补真实浏览器的几何断言；文档里的记录器在一次任务内连续两次手势会把事件序列记到另一条上，改为按控件与指针分别记录并用 jsdom 实跑验证；拦截物理移动的示例补上撤销；`AGENTS.md` 与 ADR 里三处超出实现或证据的措辞改准。评审同时确认：没有陈旧闭包，取消与卸载不会让提示行永久冻结，提交可用性与执行前校验不读展示状态。
+- 浏览器（`tests/browser/trade-panel-all-orders.pw.ts` 新增一条，夹具新增 `__gatuSetSizeMessage` 入口；真实 Chromium、协议注入的鼠标）：拖动中出现一条三行以上的长提示，滑杆位置不变，松手后提示出现、滑杆下移；再次拖动中清空提示，提示行保持 64px 高度且为空，滑杆位置不变，松手后恢复。
+- 变异检查：去掉固定高度，1 条单测与该浏览器用例变红（行高 64 → 16）；让提示行重新跟随实时校验，4 条单测变红；手势结束不复位，5 条单测变红。三次均还原且逐字节一致。
+- 真实页面（桌面 1440 布局，脚本派发事件并拦掉物理鼠标移动）：从未触碰的 0 拖到 60%，控件顶部全程 276、无提示行；60%→1%，全程 276，松手后出现 `Min order $10`、顶部变为 300；1%→40%，全程 300，提示行先显示 `Min order $10` 后留空，松手后移除、顶部回到 276。
+- 移动布局实测：提示出现与消失时滑杆顶部（206）与动作按钮顶部（491）不变，未改。
+- 未验证：平仓弹窗的错误提示渲染在滑杆下方，底部弹层或居中弹窗高度变化时是否带动滑杆位移，没有实测（当时产品负责人正在使用同一个面板，我停止了对页面的操作）。
+
+**怎样记录才能避免复发。** 这次缺陷的成因不在某一行代码，而在三件事叠在一起：以「加固」名义加入没有证据的取消路径；测试与实现共享同一个假设；「在真实页面上验证」实际用的是注入事件。对应地把记录拆成五层，各管一件事：
+
+1. 规则放在每次会话必读的地方：`AGENTS.md` 新增「Slider gesture contract」，只写不变量与指针，不写提交号和数字。
+2. 决策与复盘放进 `docs/adr/0018-slider-gestures-end-on-release.md`：现象、根因、来历、为什么自动化发现不了、诊断走过的弯路、决策、备选方案与证据。以后有人想再「加固」时，能看到上一次加固的代价。
+3. 做法放进归属文档 `docs/slider-interactions.md`：新增「Changing the gesture lifecycle」（新增取消路径必须给出的四项、三种输入路径各能证明什么）与「Diagnosing a reported jump」（先读 `data-gesture-end`，附可直接粘贴的记录器脚本；脚本已用 jsdom 实跑验证能记录）。
+4. 机械防线：单测与浏览器用例钉住物理输入给出的事件顺序；`terminal-tests.yml` 新增「Test slider gesture lifecycles」步骤（此前这些单测不在 CI 里，只有浏览器套件在）；组件自带 `data-gesture-end`。
+5. 证据与时间线留在本记录，不进 `AGENTS.md`。
+
+### 三项规范清理（2026-09-21，产品负责人批示「做三项规范清理」）
+
+审查时登记的三项代码规范问题，均为不改行为的整理：
+
+1. **拆分 `position-close-dialog-ui.tsx`**（`4463d12c`）。原文件导出 6 个组件和 1 个视图模型工厂，违反「一个文件一个组件」。拆为 `position-close-dialog-shell.tsx`、`-header.tsx`、`-content.tsx`、`-footer.tsx`、`position-close-summary.tsx`、`position-close-sizing-controls.tsx`（git 识别为原文件的重命名），各自的属性接口改名为 `Props`；视图模型工厂是计算而不是组件，移到 `lib/trade/position-close-sizing-presentation.ts`，其中一处嵌套三元改为提前返回的 `getRequestedPercent()`。不保留转发用的旧文件（仓库规则禁止 barrel）。三个弹窗、四个测试文件的导入与 mock、国际化响应契约里的路径、六种语言目录的来源注释随之更新。
+   - 逐行核对：新文件里不是原样来自旧文件的只有导入语句、`Props` 改名与上述提前返回；旧文件的每一行非空内容都能在新文件里找到，只少了被改名的接口行与那条嵌套三元。
+   - 新增 `position-close-sizing-presentation.test.ts` 覆盖三种意图与 0–100 的钳制。我第一次写的期望值把百分比框写成向下取整（46），实际行为是四舍五入（47），按既有行为改了期望，没有改实现。
+   - 语言目录只有来源注释变化，没有任何文案或译文变化。
+2. **去掉 `use-size-slider-interaction.ts` 的三个手写 `useCallback`**（`affb1644`）。回调只作为属性传给滑杆，滑杆经 `latestRef` 读最新属性，没有任何依赖数组或测试依赖它们的引用稳定；项目启用 React Compiler，规则要求不为性能手写 memo。差异只是去掉包装。
+3. **删除 `config/trade.ts` 里无人使用的 `ORDER_LEVERAGE_STEPS`**（`e819af41`）。全仓检索只有定义处和本记录提到它。
+
+过程中的两件事：
+
+- 工作记忆校验要求记录里的 `sources` 路径存在。旧文件被删除后，`2026-09-12-neutral-surface-audit` 与本记录的来源指针改指新文件，并在前者末尾与 `docs/neutral-surface-audit.md` 开头追加说明：原文里的文件名、行号仍指基线 `43ce177c`，作为当时的证据保留。
+- 第一次提交时把「删常量」排在最前并用了限定路径的提交，提交钩子的 `lingui extract` 按工作区（已含拆分）更新了来源注释，被带进了「删常量」这个提交。三个提交都未推送，我撤回后改为先提交拆分、再提交另外两项，目录更新归入拆分提交。教训：改动会影响语言目录来源路径时，让它所在的提交最先落地。
+
+## 验证与限制
+
+均为 2026-09-20 在本机（macOS）对本分支执行。
+
+- 移除按钮与修复缺陷后的最终工作树：`pnpm --filter @gatu/terminal test` 584 文件通过、1 跳过，6,603 项通过、1 跳过（104 秒）；类型检查、Biome、`git diff --check` 通过；滑杆浏览器套件（`pnpm --dir apps/terminal run test:browser:slider`）19 项通过。移除按钮后的第一次全量运行里设计令牌棘轮因计数下降而变红，调低基线后通过。
+- 缺陷的复现与修复验证、两张性能表、高刷新率实测都在登录态的真实页面上完成，事件由脚本派发到真实滑杆元素（内置浏览器的视口模拟会让真实拖动的坐标错位）；移动下单在面板原生宽度下用真实拖动验证过。没有点击任何提交或确认按钮，结束后表单与弹窗恢复原状，持仓数与挂单数不变。本记录不保存账户、余额或仓位明细。
+- 性能数字来自开发构建（含 React 开发模式），不能当作生产基线；没有在真实的 120Hz 设备或低端手机上测量。
+- 「数据状态翻转取消拖动」只从代码与既有测试得出，没有在真实页面上人为制造断连来复现。
+- 官方终端的百分比状态来自对其前端包的静态阅读，未经账户实测。
+
+节流与暂停这一轮（同日稍后，最终工作树）：
+
+- `pnpm --filter @gatu/terminal typecheck` 通过；`pnpm --filter @gatu/terminal test` 584 文件通过、1 跳过，6,613 项通过、1 跳过（95 秒）；Biome 与 `git diff --check` 通过；滑杆浏览器套件 21 项通过（新增「指针移动快于预览间隔时持续发布」与「拖动中途暂停再恢复」两条）。
+- 这之前的一次全量运行有 2 项失败：`size-percent-input.test.tsx` 的源码契约钉着旧的 `disabled={isFormDisabled || maxSize <= 0}`，属于本次改动的连带，已改为钉住 `disabled` / `paused` 两个新表达式；`client-bootstrap-error.test.ts` 的一条用例在并行负载下失败，单独运行 4 项全过，下一次全量运行也通过，与本次改动无关，未作处理。
+- 暂停语义的单测先红后绿；变异检查：去掉 `finish()` 里的 `!paused`、去掉恢复时的补发、去掉暂停时清定时器、让原生输入在手势存活时仍写原生 `disabled`，对应用例各自变红，还原后逐字节一致。去掉 `armPreview()` 入口的 `paused` 判断是等价变异（定时器回调里有同一判断），没有用例能区分。
+- Codex 对暂停实现的只读评审结论是可以提交，三项 P3 均已处理：`finish()` 里的可用性判断漏了 `max` 的有限性检查，改为与渲染期共用 `isRangeUnavailable()`；两条用例名称超过实际覆盖，改为逐个派发失焦、Esc 与 `disabled` 翻转，并补上键盘与原生输入；新增「恢复后不足 15ms 即松手只提交一次、没有迟到的预览」；`docs/slider-interactions.md` 写明取消时恢复什么由调用方决定。Codex 本轮没有运行测试，结论基于静态阅读。
+- 限制：暂停只在 Chromium 的浏览器夹具与 jsdom 下验证；「手势存活时原生输入不写 `disabled` 以免丢焦点」在 Safari、Firefox 与真实 iOS / Android 上未验证。没有在真实页面上人为制造断连来观察暂停。
+捕获丢失这一轮（同日更晚，最终工作树）：`pnpm --filter @gatu/terminal typecheck` 通过；`pnpm --filter @gatu/terminal test` 584 文件通过、1 跳过，6,617 项通过、1 跳过（107 秒）；Biome 与 `git diff --check` 通过（`apps/terminal/tests/` 目录不在 Biome 检查范围内）；滑杆浏览器套件 22 项通过。限制：
+
+- 根因证据来自产品负责人本人在内置浏览器面板里的 23 次真实手势；修复后的真实鼠标复测要由产品负责人完成，我无法产生走系统级鼠标捕获路径的输入。独立的 Chrome、Safari、Firefox 标签页与真实触屏上是否也会出现这一事件顺序，没有验证。
+- 「漏掉松手」的兜底只在 jsdom 单测里验证，没有在真实页面上制造「捕获丢失后在 iframe 上方松手」的场景。
+
+提示行与文档这一轮（同日收尾，最终工作树）：`pnpm --filter @gatu/terminal typecheck` 通过；`pnpm --filter @gatu/terminal test` 584 文件通过、1 跳过，6,623 项通过、1 跳过（111 秒）；浏览器套件 `trade-panel-all-orders.pw.ts` 与 `trade-size-slider-performance.pw.ts` 共 29 项通过；`node --test scripts/ci-workflows.test.mjs` 6 项通过；Biome、`git diff --check`、记忆索引检查通过。此前与 Codex 评审同时运行的一次全量里有 4 个文件因超时失败（`positions-panel-preload`、`chart-build-assets`、`chart-store`、`global-modals-hip3-disclaimer`，全量耗时 160 秒），单独运行 51 项全过，无竞争负载的这一次全量也全过，与本次改动无关。限制：提示行改动的真实页面验证用的是脚本派发事件，浏览器用例用的是协议注入的鼠标，没有物理输入验证；它不涉及事件顺序或指针捕获，但按新规则如实写明输入路径。
+
+规范清理这一轮（2026-09-21，最终工作树 `affb1644`）：`pnpm --filter @gatu/terminal typecheck` 通过；`pnpm --filter @gatu/terminal test` 585 文件通过、1 跳过，6,627 项通过、1 跳过（109 秒）；Biome、`git diff --check`、记忆索引检查通过。按 CI 条件在临时工作树里做了一次生产构建（Node 22.15.0、`pnpm install --frozen-lockfile`、没有本地环境文件、两个移动配对开关为 false、`NODE_ENV=production`、`NITRO_PRESET=node-server`）：构建通过，401 个客户端 chunk 无循环静态导入，包体积预算检查通过，`trade-terminal-page` 126,044 字节 gzip，与本分支此前的测量相同；临时工作树已删除。这次构建同时覆盖了本分支此前全部滑杆改动，那些改动之后还没有跑过生产构建。未跑：其余三种配对组合的构建；平仓弹窗没有浏览器套件，拆分由单测、类型检查与逐行核对保证；另在登录态真实页面（开发服务器，移动布局 790px）点开市价平仓确认弹窗复看一次：外壳、标题与 `Price: Market`、四项摘要、数量与百分比输入、带刻度的滑杆、勾选框、静态 `Market Close` 按钮与两行脚注均正常渲染，字体为 IBM Plex Sans；用 Esc 关闭，未点击确认，持仓数与挂单数不变，事后把页面视图恢复到原来的 Account。限价平仓与全部平仓弹窗未在真实页面复看。
+
+- 评审中登记、未处理的既有风险：手势开始时记录的 `left` / `width` 在祖先缩放动画期间不更新，动画内开始的拖动前 200ms 指针与滑块可能有几个像素的偏差；不可用时外层的 `cursor-not-allowed` 被内层的 `cursor-pointer` 盖住。
+
+## 后续与替代关系
+
+- 不替代任何记录；与同日的 `2026-09-20-market-close-confirmed-size.md` 在同一分支上。
+- 待产品负责人决定：预览改节流；松手是否吸附到实际百分比；数据状态翻转时是否丢弃正在进行的拖动；是否拆分 `position-close-dialog-ui.tsx`、去掉多余的 `useCallback`、删除 `ORDER_LEVERAGE_STEPS`。
+- 待产品负责人决定：桌面下单面板拖动期间是否暂缓显示数量校验提示，以消除滑杆行 24px 的上下位移。（同日已决定并实施，见上。）
+- 三项规范清理已于 2026-09-21 完成，见上。同目录的 `position-risk-dialog-ui.tsx` 也是一个文件多个组件，未在本次批示范围内，未动。
+- 待办：平仓弹窗内错误提示出现时滑杆是否位移，需要实测；独立浏览器、Safari、Firefox 与真实触屏上的事件顺序未验证。
+- 同日已决定并实施：预览改节流、数据暂不可用时暂停手势；松手吸附不改。节流是有意偏离官方的改进，单独成一个提交，可以单独回退。其余三项（拆分文件、`useCallback`、`ORDER_LEVERAGE_STEPS`）仍待决定。
+- 下一次先查：`docs/slider-interactions.md`、`tests/browser/trade-size-slider-performance.pw.ts`、`trade-slider.tsx` 的 `schedule()` 与 `finish()`。

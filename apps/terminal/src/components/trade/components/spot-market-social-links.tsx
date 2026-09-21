@@ -98,7 +98,7 @@ export function SpotMarketSocialLinks({ socials }: SpotMarketSocialLinksProps) {
 	return (
 		<div className="hidden h-[34px] shrink-0 grid-rows-[12px_16px] gap-1.5 font-market-close min-[1001px]:grid">
 			<span
-				className="min-w-16 max-w-32 truncate text-[10px] leading-3 text-trading-panel-subtle"
+				className="min-w-16 max-w-32 truncate text-3xs leading-3 text-trading-panel-subtle"
 				title={socials.displayName}
 			>
 				{socials.displayName}

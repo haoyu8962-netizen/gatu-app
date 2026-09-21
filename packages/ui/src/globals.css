@@ -29,28 +29,30 @@
 	--font-mono: ui-monospace, "SF Mono", monospace;
 
 	/* ---- Typography Scale (Desktop) ----
-     Figma name      → Tailwind class
-     Micro    12/16  → text-2xs
-     Tiny     14/20  → text-xs
-     Small    16/24  → text-sm
-     Heading4 20/28  → text-base
-     Heading3 24/32  → text-lg
-     Heading2 32/40  → text-xl
-     Heading1 40/48  → text-2xl
-     Display  56/64  → text-3xl
+     The dense trading scale documented in .claude/rules/design-tokens.md, not the
+     original Figma export. The terminal declares the same values in its own @theme;
+     typography-scale-contract keeps the two equal.
+     size/line-height → Tailwind class
+     10/14 → text-3xs    11/16 → text-2xs    12/16 → text-xs     13/18 → text-2sm
+     14/20 → text-sm     16/24 → text-base   20/28 → text-lg     28/36 → text-xl
+     40/48 → text-2xl    56/64 → text-3xl
   */
-	--text-2xs: 12px;
+	--text-3xs: 10px;
+	--text-3xs--line-height: 14px;
+	--text-2xs: 11px;
 	--text-2xs--line-height: 16px;
-	--text-xs: 14px;
-	--text-xs--line-height: 20px;
-	--text-sm: 16px;
-	--text-sm--line-height: 24px;
-	--text-base: 20px;
-	--text-base--line-height: 28px;
-	--text-lg: 24px;
-	--text-lg--line-height: 32px;
-	--text-xl: 32px;
-	--text-xl--line-height: 40px;
+	--text-xs: 12px;
+	--text-xs--line-height: 16px;
+	--text-2sm: 13px;
+	--text-2sm--line-height: 18px;
+	--text-sm: 14px;
+	--text-sm--line-height: 20px;
+	--text-base: 16px;
+	--text-base--line-height: 24px;
+	--text-lg: 20px;
+	--text-lg--line-height: 28px;
+	--text-xl: 28px;
+	--text-xl--line-height: 36px;
 	--text-2xl: 40px;
 	--text-2xl--line-height: 48px;
 	--text-3xl: 56px;

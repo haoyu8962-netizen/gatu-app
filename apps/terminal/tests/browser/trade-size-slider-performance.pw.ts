@@ -26,6 +26,7 @@ type SliderAuditWindow = Window & {
 		stop: () => SliderAuditSnapshot;
 	};
 	__gatuSliderPointerId?: number;
+	__gatuSliderSetPaused: (paused: boolean) => void;
 };
 
 test.beforeEach(async ({ page }) => {
@@ -33,7 +34,7 @@ test.beforeEach(async ({ page }) => {
 	await page.locator('input[type="range"]').waitFor();
 });
 
-test("debounces high-frequency previews without changing the released value", async ({ page }, testInfo) => {
+test("throttles high-frequency previews without changing the released value", async ({ page }, testInfo) => {
 	const geometry = await getControlGeometry(page);
 	const session = await page.context().newCDPSession(page);
 	const startX = percentX(geometry, 25);
@@ -81,6 +82,110 @@ test("debounces high-frequency previews without changing the released value", as
 	expect(result.parentCommits).toBeLessThanOrEqual(result.previewCallbacks + 1);
 	expect(result.commitCallbacks).toBe(1);
 	expect(finalValue).toBeCloseTo(90, 0);
+});
+
+test("keeps publishing previews while the pointer moves faster than the preview interval", async ({ page }) => {
+	const geometry = await getControlGeometry(page);
+	const session = await page.context().newCDPSession(page);
+	const y = geometry.top + geometry.height / 2;
+	await resetAudit(page);
+	await captureNextPointerId(page);
+	await dispatchPointer(session, "mousePressed", percentX(geometry, 25), y, 1);
+	const pointerId = await readPointerId(page);
+
+	const during = await page.evaluate(
+		async ({ activePointerId, fromX, toX, y }) => {
+			const control = document.querySelector("[data-trade-slider-control]");
+			const audit = (window as unknown as SliderAuditWindow).__gatuSliderPerf;
+			const startedAt = performance.now();
+			let moves = 0;
+			while (performance.now() - startedAt < 400) {
+				const progress = (performance.now() - startedAt) / 400;
+				control?.dispatchEvent(
+					new PointerEvent("pointermove", {
+						bubbles: true,
+						buttons: 1,
+						clientX: fromX + (toX - fromX) * progress,
+						clientY: y,
+						isPrimary: true,
+						pointerId: activePointerId,
+						pointerType: "mouse",
+					}),
+				);
+				moves++;
+				await new Promise<void>((resolve) => setTimeout(resolve, 5));
+			}
+			return { moves, snapshot: audit.snapshot() };
+		},
+		{ activePointerId: pointerId, fromX: percentX(geometry, 25), toX: percentX(geometry, 90), y },
+	);
+
+	expect(during.moves).toBeGreaterThanOrEqual(40);
+	expect(during.snapshot.previewCallbacks).toBeGreaterThanOrEqual(8);
+	expect(during.snapshot.previewCallbacks).toBeLessThanOrEqual(28);
+	for (const interval of during.snapshot.previewIntervals) expect(interval).toBeGreaterThanOrEqual(14);
+	expect(during.snapshot.commitCallbacks).toBe(0);
+
+	await dispatchPointer(session, "mouseReleased", percentX(geometry, 90), y, 0);
+	expect(await readValue(page)).toBeCloseTo(90, 0);
+	expect((await stopAudit(page)).commitCallbacks).toBe(1);
+});
+
+test("keeps focus and the gesture when the value source pauses mid-drag, then resumes and commits", async ({ page }) => {
+	const geometry = await getControlGeometry(page);
+	const y = geometry.top + geometry.height / 2;
+	const control = page.locator("[data-trade-slider-control]").first();
+	const input = page.getByRole("slider", { name: "Size percentage", exact: true });
+	await resetAudit(page);
+	await page.mouse.move(percentX(geometry, 25), y);
+	await page.mouse.down();
+	await page.mouse.move(percentX(geometry, 60), y, { steps: 6 });
+	await expect.poll(async () => (await stopAuditSnapshot(page)).previewCallbacks).toBeGreaterThanOrEqual(1);
+	const previewsBeforePause = (await stopAuditSnapshot(page)).previewCallbacks;
+
+	await page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderSetPaused(true));
+	await page.waitForTimeout(80);
+	await expect(control).toHaveAttribute("data-dragging", "true");
+	await expect(input).toBeFocused();
+	expect(await input.evaluate((element) => (element as HTMLInputElement).disabled)).toBe(false);
+	await expect(input).toHaveAttribute("aria-disabled", "true");
+
+	await page.mouse.move(percentX(geometry, 80), y, { steps: 6 });
+	await page.waitForTimeout(80);
+	expect((await stopAuditSnapshot(page)).previewCallbacks).toBe(previewsBeforePause);
+	expect(await readThumbPercent(page)).toBeCloseTo(80, 0);
+	await expect(control).toHaveAttribute("data-dragging", "true");
+
+	await page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderSetPaused(false));
+	await expect.poll(async () => (await stopAuditSnapshot(page)).previewCallbacks).toBe(previewsBeforePause + 1);
+	await expect(input).not.toHaveAttribute("aria-disabled", "true");
+
+	await page.mouse.up();
+	await expect(control).not.toHaveAttribute("data-dragging", "true");
+	expect(await readValue(page)).toBeCloseTo(80, 0);
+	expect((await stopAudit(page)).commitCallbacks).toBe(1);
+});
+
+test("commits the drag when lost pointer capture is reported just before the release", async ({ page }) => {
+	const geometry = await getControlGeometry(page);
+	const y = geometry.top + geometry.height / 2;
+	const control = page.locator("[data-trade-slider-control]").first();
+	await resetAudit(page);
+	await page.mouse.move(percentX(geometry, 25), y);
+	await page.mouse.down();
+	await page.mouse.move(percentX(geometry, 70), y, { steps: 6 });
+	await control.evaluate((element) => {
+		element.dispatchEvent(
+			new PointerEvent("lostpointercapture", { bubbles: true, pointerId: 1, pointerType: "mouse", isPrimary: true }),
+		);
+	});
+	await expect(control).toHaveAttribute("data-dragging", "true");
+
+	await page.mouse.up();
+	await expect(control).not.toHaveAttribute("data-dragging", "true");
+	await expect(control).toHaveAttribute("data-gesture-end", "commit");
+	expect(await readValue(page)).toBeCloseTo(70, 0);
+	expect((await stopAudit(page)).commitCallbacks).toBe(1);
 });
 
 test("commits the final position after a rapid same-frame reversal", async ({ page }) => {
@@ -268,6 +373,10 @@ async function stopAudit(page: Page): Promise<SliderAuditSnapshot> {
 	return page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPerf.stop());
 }
 
+async function stopAuditSnapshot(page: Page): Promise<SliderAuditSnapshot> {
+	return page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPerf.snapshot());
+}
+
 async function readValue(page: Page): Promise<number> {
 	return page.locator("[data-slider-value]").evaluate((output) => Number.parseFloat(output.textContent ?? ""));
 }
@@ -408,7 +517,7 @@ for (const width of [390, 1000, 1001, 1333, 1920]) {
 	}
 }
 
-test("paints a rapid burst without a business preview and flushes the last value on release", async ({ page }) => {
+test("paints a same-task burst without a business preview and flushes the last value on release", async ({ page }) => {
 	const geometry = await getControlGeometry(page);
 	const session = await page.context().newCDPSession(page);
 	const y = geometry.top + geometry.height / 2;

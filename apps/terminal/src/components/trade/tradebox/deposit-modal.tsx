@@ -2,6 +2,7 @@ import { Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { type Address, formatUnits, isAddress, parseUnits, zeroAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -12,7 +13,7 @@ import {
 	isCctpSponsoredDepositEnabled,
 } from "@/config/cctp-deposit";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
-import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
+import { DEPOSIT_BALANCE_REFRESH_MS, FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import {
 	getAccountBalanceSummary,
 	getSpotBalance,
@@ -87,15 +88,9 @@ import { DepositForm } from "./deposit/deposit-form";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
 import { WithdrawForm } from "./deposit/withdraw-form";
 import { WrongNetworkScreen } from "./deposit/wrong-network-screen";
+import { DepositExplorerLink } from "./deposit-explorer-link";
 
 const LazyBridgeTab = createLazyComponent(() => import("./bridge/bridge-tab"), "BridgeTab");
-
-interface WithdrawalAttempt {
-	activationFee: string;
-	amount: string;
-	route: WithdrawalRoute;
-	routeFee: string;
-}
 
 interface CctpPreTransferReview {
 	fee: string;
@@ -136,7 +131,6 @@ export function DepositModal() {
 	const [depositAmount, setDepositAmount] = useState("");
 	const [withdrawAmount, setWithdrawAmount] = useState("");
 	const [withdrawDestination, setWithdrawDestination] = useState("");
-	const [withdrawalAttempt, setWithdrawalAttempt] = useState<WithdrawalAttempt | null>(null);
 	const [withdrawalRouteChanged, setWithdrawalRouteChanged] = useState(false);
 	const [depositRoutingPreflightErrorCode, setDepositRoutingPreflightErrorCode] = useState<
 		"changed" | "unavailable" | null
@@ -496,8 +490,6 @@ export function DepositModal() {
 		};
 	}, [fundsModalContextIdentity]);
 	const isWithdrawPending = isWithdrawalPreflighting || cctpWithdrawal.isPending || legacyWithdrawal.isPending;
-	const isWithdrawSuccess = cctpWithdrawal.isSuccess || legacyWithdrawal.isSuccess;
-	const withdrawError = cctpWithdrawal.error ?? legacyWithdrawal.error;
 	const cctpFee = cctpFeeQuery.data ?? null;
 	const withdrawalRouteFee = getWithdrawalRouteFee(withdrawalRoute, cctpFee);
 	const withdrawalActivationFee = withdrawalRoute === "arbitrum-cctp" ? (preTransferCheckQuery.data?.fee ?? "0") : "0";
@@ -586,10 +578,6 @@ export function DepositModal() {
 		observedWithdrawalRouteRef.current = routedWithdrawalRoute;
 		if (previousRoute && previousRoute !== routedWithdrawalRoute) setWithdrawalRouteChanged(true);
 	}, [open, routedWithdrawalRoute]);
-
-	function handleDepositRetry() {
-		resetDeposit();
-	}
 
 	async function assertFreshWithdrawalRoute(expectedRoute: WithdrawalRoute, signal?: AbortSignal) {
 		let freshRoute: WithdrawalRoute | null;
@@ -810,7 +798,6 @@ export function DepositModal() {
 		setDepositAmount("");
 		setWithdrawAmount("");
 		setWithdrawDestination("");
-		setWithdrawalAttempt(null);
 		setWithdrawalRouteChanged(false);
 		setDepositRoutingPreflightErrorCode(null);
 		setDepositCctpPreflightErrorCode(null);
@@ -918,6 +905,10 @@ export function DepositModal() {
 		setWithdrawalPreflightFeedback(null);
 		setIsWithdrawalPreflighting(true);
 		let mutationStarted = false;
+		let mutationSucceeded = false;
+		let mutationError: unknown = null;
+		let submittedRouteFee = "0";
+		let submittedActivationFee = "0";
 		let preflightFailureCode: FundsActionFeedbackCode = "withdrawal-eligibility-unavailable";
 		const reportPreflightFailure = (code: FundsActionFeedbackCode) => {
 			assertWithdrawalPreflightCurrent(attempt);
@@ -1013,12 +1004,8 @@ export function DepositModal() {
 				async () => {
 					assertWithdrawalPreflightCurrent(attempt);
 					setWithdrawalRouteChanged(false);
-					setWithdrawalAttempt({
-						activationFee: cctpPreTransferReview?.fee ?? "0",
-						amount: reviewedAmount,
-						route: expectedWithdrawalRoute,
-						routeFee: freshRouteFee,
-					});
+					submittedRouteFee = freshRouteFee;
+					submittedActivationFee = cctpPreTransferReview?.fee ?? "0";
 					withdrawalExecutionReviewRef.current = {
 						amount: reviewedAmount,
 						attempt,
@@ -1036,10 +1023,12 @@ export function DepositModal() {
 								sourceDex: getWithdrawalSourceDex(accountSummary.usesSpotStateForPerps),
 							}),
 						);
+						mutationSucceeded = true;
 						return;
 					}
 					mutationStarted = true;
 					await legacyWithdrawal.mutateAsync({ destination, amount: reviewedAmount });
+					mutationSucceeded = true;
 				},
 				attempt.controller.signal,
 			);
@@ -1053,6 +1042,7 @@ export function DepositModal() {
 				setWithdrawalRoutingPreflightFailed(false);
 			}
 		} catch (error) {
+			if (mutationStarted && !mutationSucceeded) mutationError = error;
 			if (
 				!mutationStarted &&
 				!attempt.controller.signal.aborted &&
@@ -1062,12 +1052,61 @@ export function DepositModal() {
 				reportPreflightFailure(error instanceof FundsActionFeedbackCause ? error.code : preflightFailureCode);
 			}
 		} finally {
+			const attemptIsCurrent =
+				withdrawalPreflightRef.current === attempt && fundsModalContextIdentityRef.current === attempt.contextIdentity;
 			if (withdrawalPreflightRef.current === attempt) {
 				withdrawalPreflightRef.current = null;
 				withdrawalExecutionReviewRef.current = null;
 				setIsWithdrawalPreflighting(false);
 			}
+			if (mutationStarted && attemptIsCurrent) {
+				if (mutationSucceeded) {
+					notifyWithdrawalSubmitted(reviewedAmount, submittedRouteFee, submittedActivationFee);
+				} else {
+					notifyWithdrawalFailure(mutationError);
+				}
+				handleClose();
+			}
 		}
+	}
+
+	function notifyWithdrawalSubmitted(amount: string, routeFee: string, activationFee: string) {
+		const netReceived = getWithdrawalNetReceived(amount, routeFee);
+		const amounts = [
+			{ label: t`Net received`, value: formatNumber(netReceived ?? "0", 2) },
+			{ label: t`Withdrawal fee`, value: formatNumber(routeFee, 2) },
+		];
+		if (isPositiveDecimal(activationFee)) {
+			amounts.push({ label: t`One-time account activation fee`, value: formatNumber(activationFee, 2) });
+		}
+		toast.success(t`Withdrawal submitted`, {
+			description: (
+				<span className="flex flex-col gap-1">
+					{amounts.map((amount) => (
+						<span key={amount.label} className="tabular-nums">
+							{amount.label}: <bdi dir="ltr">${amount.value}</bdi>
+						</span>
+					))}
+					<span>
+						{t`Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt.`}
+					</span>
+				</span>
+			),
+			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
+		});
+	}
+
+	function notifyWithdrawalFailure(error: unknown) {
+		if (error instanceof FundsActionFeedbackCause) {
+			toast.error(formatFundsActionFeedback(error.code, (descriptor) => t(descriptor)));
+			return;
+		}
+		const message = formatExchangeActionError(error, t`Withdrawal failed`);
+		if (isAmbiguousExchangeActionError(error)) {
+			toast.warning(t`Withdrawal status unknown`, { description: message, duration: Infinity, closeButton: true });
+			return;
+		}
+		toast.error(message);
 	}
 
 	async function handleWithdrawalPrerequisiteRetry() {
@@ -1174,15 +1213,111 @@ export function DepositModal() {
 		}
 	}
 
-	function handleWithdrawalErrorRetry() {
-		cctpWithdrawal.reset();
-		legacyWithdrawal.reset();
-		setWithdrawalAttempt(null);
-	}
-
 	function handlePerpsSpotTransferClick() {
 		openTransferModal("toPerp");
 	}
+	const reportedDepositOutcomeRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (depositStatus !== "success" && depositStatus !== "error") {
+			reportedDepositOutcomeRef.current = null;
+			return;
+		}
+		const outcomeKey = `${depositStatus}:${depositHash ?? "no-hash"}`;
+		if (reportedDepositOutcomeRef.current === outcomeKey) return;
+		reportedDepositOutcomeRef.current = outcomeKey;
+		reportDepositOutcome();
+	});
+
+	function reportDepositOutcome() {
+		const explorerLink = (
+			<DepositExplorerLink txHash={depositHash} txChain={depositTxChain} label={t`View on explorer`} />
+		);
+		if (depositStatus === "success") {
+			if (!isCurrentCctpDeposit) {
+				toast.success(t`Deposit submitted`, {
+					description: (
+						<span className="flex flex-col gap-1">
+							<span>
+								<bdi dir="ltr" className="tabular-nums">
+									{displayedDepositAmount} USDC
+								</bdi>{" "}
+								{t`confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute.`}
+							</span>
+							{explorerLink}
+						</span>
+					),
+					duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
+				});
+			} else if (cctpRecoveryUnavailable) {
+				toast.warning(t`Forwarding deposit`, {
+					description: (
+						<span className="flex flex-col gap-1">
+							<span>
+								{t`Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing.`}
+							</span>
+							<bdi dir="ltr" className="break-all font-mono">
+								{depositHash}
+							</bdi>
+							{explorerLink}
+						</span>
+					),
+					duration: Number.POSITIVE_INFINITY,
+					closeButton: true,
+				});
+			}
+			handleClose();
+			return;
+		}
+
+		const hasSubmittedDeposit = !!depositHash;
+		const depositStatusUnknown =
+			submissionOutcomeUnknown || (hasSubmittedDeposit && !isDefinitiveDepositSourceFailure(depositError));
+		if (depositStatusUnknown) {
+			toast.warning(t`Deposit status unknown`, {
+				description: (
+					<span className="flex flex-col gap-1">
+						<span>
+							{t`The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying.`}
+						</span>
+						{explorerLink}
+					</span>
+				),
+				duration: Number.POSITIVE_INFINITY,
+				closeButton: true,
+			});
+			handleClose();
+			return;
+		}
+
+		const depositFailureMessage = getDepositFailureMessage();
+		if (hasSubmittedDeposit) {
+			toast.error(t`Deposit failed`, {
+				description: (
+					<span className="flex flex-col gap-1">
+						<span>{depositFailureMessage}</span>
+						{explorerLink}
+					</span>
+				),
+				duration: Number.POSITIVE_INFINITY,
+				closeButton: true,
+			});
+			handleClose();
+			return;
+		}
+		toast.error(depositFailureMessage);
+		resetDeposit();
+	}
+
+	function getDepositFailureMessage(): string {
+		if (depositError instanceof UsdcDepositRouteError) {
+			return formatFundsActionFeedback(
+				depositError.reason === "changed" ? "deposit-route-changed" : "deposit-route-unavailable",
+				(descriptor) => t(descriptor),
+			);
+		}
+		return formatTransferError(depositError);
+	}
+
 	let depositPendingHeading = <Trans>Confirm in wallet</Trans>;
 	if (walletResponseDelayed) depositPendingHeading = <Trans>Taking longer than expected</Trans>;
 	if (depositStatus === "confirming") depositPendingHeading = <Trans>Waiting for chain confirmation</Trans>;
@@ -1218,122 +1353,6 @@ export function DepositModal() {
 				<Button onClick={handleClose} className="w-full">
 					<Trans>Close</Trans>
 				</Button>
-			</StatusScreen>
-		);
-	}
-
-	if (depositStatus === "success") {
-		if (isCurrentCctpDeposit) {
-			const forwardSubmitted = cctpDepositTracking.data?.status === "forward-submitted";
-			return (
-				<StatusScreen
-					open={open}
-					presentation={presentation}
-					title={<Trans>Deposit</Trans>}
-					icon={forwardSubmitted ? "success" : "loading"}
-					heading={forwardSubmitted ? <Trans>Forward transaction submitted</Trans> : <Trans>Forwarding deposit</Trans>}
-					description={
-						cctpRecoveryUnavailable ? (
-							<Trans>
-								Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing.
-							</Trans>
-						) : forwardSubmitted ? (
-							<Trans>
-								Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time.
-							</Trans>
-						) : cctpDepositTracking.isError ? (
-							<Trans>
-								The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this
-								window; tracking will resume when you return.
-							</Trans>
-						) : (
-							<Trans>
-								The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid.
-							</Trans>
-						)
-					}
-					txHash={depositHash}
-					txChain={depositTxChain}
-					onClose={handleClose}
-				>
-					<Button onClick={handleClose} className="w-full">
-						<Trans>Done</Trans>
-					</Button>
-				</StatusScreen>
-			);
-		}
-		return (
-			<StatusScreen
-				open={open}
-				presentation={presentation}
-				title={<Trans>Deposit</Trans>}
-				icon="success"
-				heading={<Trans>Deposit submitted</Trans>}
-				description={
-					<>
-						<span className="tabular-nums font-medium text-success">{displayedDepositAmount} USDC</span>{" "}
-						<Trans>confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute.</Trans>
-					</>
-				}
-				txHash={depositHash}
-				txChain={depositTxChain}
-				onClose={handleClose}
-			>
-				<Button onClick={handleClose} className="w-full">
-					<Trans>Done</Trans>
-				</Button>
-			</StatusScreen>
-		);
-	}
-
-	if (depositStatus === "error") {
-		const hasSubmittedDeposit = !!depositHash;
-		const depositRouteFeedbackCode =
-			depositError instanceof UsdcDepositRouteError
-				? depositError.reason === "changed"
-					? "deposit-route-changed"
-					: "deposit-route-unavailable"
-				: null;
-		const depositStatusUnknown =
-			submissionOutcomeUnknown || (hasSubmittedDeposit && !isDefinitiveDepositSourceFailure(depositError));
-
-		return (
-			<StatusScreen
-				open={open}
-				presentation={presentation}
-				title={<Trans>Deposit</Trans>}
-				icon="error"
-				heading={depositStatusUnknown ? <Trans>Deposit status unknown</Trans> : <Trans>Deposit failed</Trans>}
-				description={
-					depositStatusUnknown ? (
-						<Trans>
-							The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction
-							before retrying.
-						</Trans>
-					) : depositRouteFeedbackCode ? (
-						formatFundsActionFeedback(depositRouteFeedbackCode, (descriptor) => t(descriptor))
-					) : (
-						formatTransferError(depositError)
-					)
-				}
-				txHash={depositHash}
-				txChain={depositTxChain}
-				onClose={handleClose}
-			>
-				{hasSubmittedDeposit || submissionOutcomeUnknown ? (
-					<Button onClick={handleClose} className="w-full">
-						<Trans>Close</Trans>
-					</Button>
-				) : (
-					<div className="flex w-full gap-2">
-						<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
-							<Trans>Cancel</Trans>
-						</Button>
-						<Button onClick={handleDepositRetry} className="flex-1">
-							<Trans>Retry</Trans>
-						</Button>
-					</div>
-				)}
 			</StatusScreen>
 		);
 	}
@@ -1414,85 +1433,6 @@ export function DepositModal() {
 		);
 	}
 
-	if (isWithdrawSuccess && withdrawalAttempt) {
-		const withdrawNetReceived = getWithdrawalNetReceived(withdrawalAttempt.amount, withdrawalAttempt.routeFee);
-
-		return (
-			<StatusScreen
-				open={open}
-				presentation={presentation}
-				title={<Trans>Withdraw</Trans>}
-				icon="success"
-				heading={<Trans>Withdrawal submitted</Trans>}
-				description={
-					<div className="space-y-1">
-						<div>
-							<Trans>Net received</Trans>:{" "}
-							<span className="tabular-nums font-medium text-success">
-								${formatNumber(withdrawNetReceived ?? "0", 2)}
-							</span>
-						</div>
-						<div className="text-fg-muted">
-							<Trans>Withdrawal fee</Trans>:{" "}
-							<span className="tabular-nums">${formatNumber(withdrawalAttempt.routeFee, 2)}</span>
-						</div>
-						{isPositiveDecimal(withdrawalAttempt.activationFee) ? (
-							<div className="text-fg-muted">
-								<Trans>One-time account activation fee</Trans>:{" "}
-								<span className="tabular-nums">${formatNumber(withdrawalAttempt.activationFee, 2)}</span>
-							</div>
-						) : null}
-						<div className="text-fg-muted">
-							<Trans>
-								Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt.
-							</Trans>
-						</div>
-					</div>
-				}
-				onClose={handleClose}
-			>
-				<Button onClick={handleClose} className="w-full">
-					<Trans>Done</Trans>
-				</Button>
-			</StatusScreen>
-		);
-	}
-
-	if (withdrawError) {
-		const withdrawalFeedbackCode = withdrawError instanceof FundsActionFeedbackCause ? withdrawError.code : null;
-		const isAmbiguousWithdrawal = !withdrawalFeedbackCode && isAmbiguousExchangeActionError(withdrawError);
-		return (
-			<StatusScreen
-				open={open}
-				presentation={presentation}
-				title={<Trans>Withdraw</Trans>}
-				icon="error"
-				heading={isAmbiguousWithdrawal ? <Trans>Withdrawal status unknown</Trans> : <Trans>Withdrawal failed</Trans>}
-				description={
-					withdrawalFeedbackCode
-						? formatFundsActionFeedback(withdrawalFeedbackCode, (descriptor) => t(descriptor))
-						: formatExchangeActionError(withdrawError, t`Withdrawal failed`)
-				}
-				onClose={handleClose}
-			>
-				{isAmbiguousWithdrawal ? (
-					<Button onClick={handleClose} className="w-full">
-						<Trans>Close</Trans>
-					</Button>
-				) : (
-					<div className="flex w-full gap-2">
-						<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
-							<Trans>Cancel</Trans>
-						</Button>
-						<Button onClick={handleWithdrawalErrorRetry} className="flex-1">
-							<Trans>Retry</Trans>
-						</Button>
-					</div>
-				)}
-			</StatusScreen>
-		);
-	}
-
 	return (
 		<PendingActionModal
 			open={open}
@@ -1503,7 +1443,7 @@ export function DepositModal() {
 			overlayClassName={usesFundsRedesign ? "!bg-scrim/60 !backdrop-blur-none" : undefined}
 			className={
 				usesFundsRedesign
-					? "font-market-close !border-0 !bg-modal !shadow-none max-[1000px]:!rounded-t-[20px] [&>button]:!top-5 [&>button]:!right-4 [&>button]:!rounded-[8px] [&>button]:text-market-close-muted [&>button:hover]:bg-market-close-hover [&>button:hover]:text-market-close-fg [&>button:active]:bg-market-close-hover min-[1001px]:!max-w-[28rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button>svg]:size-[18px]"
+					? "font-market-close max-[1000px]:!border-0 !bg-modal !shadow-none max-[1000px]:!rounded-t-[20px] [&>button]:!top-5 [&>button]:!right-4 [&>button]:!rounded-[8px] [&>button]:text-market-close-muted [&>button:hover]:bg-market-close-hover [&>button:hover]:text-market-close-fg [&>button:active]:bg-market-close-hover min-[1001px]:!max-w-[28rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button>svg]:size-[18px]"
 					: undefined
 			}
 		>

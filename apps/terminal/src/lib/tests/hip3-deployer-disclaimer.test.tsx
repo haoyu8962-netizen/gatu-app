@@ -123,7 +123,7 @@ describe("Hip3DeployerDisclaimer", () => {
 
 		const dialog = document.body.querySelector('[role="dialog"]');
 		expect(dialog?.classList.contains("fixed")).toBe(true);
-		expect(dialog?.className).toContain("min-[1001px]:rounded-16");
+		expect(dialog?.className).toContain("rounded-t-32");
 		expect(dialog?.className).not.toContain("min-[1000px]");
 		expect(document.body.querySelectorAll('a[target="_blank"]')).toHaveLength(1);
 		expect(document.body.querySelector('a[href="/terms"]')).not.toBeNull();

@@ -12,8 +12,8 @@ const mocks = vi.hoisted(() => ({
 	isConnected: true,
 	portfolioData: undefined as InfoResponse<"portfolio"> | undefined,
 	portfolioError: true,
+	frozenNow: Date.UTC(2026, 8, 7),
 	queryAge: 0,
-	fixedUpdatedAt: null as number | null,
 	auxiliaryError: false,
 	priceStatus: "success",
 	borrowLendData: { tokenToState: [], health: "healthy", healthFactor: null } as InfoResponse<"borrowLendUserState">,
@@ -88,7 +88,7 @@ vi.mock("@/hooks/portfolio/use-portfolio-info", () => ({
 			return {
 				data: mocks.portfolioData,
 				isError: mocks.portfolioError,
-				dataUpdatedAt: mocks.fixedUpdatedAt ?? Date.now() - mocks.queryAge,
+				dataUpdatedAt: mocks.frozenNow - mocks.queryAge,
 				isPlaceholderData: false,
 				isFetchedAfterMount: true,
 				isFetching: false,
@@ -101,7 +101,7 @@ vi.mock("@/hooks/portfolio/use-portfolio-info", () => ({
 			return {
 				data: mocks.feesData,
 				isError: mocks.auxiliaryError,
-				dataUpdatedAt: mocks.fixedUpdatedAt ?? Date.now() - mocks.queryAge,
+				dataUpdatedAt: mocks.frozenNow - mocks.queryAge,
 				isPlaceholderData: false,
 				isFetchedAfterMount: true,
 				isFetching: false,
@@ -120,7 +120,7 @@ vi.mock("@/hooks/portfolio/use-portfolio-info", () => ({
 		return {
 			data: mocks.auxiliaryDataAvailable ? auxiliaryData : undefined,
 			isError: mocks.auxiliaryError,
-			dataUpdatedAt: mocks.fixedUpdatedAt ?? Date.now() - mocks.queryAge,
+			dataUpdatedAt: mocks.frozenNow - mocks.queryAge,
 			isPlaceholderData: false,
 			isFetchedAfterMount: true,
 			isFetching: false,
@@ -137,9 +137,10 @@ describe("PortfolioOverview", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.setSystemTime(mocks.frozenNow);
 		mocks.isConnected = true;
 		mocks.queryAge = 0;
-		mocks.fixedUpdatedAt = null;
 		mocks.auxiliaryError = false;
 		mocks.priceStatus = "success";
 		mocks.borrowLendData = { tokenToState: [], health: "healthy", healthFactor: null };
@@ -376,9 +377,6 @@ describe("PortfolioOverview", () => {
 		expect(container.textContent).toContain("may overlap");
 	});
 	it("expires data on the clock without waiting for another network response", () => {
-		vi.useFakeTimers();
-		vi.setSystemTime(new Date("2026-09-07T00:00:00Z"));
-		mocks.fixedUpdatedAt = Date.now();
 		renderOverview(root);
 		expect(summaryValue(container, "Total Equity")).toBe("$42.00");
 		act(() => vi.advanceTimersByTime(120_000));

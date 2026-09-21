@@ -2,6 +2,8 @@
 
 状态：源码审查已记录；视觉简化建议待实施。本轮没有修改组件或主题样式。
 
+2026-09-21 补注：`position-close-dialog-ui.tsx` 已拆分并删除，下文指向它的文件名、行号与链接只对基线有效；`PositionCloseSummary` 现位于 `apps/terminal/src/components/trade/positions/position-close-summary.tsx`，弹窗外壳位于 `position-close-dialog-shell.tsx`。
+
 日期：2026-09-12。源码基线：`43ce177c384377c3f1f84a92623d4892b0859624`。起点是用户在 `/trade` 资产资料弹窗中指出的“标的资产 / 最大杠杆”卡片。截图只证明这个弹窗的当时显示状态，不能代表其他页面、主题和设备已经验收。
 
 ## 结论与范围

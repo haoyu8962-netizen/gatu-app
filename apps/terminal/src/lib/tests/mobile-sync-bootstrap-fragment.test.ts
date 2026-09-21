@@ -3,6 +3,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	installPairingBootstrap,
+	PAIRING_BOOTSTRAP_GLOBAL,
+	type PairingBootstrapHandoff,
+} from "../mobile-sync/pairing-location";
 
 const MOBILE_AGENT_SYNC_ROUTE_PATH = "/mobile-agent-sync";
 
@@ -102,15 +107,158 @@ describe("mobile Agent pre-bootstrap fragment scrub", () => {
 		replaceState.mockRestore();
 	});
 
+	it("scrubs a differently cased route the router would still match", async () => {
+		window.history.replaceState(null, "", "/Mobile-Agent-Sync?from=qr#bearer-secret");
+		const bearerUrl = window.location.href;
+
+		const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+
+		expect(`${window.location.pathname}${window.location.search}${window.location.hash}`).toBe(
+			`${MOBILE_AGENT_SYNC_ROUTE_PATH}?from=qr`,
+		);
+		expect(bootstrap.mobileAgentSyncBootstrapScrubStatus).toBe("scrubbed");
+		expect(bootstrap.consumeBootstrappedMobileAgentSyncUrl()).toBe(bearerUrl);
+	});
+
+	describe("after the shell's head script already ran", () => {
+		afterEach(() => {
+			Reflect.deleteProperty(window, PAIRING_BOOTSTRAP_GLOBAL);
+		});
+
+		function leaveHandoff(handoff: unknown) {
+			Object.defineProperty(window, PAIRING_BOOTSTRAP_GLOBAL, { configurable: true, value: handoff });
+		}
+
+		it("takes the url the head script captured", async () => {
+			window.history.replaceState(null, "", `${MOBILE_AGENT_SYNC_ROUTE_PATH}#bearer-secret`);
+			const bearerUrl = window.location.href;
+			const headWindow = { history: window.history, location: window.location };
+			installPairingBootstrap(headWindow);
+			expect(window.location.hash).toBe("");
+			const handoff = Reflect.get(headWindow, PAIRING_BOOTSTRAP_GLOBAL) as PairingBootstrapHandoff;
+			leaveHandoff(handoff);
+
+			const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+
+			expect(bootstrap.mobileAgentSyncBootstrapScrubStatus).toBe("scrubbed");
+			expect(bootstrap.consumeBootstrappedMobileAgentSyncUrl()).toBe(bearerUrl);
+			expect(handoff.take()).toBeNull();
+		});
+
+		it("blocks hydration when the captured url was already taken by something else", async () => {
+			leaveHandoff({ v: 1, status: "captured", take: () => null });
+
+			const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+
+			expect(bootstrap.mobileAgentSyncBootstrapScrubStatus).toBe("blocked");
+			expect(bootstrap.canHydrateAfterMobileAgentSyncScrub).toBe(false);
+			expect(bootstrap.consumeBootstrappedMobileAgentSyncUrl()).toBeNull();
+		});
+
+		it.each([
+			["another version", { v: 2, status: "none", take: () => null }],
+			["an unknown status", { v: 1, status: "ready", take: () => null }],
+			["no take function", { v: 1, status: "none" }],
+			[
+				"a throwing take",
+				{
+					v: 1,
+					status: "captured",
+					take: () => {
+						throw new Error("taken apart");
+					},
+				},
+			],
+			["a take that returns something other than a url", { v: 1, status: "captured", take: () => ({ url: "x" }) }],
+			["a primitive", "captured"],
+			["null", null],
+		])("blocks hydration when the handoff is %s", async (_name, handoff) => {
+			leaveHandoff(handoff);
+
+			const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+
+			expect(bootstrap.mobileAgentSyncBootstrapScrubStatus).toBe("blocked");
+			expect(bootstrap.consumeBootstrappedMobileAgentSyncUrl()).toBeNull();
+		});
+
+		it("passes on a blocked or invalid head result", async () => {
+			leaveHandoff({ v: 1, status: "invalid", take: () => null });
+			const invalid = await import("../mobile-sync/bootstrap-fragment");
+			expect(invalid.mobileAgentSyncBootstrapScrubStatus).toBe("scrubbed");
+			expect(invalid.consumeInvalidBootstrappedMobileAgentSyncLocation()).toBe(true);
+
+			vi.resetModules();
+			Reflect.deleteProperty(window, PAIRING_BOOTSTRAP_GLOBAL);
+			leaveHandoff({ v: 1, status: "blocked", take: () => null });
+			const blocked = await import("../mobile-sync/bootstrap-fragment");
+			expect(blocked.canHydrateAfterMobileAgentSyncScrub).toBe(false);
+		});
+
+		it("still scrubs by itself when the head script saw nothing to do", async () => {
+			leaveHandoff({ v: 1, status: "none", take: () => null });
+			window.history.replaceState(null, "", `${MOBILE_AGENT_SYNC_ROUTE_PATH}#bearer-secret`);
+			const bearerUrl = window.location.href;
+
+			const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+
+			expect(window.location.hash).toBe("");
+			expect(bootstrap.consumeBootstrappedMobileAgentSyncUrl()).toBe(bearerUrl);
+		});
+	});
+
+	it("reads the unsafe-link notice once and removes it from the address bar", async () => {
+		window.history.replaceState(null, "", "/Mobile-Agent-Sync?from=qr&notice=unsafe-link");
+		const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+
+		expect(bootstrap.consumeUnsafeMobileAgentSyncLinkNotice()).toBe(true);
+		expect(`${window.location.pathname}${window.location.search}`).toBe("/Mobile-Agent-Sync?from=qr");
+		expect(bootstrap.consumeUnsafeMobileAgentSyncLinkNotice()).toBe(false);
+	});
+
+	it.each([
+		"/trade?notice=unsafe-link",
+		"/mobile-agent-sync?notice=other",
+		"/mobile-agent-sync-ticket?notice=unsafe-link",
+	])("ignores the notice on %s", async (url) => {
+		window.history.replaceState(null, "", url);
+		const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+
+		expect(bootstrap.consumeUnsafeMobileAgentSyncLinkNotice()).toBe(false);
+	});
+
+	it("leaves a blocked link for the clean pairing page once, and never loops on it", async () => {
+		const bootstrap = await import("../mobile-sync/bootstrap-fragment");
+		const replace = vi.fn();
+
+		bootstrap.leaveBlockedMobileAgentSyncLink({ hash: "#bearer", pathname: "/mobile-agent-sync", replace, search: "" });
+		expect(replace).toHaveBeenCalledExactlyOnceWith("/mobile-agent-sync?notice=unsafe-link");
+
+		replace.mockClear();
+		bootstrap.leaveBlockedMobileAgentSyncLink({
+			hash: "",
+			pathname: "/mobile-agent-sync",
+			replace,
+			search: "?notice=unsafe-link",
+		});
+		expect(replace).not.toHaveBeenCalled();
+
+		const throwing = vi.fn(() => {
+			throw new DOMException("blocked", "SecurityError");
+		});
+		expect(() =>
+			bootstrap.leaveBlockedMobileAgentSyncLink({ hash: "#bearer", pathname: "/trade", replace: throwing, search: "" }),
+		).not.toThrow();
+	});
+
 	it("keeps the client entry dependency-free until the scrub runs", () => {
 		const clientSource = readFileSync(resolve(process.cwd(), "src/client.ts"), "utf8");
 		const hydrationSource = readFileSync(resolve(process.cwd(), "src/client-hydrate.tsx"), "utf8");
-		const staticImports = clientSource.match(/^import\s+(?!\()[^\n]+$/gm) ?? [];
+		const staticImportSources = [...clientSource.matchAll(/^import\s[^;]*?from\s+"([^"]+)";$/gms)].map(
+			([, source]) => source,
+		);
 
-		expect(staticImports).toEqual([
-			'import { renderBootstrapErrorPage } from "./lib/bootstrap-error-page";',
-			'import { canHydrateAfterMobileAgentSyncScrub } from "./lib/mobile-sync/bootstrap-fragment";',
-		]);
+		expect(staticImportSources).toEqual(["./lib/bootstrap-error-page", "./lib/mobile-sync/bootstrap-fragment"]);
+		expect(clientSource).toContain('variant: "pairing-blocked"');
 		expect(clientSource.indexOf('import("./lib/error-reporting/client")')).toBeLessThan(
 			clientSource.indexOf('import("./client-hydrate")'),
 		);

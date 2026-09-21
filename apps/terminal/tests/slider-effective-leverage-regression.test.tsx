@@ -9,6 +9,9 @@ const leverageHarness = vi.hoisted(() => ({
 	sliderProps: null as Record<string, unknown> | null,
 }));
 
+const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
+vi.mock("sonner", () => ({ toast: toastMocks }));
+
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({ children, open }: { children: ReactNode; open: boolean }) =>
 		open ? createElement("section", null, children) : null,
@@ -79,11 +82,12 @@ function DesktopCommittedValueHarness({ maxLeverage }: { maxLeverage: number }) 
 	const [storeLeverage, setStoreLeverage] = useState(3);
 	const [committedLeverage, setCommittedLeverage] = useState<number | null>(null);
 
-	async function applyLeverage(requestedLeverage: number): Promise<void> {
+	async function applyLeverage(requestedLeverage: number): Promise<number> {
 		const committed = Math.max(1, Math.min(Math.round(requestedLeverage), maxLeverage));
 		setStoreLeverage(committed);
 		setPendingLeverage(committed);
 		setCommittedLeverage(committed);
+		return committed;
 	}
 
 	return (
@@ -99,7 +103,6 @@ function DesktopCommittedValueHarness({ maxLeverage }: { maxLeverage: number }) 
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
 				isUpdating={false}
-				updateError={null}
 				onApply={applyLeverage}
 				marketIdentity="HYPE"
 			/>
@@ -125,9 +128,8 @@ function MobileCapabilityHarness({ maxLeverage, showLeverage }: { maxLeverage: n
 			allowsCrossMargin
 			allowsIsolatedMarginRemoval
 			isUpdating={false}
-			updateError={null}
 			showLeverage={showLeverage}
-			onApply={async () => {}}
+			onApply={async () => null}
 			presentation="drawer"
 			mobileView="leverage"
 			marketIdentity="HYPE"
@@ -151,7 +153,7 @@ describe("slider effective leverage contracts", () => {
 		container.remove();
 	});
 
-	it("A1 makes input, pending, success, and effective store use the leverage committed under the latest max", async () => {
+	it("A1 makes input, pending, notification, and effective store use the leverage committed under the latest max", async () => {
 		act(() => root.render(<DesktopCommittedValueHarness maxLeverage={20} />));
 		const input = container.querySelector<HTMLInputElement>('input[aria-label="Leverage"]');
 		if (!input) throw new Error("Leverage input not found");
@@ -163,12 +165,12 @@ describe("slider effective leverage contracts", () => {
 		await act(async () => getButton(container, "Confirm").click());
 
 		const canonicalInput = container.querySelector<HTMLInputElement>('input[aria-label="Leverage"]');
-		const successButton = getButton(container, "Updated");
 		expect.soft(canonicalInput?.value).toBe("10");
 		expect.soft(container.querySelector('[data-testid="pending-leverage"]')?.textContent).toBe("10");
 		expect.soft(container.querySelector('[data-testid="store-leverage"]')?.textContent).toBe("10");
 		expect.soft(leverageHarness.sliderProps?.value).toBe(10);
-		expect.soft(successButton.textContent).toContain("10x");
+		expect.soft(toastMocks.success).toHaveBeenCalledWith("Leverage updated to 10x");
+		expect.soft(getButton(container, "Confirm").textContent).toBe("Confirm");
 	});
 
 	it("A1 discards a mobile drag draft when leverage capability unmounts and later remounts", () => {

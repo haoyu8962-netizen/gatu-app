@@ -11,6 +11,7 @@ import { isRtlLocale } from "@/config/i18n";
 import { areFontsReady, STARTUP_FONT_SPECS, waitForFonts } from "@/lib/fonts/font-readiness";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
+import { PAIRING_HEAD_SCRUB_SCRIPT } from "@/lib/mobile-sync/head-scrub-script.generated";
 import { buildRootHead } from "@/lib/seo";
 import { getAppRouteSurface, getPresentedRoutePathname, useClientRuntimeReady } from "@/providers/client-runtime";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
@@ -139,6 +140,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		<html lang={documentLocale} dir={documentDirection} className="dark" suppressHydrationWarning>
 			<head>
 				<HeadContent />
+				<script suppressHydrationWarning>{PAIRING_HEAD_SCRUB_SCRIPT}</script>
 				<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>
 				<link rel="stylesheet" href={appCss} precedence="default" />
 			</head>
