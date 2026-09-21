@@ -154,7 +154,11 @@ While a gesture is held and the slider is unavailable, the hidden native range i
 stays focusable with `aria-disabled="true"` instead of the native `disabled`
 attribute, which the component writes back after every render and at the end of the
 gesture. A natively disabled input would lose focus, and losing focus is one of the
-cancellation paths. The desktop and mobile order forms pass `paused` for blocked
+cancellation paths. The component is the only writer of `disabled`: it is not a
+React prop on the input, because React would set it during commit and the layout effect
+would clear it a moment later, and the Chromium build CI uses (unlike current branded
+Chrome) drops focus in that instant. `trade-size-slider-pointer-lifecycle` watches the
+attribute with a `MutationObserver`; run the browser suite with `CI=1` to use that build. The desktop and mobile order forms pass `paused` for blocked
 availability, Market Close and Limit Close for position data that is loading, stale or
 failed; TP/SL and the leverage dialogs pass only `disabled`. The official terminal's
 slider has no cancellation path and no disabled state at all, so a drag there always

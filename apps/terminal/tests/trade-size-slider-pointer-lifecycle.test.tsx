@@ -383,6 +383,22 @@ describe("TradeSlider lifecycle isolation", () => {
 		expect(slider.input.hasAttribute("aria-disabled")).toBe(false);
 	});
 
+	it("never disables the focused input, even for an instant, when paused mid-gesture", () => {
+		const slider = drag();
+		const observer = new MutationObserver(() => {});
+		observer.observe(slider.input, { attributes: true, attributeFilter: ["disabled"], attributeOldValue: true });
+		const records: MutationRecord[] = [];
+
+		render({ paused: true });
+		records.push(...observer.takeRecords());
+		render({ paused: false });
+		records.push(...observer.takeRecords());
+		observer.disconnect();
+
+		expect(records).toEqual([]);
+		expect(slider.input.disabled).toBe(false);
+	});
+
 	it("drops a pending preview when paused and republishes the held value once it resumes", () => {
 		const slider = drag();
 		render({ paused: true });

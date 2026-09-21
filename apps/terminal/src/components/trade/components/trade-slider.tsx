@@ -445,7 +445,6 @@ export function TradeSlider(props: Props) {
 				max: inputMax,
 				step: 1,
 				defaultValue: Math.round(clamp(value, min, max)),
-				disabled: unavailable,
 				"aria-valuetext": ariaValueText,
 				"aria-describedby": ariaDescribedBy,
 				"aria-invalid": ariaInvalid || undefined,
