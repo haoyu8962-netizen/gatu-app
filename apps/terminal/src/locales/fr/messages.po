@@ -1364,7 +1364,6 @@ msgstr "Cliquez pour envoyer · Les transactions exécutées sont irréversibles
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
-#: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -3650,8 +3649,8 @@ msgid "Keep this window open until Hyperliquid finishes checking the wallet acti
 msgstr "Gardez cette fenêtre ouverte jusqu'à ce qu'Hyperliquid ait fini de vérifier l'action du portefeuille."
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Keep this window open while Hyperliquid processes the request."
-msgstr "Laissez cette fenêtre ouverte pendant que Hyperliquid traite la demande."
+#~ msgid "Keep this window open while Hyperliquid processes the request."
+#~ msgstr "Laissez cette fenêtre ouverte pendant que Hyperliquid traite la demande."
 
 #: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -6146,6 +6145,7 @@ msgstr "Remplace l'Agent mobile actuel par une clé temporaire inaccessible."
 msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
 msgstr ""
 
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Request not confirmed"
 msgstr "Demande non confirmée"
@@ -9393,8 +9393,8 @@ msgid "Waiting for chain confirmation"
 msgstr "En attente de confirmation on-chain"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Waiting for confirmation"
-msgstr "En attente de confirmation"
+#~ msgid "Waiting for confirmation"
+#~ msgstr "En attente de confirmation"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #~ msgid "Waiting for confirmation..."

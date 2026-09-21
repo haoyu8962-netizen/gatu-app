@@ -1364,7 +1364,6 @@ msgstr "सबमिट करने के लिए क्लिक करे�
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
-#: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -3650,8 +3649,8 @@ msgid "Keep this window open until Hyperliquid finishes checking the wallet acti
 msgstr "जब तक Hyperliquid वॉलेट कार्रवाई की जांच पूरी न कर ले, यह विंडो खुली रखें।"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Keep this window open while Hyperliquid processes the request."
-msgstr "Hyperliquid द्वारा अनुरोध संसाधित किए जाने तक यह विंडो खुली रखें।"
+#~ msgid "Keep this window open while Hyperliquid processes the request."
+#~ msgstr "Hyperliquid द्वारा अनुरोध संसाधित किए जाने तक यह विंडो खुली रखें।"
 
 #: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -6146,6 +6145,7 @@ msgstr "वर्तमान मोबाइल एजेंट को एक �
 msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
 msgstr ""
 
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Request not confirmed"
 msgstr "अनुरोध की पुष्टि नहीं हुई"
@@ -9393,8 +9393,8 @@ msgid "Waiting for chain confirmation"
 msgstr "ऑन-चेन पुष्टि की प्रतीक्षा है"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Waiting for confirmation"
-msgstr "पुष्टि की प्रतीक्षा है"
+#~ msgid "Waiting for confirmation"
+#~ msgstr "पुष्टि की प्रतीक्षा है"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #~ msgid "Waiting for confirmation..."

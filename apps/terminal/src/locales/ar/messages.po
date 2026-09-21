@@ -1364,7 +1364,6 @@ msgstr "انقر للإرسال · لا يمكن التراجع عن الصفق�
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
-#: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -3650,8 +3649,8 @@ msgid "Keep this window open until Hyperliquid finishes checking the wallet acti
 msgstr "أبقِ هذه النافذة مفتوحة حتى ينتهي Hyperliquid من التحقق من إجراء المحفظة."
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Keep this window open while Hyperliquid processes the request."
-msgstr "أبقِ هذه النافذة مفتوحة بينما يعالج Hyperliquid الطلب."
+#~ msgid "Keep this window open while Hyperliquid processes the request."
+#~ msgstr "أبقِ هذه النافذة مفتوحة بينما يعالج Hyperliquid الطلب."
 
 #: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -6146,6 +6145,7 @@ msgstr "يستبدل وكيل الهاتف الحالي بمفتاح مؤقت غ
 msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
 msgstr ""
 
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Request not confirmed"
 msgstr "لم يتم تأكيد الطلب"
@@ -9393,8 +9393,8 @@ msgid "Waiting for chain confirmation"
 msgstr "بانتظار التأكيد على الشبكة"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Waiting for confirmation"
-msgstr "في انتظار التأكيد"
+#~ msgid "Waiting for confirmation"
+#~ msgstr "في انتظار التأكيد"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #~ msgid "Waiting for confirmation..."

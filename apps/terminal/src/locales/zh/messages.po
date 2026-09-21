@@ -1364,7 +1364,6 @@ msgstr "点击提交 · 成交后不可撤销"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
-#: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -3650,8 +3649,8 @@ msgid "Keep this window open until Hyperliquid finishes checking the wallet acti
 msgstr "请保持此窗口打开，直至 Hyperliquid 完成钱包操作检查。"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Keep this window open while Hyperliquid processes the request."
-msgstr "Hyperliquid 处理请求期间，请保持此窗口打开。"
+#~ msgid "Keep this window open while Hyperliquid processes the request."
+#~ msgstr "Hyperliquid 处理请求期间，请保持此窗口打开。"
 
 #: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -6146,6 +6145,7 @@ msgstr "使用一个临时且不可访问的密钥替换当前移动交易密钥
 msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
 msgstr "将替换当前移动密钥 <0>{existingMobileAgentLabel}</0>"
 
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Request not confirmed"
 msgstr "请求尚未确认"
@@ -9393,8 +9393,8 @@ msgid "Waiting for chain confirmation"
 msgstr "等待链上确认"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "Waiting for confirmation"
-msgstr "正在等待确认"
+#~ msgid "Waiting for confirmation"
+#~ msgstr "正在等待确认"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #~ msgid "Waiting for confirmation..."

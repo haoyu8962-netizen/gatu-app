@@ -9,20 +9,18 @@ import {
 	TextInput,
 } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { CheckCircleIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useState } from "react";
-import type { ReferralAction } from "@/hooks/trade/use-referral-actions";
+import { WarningCircleIcon } from "@phosphor-icons/react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
+import { type ReferralAction, ReferralActionStatusUnknownError } from "@/hooks/trade/use-referral-actions";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatExchangeActionError } from "@/lib/errors/format";
+import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatToken } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { ReferralRewardRow } from "@/lib/trade/referral";
 
-type Step = "error" | "form" | "review" | "submitting" | "success";
-
-interface ReferralActionError {
-	cause: unknown;
-}
+type Step = "form" | "review";
 
 interface Props {
 	action: ReferralAction;
@@ -39,31 +37,50 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 	const isReferralCodeLocked = action === "apply" && initialCode !== undefined;
 	const lockedReferralCode = isReferralCodeLocked ? initialCode : undefined;
 	const [code, setCode] = useState(initialCode ?? "");
-	const [error, setError] = useState<ReferralActionError | null>(null);
 	const [step, setStep] = useState<Step>(action === "claim" || initialCode !== undefined ? "review" : "form");
-	const isSubmitting = step === "submitting";
+	const submittedRef = useRef(false);
 	const submittedCode = lockedReferralCode ?? code;
 	const codeValid = submittedCode.length >= 1 && submittedCode.length <= 20;
 	const title =
 		action === "apply" ? t`Enter referral code` : action === "create" ? t`Create referral code` : t`Claim rewards`;
-	const errorMessage = error
-		? formatExchangeActionError(error.cause, t`Referral request could not be completed.`)
-		: null;
 
 	function close() {
-		if (!isSubmitting) onClose();
+		if (!submittedRef.current) onClose();
+	}
+
+	function getSuccessTitle(): string {
+		if (action === "claim") return t`Rewards claimed`;
+		if (action === "apply") return t`Referral code applied`;
+		return t`Referral code created`;
 	}
 
 	async function submit() {
+		if (submittedRef.current) return;
 		if ((action === "apply" || action === "create") && !codeValid) return;
-		setError(null);
-		setStep("submitting");
+		submittedRef.current = true;
+		onClose();
 		try {
 			await onSubmit(action, action === "claim" ? undefined : submittedCode);
-			setStep("success");
+			toast.success(getSuccessTitle(), {
+				description: t`The page is refreshing from Hyperliquid. Recent changes can take a moment to appear.`,
+				duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
+			});
 		} catch (submitError) {
-			setError({ cause: submitError });
-			setStep("error");
+			const description = (
+				<span className="flex flex-col gap-1">
+					<span>{formatExchangeActionError(submitError, t`Referral request could not be completed.`)}</span>
+					<span>{t`Refresh referral data before submitting another signed request.`}</span>
+				</span>
+			);
+			if (submitError instanceof ReferralActionStatusUnknownError || isAmbiguousExchangeActionError(submitError)) {
+				toast.warning(t`Request not confirmed`, {
+					description,
+					duration: Number.POSITIVE_INFINITY,
+					closeButton: true,
+				});
+			} else {
+				toast.error(t`Request not confirmed`, { description, duration: FUNDS_OUTCOME_TOAST_DURATION_MS });
+			}
 		}
 	}
 
@@ -73,10 +90,10 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 			onOpenChange={(open) => !open && close()}
 			presentation={isMobile ? "drawer" : "modal"}
 			size="lg"
-			dismissible={!isSubmitting}
-			showClose={!isMobile && !isSubmitting}
+			dismissible
+			showClose={!isMobile}
 			closeLabel={t`Close`}
-			showHandle={isMobile && !isSubmitting}
+			showHandle={isMobile}
 			handleClassName="top-2 h-1 w-9 !rounded-4 bg-fill/30"
 			layer="blocking"
 			className="max-h-[calc(100dvh-1rem)] rounded-t-32 min-[1001px]:max-w-[25rem] min-[1001px]:rounded-32"
@@ -146,51 +163,6 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 						</p>
 					</div>
 				) : null}
-
-				{step === "submitting" ? (
-					/* biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content in this status panel. */
-					<div role="status" className="flex flex-col items-center gap-3 py-8 text-center">
-						<SpinnerGapIcon className="size-8 animate-spin text-signal motion-reduce:animate-none" />
-						<p className="text-sm font-semibold text-fg">
-							<Trans>Waiting for confirmation</Trans>
-						</p>
-						<p className="text-xs text-fg-muted">
-							<Trans>Keep this window open while Hyperliquid processes the request.</Trans>
-						</p>
-					</div>
-				) : null}
-
-				{step === "success" ? (
-					/* biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content in this status panel. */
-					<div role="status" className="flex flex-col items-center gap-3 py-8 text-center">
-						<CheckCircleIcon weight="fill" className="size-9 text-success" />
-						<p className="text-base font-semibold text-fg">
-							{action === "claim" ? (
-								<Trans>Rewards claimed</Trans>
-							) : action === "apply" ? (
-								<Trans>Referral code applied</Trans>
-							) : (
-								<Trans>Referral code created</Trans>
-							)}
-						</p>
-						<p className="text-xs leading-5 text-fg-muted">
-							<Trans>The page is refreshing from Hyperliquid. Recent changes can take a moment to appear.</Trans>
-						</p>
-					</div>
-				) : null}
-
-				{step === "error" ? (
-					<div role="alert" className="flex flex-col items-center gap-3 py-7 text-center">
-						<WarningCircleIcon weight="fill" className="size-9 text-error" />
-						<p className="text-base font-semibold text-fg">
-							<Trans>Request not confirmed</Trans>
-						</p>
-						<p className="text-xs leading-5 text-error">{errorMessage}</p>
-						<p className="text-xs leading-5 text-fg-muted">
-							<Trans>Refresh referral data before submitting another signed request.</Trans>
-						</p>
-					</div>
-				) : null}
 			</ModalContent>
 
 			<ModalFooter className="gap-2 px-4 pt-0 pb-5 min-[1001px]:px-6">
@@ -203,7 +175,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 							<Trans>Review</Trans>
 						</Button>
 					</>
-				) : step === "review" ? (
+				) : (
 					<>
 						<Button
 							variant="outline"
@@ -217,11 +189,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 							{action === "claim" ? <Trans>Claim all</Trans> : <Trans>Confirm</Trans>}
 						</Button>
 					</>
-				) : step === "success" || step === "error" ? (
-					<Button className="w-full" onClick={close}>
-						<Trans>Close</Trans>
-					</Button>
-				) : null}
+				)}
 			</ModalFooter>
 		</AdaptiveModal>
 	);
