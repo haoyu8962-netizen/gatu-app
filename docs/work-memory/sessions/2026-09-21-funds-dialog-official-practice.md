@@ -57,4 +57,5 @@
 
 - 不替代任何记录。
 - 等产品负责人对三项决策给出答复后再实施；实施时更新 `docs/confirmation-surfaces.md` 例外表与本方案文档的状态。
+- 2026-09-21 补记：产品负责人答复「要做第 2、3 步」，三步已实施，见 `2026-09-21-funds-dialog-outcomes.md`。
 - 下一次先查：`docs/funds-dialog-outcome-plan.md`、`funds-action-balances.test.tsx`（资金守卫用例）、`components/funds-action/`。
