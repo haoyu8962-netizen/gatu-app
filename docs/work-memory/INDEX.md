@@ -64,6 +64,7 @@
 
 当前规范：[docs/account-overview.md](../../docs/account-overview.md) · [docs/withdrawals.md](../../docs/withdrawals.md) · [docs/cctp-deposits.md](../../docs/cctp-deposits.md)
 
+- [本地 3006 邮箱身份可见但钱包不可用，普通刷新恢复](sessions/2026-09-21-local-email-session-recovery.md) — 2026-09-21；已整理，验证见正文。内置浏览器显示邮箱身份，但交易输入与钱包菜单禁用；一次普通刷新后持仓、账户数值和钱包菜单恢复。首次失败请求未捕获，网络事件截断，不确认 token 或 iframe 根因。
 - [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) — 2026-09-20；已整理，验证见正文。迁移会话恢复、邮箱 UI 与发送/提款三份历史记录并复核已合并修复；分支先基于 main、复核后改为基于 dev，旧 Across 历史与根目录 17 个未提交修订均已用归档标签推送保存。
 - [链接移动设备：官方机制实测、17 项差距图与体验对齐实施](sessions/2026-09-18-link-device-alignment.md) — 2026-09-18；已验证，范围见正文。从官方产物实测「Link Mobile Device」：右上角图标一键 approveAgent（永久 Mobile QR）、4 秒按住显示、60 秒自动关闭、二维码为 /trade?link= 明文私钥、手机解析后以 API 钱包身份连接。我方实现更严格但生产不可达（Lambda 对票据路由固定 503、开关关闭）。41 代理工作流产出 17 项差距并逐项对抗核验；按 ADR 0015 实施 D1–D6（顶栏入口、单步审批、官方文案、圆环按住、倒计时、手机端 Agent-only 原因、扫描器相机选择、显式 local scope），D7 票据存储三备选待用户决定。
 - [邮箱钱包标识、密钥导出入口及发送网络说明修复](sessions/2026-09-16-email-wallet-ui-fix.md) — 2026-09-16；已整理，验证见正文。修复紧凑布局邮箱身份显示，补齐精确所有者邮箱钱包导出入口，区分 HyperCore 发送与 Arbitrum 提款；真实密钥导出未执行。
@@ -164,6 +165,7 @@
 | 2026-09-21 | [全部平仓：确认按钮改为静态动词，点击即关闭弹窗，结果只走右下角通知](sessions/2026-09-21-close-all-submit-and-dismiss.md) | 未取得任务标识，见正文 | `cbdadae9` | 已验证，范围见正文 |
 | 2026-09-21 | [资金类弹层：官方终端前端包取证与修复方案（未实施）](sessions/2026-09-21-funds-dialog-official-practice.md) | 未取得任务标识，见正文 | `e15ee0de` | 已整理，验证见正文 |
 | 2026-09-21 | [资金类弹层的结果反馈：划转、发送、提现、充值三步实施](sessions/2026-09-21-funds-dialog-outcomes.md) | 未取得任务标识，见正文 | `951125e0` | 已验证，范围见正文 |
+| 2026-09-21 | [本地 3006 邮箱身份可见但钱包不可用，普通刷新恢复](sessions/2026-09-21-local-email-session-recovery.md) | 未取得任务标识，见正文 | `246c57bc` | 已整理，验证见正文 |
 | 2026-09-21 | [移动端市价与限价平仓弹层没有任何明确的退出控件：恢复关闭按钮，移除标题栏里重复的标识](sessions/2026-09-21-mobile-close-dialog-dismiss.md) | 未取得任务标识，见正文 | `c0a9e8bd` | 已验证，范围见正文 |
 | 2026-09-21 | [其余交易弹层与按钮：不在按钮上显示提交进度，点击即关闭，结果走右下角通知；资金类只改按钮名称](sessions/2026-09-21-remaining-dialogs-submit-and-dismiss.md) | 未取得任务标识，见正文 | `2429368b` | 已验证，范围见正文 |
 | 2026-09-21 | [交易面板之外的同类功能块：推荐、API 钱包、金库、质押的结果反馈；LiFi 跨链桥有意不改](sessions/2026-09-21-remaining-funds-action-blocks.md) | 未取得任务标识，见正文 | `daa5ec7f` | 已验证，范围见正文 |
