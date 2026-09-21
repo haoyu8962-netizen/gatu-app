@@ -3,6 +3,7 @@ import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select
 import { useLingui } from "@lingui/react/macro";
 import { PaperPlaneTiltIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -32,17 +33,15 @@ import { type ExchangeParams, useExchange, useHyperliquid } from "@/lib/hyperliq
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import {
 	FundsActionFeedbackCause,
-	type FundsActionFeedbackCode,
 	formatFundsActionFeedback,
 	fundsActionFeedbackCause,
 } from "@/lib/trade/funds-action-feedback";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { formatTokenId } from "@/lib/trade/token-id";
+import { clearSendDraft, getSendDraft, saveSendDraft } from "@/stores/use-send-draft-store";
 import { PendingActionModal } from "../components/pending-action-modal";
 
 type AccountType = "perp" | "spot";
-
-type SendError = { kind: "local"; code: FundsActionFeedbackCode } | { kind: "raw"; cause: unknown };
 
 interface SendSubmission {
 	identity: object;
@@ -92,16 +91,15 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const submissionIdentityRef = useRef<object | null>(null);
 	const submissionRef = useRef<SendSubmission | null>(null);
 	const requestSubmissionsRef = useRef(new WeakMap<object, SendSubmission>());
-	const [destination, setDestination] = useState("");
+	const { clientKey, env, exchangeLifecycle, sessionMode: exchangeSessionMode } = useHyperliquid();
+	const draftOwnerKey = `${env}:${clientKey.toLowerCase()}`;
+	const [restoredDraft] = useState(() => getSendDraft(draftOwnerKey));
+	const restoresAsset =
+		restoredDraft !== null && restoredDraft.token === initialAsset && restoredDraft.accountType === initialAccountType;
+	const [destination, setDestination] = useState(restoredDraft?.destination ?? "");
 	const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
 	const [selectedToken, setSelectedToken] = useState(initialAsset);
-	const [amount, setAmount] = useState("");
-	const [error, setError] = useState<SendError | null>(null);
-	const errorMessage = error
-		? error.kind === "local"
-			? formatFundsActionFeedback(error.code, (descriptor) => t(descriptor))
-			: formatExchangeActionError(error.cause, t`Send failed`)
-		: null;
+	const [amount, setAmount] = useState(restoresAsset ? restoredDraft.amount : "");
 
 	const { getToken } = useSpotTokens();
 	const {
@@ -128,8 +126,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		tokenId: "",
 		source: "spot" as "spot" | "perp",
 	});
-	const { address, hasWalletAccess, sessionMode: walletSessionMode, walletAddress } = useWalletSession();
-	const { clientKey, env, exchangeLifecycle, sessionMode: exchangeSessionMode } = useHyperliquid();
+	const { address, hasWalletAccess, sessionMode: walletSessionMode, walletAddress, walletIntent } = useWalletSession();
 	const submissionIdentityKey = [
 		env,
 		clientKey.toLowerCase(),
@@ -360,7 +357,8 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		submissionRef.current = submission;
 		const isCurrentSubmission = () =>
 			submissionIdentityRef.current === submissionIdentity && submissionSequenceRef.current === submissionSequence;
-		setError(null);
+		const sentAmount = amount;
+		const sentToken = selectedToken;
 		try {
 			if (usesTradingAccount) {
 				await sendAsset({
@@ -385,18 +383,26 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 					amount,
 				});
 			}
-			if (isCurrentSubmission()) {
-				setDestination("");
-				setAmount("");
-				onOpenChange(false);
-			}
+			clearSendDraft();
+			if (isCurrentSubmission()) toast.success(t`Sent ${sentAmount} ${sentToken}`);
 		} catch (err) {
-			if (!isCurrentSubmission()) return;
-			setError(
-				err instanceof FundsActionFeedbackCause ? { kind: "local", code: err.code } : { kind: "raw", cause: err },
-			);
+			if (isCurrentSubmission()) {
+				saveSendDraft({
+					ownerKey: draftOwnerKey,
+					destination,
+					amount: sentAmount,
+					token: sentToken,
+					accountType: activeAccountType,
+				});
+				toast.error(
+					err instanceof FundsActionFeedbackCause
+						? formatFundsActionFeedback(err.code, (descriptor) => t(descriptor))
+						: formatExchangeActionError(err, t`Send failed`),
+				);
+			}
 		} finally {
 			if (submissionRef.current === submission) submissionRef.current = null;
+			if (isCurrentSubmission()) onOpenChange(false);
 		}
 	}
 
@@ -497,19 +503,9 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 						)}
 					/>
 
-					{errorMessage && (
-						<div
-							role="alert"
-							className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error"
-						>
-							<WarningCircleIcon className="size-3.5 shrink-0" />
-							<span className="flex-1">{errorMessage}</span>
-						</div>
-					)}
-
 					<Button variant="filled" intent="neutral" onClick={handleSend} disabled={!canSend} className="w-full">
 						<PaperPlaneTiltIcon className="me-2 size-3.5" />
-						{t`Send`}
+						{isPending && walletIntent === "external" ? t`Confirm in wallet` : t`Send`}
 					</Button>
 				</div>
 			</ModalContent>

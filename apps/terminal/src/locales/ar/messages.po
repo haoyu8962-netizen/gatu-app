@@ -1668,6 +1668,8 @@ msgstr "تأكيد مسح السجل غير القابل للقراءة"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "أكّد في المحفظة"
@@ -6749,6 +6751,10 @@ msgstr "أرسل USDC إلى عنوان محفظتك أدناه."
 #~ msgid "Sending..."
 #~ msgstr "جارٍ الإرسال..."
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Sent {sentAmount} {sentToken}"
+msgstr "تم إرسال {sentAmount} {sentToken}"
+
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Server unlock time: {0}"
@@ -8630,6 +8636,10 @@ msgstr "تحويل"
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Transfer between Perps and Spot"
 msgstr "التحويل بين العقود الدائمة والتداول الفوري"
+
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Transfer confirmed"
+msgstr "تم تأكيد التحويل"
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"

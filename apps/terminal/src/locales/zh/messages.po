@@ -1668,6 +1668,8 @@ msgstr "确认清除不可读记录"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "在钱包中确认"
@@ -6749,6 +6751,10 @@ msgstr "将 USDC 转入下方的钱包地址。"
 #~ msgid "Sending..."
 #~ msgstr "发送中..."
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Sent {sentAmount} {sentToken}"
+msgstr "已发送 {sentAmount} {sentToken}"
+
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Server unlock time: {0}"
@@ -8630,6 +8636,10 @@ msgstr "划转"
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Transfer between Perps and Spot"
 msgstr "在永续与现货之间划转"
+
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Transfer confirmed"
+msgstr "划转已确认"
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"

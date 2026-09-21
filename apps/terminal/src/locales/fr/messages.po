@@ -1668,6 +1668,8 @@ msgstr "Confirmer l’effacement de l’enregistrement illisible"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "Confirmer dans le portefeuille"
@@ -6749,6 +6751,10 @@ msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
 #~ msgid "Sending..."
 #~ msgstr "Envoi en cours..."
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Sent {sentAmount} {sentToken}"
+msgstr "{sentAmount} {sentToken} envoyés"
+
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Server unlock time: {0}"
@@ -8630,6 +8636,10 @@ msgstr "Transférer"
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Transfer between Perps and Spot"
 msgstr "Transférer entre perpétuels et spot"
+
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Transfer confirmed"
+msgstr "Transfert confirmé"
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
