@@ -110,10 +110,11 @@ describe("order confirmation modal", () => {
 		return button;
 	}
 
-	it("names the action with the side and has no submitting state", () => {
+	it("offers one action named with the side, no Cancel button and no submitting state", () => {
 		render(true);
-		expect(getConfirm().textContent).toBe("Long");
+		expect(getConfirm().textContent).toBe("Buy / Long");
 		expect(getConfirm().disabled).toBe(false);
+		expect([...document.querySelectorAll("button")].some((button) => button.textContent === "Cancel")).toBe(false);
 		expect(document.body.textContent).not.toContain("Submitting");
 		expect(document.querySelector('button[aria-label="Close order confirmation"]')).not.toBeNull();
 

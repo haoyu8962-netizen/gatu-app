@@ -23,7 +23,7 @@ const REVIEWED_LABELS: Record<string, LabelReview> = {
 	"trade/positions/position-tpsl-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/tradebox/leverage-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/tradebox/margin-mode-modal.tsx": { dynamic: [], indirect: [] },
-	"trade/tradebox/order-confirmation-modal.tsx": { dynamic: [], indirect: ["sideLabel"] },
+	"trade/tradebox/order-confirmation-modal.tsx": { dynamic: [], indirect: ["submitLabel"] },
 };
 
 describe("TradingActionButton label contract", () => {

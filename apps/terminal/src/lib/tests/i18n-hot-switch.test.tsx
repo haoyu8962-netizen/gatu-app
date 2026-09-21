@@ -30,6 +30,8 @@ const zhTranslations: Record<string, string> = {
 	Type: "类型",
 	Side: "方向",
 	Action: "操作",
+	"Buy / Long": "买入 / 做多",
+	"Sell / Short": "卖出 / 做空",
 	Long: "多",
 	Short: "空",
 	"Post Only": "只挂单",
@@ -483,13 +485,20 @@ describe("language hot switching", () => {
 	});
 
 	it.each([
-		{ marketKind: "perp", side: "buy", english: "Long", chinese: "多" },
-		{ marketKind: "perp", side: "sell", english: "Short", chinese: "空" },
-		{ marketKind: "spot", side: "buy", english: "Buy", chinese: "买入" },
-		{ marketKind: "spot", side: "sell", english: "Sell", chinese: "卖出" },
+		{ marketKind: "perp", side: "buy", english: "Long", chinese: "多", cta: "Buy / Long", ctaChinese: "买入 / 做多" },
+		{
+			marketKind: "perp",
+			side: "sell",
+			english: "Short",
+			chinese: "空",
+			cta: "Sell / Short",
+			ctaChinese: "卖出 / 做空",
+		},
+		{ marketKind: "spot", side: "buy", english: "Buy", chinese: "买入", cta: "Buy", ctaChinese: "买入" },
+		{ marketKind: "spot", side: "sell", english: "Sell", chinese: "卖出", cta: "Sell", ctaChinese: "卖出" },
 	] as const)(
 		"hot-switches a stable $marketKind $side confirmation without sending it",
-		({ marketKind, side, english, chinese }) => {
+		({ marketKind, side, english, chinese, cta: ctaEnglish, ctaChinese }) => {
 			const onConfirm = vi.fn();
 			const draft = { ...confirmationDraft, marketKind, side };
 			act(() =>
@@ -509,19 +518,19 @@ describe("language hot switching", () => {
 			const rows = document.querySelector('[data-testid="order-confirmation-rows"]');
 			expect(rows?.textContent).toContain("Limit · Post Only");
 			expect(rows?.textContent).toContain(`Action${english}`);
-			const cta = [...document.querySelectorAll("button")].find((button) => button.textContent === english);
+			const cta = [...document.querySelectorAll("button")].find((button) => button.textContent === ctaEnglish);
 			expect(cta).not.toBeUndefined();
 			act(() => activateLocale("zh"));
 			expect(document.querySelector('[data-testid="order-confirmation-rows"]')).toBe(rows);
 			expect(rows?.textContent).toContain("类型限价 · 只挂单");
 			expect(rows?.textContent).toContain(`操作${chinese}`);
-			expect(cta?.textContent).toBe(chinese);
+			expect(cta?.textContent).toBe(ctaChinese);
 			expect(rows?.textContent).toContain("$100,000");
 			act(() => activateLocale("en"));
 			expect(document.querySelector('[data-testid="order-confirmation-rows"]')).toBe(rows);
 			expect(rows?.textContent).toContain("TypeLimit · Post Only");
 			expect(rows?.textContent).toContain(`Action${english}`);
-			expect(cta?.textContent).toBe(english);
+			expect(cta?.textContent).toBe(ctaEnglish);
 			expect(draft.tif).toBe("Alo");
 			expect(draft.side).toBe(side);
 			expect(onConfirm).not.toHaveBeenCalled();

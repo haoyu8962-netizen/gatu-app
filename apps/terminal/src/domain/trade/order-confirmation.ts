@@ -89,6 +89,14 @@ export function getOrderConfirmationSideLabel(
 	return translate(draft.side === "buy" ? msg`Long` : msg`Short`);
 }
 
+export function getOrderConfirmationSubmitLabel(
+	draft: Pick<OrderConfirmationDraft, "marketKind" | "side">,
+	translate: (message: MessageDescriptor) => string = translateOrderMessage,
+): string {
+	if (draft.marketKind === "spot") return getOrderConfirmationSideLabel(draft, translate);
+	return translate(draft.side === "buy" ? msg`Buy / Long` : msg`Sell / Short`);
+}
+
 function getOrderTypeRows(
 	draft: OrderConfirmationDraft,
 	translate: (message: MessageDescriptor) => string,

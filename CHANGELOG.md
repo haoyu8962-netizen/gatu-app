@@ -50,7 +50,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   leverage, order value, margin and fee rows were removed; they remain in the order form summary.
   Rows that define an advanced order still appear when they apply: the order type (advanced types
   and limit orders that are not good-till-cancelled), trigger, scale and TWAP parameters, take
-  profit / stop loss and reduce only.
+  profit / stop loss and reduce only. The dialog has a single action button (`Buy / Long` or
+  `Sell / Short`; `Buy` or `Sell` on spot) and no Cancel button, because the close button already
+  dismisses it, and its rows are spaced further apart.
 - Amounts and transaction hashes in transfer, swap, deposit, withdrawal, vault and staking
   notifications keep their left-to-right order when the interface language is Arabic.
 - After a USDC deposit is confirmed on Arbitrum the Deposit dialog closes. While Circle forwards it

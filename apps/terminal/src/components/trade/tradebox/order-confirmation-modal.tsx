@@ -1,6 +1,5 @@
 import {
 	AdaptiveModal,
-	Button,
 	Checkbox,
 	ModalContent,
 	ModalDescription,
@@ -12,7 +11,7 @@ import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import {
 	buildOrderConfirmationRows,
-	getOrderConfirmationSideLabel,
+	getOrderConfirmationSubmitLabel,
 	type OrderConfirmationDraft,
 	type OrderConfirmationTone,
 } from "@/domain/trade/order-confirmation";
@@ -44,7 +43,7 @@ export function OrderConfirmationModal({
 	const { _ } = useLingui();
 	const isMobile = useIsMobile();
 	const rows = buildOrderConfirmationRows(draft, _);
-	const sideLabel = getOrderConfirmationSideLabel(draft, _);
+	const submitLabel = getOrderConfirmationSubmitLabel(draft, _);
 
 	function handleConfirm() {
 		if (!open) return;
@@ -72,10 +71,10 @@ export function OrderConfirmationModal({
 				</ModalDescription>
 			</ModalHeader>
 
-			<ModalContent className="flex flex-col gap-3 px-4 pt-4 pb-0 min-[1001px]:gap-4 min-[1001px]:px-6">
+			<ModalContent className="flex flex-col gap-4 px-4 pt-5 pb-0 min-[1001px]:gap-5 min-[1001px]:px-6">
 				<dl
 					data-testid="order-confirmation-rows"
-					className="flex max-h-[46dvh] flex-col gap-2.5 overflow-y-auto text-2sm"
+					className="flex max-h-[46dvh] flex-col gap-3.5 overflow-y-auto text-2sm leading-5"
 				>
 					{rows.map((row) => (
 						<div key={row.key} className="flex items-center justify-between gap-4">
@@ -101,17 +100,7 @@ export function OrderConfirmationModal({
 				/>
 			</ModalContent>
 
-			<ModalFooter className="flex-col items-stretch gap-2 px-4 pt-4 pb-4 min-[1001px]:flex-row min-[1001px]:px-6 min-[1001px]:pb-6">
-				<Button
-					variant="outline"
-					intent="neutral"
-					size="lg"
-					disabled={!open}
-					onClick={() => onOpenChange(false)}
-					className="min-h-11 w-full rounded-[10px] border-market-close-stroke-input text-2sm font-bold text-market-close-fg hover:not-data-disabled:border-market-close-control min-[1001px]:min-h-10"
-				>
-					{_(msg`Cancel`)}
-				</Button>
+			<ModalFooter className="px-4 pt-4 pb-4 min-[1001px]:px-6 min-[1001px]:pb-6">
 				<TradingActionButton
 					requiresBuilderFee={!isTwapOrderType(draft.orderType)}
 					onClick={handleConfirm}
@@ -124,7 +113,7 @@ export function OrderConfirmationModal({
 						getTradingCtaClass(draft.side),
 					)}
 				>
-					{sideLabel}
+					{submitLabel}
 				</TradingActionButton>
 			</ModalFooter>
 		</AdaptiveModal>
