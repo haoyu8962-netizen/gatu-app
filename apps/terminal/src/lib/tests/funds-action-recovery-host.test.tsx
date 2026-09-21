@@ -5,6 +5,7 @@ import { I18nProvider } from "@lingui/react";
 import type { ReactNode } from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { Toaster, toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	clearFundsActionMarkersForTests,
@@ -74,12 +75,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 	},
 }));
 
-describe("FundsActionRecoveryHost", () => {
+describe("FundsActionRecoveryHost", async () => {
 	let container: HTMLDivElement;
 	let root: Root;
 	let originalLocks: PropertyDescriptor | undefined;
 
 	beforeEach(() => {
+		vi.useFakeTimers();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		mocks.clientKey = WALLET_OWNER;
 		mocks.env = "Mainnet";
@@ -108,15 +110,18 @@ describe("FundsActionRecoveryHost", () => {
 		root = createRoot(container);
 	});
 
-	afterEach(() => {
+	afterEach(async () => {
 		act(() => root.unmount());
+		toast.dismiss();
+		await vi.runAllTimersAsync();
+		vi.useRealTimers();
 		clearFundsActionMarkersForTests();
 		container.remove();
 		if (originalLocks) Object.defineProperty(navigator, "locks", originalLocks);
 		else Reflect.deleteProperty(navigator, "locks");
 	});
 
-	it("shows only the exact wallet owner and ignores an unrelated active Agent owner", () => {
+	it("shows only the exact wallet owner and ignores an unrelated active Agent owner", async () => {
 		mocks.activeAgentOwner = { env: "Mainnet", address: AGENT_OWNER };
 		expect(persistFundsActionMarker(createVaultMarker({ owner: WALLET_OWNER, displayAmount: "12.34" }))).toBe(true);
 		expect(persistFundsActionMarker(createStakingMarker({ owner: AGENT_OWNER, displayAmount: "98" }))).toBe(true);
@@ -131,7 +136,7 @@ describe("FundsActionRecoveryHost", () => {
 			),
 		).toBe(true);
 
-		renderHost();
+		await renderHost();
 
 		expect(container.textContent).toContain("Vault deposit");
 		expect(container.textContent).toContain("12.34 USDC");
@@ -140,27 +145,27 @@ describe("FundsActionRecoveryHost", () => {
 		expect(container.textContent).not.toContain("55 USDC");
 	});
 
-	it("fails closed in Agent-only mode unless the exact active owner and environment match", () => {
+	it("fails closed in Agent-only mode unless the exact active owner and environment match", async () => {
 		mocks.clientKey = AGENT_OWNER;
 		mocks.sessionMode = "agent-only";
 		mocks.activeAgentOwner = { env: "Testnet", address: AGENT_OWNER };
 		expect(persistFundsActionMarker(createStakingMarker({ owner: AGENT_OWNER, displayAmount: "7.5" }))).toBe(true);
 
-		renderHost();
+		await renderHost();
 		expect(container.textContent).toBe("");
 
 		mocks.activeAgentOwner = { env: "Mainnet", address: AGENT_OWNER };
-		renderHost();
+		await renderHost();
 		expect(container.textContent).toContain("Staking deposit");
 		expect(container.textContent).toContain("7.5 HYPE");
 
 		mocks.activeAgentOwner = { env: "Mainnet", address: WALLET_OWNER };
-		renderHost();
+		await renderHost();
 		expect(container.textContent).toBe("");
 	});
 
-	it("refreshes from a cross-tab storage event", () => {
-		renderHost();
+	it("refreshes from a cross-tab storage event", async () => {
+		await renderHost();
 		expect(container.textContent).toBe("");
 
 		const marker = createVaultMarker({ owner: WALLET_OWNER, displayAmount: "3" });
@@ -175,14 +180,15 @@ describe("FundsActionRecoveryHost", () => {
 			);
 		});
 
+		await act(() => vi.advanceTimersByTimeAsync(0));
 		expect(container.textContent).toContain("Pending funds operation");
 		expect(container.textContent).toContain("3 USDC");
 	});
 
-	it("keeps the record when history has not matched or authoritative state is still unverified", () => {
+	it("keeps the record when history has not matched or authoritative state is still unverified", async () => {
 		const marker = createVaultMarker({ owner: WALLET_OWNER });
 		expect(persistFundsActionMarker(marker)).toBe(true);
-		renderHost();
+		await renderHost();
 		expect(mocks.infoCalls).toContainEqual({
 			method: "userNonFundingLedgerUpdates",
 			params: { user: WALLET_OWNER, startTime: getFundsActionHistoryStartTime(marker.startedAt) },
@@ -192,13 +198,13 @@ describe("FundsActionRecoveryHost", () => {
 		mocks.vaultHistory = [
 			{ time: marker.startedAt + 1, hash: OLD_HASH, delta: { type: "vaultDeposit", vault: VAULT, usdc: "12.34" } },
 		];
-		renderHost();
+		await renderHost();
 		expect(getFundsActionMarkers()).toHaveLength(1);
 
 		mocks.vaultHistory = [
 			{ time: marker.startedAt + 2, hash: NEW_HASH, delta: { type: "vaultDeposit", vault: VAULT, usdc: "12.34" } },
 		];
-		renderHost();
+		await renderHost();
 		openDetails();
 
 		expect(container.textContent).toContain("A new exact history event matches this request");
@@ -206,10 +212,10 @@ describe("FundsActionRecoveryHost", () => {
 		expect(getFundsActionMarkers()).toEqual([marker]);
 	});
 
-	it("uses the terminal mobile drawer for pending-operation details", () => {
+	it("uses the terminal mobile drawer for pending-operation details", async () => {
 		mocks.isMobile = true;
 		expect(persistFundsActionMarker(createVaultMarker({ owner: WALLET_OWNER }))).toBe(true);
-		renderHost();
+		await renderHost();
 		openDetails();
 
 		expect(container.querySelector('[data-testid="recovery-modal"]')?.getAttribute("data-presentation")).toBe("drawer");
@@ -218,7 +224,7 @@ describe("FundsActionRecoveryHost", () => {
 	it("requires two explicit destructive clicks before clearing the recovery record", async () => {
 		const marker = createVaultMarker({ owner: WALLET_OWNER });
 		expect(persistFundsActionMarker(marker)).toBe(true);
-		renderHost();
+		await renderHost();
 		openDetails();
 
 		clickButton("Clear record");
@@ -229,14 +235,15 @@ describe("FundsActionRecoveryHost", () => {
 		await act(async () => {
 			findButton("Confirm clear record")?.click();
 		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
 		expect(getFundsActionMarkers()).toEqual([]);
 		expect(container.textContent).toBe("");
 	});
 
-	it("does not inherit a clear confirmation when another tab replaces the marker", () => {
+	it("does not inherit a clear confirmation when another tab replaces the marker", async () => {
 		const marker = createVaultMarker({ owner: WALLET_OWNER });
 		expect(persistFundsActionMarker(marker)).toBe(true);
-		renderHost();
+		await renderHost();
 		openDetails();
 		clickButton("Clear record");
 		expect(findButton("Confirm clear record")).toBeDefined();
@@ -259,6 +266,8 @@ describe("FundsActionRecoveryHost", () => {
 			);
 		});
 
+		await act(() => vi.advanceTimersByTimeAsync(500));
+		expect(container.querySelectorAll('[data-sonner-toast][data-removed="false"]')).toHaveLength(1);
 		expect(container.textContent).toContain("99 USDC");
 		expect(findButton("Confirm clear record")).toBeUndefined();
 		clickButton("Clear record");
@@ -270,7 +279,7 @@ describe("FundsActionRecoveryHost", () => {
 		mocks.clientKey = "disconnected";
 		mocks.sessionMode = "disconnected";
 		mocks.isMobile = true;
-		renderHost();
+		await renderHost();
 		window.localStorage.setItem(FUNDS_ACTION_MARKER_STORAGE_KEY, '{"not":"a valid marker list"}');
 		act(() => {
 			window.dispatchEvent(
@@ -282,6 +291,7 @@ describe("FundsActionRecoveryHost", () => {
 			);
 		});
 
+		await act(() => vi.advanceTimersByTimeAsync(0));
 		expect(container.textContent).toContain("Funds operation record unreadable");
 		expect(container.textContent).toContain("New funds actions are locked until this record is resolved");
 		openDetails();
@@ -295,14 +305,15 @@ describe("FundsActionRecoveryHost", () => {
 		await act(async () => {
 			findButton("Confirm clear unreadable record")?.click();
 		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
 		expect(window.localStorage.getItem(FUNDS_ACTION_MARKER_STORAGE_KEY)).toBeNull();
 		expect(container.textContent).toBe("");
 	});
 
-	it("shows the complete public operation tuple without fabricating a transaction hash", () => {
+	it("shows the complete public operation tuple without fabricating a transaction hash", async () => {
 		const marker = createVaultMarker({ owner: WALLET_OWNER });
 		expect(persistFundsActionMarker(marker)).toBe(true);
-		renderHost();
+		await renderHost();
 		openDetails();
 
 		const text = container.textContent ?? "";
@@ -326,14 +337,72 @@ describe("FundsActionRecoveryHost", () => {
 		expect(container.querySelector('a[href*="/tx/"]')).toBeNull();
 	});
 
-	function renderHost() {
+	it("uses the shared Sonner host and hides the old account notification without clearing its marker", async () => {
+		const marker = createVaultMarker({ owner: WALLET_OWNER });
+		expect(persistFundsActionMarker(marker)).toBe(true);
+		await renderHost();
+		expect(container.querySelector("[data-sonner-toast]")?.textContent).toContain("Pending funds operation");
+		expect(container.querySelector(".fixed")).toBeNull();
+		openDetails();
+		mocks.clientKey = AGENT_OWNER;
+		await renderHost();
+		expect(container.textContent).not.toContain("12.34");
+		expect(container.querySelector('[data-testid="recovery-modal"]')).toBeNull();
+		expect(getFundsActionMarkers()).toEqual([marker]);
+	});
+
+	it.each(["account", "network"] as const)(
+		"keeps a recovery notification after a rapid %s switch away and back",
+		async (change) => {
+			const marker = createVaultMarker({ owner: WALLET_OWNER });
+			expect(persistFundsActionMarker(marker)).toBe(true);
+			await renderHost();
+			await act(() => vi.advanceTimersByTimeAsync(50));
+			expect(container.querySelector('[data-sonner-toast][data-removed="false"]')?.textContent).toContain("12.34 USDC");
+
+			if (change === "account") mocks.clientKey = AGENT_OWNER;
+			else mocks.env = "Testnet";
+			await renderHost();
+			await act(() => vi.advanceTimersByTimeAsync(50));
+			mocks.clientKey = WALLET_OWNER;
+			mocks.env = "Mainnet";
+			await renderHost();
+			await act(() => vi.advanceTimersByTimeAsync(500));
+
+			const visible = container.querySelectorAll('[data-sonner-toast][data-removed="false"]');
+			expect(visible).toHaveLength(1);
+			expect(visible[0]?.textContent).toContain("12.34 USDC");
+			expect(getFundsActionMarkers()).toEqual([marker]);
+			openDetails();
+			expect(findButton("Confirm clear record")).toBeUndefined();
+		},
+	);
+
+	it("keeps a recovery marker when the notification is programmatically dismissed", async () => {
+		const marker = createVaultMarker({ owner: WALLET_OWNER });
+		expect(persistFundsActionMarker(marker)).toBe(true);
+		await renderHost();
+		const notification = toast
+			.getToasts()
+			.find((item) => String(item.id).startsWith(`funds-recovery:${marker.id}:presentation:`));
+		expect(notification).toBeDefined();
+		act(() => {
+			if (notification) toast.dismiss(notification.id);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(400));
+		expect(getFundsActionMarkers()).toEqual([marker]);
+	});
+
+	async function renderHost() {
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
 					<FundsActionRecoveryHost />
+					<Toaster />
 				</I18nProvider>,
 			),
 		);
+		await act(() => vi.advanceTimersByTimeAsync(0));
 	}
 
 	function findButton(label: string) {

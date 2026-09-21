@@ -2,7 +2,6 @@ import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
@@ -605,10 +604,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	const handleAccountModeChange = useCallback(
 		async (nextAccountMode: SelectableAccountAbstraction) => {
-			const didUpdate = await accountModeControl.setAccountAbstraction(nextAccountMode);
-			if (didUpdate) toast.success(t`Account mode updated`);
+			await accountModeControl.setAccountAbstraction(nextAccountMode);
 		},
-		[accountModeControl.setAccountAbstraction, t],
+		[accountModeControl.setAccountAbstraction],
 	);
 
 	const handleMarginDialogOpenChange = useCallback(

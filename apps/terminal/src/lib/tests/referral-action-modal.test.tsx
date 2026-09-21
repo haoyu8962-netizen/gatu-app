@@ -1,3 +1,4 @@
+import { clearFeedback, feedbackErrorText, feedbackText, latestFeedback } from "./harness/order-feedback";
 // @vitest-environment jsdom
 
 import { createHash } from "node:crypto";
@@ -36,16 +37,23 @@ vi.mock("@gatu/ui", () => ({
 	TextInput: () => <input />,
 }));
 
-const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning: vi.fn() }));
-vi.mock("sonner", () => ({ toast: toastMocks }));
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 vi.mock("@/lib/number-format-reactivity", () => ({ useNumberFormatRevision: () => 0 }));
+
+const feedbackIdentity = vi.hoisted(() => ({
+	clientKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	env: "Mainnet",
+}));
+vi.mock("@/lib/hyperliquid", () => ({ useHyperliquid: () => feedbackIdentity }));
 
 describe("ReferralActionModal invitation flow", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		feedbackIdentity.clientKey = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		feedbackIdentity.env = "Mainnet";
+		clearFeedback();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -57,16 +65,6 @@ describe("ReferralActionModal invitation flow", () => {
 		container.remove();
 		vi.clearAllMocks();
 	});
-
-	function renderDescription(call: unknown[] | undefined): string {
-		const options = call?.[1] as { description?: ReactNode } | undefined;
-		const host = document.createElement("div");
-		const descriptionRoot = createI18nRoot(host);
-		act(() => descriptionRoot.render(<span>{options?.description}</span>));
-		const text = host.textContent ?? "";
-		act(() => descriptionRoot.unmount());
-		return text;
-	}
 
 	it("shows a deep-linked code for review without submitting it automatically", async () => {
 		const onSubmit = vi.fn().mockResolvedValue(undefined);
@@ -176,10 +174,10 @@ describe("ReferralActionModal invitation flow", () => {
 		expect(onSubmit).toHaveBeenCalledOnce();
 		expect(onClose).toHaveBeenCalledOnce();
 		expect(container.textContent).not.toContain("Waiting for confirmation");
-		expect(toastMocks.success).not.toHaveBeenCalled();
+		expect(latestFeedback("success")).toBeUndefined();
 
 		await act(async () => settle());
-		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Rewards claimed", expect.anything());
+		expect(feedbackText("success", "title")).toBe("Rewards claimed");
 		expect(onClose).toHaveBeenCalledOnce();
 	});
 
@@ -197,10 +195,10 @@ describe("ReferralActionModal invitation flow", () => {
 			await Promise.resolve();
 		});
 
-		expect(toastMocks.error).toHaveBeenCalledOnce();
-		expect(renderDescription(toastMocks.error.mock.calls[0])).toContain(ARABIC_REFERRAL_FAILURE);
-		expect(renderDescription(toastMocks.error.mock.calls[0])).not.toContain(REFERRAL_FAILURE);
-		expect(toastMocks.warning).not.toHaveBeenCalled();
+		expect(latestFeedback("failed")).toBeDefined();
+		expect(feedbackErrorText(latestFeedback("failed"))).toContain(ARABIC_REFERRAL_FAILURE);
+		expect(feedbackErrorText(latestFeedback("failed"))).not.toContain(REFERRAL_FAILURE);
+		expect(latestFeedback("unconfirmed")).toBeUndefined();
 		expect(onSubmit).toHaveBeenCalledOnce();
 	});
 
@@ -215,10 +213,47 @@ describe("ReferralActionModal invitation flow", () => {
 			await Promise.resolve();
 		});
 
-		expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith(
-			"Request not confirmed",
-			expect.objectContaining({ closeButton: true, duration: Number.POSITIVE_INFINITY }),
-		);
-		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(feedbackText("unconfirmed", "title")).toBe("Request not confirmed");
+		expect(latestFeedback("failed")).toBeUndefined();
 	});
+
+	it.each(["success", "failed", "unconfirmed"] as const)(
+		"keeps a late %s referral result under its original identity",
+		async (status) => {
+			let settle: (() => void) | undefined;
+			const onSubmit = vi.fn(
+				() =>
+					new Promise<void>((resolve, reject) => {
+						settle = () =>
+							status === "success"
+								? resolve()
+								: reject(
+										status === "unconfirmed" ? new ReferralActionStatusUnknownError() : new Error("Referral rejected"),
+									);
+					}),
+			);
+			const onClose = vi.fn();
+			act(() =>
+				root.render(<ReferralActionModal action="claim" unclaimedRewards={[]} onClose={onClose} onSubmit={onSubmit} />),
+			);
+			const claim = Array.from(container.querySelectorAll("button")).find(
+				(button) => button.textContent === "Claim all",
+			);
+			act(() => claim?.click());
+			const pendingId = latestFeedback("pending")?.id;
+			expect(pendingId).toBeDefined();
+
+			feedbackIdentity.clientKey = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+			feedbackIdentity.env = "Testnet";
+			act(() => root.render(null));
+			await act(async () => settle?.());
+			expect(latestFeedback(status)).toMatchObject({
+				id: pendingId,
+				owner: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				env: "Mainnet",
+			});
+			expect(onSubmit).toHaveBeenCalledOnce();
+			expect(onClose).toHaveBeenCalledOnce();
+		},
+	);
 });

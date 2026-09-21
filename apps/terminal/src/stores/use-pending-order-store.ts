@@ -8,8 +8,48 @@ import {
 	type TrackedOrderChild,
 } from "@/domain/trade/order-tracking";
 import { z } from "@/lib/zod";
+import type { OrderQueueMetadata } from "@/stores/use-order-queue-store";
 
 const cloidSchema = z.string().regex(/^0x[a-fA-F0-9]{32}$/);
+const feedbackMessageSchema = z.object({
+	id: z.string(),
+	message: z.string().optional(),
+	values: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+});
+const orderQueueMetadataSchema = z.object({
+	title: feedbackMessageSchema.optional(),
+	message: feedbackMessageSchema.optional(),
+	operation: z.enum(["order", "market-close", "close-all", "spot-swap"]).optional(),
+	market: z.string().optional(),
+	side: z.enum(["buy", "sell"]).optional(),
+	size: z.string().optional(),
+	price: z.string().optional(),
+	orderType: z.enum(["market", "limit", "trigger", "scale", "twap"]).optional(),
+	tpPrice: z.string().optional(),
+	slPrice: z.string().optional(),
+	countMode: z.enum(["accepted", "filled"]).optional(),
+	children: z
+		.array(
+			z.object({
+				assetId: z.number().int().nonnegative(),
+				market: z.string().optional(),
+				size: z.string().optional(),
+				filledSize: z.string().optional(),
+				status: z.enum([
+					"pending",
+					"filled",
+					"filled-unverified",
+					"partial",
+					"accepted",
+					"rejected",
+					"unknown",
+					"canceled",
+				]),
+				error: z.string().optional(),
+			}),
+		)
+		.optional(),
+});
 const pendingOrderSubmissionSchema = z.object({
 	id: z.string(),
 	env: z.enum(["Mainnet", "Testnet"]),
@@ -19,6 +59,7 @@ const pendingOrderSubmissionSchema = z.object({
 	confirmationMode: z.enum(["accepted", "filled"]).optional(),
 	origin: z.object({ type: z.literal("positionMarketClose"), sessionId: z.string().min(1) }).optional(),
 	queueId: z.string().optional(),
+	feedback: orderQueueMetadataSchema.optional().catch(undefined),
 	createdAt: z.number().int().nonnegative(),
 	unconfirmedAt: z.number().int().nonnegative().optional(),
 	children: z.array(
@@ -51,6 +92,7 @@ export interface PendingOrderSubmission {
 	confirmationMode?: "accepted" | "filled";
 	origin?: PendingOrderOrigin;
 	queueId?: string;
+	feedback?: OrderQueueMetadata;
 	createdAt: number;
 	unconfirmedAt?: number;
 	children: PendingOrderChild[];
@@ -64,6 +106,7 @@ interface AddPendingOrderInput {
 	confirmationMode?: "accepted" | "filled";
 	origin?: PendingOrderOrigin;
 	queueId?: string;
+	feedback?: OrderQueueMetadata;
 	children: TrackedOrderChild[];
 }
 
@@ -81,6 +124,7 @@ interface PendingOrderStore {
 	activeSubmissionIds: Set<string>;
 	actions: {
 		add: (input: AddPendingOrderInput) => PendingOrderSubmission;
+		updateFeedback: (id: string, feedback: OrderQueueMetadata) => void;
 		markActive: (id: string) => void;
 		clearActive: (id: string) => void;
 		remove: (id: string) => void;
@@ -287,6 +331,17 @@ export function createPendingOrderStore(storage: PendingOrderStorage | null = ge
 					};
 				});
 				return submission;
+			},
+			updateFeedback: (id, feedback) => {
+				set((state) => {
+					const current = readPersistedPendingOrders(storage) ?? state.submissions;
+					const submission = current.find((entry) => entry.id === id);
+					if (!submission) return state;
+					const next = { ...submission, feedback };
+					writePersistedPendingOrder(storage, next);
+					const submissions = current.map((entry) => (entry.id === id ? next : entry));
+					return { submissions: mergeMutationWithPersistedSnapshot(storage, submissions, [next]) };
+				});
 			},
 			markActive: (id) => {
 				set((state) => ({ activeSubmissionIds: new Set(state.activeSubmissionIds).add(id) }));

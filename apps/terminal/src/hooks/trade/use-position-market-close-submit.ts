@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { HL_ALL_DEXS } from "@/config/app";
 import type { ExchangeOrder } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
+import { getCloseOrderFeedbackChildren, summarizeCloseOrderFeedback } from "@/domain/trade/close-order-feedback";
 import { isLiveExecutionPriceReceiptFresh } from "@/domain/trade/market-price";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
@@ -14,7 +15,6 @@ import {
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
-import { formatToken } from "@/lib/format";
 import {
 	type ExchangeParams,
 	parseAssetId,
@@ -30,7 +30,6 @@ import { toBig } from "@/lib/trade/numbers";
 import { getOrderAssetReservationState, runWithAvailableOrderAssetLocks } from "@/lib/trade/order-asset-lock";
 import { dismissPositionMarketCloseConfirmation } from "@/lib/trade/position-market-close-confirmation-preference";
 import {
-	formatPositionSubmitFeedback,
 	getPositionMarketClosePlanFeedback,
 	localizedPositionSubmitFeedback,
 	PositionSubmitFeedbackCause,
@@ -45,6 +44,7 @@ import {
 } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBpsString } from "@/stores/use-global-settings-store";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
+import { addOrderQueueItem, getOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import { getPersistedPendingOrderAssetState } from "@/stores/use-pending-order-store";
 import { getPersistedPendingTwapAssetState } from "@/stores/use-pending-twap-store";
 
@@ -133,6 +133,25 @@ export function usePositionMarketCloseSubmit() {
 		if (!currentSession || currentSession.sessionId !== input.sessionId || currentSession.phase !== "idle") return;
 
 		const openedPresentation = currentSession.presentation;
+		const queueId = addOrderQueueItem({
+			id: `market-close:${input.sessionId}`,
+			owner: currentSession.owner,
+			env: currentSession.env,
+			operation: "market-close",
+			market: currentSession.position.coin,
+			size: input.confirmedCloseSize ?? undefined,
+			orderType: "market",
+			countMode: "filled",
+			status: "pending",
+			children: [
+				{
+					assetId: currentSession.position.assetId,
+					market: currentSession.position.coin,
+					size: input.confirmedCloseSize ?? undefined,
+					status: "pending",
+				},
+			],
+		});
 		actions.dismiss(input.sessionId);
 		actions.updatePhase(input.sessionId, "validating");
 		executionContextRef.current = null;
@@ -222,6 +241,18 @@ export function usePositionMarketCloseSubmit() {
 					}
 
 					const order = plan.orders[0];
+					const targets = [
+						{
+							assetId: refreshedSession.position.assetId,
+							market: refreshedSession.position.coin,
+							size: String(order.s),
+						},
+					];
+					updateOrderQueueItem(queueId, {
+						size: String(order.s),
+						side: order.b ? "buy" : "sell",
+						children: targets.map((target) => ({ ...target, status: "pending" })),
+					});
 					executionContextRef.current = {
 						sessionId: refreshedSession.sessionId,
 						owner: refreshedSession.owner,
@@ -240,6 +271,9 @@ export function usePositionMarketCloseSubmit() {
 						{ orders: plan.orders, grouping: plan.grouping },
 						{
 							assetLockLease,
+							queueId,
+							onResponse: (response) =>
+								updateOrderQueueItem(queueId, { children: getCloseOrderFeedbackChildren(targets, response) }),
 							riskContext: { marketKind: "perp", marginMode: fresh.marginMode },
 							exclusiveAssetLock: true,
 							confirmationMode: "filled",
@@ -247,21 +281,22 @@ export function usePositionMarketCloseSubmit() {
 						},
 					);
 					if (submission.state === "blocked") {
-						toast.error(
-							formatPositionSubmitFeedback(localizedPositionSubmitFeedback("blocked-market"), (descriptor) =>
-								t(descriptor),
-							),
-						);
+						updateOrderQueueItem(queueId, {
+							status: "failed",
+							error: localizedPositionSubmitFeedback("blocked-market"),
+							children: targets.map((target) => ({ ...target, status: "rejected" })),
+						});
 						actions.updatePhase(input.sessionId, "idle");
 						actions.close(input.sessionId);
 						return;
 					}
 					if (submission.state === "reconciling") {
-						toast.warning(
-							formatPositionSubmitFeedback(localizedPositionSubmitFeedback("reconciling-order"), (descriptor) =>
-								t(descriptor),
+						updateOrderQueueItem(queueId, {
+							status: "confirming",
+							children: getOrderQueueItem(queueId)?.children?.map((child) =>
+								child.status === "pending" ? { ...child, status: "unknown" } : child,
 							),
-						);
+						});
 						actions.updatePhase(input.sessionId, "reconciling");
 						return;
 					}
@@ -272,11 +307,12 @@ export function usePositionMarketCloseSubmit() {
 					if (!filledSize) {
 						throw positionSubmitFeedbackCause("reconciling-order");
 					}
-					toast.success(t`Close order submitted`, {
-						description: formatToken(filledSize, {
-							decimals: refreshedSession.position.szDecimals,
-							symbol: currentMarket?.shortName ?? refreshedSession.position.coin.split(":").pop(),
-						}),
+					updateOrderQueueItem(queueId, {
+						status: "success",
+						outcome: "filled",
+						size: filledSize,
+						acceptedCount: 1,
+						totalCount: 1,
 					});
 					actions.updatePhase(input.sessionId, "idle");
 					actions.close(input.sessionId);
@@ -290,7 +326,16 @@ export function usePositionMarketCloseSubmit() {
 			}
 		} catch (error) {
 			const feedback = positionSubmitFeedbackFromCause(error, "failed-market-close");
-			toast.error(formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor)));
+			const children = getOrderQueueItem(queueId)?.children ?? [];
+			const summary = summarizeCloseOrderFeedback(children);
+			const partial = summary.hasPartialFill || summary.filledCount > 0;
+			updateOrderQueueItem(queueId, {
+				status: partial ? "partial" : "failed",
+				error: partial ? undefined : feedback,
+				acceptedCount: summary.filledCount,
+				totalCount: summary.totalCount,
+				children: children.map((child) => (child.status === "pending" ? { ...child, status: "rejected" } : child)),
+			});
 			const activeSession = getPositionMarketCloseModal();
 			if (activeSession?.sessionId === input.sessionId) {
 				actions.updatePhase(input.sessionId, "idle");

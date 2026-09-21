@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { Button, Dropdown } from "@gatu/ui";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { act, createRef, type ReactNode } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 import { SizePercentInput } from "@/components/trade/components/size-percent-input";
@@ -67,7 +67,7 @@ it("renders the disabled zero slider through the same view with identical SSR", 
 			unavailable
 			showTicks
 			ticks={[0, 25, 50, 75, 100]}
-			inputProps={{ min: 0, max: 100, step: 1, defaultValue: 0, disabled: true, "aria-valuetext": "0%" }}
+			inputProps={{ min: 0, max: 100, step: 1, defaultValue: 0, "aria-valuetext": "0%" }}
 		/>,
 	);
 	expect(placeholder.innerHTML).toBe(runtime.innerHTML);
@@ -87,6 +87,51 @@ it("renders the disabled zero slider through the same view with identical SSR", 
 		]);
 	}
 });
+
+it("hydrates disabled slider availability before interaction and enables input when its guard clears", async () => {
+	const onCommit = vi.fn();
+	const onRecoverableError = vi.fn();
+	function slider(disabled: boolean) {
+		return (
+			<TradeSlider
+				value={0}
+				min={0}
+				max={100}
+				disabled={disabled}
+				showTicks
+				ariaLabel="Size (%)"
+				ariaValueText="0%"
+				onPreview={noop}
+				onCancel={noop}
+				onCommit={onCommit}
+			/>
+		);
+	}
+	const host = dom(slider(true));
+	document.body.appendChild(host);
+	let root: Root | undefined;
+	try {
+		// Availability is written by the controller's layout effect, never by a competing React disabled prop.
+		expect(host.querySelector<HTMLInputElement>("input")?.disabled).toBe(false);
+		await act(async () => {
+			root = hydrateRoot(host, slider(true), { onRecoverableError });
+		});
+		const input = required(host.querySelector<HTMLInputElement>("input"));
+		expect(input.disabled).toBe(true);
+		act(() => input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+		expect(input.value).toBe("0");
+		expect(onCommit).not.toHaveBeenCalled();
+		await act(async () => root?.render(slider(false)));
+		expect(input.disabled).toBe(false);
+		act(() => input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+		expect(onCommit).toHaveBeenCalledExactlyOnceWith(1, expect.objectContaining({ reason: "keyboard" }));
+		expect(onRecoverableError).not.toHaveBeenCalled();
+	} finally {
+		await act(async () => root?.unmount());
+		host.remove();
+	}
+});
+
 it("shares the percent frame with SizePercentInput", () => {
 	const frame = dom(
 		<TradePercentFrameView

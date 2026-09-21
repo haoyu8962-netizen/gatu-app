@@ -1,7 +1,5 @@
-import { i18n } from "@lingui/core";
-import { t } from "@lingui/core/macro";
+import { msg } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
-import { toast } from "sonner";
 import { HL_ALL_DEXS } from "@/config/app";
 import {
 	isAcceptedOrderStatus,
@@ -13,9 +11,18 @@ import {
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { releaseOrderAssetReservations } from "@/lib/trade/order-asset-lock";
-import { formatOrderReconciliationError, orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
+import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
+import {
+	syncPendingTradingActionFeedback,
+	updatePendingTradingActionFeedback,
+} from "@/lib/trade/pending-trading-action-feedback";
 import { getPositionMarketCloseActions, getPositionMarketCloseModal } from "@/stores/use-global-modal-store";
-import { hasOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
+import {
+	addOrderQueueItem,
+	getOrderQueueItem,
+	type OrderQueueItem,
+	updateOrderQueueItem,
+} from "@/stores/use-order-queue-store";
 import {
 	getPendingOrderActions,
 	isOrderStatusFinalForSubmission,
@@ -26,19 +33,12 @@ import {
 } from "@/stores/use-pending-order-store";
 import {
 	getPendingTradingActionActions,
-	getPendingTradingActionToastId,
 	TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
 	usePendingOrderCancellations,
 	usePendingOrderModifications,
 } from "@/stores/use-pending-trading-action-store";
 
 const RECONCILIATION_TICK_MS = 3_000;
-
-interface OrderReconciliationIdentity {
-	env: "Mainnet" | "Testnet";
-	mounted: boolean;
-	owner: string | null;
-}
 
 export function OrderReconciliation() {
 	const { clientKey, env, info } = useHyperliquid();
@@ -49,13 +49,6 @@ export function OrderReconciliation() {
 	const cancellations = usePendingOrderCancellations();
 	const pollingRef = useRef(false);
 	const normalizedAddress = address?.toLowerCase();
-	const identityRef = useRef<OrderReconciliationIdentity>({
-		env,
-		mounted: true,
-		owner: normalizedAddress ?? null,
-	});
-	identityRef.current.env = env;
-	identityRef.current.owner = normalizedAddress ?? null;
 	const hasCurrentTradingAction =
 		!!normalizedAddress &&
 		[...modifications, ...cancellations].some((action) => action.env === env && action.owner === normalizedAddress);
@@ -76,18 +69,16 @@ export function OrderReconciliation() {
 	);
 
 	useEffect(() => {
-		identityRef.current.mounted = true;
-		return () => {
-			identityRef.current.mounted = false;
-		};
-	}, []);
+		for (const modification of modifications) syncPendingTradingActionFeedback(modification, "modify");
+		for (const cancellation of cancellations) syncPendingTradingActionFeedback(cancellation, "cancel");
+	}, [cancellations, modifications]);
 
 	useEffect(() => {
 		const awaiting = [...modifications, ...cancellations].filter(
 			(action) => action.phase === "awaiting" && action.confirmationStartedAt !== null,
 		);
 		const now = Date.now();
-		markExpiredTradingActions(awaiting, now, () => identityRef.current);
+		markExpiredTradingActions(awaiting, now);
 		const nextDeadline = Math.min(
 			...awaiting
 				.map((action) => (action.confirmationStartedAt ?? now) + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS)
@@ -95,10 +86,7 @@ export function OrderReconciliation() {
 		);
 		if (!Number.isFinite(nextDeadline)) return;
 
-		const timer = window.setTimeout(
-			() => markExpiredTradingActions(awaiting, Date.now(), () => identityRef.current),
-			nextDeadline - now,
-		);
+		const timer = window.setTimeout(() => markExpiredTradingActions(awaiting, Date.now()), nextDeadline - now);
 		return () => window.clearTimeout(timer);
 	}, [cancellations, modifications]);
 
@@ -130,13 +118,30 @@ export function OrderReconciliation() {
 					continue;
 				}
 				getPendingTradingActionActions().releaseOrderCancellation(cancellation.id);
-				toast.info(t`The cancellation was not confirmed. Review open orders before retrying.`, {
-					id: getPendingTradingActionToastId(cancellation.id),
+				updatePendingTradingActionFeedback(cancellation, "cancel", {
+					status: "unconfirmed",
+					message: msg`The cancellation was not confirmed. Review open orders before retrying.`,
 				});
 				continue;
 			}
 			for (const oid of cancellation.oids) completedCancellationOids.add(oid);
 			getPendingTradingActionActions().confirmOrderCancellation(cancellation.id);
+			for (const modification of modifications) {
+				if (
+					modification.env === cancellation.env &&
+					modification.owner === cancellation.owner &&
+					cancellation.oids.includes(modification.oid)
+				) {
+					updatePendingTradingActionFeedback(modification, "modify", {
+						status: "canceled",
+						message: msg`The modified order was canceled.`,
+					});
+				}
+			}
+			updatePendingTradingActionFeedback(cancellation, "cancel", {
+				status: "success",
+				message: msg`Order cancellation confirmed.`,
+			});
 		}
 
 		for (const modification of modifications) {
@@ -159,8 +164,9 @@ export function OrderReconciliation() {
 			const matches = openOrders.filter((order) => order.oid === modification.oid);
 			if (matches.length === 0) {
 				getPendingTradingActionActions().resolveModification(modification.id);
-				toast.info(t`The modified order is no longer open.`, {
-					id: getPendingTradingActionToastId(modification.id),
+				updatePendingTradingActionFeedback(modification, "modify", {
+					status: "unconfirmed",
+					message: msg`The modified order is no longer open.`,
 				});
 				continue;
 			}
@@ -169,8 +175,9 @@ export function OrderReconciliation() {
 			if (!latest) continue;
 			if (matchesExpectedModification(modification, latest)) {
 				getPendingTradingActionActions().resolveModification(modification.id);
-				toast.success(t`Order modification confirmed.`, {
-					id: getPendingTradingActionToastId(modification.id),
+				updatePendingTradingActionFeedback(modification, "modify", {
+					status: "success",
+					message: msg`Order modification confirmed.`,
 				});
 				continue;
 			}
@@ -181,10 +188,10 @@ export function OrderReconciliation() {
 					continue;
 				}
 				getPendingTradingActionActions().resolveModification(modification.id);
-				toast.error(
-					t`The order changed before the requested modification was confirmed. Review the latest order before retrying.`,
-					{ id: getPendingTradingActionToastId(modification.id) },
-				);
+				updatePendingTradingActionFeedback(modification, "modify", {
+					status: "failed",
+					message: msg`The order changed before the requested modification was confirmed. Review the latest order before retrying.`,
+				});
 				continue;
 			}
 			if (modification.phase === "unconfirmed") {
@@ -192,8 +199,9 @@ export function OrderReconciliation() {
 					continue;
 				}
 				getPendingTradingActionActions().resolveModification(modification.id);
-				toast.info(t`The modification was not confirmed. Review the order before retrying.`, {
-					id: getPendingTradingActionToastId(modification.id),
+				updatePendingTradingActionFeedback(modification, "modify", {
+					status: "unconfirmed",
+					message: msg`The modification was not confirmed. Review the order before retrying.`,
 				});
 			}
 		}
@@ -209,6 +217,9 @@ export function OrderReconciliation() {
 	]);
 
 	useEffect(() => {
+		for (const submission of submissions) {
+			if (!activeSubmissionIds.has(submission.id)) syncSubmissionQueue(submission);
+		}
 		const eligible = submissions.filter(
 			(submission) => submission.unconfirmedAt === undefined && !activeSubmissionIds.has(submission.id),
 		);
@@ -303,28 +314,15 @@ type AwaitingTradingAction =
 	| ReturnType<typeof usePendingOrderModifications>[number]
 	| ReturnType<typeof usePendingOrderCancellations>[number];
 
-function markExpiredTradingActions(
-	actions: AwaitingTradingAction[],
-	now: number,
-	getIdentity: () => OrderReconciliationIdentity,
-): void {
+function markExpiredTradingActions(actions: AwaitingTradingAction[], now: number): void {
 	for (const action of actions) {
 		if ("oid" in action) {
 			if (!getPendingTradingActionActions().expireModificationAwaiting(action.id, now)) continue;
-			const identity = getIdentity();
-			if (!identity.mounted || identity.env !== action.env || identity.owner !== action.owner) continue;
-			toast.error(
-				t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`,
-				{ id: getPendingTradingActionToastId(action.id) },
-			);
+			syncPendingTradingActionFeedback({ ...action, phase: "unconfirmed" }, "modify");
 			continue;
 		}
 		if (!getPendingTradingActionActions().expireOrderCancellationAwaiting(action.id, now)) continue;
-		const identity = getIdentity();
-		if (!identity.mounted || identity.env !== action.env || identity.owner !== action.owner) continue;
-		toast.warning(t`The cancellation response could not be confirmed. Refresh open orders before retrying.`, {
-			id: getPendingTradingActionToastId(action.id),
-		});
+		syncPendingTradingActionFeedback({ ...action, phase: "unconfirmed" }, "cancel");
 	}
 }
 
@@ -366,57 +364,126 @@ function completeUnconfirmedReconciliation(submission: PendingOrderSubmission): 
 	releaseSubmissionAssetReservations(submission);
 	const error = orderReconciliationError("status-unconfirmed");
 	releasePositionMarketCloseSession(submission);
-	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
-
-	if (submission.queueId && queueVisible) {
-		updateOrderQueueItem(submission.queueId, { status: "unconfirmed", error });
-		return;
-	}
-
-	toast.warning(formatOrderReconciliationError(error.code, (descriptor) => i18n._(descriptor)));
+	const queueId = ensureSubmissionQueue(submission);
+	updateOrderQueueItem(queueId, {
+		status: "unconfirmed",
+		error,
+		children: getSubmissionQueueChildren(submission),
+	});
 }
 
 function completeReconciliation(submission: PendingOrderSubmission): void {
 	releaseSubmissionAssetReservations(submission);
 	const statuses = submission.children.map((child) => child.status).filter((status) => status !== undefined);
-	const acceptedCount = statuses.filter(isAcceptedOrderStatus).length;
-	const canceledCount = statuses.filter(isCanceledOrderStatus).length;
-	const allAccepted = acceptedCount === submission.children.length;
+	const children = getSubmissionQueueChildren(submission);
+	const acceptedCount = children.filter((child) =>
+		submission.confirmationMode === "filled"
+			? child.status === "filled"
+			: child.status === "filled" ||
+				child.status === "filled-unverified" ||
+				child.status === "partial" ||
+				child.status === "accepted",
+	).length;
+	const canceledCount = children.filter((child) => child.status === "canceled").length;
+	const allAccepted = children.every(
+		(child) => child.status === "filled" || child.status === "filled-unverified" || child.status === "accepted",
+	);
 	const allCanceled = canceledCount === submission.children.length;
-	const partiallyAccepted = acceptedCount > 0 && !allAccepted;
+	const partiallyAccepted =
+		children.some(
+			(child) => child.status === "filled" || child.status === "filled-unverified" || child.status === "accepted",
+		) && !allAccepted;
+	const partiallyFilled = children.some((child) => child.status === "partial");
+	const hasUnverifiedFillSize =
+		submission.confirmationMode === "filled" && children.some((child) => child.status === "filled-unverified");
+	const hasRejected = children.some((child) => child.status === "rejected");
 	const hasCanceled = canceledCount > 0;
-	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
 	const canceledError = orderReconciliationError("accepted-orders-canceled");
-	const canceledMessage = formatOrderReconciliationError(canceledError.code, (descriptor) => i18n._(descriptor));
 	releasePositionMarketCloseSession(submission);
-
-	if (submission.queueId && queueVisible) {
-		if (allAccepted) {
-			updateOrderQueueItem(submission.queueId, { status: "success", outcome: getReconciledOutcome(statuses) });
-		} else if (allCanceled) {
-			updateOrderQueueItem(submission.queueId, { status: "canceled", error: canceledError });
-		} else if (hasCanceled) {
-			updateOrderQueueItem(submission.queueId, { status: "partial", error: canceledError });
-		} else if (partiallyAccepted) {
-			updateOrderQueueItem(submission.queueId, {
-				status: "partial",
-				acceptedCount,
-				totalCount: submission.children.length,
-				error: orderReconciliationError("batch-rejected"),
-			});
-		} else {
-			updateOrderQueueItem(submission.queueId, {
-				status: "failed",
-				error: orderReconciliationError("order-rejected"),
-			});
-		}
-		return;
+	const queueId = ensureSubmissionQueue(submission);
+	const detail = {
+		children,
+		countMode: submission.confirmationMode === "filled" ? ("filled" as const) : ("accepted" as const),
+		positionsClosed: false,
+	};
+	if (allAccepted) {
+		updateOrderQueueItem(queueId, { ...detail, status: "success", outcome: getReconciledOutcome(statuses) });
+	} else if (allCanceled) {
+		updateOrderQueueItem(queueId, { ...detail, status: "canceled", error: canceledError });
+	} else if (hasCanceled || partiallyAccepted || partiallyFilled) {
+		let error: OrderQueueItem["error"];
+		if (hasCanceled) error = canceledError;
+		else if (hasRejected) error = orderReconciliationError("batch-rejected");
+		updateOrderQueueItem(queueId, {
+			...detail,
+			status: "partial",
+			acceptedCount: hasUnverifiedFillSize ? undefined : acceptedCount,
+			totalCount: hasUnverifiedFillSize ? undefined : submission.children.length,
+			error,
+		});
+	} else {
+		updateOrderQueueItem(queueId, { ...detail, status: "failed", error: orderReconciliationError("order-rejected") });
 	}
+}
 
-	if (allAccepted) toast.success(t`Order confirmed by the exchange.`);
-	else if (hasCanceled) toast.warning(canceledMessage);
-	else if (partiallyAccepted) toast.warning(t`Some orders were accepted. Review open orders before retrying.`);
-	else toast.error(t`The exchange did not accept the order.`);
+function getSubmissionQueueId(submission: PendingOrderSubmission): string {
+	return submission.queueId ?? `reconcile-${submission.id}`;
+}
+
+function ensureSubmissionQueue(submission: PendingOrderSubmission): string {
+	const id = getSubmissionQueueId(submission);
+	if (getOrderQueueItem(id)) return id;
+	return addOrderQueueItem({
+		...submission.feedback,
+		id,
+		owner: submission.user,
+		env: submission.env,
+		operation:
+			submission.feedback?.operation ?? (submission.origin?.type === "positionMarketClose" ? "market-close" : "order"),
+		status: submission.unconfirmedAt === undefined ? "confirming" : "unconfirmed",
+		error: submission.unconfirmedAt === undefined ? undefined : orderReconciliationError("status-unconfirmed"),
+		countMode: submission.confirmationMode === "filled" ? "filled" : "accepted",
+		totalCount: submission.children.length,
+		children: getSubmissionQueueChildren(submission),
+	});
+}
+
+function syncSubmissionQueue(submission: PendingOrderSubmission): void {
+	const queueId = ensureSubmissionQueue(submission);
+	const children = getSubmissionQueueChildren(submission);
+	if (JSON.stringify(getOrderQueueItem(queueId)?.children) !== JSON.stringify(children)) {
+		updateOrderQueueItem(queueId, { children });
+	}
+}
+
+function getSubmissionQueueChildren(submission: PendingOrderSubmission): NonNullable<OrderQueueItem["children"]> {
+	const existingChildren =
+		getOrderQueueItem(getSubmissionQueueId(submission))?.children ?? submission.feedback?.children;
+	return submission.children.map((child, index) => {
+		const previous = existingChildren?.[index];
+		const existing = previous?.assetId === child.assetId ? previous : undefined;
+		const status = child.status;
+		if (existing && status === undefined && existing.status !== "pending" && existing.status !== "unknown") {
+			return existing;
+		}
+		if (existing?.status === "partial" && status === "filled") return existing;
+		let queueStatus: NonNullable<OrderQueueItem["children"]>[number]["status"] = "rejected";
+		if (status === undefined) {
+			queueStatus = submission.unconfirmedAt === undefined ? "pending" : "unknown";
+		} else if (status === "filled") {
+			queueStatus = existing?.status === "filled" ? "filled" : "filled-unverified";
+		} else if (isCanceledOrderStatus(status)) {
+			queueStatus = "canceled";
+		} else if (isAcceptedOrderStatus(status)) {
+			queueStatus = "accepted";
+		}
+		return {
+			...existing,
+			assetId: child.assetId,
+			status: queueStatus,
+			error: status && !isAcceptedOrderStatus(status) && !isCanceledOrderStatus(status) ? status : undefined,
+		};
+	});
 }
 
 function releaseSubmissionAssetReservations(submission: PendingOrderSubmission): void {

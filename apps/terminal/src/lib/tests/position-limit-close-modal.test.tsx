@@ -403,7 +403,7 @@ describe("PositionLimitCloseModal", () => {
 		expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuetext")).toBe("25%");
 	});
 
-	it("closes at the click, submits exact strings once and reports the placed order through a notification", async () => {
+	it("closes at the click, submits exact strings once and leaves order feedback to the submit hook", async () => {
 		const settle = holdSubmission();
 		render();
 		enterPrice("101");
@@ -420,7 +420,7 @@ describe("PositionLimitCloseModal", () => {
 		expect(onSessionEnd).not.toHaveBeenCalled();
 
 		await act(async () => settle({ state: "confirmed", result: {} }));
-		expect(testState.toastSuccess).toHaveBeenCalledOnce();
+		expect(testState.toastSuccess).not.toHaveBeenCalled();
 		expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 
@@ -530,29 +530,29 @@ describe("PositionLimitCloseModal", () => {
 	});
 
 	it.each([
-		[{ state: "reconciling", submissionId: "submission-1" }, "toastInfo"],
-		[{ state: "blocked" }, "toastWarning"],
-		[{ state: "confirmed", result: {} }, "toastSuccess"],
-	] as const)("reports %o only through %s and ends the session", async (outcome, expectedToast) => {
+		{ state: "reconciling", submissionId: "submission-1" },
+		{ state: "blocked" },
+		{ state: "confirmed", result: {} },
+	] as const)("leaves %o feedback to its submit hook without a duplicate toast", async (outcome) => {
 		testState.submit.mockResolvedValue({ ...outcome });
 		render();
 		enterPrice("101");
 		await act(async () => getSubmitButton().click());
 
 		for (const name of ["toastError", "toastInfo", "toastSuccess", "toastWarning"] as const) {
-			expect(testState[name]).toHaveBeenCalledTimes(name === expectedToast ? 1 : 0);
+			expect(testState[name]).not.toHaveBeenCalled();
 		}
 		expect(testState.adaptiveProps?.open).toBe(false);
 		expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 
-	it("reports a failed submission through an error notification and ends the session", async () => {
+	it("ends a failed submission without duplicating feedback", async () => {
 		testState.submit.mockRejectedValue(new Error("Trading data changed"));
 		render();
 		enterPrice("101");
 		await act(async () => getSubmitButton().click());
 
-		expect(testState.toastError).toHaveBeenCalledExactlyOnceWith("Trading data changed");
+		expect(testState.toastError).not.toHaveBeenCalled();
 		expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 

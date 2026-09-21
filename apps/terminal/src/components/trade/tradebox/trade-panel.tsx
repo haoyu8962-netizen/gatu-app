@@ -1,7 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -518,10 +517,9 @@ export function TradePanel() {
 
 	const handleAccountModeChange = useCallback(
 		async (nextAccountMode: SelectableAccountAbstraction) => {
-			const didUpdate = await accountModeControl.setAccountAbstraction(nextAccountMode);
-			if (didUpdate) toast.success(t`Account mode updated`);
+			await accountModeControl.setAccountAbstraction(nextAccountMode);
 		},
-		[accountModeControl.setAccountAbstraction, t],
+		[accountModeControl.setAccountAbstraction],
 	);
 
 	const handleMarginModalOpenChange = useCallback(

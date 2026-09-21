@@ -265,6 +265,49 @@ describe("useTrackedOrder", () => {
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [8])).toBe(false);
 	});
 
+	it("keeps a confirmed exchange result when its presentation callback fails", async () => {
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "order", data: { statuses: [{ filled: { totalSz: "1", avgPx: "10", oid: 1 } }] } },
+		});
+		const onResponse = vi.fn(() => {
+			throw new Error("Presentation unavailable");
+		});
+		await act(async () => {
+			await expect(
+				hookValue?.submitOrder(createParams(38), { ...CROSS_PERP_SUBMIT_OPTIONS, onResponse }),
+			).resolves.toMatchObject({ state: "confirmed" });
+		});
+		expect(onResponse).toHaveBeenCalledOnce();
+		expect(mutateAsync).toHaveBeenCalledOnce();
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [38])).toBe(false);
+	});
+
+	it("retains reconciliation and blocks resending when an API-response presentation callback fails", async () => {
+		mutateAsync.mockRejectedValueOnce(
+			createForeignApiRequestError({
+				status: "ok",
+				response: { type: "order", data: { statuses: [{ resting: { oid: 39 } }] } },
+			}),
+		);
+		const onResponse = vi.fn(() => {
+			throw new Error("Presentation unavailable");
+		});
+		await act(async () => {
+			await expect(
+				hookValue?.submitOrder(createParams(39, 1, true), { ...EXCLUSIVE_FILLED_SUBMIT_OPTIONS, onResponse }),
+			).resolves.toMatchObject({ state: "reconciling" });
+		});
+		expect(onResponse).toHaveBeenCalledOnce();
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [39])).toBe(true);
+		await act(async () => {
+			await expect(hookValue?.submitOrder(createParams(39, 1, true), EXCLUSIVE_FILLED_SUBMIT_OPTIONS)).resolves.toEqual(
+				{ state: "blocked" },
+			);
+		});
+		expect(mutateAsync).toHaveBeenCalledOnce();
+	});
+
 	it("reconciles a same-length response whose child status is malformed", async () => {
 		mutateAsync.mockResolvedValueOnce({
 			status: "ok",

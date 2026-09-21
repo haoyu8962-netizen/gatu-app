@@ -1,8 +1,10 @@
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import type { ExchangeOrder } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
+import { getCloseOrderFeedbackChildren, summarizeCloseOrderFeedback } from "@/domain/trade/close-order-feedback";
 import { isLiveExecutionPriceReceiptFresh } from "@/domain/trade/market-price";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { buildPositionReverseOrder, type PositionReverseOrderError } from "@/domain/trade/position-reverse";
@@ -37,6 +39,7 @@ import {
 } from "@/lib/trade/position-submit-feedback";
 import { useMarketOrderSlippageBpsString } from "@/stores/use-global-settings-store";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
+import { addOrderQueueItem, getOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import { getPersistedPendingOrderAssetState } from "@/stores/use-pending-order-store";
 import { getPersistedPendingTwapAssetState } from "@/stores/use-pending-twap-store";
 
@@ -183,6 +186,21 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 		const submittedTarget = { ...targetRef.current };
 		const submittedTargetKey = getTargetKey(submittedTarget);
 		const submittedSlippageBps = slippageBpsRef.current;
+		const queueId = addOrderQueueItem({
+			owner: submittedTarget.owner,
+			env: submittedTarget.env,
+			operation: "order",
+			title: msg`Reverse Position`,
+			market: submittedTarget.coin,
+			orderType: "market",
+			countMode: "filled",
+			status: "pending",
+		});
+		function updateLocalState(nextPhase: PositionReverseSubmitPhase, nextError?: PositionSubmitFeedback): void {
+			if (!lifecycleRef.current.mounted || lifecycleRef.current.epoch !== lifecycleEpoch) return;
+			setPhase(nextPhase);
+			if (nextError !== undefined) setError(nextError);
+		}
 
 		try {
 			const lockResult = await runWithAvailableOrderAssetLocks(
@@ -219,6 +237,14 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 					}
 
 					const order = plan.orders[0];
+					const feedbackTargets = [
+						{ assetId: submittedTarget.assetId, market: submittedTarget.coin, size: String(order.s) },
+					];
+					updateOrderQueueItem(queueId, {
+						size: String(order.s),
+						side: order.b ? "buy" : "sell",
+						children: feedbackTargets.map((target) => ({ ...target, status: "pending" })),
+					});
 					executionContextRef.current = {
 						lifecycleEpoch,
 						targetKey: submittedTargetKey,
@@ -238,40 +264,61 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 						{ orders: plan.orders, grouping: plan.grouping },
 						{
 							assetLockLease,
+							queueId,
+							onResponse: (response) =>
+								updateOrderQueueItem(queueId, { children: getCloseOrderFeedbackChildren(feedbackTargets, response) }),
 							riskContext: { marketKind: "perp", marginMode: fresh.marginMode },
 							exclusiveAssetLock: true,
 							confirmationMode: "filled",
 						},
 					);
-					assertLifecycleActive(lifecycleEpoch);
 					if (outcome.state === "blocked") {
-						setPhase("idle");
-						setError(localizedPositionSubmitFeedback("blocked-market"));
+						updateOrderQueueItem(queueId, {
+							status: "failed",
+							error: localizedPositionSubmitFeedback("blocked-market"),
+							children: feedbackTargets.map((target) => ({ ...target, status: "rejected" })),
+						});
+						updateLocalState("idle", localizedPositionSubmitFeedback("blocked-market"));
 						return outcome;
 					}
 					if (outcome.state === "reconciling") {
-						setPhase("reconciling");
-						setError(localizedPositionSubmitFeedback("reconciling-order"));
+						updateOrderQueueItem(queueId, {
+							status: "confirming",
+							children: getOrderQueueItem(queueId)?.children?.map((child) =>
+								child.status === "pending" ? { ...child, status: "unknown" } : child,
+							),
+						});
+						updateLocalState("reconciling", localizedPositionSubmitFeedback("reconciling-order"));
 						return outcome;
 					}
 
 					throwIfAnyResponseError(outcome.result.response?.data?.statuses);
-					setPhase("idle");
+					updateOrderQueueItem(queueId, { status: "success", outcome: "filled", acceptedCount: 1, totalCount: 1 });
+					updateLocalState("idle");
 					return outcome;
 				},
 			);
-			assertLifecycleActive(lifecycleEpoch);
 			if (!lockResult.supported) {
 				throw positionSubmitFeedbackCause("coordination-unavailable");
 			}
 			if (!lockResult.acquired) {
-				setPhase("idle");
-				setError(localizedPositionSubmitFeedback("blocked-market"));
+				updateOrderQueueItem(queueId, { status: "failed", error: localizedPositionSubmitFeedback("blocked-market") });
+				updateLocalState("idle", localizedPositionSubmitFeedback("blocked-market"));
 				return { state: "blocked" };
 			}
 			return lockResult.value;
 		} catch (cause) {
 			const submitError = positionSubmitFeedbackFromCause(cause, "failed-reverse");
+			const summary = summarizeCloseOrderFeedback(getOrderQueueItem(queueId)?.children ?? []);
+			updateOrderQueueItem(queueId, {
+				status: summary.hasPartialFill ? "partial" : "failed",
+				error: summary.hasPartialFill ? undefined : submitError,
+				acceptedCount: summary.filledCount,
+				totalCount: summary.totalCount,
+				children: getOrderQueueItem(queueId)?.children?.map((child) =>
+					child.status === "pending" ? { ...child, status: "rejected" } : child,
+				),
+			});
 			const message = formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor));
 			if (lifecycleRef.current.mounted && lifecycleRef.current.epoch === lifecycleEpoch) {
 				setPhase("idle");

@@ -1,8 +1,9 @@
 /** @vitest-environment jsdom */
 
-import { type ReactNode, act, createElement, useState } from "react";
+import { act, createElement, type ReactNode, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { clearFeedback, feedbackText, latestFeedback } from "@/lib/tests/harness/order-feedback";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 
 const leverageHarness = vi.hoisted(() => ({
@@ -11,6 +12,12 @@ const leverageHarness = vi.hoisted(() => ({
 
 const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 vi.mock("sonner", () => ({ toast: toastMocks }));
+
+const feedbackIdentity = vi.hoisted(() => ({
+	clientKey: "0x1111111111111111111111111111111111111111",
+	env: "Mainnet" as const,
+}));
+vi.mock("@/lib/hyperliquid", () => ({ useHyperliquid: () => feedbackIdentity }));
 
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({ children, open }: { children: ReactNode; open: boolean }) =>
@@ -33,8 +40,7 @@ vi.mock("@gatu/ui", () => ({
 		children,
 		divider: _divider,
 		...props
-	}: { children: ReactNode; divider?: boolean } & Record<string, unknown>) =>
-		createElement("header", props, children),
+	}: { children: ReactNode; divider?: boolean } & Record<string, unknown>) => createElement("header", props, children),
 	ModalPopup: ({ children }: { children: ReactNode }) => createElement("section", null, children),
 	ModalTitle: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
 		createElement("h2", props, children),
@@ -48,6 +54,7 @@ vi.mock("@/components/trade/components/trading-action-button", () => ({
 	TradingActionButton: ({
 		children,
 		containerClassName: _containerClassName,
+		isActivationLocked: _isActivationLocked,
 		requiresBuilderFee: _requiresBuilderFee,
 		...props
 	}: Record<string, unknown>) => createElement("button", { ...props, type: "button" }, children as ReactNode),
@@ -142,6 +149,8 @@ describe("slider effective leverage contracts", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		clearFeedback();
+		vi.clearAllMocks();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -151,6 +160,7 @@ describe("slider effective leverage contracts", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		clearFeedback();
 	});
 
 	it("A1 makes input, pending, notification, and effective store use the leverage committed under the latest max", async () => {
@@ -169,7 +179,12 @@ describe("slider effective leverage contracts", () => {
 		expect.soft(container.querySelector('[data-testid="pending-leverage"]')?.textContent).toBe("10");
 		expect.soft(container.querySelector('[data-testid="store-leverage"]')?.textContent).toBe("10");
 		expect.soft(leverageHarness.sliderProps?.value).toBe(10);
-		expect.soft(toastMocks.success).toHaveBeenCalledWith("Leverage updated to 10x");
+		expect.soft(feedbackText("success")).toBe("Leverage updated to 10x");
+		expect.soft(latestFeedback("success")).toMatchObject({
+			owner: feedbackIdentity.clientKey,
+			env: feedbackIdentity.env,
+		});
+		expect.soft(toastMocks.success).not.toHaveBeenCalled();
 		expect.soft(getButton(container, "Confirm").textContent).toBe("Confirm");
 	});
 

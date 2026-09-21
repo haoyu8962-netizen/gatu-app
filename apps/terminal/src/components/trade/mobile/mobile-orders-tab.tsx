@@ -1,4 +1,6 @@
 import { Button, Select } from "@gatu/ui";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { ListIcon } from "@phosphor-icons/react";
 import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
@@ -51,11 +53,15 @@ import {
 } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isClosePositionOrder, isMarketTriggerOrder, type OpenOrder } from "@/lib/trade/open-orders";
+import {
+	ensurePendingTradingActionFeedback,
+	syncPendingTradingActionFeedback,
+	updatePendingTradingActionFeedback,
+} from "@/lib/trade/pending-trading-action-feedback";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import {
 	getPendingTradingActionActions,
-	getPendingTradingActionToastId,
 	usePendingOrderCancellations,
 	usePendingOrderModifications,
 } from "@/stores/use-pending-trading-action-store";
@@ -290,9 +296,8 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	function reportCancelFeedback(error: OrderValidationError, actionId: string | null = null) {
 		setCancelValidationError(error, actionId);
 		const message = getValidationErrorMessage(error) ?? "";
-		if (actionId) {
-			toast.warning(message, { id: getPendingTradingActionToastId(actionId) });
-		} else if (error.kind === "cancel-block") {
+		if (actionId) return;
+		if (error.kind === "cancel-block") {
 			toast.warning(message);
 		} else {
 			toast.error(message);
@@ -435,76 +440,82 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	}
 
 	function getModifyBlockMessage(reason: OpenOrderModifyBlockReason): string {
+		return t(getModifyBlockDescriptor(reason));
+	}
+
+	function getModifyBlockDescriptor(reason: OpenOrderModifyBlockReason): MessageDescriptor {
 		switch (reason) {
 			case "ambiguous-order":
 			case "order-changed":
 			case "order-not-open":
-				return t`This order changed or is no longer open. Refresh and try again.`;
+				return msg`This order changed or is no longer open. Refresh and try again.`;
 			case "client-order-id":
-				return t`Orders with a client order ID cannot be modified here. Cancel and replace the order instead.`;
+				return msg`Orders with a client order ID cannot be modified here. Cancel and replace the order instead.`;
 			case "grouped-order":
-				return t`Orders with linked TP/SL orders cannot be modified here.`;
+				return msg`Orders with linked TP/SL orders cannot be modified here.`;
 			case "invalid-market-binding":
 			case "market-binding-changed":
-				return t`Market metadata changed. Refresh and try again.`;
+				return msg`Market metadata changed. Refresh and try again.`;
 			case "invalid-order-shape":
-				return t`This order has incomplete data and cannot be modified. Refresh and try again.`;
+				return msg`This order has incomplete data and cannot be modified. Refresh and try again.`;
 			case "invalid-owner":
-				return t`Reconnect the trading account before modifying this order.`;
+				return msg`Reconnect the trading account before modifying this order.`;
 			case "invalid-price":
-				return t`Enter a valid trigger price using the market's price precision.`;
+				return msg`Enter a valid trigger price using the market's price precision.`;
 			case "invalid-size":
-				return t`Enter a valid size using the market's size precision.`;
+				return msg`Enter a valid size using the market's size precision.`;
 			case "invalid-trigger-direction":
-				return t`The trigger price is invalid for this order direction.`;
+				return msg`The trigger price is invalid for this order direction.`;
 			case "mark-price-unavailable":
-				return t`Mark price is unavailable. Wait for market data and try again.`;
+				return msg`Mark price is unavailable. Wait for market data and try again.`;
 			case "no-change":
-				return t`Enter a different value before confirming.`;
+				return msg`Enter a different value before confirming.`;
 			case "position-tpsl":
-				return t`Position TP/SL orders must be edited from the position controls.`;
+				return msg`Position TP/SL orders must be edited from the position controls.`;
 			case "session-changed":
-				return t`The trading account or network changed. Reopen the editor and try again.`;
+				return msg`The trading account or network changed. Reopen the editor and try again.`;
 			case "size-exceeds-remaining":
-				return t`Size cannot exceed the order's remaining size.`;
+				return msg`Size cannot exceed the order's remaining size.`;
 			case "snapshot-not-ready":
-				return t`Open orders are refreshing. Wait for live data and try again.`;
+				return msg`Open orders are refreshing. Wait for live data and try again.`;
 			case "trigger-price-not-applicable":
-				return t`This order does not have an editable trigger price.`;
+				return msg`This order does not have an editable trigger price.`;
 			case "unsupported-market-order":
-				return t`Market orders cannot be modified after submission.`;
+				return msg`Market orders cannot be modified after submission.`;
 			case "unsupported-order-type":
 			case "unsupported-system-order":
 			case "unsupported-tif":
-				return t`This order type cannot be modified safely. Cancel and replace it instead.`;
+				return msg`This order type cannot be modified safely. Cancel and replace it instead.`;
 		}
 	}
 
 	function getValidationErrorMessage(error: OrderValidationError | null): string | null {
 		if (!error) return null;
+		return error.kind === "raw" ? error.message : t(getValidationErrorDescriptor(error));
+	}
+
+	function getValidationErrorDescriptor(error: Exclude<OrderValidationError, { kind: "raw" }>): MessageDescriptor {
 		switch (error.kind) {
 			case "cancel-block":
-				return getCancelAllBlockMessage(error.reason);
+				return getCancelAllBlockDescriptor(error.reason);
 			case "modify-block":
-				return getModifyBlockMessage(error.reason);
-			case "raw":
-				return error.message;
+				return getModifyBlockDescriptor(error.reason);
 			case "code":
 				switch (error.code) {
 					case "cancellation-response-unconfirmed":
-						return t`The cancellation response could not be confirmed. Refresh open orders before retrying.`;
+						return msg`The cancellation response could not be confirmed. Refresh open orders before retrying.`;
 					case "failed-to-cancel":
-						return t`Failed to cancel order.`;
+						return msg`Failed to cancel order.`;
 					case "failed-to-modify":
-						return t`Failed to modify order.`;
+						return msg`Failed to modify order.`;
 					case "order-markets-unavailable":
-						return t`Some order markets are unavailable. Refresh and try again.`;
+						return msg`Some order markets are unavailable. Refresh and try again.`;
 					case "previous-modification-unconfirmed":
-						return t`The previous order modification is still unconfirmed. Refresh open orders before retrying.`;
+						return msg`The previous order modification is still unconfirmed. Refresh open orders before retrying.`;
 					case "trading-data-changed":
-						return t`Trading data changed before the order modification could be submitted.`;
+						return msg`Trading data changed before the order modification could be submitted.`;
 					case "modification-unconfirmed":
-						return t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`;
+						return msg`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`;
 				}
 		}
 	}
@@ -704,6 +715,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			setModifyValidationError({ kind: "code", code: "previous-modification-unconfirmed" });
 			return;
 		}
+		ensurePendingTradingActionFeedback(pendingAction, "modify");
 		const execution: ModifyExecutionContext = {
 			actionId: pendingAction.id,
 			guardPasses: 0,
@@ -724,6 +736,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			const result = await modifyOrders(plan.params);
 			throwIfAnyResponseError(result.response?.data?.statuses);
 			getPendingTradingActionActions().markModificationAwaiting(execution.actionId);
+			syncPendingTradingActionFeedback({ ...pendingAction, phase: "awaiting" }, "modify");
 			if (!mountedRef.current || modifyExecutionRef.current !== execution) return;
 			const live = liveModifyContextRef.current;
 			if (getModifyPhase() !== "submitting" || !isModifyExecutionSessionCurrent(execution, live)) {
@@ -731,12 +744,10 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 				return;
 			}
 			setModifyPhase("awaiting");
-			toast.info(t`Order modification submitted. Waiting for the open-orders update.`, {
-				id: getPendingTradingActionToastId(execution.actionId),
-			});
 		} catch (cause) {
 			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markModificationUnconfirmed(execution.actionId);
+				syncPendingTradingActionFeedback({ ...pendingAction, phase: "unconfirmed" }, "modify");
 				if (
 					!mountedRef.current ||
 					modifyExecutionRef.current !== execution ||
@@ -745,12 +756,17 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 					return;
 				}
 				const validationError = { kind: "code", code: "modification-unconfirmed" } as const;
-				const message = getValidationErrorMessage(validationError) ?? "";
 				clearModifyModal(validationError, execution.actionId);
-				toast.warning(message, { id: getPendingTradingActionToastId(execution.actionId) });
 				return;
 			} else {
 				getPendingTradingActionActions().resolveModification(execution.actionId);
+				const validationError = getValidationErrorFromCause(cause, "failed-to-modify");
+				updatePendingTradingActionFeedback(pendingAction, "modify", {
+					status: "failed",
+					...(validationError.kind === "raw"
+						? { error: validationError.message }
+						: { message: getValidationErrorDescriptor(validationError) }),
+				});
 			}
 			if (
 				!mountedRef.current ||
@@ -760,9 +776,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 				return;
 			}
 			const validationError = getValidationErrorFromCause(cause, "failed-to-modify");
-			const message = getValidationErrorMessage(validationError) ?? "";
 			clearModifyModal(validationError);
-			toast.error(message);
 		}
 	}
 
@@ -825,6 +839,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			oids: fresh.map((order) => order.oid),
 		});
 		if (!pendingAction) return false;
+		ensurePendingTradingActionFeedback(pendingAction, "cancel");
 		const execution: CancelExecutionContext = {
 			actionId: pendingAction.id,
 			guardPasses: 0,
@@ -849,28 +864,42 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		nextScope: CancelScope,
 		callbacks?: CancelCallbacks,
 	): Promise<void> {
+		const feedbackIdentity = {
+			id: execution.actionId,
+			owner: execution.confirmation.owner,
+			env: execution.confirmation.env,
+		};
 		try {
 			const response = await cancelOrdersAsync(execution.params);
 			if (!isConfirmedOpenOrderCancelResponse(response, execution.params.cancels.length)) {
 				getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
+				syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "awaiting" }, "cancel");
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
 					reportCancelFeedback({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
 				}
 				return;
 			}
 			getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
+			syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "awaiting" }, "cancel");
 			if (!mountedRef.current || !isCancelExecutionCurrent(execution)) return;
-			toast.success(t`Order cancellation confirmed.`, { id: getPendingTradingActionToastId(execution.actionId) });
 		} catch (cause) {
 			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
+				syncPendingTradingActionFeedback({ ...feedbackIdentity, phase: "unconfirmed" }, "cancel");
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
 					reportCancelFeedback({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
 				}
 			} else {
 				getPendingTradingActionActions().releaseOrderCancellation(execution.actionId);
+				const validationError = getValidationErrorFromCause(cause, "failed-to-cancel");
+				updatePendingTradingActionFeedback(feedbackIdentity, "cancel", {
+					status: "failed",
+					...(validationError.kind === "raw"
+						? { error: validationError.message }
+						: { message: getValidationErrorDescriptor(validationError) }),
+				});
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					reportCancelFeedback(getValidationErrorFromCause(cause, "failed-to-cancel"));
+					setCancelValidationError(validationError);
 				}
 			}
 		} finally {
@@ -895,14 +924,14 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		handleCancel(ordersToCancel, "row");
 	}
 
-	function getCancelAllBlockMessage(reason: CancelAllConfirmationBlockReason): string {
+	function getCancelAllBlockDescriptor(reason: CancelAllConfirmationBlockReason): MessageDescriptor {
 		switch (reason) {
 			case "orders-changed":
-				return t`Open orders changed. Reopen the confirmation and try again.`;
+				return msg`Open orders changed. Reopen the confirmation and try again.`;
 			case "session-changed":
-				return t`The trading account or network changed. Reopen the confirmation and try again.`;
+				return msg`The trading account or network changed. Reopen the confirmation and try again.`;
 			case "snapshot-not-ready":
-				return t`Open orders are refreshing. Wait for live data and try again.`;
+				return msg`Open orders are refreshing. Wait for live data and try again.`;
 		}
 	}
 

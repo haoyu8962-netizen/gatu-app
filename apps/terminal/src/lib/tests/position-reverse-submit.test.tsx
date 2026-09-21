@@ -2,10 +2,17 @@
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
+import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type PositionReverseTarget, usePositionReverseSubmit } from "@/hooks/trade/use-position-reverse-submit";
+import {
+	getOrderQueueItem,
+	type OrderQueueItem,
+	removeOrderQueueItem,
+	useOrderQueue,
+} from "@/stores/use-order-queue-store";
 import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
 import { getPendingTwapActions } from "@/stores/use-pending-twap-store";
 import { createI18nRoot } from "./harness/react";
@@ -185,7 +192,10 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 let currentTarget: PositionReverseTarget = createTarget();
 let hookValue: ReturnType<typeof usePositionReverseSubmit> | null = null;
 
+let queueItems: OrderQueueItem[] = [];
+
 function Probe() {
+	queueItems = useOrderQueue();
 	hookValue = usePositionReverseSubmit(currentTarget);
 	return null;
 }
@@ -320,12 +330,51 @@ describe("usePositionReverseSubmit", () => {
 
 	afterEach(() => {
 		vi.restoreAllMocks();
+		act(() => {
+			for (const item of queueItems) removeOrderQueueItem(item.id);
+		});
 		act(() => root.unmount());
 		container.remove();
 		hookValue = null;
 		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
 		getPendingTwapActions().prune(Number.MAX_SAFE_INTEGER);
 	});
+
+	it.each(["filled", "ambiguous"] as const)(
+		"keeps the actual %s exchange outcome after its dialog owner unmounts",
+		async (outcome) => {
+			let release!: () => void;
+			const gate = new Promise<void>((resolve) => {
+				release = resolve;
+			});
+			mocks.executeOrder.mockImplementationOnce(async () => {
+				await gate;
+				if (outcome === "ambiguous") throw new HttpRequestError({ detail: "Request timed out after 10000 ms" });
+				return createConfirmedResponse();
+			});
+			let submission!: ReturnType<ReturnType<typeof usePositionReverseSubmit>["submit"]>;
+			await act(async () => {
+				submission = currentHook().submit();
+			});
+			expect(mocks.executeOrder).toHaveBeenCalledOnce();
+			const queueId = queueItems[0]?.id;
+			act(() => root.render(null));
+			await act(async () => {
+				release();
+				await expect(submission).resolves.toMatchObject({
+					state: outcome === "filled" ? "confirmed" : "reconciling",
+				});
+			});
+			expect(getOrderQueueItem(queueId)).toMatchObject({
+				owner: USER,
+				env: "Mainnet",
+				status: outcome === "filled" ? "success" : "confirming",
+				children: [{ status: outcome === "filled" ? "filled" : "unknown" }],
+			});
+			expect(hasPendingOrderForAssets("Mainnet", USER, [ASSET_ID])).toBe(outcome === "ambiguous");
+			expect(mocks.executeOrder).toHaveBeenCalledOnce();
+		},
+	);
 
 	it("builds an exclusive non-reduce-only FrontendMarket order from fresh string data", async () => {
 		let outcome: Awaited<ReturnType<ReturnType<typeof usePositionReverseSubmit>["submit"]>> | undefined;
@@ -334,6 +383,17 @@ describe("usePositionReverseSubmit", () => {
 		});
 
 		expect(outcome?.state).toBe("confirmed");
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({
+			owner: USER,
+			env: "Mainnet",
+			status: "success",
+			size: "5",
+			countMode: "filled",
+			acceptedCount: 1,
+			totalCount: 1,
+			children: [{ assetId: ASSET_ID, status: "filled", filledSize: "5" }],
+		});
 		expect(mocks.clearinghouseState).toHaveBeenCalledWith({ user: USER, dex: "xyz" });
 		expect(mocks.metaAndAssetCtxs).toHaveBeenCalledWith({ dex: "xyz" });
 		expect(mocks.lockRequest).toHaveBeenCalledWith(
@@ -634,6 +694,8 @@ describe("usePositionReverseSubmit", () => {
 			error: "Order submitted. Confirming exchange status; do not retry.",
 		});
 		expect(hasPendingOrderForAssets("Mainnet", USER, [ASSET_ID])).toBe(true);
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({ owner: USER, env: "Mainnet", status: "confirming", countMode: "filled" });
 		const restCalls = mocks.clearinghouseState.mock.calls.length;
 		await act(async () => {
 			expect(await currentHook().submit()).toEqual({ state: "blocked" });

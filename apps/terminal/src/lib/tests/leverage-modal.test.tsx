@@ -1,3 +1,4 @@
+import { clearFeedback, feedbackErrorText, feedbackText, latestFeedback } from "./harness/order-feedback";
 /** @vitest-environment jsdom */
 
 import { act, createElement, type ReactNode } from "react";
@@ -19,7 +20,6 @@ const modalHarness = vi.hoisted(() => ({
 	popupRenders: 0,
 	showClose: true,
 }));
-const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 
 vi.mock("@gatu/ui", () => ({
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
@@ -83,13 +83,17 @@ vi.mock("@/components/trade/tradebox/leverage-editor", () => ({
 	},
 }));
 
-vi.mock("sonner", () => ({ toast: toastMocks }));
-
 function getButton(container: HTMLElement, label: string): HTMLButtonElement {
 	const button = [...container.querySelectorAll("button")].find((candidate) => candidate.textContent?.includes(label));
 	if (!(button instanceof HTMLButtonElement)) throw new Error(`${label} button not found`);
 	return button;
 }
+
+const feedbackIdentity = vi.hoisted(() => ({
+	clientKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	env: "Mainnet",
+}));
+vi.mock("@/lib/hyperliquid", () => ({ useHyperliquid: () => feedbackIdentity }));
 
 describe("LeverageModal", () => {
 	let container: HTMLDivElement;
@@ -99,6 +103,9 @@ describe("LeverageModal", () => {
 	let onOpenChange: ReturnType<typeof vi.fn<(open: boolean) => void>>;
 
 	beforeEach(() => {
+		feedbackIdentity.clientKey = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		feedbackIdentity.env = "Mainnet";
+		clearFeedback();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -276,10 +283,10 @@ describe("LeverageModal", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		expect(getButton(container, "Confirm").textContent).toBe("Confirm");
 		expect(container.querySelector(".animate-spin")).toBeNull();
-		expect(toastMocks.success).not.toHaveBeenCalled();
+		expect(latestFeedback("success")).toBeUndefined();
 
 		await act(async () => resolveApply?.());
-		expect(toastMocks.success).toHaveBeenCalledWith("Leverage updated to 6x");
+		expect(feedbackText("success")).toBe("Leverage updated to 6x");
 		expect(container.textContent).not.toContain("Updated to");
 	});
 
@@ -302,7 +309,7 @@ describe("LeverageModal", () => {
 		await act(async () => getButton(container, "Confirm").click());
 
 		expect(onOpenChange).toHaveBeenCalledWith(false);
-		expect(toastMocks.error).toHaveBeenCalledWith("Leverage request failed");
+		expect(feedbackErrorText(latestFeedback("failed"))).toBe("Leverage request failed");
 		expect(container.querySelector('[role="alert"]')).toBeNull();
 
 		onApply.mockResolvedValueOnce(6);
@@ -351,7 +358,7 @@ describe("LeverageModal", () => {
 		expect(onPendingLeverageChange).not.toHaveBeenCalled();
 	});
 
-	it("does not let an old account request succeed or close the new same-market session", async () => {
+	it("records the old account result without closing the new same-market session", async () => {
 		let resolveApply: (() => void) | undefined;
 		onApply.mockImplementation(
 			(value) =>
@@ -362,11 +369,12 @@ describe("LeverageModal", () => {
 		renderModal(6, true, "mainnet:0x1111:perp:1:HYPE");
 		act(() => getButton(container, "Confirm").click());
 
+		feedbackIdentity.clientKey = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 		renderModal(7, true, "mainnet:0x2222:perp:1:HYPE");
 		await act(async () => resolveApply?.());
 
-		expect(toastMocks.success).not.toHaveBeenCalled();
-		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(latestFeedback("success")?.owner).toBe("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+		expect(latestFeedback("failed")).toBeUndefined();
 		expect(modalHarness.editorProps?.value).toBe(7);
 		expect(onOpenChange).toHaveBeenCalledOnce();
 	});

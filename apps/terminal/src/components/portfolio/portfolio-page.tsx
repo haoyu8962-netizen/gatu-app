@@ -2,7 +2,6 @@ import { Button, Tooltip } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, PaperPlaneTiltIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { Suspense, useCallback, useId, useState } from "react";
-import { toast } from "sonner";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
@@ -108,10 +107,9 @@ export function PortfolioPage() {
 	};
 	const handleAccountModeChange = useCallback(
 		async (nextMode: SelectableAccountAbstraction) => {
-			const didUpdate = await accountModeControl.setAccountAbstraction(nextMode);
-			if (didUpdate) toast.success(t`Account mode updated`);
+			await accountModeControl.setAccountAbstraction(nextMode);
 		},
-		[accountModeControl.setAccountAbstraction, t],
+		[accountModeControl.setAccountAbstraction],
 	);
 
 	return (

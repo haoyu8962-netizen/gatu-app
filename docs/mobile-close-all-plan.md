@@ -2,6 +2,8 @@
 
 状态：已实现，2026-09-21。实施基线：`f924c611`；前期审查基线：`307cc26f`。范围是移动持仓工具栏缺少批量平仓入口，以及接入现有全账户市价链路；不包含真实平仓或发布。实际验证、失败记录和限制见[实施任务记录](work-memory/sessions/2026-09-21-mobile-close-all-implementation.md)。
 
+同日后续状态：下文基于 `8770d86d` 的队列复审和建议保留为历史证据；其「尚未接入即时任务」结论已由文末「全局批次反馈实施补充」取代。当前反馈以[全局操作通知规范](trading-notifications.md)为准。
+
 ## 实施前确认的差异
 
 以下保留审查时的观察；移动入口缺失已由本轮修复，当前行为见后文。
@@ -106,3 +108,15 @@
 - `position-close-all-action.test.tsx` 验证点击时刻快照、防重复和新旧会话隔离；现有 snapshot、submit、modal 与 ownership 测试保留。浏览器夹具连接真实入口、store、宿主、确认控制器与提交钩子，只替换网络和交易就绪边缘，不接触真实钱包。
 - 浏览器命令：`pnpm --dir apps/terminal exec playwright test --config tests/browser/position-close-all.playwright.config.ts`。夹具缓存是 `node_modules/.vite-position-close-all`，与应用和其他夹具互为兄弟目录；已加入分片浏览器 CI，加入配置并不代表远端 CI 已运行。
 - [前期审查记录](work-memory/sessions/2026-09-21-mobile-close-all-audit.md)保留当时的规划结论；[实施记录](work-memory/sessions/2026-09-21-mobile-close-all-implementation.md)记录最终版本的检查、实际结果和限制。没有真实订单、撤单、签名或发布，自动浏览器视口检查不等于真机验收。
+
+## 全局批次反馈实施补充（2026-09-21）
+
+状态：已实施、未发布。此节取代前文「提交后的状态反馈」中的待实施结论，保留该次官方观察与旧基线复现范围。[ADR 0019](adr/0019-global-trading-notifications.md)记录采用单一 Sonner 宿主的取舍。
+
+1. 双端确认后立即创建一张 Close All Positions 任务卡，确认面照常退出，原提交器继续执行。记录绑定 owner/env、queueId 和目标子项；同步响应、超时与后台对账更新同一任务，不再由各阶段各发一条不关联的短提示。
+2. 一张卡内列出各市场请求量、已知实际成交量、完全成交/部分成交/已接受/拒绝/取消/未知。部分结果按「完全成交」计数；HTTP 已知部分成交量不会被后续只有 filled 状态的推送覆盖成全量。WS/REST 缺少数量证据时，子项标为 `filled-unverified`，不补造完全成交计数。
+3. 原提交路径确认完整成交且新的账户快照证明仓位归零时，才显示 All positions closed。后台对账只确认订单事实，不能据此设置仓位归零；没有新增 TP/SL 清理、批量限价、自动重试或改变全账户范围。
+4. 任务宿主独立于交易页与市场就绪。切账户/网络仅显示匹配任务，原账户迟到结果仍记录给原任务。待确认、未知和部分结果常驻；pending/confirming 可软隐藏，但关闭不会释放资产锁，状态进展可重新显示。
+5. pending order 保存可选批次 metadata 与已知 HTTP 子项结果，刷新可恢复仍在跟踪的任务。旧记录或无效展示 metadata 只恢复可证明的通用信息，不丢弃合法跟踪事实，也不凭当前仓位猜当时的目标。已完成且没有 pending 记录的通知不重放。
+
+以上是当前实现说明，不把原移动入口浏览器验收自动扩大为全链路通知验收。新回归需要组合真实提交器、queue、宿主和对账，覆盖慢响应、部分量、晚到成功、身份切换及恢复；实际运行结果由[本次交付记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md)另列。没有以新的主网下单验证本次通知改动。

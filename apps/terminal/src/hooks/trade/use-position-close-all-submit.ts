@@ -3,9 +3,14 @@ import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import type { ExchangeOrder } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
+import {
+	getCloseOrderFeedbackChildren,
+	getCloseOrderFeedbackTarget,
+	summarizeCloseOrderFeedback,
+} from "@/domain/trade/close-order-feedback";
 import { isLiveExecutionPriceReceiptFresh } from "@/domain/trade/market-price";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
-import { isOrderBatchResolutionError, resolveOrderBatchResponse } from "@/domain/trade/order-tracking";
+import { isOrderBatchResolutionError, resolveFilledOrderBatchResponse } from "@/domain/trade/order-tracking";
 import {
 	getPositionCloseAllQuoteSymbol,
 	getPositionCloseAllSnapshotKey,
@@ -45,6 +50,7 @@ import {
 } from "@/lib/trade/position-submit-feedback";
 import { useMarketOrderSlippageBpsString } from "@/stores/use-global-settings-store";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
+import { addOrderQueueItem, getOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import { getPersistedPendingOrderAssetState } from "@/stores/use-pending-order-store";
 import { getPersistedPendingTwapAssetState } from "@/stores/use-pending-twap-store";
 
@@ -168,6 +174,23 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 		const submittedSnapshotKey = getPositionCloseAllSnapshotKey(submittedSnapshot);
 		const submittedSlippageBps = slippageBpsRef.current;
 		const assetIds = submittedSnapshot.targets.map((target) => target.assetId);
+		const queueId = addOrderQueueItem({
+			owner: submittedSnapshot.owner,
+			env: submittedSnapshot.env,
+			operation: "close-all",
+			orderType: "market",
+			countMode: "filled",
+			status: "pending",
+			children: submittedSnapshot.targets.map((target) => ({
+				...getCloseOrderFeedbackTarget(target),
+				status: "pending",
+			})),
+		});
+		function updateLocalState(nextPhase: PositionCloseAllSubmitPhase, nextError?: PositionSubmitFeedback): void {
+			if (!lifecycleRef.current.mounted || lifecycleRef.current.epoch !== lifecycleEpoch) return;
+			setPhase(nextPhase);
+			if (nextError !== undefined) setError(nextError);
+		}
 
 		try {
 			assertSnapshotFresh(submittedSnapshot);
@@ -190,6 +213,13 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 					assertNoPendingCoordination(assetLockLease, submittedSnapshot);
 
 					const orders = buildCloseOrders(freshTargets, submittedSlippageBps);
+					const feedbackTargets = freshTargets.map((target, index) => ({
+						...getCloseOrderFeedbackTarget(target),
+						size: String(orders[index].s),
+					}));
+					updateOrderQueueItem(queueId, {
+						children: feedbackTargets.map((target) => ({ ...target, status: "pending" })),
+					});
 					executionContextRef.current = {
 						lifecycleEpoch,
 						snapshotKey: submittedSnapshotKey,
@@ -201,43 +231,63 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 					};
 					assertLifecycleActive(lifecycleEpoch);
 					setPhase("submitting");
+					let positionsClosed = false;
 
 					const outcome = await trackedOrder.submitOrder(
 						{ orders, grouping: "na" },
 						{
 							assetLockLease,
+							queueId,
+							onResponse: (response) =>
+								updateOrderQueueItem(queueId, { children: getCloseOrderFeedbackChildren(feedbackTargets, response) }),
 							riskContext: { marketKind: "perp", marginMode: getBatchMarginMode(freshTargets) },
 							exclusiveAssetLock: true,
 							confirmationMode: "filled",
-							finalConfirmation: async () =>
-								confirmCloseTargetsAreFlat({
+							finalConfirmation: async () => {
+								positionsClosed = await confirmCloseTargetsAreFlat({
 									lifecycleEpoch,
 									snapshot: submittedSnapshot,
 									freshTargets,
 									info,
 									assertLifecycleActive,
 									liveContextRef,
-								}),
+								});
+								return positionsClosed;
+							},
 						},
 					);
-					assertLifecycleActive(lifecycleEpoch);
 					if (outcome.state === "blocked") {
-						setPhase("idle");
-						setError(localizedPositionSubmitFeedback("blocked-markets"));
+						updateOrderQueueItem(queueId, {
+							status: "failed",
+							error: localizedPositionSubmitFeedback("blocked-markets"),
+							children: feedbackTargets.map((target) => ({ ...target, status: "rejected" })),
+						});
+						updateLocalState("idle", localizedPositionSubmitFeedback("blocked-markets"));
 						return outcome;
 					}
 					if (outcome.state === "reconciling") {
-						setPhase("reconciling");
-						setError(localizedPositionSubmitFeedback("reconciling-close-orders"));
+						updateOrderQueueItem(queueId, {
+							status: "confirming",
+							children: getOrderQueueItem(queueId)?.children?.map((child) =>
+								child.status === "pending" ? { ...child, status: "unknown" } : child,
+							),
+						});
+						updateLocalState("reconciling", localizedPositionSubmitFeedback("reconciling-close-orders"));
 						return outcome;
 					}
 
-					const resolution = resolveOrderBatchResponse(
+					const resolution = resolveFilledOrderBatchResponse(
 						{ response: outcome.result.response },
-						submittedSnapshot.targets.length,
+						feedbackTargets.map((target) => target.size),
 					);
 					if (resolution?.status === "partial") {
-						setPhase("partial");
+						const summary = summarizeCloseOrderFeedback(getOrderQueueItem(queueId)?.children ?? []);
+						updateOrderQueueItem(queueId, {
+							status: "partial",
+							acceptedCount: summary.filledCount,
+							totalCount: summary.totalCount,
+						});
+						updateLocalState("partial");
 						return { ...resolution, state: "partial" as const };
 					}
 					if (resolution?.status === "rejected") {
@@ -245,23 +295,45 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 						throw positionSubmitFeedbackCause("close-orders-rejected");
 					}
 
-					setPhase("idle");
+					updateOrderQueueItem(queueId, {
+						status: "success",
+						outcome: "filled",
+						acceptedCount: feedbackTargets.length,
+						totalCount: feedbackTargets.length,
+						positionsClosed,
+					});
+					updateLocalState("idle");
 					return outcome;
 				},
 			);
-			assertLifecycleActive(lifecycleEpoch);
 			if (!lockResult.supported) {
 				throw positionSubmitFeedbackCause("coordination-unavailable");
 			}
 			if (!lockResult.acquired) {
-				setPhase("idle");
-				setError(localizedPositionSubmitFeedback("blocked-markets"));
+				updateOrderQueueItem(queueId, {
+					status: "failed",
+					error: localizedPositionSubmitFeedback("blocked-markets"),
+					children: getOrderQueueItem(queueId)?.children?.map((child) => ({ ...child, status: "rejected" })),
+				});
+				updateLocalState("idle", localizedPositionSubmitFeedback("blocked-markets"));
 				return { state: "blocked" };
 			}
 			return lockResult.value;
 		} catch (cause) {
-			if (isOrderBatchResolutionError(cause) && cause.resolution.status === "partial") {
-				const result = { state: "partial", ...cause.resolution } as const;
+			const children = getOrderQueueItem(queueId)?.children ?? [];
+			const summary = summarizeCloseOrderFeedback(children);
+			if (isOrderBatchResolutionError(cause) && (summary.hasPartialFill || summary.filledCount > 0)) {
+				const result = {
+					state: "partial",
+					acceptedCount: summary.filledCount,
+					rejectedCount: summary.totalCount - summary.filledCount,
+					totalCount: summary.totalCount,
+				} as const;
+				updateOrderQueueItem(queueId, {
+					status: "partial",
+					acceptedCount: result.acceptedCount,
+					totalCount: result.totalCount,
+				});
 				if (lifecycleRef.current.mounted && lifecycleRef.current.epoch === lifecycleEpoch) {
 					setPhase("partial");
 					setError(partialCloseAllFeedback(result.acceptedCount, result.totalCount));
@@ -270,6 +342,11 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 			}
 
 			const submitError = positionSubmitFeedbackFromCause(cause, "failed-submit-close-orders");
+			updateOrderQueueItem(queueId, {
+				status: "failed",
+				error: submitError,
+				children: children.map((child) => (child.status === "pending" ? { ...child, status: "rejected" } : child)),
+			});
 			const message = formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor));
 			if (lifecycleRef.current.mounted && lifecycleRef.current.epoch === lifecycleEpoch) {
 				setPhase("idle");

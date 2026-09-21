@@ -20,6 +20,7 @@ import {
 	reconcileStakingFundsAction,
 	reconcileVaultFundsAction,
 } from "./funds-action-reconciliation";
+import { FundsRecoveryNotification } from "./funds-recovery-notification";
 
 export function FundsActionRecoveryHost() {
 	const { t } = useLingui();
@@ -28,7 +29,7 @@ export function FundsActionRecoveryHost() {
 	const activeAgentOwner = useActiveAgentOwner();
 	const markers = useFundsActionMarkers();
 	const storageStatus = useFundsActionMarkerStorageStatus();
-	const [detailsOpen, setDetailsOpen] = useState(false);
+	const [detailsIdentity, setDetailsIdentity] = useState<string | null>(null);
 	const [confirmClearMarkerId, setConfirmClearMarkerId] = useState<string | null>(null);
 	const walletOwner = clientKey === "disconnected" ? undefined : clientKey;
 	const owner = resolveFundsActionRecoveryOwner({ sessionMode, env, activeAgentOwner, fallbackOwner: walletOwner });
@@ -57,6 +58,9 @@ export function FundsActionRecoveryHost() {
 	if (!marker) return null;
 	const activeMarker = marker;
 	const confirmClear = confirmClearMarkerId === activeMarker.id;
+	const markerIdentity = `${activeMarker.env}:${activeMarker.owner.toLowerCase()}`;
+	const detailsOpen = detailsIdentity === markerIdentity;
+	const setDetailsOpen = (open: boolean) => setDetailsIdentity(open ? markerIdentity : null);
 
 	async function clearMarker() {
 		if (confirmClearMarkerId !== activeMarker.id) {
@@ -71,24 +75,26 @@ export function FundsActionRecoveryHost() {
 
 	return (
 		<>
-			{/* biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content and review action in this status toast. */}
-			<div
-				role="status"
-				className="fixed right-4 bottom-[var(--funds-action-toast-offset)] z-[var(--z-toast)] flex max-w-[calc(100vw-var(--funds-action-toast-max))] items-center gap-3 rounded-12 border border-stroke-warning-strong bg-overlay p-3 shadow-overlay"
-			>
-				<WarningCircleIcon className="size-5 shrink-0 text-warning" weight="fill" />
-				<div className="min-w-0">
-					<p className="text-xs font-bold text-fg">
-						<Trans>Pending funds operation</Trans>
-					</p>
-					<p className="truncate text-2xs text-fg-muted">
-						<FundsActionLabel marker={activeMarker} /> · {activeMarker.displayAmount} {activeMarker.asset}
-					</p>
+			<FundsRecoveryNotification notificationId={`funds-recovery:${activeMarker.id}`}>
+				{/* biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content and review action in this status toast. */}
+				<div
+					role="status"
+					className="flex w-full items-center gap-3 rounded-12 border border-stroke-warning-strong bg-overlay p-3 shadow-overlay"
+				>
+					<WarningCircleIcon className="size-5 shrink-0 text-warning" weight="fill" />
+					<div className="min-w-0">
+						<p className="text-xs font-bold text-fg">
+							<Trans>Pending funds operation</Trans>
+						</p>
+						<p className="truncate text-2xs text-fg-muted">
+							<FundsActionLabel marker={activeMarker} /> · {activeMarker.displayAmount} {activeMarker.asset}
+						</p>
+					</div>
+					<Button size="xs" variant="outline" intent="neutral" onClick={() => setDetailsOpen(true)}>
+						<Trans>Review</Trans>
+					</Button>
 				</div>
-				<Button size="xs" variant="outline" intent="neutral" onClick={() => setDetailsOpen(true)}>
-					<Trans>Review</Trans>
-				</Button>
-			</div>
+			</FundsRecoveryNotification>
 			<AdaptiveModal
 				open={detailsOpen}
 				onOpenChange={(open) => {
@@ -189,23 +195,25 @@ function CorruptMarkerRecovery() {
 
 	return (
 		<>
-			<div
-				role="alert"
-				className="fixed right-4 bottom-[var(--funds-action-toast-offset)] z-[var(--z-toast)] flex max-w-[calc(100vw-var(--funds-action-toast-max))] items-center gap-3 rounded-12 border border-stroke-error-strong bg-overlay p-3 shadow-overlay"
-			>
-				<WarningCircleIcon className="size-5 shrink-0 text-error" weight="fill" />
-				<div className="min-w-0">
-					<p className="text-xs font-bold text-fg">
-						<Trans>Funds operation record unreadable</Trans>
-					</p>
-					<p className="truncate text-2xs text-fg-muted">
-						<Trans>New funds actions are locked until this record is resolved.</Trans>
-					</p>
+			<FundsRecoveryNotification notificationId="funds-recovery:corrupt">
+				<div
+					role="alert"
+					className="flex w-full items-center gap-3 rounded-12 border border-stroke-error-strong bg-overlay p-3 shadow-overlay"
+				>
+					<WarningCircleIcon className="size-5 shrink-0 text-error" weight="fill" />
+					<div className="min-w-0">
+						<p className="text-xs font-bold text-fg">
+							<Trans>Funds operation record unreadable</Trans>
+						</p>
+						<p className="truncate text-2xs text-fg-muted">
+							<Trans>New funds actions are locked until this record is resolved.</Trans>
+						</p>
+					</div>
+					<Button size="xs" variant="outline" intent="neutral" onClick={() => setDetailsOpen(true)}>
+						<Trans>Review</Trans>
+					</Button>
 				</div>
-				<Button size="xs" variant="outline" intent="neutral" onClick={() => setDetailsOpen(true)}>
-					<Trans>Review</Trans>
-				</Button>
-			</div>
+			</FundsRecoveryNotification>
 			<AdaptiveModal
 				open={detailsOpen}
 				onOpenChange={(open) => {

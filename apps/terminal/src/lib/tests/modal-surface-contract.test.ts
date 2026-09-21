@@ -12,6 +12,9 @@ const SHARED_THEME_CSS = readFileSync(resolve(TEST_DIR, "../../../../..", "packa
 const TERMINAL_COMPONENTS_DIR = resolve(TEST_DIR, "../..", "components");
 const POPOVER_SOURCE = readTerminalComponent("ui/popover.tsx");
 const ORDER_TOAST_SOURCE = readTerminalComponent("trade/tradebox/order-toast.tsx");
+const ORDER_NOTIFICATION_HOST_SOURCE = readTerminalComponent("trade/order-notification-host.tsx");
+const APP_TOASTER_SOURCE = readTerminalComponent("app-toaster.tsx");
+const SONNER_SOURCE = readTerminalComponent("ui/sonner.tsx");
 const DESKTOP_UTILITIES_MENU_SOURCE = readTerminalComponent("trade/header/desktop-utilities-menu.tsx");
 const TOP_NAV_SOURCE = readTerminalComponent("trade/header/top-nav.tsx");
 const USER_MENU_SOURCE = readTerminalComponent("trade/header/user-menu.tsx");
@@ -60,7 +63,7 @@ describe("modal surface contract", () => {
 
 	it("keeps transient terminal layers raised without flattening modal and drawer surfaces", () => {
 		expect(POPOVER_SOURCE).toContain("font-sans bg-overlay text-fg");
-		expect(ORDER_TOAST_SOURCE).toContain('"bg-overlay/95 backdrop-blur-sm"');
+		expect(ORDER_TOAST_SOURCE).toMatch(/\bbg-overlay(?:\/\d+)?\b/);
 		expect(menuPopupSurfaceClass).toBe(
 			"rounded-24 border-trading-panel-stroke-card bg-overlay p-1 font-market-close shadow-overlay",
 		);
@@ -72,6 +75,20 @@ describe("modal surface contract", () => {
 		expect(MOBILE_AGENT_QR_SCANNER_SOURCE).toContain("bg-modal px-6 text-center");
 		expect(MOBILE_AGENT_QR_SCANNER_SOURCE).not.toContain("bg-[#0F1A1F]");
 		expect(TRADING_DROPDOWN_SOURCE).toContain("menuPopupSelectionSkinClass,");
+	});
+
+	it("keeps task content raised inside the shared Sonner host without a second positioning layer", () => {
+		expect(ORDER_TOAST_SOURCE).toContain("shadow-overlay");
+		expect(ORDER_TOAST_SOURCE).not.toContain("bg-modal");
+		expect(ORDER_TOAST_SOURCE).not.toMatch(/\bfixed\b|createPortal|createRoot/);
+		expect(ORDER_NOTIFICATION_HOST_SOURCE).toContain("toast.custom(");
+		expect(ORDER_NOTIFICATION_HOST_SOURCE).toContain("<OrderToast ");
+		expect(APP_TOASTER_SOURCE.match(/<Toaster\s*\/>/g)).toHaveLength(1);
+		expect(APP_TOASTER_SOURCE.match(/<OrderNotificationGate\s*\/>/g)).toHaveLength(1);
+		for (const appearance of ["normal", "success", "error", "warning", "info"]) {
+			expect(SONNER_SOURCE).toContain(`"--${appearance}-bg": "var(--bg-overlay)"`);
+		}
+		expect(SONNER_SOURCE).toContain('zIndex: "var(--z-toast)"');
 	});
 
 	it("keeps every terminal menu on one shared skin without important overrides or one-off surface values", () => {

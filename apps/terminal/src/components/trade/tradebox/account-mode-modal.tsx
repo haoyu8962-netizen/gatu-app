@@ -1,8 +1,8 @@
 import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
 import {
 	type SelectableAccountAbstraction,
 	toSelectableAccountAbstraction,
@@ -10,6 +10,9 @@ import {
 import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
 import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
 import { cn } from "@/lib/cn";
+import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import { useHyperliquid } from "@/lib/hyperliquid";
+import { addOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 
 export interface AccountModeFormProps {
 	currentMode: AccountAbstraction;
@@ -75,6 +78,7 @@ export function AccountModeForm({
 	onApply,
 }: AccountModeFormProps) {
 	const { t } = useLingui();
+	const { clientKey, env } = useHyperliquid();
 	const modes = useAccountModeLabels();
 	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(() =>
 		toSelectableAccountAbstraction(currentMode),
@@ -112,11 +116,20 @@ export function AccountModeForm({
 		if (!selectedMode || !isDirty || isBusy || isModeUnavailable) return;
 
 		applyInFlightRef.current = true;
+		const notificationId = addOrderQueueItem({ owner: clientKey, env, title: msg`Account type`, status: "pending" });
 		onClose();
 		try {
 			await onApply(selectedMode);
+			updateOrderQueueItem(notificationId, { status: "success", message: msg`Account mode updated` });
 		} catch (error) {
-			toast.error(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
+			const unknown = isAmbiguousExchangeActionError(error);
+			updateOrderQueueItem(notificationId, {
+				status: unknown ? "unconfirmed" : "failed",
+				error: error instanceof Error ? error.message : undefined,
+				message: unknown
+					? msg`Update not confirmed. Check account settings before retrying.`
+					: msg`Failed to update account mode`,
+			});
 		} finally {
 			applyInFlightRef.current = false;
 		}

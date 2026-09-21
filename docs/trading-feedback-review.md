@@ -2,6 +2,8 @@
 
 日期：2026-09-21。代码基线：`efe8389ee8f2a19f99c2b45673dc5e78b409a1f7`。状态：完成审查，以下修复建议未实施。范围是普通下单、单仓市价平仓、全部平仓及共用通知/对账；不代表所有资金、金库、质押弹层已重新验收。实际命令、复现及限制见[任务记录](work-memory/sessions/2026-09-21-trading-feedback-components-review.md)。
 
+后续状态：本文保留修复前基线与原始发现，「当前」「未实施」均指对应审查时点。2026-09-21 后续已实施统一通知，替代状态见文末；当前契约以[全局操作通知规范](trading-notifications.md)及 [ADR 0019](adr/0019-global-trading-notifications.md)为准。
+
 ## 当前如何工作
 
 项目有确认弹窗，也有交易后的浮动反馈，但它们由不同组件负责。
@@ -104,3 +106,21 @@
 锁定的 Sonner 2.0.7 声明及[同版本实现](https://raw.githubusercontent.com/emilkowalski/sonner/v2.0.7/src/state.ts)已支持 `custom`、稳定 ID 更新、duration 和 dismiss 回调，无需为了统一通知引入另一套库。`toast.promise` 不能替代交易状态机：HTTP Promise 成功不是成交或仓位归零。合并宿主也不会自动修复 R1–R3，必须同时修正状态转换、身份归属与可见性判断。
 
 如果产品继续要求一个可滚动的汇总队列，可把队列内容保留在统一宿主中；不必把每个子单拆成一条短 toast。上述是推荐结构，具体并发数量、收起/重开及刷新恢复策略应在实施前补齐验收条件。[本次核对记录](work-memory/sessions/2026-09-21-feedback-host-consolidation-review.md)保留证据与查询限制。
+
+## 后续修复状态（2026-09-21，取代上述未实施状态）
+
+状态：本地实现已完成，未发布。保留前文行号、截图几何与测试结论对应的原基线，不把它们换成新代码的证据。完整当前入口矩阵、时长和恢复边界在[全局操作通知规范](trading-notifications.md)，实际最终检查由[交付任务记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md)列出。
+
+| 发现 | 已采用的实现 | 仍需遵守的边界 |
+| --- | --- | --- |
+| R1 晚到成功残留错误 | queue 状态转换清掉旧 error、outcome、计数与 message，成功内容不显示历史错误；普通订单/TWAP 同项更新 | 迟到事实必须来自原跟踪身份，不能仅因请求 Promise 成功断言成交 |
+| R2 切页不可见与过早过期 | `AppToaster` 中全局稳定挂载 `OrderNotificationHost`；成功只有到 Sonner 最前台才启用有限计时 | 不是完整通知历史；没有 pending 的已完成通知不在刷新后重放 |
+| R3 错账户反馈 | queue 必填 owner/env，宿主和内容只呈现当前身份；普通订单/TWAP 对账不再用无身份 Sonner fallback | 原账户迟到结果仍核销；过滤展示不能取消交易事实处理 |
+| R4 两套浮层遮挡 | OrderToast 改为纯内容，任务、标准提示和资金恢复使用同一 Sonner 堆叠 | 默认三条展示上限包含 custom；不再维护另一张独立历史队列 |
+| R5 601–1000px 遮住导航 | Toaster 普通 offset 与 mobileOffset 都按应用 <=1000px 规则避开导航、安全区及 12px 间隙 | 实际视口测试与物理设备验收范围须分别记录 |
+| R6 部分成交计数不准确 | filled 模式明确标为完全成交数，并保留逐市场实际量与状态；只有 filled 状态时标记 filled-unverified | 不编造成交量，不把接受、成交和仓位归零合并；后台不设置 positionsClosed |
+| R7 平仓无即时反馈 | 单仓与全部平仓点击即建立 scoped pending；跟踪器保存 queueId，后续更新原任务，部分/未知常驻 | dismiss 不解锁、不撤单、不重发；已关闭的未决项可随新状态再次出现 |
+
+同轮补齐限价平仓、反手、TP/SL、逐仓保证金、撤改单、TWAP 取消、现货兑换、模式/杠杆与推荐动作的任务反馈。可持久 pending order/TWAP 在刷新后恢复；旧记录缺少展示 metadata 或可选 metadata 校验失败时，仅显示可证明的信息，不丢合法跟踪事实。pending trading action、普通保证金/模式调整等没有因此新增持久恢复。
+
+资金恢复提醒进入同一堆叠，CCTP 保留自身持久记录与标准 Sonner，API 钱包密钥和金库/质押核验面保留。前文官方只有一个 toaster 的证据是对照，不是本地已通过验证的依据；本轮未以新的主网交易或真实钱包签名验证通知迁移。

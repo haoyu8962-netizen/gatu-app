@@ -125,6 +125,10 @@ test("keeps the real controller and submit hook alive through tab and desktop tr
 	const sizes = displayed.map((text) => Big(text.split("·")[1].trim()).toString());
 	const session = await page.getByTestId("session-id").textContent();
 	await confirm(page);
+	const feedback = page.locator("[data-order-feedback]");
+	await expect(feedback).toHaveCount(1);
+	await expect(feedback).toContainText("Submitting");
+	const feedbackId = await feedback.getAttribute("data-order-feedback");
 	await expect(page.getByTestId("sent-orders")).toContainText('"r":true');
 	await expect(page.getByTestId("mobile-close-all-positions")).toBeDisabled();
 	await page.getByRole("button", { name: "Switch tab", exact: true }).click();
@@ -135,7 +139,10 @@ test("keeps the real controller and submit hook alive through tab and desktop tr
 		page.getByTestId("positions-surface").getByRole("button", { name: "Close All Positions", exact: true }),
 	).toBeDisabled();
 	await page.getByRole("button", { name: "Release", exact: true }).click();
-	await expect(page.getByText("All close orders filled", { exact: true })).toBeVisible();
+	await expect(feedback).toContainText("All positions closed");
+	await expect(feedback).toHaveAttribute("data-order-feedback", feedbackId!);
+	await expect(feedback.getByText("Fully filled", { exact: true })).toHaveCount(2);
+	await expect(page.locator("[data-sonner-toast]")).toHaveCount(1);
 	await expect(page.getByTestId("session-id")).toHaveText("none");
 	const batches = JSON.parse((await page.getByTestId("sent-orders").textContent())!);
 	expect(batches).toHaveLength(1);
@@ -163,9 +170,18 @@ for (const change of [
 		await page.getByRole("button", { name: "Hold preflight", exact: true }).click();
 		await openConfirmation(page);
 		await confirm(page);
+		const feedback = page.locator("[data-order-feedback]");
+		await expect(feedback).toContainText("Submitting");
 		await page.getByRole("button", { name: change, exact: true }).click();
 		await page.getByRole("button", { name: "Release", exact: true }).click();
-		await expect(page.locator('[data-sonner-toast][data-type="error"]')).toBeVisible();
+		await expect(page.getByTestId("session-id")).toHaveText("none");
+		if (change === "Mismatch owner" || change === "Network") {
+			await expect(feedback).toHaveCount(0);
+			await page
+				.getByRole("button", { name: change === "Mismatch owner" ? "Restore owner" : "Network", exact: true })
+				.click();
+		}
+		await expect(feedback.getByRole("alert")).toContainText("Failed");
 		await expect(page.getByTestId("sent-orders")).toHaveText("[]");
 	});
 }
@@ -220,7 +236,7 @@ test("rejects an expired snapshot and an active TWAP", async ({ page }) => {
 	await openConfirmation(page);
 	await page.clock.fastForward(31000);
 	await confirm(page);
-	await expect(page.locator('[data-sonner-toast][data-type="error"]')).toBeVisible();
+	await expect(page.locator("[data-order-feedback]").getByRole("alert")).toContainText("Failed");
 	await expect(page.getByTestId("sent-orders")).toHaveText("[]");
 	await page.getByRole("button", { name: "Active TWAP", exact: true }).click();
 	await openConfirmation(page);
@@ -234,9 +250,60 @@ for (const outcome of ["Partial", "Ambiguous"]) {
 		await page.getByRole("button", { name: outcome, exact: true }).click();
 		await openConfirmation(page);
 		await confirm(page);
-		await expect(page.locator("[data-sonner-toast]")).toBeVisible();
-		await expect(page.getByText("All close orders filled", { exact: true })).toHaveCount(0);
+		const feedback = page.locator("[data-order-feedback]");
+		await expect(feedback).toHaveCount(1);
+		await expect(feedback).not.toContainText("All positions closed");
+		if (outcome === "Partial") {
+			await expect(feedback).toContainText("Partially completed");
+			await expect(feedback).toContainText("1 of 2 close orders fully filled");
+			await expect(feedback.getByText("Fully filled", { exact: true })).toHaveCount(1);
+			await expect(feedback.getByText("Rejected", { exact: true })).toHaveCount(1);
+			await expect(feedback).toContainText("Filled: 1.25 / 1.25");
+			await expect(feedback).toContainText("Order could not immediately match against any resting orders.");
+		} else {
+			await expect(feedback).toContainText("Confirming order status. Do not retry.");
+			await expect(feedback.getByText("Status unconfirmed", { exact: true })).toHaveCount(2);
+		}
+		await expect(page.locator("[data-sonner-toast]")).toHaveCount(1);
 		await expect(page.getByTestId("session-id")).toHaveText("none");
 		expect(JSON.parse((await page.getByTestId("sent-orders").textContent())!)).toHaveLength(1);
 	});
 }
+
+test("hot-switches the mounted waiting feedback without changing its task or sending twice", async ({ page }) => {
+	await page.goto("/position-close-all.html");
+	await page.getByRole("button", { name: "Hold exchange", exact: true }).click();
+	await openConfirmation(page);
+	await confirm(page);
+	const feedback = page.locator("[data-order-feedback]");
+	await expect(feedback).toContainText("Submitting");
+	const id = await feedback.getAttribute("data-order-feedback");
+	const element = await feedback.elementHandle();
+	await page.getByRole("button", { name: "zh", exact: true }).click();
+	await expect(feedback).toHaveAttribute("aria-label", "一键全平");
+	await expect(feedback).toHaveAttribute("data-order-feedback", id!);
+	expect(await element!.evaluate((node) => node.isConnected)).toBe(true);
+	await page.getByRole("button", { name: "en", exact: true }).click();
+	await page.getByRole("button", { name: "Release", exact: true }).click();
+	await expect(feedback).toContainText("All positions closed");
+	expect(JSON.parse((await page.getByTestId("sent-orders").textContent())!)).toHaveLength(1);
+});
+
+test("hiding waiting feedback keeps the request active and shows its eventual result", async ({ page }) => {
+	await page.goto("/position-close-all.html");
+	await page.getByRole("button", { name: "Hold exchange", exact: true }).click();
+	await openConfirmation(page);
+	await confirm(page);
+	const feedback = page.locator("[data-order-feedback]");
+	await expect(feedback).toContainText("Submitting");
+	const id = await feedback.getAttribute("data-order-feedback");
+	await feedback.getByRole("button", { name: "Dismiss", exact: true }).click();
+	await expect(feedback).toHaveCount(0);
+	await expect(page.getByTestId("mobile-close-all-positions")).toBeDisabled();
+	expect(JSON.parse((await page.getByTestId("sent-orders").textContent())!)).toHaveLength(1);
+	await page.getByRole("button", { name: "Release", exact: true }).click();
+	await expect(feedback).toContainText("All positions closed");
+	await expect(feedback).toHaveAttribute("data-order-feedback", id!);
+	await expect(page.getByTestId("session-id")).toHaveText("none");
+	expect(JSON.parse((await page.getByTestId("sent-orders").textContent())!)).toHaveLength(1);
+});

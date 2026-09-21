@@ -58,6 +58,34 @@ describe("pending order store", () => {
 		vi.unstubAllGlobals();
 	});
 
+	it("restores display metadata without changing tracked order facts", () => {
+		const storage = new MemoryStorage();
+		const store = createPendingOrderStore(storage);
+		const submission = store.getState().actions.add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "close",
+			confirmationMode: "filled",
+			queueId: "feedback-1",
+			children: [{ assetId: 0, cloid: "0x00000000000000000000000000000001" }],
+		});
+		store.getState().actions.updateFeedback(submission.id, {
+			operation: "close-all",
+			children: [{ assetId: 0, market: "HYPE", size: "2", filledSize: "1", status: "partial" }],
+		});
+		const restored = createPendingOrderStore(storage).getState().submissions[0];
+		expect(restored.feedback?.children?.[0]).toMatchObject({ status: "partial", filledSize: "1" });
+		expect(restored.children).toEqual(submission.children);
+		expect(restored.confirmationMode).toBe("filled");
+		const key = storage.key(0);
+		if (!key) throw new Error("Missing pending record");
+		storage.setItem(key, JSON.stringify({ ...restored, feedback: { operation: "invalid-ui-metadata" } }));
+		const withInvalidDisplay = createPendingOrderStore(storage).getState().submissions[0];
+		expect(withInvalidDisplay?.id).toBe(submission.id);
+		expect(withInvalidDisplay?.children).toEqual(submission.children);
+		expect(withInvalidDisplay?.feedback).toBeUndefined();
+	});
+
 	it("blocks the affected asset until every child has a known exchange status", () => {
 		const submission = getPendingOrderActions().add({
 			env: "Mainnet",

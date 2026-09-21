@@ -1,3 +1,4 @@
+import { HttpRequestError } from "@nktkas/hyperliquid";
 import { create } from "zustand";
 import type { Position } from "@/lib/hyperliquid";
 
@@ -172,7 +173,7 @@ export function useExchange(_method: string, options?: { executionGuard?: (param
 			setCloseAllFixture((state) => ({ orders: [...state.orders, params] }));
 			await waitAt("exchange");
 			const { outcome } = useCloseAllFixture.getState();
-			if (outcome === "ambiguous") throw new TypeError("Failed to fetch");
+			if (outcome === "ambiguous") throw new HttpRequestError({ detail: "Request timed out after 10000 ms" });
 			setCloseAllFixture({ settled: true });
 			return {
 				status: "ok",

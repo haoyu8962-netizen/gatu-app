@@ -1,3 +1,4 @@
+import { clearFeedback, feedbackErrorText, feedbackText, latestFeedback } from "./harness/order-feedback";
 // @vitest-environment jsdom
 
 import { act, createElement, type ReactNode } from "react";
@@ -6,7 +7,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MarginModeModal } from "@/components/trade/tradebox/margin-mode-modal";
 import { createI18nRoot } from "./harness/react";
 
-const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 const modalHarness = vi.hoisted(() => ({
 	isActivationLocked: undefined as (() => boolean) | undefined,
 	adaptiveClassName: "",
@@ -156,8 +156,6 @@ vi.mock("@/components/trade/tradebox/leverage-slider", () => ({
 	},
 }));
 
-vi.mock("sonner", () => ({ toast: toastMocks }));
-
 function getButton(container: HTMLElement, label: string): HTMLButtonElement {
 	const button = [...container.querySelectorAll("button")].find((candidate) => candidate.textContent?.includes(label));
 	if (!(button instanceof HTMLButtonElement)) throw new Error(`${label} button not found`);
@@ -170,12 +168,21 @@ function getLeverageInput(container: HTMLElement): HTMLInputElement {
 	return input;
 }
 
+const feedbackIdentity = vi.hoisted(() => ({
+	clientKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	env: "Mainnet",
+}));
+vi.mock("@/lib/hyperliquid", () => ({ useHyperliquid: () => feedbackIdentity }));
+
 describe("MarginModeModal", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 	let onApply: ReturnType<typeof vi.fn<(mode: "cross" | "isolated", leverage: number) => Promise<number | null>>>;
 
 	beforeEach(() => {
+		feedbackIdentity.clientKey = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		feedbackIdentity.env = "Mainnet";
+		clearFeedback();
 		modalHarness.adaptiveClassName = "";
 		modalHarness.adaptiveModalRenders = 0;
 		modalHarness.adaptiveOpenChange = undefined;
@@ -368,7 +375,7 @@ describe("MarginModeModal", () => {
 		expect(getButton(container, "Confirm").disabled).toBe(true);
 	});
 
-	it("does not let an old network request succeed or close the new same-market session", async () => {
+	it("records the old network result without closing the new same-market session", async () => {
 		let resolveApply: (() => void) | undefined;
 		onApply.mockImplementation(
 			(_mode, leverage) =>
@@ -384,6 +391,7 @@ describe("MarginModeModal", () => {
 		act(() => getButton(container, "Isolated").click());
 		act(() => getButton(container, "Confirm").click());
 
+		feedbackIdentity.env = "Testnet";
 		renderModal({
 			onOpenChange,
 			marketIdentity: "testnet:0x1111:perp:1:HYPE",
@@ -393,8 +401,11 @@ describe("MarginModeModal", () => {
 
 		await act(async () => resolveApply?.());
 
-		expect(toastMocks.success).not.toHaveBeenCalled();
-		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(latestFeedback("success")).toMatchObject({
+			owner: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			env: "Mainnet",
+		});
+		expect(latestFeedback("failed")).toBeUndefined();
 		expect(onOpenChange).toHaveBeenCalledOnce();
 	});
 
@@ -593,10 +604,10 @@ describe("MarginModeModal", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		expect(getButton(container, "Confirm").textContent).toBe("Confirm");
 		expect(container.querySelector(".animate-spin")).toBeNull();
-		expect(toastMocks.success).not.toHaveBeenCalled();
+		expect(latestFeedback("success")).toBeUndefined();
 
 		await act(async () => resolveApply?.());
-		expect(toastMocks.success).toHaveBeenCalledWith("Leverage updated to 7x");
+		expect(feedbackText("success")).toBe("Leverage updated to 7x");
 		expect(container.textContent).not.toContain("Updated");
 	});
 
@@ -607,10 +618,8 @@ describe("MarginModeModal", () => {
 		await act(async () => getButton(container, "Confirm").click());
 
 		expect(onApply).toHaveBeenCalledWith("isolated", 7);
-		expect(toastMocks.success).toHaveBeenCalledOnce();
-		expect(toastMocks.success).toHaveBeenCalledWith("Margin mode updated", {
-			description: "Leverage updated to 7x",
-		});
+		expect(latestFeedback("success")).toBeDefined();
+		expect(feedbackText("success")).toBe("Margin mode updated. Leverage updated to 7x");
 	});
 
 	it("keeps a new mobile draft ahead of an older commit as that commit is confirmed", () => {
@@ -654,7 +663,7 @@ describe("MarginModeModal", () => {
 		await act(async () => getButton(container, "Confirm").click());
 
 		expect(onOpenChange).toHaveBeenCalledWith(false);
-		expect(toastMocks.error).toHaveBeenCalledWith("Mobile leverage request failed");
+		expect(feedbackErrorText(latestFeedback("failed"))).toBe("Mobile leverage request failed");
 		expect(container.querySelector('[role="alert"]')).toBeNull();
 
 		onApply.mockResolvedValueOnce(7);
@@ -782,8 +791,11 @@ describe("MarginModeModal", () => {
 		});
 		await act(async () => resolveApply?.());
 
-		expect(toastMocks.success).not.toHaveBeenCalled();
-		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(latestFeedback("success")).toMatchObject({
+			owner: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			env: "Mainnet",
+		});
+		expect(latestFeedback("failed")).toBeUndefined();
 		expect(getLeverageInput(container).value).toBe("5");
 		expect(onOpenChange).toHaveBeenCalledOnce();
 	});

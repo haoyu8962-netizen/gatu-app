@@ -1,6 +1,4 @@
-import { useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
 import { type PositionReverseTarget, usePositionReverseSubmit } from "@/hooks/trade/use-position-reverse-submit";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { formatToken } from "@/lib/format";
@@ -40,7 +38,6 @@ interface ContentProps {
 
 function PositionReverseConfirmationContent({ target, open, onOpenChange }: ContentProps) {
 	useNumberFormatRevision();
-	const { t } = useLingui();
 	const markets = useMarkets();
 	const submission = usePositionReverseSubmit(target);
 	const submittedRef = useRef(false);
@@ -58,22 +55,9 @@ function PositionReverseConfirmationContent({ target, open, onOpenChange }: Cont
 		submittedRef.current = true;
 		setIsSubmitted(true);
 		try {
-			const outcome = await submission.submit();
-			if (outcome.state === "blocked") {
-				toast.warning(t`Another order for this market is still being confirmed.`);
-			} else if (outcome.state === "reconciling") {
-				toast.info(t`Order submitted. Confirming exchange status; do not retry.`);
-			} else {
-				const filledSize = getFilledSize(outcome.result.response?.data?.statuses);
-				const filledSizeLabel = filledSize
-					? formatToken(filledSize, { decimals: target.szDecimals, symbol: sizeSymbol })
-					: null;
-				toast.success(t`Position reversed — ${marketLabel}`, {
-					description: filledSizeLabel ? t`Reverse order filled for ${filledSizeLabel}.` : t`Reverse order filled.`,
-				});
-			}
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : t`Failed to reverse position`);
+			await submission.submit();
+		} catch {
+			return;
 		} finally {
 			onOpenChange(false);
 		}
@@ -95,15 +79,4 @@ function PositionReverseConfirmationContent({ target, open, onOpenChange }: Cont
 			onConfirm={() => void handleConfirm()}
 		/>
 	);
-}
-
-function getFilledSize(statuses: unknown[] | undefined): string | null {
-	for (const status of statuses ?? []) {
-		if (!status || typeof status !== "object" || !("filled" in status)) continue;
-		const filled = status.filled;
-		if (filled && typeof filled === "object" && "totalSz" in filled && typeof filled.totalSz === "string") {
-			return filled.totalSz;
-		}
-	}
-	return null;
 }

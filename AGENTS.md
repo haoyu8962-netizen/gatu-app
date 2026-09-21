@@ -125,6 +125,12 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Diagnose a reported slider problem from the page first (`data-gesture-end`, the recorder in `docs/slider-interactions.md`), then change code. A reported defect is fixed when the reporter's scenario is confirmed, not when some defect has been found and fixed.
 - A surface must not move its slider under the pointer during a gesture; hold layout that depends on the previewed value until the gesture ends, as presentation only.
 
+## Operation feedback contract
+
+- `docs/trading-notifications.md` and `docs/adr/0019-global-trading-notifications.md` own notification routing, result semantics, timing and recovery. Application feedback shares the root `AppToaster` Sonner container; bridges render content into it instead of creating independent positioned stacks.
+- Trading tasks carry the initiating owner/environment and a stable logical ID. Late results update that task; only the current identity may see it. Presentation IDs must prevent stale dismissal callbacks or exit animations from removing a later display. Dismissing feedback never cancels requests or clears business guards, and an unchanged pending/unconfirmed state must not reopen a hidden notice.
+- Preserve the distinction between accepted orders, verified full/partial fills, status-only fills and confirmed flat positions. Optional persisted display metadata must never invalidate pending execution facts. Use semantic messages for task feedback and translate at render time; retain dedicated funds-verification and one-time key panels.
+
 ## Startup rendering contract
 
 - `docs/adr/0010-blank-until-ready-startup.md` and `.claude/rules/startup-rendering.md` own this contract. Every application route prerenders and hydrates the same visually empty `StartupFallback`: `aria-busy` and one screen-reader-only output, with no visible skeleton or chrome.

@@ -1,11 +1,12 @@
 import { i18n } from "@lingui/core";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { useState } from "react";
-import { Toaster } from "sonner";
 import { MobilePositionsTab } from "@/components/trade/mobile/mobile-positions-tab";
 import { useMobileDisclosureSetState } from "@/components/trade/mobile/use-mobile-disclosure-set";
+import { OrderNotificationHost } from "@/components/trade/order-notification-host";
 import { PositionDialogHost } from "@/components/trade/positions/position-dialog-host";
 import { PositionsTab } from "@/components/trade/positions/positions-tab";
+import { Toaster } from "@/components/ui/sonner";
 import { ALL_POSITION_MARKETS } from "@/domain/trade/position-toolbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createI18nRoot } from "@/lib/tests/harness/react";
@@ -111,6 +112,9 @@ function Fixture() {
 				>
 					Mismatch owner
 				</button>
+				<button type="button" onClick={() => setCloseAllFixture({ clientKey: state.owner })}>
+					Restore owner
+				</button>
 				<button
 					type="button"
 					onClick={() => setCloseAllFixture({ env: state.env === "Mainnet" ? "Testnet" : "Mainnet" })}
@@ -138,7 +142,8 @@ function Fixture() {
 					))}
 			</section>
 			<PositionDialogHost />
-			<Toaster position="bottom-right" />
+			<Toaster />
+			<OrderNotificationHost />
 		</main>
 	);
 }

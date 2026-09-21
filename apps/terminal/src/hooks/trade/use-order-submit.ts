@@ -107,7 +107,7 @@ function getQueueOrderType(input: OrderSubmitInput): QueueOrderType {
 }
 
 export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSubmitResult {
-	const { exchangeSession, clientKey, sessionMode } = useHyperliquid();
+	const { exchangeSession, clientKey, sessionMode, env } = useHyperliquid();
 	const { submitOrder, isPending: isSubmittingOrder } = useTrackedOrder({ executionGuard: options.executionGuard });
 	const { submitTwap, isPending: isSubmittingTwap } = useTrackedTwapOrder({
 		executionGuard: options.twapExecutionGuard,
@@ -188,6 +188,8 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 		const hasSl = tpSlEnabled && canUseTpSl && isPositive(slPriceNum);
 
 		const orderId = addOrder({
+			owner: clientKey,
+			env,
 			market: baseToken,
 			side,
 			size: formattedSize,

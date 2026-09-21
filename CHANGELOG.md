@@ -8,6 +8,16 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Trading feedback now shares one notification stack across application pages. Market Close,
+  Close All, Limit Close, Reverse, TP/SL, margin updates, order edits and cancellations show an
+  immediate task that updates as the request is confirmed. Close All lists each market's result;
+  partial fills and uncertain outcomes stay available until dismissed. Late confirmations clear
+  outdated errors and remain tied to the account and network that started the request. Pending
+  orders can restore their feedback after a reload without inventing missing trade details.
+  Successful tasks get their display time when they reach the front of the stack, and mobile
+  notifications stay above the bottom navigation. Funds recovery reminders share the stack while
+  keeping their existing review panels; dismissing a trading notice does not cancel its request.
+
 - Mobile Positions now has a `Close all` action beside its single expand/collapse toggle.
   It opens the same market-close confirmation as desktop for all perpetual positions in the
   account, including positions hidden by list filters. The confirmation lists each market,

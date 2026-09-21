@@ -6,7 +6,7 @@ import { I18nProvider } from "@lingui/react";
 import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { OrderQueueErrorMessage } from "@/components/trade/tradebox/order-toast";
+import { OrderQueueErrorMessage } from "@/components/trade/tradebox/order-queue-error-message";
 import { type OrderReconciliationErrorCode, orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 
 const UNCONFIRMED =
