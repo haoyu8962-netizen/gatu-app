@@ -11,6 +11,7 @@ import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import type { PositionCloseAllSession } from "@/stores/use-position-dialog-store";
 import { TradingActionButton } from "../components/trading-action-button";
+import { PositionCloseAllTargets } from "./position-close-all-targets";
 import { PositionCloseDialogContent } from "./position-close-dialog-content";
 import { PositionCloseDialogFooter } from "./position-close-dialog-footer";
 import { PositionCloseDialogHeader } from "./position-close-dialog-header";
@@ -146,6 +147,10 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 			</PositionCloseDialogHeader>
 
 			<PositionCloseDialogContent>
+				<p className="text-xs text-market-close-muted">
+					{t`This closes all perpetual positions in this account, including positions hidden by filters.`}
+				</p>
+				<PositionCloseAllTargets targets={snapshot.targets} />
 				<PositionCloseSummary
 					testId="position-close-all-summary"
 					ariaLabel={t`Close all positions summary`}

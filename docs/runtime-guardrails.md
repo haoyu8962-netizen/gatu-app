@@ -692,6 +692,16 @@ test file. Validate dedicated fixtures from a cold fixture cache as well as a wa
 cache: incomplete mock exports can break dependency scanning even when a warm
 development run appears to pass. Never clear the application cache for this check.
 
+The mobile/desktop close-all fixture uses the sibling cache
+`node_modules/.vite-position-close-all` and scans only `position-close-all.html`.
+Run it with
+`pnpm --dir apps/terminal exec playwright test --config tests/browser/position-close-all.playwright.config.ts`.
+The shared optimizer and default suite exclude this entry and test file. It uses
+the real entry hook, dialog host, controller, submit hook and execution guards;
+wallet readiness and exchange/data transport use synthetic fixtures. It exercises
+responsive layout, filtered-account scope and pending submissions across list
+unmounts and the 1000/1001px boundary without signing or sending real orders.
+
 Shared desktop/mobile order summaries are emitted as separate implicit chunks
 after the client runtime entry. The trade route imports them statically inside its
 existing dynamic page boundary, and TanStack Start retains one client entry.

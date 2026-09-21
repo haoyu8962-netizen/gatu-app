@@ -161,3 +161,8 @@ export function getPositionCloseAllQuoteSymbol(market: UnifiedMarket | undefined
 	const quoteSymbol = market.quoteToken?.displayName?.trim() || market.quoteToken?.name?.trim();
 	return quoteSymbol || null;
 }
+
+export function getPositionCloseAllTargetDetails(target: PositionCloseAllTarget) {
+	const size = Big(target.signedPositionSize);
+	return { side: size.gt(0) ? ("long" as const) : ("short" as const), size: size.abs().toString() };
+}

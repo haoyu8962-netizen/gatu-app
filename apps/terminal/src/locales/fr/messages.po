@@ -1397,20 +1397,24 @@ msgstr "Cliquez pour envoyer · Les transactions exécutées sont irréversibles
 msgid "Close"
 msgstr "Fermer"
 
-#: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
+msgid "Close all"
+msgstr "Tout clôturer"
+
+#: src/hooks/trade/use-position-close-all-action.ts
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is currently unavailable."
 msgstr "Tout fermer est actuellement indisponible."
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable because duplicate market data was detected."
 msgstr "Tout fermer est indisponible car des données de marché en double ont été détectées."
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable because position data is incomplete."
 msgstr "Tout fermer est indisponible car les données de position sont incomplètes."
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable until every position market has loaded."
 msgstr "Tout fermer est indisponible tant que tous les marchés des positions ne sont pas chargés."
 
@@ -1602,6 +1606,7 @@ msgid "Collapse {marketName} history details"
 msgstr "Réduire les détails de l'historique {marketName}"
 
 #: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
 msgid "Collapse all"
 msgstr "Tout réduire"
 
@@ -2809,6 +2814,7 @@ msgid "Expand {marketName} history details"
 msgstr "Développer les détails de l'historique {marketName}"
 
 #: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
 msgid "Expand all"
 msgstr "Tout développer"
 
@@ -4039,6 +4045,7 @@ msgstr "Se connecter par e-mail"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-close-all-targets.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -5587,6 +5594,10 @@ msgstr "Positions"
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "Les positions ont changé pendant que cette confirmation était ouverte. Fermez-la puis rouvrez-la avant de soumettre."
 
+#: src/components/trade/positions/position-close-all-targets.tsx
+msgid "Positions to close"
+msgstr "Positions à clôturer"
+
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "Positive PNL"
 msgstr "PnL positif"
@@ -6812,6 +6823,7 @@ msgstr "Partager le PNL de {displayName}"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-close-all-targets.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -8060,6 +8072,10 @@ msgstr "Ce navigateur ne dispose plus de la clé de trading exacte correspondant
 #: src/lib/trade/position-submit-feedback.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "Cet aperçu de fermeture globale a expiré. Fermez-le puis rouvrez-le pour vérifier les valeurs actuelles."
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "This closes all perpetual positions in this account, including positions hidden by filters."
+msgstr "Toutes les positions perpétuelles de ce compte seront clôturées, y compris celles masquées par les filtres."
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
 #: src/lib/hyperliquid/use-deposit.ts

@@ -1397,20 +1397,24 @@ msgstr "انقر للإرسال · لا يمكن التراجع عن الصفق�
 msgid "Close"
 msgstr "إغلاق"
 
-#: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
+msgid "Close all"
+msgstr "إغلاق الكل"
+
+#: src/hooks/trade/use-position-close-all-action.ts
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is currently unavailable."
 msgstr "إغلاق الكل غير متاح حالياً."
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable because duplicate market data was detected."
 msgstr "إغلاق الكل غير متاح بسبب اكتشاف بيانات سوق مكررة."
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable because position data is incomplete."
 msgstr "إغلاق الكل غير متاح لأن بيانات المراكز غير مكتملة."
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable until every position market has loaded."
 msgstr "إغلاق الكل غير متاح حتى يكتمل تحميل سوق كل مركز."
 
@@ -1602,6 +1606,7 @@ msgid "Collapse {marketName} history details"
 msgstr "طي تفاصيل سجل {marketName}"
 
 #: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
 msgid "Collapse all"
 msgstr "طي الكل"
 
@@ -2809,6 +2814,7 @@ msgid "Expand {marketName} history details"
 msgstr "توسيع تفاصيل سجل {marketName}"
 
 #: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
 msgid "Expand all"
 msgstr "توسيع الكل"
 
@@ -4039,6 +4045,7 @@ msgstr "تسجيل الدخول بالبريد الإلكتروني"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-close-all-targets.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -5587,6 +5594,10 @@ msgstr "المراكز"
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "تغيّرت المراكز أثناء فتح هذا التأكيد. أغلقه وأعد فتحه قبل الإرسال."
 
+#: src/components/trade/positions/position-close-all-targets.tsx
+msgid "Positions to close"
+msgstr "المراكز المراد إغلاقها"
+
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "Positive PNL"
 msgstr "أرباح وخسائر موجبة"
@@ -6812,6 +6823,7 @@ msgstr "مشاركة الأرباح والخسائر لـ {displayName}"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-close-all-targets.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -8060,6 +8072,10 @@ msgstr "لم يعد هذا المتصفح يحتفظ بمفتاح التداول
 #: src/lib/trade/position-submit-feedback.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "انتهت صلاحية معاينة إغلاق الكل هذه. أغلقها وأعد فتحها لمراجعة القيم الحالية."
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "This closes all perpetual positions in this account, including positions hidden by filters."
+msgstr "سيؤدي هذا إلى إغلاق جميع مراكز العقود الدائمة في هذا الحساب، بما فيها المراكز المخفية بواسطة عوامل التصفية."
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
 #: src/lib/hyperliquid/use-deposit.ts

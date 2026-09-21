@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getPositionCloseAllSnapshotKey, resolvePositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
+import {
+	getPositionCloseAllSnapshotKey,
+	getPositionCloseAllTargetDetails,
+	resolvePositionCloseAllSnapshot,
+} from "@/domain/trade/position-close-all";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
 
@@ -51,6 +55,10 @@ describe("position close-all snapshot", () => {
 			},
 		]);
 		expect(getPositionCloseAllSnapshotKey(resolution.snapshot)).toContain(":BTC:1:5:0.01:cross:");
+		expect(resolution.snapshot.targets.map(getPositionCloseAllTargetDetails)).toEqual([
+			{ side: "long", size: "0.01" },
+			{ side: "short", size: "2.5" },
+		]);
 	});
 
 	it("fails the whole snapshot closed when any open position lacks a tradable market binding", () => {

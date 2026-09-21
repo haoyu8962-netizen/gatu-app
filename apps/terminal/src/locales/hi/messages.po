@@ -1397,20 +1397,24 @@ msgstr "सबमिट करने के लिए क्लिक करे�
 msgid "Close"
 msgstr "बंद करें"
 
-#: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
+msgid "Close all"
+msgstr "सभी बंद करें"
+
+#: src/hooks/trade/use-position-close-all-action.ts
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is currently unavailable."
 msgstr "सभी बंद करना अभी उपलब्ध नहीं है।"
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable because duplicate market data was detected."
 msgstr "डुप्लिकेट बाज़ार डेटा मिलने के कारण सभी बंद करना उपलब्ध नहीं है।"
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable because position data is incomplete."
 msgstr "पोज़िशन डेटा अधूरा होने के कारण सभी बंद करना उपलब्ध नहीं है।"
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable until every position market has loaded."
 msgstr "जब तक हर पोज़िशन का बाज़ार लोड नहीं हो जाता, तब तक सभी बंद करना उपलब्ध नहीं है।"
 
@@ -1602,6 +1606,7 @@ msgid "Collapse {marketName} history details"
 msgstr "{marketName} इतिहास विवरण समेटें"
 
 #: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
 msgid "Collapse all"
 msgstr "सभी समेटें"
 
@@ -2809,6 +2814,7 @@ msgid "Expand {marketName} history details"
 msgstr "{marketName} इतिहास विवरण विस्तृत करें"
 
 #: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
 msgid "Expand all"
 msgstr "सभी विस्तृत करें"
 
@@ -4039,6 +4045,7 @@ msgstr "ईमेल से लॉग इन करें"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-close-all-targets.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -5587,6 +5594,10 @@ msgstr "पोज़िशन"
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "यह पुष्टि खुली रहने के दौरान पोज़िशन बदल गईं। सबमिट करने से पहले इसे बंद करके फिर से खोलें।"
 
+#: src/components/trade/positions/position-close-all-targets.tsx
+msgid "Positions to close"
+msgstr "बंद किए जाने वाले पोज़िशन"
+
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "Positive PNL"
 msgstr "धनात्मक PNL"
@@ -6812,6 +6823,7 @@ msgstr "{displayName} का PNL साझा करें"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-close-all-targets.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -8060,6 +8072,10 @@ msgstr "इस ब्राउज़र में अब लंबित स्�
 #: src/lib/trade/position-submit-feedback.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "इस क्लोज़-ऑल पूर्वावलोकन की समय-सीमा समाप्त हो गई। वर्तमान मान देखने के लिए इसे बंद करके दोबारा खोलें।"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "This closes all perpetual positions in this account, including positions hidden by filters."
+msgstr "इस खाते के सभी परपेचुअल पोज़िशन बंद हो जाएंगे, जिनमें फ़िल्टर से छिपे पोज़िशन भी शामिल हैं।"
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
 #: src/lib/hyperliquid/use-deposit.ts

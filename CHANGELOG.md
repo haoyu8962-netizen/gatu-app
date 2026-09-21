@@ -8,6 +8,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Mobile Positions now has a `Close all` action beside its single expand/collapse toggle.
+  It opens the same market-close confirmation as desktop for all perpetual positions in the
+  account, including positions hidden by list filters. The confirmation lists each market,
+  direction and quantity before submission. Unready data disables the entry, and a pending
+  submission stays active through tab and desktop/mobile layout changes.
+
 - Reduce Only now sizes percentages and Max from the current opposite position on desktop and
   mobile, including when opening availability is zero. Oversized or wrong-direction orders are
   blocked across ordinary, trigger, TWAP and Scale orders; Scale checks the combined size.

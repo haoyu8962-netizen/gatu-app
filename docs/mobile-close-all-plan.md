@@ -1,8 +1,10 @@
-# 移动持仓「全部平仓」入口审查与修复计划
+# 移动持仓「全部平仓」入口审查与实施说明
 
-状态：拟实施，未修改产品代码。审查日期：2026-09-21。代码基线：`307cc26f`。范围是移动持仓工具栏缺少批量平仓入口，以及接入现有交易链路的方案；不包含真实平仓或发布。
+状态：已实现，2026-09-21。实施基线：`f924c611`；前期审查基线：`307cc26f`。范围是移动持仓工具栏缺少批量平仓入口，以及接入现有全账户市价链路；不包含真实平仓或发布。实际验证、失败记录和限制见[实施任务记录](work-memory/sessions/2026-09-21-mobile-close-all-implementation.md)。
 
-## 已确认的差异
+## 实施前确认的差异
+
+以下保留审查时的观察；移动入口缺失已由本轮修复，当前行为见后文。
 
 1. **入口缺失属实。** [MobilePositionsTab](../apps/terminal/src/components/trade/mobile/mobile-positions-tab.tsx) 的 `renderFilterRow` 只渲染筛选器和 [MobileBulkDisclosureActions](../apps/terminal/src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx)。后者只有展开、收起详情的功能，移动持仓页没有调用 `openCloseAll`。本地浏览器也只显示这两个动作；本次本地账户处于交易未连接状态，有仓位状态的缺口由源码确认。
 2. **项目已有可复用实现。** 桌面 [PositionsTab](../apps/terminal/src/components/trade/positions/positions-tab.tsx) 从未筛选的 `positions` 构造全账户快照，经 store 的 `openCloseAll` 打开确认面。[PositionDialogHost](../apps/terminal/src/components/trade/positions/position-dialog-host.tsx) 位于页面层，确认面已经根据 `useIsMobile` 适配移动外壳；缺的是移动入口，不需要再建一条签名或批量发单路径。
@@ -25,13 +27,13 @@
 
 来源：[Exchange endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint)、[订单类型](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/order-types)、[错误响应](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/error-responses)、[TP/SL](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/take-profit-and-stop-loss-orders-tp-sl)、[nktkas order](https://nktkas.gitbook.io/hyperliquid/api-reference/exchange-methods/order)。本地声明位于 `apps/terminal/node_modules/@nktkas/hyperliquid/esm/api/exchange/_methods/order.d.ts`。协议事实与上述项目实现分别核对，未用 UI 操作推导 API 字段。
 
-## 推荐方案与边界
+## 已采用的方案与边界
 
-本轮建议先提供**当前账户全部永续仓位的市价平仓入口**，包括已加载的默认 DEX 与 builder DEX；沿用桌面现有范围。列表方向、市场、保证金筛选只影响展示。确认面明确说明「包括被筛选隐藏的持仓」，展示实际目标数和按抵押币分组的金额，并展示目标市场及方向，避免只看到一张卡片却关闭多个仓位的误解。开窗后的快照仍冻结；数量、集合或身份变化时按现有守卫失败关闭，不自动扩大目标。
+本轮提供**当前账户全部永续仓位的市价平仓入口**，包括已加载的默认 DEX 与 builder DEX；沿用桌面现有范围。列表方向、市场、保证金筛选只影响展示。确认面明确说明「包括被筛选隐藏的持仓」，展示实际目标数和按抵押币分组的金额，并展示目标市场及方向，避免只看到一张卡片却关闭多个仓位的误解。开窗后的快照仍冻结；数量、集合或身份变化时按现有守卫失败关闭，不自动扩大目标。
 
-中文入口采用「全部平仓」，与「全部收起」区分；英文沿用 `Close All Positions` 的可访问名称。按钮只打开确认面，开窗不签名、不发单。确认后的静态动词、立即收起和右下角结果通知遵循[确认面契约](confirmation-surfaces.md)，后台提交由页面宿主持有，移动页签切换或跨桌面断点不得卸载执行器。
+中文入口采用「全部平仓」，与「全部收起」区分；移动入口的可访问名称直接使用可见标签（英文 `Close all`），避免短标签与既有完整译文不同而违反 [Label in Name](https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html)。确认面继续沿用 `Close All Positions`。按钮只打开确认面，开窗不签名、不发单。确认后的静态动词、立即收起和右下角结果通知遵循[确认面契约](confirmation-surfaces.md)，后台提交由页面宿主持有，移动页签切换或跨桌面断点不得卸载执行器。
 
-移动持仓工具栏保留现有高度和筛选控件风格。持仓页将展开/收起做成一个切换控件，为最右侧固定的「全部平仓」留出空间；左侧筛选区允许横向滚动，动作区不能被挤出屏幕。该调整只作用于持仓页，其余列表继续保留既有展开/收起行为。沿用现有视觉高度与触控热区规则，检查相邻热区不重叠。
+移动持仓工具栏保留现有高度和筛选控件风格。持仓页的展开/收起使用一个切换控件，为最右侧固定的「全部平仓」留出空间；左侧筛选区允许横向滚动，动作区不能被挤出屏幕。该调整只作用于持仓页，其余列表继续保留既有展开/收起行为。沿用现有视觉高度与触控热区规则，检查相邻热区不重叠。
 
 未连接、首份持仓未到达、数据错误/过期、市场映射不全、同账户已有会话时保持禁用；动作标签不变，不能展示被动错误或把未知快照当作空持仓。可用性由布尔状态决定，译文只负责展示。空持仓沿用当前明确空态；筛选后为空但账户仍有持仓时，入口仍按全账户范围判断，确认面必须说明范围。
 
@@ -59,6 +61,9 @@
 
 后续专项：如要求与官方完全一致，先确定按筛选还是全账户的产品语义，再设计作用范围快照与双端一致性；分别验证 `positionTpsl`、固定数量 TP/SL、父订单 OCO、普通委托和部分平仓时的清理规则，最后才考虑明确的取消步骤。测试网验证未完成前不宣称关联委托已全部撤销。
 
-## 本次已做与未做
+## 实施与验证入口
 
-本次完成源码审查、官方确认面只读观察与协议/SDK 核对，产品修改仍未实施。当前版本的定向回归结果及浏览器限制记录在[任务记录](work-memory/sessions/2026-09-21-mobile-close-all-audit.md)。没有真实订单、撤单、签名或发布。
+- 移动端进入「持仓」，工具栏最右侧为「全部平仓」，左边为单一「全部展开 / 全部收起」切换。`usePositionCloseAllAction` 同时供桌面与移动使用，开窗冻结未筛选的全账户仓位；确认面列出市场、方向、数量并说明筛选范围，金额仍按抵押币分别汇总。
+- `position-close-all-action.test.tsx` 验证点击时刻快照、防重复和新旧会话隔离；现有 snapshot、submit、modal 与 ownership 测试保留。浏览器夹具连接真实入口、store、宿主、确认控制器与提交钩子，只替换网络和交易就绪边缘，不接触真实钱包。
+- 浏览器命令：`pnpm --dir apps/terminal exec playwright test --config tests/browser/position-close-all.playwright.config.ts`。夹具缓存是 `node_modules/.vite-position-close-all`，与应用和其他夹具互为兄弟目录；已加入分片浏览器 CI，加入配置并不代表远端 CI 已运行。
+- [前期审查记录](work-memory/sessions/2026-09-21-mobile-close-all-audit.md)保留当时的规划结论；[实施记录](work-memory/sessions/2026-09-21-mobile-close-all-implementation.md)记录最终版本的检查、实际结果和限制。没有真实订单、撤单、签名或发布，自动浏览器视口检查不等于真机验收。

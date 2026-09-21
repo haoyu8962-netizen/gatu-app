@@ -13,6 +13,7 @@ import {
 	type PositionMarketIdentity,
 } from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { usePositionCloseAllAction } from "@/hooks/trade/use-position-close-all-action";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -39,7 +40,7 @@ import type {
 import { PositionFilterToolbar } from "../positions/position-filter-toolbar";
 import type { PositionMarketOption } from "../positions/position-market-filter";
 import { PositionPnlShareModal } from "../positions/position-pnl-share-modal";
-import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
+import { MobilePositionActions } from "./mobile-position-actions";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import type { MobileDisclosureSetState } from "./use-mobile-disclosure-set";
@@ -71,6 +72,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 	const { setActiveTab } = useMobileTerminalTab();
 	const { setSide } = useOrderEntryActions();
 	const positionMarketClose = usePositionMarketCloseAction();
+	const closeAll = usePositionCloseAllAction();
 
 	function handleSelectMarket(name: string, side: Side) {
 		navigateToMarket(name, undefined, { displayedContent: "trade" });
@@ -211,20 +213,33 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 		return (
 			<div
 				data-testid="mobile-position-filter-row"
-				className="flex h-9 shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5"
+				className="flex h-9 shrink-0 items-center justify-between gap-3 border-b border-market-close-stroke-card px-3.5"
 			>
-				<PositionFilterToolbar
-					direction={positionDirectionFilter}
-					margin={positionMarginFilter}
-					market={positionMarketFilter}
-					marketOptions={positionMarketOptions}
-					onDirectionChange={handlePositionDirectionChange}
-					onMarginChange={handlePositionMarginChange}
-					onMarketChange={handlePositionMarketChange}
-					mobile
-					disabled={disabled}
+				<div
+					className="min-w-0 flex-1 overflow-x-auto py-2 scrollbar-none"
+					data-testid="mobile-position-filters-scroll"
+				>
+					<div className="w-max">
+						<PositionFilterToolbar
+							direction={positionDirectionFilter}
+							margin={positionMarginFilter}
+							market={positionMarketFilter}
+							marketOptions={positionMarketOptions}
+							onDirectionChange={handlePositionDirectionChange}
+							onMarginChange={handlePositionMarginChange}
+							onMarketChange={handlePositionMarketChange}
+							mobile
+							disabled={disabled}
+						/>
+					</div>
+				</div>
+				<MobilePositionActions
+					positionKeys={disabled ? [] : filteredPositionKeys}
+					disclosure={positionsDisclosure}
+					canCloseAll={!disabled && closeAll.canOpen}
+					onCloseAll={closeAll.open}
+					unavailableReason={closeAll.unavailableReason}
 				/>
-				<MobileBulkDisclosureActions keys={disabled ? [] : filteredPositionKeys} controller={positionsDisclosure} />
 			</div>
 		);
 	}
@@ -243,6 +258,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 	if (positionsLoading || positionsError || positionsStale) {
 		return (
 			<>
+				{renderFilterRow(true)}
 				<DataPendingState loading={positionsLoading} />
 				{pnlShareModal}
 			</>

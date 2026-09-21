@@ -13,7 +13,7 @@ export default defineConfig({
 	root,
 	cacheDir: fileURLToPath(new URL("../../node_modules/.vite-browser", import.meta.url)),
 	optimizeDeps: {
-		entries: ["**/*.html", "!user-menu-recovery.html", "!mobile-trade-all-orders.html", "!account-actions.html"],
+		entries: ["**/*.html", "!user-menu-recovery.html", "!mobile-trade-all-orders.html", "!account-actions.html", "!position-close-all.html"],
 	},
 	define: { "process.env.DRAGGABLE_DEBUG": "false" },
 	plugins: [
