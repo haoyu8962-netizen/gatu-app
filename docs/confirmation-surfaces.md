@@ -59,7 +59,10 @@
 | 撤单、改单、TWAP 终止、账户模式 | 2026-09-21 第二批起满足第 6 条，见上文。它们使用普通 `button` / `Button`，**不在**标签契约测试的发现范围内，由各自的渲染测试钉住（`cancel-all-orders-modal`、`desktop-orders-cancel-all`、`mobile-orders-card`、`mobile-order-modification`、`desktop-twap-tab`、`account-mode-modal`） |
 | 保证金模式、杠杆 `tradebox/margin-mode-modal.tsx`、`tradebox/leverage-modal.tsx` | 2026-09-21 第二批起满足第 1、6 条，见上文；杠杆弹层在标签契约里登记为静态 |
 | 发送、划转、充值、提现 | 2026-09-21 起按钮名称静态（外部钱包等待签名时显示钱包握手提示 `Confirm in wallet`）；**有意不**点击即关闭，而是保持打开到请求结束、随后关闭、结果走通知，与官方终端一致；充值在广播前失败时留在表单内重试。CCTP 充值的转发进度由页面级的 `CctpDepositTrackingNotifier` 用一条可原位更新的通知呈现。做法、与官方的对照和偏差见 [资金类弹层的结果反馈](funds-dialog-outcome-plan.md)。展示 → 承诺的核对未做 |
-| API 钱包操作 `api-wallet/api-wallet-action-modal.tsx` | 不在 `components/trade` 下，未核对；提交期间显示 `Processing…` |
+| 推荐码与领取奖励 `referrals/referral-action-modal.tsx` | 2026-09-21 起点击 `Confirm` / `Claim all` 即关闭，结果走通知；状态未确认（`ReferralActionStatusUnknownError` 或请求结果不明）为常驻警告，并提示「再次提交签名请求前先刷新推荐数据」。提交钩子在推荐看板里，弹层关闭后仍然存活；看板的 `actionBusy` 在请求期间禁用入口 |
+| 金库充值 / 提现 `vaults/vault-action-modal.tsx`、质押 `staking/staking-action-modal.tsx` | 2026-09-21 起：请求期间弹层保持打开并显示进度面板（等待签名、已提交、对账），按钮区为空，质押原先的占位按钮 `Operation in progress` 已删除。对账得出结论后由页面层上报：核验成功 → 通知（金库带最终金额、佣金、平仓成本与交易哈希；质押带浏览器链接）并关闭；签名被拒或请求被拒 → 错误通知并回到复核步骤，可原地重试。**结果未知保留在弹层内**：它是资金动作标记的核验入口（`Verify again`），页面级的 `FundsActionRecoveryHost` 也会把用户带回这个弹层，改成通知会和恢复流程打架。控制器的状态机与它的测试没有改动，转换发生在 `vaults-page.tsx` 与 `staking-view.tsx` |
+| API 钱包授权 / 撤销 `api-wallet/api-wallet-action-modal.tsx` | **有意保留分阶段弹层**：授权成功后要在弹层里展示、下载并确认保存一次性私钥，结果未知时要显式丢弃本地密钥，这些都不能变成会消失的通知。2026-09-21 只改了按钮：确认按钮在预检期间保持 `Sign and authorize` / `Confirm removal`（原先按钮内容会换成「正在核对最新数据…」加转圈，现在是按钮上方的一行状态），进行中不再有 `Processing…` 占位按钮 |
+| LiFi 跨链桥 `tradebox/bridge/*` | 未改。功能开关 `VITE_LIFI_BRIDGE_CREATE_ENABLED` 默认关闭；执行页是一个多笔交易、由当前页面驱动的执行跟踪器（可恢复），不是确认按钮上的进度 |
 
 `trading-action-button-label-contract.test.ts` 只覆盖渲染 `TradingActionButton` 的文件，名称如此，覆盖范围也如此。它用 TypeScript AST 检查该按钮子节点里的插值模板、`<Plural>`、带值的 `<Trans>` 与字符串拼接，并登记经由变量给出的名称；变量、属性、函数调用等它无法判断的表达式按源码文本登记，内容要靠人审查。发现按文件聚合：一个文件开始或停止渲染该按钮、或者登记的表达式集合变化时测试失败，借此要求对照本文审查一次；在已登记文件里再加一个只用静态动词的按钮不会触发。
 

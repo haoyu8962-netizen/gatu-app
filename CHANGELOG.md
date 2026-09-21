@@ -32,6 +32,21 @@ changes, not evidence that a build has been deployed or accepted on real devices
   reason it failed. A withdrawal whose status could not be confirmed stays on screen as a warning
   until you dismiss it. A failed Send keeps the destination and amount for the next time you open
   Send. A deposit that fails before it is broadcast returns to the form so you can retry.
+- Referral dialogs (enter a code, create a code, claim rewards) close as soon as you confirm and
+  report the result as a notification; a request whose status could not be confirmed stays on
+  screen as a warning until you dismiss it.
+- Vault deposits and withdrawals and staking operations still show their progress while the
+  request is signed, submitted and verified, but a verified result now closes the dialog and
+  arrives as a notification (a vault transfer lists the final amount, commission and closing cost),
+  and a rejected request shows a notification and returns to the review step. A result that could
+  not be verified stays in the dialog with `Verify again`, as before. The staking dialog no longer
+  shows a disabled `Operation in progress` button, and its error explanations, which were rendering
+  empty, are now shown and translated.
+- The API wallet dialog keeps its buttons named `Sign and authorize` and `Confirm removal` while
+  fresh data is checked, and no longer shows a `Processing…` placeholder button. The rest of that
+  dialog is unchanged because it has to show the one-time key.
+- Amounts and transaction hashes in transfer, swap, deposit, withdrawal, vault and staking
+  notifications keep their left-to-right order when the interface language is Arabic.
 - After a USDC deposit is confirmed on Arbitrum the Deposit dialog closes. While Circle forwards it
   to Hyperliquid, a single notification with an explorer link shows the progress, keeps tracking
   after you close the dialog or reload the page, and turns into the result. Reopening Deposit while
