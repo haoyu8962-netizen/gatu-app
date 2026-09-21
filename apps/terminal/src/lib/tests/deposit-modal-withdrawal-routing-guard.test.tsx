@@ -47,6 +47,7 @@ const WITHDRAWAL_MESSAGES_AR: Record<keyof typeof WITHDRAWAL_MESSAGES, string> =
 const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning: vi.fn() }));
 vi.mock("sonner", () => ({ toast: toastMocks }));
 const closeDepositModal = vi.hoisted(() => vi.fn());
+const resetDeposit = vi.hoisted(() => vi.fn());
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -415,7 +416,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			maxAmount: "10",
 			maxDepositRaw: testState.depositMaxRaw,
 			networkName: "Arbitrum",
-			reset: vi.fn(),
+			reset: resetDeposit,
 			sponsoredCctpEnabled: true,
 			sponsoredCctpReadiness: {
 				failure: testState.sponsoredReadinessFailure,
@@ -611,6 +612,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		toastMocks.success.mockReset();
 		toastMocks.warning.mockReset();
 		closeDepositModal.mockReset();
+		resetDeposit.mockReset();
 		testState.exchangeMutations.clear();
 		testState.exchangeSdkCalls.clear();
 		testState.exchangeSignal = new AbortController().signal;
@@ -1914,7 +1916,17 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
 	});
 
-	it("renders a localized definitive source failure as failed without parsing its wording", async () => {
+	function getToastText(call: unknown[] | undefined): string {
+		const options = call?.[1] as { description?: ReactNode } | undefined;
+		const host = document.createElement("div");
+		const descriptionRoot = createRoot(host);
+		act(() => descriptionRoot.render(createElement(I18nProvider, { i18n }, options?.description)));
+		const text = `${String(call?.[0])} ${host.textContent ?? ""}`;
+		act(() => descriptionRoot.unmount());
+		return text;
+	}
+
+	it("reports a localized definitive source failure without parsing its wording and closes", async () => {
 		testState.modalOpen = true;
 		testState.depositStatus = "error";
 		testState.depositHash = `0x${"1".repeat(64)}`;
@@ -1925,25 +1937,27 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		);
 
 		await rerender();
+		await rerender();
 
-		expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Deposit failed");
-		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe("交易已在 Arbitrum 上回滚");
+		expect(toastMocks.error).toHaveBeenCalledOnce();
+		expect(getToastText(toastMocks.error.mock.calls[0])).toContain("Deposit failed 交易已在 Arbitrum 上回滚");
+		expect(getToastText(toastMocks.error.mock.calls[0])).toContain("View on explorer");
+		expect(toastMocks.warning).not.toHaveBeenCalled();
+		expect(container.querySelector('[data-testid="status-screen"]')).toBeNull();
+		expect(closeDepositModal).toHaveBeenCalledOnce();
 	});
 
-	it("retranslates a stored deposit-route error after the locale changes", async () => {
+	it("reports a deposit-route error from its stable code and returns to the form for a retry", async () => {
 		testState.modalOpen = true;
 		testState.depositStatus = "error";
 		testState.depositError = new UsdcDepositRouteError("changed");
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
 
 		await rerender();
-		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(
-			WITHDRAWAL_MESSAGES.depositRouteChanged,
-		);
 
-		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
-		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(
-			WITHDRAWAL_MESSAGES_AR.depositRouteChanged,
-		);
+		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(WITHDRAWAL_MESSAGES_AR.depositRouteChanged);
+		expect(resetDeposit).toHaveBeenCalledOnce();
+		expect(closeDepositModal).not.toHaveBeenCalled();
 	});
 
 	it("does not infer a definitive outcome from an unstructured error message", async () => {
@@ -1955,7 +1969,13 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 		await rerender();
 
-		expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Deposit status unknown");
+		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith(
+			"Deposit status unknown",
+			expect.objectContaining({ closeButton: true, duration: Number.POSITIVE_INFINITY }),
+		);
+		expect(getToastText(toastMocks.warning.mock.calls[0])).toContain("its final status could not be verified");
+		expect(closeDepositModal).toHaveBeenCalledOnce();
 	});
 
 	it("does not offer a retry when a sponsored submission may have reached the bundler without returning a hash", async () => {
@@ -1968,9 +1988,36 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 		await rerender();
 
-		expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Deposit status unknown");
-		expect(Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Retry")).toBe(
-			false,
-		);
+		expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith("Deposit status unknown", expect.anything());
+		expect(resetDeposit).toHaveBeenCalledOnce();
+		expect(closeDepositModal).toHaveBeenCalledOnce();
+		expect(toastMocks.error).not.toHaveBeenCalled();
+	});
+
+	it("reports a confirmed bridge deposit with its amount and closes the dialog", async () => {
+		testState.modalOpen = true;
+		testState.depositStatus = "success";
+		testState.depositHash = `0x${"3".repeat(64)}`;
+		testState.depositExecutionRoute = "bridge";
+
+		await rerender();
+
+		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Deposit submitted", expect.anything());
+		expect(getToastText(toastMocks.success.mock.calls[0])).toContain("confirmed on Arbitrum");
+		expect(container.querySelector('[data-testid="status-screen"]')).toBeNull();
+		expect(closeDepositModal).toHaveBeenCalledOnce();
+	});
+
+	it("hands a confirmed CCTP deposit to the page-level tracker without a notification of its own", async () => {
+		testState.modalOpen = true;
+		testState.depositStatus = "success";
+		testState.depositHash = `0x${"4".repeat(64)}`;
+		testState.depositExecutionRoute = "cctp";
+
+		await rerender();
+
+		expect(toastMocks.success).not.toHaveBeenCalled();
+		expect(toastMocks.warning).not.toHaveBeenCalled();
+		expect(closeDepositModal).toHaveBeenCalledOnce();
 	});
 });

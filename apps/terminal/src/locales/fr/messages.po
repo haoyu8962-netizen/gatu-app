@@ -1120,7 +1120,6 @@ msgstr "Aperçu caméra pour le QR du portefeuille de bureau"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
@@ -1289,11 +1288,12 @@ msgstr "Les frais Circle ont changé avant l’envoi. Vérifiez les frais actual
 msgid "Circle fees changed. Review the updated fee, then submit again."
 msgstr "Les frais Circle ont changé. Vérifiez les frais actualisés, puis soumettez à nouveau."
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
 msgstr "Circle émet et transfère les USDC vers Hyperliquid. Ne renvoyez pas le même transfert."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
 msgstr "Circle a soumis la transaction de transfert HyperEVM. Le crédit sur HyperCore peut prendre plus de temps."
@@ -1384,7 +1384,6 @@ msgstr "Cliquez pour envoyer · Les transactions exécutées sont irréversibles
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
@@ -2197,9 +2196,6 @@ msgstr "Déployeur"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -2230,6 +2226,7 @@ msgstr "Code QR de l'adresse de dépôt"
 msgid "Deposit amount"
 msgstr "Montant"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "Échec du dépôt"
@@ -2496,8 +2493,6 @@ msgstr "Ne plus afficher cette confirmation"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "Terminé"
@@ -3184,11 +3179,12 @@ msgstr "Pour les utilisateurs avancés qui veulent plus de flexibilité et d'eff
 msgid "For example: grid-bot"
 msgstr "Par exemple : grid-bot"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forward transaction submitted"
 msgstr "Transaction de transfert soumise"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forwarding deposit"
@@ -6220,7 +6216,6 @@ msgstr "Reprendre le suivi"
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -7639,13 +7634,14 @@ msgstr "Le résultat de l'approbation n'est pas confirmé. Réessayez la vérifi
 #~ msgstr "L’Agent Hyperliquid approuvé signe cette demande. Les demandes signées ne sont jamais réessayées automatiquement."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
-msgstr "La transaction Arbitrum est confirmée, mais le statut Circle est temporairement indisponible. Vous pouvez fermer cette fenêtre ; le suivi reprendra à votre retour."
+#~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
+#~ msgstr "La transaction Arbitrum est confirmée, mais le statut Circle est temporairement indisponible. Vous pouvez fermer cette fenêtre ; le suivi reprendra à votre retour."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
-msgstr "La transaction Arbitrum est confirmée. Circle émet et transfère les USDC vers Hyperliquid."
+#~ msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
+#~ msgstr "La transaction Arbitrum est confirmée. Circle émet et transfère les USDC vers Hyperliquid."
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume when you return."
 msgstr "La transaction Arbitrum a été soumise, mais le statut Circle est temporairement indisponible. Le suivi reprendra à votre retour."
@@ -9370,6 +9366,8 @@ msgstr "Tout afficher"
 msgid "View asset information"
 msgstr "Afficher les informations sur l'actif"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "View on explorer"
 msgstr "Voir sur l'explorateur"

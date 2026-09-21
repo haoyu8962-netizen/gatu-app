@@ -1120,7 +1120,6 @@ msgstr "डेस्कटॉप वॉलेट QR के लिए कैम�
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
@@ -1289,11 +1288,12 @@ msgstr "सबमिशन से पहले Circle शुल्क बदल 
 msgid "Circle fees changed. Review the updated fee, then submit again."
 msgstr "Circle शुल्क बदल गए हैं। अपडेट किए गए शुल्क की समीक्षा करें और फिर दोबारा सबमिट करें।"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
 msgstr "Circle USDC मिंट करके Hyperliquid को फ़ॉरवर्ड कर रहा है। उसी ट्रांसफ़र को दोबारा सबमिट न करें।"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
 msgstr "Circle ने HyperEVM फ़ॉरवर्डिंग ट्रांज़ैक्शन सबमिट कर दिया है। HyperCore में क्रेडिट होने में अतिरिक्त समय लग सकता है।"
@@ -1384,7 +1384,6 @@ msgstr "सबमिट करने के लिए क्लिक करे�
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
@@ -2197,9 +2196,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -2230,6 +2226,7 @@ msgstr "जमा पते का QR कोड"
 msgid "Deposit amount"
 msgstr "राशि"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "डिपॉज़िट विफल"
@@ -2496,8 +2493,6 @@ msgstr "यह पुष्टि दोबारा न दिखाएं"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "पूर्ण"
@@ -3184,11 +3179,12 @@ msgstr "उन उन्नत उपयोगकर्ताओं के ल�
 msgid "For example: grid-bot"
 msgstr "उदाहरण: grid-bot"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forward transaction submitted"
 msgstr "फ़ॉरवर्ड ट्रांज़ैक्शन सबमिट किया गया"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forwarding deposit"
@@ -6220,7 +6216,6 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -7639,13 +7634,14 @@ msgstr "स्वीकृति परिणाम की पुष्टि �
 #~ msgstr "स्वीकृत Hyperliquid Agent इस अनुरोध पर हस्ताक्षर करता है। हस्ताक्षरित अनुरोधों का अपने-आप दोबारा प्रयास कभी नहीं किया जाता।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
-msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आप यह विंडो बंद कर सकते हैं; आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
+#~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
+#~ msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आप यह विंडो बंद कर सकते हैं; आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
-msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है। Circle USDC मिंट करके Hyperliquid को फ़ॉरवर्ड कर रहा है।"
+#~ msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
+#~ msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है। Circle USDC मिंट करके Hyperliquid को फ़ॉरवर्ड कर रहा है।"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume when you return."
 msgstr "Arbitrum ट्रांज़ैक्शन सबमिट हो गया है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
@@ -9370,6 +9366,8 @@ msgstr "सभी देखें"
 msgid "View asset information"
 msgstr "परिसंपत्ति की जानकारी देखें"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "View on explorer"
 msgstr "Explorer पर देखें"

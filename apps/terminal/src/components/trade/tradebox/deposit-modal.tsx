@@ -88,6 +88,7 @@ import { DepositForm } from "./deposit/deposit-form";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
 import { WithdrawForm } from "./deposit/withdraw-form";
 import { WrongNetworkScreen } from "./deposit/wrong-network-screen";
+import { DepositExplorerLink } from "./deposit-explorer-link";
 
 const LazyBridgeTab = createLazyComponent(() => import("./bridge/bridge-tab"), "BridgeTab");
 
@@ -577,10 +578,6 @@ export function DepositModal() {
 		observedWithdrawalRouteRef.current = routedWithdrawalRoute;
 		if (previousRoute && previousRoute !== routedWithdrawalRoute) setWithdrawalRouteChanged(true);
 	}, [open, routedWithdrawalRoute]);
-
-	function handleDepositRetry() {
-		resetDeposit();
-	}
 
 	async function assertFreshWithdrawalRoute(expectedRoute: WithdrawalRoute, signal?: AbortSignal) {
 		let freshRoute: WithdrawalRoute | null;
@@ -1215,6 +1212,104 @@ export function DepositModal() {
 	function handlePerpsSpotTransferClick() {
 		openTransferModal("toPerp");
 	}
+	const reportedDepositOutcomeRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (depositStatus !== "success" && depositStatus !== "error") {
+			reportedDepositOutcomeRef.current = null;
+			return;
+		}
+		const outcomeKey = `${depositStatus}:${depositHash ?? "no-hash"}`;
+		if (reportedDepositOutcomeRef.current === outcomeKey) return;
+		reportedDepositOutcomeRef.current = outcomeKey;
+		reportDepositOutcome();
+	});
+
+	function reportDepositOutcome() {
+		const explorerLink = (
+			<DepositExplorerLink txHash={depositHash} txChain={depositTxChain} label={t`View on explorer`} />
+		);
+		if (depositStatus === "success") {
+			if (!isCurrentCctpDeposit) {
+				toast.success(t`Deposit submitted`, {
+					description: (
+						<span className="flex flex-col gap-1">
+							<span>
+								<span className="tabular-nums">{displayedDepositAmount} USDC</span>{" "}
+								{t`confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute.`}
+							</span>
+							{explorerLink}
+						</span>
+					),
+					duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
+				});
+			} else if (cctpRecoveryUnavailable) {
+				toast.warning(t`Forwarding deposit`, {
+					description: (
+						<span className="flex flex-col gap-1">
+							<span>
+								{t`Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing.`}
+							</span>
+							<span className="break-all font-mono">{depositHash}</span>
+							{explorerLink}
+						</span>
+					),
+					duration: Number.POSITIVE_INFINITY,
+					closeButton: true,
+				});
+			}
+			handleClose();
+			return;
+		}
+
+		const hasSubmittedDeposit = !!depositHash;
+		const depositStatusUnknown =
+			submissionOutcomeUnknown || (hasSubmittedDeposit && !isDefinitiveDepositSourceFailure(depositError));
+		if (depositStatusUnknown) {
+			toast.warning(t`Deposit status unknown`, {
+				description: (
+					<span className="flex flex-col gap-1">
+						<span>
+							{t`The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying.`}
+						</span>
+						{explorerLink}
+					</span>
+				),
+				duration: Number.POSITIVE_INFINITY,
+				closeButton: true,
+			});
+			handleClose();
+			return;
+		}
+
+		const depositFailureMessage = getDepositFailureMessage();
+		if (hasSubmittedDeposit) {
+			toast.error(t`Deposit failed`, {
+				description: (
+					<span className="flex flex-col gap-1">
+						<span>{depositFailureMessage}</span>
+						{explorerLink}
+					</span>
+				),
+				duration: Number.POSITIVE_INFINITY,
+				closeButton: true,
+			});
+			handleClose();
+			return;
+		}
+		toast.error(depositFailureMessage);
+		resetDeposit();
+	}
+
+	function getDepositFailureMessage(): string {
+		if (depositError instanceof UsdcDepositRouteError) {
+			return formatFundsActionFeedback(
+				depositError.reason === "changed" ? "deposit-route-changed" : "deposit-route-unavailable",
+				(descriptor) => t(descriptor),
+			);
+		}
+		return formatTransferError(depositError);
+	}
+
 	let depositPendingHeading = <Trans>Confirm in wallet</Trans>;
 	if (walletResponseDelayed) depositPendingHeading = <Trans>Taking longer than expected</Trans>;
 	if (depositStatus === "confirming") depositPendingHeading = <Trans>Waiting for chain confirmation</Trans>;
@@ -1250,122 +1345,6 @@ export function DepositModal() {
 				<Button onClick={handleClose} className="w-full">
 					<Trans>Close</Trans>
 				</Button>
-			</StatusScreen>
-		);
-	}
-
-	if (depositStatus === "success") {
-		if (isCurrentCctpDeposit) {
-			const forwardSubmitted = cctpDepositTracking.data?.status === "forward-submitted";
-			return (
-				<StatusScreen
-					open={open}
-					presentation={presentation}
-					title={<Trans>Deposit</Trans>}
-					icon={forwardSubmitted ? "success" : "loading"}
-					heading={forwardSubmitted ? <Trans>Forward transaction submitted</Trans> : <Trans>Forwarding deposit</Trans>}
-					description={
-						cctpRecoveryUnavailable ? (
-							<Trans>
-								Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing.
-							</Trans>
-						) : forwardSubmitted ? (
-							<Trans>
-								Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time.
-							</Trans>
-						) : cctpDepositTracking.isError ? (
-							<Trans>
-								The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this
-								window; tracking will resume when you return.
-							</Trans>
-						) : (
-							<Trans>
-								The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid.
-							</Trans>
-						)
-					}
-					txHash={depositHash}
-					txChain={depositTxChain}
-					onClose={handleClose}
-				>
-					<Button onClick={handleClose} className="w-full">
-						<Trans>Done</Trans>
-					</Button>
-				</StatusScreen>
-			);
-		}
-		return (
-			<StatusScreen
-				open={open}
-				presentation={presentation}
-				title={<Trans>Deposit</Trans>}
-				icon="success"
-				heading={<Trans>Deposit submitted</Trans>}
-				description={
-					<>
-						<span className="tabular-nums font-medium text-success">{displayedDepositAmount} USDC</span>{" "}
-						<Trans>confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute.</Trans>
-					</>
-				}
-				txHash={depositHash}
-				txChain={depositTxChain}
-				onClose={handleClose}
-			>
-				<Button onClick={handleClose} className="w-full">
-					<Trans>Done</Trans>
-				</Button>
-			</StatusScreen>
-		);
-	}
-
-	if (depositStatus === "error") {
-		const hasSubmittedDeposit = !!depositHash;
-		const depositRouteFeedbackCode =
-			depositError instanceof UsdcDepositRouteError
-				? depositError.reason === "changed"
-					? "deposit-route-changed"
-					: "deposit-route-unavailable"
-				: null;
-		const depositStatusUnknown =
-			submissionOutcomeUnknown || (hasSubmittedDeposit && !isDefinitiveDepositSourceFailure(depositError));
-
-		return (
-			<StatusScreen
-				open={open}
-				presentation={presentation}
-				title={<Trans>Deposit</Trans>}
-				icon="error"
-				heading={depositStatusUnknown ? <Trans>Deposit status unknown</Trans> : <Trans>Deposit failed</Trans>}
-				description={
-					depositStatusUnknown ? (
-						<Trans>
-							The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction
-							before retrying.
-						</Trans>
-					) : depositRouteFeedbackCode ? (
-						formatFundsActionFeedback(depositRouteFeedbackCode, (descriptor) => t(descriptor))
-					) : (
-						formatTransferError(depositError)
-					)
-				}
-				txHash={depositHash}
-				txChain={depositTxChain}
-				onClose={handleClose}
-			>
-				{hasSubmittedDeposit || submissionOutcomeUnknown ? (
-					<Button onClick={handleClose} className="w-full">
-						<Trans>Close</Trans>
-					</Button>
-				) : (
-					<div className="flex w-full gap-2">
-						<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
-							<Trans>Cancel</Trans>
-						</Button>
-						<Button onClick={handleDepositRetry} className="flex-1">
-							<Trans>Retry</Trans>
-						</Button>
-					</div>
-				)}
 			</StatusScreen>
 		);
 	}

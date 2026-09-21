@@ -1120,7 +1120,6 @@ msgstr "معاينة الكاميرا لرمز QR الخاص بمحفظة سطح
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
@@ -1289,11 +1288,12 @@ msgstr "تغيرت رسوم Circle قبل الإرسال. راجع الرسوم 
 msgid "Circle fees changed. Review the updated fee, then submit again."
 msgstr "تغيرت رسوم Circle. راجع الرسوم المحدّثة، ثم أرسل مرة أخرى."
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
 msgstr "تقوم Circle بسك USDC وتحويله إلى Hyperliquid. لا تُعد إرسال التحويل نفسه."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
 msgstr "أرسلت Circle معاملة التحويل إلى HyperEVM. قد يستغرق قيد HyperCore وقتًا إضافيًا."
@@ -1384,7 +1384,6 @@ msgstr "انقر للإرسال · لا يمكن التراجع عن الصفق�
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
@@ -2197,9 +2196,6 @@ msgstr "جهة النشر"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -2230,6 +2226,7 @@ msgstr "رمز QR لعنوان الإيداع"
 msgid "Deposit amount"
 msgstr "المبلغ"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "فشل الإيداع"
@@ -2496,8 +2493,6 @@ msgstr "عدم إظهار هذا التأكيد مرة أخرى"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "تم"
@@ -3184,11 +3179,12 @@ msgstr "للمستخدمين المتقدمين الذين يريدون مرون
 msgid "For example: grid-bot"
 msgstr "على سبيل المثال: grid-bot"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forward transaction submitted"
 msgstr "تم إرسال معاملة التحويل"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forwarding deposit"
@@ -6220,7 +6216,6 @@ msgstr "استئناف التتبع"
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -7639,13 +7634,14 @@ msgstr "نتيجة الموافقة غير مؤكدة. أعد محاولة ال�
 #~ msgstr "يوقّع Agent المعتمد من Hyperliquid هذا الطلب. لا تُعاد محاولة الطلبات الموقّعة تلقائيًا مطلقًا."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
-msgstr "تم تأكيد معاملة Arbitrum، لكن حالة Circle غير متاحة مؤقتًا. يمكنك إغلاق هذه النافذة؛ سيُستأنف التتبع عند عودتك."
+#~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
+#~ msgstr "تم تأكيد معاملة Arbitrum، لكن حالة Circle غير متاحة مؤقتًا. يمكنك إغلاق هذه النافذة؛ سيُستأنف التتبع عند عودتك."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
-msgstr "تم تأكيد معاملة Arbitrum. تقوم Circle بسك USDC وتحويله إلى Hyperliquid."
+#~ msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
+#~ msgstr "تم تأكيد معاملة Arbitrum. تقوم Circle بسك USDC وتحويله إلى Hyperliquid."
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume when you return."
 msgstr "أُرسلت معاملة Arbitrum، لكن حالة Circle غير متاحة مؤقتًا. سيُستأنف التتبع عند عودتك."
@@ -9370,6 +9366,8 @@ msgstr "عرض الكل"
 msgid "View asset information"
 msgstr "عرض معلومات الأصل"
 
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "View on explorer"
 msgstr "العرض على المستكشف"
