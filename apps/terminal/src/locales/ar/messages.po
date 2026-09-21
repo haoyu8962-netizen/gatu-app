@@ -5740,8 +5740,8 @@ msgstr "وقت المعالجة"
 #~ msgstr "جارٍ المعالجة..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
-msgid "Processing…"
-msgstr "جارٍ المعالجة…"
+#~ msgid "Processing…"
+#~ msgstr "جارٍ المعالجة…"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx

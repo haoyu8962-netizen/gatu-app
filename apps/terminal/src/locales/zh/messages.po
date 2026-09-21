@@ -5740,8 +5740,8 @@ msgstr "处理时间"
 #~ msgstr "处理中…"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
-msgid "Processing…"
-msgstr "处理中…"
+#~ msgid "Processing…"
+#~ msgstr "处理中…"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx

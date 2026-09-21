@@ -5740,8 +5740,8 @@ msgstr "Processing time"
 #~ msgstr "Processing..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
-msgid "Processing…"
-msgstr "Processing…"
+#~ msgid "Processing…"
+#~ msgstr "Processing…"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
