@@ -443,7 +443,7 @@ export function TradeFormFields({
 					(capabilities.hasTpSl && canUseTpSl) ||
 					orderType === "limit" ||
 					scaleOrder) && (
-					<div className="space-y-2 py-0.5">
+					<div className="space-y-2 py-0">
 						<TradeOptionCheckboxes
 							className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-xs"
 							tradingPanel
