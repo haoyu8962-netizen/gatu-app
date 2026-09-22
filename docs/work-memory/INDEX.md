@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [精简通知提交 4f7e046f 合规对抗审查](sessions/2026-09-22-compact-notification-adversarial-review.md) — 2026-09-22；已验证，范围见正文。对 4f7e046f 做合规与对抗审查：静态检查、类型检查与 15 套 341 项聚焦回归在本检出通过；无 P0/P1，2 项 P2（IOC 部分成交后取消状态会追加矛盾的取消错误行；Scale 分层挂单的正常首笔成交被标为 partial 警告并 3 秒隐藏）、5 项 P3。仅审查与记录，未修改生产代码。
 - [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) — 2026-09-22；已整理，验证见正文。核对请求量价与实际成交数据的缺口，提出单句结果、移动端自然分行及证据驱动的量价展示方案；本轮只规划，未改变通知实现或时长。
 - [精简交易通知文案与真实成交摘要实施](sessions/2026-09-22-compact-notification-implementation.md) — 2026-09-22；已验证，范围见正文。真实成交摘要与精简通知已实施，保留部分/未知及附属单异常，修复长错误和短视口溢出；终端6946项与浏览器17项通过，未真实交易或发布。
 - [修复提交进度通知重复与异步关闭残留](sessions/2026-09-22-notification-lifecycle-fix.md) — 2026-09-22；已验证，范围见正文。修复 StrictMode 重复发布、Sonner 迟到插入残留及同批关闭/成交丢结果；11项生命周期与5项浏览器回归通过，保留单容器、时长、身份及业务守卫。
@@ -39,6 +40,7 @@
 
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
+- [精简通知提交 4f7e046f 合规对抗审查](sessions/2026-09-22-compact-notification-adversarial-review.md) — 2026-09-22；已验证，范围见正文。对 4f7e046f 做合规与对抗审查：静态检查、类型检查与 15 套 341 项聚焦回归在本检出通过；无 P0/P1，2 项 P2（IOC 部分成交后取消状态会追加矛盾的取消错误行；Scale 分层挂单的正常首笔成交被标为 partial 警告并 3 秒隐藏）、5 项 P3。仅审查与记录，未修改生产代码。
 - [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) — 2026-09-22；已整理，验证见正文。核对请求量价与实际成交数据的缺口，提出单句结果、移动端自然分行及证据驱动的量价展示方案；本轮只规划，未改变通知实现或时长。
 - [精简交易通知文案与真实成交摘要实施](sessions/2026-09-22-compact-notification-implementation.md) — 2026-09-22；已验证，范围见正文。真实成交摘要与精简通知已实施，保留部分/未知及附属单异常，修复长错误和短视口溢出；终端6946项与浏览器17项通过，未真实交易或发布。
 - [修复提交进度通知重复与异步关闭残留](sessions/2026-09-22-notification-lifecycle-fix.md) — 2026-09-22；已验证，范围见正文。修复 StrictMode 重复发布、Sonner 迟到插入残留及同批关闭/成交丢结果；11项生命周期与5项浏览器回归通过，保留单容器、时长、身份及业务守卫。
@@ -194,6 +196,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-22 | [精简通知提交 4f7e046f 合规对抗审查](sessions/2026-09-22-compact-notification-adversarial-review.md) | 对抗审查 4f7e046f（`9b4fc2e8-a227-4578-bfd1-5db0594a392e`） | `4f7e046f` | 已验证，范围见正文 |
 | 2026-09-22 | [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `a999806b` | 已整理，验证见正文 |
 | 2026-09-22 | [精简交易通知文案与真实成交摘要实施](sessions/2026-09-22-compact-notification-implementation.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `18365269` | 已验证，范围见正文 |
 | 2026-09-22 | [修复提交进度通知重复与异步关闭残留](sessions/2026-09-22-notification-lifecycle-fix.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `938983d4` | 已验证，范围见正文 |
