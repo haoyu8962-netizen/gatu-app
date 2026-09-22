@@ -13,6 +13,7 @@
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
 - [结果通知三秒自动隐藏](sessions/2026-09-22-notification-result-timeout.md) — 2026-09-22；已验证，范围见正文。未确认、部分成交、失败和取消通知已改为前台显示三秒，保留后台对账及重复提交保护；77项聚焦回归、类型与规范检查通过。
+- [单次提交产生重复及残留进度通知审查](sessions/2026-09-22-stale-submitting-notification-review.md) — 2026-09-22；已验证，范围见正文。真实 Chrome 页面确认同一任务出现不同 Sonner 展示 ID，队列清空后旧 pending 卡片仍残留；StrictMode 诊断复现短暂重复，长期残留的精确调度时序尚未稳定复现。本轮仅审查与记录，未修改生产代码。
 - [全部平仓提交后的队列与官方通知实践复审](sessions/2026-09-21-close-all-queue-review.md) — 2026-09-21；已验证，范围见正文。全部平仓有内部阶段、持久订单跟踪与对账，但未接入可见 Order Queue，等待无即时反馈，3 秒通知短于 2 分钟核对窗口。官方公开实现使用 errorsOnly 加汇总通知，同样没有持续进度队列；本轮仅审查及建议，69 项定向测试通过，未真实交易。
 - [官方通知宿主数量核对与项目统一建议](sessions/2026-09-21-feedback-host-consolidation-review.md) — 2026-09-21；已验证，范围见正文。官方当前交易页有一个 toaster；普通订单以同 ID 更新 loading/结果，全部平仓以 errorsOnly 后汇总调用同一通知入口。建议 gatu 保留交易状态与对账，用一个 Sonner 宿主管理普通及任务内容；多宿主不是天然错误，但当前两套同区浮层没有必要。仅文档建议，未实施。
 - [全局 Sonner 通知统一及遗漏操作补齐](sessions/2026-09-21-global-sonner-notifications.md) — 2026-09-21；已验证，范围见正文。单一全局 Sonner 容器与按需订单宿主落地，补齐操作反馈、owner/env 隔离、逐市场结果和 pending 恢复；6888项终端测试、生产构建与预算通过，未执行真实交易或发布。
@@ -36,6 +37,7 @@
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
 - [结果通知三秒自动隐藏](sessions/2026-09-22-notification-result-timeout.md) — 2026-09-22；已验证，范围见正文。未确认、部分成交、失败和取消通知已改为前台显示三秒，保留后台对账及重复提交保护；77项聚焦回归、类型与规范检查通过。
+- [单次提交产生重复及残留进度通知审查](sessions/2026-09-22-stale-submitting-notification-review.md) — 2026-09-22；已验证，范围见正文。真实 Chrome 页面确认同一任务出现不同 Sonner 展示 ID，队列清空后旧 pending 卡片仍残留；StrictMode 诊断复现短暂重复，长期残留的精确调度时序尚未稳定复现。本轮仅审查与记录，未修改生产代码。
 - [全部平仓提交后的队列与官方通知实践复审](sessions/2026-09-21-close-all-queue-review.md) — 2026-09-21；已验证，范围见正文。全部平仓有内部阶段、持久订单跟踪与对账，但未接入可见 Order Queue，等待无即时反馈，3 秒通知短于 2 分钟核对窗口。官方公开实现使用 errorsOnly 加汇总通知，同样没有持续进度队列；本轮仅审查及建议，69 项定向测试通过，未真实交易。
 - [官方通知宿主数量核对与项目统一建议](sessions/2026-09-21-feedback-host-consolidation-review.md) — 2026-09-21；已验证，范围见正文。官方当前交易页有一个 toaster；普通订单以同 ID 更新 loading/结果，全部平仓以 errorsOnly 后汇总调用同一通知入口。建议 gatu 保留交易状态与对账，用一个 Sonner 宿主管理普通及任务内容；多宿主不是天然错误，但当前两套同区浮层没有必要。仅文档建议，未实施。
 - [全局 Sonner 通知统一及遗漏操作补齐](sessions/2026-09-21-global-sonner-notifications.md) — 2026-09-21；已验证，范围见正文。单一全局 Sonner 容器与按需订单宿主落地，补齐操作反馈、owner/env 隔离、逐市场结果和 pending 恢复；6888项终端测试、生产构建与预算通过，未执行真实交易或发布。
@@ -187,6 +189,7 @@
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
 | 2026-09-22 | [结果通知三秒自动隐藏](sessions/2026-09-22-notification-result-timeout.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `a379d231f2a5bddf2bc602d0545aed8e14630581` | 已验证，范围见正文 |
+| 2026-09-22 | [单次提交产生重复及残留进度通知审查](sessions/2026-09-22-stale-submitting-notification-review.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `15b0d1c83df19d6490bb2f3012296f4c69954108` | 已验证，范围见正文 |
 | 2026-09-21 | [全部平仓提交后的队列与官方通知实践复审](sessions/2026-09-21-close-all-queue-review.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `8770d86de2fbf71d4a13318933369ca67c501619` | 已验证，范围见正文 |
 | 2026-09-21 | [全部平仓：确认按钮改为静态动词，点击即关闭弹窗，结果只走右下角通知](sessions/2026-09-21-close-all-submit-and-dismiss.md) | 未取得任务标识，见正文 | `cbdadae9` | 已验证，范围见正文 |
 | 2026-09-21 | [官方通知宿主数量核对与项目统一建议](sessions/2026-09-21-feedback-host-consolidation-review.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `eeec5c67b32fda7f98cb5fde02efd027f9ee598f` | 已验证，范围见正文 |
