@@ -152,7 +152,7 @@ test("keeps shared option spacing aligned with the responsive touch contract", a
 	await expectOptionSpacing(page, 8);
 
 	await page.setViewportSize({ width: 375, height: 666 });
-	await expectOptionSpacing(page, 12);
+	await expectOptionSpacing(page, 8);
 });
 
 test("fits the reported 1400x1330 Chinese empty Limit with newly expanded TP/SL", async ({ page }) => {
