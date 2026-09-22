@@ -24,6 +24,7 @@ import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
+import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import { useOrderEntryActions, useTif } from "@/stores/use-order-entry-store";
 
 const zhTranslations: Record<string, string> = {
@@ -77,7 +78,7 @@ const zhTranslations: Record<string, string> = {
 	"Close Long": "平多",
 	"Close Short": "平空",
 	Sell: "卖出",
-	Trigger: "触发",
+	"Order submitted": "订单已提交",
 };
 
 function getMessageId(message: string, context = ""): string {
@@ -342,12 +343,12 @@ function TestSurface() {
 }
 
 function OrderLabelsProbe() {
+	const { t } = useLingui();
 	const {
 		getAdvancedOrderTypeLabel,
 		getHistoricalOrderStatusLabel,
 		getOrderSideLabel,
 		getOrderTypeLabel,
-		getQueueOrderTypeLabel,
 		getTriggerConditionLabel,
 	} = useOrderDisplayLabels();
 
@@ -368,7 +369,22 @@ function OrderLabelsProbe() {
 			<span data-label="sell-side">{getOrderSideLabel("A", false)}</span>
 			<span data-label="close-short-side">{getOrderSideLabel("B", true)}</span>
 			<span data-label="close-long-side">{getOrderSideLabel("A", true)}</span>
-			<span data-label="queue-type">{getQueueOrderTypeLabel("trigger")}</span>
+			<span data-label="queue-summary">
+				{
+					getOrderNotificationCopy(
+						{
+							id: "locale-notification",
+							owner: "test",
+							env: "Mainnet",
+							createdAt: 0,
+							status: "success",
+							outcome: "triggerSet",
+							orderType: "trigger",
+						},
+						(descriptor) => t(descriptor),
+					).summary
+				}
+			</span>
 		</div>
 	);
 }
@@ -622,11 +638,12 @@ describe("language hot switching", () => {
 		expect(orderLabels?.querySelector('[data-label="sell-side"]')?.textContent).toBe("卖出");
 		expect(orderLabels?.querySelector('[data-label="close-short-side"]')?.textContent).toBe("平空");
 		expect(orderLabels?.querySelector('[data-label="close-long-side"]')?.textContent).toBe("平多");
-		expect(orderLabels?.querySelector('[data-label="queue-type"]')?.textContent).toBe("触发");
+		expect(orderLabels?.querySelector('[data-label="queue-summary"]')?.textContent).toBe("订单已提交");
 
 		act(() => activateLocale("en"));
 		expect(container.querySelector('[data-testid="order-labels"]')).toBe(orderLabels);
 		expect(orderLabels?.querySelector('[data-label="advanced"]')?.textContent).toBe("Stop Market");
+		expect(orderLabels?.querySelector('[data-label="queue-summary"]')?.textContent).toBe("Order submitted");
 		expect(container.querySelector('[aria-label="Reduce Only"]')).toBe(originalCheckbox);
 		expect(originalCheckbox?.getAttribute("aria-checked")).toBe("true");
 	});

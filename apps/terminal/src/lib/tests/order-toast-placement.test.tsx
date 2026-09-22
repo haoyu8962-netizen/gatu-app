@@ -88,7 +88,7 @@ describe("global order notifications", () => {
 			updateOrderQueueItem(id, { status: "success", outcome: "filled" });
 		});
 		await flush();
-		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain("order filled");
 		expect(container.querySelector(`[data-order-feedback="${id}"]`)?.closest("[data-sonner-toaster]")).not.toBeNull();
 	});
 	it("soft-hides unknown results after three seconds and clears stale errors on late success", async () => {
@@ -117,7 +117,7 @@ describe("global order notifications", () => {
 			acceptedCount: undefined,
 			totalCount: undefined,
 		});
-		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain("order filled");
 		expect(container.textContent).not.toContain("Status unconfirmed");
 		await act(() => vi.advanceTimersByTimeAsync(5300));
 		expect(getOrderQueueItem(id)).toBeUndefined();
@@ -188,7 +188,7 @@ describe("global order notifications", () => {
 		expect(container.textContent).not.toContain("HYPE");
 		act(() => updateOrderQueueItem(id, { status: "success", outcome: "filled" }));
 		await flush();
-		expect(container.textContent).not.toContain("Filled");
+		expect(container.textContent).not.toContain("order filled");
 		act(() => {
 			identity.clientKey = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 			identity.env = "Testnet";
@@ -201,7 +201,7 @@ describe("global order notifications", () => {
 			root.render(<Harness account={{ ...identity }} />);
 		});
 		await act(() => vi.advanceTimersByTimeAsync(400));
-		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain("order filled");
 	});
 	it.each([
 		{ callback: "onDismiss", status: "pending" },
@@ -239,7 +239,7 @@ describe("global order notifications", () => {
 		});
 		await flush();
 		const element = container.querySelector(`[data-order-feedback="${id}"]`);
-		const messageId = createHash("sha256").update("Submitting\x1f").digest("base64").slice(0, 6);
+		const messageId = createHash("sha256").update("Submitting…\x1f").digest("base64").slice(0, 6);
 		act(() => i18n.loadAndActivate({ locale: "zh", messages: { [messageId]: "正在提交" } }));
 		expect(container.textContent).toContain("正在提交");
 		expect(container.querySelector(`[data-order-feedback="${id}"]`)).toBe(element);
@@ -261,7 +261,7 @@ describe("global order notifications", () => {
 			});
 		});
 		await flush();
-		expect(container.textContent).toContain("1 of 2 close orders fully filled");
+		expect(container.textContent).toContain("Fully filled 1/2 · Review positions");
 		expect(container.textContent).toContain("Partially filled");
 		expect(container.textContent).toContain("1 / 2");
 		expect(container.textContent).not.toContain("All positions closed");
@@ -284,7 +284,7 @@ describe("global order notifications", () => {
 		expect(getOrderQueueItem(older)).toBeDefined();
 		act(() => removeOrderQueueItem(newer));
 		await act(() => vi.advanceTimersByTimeAsync(500));
-		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain("order filled");
 		await act(() => vi.advanceTimersByTimeAsync(5300));
 		expect(getOrderQueueItem(older)).toBeUndefined();
 	});
@@ -322,7 +322,7 @@ describe("global order notifications", () => {
 			await act(() => vi.advanceTimersByTimeAsync(500));
 			act(() => updateOrderQueueItem(id, { status: "success", outcome: "filled" }));
 			await flush();
-			expect(container.textContent).toContain("Filled");
+			expect(container.textContent).toContain("order filled");
 		},
 	);
 

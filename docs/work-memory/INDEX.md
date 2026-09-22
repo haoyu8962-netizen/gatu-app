@@ -13,6 +13,7 @@
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
 - [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) — 2026-09-22；已整理，验证见正文。核对请求量价与实际成交数据的缺口，提出单句结果、移动端自然分行及证据驱动的量价展示方案；本轮只规划，未改变通知实现或时长。
+- [精简交易通知文案与真实成交摘要实施](sessions/2026-09-22-compact-notification-implementation.md) — 2026-09-22；已验证，范围见正文。真实成交摘要与精简通知已实施，保留部分/未知及附属单异常，修复长错误和短视口溢出；终端6946项与浏览器17项通过，未真实交易或发布。
 - [修复提交进度通知重复与异步关闭残留](sessions/2026-09-22-notification-lifecycle-fix.md) — 2026-09-22；已验证，范围见正文。修复 StrictMode 重复发布、Sonner 迟到插入残留及同批关闭/成交丢结果；11项生命周期与5项浏览器回归通过，保留单容器、时长、身份及业务守卫。
 - [结果通知三秒自动隐藏](sessions/2026-09-22-notification-result-timeout.md) — 2026-09-22；已验证，范围见正文。未确认、部分成交、失败和取消通知已改为前台显示三秒，保留后台对账及重复提交保护；77项聚焦回归、类型与规范检查通过。
 - [单次提交产生重复及残留进度通知审查](sessions/2026-09-22-stale-submitting-notification-review.md) — 2026-09-22；已验证，范围见正文。真实 Chrome 页面确认同一任务出现不同 Sonner 展示 ID，队列清空后旧 pending 卡片仍残留；StrictMode 诊断复现短暂重复，长期残留的精确调度时序尚未稳定复现。本轮仅审查与记录，未修改生产代码。
@@ -39,6 +40,7 @@
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
 - [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) — 2026-09-22；已整理，验证见正文。核对请求量价与实际成交数据的缺口，提出单句结果、移动端自然分行及证据驱动的量价展示方案；本轮只规划，未改变通知实现或时长。
+- [精简交易通知文案与真实成交摘要实施](sessions/2026-09-22-compact-notification-implementation.md) — 2026-09-22；已验证，范围见正文。真实成交摘要与精简通知已实施，保留部分/未知及附属单异常，修复长错误和短视口溢出；终端6946项与浏览器17项通过，未真实交易或发布。
 - [修复提交进度通知重复与异步关闭残留](sessions/2026-09-22-notification-lifecycle-fix.md) — 2026-09-22；已验证，范围见正文。修复 StrictMode 重复发布、Sonner 迟到插入残留及同批关闭/成交丢结果；11项生命周期与5项浏览器回归通过，保留单容器、时长、身份及业务守卫。
 - [结果通知三秒自动隐藏](sessions/2026-09-22-notification-result-timeout.md) — 2026-09-22；已验证，范围见正文。未确认、部分成交、失败和取消通知已改为前台显示三秒，保留后台对账及重复提交保护；77项聚焦回归、类型与规范检查通过。
 - [单次提交产生重复及残留进度通知审查](sessions/2026-09-22-stale-submitting-notification-review.md) — 2026-09-22；已验证，范围见正文。真实 Chrome 页面确认同一任务出现不同 Sonner 展示 ID，队列清空后旧 pending 卡片仍残留；StrictMode 诊断复现短暂重复，长期残留的精确调度时序尚未稳定复现。本轮仅审查与记录，未修改生产代码。
@@ -193,6 +195,7 @@
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
 | 2026-09-22 | [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `a999806b` | 已整理，验证见正文 |
+| 2026-09-22 | [精简交易通知文案与真实成交摘要实施](sessions/2026-09-22-compact-notification-implementation.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `18365269` | 已验证，范围见正文 |
 | 2026-09-22 | [修复提交进度通知重复与异步关闭残留](sessions/2026-09-22-notification-lifecycle-fix.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `938983d4` | 已验证，范围见正文 |
 | 2026-09-22 | [结果通知三秒自动隐藏](sessions/2026-09-22-notification-result-timeout.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `a379d231f2a5bddf2bc602d0545aed8e14630581` | 已验证，范围见正文 |
 | 2026-09-22 | [单次提交产生重复及残留进度通知审查](sessions/2026-09-22-stale-submitting-notification-review.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `15b0d1c83df19d6490bb2f3012296f4c69954108` | 已验证，范围见正文 |

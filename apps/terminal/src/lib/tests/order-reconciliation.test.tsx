@@ -611,6 +611,39 @@ describe("OrderReconciliation", () => {
 		expect(getOrderQueueItem(queueId)?.error).toBeUndefined();
 	});
 
+	it("restores an entry execution and never upgrades a known partial from a later status-only fill", () => {
+		const cloid = "0x00000000000000000000000000000067" as const;
+		const execution = {
+			evidence: "exchange-response",
+			filledSize: "0.4",
+			requestedSize: "1",
+			averagePrice: "99",
+			orderIds: [67],
+			completeness: "partial",
+		} as const;
+		const submission = getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "entry-partial",
+			queueId: "entry-partial-queue",
+			feedback: { market: "HYPE", quoteToken: "USDC", execution: { ...execution, orderIds: [67] } },
+			children: [{ assetId: 67, cloid }],
+		});
+		act(() => root.render(createReconciliation()));
+		expect(getOrderQueueItem(submission.queueId)).toMatchObject({
+			status: "confirming",
+			execution,
+			quoteToken: "USDC",
+		});
+		mocks.orderUpdatesData = [{ order: { cloid }, status: "filled" }];
+		act(() => root.render(createReconciliation()));
+		expect(getOrderQueueItem(submission.queueId)).toMatchObject({
+			status: "partial",
+			execution,
+			positionsClosed: false,
+		});
+	});
+
 	it("uses a fresh open-orders snapshot to confirm an update that arrived before the HTTP response", () => {
 		const now = Date.now();
 		const action = getPendingTradingActionActions().claimModification({

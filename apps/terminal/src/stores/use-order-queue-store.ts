@@ -1,5 +1,6 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { create } from "zustand";
+import type { OrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import type { OrderOutcome } from "@/lib/trade/extract-order-status";
 import type { OrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import type { OrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
@@ -23,6 +24,8 @@ export interface OrderQueueMetadata {
 	side?: "buy" | "sell";
 	size?: string;
 	price?: string;
+	quoteToken?: string;
+	execution?: OrderExecutionSummary;
 	orderType?: "market" | "limit" | "trigger" | "scale" | "twap";
 	tpPrice?: string;
 	slPrice?: string;

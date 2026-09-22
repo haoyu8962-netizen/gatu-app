@@ -152,6 +152,76 @@ describe("useOrderSubmit surface reset", () => {
 		});
 	}
 
+	it("captures actual fill quantity and average in the notification", async () => {
+		mocks.submitOrder.mockImplementation(async (_params, options) => {
+			const result = {
+				status: "ok",
+				response: { type: "order", data: { statuses: [{ filled: { totalSz: "0.68", avgPx: "92.762", oid: 11 } }] } },
+			};
+			options.onResponse(result, _params.orders);
+			return { state: "confirmed", result };
+		});
+		await submit(marketInput({ sizeValue: 0.68, quoteToken: "USDC" }));
+		expect(mocks.addOrder).toHaveBeenCalledWith(
+			expect.objectContaining({ size: "0.68", price: "100", quoteToken: "USDC" }),
+		);
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
+			execution: expect.objectContaining({
+				filledSize: "0.68",
+				requestedSize: "0.68",
+				averagePrice: "92.762",
+				completeness: "full",
+			}),
+		});
+		expect(mocks.updateOrder).toHaveBeenLastCalledWith("queue-1", { status: "success", outcome: "filled" });
+	});
+
+	it("reports a partial market execution as partial rather than fully filled", async () => {
+		mocks.submitOrder.mockImplementation(async (_params, options) => {
+			const result = {
+				status: "ok",
+				response: { type: "order", data: { statuses: [{ filled: { totalSz: "0.4", avgPx: "99", oid: 12 } }] } },
+			};
+			options.onResponse(result, _params.orders);
+			return { state: "confirmed", result };
+		});
+		await submit(marketInput());
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
+			execution: expect.objectContaining({ filledSize: "0.4", requestedSize: "1", completeness: "partial" }),
+		});
+		expect(mocks.updateOrder).toHaveBeenLastCalledWith("queue-1", { status: "partial", outcome: "filled" });
+	});
+
+	it("keeps actual main fills when TP/SL submission partially fails", async () => {
+		mocks.submitOrder.mockImplementation(async (_params, options) => {
+			options.onResponse(
+				{
+					status: "ok",
+					response: {
+						type: "order",
+						data: { statuses: [{ filled: { totalSz: "1", avgPx: "99", oid: 13 } }, { error: "TP rejected" }] },
+					},
+				},
+				_params.orders,
+			);
+			throw new OrderBatchResolutionError({
+				status: "partial",
+				totalCount: 2,
+				acceptedCount: 1,
+				rejectedCount: 1,
+				errors: ["TP rejected"],
+			});
+		});
+		await submit(marketInput({ tpSlEnabled: true, canUseTpSl: true, tpPriceNum: 120 }));
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
+			execution: expect.objectContaining({ filledSize: "1", averagePrice: "99", completeness: "full" }),
+		});
+		expect(mocks.updateOrder).toHaveBeenLastCalledWith(
+			"queue-1",
+			expect.objectContaining({ status: "partial", error: "TP rejected" }),
+		);
+	});
+
 	it("clears the surface-local inputs exactly when the shared form is reset", async () => {
 		await submit(marketInput());
 

@@ -86,6 +86,43 @@ describe("pending order store", () => {
 		expect(withInvalidDisplay?.feedback).toBeUndefined();
 	});
 
+	it("restores execution evidence and ignores corrupt optional execution without discarding a lock", () => {
+		const storage = new MemoryStorage();
+		const store = createPendingOrderStore(storage);
+		const execution = {
+			evidence: "exchange-response",
+			filledSize: "0.4",
+			requestedSize: "1",
+			averagePrice: "99",
+			orderIds: [1],
+			completeness: "partial",
+		} as const;
+		const submission = store.getState().actions.add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "execution",
+			children: [{ assetId: 0, cloid: "0x00000000000000000000000000000001" }],
+			feedback: { market: "HYPE", quoteToken: "USDC", execution: { ...execution, orderIds: [1] } },
+		});
+		const restored = createPendingOrderStore(storage).getState().submissions[0];
+		expect(restored.feedback).toMatchObject({ market: "HYPE", quoteToken: "USDC", execution });
+		const key = storage.key(0);
+		if (!key) throw new Error("Missing pending record");
+		for (const corrupted of [
+			{ ...execution, averagePrice: "bad" },
+			{ ...execution, completeness: "full" },
+			{ ...execution, filledSize: "2" },
+			{ ...execution, orderIds: [1, 1] },
+			{ ...execution, orderIds: [Number.MAX_SAFE_INTEGER + 1] },
+		]) {
+			storage.setItem(key, JSON.stringify({ ...submission, feedback: { market: "HYPE", execution: corrupted } }));
+			const invalid = createPendingOrderStore(storage).getState().submissions[0];
+			expect(invalid.id).toBe(submission.id);
+			expect(invalid.children).toEqual(submission.children);
+			expect(invalid.feedback).toEqual({ market: "HYPE", execution: undefined });
+		}
+	});
+
 	it("blocks the affected asset until every child has a known exchange status", () => {
 		const submission = getPendingOrderActions().add({
 			env: "Mainnet",

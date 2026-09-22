@@ -75,3 +75,7 @@ WS/REST 的 order-status 对账只有状态时，继续使用无量价的短句�
 ## 后续与替代关系
 
 本方案待实施，不替代当前 Reference 或已完成的生命周期修复。执行时需同步 Reference、展示字段 schema、翻译、测试和 Changelog，保留单一容器、展示实例失效保护和后台交易事实。
+
+## 后续实施
+
+用户随后授权执行本方案，实施与验证记录见[精简交易通知实施](2026-09-22-compact-notification-implementation.md)。本文件保留规划时的证据与未实施状态；当前行为以全局操作通知 Reference 为准。

@@ -5,6 +5,8 @@ import { createRoot } from "react-dom/client";
 import { toast } from "sonner";
 import { OrderNotificationGate } from "@/components/trade/order-notification-gate";
 import { Toaster } from "@/components/ui/sonner";
+import { messages as englishMessages } from "@/locales/en/messages.po";
+import { messages as chineseMessages } from "@/locales/zh/messages.po";
 import { useSetTheme, useTheme } from "@/stores/use-global-settings-store";
 import {
 	addOrderQueueItem,
@@ -14,7 +16,7 @@ import {
 	useOrderQueue,
 } from "@/stores/use-order-queue-store";
 import { NotificationIdentity, OWNER_A, OWNER_B } from "./notifications.browser";
-import "../../src/styles.css";
+import "./notifications.css";
 
 function Fixture() {
 	const theme = useTheme();
@@ -37,6 +39,54 @@ function Fixture() {
 	function fillOrder() {
 		const order = getOrderQueueItems().find((entry) => entry.owner === owner && entry.operation === "order");
 		if (order) updateOrderQueueItem(order.id, { status: "success", outcome: "filled" });
+	}
+	function executionResult(longMarket = false) {
+		addOrderQueueItem({
+			owner,
+			env: "Mainnet",
+			operation: "order",
+			market: longMarket ? "SYNTHETICMARKETWITHANUNBROKENLONGSYMBOL" : "HYPE",
+			quoteToken: "USDC",
+			side: "buy",
+			size: "1.25",
+			price: "111",
+			status: "success",
+			outcome: "filled",
+			successDurationMs: 60_000,
+			execution: {
+				evidence: "exchange-response",
+				filledSize: "1.25",
+				requestedSize: "1.25",
+				averagePrice: "101.125",
+				orderIds: [101],
+				completeness: "full",
+			},
+		});
+	}
+	function rejection(batch = false, withChildren = false) {
+		addOrderQueueItem({
+			owner,
+			env: "Mainnet",
+			operation: withChildren ? "close-all" : "order",
+			market: "SYNTHETICMARKETWITHANUNBROKENLONGSYMBOL",
+			status: "failed",
+			children: withChildren
+				? Array.from({ length: 20 }, (_, index) => ({
+						assetId: index,
+						market: `SYNTHETIC-${index + 1}`,
+						size: "1",
+						status: "rejected" as const,
+						error: `Synthetic child rejection ${index + 1}`,
+					}))
+				: undefined,
+			error: batch
+				? Array.from(
+						{ length: 20 },
+						(_, index) =>
+							`Synthetic rejection ${index + 1}: the order could not be placed. Reference: SYNTHETICREFERENCEWITHANUNBROKENLONGIDENTIFIER. Review this order before trying again.`,
+					).join("\n")
+				: "Synthetic rejection: the account could not place this order. Reference: SYNTHETICREFERENCEWITHANUNBROKENLONGIDENTIFIER. Review the order details before trying again.",
+		});
 	}
 	function pending() {
 		addOrderQueueItem({
@@ -76,6 +126,12 @@ function Fixture() {
 				</p>
 				<output aria-label="Queued tasks">{orders.length}</output>
 				<div className="flex flex-wrap gap-3">
+					<button type="button" onClick={() => i18n.loadAndActivate({ locale: "en", messages: englishMessages })}>
+						English
+					</button>
+					<button type="button" onClick={() => i18n.loadAndActivate({ locale: "zh", messages: chineseMessages })}>
+						Chinese
+					</button>
 					<button
 						type="button"
 						onClick={() => {
@@ -97,6 +153,21 @@ function Fixture() {
 					</button>
 					<button type="button" onClick={fillOrder}>
 						Fill synthetic order
+					</button>
+					<button type="button" onClick={() => executionResult()}>
+						Verified synthetic fill
+					</button>
+					<button type="button" onClick={() => executionResult(true)}>
+						Long market fill
+					</button>
+					<button type="button" onClick={() => rejection()}>
+						Long rejection
+					</button>
+					<button type="button" onClick={() => rejection(true)}>
+						Twenty rejections
+					</button>
+					<button type="button" onClick={() => rejection(true, true)}>
+						Twenty rejections with children
 					</button>
 					<button
 						type="button"
@@ -131,7 +202,7 @@ function Fixture() {
 	);
 }
 
-i18n.loadAndActivate({ locale: "en", messages: {} });
+i18n.loadAndActivate({ locale: "en", messages: englishMessages });
 const element = document.getElementById("root");
 if (element)
 	createRoot(element).render(

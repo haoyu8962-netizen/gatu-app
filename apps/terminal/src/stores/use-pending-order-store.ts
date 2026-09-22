@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { STORAGE_KEYS } from "@/config/app";
+import { isValidOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import {
 	getReconciliationDelayMs,
 	ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS,
@@ -16,6 +17,16 @@ const feedbackMessageSchema = z.object({
 	message: z.string().optional(),
 	values: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 });
+const orderExecutionSummarySchema = z
+	.object({
+		evidence: z.literal("exchange-response"),
+		filledSize: z.string(),
+		requestedSize: z.string(),
+		averagePrice: z.string(),
+		orderIds: z.array(z.number().int().nonnegative()).min(1),
+		completeness: z.enum(["full", "partial"]),
+	})
+	.refine(isValidOrderExecutionSummary);
 const orderQueueMetadataSchema = z.object({
 	title: feedbackMessageSchema.optional(),
 	message: feedbackMessageSchema.optional(),
@@ -24,6 +35,8 @@ const orderQueueMetadataSchema = z.object({
 	side: z.enum(["buy", "sell"]).optional(),
 	size: z.string().optional(),
 	price: z.string().optional(),
+	quoteToken: z.string().optional(),
+	execution: orderExecutionSummarySchema.optional().catch(undefined),
 	orderType: z.enum(["market", "limit", "trigger", "scale", "twap"]).optional(),
 	tpPrice: z.string().optional(),
 	slPrice: z.string().optional(),

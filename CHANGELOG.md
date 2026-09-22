@@ -8,6 +8,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Trading notifications now use concise result sentences and compact, wrapping layouts on
+  desktop and mobile. Immediate order-entry fills show actual executed quantity and average price from
+  the exchange response; request prices are no longer presented as execution prices. Partial
+  fills, attached-order failures and uncertain outcomes remain distinct, with order-status-only
+  confirmations omitting unknown execution values. Both layouts share the existing notification
+  stack, account isolation and display durations.
+
 - Trading notifications no longer create duplicate submission cards during development
   effect replay or leave stale progress behind after an asynchronous close. Each card
   follows its current task, and closing a notice cannot discard a result arriving in the

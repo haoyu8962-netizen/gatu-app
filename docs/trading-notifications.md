@@ -78,10 +78,34 @@
 
 悬停、页面后台及退出动画由 Sonner 生命周期处理。Toaster 使用 `bg-overlay`、共享 `z-toast` 与主题色；项目移动断点是 `<=1000px`，两个 offset 分支均保留 56px 底部导航、安全区和 12px 间隙；桌面用安全区内右下角。没有另加高于所有弹层的硬编码层级。任务有可访问名称、状态/错误播报与关闭按钮。
 
+## 精简文案与实际成交摘要
+
+2026-09-22 已实现，尚未发布；验证范围见[精简通知实施记录](work-memory/sessions/2026-09-22-compact-notification-implementation.md)。普通下单显示一条结果短句，实际成交时补一行均价，删除重复的订单类型、方向、Size、请求价格与 TP/SL 价格。非普通操作保留动作及市场上下文；主单成功但附属单失败仍保留错误与接受计数。
+
+| 证据/阶段 | 中文示例（合成数值） |
+| --- | --- |
+| 本地准备、签名或发送 | `HYPE · 正在提交…` |
+| 明确受理挂单或触发单 | `HYPE 订单已提交` |
+| 有真实成交量与均价 | `已买入 1 HYPE`，下一行 `均价 $100`；卖出同理 |
+| 只有 filled 状态 | `HYPE 订单已成交`；省略未知量价 |
+| 真实成交量小于提交量 | `部分成交 0.4 / 1 HYPE`；已取得均价时另行显示 |
+| 后台核对中 | `HYPE · 确认中，请勿重复提交` |
+| 仍无法确认 | `HYPE · 结果待确认，请先核对订单` |
+| 明确失败 | `HYPE 下单失败`，另行保留准确原因 |
+| TWAP 创建受理 | `TWAP · HYPE · 已创建`；不声称每个分片运行或成交 |
+
+[呈现 helper](../apps/terminal/src/lib/trade/order-notification-copy.ts) 显式接收响应 locale 的翻译依赖。状态更新仍是同一任务与展示生命周期，不延迟真实结果来强制播放「已提交」。结构化重复确认说明可合并；原始错误不猜测、不截断。批次继续保留所有逐市场结果及可滚动明细，完全成交计数与接受计数分别表述。
+
+queue 与 pending feedback 的可选 `execution` 保存 `filledSize`、实际主单提交量 `requestedSize`、`averagePrice`、订单 ID、`exchange-response` 证据和 full/partial。domain helper 使用实际提交（含生成 cloid）的订单列表及回包对应位置校验；普通单仅取主单，Scale 只合并同资产同方向，TP/SL 不混入主单。加权运算用 Big.js。请求 `size` / `price` 的原义不变，成交卡不再把它们当成交证据。
+
+`quoteToken` 随原始市场保存；USDC/USDT/USD 显示美元符号，其他报价币明确显示币种，缺少报价单位时省略均价。均价展示最多 8 位有效数字，数量保留真实十进制字符串；动态量价使用双向文本隔离，摘要保留未按展示有效位数缩减的十进制结果（加权除法沿用 Big.js 的小数精度）。损坏 execution 字段独立忽略，不破坏合法 pending 记录、其他 metadata 或业务锁。WS/REST 只有状态时不填补缺失量价，也不把已知部分成交升级成全量；后来挂单的完整成交均价仍需单独的逐单成交归集设计，近期成交列表不能替代完整证据。
+
+桌面和手机共用相同短句与自然分行，普通成交为两行主体，不另建移动通知系统；长符号、翻译与错误允许增加行数。正文 `min-w-0` 和任意断词避免挤占关闭控件；正文可键盘聚焦，正文与子项均可滚动；各自高度不超过 `min(18rem,35dvh)`，也不超过视口扣除实际 Sonner 底部偏移、顶部安全区与 4rem 控件/间距后的可用高度的一半。20 层 Scale 长拒单与子项同时出现时，较矮视口也保留顶部与关闭控件。关闭目标至少 24px。保留主题 tokens、字号、单容器、底部导航安全距离及既定时长；不会通过缩小文字或省略号隐藏异常。
+
 ## 验证契约与证据边界
 
 回归应覆盖真实 store、宿主、对账器与提交路径的组合：超时后晚到成功清错、未展示成功不提前消失、切路由/账户/网络、A 的迟到 REST、刷新恢复及损坏的可选 metadata、部分成交量不被覆盖、未知子项与完整成交计数、关闭不解锁、标准提示/任务/资金恢复同现、语言热切换。布局覆盖 390/600/601/800/1000/1001/1280px，验证底部导航、滚动和共享堆叠。
 
-入口包括 `order-toast-placement.test.tsx`、`order-reconciliation.test.tsx`、`twap-reconciliation.test.tsx`、close-all / market-close 的 submit 与 modal 测试，以及撤改单、TP/SL、逐仓保证金、Swap、CCTP 和 funds recovery 各自套件。测试文件是验证入口，不表示每次更改都已经执行全部用例；本轮实际命令、失败、更正、源码版本和浏览器范围由[交付任务记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md)列出。模拟网络和浏览器夹具不能证明真实资金交易、签名钱包或物理触屏时序；本次通知迁移不以新的主网下单作验收。
+入口包括 `order-notification-copy.test.ts`、`order-execution-summary.test.ts`、`order-toast-placement.test.tsx`、`order-reconciliation.test.tsx`、`twap-reconciliation.test.tsx`、close-all / market-close 的 submit 与 modal 测试，以及撤改单、TP/SL、逐仓保证金、Swap、CCTP 和 funds recovery 各自套件。测试文件是验证入口，不表示每次更改都已经执行全部用例；本轮实际命令、失败、更正、源码版本和浏览器范围由[交付任务记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md)列出。模拟网络和浏览器夹具不能证明真实资金交易、签名钱包或物理触屏时序；本次通知迁移不以新的主网下单作验收。
 
 生命周期入口 `order-notification-lifecycle.test.tsx` 使用真实 Sonner、queue、根 StrictMode 和 Gate，覆盖冷/热挂载、关闭 RAF 早于插入 timer、真实卸载、身份切换及同批关闭/结果；必须同时验证任务与外层 Sonner DOM，不能只看队列为空。独立浏览器 suite 使用 `pnpm --dir apps/terminal exec playwright test --config tests/browser/notifications.playwright.config.ts`，覆盖原位更新、重复 Gate 挂载、软隐藏迟到结果和桌面/移动两主题堆叠，接入 CI 两分片。夹具缓存隔离规则见 [runtime guardrails §9](runtime-guardrails.md#9-development-and-browser-test-caches)。

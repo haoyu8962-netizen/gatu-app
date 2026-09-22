@@ -6,7 +6,17 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { reserveOrderAssets, runWithOrderAssetLocks } from "@/lib/trade/order-asset-lock";
-import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
+import {
+	addOrderQueueItem,
+	getOrderQueueItems,
+	removeOrderQueueItem,
+	updateOrderQueueItem,
+} from "@/stores/use-order-queue-store";
+import {
+	createPendingOrderStore,
+	getPendingOrderActions,
+	hasPendingOrderForAssets,
+} from "@/stores/use-pending-order-store";
 
 const mutateAsync = vi.fn();
 const reset = vi.fn();
@@ -100,6 +110,7 @@ describe("useTrackedOrder", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		for (const item of getOrderQueueItems()) removeOrderQueueItem(item.id);
 		mutateAsync.mockReset();
 		reset.mockReset();
 		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
@@ -306,6 +317,47 @@ describe("useTrackedOrder", () => {
 			);
 		});
 		expect(mutateAsync).toHaveBeenCalledOnce();
+	});
+
+	it("persists execution feedback from the response callback before reconciliation", async () => {
+		const queueId = addOrderQueueItem({
+			owner: "0x1111111111111111111111111111111111111111",
+			env: "Mainnet",
+			market: "HYPE",
+			quoteToken: "USDC",
+			status: "pending",
+		});
+		const execution = {
+			evidence: "exchange-response",
+			filledSize: "0.4",
+			requestedSize: "2",
+			averagePrice: "99",
+			orderIds: [40],
+			completeness: "partial",
+		} as const;
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "order", data: { statuses: [{ filled: { totalSz: "0.4", avgPx: "99", oid: 40 } }, {}] } },
+		});
+		await act(async () => {
+			await expect(
+				hookValue?.submitOrder(createParams(40, 2), {
+					...CROSS_PERP_SUBMIT_OPTIONS,
+					queueId,
+					onResponse: (_response, orders) => {
+						expect(orders).toBe(mutateAsync.mock.calls[0]?.[0].orders);
+						expect(orders[0]?.c).toMatch(/^0x[a-f0-9]{32}$/);
+						updateOrderQueueItem(queueId, { execution: { ...execution, orderIds: [40] } });
+					},
+				}),
+			).resolves.toMatchObject({ state: "reconciling" });
+		});
+		expect(createPendingOrderStore(window.localStorage).getState().submissions[0].feedback).toMatchObject({
+			market: "HYPE",
+			quoteToken: "USDC",
+			execution,
+		});
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [40])).toBe(true);
 	});
 
 	it("reconciles a same-length response whose child status is malformed", async () => {

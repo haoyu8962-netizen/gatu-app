@@ -1,8 +1,6 @@
 import { i18n } from "@lingui/core";
-import { act } from "react";
-import { OrderQueueErrorMessage } from "@/components/trade/tradebox/order-queue-error-message";
+import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import { getOrderQueueItems, type OrderQueueItem, removeOrderQueueItem } from "@/stores/use-order-queue-store";
-import { createI18nRoot } from "./react";
 
 export function latestFeedback(status?: OrderQueueItem["status"]) {
 	return getOrderQueueItems()
@@ -15,12 +13,7 @@ export function clearFeedback() {
 }
 
 export function feedbackErrorText(order: OrderQueueItem | undefined): string {
-	const host = document.createElement("div");
-	const root = createI18nRoot(host);
-	act(() => root.render(order?.error ? <OrderQueueErrorMessage error={order.error} /> : null));
-	const text = host.textContent ?? "";
-	act(() => root.unmount());
-	return text;
+	return order ? (getOrderNotificationCopy(order, (descriptor) => i18n._(descriptor)).error ?? "") : "";
 }
 
 export function feedbackText(status: OrderQueueItem["status"], field: "title" | "message" = "message") {

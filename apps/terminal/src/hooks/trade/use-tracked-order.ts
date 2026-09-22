@@ -38,7 +38,7 @@ interface SubmitOptions {
 	exclusiveAssetLock?: boolean;
 	confirmationMode?: "accepted" | "filled";
 	finalConfirmation?: (result: ExchangeResponse<"order">) => boolean | Promise<boolean>;
-	onResponse?: (response: unknown) => void;
+	onResponse?: (response: unknown, orders: TrackedOrderParams["orders"]) => void;
 	origin?: PendingOrderOrigin;
 }
 
@@ -141,7 +141,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 
 			try {
 				const result = await mutation.mutateAsync(tracked.params);
-				updateResponseFeedback(options, submission.id, result);
+				updateResponseFeedback(options, submission.id, result, tracked.params.orders);
 				if (options.confirmationMode === "filled") {
 					const resolution = resolveFilledOrderBatchResponse(
 						result,
@@ -175,7 +175,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 			} catch (error) {
 				if (error instanceof OrderBatchResolutionError) throw error;
 				if (isApiOrderResponseError(error)) {
-					updateResponseFeedback(options, submission.id, error.response);
+					updateResponseFeedback(options, submission.id, error.response, tracked.params.orders);
 					const resolution =
 						options.confirmationMode === "filled"
 							? resolveFilledOrderBatchResponse(
@@ -219,9 +219,14 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 	};
 }
 
-function updateResponseFeedback(options: SubmitOptions, submissionId: string, response: unknown): void {
+function updateResponseFeedback(
+	options: SubmitOptions,
+	submissionId: string,
+	response: unknown,
+	orders: TrackedOrderParams["orders"],
+): void {
 	try {
-		options.onResponse?.(response);
+		options.onResponse?.(response, orders);
 		const feedback = getQueueFeedback(options.queueId);
 		if (feedback) getPendingOrderActions().updateFeedback(submissionId, feedback);
 	} catch {
@@ -238,6 +243,8 @@ function getQueueFeedback(queueId: string | undefined): OrderQueueMetadata | und
 		side: item.side,
 		size: item.size,
 		price: item.price,
+		quoteToken: item.quoteToken,
+		execution: item.execution,
 		orderType: item.orderType,
 		tpPrice: item.tpPrice,
 		slPrice: item.slPrice,

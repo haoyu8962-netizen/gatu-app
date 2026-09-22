@@ -117,7 +117,7 @@ describe("lazy global order notification gate", () => {
 		});
 		await act(() => vi.advanceTimersByTimeAsync(0));
 		expect(container.querySelector(`[data-order-feedback="${id}"]`)).not.toBeNull();
-		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain("order filled");
 		expect(container.querySelectorAll("[data-sonner-toaster]")).toHaveLength(1);
 		await act(() => vi.advanceTimersByTimeAsync(4900));
 		expect(getOrderQueueItem(id)).toBeDefined();

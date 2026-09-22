@@ -44,21 +44,17 @@ msgstr "{0} 已作为 Hyperliquid 原生永续市场上线。"
 msgid "{0} of {1}"
 msgstr "第 {0} 页，共 {1} 页"
 
-#. placeholder {0}: order.acceptedCount
-#. placeholder {1}: order.totalCount
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "{0} of {1} close orders fully filled. Review positions before retrying."
-msgstr "共 {1} 笔平仓委托，其中 {0} 笔已全部成交。重试前请核对持仓。"
+#~ msgid "{0} of {1} close orders fully filled. Review positions before retrying."
+#~ msgstr "共 {1} 笔平仓委托，其中 {0} 笔已全部成交。重试前请核对持仓。"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "{0} of {1} close orders were accepted. Review positions before retrying."
 #~ msgstr "{1} 笔平仓委托中有 {0} 笔已被接受。重试前请检查持仓。"
 
-#. placeholder {0}: order.acceptedCount
-#. placeholder {1}: order.totalCount
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "{0} of {1} orders were accepted. Review open orders before retrying."
-msgstr "{0}/{1} 笔订单已被接受。重试前请检查当前委托。"
+#~ msgid "{0} of {1} orders were accepted. Review open orders before retrying."
+#~ msgstr "{0}/{1} 笔订单已被接受。重试前请检查当前委托。"
 
 #. placeholder {0}: code.length
 #: src/components/referrals/referral-action-modal.tsx
@@ -113,6 +109,22 @@ msgstr "{periodLabel}内暂无{label}历史数据。"
 #: src/components/vaults/vault-performance-chart.tsx
 #~ msgid "{label} trend"
 #~ msgstr "{label} 趋势"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order canceled"
+msgstr "{market} 订单已撤销"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order failed"
+msgstr "{market} 下单失败"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order filled"
+msgstr "{market} 订单已成交"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order submitted"
+msgstr "{market} 订单已提交"
 
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "{orderCount, plural, one {This will cancel the open order, including protective stop orders. Your position may no longer be protected.} other {This will cancel all # open orders, including protective stop orders. Your positions will no longer be protected.}}"
@@ -327,6 +339,10 @@ msgstr "请先接受该市场的 HIP-3 部署者免责声明再交易。"
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Accepted"
 msgstr "已受理"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Accepted {accepted}/{total} · Review orders"
+msgstr "已接受 {accepted}/{total} · 请核对订单"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Access disabled"
@@ -603,7 +619,7 @@ msgstr "所有方向"
 msgid "All markets"
 msgstr "所有市场"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "All positions closed"
 msgstr "全部持仓已平仓"
 
@@ -979,6 +995,10 @@ msgstr "平均价格"
 msgid "Avg Price"
 msgstr "均价"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Avg. {price}"
+msgstr "均价 {price}"
+
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -1055,6 +1075,10 @@ msgstr "Bitcoin 是一种由工作量证明网络保障安全的去中心化数�
 msgid "Borrow"
 msgstr "借入"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Bought {quantity}"
+msgstr "已买入 {quantity}"
+
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1094,7 +1118,6 @@ msgstr "Builder 奖励是累计的来源明细，并非额外的奖励余额。"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Buy"
 msgstr "买入"
@@ -1179,9 +1202,9 @@ msgstr "取消选中的订单"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
-#: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-reconciliation-feedback.ts
 msgid "Canceled"
 msgstr "已取消"
@@ -1442,7 +1465,7 @@ msgstr "所有持仓市场加载完成前，一键全平不可用。"
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Close All Positions"
 msgstr "一键全平"
 
@@ -1737,7 +1760,7 @@ msgstr "在钱包中确认交易"
 msgid "Confirm trigger price change"
 msgstr "确认修改触发价格"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Confirmed"
 msgstr "已确认"
 
@@ -1749,13 +1772,17 @@ msgstr "已在 Arbitrum 确认。Hyperliquid 通常会在一分钟内入账。"
 #~ msgid "confirming"
 #~ msgstr "确认中"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Confirming — do not resubmit"
+msgstr "确认中，请勿重复提交"
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Confirming exchange status..."
 #~ msgstr "正在确认交易所状态..."
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "Confirming order status. Do not retry."
-msgstr "正在确认订单状态，请勿重试。"
+#~ msgid "Confirming order status. Do not retry."
+#~ msgstr "正在确认订单状态，请勿重试。"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "Confirming..."
@@ -2058,6 +2085,10 @@ msgstr "创建 TWAP"
 #: src/config/account-ledger.ts
 msgid "Create Vault"
 msgstr "创建金库"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Created"
+msgstr "已创建"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Creating your wallet. Please wait..."
@@ -2919,8 +2950,8 @@ msgstr "正在导出成交历史……"
 #~ msgstr "失败"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
-#: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Failed"
 msgstr "失败"
 
@@ -3117,7 +3148,6 @@ msgstr "成交状态"
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
 msgstr "已成交"
 
@@ -3247,6 +3277,10 @@ msgstr "从"
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "全部成交"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Fully filled {accepted}/{total} · Review positions"
+msgstr "完全成交 {accepted}/{total} · 请核对持仓"
 
 #: src/config/market-header.ts
 msgid "Funding"
@@ -4264,7 +4298,7 @@ msgstr "当前在此账户和网络中点击“市价”会立即平掉全部仓
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Market Close"
 msgstr "市价平仓"
 
@@ -5127,7 +5161,7 @@ msgstr "预言机"
 #~ msgid "ORACLE"
 #~ msgstr "预言机"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Order"
 msgstr "委托"
 
@@ -5157,6 +5191,10 @@ msgstr "以计价资产显示订单簿"
 msgid "Order book view"
 msgstr "订单簿视图"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Order canceled"
+msgstr "订单已撤销"
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "Order cancellation confirmed."
 msgstr "撤单已确认。"
@@ -5176,11 +5214,14 @@ msgstr "下单确认"
 #~ msgstr "交易所已确认订单。"
 
 #: src/config/ui-text.ts
+#: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Order failed"
 msgstr "下单失败"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/lib/trade/order-notification-copy.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Order filled"
 msgstr "委托已成交"
 
@@ -5241,6 +5282,8 @@ msgid "Order status"
 msgstr "委托状态"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/lib/trade/order-notification-copy.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Order submitted"
 msgstr "委托已提交"
 
@@ -5349,13 +5392,17 @@ msgstr "部分数量"
 #~ msgid "Partial result — reopen to retry"
 #~ msgstr "部分成功 — 重新打开后可重试"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Partially completed"
 msgstr "部分完成"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Partially filled"
 msgstr "部分成交"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Partially filled {progress}"
+msgstr "部分成交 {progress}"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -5500,8 +5547,8 @@ msgid "Place Limit Close"
 msgstr "提交限价平仓"
 
 #: src/hooks/trade/use-order-display-labels.ts
-msgid "Placed"
-msgstr "已提交"
+#~ msgid "Placed"
+#~ msgstr "已提交"
 
 #: src/components/staking/staking-fixture.tsx
 msgid "Placeholder validator data for visual review."
@@ -6411,6 +6458,10 @@ msgstr "反向数量（仓位的 2 倍）"
 msgid "Review"
 msgstr "核对"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Review active TWAP orders before retrying"
+msgstr "重试前请核对进行中的 TWAP 订单"
+
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "Review again"
@@ -6562,7 +6613,6 @@ msgid "Rows per page"
 msgstr "每页行数"
 
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Running"
 msgstr "运行中"
 
@@ -6619,7 +6669,6 @@ msgid "Saving..."
 msgstr "正在保存..."
 
 #: src/config/trade.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
 msgstr "分段订单"
 
@@ -6804,7 +6853,6 @@ msgstr "所选周期 PNL"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Sell"
 msgstr "卖出"
 
@@ -6860,8 +6908,8 @@ msgid "Server unlock time: {0}"
 msgstr "服务端解锁时间：{0}"
 
 #: src/hooks/trade/use-order-display-labels.ts
-msgid "Set"
-msgstr "设置"
+#~ msgid "Set"
+#~ msgstr "设置"
 
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 msgid "Set to {p}%"
@@ -7011,7 +7059,6 @@ msgstr "签名中..."
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/order-toast.tsx
-#: src/components/trade/tradebox/order-toast.tsx
 #: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -7087,6 +7134,10 @@ msgstr "智能钱包入金状态正在同步。余额核对完成前，请勿再
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "Solana 是一个面向智能合约和去中心化应用、专为高吞吐执行而设计的区块链。"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Sold {quantity}"
+msgstr "已卖出 {quantity}"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Some balances cannot be valued with current data."
@@ -7323,8 +7374,8 @@ msgid "Status unconfirmed"
 msgstr "状态未确认"
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "Status unconfirmed. Review orders and positions before retrying."
-msgstr "状态尚未确认。重试前请核对委托与持仓。"
+#~ msgid "Status unconfirmed. Review orders and positions before retrying."
+#~ msgstr "状态尚未确认。重试前请核对委托与持仓。"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Stay Connected"
@@ -7427,8 +7478,8 @@ msgid "Submitted limit and trigger orders will appear here."
 msgstr "已提交的限价单与触发单将显示在这里"
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "Submitting"
-msgstr "正在提交"
+#~ msgid "Submitting"
+#~ msgstr "正在提交"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Submitting close orders..."
@@ -7441,6 +7492,10 @@ msgstr "正在提交至 Hyperliquid"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Submitting..."
 #~ msgstr "提交中..."
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Submitting…"
+msgstr "正在提交…"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -7458,9 +7513,9 @@ msgstr "支持"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Swap"
 msgstr "兑换"
 
@@ -8799,7 +8854,6 @@ msgstr "在测试网上，转入 Spot 需经过约 5 分钟的队列。Hyperliqu
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
 msgstr "触发"
 
@@ -8864,7 +8918,7 @@ msgstr "TVL"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "TWAP"
 msgstr "TWAP"
 
@@ -9094,6 +9148,10 @@ msgstr "未领取 USDC"
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "unconfirmed"
 #~ msgstr "未确认"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Unconfirmed — review before retrying"
+msgstr "结果待确认，请先核对订单"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx

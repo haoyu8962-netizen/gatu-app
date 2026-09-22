@@ -35,8 +35,8 @@ function expectActionFeedback(id: string, status: OrderQueueItem["status"], mess
 }
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
-const TWAP_UNCONFIRMED = "The exchange did not return a final TWAP status. Review active TWAP orders before retrying.";
-const ARABIC_TWAP_UNCONFIRMED = "لم تُرجع البورصة حالة نهائية لطلب TWAP. راجع طلبات TWAP النشطة قبل إعادة المحاولة.";
+const TWAP_UNCONFIRMED = "Review active TWAP orders before retrying";
+const ARABIC_TWAP_UNCONFIRMED = "راجع أوامر TWAP النشطة قبل إعادة المحاولة";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);

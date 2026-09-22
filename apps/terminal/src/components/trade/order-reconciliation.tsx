@@ -393,7 +393,8 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 		children.some(
 			(child) => child.status === "filled" || child.status === "filled-unverified" || child.status === "accepted",
 		) && !allAccepted;
-	const partiallyFilled = children.some((child) => child.status === "partial");
+	const execution = getOrderQueueItem(getSubmissionQueueId(submission))?.execution ?? submission.feedback?.execution;
+	const partiallyFilled = children.some((child) => child.status === "partial") || execution?.completeness === "partial";
 	const hasUnverifiedFillSize =
 		submission.confirmationMode === "filled" && children.some((child) => child.status === "filled-unverified");
 	const hasRejected = children.some((child) => child.status === "rejected");
@@ -406,9 +407,9 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 		countMode: submission.confirmationMode === "filled" ? ("filled" as const) : ("accepted" as const),
 		positionsClosed: false,
 	};
-	if (allAccepted) {
+	if (allAccepted && !partiallyFilled) {
 		updateOrderQueueItem(queueId, { ...detail, status: "success", outcome: getReconciledOutcome(statuses) });
-	} else if (allCanceled) {
+	} else if (allCanceled && !partiallyFilled) {
 		updateOrderQueueItem(queueId, { ...detail, status: "canceled", error: canceledError });
 	} else if (hasCanceled || partiallyAccepted || partiallyFilled) {
 		let error: OrderQueueItem["error"];

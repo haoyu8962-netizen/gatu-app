@@ -13,6 +13,7 @@ const TERMINAL_COMPONENTS_DIR = resolve(TEST_DIR, "../..", "components");
 const POPOVER_SOURCE = readTerminalComponent("ui/popover.tsx");
 const ORDER_TOAST_SOURCE = readTerminalComponent("trade/tradebox/order-toast.tsx");
 const ORDER_NOTIFICATION_HOST_SOURCE = readTerminalComponent("trade/order-notification-host.tsx");
+const ORDER_NOTIFICATION_SOURCE = readTerminalComponent("trade/order-notification.tsx");
 const APP_TOASTER_SOURCE = readTerminalComponent("app-toaster.tsx");
 const SONNER_SOURCE = readTerminalComponent("ui/sonner.tsx");
 const DESKTOP_UTILITIES_MENU_SOURCE = readTerminalComponent("trade/header/desktop-utilities-menu.tsx");
@@ -82,7 +83,8 @@ describe("modal surface contract", () => {
 		expect(ORDER_TOAST_SOURCE).not.toContain("bg-modal");
 		expect(ORDER_TOAST_SOURCE).not.toMatch(/\bfixed\b|createPortal|createRoot/);
 		expect(ORDER_NOTIFICATION_HOST_SOURCE).toContain("toast.custom(");
-		expect(ORDER_NOTIFICATION_HOST_SOURCE).toContain("<OrderToast ");
+		expect(ORDER_NOTIFICATION_HOST_SOURCE).toContain("<OrderNotification ");
+		expect(ORDER_NOTIFICATION_SOURCE).toContain("<OrderToast ");
 		expect(APP_TOASTER_SOURCE.match(/<Toaster\s*\/>/g)).toHaveLength(1);
 		expect(APP_TOASTER_SOURCE.match(/<OrderNotificationGate\s*\/>/g)).toHaveLength(1);
 		for (const appearance of ["normal", "success", "error", "warning", "info"]) {

@@ -2,11 +2,9 @@ import { useLingui } from "@lingui/react/macro";
 import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { type AdvancedOrderType, ORDER_TYPE_MESSAGES, type OrderType } from "@/config/trade";
-import type { OrderOutcome } from "@/lib/trade/extract-order-status";
 import type { OpenOrder, OrderSide, OrderTypeConfig } from "@/lib/trade/open-orders";
 import { getOrderDirection } from "@/lib/trade/order-direction";
 import type { TwapHistoryStatus } from "@/lib/trade/order-history";
-import type { OrderQueueItem } from "@/stores/use-order-queue-store";
 
 type HistoricalOrderStatus = HistoricalOrdersResponse[number]["status"];
 
@@ -161,47 +159,14 @@ export function useOrderDisplayLabels() {
 		}
 	}
 
-	function getQueueOrderTypeLabel(orderType: OrderQueueItem["orderType"]): string | null {
-		switch (orderType) {
-			case "trigger":
-				return t`Trigger`;
-			case "scale":
-				return t`Scale`;
-			case "twap":
-				return t`TWAP`;
-			default:
-				return null;
-		}
-	}
-
-	function getQueueSideLabel(side: OrderQueueItem["side"]): string {
-		return side === "buy" ? t`Buy` : t`Sell`;
-	}
-
-	function getOrderOutcomeLabel(outcome: OrderOutcome): string {
-		switch (outcome) {
-			case "filled":
-				return t`Filled`;
-			case "resting":
-				return t`Placed`;
-			case "triggerSet":
-				return t`Set`;
-			case "twapStarted":
-				return t`Running`;
-		}
-	}
-
 	return {
 		getAdvancedOrderLabel,
 		getAdvancedOrderTypeLabel,
 		getExecutionKindLabel,
 		getFullOrderTypeLabel,
 		getHistoricalOrderStatusLabel,
-		getOrderOutcomeLabel,
 		getOrderSideLabel,
 		getOrderTypeLabel,
-		getQueueOrderTypeLabel,
-		getQueueSideLabel,
 		getTriggerConditionLabel,
 		getTriggerKindLabel,
 		getTwapHistoryStatusLabel,

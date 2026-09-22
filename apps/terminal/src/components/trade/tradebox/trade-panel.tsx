@@ -616,6 +616,7 @@ export function TradePanel() {
 					szDecimals: market.szDecimals,
 				},
 				baseToken,
+				quoteToken,
 				side,
 				orderType,
 				sizeValue,

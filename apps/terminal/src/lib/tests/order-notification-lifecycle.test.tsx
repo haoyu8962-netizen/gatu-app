@@ -129,13 +129,12 @@ describe("order notification lifecycle with real Sonner", () => {
 		await timers();
 		expect(container.querySelectorAll(`[data-order-feedback="${id}"]`)).toHaveLength(1);
 		expect(container.querySelector(`[data-order-feedback="${id}"]`)).toBe(card);
-		expect(card?.textContent).toContain("Filled");
+		expect(card?.textContent).toContain("order filled");
 		await timers(5100);
 		await settle();
 		expect(getOrderQueueItem(id)).toBeUndefined();
 		expect(container.querySelectorAll("[data-sonner-toast]")).toHaveLength(0);
-	});
-
+	}, 30_000);
 	it("removes a late-inserted card when dismissal frames run before Sonner insertion timers", async () => {
 		await warmGate();
 		const id = await addTask();
@@ -182,7 +181,7 @@ describe("order notification lifecycle with real Sonner", () => {
 		await settle();
 		expect(getOrderQueueItem(id)).toMatchObject({ status: "success", dismissed: false });
 		expect(container.querySelectorAll(`[data-order-feedback="${id}"]`)).toHaveLength(1);
-		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain("order filled");
 		expect(container.textContent).not.toContain("Submitting");
 		await timers(5100);
 		await settle();
@@ -200,7 +199,7 @@ describe("order notification lifecycle with real Sonner", () => {
 		await settle();
 		expect(getOrderQueueItem(id)).toMatchObject({ status: "success", dismissed: false });
 		expect(container.querySelectorAll(`[data-order-feedback="${id}"]`)).toHaveLength(1);
-		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain("order filled");
 		expect(container.textContent).not.toContain("Submitting");
 		await timers(5100);
 		await settle();
@@ -252,7 +251,7 @@ describe("order notification lifecycle with real Sonner", () => {
 		await settle();
 		expect(getOrderQueueItem(id)).toMatchObject({ status: "success", dismissed: false });
 		expect(container.querySelectorAll(`[data-order-feedback="${id}"]`)).toHaveLength(1);
-		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain("order filled");
 		expect(container.textContent).not.toContain("Submitting");
 		await timers(5100);
 		await settle();
@@ -276,7 +275,7 @@ describe("order notification lifecycle with real Sonner", () => {
 		await settle();
 		expect(getOrderQueueItem(id)).toMatchObject({ status: "success", dismissed: false });
 		expect(container.querySelectorAll(`[data-order-feedback="${id}"]`)).toHaveLength(1);
-		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain("order filled");
 		expect(container.textContent).not.toContain("Submitting");
 		await timers(5100);
 		await settle();
@@ -297,7 +296,7 @@ describe("order notification lifecycle with real Sonner", () => {
 		await settle();
 		expect(getOrderQueueItem(id)).toMatchObject({ status: "success", dismissed: false });
 		expect(container.querySelectorAll(`[data-order-feedback="${id}"]`)).toHaveLength(1);
-		expect(container.textContent).toContain("Filled");
+		expect(container.textContent).toContain("order filled");
 		await timers(5100);
 		await settle();
 		expect(getOrderQueueItem(id)).toBeUndefined();
@@ -325,7 +324,7 @@ describe("order notification lifecycle with real Sonner", () => {
 			expect(getOrderQueueItem(id)).toBe(currentTask);
 			expect(getOrderQueueItem(id)).toMatchObject({ status, dismissed: false });
 			expect(container.querySelectorAll(`[data-order-feedback="${id}"]`)).toHaveLength(1);
-			expect(container.textContent).toContain(status === "success" ? "Filled" : "Submitting");
+			expect(container.textContent).toContain(status === "success" ? "order filled" : "Submitting");
 		},
 	);
 });

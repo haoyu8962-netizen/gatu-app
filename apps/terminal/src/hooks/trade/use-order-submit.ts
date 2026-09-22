@@ -1,7 +1,8 @@
 import type { ExchangeExecutionGuard, HyperliquidExchangeSessionLease } from "@gatu/hl-react";
 import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
+import { getOrderExecutionSummary, type OrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
-import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
+import { isOrderBatchResolutionError, type TrackedOrderParams } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { buildTwapOrderDetails } from "@/domain/trade/twap-details";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -39,6 +40,7 @@ export interface OrderSubmitInput {
 	draftResetToken: OrderSubmitDraftResetToken;
 	market: SubmitMarket;
 	baseToken: string;
+	quoteToken?: string;
 	side: Side;
 	orderType: OrderType;
 	sizeValue: number;
@@ -191,6 +193,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 			owner: clientKey,
 			env,
 			market: baseToken,
+			quoteToken: input.quoteToken,
 			side,
 			size: formattedSize,
 			price: formattedPrice,
@@ -280,9 +283,14 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					return;
 				}
 
+				let execution: OrderExecutionSummary | undefined;
+				function updateExecution(response: unknown, orders: TrackedOrderParams["orders"]) {
+					execution = getOrderExecutionSummary(orders, response, input.scaleOrder ? orders.length : 1);
+					if (execution) updateOrder(orderId, { execution });
+				}
 				const submission = await submitOrder(
 					{ orders: plan.orders, grouping: plan.grouping },
-					{ queueId: orderId, riskContext },
+					{ queueId: orderId, riskContext, onResponse: updateExecution },
 				);
 				if (submission.state === "blocked") {
 					updateOrder(orderId, {
@@ -302,7 +310,10 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				if (errors.length > 0) {
 					updateOrder(orderId, { status: "failed", error: errors.join("; ") });
 				} else {
-					updateOrder(orderId, { status: "success", outcome: deriveOrderOutcome(statuses) });
+					updateOrder(orderId, {
+						status: execution?.completeness === "partial" ? "partial" : "success",
+						outcome: deriveOrderOutcome(statuses),
+					});
 				}
 			}
 

@@ -44,21 +44,17 @@ msgstr "{0} is listed as a native Hyperliquid perpetual market."
 msgid "{0} of {1}"
 msgstr "{0} of {1}"
 
-#. placeholder {0}: order.acceptedCount
-#. placeholder {1}: order.totalCount
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "{0} of {1} close orders fully filled. Review positions before retrying."
-msgstr "{0} of {1} close orders fully filled. Review positions before retrying."
+#~ msgid "{0} of {1} close orders fully filled. Review positions before retrying."
+#~ msgstr "{0} of {1} close orders fully filled. Review positions before retrying."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "{0} of {1} close orders were accepted. Review positions before retrying."
 #~ msgstr "{0} of {1} close orders were accepted. Review positions before retrying."
 
-#. placeholder {0}: order.acceptedCount
-#. placeholder {1}: order.totalCount
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "{0} of {1} orders were accepted. Review open orders before retrying."
-msgstr "{0} of {1} orders were accepted. Review open orders before retrying."
+#~ msgid "{0} of {1} orders were accepted. Review open orders before retrying."
+#~ msgstr "{0} of {1} orders were accepted. Review open orders before retrying."
 
 #. placeholder {0}: code.length
 #: src/components/referrals/referral-action-modal.tsx
@@ -113,6 +109,22 @@ msgstr "{label} over {periodLabel}. No performance history."
 #: src/components/vaults/vault-performance-chart.tsx
 #~ msgid "{label} trend"
 #~ msgstr "{label} trend"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order canceled"
+msgstr "{market} order canceled"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order failed"
+msgstr "{market} order failed"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order filled"
+msgstr "{market} order filled"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order submitted"
+msgstr "{market} order submitted"
 
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "{orderCount, plural, one {This will cancel the open order, including protective stop orders. Your position may no longer be protected.} other {This will cancel all # open orders, including protective stop orders. Your positions will no longer be protected.}}"
@@ -327,6 +339,10 @@ msgstr "Accept the HIP-3 deployer disclaimer before trading this market."
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Accepted"
 msgstr "Accepted"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Accepted {accepted}/{total} · Review orders"
+msgstr "Accepted {accepted}/{total} · Review orders"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Access disabled"
@@ -603,7 +619,7 @@ msgstr "All directions"
 msgid "All markets"
 msgstr "All markets"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "All positions closed"
 msgstr "All positions closed"
 
@@ -979,6 +995,10 @@ msgstr "Average Price"
 msgid "Avg Price"
 msgstr "Avg Price"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Avg. {price}"
+msgstr "Avg. {price}"
+
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -1055,6 +1075,10 @@ msgstr "Bitcoin is a decentralized digital asset secured by a proof-of-work netw
 msgid "Borrow"
 msgstr "Borrow"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Bought {quantity}"
+msgstr "Bought {quantity}"
+
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1094,7 +1118,6 @@ msgstr "Builder rewards are a cumulative source breakdown, not an additional rew
 #: src/components/trade/positions/orders-tab.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Buy"
 msgstr "Buy"
@@ -1179,9 +1202,9 @@ msgstr "Cancel selected orders"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
-#: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-reconciliation-feedback.ts
 msgid "Canceled"
 msgstr "Canceled"
@@ -1442,7 +1465,7 @@ msgstr "Close all is unavailable until every position market has loaded."
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Close All Positions"
 msgstr "Close All Positions"
 
@@ -1737,7 +1760,7 @@ msgstr "Confirm transaction in your wallet"
 msgid "Confirm trigger price change"
 msgstr "Confirm trigger price change"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Confirmed"
 msgstr "Confirmed"
 
@@ -1749,13 +1772,17 @@ msgstr "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minut
 #~ msgid "confirming"
 #~ msgstr "confirming"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Confirming — do not resubmit"
+msgstr "Confirming — do not resubmit"
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Confirming exchange status..."
 #~ msgstr "Confirming exchange status..."
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "Confirming order status. Do not retry."
-msgstr "Confirming order status. Do not retry."
+#~ msgid "Confirming order status. Do not retry."
+#~ msgstr "Confirming order status. Do not retry."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "Confirming..."
@@ -2058,6 +2085,10 @@ msgstr "Create TWAP"
 #: src/config/account-ledger.ts
 msgid "Create Vault"
 msgstr "Create Vault"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Created"
+msgstr "Created"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Creating your wallet. Please wait..."
@@ -2919,8 +2950,8 @@ msgstr "Exporting trade history..."
 #~ msgstr "failed"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
-#: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Failed"
 msgstr "Failed"
 
@@ -3117,7 +3148,6 @@ msgstr "Fill status"
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
 msgstr "Filled"
 
@@ -3247,6 +3277,10 @@ msgstr "From"
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "Fully filled"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Fully filled {accepted}/{total} · Review positions"
+msgstr "Fully filled {accepted}/{total} · Review positions"
 
 #: src/config/market-header.ts
 msgid "Funding"
@@ -4264,7 +4298,7 @@ msgstr "Market clicks currently close the full position immediately for this acc
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Market Close"
 msgstr "Market Close"
 
@@ -5127,7 +5161,7 @@ msgstr "Oracle"
 #~ msgid "ORACLE"
 #~ msgstr "ORACLE"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Order"
 msgstr "Order"
 
@@ -5157,6 +5191,10 @@ msgstr "Order book in quote asset"
 msgid "Order book view"
 msgstr "Order book view"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Order canceled"
+msgstr "Order canceled"
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "Order cancellation confirmed."
 msgstr "Order cancellation confirmed."
@@ -5176,11 +5214,14 @@ msgstr "Order confirmation"
 #~ msgstr "Order confirmed by the exchange."
 
 #: src/config/ui-text.ts
+#: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Order failed"
 msgstr "Order failed"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/lib/trade/order-notification-copy.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Order filled"
 msgstr "Order filled"
 
@@ -5241,6 +5282,8 @@ msgid "Order status"
 msgstr "Order status"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/lib/trade/order-notification-copy.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Order submitted"
 msgstr "Order submitted"
 
@@ -5349,13 +5392,17 @@ msgstr "Partial amount"
 #~ msgid "Partial result — reopen to retry"
 #~ msgstr "Partial result — reopen to retry"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Partially completed"
 msgstr "Partially completed"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Partially filled"
 msgstr "Partially filled"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Partially filled {progress}"
+msgstr "Partially filled {progress}"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -5500,8 +5547,8 @@ msgid "Place Limit Close"
 msgstr "Place Limit Close"
 
 #: src/hooks/trade/use-order-display-labels.ts
-msgid "Placed"
-msgstr "Placed"
+#~ msgid "Placed"
+#~ msgstr "Placed"
 
 #: src/components/staking/staking-fixture.tsx
 msgid "Placeholder validator data for visual review."
@@ -6411,6 +6458,10 @@ msgstr "Reverse quantity (2× position)"
 msgid "Review"
 msgstr "Review"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Review active TWAP orders before retrying"
+msgstr "Review active TWAP orders before retrying"
+
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "Review again"
@@ -6562,7 +6613,6 @@ msgid "Rows per page"
 msgstr "Rows per page"
 
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Running"
 msgstr "Running"
 
@@ -6619,7 +6669,6 @@ msgid "Saving..."
 msgstr "Saving..."
 
 #: src/config/trade.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
 msgstr "Scale"
 
@@ -6804,7 +6853,6 @@ msgstr "Selected-period PNL"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Sell"
 msgstr "Sell"
 
@@ -6860,8 +6908,8 @@ msgid "Server unlock time: {0}"
 msgstr "Server unlock time: {0}"
 
 #: src/hooks/trade/use-order-display-labels.ts
-msgid "Set"
-msgstr "Set"
+#~ msgid "Set"
+#~ msgstr "Set"
 
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 msgid "Set to {p}%"
@@ -7011,7 +7059,6 @@ msgstr "Signing..."
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/order-toast.tsx
-#: src/components/trade/tradebox/order-toast.tsx
 #: src/config/orderbook-labels.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -7087,6 +7134,10 @@ msgstr "Smart wallet deposit state is syncing. Do not submit another deposit whi
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Sold {quantity}"
+msgstr "Sold {quantity}"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Some balances cannot be valued with current data."
@@ -7323,8 +7374,8 @@ msgid "Status unconfirmed"
 msgstr "Status unconfirmed"
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "Status unconfirmed. Review orders and positions before retrying."
-msgstr "Status unconfirmed. Review orders and positions before retrying."
+#~ msgid "Status unconfirmed. Review orders and positions before retrying."
+#~ msgstr "Status unconfirmed. Review orders and positions before retrying."
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Stay Connected"
@@ -7427,8 +7478,8 @@ msgid "Submitted limit and trigger orders will appear here."
 msgstr "Submitted limit and trigger orders will appear here."
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "Submitting"
-msgstr "Submitting"
+#~ msgid "Submitting"
+#~ msgstr "Submitting"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Submitting close orders..."
@@ -7441,6 +7492,10 @@ msgstr "Submitting to Hyperliquid"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Submitting..."
 #~ msgstr "Submitting..."
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Submitting…"
+msgstr "Submitting…"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -7458,9 +7513,9 @@ msgstr "Support"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Swap"
 msgstr "Swap"
 
@@ -8799,7 +8854,6 @@ msgstr "Transfers to Spot use an approximately five-minute queue on Testnet. Hyp
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
 msgstr "Trigger"
 
@@ -8864,7 +8918,7 @@ msgstr "TVL"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "TWAP"
 msgstr "TWAP"
 
@@ -9094,6 +9148,10 @@ msgstr "Unclaimed USDC"
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "unconfirmed"
 #~ msgstr "unconfirmed"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Unconfirmed — review before retrying"
+msgstr "Unconfirmed — review before retrying"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx

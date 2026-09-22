@@ -68,7 +68,6 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/tradebox/leverage-slider.tsx",
 	"components/trade/tradebox/margin-mode-modal.tsx",
 	"components/trade/tradebox/order-toast.tsx",
-	"components/trade/tradebox/order-queue-error-message.tsx",
 	"components/trade/tradebox/price-input-with-percent.tsx",
 	"components/trade/tradebox/tp-sl-section.tsx",
 	"components/trade/tradebox/trade-form-scale.tsx",

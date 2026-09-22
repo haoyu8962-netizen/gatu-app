@@ -1,10 +1,12 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CheckIcon, SpinnerGapIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
-import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { cn } from "@/lib/cn";
+import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
-import { OrderQueueErrorMessage } from "./order-queue-error-message";
+
+const scrollRegionClassName =
+	"max-h-[min(18rem,35dvh,calc((100dvh_-_var(--offset-bottom,0px)_-_env(safe-area-inset-top)_-_4rem)/2))] overflow-y-auto overscroll-contain";
 
 interface Props {
 	order: OrderQueueItem;
@@ -13,19 +15,10 @@ interface Props {
 
 export function OrderToast({ order, onDismiss }: Props) {
 	const { t } = useLingui();
-	const { getOrderOutcomeLabel, getQueueOrderTypeLabel, getQueueSideLabel } = useOrderDisplayLabels();
+	const copy = getOrderNotificationCopy(order, (descriptor) => t(descriptor));
 	const waiting = order.status === "pending" || order.status === "confirming";
 	const successful = order.status === "success";
 	const failed = order.status === "failed";
-	const statusLabels = {
-		pending: t`Submitting`,
-		confirming: t`Confirming order status. Do not retry.`,
-		unconfirmed: t`Status unconfirmed. Review orders and positions before retrying.`,
-		partial: t`Partially completed`,
-		success: t`Confirmed`,
-		canceled: t`Canceled`,
-		failed: t`Failed`,
-	};
 	const childLabels = {
 		pending: t`Pending`,
 		filled: t`Fully filled`,
@@ -36,22 +29,9 @@ export function OrderToast({ order, onDismiss }: Props) {
 		unknown: t`Status unconfirmed`,
 		canceled: t`Canceled`,
 	};
-	function getTitle() {
-		if (order.title) return t(order.title);
-		if (order.operation === "close-all") return t`Close All Positions`;
-		if (order.operation === "market-close") return t`Market Close`;
-		if (order.operation === "spot-swap") return t`Swap`;
-		return getQueueOrderTypeLabel(order.orderType) || t`Order`;
-	}
-	function getStatus() {
-		if (order.message) return t(order.message);
-		if (order.positionsClosed && successful) return t`All positions closed`;
-		if (successful && order.outcome) return getOrderOutcomeLabel(order.outcome);
-		return statusLabels[order.status];
-	}
 	return (
 		<section
-			aria-label={getTitle()}
+			aria-label={copy.label}
 			data-order-feedback={order.id}
 			className="w-full rounded-8 border border-stroke-weak bg-overlay p-3 shadow-overlay font-sans text-xs"
 		>
@@ -61,42 +41,28 @@ export function OrderToast({ order, onDismiss }: Props) {
 				{failed && <XIcon className="size-4 shrink-0 text-error" />}
 				{!waiting && !successful && !failed && <WarningCircleIcon className="size-4 shrink-0 text-warning" />}
 				<div className="min-w-0 flex-1 space-y-1">
-					<div className="flex flex-wrap gap-2 font-semibold text-fg">
-						<span>{getTitle()}</span>
-						{order.market && <span>{order.market}</span>}
-						{order.side && (
-							<span className={cn(order.side === "buy" ? "text-success" : "text-error")}>
-								{getQueueSideLabel(order.side)}
-							</span>
-						)}
-					</div>
 					<div
 						role={failed ? "alert" : "status"}
 						aria-atomic="true"
+						tabIndex={0}
 						className={cn(
-							"space-y-1",
+							scrollRegionClassName,
+							"space-y-1 [overflow-wrap:anywhere]",
 							successful && "text-success",
 							failed && "text-error",
 							!successful && !failed && "text-fg-muted",
 						)}
 					>
-						<p>{getStatus()}</p>
-						{order.size && (
-							<p>
-								{t`Size`}: {order.size}
-								{order.price && ` @ ${order.price}`}
+						<p data-order-summary dir="auto" className="font-medium">
+							{copy.summary}
+						</p>
+						{copy.detail && (
+							<p data-order-detail dir="auto">
+								{copy.detail}
 							</p>
 						)}
-						{order.tpPrice && <p>TP: {order.tpPrice}</p>}
-						{order.slPrice && <p>SL: {order.slPrice}</p>}
-						{order.status === "partial" && order.acceptedCount !== undefined && order.totalCount !== undefined && (
-							<p>
-								{order.countMode === "filled"
-									? t`${order.acceptedCount} of ${order.totalCount} close orders fully filled. Review positions before retrying.`
-									: t`${order.acceptedCount} of ${order.totalCount} orders were accepted. Review open orders before retrying.`}
-							</p>
-						)}
-						{order.error && !successful && <OrderQueueErrorMessage error={order.error} />}
+						{copy.count && <p>{copy.count}</p>}
+						{copy.error && <p dir="auto">{copy.error}</p>}
 					</div>
 				</div>
 				<Button
@@ -105,34 +71,38 @@ export function OrderToast({ order, onDismiss }: Props) {
 					size="xs"
 					onClick={onDismiss}
 					aria-label={t`Dismiss`}
-					className="shrink-0"
+					className="min-h-6 min-w-6 shrink-0"
 				>
 					<XIcon className="size-4" />
 				</Button>
 			</div>
 			{order.children && order.children.length > 0 && (
-				<ul
-					aria-label={t`Order results`}
-					className="mt-2 max-h-[min(18rem,35dvh)] overflow-y-auto divide-y divide-stroke-weak overscroll-contain"
-				>
+				<ul aria-label={t`Order results`} className={cn(scrollRegionClassName, "mt-2 divide-y divide-stroke-weak")}>
 					{order.children.map((child, index) => (
-						<li key={`${child.assetId}-${index}`} className="py-1.5 text-fg-muted">
+						<li key={`${child.assetId}-${index}`} className="py-1.5 text-fg-muted [overflow-wrap:anywhere]">
 							<div className="flex flex-wrap justify-between gap-2">
-								<span>{child.market || t`Order ${index + 1}`}</span>
+								<bdi>{child.market || t`Order ${index + 1}`}</bdi>
 								<span>{childLabels[child.status]}</span>
 							</div>
 							{child.filledSize !== undefined && (
 								<p>
-									{t`Filled`}: {child.filledSize}
-									{child.size && ` / ${child.size}`}
+									{t`Filled`}:{" "}
+									<bdi>
+										{child.filledSize}
+										{child.size && ` / ${child.size}`}
+									</bdi>
 								</p>
 							)}
 							{child.filledSize === undefined && child.size && (
 								<p>
-									{t`Size`}: {child.size}
+									{t`Size`}: <bdi>{child.size}</bdi>
 								</p>
 							)}
-							{child.error && <p className="text-warning break-words">{child.error}</p>}
+							{child.error && (
+								<p dir="auto" className="text-warning break-words">
+									{child.error}
+								</p>
+							)}
 						</li>
 					))}
 				</ul>
