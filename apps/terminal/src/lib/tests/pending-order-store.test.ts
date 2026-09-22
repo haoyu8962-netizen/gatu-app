@@ -126,6 +126,7 @@ describe("pending order store", () => {
 	it("restores IOC remainder evidence and drops corrupt optional fields without losing execution facts", () => {
 		const storage = new MemoryStorage();
 		const cloid = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		const attachedCloid = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 		const execution = {
 			evidence: "exchange-response" as const,
 			filledSize: "0.4",
@@ -140,12 +141,16 @@ describe("pending order store", () => {
 				env: "Mainnet",
 				user: USER,
 				intentKey: "partial-ioc-execution",
-				children: [{ assetId: 0, cloid }],
-				feedback: { execution: { ...execution, partialIoc: { cloid, orderId: 1 } } },
+				children: [
+					{ assetId: 0, cloid },
+					{ assetId: 0, cloid: attachedCloid },
+				],
+				feedback: { execution: { ...execution, partialIoc: { cloid, orderId: 1, attachedCloids: [attachedCloid] } } },
 			});
 		expect(createPendingOrderStore(storage).getState().submissions[0].feedback?.execution?.partialIoc).toEqual({
 			cloid,
 			orderId: 1,
+			attachedCloids: [attachedCloid],
 		});
 		const key = storage.key(0);
 		if (!key) throw new Error("Missing pending record");

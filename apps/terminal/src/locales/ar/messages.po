@@ -4980,6 +4980,10 @@ msgstr "غير متصل"
 msgid "Not reported"
 msgstr "غير مُبلّغ عنه"
 
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Notification details"
+msgstr "تفاصيل الإشعار"
+
 #: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
 msgstr "تنسيق الأرقام"

@@ -4,7 +4,7 @@ import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
-import { OrderBatchResolutionError } from "@/domain/trade/order-tracking";
+import { OrderBatchResolutionError, type TrackedOrderParams, trackOrderRequest } from "@/domain/trade/order-tracking";
 import { type OrderSubmitInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { orderSubmissionFeedbackCause } from "@/lib/trade/order-submission-feedback";
 import { createI18nRoot } from "./harness/react";
@@ -177,17 +177,25 @@ describe("useOrderSubmit surface reset", () => {
 	});
 
 	it("reports a partial market execution as partial rather than fully filled", async () => {
-		mocks.submitOrder.mockImplementation(async (_params, options) => {
+		mocks.submitOrder.mockImplementation(async (params: TrackedOrderParams, options) => {
+			expect(params.orders).toHaveLength(1);
+			expect(params.orders[0]).toEqual(expect.objectContaining({ t: { limit: { tif: "FrontendMarket" } } }));
+			const tracked = trackOrderRequest(params);
 			const result = {
 				status: "ok",
 				response: { type: "order", data: { statuses: [{ filled: { totalSz: "0.4", avgPx: "99", oid: 12 } }] } },
 			};
-			options.onResponse(result, _params.orders);
+			options.onResponse(result, tracked.params.orders);
 			return { state: "confirmed", result };
 		});
 		await submit(marketInput());
 		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
-			execution: expect.objectContaining({ filledSize: "0.4", requestedSize: "1", completeness: "partial" }),
+			execution: expect.objectContaining({
+				filledSize: "0.4",
+				requestedSize: "1",
+				completeness: "partial",
+				partialIoc: { cloid: expect.stringMatching(/^0x[\da-f]{32}$/), orderId: 12 },
+			}),
 		});
 		expect(mocks.updateOrder).toHaveBeenLastCalledWith("queue-1", { status: "partial", outcome: "filled" });
 	});

@@ -18,6 +18,7 @@ const RENDER_HELPER_OWNERS = new Map([
 	["portfolio-performance-chart.tsx", ["PortfolioPerformanceChart"]],
 	["mobile-market-bar.tsx", ["MobileMarketBar"]],
 	["orders-tab.tsx", ["OrderRow"]],
+	["order-toast.tsx", ["OrderToast"]],
 ]);
 
 describe("number format reactivity contract", () => {
@@ -28,10 +29,11 @@ describe("number format reactivity contract", () => {
 			const sourceText = readFileSync(filePath, "utf8");
 			const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 			const formatterAliases = getNumberFormatterAliases(sourceFile);
-			if (formatterAliases.size === 0) continue;
+			const helperOwners = RENDER_HELPER_OWNERS.get(basename(filePath)) ?? [];
+			if (formatterAliases.size === 0 && helperOwners.length === 0) continue;
 
 			const components = getFormattingComponents(sourceFile, formatterAliases);
-			for (const owner of RENDER_HELPER_OWNERS.get(basename(filePath)) ?? []) components.add(owner);
+			for (const owner of helperOwners) components.add(owner);
 
 			for (const componentName of components) {
 				const component = findFunction(sourceFile, componentName);

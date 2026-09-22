@@ -644,7 +644,7 @@ describe("OrderReconciliation", () => {
 		});
 	});
 
-	it("preserves a verified IOC partial fill when its remainder is canceled without hiding attached-order outcomes", () => {
+	it("preserves a verified IOC partial fill when its remainder and attached order are canceled", () => {
 		const mainCloid = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 		const tpCloid = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 		const execution = {
@@ -654,7 +654,7 @@ describe("OrderReconciliation", () => {
 			averagePrice: "99",
 			orderIds: [70],
 			completeness: "partial" as const,
-			partialIoc: { cloid: mainCloid, orderId: 70 },
+			partialIoc: { cloid: mainCloid, orderId: 70, attachedCloids: [tpCloid] },
 		};
 		const submission = getPendingOrderActions().add({
 			env: "Mainnet",
@@ -668,16 +668,16 @@ describe("OrderReconciliation", () => {
 		});
 		mocks.orderUpdatesData = [
 			{ order: { cloid: mainCloid }, status: "canceled" },
-			{ order: { cloid: tpCloid }, status: "open" },
+			{ order: { cloid: tpCloid }, status: "canceled" },
 		];
 		act(() => root.render(createReconciliation()));
 		expect(getOrderQueueItem(`reconcile-${submission.id}`)).toMatchObject({
 			status: "partial",
 			execution,
-			acceptedCount: 2,
+			acceptedCount: 1,
 			totalCount: 2,
 			positionsClosed: false,
-			children: [{ status: "partial", size: "1", filledSize: "0.4" }, { status: "accepted" }],
+			children: [{ status: "partial", size: "1", filledSize: "0.4" }, { status: "canceled" }],
 		});
 		expect(getOrderQueueItem(`reconcile-${submission.id}`)?.error).toBeUndefined();
 	});
@@ -750,7 +750,6 @@ describe("OrderReconciliation", () => {
 
 	it.each([
 		{ knownPartialChild: false, confirmationMode: "accepted", secondStatus: "open", expected: "success" },
-		{ knownPartialChild: true, confirmationMode: "accepted", secondStatus: "open", expected: "success" },
 		{ knownPartialChild: true, confirmationMode: "filled", secondStatus: "filled", expected: "partial" },
 		{ knownPartialChild: false, confirmationMode: "accepted", secondStatus: "canceled", expected: "partial" },
 		{ knownPartialChild: false, confirmationMode: "accepted", secondStatus: "rejected", expected: "partial" },

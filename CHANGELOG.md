@@ -8,6 +8,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Market-order partial fills now retain their execution result when the `FrontendMarket`
+  remainder is canceled during reconciliation. Ordinary TP/SL cancellations caused by the
+  same partially filled parent no longer add a contradictory order-canceled error; abnormal
+  cancellations and rejected children remain visible. Overflowing notification bodies now
+  use a distinct accessible details label.
+
 - Accepted Scale ladders now show successful submission even when only some levels fill
   immediately. Reconciled IOC remainders with matching partial-fill evidence retain their
   execution result without a misleading cancellation error. Execution averages follow the

@@ -390,11 +390,7 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 	).length;
 	const canceledCount = children.filter((child) => child.status === "canceled").length;
 	const allAccepted = children.every(
-		(child) =>
-			child.status === "filled" ||
-			child.status === "filled-unverified" ||
-			child.status === "accepted" ||
-			(acceptedScale && child.status === "partial"),
+		(child) => child.status === "filled" || child.status === "filled-unverified" || child.status === "accepted",
 	);
 	const allCanceled = canceledCount === submission.children.length;
 	const partiallyAccepted =
@@ -406,7 +402,21 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 	const hasUnverifiedFillSize =
 		submission.confirmationMode === "filled" && children.some((child) => child.status === "filled-unverified");
 	const hasRejected = children.some((child) => child.status === "rejected");
-	const hasCanceled = canceledCount > 0;
+	const canceledPartialIoc =
+		execution &&
+		submission.children.find(
+			(child) => child.status === "canceled" && isPartialIocExecutionForOrder(execution, child.cloid),
+		);
+	const expectedCanceledCloids = new Set(
+		canceledPartialIoc
+			? [canceledPartialIoc.cloid, ...(execution?.partialIoc?.attachedCloids ?? [])].map((cloid) => cloid.toLowerCase())
+			: [],
+	);
+	const hasUnexpectedCanceled = submission.children.some(
+		(child) =>
+			isCanceledOrderStatus(child.status) &&
+			!(child.status === "canceled" && expectedCanceledCloids.has(child.cloid.toLowerCase())),
+	);
 	const canceledError = orderReconciliationError("accepted-orders-canceled");
 	releasePositionMarketCloseSession(submission);
 	const queueId = ensureSubmissionQueue(submission);
@@ -419,9 +429,9 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 		updateOrderQueueItem(queueId, { ...detail, status: "success", outcome: getReconciledOutcome(statuses) });
 	} else if (allCanceled && !partiallyFilled) {
 		updateOrderQueueItem(queueId, { ...detail, status: "canceled", error: canceledError });
-	} else if (hasCanceled || partiallyAccepted || partiallyFilled) {
+	} else if (hasUnexpectedCanceled || partiallyAccepted || partiallyFilled) {
 		let error: OrderQueueItem["error"];
-		if (hasCanceled) error = canceledError;
+		if (hasUnexpectedCanceled) error = canceledError;
 		else if (hasRejected) error = orderReconciliationError("batch-rejected");
 		updateOrderQueueItem(queueId, {
 			...detail,

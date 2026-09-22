@@ -63,3 +63,5 @@
 原审查和实施记录均保留，已追加局部更正和链接；当前行为同步到 `docs/trading-notifications.md` 和 CHANGELOG。旧 pending 没有新 IOC 证据时维持保守取消提示，后续成交归集不属此次范围。没有新增真实交易或发布任务。
 
 2026-09-22 二次对抗审查更正：`partialIoc` 只匹配 `tif: "Ioc"`，而市价单实际发送 `FrontendMarket`，因此上文「IOC 恢复对账取消误报」的修复对市价单主场景未生效，仅覆盖手选 IOC 的限价单；本节其余结论不变。详见[75a7fb01 对抗审查](2026-09-22-notification-remediation-adversarial-review.md)。
+
+2026-09-22 后续修复：市价 `FrontendMarket` 现纳入即时成交余量取消语义；主单有匹配部分成交证据且普通 `canceled` 时，已绑定的同批 TP/SL 普通取消保持中性，`marginCanceled` / rejected / unknown 不放宽。数字格式 helper owner 登记、正文区域名称及无生产来源的 Scale partial 子项放行分支一并处理。此段是对上文的局部更正，实际验证以[后续任务记录](2026-09-22-notification-remediation-followup.md)为准。

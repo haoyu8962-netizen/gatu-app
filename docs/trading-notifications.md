@@ -57,14 +57,14 @@
 | HTTP 回包包含实际成交量且等于请求量 | 子项 Fully filled；`countMode: filled` 可计入「完全成交」数量 | 仓位一定归零、关联委托一定已撤销 |
 | HTTP 实际成交量小于请求量 | Partially filled，保留实际量 | 将后续只有 filled 状态的推送补成请求全量 |
 | Scale 全部 GTC 子项已接受，部分立即成交、其余挂单 | 提交成功；成交摘要仍显示已证明的进度和均价 | 整批已完全成交，或把正常挂单进度当作提交异常 |
-| 有匹配 cloid 的单主单 IOC 部分成交证据，后续普通 canceled | 保留部分成交，未成交余量取消不追加整单取消错误 | 无证据时忽略取消，或隐藏附属委托取消、保证金等异常取消 |
+| 有匹配 cloid 的单主单 `Ioc` / `FrontendMarket` 部分成交证据，后续普通 `canceled`（包括已绑定同批 TP/SL 的普通取消） | 保留部分成交；未成交余量和随父单取消的已绑定附属委托不追加整单取消错误 | 无证据或无附属绑定时忽略取消，或隐藏 `marginCanceled`、拒绝和未知等异常 |
 | WS / REST 只有 `filled`，缺少完整数量证据 | 顶层 Filled；子项 `filled-unverified`，显示 Filled (quantity unverified) | 子项 Fully filled 或虚构完全成交计数 |
 | 拒绝、取消、未知混合 | 逐项区分 rejected / canceled / unknown；汇总 partial 或对应结局 | 顶层 `ok` 代表整批成功，或未知等于拒单 |
 | 完整成交加原提交路径取得的新账户仓位快照确认 | All positions closed | 后台 orderStatus 单独提供同样结论 |
 
 `acceptedCount` 是兼容既有提交器的字段名，渲染必须按 `countMode` 分辨「已接受」与「完全成交」。全部平仓使用 filled 模式；后台无法证明成交量时不输出虚构的 X/Y 完全成交计数。后台对账不设置 `positionsClosed: true`。通知不承诺清理 TP/SL，不扩大确认范围，也不对整批自动重发。
 
-Scale 的成功只代表全部子项已受理，与 `execution.completeness` 的即时成交进度独立；拒绝、取消、未知子项仍按原异常/核对路径处理，`confirmationMode: filled` 不放宽。普通单笔 IOC 有效 HTTP 回包后会结束 pending 跟踪；取消与已知部分成交并存的规则适用于仍需对账或恢复的记录。只有摘要生成时根据实际 `tif: Ioc`、真实回包量价与 oid、提交 cloid 绑定的 `partialIoc` 证据可以识别余量取消；后续以 cloid 对应同一子项，且只匹配普通 `canceled`。缺失该可选证据的旧记录保持保守，不凭 `orderType: market` 猜测。
+Scale 的成功只代表全部子项已受理，与 `execution.completeness` 的即时成交进度独立；拒绝、取消、未知子项仍按原异常/核对路径处理，`confirmationMode: filled` 不放宽。普通单笔 IOC 有效 HTTP 回包后会结束 pending 跟踪；取消与已知部分成交并存的规则适用于仍需对账或恢复的记录。只有摘要生成时根据实际 `tif: Ioc` 或 `FrontendMarket`、真实回包量价与 oid、提交 cloid 绑定的 `partialIoc` 证据可以识别余量取消；正常 TP/SL 分组会同时保存已校验的附属 cloid，后续必须先以 cloid 匹配主单的普通 `canceled`，同一可信部分成交批次中的已绑定附属普通 `canceled` 才按正常附属取消处理。`marginCanceled`、拒绝、未知、无附属绑定和缺失/损坏证据仍保持保守错误提示，不凭 `orderType: market` 猜测。
 
 ## 展示、时长与可访问性
 

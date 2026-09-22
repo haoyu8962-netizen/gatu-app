@@ -8,13 +8,14 @@ export interface OrderExecutionSummary {
 	averagePrice: string;
 	orderIds: number[];
 	completeness: "full" | "partial";
-	partialIoc?: { cloid: string; orderId: number };
+	partialIoc?: { cloid: string; orderId: number; attachedCloids?: string[] };
 }
 
 export function getOrderExecutionSummary(
 	orders: TrackedOrderParams["orders"],
 	response: unknown,
 	mainOrderCount: number,
+	grouping?: TrackedOrderParams["grouping"],
 ): OrderExecutionSummary | undefined {
 	if (!Number.isSafeInteger(mainOrderCount) || mainOrderCount < 1 || mainOrderCount > orders.length) return;
 	const envelope = asRecord(response);
@@ -56,11 +57,12 @@ export function getOrderExecutionSummary(
 			mainOrderCount === 1 &&
 			actual.lt(requested) &&
 			"limit" in order.t &&
-			order.t.limit.tif === "Ioc" &&
+			isImmediateCancelTif(order.t.limit.tif) &&
 			order.c !== undefined &&
 			/^0x[a-fA-F0-9]{32}$/.test(order.c)
 		) {
-			partialIoc = { cloid: order.c, orderId: oid };
+			const attachedCloids = getAttachedTpslCloids(orders, grouping);
+			partialIoc = { cloid: order.c, orderId: oid, ...(attachedCloids ? { attachedCloids } : {}) };
 		}
 	}
 	if (!filledSize.gt(0)) return;
@@ -73,6 +75,39 @@ export function getOrderExecutionSummary(
 		completeness: filledSize.eq(requestedSize) ? "full" : "partial",
 		...(partialIoc ? { partialIoc } : {}),
 	};
+}
+
+function isImmediateCancelTif(tif: string): boolean {
+	return tif === "Ioc" || tif === "FrontendMarket";
+}
+
+function getAttachedTpslCloids(
+	orders: TrackedOrderParams["orders"],
+	grouping: TrackedOrderParams["grouping"],
+): string[] | undefined {
+	const parent = orders[0];
+	if (grouping !== "normalTpsl" || !parent?.c || orders.length < 2 || orders.length > 3) return;
+	const requested = positiveDecimal(parent.s);
+	if (!requested) return;
+	const cloids = new Set([parent.c.toLowerCase()]);
+	const attachedCloids: string[] = [];
+	for (const child of orders.slice(1)) {
+		if (
+			child.a !== parent.a ||
+			child.b === parent.b ||
+			!child.r ||
+			!("trigger" in child.t) ||
+			!positiveDecimal(child.s)?.eq(requested) ||
+			!child.c ||
+			!/^0x[a-fA-F0-9]{32}$/.test(child.c) ||
+			cloids.has(child.c.toLowerCase())
+		) {
+			return;
+		}
+		cloids.add(child.c.toLowerCase());
+		attachedCloids.push(child.c);
+	}
+	return attachedCloids;
 }
 
 export function isPartialIocExecutionForOrder(summary: OrderExecutionSummary, cloid: string): boolean {

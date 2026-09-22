@@ -25,7 +25,25 @@ const orderExecutionSummarySchema = z
 		averagePrice: z.string(),
 		orderIds: z.array(z.number().int().nonnegative()).min(1),
 		completeness: z.enum(["full", "partial"]),
-		partialIoc: z.object({ cloid: cloidSchema, orderId: z.number().int().nonnegative() }).optional().catch(undefined),
+		partialIoc: z
+			.object({
+				cloid: cloidSchema,
+				orderId: z.number().int().nonnegative(),
+				attachedCloids: z
+					.array(cloidSchema)
+					.min(1)
+					.max(2)
+					.refine((cloids) => new Set(cloids.map((cloid) => cloid.toLowerCase())).size === cloids.length)
+					.optional()
+					.catch(undefined),
+			})
+			.transform((partialIoc) =>
+				partialIoc.attachedCloids?.some((cloid) => cloid.toLowerCase() === partialIoc.cloid.toLowerCase())
+					? { ...partialIoc, attachedCloids: undefined }
+					: partialIoc,
+			)
+			.optional()
+			.catch(undefined),
 	})
 	.refine(isValidOrderExecutionSummary)
 	.transform((summary) =>

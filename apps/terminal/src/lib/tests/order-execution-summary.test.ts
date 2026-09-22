@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getOrderExecutionSummary, isPartialIocExecutionForOrder } from "@/domain/trade/order-execution-summary";
 import type { TrackedOrderParams } from "@/domain/trade/order-tracking";
+import { buildFrontendMarketOrder } from "@/domain/trade/orders";
 
 function order(size = "1", asset = 0, buy = true): TrackedOrderParams["orders"][number] {
 	return { a: asset, b: buy, s: size, p: "101", r: false, t: { limit: { tif: "Gtc" } } };
@@ -47,6 +48,58 @@ describe("order execution summary", () => {
 		expect(
 			getOrderExecutionSummary([{ ...requested, c: undefined }], response([filled("0.3")]), 1)?.partialIoc,
 		).toBeUndefined();
+	});
+
+	it("recognizes a partial FrontendMarket execution from the real market order builder", () => {
+		const cloid = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		const built = buildFrontendMarketOrder({
+			assetId: 0,
+			side: "buy",
+			size: "1",
+			szDecimals: 3,
+			markPx: "100",
+			slippageBps: "50",
+			reduceOnly: true,
+		});
+		const requested = { ...built, c: cloid };
+		const execution = getOrderExecutionSummary([requested], response([filled("0.4", "99", 7)]), 1);
+
+		expect(requested.t).toEqual({ limit: { tif: "FrontendMarket" } });
+		expect(execution?.partialIoc).toEqual({ cloid, orderId: 7 });
+	});
+
+	it("records tracked TP/SL cloids for a partial normalTpsl execution", () => {
+		const parentCloid = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		const childCloid = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+		const parent = {
+			...buildFrontendMarketOrder({
+				assetId: 0,
+				side: "buy" as const,
+				size: "1",
+				szDecimals: 3,
+				markPx: "100",
+				slippageBps: "50",
+				reduceOnly: false,
+			}),
+			c: parentCloid,
+		};
+		const child = {
+			a: 0,
+			b: false,
+			p: "90",
+			s: "1",
+			r: true,
+			t: { trigger: { isMarket: true, triggerPx: "95", tpsl: "sl" as const } },
+			c: childCloid,
+		};
+		const execution = getOrderExecutionSummary(
+			[parent, child],
+			response([filled("0.4", "99", 8), { canceled: true }]),
+			1,
+			"normalTpsl",
+		);
+
+		expect(execution?.partialIoc).toEqual({ cloid: parentCloid, orderId: 8, attachedCloids: [childCloid] });
 	});
 
 	it.each(["Gtc", "Alo"] as const)("does not infer an IOC remainder from a %s partial fill", (tif) => {

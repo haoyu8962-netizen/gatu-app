@@ -4980,6 +4980,10 @@ msgstr "कनेक्टेड नहीं"
 msgid "Not reported"
 msgstr "रिपोर्ट नहीं किया गया"
 
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Notification details"
+msgstr "सूचना का विवरण"
+
 #: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
 msgstr "नंबर फ़ॉर्मेट"

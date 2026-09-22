@@ -70,7 +70,7 @@ export function OrderToast({ order, onDismiss }: Props) {
 				<div className="min-w-0 flex-1 space-y-1">
 					<section
 						ref={bodyRegion.ref}
-						aria-label={bodyRegion.scrollable ? copy.label : undefined}
+						aria-label={bodyRegion.scrollable ? t`Notification details` : undefined}
 						tabIndex={bodyRegion.scrollable ? 0 : undefined}
 						data-order-scroll="body"
 						className={cn(

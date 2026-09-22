@@ -285,7 +285,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 
 				let execution: OrderExecutionSummary | undefined;
 				function updateExecution(response: unknown, orders: TrackedOrderParams["orders"]) {
-					execution = getOrderExecutionSummary(orders, response, input.scaleOrder ? orders.length : 1);
+					execution = getOrderExecutionSummary(orders, response, input.scaleOrder ? orders.length : 1, plan.grouping);
 					if (execution) updateOrder(orderId, { execution });
 				}
 				const submission = await submitOrder(
