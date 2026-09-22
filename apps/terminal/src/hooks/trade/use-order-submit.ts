@@ -311,7 +311,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					updateOrder(orderId, { status: "failed", error: errors.join("; ") });
 				} else {
 					updateOrder(orderId, {
-						status: execution?.completeness === "partial" ? "partial" : "success",
+						status: execution?.completeness === "partial" && !input.scaleOrder ? "partial" : "success",
 						outcome: deriveOrderOutcome(statuses),
 					});
 				}

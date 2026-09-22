@@ -1,7 +1,12 @@
 import { setupI18n } from "@lingui/core";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
+
+const formatSettings = vi.hoisted(() => ({ numberFormatLocale: "en-US" }));
+vi.mock("@/stores/use-global-settings-store", () => ({
+	getResolvedFormatLocale: () => formatSettings.numberFormatLocale,
+}));
 
 const i18n = setupI18n({ locale: "en", messages: { en: {} } });
 const base: OrderQueueItem = {
@@ -34,6 +39,33 @@ function copy(update: Partial<OrderQueueItem> = {}) {
 }
 
 describe("compact order notification copy", () => {
+	beforeEach(() => {
+		formatSettings.numberFormatLocale = "en-US";
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+	it.each([
+		["en-US", "88,140.123"],
+		["de-DE", "88.140,123"],
+		["fr-FR", "88 140,123"],
+	])("uses shared %s separators for execution averages", (locale, expected) => {
+		formatSettings.numberFormatLocale = locale;
+		const fill = { ...execution, averagePrice: "88140.12345" };
+		expect(copy({ execution: fill }).detail).toBe(`Avg. $${expected}`);
+		expect(copy({ execution: fill, quoteToken: "BTC" }).detail).toBe(`Avg. ${expected} BTC`);
+		expect(fill.averagePrice).toBe("88140.12345");
+	});
+	it("keeps non-tick and tiny averages at eight significant digits without compact notation", () => {
+		expect(copy({ execution: { ...execution, averagePrice: "0.000000123456789" } }).detail).toBe(
+			"Avg. $0.00000012345679",
+		);
+		expect(copy({ execution: { ...execution, averagePrice: "1234567.89" } }).detail).toBe("Avg. $1,234,567.9");
+		expect(copy({ execution: { ...execution, averagePrice: "101.123456789" } }).detail).toBe("Avg. $101.12346");
+	});
+	it("keeps number preferences independent of translation language", () => {
+		formatSettings.numberFormatLocale = "de-DE";
+		i18n.loadAndActivate({ locale: "ar", messages: {} });
+		expect(copy({ execution }).detail).toBe("Avg. $101,125");
+	});
 	it("uses actual execution amount and average, never request price", () => {
 		expect(copy({ execution })).toMatchObject({ summary: "Bought 1.25 HYPE", detail: "Avg. $101.125" });
 		expect(JSON.stringify(copy({ execution }))).not.toContain("111");

@@ -79,4 +79,6 @@
 
 ## 后续与替代关系
 
+2026-09-22 后续复核已启动，见[审查修复任务](2026-09-22-notification-review-remediation.md)。两项依据需收窄：本报告引用的 L1 取消示例实际为 `Alo`，不能充当 IOC 真实回包证据；普通单笔 IOC 有效部分成交 HTTP 回包会完成并删除 pending，对账问题限于仍需对账或恢复的记录。P3-1 的共享数字格式由用户数字预设控制，阿拉伯语并不自动切换数字系统；加权均价也不能机械套用委托价格 tick。原始审查推演保留，最终修复和验证以新任务记录为准。
+
 本记录只报告问题，不替代 `docs/trading-notifications.md` 与 [实施记录](2026-09-22-compact-notification-implementation.md)。若修复 P2-1/P2-2，需同步更新 Reference 的证据表格、`order-reconciliation.test.tsx` 与 `order-execution-summary.test.ts`，并在 CHANGELOG 记录语义变更。

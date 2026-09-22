@@ -8,6 +8,7 @@ export interface OrderExecutionSummary {
 	averagePrice: string;
 	orderIds: number[];
 	completeness: "full" | "partial";
+	partialIoc?: { cloid: string; orderId: number };
 }
 
 export function getOrderExecutionSummary(
@@ -27,6 +28,7 @@ export function getOrderExecutionSummary(
 	let filledSize = Big(0);
 	let filledValue = Big(0);
 	const orderIds: number[] = [];
+	let partialIoc: OrderExecutionSummary["partialIoc"];
 	for (let index = 0; index < mainOrderCount; index += 1) {
 		const order = orders[index];
 		if (!order || order.a !== firstOrder?.a || order.b !== firstOrder.b) return;
@@ -50,6 +52,16 @@ export function getOrderExecutionSummary(
 		orderIds.push(oid);
 		filledSize = filledSize.plus(actual);
 		filledValue = filledValue.plus(actual.times(price));
+		if (
+			mainOrderCount === 1 &&
+			actual.lt(requested) &&
+			"limit" in order.t &&
+			order.t.limit.tif === "Ioc" &&
+			order.c !== undefined &&
+			/^0x[a-fA-F0-9]{32}$/.test(order.c)
+		) {
+			partialIoc = { cloid: order.c, orderId: oid };
+		}
 	}
 	if (!filledSize.gt(0)) return;
 	return {
@@ -59,7 +71,21 @@ export function getOrderExecutionSummary(
 		averagePrice: filledValue.div(filledSize).toFixed(),
 		orderIds,
 		completeness: filledSize.eq(requestedSize) ? "full" : "partial",
+		...(partialIoc ? { partialIoc } : {}),
 	};
+}
+
+export function isPartialIocExecutionForOrder(summary: OrderExecutionSummary, cloid: string): boolean {
+	const partialIoc = summary.partialIoc;
+	return (
+		isValidOrderExecutionSummary(summary) &&
+		summary.completeness === "partial" &&
+		summary.orderIds.length === 1 &&
+		partialIoc !== undefined &&
+		summary.orderIds[0] === partialIoc.orderId &&
+		/^0x[a-fA-F0-9]{32}$/.test(partialIoc.cloid) &&
+		partialIoc.cloid.toLowerCase() === cloid.toLowerCase()
+	);
 }
 
 export function isValidOrderExecutionSummary(summary: OrderExecutionSummary): boolean {

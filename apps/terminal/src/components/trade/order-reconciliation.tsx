@@ -1,6 +1,7 @@
 import { msg } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
+import { isPartialIocExecutionForOrder } from "@/domain/trade/order-execution-summary";
 import {
 	isAcceptedOrderStatus,
 	isCanceledOrderStatus,
@@ -376,6 +377,9 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 	releaseSubmissionAssetReservations(submission);
 	const statuses = submission.children.map((child) => child.status).filter((status) => status !== undefined);
 	const children = getSubmissionQueueChildren(submission);
+	const queueItem = getOrderQueueItem(getSubmissionQueueId(submission));
+	const acceptedScale =
+		(queueItem?.orderType ?? submission.feedback?.orderType) === "scale" && submission.confirmationMode !== "filled";
 	const acceptedCount = children.filter((child) =>
 		submission.confirmationMode === "filled"
 			? child.status === "filled"
@@ -386,14 +390,18 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 	).length;
 	const canceledCount = children.filter((child) => child.status === "canceled").length;
 	const allAccepted = children.every(
-		(child) => child.status === "filled" || child.status === "filled-unverified" || child.status === "accepted",
+		(child) =>
+			child.status === "filled" ||
+			child.status === "filled-unverified" ||
+			child.status === "accepted" ||
+			(acceptedScale && child.status === "partial"),
 	);
 	const allCanceled = canceledCount === submission.children.length;
 	const partiallyAccepted =
 		children.some(
 			(child) => child.status === "filled" || child.status === "filled-unverified" || child.status === "accepted",
 		) && !allAccepted;
-	const execution = getOrderQueueItem(getSubmissionQueueId(submission))?.execution ?? submission.feedback?.execution;
+	const execution = queueItem?.execution ?? submission.feedback?.execution;
 	const partiallyFilled = children.some((child) => child.status === "partial") || execution?.completeness === "partial";
 	const hasUnverifiedFillSize =
 		submission.confirmationMode === "filled" && children.some((child) => child.status === "filled-unverified");
@@ -407,7 +415,7 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 		countMode: submission.confirmationMode === "filled" ? ("filled" as const) : ("accepted" as const),
 		positionsClosed: false,
 	};
-	if (allAccepted && !partiallyFilled) {
+	if (allAccepted && (!partiallyFilled || acceptedScale)) {
 		updateOrderQueueItem(queueId, { ...detail, status: "success", outcome: getReconciledOutcome(statuses) });
 	} else if (allCanceled && !partiallyFilled) {
 		updateOrderQueueItem(queueId, { ...detail, status: "canceled", error: canceledError });
@@ -458,12 +466,23 @@ function syncSubmissionQueue(submission: PendingOrderSubmission): void {
 }
 
 function getSubmissionQueueChildren(submission: PendingOrderSubmission): NonNullable<OrderQueueItem["children"]> {
-	const existingChildren =
-		getOrderQueueItem(getSubmissionQueueId(submission))?.children ?? submission.feedback?.children;
+	const queueItem = getOrderQueueItem(getSubmissionQueueId(submission));
+	const execution = queueItem?.execution ?? submission.feedback?.execution;
+	const existingChildren = queueItem?.children ?? submission.feedback?.children;
 	return submission.children.map((child, index) => {
 		const previous = existingChildren?.[index];
 		const existing = previous?.assetId === child.assetId ? previous : undefined;
 		const status = child.status;
+		if (status === "canceled" && execution && isPartialIocExecutionForOrder(execution, child.cloid)) {
+			return {
+				...existing,
+				assetId: child.assetId,
+				status: "partial",
+				size: execution.requestedSize,
+				filledSize: execution.filledSize,
+				error: undefined,
+			};
+		}
 		if (existing && status === undefined && existing.status !== "pending" && existing.status !== "unknown") {
 			return existing;
 		}

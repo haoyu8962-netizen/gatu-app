@@ -6,6 +6,8 @@ import { act, createContext, isValidElement, StrictMode, useContext } from "reac
 import { createRoot, type Root } from "react-dom/client";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+// Transform the real host during collection; the gate suite controls deferred import readiness.
+import "@/components/trade/order-notification-host";
 import { OrderNotificationGate } from "@/components/trade/order-notification-gate";
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -134,7 +136,7 @@ describe("order notification lifecycle with real Sonner", () => {
 		await settle();
 		expect(getOrderQueueItem(id)).toBeUndefined();
 		expect(container.querySelectorAll("[data-sonner-toast]")).toHaveLength(0);
-	}, 30_000);
+	});
 	it("removes a late-inserted card when dismissal frames run before Sonner insertion timers", async () => {
 		await warmGate();
 		const id = await addTask();

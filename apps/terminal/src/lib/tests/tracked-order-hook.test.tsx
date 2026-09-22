@@ -4,6 +4,7 @@ import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { reserveOrderAssets, runWithOrderAssetLocks } from "@/lib/trade/order-asset-lock";
 import {
@@ -358,6 +359,50 @@ describe("useTrackedOrder", () => {
 			execution,
 		});
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [40])).toBe(true);
+	});
+
+	it("resolves a valid partial IOC response immediately without leaving a later cancellation to reconcile", async () => {
+		const queueId = addOrderQueueItem({
+			owner: "0x1111111111111111111111111111111111111111",
+			env: "Mainnet",
+			market: "HYPE",
+			status: "pending",
+		});
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "order", data: { statuses: [{ filled: { totalSz: "0.4", avgPx: "99", oid: 41 } }] } },
+		});
+		const params = createParams(41);
+		await act(async () => {
+			await expect(
+				hookValue?.submitOrder(
+					{ ...params, orders: params.orders.map((order) => ({ ...order, t: { limit: { tif: "Ioc" } } })) },
+					{
+						...CROSS_PERP_SUBMIT_OPTIONS,
+						queueId,
+						onResponse: (response, orders) => {
+							const execution = getOrderExecutionSummary(orders, response, 1);
+							expect(execution).toMatchObject({
+								filledSize: "0.4",
+								completeness: "partial",
+								partialIoc: { cloid: orders[0].c, orderId: 41 },
+							});
+							updateOrderQueueItem(queueId, { execution });
+						},
+					},
+				),
+			).resolves.toMatchObject({ state: "confirmed" });
+		});
+		expect(createPendingOrderStore(window.localStorage).getState().submissions).toHaveLength(0);
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [41])).toBe(false);
+		expect(
+			getPendingOrderActions().resolve(
+				"Mainnet",
+				"0x1111111111111111111111111111111111111111",
+				mutateAsync.mock.calls[0][0].orders[0].c,
+				"canceled",
+			),
+		).toBeNull();
 	});
 
 	it("reconciles a same-length response whose child status is malformed", async () => {

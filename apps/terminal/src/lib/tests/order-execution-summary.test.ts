@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
+import { getOrderExecutionSummary, isPartialIocExecutionForOrder } from "@/domain/trade/order-execution-summary";
 import type { TrackedOrderParams } from "@/domain/trade/order-tracking";
 
 function order(size = "1", asset = 0, buy = true): TrackedOrderParams["orders"][number] {
@@ -32,6 +32,26 @@ describe("order execution summary", () => {
 			requestedSize: "1",
 			completeness: "partial",
 		});
+	});
+
+	it("binds a partial IOC remainder to the submitted cloid and verified execution oid", () => {
+		const cloid = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		const requested = { ...order(), c: cloid, t: { limit: { tif: "Ioc" as const } } };
+		const execution = getOrderExecutionSummary([requested], response([filled("0.3", "100", 7)]), 1);
+		expect(execution?.partialIoc).toEqual({ cloid, orderId: 7 });
+		if (!execution) throw new Error("Expected partial execution");
+		expect(isPartialIocExecutionForOrder(execution, cloid.toUpperCase())).toBe(true);
+		expect(isPartialIocExecutionForOrder(execution, "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")).toBe(false);
+		expect(isPartialIocExecutionForOrder({ ...execution, partialIoc: { cloid, orderId: 8 } }, cloid)).toBe(false);
+		expect(getOrderExecutionSummary([requested], response([filled()]), 1)?.partialIoc).toBeUndefined();
+		expect(
+			getOrderExecutionSummary([{ ...requested, c: undefined }], response([filled("0.3")]), 1)?.partialIoc,
+		).toBeUndefined();
+	});
+
+	it.each(["Gtc", "Alo"] as const)("does not infer an IOC remainder from a %s partial fill", (tif) => {
+		const requested = { ...order(), c: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", t: { limit: { tif } } };
+		expect(getOrderExecutionSummary([requested], response([filled("0.3")]), 1)?.partialIoc).toBeUndefined();
 	});
 
 	it("excludes attached TP/SL fills from the entry execution", () => {

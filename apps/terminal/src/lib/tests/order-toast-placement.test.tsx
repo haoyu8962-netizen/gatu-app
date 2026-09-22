@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderNotificationHost } from "@/components/trade/order-notification-host";
 import { Toaster } from "@/components/ui/sonner";
 import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
+import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import {
 	addOrderQueueItem,
 	getOrderQueueItem,
@@ -39,11 +40,18 @@ function add(status: OrderQueueItem["status"] = "pending") {
 }
 
 function Harness({ page = "trade", account = identity }: { page?: string; account?: typeof identity }) {
+	const { setNumberFormatLocale } = useGlobalSettingsActions();
 	return (
 		<IdentityContext.Provider value={account}>
 			<Toaster />
 			<OrderNotificationHost />
 			<div data-page={page}>{page}</div>
+			<button type="button" data-number-format="en-US" onClick={() => setNumberFormatLocale("en-US")}>
+				English numbers
+			</button>
+			<button type="button" data-number-format="de-DE" onClick={() => setNumberFormatLocale("de-DE")}>
+				German numbers
+			</button>
 		</IdentityContext.Provider>
 	);
 }
@@ -60,20 +68,92 @@ describe("global order notifications", () => {
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
 		act(() => root.render(<Harness account={{ ...identity }} />));
+		act(() => container.querySelector<HTMLButtonElement>('[data-number-format="en-US"]')?.click());
 	});
 	afterEach(async () => {
 		await act(async () => {
+			container.querySelector<HTMLButtonElement>('[data-number-format="en-US"]')?.click();
 			for (const id of ids.splice(0)) removeOrderQueueItem(id);
 			toast.dismiss();
 			await vi.advanceTimersByTimeAsync(1000);
 			root.unmount();
 		});
 		container.remove();
+		vi.unstubAllGlobals();
 		vi.useRealTimers();
 	});
 	async function flush() {
 		await act(() => vi.advanceTimersByTimeAsync(0));
 	}
+	it("keeps short live feedback out of the tab order", async () => {
+		vi.stubGlobal("ResizeObserver", undefined);
+		let id = "";
+		act(() => {
+			id = add();
+		});
+		await flush();
+		const card = container.querySelector(`[data-order-feedback="${id}"]`);
+		expect(card?.querySelector('[role="status"]')?.getAttribute("aria-atomic")).toBe("true");
+		expect(card?.querySelector('[data-order-scroll="body"]')?.hasAttribute("tabindex")).toBe(false);
+		expect(card?.querySelector('[role="status"]')?.hasAttribute("tabindex")).toBe(false);
+		expect(card?.querySelectorAll("button")).toHaveLength(1);
+	});
+	it("makes only overflowing body and child regions focusable and observes their content", async () => {
+		const observers: { notify: () => void; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }[] =
+			[];
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				observe = vi.fn();
+				disconnect = vi.fn();
+				constructor(notify: () => void) {
+					observers.push({ notify, observe: this.observe, disconnect: this.disconnect });
+				}
+			},
+		);
+		let id = "";
+		act(() => {
+			id = add();
+			updateOrderQueueItem(id, {
+				operation: "close-all",
+				children: [{ assetId: 0, market: "HYPE", size: "1", status: "pending" }],
+			});
+		});
+		await flush();
+		const regions = container.querySelectorAll<HTMLElement>(`[data-order-feedback="${id}"] [data-order-scroll]`);
+		expect(regions).toHaveLength(2);
+		let contentHeight = 200;
+		for (const region of regions) {
+			Object.defineProperties(region, {
+				clientHeight: { get: () => 100 },
+				scrollHeight: { get: () => contentHeight },
+			});
+			const observer = observers.find((entry) => entry.observe.mock.calls.some(([element]) => element === region));
+			expect(observer).toBeDefined();
+			expect(observer?.observe).toHaveBeenCalledWith(region.firstElementChild);
+		}
+		act(() => {
+			for (const observer of observers) observer.notify();
+		});
+		for (const region of regions) {
+			expect(region.tabIndex).toBe(0);
+			expect(region.getAttribute("aria-label")).toBeTruthy();
+		}
+		contentHeight = 80;
+		act(() => {
+			for (const observer of observers) observer.notify();
+		});
+		for (const region of regions) {
+			expect(region.hasAttribute("tabindex")).toBe(false);
+			expect(region.hasAttribute("aria-label")).toBe(false);
+		}
+		act(() => updateOrderQueueItem(id, { children: undefined }));
+		await flush();
+		const childrenObserver = observers.find((entry) =>
+			entry.observe.mock.calls.some(([element]) => element === regions[1]),
+		);
+		expect(childrenObserver?.disconnect).toHaveBeenCalled();
+	});
 	it("shares one Sonner container with ordinary notifications and survives a route change", async () => {
 		let id = "";
 		act(() => {
@@ -243,6 +323,31 @@ describe("global order notifications", () => {
 		act(() => i18n.loadAndActivate({ locale: "zh", messages: { [messageId]: "正在提交" } }));
 		expect(container.textContent).toContain("正在提交");
 		expect(container.querySelector(`[data-order-feedback="${id}"]`)).toBe(element);
+	});
+	it("updates the displayed average when number preferences change without recreating the task", async () => {
+		let id = "";
+		act(() => {
+			id = add("success");
+			updateOrderQueueItem(id, {
+				quoteToken: "USDC",
+				execution: {
+					evidence: "exchange-response",
+					filledSize: "1",
+					requestedSize: "1",
+					averagePrice: "1234.56789",
+					orderIds: [101],
+					completeness: "full",
+				},
+			});
+		});
+		await flush();
+		const element = container.querySelector(`[data-order-feedback="${id}"]`);
+		const task = getOrderQueueItem(id);
+		expect(element?.textContent).toContain("$1,234.5679");
+		act(() => container.querySelector<HTMLButtonElement>('[data-number-format="de-DE"]')?.click());
+		expect(element?.textContent).toContain("$1.234,5679");
+		expect(container.querySelector(`[data-order-feedback="${id}"]`)).toBe(element);
+		expect(getOrderQueueItem(id)).toBe(task);
 	});
 	it("renders full-fill counts and partial child details without claiming positions are flat", async () => {
 		let id = "";

@@ -7,7 +7,7 @@ import { OrderNotificationGate } from "@/components/trade/order-notification-gat
 import { Toaster } from "@/components/ui/sonner";
 import { messages as englishMessages } from "@/locales/en/messages.po";
 import { messages as chineseMessages } from "@/locales/zh/messages.po";
-import { useSetTheme, useTheme } from "@/stores/use-global-settings-store";
+import { useGlobalSettingsActions, useSetTheme, useTheme } from "@/stores/use-global-settings-store";
 import {
 	addOrderQueueItem,
 	getOrderQueueItems,
@@ -21,6 +21,7 @@ import "./notifications.css";
 function Fixture() {
 	const theme = useTheme();
 	const setTheme = useSetTheme();
+	const { setNumberFormatLocale } = useGlobalSettingsActions();
 	const [owner, setOwner] = useState(OWNER_A);
 	const [route, setRoute] = useState("trade");
 	const orders = useOrderQueue();
@@ -131,6 +132,12 @@ function Fixture() {
 					</button>
 					<button type="button" onClick={() => i18n.loadAndActivate({ locale: "zh", messages: chineseMessages })}>
 						Chinese
+					</button>
+					<button type="button" onClick={() => setNumberFormatLocale("en-US")}>
+						English numbers
+					</button>
+					<button type="button" onClick={() => setNumberFormatLocale("de-DE")}>
+						German numbers
 					</button>
 					<button
 						type="button"

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { STORAGE_KEYS } from "@/config/app";
-import { isValidOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
+import { isPartialIocExecutionForOrder, isValidOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import {
 	getReconciliationDelayMs,
 	ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS,
@@ -25,8 +25,14 @@ const orderExecutionSummarySchema = z
 		averagePrice: z.string(),
 		orderIds: z.array(z.number().int().nonnegative()).min(1),
 		completeness: z.enum(["full", "partial"]),
+		partialIoc: z.object({ cloid: cloidSchema, orderId: z.number().int().nonnegative() }).optional().catch(undefined),
 	})
-	.refine(isValidOrderExecutionSummary);
+	.refine(isValidOrderExecutionSummary)
+	.transform((summary) =>
+		summary.partialIoc && !isPartialIocExecutionForOrder(summary, summary.partialIoc.cloid)
+			? { ...summary, partialIoc: undefined }
+			: summary,
+	);
 const orderQueueMetadataSchema = z.object({
 	title: feedbackMessageSchema.optional(),
 	message: feedbackMessageSchema.optional(),

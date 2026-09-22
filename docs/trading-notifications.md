@@ -56,11 +56,15 @@
 | 订单接受/挂单成功 | Accepted / Placed 等对应结果 | 已成交、已平仓 |
 | HTTP 回包包含实际成交量且等于请求量 | 子项 Fully filled；`countMode: filled` 可计入「完全成交」数量 | 仓位一定归零、关联委托一定已撤销 |
 | HTTP 实际成交量小于请求量 | Partially filled，保留实际量 | 将后续只有 filled 状态的推送补成请求全量 |
+| Scale 全部 GTC 子项已接受，部分立即成交、其余挂单 | 提交成功；成交摘要仍显示已证明的进度和均价 | 整批已完全成交，或把正常挂单进度当作提交异常 |
+| 有匹配 cloid 的单主单 IOC 部分成交证据，后续普通 canceled | 保留部分成交，未成交余量取消不追加整单取消错误 | 无证据时忽略取消，或隐藏附属委托取消、保证金等异常取消 |
 | WS / REST 只有 `filled`，缺少完整数量证据 | 顶层 Filled；子项 `filled-unverified`，显示 Filled (quantity unverified) | 子项 Fully filled 或虚构完全成交计数 |
 | 拒绝、取消、未知混合 | 逐项区分 rejected / canceled / unknown；汇总 partial 或对应结局 | 顶层 `ok` 代表整批成功，或未知等于拒单 |
 | 完整成交加原提交路径取得的新账户仓位快照确认 | All positions closed | 后台 orderStatus 单独提供同样结论 |
 
 `acceptedCount` 是兼容既有提交器的字段名，渲染必须按 `countMode` 分辨「已接受」与「完全成交」。全部平仓使用 filled 模式；后台无法证明成交量时不输出虚构的 X/Y 完全成交计数。后台对账不设置 `positionsClosed: true`。通知不承诺清理 TP/SL，不扩大确认范围，也不对整批自动重发。
+
+Scale 的成功只代表全部子项已受理，与 `execution.completeness` 的即时成交进度独立；拒绝、取消、未知子项仍按原异常/核对路径处理，`confirmationMode: filled` 不放宽。普通单笔 IOC 有效 HTTP 回包后会结束 pending 跟踪；取消与已知部分成交并存的规则适用于仍需对账或恢复的记录。只有摘要生成时根据实际 `tif: Ioc`、真实回包量价与 oid、提交 cloid 绑定的 `partialIoc` 证据可以识别余量取消；后续以 cloid 对应同一子项，且只匹配普通 `canceled`。缺失该可选证据的旧记录保持保守，不凭 `orderType: market` 猜测。
 
 ## 展示、时长与可访问性
 
@@ -77,6 +81,8 @@
 | 资金恢复提醒 | 常驻且不允许划走关闭；通过 Review 与既有核验/清理路径处理 |
 
 悬停、页面后台及退出动画由 Sonner 生命周期处理。Toaster 使用 `bg-overlay`、共享 `z-toast` 与主题色；项目移动断点是 `<=1000px`，两个 offset 分支均保留 56px 底部导航、安全区和 12px 间隙；桌面用安全区内右下角。没有另加高于所有弹层的硬编码层级。任务有可访问名称、状态/错误播报与关闭按钮。
+
+真实部分成交沿用三秒是用户明确选择；不因附带 `execution` 单独延长。通知不是成交证据的唯一入口，成交历史及订单列表仍承担持续核对。正常受理的 Scale 成交进度使用成功状态和成功时长。
 
 ## 精简文案与实际成交摘要
 
@@ -98,9 +104,9 @@
 
 queue 与 pending feedback 的可选 `execution` 保存 `filledSize`、实际主单提交量 `requestedSize`、`averagePrice`、订单 ID、`exchange-response` 证据和 full/partial。domain helper 使用实际提交（含生成 cloid）的订单列表及回包对应位置校验；普通单仅取主单，Scale 只合并同资产同方向，TP/SL 不混入主单。加权运算用 Big.js。请求 `size` / `price` 的原义不变，成交卡不再把它们当成交证据。
 
-`quoteToken` 随原始市场保存；USDC/USDT/USD 显示美元符号，其他报价币明确显示币种，缺少报价单位时省略均价。均价展示最多 8 位有效数字，数量保留真实十进制字符串；动态量价使用双向文本隔离，摘要保留未按展示有效位数缩减的十进制结果（加权除法沿用 Big.js 的小数精度）。损坏 execution 字段独立忽略，不破坏合法 pending 记录、其他 metadata 或业务锁。WS/REST 只有状态时不填补缺失量价，也不把已知部分成交升级成全量；后来挂单的完整成交均价仍需单独的逐单成交归集设计，近期成交列表不能替代完整证据。
+`quoteToken` 随原始市场保存；USDC/USDT/USD 通过共享 `formatPrice` 显示美元符号，其他报价币通过 `formatToken` 明确显示币种，缺少报价单位时省略均价。均价先用 Big.js 限为最多 8 位有效数字，再交给共享格式化器显示完整数值（不启用 K/M 压缩），遵循用户的数字分隔符设置并订阅其热更新；数字预设与界面语言独立。均价是加权结果，可能不在委托价格 tick 上，因此不套 `szDecimals` 截断。数量保留真实十进制字符串；动态量价使用双向文本隔离，摘要保留未按展示有效位数缩减的十进制结果（加权除法沿用 Big.js 的小数精度）。损坏 execution 字段独立忽略；其中损坏的可选 `partialIoc` 也独立忽略，不破坏其余成交摘要、合法 pending 记录、其他 metadata 或业务锁。WS/REST 只有状态时不填补缺失量价，也不把已知部分成交升级成全量；后来挂单的完整成交均价仍需单独的逐单成交归集设计，近期成交列表不能替代完整证据。
 
-桌面和手机共用相同短句与自然分行，普通成交为两行主体，不另建移动通知系统；长符号、翻译与错误允许增加行数。正文 `min-w-0` 和任意断词避免挤占关闭控件；正文可键盘聚焦，正文与子项均可滚动；各自高度不超过 `min(18rem,35dvh)`，也不超过视口扣除实际 Sonner 底部偏移、顶部安全区与 4rem 控件/间距后的可用高度的一半。20 层 Scale 长拒单与子项同时出现时，较矮视口也保留顶部与关闭控件。关闭目标至少 24px。保留主题 tokens、字号、单容器、底部导航安全距离及既定时长；不会通过缩小文字或省略号隐藏异常。
+桌面和手机共用相同短句与自然分行，普通成交为两行主体，不另建移动通知系统；长符号、翻译与错误允许增加行数。正文 `min-w-0` 和任意断词避免挤占关闭控件；正文与子项均可滚动，仅实际纵向溢出时提供有名称的键盘滚动区域。状态/错误播报与滚动焦点分开，短通知不增加正文 Tab 停靠点；尺寸或内容变化重新测量。各自高度不超过 `min(18rem,35dvh)`，也不超过视口扣除实际 Sonner 底部偏移、顶部安全区与 4rem 控件/间距后的可用高度的一半。20 层 Scale 长拒单与子项同时出现时，较矮视口也保留顶部与关闭控件。关闭目标至少 24px。保留主题 tokens、字号、单容器、底部导航安全距离及既定时长；不会通过缩小文字或省略号隐藏异常。
 
 ## 验证契约与证据边界
 
@@ -109,3 +115,5 @@ queue 与 pending feedback 的可选 `execution` 保存 `filledSize`、实际主
 入口包括 `order-notification-copy.test.ts`、`order-execution-summary.test.ts`、`order-toast-placement.test.tsx`、`order-reconciliation.test.tsx`、`twap-reconciliation.test.tsx`、close-all / market-close 的 submit 与 modal 测试，以及撤改单、TP/SL、逐仓保证金、Swap、CCTP 和 funds recovery 各自套件。测试文件是验证入口，不表示每次更改都已经执行全部用例；本轮实际命令、失败、更正、源码版本和浏览器范围由[交付任务记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md)列出。模拟网络和浏览器夹具不能证明真实资金交易、签名钱包或物理触屏时序；本次通知迁移不以新的主网下单作验收。
 
 生命周期入口 `order-notification-lifecycle.test.tsx` 使用真实 Sonner、queue、根 StrictMode 和 Gate，覆盖冷/热挂载、关闭 RAF 早于插入 timer、真实卸载、身份切换及同批关闭/结果；必须同时验证任务与外层 Sonner DOM，不能只看队列为空。独立浏览器 suite 使用 `pnpm --dir apps/terminal exec playwright test --config tests/browser/notifications.playwright.config.ts`，覆盖原位更新、重复 Gate 挂载、软隐藏迟到结果和桌面/移动两主题堆叠，接入 CI 两分片。夹具缓存隔离规则见 [runtime guardrails §9](runtime-guardrails.md#9-development-and-browser-test-caches)。
+
+生命周期单测在 collection 阶段转换真实宿主，不再仅放宽首条用例超时；Gate 套件用受控延迟 importer 验证加载就绪、身份变化和完整展示时间。2026-09-22 对抗审查的复核、更正与本轮实际验证见[修复记录](work-memory/sessions/2026-09-22-notification-review-remediation.md)。

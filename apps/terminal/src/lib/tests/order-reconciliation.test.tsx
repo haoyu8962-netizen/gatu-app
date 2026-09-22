@@ -644,6 +644,160 @@ describe("OrderReconciliation", () => {
 		});
 	});
 
+	it("preserves a verified IOC partial fill when its remainder is canceled without hiding attached-order outcomes", () => {
+		const mainCloid = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		const tpCloid = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+		const execution = {
+			evidence: "exchange-response" as const,
+			filledSize: "0.4",
+			requestedSize: "1",
+			averagePrice: "99",
+			orderIds: [70],
+			completeness: "partial" as const,
+			partialIoc: { cloid: mainCloid, orderId: 70 },
+		};
+		const submission = getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "ioc-partial-with-tp",
+			feedback: { market: "HYPE", orderType: "market", execution },
+			children: [
+				{ assetId: 70, cloid: mainCloid },
+				{ assetId: 70, cloid: tpCloid },
+			],
+		});
+		mocks.orderUpdatesData = [
+			{ order: { cloid: mainCloid }, status: "canceled" },
+			{ order: { cloid: tpCloid }, status: "open" },
+		];
+		act(() => root.render(createReconciliation()));
+		expect(getOrderQueueItem(`reconcile-${submission.id}`)).toMatchObject({
+			status: "partial",
+			execution,
+			acceptedCount: 2,
+			totalCount: 2,
+			positionsClosed: false,
+			children: [{ status: "partial", size: "1", filledSize: "0.4" }, { status: "accepted" }],
+		});
+		expect(getOrderQueueItem(`reconcile-${submission.id}`)?.error).toBeUndefined();
+	});
+
+	it.each([
+		{ mainStatus: "canceled", attachedStatus: "canceled", code: "accepted-orders-canceled" },
+		{ mainStatus: "canceled", attachedStatus: "rejected", code: "batch-rejected" },
+		{ mainStatus: "marginCanceled", attachedStatus: "open", code: "accepted-orders-canceled" },
+	] as const)("keeps abnormal IOC batch outcomes (%j)", ({ mainStatus, attachedStatus, code }) => {
+		const mainCloid = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		const tpCloid = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+		getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "ioc-partial-with-failed-tp",
+			feedback: {
+				market: "HYPE",
+				execution: {
+					evidence: "exchange-response",
+					filledSize: "0.4",
+					requestedSize: "1",
+					averagePrice: "99",
+					orderIds: [71],
+					completeness: "partial",
+					partialIoc: { cloid: mainCloid, orderId: 71 },
+				},
+			},
+			children: [
+				{ assetId: 71, cloid: mainCloid },
+				{ assetId: 71, cloid: tpCloid },
+			],
+		});
+		mocks.orderUpdatesData = [
+			{ order: { cloid: mainCloid }, status: mainStatus },
+			{ order: { cloid: tpCloid }, status: attachedStatus },
+		];
+		act(() => root.render(createReconciliation()));
+		expect(findQueueForAsset(71)).toMatchObject({ status: "partial", error: { code } });
+	});
+
+	it.each([
+		undefined,
+		{ cloid: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", orderId: 72 },
+		{ cloid: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", orderId: 73 },
+	])("does not infer normal IOC cancellation from missing or mismatched evidence (%j)", (partialIoc) => {
+		const cloid = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "unverified-ioc-remainder",
+			feedback: {
+				market: "HYPE",
+				orderType: "market",
+				execution: {
+					evidence: "exchange-response",
+					filledSize: "0.4",
+					requestedSize: "1",
+					averagePrice: "99",
+					orderIds: [72],
+					completeness: "partial",
+					partialIoc,
+				},
+			},
+			children: [{ assetId: 72, cloid }],
+		});
+		mocks.orderUpdatesData = [{ order: { cloid }, status: "canceled" }];
+		act(() => root.render(createReconciliation()));
+		expect(findQueueForAsset(72)).toMatchObject({ status: "partial", error: { code: "accepted-orders-canceled" } });
+	});
+
+	it.each([
+		{ knownPartialChild: false, confirmationMode: "accepted", secondStatus: "open", expected: "success" },
+		{ knownPartialChild: true, confirmationMode: "accepted", secondStatus: "open", expected: "success" },
+		{ knownPartialChild: true, confirmationMode: "filled", secondStatus: "filled", expected: "partial" },
+		{ knownPartialChild: false, confirmationMode: "accepted", secondStatus: "canceled", expected: "partial" },
+		{ knownPartialChild: false, confirmationMode: "accepted", secondStatus: "rejected", expected: "partial" },
+	] as const)("separates Scale acceptance from fill completeness (%j)", (scenario) => {
+		const firstCloid = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		const secondCloid = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+		getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "scale-accepted-partial-execution",
+			confirmationMode: scenario.confirmationMode,
+			feedback: {
+				market: "HYPE",
+				orderType: "scale",
+				execution: {
+					evidence: "exchange-response",
+					filledSize: "0.4",
+					requestedSize: "1",
+					averagePrice: "99",
+					orderIds: [73],
+					completeness: "partial",
+				},
+				children: scenario.knownPartialChild
+					? [
+							{ assetId: 73, size: "0.5", filledSize: "0.4", status: "partial" },
+							{ assetId: 73, status: "pending" },
+						]
+					: undefined,
+			},
+			children: [
+				{ assetId: 73, cloid: firstCloid },
+				{ assetId: 73, cloid: secondCloid },
+			],
+		});
+		mocks.orderUpdatesData = [
+			{ order: { cloid: firstCloid }, status: "filled" },
+			{ order: { cloid: secondCloid }, status: scenario.secondStatus },
+		];
+		act(() => root.render(createReconciliation()));
+		expect(findQueueForAsset(73)).toMatchObject({
+			status: scenario.expected,
+			execution: { completeness: "partial", filledSize: "0.4", requestedSize: "1" },
+			positionsClosed: false,
+		});
+		if (scenario.expected === "success") expect(findQueueForAsset(73)?.error).toBeUndefined();
+	});
+
 	it("uses a fresh open-orders snapshot to confirm an update that arrived before the HTTP response", () => {
 		const now = Date.now();
 		const action = getPendingTradingActionActions().claimModification({

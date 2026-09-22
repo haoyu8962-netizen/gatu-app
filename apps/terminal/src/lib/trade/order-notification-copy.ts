@@ -2,6 +2,7 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import Big from "big.js";
 import { isValidOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
+import { formatPrice, formatToken } from "@/lib/format";
 import { formatOrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import { formatOrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 import { formatPositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
@@ -135,8 +136,9 @@ function getErrorCopy(order: OrderQueueItem, translate: Translate): string | und
 
 function formatExecutionPrice(value: string, quoteToken: string): string {
 	const price = Big(value).prec(8).toFixed();
-	if (quoteToken === "USDC" || quoteToken === "USDT" || quoteToken === "USD") return `$${price}`;
-	return `${price} ${quoteToken}`;
+	const options = { compact: false, maximumSignificantDigits: 8 };
+	if (quoteToken === "USDC" || quoteToken === "USDT" || quoteToken === "USD") return formatPrice(price, options);
+	return formatToken(price, { ...options, symbol: quoteToken });
 }
 
 function isolate(value: string): string {

@@ -202,6 +202,10 @@ for (const viewport of viewports) {
 				await expect(feedback).toHaveAttribute("data-order-feedback", taskId ?? "");
 				expect(await feedback.evaluate((element, initial) => element === initial, original)).toBe(true);
 				await expect(page.locator("[data-sonner-toaster]")).toHaveCount(1);
+				await expect(feedback.locator("[data-order-scroll]")).not.toHaveAttribute("tabindex");
+				await page.locator("[data-sonner-toast]").focus();
+				await page.keyboard.press("Tab");
+				await expect(feedback.getByRole("button")).toBeFocused();
 				await expect(page.getByRole("status", { name: "Queued tasks" })).toHaveText("1");
 				await expectContainedFeedback(feedback, viewport);
 				const contentHeight = await feedback.evaluate((element) => {
@@ -241,7 +245,7 @@ for (const viewport of viewports) {
 					);
 				}
 				if (scenario === "Twenty rejections") {
-					const body = feedback.getByRole("alert");
+					const body = feedback.locator('[data-order-scroll="body"]');
 					for (let index = 1; index <= 20; index += 1) {
 						await expect(body).toContainText(`Synthetic rejection ${index}:`);
 					}
@@ -269,6 +273,46 @@ for (const viewport of viewports) {
 	});
 }
 
+test("updates number preferences in an existing compiled notification", async ({ page }) => {
+	await page.getByRole("button", { name: "Verified synthetic fill", exact: true }).click();
+	const feedback = page.locator(feedbackSelector);
+	await waitForInitialFeedback(feedback);
+	const original = await feedback.elementHandle();
+	const taskId = await feedback.getAttribute("data-order-feedback");
+	await expectReadableCopy(feedback.locator("[data-order-detail]"), "Avg. $101.125");
+	await page.getByRole("button", { name: "German numbers", exact: true }).click();
+	await expectReadableCopy(feedback.locator("[data-order-detail]"), "Avg. $101,125");
+	await page.getByRole("button", { name: "Chinese", exact: true }).click();
+	await expectReadableCopy(feedback.locator("[data-order-detail]"), "均价 $101,125");
+	await page.getByRole("button", { name: "English numbers", exact: true }).click();
+	await expectReadableCopy(feedback.locator("[data-order-detail]"), "均价 $101.125");
+	await expect(feedback).toHaveAttribute("data-order-feedback", taskId ?? "");
+	expect(await feedback.evaluate((element, initial) => element === initial, original)).toBe(true);
+	await expect(page.getByRole("status", { name: "Queued tasks" })).toHaveText("1");
+});
+
+test("removes the extra tab stop when an overflowing notice becomes a short result", async ({ page }) => {
+	await page.getByRole("button", { name: "Twenty rejections", exact: true }).click();
+	const feedback = page.locator(feedbackSelector);
+	await waitForInitialFeedback(feedback);
+	await feedback.hover();
+	const original = await feedback.elementHandle();
+	const body = feedback.locator('[data-order-scroll="body"]');
+	await expect(body).toHaveAttribute("tabindex", "0");
+	await page.locator("[data-sonner-toast]").focus();
+	await page.keyboard.press("Tab");
+	await expect(body).toBeFocused();
+	await body.press("End");
+	await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+	await page.getByRole("button", { name: "Fill synthetic order", exact: true }).click();
+	await expect(feedback.getByRole("status")).toContainText("order filled");
+	await expect(body).not.toHaveAttribute("tabindex");
+	expect(await feedback.evaluate((element, initial) => element === initial, original)).toBe(true);
+	await page.locator("[data-sonner-toast]").focus();
+	await page.keyboard.press("Tab");
+	await expect(feedback.getByRole("button")).toBeFocused();
+});
+
 test("keeps combined batch errors and child results reachable in a short mobile viewport", async ({
 	page,
 }, testInfo) => {
@@ -279,8 +323,8 @@ test("keeps combined batch errors and child results reachable in a short mobile 
 	await waitForInitialFeedback(feedback);
 	await feedback.hover();
 	await expectContainedFeedback(feedback, viewport);
-	const body = feedback.getByRole("alert");
-	const children = feedback.getByRole("list", { name: "Order results" });
+	const body = feedback.locator('[data-order-scroll="body"]');
+	const children = feedback.getByRole("region", { name: "Order results" });
 	await expect(children.getByRole("listitem")).toHaveCount(20);
 	for (const region of [body, children]) {
 		expect(await region.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
@@ -290,8 +334,11 @@ test("keeps combined batch errors and child results reachable in a short mobile 
 	await expect
 		.poll(() => body.evaluate((element) => element.scrollTop + element.clientHeight >= element.scrollHeight - 1))
 		.toBe(true);
-	await children.hover();
-	await page.mouse.wheel(0, 2_000);
+	await body.press("Tab");
+	await expect(feedback.getByRole("button")).toBeFocused();
+	await page.keyboard.press("Tab");
+	await expect(children).toBeFocused();
+	await children.press("End");
 	await expect
 		.poll(() => children.evaluate((element) => element.scrollTop + element.clientHeight >= element.scrollHeight - 1))
 		.toBe(true);
@@ -310,7 +357,7 @@ test.describe("touch scrolling", () => {
 		const feedback = page.locator(feedbackSelector);
 		await waitForInitialFeedback(feedback);
 		await feedback.getByRole("button").hover();
-		const body = feedback.getByRole("alert");
+		const body = feedback.locator('[data-order-scroll="body"]');
 		const box = await body.boundingBox();
 		expect(box).not.toBeNull();
 		if (!box) throw new Error("Scrollable feedback body is missing");

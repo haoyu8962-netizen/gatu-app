@@ -8,6 +8,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Accepted Scale ladders now show successful submission even when only some levels fill
+  immediately. Reconciled IOC remainders with matching partial-fill evidence retain their
+  execution result without a misleading cancellation error. Execution averages follow the
+  selected number separators, and only overflowing notification content adds a keyboard
+  scroll stop. Partial-result notifications retain their three-second duration.
+
 - Trading notifications now use concise result sentences and compact, wrapping layouts on
   desktop and mobile. Immediate order-entry fills show actual executed quantity and average price from
   the exchange response; request prices are no longer presented as execution prices. Partial

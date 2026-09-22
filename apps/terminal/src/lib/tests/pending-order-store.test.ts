@@ -123,6 +123,41 @@ describe("pending order store", () => {
 		}
 	});
 
+	it("restores IOC remainder evidence and drops corrupt optional fields without losing execution facts", () => {
+		const storage = new MemoryStorage();
+		const cloid = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		const execution = {
+			evidence: "exchange-response" as const,
+			filledSize: "0.4",
+			requestedSize: "1",
+			averagePrice: "99",
+			orderIds: [1],
+			completeness: "partial" as const,
+		};
+		const submission = createPendingOrderStore(storage)
+			.getState()
+			.actions.add({
+				env: "Mainnet",
+				user: USER,
+				intentKey: "partial-ioc-execution",
+				children: [{ assetId: 0, cloid }],
+				feedback: { execution: { ...execution, partialIoc: { cloid, orderId: 1 } } },
+			});
+		expect(createPendingOrderStore(storage).getState().submissions[0].feedback?.execution?.partialIoc).toEqual({
+			cloid,
+			orderId: 1,
+		});
+		const key = storage.key(0);
+		if (!key) throw new Error("Missing pending record");
+		for (const partialIoc of [{ cloid, orderId: 2 }, { cloid: "bad", orderId: 1 }, { cloid, orderId: -1 }, "bad"]) {
+			storage.setItem(key, JSON.stringify({ ...submission, feedback: { execution: { ...execution, partialIoc } } }));
+			const restored = createPendingOrderStore(storage).getState().submissions[0];
+			expect(restored.children).toEqual(submission.children);
+			expect(restored.feedback?.execution).toMatchObject(execution);
+			expect(restored.feedback?.execution?.partialIoc).toBeUndefined();
+		}
+	});
+
 	it("blocks the affected asset until every child has a known exchange status", () => {
 		const submission = getPendingOrderActions().add({
 			env: "Mainnet",

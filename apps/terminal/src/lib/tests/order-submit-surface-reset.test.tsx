@@ -192,6 +192,41 @@ describe("useOrderSubmit surface reset", () => {
 		expect(mocks.updateOrder).toHaveBeenLastCalledWith("queue-1", { status: "partial", outcome: "filled" });
 	});
 
+	it("treats accepted Scale layers as success while retaining partial execution evidence", async () => {
+		mocks.submitOrder.mockImplementation(async (params, options) => {
+			expect(params.orders).toHaveLength(2);
+			expect(params.orders).toEqual([
+				expect.objectContaining({ t: { limit: { tif: "Gtc" } } }),
+				expect.objectContaining({ t: { limit: { tif: "Gtc" } } }),
+			]);
+			const result = {
+				status: "ok",
+				response: {
+					type: "order",
+					data: {
+						statuses: [{ filled: { totalSz: params.orders[0].s, avgPx: "99", oid: 20 } }, { resting: { oid: 21 } }],
+					},
+				},
+			};
+			options.onResponse(result, params.orders);
+			return { state: "confirmed", result };
+		});
+		await submit(
+			marketInput({
+				orderType: "scale",
+				scaleOrder: true,
+				scaleStartPriceInput: "90",
+				scaleEndPriceInput: "100",
+				scaleLevelsNum: 2,
+				scaleSkewInput: "1",
+			}),
+		);
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
+			execution: expect.objectContaining({ filledSize: "0.5", requestedSize: "1", completeness: "partial" }),
+		});
+		expect(mocks.updateOrder).toHaveBeenLastCalledWith("queue-1", { status: "success", outcome: "filled" });
+	});
+
 	it("keeps actual main fills when TP/SL submission partially fails", async () => {
 		mocks.submitOrder.mockImplementation(async (_params, options) => {
 			options.onResponse(
