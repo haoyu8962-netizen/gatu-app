@@ -39,7 +39,7 @@ export function TradeOptionCheckboxesView({
 	);
 }
 
-export const option = "min-w-0 min-h-5 items-center gap-1.5 max-[1000px]:min-h-8";
+export const option = "min-w-0 min-h-5 items-center gap-1.5";
 export const optionLabel = "text-xs text-trading-panel-muted";
 export const optionControl =
 	"size-[17px] rounded-[5px] border-trading-panel-stroke-control data-checked:border-trading-panel-control data-checked:bg-trading-panel-control";

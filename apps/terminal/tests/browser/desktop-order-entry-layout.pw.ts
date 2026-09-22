@@ -121,7 +121,7 @@ async function expectHitTarget(control: Locator) {
 	).toBe(true);
 }
 
-async function expectOptionSpacing(page: Page, expectedGap: number) {
+async function expectOptionSpacing(page: Page, expectedGap: number, expectedHeight: number) {
 	await expect
 		.poll(() =>
 			page.locator('[data-slot="trade-order-options"] label').evaluateAll((labels) => {
@@ -131,10 +131,10 @@ async function expectOptionSpacing(page: Page, expectedGap: number) {
 				if (visible.length < 2) return null;
 				const first = visible[0].getBoundingClientRect();
 				const second = visible[1].getBoundingClientRect();
-				return second.top - first.bottom;
+				return { gap: second.top - first.bottom, height: first.height };
 			}),
 		)
-		.toBe(expectedGap);
+		.toEqual({ gap: expectedGap, height: expectedHeight });
 }
 
 test.beforeEach(async ({ page }) => {
@@ -149,10 +149,10 @@ test.beforeEach(async ({ page }) => {
 test("keeps shared option spacing aligned with the responsive touch contract", async ({ page }) => {
 	await page.setViewportSize({ width: 1400, height: 1330 });
 	await openFixture(page, "en");
-	await expectOptionSpacing(page, 8);
+	await expectOptionSpacing(page, 8, 20);
 
 	await page.setViewportSize({ width: 375, height: 666 });
-	await expectOptionSpacing(page, 8);
+	await expectOptionSpacing(page, 8, 20);
 });
 
 test("fits the reported 1400x1330 Chinese empty Limit with newly expanded TP/SL", async ({ page }) => {
