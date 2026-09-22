@@ -61,3 +61,5 @@
 ## 后续与替代关系
 
 原审查和实施记录均保留，已追加局部更正和链接；当前行为同步到 `docs/trading-notifications.md` 和 CHANGELOG。旧 pending 没有新 IOC 证据时维持保守取消提示，后续成交归集不属此次范围。没有新增真实交易或发布任务。
+
+2026-09-22 二次对抗审查更正：`partialIoc` 只匹配 `tif: "Ioc"`，而市价单实际发送 `FrontendMarket`，因此上文「IOC 恢复对账取消误报」的修复对市价单主场景未生效，仅覆盖手选 IOC 的限价单；本节其余结论不变。详见[75a7fb01 对抗审查](2026-09-22-notification-remediation-adversarial-review.md)。
