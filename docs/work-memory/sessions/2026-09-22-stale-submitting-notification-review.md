@@ -83,3 +83,5 @@ Sonner 2.0.7 的 observer dismissal 经 `requestAnimationFrame` 发布，Toaster
 4. 必须保持一个全局容器、owner/env 隔离、未知软隐藏及后台对账、既定通知时长。不通过关闭 StrictMode、把所有 pending 改成三秒或删除 OrderToast 展示内容来掩盖问题。依赖升级仅在核实发布与回归兼容后考虑。
 
 本记录补充全局通知及三秒时长任务的验证边界，不整体替代其架构决策或历史结果；当前实现仍待修复。
+
+后续：同日用户授权后已实施[生命周期修复](2026-09-22-notification-lifecycle-fix.md)，新增受控 timer/RAF 红绿回归，覆盖本记录当时未稳定复现的残留路径。本记录的「未修复」是审查结束时状态，最终实现与验证以该后续任务和当前 Reference 为准。

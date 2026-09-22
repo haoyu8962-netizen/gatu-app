@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [修复提交进度通知重复与异步关闭残留](sessions/2026-09-22-notification-lifecycle-fix.md) — 2026-09-22；已验证，范围见正文。修复 StrictMode 重复发布、Sonner 迟到插入残留及同批关闭/成交丢结果；11项生命周期与5项浏览器回归通过，保留单容器、时长、身份及业务守卫。
 - [结果通知三秒自动隐藏](sessions/2026-09-22-notification-result-timeout.md) — 2026-09-22；已验证，范围见正文。未确认、部分成交、失败和取消通知已改为前台显示三秒，保留后台对账及重复提交保护；77项聚焦回归、类型与规范检查通过。
 - [单次提交产生重复及残留进度通知审查](sessions/2026-09-22-stale-submitting-notification-review.md) — 2026-09-22；已验证，范围见正文。真实 Chrome 页面确认同一任务出现不同 Sonner 展示 ID，队列清空后旧 pending 卡片仍残留；StrictMode 诊断复现短暂重复，长期残留的精确调度时序尚未稳定复现。本轮仅审查与记录，未修改生产代码。
 - [全部平仓提交后的队列与官方通知实践复审](sessions/2026-09-21-close-all-queue-review.md) — 2026-09-21；已验证，范围见正文。全部平仓有内部阶段、持久订单跟踪与对账，但未接入可见 Order Queue，等待无即时反馈，3 秒通知短于 2 分钟核对窗口。官方公开实现使用 errorsOnly 加汇总通知，同样没有持续进度队列；本轮仅审查及建议，69 项定向测试通过，未真实交易。
@@ -36,6 +37,7 @@
 
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
+- [修复提交进度通知重复与异步关闭残留](sessions/2026-09-22-notification-lifecycle-fix.md) — 2026-09-22；已验证，范围见正文。修复 StrictMode 重复发布、Sonner 迟到插入残留及同批关闭/成交丢结果；11项生命周期与5项浏览器回归通过，保留单容器、时长、身份及业务守卫。
 - [结果通知三秒自动隐藏](sessions/2026-09-22-notification-result-timeout.md) — 2026-09-22；已验证，范围见正文。未确认、部分成交、失败和取消通知已改为前台显示三秒，保留后台对账及重复提交保护；77项聚焦回归、类型与规范检查通过。
 - [单次提交产生重复及残留进度通知审查](sessions/2026-09-22-stale-submitting-notification-review.md) — 2026-09-22；已验证，范围见正文。真实 Chrome 页面确认同一任务出现不同 Sonner 展示 ID，队列清空后旧 pending 卡片仍残留；StrictMode 诊断复现短暂重复，长期残留的精确调度时序尚未稳定复现。本轮仅审查与记录，未修改生产代码。
 - [全部平仓提交后的队列与官方通知实践复审](sessions/2026-09-21-close-all-queue-review.md) — 2026-09-21；已验证，范围见正文。全部平仓有内部阶段、持久订单跟踪与对账，但未接入可见 Order Queue，等待无即时反馈，3 秒通知短于 2 分钟核对窗口。官方公开实现使用 errorsOnly 加汇总通知，同样没有持续进度队列；本轮仅审查及建议，69 项定向测试通过，未真实交易。
@@ -188,6 +190,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-22 | [修复提交进度通知重复与异步关闭残留](sessions/2026-09-22-notification-lifecycle-fix.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `938983d4` | 已验证，范围见正文 |
 | 2026-09-22 | [结果通知三秒自动隐藏](sessions/2026-09-22-notification-result-timeout.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `a379d231f2a5bddf2bc602d0545aed8e14630581` | 已验证，范围见正文 |
 | 2026-09-22 | [单次提交产生重复及残留进度通知审查](sessions/2026-09-22-stale-submitting-notification-review.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `15b0d1c83df19d6490bb2f3012296f4c69954108` | 已验证，范围见正文 |
 | 2026-09-21 | [全部平仓提交后的队列与官方通知实践复审](sessions/2026-09-21-close-all-queue-review.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `8770d86de2fbf71d4a13318933369ca67c501619` | 已验证，范围见正文 |

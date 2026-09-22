@@ -4,7 +4,7 @@
 
 2026-09-22 时长调整：按用户要求，未确认、部分成交、失败和取消结果改为前台显示 3 秒后自动隐藏；正在提交/确认中的进度继续常驻。范围与验证见[三秒结果通知任务](work-memory/sessions/2026-09-22-notification-result-timeout.md)。
 
-2026-09-22 已知缺陷（待修复）：开发页面中已确认同一逻辑任务产生两张展示实例，成功后旧的「正在提交」仍残留。实际页面只有一个 Sonner 容器；队列与 Sonner 活跃记录清空后，旧 DOM 仍显示 pending。StrictMode 隔离测试复现了重复实例，但尚未稳定复现长期残留的完整浏览器时序。下文「原位更新」是应满足的契约，不能视为这条生命周期路径已通过验收。证据、代码位置与修复建议见[残留通知审查](work-memory/sessions/2026-09-22-stale-submitting-notification-review.md)。
+2026-09-22 生命周期修复：对[残留通知审查](work-memory/sessions/2026-09-22-stale-submitting-notification-review.md)发现的重复展示与旧 pending 常驻，增加可取消发布、展示实例失效订阅和迟到节点清理；关闭提示与结果同批到达时也分别管理新旧展示。实现与实际验证范围见[修复任务](work-memory/sessions/2026-09-22-notification-lifecycle-fix.md)，尚未发布。
 
 ## 目标与非目标
 
@@ -40,6 +40,8 @@
 [queue store](../apps/terminal/src/stores/use-order-queue-store.ts) 保存稳定任务 ID、必填 `owner` / `env`、状态以及可选展示 metadata。owner 规范化为小写，宿主只显示当前 owner/env；自定义内容在渲染时再次核对身份。A 的迟到回包可以完成 A 的记录，但不能给 B 显示通知；切回 A 时仍可显示尚未关闭的 A 任务。后台普通订单/TWAP 不再因 queue 是否可见而另发无身份 Sonner 通知。
 
 - Sonner 的展示实例与逻辑任务 ID 分离。隐藏后重新显示使用新展示身份；退出动画及延迟关闭回调必须核对原展示身份，不能删除切回账户后重新展示的任务。
+- Host 对 Sonner 的发布使用可取消 microtask，Effect 重放时被清理的 setup 不创建通知。展示实例拥有不可逆的 active 状态；内容用 `useSyncExternalStore` 订阅失效，并用 queue 单项订阅读取当前结果。失效、已隐藏、身份不符或任务消失时立即不呈现内容，同时关闭自己的 Sonner ID，覆盖库先关闭、后插入的异步竞态，并清理外层占位。
+- 自定义按钮、Sonner 关闭与自动计时共用展示身份及任务引用守卫。获准关闭时先同步结束当前展示实例，再软隐藏/移除任务；若结果在同一 React 批次到达，会创建新展示，不复用仍在退出的 ID。关闭未获准的旧回调不能先调用无条件 `toast.dismiss`。
 - `pending` / `confirming` / `unconfirmed` 的关闭是**软隐藏**：保留任务，不解除锁、不删除 pending 记录、不取消请求，也不重发。状态推进时同项重新显示；仅同步未变化的阶段不能把已关闭提示反复打开。
 - `partial`、`failed`、`canceled` 可手动移除可见任务，也会在前台显示 3 秒后自动移除。`unconfirmed` 的自动关闭沿用软隐藏，避免未变化的对账反复弹出提示。交易事实仍在各自业务存储里；后续有已核实的新事实时，对账可以恢复同一逻辑任务通知。这里没有通知收件箱或「重新打开全部已关闭通知」入口。
 - 带状态的更新清除旧 error、outcome、计数、message 与仓位归零标记，再写入新结局；纯 metadata 更新不改变状态或软隐藏。成功不能残留旧的超时错误。
@@ -81,3 +83,5 @@
 回归应覆盖真实 store、宿主、对账器与提交路径的组合：超时后晚到成功清错、未展示成功不提前消失、切路由/账户/网络、A 的迟到 REST、刷新恢复及损坏的可选 metadata、部分成交量不被覆盖、未知子项与完整成交计数、关闭不解锁、标准提示/任务/资金恢复同现、语言热切换。布局覆盖 390/600/601/800/1000/1001/1280px，验证底部导航、滚动和共享堆叠。
 
 入口包括 `order-toast-placement.test.tsx`、`order-reconciliation.test.tsx`、`twap-reconciliation.test.tsx`、close-all / market-close 的 submit 与 modal 测试，以及撤改单、TP/SL、逐仓保证金、Swap、CCTP 和 funds recovery 各自套件。测试文件是验证入口，不表示每次更改都已经执行全部用例；本轮实际命令、失败、更正、源码版本和浏览器范围由[交付任务记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md)列出。模拟网络和浏览器夹具不能证明真实资金交易、签名钱包或物理触屏时序；本次通知迁移不以新的主网下单作验收。
+
+生命周期入口 `order-notification-lifecycle.test.tsx` 使用真实 Sonner、queue、根 StrictMode 和 Gate，覆盖冷/热挂载、关闭 RAF 早于插入 timer、真实卸载、身份切换及同批关闭/结果；必须同时验证任务与外层 Sonner DOM，不能只看队列为空。独立浏览器 suite 使用 `pnpm --dir apps/terminal exec playwright test --config tests/browser/notifications.playwright.config.ts`，覆盖原位更新、重复 Gate 挂载、软隐藏迟到结果和桌面/移动两主题堆叠，接入 CI 两分片。夹具缓存隔离规则见 [runtime guardrails §9](runtime-guardrails.md#9-development-and-browser-test-caches)。

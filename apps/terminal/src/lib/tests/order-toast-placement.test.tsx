@@ -265,7 +265,7 @@ describe("global order notifications", () => {
 		expect(container.textContent).toContain("Partially filled");
 		expect(container.textContent).toContain("1 / 2");
 		expect(container.textContent).not.toContain("All positions closed");
-		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Dismiss"]')?.click());
+		await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Dismiss"]')?.click());
 		expect(getOrderQueueItem(id)).toBeUndefined();
 	});
 	it("does not expire a successful task hidden behind a newer pending task", async () => {

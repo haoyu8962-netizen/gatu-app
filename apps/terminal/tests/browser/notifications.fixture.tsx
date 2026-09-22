@@ -1,17 +1,18 @@
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { useState } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { toast } from "sonner";
-import { OrderNotificationHost } from "@/components/trade/order-notification-host";
+import { OrderNotificationGate } from "@/components/trade/order-notification-gate";
 import { Toaster } from "@/components/ui/sonner";
+import { useSetTheme, useTheme } from "@/stores/use-global-settings-store";
 import {
 	addOrderQueueItem,
 	getOrderQueueItems,
 	removeOrderQueueItem,
 	updateOrderQueueItem,
+	useOrderQueue,
 } from "@/stores/use-order-queue-store";
-import { useTheme, useSetTheme } from "@/stores/use-global-settings-store";
 import { NotificationIdentity, OWNER_A, OWNER_B } from "./notifications.browser";
 import "../../src/styles.css";
 
@@ -20,6 +21,23 @@ function Fixture() {
 	const setTheme = useSetTheme();
 	const [owner, setOwner] = useState(OWNER_A);
 	const [route, setRoute] = useState("trade");
+	const orders = useOrderQueue();
+	function startOrder() {
+		addOrderQueueItem({
+			owner,
+			env: "Mainnet",
+			operation: "order",
+			market: "HYPE",
+			side: "buy",
+			size: "1.06",
+			price: "92.927",
+			status: "pending",
+		});
+	}
+	function fillOrder() {
+		const order = getOrderQueueItems().find((entry) => entry.owner === owner && entry.operation === "order");
+		if (order) updateOrderQueueItem(order.id, { status: "success", outcome: "filled" });
+	}
 	function pending() {
 		addOrderQueueItem({
 			owner,
@@ -50,12 +68,13 @@ function Fixture() {
 	return (
 		<NotificationIdentity.Provider value={{ clientKey: owner, env: "Mainnet" }}>
 			<Toaster />
-			<OrderNotificationHost />
+			<OrderNotificationGate />
 			<main className="p-6 text-fg space-y-4 bg-background min-h-dvh">
 				<h1>Notification fixture</h1>
 				<p>
 					{route} · {owner === OWNER_A ? "Account A" : "Account B"}
 				</p>
+				<output aria-label="Queued tasks">{orders.length}</output>
 				<div className="flex flex-wrap gap-3">
 					<button
 						type="button"
@@ -72,6 +91,12 @@ function Fixture() {
 					</button>
 					<button type="button" onClick={partial}>
 						Partial result
+					</button>
+					<button type="button" onClick={startOrder}>
+						Submit synthetic order
+					</button>
+					<button type="button" onClick={fillOrder}>
+						Fill synthetic order
 					</button>
 					<button
 						type="button"
@@ -110,7 +135,9 @@ i18n.loadAndActivate({ locale: "en", messages: {} });
 const element = document.getElementById("root");
 if (element)
 	createRoot(element).render(
-		<I18nProvider i18n={i18n}>
-			<Fixture />
-		</I18nProvider>,
+		<StrictMode>
+			<I18nProvider i18n={i18n}>
+				<Fixture />
+			</I18nProvider>
+		</StrictMode>,
 	);

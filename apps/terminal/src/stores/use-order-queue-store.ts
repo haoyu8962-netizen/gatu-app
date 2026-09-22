@@ -125,6 +125,10 @@ export function useOrderQueue() {
 	return useOrderQueueStore((state) => state.orders);
 }
 
+export function useOrderQueueItem(id: string) {
+	return useOrderQueueStore((state) => state.orders.find((order) => order.id === id));
+}
+
 export function useOrderQueueActions() {
 	return useOrderQueueStore((state) => state.actions);
 }

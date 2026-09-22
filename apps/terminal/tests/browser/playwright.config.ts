@@ -13,6 +13,7 @@ export default defineConfig({
 		"desktop-order-entry-layout.pw.ts",
 		"account-actions.pw.ts",
 		"position-close-all.pw.ts",
+		"notifications.pw.ts",
 	],
 	outputDir: fileURLToPath(new URL("../../test-results/shared-browser", import.meta.url)),
 	fullyParallel: false,

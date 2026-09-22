@@ -46,6 +46,8 @@
 
 ## 验证与交付边界
 
+2026-09-22 生命周期补充：保留一个 Sonner 容器及展示 ID 与任务 ID 分离，发布改为可取消 microtask；每个展示实例独立失效，内容订阅当前任务与展示有效性，并在失效后补发本实例关闭，覆盖 Sonner 异步插入晚于首次关闭的竞态。获准关闭先同步结束展示，再修改 queue，避免同批结果沿用正在退出的 ID。代价是增加一个仅管理展示存活的外部订阅对象；它不存交易事实、不计时、不重发交易。仅延后发布无法覆盖真实卸载，仅隐藏内容留下空白容器；不采用关闭 StrictMode、永久复用 ID 或无证据升级依赖。回归与实际结果见[生命周期修复任务](../work-memory/sessions/2026-09-22-notification-lifecycle-fix.md)。
+
 - 代码证据：`components/app-toaster.tsx`、`components/trade/order-notification-host.tsx`、`tradebox/order-toast.tsx`、`stores/use-order-queue-store.ts`、pending order/TWAP store、两个 reconciliation 与各提交入口。完整入口矩阵与时长例外由 Reference 单独维护。
 - 回归要求：迟到结果与身份切换、状态转换清错、成功实际到前台才过期、dismiss 不解锁、刷新兼容旧/损坏 metadata、部分成交和未知数量、资金恢复同栈、语言切换，以及 600/601/1000/1001px 断点。
 - 实际执行的命令、失败修正、最终版本和浏览器观察由[本次交付任务记录](../work-memory/sessions/2026-09-21-global-sonner-notifications.md)保存，本文列出的要求不冒充已执行结果。mock / 隔离浏览器验证不能证明主网资金、外部钱包和真实触屏行为；未在本次迁移中执行新的真实交易或发布。

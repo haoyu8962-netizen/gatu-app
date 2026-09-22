@@ -8,6 +8,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Trading notifications no longer create duplicate submission cards during development
+  effect replay or leave stale progress behind after an asynchronous close. Each card
+  follows its current task, and closing a notice cannot discard a result arriving in the
+  same update. Existing account isolation, background reconciliation and durations remain.
+
 - Trading feedback now shares one notification stack across application pages. Market Close,
   Close All, Limit Close, Reverse, TP/SL, margin updates, order edits and cancellations show an
   immediate task that updates as the request is confirmed. Close All lists each market's result;
