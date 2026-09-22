@@ -35,6 +35,7 @@ import { PositionDialogHostGate } from "./position-dialog-host-gate";
 import { TradingOnboardingGate } from "./trading-onboarding-gate";
 
 const GLOBAL_MODAL_EXIT_MS = 250;
+type GlobalModalScope = "all" | "preferences";
 
 interface Props {
 	enableHip3Disclaimer?: boolean;
@@ -95,7 +96,9 @@ function LegalAwareGlobalModals({
 }) {
 	const legalGate = useLegalGate();
 
-	if (legalGate.state === "checking") return null;
+	if (legalGate.state === "checking") {
+		return <SharedGlobalModals enablePositionMarketClose={false} scope="preferences" />;
+	}
 	if (legalGate.state !== "inactive" && legalGate.state !== "accepted") {
 		return (
 			<LegalAcceptanceModal
@@ -147,13 +150,21 @@ function SharedGlobalModals({
 	hip3Disclaimer,
 	onHip3DisclaimerCancel,
 	enablePositionMarketClose,
+	scope = "all",
 }: {
 	hip3Disclaimer?: Hip3DisclaimerRequirement;
 	onHip3DisclaimerCancel?: () => void;
 	enablePositionMarketClose: boolean;
+	scope?: GlobalModalScope;
 }) {
 	const activeModal = useGlobalModalType();
-	const displayedModal = useLingeringValue(activeModal, GLOBAL_MODAL_EXIT_MS);
+	const visibleActiveModal =
+		scope === "preferences" && activeModal !== "settings" && activeModal !== "commandMenu" ? null : activeModal;
+	const lingeringModal = useLingeringValue(visibleActiveModal, GLOBAL_MODAL_EXIT_MS);
+	const displayedModal =
+		scope === "preferences" && lingeringModal !== "settings" && lingeringModal !== "commandMenu"
+			? null
+			: lingeringModal;
 	const marketCloseSession = usePositionMarketCloseSession();
 	const isHip3DisclaimerRequired = hip3Disclaimer?.isRequired === true;
 	const { open: openCommandMenu, close: closeCommandMenu } = useCommandMenuActions();

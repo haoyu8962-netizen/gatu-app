@@ -8,6 +8,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Settings and the command menu remain usable while the legal status check is
+  pending. Trading and funds dialogs stay gated until the account's legal state
+  is resolved.
+
 - Market-order partial fills now retain their execution result when the `FrontendMarket`
   remainder is canceled during reconciliation. Ordinary TP/SL cancellations caused by the
   same partially filled parent no longer add a contradictory order-canceled error; abnormal

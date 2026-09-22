@@ -109,9 +109,12 @@ The terminal must preserve this ordering:
    signature to first-time Agent setup. `useTradingAuthorization` requests it
    before the first action that needs the configured builder code.
 
-The legal gate has priority over signer readiness, Agent setup and ordinary
-global dialogs. A required HIP-3 deployer disclaimer retains priority over
-ordinary dialogs once legal review and signer setup are complete.
+The legal gate has priority over signer readiness, Agent setup and trading or
+funds dialogs. Preference-only dialogs, including Settings and the command
+menu, remain available while legal status is being checked; they do not grant
+any trading or signing capability. A required HIP-3 deployer disclaimer retains
+priority over ordinary trading dialogs once legal review and signer setup are
+complete.
 
 ## Stay Connected
 
@@ -396,6 +399,8 @@ At minimum, changes to this flow must cover:
 
 - legal status: inactive, checking, required, submitting, blocked,
   wallet-required, error, and accepted;
+- while legal status is `checking`, preference dialogs remain available while
+  trading and funds dialogs stay suppressed;
 - initial legal failure, background refetch failure with retained read-only
   data, offline action rejection, focus/reconnect refresh, BFCache invalidation,
   schema drift, bounded retry, and exact-owner Exchange write enforcement;

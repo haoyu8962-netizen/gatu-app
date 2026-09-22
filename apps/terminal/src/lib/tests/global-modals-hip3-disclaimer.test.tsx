@@ -224,14 +224,40 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).not.toBeNull();
 	});
 
-	it("suppresses lower-priority modals while legal status is loading", async () => {
+	it("keeps preference modals available while legal status is loading", async () => {
 		testState.legalGate.state = "checking";
+		testState.activeModal = "settings";
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
 		act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true, enableLegalGate: true })));
 
-		expect(container.children).toHaveLength(0);
+		expect(container.querySelector('[data-testid="GlobalSettingsModal"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
 		expect(testState.hip3RequirementHook).not.toHaveBeenCalled();
+	});
+
+	it("keeps the command menu available while legal status is loading", async () => {
+		testState.legalGate.state = "checking";
+		testState.activeModal = "commandMenu";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true, enableLegalGate: true })));
+
+		expect(container.querySelector('[data-testid="CommandMenu"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
+		expect(testState.hip3RequirementHook).not.toHaveBeenCalled();
+	});
+
+	it("does not keep a trading modal mounted when legal checking starts", async () => {
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true })));
+		expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
+
+		testState.legalGate.state = "checking";
+		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, key: "legal-checking" })));
+
+		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
 	});
 
 	it("preserves existing global modal behavior when no disclaimer is required", async () => {
