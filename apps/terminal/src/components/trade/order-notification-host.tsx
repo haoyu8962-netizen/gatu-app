@@ -1,17 +1,22 @@
 import { useEffect, useRef } from "react";
 import { toast, useSonner } from "sonner";
-import { ORDER_TOAST_SUCCESS_DURATION_MS } from "@/config/time";
+import { ORDER_TOAST_SUCCESS_DURATION_MS, TOAST_DEFAULT_DURATION_MS } from "@/config/time";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
 	dismissOrderQueueItem,
 	getOrderQueueItem,
 	type OrderQueueItem,
-	removeOrderQueueItem,
 	useOrderQueue,
 } from "@/stores/use-order-queue-store";
 import { OrderToast } from "./tradebox/order-toast";
 
 let presentationSequence = 0;
+
+function getDisplayDuration(order: OrderQueueItem, isFront: boolean) {
+	if (!isFront || order.status === "pending" || order.status === "confirming") return Infinity;
+	if (order.status === "success") return order.successDurationMs ?? ORDER_TOAST_SUCCESS_DURATION_MS;
+	return TOAST_DEFAULT_DURATION_MS;
+}
 
 function OrderNotification({ order }: { order: OrderQueueItem }) {
 	const { clientKey, env } = useHyperliquid();
@@ -39,27 +44,22 @@ export function OrderNotificationHost() {
 		for (const order of visible) {
 			const previous = displayed.current.get(order.id);
 			const toastId = previous?.toastId ?? `order-feedback:${++presentationSequence}:${order.id}`;
-			const duration =
-				order.status === "success" && toastId === frontId
-					? (order.successDurationMs ?? ORDER_TOAST_SUCCESS_DURATION_MS)
-					: Infinity;
+			const duration = getDisplayDuration(order, toastId === frontId);
 			if (previous?.order === order && previous.duration === duration) continue;
 			displayed.current.set(order.id, { order, toastId, duration });
 			function isCurrentPresentation() {
 				const current = displayed.current.get(order.id);
 				return current?.toastId === toastId && current.order === order && getOrderQueueItem(order.id) === order;
 			}
-			function removeDisplayed() {
-				if (isCurrentPresentation()) removeOrderQueueItem(order.id);
+			function dismissDisplayed() {
+				if (isCurrentPresentation()) dismissOrderQueueItem(order.id);
 			}
 			toast.custom(() => <OrderNotification order={order} />, {
 				id: toastId,
 				duration,
 				dismissible: true,
-				onDismiss: () => {
-					if (isCurrentPresentation()) dismissOrderQueueItem(order.id);
-				},
-				onAutoClose: removeDisplayed,
+				onDismiss: dismissDisplayed,
+				onAutoClose: dismissDisplayed,
 				className: "w-[var(--width)]",
 			});
 		}

@@ -14,6 +14,7 @@ import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedb
 import {
 	addOrderQueueItem,
 	getOrderQueueItem,
+	type OrderQueueItem,
 	removeOrderQueueItem,
 	updateOrderQueueItem,
 } from "@/stores/use-order-queue-store";
@@ -24,7 +25,7 @@ const IdentityContext = createContext(identity);
 vi.mock("@/lib/hyperliquid", () => ({ useHyperliquid: () => useContext(IdentityContext) }));
 const ids: string[] = [];
 
-function add(status: "pending" | "success" | "unconfirmed" = "pending") {
+function add(status: OrderQueueItem["status"] = "pending") {
 	const id = addOrderQueueItem({
 		owner: identity.clientKey,
 		env: "Mainnet",
@@ -90,7 +91,7 @@ describe("global order notifications", () => {
 		expect(container.textContent).toContain("Filled");
 		expect(container.querySelector(`[data-order-feedback="${id}"]`)?.closest("[data-sonner-toaster]")).not.toBeNull();
 	});
-	it("keeps unknown results until dismissal and clears stale errors on late success", async () => {
+	it("soft-hides unknown results after three seconds and clears stale errors on late success", async () => {
 		let id = "";
 		act(() => {
 			id = add();
@@ -102,8 +103,12 @@ describe("global order notifications", () => {
 			});
 		});
 		await flush();
-		await act(() => vi.advanceTimersByTimeAsync(120_000));
-		expect(container.textContent).toContain("Status unconfirmed");
+		await act(() => vi.advanceTimersByTimeAsync(3500));
+		expect(getOrderQueueItem(id)).toMatchObject({ status: "unconfirmed", dismissed: true });
+		expect(container.querySelector(`[data-order-feedback="${id}"]`)).toBeNull();
+		act(() => updateOrderQueueItem(id, { acceptedCount: 1 }));
+		await flush();
+		expect(container.querySelector(`[data-order-feedback="${id}"]`)).toBeNull();
 		act(() => updateOrderQueueItem(id, { status: "success", outcome: "filled" }));
 		await flush();
 		expect(getOrderQueueItem(id)).toMatchObject({
@@ -115,6 +120,46 @@ describe("global order notifications", () => {
 		expect(container.textContent).toContain("Filled");
 		expect(container.textContent).not.toContain("Status unconfirmed");
 		await act(() => vi.advanceTimersByTimeAsync(5300));
+		expect(getOrderQueueItem(id)).toBeUndefined();
+	});
+	it.each(["unconfirmed", "partial", "failed", "canceled"] as const)(
+		"auto-hides a %s result at three seconds",
+		async (status) => {
+			let id = "";
+			act(() => {
+				id = add(status);
+			});
+			await flush();
+			// Sonner publishes the initial toast and its front-of-stack duration on separate timer turns.
+			await act(() => vi.advanceTimersByTimeAsync(1));
+			await act(() => vi.advanceTimersByTimeAsync(2999));
+			expect(container.querySelector(`[data-order-feedback="${id}"]`)).not.toBeNull();
+			expect(getOrderQueueItem(id)).toMatchObject({ status });
+			expect(getOrderQueueItem(id)?.dismissed).not.toBe(true);
+			await act(() => vi.advanceTimersByTimeAsync(1));
+			if (status === "unconfirmed") {
+				expect(getOrderQueueItem(id)).toMatchObject({ status, dismissed: true });
+			} else {
+				expect(getOrderQueueItem(id)).toBeUndefined();
+			}
+			await act(() => vi.advanceTimersByTimeAsync(500));
+			expect(container.querySelector(`[data-order-feedback="${id}"]`)).toBeNull();
+		},
+	);
+	it.each(["pending", "confirming"] as const)("keeps %s progress visible until a result arrives", async (status) => {
+		let id = "";
+		act(() => {
+			id = add(status);
+		});
+		await flush();
+		await act(() => vi.advanceTimersByTimeAsync(120_000));
+		expect(container.querySelector(`[data-order-feedback="${id}"]`)).not.toBeNull();
+		expect(getOrderQueueItem(id)?.dismissed).not.toBe(true);
+		act(() => updateOrderQueueItem(id, { status: "failed" }));
+		await flush();
+		await act(() => vi.advanceTimersByTimeAsync(2999));
+		expect(getOrderQueueItem(id)).toMatchObject({ status: "failed" });
+		await act(() => vi.advanceTimersByTimeAsync(1));
 		expect(getOrderQueueItem(id)).toBeUndefined();
 	});
 	it("starts success lifetime when displayed, not when the result happened", async () => {
@@ -242,6 +287,27 @@ describe("global order notifications", () => {
 		expect(container.textContent).toContain("Filled");
 		await act(() => vi.advanceTimersByTimeAsync(5300));
 		expect(getOrderQueueItem(older)).toBeUndefined();
+	});
+	it("gives an unknown result its three seconds after reaching the front of the stack", async () => {
+		let older = "";
+		let newer = "";
+		act(() => {
+			older = add("unconfirmed");
+		});
+		await flush();
+		act(() => {
+			newer = add();
+		});
+		await flush();
+		await act(() => vi.advanceTimersByTimeAsync(10_000));
+		expect(getOrderQueueItem(older)?.dismissed).not.toBe(true);
+		act(() => removeOrderQueueItem(newer));
+		await act(() => vi.advanceTimersByTimeAsync(500));
+		expect(getOrderQueueItem(older)?.dismissed).not.toBe(true);
+		await act(() => vi.advanceTimersByTimeAsync(2000));
+		expect(getOrderQueueItem(older)?.dismissed).not.toBe(true);
+		await act(() => vi.advanceTimersByTimeAsync(1000));
+		expect(getOrderQueueItem(older)).toMatchObject({ status: "unconfirmed", dismissed: true });
 	});
 	it.each(["pending", "unconfirmed"] as const)(
 		"dismissing a %s card keeps the task and shows its eventual result",

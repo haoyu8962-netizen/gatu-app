@@ -11,7 +11,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - Trading feedback now shares one notification stack across application pages. Market Close,
   Close All, Limit Close, Reverse, TP/SL, margin updates, order edits and cancellations show an
   immediate task that updates as the request is confirmed. Close All lists each market's result;
-  partial fills and uncertain outcomes stay available until dismissed. Late confirmations clear
+  partial fills, uncertain outcomes, failures and cancellations hide after three seconds at the
+  front of the stack, while submission and confirmation progress stays visible. Late confirmations clear
   outdated errors and remain tied to the account and network that started the request. Pending
   orders can restore their feedback after a reload without inventing missing trade details.
   Successful tasks get their display time when they reach the front of the stack, and mobile

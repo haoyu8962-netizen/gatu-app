@@ -40,6 +40,10 @@
 
 代价是需要 owner/env 过滤、任务与 Sonner ID 的桥接、子项 metadata 和前台计时协调。第一次有可展示订单任务时需要加载通知模块；队列负责保留这段时间内的最新结果。常驻失败/未知消息会占用堆叠，用户需要关闭或完成核验；不提供自动重试来减少这一步。并发数量由 Sonner 展示规则决定，不能据此推断交易执行顺序。
 
+## 2026-09-22 时长决定修订
+
+用户要求未确认、部分成交等结果使用三秒短提示，因此决策 4 中「其他状态常驻」、决策 6 中「部分和未知持续可查」及上述对应代价被局部替代：unconfirmed、partial、failed、canceled 只在 Sonner 最前台计时三秒；pending/confirming 继续常驻，成功及专用资金通知时长不变。自动关闭沿用手动 dismiss 语义，未确认软隐藏并保留任务与执行事实，新状态仍可重显；不采用直接删除未确认记录的方案，以免未变化的对账再次弹出通知。完整历史中心仍未引入，用户需到订单与成交记录核对详情。本次是用户指定的产品时长，不宣称官方所有状态都使用三秒。实际验证见[三秒结果通知任务](../work-memory/sessions/2026-09-22-notification-result-timeout.md)。
+
 ## 验证与交付边界
 
 - 代码证据：`components/app-toaster.tsx`、`components/trade/order-notification-host.tsx`、`tradebox/order-toast.tsx`、`stores/use-order-queue-store.ts`、pending order/TWAP store、两个 reconciliation 与各提交入口。完整入口矩阵与时长例外由 Reference 单独维护。
