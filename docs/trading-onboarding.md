@@ -26,6 +26,12 @@ loading, or deposit behavior changes.
 - [TanStack Query focus refetching](https://tanstack.com/query/latest/docs/framework/react/guides/window-focus-refetching)
 - [WebKit page cache lifecycle](https://webkit.org/blog/516/webkit-page-cache-ii-the-unload-event/)
 
+Documentation review note (2026-09-22): the Hyperliquid API index reports a
+last update of approximately one month ago and was rechecked for this change.
+The current public index, onboarding page and Exchange Endpoint page still do
+not document `legalCheck` or `acceptTerms2`; those two operations remain a
+version-locked SDK/frontend contract in this repository.
+
 Hyperliquid's public API documentation does not currently describe
 `legalCheck` or `acceptTerms2`. The pinned SDK exposes `legalCheck`, while the
 application maintains the typed `acceptTerms2` adapter. Treat both as a
@@ -110,11 +116,14 @@ The terminal must preserve this ordering:
    before the first action that needs the configured builder code.
 
 The legal gate has priority over signer readiness, Agent setup and trading or
-funds dialogs. Preference-only dialogs, including Settings and the command
-menu, remain available while legal status is being checked; they do not grant
-any trading or signing capability. A required HIP-3 deployer disclaimer retains
-priority over ordinary trading dialogs once legal review and signer setup are
-complete.
+funds dialogs. While the status is being checked, the order-entry surfaces show
+a neutral `Verifying trading access` status and remain unable to submit. The
+position-dialog host is not mounted, and any ordinary trading or funds modal is
+cleared so it cannot reappear after legal review. Preference-only dialogs,
+including Settings and the command menu, remain available while legal status is
+being checked; they do not grant any trading or signing capability. A required
+HIP-3 deployer disclaimer retains priority over ordinary trading dialogs once
+legal review and signer setup are complete.
 
 ## Stay Connected
 

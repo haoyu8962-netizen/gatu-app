@@ -9569,6 +9569,10 @@ msgstr "Vérification du solde du propriétaire dans le coffre avant d’activer
 msgid "Verifying the result"
 msgstr "Vérification du résultat"
 
+#: src/components/trade/components/legal-status-notice.tsx
+msgid "Verifying trading access"
+msgstr "Vérification de l’accès au trading"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."

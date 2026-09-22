@@ -8,6 +8,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Legal-status checks now show a neutral verification state in desktop and mobile
+  order entry, keep the position-dialog host behind the legal gate, and clear
+  ordinary trading or funds modals when legal review takes priority. Settings and
+  the command menu remain available during the check without granting signing or
+  trading capability.
+
 - Settings and the command menu remain usable while the legal status check is
   pending. Trading and funds dialogs stay gated until the account's legal state
   is resolved.

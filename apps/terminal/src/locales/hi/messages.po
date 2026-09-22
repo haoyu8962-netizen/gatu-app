@@ -9569,6 +9569,10 @@ msgstr "निकासी सक्षम करने से पहले म�
 msgid "Verifying the result"
 msgstr "परिणाम सत्यापित किया जा रहा है"
 
+#: src/components/trade/components/legal-status-notice.tsx
+msgid "Verifying trading access"
+msgstr "ट्रेडिंग एक्सेस सत्यापित किया जा रहा है"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."

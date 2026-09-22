@@ -377,6 +377,11 @@ export function getPositionMarketCloseActions(): PositionMarketCloseStoreActions
 	return useGlobalModalStore.getState().positionMarketCloseActions;
 }
 
+/** Clear an ordinary global modal without touching an in-flight position close session. */
+export function clearGlobalModal(): void {
+	useGlobalModalStore.setState((state) => (state.modal?.type === "positionMarketClose" ? state : { modal: null }));
+}
+
 export function discardPositionMarketCloseModal(): void {
 	const session = getPositionMarketCloseModal();
 	if (!session) return;
