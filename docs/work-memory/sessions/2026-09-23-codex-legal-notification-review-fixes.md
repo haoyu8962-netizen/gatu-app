@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review", "order-entry"],
-  "summary": "审查 e52739d2..b82dd443：b82dd443 把持仓弹窗宿主移入 legal gate 并永久清理弹窗（确认面契约测试失败），e52739d2 留下类型检查错误；已恢复页面层宿主、去掉清理与可见检查提示（对齐官方终端），按官方 TP/SL 文档给带 TP/SL 的部分成交加规则说明，并按实际 20px 行高和 8px 行距把选项点击区收成互不重叠的 28px（同时修复控件自带 44px 点击层抢点下一行的已有缺陷）；未做真实钱包或设备验收。",
+  "summary": "审查 e52739d2..b82dd443：b82dd443 把持仓弹窗宿主移入 legal gate 并永久清理弹窗（确认面契约测试失败），e52739d2 留下类型检查错误；已恢复页面层宿主、去掉清理与可见检查提示（对齐官方终端），按官方 TP/SL 文档给带 TP/SL 的部分成交加规则说明，并按实际 20px 行高和 8px 行距把选项点击区收成互不重叠的 28px（同时修复控件自带 44px 点击层抢点下一行的已有缺陷，并按用户要求修了桌面 TWAP 选项的同类问题）；未做真实钱包或设备验收。",
   "thread": null,
   "baseCommit": "b82dd443",
-  "commits": ["85525d49", "9fb13653", "ab060288"],
+  "commits": ["85525d49", "9fb13653", "ab060288", "1cc83fbf"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/components/global-modals.tsx" },
     { "path": "apps/terminal/src/lib/tests/position-dialog-session-ownership.test.tsx" },
@@ -54,6 +54,7 @@
 - TP/SL：用户选择「按官方文档走」。官方前端的英文文案里只有 `Partially Filled`，没有 TP/SL 说明。按官方文档规则，对携带 TP/SL（`tpPrice`/`slPrice`）且执行摘要为部分成交的市价或限价单，追加一句中性规则说明：附带 TP/SL 只在完全成交后下达，保护已成交部分需在持仓上设置。提示不推断某一笔附属单的状态，因为保证金不足取消的分支在提交时无法区分。时长沿用部分成交的 3 秒。
 - 选项行：用户要求「按照实际高度情况来处理」。视觉保持实际的 20px 行高和 8px 行距；标签加 `isolate` 和位于内容下方的 `::after`，上下各扩 4px（正好是行距的一半），相邻两行在间隙中点相接。第一版把 `::after` 画在复选框控件上面，Playwright 报标签拦截了对控件的点击（7 项失败），改为 `after:-z-10` 后修复。
 - 验证中发现的已有缺陷：`@gatu/ui` 复选框控件自带 44px 的 `::after` 点击层（`after:size-11`）。原来的 32px 行加 12px 行距正好是 44px 间距，所以不重叠；`086c9023`/`f000fa0a` 把间距改成 28px 后，下一行控件的 44px 层会盖住上一行复选框的下边缘和其下方间隙。Chromium `elementFromPoint` 实测，「control bottom」「control below」两个探测点命中了下一行的控件，也就是点 Reduce Only 下边缘会切换 TP/SL。按仓库已有做法（TWAP 移动端选项的 `after:size-6`），把选项控件的点击层高度收到行距 28px（`after:h-7`），宽度保留 44px。测试现在逐行探测控件中心、上下边缘和上下间隙，并断言标签扩展 8px、控件点击层 28px、行距 28px。
+- TWAP 选项（用户在第一轮修复后追加要求）：新增的探测每 2px 采样选项组，要求每个命中点都归属离它最近的选项。修复前，桌面 1001/1400/1545px 在中英文下都有抢点：Advanced Settings 抢 Randomize timing 42 个点，Reduce Only 抢 Advanced Settings 77/74 个点、抢 Randomize timing 44 个点。375px 移动端原本就是 24px 行对 `after:size-6`，没有抢点。修复只改桌面分支：标签上下各扩 4px，控件点击层高 28px（`after:h-7`）但不向两侧延伸（`after:w-full`，计算宽度是控件内框 15px）；第一版用 32px 宽（`after:w-8`）时，间隙左下角还剩 1 个更靠近 Advanced Settings 的点，所以去掉了横向延伸。Randomize/Reduce Only 行补 `gap-y-2`，换行时也保持 28px 间距。把修复临时还原后，新测试会失败。
 
 ## 验证与限制
 
@@ -62,6 +63,7 @@
 - `85525d49`：6 个相关单测文件 230 项通过（global-modals、position-dialog-session-ownership、legal-gate、i18n-reactivity-contract、mobile-data-presentation-contract、trading-onboarding-gate）；Biome 通过。此时类型检查失败，原因是上面第 3 项已存在的错误，由下一提交修复。
 - `9fb13653`：order-notification-copy、order-toast-placement、order-reconciliation、两份 reactivity contract 和 i18n-hot-switch 共 6 个文件 232 项通过；`pnpm --filter @gatu/terminal typecheck` 通过；`pnpm i18n:extract`/`compile` 通过，新文案补齐 zh、es、fr、hi、ar 五种语言。
 - 选项点击区：trade-form-compact-fields、trade-form-tp-sl、trade-form-twap-advanced、design-token-ratchet、i18n-reactivity-contract、order-entry 共 197 项通过。`mobile-trade-all-orders.playwright.config.ts`（含 desktop-order-entry-layout、mobile-trade-all-orders、reduce-only）：只有标签扩展、未加控件上限的版本 46/46 通过；加严后的几何测试在未加控件上限时失败（上一行的 control bottom/control below 命中下一行），加 `after:h-7` 后该测试在 1400px 与 375px 通过，整个配置重跑 46/46 通过。
+- `1cc83fbf`：新 TWAP 测试在 1001/1400/1545/375px、中英文下 0 抢点；trade-form-twap-advanced、design-token-ratchet、i18n-reactivity-contract、order-entry、trade-form-compact-fields 共 176 项通过；类型检查 0 错误；`mobile-trade-all-orders.playwright.config.ts` 47/47 通过。
 - 在 `ab060288` 上：`notifications.playwright.config.ts` 19/19 通过；`pnpm --filter @gatu/terminal test` 通过 601 个测试文件（1 个跳过），6,985 项通过（1 项跳过）。
 
 未执行：真实钱包签名、真实成交（部分成交文案只用合成执行摘要验证）、真实设备触控与屏幕阅读器验收、生产构建、推送或发布。触控结论来自 Chromium 的 `elementFromPoint` 几何探测，不是物理输入。
@@ -71,4 +73,4 @@
 - 本记录局部替代 `b82dd443` 在 `docs/trading-onboarding.md` 与 CHANGELOG 中的描述（宿主藏在 legal gate 后、清空弹窗、可见检查提示），`3c8a7432` 的偏好弹窗放行保留。
 - 之前就存在、本次未改：legal 状态从 `accepted` 切到 `checking`/`error` 时，`SharedGlobalModals` 分支切换或卸载会调用 `discardPositionMarketCloseModal()`，对进行中的市价平仓会话强制置为 `reconciling` 并关闭。`3c8a7432` 之前的 `return null` 分支也有同样行为，需要单独评估市价平仓提交的承载者是否也应挪到页面层。
 - codex 的 `2026-09-22-notification-remediation-followup` 记录中「类型检查通过」一句与本次实测不符，应以本记录为准。
-- 同类点击区重叠可能也存在于桌面 TWAP 选项（Randomize timing / Reduce Only 行与 Advanced Settings 行同样是 28px 间距，而控件点击层只在移动端收窄），尚未验证。上一条的市价平仓问题和这一条都已拆成独立后续任务，本次没有修改。
+- 上一条的市价平仓问题已拆成独立后续任务，本次没有修改。桌面 TWAP 选项的点击区重叠已在 `1cc83fbf` 修复。
