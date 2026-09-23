@@ -255,13 +255,13 @@ for (const outcome of ["Partial", "Ambiguous"]) {
 		await expect(feedback).not.toContainText("All positions closed");
 		if (outcome === "Partial") {
 			await expect(feedback).toContainText("Partially completed");
-			await expect(feedback).toContainText("1 of 2 close orders fully filled");
+			await expect(feedback).toContainText("Fully filled 1/2 · Review positions");
 			await expect(feedback.getByText("Fully filled", { exact: true })).toHaveCount(1);
 			await expect(feedback.getByText("Rejected", { exact: true })).toHaveCount(1);
 			await expect(feedback).toContainText("Filled: 1.25 / 1.25");
 			await expect(feedback).toContainText("Order could not immediately match against any resting orders.");
 		} else {
-			await expect(feedback).toContainText("Confirming order status. Do not retry.");
+			await expect(feedback).toContainText("Confirming — do not resubmit");
 			await expect(feedback.getByText("Status unconfirmed", { exact: true })).toHaveCount(2);
 		}
 		await expect(page.locator("[data-sonner-toast]")).toHaveCount(1);
