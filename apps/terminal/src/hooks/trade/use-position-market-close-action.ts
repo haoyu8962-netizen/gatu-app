@@ -1,9 +1,12 @@
 import type { PositionMarketCloseRef } from "@/components/trade/positions/position-dialog-types";
 import { getPositionDex } from "@/domain/market";
 import { useLegalGate } from "@/hooks/trade/use-legal-gate";
-import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
 import { type UnifiedMarket, useHyperliquid, useMarkets, useTradingStatus } from "@/lib/hyperliquid";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
+import {
+	hasPositionMarketCloseSubmitter,
+	submitPositionMarketClose,
+} from "@/lib/trade/position-market-close-submitter";
 import { usePendingPositionMarketCloseAssetId, usePositionMarketCloseActions } from "@/stores/use-global-modal-store";
 import { useHasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
 
@@ -16,7 +19,6 @@ const EVM_ADDRESS_PATTERN = /^0x[a-f0-9]{40}$/;
 export function usePositionMarketCloseAction() {
 	const actions = usePositionMarketCloseActions();
 	const pendingAssetId = usePendingPositionMarketCloseAssetId();
-	const { submit } = usePositionMarketCloseSubmit();
 	const { clientKey, env } = useHyperliquid();
 	const markets = useMarkets();
 	const legalGate = useLegalGate();
@@ -30,6 +32,7 @@ export function usePositionMarketCloseAction() {
 		const direct =
 			EVM_ADDRESS_PATTERN.test(owner) &&
 			preference === "dismissed" &&
+			hasPositionMarketCloseSubmitter() &&
 			legalGate.state === "accepted" &&
 			tradingStatus.isReady &&
 			!tradingStatus.isLoading &&
@@ -39,7 +42,7 @@ export function usePositionMarketCloseAction() {
 			(market?.kind !== "builderPerp" || hasAcceptedHip3);
 
 		const sessionId = actions.open(position, direct ? "direct" : "confirmation");
-		if (sessionId && direct) void submit({ sessionId, confirmedCloseSize: null });
+		if (sessionId && direct) void submitPositionMarketClose({ sessionId, confirmedCloseSize: null });
 		return sessionId;
 	}
 

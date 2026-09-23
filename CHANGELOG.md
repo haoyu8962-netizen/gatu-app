@@ -8,6 +8,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Market Close submissions now run in a page-level host. A brief legal-status recheck
+  (wallet reconnect or a failed background refresh) no longer cancels a confirmed close or
+  releases its in-flight guard early, and switching the account tab, mobile view or layout
+  during a direct close no longer lets the order go out on frozen position data.
+
 - Stacked order options in the trading panel keep each click or tap target inside its own
   28px row. Previously the checkbox's 44px hit layer let a click on the lower edge of
   Reduce Only toggle TP/SL; each label now also answers across the adjacent half gap.

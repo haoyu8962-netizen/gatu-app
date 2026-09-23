@@ -178,8 +178,8 @@ vi.mock("@/hooks/use-mobile", () => ({
 	useIsMobile: () => testState.isMobile,
 }));
 
-vi.mock("@/hooks/trade/use-position-market-close-submit", () => ({
-	usePositionMarketCloseSubmit: () => ({ submit: testState.submit }),
+vi.mock("@/lib/trade/position-market-close-submitter", () => ({
+	submitPositionMarketClose: testState.submit,
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({

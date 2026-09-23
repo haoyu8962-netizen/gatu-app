@@ -5,6 +5,7 @@ import Big from "big.js";
 import { act, createElement, Fragment, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PositionMarketCloseSubmitHost } from "@/components/trade/components/position-market-close-submit-host";
 import { PositionMarketCloseModal } from "@/components/trade/positions/position-market-close-modal";
 import type { PositionCloseSizingIntent } from "@/domain/trade/position-market-close";
 import { localizedPositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
@@ -197,7 +198,15 @@ describe("market close: the size shown at the click bounds the size that is sent
 
 	function renderDialog() {
 		act(() =>
-			root.render(createElement(Fragment, null, createElement(QueueProbe), createElement(PositionMarketCloseModal))),
+			root.render(
+				createElement(
+					Fragment,
+					null,
+					createElement(QueueProbe),
+					createElement(PositionMarketCloseModal),
+					createElement(PositionMarketCloseSubmitHost),
+				),
+			),
 		);
 	}
 

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PositionMarketCloseRef } from "@/components/trade/positions/position-dialog-types";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
 import { dismissPositionMarketCloseConfirmation } from "@/lib/trade/position-market-close-confirmation-preference";
+import { registerPositionMarketCloseSubmitter } from "@/lib/trade/position-market-close-submitter";
 import { getPositionMarketCloseActions, getPositionMarketCloseModal } from "@/stores/use-global-modal-store";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
@@ -39,10 +40,6 @@ const mocks = vi.hoisted(() => ({
 	submit: vi.fn(async () => {}),
 }));
 
-vi.mock("@/hooks/trade/use-position-market-close-submit", () => ({
-	usePositionMarketCloseSubmit: () => ({ submit: mocks.submit }),
-}));
-
 vi.mock("@/hooks/trade/use-legal-gate", () => ({
 	useLegalGate: () => ({ state: mocks.legalState }),
 }));
@@ -68,6 +65,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 let hookValue: ReturnType<typeof usePositionMarketCloseAction> | null = null;
+let unregisterSubmitter = () => {};
 let hookRenderCount = 0;
 
 function Probe() {
@@ -112,6 +110,7 @@ describe("usePositionMarketCloseAction", () => {
 			szDecimals: POSITION.szDecimals,
 		};
 		mocks.submit.mockClear();
+		unregisterSubmitter = registerPositionMarketCloseSubmitter(mocks.submit);
 		hookRenderCount = 0;
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -123,6 +122,7 @@ describe("usePositionMarketCloseAction", () => {
 		act(() => root.unmount());
 		container.remove();
 		hookValue = null;
+		unregisterSubmitter();
 		clearSession();
 	});
 
@@ -172,6 +172,16 @@ describe("usePositionMarketCloseAction", () => {
 		});
 		expect(mocks.submit).toHaveBeenCalledOnce();
 		expect(mocks.submit).toHaveBeenCalledWith({ sessionId: firstSessionId, confirmedCloseSize: null });
+	});
+
+	it("falls back to the confirmation dialog while no page-level submit host is mounted", () => {
+		expect(dismissPositionMarketCloseConfirmation({ owner: USER, env: "Mainnet" })).toBe("dismissed");
+		unregisterSubmitter();
+
+		act(() => currentHook().open(POSITION));
+
+		expect(getPositionMarketCloseModal()).toMatchObject({ presentation: "confirmation", phase: "idle" });
+		expect(mocks.submit).not.toHaveBeenCalled();
 	});
 
 	it("honors the dismissed confirmation preference on mobile when every gate is ready", () => {

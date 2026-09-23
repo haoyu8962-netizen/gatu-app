@@ -12,7 +12,7 @@ const testState = vi.hoisted(() => ({
 	closeCommandMenu: vi.fn(),
 	closeDepositModal: vi.fn(),
 	depositPath: "sponsored" as "external" | "sponsored",
-	discardPositionMarketCloseModal: vi.fn(),
+	discardIdlePositionMarketCloseModal: vi.fn(),
 	depositModalTab: "deposit" as "bridge" | "deposit" | "withdraw",
 	hip3Disclaimer: {
 		isRequired: true,
@@ -86,6 +86,10 @@ vi.mock("@/components/trade/components/position-dialog-host-gate", () => ({
 	PositionDialogHostGate: () => createElement("div", { "data-testid": "PositionDialogHostGate" }),
 }));
 
+vi.mock("@/components/trade/components/position-market-close-submit-host-gate", () => ({
+	PositionMarketCloseSubmitHostGate: () => createElement("div", { "data-testid": "PositionMarketCloseSubmitHost" }),
+}));
+
 vi.mock("@/hooks/use-mobile", () => ({
 	useIsMobile: () => false,
 }));
@@ -103,7 +107,7 @@ vi.mock("@/lib/lazy", () => ({
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
-	discardPositionMarketCloseModal: testState.discardPositionMarketCloseModal,
+	discardIdlePositionMarketCloseModal: testState.discardIdlePositionMarketCloseModal,
 	useCommandMenuActions: () => ({ open: testState.openCommandMenu, close: testState.closeCommandMenu }),
 	useDepositModalActions: () => ({ close: testState.closeDepositModal }),
 	useDepositModalTab: () => testState.depositModalTab,
@@ -158,7 +162,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 			documentationUrl: "https://docs.trade.xyz/consolidated-resources/specification-index",
 		};
 		testState.closeCommandMenu.mockReset();
-		testState.discardPositionMarketCloseModal.mockReset();
+		testState.discardIdlePositionMarketCloseModal.mockReset();
 		testState.closeSendModal.mockReset();
 		testState.hip3RequirementHook.mockReset();
 		testState.legalGate = {
@@ -285,12 +289,15 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 
 		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
 		const host = container.querySelector('[data-testid="PositionDialogHostGate"]');
+		const marketCloseHost = container.querySelector('[data-testid="PositionMarketCloseSubmitHost"]');
 		expect(host).not.toBeNull();
+		expect(marketCloseHost).not.toBeNull();
 
 		for (const state of ["checking", "error", "accepted"]) {
 			testState.legalGate.state = state;
 			act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
 			expect(container.querySelector('[data-testid="PositionDialogHostGate"]')).toBe(host);
+			expect(container.querySelector('[data-testid="PositionMarketCloseSubmitHost"]')).toBe(marketCloseHost);
 		}
 	});
 
@@ -413,7 +420,17 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 
 		act(() => root.render(createElement(GlobalModals)));
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).toBeNull();
-		expect(testState.discardPositionMarketCloseModal).toHaveBeenCalledOnce();
+		expect(testState.discardIdlePositionMarketCloseModal).toHaveBeenCalledOnce();
+	});
+
+	it("mounts the market close submit host only in enabled scopes", async () => {
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true })));
+		expect(container.querySelector('[data-testid="PositionMarketCloseSubmitHost"]')).toBeNull();
+
+		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
+		expect(container.querySelector('[data-testid="PositionMarketCloseSubmitHost"]')).not.toBeNull();
 	});
 
 	it("never mounts a direct close but keeps a dismissed close mounted while it runs", async () => {

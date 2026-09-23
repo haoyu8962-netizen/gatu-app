@@ -377,6 +377,12 @@ export function getPositionMarketCloseActions(): PositionMarketCloseStoreActions
 	return useGlobalModalStore.getState().positionMarketCloseActions;
 }
 
+/** Close an idle Market Close session when another surface takes priority; in-flight sessions stay with their submit host. */
+export function discardIdlePositionMarketCloseModal(): void {
+	const session = getPositionMarketCloseModal();
+	if (session?.phase === "idle") getPositionMarketCloseActions().close(session.sessionId);
+}
+
 export function discardPositionMarketCloseModal(): void {
 	const session = getPositionMarketCloseModal();
 	if (!session) return;

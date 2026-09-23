@@ -132,10 +132,12 @@ required HIP-3 deployer disclaimer retains priority over ordinary trading
 dialogs once legal review and signer setup are complete.
 
 The position-dialog host stays mounted at the page level in every legal state,
-outside the legal gate. It owns in-flight Close All, Reverse, Limit Close, TP/SL
-and isolated-margin submissions, and a reconnect (`checking`) or a failed
-background refetch (`error`) must not unmount it before those submissions
-settle (see `docs/confirmation-surfaces.md`).
+outside the legal gate, and so does the Market Close submit host. Together they
+own in-flight Close All, Reverse, Limit Close, TP/SL, isolated-margin and Market
+Close submissions, and a reconnect (`checking`) or a failed background refetch
+(`error`) must not unmount them before those submissions settle. Legal-gate
+branch changes discard only idle Market Close sessions (see
+`docs/confirmation-surfaces.md`).
 
 ## Stay Connected
 

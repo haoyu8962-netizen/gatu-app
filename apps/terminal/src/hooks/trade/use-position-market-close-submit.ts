@@ -29,6 +29,7 @@ import {
 import { toBig } from "@/lib/trade/numbers";
 import { getOrderAssetReservationState, runWithAvailableOrderAssetLocks } from "@/lib/trade/order-asset-lock";
 import { dismissPositionMarketCloseConfirmation } from "@/lib/trade/position-market-close-confirmation-preference";
+import type { PositionMarketCloseSubmitInput } from "@/lib/trade/position-market-close-submitter";
 import {
 	getPositionMarketClosePlanFeedback,
 	localizedPositionSubmitFeedback,
@@ -47,12 +48,6 @@ import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
 import { addOrderQueueItem, getOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import { getPersistedPendingOrderAssetState } from "@/stores/use-pending-order-store";
 import { getPersistedPendingTwapAssetState } from "@/stores/use-pending-twap-store";
-
-interface SubmitInput {
-	sessionId: string;
-	confirmedCloseSize: string | null;
-	dismissFutureConfirmation?: boolean;
-}
 
 interface FreshCloseSnapshot {
 	signedPositionSize: string;
@@ -127,7 +122,7 @@ export function usePositionMarketCloseSubmit() {
 
 	const trackedOrder = useTrackedOrder({ executionGuard: assertExecutionContext });
 
-	async function submit(input: SubmitInput): Promise<void> {
+	async function submit(input: PositionMarketCloseSubmitInput): Promise<void> {
 		const actions = getPositionMarketCloseActions();
 		const currentSession = getPositionMarketCloseModal();
 		if (!currentSession || currentSession.sessionId !== input.sessionId || currentSession.phase !== "idle") return;
@@ -154,7 +149,6 @@ export function usePositionMarketCloseSubmit() {
 		});
 		actions.dismiss(input.sessionId);
 		actions.updatePhase(input.sessionId, "validating");
-		executionContextRef.current = null;
 
 		try {
 			const confirmedCloseSize = resolveConfirmedCloseSize(openedPresentation, input.confirmedCloseSize);
@@ -342,7 +336,7 @@ export function usePositionMarketCloseSubmit() {
 				actions.close(input.sessionId);
 			}
 		} finally {
-			executionContextRef.current = null;
+			if (executionContextRef.current?.sessionId === input.sessionId) executionContextRef.current = null;
 		}
 	}
 
