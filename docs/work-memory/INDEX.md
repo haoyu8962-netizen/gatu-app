@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [codex/reviewceshi 六提交审查与修复](sessions/2026-09-23-codex-legal-notification-review-fixes.md) — 2026-09-23；已验证，范围见正文。审查 e52739d2..b82dd443：b82dd443 把持仓弹窗宿主移入 legal gate 并永久清理弹窗（确认面契约测试失败），e52739d2 留下类型检查错误；已恢复页面层宿主、去掉清理与可见检查提示（对齐官方终端），按官方 TP/SL 文档给带 TP/SL 的部分成交加规则说明，并按实际 20px 行高和 8px 行距把选项点击区收成互不重叠的 28px（同时修复控件自带 44px 点击层抢点下一行的已有缺陷）；未做真实钱包或设备验收。
 - [精简通知提交 4f7e046f 合规对抗审查](sessions/2026-09-22-compact-notification-adversarial-review.md) — 2026-09-22；已验证，范围见正文。对 4f7e046f 做合规与对抗审查：静态检查、类型检查与 15 套 341 项聚焦回归在本检出通过；无 P0/P1，2 项 P2（IOC 部分成交后取消状态会追加矛盾的取消错误行；Scale 分层挂单的正常首笔成交被标为 partial 警告并 3 秒隐藏）、5 项 P3。仅审查与记录，未修改生产代码。
 - [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) — 2026-09-22；已整理，验证见正文。核对请求量价与实际成交数据的缺口，提出单句结果、移动端自然分行及证据驱动的量价展示方案；本轮只规划，未改变通知实现或时长。
 - [精简交易通知文案与真实成交摘要实施](sessions/2026-09-22-compact-notification-implementation.md) — 2026-09-22；已验证，范围见正文。真实成交摘要与精简通知已实施，保留部分/未知及附属单异常，修复长错误和短视口溢出；终端6946项与浏览器17项通过，未真实交易或发布。
@@ -43,6 +44,7 @@
 
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
+- [codex/reviewceshi 六提交审查与修复](sessions/2026-09-23-codex-legal-notification-review-fixes.md) — 2026-09-23；已验证，范围见正文。审查 e52739d2..b82dd443：b82dd443 把持仓弹窗宿主移入 legal gate 并永久清理弹窗（确认面契约测试失败），e52739d2 留下类型检查错误；已恢复页面层宿主、去掉清理与可见检查提示（对齐官方终端），按官方 TP/SL 文档给带 TP/SL 的部分成交加规则说明，并按实际 20px 行高和 8px 行距把选项点击区收成互不重叠的 28px（同时修复控件自带 44px 点击层抢点下一行的已有缺陷）；未做真实钱包或设备验收。
 - [精简通知提交 4f7e046f 合规对抗审查](sessions/2026-09-22-compact-notification-adversarial-review.md) — 2026-09-22；已验证，范围见正文。对 4f7e046f 做合规与对抗审查：静态检查、类型检查与 15 套 341 项聚焦回归在本检出通过；无 P0/P1，2 项 P2（IOC 部分成交后取消状态会追加矛盾的取消错误行；Scale 分层挂单的正常首笔成交被标为 partial 警告并 3 秒隐藏）、5 项 P3。仅审查与记录，未修改生产代码。
 - [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) — 2026-09-22；已整理，验证见正文。核对请求量价与实际成交数据的缺口，提出单句结果、移动端自然分行及证据驱动的量价展示方案；本轮只规划，未改变通知实现或时长。
 - [精简交易通知文案与真实成交摘要实施](sessions/2026-09-22-compact-notification-implementation.md) — 2026-09-22；已验证，范围见正文。真实成交摘要与精简通知已实施，保留部分/未知及附属单异常，修复长错误和短视口溢出；终端6946项与浏览器17项通过，未真实交易或发布。
@@ -202,6 +204,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-23 | [codex/reviewceshi 六提交审查与修复](sessions/2026-09-23-codex-legal-notification-review-fixes.md) | 未取得任务标识，见正文 | `b82dd443` | 已验证，范围见正文 |
 | 2026-09-22 | [精简通知提交 4f7e046f 合规对抗审查](sessions/2026-09-22-compact-notification-adversarial-review.md) | 对抗审查 4f7e046f（`9b4fc2e8-a227-4578-bfd1-5db0594a392e`） | `4f7e046f` | 已验证，范围见正文 |
 | 2026-09-22 | [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `a999806b` | 已整理，验证见正文 |
 | 2026-09-22 | [精简交易通知文案与真实成交摘要实施](sessions/2026-09-22-compact-notification-implementation.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `18365269` | 已验证，范围见正文 |
