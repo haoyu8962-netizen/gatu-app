@@ -54,3 +54,4 @@
 
 - 本记录局部替代 [市价平仓页面级提交宿主](2026-09-23-market-close-page-level-submit-host.md) 中「宿主注册前确认最多等待 5 秒」的实现细节（改为先封存再等待），以及 [codex 六提交审查与修复](2026-09-23-codex-legal-notification-review-fixes.md) 中 TP/SL 文案的表述。两份记录都已追加更正。
 - 待处理：`user-menu-recovery` 浏览器套件在 dev 上的 10 项失败。
+- 更正（2026-09-24）：上文「包体积预算通过」只覆盖静态启动闭包；门控组件挂载后无条件动态加载宿主，约 4.3 KB gzip 的确定性下载没有被预算统计到。GPT-6 astra 审查指出后已改为按意图加载，见[后续记录](2026-09-24-gpt6-review-market-close-host-fixes.md)。
