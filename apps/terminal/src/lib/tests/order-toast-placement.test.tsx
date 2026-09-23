@@ -373,6 +373,32 @@ describe("global order notifications", () => {
 		await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Dismiss"]')?.click());
 		expect(getOrderQueueItem(id)).toBeUndefined();
 	});
+	it("announces the TP/SL rule inside the status region of a partial fill that carried TP/SL", async () => {
+		let id = "";
+		act(() => {
+			id = add();
+			updateOrderQueueItem(id, {
+				status: "partial",
+				orderType: "market",
+				quoteToken: "USDC",
+				slPrice: "95",
+				execution: {
+					evidence: "exchange-response",
+					filledSize: "0.4",
+					requestedSize: "1",
+					averagePrice: "99",
+					orderIds: [7],
+					completeness: "partial",
+				},
+			});
+		});
+		await flush();
+		const notice = container.querySelector(`[data-order-feedback="${id}"] [data-order-notice]`);
+		expect(notice?.textContent).toBe(
+			"Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size.",
+		);
+		expect(notice?.closest('[role="status"]')).not.toBeNull();
+	});
 	it("does not expire a successful task hidden behind a newer pending task", async () => {
 		let older = "";
 		let newer = "";

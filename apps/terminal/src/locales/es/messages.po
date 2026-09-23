@@ -901,6 +901,10 @@ msgstr "Importe atómico"
 msgid "Atomic decimals"
 msgstr "Decimales atómicos"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size."
+msgstr "El TP/SL adjunto solo se coloca cuando la orden se ejecuta por completo. Configura el TP/SL en la posición para proteger el tamaño ejecutado."
+
 #: src/components/staking/staking-view.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"

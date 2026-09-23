@@ -15,6 +15,7 @@ export interface OrderNotificationCopy {
 	label: string;
 	summary: string;
 	detail?: string;
+	notice?: string;
 	count?: string;
 	error?: string;
 }
@@ -28,6 +29,7 @@ export function getOrderNotificationCopy(order: OrderQueueItem, translate: Trans
 		ordinary && execution && market && order.side && (order.status === "success" || order.status === "partial");
 	let summary: string;
 	let detail: string | undefined;
+	let notice: string | undefined;
 	if (order.message) {
 		summary = [order.title ? label : undefined, market, translate(order.message)].filter(Boolean).join(" · ");
 	} else if (order.positionsClosed && order.status === "success") {
@@ -37,6 +39,11 @@ export function getOrderNotificationCopy(order: OrderQueueItem, translate: Trans
 		if (execution.completeness === "partial") {
 			const progress = isolate(`${execution.filledSize} / ${execution.requestedSize} ${market}`);
 			summary = translate(msg`Partially filled ${progress}`);
+			if (order.tpPrice || order.slPrice) {
+				notice = translate(
+					msg`Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size.`,
+				);
+			}
 		} else {
 			summary = order.side === "buy" ? translate(msg`Bought ${quantity}`) : translate(msg`Sold ${quantity}`);
 		}
@@ -49,7 +56,14 @@ export function getOrderNotificationCopy(order: OrderQueueItem, translate: Trans
 	}
 	const count = getCountSummary(order, translate);
 	const error = getErrorCopy(order, translate);
-	return { label, summary, detail, count, error: error === summary || error === count ? undefined : error };
+	return {
+		label,
+		summary,
+		detail,
+		notice,
+		count,
+		error: error === summary || error === count ? undefined : error,
+	};
 }
 
 function getActionLabel(order: OrderQueueItem, translate: Translate): string {

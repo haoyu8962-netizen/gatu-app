@@ -901,6 +901,10 @@ msgstr "原子单位金额"
 msgid "Atomic decimals"
 msgstr "原子单位小数位"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size."
+msgstr "附带的止盈 / 止损仅在订单完全成交后下达。如需保护已成交部分，请在持仓上设置止盈 / 止损。"
+
 #: src/components/staking/staking-view.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"

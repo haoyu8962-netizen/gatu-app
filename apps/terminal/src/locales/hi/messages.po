@@ -901,6 +901,10 @@ msgstr "एटॉमिक राशि"
 msgid "Atomic decimals"
 msgstr "एटॉमिक दशमलव"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size."
+msgstr "संलग्न TP/SL केवल ऑर्डर के पूरी तरह निष्पादित होने के बाद ही लगाया जाता है। निष्पादित आकार की सुरक्षा के लिए पोज़िशन पर TP/SL सेट करें।"
+
 #: src/components/staking/staking-view.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"

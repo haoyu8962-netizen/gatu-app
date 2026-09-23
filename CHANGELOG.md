@@ -8,6 +8,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Partial fills of market or limit orders that carried TP/SL now add a neutral note that
+  attached TP/SL is placed only after a full fill, following Hyperliquid's TP/SL
+  documentation, and suggest setting TP/SL on the position for the filled size.
+
 - Settings and the command menu remain usable while the legal status check is
   pending. Trading and funds dialogs stay gated until the account's legal state
   is resolved.

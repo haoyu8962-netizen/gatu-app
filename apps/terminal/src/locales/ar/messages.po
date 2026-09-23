@@ -901,6 +901,10 @@ msgstr "المبلغ بالوحدة الذرية"
 msgid "Atomic decimals"
 msgstr "المنازل العشرية للوحدة الذرية"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size."
+msgstr "لا يُوضع TP/SL المرفق إلا بعد تنفيذ الأمر بالكامل. اضبط TP/SL على المركز لحماية الحجم المنفَّذ."
+
 #: src/components/staking/staking-view.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"

@@ -414,6 +414,7 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 	);
 	const hasUnexpectedCanceled = submission.children.some(
 		(child) =>
+			child.status !== undefined &&
 			isCanceledOrderStatus(child.status) &&
 			!(child.status === "canceled" && expectedCanceledCloids.has(child.cloid.toLowerCase())),
 	);

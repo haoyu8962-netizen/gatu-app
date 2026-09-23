@@ -90,6 +90,11 @@ export function OrderToast({ order, onDismiss }: Props) {
 									{copy.detail}
 								</p>
 							)}
+							{copy.notice && (
+								<p data-order-notice dir="auto">
+									{copy.notice}
+								</p>
+							)}
 							{copy.count && <p>{copy.count}</p>}
 							{copy.error && <p dir="auto">{copy.error}</p>}
 						</div>
