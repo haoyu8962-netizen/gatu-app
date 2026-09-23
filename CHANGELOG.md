@@ -11,6 +11,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - Stacked order options in the trading panel keep each click or tap target inside its own
   28px row. Previously the checkbox's 44px hit layer let a click on the lower edge of
   Reduce Only toggle TP/SL; each label now also answers across the adjacent half gap.
+  Desktop TWAP options (Randomize timing, Reduce Only, Advanced Settings) follow the same
+  rule, so a click near one option no longer toggles its neighbour.
 
 - Partial fills of market or limit orders that carried TP/SL now add a neutral note that
   attached TP/SL is placed only after a full fill, following Hyperliquid's TP/SL
