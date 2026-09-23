@@ -9569,10 +9569,6 @@ msgstr "Verifying the owner Vault balance before enabling withdrawals."
 msgid "Verifying the result"
 msgstr "Verifying the result"
 
-#: src/components/trade/components/legal-status-notice.tsx
-msgid "Verifying trading access"
-msgstr "Verifying trading access"
-
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."

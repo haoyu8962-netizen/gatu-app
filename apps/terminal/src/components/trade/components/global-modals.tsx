@@ -8,7 +8,6 @@ import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
-	clearGlobalModal,
 	discardPositionMarketCloseModal,
 	useCommandMenuActions,
 	useGlobalModalType,
@@ -50,7 +49,7 @@ export function GlobalModals(props: Props) {
 	return (
 		<>
 			<PrioritizedGlobalModals {...props} />
-			{!props.enableLegalGate && props.enablePositionMarketClose && <PositionDialogHostGate />}
+			{props.enablePositionMarketClose && <PositionDialogHostGate />}
 		</>
 	);
 }
@@ -96,18 +95,6 @@ function LegalAwareGlobalModals({
 	enableTradingOnboarding: boolean;
 }) {
 	const legalGate = useLegalGate();
-	const activeModal = useGlobalModalType();
-	const positionMarketCloseSession = usePositionMarketCloseSession();
-
-	useEffect(() => {
-		if (legalGate.state === "inactive" || legalGate.state === "accepted") return;
-		if (legalGate.state === "checking" && (activeModal === "settings" || activeModal === "commandMenu")) {
-			if (positionMarketCloseSession) discardPositionMarketCloseModal();
-			return;
-		}
-		if (activeModal !== null) clearGlobalModal();
-		if (positionMarketCloseSession) discardPositionMarketCloseModal();
-	}, [activeModal, legalGate.state, positionMarketCloseSession]);
 
 	if (legalGate.state === "checking") {
 		return <SharedGlobalModals enablePositionMarketClose={false} scope="preferences" />;
@@ -133,12 +120,7 @@ function LegalAwareGlobalModals({
 	) : (
 		<SharedGlobalModals enablePositionMarketClose={enablePositionMarketClose} />
 	);
-	return (
-		<>
-			{enableTradingOnboarding ? <TradingOnboardingGate>{content}</TradingOnboardingGate> : content}
-			{enablePositionMarketClose && <PositionDialogHostGate />}
-		</>
-	);
+	return enableTradingOnboarding ? <TradingOnboardingGate>{content}</TradingOnboardingGate> : content;
 }
 
 function Hip3AwareGlobalModals({

@@ -9569,10 +9569,6 @@ msgstr "جارٍ التحقق من رصيد المالك في الخزنة قب�
 msgid "Verifying the result"
 msgstr "جارٍ التحقق من النتيجة"
 
-#: src/components/trade/components/legal-status-notice.tsx
-msgid "Verifying trading access"
-msgstr "جارٍ التحقق من صلاحية التداول"
-
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."

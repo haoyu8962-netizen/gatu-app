@@ -9,7 +9,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const testState = vi.hoisted(() => ({
 	activeModalListeners: new Set<() => void>(),
 	activeModal: "deposit" as string | null,
-	clearGlobalModal: vi.fn(),
 	closeCommandMenu: vi.fn(),
 	closeDepositModal: vi.fn(),
 	depositPath: "sponsored" as "external" | "sponsored",
@@ -104,7 +103,6 @@ vi.mock("@/lib/lazy", () => ({
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
-	clearGlobalModal: testState.clearGlobalModal,
 	discardPositionMarketCloseModal: testState.discardPositionMarketCloseModal,
 	useCommandMenuActions: () => ({ open: testState.openCommandMenu, close: testState.closeCommandMenu }),
 	useDepositModalActions: () => ({ close: testState.closeDepositModal }),
@@ -160,11 +158,6 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 			documentationUrl: "https://docs.trade.xyz/consolidated-resources/specification-index",
 		};
 		testState.closeCommandMenu.mockReset();
-		testState.clearGlobalModal.mockReset();
-		testState.clearGlobalModal.mockImplementation(() => {
-			testState.activeModal = null;
-			for (const listener of testState.activeModalListeners) listener();
-		});
 		testState.discardPositionMarketCloseModal.mockReset();
 		testState.closeSendModal.mockReset();
 		testState.hip3RequirementHook.mockReset();
@@ -259,7 +252,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(testState.hip3RequirementHook).not.toHaveBeenCalled();
 	});
 
-	it("does not keep a trading modal mounted when legal checking starts", async () => {
+	it("suspends a trading modal while legal status is checking without discarding it", async () => {
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
 		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true })));
@@ -269,39 +262,36 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, key: "legal-checking" })));
 
 		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
-		expect(testState.clearGlobalModal).toHaveBeenCalledOnce();
 
 		testState.legalGate.state = "accepted";
 		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, key: "legal-accepted" })));
-		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
+		expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
 	});
 
-	it("does not restore a preference modal after legal review takes priority", async () => {
-		testState.legalGate.state = "checking";
-		testState.activeModal = "settings";
-		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+	it.each(["checking", "required", "submitting", "blocked", "wallet_required", "error", "accepted"])(
+		"keeps the position dialog host mounted while legal status is %s",
+		async (state) => {
+			testState.legalGate.state = state;
+			const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true })));
-		expect(container.querySelector('[data-testid="GlobalSettingsModal"]')).not.toBeNull();
+			act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
 
-		testState.legalGate.state = "required";
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, key: "legal-required" })));
-		expect(container.querySelector('[data-testid="LegalAcceptanceModal"]')).not.toBeNull();
-		expect(testState.clearGlobalModal).toHaveBeenCalledOnce();
+			expect(container.querySelector('[data-testid="PositionDialogHostGate"]')).not.toBeNull();
+		},
+	);
 
-		testState.legalGate.state = "accepted";
-		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, key: "legal-accepted" })));
-		expect(container.querySelector('[data-testid="GlobalSettingsModal"]')).toBeNull();
-	});
-
-	it("keeps the position dialog host behind the legal gate", async () => {
-		testState.legalGate.state = "required";
+	it("keeps an in-flight position dialog owner mounted when legal status leaves accepted", async () => {
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
 		act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
+		const host = container.querySelector('[data-testid="PositionDialogHostGate"]');
+		expect(host).not.toBeNull();
 
-		expect(container.querySelector('[data-testid="LegalAcceptanceModal"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="PositionDialogHostGate"]')).toBeNull();
+		for (const state of ["checking", "error", "accepted"]) {
+			testState.legalGate.state = state;
+			act(() => root.render(createElement(GlobalModals, { enableLegalGate: true, enablePositionMarketClose: true })));
+			expect(container.querySelector('[data-testid="PositionDialogHostGate"]')).toBe(host);
+		}
 	});
 
 	it("preserves existing global modal behavior when no disclaimer is required", async () => {

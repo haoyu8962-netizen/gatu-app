@@ -37,7 +37,6 @@ import {
 import { useBuilderFeeTenthsBps } from "@/hooks/trade/use-builder-fee-config";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
-import { useLegalGate } from "@/hooks/trade/use-legal-gate";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
@@ -112,7 +111,6 @@ import {
 	useSelectedPrice,
 } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
-import { LegalStatusNotice } from "../components/legal-status-notice";
 import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { MarginModeModal, warmTradeSettingsModals } from "../tradebox/lazy-trade-settings-modals";
 import type { MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
@@ -152,7 +150,6 @@ function warmMobileTradeSettingsModals() {
 export function MobileTradeView({ active = true, className, embedded, sizeMode, onSizeModeChange }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const { state: legalGateState } = useLegalGate();
 	const validationErrorId = useId();
 	const { address, isConnected } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
@@ -871,7 +868,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				</div>
 			</div>
 			<MobileTradeScrollArea embedded={embedded}>
-				<LegalStatusNotice state={legalGateState} />
 				<TradeHeader
 					orderType={orderType}
 					side={side}

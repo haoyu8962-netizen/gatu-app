@@ -9569,10 +9569,6 @@ msgstr "正在核验所有者的 Vault 余额，核验完成后才能提款。"
 msgid "Verifying the result"
 msgstr "正在验证结果"
 
-#: src/components/trade/components/legal-status-notice.tsx
-msgid "Verifying trading access"
-msgstr "正在验证交易权限"
-
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."

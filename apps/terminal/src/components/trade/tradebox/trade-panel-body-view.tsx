@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 interface Props {
 	header: ReactNode;
 	fields: ReactNode;
-	legalNotice?: ReactNode;
 	overlays?: ReactNode;
 	footer: ReactNode;
 	onIntent?: () => void;
@@ -11,7 +10,7 @@ interface Props {
 
 export const TRADE_PANEL_CLASS = "trade-panel-container flex h-full flex-col bg-surface font-market-close";
 
-export function TradePanelBodyView({ header, fields, legalNotice, footer, overlays, onIntent }: Props) {
+export function TradePanelBodyView({ header, fields, footer, overlays, onIntent }: Props) {
 	return (
 		<div
 			className={TRADE_PANEL_CLASS}
@@ -25,7 +24,6 @@ export function TradePanelBodyView({ header, fields, legalNotice, footer, overla
 					{header}
 				</div>
 				<div data-slot="trade-panel-body" className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain">
-					{legalNotice}
 					<div data-slot="trade-panel-fields" className="min-h-0 flex-[1_0_auto]">
 						<div className="flex flex-col px-3 pt-2">{fields}</div>
 					</div>

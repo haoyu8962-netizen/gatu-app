@@ -34,7 +34,6 @@ import {
 import { useBuilderFeeTenthsBps } from "@/hooks/trade/use-builder-fee-config";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
-import { useLegalGate } from "@/hooks/trade/use-legal-gate";
 import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
@@ -103,7 +102,6 @@ import {
 	getSelectedPriceForMarket,
 	useSelectedPrice,
 } from "@/stores/use-orderbook-actions-store";
-import { LegalStatusNotice } from "../components/legal-status-notice";
 import {
 	AccountModeModal,
 	LeverageModal,
@@ -131,7 +129,6 @@ function warmDesktopTradeSettingsModals() {
 export function TradePanel() {
 	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
-	const { state: legalGateState } = useLegalGate();
 	const depositAvailability = useDepositAvailability();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const switchChain = useSwitchChain();
@@ -772,7 +769,6 @@ export function TradePanel() {
 	return (
 		<TradePanelBodyView
 			onIntent={warmDesktopTradeSettingsModals}
-			legalNotice={<LegalStatusNotice state={legalGateState} />}
 			overlays={
 				<>
 					<LazyDialogHost
