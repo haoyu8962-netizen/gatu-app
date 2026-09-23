@@ -8,6 +8,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Stacked order options in the trading panel keep each click or tap target inside its own
+  28px row. Previously the checkbox's 44px hit layer let a click on the lower edge of
+  Reduce Only toggle TP/SL; each label now also answers across the adjacent half gap.
+
 - Partial fills of market or limit orders that carried TP/SL now add a neutral note that
   attached TP/SL is placed only after a full fill, following Hyperliquid's TP/SL
   documentation, and suggest setting TP/SL on the position for the filled size.

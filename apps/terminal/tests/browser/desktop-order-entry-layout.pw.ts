@@ -137,6 +137,59 @@ async function expectOptionSpacing(page: Page, expectedGap: number, expectedHeig
 		.toEqual({ gap: expectedGap, height: expectedHeight });
 }
 
+async function expectOptionHitAreasFillTheGap(page: Page, gap: number) {
+	await expect
+		.poll(() =>
+			page.locator('[data-slot="trade-order-options"] label').evaluateAll((labels) => {
+				const visible = labels
+					.filter((label) => label.getClientRects().length > 0)
+					.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+				if (visible.length < 2) return null;
+				const misses: string[] = [];
+				const heights = visible.map((label, index) => {
+					const rect = label.getBoundingClientRect();
+					const control = label.querySelector('[role="checkbox"]');
+					if (!control) {
+						misses.push(`${index}: no control`);
+						return null;
+					}
+					const controlRect = control.getBoundingClientRect();
+					const controlX = controlRect.left + controlRect.width / 2;
+					const labelX = rect.left + rect.width / 2;
+					const probes: Array<[string, number, number, Element]> = [
+						["control center", controlX, controlRect.top + controlRect.height / 2, control],
+						["control top", controlX, controlRect.top + 1, control],
+						["control bottom", controlX, controlRect.bottom - 1, control],
+					];
+					if (index > 0) {
+						probes.push(["label above", labelX, rect.top - 3, label], ["control above", controlX, rect.top - 3, label]);
+					}
+					if (index < visible.length - 1) {
+						probes.push(
+							["label below", labelX, rect.bottom + 3, label],
+							["control below", controlX, rect.bottom + 3, label],
+						);
+					}
+					for (const [name, x, y, owner] of probes) {
+						const hit = document.elementFromPoint(x, y);
+						if (!hit || !(hit === owner || owner.contains(hit))) misses.push(`${index}: ${name}`);
+					}
+					return {
+						label: Number.parseFloat(getComputedStyle(label, "::after").height) - rect.height,
+						control: Number.parseFloat(getComputedStyle(control, "::after").height),
+					};
+				});
+				return {
+					misses,
+					labelExtensions: [...new Set(heights.map((height) => height?.label))],
+					controlHeights: [...new Set(heights.map((height) => height?.control))],
+					rowPitch: visible[1].getBoundingClientRect().top - visible[0].getBoundingClientRect().top,
+				};
+			}),
+		)
+		.toEqual({ misses: [], labelExtensions: [gap], controlHeights: [20 + gap], rowPitch: 20 + gap });
+}
+
 test.beforeEach(async ({ page }) => {
 	page.on("pageerror", (error) => {
 		throw error;
@@ -150,9 +203,11 @@ test("keeps shared option spacing aligned with the responsive touch contract", a
 	await page.setViewportSize({ width: 1400, height: 1330 });
 	await openFixture(page, "en");
 	await expectOptionSpacing(page, 8, 20);
+	await expectOptionHitAreasFillTheGap(page, 8);
 
 	await page.setViewportSize({ width: 375, height: 666 });
 	await expectOptionSpacing(page, 8, 20);
+	await expectOptionHitAreasFillTheGap(page, 8);
 });
 
 test("fits the reported 1400x1330 Chinese empty Limit with newly expanded TP/SL", async ({ page }) => {

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-export const optionsGrid = "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 max-[1000px]:gap-y-2";
+export const optionsGrid = "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2";
 
 interface Props {
 	className?: string;
@@ -39,7 +39,8 @@ export function TradeOptionCheckboxesView({
 	);
 }
 
-export const option = "min-w-0 min-h-5 items-center gap-1.5";
+export const option =
+	"relative isolate min-w-0 min-h-5 items-center gap-1.5 after:absolute after:inset-x-0 after:-inset-y-1 after:-z-10 after:content-['']";
 export const optionLabel = "text-xs text-trading-panel-muted";
 export const optionControl =
-	"size-[17px] rounded-[5px] border-trading-panel-stroke-control data-checked:border-trading-panel-control data-checked:bg-trading-panel-control";
+	"size-[17px] rounded-[5px] border-trading-panel-stroke-control after:h-7 data-checked:border-trading-panel-control data-checked:bg-trading-panel-control";
