@@ -676,7 +676,14 @@ The dedicated header-recovery fixture uses the separate sibling cache
 `pnpm --dir apps/terminal test:browser:user-menu-recovery`. Its Vite configuration
 scans only `user-menu-recovery.html`; the shared browser optimizer excludes that
 entry, and the default Playwright suite excludes its dedicated test file so each
-fixture runs with its own wallet mocks and server configuration.
+fixture runs with its own wallet mocks and server configuration. Its mock module
+must cover every module the header imports that needs a provider or the real
+`wagmi` package (`use-wallet-session`, `use-email-wallet-export`, `privy-wagmi`):
+Vite's dependency scanner follows bare imports through the fixture graph and
+applies `resolve.alias` to them, so one un-stubbed import of `@privy-io/wagmi`
+makes the pre-bundle fail and the fixture render nothing. The fixture also seeds
+the SDK session token key before rendering, because the header only shows
+`Connecting...` for a returning session (see the connection UI rules above).
 
 The real mobile order-entry fixture uses `node_modules/.vite-mobile-trade-all-orders`
 and scans only `mobile-trade-all-orders.html`. Run it with

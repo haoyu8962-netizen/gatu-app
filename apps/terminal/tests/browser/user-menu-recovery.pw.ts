@@ -23,6 +23,10 @@ async function setup(page: Page) {
 }
 
 for (const width of [390, 1333]) {
+	const desktop = width > 1000;
+	const connectLabel = desktop ? "Connect Wallet" : "Connect";
+	const accountLabel = (email: string) => (desktop ? email : email.slice(0, email.indexOf("@")));
+
 	test.describe(`user menu readiness at ${width}px`, () => {
 		test.use({ viewport: { width, height: 900 } });
 
@@ -61,7 +65,8 @@ for (const width of [390, 1333]) {
 			const failures = await setup(page);
 			await setSession(page, walletPending);
 			const account = page.getByRole("button", { name: "Account and wallet", exact: true });
-			await expect(account).toContainText("fixture@example.test");
+			await expect(account).toContainText(accountLabel("fixture@example.test"));
+			if (!desktop) await expect(page.locator('[title="fixture@example.test"]')).toHaveCount(1);
 			await account.focus();
 			await account.press("ArrowDown");
 			await expect(page.getByRole("menuitem", { name: "Reconnect wallet", exact: true })).toBeDisabled();
@@ -80,6 +85,12 @@ for (const width of [390, 1333]) {
 			expect(await page.evaluate(() => window.__gatuUserMenuRecovery.calls.reconnect)).toBe(0);
 			expect(await page.evaluate(() => window.__gatuUserMenuRecovery.calls.disconnect)).toBe(0);
 			await page.keyboard.press("Home");
+			const exportWallet = page.getByRole("menuitem", { name: "Export email wallet", exact: true });
+			await expect(exportWallet).toBeFocused();
+			await expect(exportWallet).toBeDisabled();
+			await page.keyboard.press("Enter");
+			expect(navigations).toBe(initialNavigations);
+			await page.keyboard.press("ArrowDown");
 			await expect(page.getByRole("menuitem", { name: "Reconnect wallet", exact: true })).toBeFocused();
 			await page.keyboard.press("Enter");
 			expect(await page.evaluate(() => window.__gatuUserMenuRecovery.calls.reconnect)).toBe(0);
@@ -158,7 +169,7 @@ for (const width of [390, 1333]) {
 		test("allows unauthenticated Connect Wallet and preserves the Agent-only account menu", async ({ page }) => {
 			const failures = await setup(page);
 			await setSession(page, { authenticationReady: true });
-			const connect = page.getByRole("button", { name: "Connect Wallet", exact: true });
+			const connect = page.getByRole("button", { name: connectLabel, exact: true });
 			await expect(connect).toBeEnabled();
 			await connect.click();
 			await expect(page.getByRole("dialog", { name: "Fixture wallet connector" })).toBeVisible();
@@ -190,7 +201,7 @@ for (const width of [390, 1333]) {
 			await page.clock.fastForward(28_001);
 			await expect(page.getByRole("menuitem", { name: "Reload page", exact: true })).toBeVisible();
 			await setSession(page, { user: { id: "fixture-user-b", email: { address: "second@example.test" } } });
-			await expect(account).toContainText("second@example.test");
+			await expect(account).toContainText(accountLabel("second@example.test"));
 			await expect(page.getByRole("menuitem", { name: "Reload page", exact: true })).toHaveCount(0);
 			await page.clock.fastForward(29_000);
 			await expect(page.getByRole("menuitem", { name: "Reload page", exact: true })).toHaveCount(0);

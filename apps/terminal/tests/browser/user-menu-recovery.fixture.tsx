@@ -20,6 +20,11 @@ declare global {
 i18n.load({ en: englishMessages, zh: chineseMessages });
 i18n.activate("en");
 
+// Every scenario here is a returning session whose initialization stalls. The header only shows
+// "Connecting..." before Privy is ready when the SDK's session token key exists (see
+// src/lib/wallet/privy-session-hint.ts); a fresh browser context would otherwise show "Connect".
+window.localStorage.setItem("privy:token", "fixture-session");
+
 window.__gatuUserMenuRecovery = {
 	setSession: setRecoverySession,
 	setLocale: (locale) => i18n.activate(locale),
