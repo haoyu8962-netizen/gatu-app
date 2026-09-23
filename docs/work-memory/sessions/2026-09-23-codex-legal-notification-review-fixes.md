@@ -74,3 +74,4 @@
 - 之前就存在、本次未改：legal 状态从 `accepted` 切到 `checking`/`error` 时，`SharedGlobalModals` 分支切换或卸载会调用 `discardPositionMarketCloseModal()`，对进行中的市价平仓会话强制置为 `reconciling` 并关闭。`3c8a7432` 之前的 `return null` 分支也有同样行为，需要单独评估市价平仓提交的承载者是否也应挪到页面层。
 - codex 的 `2026-09-22-notification-remediation-followup` 记录中「类型检查通过」一句与本次实测不符，应以本记录为准。
 - 上一条的市价平仓问题已拆成独立后续任务，本次没有修改。桌面 TWAP 选项的点击区重叠已在 `1cc83fbf` 修复。
+- 更正（同日稍后）：上面两条所说的市价平仓问题，已按用户要求在 [市价平仓页面级提交宿主](2026-09-23-market-close-page-level-submit-host.md) 中复现并修复，所拆的后续任务已撤回；本记录其余结论不变。
