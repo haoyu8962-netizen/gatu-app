@@ -65,3 +65,4 @@
 - 离开交易页或投资组合页、行情未就绪时，宿主卸载，进行中的市价平仓仍会失败关闭。这与之前的已知限制一致，本次没有改变。
 - 同日补查其余浏览器套件（`e7808cde` 工作区，本机 Node 24）：共享配置 4 个 spec 共 49/49 通过；`account-actions.playwright.config.ts` 20 通过、4 失败（`preserves mode selection and quiet unavailable state` 在 375/393/1001/1363px 均报 `useHyperliquid must be used within a HyperliquidProvider`）；`user-menu-recovery.playwright.config.ts` 10 失败。在临时 worktree 核对：`account-actions` 在 `origin/dev` `9387a888` 上 24/24 通过，在 `b82dd443` 上失败，`git bisect` 定位到 codex 的 `a379d231`（它给 `AccountModeModal` 加了 `useHyperliquid()`，同步了 position-close-all 夹具却漏了 account-actions 夹具，属于夹具缺口，不是产品缺陷）；`user-menu-recovery` 在 `origin/dev` 上同样 10 项失败，不在 CI 里，是 dev 上的已有问题。两者本次都未修改。
 - 同日另有会话提交了 `173585a4`（对本会话 8 个提交的对抗审查），确认 3 项 P2：F1 重复调用会清掉宿主的运行标记；F2 宿主懒加载等待期间确认未封存，后续编辑会改变执行量；F3 部分成交的 TP/SL 说明漏了官方的保证金不足取消例外。本次尚未处理，待用户决定。
+- 更正（同日稍后）：上文「确认最多等待 5 秒宿主注册」的做法留下了对抗审查 F1、F2 指出的缺口（等待期间未封存、重复调用清掉运行标记），已在[点击即封存与 TP/SL 例外修复](2026-09-23-market-close-attempt-sealing-fix.md)中改为先封存再等待。

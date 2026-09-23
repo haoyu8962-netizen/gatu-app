@@ -14,6 +14,7 @@
 
 - [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) — 2026-09-23；已整理，验证见正文。审查 b82dd443..cf76c54a 的 8 个 Claude 联署提交：确认 3 项 P2，涉及懒加载等待期间确认未封存、重复调用提前清除宿主运行标记，以及 TP/SL 文案遗漏保证金不足取消的官方例外；现有 439 项聚焦单测与 9 项浏览器布局测试通过，另以隔离复现验证前两项；未改交易实现、未执行真实交易。
 - [codex/reviewceshi 六提交审查与修复](sessions/2026-09-23-codex-legal-notification-review-fixes.md) — 2026-09-23；已验证，范围见正文。审查 e52739d2..b82dd443：b82dd443 把持仓弹窗宿主移入 legal gate 并永久清理弹窗（确认面契约测试失败），e52739d2 留下类型检查错误；已恢复页面层宿主、去掉清理与可见检查提示（对齐官方终端），按官方 TP/SL 文档给带 TP/SL 的部分成交加规则说明，并按实际 20px 行高和 8px 行距把选项点击区收成互不重叠的 28px（同时修复控件自带 44px 点击层抢点下一行的已有缺陷，并按用户要求修了桌面 TWAP 选项的同类问题）；未做真实钱包或设备验收。
+- [市价平仓点击即封存、TP/SL 保证金例外与 account-actions 夹具修复](sessions/2026-09-23-market-close-attempt-sealing-fix.md) — 2026-09-23；已验证，范围见正文。修复对抗审查 F1–F3：确认点击时同步封存不可变的提交尝试并按会话去重，宿主按尝试对象记录执行；部分成交 TP/SL 提示完整写出官方的保证金不足例外；给 account-actions 浏览器夹具补账户身份。全量单测、CI 条件构建与 5 个 CI 浏览器套件通过，未做真实钱包或真实成交验收。
 - [市价平仓提交移到页面级宿主](sessions/2026-09-23-market-close-page-level-submit-host.md) — 2026-09-23；已验证，范围见正文。复现并修复市价平仓后台提交的两条丢失路径（legal 状态短暂离开 accepted 时确认路径被丢弃；直提所有者随持仓页签卸载后守卫读冻结数据仍发单），提交改由按需加载的页面级 PositionMarketCloseSubmitHost 执行；全量单测与 CI 条件构建预算通过，未做真实钱包或真实成交验收。
 - [精简通知提交 4f7e046f 合规对抗审查](sessions/2026-09-22-compact-notification-adversarial-review.md) — 2026-09-22；已验证，范围见正文。对 4f7e046f 做合规与对抗审查：静态检查、类型检查与 15 套 341 项聚焦回归在本检出通过；无 P0/P1，2 项 P2（IOC 部分成交后取消状态会追加矛盾的取消错误行；Scale 分层挂单的正常首笔成交被标为 partial 警告并 3 秒隐藏）、5 项 P3。仅审查与记录，未修改生产代码。
 - [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) — 2026-09-22；已整理，验证见正文。核对请求量价与实际成交数据的缺口，提出单句结果、移动端自然分行及证据驱动的量价展示方案；本轮只规划，未改变通知实现或时长。
@@ -48,6 +49,7 @@
 
 - [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) — 2026-09-23；已整理，验证见正文。审查 b82dd443..cf76c54a 的 8 个 Claude 联署提交：确认 3 项 P2，涉及懒加载等待期间确认未封存、重复调用提前清除宿主运行标记，以及 TP/SL 文案遗漏保证金不足取消的官方例外；现有 439 项聚焦单测与 9 项浏览器布局测试通过，另以隔离复现验证前两项；未改交易实现、未执行真实交易。
 - [codex/reviewceshi 六提交审查与修复](sessions/2026-09-23-codex-legal-notification-review-fixes.md) — 2026-09-23；已验证，范围见正文。审查 e52739d2..b82dd443：b82dd443 把持仓弹窗宿主移入 legal gate 并永久清理弹窗（确认面契约测试失败），e52739d2 留下类型检查错误；已恢复页面层宿主、去掉清理与可见检查提示（对齐官方终端），按官方 TP/SL 文档给带 TP/SL 的部分成交加规则说明，并按实际 20px 行高和 8px 行距把选项点击区收成互不重叠的 28px（同时修复控件自带 44px 点击层抢点下一行的已有缺陷，并按用户要求修了桌面 TWAP 选项的同类问题）；未做真实钱包或设备验收。
+- [市价平仓点击即封存、TP/SL 保证金例外与 account-actions 夹具修复](sessions/2026-09-23-market-close-attempt-sealing-fix.md) — 2026-09-23；已验证，范围见正文。修复对抗审查 F1–F3：确认点击时同步封存不可变的提交尝试并按会话去重，宿主按尝试对象记录执行；部分成交 TP/SL 提示完整写出官方的保证金不足例外；给 account-actions 浏览器夹具补账户身份。全量单测、CI 条件构建与 5 个 CI 浏览器套件通过，未做真实钱包或真实成交验收。
 - [市价平仓提交移到页面级宿主](sessions/2026-09-23-market-close-page-level-submit-host.md) — 2026-09-23；已验证，范围见正文。复现并修复市价平仓后台提交的两条丢失路径（legal 状态短暂离开 accepted 时确认路径被丢弃；直提所有者随持仓页签卸载后守卫读冻结数据仍发单），提交改由按需加载的页面级 PositionMarketCloseSubmitHost 执行；全量单测与 CI 条件构建预算通过，未做真实钱包或真实成交验收。
 - [精简通知提交 4f7e046f 合规对抗审查](sessions/2026-09-22-compact-notification-adversarial-review.md) — 2026-09-22；已验证，范围见正文。对 4f7e046f 做合规与对抗审查：静态检查、类型检查与 15 套 341 项聚焦回归在本检出通过；无 P0/P1，2 项 P2（IOC 部分成交后取消状态会追加矛盾的取消错误行；Scale 分层挂单的正常首笔成交被标为 partial 警告并 3 秒隐藏）、5 项 P3。仅审查与记录，未修改生产代码。
 - [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) — 2026-09-22；已整理，验证见正文。核对请求量价与实际成交数据的缺口，提出单句结果、移动端自然分行及证据驱动的量价展示方案；本轮只规划，未改变通知实现或时长。
@@ -210,6 +212,7 @@
 | --- | --- | --- | --- | --- |
 | 2026-09-23 | [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) | 未取得任务标识，见正文 | `cf76c54a` | 已整理，验证见正文 |
 | 2026-09-23 | [codex/reviewceshi 六提交审查与修复](sessions/2026-09-23-codex-legal-notification-review-fixes.md) | 未取得任务标识，见正文 | `b82dd443` | 已验证，范围见正文 |
+| 2026-09-23 | [市价平仓点击即封存、TP/SL 保证金例外与 account-actions 夹具修复](sessions/2026-09-23-market-close-attempt-sealing-fix.md) | 未取得任务标识，见正文 | `155f36aa` | 已验证，范围见正文 |
 | 2026-09-23 | [市价平仓提交移到页面级宿主](sessions/2026-09-23-market-close-page-level-submit-host.md) | 未取得任务标识，见正文 | `79542991` | 已验证，范围见正文 |
 | 2026-09-22 | [精简通知提交 4f7e046f 合规对抗审查](sessions/2026-09-22-compact-notification-adversarial-review.md) | 对抗审查 4f7e046f（`9b4fc2e8-a227-4578-bfd1-5db0594a392e`） | `4f7e046f` | 已验证，范围见正文 |
 | 2026-09-22 | [交易通知精简文案与移动端方案](sessions/2026-09-22-compact-notification-copy-plan.md) | 启动开发服务器（`01a0c3b4-5aec-7f93-bc8b-6ecf0e661507`） | `a999806b` | 已整理，验证见正文 |

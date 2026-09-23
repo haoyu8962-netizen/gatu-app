@@ -75,3 +75,4 @@
 - codex 的 `2026-09-22-notification-remediation-followup` 记录中「类型检查通过」一句与本次实测不符，应以本记录为准。
 - 上一条的市价平仓问题已拆成独立后续任务，本次没有修改。桌面 TWAP 选项的点击区重叠已在 `1cc83fbf` 修复。
 - 更正（同日稍后）：上面两条所说的市价平仓问题，已按用户要求在 [市价平仓页面级提交宿主](2026-09-23-market-close-page-level-submit-host.md) 中复现并修复，所拆的后续任务已撤回；本记录其余结论不变。
+- 更正（同日稍后）：上文「TP/SL：用户选择按官方文档走」一条实施的文案写成「附带 TP/SL 只在完全成交后下达」，漏掉了官方文档里「部分成交后因保证金不足被取消，附带 TP/SL 照常下达」的例外。该问题由[对抗审查](2026-09-23-claude-eight-commit-adversarial-review.md) F3 指出，已在[点击即封存与 TP/SL 例外修复](2026-09-23-market-close-attempt-sealing-fix.md)中更正；上文原句保留作历史。
