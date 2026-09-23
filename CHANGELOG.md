@@ -22,9 +22,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   Desktop TWAP options (Randomize timing, Reduce Only, Advanced Settings) follow the same
   rule, so a click near one option no longer toggles its neighbour.
 
-- Partial fills of market or limit orders that carried TP/SL now add a neutral note that
-  attached TP/SL is placed only after a full fill, following Hyperliquid's TP/SL
-  documentation, and suggest setting TP/SL on the position for the filled size.
+- Partial fills of market or limit orders that carried TP/SL now add a neutral note stating
+  Hyperliquid's documented rule: attached TP/SL is placed only if the order fully fills, or
+  if its remainder is canceled for insufficient margin. The note asks the user to review the
+  position's TP/SL and does not claim the attached orders' actual state.
 
 - Settings and the command menu remain usable while the legal status check is
   pending. Trading and funds dialogs stay gated until the account's legal state

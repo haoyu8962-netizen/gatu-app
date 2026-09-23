@@ -41,7 +41,7 @@ export function getOrderNotificationCopy(order: OrderQueueItem, translate: Trans
 			summary = translate(msg`Partially filled ${progress}`);
 			if (order.tpPrice || order.slPrice) {
 				notice = translate(
-					msg`Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size.`,
+					msg`Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL.`,
 				);
 			}
 		} else {

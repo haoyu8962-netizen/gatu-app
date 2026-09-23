@@ -395,7 +395,7 @@ describe("global order notifications", () => {
 		await flush();
 		const notice = container.querySelector(`[data-order-feedback="${id}"] [data-order-notice]`);
 		expect(notice?.textContent).toBe(
-			"Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size.",
+			"Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL.",
 		);
 		expect(notice?.closest('[role="status"]')).not.toBeNull();
 	});

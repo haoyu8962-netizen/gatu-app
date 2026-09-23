@@ -58,12 +58,12 @@
 | HTTP 实际成交量小于请求量 | Partially filled，保留实际量 | 将后续只有 filled 状态的推送补成请求全量 |
 | Scale 全部 GTC 子项已接受，部分立即成交、其余挂单 | 提交成功；成交摘要仍显示已证明的进度和均价 | 整批已完全成交，或把正常挂单进度当作提交异常 |
 | 有匹配 cloid 的单主单 `Ioc` / `FrontendMarket` 部分成交证据，后续普通 `canceled`（包括已绑定同批 TP/SL 的普通取消） | 保留部分成交；未成交余量和随父单取消的已绑定附属委托不追加整单取消错误 | 无证据或无附属绑定时忽略取消，或隐藏 `marginCanceled`、拒绝和未知等异常 |
-| 带 TP/SL 的市价或限价单，已核实执行摘要为部分成交 | 在部分成交摘要下追加一句中性规则：附带 TP/SL 只在订单完全成交后下达，保护已成交部分需在持仓上设置 | 声称 TP/SL 已生效、已取消或已按成交量缩小，或对未携带 TP/SL、完全成交、失败的结果显示该句 |
+| 带 TP/SL 的市价或限价单，已核实执行摘要为部分成交 | 在部分成交摘要下追加一句中性规则：附带 TP/SL 只在订单完全成交，或剩余部分因保证金不足被取消时才会下达，并提示检查持仓的 TP/SL | 只写「完全成交后才下达」而漏掉保证金不足的例外，声称 TP/SL 已生效、已取消或已按成交量缩小，或对未携带 TP/SL、完全成交、失败的结果显示该句 |
 | WS / REST 只有 `filled`，缺少完整数量证据 | 顶层 Filled；子项 `filled-unverified`，显示 Filled (quantity unverified) | 子项 Fully filled 或虚构完全成交计数 |
 | 拒绝、取消、未知混合 | 逐项区分 rejected / canceled / unknown；汇总 partial 或对应结局 | 顶层 `ok` 代表整批成功，或未知等于拒单 |
 | 完整成交加原提交路径取得的新账户仓位快照确认 | All positions closed | 后台 orderStatus 单独提供同样结论 |
 
-`acceptedCount` 是兼容既有提交器的字段名，渲染必须按 `countMode` 分辨「已接受」与「完全成交」。全部平仓使用 filled 模式；后台无法证明成交量时不输出虚构的 X/Y 完全成交计数。后台对账不设置 `positionsClosed: true`。通知不承诺清理 TP/SL，不扩大确认范围，也不对整批自动重发。部分成交的 TP/SL 提示依据 [官方 TP/SL 文档](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/take-profit-and-stop-loss-orders-tp-sl)：父单完全成交，或部分成交后因保证金不足被取消，附带 TP/SL 才会下达；其余部分成交后取消会连同附带 TP/SL 一并取消。通知只陈述这条规则，不推断某一笔的附属单状态（保证金不足的分支在提交时无法区分），因此不写「已取消」。2026-09-23 核对官方终端英文文案，官方部分成交通知只有 `Partially Filled`，没有这句规则；这是本终端在官方文档基础上补充的说明，沿用部分成交的 3 秒时长。
+`acceptedCount` 是兼容既有提交器的字段名，渲染必须按 `countMode` 分辨「已接受」与「完全成交」。全部平仓使用 filled 模式；后台无法证明成交量时不输出虚构的 X/Y 完全成交计数。后台对账不设置 `positionsClosed: true`。通知不承诺清理 TP/SL，不扩大确认范围，也不对整批自动重发。部分成交的 TP/SL 提示依据 [官方 TP/SL 文档](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/take-profit-and-stop-loss-orders-tp-sl)：父单完全成交，或部分成交后因保证金不足被取消，附带 TP/SL 才会下达；其余部分成交后取消会连同附带 TP/SL 一并取消。通知只陈述这条规则，不推断某一笔的附属单状态（保证金不足的分支在提交时无法区分），因此不写「已取消」，也不写成「只有完全成交才下达」这种省掉例外的绝对说法（2026-09-23 [对抗审查](work-memory/sessions/2026-09-23-claude-eight-commit-adversarial-review.md) F3 更正了最初的文案，修复见[任务记录](work-memory/sessions/2026-09-23-market-close-attempt-sealing-fix.md)）。2026-09-23 核对官方终端英文文案，官方部分成交通知只有 `Partially Filled`，没有这句规则；这是本终端在官方文档基础上补充的说明，沿用部分成交的 3 秒时长。
 
 Scale 的成功只代表全部子项已受理，与 `execution.completeness` 的即时成交进度独立；拒绝、取消、未知子项仍按原异常/核对路径处理，`confirmationMode: filled` 不放宽。普通单笔 IOC 有效 HTTP 回包后会结束 pending 跟踪；取消与已知部分成交并存的规则适用于仍需对账或恢复的记录。只有摘要生成时根据实际 `tif: Ioc` 或 `FrontendMarket`、真实回包量价与 oid、提交 cloid 绑定的 `partialIoc` 证据可以识别余量取消；正常 TP/SL 分组会同时保存已校验的附属 cloid，后续必须先以 cloid 匹配主单的普通 `canceled`，同一可信部分成交批次中的已绑定附属普通 `canceled` 才按正常附属取消处理。`marginCanceled`、拒绝、未知、无附属绑定和缺失/损坏证据仍保持保守错误提示，不凭 `orderType: market` 猜测。
 

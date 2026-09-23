@@ -111,13 +111,30 @@ describe("compact order notification copy", () => {
 	it("states the official TP/SL rule only for partial fills that carried TP/SL", () => {
 		const partial = { ...execution, filledSize: "0.5", completeness: "partial" as const };
 		const notice =
-			"Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size.";
+			"Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL.";
 		expect(copy({ status: "partial", execution: partial, slPrice: "95" }).notice).toBe(notice);
 		expect(copy({ status: "partial", execution: partial, tpPrice: "120", orderType: "limit" }).notice).toBe(notice);
 		expect(copy({ status: "partial", execution: partial }).notice).toBeUndefined();
 		expect(copy({ execution, tpPrice: "120", slPrice: "95" }).notice).toBeUndefined();
 		expect(copy({ status: "failed", tpPrice: "120" }).notice).toBeUndefined();
 	});
+	it.each(["accepted", "canceled", "unknown", "pending"] as const)(
+		"states the same TP/SL rule without inferring an attached order that is %s",
+		(attachedStatus) => {
+			const result = copy({
+				status: "partial",
+				execution: { ...execution, filledSize: "0.5", completeness: "partial" },
+				slPrice: "95",
+				children: [
+					{ assetId: 0, market: "HYPE", size: "1.25", filledSize: "0.5", status: "partial" },
+					{ assetId: 0, market: "HYPE", size: "1.25", status: attachedStatus },
+				],
+			});
+			expect(result.notice).toBe(
+				"Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL.",
+			);
+		},
+	);
 	it("retains a fully filled main order and attached order failure", () => {
 		expect(
 			copy({ status: "partial", execution, acceptedCount: 1, totalCount: 2, error: "TP order rejected" }),
