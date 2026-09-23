@@ -1,33 +1,26 @@
-import { useEffect, useState } from "react";
-
-type SubmitHost = typeof import("./position-market-close-submit-host").PositionMarketCloseSubmitHost;
-
-const HOST_LOAD_ATTEMPTS = 3;
-const HOST_RETRY_DELAY_MS = 1_000;
+import { useEffect, useSyncExternalStore } from "react";
+import { abandonWaitingPositionMarketCloseAttempts } from "@/lib/trade/position-market-close-submitter";
+import { usePositionMarketCloseSession } from "@/stores/use-global-modal-store";
+import {
+	getLoadedPositionMarketCloseSubmitHost,
+	getUnloadedPositionMarketCloseSubmitHost,
+	subscribeToPositionMarketCloseSubmitHost,
+	warmPositionMarketCloseSubmitHost,
+} from "./position-market-close-submit-host-loader";
 
 export function PositionMarketCloseSubmitHostGate() {
-	const [SubmitHost, setSubmitHost] = useState<SubmitHost | null>(null);
+	const SubmitHost = useSyncExternalStore(
+		subscribeToPositionMarketCloseSubmitHost,
+		getLoadedPositionMarketCloseSubmitHost,
+		getUnloadedPositionMarketCloseSubmitHost,
+	);
+	const hasSession = usePositionMarketCloseSession() !== null;
 
 	useEffect(() => {
-		let active = true;
-		let retryTimer: ReturnType<typeof setTimeout> | undefined;
-		function load(attempt: number) {
-			import("./position-market-close-submit-host").then(
-				(module) => {
-					if (active) setSubmitHost(() => module.PositionMarketCloseSubmitHost);
-				},
-				() => {
-					if (!active || attempt >= HOST_LOAD_ATTEMPTS) return;
-					retryTimer = setTimeout(() => load(attempt + 1), HOST_RETRY_DELAY_MS * attempt);
-				},
-			);
-		}
-		load(1);
-		return () => {
-			active = false;
-			clearTimeout(retryTimer);
-		};
-	}, []);
+		if (hasSession) warmPositionMarketCloseSubmitHost();
+	}, [hasSession]);
+
+	useEffect(() => () => abandonWaitingPositionMarketCloseAttempts(), []);
 
 	return SubmitHost ? <SubmitHost /> : null;
 }

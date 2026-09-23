@@ -241,6 +241,10 @@ header gained its chip row. The baseline is unchanged; the regression was remove
   A deterministic idle download would still be startup weight under the runtime-profile rule above, and counting the
   idle-warmed variant honestly put the desktop increment near 211.6 kB against its 201,988-byte limit with a larger
   combined total. No semantic root changed, because nothing new is fetched on a load without interaction.
+- The Market Close submit host (`components/trade/components/position-market-close-submit-host-loader.ts`) follows the
+  same rule: it is warmed when a pointer, press or focus reaches a positions surface, or when a Market Close session
+  opens, never at mount or idle. Its first version loaded unconditionally after `GlobalModals` mounted, which was a
+  deterministic download that the runtime profile did not count (about 4.3 kB gzip, reported by the 2026-09-24 review).
 - These dialogs use `createRetryableLazyComponent`, never `createLazyComponent`: the latter answers a missing chunk with
   `window.location.reload()` on the next render, which would discard an unsent order draft. A failed import shows an
   error shell with Try again and an explicit Reload page; a failed warm-up is forgotten.

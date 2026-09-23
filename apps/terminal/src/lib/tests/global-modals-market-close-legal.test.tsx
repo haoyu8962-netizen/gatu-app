@@ -224,13 +224,16 @@ describe("Market Close across legal-gate rechecks", () => {
 	let root: Root;
 	let queueId = "";
 
-	function openAndConfirm(): string {
+	async function openAndConfirm(): Promise<string> {
 		let sessionId: string | null = null;
 		act(() => {
 			sessionId = getPositionMarketCloseActions().open(positionRef, { owner: USER, env: "Mainnet" });
 		});
 		if (!sessionId) throw new Error("Expected a market close session");
 		queueId = `market-close:${sessionId}`;
+		await act(async () => {
+			await vi.waitFor(() => expect(hasPositionMarketCloseSubmitter()).toBe(true));
+		});
 		act(() => container.querySelector<HTMLButtonElement>('[data-testid="confirm-market-close"]')?.click());
 		return sessionId;
 	}
@@ -278,7 +281,6 @@ describe("Market Close across legal-gate rechecks", () => {
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
 		act(() => root.render(createElement(Legal)));
-		await vi.waitFor(() => expect(hasPositionMarketCloseSubmitter()).toBe(true));
 	});
 
 	afterEach(() => {
@@ -299,7 +301,7 @@ describe("Market Close across legal-gate rechecks", () => {
 				await freshPosition.wait();
 				return respond?.(...args);
 			});
-			const sessionId = openAndConfirm();
+			const sessionId = await openAndConfirm();
 			await act(async () => {
 				await freshPosition.entered;
 			});
@@ -333,7 +335,7 @@ describe("Market Close across legal-gate rechecks", () => {
 				response: { type: "order", data: { statuses: [{ filled: { totalSz: "2.5", avgPx: "99.5", oid: 1 } }] } },
 			};
 		});
-		const sessionId = openAndConfirm();
+		const sessionId = await openAndConfirm();
 		await act(async () => {
 			await exchange.entered;
 		});

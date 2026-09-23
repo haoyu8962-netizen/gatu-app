@@ -35,6 +35,7 @@ export const POSITION_MARKET_CLOSE_SUBMITTER_WAIT_MS = 5_000;
 let registration: { execute: PositionMarketCloseExecutor } | null = null;
 const registrationListeners = new Set<() => void>();
 const runningAttempts = new Map<string, Promise<void>>();
+const waitingAttempts = new Map<PositionMarketCloseAttempt, () => void>();
 
 /**
  * Market Close attempts execute in the page-level submit host so that legal, HIP-3, onboarding,
@@ -112,21 +113,37 @@ export function submitPositionMarketClose(input: PositionMarketCloseSubmitInput)
 	return run;
 }
 
+/**
+ * The page that sealed a waiting attempt is going away (its submit host gate unmounted before the host
+ * registered). The attempt fails closed instead of being picked up by a host on another page.
+ */
+export function abandonWaitingPositionMarketCloseAttempts(): void {
+	for (const abandon of [...waitingAttempts.values()]) abandon();
+}
+
 async function dispatchAttempt(attempt: PositionMarketCloseAttempt): Promise<void> {
-	if (!registration) await waitForSubmitter(POSITION_MARKET_CLOSE_SUBMITTER_WAIT_MS);
+	if (!registration) {
+		const abandoned = await waitForSubmitter(attempt, POSITION_MARKET_CLOSE_SUBMITTER_WAIT_MS);
+		if (abandoned) return failAttemptWithoutSubmitter(attempt);
+	}
 	if (registration) return registration.execute(attempt);
 	failAttemptWithoutSubmitter(attempt);
 }
 
-function waitForSubmitter(timeoutMs: number): Promise<void> {
+function waitForSubmitter(attempt: PositionMarketCloseAttempt, timeoutMs: number): Promise<boolean> {
 	return new Promise((resolve) => {
-		const timer = setTimeout(done, timeoutMs);
-		function done() {
+		const timer = setTimeout(() => settle(false), timeoutMs);
+		function settle(abandoned: boolean) {
 			clearTimeout(timer);
-			registrationListeners.delete(done);
-			resolve();
+			registrationListeners.delete(onRegistered);
+			waitingAttempts.delete(attempt);
+			resolve(abandoned);
 		}
-		registrationListeners.add(done);
+		function onRegistered() {
+			settle(false);
+		}
+		registrationListeners.add(onRegistered);
+		waitingAttempts.set(attempt, () => settle(true));
 	});
 }
 

@@ -1,6 +1,7 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { useId, useMemo, useState } from "react";
+import { warmPositionMarketCloseSubmitHost } from "@/components/trade/components/position-market-close-submit-host-loader";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
 import {
@@ -135,7 +136,12 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	const placeholder = renderPlaceholder();
 
 	return (
-		<div className={positionsPanelTabRootClass}>
+		<div
+			className={positionsPanelTabRootClass}
+			onPointerEnter={warmPositionMarketCloseSubmitHost}
+			onPointerDownCapture={warmPositionMarketCloseSubmitHost}
+			onFocusCapture={warmPositionMarketCloseSubmitHost}
+		>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ? (
 					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{placeholder}</div>

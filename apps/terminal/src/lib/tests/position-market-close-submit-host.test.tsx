@@ -8,6 +8,7 @@ import { PositionMarketCloseSubmitHost } from "@/components/trade/components/pos
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
 import { dismissPositionMarketCloseConfirmation } from "@/lib/trade/position-market-close-confirmation-preference";
 import {
+	abandonWaitingPositionMarketCloseAttempts,
 	hasPositionMarketCloseSubmitter,
 	POSITION_MARKET_CLOSE_SUBMITTER_WAIT_MS,
 	submitPositionMarketClose,
@@ -432,6 +433,30 @@ describe("PositionMarketCloseSubmitHost", () => {
 		} finally {
 			vi.useRealTimers();
 		}
+	});
+
+	it("fails a waiting confirmation closed when its page leaves before any host registers", async () => {
+		let sessionId = "";
+		act(() => {
+			sessionId = getPositionMarketCloseActions().open(positionRef, { owner: USER, env: "Mainnet" }) ?? "";
+		});
+		queueIds.push(`market-close:${sessionId}`);
+		const pending = submitPositionMarketClose({ sessionId, confirmedCloseSize: "2.5" });
+		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "validating" });
+
+		act(() => abandonWaitingPositionMarketCloseAttempts());
+		mountHost();
+		await act(async () => {
+			await pending;
+		});
+
+		expect(mocks.executeOrder).not.toHaveBeenCalled();
+		expect(getPositionMarketCloseModal()).toBeNull();
+		expect(getOrderQueueItem(`market-close:${sessionId}`)).toMatchObject({
+			status: "failed",
+			error: { kind: "localized", code: "failed-market-close" },
+			children: [expect.objectContaining({ status: "rejected" })],
+		});
 	});
 
 	it("runs a confirmation that arrived before the host registered once the host mounts", async () => {

@@ -2,6 +2,7 @@ import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ChartLineIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
+import { warmPositionMarketCloseSubmitHost } from "@/components/trade/components/position-market-close-submit-host-loader";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { HL_ALL_DEXS } from "@/config/app";
 import {
@@ -290,7 +291,12 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 
 	return (
 		<>
-			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col")}>
+			<div
+				className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col")}
+				onPointerEnter={warmPositionMarketCloseSubmitHost}
+				onPointerDownCapture={warmPositionMarketCloseSubmitHost}
+				onFocusCapture={warmPositionMarketCloseSubmitHost}
+			>
 				{renderFilterRow(false)}
 				<div className={cn("space-y-2.5 px-3.5 py-3", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 					{filteredPositions.length === 0 ? (
