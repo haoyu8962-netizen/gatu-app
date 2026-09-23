@@ -411,7 +411,12 @@ describe("PositionMarketCloseSubmitHost", () => {
 			queueIds.push(`market-close:${sessionId}`);
 
 			const pending = submitPositionMarketClose({ sessionId, confirmedCloseSize: "2.5" });
-			expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "idle" });
+			expect(getPositionMarketCloseModal()).toMatchObject({
+				sessionId,
+				phase: "validating",
+				presentation: "dismissed",
+			});
+			expect(getOrderQueueItem(`market-close:${sessionId}`)).toMatchObject({ status: "pending" });
 			await act(async () => {
 				await vi.advanceTimersByTimeAsync(POSITION_MARKET_CLOSE_SUBMITTER_WAIT_MS);
 				await pending;
@@ -422,6 +427,7 @@ describe("PositionMarketCloseSubmitHost", () => {
 			expect(getOrderQueueItem(`market-close:${sessionId}`)).toMatchObject({
 				status: "failed",
 				error: { kind: "localized", code: "failed-market-close" },
+				children: [expect.objectContaining({ status: "rejected" })],
 			});
 		} finally {
 			vi.useRealTimers();

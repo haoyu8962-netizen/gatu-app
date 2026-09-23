@@ -11,7 +11,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - Market Close submissions now run in a page-level host. A brief legal-status recheck
   (wallet reconnect or a failed background refresh) no longer cancels a confirmed close or
   releases its in-flight guard early, and switching the account tab, mobile view or layout
-  during a direct close no longer lets the order go out on frozen position data.
+  during a direct close no longer lets the order go out on frozen position data. A
+  confirmation is sealed at the click even while the host is still loading: the dialog
+  closes, the pending notification appears, the size can no longer change, and repeated
+  confirmations of the same session reuse that one attempt.
 
 - Stacked order options in the trading panel keep each click or tap target inside its own
   28px row. Previously the checkbox's 44px hit layer let a click on the lower edge of

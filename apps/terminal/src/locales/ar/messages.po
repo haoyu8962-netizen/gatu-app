@@ -902,8 +902,8 @@ msgid "Atomic decimals"
 msgstr "المنازل العشرية للوحدة الذرية"
 
 #: src/lib/trade/order-notification-copy.ts
-msgid "Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size."
-msgstr "لا يُوضع TP/SL المرفق إلا بعد تنفيذ الأمر بالكامل. اضبط TP/SL على المركز لحماية الحجم المنفَّذ."
+msgid "Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL."
+msgstr "لا يُوضع TP/SL المرفق إلا إذا نُفِّذ الأمر بالكامل، أو أُلغي الجزء المتبقي بسبب عدم كفاية الهامش. راجع TP/SL لمركزك."
 
 #: src/components/staking/staking-view.tsx
 #: src/components/vaults/vaults-page.tsx

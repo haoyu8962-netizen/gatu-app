@@ -902,8 +902,8 @@ msgid "Atomic decimals"
 msgstr "原子单位小数位"
 
 #: src/lib/trade/order-notification-copy.ts
-msgid "Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size."
-msgstr "附带的止盈 / 止损仅在订单完全成交后下达。如需保护已成交部分，请在持仓上设置止盈 / 止损。"
+msgid "Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL."
+msgstr "附带的止盈 / 止损只在订单完全成交，或剩余部分因保证金不足被取消时才会下达。请检查持仓的止盈 / 止损。"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/vaults/vaults-page.tsx

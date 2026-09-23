@@ -215,6 +215,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/position-market-close-modal.test.tsx \
   src/lib/tests/position-market-close-action.test.tsx \
   src/lib/tests/position-market-close-submit-host.test.tsx \
+  src/lib/tests/position-market-close-submit-lifecycle.test.tsx \
   src/lib/tests/global-modals-market-close-legal.test.tsx \
   src/lib/tests/position-market-close.test.ts \
   src/lib/tests/trading-action-button-label-contract.test.ts \

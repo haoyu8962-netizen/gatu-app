@@ -1,30 +1,32 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
-import { registerPositionMarketCloseSubmitter } from "@/lib/trade/position-market-close-submitter";
+import {
+	type PositionMarketCloseAttempt,
+	registerPositionMarketCloseSubmitter,
+} from "@/lib/trade/position-market-close-submitter";
 import { discardPositionMarketCloseModal, getPositionMarketCloseModal } from "@/stores/use-global-modal-store";
 
 export function PositionMarketCloseSubmitHost() {
-	const { submit } = usePositionMarketCloseSubmit();
-	const submitRef = useRef(submit);
-	const runningSessionIdsRef = useRef(new Set<string>());
+	const { execute } = usePositionMarketCloseSubmit();
+	const executeRef = useRef(execute);
+	const runningAttemptsRef = useRef(new Set<PositionMarketCloseAttempt>());
 
 	useLayoutEffect(() => {
-		submitRef.current = submit;
+		executeRef.current = execute;
 	});
 
 	useEffect(() => {
-		const runningSessionIds = runningSessionIdsRef.current;
-		const unregister = registerPositionMarketCloseSubmitter((input) => {
-			runningSessionIds.add(input.sessionId);
-			return submitRef.current(input).finally(() => runningSessionIds.delete(input.sessionId));
+		const runningAttempts = runningAttemptsRef.current;
+		const unregister = registerPositionMarketCloseSubmitter((attempt) => {
+			runningAttempts.add(attempt);
+			return executeRef.current(attempt).finally(() => runningAttempts.delete(attempt));
 		});
 		return () => {
 			unregister();
 			const session = getPositionMarketCloseModal();
-			if (
-				session?.phase === "reconciling" ||
-				(session && session.phase !== "idle" && runningSessionIds.has(session.sessionId))
-			) {
+			if (!session) return;
+			const isRunningHere = [...runningAttempts].some((attempt) => attempt.sessionId === session.sessionId);
+			if (session.phase === "reconciling" || (session.phase !== "idle" && isRunningHere)) {
 				discardPositionMarketCloseModal();
 			}
 		};

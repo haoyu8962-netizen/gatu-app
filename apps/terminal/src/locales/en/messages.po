@@ -902,8 +902,8 @@ msgid "Atomic decimals"
 msgstr "Atomic decimals"
 
 #: src/lib/trade/order-notification-copy.ts
-msgid "Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size."
-msgstr "Attached TP/SL is placed only after the order fully fills. Set TP/SL on the position to protect the filled size."
+msgid "Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL."
+msgstr "Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL."
 
 #: src/components/staking/staking-view.tsx
 #: src/components/vaults/vaults-page.tsx

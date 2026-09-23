@@ -29,7 +29,7 @@ import {
 import { toBig } from "@/lib/trade/numbers";
 import { getOrderAssetReservationState, runWithAvailableOrderAssetLocks } from "@/lib/trade/order-asset-lock";
 import { dismissPositionMarketCloseConfirmation } from "@/lib/trade/position-market-close-confirmation-preference";
-import type { PositionMarketCloseSubmitInput } from "@/lib/trade/position-market-close-submitter";
+import type { PositionMarketCloseAttempt } from "@/lib/trade/position-market-close-submitter";
 import {
 	getPositionMarketClosePlanFeedback,
 	localizedPositionSubmitFeedback,
@@ -42,10 +42,11 @@ import {
 	getPositionMarketCloseModal,
 	type PositionMarketClosePresentation,
 	type PositionMarketCloseSession,
+	type PositionMarketCloseSizingIntent,
 } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBpsString } from "@/stores/use-global-settings-store";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
-import { addOrderQueueItem, getOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
+import { getOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import { getPersistedPendingOrderAssetState } from "@/stores/use-pending-order-store";
 import { getPersistedPendingTwapAssetState } from "@/stores/use-pending-twap-store";
 
@@ -122,45 +123,25 @@ export function usePositionMarketCloseSubmit() {
 
 	const trackedOrder = useTrackedOrder({ executionGuard: assertExecutionContext });
 
-	async function submit(input: PositionMarketCloseSubmitInput): Promise<void> {
+	async function execute(attempt: PositionMarketCloseAttempt): Promise<void> {
 		const actions = getPositionMarketCloseActions();
-		const currentSession = getPositionMarketCloseModal();
-		if (!currentSession || currentSession.sessionId !== input.sessionId || currentSession.phase !== "idle") return;
-
-		const openedPresentation = currentSession.presentation;
-		const queueId = addOrderQueueItem({
-			id: `market-close:${input.sessionId}`,
-			owner: currentSession.owner,
-			env: currentSession.env,
-			operation: "market-close",
-			market: currentSession.position.coin,
-			size: input.confirmedCloseSize ?? undefined,
-			orderType: "market",
-			countMode: "filled",
-			status: "pending",
-			children: [
-				{
-					assetId: currentSession.position.assetId,
-					market: currentSession.position.coin,
-					size: input.confirmedCloseSize ?? undefined,
-					status: "pending",
-				},
-			],
-		});
-		actions.dismiss(input.sessionId);
-		actions.updatePhase(input.sessionId, "validating");
+		const { queueId } = attempt;
 
 		try {
-			const confirmedCloseSize = resolveConfirmedCloseSize(openedPresentation, input.confirmedCloseSize);
+			const sealedSession = getPositionMarketCloseModal();
+			if (!sealedSession || sealedSession.sessionId !== attempt.sessionId || sealedSession.phase !== "validating") {
+				throw positionSubmitFeedbackCause("trading-data-changed");
+			}
+			const confirmedCloseSize = resolveConfirmedCloseSize(attempt.openedPresentation, attempt.confirmedCloseSize);
 			const lockResult = await runWithAvailableOrderAssetLocks(
 				{
-					env: currentSession.env,
-					owner: currentSession.owner,
-					assetIds: [currentSession.position.assetId],
+					env: attempt.env,
+					owner: attempt.owner,
+					assetIds: [attempt.position.assetId],
 				},
 				async (assetLockLease) => {
 					const lockedSession = getPositionMarketCloseModal();
-					if (!lockedSession || lockedSession.sessionId !== input.sessionId || lockedSession.phase !== "validating") {
+					if (!lockedSession || lockedSession.sessionId !== attempt.sessionId || lockedSession.phase !== "validating") {
 						throw positionSubmitFeedbackCause("trading-data-changed");
 					}
 					assertSessionIdentity(lockedSession, liveContextRef.current.clientKey, liveContextRef.current.env);
@@ -194,7 +175,7 @@ export function usePositionMarketCloseSubmit() {
 					const refreshedSession = getPositionMarketCloseModal();
 					if (
 						!refreshedSession ||
-						refreshedSession.sessionId !== input.sessionId ||
+						refreshedSession.sessionId !== attempt.sessionId ||
 						refreshedSession.phase !== "validating"
 					) {
 						throw positionSubmitFeedbackCause("trading-data-changed");
@@ -208,8 +189,17 @@ export function usePositionMarketCloseSubmit() {
 					if (!plannedLivePosition || !toBig(plannedLivePosition.szi)) {
 						throw positionSubmitFeedbackCause("trading-data-changed");
 					}
-					const closeResolution = resolveCurrentCloseSize(refreshedSession, fresh.signedPositionSize);
-					assertPercentageCloseWithinLiveIntent(refreshedSession, plannedLivePosition.szi, closeResolution);
+					const closeResolution = resolveCurrentCloseSize(
+						attempt.sizingIntent,
+						refreshedSession.position.szDecimals,
+						fresh.signedPositionSize,
+					);
+					assertPercentageCloseWithinLiveIntent(
+						attempt.sizingIntent,
+						refreshedSession.position.szDecimals,
+						plannedLivePosition.szi,
+						closeResolution,
+					);
 					assertCloseSizeWithinConfirmedSize(closeResolution, confirmedCloseSize);
 
 					const plan = buildOrderPlan({
@@ -224,7 +214,7 @@ export function usePositionMarketCloseSubmit() {
 					if (plan.errors.length > 0 || plan.orders.length !== 1) {
 						throw new PositionSubmitFeedbackCause(getPositionMarketClosePlanFeedback(plan.errors[0]));
 					}
-					if (input.dismissFutureConfirmation) {
+					if (attempt.dismissFutureConfirmation) {
 						const preferenceStatus = dismissPositionMarketCloseConfirmation({
 							owner: refreshedSession.owner,
 							env: refreshedSession.env,
@@ -259,7 +249,7 @@ export function usePositionMarketCloseSubmit() {
 						grouping: plan.grouping,
 						priceReceivedAt: fresh.priceReceivedAt,
 					};
-					actions.updatePhase(input.sessionId, "submitting");
+					actions.updatePhase(attempt.sessionId, "submitting");
 
 					const submission = await trackedOrder.submitOrder(
 						{ orders: plan.orders, grouping: plan.grouping },
@@ -280,8 +270,8 @@ export function usePositionMarketCloseSubmit() {
 							error: localizedPositionSubmitFeedback("blocked-market"),
 							children: targets.map((target) => ({ ...target, status: "rejected" })),
 						});
-						actions.updatePhase(input.sessionId, "idle");
-						actions.close(input.sessionId);
+						actions.updatePhase(attempt.sessionId, "idle");
+						actions.close(attempt.sessionId);
 						return;
 					}
 					if (submission.state === "reconciling") {
@@ -291,7 +281,7 @@ export function usePositionMarketCloseSubmit() {
 								child.status === "pending" ? { ...child, status: "unknown" } : child,
 							),
 						});
-						actions.updatePhase(input.sessionId, "reconciling");
+						actions.updatePhase(attempt.sessionId, "reconciling");
 						return;
 					}
 
@@ -308,8 +298,8 @@ export function usePositionMarketCloseSubmit() {
 						acceptedCount: 1,
 						totalCount: 1,
 					});
-					actions.updatePhase(input.sessionId, "idle");
-					actions.close(input.sessionId);
+					actions.updatePhase(attempt.sessionId, "idle");
+					actions.close(attempt.sessionId);
 				},
 			);
 			if (!lockResult.supported) {
@@ -331,16 +321,16 @@ export function usePositionMarketCloseSubmit() {
 				children: children.map((child) => (child.status === "pending" ? { ...child, status: "rejected" } : child)),
 			});
 			const activeSession = getPositionMarketCloseModal();
-			if (activeSession?.sessionId === input.sessionId) {
-				actions.updatePhase(input.sessionId, "idle");
-				actions.close(input.sessionId);
+			if (activeSession?.sessionId === attempt.sessionId) {
+				actions.updatePhase(attempt.sessionId, "idle");
+				actions.close(attempt.sessionId);
 			}
 		} finally {
-			if (executionContextRef.current?.sessionId === input.sessionId) executionContextRef.current = null;
+			if (executionContextRef.current?.sessionId === attempt.sessionId) executionContextRef.current = null;
 		}
 	}
 
-	return { submit };
+	return { execute };
 }
 
 function assertSessionIdentity(
@@ -397,19 +387,20 @@ function assertNoActiveTwap(session: PositionMarketCloseSession, live: LiveConte
 }
 
 function resolveCurrentCloseSize(
-	session: PositionMarketCloseSession,
+	sizingIntent: PositionMarketCloseSizingIntent,
+	szDecimals: number,
 	freshSignedPositionSize: string,
 ): PositionMarketCloseResolution {
 	const input = {
 		signedPositionSize: freshSignedPositionSize,
-		szDecimals: session.position.szDecimals,
+		szDecimals,
 	};
 	const resolution =
-		session.sizingIntent.kind === "size"
-			? resolvePositionMarketCloseSize({ ...input, closeSize: session.sizingIntent.value })
+		sizingIntent.kind === "size"
+			? resolvePositionMarketCloseSize({ ...input, closeSize: sizingIntent.value })
 			: resolvePositionMarketClosePercent({
 					...input,
-					percent: session.sizingIntent.kind === "max" ? "100" : session.sizingIntent.value,
+					percent: sizingIntent.kind === "max" ? "100" : sizingIntent.value,
 				});
 	if (resolution.errors.length > 0) {
 		throw new PositionSubmitFeedbackCause(getPositionMarketClosePlanFeedback(resolution.errors[0]));
@@ -418,15 +409,16 @@ function resolveCurrentCloseSize(
 }
 
 function assertPercentageCloseWithinLiveIntent(
-	session: PositionMarketCloseSession,
+	sizingIntent: PositionMarketCloseSizingIntent,
+	szDecimals: number,
 	liveSignedPositionSize: string,
 	closeResolution: PositionMarketCloseResolution,
 ): void {
-	if (session.sizingIntent.kind !== "percent") return;
+	if (sizingIntent.kind !== "percent") return;
 	const liveResolution = resolvePositionMarketClosePercent({
 		signedPositionSize: liveSignedPositionSize,
-		szDecimals: session.position.szDecimals,
-		percent: session.sizingIntent.value,
+		szDecimals,
+		percent: sizingIntent.value,
 	});
 	const plannedCloseSize = toBig(closeResolution.normalizedSize);
 	const liveIntentLimit = toBig(liveResolution.normalizedSize);

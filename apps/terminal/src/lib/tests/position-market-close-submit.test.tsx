@@ -9,6 +9,10 @@ import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-
 import { reserveOrderAssets, runWithOrderAssetLocks } from "@/lib/trade/order-asset-lock";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import {
+	beginPositionMarketCloseAttempt,
+	type PositionMarketCloseSubmitInput,
+} from "@/lib/trade/position-market-close-submitter";
+import {
 	formatPositionSubmitFeedback,
 	localizedPositionSubmitFeedback,
 	type PositionSubmitFeedbackCode,
@@ -259,9 +263,14 @@ interface SubmitConfirmedOptions {
 	dismissFutureConfirmation?: boolean;
 }
 
+function submitThroughHook(input: PositionMarketCloseSubmitInput): Promise<void> {
+	const attempt = beginPositionMarketCloseAttempt(input);
+	return attempt ? currentHook().execute(attempt) : Promise.resolve();
+}
+
 function submitConfirmed(sessionId: string, options: SubmitConfirmedOptions = {}): Promise<void> {
 	const { confirmedCloseSize = "2.5", dismissFutureConfirmation } = options;
-	return currentHook().submit({ sessionId, confirmedCloseSize, dismissFutureConfirmation });
+	return submitThroughHook({ sessionId, confirmedCloseSize, dismissFutureConfirmation });
 }
 
 function createExecutionGate() {
@@ -1001,7 +1010,7 @@ describe("usePositionMarketCloseSubmit", () => {
 			const sessionId = openSession();
 
 			await act(async () => {
-				await currentHook().submit({
+				await submitThroughHook({
 					sessionId,
 					confirmedCloseSize: value as string | null,
 					dismissFutureConfirmation: true,

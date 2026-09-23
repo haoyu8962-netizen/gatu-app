@@ -171,7 +171,14 @@ describe("usePositionMarketCloseAction", () => {
 			sizingIntent: { kind: "max" },
 		});
 		expect(mocks.submit).toHaveBeenCalledOnce();
-		expect(mocks.submit).toHaveBeenCalledWith({ sessionId: firstSessionId, confirmedCloseSize: null });
+		expect(mocks.submit).toHaveBeenCalledWith(
+			expect.objectContaining({
+				sessionId: firstSessionId,
+				openedPresentation: "direct",
+				sizingIntent: { kind: "max" },
+				confirmedCloseSize: null,
+			}),
+		);
 	});
 
 	it("falls back to the confirmation dialog while no page-level submit host is mounted", () => {
@@ -196,7 +203,13 @@ describe("usePositionMarketCloseAction", () => {
 			presentation: "direct",
 			sizingIntent: { kind: "max" },
 		});
-		expect(mocks.submit).toHaveBeenCalledWith({ sessionId: session?.sessionId, confirmedCloseSize: null });
+		expect(mocks.submit).toHaveBeenCalledWith(
+			expect.objectContaining({
+				sessionId: session?.sessionId,
+				openedPresentation: "direct",
+				confirmedCloseSize: null,
+			}),
+		);
 	});
 
 	it.each([
