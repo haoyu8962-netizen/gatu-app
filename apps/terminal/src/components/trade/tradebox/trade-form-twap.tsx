@@ -27,7 +27,7 @@ interface Props {
 	compact?: boolean;
 	desktop?: boolean;
 	mobileSafe?: boolean;
-	reduceOnly?: { checked: boolean; onCheckedChange: (checked: boolean) => void };
+	reduceOnly?: { disabled?: boolean; checked: boolean; onCheckedChange: (checked: boolean) => void };
 }
 
 const labelClass = "text-2xs leading-none text-trading-panel-subtle";
@@ -95,10 +95,15 @@ export function TradeFormTwap({
 	const quoteUnitClass = compact || desktop ? "trade-card-label-full" : undefined;
 
 	const optionProps = {
-		className: cn("min-w-0 max-w-full items-center gap-1.5", mobileSafe ? "min-h-6 w-full gap-2" : "min-h-5"),
+		className: cn(
+			"min-w-0 max-w-full items-center gap-1.5",
+			mobileSafe
+				? "min-h-6 w-full gap-2"
+				: "relative isolate min-h-5 after:absolute after:inset-x-0 after:-inset-y-1 after:-z-10 after:content-['']",
+		),
 		controlClassName: cn(
 			"size-[17px] rounded-[5px] border-trading-panel-stroke-control data-checked:border-trading-panel-control data-checked:bg-trading-panel-control",
-			mobileSafe && "size-4 rounded-4 after:size-6",
+			mobileSafe ? "size-4 rounded-4 after:size-6" : "after:h-7 after:w-full",
 		),
 		indicatorClassName: "text-trading-panel-on-control",
 		labelClassName: "text-xs text-trading-panel-muted [overflow-wrap:anywhere]",
@@ -156,7 +161,7 @@ export function TradeFormTwap({
 				</div>
 			</div>
 			<div data-slot="trade-twap-options" className={mobileSafe ? "flex min-w-0 flex-col" : "contents"}>
-				<div className={mobileSafe ? "contents" : "flex min-w-0 flex-wrap items-center gap-x-4"}>
+				<div className={mobileSafe ? "contents" : "flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2"}>
 					<Checkbox
 						{...optionProps}
 						disabled={disabled}
@@ -167,7 +172,7 @@ export function TradeFormTwap({
 					{reduceOnly && (
 						<Checkbox
 							{...optionProps}
-							disabled={disabled}
+							disabled={reduceOnly.disabled ?? disabled}
 							checked={reduceOnly.checked}
 							onCheckedChange={(checked) => reduceOnly.onCheckedChange(checked === true)}
 							label={t`Reduce Only`}

@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,6 +14,7 @@ const EMBEDDED_WALLET = "0x2222222222222222222222222222222222222222";
 
 const testState = vi.hoisted(() => ({
 	depositModalOpen: false,
+	isTestnet: false,
 	trackingOptions: null as Record<string, unknown> | null,
 	tracking: {
 		data: undefined as { status: "waiting" | "forward-submitted" } | undefined,
@@ -37,7 +40,7 @@ vi.mock("@/hooks/trade/use-cctp-deposit-tracking", () => ({
 }));
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({ useWalletSession: () => testState.walletSession }));
 vi.mock("@/stores/use-global-modal-store", () => ({ useDepositModalOpen: () => testState.depositModalOpen }));
-vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => false }));
+vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => testState.isTestnet }));
 
 import { CctpDepositTrackingNotifier } from "@/components/trade/tradebox/cctp-deposit-tracking-notifier";
 
@@ -47,6 +50,7 @@ describe("CctpDepositTrackingNotifier", () => {
 
 	beforeEach(() => {
 		testState.depositModalOpen = false;
+		testState.isTestnet = false;
 		testState.trackingOptions = null;
 		testState.tracking = {
 			data: undefined,
@@ -95,7 +99,12 @@ describe("CctpDepositTrackingNotifier", () => {
 
 		expect(toastMocks.loading).toHaveBeenCalledWith(
 			"Forwarding deposit",
-			expect.objectContaining({ id: `cctp-deposit:${SOURCE_HASH}`, duration: Number.POSITIVE_INFINITY }),
+			expect.objectContaining({
+				id: expect.stringMatching(
+					new RegExp(`^cctp-deposit:Mainnet:${EXTERNAL_WALLET}:${SOURCE_HASH}:presentation:\\d+$`),
+				),
+				duration: Number.POSITIVE_INFINITY,
+			}),
 		);
 		expect(testState.trackingOptions).toMatchObject({ poll: true, removeOnForwardSubmitted: true });
 	});
@@ -105,12 +114,17 @@ describe("CctpDepositTrackingNotifier", () => {
 		render();
 		testState.tracking.data = { status: "forward-submitted" };
 		render();
+		expect(toastMocks.success.mock.calls[0]?.[1]?.id).toBe(toastMocks.loading.mock.calls[0]?.[1]?.id);
 		testState.tracking = { ...testState.tracking, data: undefined, recoveryRecord: null, trackedSourceHash: undefined };
 		render();
 
 		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith(
 			"Forward transaction submitted",
-			expect.objectContaining({ id: `cctp-deposit:${SOURCE_HASH}` }),
+			expect.objectContaining({
+				id: expect.stringMatching(
+					new RegExp(`^cctp-deposit:Mainnet:${EXTERNAL_WALLET}:${SOURCE_HASH}:presentation:\\d+$`),
+				),
+			}),
 		);
 		expect(toastMocks.dismiss).not.toHaveBeenCalled();
 	});
@@ -128,7 +142,9 @@ describe("CctpDepositTrackingNotifier", () => {
 			expect.objectContaining({
 				closeButton: true,
 				duration: Number.POSITIVE_INFINITY,
-				id: `cctp-deposit:${SOURCE_HASH}`,
+				id: expect.stringMatching(
+					new RegExp(`^cctp-deposit:Mainnet:${EXTERNAL_WALLET}:${SOURCE_HASH}:presentation:\\d+$`),
+				),
 			}),
 		);
 	});
@@ -140,7 +156,9 @@ describe("CctpDepositTrackingNotifier", () => {
 
 		testState.depositModalOpen = true;
 		render();
-		expect(toastMocks.dismiss).toHaveBeenCalledExactlyOnceWith(`cctp-deposit:${SOURCE_HASH}`);
+		expect(toastMocks.dismiss).toHaveBeenCalledExactlyOnceWith(
+			expect.stringMatching(new RegExp(`^cctp-deposit:Mainnet:${EXTERNAL_WALLET}:${SOURCE_HASH}:presentation:\\d+$`)),
+		);
 		expect(testState.trackingOptions).toMatchObject({ poll: false, removeOnForwardSubmitted: false });
 
 		testState.depositModalOpen = false;
@@ -154,7 +172,9 @@ describe("CctpDepositTrackingNotifier", () => {
 		testState.tracking = { ...testState.tracking, data: undefined, recoveryRecord: null, trackedSourceHash: undefined };
 		render();
 
-		expect(toastMocks.dismiss).toHaveBeenCalledExactlyOnceWith(`cctp-deposit:${SOURCE_HASH}`);
+		expect(toastMocks.dismiss).toHaveBeenCalledExactlyOnceWith(
+			expect.stringMatching(new RegExp(`^cctp-deposit:Mainnet:${EXTERNAL_WALLET}:${SOURCE_HASH}:presentation:\\d+$`)),
+		);
 	});
 
 	it("reads an embedded wallet's record without polling or removing it", () => {
@@ -172,5 +192,47 @@ describe("CctpDepositTrackingNotifier", () => {
 			removeOnForwardSubmitted: false,
 		});
 		expect(toastMocks.loading).toHaveBeenCalledOnce();
+	});
+	it.each(["owner", "network"])("clears even a persistent terminal error when the %s changes", (change) => {
+		trackWaitingDeposit();
+		testState.tracking.error = new DefinitiveDepositSourceFailureError("source-transaction-reverted", "Reverted");
+		testState.tracking.isError = true;
+		render();
+		if (change === "owner") testState.walletSession.walletAddress = EMBEDDED_WALLET;
+		else testState.isTestnet = true;
+		testState.tracking = { ...testState.tracking, data: undefined, recoveryRecord: null, trackedSourceHash: undefined };
+		render();
+		expect(toastMocks.dismiss).toHaveBeenCalledWith(
+			expect.stringMatching(new RegExp(`^cctp-deposit:Mainnet:${EXTERNAL_WALLET}:${SOURCE_HASH}:presentation:\\d+$`)),
+		);
+	});
+
+	it("retranslates a terminal notification using its original ID after the source record is removed", () => {
+		trackWaitingDeposit();
+		testState.tracking.data = { status: "forward-submitted" };
+		render();
+		testState.tracking = { ...testState.tracking, data: undefined, recoveryRecord: null, trackedSourceHash: undefined };
+		render();
+		act(() =>
+			i18n.loadAndActivate({ locale: "zh", messages: { [msg`Forward transaction submitted`.id]: "转发交易已提交" } }),
+		);
+		expect(toastMocks.success).toHaveBeenLastCalledWith("转发交易已提交", expect.anything());
+		expect(toastMocks.success).toHaveBeenCalledTimes(2);
+		expect(toastMocks.success.mock.calls[1]?.[1]?.id).toBe(toastMocks.success.mock.calls[0]?.[1]?.id);
+		expect(toastMocks.success.mock.calls[1]?.[1]).toMatchObject({
+			id: expect.stringMatching(
+				new RegExp(`^cctp-deposit:Mainnet:${EXTERNAL_WALLET}:${SOURCE_HASH}:presentation:\\d+$`),
+			),
+		});
+	});
+
+	it("does not replay a dismissed terminal notification during a language switch", () => {
+		trackWaitingDeposit();
+		testState.tracking.data = { status: "forward-submitted" };
+		render();
+		const options = toastMocks.success.mock.calls[0]?.[1] as { onAutoClose: () => void };
+		options.onAutoClose();
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+		expect(toastMocks.success).toHaveBeenCalledOnce();
 	});
 });

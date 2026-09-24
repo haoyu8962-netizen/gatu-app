@@ -1,7 +1,6 @@
 import { ModalDescription, ModalTitle } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
 import type { PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
 import { usePositionCloseAllSubmit } from "@/hooks/trade/use-position-close-all-submit";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
@@ -11,6 +10,7 @@ import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import type { PositionCloseAllSession } from "@/stores/use-position-dialog-store";
 import { TradingActionButton } from "../components/trading-action-button";
+import { PositionCloseAllTargets } from "./position-close-all-targets";
 import { PositionCloseDialogContent } from "./position-close-dialog-content";
 import { PositionCloseDialogFooter } from "./position-close-dialog-footer";
 import { PositionCloseDialogHeader } from "./position-close-dialog-header";
@@ -100,22 +100,9 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 		submittedRef.current = true;
 		setIsSubmitted(true);
 		try {
-			const outcome = await submission.submit();
-			if (outcome.state === "blocked") {
-				toast.warning(t`Another order for one of these markets is still being confirmed.`);
-			} else if (outcome.state === "reconciling") {
-				toast.info(t`Close orders submitted. Confirming exchange status; do not retry.`);
-			} else if (outcome.state === "partial") {
-				toast.warning(
-					t`${outcome.acceptedCount} of ${outcome.totalCount} close orders were accepted. Review positions before retrying.`,
-				);
-			} else {
-				toast.success(t`All close orders filled`, {
-					description: t`${positionCount} positions were closed at market.`,
-				});
-			}
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : t`Failed to submit close orders`);
+			await submission.submit();
+		} catch {
+			return;
 		} finally {
 			onOpenChange(false);
 		}
@@ -146,6 +133,10 @@ function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps)
 			</PositionCloseDialogHeader>
 
 			<PositionCloseDialogContent>
+				<p className="text-xs text-market-close-muted">
+					{t`This closes all perpetual positions in this account, including positions hidden by filters.`}
+				</p>
+				<PositionCloseAllTargets targets={snapshot.targets} />
 				<PositionCloseSummary
 					testId="position-close-all-summary"
 					ariaLabel={t`Close all positions summary`}

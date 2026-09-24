@@ -121,6 +121,75 @@ async function expectHitTarget(control: Locator) {
 	).toBe(true);
 }
 
+async function expectOptionSpacing(page: Page, expectedGap: number, expectedHeight: number) {
+	await expect
+		.poll(() =>
+			page.locator('[data-slot="trade-order-options"] label').evaluateAll((labels) => {
+				const visible = labels
+					.filter((label) => label.getClientRects().length > 0)
+					.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+				if (visible.length < 2) return null;
+				const first = visible[0].getBoundingClientRect();
+				const second = visible[1].getBoundingClientRect();
+				return { gap: second.top - first.bottom, height: first.height };
+			}),
+		)
+		.toEqual({ gap: expectedGap, height: expectedHeight });
+}
+
+async function expectOptionHitAreasFillTheGap(page: Page, gap: number) {
+	await expect
+		.poll(() =>
+			page.locator('[data-slot="trade-order-options"] label').evaluateAll((labels) => {
+				const visible = labels
+					.filter((label) => label.getClientRects().length > 0)
+					.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+				if (visible.length < 2) return null;
+				const misses: string[] = [];
+				const heights = visible.map((label, index) => {
+					const rect = label.getBoundingClientRect();
+					const control = label.querySelector('[role="checkbox"]');
+					if (!control) {
+						misses.push(`${index}: no control`);
+						return null;
+					}
+					const controlRect = control.getBoundingClientRect();
+					const controlX = controlRect.left + controlRect.width / 2;
+					const labelX = rect.left + rect.width / 2;
+					const probes: Array<[string, number, number, Element]> = [
+						["control center", controlX, controlRect.top + controlRect.height / 2, control],
+						["control top", controlX, controlRect.top + 1, control],
+						["control bottom", controlX, controlRect.bottom - 1, control],
+					];
+					if (index > 0) {
+						probes.push(["label above", labelX, rect.top - 3, label], ["control above", controlX, rect.top - 3, label]);
+					}
+					if (index < visible.length - 1) {
+						probes.push(
+							["label below", labelX, rect.bottom + 3, label],
+							["control below", controlX, rect.bottom + 3, label],
+						);
+					}
+					for (const [name, x, y, owner] of probes) {
+						const hit = document.elementFromPoint(x, y);
+						if (!hit || !(hit === owner || owner.contains(hit))) misses.push(`${index}: ${name}`);
+					}
+					return {
+						label: Number.parseFloat(getComputedStyle(label, "::after").height) - rect.height,
+						control: Number.parseFloat(getComputedStyle(control, "::after").height),
+					};
+				});
+				return {
+					misses,
+					labelExtensions: [...new Set(heights.map((height) => height?.label))],
+					controlHeights: [...new Set(heights.map((height) => height?.control))],
+					rowPitch: visible[1].getBoundingClientRect().top - visible[0].getBoundingClientRect().top,
+				};
+			}),
+		)
+		.toEqual({ misses: [], labelExtensions: [gap], controlHeights: [20 + gap], rowPitch: 20 + gap });
+}
+
 test.beforeEach(async ({ page }) => {
 	page.on("pageerror", (error) => {
 		throw error;
@@ -128,6 +197,79 @@ test.beforeEach(async ({ page }) => {
 	await page.route("**/*", (route) =>
 		new URL(route.request().url()).hostname === "127.0.0.1" ? route.continue() : route.abort(),
 	);
+});
+
+test("keeps shared option spacing aligned with the responsive touch contract", async ({ page }) => {
+	await page.setViewportSize({ width: 1400, height: 1330 });
+	await openFixture(page, "en");
+	await expectOptionSpacing(page, 8, 20);
+	await expectOptionHitAreasFillTheGap(page, 8);
+	expect((await probeNearestOptionOwner(page, '[data-slot="trade-order-options"]:visible')).violations).toEqual({});
+
+	await page.setViewportSize({ width: 375, height: 666 });
+	await expectOptionSpacing(page, 8, 20);
+	await expectOptionHitAreasFillTheGap(page, 8);
+	expect((await probeNearestOptionOwner(page, '[data-slot="trade-order-options"]:visible')).violations).toEqual({});
+});
+
+async function probeNearestOptionOwner(page: Page, container: string) {
+	return page.locator(container).evaluate((root) => {
+		const labels = [...root.querySelectorAll("label")].filter((label) => label.getClientRects().length > 0);
+		const rects = labels.map((label) => label.getBoundingClientRect());
+		const distance = (x: number, y: number, rect: DOMRect) =>
+			Math.hypot(Math.max(rect.left - x, 0, x - rect.right), Math.max(rect.top - y, 0, y - rect.bottom));
+		const left = Math.min(...rects.map((rect) => rect.left)) - 6;
+		const right = Math.max(...rects.map((rect) => rect.right)) + 6;
+		const top = Math.min(...rects.map((rect) => rect.top)) - 6;
+		const bottom = Math.max(...rects.map((rect) => rect.bottom)) + 6;
+		const violations: Record<string, number> = {};
+		const firstViolations: Record<string, string> = {};
+		for (let y = top; y <= bottom; y += 2) {
+			for (let x = left; x <= right; x += 2) {
+				const hit = document.elementFromPoint(x, y);
+				const owner = hit ? labels.findIndex((label) => label.contains(hit)) : -1;
+				if (owner < 0) continue;
+				const distances = rects.map((rect) => distance(x, y, rect));
+				const nearest = Math.min(...distances);
+				if (distances[owner] <= nearest + 0.5) continue;
+				const pair = `${labels[owner].textContent} takes ${labels[distances.indexOf(nearest)].textContent}`;
+				violations[pair] = (violations[pair] ?? 0) + 1;
+				firstViolations[pair] ??= `owner+${Math.round((x - rects[owner].left) * 10) / 10},${Math.round((y - rects[owner].top) * 10) / 10} rects ${rects.map((rect) => [rect.left, rect.top, rect.right, rect.bottom].join("/")).join(" ")}`;
+			}
+		}
+		const controlHitHeights = labels.map((label) => {
+			const control = label.querySelector('[role="checkbox"]');
+			return control ? getComputedStyle(control, "::after").height : null;
+		});
+		return { labels: labels.length, violations, firstViolations, controlHitHeights: [...new Set(controlHitHeights)] };
+	});
+}
+
+test("keeps TWAP option hit areas with their nearest option", async ({ page }) => {
+	for (const viewport of [
+		{ width: 1001, height: 900, hitHeight: "28px" },
+		{ width: 1400, height: 1330, hitHeight: "28px" },
+		{ width: 1545, height: 900, hitHeight: "28px" },
+		{ width: 375, height: 666, hitHeight: "24px" },
+	]) {
+		await page.setViewportSize({ width: 1400, height: 1330 });
+		await openFixture(page, "en");
+		for (const locale of ["en", "zh"] as const) {
+			await page.setViewportSize({ width: 1400, height: 1330 });
+			await page.getByRole("button", { name: locale === "en" ? "English" : "中文", exact: true }).click();
+			await chooseOrder(page, 6, locale);
+			await page.setViewportSize(viewport);
+			const fields = page.locator('[data-slot="trade-twap-fields"]:visible');
+			await expect(fields).toHaveCount(1);
+			await expect(fields).toBeInViewport();
+			expect(await probeNearestOptionOwner(page, '[data-slot="trade-twap-fields"]:visible'), `${viewport.width}px ${locale}`).toEqual({
+				labels: 3,
+				violations: {},
+				firstViolations: {},
+				controlHitHeights: [viewport.hitHeight],
+			});
+		}
+	}
 });
 
 test("fits the reported 1400x1330 Chinese empty Limit with newly expanded TP/SL", async ({ page }) => {

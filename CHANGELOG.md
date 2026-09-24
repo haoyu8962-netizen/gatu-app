@@ -8,6 +8,79 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Market Close submissions now run in a page-level host. A brief legal-status recheck
+  (wallet reconnect or a failed background refresh) no longer cancels a confirmed close or
+  releases its in-flight guard early, and switching the account tab, mobile view or layout
+  during a direct close no longer lets the order go out on frozen position data. A
+  confirmation is sealed at the click even while the host is still loading: the dialog
+  closes, the pending notification appears, the size can no longer change, and repeated
+  confirmations of the same session reuse that one attempt.
+
+- Stacked order options in the trading panel keep each click or tap target inside its own
+  28px row. Previously the checkbox's 44px hit layer let a click on the lower edge of
+  Reduce Only toggle TP/SL; each label now also answers across the adjacent half gap.
+  Desktop TWAP options (Randomize timing, Reduce Only, Advanced Settings) follow the same
+  rule, so a click near one option no longer toggles its neighbour.
+
+- Partial fills of market or limit orders that carried TP/SL now add a neutral note stating
+  Hyperliquid's documented rule: attached TP/SL is placed only if the order fully fills, or
+  if its remainder is canceled for insufficient margin. The note asks the user to review the
+  position's TP/SL and does not claim the attached orders' actual state.
+
+- Settings and the command menu remain usable while the legal status check is
+  pending. Trading and funds dialogs stay gated until the account's legal state
+  is resolved.
+
+- Market-order partial fills now retain their execution result when the `FrontendMarket`
+  remainder is canceled during reconciliation. Ordinary TP/SL cancellations caused by the
+  same partially filled parent no longer add a contradictory order-canceled error; abnormal
+  cancellations and rejected children remain visible. Overflowing notification bodies now
+  use a distinct accessible details label.
+
+- Accepted Scale ladders now show successful submission even when only some levels fill
+  immediately. Reconciled IOC remainders with matching partial-fill evidence retain their
+  execution result without a misleading cancellation error. Execution averages follow the
+  selected number separators, and only overflowing notification content adds a keyboard
+  scroll stop. Partial-result notifications retain their three-second duration.
+
+- Trading notifications now use concise result sentences and compact, wrapping layouts on
+  desktop and mobile. Immediate order-entry fills show actual executed quantity and average price from
+  the exchange response; request prices are no longer presented as execution prices. Partial
+  fills, attached-order failures and uncertain outcomes remain distinct, with order-status-only
+  confirmations omitting unknown execution values. Both layouts share the existing notification
+  stack, account isolation and display durations.
+
+- Trading notifications no longer create duplicate submission cards during development
+  effect replay or leave stale progress behind after an asynchronous close. Each card
+  follows its current task, and closing a notice cannot discard a result arriving in the
+  same update. Existing account isolation, background reconciliation and durations remain.
+
+- Trading feedback now shares one notification stack across application pages. Market Close,
+  Close All, Limit Close, Reverse, TP/SL, margin updates, order edits and cancellations show an
+  immediate task that updates as the request is confirmed. Close All lists each market's result;
+  partial fills, uncertain outcomes, failures and cancellations hide after three seconds at the
+  front of the stack, while submission and confirmation progress stays visible. Late confirmations clear
+  outdated errors and remain tied to the account and network that started the request. Pending
+  orders can restore their feedback after a reload without inventing missing trade details.
+  Successful tasks get their display time when they reach the front of the stack, and mobile
+  notifications stay above the bottom navigation. Funds recovery reminders share the stack while
+  keeping their existing review panels; dismissing a trading notice does not cancel its request.
+
+- Mobile Positions now has a `Close all` action beside its single expand/collapse toggle.
+  It opens the same market-close confirmation as desktop for all perpetual positions in the
+  account, including positions hidden by list filters. The confirmation lists each market,
+  direction and quantity before submission. Unready data disables the entry, and a pending
+  submission stays active through tab and desktop/mobile layout changes.
+
+- Reduce Only now sizes percentages and Max from the current opposite position on desktop and
+  mobile, including when opening availability is zero. Oversized or wrong-direction orders are
+  blocked across ordinary, trigger, TWAP and Scale orders; Scale checks the combined size.
+  Quote-unit selections preserve their exact base quantity through confirmation and submission,
+  and Reduce Only displays no opening-margin requirement.
+  Follow-up fixes preserve valid available balances while position data is unavailable,
+  label the Reduce Only Max action accurately in both layouts, and restore the original
+  price basis for ordinary mobile order margin estimates.
+
 - The remaining trading dialogs no longer show progress in their buttons. TP/SL, Adjust Isolated
   Margin, Cancel All Orders, the phone's Modify Order sheet, Swap and Account type close as soon as
   you confirm, and the result arrives as a notification in the bottom-right corner: updated,

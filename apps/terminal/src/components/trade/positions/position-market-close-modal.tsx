@@ -8,7 +8,6 @@ import {
 	resolvePositionMarketClosePercent,
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
-import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD } from "@/lib/format";
@@ -18,6 +17,7 @@ import { toBig } from "@/lib/trade/numbers";
 import { createPositionCloseSizingViewModel } from "@/lib/trade/position-close-sizing-presentation";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import { getPositionMarketCloseErrorMessage } from "@/lib/trade/position-market-close-errors";
+import { submitPositionMarketClose } from "@/lib/trade/position-market-close-submitter";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import {
 	type PositionMarketCloseSizingIntent,
@@ -45,7 +45,6 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	const sizingInteractionActiveRef = useRef(false);
 	const session = usePositionMarketCloseSession();
 	const actions = usePositionMarketCloseActions();
-	const { submit } = usePositionMarketCloseSubmit();
 	const userPositions = useUserPositions();
 	const { clientKey, env } = useHyperliquid();
 	const { getMarketInfo } = useMarketsInfo();
@@ -200,7 +199,11 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 
 	function handleSubmit() {
 		if (!canSubmit || sizingInteractionActiveRef.current) return;
-		return submit({ sessionId, confirmedCloseSize: sizing.normalizedSize, dismissFutureConfirmation });
+		return submitPositionMarketClose({
+			sessionId,
+			confirmedCloseSize: sizing.normalizedSize,
+			dismissFutureConfirmation,
+		});
 	}
 
 	return (

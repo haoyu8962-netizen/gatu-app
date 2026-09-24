@@ -28,6 +28,10 @@ function readMobilePositionSource(file: string): string {
 
 const POSITIONS_PANEL_SOURCE = readPositionSource("positions-panel.tsx");
 const POSITIONS_TAB_SOURCE = readPositionSource("positions-tab.tsx");
+const CLOSE_ALL_ACTION_SOURCE = readFileSync(
+	resolve(TEST_DIR, "../../hooks/trade/use-position-close-all-action.ts"),
+	"utf8",
+);
 const POSITION_ROW_SOURCE = readPositionSource("position-row.tsx");
 const POSITION_ACTIONS_SOURCE = readPositionSource("position-inline-actions.tsx");
 const POSITION_MARKET_CLOSE_MODAL_SOURCE = readPositionSource("position-market-close-modal.tsx");
@@ -103,18 +107,18 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_PANEL_SOURCE).not.toContain("positionsAccountSummary");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("Account Equity");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("Maintenance Margin Ratio");
-		expect(POSITIONS_TAB_SOURCE).toContain("openCloseAll(resolution.snapshot)");
+		expect(POSITIONS_TAB_SOURCE).toContain("usePositionCloseAllAction()");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("PositionCloseAllController");
 		expect(POSITIONS_TAB_SOURCE).toContain("Close All Positions");
-		expect(POSITIONS_TAB_SOURCE).toContain("candidates: positions.map");
+		expect(CLOSE_ALL_ACTION_SOURCE).toContain("candidates: positions.map");
 		expect(POSITIONS_TAB_SOURCE).toContain("focusableWhenDisabled");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("getToolbarAccountMarginRatio");
 	});
 
 	it("keeps Close All readiness independent from the incremental fast mark stream", () => {
-		expect(POSITIONS_TAB_SOURCE).not.toContain("allPositionMarksFresh");
-		expect(POSITIONS_TAB_SOURCE).not.toContain("markPx: marketInfo?.markPx");
-		expect(POSITIONS_TAB_SOURCE).toContain("Close all is unavailable until every position market has loaded.");
+		expect(CLOSE_ALL_ACTION_SOURCE).not.toContain("useMarketsInfo");
+		expect(CLOSE_ALL_ACTION_SOURCE).not.toContain("markPx:");
+		expect(CLOSE_ALL_ACTION_SOURCE).toContain("Close all is unavailable until every position market has loaded.");
 	});
 
 	it("uses native horizontal overflow without hiding the vertical scroll affordance", () => {

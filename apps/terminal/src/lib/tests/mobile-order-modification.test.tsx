@@ -9,11 +9,23 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { MobileOrdersTab } from "@/components/trade/mobile/mobile-orders-tab";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import {
+	getOrderQueueItem,
+	type OrderQueueItem,
+	removeOrderQueueItem,
+	useOrderQueue,
+} from "@/stores/use-order-queue-store";
+import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
 	getPendingTradingActionToastId,
 } from "@/stores/use-pending-trading-action-store";
 import { createI18nRoot } from "./harness/react";
+
+let queueItems: OrderQueueItem[] = [];
+function ReviewedOrders() {
+	queueItems = useOrderQueue();
+	return <MobileOrdersTab scrollMode="page" />;
+}
 
 const mocks = vi.hoisted(() => ({
 	address: "0x1111111111111111111111111111111111111111",
@@ -207,13 +219,17 @@ describe("mobile order modification", () => {
 	});
 
 	afterEach(() => {
-		act(() => root.unmount());
+		act(() => {
+			for (const item of queueItems) removeOrderQueueItem(item.id);
+			root.unmount();
+		});
+		queueItems = [];
 		container.remove();
 		vi.useRealTimers();
 	});
 
 	function openEditor() {
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		act(() => root.render(<ReviewedOrders />));
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Expand ORCL order details"]')?.click());
 		const modify = findButton("Modify Order", container);
 		expect(modify).not.toBeUndefined();
@@ -287,8 +303,11 @@ describe("mobile order modification", () => {
 		});
 		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
 		expect(pendingModification?.phase).toBe("awaiting");
-		expect(mocks.toastInfo).toHaveBeenCalledWith("Order modification submitted. Waiting for the open-orders update.", {
-			id: getPendingTradingActionToastId(pendingModification?.id ?? ""),
+		expect(mocks.toastInfo).not.toHaveBeenCalled();
+		expect(getOrderQueueItem(getPendingTradingActionToastId(pendingModification?.id ?? ""))).toMatchObject({
+			owner: "0x1111111111111111111111111111111111111111",
+			env: "Mainnet",
+			status: "confirming",
 		});
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(document.body.querySelector('input[aria-label="Size"]')).toBeNull();
@@ -386,7 +405,8 @@ describe("mobile order modification", () => {
 
 		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
 		expect(mocks.toastWarning).not.toHaveBeenCalled();
-		expect(mocks.toastError).toHaveBeenCalledOnce();
+		expect(mocks.toastError).not.toHaveBeenCalled();
+		expect(queueItems.at(-1)).toMatchObject({ status: "failed" });
 	});
 
 	it("keeps an awaiting modification isolated to its original account", async () => {
@@ -402,7 +422,7 @@ describe("mobile order modification", () => {
 		mocks.clientKey = "0x2222222222222222222222222222222222222222";
 		mocks.orders = [triggerOrder];
 		await act(async () => {
-			root.render(<MobileOrdersTab scrollMode="page" />);
+			root.render(<ReviewedOrders />);
 			await Promise.resolve();
 		});
 
@@ -425,7 +445,7 @@ describe("mobile order modification", () => {
 
 	it("explains unsupported modifications on touch without submitting an order", () => {
 		mocks.orders = [unsafeTriggerOrder];
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		act(() => root.render(<ReviewedOrders />));
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Expand ORCL order details"]')?.click());
 		const modify = findButton("Modify Order", container);
 		expect(modify?.disabled).toBe(false);

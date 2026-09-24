@@ -17,6 +17,8 @@ let state = {
 	status: "success" as MarkPriceStatus,
 	accountStatus: undefined as MarkPriceStatus | undefined,
 	positionPending: false,
+	positionStatus: "success" as MarkPriceStatus,
+	positionSize: new URLSearchParams(window.location.search).get("position") ?? "0",
 	submissions: [] as OrderSubmitDraftInput[],
 };
 export function setFixtureState(next: Partial<typeof state>) {
@@ -126,8 +128,8 @@ export function useAssetLeverage() {
 		maxLeverage: 20,
 		setPendingLeverage: empty,
 		resetPending: empty,
-		maxTradeSzs: [10, 10],
-		maxTradeSzsRaw: ["10", "10"],
+		maxTradeSzs: current.funded ? [10, 10] : [0, 0],
+		maxTradeSzsRaw: current.funded ? ["10", "10"] : ["0", "0"],
 		availableToTrade: [balance, balance],
 		marginMode: "cross",
 		hasPosition: false,
@@ -169,7 +171,31 @@ export function useTradingGuard() {
 }
 export function useUserPositions() {
 	const current = useFixtureState();
-	return { getPosition: () => null, hasError: false, isLoading: current.positionPending, isStale: false };
+	return {
+		getPosition: (coin: string, dex?: string) =>
+			current.positionSize === "0" ||
+			coin !== (builderUsdh ? "xyz:BTC" : "BTC") ||
+			(dex ?? "") !== (builderUsdh ? "xyz" : "")
+				? null
+				: {
+						szi: current.positionSize,
+						coin: builderUsdh ? "xyz:BTC" : "BTC",
+						dex: builderUsdh ? "xyz" : "",
+						entryPx: "100",
+						positionValue: "715",
+						unrealizedPnl: "0",
+						returnOnEquity: "0",
+						liquidationPx: null,
+						marginUsed: "71.5",
+						maxLeverage: 20,
+						leverage: { type: "cross", value: 10 },
+						cumFunding: { allTime: "0", sinceOpen: "0", sinceChange: "0" },
+					},
+		hasError: current.positionStatus === "error",
+		isLoading: current.positionPending || current.positionStatus === "loading",
+		isStale: current.positionStatus === "stale",
+		receivedAt: current.positionStatus === "stale" ? Date.now() - 60_001 : Date.now(),
+	};
 }
 export function useInfo() {
 	return { data: undefined };

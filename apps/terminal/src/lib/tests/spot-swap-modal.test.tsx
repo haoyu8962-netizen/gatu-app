@@ -7,21 +7,10 @@ import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
 	closeSwap: vi.fn(),
+	owner: "0x1111111111111111111111111111111111111111",
+	executionGuard: null as null | ((params: unknown) => void),
 	modalType: "swap" as string | null,
 	submitOrder: vi.fn(),
-	toastError: vi.fn(),
-	toastInfo: vi.fn(),
-	toastSuccess: vi.fn(),
-	toastWarning: vi.fn(),
-}));
-
-vi.mock("sonner", () => ({
-	toast: {
-		error: mocks.toastError,
-		info: mocks.toastInfo,
-		success: mocks.toastSuccess,
-		warning: mocks.toastWarning,
-	},
 }));
 
 vi.mock("@gatu/ui", () => ({
@@ -84,13 +73,16 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 vi.mock("@/hooks/trade/use-fee-rates", () => ({ useFeeRates: () => ({ takerRate: 0.0007 }) }));
 
 vi.mock("@/hooks/trade/use-tracked-order", () => ({
-	useTrackedOrder: () => ({ submitOrder: mocks.submitOrder, isPending: false }),
+	useTrackedOrder: ({ executionGuard }: { executionGuard: (params: unknown) => void }) => {
+		mocks.executionGuard = executionGuard;
+		return { submitOrder: mocks.submitOrder, isPending: false };
+	},
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => ({
 		builderConfig: null,
-		clientKey: "0x1111111111111111111111111111111111111111",
+		clientKey: mocks.owner,
 		env: "Mainnet",
 		sessionMode: "owner",
 	}),
@@ -133,6 +125,7 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 }));
 
 import { SpotSwapModal } from "@/components/trade/components/spot-swap-modal";
+import { getOrderQueueItem, removeOrderQueueItem } from "@/stores/use-order-queue-store";
 
 function setInputValue(input: HTMLInputElement, value: string) {
 	const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
@@ -146,6 +139,7 @@ describe("SpotSwapModal submission", () => {
 
 	beforeEach(() => {
 		mocks.modalType = "swap";
+		mocks.owner = "0x1111111111111111111111111111111111111111";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -158,6 +152,9 @@ describe("SpotSwapModal submission", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		for (const call of mocks.submitOrder.mock.calls) {
+			if (call[1]?.queueId) removeOrderQueueItem(call[1].queueId);
+		}
 		vi.clearAllMocks();
 	});
 
@@ -167,7 +164,28 @@ describe("SpotSwapModal submission", () => {
 		return button;
 	}
 
-	it("hides the dialog at the click, keeps a static label and closes the modal only after the outcome", async () => {
+	function queuedItem() {
+		return getOrderQueueItem(mocks.submitOrder.mock.calls.at(-1)?.[1]?.queueId);
+	}
+
+	function filledResponse(size?: string) {
+		return {
+			state: "submitted",
+			result: {
+				response: {
+					data: {
+						statuses: [
+							{
+								filled: { totalSz: size ?? mocks.submitOrder.mock.calls.at(-1)?.[0].orders[0].s, avgPx: "25", oid: 1 },
+							},
+						],
+					},
+				},
+			},
+		};
+	}
+
+	it("hides the dialog at click and creates one scoped pending task before receiving the outcome", async () => {
 		let resolveSubmission: ((value: unknown) => void) | undefined;
 		mocks.submitOrder.mockImplementationOnce(
 			() =>
@@ -176,64 +194,101 @@ describe("SpotSwapModal submission", () => {
 				}),
 		);
 		expect(confirm().textContent).toBe("Swap");
-		expect(confirm().disabled).toBe(false);
-
 		act(() => {
 			confirm().click();
 			container.querySelector<HTMLButtonElement>('[data-testid="swap-confirm"]')?.click();
 		});
-
 		expect(mocks.submitOrder).toHaveBeenCalledOnce();
 		expect(container.querySelector('[role="dialog"]')).toBeNull();
-		expect(container.textContent).not.toContain("Swapping");
-		expect(mocks.closeSwap).not.toHaveBeenCalled();
-
-		await act(async () => {
-			resolveSubmission?.({
-				state: "submitted",
-				result: { response: { data: { statuses: [{ filled: { totalSz: "4", avgPx: "25", oid: 1 } }] } } },
-			});
-			await Promise.resolve();
+		expect(queuedItem()).toMatchObject({
+			owner: mocks.owner,
+			env: "Mainnet",
+			operation: "spot-swap",
+			status: "pending",
 		});
-
-		expect(mocks.toastSuccess).toHaveBeenCalledExactlyOnceWith("Swap submitted", expect.anything());
-		const options = mocks.toastSuccess.mock.calls[0]?.[1] as { description: ReactNode };
-		const host = document.createElement("div");
-		const descriptionRoot = createI18nRoot(host);
-		act(() => descriptionRoot.render(createElement("span", null, options.description)));
-		expect(host.querySelector('bdi[dir="ltr"]')?.textContent).toContain("100 USDC");
-		act(() => descriptionRoot.unmount());
+		expect(mocks.closeSwap).not.toHaveBeenCalled();
+		await act(async () => {
+			resolveSubmission?.(filledResponse());
+		});
+		expect(queuedItem()).toMatchObject({ status: "success", outcome: "filled" });
 		expect(mocks.closeSwap).toHaveBeenCalledOnce();
 	});
 
+	it.each(["unmount", "identity"])(
+		"records the original account outcome after %s without closing another dialog",
+		async (change) => {
+			let resolveSubmission: ((value: unknown) => void) | undefined;
+			mocks.submitOrder.mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						resolveSubmission = resolve;
+					}),
+			);
+			act(() => confirm().click());
+			const originalOwner = mocks.owner;
+			const guard = mocks.executionGuard;
+			expect(() => guard?.(mocks.submitOrder.mock.calls[0]?.[0])).not.toThrow();
+			if (change === "unmount") act(() => root.render(null));
+			else {
+				mocks.owner = "0x2222222222222222222222222222222222222222";
+				act(() => root.render(createElement(SpotSwapModal, { key: mocks.owner })));
+			}
+			if (change === "unmount") expect(() => guard?.(mocks.submitOrder.mock.calls[0]?.[0])).toThrow();
+			await act(async () => {
+				resolveSubmission?.(filledResponse());
+			});
+			expect(queuedItem()).toMatchObject({ owner: originalOwner, status: "success" });
+			expect(mocks.closeSwap).not.toHaveBeenCalled();
+		},
+	);
+
+	it("records a late error after the original controller has unmounted", async () => {
+		let rejectSubmission: ((value: unknown) => void) | undefined;
+		mocks.submitOrder.mockImplementationOnce(
+			() =>
+				new Promise((_, reject) => {
+					rejectSubmission = reject;
+				}),
+		);
+		act(() => confirm().click());
+		act(() => root.render(null));
+		await act(async () => {
+			rejectSubmission?.(new Error("Insufficient spot balance"));
+		});
+		expect(queuedItem()).toMatchObject({
+			status: "failed",
+			error: { kind: "raw", message: "Insufficient spot balance" },
+		});
+		expect(mocks.closeSwap).not.toHaveBeenCalled();
+	});
+
 	it.each([
-		["blocked", "toastWarning", "Another order for this market is still being confirmed."],
-		["reconciling", "toastInfo", "Order submitted. Confirming exchange status; do not retry."],
-	] as const)("reports a %s submission through a notification", async (state, notify, message) => {
+		["blocked", "failed"],
+		["reconciling", "confirming"],
+	] as const)("keeps a %s submission in the same notification task", async (state, status) => {
 		mocks.submitOrder.mockResolvedValueOnce({ state });
-
 		await act(async () => confirm().click());
-
-		expect(mocks[notify]).toHaveBeenCalledWith(message);
-		expect(mocks.toastSuccess).not.toHaveBeenCalled();
-		expect(container.textContent).not.toContain(message);
+		expect(queuedItem()).toMatchObject({ status });
 		expect(mocks.closeSwap).toHaveBeenCalledOnce();
+	});
+
+	it("does not describe a partial fill as complete", async () => {
+		mocks.submitOrder.mockImplementationOnce(() => Promise.resolve(filledResponse("1")));
+		await act(async () => confirm().click());
+		expect(queuedItem()).toMatchObject({ status: "partial", children: [{ status: "partial", filledSize: "1" }] });
 	});
 
 	it.each([
 		[
 			new Error("Order could not immediately match against any resting orders"),
-			"No liquidity was available within the",
+			{ kind: "spot-swap", code: "no-liquidity" },
 		],
-		[new Error("Insufficient spot balance"), "Insufficient spot balance"],
-		["not an error", "Swap failed"],
-	])("reports a failed swap through a notification and closes: %s", async (cause, message) => {
+		[new Error("Insufficient spot balance"), { kind: "raw", message: "Insufficient spot balance" }],
+		["not an error", { kind: "spot-swap", code: "failed" }],
+	])("keeps a stable semantic error in the failed task: %s", async (cause, error) => {
 		mocks.submitOrder.mockRejectedValueOnce(cause);
-
 		await act(async () => confirm().click());
-
-		expect(mocks.toastError).toHaveBeenCalledWith(expect.stringContaining(message));
-		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(queuedItem()).toMatchObject({ status: "failed", error });
 		expect(mocks.closeSwap).toHaveBeenCalledOnce();
 	});
 });

@@ -8,7 +8,7 @@ import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
-	discardPositionMarketCloseModal,
+	discardIdlePositionMarketCloseModal,
 	useCommandMenuActions,
 	useGlobalModalType,
 	usePositionMarketCloseSession,
@@ -32,9 +32,11 @@ import {
 } from "./lazy-global-modals";
 import { LegalAcceptanceModal } from "./legal-acceptance-modal";
 import { PositionDialogHostGate } from "./position-dialog-host-gate";
+import { PositionMarketCloseSubmitHostGate } from "./position-market-close-submit-host-gate";
 import { TradingOnboardingGate } from "./trading-onboarding-gate";
 
 const GLOBAL_MODAL_EXIT_MS = 250;
+type GlobalModalScope = "all" | "preferences";
 
 interface Props {
 	enableHip3Disclaimer?: boolean;
@@ -48,6 +50,7 @@ export function GlobalModals(props: Props) {
 	return (
 		<>
 			<PrioritizedGlobalModals {...props} />
+			{props.enablePositionMarketClose && <PositionMarketCloseSubmitHostGate />}
 			{props.enablePositionMarketClose && <PositionDialogHostGate />}
 		</>
 	);
@@ -95,7 +98,9 @@ function LegalAwareGlobalModals({
 }) {
 	const legalGate = useLegalGate();
 
-	if (legalGate.state === "checking") return null;
+	if (legalGate.state === "checking") {
+		return <SharedGlobalModals enablePositionMarketClose={false} scope="preferences" />;
+	}
 	if (legalGate.state !== "inactive" && legalGate.state !== "accepted") {
 		return (
 			<LegalAcceptanceModal
@@ -137,7 +142,7 @@ function Hip3AwareGlobalModals({
 	return (
 		<SharedGlobalModals
 			hip3Disclaimer={hip3Disclaimer}
-			onHip3DisclaimerCancel={marketCloseSession ? discardPositionMarketCloseModal : undefined}
+			onHip3DisclaimerCancel={marketCloseSession ? discardIdlePositionMarketCloseModal : undefined}
 			enablePositionMarketClose={enablePositionMarketClose}
 		/>
 	);
@@ -147,13 +152,21 @@ function SharedGlobalModals({
 	hip3Disclaimer,
 	onHip3DisclaimerCancel,
 	enablePositionMarketClose,
+	scope = "all",
 }: {
 	hip3Disclaimer?: Hip3DisclaimerRequirement;
 	onHip3DisclaimerCancel?: () => void;
 	enablePositionMarketClose: boolean;
+	scope?: GlobalModalScope;
 }) {
 	const activeModal = useGlobalModalType();
-	const displayedModal = useLingeringValue(activeModal, GLOBAL_MODAL_EXIT_MS);
+	const visibleActiveModal =
+		scope === "preferences" && activeModal !== "settings" && activeModal !== "commandMenu" ? null : activeModal;
+	const lingeringModal = useLingeringValue(visibleActiveModal, GLOBAL_MODAL_EXIT_MS);
+	const displayedModal =
+		scope === "preferences" && lingeringModal !== "settings" && lingeringModal !== "commandMenu"
+			? null
+			: lingeringModal;
 	const marketCloseSession = usePositionMarketCloseSession();
 	const isHip3DisclaimerRequired = hip3Disclaimer?.isRequired === true;
 	const { open: openCommandMenu, close: closeCommandMenu } = useCommandMenuActions();
@@ -169,11 +182,11 @@ function SharedGlobalModals({
 
 	useEffect(() => {
 		if (!enablePositionMarketClose && activeModal === "positionMarketClose") {
-			discardPositionMarketCloseModal();
+			discardIdlePositionMarketCloseModal();
 		}
 	}, [activeModal, enablePositionMarketClose]);
 
-	useEffect(() => () => discardPositionMarketCloseModal(), []);
+	useEffect(() => () => discardIdlePositionMarketCloseModal(), []);
 
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {

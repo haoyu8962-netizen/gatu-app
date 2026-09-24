@@ -75,6 +75,11 @@ test("shards every browser invocation by test, in two jobs", () => {
 	assert.equal(invocations >= 4, true);
 	assert.equal(countOccurrences(browser, SHARD_FLAGS), invocations, "an unsharded invocation runs in full in both jobs");
 	assert.equal(/pnpm --dir apps\/terminal test:browser/.test(browser), false, "package scripts bypass the shard flags");
+	assert.equal(
+		browser.includes("--config tests/browser/notifications.playwright.config.ts"),
+		true,
+		"the notification lifecycle regression must run in the browser job",
+	);
 });
 
 test("keeps the merged static checks in one job", () => {

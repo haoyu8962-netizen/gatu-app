@@ -1,6 +1,9 @@
 import { useLayoutEffect, useRef } from "react";
+import type { OrderSizeSource } from "@/stores/use-order-entry-store";
 
 interface Params {
+	sizeSource?: OrderSizeSource | null;
+	restoreSizeSelection?: (size: string, source: OrderSizeSource) => void;
 	onInteractionChange?: (active: boolean) => void;
 	applyPercent: (percent: number) => void;
 	interactionIdentity: string;
@@ -9,12 +12,15 @@ interface Params {
 }
 
 interface SizeSnapshot {
+	sizeSource?: OrderSizeSource | null;
 	identity: string;
 	sizeInput: string;
 }
 
 export function useSizeSliderInteraction({
 	applyPercent,
+	sizeSource,
+	restoreSizeSelection,
 	interactionIdentity,
 	setSizeInput,
 	sizeInput,
@@ -33,14 +39,17 @@ export function useSizeSliderInteraction({
 
 	function onPercentInteractionStart() {
 		if (!mountedRef.current) return;
-		snapshotRef.current = { identity: interactionIdentity, sizeInput };
+		snapshotRef.current = { identity: interactionIdentity, sizeInput, sizeSource };
 		onInteractionChange?.(true);
 	}
 
 	function onPercentCancel() {
 		const snapshot = snapshotRef.current;
 		snapshotRef.current = null;
-		if (mountedRef.current && snapshot?.identity === interactionIdentity) setSizeInput(snapshot.sizeInput);
+		if (mountedRef.current && snapshot?.identity === interactionIdentity) {
+			if (snapshot.sizeSource && restoreSizeSelection) restoreSizeSelection(snapshot.sizeInput, snapshot.sizeSource);
+			else setSizeInput(snapshot.sizeInput);
+		}
 	}
 
 	function onPercentCommit(percent: number) {

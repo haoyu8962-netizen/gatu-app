@@ -5,13 +5,29 @@ import { i18n, type Messages } from "@lingui/core";
 import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
-import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IsolatedMarginPositionTarget } from "@/components/trade/positions/position-dialog-types";
 import { PositionIsolatedMarginModal } from "@/components/trade/positions/position-isolated-margin-modal";
 import type { Position } from "@/lib/hyperliquid";
 import { getOrderAssetLockName } from "@/lib/trade/order-asset-lock";
+import { formatPositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
+import * as queueStore from "@/stores/use-order-queue-store";
 import { createI18nRoot } from "./harness/react";
+
+const addQueueItemSpy = vi.spyOn(queueStore, "addOrderQueueItem");
+
+function lastQueueItem() {
+	return queueStore.getOrderQueueItem(addQueueItemSpy.mock.results.at(-1)?.value);
+}
+
+function lastQueueMessage(): string {
+	const error = lastQueueItem()?.error;
+	if (!error) return "";
+	if (typeof error === "string") return error;
+	if (!("kind" in error)) return i18n._(error);
+	if (error.kind === "order-reconciliation" || error.kind === "spot-swap") throw new Error("Unexpected feedback kind");
+	return formatPositionSubmitFeedback(error, (descriptor) => i18n._(descriptor));
+}
 
 const AMBIGUOUS_MESSAGE = "The margin update may have been applied. Refresh position data before trying again.";
 const AMBIGUOUS_MESSAGE_AR = "ربما تم تطبيق تحديث الهامش. حدّث بيانات المركز قبل إعادة المحاولة.";
@@ -390,6 +406,9 @@ describe("PositionIsolatedMarginModal", () => {
 		act(() => root.unmount());
 		container.remove();
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
+		for (const result of addQueueItemSpy.mock.results) {
+			if (result.type === "return") queueStore.removeOrderQueueItem(result.value);
+		}
 		vi.clearAllMocks();
 	});
 
@@ -415,9 +434,9 @@ describe("PositionIsolatedMarginModal", () => {
 		return onOpenChange;
 	}
 
-	function expectDismissedWith(notify: unknown, message: string) {
-		expect(notify).toHaveBeenCalledTimes(1);
-		expect(notify).toHaveBeenCalledWith(expect.stringContaining(message));
+	function expectDismissedWith(status: string, message: string) {
+		expect(lastQueueItem()?.status).toBe(status);
+		expect(lastQueueMessage()).toContain(message);
 		expect(container.textContent).not.toContain(message);
 		expect(container.querySelector('[data-testid="position-risk-dialog"]')).toBeNull();
 	}
@@ -474,6 +493,30 @@ describe("PositionIsolatedMarginModal", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
+	it("keeps the scoped pending task and its result when the dialog controller unmounts after dispatch", async () => {
+		const pending = createDeferred();
+		testState.updateMargin.mockImplementationOnce(async () => {
+			await pending.promise;
+			return { status: "ok", response: { type: "default" } };
+		});
+		renderModal();
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		act(() => getButton(container, "Add Margin").click());
+		expect(lastQueueItem()).toMatchObject({
+			status: "pending",
+			owner: basePositionRef.owner,
+			env: basePositionRef.env,
+		});
+		await vi.waitFor(() => expect(testState.updateMargin).toHaveBeenCalledOnce());
+		const queueId = lastQueueItem()?.id;
+		act(() => root.render(null));
+		await act(async () => {
+			pending.resolve();
+			await pending.promise;
+		});
+		expect(queueStore.getOrderQueueItem(queueId)).toMatchObject({ status: "success", owner: basePositionRef.owner });
+	});
+
 	it("fails closed after a response-loss ambiguity and blocks an immediate retry", async () => {
 		testState.updateMargin.mockRejectedValueOnce(new HttpRequestError({ detail: "Request timed out" }));
 		renderModal();
@@ -482,14 +525,14 @@ describe("PositionIsolatedMarginModal", () => {
 		await act(async () => getButton(container, "Add Margin").click());
 
 		expect(testState.updateMargin).toHaveBeenCalledTimes(1);
-		expectDismissedWith(toast.warning, "The margin update may have been applied.");
+		expectDismissedWith("unconfirmed", "The margin update may have been applied.");
 
 		renderModal(basePositionRef, vi.fn(), "margin-2");
 		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
 		await act(async () => getButton(container, "Add Margin").click());
 
 		expect(testState.updateMargin).toHaveBeenCalledTimes(1);
-		expect(toast.warning).toHaveBeenLastCalledWith("Another action for this market is already in progress.");
+		expect(lastQueueMessage()).toEqual("Another action for this market is already in progress.");
 	});
 
 	it("reports an ambiguous result in the locale that is active when it settles", async () => {
@@ -509,8 +552,8 @@ describe("PositionIsolatedMarginModal", () => {
 			await pending.promise;
 		});
 
-		await vi.waitFor(() => expect(toast.warning).toHaveBeenCalledWith(AMBIGUOUS_MESSAGE_AR));
-		expect(toast.warning).not.toHaveBeenCalledWith(AMBIGUOUS_MESSAGE);
+		await vi.waitFor(() => expect(lastQueueMessage()).toEqual(AMBIGUOUS_MESSAGE_AR));
+		expect(lastQueueMessage()).not.toEqual(AMBIGUOUS_MESSAGE);
 		expect(testState.updateMargin).toHaveBeenCalledOnce();
 	});
 
@@ -523,7 +566,7 @@ describe("PositionIsolatedMarginModal", () => {
 		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
 		await act(async () => getButton(container, "Add Margin").click());
 
-		expectDismissedWith(toast.error, sdkMessage);
+		expectDismissedWith("failed", sdkMessage);
 		expect(testState.updateMargin).toHaveBeenCalledOnce();
 	});
 
@@ -535,7 +578,7 @@ describe("PositionIsolatedMarginModal", () => {
 		await act(async () => getButton(container, "Add Margin").click());
 
 		expect(testState.updateMargin).toHaveBeenCalledTimes(1);
-		expectDismissedWith(toast.warning, "The margin update may have been applied.");
+		expectDismissedWith("unconfirmed", "The margin update may have been applied.");
 	});
 
 	it("allows a retry after a definitive HTTP rejection that could not have been applied", async () => {
@@ -547,15 +590,15 @@ describe("PositionIsolatedMarginModal", () => {
 		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
 		await act(async () => getButton(container, "Add Margin").click());
 		expect(testState.updateMargin).toHaveBeenCalledTimes(1);
-		expect(toast.warning).not.toHaveBeenCalled();
-		expect(toast.error).toHaveBeenCalledTimes(1);
+		expect(lastQueueItem()?.status).not.toBe("unconfirmed");
+		expect(lastQueueItem()?.status).toBe("failed");
 		expect(container.querySelector('[data-testid="position-risk-dialog"]')).toBeNull();
 
 		const onOpenChange = renderModal(basePositionRef, vi.fn(), "margin-2");
 		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
 		await act(async () => getButton(container, "Add Margin").click());
 		expect(testState.updateMargin).toHaveBeenCalledTimes(2);
-		expect(toast.success).toHaveBeenCalledTimes(1);
+		expect(lastQueueItem()?.status).toBe("success");
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
@@ -572,7 +615,7 @@ describe("PositionIsolatedMarginModal", () => {
 		});
 
 		expect(testState.updateMargin).not.toHaveBeenCalled();
-		expectDismissedWith(toast.warning, "Another action for this market is already in progress.");
+		expectDismissedWith("failed", "Another action for this market is already in progress.");
 	});
 
 	it("blocks an action when the current live position side differs from the opened position", async () => {
@@ -822,9 +865,7 @@ describe("PositionIsolatedMarginModal", () => {
 			await releaseQueue.promise;
 		});
 
-		await vi.waitFor(() =>
-			expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("This position changed sides.")),
-		);
+		await vi.waitFor(() => expect(lastQueueMessage()).toEqual(expect.stringContaining("This position changed sides.")));
 		expect(testState.updateMargin).not.toHaveBeenCalled();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
@@ -850,9 +891,7 @@ describe("PositionIsolatedMarginModal", () => {
 			await releaseQueue.promise;
 		});
 
-		await vi.waitFor(() =>
-			expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("This position changed sides.")),
-		);
+		await vi.waitFor(() => expect(lastQueueMessage()).toEqual(expect.stringContaining("This position changed sides.")));
 		expect(testState.topUpMargin).not.toHaveBeenCalled();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
@@ -883,7 +922,7 @@ describe("PositionIsolatedMarginModal", () => {
 		});
 
 		await vi.waitFor(() =>
-			expect(toast.error).toHaveBeenCalledWith(
+			expect(lastQueueMessage()).toEqual(
 				expect.stringContaining("Target leverage must be below the current effective leverage to add margin."),
 			),
 		);
@@ -912,7 +951,7 @@ describe("PositionIsolatedMarginModal", () => {
 		});
 
 		await vi.waitFor(() =>
-			expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("Live position data is unavailable.")),
+			expect(lastQueueMessage()).toEqual(expect.stringContaining("Live position data is unavailable.")),
 		);
 		expect(testState.updateMargin).not.toHaveBeenCalled();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -939,7 +978,7 @@ describe("PositionIsolatedMarginModal", () => {
 		});
 
 		await vi.waitFor(() =>
-			expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("Live position data is unavailable.")),
+			expect(lastQueueMessage()).toEqual(expect.stringContaining("Live position data is unavailable.")),
 		);
 		expect(testState.updateMargin).not.toHaveBeenCalled();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -970,7 +1009,7 @@ describe("PositionIsolatedMarginModal", () => {
 		});
 
 		await vi.waitFor(() =>
-			expect(toast.error).toHaveBeenCalledWith(
+			expect(lastQueueMessage()).toEqual(
 				expect.stringContaining(
 					"This strict isolated market does not allow margin to be removed from an open position.",
 				),

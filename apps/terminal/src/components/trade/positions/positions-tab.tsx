@@ -1,13 +1,9 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { useId, useMemo, useState } from "react";
+import { warmPositionMarketCloseSubmitHost } from "@/components/trade/components/position-market-close-submit-host-loader";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
-import {
-	getPositionCloseAllQuoteSymbol,
-	type PositionCloseAllSnapshotIssue,
-	resolvePositionCloseAllSnapshot,
-} from "@/domain/trade/position-close-all";
 import {
 	filterPositions,
 	type PositionDirectionFilter,
@@ -15,6 +11,7 @@ import {
 	type PositionMarketIdentity,
 } from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { usePositionCloseAllAction } from "@/hooks/trade/use-position-close-all-action";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -22,7 +19,7 @@ import { useHyperliquid, useMarkets, useMarketsInfo, useSubscription, useUserPos
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
-import { usePositionCloseAllSession, usePositionDialogActions } from "@/stores/use-position-dialog-store";
+import { usePositionDialogActions } from "@/stores/use-position-dialog-store";
 import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
 import type {
@@ -73,8 +70,8 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 		navigateToMarket(name);
 		setSide(side);
 	}
-	const closeAllSession = usePositionCloseAllSession();
-	const { openCloseAll, openIsolatedMargin, openLimitClose, openReverse, openTpSl } = usePositionDialogActions();
+	const closeAll = usePositionCloseAllAction();
+	const { openIsolatedMargin, openLimitClose, openReverse, openTpSl } = usePositionDialogActions();
 	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [pnlMode, setPnlMode] = useState<PositionPnlMode>("roe");
 
@@ -97,67 +94,11 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 	const filteredPositions = filterPositions(positions, directionFilter, marketFilter, currentMarket);
-	const signingIdentityReady =
-		isConnected && !!address && clientKey !== "disconnected" && address.toLowerCase() === clientKey.toLowerCase();
-	const closeAllMarketDataReady =
-		!positionsLoading && !positionsError && !positionsStale && !markets.isLoading && !markets.error;
-	const closeAllDataReady = signingIdentityReady && closeAllMarketDataReady;
-
-	function resolveCurrentCloseAllSnapshot(capturedAtMs = Date.now()) {
-		return resolvePositionCloseAllSnapshot({
-			owner: address,
-			env,
-			capturedAtMs,
-			candidates: positions.map((position) => {
-				const market = markets.getMarket(position.coin);
-				return {
-					coin: position.coin,
-					dex: position.dex,
-					assetId: market?.assetId,
-					szDecimals: market?.szDecimals,
-					signedPositionSize: position.szi,
-					positionValue: position.positionValue,
-					unrealizedPnl: position.unrealizedPnl,
-					marginMode: position.leverage.type,
-					quoteSymbol: getPositionCloseAllQuoteSymbol(market),
-				};
-			}),
-		});
-	}
-
-	const closeAllResolution = resolveCurrentCloseAllSnapshot();
-	const closeAllPreview = closeAllDataReady ? closeAllResolution.snapshot : null;
-	const closeAllIssues: readonly PositionCloseAllSnapshotIssue[] = closeAllResolution.issues;
-	const hasCloseAllSession =
-		!!address && closeAllSession?.snapshot.owner === address.toLowerCase() && closeAllSession.snapshot.env === env;
-
-	function getCloseAllUnavailableReason() {
-		if (closeAllPreview) return null;
-		if (!signingIdentityReady) return t`Close all is currently unavailable.`;
-		if (!closeAllMarketDataReady || closeAllIssues.includes("invalid-market")) {
-			return t`Close all is unavailable until every position market has loaded.`;
-		}
-		if (closeAllIssues.includes("invalid-position")) {
-			return t`Close all is unavailable because position data is incomplete.`;
-		}
-		if (closeAllIssues.includes("duplicate-market")) {
-			return t`Close all is unavailable because duplicate market data was detected.`;
-		}
-		return t`Close all is currently unavailable.`;
-	}
-
-	const closeAllUnavailableReason = getCloseAllUnavailableReason();
 
 	const pnlHeader = pnlMode === "roe" ? t`PNL (ROE %)` : t`PNL (Price Change %)`;
 
 	function handleOpenMarketClose(position: PositionMarketCloseRef) {
 		positionMarketClose.open(position);
-	}
-
-	function handleOpenCloseAll() {
-		if (!closeAllDataReady || hasCloseAllSession) return;
-		const resolution = resolveCurrentCloseAllSnapshot(Date.now());
-		if (resolution.snapshot) openCloseAll(resolution.snapshot);
 	}
 
 	function handleReverse(data: PositionReverseRef) {
@@ -195,7 +136,12 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	const placeholder = renderPlaceholder();
 
 	return (
-		<div className={positionsPanelTabRootClass}>
+		<div
+			className={positionsPanelTabRootClass}
+			onPointerEnter={warmPositionMarketCloseSubmitHost}
+			onPointerDownCapture={warmPositionMarketCloseSubmitHost}
+			onFocusCapture={warmPositionMarketCloseSubmitHost}
+		>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ? (
 					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{placeholder}</div>
@@ -287,22 +233,22 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(positionTableHeadClass, "pe-5")}>
 										<span className="sr-only">{t`Actions`}</span>
-										{closeAllUnavailableReason ? (
+										{closeAll.unavailableReason ? (
 											<span id={closeAllUnavailableId} className="sr-only">
-												{closeAllUnavailableReason}
+												{closeAll.unavailableReason}
 											</span>
 										) : null}
-										<Tooltip content={closeAllUnavailableReason} side="top">
+										<Tooltip content={closeAll.unavailableReason} side="top">
 											<span className="inline-flex max-w-full">
 												<Button
 													type="button"
 													variant="ghost"
 													intent="brand"
 													size="xxs"
-													disabled={!closeAllPreview || hasCloseAllSession}
+													disabled={!closeAll.canOpen}
 													focusableWhenDisabled
-													onClick={closeAllPreview ? handleOpenCloseAll : undefined}
-													aria-describedby={closeAllUnavailableReason ? closeAllUnavailableId : undefined}
+													onClick={closeAll.open}
+													aria-describedby={closeAll.unavailableReason ? closeAllUnavailableId : undefined}
 													className="h-[26px] min-h-0 max-w-full rounded-[6px] bg-transparent px-1 py-0 text-right text-2xs leading-4 font-semibold whitespace-nowrap text-market-close-success shadow-none transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:!outline-market-close-focus active:not-data-disabled:scale-100 data-disabled:bg-transparent data-disabled:text-market-close-subtle"
 												>
 													{t`Close All Positions`}

@@ -20,6 +20,11 @@ import {
 	type OrderInputContext,
 } from "../definitions/order-input";
 import {
+	reduceOnlyPositionDirectionValidator,
+	reduceOnlyPositionExistsValidator,
+	reduceOnlyPositionSizeValidator,
+} from "../definitions/reduce-only";
+import {
 	enterPriceRangeValidator,
 	type ScaleContext,
 	scaleLevelMinNotionalValidator,
@@ -43,9 +48,6 @@ import {
 	type TriggerContext,
 	tpTriggerAboveMarkValidator,
 	tpTriggerBelowMarkValidator,
-	triggerPositionDirectionValidator,
-	triggerPositionExistsValidator,
-	triggerPositionSizeValidator,
 } from "../definitions/trigger";
 import {
 	type TwapContext,
@@ -82,7 +84,7 @@ export interface PerpOrderValidationResult {
 const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	walletNotConnectedValidator,
 	walletLoadingValidator,
-	noBalanceValidator,
+	{ ...noBalanceValidator, validate: (ctx) => ctx.reduceOnly || noBalanceValidator.validate(ctx) },
 	noMarketValidator,
 	marketNotReadyValidator,
 	signerNotReadyValidator,
@@ -92,7 +94,7 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	enterTriggerPriceValidator,
 	enterSizeValidator,
 	minOrderNotionalValidator,
-	exceedsMaxSizeValidator,
+	{ ...exceedsMaxSizeValidator, validate: (ctx) => ctx.reduceOnly || exceedsMaxSizeValidator.validate(ctx) },
 	tpSlReturnValidator,
 	enterTpSlPriceValidator,
 	tpPriceValidator,
@@ -101,9 +103,9 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	stopTriggerBelowMarkValidator,
 	tpTriggerAboveMarkValidator,
 	tpTriggerBelowMarkValidator,
-	triggerPositionExistsValidator,
-	triggerPositionDirectionValidator,
-	triggerPositionSizeValidator,
+	reduceOnlyPositionExistsValidator,
+	reduceOnlyPositionDirectionValidator,
+	reduceOnlyPositionSizeValidator,
 	enterPriceRangeValidator,
 	scaleLevelsRangeValidator,
 	scaleStartEndDifferValidator,

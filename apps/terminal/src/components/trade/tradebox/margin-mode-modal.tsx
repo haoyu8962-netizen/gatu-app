@@ -12,12 +12,15 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@gatu/ui";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
-import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { memo, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import { useHyperliquid } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
+import { addOrderQueueItem, removeOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import { TradingActionButton } from "../components/trading-action-button";
 import { AccountModeForm, type AccountModeFormProps } from "./account-mode-modal";
 import { LeverageEditor } from "./leverage-editor";
@@ -97,7 +100,6 @@ type FormProps = Omit<
 	mobileView?: MobileTradeSettingsView;
 	leverageDraft?: number | null;
 	onLeverageDraftChange?: (value: number | null) => void;
-	isSessionCurrent: () => boolean;
 };
 
 const MODE_OPTIONS: Array<{
@@ -178,15 +180,6 @@ function MarginModeModalComponent({
 	...formProps
 }: Props) {
 	const { t } = useLingui();
-	const identityRef = useRef(marketIdentity);
-
-	useLayoutEffect(() => {
-		identityRef.current = marketIdentity;
-	}, [marketIdentity]);
-
-	function isSessionCurrent() {
-		return identityRef.current === marketIdentity;
-	}
 
 	const marketFormKey = marketIdentity ?? "market";
 	const capabilityKey = `${formProps.maxLeverage}:${formProps.showLeverage ? "leveraged" : "fixed"}`;
@@ -229,7 +222,6 @@ function MarginModeModalComponent({
 						isUpdating={actionPending || !open}
 						onClose={() => onOpenChange(false)}
 						sessionOpen={open}
-						isSessionCurrent={isSessionCurrent}
 					/>
 				) : (
 					<>
@@ -266,7 +258,6 @@ function MarginModeModalComponent({
 											isUpdating={actionPending}
 											onClose={() => onOpenChange(false)}
 											sessionOpen={open}
-											isSessionCurrent={isSessionCurrent}
 											mobileLayout
 											mobileView="margin"
 										/>
@@ -291,7 +282,6 @@ function MarginModeModalComponent({
 								isUpdating={actionPending}
 								onClose={() => onOpenChange(false)}
 								sessionOpen={open}
-								isSessionCurrent={isSessionCurrent}
 								mobileLayout
 								mobileView="margin"
 							/>
@@ -322,7 +312,6 @@ function MarginModeModalComponent({
 					isUpdating={actionPending}
 					onClose={() => onOpenChange(false)}
 					sessionOpen={open}
-					isSessionCurrent={isSessionCurrent}
 				/>
 			</ModalPopup>
 		</Modal>
@@ -372,9 +361,9 @@ function MarginModeForm({
 	mobileView = "margin",
 	leverageDraft = null,
 	onLeverageDraftChange,
-	isSessionCurrent,
 }: FormProps) {
 	const { t } = useLingui();
+	const { clientKey, env } = useHyperliquid();
 	const [selectedMode, setSelectedMode] = useState<MarginMode>(currentMode);
 	const [leverageInputValid, setLeverageInputValid] = useState(true);
 	const applyInFlightRef = useRef(false);
@@ -431,22 +420,25 @@ function MarginModeForm({
 			return;
 		applyInFlightRef.current = true;
 		const mode = showMarginControls ? selectedMode : currentMode;
+		const notificationId = addOrderQueueItem({ owner: clientKey, env, title: msg`Margin mode`, status: "pending" });
 		onClose();
 		try {
 			const leverage = await onApply(mode, showLeverageControls ? canonicalLeverage : effectiveLeverage);
-			if (leverage === null || !isSessionCurrent()) return;
-			const leverageNotice = t`Leverage updated to ${leverage}x`;
-			if (!modeDirty) {
-				toast.success(leverageNotice);
-			} else if (leverageDirty) {
-				toast.success(t`Margin mode updated`, { description: leverageNotice });
-			} else {
-				toast.success(t`Margin mode updated`);
+			if (leverage === null) {
+				removeOrderQueueItem(notificationId);
+				return;
 			}
+			let message = msg`Margin mode updated`;
+			if (!modeDirty) message = msg`Leverage updated to ${leverage}x`;
+			else if (leverageDirty) message = msg`Margin mode updated. Leverage updated to ${leverage}x`;
+			updateOrderQueueItem(notificationId, { status: "success", message });
 		} catch (error) {
-			if (isSessionCurrent()) {
-				toast.error(error instanceof Error && error.message ? error.message : t`Update failed`);
-			}
+			const unknown = isAmbiguousExchangeActionError(error);
+			updateOrderQueueItem(notificationId, {
+				status: unknown ? "unconfirmed" : "failed",
+				error: error instanceof Error ? error.message : undefined,
+				message: unknown ? msg`Update not confirmed. Check account settings before retrying.` : msg`Update failed`,
+			});
 		} finally {
 			applyInFlightRef.current = false;
 		}

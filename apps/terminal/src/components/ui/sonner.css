@@ -1,0 +1,8 @@
+.toaster[data-sonner-toaster] [data-sonner-toast][data-expanded="false"][data-front="false"] > * {
+	opacity: 0;
+}
+
+.toaster[data-sonner-toaster] [data-sonner-toast][data-styled="false"] {
+	border-radius: var(--radius-8);
+	background: var(--bg-overlay);
+}

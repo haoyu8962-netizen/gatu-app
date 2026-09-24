@@ -78,3 +78,15 @@ jobs:
           pnpm --dir apps/terminal exec playwright test
           --config tests/browser/account-actions.playwright.config.ts
           --fully-parallel --shard=${{ matrix.shard }}/2
+
+      - name: Run mobile close-all positions regressions
+        run: >-
+          pnpm --dir apps/terminal exec playwright test
+          --config tests/browser/position-close-all.playwright.config.ts
+          --fully-parallel --shard=${{ matrix.shard }}/2
+
+      - name: Run notification lifecycle and layout regressions
+        run: >-
+          pnpm --dir apps/terminal exec playwright test
+          --config tests/browser/notifications.playwright.config.ts
+          --fully-parallel --shard=${{ matrix.shard }}/2

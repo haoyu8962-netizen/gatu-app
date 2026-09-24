@@ -2,21 +2,19 @@
 
 import { i18n } from "@lingui/core";
 import Big from "big.js";
-import { act, createElement, type ReactNode } from "react";
+import { act, createElement, Fragment, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PositionMarketCloseSubmitHost } from "@/components/trade/components/position-market-close-submit-host";
 import { PositionMarketCloseModal } from "@/components/trade/positions/position-market-close-modal";
 import type { PositionCloseSizingIntent } from "@/domain/trade/position-market-close";
-import {
-	formatPositionSubmitFeedback,
-	localizedPositionSubmitFeedback,
-	type PositionSubmitFeedbackCode,
-} from "@/lib/trade/position-submit-feedback";
+import { localizedPositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
 import {
 	getPositionMarketCloseActions,
 	getPositionMarketCloseModal,
 	type PositionMarketCloseRef,
 } from "@/stores/use-global-modal-store";
+import { type OrderQueueItem, removeOrderQueueItem, useOrderQueue } from "@/stores/use-order-queue-store";
 import { getPendingOrderActions } from "@/stores/use-pending-order-store";
 import { getPendingTwapActions } from "@/stores/use-pending-twap-store";
 import { createI18nRoot } from "./harness/react";
@@ -169,8 +167,10 @@ const positionRef: PositionMarketCloseRef = {
 	marginMode: "isolated",
 };
 
-function localizedMessage(code: PositionSubmitFeedbackCode): string {
-	return formatPositionSubmitFeedback(localizedPositionSubmitFeedback(code), (descriptor) => i18n._(descriptor));
+let queueItems: OrderQueueItem[] = [];
+function QueueProbe() {
+	queueItems = useOrderQueue();
+	return null;
 }
 
 function createGate() {
@@ -197,7 +197,17 @@ describe("market close: the size shown at the click bounds the size that is sent
 	let root: Root;
 
 	function renderDialog() {
-		act(() => root.render(createElement(PositionMarketCloseModal)));
+		act(() =>
+			root.render(
+				createElement(
+					Fragment,
+					null,
+					createElement(QueueProbe),
+					createElement(PositionMarketCloseModal),
+					createElement(PositionMarketCloseSubmitHost),
+				),
+			),
+		);
 	}
 
 	function getShownCloseSize(): string {
@@ -305,6 +315,9 @@ describe("market close: the size shown at the click bounds the size that is sent
 	});
 
 	afterEach(() => {
+		act(() => {
+			for (const item of queueItems) removeOrderQueueItem(item.id);
+		});
 		act(() => root.unmount());
 		container.remove();
 		const session = getPositionMarketCloseModal();
@@ -326,8 +339,12 @@ describe("market close: the size shown at the click bounds the size that is sent
 
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getSentSizes()).toEqual([]);
-		expect(mocks.toastError).toHaveBeenCalledTimes(1);
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("close-size-exceeds-confirmed"));
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({
+			status: "failed",
+			error: localizedPositionSubmitFeedback("close-size-exceeds-confirmed"),
+		});
+		expect(mocks.toastError).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -361,7 +378,9 @@ describe("market close: the size shown at the click bounds the size that is sent
 		expect(getSentSizes()).toEqual([sent]);
 		expect(Big(sent).lte(Big(shown))).toBe(true);
 		expect(mocks.toastError).not.toHaveBeenCalled();
-		expect(mocks.toastSuccess).toHaveBeenCalledTimes(1);
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({ status: "success", outcome: "filled", size: sent });
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 	});
 
 	it("sends nothing for a tap that lands while the size slider is being dragged", async () => {

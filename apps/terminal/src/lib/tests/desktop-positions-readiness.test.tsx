@@ -10,7 +10,7 @@ const state = vi.hoisted(() => ({
 	connected: true,
 	status: "active",
 	isStale: false,
-	data: undefined as { clearinghouseStates: [] } | undefined,
+	data: undefined as { user: string; clearinghouseStates: [] } | undefined,
 }));
 
 vi.mock("../../../../../packages/hl-react/src/provider", () => ({
@@ -71,7 +71,7 @@ describe("desktop positions snapshot presentation", () => {
 		state.status = "active";
 		render();
 		expect(container.querySelector('[data-slot="passive-data-placeholder"][aria-busy="true"]')).not.toBeNull();
-		state.data = { clearinghouseStates: [] };
+		state.data = { user: "0x1111111111111111111111111111111111111111", clearinghouseStates: [] };
 		render();
 		expect(container.textContent).toContain("No active positions.");
 		expect(container.textContent).not.toContain("Loading positions...");
@@ -84,7 +84,7 @@ describe("desktop positions snapshot presentation", () => {
 		expect(container.textContent).not.toContain("Failed to load positions.");
 	});
 	it("does not turn a stale empty snapshot into a confirmed empty account", () => {
-		state.data = { clearinghouseStates: [] };
+		state.data = { user: "0x1111111111111111111111111111111111111111", clearinghouseStates: [] };
 		state.isStale = true;
 		render();
 		expect(container.querySelector('[data-slot="passive-data-placeholder"]')).not.toBeNull();

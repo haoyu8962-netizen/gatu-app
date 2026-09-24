@@ -62,7 +62,7 @@ Detailed conventions live in [code-style.md](.claude/rules/code-style.md), [hype
 
 Prefer existing typed exports from `@gatu/hl-react`: `useInfo*` for requests, `useSub*` for subscriptions and `useAction*` for mutations. Shared implementations live in [packages/hl-react/src/hooks](packages/hl-react/src/hooks), with behavior declared in [registries](packages/hl-react/src/registries). Add app-specific composition under `apps/terminal/src/hooks/` or `lib/`; do not recreate the former app-local info/subscription/exchange directories or bypass shared execution guards.
 
-Draft and preference stores live in `apps/terminal/src/stores/`. Add persistence only where the lifecycle requires it; validate persisted data with [validated storage](apps/terminal/src/lib/storage/validated-storage.ts). Financial action execution must recheck current identity, market, legal status and required snapshot availability, not merely trust displayed component values.
+Draft and preference stores live in `apps/terminal/src/stores/`. Add persistence only where the lifecycle requires it; validate persisted data with [validated storage](apps/terminal/src/lib/storage/validated-storage.ts). Financial action execution must recheck current identity, market, legal status and required snapshot availability, not merely trust displayed component values. Requested-action feedback follows the [global notification contract](docs/trading-notifications.md): use the shared Sonner host and owner/environment-scoped task updates without making presentation state an execution guard.
 
 ### Layout and passive data
 

@@ -6,10 +6,22 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { MobileOrdersTab } from "@/components/trade/mobile/mobile-orders-tab";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import {
+	getOrderQueueItem,
+	type OrderQueueItem,
+	removeOrderQueueItem,
+	useOrderQueue,
+} from "@/stores/use-order-queue-store";
+import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
 } from "@/stores/use-pending-trading-action-store";
 import { createI18nRoot } from "./harness/react";
+
+let queueItems: OrderQueueItem[] = [];
+function ReviewedOrders() {
+	queueItems = useOrderQueue();
+	return <MobileOrdersTab scrollMode="page" />;
+}
 
 const mocks = vi.hoisted(() => ({
 	toastError: vi.fn(),
@@ -239,13 +251,17 @@ describe("MobileOrdersTab disclosure card", () => {
 	});
 
 	afterEach(() => {
-		act(() => root.unmount());
+		act(() => {
+			for (const item of queueItems) removeOrderQueueItem(item.id);
+			root.unmount();
+		});
+		queueItems = [];
 		container.remove();
 		vi.clearAllMocks();
 	});
 
 	function renderOrders({ expandFirst = true }: { expandFirst?: boolean } = {}) {
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		act(() => root.render(<ReviewedOrders />));
 		if (!expandFirst) return;
 
 		const expand = container.querySelector<HTMLButtonElement>(
@@ -617,6 +633,8 @@ describe("MobileOrdersTab disclosure card", () => {
 			(button) => button.textContent?.trim() === "Cancel",
 		);
 		act(() => accountACancel?.click());
+		const feedbackId = queueItems.at(-1)?.id;
+		expect(getOrderQueueItem(feedbackId)?.status).toBe("pending");
 		const accountACallbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void } | undefined;
 
 		mocks.address = "0x2222222222222222222222222222222222222222";
@@ -630,6 +648,32 @@ describe("MobileOrdersTab disclosure card", () => {
 
 		expect(mocks.cancelError?.message).toBe("Account A cancellation failed");
 		expect(container.textContent).not.toContain("Account A cancellation failed");
+		expect(getOrderQueueItem(feedbackId)).toMatchObject({
+			owner: "0x1111111111111111111111111111111111111111",
+			status: "failed",
+			error: "Account A cancellation failed",
+		});
+	});
+
+	it("retains the definitive cancellation failure after its list unmounts", async () => {
+		renderOrders();
+		const cancel = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel",
+		);
+		act(() => cancel?.click());
+		const feedbackId = queueItems.at(-1)?.id;
+		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void } | undefined;
+		act(() => root.render(null));
+		await act(async () => {
+			callbacks?.onError(new Error("Cancellation failed after leaving the list"));
+			await Promise.resolve();
+		});
+		expect(getOrderQueueItem(feedbackId)).toMatchObject({
+			owner: "0x1111111111111111111111111111111111111111",
+			status: "failed",
+			error: "Cancellation failed after leaving the list",
+		});
+		expect(mocks.toastError).not.toHaveBeenCalled();
 	});
 
 	it("requires confirmation before canceling all and blocks duplicate submission", async () => {
@@ -672,7 +716,8 @@ describe("MobileOrdersTab disclosure card", () => {
 		});
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
 		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
-		expect(mocks.toastSuccess).toHaveBeenCalledWith("Order cancellation confirmed.", { id: expect.any(String) });
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		expect(queueItems.at(-1)).toMatchObject({ status: "confirming" });
 		expect(mocks.toastError).not.toHaveBeenCalled();
 		expect(mocks.toastWarning).not.toHaveBeenCalled();
 	});
@@ -697,10 +742,8 @@ describe("MobileOrdersTab disclosure card", () => {
 		});
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
 		expect(document.body.textContent).toContain("The cancellation response could not be confirmed.");
-		expect(mocks.toastWarning).toHaveBeenCalledWith(
-			expect.stringContaining("The cancellation response could not be confirmed."),
-			{ id: expect.any(String) },
-		);
+		expect(mocks.toastWarning).not.toHaveBeenCalled();
+		expect(queueItems.at(-1)).toMatchObject({ status: "confirming" });
 		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
 	});
 

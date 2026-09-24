@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const REACTIVE_COMPONENTS = [
@@ -101,9 +102,66 @@ describe("live localization source contract", () => {
 	it.each(REACTIVE_COMPONENTS)("translates %s during render", (relativePath) => {
 		const source = readFileSync(resolve(__dirname, "../..", relativePath), "utf8");
 
-		expect(source).not.toContain("@lingui/core/macro");
+		expect(nonDescriptorCoreMacroImports(source)).toEqual([]);
 		expect(source).not.toContain("UI_TEXT");
 		expect(source).toContain("@lingui/react/macro");
+	});
+});
+
+// Core msg/defineMessage retain semantics for later translation. Core t/plural/select
+// eagerly produce strings and must not replace a locale-subscribed render translator.
+function nonDescriptorCoreMacroImports(source: string): string[] {
+	const file = ts.createSourceFile("presentation.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+	const violations: string[] = [];
+	for (const statement of file.statements) {
+		if (
+			!ts.isImportDeclaration(statement) ||
+			!ts.isStringLiteral(statement.moduleSpecifier) ||
+			statement.moduleSpecifier.text !== "@lingui/core/macro"
+		)
+			continue;
+		const clause = statement.importClause;
+		if (clause?.isTypeOnly) continue;
+		if (!clause) {
+			violations.push("side-effect");
+			continue;
+		}
+		if (clause.name) violations.push("default");
+		const bindings = clause.namedBindings;
+		if (!bindings) continue;
+		if (ts.isNamespaceImport(bindings)) {
+			violations.push("namespace");
+			continue;
+		}
+		for (const binding of bindings.elements) {
+			if (binding.isTypeOnly) continue;
+			const imported = (binding.propertyName ?? binding.name).text;
+			if (imported !== "msg" && imported !== "defineMessage") violations.push(imported);
+		}
+	}
+	return violations;
+}
+
+describe("lazy descriptor imports in reactive presentation", () => {
+	it.each([
+		'import { msg } from "@lingui/core/macro";',
+		'import { msg as describeMessage, defineMessage } from "@lingui/core/macro";',
+	])("allows locale-independent descriptors: %s", (coreImport) => {
+		expect(nonDescriptorCoreMacroImports(coreImport)).toEqual([]);
+	});
+
+	it.each([
+		['import { t } from "@lingui/core/macro";', "t"],
+		['import { t as translate } from "@lingui/core/macro";', "t"],
+		['import { msg, t } from "@lingui/core/macro";', "t"],
+		['import { plural } from "@lingui/core/macro";', "plural"],
+		['import * as core from "@lingui/core/macro";', "namespace"],
+		['import core from "@lingui/core/macro";', "default"],
+	])("rejects imperative core imports even alongside a React locale subscription: %s", (coreImport, violation) => {
+		const source = `${coreImport}
+import { useLingui } from "@lingui/react/macro";
+function View() { const { t } = useLingui(); return t({ id: "label" }); }`;
+		expect(nonDescriptorCoreMacroImports(source)).toEqual([violation]);
 	});
 });
 

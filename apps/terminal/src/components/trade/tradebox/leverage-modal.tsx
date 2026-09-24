@@ -1,7 +1,10 @@
 import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { memo, useEffect, useRef, useState } from "react";
+import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import { useHyperliquid } from "@/lib/hyperliquid";
+import { addOrderQueueItem, removeOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import { TradingActionButton } from "../components/trading-action-button";
 import { LeverageEditor } from "./leverage-editor";
 
@@ -20,11 +23,6 @@ interface Props {
 
 function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...contentProps }: Props) {
 	const { t } = useLingui();
-	const identityRef = useRef(marketIdentity);
-
-	useLayoutEffect(() => {
-		identityRef.current = marketIdentity;
-	}, [marketIdentity]);
 
 	return (
 		<Modal open={open} onOpenChange={onOpenChange}>
@@ -40,7 +38,6 @@ function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...content
 					{...contentProps}
 					open={open}
 					onOpenChange={onOpenChange}
-					isSessionCurrent={() => identityRef.current === marketIdentity}
 				/>
 			</ModalPopup>
 		</Modal>
@@ -49,9 +46,7 @@ function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...content
 
 export const LeverageModal = memo(LeverageModalComponent);
 
-type LeverageModalContentProps = Omit<Props, "marketIdentity"> & {
-	isSessionCurrent: () => boolean;
-};
+type LeverageModalContentProps = Omit<Props, "marketIdentity">;
 
 function LeverageModalContent({
 	open,
@@ -63,9 +58,8 @@ function LeverageModalContent({
 	onPendingLeverageChange,
 	isUpdating,
 	onApply,
-	isSessionCurrent,
 }: LeverageModalContentProps) {
-	const { t } = useLingui();
+	const { clientKey, env } = useHyperliquid();
 	const [dragLeverage, setDragLeverage] = useState<number | null>(null);
 	const leverageDragActiveRef = useRef(false);
 	const [leverageInputValid, setLeverageInputValid] = useState(true);
@@ -110,14 +104,22 @@ function LeverageModalContent({
 		)
 			return;
 		applyInFlightRef.current = true;
+		const notificationId = addOrderQueueItem({ owner: clientKey, env, title: msg`Adjust leverage`, status: "pending" });
 		onOpenChange(false);
 		try {
 			const leverage = await onApply(canonicalLeverage);
-			if (leverage !== null && isSessionCurrent()) toast.success(t`Leverage updated to ${leverage}x`);
-		} catch (error) {
-			if (isSessionCurrent()) {
-				toast.error(error instanceof Error && error.message ? error.message : t`Update failed`);
+			if (leverage === null) {
+				removeOrderQueueItem(notificationId);
+				return;
 			}
+			updateOrderQueueItem(notificationId, { status: "success", message: msg`Leverage updated to ${leverage}x` });
+		} catch (error) {
+			const unknown = isAmbiguousExchangeActionError(error);
+			updateOrderQueueItem(notificationId, {
+				status: unknown ? "unconfirmed" : "failed",
+				error: error instanceof Error ? error.message : undefined,
+				message: unknown ? msg`Update not confirmed. Check account settings before retrying.` : msg`Update failed`,
+			});
 		} finally {
 			applyInFlightRef.current = false;
 		}

@@ -1,7 +1,8 @@
 import type { ExchangeExecutionGuard, HyperliquidExchangeSessionLease } from "@gatu/hl-react";
 import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
+import { getOrderExecutionSummary, type OrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
-import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
+import { isOrderBatchResolutionError, type TrackedOrderParams } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { buildTwapOrderDetails } from "@/domain/trade/twap-details";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -39,9 +40,11 @@ export interface OrderSubmitInput {
 	draftResetToken: OrderSubmitDraftResetToken;
 	market: SubmitMarket;
 	baseToken: string;
+	quoteToken?: string;
 	side: Side;
 	orderType: OrderType;
 	sizeValue: number;
+	sizeForOrder?: string;
 	price: number;
 	executionReferencePx: number;
 	markPx: number;
@@ -106,7 +109,7 @@ function getQueueOrderType(input: OrderSubmitInput): QueueOrderType {
 }
 
 export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSubmitResult {
-	const { exchangeSession, clientKey, sessionMode } = useHyperliquid();
+	const { exchangeSession, clientKey, sessionMode, env } = useHyperliquid();
 	const { submitOrder, isPending: isSubmittingOrder } = useTrackedOrder({ executionGuard: options.executionGuard });
 	const { submitTwap, isPending: isSubmittingTwap } = useTrackedTwapOrder({
 		executionGuard: options.twapExecutionGuard,
@@ -178,7 +181,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 		} = input;
 
 		const szDecimals = market.szDecimals ?? 0;
-		const formattedSize = formatSizeForOrder(sizeValue, szDecimals);
+		const formattedSize = formatSizeForOrder(input.sizeForOrder ?? sizeValue, szDecimals);
 		const formattedPrice = formatPriceForOrder(price, { assetId: market.assetId, szDecimals });
 		const riskContext =
 			market.kind === "spot" ? ({ marketKind: "spot" } as const) : ({ marketKind: "perp", marginMode } as const);
@@ -187,7 +190,10 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 		const hasSl = tpSlEnabled && canUseTpSl && isPositive(slPriceNum);
 
 		const orderId = addOrder({
+			owner: clientKey,
+			env,
 			market: baseToken,
+			quoteToken: input.quoteToken,
 			side,
 			size: formattedSize,
 			price: formattedPrice,
@@ -253,7 +259,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					assetId: market.assetId,
 					side,
 					orderType,
-					sizeValue,
+					sizeValue: input.sizeForOrder ?? sizeValue,
 					szDecimals,
 					markPx: executionReferencePx,
 					price,
@@ -277,9 +283,14 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					return;
 				}
 
+				let execution: OrderExecutionSummary | undefined;
+				function updateExecution(response: unknown, orders: TrackedOrderParams["orders"]) {
+					execution = getOrderExecutionSummary(orders, response, input.scaleOrder ? orders.length : 1, plan.grouping);
+					if (execution) updateOrder(orderId, { execution });
+				}
 				const submission = await submitOrder(
 					{ orders: plan.orders, grouping: plan.grouping },
-					{ queueId: orderId, riskContext },
+					{ queueId: orderId, riskContext, onResponse: updateExecution },
 				);
 				if (submission.state === "blocked") {
 					updateOrder(orderId, {
@@ -299,7 +310,10 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				if (errors.length > 0) {
 					updateOrder(orderId, { status: "failed", error: errors.join("; ") });
 				} else {
-					updateOrder(orderId, { status: "success", outcome: deriveOrderOutcome(statuses) });
+					updateOrder(orderId, {
+						status: execution?.completeness === "partial" && !input.scaleOrder ? "partial" : "success",
+						outcome: deriveOrderOutcome(statuses),
+					});
 				}
 			}
 

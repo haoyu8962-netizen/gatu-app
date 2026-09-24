@@ -17,7 +17,7 @@ interface Props {
 	liqPrice: number | null;
 	liqWarning: boolean;
 	orderValue: number;
-	marginRequired: number;
+	marginRequired: number | null;
 	takerFeeQuote: OrderFeeQuote;
 	makerFeeQuote: OrderFeeQuote;
 	slippagePercent: number;
@@ -72,8 +72,15 @@ export function OrderSummary({
 			</SummaryRow>
 			{isLeveraged && (
 				<SummaryRow compact={compact} label={t(TRADE_PANEL_LABELS.marginRequired)}>
-					<span className={cn("whitespace-nowrap", marginRequired <= 0 && "font-normal text-trading-panel-muted")}>
-						{marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
+					<span
+						className={cn(
+							"whitespace-nowrap",
+							(marginRequired === null || marginRequired <= 0) && "font-normal text-trading-panel-muted",
+						)}
+					>
+						{marginRequired !== null && marginRequired > 0
+							? formatUSD(marginRequired, { compact: false })
+							: FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
 			)}

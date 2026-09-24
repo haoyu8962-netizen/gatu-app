@@ -1,3 +1,4 @@
+import { clearFeedback, feedbackErrorText, feedbackText, latestFeedback } from "./harness/order-feedback";
 // @vitest-environment jsdom
 
 import { createHash } from "node:crypto";
@@ -7,9 +8,6 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountModeModal } from "@/components/trade/tradebox/account-mode-modal";
-
-const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
-vi.mock("sonner", () => ({ toast: toastMocks }));
 
 const zhTranslations: Record<string, string> = {
 	"Account type": "账户类型",
@@ -39,11 +37,20 @@ function activateLocale(locale: "en" | "zh") {
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+const feedbackIdentity = vi.hoisted(() => ({
+	clientKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	env: "Mainnet",
+}));
+vi.mock("@/lib/hyperliquid", () => ({ useHyperliquid: () => feedbackIdentity }));
+
 describe("AccountModeModal", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		feedbackIdentity.clientKey = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+		feedbackIdentity.env = "Mainnet";
+		clearFeedback();
 		activateLocale("en");
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -51,8 +58,7 @@ describe("AccountModeModal", () => {
 	});
 
 	afterEach(() => {
-		toastMocks.error.mockReset();
-		toastMocks.success.mockReset();
+		clearFeedback();
 		act(() => root.unmount());
 		container.remove();
 	});
@@ -130,7 +136,7 @@ describe("AccountModeModal", () => {
 
 		await act(async () => resolveApply?.());
 		expect(onOpenChange).toHaveBeenCalledOnce();
-		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(latestFeedback("failed")).toBeUndefined();
 	});
 
 	it("requires an explicit supported selection for the protocol default", async () => {
@@ -214,7 +220,7 @@ describe("AccountModeModal", () => {
 			await Promise.resolve();
 		});
 		expect(onOpenChange).toHaveBeenCalledWith(false);
-		expect(toastMocks.error).toHaveBeenCalledWith(message);
+		expect(feedbackErrorText(latestFeedback("failed")) || feedbackText("failed")).toBe(message);
 		expect(document.body.textContent).not.toContain(message);
 		expect(onApply).toHaveBeenCalledOnce();
 	});
@@ -331,4 +337,47 @@ describe("AccountModeModal", () => {
 			"Portfolio margin eligibility and limits",
 		);
 	});
+
+	it.each(["success", "failed"] as const)(
+		"keeps a late %s result scoped after the account form unmounts",
+		async (status) => {
+			let settle: (() => void) | undefined;
+			const onApply = vi.fn(
+				() =>
+					new Promise<void>((resolve, reject) => {
+						settle = () => (status === "success" ? resolve() : reject(new Error("Request rejected")));
+					}),
+			);
+			const onOpenChange = vi.fn();
+			act(() =>
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<AccountModeModal open onOpenChange={onOpenChange} currentMode="disabled" canChange onApply={onApply} />
+					</I18nProvider>,
+				),
+			);
+			const option = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find((button) =>
+				button.textContent?.includes("Unified account"),
+			);
+			act(() => option?.click());
+			const confirm = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+				(button) => button.textContent?.trim() === "Confirm",
+			);
+			act(() => confirm?.click());
+			const pendingId = latestFeedback("pending")?.id;
+			expect(pendingId).toBeDefined();
+
+			feedbackIdentity.clientKey = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+			feedbackIdentity.env = "Testnet";
+			act(() => root.render(null));
+			await act(async () => settle?.());
+			expect(latestFeedback(status)).toMatchObject({
+				id: pendingId,
+				owner: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				env: "Mainnet",
+			});
+			expect(onApply).toHaveBeenCalledOnce();
+			expect(onOpenChange).toHaveBeenCalledOnce();
+		},
+	);
 });

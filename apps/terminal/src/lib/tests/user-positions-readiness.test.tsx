@@ -64,8 +64,38 @@ describe("position snapshot readiness", () => {
 		expect(render()?.getAttribute("data-error")).toBe("true");
 	});
 
+	it("rejects a snapshot belonging to another owner", () => {
+		state.data = {
+			user: "0x2222222222222222222222222222222222222222",
+			clearinghouseStates: [],
+		} as AllDexsClearinghouseStateWsEvent;
+		expect(render()?.getAttribute("data-error")).toBe("true");
+	});
+	it.each(["NaN", "", "1e3"])("rejects malformed position %s instead of publishing an empty account", (szi) => {
+		state.data = {
+			user: state.clientKey,
+			clearinghouseStates: [["", { assetPositions: [{ position: { coin: "HYPE", szi } }] }]],
+		} as AllDexsClearinghouseStateWsEvent;
+		expect(render()?.getAttribute("data-error")).toBe("true");
+	});
+
 	it("does not mark disconnected sessions as loading", () => {
 		state.clientKey = "disconnected";
 		expect(render()?.getAttribute("data-loading")).toBe("false");
+	});
+	it.each(
+		[
+			null,
+			{},
+			[null],
+			[["", { assetPositions: [null] }]],
+			[
+				["", { assetPositions: [] }],
+				["", { assetPositions: [] }],
+			],
+		].map((clearinghouseStates) => ({ clearinghouseStates })),
+	)("rejects malformed clearinghouse structure $clearinghouseStates without throwing", ({ clearinghouseStates }) => {
+		state.data = { user: state.clientKey, clearinghouseStates } as unknown as AllDexsClearinghouseStateWsEvent;
+		expect(render()?.getAttribute("data-error")).toBe("true");
 	});
 });

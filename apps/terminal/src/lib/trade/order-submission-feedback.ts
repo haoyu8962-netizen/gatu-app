@@ -24,6 +24,7 @@ export type OrderSubmissionFeedbackCode =
 	| "market-context-mismatch"
 	| "no-active-account"
 	| "order-conditions-changed"
+	| "reduce-only-position-changed"
 	| "order-failed"
 	| "scale-level-below-min-notional"
 	| "scale-levels-range"
@@ -47,6 +48,7 @@ export interface OrderSubmissionFeedback {
 }
 
 const messages: Record<OrderSubmissionFeedbackCode, MessageDescriptor> = {
+	"reduce-only-position-changed": msg`Position changed before submission. Review the Reduce Only quantity and direction.`,
 	"balance-changed": msg`Balance changed before submission. Review the updated balance and try again.`,
 	"blocked-order": msg`Another order for this market is still being confirmed.`,
 	"blocked-twap": msg`Another TWAP order for this market is still being confirmed.`,
@@ -142,8 +144,9 @@ function getEntryExecutionFeedback(cause: EntryExecutionError): OrderSubmissionF
 			return orderSubmissionFeedback("twap-minutes-range");
 		case "twap-notional-too-small":
 			return orderSubmissionFeedback("twap-min-notional");
-		case "order-request-invalid":
 		case "reduce-only-position-changed":
+			return orderSubmissionFeedback("reduce-only-position-changed");
+		case "order-request-invalid":
 		case "slippage-limit-exceeded":
 		case "slippage-setting-invalid":
 		case "stop-price-invalidated":
@@ -203,6 +206,8 @@ export function getDefaultOrderSubmissionFeedbackMessage(feedback: OrderSubmissi
 			return "Order market context does not match the submitted asset.";
 		case "no-active-account":
 			return "No active Hyperliquid account";
+		case "reduce-only-position-changed":
+			return "Position changed before submission. Review the Reduce Only quantity and direction.";
 		case "order-conditions-changed":
 			return "Order conditions changed before it was confirmed. Review the order and submit it again.";
 		case "order-failed":

@@ -20,7 +20,6 @@ import { AccountActivityFeedOwner } from "./account-activity-feed-owner";
 import { DesktopTerminalSurface } from "./layout/desktop-terminal-surface";
 import { TerminalBootError } from "./layout/terminal-boot-error";
 import { MobileTerminal } from "./mobile/mobile-terminal";
-import { OrderToast } from "./tradebox/order-toast";
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 
@@ -111,12 +110,9 @@ function MarketReadyOverlays({ marketReady }: Props) {
 	if (!marketReady) return null;
 
 	return (
-		<>
-			<OrderToast />
-			<Suspense fallback={null}>
-				<GlobalModals enableHip3Disclaimer enableLegalGate enablePositionMarketClose enableTradingOnboarding />
-			</Suspense>
-		</>
+		<Suspense fallback={null}>
+			<GlobalModals enableHip3Disclaimer enableLegalGate enablePositionMarketClose enableTradingOnboarding />
+		</Suspense>
 	);
 }
 

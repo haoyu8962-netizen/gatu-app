@@ -9,6 +9,10 @@ import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-
 import { reserveOrderAssets, runWithOrderAssetLocks } from "@/lib/trade/order-asset-lock";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import {
+	beginPositionMarketCloseAttempt,
+	type PositionMarketCloseSubmitInput,
+} from "@/lib/trade/position-market-close-submitter";
+import {
 	formatPositionSubmitFeedback,
 	localizedPositionSubmitFeedback,
 	type PositionSubmitFeedbackCode,
@@ -19,9 +23,11 @@ import {
 	type PositionMarketClosePresentation,
 	type PositionMarketCloseRef,
 } from "@/stores/use-global-modal-store";
+import { type OrderQueueItem, removeOrderQueueItem, useOrderQueue } from "@/stores/use-order-queue-store";
 import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
 import { getPendingTwapActions } from "@/stores/use-pending-twap-store";
 import { createExchangeHarness } from "./harness/hyperliquid-exchange";
+import { feedbackErrorText } from "./harness/order-feedback";
 import { createI18nRoot } from "./harness/react";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
@@ -191,8 +197,14 @@ const positionRef: PositionMarketCloseRef = {
 
 let hookValue: ReturnType<typeof usePositionMarketCloseSubmit> | null = null;
 let hookRenderCount = 0;
+let queueItems: OrderQueueItem[] = [];
+
+function queueErrorMessages() {
+	return queueItems.filter((item) => item.status === "failed").map(feedbackErrorText);
+}
 
 function Probe() {
+	queueItems = useOrderQueue();
 	hookRenderCount += 1;
 	hookValue = usePositionMarketCloseSubmit();
 	return null;
@@ -251,9 +263,14 @@ interface SubmitConfirmedOptions {
 	dismissFutureConfirmation?: boolean;
 }
 
+function submitThroughHook(input: PositionMarketCloseSubmitInput): Promise<void> {
+	const attempt = beginPositionMarketCloseAttempt(input);
+	return attempt ? currentHook().execute(attempt) : Promise.resolve();
+}
+
 function submitConfirmed(sessionId: string, options: SubmitConfirmedOptions = {}): Promise<void> {
 	const { confirmedCloseSize = "2.5", dismissFutureConfirmation } = options;
-	return currentHook().submit({ sessionId, confirmedCloseSize, dismissFutureConfirmation });
+	return submitThroughHook({ sessionId, confirmedCloseSize, dismissFutureConfirmation });
 }
 
 function createExecutionGate() {
@@ -371,6 +388,9 @@ describe("usePositionMarketCloseSubmit", () => {
 	});
 
 	afterEach(() => {
+		act(() => {
+			for (const item of queueItems) removeOrderQueueItem(item.id);
+		});
 		act(() => root.unmount());
 		container.remove();
 		hookValue = null;
@@ -408,10 +428,16 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(typeof submitted.orders[0]?.p).toBe("string");
 		expect(typeof submitted.orders[0]?.s).toBe("string");
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastSuccess).toHaveBeenCalledWith(
-			"Close order submitted",
-			expect.objectContaining({ description: "2.500 CXMT" }),
-		);
+		expect(queueItems.at(-1)).toMatchObject({
+			status: "success",
+			outcome: "filled",
+			size: "2.5",
+			owner: USER,
+			env: "Mainnet",
+			operation: "market-close",
+			children: [{ assetId: ASSET_ID, market: COIN, status: "filled", filledSize: "2.5" }],
+		});
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -462,7 +488,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(hookRenderCount).toBe(1);
 	});
 
-	it("reports a client-side block with a toast and releases the session", async () => {
+	it("reports a client-side block in the queue and releases the session", async () => {
 		mocks.lockRequest.mockImplementationOnce(
 			async (_name: string, _options: LockOptions, callback: (lock: Lock | null) => unknown | PromiseLike<unknown>) =>
 				callback(null),
@@ -471,20 +497,20 @@ describe("usePositionMarketCloseSubmit", () => {
 
 		await act(async () => submitConfirmed(sessionId));
 
-		expect(mocks.toastError).toHaveBeenCalledWith(BLOCKED_MESSAGE);
+		expect(queueErrorMessages()).toContain(BLOCKED_MESSAGE);
 		expect(getPositionMarketCloseModal()).toBeNull();
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 	});
 
-	it("reports a raw SDK error with a toast and releases the session", async () => {
+	it("reports a raw SDK error in the queue and releases the session", async () => {
 		const sdkMessage = "SDK could not load the close snapshot";
 		mocks.clearinghouseState.mockRejectedValueOnce(new Error(sdkMessage));
 		const sessionId = openSession();
 
 		await act(async () => submitConfirmed(sessionId));
 
-		expect(mocks.toastError).toHaveBeenCalledWith(sdkMessage);
+		expect(queueErrorMessages()).toContain(sdkMessage);
 		expect(getPositionMarketCloseModal()).toBeNull();
 		expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
 	});
@@ -503,13 +529,62 @@ describe("usePositionMarketCloseSubmit", () => {
 			await gate.entered;
 		});
 		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, presentation: "dismissed", phase: "validating" });
+		const queueId = queueItems.at(-1)?.id;
+		expect(queueItems.at(-1)).toMatchObject({
+			operation: "market-close",
+			status: "pending",
+			owner: USER,
+			env: "Mainnet",
+		});
+		expect(mocks.executeOrder).not.toHaveBeenCalled();
 
 		await act(async () => {
 			gate.release();
 			await submission;
 		});
-		expect(mocks.toastError).toHaveBeenCalledWith("snapshot failed");
+		expect(queueErrorMessages()).toContain("snapshot failed");
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({ id: queueId, status: "failed" });
 		expect(getPositionMarketCloseModal()).toBeNull();
+	});
+
+	it("retains actual partial close quantity instead of reporting zero execution as a rejection", async () => {
+		mocks.executeOrder.mockResolvedValueOnce(createConfirmedResponse("0.5"));
+		const sessionId = openSession();
+		await act(async () => submitConfirmed(sessionId));
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({
+			status: "partial",
+			countMode: "filled",
+			acceptedCount: 0,
+			totalCount: 1,
+			children: [{ assetId: ASSET_ID, market: COIN, size: "2.5", filledSize: "0.5", status: "partial" }],
+		});
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		expect(mocks.toastError).not.toHaveBeenCalled();
+	});
+
+	it("keeps a blocked late attempt attributed to the original owner and network", async () => {
+		const gate = createExecutionGate();
+		mocks.betweenExecutionGuards = gate.wait;
+		const sessionId = openSession();
+		let submission!: Promise<void>;
+		await act(async () => {
+			submission = submitConfirmed(sessionId);
+			await gate.entered;
+		});
+		const queueId = queueItems[0]?.id;
+		mocks.clientKey = "0x2222222222222222222222222222222222222222";
+		mocks.env = "Testnet";
+		act(() => root.render(createElement(Probe)));
+		await act(async () => {
+			gate.release();
+			await submission;
+		});
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({ id: queueId, status: "failed", owner: USER, env: "Mainnet" });
+		expect(mocks.executeOrder).not.toHaveBeenCalled();
+		expect(mocks.toastError).not.toHaveBeenCalled();
 	});
 
 	it("ignores a rapid second click while fresh validation is still in flight", async () => {
@@ -596,7 +671,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("coordination-unavailable"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("coordination-unavailable"));
 	});
 
 	it("blocks immediately when another tab currently holds the same asset lock", async () => {
@@ -613,7 +688,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("blocked-market"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("blocked-market"));
 	});
 
 	it("blocks a pending same-asset order written by another tab", async () => {
@@ -635,7 +710,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("blocked-market"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("blocked-market"));
 	});
 
 	it("blocks a pending order for the same asset before refreshing REST state", async () => {
@@ -654,7 +729,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("blocked-market"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("blocked-market"));
 	});
 
 	it("blocks a persisted pending TWAP before refreshing REST state", async () => {
@@ -682,7 +757,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("blocked-market"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("blocked-market"));
 	});
 
 	it("fails closed when persisted pending TWAP state cannot be read", async () => {
@@ -706,7 +781,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("coordination-unavailable"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("coordination-unavailable"));
 	});
 
 	it("blocks an active TWAP for the same market before refreshing REST state", async () => {
@@ -721,7 +796,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("blocked-market"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("blocked-market"));
 	});
 
 	it("fails closed when the active TWAP baseline is stale", async () => {
@@ -736,7 +811,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("trading-data-changed"));
 	});
 
 	it("fails closed before refreshing when the target HIP-3 disclaimer is not accepted", async () => {
@@ -750,7 +825,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("accept-hip3-market"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("accept-hip3-market"));
 	});
 
 	it("atomically blocks when a same-asset order appears during the REST refresh", async () => {
@@ -790,7 +865,7 @@ describe("usePositionMarketCloseSubmit", () => {
 
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("blocked-market"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("blocked-market"));
 	});
 
 	it("re-resolves Max from the fresh REST position instead of the UI snapshot", async () => {
@@ -837,7 +912,7 @@ describe("usePositionMarketCloseSubmit", () => {
 
 		expect(mocks.executeOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("trading-data-changed"));
 	});
 
 	it.each([
@@ -868,8 +943,8 @@ describe("usePositionMarketCloseSubmit", () => {
 			expect(mocks.mutateOrder).not.toHaveBeenCalled();
 			expect(mocks.executeOrder).not.toHaveBeenCalled();
 			expect(getPositionMarketCloseModal()).toBeNull();
-			expect(mocks.toastError).toHaveBeenCalledTimes(1);
-			expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("close-size-exceeds-confirmed"));
+			expect(queueErrorMessages()).toHaveLength(1);
+			expect(queueErrorMessages().at(-1)).toBe(localizedMessage("close-size-exceeds-confirmed"));
 		},
 	);
 
@@ -891,7 +966,7 @@ describe("usePositionMarketCloseSubmit", () => {
 			expect(mocks.executeOrder).toHaveBeenCalledTimes(1);
 			const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
 			expect(submitted.orders[0]?.s).toBe(expectedSize);
-			expect(mocks.toastError).not.toHaveBeenCalled();
+			expect(queueErrorMessages()).toEqual([]);
 		},
 	);
 
@@ -919,7 +994,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.executeOrder).toHaveBeenCalledTimes(1);
 		const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
 		expect(submitted.orders[0]?.s).toBe("1.1");
-		expect(mocks.toastError).not.toHaveBeenCalled();
+		expect(queueErrorMessages()).toEqual([]);
 	});
 
 	it.each([
@@ -935,7 +1010,7 @@ describe("usePositionMarketCloseSubmit", () => {
 			const sessionId = openSession();
 
 			await act(async () => {
-				await currentHook().submit({
+				await submitThroughHook({
 					sessionId,
 					confirmedCloseSize: value as string | null,
 					dismissFutureConfirmation: true,
@@ -948,8 +1023,8 @@ describe("usePositionMarketCloseSubmit", () => {
 			expect(mocks.mutateOrder).not.toHaveBeenCalled();
 			expect(readPositionMarketCloseConfirmationPreference({ owner: USER, env: "Mainnet" })).toBe("required");
 			expect(getPositionMarketCloseModal()).toBeNull();
-			expect(mocks.toastError).toHaveBeenCalledTimes(1);
-			expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
+			expect(queueErrorMessages()).toHaveLength(1);
+			expect(queueErrorMessages().at(-1)).toBe(localizedMessage("trading-data-changed"));
 		},
 	);
 
@@ -980,7 +1055,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("trading-data-changed"));
 	});
 
 	it("fails closed when the fresh REST position changed direction", async () => {
@@ -994,8 +1069,8 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(mocks.executeOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("no-active-positions"));
-		expect(mocks.toastError).toHaveBeenCalledTimes(1);
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("no-active-positions"));
+		expect(queueErrorMessages()).toHaveLength(1);
 	});
 
 	it("rejects a HIP-3 wire asset id that is not bound to the fresh DEX context index", async () => {
@@ -1009,7 +1084,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("trading-data-changed"));
 	});
 
 	it("keeps a reconciling session dismissed and ignores retry attempts", async () => {
@@ -1021,7 +1096,8 @@ describe("usePositionMarketCloseSubmit", () => {
 		});
 
 		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "reconciling", presentation: "dismissed" });
-		expect(mocks.toastWarning).toHaveBeenLastCalledWith(localizedMessage("reconciling-order"));
+		expect(queueItems.at(-1)?.status).toBe("confirming");
+		expect(mocks.toastWarning).not.toHaveBeenCalled();
 		const restCalls = mocks.clearinghouseState.mock.calls.length;
 		const mutationCalls = mocks.mutateOrder.mock.calls.length;
 
@@ -1046,7 +1122,8 @@ describe("usePositionMarketCloseSubmit", () => {
 		});
 
 		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "reconciling", presentation: "dismissed" });
-		expect(mocks.toastWarning).toHaveBeenLastCalledWith(localizedMessage("reconciling-order"));
+		expect(queueItems.at(-1)?.status).toBe("confirming");
+		expect(mocks.toastWarning).not.toHaveBeenCalled();
 		expect(hasPendingOrderForAssets("Mainnet", USER, [ASSET_ID])).toBe(true);
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 	});
@@ -1074,7 +1151,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.guardCalls).toBe(2);
 		expect(mocks.executeOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("trading-data-changed"));
 	});
 
 	it("fails closed when the live position size changes after a percentage close is planned", async () => {
@@ -1101,7 +1178,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.guardCalls).toBe(2);
 		expect(mocks.executeOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("trading-data-changed"));
 	});
 
 	it("blocks when an active TWAP appears at the SDK execution boundary", async () => {
@@ -1127,7 +1204,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.guardCalls).toBe(2);
 		expect(mocks.executeOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("blocked-market"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("blocked-market"));
 	});
 
 	it("revalidates the latest modal session at the SDK execution boundary", async () => {
@@ -1152,6 +1229,6 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.guardCalls).toBe(2);
 		expect(mocks.executeOrder).not.toHaveBeenCalled();
 		expect(getPositionMarketCloseModal()).toBeNull();
-		expect(mocks.toastError).toHaveBeenLastCalledWith(localizedMessage("trading-data-changed"));
+		expect(queueErrorMessages().at(-1)).toBe(localizedMessage("trading-data-changed"));
 	});
 });

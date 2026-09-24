@@ -30,6 +30,7 @@ import {
 	useOrderEntryActions,
 	useOrderSide,
 	useOrderSize,
+	useOrderSizeSource,
 	useOrderType,
 	useReduceOnly,
 	useSizeMode,
@@ -53,6 +54,7 @@ type TradeFormOrderEntryData = Pick<
 	ReturnType<typeof useOrderEntryData>,
 	| "isSpotMarket"
 	| "isAvailabilityBlocked"
+	| "isBalanceAvailabilityBlocked"
 	| "baseToken"
 	| "quoteToken"
 	| "capabilities"
@@ -108,6 +110,8 @@ export function TradeFormFields({
 	const side = useOrderSide();
 	const sizeMode = useSizeMode();
 	const sizeInput = useOrderSize();
+	const sizeSource = useOrderSizeSource();
+	const { setSizeSelection } = useOrderEntryActions();
 	const orderType = useOrderType();
 	const limitPriceInput = useLimitPrice();
 	const triggerPriceInput = useTriggerPrice();
@@ -119,6 +123,7 @@ export function TradeFormFields({
 	const {
 		isSpotMarket,
 		isAvailabilityBlocked,
+		isBalanceAvailabilityBlocked,
 		baseToken,
 		quoteToken,
 		capabilities,
@@ -136,9 +141,12 @@ export function TradeFormFields({
 	const { setSize, setLimitPriceFromPrefill, setLimitPriceFromUser, setTriggerPrice, setReduceOnly, setTpSlEnabled } =
 		useOrderEntryActions();
 
-	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
+	const isFormDisabled =
+		!isConnected || isAvailabilityBlocked || (!(capabilities.hasReduceOnly && reduceOnly) && availableBalance <= 0);
 	const isSizeSliderPaused = isConnected && isAvailabilityBlocked;
 	const isSizeSliderDisabled = !isSizeSliderPaused && (isFormDisabled || maxSize <= 0);
+	const maxSizeLabel =
+		capabilities.hasReduceOnly && reduceOnly ? t`Use max reducible size` : t`Use max available balance`;
 
 	const twapOrder = isTwapOrderType(orderType);
 	const scaleOrder = isScaleOrderType(orderType);
@@ -185,6 +193,8 @@ export function TradeFormFields({
 	}
 
 	const sliderInteraction = useSizeSliderInteraction({
+		sizeSource,
+		restoreSizeSelection: setSizeSelection,
 		applyPercent: handleSizePercentApply,
 		onInteractionChange: handleSizeInteractionChange,
 		interactionIdentity: sliderInteractionIdentity,
@@ -195,7 +205,7 @@ export function TradeFormFields({
 	function formatAvailableBalance(): string {
 		const isBaseToken = isSpotMarket && side === "sell";
 		const decimals = isBaseToken ? szDecimals : 2;
-		return formatToken(!isConnected || isAvailabilityBlocked ? "0" : displayAvailableBalance, {
+		return formatToken(!isConnected || isBalanceAvailabilityBlocked ? "0" : displayAvailableBalance, {
 			decimals,
 			symbol: displayAvailableBalanceToken ?? undefined,
 		});
@@ -218,7 +228,8 @@ export function TradeFormFields({
 								type="button"
 								onClick={() => handleSizePercentApply(100)}
 								disabled={isFormDisabled || maxSize <= 0}
-								aria-label={t`Use max available balance`}
+								aria-label={maxSizeLabel}
+								title={maxSizeLabel}
 								className="min-w-0 cursor-pointer truncate border-b border-dashed border-trading-panel-stroke-control font-semibold whitespace-nowrap tabular-nums text-trading-panel-fg transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-default disabled:border-transparent disabled:hover:opacity-100"
 							>
 								{formatAvailableBalance()}
@@ -226,7 +237,7 @@ export function TradeFormFields({
 						) : null
 					}
 					action={
-						isConnected && !isAvailabilityBlocked && swapTargetToken ? (
+						isConnected && !isBalanceAvailabilityBlocked && swapTargetToken ? (
 							<Button
 								variant="link"
 								intent="brand"
@@ -412,7 +423,9 @@ export function TradeFormFields({
 					{twapOrder && (
 						<TradeFormTwap
 							reduceOnly={
-								capabilities.hasReduceOnly ? { checked: reduceOnly, onCheckedChange: setReduceOnly } : undefined
+								capabilities.hasReduceOnly
+									? { checked: reduceOnly, disabled: !isConnected, onCheckedChange: setReduceOnly }
+									: undefined
 							}
 							desktop
 							disabled={isFormDisabled}
@@ -430,7 +443,7 @@ export function TradeFormFields({
 					(capabilities.hasTpSl && canUseTpSl) ||
 					orderType === "limit" ||
 					scaleOrder) && (
-					<div className="space-y-2 py-0.5">
+					<div className="space-y-2 py-0">
 						<TradeOptionCheckboxes
 							className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-xs"
 							tradingPanel
@@ -438,7 +451,7 @@ export function TradeFormFields({
 								capabilities.hasReduceOnly
 									? {
 											checked: reduceOnly,
-											disabled: isFormDisabled,
+											disabled: !isConnected,
 											onCheckedChange: setReduceOnly,
 										}
 									: undefined

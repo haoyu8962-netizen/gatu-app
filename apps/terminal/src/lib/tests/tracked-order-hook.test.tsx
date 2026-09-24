@@ -4,9 +4,20 @@ import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { reserveOrderAssets, runWithOrderAssetLocks } from "@/lib/trade/order-asset-lock";
-import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
+import {
+	addOrderQueueItem,
+	getOrderQueueItems,
+	removeOrderQueueItem,
+	updateOrderQueueItem,
+} from "@/stores/use-order-queue-store";
+import {
+	createPendingOrderStore,
+	getPendingOrderActions,
+	hasPendingOrderForAssets,
+} from "@/stores/use-pending-order-store";
 
 const mutateAsync = vi.fn();
 const reset = vi.fn();
@@ -100,6 +111,7 @@ describe("useTrackedOrder", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		for (const item of getOrderQueueItems()) removeOrderQueueItem(item.id);
 		mutateAsync.mockReset();
 		reset.mockReset();
 		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
@@ -263,6 +275,134 @@ describe("useTrackedOrder", () => {
 
 		expect(result?.state).toBe("confirmed");
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [8])).toBe(false);
+	});
+
+	it("keeps a confirmed exchange result when its presentation callback fails", async () => {
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "order", data: { statuses: [{ filled: { totalSz: "1", avgPx: "10", oid: 1 } }] } },
+		});
+		const onResponse = vi.fn(() => {
+			throw new Error("Presentation unavailable");
+		});
+		await act(async () => {
+			await expect(
+				hookValue?.submitOrder(createParams(38), { ...CROSS_PERP_SUBMIT_OPTIONS, onResponse }),
+			).resolves.toMatchObject({ state: "confirmed" });
+		});
+		expect(onResponse).toHaveBeenCalledOnce();
+		expect(mutateAsync).toHaveBeenCalledOnce();
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [38])).toBe(false);
+	});
+
+	it("retains reconciliation and blocks resending when an API-response presentation callback fails", async () => {
+		mutateAsync.mockRejectedValueOnce(
+			createForeignApiRequestError({
+				status: "ok",
+				response: { type: "order", data: { statuses: [{ resting: { oid: 39 } }] } },
+			}),
+		);
+		const onResponse = vi.fn(() => {
+			throw new Error("Presentation unavailable");
+		});
+		await act(async () => {
+			await expect(
+				hookValue?.submitOrder(createParams(39, 1, true), { ...EXCLUSIVE_FILLED_SUBMIT_OPTIONS, onResponse }),
+			).resolves.toMatchObject({ state: "reconciling" });
+		});
+		expect(onResponse).toHaveBeenCalledOnce();
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [39])).toBe(true);
+		await act(async () => {
+			await expect(hookValue?.submitOrder(createParams(39, 1, true), EXCLUSIVE_FILLED_SUBMIT_OPTIONS)).resolves.toEqual(
+				{ state: "blocked" },
+			);
+		});
+		expect(mutateAsync).toHaveBeenCalledOnce();
+	});
+
+	it("persists execution feedback from the response callback before reconciliation", async () => {
+		const queueId = addOrderQueueItem({
+			owner: "0x1111111111111111111111111111111111111111",
+			env: "Mainnet",
+			market: "HYPE",
+			quoteToken: "USDC",
+			status: "pending",
+		});
+		const execution = {
+			evidence: "exchange-response",
+			filledSize: "0.4",
+			requestedSize: "2",
+			averagePrice: "99",
+			orderIds: [40],
+			completeness: "partial",
+		} as const;
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "order", data: { statuses: [{ filled: { totalSz: "0.4", avgPx: "99", oid: 40 } }, {}] } },
+		});
+		await act(async () => {
+			await expect(
+				hookValue?.submitOrder(createParams(40, 2), {
+					...CROSS_PERP_SUBMIT_OPTIONS,
+					queueId,
+					onResponse: (_response, orders) => {
+						expect(orders).toBe(mutateAsync.mock.calls[0]?.[0].orders);
+						expect(orders[0]?.c).toMatch(/^0x[a-f0-9]{32}$/);
+						updateOrderQueueItem(queueId, { execution: { ...execution, orderIds: [40] } });
+					},
+				}),
+			).resolves.toMatchObject({ state: "reconciling" });
+		});
+		expect(createPendingOrderStore(window.localStorage).getState().submissions[0].feedback).toMatchObject({
+			market: "HYPE",
+			quoteToken: "USDC",
+			execution,
+		});
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [40])).toBe(true);
+	});
+
+	it("resolves a valid partial IOC response immediately without leaving a later cancellation to reconcile", async () => {
+		const queueId = addOrderQueueItem({
+			owner: "0x1111111111111111111111111111111111111111",
+			env: "Mainnet",
+			market: "HYPE",
+			status: "pending",
+		});
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "order", data: { statuses: [{ filled: { totalSz: "0.4", avgPx: "99", oid: 41 } }] } },
+		});
+		const params = createParams(41);
+		await act(async () => {
+			await expect(
+				hookValue?.submitOrder(
+					{ ...params, orders: params.orders.map((order) => ({ ...order, t: { limit: { tif: "Ioc" } } })) },
+					{
+						...CROSS_PERP_SUBMIT_OPTIONS,
+						queueId,
+						onResponse: (response, orders) => {
+							const execution = getOrderExecutionSummary(orders, response, 1);
+							expect(execution).toMatchObject({
+								filledSize: "0.4",
+								completeness: "partial",
+								partialIoc: { cloid: orders[0].c, orderId: 41 },
+							});
+							updateOrderQueueItem(queueId, { execution });
+						},
+					},
+				),
+			).resolves.toMatchObject({ state: "confirmed" });
+		});
+		expect(createPendingOrderStore(window.localStorage).getState().submissions).toHaveLength(0);
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [41])).toBe(false);
+		expect(
+			getPendingOrderActions().resolve(
+				"Mainnet",
+				"0x1111111111111111111111111111111111111111",
+				mutateAsync.mock.calls[0][0].orders[0].c,
+				"canceled",
+			),
+		).toBeNull();
 	});
 
 	it("reconciles a same-length response whose child status is malformed", async () => {

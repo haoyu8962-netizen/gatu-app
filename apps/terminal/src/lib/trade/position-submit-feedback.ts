@@ -104,7 +104,7 @@ const messages: Record<PositionSubmitFeedbackCode, MessageDescriptor> = {
 	"trading-data-changed": msg`Trading data changed while this dialog was open. Close and reopen it before submitting.`,
 };
 
-const partialCloseAllMessage = msg`{acceptedCount} of {totalCount} close orders were accepted. Review positions before retrying.`;
+const partialCloseAllMessage = msg`{acceptedCount} of {totalCount} close orders were fully filled. Review positions before retrying.`;
 
 export class PositionSubmitFeedbackCause extends Error {
 	constructor(

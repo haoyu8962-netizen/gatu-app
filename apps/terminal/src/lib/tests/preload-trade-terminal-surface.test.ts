@@ -121,7 +121,7 @@ describe("first-render preload set (ADR 0012)", () => {
 	it("preloads the runtime overlays that render with the first frame", async () => {
 		const { preloadAppRuntimeOverlays } = await import("@/components/app-runtime-overlays");
 		const done = preloadAppRuntimeOverlays();
-		expect(lazies.names).toEqual(["Toaster", "FundsActionRecoveryHost"]);
+		expect(lazies.names).toEqual(["AppToaster"]);
 		for (const release of lazies.resolvers.values()) release();
 		await expect(done).resolves.toBeUndefined();
 	});

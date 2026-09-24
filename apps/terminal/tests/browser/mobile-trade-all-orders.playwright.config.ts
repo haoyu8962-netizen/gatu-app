@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "@playwright/test";
 export default defineConfig({
 	testDir: fileURLToPath(new URL(".", import.meta.url)),
-	testMatch: ["mobile-trade-all-orders.pw.ts", "desktop-order-entry-layout.pw.ts"],
+	testMatch: ["mobile-trade-all-orders.pw.ts", "desktop-order-entry-layout.pw.ts", "reduce-only.pw.ts"],
 	outputDir: fileURLToPath(new URL("../../test-results/order-entry", import.meta.url)),
 	workers: 1,
 	fullyParallel: false,
