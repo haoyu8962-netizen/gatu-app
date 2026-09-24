@@ -6,6 +6,7 @@ import { useState } from "react";
 import { PERCENT_OPTIONS } from "@/config/bridge";
 import { isValidUsdInput, usdToTokenAmount } from "@/lib/bridge/format";
 import { cn } from "@/lib/cn";
+import { normalizeDecimalInput } from "@/lib/format";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
 import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
 import { TokenIcon } from "./shared-ui";
@@ -23,7 +24,7 @@ export function AmountEntryScreen({ token, initialUsd, onBack, onContinue }: Pro
 	const [usdInput, setUsdInput] = useState(initialUsd);
 
 	function handleUsdChange(e: React.ChangeEvent<HTMLInputElement>) {
-		const raw = e.target.value;
+		const raw = normalizeDecimalInput(e.target.value);
 		if (raw === "") {
 			setUsdInput("");
 			return;

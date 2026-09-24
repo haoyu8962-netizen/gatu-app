@@ -1,6 +1,6 @@
 # 数字格式与图表翻译：对齐官方终端两项实践的规划
 
-状态：A-1、A-3、A-4 已于 2026-09-24 实施（归属文档 [number-format-setting.md](number-format-setting.md)）；A-2a 与 B 待做。2026-09-24 依据 [官方切换语言取证](work-memory/sessions/2026-09-24-official-terminal-language-switch-trace.md) 写成；取证结论里不建议对齐的部分（Suspense 整页隐藏、`html lang` 不更新、图表不重建、数字格式改动 reload）不在本计划范围内。
+状态：A-1、A-2a、A-3、A-4 已于 2026-09-24 实施（归属文档 [number-format-setting.md](number-format-setting.md)）；B 待 zh + ar 审计。2026-09-24 依据 [官方切换语言取证](work-memory/sessions/2026-09-24-official-terminal-language-switch-trace.md) 写成；取证结论里不建议对齐的部分（Suspense 整页隐藏、`html lang` 不更新、图表不重建、数字格式改动 reload）不在本计划范围内。
 
 ## 1. 目标
 

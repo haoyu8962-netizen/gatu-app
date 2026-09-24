@@ -8,6 +8,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- With the `1.234,56` or `1 234,56` number format, typing a comma in any amount, size or price
+  field now enters the decimal point instead of being ignored, so the decimal key on German and
+  French keyboards works; the field still shows the protocol value with a dot.
+
 - The chart now follows the number-format setting: its price axis, legend and crosshair
   labels use the same decimal sign and grouping separator as the rest of the terminal, and a
   setting change rebuilds the chart with its layout preserved instead of leaving `1.234,56`

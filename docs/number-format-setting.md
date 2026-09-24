@@ -9,6 +9,7 @@
 3. **组件与业务代码不得直接调用 `toLocale*` 或 `new Intl.*Format`。** 一律经 `lib/format.ts`；`locale-format-contract.test.ts` 扫描 `apps/terminal/src`（测试目录除外）并在出现新的直接调用时失败。
 4. **图表跟随数字格式。** `ChartPanel` 把 `numberFormatLocale` 传给 `TradingViewChart`，widget 创建时收到 `numeric_formatting: { decimal_sign, grouping_separator }`。该选项只能在构造时给，所以设置变化走与语言变化相同的「保存状态 → 重建 iframe」路径（`requestStatePreservingRebuild(widget, "numeric-format")`），`appliedNumberFormatRef` 与创建时的值比较，值未变不重建；语言与数字格式在同一次状态保存窗口内变化只重建一次。
 5. **用户可见名称的排序** 用 `localeCompare(other, undefined, { sensitivity: "base" })`（报价币种分类、Swap 代币列表、API 钱包名称）；id、hash、地址的排序仍是无参 `localeCompare`，它们只需要稳定顺序。
+6. **输入框接受设置的小数点，值仍是协议串。** 当设置的小数点是 `,`（`de-DE`、`fr-FR`）时，输入框里打出的 `,` 在到达任何校验或状态之前被 `normalizeDecimalInput` 改写成 `.`；默认格式下 `,` 保持原样并被既有校验拒绝，避免把 `1,000` 读成一。输入框显示的仍是 `.` 形式的协议串（`1.5`），只有表格与标签按设置显示 `1,5`。接入点：`NumberInput`、`TradeInputFrameView`（下单表单尺寸/价格/TP/SL 的共享框）、`PriceInputWithPercent`、移动端下单与改单、内联改单、Across 金额、质押与金库金额；DOM 层的改写经 `normalizeDecimalInputEvent` 保留光标位置。新增裸 `<input inputMode="decimal">` 时必须接同一个 helper。
 
 ## 选项与存储
 
@@ -29,7 +30,7 @@
 
 ## 未完成
 
-- 输入框仍只接受 `.` 作为小数点（规划 A-2a：当设置的小数点是 `,` 时把 `,` 归一为 `.`，显示不变）。
+- 输入框显示不本地化（规划 A-2b 未采用）：`,` 被接受但显示为 `.`；德语/法语键盘的小数键可用，但输入框与表格的写法不同。
 - 图表库内译文的定点修补机制（规划 B）等 zh/ar 审计结果。
 
 ## 回归入口
@@ -40,6 +41,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/number-format-settings.test.ts \
   src/lib/tests/number-format-reactivity-contract.test.ts \
   src/lib/tests/locale-format-contract.test.ts \
+  src/lib/tests/decimal-input-normalization.test.tsx \
   src/lib/tests/tradingview-chart.test.tsx \
   src/lib/tests/trades.test.ts \
   src/lib/tests/global-settings-store.test.ts

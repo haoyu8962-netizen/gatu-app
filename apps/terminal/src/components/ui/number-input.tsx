@@ -17,6 +17,7 @@ import { Input as BaseInput } from "@base-ui/react/input";
 import Big from "big.js";
 import type * as React from "react";
 import { useCallback, useId } from "react";
+import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { cn } from "@/lib/cn";
 import { labelTypographyClass } from "./field-label";
 import { getInputClassName, type InputSize } from "./input";
@@ -225,7 +226,7 @@ export function NumberInput({
 
 	const handleChange = useCallback(
 		(e: React.ChangeEvent<HTMLInputElement>) => {
-			const inputValue = e.target.value;
+			const inputValue = normalizeDecimalInputEvent(e).target.value;
 
 			const isIntermediateState =
 				inputValue === "" ||

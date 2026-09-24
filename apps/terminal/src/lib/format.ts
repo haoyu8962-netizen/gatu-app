@@ -79,9 +79,7 @@ function getFormatter(
 
 function formatNumberParts(value: number, opts: Intl.NumberFormatOptions): string {
 	const formatter = getFormatter("number", BASE_NUMBER_FORMAT_LOCALE, opts);
-	const separators =
-		numberSeparatorsByFormatLocale[getResolvedFormatLocale() as NumberFormatLocale] ??
-		numberSeparatorsByFormatLocale[defaultNumberFormatLocale];
+	const separators = getActiveNumberSeparators();
 
 	return formatter
 		.formatToParts(value)
@@ -91,6 +89,24 @@ function formatNumberParts(value: number, opts: Intl.NumberFormatOptions): strin
 			return part.value;
 		})
 		.join("");
+}
+
+function getActiveNumberSeparators(): { group: string; decimal: string } {
+	return (
+		numberSeparatorsByFormatLocale[getResolvedFormatLocale() as NumberFormatLocale] ??
+		numberSeparatorsByFormatLocale[defaultNumberFormatLocale]
+	);
+}
+
+/**
+ * Typed decimal input stays a protocol string with `.` as the decimal point. When the active
+ * number format displays `,` as the decimal sign, a typed `,` is accepted as that decimal
+ * point; under the default format a `,` is left in place so the input validators reject it
+ * instead of silently reading `1,000` as one.
+ */
+export function normalizeDecimalInput(value: string): string {
+	if (getActiveNumberSeparators().decimal !== ",") return value;
+	return value.replaceAll(",", ".");
 }
 
 function getActiveLanguageIntlLocale(): string {

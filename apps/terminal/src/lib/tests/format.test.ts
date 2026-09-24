@@ -13,6 +13,7 @@ import {
 	formatTime,
 	formatToken,
 	formatUSD,
+	normalizeDecimalInput,
 	shortenAddress,
 	szDecimalsToPriceDecimals,
 } from "@/lib/format";
@@ -81,6 +82,16 @@ describe("format", () => {
 		expect(formatUSD(1234.56, { compact: false })).toBe(usd);
 		expect(formatPercent(0.125, 2)).toBe(percent);
 		expect(formatUSD(12500, { decimals: 1 })).toBe(compactUsd);
+	});
+
+	it.each([
+		["en-US", "1,5", "1,5"],
+		["de-DE", "1,5", "1.5"],
+		["fr-FR", "12,", "12."],
+		["de-DE", "1.5", "1.5"],
+	] as const)("normalizes typed decimal input under the %s preset", (locale, typed, expected) => {
+		formatSettings.numberFormatLocale = locale;
+		expect(normalizeDecimalInput(typed)).toBe(expected);
 	});
 
 	it("formats dates from the active interface language independently of number separators", () => {

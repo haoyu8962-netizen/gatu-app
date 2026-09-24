@@ -1,5 +1,6 @@
 import { type KeyboardEvent, useEffect, useRef } from "react";
 import { cn } from "@/lib/cn";
+import { normalizeDecimalInput } from "@/lib/format";
 
 interface Props {
 	value: string;
@@ -85,7 +86,7 @@ export function OrderInlineEdit({
 					invalid && "border-market-close-danger focus:border-market-close-danger focus:ring-market-close-danger/15",
 					align === "right" ? "w-[90px]" : "w-[102px]",
 				)}
-				onChange={(event) => onChange(event.target.value)}
+				onChange={(event) => onChange(normalizeDecimalInput(event.target.value))}
 				onKeyDown={handleKeyDown}
 			/>
 			<button

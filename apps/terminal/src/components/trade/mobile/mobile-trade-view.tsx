@@ -47,7 +47,7 @@ import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interact
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
+import { formatPrice, formatSlippageBps, formatToken, formatUSD, normalizeDecimalInput } from "@/lib/format";
 import {
 	getMarketCapabilities,
 	type UnifiedMarketInfo,
@@ -902,7 +902,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						inputMode="decimal"
 						placeholder="0.00"
 						value={triggerPrice}
-						onChange={(e: ChangeEvent<HTMLInputElement>) => setTriggerPrice(e.target.value)}
+						onChange={(e: ChangeEvent<HTMLInputElement>) => setTriggerPrice(normalizeDecimalInput(e.target.value))}
 						midPrice={midReferencePrice}
 						szDecimals={market?.szDecimals}
 						marketType={marketType}
@@ -920,7 +920,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							placeholder="0.00"
 							value={limitPriceInput}
 							onChange={(e: ChangeEvent<HTMLInputElement>) =>
-								setLimitPriceFromUser(limitPrefillIdentity, e.target.value)
+								setLimitPriceFromUser(limitPrefillIdentity, normalizeDecimalInput(e.target.value))
 							}
 							onMidClick={(value) => setLimitPriceFromUser(limitPrefillIdentity, value)}
 							midPrice={midReferencePrice}

@@ -4,7 +4,7 @@ import { useId } from "react";
 import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
-import { formatUSD } from "@/lib/format";
+import { formatUSD, normalizeDecimalInput } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isPositive } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
@@ -77,7 +77,7 @@ export function PriceInputWithPercent({
 				inputMode="decimal"
 				placeholder={t`Price`}
 				value={value}
-				onChange={(e) => onChange(e.target.value)}
+				onChange={(e) => onChange(normalizeDecimalInput(e.target.value))}
 				className={cn(
 					"min-w-0 flex-1 border-0 bg-transparent tabular-nums focus-visible:border-transparent focus-visible:ring-0",
 					mobileTouchSafe && "max-[1000px]:h-11",
@@ -136,7 +136,7 @@ export function PriceInputWithPercent({
 								placeholder={linkedReturnInput.placeholder}
 								value={linkedReturnInput.value}
 								onBlur={linkedReturnInput.onBlur}
-								onChange={(event) => linkedReturnInput.onChange(event.target.value)}
+								onChange={(event) => linkedReturnInput.onChange(normalizeDecimalInput(event.target.value))}
 								className={cn(
 									"min-w-0 flex-1 border-0 bg-transparent tabular-nums focus-visible:border-transparent focus-visible:ring-0",
 									mobileTouchSafe && "max-[1000px]:h-11",
@@ -171,7 +171,7 @@ export function PriceInputWithPercent({
 						inputMode="decimal"
 						placeholder={t`Price`}
 						value={value}
-						onChange={(e) => onChange(e.target.value)}
+						onChange={(e) => onChange(normalizeDecimalInput(e.target.value))}
 						className={cn(
 							"min-w-0 flex-1 border-0 bg-transparent tabular-nums focus-visible:border-transparent focus-visible:ring-0",
 							mobileTouchSafe && "max-[1000px]:h-11",

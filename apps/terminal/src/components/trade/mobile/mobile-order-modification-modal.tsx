@@ -2,6 +2,7 @@ import { AdaptiveModal, ModalContent, ModalFooter, ModalHeader, ModalTitle } fro
 import { useLingui } from "@lingui/react/macro";
 import { type FormEvent, type KeyboardEvent, useId, useRef } from "react";
 import { cn } from "@/lib/cn";
+import { normalizeDecimalInput } from "@/lib/format";
 
 interface Props {
 	open: boolean;
@@ -118,7 +119,7 @@ export function MobileOrderModificationModal({
 								aria-invalid={triggerPriceInvalid || undefined}
 								aria-describedby={describedBy}
 								className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-right text-base font-semibold tabular-nums text-market-close-fg outline-none disabled:cursor-not-allowed disabled:text-market-close-subtle"
-								onChange={(event) => onTriggerPriceChange(event.target.value)}
+								onChange={(event) => onTriggerPriceChange(normalizeDecimalInput(event.target.value))}
 								onKeyDown={handleInputKeyDown}
 							/>
 							<span className="ms-2 shrink-0 text-xs text-market-close-muted">USDC</span>
@@ -144,7 +145,7 @@ export function MobileOrderModificationModal({
 							aria-invalid={sizeInvalid || undefined}
 							aria-describedby={describedBy}
 							className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-right text-base font-semibold tabular-nums text-market-close-fg outline-none disabled:cursor-not-allowed disabled:text-market-close-subtle"
-							onChange={(event) => onSizeChange(event.target.value)}
+							onChange={(event) => onSizeChange(normalizeDecimalInput(event.target.value))}
 							onKeyDown={handleInputKeyDown}
 						/>
 						<span className="ms-2 max-w-[35%] shrink-0 truncate text-xs text-market-close-muted">{marketLabel}</span>
