@@ -8,6 +8,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The Link mobile device dialog no longer stacks grey boxes: the master wallet is a plain
+  label row, "pairing temporarily unavailable" and "keep this window open" are info callouts,
+  "trading key approved" and "mobile access revoked" are success callouts, and the approval,
+  reveal, scan and revoke cards are outlined on the dialog surface. Warning callouts use the
+  semantic error stroke instead of an opacity modifier.
+
 - With the `1.234,56` or `1 234,56` number format, typing a comma in any amount, size or price
   field now enters the decimal point instead of being ignored, so the decimal key on German and
   French keyboards works; the field still shows the protocol value with a dot.

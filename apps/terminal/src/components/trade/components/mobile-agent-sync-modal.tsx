@@ -1109,7 +1109,7 @@ function MobileAgentSyncSession({
 			</ModalHeader>
 
 			<ModalContent className="space-y-4">
-				<div className="flex items-center justify-between gap-3 rounded-8 border border-stroke-weak bg-fill-weak px-3 py-2 text-xs">
+				<div className="flex items-center justify-between gap-3 text-xs">
 					<span className="text-fg-muted">
 						<Trans>Master wallet</Trans>
 					</span>
@@ -1128,7 +1128,7 @@ function MobileAgentSyncSession({
 				</div>
 
 				{hasUnsettledWalletAction && (
-					<output className="block rounded-8 border border-stroke-weak bg-fill-weak p-3 text-xs text-fg-muted">
+					<output className="block rounded-16 border border-stroke-info-weak bg-info-soft p-3 text-xs text-info">
 						<Trans>Keep this window open until Hyperliquid finishes checking the wallet action.</Trans>
 					</output>
 				)}
@@ -1250,7 +1250,7 @@ function PendingApprovalVerificationPanel({
 	onRetry: () => void;
 }) {
 	return (
-		<div className="space-y-3 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error">
+		<div className="space-y-3 rounded-16 border border-stroke-error-weak bg-error-soft p-3 text-xs text-error">
 			<div className="flex items-start gap-2">
 				<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 				<div className="space-y-1">
@@ -1274,8 +1274,8 @@ function PendingApprovalVerificationPanel({
 
 function PairingUnavailablePanel() {
 	return (
-		<div className="flex items-start gap-3 rounded-8 border border-stroke-weak bg-fill-weak p-3">
-			<WarningCircleIcon className="mt-0.5 size-5 shrink-0 text-fg-muted" weight="duotone" aria-hidden />
+		<div className="flex items-start gap-3 rounded-16 border border-stroke-info-weak bg-info-soft p-3">
+			<WarningCircleIcon className="mt-0.5 size-5 shrink-0 text-icon-info" weight="duotone" aria-hidden />
 			<div className="min-w-0 space-y-1">
 				<p className="text-sm font-semibold text-fg">
 					<Trans>New mobile pairing is temporarily unavailable</Trans>
@@ -1292,7 +1292,7 @@ function PreApprovalPanel({ existingMobileAgentAddress }: { existingMobileAgentA
 	const existingMobileAgentLabel = existingMobileAgentAddress ? shortenAddress(existingMobileAgentAddress) : null;
 
 	return (
-		<div className="space-y-3 rounded-8 border border-stroke-weak bg-fill-weak p-3">
+		<div className="space-y-3 rounded-16 border border-stroke-weak p-3">
 			<div className="flex items-start gap-3">
 				<ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-signal" weight="duotone" aria-hidden />
 				<div className="min-w-0 space-y-1">
@@ -1394,7 +1394,7 @@ function ConcealedQrPanel({
 
 	return (
 		<div className="space-y-3">
-			<div className="flex items-start gap-2 rounded-8 border border-stroke-weak bg-fill-weak p-3">
+			<div className="flex items-start gap-2 rounded-16 border border-stroke-success-weak bg-success-soft p-3">
 				<CheckIcon className="mt-0.5 size-4 shrink-0 text-success" weight="bold" aria-hidden />
 				<div className="min-w-0">
 					<p className="text-sm font-semibold text-fg">
@@ -1410,7 +1410,7 @@ function ConcealedQrPanel({
 
 			<PhoneJourneyInstruction />
 
-			<div className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error">
+			<div className="flex items-start gap-2 rounded-16 border border-stroke-error-weak bg-error-soft p-3 text-xs text-error">
 				<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 				<p>
 					<Trans>
@@ -1420,7 +1420,7 @@ function ConcealedQrPanel({
 				</p>
 			</div>
 
-			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
+			<div className="rounded-16 border border-stroke-weak p-3">
 				<p className="text-sm font-semibold text-fg">
 					<Trans>Hold to reveal QR</Trans>
 				</p>
@@ -1481,7 +1481,7 @@ function VisibleQrPanel({
 
 	return (
 		<div className="space-y-3">
-			<div className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error">
+			<div className="flex items-start gap-2 rounded-16 border border-stroke-error-weak bg-error-soft p-3 text-xs text-error">
 				<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 				<p>
 					<Trans>Scan only with your phone. Anyone who captures this QR can use the trading key.</Trans>
@@ -1490,7 +1490,7 @@ function VisibleQrPanel({
 
 			<PhoneJourneyInstruction />
 
-			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
+			<div className="rounded-16 border border-stroke-weak p-3">
 				<div className="flex items-center justify-between gap-3">
 					<div>
 						<p className="text-sm font-semibold text-fg">
@@ -1507,7 +1507,7 @@ function VisibleQrPanel({
 						<SpinnerGapIcon className="size-4 animate-spin text-signal" aria-label={t`Rendering QR`} />
 					)}
 				</div>
-				<div className="mt-3 flex justify-center rounded-8 border border-stroke-weak bg-white p-3">
+				<div className="mt-3 flex justify-center rounded-16 border border-stroke-weak bg-white p-3">
 					<canvas ref={canvasRef} aria-label={t`Phone access QR code`} className="size-80 max-w-full" />
 				</div>
 			</div>
@@ -1519,7 +1519,7 @@ function InlineError({ message }: { message: MobileAgentSyncMessage }) {
 	return (
 		<div
 			role="alert"
-			className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error"
+			className="flex items-start gap-2 rounded-16 border border-stroke-error-weak bg-error-soft p-3 text-xs text-error"
 		>
 			<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 			<p>
@@ -1550,7 +1550,7 @@ function ResetMobileAccessPanel({
 	const isBusy = state.status === "checking" || state.status === "signing" || state.status === "verifying";
 
 	return (
-		<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
+		<div className="rounded-16 border border-stroke-weak p-3">
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 space-y-1">
 					<p className="text-sm font-semibold text-fg">
@@ -1578,7 +1578,7 @@ function ResetMobileAccessPanel({
 			</div>
 
 			{state.status === "confirm" && (
-				<div className="mt-3 space-y-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-2.5 text-xs text-error">
+				<div className="mt-3 space-y-2 rounded-16 border border-stroke-error-weak bg-error-soft p-2.5 text-xs text-error">
 					<p>
 						<Trans>
 							This will replace any current mobile trading key with an inaccessible key. Existing phones will stop
@@ -1592,7 +1592,7 @@ function ResetMobileAccessPanel({
 			)}
 
 			{state.status === "pending" && (
-				<div className="mt-3 space-y-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-2.5 text-xs text-error">
+				<div className="mt-3 space-y-2 rounded-16 border border-stroke-error-weak bg-error-soft p-2.5 text-xs text-error">
 					<p>
 						<MobileAgentSyncMessageText message={state.message} />
 					</p>
@@ -1606,7 +1606,7 @@ function ResetMobileAccessPanel({
 			)}
 
 			{state.status === "success" && (
-				<div className="mt-3 flex items-start gap-2 rounded-8 border border-stroke-weak bg-background p-2.5 text-xs text-fg-muted">
+				<div className="mt-3 flex items-start gap-2 rounded-16 border border-stroke-success-weak bg-success-soft p-2.5 text-xs text-fg-muted">
 					<CheckIcon className="mt-0.5 size-3.5 shrink-0 text-success" weight="bold" aria-hidden />
 					<p>
 						{expiresAtLabel ? (
@@ -1620,7 +1620,7 @@ function ResetMobileAccessPanel({
 				</div>
 			)}
 			{state.status === "success" && state.localCleanupIncomplete && (
-				<div className="mt-2 flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-2.5 text-xs text-error">
+				<div className="mt-2 flex items-start gap-2 rounded-16 border border-stroke-error-weak bg-error-soft p-2.5 text-xs text-error">
 					<WarningCircleIcon className="mt-0.5 size-3.5 shrink-0" weight="fill" aria-hidden />
 					<p>
 						<Trans>
