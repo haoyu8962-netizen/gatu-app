@@ -2550,6 +2550,81 @@ describe("TradingViewChart", () => {
 		expect(widgetConstructor).toHaveBeenCalledTimes(2);
 	});
 
+	it("merges a number format change into a locale state save that has not called back yet", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		let deliverState: ((state: object) => void) | undefined;
+		widget?.save.mockImplementation((callback: (state: object) => void) => {
+			deliverState = callback;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "fr" }));
+		});
+		await flushChartEffects();
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					locale: "fr",
+					numberFormatLocale: "fr-FR",
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widget?.save).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		const savedState = { charts: ["layout"] };
+		act(() => deliverState?.(savedState));
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				locale: "fr",
+				numeric_formatting: { decimal_sign: ",", grouping_separator: " " },
+				saved_data: savedState,
+			}),
+		);
+	});
+
+	it("cancels a pending number format rebuild when the format reverts before the state save calls back", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		let deliverState: ((state: object) => void) | undefined;
+		widget?.save.mockImplementation((callback: (state: object) => void) => {
+			deliverState = callback;
+		});
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", numberFormatLocale: "de-DE" }),
+			);
+		});
+		await flushChartEffects();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		act(() => deliverState?.({ charts: ["layout"] }));
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+		expect(widget?.remove).not.toHaveBeenCalled();
+	});
+
 	it("rebuilds once when the locale and the number format change in the same commit", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));

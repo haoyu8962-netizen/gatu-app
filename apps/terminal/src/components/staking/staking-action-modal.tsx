@@ -1,7 +1,8 @@
 import { AdaptiveModal, Alert, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle, TextInput } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useState } from "react";
-import { formatDateTime, normalizeDecimalInput, shortenAddress } from "@/lib/format";
+import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
+import { formatDateTime, shortenAddress } from "@/lib/format";
 import type { FundsActionReference } from "../funds-action/funds-action-marker";
 import { type FundsActionState, getFundsActionSteps } from "../funds-action/funds-action-state";
 import {
@@ -105,7 +106,7 @@ export function StakingActionModal({
 							autoComplete="off"
 							value={amount}
 							onChange={(event) => {
-								setAmount(normalizeDecimalInput(event.currentTarget.value));
+								setAmount(normalizeDecimalInputEvent(event).currentTarget.value);
 								setShowError(false);
 							}}
 							placeholder="0.00"

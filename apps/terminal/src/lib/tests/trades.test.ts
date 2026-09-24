@@ -43,6 +43,8 @@ describe("trades", () => {
 		} as RawTrade;
 
 		const [trade] = processTrades([rawTrade]);
+		const [arabicTrade] = processTrades([rawTrade], "ar");
+		expect(arabicTrade?.time).toMatch(/^\d{2}:\d{2}:\d{2}$/);
 
 		expect(trade).toMatchObject({
 			id: "1721977585899:HYPE:123",

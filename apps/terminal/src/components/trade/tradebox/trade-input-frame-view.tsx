@@ -1,5 +1,4 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
-import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { getInputClassName } from "@/components/ui/input-styles";
 import { cn } from "@/lib/cn";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
@@ -27,7 +26,6 @@ export function TradeInputFrameView({
 	id,
 	mobile,
 	labelClassName,
-	onChange,
 	...props
 }: Props) {
 	return (
@@ -53,7 +51,6 @@ export function TradeInputFrameView({
 					data-slot="input"
 					data-size={mobile ? "lg" : "default"}
 					id={id}
-					onChange={onChange ? (event) => onChange(normalizeDecimalInputEvent(event)) : undefined}
 					{...props}
 					className={getInputClassName(mobile ? "lg" : "default", cn("w-full", TRADE_INPUT_CLASS, className), mobile)}
 				/>

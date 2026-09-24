@@ -113,9 +113,26 @@ function getActiveLanguageIntlLocale(): string {
 	return languageToIntlLocale[i18n.locale as LocaleCode] ?? languageToIntlLocale[defaultLocale];
 }
 
-function resolveDateLocale(locale: string | undefined): string {
+function resolveLanguageIntlLocale(locale: string | undefined): string {
 	if (!locale) return getActiveLanguageIntlLocale();
 	return isValidLocale(locale) ? languageToIntlLocale[locale] : locale;
+}
+
+export interface FormatListOptions extends Intl.ListFormatOptions {
+	locale?: string;
+}
+
+/**
+ * Join items the way the interface language does ("A, B and C").
+ * @example formatList(["Deposit", "Withdraw"]) -> "Deposit and Withdraw"
+ */
+export function formatList(items: readonly string[], opts?: FormatListOptions): string {
+	const { locale, ...rest } = opts ?? {};
+	return new Intl.ListFormat(resolveLanguageIntlLocale(locale), {
+		style: "short",
+		type: "conjunction",
+		...rest,
+	}).format(items);
 }
 
 // Helper to normalize options
@@ -405,7 +422,7 @@ export function formatTime(value: DateInput, opts?: FormatDateOptions): string {
 	const { locale, ...rest } = opts ?? {};
 	const formatOpts: Intl.DateTimeFormatOptions = hasDateComponentOptions(rest) ? rest : { timeStyle: "short", ...rest };
 
-	return getFormatter("date", resolveDateLocale(locale), formatOpts).format(toDate(value));
+	return getFormatter("date", resolveLanguageIntlLocale(locale), formatOpts).format(toDate(value));
 }
 
 /**
@@ -422,7 +439,7 @@ export function formatDateTime(value: DateInput, opts?: FormatDateOptions): stri
 			? rest
 			: { dateStyle: "medium", timeStyle: "short", ...rest };
 
-	return getFormatter("date", resolveDateLocale(locale), formatOpts).format(toDate(value));
+	return getFormatter("date", resolveLanguageIntlLocale(locale), formatOpts).format(toDate(value));
 }
 
 export function formatDateTimeShort(value: DateInput, opts?: FormatDateOptions): string {
@@ -440,7 +457,7 @@ export function formatDateTimeShort(value: DateInput, opts?: FormatDateOptions):
 		...rest,
 	};
 
-	return getFormatter("date", resolveDateLocale(locale), defaults).format(toDate(value));
+	return getFormatter("date", resolveLanguageIntlLocale(locale), defaults).format(toDate(value));
 }
 
 /**

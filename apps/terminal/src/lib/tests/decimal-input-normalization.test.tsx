@@ -1,9 +1,9 @@
 /** @vitest-environment jsdom */
 
-import { act } from "react";
+import { act, type ChangeEvent, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TradeInputFrameView } from "@/components/trade/tradebox/trade-input-frame-view";
+import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { NumberInput } from "@/components/ui/number-input";
 
 const formatSettings = vi.hoisted(() => ({
@@ -84,20 +84,42 @@ describe("decimal input normalization", () => {
 		expect(onChange).not.toHaveBeenCalled();
 	});
 
-	it("normalizes the shared trade input frame before the caller reads the event", () => {
+	it("rewrites the DOM value in place and keeps the caret for string-variant inputs", () => {
 		formatSettings.numberFormatLocale = "fr-FR";
-		const onChange = vi.fn((event: { target: HTMLInputElement }) => event.target.value);
-		act(() => root.render(<TradeInputFrameView label="Size" value="" onChange={onChange} />));
+		const seen: Array<{ value: string; caret: number | null }> = [];
+		function BareInput() {
+			const [value, setValue] = useState("15");
+			return (
+				<input
+					inputMode="decimal"
+					value={value}
+					onChange={(event) => {
+						const next = normalizeDecimalInputEvent(event).target.value;
+						seen.push({ value: next, caret: event.target.selectionStart });
+						setValue(next);
+					}}
+				/>
+			);
+		}
+		act(() => root.render(<BareInput />));
+		const input = container.querySelector<HTMLInputElement>("input");
+		if (!input) throw new Error("input not rendered");
 
-		typeValue("0,25");
+		const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+		act(() => {
+			setter?.call(input, "1,5");
+			input.setSelectionRange(2, 2);
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
 
-		expect(onChange).toHaveBeenCalledOnce();
-		expect(onChange.mock.results[0]?.value).toBe("0.25");
+		expect(seen).toEqual([{ value: "1.5", caret: 2 }]);
+		expect(input.value).toBe("1.5");
+		expect(input.selectionStart).toBe(2);
 	});
 
-	it("passes the shared trade input frame through unchanged under the default format", () => {
-		const onChange = vi.fn((event: { target: HTMLInputElement }) => event.target.value);
-		act(() => root.render(<TradeInputFrameView label="Size" value="" onChange={onChange} />));
+	it("leaves the event untouched under the default format", () => {
+		const onChange = vi.fn((event: ChangeEvent<HTMLInputElement>) => normalizeDecimalInputEvent(event).target.value);
+		act(() => root.render(<input inputMode="decimal" value="" onChange={onChange} />));
 
 		typeValue("0,25");
 

@@ -34,11 +34,12 @@ export function getTradeQuoteSize(price: string, size: string): string | null {
 	return priceValue && sizeValue ? priceValue.times(sizeValue).toString() : null;
 }
 
-export function processTrades(trades: RawTrade[]): ProcessedTrade[] {
+export function processTrades(trades: RawTrade[], locale?: string): ProcessedTrade[] {
 	return trades.map((trade) => ({
 		id: getTradeKey(trade.time, trade.coin, trade.tid),
 		hash: trade.hash,
 		time: formatTime(trade.time, {
+			locale,
 			hour: "2-digit",
 			hourCycle: "h23",
 			minute: "2-digit",

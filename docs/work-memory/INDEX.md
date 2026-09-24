@@ -216,7 +216,7 @@
 
 当前规范：[docs/i18n-presentation.md](../../docs/i18n-presentation.md) · [docs/runtime-guardrails.md](../../docs/runtime-guardrails.md)
 
-- [图表跟随数字格式设置、日期固定拉丁数字、原生 Intl 调用收口（规划 A-1/A-3/A-4）](sessions/2026-09-24-number-format-chart-and-date-rules.md) — 2026-09-24；已验证，范围见正文。按用户决策实施对齐规划的 A-1、A-3、A-4：TradingView 创建时收到 numeric_formatting，数字格式变化走与语言相同的保存状态重建（新 reason numeric-format，值未变不重建）；format.ts 的日期函数强制 numberingSystem latn 并接受界面语言代码；6 处绕过 format.ts 的 toLocale*/Intl.DateTimeFormat 调用改走 formatTime/formatDateTime，3 处用户可见名称排序加 sensitivity base；新增 locale-format-contract 扫描测试与归属文档 docs/number-format-setting.md、AGENTS.md 契约。内置浏览器实测 1.234,56 下图表轴、图例、订单簿、标题分隔符一致。
+- [图表跟随数字格式设置、日期固定拉丁数字、原生 Intl 调用收口、输入框接受设置的小数点（规划 A-1/A-2a/A-3/A-4）](sessions/2026-09-24-number-format-chart-and-date-rules.md) — 2026-09-24；已验证，范围见正文。按用户决策实施对齐规划的 A-1、A-3、A-4：TradingView 创建时收到 numeric_formatting，数字格式变化走与语言相同的保存状态重建（新 reason numeric-format，值未变不重建）；format.ts 的日期函数强制 numberingSystem latn 并接受界面语言代码；6 处绕过 format.ts 的 toLocale*/Intl.DateTimeFormat 调用改走 formatTime/formatDateTime，3 处用户可见名称排序加 sensitivity base；新增 locale-format-contract 扫描测试与归属文档 docs/number-format-setting.md、AGENTS.md 契约。内置浏览器实测 1.234,56 下图表轴、图例、订单簿、标题分隔符一致。第二个提交实施 A-2a（输入框接受设置的小数点），随后两轮对抗审查（GPT-6 astra、三路 Claude 工作流）的确认项已在第三、四个提交修复。
 - [官方终端切换语言实践取证：react-intl + Suspense 懒加载语言包，图表只在创建时取语言](sessions/2026-09-24-official-terminal-language-switch-trace.md) — 2026-09-24；已验证，范围见正文。在内置浏览器只读调试 app.hyperliquid.xyz/trade/HYPE 并静态分析其生产包：语言用 react-intl，五个语言包（含英文）都是变量动态导入编译出的懒加载 chunk，消息 hook 在未缓存时 throw Promise 走根级无 fallback 的 Suspense；切换不 reload、不改 html lang、不重连 WS、不重建 TradingView（图表语言到下次刷新才变），但未用 startTransition，整棵应用被 display:none 约 66–68 ms；语言设置以 JSON 存 hyperliquid.locale-setting，数字格式是独立设置 hyperliquid.locale 且改动会 window.location.reload()；时间戳、图表坐标轴和排序都不跟随 UI 语言。八组静态结论经三路对抗核对与一路补漏，修正了目录键数（1,993）、导入映射来源（vite:dynamic-import-vars）等细节。与 gatu 的 Lingui 热切换、html lang/dir 同步、图表状态保存重建做了对照。
 
 ## 按记录日期检索
@@ -224,7 +224,7 @@
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
 | 2026-09-24 | [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) | 未取得任务标识，见正文 | `15196136` | 已验证，范围见正文 |
-| 2026-09-24 | [图表跟随数字格式设置、日期固定拉丁数字、原生 Intl 调用收口（规划 A-1/A-3/A-4）](sessions/2026-09-24-number-format-chart-and-date-rules.md) | 未取得任务标识，见正文 | `ce9fb539` | 已验证，范围见正文 |
+| 2026-09-24 | [图表跟随数字格式设置、日期固定拉丁数字、原生 Intl 调用收口、输入框接受设置的小数点（规划 A-1/A-2a/A-3/A-4）](sessions/2026-09-24-number-format-chart-and-date-rules.md) | 未取得任务标识，见正文 | `ce9fb539` | 已验证，范围见正文 |
 | 2026-09-24 | [官方终端切换语言实践取证：react-intl + Suspense 懒加载语言包，图表只在创建时取语言](sessions/2026-09-24-official-terminal-language-switch-trace.md) | 未取得任务标识，见正文 | `f03dcbc0` | 已验证，范围见正文 |
 | 2026-09-24 | [user-menu-recovery 浏览器夹具修复](sessions/2026-09-24-user-menu-recovery-fixture-repair.md) | 未取得任务标识，见正文 | `145adad5` | 已验证，范围见正文 |
 | 2026-09-23 | [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) | 未取得任务标识，见正文 | `cf76c54a` | 已整理，验证见正文 |

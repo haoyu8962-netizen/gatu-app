@@ -18,9 +18,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   in the tables next to `1.234` on the axis.
 
 - Dates and times keep Latin digits in every language (the Arabic interface previously
-  showed Arabic-Indic digits next to Latin-digit prices), and the remaining places that
-  formatted times with the browser's own locale (recent trades, the pairing pages, vault and
-  API-wallet timestamps) now follow the interface language like everything else.
+  showed Arabic-Indic digits next to Latin-digit prices). Recent trades and the pairing pages,
+  which formatted times with the browser's own locale, now follow the interface language;
+  vault and API-wallet timestamps already did and keep their date-only or date-time shape.
 
 - Switching the interface language in the dark theme no longer flashes a light chart for a
   moment. The chart's initialization mask now becomes opaque immediately when the

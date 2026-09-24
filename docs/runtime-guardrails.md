@@ -415,7 +415,10 @@ mobile regressions.
   when the widget is created, so the chart follows the number-format setting
   through the same state-preserving rebuild as a locale change
   (`requestStatePreservingRebuild(widget, "numeric-format")`), never through a
-  reload; `docs/number-format-setting.md` owns the rule.
+  reload. The vendored library's `widget.save` calls back synchronously, so a
+  second creation-option change in the same commit is collapsed by the
+  not-ready branch rather than merged into a pending save;
+  `docs/number-format-setting.md` owns the rule.
 - Fonts are scoped to a document, so the `@font-face` rules in the application
   stylesheet do not reach the chart iframe. `CHART_CUSTOM_FONT_FAMILY` and the
   theme stylesheets use a system font stack and must not name an application
@@ -506,8 +509,9 @@ transport. Adding account subscriptions must not disturb market subscriptions.
 - Store locale preference in localStorage and update Lingui/i18n state in place.
 - Numbers follow the number-format setting, dates follow the interface
   language with Latin digits, and components never call `toLocale*` or
-  `new Intl.*Format` directly; `docs/number-format-setting.md` owns these
-  rules and `locale-format-contract` pins the last one.
+  construct `Intl.*` formatters directly; `docs/number-format-setting.md` owns
+  these rules and `locale-format-contract` pins the last one together with the
+  decimal-input normalization rule.
 - Use semantic design tokens and Tailwind utilities. Do not hard-code hex colors
   in app components.
 - Tooltip/popover layers must render above terminal panels and clamp to the

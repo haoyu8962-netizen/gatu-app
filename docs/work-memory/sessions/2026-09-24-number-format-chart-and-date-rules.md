@@ -3,11 +3,11 @@
   "schemaVersion": 1,
   "id": "2026-09-24-number-format-chart-and-date-rules",
   "date": "2026-09-24",
-  "title": "图表跟随数字格式设置、日期固定拉丁数字、原生 Intl 调用收口（规划 A-1/A-3/A-4）",
+  "title": "图表跟随数字格式设置、日期固定拉丁数字、原生 Intl 调用收口、输入框接受设置的小数点（规划 A-1/A-2a/A-3/A-4）",
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime"],
-  "summary": "按用户决策实施对齐规划的 A-1、A-3、A-4：TradingView 创建时收到 numeric_formatting，数字格式变化走与语言相同的保存状态重建（新 reason numeric-format，值未变不重建）；format.ts 的日期函数强制 numberingSystem latn 并接受界面语言代码；6 处绕过 format.ts 的 toLocale*/Intl.DateTimeFormat 调用改走 formatTime/formatDateTime，3 处用户可见名称排序加 sensitivity base；新增 locale-format-contract 扫描测试与归属文档 docs/number-format-setting.md、AGENTS.md 契约。内置浏览器实测 1.234,56 下图表轴、图例、订单簿、标题分隔符一致。",
+  "summary": "按用户决策实施对齐规划的 A-1、A-3、A-4：TradingView 创建时收到 numeric_formatting，数字格式变化走与语言相同的保存状态重建（新 reason numeric-format，值未变不重建）；format.ts 的日期函数强制 numberingSystem latn 并接受界面语言代码；6 处绕过 format.ts 的 toLocale*/Intl.DateTimeFormat 调用改走 formatTime/formatDateTime，3 处用户可见名称排序加 sensitivity base；新增 locale-format-contract 扫描测试与归属文档 docs/number-format-setting.md、AGENTS.md 契约。内置浏览器实测 1.234,56 下图表轴、图例、订单簿、标题分隔符一致。第二个提交实施 A-2a（输入框接受设置的小数点），随后两轮对抗审查（GPT-6 astra、三路 Claude 工作流）的确认项已在第三、四个提交修复。",
   "thread": null,
   "baseCommit": "ce9fb539",
   "commits": [],
@@ -26,20 +26,20 @@
   "supersedes": []
 }
 -->
-# 图表跟随数字格式设置、日期固定拉丁数字、原生 Intl 调用收口（规划 A-1/A-3/A-4）
+# 图表跟随数字格式设置、日期固定拉丁数字、原生 Intl 调用收口、输入框接受设置的小数点（规划 A-1/A-2a/A-3/A-4）
 
 ## 背景与范围
 
-同步记录。用户对[对齐规划](../../number-format-and-chart-translation-plan.md)的决策：全部采纳建议（输入框 A-2a、阿拉伯语日期改拉丁数字、图表翻译审计先 zh + ar），并要求先做 A-1 与 A-3。A-4（拉丁数字）是 A-3 把最近成交时间改走 `formatTime` 的前提——否则阿拉伯语界面的成交时间会从浏览器默认 locale 的拉丁数字变成阿拉伯-印度数字——所以一并实施。基线 `ce9fb539`，开始时工作区干净。A-2a 与方案 B 未做。
+同步记录。用户对[对齐规划](../../number-format-and-chart-translation-plan.md)的决策：全部采纳建议（输入框 A-2a、阿拉伯语日期改拉丁数字、图表翻译审计先 zh + ar），并要求先做 A-1 与 A-3。A-4（拉丁数字）是 A-3 把最近成交时间改走 `formatTime` 的前提——否则阿拉伯语界面的成交时间会从浏览器默认 locale 的拉丁数字变成阿拉伯-印度数字——所以一并实施。基线 `ce9fb539`，开始时工作区干净。A-2a 于第二个提交实施；方案 B 未做。
 
 ## 结论与依据
 
-1. **图表跟随数字格式（A-1）。** `numberSeparatorsByFormatLocale` 从 `lib/format.ts` 上移到 `config/i18n.ts`；`ChartPanel` 读 `useGlobalSettings().numberFormatLocale` 传给 `TradingViewChart`；widget 创建时传 `numeric_formatting: { decimal_sign, grouping_separator }`（v28.3 类型两个字段都必填）。变化走 `requestStatePreservingRebuild(widget, "numeric-format")`：新增 `numericFormatRebuild` 标记、`appliedNumberFormatRef`（创建时记录、`removeWidget` 清空），`finishStatePreservingRebuild` 只在目标值与已应用值不同时重建。语言与数字格式的切换请求收敛到同一个 `requestCreationOptionRebuild(reason, alreadyApplied)`，已应用时清掉自己的标记并在没有其他待重建原因时取消状态保存。
-2. **日期固定拉丁数字并接受语言代码（A-4 / A-3）。** `getFormatter("date")` 强制 `numberingSystem: "latn"`（Node 22 实测 `ar-SA` 由 `٧:٠٥ ص` 变为 `7:05 ص`）；新增 `resolveDateLocale`，显式 `locale` 为界面语言代码（`zh`、`fr`）时按 `languageToIntlLocale` 映射，否则原样交给 Intl。
+1. **图表跟随数字格式（A-1）。** `numberSeparatorsByFormatLocale` 从 `lib/format.ts` 上移到 `config/i18n.ts`；`ChartPanel` 读数字格式设置（第四个提交起用专用选择器 `useNumberFormatLocale()`，避免其它设置变化重渲染图表）传给 `TradingViewChart`；widget 创建时传 `numeric_formatting: { decimal_sign, grouping_separator }`（v28.3 类型两个字段都必填）。变化走 `requestStatePreservingRebuild(widget, "numeric-format")`：新增 `numericFormatRebuild` 标记、`appliedNumberFormatRef`（创建时记录、`removeWidget` 清空），`finishStatePreservingRebuild` 只在目标值与已应用值不同时重建。语言与数字格式的切换请求收敛到同一个 `requestCreationOptionRebuild(reason, alreadyApplied)`，已应用时清掉自己的标记并在没有其他待重建原因时取消状态保存。
+2. **日期固定拉丁数字并接受语言代码（A-4 / A-3）。** `getFormatter("date")` 强制 `numberingSystem: "latn"`（Node 22 实测 `ar-SA` 由 `٧:٠٥ ص` 变为 `7:05 ص`）；新增 `resolveLanguageIntlLocale`（第四个提交前叫 `resolveDateLocale`），显式 `locale` 为界面语言代码（`zh`、`fr`）时按 `languageToIntlLocale` 映射，否则原样交给 Intl。
 3. **收口绕过（A-3）。** 改走 `lib/format.ts` 的 6 处：`lib/trade/trades.ts`（最近成交时间，原 `toLocaleTimeString([])` 浏览器默认 locale）、`mobile-agent-sync-modal.tsx` 与 `routes/mobile-agent-sync.tsx`（配对到期时间，同上；后者是写扫描测试后才发现的第 6 处）、`vaults-list.tsx`、`vault-detail-view.tsx`、`use-api-wallet-controller.ts`（原直接 `new Intl.DateTimeFormat(locale, …)`，`locale` 是 Lingui 语言代码）。三处用户可见名称排序（报价币种分类、Swap 代币 `displayName`、API 钱包 `name`）改为 `localeCompare(other, undefined, { sensitivity: "base" })`。
 4. **契约与文档。** 新增 `locale-format-contract.test.ts`：扫描 `apps/terminal/src`（测试目录与 `.d.ts` 除外）中 `lib/format.ts` 之外的 `.toLocale*(`、`new Intl.NumberFormat(`、`new Intl.DateTimeFormat(`，要求为空。归属文档 `docs/number-format-setting.md`（规则、选项、存储、与官方差异、未完成、回归入口），AGENTS.md 新增「Number and date formatting contract」与验证分组，`docs/runtime-guardrails.md` §4/§7 各加一条，`docs/README.md` 导航，CHANGELOG 两条，规划文档状态改为 A-1/A-3/A-4 已实施。
-5. **输入框接受设置的小数点（A-2a，第二个提交）。** `lib/format.ts` 新增 `normalizeDecimalInput`：设置的小数点是 `,` 时把输入串里的 `,` 全部改成 `.`，默认格式下原样返回交给既有校验拒绝；`components/ui/decimal-input-event.ts` 的 `normalizeDecimalInputEvent` 在 DOM 层改写 `event.target.value` 并保留光标，供读取事件的消费者使用。接入 11 处：`NumberInput`（覆盖划转、发送、提现、移动端尺寸）、`TradeInputFrameView`（覆盖桌面与移动端下单表单的尺寸/价格/TP/SL 共享框）、`PriceInputWithPercent` 三个输入、Across 金额、移动端改单两个输入、移动端触发价与限价、内联改单、质押金额、金库金额。规划里的 `number-input.tsx` 单点方案不够：仓库有 13 个文件各自写 `<input inputMode="decimal">` 的 `onChange`，不逐个接入就会出现同一格式下有的输入框认 `,` 有的不认。输入框显示仍是协议串 `.`（A-2b 未采用）。
-6. **未变的行为。** 数字格式选项仍是设计钉住的三种；`Reset` 先切语言再切数字格式，两次变化若落在同一状态保存窗口内只重建一次，否则第二次重新初始化（测试钉住同一 commit 内两者同时变化只构造两次 widget 且最后一次同时带 `locale: "fr"` 与法式分隔符）。
+5. **输入框接受设置的小数点（A-2a，第二个提交）。** `lib/format.ts` 新增 `normalizeDecimalInput`：设置的小数点是 `,` 时把输入串里的 `,` 全部改成 `.`，默认格式下原样返回交给既有校验拒绝；`components/ui/decimal-input-event.ts` 的 `normalizeDecimalInputEvent` 在 DOM 层改写 `event.target.value` 并保留光标，供读取事件的消费者使用。接入点经第四个提交修正为两层：`NumberInput`（桌面下单表单的尺寸/价格/触发价/TP/SL 通过 `TradeInputFrameView` 的 `input` 插槽也是它，移动端尺寸与价格、划转、发送、提现、充值、Swap 等亦然）；不经 `NumberInput` 的裸输入 8 处（`PriceInputWithPercent` 三个、Across 金额、移动端改单两个、内联改单、质押金额、金库金额）。规划里的 `number-input.tsx` 单点方案不够：仓库有 13 个文件各自写 `<input inputMode="decimal">` 的 `onChange`，不逐个接入就会出现同一格式下有的输入框认 `,` 有的不认。输入框显示仍是协议串 `.`（A-2b 未采用）。
+6. **未变的行为。** 数字格式选项仍是设计钉住的三种；`Reset` 先切语言再切数字格式：库的 `widget.save` 同步回调，所以第二个变化落在「widget 未就绪」分支重新开始初始化，最终只创建一个带两个新值的 widget（测试钉住同一 commit 内两者同时变化只构造两次 widget 且最后一次同时带 `locale: "fr"` 与法式分隔符；另有异步回调下的合并与回退取消测试）。
 
 ## 验证与限制
 
@@ -61,6 +61,23 @@
 4. **P3 文档状态陈旧**：`docs/README.md` 规划行仍写「未实施」，本记录「待做」仍列 A-2a；已更正。另修复 `git diff --check 1eea914e..HEAD` 报的规划文档代码块「space before tab」。
 
 GPT 未确认缺陷但指出的限制：最近成交时间的 `useMemo` 缺语言依赖（当前六种语言输出相同的 `HH:mm:ss`，不可见）；`numberingSystem` 可被调用方参数覆盖（现无此类调用）；扫描测试遗漏不带 `new` 的 `Intl.*Format(`（现无绕过）；它的沙箱不能写 `.vite-temp`，Vitest 未执行，typecheck 通过。修复后：Biome 无问题、typecheck 0 错误、`decimal-input-normalization` / `format` / `number-input` / `mobile-agent-sync-modal` / `mobile-agent-sync-route` / api-wallet / `locale-format-contract` / `i18n-reactivity-contract` 共 14 文件 340 项通过。
+
+## 交叉核对补记（三路 Claude 工作流，第四个提交）
+
+与 GPT-6 并行起了 Workflow：三个审查视角（输入与 DOM 语义、图表生命周期、Intl/日期/排序/文档）各出发现，每条再由两个反驳者独立核对，共 33 个代理、753 次工具调用。15 条发现中 12 条存活、3 条被驳回（de-DE 下 `1.000` 被当作一是范围外的既有行为；`ChartPanel` 订阅四个设置字段不构成缺陷；其余为重复）。与 GPT-6 重叠的 4 条已在第三个提交修复；新增修复：
+
+1. **P2→P3 `TradeInputFrameView` 的裸 `<input>` 包装是死代码**：四个产品调用点都传 `input=`（桌面尺寸/价格/触发价与移动端尺寸都是 `NumberInput`），包装永远不渲染，却让 props-only 视图引入 `lib/format` → Lingui/store。修复：从视图删掉包装与导入，裸路径只保留给 `trade-form-views.test.tsx` 的占位几何对照；扫描测试把该文件列为占位例外。
+2. **P3 七处字符串写法的接入点不保留光标**：`onChange(normalizeDecimalInput(e.target.value))` 只改 state，React 的受控还原随后把 DOM 从 `1,5` 改成 `1.5` 并把光标推到末尾。修复：八处裸输入统一改为 `normalizeDecimalInputEvent(event).target.value`（质押为 `currentTarget`），先改写 DOM 再读值；新增测试在 `15` 中间插入 `,` 后值为 `1.5` 且光标停在 2。
+3. **P3 移动端触发价/限价重复归一化**：`MobileTradePriceField → PriceInput → NumberInput` 已经处理，删掉 `mobile-trade-view.tsx` 的两处包装；记录里的「接入 11 处」改为两层描述。
+4. **P3 AGENTS 规则没有扫描器**：`locale-format-contract` 新增第二条检查——每个裸 `inputMode="decimal"`（所属标签不是 `NumberInput`/`PriceInput`/`MobileTradePriceField`）所在文件必须引用归一化 helper。
+5. **P3 扫描模式窄于契约文字**：`portfolio-page.tsx` 的 `new Intl.ListFormat(i18n.locale, …)` 未被抓到。修复：模式放宽为 `Intl.<Name>(`（含无 `new`），新增 `formatList` 并让投资组合页走它。
+6. **P3 图表合并/回退分支没有测试、文档描述了库不会打开的「保存窗口」**：库的 `save` 同步回调，同一 commit 的第二个变化实际落在「未就绪」分支。修复：归属文档规则 4、guardrails §4、本记录第 6 条改为实际机制；新增两条延迟回调测试（未回调期间的数字格式变化并入同一次保存并带 `saved_data`；变回原值则不重建、不 `remove`）。
+7. **P3 最近成交时间在语言切换后可能陈旧**：`processTrades` 加 `locale` 参数，`TradesPanel` 传 `i18n.locale` 并加入 memo 依赖；`trades.test.ts` 钉住 `ar` 下仍是拉丁数字 `HH:mm:ss`。
+8. **P3 CHANGELOG 夸大迁移范围**（金库与 API 钱包原本就不用浏览器 locale）与本记录自相矛盾（标题/摘要/第 33 行未含 A-2a）：已改写。
+
+反驳者对 `ChartPanel` 订阅面的意见是"机制属实但非缺陷"；仍改为专用 `useNumberFormatLocale()` 选择器，因为改动一行且减少图表面板的无关重渲染。
+
+第四个提交后的验证：Biome 19 个改动文件无问题；typecheck 0 错误；定向组 21 文件 413 项通过；全量 `pnpm --filter @gatu/terminal test`（单独运行）608 文件中 607 通过、1 跳过，7,031 项通过，本次无负载失败。仍未做：真实键盘、真机、`Reset` 连续操作的真实页面观察。
 
 ## 后续与替代关系
 

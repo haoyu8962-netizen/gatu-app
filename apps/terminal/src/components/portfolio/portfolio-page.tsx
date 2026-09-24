@@ -16,6 +16,7 @@ import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-avail
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { formatList } from "@/lib/format";
 import { createLazyComponent } from "@/lib/lazy";
 import {
 	useDepositModalActions,
@@ -100,7 +101,6 @@ export function PortfolioPage() {
 		},
 		{ actions: [t`Deposit`], reason: depositDisabled ? depositAvailability.unavailableReason : null },
 	]);
-	const actionListFormatter = new Intl.ListFormat(i18n.locale, { style: "short", type: "conjunction" });
 	const getUnavailableReasonId = (reason: string | null) => {
 		const index = reason ? unavailableActionGroups.findIndex((group) => group.reason === reason) : -1;
 		return index >= 0 ? `${unavailableActionsId}-${index}` : undefined;
@@ -233,7 +233,7 @@ export function PortfolioPage() {
 										</p>
 										{unavailableActionGroups.map((group, index) => (
 											<p id={`${unavailableActionsId}-${index}`} key={group.reason}>
-												<span className="font-semibold">{actionListFormatter.format(group.actions)}:</span>{" "}
+												<span className="font-semibold">{formatList(group.actions, { locale: i18n.locale })}:</span>{" "}
 												{group.reason}
 											</p>
 										))}

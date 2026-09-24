@@ -248,6 +248,10 @@ export function useTheme() {
 	return useGlobalSettingsStore((state) => state.theme);
 }
 
+export function useNumberFormatLocale() {
+	return useGlobalSettingsStore((state) => state.numberFormatLocale);
+}
+
 export function useSetTheme() {
 	return useGlobalSettingsStore((state) => state.actions.setTheme);
 }
