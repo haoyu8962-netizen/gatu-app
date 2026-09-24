@@ -389,6 +389,10 @@ function hasDateComponentOptions(opts: Intl.DateTimeFormatOptions): boolean {
 	return DATE_COMPONENT_KEYS.some((key) => key in opts);
 }
 
+function hasStyleOptions(opts: Intl.DateTimeFormatOptions): boolean {
+	return "dateStyle" in opts || "timeStyle" in opts;
+}
+
 /**
  * Format time only
  * @example formatTime(new Date()) -> "2:30 PM"
@@ -413,9 +417,10 @@ export function formatDateTime(value: DateInput, opts?: FormatDateOptions): stri
 	if (!isValidDate(value)) return FALLBACK_VALUE_PLACEHOLDER;
 
 	const { locale, ...rest } = opts ?? {};
-	const formatOpts: Intl.DateTimeFormatOptions = hasDateComponentOptions(rest)
-		? rest
-		: { dateStyle: "medium", timeStyle: "short", ...rest };
+	const formatOpts: Intl.DateTimeFormatOptions =
+		hasDateComponentOptions(rest) || hasStyleOptions(rest)
+			? rest
+			: { dateStyle: "medium", timeStyle: "short", ...rest };
 
 	return getFormatter("date", resolveDateLocale(locale), formatOpts).format(toDate(value));
 }

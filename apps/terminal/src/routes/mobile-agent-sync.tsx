@@ -490,7 +490,8 @@ function LoadedQrPanel({
 	source: EnvelopeSource;
 	onDiscard: () => void;
 }) {
-	const expiresAtLabel = formatTime(envelope.expiresAtMs, { hour: "2-digit", minute: "2-digit" });
+	const { i18n } = useLingui();
+	const expiresAtLabel = formatTime(envelope.expiresAtMs, { locale: i18n.locale, hour: "2-digit", minute: "2-digit" });
 
 	return (
 		<div className="space-y-3 rounded-8 border border-stroke-weak bg-fill-weak p-3">

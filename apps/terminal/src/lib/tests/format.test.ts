@@ -127,6 +127,15 @@ describe("format", () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 	});
 
+	it("respects an explicit date-only or time-only style instead of appending the defaults", () => {
+		const value = new Date("2026-08-12T14:35:00Z");
+		const options = { timeZone: "UTC" } as const;
+
+		expect(formatDateTime(value, { ...options, dateStyle: "medium" })).toBe("Aug 12, 2026");
+		expect(formatDateTime(value, { ...options, timeStyle: "short" })).toBe("2:35 PM");
+		expect(formatDateTime(value, options)).toBe("Aug 12, 2026, 2:35 PM");
+	});
+
 	it("maps an interface language code passed as locale to its Intl locale", () => {
 		const value = new Date("2026-08-12T14:35:00Z");
 		const options = { timeZone: "UTC" } as const;

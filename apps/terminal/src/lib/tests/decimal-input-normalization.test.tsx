@@ -51,6 +51,30 @@ describe("decimal input normalization", () => {
 		expect(onChange.mock.results[0]?.value).toBe("1.5");
 	});
 
+	it("lets the comma key through NumberInput's keydown filter only when the format displays a comma", () => {
+		const onChange = vi.fn();
+		const pressKey = (key: string): boolean => {
+			const input = container.querySelector<HTMLInputElement>("input");
+			if (!input) throw new Error("input not rendered");
+			let accepted = false;
+			act(() => {
+				accepted = input.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key }));
+			});
+			return accepted;
+		};
+
+		formatSettings.numberFormatLocale = "de-DE";
+		act(() => root.render(<NumberInput value="1" onChange={onChange} />));
+		expect(pressKey(",")).toBe(true);
+		expect(pressKey(".")).toBe(true);
+		expect(pressKey("x")).toBe(false);
+
+		formatSettings.numberFormatLocale = "en-US";
+		act(() => root.render(<NumberInput value="2" onChange={onChange} />));
+		expect(pressKey(",")).toBe(false);
+		expect(pressKey(".")).toBe(true);
+	});
+
 	it("keeps rejecting a comma in NumberInput under the default format", () => {
 		const onChange = vi.fn();
 		act(() => root.render(<NumberInput value="" onChange={onChange} />));

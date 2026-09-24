@@ -1542,9 +1542,10 @@ function ResetMobileAccessPanel({
 	onConfirm: () => void;
 	onRetryVerification: () => void;
 }) {
+	const { i18n } = useLingui();
 	const expiresAtLabel =
 		state.status === "success" && state.replacementExpiresAtMs !== null
-			? formatTime(state.replacementExpiresAtMs, { hour: "2-digit", minute: "2-digit" })
+			? formatTime(state.replacementExpiresAtMs, { locale: i18n.locale, hour: "2-digit", minute: "2-digit" })
 			: null;
 	const isBusy = state.status === "checking" || state.status === "signing" || state.status === "verifying";
 

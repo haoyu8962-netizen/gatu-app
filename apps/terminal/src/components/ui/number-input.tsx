@@ -19,6 +19,7 @@ import type * as React from "react";
 import { useCallback, useId } from "react";
 import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { cn } from "@/lib/cn";
+import { normalizeDecimalInput } from "@/lib/format";
 import { labelTypographyClass } from "./field-label";
 import { getInputClassName, type InputSize } from "./input";
 
@@ -198,7 +199,7 @@ export function NumberInput({
 			}
 
 			const isDigit = /^[0-9]$/.test(e.key);
-			const isDecimal = e.key === "." && effectiveAllowDecimals;
+			const isDecimal = (e.key === "." || normalizeDecimalInput(e.key) === ".") && effectiveAllowDecimals;
 			const isMinus = e.key === "-" && allowNegative;
 
 			if (!isDigit && !isDecimal && !isMinus) {

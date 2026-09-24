@@ -88,10 +88,10 @@
 
   ```ts
   interface ChartTranslationPatch {
-  	originalText: string;
-  	expectedTranslatedText: string; // 库当前的错译，用于契约测试
-  	value: string;                  // 修正后的译文
-  	note: string;                   // 出现面与核对日期
+      originalText: string;
+      expectedTranslatedText: string; // 库当前的错译，用于契约测试
+      value: string;                  // 修正后的译文
+      note: string;                   // 出现面与核对日期
   }
   export const CHART_TRANSLATION_PATCHES: Partial<Record<LanguageCode, readonly ChartTranslationPatch[]>>;
   export function createChartTranslateFunction(locale: LanguageCode): CustomTranslateFunction | undefined;

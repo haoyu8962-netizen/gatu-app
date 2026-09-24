@@ -51,7 +51,18 @@
 - A-2a 后的全量 `pnpm --filter @gatu/terminal test`（Node 22.15，单独运行）：608 文件中 605 通过、1 跳过、2 失败——`chart-build-assets.test.ts`（TradingView 源树摘要清单）与 `chart-store.test.ts`（共享蜡烛订阅），两者单跑各自通过（4 文件 62 项），与本次改动无关，属全量并行下的负载敏感用例；此前一次与后台运行重叠的全量跑出 4 个不同文件失败，同样单跑全过，已作废不计。
 - 未做：真实浏览器/真机验收（含德语/法语键盘的小数键）；`Reset` 连续操作的真实页面观察；阿拉伯语界面整体检查；方案 B 审计。
 
+## 对抗审查补记（GPT-6 astra，第三个提交）
+
+用户要求用 `codex exec -m gpt-6-astra -s read-only`（`model_reasoning_effort` medium，约 117k token）按项目规范审查 `1eea914e..949693a5`。报告确认 2 项 P2、2 项 P3，无 P0/P1；我逐条核对后全部成立并修复：
+
+1. **P2 `NumberInput` 的 keydown 仍拦截 `,`**：`handleKeyDown` 只放行 `.`，逗号在到达 `input` 事件之前就被 `preventDefault()`，A-2a 的归一化对 `NumberInput`（划转、发送、提现、移动端数量）根本不会执行；我的单测直接派发 `input` 事件绕过了 keydown，内置浏览器实测又只覆盖了没有 keydown 过滤的 `TradeInputFrameView`。修复：`isDecimal` 同时接受 `normalizeDecimalInput(e.key) === "."` 的键；新增 keydown 路径测试（`de-DE` 下 `,`/`.` 放行、`x` 拦截；`en-US` 下 `,` 拦截）。
+2. **P2 配对到期时间不随语言热切换**：`LoadedQrPanel` 与 `ResetMobileAccessPanel` 里 `formatTime(...)` 没有响应式语言依赖，React Compiler 按到期时间缓存结果，语言切换后标签保持旧格式，违反 `docs/i18n-presentation.md`「helper 显式接收翻译依赖」。修复：两处改为 `useLingui()` 并传 `locale: i18n.locale`。未加专门测试：两个组件未导出，现有模态/路由测试没有到达成功态；该差距记入未做。
+3. **P3 API 钱包有效期多出了时间**：`formatDateTime(x, { dateStyle: "medium" })` 会补默认 `timeStyle: "short"`，原 `Intl.DateTimeFormat(locale, { dateStyle: "medium" })` 只显示日期。修复：`formatDateTime` 遇到显式 `dateStyle`/`timeStyle` 时不再补默认值（`hasStyleOptions`），`format.test.ts` 钉住日期限定、时间限定与默认三种输出。
+4. **P3 文档状态陈旧**：`docs/README.md` 规划行仍写「未实施」，本记录「待做」仍列 A-2a；已更正。另修复 `git diff --check 1eea914e..HEAD` 报的规划文档代码块「space before tab」。
+
+GPT 未确认缺陷但指出的限制：最近成交时间的 `useMemo` 缺语言依赖（当前六种语言输出相同的 `HH:mm:ss`，不可见）；`numberingSystem` 可被调用方参数覆盖（现无此类调用）；扫描测试遗漏不带 `new` 的 `Intl.*Format(`（现无绕过）；它的沙箱不能写 `.vite-temp`，Vitest 未执行，typecheck 通过。修复后：Biome 无问题、typecheck 0 错误、`decimal-input-normalization` / `format` / `number-input` / `mobile-agent-sync-modal` / `mobile-agent-sync-route` / api-wallet / `locale-format-contract` / `i18n-reactivity-contract` 共 14 文件 340 项通过。
+
 ## 后续与替代关系
 
 - 接续 [官方切换语言取证](2026-09-24-official-terminal-language-switch-trace.md) 与规划文档；不替代任何记录。
-- 待做：A-2a（输入框在 `,` 小数点格式下接受 `,`），方案 B 的 zh + ar 图表面审计。
+- 待做：方案 B 的 zh + ar 图表面审计；真实键盘验收。A-2a 已在第二个提交完成（见上文第 5 条）。
