@@ -3928,6 +3928,7 @@ msgstr "Vincular billetera de escritorio"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 msgid "Link mobile device"
 msgstr "Vincular dispositivo móvil"
 
@@ -3990,6 +3991,7 @@ msgstr "Los datos de trading en tiempo real no están disponibles. Espera a que 
 msgid "Load more"
 msgstr "Cargar más"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "Cargando"

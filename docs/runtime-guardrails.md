@@ -548,10 +548,14 @@ have an install capability.
   labels, and then opens the scanned link itself; there is no draft storage.
 - The desktop Link mobile device entry is one surface: the header QR icon,
   rendered when `hasWalletAccess && MOBILE_PAIRING_FEATURES.enabled` and kept
-  visible at compact widths. It opens the modal through the global modal store
-  (`useMobileSyncModalOpen` / `useMobileSyncModalActions` in
-  `stores/use-global-modal-store.ts`); the lazy host, error boundary and retry
-  stay in `UserMenu`, which no longer lists a menu item. There is no compact
+  visible at compact widths. The icon warms the dialog chunk on pointer enter
+  and focus (`header/mobile-agent-sync-modal-loader.ts`) and opens the modal
+  through the global modal store (`useMobileSyncModalOpen` /
+  `useMobileSyncModalActions` in `stores/use-global-modal-store.ts`) only after
+  that chunk has resolved, so the click never shows a loading shell; the lazy
+  host, error boundary and retry stay in `UserMenu`, which no longer lists a
+  menu item, and its fallback for this dialog is titled Link mobile device
+  rather than Connecting. There is no compact
   menu entry and no revoke panel: approving again replaces the Mobile Agent,
   and the API wallet page removes it.
 - The dialog has one sentence of instruction, one warning and one action. The

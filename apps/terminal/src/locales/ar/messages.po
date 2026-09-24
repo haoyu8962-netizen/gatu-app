@@ -3928,6 +3928,7 @@ msgstr "ربط محفظة سطح المكتب"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 msgid "Link mobile device"
 msgstr "ربط جهاز الجوال"
 
@@ -3990,6 +3991,7 @@ msgstr "بيانات التداول المباشرة غير متاحة. انتظ
 msgid "Load more"
 msgstr "تحميل المزيد"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "جارٍ التحميل"

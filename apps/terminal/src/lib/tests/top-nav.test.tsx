@@ -22,6 +22,7 @@ const testState = vi.hoisted(() => ({
 	navigate: vi.fn(),
 	openDepositModal: vi.fn(),
 	openMobileSyncModal: vi.fn(),
+	preloadMobileSyncModal: vi.fn(),
 	openSettingsDialog: vi.fn(),
 	pathname: "/trade/HYPE",
 	privyPopupOpen: false,
@@ -173,6 +174,12 @@ vi.mock("@/config/mobile-pairing", () => ({
 			return testState.mobilePairingCreateAndReveal;
 		},
 	},
+}));
+
+vi.mock("@/components/trade/header/mobile-agent-sync-modal-loader", () => ({
+	getMobileAgentSyncModalComponent: () => () => null,
+	preloadMobileAgentSyncModal: () => testState.preloadMobileSyncModal(),
+	resetMobileAgentSyncModalComponent: () => () => null,
 }));
 
 vi.mock("@/hooks/trade/use-trade-home-path", () => ({
@@ -631,13 +638,24 @@ describe("TopNav", () => {
 		expect(findLink("Trade")).toBe(trade);
 	});
 
-	it("shows the Link mobile device icon only for wallet sessions with pairing enabled", () => {
+	it("shows the Link mobile device icon only for wallet sessions with pairing enabled", async () => {
+		testState.preloadMobileSyncModal.mockResolvedValue(undefined);
 		renderNav();
 		const icon = findLinkMobileIcon();
 		expect(icon?.disabled).toBe(false);
 		expect(icon?.parentElement?.className).not.toContain("nav-compact:hidden");
 		expect(icon?.closest(".nav-compact\\:hidden")).toBeNull();
-		act(() => icon?.click());
+
+		act(() => {
+			icon?.dispatchEvent(new Event("pointerover", { bubbles: true }));
+		});
+		expect(testState.preloadMobileSyncModal).toHaveBeenCalledTimes(1);
+		expect(testState.openMobileSyncModal).not.toHaveBeenCalled();
+
+		await act(async () => {
+			icon?.click();
+		});
+		expect(testState.preloadMobileSyncModal).toHaveBeenCalledTimes(2);
 		expect(testState.openMobileSyncModal).toHaveBeenCalledOnce();
 		expect(testState.openSettingsDialog).not.toHaveBeenCalled();
 
@@ -652,15 +670,17 @@ describe("TopNav", () => {
 		expect(container.querySelector('button[aria-label="Settings"]')).not.toBeNull();
 	});
 
-	it("disables the Link mobile device icon with the settings icon while the market loads", () => {
+	it("disables the Link mobile device icon with the settings icon while the market loads", async () => {
 		renderNav("market-loading");
 		const icon = findLinkMobileIcon();
 		expect(icon?.disabled).toBe(true);
-		act(() => {
+		await act(async () => {
+			icon?.dispatchEvent(new Event("pointerover", { bubbles: true }));
 			icon?.focus();
 			icon?.click();
 		});
 		expect(document.activeElement).not.toBe(icon);
+		expect(testState.preloadMobileSyncModal).not.toHaveBeenCalled();
 		expect(testState.openMobileSyncModal).not.toHaveBeenCalled();
 	});
 

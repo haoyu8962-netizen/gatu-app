@@ -9,7 +9,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 ### Changed
 
 - Link mobile device is now one sentence, one warning and one action. The header QR icon is the
-  only entry, the dialog approves the 30-day trading key with a single click (an email wallet signs
+  only entry (it loads the dialog while you hover or focus it, so the click opens the dialog
+  directly instead of a "Connecting" shell), the dialog approves the 30-day trading key with a single click (an email wallet signs
   without a second prompt), a 2-second hold that counts down on the button reveals the QR and it closes after 60 seconds. The phone
   page scrubs the link, shows one sentence and imports on a single tap; a reload asks for a new scan.
   The link now carries a plain payload in the URL fragment instead of an encrypted envelope, the

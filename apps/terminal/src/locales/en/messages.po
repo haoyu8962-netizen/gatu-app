@@ -3928,6 +3928,7 @@ msgstr "Link Desktop Wallet"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 msgid "Link mobile device"
 msgstr "Link mobile device"
 
@@ -3990,6 +3991,7 @@ msgstr "Live trading data is unavailable. Wait for it to refresh and try again."
 msgid "Load more"
 msgstr "Load more"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "Loading"

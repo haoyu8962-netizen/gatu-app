@@ -481,9 +481,10 @@ describe("UserMenu", () => {
 		await act(async () => {
 			mobileSyncStore.set(true);
 		});
-		expect(container.querySelector('[data-testid="user-menu-modal-loading-fallback"]')?.textContent).toContain(
-			"Connecting...",
-		);
+		const loadingFallback = container.querySelector('[data-testid="user-menu-modal-loading-fallback"]');
+		expect(loadingFallback?.textContent).toContain("Loading");
+		expect(loadingFallback?.textContent).not.toContain("Connecting");
+		expect(container.querySelector('[role="dialog"]')?.textContent).toContain("Link mobile device");
 		expect(container.querySelector('[role="dialog"]')?.getAttribute("data-presentation")).toBe("drawer");
 
 		await act(async () => {

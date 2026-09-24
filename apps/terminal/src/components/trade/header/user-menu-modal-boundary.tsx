@@ -11,7 +11,12 @@ interface ModalShellProps {
 	presentation: "drawer" | "modal";
 }
 
-export function UserMenuModalLoadingFallback({ open, onOpenChange, presentation }: ModalShellProps) {
+interface LoadingFallbackProps extends ModalShellProps {
+	title?: ReactNode;
+	label?: ReactNode;
+}
+
+export function UserMenuModalLoadingFallback({ open, onOpenChange, presentation, title, label }: LoadingFallbackProps) {
 	const { t } = useLingui();
 
 	return (
@@ -24,9 +29,7 @@ export function UserMenuModalLoadingFallback({ open, onOpenChange, presentation 
 			size="sm"
 		>
 			<ModalHeader className="sr-only">
-				<ModalTitle>
-					<Trans>Connecting...</Trans>
-				</ModalTitle>
+				<ModalTitle>{title ?? <Trans>Connecting...</Trans>}</ModalTitle>
 			</ModalHeader>
 			<ModalContent>
 				<output
@@ -36,7 +39,7 @@ export function UserMenuModalLoadingFallback({ open, onOpenChange, presentation 
 					aria-live="polite"
 				>
 					<SpinnerGapIcon className="size-4 animate-spin text-signal motion-reduce:animate-none" aria-hidden="true" />
-					<Trans>Connecting...</Trans>
+					{label ?? <Trans>Connecting...</Trans>}
 				</output>
 			</ModalContent>
 		</AdaptiveModal>

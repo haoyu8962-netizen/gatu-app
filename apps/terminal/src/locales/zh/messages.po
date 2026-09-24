@@ -3928,6 +3928,7 @@ msgstr "关联桌面钱包"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 msgid "Link mobile device"
 msgstr "关联移动设备"
 
@@ -3990,6 +3991,7 @@ msgstr "实时交易数据不可用。请等待数据刷新后重试。"
 msgid "Load more"
 msgstr "加载更多"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "加载中"

@@ -3928,6 +3928,7 @@ msgstr "Associer un portefeuille de bureau"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 msgid "Link mobile device"
 msgstr "Associer un appareil mobile"
 
@@ -3990,6 +3991,7 @@ msgstr "Les données de trading en temps réel sont indisponibles. Attendez leur
 msgid "Load more"
 msgstr "Charger plus"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "Chargement"

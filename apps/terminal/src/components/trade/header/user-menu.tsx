@@ -25,15 +25,12 @@ import { hasPersistedPrivySession } from "@/lib/wallet/privy-session-hint";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import { useMobileSyncModalActions, useMobileSyncModalOpen } from "@/stores/use-global-modal-store";
 import { MobileWalletCtaView } from "../mobile/mobile-wallet-cta-view";
+import { getMobileAgentSyncModalComponent, resetMobileAgentSyncModalComponent } from "./mobile-agent-sync-modal-loader";
 import { UserMenuModalErrorBoundary, UserMenuModalLoadingFallback } from "./user-menu-modal-boundary";
 import { loadUserMenuModalModule } from "./user-menu-modal-load";
 import { USER_MENU_BUTTON_MIN_WIDTH, WalletCtaView } from "./wallet-cta-view";
 
 // Keep successful loads across UserMenu remounts; replace only a wrapper that cached a tagged import failure.
-let MobileAgentSyncModal = createLazyComponent(
-	() => loadUserMenuModalModule(() => import("../components/mobile-agent-sync-modal")),
-	"MobileAgentSyncModal",
-);
 let WalletModal = createLazyComponent(
 	() => loadUserMenuModalModule(() => import("../components/wallet-modal")),
 	"WalletModal",
@@ -47,6 +44,7 @@ interface Props {
 }
 
 export function UserMenu({ variant = "default" }: Props) {
+	const MobileAgentSyncModal = getMobileAgentSyncModalComponent();
 	const { t } = useLingui();
 	const walletExport = useEmailWalletExport();
 	const {
@@ -119,10 +117,7 @@ export function UserMenu({ variant = "default" }: Props) {
 	}
 
 	function resetMobileSyncLoad() {
-		MobileAgentSyncModal = createLazyComponent(
-			() => loadUserMenuModalModule(() => import("../components/mobile-agent-sync-modal")),
-			"MobileAgentSyncModal",
-		);
+		resetMobileAgentSyncModalComponent();
 		setMobileSyncLoadAttempt((attempt) => attempt + 1);
 	}
 
@@ -328,6 +323,8 @@ export function UserMenu({ variant = "default" }: Props) {
 								onOpenChange={handleMobileSyncOpenChange}
 								open={mobileSyncOpen}
 								presentation={isMobile ? "drawer" : "modal"}
+								title={<Trans>Link mobile device</Trans>}
+								label={<Trans>Loading</Trans>}
 							/>
 						}
 					>
