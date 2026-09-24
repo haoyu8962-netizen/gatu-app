@@ -15,6 +15,7 @@ const AGENT_NAME = `Mobile valid_until ${AGENT_VALID_UNTIL_MS}`;
 
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
+	onOpenChangeComplete: undefined as ((open: boolean) => void) | undefined,
 	features: { enabled: true },
 	hasWalletAccess: true,
 	isMobile: false,
@@ -49,22 +50,26 @@ vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		onOpenChange,
+		onOpenChangeComplete,
 		open,
 		presentation,
 	}: {
 		children: ReactNode;
 		onOpenChange: (open: boolean) => void;
+		onOpenChangeComplete?: (open: boolean) => void;
 		open: boolean;
 		presentation?: string;
-	}) =>
-		open
+	}) => {
+		testState.onOpenChangeComplete = onOpenChangeComplete;
+		return open
 			? createElement(
 					"div",
 					{ "data-presentation": presentation, role: "dialog" },
 					createElement("button", { onClick: () => onOpenChange(false), type: "button" }, "Close modal"),
 					children,
 				)
-			: null,
+			: null;
+	},
 	Button: ({
 		children,
 		className,
@@ -188,10 +193,10 @@ describe("MobileAgentSyncModal", () => {
 		vi.useRealTimers();
 	});
 
-	async function renderModal(onOpenChange = vi.fn()) {
+	async function renderModal(onOpenChange = vi.fn(), open = true) {
 		const { MobileAgentSyncModal } = await import("@/components/trade/components/mobile-agent-sync-modal");
 		act(() => {
-			root.render(createElement(MobileAgentSyncModal, { open: true, onOpenChange }));
+			root.render(createElement(MobileAgentSyncModal, { open, onOpenChange }));
 		});
 		await flushAsyncWork();
 		return onOpenChange;
@@ -268,7 +273,13 @@ describe("MobileAgentSyncModal", () => {
 		await approve();
 
 		const holdButton = getButton(container, "Hold to reveal");
-		expect(holdButton.getAttribute("aria-label")).toBe("Hold for 2 seconds to reveal the QR code");
+		expect(holdButton.hasAttribute("aria-label")).toBe(false);
+		const hint = document.getElementById(holdButton.getAttribute("aria-describedby") ?? "");
+		expect(hint?.textContent).toBe("Hold for 2 seconds to reveal the QR code");
+		for (const circle of holdButton.querySelectorAll("circle")) {
+			expect(circle.getAttribute("class") ?? "").not.toContain("transition");
+		}
+		expect(holdButton.querySelector('[role="progressbar"]')).toBeNull();
 		dispatchPointer(holdButton, "pointerdown");
 		await advanceTime(1_500);
 		expect(container.textContent).toContain("Keep holding for");
@@ -318,6 +329,19 @@ describe("MobileAgentSyncModal", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
+	it("does not keep a QR revealed while the document is hidden", async () => {
+		const onOpenChange = await renderModal();
+		await approve();
+		Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+		try {
+			await reveal();
+		} finally {
+			Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+		}
+
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
 	it("does not offer approval without the exact owner wallet", async () => {
 		testState.hasWalletAccess = false;
 		await renderModal();
@@ -334,6 +358,20 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.textContent).toContain("New mobile pairing is temporarily unavailable.");
 		expect(findButton(container, "Approve mobile trading key")).toBeUndefined();
 		expect(testState.approveAgent).not.toHaveBeenCalled();
+	});
+
+	it("keeps its content through the exit transition and starts idle on the next open", async () => {
+		const onOpenChange = await renderModal();
+		await approve();
+
+		await renderModal(onOpenChange, false);
+		expect(container.querySelector('[role="dialog"]')).toBeNull();
+		act(() => testState.onOpenChangeComplete?.(false));
+
+		await renderModal(onOpenChange, true);
+		expect(container.textContent).toContain("Approve mobile trading key");
+		expect(container.textContent).not.toContain("Hold to reveal");
+		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 	});
 
 	it("ignores a late approval result after the dialog was closed", async () => {

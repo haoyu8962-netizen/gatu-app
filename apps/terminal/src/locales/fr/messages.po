@@ -5953,8 +5953,8 @@ msgid "QR code linking to {0} market"
 msgstr "Code QR renvoyant vers le marché {0}"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "QR reveal progress"
-msgstr "Progression de l'affichage du QR"
+#~ msgid "QR reveal progress"
+#~ msgstr "Progression de l'affichage du QR"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "QR unavailable"

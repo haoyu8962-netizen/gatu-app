@@ -2,7 +2,7 @@ import { createMobileAgentApproval, type MobileAgentApproval } from "@gatu/hl-re
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DeviceMobileIcon, QrCodeIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Address } from "viem";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { usePressAndHold } from "@/hooks/ui/use-press-and-hold";
@@ -41,7 +41,7 @@ const HOLD_RING_CIRCUMFERENCE = 2 * Math.PI * HOLD_RING_RADIUS;
 export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModalProps) {
 	const { walletAddress, hasWalletAccess } = useWalletSession();
 	const { env } = useHyperliquid();
-	const sessionKey = `${open ? "open" : "closed"}:${env}:${walletAddress?.toLowerCase() ?? "no-wallet"}:${hasWalletAccess}`;
+	const sessionKey = `${env}:${walletAddress?.toLowerCase() ?? "no-wallet"}:${hasWalletAccess}`;
 
 	return (
 		<MobileAgentSyncDialog
@@ -73,7 +73,7 @@ function MobileAgentSyncDialog({
 	useEffect(() => () => operationRef.current?.abort(), []);
 
 	useEffect(() => {
-		if (state.status !== "revealed") return;
+		if (!open || state.status !== "revealed") return;
 		const { closesAtMs } = state;
 
 		function close() {
@@ -84,6 +84,10 @@ function MobileAgentSyncDialog({
 			if (document.visibilityState !== "visible") close();
 		}
 
+		if (document.visibilityState !== "visible") {
+			close();
+			return;
+		}
 		const timeoutId = window.setTimeout(close, Math.max(0, closesAtMs - Date.now()));
 		window.addEventListener("blur", close);
 		window.addEventListener("pagehide", close);
@@ -94,7 +98,12 @@ function MobileAgentSyncDialog({
 			window.removeEventListener("pagehide", close);
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 		};
-	}, [state]);
+	}, [open, state]);
+
+	useEffect(() => {
+		if (state.status !== "ready") return;
+		void import("qrcode").catch(() => undefined);
+	}, [state.status]);
 
 	const canApprove = MOBILE_PAIRING_FEATURES.enabled && hasWalletAccess && !!walletAddress;
 
@@ -141,12 +150,17 @@ function MobileAgentSyncDialog({
 		onOpenChange(nextOpen);
 	}
 
+	function handleOpenChangeComplete(nextOpen: boolean) {
+		if (!nextOpen) setState({ status: "idle" });
+	}
+
 	const showsApproveButton = state.status === "idle" || state.status === "signing" || state.status === "error";
 
 	return (
 		<AdaptiveModal
 			open={open}
 			onOpenChange={handleOpenChange}
+			onOpenChangeComplete={handleOpenChangeComplete}
 			size="md"
 			closeLabel={t`Close`}
 			presentation={isMobile ? "drawer" : "modal"}
@@ -231,7 +245,7 @@ function SyncErrorText({ error }: { error: SyncError }) {
 }
 
 function RevealButton({ onReveal }: { onReveal: () => void }) {
-	const { t } = useLingui();
+	const hintId = useId();
 	const { handlers, isHolding, progressPercent } = usePressAndHold({
 		durationMs: QR_REVEAL_HOLD_MS,
 		onComplete: onReveal,
@@ -240,33 +254,29 @@ function RevealButton({ onReveal }: { onReveal: () => void }) {
 	const holdSeconds = QR_REVEAL_HOLD_SECONDS;
 
 	return (
-		<Button
-			type="button"
-			variant="filled"
-			intent="brand"
-			size="md"
-			className="w-full touch-none select-none"
-			aria-label={t`Hold for ${holdSeconds} seconds to reveal the QR code`}
-			iconLeft={<HoldProgressRing progressPercent={progressPercent} />}
-			{...handlers}
-		>
-			{isHolding ? <Trans>Keep holding for {remainingSeconds}s</Trans> : <Trans>Hold to reveal</Trans>}
-		</Button>
+		<>
+			<Button
+				type="button"
+				variant="filled"
+				intent="brand"
+				size="md"
+				className="w-full touch-none select-none"
+				aria-describedby={hintId}
+				iconLeft={<HoldProgressRing progressPercent={progressPercent} />}
+				{...handlers}
+			>
+				{isHolding ? <Trans>Keep holding for {remainingSeconds}s</Trans> : <Trans>Hold to reveal</Trans>}
+			</Button>
+			<span id={hintId} className="sr-only">
+				<Trans>Hold for {holdSeconds} seconds to reveal the QR code</Trans>
+			</span>
+		</>
 	);
 }
 
 function HoldProgressRing({ progressPercent }: { progressPercent: number }) {
-	const { t } = useLingui();
-
 	return (
-		<span
-			role="progressbar"
-			aria-label={t`QR reveal progress`}
-			aria-valuemin={0}
-			aria-valuemax={100}
-			aria-valuenow={Math.round(progressPercent)}
-			className="inline-flex size-3.5 shrink-0"
-		>
+		<span aria-hidden="true" className="inline-flex size-3.5 shrink-0">
 			<svg viewBox="0 0 24 24" aria-hidden="true" className="size-full origin-center -rotate-90">
 				<circle cx={12} cy={12} r={HOLD_RING_RADIUS} fill="none" stroke="currentColor" strokeWidth={3} opacity={0.25} />
 				<circle
@@ -279,7 +289,6 @@ function HoldProgressRing({ progressPercent }: { progressPercent: number }) {
 					strokeLinecap="round"
 					strokeDasharray={HOLD_RING_CIRCUMFERENCE}
 					strokeDashoffset={HOLD_RING_CIRCUMFERENCE * (1 - progressPercent / 100)}
-					className="transition-[stroke-dashoffset] duration-100"
 				/>
 			</svg>
 		</span>
@@ -336,7 +345,7 @@ function RevealedQrPanel({
 	return (
 		<div className="space-y-2">
 			<div className="flex justify-center rounded-16 border border-stroke-weak bg-white p-3">
-				<canvas ref={canvasRef} aria-label={t`Phone access QR code`} className="size-80 max-w-full" />
+				<canvas ref={canvasRef} aria-label={t`Phone access QR code`} className="h-auto w-80 max-w-full" />
 			</div>
 			<p role="timer" className="text-center text-xs text-fg-muted tabular-nums">
 				<Trans>Closes in {remainingSeconds}s</Trans>
