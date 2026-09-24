@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [CloudFront 生产发布 p23：main 121e8e76，主网赞助充值开、移动配对关](sessions/2026-09-24-cloudfront-release-p23.md) — 2026-09-24；已验证，范围见正文。用户要求推送 codex/reviewceshi、向 dev 开 PR、晋升 main 并发布。PR #40 五项检查通过后以 merge commit 合入 dev（42237b04）；PR #41 八项检查（含四种配对组合构建）通过后合入 main（121e8e76）。临时工作树从 main 构建 cloudfront-2026-09-24-p23，环境文件只软链不读取，命令行强制关闭移动配对、按用户选择保持主网赞助充值开启并带确认参数上传。函数、Lambda、同步、两条分发失效退出码全 0；主网 15 项、测试网 16 项 verify 全部 ok；CSP 覆盖三个汇总数组为空。市价平仓相关改动发布前没有真实钱包验收。
 - [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) — 2026-09-24；已验证，范围见正文。用 codex exec（gpt-6-astra，read-only，medium）对 b82dd443..15196136 做对抗审查：确认 2 项 P2——提交宿主在挂载后无条件下载但未计入启动预算、宿主注册前封存的尝试离开页面后可被其他页面接手。已改为按意图加载宿主、门控卸载时废弃等待中的尝试；未发现 P0/P1，TP/SL 文案与官方规则一致。
 - [user-menu-recovery 浏览器夹具修复](sessions/2026-09-24-user-menu-recovery-fixture-repair.md) — 2026-09-24；已验证，范围见正文。user-menu-recovery 套件 10 项全红的原因是夹具缺口而非产品缺陷：df4ed89f 给页头加的 useEmailWalletExport 需要 PrivyProvider 且引入了桩没有的导出，8cb1b98a 起未就绪页头只对已有会话显示 Connecting...，51c5ace3/67d4212e 改了移动端文案。补桩、种会话标记、按宽度更新断言后 10/10 通过；未改产品代码，套件仍不在 CI。
 - [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) — 2026-09-23；已整理，验证见正文。审查 b82dd443..cf76c54a 的 8 个 Claude 联署提交：确认 3 项 P2，涉及懒加载等待期间确认未封存、重复调用提前清除宿主运行标记，以及 TP/SL 文案遗漏保证金不足取消的官方例外；现有 439 项聚焦单测与 9 项浏览器布局测试通过，另以隔离复现验证前两项；未改交易实现、未执行真实交易。
@@ -176,6 +177,7 @@
 
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md)
 
+- [CloudFront 生产发布 p23：main 121e8e76，主网赞助充值开、移动配对关](sessions/2026-09-24-cloudfront-release-p23.md) — 2026-09-24；已验证，范围见正文。用户要求推送 codex/reviewceshi、向 dev 开 PR、晋升 main 并发布。PR #40 五项检查通过后以 merge commit 合入 dev（42237b04）；PR #41 八项检查（含四种配对组合构建）通过后合入 main（121e8e76）。临时工作树从 main 构建 cloudfront-2026-09-24-p23，环境文件只软链不读取，命令行强制关闭移动配对、按用户选择保持主网赞助充值开启并带确认参数上传。函数、Lambda、同步、两条分发失效退出码全 0；主网 15 项、测试网 16 项 verify 全部 ok；CSP 覆盖三个汇总数组为空。市价平仓相关改动发布前没有真实钱包验收。
 - [全部平仓：确认按钮改为静态动词，点击即关闭弹窗，结果只走右下角通知](sessions/2026-09-21-close-all-submit-and-dismiss.md) — 2026-09-21；已验证，范围见正文。产品负责人要求全部平仓的按钮不显示状态、与其他按钮一致、订单状态放到右下角通知。原实现把仓位数写进确认按钮，并在按钮上依次显示校验中、提交中、确认中与部分成功，弹窗等待结果。现改为静态的 Close All Positions，点击即关闭弹窗，组件保持挂载到提交结束，五种结局各发一条通知；持仓页在会话存在期间禁用入口。同日按「一并修复，还有下单弹窗按钮」的要求，限价平仓、反手确认与下单确认也改为同一做法，并写入确认面契约第 6 条；TP/SL、逐仓保证金、保证金模式、现货兑换与资金类弹窗仍在按钮上显示进度，未改。
 - [CloudFront 生产发布 p22：main 246c57bc，主网赞助充值开、移动配对关](sessions/2026-09-21-cloudfront-release-p22.md) — 2026-09-21；已验证，范围见正文。产品负责人要求把 dev 晋升到 main 并发布到线上。PR #38 以 merge commit 合入 main（246c57bc，九项检查含四种配对组合构建全部通过）。在干净的临时工作树从 main 构建 cloudfront-2026-09-21-p22：环境文件只软链不读取，命令行强制关闭移动配对、按产品负责人的选择打开主网赞助充值并在上传时带确认参数。按日常发布顺序执行函数、Lambda、同步、两条分发失效，主网 15 项与测试网 16 项 verify 全部 ok，浏览器 CSP 覆盖 32 步零违规。PR #37 的交易与资金弹层发布前没有做真实钱包验收。
 - [资金类弹层：官方终端前端包取证与修复方案（未实施）](sessions/2026-09-21-funds-dialog-official-practice.md) — 2026-09-21；已整理，验证见正文。产品负责人要求对照官方终端的做法规划划转、发送、充值、提现四个弹层的修复。只读取证官方前端包：资金弹层不是点击即关闭，而是保持打开并禁用到请求结束、无论成败都关闭、结果走通知；等待期间只有钱包握手提示 Confirm in Wallet；充值失败留在原地重试；长时间状态放在可原位更新的通知与持久化、自动核销的待处理列表里，入口在账户面板。据此写成三步方案与三项待决策事项，未改动任何代码。
@@ -216,6 +218,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-24 | [CloudFront 生产发布 p23：main 121e8e76，主网赞助充值开、移动配对关](sessions/2026-09-24-cloudfront-release-p23.md) | 未取得任务标识，见正文 | `42237b04` | 已验证，范围见正文 |
 | 2026-09-24 | [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) | 未取得任务标识，见正文 | `15196136` | 已验证，范围见正文 |
 | 2026-09-24 | [user-menu-recovery 浏览器夹具修复](sessions/2026-09-24-user-menu-recovery-fixture-repair.md) | 未取得任务标识，见正文 | `145adad5` | 已验证，范围见正文 |
 | 2026-09-23 | [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) | 未取得任务标识，见正文 | `cf76c54a` | 已整理，验证见正文 |
