@@ -576,8 +576,8 @@ function SuccessPanel({
 	agentValidUntilMs: number;
 	localCleanupIncomplete: boolean;
 }) {
-	useLingui();
-	const validUntilLabel = formatDateTime(agentValidUntilMs);
+	const { i18n } = useLingui();
+	const validUntilLabel = formatDateTime(agentValidUntilMs, { locale: i18n.locale });
 
 	return (
 		<div className="space-y-3">

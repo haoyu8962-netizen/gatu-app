@@ -1736,6 +1736,10 @@ msgid "Confirm removal"
 msgstr "Confirm removal"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Confirm revoke"
+msgstr "Confirm revoke"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Confirm revoke in wallet"
 msgstr "Confirm revoke in wallet"
 
@@ -9956,6 +9960,7 @@ msgid "Your email wallet is unavailable. Sign out and log in again with the same
 msgstr "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
 msgstr "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
 

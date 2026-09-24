@@ -227,7 +227,7 @@ export function MobileAgentQrScanner({
 			{feedbackMessage && (
 				<div
 					role="alert"
-					className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error"
+					className="flex items-start gap-2 rounded-16 border border-stroke-error-weak bg-error-soft p-3 text-xs text-error"
 				>
 					<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 					<p>{feedbackMessage}</p>

@@ -1,6 +1,6 @@
 # 配对页加固规划（A 批）
 
-状态：已实施、未推送、未发布（2026-09-20，分支 `fix/pairing-page-hardening`，结果见文末「实施结果」）。规划第 2 版（2026-09-19）；第 1 版经 Codex `gpt-6-astra`（只读，`medium`，约 10 万 token）对抗审查后判为「不能按原样实施」；本版逐条核实后修订，变更见文末「审查与修订」。范围是 [无票据方案](mobile-sync-ticketless-transfer-plan.md) 安全复核里无需产品决策的遗留项。两个 `VITE_MOBILE_PAIRING_*` 开关保持关闭；本批不发布、不改协议（信封 v3、TTL、去重、导入顺序不动）。
+状态：已实施、未推送、未发布（2026-09-20，分支 `fix/pairing-page-hardening`，结果见文末「实施结果」）。更正（2026-09-24）：本批已经 PR #33（`d1f31576`）与 PR #34（`8dae2522`）合入 `dev`，并随 2026-09-21 的生产发布 p22（`main` `246c57bc`，[发布记录](work-memory/sessions/2026-09-21-cloudfront-release-p22.md)）上线，`verify` 含 “pairing page headers” 检查通过；两个 `VITE_MOBILE_PAIRING_*` 开关在线上仍关闭。规划第 2 版（2026-09-19）；第 1 版经 Codex `gpt-6-astra`（只读，`medium`，约 10 万 token）对抗审查后判为「不能按原样实施」；本版逐条核实后修订，变更见文末「审查与修订」。范围是 [无票据方案](mobile-sync-ticketless-transfer-plan.md) 安全复核里无需产品决策的遗留项。两个 `VITE_MOBILE_PAIRING_*` 开关保持关闭；本批不发布、不改协议（信封 v3、TTL、去重、导入顺序不动）。
 
 ## 现状（2026-09-19 读源码与本地生产产物确认）
 

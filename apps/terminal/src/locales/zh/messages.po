@@ -1736,6 +1736,10 @@ msgid "Confirm removal"
 msgstr "确认移除"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Confirm revoke"
+msgstr "确认撤销"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Confirm revoke in wallet"
 msgstr "在钱包中确认撤销"
 
@@ -7028,11 +7032,11 @@ msgstr "签名账户"
 
 #: src/components/staking/staking-view.tsx
 msgid "Signing ready"
-msgstr ""
+msgstr "签名就绪"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Signing with your email wallet"
-msgstr ""
+msgstr "正在用邮箱钱包签名"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
@@ -7103,7 +7107,7 @@ msgstr "数量偏斜"
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
-msgstr ""
+msgstr "数量偏斜相对总数量过大"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -9956,8 +9960,9 @@ msgid "Your email wallet is unavailable. Sign out and log in again with the same
 msgstr "邮箱钱包不可用。请退出登录并使用同一邮箱重新登录，然后重试。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
-msgstr ""
+msgstr "邮箱钱包会自动为已审核的请求签名。在 Hyperliquid 接受之前不会有任何变化。"
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

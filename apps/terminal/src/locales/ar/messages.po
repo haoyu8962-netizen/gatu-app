@@ -1736,6 +1736,10 @@ msgid "Confirm removal"
 msgstr "تأكيد الإزالة"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Confirm revoke"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Confirm revoke in wallet"
 msgstr "أكّد الإبطال في المحفظة"
 
@@ -9956,6 +9960,7 @@ msgid "Your email wallet is unavailable. Sign out and log in again with the same
 msgstr "محفظة البريد الإلكتروني غير متاحة. سجّل الخروج ثم سجّل الدخول مجددًا باستخدام البريد الإلكتروني نفسه وأعد المحاولة."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
 msgstr ""
 

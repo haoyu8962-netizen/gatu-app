@@ -12,7 +12,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   mobile trading access from the Link mobile device dialog, or when authorizing or removing an
   API wallet. Each dialog's own review step is the confirmation, so the embedded wallet signs
   silently like every other reviewed action, and the API wallet progress view says so instead
-  of asking for a wallet confirmation.
+  of asking for a wallet confirmation. The revoke confirmation in the Link mobile device dialog
+  says "Confirm revoke" for email users and keeps "Confirm revoke in wallet" for external
+  wallets; the phone pairing page formats the key's expiry in the interface language.
 
 - The Link mobile device dialog no longer stacks grey boxes: the master wallet is a plain
   label row, "pairing temporarily unavailable" and "keep this window open" are info callouts,

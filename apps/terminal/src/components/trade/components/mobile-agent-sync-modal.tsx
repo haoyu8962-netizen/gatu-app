@@ -53,10 +53,13 @@ interface MobileAgentSyncModalProps {
 	onOpenChange: (open: boolean) => void;
 }
 
+type MobileAgentSyncSigner = "embedded" | "external";
+
 interface MobileAgentSyncSessionProps extends MobileAgentSyncModalProps {
 	env: HyperliquidEnv;
 	hasWalletAccess: boolean;
 	walletAddress: Address | undefined;
+	signer: MobileAgentSyncSigner;
 }
 
 interface QrDeadlines {
@@ -227,8 +230,9 @@ function isDefinitiveApprovalFailure(verification: ExpectedMobileAgentVerificati
 }
 
 export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModalProps) {
-	const { walletAddress, hasWalletAccess } = useWalletSession();
+	const { walletAddress, hasWalletAccess, walletIntent } = useWalletSession();
 	const { env } = useHyperliquid();
+	const signer: MobileAgentSyncSigner = walletIntent === "embedded" ? "embedded" : "external";
 	const sessionKey = `${open ? "open" : "closed"}:${env}:${walletAddress?.toLowerCase() ?? "no-wallet"}:${hasWalletAccess}`;
 
 	return (
@@ -239,6 +243,7 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 			env={env}
 			walletAddress={walletAddress}
 			hasWalletAccess={hasWalletAccess}
+			signer={signer}
 		/>
 	);
 }
@@ -249,6 +254,7 @@ function MobileAgentSyncSession({
 	env,
 	walletAddress,
 	hasWalletAccess,
+	signer,
 }: MobileAgentSyncSessionProps) {
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
@@ -1149,6 +1155,7 @@ function MobileAgentSyncSession({
 
 				<ResetMobileAccessPanel
 					state={resetState}
+					signer={signer}
 					disabled={isSyncPending || isResetPending || !walletAddress || !hasWalletAccess}
 					onReview={handleReviewRevocation}
 					onConfirm={handleConfirmRevocation}
@@ -1531,12 +1538,14 @@ function InlineError({ message }: { message: MobileAgentSyncMessage }) {
 
 function ResetMobileAccessPanel({
 	state,
+	signer,
 	disabled,
 	onReview,
 	onConfirm,
 	onRetryVerification,
 }: {
 	state: ResetState;
+	signer: MobileAgentSyncSigner;
 	disabled: boolean;
 	onReview: () => void;
 	onConfirm: () => void;
@@ -1585,8 +1594,16 @@ function ResetMobileAccessPanel({
 							trading after Hyperliquid confirms the replacement.
 						</Trans>
 					</p>
+					{signer === "embedded" && (
+						<p>
+							<Trans>
+								Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts
+								it.
+							</Trans>
+						</p>
+					)}
 					<Button type="button" variant="filled" intent="error" size="sm" onClick={onConfirm}>
-						<Trans>Confirm revoke in wallet</Trans>
+						{signer === "embedded" ? <Trans>Confirm revoke</Trans> : <Trans>Confirm revoke in wallet</Trans>}
 					</Button>
 				</div>
 			)}

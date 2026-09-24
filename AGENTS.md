@@ -53,7 +53,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - `docs/runtime-guardrails.md` §8 owns these rules. Terminal layout, wallet-connection surface and PWA installation are three independent decisions: `MOBILE_MEDIA_QUERY` switches the layout; `MOBILE_QR_SURFACE_MEDIA_QUERY` (which also covers coarse pointers and standalone display mode) must never switch it.
 - Offer Link Desktop only behind its fail-closed feature flag. Email login and the Ethereum-only Privy wallet directory remain the ordinary mobile connection paths; authenticated sessions use the explicit reconnect path.
-- Desktop Link mobile device entries (header icon, compact utilities menu, user menu) share one modal instance and appear only for an exact-owner session with `createAndReveal` enabled; the phone shows agent-only funds actions disabled with a single desktop-required reason instead of hiding them.
+- Desktop Link mobile device entries share one modal instance. The header icon and the compact utilities item appear only for an exact-owner session with `createAndReveal` enabled; the user-menu item appears for every exact-owner session because it is the verify/revoke entry, and the dialog itself reports when new pairing is unavailable. The phone shows agent-only funds actions disabled with a single desktop-required reason instead of hiding them.
 - Show PWA installation only when a real browser install prompt or supported iOS instructions exist; a captured prompt is single-use, and wide desktop `beforeinstallprompt` behavior stays browser-owned.
 
 ## Mobile data presentation contract

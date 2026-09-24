@@ -88,7 +88,7 @@ jobs:
           src/lib/tests/mobile-trade-layout-market-reset.test.tsx
           src/lib/tests/market-overview.test.tsx
 
-      - name: Test mobile ticket protocol and import lifecycle
+      - name: Test mobile pairing protocol, signing chain and import lifecycle
         working-directory: apps/terminal
         run: >-
           pnpm exec vitest run --maxWorkers=1
@@ -96,6 +96,13 @@ jobs:
           src/lib/tests/mobile-agent-sync-route.test.tsx
           src/lib/tests/mobile-agent-qr-scanner.test.tsx
           src/lib/tests/mobile-pairing-feature-gate.test.ts
+          src/lib/tests/qr-classification.test.ts
+          src/lib/tests/mobile-agent-remote-verification.test.ts
+          src/lib/tests/desktop-approval-recovery.test.ts
+          src/lib/tests/mobile-agent-lifecycle.test.ts
+          src/lib/tests/use-explicit-agent-approval.test.tsx
+          src/lib/tests/privy-agent-signer.test.ts
+          src/lib/tests/lambda-handler.test.ts
 
       - name: Test route provider lifecycles
         working-directory: apps/terminal

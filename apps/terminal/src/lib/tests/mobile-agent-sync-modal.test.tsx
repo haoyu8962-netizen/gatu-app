@@ -80,6 +80,7 @@ const testState = vi.hoisted(() => ({
 	spotRefetch: vi.fn(),
 	spotState: { balances: [] as Array<{ hold?: string; total?: string }> },
 	walletAddress: "0x1111111111111111111111111111111111111111" as `0x${string}` | undefined,
+	walletIntent: "external" as "embedded" | "external" | "unavailable",
 	writeClipboard: vi.fn(),
 }));
 
@@ -207,6 +208,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
 		hasWalletAccess: testState.hasWalletAccess,
 		walletAddress: testState.walletAddress,
+		walletIntent: testState.walletIntent,
 	}),
 }));
 
@@ -311,6 +313,7 @@ describe("MobileAgentSyncModal", () => {
 		root = createI18nRoot(container);
 		testState.walletAddress = USER_ADDRESS;
 		testState.hasWalletAccess = true;
+		testState.walletIntent = "external";
 		testState.isMobile = false;
 		testState.features.createAndReveal = true;
 		testState.features.importFromQr = true;
@@ -1521,6 +1524,31 @@ describe("MobileAgentSyncModal", () => {
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 	});
 
+	it("names the revoke confirmation without a wallet handshake for an embedded owner", async () => {
+		testState.walletIntent = "embedded";
+		testState.extraAgents = [];
+		testState.approveAgent.mockImplementation(async ({ agentAddress }: { agentAddress: string }) => {
+			if (agentAddress === REVOKE_AGENT_ADDRESS) testState.extraAgents = [replacementRemoteAgent()];
+		});
+		await renderModal();
+		act(() => getButton(container, "Review revoke").click());
+		await flushAsyncWork();
+
+		const confirm = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent?.trim() === "Confirm revoke",
+		);
+		expect(confirm).toBeDefined();
+		expect(container.textContent).not.toContain("Confirm revoke in wallet");
+		expect(container.textContent).toContain("Your email wallet signs the reviewed request automatically");
+
+		act(() => confirm?.click());
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("Mobile access revoked");
+		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
+		expect(testState.approveAgent.mock.calls[0]?.[1]).toMatchObject({ applicationReview: "confirmed" });
+	});
+
 	it("keeps revoke available while the create feature gate is closed", async () => {
 		testState.features.createAndReveal = false;
 		testState.extraAgents = [];
@@ -1536,6 +1564,7 @@ describe("MobileAgentSyncModal", () => {
 		await flushAsyncWork();
 
 		expect(container.textContent).toContain("Confirm revoke in wallet");
+		expect(container.textContent).not.toContain("signs the reviewed request automatically");
 		expect(container.textContent).not.toContain("No approved mobile Agent remains");
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 		act(() => getButton(container, "Confirm revoke in wallet").click());

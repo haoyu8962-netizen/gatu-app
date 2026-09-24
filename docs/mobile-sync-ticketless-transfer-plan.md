@@ -1,6 +1,6 @@
 # 移动配对方案 B：去服务端票据的纯客户端传输（实施规划）
 
-状态：已选定（2026-09-18，用户决定）；实施顺序 1–4 已于 2026-09-18 完成（任务记录 [2026-09-18-mobile-sync-ticketless-implementation](work-memory/sessions/2026-09-18-mobile-sync-ticketless-implementation.md)），静态托管实测与一次只读对抗安全复核已执行（见下方「验收执行记录」与「安全复核结论」）；真机矩阵、第 5 步（打开生产开关）与线上发布尚未执行。归属决策见 [ADR 0015](adr/0015-link-device-alignment.md) D7。实施偏差：退役路径 `/mobile-agent-sync-ticket*` 由 CloudFront viewer-request 函数与静态页分类器直接返回 404（而非落入 SPA 壳），Service Worker 与 `serve:spa` 继续把它当作非导航路径；真机矩阵模板与 `scripts/validate-mobile-phone-access-device-validation.js` 已于同日改写为无票据协议。
+状态：已选定（2026-09-18，用户决定）；实施顺序 1–4 已于 2026-09-18 完成（任务记录 [2026-09-18-mobile-sync-ticketless-implementation](work-memory/sessions/2026-09-18-mobile-sync-ticketless-implementation.md)），静态托管实测与一次只读对抗安全复核已执行（见下方「验收执行记录」与「安全复核结论」）；真机矩阵、第 5 步（打开生产开关）与线上发布尚未执行。归属决策见 [ADR 0015](adr/0015-link-device-alignment.md) D7。更正（2026-09-24）：无票据客户端代码、边缘 404 与配对页响应头、以及 [配对页加固](pairing-page-hardening-plan.md) 的头部擦除 / Service Worker 放行都已随 2026-09-21 的生产发布 p22（`main` `246c57bc`，[发布记录](work-memory/sessions/2026-09-21-cloudfront-release-p22.md)）上线，函数、Lambda 与分发配置已重新发布，主网 15 项与测试网 16 项 `verify` 通过；下文「验收执行记录」里的「部署：未执行」描述的是 2026-09-18 当时的状态。两个 `VITE_MOBILE_PAIRING_*` 开关在线上仍关闭，真机矩阵仍未执行。实施偏差：退役路径 `/mobile-agent-sync-ticket*` 由 CloudFront viewer-request 函数与静态页分类器直接返回 404（而非落入 SPA 壳），Service Worker 与 `serve:spa` 继续把它当作非导航路径；真机矩阵模板与 `scripts/validate-mobile-phone-access-device-validation.js` 已于同日改写为无票据协议。
 
 ## 目标与不变量
 

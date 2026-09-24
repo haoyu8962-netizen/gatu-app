@@ -1736,6 +1736,10 @@ msgid "Confirm removal"
 msgstr "हटाने की पुष्टि करें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Confirm revoke"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Confirm revoke in wallet"
 msgstr "वॉलेट में निरस्तीकरण की पुष्टि करें"
 
@@ -9956,6 +9960,7 @@ msgid "Your email wallet is unavailable. Sign out and log in again with the same
 msgstr "आपका ईमेल वॉलेट उपलब्ध नहीं है। साइन आउट करें, उसी ईमेल से फिर लॉग इन करें और दोबारा प्रयास करें।"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
 msgstr ""
 
