@@ -45,7 +45,11 @@
 - 实际运行：Biome 无问题；`pnpm --filter @gatu/terminal typecheck` 0 错误；`mobile-agent-sync-modal`、`use-explicit-agent-approval`、`privy-agent-signer`、`use-agent-registration-race`、`establish-connection-modal`、api-wallet 相关、`privy-config`、`mobile-agent-lifecycle` 共 14 文件 253 项通过。
 - 未做：真实邮箱账户上的实际审批（本地构建 `createAndReveal` 关闭，弹窗显示「temporarily unavailable」，无法走到签名；用户环境可验证）；官方站真实登录复现（静态证据已足够，且会在真实账户上创建 Agent）。
 
+## 补记：API 钱包管理弹窗同样静默（第二个提交）
+
+用户随后决定 API 钱包管理弹窗也对齐。核对规则前提：`use-api-wallet-controller.ts` 的授权（`handleAuthorize`）与移除（`handleRemove`）都先进入 `review` 阶段，只有点击确认后才做只读预检并进入 `requestSignature`（测试「runs the read-only preflight on open and signs only after the explicit approval click」钉住），满足 `docs/trading-onboarding.md` §4「入口已完成自己的应用层审查」的条件。改动：`approvalMutation.mutateAsync(..., { signal, applicationReview: "confirmed" })`；`ApiWalletActionView` 新增 `signer: "embedded" | "external"`（来自 `useWalletSession().walletIntent`），进度视图在 `awaiting` 阶段对嵌入钱包显示「Signing with your email wallet / Your email wallet signs the reviewed request automatically…」，外部钱包保持「Waiting for wallet signature / Confirm the request in the matching master wallet…」——原文案对邮箱用户会在静默签名的一两秒里要求「在钱包里确认」，与实际不符。Link mobile device 弹窗 approving 态的「Approve QR code with wallet...」保持不变，与官方签名期间的文案相同。文档：`docs/trading-onboarding.md` §4、`docs/email-trading-signing.md` 边界 4、`docs/api-wallet-redesign-notes.md`、ADR 0015 补注、CHANGELOG。测试：`use-api-wallet-controller.test.tsx` 断言带 `applicationReview: "confirmed"`；`api-wallet-action-modal.test.tsx` 新增 embedded/external 两种 awaiting 文案用例。实际运行：Biome 无问题；typecheck 0 错误；api-wallet 全部测试、`use-api-wallet-controller`、`use-explicit-agent-approval`、`privy-agent-signer`、`mobile-agent-sync-modal`、`i18n-reactivity-contract` 共 12 文件 335 项通过。未做：真实邮箱账户上的授权/移除实测。
+
 ## 后续与替代关系
 
 - 不替代任何记录；接续 ADR 0015 与 `docs/trading-onboarding.md`。
-- 待用户决定：API 钱包管理弹窗（授权/移除）是否同样声明 `applicationReview: "confirmed"` 以对齐官方的全局静默。
+- API 钱包管理弹窗已在第二个提交对齐；`createPrivyAgentSigner` 的显式 UI 分支现已没有产品调用方，作为未来入口的默认保留。

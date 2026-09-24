@@ -7030,6 +7030,10 @@ msgstr "Compte signataire"
 msgid "Signing ready"
 msgstr ""
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Signing with your email wallet"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 msgid "Signing..."
@@ -9950,6 +9954,10 @@ msgstr "Votre stake délégué"
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "Votre portefeuille lié à l’e-mail est indisponible. Déconnectez-vous, reconnectez-vous avec la même adresse e-mail, puis réessayez."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
+msgstr ""
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

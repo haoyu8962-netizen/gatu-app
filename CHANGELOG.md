@@ -9,8 +9,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 ### Changed
 
 - Email users no longer see a second Privy signature prompt when approving or revoking
-  mobile trading access from the Link mobile device dialog. The dialog's own review step is
-  the confirmation, so the embedded wallet signs silently like every other reviewed action.
+  mobile trading access from the Link mobile device dialog, or when authorizing or removing an
+  API wallet. Each dialog's own review step is the confirmation, so the embedded wallet signs
+  silently like every other reviewed action, and the API wallet progress view says so instead
+  of asking for a wallet confirmation.
 
 - The Link mobile device dialog no longer stacks grey boxes: the master wallet is a plain
   label row, "pairing temporarily unavailable" and "keep this window open" are info callouts,

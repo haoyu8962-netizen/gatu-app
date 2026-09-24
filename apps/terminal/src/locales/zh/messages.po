@@ -7030,6 +7030,10 @@ msgstr "签名账户"
 msgid "Signing ready"
 msgstr ""
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Signing with your email wallet"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 msgid "Signing..."
@@ -9950,6 +9954,10 @@ msgstr "您的已委托质押"
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "邮箱钱包不可用。请退出登录并使用同一邮箱重新登录，然后重试。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
+msgstr ""
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

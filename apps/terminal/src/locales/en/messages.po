@@ -7030,6 +7030,10 @@ msgstr "Signing account"
 msgid "Signing ready"
 msgstr ""
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Signing with your email wallet"
+msgstr "Signing with your email wallet"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 msgid "Signing..."
@@ -9950,6 +9954,10 @@ msgstr "Your delegated stake"
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
+msgstr "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

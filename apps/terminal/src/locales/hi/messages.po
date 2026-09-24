@@ -7030,6 +7030,10 @@ msgstr "हस्ताक्षर करने वाला खाता"
 msgid "Signing ready"
 msgstr ""
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Signing with your email wallet"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 msgid "Signing..."
@@ -9950,6 +9954,10 @@ msgstr "आपका डेलीगेट किया गया स्टे�
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "आपका ईमेल वॉलेट उपलब्ध नहीं है। साइन आउट करें, उसी ईमेल से फिर लॉग इन करें और दोबारा प्रयास करें।"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
+msgstr ""
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

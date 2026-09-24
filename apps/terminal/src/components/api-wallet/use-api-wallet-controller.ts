@@ -32,6 +32,7 @@ import {
 	validateApiWalletName,
 } from "./api-wallet-state";
 import type {
+	ApiWalletActionSigner,
 	ApiWalletActionView,
 	ApiWalletAgentStatus,
 	ApiWalletAgentView,
@@ -300,7 +301,10 @@ export function useApiWalletController({
 				state: transitionApiWalletAction(preflighted.state, { type: "requestSignature" }),
 				isPreflighting: false,
 			});
-			await approvalMutation.mutateAsync(getApprovalParameters(current), { signal: lease.abortController.signal });
+			await approvalMutation.mutateAsync(getApprovalParameters(current), {
+				signal: lease.abortController.signal,
+				applicationReview: "confirmed",
+			});
 			if (!executionIsCurrent(lease)) return;
 			const awaiting = activeActionRef.current;
 			if (!awaiting) return;
@@ -435,7 +439,14 @@ export function useApiWalletController({
 		void agentsQuery.refetch({ cancelRefetch: true });
 	}
 
-	const actionView = createActionView(identityBoundAction, identityBoundCredential?.privateKey, i18n.locale, t);
+	const actionSigner: ApiWalletActionSigner = wallet.walletIntent === "embedded" ? "embedded" : "external";
+	const actionView = createActionView(
+		identityBoundAction,
+		identityBoundCredential?.privateKey,
+		i18n.locale,
+		actionSigner,
+		t,
+	);
 
 	return {
 		pageState,
@@ -505,6 +516,7 @@ function createActionView(
 	action: ActiveAction | undefined,
 	privateKey: Hex | undefined,
 	locale: string,
+	signer: ApiWalletActionSigner,
 	t: ReturnType<typeof useLingui>["t"],
 ): ApiWalletActionView | null {
 	if (!action || action.state.stage === "input") return null;
@@ -516,6 +528,7 @@ function createActionView(
 		open: true,
 		kind: action.state.action,
 		stage: action.state.stage,
+		signer,
 		result,
 		agentName: approval?.baseName ?? action.removal?.target.name ?? "",
 		agentAddress: approval?.address ?? action.removal?.target.address ?? "",

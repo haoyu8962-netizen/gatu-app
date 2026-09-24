@@ -160,7 +160,7 @@ The handoff source is `designs/Gatu标志加载动画/tokens.json`. The project'
 - Removal sends the zero address with the exact original `extraAgents` name. Historical names are not normalized or revalidated before removal.
 - Development screenshot fixtures isolate the page from live application chrome so a mock account state cannot contradict a real disconnected header. Production always renders the normal desktop/mobile shell.
 - The protocol offers no compare-and-delete form of `approveAgent`. A fresh exact-tuple preflight closes the review-to-sign stale window as far as the API allows, but another client can still replace a same-name Agent after preflight and before the signed request is processed.
-- External-wallet prompts cannot always be cancelled after dispatch. An owner/network change immediately hides and clears the candidate key and ignores late client results; a late on-chain approval can therefore leave an Agent whose private key is intentionally unrecoverable and must be removed from the list.
+- Email (embedded-wallet) sessions sign the reviewed authorize/remove request silently (`applicationReview: "confirmed"`, matching the official terminal's global `showWalletUIs: false`); the awaiting stage then says the wallet signs automatically. External-wallet prompts cannot always be cancelled after dispatch. An owner/network change immediately hides and clears the candidate key and ignores late client results; a late on-chain approval can therefore leave an Agent whose private key is intentionally unrecoverable and must be removed from the list.
 
 ## Delivery verification
 
