@@ -67,7 +67,7 @@
 
 ### 未做与限制
 
-- 邮箱主钱包的桌面会话不会自行清理同源里已被移除的 Mobile 密钥（`use-agent-status` 只在 Agent 会话里核对）；本次是同源单标签测试，手动删掉了这些本地键。独立手机的 Agent-only 会话会在下次核对 `extraAgents` 时清理，与文档一致，但本次未在真机验证。
+- 邮箱主钱包的桌面会话不会自行清理同源里已被移除的 Mobile 密钥（`use-agent-status` 只在 Agent 会话里核对）；本次是同源单标签测试，手动删掉了这些本地键。手动删除时连 `hyperliquid_agent_registration_session_<env>_<owner>` 一起删掉了，而该记录只在会话建立（页面加载、登录）时由 `session-provider` 写成 `active`，所以在未刷新的同一页面上再点「授权移动交易密钥」时 `captureAgentRegistrationExecutionLease` 返回 null，弹窗显示 hook 的通用错误「The wallet session changed before mobile access approval.」；刷新后记录恢复为 `active`，这是清理造成的，不是代码缺陷。hook 的这条文案对六种守卫失败共用且未本地化（API 钱包页同样）。独立手机的 Agent-only 会话会在下次核对 `extraAgents` 时清理，与文档一致，但本次未在真机验证。
 - 旧协议留下的 `gatu.mobile-sync.imported.v1` 记录不再被任何代码修剪（只有开发测试者有过），已在测试浏览器里手动清除。
 - es/fr/hi/ar 各缺译 54 条（含本次 15 条新文案），开关打开前应补齐；三行真机清单 RD-1…RD-3 未跑；线上 `VITE_MOBILE_PAIRING_ENABLED` 保持关闭；边缘函数的配对响应头与 Service Worker 放行未动。
 - 倒计时文案在揭示后约 1 秒仍显示「60 秒后关闭」（单测在 1 秒后断言 59 秒通过），未深究，属展示细节。
