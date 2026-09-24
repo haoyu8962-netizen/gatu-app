@@ -77,3 +77,5 @@
 ## 更正（2026-09-25）
 
 「顺路发现」一节的归因有误。用户指出这些市场全部已下架，随后用公开 API 复核（`meta`，按 dex 查询）：hyna 25/25、flx 16/16、vntl 15/15、km 23/23、cash 17/17 以及 abcd 1/1 的资产全部带 `isDelisted: true`。目录构建在 `use-markets.tsx` 跳过已下架资产，所以这些市场不在目录里、直接打开是 404，属于预期行为，与抵押品不是 USDC 无关。当时只核对了抵押品字段，没有核对 `isDelisted`。仍在交易的 builder 市场（xyz、para、mkts、io）抵押品都是 USDC，目前没有抵押品非 USDC 且仍在交易的市场，非 USDC 抵押品的路径无法据此验证。候选处理中的「单独排查非 USDC 抵押品 builder dex 缺失」撤销；其余候选处理由 [2026-09-25-hip3-disclaimer-alignment](2026-09-25-hip3-disclaimer-alignment.md) 实施。
+
+另一条在独立 worktree 进行的[后续排查](2026-09-25-builder-market-delisting-investigation.md)独立得出同一结论（API 标记下架、目录按下架标志剔除）；它没有重审免责声明结论。
