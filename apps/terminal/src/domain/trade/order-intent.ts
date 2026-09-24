@@ -33,7 +33,7 @@ export type EntryOrderIntent = {
 	assetId: number;
 	side: Side;
 	orderType: OrderType;
-	sizeValue: number;
+	sizeValue: Numeric;
 	szDecimals: number;
 	markPx: number;
 	price: number;

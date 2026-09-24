@@ -74,6 +74,7 @@ const committedOrderEntryData = {
 	displayAvailableBalanceToken: "USDC",
 	hasAvailabilityError: false,
 	isAvailabilityBlocked: false,
+	isBalanceAvailabilityBlocked: false,
 	isAvailabilityLoading: false,
 	isAvailabilityStale: false,
 	isSpotMarket: false,
@@ -100,7 +101,13 @@ describe("TradeFormFields order-entry data ownership", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
-	function ParentHarness({ maxSize = 10 }: { maxSize?: number }) {
+	function ParentHarness({
+		maxSize = 10,
+		swapTargetToken = null,
+	}: {
+		maxSize?: number;
+		swapTargetToken?: string | null;
+	}) {
 		const hookOrderEntryData = useOrderEntryData({
 			market: undefined,
 			side: "buy",
@@ -134,7 +141,7 @@ describe("TradeFormFields order-entry data ownership", () => {
 					visibleValidationErrors={[]}
 					price={100}
 					positionSize={0}
-					swapTargetToken={null}
+					swapTargetToken={swapTargetToken}
 					onSizeModeToggle={vi.fn()}
 					onSizePercentApply={(percent) => actions.setSize(percent === 80 ? "8" : String(percent))}
 					onSwapClick={vi.fn()}
@@ -161,6 +168,28 @@ describe("TradeFormFields order-entry data ownership", () => {
 		container.remove();
 		localStorage.clear();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("preserves a successful balance and Swap when only the reduce-only position is unavailable", () => {
+		useOrderEntryDataMock.mockReset();
+		useOrderEntryDataMock.mockReturnValue({
+			...committedOrderEntryData,
+			isAvailabilityBlocked: true,
+		});
+		act(() => root.render(<ParentHarness swapTargetToken="USDH" />));
+		act(() => actions.setReduceOnly(true));
+		const max = container.querySelector<HTMLButtonElement>('button[aria-label="Use max reducible size"]');
+		expect(max?.textContent).toBe("1,000.00 USDC");
+		expect(max?.disabled).toBe(true);
+		expect(container.querySelector('button[aria-label="Swap USDH"]')).not.toBeNull();
+		useOrderEntryDataMock.mockReturnValue({
+			...committedOrderEntryData,
+			isAvailabilityBlocked: true,
+			isBalanceAvailabilityBlocked: true,
+		});
+		act(() => root.render(<ParentHarness swapTargetToken="USDH" />));
+		expect(max?.textContent).toBe("0.00 USDC");
+		expect(container.querySelector('button[aria-label="Swap USDH"]')).toBeNull();
 	});
 
 	it("hot-switches the TIF selector label while preserving selection, input and focus", async () => {

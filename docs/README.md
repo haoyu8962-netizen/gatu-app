@@ -26,8 +26,9 @@
 | 充值、提现与资金 | [CCTP 充值](cctp-deposits.md)、[提现路由](withdrawals.md)、[账户概要](account-overview.md)、[Portfolio 统计](portfolio-statistics.md) |
 | 账户共享模型 | [账户 ADR](adr/0001-account-overview-cross-shell-model.md)；账户概要与 Portfolio 的就绪条件不同 |
 | 市场身份、路由与展示价格 | [单交易路由迁移](architecture/trade-single-route-migration.md)、[价格来源审查](price-source-audit.md)、[资产资料来源](spot-asset-information.md) |
-| 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md) |
-| 确认弹窗：展示与执行 | [确认面契约](confirmation-surfaces.md)、[ADR 0017](adr/0017-market-close-confirmed-size-ceiling.md)、[ADR 0014](adr/0014-market-close-submit-and-dismiss.md)；目前只有市价平仓完整满足 |
+| 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md)；[只减仓修复方案](reduce-only-repair-plan.md)记录已实施设计、官方有仓位表单观察与验收矩阵 |
+| 确认弹窗：展示与执行 | [确认面契约](confirmation-surfaces.md)、[ADR 0017](adr/0017-market-close-confirmed-size-ceiling.md)、[ADR 0014](adr/0014-market-close-submit-and-dismiss.md)；当前实施状态与保留例外见契约 |
+| 交易通知与订单队列 | [全局操作通知规范](trading-notifications.md)、[ADR 0019](adr/0019-global-trading-notifications.md)：已实现单一 Sonner 宿主、带身份任务、批次明细与 pending 恢复；[反馈组件审查](trading-feedback-review.md)保留修复前证据与替代说明。通知不是完整交易历史，实际验证范围见[交付记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md) |
 | 订单簿数据、交互与动画 | [分组隔离修复依据](terminal-review-remediation.md)、[传输 ADR](adr/0003-orderbook-transport-isolation.md)、[累计悬浮](orderbook-hover.md)、[行几何](orderbook-layout.md)、[新增档位及数量反馈](orderbook-new-level-animation.md)、[最近成交面板](recent-trades.md) |
 | 响应式布局与控件 | [桌面网格](desktop-grid-layout.md)、[交易滑杆](slider-interactions.md)（含手势改动的验证规则与「滑杆跳回」的诊断步骤；缘由见 [ADR 0018](adr/0018-slider-gestures-end-on-release.md)）、[工具栏](trading-toolbar-redesign.md) |
 | 被动加载与语言切换 | [数据展示契约](mobile-data-presentation.md)、[加载审查与证据](terminal-loading-audit.md)、[运行时翻译](i18n-presentation.md) |
@@ -41,6 +42,7 @@
 
 | 主题 | 方案与前置条件 |
 | --- | --- |
+| 移动持仓全部平仓 | [入口审查与实施说明](mobile-close-all-plan.md)：持仓工具栏已接入共享全账户市价链路；确认面列出实际目标并明示包含筛选隐藏仓位，后台提交跨页签和断点保持；批量限价和 TP/SL 清理仍为后续专项 |
 | Across 持久充值地址 | [接入设计](across-deposit-addresses.md)、[ADR 0004](adr/0004-across-deposit-addresses.md)：邮箱用户独立入口；生产权限、服务端身份/持久化、账户模式及资金验收待完成 |
 | 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：运行时不再 SSR，Node 进程用预渲染的 `_shell.html` 与文档页回答导航，只执行可移植的 `/api/*` 处理器；发布健康检查含真实 geo 探针；把 `public/` 搬到 CDN 与边缘运行时挂载待完成 |
 | 启动渲染 | [ADR 0010](adr/0010-blank-until-ready-startup.md)、[规则](../.claude/rules/startup-rendering.md)：统一空播报 → 持久语言真实 chrome → 市场内容；[ADR 0009](adr/0009-startup-placeholder-single-source.md) 的纯 runtime view 决策保留，占位决策已被部分取代 |

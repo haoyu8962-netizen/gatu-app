@@ -15,7 +15,7 @@ interface Props {
 	scaleLevels: number;
 	scaleSkew: number | null;
 	orderValue: number;
-	marginRequired: number;
+	marginRequired: number | null;
 	feeQuote: OrderFeeQuote;
 	szDecimals: number | undefined;
 	marketKind?: MarketKind;
@@ -89,8 +89,15 @@ export function ScaleOrderSummary({
 			</SummaryRow>
 			{isLeveraged && (
 				<SummaryRow compact={compact} label={t`Margin Req.`}>
-					<span className={cn("whitespace-nowrap", marginRequired > 0 ? "" : "font-normal text-trading-panel-muted")}>
-						{marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
+					<span
+						className={cn(
+							"whitespace-nowrap",
+							marginRequired !== null && marginRequired > 0 ? "" : "font-normal text-trading-panel-muted",
+						)}
+					>
+						{marginRequired !== null && marginRequired > 0
+							? formatUSD(marginRequired, { compact: false })
+							: FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
 			)}

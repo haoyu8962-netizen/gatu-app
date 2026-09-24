@@ -12,6 +12,7 @@ interface ButtonContentInput {
 	isSwitchingChain: boolean;
 	switchChain: (chainId: number) => void;
 	availableBalance: number;
+	reduceOnly?: boolean;
 	isBalanceLoading?: boolean;
 	hasBalanceError?: boolean;
 	canDeposit: boolean;
@@ -55,6 +56,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 			hasBalanceError: input.hasBalanceError === true,
 			isBalanceLoading: input.isBalanceLoading === true,
 			availableBalance: input.availableBalance,
+			reduceOnly: input.reduceOnly,
 		});
 
 		if (stage === "connect") {
@@ -110,6 +112,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.isSwitchingChain,
 		input.switchChain,
 		input.availableBalance,
+		input.reduceOnly,
 		input.isBalanceLoading,
 		input.hasBalanceError,
 		input.canDeposit,

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
 import { ApiRequestError, type FrontendOpenOrdersResponse, HttpRequestError } from "@nktkas/hyperliquid";
 import { act, type ComponentProps, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
-import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TradeSizeSlider } from "@/components/trade/components/trade-size-slider";
 import type { TpSlPositionTarget } from "@/components/trade/positions/position-dialog-types";
@@ -11,8 +11,25 @@ import { PositionTpSlModal } from "@/components/trade/positions/position-tpsl-mo
 import type { Position } from "@/lib/hyperliquid";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import { getOrderAssetLockName } from "@/lib/trade/order-asset-lock";
+import { formatPositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
+import * as queueStore from "@/stores/use-order-queue-store";
 import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 import { createI18nRoot } from "./harness/react";
+
+const addQueueItemSpy = vi.spyOn(queueStore, "addOrderQueueItem");
+
+function lastQueueItem() {
+	return queueStore.getOrderQueueItem(addQueueItemSpy.mock.results.at(-1)?.value);
+}
+
+function lastQueueMessage(): string {
+	const error = lastQueueItem()?.error;
+	if (!error) return "";
+	if (typeof error === "string") return error;
+	if (!("kind" in error)) return i18n._(error);
+	if (error.kind === "order-reconciliation" || error.kind === "spot-swap") throw new Error("Unexpected feedback kind");
+	return formatPositionSubmitFeedback(error, (descriptor) => i18n._(descriptor));
+}
 
 const testState = vi.hoisted(() => ({
 	isActivationLocked: undefined as (() => boolean) | undefined,
@@ -502,6 +519,9 @@ describe("PositionTpSlModal live data", () => {
 		act(() => root.unmount());
 		container.remove();
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
+		for (const result of addQueueItemSpy.mock.results) {
+			if (result.type === "return") queueStore.removeOrderQueueItem(result.value);
+		}
 		vi.clearAllMocks();
 	});
 
@@ -516,9 +536,9 @@ describe("PositionTpSlModal live data", () => {
 		});
 	}
 
-	function expectDismissedWith(notify: unknown, message: string) {
-		expect(notify).toHaveBeenCalledTimes(1);
-		expect(notify).toHaveBeenCalledWith(expect.stringContaining(message));
+	function expectDismissedWith(status: string, message: string) {
+		expect(lastQueueItem()?.status).toBe(status);
+		expect(lastQueueMessage()).toContain(message);
 		expect(container.textContent).not.toContain(message);
 		expect(container.querySelector('[data-testid="position-risk-dialog"]')).toBeNull();
 	}
@@ -1016,7 +1036,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).not.toHaveBeenCalled();
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expectDismissedWith(toast.error, "Trading data changed while this dialog was open.");
+		expectDismissedWith("failed", "Trading data changed while this dialog was open.");
 	});
 
 	it("fails closed when the lock-time REST position size differs from the confirmed dialog size", async () => {
@@ -1036,7 +1056,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).not.toHaveBeenCalled();
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expectDismissedWith(toast.error, "Trading data changed while this dialog was open.");
+		expectDismissedWith("failed", "Trading data changed while this dialog was open.");
 	});
 
 	it("fails closed when the live position size changes while the dialog remains open", () => {
@@ -1067,7 +1087,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.frontendOpenOrders).not.toHaveBeenCalled();
 		expect(testState.cancelOrders).not.toHaveBeenCalled();
-		expectDismissedWith(toast.warning, "Another order for this market is still being confirmed.");
+		expectDismissedWith("failed", "Another order for this market is still being confirmed.");
 	});
 
 	it("does not place a replacement and blocks retries when the cancel response is lost", async () => {
@@ -1080,7 +1100,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
+		expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
 
 		act(() => {
 			root.render(modalElement(positionRef, vi.fn(), "tpsl-2"));
@@ -1090,7 +1110,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expect(toast.warning).toHaveBeenCalledWith("Another order for this market is still being confirmed.");
+		expect(lastQueueMessage()).toEqual("Another order for this market is still being confirmed.");
 	});
 
 	it("does not place replacements after a partial cancel response", async () => {
@@ -1117,7 +1137,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
+		expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
 	});
 
 	it("treats a single cancel error as a definitive whole-batch rejection and permits a safe retry", async () => {
@@ -1147,7 +1167,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expectDismissedWith(toast.error, "batch rejected");
+		expectDismissedWith("failed", "batch rejected");
 
 		act(() => {
 			root.render(modalElement(positionRef, vi.fn(), "tpsl-2"));
@@ -1171,7 +1191,7 @@ describe("PositionTpSlModal live data", () => {
 
 			expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 			expect(testState.placeOrder).not.toHaveBeenCalled();
-			expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
+			expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
 		},
 	);
 
@@ -1436,7 +1456,7 @@ describe("PositionTpSlModal live data", () => {
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
 		expect(onOpenChange).toHaveBeenCalledWith(false);
-		expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
+		expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
 
 		act(() => {
 			root.render(modalElement(positionRef, vi.fn(), "tpsl-2"));
@@ -1445,7 +1465,7 @@ describe("PositionTpSlModal live data", () => {
 		await act(async () => getButton(container, "Confirm").click());
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
-		expect(toast.warning).toHaveBeenCalledWith("Another order for this market is still being confirmed.");
+		expect(lastQueueMessage()).toEqual("Another order for this market is still being confirmed.");
 	});
 
 	it("replaces an existing position TP without the unsafe batch-modify flag", async () => {
@@ -1497,6 +1517,8 @@ describe("PositionTpSlModal live data", () => {
 
 		await vi.waitFor(() => expect(testState.cancelOrders).toHaveBeenCalledTimes(1));
 		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(addQueueItemSpy).toHaveBeenCalledOnce();
+		expect(lastQueueItem()).toMatchObject({ status: "pending", owner: positionRef.owner, env: positionRef.env });
 		expect(container.querySelector('[data-testid="position-risk-dialog"]')).toBeNull();
 		expect(container.textContent).not.toContain("Submitting");
 		await act(async () => {
@@ -1505,6 +1527,31 @@ describe("PositionTpSlModal live data", () => {
 		});
 		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
 		await vi.waitFor(() => expect(onOpenChange, container.textContent ?? undefined).toHaveBeenCalledWith(false));
+	});
+
+	it("keeps placement feedback associated with its task after the dialog unmounts", async () => {
+		let resolvePlacement: ((value: unknown) => void) | undefined;
+		testState.placeOrder.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					resolvePlacement = resolve;
+				}),
+		);
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		act(() => getButton(container, "Confirm").click());
+		await vi.waitFor(() => expect(testState.placeOrder).toHaveBeenCalledOnce());
+		const queueId = lastQueueItem()?.id;
+		expect(testState.trackedOrderOptions[0]).toMatchObject({ queueId });
+		expect(lastQueueItem()).toMatchObject({ status: "pending", owner: positionRef.owner, env: positionRef.env });
+		act(() => root.render(null));
+		await act(async () => {
+			resolvePlacement?.({
+				status: "ok",
+				response: { type: "order", data: { statuses: [{ resting: { oid: 100 } }] } },
+			});
+		});
+		expect(queueStore.getOrderQueueItem(queueId)).toMatchObject({ status: "success", owner: positionRef.owner });
 	});
 
 	it("reports a failed placement after a successful cancellation and ends the session", async () => {
@@ -1531,8 +1578,8 @@ describe("PositionTpSlModal live data", () => {
 		);
 		expect(onOpenChange).toHaveBeenCalledTimes(1);
 		expect(onOpenChange).toHaveBeenCalledWith(false);
-		expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
-		expect(toast.success).not.toHaveBeenCalled();
+		expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
+		expect(lastQueueItem()?.status).not.toBe("success");
 	});
 
 	it("allows placement to observe the subscription update caused by successful cancellation", async () => {
@@ -1620,8 +1667,8 @@ describe("PositionTpSlModal live data", () => {
 
 		await vi.waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expectDismissedWith(toast.error, "Confirming exchange status; do not retry.");
-		expect(toast.success).not.toHaveBeenCalled();
+		expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
+		expect(lastQueueItem()?.status).not.toBe("success");
 	});
 
 	it("shows a stable disconnected state instead of an endless loading screen", () => {

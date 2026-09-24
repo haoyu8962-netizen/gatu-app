@@ -246,7 +246,7 @@ describe("PositionCloseAllController", () => {
 		expect(testState.submit).toHaveBeenCalledTimes(1);
 
 		await act(async () => settle({ state: "filled" }));
-		expect(toastMock.success).toHaveBeenCalledTimes(1);
+		expect(toastMock.success).not.toHaveBeenCalled();
 		expect(testState.onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 
@@ -261,29 +261,28 @@ describe("PositionCloseAllController", () => {
 	});
 
 	it.each([
-		[{ state: "blocked" }, "warning"],
-		[{ state: "reconciling" }, "info"],
-		[{ state: "partial", acceptedCount: 1, totalCount: 2 }, "warning"],
-		[{ state: "filled" }, "success"],
-	] as const)("reports %o only through a %s notification and ends the session", async (outcome, level) => {
+		{ state: "blocked" },
+		{ state: "reconciling" },
+		{ state: "partial", acceptedCount: 1, totalCount: 2 },
+		{ state: "filled" },
+	] as const)("leaves %o feedback to the submit hook instead of duplicating a toast", async (outcome) => {
 		testState.submit.mockImplementation(async () => ({ ...outcome }));
 		render(2);
 		await act(async () => getSubmit().click());
 
-		for (const [name, notify] of Object.entries(toastMock))
-			expect(notify).toHaveBeenCalledTimes(name === level ? 1 : 0);
+		for (const notify of Object.values(toastMock)) expect(notify).not.toHaveBeenCalled();
 		expect(testState.shellProps?.open).toBe(false);
 		expect(testState.onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 
-	it("reports a failed submission through an error notification and ends the session", async () => {
+	it("ends a failed session without duplicating the submit hook notification", async () => {
 		testState.submit.mockImplementation(async () => {
 			throw new Error("Trading data changed");
 		});
 		render();
 		await act(async () => getSubmit().click());
 
-		expect(toastMock.error).toHaveBeenCalledExactlyOnceWith("Trading data changed");
+		expect(toastMock.error).not.toHaveBeenCalled();
 		expect(testState.onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
 	});
 

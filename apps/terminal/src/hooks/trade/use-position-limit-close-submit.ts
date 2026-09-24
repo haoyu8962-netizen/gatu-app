@@ -1,7 +1,9 @@
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import type { ExchangeOrder } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
+import { getCloseOrderFeedbackChildren } from "@/domain/trade/close-order-feedback";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { type TrackedOrderResult, useTrackedOrder } from "@/hooks/trade/use-tracked-order";
@@ -13,6 +15,7 @@ import {
 	useMarkets,
 	useUserPositions,
 } from "@/lib/hyperliquid";
+import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
 import { toBig } from "@/lib/trade/numbers";
 import { orderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 import {
@@ -26,6 +29,7 @@ import {
 	positionSubmitFeedbackFromCause,
 } from "@/lib/trade/position-submit-feedback";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
+import { addOrderQueueItem, getOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 
 export interface PositionLimitCloseTarget {
 	owner: string;
@@ -126,20 +130,32 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 
 	async function submit(input: PositionLimitCloseSubmitInput): Promise<PositionLimitCloseSubmitOutcome> {
 		if (phaseRef.current !== "idle") return { state: "blocked" };
+		const submittedTarget = targetRef.current;
+		const queueId = addOrderQueueItem({
+			owner: submittedTarget.owner,
+			env: submittedTarget.env,
+			operation: "order",
+			title: msg`Limit Close`,
+			market: submittedTarget.coin,
+			size: input.size,
+			price: input.price,
+			orderType: "limit",
+			countMode: "accepted",
+			status: "pending",
+		});
 
 		const requestedPrice = toBig(input.price);
 		const requestedSize = toBig(input.size);
 		if (!requestedPrice || requestedPrice.lte(0)) {
-			return failBeforeSubmission(localizedPositionSubmitFeedback("enter-limit-price"));
+			return failBeforeSubmission(queueId, localizedPositionSubmitFeedback("enter-limit-price"));
 		}
 		if (!requestedSize || requestedSize.lte(0)) {
-			return failBeforeSubmission(localizedPositionSubmitFeedback("close-size-positive"));
+			return failBeforeSubmission(queueId, localizedPositionSubmitFeedback("close-size-positive"));
 		}
 
 		setPhase("validating");
 		setError(null);
 		executionContextRef.current = null;
-		const submittedTarget = targetRef.current;
 		const submittedTargetKey = getTargetKey(submittedTarget);
 
 		try {
@@ -173,6 +189,15 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 			}
 
 			const order = plan.orders[0];
+			const feedbackTargets = [
+				{ assetId: submittedTarget.assetId, market: submittedTarget.coin, size: String(order.s) },
+			];
+			updateOrderQueueItem(queueId, {
+				size: String(order.s),
+				price: String(order.p),
+				side: order.b ? "buy" : "sell",
+				children: feedbackTargets.map((target) => ({ ...target, status: "pending" })),
+			});
 			executionContextRef.current = {
 				targetKey: submittedTargetKey,
 				owner: submittedTarget.owner.toLowerCase(),
@@ -188,23 +213,41 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 			const outcome = await trackedOrder.submitOrder(
 				{ orders: plan.orders, grouping: plan.grouping },
 				{
+					queueId,
+					onResponse: (response) =>
+						updateOrderQueueItem(queueId, { children: getCloseOrderFeedbackChildren(feedbackTargets, response) }),
 					riskContext: { marketKind: "perp", marginMode: fresh.marginMode },
 					exclusiveAssetLock: false,
 					confirmationMode: "accepted",
 				},
 			);
 			if (outcome.state === "blocked") {
+				updateOrderQueueItem(queueId, {
+					status: "failed",
+					error: localizedPositionSubmitFeedback("blocked-market"),
+					children: feedbackTargets.map((target) => ({ ...target, status: "rejected" })),
+				});
 				setPhase("idle");
 				setError(localizedPositionSubmitFeedback("blocked-market"));
 				return outcome;
 			}
 			if (outcome.state === "reconciling") {
+				updateOrderQueueItem(queueId, {
+					status: "confirming",
+					children: getOrderQueueItem(queueId)?.children?.map((child) =>
+						child.status === "pending" ? { ...child, status: "unknown" } : child,
+					),
+				});
 				setPhase("reconciling");
 				setError(localizedPositionSubmitFeedback("reconciling-order"));
 				return outcome;
 			}
 
 			throwIfAnyResponseError(outcome.result.response?.data?.statuses);
+			updateOrderQueueItem(queueId, {
+				status: "success",
+				outcome: deriveOrderOutcome(outcome.result.response?.data?.statuses ?? []),
+			});
 			setPhase("idle");
 			return outcome;
 		} catch (cause) {
@@ -212,13 +255,21 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 			const message = formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor));
 			setPhase("idle");
 			setError(submitError);
+			updateOrderQueueItem(queueId, {
+				status: "failed",
+				error: submitError,
+				children: getOrderQueueItem(queueId)?.children?.map((child) =>
+					child.status === "pending" ? { ...child, status: "rejected" } : child,
+				),
+			});
 			throw localizePositionSubmitFeedbackCause(cause, submitError, message);
 		} finally {
 			executionContextRef.current = null;
 		}
 	}
 
-	function failBeforeSubmission(submitError: PositionSubmitFeedback): never {
+	function failBeforeSubmission(queueId: string, submitError: PositionSubmitFeedback): never {
+		updateOrderQueueItem(queueId, { status: "failed", error: submitError });
 		const message = formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor));
 		setError(submitError);
 		throw new PositionSubmitFeedbackCause(submitError, message);

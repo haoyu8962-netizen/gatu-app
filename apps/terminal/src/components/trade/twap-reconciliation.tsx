@@ -1,20 +1,21 @@
-import { i18n } from "@lingui/core";
-import { t } from "@lingui/core/macro";
-import { useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { msg } from "@lingui/core/macro";
+import { useEffect } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { matchesTwapIntent, TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS, type TwapStateLike } from "@/domain/trade/twap";
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
-import { formatOrderReconciliationError, orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
+import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
+import {
+	syncPendingTradingActionFeedback,
+	updatePendingTradingActionFeedback,
+} from "@/lib/trade/pending-trading-action-feedback";
 import {
 	reconcileTwapOrderAssetReservation,
 	releaseActiveTwapOrderAssetReservation,
 } from "@/lib/trade/twap-order-asset-reservation";
-import { hasOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
+import { addOrderQueueItem, getOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
-	getPendingTradingActionToastId,
 	type PendingTwapCancellation,
 	TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
 	usePendingTwapCancellations,
@@ -38,31 +39,15 @@ const activeTwapCancellationReleases = new Set<string>();
 const TWAP_RECONCILIATION_RETRY_MS = 1_000;
 const TWAP_CANCELLATION_RELEASE_MAX_ATTEMPTS = 3;
 
-interface TwapReconciliationIdentity {
-	env: "Mainnet" | "Testnet";
-	mounted: boolean;
-	owner: string | null;
-}
-
 export function TwapReconciliation() {
 	const { clientKey, env } = useHyperliquid();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as `0x${string}`);
 	const submissions = usePendingTwapSubmissions();
 	const activeSubmissionIds = usePendingTwapActiveSubmissionIds();
 	const cancellations = usePendingTwapCancellations();
-	const identityRef = useRef<TwapReconciliationIdentity>({
-		env,
-		mounted: true,
-		owner: address?.toLowerCase() ?? null,
-	});
-	identityRef.current.env = env;
-	identityRef.current.owner = address?.toLowerCase() ?? null;
 	useEffect(() => {
-		identityRef.current.mounted = true;
-		return () => {
-			identityRef.current.mounted = false;
-		};
-	}, []);
+		for (const cancellation of cancellations) syncPendingTradingActionFeedback(cancellation, "twap-cancel");
+	}, [cancellations]);
 	const {
 		data: activeTwaps,
 		status: activeTwapsStatus,
@@ -79,7 +64,7 @@ export function TwapReconciliation() {
 			(action) => action.phase === "awaiting" && action.confirmationStartedAt !== null,
 		);
 		const now = Date.now();
-		markExpiredTwapCancellations(awaiting, now, () => identityRef.current);
+		markExpiredTwapCancellations(awaiting, now);
 		const nextDeadline = Math.min(
 			...awaiting
 				.map((action) => (action.confirmationStartedAt ?? now) + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS)
@@ -87,10 +72,7 @@ export function TwapReconciliation() {
 		);
 		if (!Number.isFinite(nextDeadline)) return;
 
-		const timer = window.setTimeout(
-			() => markExpiredTwapCancellations(awaiting, Date.now(), () => identityRef.current),
-			nextDeadline - now,
-		);
+		const timer = window.setTimeout(() => markExpiredTwapCancellations(awaiting, Date.now()), nextDeadline - now);
 		return () => window.clearTimeout(timer);
 	}, [cancellations]);
 
@@ -115,13 +97,14 @@ export function TwapReconciliation() {
 						continue;
 					}
 					getPendingTradingActionActions().resolveTwapCancellation(cancellation.id);
-					toast.info(t`TWAP cancellation was not confirmed. Review active TWAP orders before retrying.`, {
-						id: getPendingTradingActionToastId(cancellation.id),
+					updatePendingTradingActionFeedback(cancellation, "twap-cancel", {
+						status: "unconfirmed",
+						message: msg`TWAP cancellation was not confirmed. Review active TWAP orders before retrying.`,
 					});
 				}
 				continue;
 			}
-			void confirmTwapCancellation(cancellation, () => identityRef.current);
+			void confirmTwapCancellation(cancellation);
 		}
 	}, [activeTwaps, activeTwapsLastMessageAt, activeTwapsStale, activeTwapsStatus, address, cancellations, env]);
 	const { data: twapHistory } = useSubscription(
@@ -131,6 +114,9 @@ export function TwapReconciliation() {
 	);
 
 	useEffect(() => {
+		for (const submission of submissions) {
+			if (!activeSubmissionIds.has(submission.id)) ensureTwapSubmissionQueue(submission);
+		}
 		const eligible = submissions.filter(
 			(submission) => submission.unconfirmedAt === undefined && !activeSubmissionIds.has(submission.id),
 		);
@@ -194,11 +180,7 @@ export function TwapReconciliation() {
 	return null;
 }
 
-async function confirmTwapCancellation(
-	cancellation: PendingTwapCancellation,
-	getIdentity: () => TwapReconciliationIdentity,
-	attempt = 1,
-): Promise<void> {
+async function confirmTwapCancellation(cancellation: PendingTwapCancellation, attempt = 1): Promise<void> {
 	if (attempt === 1) {
 		if (activeTwapCancellationReleases.has(cancellation.id)) return;
 		activeTwapCancellationReleases.add(cancellation.id);
@@ -220,10 +202,10 @@ async function confirmTwapCancellation(
 	if (released) {
 		getPendingTradingActionActions().resolveTwapCancellation(latest.id);
 		activeTwapCancellationReleases.delete(cancellation.id);
-		const identity = getIdentity();
-		if (identity.mounted && identity.env === latest.env && identity.owner === latest.owner) {
-			toast.success(t`TWAP cancellation confirmed.`, { id: getPendingTradingActionToastId(latest.id) });
-		}
+		updatePendingTradingActionFeedback(latest, "twap-cancel", {
+			status: "success",
+			message: msg`TWAP cancellation confirmed.`,
+		});
 		return;
 	}
 	if (attempt >= TWAP_CANCELLATION_RELEASE_MAX_ATTEMPTS) {
@@ -237,7 +219,7 @@ async function confirmTwapCancellation(
 				activeTwapCancellationReleases.delete(cancellation.id);
 				return;
 			}
-			void confirmTwapCancellation(retriable, getIdentity, attempt + 1);
+			void confirmTwapCancellation(retriable, attempt + 1);
 		},
 		TWAP_RECONCILIATION_RETRY_MS * 2 ** (attempt - 1),
 	);
@@ -260,18 +242,10 @@ function findPendingTwapCancellation(expected: PendingTwapCancellation): Pending
 function markExpiredTwapCancellations(
 	cancellations: ReturnType<typeof usePendingTwapCancellations>,
 	now: number,
-	getIdentity: () => TwapReconciliationIdentity,
 ): void {
 	for (const cancellation of cancellations) {
 		if (!getPendingTradingActionActions().expireTwapCancellationAwaiting(cancellation.id, now)) continue;
-		const identity = getIdentity();
-		if (!identity.mounted || identity.env !== cancellation.env || identity.owner !== cancellation.owner) {
-			continue;
-		}
-		toast.warning(
-			t`TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying.`,
-			{ id: getPendingTradingActionToastId(cancellation.id) },
-		);
+		syncPendingTradingActionFeedback({ ...cancellation, phase: "unconfirmed" }, "twap-cancel");
 	}
 }
 
@@ -290,14 +264,7 @@ function completeUnconfirmedTwapReconciliation(submission: PendingTwapSubmission
 		pendingSubmissionId: submission.id,
 	});
 	const error = orderReconciliationError("twap-status-unconfirmed");
-	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
-
-	if (submission.queueId && queueVisible) {
-		updateOrderQueueItem(submission.queueId, { status: "unconfirmed", error });
-		return;
-	}
-
-	toast.warning(formatOrderReconciliationError(error.code, (descriptor) => i18n._(descriptor)));
+	updateOrderQueueItem(ensureTwapSubmissionQueue(submission), { status: "unconfirmed", error });
 }
 
 function findMatchingCandidate(
@@ -354,24 +321,44 @@ async function coordinateTwapReconciliation(
 }
 
 function completeTwapReconciliation(submission: PendingTwapSubmission, candidate: TwapCandidate): void {
-	const accepted = candidate.status !== "error";
-	const error = candidate.error ?? orderReconciliationError("twap-order-rejected");
-	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
-
-	if (submission.queueId && queueVisible) {
-		if (accepted) {
-			updateOrderQueueItem(submission.queueId, { status: "success", outcome: "twapStarted" });
-		} else {
-			updateOrderQueueItem(submission.queueId, { status: "failed", error });
-		}
-		return;
+	const queueId = ensureTwapSubmissionQueue(submission);
+	switch (candidate.status) {
+		case "activated":
+			updateOrderQueueItem(queueId, { status: "success", outcome: "twapStarted" });
+			break;
+		case "waitingForTrigger":
+			updateOrderQueueItem(queueId, { status: "success", message: msg`TWAP waiting for trigger` });
+			break;
+		case "finished":
+			updateOrderQueueItem(queueId, { status: "success", message: msg`TWAP finished` });
+			break;
+		case "terminated":
+			updateOrderQueueItem(queueId, { status: "canceled", message: msg`TWAP terminated` });
+			break;
+		case "stopped":
+			updateOrderQueueItem(queueId, { status: "canceled", message: msg`TWAP stopped` });
+			break;
+		case "error":
+			updateOrderQueueItem(queueId, {
+				status: "failed",
+				error: candidate.error ?? orderReconciliationError("twap-order-rejected"),
+			});
 	}
+}
 
-	if (accepted) toast.success(t`TWAP order confirmed by the exchange.`);
-	else
-		toast.error(
-			typeof error === "string"
-				? error
-				: formatOrderReconciliationError(error.code, (descriptor) => i18n._(descriptor)),
-		);
+function ensureTwapSubmissionQueue(submission: PendingTwapSubmission): string {
+	const id = submission.queueId ?? `reconcile-${submission.id}`;
+	if (getOrderQueueItem(id)) return id;
+	return addOrderQueueItem({
+		id,
+		owner: submission.user,
+		env: submission.env,
+		operation: "order",
+		market: submission.intent.coin,
+		side: submission.intent.side === "B" ? "buy" : "sell",
+		size: submission.intent.size,
+		orderType: "twap",
+		status: submission.unconfirmedAt === undefined ? "confirming" : "unconfirmed",
+		error: submission.unconfirmedAt === undefined ? undefined : orderReconciliationError("twap-status-unconfirmed"),
+	});
 }

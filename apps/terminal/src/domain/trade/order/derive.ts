@@ -7,12 +7,13 @@ import {
 	type SpotBalanceData,
 } from "@/domain/trade/balances";
 import { getExecutedPrice } from "@/domain/trade/order/price";
-import { getMaxSizeForOrderEntry, getOrderValue, getSizeValueFromInput } from "@/domain/trade/order/size";
+import { getMaxSizeForOrderEntry, getOrderValue, getSizeStringFromInput } from "@/domain/trade/order/size";
 import { formatPriceForOrder } from "@/domain/trade/orders";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
 import { getMarketCapabilities, type MarketCapabilities } from "@/lib/hyperliquid";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
+import { type EntryPositionSnapshot, getReduceOnlyCapacity, type ReduceOnlyCapacity } from "./reduce-only";
 
 export interface MarketOrderSizingInput {
 	referencePx: number;
@@ -20,6 +21,9 @@ export interface MarketOrderSizingInput {
 }
 
 export interface OrderEntryInputs {
+	reduceOnly?: boolean;
+	positionSnapshot?: EntryPositionSnapshot;
+	selectedBaseSize?: string;
 	isConnected: boolean;
 	market: UnifiedMarketInfo | undefined;
 	side: Side;
@@ -36,6 +40,7 @@ export interface OrderEntryInputs {
 }
 
 export interface OrderEntryDerived {
+	reduceOnlyCapacity: ReduceOnlyCapacity;
 	isSpotMarket: boolean;
 	baseToken: string;
 	quoteToken: string;
@@ -48,6 +53,7 @@ export interface OrderEntryDerived {
 	spotBalance: SpotBalanceData;
 	maxSize: number;
 	sizeValue: number;
+	sizeForOrder: string;
 	orderValue: number;
 	sizeModeLabel: string;
 }
@@ -102,27 +108,40 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const displayAvailableBalance = availableBalance;
 	const maxSizePrice = getMaxSizePrice(inputs, isSpotMarket, isBuy, szDecimals);
 
-	const maxSize = getMaxSizeForOrderEntry({
-		isConnected: inputs.isConnected,
-		isSpotMarket,
-		side: inputs.side,
-		price: maxSizePrice,
-		spotBalance,
+	const reduceOnlyCapacity = getReduceOnlyCapacity(
+		!!inputs.reduceOnly && capabilities.hasReduceOnly,
+		inputs.side,
+		inputs.isConnected ? inputs.positionSnapshot : undefined,
 		szDecimals,
-		maxTradeSzs: inputs.maxTradeSzs,
-	});
+	);
+	const maxSize =
+		reduceOnlyCapacity.status !== "ordinary"
+			? Number(reduceOnlyCapacity.maxBase)
+			: getMaxSizeForOrderEntry({
+					isConnected: inputs.isConnected,
+					isSpotMarket,
+					side: inputs.side,
+					price: maxSizePrice,
+					spotBalance,
+					szDecimals,
+					maxTradeSzs: inputs.maxTradeSzs,
+				});
 
-	const sizeValue = getSizeValueFromInput({
-		sizeInput: inputs.sizeInput,
-		sizeMode: inputs.sizeMode,
-		price: inputs.conversionPrice,
-		szDecimals,
-	});
+	const sizeForOrder =
+		inputs.selectedBaseSize ??
+		getSizeStringFromInput({
+			sizeInput: inputs.sizeInput,
+			sizeMode: inputs.sizeMode,
+			price: inputs.conversionPrice,
+			szDecimals,
+		});
 
+	const sizeValue = Number(sizeForOrder);
 	const orderValue = getOrderValue(sizeValue, inputs.conversionPrice);
 	const sizeModeLabel = getSizeModeLabel(inputs.sizeMode, baseToken, quoteToken);
 
 	return {
+		reduceOnlyCapacity,
 		isSpotMarket,
 		baseToken,
 		quoteToken,
@@ -135,6 +154,7 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		spotBalance,
 		maxSize,
 		sizeValue,
+		sizeForOrder,
 		orderValue,
 		sizeModeLabel,
 	};

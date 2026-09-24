@@ -26,6 +26,16 @@ loading, or deposit behavior changes.
 - [TanStack Query focus refetching](https://tanstack.com/query/latest/docs/framework/react/guides/window-focus-refetching)
 - [WebKit page cache lifecycle](https://webkit.org/blog/516/webkit-page-cache-ii-the-unload-event/)
 
+Documentation review note (2026-09-22): the Hyperliquid API index reports a
+last update of approximately one month ago and was rechecked for this change.
+The current public index, onboarding page and Exchange Endpoint page still do
+not document `legalCheck` or `acceptTerms2`; those two operations remain a
+version-locked SDK/frontend contract in this repository. A 2026-09-23 read of
+the official terminal bundle (`app.hyperliquid.xyz`, no account, no signing)
+maps a pending `legalCheck` to its `acceptTermsLoading` trader state: the order
+button keeps its normal form, funds entries are disabled with static labels,
+and no verification banner is rendered.
+
 Hyperliquid's public API documentation does not currently describe
 `legalCheck` or `acceptTerms2`. The pinned SDK exposes `legalCheck`, while the
 application maintains the typed `acceptTerms2` adapter. Treat both as a
@@ -109,9 +119,25 @@ The terminal must preserve this ordering:
    signature to first-time Agent setup. `useTradingAuthorization` requests it
    before the first action that needs the configured builder code.
 
-The legal gate has priority over signer readiness, Agent setup and ordinary
-global dialogs. A required HIP-3 deployer disclaimer retains priority over
-ordinary dialogs once legal review and signer setup are complete.
+The legal gate has priority over signer readiness, Agent setup and trading or
+funds dialogs. While the status is being checked, trading and funds dialogs are
+suspended rather than discarded: the global modal store keeps them, and they
+return once the status resolves. Order entry shows no passive verification
+notice, matching the official terminal, whose equivalent `acceptTermsLoading`
+state leaves the order button in place and only disables funds entries; every
+Exchange write still revalidates legal status at execution. Preference-only
+dialogs, including Settings and the command menu, remain available while legal
+status is being checked; they do not grant any trading or signing capability. A
+required HIP-3 deployer disclaimer retains priority over ordinary trading
+dialogs once legal review and signer setup are complete.
+
+The position-dialog host stays mounted at the page level in every legal state,
+outside the legal gate, and so does the Market Close submit host. Together they
+own in-flight Close All, Reverse, Limit Close, TP/SL, isolated-margin and Market
+Close submissions, and a reconnect (`checking`) or a failed background refetch
+(`error`) must not unmount them before those submissions settle. Legal-gate
+branch changes discard only idle Market Close sessions (see
+`docs/confirmation-surfaces.md`).
 
 ## Stay Connected
 
@@ -396,6 +422,11 @@ At minimum, changes to this flow must cover:
 
 - legal status: inactive, checking, required, submitting, blocked,
   wallet-required, error, and accepted;
+- while legal status is `checking`, preference dialogs remain available while
+  trading and funds dialogs stay suppressed and return once it resolves;
+- the page-level position-dialog host keeps the same instance through every
+  legal state (`position-dialog-session-ownership`,
+  `global-modals-hip3-disclaimer`);
 - initial legal failure, background refetch failure with retained read-only
   data, offline action rejection, focus/reconnect refresh, BFCache invalidation,
   schema drift, bounded retry, and exact-owner Exchange write enforcement;

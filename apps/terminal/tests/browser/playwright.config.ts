@@ -9,8 +9,11 @@ export default defineConfig({
 	testIgnore: [
 		"user-menu-recovery.pw.ts",
 		"mobile-trade-all-orders.pw.ts",
+		"reduce-only.pw.ts",
 		"desktop-order-entry-layout.pw.ts",
 		"account-actions.pw.ts",
+		"position-close-all.pw.ts",
+		"notifications.pw.ts",
 	],
 	outputDir: fileURLToPath(new URL("../../test-results/shared-browser", import.meta.url)),
 	fullyParallel: false,

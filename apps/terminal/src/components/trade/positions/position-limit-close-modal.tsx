@@ -2,7 +2,6 @@ import { ModalDescription, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
 import { PriceInput } from "@/components/ui/price-input";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import { formatPriceForOrder } from "@/domain/trade/orders";
@@ -273,18 +272,9 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 		setIsSubmitted(true);
 		const submittedSize = sizing.normalizedSize;
 		try {
-			const outcome = await submit({ price: priceInput, size: submittedSize });
-			if (outcome.state === "reconciling") {
-				toast.info(t`Order submitted. Confirming exchange status; do not retry.`);
-			} else if (outcome.state === "blocked") {
-				toast.warning(t`Another order for this market is still being confirmed.`);
-			} else {
-				toast.success(t`Limit close order placed`, {
-					description: formatToken(submittedSize, { decimals: position.szDecimals, symbol: sizeSymbol }),
-				});
-			}
-		} catch (cause) {
-			toast.error(cause instanceof Error ? cause.message : t`Failed to place limit close order`);
+			await submit({ price: priceInput, size: submittedSize });
+		} catch {
+			return;
 		} finally {
 			onOpenChange(false);
 		}

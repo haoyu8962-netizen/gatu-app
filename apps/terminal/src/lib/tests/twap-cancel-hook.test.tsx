@@ -13,6 +13,7 @@ import {
 	runWithOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
 import { getActiveTwapReservationId } from "@/lib/trade/twap-order-asset-reservation";
+import { type OrderQueueItem, removeOrderQueueItem, useOrderQueue } from "@/stores/use-order-queue-store";
 import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
@@ -69,9 +70,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({ getAssetId: () => mocks.assetId }),
 }));
 
+let queueItems: OrderQueueItem[] = [];
 let hookValue: ReturnType<typeof useTwapCancel> | null = null;
 
 function Probe() {
+	queueItems = useOrderQueue();
 	hookValue = useTwapCancel();
 	return null;
 }
@@ -113,7 +116,11 @@ describe("useTwapCancel", () => {
 	});
 
 	afterEach(() => {
-		act(() => root.unmount());
+		act(() => {
+			for (const item of queueItems) removeOrderQueueItem(item.id);
+			root.unmount();
+		});
+		queueItems = [];
 		container.remove();
 		hookValue = null;
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
@@ -201,6 +208,7 @@ describe("useTwapCancel", () => {
 
 		expect(mocks.mutateAsync).not.toHaveBeenCalled();
 		expect(mocks.errorToast).toHaveBeenCalledOnce();
+		expect(queueItems).toHaveLength(0);
 		expect(hookValue?.feedback?.tone).toBe("error");
 	});
 
@@ -227,7 +235,8 @@ describe("useTwapCancel", () => {
 			await hookValue?.cancelTwap("BTC", 44);
 		});
 
-		expect(mocks.warningToast).toHaveBeenCalledOnce();
+		expect(mocks.warningToast).not.toHaveBeenCalled();
+		expect(queueItems.at(-1)).toMatchObject({ owner: USER, env: "Mainnet", status: "unconfirmed" });
 		expect(mocks.errorToast).not.toHaveBeenCalled();
 		expect(hookValue?.feedback?.tone).toBe("warning");
 		await act(async () => {
@@ -247,7 +256,8 @@ describe("useTwapCancel", () => {
 		});
 
 		expect(mocks.warningToast).not.toHaveBeenCalled();
-		expect(mocks.errorToast).toHaveBeenCalledOnce();
+		expect(mocks.errorToast).not.toHaveBeenCalled();
+		expect(queueItems.at(-1)).toMatchObject({ owner: USER, env: "Mainnet", status: "failed" });
 		expect(hookValue?.cancellingTwapId).toBeNull();
 		expect(hookValue?.feedback?.tone).toBe("error");
 	});
@@ -259,7 +269,8 @@ describe("useTwapCancel", () => {
 			await hookValue?.cancelTwap("ETH", 45);
 		});
 
-		expect(mocks.errorToast).toHaveBeenCalledWith("TWAP 45 is not active");
+		expect(mocks.errorToast).not.toHaveBeenCalled();
+		expect(queueItems.at(-1)).toMatchObject({ status: "failed", error: "TWAP 45 is not active" });
 		expect(hookValue?.feedback).toEqual({ tone: "error", message: "TWAP 45 is not active" });
 
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
@@ -303,6 +314,12 @@ describe("useTwapCancel", () => {
 
 		expect(hookValue?.feedback).toBeNull();
 		expect(mocks.errorToast).not.toHaveBeenCalled();
+		expect(queueItems.at(-1)).toMatchObject({
+			owner: USER,
+			env: "Mainnet",
+			status: "failed",
+			error: "TWAP 66 is not active",
+		});
 	});
 
 	it("treats HTTP 429 as a definitive cancellation failure", async () => {
@@ -314,7 +331,8 @@ describe("useTwapCancel", () => {
 			await hookValue?.cancelTwap("ETH", 46);
 		});
 
-		expect(mocks.errorToast).toHaveBeenCalledOnce();
+		expect(mocks.errorToast).not.toHaveBeenCalled();
+		expect(queueItems.at(-1)).toMatchObject({ owner: USER, env: "Mainnet", status: "failed" });
 		expect(mocks.warningToast).not.toHaveBeenCalled();
 		expect(hookValue?.feedback?.tone).toBe("error");
 	});

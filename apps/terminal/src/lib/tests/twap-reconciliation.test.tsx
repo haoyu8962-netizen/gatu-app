@@ -13,8 +13,14 @@ import {
 	reserveOrderAssets,
 	runWithOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
+import * as twapReservations from "@/lib/trade/twap-order-asset-reservation";
 import { getActiveTwapReservationId } from "@/lib/trade/twap-order-asset-reservation";
-import { type OrderQueueItem, useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
+import {
+	getOrderQueueItem,
+	type OrderQueueItem,
+	useOrderQueue,
+	useOrderQueueActions,
+} from "@/stores/use-order-queue-store";
 import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
@@ -22,9 +28,15 @@ import {
 import { getPendingTwapActions, hasPendingTwapForAsset } from "@/stores/use-pending-twap-store";
 import { createI18nRoot } from "./harness/react";
 
+function expectActionFeedback(id: string, status: OrderQueueItem["status"], message: string) {
+	const item = getOrderQueueItem(`pending-trading-action:${id}`);
+	expect(item?.status).toBe(status);
+	expect(item?.message ? i18n._(item.message) : null).toBe(message);
+}
+
 const USER = "0x1111111111111111111111111111111111111111" as const;
-const TWAP_UNCONFIRMED = "The exchange did not return a final TWAP status. Review active TWAP orders before retrying.";
-const ARABIC_TWAP_UNCONFIRMED = "لم تُرجع البورصة حالة نهائية لطلب TWAP. راجع طلبات TWAP النشطة قبل إعادة المحاولة.";
+const TWAP_UNCONFIRMED = "Review active TWAP orders before retrying";
+const ARABIC_TWAP_UNCONFIRMED = "راجع أوامر TWAP النشطة قبل إعادة المحاولة";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -42,6 +54,26 @@ function OrderQueueProbe() {
 	queueActions = useOrderQueueActions();
 	return null;
 }
+function createReconciliation() {
+	return createElement(Fragment, null, createElement(TwapReconciliation), createElement(OrderQueueProbe));
+}
+
+function QueueFeedback() {
+	const orders = useOrderQueue();
+	const actions = useOrderQueueActions();
+	return createElement(
+		Fragment,
+		null,
+		...orders.map((order) =>
+			createElement(OrderToast, {
+				key: order.id,
+				order,
+				onDismiss: () => actions.removeOrder(order.id),
+			}),
+		),
+	);
+}
+
 const mocks = vi.hoisted(() => ({
 	clientKey: "0x1111111111111111111111111111111111111111",
 	activeData: undefined as
@@ -66,6 +98,7 @@ const mocks = vi.hoisted(() => ({
 	errorToast: vi.fn(),
 	warningToast: vi.fn(),
 	infoToast: vi.fn(),
+	dismissToast: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({
@@ -74,6 +107,7 @@ vi.mock("sonner", () => ({
 		error: mocks.errorToast,
 		warning: mocks.warningToast,
 		info: mocks.infoToast,
+		dismiss: mocks.dismissToast,
 	},
 }));
 
@@ -179,6 +213,7 @@ describe("TwapReconciliation", () => {
 		mocks.errorToast.mockReset();
 		mocks.warningToast.mockReset();
 		mocks.infoToast.mockReset();
+		mocks.dismissToast.mockReset();
 		mocks.clientKey = USER;
 		mocks.activeLastMessageAt = undefined;
 		getPendingTwapActions().prune(Number.MAX_SAFE_INTEGER);
@@ -199,6 +234,7 @@ describe("TwapReconciliation", () => {
 		act(() => root.unmount());
 		container.remove();
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
+		vi.restoreAllMocks();
 		vi.useRealTimers();
 	});
 
@@ -207,7 +243,7 @@ describe("TwapReconciliation", () => {
 		getPendingTwapActions().markActive(submission.id);
 		mocks.activeData = { dex: "", user: USER, states: [[51, createTwapState()]] };
 
-		act(() => root.render(createElement(TwapReconciliation)));
+		act(() => root.render(createReconciliation()));
 		expect(hasPendingTwapForAsset("Mainnet", USER, 7)).toBe(true);
 		expect(mocks.successToast).not.toHaveBeenCalled();
 
@@ -216,14 +252,17 @@ describe("TwapReconciliation", () => {
 			await Promise.resolve();
 		});
 		expect(hasPendingTwapForAsset("Mainnet", USER, 7)).toBe(false);
-		expect(mocks.successToast).toHaveBeenCalledOnce();
+		expect(mocks.successToast).not.toHaveBeenCalled();
+		expect(queueItems).toEqual([
+			expect.objectContaining({ owner: USER, env: "Mainnet", status: "success", outcome: "twapStarted" }),
+		]);
 	});
 
 	it("does not consume a TWAP ID that was already present in the pre-submit baseline", () => {
 		addSubmission({ activeKnownIds: [52] });
 		mocks.activeData = { dex: "", user: USER, states: [[52, createTwapState()]] };
 
-		act(() => root.render(createElement(TwapReconciliation)));
+		act(() => root.render(createReconciliation()));
 
 		expect(hasPendingTwapForAsset("Mainnet", USER, 7)).toBe(true);
 		expect(mocks.successToast).not.toHaveBeenCalled();
@@ -247,13 +286,53 @@ describe("TwapReconciliation", () => {
 		};
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 		});
 
 		expect(hasPendingTwapForAsset("Mainnet", USER, 7)).toBe(false);
 		expect(mocks.successToast).not.toHaveBeenCalled();
-		expect(mocks.errorToast).toHaveBeenCalledWith("TWAP order rejected");
+		expect(mocks.errorToast).not.toHaveBeenCalled();
+		expect(queueItems).toEqual([
+			expect.objectContaining({ owner: USER, env: "Mainnet", status: "failed", error: "TWAP order rejected" }),
+		]);
+	});
+
+	it.each([
+		["finished", "success", "TWAP finished"],
+		["terminated", "canceled", "TWAP terminated"],
+		["stopped", "canceled", "TWAP stopped"],
+		["waitingForTrigger", "success", "TWAP waiting for trigger"],
+	] as const)("reports late history %s instead of the older active snapshot", async (status, queueStatus, message) => {
+		const submission = addSubmission();
+		getPendingTwapActions().markUnconfirmed(submission.id, submission.createdAt + 1);
+		const state = createTwapState();
+		mocks.activeData = { dex: "", user: USER, states: [[53, state]] };
+		mocks.historyData = {
+			user: USER,
+			isSnapshot: true,
+			history: [{ twapId: 53, time: Math.floor(Date.now() / 1000), state, status: { status } }],
+		};
+
+		await act(async () => {
+			root.render(createElement(Fragment, null, createReconciliation(), createElement(QueueFeedback)));
+			await Promise.resolve();
+		});
+
+		expect(hasPendingTwapForAsset("Mainnet", USER, 7)).toBe(false);
+		expect(queueItems).toHaveLength(1);
+		const item = queueItems[0];
+		expect(item).toMatchObject({ id: `reconcile-${submission.id}`, owner: USER, env: "Mainnet", status: queueStatus });
+		expect(item?.outcome).toBeUndefined();
+		expect(item?.error).toBeUndefined();
+		expect(item?.message ? i18n._(item.message) : null).toBe(message);
+		expect(container.textContent).toContain(message);
+		expect(container.textContent).not.toContain("Running");
+		expect(container.textContent).not.toContain("Filled");
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: { [getMessageId(message)]: "حالة طلب TWAP المؤكدة" } }));
+		expect(container.textContent).toContain("حالة طلب TWAP المؤكدة");
+		expect(queueItems[0]?.id).toBe(item?.id);
 	});
 
 	it("ignores a new TWAP whose exchange fields do not match the submitted intent", () => {
@@ -264,7 +343,7 @@ describe("TwapReconciliation", () => {
 			states: [[54, createTwapState({ minutes: 60 })]],
 		};
 
-		act(() => root.render(createElement(TwapReconciliation)));
+		act(() => root.render(createReconciliation()));
 
 		expect(hasPendingTwapForAsset("Mainnet", USER, 7)).toBe(true);
 		expect(mocks.successToast).not.toHaveBeenCalled();
@@ -275,11 +354,19 @@ describe("TwapReconciliation", () => {
 		await reservePendingSubmission(submission, submission.createdAt + 60 * 60_000);
 		vi.setSystemTime(submission.createdAt + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS);
 
-		act(() => root.render(createElement(TwapReconciliation)));
+		act(() => root.render(createReconciliation()));
 		await act(() => vi.runOnlyPendingTimersAsync());
 
 		expect(hasPendingTwapForAsset("Mainnet", USER, 7)).toBe(false);
-		expect(mocks.warningToast).toHaveBeenCalledOnce();
+		expect(mocks.warningToast).not.toHaveBeenCalled();
+		expect(queueItems).toEqual([
+			expect.objectContaining({
+				owner: USER,
+				env: "Mainnet",
+				status: "unconfirmed",
+				error: { code: "twap-status-unconfirmed", kind: "order-reconciliation" },
+			}),
+		]);
 		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
 			expect(
 				getOrderAssetReservationState(lease, {
@@ -298,6 +385,8 @@ describe("TwapReconciliation", () => {
 		act(() => {
 			queueId =
 				queueActions?.addOrder({
+					owner: USER,
+					env: "Mainnet",
 					market: "GOLD",
 					orderType: "twap",
 					side: "buy",
@@ -313,9 +402,9 @@ describe("TwapReconciliation", () => {
 				createElement(
 					Fragment,
 					null,
-					createElement(TwapReconciliation),
+					createReconciliation(),
 					createElement(OrderQueueProbe),
-					createElement(OrderToast),
+					createElement(QueueFeedback),
 				),
 			);
 			await Promise.resolve();
@@ -338,10 +427,18 @@ describe("TwapReconciliation", () => {
 		mocks.clientKey = "disconnected";
 		vi.setSystemTime(submission.createdAt + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS);
 
-		act(() => root.render(createElement(TwapReconciliation)));
+		act(() => root.render(createReconciliation()));
 
 		expect(hasPendingTwapForAsset("Mainnet", USER, 7)).toBe(false);
-		expect(mocks.warningToast).toHaveBeenCalledOnce();
+		expect(mocks.warningToast).not.toHaveBeenCalled();
+		expect(queueItems).toEqual([
+			expect.objectContaining({
+				owner: USER,
+				env: "Mainnet",
+				status: "unconfirmed",
+				error: { code: "twap-status-unconfirmed", kind: "order-reconciliation" },
+			}),
+		]);
 	});
 
 	it("accepts a late matching TWAP after the local hard lock has been released", async () => {
@@ -350,12 +447,62 @@ describe("TwapReconciliation", () => {
 		mocks.activeData = { dex: "", user: USER, states: [[55, createTwapState()]] };
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 		});
 
 		expect(hasPendingTwapForAsset("Mainnet", USER, 7)).toBe(false);
-		expect(mocks.successToast).toHaveBeenCalledOnce();
+		expect(mocks.successToast).not.toHaveBeenCalled();
+		expect(queueItems).toEqual([
+			expect.objectContaining({ owner: USER, env: "Mainnet", status: "success", outcome: "twapStarted" }),
+		]);
+		expect(getOrderQueueItem(`reconcile-${submission.id}`)?.error).toBeUndefined();
+	});
+
+	it("restores an in-progress TWAP notification from the persisted intent", () => {
+		const submission = addSubmission();
+
+		act(() => root.render(createReconciliation()));
+
+		expect(getOrderQueueItem(`reconcile-${submission.id}`)).toMatchObject({
+			owner: USER,
+			env: "Mainnet",
+			market: "xyz:GOLD",
+			side: "buy",
+			size: "1.2500",
+			orderType: "twap",
+			status: "confirming",
+		});
+		expect(mocks.infoToast).not.toHaveBeenCalled();
+	});
+
+	it("keeps a late coordinated TWAP result scoped to its owner after switching accounts", async () => {
+		let settle!: (coordinated: boolean) => void;
+		vi.spyOn(twapReservations, "reconcileTwapOrderAssetReservation").mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					settle = resolve;
+				}),
+		);
+		const submission = addSubmission();
+		mocks.activeData = { dex: "", user: USER, states: [[70, createTwapState()]] };
+		act(() => root.render(createReconciliation()));
+		expect(getOrderQueueItem(`reconcile-${submission.id}`)?.status).toBe("confirming");
+
+		mocks.clientKey = "0x2222222222222222222222222222222222222222";
+		act(() => root.render(createReconciliation()));
+		await act(async () => {
+			settle(true);
+		});
+
+		expect(getOrderQueueItem(`reconcile-${submission.id}`)).toMatchObject({
+			owner: USER,
+			env: "Mainnet",
+			status: "success",
+			outcome: "twapStarted",
+		});
+		expect(hasPendingTwapForAsset("Mainnet", USER, 7)).toBe(false);
+		expect(mocks.successToast).not.toHaveBeenCalled();
 	});
 
 	it("promotes a reconciled active TWAP beyond the short confirmation window", async () => {
@@ -364,7 +511,7 @@ describe("TwapReconciliation", () => {
 		mocks.activeData = { dex: "", user: USER, states: [[56, createTwapState()]] };
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 		});
 		vi.setSystemTime(submission.createdAt + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS + 1);
@@ -398,7 +545,7 @@ describe("TwapReconciliation", () => {
 		};
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 		});
 		vi.setSystemTime(submission.createdAt + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS + 1);
@@ -427,7 +574,7 @@ describe("TwapReconciliation", () => {
 		mocks.activeData = { dex: "", user: USER, states: [[58, createTwapState()]] };
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 		});
 
@@ -462,7 +609,7 @@ describe("TwapReconciliation", () => {
 		};
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 		});
 
@@ -504,16 +651,13 @@ describe("TwapReconciliation", () => {
 		mocks.activeLastMessageAt = now;
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 			await Promise.resolve();
 		});
 
 		expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(0);
-		expect(mocks.successToast).toHaveBeenCalledWith(
-			"TWAP cancellation confirmed.",
-			expect.objectContaining({ id: `pending-trading-action:${cancellation.id}` }),
-		);
+		expectActionFeedback(cancellation.id, "success", "TWAP cancellation confirmed.");
 		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
 			expect(
 				getOrderAssetReservationState(lease, {
@@ -541,7 +685,7 @@ describe("TwapReconciliation", () => {
 		mocks.activeLastMessageAt = now - 1;
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 		});
 		expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(1);
@@ -550,13 +694,14 @@ describe("TwapReconciliation", () => {
 		mocks.activeData = { dex: "", user: USER, states: [[twapId, createTwapState()]] };
 		mocks.activeLastMessageAt = now + 1;
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 		});
 		expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(0);
-		expect(mocks.infoToast).toHaveBeenCalledWith(
+		expectActionFeedback(
+			cancellation.id,
+			"unconfirmed",
 			"TWAP cancellation was not confirmed. Review active TWAP orders before retrying.",
-			expect.objectContaining({ id: `pending-trading-action:${cancellation.id}` }),
 		);
 	});
 
@@ -575,7 +720,7 @@ describe("TwapReconciliation", () => {
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 			await Promise.resolve();
 		});
@@ -586,10 +731,7 @@ describe("TwapReconciliation", () => {
 		await act(() => vi.advanceTimersByTimeAsync(1_000));
 
 		expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(0);
-		expect(mocks.successToast).toHaveBeenCalledWith(
-			"TWAP cancellation confirmed.",
-			expect.objectContaining({ id: `pending-trading-action:${cancellation.id}` }),
-		);
+		expectActionFeedback(cancellation.id, "success", "TWAP cancellation confirmed.");
 	});
 
 	it("stops a scheduled reservation-release retry after the action is reset", async () => {
@@ -607,7 +749,7 @@ describe("TwapReconciliation", () => {
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 			await Promise.resolve();
 		});
@@ -635,7 +777,7 @@ describe("TwapReconciliation", () => {
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 
 		await act(async () => {
-			root.render(createElement(TwapReconciliation));
+			root.render(createReconciliation());
 			await Promise.resolve();
 			await Promise.resolve();
 		});

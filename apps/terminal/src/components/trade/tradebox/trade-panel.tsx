@@ -1,7 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -44,6 +43,7 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import {
+	getMarketCapabilities,
 	useMarketsInfo,
 	useSelectedMarketInfo,
 	useTradingAuthorization,
@@ -155,6 +155,13 @@ export function TradePanel() {
 
 	const orderType = useOrderType();
 	const limitPriceInput = useLimitPrice();
+	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
+	const positionSize = toNumberOrZero(position?.szi);
+	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
+	const validatedPositionSize = positionSnapshotReady ? (position?.szi ?? "0") : null;
+	const reduceOnlyChecked = useReduceOnly();
+	const capabilities = getMarketCapabilities(market);
+	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
 	const orderEntryData = useOrderEntryData({
 		market,
 		side,
@@ -162,6 +169,12 @@ export function TradePanel() {
 		sizeMode,
 		sizeInput,
 		limitPx: usesLimitPriceForOrder(orderType) ? toNumberOrZero(limitPriceInput) : undefined,
+		reduceOnly,
+		positionSnapshot: {
+			ready: positionSnapshotReady,
+			receivedAt: userPositions.receivedAt,
+			signedSize: validatedPositionSize ?? undefined,
+		},
 		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
 	});
 	const {
@@ -174,7 +187,6 @@ export function TradePanel() {
 		baseToken,
 		quoteToken,
 		spotBalance,
-		capabilities,
 		availableBalance,
 		isAvailabilityBlocked,
 		isAvailabilityLoading,
@@ -182,10 +194,11 @@ export function TradePanel() {
 		hasAvailabilityError,
 		maxSize,
 		sizeValue,
+		sizeForOrder,
 		orderValue,
 		sideLabels,
-		getSizeForPercent,
-		convertSizeForModeToggle,
+		applySizePercent,
+		toggleSizeDenomination,
 		leverage,
 		leverageInteractionIdentity,
 		marginMode,
@@ -203,10 +216,7 @@ export function TradePanel() {
 		allowsIsolatedMarginRemoval,
 	} = orderEntryData;
 	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, orderType === "market");
-	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
-	const positionSize = toNumberOrZero(position?.szi);
-	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
-	const validatedPositionSize = positionSnapshotReady ? positionSize : null;
+
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
 		active: true,
 		assetId: market?.assetId,
@@ -217,7 +227,7 @@ export function TradePanel() {
 		availability: executionAvailability,
 		positionStateReady: positionSnapshotReady,
 		positionReceivedAt: userPositions.receivedAt,
-		positionSignedSize: position?.szi,
+		positionSignedSize: validatedPositionSize ?? undefined,
 		markPriceStatus,
 		markPx: market?.markPx,
 		markPriceReceivedAt: market?.markPriceReceivedAt,
@@ -235,7 +245,7 @@ export function TradePanel() {
 		availability: executionAvailability,
 		positionStateReady: positionSnapshotReady,
 		positionReceivedAt: userPositions.receivedAt,
-		positionSignedSize: position?.szi,
+		positionSignedSize: validatedPositionSize ?? undefined,
 		markPriceStatus,
 		markPx: market?.markPx,
 		markPriceReceivedAt: market?.markPriceReceivedAt,
@@ -271,8 +281,6 @@ export function TradePanel() {
 	const { takerRate, makerRate } = useMarketFeeRates(market);
 	const builderFeeTenthsBps = useBuilderFeeTenthsBps();
 	const selectedPrice = useSelectedPrice();
-	const reduceOnlyChecked = useReduceOnly();
-	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
 	const triggerPriceInput = useTriggerPrice();
 	const scaleStartPriceInput = useScaleStart();
 	const scaleEndPriceInput = useScaleEnd();
@@ -311,7 +319,7 @@ export function TradePanel() {
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 
-	const { setSide, setOrderType, setSizeMode, setSize, setLimitPriceFromUser } = useOrderEntryActions();
+	const { setSide, setOrderType, setLimitPriceFromUser } = useOrderEntryActions();
 
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 	const [activeModal, setActiveModal] = useState<ActiveModal>(null);
@@ -389,7 +397,7 @@ export function TradePanel() {
 	const prospectiveExistingPosition =
 		marginMode === "cross" ? crossMarginSnapshot.existingPosition : isolatedExistingPosition;
 
-	const { marginRequired } = getOrderMetrics({ sizeValue, price, leverage });
+	const { marginRequired } = getOrderMetrics({ sizeValue, price, leverage, reduceOnly });
 	const { liqPrice, liqWarning } = estimateProspectiveLiquidation({
 		price,
 		orderSize: sizeValue,
@@ -461,6 +469,7 @@ export function TradePanel() {
 					stopOrder,
 					takeProfitOrder,
 					positionSize: validatedPositionSize,
+					sizeForOrder,
 					reduceOnly,
 					tpSlEnabled,
 					canUseTpSl,
@@ -490,18 +499,12 @@ export function TradePanel() {
 	const displayedConfirmation = useLingeringValue(confirmation.pending, ORDER_CONFIRMATION_EXIT_MS);
 
 	function handleSizeModeToggle() {
-		const newMode = sizeMode === "base" ? "quote" : "base";
-		const convertedSize = convertSizeForModeToggle();
-		if (convertedSize) {
-			setSize(convertedSize);
-		}
-		setSizeMode(newMode);
+		toggleSizeDenomination();
 	}
 
 	function handleSizePercentApply(pct: number) {
 		if (maxSize <= 0) return;
-		const newSize = getSizeForPercent(pct);
-		if (newSize) setSize(newSize);
+		applySizePercent(pct);
 	}
 
 	const isRegistering =
@@ -514,10 +517,9 @@ export function TradePanel() {
 
 	const handleAccountModeChange = useCallback(
 		async (nextAccountMode: SelectableAccountAbstraction) => {
-			const didUpdate = await accountModeControl.setAccountAbstraction(nextAccountMode);
-			if (didUpdate) toast.success(t`Account mode updated`);
+			await accountModeControl.setAccountAbstraction(nextAccountMode);
 		},
-		[accountModeControl.setAccountAbstraction, t],
+		[accountModeControl.setAccountAbstraction],
 	);
 
 	const handleMarginModalOpenChange = useCallback(
@@ -579,6 +581,7 @@ export function TradePanel() {
 			baseToken,
 			szDecimals: market.szDecimals,
 			sizeValue,
+			sizeForOrder,
 			orderValue,
 			limitPrice: toNumber(limitPriceInput),
 			triggerPrice: triggerPriceNum,
@@ -613,9 +616,11 @@ export function TradePanel() {
 					szDecimals: market.szDecimals,
 				},
 				baseToken,
+				quoteToken,
 				side,
 				orderType,
 				sizeValue,
+				sizeForOrder,
 				marginMode,
 				slippageBps,
 				reduceOnly,
@@ -647,7 +652,7 @@ export function TradePanel() {
 		accountReady:
 			isConnected &&
 			!isWalletLoading &&
-			availableBalance > 0 &&
+			(reduceOnly || availableBalance > 0) &&
 			!validation.needsApproval &&
 			!isAvailabilityBlocked &&
 			!tradeActionsBlocked,
@@ -686,7 +691,8 @@ export function TradePanel() {
 		isSwitchingChain: switchChain.isPending,
 		switchChain: (chainId) => switchChain.mutate({ chainId }),
 		availableBalance,
-		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale,
+		reduceOnly,
+		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale || isAvailabilityBlocked,
 		hasBalanceError: hasAvailabilityError,
 		canDeposit: depositAvailability.available,
 		depositUnavailableReason: getFundsAvailabilityNotice(depositAvailability),

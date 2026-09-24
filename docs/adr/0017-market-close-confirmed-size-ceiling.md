@@ -81,3 +81,7 @@
 ## 补注（2026-09-21）：移动端标题栏的 `Price: Market` 换成关闭按钮
 
 决策 1 提到「移动端标题栏已有 `Price: Market`」。产品负责人指出它与标题 `Market Close` 重复，而移动端弹层没有任何明确的退出控件（2026-08-04 的重设计 `928cebf1` 把移动端的关闭按钮换成了装饰性的把手，首版 `5341c3df` 是有关闭按钮的）。现已移除这个标签并在原位显示关闭按钮；限价平仓标题栏的 `Limit` 同样处理。市价这一事实仍由标题与确认按钮的 `Market Close` 表达，桌面端 `Close size` 行右侧的 `Price: Market` 不变；承诺量的展示位（`Close size` 输入框）与本 ADR 的其余决策不受影响。规则见 `.claude/rules/style-ui-guide.md`「Dialog chrome」，由 `dialog-dismiss-control-contract.test.ts` 钉住。
+
+## 补注（2026-09-23）：提交改由页面级宿主执行
+
+[ADR 0014 后续](0014-market-close-submit-and-dismiss.md#后续)把 `usePositionMarketCloseSubmit()` 移进页面级的 `PositionMarketCloseSubmitHost`，弹窗通过 `submitPositionMarketClose()` 把展示的 `confirmedCloseSize` 交给它。本 ADR 的上限、`close-size-exceeds-confirmed` 失败关闭与静态按钮都不变；「`dismissed` 期间组件保持挂载」现在只为退出动画，不再是执行守卫拿到实时数据的前提。

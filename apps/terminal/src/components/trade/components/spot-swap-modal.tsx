@@ -2,12 +2,12 @@ import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup,
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowsDownUpIcon, WarningIcon } from "@phosphor-icons/react";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
 import { getSpotAvailable, getSpotAvailableValue, getSpotBalance } from "@/domain/trade/balances";
+import { getCloseOrderFeedbackChildren } from "@/domain/trade/close-order-feedback";
 import { formatPriceForOrder, formatSizeForOrder, throwIfAnyResponseError } from "@/domain/trade/orders";
 import {
 	assertSpotSwapExecutionAllowed,
@@ -32,12 +32,10 @@ import { formatToken } from "@/lib/format";
 import { type ExchangeParams, useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { useMarketsInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
 import { toBig } from "@/lib/trade/numbers";
-import {
-	formatOrderSubmissionFeedback,
-	getOrderSubmissionFeedback,
-	type OrderSubmissionFeedback,
-} from "@/lib/trade/order-submission-feedback";
+import { orderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
+import { getSpotSwapFeedback } from "@/lib/trade/spot-swap-feedback";
 import {
 	type SwapMode,
 	useGlobalModalType,
@@ -47,19 +45,12 @@ import {
 	useSwapModalOpen,
 	useSwapModalToToken,
 } from "@/stores/use-global-modal-store";
+import { addOrderQueueItem, type OrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import { AssetDisplay } from "./asset-display";
 import { TokenSelectorDropdown } from "./token-selector-dropdown";
 import { TradingActionButton } from "./trading-action-button";
 
 const DEFAULT_SWAP_SLIPPAGE_PERCENT = DEFAULT_SWAP_SLIPPAGE_BPS / 100;
-
-type SpotSwapError =
-	| OrderSubmissionFeedback
-	| { kind: "blocked" }
-	| { kind: "no-liquidity" }
-	| { kind: "raw"; message: string }
-	| { kind: "reconciling" }
-	| { kind: "swap-failed" };
 
 export function SpotSwapModal() {
 	const isOpen = useSwapModalOpen();
@@ -295,19 +286,6 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		if (!open && !submittedRef.current) onClose();
 	}
 
-	function getSwapErrorMessage(error: SpotSwapError): string {
-		if (error.kind === "order-submission") {
-			return formatOrderSubmissionFeedback(error, (descriptor) => t(descriptor));
-		}
-		if (error.kind === "blocked") return t`Another order for this market is still being confirmed.`;
-		if (error.kind === "reconciling") return t`Order submitted. Confirming exchange status; do not retry.`;
-		if (error.kind === "no-liquidity") {
-			return t`No liquidity was available within the ${DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit.`;
-		}
-		if (error.kind === "swap-failed") return t`Swap failed`;
-		return error.message;
-	}
-
 	async function handleSubmit() {
 		if (!isOpen || !accountDataReady || !spotMarket || !quote || !expectedOrder) return;
 		if (isSubmitting || submittedRef.current) return;
@@ -318,11 +296,17 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 			executionStateRef.current.active &&
 			submissionSequenceRef.current === submissionSequence &&
 			executionSessionIdentityRef.current === submissionIdentity;
-		const swapSummary = (
-			<bdi dir="ltr">
-				{amount} {fromToken} → ~{formatToken(estimatedReceive, 6)} {toToken}
-			</bdi>
-		);
+		const queueId = addOrderQueueItem({
+			owner: clientKey,
+			env,
+			operation: "spot-swap",
+			market: `${fromToken} → ${toToken}`,
+			side: isBuying ? "buy" : "sell",
+			size: expectedOrder.s,
+			orderType: "market",
+			status: "pending",
+			children: [{ assetId: expectedOrder.a, market: spotMarket.name, size: expectedOrder.s, status: "pending" }],
+		});
 
 		submittedRef.current = true;
 		setIsSubmitted(true);
@@ -330,22 +314,38 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		try {
 			const submission = await submitOrder(
 				{ orders: [expectedOrder], grouping: "na" },
-				{ riskContext: { marketKind: "spot" } },
+				{ queueId, riskContext: { marketKind: "spot" } },
 			);
-			if (!isCurrentSubmission()) return;
 			if (submission.state === "blocked") {
-				toast.warning(getSwapErrorMessage({ kind: "blocked" }));
+				updateOrderQueueItem(queueId, { status: "failed", error: orderSubmissionFeedback("blocked-order") });
 			} else if (submission.state === "reconciling") {
-				toast.info(getSwapErrorMessage({ kind: "reconciling" }));
+				updateOrderQueueItem(queueId, { status: "confirming" });
 			} else {
 				throwIfAnyResponseError(submission.result.response?.data?.statuses);
-				toast.success(t`Swap submitted`, { description: swapSummary });
+				const children = getCloseOrderFeedbackChildren(
+					[{ assetId: expectedOrder.a, market: spotMarket.name, size: expectedOrder.s }],
+					submission.result,
+				);
+				const child = children[0];
+				let status: OrderQueueItem["status"] = "unconfirmed";
+				if (child?.status === "filled" || child?.status === "accepted") {
+					status = "success";
+				} else if (child?.status === "partial") {
+					status = "partial";
+				} else if (child?.status === "rejected") {
+					status = "failed";
+				}
+				updateOrderQueueItem(queueId, {
+					status,
+					outcome: deriveOrderOutcome(submission.result.response?.data?.statuses ?? []),
+					children,
+					error: child?.error,
+				});
 			}
 		} catch (err) {
-			if (!isCurrentSubmission()) return;
-			toast.error(getSwapErrorMessage(toSpotSwapError(err)));
+			updateOrderQueueItem(queueId, { status: "failed", error: getSpotSwapFeedback(err) });
 		} finally {
-			onClose();
+			if (isCurrentSubmission()) onClose();
 		}
 	}
 
@@ -563,14 +563,6 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 			</ModalPopup>
 		</Modal>
 	);
-}
-
-function toSpotSwapError(cause: unknown): SpotSwapError {
-	if (!(cause instanceof Error)) return { kind: "swap-failed" };
-	const trackedOrderFeedback = getOrderSubmissionFeedback(cause);
-	if (trackedOrderFeedback) return trackedOrderFeedback;
-	if (cause.message.includes("could not immediately match")) return { kind: "no-liquidity" };
-	return { kind: "raw", message: cause.message };
 }
 
 interface TokenPanelProps {

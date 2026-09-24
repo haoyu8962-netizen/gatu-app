@@ -37,6 +37,7 @@ export interface OrderConfirmationDraft {
 	baseToken: string;
 	szDecimals: number | undefined;
 	sizeValue: number;
+	sizeForOrder?: string;
 	orderValue: number;
 	limitPrice: number | null;
 	triggerPrice: number | null;
@@ -54,7 +55,7 @@ export interface OrderConfirmationDraft {
 	reduceOnly: boolean;
 	leverage: number | null;
 	marginMode: MarginMode;
-	marginRequired: number;
+	marginRequired: number | null;
 	feeQuote: OrderFeeQuote;
 	liqPrice: number | null;
 	liqWarning: boolean;
@@ -115,7 +116,7 @@ function getMarketExecutionLabel(): string {
 
 function getSizeValue(draft: OrderConfirmationDraft): string {
 	if (!isPositive(draft.sizeValue)) return FALLBACK_VALUE_PLACEHOLDER;
-	const submittedSize = formatSizeForOrder(draft.sizeValue, draft.szDecimals ?? 0);
+	const submittedSize = formatSizeForOrder(draft.sizeForOrder ?? draft.sizeValue, draft.szDecimals ?? 0);
 	return formatToken(submittedSize, { decimals: draft.szDecimals, symbol: draft.baseToken });
 }
 

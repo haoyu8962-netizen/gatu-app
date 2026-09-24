@@ -4,6 +4,8 @@
 
 **目前只有市价平仓完整满足本契约。** 其余确认面的核对状态见「尚未核对或已知例外」，不要因为它们出现在本文里就当作已经满足。
 
+2026-09-21 后续更新：通知已改用[全局操作通知规范](trading-notifications.md)。下文保留当日分批实施的描述；其中独立 OrderToast、持仓短 Sonner、TP/SL 未知提示会自动消失等阶段行为，已由文末「全局通知实施补充」取代。通知迁移不把其他确认面提升为完整满足展示 → 承诺契约。
+
 ## 为什么需要它
 
 项目一直有「执行不得信任展示值」的规则（`agent.md`：Financial action execution must recheck current identity, market, legal status and required snapshot availability, not merely trust displayed component values）。它的对偶规则此前没有写下来：**执行可以用更新的数据重算，但不能超出用户点击时看到的承诺。**
@@ -17,7 +19,7 @@
 3. **执行若用更新的数据重算，必须以点击时展示的值为界，越界失败关闭。** 界的方向由动作语义决定，不能照搬：平仓数量是「执行量 ≤ 展示量」；兑换的最低到账量、改单的价格方向需要各自定义。没有越界只说明没有超出用户授权的数量，不等于结果对用户更有利——少平仓会留下更多敞口。
 4. **确认对象与开窗时不同要明示。** 什么算「不同」由各确认面定义（市价平仓：当前有效、同方向仓位的数量不等于开窗快照）。随行情逐笔变化的价格不属于此类，不能每次刷新都触发提示。提示只在可见、可编辑的确认阶段出现，不参与「能否提交」的判断。
 5. **每个确认面应当有一条跨「展示 → 承诺」边界的测试。** 弹窗组件、提交流程和会话 store 用真实实现，数据在网络与 SDK 边缘给定；读取屏幕上的承诺量 `D`，点击，再断言发出的量满足第 3 条的关系，拒绝路径零下单、放行路径恰好一次。展示用的外壳（对话框容器、输入框、滑杆、按钮）可以用透传属性的替身，但替身不得参与数量的计算或传递，执行守卫必须真实执行。只测 UI 或只测提交流程都不能发现这类缺陷。
-6. **订单类确认面点击即关闭，状态只走通知。** 自 2026-09-21 起（产品负责人：「不应该显示状态，应该和其他按钮一样，订单状态放在右下角的通知里」），市价平仓、全部平仓、限价平仓、反手与下单确认的确认控件不显示「校验中 / 提交中 / 确认中」，弹窗正文也不展示提交错误或对账提示。点击确认后弹窗立即关闭，提交在后台执行，被锁、待对账、部分成功、成功与失败各发一条右下角通知。三点必须同时成立：同一次点击内用同步 ref 防止重复触发；承载提交钩子的组件保持挂载到提交结束，因为执行守卫读取它的实时数据，卸载会冻结快照或直接失败关闭，甚至把已经成交的结果报告成失败；会话存在期间入口不能再次打开，否则新的会话会替换掉正在后台提交的实例。弹窗一旦不再是模态的，用户就能在提交期间切换页签、切换移动端底部导航或跨过桌面与移动的断点，所以会话的所有者不能放在页签面板里：全部平仓、反手与限价平仓的会话存放在 `stores/use-position-dialog-store.ts`，由 `PositionDialogHost` 承载，它与市价平仓一样经 `GlobalModals` 挂在页面层；每次打开分配新的会话 ID，结束时只结束自己的那个会话。普通下单的提交器常驻在下单面板里，状态由右下角的订单队列（`OrderToast`）给出；持仓类动作走 sonner 通知，两者位置相同。第 1 条里「执行进度不在此列」的豁免不再适用于这五个确认面。
+6. **订单类确认面点击即关闭，状态只走通知。** 自 2026-09-21 起（产品负责人：「不应该显示状态，应该和其他按钮一样，订单状态放在右下角的通知里」），市价平仓、全部平仓、限价平仓、反手与下单确认的确认控件不显示「校验中 / 提交中 / 确认中」，弹窗正文也不展示提交错误或对账提示。点击确认后弹窗立即关闭，提交在后台执行，被锁、待对账、部分成功、成功与失败各发一条右下角通知。三点必须同时成立：同一次点击内用同步 ref 防止重复触发；承载提交钩子的组件保持挂载到提交结束，因为执行守卫读取它的实时数据，卸载会冻结快照或直接失败关闭，甚至把已经成交的结果报告成失败；会话存在期间入口不能再次打开，否则新的会话会替换掉正在后台提交的实例。弹窗一旦不再是模态的，用户就能在提交期间切换页签、切换移动端底部导航或跨过桌面与移动的断点，所以会话的所有者不能放在页签面板里：全部平仓、反手与限价平仓的会话存放在 `stores/use-position-dialog-store.ts`，由 `PositionDialogHost` 承载，经 `GlobalModals` 挂在页面层；市价平仓的会话留在全局弹窗 store，提交则由同样挂在页面层、legal gate 之外的 `PositionMarketCloseSubmitHost` 执行，弹窗与持仓页的直提入口只调用 `submitPositionMarketClose()`，各分支切换只丢弃未提交（`idle`）的会话（2026-09-23，见 ADR 0014 后续）；每次打开分配新的会话 ID，结束时只结束自己的那个会话。普通下单的提交器常驻在下单面板里，状态由右下角的订单队列（`OrderToast`）给出；持仓类动作走 sonner 通知，两者位置相同。第 1 条里「执行进度不在此列」的豁免不再适用于这五个确认面。
 
    同日第二批把同一做法扩展到其余会提交交易动作的弹层与按钮，判断标准只有一条：**确认控件的名称不随提交进度变化，状态不写在按钮上，也不写在弹层正文里**。
    - 止盈止损与逐仓保证金：会话同样进入 `use-position-dialog-store`（`tpSl`、`isolatedMargin`），由 `PositionDialogHost` 承载；点击 `Confirm` / `Add Margin` 等静态动词后弹层立即隐藏，被锁、待对账、失败与成功各发一条通知，结束后才释放会话。待对账时为该资产写入的占位（reservation）不变，所以重新打开后再次提交仍会被「另一笔订单仍在确认」拦住；弹层内原先常驻的「关闭后重新打开」提示随之删除。两个弹层用 `useLingeringValue` 多挂载 250 ms 以播放退出动画，关闭中的实例按已取消处理（`canSubmit` 含 `open`）。
@@ -40,9 +42,10 @@
 | --- | --- | --- |
 | 1 | 确认按钮文案为静态 `Market Close`；数量通过 `aria-describedby` 指向的 sr-only 描述提供给辅助技术，不进入按钮名称，也不使用 assertive 播报。滑杆手势期间的提交锁用 ref 实现：`handleSubmit()` 里拦截，同一个 ref 作为 `isActivationLocked` 交给 `TradingActionButton`，连未就绪时的 `Enable` 分支一并拦住；手势锁本身不改变按钮的 `disabled` 与样式（数量为零、仓位不可读时仍照常禁用）。全站六个带滑杆的交易面做法一致，见下文「滑杆手势期间不把提交按钮置灰」（`components/trade/positions/position-market-close-modal.tsx`） | `trading-action-button-label-contract.test.ts`、`position-market-close-modal.test.tsx`、`position-market-close-display-commit.test.tsx`（手势期间的点击不关闭弹窗、不发平仓请求）、`trading-action-button.test.tsx`（真实按钮在锁定时既不启用交易也不执行动作） |
 | 2 | `Close size` 输入框、sr-only 描述与 `handleSubmit()` 传出的 `confirmedCloseSize` 都来自同一次渲染的 `sizing.normalizedSize` | `position-market-close-modal.test.tsx`（实时仓位移动后，三种意图下传出的值等于输入框所示） |
-| 3 | `usePositionMarketCloseSubmit().submit()` 的必填参数 `confirmedCloseSize: string \| null`：确认会话必须是正数，直提会话（不出弹窗）必须是 `null`，`dismissed` 会话不是合法入口；校验在 `try` 内、取锁与任何请求之前，失败走统一的通知与会话释放。用最新仓位重算后若大于上限，以 `close-size-exceeds-confirmed` 失败关闭；小于等于放行。固定数量意图在仓位不足时仍按原规则拒绝，不自动缩量 | `position-market-close-submit.test.tsx`、`position-market-close-display-commit.test.tsx` |
+| 3 | `submitPositionMarketClose()` 的必填参数 `confirmedCloseSize: string \| null`，由 `beginPositionMarketCloseAttempt()` 连同 `openedPresentation` 与数量意图冻结在 `PositionMarketCloseAttempt` 上：确认会话必须是正数，直提会话（不出弹窗）必须是 `null`，`dismissed` 会话不是合法入口；`execute(attempt)` 在 `try` 内、取锁与任何请求之前校验，失败走统一的通知与会话释放。用最新仓位重算后若大于上限，以 `close-size-exceeds-confirmed` 失败关闭；小于等于放行。固定数量意图在仓位不足时仍按原规则拒绝，不自动缩量 | `position-market-close-submit.test.tsx`、`position-market-close-display-commit.test.tsx` |
 | 4 | `hasPositionMarketCloseSizeChanged`（`domain/trade/position-market-close.ts`）用开窗快照与当前仓位纯推导，无 effect、无历史状态；数量回到开窗值时提示消失。只在 `presentation === "confirmation"`、`phase === "idle"`、未开始关闭且仓位状态正常时渲染 `<output aria-live="polite">` | `position-market-close.test.ts`、`position-market-close-modal.test.tsx` |
-| 5 | `position-market-close-display-commit.test.tsx`：真实弹窗 + 真实提交钩子 + 真实会话 store，保留两次真实执行守卫；用「点击后暂停仓位请求 → 推进实时仓位与 REST 仓位 → 放行」复现时序。`@gatu/ui` 外壳、`NumberInput`、滑杆、`TradingActionButton` 与 `@/lib/hyperliquid` 的数据 hook 是替身，因此它不证明按钮的交易就绪流程、真实输入事件、关闭动画或辅助技术的实际播报 | 同左 |
+| 5 | `position-market-close-display-commit.test.tsx`：真实弹窗 + 真实页面级提交宿主（`PositionMarketCloseSubmitHost`）+ 真实会话 store，保留两次真实执行守卫；用「点击后暂停仓位请求 → 推进实时仓位与 REST 仓位 → 放行」复现时序。`@gatu/ui` 外壳、`NumberInput`、滑杆、`TradingActionButton` 与 `@/lib/hyperliquid` 的数据 hook 是替身，因此它不证明按钮的交易就绪流程、真实输入事件、关闭动画或辅助技术的实际播报 | 同左 |
+| 6 | 提交所有权：`PositionMarketCloseSubmitHost` 是 `usePositionMarketCloseSubmit()` 的唯一调用者，在 legal、HIP-3、交易引导、页签与断点变化中保持挂载，执行守卫始终读实时数据；宿主由 `PositionMarketCloseSubmitHostGate` 按意图加载（指针、按下或焦点到达持仓面板，或市价平仓会话打开时；不在挂载或空闲时加载，因此不计入启动重量）；门控卸载时等待中的尝试失败关闭，不会被其他页面的宿主接手；宿主注册前直提回退为确认弹窗；确认点击在同步阶段封存一次提交尝试（关闭弹窗、建立唯一的待处理通知、会话离开 `idle`，冻结数量意图、显示上限与「不再提示」），再等待宿主最多 5 秒，超时按同一条通知报告失败并释放会话；同一会话的重复调用复用这次尝试，宿主按尝试对象记录执行中的提交（封存时的 `idle` 检查是首要屏障：封存后弹窗按钮即禁用，第二次调用也开不出新尝试；复用尝试与按对象记录是纵深防御，正常路径里与首要屏障不可区分）；宿主卸载时丢弃自己仍在执行的会话（失败关闭）以及对账中的会话（对账由根级 `OrderReconciliation` 继续跟踪），离开页面后不会占住全局弹窗槽位（`components/trade/components/position-market-close-submit-host.tsx`、`lib/trade/position-market-close-submitter.ts`） | `position-market-close-submit-host.test.tsx`（持仓页卸载后直提照常完成、校验中仓位缩小或请求前仓位反向时不发单、宿主卸载时释放对账中的会话、只丢空闲会话、宿主卸载失败关闭、StrictMode 不误丢、宿主注册前的确认在宿主就绪后只执行一次、超时仍无宿主时释放会话、等待中的尝试在页面离开时失败关闭）、`position-market-close-submit-host-gate.test.tsx`（挂载不加载、会话或意图才加载、卸载时废弃等待中的尝试）、`position-market-close-submit-lifecycle.test.tsx`（真实的市价平仓弹窗组件、`TradingActionButton`、`useTradingGuard`、提交入口、宿主与会话 store；`@gatu/ui` 外壳、数量输入、滑杆、数据 hook 与签名状态 hook 是替身，断点重挂载由按 `presentation` 取 key 的 `AdaptiveModal` 替身加模拟的 `useIsMobile` 实现，不证明真实 Modal/Drawer 切换。覆盖：宿主加载前确认即封存且数量不可再改；封存后重挂载的确认按钮禁用、点击不再产生尝试，宿主卸载后不发单；同一会话的重复调用复用同一尝试，宿主卸载后仍不发单；无宿主超时后同一条通知变为失败、子项为 rejected、会话释放）、`global-modals-market-close-legal.test.tsx`（真实 `GlobalModals` 与真实宿主下，校验中或请求中 legal 状态变为 `checking`/`error` 后订单仍只发一次、平仓中守卫不提前释放，空闲确认仍被 legal 审核关闭）、`global-modals-hip3-disclaimer.test.tsx`（legal 各状态下宿主是同一实例）、`position-market-close-action.test.tsx`（无宿主时回退确认弹窗） |
 
 复现时序的注意事项：只让 REST 仓位变大、实时仓位保持不变，会被 SDK 边界既有的 `assertLivePositionMatches`（`|当前仓位| ≥ 平仓量`）拦下，这样的用例在没有上限时也会通过，不能证明上限有效。必须让实时仓位在规划之前追上。
 
@@ -52,7 +55,7 @@
 
 | 确认面 | 状态 |
 | --- | --- |
-| 全部平仓 `position-close-all-modal.tsx` | 2026-09-21 起确认按钮是静态的 `Close All Positions`，不再带仓位数，也不再显示校验、提交、确认中或部分成功等状态；仓位数留在摘要与说明里。点击即关闭弹窗，组件保持挂载到提交结束，结果只走右下角通知（与 [ADR 0014](adr/0014-market-close-submit-and-dismiss.md) 的市价平仓一致），标签契约测试已把它登记为静态。展示 → 承诺的核对未做：弹窗展示的是打开时冻结的快照，提交钩子按快照键与实时仓位逐项复核并失败关闭，但没有像市价平仓那样的跨边界测试 |
+| 全部平仓 `position-close-all-modal.tsx` | 2026-09-21 起确认按钮为静态 `Close All Positions`，点击即关闭，宿主保持到提交结束，结果只走通知。双端共享全账户快照，确认面列出目标市场、方向、数量，并说明包含筛选隐藏的仓位；按抵押币分别汇总。`position-close-all.pw.ts` 用真实 store、宿主、控制器与提交器核对展示数量等于发单数量，覆盖多 DEX、异步预检中的数量增减/反向/仓位删除、身份/网络变化与过期，以及跨页签卸载和 1000/1001px 断点仍只提交一次；替换的是钱包就绪与网络边缘，不证明真实签名或成交。对象变化目前仍在提交守卫失败关闭，尚未像市价平仓那样在可见确认阶段提示第 4 条，因此不宣称完整满足本契约。范围与取舍见[实施说明](mobile-close-all-plan.md) |
 | 限价平仓 `position-limit-close-modal.tsx` | 2026-09-21 起满足第 1、6 条：按钮固定为 `Place Limit Close`，点击即关闭，结果走通知。展示 → 承诺的核对未做 |
 | 反手、下单确认 | 2026-09-21 起满足第 1、6 条：反手按钮固定为方向动词，不再变成 `Reversing...`；下单确认先关闭弹窗再发单，按钮不再变成 `Submitting...`。展示 → 承诺的核对未做；下单确认的 `useOrderConfirmation` 同时快照输入与草稿并在确认时复核，属于另一种满足第 3 条的做法。2026-09-21 起下单确认的正文对齐官方终端的字段：操作、数量、价格、预估强平价格（现货无强平行），操作与数量按方向着色；市场、滑点、杠杆、订单价值、保证金、费用不再重复（仍在下单面板的摘要里）。会改变提交内容的参数只在适用时出现：类型（高级订单，以及非 GTC 的限价单）、触发价、Scale 与 TWAP 参数、止盈止损、只减仓。桌面弹层与移动抽屉共用 `buildOrderConfirmationRows`，`order-confirmation-rows.test.ts` 钉住。底部只有一个动作按钮（永续 `Buy / Long`、`Sell / Short`，现货 `Buy`、`Sell`），没有取消按钮：右上角的关闭按钮在桌面与移动抽屉上都常驻，是明确的退出控件（`order-confirmation-modal.test.tsx` 钉住两者）；行距放宽为 `gap-3.5` |
 | TP/SL、逐仓保证金、现货兑换 | 2026-09-21 第二批起满足第 1、6 条：按钮为静态动词（逐仓保证金经由已登记的 `submitLabel`），点击即关闭，结果走通知。展示 → 承诺的核对未做。取舍：取消成功但补单失败这类不确定结果原先常驻在弹层里，现在只有一条会自动消失的通知；资产占位仍然拦住重复提交，但解释不再常驻 |
@@ -112,6 +115,29 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/position-market-close-submit.test.tsx \
   src/lib/tests/position-market-close-modal.test.tsx \
   src/lib/tests/position-market-close-action.test.tsx \
+  src/lib/tests/position-market-close-submit-host.test.tsx \
+  src/lib/tests/position-market-close-submit-lifecycle.test.tsx \
+  src/lib/tests/global-modals-market-close-legal.test.tsx \
+  src/lib/tests/global-modals-hip3-disclaimer.test.tsx \
   src/lib/tests/position-market-close.test.ts \
   src/lib/tests/trading-action-button-label-contract.test.ts
 ```
+
+## 普通入口只减仓补充（2026-09-21）
+
+本次修复为普通入口只减仓增加 `sizeForOrder` 确认来源：显示和发送使用相同基础币字符串，百分比/单位转换不会经金额舍入反算增减承诺量。提交守卫对最新仓位重新判断，原确认数量超出最新容量时拒绝而不静默缩单，仓位增长不扩单。此补充仅声明只减仓数量链路，不将其他尚未核对确认面的状态升级为已验收。
+
+## 全局通知实施补充（2026-09-21，取代早期反馈实现描述）
+
+状态：已实施、未发布。第 6 条的静态确认按钮、立即退场和提交所有权继续生效；结果展示采用 [ADR 0019](adr/0019-global-trading-notifications.md) 的一个全局 Sonner 堆叠。`OrderToast` 现在只是自定义内容，不再有独立定位或计时器。交易任务在请求开始即建立 pending，后续状态更新同一带 owner/env 的任务；部分、未知、失败和取消不再按普通三秒提示消失。
+
+以下内容取代第 6 条及例外表中对应的早期实施细节，不改变其中尚未完成的确认数量审查：
+
+- 普通下单、市价/全部/限价平仓、反手、TP/SL、逐仓保证金与现货兑换统一进入任务反馈。全部平仓列出逐市场结果；后台仅有 filled 状态但无完整数量证据时显示「已成交，数量未核实」，不宣称完全成交或仓位归零。
+- 撤单、改单、TWAP 终止使用原 pending action 的稳定 ID。来源列表和全局对账都写同一任务，离开列表不丢最终反馈；局部提示行仍有原挂载/身份守卫。迟到结果留在原账户任务，当前新账户不显示；不再因局部组件已经卸载而丢掉明确失败，也不从 pending 记录消失推定成功。
+- 杠杆、保证金模式、账户模式与推荐动作使用带身份任务。成功仍以实际调用应用的值为准；该迁移没有增加持久化恢复或改变 no-op/失效请求规则。
+- TP/SL、逐仓保证金不确定结果在 2026-09-21 迁移时改为常驻；2026-09-22 按用户要求，与推荐等 OrderQueue 未确认/部分/失败/取消结果统一改为前台显示三秒。此修订也取代例外表中推荐未确认常驻的时长说明。保留资产占位和原核对指引；资金/工作流没有终态证据时不能因为通知隐藏而自动变为成功。当前时长由[全局操作通知规范](trading-notifications.md)维护。
+- pending/confirming 通知可软隐藏，状态推进再出现。关闭通知不取消、解锁或重发请求。成功到 Sonner 最前台才启动默认五秒计时；任务表不是执行 FIFO 或完整历史。
+- 资金弹窗继续保持打开到请求结束。划转/发送失败关闭后保留既有重试草稿规则，充值广播前失败回到表单；金库/质押核验面、API 钱包一次性密钥面保留。资金恢复提醒与 CCTP 通知共用全局宿主，不等于它们全部使用 OrderQueue。
+
+恢复范围、时长例外、语言重译与回归入口以[全局通知规范](trading-notifications.md)为准。实际检查见[交付任务记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md)；此次补充不表示已执行真实交易、真实钱包或真机验收。

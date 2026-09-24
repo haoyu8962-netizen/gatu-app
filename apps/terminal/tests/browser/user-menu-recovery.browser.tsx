@@ -10,6 +10,7 @@ export interface UserMenuRecoverySession {
 	displayAddress: `0x${string}` | undefined;
 	sessionMode: "agent-only" | "disconnected" | "wallet";
 	hasWalletAccess: boolean;
+	walletIntent?: "embedded" | "external";
 	user: { id: string; email?: { address: string } } | null;
 }
 
@@ -78,6 +79,17 @@ export function useMobileSyncModalOpen() {
 
 export function useMobileSyncModalActions() {
 	return { open: () => setMobileSyncOpen(true), close: () => setMobileSyncOpen(false) };
+}
+
+export function useEmailWalletExport() {
+	const state = useWalletSession();
+	const visible =
+		state.authenticationReady &&
+		state.authenticated &&
+		!!getPrivyEmailAddress(state.user) &&
+		state.sessionMode !== "agent-only" &&
+		state.walletIntent !== "external";
+	return { visible, canExport: false, exportEmailWallet: async () => {} };
 }
 
 export function useEnsName() {

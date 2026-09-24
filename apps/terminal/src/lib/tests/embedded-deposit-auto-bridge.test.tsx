@@ -10,6 +10,7 @@ import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-
 import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
 
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
+const NOTIFICATION_ID = expect.stringMatching(new RegExp(`^embedded-cctp-auto-deposit:Testnet:${USER_ADDRESS}:\\d+$`));
 const HASH = "0x0000000000000000000000000000000000000000000000000000000000000001" as const;
 const DEPOSIT_ROUTE_CHANGED =
 	"The Hyperliquid deposit route changed before signing. Review the updated route and retry.";
@@ -24,6 +25,7 @@ const arabicMessages: Messages = {
 };
 
 const testState = vi.hoisted(() => ({
+	owner: "0x1111111111111111111111111111111111111111",
 	deposit: vi.fn(),
 	depositError: null as Error | null,
 	depositHash: undefined as `0x${string}` | undefined,
@@ -81,7 +83,7 @@ vi.mock("sonner", () => ({
 vi.mock("@/hooks/wallet/use-email-embedded-wallet", () => ({
 	useEmailEmbeddedWallet: () => ({
 		emailAddress: "user@example.com",
-		embeddedWalletAddress: USER_ADDRESS,
+		embeddedWalletAddress: testState.owner,
 		shouldUseEmbeddedWallet: true,
 		needsEmbeddedWallet: false,
 		isCreatingEmbeddedWallet: false,
@@ -132,7 +134,7 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
 		user: { email: { address: "user@example.com" } },
-		embeddedWalletAddress: USER_ADDRESS,
+		embeddedWalletAddress: testState.owner,
 		walletIntent: testState.walletIntent,
 	}),
 }));
@@ -172,6 +174,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 			render: (children) => reactRoot.render(withI18n(children)),
 			unmount: () => reactRoot.unmount(),
 		} as Root;
+		testState.owner = USER_ADDRESS;
 		testState.deposit.mockReset();
 		testState.deposit.mockResolvedValue(undefined);
 		testState.refreshBalance.mockReset();
@@ -492,7 +495,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.refreshBalance).toHaveBeenCalledTimes(2);
 		expect(testState.toastError).toHaveBeenCalledWith(
 			"Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked.",
-			{ id: "embedded-cctp-auto-deposit" },
+			expect.objectContaining({ id: NOTIFICATION_ID }),
 		);
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("rpc.zerodev.app");
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("callData");
@@ -507,9 +510,10 @@ describe("EmbeddedDepositAutoBridge", () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
 
-		expect(testState.toastError).toHaveBeenCalledWith(DEPOSIT_ROUTE_CHANGED_AR, {
-			id: "embedded-cctp-auto-deposit",
-		});
+		expect(testState.toastError).toHaveBeenCalledWith(
+			DEPOSIT_ROUTE_CHANGED_AR,
+			expect.objectContaining({ id: NOTIFICATION_ID }),
+		);
 		expect(testState.toastError.mock.calls.flat()).not.toContain(DEPOSIT_ROUTE_CHANGED);
 	});
 
@@ -520,16 +524,17 @@ describe("EmbeddedDepositAutoBridge", () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
 
-		expect(testState.toastLoading).toHaveBeenCalledWith("Preparing automatic USDC deposit...", {
-			id: "embedded-cctp-auto-deposit",
-		});
+		expect(testState.toastLoading).toHaveBeenCalledWith(
+			"Preparing automatic USDC deposit...",
+			expect.objectContaining({ id: NOTIFICATION_ID }),
+		);
 
 		testState.depositStatus = "idle";
 		await act(async () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
 
-		expect(testState.toastDismiss).toHaveBeenCalledWith("embedded-cctp-auto-deposit");
+		expect(testState.toastDismiss).toHaveBeenCalledWith(NOTIFICATION_ID);
 	});
 
 	it("keeps a completed deposit toast available for normal auto-dismiss", async () => {
@@ -548,9 +553,34 @@ describe("EmbeddedDepositAutoBridge", () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
 
-		expect(testState.toastSuccess).toHaveBeenCalledWith("USDC deposit submitted to Hyperliquid", {
-			id: "embedded-cctp-auto-deposit",
-		});
+		expect(testState.toastSuccess).toHaveBeenCalledWith(
+			"USDC deposit submitted to Hyperliquid",
+			expect.objectContaining({ id: NOTIFICATION_ID }),
+		);
 		expect(testState.toastDismiss).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["success", "account"],
+		["error", "account"],
+		["success", "network"],
+		["error", "network"],
+		["success", "disconnect"],
+		["error", "disconnect"],
+		["success", "unmount"],
+		["error", "unmount"],
+	] as const)("dismisses a terminal %s notification on %s change", async (status, change) => {
+		testState.depositStatus = status;
+		testState.depositError = status === "error" ? new Error("Deposit rejected") : null;
+		await act(async () => root.render(createElement(EmbeddedDepositAutoBridge)));
+		const notification = status === "success" ? testState.toastSuccess : testState.toastError;
+		expect(notification).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ id: NOTIFICATION_ID }));
+
+		testState.depositStatus = "idle";
+		if (change === "account") testState.owner = "0x2222222222222222222222222222222222222222";
+		if (change === "network") testState.isTestnet = false;
+		if (change === "disconnect") testState.walletIntent = "unavailable";
+		await act(async () => root.render(change === "unmount" ? null : createElement(EmbeddedDepositAutoBridge)));
+		expect(testState.toastDismiss).toHaveBeenCalledWith(NOTIFICATION_ID);
 	});
 });

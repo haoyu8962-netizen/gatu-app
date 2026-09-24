@@ -21,6 +21,7 @@ export default defineConfig({
 		alias: [
 			{ find: /^wagmi$/u, replacement: browserMock },
 			{ find: /^@\/hooks\/wallet\/use-wallet-session$/u, replacement: browserMock },
+			{ find: /^@\/hooks\/wallet\/use-email-wallet-export$/u, replacement: browserMock },
 			{ find: /^@\/lib\/wallet\/privy-wagmi$/u, replacement: browserMock },
 			{ find: /^@\/lib\/error-reporting\/client$/u, replacement: browserMock },
 			{ find: /^@\/stores\/use-global-modal-store$/u, replacement: browserMock },

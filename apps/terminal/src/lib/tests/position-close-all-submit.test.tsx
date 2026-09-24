@@ -7,7 +7,18 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
 import { usePositionCloseAllSubmit } from "@/hooks/trade/use-position-close-all-submit";
-import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
+import {
+	getOrderQueueItem,
+	type OrderQueueItem,
+	removeOrderQueueItem,
+	useOrderQueue,
+} from "@/stores/use-order-queue-store";
+import {
+	getPendingOrderActions,
+	hasPendingOrderForAssets,
+	type PendingOrderSubmission,
+	usePendingOrderSubmissions,
+} from "@/stores/use-pending-order-store";
 import { getPendingTwapActions } from "@/stores/use-pending-twap-store";
 import { createI18nRoot } from "./harness/react";
 
@@ -16,9 +27,10 @@ const MAIN_COIN = "BTC";
 const BUILDER_COIN = "xyz:CXMT";
 const MAIN_ASSET_ID = 1;
 const BUILDER_ASSET_ID = 120_031;
-const PARTIAL_MESSAGE = "{acceptedCount} of {totalCount} close orders were accepted. Review positions before retrying.";
+const PARTIAL_MESSAGE =
+	"{acceptedCount} of {totalCount} close orders were fully filled. Review positions before retrying.";
 const PARTIAL_MESSAGE_AR =
-	"تم قبول {acceptedCount} من أصل {totalCount} من أوامر الإغلاق. راجع المراكز قبل إعادة المحاولة.";
+	"تم تنفيذ {acceptedCount} من أصل {totalCount} من أوامر الإغلاق. راجع المراكز قبل إعادة المحاولة.";
 const BELOW_PRECISION_MESSAGE = "Position size is below market precision";
 const BELOW_PRECISION_MESSAGE_AR = "حجم المركز أقل من دقة السوق";
 
@@ -164,7 +176,12 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 let currentSnapshot = createSnapshot();
 let hookValue: ReturnType<typeof usePositionCloseAllSubmit> | null = null;
 
+let queueItems: OrderQueueItem[] = [];
+let pendingSubmissions: PendingOrderSubmission[] = [];
+
 function Probe() {
+	queueItems = useOrderQueue();
+	pendingSubmissions = usePendingOrderSubmissions();
 	hookValue = usePositionCloseAllSubmit(currentSnapshot);
 	return null;
 }
@@ -316,6 +333,9 @@ describe("usePositionCloseAllSubmit", () => {
 	});
 
 	afterEach(() => {
+		act(() => {
+			for (const item of queueItems) removeOrderQueueItem(item.id);
+		});
 		act(() => root.unmount());
 		container.remove();
 		hookValue = null;
@@ -330,6 +350,17 @@ describe("usePositionCloseAllSubmit", () => {
 		});
 
 		expect(outcome?.state).toBe("confirmed");
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({
+			operation: "close-all",
+			owner: USER,
+			env: "Mainnet",
+			status: "success",
+			countMode: "filled",
+			acceptedCount: 2,
+			totalCount: 2,
+			positionsClosed: true,
+		});
 		expect(mocks.clearinghouseState.mock.calls.map(([params]) => params)).toEqual(
 			expect.arrayContaining([
 				{ user: USER, dex: "" },
@@ -382,7 +413,23 @@ describe("usePositionCloseAllSubmit", () => {
 
 		expect(outcome).toMatchObject({ state: "partial", acceptedCount: 1, rejectedCount: 1, totalCount: 2 });
 		expect(currentHook()).toMatchObject({ phase: "partial", isPartial: true });
-		expect(currentHook().error).toContain("1 of 2 close orders were accepted");
+		expect(currentHook().error).toContain("1 of 2 close orders were fully filled");
+		expect(queueItems[0]).toMatchObject({
+			status: "partial",
+			countMode: "filled",
+			acceptedCount: 1,
+			totalCount: 2,
+			children: [
+				{ assetId: MAIN_ASSET_ID, market: MAIN_COIN, size: "1.25", filledSize: "1.25", status: "filled" },
+				{
+					assetId: BUILDER_ASSET_ID,
+					market: BUILDER_COIN,
+					size: "2.5",
+					status: "rejected",
+					error: "No liquidity available for market order.",
+				},
+			],
+		});
 		await act(async () => {
 			expect(await currentHook().submit()).toEqual({ state: "blocked" });
 		});
@@ -409,11 +456,11 @@ describe("usePositionCloseAllSubmit", () => {
 		await act(async () => {
 			await currentHook().submit();
 		});
-		expect(currentHook().error).toContain("1 of 2 close orders were accepted");
+		expect(currentHook().error).toContain("1 of 2 close orders were fully filled");
 
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
 
-		expect(currentHook().error).toBe("تم قبول 1 من أصل 2 من أوامر الإغلاق. راجع المراكز قبل إعادة المحاولة.");
+		expect(currentHook().error).toBe("تم تنفيذ 1 من أصل 2 من أوامر الإغلاق. راجع المراكز قبل إعادة المحاولة.");
 		expect(currentHook().phase).toBe("partial");
 		expect(mocks.executeOrder).toHaveBeenCalledOnce();
 	});
@@ -462,6 +509,43 @@ describe("usePositionCloseAllSubmit", () => {
 		expect(currentHook()).toMatchObject({ phase: "reconciling", isReconciling: true });
 		expect(hasPendingOrderForAssets("Mainnet", USER, [MAIN_ASSET_ID, BUILDER_ASSET_ID])).toBe(true);
 		expect(mocks.clearinghouseState).toHaveBeenCalledTimes(4);
+		expect(queueItems[0]).toMatchObject({
+			status: "confirming",
+			children: [{ status: "filled" }, { status: "filled" }],
+		});
+		expect(queueItems[0]?.positionsClosed).not.toBe(true);
+	});
+
+	it("retains filled-order evidence and reconciliation when the owner unmounts before the SDK responds", async () => {
+		let release!: (value: ReturnType<typeof createConfirmedResponse>) => void;
+		mocks.executeOrder.mockReturnValueOnce(
+			new Promise((resolve) => {
+				release = resolve;
+			}),
+		);
+		let submission!: ReturnType<ReturnType<typeof usePositionCloseAllSubmit>["submit"]>;
+		await act(async () => {
+			submission = currentHook().submit();
+		});
+		expect(mocks.executeOrder).toHaveBeenCalledOnce();
+		const queueId = queueItems[0]?.id;
+		act(() => root.render(null));
+		await act(async () => {
+			release(createConfirmedResponse());
+			await expect(submission).resolves.toMatchObject({ state: "reconciling" });
+		});
+		expect(getOrderQueueItem(queueId)).toMatchObject({
+			owner: USER,
+			env: "Mainnet",
+			status: "confirming",
+			children: [
+				{ status: "filled", filledSize: "1.25" },
+				{ status: "filled", filledSize: "2.5" },
+			],
+		});
+		expect(getOrderQueueItem(queueId)?.positionsClosed).not.toBe(true);
+		expect(hasPendingOrderForAssets("Mainnet", USER, [MAIN_ASSET_ID, BUILDER_ASSET_ID])).toBe(true);
+		expect(mocks.clearinghouseState).toHaveBeenCalledTimes(2);
 	});
 
 	it("reports an incomplete filled quantity instead of claiming all positions closed", async () => {
@@ -486,6 +570,85 @@ describe("usePositionCloseAllSubmit", () => {
 		expect(outcome).toMatchObject({ state: "partial", acceptedCount: 1, rejectedCount: 1, totalCount: 2 });
 		expect(currentHook()).toMatchObject({ phase: "partial", isPartial: true });
 		expect(mocks.clearinghouseState).toHaveBeenCalledTimes(2);
+		expect(queueItems[0]).toMatchObject({
+			status: "partial",
+			acceptedCount: 1,
+			totalCount: 2,
+			children: [
+				{ status: "partial", filledSize: "0.25", size: "1.25" },
+				{ status: "filled", filledSize: "2.5" },
+			],
+		});
+	});
+
+	it("shows one pending batch before refreshing data and attributes an identity-change failure to its original account", async () => {
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		const original = mocks.clearinghouseState.getMockImplementation();
+		mocks.clearinghouseState.mockImplementationOnce(async (params) => {
+			await gate;
+			return original?.(params);
+		});
+		let submission!: Promise<unknown>;
+		await act(async () => {
+			submission = currentHook()
+				.submit()
+				.catch((error: unknown) => error);
+		});
+		expect(queueItems).toHaveLength(1);
+		const queueId = queueItems[0]?.id;
+		expect(queueItems[0]).toMatchObject({
+			status: "pending",
+			operation: "close-all",
+			owner: USER,
+			env: "Mainnet",
+			children: [
+				{ market: MAIN_COIN, size: "1.25" },
+				{ market: BUILDER_COIN, size: "2.5" },
+			],
+		});
+		expect(mocks.executeOrder).not.toHaveBeenCalled();
+		mocks.clientKey = "0x2222222222222222222222222222222222222222";
+		mocks.env = "Testnet";
+		act(() => root.render(createElement(Probe)));
+		await act(async () => {
+			release();
+			await submission;
+		});
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({ id: queueId, status: "failed", owner: USER, env: "Mainnet" });
+		expect(mocks.executeOrder).not.toHaveBeenCalled();
+	});
+
+	it("reports partial execution when no target filled completely", async () => {
+		mocks.executeOrder.mockResolvedValueOnce({
+			status: "ok",
+			response: {
+				type: "order",
+				data: {
+					statuses: [
+						{ filled: { totalSz: "0.25", avgPx: "99.5", oid: 1 } },
+						{ filled: { totalSz: "0.5", avgPx: "201", oid: 2 } },
+					],
+				},
+			},
+		});
+		let outcome: unknown;
+		await act(async () => {
+			outcome = await currentHook().submit();
+		});
+		expect(outcome).toMatchObject({ state: "partial", acceptedCount: 0, totalCount: 2 });
+		expect(queueItems[0]).toMatchObject({
+			status: "partial",
+			acceptedCount: 0,
+			totalCount: 2,
+			children: [
+				{ status: "partial", filledSize: "0.25" },
+				{ status: "partial", filledSize: "0.5" },
+			],
+		});
 	});
 
 	it("rejects an expired preview before acquiring locks or refreshing account state", async () => {
@@ -543,6 +706,22 @@ describe("usePositionCloseAllSubmit", () => {
 		expect(outcome?.state).toBe("reconciling");
 		expect(currentHook()).toMatchObject({ phase: "reconciling", isReconciling: true });
 		expect(hasPendingOrderForAssets("Mainnet", USER, [MAIN_ASSET_ID, BUILDER_ASSET_ID])).toBe(true);
+		expect(queueItems[0]).toMatchObject({
+			status: "confirming",
+			countMode: "filled",
+			children: [{ status: "accepted" }, { status: "accepted" }],
+		});
+		expect(pendingSubmissions[0]).toMatchObject({
+			queueId: queueItems[0]?.id,
+			feedback: {
+				operation: "close-all",
+				countMode: "filled",
+				children: [
+					{ market: MAIN_COIN, size: "1.25" },
+					{ market: BUILDER_COIN, size: "2.5" },
+				],
+			},
+		});
 		const refreshCount = mocks.clearinghouseState.mock.calls.length;
 		await act(async () => {
 			expect(await currentHook().submit()).toEqual({ state: "blocked" });

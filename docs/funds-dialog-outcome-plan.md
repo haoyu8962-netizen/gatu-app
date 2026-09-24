@@ -2,6 +2,8 @@
 
 状态：三步均已实施（2026-09-21，分支 `fix/market-close-confirmed-size`，未推送、未发布、未做真实钱包验收）；与原方案的偏差见文末「实施记录」。日期：2026-09-21。范围：划转（Perp ⇄ Spot）、发送、提现、充值四个资金弹层在「提交期间」与「结果出来之后」的呈现。归属契约：[确认面契约](confirmation-surfaces.md) 第 6 条；本文是它的例外表里「资金类」一行的后续方案。
 
+同日后续更新：通知宿主已按[全局操作通知规范](trading-notifications.md)统一；下面的原方案、取证和三步实施记录保留历史范围，后续变化见文末「统一宿主实施补充」。没有新增提现持久列表，也没有把资金弹窗改为点击即关闭。
+
 ## 目标
 
 产品负责人的原则是「按钮不显示状态，与其他按钮一致，状态放在右下角的通知里」。交易类弹层已按此改完；资金类在 2026-09-21 只把按钮名称改成静态，弹层仍然等请求结束才关闭、失败时把错误留在弹层里、成功时不发任何通知。本文回答两个问题：官方终端对这四个弹层是怎么做的；gatu 怎样在不削弱现有资金守卫的前提下对齐。
@@ -106,3 +108,15 @@ gatu 的状态未知指引、CCTP 跟踪与资金动作锁比官方更严格，�
 - 官方包取证的原始片段未入库（第三方代码），定位用的消息键：`transfer.success`、`sent.x.token`、`withdrawal.initiated`、`deposit.pending`、`deposit.confirmed`、`alert.deposit.failed`、`confirm.in.wallet`、`pending.deposit.withdrawal`，持久化键 `hyperliquid.pending_deposits`、`hyperliquid.pending_withdrawals`。
 - 任务记录：`docs/work-memory/sessions/2026-09-21-funds-dialog-official-practice.md`。
 - 关联：[确认面契约](confirmation-surfaces.md)、[ADR 0014](adr/0014-market-close-submit-and-dismiss.md)、[运行时护栏](runtime-guardrails.md)、[移动端数据呈现](mobile-data-presentation.md)。
+
+## 统一宿主实施补充（2026-09-21）
+
+状态：已实施、未发布；不改变上文官方取证结论或真实钱包验收尚未执行的范围。决策见 [ADR 0019](adr/0019-global-trading-notifications.md)。
+
+- 全局 `AppToaster` 组合一个 Toaster、订单通知桥、CCTP 通知器和资金恢复宿主。普通订单与资金结果不再有两套相互覆盖的固定通知区；所有内容遵循项目移动断点与底部导航安全区。
+- `FundsActionRecoveryHost` 的待核验/损坏记录提醒改为同一个 Sonner custom 堆叠里的常驻入口，不能直接划走关闭。Review 专用弹窗、账本及账户状态核验、marker、锁、两步清理确认保留；切换身份只清旧提醒，不清掉记录。这个改动没有为提现新增恢复 marker。
+- CCTP 继续用标准 Sonner，未改用 OrderQueue。稳定 ID 由环境、owner、源交易哈希组成；切身份撤旧显示，语言切换原位重译包括仍显示的终态。forwarding 与明确失败为常驻，转发已提交沿用 10 秒；后者只证明 Circle 提交转发交易，不证明 HyperCore 到账。
+- 邮箱自动充值仍由原控制器执行，普通 Sonner 的 ID 增加环境/owner，身份变化清理已有进度和终态显示；不改变自动充值签名、重试或恢复规则。控制器回到 idle 后仍短暂显示的终态 toast 不再随语言切换重译，未迁入持久语义任务。
+- 划转、发送、充值、提现保留原弹窗、当前尝试对象身份和标准结果通知。默认短通知仍为 3 秒，提现/充值等显式资金结局保留 10 秒或未知常驻，不能将所有资金通知统称为 10 秒。API 钱包密钥、金库/质押 Verify again 与恢复面板继续保留。
+
+本次是呈现宿主及归属的统一，不是把所有资金操作迁入可持久任务队列。没有增加新的真实转账、充值、提现或钱包签名验收；具体自动化和隔离浏览器结果见[交付任务记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md)。

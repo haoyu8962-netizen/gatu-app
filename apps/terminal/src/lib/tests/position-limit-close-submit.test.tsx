@@ -9,6 +9,7 @@ import {
 	type PositionLimitCloseTarget,
 	usePositionLimitCloseSubmit,
 } from "@/hooks/trade/use-position-limit-close-submit";
+import { type OrderQueueItem, removeOrderQueueItem, useOrderQueue } from "@/stores/use-order-queue-store";
 import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 import { createI18nRoot } from "./harness/react";
 
@@ -140,7 +141,10 @@ const target: PositionLimitCloseTarget = {
 
 let hookValue: ReturnType<typeof usePositionLimitCloseSubmit> | null = null;
 
+let queueItems: OrderQueueItem[] = [];
+
 function Probe() {
+	queueItems = useOrderQueue();
 	hookValue = usePositionLimitCloseSubmit(target);
 	return null;
 }
@@ -220,6 +224,9 @@ describe("usePositionLimitCloseSubmit", () => {
 	});
 
 	afterEach(() => {
+		act(() => {
+			for (const item of queueItems) removeOrderQueueItem(item.id);
+		});
 		act(() => root.unmount());
 		container.remove();
 		hookValue = null;
@@ -251,11 +258,22 @@ describe("usePositionLimitCloseSubmit", () => {
 			{
 				confirmationMode: "accepted",
 				exclusiveAssetLock: false,
+				queueId: queueItems[0]?.id,
+				onResponse: expect.any(Function),
 				riskContext: { marketKind: "perp", marginMode: "isolated" },
 			},
 		);
 		expect(currentHook().phase).toBe("idle");
 		expect(currentHook().error).toBeNull();
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({
+			owner: USER,
+			env: "Mainnet",
+			status: "success",
+			size: "1.234",
+			price: "123.45",
+			countMode: "accepted",
+		});
 	});
 
 	it("passes the guarded limit-close order through the real SDK as exact base quantity", async () => {
@@ -311,11 +329,17 @@ describe("usePositionLimitCloseSubmit", () => {
 	it("rejects a size larger than either the live or freshly refreshed position", async () => {
 		mocks.restPositionSize = "0.750";
 
-		await expect(
-			act(async () => {
+		let submissionError: unknown;
+		await act(async () => {
+			try {
 				await currentHook().submit({ price: "100", size: "1.000" });
-			}),
-		).rejects.toThrow("Trading data changed");
+			} catch (error) {
+				submissionError = error;
+			}
+		});
+		expect(submissionError).toEqual(
+			expect.objectContaining({ message: expect.stringContaining("Trading data changed") }),
+		);
 		expect(mocks.submitOrder).not.toHaveBeenCalled();
 		expect(currentHook().phase).toBe("idle");
 	});
@@ -356,6 +380,9 @@ describe("usePositionLimitCloseSubmit", () => {
 			firstSubmit = currentHook().submit({ price: "100", size: "1" });
 			await Promise.resolve();
 		});
+		const queueId = queueItems[0]?.id;
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({ status: "pending", owner: USER, env: "Mainnet" });
 		let duplicateState: string | undefined;
 		await act(async () => {
 			duplicateState = (await currentHook().submit({ price: "100", size: "1" })).state;
@@ -368,6 +395,8 @@ describe("usePositionLimitCloseSubmit", () => {
 			await firstSubmit;
 		});
 		expect(mocks.submitOrder).toHaveBeenCalledTimes(1);
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({ id: queueId, status: "success" });
 	});
 
 	it("keeps reconciliation terminal and prevents retrying the ambiguous submit", async () => {
@@ -380,6 +409,13 @@ describe("usePositionLimitCloseSubmit", () => {
 		expect(currentHook().phase).toBe("reconciling");
 		expect(currentHook().isReconciling).toBe(true);
 		expect(currentHook().error).toContain("do not retry");
+		expect(queueItems).toHaveLength(1);
+		expect(queueItems[0]).toMatchObject({
+			status: "confirming",
+			owner: USER,
+			env: "Mainnet",
+			children: [{ assetId: ASSET_ID, status: "unknown" }],
+		});
 
 		let retryState: string | undefined;
 		await act(async () => {
@@ -426,11 +462,17 @@ describe("usePositionLimitCloseSubmit", () => {
 			return createConfirmedRestingResponse();
 		});
 
-		await expect(
-			act(async () => {
+		let submissionError: unknown;
+		await act(async () => {
+			try {
 				await currentHook().submit({ price: "100", size: "1" });
-			}),
-		).rejects.toThrow("Trading data changed");
+			} catch (error) {
+				submissionError = error;
+			}
+		});
+		expect(submissionError).toEqual(
+			expect.objectContaining({ message: expect.stringContaining("Trading data changed") }),
+		);
 		expect(currentHook().phase).toBe("idle");
 	});
 });

@@ -8,6 +8,7 @@ import {
 	SegmentedControlItem,
 	SegmentedControls,
 } from "@gatu/ui";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type {
 	TopUpIsolatedOnlyMarginParameters,
@@ -15,7 +16,6 @@ import type {
 } from "@nktkas/hyperliquid/api/exchange";
 import { WarningIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
 import { getPositionDex } from "@/domain/market";
@@ -42,12 +42,11 @@ import {
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
 import {
-	formatPositionSubmitFeedback,
 	localizedPositionSubmitFeedback,
-	type PositionSubmitFeedback,
 	positionSubmitFeedbackCause,
 	positionSubmitFeedbackFromCause,
 } from "@/lib/trade/position-submit-feedback";
+import { addOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import type { PositionIsolatedMarginSession } from "@/stores/use-position-dialog-store";
 import { TradingActionButton } from "../components/trading-action-button";
 import type { IsolatedMarginPositionTarget } from "./position-dialog-types";
@@ -284,20 +283,23 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 		setDirection(nextDirection);
 	}
 
-	function formatFeedback(feedback: PositionSubmitFeedback): string {
-		return formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor));
-	}
-
 	async function handleSubmit() {
 		if (!canSubmit || coordinatingRef.current) return;
 		if (mode === "amount" && direction === "remove" && !allowsRemoval) return;
 		coordinatingRef.current = true;
 		setIsCoordinating(true);
 		setIsSubmitted(true);
+		const queueId = addOrderQueueItem({
+			owner: sessionIdentity.owner,
+			env: sessionIdentity.env,
+			title: msg`Isolated margin`,
+			market: position.coin,
+			status: "pending",
+		});
 
 		try {
 			const params = mode === "amount" ? amountParams : targetParams;
-			if (!params) return;
+			if (!params) throw positionSubmitFeedbackCause("trading-data-changed");
 			const reservationId = `isolated-margin:${createClientOrderId()}`;
 			const lockResult = await runWithAvailableOrderAssetLocks(
 				{ env: sessionIdentity.env, owner: sessionIdentity.owner, assetIds: [position.assetId] },
@@ -343,22 +345,29 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 				throw positionSubmitFeedbackCause("isolated-margin-coordination-unavailable");
 			}
 			if (!lockResult.acquired || lockResult.value.state === "blocked") {
-				toast.warning(formatFeedback(localizedPositionSubmitFeedback("isolated-margin-blocked")));
+				updateOrderQueueItem(queueId, {
+					status: "failed",
+					error: localizedPositionSubmitFeedback("isolated-margin-blocked"),
+				});
 				return;
 			}
 			if (lockResult.value.state === "coordination-unavailable") {
 				throw positionSubmitFeedbackCause("isolated-margin-coordination-unavailable");
 			}
 			if (lockResult.value.state === "ambiguous") {
-				toast.warning(formatFeedback(localizedPositionSubmitFeedback("isolated-margin-ambiguous")));
+				updateOrderQueueItem(queueId, {
+					status: "unconfirmed",
+					error: localizedPositionSubmitFeedback("isolated-margin-ambiguous"),
+				});
 				return;
 			}
 
-			toast.success(t`Isolated margin updated`, {
-				description: position.coin,
-			});
+			updateOrderQueueItem(queueId, { status: "success", message: msg`Isolated margin updated` });
 		} catch (error) {
-			toast.error(formatFeedback(positionSubmitFeedbackFromCause(error, "failed-update-isolated-margin")));
+			updateOrderQueueItem(queueId, {
+				status: "failed",
+				error: positionSubmitFeedbackFromCause(error, "failed-update-isolated-margin"),
+			});
 		} finally {
 			coordinatingRef.current = false;
 			setIsCoordinating(false);

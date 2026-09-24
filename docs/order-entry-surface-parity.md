@@ -79,3 +79,19 @@ pnpm --dir apps/terminal exec playwright test \
   tests/browser/trade-panel-all-orders.pw.ts tests/browser/mobile-trade-height.pw.ts \
   --config tests/browser/playwright.config.ts
 ```
+
+## 只减仓数量与可用性（2026-09-21）
+
+桌面和移动端从 `getReduceOnlyCapacity` / `useOrderEntryData` 共用持仓容量：成功且未过期的精确账户/网络订阅、coin/dex 匹配的原始 signed size，按 szDecimals 向下量化；多仓只能卖、空仓只能买，无仓位、错方向、不可判定快照分开。Max 与百分比以此容量为分母，开仓余额/杠杆不参与。余额行仍展示账户余额；数值为零不能锁死只减仓开关、有效减仓输入或把只减仓主按钮变成充值。
+
+余额展示和桌面 Swap 仅使用 `isBalanceAvailabilityBlocked`；`isAvailabilityBlocked` 仍组合余额流与只减仓持仓门槛，供数量控件和交易动作使用。健康余额不能因为持仓快照缺失、错误或陈旧而变成零，数据恢复也不重置草稿。余额 Max 的可访问名称和 title 随模式切换：普通为“使用全部可用余额”，只减仓为“使用最大可减仓数量”，语言切换在同一个按钮实例上生效。
+
+开关与方向改变保留手输数量，超额不裁剪；提交仍保留签名、账户模式、地区和数据可用性守卫。不可判定状态只显示原占位并阻止动作；已知无仓、错方向和超额使用订阅语言的字段反馈。只减仓保证金为 `—`，费用、价值、滑点仍展示；强平价模型不扩展。
+
+普通手机订单保证金保留原有价格口径：共享 Hook 的 `conversionPrice`（限价类的有效限价，其余为标记价）进入 Big.js 域计算，触发价和 Scale 区间中点不改变该估算。只减仓返回不适用；TWAP 摘要继续不展示保证金行。此修复不改变桌面现有估算模型或交易所保证金规则。
+
+入口执行守卫对市价、限价、四类条件单、TWAP 和 Scale 的主单复核最新持仓，Scale 合计检查；`normalTpsl` 子单不重复占用当前仓位。减仓主单不比较普通开仓容量，但仍要求原可用性上下文成功且新鲜；普通主单继续检查原方向容量。`r=true` 保持协议保护，不代表保证成交。TWAP 时间/最低价值规则继续生效，不新增小额平仓豁免。
+
+设计、备选与验收范围见[修复方案](reduce-only-repair-plan.md)。
+
+持仓来源先核对快照 owner、dex/coin 唯一身份、结构与原始数量字符串；错账户或畸形帧保留错误门槛，不归一化为已确认空仓。只减仓执行时再按本地 receipt time 验证快照新鲜度。

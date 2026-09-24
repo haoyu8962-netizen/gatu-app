@@ -96,6 +96,28 @@ describe("useSizeSliderInteraction", () => {
 		vi.unstubAllGlobals();
 	});
 
+	it("restores the exact base source along with the quote draft on cancellation", () => {
+		const restoreSizeSelection = vi.fn();
+		function SourceHarness() {
+			testState.slider = useSizeSliderInteraction({
+				applyPercent: vi.fn(),
+				interactionIdentity: "owner:market:quote",
+				sizeInput: "686.37",
+				sizeSource: { context: "owner:market:quote", baseSize: "7.15" },
+				restoreSizeSelection,
+				setSizeInput: vi.fn(),
+			});
+			return null;
+		}
+		act(() => root.render(<SourceHarness />));
+		act(() => testState.slider?.onPercentInteractionStart());
+		act(() => testState.slider?.onPercentCancel());
+		expect(restoreSizeSelection).toHaveBeenCalledExactlyOnceWith("686.37", {
+			context: "owner:market:quote",
+			baseSize: "7.15",
+		});
+	});
+
 	it("restores the exact size even after percent application becomes unavailable", () => {
 		act(() => root.render(<Harness identity="account-a:BTC:base" maxSize={10} />));
 		act(() => testState.slider?.onPercentInteractionStart());

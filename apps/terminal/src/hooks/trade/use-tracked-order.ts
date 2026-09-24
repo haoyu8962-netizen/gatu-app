@@ -20,7 +20,7 @@ import {
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
 import { orderSubmissionFeedbackCause } from "@/lib/trade/order-submission-feedback";
-import { updateOrderQueueItem } from "@/stores/use-order-queue-store";
+import { getOrderQueueItem, type OrderQueueMetadata, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import {
 	getPendingOrderActions,
 	hasExclusivePendingOrderForAssets,
@@ -38,6 +38,7 @@ interface SubmitOptions {
 	exclusiveAssetLock?: boolean;
 	confirmationMode?: "accepted" | "filled";
 	finalConfirmation?: (result: ExchangeResponse<"order">) => boolean | Promise<boolean>;
+	onResponse?: (response: unknown, orders: TrackedOrderParams["orders"]) => void;
 	origin?: PendingOrderOrigin;
 }
 
@@ -117,6 +118,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 					origin: options.origin,
 					children: tracked.children,
 					queueId: options.queueId,
+					feedback: getQueueFeedback(options.queueId),
 				});
 			} catch (error) {
 				if (error instanceof PendingOrderPersistenceError) {
@@ -139,6 +141,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 
 			try {
 				const result = await mutation.mutateAsync(tracked.params);
+				updateResponseFeedback(options, submission.id, result, tracked.params.orders);
 				if (options.confirmationMode === "filled") {
 					const resolution = resolveFilledOrderBatchResponse(
 						result,
@@ -172,6 +175,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 			} catch (error) {
 				if (error instanceof OrderBatchResolutionError) throw error;
 				if (isApiOrderResponseError(error)) {
+					updateResponseFeedback(options, submission.id, error.response, tracked.params.orders);
 					const resolution =
 						options.confirmationMode === "filled"
 							? resolveFilledOrderBatchResponse(
@@ -212,6 +216,42 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 		isPending: isCoordinating || mutation.isPending,
 		error: isAmbiguousOrderRequestError(mutation.error) ? null : mutation.error,
 		reset: mutation.reset,
+	};
+}
+
+function updateResponseFeedback(
+	options: SubmitOptions,
+	submissionId: string,
+	response: unknown,
+	orders: TrackedOrderParams["orders"],
+): void {
+	try {
+		options.onResponse?.(response, orders);
+		const feedback = getQueueFeedback(options.queueId);
+		if (feedback) getPendingOrderActions().updateFeedback(submissionId, feedback);
+	} catch {
+		// Presentation failures must not discard the submitted order or its duplicate-submission guard.
+	}
+}
+
+function getQueueFeedback(queueId: string | undefined): OrderQueueMetadata | undefined {
+	const item = queueId ? getOrderQueueItem(queueId) : undefined;
+	if (!item) return undefined;
+	return {
+		operation: item.operation,
+		market: item.market,
+		side: item.side,
+		size: item.size,
+		price: item.price,
+		quoteToken: item.quoteToken,
+		execution: item.execution,
+		orderType: item.orderType,
+		tpPrice: item.tpPrice,
+		slPrice: item.slPrice,
+		countMode: item.countMode,
+		children: item.children,
+		title: item.title,
+		message: item.message,
 	};
 }
 

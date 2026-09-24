@@ -44,17 +44,17 @@ msgstr "{0} مدرج كسوق عقود دائمة أصلي على Hyperliquid."
 msgid "{0} of {1}"
 msgstr "{0} من {1}"
 
-#. placeholder {0}: outcome.acceptedCount
-#. placeholder {1}: outcome.totalCount
-#: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{0} of {1} close orders were accepted. Review positions before retrying."
-msgstr "تم قبول {0} من أصل {1} من أوامر الإغلاق. راجع المراكز قبل إعادة المحاولة."
-
-#. placeholder {0}: order.acceptedCount
-#. placeholder {1}: order.totalCount
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "{0} of {1} orders were accepted. Review open orders before retrying."
-msgstr "تم قبول {0} من أصل {1} أوامر. راجع الأوامر المفتوحة قبل إعادة المحاولة."
+#~ msgid "{0} of {1} close orders fully filled. Review positions before retrying."
+#~ msgstr "تم تنفيذ {0} من أصل {1} من أوامر الإغلاق بالكامل. راجع المراكز قبل إعادة المحاولة."
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+#~ msgid "{0} of {1} close orders were accepted. Review positions before retrying."
+#~ msgstr "تم قبول {0} من أصل {1} من أوامر الإغلاق. راجع المراكز قبل إعادة المحاولة."
+
+#: src/components/trade/tradebox/order-toast.tsx
+#~ msgid "{0} of {1} orders were accepted. Review open orders before retrying."
+#~ msgstr "تم قبول {0} من أصل {1} أوامر. راجع الأوامر المفتوحة قبل إعادة المحاولة."
 
 #. placeholder {0}: code.length
 #: src/components/referrals/referral-action-modal.tsx
@@ -62,8 +62,12 @@ msgid "{0}/20 characters"
 msgstr "{0}/20 حرفًا"
 
 #: src/lib/trade/position-submit-feedback.ts
-msgid "{acceptedCount} of {totalCount} close orders were accepted. Review positions before retrying."
-msgstr "تم قبول {acceptedCount} من أصل {totalCount} من أوامر الإغلاق. راجع المراكز قبل إعادة المحاولة."
+#~ msgid "{acceptedCount} of {totalCount} close orders were accepted. Review positions before retrying."
+#~ msgstr "تم قبول {acceptedCount} من أصل {totalCount} من أوامر الإغلاق. راجع المراكز قبل إعادة المحاولة."
+
+#: src/lib/trade/position-submit-feedback.ts
+msgid "{acceptedCount} of {totalCount} close orders were fully filled. Review positions before retrying."
+msgstr "تم تنفيذ {acceptedCount} من أصل {totalCount} من أوامر الإغلاق بالكامل. راجع المراكز قبل إعادة المحاولة."
 
 #: src/components/vaults/vaults-list.tsx
 msgid "{age} days"
@@ -106,6 +110,22 @@ msgstr "{label} خلال {periodLabel}. لا يتوفر سجل أداء."
 #~ msgid "{label} trend"
 #~ msgstr ""
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order canceled"
+msgstr "تم إلغاء أمر {market}"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order failed"
+msgstr "فشل أمر {market}"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order filled"
+msgstr "تم تنفيذ أمر {market}"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "{market} order submitted"
+msgstr "تم إرسال أمر {market}"
+
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "{orderCount, plural, one {This will cancel the open order, including protective stop orders. Your position may no longer be protected.} other {This will cancel all # open orders, including protective stop orders. Your positions will no longer be protected.}}"
 msgstr "{orderCount, plural, one {سيؤدي هذا إلى إلغاء الأمر المفتوح، بما في ذلك أوامر الإيقاف الوقائية. قد لا يعود مركزك محمياً.} other {سيؤدي هذا إلى إلغاء جميع الأوامر المفتوحة البالغ عددها #، بما في ذلك أوامر الإيقاف الوقائية. لن تعود مراكزك محمية.}}"
@@ -139,8 +159,8 @@ msgid "{positionCount, plural, one {This submits a market close for the open pos
 msgstr "{positionCount, plural, one {يرسل هذا أمر إغلاق بسعر السوق للمركز المفتوح. يتم تأكيد كل أمر على حدة ولا يمكن التراجع عن التنفيذات.} other {يرسل هذا أوامر إغلاق بسعر السوق لجميع المراكز المفتوحة البالغ عددها #. يتم تأكيد كل أمر على حدة ولا يمكن التراجع عن التنفيذات.}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{positionCount} positions were closed at market."
-msgstr "تم إغلاق {positionCount} من المراكز بسعر السوق."
+#~ msgid "{positionCount} positions were closed at market."
+#~ msgstr "تم إغلاق {positionCount} من المراكز بسعر السوق."
 
 #: src/components/trade/positions/position-close-sizing-controls.tsx
 msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
@@ -316,6 +336,14 @@ msgstr "اقبل إخلاء مسؤولية جهة نشر HIP-3 قبل التدا
 msgid "Accept the HIP-3 deployer disclaimer before trading this market."
 msgstr "اقبل إخلاء مسؤولية جهة نشر HIP-3 قبل التداول في هذا السوق."
 
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Accepted"
+msgstr "مقبول"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Accepted {accepted}/{total} · Review orders"
+msgstr "تم قبول {accepted}/{total} · راجع الأوامر"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Access disabled"
 msgstr "الوصول معطّل"
@@ -365,9 +393,7 @@ msgstr "وضع الحساب"
 msgid "Account mode changed before the request was submitted. Review balances and try again."
 msgstr "تغيّر وضع الحساب قبل إرسال الطلب. راجع الأرصدة وحاول مرة أخرى."
 
-#: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/trade-panel.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Account mode updated"
 msgstr "تم تحديث وضع الحساب"
 
@@ -383,6 +409,7 @@ msgstr "حالة تخزين الحساب"
 msgid "Account Summary"
 msgstr "ملخص الحساب"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -512,6 +539,7 @@ msgid "Adjust isolated margin for {displayName}"
 msgstr "تعديل الهامش المعزول لـ {displayName}"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Adjust leverage"
 msgstr "تعديل الرافعة المالية"
@@ -563,8 +591,8 @@ msgid "All"
 msgstr "الكل"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "All close orders filled"
-msgstr "تم تنفيذ جميع أوامر الإغلاق"
+#~ msgid "All close orders filled"
+#~ msgstr "تم تنفيذ جميع أوامر الإغلاق"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions may be forfeited."
@@ -590,6 +618,10 @@ msgstr "جميع الاتجاهات"
 #: src/components/trade-history/trade-history-page.tsx
 msgid "All markets"
 msgstr "جميع الأسواق"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "All positions closed"
+msgstr "تم إغلاق جميع المراكز"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "All roles"
@@ -701,14 +733,10 @@ msgstr "هناك موافقة هاتف أخرى قيد التنفيذ بالفع
 msgid "Another mobile approval is being prepared for this wallet."
 msgstr "يجري تجهيز موافقة هاتف أخرى لهذه المحفظة."
 
-#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Another order for one of these markets is still being confirmed."
 msgstr "لا يزال تأكيد أمر آخر لأحد هذه الأسواق جارياً."
 
-#: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/order-submission-feedback.ts
 #: src/lib/trade/position-submit-feedback.ts
@@ -873,6 +901,10 @@ msgstr "المبلغ بالوحدة الذرية"
 msgid "Atomic decimals"
 msgstr "المنازل العشرية للوحدة الذرية"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL."
+msgstr "لا يُوضع TP/SL المرفق إلا إذا نُفِّذ الأمر بالكامل، أو أُلغي الجزء المتبقي بسبب عدم كفاية الهامش. راجع TP/SL لمركزك."
+
 #: src/components/staking/staking-view.tsx
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
@@ -967,6 +999,10 @@ msgstr "متوسط السعر"
 msgid "Avg Price"
 msgstr "متوسط السعر"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Avg. {price}"
+msgstr "المتوسط {price}"
+
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -1043,6 +1079,10 @@ msgstr "بيتكوين أصل رقمي لامركزي تؤمّنه شبكة إث
 msgid "Borrow"
 msgstr "اقتراض"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Bought {quantity}"
+msgstr "تم شراء {quantity}"
+
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1082,7 +1122,6 @@ msgstr "مكافآت المنشئ هي تفصيل تراكمي حسب المصد
 #: src/components/trade/positions/orders-tab.tsx
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Buy"
 msgstr "شراء"
@@ -1151,6 +1190,10 @@ msgstr "إلغاء جميع الأوامر"
 msgid "Cancel order"
 msgstr "إلغاء الأمر"
 
+#: src/lib/trade/pending-trading-action-feedback.ts
+msgid "Cancel orders"
+msgstr "إلغاء الأوامر"
+
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Cancel selected"
 msgstr "إلغاء المحدد"
@@ -1165,6 +1208,7 @@ msgstr "إلغاء الأوامر المحددة"
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-reconciliation-feedback.ts
 msgid "Canceled"
 msgstr "ملغي"
@@ -1176,6 +1220,10 @@ msgstr "ملغي"
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Canceling..."
 #~ msgstr "جارٍ الإلغاء..."
+
+#: src/lib/trade/pending-trading-action-feedback.ts
+msgid "Cancellation submitted. Waiting for the open-orders update."
+msgstr "تم إرسال طلب الإلغاء. بانتظار تحديث الأوامر المفتوحة."
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
@@ -1397,26 +1445,31 @@ msgstr "انقر للإرسال · لا يمكن التراجع عن الصفق�
 msgid "Close"
 msgstr "إغلاق"
 
-#: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
+msgid "Close all"
+msgstr "إغلاق الكل"
+
+#: src/hooks/trade/use-position-close-all-action.ts
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is currently unavailable."
 msgstr "إغلاق الكل غير متاح حالياً."
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable because duplicate market data was detected."
 msgstr "إغلاق الكل غير متاح بسبب اكتشاف بيانات سوق مكررة."
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable because position data is incomplete."
 msgstr "إغلاق الكل غير متاح لأن بيانات المراكز غير مكتملة."
 
-#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-action.ts
 msgid "Close all is unavailable until every position market has loaded."
 msgstr "إغلاق الكل غير متاح حتى يكتمل تحميل سوق كل مركز."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Close All Positions"
 msgstr "إغلاق جميع المراكز"
 
@@ -1458,14 +1511,13 @@ msgid "Close order modification"
 msgstr "إغلاق تعديل الأمر"
 
 #: src/hooks/trade/use-position-market-close-submit.ts
-msgid "Close order submitted"
-msgstr "تم إرسال أمر الإغلاق"
+#~ msgid "Close order submitted"
+#~ msgstr "تم إرسال أمر الإغلاق"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Close orders rejected"
 msgstr "تم رفض أوامر الإغلاق"
 
-#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Close orders submitted. Confirming exchange status; do not retry."
 msgstr "تم إرسال أوامر الإغلاق. جارٍ تأكيد حالتها لدى المنصة؛ لا تحاول مرة أخرى."
@@ -1602,6 +1654,7 @@ msgid "Collapse {marketName} history details"
 msgstr "طي تفاصيل سجل {marketName}"
 
 #: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
 msgid "Collapse all"
 msgstr "طي الكل"
 
@@ -1711,21 +1764,29 @@ msgstr "أكّد المعاملة في محفظتك"
 msgid "Confirm trigger price change"
 msgstr "تأكيد تغيير سعر التفعيل"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Confirmed"
+msgstr "مؤكّد"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
 msgstr "تم التأكيد على Arbitrum. عادةً ما يصل رصيد Hyperliquid خلال دقيقة."
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "confirming"
-msgstr "جارٍ التأكيد"
+#~ msgid "confirming"
+#~ msgstr "جارٍ التأكيد"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Confirming — do not resubmit"
+msgstr "جارٍ التأكيد — لا تُعِد الإرسال"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Confirming exchange status..."
 #~ msgstr "جارٍ تأكيد الحالة لدى المنصة..."
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "Confirming order status. Do not retry."
-msgstr "جارٍ تأكيد حالة الطلب. لا تحاول مرة أخرى."
+#~ msgid "Confirming order status. Do not retry."
+#~ msgstr "جارٍ تأكيد حالة الطلب. لا تحاول مرة أخرى."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "Confirming..."
@@ -2028,6 +2089,10 @@ msgstr "إنشاء TWAP"
 #: src/config/account-ledger.ts
 msgid "Create Vault"
 msgstr "إنشاء خزنة"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Created"
+msgstr "تم الإنشاء"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Creating your wallet. Please wait..."
@@ -2809,6 +2874,7 @@ msgid "Expand {marketName} history details"
 msgstr "توسيع تفاصيل سجل {marketName}"
 
 #: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
+#: src/components/trade/mobile/mobile-position-actions.tsx
 msgid "Expand all"
 msgstr "توسيع الكل"
 
@@ -2884,11 +2950,12 @@ msgid "Exporting trade history..."
 msgstr "جارٍ تصدير سجل الصفقات..."
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "failed"
-msgstr "فشل"
+#~ msgid "failed"
+#~ msgstr "فشل"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Failed"
 msgstr "فشل"
 
@@ -3002,12 +3069,10 @@ msgstr "فشل تحميل المراكز."
 msgid "Failed to modify order."
 msgstr "تعذر تعديل الأمر."
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to place limit close order"
 msgstr "فشل وضع أمر إغلاق محدد"
 
-#: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to reverse position"
 msgstr "فشل عكس المركز"
@@ -3016,7 +3081,6 @@ msgstr "فشل عكس المركز"
 msgid "Failed to save share image"
 msgstr "فشل حفظ صورة المشاركة"
 
-#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to submit close orders"
 msgstr "فشل إرسال أوامر الإغلاق"
@@ -3085,11 +3149,15 @@ msgstr "حالة التنفيذ"
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
 msgstr "منفذ"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Filled (quantity unverified)"
+msgstr "تم التنفيذ (لم يتم التحقق من الكمية)"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
@@ -3178,6 +3246,8 @@ msgstr "على سبيل المثال: grid-bot"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/tests/cctp-deposit-notification-lifecycle.test.tsx
+#: src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
 msgid "Forward transaction submitted"
 msgstr "تم إرسال معاملة التحويل"
 
@@ -3207,6 +3277,14 @@ msgstr "جارٍ التحقق من بيانات extraAgents الحديثة قب�
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "From"
 msgstr "من"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Fully filled"
+msgstr "تم التنفيذ بالكامل"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Fully filled {accepted}/{total} · Review positions"
+msgstr "تم التنفيذ بالكامل {accepted}/{total} · راجع المراكز"
 
 #: src/config/market-header.ts
 msgid "Funding"
@@ -3625,6 +3703,10 @@ msgid "Isolated"
 msgstr "معزول"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Isolated margin"
+msgstr "الهامش المعزول"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Isolated margin updated"
 msgstr "تم تحديث الهامش المعزول"
 
@@ -3786,12 +3868,13 @@ msgstr "شراء محدد"
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/hooks/trade/use-position-limit-close-submit.ts
 msgid "Limit Close"
 msgstr "إغلاق بأمر محدد"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-msgid "Limit close order placed"
-msgstr "تم وضع أمر الإغلاق المحدد"
+#~ msgid "Limit close order placed"
+#~ msgstr "تم وضع أمر الإغلاق المحدد"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Limit execution"
@@ -4039,6 +4122,7 @@ msgstr "تسجيل الدخول بالبريد الإلكتروني"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-close-all-targets.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -4108,14 +4192,18 @@ msgstr "نظرة سريعة على الهامش ومخاطر الحساب"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "وضع الهامش"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode updated"
 msgstr "تم تحديث وضع الهامش"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin mode updated. Leverage updated to {leverage}x"
+msgstr "تم تحديث وضع الهامش. تم تحديث الرافعة المالية إلى {leverage}x"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -4214,6 +4302,7 @@ msgstr "يؤدي النقر على الإغلاق بسعر السوق حاليً
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Market Close"
 msgstr "إغلاق بسعر السوق"
 
@@ -4436,6 +4525,10 @@ msgstr "إظهار رمز QR للهاتف غير متاح مؤقتًا. أبطل
 #: src/components/api-wallet/api-wallet-fixture.tsx
 msgid "Mock account"
 msgstr "حساب تجريبي"
+
+#: src/lib/trade/pending-trading-action-feedback.ts
+msgid "Modify order"
+msgstr "تعديل الأمر"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -4690,9 +4783,12 @@ msgid "No legacy reward history."
 msgstr "لا يوجد سجل قديم للمكافآت."
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/components/spot-swap-modal.tsx
 msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
 msgstr "لم تتوفر سيولة ضمن حد انزلاق قدره {DEFAULT_SWAP_SLIPPAGE_PERCENT}%."
+
+#: src/lib/trade/spot-swap-feedback.ts
+msgid "No liquidity was available within the {slippagePercent}% slippage limit."
+msgstr "لم تتوفر سيولة ضمن حد الانزلاق السعري البالغ {slippagePercent}%."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No lock timestamp was returned"
@@ -4888,6 +4984,10 @@ msgstr "غير متصل"
 msgid "Not reported"
 msgstr "غير مُبلّغ عنه"
 
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Notification details"
+msgstr "تفاصيل الإشعار"
+
 #: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
 msgstr "تنسيق الأرقام"
@@ -4973,10 +5073,6 @@ msgstr "هذا التحويل وحده يبدأ طابور شبكة الاختب
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
 msgstr "مفتوح"
-
-#: src/lib/errors/definitions/trigger.ts
-msgid "Open a position before placing a trigger order"
-msgstr "افتح مركزًا قبل تقديم أمر مشروط"
 
 #: src/config/footer-links.ts
 msgid "Open command menu"
@@ -5073,6 +5169,15 @@ msgstr "أوراكل"
 #~ msgid "ORACLE"
 #~ msgstr "أوراكل"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Order"
+msgstr "أمر"
+
+#. placeholder {0}: index + 1
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Order {0}"
+msgstr "الأمر {0}"
+
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/config/orderbook-labels.ts
@@ -5094,8 +5199,11 @@ msgstr "دفتر الأوامر بعملة التسعير"
 msgid "Order book view"
 msgstr "عرض دفتر الأوامر"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/lib/trade/order-notification-copy.ts
+msgid "Order canceled"
+msgstr "تم إلغاء الأمر"
+
+#: src/components/trade/order-reconciliation.tsx
 msgid "Order cancellation confirmed."
 msgstr "تم تأكيد إلغاء الأمر."
 
@@ -5110,15 +5218,18 @@ msgid "Order confirmation"
 msgstr "تأكيد الأمر"
 
 #: src/components/trade/order-reconciliation.tsx
-msgid "Order confirmed by the exchange."
-msgstr "أكدت المنصة الطلب."
+#~ msgid "Order confirmed by the exchange."
+#~ msgstr "أكدت المنصة الطلب."
 
 #: src/config/ui-text.ts
+#: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Order failed"
 msgstr "فشل الطلب"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/lib/trade/order-notification-copy.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Order filled"
 msgstr "تم تنفيذ الأمر"
 
@@ -5156,15 +5267,22 @@ msgstr "سياق سوق الأمر لا يطابق الأصل المرسل."
 msgid "Order modification confirmed."
 msgstr "تم تأكيد تعديل الأمر."
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/lib/trade/pending-trading-action-feedback.ts
 msgid "Order modification submitted. Waiting for the open-orders update."
 msgstr "تم إرسال تعديل الأمر. في انتظار تحديث الأوامر المفتوحة."
 
+#: src/lib/errors/definitions/reduce-only.ts
+msgid "Order must reduce your current position"
+msgstr "يجب أن يقلل الأمر مركزك الحالي"
+
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "Order Queue"
-msgstr "قائمة الأوامر"
+#~ msgid "Order Queue"
+#~ msgstr "قائمة الأوامر"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Order results"
+msgstr "نتائج الأوامر"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -5172,12 +5290,11 @@ msgid "Order status"
 msgstr "حالة الأمر"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/lib/trade/order-notification-copy.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Order submitted"
 msgstr "تم إرسال الأمر"
 
-#: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
@@ -5272,8 +5389,8 @@ msgid "Page reloads when changed"
 msgstr "تُعاد تحميل الصفحة عند التغيير"
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "partial"
-msgstr "جزئي"
+#~ msgid "partial"
+#~ msgstr "جزئي"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Partial amount"
@@ -5282,6 +5399,18 @@ msgstr "مبلغ جزئي"
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Partial result — reopen to retry"
 #~ msgstr "نتيجة جزئية — أعد الفتح لإعادة المحاولة"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Partially completed"
+msgstr "اكتمل جزئيًا"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Partially filled"
+msgstr "تم التنفيذ جزئيًا"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Partially filled {progress}"
+msgstr "تنفيذ جزئي {progress}"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -5304,7 +5433,11 @@ msgid "Payment"
 msgstr "الدفعة"
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "pending"
+#~ msgid "pending"
+#~ msgstr "قيد الانتظار"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Pending"
 msgstr "قيد الانتظار"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
@@ -5422,8 +5555,8 @@ msgid "Place Limit Close"
 msgstr "وضع إغلاق محدد"
 
 #: src/hooks/trade/use-order-display-labels.ts
-msgid "Placed"
-msgstr "تم الوضع"
+#~ msgid "Placed"
+#~ msgstr "تم الوضع"
 
 #: src/components/staking/staking-fixture.tsx
 msgid "Placeholder validator data for visual review."
@@ -5537,6 +5670,10 @@ msgstr "قيمة المحفظة"
 msgid "Position"
 msgstr "المركز"
 
+#: src/lib/trade/order-submission-feedback.ts
+msgid "Position changed before submission. Review the Reduce Only quantity and direction."
+msgstr "تغير المركز قبل الإرسال. راجع كمية التقليل فقط واتجاهها."
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
 msgstr "بيانات المركز غير متاحة. انتظر حتى تتم استعادة اتصال الحساب قبل تغيير وضع الهامش."
@@ -5546,8 +5683,8 @@ msgid "Position margin"
 msgstr "هامش المركز"
 
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
-msgid "Position reversed — {marketLabel}"
-msgstr "تم عكس المركز — {marketLabel}"
+#~ msgid "Position reversed — {marketLabel}"
+#~ msgstr "تم عكس المركز — {marketLabel}"
 
 #: src/lib/trade/position-market-close-errors.ts
 #: src/lib/trade/position-submit-feedback.ts
@@ -5563,6 +5700,10 @@ msgstr "يجب أن يكون حجم المركز رقمًا غير صفري"
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Position summary"
 msgstr "ملخص المركز"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Position TP/SL"
+msgstr "جني الربح / وقف الخسارة للمركز"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -5582,6 +5723,10 @@ msgstr "المراكز"
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "تغيّرت المراكز أثناء فتح هذا التأكيد. أغلقه وأعد فتحه قبل الإرسال."
+
+#: src/components/trade/positions/position-close-all-targets.tsx
+msgid "Positions to close"
+msgstr "المراكز المراد إغلاقها"
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "Positive PNL"
@@ -5929,6 +6074,14 @@ msgstr "تعذر حفظ بيانات الاسترداد في هذا المتصف
 msgid "Reduce Only"
 msgstr "تقليل فقط"
 
+#: src/lib/errors/definitions/reduce-only.ts
+msgid "Reduce Only requires an open position"
+msgstr "يتطلب التقليل فقط مركزًا مفتوحًا"
+
+#: src/lib/errors/definitions/reduce-only.ts
+msgid "Reduce Only size exceeds position size"
+msgstr "حجم التقليل فقط يتجاوز حجم المركز"
+
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
 msgstr "قلّل هذا المركز بسعر السوق الحالي. لا يمكن التراجع عن الصفقات المنفذة."
@@ -5982,6 +6135,10 @@ msgstr "بيانات الإحالة غير متاحة"
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Referral discounts do not apply to vaults or subaccounts."
 msgstr "لا تنطبق خصومات الإحالة على الخزائن أو الحسابات الفرعية."
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Referral request"
+msgstr "طلب إحالة"
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Referral request could not be completed."
@@ -6077,6 +6234,7 @@ msgstr "جارٍ التحديث…"
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "مرفوض"
@@ -6149,7 +6307,6 @@ msgstr "يستبدل وكيل الهاتف الحالي بمفتاح مؤقت غ
 msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
 msgstr ""
 
-#: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Request not confirmed"
 msgstr "لم يتم تأكيد الطلب"
@@ -6278,15 +6435,16 @@ msgid "Reverse"
 msgstr "عكس"
 
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
-msgid "Reverse order filled for {filledSizeLabel}."
-msgstr "تم تنفيذ أمر العكس بمقدار {filledSizeLabel}."
+#~ msgid "Reverse order filled for {filledSizeLabel}."
+#~ msgstr "تم تنفيذ أمر العكس بمقدار {filledSizeLabel}."
 
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
-msgid "Reverse order filled."
-msgstr "تم تنفيذ أمر العكس."
+#~ msgid "Reverse order filled."
+#~ msgstr "تم تنفيذ أمر العكس."
 
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Reverse Position"
 msgstr "عكس المركز"
 
@@ -6307,6 +6465,10 @@ msgstr "كمية العكس (2× المركز)"
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Review"
 msgstr "مراجعة"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Review active TWAP orders before retrying"
+msgstr "راجع أوامر TWAP النشطة قبل إعادة المحاولة"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -6459,7 +6621,6 @@ msgid "Rows per page"
 msgstr "الصفوف في كل صفحة"
 
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Running"
 msgstr "قيد التشغيل"
 
@@ -6516,7 +6677,6 @@ msgid "Saving..."
 msgstr "جارٍ الحفظ..."
 
 #: src/config/trade.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
 msgstr "تدرّج"
 
@@ -6701,7 +6861,6 @@ msgstr "الأرباح والخسائر للفترة المحددة"
 #: src/config/trade-panel-labels.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Sell"
 msgstr "بيع"
 
@@ -6757,8 +6916,8 @@ msgid "Server unlock time: {0}"
 msgstr "وقت إلغاء القفل حسب الخادم: {0}"
 
 #: src/hooks/trade/use-order-display-labels.ts
-msgid "Set"
-msgstr "تعيين"
+#~ msgid "Set"
+#~ msgstr "تعيين"
 
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 msgid "Set to {p}%"
@@ -6800,6 +6959,7 @@ msgstr "مشاركة الأرباح والخسائر لـ {displayName}"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-close-all-targets.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -6983,6 +7143,10 @@ msgstr "تجري مزامنة حالة إيداع المحفظة الذكية. �
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "سولانا سلسلة كتل للعقود الذكية والتطبيقات اللامركزية، مصممة للتنفيذ عالي الإنتاجية."
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Sold {quantity}"
+msgstr "تم بيع {quantity}"
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Some balances cannot be valued with current data."
 msgstr "لا يمكن تقييم بعض الأرصدة بالبيانات الحالية."
@@ -6992,7 +7156,6 @@ msgstr "لا يمكن تقييم بعض الأرصدة بالبيانات الح
 msgid "Some order markets are unavailable. Refresh and try again."
 msgstr "بعض أسواق الأوامر غير متاحة. حدّث الصفحة وحاول مرة أخرى."
 
-#: src/components/trade/order-reconciliation.tsx
 #: src/lib/trade/order-reconciliation-feedback.ts
 msgid "Some orders were accepted. Review open orders before retrying."
 msgstr "تم قبول بعض الأوامر. راجع الأوامر المفتوحة قبل إعادة المحاولة."
@@ -7214,6 +7377,14 @@ msgstr "الحالة"
 msgid "Status not confirmed"
 msgstr "الحالة غير مؤكدة"
 
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Status unconfirmed"
+msgstr "الحالة غير مؤكدة"
+
+#: src/components/trade/tradebox/order-toast.tsx
+#~ msgid "Status unconfirmed. Review orders and positions before retrying."
+#~ msgstr "الحالة غير مؤكدة. راجع الأوامر والمراكز قبل إعادة المحاولة."
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Stay Connected"
 msgstr "البقاء على اتصال"
@@ -7314,6 +7485,10 @@ msgstr "تم الإرسال"
 msgid "Submitted limit and trigger orders will appear here."
 msgstr "ستظهر هنا الأوامر المحددة والأوامر المشروطة المُقدَّمة."
 
+#: src/components/trade/tradebox/order-toast.tsx
+#~ msgid "Submitting"
+#~ msgstr "جارٍ الإرسال"
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Submitting close orders..."
 #~ msgstr "جارٍ إرسال أوامر الإغلاق..."
@@ -7325,6 +7500,10 @@ msgstr "جارٍ الإرسال إلى Hyperliquid"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Submitting..."
 #~ msgstr "جارٍ الإرسال..."
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Submitting…"
+msgstr "جارٍ الإرسال…"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -7344,6 +7523,7 @@ msgstr "الدعم"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Swap"
 msgstr "مبادلة"
 
@@ -7351,7 +7531,7 @@ msgstr "مبادلة"
 msgid "Swap direction"
 msgstr "اتجاه المبادلة"
 
-#: src/components/trade/components/spot-swap-modal.tsx
+#: src/lib/trade/spot-swap-feedback.ts
 msgid "Swap failed"
 msgstr "فشلت المبادلة"
 
@@ -7362,8 +7542,8 @@ msgid "Swap Stablecoins"
 msgstr "تبديل العملات المستقرة"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Swap submitted"
-msgstr "تم إرسال المبادلة"
+#~ msgid "Swap submitted"
+#~ msgstr "تم إرسال المبادلة"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #~ msgid "Swapping..."
@@ -7546,6 +7726,10 @@ msgstr "يجب أن تكون الرافعة المالية المستهدفة أ
 msgid "Terminate"
 msgstr "إنهاء"
 
+#: src/lib/trade/pending-trading-action-feedback.ts
+msgid "Terminate TWAP"
+msgstr "إنهاء TWAP"
+
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Terminate TWAP order"
@@ -7654,8 +7838,8 @@ msgid "The Arbitrum transaction was submitted, but its final status could not be
 msgstr "أُرسلت معاملة Arbitrum، لكن تعذر التحقق من حالتها النهائية. افحص المعاملة قبل إعادة المحاولة."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/lib/trade/pending-trading-action-feedback.ts
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "تعذر تأكيد استجابة الإلغاء. حدّث الأوامر المفتوحة قبل إعادة المحاولة."
 
@@ -7683,7 +7867,6 @@ msgstr "الاسم الدقيق والعنوان العام موجودان ال�
 msgid "The exchange did not accept every order."
 msgstr "لم تقبل المنصة جميع الأوامر."
 
-#: src/components/trade/order-reconciliation.tsx
 #: src/lib/trade/order-reconciliation-feedback.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "The exchange did not accept the order."
@@ -7754,6 +7937,10 @@ msgstr "لم يُؤكد التعديل. راجع الأمر قبل إعادة ا
 msgid "The modified order is no longer open."
 msgstr "الأمر المعدَّل لم يعد مفتوحًا."
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The modified order was canceled."
+msgstr "تم إلغاء الأمر المعدّل."
+
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "The network-matched public dataset could not be verified. Your account and trading are unaffected."
@@ -7780,8 +7967,8 @@ msgstr "تغيّر الأمر قبل تأكيد التعديل المطلوب. �
 #~ msgstr "لا يزال تأكيد الأمر جارياً."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/lib/trade/pending-trading-action-feedback.ts
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "لم تؤكد البيانات المباشرة تحديث الأمر. حدّث قبل إعادة المحاولة؛ ويظل الإلغاء متاحًا."
 
@@ -8048,6 +8235,10 @@ msgstr "لم يعد هذا المتصفح يحتفظ بمفتاح التداول
 #: src/lib/trade/position-submit-feedback.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "انتهت صلاحية معاينة إغلاق الكل هذه. أغلقها وأعد فتحها لمراجعة القيم الحالية."
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "This closes all perpetual positions in this account, including positions hidden by filters."
+msgstr "سيؤدي هذا إلى إغلاق جميع مراكز العقود الدائمة في هذا الحساب، بما فيها المراكز المخفية بواسطة عوامل التصفية."
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8671,7 +8862,6 @@ msgstr "تستخدم التحويلات إلى الحساب الفوري طاب�
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
 msgstr "المُحفِّز"
 
@@ -8679,10 +8869,6 @@ msgstr "المُحفِّز"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Trigger Condition"
 msgstr "شرط التفعيل"
-
-#: src/lib/errors/definitions/trigger.ts
-msgid "Trigger order must reduce your current position"
-msgstr "يجب أن يقلل الأمر المشروط مركزك الحالي"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -8705,10 +8891,6 @@ msgstr "سعر التحفيز"
 #: src/lib/errors/definitions/twap.ts
 msgid "Trigger price must differ from mark"
 msgstr "يجب أن يختلف سعر التفعيل عن السعر العادل"
-
-#: src/lib/errors/definitions/trigger.ts
-msgid "Trigger size exceeds position size"
-msgstr "حجم الأمر المشروط يتجاوز حجم المركز"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -8744,7 +8926,7 @@ msgstr "إجمالي القيمة المقفلة"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "TWAP"
 msgstr "TWAP"
 
@@ -8756,12 +8938,16 @@ msgstr "نشاط TWAP"
 msgid "TWAP cancellation confirmed."
 msgstr "تم تأكيد إلغاء TWAP."
 
+#: src/lib/trade/pending-trading-action-feedback.ts
+msgid "TWAP cancellation submitted. Waiting for the active TWAP update."
+msgstr "تم إرسال طلب إلغاء TWAP. بانتظار تحديث أوامر TWAP النشطة."
+
 #: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
 msgstr "لم يُؤكد إلغاء TWAP. راجع أوامر TWAP النشطة قبل إعادة المحاولة."
 
-#: src/components/trade/twap-reconciliation.tsx
 #: src/lib/trade/order-submission-feedback.ts
+#: src/lib/trade/pending-trading-action-feedback.ts
 msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 msgstr "تم إرسال طلب إلغاء TWAP، ولكن تعذر تأكيد حالته. تحقق من قائمة أوامر TWAP النشطة قبل إعادة المحاولة."
 
@@ -8778,6 +8964,10 @@ msgstr "تقدم تنفيذ TWAP"
 msgid "TWAP fill history"
 msgstr "سجل تنفيذات TWAP"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP finished"
+msgstr "اكتمل TWAP"
+
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "TWAP history"
 msgstr "سجل TWAP"
@@ -8788,8 +8978,8 @@ msgid "TWAP minutes must be {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 msgstr "يجب أن تكون دقائق TWAP {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 
 #: src/components/trade/twap-reconciliation.tsx
-msgid "TWAP order confirmed by the exchange."
-msgstr "أكدت المنصة أمر TWAP."
+#~ msgid "TWAP order confirmed by the exchange."
+#~ msgstr "أكدت المنصة أمر TWAP."
 
 #: src/lib/trade/order-submission-feedback.ts
 msgid "TWAP order state is still loading. Please retry in a moment."
@@ -8803,6 +8993,18 @@ msgstr "يجب ألا تقل قيمة أمر TWAP عن ${TWAP_MIN_NOTIONAL_USD}.
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP Slice"
 msgstr "شريحة من أمر TWAP"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP stopped"
+msgstr "توقف TWAP"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP terminated"
+msgstr "تم إنهاء TWAP"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP waiting for trigger"
+msgstr "TWAP بانتظار التفعيل"
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Two-sided open interest: the sum of long and short positions on this contract."
@@ -8952,8 +9154,12 @@ msgid "Unclaimed USDC"
 msgstr "USDC غير مطالب به"
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "unconfirmed"
-msgstr "غير مؤكد"
+#~ msgid "unconfirmed"
+#~ msgstr "غير مؤكد"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Unconfirmed — review before retrying"
+msgstr "غير مؤكد — راجع قبل إعادة المحاولة"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -9069,6 +9275,12 @@ msgstr "ما يصل إلى أحدث {TRADE_HISTORY_SNAPSHOT_LIMIT} من عملي
 msgid "Update failed"
 msgstr "فشل التحديث"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Update not confirmed. Check account settings before retrying."
+msgstr "لم يتم تأكيد التحديث. تحقق من إعدادات الحساب قبل إعادة المحاولة."
+
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -9133,9 +9345,15 @@ msgstr "حجم تداول USDC"
 msgid "Use {priceText} as limit price"
 msgstr "استخدام {priceText} كسعر حد"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Use max available balance"
 msgstr "استخدام الحد الأقصى للرصيد المتاح"
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+msgid "Use max reducible size"
+msgstr "استخدام أقصى كمية قابلة للتخفيض"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/mobile/mobile-trade-price-field.tsx

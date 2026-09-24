@@ -1,7 +1,7 @@
 import { Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useId, useLayoutEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
@@ -58,11 +58,7 @@ import {
 	reserveOrderAssets,
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
-import {
-	formatOrderSubmissionFeedback,
-	getOrderSubmissionFeedback,
-	type OrderSubmissionFeedback,
-} from "@/lib/trade/order-submission-feedback";
+import { getOrderSubmissionFeedback, type OrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 import {
 	calculateEstimatedPnlExact,
 	calculateRoeMagnitudeFromPriceExact,
@@ -74,6 +70,7 @@ import {
 	validateTpPrice,
 } from "@/lib/trade/tpsl";
 import { getValueColorClass } from "@/lib/ui/value-color";
+import { addOrderQueueItem, type OrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import type { PositionTpSlSession } from "@/stores/use-position-dialog-store";
 import { AssetDisplay } from "../components/asset-display";
 import { SizePercentInput } from "../components/size-percent-input";
@@ -507,25 +504,25 @@ function PositionTpSlForm({
 	const amountInteractionSnapshotRef = useRef<{ identity: string; sizeInput: string } | null>(null);
 	const amountErrorId = useId();
 
-	function getSubmitErrorMessage(error: PositionTpSlSubmitError): string {
+	function getSubmitFeedback(error: PositionTpSlSubmitError): OrderQueueItem["error"] {
 		if (error.kind === "order-submission") {
-			return formatOrderSubmissionFeedback(error, (descriptor) => t(descriptor));
+			return error;
 		}
-		if (error.kind === "blocked") return t`Another order for this market is still being confirmed.`;
+		if (error.kind === "blocked") return msg`Another order for this market is still being confirmed.`;
 		if (error.kind === "coordination-unavailable") {
-			return t`Safe action coordination across tabs is unavailable in this browser.`;
+			return msg`Safe action coordination across tabs is unavailable in this browser.`;
 		}
 		if (error.kind === "reconciling") {
-			return t`Order submitted. Confirming exchange status; do not retry.`;
+			return msg`Order submitted. Confirming exchange status; do not retry.`;
 		}
 		if (error.kind === "trading-data-changed") {
-			return t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
+			return msg`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
 		}
 		if (error.kind === "market-context-mismatch") {
-			return t`Order market context does not match the submitted asset.`;
+			return msg`Order market context does not match the submitted asset.`;
 		}
-		if (error.kind === "failed") return t`Failed to update TP/SL orders`;
-		return error.message;
+		if (error.kind === "failed") return msg`Failed to update TP/SL orders`;
+		return error;
 	}
 
 	function toSubmitError(error: unknown, uncertain = false): PositionTpSlSubmitError {
@@ -1030,6 +1027,13 @@ function PositionTpSlForm({
 		workflowSubmittingRef.current = true;
 		setIsWorkflowSubmitting(true);
 		setIsSubmitted(true);
+		const queueId = addOrderQueueItem({
+			owner: sessionIdentity.owner,
+			env: sessionIdentity.env,
+			title: msg`Position TP/SL`,
+			market: positionRef.coin,
+			status: "pending",
+		});
 
 		try {
 			const lockIdentity = {
@@ -1085,6 +1089,7 @@ function PositionTpSlForm({
 						const submission = await submitOrder(
 							{ orders: workflowOrders, grouping: "positionTpsl" },
 							{
+								queueId,
 								assetLockLease: lease,
 								exclusiveAssetLock: true,
 								riskContext,
@@ -1130,22 +1135,31 @@ function PositionTpSlForm({
 			});
 
 			if (!lockResult.supported) {
-				toast.error(getSubmitErrorMessage({ kind: "coordination-unavailable" }));
+				updateOrderQueueItem(queueId, {
+					status: "failed",
+					error: getSubmitFeedback({ kind: "coordination-unavailable" }),
+				});
 			} else if (!lockResult.acquired) {
-				toast.warning(getSubmitErrorMessage({ kind: "blocked" }));
+				updateOrderQueueItem(queueId, { status: "failed", error: getSubmitFeedback({ kind: "blocked" }) });
 			} else if (lockResult.value.state === "coordination-unavailable") {
-				toast.error(getSubmitErrorMessage({ kind: "coordination-unavailable" }));
+				updateOrderQueueItem(queueId, {
+					status: "failed",
+					error: getSubmitFeedback({ kind: "coordination-unavailable" }),
+				});
 			} else if (lockResult.value.state === "blocked") {
-				toast.warning(getSubmitErrorMessage({ kind: "blocked" }));
+				updateOrderQueueItem(queueId, { status: "failed", error: getSubmitFeedback({ kind: "blocked" }) });
 			} else if (lockResult.value.state === "uncertain") {
-				toast.info(getSubmitErrorMessage({ kind: "reconciling" }));
+				updateOrderQueueItem(queueId, { status: "confirming", error: getSubmitFeedback({ kind: "reconciling" }) });
 			} else if (lockResult.value.state === "failed") {
-				toast.error(getSubmitErrorMessage(toSubmitError(lockResult.value.error, lockResult.value.uncertain)));
+				updateOrderQueueItem(queueId, {
+					status: lockResult.value.uncertain ? "unconfirmed" : "failed",
+					error: getSubmitFeedback(toSubmitError(lockResult.value.error, lockResult.value.uncertain)),
+				});
 			} else {
-				toast.success(t`TP/SL orders updated`);
+				updateOrderQueueItem(queueId, { status: "success", message: msg`TP/SL orders updated` });
 			}
 		} catch (err) {
-			toast.error(getSubmitErrorMessage(toSubmitError(err)));
+			updateOrderQueueItem(queueId, { status: "failed", error: getSubmitFeedback(toSubmitError(err)) });
 		} finally {
 			workflowSubmittingRef.current = false;
 			setIsWorkflowSubmitting(false);

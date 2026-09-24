@@ -208,10 +208,6 @@ vi.mock("@/components/trade/mobile/mobile-account-view", () => ({
 }));
 vi.mock("@/components/trade/mobile/offline-banner", () => ({ OfflineBanner: () => null }));
 
-vi.mock("@/components/trade/tradebox/order-toast", () => ({
-	OrderToast: () => <div data-testid="order-toast" />,
-}));
-
 import { TradeTerminalPage } from "@/components/trade/trade-terminal-page";
 
 function catalogState(overrides: Partial<MarketCatalogState> = {}): MarketCatalogState {
@@ -276,7 +272,6 @@ describe("trade terminal page boot", () => {
 	function expectNoReadyOnlyRuntime() {
 		expect(container.querySelector('[data-testid="main-workspace"]')).toBeNull();
 		expect(container.querySelector('[data-testid="tab-title-sync"]')).toBeNull();
-		expect(container.querySelector('[data-testid="order-toast"]')).toBeNull();
 		expect(container.querySelector('[data-testid="GlobalModals"]')).toBeNull();
 		expect(testState.selectedMarketInfoReads).toBe(0);
 		expect(testState.setScope).not.toHaveBeenCalled();
@@ -399,7 +394,6 @@ describe("trade terminal page boot", () => {
 		expect(testState.userMenuUnmounts).toBe(0);
 		expect(container.querySelector('[data-testid="main-workspace"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="tab-title-sync"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="order-toast"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="GlobalModals"]')).not.toBeNull();
 	});
 
@@ -454,7 +448,6 @@ describe("trade terminal page boot", () => {
 		expect(container.querySelector("nav")).toBe(nav);
 		expect(container.querySelector('[data-testid="desktop-terminal-surface"]')).toBeNull();
 		expect(container.querySelector('[data-testid="tab-title-sync"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="order-toast"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="GlobalModals"]')).not.toBeNull();
 	});
 

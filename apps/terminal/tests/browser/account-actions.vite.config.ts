@@ -3,6 +3,7 @@ import { mergeConfig } from "vite";
 import shared from "./vite.config";
 
 const mock = fileURLToPath(new URL("./account-actions.browser.ts", import.meta.url));
+const hyperliquidMock = fileURLToPath(new URL("./account-actions-hyperliquid.browser.ts", import.meta.url));
 export default mergeConfig(
 	{ ...shared, resolve: undefined, optimizeDeps: undefined },
 	{
@@ -15,6 +16,7 @@ export default mergeConfig(
 				{ find: /^@\/hooks\/trade\/(?:use-account-overview|use-deposit-availability)$/u, replacement: mock },
 				{ find: /^@\/hooks\/wallet\/use-wallet-session$/u, replacement: mock },
 				{ find: /^@\/hooks\/use-geo-restriction$/u, replacement: mock },
+				{ find: /^@\/lib\/hyperliquid$/u, replacement: hyperliquidMock },
 				{ find: /^@\/lib\/lifi\/bridge-execution-state$/u, replacement: mock },
 				{ find: /^@\/stores\/use-global-modal-store$/u, replacement: mock },
 			],

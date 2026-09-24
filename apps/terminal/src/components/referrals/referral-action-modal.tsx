@@ -8,17 +8,19 @@ import {
 	ModalTitle,
 	TextInput,
 } from "@gatu/ui";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { type ReferralAction, ReferralActionStatusUnknownError } from "@/hooks/trade/use-referral-actions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatToken } from "@/lib/format";
+import { useHyperliquid } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { ReferralRewardRow } from "@/lib/trade/referral";
+import { addOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 
 type Step = "form" | "review";
 
@@ -34,6 +36,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
+	const { clientKey, env } = useHyperliquid();
 	const isReferralCodeLocked = action === "apply" && initialCode !== undefined;
 	const lockedReferralCode = isReferralCodeLocked ? initialCode : undefined;
 	const [code, setCode] = useState(initialCode ?? "");
@@ -48,39 +51,40 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 		if (!submittedRef.current) onClose();
 	}
 
-	function getSuccessTitle(): string {
-		if (action === "claim") return t`Rewards claimed`;
-		if (action === "apply") return t`Referral code applied`;
-		return t`Referral code created`;
+	function getSuccessTitle() {
+		if (action === "claim") return msg`Rewards claimed`;
+		if (action === "apply") return msg`Referral code applied`;
+		return msg`Referral code created`;
 	}
 
 	async function submit() {
 		if (submittedRef.current) return;
 		if ((action === "apply" || action === "create") && !codeValid) return;
 		submittedRef.current = true;
+		const notificationId = addOrderQueueItem({
+			owner: clientKey,
+			env,
+			title: msg`Referral request`,
+			status: "pending",
+			successDurationMs: FUNDS_OUTCOME_TOAST_DURATION_MS,
+		});
 		onClose();
 		try {
 			await onSubmit(action, action === "claim" ? undefined : submittedCode);
-			toast.success(getSuccessTitle(), {
-				description: t`The page is refreshing from Hyperliquid. Recent changes can take a moment to appear.`,
-				duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
+			updateOrderQueueItem(notificationId, {
+				status: "success",
+				title: getSuccessTitle(),
+				message: msg`The page is refreshing from Hyperliquid. Recent changes can take a moment to appear.`,
 			});
 		} catch (submitError) {
-			const description = (
-				<span className="flex flex-col gap-1">
-					<span>{formatExchangeActionError(submitError, t`Referral request could not be completed.`)}</span>
-					<span>{t`Refresh referral data before submitting another signed request.`}</span>
-				</span>
-			);
-			if (submitError instanceof ReferralActionStatusUnknownError || isAmbiguousExchangeActionError(submitError)) {
-				toast.warning(t`Request not confirmed`, {
-					description,
-					duration: Number.POSITIVE_INFINITY,
-					closeButton: true,
-				});
-			} else {
-				toast.error(t`Request not confirmed`, { description, duration: FUNDS_OUTCOME_TOAST_DURATION_MS });
-			}
+			const unknown =
+				submitError instanceof ReferralActionStatusUnknownError || isAmbiguousExchangeActionError(submitError);
+			updateOrderQueueItem(notificationId, {
+				status: unknown ? "unconfirmed" : "failed",
+				title: msg`Request not confirmed`,
+				message: msg`Refresh referral data before submitting another signed request.`,
+				error: formatExchangeActionError(submitError, "") || msg`Referral request could not be completed.`,
+			});
 		}
 	}
 
