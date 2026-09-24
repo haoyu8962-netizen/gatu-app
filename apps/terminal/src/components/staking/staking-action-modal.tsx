@@ -252,7 +252,7 @@ function ActionStatus({
 
 function StakingOperationReference({ reference }: { reference: FundsActionReference }) {
 	return (
-		<dl className="divide-y divide-stroke-weak rounded-8 border border-stroke-weak bg-fill-weaker px-3 text-xs">
+		<dl className="divide-y divide-stroke-weak rounded-16 border border-stroke-weak px-3 text-xs">
 			<ReferenceRow label={<Trans>Network</Trans>} value={reference.env} />
 			<ReferenceRow label={<Trans>Owner</Trans>} value={reference.owner} mono />
 			<ReferenceRow label={<Trans>SDK method</Trans>} value={reference.method} mono />

@@ -424,7 +424,7 @@ function MobileAgentSyncRoute() {
 					</div>
 
 					<div className="space-y-4 p-4">
-						<div className="flex items-center justify-between gap-3 rounded-8 border border-stroke-weak bg-fill-weak px-3 py-2 text-xs">
+						<div className="flex items-center justify-between gap-3 text-xs">
 							<span className="text-fg-muted">
 								<Trans>Network</Trans>
 							</span>
@@ -494,7 +494,7 @@ function LoadedQrPanel({
 	const expiresAtLabel = formatTime(envelope.expiresAtMs, { locale: i18n.locale, hour: "2-digit", minute: "2-digit" });
 
 	return (
-		<div className="space-y-3 rounded-8 border border-stroke-weak bg-fill-weak p-3">
+		<div className="space-y-3 rounded-16 border border-stroke-weak p-3">
 			<div className="flex items-start justify-between gap-3">
 				<div className="flex min-w-0 items-start gap-2">
 					<CheckCircleIcon className="mt-0.5 size-5 shrink-0 text-success" weight="fill" aria-hidden />
@@ -530,7 +530,7 @@ function LoadedQrPanel({
 
 function EmptyQrPanel() {
 	return (
-		<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3 text-xs text-fg-muted">
+		<div className="rounded-16 border border-stroke-info-weak bg-info-soft p-3 text-xs text-info">
 			<Trans>No desktop QR is loaded. Return to the terminal scanner or scan a fresh QR with your system camera.</Trans>
 		</div>
 	);
@@ -538,7 +538,7 @@ function EmptyQrPanel() {
 
 function RequirementRow({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="flex items-center justify-between gap-3 rounded-8 border border-stroke-weak bg-background px-3 py-2">
+		<div className="flex items-center justify-between gap-3 rounded-16 border border-stroke-weak px-3 py-2">
 			<span className="text-fg-muted">{label}</span>
 			<span className="flex min-w-0 items-center gap-1.5 font-medium text-fg">
 				<span className="size-1.5 shrink-0 rounded-full bg-success" aria-hidden />
@@ -557,7 +557,7 @@ const ErrorCallout = forwardRef<HTMLDivElement, { message: MobileSyncImportMessa
 			ref={ref}
 			role="alert"
 			tabIndex={-1}
-			className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error"
+			className="flex items-start gap-2 rounded-16 border border-stroke-error-weak bg-error-soft p-3 text-xs text-error"
 		>
 			<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 			<p>{message}</p>
@@ -581,7 +581,7 @@ function SuccessPanel({
 
 	return (
 		<div className="space-y-3">
-			<div className="flex items-start gap-2 rounded-8 border border-stroke-weak bg-fill-weak p-3">
+			<div className="flex items-start gap-2 rounded-16 border border-stroke-success-weak bg-success-soft p-3">
 				<CheckCircleIcon className="mt-0.5 size-5 shrink-0 text-success" weight="fill" aria-hidden />
 				<div className="min-w-0">
 					<p className="text-sm font-semibold text-fg">
@@ -599,14 +599,14 @@ function SuccessPanel({
 			<p className="text-xs text-fg-muted">
 				<Trans>If you did not import this yourself, revoke phone access from the master wallet on desktop now.</Trans>
 			</p>
-			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3 text-xs">
+			<div className="text-xs">
 				<p className="text-fg-muted">
 					<Trans>Owner account</Trans>
 				</p>
 				<p className="mt-1 truncate font-mono font-semibold text-fg">{userAddress}</p>
 			</div>
 			{localCleanupIncomplete && (
-				<div className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error">
+				<div className="flex items-start gap-2 rounded-16 border border-stroke-error-weak bg-error-soft p-3 text-xs text-error">
 					<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 					<p>
 						<Trans>

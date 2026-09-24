@@ -12,7 +12,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
   label row, "pairing temporarily unavailable" and "keep this window open" are info callouts,
   "trading key approved" and "mobile access revoked" are success callouts, and the approval,
   reveal, scan and revoke cards are outlined on the dialog surface. Warning callouts use the
-  semantic error stroke instead of an opacity modifier.
+  semantic error stroke instead of an opacity modifier. The phone pairing page, the staking
+  operation reference and the pending-CCTP-deposit notice follow the same three tiers.
 
 - With the `1.234,56` or `1 234,56` number format, typing a comma in any amount, size or price
   field now enters the decimal point instead of being ignored, so the decimal key on German and
