@@ -333,7 +333,7 @@ export function ApiWalletList({ pageState, agents, isRefreshing, onRemove, onRet
 	const headingId = useId();
 	const [sortDirection, setSortDirection] = useState<"ascending" | "descending">("ascending");
 	const sortedAgents = [...agents].sort((left, right) => {
-		const comparison = left.name.localeCompare(right.name);
+		const comparison = left.name.localeCompare(right.name, undefined, { sensitivity: "base" });
 		return sortDirection === "ascending" ? comparison : -comparison;
 	});
 	const isLoading = pageState === "loading";

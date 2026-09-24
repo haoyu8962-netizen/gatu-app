@@ -15,7 +15,7 @@ import { CheckCircleIcon, DeviceMobileIcon, SpinnerGapIcon, WarningCircleIcon } 
 import { createFileRoute } from "@tanstack/react-router";
 import { type FormEvent, forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatTime } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
 	consumeBootstrappedMobileAgentSyncUrl,
@@ -490,10 +490,7 @@ function LoadedQrPanel({
 	source: EnvelopeSource;
 	onDiscard: () => void;
 }) {
-	const expiresAtLabel = new Date(envelope.expiresAtMs).toLocaleTimeString([], {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+	const expiresAtLabel = formatTime(envelope.expiresAtMs, { hour: "2-digit", minute: "2-digit" });
 
 	return (
 		<div className="space-y-3 rounded-8 border border-stroke-weak bg-fill-weak p-3">

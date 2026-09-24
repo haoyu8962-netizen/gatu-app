@@ -5,6 +5,7 @@ import type { Address, Hex } from "viem";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatExchangeActionError } from "@/lib/errors/format";
+import { formatDateTime } from "@/lib/format";
 import { type InfoResponse, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 import {
 	type ApiWalletActionState,
@@ -585,7 +586,7 @@ function formatValidityDays(days: number, t: ReturnType<typeof useLingui>["t"]):
 
 function formatValidityDate(validUntil: number | null, locale: string, t: ReturnType<typeof useLingui>["t"]): string {
 	if (validUntil === null) return t`Not reported`;
-	return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(validUntil));
+	return formatDateTime(validUntil, { locale, dateStyle: "medium" });
 }
 
 function toReconciliationTarget(action: ActiveAction): ApiWalletReconciliationTarget | undefined {

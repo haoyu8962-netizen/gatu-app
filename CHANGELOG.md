@@ -8,6 +8,16 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The chart now follows the number-format setting: its price axis, legend and crosshair
+  labels use the same decimal sign and grouping separator as the rest of the terminal, and a
+  setting change rebuilds the chart with its layout preserved instead of leaving `1.234,56`
+  in the tables next to `1.234` on the axis.
+
+- Dates and times keep Latin digits in every language (the Arabic interface previously
+  showed Arabic-Indic digits next to Latin-digit prices), and the remaining places that
+  formatted times with the browser's own locale (recent trades, the pairing pages, vault and
+  API-wallet timestamps) now follow the interface language like everything else.
+
 - Switching the interface language in the dark theme no longer flashes a light chart for a
   moment. The chart's initialization mask now becomes opaque immediately when the
   TradingView widget is rebuilt (it still fades out), so the library's default light body

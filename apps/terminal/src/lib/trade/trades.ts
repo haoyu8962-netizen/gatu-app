@@ -1,5 +1,5 @@
 import type { TradesWsEvent } from "@nktkas/hyperliquid";
-import { szDecimalsToPriceDecimals } from "@/lib/format";
+import { formatTime, szDecimalsToPriceDecimals } from "@/lib/format";
 import { toBig, toNumber } from "@/lib/trade/numbers";
 import { getPriceGroupingOptions } from "@/lib/trade/orderbook";
 
@@ -38,7 +38,7 @@ export function processTrades(trades: RawTrade[]): ProcessedTrade[] {
 	return trades.map((trade) => ({
 		id: getTradeKey(trade.time, trade.coin, trade.tid),
 		hash: trade.hash,
-		time: new Date(trade.time).toLocaleTimeString([], {
+		time: formatTime(trade.time, {
 			hour: "2-digit",
 			hourCycle: "h23",
 			minute: "2-digit",

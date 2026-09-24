@@ -411,6 +411,11 @@ mobile regressions.
   that starts a rebuild: it never transitions in (only out), because a fade-in
   leaves the light body visible on the dark terminal during a locale rebuild.
   `tradingview-chart.test.tsx` pins the mask class at removal time.
+- `numeric_formatting` (decimal sign and grouping separator) can only be given
+  when the widget is created, so the chart follows the number-format setting
+  through the same state-preserving rebuild as a locale change
+  (`requestStatePreservingRebuild(widget, "numeric-format")`), never through a
+  reload; `docs/number-format-setting.md` owns the rule.
 - Fonts are scoped to a document, so the `@font-face` rules in the application
   stylesheet do not reach the chart iframe. `CHART_CUSTOM_FONT_FAMILY` and the
   theme stylesheets use a system font stack and must not name an application
@@ -499,6 +504,10 @@ transport. Adding account subscriptions must not disturb market subscriptions.
 - Language switching must be client-side hot switching. Do not reload the route
   just to change locale.
 - Store locale preference in localStorage and update Lingui/i18n state in place.
+- Numbers follow the number-format setting, dates follow the interface
+  language with Latin digits, and components never call `toLocale*` or
+  `new Intl.*Format` directly; `docs/number-format-setting.md` owns these
+  rules and `locale-format-contract` pins the last one.
 - Use semantic design tokens and Tailwind utilities. Do not hard-code hex colors
   in app components.
 - Tooltip/popover layers must render above terminal panels and clamp to the

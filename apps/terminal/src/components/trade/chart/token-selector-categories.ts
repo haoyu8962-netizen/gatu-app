@@ -90,7 +90,7 @@ export function getSpotQuoteSubcategories(markets: readonly UnifiedMarketInfo[])
 		if (leftIndex >= 0 && rightIndex >= 0) return leftIndex - rightIndex;
 		if (leftIndex >= 0) return -1;
 		if (rightIndex >= 0) return 1;
-		return left.localeCompare(right);
+		return left.localeCompare(right, undefined, { sensitivity: "base" });
 	});
 
 	return [{ value: "all", label: "All" }, ...orderedQuotes.map((quote) => ({ value: quote, label: quote }))];

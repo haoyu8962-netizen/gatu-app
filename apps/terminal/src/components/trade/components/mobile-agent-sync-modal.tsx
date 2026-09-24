@@ -21,7 +21,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
-import { shortenAddress } from "@/lib/format";
+import { formatTime, shortenAddress } from "@/lib/format";
 import {
 	type AgentRegistrationExecutionLease,
 	captureAgentRegistrationExecutionLease,
@@ -1544,10 +1544,7 @@ function ResetMobileAccessPanel({
 }) {
 	const expiresAtLabel =
 		state.status === "success" && state.replacementExpiresAtMs !== null
-			? new Date(state.replacementExpiresAtMs).toLocaleTimeString([], {
-					hour: "2-digit",
-					minute: "2-digit",
-				})
+			? formatTime(state.replacementExpiresAtMs, { hour: "2-digit", minute: "2-digit" })
 			: null;
 	const isBusy = state.status === "checking" || state.status === "signing" || state.status === "verifying";
 

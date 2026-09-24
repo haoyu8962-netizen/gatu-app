@@ -2496,6 +2496,88 @@ describe("TradingViewChart", () => {
 		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ locale: "zh" }));
 	});
 
+	it("passes the number format separators to the widget at creation", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledWith(
+			expect.objectContaining({ numeric_formatting: { decimal_sign: ".", grouping_separator: "," } }),
+		);
+	});
+
+	it("rebuilds the widget with its saved layout when the number format changes", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		const savedState = { charts: [{ panes: [{ studies: ["Moving Average"] }] }] };
+		widget?.activeChart.mockReturnValue({
+			onSymbolChanged: vi.fn(() => createMockSubscription()),
+			resetData: vi.fn(),
+			resolution: vi.fn(() => "1D"),
+			symbol: vi.fn(() => "BTC"),
+		});
+		widget?.save.mockImplementation((callback: (state: object) => void) => callback(savedState));
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", numberFormatLocale: "de-DE" }),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widget?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				interval: "1D",
+				numeric_formatting: { decimal_sign: ",", grouping_separator: "." },
+				saved_data: savedState,
+			}),
+		);
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", numberFormatLocale: "de-DE" }),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+	});
+
+	it("rebuilds once when the locale and the number format change in the same commit", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					locale: "fr",
+					numberFormatLocale: "fr-FR",
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				locale: "fr",
+				numeric_formatting: { decimal_sign: ",", grouping_separator: " " },
+			}),
+		);
+	});
+
 	it("preserves the current chart layout and interval when the locale changes", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));

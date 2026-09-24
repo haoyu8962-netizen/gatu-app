@@ -3,6 +3,7 @@ import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { GatuOrbitLoader } from "@/components/brand/gatu-orbit-loader";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
+import { defaultNumberFormatLocale, type NumberFormatLocale, numberSeparatorsByFormatLocale } from "@/config/i18n";
 import { getCandleGateRetryAt, subscribeCandleGate } from "@/lib/chart/candle-gate";
 import { createHistoryRecoveryController } from "@/lib/chart/history-recovery";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
@@ -102,6 +103,7 @@ interface Props {
 	interval?: string;
 	theme?: "light" | "dark";
 	locale?: LanguageCode;
+	numberFormatLocale?: NumberFormatLocale;
 	yAxisInside?: boolean;
 }
 
@@ -112,6 +114,7 @@ export function TradingViewChart({
 	interval = DEFAULT_CHART_INTERVAL,
 	theme = DEFAULT_CHART_THEME,
 	locale = CHART_LOCALE,
+	numberFormatLocale = defaultNumberFormatLocale,
 	yAxisInside = false,
 }: Props) {
 	const { t } = useLingui();
@@ -140,6 +143,9 @@ export function TradingViewChart({
 	const targetThemeRef = useRef(theme);
 	const targetLocaleRef = useRef(locale);
 	const committedLocaleRef = useRef(locale);
+	const targetNumberFormatRef = useRef(numberFormatLocale);
+	const committedNumberFormatRef = useRef(numberFormatLocale);
+	const appliedNumberFormatRef = useRef<NumberFormatLocale | null>(null);
 	const activeRef = useRef(active);
 	const appliedSymbolRef = useRef<string | null>(null);
 	const appliedIntervalRef = useRef<string | null>(null);
@@ -180,6 +186,7 @@ export function TradingViewChart({
 		historyRebuild: boolean;
 		historyTargetGeneration: number | null;
 		localeRebuild: boolean;
+		numericFormatRebuild: boolean;
 		overlayRebuild: boolean;
 		themeRebuild: boolean;
 		remainingMs: number;
@@ -206,6 +213,7 @@ export function TradingViewChart({
 	const applySymbolRef = useRef<() => void>(() => {});
 	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
 	const requestLocaleSwitchRef = useRef<() => void>(() => {});
+	const requestNumericFormatSwitchRef = useRef<() => void>(() => {});
 	const requestDataResetRef = useRef<() => void>(() => {});
 	const requestRealtimeResetRef = useRef<() => void>(() => {});
 	const flushPendingRealtimeResetRef = useRef<() => void>(() => {});
@@ -731,7 +739,8 @@ export function TradingViewChart({
 			(request.historyRebuild && request.historyTargetGeneration === historyTargetGenerationRef.current) ||
 			request.overlayRebuild ||
 			request.themeRebuild ||
-			(request.localeRebuild && targetLocaleRef.current !== appliedLocaleRef.current);
+			(request.localeRebuild && targetLocaleRef.current !== appliedLocaleRef.current) ||
+			(request.numericFormatRebuild && targetNumberFormatRef.current !== appliedNumberFormatRef.current);
 		const sourceMatchesTarget =
 			request.sourceSymbol !== undefined && isChartSymbolApplied(request.sourceSymbol, targetSymbolRef.current);
 		clearStateSave(widget, sequence);
@@ -785,7 +794,7 @@ export function TradingViewChart({
 
 	function requestStatePreservingRebuild(
 		widget: IChartingLibraryWidget,
-		reason: "history" | "locale" | "overlay" | "theme",
+		reason: "history" | "locale" | "numeric-format" | "overlay" | "theme",
 	) {
 		if (widgetRef.current !== widget) return;
 		const pendingRequest = stateSaveRef.current;
@@ -795,6 +804,7 @@ export function TradingViewChart({
 				pendingRequest.historyTargetGeneration = historyTargetGenerationRef.current;
 			}
 			if (reason === "locale") pendingRequest.localeRebuild = true;
+			if (reason === "numeric-format") pendingRequest.numericFormatRebuild = true;
 			if (reason === "overlay") pendingRequest.overlayRebuild = true;
 			if (reason === "theme") pendingRequest.themeRebuild = true;
 			return;
@@ -813,6 +823,7 @@ export function TradingViewChart({
 			historyRebuild: reason === "history",
 			historyTargetGeneration: reason === "history" ? historyTargetGenerationRef.current : null,
 			localeRebuild: reason === "locale",
+			numericFormatRebuild: reason === "numeric-format",
 			overlayRebuild: reason === "overlay",
 			themeRebuild: reason === "theme",
 			remainingMs: LOCALE_STATE_SAVE_TIMEOUT_MS,
@@ -829,13 +840,19 @@ export function TradingViewChart({
 		}
 	}
 
-	requestLocaleSwitchRef.current = () => {
-		const targetLocale = targetLocaleRef.current;
-		if (targetLocale === appliedLocaleRef.current) {
+	function requestCreationOptionRebuild(reason: "locale" | "numeric-format", alreadyApplied: boolean) {
+		if (alreadyApplied) {
 			const request = stateSaveRef.current;
 			if (request) {
-				request.localeRebuild = false;
-				if (!request.historyRebuild && !request.overlayRebuild && !request.themeRebuild) {
+				if (reason === "locale") request.localeRebuild = false;
+				else request.numericFormatRebuild = false;
+				if (
+					!request.historyRebuild &&
+					!request.overlayRebuild &&
+					!request.themeRebuild &&
+					!request.localeRebuild &&
+					!request.numericFormatRebuild
+				) {
 					clearStateSave(request.widget, request.sequence);
 				}
 			}
@@ -850,7 +867,15 @@ export function TradingViewChart({
 			return;
 		}
 
-		requestStatePreservingRebuild(widget, "locale");
+		requestStatePreservingRebuild(widget, reason);
+	}
+
+	requestLocaleSwitchRef.current = () => {
+		requestCreationOptionRebuild("locale", targetLocaleRef.current === appliedLocaleRef.current);
+	};
+
+	requestNumericFormatSwitchRef.current = () => {
+		requestCreationOptionRebuild("numeric-format", targetNumberFormatRef.current === appliedNumberFormatRef.current);
 	};
 
 	requestDataResetRef.current = () => {
@@ -1078,6 +1103,7 @@ export function TradingViewChart({
 			appliedIntervalRef.current = null;
 			appliedThemeRef.current = null;
 			appliedLocaleRef.current = null;
+			appliedNumberFormatRef.current = null;
 			themeSwitchRetryTargetRef.current = null;
 			if (themeRecoveryWidgetRef.current === widget) {
 				themeRecoveryWidgetRef.current = null;
@@ -1282,6 +1308,8 @@ export function TradingViewChart({
 				const loadingColors = getLoadingScreenColors();
 				const initialTheme = targetThemeRef.current;
 				const initialLocale = targetLocaleRef.current;
+				const initialNumberFormat = targetNumberFormatRef.current;
+				const numberSeparators = numberSeparatorsByFormatLocale[initialNumberFormat];
 				const customCssUrl = getChartCssUrl(initialTheme);
 
 				const initialSymbol = targetSymbolRef.current;
@@ -1406,6 +1434,10 @@ export function TradingViewChart({
 					overrides: overrides,
 					loading_screen: loadingColors,
 					custom_css_url: customCssUrl,
+					numeric_formatting: {
+						decimal_sign: numberSeparators.decimal,
+						grouping_separator: numberSeparators.group,
+					},
 					studies_overrides: {},
 					favorites: {
 						intervals: CHART_FAVORITE_INTERVALS,
@@ -1424,6 +1456,7 @@ export function TradingViewChart({
 				appliedIntervalRef.current = savedChartState ? null : initialInterval;
 				appliedThemeRef.current = savedChartState ? null : initialTheme;
 				appliedLocaleRef.current = initialLocale;
+				appliedNumberFormatRef.current = initialNumberFormat;
 
 				const watchdog = {
 					widget,
@@ -1547,6 +1580,13 @@ export function TradingViewChart({
 		committedLocaleRef.current = locale;
 		requestLocaleSwitchRef.current();
 	}, [locale]);
+
+	useLayoutEffect(() => {
+		targetNumberFormatRef.current = numberFormatLocale;
+		if (committedNumberFormatRef.current === numberFormatLocale) return;
+		committedNumberFormatRef.current = numberFormatLocale;
+		requestNumericFormatSwitchRef.current();
+	}, [numberFormatLocale]);
 
 	return (
 		<div

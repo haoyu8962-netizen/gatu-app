@@ -5,7 +5,7 @@ import { resolveChartLocale } from "@/config/chart";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
-import { useTheme } from "@/stores/use-global-settings-store";
+import { useGlobalSettings, useTheme } from "@/stores/use-global-settings-store";
 
 const TradingViewChart = createLazyComponent(() => import("./tradingview-chart"), "TradingViewChart");
 
@@ -22,6 +22,7 @@ export function ChartPanel({ active = true, yAxisInside = false }: Props) {
 	useRenderCommitTrack("chart");
 	const { i18n } = useLingui();
 	const theme = useTheme();
+	const { numberFormatLocale } = useGlobalSettings();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const lastSelectedMarketRef = useRef(selectedMarket);
 	useEffect(() => {
@@ -45,6 +46,7 @@ export function ChartPanel({ active = true, yAxisInside = false }: Props) {
 							market={chartMarket}
 							theme={chartTheme}
 							locale={chartLocale}
+							numberFormatLocale={numberFormatLocale}
 							yAxisInside={yAxisInside}
 						/>
 					</Suspense>

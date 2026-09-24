@@ -88,6 +88,12 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Derive trade price precision from the selected market under both Hyperliquid constraints (five significant figures and the perp/spot `szDecimals` decimal cap) instead of hard-coding decimal places. Keep WebSocket `px` and `sz` as strings until formatting or Big.js calculation, and compute quote-denominated sizes outside React components.
 - Use `(time, coin, tid)` for trade identity in both processed UI data and subscription accumulation.
 
+## Number and date formatting contract
+
+- `docs/number-format-setting.md` owns the number-format options, their storage and which surfaces follow them.
+- Numbers follow the number-format setting, never the interface language; dates and times follow the interface language with Latin digits. Components and business code format both through `lib/format.ts` and never call `toLocale*` or `new Intl.*Format` directly.
+- The chart receives `numeric_formatting` at creation and follows a setting change through the same state-preserving rebuild as a locale change; a number-format change never reloads the page.
+
 ## Desktop trading layout contract
 
 - `docs/desktop-grid-layout.md` owns breakpoints, column counts, default spans, shared boundaries, height ownership, persistence and the underlay token; `apps/terminal/src/config/desktop-grid-layout.ts` is the single source of default geometry.
@@ -197,6 +203,14 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trades.test.ts \
   src/lib/tests/trades-panel.test.tsx \
   src/lib/tests/trade-row.test.tsx
+
+# Number and date formatting
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/format.test.ts \
+  src/lib/tests/number-format-settings.test.ts \
+  src/lib/tests/number-format-reactivity-contract.test.ts \
+  src/lib/tests/locale-format-contract.test.ts \
+  src/lib/tests/tradingview-chart.test.tsx
 
 # Desktop trading layout and order entry
 pnpm --dir apps/terminal exec vitest run \

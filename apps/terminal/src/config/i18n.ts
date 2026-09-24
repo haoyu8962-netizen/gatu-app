@@ -29,6 +29,12 @@ export const numberFormatLocaleList = Object.entries(numberFormatLocales).map(([
 
 export const defaultNumberFormatLocale: NumberFormatLocale = "en-US";
 
+export const numberSeparatorsByFormatLocale = {
+	"en-US": { group: ",", decimal: "." },
+	"de-DE": { group: ".", decimal: "," },
+	"fr-FR": { group: " ", decimal: "," },
+} as const satisfies Record<NumberFormatLocale, { group: string; decimal: string }>;
+
 const legacyNumberFormatLocaleMap: Readonly<Record<string, NumberFormatLocale>> = {
 	auto: "en-US",
 	"en-US": "en-US",

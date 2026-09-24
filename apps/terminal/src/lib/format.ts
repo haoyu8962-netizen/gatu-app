@@ -3,9 +3,11 @@ import { FALLBACK_VALUE_PLACEHOLDER, FORMAT_COMPACT_DEFAULT, FORMAT_COMPACT_THRE
 import {
 	defaultLocale,
 	defaultNumberFormatLocale,
+	isValidLocale,
 	type LocaleCode,
 	languageToIntlLocale,
 	type NumberFormatLocale,
+	numberSeparatorsByFormatLocale,
 } from "@/config/i18n";
 import { HL_PERP_PRICE_MAX_DECIMALS, HL_PRICE_MAX_DECIMALS } from "@/config/trade";
 import { toNumber } from "@/lib/trade/numbers";
@@ -16,12 +18,7 @@ type DateInput = Date | number | string | null | undefined;
 
 const formatterCache = new Map<string, Formatter>();
 const BASE_NUMBER_FORMAT_LOCALE = "en-US";
-
-const NUMBER_SEPARATORS_BY_FORMAT_LOCALE = {
-	"en-US": { group: ",", decimal: "." },
-	"de-DE": { group: ".", decimal: "," },
-	"fr-FR": { group: " ", decimal: "," },
-} as const satisfies Record<NumberFormatLocale, { group: string; decimal: string }>;
+const DATE_NUMBERING_SYSTEM = "latn";
 
 export interface FormatOptions extends Intl.NumberFormatOptions {
 	decimals?: number;
@@ -63,7 +60,13 @@ function getFormatter(
 		if (type === "number") {
 			formatterCache.set(key, new Intl.NumberFormat(resolvedLocale, opts as Intl.NumberFormatOptions));
 		} else {
-			formatterCache.set(key, new Intl.DateTimeFormat(resolvedLocale, opts as Intl.DateTimeFormatOptions));
+			formatterCache.set(
+				key,
+				new Intl.DateTimeFormat(resolvedLocale, {
+					numberingSystem: DATE_NUMBERING_SYSTEM,
+					...(opts as Intl.DateTimeFormatOptions),
+				}),
+			);
 		}
 	}
 
@@ -77,8 +80,8 @@ function getFormatter(
 function formatNumberParts(value: number, opts: Intl.NumberFormatOptions): string {
 	const formatter = getFormatter("number", BASE_NUMBER_FORMAT_LOCALE, opts);
 	const separators =
-		NUMBER_SEPARATORS_BY_FORMAT_LOCALE[getResolvedFormatLocale() as NumberFormatLocale] ??
-		NUMBER_SEPARATORS_BY_FORMAT_LOCALE[defaultNumberFormatLocale];
+		numberSeparatorsByFormatLocale[getResolvedFormatLocale() as NumberFormatLocale] ??
+		numberSeparatorsByFormatLocale[defaultNumberFormatLocale];
 
 	return formatter
 		.formatToParts(value)
@@ -92,6 +95,11 @@ function formatNumberParts(value: number, opts: Intl.NumberFormatOptions): strin
 
 function getActiveLanguageIntlLocale(): string {
 	return languageToIntlLocale[i18n.locale as LocaleCode] ?? languageToIntlLocale[defaultLocale];
+}
+
+function resolveDateLocale(locale: string | undefined): string {
+	if (!locale) return getActiveLanguageIntlLocale();
+	return isValidLocale(locale) ? languageToIntlLocale[locale] : locale;
 }
 
 // Helper to normalize options
@@ -377,7 +385,7 @@ export function formatTime(value: DateInput, opts?: FormatDateOptions): string {
 	const { locale, ...rest } = opts ?? {};
 	const formatOpts: Intl.DateTimeFormatOptions = hasDateComponentOptions(rest) ? rest : { timeStyle: "short", ...rest };
 
-	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), formatOpts).format(toDate(value));
+	return getFormatter("date", resolveDateLocale(locale), formatOpts).format(toDate(value));
 }
 
 /**
@@ -393,7 +401,7 @@ export function formatDateTime(value: DateInput, opts?: FormatDateOptions): stri
 		? rest
 		: { dateStyle: "medium", timeStyle: "short", ...rest };
 
-	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), formatOpts).format(toDate(value));
+	return getFormatter("date", resolveDateLocale(locale), formatOpts).format(toDate(value));
 }
 
 export function formatDateTimeShort(value: DateInput, opts?: FormatDateOptions): string {
@@ -411,7 +419,7 @@ export function formatDateTimeShort(value: DateInput, opts?: FormatDateOptions):
 		...rest,
 	};
 
-	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), defaults).format(toDate(value));
+	return getFormatter("date", resolveDateLocale(locale), defaults).format(toDate(value));
 }
 
 /**
