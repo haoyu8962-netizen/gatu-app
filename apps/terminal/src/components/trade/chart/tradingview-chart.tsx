@@ -1559,8 +1559,10 @@ export function TradingViewChart({
 				data-chart-initializing
 				aria-hidden="true"
 				className={cn(
-					"pointer-events-none absolute inset-0 z-10 bg-background transition-opacity duration-150 ease-out motion-reduce:transition-none",
-					isInitializing ? "opacity-100" : "opacity-0",
+					"pointer-events-none absolute inset-0 z-10 bg-background",
+					isInitializing
+						? "opacity-100"
+						: "opacity-0 transition-opacity duration-150 ease-out motion-reduce:transition-none",
 				)}
 			/>
 			{isInitializing && !initError && (

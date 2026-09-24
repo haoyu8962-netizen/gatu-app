@@ -447,6 +447,7 @@ describe("TradingViewChart", () => {
 			hasRecoverySpinner: true,
 			maskClassName: expect.stringContaining("opacity-100"),
 		});
+		expect(stateAtRemoval?.maskClassName).not.toContain("transition-opacity");
 		expect(widgetConstructor).toHaveBeenCalledOnce();
 
 		act(() => finishLoading?.());
@@ -1799,12 +1800,14 @@ describe("TradingViewChart", () => {
 		expect(loading?.querySelector("span")?.textContent).toBe("Loading...");
 		expect(mask?.className).toContain("bg-background");
 		expect(mask?.className).toContain("opacity-100");
+		expect(mask?.className).not.toContain("transition-opacity");
 		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");
 
 		act(() => readyCallback?.());
 		await flushChartEffects();
 
 		expect(mask?.className).toContain("opacity-0");
+		expect(mask?.className).toContain("transition-opacity");
 		expect(container.querySelector("[data-chart-loading]")).toBeNull();
 		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("false");
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();

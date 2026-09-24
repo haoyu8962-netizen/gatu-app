@@ -404,6 +404,13 @@ mobile regressions.
 - Keep the single theme-aware TradingView stylesheet used by runtime theme
   switching; changing CSS URLs on theme changes would require rebuilding the
   iframe.
+- A rebuilt iframe paints the library's own light `body` background
+  (`#e0e3eb`) as soon as the library stylesheet loads, some tens of
+  milliseconds before `custom_css_url` applies the terminal theme. The
+  `data-chart-initializing` mask must therefore be fully opaque at the commit
+  that starts a rebuild: it never transitions in (only out), because a fade-in
+  leaves the light body visible on the dark terminal during a locale rebuild.
+  `tradingview-chart.test.tsx` pins the mask class at removal time.
 - Fonts are scoped to a document, so the `@font-face` rules in the application
   stylesheet do not reach the chart iframe. `CHART_CUSTOM_FONT_FAMILY` and the
   theme stylesheets use a system font stack and must not name an application

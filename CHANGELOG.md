@@ -8,6 +8,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Switching the interface language in the dark theme no longer flashes a light chart for a
+  moment. The chart's initialization mask now becomes opaque immediately when the
+  TradingView widget is rebuilt (it still fades out), so the library's default light body
+  background stays hidden until the terminal theme stylesheet has loaded inside the iframe.
+
 - Market Close submissions now run in a page-level host. A brief legal-status recheck
   (wallet reconnect or a failed background refresh) no longer cancels a confirmed close or
   releases its in-flight guard early, and switching the account tab, mobile view or layout
