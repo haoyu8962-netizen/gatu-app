@@ -451,7 +451,7 @@ describe("MobileAgentSyncModal", () => {
 				agentAddress: AGENT_ADDRESS,
 				agentName: AGENT_NAME,
 			},
-			{ signal: expect.any(AbortSignal) },
+			{ signal: expect.any(AbortSignal), applicationReview: "confirmed" },
 		);
 		expect(testState.extraAgentsRefetch).toHaveBeenCalled();
 		expect(testState.createMobileAgentSyncUrl).not.toHaveBeenCalled();
@@ -1306,7 +1306,7 @@ describe("MobileAgentSyncModal", () => {
 				agentAddress: REVOKE_AGENT_ADDRESS,
 				agentName: REVOKE_AGENT_NAME,
 			},
-			{ signal: expect.any(AbortSignal) },
+			{ signal: expect.any(AbortSignal), applicationReview: "confirmed" },
 		);
 		expect(container.textContent).toContain("Mobile access revoked");
 		expect(testState.cleanupAgentRegistrationIfMatches).toHaveBeenCalledWith("Mainnet", USER_ADDRESS, {

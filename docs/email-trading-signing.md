@@ -44,7 +44,9 @@ identities and stub or fixture-generated signatures.
 4. Hide only duplicate embedded-wallet confirmations for explicit application
    actions. Policy acceptance still needs both acknowledgements; builder fees
    still require the first relevant trading action. Explicit Agent management
-   and desktop-link approvals retain their own permission review and verification.
+   and desktop-link approvals retain their own permission review and verification;
+   the desktop-link dialog's reviewed approval and revocation pass
+   `applicationReview: "confirmed"` and therefore sign without the Privy prompt.
 5. Route desktop, mobile, shared trading dialogs, referrals and vault actions
    through trading signer readiness. Agent management continues to query real
    Agent approval. Preserve exact owner signing for withdrawals and other funds

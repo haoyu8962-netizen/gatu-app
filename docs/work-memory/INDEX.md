@@ -134,6 +134,7 @@
 
 当前规范：[docs/adr/0015-link-device-alignment.md](../../docs/adr/0015-link-device-alignment.md) · [deploy/cloudfront/README.md](../../deploy/cloudfront/README.md)
 
+- [邮箱用户在 Link mobile device 弹窗里仍弹出 Privy 签名确认：原因与对齐官方的静默签名](sessions/2026-09-24-email-mobile-approval-silent-signing.md) — 2026-09-24；已验证，范围见正文。用户截图：邮箱用户在 Link mobile device 弹窗点 Approve 后出现 Privy「Approve mobile trading access」确认。原因是弹窗调用 approveAgent.mutateAsync 时没有传 applicationReview: "confirmed"，createPrivyAgentSigner 按 trading-onboarding §4 的默认规则回退到显式 UI；官方产物全局 showWalletUIs:false 且无按调用 uiOptions，approveAgent 经 Privy provider 静默签名。已让审批与撤销两处声明应用层审查已完成，弹窗测试钉住该参数；API 钱包管理弹窗的 Privy 确认保留待决。
 - [链接移动设备：官方机制实测、17 项差距图与体验对齐实施](sessions/2026-09-18-link-device-alignment.md) — 2026-09-18；已验证，范围见正文。从官方产物实测「Link Mobile Device」：右上角图标一键 approveAgent（永久 Mobile QR）、4 秒按住显示、60 秒自动关闭、二维码为 /trade?link= 明文私钥、手机解析后以 API 钱包身份连接。我方实现更严格但生产不可达（Lambda 对票据路由固定 503、开关关闭）。41 代理工作流产出 17 项差距并逐项对抗核验；按 ADR 0015 实施 D1–D6（顶栏入口、单步审批、官方文案、圆环按住、倒计时、手机端 Agent-only 原因、扫描器相机选择、显式 local scope），D7 票据存储三备选待用户决定。
 - [移动配对方案 B 实施：去服务端票据的纯客户端传输（信封 v3）](sessions/2026-09-18-mobile-sync-ticketless-implementation.md) — 2026-09-18；已整理，验证见正文。按 ADR 0015 D7 方案 B 完成代码与文档：信封 v3、TTL 2 分钟、揭示后 60 秒单调时钟窗口、桌面本地 syncId、手机端 syncId 本地去重、v1/v2 信封提示刷新；删除票据客户端/服务端/路由、Lambda 503 桩、CloudFront 转发与 EC2 时代 mobile-sync 发布脚本。定向测试与 typecheck 通过；pnpm build 因既有 trade-terminal-page 预算超限失败（改动不在该 chunk）；全量 vitest 余 8 个文件 32 项基线红（干净 HEAD 同样失败）。静态托管实测、真机矩阵、对抗安全复核未执行，生产开关保持关闭。
 - [部署第 2 步：已安装 Caddy 配置与仓库不一致](sessions/2026-09-12-caddy-config-mismatch.md) — 2026-09-12；已整理，验证见正文。Caddy 转发头警告不是中止原因；管理员依次验证、安装、reload 仓库配置后重跑部署，服务器恢复尚待验证。
@@ -223,6 +224,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-24 | [邮箱用户在 Link mobile device 弹窗里仍弹出 Privy 签名确认：原因与对齐官方的静默签名](sessions/2026-09-24-email-mobile-approval-silent-signing.md) | 未取得任务标识，见正文 | `b14c3a12` | 已验证，范围见正文 |
 | 2026-09-24 | [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) | 未取得任务标识，见正文 | `15196136` | 已验证，范围见正文 |
 | 2026-09-24 | [图表跟随数字格式设置、日期固定拉丁数字、原生 Intl 调用收口、输入框接受设置的小数点（规划 A-1/A-2a/A-3/A-4）](sessions/2026-09-24-number-format-chart-and-date-rules.md) | 未取得任务标识，见正文 | `ce9fb539` | 已验证，范围见正文 |
 | 2026-09-24 | [官方终端切换语言实践取证：react-intl + Suspense 懒加载语言包，图表只在创建时取语言](sessions/2026-09-24-official-terminal-language-switch-trace.md) | 未取得任务标识，见正文 | `f03dcbc0` | 已验证，范围见正文 |

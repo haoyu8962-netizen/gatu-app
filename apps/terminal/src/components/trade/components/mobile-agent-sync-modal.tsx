@@ -744,7 +744,7 @@ function MobileAgentSyncSession({
 						agentAddress: approval.publicKey,
 						agentName: approval.agentName,
 					},
-					{ signal: operation.signal },
+					{ signal: operation.signal, applicationReview: "confirmed" },
 				);
 			} catch (error) {
 				submissionErrorMessage = externalErrorMessage(error);
@@ -983,7 +983,7 @@ function MobileAgentSyncSession({
 					agentAddress: revocation.publicKey,
 					agentName: revocation.agentName,
 				},
-				{ signal: operation.signal },
+				{ signal: operation.signal, applicationReview: "confirmed" },
 			);
 		} catch (error) {
 			submissionError = error;

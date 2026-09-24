@@ -80,7 +80,12 @@ The terminal must preserve this ordering:
    Explicit API-wallet management and desktop linking remain separate
    owner-approved operations. An embedded wallet may hide a duplicate Privy
    confirmation only when that entry point already completed its own application
-   permission review; other Agent approvals retain confirmation by default.
+   permission review; other Agent approvals retain confirmation by default. The
+   desktop Link mobile device dialog is such an entry point: its approval runs
+   only from the reviewed "Approve a mobile trading key" step and its revocation
+   only after the explicit "Review revoke" confirmation, so both pass
+   `applicationReview: "confirmed"` and the embedded wallet signs silently, as
+   the official terminal does with its global `showWalletUIs: false`.
    Page load and status checks never sign. Agent registration is separate from
    builder-fee approval.
 5. **Verify a requested new Agent (external-wallet flow).** Before opening the

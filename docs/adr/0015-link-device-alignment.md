@@ -41,6 +41,7 @@
 - 弹窗打开即发只读请求；这些查询原本就在 `open && hasWalletAccess` 时启用，不新增签名。
 - `agent-only-session` 是已确认限制，允许展示原因；`PASSIVE_DATA_REASONS` 不变。
 - D7 实施后 Lambda 503 桩与 CloudFront 票据转发已删除，退役路径返回 404；生产开关仍未改变，需真机验收后另行打开。
+- 2026-09-24 补注：邮箱用户在弹窗里点「Approve」后仍会弹出 Privy 的「Approve mobile trading access」签名确认，原因是弹窗调用 `approveAgent.mutateAsync` 时没有声明 `applicationReview: "confirmed"`，`createPrivyAgentSigner` 按规则回退到显式 UI。官方（2026-09-24 产物 `index-58uVNh8f.js`）全局 `embeddedWallets.showWalletUIs: false`，`approveAgent` 经 Privy 钱包的 EIP-1193 provider 静默签名，应用代码没有任何按调用的 `uiOptions`；签名期间只显示转圈。现已让审批与撤销两处都传 `applicationReview: "confirmed"`（弹窗自身的审批面与「Review revoke」确认即应用层审查），行为与官方一致；API 钱包管理弹窗仍保留 Privy 确认，待单独决定。
 
 ## 证据
 
