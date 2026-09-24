@@ -3496,12 +3496,16 @@ msgstr "Historique"
 #~ msgstr "Les données d'historique n'ont pas pu être validées. Actualisez et réessayez."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Hold for {holdSeconds} seconds to reveal the QR code"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hold for 4 seconds to reveal phone access QR"
 #~ msgstr "Maintenez pendant 4 secondes pour afficher le QR d'accès téléphone"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Hold for 4 seconds to reveal the QR code"
-msgstr ""
+#~ msgid "Hold for 4 seconds to reveal the QR code"
+#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold to reveal"
@@ -3741,6 +3745,10 @@ msgstr "Les validateurs suspendus ne produisent ni blocs ni récompenses"
 #: src/components/referrals/referred-traders.tsx
 msgid "Joined"
 msgstr "Inscription"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Keep holding for {remainingSeconds}s"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."

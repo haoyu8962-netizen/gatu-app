@@ -33,7 +33,8 @@ type SyncState =
 	| { status: "revealed"; url: string; closesAtMs: number }
 	| { status: "error"; error: SyncError };
 
-const QR_REVEAL_HOLD_MS = 4_000;
+const QR_REVEAL_HOLD_MS = 2_000;
+const QR_REVEAL_HOLD_SECONDS = QR_REVEAL_HOLD_MS / 1_000;
 const HOLD_RING_RADIUS = 10;
 const HOLD_RING_CIRCUMFERENCE = 2 * Math.PI * HOLD_RING_RADIUS;
 
@@ -231,7 +232,12 @@ function SyncErrorText({ error }: { error: SyncError }) {
 
 function RevealButton({ onReveal }: { onReveal: () => void }) {
 	const { t } = useLingui();
-	const { handlers, progressPercent } = usePressAndHold({ durationMs: QR_REVEAL_HOLD_MS, onComplete: onReveal });
+	const { handlers, isHolding, progressPercent } = usePressAndHold({
+		durationMs: QR_REVEAL_HOLD_MS,
+		onComplete: onReveal,
+	});
+	const remainingSeconds = Math.max(1, Math.ceil((QR_REVEAL_HOLD_MS * (1 - progressPercent / 100)) / 1_000));
+	const holdSeconds = QR_REVEAL_HOLD_SECONDS;
 
 	return (
 		<Button
@@ -240,11 +246,11 @@ function RevealButton({ onReveal }: { onReveal: () => void }) {
 			intent="brand"
 			size="md"
 			className="w-full touch-none select-none"
-			aria-label={t`Hold for 4 seconds to reveal the QR code`}
+			aria-label={t`Hold for ${holdSeconds} seconds to reveal the QR code`}
 			iconLeft={<HoldProgressRing progressPercent={progressPercent} />}
 			{...handlers}
 		>
-			<Trans>Hold to reveal</Trans>
+			{isHolding ? <Trans>Keep holding for {remainingSeconds}s</Trans> : <Trans>Hold to reveal</Trans>}
 		</Button>
 	);
 }

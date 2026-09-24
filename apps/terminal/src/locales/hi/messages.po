@@ -3496,12 +3496,16 @@ msgstr "इतिहास"
 #~ msgstr "इतिहास डेटा सत्यापित नहीं हो सका। रीफ़्रेश करें और फिर से प्रयास करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Hold for {holdSeconds} seconds to reveal the QR code"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hold for 4 seconds to reveal phone access QR"
 #~ msgstr "फ़ोन एक्सेस QR दिखाने के लिए 4 सेकंड दबाए रखें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Hold for 4 seconds to reveal the QR code"
-msgstr ""
+#~ msgid "Hold for 4 seconds to reveal the QR code"
+#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold to reveal"
@@ -3741,6 +3745,10 @@ msgstr "जेल्ड वैलिडेटर कोई ब्लॉक य�
 #: src/components/referrals/referred-traders.tsx
 msgid "Joined"
 msgstr "शामिल होने का समय"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Keep holding for {remainingSeconds}s"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."

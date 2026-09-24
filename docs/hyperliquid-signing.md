@@ -435,7 +435,7 @@ the product decisions and the official comparison are in
   (`apps/terminal/src/lib/mobile-sync/sync-core.ts`, payload version 4, TTL
   `MOBILE_SYNC_PAYLOAD_TTL_MS` = 2 minutes, bound to the network and owner).
   The fragment never reaches a server and is removed from the address bar by
-  the import page before its first paint. Reveal requires a 4 s hold and the
+  the import page before its first paint. Reveal requires a 2 s hold and the
   QR closes after `MOBILE_SYNC_QR_VISIBLE_MS` = 60 s, on window blur or when
   the page is hidden. The transfer uses no server state (ADR 0015 D7 option B
   and D8): a second phone scanning the same code within the payload lifetime

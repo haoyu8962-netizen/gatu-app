@@ -558,7 +558,7 @@ have an install capability.
   approval button is the only signing action (`applicationReview:
   "confirmed"`, so an embedded wallet signs without a second prompt); success
   is the exchange's `status: "ok"`, with no `extraAgents` polling on desktop.
-  Reveal keeps the 4 s hold; the QR then closes after
+  Reveal keeps a 2 s hold that counts down on the button; the QR then closes after
   `MOBILE_SYNC_QR_VISIBLE_MS` (60 s), on window blur, page hide or a hidden
   document. A phone in an Agent-only session shows Deposit / Withdraw /
   Transfer disabled with the `agent-only-session` reason instead of hiding

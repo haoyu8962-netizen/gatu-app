@@ -205,7 +205,7 @@ describe("MobileAgentSyncModal", () => {
 
 	async function reveal() {
 		dispatchPointer(getButton(container, "Hold to reveal"), "pointerdown");
-		await advanceTime(4_000);
+		await advanceTime(2_000);
 	}
 
 	it("uses a drawer at the terminal mobile breakpoint", async () => {
@@ -263,15 +263,18 @@ describe("MobileAgentSyncModal", () => {
 		expect(testState.approveAgent).toHaveBeenCalledTimes(2);
 	});
 
-	it("reveals the QR after a four-second hold and closes the dialog after sixty seconds", async () => {
+	it("reveals the QR after a two-second hold and closes the dialog after sixty seconds", async () => {
 		const onOpenChange = await renderModal();
 		await approve();
 
-		dispatchPointer(getButton(container, "Hold to reveal"), "pointerdown");
-		await advanceTime(3_000);
+		const holdButton = getButton(container, "Hold to reveal");
+		expect(holdButton.getAttribute("aria-label")).toBe("Hold for 2 seconds to reveal the QR code");
+		dispatchPointer(holdButton, "pointerdown");
+		await advanceTime(1_500);
+		expect(container.textContent).toContain("Keep holding for");
 		expect(container.querySelector("canvas")).toBeNull();
 
-		await advanceTime(1_000);
+		await advanceTime(500);
 		expect(container.querySelector("canvas")).not.toBeNull();
 		await vi.waitFor(() => expect(testState.qrToCanvas).toHaveBeenCalledTimes(1));
 		const [, url] = testState.qrToCanvas.mock.calls[0] as [unknown, string];
@@ -293,9 +296,9 @@ describe("MobileAgentSyncModal", () => {
 
 		const holdButton = getButton(container, "Hold to reveal");
 		dispatchPointer(holdButton, "pointerdown");
-		await advanceTime(2_000);
+		await advanceTime(1_000);
 		dispatchPointer(holdButton, "pointerup");
-		await advanceTime(3_000);
+		await advanceTime(1_500);
 
 		expect(container.querySelector("canvas")).toBeNull();
 		expect(testState.qrToCanvas).not.toHaveBeenCalled();
