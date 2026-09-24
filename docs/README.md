@@ -10,9 +10,9 @@
 | 查目录、路由、Provider、命令 | [Terminal Reference](../apps/terminal/README.md)、[开发约定](../agent.md) |
 | 查共享包与营销站点 | [hl-react](../packages/hl-react/README.md)、[UI](../packages/ui/README.md)、[Website](../apps/website/README.md) |
 | 看用户可见变化 | [Changelog / Unreleased](../CHANGELOG.md)，不代表已经发布 |
-| 部署、入口保护与回滚 | [CloudFront 发布](../deploy/cloudfront/README.md)（现行宿主；移动配对为纯客户端传输、无服务端路由，两个配对开关在真机验收前保持关闭，见 [ADR 0015](adr/0015-link-device-alignment.md) D7）、[产物清单](../deploy/manifests/README.md)、[部署夹具](../deploy/fixtures/README.md) |
+| 部署、入口保护与回滚 | [CloudFront 发布](../deploy/cloudfront/README.md)（现行宿主；移动配对为纯客户端传输、无服务端路由，配对开关在真机清单记录前保持关闭，见 [ADR 0015](adr/0015-link-device-alignment.md) D7 与 D8）、[产物清单](../deploy/manifests/README.md)、[部署夹具](../deploy/fixtures/README.md) |
 | 接手续作与查历史证据 | 持续任务使用项目 `docs/work-memory/` 入口；[历史资料说明](../notes/README.md)、[历史与文档审查索引](../notes/index.md)补足原始 review |
-| 理解决策利弊 | [ADR 索引](adr/README.md)；移动配对去票据实施规划见 [方案 B 规划](mobile-sync-ticketless-transfer-plan.md)，其后续加固见 [配对页加固规划](pairing-page-hardening-plan.md)（已随 p22 上线，开关关闭）；对齐官方量级的收敛方案见 [关联移动设备简化规划](link-mobile-device-simplification-plan.md)（草案，待决策） |
+| 理解决策利弊 | [ADR 索引](adr/README.md)；移动配对去票据实施规划见 [方案 B 规划](mobile-sync-ticketless-transfer-plan.md)，其后续加固见 [配对页加固规划](pairing-page-hardening-plan.md)（已随 p22 上线，开关关闭）；对齐官方量级的收敛方案见 [关联移动设备简化规划](link-mobile-device-simplification-plan.md)（2026-09-24 已实施，ADR 0015 D8） |
 
 ## 当前设计与 Reference
 
@@ -22,7 +22,7 @@
 | --- | --- |
 | 产品稳定约束与运行边界 | [AGENTS](../AGENTS.md)、[Runtime guardrails](runtime-guardrails.md) |
 | 钱包身份与首次交易 | [首次交易](trading-onboarding.md)、[邮箱签名](email-trading-signing.md)、[签名机制](hyperliquid-signing.md)、[签名 ADR](adr/0002-exact-owner-trading-signers.md) |
-| 钱包调试与桌面配对 | [初始化调试](wallet-initialization-debugging.md)、[手机访问与扫码设计](mobile-phone-access-scanner-prd.md)、[设备验证矩阵](mobile-phone-access-device-validation.md) |
+| 钱包调试与桌面配对 | [初始化调试](wallet-initialization-debugging.md)、[手机访问与扫码设计](mobile-phone-access-scanner-prd.md)、[设备验证清单](mobile-phone-access-device-validation.md) |
 | 充值、提现与资金 | [CCTP 充值](cctp-deposits.md)、[提现路由](withdrawals.md)、[账户概要](account-overview.md)、[Portfolio 统计](portfolio-statistics.md) |
 | 账户共享模型 | [账户 ADR](adr/0001-account-overview-cross-shell-model.md)；账户概要与 Portfolio 的就绪条件不同 |
 | 市场身份、路由与展示价格 | [单交易路由迁移](architecture/trade-single-route-migration.md)、[价格来源审查](price-source-audit.md)、[资产资料来源](spot-asset-information.md) |

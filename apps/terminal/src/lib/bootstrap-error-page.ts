@@ -1,26 +1,17 @@
-import {
-	type BootstrapFatalVariant,
-	getBootstrapFatalCopy,
-	getBootstrapFatalDirection,
-	getBootstrapFatalLocale,
-} from "@/lib/bootstrap-error-copy";
+import { getBootstrapFatalCopy, getBootstrapFatalDirection, getBootstrapFatalLocale } from "@/lib/bootstrap-error-copy";
 
 const BOOTSTRAP_ERROR_PAGE_ATTRIBUTE = "data-terminal-bootstrap-error";
 
 interface BootstrapErrorPageOptions {
 	onReload?: () => void;
-	variant?: BootstrapFatalVariant;
 }
 
-export function renderBootstrapErrorPage({
-	onReload = reloadWindow,
-	variant = "startup",
-}: BootstrapErrorPageOptions = {}): void {
+export function renderBootstrapErrorPage({ onReload = reloadWindow }: BootstrapErrorPageOptions = {}): void {
 	try {
 		const body = document.body;
 		if (!body || body.querySelector(`[${BOOTSTRAP_ERROR_PAGE_ATTRIBUTE}]`)) return;
 		const locale = getBootstrapFatalLocale();
-		const copy = getBootstrapFatalCopy(locale, variant);
+		const copy = getBootstrapFatalCopy(locale);
 		const direction = getBootstrapFatalDirection(locale);
 		document.documentElement.lang = locale;
 		document.documentElement.dir = direction;

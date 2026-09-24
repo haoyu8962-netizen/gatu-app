@@ -7,8 +7,6 @@ on:
       - "apps/**"
       - "deploy/**"
       - "packages/**"
-      - "scripts/validate-mobile-phone-access-device-validation*"
-      - "docs/mobile-phone-access-device-validation.md"
       - "scripts/check-client-bundle-budget.mjs"
       - "scripts/check-client-bundle-budget.test.mjs"
       - "scripts/ci-workflows.test.mjs"
@@ -16,8 +14,6 @@ on:
       - "scripts/inject-shell-preloads.test.mjs"
       - "scripts/collect-inline-script-hashes.mjs"
       - "scripts/collect-inline-script-hashes.test.mjs"
-      - "scripts/check-shell-head-scrub.mjs"
-      - "scripts/check-shell-head-scrub.test.mjs"
       - "scripts/serve-spa-static.mjs"
       - "scripts/serve-spa-static.test.mjs"
       - "scripts/client-chunk-graph.*"
@@ -53,12 +49,10 @@ jobs:
       - name: Test build and release validators
         run: >-
           node --test
-          scripts/validate-mobile-phone-access-device-validation.test.js
           scripts/check-client-bundle-budget.test.mjs
           scripts/ci-workflows.test.mjs
           scripts/inject-shell-preloads.test.mjs
           scripts/collect-inline-script-hashes.test.mjs
-          scripts/check-shell-head-scrub.test.mjs
           scripts/serve-spa-static.test.mjs
 
       - name: Test the CloudFront release tooling
@@ -97,8 +91,6 @@ jobs:
           src/lib/tests/mobile-agent-qr-scanner.test.tsx
           src/lib/tests/mobile-pairing-feature-gate.test.ts
           src/lib/tests/qr-classification.test.ts
-          src/lib/tests/mobile-agent-remote-verification.test.ts
-          src/lib/tests/desktop-approval-recovery.test.ts
           src/lib/tests/mobile-agent-lifecycle.test.ts
           src/lib/tests/use-explicit-agent-approval.test.tsx
           src/lib/tests/privy-agent-signer.test.ts

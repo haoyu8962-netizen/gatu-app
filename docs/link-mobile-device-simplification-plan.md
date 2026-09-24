@@ -1,6 +1,6 @@
 # 关联移动设备简化规划：一句说明、一个动作，代码降到官方量级
 
-状态：规划草案（2026-09-24），待用户确认文末「待决策」后实施；本文不改代码。官方取证见 [2026-09-24-official-link-mobile-device-ux-trace](work-memory/sessions/2026-09-24-official-link-mobile-device-ux-trace.md)，现有设计见 [ADR 0015](adr/0015-link-device-alignment.md)、[方案 B 规划](mobile-sync-ticketless-transfer-plan.md)、[配对页加固规划](pairing-page-hardening-plan.md)。接受后先在 ADR 0015 追加 D8 记录决策，再按本文顺序实施。
+状态：已接受并实施（2026-09-24，五项待决策全部按推荐执行；决策记录为 [ADR 0015](adr/0015-link-device-alignment.md) D8，实施与验证见任务记录 [2026-09-24-link-mobile-device-simplification](work-memory/sessions/2026-09-24-link-mobile-device-simplification.md)）。下文保留规划原文。官方取证见 [2026-09-24-official-link-mobile-device-ux-trace](work-memory/sessions/2026-09-24-official-link-mobile-device-ux-trace.md)，现有设计见 [ADR 0015](adr/0015-link-device-alignment.md)、[方案 B 规划](mobile-sync-ticketless-transfer-plan.md)、[配对页加固规划](pairing-page-hardening-plan.md)。接受后先在 ADR 0015 追加 D8 记录决策，再按本文顺序实施。
 
 ## 1. 目标
 

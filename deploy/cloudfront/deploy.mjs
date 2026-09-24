@@ -558,6 +558,7 @@ export const RELEASE_GATES = Object.freeze([
 		label: "Mobile Agent pairing",
 		read: (buildMeta) => {
 			const pairing = buildMeta.mobileSync;
+			if (typeof pairing?.enabled === "boolean") return pairing.enabled;
 			if (typeof pairing?.createAndReveal !== "boolean" || typeof pairing?.importFromQr !== "boolean") return undefined;
 			return pairing.createAndReveal || pairing.importFromQr;
 		},

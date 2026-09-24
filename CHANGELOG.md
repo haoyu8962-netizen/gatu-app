@@ -8,6 +8,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Link mobile device is now one sentence, one warning and one action. The header QR icon is the
+  only entry, the dialog approves the 30-day trading key with a single click (an email wallet signs
+  without a second prompt), a 4-second hold reveals the QR and it closes after 60 seconds. The phone
+  page scrubs the link, shows one sentence and imports on a single tap; a reload asks for a new scan.
+  The link now carries a plain payload in the URL fragment instead of an encrypted envelope, the
+  revoke panel is gone (approving again replaces the key and the API wallet page removes it), and
+  the two build switches became one `VITE_MOBILE_PAIRING_ENABLED`, still off in production.
+
 - Email users no longer see a second Privy signature prompt when approving or revoking
   mobile trading access from the Link mobile device dialog, or when authorizing or removing an
   API wallet. Each dialog's own review step is the confirmation, so the embedded wallet signs

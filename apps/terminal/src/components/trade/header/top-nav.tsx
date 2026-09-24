@@ -66,7 +66,7 @@ export function TopNav({ mode = "default" }: Props) {
 	const isTestnet = useIsTestnet();
 	const tradeHomePath = useTradeHomePath();
 	const showsDepositEntry = hasWalletAccess || depositAvailability.path === "sponsored";
-	const showsLinkMobileEntry = hasWalletAccess && MOBILE_PAIRING_FEATURES.createAndReveal;
+	const showsLinkMobileEntry = hasWalletAccess && MOBILE_PAIRING_FEATURES.enabled;
 	const isMarketLoading = mode === "market-loading";
 	const accountChipVisible = authenticated || isConnected;
 
@@ -190,13 +190,7 @@ export function TopNav({ mode = "default" }: Props) {
 			}
 			compactUtilities={
 				accountChipVisible && (
-					<DesktopUtilitiesMenu
-						settingsDisabled={isMarketLoading}
-						onOpenSettings={openSettingsDialog}
-						linkMobileVisible={showsLinkMobileEntry}
-						linkMobileDisabled={isMarketLoading}
-						onLinkMobile={openMobileSyncModal}
-					/>
+					<DesktopUtilitiesMenu settingsDisabled={isMarketLoading} onOpenSettings={openSettingsDialog} />
 				)
 			}
 		/>

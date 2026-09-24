@@ -1,4 +1,4 @@
-import { MOBILE_SYNC_FRAGMENT_KEY, MOBILE_SYNC_KEY_FRAGMENT_KEY, MOBILE_SYNC_ROUTE_PATH } from "./sync-core";
+import { MOBILE_SYNC_FRAGMENT_KEY, MOBILE_SYNC_ROUTE_PATH } from "./sync-core";
 
 export type QrClassification =
 	| { type: "walletconnect"; uri: string }
@@ -42,8 +42,7 @@ function isPhoneAccessLink(value: string, expectedOrigin?: string): boolean {
 		if (url.pathname !== MOBILE_SYNC_ROUTE_PATH) return false;
 		if (expectedOrigin && url.origin !== new URL(expectedOrigin).origin) return false;
 
-		const fragment = new URLSearchParams(url.hash.slice(1));
-		return fragment.has(MOBILE_SYNC_FRAGMENT_KEY) && fragment.has(MOBILE_SYNC_KEY_FRAGMENT_KEY);
+		return new URLSearchParams(url.hash.slice(1)).has(MOBILE_SYNC_FRAGMENT_KEY);
 	} catch {
 		return false;
 	}

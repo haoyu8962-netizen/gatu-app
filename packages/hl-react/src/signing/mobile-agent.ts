@@ -5,7 +5,6 @@ import type { AgentWallet } from "./types";
 
 export const MOBILE_AGENT_NAME_BASE = "Mobile";
 export const MOBILE_AGENT_VALIDITY_MS = 30 * 24 * 60 * 60 * 1000;
-export const MOBILE_AGENT_REVOKE_VALIDITY_MS = 10 * 60 * 1000;
 
 const VALID_UNTIL_SUFFIX_RE = / valid_until \d+$/u;
 
@@ -27,7 +26,6 @@ export interface MobileAgentStorageMetadata {
 	agentName: string;
 	agentValidUntilMs: number;
 	importedAtMs: number;
-	syncId: string;
 }
 
 export interface ExpectedMobileAgent {
@@ -81,21 +79,21 @@ export function createMobileAgentApproval(
 	nowMs = Date.now(),
 	privateKey: Hex = generatePrivateKey(),
 ): MobileAgentApproval {
-	return createMobileAgentApprovalForValidity(nowMs + MOBILE_AGENT_VALIDITY_MS, privateKey);
-}
-
-export function createMobileAgentRevocationApproval(
-	nowMs = Date.now(),
-	privateKey: Hex = generatePrivateKey(),
-): MobileAgentApproval {
-	return createMobileAgentApprovalForValidity(nowMs + MOBILE_AGENT_REVOKE_VALIDITY_MS, privateKey);
+	const account = privateKeyToAccount(privateKey);
+	const validUntilMs = nowMs + MOBILE_AGENT_VALIDITY_MS;
+	return {
+		privateKey: privateKey.toLowerCase() as Hex,
+		publicKey: account.address.toLowerCase() as Address,
+		agentNameBase: MOBILE_AGENT_NAME_BASE,
+		agentName: createMobileAgentName(validUntilMs),
+		agentValidUntilMs: validUntilMs,
+	};
 }
 
 export function createMobileAgentStorageMetadata(input: {
 	agentName: string;
 	agentValidUntilMs: number;
 	importedAtMs: number;
-	syncId: string;
 }): MobileAgentStorageMetadata {
 	if (!isMobileAgentName(input.agentName) || input.agentName !== createMobileAgentName(input.agentValidUntilMs)) {
 		throw new Error("Invalid mobile agent name");
@@ -106,16 +104,12 @@ export function createMobileAgentStorageMetadata(input: {
 	if (input.importedAtMs >= input.agentValidUntilMs) {
 		throw new Error("Mobile agent must expire after import");
 	}
-	if (!input.syncId || input.syncId.trim() !== input.syncId) {
-		throw new Error("Invalid mobile agent sync id");
-	}
 	return {
 		source: "mobile-sync",
 		agentNameBase: MOBILE_AGENT_NAME_BASE,
 		agentName: input.agentName,
 		agentValidUntilMs: input.agentValidUntilMs,
 		importedAtMs: input.importedAtMs,
-		syncId: input.syncId,
 	};
 }
 
@@ -125,7 +119,6 @@ export function createMobileAgentWalletRecord(input: {
 	agentName: string;
 	agentValidUntilMs: number;
 	importedAtMs: number;
-	syncId: string;
 }): AgentWallet {
 	const derivedPublicKey = privateKeyToAccount(input.privateKey).address.toLowerCase();
 	if (derivedPublicKey !== input.publicKey.toLowerCase()) {
@@ -139,7 +132,6 @@ export function createMobileAgentWalletRecord(input: {
 			agentName: input.agentName,
 			agentValidUntilMs: input.agentValidUntilMs,
 			importedAtMs: input.importedAtMs,
-			syncId: input.syncId,
 		}),
 	};
 }
@@ -153,10 +145,7 @@ export function isStoredMobileAgent(
 		typeof agent.agentName !== "string" ||
 		!isFiniteSafeExpiry(agent.agentValidUntilMs) ||
 		!isFiniteSafeExpiry(agent.importedAtMs) ||
-		agent.importedAtMs >= agent.agentValidUntilMs ||
-		typeof agent.syncId !== "string" ||
-		agent.syncId.length === 0 ||
-		agent.syncId.trim() !== agent.syncId
+		agent.importedAtMs >= agent.agentValidUntilMs
 	) {
 		return false;
 	}
@@ -169,24 +158,6 @@ export function isStoredMobileAgent(
 	} catch {
 		return false;
 	}
-}
-
-/** @deprecated Address-only lookup. Security-sensitive Mobile flows must use verifyExpectedMobileAgent. */
-export function findApprovedMobileAgent(
-	extraAgents: ExtraAgentsResponse | undefined,
-	agentAddress: string | undefined,
-	nowMs = Date.now(),
-): ExtraAgentsResponse[number] | null {
-	if (!extraAgents || !agentAddress) return null;
-	const normalizedAddress = agentAddress.toLowerCase();
-	return (
-		extraAgents.find(
-			(agent) =>
-				agent.address.toLowerCase() === normalizedAddress &&
-				(agent.validUntil ?? Number.POSITIVE_INFINITY) > nowMs &&
-				agent.name === MOBILE_AGENT_NAME_BASE,
-		) ?? null
-	);
 }
 
 /**
@@ -289,15 +260,4 @@ export function verifyMobileAgent(
 
 export function shouldClearMobileAgent(verification: MobileAgentVerification): boolean {
 	return verification.status === "stale";
-}
-
-function createMobileAgentApprovalForValidity(validUntilMs: number, privateKey: Hex): MobileAgentApproval {
-	const account = privateKeyToAccount(privateKey);
-	return {
-		privateKey: privateKey.toLowerCase() as Hex,
-		publicKey: account.address.toLowerCase() as Address,
-		agentNameBase: MOBILE_AGENT_NAME_BASE,
-		agentName: createMobileAgentName(validUntilMs),
-		agentValidUntilMs: validUntilMs,
-	};
 }

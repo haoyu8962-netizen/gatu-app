@@ -541,47 +541,43 @@ have an install capability.
   `MOBILE_QR_SURFACE_MEDIA_QUERY` additionally covers coarse pointers and
   standalone display mode; do not use it to switch the terminal layout.
 - The Link Desktop scanner is optional and fail closed. Render it only when
-  `MOBILE_PAIRING_FEATURES.importFromQr` is enabled, and accept only the
-  terminal's validated desktop-approved Agent payload. The scanner selects a
-  back camera after `start()` (never before, which would open an unconstrained
-  stream) and excludes ultra-wide and telephoto labels.
-- The desktop Link mobile device entry has three surfaces that share one modal
-  instance through the global modal store (`useMobileSyncModalOpen` /
-  `useMobileSyncModalActions` in `stores/use-global-modal-store.ts`): the
-  header QR icon beside settings, the compact `DesktopUtilitiesMenu` item at
-  connected widths at or below the compact breakpoint, and the `UserMenu` item.
-  The icon and compact item render only when `hasWalletAccess &&
-  MOBILE_PAIRING_FEATURES.createAndReveal`; the user-menu item remains because
-  it is also the verify/revoke entry. The lazy host, error boundary and retry
-  stay in `UserMenu`, so opening from any surface mounts one modal.
-- Opening the modal runs read-only preflight only (funding snapshot, builder
-  fee, reserved slot); the single approval button is the only signing action.
-  Reveal keeps the 4 s hold, the visible countdown derives from the envelope
-  expiry and the 60 s reveal window on the local monotonic clock, and a phone in an Agent-only session shows
-  Deposit / Withdraw / Transfer disabled with the `agent-only-session` reason
-  instead of hiding them ([ADR 0015](adr/0015-link-device-alignment.md)).
-- Pairing is a client-only transfer with no server route
-  (`docs/trading-onboarding.md`, ADR 0015 D7 option B); the retired
-  `/mobile-agent-sync-ticket` path answers 404 everywhere and must not be
-  reintroduced. Both `VITE_MOBILE_PAIRING_*` build flags stay off in
-  production until the physical-device acceptance in
-  `docs/mobile-sync-ticketless-transfer-plan.md` has been run and recorded.
-- The pairing fragment leaves the address bar from the shell's first script
-  element (`docs/pairing-page-hardening-plan.md`). That inline script is
-  rendered from `lib/mobile-sync/pairing-location.ts` by
-  `apps/terminal/scripts/render-pairing-head-scrub.mjs` and committed; never
-  edit `head-scrub-script.generated.ts` by hand, keep the source file free of
-  imports, and keep the script ahead of every other script in `RootDocument`
-  (`scripts/check-shell-head-scrub.mjs` fails the build otherwise). The client
-  entry runs the same function as the second line of defence and alone decides
-  whether the application may hydrate: a scrub that failed, or a captured link
-  that can no longer be handed over, shows the multilingual notice instead.
-- Every path spelling the router accepts for the pairing page is scrubbed
-  (ASCII case, one percent-decoding); deeper or undecodable paths are scrubbed
-  and refused. `classifyPairingPath` is the only place that decides this.
-- The service worker never answers a pairing navigation: the shared cached
-  shell would carry another route's response headers and could be a release
-  behind. The edge functions give that page `no-store` and `no-referrer`.
+  `MOBILE_PAIRING_FEATURES.enabled` is true, and accept only a same-origin
+  `/mobile-agent-sync` link whose fragment parses as the terminal's payload.
+  The scanner selects a back camera after `start()` (never before, which
+  would open an unconstrained stream), excludes ultra-wide and telephoto
+  labels, and then opens the scanned link itself; there is no draft storage.
+- The desktop Link mobile device entry is one surface: the header QR icon,
+  rendered when `hasWalletAccess && MOBILE_PAIRING_FEATURES.enabled` and kept
+  visible at compact widths. It opens the modal through the global modal store
+  (`useMobileSyncModalOpen` / `useMobileSyncModalActions` in
+  `stores/use-global-modal-store.ts`); the lazy host, error boundary and retry
+  stay in `UserMenu`, which no longer lists a menu item. There is no compact
+  menu entry and no revoke panel: approving again replaces the Mobile Agent,
+  and the API wallet page removes it.
+- The dialog has one sentence of instruction, one warning and one action. The
+  approval button is the only signing action (`applicationReview:
+  "confirmed"`, so an embedded wallet signs without a second prompt); success
+  is the exchange's `status: "ok"`, with no `extraAgents` polling on desktop.
+  Reveal keeps the 4 s hold; the QR then closes after
+  `MOBILE_SYNC_QR_VISIBLE_MS` (60 s), on window blur, page hide or a hidden
+  document. A phone in an Agent-only session shows Deposit / Withdraw /
+  Transfer disabled with the `agent-only-session` reason instead of hiding
+  them ([ADR 0015](adr/0015-link-device-alignment.md) D8).
+- Pairing is a client-only transfer with no server route (ADR 0015 D7 and
+  D8): the payload is plain JSON in the fragment of `/mobile-agent-sync`
+  (`lib/mobile-sync/sync-core.ts`, version 4), bound to one network, one owner
+  and a 2-minute window. The phone parses it before its first paint, removes
+  it from the address bar with `history.replaceState`, verifies the approval
+  once through `extraAgents` and imports only on an explicit tap; a reload
+  after the scrub asks for a new scan. The retired `/mobile-agent-sync-ticket`
+  path answers 404 everywhere and must not be reintroduced. The single
+  `VITE_MOBILE_PAIRING_ENABLED` build flag stays off in production until the
+  checklist in `docs/mobile-phone-access-device-validation.md` has been run
+  and recorded.
+- The service worker never answers a pairing navigation, and the edge
+  functions give that page `no-store` and `no-referrer`. Both predate the
+  plain-fragment payload and are harmless, so they stay until the next edge
+  release reviews them.
 - The mobile Email and WalletConnect entries launch Privy with explicit login
   methods; wallet selection remains Ethereum-only. An authenticated user takes
   the explicit reconnect path instead of starting a new login flow.
@@ -610,9 +606,8 @@ have an install capability.
 - `apps/terminal/src/components/trade/header/user-menu.tsx`
 - `apps/terminal/src/stores/use-global-modal-store.ts`
 - `apps/terminal/src/routes/mobile-agent-sync.tsx`
-- `apps/terminal/src/lib/mobile-sync/pairing-location.ts`
-- `apps/terminal/src/lib/mobile-sync/bootstrap-fragment.ts`
-- `apps/terminal/src/client.ts`
+- `apps/terminal/src/lib/mobile-sync/sync-core.ts`
+- `apps/terminal/src/lib/mobile-sync/qr-classification.ts`
 - `apps/terminal/src/edge/lambda-handler.ts`
 - `apps/terminal/src/providers/pwa-install.tsx`
 - `apps/terminal/src/config/seo.ts`
@@ -631,11 +626,10 @@ have an install capability.
 - `apps/terminal/src/lib/tests/mobile-agent-sync-modal.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-agent-qr-scanner.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-agent-sync-route.test.tsx`
-- `apps/terminal/src/lib/tests/mobile-sync-pairing-location.test.ts`
-- `apps/terminal/src/lib/tests/mobile-sync-bootstrap-fragment.test.ts`
-- `apps/terminal/src/lib/tests/client-bootstrap-error.test.ts`
+- `apps/terminal/src/lib/tests/mobile-sync-core.test.ts`
+- `apps/terminal/src/lib/tests/qr-classification.test.ts`
+- `apps/terminal/src/lib/tests/mobile-pairing-feature-gate.test.ts`
 - `apps/terminal/src/lib/tests/sw-navigation-cache.test.ts`
-- `scripts/check-shell-head-scrub.test.mjs`
 
 ## 9. Development And Browser Test Caches
 

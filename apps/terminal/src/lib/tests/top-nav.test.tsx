@@ -169,13 +169,9 @@ vi.mock("@/components/trade/header/theme-toggle", () => ({
 
 vi.mock("@/config/mobile-pairing", () => ({
 	MOBILE_PAIRING_FEATURES: {
-		get createAndReveal() {
+		get enabled() {
 			return testState.mobilePairingCreateAndReveal;
 		},
-		get importFromQr() {
-			return testState.mobilePairingCreateAndReveal;
-		},
-		legacyLinkInput: false,
 	},
 }));
 
@@ -329,18 +325,6 @@ describe("TopNav", () => {
 
 	function findLinkMobileIcon() {
 		return container.querySelector<HTMLButtonElement>('button[aria-label="Link mobile device"]') ?? undefined;
-	}
-
-	function remountNav(mode?: TopNavMode) {
-		act(() => root.unmount());
-		root = createI18nRoot(container);
-		renderNav(mode);
-	}
-
-	function findUtilitiesMenuItem(label: string) {
-		return [...document.body.querySelectorAll<HTMLButtonElement>('[data-slot="popover-content"] button')].find(
-			(button) => button.textContent?.trim() === label,
-		);
 	}
 
 	it.each([
@@ -651,8 +635,8 @@ describe("TopNav", () => {
 		renderNav();
 		const icon = findLinkMobileIcon();
 		expect(icon?.disabled).toBe(false);
-		expect(icon?.parentElement?.className).toContain("nav-compact:hidden");
-		expect(icon?.nextElementSibling).toBe(container.querySelector('button[aria-label="Settings"]'));
+		expect(icon?.parentElement?.className).not.toContain("nav-compact:hidden");
+		expect(icon?.closest(".nav-compact\\:hidden")).toBeNull();
 		act(() => icon?.click());
 		expect(testState.openMobileSyncModal).toHaveBeenCalledOnce();
 		expect(testState.openSettingsDialog).not.toHaveBeenCalled();
@@ -678,49 +662,6 @@ describe("TopNav", () => {
 		});
 		expect(document.activeElement).not.toBe(icon);
 		expect(testState.openMobileSyncModal).not.toHaveBeenCalled();
-	});
-
-	it("offers Link mobile device from the compact utilities menu under the same visibility rule", async () => {
-		try {
-			stubViewportWidth(1181);
-			renderNav();
-			await act(async () => findDesktopUtilitiesButton()?.click());
-			const linkMobileItem = findUtilitiesMenuItem("Link mobile device");
-			expect(linkMobileItem?.disabled).toBe(false);
-			expect(findUtilitiesMenuItem("Settings")).not.toBeUndefined();
-			await act(async () => linkMobileItem?.click());
-			expect(testState.openMobileSyncModal).toHaveBeenCalledOnce();
-			expect(testState.openSettingsDialog).not.toHaveBeenCalled();
-
-			testState.mobilePairingCreateAndReveal = false;
-			remountNav();
-			await act(async () => findDesktopUtilitiesButton()?.click());
-			expect(findUtilitiesMenuItem("Link mobile device")).toBeUndefined();
-			expect(findUtilitiesMenuItem("Settings")).not.toBeUndefined();
-
-			testState.mobilePairingCreateAndReveal = true;
-			testState.hasWalletAccess = false;
-			remountNav();
-			await act(async () => findDesktopUtilitiesButton()?.click());
-			expect(findUtilitiesMenuItem("Link mobile device")).toBeUndefined();
-			expect(findUtilitiesMenuItem("Settings")).not.toBeUndefined();
-		} finally {
-			Reflect.deleteProperty(window, "matchMedia");
-		}
-	});
-
-	it("keeps the compact Link mobile device entry inert while the market loads", async () => {
-		try {
-			stubViewportWidth(1181);
-			renderNav("market-loading");
-			await act(async () => findDesktopUtilitiesButton()?.click());
-			const linkMobileItem = findUtilitiesMenuItem("Link mobile device");
-			expect(linkMobileItem?.disabled).toBe(true);
-			await act(async () => linkMobileItem?.click());
-			expect(testState.openMobileSyncModal).not.toHaveBeenCalled();
-		} finally {
-			Reflect.deleteProperty(window, "matchMedia");
-		}
 	});
 
 	it("keeps account, theme, language, and settings controls mounted", () => {

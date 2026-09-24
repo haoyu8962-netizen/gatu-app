@@ -4,7 +4,6 @@ import {
 	ArrowClockwiseIcon,
 	CheckIcon,
 	CopyIcon,
-	DeviceMobileIcon,
 	SignOutIcon,
 	SpinnerGapIcon,
 	WalletIcon,
@@ -245,19 +244,6 @@ export function UserMenu({ variant = "default" }: Props) {
 							<CopyIcon className="size-3.5" />
 						),
 						onSelect: () => copy(displayAddress),
-					},
-				]
-			: []),
-		...(hasWalletAccess
-			? [
-					{
-						label: t`Link mobile device`,
-						icon: <DeviceMobileIcon className="size-3.5" />,
-						onSelect: () => {
-							shouldKeepMobileSyncModalMounted = true;
-							setHasOpenedMobileSync(true);
-							openMobileSync();
-						},
 					},
 				]
 			: []),

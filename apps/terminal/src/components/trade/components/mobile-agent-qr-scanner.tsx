@@ -3,13 +3,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowLeftIcon, CameraIcon, QrCodeIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
-import {
-	clearMobileSyncDraft,
-	isMobileSyncEnvelopeExpired,
-	saveMobileSyncDraft,
-} from "@/lib/mobile-sync/draft-storage";
 import { classifyQrValue, shouldShowQrFeedback } from "@/lib/mobile-sync/qr-classification";
-import { isMobileSyncError, MOBILE_SYNC_ROUTE_PATH, parseMobileSyncUrl } from "@/lib/mobile-sync/sync-core";
+import { isMobileSyncError, parseMobileSyncUrl } from "@/lib/mobile-sync/sync-core";
 
 type ScannerStatus = "idle" | "starting" | "scanning";
 type ScannerFeedback =
@@ -18,13 +13,12 @@ type ScannerFeedback =
 	| "feature-unavailable"
 	| "invalid-link"
 	| "invalid-payload"
-	| "storage-unavailable"
 	| "upgrade-required"
 	| "wallet-connect";
 
 interface MobileAgentQrScannerProps {
 	onCancel: () => void;
-	onSyncReady?: () => void;
+	onSyncReady?: (url: string) => void;
 	startScanner?: QrScannerStart;
 }
 
@@ -42,7 +36,7 @@ const NON_PRIMARY_CAMERA_LABEL = /front|user|face|selfie|ultra|wide|tele|macro|z
 
 export function MobileAgentQrScanner({
 	onCancel,
-	onSyncReady = openMobileSyncRoute,
+	onSyncReady = openMobileSyncLink,
 	startScanner = startBrowserQrScanner,
 }: MobileAgentQrScannerProps) {
 	const { t } = useLingui();
@@ -90,8 +84,7 @@ export function MobileAgentQrScanner({
 
 	async function handleStartScanner() {
 		stopScanner();
-		clearMobileSyncDraft();
-		if (!MOBILE_PAIRING_FEATURES.importFromQr) {
+		if (!MOBILE_PAIRING_FEATURES.enabled) {
 			setStatus("idle");
 			setFeedback("feature-unavailable");
 			return;
@@ -119,20 +112,7 @@ export function MobileAgentQrScanner({
 				}
 
 				try {
-					const parsed = parseMobileSyncUrl(classification.url);
-					if (isMobileSyncEnvelopeExpired(parsed.envelope)) {
-						parsed.keyBytes.fill(0);
-						clearMobileSyncDraft();
-						showFeedback("expired");
-						return;
-					}
-					if (!saveMobileSyncDraft(parsed.envelope, parsed.encodedKey)) {
-						parsed.keyBytes.fill(0);
-						showFeedback("storage-unavailable");
-						return;
-					}
-					parsed.keyBytes.fill(0);
-
+					parseMobileSyncUrl(classification.url);
 					didCompleteRef.current = true;
 					scanGenerationRef.current++;
 					controlsRef.current = null;
@@ -143,12 +123,9 @@ export function MobileAgentQrScanner({
 					} finally {
 						stopVideoTracks(videoRef.current);
 					}
-					onSyncReady();
+					onSyncReady(classification.url);
 				} catch (error) {
-					clearMobileSyncDraft();
-					showFeedback(
-						isMobileSyncError(error) && error.code === "unsupported_version" ? "upgrade-required" : "invalid-payload",
-					);
+					showFeedback(getParseFeedback(error));
 				}
 			});
 
@@ -189,9 +166,6 @@ export function MobileAgentQrScanner({
 		if (code === "feature-unavailable") return t`Mobile QR import is temporarily unavailable.`;
 		if (code === "invalid-link") return t`This QR is not a valid desktop wallet link.`;
 		if (code === "invalid-payload") return t`This QR is invalid or incomplete. Create a new QR on desktop.`;
-		if (code === "storage-unavailable") {
-			return t`This device could not securely hold the QR. Check browser storage and retry.`;
-		}
 		if (code === "upgrade-required") return t`Refresh both devices to update phone access, then create a new QR.`;
 		return t`This is a WalletConnect QR. Scan the Link Desktop Wallet QR instead.`;
 	}
@@ -290,8 +264,15 @@ function stopVideoTracks(video: HTMLVideoElement | null): void {
 	if (video) video.srcObject = null;
 }
 
-function openMobileSyncRoute(): void {
-	window.location.assign(MOBILE_SYNC_ROUTE_PATH);
+function openMobileSyncLink(url: string): void {
+	window.location.assign(url);
+}
+
+function getParseFeedback(error: unknown): ScannerFeedback {
+	if (!isMobileSyncError(error)) return "invalid-payload";
+	if (error.code === "expired_payload") return "expired";
+	if (error.code === "unsupported_version") return "upgrade-required";
+	return "invalid-payload";
 }
 
 export async function startBrowserQrScanner(

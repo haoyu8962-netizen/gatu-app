@@ -17,55 +17,6 @@ describe("client bootstrap error handling", () => {
 		document.body.replaceChildren();
 	});
 
-	it("scrubs the mobile credential before loading telemetry and hydration", async () => {
-		const sequence: string[] = [];
-		window.history.replaceState(null, "", "/mobile-agent-sync#bearer-secret");
-		vi.doMock("../error-reporting/client", () => {
-			sequence.push(`reporter:${window.location.hash}`);
-			return {
-				installGlobalErrorReporting: () => {
-					sequence.push("installed");
-					return () => {};
-				},
-				reportClientError: vi.fn(),
-			};
-		});
-		vi.doMock("../../client-hydrate", () => {
-			sequence.push("hydration");
-			return {};
-		});
-
-		await import("../../client");
-		await vi.waitFor(() => expect(sequence).toContain("hydration"));
-
-		expect(sequence).toEqual(["reporter:", "installed", "hydration"]);
-		expect(window.location.hash).toBe("");
-	});
-
-	it("loads nothing and explains itself when the mobile credential cannot be scrubbed", async () => {
-		const loaded: string[] = [];
-		window.history.replaceState(null, "", "/mobile-agent-sync#bearer-secret");
-		vi.spyOn(window.history, "replaceState").mockImplementation(() => {
-			throw new DOMException("blocked", "SecurityError");
-		});
-		vi.doMock("../error-reporting/client", () => {
-			loaded.push("reporter");
-			return { installGlobalErrorReporting: () => () => {}, reportClientError: vi.fn() };
-		});
-		vi.doMock("../../client-hydrate", () => {
-			loaded.push("hydration");
-			return {};
-		});
-
-		await import("../../client");
-		await Promise.resolve();
-
-		expect(loaded).toEqual([]);
-		expect(document.querySelector('[role="alert"]')?.textContent).toContain("This link could not be opened safely");
-		expect(document.body.textContent).toContain("create a new QR code and scan it again");
-		expect(document.body.textContent).not.toContain("bearer-secret");
-	});
-
 	it("reports a hydration import failure and renders a dependency-free safe fallback", async () => {
 		const installGlobalErrorReporting = vi.fn(() => () => {});
 		const reportClientError = vi.fn();

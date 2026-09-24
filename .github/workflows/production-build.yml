@@ -7,16 +7,12 @@ on:
       - "apps/**"
       - "deploy/**"
       - "packages/**"
-      - "scripts/validate-mobile-phone-access-device-validation*"
-      - "docs/mobile-phone-access-device-validation.md"
       - "scripts/check-client-bundle-budget.mjs"
       - "scripts/check-client-bundle-budget.test.mjs"
       - "scripts/inject-shell-preloads.mjs"
       - "scripts/inject-shell-preloads.test.mjs"
       - "scripts/collect-inline-script-hashes.mjs"
       - "scripts/collect-inline-script-hashes.test.mjs"
-      - "scripts/check-shell-head-scrub.mjs"
-      - "scripts/check-shell-head-scrub.test.mjs"
       - "scripts/serve-spa-static.mjs"
       - "scripts/serve-spa-static.test.mjs"
       - "scripts/check-client-chunk-cycles.mjs"
@@ -25,9 +21,9 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-  # Release tags and manual runs build every pairing combination (see the build job's strategy).
+  # Release tags and manual runs build both pairing states (see the build job's strategy).
   # The patterns require a digit after the prefix (`v0.1.0`, `cloudfront-2026-09-17-p21`), so an
-  # `archive/**` tag or any other tag that merely starts with `v` never starts four builds.
+  # `archive/**` tag or any other tag that merely starts with `v` never starts extra builds.
   # `tags` and `tags-ignore` cannot be combined, which is why the patterns themselves are narrow.
   push:
     tags:
@@ -44,17 +40,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Pull requests build only the production default, with both pairing switches off.
+        # Pull requests build only the production default, with the pairing switch off.
         # Pull requests into main (the dev to main promotion), release tags and manual runs build
-        # every combination. A job-level `if` cannot do this because it cannot read `matrix`. The
+        # both states. A job-level `if` cannot do this because it cannot read `matrix`. The
         # lines of the expression share one indent so that YAML folds them into a single line.
         pairing: >-
           ${{ fromJSON(
           (github.event_name == 'pull_request' && github.base_ref != 'main')
-          && '[{"create":"false","import":"false"}]'
-          || '[{"create":"false","import":"false"},{"create":"false","import":"true"},{"create":"true","import":"false"},{"create":"true","import":"true"}]'
+          && '[{"enabled":"false"}]'
+          || '[{"enabled":"false"},{"enabled":"true"}]'
           ) }}
-    name: Build terminal (${{ matrix.pairing.create }}/${{ matrix.pairing.import }})
+    name: Build terminal (pairing ${{ matrix.pairing.enabled }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -76,8 +72,7 @@ jobs:
           GATU_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
           NODE_ENV: production
           NITRO_PRESET: node-server
-          VITE_MOBILE_PAIRING_CREATE_ENABLED: ${{ matrix.pairing.create }}
-          VITE_MOBILE_PAIRING_IMPORT_ENABLED: ${{ matrix.pairing.import }}
+          VITE_MOBILE_PAIRING_ENABLED: ${{ matrix.pairing.enabled }}
 
       - name: Measure client-root startup closure
         run: pnpm --filter @gatu/terminal perf:startup

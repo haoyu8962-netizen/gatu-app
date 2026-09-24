@@ -11,8 +11,7 @@
       "name": "terminal-pairing",
       "runtimeExecutable": "env",
       "runtimeArgs": [
-        "VITE_MOBILE_PAIRING_CREATE_ENABLED=true",
-        "VITE_MOBILE_PAIRING_IMPORT_ENABLED=true",
+        "VITE_MOBILE_PAIRING_ENABLED=true",
         "pnpm",
         "--filter",
         "@gatu/terminal",

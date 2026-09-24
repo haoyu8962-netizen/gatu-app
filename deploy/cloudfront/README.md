@@ -128,7 +128,7 @@ node deploy/cloudfront/deploy.mjs verify --origin https://testnet.gatu.ai --netw
 | 闸门 | `build-meta.json` 字段 | 确认参数 | 何时可以打开 |
 | --- | --- | --- | --- |
 | 主网赞助充值 | `cctpDeposits.mainnetSponsoredWallet` | `--allow-sponsored-mainnet-deposits` | 见 [CCTP 充值](../../docs/cctp-deposits.md) 的发布模式 |
-| 移动配对 | `mobileSync.importFromQr` 或 `createAndReveal` | `--allow-mobile-pairing` | 仅在 [真机矩阵](../../docs/mobile-phone-access-device-validation.md) 验收完成之后；此前两个开关必须保持关闭 |
+| 移动配对 | `mobileSync.enabled`（2026-09-24 之前的构建为 `importFromQr` 或 `createAndReveal`，两种形状都能读） | `--allow-mobile-pairing` | 仅在 [真机清单](../../docs/mobile-phone-access-device-validation.md) 记录完成之后；此前开关必须保持关闭 |
 
 规则是双向精确匹配：构建打开了闸门而没有带参数，拒绝；带了参数而构建没有打开，也拒绝（说明运营方以为在发的版本和实际产物不一致）；`build-meta.json` 没有这些字段（旧构建）同样拒绝，需用当前源码重新构建。`sync` 每次都会打印一行 `release gates: …`；不带 `--execute` 的演练只给出警告。`verify` 会比较线上与本地构建的闸门状态。测试网的两个充值开关只记录、不需要确认。
 
@@ -138,7 +138,7 @@ node deploy/cloudfront/deploy.mjs verify --origin https://testnet.gatu.ai --netw
 
 ## 与已退役 EC2 部署的差异
 
-- 移动配对已改为纯客户端片段信封传输（[ADR 0015](../../docs/adr/0015-link-device-alignment.md) D7 方案 B），不再有票据端点：viewer-request 函数对 `/mobile-agent-sync-ticket*` 直接返回 404，Lambda 不再接收该路径，`build-meta.json` 的 `mobileSync` 只保留两个开关。两个 `VITE_MOBILE_PAIRING_*` 构建开关在真机验收完成前保持关闭。
+- 移动配对已改为纯客户端片段信封传输（[ADR 0015](../../docs/adr/0015-link-device-alignment.md) D7 方案 B），不再有票据端点：viewer-request 函数对 `/mobile-agent-sync-ticket*` 直接返回 404，Lambda 不再接收该路径，`build-meta.json` 的 `mobileSync` 只保留一个 `enabled` 开关（ADR 0015 D8）。`VITE_MOBILE_PAIRING_ENABLED` 在真机清单记录完成前保持关闭。
 - `verify_geo_provider` 的等价检查是 `deploy.mjs verify` 的 geo 项：它从执行机的公网 IP 发起，要求 200 与两位国家码。
 - referral 深链的标记从 HTML meta 变为 `x-gatu-route` 响应头；客户端路由仍在水合后写入 meta。
 - 错误上报进入 Lambda 的 CloudWatch 日志；`/api/leaderboard` 的缓存是每个执行实例内存级的。

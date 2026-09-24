@@ -37,7 +37,6 @@ const ISOLATED_IDENTITY_FIELDS = [
 	["components/api-wallet/api-wallet-view.tsx", '<bdi dir="ltr">{shortenAddress(accountAddress)}</bdi>'],
 	["components/leaderboard/leaderboard-view.tsx", '<bdi dir="ltr">{shortenAddress(address, 6, 4)}</bdi>'],
 	["components/referrals/referral-claim-history.tsx", '<bdi dir="ltr">{shortenAddress(row.hash, 6, 6)}</bdi>'],
-	["components/trade/components/mobile-agent-sync-modal.tsx", '<bdi dir="ltr">{shortenAddress(walletAddress)}</bdi>'],
 	["components/trade/market-overview.tsx", '<bdi dir="ltr">{shortenAddress(address, 4, 4)}</bdi>'],
 	["components/trade/mobile/mobile-market-bar.tsx", '<bdi dir="ltr">{shortenAddress(address, 4, 4)}</bdi>'],
 	["components/trade/tradebox/bridge/executing-screen.tsx", '<bdi dir="ltr">{shortenAddress(address)}</bdi>'],
