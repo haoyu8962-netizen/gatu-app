@@ -212,11 +212,18 @@
 - [Across 二轮复审：N1–N8 验收与恢复边界](sessions/2026-09-13-across-rereview-resolution.md) — 2026-09-13；已整理，验证见正文。补 legal 可判定验收、导出兼容、token、密钥和受控恢复；不采用 WebView 一律禁用、10 USDC 通用引导或交易 hash 主键，生产依赖仍未完成。
 - [AGENTS.md 指针化重构与 HypeTerminal 品牌残留清理](sessions/2026-09-13-agents-brand-cleanup.md) — 2026-09-13；已验证，范围见正文。AGENTS.md 由 24.7KB 压到 17.7KB：细节回归归属文档，新增 recent-trades.md 与 Order entry 节，每个契约配回归入口；全仓文档、测试夹具、bin 名、死存储键与 deepsec id 的旧品牌清理完成，仅保留两处刻意残留。
 
+### 运行时多语言与图表本地化
+
+当前规范：[docs/i18n-presentation.md](../../docs/i18n-presentation.md) · [docs/runtime-guardrails.md](../../docs/runtime-guardrails.md)
+
+- [官方终端切换语言实践取证：react-intl + Suspense 懒加载语言包，图表只在创建时取语言](sessions/2026-09-24-official-terminal-language-switch-trace.md) — 2026-09-24；已验证，范围见正文。在内置浏览器只读调试 app.hyperliquid.xyz/trade/HYPE 并静态分析其生产包：语言用 react-intl，五个语言包（含英文）都是变量动态导入编译出的懒加载 chunk，消息 hook 在未缓存时 throw Promise 走根级无 fallback 的 Suspense；切换不 reload、不改 html lang、不重连 WS、不重建 TradingView（图表语言到下次刷新才变），但未用 startTransition，整棵应用被 display:none 约 66–68 ms；语言设置以 JSON 存 hyperliquid.locale-setting，数字格式是独立设置 hyperliquid.locale 且改动会 window.location.reload()；时间戳、图表坐标轴和排序都不跟随 UI 语言。八组静态结论经三路对抗核对与一路补漏，修正了目录键数（1,993）、导入映射来源（vite:dynamic-import-vars）等细节。与 gatu 的 Lingui 热切换、html lang/dir 同步、图表状态保存重建做了对照。
+
 ## 按记录日期检索
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
 | 2026-09-24 | [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) | 未取得任务标识，见正文 | `15196136` | 已验证，范围见正文 |
+| 2026-09-24 | [官方终端切换语言实践取证：react-intl + Suspense 懒加载语言包，图表只在创建时取语言](sessions/2026-09-24-official-terminal-language-switch-trace.md) | 未取得任务标识，见正文 | `f03dcbc0` | 已验证，范围见正文 |
 | 2026-09-24 | [user-menu-recovery 浏览器夹具修复](sessions/2026-09-24-user-menu-recovery-fixture-repair.md) | 未取得任务标识，见正文 | `145adad5` | 已验证，范围见正文 |
 | 2026-09-23 | [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) | 未取得任务标识，见正文 | `cf76c54a` | 已整理，验证见正文 |
 | 2026-09-23 | [codex/reviewceshi 六提交审查与修复](sessions/2026-09-23-codex-legal-notification-review-fixes.md) | 未取得任务标识，见正文 | `b82dd443` | 已验证，范围见正文 |
