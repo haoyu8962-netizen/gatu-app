@@ -42,6 +42,7 @@
 
 | 主题 | 方案与前置条件 |
 | --- | --- |
+| 数字格式与图表翻译对齐官方 | [规划](number-format-and-chart-translation-plan.md)：图表传 `numeric_formatting` 并随数字格式设置重建、日期/排序规则收口、输入框与阿拉伯语数字系统待决策；图表库内错译用 `custom_translate_function` 定点修补，先审计后收录、每条绑定库条目；未实施 |
 | 移动持仓全部平仓 | [入口审查与实施说明](mobile-close-all-plan.md)：持仓工具栏已接入共享全账户市价链路；确认面列出实际目标并明示包含筛选隐藏仓位，后台提交跨页签和断点保持；批量限价和 TP/SL 清理仍为后续专项 |
 | Across 持久充值地址 | [接入设计](across-deposit-addresses.md)、[ADR 0004](adr/0004-across-deposit-addresses.md)：邮箱用户独立入口；生产权限、服务端身份/持久化、账户模式及资金验收待完成 |
 | 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：运行时不再 SSR，Node 进程用预渲染的 `_shell.html` 与文档页回答导航，只执行可移植的 `/api/*` 处理器；发布健康检查含真实 geo 探针；把 `public/` 搬到 CDN 与边缘运行时挂载待完成 |
