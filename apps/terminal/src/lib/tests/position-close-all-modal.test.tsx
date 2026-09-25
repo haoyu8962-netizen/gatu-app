@@ -10,12 +10,17 @@ import type { PositionCloseAllSnapshot } from "@/domain/trade/position-close-all
 const testState = vi.hoisted(() => ({
 	actionButtonProps: null as Record<string, unknown> | null,
 	error: null as string | null,
+	freshSnapshot: null as PositionCloseAllSnapshot | null,
+	hip3Required: false,
+	hip3Target: null as unknown,
 	isPartial: false,
 	isPending: false,
 	isReconciling: false,
 	phase: "idle" as "idle" | "validating" | "submitting" | "reconciling" | "partial",
 	onSessionEnd: vi.fn(),
+	refreshCloseAll: vi.fn(),
 	resetError: vi.fn(),
+	resolverReady: true,
 	shellProps: null as Record<string, unknown> | null,
 	submit: vi.fn(async (): Promise<Record<string, unknown>> => ({ state: "filled" })),
 }));
@@ -70,6 +75,47 @@ vi.mock("@/components/trade/components/trading-action-button", () => ({
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
+
+vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
+	useHip3DisclaimerRequirement: (target: unknown) => {
+		testState.hip3Target = target;
+		return testState.hip3Required
+			? { isRequired: true, dex: "xyz", documentationUrl: undefined }
+			: { isRequired: false, dex: undefined, documentationUrl: undefined };
+	},
+}));
+
+vi.mock("@/components/trade/components/hip3-deployer-disclaimer", () => ({
+	Hip3DeployerDisclaimer: ({
+		open,
+		exit,
+		onExit,
+		onAccept,
+	}: {
+		open: boolean;
+		exit: string;
+		onExit: () => void;
+		onAccept?: () => void;
+	}) =>
+		createElement(
+			"div",
+			{ "data-testid": "hip3-disclaimer", "data-open": String(open), "data-exit": exit },
+			createElement("button", { type: "button", "data-testid": "hip3-exit", onClick: onExit }, "Exit"),
+			createElement("button", { type: "button", "data-testid": "hip3-accept", onClick: onAccept }, "Accept"),
+		),
+}));
+
+vi.mock("@/hooks/trade/use-position-close-all-action", () => ({
+	usePositionCloseAllSnapshotResolver: () => ({
+		identityReady: testState.resolverReady,
+		dataReady: testState.resolverReady,
+		resolveSnapshot: () => ({ snapshot: testState.freshSnapshot, issues: [] }),
+	}),
+}));
+
+vi.mock("@/stores/use-position-dialog-store", () => ({
+	usePositionDialogActions: () => ({ refreshCloseAll: testState.refreshCloseAll }),
+}));
 
 vi.mock("@/hooks/trade/use-position-close-all-submit", () => ({
 	usePositionCloseAllSubmit: () => ({
@@ -135,12 +181,17 @@ describe("PositionCloseAllController", () => {
 		root = createRoot(container);
 		testState.actionButtonProps = null;
 		testState.error = null;
+		testState.freshSnapshot = null;
+		testState.hip3Required = false;
+		testState.hip3Target = null;
 		testState.isPartial = false;
 		testState.isPending = false;
 		testState.isReconciling = false;
 		testState.phase = "idle";
 		testState.onSessionEnd.mockReset();
+		testState.refreshCloseAll.mockReset();
 		testState.resetError.mockReset();
+		testState.resolverReady = true;
 		testState.shellProps = null;
 		testState.submit.mockReset();
 		testState.submit.mockImplementation(async () => ({ state: "filled" }));
@@ -167,6 +218,62 @@ describe("PositionCloseAllController", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+	});
+
+	it("shows the HIP-3 disclaimer for builder-deployed targets before the confirmation and ends the session on Cancel", () => {
+		testState.hip3Required = true;
+		render(2);
+
+		expect(testState.hip3Target).toEqual(["COIN0", "COIN1"]);
+		const disclaimer = container.querySelector('[data-testid="hip3-disclaimer"]');
+		expect(disclaimer?.getAttribute("data-exit")).toBe("cancel");
+		expect(disclaimer?.getAttribute("data-open")).toBe("true");
+		expect(container.querySelector('[data-testid="submit"]')).toBeNull();
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="hip3-exit"]')?.click());
+		expect(testState.onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
+		expect(testState.refreshCloseAll).not.toHaveBeenCalled();
+	});
+
+	it("recaptures the snapshot when the disclaimer is accepted so the preview ages from the confirmation", () => {
+		testState.hip3Required = true;
+		testState.freshSnapshot = snapshotWith(3);
+		render(2);
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="hip3-accept"]')?.click());
+		expect(testState.refreshCloseAll).toHaveBeenCalledExactlyOnceWith(SESSION_ID, testState.freshSnapshot);
+		expect(testState.onSessionEnd).not.toHaveBeenCalled();
+	});
+
+	it("keeps the opening snapshot when the account cannot be resolved at acceptance", () => {
+		testState.hip3Required = true;
+		testState.resolverReady = false;
+		testState.freshSnapshot = snapshotWith(3);
+		render();
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="hip3-accept"]')?.click());
+		expect(testState.refreshCloseAll).not.toHaveBeenCalled();
+	});
+
+	it("mounts the confirmation once the disclaimer is accepted and its exit transition has run", () => {
+		vi.useFakeTimers();
+		try {
+			testState.hip3Required = true;
+			render();
+			testState.hip3Required = false;
+			render();
+			expect(container.querySelector('[data-testid="hip3-disclaimer"]')?.getAttribute("data-open")).toBe("false");
+			expect(container.querySelector('[data-testid="submit"]')).toBeNull();
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[data-testid="hip3-disclaimer"]')).toBeNull();
+			expect(getSubmit().disabled).toBe(false);
+			expect(testState.onSessionEnd).not.toHaveBeenCalled();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("keeps the dialog mounted closed for its exit transition after the snapshot clears", () => {

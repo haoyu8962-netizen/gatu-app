@@ -138,7 +138,10 @@ Exchange write still revalidates legal status at execution. Preference-only
 dialogs, including Settings and the command menu, remain available while legal
 status is being checked; they do not grant any trading or signing capability. A
 required HIP-3 deployer disclaimer retains priority over ordinary trading
-dialogs once legal review and signer setup are complete.
+dialogs once legal review and signer setup are complete. On the trade page its
+only way out is Leave this market, which returns to the default market; the
+position close flows show a cancellable copy first. `docs/hip3-deployer-disclaimer.md`
+owns this behavior.
 
 The position-dialog host stays mounted at the page level in every legal state,
 outside the legal gate, and so does the Market Close submit host. Together they

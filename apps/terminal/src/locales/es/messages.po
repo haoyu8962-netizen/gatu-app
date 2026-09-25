@@ -1417,7 +1417,6 @@ msgstr "Haz clic para enviar · Las operaciones ejecutadas no se pueden revertir
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-#: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/pending-action-modal.tsx
@@ -3822,6 +3821,10 @@ msgstr "Período de clasificación"
 #: src/components/vaults/vaults-list.tsx
 msgid "Leading"
 msgstr "Líder"
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Leave this market"
+msgstr "Salir de este mercado"
 
 #: src/components/referrals/referral-activity.tsx
 #: src/components/trade/tradebox/trade-header.tsx

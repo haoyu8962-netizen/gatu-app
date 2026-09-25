@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review"],
-  "summary": "用户问 HIP-3 部署者免责声明的签署次数是否合规、是否与官方一致。对官方 2026-09-24 产物取证：组件 uC/dC 只在交易页渲染，任何 builder 永续市场触发，复选框必勾才能确认，确认把 hyperliquid.discard_hip3_disclaimer 写成 true（全局、永久、不分 deployer、无版本），点遮罩可不接受就关闭但换市场/刷新会再弹，无 Esc、无 X。gatu：同样每浏览器一次、全局、永久（带版本），实机验证接受一次后刷新与切换其它 deployer 市场都不再弹。差异：gatu 页面级弹窗不可关闭且未在 dismiss 契约登记；市价/限价平仓给可取消副本，全部平仓与反手则提交时拒绝且无接受入口；三个版本旋钮只有一个是有意的；缺补水回归测试。顺路发现抵押品非 USDC 的 builder dex（hyna、flx、cash、vntl、km）没进目录，直接打开 404。未改代码。",
+  "summary": "用户问 HIP-3 部署者免责声明的签署次数是否合规、是否与官方一致。对官方 2026-09-24 产物取证：组件 uC/dC 只在交易页渲染，任何 builder 永续市场触发，复选框必勾才能确认，确认把 hyperliquid.discard_hip3_disclaimer 写成 true（全局、永久、不分 deployer、无版本），点遮罩可不接受就关闭但换市场/刷新会再弹，无 Esc、无 X。gatu：同样每浏览器一次、全局、永久（带版本），实机验证接受一次后刷新与切换其它 deployer 市场都不再弹。差异：gatu 页面级弹窗不可关闭且未在 dismiss 契约登记；市价/限价平仓给可取消副本，全部平仓与反手则提交时拒绝且无接受入口；三个版本旋钮只有一个是有意的；缺补水回归测试。顺路发现抵押品非 USDC 的 builder dex（hyna、flx、cash、vntl、km）没进目录，直接打开 404。未改代码。2026-09-25 更正：这些 dex 的资产全部已下架，目录按 isDelisted 跳过属预期，与抵押品无关，见正文末尾。",
   "thread": null,
   "baseCommit": "f736d8a9",
   "commits": [],
@@ -73,3 +73,7 @@
 ## 后续与替代关系
 
 - 不替代任何记录。候选处理（待用户决定）：页面级弹窗补一个明确出口并在 dismiss 契约登记，或在文档记录偏离；全部平仓与反手改为与市价/限价一致的可取消弹窗，或与官方一致不再把关；补一条补水回归测试；用 store 派生 `open` 以恢复退出过渡；单独排查非 USDC 抵押品 builder dex 缺失。
+
+## 更正（2026-09-25）
+
+「顺路发现」一节的归因有误。用户指出这些市场全部已下架，随后用公开 API 复核（`meta`，按 dex 查询）：hyna 25/25、flx 16/16、vntl 15/15、km 23/23、cash 17/17 以及 abcd 1/1 的资产全部带 `isDelisted: true`。目录构建在 `use-markets.tsx` 跳过已下架资产，所以这些市场不在目录里、直接打开是 404，属于预期行为，与抵押品不是 USDC 无关。当时只核对了抵押品字段，没有核对 `isDelisted`。仍在交易的 builder 市场（xyz、para、mkts、io）抵押品都是 USDC，目前没有抵押品非 USDC 且仍在交易的市场，非 USDC 抵押品的路径无法据此验证。候选处理中的「单独排查非 USDC 抵押品 builder dex 缺失」撤销；其余候选处理由 [2026-09-25-hip3-disclaimer-alignment](2026-09-25-hip3-disclaimer-alignment.md) 实施。

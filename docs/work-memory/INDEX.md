@@ -13,7 +13,7 @@
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
 - [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) — 2026-09-24；已验证，范围见正文。用 codex exec（gpt-6-astra，read-only，medium）对 b82dd443..15196136 做对抗审查：确认 2 项 P2——提交宿主在挂载后无条件下载但未计入启动预算、宿主注册前封存的尝试离开页面后可被其他页面接手。已改为按意图加载宿主、门控卸载时废弃等待中的尝试；未发现 P0/P1，TP/SL 文案与官方规则一致。
-- [HIP-3 部署者免责声明：签署次数与官方终端对照审查](sessions/2026-09-24-hip3-disclaimer-parity-review.md) — 2026-09-24；已验证，范围见正文。用户问 HIP-3 部署者免责声明的签署次数是否合规、是否与官方一致。对官方 2026-09-24 产物取证：组件 uC/dC 只在交易页渲染，任何 builder 永续市场触发，复选框必勾才能确认，确认把 hyperliquid.discard_hip3_disclaimer 写成 true（全局、永久、不分 deployer、无版本），点遮罩可不接受就关闭但换市场/刷新会再弹，无 Esc、无 X。gatu：同样每浏览器一次、全局、永久（带版本），实机验证接受一次后刷新与切换其它 deployer 市场都不再弹。差异：gatu 页面级弹窗不可关闭且未在 dismiss 契约登记；市价/限价平仓给可取消副本，全部平仓与反手则提交时拒绝且无接受入口；三个版本旋钮只有一个是有意的；缺补水回归测试。顺路发现抵押品非 USDC 的 builder dex（hyna、flx、cash、vntl、km）没进目录，直接打开 404。未改代码。
+- [HIP-3 部署者免责声明：签署次数与官方终端对照审查](sessions/2026-09-24-hip3-disclaimer-parity-review.md) — 2026-09-24；已验证，范围见正文。用户问 HIP-3 部署者免责声明的签署次数是否合规、是否与官方一致。对官方 2026-09-24 产物取证：组件 uC/dC 只在交易页渲染，任何 builder 永续市场触发，复选框必勾才能确认，确认把 hyperliquid.discard_hip3_disclaimer 写成 true（全局、永久、不分 deployer、无版本），点遮罩可不接受就关闭但换市场/刷新会再弹，无 Esc、无 X。gatu：同样每浏览器一次、全局、永久（带版本），实机验证接受一次后刷新与切换其它 deployer 市场都不再弹。差异：gatu 页面级弹窗不可关闭且未在 dismiss 契约登记；市价/限价平仓给可取消副本，全部平仓与反手则提交时拒绝且无接受入口；三个版本旋钮只有一个是有意的；缺补水回归测试。顺路发现抵押品非 USDC 的 builder dex（hyna、flx、cash、vntl、km）没进目录，直接打开 404。未改代码。2026-09-25 更正：这些 dex 的资产全部已下架，目录按 isDelisted 跳过属预期，与抵押品无关，见正文末尾。
 - [user-menu-recovery 浏览器夹具修复](sessions/2026-09-24-user-menu-recovery-fixture-repair.md) — 2026-09-24；已验证，范围见正文。user-menu-recovery 套件 10 项全红的原因是夹具缺口而非产品缺陷：df4ed89f 给页头加的 useEmailWalletExport 需要 PrivyProvider 且引入了桩没有的导出，8cb1b98a 起未就绪页头只对已有会话显示 Connecting...，51c5ace3/67d4212e 改了移动端文案。补桩、种会话标记、按宽度更新断言后 10/10 通过；未改产品代码，套件仍不在 CI。
 - [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) — 2026-09-23；已整理，验证见正文。审查 b82dd443..cf76c54a 的 8 个 Claude 联署提交：确认 3 项 P2，涉及懒加载等待期间确认未封存、重复调用提前清除宿主运行标记，以及 TP/SL 文案遗漏保证金不足取消的官方例外；现有 439 项聚焦单测与 9 项浏览器布局测试通过，另以隔离复现验证前两项；未改交易实现、未执行真实交易。
 - [codex/reviewceshi 六提交审查与修复](sessions/2026-09-23-codex-legal-notification-review-fixes.md) — 2026-09-23；已验证，范围见正文。审查 e52739d2..b82dd443：b82dd443 把持仓弹窗宿主移入 legal gate 并永久清理弹窗（确认面契约测试失败），e52739d2 留下类型检查错误；已恢复页面层宿主、去掉清理与可见检查提示（对齐官方终端），按官方 TP/SL 文档给带 TP/SL 的部分成交加规则说明，并按实际 20px 行高和 8px 行距把选项点击区收成互不重叠的 28px（同时修复控件自带 44px 点击层抢点下一行的已有缺陷，并按用户要求修了桌面 TWAP 选项的同类问题）；未做真实钱包或设备验收。
@@ -50,6 +50,7 @@
 
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
+- [HIP-3 部署者免责声明：补出口、统一平仓把关与退出过渡](sessions/2026-09-25-hip3-disclaimer-alignment.md) — 2026-09-25；已验证，范围见正文。按用户决定实施 2026-09-24 审查的候选处理：交易页免责声明加「离开此市场」（回到 BTC，遮罩与 Esc 仍不关闭）并在 dismiss 契约登记两个出口；全部平仓与反手改为与市价、限价平仓一致的可取消免责声明，接受后才挂载确认面；全部平仓的快照 30 秒有效，接受时按当时账户重新生成（refreshCloseAll）；open 由接受状态派生，关闭后保留 250 ms 播放退出动画，出口类型同步保留；补补水回归测试。新增归属文档 docs/hip3-deployer-disclaimer.md。Biome、类型检查、完整单测（600 文件 6842 项）与全部平仓浏览器套件（40 项）通过，应用内浏览器实测交易页两条出口与手机抽屉；四个平仓流程未在持有 HIP-3 仓位的真实账户上操作。
 - [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) — 2026-09-24；已验证，范围见正文。用 codex exec（gpt-6-astra，read-only，medium）对 b82dd443..15196136 做对抗审查：确认 2 项 P2——提交宿主在挂载后无条件下载但未计入启动预算、宿主注册前封存的尝试离开页面后可被其他页面接手。已改为按意图加载宿主、门控卸载时废弃等待中的尝试；未发现 P0/P1，TP/SL 文案与官方规则一致。
 - [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) — 2026-09-23；已整理，验证见正文。审查 b82dd443..cf76c54a 的 8 个 Claude 联署提交：确认 3 项 P2，涉及懒加载等待期间确认未封存、重复调用提前清除宿主运行标记，以及 TP/SL 文案遗漏保证金不足取消的官方例外；现有 439 项聚焦单测与 9 项浏览器布局测试通过，另以隔离复现验证前两项；未改交易实现、未执行真实交易。
 - [codex/reviewceshi 六提交审查与修复](sessions/2026-09-23-codex-legal-notification-review-fixes.md) — 2026-09-23；已验证，范围见正文。审查 e52739d2..b82dd443：b82dd443 把持仓弹窗宿主移入 legal gate 并永久清理弹窗（确认面契约测试失败），e52739d2 留下类型检查错误；已恢复页面层宿主、去掉清理与可见检查提示（对齐官方终端），按官方 TP/SL 文档给带 TP/SL 的部分成交加规则说明，并按实际 20px 行高和 8px 行距把选项点击区收成互不重叠的 28px（同时修复控件自带 44px 点击层抢点下一行的已有缺陷，并按用户要求修了桌面 TWAP 选项的同类问题）；未做真实钱包或设备验收。
@@ -228,6 +229,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-25 | [HIP-3 部署者免责声明：补出口、统一平仓把关与退出过渡](sessions/2026-09-25-hip3-disclaimer-alignment.md) | 未取得任务标识，见正文 | `cd2176a1` | 已验证，范围见正文 |
 | 2026-09-24 | [邮箱用户在 Link mobile device 弹窗里仍弹出 Privy 签名确认：原因与对齐官方的静默签名](sessions/2026-09-24-email-mobile-approval-silent-signing.md) | 未取得任务标识，见正文 | `b14c3a12` | 已验证，范围见正文 |
 | 2026-09-24 | [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) | 未取得任务标识，见正文 | `15196136` | 已验证，范围见正文 |
 | 2026-09-24 | [HIP-3 部署者免责声明：签署次数与官方终端对照审查](sessions/2026-09-24-hip3-disclaimer-parity-review.md) | 未取得任务标识，见正文 | `f736d8a9` | 已验证，范围见正文 |

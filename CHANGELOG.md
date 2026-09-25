@@ -8,6 +8,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market
+  returns to BTC; the scrim and Esc still do not dismiss it. Close All and Reverse now show the
+  same cancellable disclaimer as Market Close and Limit Close before their confirmation instead of
+  failing at submission, and Close All reads the account again when the disclaimer is accepted, so
+  its 30-second preview starts when the confirmation appears. The disclaimer fades out after Confirm
+  or Leave instead of disappearing, and it no longer shows a close button because its footer holds
+  the way out.
+
 - Link mobile device is now one sentence, one warning and one action. The header QR icon is the
   only entry (it loads the dialog while you hover or focus it, so the click opens the dialog
   directly instead of a "Connecting" shell), the dialog approves the 30-day trading key with a single click (an email wallet signs

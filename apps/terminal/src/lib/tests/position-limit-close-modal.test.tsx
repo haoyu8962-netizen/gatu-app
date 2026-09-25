@@ -126,8 +126,12 @@ vi.mock("@/components/trade/components/trading-action-button", () => ({
 }));
 
 vi.mock("@/components/trade/components/hip3-deployer-disclaimer", () => ({
-	Hip3DeployerDisclaimer: ({ onCancel }: { onCancel: () => void }) =>
-		createElement("button", { type: "button", "data-testid": "hip3-cancel", onClick: onCancel }, "HIP-3"),
+	Hip3DeployerDisclaimer: ({ open, exit, onExit }: { open: boolean; exit: string; onExit: () => void }) =>
+		createElement(
+			"button",
+			{ type: "button", "data-testid": "hip3-cancel", "data-open": String(open), "data-exit": exit, onClick: onExit },
+			"HIP-3",
+		),
 }));
 
 vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
@@ -588,23 +592,37 @@ describe("PositionLimitCloseModal", () => {
 		render();
 
 		expect(testState.submitTarget).toBeNull();
-		act(() => container.querySelector<HTMLButtonElement>('[data-testid="hip3-cancel"]')?.click());
+		const disclaimer = container.querySelector<HTMLButtonElement>('[data-testid="hip3-cancel"]');
+		expect(disclaimer?.getAttribute("data-exit")).toBe("cancel");
+		expect(disclaimer?.getAttribute("data-open")).toBe("true");
+		act(() => disclaimer?.click());
 		expect(onSessionEnd).toHaveBeenCalledWith(SESSION_ID);
 	});
 
 	it("captures owner and environment before the HIP-3 disclaimer can switch accounts", () => {
-		testState.hip3Required = true;
-		render();
-		expect(testState.submitTarget).toBeNull();
+		vi.useFakeTimers();
+		try {
+			testState.hip3Required = true;
+			render();
+			expect(testState.submitTarget).toBeNull();
 
-		testState.clientKey = "0x2222222222222222222222222222222222222222";
-		testState.env = "Testnet";
-		testState.hip3Required = false;
-		render();
+			testState.clientKey = "0x2222222222222222222222222222222222222222";
+			testState.env = "Testnet";
+			testState.hip3Required = false;
+			render();
+			expect(container.querySelector('[data-testid="hip3-cancel"]')?.getAttribute("data-open")).toBe("false");
+			expect(testState.submitTarget).toBeNull();
 
-		expect(testState.submitTarget).toMatchObject({
-			owner: "0x1111111111111111111111111111111111111111",
-			env: "Mainnet",
-		});
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[data-testid="hip3-cancel"]')).toBeNull();
+			expect(testState.submitTarget).toMatchObject({
+				owner: "0x1111111111111111111111111111111111111111",
+				env: "Mainnet",
+			});
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

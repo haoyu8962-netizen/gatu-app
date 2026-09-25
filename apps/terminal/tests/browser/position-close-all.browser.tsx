@@ -205,6 +205,12 @@ export function usePositionMarketCloseAction() {
 export function hasAcceptedHip3Disclaimer() {
 	return true;
 }
+export function useHip3DisclaimerRequirement() {
+	return { isRequired: false, dex: undefined, documentationUrl: undefined };
+}
+export function useHip3DisclaimerActions() {
+	return { accept: () => {} };
+}
 export function PositionPnlShareModal() {
 	return null;
 }

@@ -12,6 +12,7 @@ import {
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
 import { useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
+import { useHip3DisclaimerPresentation } from "@/hooks/trade/use-hip3-disclaimer-presentation";
 import {
 	type PositionLimitCloseTarget,
 	usePositionLimitCloseSubmit,
@@ -41,6 +42,8 @@ interface Props {
 	onSessionEnd: (sessionId: string) => void;
 }
 
+const DIALOG_EXIT_MS = 250;
+
 export function PositionLimitCloseModal({ session, onSessionEnd }: Props) {
 	if (!session) return null;
 	return (
@@ -66,14 +69,17 @@ function PositionLimitCloseModalSession({ position, onOpenChange }: BodyProps) {
 		signedPositionSize: position.signedPositionSize,
 		marginMode: position.marginMode,
 	}).current;
-	const hip3Disclaimer = useHip3DisclaimerRequirement(position.coin);
+	const hip3Requirement = useHip3DisclaimerRequirement(position.coin);
+	const hip3Disclaimer = useHip3DisclaimerPresentation(hip3Requirement, "cancel", DIALOG_EXIT_MS);
 
-	if (hip3Disclaimer.isRequired && hip3Disclaimer.dex) {
+	if (hip3Disclaimer) {
 		return (
 			<Hip3DeployerDisclaimer
 				key={hip3Disclaimer.dex}
+				open={hip3Disclaimer.open}
 				documentationUrl={hip3Disclaimer.documentationUrl}
-				onCancel={() => onOpenChange(false)}
+				exit={hip3Disclaimer.exit}
+				onExit={() => onOpenChange(false)}
 			/>
 		);
 	}
