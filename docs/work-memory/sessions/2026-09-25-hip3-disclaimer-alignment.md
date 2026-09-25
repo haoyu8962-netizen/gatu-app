@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["order-entry"],
-  "summary": "按用户决定实施 2026-09-24 审查的候选处理：交易页免责声明加「离开此市场」（回到 BTC，遮罩与 Esc 仍不关闭）并在 dismiss 契约登记两个出口；全部平仓与反手改为与市价、限价平仓一致的可取消免责声明，接受后才挂载确认面；全部平仓的快照 30 秒有效，接受时按当时账户重新生成（refreshCloseAll）；open 由接受状态派生，关闭后保留 250 ms 播放退出动画，出口类型同步保留；补补水回归测试。新增归属文档 docs/hip3-deployer-disclaimer.md。Biome、类型检查、完整单测（600 文件 6842 项）与全部平仓浏览器套件（40 项）通过，应用内浏览器实测交易页两条出口与手机抽屉；四个平仓流程未在持有 HIP-3 仓位的真实账户上操作。",
+  "summary": "按用户决定实施 2026-09-24 审查的候选处理：交易页免责声明加「离开此市场」（回到 BTC，遮罩与 Esc 仍不关闭）并在 dismiss 契约登记两个出口；全部平仓与反手改为与市价、限价平仓一致的可取消免责声明，接受后才挂载确认面；全部平仓的快照 30 秒有效，接受时按当时账户重新生成（refreshCloseAll）；open 由接受状态派生，关闭后保留 250 ms 播放退出动画，出口类型同步保留；补补水回归测试。新增归属文档 docs/hip3-deployer-disclaimer.md。Biome、类型检查、完整单测（600 文件 6842 项）与全部平仓浏览器套件（40 项）通过，应用内浏览器实测交易页两条出口与手机抽屉；四个平仓流程未在持有 HIP-3 仓位的真实账户上操作。补记：Codex 只读对抗审查 7c9b3f21，无 P0、P1，3 项 P2 经核对均成立（全部平仓快照刷新缺真实提交路径测试、限价平仓取消时无退出动画而文档称有、确认面文档误称市价平仓提交钩子接受后才挂载），另核实 store merge 在首次访问时补水不完成的既有问题；均未修复。",
   "thread": null,
   "baseCommit": "cd2176a1",
   "commits": [],
@@ -60,3 +60,14 @@
 - 不替代任何记录。上一条审查记录的候选处理除「单独排查非 USDC 抵押品 builder dex 缺失」外均已实施；那一项已在上一条记录末尾更正为无需处理。
 - 下次改动免责声明先读 [docs/hip3-deployer-disclaimer.md](../../hip3-deployer-disclaimer.md)；要重新询问所有用户只升 `HIP3_DISCLAIMER_VERSION`。
 - 仍待办：有 HIP-3 仓位时的四个平仓流程实测。
+
+## 补记：Codex 对抗审查（2026-09-25）
+
+- 调用：`codex exec -m gpt-6-astra -s read-only -c approval_policy='"never"' -c model_reasoning_effort='"medium"'`，codex-cli 0.154.0，对象 `7c9b3f21`，父提交 `cd2176a1`。共 14 条只读命令、约 12.2 万 token。Codex 没有运行测试，它对测试数量的复述不是独立验证。
+- 结论：无 P0、P1。3 项 P2 由本会话逐条对照代码核对，均成立：
+  1. 全部平仓的快照刷新没有「真实弹窗加真实提交路径」的测试。`position-close-all-modal.test.tsx` 把 store 与提交钩子都桩掉，只断言调用了 `refreshCloseAll`；浏览器夹具的 `useHip3DisclaimerRequirement` 固定返回不需要。AGENTS.md「Confirmation surface contract」要求改变确认面展示或承诺内容的改动保留这种测试。实现本身有误尚未证实。
+  2. 限价平仓的免责声明在取消时立即卸载：`PositionLimitCloseModal` 在会话结束时直接返回 null，没有退出动画。父提交已是这样，但 `docs/hip3-deployer-disclaimer.md` 第 5 节把「会话结束」写进了保留 250 ms 的情形，保证过宽。
+  3. `docs/confirmation-surfaces.md` 新增的一行把市价平仓也写成「接受后才挂载提交钩子」。实际上市价平仓的提交宿主由 `GlobalModals` 在页面层渲染，与免责声明无关。
+- Codex 的变异推演另外指出：交易页副本的 `dismissible={false}` 没有测试钉住，Esc 与点遮罩只在应用内浏览器实测过。
+- 本会话另外核实的既有问题，不在本提交的改动里：免责声明 store 的 `merge` 直接读 `persisted.acceptedVersion`。首次访问没有存储记录时，zustand 以 `undefined` 调用 `merge`，抛出的错误被 persist 吞掉，补水不完成，状态停在默认的 0，行为恰好正确。用已安装的 zustand 5.0.9 写脚本复现：现写法首次访问时 `hasHydrated()` 为 false，加 `persisted ?? {}` 后为 true；老用户两种写法都正常。全局设置 store 的 `merge` 同样没有空值保护。仓库里没有代码依赖补水回调，目前没有可见影响。
+- 状态：以上发现均未修复，等待用户决定。
