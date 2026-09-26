@@ -34,7 +34,7 @@ const useHip3DisclaimerStore = create<Hip3DisclaimerStore>()(
 			storage: createJSONStorage(() => validatedStorage),
 			partialize: (state) => ({ acceptedVersion: state.acceptedVersion }),
 			merge: (persisted, current) => {
-				const stored = persisted as Partial<Hip3DisclaimerStore>;
+				const stored = (persisted ?? {}) as Partial<Hip3DisclaimerStore>;
 				return {
 					...current,
 					acceptedVersion:
