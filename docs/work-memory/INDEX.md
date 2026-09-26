@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [zustand persist 首次访问时 merge 收到 undefined 的防护](sessions/2026-09-26-persist-merge-first-visit-guard.md) — 2026-09-26；已验证，范围见正文。zustand 5.0.9 的 persist 在首次访问、存储数据未通过校验被清除、以及版本不同且没有 migrate 时都会调用 merge(undefined)；global-settings 与 HIP-3 免责声明两个 store 的 merge 没有防护，抛出的 TypeError 被吞掉，hasHydrated() 一直为 false。两处改为 persisted ?? {}，新增覆盖全部四个持久化 store 的水合回归测试（修复前 5 项失败，修复后 14 项通过）；默认值和归一化不变，market 与 order-entry 已经安全、未改动。
 - [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) — 2026-09-24；已验证，范围见正文。用 codex exec（gpt-6-astra，read-only，medium）对 b82dd443..15196136 做对抗审查：确认 2 项 P2——提交宿主在挂载后无条件下载但未计入启动预算、宿主注册前封存的尝试离开页面后可被其他页面接手。已改为按意图加载宿主、门控卸载时废弃等待中的尝试；未发现 P0/P1，TP/SL 文案与官方规则一致。
 - [user-menu-recovery 浏览器夹具修复](sessions/2026-09-24-user-menu-recovery-fixture-repair.md) — 2026-09-24；已验证，范围见正文。user-menu-recovery 套件 10 项全红的原因是夹具缺口而非产品缺陷：df4ed89f 给页头加的 useEmailWalletExport 需要 PrivyProvider 且引入了桩没有的导出，8cb1b98a 起未就绪页头只对已有会话显示 Connecting...，51c5ace3/67d4212e 改了移动端文案。补桩、种会话标记、按宽度更新断言后 10/10 通过；未改产品代码，套件仍不在 CI。
 - [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) — 2026-09-23；已整理，验证见正文。审查 b82dd443..cf76c54a 的 8 个 Claude 联署提交：确认 3 项 P2，涉及懒加载等待期间确认未封存、重复调用提前清除宿主运行标记，以及 TP/SL 文案遗漏保证金不足取消的官方例外；现有 439 项聚焦单测与 9 项浏览器布局测试通过，另以隔离复现验证前两项；未改交易实现、未执行真实交易。
@@ -216,6 +217,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-26 | [zustand persist 首次访问时 merge 收到 undefined 的防护](sessions/2026-09-26-persist-merge-first-visit-guard.md) | 未取得任务标识，见正文 | `121e8e76` | 已验证，范围见正文 |
 | 2026-09-24 | [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) | 未取得任务标识，见正文 | `15196136` | 已验证，范围见正文 |
 | 2026-09-24 | [user-menu-recovery 浏览器夹具修复](sessions/2026-09-24-user-menu-recovery-fixture-repair.md) | 未取得任务标识，见正文 | `145adad5` | 已验证，范围见正文 |
 | 2026-09-23 | [Claude 署名八提交对抗审查：市价平仓等待窗口与 TP/SL 说明](sessions/2026-09-23-claude-eight-commit-adversarial-review.md) | 未取得任务标识，见正文 | `cf76c54a` | 已整理，验证见正文 |
