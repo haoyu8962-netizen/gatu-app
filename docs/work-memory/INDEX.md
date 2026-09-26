@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [zustand persist 首次访问时 merge 收到 undefined 的防护](sessions/2026-09-26-persist-merge-first-visit-guard.md) — 2026-09-26；已验证，范围见正文。zustand 5.0.9 的 persist 在首次访问、存储数据未通过校验被清除、以及版本不同且没有 migrate 时都会调用 merge(undefined)；global-settings 与 HIP-3 免责声明两个 store 的 merge 没有防护，抛出的 TypeError 被吞掉，hasHydrated() 一直为 false。两处改为 persisted ?? {}，新增覆盖全部四个持久化 store 的水合回归测试（修复前 5 项失败，修复后 14 项通过）；默认值和归一化不变，market 与 order-entry 已经安全、未改动。
 - [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) — 2026-09-24；已验证，范围见正文。用 codex exec（gpt-6-astra，read-only，medium）对 b82dd443..15196136 做对抗审查：确认 2 项 P2——提交宿主在挂载后无条件下载但未计入启动预算、宿主注册前封存的尝试离开页面后可被其他页面接手。已改为按意图加载宿主、门控卸载时废弃等待中的尝试；未发现 P0/P1，TP/SL 文案与官方规则一致。
 - [HIP-3 部署者免责声明：签署次数与官方终端对照审查](sessions/2026-09-24-hip3-disclaimer-parity-review.md) — 2026-09-24；已验证，范围见正文。用户问 HIP-3 部署者免责声明的签署次数是否合规、是否与官方一致。对官方 2026-09-24 产物取证：组件 uC/dC 只在交易页渲染，任何 builder 永续市场触发，复选框必勾才能确认，确认把 hyperliquid.discard_hip3_disclaimer 写成 true（全局、永久、不分 deployer、无版本），点遮罩可不接受就关闭但换市场/刷新会再弹，无 Esc、无 X。gatu：同样每浏览器一次、全局、永久（带版本），实机验证接受一次后刷新与切换其它 deployer 市场都不再弹。差异：gatu 页面级弹窗不可关闭且未在 dismiss 契约登记；市价/限价平仓给可取消副本，全部平仓与反手则提交时拒绝且无接受入口；三个版本旋钮只有一个是有意的；缺补水回归测试。顺路发现抵押品非 USDC 的 builder dex（hyna、flx、cash、vntl、km）没进目录，直接打开 404。未改代码。2026-09-25 更正：这些 dex 的资产全部已下架，目录按 isDelisted 跳过属预期，与抵押品无关，见正文末尾。
 - [user-menu-recovery 浏览器夹具修复](sessions/2026-09-24-user-menu-recovery-fixture-repair.md) — 2026-09-24；已验证，范围见正文。user-menu-recovery 套件 10 项全红的原因是夹具缺口而非产品缺陷：df4ed89f 给页头加的 useEmailWalletExport 需要 PrivyProvider 且引入了桩没有的导出，8cb1b98a 起未就绪页头只对已有会话显示 Connecting...，51c5ace3/67d4212e 改了移动端文案。补桩、种会话标记、按宽度更新断言后 10/10 通过；未改产品代码，套件仍不在 CI。
@@ -229,6 +230,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-26 | [zustand persist 首次访问时 merge 收到 undefined 的防护](sessions/2026-09-26-persist-merge-first-visit-guard.md) | 未取得任务标识，见正文 | `121e8e76` | 已验证，范围见正文 |
 | 2026-09-25 | [HIP-3 部署者免责声明：补出口、统一平仓把关与退出过渡](sessions/2026-09-25-hip3-disclaimer-alignment.md) | 未取得任务标识，见正文 | `cd2176a1` | 已验证，范围见正文 |
 | 2026-09-24 | [邮箱用户在 Link mobile device 弹窗里仍弹出 Privy 签名确认：原因与对齐官方的静默签名](sessions/2026-09-24-email-mobile-approval-silent-signing.md) | 未取得任务标识，见正文 | `b14c3a12` | 已验证，范围见正文 |
 | 2026-09-24 | [GPT-6 astra 对抗审查与提交宿主按意图加载、等待尝试失败关闭](sessions/2026-09-24-gpt6-review-market-close-host-fixes.md) | 未取得任务标识，见正文 | `15196136` | 已验证，范围见正文 |
