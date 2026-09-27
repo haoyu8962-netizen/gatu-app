@@ -3,12 +3,15 @@
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import type { TwapHistoryResponse, UserFillsResponse } from "@nktkas/hyperliquid";
-import { act } from "react";
+import { act, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { MobileDataScrollMode } from "@/components/trade/mobile/mobile-positions-view";
 
 const mocks = vi.hoisted(() => ({
 	cancelTwap: vi.fn(),
+	exportListeners: new Set<() => void>(),
+	exportTwapFills: vi.fn(async () => undefined),
 	hasActiveOrder: true,
 	hasSnapshot: true,
 	status: "active",
@@ -16,8 +19,11 @@ const mocks = vi.hoisted(() => ({
 	feedback: null as { message: string; tone: "error" } | null,
 	hasMoreTwapFills: false,
 	hasMoreTwapHistory: false,
+	isExportingTwapFills: false,
+	isTwapFillsEmpty: false,
 	isTwapFillsRealtimeDegraded: false,
 	isTwapHistoryRealtimeDegraded: false,
+	isWalletConnected: true,
 	loadMoreTwapFills: vi.fn(),
 	loadMoreTwapHistory: vi.fn(),
 	navigateToMarket: vi.fn(),
@@ -26,6 +32,7 @@ const mocks = vi.hoisted(() => ({
 	setActiveTab: vi.fn(),
 	setOrderType: vi.fn(),
 	side: "B" as "A" | "B",
+	twapFillsStatus: "ready" as "error" | "idle" | "loading" | "ready",
 	twapHistory: [
 		{
 			state: {
@@ -106,22 +113,35 @@ vi.mock("@/hooks/trade/use-twap-history", () => ({
 vi.mock("@/hooks/trade/use-twap-slice-fills", () => ({
 	useTwapSliceFills: () => ({
 		error: undefined,
-		fills: mocks.twapFills,
+		fills: mocks.isTwapFillsEmpty ? [] : mocks.twapFills,
 		hasMore: mocks.hasMoreTwapFills,
-		isConnected: true,
+		isConnected: mocks.isWalletConnected,
 		isRealtimeDegraded: mocks.isTwapFillsRealtimeDegraded,
 		loadMore: mocks.loadMoreTwapFills,
 		realtimeError: mocks.isTwapFillsRealtimeDegraded ? new Error("Fill stream unavailable") : undefined,
 		retryRealtime: mocks.retryTwapFillsRealtime,
-		status: "ready",
+		status: mocks.twapFillsStatus,
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-twap-fill-history-csv", () => ({
+	useTwapFillHistoryCsv: () => ({
+		exportCsv: mocks.exportTwapFills,
+		isExporting: useSyncExternalStore(
+			(listener) => {
+				mocks.exportListeners.add(listener);
+				return () => mocks.exportListeners.delete(listener);
+			},
+			() => mocks.isExportingTwapFills,
+		),
 	}),
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({
-		address: "0x1111111111111111111111111111111111111111",
-		isConnected: true,
-	}),
+	useWalletSession: () =>
+		mocks.isWalletConnected
+			? { address: "0x1111111111111111111111111111111111111111", isConnected: true }
+			: { address: undefined, isConnected: false },
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -191,8 +211,12 @@ describe("MobileTwapTab card", () => {
 		mocks.feedback = null;
 		mocks.hasMoreTwapFills = false;
 		mocks.hasMoreTwapHistory = false;
+		mocks.isExportingTwapFills = false;
+		mocks.isTwapFillsEmpty = false;
 		mocks.isTwapFillsRealtimeDegraded = false;
 		mocks.isTwapHistoryRealtimeDegraded = false;
+		mocks.isWalletConnected = true;
+		mocks.twapFillsStatus = "ready";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -204,14 +228,33 @@ describe("MobileTwapTab card", () => {
 		vi.clearAllMocks();
 	});
 
-	function render() {
+	function render(scrollMode: MobileDataScrollMode = "page") {
 		act(() => {
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<MobileTwapTab scrollMode="page" />
+					<MobileTwapTab scrollMode={scrollMode} />
 				</I18nProvider>,
 			);
 		});
+	}
+
+	function selectSubview(label: string) {
+		const tab = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find(
+			(candidate) => candidate.textContent === label,
+		);
+		expect(tab).toBeDefined();
+		act(() => tab?.click());
+	}
+
+	function setExportingTwapFills(isExporting: boolean) {
+		act(() => {
+			mocks.isExportingTwapFills = isExporting;
+			for (const listener of mocks.exportListeners) listener();
+		});
+	}
+
+	function getTwapFillFooter() {
+		return container.querySelector<HTMLElement>('[data-testid="mobile-twap-fill-history-footer"]');
 	}
 
 	it.each([
@@ -364,5 +407,94 @@ describe("MobileTwapTab card", () => {
 		act(() => loadMore?.click());
 		expect(mocks.retryTwapHistoryRealtime).not.toHaveBeenCalled();
 		expect(mocks.loadMoreTwapHistory).toHaveBeenCalledTimes(1);
+	});
+
+	it.each([
+		{ status: "idle", empty: false, degraded: false },
+		{ status: "loading", empty: false, degraded: false },
+		{ status: "error", empty: false, degraded: false },
+		{ status: "ready", empty: true, degraded: true },
+	] as const)(
+		"keeps the TWAP fill export next to a quiet $status placeholder (degraded: $degraded)",
+		({ status, empty, degraded }) => {
+			mocks.twapFillsStatus = status;
+			mocks.isTwapFillsEmpty = empty;
+			mocks.isTwapFillsRealtimeDegraded = degraded;
+			render();
+			selectSubview("Fill History");
+
+			const pending = container.querySelector('[data-slot="data-pending"]');
+			expect(pending?.getAttribute("aria-busy")).toBe(String(status === "idle" || status === "loading"));
+			expect(container.textContent).not.toMatch(/Loading|Failed|No TWAP fills found|Exporting/);
+			const footer = getTwapFillFooter();
+			expect(pending?.compareDocumentPosition(footer as Node)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+			expect(footer?.querySelector("button")?.disabled).toBe(false);
+		},
+	);
+
+	it("keeps the TWAP fill export below a confirmed empty history", () => {
+		mocks.isTwapFillsEmpty = true;
+		render();
+		selectSubview("Fill History");
+
+		expect(container.textContent).toContain("No TWAP fills found.");
+		expect(getTwapFillFooter()?.querySelector("button")?.textContent).toBe("Export CSV");
+	});
+
+	it.each(["page", "contained"] as const)("places the TWAP fill export after the %s-scrolled cards", (scrollMode) => {
+		mocks.hasMoreTwapFills = true;
+		render(scrollMode);
+		selectSubview("Fill History");
+
+		const list = container.querySelector<HTMLElement>('[data-testid="mobile-twap-fill-history-list"]');
+		const footer = getTwapFillFooter();
+		expect(list?.querySelector("article")).not.toBeNull();
+		expect(list?.textContent).toContain("Load more");
+		expect(list?.nextElementSibling).toBe(footer);
+		expect(footer?.parentElement?.lastElementChild).toBe(footer);
+		expect(footer?.parentElement?.className.includes("overflow-y-auto")).toBe(scrollMode === "contained");
+		expect(footer?.className).toContain("h-[38px]");
+		expect(footer?.className).toContain("px-3.5");
+		const button = footer?.querySelector<HTMLButtonElement>("button");
+		expect(button?.className).toContain("h-[38px]");
+		expect(button?.className).toContain("min-h-0");
+		expect(button?.className).toContain("after:h-11");
+		expect(button?.className).toContain("active:text-market-close-fg");
+
+		act(() => button?.click());
+		expect(mocks.exportTwapFills).toHaveBeenCalledTimes(1);
+	});
+
+	it("disables the TWAP fill export only while it runs and keeps its label", () => {
+		render();
+		selectSubview("Fill History");
+
+		setExportingTwapFills(true);
+		const button = getTwapFillFooter()?.querySelector<HTMLButtonElement>("button");
+		expect(button?.disabled).toBe(true);
+		expect(button?.textContent).toBe("Export CSV");
+		act(() => button?.click());
+		expect(mocks.exportTwapFills).not.toHaveBeenCalled();
+
+		setExportingTwapFills(false);
+		expect(getTwapFillFooter()?.querySelector<HTMLButtonElement>("button")?.disabled).toBe(false);
+	});
+
+	it("keeps the TWAP fill export off the other subviews and off disconnected accounts", () => {
+		render();
+		expect(getTwapFillFooter()).toBeNull();
+		selectSubview("History");
+		expect(getTwapFillFooter()).toBeNull();
+		selectSubview("Fill History");
+		expect(getTwapFillFooter()).not.toBeNull();
+
+		act(() => root.unmount());
+		root = createRoot(container);
+		mocks.isWalletConnected = false;
+		render();
+		selectSubview("Fill History");
+		expect(getTwapFillFooter()).toBeNull();
+		expect(container.querySelector("button[disabled]")).toBeNull();
+		expect(container.textContent).not.toContain("Export CSV");
 	});
 });

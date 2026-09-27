@@ -1,5 +1,20 @@
 import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import Big from "big.js";
+import { fetchTimeRangeHistory } from "@/lib/trade/history-pagination";
+import {
+	createInfoWeightPacer,
+	getItemWeightedInfoRequestWeight,
+	INFO_REST_WEIGHT_LIMIT_PER_MINUTE,
+	type InfoWeightPacerOptions,
+} from "@/lib/trade/info-weight-pacer";
+
+export const TWAP_SLICE_FILLS_EXPORT_LIMIT = 10_000;
+/** Share of the per-IP REST budget the TWAP export may spend per minute; the rest stays with the terminal. */
+export const TWAP_SLICE_FILLS_EXPORT_WEIGHT_PER_MINUTE = (INFO_REST_WEIGHT_LIMIT_PER_MINUTE * 3) / 5;
+/** Largest page observed from `userTwapSliceFillsByTime`; the pacer reserves its weight before each request. */
+export const TWAP_SLICE_FILLS_OBSERVED_PAGE_SIZE = 2_000;
+/** Retry delay after a 429 without `Retry-After`, long enough for the per-minute budget to recover. */
+export const TWAP_SLICE_FILLS_EXPORT_RATE_LIMIT_FALLBACK_MS = 60_000;
 
 const UNSIGNED_DECIMAL_PATTERN = /^\d+(?:\.\d+)?$/;
 const SIGNED_DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
@@ -79,6 +94,56 @@ export function getUserTwapSliceFillKey(entry: UserTwapSliceFillsResponse[number
 
 export function normalizeUserTwapSliceFills(entries: UserTwapSliceFillsResponse): UserFillsResponse {
 	return entries.map((entry) => ({ ...entry.fill, twapId: entry.twapId }));
+}
+
+export interface UserTwapSliceFillHistoryResult {
+	items: UserFillsResponse;
+	truncated: boolean;
+}
+
+interface FetchUserTwapSliceFillHistoryOptions extends Pick<InfoWeightPacerOptions, "now" | "wait"> {
+	endTime: number;
+	maxPages?: number;
+	signal: AbortSignal;
+}
+
+/**
+ * Walks `userTwapSliceFillsByTime` forward from the epoch. The page size of this endpoint is not
+ * documented, so paging ends on an empty or overlap-only page instead of on a short page, and an
+ * out-of-order page fails closed. Only the latest {@link TWAP_SLICE_FILLS_EXPORT_LIMIT} fills are kept.
+ * Pages are paced so their item-weighted cost stays within
+ * {@link TWAP_SLICE_FILLS_EXPORT_WEIGHT_PER_MINUTE} in any minute.
+ */
+export async function fetchUserTwapSliceFillHistory(
+	fetchPage: (startTime: number, endTime: number, signal: AbortSignal) => Promise<UserTwapSliceFillsResponse>,
+	options: FetchUserTwapSliceFillHistoryOptions,
+): Promise<UserTwapSliceFillHistoryResult> {
+	const pacer = createInfoWeightPacer({
+		now: options.now,
+		reserveWeight: getItemWeightedInfoRequestWeight(TWAP_SLICE_FILLS_OBSERVED_PAGE_SIZE),
+		wait: options.wait,
+		weightPerWindow: TWAP_SLICE_FILLS_EXPORT_WEIGHT_PER_MINUTE,
+	});
+	const result = await fetchTimeRangeHistory({
+		endTime: options.endTime,
+		fetchPage: async (startTime, endTime, signal) => {
+			await pacer.acquire(signal);
+			const page = await fetchPage(startTime, endTime, signal);
+			pacer.record(getItemWeightedInfoRequestWeight(Array.isArray(page) ? page.length : 0));
+			return page;
+		},
+		getKey: getUserTwapSliceFillKey,
+		getTime: (entry: UserTwapSliceFillsResponse[number]) => entry.fill.time,
+		...(options.maxPages === undefined ? {} : { maxPages: options.maxPages }),
+		requireAscending: true,
+		retainLatestItems: TWAP_SLICE_FILLS_EXPORT_LIMIT,
+		signal: options.signal,
+		validateItem: isValidUserTwapSliceFillHistoryItem,
+	});
+	return {
+		items: normalizeUserTwapSliceFills(result.items),
+		truncated: result.truncated || result.items.length >= TWAP_SLICE_FILLS_EXPORT_LIMIT,
+	};
 }
 
 export function getUserFillNotional(fill: UserFillsResponse[number]): string | null {
