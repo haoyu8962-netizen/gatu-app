@@ -66,6 +66,8 @@ interface FetchTimeRangeHistoryOptions<T> {
 
 interface RateLimitRetryOptions {
 	maxRetries?: number;
+	/** Delay before retrying a 429 that carries no `Retry-After`; defaults to the shared query fallback. */
+	rateLimitFallbackMs?: number;
 	signal: AbortSignal;
 	wait?: (delayMs: number, signal: AbortSignal) => Promise<void>;
 }
@@ -106,7 +108,7 @@ export async function fetchHistoryPageWithRetry<T>(
 	request: (signal: AbortSignal) => Promise<T>,
 	options: RateLimitRetryOptions,
 ): Promise<T> {
-	const { maxRetries = DEFAULT_RATE_LIMIT_RETRIES, signal, wait = waitForHistoryRetry } = options;
+	const { maxRetries = DEFAULT_RATE_LIMIT_RETRIES, rateLimitFallbackMs, signal, wait = waitForHistoryRetry } = options;
 	let retries = 0;
 
 	while (true) {
@@ -116,7 +118,7 @@ export async function fetchHistoryPageWithRetry<T>(
 		} catch (error) {
 			throwIfAborted(signal);
 			if (!isRetryableHistoryPageError(error) || retries >= maxRetries) throw error;
-			const delayMs = getQueryRetryDelayMs(retries, error, () => 0);
+			const delayMs = getQueryRetryDelayMs(retries, error, () => 0, rateLimitFallbackMs);
 			retries++;
 			await wait(delayMs, signal);
 		}

@@ -46,11 +46,16 @@ export function parseRetryAfterMs(value: string | null, nowMs = Date.now()): num
 	return Math.min(Math.max(retryAt - nowMs, 0), MAX_RETRY_AFTER_MS);
 }
 
-export function getQueryRetryDelayMs(failureCount: number, error: unknown, random = Math.random): number {
+export function getQueryRetryDelayMs(
+	failureCount: number,
+	error: unknown,
+	random = Math.random,
+	rateLimitFallbackMs = RATE_LIMIT_FALLBACK_MS,
+): number {
 	const headers = error instanceof Error ? (error as HttpLikeError).response?.headers : undefined;
 	const retryAfterMs = parseRetryAfterMs(headers?.get("retry-after") ?? null);
 	if (retryAfterMs !== null) return retryAfterMs;
-	if (getHttpStatus(error) === 429) return RATE_LIMIT_FALLBACK_MS;
+	if (getHttpStatus(error) === 429) return rateLimitFallbackMs;
 
 	const backoffMs = Math.min(1000 * 2 ** failureCount, MAX_BACKOFF_MS);
 	return Math.round(backoffMs + backoffMs * 0.1 * random());

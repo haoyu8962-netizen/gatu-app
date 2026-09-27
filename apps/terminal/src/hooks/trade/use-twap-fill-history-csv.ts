@@ -6,7 +6,11 @@ import { buildCsvRows, downloadCsv } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { getInfoClient, useMarkets } from "@/lib/hyperliquid";
 import { fetchHistoryPageWithRetry } from "@/lib/trade/history-pagination";
-import { fetchUserTwapSliceFillHistory, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
+import {
+	fetchUserTwapSliceFillHistory,
+	hasUserFillExplorerTransaction,
+	TWAP_SLICE_FILLS_EXPORT_RATE_LIMIT_FALLBACK_MS,
+} from "@/lib/trade/user-fills";
 import { isHistoryAbortError, useHistoryExportRunner } from "./use-history-csv-export";
 
 const TWAP_FILL_HISTORY_CSV_FILENAME = "twap_fill_history.csv";
@@ -41,7 +45,7 @@ export function useTwapFillHistoryCsv(): TwapFillHistoryCsvResult {
 						fetchHistoryPageWithRetry(
 							(requestSignal) =>
 								client.userTwapSliceFillsByTime({ endTime: pageEndTime, startTime, user: address }, requestSignal),
-							{ signal: pageSignal },
+							{ rateLimitFallbackMs: TWAP_SLICE_FILLS_EXPORT_RATE_LIMIT_FALLBACK_MS, signal: pageSignal },
 						),
 					{ endTime, signal },
 				);
