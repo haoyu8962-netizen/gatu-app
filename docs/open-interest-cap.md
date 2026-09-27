@@ -68,7 +68,7 @@
 
 拦截集合就是 `usesLimitPrice` 的三种类型，与官方的 `limit | stopLimit | takeLimit` 相同；只减仓与 TIF 不豁免，也与官方一致。IOC 限价单不会挂单，文案里的「挂出后会被撤销」对它不准确，这是为了对齐官方保留的已知不精确之处。
 
-执行守卫用 `isOpenInterestCapRestrictedOrderRequest(params)` 从 SDK 参数判断：`positionTpsl` 不适用；`normalTpsl` 只看父单；`na` 分组有两笔及以上主单时视为 Scale（`SCALE_LEVELS_MIN = 2`）不拦截；单笔 `limit` 且 TIF 不是 `FrontendMarket` 时拦截；单笔 `trigger` 且 `isMarket === false` 时拦截。测试用真实 `buildOrderPlan` 为七种非 TWAP 类型（买卖、只减仓各组合）生成参数，钉住这个分类与订单类型规则一致。
+执行守卫用 `isOpenInterestCapRestrictedOrderRequest(params)` 从 SDK 参数判断：`positionTpsl` 不适用；`normalTpsl` 只看父单；`na` 分组有两笔及以上主单时视为 Scale（`SCALE_LEVELS_MIN = 2`）不拦截；单笔 `limit` 且 TIF 不是 `FrontendMarket` 时拦截；单笔 `trigger` 且 `isMarket === false` 时拦截。测试用真实 `buildOrderPlan` 为七种非 TWAP 类型（买卖、只减仓各组合）生成参数，钉住这个分类与校验器所用的同一个 `usesLimitPrice(orderType)`（`lib/trade/order-types.ts`，桌面与移动表单传给校验器的就是它）一致；领域层不再保留第二份订单类型规则。
 
 ### 校验与提交复核
 

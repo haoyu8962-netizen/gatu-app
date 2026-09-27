@@ -1,7 +1,5 @@
 import type { OrderParameters } from "@nktkas/hyperliquid";
-import type { OrderType } from "@/config/trade";
 import { toBig } from "@/lib/trade/numbers";
-import { usesLimitPrice } from "@/lib/trade/order-types";
 
 export type OpenInterestCapStatus = "capped" | "clear" | "unknown";
 
@@ -61,10 +59,6 @@ export function getMarketOpenInterestCapStatus(
 	if (market.kind === "spot") return "clear";
 	if (!Array.isArray(cappedCoins)) return "unknown";
 	return cappedCoins.includes(market.name) ? "capped" : "clear";
-}
-
-export function isOpenInterestCapRestrictedOrderType(orderType: OrderType): boolean {
-	return usesLimitPrice(orderType);
 }
 
 export function isOpenInterestCapRestrictedOrderRequest(params: OrderParameters): boolean {

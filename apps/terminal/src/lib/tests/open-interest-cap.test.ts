@@ -6,9 +6,9 @@ import {
 	getOpenInterestCappedCoins,
 	getPerpDexCoinOpenInterestCap,
 	isOpenInterestCapRestrictedOrderRequest,
-	isOpenInterestCapRestrictedOrderType,
 } from "@/domain/trade/open-interest-cap";
 import { buildOrderPlan, type EntryOrderIntent } from "@/domain/trade/order-intent";
+import { usesLimitPrice } from "@/lib/trade/order-types";
 
 const USER = "0x00000000000000000000000000000000000000aa";
 
@@ -160,12 +160,12 @@ describe("market open-interest cap status", () => {
 });
 
 describe("open-interest cap order classification", () => {
-	it("restricts exactly the limit-priced order types", () => {
-		expect(ORDER_TYPES.filter(isOpenInterestCapRestrictedOrderType)).toEqual(["limit", "stopLimit", "takeProfitLimit"]);
+	it("restricts exactly the limit-priced order types the validator receives", () => {
+		expect(ORDER_TYPES.filter(usesLimitPrice)).toEqual(["limit", "stopLimit", "takeProfitLimit"]);
 	});
 
 	for (const [orderType, input] of Object.entries(PLAN_INPUTS)) {
-		const expected = isOpenInterestCapRestrictedOrderType(orderType as OrderType);
+		const expected = usesLimitPrice(orderType as OrderType);
 
 		it(`classifies the real ${orderType} plan like its order type`, () => {
 			for (const reduceOnly of [false, true]) {
