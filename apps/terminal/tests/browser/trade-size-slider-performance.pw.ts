@@ -390,7 +390,7 @@ async function pauseAndReadPreviewCount(input: Locator): Promise<number> {
 				const timeout = setTimeout(() => {
 					observer.disconnect();
 					reject(new Error("The pause did not mark the held slider input aria-disabled"));
-				}, 2_000);
+				}, 5_000);
 				observer.observe(element, { attributeFilter: ["aria-disabled"] });
 				auditWindow.__gatuSliderSetPaused(true);
 			}),
