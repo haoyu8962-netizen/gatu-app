@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["static-hosting", "docs-governance"],
-  "summary": "按用户选择（改成应用页、6 页全改）删除文档路由表面与 DocumentChrome：/docs /support /terms /privacy /risk /cookies 改为仪表盘路由，桌面用 TopNav/FooterBar、移动用 MobileHeader；只预渲染 SPA 壳，Node 静态页、CloudFront 请求函数与 SW（v10）不再区分文档页，deploy verify 改查法律页返回壳；ADR 0020。Cookie Policy 未进全局底栏（1001px 下会压住 ⌘K 按钮约 80px），现只能从法律接受弹窗和 URL 进入。类型检查、Biome、CloudFront 测试 40 项、完整单测、生产构建及开发服务器浏览器检查的结果见正文；未发布，未做真机检查。",
+  "summary": "按用户选择（改成应用页、6 页全改）删除文档路由表面与 DocumentChrome：/docs /support /terms /privacy /risk /cookies 改为仪表盘路由，桌面用 TopNav/FooterBar、移动用 MobileHeader；只预渲染 SPA 壳，Node 静态页、CloudFront 请求函数与 SW（v10）不再区分文档页，deploy verify 改查法律页返回壳；ADR 0020。Cookie Policy 未进全局底栏（官方也没有；1001px 下会压住 ⌘K 按钮约 80px）。补记：照官方做法把 Cookie 入口放进隐私政策第 4 节，手机抽屉加 Docs/Support，sync 删除遗留的 <route>/index.html，verify 要求 /terms/index.html 返回 404。类型检查、Biome、CloudFront 测试 40 项、完整单测、生产构建及开发服务器浏览器检查的结果见正文；未发布，未做真机检查。",
   "thread": null,
   "baseCommit": "8b9950ce",
-  "commits": [],
+  "commits": ["2e6c5214"],
   "sources": [
     { "path": "docs/adr/0020-legal-pages-in-app-shell.md" },
     { "path": "apps/terminal/src/components/legal/legal-doc-page.tsx" },
@@ -56,8 +56,18 @@
 - 开发服务器浏览器检查（Vite 3015，内置浏览器，页面由脚本读取 DOM，面板隐藏时无法截图）：1440 宽的 `/terms` 只有应用的 Primary navigation 和底栏 “Documentation and legal” 两组导航，一个 `<main>`，没有错误边界；375 宽的 `/privacy` 使用 MobileHeader，没有页脚，`scrollWidth` 375，标题 “Privacy Policy | GATU”；从 `/trade/BTC` 点底栏 Terms 是客户端导航（没有新的 navigation entry），返回后回到交易页，订单簿正常。
 - 未做：真机和 iOS Safari 检查、已安装 v9 Service Worker 的浏览器跨版本首次导航、CloudFront 线上发布与 `verify`、`csp-coverage.mjs` 浏览器套件、未连接钱包以外的登录状态检查。
 
+## 补记：三项待决事项按官方做法落地
+
+第一次提交 `2e6c5214` 后，用户要求“需要我决定的事情你可以调试下 app.hyperliquid.xyz/terms 看下它的实践，跟着规划推荐的实践方案”。2026-09-27 用内置浏览器只读检查官方站（只打开菜单和抽屉，没有改设置，也没有签名）：
+
+- **Cookie**：官方条款页和底栏都没有任何 Cookie 链接，站内也没有单独的 Cookie 页；`/privacyPolicy` 正文里有一段 “Cookie Policy:”。→ 在隐私政策第 4 节末尾加一句，链到 `https://app.gatu.ai/cookies`，写法与已有的 Terms ↔ Privacy 绝对链接一致；隐私政策 Last Updated 改为 September 27, 2026（按 `legal/README.md` 的规则；这个日期不驱动重新同意，已用 `git grep` 核对）；`legal/README.md` 的文档表补上 cookies 行。底栏不变。
+- **移动导航**：官方桌面 More 菜单只有 Docs 一个文档类入口；手机抽屉在更多类链接之后放 Docs、Support（都是外链），没有 Terms、Privacy。→ `MobileNavDrawer` 的 More 分组在 API Wallet 之后加 Docs（`/docs`）、Support（`/support`）；法律页照官方不进抽屉。原先断言抽屉里没有 Docs、Support 的测试是 `6678a949`（API 钱包功能）顺带加的，没有找到设计依据，已改为只断言没有 Terms / Privacy / Risk / Cookie Policy。
+- **遗留文件**：用 curl 实测，官方 `/terms/index.html` 和不存在的 `/no-such-file.js` 都返回同一个 6,831 字节的 SPA 壳；gatu 线上 `/terms/index.html` 目前返回 45,278 字节的预渲染条款页，`/no-such-page/index.html` 返回 404。→ `deploy.mjs` 新增 `RETIRED_PAGE_KEYS` 与 `buildRetiredPageCommands`：`sync` 上传完成后对六个 `<route>/index.html` 执行 `aws s3 rm`（本次构建仍包含的跳过，桶有版本控制）；`verify` 新增 “retired document pages answer 404”。IAM 策略已包含 `s3:DeleteObject`。
+
+补记验证（同一 worktree，基线为 `2e6c5214` 加上本次未提交的改动）：`pnpm test:cloudfront` 41 项通过；`pnpm --filter @gatu/terminal typecheck` 通过；Biome 检查改动的 3 个代码文件通过；`mobile-nav-drawer`、`legal-policy-contract`、`terms-content`、`legal-doc-page`、`i18n-reactivity-contract`、`i18n-hot-switch`、`top-nav`、`footer-bar` 共 8 个文件、206 项通过；`pnpm --filter @gatu/website test` 4 项通过；`pnpm i18n:extract` 只给 Docs、Support 增加抽屉引用，缺失数不变。开发服务器上 375 宽的 `/privacy` 显示新链接（`target=_blank`，指向 `https://app.gatu.ai/cookies`）和新日期；抽屉 More 分组依次是 Statistics、API Wallet、Docs、Support，点 Support 后进入 `/support`，抽屉关闭，没有横向滚动。这次补记没有重跑完整单测和生产构建，删除命令也没有对真实的桶执行。
+
 ## 后续与替代关系
 
 - ADR 0020 部分取代 ADR 0005/0006/0010 中与文档路由相关的决策；这些 ADR 的其余部分不变。
-- 待用户决定：Cookie Policy 是否需要常驻入口（全局底栏在 1001px 下放不下）；移动端法律页之间没有互相链接的导航；S3 上历史的 `<route>/index.html` 是否清理。
+- 隐私政策多了一句交叉引用，法律实质内容没有变；按 `legal/README.md`，数据处理类措辞的变动需要法律审阅，这一句只是导航，发布前可以请法务确认。
 - 发布时按现有顺序先 `deploy.mjs functions`（新的请求函数会把 6 个路径改写到壳），再 `sync`、失效、`verify`；发布后再跑 `csp-coverage.mjs`。

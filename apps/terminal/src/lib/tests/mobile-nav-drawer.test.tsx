@@ -202,7 +202,7 @@ describe("MobileNavDrawer", () => {
 			"Referrals",
 			"Leaderboard",
 		]);
-		expect(moreItems.map(itemLabel)).toEqual(["Statistics", "API Wallet"]);
+		expect(moreItems.map(itemLabel)).toEqual(["Statistics", "API Wallet", "Docs", "Support"]);
 
 		const links = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')];
 		expect(links.map((link) => link.textContent?.trim())).toEqual([
@@ -214,6 +214,8 @@ describe("MobileNavDrawer", () => {
 			"Leaderboard",
 			"Statistics",
 			"API Wallet",
+			"Docs",
+			"Support",
 		]);
 		expect(links.map((link) => link.dataset.to)).toEqual([
 			"/trade/HYPE",
@@ -224,6 +226,8 @@ describe("MobileNavDrawer", () => {
 			"/leaderboard",
 			undefined,
 			"/api-wallet",
+			"/docs",
+			"/support",
 		]);
 		const statisticsLink = links.find((link) => link.textContent?.trim() === "Statistics");
 		expect(statisticsLink?.href).toBe(HYPERSCREENER_URL);
@@ -240,7 +244,7 @@ describe("MobileNavDrawer", () => {
 		}
 
 		const drawerText = container.querySelector('[data-testid="mobile-nav-drawer"]')?.textContent;
-		for (const removedLabel of ["Docs", "Support", "Terms", "Privacy Policy", "Risk Disclosure"])
+		for (const removedLabel of ["Terms", "Privacy Policy", "Risk Disclosure", "Cookie Policy"])
 			expect(drawerText).not.toContain(removedLabel);
 
 		const apiWalletLink = links.find((link) => link.textContent?.trim() === "API Wallet");

@@ -24,6 +24,9 @@
 3. **只预渲染 SPA 壳。** `createTanstackStartOptions()` 不再列 `pages`；Node 静态页、CloudFront viewer-request 函数都把这 6 个路径交给 `_shell.html`。`deploy.mjs verify` 的“预渲染文档路由”检查改为“法律页导航返回与本地构建一致的壳”。
 4. **Service Worker 升到 v10。** 删除 `documents-*` 缓存与路由表，6 个路径与其他应用路径共用唯一的壳缓存条目；激活时清理 `shell-v9`、`documents-v9`。
 5. **地区判定对所有入口预取。** 已没有不加载运行时的入口，`shouldPrefetchGeo` 删除，引导入口总是预取 `/api/geo`。
+6. **Cookie 说明从隐私政策进入。** 官方没有单独的 Cookie 页，也没有底栏链接；它的隐私政策里有一段 “Cookie Policy:”。gatu 保留更详细的 `/cookies` 页，但入口照官方放在隐私政策里：第 4 节（Cookies, Local Storage, and Analytics）末尾加一句链到 `https://app.gatu.ai/cookies`，写法与法律文档之间现有的绝对链接一致，终端和营销站都能打开；隐私政策的 Last Updated 改为 2026-09-27。全局底栏保持 Docs / Support / Terms / Privacy Policy / Risk Disclosure。
+7. **移动抽屉放 Docs 与 Support，不放法律页。** 官方手机抽屉在更多类链接之后放 Docs 和 Support，Terms、Privacy 在手机上没有导航入口。gatu 的 `MobileNavDrawer` 在 More 分组的 Statistics、API Wallet 之后加 Docs（`/docs`）和 Support（`/support`）；Terms、Privacy Policy、Risk Disclosure、Cookie Policy 仍不进抽屉，照样可以从法律接受弹窗、正文里的互相链接和 URL 进入。
+8. **发布时删除遗留的文档页。** 官方任何路径都返回同一个 SPA 壳（实测 `/terms/index.html` 和不存在的 `.js` 都返回壳，6,831 字节），不存在过期的独立页面。gatu 的 `sync --execute` 上传完成后用 `aws s3 rm` 删除 ADR 0020 之前构建留下的六个 `<route>/index.html`；本次构建仍包含的不删，以便回滚到旧构建；桶有版本控制，删除可以恢复。`verify` 新增检查：`/terms/index.html` 必须返回 404。
 
 ## 备选方案
 
@@ -31,18 +34,22 @@
 | --- | --- |
 | 保留预渲染文档页，只用纯视图 `TopNavView`/`FooterBarView` 画出同样的导航 | 未采用。文档页不加载钱包运行时，右上角只能永远显示未连接的 Connect，已登录用户看到的状态是错的，与官方做法也不一致 |
 | 只改 `/terms` 与 `/privacy` | 未采用。从条款页底栏点进 `/risk` 等页面又会切回独立导航，前后不一致 |
-| 把 Cookie Policy 加进全局底栏 | 未采用。实测 1001px 宽度下底栏原有 5 个链接已与居中的 ⌘K 按钮贴边（间距约 −0.4px），第 6 个链接会压住按钮约 80px。Cookie Policy 仍可从法律接受弹窗和 `/cookies` 直接访问，是否需要常驻入口留待后续决定 |
+| 把 Cookie Policy 加进全局底栏 | 未采用。官方底栏没有这一项；实测 1001px 宽度下底栏原有 5 个链接已与居中的 ⌘K 按钮贴边（间距约 −0.4px），第 6 个链接会压住按钮约 80px |
+| 把 Cookie 政策并入隐私政策正文，删除 `/cookies` | 未采用。这会实质改写法律文本，需要法律审阅；交叉引用已经能达到与官方相同的入口位置 |
+| 移动抽屉也放 Terms / Privacy | 未采用。官方手机抽屉没有这两项 |
+| 保留桶里的遗留文档页 | 未采用。导航虽然不会指向它们，但显式请求 `/terms/index.html` 仍会读到内容冻结的旧条款；两次发布后旧页的内联脚本哈希不再在 CSP 里，页面还会被拦截 |
 
 ## 后果与边界
 
 - **首屏**：直接打开这些页面时先是空白播报，等运行时、语言目录和字体就绪后才出现外壳和正文，与 Portfolio 相同；页面会加载 Privy，并请求 `/api/geo`。
 - **SEO 与无脚本访问**：HTML 中不再有预渲染的法律正文和逐页 `<title>`/描述，爬虫和禁用脚本的访问只拿到壳。页面标题和描述在客户端由 `buildPageHead` 更新。
-- **移动端**：移动页和其他仪表盘页一样没有页脚，`MobileNavDrawer` 也没有法律链接（`mobile-nav-drawer.test.tsx` 断言如此）。原文档外壳在窄屏上的横向文档导航随之移除，移动端在法律页之间切换只能靠正文链接或返回。
-- **部署**：`sync` 从不 `--delete`，S3 上历史的 `<route>/index.html` 会继续存在，但边缘函数发布后导航不再指向它们；只有显式请求 `/terms/index.html` 这类文件路径才会拿到旧页。是否删除这些对象由发布者决定。CSP 内联脚本哈希只需覆盖壳。
+- **移动端**：移动页和其他仪表盘页一样没有页脚。抽屉里有 Docs 和 Support，法律页照官方不进抽屉（`mobile-nav-drawer.test.tsx` 断言如此）；原文档外壳在窄屏上的横向文档导航随之移除，法律页之间靠正文里的互相链接切换。
+- **部署**：`sync` 仍不带 `--delete`，只额外删除六个指名的遗留文档页；发布顺序不变（先发布函数，再同步，再失效与 `verify`）。CSP 内联脚本哈希只需覆盖壳。
 - **浏览器缓存**：已安装 v9 Service Worker 的浏览器，在新 SW 激活前的一次导航可能仍从 `documents-v9` 返回旧文档页；v10 激活时会删除它。
 
 ## 证据
 
-- 代码：`apps/terminal/src/config/app-route-surface.ts`、`routes/__root.tsx`、`providers/root.tsx`、`components/legal/legal-doc-page.tsx`、`config/dashboard-frames.ts`、`routes/{docs,support,terms,privacy,risk,cookies}.tsx`、`vite.config.ts`、`lib/static-pages/static-pages.ts`、`lib/geo/geo-prefetch.ts`、`public/sw.js`、`deploy/cloudfront/functions/terminal-request.js`、`deploy/cloudfront/deploy.mjs`。
+- 代码：`apps/terminal/src/config/app-route-surface.ts`、`routes/__root.tsx`、`providers/root.tsx`、`components/legal/legal-doc-page.tsx`、`config/dashboard-frames.ts`、`routes/{docs,support,terms,privacy,risk,cookies}.tsx`、`vite.config.ts`、`lib/static-pages/static-pages.ts`、`lib/geo/geo-prefetch.ts`、`public/sw.js`、`components/trade/mobile/mobile-nav-drawer.tsx`、`legal/privacyPolicy.md`、`deploy/cloudfront/functions/terminal-request.js`、`deploy/cloudfront/deploy.mjs`（`RETIRED_PAGE_KEYS`、`buildRetiredPageCommands`、“retired document pages answer 404”）。
+- 官方实测（2026-09-27，内置浏览器只读检查）：桌面 More 菜单只有 Docs 一个文档类入口；手机抽屉在更多类链接之后放 Docs 和 Support；官方站点上找不到任何 Cookie 链接，隐私政策里有一段 “Cookie Policy:”。
 - 测试：`root-route-transition.test.tsx`（法律页直接进入挂载钱包与市场运行时，与交易页往返不重挂）、`legal-doc-page.test.tsx`、`app-route-surface.test.ts`、`spa-shell-config.test.ts`、`static-pages*.test.ts`、`sw-navigation-cache.test.ts`、`chart-asset-cache-policy.test.ts`、`root-provider-split.test.ts`、`geo-prefetch.test.ts`、`early-prefetch.test.ts`、`deploy/cloudfront/*.test.mjs`。
 - 本次执行的验证与结果记录在[任务记录](../work-memory/sessions/2026-09-27-legal-pages-app-shell.md)。

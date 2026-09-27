@@ -25,7 +25,8 @@ describe("published legal policy contract", () => {
 	});
 
 	it("describes current data handling without claiming an unused analytics provider", () => {
-		expect(privacy).toContain("**Last Updated:** July 21, 2026");
+		expect(privacy).toContain("**Last Updated:** September 27, 2026");
+		expect(privacy).toContain("[Cookie and Browser Storage Policy](https://app.gatu.ai/cookies)");
 		expect(privacy).toContain("does not integrate a product-analytics SDK");
 		expect(privacy).not.toContain("Mixpanel");
 		expect(privacy).toContain("support@gatu.ai");

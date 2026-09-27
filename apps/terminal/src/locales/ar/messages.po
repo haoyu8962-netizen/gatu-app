@@ -2545,6 +2545,7 @@ msgstr "لا ترسل عملية أموال تخزين أخرى. ستواصل ل
 msgid "Do not submit this operation again."
 msgstr "لا ترسل هذه العملية مرة أخرى."
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "المستندات"
@@ -7557,6 +7558,7 @@ msgstr "ناجح"
 msgid "Supply"
 msgstr "إيداع للإقراض"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "الدعم"

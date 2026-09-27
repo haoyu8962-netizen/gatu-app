@@ -2545,6 +2545,7 @@ msgstr "请勿提交另一笔质押资金操作。共享恢复面板会继续检
 msgid "Do not submit this operation again."
 msgstr "请勿再次提交此操作。"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "文档"
@@ -7557,6 +7558,7 @@ msgstr "成功"
 msgid "Supply"
 msgstr "存入借贷"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "支持"

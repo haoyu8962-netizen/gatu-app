@@ -11,6 +11,7 @@ import {
 	buildFunctionUpdateCommands,
 	buildInvalidationCommand,
 	buildLambdaCommands,
+	buildRetiredPageCommands,
 	buildReuploadCommands,
 	buildSyncCommands,
 	evaluateReleaseGates,
@@ -22,6 +23,7 @@ import {
 	prepareResponseFunction,
 	releaseFunctionPath,
 	releaseGateState,
+	RETIRED_PAGE_KEYS,
 	resolveAwsProfile,
 	REVALIDATE_CACHE_CONTROL,
 	verifyDeployment,
@@ -84,6 +86,26 @@ test("reupload rewrites the metadata of the selected objects in the bucket, neve
 	assert.ok(!commands.flat().includes("docs/index.html") && !commands.flat().includes("charting_library/charting_library.js"));
 	const many = Array.from({ length: 1_001 }, (_, index) => `charting_library/bundles/${index}.0123456789abcdef0123.js`);
 	assert.equal(buildReuploadCommands({ bucket: "b", files: many, prefixes: ["charting_library/"] }).length, 3);
+});
+
+test("an executing sync removes the retired document pages unless the build still ships them", () => {
+	assert.deepEqual(RETIRED_PAGE_KEYS, [
+		"cookies/index.html",
+		"docs/index.html",
+		"privacy/index.html",
+		"risk/index.html",
+		"support/index.html",
+		"terms/index.html",
+	]);
+	const commands = buildRetiredPageCommands({ bucket: "b", files: ["_shell.html", "assets/a.js"] });
+	assert.deepEqual(
+		commands.map((command) => command.slice(0, 3)),
+		RETIRED_PAGE_KEYS.map((key) => ["s3", "rm", `s3://b/${key}`]),
+	);
+	assert.ok(commands.every((command) => !command.includes("--recursive")));
+	const rollback = buildRetiredPageCommands({ bucket: "b", files: ["_shell.html", "terms/index.html"] });
+	assert.ok(!rollback.flat().includes("s3://b/terms/index.html"));
+	assert.equal(rollback.length, 5);
 });
 
 test("a sync that stopped before the shell is reported instead of passing silently", () => {
@@ -193,7 +215,7 @@ test("verification passes when the edge serves the build with the expected heade
 		results.filter((result) => !result.ok),
 		[],
 	);
-	assert.equal(results.length, 15);
+	assert.equal(results.length, 16);
 	assert.equal(results.find((result) => result.name === "shell preloads the startup closure")?.detail, "24 links");
 	assert.equal(results.find((result) => result.name === "inline scripts are allowed by the edge policy")?.detail, "1 pages, 1 inline scripts, report-only");
 	assert.equal(results.find((result) => result.name === "image sources follow the edge config")?.detail, "3 sources, report-only");
@@ -281,6 +303,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 		"referral deep link headers",
 		"pairing page headers",
 		"missing files stay 404",
+		"retired document pages answer 404",
 		"chart entry is immutable and preloaded by the shell",
 		"shell preloads the startup closure",
 		"inline scripts are allowed by the edge policy",

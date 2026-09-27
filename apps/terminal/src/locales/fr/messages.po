@@ -2545,6 +2545,7 @@ msgstr "Ne soumettez pas d’autre opération de fonds de staking. Le panneau de
 msgid "Do not submit this operation again."
 msgstr "Ne soumettez pas cette opération à nouveau."
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "Documentation"
@@ -7557,6 +7558,7 @@ msgstr "Réussi"
 msgid "Supply"
 msgstr "Fournir"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "Support"

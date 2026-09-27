@@ -110,7 +110,26 @@ export function buildSyncCommands({ publicDir, bucket, files }) {
 	return commands;
 }
 
-const FUNCTIONS_DIR = resolve(fileURLToPath(new URL(".", import.meta.url)), "functions");
+/**
+ * Standalone document pages that builds before ADR 0020 prerendered. Navigations reach the shell
+ * now, but a file-like request such as `/terms/index.html` would still read the frozen copy, so an
+ * executing sync removes them once the new HTML is in place. A build that still ships one keeps it,
+ * and the versioned bucket lets a rollback restore them.
+ */
+export const RETIRED_PAGE_KEYS = ["cookies", "docs", "privacy", "risk", "support", "terms"].map(
+	(route) => `${route}/index.html`,
+);
+
+export function buildRetiredPageCommands({ bucket, files }) {
+	return RETIRED_PAGE_KEYS.filter((key) => !files.includes(key)).map((key) => [
+		"s3",
+		"rm",
+		`s3://${bucket}/${key}`,
+		"--only-show-errors",
+	]);
+}
+
+const FUNCTIONS_DIR =resolve(fileURLToPath(new URL(".", import.meta.url)), "functions");
 export const RESPONSE_FUNCTION_NAME = "gatu-terminal-response";
 export const CLOUDFRONT_FUNCTIONS = [
 	{ name: "gatu-terminal-request", file: "terminal-request.js" },
@@ -329,6 +348,10 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(chart.status === 404, `chart status ${chart.status}`);
 		const serverFn = await fetchImpl(`${base}/_serverFn/abc`);
 		expect(serverFn.status === 404, `server function status ${serverFn.status}`);
+	});
+	await check("retired document pages answer 404", async () => {
+		const response = await fetchImpl(`${base}/terms/index.html`, { headers: { accept: "text/html" } });
+		expect(response.status === 404, `status ${response.status}`);
 	});
 	await check("chart entry is immutable and preloaded by the shell", async () => {
 		const href = /<link rel="preload" href="(\/charting_library\/charting_library\.[0-9a-f]{16}\.js)" as="script"/.exec(shell.toString("utf8"))?.[1];
@@ -631,7 +654,11 @@ async function main() {
 				for (const problem of gates.problems) console.warn(`An executing sync would refuse this build: ${problem}`);
 			}
 			if (options.execute) assertLivePolicyAllowsBuild(publicDir);
-			for (const command of buildSyncCommands({ publicDir, bucket, files: listPublicFiles(publicDir) })) {
+			const files = listPublicFiles(publicDir);
+			for (const command of buildSyncCommands({ publicDir, bucket, files })) {
+				runAws(command, options.execute);
+			}
+			for (const command of buildRetiredPageCommands({ bucket, files })) {
 				runAws(command, options.execute);
 			}
 			if (options.execute) {

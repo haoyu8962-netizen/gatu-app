@@ -2545,6 +2545,7 @@ msgstr "कोई दूसरा स्टेकिंग फंड ऑपर�
 msgid "Do not submit this operation again."
 msgstr "यह ऑपरेशन दोबारा न भेजें।"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "दस्तावेज़"
@@ -7557,6 +7558,7 @@ msgstr "सफल"
 msgid "Supply"
 msgstr "सप्लाई"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "सहायता"

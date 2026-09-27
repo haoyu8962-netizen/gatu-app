@@ -13,8 +13,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   pages on desktop, and the application mobile header on phones. Their separate document
   navigation is gone, and the account menu, Deposit and connection controls work on these pages.
   Opening one directly now shows the usual blank startup until the app is ready, and the pages
-  are no longer prerendered as standalone HTML. The Cookie Policy link that lived only in the old
-  document footer is now reached from the legal acceptance dialog or its URL.
+  are no longer prerendered as standalone HTML. As on the official terminal, the Cookie Policy is
+  reached from Section 4 of the Privacy Policy (updated September 27, 2026) instead of a footer
+  link, and the phone navigation drawer now lists Docs and Support. Releases remove the old
+  standalone page files, so a URL such as `/terms/index.html` answers 404 instead of an outdated
+  copy.
 
 - The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market
   returns to BTC; the scrim and Esc still do not dismiss it. Close All and Reverse now show the

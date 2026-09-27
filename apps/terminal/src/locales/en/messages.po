@@ -2545,6 +2545,7 @@ msgstr "Do not submit another staking funds operation. The shared recovery panel
 msgid "Do not submit this operation again."
 msgstr "Do not submit this operation again."
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "Docs"
@@ -7557,6 +7558,7 @@ msgstr "Successful"
 msgid "Supply"
 msgstr "Supply"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "Support"
