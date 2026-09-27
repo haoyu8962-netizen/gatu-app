@@ -42,8 +42,9 @@
 - 数值规则（提前返回，不嵌套三元）：
   - `unlimited` → `No tier limit`（译文由组件传入）。
   - `unavailable`，或受限但缺少计价币符号 → `FALLBACK_VALUE_PLACEHOLDER`（`-`）。
-  - 计价币为 USDC → `formatUSD(value, { compact: false, decimals: 0 })`，例如 `$150,000,000`；数字格式为 `de-DE` 时是 `$150.000.000`。
-  - 其他计价币 → `formatQuoteAmount(value, symbol, { compact: false, decimals: 0 })`，例如 `150,000,000 USDH`。
+  - 受限时先用 Big.js 把下界向零截断到整数（`round(0, Big.roundDown)`），再交给格式化器，所以显示的「最大」不会高于真实上限：分数下界 `3000000.5` 显示为 `$3,000,000`，不是按 `Intl` 默认规则进位的 `$3,000,001`。领域值本身保持精确。
+  - 计价币为 USDC → `formatUSD(truncated, { compact: false, decimals: 0 })`，例如 `$150,000,000`；数字格式为 `de-DE` 时是 `$150.000.000`。
+  - 其他计价币 → `formatQuoteAmount(truncated, symbol, { compact: false, decimals: 0 })`，例如 `150,000,000 USDH`。
 - 计价币的取舍：下单面板的「订单价值」（`order-summary.tsx`）对所有市场都用 `formatUSD`，这是既有的简化；同一表单的止盈止损收益（`tp-sl-section.tsx`，经 `getTpSlCollateralSymbol(market)`）与持仓价值（`position-row.tsx`、`mobile-position-card.tsx`）按计价币区分。分档下界是该 dex 抵押币计的名义价值，所以这一行沿用后者：宿主传 `getTpSlCollateralSymbol(market)`（永续为 `USDC`，builder 永续为其 `quoteToken` 的显示名，缺失为 `null`）。缺少符号时不猜测为美元，显示占位符；「无档位上限」与单位无关，照常显示。
 - 行固定为单行：容器 `min-h-4 gap-3 whitespace-nowrap p-0 text-xs`，标签 `min-w-0 truncate`，数值 `shrink-0 font-medium`，颜色沿用编辑器的 `text-trading-panel-muted` / `text-trading-panel-fg`。文字变长（如阿拉伯语、印地语标签）时截断标签，数值始终完整，行高不变。纯文本行，没有背景块，没有 `aria-live`，拖动预览不会被读屏播报。
 - 组件体内先调用 `useNumberFormatRevision()`，并把版本号显式传给格式化函数，React Compiler 因此不会在数字格式切换后保留旧字符串；`number-format-reactivity-contract` 把该组件登记为格式化辅助函数的所有者，`i18n-reactivity-contract` 登记为响应式渲染文件。
@@ -52,7 +53,7 @@
 
 - `LeverageEditor` 是桌面弹窗与移动抽屉唯一的共同渲染点。新行放在 `space-y-3` 堆叠里的杠杆输入框之后、既有的高杠杆警告之前，读序为「输入 → 结果」。放在输入框下方还让滑杆在有分档与无分档的市场上处于同一位置。
 - `LeverageEditor`、`LeverageModal`、`MarginModeModal` 各增加两个可选属性 `marginTiers`、`quoteSymbol`，只做透传；`MarginModeModal` 的 `FormProps` 由 `Props` 派生，属性自动到达 `MarginModeForm`。
-- 桌面宿主 `trade-panel.tsx` 与移动宿主 `mobile-trade-view.tsx` 把原来内联在预估强平价调用里的 `market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null` 提到一个 `marginTiers` 常量（行为不变），同时传给强平价估算与杠杆弹层。`market.marginTiers` 是目录 `createMarkets` 里生成的数组，选中市场对象按价格刷新时只做浅展开，引用保持稳定，所以 `memo` 的弹层不会因价格跳动多渲染；`quoteSymbol` 是字符串。桌面的 `MarginModeModal`（`showLeverage={false}`）不传，也不渲染编辑器。
+- 桌面宿主 `trade-panel.tsx` 与移动宿主 `mobile-trade-view.tsx` 把原来内联在预估强平价调用里的 `market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null` 提到一个 `marginTiers` 常量（行为不变），同时传给强平价估算与杠杆弹层。`market.marginTiers` 是目录 `createMarkets` 里生成的数组，选中市场对象按价格刷新时只做浅展开，引用保持稳定，所以 `memo` 的弹层不会因价格跳动多渲染；`quoteSymbol` 是字符串。桌面的 `MarginModeModal`（`showLeverage={false}`）不传，也不渲染编辑器。这组透传由 `lazy-trade-settings-modals.test.tsx` 的源码契约钉住：两个宿主都从 `market.marginTiers` 派生同一个常量并交给强平价估算，桌面 `LeverageModal` 与移动 `MarginModeModal`（`showLeverage={capabilities.isLeveraged}`）都收到 `marginTiers={marginTiers}` 与 `quoteSymbol={getTpSlCollateralSymbol(market)}`，桌面保证金弹窗不收；删掉任一宿主的任一属性，该用例都会失败。宿主层没有渲染级断言（`TradePanel` 没有 jsdom 渲染夹具），引用稳定性由上面的目录结构与 `leverage-modal.test.tsx` 的 `memo` 用例支撑。
 - 移动抽屉只在 `mobileView="leverage"` 且市场可调杠杆时渲染编辑器；保证金模式视图与杠杆固定的市场没有这一行。
 - 新代码都在已经按需加载的杠杆弹层块里（`lazy-trade-settings-modals.ts`），不新增首屏惰性块；领域函数、`lib/format` 与 `InfoRow` 已在主依赖图中。
 
@@ -60,7 +61,7 @@
 
 | 情况 | 是否显示 | 数值 |
 | --- | --- | --- |
-| 有效多档表，所选杠杆高于某档最高杠杆 | 显示 | 第一个「最高杠杆 < 所选杠杆」的档位下界，按计价币格式化 |
+| 有效多档表，所选杠杆高于某档最高杠杆 | 显示 | 第一个「最高杠杆 < 所选杠杆」的档位下界，向零截断到整数后按计价币格式化 |
 | 有效多档表，没有这样的档位（如 BTC ≤ 20x） | 显示 | `No tier limit` |
 | 单档表、隐式表（ID < 50）、分档表缺失或无效 | 整行不出现（按市场决定） | — |
 | 杠杆不是 1 到第一档最高杠杆之间的整数（防御情形） | 显示 | `-` |
@@ -93,7 +94,8 @@
 | 请求 `info.marginTable` | 重复请求、新查询键与加载态；目录已覆盖全部资产 | 不采用 |
 | 放在滑杆上方（官方位置） | 有分档与无分档市场的滑杆位置不同 | 不采用，放在输入框下方 |
 | 按目录新鲜度（`marginMetadataReady`）门控 | 侦察推测 5 分钟 `staleTime` 后可能周期性变为占位，未经运行时验证；数值只是说明 | 不采用，只看分档表本身 |
-| 分数下界向下取整 | 需要在领域层丢失精确值；当日主网没有分数下界 | 不采用：领域值保持精确，显示用 `decimals: 0`，分数下界按格式化器默认规则四舍五入 |
+| 在领域层把分数下界取整 | 领域值丢失精确度，其他调用方拿不到真实下界 | 不采用：领域值保持精确，只在展示层向零截断后再按 `decimals: 0` 格式化 |
+| 展示层按格式化器默认规则四舍五入 | 分数下界会进位，显示的「最大」高于真实上限（如 `3000000.5` → `$3,000,001`），错在不安全的方向；当日主网下界都以 `.0` 结尾，影响只是假设 | 不采用：审查后改为向零截断（2026-09-27） |
 
 ## 8. 验证
 
@@ -105,6 +107,13 @@
 - 与改动相关的既有文件与扫描器：32 个文件 500 个测试（含两个宿主的渲染测试与源码契约、`i18n-reactivity-contract`、`i18n-hot-switch`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`modal-surface-contract`、`action-progress-label-contract`、`trading-action-button-label-contract`、`mobile-data-presentation-contract`、`dialog-dismiss-control-contract`）。
 - `AGENTS.md` 分组：确认面 41 个文件 882 个测试；滑杆手势与数字/日期格式 15 个文件 267 个测试；移动端数据展示 4 个文件 74 个测试。
 - 变异核对：把组件传给格式化函数的数字格式版本号换成常量 0 后，`leverage-position-limit-row.test.tsx` 的数字格式切换用例失败，恢复后通过。
+
+审查修复（同日，本分支 `bd6bb81b` 之后）实际运行，全部通过：
+
+- 修复内容：展示层向零截断分数下界（`leverage-position-limit-row.test.tsx` 新增 `3000000.5` 的 USDC 与 USDH 用例）；宿主透传的源码契约（`lazy-trade-settings-modals.test.tsx` 新增一个用例）。
+- `pnpm exec biome check`：改动的 3 个 TypeScript/TSX 文件，无问题；`pnpm --filter @gatu/terminal typecheck`：通过。
+- 本功能的回归入口（§9）、上述扫描器与数字/日期格式分组：22 个文件 516 个测试；`AGENTS.md` 确认面分组：41 个文件 882 个测试。
+- 变异核对：去掉截断后新用例得到 `$3,000,001` 而失败；分别从两个宿主删去 `marginTiers={marginTiers}` 或 `quoteSymbol={getTpSlCollateralSymbol(market)}`（共 4 次），源码契约用例每次都失败；恢复后通过。
 
 输入路径：以上交互测试都是 jsdom 中由脚本调用滑杆回调与分发输入事件，不代表操作系统的指针事件顺序。未运行：浏览器夹具与 Playwright 滑杆套件（`test:browser:slider`）、完整终端测试、`pnpm build`（包体预算），也没有在真实设备上拖动真实弹层或连接钱包。按[滑杆交互契约](slider-interactions.md)，手势相关的结论在真人拖动真实控件之前不算验证完成。
 
@@ -118,5 +127,6 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/leverage-modal.test.tsx \
   src/lib/tests/margin-mode-modal.test.tsx \
   src/lib/tests/market-catalog.test.ts \
-  src/lib/tests/prospective-liquidation.test.ts
+  src/lib/tests/prospective-liquidation.test.ts \
+  src/lib/tests/lazy-trade-settings-modals.test.tsx
 ```

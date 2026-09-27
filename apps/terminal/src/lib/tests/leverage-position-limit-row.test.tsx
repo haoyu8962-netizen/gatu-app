@@ -119,6 +119,19 @@ describe("LeveragePositionLimitRow", () => {
 		expect(getValue()).toBe("No tier limit");
 	});
 
+	it("truncates a fractional tier bound so the shown maximum never exceeds the real cap", () => {
+		const fractionalTiers = [
+			{ lowerBound: "0", maxLeverage: 10 },
+			{ lowerBound: "3000000.5", maxLeverage: 5 },
+		] as const;
+
+		renderRow(10, { marginTiers: fractionalTiers });
+		expect(getValue()).toBe("$3,000,000");
+
+		renderRow(10, { marginTiers: fractionalTiers, quoteSymbol: "USDH" });
+		expect(getValue()).toBe("3,000,000 USDH");
+	});
+
 	it("follows a number-format change without remounting the row", () => {
 		renderRow(25);
 		const row = getRow();
