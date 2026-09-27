@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 
 import { i18n } from "@lingui/core";
-import { ApiRequestError, type FrontendOpenOrdersResponse, HttpRequestError } from "@nktkas/hyperliquid";
+import {
+	ApiRequestError,
+	type FrontendOpenOrdersResponse,
+	HttpRequestError,
+	type MaxMarketOrderNtlsResponse,
+} from "@nktkas/hyperliquid";
 import { act, type ComponentProps, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -79,6 +84,13 @@ const testState = vi.hoisted(() => ({
 	pendingMethods: new Set<string>(),
 	executionGuards: {} as Record<string, ((params: unknown) => void) | undefined>,
 	amountSliderProps: null as ComponentProps<typeof TradeSizeSlider> | null,
+	infoCalls: [] as Array<{ method: string; params: unknown; options: unknown }>,
+	maxMarketOrderNtlsQuery: {
+		data: undefined as unknown,
+		isSuccess: false,
+		status: "pending" as "pending" | "error" | "success",
+	},
+	infoListeners: new Set<() => void>(),
 }));
 
 vi.mock("@/components/trade/components/trade-size-slider", async (importOriginal) => {
@@ -288,71 +300,102 @@ vi.mock("@/components/trade/tradebox/tp-sl-section", () => ({
 		),
 }));
 
-vi.mock("@/lib/hyperliquid", () => ({
-	useExchange: (method: string, options?: { executionGuard?: (params: unknown) => void }) => {
-		testState.executionGuards[method] = options?.executionGuard;
-		const mutation = method === "order" ? testState.placeOrder : testState.cancelOrders;
-		return {
-			error: null,
-			isPending: testState.pendingMethods.has(method),
-			mutateAsync: async (params: unknown) => {
-				options?.executionGuard?.(params);
-				return mutation(params);
-			},
-			reset: vi.fn(),
+vi.mock("@/lib/hyperliquid", async () => {
+	const { useSyncExternalStore } = await import("react");
+	const idleInfoQuery = { data: undefined, isSuccess: false, status: "pending" as const };
+	function subscribeToInfo(listener: () => void) {
+		testState.infoListeners.add(listener);
+		return () => {
+			testState.infoListeners.delete(listener);
 		};
-	},
-	useHyperliquid: () => ({
-		clientKey: testState.connected ? testState.clientKey : "disconnected",
-		env: testState.env,
-		info: {
-			frontendOpenOrders: testState.frontendOpenOrders,
-			clearinghouseState: testState.clearinghouseState,
+	}
+	return {
+		useInfo: (method: string, params: unknown, options: unknown) => {
+			testState.infoCalls.push({ method, params, options });
+			return useSyncExternalStore(subscribeToInfo, () =>
+				method === "maxMarketOrderNtls" ? testState.maxMarketOrderNtlsQuery : idleInfoQuery,
+			);
 		},
-	}),
-	useMarketsInfo: () => ({
-		getMarketInfo: () => (testState.marketMarkPx ? { markPx: testState.marketMarkPx } : undefined),
-	}),
-	useMarkets: () => ({
-		error: testState.marketError,
-		isLoading: testState.marketLoading,
-		getMarket: () => ({
-			kind: "builderPerp",
-			assetId: testState.marketAssetId,
-			szDecimals: testState.marketSzDecimals,
-			dex: testState.marketDex,
-			quoteToken: { name: "USDC" },
+		useExchange: (method: string, options?: { executionGuard?: (params: unknown) => void }) => {
+			testState.executionGuards[method] = options?.executionGuard;
+			const mutation = method === "order" ? testState.placeOrder : testState.cancelOrders;
+			return {
+				error: null,
+				isPending: testState.pendingMethods.has(method),
+				mutateAsync: async (params: unknown) => {
+					options?.executionGuard?.(params);
+					return mutation(params);
+				},
+				reset: vi.fn(),
+			};
+		},
+		useHyperliquid: () => ({
+			clientKey: testState.connected ? testState.clientKey : "disconnected",
+			env: testState.env,
+			info: {
+				frontendOpenOrders: testState.frontendOpenOrders,
+				clearinghouseState: testState.clearinghouseState,
+			},
 		}),
-	}),
-	useSubscription: (method: string, params: unknown) => {
-		testState.subscriptions.push({ method, params });
-		if (method === "activeAssetCtx") {
-			return {
-				data: testState.markPx ? { coin: positionRef.coin, ctx: { markPx: testState.markPx } } : undefined,
-				status: testState.markStatus,
-				isStale: testState.markStale,
-				lastMessageAt: testState.markReceivedAt,
-			};
-		}
-		if (method === "openOrders") {
-			return {
-				data: testState.hasOpenOrdersSnapshot ? { orders: testState.orders } : undefined,
-				status: testState.openOrdersStatus,
-				isStale: testState.openOrdersStale,
-			};
-		}
-		return { data: undefined, status: "idle" };
-	},
-	useUserPositions: () => ({
-		getPosition: (coin: string, dex: string) => {
-			testState.getPosition(coin, dex);
-			return testState.position;
+		useMarketsInfo: () => ({
+			getMarketInfo: () => (testState.marketMarkPx ? { markPx: testState.marketMarkPx } : undefined),
+		}),
+		useMarkets: () => ({
+			error: testState.marketError,
+			isLoading: testState.marketLoading,
+			getMarket: () => ({
+				kind: "builderPerp",
+				assetId: testState.marketAssetId,
+				szDecimals: testState.marketSzDecimals,
+				dex: testState.marketDex,
+				quoteToken: { name: "USDC" },
+			}),
+		}),
+		useSubscription: (method: string, params: unknown) => {
+			testState.subscriptions.push({ method, params });
+			if (method === "activeAssetCtx") {
+				return {
+					data: testState.markPx ? { coin: positionRef.coin, ctx: { markPx: testState.markPx } } : undefined,
+					status: testState.markStatus,
+					isStale: testState.markStale,
+					lastMessageAt: testState.markReceivedAt,
+				};
+			}
+			if (method === "openOrders") {
+				return {
+					data: testState.hasOpenOrdersSnapshot ? { orders: testState.orders } : undefined,
+					status: testState.openOrdersStatus,
+					isStale: testState.openOrdersStale,
+				};
+			}
+			return { data: undefined, status: "idle" };
 		},
-		hasError: testState.positionError,
-		isLoading: testState.positionLoading,
-		isStale: testState.positionStale,
-	}),
-}));
+		useUserPositions: () => ({
+			getPosition: (coin: string, dex: string) => {
+				testState.getPosition(coin, dex);
+				return testState.position;
+			},
+			hasError: testState.positionError,
+			isLoading: testState.positionLoading,
+			isStale: testState.positionStale,
+		}),
+	};
+});
+
+const MAX_MARKET_ORDER_NTLS: MaxMarketOrderNtlsResponse = [
+	[25, "30000000.0"],
+	[20, "5000000.0"],
+	[10, "2000000.0"],
+	[1, "500000.0"],
+];
+
+const SLIPPAGE_WARNING_TEXT =
+	"A market TP/SL may fill with large slippage because of this position's size. To reduce slippage, use limit execution with a limit price, or configure a smaller amount.";
+
+function setMaxMarketOrderNtlsQuery(query: typeof testState.maxMarketOrderNtlsQuery) {
+	testState.maxMarketOrderNtlsQuery = query;
+	for (const listener of testState.infoListeners) listener();
+}
 
 const positionRef: TpSlPositionTarget = {
 	owner: "0x1111111111111111111111111111111111111111",
@@ -513,6 +556,9 @@ describe("PositionTpSlModal live data", () => {
 		testState.trackedOrderOptions = [];
 		testState.executionGuards = {};
 		testState.amountSliderProps = null;
+		testState.infoCalls = [];
+		testState.infoListeners.clear();
+		testState.maxMarketOrderNtlsQuery = { data: MAX_MARKET_ORDER_NTLS, isSuccess: true, status: "success" };
 	});
 
 	afterEach(() => {
@@ -1707,5 +1753,237 @@ describe("PositionTpSlModal live data", () => {
 		expect(getInput(container, "Take Profit").value).toBe("27500");
 		expect(container.textContent).not.toContain("Failed to load positions.");
 		expect(getButton(container, "Confirm").disabled).toBe(true);
+	});
+
+	describe("large-slippage advisory", () => {
+		const successQuery: typeof testState.maxMarketOrderNtlsQuery = {
+			data: MAX_MARKET_ORDER_NTLS,
+			isSuccess: true,
+			status: "success",
+		};
+
+		function setPositionSize(positionValue: string, leverage = 20, maxLeverage = 20) {
+			if (!testState.position) throw new Error("Position fixture missing");
+			testState.position = {
+				...testState.position,
+				positionValue,
+				maxLeverage,
+				leverage: { type: "cross", value: leverage },
+			} as Position;
+		}
+
+		function slippageWarning(): HTMLElement | null {
+			return container.querySelector<HTMLElement>('[data-testid="position-tpsl-slippage-warning"]');
+		}
+
+		function renderSession(sessionId: string) {
+			act(() => {
+				root.render(modalElement({ ...positionRef }, vi.fn(), sessionId));
+			});
+		}
+
+		function follows(earlier: Node, later: Node): boolean {
+			return Boolean(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING);
+		}
+
+		it.each([false, true])("warns when the whole position exceeds its leverage tier on mobile=%s", (isMobile) => {
+			testState.isMobile = isMobile;
+			setPositionSize("6000000");
+			renderModal();
+
+			const dialog = container.querySelector<HTMLElement>('[data-testid="position-risk-dialog"]');
+			expect(dialog?.dataset.presentation).toBe(isMobile ? "drawer" : "modal");
+			const notice = slippageWarning();
+			expect(notice?.textContent).toBe(SLIPPAGE_WARNING_TEXT);
+			expect(notice?.textContent).not.toMatch(/\d/);
+			expect(notice?.getAttribute("aria-live")).toBeNull();
+			expect(notice?.getAttribute("role")).toBeNull();
+			expect(notice?.className).toContain("border-stroke-warning-weak");
+			expect(container.textContent).not.toContain("Loading...");
+			expect(testState.infoCalls.length).toBeGreaterThan(0);
+			expect(testState.infoCalls.every((call) => call.method === "maxMarketOrderNtls")).toBe(true);
+			expect(testState.infoCalls[0]).toEqual({
+				method: "maxMarketOrderNtls",
+				params: undefined,
+				options: { enabled: true, staleTime: 30 * 60_000, gcTime: 30 * 60_000 },
+			});
+
+			expect(getButton(container, "Confirm").disabled).toBe(true);
+			act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+			expect(getButton(container, "Confirm").disabled).toBe(false);
+			expect(slippageWarning()).not.toBeNull();
+		});
+
+		it("commits the same TP/SL payload with or without the notice", async () => {
+			async function submitWithPositionValue(positionValue: string, sessionId: string) {
+				setPositionSize(positionValue);
+				renderSession(sessionId);
+				const noticeShown = slippageWarning() !== null;
+				act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+				const confirm = getButton(container, "Confirm");
+				const confirmEnabled = !confirm.disabled;
+				await act(async () => confirm.click());
+				return { noticeShown, confirmEnabled, params: testState.placeOrder.mock.calls.at(-1)?.[0] };
+			}
+
+			const large = await submitWithPositionValue("6000000", "tpsl-large");
+			const small = await submitWithPositionValue("4000000", "tpsl-small");
+
+			expect(large.noticeShown).toBe(true);
+			expect(small.noticeShown).toBe(false);
+			expect(large.confirmEnabled).toBe(true);
+			expect(small.confirmEnabled).toBe(true);
+			expect(testState.placeOrder).toHaveBeenCalledTimes(2);
+			expect(testState.cancelOrders).not.toHaveBeenCalled();
+			expect(large.params).toEqual(small.params);
+			expect(large.params).toEqual({
+				orders: [expect.objectContaining({ a: positionRef.assetId, s: "0", r: true })],
+				grouping: "positionTpsl",
+			});
+		});
+
+		it("selects the tier by the position's current leverage rather than the asset maximum", () => {
+			setPositionSize("3000000", 10, 20);
+			renderSession("tpsl-10x");
+			expect(slippageWarning()).not.toBeNull();
+
+			setPositionSize("3000000", 20, 20);
+			renderSession("tpsl-20x");
+			expect(slippageWarning()).toBeNull();
+		});
+
+		it.each<[string, typeof testState.maxMarketOrderNtlsQuery]>([
+			["pending", { data: undefined, isSuccess: false, status: "pending" }],
+			["failed", { data: undefined, isSuccess: false, status: "error" }],
+			["failed on refetch with older data", { data: MAX_MARKET_ORDER_NTLS, isSuccess: false, status: "error" }],
+			["malformed", { data: [...MAX_MARKET_ORDER_NTLS, [20, "5e6"]], isSuccess: true, status: "success" }],
+			["not an array", { data: { 20: "5000000.0" }, isSuccess: true, status: "success" }],
+		])("renders nothing extra while the tier table is %s", (_label, query) => {
+			testState.maxMarketOrderNtlsQuery = query;
+			setPositionSize("6000000");
+			renderSession("tpsl-silent");
+			const silentText = container.textContent;
+			const silentConfirmDisabled = getButton(container, "Confirm").disabled;
+			expect(slippageWarning()).toBeNull();
+			act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+			expect(getButton(container, "Confirm").disabled).toBe(false);
+
+			testState.maxMarketOrderNtlsQuery = successQuery;
+			setPositionSize("4000000");
+			renderSession("tpsl-baseline");
+			expect(slippageWarning()).toBeNull();
+			expect(container.textContent).toBe(silentText);
+			expect(getButton(container, "Confirm").disabled).toBe(silentConfirmDisabled);
+		});
+
+		it("stays visible through limit execution and amount changes", () => {
+			setPositionSize("6000000");
+			renderModal();
+			expect(slippageWarning()).not.toBeNull();
+
+			act(() => getInput(container, "Limit execution").click());
+			expect(getInput(container, "Limit execution").checked).toBe(true);
+			expect(slippageWarning()).not.toBeNull();
+
+			act(() => getButton(container, "Partial amount").click());
+			act(() => setInputValue(getInput(container, "Size (%)"), "10"));
+			expect(getInput(container, "Configured TP/SL amount").value).toBe("0.030");
+			expect(slippageWarning()).not.toBeNull();
+
+			act(() => getButton(container, "Whole position").click());
+			expect(container.querySelector('input[aria-label="Configured TP/SL amount"]')).toBeNull();
+			expect(slippageWarning()).not.toBeNull();
+
+			act(() => getInput(container, "Configure amount").click());
+			expect(slippageWarning()).not.toBeNull();
+		});
+
+		it("sits below the amount slider and above the guard message and footer", () => {
+			setPositionSize("6000000");
+			renderModal();
+			act(() => getInput(container, "Configure amount").click());
+
+			const notice = slippageWarning();
+			const slider = container.querySelector('input[type="range"]');
+			const explanation = [...container.querySelectorAll("p")].find((paragraph) =>
+				paragraph.textContent?.startsWith("By default, TP/SL applies"),
+			);
+			const footer = container.querySelector("footer");
+			if (!notice || !slider || !explanation || !footer) throw new Error("Advisory layout nodes missing");
+			expect(testState.amountSliderProps).not.toBeNull();
+			expect(follows(slider, notice)).toBe(true);
+			expect(follows(getInput(container, "Limit execution"), notice)).toBe(true);
+			expect(follows(explanation, notice)).toBe(true);
+			expect(follows(notice, footer)).toBe(true);
+			expect(footer.contains(notice)).toBe(false);
+
+			testState.orders = [openOrder({ oid: 8 })];
+			act(() => {
+				root.render(modalElement(positionRef));
+			});
+			const guardMessage = [...container.querySelectorAll("div")].find(
+				(element) =>
+					element.textContent ===
+					"Trading data changed while this dialog was open. Close and reopen it before submitting.",
+			);
+			const currentNotice = slippageWarning();
+			if (!guardMessage || !currentNotice) throw new Error("Guard message or advisory missing");
+			expect(follows(currentNotice, guardMessage)).toBe(true);
+			expect(getButton(container, "Confirm").disabled).toBe(true);
+		});
+
+		it.each<[string, () => void, string]>([
+			[
+				"disconnected",
+				() => {
+					testState.connected = false;
+				},
+				"Connect wallet to view positions",
+			],
+			[
+				"without a live position",
+				() => {
+					testState.position = null;
+				},
+				"No active positions.",
+			],
+		])("does not request the tier table while the dialog is %s", (_label, arrange, message) => {
+			arrange();
+			renderModal();
+
+			expect(container.textContent).toContain(message);
+			expect(testState.infoCalls).toHaveLength(0);
+			expect(slippageWarning()).toBeNull();
+		});
+
+		it("follows the tier table and live position value without touching the TP draft", () => {
+			testState.maxMarketOrderNtlsQuery = { data: undefined, isSuccess: false, status: "pending" };
+			setPositionSize("6000000");
+			renderModal();
+			act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+			expect(slippageWarning()).toBeNull();
+			expect(getButton(container, "Confirm").disabled).toBe(false);
+
+			act(() => setMaxMarketOrderNtlsQuery(successQuery));
+			expect(slippageWarning()?.textContent).toBe(SLIPPAGE_WARNING_TEXT);
+			expect(getInput(container, "Take Profit").value).toBe("27500");
+			expect(getButton(container, "Confirm").disabled).toBe(false);
+
+			act(() => setMaxMarketOrderNtlsQuery({ data: MAX_MARKET_ORDER_NTLS, isSuccess: false, status: "error" }));
+			expect(slippageWarning()).toBeNull();
+			expect(getInput(container, "Take Profit").value).toBe("27500");
+
+			act(() => setMaxMarketOrderNtlsQuery(successQuery));
+			expect(slippageWarning()).not.toBeNull();
+			setPositionSize("4000000");
+			act(() => {
+				root.render(modalElement(positionRef));
+			});
+			expect(slippageWarning()).toBeNull();
+			expect(getInput(container, "Take Profit").value).toBe("27500");
+			expect(getButton(container, "Confirm").disabled).toBe(false);
+			expect(testState.placeOrder).not.toHaveBeenCalled();
+			expect(testState.cancelOrders).not.toHaveBeenCalled();
+		});
 	});
 });

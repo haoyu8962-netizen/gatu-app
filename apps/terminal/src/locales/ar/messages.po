@@ -280,6 +280,10 @@ msgstr "يظهر تأكيد قبل كل إغلاق بسعر السوق."
 msgid "A funds operation is awaiting verification"
 msgstr "عملية أموال بانتظار التحقق"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "A market TP/SL may fill with large slippage because of this position's size. To reduce slippage, use limit execution with a limit price, or configure a smaller amount."
+msgstr "قد يُنفَّذ أمر TP/SL بسعر السوق بانزلاق كبير بسبب حجم هذا المركز. لتقليل الانزلاق، استخدم التنفيذ المحدد مع سعر محدد، أو حدد مبلغاً أصغر."
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "A new delegation is locked to this validator for one day. Rewards are distributed daily and automatically redelegated."
 msgstr "يُقفل التفويض الجديد لدى جهة التحقق هذه لمدة يوم واحد. تُوزّع المكافآت يوميًا ويُعاد تفويضها تلقائيًا."

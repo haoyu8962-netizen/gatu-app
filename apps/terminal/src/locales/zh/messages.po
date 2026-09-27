@@ -280,6 +280,10 @@ msgstr "每次市价平仓前都会显示确认。"
 msgid "A funds operation is awaiting verification"
 msgstr "有一笔资金操作正在等待验证"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "A market TP/SL may fill with large slippage because of this position's size. To reduce slippage, use limit execution with a limit price, or configure a smaller amount."
+msgstr "受该仓位规模影响，市价 TP/SL 可能以较大滑点成交。为降低滑点，请使用限价执行并设置限价，或设置更小的数量。"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "A new delegation is locked to this validator for one day. Rewards are distributed daily and automatically redelegated."
 msgstr "新委托将锁定在此验证者下 1 天。奖励每日分发并自动复投。"
