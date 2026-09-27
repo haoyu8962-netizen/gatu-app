@@ -37,6 +37,25 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Docs, Support, Terms, Privacy Policy, Risk Disclosure and Cookie Policy now open inside the
+  normal application chrome: the same top navigation and footer as the trading and dashboard
+  pages on desktop, and the application mobile header on phones. Their separate document
+  navigation is gone, and the account menu, Deposit and connection controls work on these pages.
+  Opening one directly now shows the usual blank startup until the app is ready, then waits like
+  the other dashboard pages for the footer and dialog host, and the pages are no longer
+  prerendered as standalone HTML. As on the official terminal, the Cookie Policy is reached from
+  Section 4 of the Privacy Policy (updated September 27, 2026) instead of a footer
+  link, and the phone navigation drawer now lists Docs and Support. Releases replace the old
+  standalone page files with the app, so a URL such as `/terms/index.html` no longer shows an
+  outdated copy.
+
+- Opening a dashboard page directly (Portfolio, Vaults, Staking, Referrals and referral
+  invitation links, Leaderboard, API wallet and the history pages) now waits up to 1.5 seconds,
+  the same limit as the trade page, for the footer and the global dialog host to load. When they
+  load in time they appear together with the page instead of a moment later, so Ctrl/⌘K works
+  from the first frame unless the terms-acceptance prompt is showing. The command menu itself
+  still loads on first use, and a slow connection reveals the page when the limit is reached.
+
 - The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market
   returns to BTC; the scrim and Esc still do not dismiss it. Close All and Reverse now show the
   same cancellable disclaimer as Market Close and Limit Close before their confirmation instead of

@@ -11,8 +11,10 @@ import {
 	buildFunctionUpdateCommands,
 	buildInvalidationCommand,
 	buildLambdaCommands,
+	buildRetiredPageCommands,
 	buildReuploadCommands,
 	buildSyncCommands,
+	collectServedScriptHashes,
 	evaluateReleaseGates,
 	HTML_CACHE_CONTROL,
 	IMMUTABLE_CACHE_CONTROL,
@@ -22,6 +24,7 @@ import {
 	prepareResponseFunction,
 	releaseFunctionPath,
 	releaseGateState,
+	RETIRED_PAGE_KEYS,
 	resolveAwsProfile,
 	REVALIDATE_CACHE_CONTROL,
 	verifyDeployment,
@@ -86,6 +89,30 @@ test("reupload rewrites the metadata of the selected objects in the bucket, neve
 	assert.equal(buildReuploadCommands({ bucket: "b", files: many, prefixes: ["charting_library/"] }).length, 3);
 });
 
+test("an executing sync overwrites the retired document pages with the shell unless the build still ships them", () => {
+	assert.deepEqual(RETIRED_PAGE_KEYS, [
+		"cookies/index.html",
+		"docs/index.html",
+		"privacy/index.html",
+		"risk/index.html",
+		"support/index.html",
+		"terms/index.html",
+	]);
+	const commands = buildRetiredPageCommands({ publicDir: "/out", bucket: "b", files: ["_shell.html", "assets/a.js"] });
+	assert.deepEqual(
+		commands.map((command) => command.slice(0, 4)),
+		RETIRED_PAGE_KEYS.map((key) => ["s3", "cp", join("/out", "_shell.html"), `s3://b/${key}`]),
+	);
+	for (const command of commands) {
+		assert.equal(command[command.indexOf("--cache-control") + 1], HTML_CACHE_CONTROL);
+		assert.equal(command[command.indexOf("--content-type") + 1], "text/html; charset=utf-8");
+		assert.ok(!command.includes("rm") && !command.includes("--recursive") && !command.includes("--delete"));
+	}
+	const rollback = buildRetiredPageCommands({ publicDir: "/out", bucket: "b", files: ["_shell.html", "terms/index.html"] });
+	assert.ok(!rollback.flat().includes("s3://b/terms/index.html"));
+	assert.equal(rollback.length, 5);
+});
+
 test("a sync that stopped before the shell is reported instead of passing silently", () => {
 	const publicDir = createPublicDir();
 	const sizes = { "_shell.html": SHELL_HTML.length, "build-meta.json": JSON.stringify(BUILD_META).length };
@@ -132,11 +159,9 @@ const REPORT_ONLY_HEADER = `default-src 'self'; img-src 'self' data: https://app
 
 function createPublicDir() {
 	const dir = mkdtempSync(join(tmpdir(), "gatu-cf-verify-"));
-	mkdirSync(join(dir, "docs"), { recursive: true });
 	mkdirSync(join(dir, "assets"), { recursive: true });
 	for (const href of SHELL_PRELOADS) writeFileSync(join(dir, href.slice(1)), "js");
 	writeFileSync(join(dir, "_shell.html"), SHELL_HTML);
-	writeFileSync(join(dir, "docs", "index.html"), "<html>docs</html>");
 	writeFileSync(join(dir, "build-meta.json"), JSON.stringify(BUILD_META));
 	mkdirSync(join(dir, "charting_library", "bundles"), { recursive: true });
 	writeFileSync(join(dir, "charting_library", "bundles", "runtime.4d986d07cb97d8edacba.js"), "js");
@@ -147,6 +172,15 @@ function createPublicDir() {
 function edgeSequence(route) {
 	let hits = 0;
 	return () => ({ ...route, headers: { ...route.headers, "x-cache": hits++ === 0 ? "Miss from cloudfront" : "Hit from cloudfront" } });
+}
+
+function legalRoutes(body) {
+	const routes = {};
+	for (const route of ["cookies", "docs", "privacy", "risk", "support", "terms"]) {
+		routes[`/${route}`] = { body };
+		routes[`/${route}/index.html`] = { body };
+	}
+	return routes;
 }
 
 function fakeFetch(routes) {
@@ -171,7 +205,7 @@ test("verification passes when the edge serves the build with the expected heade
 			[SHELL_PRELOADS.at(-1)]: { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
 			"/api/health": { status: 204, body: null, headers: { "cache-control": NO_STORE } },
 			"/charting_library/bundles/runtime.4d986d07cb97d8edacba.js": edgeSequence({ body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } }),
-			"/docs": { body: "<html>docs</html>", headers: { "content-security-policy": "x", "content-security-policy-report-only": REPORT_ONLY_HEADER } },
+			...legalRoutes(SHELL_HTML),
 			"/build-meta.json": { body: JSON.stringify(BUILD_META) },
 			"/api/geo": { body: JSON.stringify({ country: "GB", proxy: false, tradeRestricted: false }) },
 			"/api/referral-geo": (init) => ({
@@ -197,12 +231,44 @@ test("verification passes when the edge serves the build with the expected heade
 	);
 	assert.equal(results.length, 15);
 	assert.equal(results.find((result) => result.name === "shell preloads the startup closure")?.detail, "24 links");
-	assert.equal(results.find((result) => result.name === "inline scripts are allowed by the edge policy")?.detail, "2 pages, 1 inline scripts, report-only");
+	assert.equal(results.find((result) => result.name === "inline scripts are allowed by the edge policy")?.detail, "1 pages, 1 inline scripts, report-only");
 	assert.equal(results.find((result) => result.name === "image sources follow the edge config")?.detail, "3 sources, report-only");
 	assert.equal(results.find((result) => result.name.startsWith("chart entry"))?.detail, CHART_ENTRY);
 	assert.equal(results.find((result) => result.name === "shell repeats from the edge")?.detail, "Hit from cloudfront");
+	assert.equal(results.find((result) => result.name === "legal pages match the build")?.detail, "6 shell, 0 standalone");
 	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
 	assert.equal(results.find((result) => result.name === "build metadata parity")?.detail, "abc / r1 / sponsored-mainnet-deposits=off mobile-pairing=off");
+});
+
+test("verifying a rollback checks each legal page against the page the build ships", async () => {
+	const publicDir = createPublicDir();
+	for (const route of ["terms", "privacy"]) {
+		mkdirSync(join(publicDir, route), { recursive: true });
+		writeFileSync(join(publicDir, route, "index.html"), `<html>${route}</html>`);
+	}
+	async function run(overrides) {
+		const results = await verifyDeployment({
+			origin: "https://app.gatu.ai",
+			publicDir,
+			network: "mainnet",
+			fetchImpl: fakeFetch({
+				...legalRoutes(SHELL_HTML),
+				"/terms": { body: "<html>terms</html>" },
+				"/terms/index.html": { body: "<html>terms</html>" },
+				"/privacy": { body: "<html>privacy</html>" },
+				"/privacy/index.html": { body: "<html>privacy</html>" },
+				...overrides,
+				"*": { status: 404, body: "missing" },
+			}),
+		});
+		return results.find((result) => result.name === "legal pages match the build");
+	}
+	const rollback = await run({});
+	assert.equal(rollback.ok, true);
+	assert.equal(rollback.detail, "4 shell, 2 standalone");
+	assert.match((await run({ "/privacy": { body: SHELL_HTML } })).detail, /^\/privacy body differs from local privacy\/index\.html/);
+	assert.match((await run({ "/risk/index.html": { body: "<html>old risk</html>" } })).detail, /^\/risk\/index\.html body differs from local _shell\.html/);
+	assert.match((await run({ "/docs/index.html": { status: 404, body: "missing" } })).detail, /^\/docs\/index\.html status 404/);
 });
 
 test("verification fails when the live origin exposes a gate the local build does not", async () => {
@@ -266,7 +332,6 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 		network: "testnet",
 		fetchImpl: fakeFetch({
 			"/trade/HYPE": { body: "<html>old shell</html>", headers: { "content-security-policy": "x", link: "<https://api.hyperliquid.xyz>; rel=preconnect" } },
-			"/docs": { body: "<html>docs</html>" },
 			"/build-meta.json": { body: JSON.stringify({ ...BUILD_META, commit: "old", release: "r0" }) },
 			"/api/geo": { status: 503, body: JSON.stringify({ error: "unavailable", reason: "missing_config" }) },
 			"/join/__gatu_healthcheck__": { body: "x", headers: { "cache-control": "no-store" } },
@@ -277,6 +342,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 	const failed = results.filter((result) => !result.ok).map((result) => result.name);
 	assert.deepEqual(failed, [
 		"shell for a trade navigation",
+		"legal pages match the build",
 		"build metadata parity",
 		"geo endpoint answers with a real verdict",
 		"signed lambda post with a payload hash",
@@ -304,7 +370,6 @@ test("the enforced stage rejects a policy that still allows unsafe-inline or mis
 			scriptHashesMode: "enforce",
 			fetchImpl: fakeFetch({
 				"/trade/HYPE": { body: SHELL_HTML, headers: { "content-security-policy": header } },
-				"/docs": { body: "<html>docs</html>", headers: { "content-security-policy": header } },
 				"*": { status: 404, body: "missing" },
 			}),
 		});
@@ -328,6 +393,35 @@ test("the enforced stage rejects a policy that still allows unsafe-inline or mis
 	assert.equal((await images("default-src 'self'; img-src 'self' data: https://app.hyperliquid.xyz")).ok, true);
 	assert.match((await images("default-src 'self'; img-src 'self' data: blob: https:")).detail, /still allows any https origin/);
 	assert.match((await images("default-src 'self'")).detail, /no content-security-policy with an img-src/);
+});
+
+test("a rotation keeps the hashes of a legal page file an interrupted sync left on an older build", async () => {
+	const publicDir = createPublicDir();
+	const olderScript = '(()=>{document.documentElement.dataset.release="a"})();';
+	const olderPage = `<html><head><script>${olderScript}</script></head></html>`;
+	const served = await collectServedScriptHashes({
+		origin: "https://app.gatu.ai/",
+		publicDir,
+		fetchImpl: fakeFetch({
+			"/trade/HYPE": { body: SHELL_HTML },
+			"/terms/index.html": { body: olderPage },
+			"/privacy/index.html": { body: SHELL_HTML },
+			"*": { status: 404, body: "missing" },
+		}),
+	});
+	assert.deepEqual(served, [cspHash(olderScript), THEME_HASH].sort());
+	const committed = 'var SCRIPT_HASHES_CURRENT = "";\nvar SCRIPT_HASHES_PREVIOUS = "";\nfunction handler(event) { return event.response; }\n';
+	const nextBuild = "sha256-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=";
+	const rotated = prepareResponseFunction({ committedCode: committed, buildHashes: [nextBuild], servedHashes: served });
+	assert.ok([...rotated.current, ...rotated.previous].includes(cspHash(olderScript)));
+	await assert.rejects(
+		collectServedScriptHashes({
+			origin: "https://app.gatu.ai",
+			publicDir,
+			fetchImpl: fakeFetch({ "/trade/HYPE": { body: SHELL_HTML }, "/docs/index.html": { status: 503, body: "x" }, "*": { status: 404, body: "missing" } }),
+		}),
+		/\/docs\/index\.html answered 503/,
+	);
 });
 
 test("a release fills the committed function with the build's hashes and keeps the live set as previous", () => {

@@ -2019,8 +2019,8 @@ msgid "Contract"
 msgstr "Contrato"
 
 #: src/components/legal/document-chrome.tsx
-msgid "Cookie Policy"
-msgstr "Política de cookies"
+#~ msgid "Cookie Policy"
+#~ msgstr "Política de cookies"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
@@ -2602,12 +2602,11 @@ msgstr "No envíes otra operación de fondos de staking. El panel compartido de 
 msgid "Do not submit this operation again."
 msgstr "No vuelvas a enviar esta operación."
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "Documentación"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "Documentación y avisos legales"
@@ -6043,7 +6042,6 @@ msgstr "Precisión de precio"
 msgid "Price: Market"
 msgstr "Precio: Mercado"
 
-#: src/components/legal/document-chrome.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
@@ -6054,7 +6052,6 @@ msgstr "Navegación principal"
 msgid "Priority Gas Auction Fee"
 msgstr "Comisión de subasta de gas prioritaria"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "Política de privacidad"
@@ -6789,7 +6786,6 @@ msgstr "Recompensas reclamadas"
 msgid "Rewards compound automatically"
 msgstr "Las recompensas se reinvierten automáticamente"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "Divulgación de riesgos"
@@ -7745,7 +7741,7 @@ msgstr "Exitoso"
 msgid "Supply"
 msgstr "Suministrar"
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "Soporte"
@@ -7974,7 +7970,6 @@ msgstr "Terminar orden TWAP"
 #~ msgid "Terminating..."
 #~ msgstr "Terminando..."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Terms"
 msgstr "Términos"

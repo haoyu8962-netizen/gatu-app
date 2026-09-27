@@ -1,11 +1,21 @@
+import { settleWithinBudget, TRADE_ROUTE_REVEAL_BUDGET_MS } from "@/lib/trade/trade-route-boot";
+
 /**
- * Dashboard routes mount the desktop navigation statically, so the only lazy piece of their first
- * render is the account menu. Awaiting it from `beforeLoad` reveals the page with the wallet
- * control already resolved instead of an empty slot (ADR 0012 pattern, see the PR 26 review record).
- * The navigation module is imported dynamically so the route tree chunk stays free of the header's
- * wallet dependencies; the route component chunk already contains them.
+ * Dashboard routes mount the desktop navigation statically; the lazy pieces of their first render
+ * are the account menu, the global modal host (which installs the Ctrl/⌘K listener) and, on
+ * desktop, the footer. Awaiting them from `beforeLoad`, within the trade reveal budget, lets the
+ * first render commit without suspending again, so they arrive with the page instead of after
+ * React's 300ms fallback throttle (ADR 0012). The chrome module is imported dynamically so the
+ * route tree chunk stays free of the header's and the modal host's wallet dependencies; the route
+ * component chunk already contains them.
  */
 export function bootDashboardRoute(): Promise<void> {
 	if (typeof window === "undefined") return Promise.resolve();
-	return import("@/components/trade/header/top-nav").then((module) => module.preloadTopNav()).catch(() => undefined);
+	const preloads = import("@/components/dashboard/dashboard-chrome")
+		.then((module) => module.preloadDashboardChrome())
+		.then(
+			() => undefined,
+			() => undefined,
+		);
+	return settleWithinBudget(preloads, TRADE_ROUTE_REVEAL_BUDGET_MS);
 }

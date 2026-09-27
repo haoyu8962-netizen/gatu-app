@@ -4,7 +4,7 @@ import { createStaticPagesResponder } from "@/lib/static-pages/static-pages-resp
 
 const ORIGIN = "https://gatu.ai";
 const SHELL = "<html><head><title>shell</title></head><body>shell</body></html>";
-const DOCS = "<html><head><title>docs</title></head><body>docs</body></html>";
+const RETIRED_DOCS = "<html><head><title>docs</title></head><body>docs</body></html>";
 
 function createFakeFileSystem(files: Record<string, string>) {
 	const readFile = vi.fn(async (file: string) => {
@@ -20,28 +20,31 @@ function request(path: string, method = "GET"): Request {
 }
 
 describe("static pages responder", () => {
-	it("serves prerendered documents, the shell for application routes and caches file reads", async () => {
-		const readFile = createFakeFileSystem({ "/srv/public/_shell.html": SHELL, "/srv/public/docs/index.html": DOCS });
+	it("serves the shell for every application route, ignores retired document pages and caches file reads", async () => {
+		const readFile = createFakeFileSystem({
+			"/srv/public/_shell.html": SHELL,
+			"/srv/public/docs/index.html": RETIRED_DOCS,
+		});
 		const respond = createStaticPagesResponder({ publicDir: "/srv/public", readFile, allowRuntimeSsr: false });
 
 		const docs = await respond(request("/docs"));
 		expect(docs?.status).toBe(200);
 		expect(docs?.headers.get("content-type")).toBe("text/html; charset=utf-8");
 		expect(docs?.headers.get("cache-control")).toBe("no-cache");
-		await expect(docs?.text()).resolves.toBe(DOCS);
+		await expect(docs?.text()).resolves.toBe(SHELL);
 
 		const trade = await respond(request("/trade/BTC"));
 		await expect(trade?.text()).resolves.toBe(SHELL);
 		const portfolio = await respond(request("/portfolio"));
 		await expect(portfolio?.text()).resolves.toBe(SHELL);
-		expect(readFile).toHaveBeenCalledTimes(2);
+		expect(readFile).toHaveBeenCalledTimes(1);
 
 		const head = await respond(request("/trade/ETH", "HEAD"));
 		expect(head?.status).toBe(200);
 		await expect(head?.text()).resolves.toBe("");
 	});
 
-	it("falls back to the shell when a document page is missing and stamps referral markers", async () => {
+	it("serves the shell for legal pages and stamps referral markers", async () => {
 		const readFile = createFakeFileSystem({ "/srv/public/_shell.html": SHELL });
 		const respond = createStaticPagesResponder({ publicDir: "/srv/public", readFile, allowRuntimeSsr: false });
 

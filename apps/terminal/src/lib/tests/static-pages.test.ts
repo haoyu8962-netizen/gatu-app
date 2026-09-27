@@ -1,6 +1,5 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { DOCUMENT_ROUTE_PATHS } from "@/config/document-routes";
 import { listPublicDirCandidates } from "@/lib/static-pages/public-dir";
 import {
 	classifyStaticPageRequest,
@@ -10,7 +9,7 @@ import {
 } from "@/lib/static-pages/static-pages";
 
 describe("static page classification", () => {
-	it("serves the shell for application navigations and the prerendered file for document routes", () => {
+	it("serves the shell for every application navigation, legal pages included", () => {
 		expect(classifyStaticPageRequest("GET", "/trade/BTC")).toEqual({
 			kind: "page",
 			candidates: [STATIC_SHELL_FILE],
@@ -26,15 +25,13 @@ describe("static page classification", () => {
 			candidates: [STATIC_SHELL_FILE],
 			marker: null,
 		});
-		for (const path of DOCUMENT_ROUTE_PATHS) {
+		for (const path of ["/cookies", "/docs", "/privacy", "/risk", "/support", "/terms"]) {
 			expect(classifyStaticPageRequest("GET", path)).toEqual({
 				kind: "page",
-				candidates: [`${path.slice(1)}/index.html`, STATIC_SHELL_FILE],
+				candidates: [STATIC_SHELL_FILE],
 				marker: null,
 			});
-			expect(classifyStaticPageRequest("GET", `${path}/`)).toMatchObject({
-				candidates: [`${path.slice(1)}/index.html`, STATIC_SHELL_FILE],
-			});
+			expect(classifyStaticPageRequest("GET", `${path}/`)).toMatchObject({ candidates: [STATIC_SHELL_FILE] });
 		}
 	});
 

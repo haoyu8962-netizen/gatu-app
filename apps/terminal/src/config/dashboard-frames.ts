@@ -45,4 +45,8 @@ export const DASHBOARD_FRAMES = {
 		canvasClassName: "min-h-dvh bg-grid-container font-sans text-fg",
 		mainClassName: "mx-auto w-full max-w-[1440px] px-4 py-5 min-[1001px]:px-10 min-[1001px]:py-6",
 	},
+	legal: {
+		canvasClassName: "min-h-dvh bg-background font-sans text-fg",
+		mainClassName: "mx-auto w-full max-w-3xl px-5 py-8 min-[1001px]:py-12",
+	},
 } as const satisfies Record<string, DashboardFramePreset>;

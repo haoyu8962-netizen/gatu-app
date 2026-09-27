@@ -1,6 +1,6 @@
 # Gatu - Privacy Policy
 
-**Last Updated:** July 21, 2026
+**Last Updated:** September 27, 2026
 
 This Privacy Policy ("Policy") explains how Gatu Corp. ("Gatu," "we," "us," or "our")
 handles personal data in connection with the interface available at
@@ -45,7 +45,9 @@ available under applicable data-protection law are not limited by this Policy.
 
 The Services may use cookies and browser storage for authentication, security, preferences,
 and feature operation. Clearing browser storage may remove settings or locally stored Agent
-credentials and may require you to reconnect or reauthorize a wallet.
+credentials and may require you to reconnect or reauthorize a wallet. Our
+[Cookie and Browser Storage Policy](https://app.gatu.ai/cookies) describes the storage the
+Interface uses and how to manage it.
 
 As of the Last Updated date, the Interface does not integrate a product-analytics SDK.
 Infrastructure access logs and third-party providers may still process

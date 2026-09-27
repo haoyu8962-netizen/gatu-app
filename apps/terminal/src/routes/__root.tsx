@@ -1,8 +1,8 @@
 import { i18n } from "@lingui/core";
 import type { QueryClient } from "@tanstack/react-query";
-import { createRootRouteWithContext, HeadContent, Outlet, Scripts, useRouterState } from "@tanstack/react-router";
+import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AppRuntimeOverlays, DocumentOverlays } from "@/components/app-runtime-overlays";
+import { AppRuntimeOverlays } from "@/components/app-runtime-overlays";
 import { ApplicationErrorBoundary } from "@/components/application-error-boundary";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { RouterErrorPage } from "@/components/pages/router-error-page";
@@ -12,7 +12,7 @@ import { areFontsReady, STARTUP_FONT_SPECS, waitForFonts } from "@/lib/fonts/fon
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
 import { buildRootHead } from "@/lib/seo";
-import { getAppRouteSurface, getPresentedRoutePathname, useClientRuntimeReady } from "@/providers/client-runtime";
+import { useClientRuntimeReady } from "@/providers/client-runtime";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
 import { ClientRuntimeGate } from "@/providers/root";
 import "@/bones/registry";
@@ -51,21 +51,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function RootComponent() {
-	const pathname = useRouterState({ select: getPresentedRoutePathname });
-	const routeSurface = getAppRouteSurface(pathname);
-
 	useEffect(() => {
 		registerServiceWorker();
 	}, []);
-
-	if (routeSurface === "document") {
-		return (
-			<ApplicationErrorBoundary>
-				<Outlet />
-				<DocumentOverlays />
-			</ApplicationErrorBoundary>
-		);
-	}
 
 	const fallback = <StartupFallback />;
 

@@ -72,7 +72,7 @@ vi.mock("@/lib/hyperliquid/hooks/useMarketsInfo", () => ({
 	},
 }));
 
-const DOCUMENT_PATHS = ["/cookies", "/docs", "/privacy", "/risk", "/support", "/terms"] as const;
+const LEGAL_PATHS = ["/cookies", "/docs", "/privacy", "/risk", "/support", "/terms"] as const;
 
 function TradeProbe() {
 	useMarketsInfoContext();
@@ -93,12 +93,24 @@ function DashboardProbe() {
 	return <main data-page="dashboard">Dashboard route</main>;
 }
 
+function LegalProbe({ path }: { path: string }) {
+	useMarketsInfoContext();
+	if (!useClientRuntimeReady()) throw new Error("Legal page rendered without the client wallet runtime");
+	return <main data-page={path}>{path}</main>;
+}
+
 function createDeferredLoader() {
 	let resolve: () => void = () => {};
 	const promise = new Promise<void>((release) => {
 		resolve = release;
 	});
 	return { promise, resolve, started: false };
+}
+
+function pageComponent(path: string) {
+	if (path.startsWith("/trade/")) return TradeProbe;
+	if (path === "/portfolio" || path === "/vaults") return DashboardProbe;
+	return () => <LegalProbe path={path} />;
 }
 
 describe("root route provider lifetime during committed route transitions", () => {
@@ -142,30 +154,20 @@ describe("root route provider lifetime during committed route transitions", () =
 			errorComponent: Route.options.errorComponent,
 			notFoundComponent: Route.options.notFoundComponent,
 		});
-		const children = [
-			...DOCUMENT_PATHS,
-			"/trade/HYPE",
-			"/trade/BTC",
-			"/portfolio",
-			"/vaults",
-			"/redirect-to-terms",
-		].map((path) =>
-			createRoute({
-				getParentRoute: () => rootRoute,
-				path,
-				loader: () => {
-					if (path === "/redirect-to-terms") throw redirect({ to: "/terms" });
-					const loader = loaders.get(path);
-					if (!loader) return;
-					loader.started = true;
-					return loader.promise;
-				},
-				component: path.startsWith("/trade/")
-					? TradeProbe
-					: ["/portfolio", "/vaults"].includes(path)
-						? DashboardProbe
-						: () => <main data-page={path}>{path}</main>,
-			}),
+		const children = [...LEGAL_PATHS, "/trade/HYPE", "/trade/BTC", "/portfolio", "/vaults", "/redirect-to-terms"].map(
+			(path) =>
+				createRoute({
+					getParentRoute: () => rootRoute,
+					path,
+					loader: () => {
+						if (path === "/redirect-to-terms") throw redirect({ to: "/terms" });
+						const loader = loaders.get(path);
+						if (!loader) return;
+						loader.started = true;
+						return loader.promise;
+					},
+					component: pageComponent(path),
+				}),
 		);
 		router = createRouter({
 			routeTree: rootRoute.addChildren(children),
@@ -209,28 +211,23 @@ describe("root route provider lifetime during committed route transitions", () =
 		return { loader, completion };
 	}
 
-	it("does not eagerly import the wallet runtime from the initial document URL", async () => {
+	it("eagerly imports the wallet runtime from an initial legal page URL", async () => {
 		await vi.dynamicImportSettled();
-		expect(runtime.walletModuleLoads).toBe(0);
+		expect(runtime.walletModuleLoads).toBe(1);
 	});
 
-	it.each(DOCUMENT_PATHS)("does not import or mount the wallet runtime for a direct %s entry", async (path) => {
-		const previousModuleLoads = runtime.walletModuleLoads;
+	it.each(LEGAL_PATHS)("mounts the wallet and market runtime for a direct %s entry", async (path) => {
 		await mount(path);
-		expect(runtime.walletModuleLoads).toBe(previousModuleLoads);
-		expect(runtime.walletMounts).toBe(0);
-		expect(runtime.marketMounts).toBe(0);
+		expect(runtime.walletMounts).toBe(1);
+		expect(runtime.marketMounts).toBe(1);
 	});
 
-	it.each(DOCUMENT_PATHS)("retains the trading providers until delayed %s navigation commits", async (path) => {
+	it.each(LEGAL_PATHS)("keeps the trading providers mounted across a delayed %s navigation", async (path) => {
 		await mount("/trade/HYPE");
 		const navigation = await startNavigation(path);
 
 		expect(router.state.matches.at(-1)?.pathname).toBe("/trade/HYPE");
 		await expectPage("trade");
-		expect(runtime.walletMounts).toBe(1);
-		expect(runtime.walletUnmounts).toBe(0);
-		expect(runtime.marketUnmounts).toBe(0);
 		expect(runtime.tradeUnmounts).toBe(0);
 
 		await act(async () => {
@@ -239,112 +236,101 @@ describe("root route provider lifetime during committed route transitions", () =
 		});
 		await expectPage(path);
 		expect(router.state.matches.at(-1)?.pathname).toBe(path);
-		expect(runtime.walletUnmounts).toBe(1);
-		expect(runtime.marketUnmounts).toBe(1);
 		expect(runtime.tradeUnmounts).toBe(1);
+		expect(runtime.walletMounts).toBe(1);
+		expect(runtime.walletUnmounts).toBe(0);
+		expect(runtime.marketMounts).toBe(1);
+		expect(runtime.marketUnmounts).toBe(0);
 	});
 
-	it.each(DOCUMENT_PATHS)(
-		"keeps %s visible while the trading route loads and then supplies its providers",
-		async (path) => {
-			await mount(path);
-			const navigation = await startNavigation("/trade/HYPE");
+	it.each(LEGAL_PATHS)("keeps %s visible while the trading route loads without remounting providers", async (path) => {
+		await mount(path);
+		const navigation = await startNavigation("/trade/HYPE");
 
-			expect(router.state.matches.at(-1)?.pathname).toBe(path);
-			await expectPage(path);
-			expect(runtime.walletMounts).toBe(0);
-			expect(runtime.marketMounts).toBe(0);
+		expect(router.state.matches.at(-1)?.pathname).toBe(path);
+		await expectPage(path);
 
-			await act(async () => {
-				navigation.loader.resolve();
-				await navigation.completion;
-			});
-			await expectPage("trade");
-			expect(runtime.walletMounts).toBe(1);
-			expect(runtime.marketMounts).toBe(1);
-			expect(runtime.tradeMounts).toBe(1);
-		},
-	);
+		await act(async () => {
+			navigation.loader.resolve();
+			await navigation.completion;
+		});
+		await expectPage("trade");
+		expect(runtime.walletMounts).toBe(1);
+		expect(runtime.walletUnmounts).toBe(0);
+		expect(runtime.marketMounts).toBe(1);
+		expect(runtime.tradeMounts).toBe(1);
+	});
 
-	it("preserves the mounted trading runtime when document navigation is superseded", async () => {
+	it("keeps the trading page when a legal navigation is superseded", async () => {
 		await mount("/trade/HYPE");
-		const documentNavigation = await startNavigation("/terms");
+		const legalNavigation = await startNavigation("/terms");
 		const tradeNavigation = await startNavigation("/trade/BTC");
 
 		await expectPage("trade");
-		expect(runtime.walletUnmounts).toBe(0);
-		expect(runtime.marketUnmounts).toBe(0);
-
 		await act(async () => {
 			tradeNavigation.loader.resolve();
 			await tradeNavigation.completion;
+		});
+		await expectPage("trade");
+		expect(router.state.matches.at(-1)?.pathname).toBe("/trade/BTC");
+
+		await act(async () => {
+			legalNavigation.loader.resolve();
+			await legalNavigation.completion;
 		});
 		await expectPage("trade");
 		expect(router.state.matches.at(-1)?.pathname).toBe("/trade/BTC");
 		expect(runtime.walletMounts).toBe(1);
-		expect(runtime.marketMounts).toBe(1);
-
-		await act(async () => {
-			documentNavigation.loader.resolve();
-			await documentNavigation.completion;
-		});
-		await expectPage("trade");
-		expect(router.state.matches.at(-1)?.pathname).toBe("/trade/BTC");
 		expect(runtime.walletUnmounts).toBe(0);
 		expect(runtime.marketUnmounts).toBe(0);
 	});
 
-	it("keeps document content stable when a pending trading navigation is superseded", async () => {
+	it("keeps legal content stable when a pending trading navigation is superseded", async () => {
 		await mount("/terms");
 		const tradeNavigation = await startNavigation("/trade/HYPE");
-		const documentNavigation = await startNavigation("/privacy");
+		const legalNavigation = await startNavigation("/privacy");
 		await expectPage("/terms");
-		expect(runtime.walletMounts).toBe(0);
 
 		await act(async () => {
-			documentNavigation.loader.resolve();
-			await documentNavigation.completion;
+			legalNavigation.loader.resolve();
+			await legalNavigation.completion;
 			tradeNavigation.loader.resolve();
 			await tradeNavigation.completion;
 		});
 		await expectPage("/privacy");
-		expect(runtime.walletMounts).toBe(0);
-		expect(runtime.marketMounts).toBe(0);
+		expect(runtime.tradeMounts).toBe(0);
+		expect(runtime.walletMounts).toBe(1);
+		expect(runtime.walletUnmounts).toBe(0);
 	});
 
-	it.each(["/trade/BTC", "/portfolio", "/vaults"] as const)("uses the same empty announcement on %s", async (path) => {
-		runtime.ready = false;
-		await mount(path, false);
-		await vi.waitFor(() => {
-			expect(container.querySelector('[data-testid="startup-fallback"]')?.getAttribute("aria-busy")).toBe("true");
-			expect(container.querySelector("nav, header, footer")).toBeNull();
-			expect(container.querySelector("output")?.className).toBe("sr-only");
-			expect(container.textContent).toBe("Loading GATU...");
-		});
-		const navigation = await startNavigation("/terms");
-		await act(async () => {
-			navigation.loader.resolve();
-			await navigation.completion;
-		});
-		await expectPage("/terms");
-	});
+	it.each(["/trade/BTC", "/portfolio", "/vaults", "/terms", "/privacy"] as const)(
+		"uses the same empty announcement on %s",
+		async (path) => {
+			runtime.ready = false;
+			await mount(path, false);
+			await vi.waitFor(() => {
+				expect(container.querySelector('[data-testid="startup-fallback"]')?.getAttribute("aria-busy")).toBe("true");
+				expect(container.querySelector("nav, header, footer, main")).toBeNull();
+				expect(container.querySelector("output")?.className).toBe("sr-only");
+				expect(container.textContent).toBe("Loading GATU...");
+			});
+		},
+	);
 
-	it("preserves dashboard providers until its document destination commits", async () => {
+	it("keeps dashboard providers mounted when it navigates to a legal page", async () => {
 		await mount("/portfolio");
 		const navigation = await startNavigation("/terms");
 		await expectPage("dashboard");
-		expect(runtime.walletUnmounts).toBe(0);
-		expect(runtime.marketUnmounts).toBe(0);
 		await act(async () => {
 			navigation.loader.resolve();
 			await navigation.completion;
 		});
 		await expectPage("/terms");
-		expect(runtime.walletUnmounts).toBe(1);
-		expect(runtime.marketUnmounts).toBe(1);
+		expect(runtime.walletUnmounts).toBe(0);
+		expect(runtime.marketUnmounts).toBe(0);
 	});
 
-	it("keeps the trading context until a redirected document loader completes", async () => {
+	it("keeps the trading context until a redirected legal loader completes", async () => {
 		await mount("/trade/HYPE");
 		const loader = createDeferredLoader();
 		loaders.set("/terms", loader);
@@ -372,7 +358,7 @@ describe("root route provider lifetime during committed route transitions", () =
 		expect(runtime.reportClientError).not.toHaveBeenCalled();
 	});
 
-	it("restores trading and document providers correctly on browser back and forward", async () => {
+	it("moves between trading and a legal page on browser back and forward with one runtime", async () => {
 		await mount("/trade/HYPE");
 		await act(async () => {
 			await router.navigate({ to: "/terms" });
@@ -383,14 +369,15 @@ describe("root route provider lifetime during committed route transitions", () =
 			router.history.back();
 		});
 		await expectPage("trade");
-		expect(runtime.walletMounts).toBe(2);
-		expect(runtime.marketMounts).toBe(2);
 
 		await act(async () => {
 			router.history.forward();
 		});
 		await expectPage("/terms");
-		expect(runtime.walletUnmounts).toBe(2);
-		expect(runtime.marketUnmounts).toBe(2);
+		expect(runtime.walletMounts).toBe(1);
+		expect(runtime.walletUnmounts).toBe(0);
+		expect(runtime.marketMounts).toBe(1);
+		expect(runtime.marketUnmounts).toBe(0);
+		expect(runtime.tradeMounts).toBe(2);
 	});
 });

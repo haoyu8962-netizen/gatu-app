@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { ReferralsPage } from "@/components/referrals/referrals-page";
+import { bootDashboardRoute } from "@/lib/navigation/boot-dashboard-route";
 import { getNetwork } from "@/lib/network";
 import { buildPageHead } from "@/lib/seo";
 import { isSafeReferralJoinCode, resolveReferralJoinIntent } from "@/lib/trade/referral-join";
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/join/$code")({
 		// decoded value directly; the client separately verifies the raw browser
 		// pathname with the canonical, single-decode parser.
 		if (!isSafeReferralJoinCode(params.code)) throw notFound();
+		return bootDashboardRoute();
 	},
 	remountDeps: ({ params }) => ({ code: params.code }),
 	head: () => {

@@ -8,7 +8,7 @@ import { chromium } from "@playwright/test";
 
 const origin = (process.argv[2] ?? "https://d2i25dhfjwco8b.cloudfront.net").replace(/\/+$/, "");
 const INIT = `window.__cspViolations = []; document.addEventListener("securitypolicyviolation", (e) => { window.__cspViolations.push({ directive: e.effectiveDirective, blocked: e.blockedURI, disposition: e.disposition, sample: e.sample, source: e.sourceFile ? e.sourceFile.replace(location.origin, "") + ":" + e.lineNumber : "", doc: e.documentURI.replace(location.origin, "") }); });`;
-const DOCUMENT_ROUTES = ["/docs", "/support", "/terms", "/privacy", "/risk", "/cookies"];
+const LEGAL_ROUTES = ["/docs", "/support", "/terms", "/privacy", "/risk", "/cookies"];
 
 async function settle(page, ms = 4000) {
 	await page.waitForLoadState("load").catch(() => {});
@@ -73,7 +73,7 @@ await run({ viewport: { width: 1440, height: 900 } }, async (page) => {
 	await page.keyboard.press("Escape").catch(() => {});
 	await tryClick(page, ['button:has-text("Limit")', '[role="tab"]:has-text("Limit")'], "desktop limit tab", results, 1500);
 	await tryClick(page, ['button:has-text("Buy")', 'button:has-text("Long")'], "desktop order button", results, 1500);
-	for (const route of ["/portfolio", "/leaderboard", "/fundingComparison", "/vaults", "/staking", "/referrals", "/api-wallet", "/perp", "/spot", "/builders-perp", "/trade/HYPE/USDC", "/join/__gatu_healthcheck__", ...DOCUMENT_ROUTES]) {
+	for (const route of ["/portfolio", "/leaderboard", "/fundingComparison", "/vaults", "/staking", "/referrals", "/api-wallet", "/perp", "/spot", "/builders-perp", "/trade/HYPE/USDC", "/join/__gatu_healthcheck__", ...LEGAL_ROUTES]) {
 		await page.goto(`${origin}${route}`, { waitUntil: "load", timeout: 60000 });
 		await settle(page, 3500);
 		await collect(page, `desktop ${route}`, results);

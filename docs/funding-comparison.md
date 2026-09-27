@@ -76,7 +76,7 @@
 
 ## 5. 页面与入口
 
-- 路由：`apps/terminal/src/routes/fundingComparison.tsx`（`beforeLoad: () => bootDashboardRoute()`、`ssr: false`、`buildPageHead`）；页面框架预设为 `DASHBOARD_FRAMES["/funding-comparison"]`，与排行榜相同。`routeTree.gen.ts` 由 TanStack 路由生成器生成。
+- 路由：`apps/terminal/src/routes/fundingComparison.tsx`（`beforeLoad: () => bootDashboardRoute()`、`ssr: false`、`buildPageHead`）；页面框架预设为 `DASHBOARD_FRAMES["/funding-comparison"]`，与排行榜相同；页头、页脚与全局弹窗使用 `components/dashboard/dashboard-chrome.tsx` 的共享实例（`DashboardHeader`、`FooterBar`、`GlobalModals`），与合入 `dev` 的仪表盘页一致，由 `bootDashboardRoute` 在揭示前预加载。`routeTree.gen.ts` 由 TanStack 路由生成器生成。
 - 结构：`funding-comparison-page.tsx`（框架与真实页头、页脚、全局弹窗）→ `use-funding-comparison-controller.ts`（数据、状态与界面状态）→ `funding-comparison-view.tsx`（纯展示，只使用 `useLingui`、`useIsMobile`、`useNumberFormatRevision`）。
 - 页头：标题「Funding Comparison」、副标题「Funding rate differences across exchanges.」；工具栏为搜索框（占位「Search by market」）与周期下拉（无障碍名称「Funding period」）。
 - 桌面（1001px 及以上）：七列可排序表格（Market、Hyperliquid OI、Hyperliquid、Binance、Binance-HL Arb、Bybit、Bybit-HL Arb），表头按钮带 `aria-sort`，表格带 `scrollableRegionLabel` 与屏幕阅读器标题；Market 列的资产徽标调用 `useMarketNavigation()` 打开对应交易页。
