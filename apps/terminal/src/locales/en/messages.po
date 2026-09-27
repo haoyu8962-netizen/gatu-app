@@ -2028,8 +2028,8 @@ msgid "Contract"
 msgstr "Contract"
 
 #: src/components/legal/document-chrome.tsx
-msgid "Cookie Policy"
-msgstr "Cookie Policy"
+#~ msgid "Cookie Policy"
+#~ msgstr "Cookie Policy"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
@@ -2594,12 +2594,11 @@ msgstr "Do not submit another staking funds operation. The shared recovery panel
 msgid "Do not submit this operation again."
 msgstr "Do not submit this operation again."
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "Docs"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "Documentation and legal"
@@ -6004,7 +6003,6 @@ msgstr "Price precision"
 msgid "Price: Market"
 msgstr "Price: Market"
 
-#: src/components/legal/document-chrome.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
@@ -6015,7 +6013,6 @@ msgstr "Primary navigation"
 msgid "Priority Gas Auction Fee"
 msgstr "Priority Gas Auction Fee"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "Privacy Policy"
@@ -6768,7 +6765,6 @@ msgstr "Rewards claimed"
 msgid "Rewards compound automatically"
 msgstr "Rewards compound automatically"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "Risk Disclosure"
@@ -7747,7 +7743,7 @@ msgstr "Supply to Earn"
 msgid "Supplying and borrowing happen automatically on Portfolio Margin mode. Quote assets like USDC or USDT that are not being utilized are supplied and earn interest. Trades that require additional quote assets will borrow against collateral like HYPE or BTC. Borrows pay interest, and collateral remains locked until the borrows are repaid."
 msgstr "Supplying and borrowing happen automatically on Portfolio Margin mode. Quote assets like USDC or USDT that are not being utilized are supplied and earn interest. Trades that require additional quote assets will borrow against collateral like HYPE or BTC. Borrows pay interest, and collateral remains locked until the borrows are repaid."
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "Support"
@@ -7974,7 +7970,6 @@ msgstr "Terminate TWAP order"
 #~ msgid "Terminating..."
 #~ msgstr "Terminating..."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Terms"
 msgstr "Terms"

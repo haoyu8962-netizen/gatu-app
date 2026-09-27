@@ -21,6 +21,12 @@ function required<T>(value: T | null | undefined): T {
 
 const routes = Object.keys(DASHBOARD_FRAMES) as (keyof typeof DASHBOARD_FRAMES)[];
 
+function pageSource(route: keyof typeof DASHBOARD_FRAMES) {
+	if (route === "legal") return { file: "legal/legal-doc-page.tsx", preset: "{...DASHBOARD_FRAMES.legal}" };
+	const name = route.slice(1);
+	return { file: `${name}/${name}-page.tsx`, preset: `{...DASHBOARD_FRAMES["${route}"]}` };
+}
+
 describe("dashboard frame runtime layout", () => {
 	it.each([false, true])("preserves desktop offsets and mobile flow for testnet=%s", (testnet) => {
 		for (const preset of Object.values(DASHBOARD_FRAMES))
@@ -67,10 +73,10 @@ describe("dashboard frame runtime layout", () => {
 	});
 
 	it.each(routes)("wires the %s page to its preset and preserves real chrome", (route) => {
-		const name = route.slice(1);
-		const source = readFileSync(resolve(__dirname, `../../components/${name}/${name}-page.tsx`), "utf8");
+		const { file, preset } = pageSource(route);
+		const source = readFileSync(resolve(__dirname, `../../components/${file}`), "utf8");
 		expect(source).toContain("<DashboardFrameView");
-		expect(source).toContain(`{...DASHBOARD_FRAMES["${route}"]}`);
+		expect(source).toContain(preset);
 		expect(source).toContain("<DashboardHeader isMobile={isMobile} />");
 		expect(source).toContain("<FooterBar />");
 		expect(source).toContain("<GlobalModals");
@@ -129,5 +135,9 @@ it("pins all preset classes to the pre-migration page sources", () => {
 	expect(DASHBOARD_FRAMES["/trade-history"]).toEqual({
 		canvasClassName: "min-h-dvh bg-grid-container font-sans text-fg",
 		mainClassName: "mx-auto w-full max-w-[1440px] px-4 py-5 min-[1001px]:px-10 min-[1001px]:py-6",
+	});
+	expect(DASHBOARD_FRAMES.legal).toEqual({
+		canvasClassName: "min-h-dvh bg-background font-sans text-fg",
+		mainClassName: "mx-auto w-full max-w-3xl px-5 py-8 min-[1001px]:py-12",
 	});
 });

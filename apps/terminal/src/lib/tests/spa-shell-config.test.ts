@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DOCUMENT_ROUTE_PATHS } from "@/config/document-routes";
-import { getAppRouteSurface } from "@/providers/client-runtime";
+import { getAppRouteSurface } from "@/config/app-route-surface";
 import { createTanstackStartOptions, SPA_SHELL_MASK_PATH, SPA_SHELL_OUTPUT_PATH } from "../../../vite.config";
 
 describe("SPA shell build configuration", () => {
@@ -14,13 +13,8 @@ describe("SPA shell build configuration", () => {
 		expect(options.spa.prerender.outputPath).toBe(SPA_SHELL_OUTPUT_PATH);
 	});
 
-	it("prerenders every document route as real HTML and nothing else", () => {
-		const prerenderedPaths = options.pages.map((page) => page.path);
-		expect(prerenderedPaths).toEqual([...DOCUMENT_ROUTE_PATHS]);
-		for (const page of options.pages) {
-			expect(page.prerender.enabled).toBe(true);
-			expect(getAppRouteSurface(page.path)).toBe("document");
-		}
+	it("prerenders the shell and no route-specific pages", () => {
+		expect(options).not.toHaveProperty("pages");
 		expect(options.prerender.autoStaticPathsDiscovery).toBe(false);
 		expect(options.prerender.crawlLinks).toBe(false);
 		expect(options.prerender.failOnError).toBe(true);

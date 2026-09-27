@@ -1,13 +1,12 @@
 // CloudFront Function (viewer-request, JavaScript runtime 2.0) for the gatu trading terminal.
 //
-// Mirrors apps/terminal/src/lib/static-pages/static-pages.ts for an S3 origin: document routes
-// map to their prerendered index.html, every other application path maps to the SPA shell, and
-// server paths are left untouched so their cache behaviors route them to the API origin. Missing
+// Mirrors apps/terminal/src/lib/static-pages/static-pages.ts for an S3 origin: every application
+// path maps to the SPA shell, and server paths are left untouched so their cache behaviors route
+// them to the API origin. Missing
 // files stay 404 (custom error response) instead of becoming HTML. The public host is copied
 // into x-gatu-forwarded-host so the API origin can rebuild the public origin. Join paths and the
 // pairing path are tagged so the viewer-response function can expose the route marker and give the
 // pairing page its uncached, referrer-free headers; a tag the viewer sent itself is dropped first.
-var DOCUMENT_ROUTES = ['/cookies', '/docs', '/privacy', '/risk', '/support', '/terms'];
 var SERVER_PATHS = ['/api', '/client-error-report'];
 var SERVER_PREFIXES = ['/api/'];
 var RETIRED_PATH = '/mobile-agent-sync-ticket';
@@ -72,6 +71,6 @@ function handler(event) {
 	} else if (uri.toLowerCase() === PAIRING_PATH) {
 		request.headers['x-gatu-route'] = { value: 'mobile-agent-sync' };
 	}
-	request.uri = includes(DOCUMENT_ROUTES, uri) ? uri + '/index.html' : SHELL;
+	request.uri = SHELL;
 	return request;
 }

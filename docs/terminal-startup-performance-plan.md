@@ -2,6 +2,8 @@
 
 状态：阶段 1（P2、P3）与阶段 2（P1、P4.1、P4.2）已发布到 `*.cloudfront.net`，决策记录在 [ADR 0006](adr/0006-startup-preloads-and-edge-caching.md)；P4.3 边缘初判按用户决定不做；阶段 3 评估后暂缓（见 P5、P6 的说明）；阶段 5（P9 图表入口提前）已实施；阶段 4 未开始。阶段 2 后的同环境测量见任务记录第九检查点：97 个启动块 0.94 s 到齐、FCP 220 ms、`/api/geo` 1.39 s，官方站同工具 FCP 1,148 ms、58 块 1.35 s 到齐。基线是 `claude/spa-mode` 分支提交 `6721c375` 的 CloudFront 首发；对比对象是 2026-09-13 在同一台机器、同一个应用内浏览器里冷缓存实测的 `app.hyperliquid.xyz/trade/HYPE`。度量方法、原始数字与官方站技术栈指纹记录在 [任务记录](work-memory/sessions/2026-09-13-spa-shell-spike.md) 第八检查点；托管形态见 [ADR 0005](adr/0005-spa-static-shell.md) 与 [CloudFront 手册](../deploy/cloudfront/README.md)。
 
+> 更正（2026-09-27）：下文“文档页永不加载 Privy”“壳与文档页边缘缓存”“文档路由不预取地区判定”描述的是当时的范围。[ADR 0020](adr/0020-legal-pages-in-app-shell.md) 起六个文档页并入应用外壳，会加载钱包运行时，也会预取地区判定，只剩壳在边缘缓存。
+
 ## 目标
 
 把冷加载"可交互"时间拉到与官方站同一量级，同时保住本项目已经领先的部分：预渲染骨架先于 JS 出现、完整安全头、资源 immutable 缓存、生效的 Service Worker、fail-closed 的地区与法务门控。

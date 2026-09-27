@@ -2028,8 +2028,8 @@ msgid "Contract"
 msgstr "العقد"
 
 #: src/components/legal/document-chrome.tsx
-msgid "Cookie Policy"
-msgstr "سياسة ملفات تعريف الارتباط"
+#~ msgid "Cookie Policy"
+#~ msgstr "سياسة ملفات تعريف الارتباط"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
@@ -2594,12 +2594,11 @@ msgstr "لا ترسل عملية أموال تخزين أخرى. ستواصل ل
 msgid "Do not submit this operation again."
 msgstr "لا ترسل هذه العملية مرة أخرى."
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "المستندات"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "الوثائق والمعلومات القانونية"
@@ -6004,7 +6003,6 @@ msgstr "دقة السعر"
 msgid "Price: Market"
 msgstr "السعر: سعر السوق"
 
-#: src/components/legal/document-chrome.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
@@ -6015,7 +6013,6 @@ msgstr "التنقل الرئيسي"
 msgid "Priority Gas Auction Fee"
 msgstr "رسوم مزاد أولوية الغاز"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "سياسة الخصوصية"
@@ -6768,7 +6765,6 @@ msgstr "تمت المطالبة بالمكافآت"
 msgid "Rewards compound automatically"
 msgstr "تُعاد استثمار المكافآت تلقائيًا"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "الإفصاح عن المخاطر"
@@ -7747,7 +7743,7 @@ msgstr "إيداع لكسب العائد"
 msgid "Supplying and borrowing happen automatically on Portfolio Margin mode. Quote assets like USDC or USDT that are not being utilized are supplied and earn interest. Trades that require additional quote assets will borrow against collateral like HYPE or BTC. Borrows pay interest, and collateral remains locked until the borrows are repaid."
 msgstr "في وضع هامش المحفظة يتم الإيداع والاقتراض تلقائيًا. تُودَع أصول التسعير غير المستخدمة مثل USDC أو USDT وتكسب الفائدة. الصفقات التي تحتاج إلى أصول تسعير إضافية تقترض مقابل ضمان مثل HYPE أو BTC. تدفع القروض فائدة، ويظل الضمان مقفلًا حتى سداد القروض."
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "الدعم"
@@ -7974,7 +7970,6 @@ msgstr "إنهاء أمر TWAP"
 #~ msgid "Terminating..."
 #~ msgstr "جارٍ الإنهاء..."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Terms"
 msgstr "الشروط"

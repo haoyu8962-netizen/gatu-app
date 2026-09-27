@@ -2028,8 +2028,8 @@ msgid "Contract"
 msgstr "合约"
 
 #: src/components/legal/document-chrome.tsx
-msgid "Cookie Policy"
-msgstr "Cookie 政策"
+#~ msgid "Cookie Policy"
+#~ msgstr "Cookie 政策"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
@@ -2594,12 +2594,11 @@ msgstr "请勿提交另一笔质押资金操作。共享恢复面板会继续检
 msgid "Do not submit this operation again."
 msgstr "请勿再次提交此操作。"
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "文档"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "文档与法律信息"
@@ -6004,7 +6003,6 @@ msgstr "价格精度"
 msgid "Price: Market"
 msgstr "价格：市价"
 
-#: src/components/legal/document-chrome.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
@@ -6015,7 +6013,6 @@ msgstr "主导航"
 msgid "Priority Gas Auction Fee"
 msgstr "优先 Gas 拍卖费"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "隐私政策"
@@ -6768,7 +6765,6 @@ msgstr "奖励已领取"
 msgid "Rewards compound automatically"
 msgstr "奖励自动复投"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "风险披露"
@@ -7747,7 +7743,7 @@ msgstr "存入赚息"
 msgid "Supplying and borrowing happen automatically on Portfolio Margin mode. Quote assets like USDC or USDT that are not being utilized are supplied and earn interest. Trades that require additional quote assets will borrow against collateral like HYPE or BTC. Borrows pay interest, and collateral remains locked until the borrows are repaid."
 msgstr "组合保证金模式下，存入和借入自动进行。未被使用的 USDC、USDT 等计价资产会被存入并赚取利息。需要额外计价资产的交易会以 HYPE、BTC 等抵押品借入。借款需支付利息，抵押品在借款偿还前保持锁定。"
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "支持"
@@ -7974,7 +7970,6 @@ msgstr "终止 TWAP 委托"
 #~ msgid "Terminating..."
 #~ msgstr "终止中..."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Terms"
 msgstr "条款"

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GEO_API_PATH } from "@/config/api-paths";
-import { GEO_REQUEST_INIT, shouldPrefetchGeo, startGeoPrefetch, takeGeoPrefetch } from "@/lib/geo/geo-prefetch";
+import { GEO_REQUEST_INIT, startGeoPrefetch, takeGeoPrefetch } from "@/lib/geo/geo-prefetch";
 import { getGeo } from "@/lib/geo/get-geo";
 
 const VERDICT = { country: "GB", tradeRestricted: false, proxy: false };
@@ -9,15 +9,6 @@ describe("geo prefetch", () => {
 	afterEach(() => {
 		takeGeoPrefetch();
 		vi.unstubAllGlobals();
-	});
-
-	it("only prefetches on application surfaces", () => {
-		expect(shouldPrefetchGeo("/trade/HYPE")).toBe(true);
-		expect(shouldPrefetchGeo("/")).toBe(true);
-		expect(shouldPrefetchGeo("/portfolio")).toBe(true);
-		for (const path of ["/docs", "/support", "/terms/", "/privacy", "/risk", "/cookies"]) {
-			expect(shouldPrefetchGeo(path), path).toBe(false);
-		}
 	});
 
 	it("sends one request and hands the response to exactly one consumer", async () => {

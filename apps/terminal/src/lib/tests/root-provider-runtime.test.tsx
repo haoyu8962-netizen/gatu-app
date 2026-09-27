@@ -87,50 +87,26 @@ describe("root provider runtime boundary", () => {
 		expect(runtime.clientProviderRenders).toBe(0);
 	});
 
-	it("keeps a document route mounted across hydration without loading client providers", () => {
-		const counters = { mounts: 0, unmounts: 0 };
+	it.each(["/trade/HYPE", "/terms", "/docs"])(
+		"does not mount %s content outside its client providers before hydration",
+		(pathname) => {
+			runtime.pathname = pathname;
+			const counters = { mounts: 0, unmounts: 0 };
 
-		function render() {
 			act(() => {
 				root.render(
 					<RootProvider queryClient={queryClient}>
-						<ClientRuntimeGate fallback={<span>Loading document</span>}>
-							<MountProbe label="Document" counters={counters} />
+						<ClientRuntimeGate fallback={<span>Terminal frame</span>}>
+							<MountProbe label="Trading route" counters={counters} />
 						</ClientRuntimeGate>
 					</RootProvider>,
 				);
 			});
-		}
-
-		render();
-		expect(container.textContent).toBe("Document");
-
-		runtime.hydrated = true;
-		render();
-
-		expect(container.textContent).toBe("Document");
-		expect(counters.mounts).toBe(1);
-		expect(counters.unmounts).toBe(0);
-		expect(runtime.clientProviderRenders).toBe(0);
-	});
-
-	it("does not mount business route content outside its client providers before hydration", () => {
-		runtime.pathname = "/trade/HYPE";
-		const counters = { mounts: 0, unmounts: 0 };
-
-		act(() => {
-			root.render(
-				<RootProvider queryClient={queryClient}>
-					<ClientRuntimeGate fallback={<span>Terminal frame</span>}>
-						<MountProbe label="Trading route" counters={counters} />
-					</ClientRuntimeGate>
-				</RootProvider>,
-			);
-		});
-		expect(container.textContent).toBe("Terminal frame");
-		expect(counters).toEqual({ mounts: 0, unmounts: 0 });
-		expect(runtime.clientProviderRenders).toBe(0);
-	});
+			expect(container.textContent).toBe("Terminal frame");
+			expect(counters).toEqual({ mounts: 0, unmounts: 0 });
+			expect(runtime.clientProviderRenders).toBe(0);
+		},
+	);
 
 	it("mounts business route content once after the client provider is ready", async () => {
 		runtime.pathname = "/trade/HYPE";

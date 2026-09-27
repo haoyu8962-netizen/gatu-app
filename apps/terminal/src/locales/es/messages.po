@@ -2028,8 +2028,8 @@ msgid "Contract"
 msgstr "Contrato"
 
 #: src/components/legal/document-chrome.tsx
-msgid "Cookie Policy"
-msgstr "Política de cookies"
+#~ msgid "Cookie Policy"
+#~ msgstr "Política de cookies"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
@@ -2594,12 +2594,11 @@ msgstr "No envíes otra operación de fondos de staking. El panel compartido de 
 msgid "Do not submit this operation again."
 msgstr "No vuelvas a enviar esta operación."
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "Documentación"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "Documentación y avisos legales"
@@ -6004,7 +6003,6 @@ msgstr "Precisión de precio"
 msgid "Price: Market"
 msgstr "Precio: Mercado"
 
-#: src/components/legal/document-chrome.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
@@ -6015,7 +6013,6 @@ msgstr "Navegación principal"
 msgid "Priority Gas Auction Fee"
 msgstr "Comisión de subasta de gas prioritaria"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "Política de privacidad"
@@ -6768,7 +6765,6 @@ msgstr "Recompensas reclamadas"
 msgid "Rewards compound automatically"
 msgstr "Las recompensas se reinvierten automáticamente"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "Divulgación de riesgos"
@@ -7747,7 +7743,7 @@ msgstr "Suministrar para ganar"
 msgid "Supplying and borrowing happen automatically on Portfolio Margin mode. Quote assets like USDC or USDT that are not being utilized are supplied and earn interest. Trades that require additional quote assets will borrow against collateral like HYPE or BTC. Borrows pay interest, and collateral remains locked until the borrows are repaid."
 msgstr "En el modo Portfolio Margin, el suministro y el préstamo son automáticos. Los activos de cotización como USDC o USDT que no se utilizan se suministran y generan intereses. Las operaciones que necesitan más activos de cotización piden prestado contra colateral como HYPE o BTC. Los préstamos pagan intereses y el colateral permanece bloqueado hasta que se reembolsan."
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "Soporte"
@@ -7974,7 +7970,6 @@ msgstr "Terminar orden TWAP"
 #~ msgid "Terminating..."
 #~ msgstr "Terminando..."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Terms"
 msgstr "Términos"

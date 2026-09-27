@@ -20,24 +20,16 @@ import { BUILD_META_PATH } from './src/config/api-paths'
 import { type BuildMeta, createBuildMeta } from './src/config/build-meta'
 import { resolveCctpDepositFeatureFlags } from './src/config/cctp-deposit-flags'
 import { createHashedChartLibraryEntryPath } from './src/config/chart-library'
-import { DOCUMENT_ROUTE_PATHS } from './src/config/document-routes'
 import { resolveMobilePairingFeatureFlags } from './src/config/mobile-pairing-flags'
 import { chartingLibrarySecurityHeaders, referralJoinHeaders, securityHeaders } from './src/config/security-headers'
 import { hashCatalogMessageIds } from './src/lib/i18n-catalog'
 
-// SPA mode: the build prerenders one static shell for every client-rendered application route
-// and real HTML for the document routes, so the client output can be hosted without the Nitro
-// server. The mask path must match an application surface whose routes are all `ssr: false`;
-// `/` cannot be used because its server-side `beforeLoad` redirects.
+// SPA mode: the build prerenders one static shell for every client-rendered application route,
+// so the client output can be hosted without the Nitro server. The mask path must match an
+// application surface whose routes are all `ssr: false`; `/` cannot be used because its
+// server-side `beforeLoad` redirects.
 export const SPA_SHELL_MASK_PATH = '/trade'
 export const SPA_SHELL_OUTPUT_PATH = '/_shell'
-
-export function createStartPrerenderPages() {
-  return DOCUMENT_ROUTE_PATHS.map((path) => ({
-    path,
-    prerender: { enabled: true, crawlLinks: false },
-  }))
-}
 
 export function createTanstackStartOptions() {
   return {
@@ -46,7 +38,6 @@ export function createTanstackStartOptions() {
       maskPath: SPA_SHELL_MASK_PATH,
       prerender: { outputPath: SPA_SHELL_OUTPUT_PATH, crawlLinks: false },
     },
-    pages: createStartPrerenderPages(),
     prerender: {
       enabled: true,
       crawlLinks: false,
