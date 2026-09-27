@@ -9,7 +9,7 @@ interface MaxMarketOrderNotionalTier {
 }
 
 function parseMaxMarketOrderNotionalTier(entry: unknown): MaxMarketOrderNotionalTier | null {
-	if (!Array.isArray(entry) || entry.length < 2) return null;
+	if (!Array.isArray(entry) || entry.length !== 2) return null;
 	const [leverage, notional] = entry;
 	if (typeof leverage !== "number" || !Number.isFinite(leverage) || leverage <= 0) return null;
 	if (typeof notional !== "string" || !MAX_MARKET_ORDER_NOTIONAL_PATTERN.test(notional)) return null;

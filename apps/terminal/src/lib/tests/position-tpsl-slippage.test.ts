@@ -97,11 +97,17 @@ describe("shouldWarnPositionTpSlSlippage", () => {
 		["a zero notional", [[20, "0.0"]]],
 		["a numeric notional", [[20, 5000000]]],
 		["a short tuple", [[20]]],
+		["an over-long tuple", [[20, "5000000.0", "extra"]]],
 		["an object entry", [{ maxLeverage: 20, maxMarketOrderNtl: "5000000.0" }]],
 	])("rejects the whole table when one entry has %s", (_label, badEntries) => {
 		const tiers = [...MAINNET_TIERS, ...badEntries];
 		expect(getMaxMarketOrderNotional(tiers, 25)).toBeNull();
 		expect(warns("600000000", 25, tiers)).toBe(false);
+	});
+
+	it("does not warn from an over-long tuple that would otherwise select the tier", () => {
+		expect(warns("6000000", 20, [[20, "5000000.0"]])).toBe(true);
+		expect(warns("6000000", 20, [[20, "5000000.0", "extra"]])).toBe(false);
 	});
 
 	it.each([

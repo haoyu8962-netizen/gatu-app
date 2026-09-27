@@ -506,6 +506,7 @@ function PositionTpSlForm({
 	const [isWorkflowSubmitting, setIsWorkflowSubmitting] = useState(false);
 	const amountInteractionSnapshotRef = useRef<{ identity: string; sizeInput: string } | null>(null);
 	const [slippageWarningHeld, setSlippageWarningHeld] = useState<boolean | null>(null);
+	const [closedSlippageWarning, setClosedSlippageWarning] = useState<boolean | null>(null);
 	const amountErrorId = useId();
 
 	function getSubmitFeedback(error: PositionTpSlSubmitError): OrderQueueItem["error"] {
@@ -736,7 +737,10 @@ function PositionTpSlForm({
 		positionLeverage: leverage,
 		positionValue: position.positionValue,
 	});
-	const showSlippageWarning = slippageWarningHeld ?? liveSlippageWarning;
+	const dialogOpen = open && !isSubmitted;
+	const openSlippageWarning = slippageWarningHeld ?? liveSlippageWarning;
+	if (!dialogOpen && closedSlippageWarning === null) setClosedSlippageWarning(openSlippageWarning);
+	const showSlippageWarning = closedSlippageWarning ?? openSlippageWarning;
 
 	const positionChanged =
 		!liveSignedSize ||
@@ -1207,7 +1211,7 @@ function PositionTpSlForm({
 
 	return (
 		<PositionRiskDialogShell
-			open={open && !isSubmitted}
+			open={dialogOpen}
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
 			dismissible={!isSubmitting}

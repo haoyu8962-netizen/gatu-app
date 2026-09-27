@@ -1,6 +1,6 @@
 # 持仓 TP/SL 大额滑点提示
 
-状态：已实现（2026-09-27，分支 `claude/sdk-feat-tpsl-slippage`，基于 `dbc6036e`），未合入、未发布，未做真实钱包与真机验收。范围：持仓「管理 TP/SL」弹窗（`apps/terminal/src/components/trade/positions/position-tpsl-modal.tsx`），桌面弹层与移动抽屉共用同一份实现。本文是该提示的归属文档；批次规划见 [SDK 未接入接口的接入规划](sdk-feature-integration-plan.md) 第 4 项，被动提示的展示规则见 [数据展示契约](mobile-data-presentation.md)，确认面规则见 [确认面契约](confirmation-surfaces.md)。
+状态：已实现（2026-09-27，分支 `claude/sdk-feat-tpsl-slippage`，基于 `dbc6036e`；第二轮审查修复在分支 `claude/sdk-fix-r1-tpsl-slippage`，基于集成头 `19af214b`，见第 10 节），未合入、未发布，未做真实钱包与真机验收。范围：持仓「管理 TP/SL」弹窗（`apps/terminal/src/components/trade/positions/position-tpsl-modal.tsx`），桌面弹层与移动抽屉共用同一份实现。本文是该提示的归属文档；批次规划见 [SDK 未接入接口的接入规划](sdk-feature-integration-plan.md) 第 4 项，被动提示的展示规则见 [数据展示契约](mobile-data-presentation.md)，确认面规则见 [确认面契约](confirmation-surfaces.md)。
 
 ## 1. 目标
 
@@ -33,7 +33,7 @@
 
 `shouldWarnPositionTpSlSlippage({ tiers, positionLeverage, positionValue })`（`apps/terminal/src/domain/trade/position-tpsl-slippage.ts`）：
 
-1. 分档表必须是数组，且每一项都是 `[杠杆, 名义值]`：杠杆为有限正数，名义值为符合 SDK 模式的正十进制字符串。任何一项不合格，整张表视为不可用，不提示；不猜测哪部分还能用。
+1. 分档表必须是数组，且每一项都是恰好两个元素的数组 `[杠杆, 名义值]`：杠杆为有限正数，名义值为符合 SDK 模式的正十进制字符串；少一个或多一个元素（例如 `[20, "5000000", "extra"]`）都算格式错误。任何一项不合格，整张表视为不可用，不提示；不猜测哪部分还能用。
 2. 选档：在杠杆门槛不高于仓位**当前杠杆**（`position.leverage.value`）的各项中取门槛最高的一项。响应为降序时，与官方「第一个满足 `当前杠杆 >= 门槛`」的写法结果相同；顺序变化时结果不变。没有满足的档位（例如杠杆小于 1）时不提示。
 3. 比较：`positionValue`（整个仓位的价值，协议字符串）用 Big.js 与所选名义值比较，**严格大于**才提示；等于上限不提示。仓位价值缺失、非法或不为正时不提示。
 
@@ -47,7 +47,7 @@
 
 - 查询键由 `useInfo` 按网络区分，主网与测试网互不混用；请求不带用户、不签名、不持久化，重试沿用应用的默认查询策略。
 - 只在 `isSuccess` 时返回数据。首次加载、失败、以及后台刷新失败但仍保留旧数据的状态都返回 `undefined`，提示因此消失而不是显示过期结论。
-- 弹窗关闭进入 250 ms 退出动画时 `open` 变为 `false`，查询停止但已缓存的成功数据仍然返回，提示不会在淡出中途塌陷。
+- 弹窗关闭进入 250 ms 退出动画时 `open` 变为 `false`，查询不再发起新请求；但关闭前已经发出的请求仍可能在退出期间成功返回或失败，hook 照常返回实时结果。关闭期间提示的有无由弹窗在展示层保持（第 6 节），不依赖查询停在哪个状态。
 - 未连接、身份不符、仓位或订单快照未就绪、没有仓位时，弹窗显示状态页（`PositionTpSlStatus`），不挂载表单，也就不发请求。
 
 ## 6. 界面与状态
@@ -58,6 +58,8 @@
 
 手势期间的保持：`TradeSizeSlider` 在指针按下时调用 `onPercentInteractionStart`，此时弹窗记下提示当前是否显示（`slippageWarningHeld`），渲染用 `slippageWarningHeld ?? 实时结果`；`onPercentInteractionEnd` 清除记录。`TradeSlider` 在松开、`pointercancel`、Esc、编辑上下文变化、卸载以及 [滑杆手势](slider-interactions.md) 列出的其余取消路径上都会调用它，所以保持不会遗留到手势之后。键盘调整与百分比输入框不开始手势，不保持。保持与数量编辑是否可用无关：即使 `canEditConfiguredAmount` 拒绝这次拖动的数量回调，滑杆仍在指针下，版面照样固定。只保持有无，不像下单面板那样再固定测得的高度：提示高度只随文案（切换语言除外，手势期间不变）和容器宽度变化，而容器宽度变化会让滑杆宽度变化并取消手势。
 
+关闭期间的保持：弹窗外壳关闭有两种情况，一是会话结束后 `open` 变为 `false`、组件再保留 250 ms 跑退出动画，二是点击确认后 `isSubmitted` 让外壳立即关闭、组件留到提交结束。外壳第一次以关闭状态渲染时，弹窗记下提示当时的有无（`closedSlippageWarning`，已含手势保持的结果），之后渲染只用这个记录：关闭前还在加载、退出期间才成功返回的分档表不会让提示出现，关闭前已显示、退出期间刷新失败也不会让它消失。组件按会话 id 挂载，关闭后不会在同一实例里重新打开，所以记录不需要清除。关闭时滑杆被禁用而结束手势、清除手势保持，也不影响已记下的有无。这只是展示状态，提交判断与负载不读它。
+
 英文文案：「A market TP/SL may fill with large slippage because of this position's size. To reduce slippage, use limit execution with a limit price, or configure a smaller amount.」五个非英语目录已补齐翻译。
 
 | 情况 | 显示 |
@@ -67,7 +69,7 @@
 | 成功但仓位价值不超过上限 | 什么都不显示 |
 | 勾选限价执行、切换整仓/部分数量、输入数量或百分比、拖动数量滑杆 | 与之无关，保持原状 |
 | 拖动数量滑杆期间，仓位价值跨过上限，或分档表后到、刷新失败 | 保持手势开始时的有无；手势结束（松开或取消）后按实时结果显示 |
-| 弹窗关闭中（250 ms） | 保持关闭前的状态 |
+| 弹窗关闭中（会话结束后的 250 ms 退出动画，或点击确认后外壳关闭、提交仍在后台进行） | 保持外壳关闭那一刻的有无：之后成功返回的分档表不会让提示出现，刷新失败不会让它消失 |
 | 点击确认 | 弹窗照常立即关闭，提交与通知不变 |
 
 ## 7. 与协议规格的差异
@@ -116,7 +118,15 @@
 - 上述三个测试文件连同十个契约扫描：13 个文件 366 项通过；`AGENTS.md` 确认面回归组：41 个文件 895 项通过；数据展示、滑杆手势、运行时翻译回归组加 `position-tpsl-size`、`use-market-slippage-estimate`：17 个文件 355 项通过；`global-modals-*` 与 `position-dialog-session-ownership`：4 个文件 45 项通过。
 - `pnpm exec biome check`（改动的 2 个 TSX 文件）无问题；`pnpm --filter @gatu/terminal typecheck` 通过；`git diff --check` 无问题。
 
-未做：浏览器目测、真实钱包、真机，以及真人拖动真实控件（按[滑杆手势](slider-interactions.md)的规则，手势相关改动在此之前不算完成验证）；完整终端测试与生产构建（包体预算）由集成方运行。
+第二轮审查修复（2026-09-27，分支 `claude/sdk-fix-r1-tpsl-slippage`，基于集成头 `19af214b`）：只读审查确认两项 P3。一是分档项只检查了 `length < 2`，`[[20,"5000000","extra"]]` 这类超长元组仍被采用；二是第 5、6 节原先承诺「关闭中保持关闭前的状态」，但 `enabled: false` 不会冻结已发出的请求，退出期间成功返回会让提示出现、刷新失败会让它消失。修复为：分档项必须恰好两个元素（第 4 节）；外壳第一次以关闭状态渲染时记下提示的有无，之后只用该记录（第 5、6 节），关闭包括会话结束后的退出动画和点击确认后外壳关闭两种情况。先写回归测试并确认它们在 `19af214b` 上失败，再修改实现。实际运行：
+
+- `position-tpsl-slippage.test.ts` 新增 2 项（整表拒绝的超长元组一行；同一档位去掉多余元素时提示、带多余元素时不提示），在 `19af214b` 上 2 项失败，修复后 38 项全部通过。
+- `position-tpsl-modal.test.tsx` 新增 4 项：会话结束后的退出期间与点击确认后外壳关闭期间各两项，分别是「关闭前加载中、关闭后成功返回，提示仍不出现」与「关闭前已显示、关闭后刷新失败，提示仍显示」。测试桩的 `AdaptiveModal` 增加开关，关闭后仍渲染内容并标 `data-open="false"`，模拟 Base UI 在退出动画期间保留弹层；会话结束用假计时器，确保 250 ms 的保留计时不在断言前触发。在 `19af214b` 上 4 项都在「提示状态」这条断言失败（此前的「弹层处于关闭中」断言已通过），修复后 93 项全部通过。
+- 变异核对（临时改回生产代码后运行，随后恢复并逐字节比对备份）：分档项检查改回 `length < 2`，新增 2 项领域测试失败；渲染改回只用未关闭时的结果（去掉关闭记录），新增 4 项弹窗测试失败；记录条件从外壳关闭（`open && !isSubmitted` 为假）改为只看 `open`，点击确认的 2 项失败。
+- 上述三个测试文件连同 `i18n-reactivity-contract`、`i18n-hot-switch`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`modal-surface-contract`、`action-progress-label-contract`、`trading-action-button-label-contract`、`mobile-data-presentation-contract`、`dialog-dismiss-control-contract`：13 个文件 381 项通过；`global-modals-*`（3 个文件）、`position-dialog-session-ownership`、`position-tpsl-size`、`trade-size-slider-pointer-lifecycle`、`trade-size-slider`、`use-size-slider-interaction`：8 个文件 116 项通过。
+- `pnpm exec biome check`（改动的 4 个 TS/TSX 文件）无问题；`git diff --check` 无问题。`pnpm --filter @gatu/terminal typecheck` 报 4 个错误，全部在 `funding-history-load-boundary.test.tsx`（第 88、125 行 `Panel` 的 JSX 类型），与本修复无关：把本次改动的 4 个 TS 文件临时换回 `19af214b` 版本后同样是这 4 个错误，恢复后错误不变、没有新增。
+
+未做：浏览器目测、真实钱包、真机，以及真人拖动真实控件（按[滑杆手势](slider-interactions.md)的规则，手势相关改动在此之前不算完成验证）；退出动画期间的保持只在 jsdom 中验证，没有在浏览器里观察真实的 Base UI 退出动画；完整终端测试与生产构建（包体预算）由集成方运行。
 
 ## 11. 未验证事项
 
