@@ -29,6 +29,7 @@ prerendered body has no grid or chrome. See [ADR 0010](adr/0010-blank-until-read
 - Account content growth may expand the lower area; account content shrinkage must allow it to return to the user's size. Trading form content never sets grid minimums. Never feed a stretched panel height back into natural content measurement or save it as a new user preference.
 - Measure actual content inside Suspense boundaries. Loading fallbacks and detached nodes must not change persisted geometry.
 - Measure natural content in a separate, non-stretched layer. A `height: 100%` or auto-margin expansion must not become a new content minimum.
+- The chart panel's internal `Chart | Funding` view strip and the funding view ([market funding history](market-funding-history.md)) live inside the `chart` grid child. The strip has a fixed height for every market kind, the funding view fills the same box, and neither is measured, so grid geometry, panel constraints and `DESKTOP_GRID_STORAGE_KEY` are unchanged.
 
 ## Persistence and verification
 
