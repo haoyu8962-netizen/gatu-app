@@ -21,12 +21,14 @@
 
 1. **D1 交易签名方。** `borrowLend` 是 L1 action，走 `useExchange` 的交易客户端：邮箱账户用自己的嵌入式钱包，外部钱包用已验证的 Agent。官方前端同样传入 Agent 钱包签名。确认按钮使用 `TradingActionButton`（不要求 builder fee），签名方未就绪时先启用交易。
 2. **D2 永远发送精确数量。** 官方点击 Max 后发送 `amount: null`（链上按全额执行）。本项目改为发送弹窗展示的精确小数字符串，并在发送前用刷新后的储备池与仓位重算 Max，要求发送量 ≤ 展示的 Max 且 ≤ 最新 Max，否则失败关闭。这样执行量不会超过用户看到的值。
-3. **D3 资金类弹层生命周期。** 与划转、发送一致：请求期间弹窗保持打开且不可关闭，按钮名不变，结束后关闭并通过全局通知报告成功、失败或未知。传输结果不明报告为常驻警告，不当作失败。第一版不建持久化的资金动作标记。
+3. **D3 资金类弹层生命周期。** 与划转、发送一致：请求期间弹窗保持打开且不可关闭，按钮名不变，结束后关闭并通过全局通知报告成功、失败或未知。传输结果不明报告为常驻警告，不当作失败。第一版不建持久化的资金动作标记。通知内容由 `EarnOutcomeToastContent` 渲染：记下发起时的网络与账户，身份变化时撤下自己，文字随当前语言重新翻译（2026-09-27 审查后补）。
 4. **D4 纳入跨标签页资金锁。** `borrowLend` 加入 hl-react 的 `FUNDS_ACTION_METHODS`，同一账户的资金动作串行执行，锁内强制刷新法律条款校验。
 5. **D5 门控。** 页面与弹窗复用 `useFundsActionAvailability`：地区受限或无法判定、手机 Agent-only 会话、没有钱包访问、账户模式未知或不支持、账户数据未就绪时禁用全部操作。在此之上按官方规则判定各按钮（没有存入不能取出、没有抵押品不能借入、没有借款不能偿还）。
 6. **D6 组合保证金账户。** 与官方一致，手动存入、取出、借入禁用并显示官方说明；已赚/应付利息列隐藏；清算价改用维持后可用额计算。偿还也禁用：官方在组合保证金下的偿还是卖出抵押品的现货兑换流程，本版未实现。
-7. **D7 利息与历史。** 利息页签用 `userBorrowLendInterest` info 接口轮询最近 30 天（SDK 0.33.3 没有这个订阅，官方用的是 WebSocket 推送）。操作历史复用共享账本中来源或去向为 Earn 的记录。
+7. **D7 利息与历史。** 利息页签用 `userBorrowLendInterest` info 接口轮询最近 30 天，按时间游标分页拉完，窗口起点在每次请求时计算（SDK 0.33.3 没有这个订阅，官方用的是 WebSocket 推送）。操作历史复用共享账本，账本在截断前单独保留 `borrowLend` 记录（`earnRows`）。
 8. **D8 导航。** Earn 改为常驻一级入口（`placement: "primary"`，链接 `/earn`），移动抽屉同步改为链接。1101–1181px 未连接钱包时一级入口因此多一个；实测法语余量不足（见后果），窄屏收纳阈值 `DESKTOP_NAV_NARROW_MAX_PX` 从 1100 调到 1150。
+9. **D9 SDK 边界再核验。** D2 的刷新与封顶发生在等待资金锁与法律校验之前，排队期间数据可能失效；`useExchange` 的异步前置守卫只支持用户签名方法。因此在同步执行守卫里再核一次：核验不超过 20 秒、账户快照仍就绪、不是组合保证金、按当时最新的订阅与缓存数据重算的 Max 仍不小于发送量（2026-09-27 审查后补）。
+10. **D10 快照完整性与仓位变化提示。** 储备池或仓位出现重复资产、有非零仓位却缺少对应储备池时整张快照不可用；零价格时相关 Max 不可用。弹窗打开后仓位变化时就地提示，不阻止提交（确认面契约第 4 条）。
 
 ## 备选方案与代价
 
@@ -38,6 +40,7 @@
 | 在组合保证金下实现官方的“卖出抵押品偿还” | 需要现货市价单、缓冲倍数与滑点处理，属于另一个交易流程。推迟 |
 | Earn 设为 `lower` 入口，与金库等一起收纳 | 不改断点，但与官方（Earn 常驻一级）不一致，已连接时在紧凑宽度会进入 More。未采用 |
 | 保持 1100 阈值 | 法语在 1101px 只剩 6px。未采用 |
+| 扩展 `useExchange`，让交易签名方法也支持锁内的异步前置守卫，在锁内重新请求储备池与仓位 | 能在锁内拿到网络上的最新数据，但改动所有 L1 动作共用的执行路径与签名会话，超出本任务。本版用同步边界核验（D9）替代，代价是锁内不重新请求网络 |
 
 ## 后果与边界
 
@@ -48,5 +51,5 @@
 ## 证据
 
 - 代码：`apps/terminal/src/domain/earn.ts`、`domain/earn-submission.ts`、`hooks/earn/use-earn-data.ts`、`components/earn/`、`routes/earn.tsx`、`config/desktop-nav.ts`、`config/layout.ts`、`packages/hl-react/src/internal/exchange/funds-action-lock.ts`。
-- 测试：`earn-domain.test.ts`、`earn-action-modal.test.tsx`（真实弹窗与提交路径，核对展示值等于发送值）、`desktop-nav-layout.test.ts`、`top-nav.test.tsx`、`mobile-nav-drawer.test.tsx`、`earn-page-surface-contract.test.ts`、`funds-action-lock.test.ts`。
+- 测试：`earn-domain.test.ts`、`earn-action-modal.test.tsx`（真实弹窗组件与提交函数，核对展示值等于发送值；按钮、`useExchange` 与核验 hook 为替身，范围见 [Earn](../earn.md)“验证”）、`earn-view.test.tsx`、`earn-interest-history.test.ts`、`use-account-ledger.test.tsx`、`desktop-nav-layout.test.ts`、`top-nav.test.tsx`、`mobile-nav-drawer.test.tsx`、`earn-page-surface-contract.test.ts`、`funds-action-lock.test.ts`。
 - 官方取证方法与结论见 [Earn](../earn.md) 的“依据与核对方式”；任务记录见 `docs/work-memory/sessions/2026-09-27-earn-page.md`。

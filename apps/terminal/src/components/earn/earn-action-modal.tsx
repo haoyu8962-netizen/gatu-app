@@ -22,6 +22,7 @@ import {
 import {
 	type EarnSubmissionRequest,
 	EarnSubmissionStaleError,
+	verifyEarnSubmissionAtBoundary,
 	verifyFreshEarnSubmission,
 } from "@/domain/earn-submission";
 import { assertFreshFundsAmount, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
@@ -44,6 +45,7 @@ import {
 	fundsActionFeedbackCause,
 } from "@/lib/trade/funds-action-feedback";
 import { limitDecimalInput } from "@/lib/trade/numbers";
+import { EarnOutcomeToastContent, type EarnToastIdentity } from "./earn-outcome-toast";
 
 interface Props {
 	open: boolean;
@@ -57,7 +59,7 @@ interface EarnSubmission {
 	identity: object;
 	sequence: number;
 	request: EarnSubmissionRequest;
-	verified: boolean;
+	verifiedAt: number | null;
 }
 
 export function EarnActionModal({ open, operation, initialToken, data, onOpenChange }: Props) {
@@ -84,6 +86,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 	const rows = snapshot ? getEarnOperationRows(operation, snapshot) : [];
 	const [selectedToken, setSelectedToken] = useState<number | null>(initialToken ?? rows[0]?.token ?? null);
 	const [amount, setAmount] = useState("");
+	const [openedPosition, setOpenedPosition] = useState<EarnPositionBaseline | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const dataRef = useRef(data);
 	dataRef.current = data;
@@ -120,6 +123,11 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(data.accountAbstraction, data.ownerAddress);
 
 	const row = rows.find((candidate) => candidate.token === selectedToken) ?? null;
+	const accountReady = data.accountStatus === "ready";
+	if (row && accountReady && openedPosition?.token !== row.token) {
+		setOpenedPosition(createPositionBaseline(row));
+	}
+	const positionChanged = Boolean(row && accountReady && openedPosition && hasPositionChanged(openedPosition, row));
 	const spotAvailable = row ? getSpotAvailable(data, row.token) : null;
 	const maxAmount =
 		snapshot && row ? getEarnMaxAmount({ operation, row, summary: snapshot.summary, spotAvailable }) : null;
@@ -134,7 +142,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		const submission = submissionRef.current;
 		if (
 			!submission ||
-			!submission.verified ||
+			submission.verifiedAt === null ||
 			!exchangeLifecycle.active ||
 			submission.identity !== submissionIdentityRef.current ||
 			submission.sequence !== submissionSequenceRef.current ||
@@ -144,6 +152,16 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		) {
 			throw new ExchangeRequestInvalidatedError();
 		}
+		const latest = dataRef.current;
+		verifyEarnSubmissionAtBoundary({
+			request: submission.request,
+			verifiedAt: submission.verifiedAt,
+			now: Date.now(),
+			snapshot: latest.snapshot,
+			accountReady: latest.accountStatus === "ready",
+			portfolioMargin: latest.portfolioMargin,
+			spotAvailable: getSpotAvailable(latest, submission.request.token),
+		});
 	}
 
 	async function verifyFreshState(request: EarnSubmissionRequest, signal: AbortSignal) {
@@ -199,30 +217,42 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 			amount: toEarnProtocolAmount(amount),
 			displayedMax: maxAmount,
 		};
-		const submission: EarnSubmission = { identity, sequence, request, verified: false };
+		const submission: EarnSubmission = { identity, sequence, request, verifiedAt: null };
 		submissionRef.current = submission;
 		const isCurrent = () => submissionIdentityRef.current === identity && submissionSequenceRef.current === sequence;
 		const controller = new AbortController();
 		const tokenLabel = row.displayName;
-		const summary = (
-			<bdi dir="ltr">
-				{formatNumber(request.amount)} {tokenLabel}
-			</bdi>
-		);
+		const toastIdentity: EarnToastIdentity = { toastId: `earn:${sequence}:${Date.now()}`, env, clientKey };
 		setIsSubmitting(true);
 		try {
 			await verifyFreshState(request, controller.signal);
 			if (!isCurrent() || submissionRef.current !== submission) throw new ExchangeRequestInvalidatedError();
-			submission.verified = true;
+			submission.verifiedAt = Date.now();
 			await borrowLend({ operation: request.operation, token: request.token, amount: request.amount });
 			if (isCurrent()) {
-				toast.success(getSuccessTitle(operation, tokenLabel), {
-					description: summary,
-					duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
-				});
+				toast.success(
+					<EarnOutcomeToastContent
+						{...toastIdentity}
+						render={(translateMessage) => translateMessage(getSuccessMessage(operation, tokenLabel))}
+					/>,
+					{
+						id: toastIdentity.toastId,
+						description: (
+							<EarnOutcomeToastContent
+								{...toastIdentity}
+								render={() => (
+									<bdi dir="ltr">
+										{formatNumber(request.amount)} {tokenLabel}
+									</bdi>
+								)}
+							/>
+						),
+						duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
+					},
+				);
 			}
 		} catch (error) {
-			if (isCurrent()) reportFailure(error);
+			if (isCurrent()) reportFailure(error, toastIdentity);
 		} finally {
 			controller.abort();
 			if (submissionRef.current === submission) submissionRef.current = null;
@@ -233,36 +263,37 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		}
 	}
 
-	function reportFailure(error: unknown) {
+	function reportFailure(error: unknown, identity: EarnToastIdentity) {
 		if (isAmbiguousExchangeActionError(error)) {
-			toast.warning(t`Earn request status unknown`, {
-				description: t`Check Earn Action History before retrying.`,
-				duration: Number.POSITIVE_INFINITY,
-				closeButton: true,
-			});
+			toast.warning(
+				<EarnOutcomeToastContent
+					{...identity}
+					render={(translateMessage) => translateMessage(msg`Earn request status unknown`)}
+				/>,
+				{
+					id: identity.toastId,
+					description: (
+						<EarnOutcomeToastContent
+							{...identity}
+							render={(translateMessage) => translateMessage(msg`Check Earn Action History before retrying.`)}
+						/>
+					),
+					duration: Number.POSITIVE_INFINITY,
+					closeButton: true,
+				},
+			);
 			return;
 		}
-		if (error instanceof FundsActionFeedbackCause) {
-			toast.error(formatFundsActionFeedback(error.code, (descriptor) => t(descriptor)));
-			return;
-		}
-		if (error instanceof EarnSubmissionStaleError) {
-			toast.error(t`Earn balances changed before submission. Review the updated amounts and try again.`);
-			return;
-		}
-		toast.error(formatExchangeActionError(error, t`Earn request failed`));
-	}
-
-	function getSuccessTitle(currentOperation: EarnOperation, token: string) {
-		if (currentOperation === "supply") return t`Supplied ${token}`;
-		if (currentOperation === "withdraw") return t`Withdrew ${token}`;
-		if (currentOperation === "borrow") return t`Borrowed ${token}`;
-		return t`Repaid ${token}`;
+		toast.error(
+			<EarnOutcomeToastContent {...identity} render={(translateMessage) => getFailureText(error, translateMessage)} />,
+			{ id: identity.toastId },
+		);
 	}
 
 	function handleTokenChange(value: string | null) {
 		if (pending || value === null) return;
 		setSelectedToken(Number(value));
+		setOpenedPosition(null);
 		setAmount("");
 	}
 
@@ -342,6 +373,11 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 						) : null}
 					</div>
 					{row ? <EarnActionSummary operation={operation} row={row} maxAmount={maxAmount} /> : null}
+					{positionChanged && !pending ? (
+						<p className="rounded-16 border border-stroke-info-weak bg-info-soft p-2.5 text-xs text-info">
+							{t`Your position changed since you opened this dialog. Review the amounts before confirming.`}
+						</p>
+					) : null}
 					<TradingActionButton
 						requiresBuilderFee={false}
 						requireReadyConfirmation
@@ -448,4 +484,33 @@ function getAmountError(validation: ReturnType<typeof validateEarnAmount>, trans
 	if (validation === "invalid") return translate(msg`Enter a valid amount`);
 	if (validation === "exceedsMax") return translate(msg`Insufficient funds`);
 	return null;
+}
+
+function getSuccessMessage(operation: EarnOperation, token: string): MessageDescriptor {
+	if (operation === "supply") return msg`Supplied ${token}`;
+	if (operation === "withdraw") return msg`Withdrew ${token}`;
+	if (operation === "borrow") return msg`Borrowed ${token}`;
+	return msg`Repaid ${token}`;
+}
+
+function getFailureText(error: unknown, translate: Translate): string {
+	if (error instanceof FundsActionFeedbackCause) return formatFundsActionFeedback(error.code, translate);
+	if (error instanceof EarnSubmissionStaleError) {
+		return translate(msg`Earn balances changed before submission. Review the updated amounts and try again.`);
+	}
+	return formatExchangeActionError(error, translate(msg`Earn request failed`));
+}
+
+interface EarnPositionBaseline {
+	token: number;
+	supplied: string;
+	borrowed: string;
+}
+
+function createPositionBaseline(row: EarnAssetRow): EarnPositionBaseline {
+	return { token: row.token, supplied: row.supplied, borrowed: row.borrowed };
+}
+
+function hasPositionChanged(baseline: EarnPositionBaseline, row: EarnAssetRow): boolean {
+	return baseline.token === row.token && (baseline.supplied !== row.supplied || baseline.borrowed !== row.borrowed);
 }

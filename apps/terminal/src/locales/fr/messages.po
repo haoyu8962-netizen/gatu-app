@@ -10263,6 +10263,10 @@ msgstr "Vos intérêts dus"
 #~ msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
 #~ msgstr "Votre portefeuille principal approuve une clé de trading. Cette clé ne peut pas retirer de fonds."
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Your position changed since you opened this dialog. Review the amounts before confirming."
+msgstr "Votre position a changé depuis l'ouverture de cette fenêtre. Vérifiez les montants avant de confirmer."
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Your referral"
 msgstr "Votre parrainage"

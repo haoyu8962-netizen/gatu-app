@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type { InfoClient } from "@nktkas/hyperliquid";
+import { useQuery } from "@tanstack/react-query";
 import {
 	buildEarnSnapshot,
 	type EarnInterestEntry,
@@ -20,8 +21,13 @@ import {
 } from "@/hooks/trade/use-account-balances";
 import { useAccountLedger } from "@/hooks/trade/use-account-ledger";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { useInfo, useSpotTokens } from "@/lib/hyperliquid";
+import { useHyperliquid, useInfo, useSpotTokens } from "@/lib/hyperliquid";
 import type { AccountLedgerRow } from "@/lib/trade/account-ledger";
+import {
+	fetchHistoryPageWithRetry,
+	fetchTimeRangeHistory,
+	requireCompleteHistorySnapshot,
+} from "@/lib/trade/history-pagination";
 
 const EARN_REQUEST_TIMEOUT_MS = 10_000;
 const EARN_PUBLIC_REFRESH_MS = 30_000;
@@ -64,15 +70,48 @@ export function getEarnInterestStartTime(now: number): number {
 	return Math.floor((now - EARN_INTEREST_LOOKBACK_MS) / EARN_INTEREST_WINDOW_ALIGN_MS) * EARN_INTEREST_WINDOW_ALIGN_MS;
 }
 
-export function isEarnLedgerRow(row: AccountLedgerRow): boolean {
-	return row.source.kind === "earn" || row.destination.kind === "earn";
+interface RawEarnInterest {
+	time: number;
+	token: string;
+}
+
+function isRawEarnInterest(item: unknown): item is RawEarnInterest {
+	return (
+		typeof item === "object" &&
+		item !== null &&
+		typeof (item as { time?: unknown }).time === "number" &&
+		typeof (item as { token?: unknown }).token === "string"
+	);
+}
+
+export async function fetchEarnInterest(
+	info: InfoClient,
+	user: `0x${string}`,
+	now: number,
+	signal: AbortSignal,
+): Promise<unknown[]> {
+	const result = await fetchTimeRangeHistory<unknown>({
+		startTime: getEarnInterestStartTime(now),
+		endTime: now,
+		fetchPage: (pageStartTime, pageEndTime, pageSignal) =>
+			fetchHistoryPageWithRetry(
+				(requestSignal) =>
+					info.userBorrowLendInterest({ user, startTime: pageStartTime, endTime: pageEndTime }, requestSignal),
+				{ signal: pageSignal },
+			),
+		getKey: (item) => (isRawEarnInterest(item) ? `${item.time}:${item.token}` : ""),
+		getTime: (item) => (isRawEarnInterest(item) ? item.time : Number.NaN),
+		validateItem: isRawEarnInterest,
+		signal,
+	});
+	return requireCompleteHistorySnapshot(result);
 }
 
 export function useEarnData(): EarnData {
 	const { address, isConnected } = useWalletSession();
 	const ownerAddress = isConnected ? address : undefined;
 	const user = ownerAddress ?? EMPTY_USER;
-	const [interestStartTime] = useState(() => getEarnInterestStartTime(Date.now()));
+	const { env, info } = useHyperliquid();
 	const balances = useDefaultDexBalances();
 	const { tokens: spotTokens } = useSpotTokens();
 	const accountQueryOptions = {
@@ -90,11 +129,15 @@ export function useEarnData(): EarnData {
 		retry: 1,
 	});
 	const userStateQuery = useInfo("borrowLendUserState", { user }, accountQueryOptions);
-	const interestQuery = useInfo(
-		"userBorrowLendInterest",
-		{ user, startTime: interestStartTime },
-		{ ...accountQueryOptions, refetchInterval: EARN_PUBLIC_REFRESH_MS },
-	);
+	const interestQuery = useQuery({
+		enabled: Boolean(ownerAddress),
+		queryKey: ["hl", "earn-interest", env, user.toLowerCase()],
+		queryFn: ({ signal }) => fetchEarnInterest(info, user as `0x${string}`, Date.now(), signal),
+		refetchInterval: EARN_PUBLIC_REFRESH_MS,
+		refetchOnWindowFocus: true,
+		retry: 1,
+		staleTime: 0,
+	});
 	const ledger = useAccountLedger({ enabled: Boolean(ownerAddress) });
 
 	const reserves = parseEarnReserves(reservesQuery.data);
@@ -189,7 +232,7 @@ export function useEarnData(): EarnData {
 		portfolioMargin,
 		spotStateReceivedAt: balances.spotStateReceivedAt,
 		interest: interest ?? [],
-		history: ledger.rows.filter(isEarnLedgerRow),
+		history: ledger.earnRows,
 		retryPublic: () => {
 			void reservesQuery.refetch();
 		},

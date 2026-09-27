@@ -10263,6 +10263,10 @@ msgstr "Tus intereses adeudados"
 #~ msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
 #~ msgstr "Tu monedero principal aprueba una clave de trading. La clave no puede retirar fondos."
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Your position changed since you opened this dialog. Review the amounts before confirming."
+msgstr "Tu posición cambió desde que abriste este diálogo. Revisa los importes antes de confirmar."
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Your referral"
 msgstr "Tu referido"

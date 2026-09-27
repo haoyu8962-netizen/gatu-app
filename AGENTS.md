@@ -264,6 +264,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/vault-detail-page-outcomes.test.tsx \
   src/lib/tests/earn-action-modal.test.tsx \
   src/lib/tests/earn-domain.test.ts \
+  src/lib/tests/earn-view.test.tsx \
+  src/lib/tests/earn-interest-history.test.ts \
   src/components/staking/__tests__/staking-view.test.tsx \
   src/lib/tests/action-progress-label-contract.test.ts \
   tests/slider-effective-leverage-regression.test.tsx \

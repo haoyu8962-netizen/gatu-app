@@ -254,6 +254,12 @@ function AssetSection({ title, kind, rows, data, isMobile, blocks, onOpenAction 
 	const accountReady = data.accountStatus === "ready";
 	const showInterest = !data.portfolioMargin;
 
+	function getRepayReason(row: EarnAssetRow): string | null {
+		if (blocks.repay === "portfolioMargin") return getBlockReason("portfolioMargin", translate, "repay");
+		if (!accountReady || blocks.repay === "unavailable") return null;
+		return Big(row.borrowed).gt(0) ? null : t`You have no borrows to repay.`;
+	}
+
 	function getActions(row: EarnAssetRow): RowAction[] {
 		const spotAvailable = data.snapshotInputs.spotBalances.get(row.token)?.available ?? "0";
 		if (kind === "supply") {
@@ -284,9 +290,7 @@ function AssetSection({ title, kind, rows, data, isMobile, blocks, onOpenAction 
 				operation: "repay",
 				label: t`Repay`,
 				disabled: blocks.repay === "unavailable" || blocks.repay === "portfolioMargin" || !Big(row.borrowed).gt(0),
-				reason: Big(row.borrowed).gt(0)
-					? getBlockReason(blocks.repay === "portfolioMargin" ? "portfolioMargin" : null, translate, "repay")
-					: t`You have no borrows to repay.`,
+				reason: getRepayReason(row),
 			},
 		];
 	}

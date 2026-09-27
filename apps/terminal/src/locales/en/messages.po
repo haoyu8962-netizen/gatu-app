@@ -10263,6 +10263,10 @@ msgstr "Your Interest Owed"
 #~ msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
 #~ msgstr "Your master wallet approves one trading key. The key cannot withdraw funds."
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Your position changed since you opened this dialog. Review the amounts before confirming."
+msgstr "Your position changed since you opened this dialog. Review the amounts before confirming."
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Your referral"
 msgstr "Your referral"

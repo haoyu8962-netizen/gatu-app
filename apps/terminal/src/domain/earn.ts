@@ -113,6 +113,7 @@ function readTokenId(value: unknown): number | null {
 export function parseEarnReserves(data: unknown): EarnReserve[] | null {
 	if (!Array.isArray(data)) return null;
 	const reserves: EarnReserve[] = [];
+	const seen = new Set<number>();
 	for (const entry of data) {
 		if (!Array.isArray(entry) || entry.length !== 2 || !isRecord(entry[1])) return null;
 		const token = readTokenId(entry[0]);
@@ -131,10 +132,12 @@ export function parseEarnReserves(data: unknown): EarnReserve[] | null {
 			ltv === null ||
 			Big(ltv).gte(1) ||
 			totalSupplied === null ||
-			totalBorrowed === null
+			totalBorrowed === null ||
+			seen.has(token)
 		) {
 			return null;
 		}
+		seen.add(token);
 		reserves.push({
 			token,
 			borrowYearlyRate,
@@ -164,7 +167,7 @@ export function parseEarnUserState(data: unknown): EarnUserState | null {
 		const token = readTokenId(entry[0]);
 		const supply = parsePosition(entry[1].supply);
 		const borrow = parsePosition(entry[1].borrow);
-		if (token === null || !supply || !borrow) return null;
+		if (token === null || !supply || !borrow || positions.has(token)) return null;
 		positions.set(token, { supply, borrow });
 	}
 	let healthFactor: string | null = null;
@@ -231,6 +234,11 @@ export function buildEarnSnapshot({
 	spotBalances,
 	availableAfterMaintenance,
 }: BuildEarnSnapshotInput): EarnSnapshot | null {
+	const reserveTokens = new Set(reserves.map((reserve) => reserve.token));
+	for (const [token, position] of userState?.positions ?? []) {
+		const hasExposure = Big(position.supply.value).gt(0) || Big(position.borrow.value).gt(0);
+		if (hasExposure && !reserveTokens.has(token)) return null;
+	}
 	const rows: EarnAssetRow[] = [];
 	let totalSuppliedUsd = Big(0);
 	let weightedSuppliedUsd = Big(0);
@@ -325,12 +333,14 @@ export function getEarnMaxAmount({ operation, row, summary, spotAvailable }: Ear
 	if (operation === "withdraw") {
 		const supplied = Big(row.supplied);
 		if (!row.isCollateral) return floorToDecimals(supplied);
-		const collateralLimit = Big(summary.availableToBorrowUsd).div(Big(row.oraclePx).times(row.ltv));
+		const collateralValue = Big(row.oraclePx).times(row.ltv);
+		if (collateralValue.lte(0)) return null;
+		const collateralLimit = Big(summary.availableToBorrowUsd).div(collateralValue);
 		return floorToDecimals(supplied.lt(collateralLimit) ? supplied : collateralLimit);
 	}
 	if (operation === "borrow") {
 		const price = Big(row.oraclePx);
-		return price.gt(0) ? floorToDecimals(Big(summary.availableToBorrowUsd).div(price)) : "0";
+		return price.gt(0) ? floorToDecimals(Big(summary.availableToBorrowUsd).div(price)) : null;
 	}
 	const borrowed = Big(row.borrowed);
 	if (borrowed.lte(0)) return "0";

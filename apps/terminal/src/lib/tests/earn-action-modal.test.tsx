@@ -8,6 +8,7 @@ import { EarnActionModal } from "@/components/earn/earn-action-modal";
 import {
 	buildEarnSnapshot,
 	type EarnOperation,
+	type EarnSpotBalance,
 	type EarnTokenMeta,
 	parseEarnReserves,
 	parseEarnUserState,
@@ -17,7 +18,7 @@ import { createI18nRoot } from "./harness/react";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
 
-const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning: vi.fn() }));
+const toastMocks = vi.hoisted(() => ({ dismiss: vi.fn(), error: vi.fn(), success: vi.fn(), warning: vi.fn() }));
 vi.mock("sonner", () => ({ toast: toastMocks }));
 
 const testState = vi.hoisted(() => ({
@@ -233,6 +234,15 @@ function setInputValue(input: HTMLInputElement, value: string) {
 	input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+function toastText(node: unknown): string {
+	const host = document.createElement("div");
+	const toastRoot = createI18nRoot(host);
+	act(() => toastRoot.render(node as ReactNode));
+	const text = host.textContent ?? "";
+	act(() => toastRoot.unmount());
+	return text;
+}
+
 async function flush() {
 	await act(async () => {
 		for (let index = 0; index < 5; index += 1) await Promise.resolve();
@@ -285,7 +295,10 @@ describe("earn action modal", () => {
 
 		expect(testState.borrowLend).toHaveBeenCalledTimes(1);
 		expect(testState.borrowLend).toHaveBeenCalledWith({ operation: "borrow", token: 0, amount: "5029.4" });
-		expect(toastMocks.success).toHaveBeenCalledWith("Borrowed USDC", expect.any(Object));
+		expect(toastMocks.success).toHaveBeenCalledTimes(1);
+		const [title, options] = toastMocks.success.mock.calls[0] as [unknown, { description: unknown }];
+		expect(toastText(title)).toBe("Borrowed USDC");
+		expect(toastText(options.description)).toBe("5,029.4 USDC");
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
@@ -299,7 +312,7 @@ describe("earn action modal", () => {
 		await flush();
 
 		expect(testState.borrowLend).not.toHaveBeenCalled();
-		expect(toastMocks.error).toHaveBeenCalledWith(
+		expect(toastText(toastMocks.error.mock.calls[0]?.[0])).toBe(
 			"Earn balances changed before submission. Review the updated amounts and try again.",
 		);
 		expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -351,7 +364,114 @@ describe("earn action modal", () => {
 		act(() => setInputValue(getInput(container), "10"));
 		act(() => getSubmit(container).click());
 		await flush();
-		expect(toastMocks.warning).toHaveBeenCalledWith("Earn request status unknown", expect.any(Object));
+		const [warningTitle, warningOptions] = toastMocks.warning.mock.calls[0] as [unknown, { duration: number }];
+		expect(toastText(warningTitle)).toBe("Earn request status unknown");
+		expect(warningOptions.duration).toBe(Number.POSITIVE_INFINITY);
 		expect(toastMocks.error).not.toHaveBeenCalled();
+	});
+	it("rejects a second click in the same synchronous batch", async () => {
+		render("supply", 0, createData());
+		act(() => setInputValue(getInput(container), "10"));
+		act(() => {
+			getSubmit(container).click();
+			getSubmit(container).click();
+		});
+		await flush();
+		expect(testState.borrowLend).toHaveBeenCalledTimes(1);
+	});
+
+	it("fails closed at the SDK boundary when the balance shrinks while the request waits", async () => {
+		const data = createData();
+		testState.beforeSdk.mockImplementation(async () => {
+			(data.snapshotInputs.spotBalances as Map<number, EarnSpotBalance>).set(0, {
+				token: 0,
+				available: "5",
+				total: "5",
+			});
+		});
+		render("supply", 0, data);
+		act(() => setInputValue(getInput(container), "10"));
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).not.toHaveBeenCalled();
+		expect(toastText(toastMocks.error.mock.calls[0]?.[0])).toBe(
+			"Earn balances changed before submission. Review the updated amounts and try again.",
+		);
+	});
+
+	it("fails closed at the SDK boundary when the verification is too old", async () => {
+		const realNow = Date.now.bind(Date);
+		let offset = 0;
+		const nowSpy = vi.spyOn(Date, "now").mockImplementation(() => realNow() + offset);
+		testState.beforeSdk.mockImplementation(async () => {
+			offset = 21_000;
+		});
+		try {
+			render("supply", 0, createData());
+			act(() => setInputValue(getInput(container), "10"));
+			act(() => getSubmit(container).click());
+			await flush();
+			expect(testState.borrowLend).not.toHaveBeenCalled();
+		} finally {
+			nowSpy.mockRestore();
+		}
+	});
+
+	it("does not submit when the region or account mode cannot be verified", async () => {
+		const { FundsActionGeoExecutionError } = await import("@/hooks/trade/use-funds-action-availability");
+		testState.assertFreshGeoAllowed.mockRejectedValue(new FundsActionGeoExecutionError("restricted"));
+		render("supply", 0, createData());
+		act(() => setInputValue(getInput(container), "10"));
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).not.toHaveBeenCalled();
+		expect(toastText(toastMocks.error.mock.calls[0]?.[0])).toBe(
+			"Funds actions are not available in your region. This funds action was not submitted.",
+		);
+
+		toastMocks.error.mockClear();
+		testState.assertFreshGeoAllowed.mockResolvedValue(undefined);
+		const { AccountAbstractionExecutionError } = await import("@/hooks/trade/use-account-abstraction-guard");
+		testState.assertAccountAbstraction.mockRejectedValue(new AccountAbstractionExecutionError("changed"));
+		render("supply", 0, createData());
+		act(() => setInputValue(getInput(container), "10"));
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).not.toHaveBeenCalled();
+	});
+
+	it("does not supply from a stale spot balance", async () => {
+		const data = { ...createData(), spotStateReceivedAt: Date.now() - 60_000 };
+		render("supply", 0, data);
+		act(() => setInputValue(getInput(container), "10"));
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).not.toHaveBeenCalled();
+	});
+
+	it("tells the user when the position changes after the dialog opened without blocking submission", () => {
+		render("withdraw", 150, createData("100"));
+		expect(container.textContent).not.toContain("Your position changed");
+		render("withdraw", 150, createData("90"));
+		expect(container.textContent).toContain(
+			"Your position changed since you opened this dialog. Review the amounts before confirming.",
+		);
+		act(() => setInputValue(getInput(container), "1"));
+		expect(getSubmit(container).disabled).toBe(false);
+	});
+
+	it("withdraws an outcome notice once the account or network changes", async () => {
+		render("supply", 0, createData());
+		act(() => setInputValue(getInput(container), "10"));
+		act(() => getSubmit(container).click());
+		await flush();
+		const title = toastMocks.success.mock.calls[0]?.[0];
+		testState.exchangeIdentity.env = "Testnet";
+		try {
+			expect(toastText(title)).toBe("");
+			expect(toastMocks.dismiss).toHaveBeenCalledTimes(1);
+		} finally {
+			testState.exchangeIdentity.env = "Mainnet";
+		}
 	});
 });

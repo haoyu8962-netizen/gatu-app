@@ -14,7 +14,12 @@ import {
 	toEarnProtocolAmount,
 	validateEarnAmount,
 } from "@/domain/earn";
-import { EarnSubmissionStaleError, verifyFreshEarnSubmission } from "@/domain/earn-submission";
+import {
+	EARN_VERIFICATION_TTL_MS,
+	EarnSubmissionStaleError,
+	verifyEarnSubmissionAtBoundary,
+	verifyFreshEarnSubmission,
+} from "@/domain/earn-submission";
 
 const RESERVES_RESPONSE = [
 	[
@@ -319,6 +324,73 @@ describe("fresh earn submission", () => {
 				inputs: snapshotInputs(true),
 				request: { operation: "supply", token: 0, amount: "1", displayedMax: "700" },
 			}),
+		).toThrow(EarnSubmissionStaleError);
+	});
+});
+
+describe("earn snapshot completeness", () => {
+	it("rejects duplicated reserve or position entries", () => {
+		expect(parseEarnReserves([...RESERVES_RESPONSE, RESERVES_RESPONSE[1]])).toBeNull();
+		expect(
+			parseEarnUserState({
+				tokenToState: [USER_RESPONSE.tokenToState[1], USER_RESPONSE.tokenToState[1]],
+				healthFactor: null,
+			}),
+		).toBeNull();
+	});
+
+	it("refuses to build a snapshot that would drop an open position", () => {
+		const reserves = parseEarnReserves(RESERVES_RESPONSE.filter(([token]) => token !== 268));
+		const userState = parseEarnUserState({
+			tokenToState: [
+				[150, { borrow: { basis: "0", value: "0" }, supply: { basis: "100", value: "100" } }],
+				[268, { borrow: { basis: "6500", value: "6500" }, supply: { basis: "0", value: "0" } }],
+			],
+			healthFactor: "1",
+		});
+		if (!reserves || !userState) throw new Error("fixture must parse");
+		expect(buildEarnSnapshot({ reserves, userState, ...snapshotInputs() })).toBeNull();
+	});
+
+	it("treats a zero oracle price as unavailable instead of dividing by zero", () => {
+		const zeroPrice = RESERVES_RESPONSE.map(([token, state]) =>
+			token === 150 ? [token, { ...(state as object), oraclePx: "0" }] : [token, state],
+		);
+		const reserves = parseEarnReserves(zeroPrice);
+		const userState = parseEarnUserState(USER_RESPONSE);
+		if (!reserves || !userState) throw new Error("fixture must parse");
+		const snapshot = buildEarnSnapshot({ reserves, userState, ...snapshotInputs() });
+		const hype = snapshot?.supplyRows.find((row) => row.token === 150);
+		if (!snapshot || !hype) throw new Error("rows missing");
+		expect(
+			getEarnMaxAmount({ operation: "withdraw", row: hype, summary: snapshot.summary, spotAvailable: "0" }),
+		).toBeNull();
+		expect(
+			getEarnMaxAmount({ operation: "borrow", row: hype, summary: snapshot.summary, spotAvailable: "0" }),
+		).toBeNull();
+	});
+});
+
+describe("earn submission at the SDK boundary", () => {
+	it("requires a recent verification and the latest maximum", () => {
+		const { snapshot } = buildSnapshot();
+		const base = {
+			request: { operation: "borrow" as const, token: 0, amount: "100", displayedMax: "5029.4" },
+			verifiedAt: 1_000,
+			now: 1_000,
+			snapshot,
+			accountReady: true,
+			portfolioMargin: false,
+			spotAvailable: "700",
+		};
+		expect(() => verifyEarnSubmissionAtBoundary(base)).not.toThrow();
+		expect(() => verifyEarnSubmissionAtBoundary({ ...base, now: 1_000 + EARN_VERIFICATION_TTL_MS + 1 })).toThrow(
+			EarnSubmissionStaleError,
+		);
+		expect(() => verifyEarnSubmissionAtBoundary({ ...base, accountReady: false })).toThrow(EarnSubmissionStaleError);
+		expect(() => verifyEarnSubmissionAtBoundary({ ...base, portfolioMargin: true })).toThrow(EarnSubmissionStaleError);
+		expect(() =>
+			verifyEarnSubmissionAtBoundary({ ...base, request: { ...base.request, amount: "6000", displayedMax: "6000" } }),
 		).toThrow(EarnSubmissionStaleError);
 	});
 });

@@ -4,6 +4,7 @@ import {
 	buildEarnSnapshot,
 	type EarnOperation,
 	type EarnReserve,
+	type EarnSnapshot,
 	type EarnUserState,
 	getEarnMaxAmount,
 	getEarnOperationRows,
@@ -55,4 +56,38 @@ export function verifyFreshEarnSubmission({
 	if (freshMax === null) throw new EarnSubmissionStaleError("unavailable");
 	if (amount.gt(freshMax)) throw new EarnSubmissionStaleError("exceedsFresh");
 	return freshMax;
+}
+
+export const EARN_VERIFICATION_TTL_MS = 20_000;
+
+export interface VerifyEarnSubmissionAtBoundaryInput {
+	request: EarnSubmissionRequest;
+	verifiedAt: number;
+	now: number;
+	snapshot: EarnSnapshot | null;
+	accountReady: boolean;
+	portfolioMargin: boolean;
+	spotAvailable: string | null;
+}
+
+export function verifyEarnSubmissionAtBoundary({
+	request,
+	verifiedAt,
+	now,
+	snapshot,
+	accountReady,
+	portfolioMargin,
+	spotAvailable,
+}: VerifyEarnSubmissionAtBoundaryInput): void {
+	const age = now - verifiedAt;
+	if (age < 0 || age > EARN_VERIFICATION_TTL_MS) throw new EarnSubmissionStaleError("unavailable");
+	if (portfolioMargin) throw new EarnSubmissionStaleError("portfolioMargin");
+	if (!accountReady || !snapshot) throw new EarnSubmissionStaleError("unavailable");
+	const row = getEarnOperationRows(request.operation, snapshot).find((candidate) => candidate.token === request.token);
+	if (!row) throw new EarnSubmissionStaleError("unavailable");
+	const latestMax = getEarnMaxAmount({ operation: request.operation, row, summary: snapshot.summary, spotAvailable });
+	if (latestMax === null) throw new EarnSubmissionStaleError("unavailable");
+	const amount = Big(request.amount);
+	if (amount.gt(request.displayedMax)) throw new EarnSubmissionStaleError("exceedsDisplayed");
+	if (amount.gt(latestMax)) throw new EarnSubmissionStaleError("exceedsFresh");
 }
