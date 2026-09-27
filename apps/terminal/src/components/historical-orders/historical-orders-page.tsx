@@ -3,12 +3,10 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, ArrowLeftIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, Suspense, useMemo, useState } from "react";
+import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
 import { HistoricalOrderPrice } from "@/components/trade/components/historical-order-price";
-import { TopNav } from "@/components/trade/header/top-nav";
-import { MobileHeader } from "@/components/trade/mobile/mobile-header";
-import { TestnetBanner } from "@/components/trade/testnet-banner";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { useHistoricalOrdersCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -19,7 +17,6 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTime, formatToken, shortenAddress } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { createLazyComponent } from "@/lib/lazy";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getOrderHistoryStatusCategory, getOrderHistoryTriggerPrice } from "@/lib/trade/order-history";
 import {
@@ -42,8 +39,6 @@ import {
 } from "@/lib/trade/order-history-page";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
-const FooterBar = createLazyComponent(() => import("@/components/trade/footer/footer-bar"), "FooterBar");
-const GlobalModals = createLazyComponent(() => import("@/components/trade/components/global-modals"), "GlobalModals");
 const ORDER_HISTORY_SKELETON_ROWS = ["row-1", "row-2", "row-3", "row-4", "row-5", "row-6"] as const;
 const ALL_ORDER_MARKETS_VALUE = "__all_order_markets__";
 const ALL_ORDER_TYPES_VALUE = "__all_order_types__";
@@ -543,16 +538,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 				isMobile={isMobile}
 				bannerOffset={isTestnet}
 				testnet={isTestnet}
-				header={
-					isMobile ? (
-						<MobileHeader />
-					) : (
-						<>
-							<TestnetBanner />
-							<TopNav />
-						</>
-					)
-				}
+				header={<DashboardHeader isMobile={isMobile} />}
 				main={
 					<>
 						<div className="mb-4 flex flex-wrap items-start justify-between gap-4">

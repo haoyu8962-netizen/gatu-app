@@ -19,8 +19,8 @@
 
 ## 决策
 
-1. **去掉“文档”这一类路由表面。** 删除 `config/document-routes.ts`、`isDocumentRoutePath` 和根路由的文档分支；`getAppRouteSurface` 只剩 `terminal` 与 `dashboard`。6 个页面归入 `dashboard`：`ssr: false`，`beforeLoad` 使用 `bootLegalRoute()`：在 `bootDashboardRoute()` 之外，还在交易页的揭示预算（1,500 ms）内等待本页自己的惰性 `GlobalModals` 与桌面 `FooterBar` 加载完成（`preloadLegalDocPage()`），首帧就带着页脚和弹层宿主，不再晚 300 ms 才补上（ADR 0012 的做法）。
-2. **`LegalDocPage` 使用仪表盘外壳。** 用 `DashboardFrameView` 和新增的 `DASHBOARD_FRAMES.legal` 预设（`bg-background`，正文 `max-w-3xl`），桌面端是 `TestnetBanner` + `TopNav` + 惰性 `FooterBar`，移动端是 `MobileHeader`、无页脚，并挂载 `GlobalModals`，让顶栏的 Deposit、连接和账户操作可用。正文仍是 `<article lang="en" dir="ltr">`。删除 `DocumentChrome` 与 `DocumentOverlays`。
+1. **去掉“文档”这一类路由表面。** 删除 `config/document-routes.ts`、`isDocumentRoutePath` 和根路由的文档分支；`getAppRouteSurface` 只剩 `terminal` 与 `dashboard`。6 个页面归入 `dashboard`：`ssr: false`，`beforeLoad` 使用 `bootDashboardRoute()`：它在交易页的揭示预算（1,500 ms）内等待共享的 `dashboard-chrome.tsx` 实例（账户菜单、`GlobalModals`、桌面 `FooterBar`）加载完成，首帧就带着页脚和弹层宿主（ADR 0012 的做法，PR #46 为全部仪表盘页实现）。本 PR 曾为法律页单独写过 `bootLegalRoute` / `preloadLegalDocPage`，合并 `dev` 后删除，改用共享实现。
+2. **`LegalDocPage` 使用仪表盘外壳。** 用 `DashboardFrameView` 和新增的 `DASHBOARD_FRAMES.legal` 预设（`bg-background`，正文 `max-w-3xl`），页头用共享的 `DashboardHeader`（桌面 `TestnetBanner` + `TopNav`，移动 `MobileHeader`），桌面挂共享的惰性 `FooterBar`、移动无页脚，并挂载共享的 `GlobalModals`，让顶栏的 Deposit、连接和账户操作可用。正文仍是 `<article lang="en" dir="ltr">`。删除 `DocumentChrome` 与 `DocumentOverlays`。
 3. **只预渲染 SPA 壳。** `createTanstackStartOptions()` 不再列 `pages`；Node 静态页、CloudFront viewer-request 函数都把这 6 个路径交给 `_shell.html`。`deploy.mjs verify` 的“预渲染文档路由”检查改为“法律页导航返回与本地构建一致的壳”。
 4. **Service Worker 升到 v10。** 删除 `documents-*` 缓存与路由表，6 个路径与其他应用路径共用唯一的壳缓存条目；激活时清理 `shell-v9`、`documents-v9`。
 5. **地区判定对所有入口预取。** 已没有不加载运行时的入口，`shouldPrefetchGeo` 删除，引导入口总是预取 `/api/geo`。

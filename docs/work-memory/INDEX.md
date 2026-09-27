@@ -161,6 +161,7 @@
 
 当前规范：[docs/adr/0005-spa-static-shell.md](../../docs/adr/0005-spa-static-shell.md) · [deploy/cloudfront/README.md](../../deploy/cloudfront/README.md)
 
+- [仪表盘路由揭示前预加载页脚与全局弹窗宿主](sessions/2026-09-27-dashboard-route-chrome-preload.md) — 2026-09-27；已验证，范围见正文。九个仪表盘页面改为从共享的 components/dashboard/dashboard-chrome.tsx 渲染 DashboardHeader、FooterBar 与 GlobalModals，bootDashboardRoute 动态导入该模块并在 1500 ms 上限内等待账户菜单、全局弹窗宿主与桌面页脚。只共享惰性包装的首版使 Rollup 拆分页面与交易页共享的头部块，桌面运行时启动超预算（+10,473 / 上限 10,000）；把头部并入同一模块后所有预算指标都低于基线构建。首帧测试、三处变异检查、完整单测 602 文件 6,878 项、Node 22.15 生产构建通过；未做浏览器冷加载时间线实测。补记：gpt-6-astra 只读对抗审查 48b7d386 报 2 项 P2（/join/$code 邀请路由漏接预加载；断点只在预加载开始时读一次）与 2 项 P3（CHANGELOG 夸大；一文件多个可渲染导出），前三项修复并以变异钉住，同时消除 boot 测试在并行负载下的 5 s 超时。PR #46 第二轮 gpt-6-astra 审查报 1 项 P2（断点复核未等账户菜单）与 2 项 P3（新测试未接入按清单运行的 CI；CHANGELOG 仍夸大快捷键保证），均已修复。
 - [文档与法律页并入应用外壳，对齐官方条款页](sessions/2026-09-27-legal-pages-app-shell.md) — 2026-09-27；已验证，范围见正文。按用户选择（改成应用页、6 页全改）删除文档路由表面与 DocumentChrome：/docs /support /terms /privacy /risk /cookies 改为仪表盘路由，桌面用 TopNav/FooterBar、移动用 MobileHeader；只预渲染 SPA 壳，Node 静态页、CloudFront 请求函数与 SW（v10）不再区分文档页，deploy verify 改查法律页返回壳；ADR 0020。Cookie Policy 未进全局底栏（官方也没有；1001px 下会压住 ⌘K 按钮约 80px）。补记：照官方做法把 Cookie 入口放进隐私政策第 4 节，手机抽屉加 Docs/Support，sync 删除遗留的 <route>/index.html，verify 要求 /terms/index.html 返回 404（PR #47 第二轮 Codex 审查后改为用壳覆盖六页、verify 逐页核对）。类型检查、Biome、CloudFront 测试 40 项、完整单测、生产构建及开发服务器浏览器检查的结果见正文；未发布，未做真机检查。
 - [配对页加固（A 批）：头部内联擦除、阻断说明页、路径规范、Service Worker 放行、StrictMode](sessions/2026-09-20-pairing-page-hardening.md) — 2026-09-20；已整理，验证见正文。用户要求推送 Link Device 续作分支并开 PR（#33），然后做 A 批；不确定的事项先调试官方终端再规划，规划交 Codex 对抗审查。官方 app.hyperliquid.xyz 对 ?link= 只在应用内扫码器里解析，直接打开时既不读取也不从地址栏移除，明文密钥在查询串里，所以这一项没有官方做法可对齐，按本仓库契约设计。规划第 1 版被 Codex 判为不能按原样实施（1 项条件性 P0、5 项 P1），逐条核实后出第 2 版并实施：片段擦除改由页面壳第一个脚本执行（单一 TS 实现生成并提交的内联脚本，带非秘密状态的交接对象，客户端入口为第二道防线）；擦除失败或交接异常时显示六种语言的说明页并跳转到干净的配对页；路径判断统一（ASCII 大小写、只解码一次）；Service Worker 放行配对导航；StrictMode 重放 effect 后密钥不再被提前清零；构建末尾新增产物级断言。浏览器因果验证 9 项通过。未推送、未发布。
 - [CloudFront 发布闸门：暴露资金或凭证路径的构建需要上传时再确认](sessions/2026-09-19-cloudfront-release-gates.md) — 2026-09-19；已整理，验证见正文。补上 2026-09-18 清理 EC2 部署代码时发现的缺口：旧脚本会拒绝「主网赞助充值开关」与运营方二次确认不一致的构建，CloudFront 流程没有等价检查。现在构建把实际生效的赞助充值开关写进 build-meta.json（cctpDeposits，与应用同一个解析函数），deploy.mjs sync 读取构建产物：开了主网赞助充值或移动配对而没带 --allow-* 参数、带了参数而构建没开、或构建没有记录闸门，--execute 一律拒绝；verify 比较线上与本地的闸门状态。环境文件拼写类检查（Privy ID、Agent 名、默认网络）未移植并已写明。只在本地分支实现，未推送、未发布。
@@ -236,6 +237,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-27 | [仪表盘路由揭示前预加载页脚与全局弹窗宿主](sessions/2026-09-27-dashboard-route-chrome-preload.md) | 未取得任务标识，见正文 | `e3b5dd82` | 已验证，范围见正文 |
 | 2026-09-27 | [HIP-3 免责声明对齐：修复 Codex 审查发现](sessions/2026-09-27-hip3-alignment-review-fixes.md) | 未取得任务标识，见正文 | `27ee060f` | 已验证，范围见正文 |
 | 2026-09-27 | [文档与法律页并入应用外壳，对齐官方条款页](sessions/2026-09-27-legal-pages-app-shell.md) | 未取得任务标识，见正文 | `8b9950ce` | 已验证，范围见正文 |
 | 2026-09-26 | [zustand persist 首次访问时 merge 收到 undefined 的防护](sessions/2026-09-26-persist-merge-first-visit-guard.md) | 未取得任务标识，见正文 | `121e8e76` | 已验证，范围见正文 |

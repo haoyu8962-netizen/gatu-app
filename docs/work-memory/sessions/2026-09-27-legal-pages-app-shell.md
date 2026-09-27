@@ -100,6 +100,14 @@ Codex 标为“无法确认”的：最终构建体积（它读到的 `.output` 
 
 验证：`pnpm test:cloudfront` 43 项通过。
 
+## 补记：合并 dev（PR #46）后改用共享仪表盘外壳
+
+推送 `a8499cf4` 后 PR #47 显示与 `dev` 冲突。原因是本会话开出的后台任务 task_a8ccf726 已经作为 PR #46 合入 `dev`（`cdd0ee60`）。它新增了 `components/dashboard/dashboard-chrome.tsx`，提供共享的 `DashboardHeader`、`FooterBar`、`GlobalModals` 和 `preloadDashboardChrome()`，并让 `bootDashboardRoute()` 在预算内等待这些实例；它的任务记录 [2026-09-27-dashboard-route-chrome-preload](2026-09-27-dashboard-route-chrome-preload.md) 也写明法律页合入时要迁移过去。
+
+合并 `origin/dev`：`CHANGELOG.md` 两条都保留；`dashboard-frame-view.test.tsx` 采用 dev 的共享页头断言，同时保留本分支对 `legal` 预设的文件映射；`INDEX.md` 取 dev 版本后重新生成。`LegalDocPage` 改用共享的 `DashboardHeader` / `FooterBar` / `GlobalModals`，6 个路由改回 `bootDashboardRoute()`；删除 `lib/navigation/boot-legal-route.ts`、`boot-legal-route.test.ts` 和 `preloadLegalDocPage()`（上文第一、二轮补记中对它们的描述保留为历史）。法律页首帧测试改为先调用 `preloadDashboardChrome()`，做过变异检查：去掉这一步后测试失败。
+
+合并后验证（`a8499cf4` 合并 `cdd0ee60` 后的工作区）：`pnpm --filter @gatu/terminal typecheck` 退出码 0；Biome 检查改动的 9 个文件通过；`pnpm --filter @gatu/terminal test` 602 个文件通过、1 个跳过，6893 项通过、1 项跳过，零失败；`pnpm build`（Node v24.15.0）退出码 0，只预渲染 1 页，bundle 总计 3,106,960 gzip 字节（比基线少 47,747），交易页启动 1,544,154 gzip 字节，内联脚本哈希为 2 页 3 个。
+
 ## 后续与替代关系
 
 - ADR 0020 部分取代 ADR 0005/0006/0010 中与文档路由相关的决策；这些 ADR 的其余部分不变。

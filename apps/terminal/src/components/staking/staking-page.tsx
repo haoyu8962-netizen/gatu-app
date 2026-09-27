@@ -1,20 +1,14 @@
 import { Suspense } from "react";
+import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { createLazyComponent } from "@/lib/lazy";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
-import { TopNav } from "../trade/header/top-nav";
-import { MobileHeader } from "../trade/mobile/mobile-header";
-import { TestnetBanner } from "../trade/testnet-banner";
 import type { StakingActionSubmission } from "./domain/staking";
 import { getStakingFixtureFromLocation, StakingFixture } from "./staking-fixture";
 import { StakingView } from "./staking-view";
 import { useStakingActions } from "./use-staking-actions";
 import { useStakingController } from "./use-staking-controller";
-
-const FooterBar = createLazyComponent(() => import("../trade/footer/footer-bar"), "FooterBar");
-const GlobalModals = createLazyComponent(() => import("../trade/components/global-modals"), "GlobalModals");
 
 export interface StakingPageProps {
 	onActionSubmit?: (submission: StakingActionSubmission) => void;
@@ -49,16 +43,7 @@ function StakingLive({ onActionSubmit, isTestnet }: StakingPageProps & { isTestn
 				isMobile={isMobile}
 				bannerOffset={isTestnet}
 				testnet={isTestnet}
-				header={
-					isMobile ? (
-						<MobileHeader />
-					) : (
-						<>
-							<TestnetBanner />
-							<TopNav />
-						</>
-					)
-				}
+				header={<DashboardHeader isMobile={isMobile} />}
 				main={
 					<StakingView
 						{...controller}

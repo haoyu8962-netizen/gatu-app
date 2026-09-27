@@ -77,12 +77,18 @@ describe("dashboard frame runtime layout", () => {
 		const source = readFileSync(resolve(__dirname, `../../components/${file}`), "utf8");
 		expect(source).toContain("<DashboardFrameView");
 		expect(source).toContain(preset);
-		for (const chrome of ["MobileHeader", "TopNav", "FooterBar", "TestnetBanner"])
-			expect(source).toContain(`<${chrome} />`);
+		expect(source).toContain("<DashboardHeader isMobile={isMobile} />");
+		expect(source).toContain("<FooterBar />");
+		expect(source).toContain("<GlobalModals");
 		expect(source).toContain("isMobile={isMobile}");
 		expect(source).toContain("bannerOffset={isTestnet}");
 		expect(source).toContain("testnet={isTestnet}");
 		expect(source).not.toMatch(/<main\b|min-h-dvh|APP_HEADER_OFFSET_CLASS|APP_HEADER_PLUS_BANNER_OFFSET_CLASS/);
+	});
+
+	it("renders the real header chrome from the shared dashboard header", () => {
+		const source = readFileSync(resolve(__dirname, "../../components/dashboard/dashboard-chrome.tsx"), "utf8");
+		for (const chrome of ["MobileHeader", "TopNav", "TestnetBanner"]) expect(source).toContain(`<${chrome} />`);
 	});
 
 	it.each(["dashboard-frame-view.tsx"])("keeps %s pure", (file) => {

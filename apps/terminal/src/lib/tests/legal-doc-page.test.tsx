@@ -5,7 +5,8 @@ import { resolve } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LegalDocPage, preloadLegalDocPage } from "@/components/legal/legal-doc-page";
+import { preloadDashboardChrome } from "@/components/dashboard/dashboard-chrome";
+import { LegalDocPage } from "@/components/legal/legal-doc-page";
 
 const testState = vi.hoisted(() => ({ isMobile: false, isTestnet: false }));
 
@@ -13,6 +14,7 @@ vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => testState.isMobile }))
 vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => testState.isTestnet }));
 vi.mock("@/components/trade/header/top-nav", () => ({
 	TopNav: () => <header data-testid="top-nav">Top navigation</header>,
+	preloadTopNav: () => Promise.resolve(),
 }));
 vi.mock("@/components/trade/mobile/mobile-header", () => ({
 	MobileHeader: () => <header data-testid="mobile-header">Mobile header</header>,
@@ -62,7 +64,7 @@ describe("LegalDocPage", () => {
 	}
 
 	it("commits the footer and the modal host in the first render once the route preload settles", async () => {
-		await preloadLegalDocPage();
+		await preloadDashboardChrome();
 		root = createRoot(container);
 		act(() => root?.render(<LegalDocPage content="Legal document" />));
 
@@ -110,11 +112,13 @@ describe("LegalDocPage", () => {
 		expect(legalPageSource).not.toContain("<header");
 		expect(legalPageSource).not.toContain("<footer");
 		expect(legalPageSource).toContain("DASHBOARD_FRAMES.legal");
+		expect(legalPageSource).toContain('from "@/components/dashboard/dashboard-chrome"');
+		expect(legalPageSource).not.toContain("createLazyComponent");
 	});
 
-	it.each(LEGAL_ROUTE_FILES)("boots /%s through the legal route preload", (name) => {
+	it.each(LEGAL_ROUTE_FILES)("boots /%s through the shared dashboard chrome preload", (name) => {
 		const routeSource = readFileSync(resolve(process.cwd(), `src/routes/${name}.tsx`), "utf8");
-		expect(routeSource).toContain("beforeLoad: () => bootLegalRoute()");
+		expect(routeSource).toContain("beforeLoad: () => bootDashboardRoute()");
 		expect(routeSource).toContain("ssr: false");
 		expect(routeSource).not.toContain("ssr: true");
 		expect(routeSource).toContain("<LegalDocPage content={content} />");
