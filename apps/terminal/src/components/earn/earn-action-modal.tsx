@@ -517,14 +517,17 @@ function getFailureText(error: unknown, translate: Translate): string {
 
 interface EarnPositionBaseline {
 	token: number;
-	supplied: string;
-	borrowed: string;
+	suppliedBasis: string;
+	borrowedBasis: string;
 }
 
 function createPositionBaseline(row: EarnAssetRow): EarnPositionBaseline {
-	return { token: row.token, supplied: row.supplied, borrowed: row.borrowed };
+	return { token: row.token, suppliedBasis: row.suppliedBasis, borrowedBasis: row.borrowedBasis };
 }
 
 function hasPositionChanged(baseline: EarnPositionBaseline, row: EarnAssetRow): boolean {
-	return baseline.token === row.token && (baseline.supplied !== row.supplied || baseline.borrowed !== row.borrowed);
+	return (
+		baseline.token === row.token &&
+		(baseline.suppliedBasis !== row.suppliedBasis || baseline.borrowedBasis !== row.borrowedBasis)
+	);
 }

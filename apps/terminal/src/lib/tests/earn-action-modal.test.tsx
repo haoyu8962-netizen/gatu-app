@@ -473,6 +473,25 @@ describe("earn action modal", () => {
 		expect(testState.borrowLend).not.toHaveBeenCalled();
 	});
 
+	it("does not flag continuous interest accrual as a position change", () => {
+		const accrued = (value: string) => {
+			const data = createData();
+			const reserves = parseEarnReserves(RESERVES);
+			const userState = parseEarnUserState({
+				tokenToState: [
+					[0, { borrow: { basis: "1000", value: "1000" }, supply: { basis: "0", value: "0" } }],
+					[150, { borrow: { basis: "0", value: "0" }, supply: { basis: "100", value } }],
+				],
+				healthFactor: "6",
+			});
+			if (!reserves || !userState) throw new Error("fixture must parse");
+			return { ...data, snapshot: buildEarnSnapshot({ reserves, userState, ...data.snapshotInputs }) };
+		};
+		render("withdraw", 150, accrued("100.00000001"));
+		render("withdraw", 150, accrued("100.00000009"));
+		expect(container.textContent).not.toContain("Your position changed");
+	});
+
 	it("tells the user when the position changes after the dialog opened without blocking submission", () => {
 		render("withdraw", 150, createData("100"));
 		expect(container.textContent).not.toContain("Your position changed");

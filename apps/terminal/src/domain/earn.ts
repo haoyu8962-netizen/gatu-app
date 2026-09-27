@@ -56,8 +56,10 @@ export interface EarnAssetRow {
 	totalBorrowed: string;
 	reserveBalance: string;
 	supplied: string;
+	suppliedBasis: string;
 	suppliedInterest: string;
 	borrowed: string;
+	borrowedBasis: string;
 	borrowedInterest: string;
 	liquidationPx: string | null;
 }
@@ -280,8 +282,10 @@ export function buildEarnSnapshot({
 			totalBorrowed: reserve.totalBorrowed,
 			reserveBalance: reserve.balance,
 			supplied,
+			suppliedBasis: position?.supply.basis ?? "0",
 			suppliedInterest: position ? Big(supplied).minus(position.supply.basis).toFixed() : "0",
 			borrowed,
+			borrowedBasis: position?.borrow.basis ?? "0",
 			borrowedInterest: position ? Big(borrowed).minus(position.borrow.basis).toFixed() : "0",
 			liquidationPx: null,
 		});
