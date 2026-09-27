@@ -91,6 +91,7 @@ const testState = vi.hoisted(() => ({
 		status: "pending" as "pending" | "error" | "success",
 	},
 	infoListeners: new Set<() => void>(),
+	keepClosedDialogMounted: false,
 }));
 
 vi.mock("@/components/trade/components/trade-size-slider", async (importOriginal) => {
@@ -119,11 +120,12 @@ vi.mock("@gatu/ui", () => ({
 		presentation: string;
 		showHandle: boolean;
 	}) =>
-		open
+		open || testState.keepClosedDialogMounted
 			? createElement(
 					"section",
 					{
 						"data-testid": "position-risk-dialog",
+						"data-open": String(open),
 						"data-presentation": presentation,
 						"data-dismissible": String(dismissible),
 						"data-show-handle": String(showHandle),
@@ -559,6 +561,7 @@ describe("PositionTpSlModal live data", () => {
 		testState.infoCalls = [];
 		testState.infoListeners.clear();
 		testState.maxMarketOrderNtlsQuery = { data: MAX_MARKET_ORDER_NTLS, isSuccess: true, status: "success" };
+		testState.keepClosedDialogMounted = false;
 	});
 
 	afterEach(() => {
@@ -2027,5 +2030,72 @@ describe("PositionTpSlModal live data", () => {
 			expect(testState.placeOrder).not.toHaveBeenCalled();
 			expect(testState.cancelOrders).not.toHaveBeenCalled();
 		});
+
+		const closePaths: Array<[string, () => Promise<void>]> = [
+			[
+				"the session ends",
+				async () => {
+					act(() => {
+						root.render(createElement(PositionTpSlModal, { session: null, onSessionEnd: vi.fn() }));
+					});
+				},
+			],
+			[
+				"the confirmation submits",
+				async () => {
+					await act(async () => getButton(container, "Confirm").click());
+					expect(testState.placeOrder).toHaveBeenCalledTimes(1);
+				},
+			],
+		];
+
+		function closingDialog(): HTMLElement | null {
+			return container.querySelector<HTMLElement>('[data-testid="position-risk-dialog"][data-open="false"]');
+		}
+
+		it.each(closePaths)(
+			"keeps a hidden notice hidden when the tier table arrives after %s",
+			async (_label, closeDialog) => {
+				vi.useFakeTimers();
+				try {
+					testState.keepClosedDialogMounted = true;
+					testState.maxMarketOrderNtlsQuery = { data: undefined, isSuccess: false, status: "pending" };
+					setPositionSize("6000000");
+					renderModal();
+					act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+					expect(slippageWarning()).toBeNull();
+
+					await closeDialog();
+					expect(closingDialog()).not.toBeNull();
+					act(() => setMaxMarketOrderNtlsQuery(successQuery));
+					expect(closingDialog()).not.toBeNull();
+					expect(slippageWarning()).toBeNull();
+				} finally {
+					vi.useRealTimers();
+				}
+			},
+		);
+
+		it.each(closePaths)(
+			"keeps a visible notice visible when the tier table refresh fails after %s",
+			async (_label, closeDialog) => {
+				vi.useFakeTimers();
+				try {
+					testState.keepClosedDialogMounted = true;
+					setPositionSize("6000000");
+					renderModal();
+					act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+					expect(slippageWarning()?.textContent).toBe(SLIPPAGE_WARNING_TEXT);
+
+					await closeDialog();
+					expect(closingDialog()).not.toBeNull();
+					act(() => setMaxMarketOrderNtlsQuery({ data: MAX_MARKET_ORDER_NTLS, isSuccess: false, status: "error" }));
+					expect(closingDialog()).not.toBeNull();
+					expect(slippageWarning()?.textContent).toBe(SLIPPAGE_WARNING_TEXT);
+				} finally {
+					vi.useRealTimers();
+				}
+			},
+		);
 	});
 });
