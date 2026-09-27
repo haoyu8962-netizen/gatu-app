@@ -25,6 +25,7 @@ history and must not be restored as operational guidance.
 | [riskDisclosure.md](./riskDisclosure.md) | Risk Disclosure | `https://app.gatu.ai/risk` | `https://gatu.ai/risk` |
 | [support.md](./support.md) | Support information | `https://app.gatu.ai/support` | `https://gatu.ai/support` |
 | [docs.md](./docs.md) | Product documentation | `https://app.gatu.ai/docs` | Not published |
+| [cookies.md](./cookies.md) | Cookie and browser storage policy, linked from Privacy Policy Section 4 | `https://app.gatu.ai/cookies` | Not published |
 
 ## Stable identity
 

@@ -115,22 +115,20 @@ inspect entry visibility at 375, 1100 and 1440 pixels without exposing a real ke
 
 ### Provider Lifetime During Navigation
 
-- The root route and client runtime gate must classify their surface using
-  the last presented `router.state.matches` pathname, with `location` only
-  as the initial fallback when no matches exist. The requested `location`
-  changes before `Outlet` replaces the previous route; `resolvedLocation`
-  can remain old after the destination is presented. Neither is a safe
-  standalone signal for mounting or removing route providers.
+- Every application route, the Docs, Support, Terms, Privacy, Risk and
+  Cookies pages included, renders inside the same client runtime gate.
+  There is no document/app provider boundary to switch on the pathname
+  ([ADR 0020](adr/0020-legal-pages-in-app-shell.md)); do not reintroduce a
+  route surface that skips the wallet runtime without a new decision.
 - Keep the current route's providers mounted throughout a pending or
-  cancelled navigation. Replace the document/app provider boundary when
-  the presented matches change, and preserve provider identity between
-  business routes. Initial document entries must remain independent of
-  the wallet runtime.
+  cancelled navigation, and preserve provider identity between routes:
+  moving between trading, dashboard and legal pages must not remount the
+  wallet or market runtime.
 - A departing market title synchronizer may clear only its own last
   applied title. It must preserve a destination title already installed
   by the router's head renderer.
-- Cover delayed navigation from business routes to every document route,
-  the reverse direction, cancellation and browser history with a real
+- Cover delayed navigation from trading and dashboard routes to every legal
+  page, the reverse direction, cancellation and browser history with a real
   router. Mocking only a pathname cannot verify provider/Outlet alignment.
 
 ### Important Files

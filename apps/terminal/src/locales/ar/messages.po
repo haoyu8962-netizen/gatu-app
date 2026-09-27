@@ -1979,8 +1979,8 @@ msgid "Contract"
 msgstr "العقد"
 
 #: src/components/legal/document-chrome.tsx
-msgid "Cookie Policy"
-msgstr "سياسة ملفات تعريف الارتباط"
+#~ msgid "Cookie Policy"
+#~ msgstr "سياسة ملفات تعريف الارتباط"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
@@ -2545,12 +2545,11 @@ msgstr "لا ترسل عملية أموال تخزين أخرى. ستواصل ل
 msgid "Do not submit this operation again."
 msgstr "لا ترسل هذه العملية مرة أخرى."
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "المستندات"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "الوثائق والمعلومات القانونية"
@@ -5882,7 +5881,6 @@ msgstr "دقة السعر"
 msgid "Price: Market"
 msgstr "السعر: سعر السوق"
 
-#: src/components/legal/document-chrome.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
@@ -5893,7 +5891,6 @@ msgstr "التنقل الرئيسي"
 msgid "Priority Gas Auction Fee"
 msgstr "رسوم مزاد أولوية الغاز"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "سياسة الخصوصية"
@@ -6621,7 +6618,6 @@ msgstr "تمت المطالبة بالمكافآت"
 msgid "Rewards compound automatically"
 msgstr "تُعاد استثمار المكافآت تلقائيًا"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "الإفصاح عن المخاطر"
@@ -7562,7 +7558,7 @@ msgstr "ناجح"
 msgid "Supply"
 msgstr "إيداع للإقراض"
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "الدعم"
@@ -7789,7 +7785,6 @@ msgstr "إنهاء أمر TWAP"
 #~ msgid "Terminating..."
 #~ msgstr "جارٍ الإنهاء..."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Terms"
 msgstr "الشروط"

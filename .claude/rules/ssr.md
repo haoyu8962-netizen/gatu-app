@@ -6,7 +6,7 @@ description: SSR safety rules for TanStack Start
 
 ## SSR Safety (TanStack Start)
 
-This project uses TanStack Start. Runtime server rendering is off: the Node process answers navigations from the prerendered `_shell.html` and document pages (`src/lib/static-pages/`). Module-level code still runs on the server during the build-time prerender and in the dev server, so every rule below still applies.
+This project uses TanStack Start. Runtime server rendering is off: the Node process answers every navigation from the prerendered `_shell.html` (`src/lib/static-pages/`). Module-level code still runs on the server during the build-time prerender and in the dev server, so every rule below still applies.
 
 - **Never access browser APIs (`document`, `window`, `localStorage`, `navigator`) at module top-level** without a guard: `if (typeof document === "undefined") return;`
 - **`React.lazy()` does NOT prevent SSR evaluation** — Vite's SSR module runner still evaluates the full import chain of dynamic imports. Do not use `lazy()` as an SSR escape hatch.

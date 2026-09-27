@@ -4,6 +4,8 @@
 - 前置：[ADR 0005](0005-spa-static-shell.md)（静态壳与无服务器托管）
 - 计划与度量：[终端启动性能对齐官方站](../terminal-startup-performance-plan.md)、[任务记录](../work-memory/sessions/2026-09-13-spa-shell-spike.md)
 
+> 2026-09-27 更正：文档页按 URL 缓存（`documents-v9`）与“文档路由不预取地区判定”已被 [ADR 0020](0020-legal-pages-in-app-shell.md) 取代：Service Worker 升到 v10，只保留一个壳缓存条目，引导入口对所有路径预取 `/api/geo`。其余决策不变。
+
 ## 背景与约束
 
 CloudFront 首发后与官方站同环境冷缓存对比：官方站把 45 个启动块写进 HTML 一次并发下载，本项目的壳只写 6 个 `modulepreload`，其余 92 个块靠嵌套 `import()` 逐层发现；壳是 `no-cache`，每次导航都回源 S3；TradingView 内部的 85 个 bundle 每次都重新验证；地区判定要等钱包运行时加载后才发起，再加上 Lambda 冷启动与 IPdata 首次调用。约束不变：文档页永不加载钱包运行时，地区与法务门控 fail closed，订阅粒度与订单簿传输隔离不改，不新增依赖，预算与重新基线规则照常。

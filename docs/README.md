@@ -47,7 +47,7 @@
 | 数字格式与图表翻译对齐官方 | [规划](number-format-and-chart-translation-plan.md)：图表传 `numeric_formatting` 并随数字格式设置重建、日期/排序规则收口、输入框与阿拉伯语数字系统待决策；图表库内错译用 `custom_translate_function` 定点修补，先审计后收录、每条绑定库条目；数字格式四项（A-1/A-2a/A-3/A-4）已实施，归属见[数字格式设置](number-format-setting.md)，方案 B 待 zh + ar 审计 |
 | 移动持仓全部平仓 | [入口审查与实施说明](mobile-close-all-plan.md)：持仓工具栏已接入共享全账户市价链路；确认面列出实际目标并明示包含筛选隐藏仓位，后台提交跨页签和断点保持；批量限价和 TP/SL 清理仍为后续专项 |
 | Across 持久充值地址 | [接入设计](across-deposit-addresses.md)、[ADR 0004](adr/0004-across-deposit-addresses.md)：邮箱用户独立入口；生产权限、服务端身份/持久化、账户模式及资金验收待完成 |
-| 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：运行时不再 SSR，Node 进程用预渲染的 `_shell.html` 与文档页回答导航，只执行可移植的 `/api/*` 处理器；发布健康检查含真实 geo 探针；把 `public/` 搬到 CDN 与边缘运行时挂载待完成 |
+| 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：运行时不再 SSR，Node 进程用预渲染的 `_shell.html` 回答导航（文档页自 [ADR 0020](adr/0020-legal-pages-in-app-shell.md) 起并入应用外壳），只执行可移植的 `/api/*` 处理器；发布健康检查含真实 geo 探针；把 `public/` 搬到 CDN 与边缘运行时挂载待完成 |
 | 启动渲染 | [ADR 0010](adr/0010-blank-until-ready-startup.md)、[规则](../.claude/rules/startup-rendering.md)：统一空播报 → 持久语言真实 chrome → 市场内容；[ADR 0009](adr/0009-startup-placeholder-single-source.md) 的纯 runtime view 决策保留，占位决策已被部分取代 |
 | 启动性能对齐官方站 | [修复计划](terminal-startup-performance-plan.md)：壳内预加载交易页静态闭包、壳与图表包边缘缓存、地区判定预取与 Lambda 保温、分块整理；含同环境冷缓存对比数据与需要决策的事项；各项状态见文内 |
 | CSP 第二步：内联脚本哈希 | [计划](csp-inline-script-hashes-plan.md)：`script-src` 去掉 `'unsafe-inline'`，哈希随发布轮换并保留上一版集合，先 report-only 观察再强制；含现状数据、备选方案与需要决策的事项；B、C、D 阶段均已执行 |

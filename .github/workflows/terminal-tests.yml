@@ -109,6 +109,7 @@ jobs:
           src/lib/tests/boot-dashboard-route.test.ts
           src/lib/tests/dashboard-chrome.test.tsx
           src/lib/tests/dashboard-frame-view.test.tsx
+          src/lib/tests/legal-doc-page.test.tsx
 
       - name: Test order draft and exchange session lifecycles
         working-directory: apps/terminal

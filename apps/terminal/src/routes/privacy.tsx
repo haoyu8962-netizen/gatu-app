@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalDocPage } from "@/components/legal/legal-doc-page";
+import { bootDashboardRoute } from "@/lib/navigation/boot-dashboard-route";
 import { buildPageHead } from "@/lib/seo";
 import content from "../../../../legal/privacyPolicy.md?raw";
 
 export const Route = createFileRoute("/privacy")({
-	ssr: true,
+	beforeLoad: () => bootDashboardRoute(),
+	ssr: false,
 	head: () =>
 		buildPageHead({
 			title: "Privacy Policy",
