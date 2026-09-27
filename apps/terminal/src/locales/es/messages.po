@@ -280,6 +280,10 @@ msgstr "Se muestra una confirmación antes de cada cierre a mercado."
 msgid "A funds operation is awaiting verification"
 msgstr "Una operación de fondos está pendiente de verificación"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "A market TP/SL may fill with large slippage because of this position's size. To reduce slippage, use limit execution with a limit price, or configure a smaller amount."
+msgstr "Un TP/SL a mercado puede ejecutarse con un deslizamiento elevado debido al tamaño de esta posición. Para reducir el deslizamiento, usa la ejecución límite con un precio límite o configura una cantidad menor."
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "A new delegation is locked to this validator for one day. Rewards are distributed daily and automatically redelegated."
 msgstr "Una nueva delegación está bloqueada en este validador por un día. Las recompensas se distribuyen diariamente y se redelegan automáticamente."
