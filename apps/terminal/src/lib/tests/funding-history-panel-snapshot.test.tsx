@@ -11,6 +11,7 @@ import { createI18nRoot } from "./harness/react";
 
 const HOUR_MS = 3_600_000;
 const NOW = 1_790_496_000_000 + 16 * HOUR_MS;
+const STALE_TIME_MS = 5 * 60_000;
 const NEW_MARKET = { kind: "builderPerp", name: "xyz:NEW" } as UnifiedMarketInfo;
 
 const mocks = vi.hoisted(() => ({
@@ -30,6 +31,26 @@ async function flush() {
 	await act(async () => {
 		await new Promise((resolve) => setTimeout(resolve, 0));
 	});
+}
+
+// Fake timers give a zero-delay timer created during a tick a 1 ms delay, so TanStack's notification
+// timers scheduled by an interval need a few extra milliseconds to reach React.
+const NOTIFY_SETTLE_MS = 5;
+
+async function advance(ms: number) {
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(ms + NOTIFY_SETTLE_MS);
+	});
+}
+
+function deferred<T>() {
+	let resolve: (value: T) => void = () => {};
+	let reject: (error: unknown) => void = () => {};
+	const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+		resolve = resolvePromise;
+		reject = rejectPromise;
+	});
+	return { promise, reject, resolve };
 }
 
 describe("FundingHistoryPanel snapshot states", () => {
@@ -52,6 +73,7 @@ describe("FundingHistoryPanel snapshot states", () => {
 		act(() => root.unmount());
 		container.remove();
 		client.clear();
+		vi.useRealTimers();
 		onlineManager.setOnline(true);
 		vi.restoreAllMocks();
 	});
@@ -97,6 +119,28 @@ describe("FundingHistoryPanel snapshot states", () => {
 		await act(async () => body().querySelector("button")?.click());
 		await flush();
 		expect(body().textContent).toBe("No funding history");
+	});
+
+	it("does not keep confirming an empty history once it goes stale in the active view", async () => {
+		vi.useFakeTimers({ now: NOW, toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render(true);
+		await advance(0);
+		expect(body().textContent).toBe("No funding history");
+
+		const refresh = deferred<unknown>();
+		mocks.fundingHistory.mockReturnValueOnce(refresh.promise);
+		await advance(STALE_TIME_MS);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(body().textContent).toBe("Loading...");
+		expect(body().getAttribute("aria-busy")).toBe("true");
+
+		await act(async () => refresh.reject(new Error("server error")));
+		await advance(0);
+		expect(body().textContent).toBe("Retry");
+		expect(body().getAttribute("aria-busy")).toBe("false");
+		expect(body().querySelector('[role="alert"]')).toBeNull();
 	});
 
 	it("keeps a stale empty snapshot blank while its refresh is paused offline", async () => {

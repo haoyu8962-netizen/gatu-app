@@ -53,7 +53,8 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 
 - 查询键 `["hl", "market-funding-history", env, coin, range]`，不带 `persisted` 前缀，所以不进本地持久化缓存。网络、市场、区间各自独立；切换时没有 `placeholderData`，不会显示上一个市场或区间的数据。
 - 只在 Funding 视图可见（`active`）、市场是 `perp` 或 `builderPerp`、`coin` 非空时启用。
-- `staleTime` 5 分钟，`retry: false`（页级重试已处理可重试错误），不在窗口聚焦时刷新，网络恢复时刷新。缓存保留时间为 TanStack 默认值（5 分钟）；视图隐藏期间查询停用、缓存保留，重新显示时若已过期则在后台刷新。
+- `staleTime` 5 分钟，`retry: false`（页级重试已处理可重试错误），网络恢复时刷新。缓存保留时间为 TanStack 默认值（5 分钟）；视图隐藏期间查询停用、缓存保留，重新显示时若已过期则在后台刷新。
+- 非空快照不轮询、不在窗口聚焦时刷新（官方终端也不轮询），与之前相同。只有缓存里是空快照（`[]`）时，查询才带 `refetchInterval` = 5 分钟（等于 `staleTime`）与 `refetchOnWindowFocus`：两者都是按 `query.state.data` 判断的函数，数据一旦非空就返回 `false`，轮询随之停止。`refetchIntervalInBackground: false`，页面在后台（`document.visibilityState === "hidden"`）时不发请求；回到前台时，TanStack 只对已过期的查询执行聚焦刷新，所以空快照过期后回来会立即刷新一次，新鲜的空快照不会。查询停用时 TanStack 既不启动定时器也不执行聚焦刷新，停用时的取消逻辑不变。空快照刷新失败后数据仍是 `[]`，视图可见期间每 5 分钟会再试一次；每次只有一页，请求权重约 20。
 - 停用只会让 TanStack 不再发起新请求，不会中止已经在进行的请求。因此查询从启用变为停用时，hook 在 effect 里对当前键调用 `queryClient.cancelQueries({ queryKey, exact: true, type: "inactive" })`：请求的 `AbortSignal` 被中止，`fetchTimeRangeHistory` 不再请求下一页，`fetchHistoryPageWithRetry` 的等待与页级重试随之结束；取消默认 `revert`，缓存回到这次请求开始前的状态（已有快照保留，首次请求则回到无数据）。`type: "inactive"` 只匹配没有启用观察者的查询，同一键若还有别的活动视图在用，请求不会被取消。重新显示时按「无数据或已过期」重新请求。切换市场、区间或网络时旧键失去观察者，由 TanStack 自行中止（查询函数读取了 `signal`）。
 
 状态先看是否有可显示的记录，再区分空快照：
@@ -61,13 +62,15 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 | 条件 | `status` |
 | --- | --- |
 | 有非空记录（包括停用或后台刷新失败时） | `ready` |
-| 空快照，且该键最近一次请求成功（`status === "success"`）、当前没有请求在进行或暂停（`fetchStatus === "idle"`）、在线 | `ready` |
+| 空快照，且该键最近一次请求成功（`status === "success"`）、当前没有请求在进行或暂停（`fetchStatus === "idle"`）、未超过 `staleTime`（`isStale === false`）、在线 | `ready` |
 | 上两行都不满足且查询停用 | `disabled` |
 | 上两行都不满足且离线或查询被暂停 | `offline` |
 | 上两行都不满足、上次请求失败且当前没有在请求 | `error` |
-| 其余（首次请求、重试中、空快照正在刷新） | `loading` |
+| 其余（首次请求、重试中、空快照正在刷新、空快照已过期但还没开始刷新） | `loading` |
 
-非空记录在刷新失败时静默保留；空快照是「没有记录」的结论，只能来自最近一次成功且此刻没有被刷新、暂停或离线推翻的请求。例如新市场第一次得到 `[]`，隐藏超过五分钟后重新打开：刷新期间是空白忙碌态，刷新失败显示中性「重试」，离线或暂停时保持空白，都不再显示「暂无资金费率历史」。
+非空记录在刷新失败时静默保留；空快照是「没有记录」的结论，只能来自最近一次成功、未过期，且此刻没有被刷新、暂停或离线推翻的请求。例如新市场第一次得到 `[]`，隐藏超过五分钟后重新打开：刷新期间是空白忙碌态，刷新失败显示中性「重试」，离线或暂停时保持空白，都不再显示「暂无资金费率历史」。Funding 视图一直可见时也一样：空快照满 5 分钟由 `refetchInterval` 刷新，刷新期间是空白忙碌态，成功后按新快照显示（仍为空则回到「暂无资金费率历史」，有记录则出图），失败则显示中性「重试」。
+
+过期判断读 TanStack 的 `isStale`，不在渲染里读 `Date.now()`。`useQuery` 的结果按读取过的字段通知组件，hook 读了 `isStale`，它就在被追踪的字段里；观察者本身在 `dataUpdatedAt + staleTime + 1ms` 设了定时器，到点重算结果，`isStale` 从 `false` 变成 `true`，组件随之重渲染。页面在后台时轮询跳过，就靠这个定时器让已过期的空快照从「暂无资金费率历史」变成空白忙碌态。TanStack 对停用的查询一律报告 `isStale === false`，所以停用视图里的空快照仍映射为 `ready`。此时 Funding 层不可见；重新启用时第一次渲染就用上了「正在请求」的乐观结果，状态为 `loading`（离线时为 `offline`），既有用例覆盖了这两种情况。
 
 ### 分桶
 
@@ -114,15 +117,15 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 
 | 情况 | 展示 | 禁止 |
 | --- | --- | --- |
-| 惰性块加载中、首次请求、重试中、空快照正在刷新 | 空白绘图区，`aria-busy="true"`，读屏专用 `Loading...`；区间按钮可用 | 可见的加载文字、骨架动画、旋转图标 |
+| 惰性块加载中、首次请求、重试中、空快照正在刷新（包括视图可见时满 5 分钟的自动刷新），或空快照已过期而页面在后台、尚未刷新 | 空白绘图区，`aria-busy="true"`，读屏专用 `Loading...`；区间按钮可用 | 可见的加载文字、骨架动画、旋转图标 |
 | 首次请求失败（无数据），或空快照刷新失败 | 只有中性「重试」按钮，点击重新请求 | 错误文字、警告图标、`error.message`、`role="alert"`、沿用旧的「暂无资金费率历史」 |
 | 已有非空数据后刷新失败 | 继续显示已加载的快照，不提示 | 清空图表、显示失败横条 |
 | 离线或请求暂停，且无数据或只有空快照 | 空白，依靠全局离线提示 | 「无法加载」「暂无资金费率历史」等文字 |
-| 最近一次请求成功、没有刷新在进行或暂停、在线的完整空快照（例如新上线的 HIP-3 市场） | 「暂无资金费率历史」 | 把截断、失败、未请求、正在刷新、暂停或离线时的空快照当作空 |
+| 最近一次请求成功、未超过 5 分钟、没有刷新在进行或暂停、在线的完整空快照（例如新上线的 HIP-3 市场） | 「暂无资金费率历史」 | 把截断、失败、未请求、已过期、正在刷新、暂停或离线时的空快照当作空 |
 | 完整快照 | 图表 | — |
 | 切换市场、区间或网络 | 新键首次请求时的空白忙碌态 | 显示其他市场或区间的数据 |
 | 现货 | 没有 Funding 页签，视图为 Chart | 显示空的 Funding 视图 |
-| 页签隐藏 | 查询停用，进行中的请求被中止（分页与页级重试停止），缓存保留，不在聚焦时刷新 | 隐藏时继续请求、翻页或重试 |
+| 页签隐藏 | 查询停用，进行中的请求被中止（分页与页级重试停止），缓存保留，不轮询，不在聚焦时刷新 | 隐藏时继续请求、翻页、重试或轮询 |
 
 ## 格式化与语言
 
@@ -175,6 +178,28 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 - 回归入口列出的 11 个文件，加上 `i18n-reactivity-contract`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`action-progress-label-contract`、`mobile-data-presentation-contract`：17 个文件、373 个用例全部通过。
 
 未运行：完整终端测试、`pnpm build`、浏览器与真机核对；隐藏页签后请求确实中止、空快照过期后的展示，只有 jsdom 证据。
+
+2026-09-28 第二轮审查修复（分支 `claude/sdk-fix-r2-funding-history`，基于 `1411036c`；jsdom，Vitest 假计时器模拟 `setTimeout` / `setInterval` / `Date`，页面前后台由 `focusManager.setFocused` 脚本切换，不代表真实的标签页切换）。问题：Funding 视图一直可见并超过 5 分钟时，空快照没有任何刷新，「暂无资金费率历史」会一直显示下去。
+
+- 先写回归测试，在 `1411036c` 上确认失败，再修复：
+  - `use-market-funding-history.test.tsx` 新增 5 例：「视图可见时空快照过期即刷新」（满 5 分钟后第 2 次请求、刷新中为 `loading`、成功后回到空态）；「刷新得到记录后停止轮询」（再过 15 分钟仍是 2 次请求）；「非空快照在视图可见时不轮询」（15 分钟内只有 1 次请求、`isRefreshing` 为 `false`）；「停用时不刷新过期空快照」（15 分钟内只有 1 次请求）；「页面在后台时过期空快照不再确认为空，回到前台即刷新」（后台超过 5 分钟：不发请求，状态由 `ready` 变为 `loading`；回到前台后第 2 次请求，成功后为 `ready`）。
+  - `funding-history-panel-snapshot.test.tsx` 新增 1 例：面板接真实 hook 与 QueryClient，视图可见 5 分钟后发出第 2 次请求，正文从「No funding history」变为读屏专用的 `Loading...`、`aria-busy="true"`；刷新失败后正文只剩「Retry」，没有 `role="alert"`。
+  - 在 `1411036c` 上：「过期即刷新」「得到记录后停止」和面板用例都在「应有 2 次请求，实际 1 次」处失败，「后台过期」用例在「应为 `loading`，实际 `ready`」处失败；两个钉住用例（非空不轮询、停用不刷新）通过。
+- 修复（`use-market-funding-history.ts`）：空态条件加上 `!query.isStale`；`refetchInterval` 与 `refetchOnWindowFocus` 只在缓存为空快照时生效；显式写出 `refetchIntervalInBackground: false`。两个查询选项的具体语义见上文「查询」。
+- 测试工具的一处坑：假计时器会把 tick 期间创建的零延时定时器推后 1ms，TanStack 由轮询或过期定时器触发的通知（`setTimeout(0)`）会落在推进区间之外，组件看起来没有重渲染。新用例的 `advance` 因此每次多推进 5ms（`NOTIFY_SETTLE_MS`）。
+- 变异检查（临时改 hook 后运行这两个测试文件，均已还原，还原后与修复版逐字相同）：
+  - 去掉 `refetchInterval`：「过期即刷新」「得到记录后停止」和面板用例失败。
+  - 去掉 `!query.isStale`：「后台过期」用例失败。
+  - `refetchOnWindowFocus` 改回 `false`：「后台过期」用例失败。
+  - 改成无条件轮询：「得到记录后停止」「非空不轮询」失败。
+  - `refetchIntervalInBackground` 改为 `true`：「后台过期」用例失败。
+  - 聚焦刷新改为对所有快照生效：既有的「聚焦不刷新过期快照」失败。
+- `pnpm exec biome check`（改动的 3 个 TS / TSX 文件）：通过。
+- `pnpm --filter @gatu/terminal typecheck`：通过。
+- 回归入口列出的 11 个文件，加上 `mobile-data-presentation-contract`、`i18n-reactivity-contract`、`number-format-reactivity-contract`：14 个文件、371 个用例全部通过。
+- 既有的偶发失败，与本次修复无关：`use-market-funding-history.test.tsx` 有几条旧用例在 mock 立即 resolve 的 `render` 之后马上断言 `loading`，结果取决于 TanStack 的真实 `setTimeout(0)` 通知是否赶在 React `act` 收尾之前。在未改动的 `1411036c` 文件上连续跑 20 次，失败 1 次（第 3 次，`maps a complete snapshot to ready range buckets`）。修复版在本次约 25 次运行里失败过 2 次，都在 `aborts an in-flight load when the view deactivates…` 的同一条断言上：一次是修复后第一次运行，另一次是去掉 `refetchInterval` 的变异运行。这两处都不经过新增的轮询与过期判断（数据为 `undefined`），本次没有改动。
+
+未运行：完整终端测试、`pnpm build`、浏览器与真机核对。真实标签页切换（`visibilitychange`）下后台不发请求、回到前台立即刷新，只有脚本切换 `focusManager` 的 jsdom 证据。
 
 ## 回归入口
 

@@ -9,6 +9,7 @@ import { useMarketFundingHistory } from "@/hooks/trade/use-market-funding-histor
 
 const HOUR_MS = 3_600_000;
 const NOW = 1_790_496_000_000 + 16 * HOUR_MS;
+const STALE_TIME_MS = 5 * 60_000;
 
 const mocks = vi.hoisted(() => ({
 	env: "Mainnet",
@@ -63,6 +64,20 @@ async function flush() {
 	});
 }
 
+function installFakeClock() {
+	vi.useFakeTimers({ now: NOW, toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+}
+
+// Fake timers give a zero-delay timer created during a tick a 1 ms delay, so TanStack's notification
+// timers scheduled by an interval or stale timeout need a few extra milliseconds to reach React.
+const NOTIFY_SETTLE_MS = 5;
+
+async function advance(ms: number) {
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(ms + NOTIFY_SETTLE_MS);
+	});
+}
+
 describe("useMarketFundingHistory", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -82,7 +97,9 @@ describe("useMarketFundingHistory", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		client.clear();
+		vi.useRealTimers();
 		onlineManager.setOnline(true);
+		focusManager.setFocused(undefined);
 		vi.restoreAllMocks();
 	});
 
@@ -346,6 +363,89 @@ describe("useMarketFundingHistory", () => {
 		mocks.fundingHistory.mockResolvedValueOnce([]);
 		await act(async () => onlineManager.setOnline(true));
 		await flush();
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+	});
+
+	it("refreshes an active empty snapshot when it goes stale instead of confirming it", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await advance(0);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+
+		const refresh = deferred<unknown>();
+		mocks.fundingHistory.mockReturnValueOnce(refresh.promise);
+		await advance(STALE_TIME_MS);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(current()).toMatchObject({ buckets: [], status: "loading" });
+
+		await act(async () => refresh.resolve([]));
+		await advance(0);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+	});
+
+	it("stops refreshing an empty snapshot once a refresh returns records", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await advance(0);
+
+		mocks.fundingHistory.mockResolvedValue(rows("xyz:NEW", 8));
+		await advance(STALE_TIME_MS);
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(current().status).toBe("ready");
+		expect(current().buckets).toHaveLength(1);
+
+		await advance(3 * STALE_TIME_MS);
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(current().buckets).toHaveLength(1);
+	});
+
+	it("does not poll a non-empty history while the view stays active", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValue(rows("BTC", 8));
+		await render();
+		await advance(0);
+		expect(current().status).toBe("ready");
+
+		await advance(3 * STALE_TIME_MS);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+		expect(current()).toMatchObject({ isRefreshing: false, status: "ready" });
+		expect(current().buckets).toHaveLength(1);
+	});
+
+	it("does not refresh a stale empty snapshot while the view is inactive", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await advance(0);
+
+		await render({ coin: "xyz:NEW", enabled: false });
+		await advance(3 * STALE_TIME_MS);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+	});
+
+	it("stops confirming a stale empty snapshot while the page is hidden, and refreshes it on return", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await advance(0);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+
+		act(() => focusManager.setFocused(false));
+		await advance(STALE_TIME_MS);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+		expect(current()).toMatchObject({ buckets: [], status: "loading" });
+
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		act(() => focusManager.setFocused(true));
+		await advance(0);
+
 		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
 		expect(current()).toMatchObject({ buckets: [], status: "ready" });
 	});
