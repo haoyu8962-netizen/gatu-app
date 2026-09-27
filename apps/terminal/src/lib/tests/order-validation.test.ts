@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { ORDER_TYPES, type OrderType } from "@/config/trade";
 import { getTpSlPriceErrors } from "@/domain/trade/tpsl-price-validation";
 import {
 	enterSizeValidator,
@@ -39,6 +40,7 @@ import {
 } from "@/lib/errors/definitions/twap";
 import { type PerpOrderContext, validatePerpOrder } from "@/lib/errors/stacks/perp-order";
 import { type SpotOrderContext, validateSpotOrder } from "@/lib/errors/stacks/spot-order";
+import { usesLimitPrice } from "@/lib/trade/order-types";
 import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/lib/trade/order-validation-presentation";
 
 vi.mock("@lingui/core/macro", () => ({
@@ -111,6 +113,7 @@ function perpContext(overrides: Partial<PerpOrderContext> = {}): PerpOrderContex
 		takeProfitOrder: false,
 		positionSize: null,
 		reduceOnly: false,
+		openInterestCapped: false,
 		scaleOrder: false,
 		scaleStartPriceNum: null,
 		scaleEndPriceNum: null,
@@ -958,5 +961,103 @@ describe("shared reduce-only form validation", () => {
 			}),
 		);
 		expect(result.errors.map((e) => e.code)).toContain("TRG_007");
+	});
+});
+
+describe("open-interest cap order validation", () => {
+	function orderTypeContext(orderType: OrderType, overrides: Partial<PerpOrderContext> = {}): PerpOrderContext {
+		const trigger = orderType.startsWith("stop") || orderType.startsWith("takeProfit");
+		return perpContext({
+			orderType,
+			usesLimitPrice: usesLimitPrice(orderType),
+			sizeValue: 2,
+			orderValue: 200,
+			usesTriggerPrice: trigger,
+			triggerPriceNum: trigger ? (orderType.startsWith("stop") ? 110 : 90) : null,
+			stopOrder: orderType.startsWith("stop"),
+			takeProfitOrder: orderType.startsWith("takeProfit"),
+			twapOrder: orderType === "twap",
+			twapMinutesNum: 30,
+			scaleOrder: orderType === "scale",
+			scaleStartPriceNum: 90,
+			scaleEndPriceNum: 110,
+			scaleLevelsNum: 4,
+			scaleSkewNum: 1,
+			...overrides,
+		});
+	}
+
+	it.each(ORDER_TYPES)("adds the restriction only to a capped limit-priced %s order", (orderType) => {
+		const restricted = orderType === "limit" || orderType === "stopLimit" || orderType === "takeProfitLimit";
+		for (const reduceOnly of [false, true]) {
+			const context = orderTypeContext(orderType, { reduceOnly, positionSize: reduceOnly ? "-2" : null });
+			const clear = validatePerpOrder(context);
+			const capped = validatePerpOrder({ ...context, openInterestCapped: true });
+
+			expect(clear.errors).toEqual([]);
+			expect(clear.canSubmit).toBe(true);
+			expect(capped.errors.map((error) => error.id)).toEqual(restricted ? ["limit-order-open-interest-cap"] : []);
+			expect(capped.canSubmit).toBe(!restricted);
+		}
+	});
+
+	it("uses a restriction category ahead of input errors with the official copy", () => {
+		const result = validatePerpOrder(
+			orderTypeContext("limit", { openInterestCapped: true, price: 0, sizeValue: 0, orderValue: 0 }),
+		);
+
+		expect(result.errors[0]).toMatchObject({
+			id: "limit-order-open-interest-cap",
+			code: "OIC_001",
+			category: "restriction",
+			message:
+				"The limit order would be canceled after resting because open interest is capped. Use market orders to close positions.",
+		});
+		expect(result.errors.map((error) => error.id)).toEqual([
+			"limit-order-open-interest-cap",
+			"enter-limit-price",
+			"enter-size",
+		]);
+	});
+
+	it("shows the restriction before a price is typed and without a live mark, but only for a ready account", () => {
+		const result = validatePerpOrder(orderTypeContext("stopLimit", { openInterestCapped: true, price: 0 }));
+		const emptyPriceDraft = {
+			size: "2",
+			limitPrice: "",
+			triggerPrice: "110",
+			tpPrice: "",
+			slPrice: "",
+			scaleStartPrice: "",
+			scaleEndPrice: "",
+		};
+
+		expect(
+			getOrderValidationPresentation(result.errors, {
+				accountReady: true,
+				marketReady: false,
+				positionReady: false,
+				draft: emptyPriceDraft,
+			}).map((error) => error.id),
+		).toEqual(["limit-order-open-interest-cap"]);
+		expect(
+			getOrderValidationPresentation(result.errors, {
+				accountReady: false,
+				marketReady: true,
+				positionReady: true,
+				draft: emptyPriceDraft,
+			}),
+		).toEqual([]);
+		expect(result.canSubmit).toBe(false);
+	});
+
+	it("leaves the spot stack unaffected", () => {
+		const result = validateSpotOrder({
+			...spotContext({ usesLimitPrice: true }),
+			openInterestCapped: true,
+		} as SpotOrderContext);
+
+		expect(result.errors.map((error) => error.code)).not.toContain("OIC_001");
+		expect(result.canSubmit).toBe(true);
 	});
 });

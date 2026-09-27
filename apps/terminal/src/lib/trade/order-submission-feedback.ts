@@ -23,6 +23,7 @@ export type OrderSubmissionFeedbackCode =
 	| "market-precision-invalid"
 	| "market-context-mismatch"
 	| "no-active-account"
+	| "open-interest-capped"
 	| "order-conditions-changed"
 	| "reduce-only-position-changed"
 	| "order-failed"
@@ -59,6 +60,7 @@ const messages: Record<OrderSubmissionFeedbackCode, MessageDescriptor> = {
 	"market-precision-invalid": msg`Market precision data is invalid. Refresh market data before placing an order.`,
 	"market-context-mismatch": msg`Order market context does not match the submitted asset.`,
 	"no-active-account": msg`No active Hyperliquid account`,
+	"open-interest-capped": msg`The limit order would be canceled after resting because open interest is capped. Use market orders to close positions.`,
 	"order-conditions-changed": msg`Order conditions changed before it was confirmed. Review the order and submit it again.`,
 	"order-failed": msg`Order failed`,
 	"scale-level-below-min-notional": msg`Scale level below min notional`,
@@ -146,6 +148,8 @@ function getEntryExecutionFeedback(cause: EntryExecutionError): OrderSubmissionF
 			return orderSubmissionFeedback("twap-min-notional");
 		case "reduce-only-position-changed":
 			return orderSubmissionFeedback("reduce-only-position-changed");
+		case "open-interest-capped":
+			return orderSubmissionFeedback("open-interest-capped");
 		case "order-request-invalid":
 		case "slippage-limit-exceeded":
 		case "slippage-setting-invalid":
@@ -206,6 +210,8 @@ export function getDefaultOrderSubmissionFeedbackMessage(feedback: OrderSubmissi
 			return "Order market context does not match the submitted asset.";
 		case "no-active-account":
 			return "No active Hyperliquid account";
+		case "open-interest-capped":
+			return "The limit order would be canceled after resting because open interest is capped. Use market orders to close positions.";
 		case "reduce-only-position-changed":
 			return "Position changed before submission. Review the Reduce Only quantity and direction.";
 		case "order-conditions-changed":

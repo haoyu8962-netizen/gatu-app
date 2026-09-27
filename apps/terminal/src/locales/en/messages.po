@@ -5161,6 +5161,10 @@ msgstr "Open Deposit to prepare your email wallet."
 msgid "Open Interest"
 msgstr "Open Interest"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Open interest cap"
+msgstr "Open interest cap"
+
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
@@ -8004,6 +8008,11 @@ msgstr "The Hyperliquid withdrawal route changed. Review the updated route and f
 #: src/components/vaults/vault-detail-view.tsx
 msgid "The leader receives the commission shown above from profits."
 msgstr "The leader receives the commission shown above from profits."
+
+#: src/lib/errors/definitions/open-interest-cap.ts
+#: src/lib/trade/order-submission-feedback.ts
+msgid "The limit order would be canceled after resting because open interest is capped. Use market orders to close positions."
+msgstr "The limit order would be canceled after resting because open interest is capped. Use market orders to close positions."
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."

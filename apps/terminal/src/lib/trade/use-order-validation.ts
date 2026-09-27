@@ -51,6 +51,7 @@ export interface PerpOrderFields {
 	positionSize: number | string | null;
 	sizeForOrder?: string;
 	reduceOnly: boolean;
+	openInterestCapped: boolean;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;
 	tpSlReturnInvalid: boolean;

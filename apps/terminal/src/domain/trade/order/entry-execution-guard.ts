@@ -7,6 +7,7 @@ import {
 	TWAP_MINUTES_MIN,
 } from "@/config/trade";
 import { isLiveMarkPriceReady, type MarkPriceStatus } from "@/domain/trade/market-price";
+import { isOpenInterestCapRestrictedOrderRequest } from "@/domain/trade/open-interest-cap";
 import { isValidSizeDecimalsForAsset } from "@/domain/trade/orders";
 import type { AssetAvailabilityStatus } from "./availability";
 
@@ -19,6 +20,7 @@ export type EntryExecutionErrorReason =
 	| "inactive"
 	| "mark-price-unavailable"
 	| "market-context-mismatch"
+	| "open-interest-capped"
 	| "order-request-invalid"
 	| "position-data-unavailable"
 	| "reduce-only-position-changed"
@@ -36,6 +38,8 @@ const ENTRY_EXECUTION_ERROR_MESSAGES: Record<EntryExecutionErrorReason, string> 
 	inactive: "Order entry is no longer active",
 	"mark-price-unavailable": "Live mark price is unavailable",
 	"market-context-mismatch": "Order no longer matches the selected market",
+	"open-interest-capped":
+		"The limit order would be canceled after resting because open interest is capped. Use market orders to close positions.",
 	"order-request-invalid": "Order request is invalid",
 	"position-data-unavailable": "Live position data is unavailable",
 	"reduce-only-position-changed": "Reduce-only order no longer matches the current position",
@@ -88,6 +92,7 @@ export interface EntryOrderExecutionState {
 	executionReferencePx: string | undefined;
 	executionPriceReceivedAt: number | undefined;
 	slippageBps: number;
+	openInterestCapped: boolean;
 }
 
 export type EntryOrderExecutionAvailability =
@@ -258,6 +263,9 @@ export function assertEntryOrderExecutionAllowed(
 		params.orders.some((order) => order.a !== state.assetId)
 	) {
 		failEntryExecution("market-context-mismatch");
+	}
+	if (state.openInterestCapped && isOpenInterestCapRestrictedOrderRequest(params)) {
+		failEntryExecution("open-interest-capped");
 	}
 	const availabilityAge =
 		state.availabilityReceivedAt === undefined ? Number.POSITIVE_INFINITY : now - state.availabilityReceivedAt;

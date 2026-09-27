@@ -17,6 +17,7 @@
 | 数据依赖尚未就绪的操作按钮 | 保留操作名称并禁用；执行中的明确用户操作可以显示进度 | 把按钮改名为“加载余额失败”“不可用”等数据状态 |
 | 钱包或地区规则尚未解析 | 等待解析，保留动作禁用状态 | 提前断言“不支持充值提现”“请选择账户模式”“等待连接恢复” |
 | 已确认的地区、网络或账户限制 | 必要、准确的限制说明 | 用未知状态代替已确认限制 |
+| 已确认的市场未平仓量上限（当前、成功、未过期、同一账户的 `webData3` 快照在 `perpsAtOpenInterestCap` 中列出该永续市场的精确名称） | 选中限价、止损限价、止盈限价时，在各端既有的校验提示行显示一条准确的限制说明（「未平仓量已达上限，限价单挂出后会被撤销。请使用市价单平仓。」），提交按钮保留静态名称并由 `canSubmit` 禁用；市价、止损市价、止盈市价、TWAP、分段订单和现货不受影响（[OI 上限说明](open-interest-cap.md)） | 快照缺失、订阅中、过期、错误、重连或账户不匹配时显示或执行上限限制；用提示是否存在决定能否提交；在行情区、按钮名称或未连接状态下展示被动上限徽标 |
 | 已确认的 Agent-only 会话（手机使用桌面授权的交易密钥） | Deposit / Withdraw / Transfer 保留并禁用，给出「需要在桌面连接主钱包」的一句原因（`agent-only-session`） | 整体隐藏资金入口；把该原因归入被动数据原因集合 |
 | 用户实际提交的操作失败或结果待确认 | 保留与该操作有关的错误、重试与追踪反馈 | 静默吞掉提交失败，或把待确认交易当作失败后允许重复提交 |
 | 由市场静态元数据推导的说明值（目前仅杠杆编辑器的「最大仓位」行，桌面弹窗与移动抽屉共用） | 是否出现只取决于该市场的保证金分档表：有效且多于一档才显示，数值随编辑器显示的杠杆变化；「无档位上限」只能由有效分档表得出；杠杆超出分档范围或缺少计价币符号时用稳定占位符（[杠杆仓位上限](leverage-position-limit.md)） | 分档表缺失、无效或单档时显示「加载中」「不可用」等文字；让该行随预览杠杆出现或消失；用该行是否存在或其数值决定确认按钮能否点击 |
@@ -94,9 +95,13 @@
 
 新增被动数据提示必须先明确修改本规范并取得产品需求依据；不得仅为了调试或展示内部状态而添加用户可见提示。市价平仓的「仓位数量与开窗时不同」提示的产品依据与取舍见 [ADR 0017](adr/0017-market-close-confirmed-size-ceiling.md)；它由开窗快照与当前有效仓位纯推导，数量回到开窗值时提示消失，不记录「期间曾变化」。仓位 TP/SL 大额滑点提示的产品依据是与官方终端对齐：官方持仓 TP/SL 弹窗读取同一接口，在仓位价值超过分档上限时显示滑点警告，读取失败时不显示任何内容；条件、与协议规格的差异和取舍见 [TP/SL 大额滑点提示](position-tpsl-slippage-warning.md)。它由成功的分档表与弹窗正在使用的实时仓位（价值与当前杠杆）纯推导，加载、失败和格式异常都保持静默；唯一的例外是展示层面的：数量滑杆手势期间保持手势开始时的有无，手势结束后再按推导结果显示，以免滑杆行在指针下移动（[滑杆手势](slider-interactions.md)）。
 
+未平仓量上限说明属于「已确认的市场限制」，不是被动数据提示。产品依据是官方终端对等（2026-09-27 对 `app.hyperliquid.xyz` 生产包的静态阅读：提交限价类订单时若当前市场在 `perpsAtOpenInterestCap` 集合中则拦截并提示同一句话）。它只在当前、成功、同一账户的快照明确列出该市场时出现；未知状态放行且不显示任何文字，交易所仍是最终裁决，取舍见 [ADR 0021](adr/0021-open-interest-cap-advisory-check.md)。HIP-3 资产信息弹窗里的「未平仓量上限」一行是用户打开弹窗后的只读元数据，加载、失败、空值或畸形响应时整行不出现，也不显示加载或错误文字。
+
 ## 回归入口
 
 `apps/terminal/src/lib/tests/mobile-data-presentation-contract.test.ts` 检查已移除的移动文案、共享弹窗被动警告和规范入口；`user-positions-readiness.test.tsx` 验证订阅确认与首份数据的区别。余额、委托、TWAP、历史和仓位弹窗的组件测试同时验证静默展示、恢复和操作保护。
+
+`open-interest-cap.test.ts` 验证上限集合只在活跃、有数据、未过期、同一账户的快照上得出，其余状态为未知；`mobile-trade-size-validation-a11y.test.tsx` 与 `trade-panel-open-interest-cap.test.tsx` 在真实移动与桌面下单面板上验证已确认上限时的限制说明、禁用与未提交，以及未知或未上限时保持安静；`market-asset-info.test.tsx` 验证 HIP-3 上限行在加载、失败、空值和畸形响应时不出现。
 
 `account-mode-query.test.ts` 验证模式来源解析与三态分类；`mobile-account-view.test.tsx`、`funds-action-balances.test.tsx` 和 `deposit-modal-withdrawal-routing-guard.test.tsx` 使用真实资金能力计算验证未解析静默、确认限制、按钮禁用和未发起请求。`desktop-positions-readiness.test.tsx` 连接真实持仓 hook 与桌面页，验证首快照等待、错误优先和恢复，不依赖源码匹配。
 
@@ -113,7 +118,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/deposit-empty-balances-entry.test.tsx \
   src/lib/tests/mobile-orders-card.test.tsx \
   src/lib/tests/mobile-twap-card.test.tsx \
-  src/lib/tests/mobile-history-cards.test.tsx
+  src/lib/tests/mobile-history-cards.test.tsx \
+  src/lib/tests/open-interest-cap.test.ts \
+  src/lib/tests/market-asset-info.test.tsx \
+  tests/mobile-trade-size-validation-a11y.test.tsx \
+  tests/trade-panel-open-interest-cap.test.tsx
 ```
 
 契约测试的文案清单不能替代行为审查；新增入口仍须覆盖未知、失败、恢复和确认空快照，检查禁用逻辑是否独立于文案。

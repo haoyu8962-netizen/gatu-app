@@ -2,6 +2,7 @@ import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent, WebData3WsEven
 import { useMemo } from "react";
 import { getPositionDex } from "@/domain/market";
 import { isSupportedAccountAbstraction, type SupportedAccountAbstraction } from "@/domain/trade/account-abstraction";
+import { getOpenInterestCappedCoins } from "@/domain/trade/open-interest-cap";
 import { type AssetAvailabilityStatus, getStreamAvailabilityStatus } from "@/domain/trade/order/availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { getAccountLedgerRefreshKey, useInfo, useSubscription } from "@/lib/hyperliquid";
@@ -40,6 +41,7 @@ export interface AccountBalances {
 	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance;
 	portfolioMarginRatio: string | null;
 	accountAbstraction: AccountAbstraction;
+	perpsAtOpenInterestCap: readonly string[] | null;
 	withdrawable: string;
 	crossMaintenanceMarginUsed: string;
 	spotStateStatus: AssetAvailabilityStatus;
@@ -107,6 +109,7 @@ export interface AllDexsAccountState {
 	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance;
 	portfolioMarginRatio: string | null;
 	accountAbstraction: AccountAbstraction;
+	perpsAtOpenInterestCap: readonly string[] | null;
 	spotStateStatus: AssetAvailabilityStatus;
 	perpStateStatus: AssetAvailabilityStatus;
 	spotStateReceivedAt: number | undefined;
@@ -125,11 +128,11 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	const { data: ledgerEvent } = useSubscription("userNonFundingLedgerUpdates", { user: address ?? "" }, { enabled });
 	const ledgerRefreshKey = getAccountLedgerRefreshKey(ledgerEvent);
 
-	const { data: webData3Event, status: webData3Status } = useSubscription(
-		"webData3",
-		{ user: address ?? "0x0" },
-		{ enabled, refreshKey: ledgerRefreshKey },
-	);
+	const {
+		data: webData3Event,
+		status: webData3Status,
+		isStale: isWebData3Stale,
+	} = useSubscription("webData3", { user: address ?? "0x0" }, { enabled, refreshKey: ledgerRefreshKey });
 	const { data: infoAccountAbstraction, status: accountAbstractionStatus } = useUserAbstraction(address, enabled);
 
 	const accountAbstraction = resolveAccountAbstraction(infoAccountAbstraction, webData3Event?.userState.abstraction);
@@ -170,6 +173,7 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 			spotAvailableAfterMaintenance: EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
 			portfolioMarginRatio: null,
 			accountAbstraction: null,
+			perpsAtOpenInterestCap: null,
 			spotStateStatus: "idle",
 			perpStateStatus: "idle",
 			spotStateReceivedAt: undefined,
@@ -205,6 +209,13 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		accountAbstractionStatus === "error" &&
 		!isSupportedAccountAbstraction(normalizeAccountAbstraction(webData3Event?.userState.abstraction));
 	const hasError = perpStateStatus === "error" || spotStateStatus === "error" || hasAccountAbstractionError;
+	const perpsAtOpenInterestCap = getOpenInterestCappedCoins({
+		enabled,
+		user: address,
+		event: webData3Event,
+		status: webData3Status,
+		isStale: isWebData3Stale,
+	});
 
 	return {
 		clearinghouseStates,
@@ -214,6 +225,7 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		spotAvailableAfterMaintenance,
 		portfolioMarginRatio,
 		accountAbstraction,
+		perpsAtOpenInterestCap,
 		spotStateStatus,
 		perpStateStatus,
 		spotStateReceivedAt,
@@ -235,6 +247,7 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 		spotAvailableAfterMaintenance,
 		portfolioMarginRatio,
 		accountAbstraction,
+		perpsAtOpenInterestCap,
 		spotStateStatus,
 		perpStateStatus,
 		spotStateReceivedAt,
@@ -275,6 +288,7 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 		spotAvailableAfterMaintenance,
 		portfolioMarginRatio,
 		accountAbstraction,
+		perpsAtOpenInterestCap,
 		withdrawable,
 		crossMaintenanceMarginUsed,
 		spotStateStatus,

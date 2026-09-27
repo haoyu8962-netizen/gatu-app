@@ -193,6 +193,7 @@ export function TradePanel() {
 		isAvailabilityLoading,
 		isAvailabilityStale,
 		hasAvailabilityError,
+		isOpenInterestCapped,
 		maxSize,
 		sizeValue,
 		sizeForOrder,
@@ -235,6 +236,7 @@ export function TradePanel() {
 		executionReferencePx: market?.midPx ?? market?.markPx,
 		executionPriceReceivedAt: market?.midPx !== undefined ? market.midPriceReceivedAt : market?.markPriceReceivedAt,
 		slippageBps,
+		openInterestCapped: isOpenInterestCapped,
 	});
 	orderExecutionStateRef.current = {
 		active: true,
@@ -253,6 +255,7 @@ export function TradePanel() {
 		executionReferencePx: market?.midPx ?? market?.markPx,
 		executionPriceReceivedAt: market?.midPx !== undefined ? market.midPriceReceivedAt : market?.markPriceReceivedAt,
 		slippageBps,
+		openInterestCapped: isOpenInterestCapped,
 	};
 	const executionGuard = useCallback(
 		(params: Parameters<typeof assertEntryOrderExecutionAllowed>[0]) =>
@@ -473,6 +476,7 @@ export function TradePanel() {
 					positionSize: validatedPositionSize,
 					sizeForOrder,
 					reduceOnly,
+					openInterestCapped: isOpenInterestCapped,
 					tpSlEnabled,
 					canUseTpSl,
 					tpSlReturnInvalid,

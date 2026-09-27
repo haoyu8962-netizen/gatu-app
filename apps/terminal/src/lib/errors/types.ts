@@ -4,6 +4,7 @@ export type ErrorCategory =
 	| "connection"
 	| "balance"
 	| "market"
+	| "restriction"
 	| "input"
 	| "tpsl"
 	| "trigger"
