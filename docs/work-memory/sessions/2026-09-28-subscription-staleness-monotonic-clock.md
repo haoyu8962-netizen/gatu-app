@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["market-recovery"],
-  "summary": "修复 Codex 在资金费率对比审查中复现的缺口：系统时间回拨后停止更新的订阅一直不被判过期。每帧携带墙钟与单调两个接收时间，巡检、隐藏缓冲提交、前台恢复过期与诊断都取两者年龄中较大者；节流投递的间隔同样取两个时钟中较大者（原版在回拨后会把订单簿投递推迟约一小时，开发服务器对照已复现；首版只用单调时钟，Codex 对抗审查指出前跳与休眠后会多等一个节流窗口，已在第二个提交修正）。lastMessageAt 保持墙钟，阈值、订阅键与恢复路径不变；新增 ADR 0022。typecheck、Biome、订单簿与移动数据展示回归组、订阅套件与完整单测（审查修复后 601 文件 6882 项）通过，两轮共 16 个变异全部被抓住。资金费率对比文档与 perpContextsLive 测试在分支 claude/sdk-api-review-51a3ea，快进被权限拒绝，未改动。",
+  "summary": "修复 Codex 在资金费率对比审查中复现的缺口：系统时间回拨后停止更新的订阅一直不被判过期。每帧携带墙钟与单调两个接收时间，巡检、隐藏缓冲提交、前台恢复过期与诊断都取两者年龄中较大者；节流投递的间隔同样取两个时钟中较大者（原版在回拨后会把订单簿投递推迟约一小时，开发服务器对照已复现；首版只用单调时钟，Codex 对抗审查指出前跳与休眠后会多等一个节流窗口，已在第二个提交修正）。lastMessageAt 保持墙钟，阈值、订阅键与恢复路径不变；新增 ADR 0022。typecheck、Biome、订单簿与移动数据展示回归组、订阅套件与完整单测（审查修复后 601 文件 6882 项）通过，两轮共 16 个变异全部被抓住。之后按用户要求合入 claude/sdk-api-review-51a3ea（合并提交 bd0b80f1，因评审 worktree 有其他会话在用，先在本 worktree 的临时分支上完成再快进评审分支），并删除资金费率对比文档的回拨限定。",
   "thread": null,
   "baseCommit": "e3b5dd82",
   "commits": [],
@@ -79,7 +79,7 @@
 ## 后续与替代关系
 
 - 不替代任何记录。
-- 待合入 `claude/sdk-api-review-51a3ea` 后处理：删除 `docs/funding-comparison.md` 第 4 节「这条上界依赖共享巡检……已另列后续任务」的回拨说明，改为引用 ADR 0022；同步第 10 节剩余限制里「这个上界只在系统时钟不回拨时成立」一句；在 `use-markets-info-subscriptions.test.tsx` 按真实 store 补 `perpContextsLive` 的回拨用例（本次在 `use-sub.test.tsx` 对 `pac` / `allDexsAssetCtxs` 断言了同一条件）。
+- 资金费率对比文档的回拨限定已在合入评审分支后删除，见文末补记。`use-markets-info-subscriptions.test.tsx` 未改用真实 store 补 `perpContextsLive` 回拨用例，理由见补记。
 - 仍用墙钟、本次未改：`transport-monitor.ts` 的 socket 静默检测（回拨后失效到墙钟追上，巡检的多流重连仍可恢复）、`l2-subscription-gate.ts` 的截止时间、`order-reconciliation` / `twap-reconciliation` 的先后比较与期限定时器（回拨后撤单确认会等待）。
 - 下一次先查：ADR 0022、`docs/runtime-guardrails.md` §6、`packages/hl-react/src/internal/websocket/staleness.ts`。
 
@@ -99,3 +99,14 @@
 - `pnpm typecheck` 通过；Biome 对 4 个改动文件通过；订单簿回归组 181 项、移动端数据展示回归组 74 项通过；订阅与 WebSocket 相关 14 个文件 175 项通过、1 项跳过。
 - 完整单测 `pnpm --filter @gatu/terminal test`：601 个文件通过、1 个跳过，6882 项通过、1 项跳过。
 - 没有重复浏览器核对：回拨时墙钟间隔为负，取大后等于单调间隔，与首版在开发服务器上核对过的行为相同；修复只改变「墙钟越过间隔而单调时钟未越过」时的投递时刻，这一点只有单元测试覆盖，真实前跳与设备休眠没有核对。
+
+## 补记：合入评审分支并更新资金费率对比文档（2026-09-28）
+
+用户要求「把本分支合入 claude/sdk-api-review-51a3ea 再补资金费率文档」。评审分支此时已前进到 `70297bda`，它的 worktree 里有另一个 Claude 会话在工作（该 worktree 的开发服务器在 3025 端口运行约 38 分钟，另有一个刚启动的浏览器进程）。直接在那里合并会在运行中的会话脚下改文件，所以改在本 worktree 做：从评审分支提交头建临时分支，`git merge --no-ff claude/eloquent-swartz-534241`，第一父为评审分支，提交说明沿用该分支已有的 `Merge branch '…' into claude/sdk-api-review-51a3ea` 格式。第一次基于 `70297bda`（临时分支 `claude/sdk-review-staleness-merge`，合并 `69983e98`、文档 `6e7a4958`）；验证完准备快进时，该会话又提交了 `dbeab0c8`（只改 `docs/sdk-feature-integration-plan.md` 与批次记录，内容是交付前自查），无法快进，于是在 `dbeab0c8` 上重建：临时分支 `claude/sdk-review-staleness-merge-2`，合并 `bd0b80f1`，文档提交由 `6e7a4958` 拣选而来，两处文件自动合并、内容不冲突。第一次的临时分支已被取代。
+
+- 两边都改的文件有 4 个：`CHANGELOG.md` 与 `docs/runtime-guardrails.md` 自动合并，改动位置互不重叠；`docs/adr/README.md` 冲突，保留 0021 与 0022 两行；`docs/work-memory/INDEX.md` 冲突，取任一侧后用 `pnpm memory:index` 重新生成，结果相对 `70297bda` 只多本记录两行。合并结果相对评审分支提交头改动 19 个文件：其中 17 个文件的补丁与 `e3b5dd82..6aa715d7` 的 `git patch-id --stable` 相同，ADR 索引与工作记录索引只因上下文不同，新增的仍只有本次的行。评审分支没有改依赖、`AGENTS.md` 或 `packages/`，与本次改动没有代码交集。
+- `docs/funding-comparison.md`：第 4 节删除「只在系统时钟不回拨时成立……已另列后续任务」的回拨说明，改为引用 ADR 0022，并把「约 25 秒」限定为巡检按时运行（`setInterval` 在后台或被冻结的页面可能延后），保留第三轮审查的复现作为历史；第 10 节回归入口增加 `store-staleness.test.ts` 与 `use-sub.test.tsx` 的回拨用例，剩余限制改写为回拨后上界仍成立、`perpContextsLive` 只有桩测试。
+- `docs/sdk-feature-integration-plan.md` 的审查表与遗留列表、`2026-09-28-sdk-feature-batch-1.md` 的后续事项都以追加「2026-09-28 更新」的方式指向本记录，没有改写原结论。
+- 没有在 `use-markets-info-subscriptions.test.tsx` 补真实 store 的回拨用例：该文件整体桩掉 `@gatu/hl-react`，`perpContextsLive` 只是 `pac` / `allDexsAssetCtxs` 的 `data`、`status`、`isStale` 组合；回拨后这三项的真实转换已由 `use-sub.test.tsx` 用真实 store 与相同 `throttleMs` 断言，组合规则由该文件的桩测试覆盖。
+- 验证在第一次合并后的树（`6e7a4958`）上执行；重建后的树与它只差 `dbeab0c8` 的两处文档改动，代码与测试文件完全相同。`pnpm typecheck` 通过；完整单测 `pnpm --filter @gatu/terminal test` 621 个文件通过、1 个跳过，7511 项通过、1 项跳过；订单簿回归组 181 项、移动端数据展示回归组 74 项通过；订阅巡检、节流、`use-markets-info-subscriptions`、`market-price` 与资金费率对比领域、目录、视图、控制器共 12 个文件 349 项通过。没有运行 `pnpm build`，也没有做浏览器核对（本次合并只把 hl-react 改动带入评审分支，资金费率对比页代码未变）。
+- 本记录随文档提交一起进入临时分支；在评审 worktree 空闲、工作区干净且提交头仍为 `dbeab0c8` 时，把评审分支快进到该提交即完成合入。

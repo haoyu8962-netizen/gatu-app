@@ -65,7 +65,7 @@
 | `pac` 无数据，`allDexsAssetCtxs` 有 `ctxs`（浏览器不支持解压或紧凑频道失败后的原频道） | `allDexsAssetCtxs` 订阅 `status === "active"` 且 `isStale === false` 时为真 |
 | 两条实时订阅都没有数据（首次加载、紧凑频道失败后切换期间、路由关闭订阅），不论会话缓存是否有值 | 假 |
 
-`status` 为 `subscribing`（过期恢复中重新订阅，保留旧数据）、`error` 或 `idle` 时都为假。`isStale` 来自 hl-react 的订阅新鲜度巡检：`pac` 与 `allDexsAssetCtxs` 的阈值都是 20 秒（`internal/websocket/reliability.ts`），巡检间隔 5 秒，因此在系统时钟不回拨时，最后一帧到达后最多约 25 秒页面仍按实时显示 OI，之后换成 `--`，新帧到达后恢复。这条上界依赖共享巡检：`packages/hl-react/src/internal/websocket/staleness.ts` 用墙钟 `Date.now() - lastMessageAt` 判断过期，系统时间回拨后，已经停止更新的上下文可以一直不被判为过期（第三轮对抗审查用内存模拟复现：回拨一小时再静默 10 分钟，`isStale` 仍为 false，OI 仍显示并参与排序）。该巡检由全站所有周期订阅共用，本批没有改动；把它改为单调时钟会同时改变订单簿、价格、账户流的过期判断，需要单独的变更与审查，已另列后续任务。这个字段只读取两条现有订阅的 `status` / `isStale`，不改订阅参数与选项，不新增订阅键；`useMarketsInfo` 的其他字段和其他使用方的行为不变。领域函数 `buildFundingComparisonRows(snapshot, perpMarkets, { perpContextsLive, now })` 保持纯函数，由控制器把该字段传入。
+`status` 为 `subscribing`（过期恢复中重新订阅，保留旧数据）、`error` 或 `idle` 时都为假。`isStale` 来自 hl-react 的订阅新鲜度巡检：`pac` 与 `allDexsAssetCtxs` 的阈值都是 20 秒（`internal/websocket/reliability.ts`），巡检间隔 5 秒，因此最后一帧到达后最多约 25 秒页面仍按实时显示 OI，之后换成 `--`，新帧到达后恢复。这个上界假定巡检按时运行：巡检用 `setInterval`，页面在后台或被冻结时回调可能延后。巡检自 [ADR 0022](adr/0022-subscription-staleness-monotonic-clock.md)（2026-09-28）起用本地单调时钟与墙钟两个年龄中较大者判断过期，系统时间回拨不再延长这个上界；节流投递的间隔同样两个时钟取大，回拨后仍在推送的 `pac` / `allDexsAssetCtxs` 不会被压住。此前 `packages/hl-react/src/internal/websocket/staleness.ts` 只用墙钟 `Date.now() - lastMessageAt`，第三轮对抗审查用内存模拟复现过：回拨一小时再静默 10 分钟，`isStale` 仍为 false，OI 仍显示并参与排序；回归用例见第 10 节。这个字段只读取两条现有订阅的 `status` / `isStale`，不改订阅参数与选项，不新增订阅键；`useMarketsInfo` 的其他字段和其他使用方的行为不变。领域函数 `buildFundingComparisonRows(snapshot, perpMarkets, { perpContextsLive, now })` 保持纯函数，由控制器把该字段传入。
 
 搜索、排序、分页在 `deriveFundingComparisonPage` 中完成：
 
@@ -165,6 +165,7 @@
 - `src/lib/tests/funding-comparison-domain.test.ts` 另含 `isFundingComparisonSnapshotFresh` 的边界：年龄 0 与上限减 1 毫秒可用，等于上限及以上不可用；接收时间为 0 / NaN、当前时间为 NaN、接收时间晚于当前时间均不可用。`observeFundingComparisonSnapshot` 以首次看到时的墙钟年龄折算单调截止时刻，接收时间为 0、晚于本地时钟、已满上限或单调时刻无效时为空；`getFundingComparisonSnapshotRemainingMs` 取两个时钟中较早的截止：墙钟回拨时按单调剩余，单调时钟未前进时按墙钟剩余，墙钟回拨到接收之前或单调时刻无效时为 0。
 - `src/components/funding-comparison/__tests__/funding-comparison-view.test.tsx`：桌面表头与 `aria-sort`、数字在 `<bdi dir="ltr">` 中、方向文字、色调、`--` 占位、徽标导航、分页边界、手机卡片与按压反馈、骨架与 `aria-busy`、错误态只有中性 Retry、空快照与无搜索结果的区分、en → zh 切换时 section 与输入框不重挂载且保留搜索值和周期。
 - `src/lib/tests/funding-comparison-catalogs.test.ts`：新文案在 en 保留原文，在 zh / es / fr / hi / ar 都有译文。
+- 共享巡检的时钟回拨（归属 ADR 0022）：`src/lib/tests/store-staleness.test.ts` 中 `pac` / `allDexsAssetCtxs` 回拨一小时后静默，20 秒未过期、25 秒过期并重订阅、10 分钟后仍过期；`src/lib/tests/use-sub.test.tsx` 用真实 store 与 `useSubscription` 以本页相同的 `throttleMs: 5_000` 订阅两条频道，断言 `perpContextsLive` 采用的条件（有数据、`active`、未过期）在回拨后持续推送时为真、静默后为假。`perpContextsLive` 本身仍由 `use-markets-info-subscriptions.test.tsx` 的桩状态覆盖，两段合起来覆盖回拨后 OI 置空。
 - 更新：`dashboard-frame-view`（预设）、`boot-dashboard-route`（路由列表）、`desktop-nav-layout`、`top-nav`、`mobile-nav-drawer`（入口顺序、当前页与跳转）、`market-stats-subscription`（本路由保持订阅）、`app-route-surface`、`nav`、`history-table-scroll-accessibility`、`rtl-financial-ui-contract`、`i18n-reactivity-contract`（登记视图），以及浏览器 CSP 扫描 `tests/browser/csp-coverage.mjs` 的桌面路由列表（本任务未运行该浏览器脚本）。
 
 本任务实际执行的检查（2026-09-27，分支 `claude/sdk-feat-funding-comparison`，基于 `dbc6036e`）：
@@ -211,7 +212,7 @@ Biome 无问题；vitest 20 个文件 558 个用例全部通过。终端类型�
 - 完整终端测试与 `pnpm build`（含分块环检查与包体预算）。本路由的包体预算条目需在真实构建中测量后加入 `scripts/check-client-bundle-budget.mjs`。
 - 开发服务器上的桌面 lg / md / 紧凑与手机 375px、明暗主题、en / zh / ar 界面核对，以及与官方页同一周期下 BTC、PONS 行的数值对照。
 - 真机验收。
-- OI 的资产上下文新鲜度：r1 遗留的「实时标记价格乘会话缓存或停止订阅中的持仓量」已由下文 r2 修复关闭，规则见第 4 节。剩余限制：上下文过期检测沿用订阅巡检，最后一帧到达后最多约 25 秒（20 秒阈值 + 5 秒巡检间隔）仍显示 OI，这个上界只在系统时钟不回拨时成立（原因见第 4 节，属于共享巡检的既有性质）；`status` / `isStale` 的真实转换（巡检、页面隐藏时的缓冲、恢复重订阅）只在单元测试的桩状态下覆盖，没有在真实浏览器断网或后台标签页中核对。
+- OI 的资产上下文新鲜度：r1 遗留的「实时标记价格乘会话缓存或停止订阅中的持仓量」已由下文 r2 修复关闭，规则见第 4 节。剩余限制：上下文过期检测沿用订阅巡检，最后一帧到达后最多约 25 秒（20 秒阈值 + 5 秒巡检间隔）仍显示 OI，这个上界假定巡检按时运行（第 4 节）；系统时间回拨后上界仍成立（2026-09-28 由 ADR 0022 修复，原先只在时钟不回拨时成立）。`status` / `isStale` 的真实转换（巡检、页面隐藏时的缓冲、恢复重订阅）在 hl-react store 的单元测试中覆盖，`perpContextsLive` 只用桩状态测试，都没有在真实浏览器断网或后台标签页中核对。
 
 r2 审查修复（2026-09-28，分支 `claude/sdk-fix-r2-funding-comparison`，基于集成头 `1411036c`）：P2 OI 只看标记价格新鲜度，持仓量可能来自停止、失败、未送达的订阅或会话缓存且没有时间上界。`useMarketsInfoInternal` 附加 `perpContextsLive`（第 4 节），领域与控制器在它为假时把 OI 置空。先写回归测试并确认在 `1411036c` 上失败，再修复：4 个测试文件共 18 个用例失败。其中控制器 1 个是行为断言（旧控制器在上下文非实时时仍按旧持仓量显示并排序），`useMarketsInfoInternal` 11 个是新字段缺失，领域 4 个与视图 2 个是旧代码把新的第三个参数当作 `now` 读取。领域的「上下文非实时时按市场名排序」一例在旧代码上因同一原因全部 OI 为空而通过，由下面的变异检查证明它有效。变异检查（逐一改动后运行领域、控制器、视图与 `use-markets-info-subscriptions` 4 个测试文件，再从备份还原）：领域去掉 `perpContextsLive` 条件，3 个失败；hook 不看 `isStale`，2 个失败；hook 不看 `status`，3 个失败；hook 把任何在用的上下文（含会话缓存）当作实时，7 个失败；原频道路径误读 `pac` 的状态，1 个失败；控制器固定传入 `true`，1 个失败。实际运行：
 
