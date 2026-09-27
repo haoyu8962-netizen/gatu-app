@@ -132,6 +132,26 @@ describe("LeveragePositionLimitRow", () => {
 		expect(getValue()).toBe("3,000,000 USDH");
 	});
 
+	it.each([
+		["9007199254740995.5", "USDC", FALLBACK_VALUE_PLACEHOLDER],
+		["9007199254740995.5", "USDH", FALLBACK_VALUE_PLACEHOLDER],
+		["123456789012345678901.5", "USDC", FALLBACK_VALUE_PLACEHOLDER],
+		["123456789012345678901.5", "USDH", FALLBACK_VALUE_PLACEHOLDER],
+		["9007199254740991.9", "USDC", "$9,007,199,254,740,991"],
+		["9007199254740991.9", "USDH", "9,007,199,254,740,991 USDH"],
+		["9007199254740990.5", "USDC", "$9,007,199,254,740,990"],
+		["9007199254740990.5", "USDH", "9,007,199,254,740,990 USDH"],
+	] as const)("never shows the bound %s in %s above the real cap", (lowerBound, quoteSymbol, expected) => {
+		const tiers = [
+			{ lowerBound: "0", maxLeverage: 10 },
+			{ lowerBound, maxLeverage: 5 },
+		] as const;
+
+		renderRow(10, { marginTiers: tiers, quoteSymbol });
+
+		expect(getValue()).toBe(expected);
+	});
+
 	it("follows a number-format change without remounting the row", () => {
 		renderRow(25);
 		const row = getRow();

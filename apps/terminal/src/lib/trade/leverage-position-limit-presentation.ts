@@ -16,7 +16,9 @@ interface LeveragePositionLimitDisplayInput {
  * terminal uses for builder-perp position values. A capped value without a
  * known quote symbol shows the placeholder instead of guessing a currency. The
  * whole-unit display truncates toward zero so a fractional tier bound is never
- * shown above the real cap.
+ * shown above the real cap. The shared formatters convert to a JavaScript
+ * number, so a truncated bound above `Number.MAX_SAFE_INTEGER` could round up
+ * again; such a bound shows the placeholder instead.
  */
 export function formatLeveragePositionLimit(
 	{ limit, quoteSymbol, noTierLimitLabel }: LeveragePositionLimitDisplayInput,
@@ -27,7 +29,10 @@ export function formatLeveragePositionLimit(
 	const maxPositionNotional = limit.status === "limited" ? toBig(limit.maxPositionNotional) : null;
 	if (!maxPositionNotional || !symbol) return FALLBACK_VALUE_PLACEHOLDER;
 
-	const displayedNotional = maxPositionNotional.round(0, Big.roundDown).toFixed();
+	const truncatedNotional = maxPositionNotional.round(0, Big.roundDown);
+	if (truncatedNotional.gt(Number.MAX_SAFE_INTEGER)) return FALLBACK_VALUE_PLACEHOLDER;
+
+	const displayedNotional = truncatedNotional.toFixed();
 	if (symbol === DEFAULT_QUOTE_TOKEN) return formatUSD(displayedNotional, { compact: false, decimals: 0 });
 	return formatQuoteAmount(displayedNotional, symbol, { compact: false, decimals: 0 });
 }
