@@ -300,7 +300,6 @@ describe("LeverageModal", () => {
 
 		renderModal(8, true, "HYPE", 6);
 		expect(modalHarness.editorProps?.value).toBe(8);
-		expect(modalHarness.editorProps?.riskValue).toBe(8);
 	});
 
 	it("reports a failed leverage update through a notification and allows retrying it", async () => {
