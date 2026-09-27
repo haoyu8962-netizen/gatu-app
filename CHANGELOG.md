@@ -14,12 +14,19 @@ changes, not evidence that a build has been deployed or accepted on real devices
   official terminal's rules; for supplies and borrows the amount you see is the most that is sent,
   withdraw-all and repay-all with Max close the whole position including interest accrued until it
   executes, amounts that would leave less than $1 supplied are blocked with an explanation, and the
-  request stops if your balances changed before it was submitted. Portfolio Margin accounts see the automatic-mode
-  explanation with manual actions disabled. Earn is now a regular navigation entry on desktop and
+  request stops if your balances changed before it was submitted. Portfolio Margin accounts see the
+  automatic-mode explanation with manual actions disabled. Earn is now a regular navigation entry on desktop and
   in the mobile menu; between 1101px and 1150px the lower navigation entries move into More so
   French labels still fit.
 
 ### Changed
+
+- Opening a dashboard page directly (Portfolio, Vaults, Staking, Referrals and referral
+  invitation links, Leaderboard, API wallet and the history pages) now waits up to 1.5 seconds,
+  the same limit as the trade page, for the footer and the global dialog host to load. When they
+  load in time they appear together with the page instead of a moment later, so Ctrl/⌘K works
+  from the first frame unless the terms-acceptance prompt is showing. The command menu itself
+  still loads on first use, and a slow connection reveals the page when the limit is reached.
 
 - The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market
   returns to BTC; the scrim and Esc still do not dismiss it. Close All and Reverse now show the
