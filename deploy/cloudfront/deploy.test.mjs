@@ -14,6 +14,7 @@ import {
 	buildRetiredPageCommands,
 	buildReuploadCommands,
 	buildSyncCommands,
+	collectServedScriptHashes,
 	evaluateReleaseGates,
 	HTML_CACHE_CONTROL,
 	IMMUTABLE_CACHE_CONTROL,
@@ -392,6 +393,35 @@ test("the enforced stage rejects a policy that still allows unsafe-inline or mis
 	assert.equal((await images("default-src 'self'; img-src 'self' data: https://app.hyperliquid.xyz")).ok, true);
 	assert.match((await images("default-src 'self'; img-src 'self' data: blob: https:")).detail, /still allows any https origin/);
 	assert.match((await images("default-src 'self'")).detail, /no content-security-policy with an img-src/);
+});
+
+test("a rotation keeps the hashes of a legal page file an interrupted sync left on an older build", async () => {
+	const publicDir = createPublicDir();
+	const olderScript = '(()=>{document.documentElement.dataset.release="a"})();';
+	const olderPage = `<html><head><script>${olderScript}</script></head></html>`;
+	const served = await collectServedScriptHashes({
+		origin: "https://app.gatu.ai/",
+		publicDir,
+		fetchImpl: fakeFetch({
+			"/trade/HYPE": { body: SHELL_HTML },
+			"/terms/index.html": { body: olderPage },
+			"/privacy/index.html": { body: SHELL_HTML },
+			"*": { status: 404, body: "missing" },
+		}),
+	});
+	assert.deepEqual(served, [cspHash(olderScript), THEME_HASH].sort());
+	const committed = 'var SCRIPT_HASHES_CURRENT = "";\nvar SCRIPT_HASHES_PREVIOUS = "";\nfunction handler(event) { return event.response; }\n';
+	const nextBuild = "sha256-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=";
+	const rotated = prepareResponseFunction({ committedCode: committed, buildHashes: [nextBuild], servedHashes: served });
+	assert.ok([...rotated.current, ...rotated.previous].includes(cspHash(olderScript)));
+	await assert.rejects(
+		collectServedScriptHashes({
+			origin: "https://app.gatu.ai",
+			publicDir,
+			fetchImpl: fakeFetch({ "/trade/HYPE": { body: SHELL_HTML }, "/docs/index.html": { status: 503, body: "x" }, "*": { status: 404, body: "missing" } }),
+		}),
+		/\/docs\/index\.html answered 503/,
+	);
 });
 
 test("a release fills the committed function with the build's hashes and keeps the live set as previous", () => {

@@ -91,6 +91,15 @@ Codex 标为“无法确认”的：最终构建体积（它读到的 `.output` 
 
 修复后验证（基线 `a141f856` 加上本次未提交的改动）：`pnpm --filter @gatu/terminal typecheck` 退出码 0；Biome 检查改动的 4 个 TS 文件通过；`pnpm test:cloudfront` 42 项通过；`boot-legal-route`、`mobile-nav-drawer`、`legal-doc-page`、`touch-press-feedback-contract`、启动渲染组（`root-startup-fallback`、`root-route-transition`、`trade-terminal-page-boot`、`top-nav`、`dashboard-frame-view`）、i18n 两个契约测试、`sw-navigation-cache`，共 12 个文件、308 项通过。这轮没有重跑完整单测和生产构建（改动集中在 `deploy.mjs`、抽屉样式和 boot 的等待方式，都有直接测试覆盖），也没有对真实的桶执行覆盖命令。
 
+## 补记：第三轮 Codex 复审
+
+复审 `a141f856..ab8b7272`（gpt-6-astra，只读，medium，约 11.8 万 token）：上一轮 3 项和 `allSettled` 的修复都核验成立；新报 1 项 P2、1 项 P3，核实后成立：
+
+- **P2 中断的 sync 之后再发布另一构建会丢哈希**：`collectServedScriptHashes` 只请求本地构建里有的页面。新构建没有独立页，所以只抓 `/trade/HYPE`。若上一次 `sync` 在覆盖副本途中中断，某个 `<route>/index.html` 仍是更早的构建，它的内联脚本哈希会在下一次轮换中被丢掉，而 CSP 是 enforce，直接访问这个文件时脚本会被拦截。Codex 在内存中调用 `prepareResponseFunction` 复现了这一点。→ 采集时额外读取六个遗留文件 URL（404 跳过，其他错误照旧报错），新增回归测试：旧副本的哈希进入轮换结果，503 仍会报错。
+- **P3 ADR 当前描述过时**：仍写抽屉全部用 `TOUCH_PRESS_CLASS`，证据里还引用已删除的检查名。→ 已更正。
+
+验证：`pnpm test:cloudfront` 43 项通过。
+
 ## 后续与替代关系
 
 - ADR 0020 部分取代 ADR 0005/0006/0010 中与文档路由相关的决策；这些 ADR 的其余部分不变。

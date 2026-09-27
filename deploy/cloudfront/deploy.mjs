@@ -167,13 +167,25 @@ export function servedPageRoutes(publicDir) {
 		.map((page) => (page === "_shell.html" ? "/trade/HYPE" : `/${page.slice(0, -"/index.html".length)}`));
 }
 
-/** Inline script hashes of the pages the origin serves right now, so a rotation never drops them. */
+/**
+ * Inline script hashes of the pages the origin serves right now, so a rotation never drops them.
+ * The retired legal page files are read by their file URL as well: an interrupted sync can leave one
+ * of them on an older build than the shell, and navigations to `/terms` would only show the shell. A
+ * bucket that never held such a file answers 404, which is skipped.
+ */
 export async function collectServedScriptHashes({ origin, publicDir, fetchImpl = fetch }) {
 	const base = origin.replace(/\/+$/, "");
 	const hashes = new Set();
+	const headers = { accept: "text/html", "cache-control": "no-cache" };
 	for (const route of servedPageRoutes(publicDir)) {
-		const response = await fetchImpl(`${base}${route}`, { headers: { accept: "text/html", "cache-control": "no-cache" } });
+		const response = await fetchImpl(`${base}${route}`, { headers });
 		if (!response.ok) throw new Error(`${route} answered ${response.status} while reading the served inline script hashes`);
+		for (const script of collectInlineScripts(await response.text())) hashes.add(script.hash);
+	}
+	for (const key of RETIRED_PAGE_KEYS) {
+		const response = await fetchImpl(`${base}/${key}`, { headers });
+		if (response.status === 404) continue;
+		if (!response.ok) throw new Error(`/${key} answered ${response.status} while reading the served inline script hashes`);
 		for (const script of collectInlineScripts(await response.text())) hashes.add(script.hash);
 	}
 	return [...hashes].sort();
