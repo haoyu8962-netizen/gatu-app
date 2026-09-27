@@ -4,6 +4,7 @@ import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
+import { TOUCH_PRESS_CLASS } from "@/components/ui/touch-press";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -18,7 +19,7 @@ import { ThemeToggle } from "../header/theme-toggle";
 
 export function MobileNavDrawer() {
 	const { t } = useLingui();
-	const { pathname } = useLocation();
+	const pathname = normalizeActivePathname(useLocation().pathname);
 	const [open, setOpen] = useState(false);
 	const [pendingModal, setPendingModal] = useState<PreloadableGlobalModal | null>(null);
 	const [preloadFailed, setPreloadFailed] = useState(false);
@@ -38,7 +39,8 @@ export function MobileNavDrawer() {
 
 	function getNavLinkClass(active: boolean): string {
 		return cn(
-			"rounded-8 px-3 py-2.5 text-sm transition-colors hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+			"rounded-8 px-3 py-2.5 text-sm hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+			TOUCH_PRESS_CLASS,
 			active ? "bg-fill-hover font-medium text-action" : "text-fg",
 		);
 	}
@@ -309,4 +311,9 @@ function UpcomingMobileNavItem({ label, soonLabel }: UpcomingMobileNavItemProps)
 			</Badge>
 		</button>
 	);
+}
+
+function normalizeActivePathname(pathname: string): string {
+	const lowerCase = pathname.toLowerCase();
+	return lowerCase.length > 1 ? lowerCase.replace(/\/+$/, "") : lowerCase;
 }

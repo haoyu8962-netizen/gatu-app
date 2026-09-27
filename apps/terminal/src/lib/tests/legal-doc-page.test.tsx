@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LegalDocPage } from "@/components/legal/legal-doc-page";
+import { LegalDocPage, preloadLegalDocPage } from "@/components/legal/legal-doc-page";
 
 const testState = vi.hoisted(() => ({ isMobile: false, isTestnet: false }));
 
@@ -61,6 +61,16 @@ describe("LegalDocPage", () => {
 		await act(async () => {});
 	}
 
+	it("commits the footer and the modal host in the first render once the route preload settles", async () => {
+		await preloadLegalDocPage();
+		root = createRoot(container);
+		act(() => root?.render(<LegalDocPage content="Legal document" />));
+
+		expect(container.querySelector('[data-testid="top-nav"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="footer-bar"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="global-modals"]')).not.toBeNull();
+	});
+
 	it("renders the document inside the application desktop chrome", async () => {
 		await renderPage();
 		await vi.waitFor(async () => {
@@ -102,9 +112,9 @@ describe("LegalDocPage", () => {
 		expect(legalPageSource).toContain("DASHBOARD_FRAMES.legal");
 	});
 
-	it.each(LEGAL_ROUTE_FILES)("boots /%s like every other dashboard route", (name) => {
+	it.each(LEGAL_ROUTE_FILES)("boots /%s through the legal route preload", (name) => {
 		const routeSource = readFileSync(resolve(process.cwd(), `src/routes/${name}.tsx`), "utf8");
-		expect(routeSource).toContain("beforeLoad: () => bootDashboardRoute()");
+		expect(routeSource).toContain("beforeLoad: () => bootLegalRoute()");
 		expect(routeSource).toContain("ssr: false");
 		expect(routeSource).not.toContain("ssr: true");
 		expect(routeSource).toContain("<LegalDocPage content={content} />");

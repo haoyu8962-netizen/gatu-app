@@ -261,6 +261,29 @@ describe("MobileNavDrawer", () => {
 		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')).toBeNull();
 	});
 
+	it("gives every destination touch press feedback", () => {
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+		const links = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')];
+		expect(links.length).toBeGreaterThan(0);
+		for (const link of links) expect(link.className, link.textContent ?? "").toContain("active:bg-fill-weak");
+	});
+
+	it.each([
+		["/DOCS/", "Docs"],
+		["/Support", "Support"],
+		["/Portfolio", "Portfolio"],
+	])("highlights the destination for the case-insensitive path %s", (pathname, label) => {
+		testState.pathname = pathname;
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+		const link = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')].find(
+			(item) => item.textContent?.trim() === label,
+		);
+		expect(link?.getAttribute("aria-current")).toBe("page");
+		expect(link?.className).toContain("text-action");
+	});
+
 	it("keeps the drawer visible while Settings loads and opens it only after the drawer closes", async () => {
 		let resolvePreload: (() => void) | undefined;
 		testState.preloadGlobalModal.mockImplementationOnce(

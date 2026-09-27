@@ -261,6 +261,8 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 	const base = origin.replace(/\/+$/, "");
 	const expectedApiOrigin = network === "testnet" ? "https://api.hyperliquid-testnet.xyz" : "https://api.hyperliquid.xyz";
 	const shell = readFileSync(join(publicDir, "_shell.html"));
+	const legacyTermsFile = join(publicDir, "terms", "index.html");
+	const legacyTerms = existsSync(legacyTermsFile) ? readFileSync(legacyTermsFile) : null;
 	const buildMeta = JSON.parse(readFileSync(join(publicDir, "build-meta.json"), "utf8"));
 	const results = [];
 	async function check(name, run) {
@@ -284,10 +286,16 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(link.includes(`<${expectedApiOrigin}>`) && link.includes("preconnect"), `missing ${expectedApiOrigin} preconnect`);
 		return `csp ok, preconnect ${expectedApiOrigin}`;
 	});
-	await check("shell for a legal page navigation", async () => {
+	await check("legal page navigation matches the build", async () => {
 		const response = await fetchImpl(`${base}/terms`, { headers: { accept: "text/html" } });
 		expect(response.status === 200, `status ${response.status}`);
-		expect(sha256(Buffer.from(await response.arrayBuffer())) === sha256(shell), "body differs from local _shell.html");
+		const body = sha256(Buffer.from(await response.arrayBuffer()));
+		if (legacyTerms) {
+			expect(body === sha256(legacyTerms), "body differs from local terms/index.html");
+			return "standalone page (build predates ADR 0020)";
+		}
+		expect(body === sha256(shell), "body differs from local _shell.html");
+		return "shell";
 	});
 	await check("build metadata parity", async () => {
 		const response = await fetchImpl(`${base}/build-meta.json`);
@@ -350,8 +358,10 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(serverFn.status === 404, `server function status ${serverFn.status}`);
 	});
 	await check("retired document pages answer 404", async () => {
+		if (legacyTerms) return "skipped: the build still ships terms/index.html";
 		const response = await fetchImpl(`${base}/terms/index.html`, { headers: { accept: "text/html" } });
 		expect(response.status === 404, `status ${response.status}`);
+		return "404";
 	});
 	await check("chart entry is immutable and preloaded by the shell", async () => {
 		const href = /<link rel="preload" href="(\/charting_library\/charting_library\.[0-9a-f]{16}\.js)" as="script"/.exec(shell.toString("utf8"))?.[1];

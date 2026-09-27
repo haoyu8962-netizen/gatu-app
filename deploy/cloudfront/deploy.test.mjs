@@ -221,8 +221,40 @@ test("verification passes when the edge serves the build with the expected heade
 	assert.equal(results.find((result) => result.name === "image sources follow the edge config")?.detail, "3 sources, report-only");
 	assert.equal(results.find((result) => result.name.startsWith("chart entry"))?.detail, CHART_ENTRY);
 	assert.equal(results.find((result) => result.name === "shell repeats from the edge")?.detail, "Hit from cloudfront");
+	assert.equal(results.find((result) => result.name === "legal page navigation matches the build")?.detail, "shell");
+	assert.equal(results.find((result) => result.name === "retired document pages answer 404")?.detail, "404");
 	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
 	assert.equal(results.find((result) => result.name === "build metadata parity")?.detail, "abc / r1 / sponsored-mainnet-deposits=off mobile-pairing=off");
+});
+
+test("verifying a rollback to a build that still ships standalone legal pages expects those pages", async () => {
+	const publicDir = createPublicDir();
+	mkdirSync(join(publicDir, "terms"), { recursive: true });
+	writeFileSync(join(publicDir, "terms", "index.html"), "<html>terms</html>");
+	async function run(termsBody) {
+		const results = await verifyDeployment({
+			origin: "https://app.gatu.ai",
+			publicDir,
+			network: "mainnet",
+			fetchImpl: fakeFetch({
+				"/terms": { body: termsBody },
+				"/terms/index.html": { body: "<html>terms</html>" },
+				"*": { status: 404, body: "missing" },
+			}),
+		});
+		return {
+			navigation: results.find((result) => result.name === "legal page navigation matches the build"),
+			retired: results.find((result) => result.name === "retired document pages answer 404"),
+		};
+	}
+	const rollback = await run("<html>terms</html>");
+	assert.equal(rollback.navigation.ok, true);
+	assert.equal(rollback.navigation.detail, "standalone page (build predates ADR 0020)");
+	assert.equal(rollback.retired.ok, true);
+	assert.match(rollback.retired.detail, /^skipped/);
+	const mismatched = await run(SHELL_HTML);
+	assert.equal(mismatched.navigation.ok, false);
+	assert.match(mismatched.navigation.detail, /differs from local terms\/index\.html/);
 });
 
 test("verification fails when the live origin exposes a gate the local build does not", async () => {
@@ -296,7 +328,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 	const failed = results.filter((result) => !result.ok).map((result) => result.name);
 	assert.deepEqual(failed, [
 		"shell for a trade navigation",
-		"shell for a legal page navigation",
+		"legal page navigation matches the build",
 		"build metadata parity",
 		"geo endpoint answers with a real verdict",
 		"signed lambda post with a payload hash",

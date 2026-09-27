@@ -66,6 +66,19 @@
 
 补记验证（同一 worktree，基线为 `2e6c5214` 加上本次未提交的改动）：`pnpm test:cloudfront` 41 项通过；`pnpm --filter @gatu/terminal typecheck` 通过；Biome 检查改动的 3 个代码文件通过；`mobile-nav-drawer`、`legal-policy-contract`、`terms-content`、`legal-doc-page`、`i18n-reactivity-contract`、`i18n-hot-switch`、`top-nav`、`footer-bar` 共 8 个文件、206 项通过；`pnpm --filter @gatu/website test` 4 项通过；`pnpm i18n:extract` 只给 Docs、Support 增加抽屉引用，缺失数不变。开发服务器上 375 宽的 `/privacy` 显示新链接（`target=_blank`，指向 `https://app.gatu.ai/cookies`）和新日期；抽屉 More 分组依次是 Statistics、API Wallet、Docs、Support，点 Support 后进入 `/support`，抽屉关闭，没有横向滚动。这次补记没有重跑完整单测和生产构建，删除命令也没有对真实的桶执行。
 
+## 补记：Codex 对抗审查与修复
+
+用户要求用 Codex 对 `8b9950ce..5a136d71` 再做一遍对抗审查（bug、不规范写法、UI）。命令：`codex exec -m gpt-6-astra -s read-only -c 'approval_policy="never"' -c 'model_reasoning_effort="medium"'`，只读，约 13.2 万 token，没有运行测试。报告 2 项 P2、2 项 P3，没有 P0/P1；逐条对照代码核实后全部成立：
+
+- **P2 verify 与回滚矛盾**：`buildRetiredPageCommands` 会保留旧构建自带的 `terms/index.html`，而 `verify` 无条件要求它返回 404、`/terms` 返回壳，所以回滚到旧构建时校验必然失败。→ `verify` 改为按本地构建决定期望（检查名改为 “legal page navigation matches the build”），新增回滚场景测试。
+- **P2 首帧缺懒加载片段**：法律页的 `FooterBar`、`GlobalModals` 是本页的懒加载实例，而 `bootDashboardRoute` 只等 TopNav；页面揭示时这两块可能还没加载，之后才补上，而且在此之前 ⌘K 监听不存在。原测试先等动态导入完成，恰好绕过了这个窗口。→ 新增 `preloadLegalDocPage()` 与 `lib/navigation/boot-legal-route.ts`（在 `TRADE_ROUTE_REVEAL_BUDGET_MS` 内等待；`settleWithinBudget` 从 `trade-route-boot.ts` 导出复用），6 个路由改用 `bootLegalRoute()`；新增首帧测试（做了变异检查：去掉预加载后该测试失败）和 `boot-legal-route.test.ts`（等待、超时揭示、失败不阻塞）。另外 9 个仪表盘页有同样的缺口，是原有写法，不在本次范围内，已另开后台任务建议（task_a8ccf726）。
+- **P3 抽屉无按压反馈**：`getNavLinkClass` 只有 hover 样式，抽屉里所有条目都违反 `style-ui-guide.md` 的触摸反馈规则。→ 加上 `TOUCH_PRESS_CLASS`，测试断言每个条目都有。
+- **P3 大小写路径下选中态失效**：路由不区分大小写，但抽屉用 `===` 比较路径。→ 先转小写、去掉尾斜杠再比较，测试覆盖 `/DOCS/`、`/Support`、`/Portfolio`。
+
+修复后验证（基线 `5a136d71` 加上本次未提交的改动）：`pnpm --filter @gatu/terminal typecheck` 通过；Biome 检查改动的代码文件通过；`pnpm test:cloudfront` 42 项通过；`pnpm --filter @gatu/terminal test` 602 个文件通过、1 个跳过，6877 项通过、1 项跳过，零失败；`pnpm build`（Node v24.15.0）退出码 0，只预渲染 1 页，bundle 总计 3,116,284 gzip 字节（比基线少 38,423），交易页启动 1,547,574 gzip 字节，内联脚本哈希为 2 页 3 个。没有用 Node 22.15 复测精确字节数。
+
+Codex 标为“无法确认”的：最终构建体积（它读到的 `.output` 是旧产物）、真实部署与 SW 跨版本、真机与阿拉伯语布局、历史验证结论是否属实。
+
 ## 后续与替代关系
 
 - ADR 0020 部分取代 ADR 0005/0006/0010 中与文档路由相关的决策；这些 ADR 的其余部分不变。
