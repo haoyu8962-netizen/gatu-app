@@ -47,3 +47,7 @@
 ## 验证
 
 单测：`trade-route-boot.test.ts`（返回 Promise、等待集合、超时与失败兜底）、`trade-terminal-boot.test.ts`、`trade-terminal-page-boot.test.tsx`、`root-startup-fallback`；typecheck；Biome。浏览器：本地生产构建热刷新第三次加载的 commit 时间线（无 300 ms 空窗、导航栏与网格在 `load()` 完成后同帧）；10 Mbps/40 ms 限速冷加载的 header/grid 里程碑前后对照；`boot-milestones.mjs` 冷加载不回退；构建预算。实际结果记录在任务记录中，本 ADR 不宣称已执行。
+
+## 补充（2026-09-27）：仪表盘路由
+
+仪表盘路由的 `bootDashboardRoute` 原先只等待 `preloadTopNav()`，而页面各自声明的 `FooterBar`（仅桌面）与 `GlobalModals` 惰性包装未被预加载：冷启动直达时页面先揭示，页脚与全局弹窗宿主（含 Ctrl/⌘K 监听）随后经 300 ms 节流才出现。现在九个仪表盘页面统一从 `components/dashboard/dashboard-chrome.tsx` 渲染 `DashboardHeader` 与同一组惰性实例，`bootDashboardRoute` 只动态导入该模块并等待 `preloadDashboardChrome()`（账户菜单、全局弹窗宿主、桌面页脚），并沿用本 ADR 的 `TRADE_ROUTE_REVEAL_BUDGET_MS` 上限与失败兜底；该模块动态导入，路由树块不引入钱包依赖。头部放在同一模块是为了让动态块与页面共享头部闭包：只放惰性包装时 Rollup 会拆分页面与交易页共享的头部块，桌面运行时启动体积超出预算。验证记录见 `docs/work-memory/sessions/2026-09-27-dashboard-route-chrome-preload.md`。

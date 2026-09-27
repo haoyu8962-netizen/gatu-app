@@ -810,7 +810,14 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `UserMenu` decides its first frame from `useState(() => hasPersistedPrivySession())`, not from a
   mount effect: visitors without a stored Privy session see `Connect Wallet` on the first rendered
   frame, and the compact label keeps the ENS name for accounts without email. Dashboard routes
-  await `bootDashboardRoute()` in `beforeLoad` so the account menu chunk is resolved before reveal.
+  await `bootDashboardRoute()` in `beforeLoad`, within `TRADE_ROUTE_REVEAL_BUDGET_MS`, so the
+  account menu, the global modal host (and its Ctrl/⌘K listener) and the desktop footer are
+  resolved before reveal. Dashboard pages render `DashboardHeader`, `FooterBar` and `GlobalModals`
+  only from `components/dashboard/dashboard-chrome.tsx`, whose `preloadDashboardChrome()` preloads
+  those exact lazy instances; a page-local `createLazyComponent` wrapper would not be preloaded.
+  The header lives in the same module so the dynamically imported chrome chunk shares the pages'
+  header closure; without it Rollup regroups the shared header chunks and the trade desktop
+  runtime startup exceeded its bundle budget.
 - Evidence for the narrow width (2026-09-17, local production build, disconnected, 1001px viewport,
   gap between the navigation and the wallet controls after removing Earn): en 78px, zh 189px,
   hi 185px, es 53px, fr 2px, ar 109px. French leaves no margin, so every state collapses at
@@ -824,6 +831,7 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `apps/terminal/src/components/trade/header/top-nav.tsx`
 - `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
 - `apps/terminal/src/lib/navigation/boot-dashboard-route.ts`
+- `apps/terminal/src/components/dashboard/dashboard-chrome.tsx`
 - `apps/terminal/src/lib/tests/preload-trade-terminal-surface.test.ts`
 
 ## Required Review Checklist

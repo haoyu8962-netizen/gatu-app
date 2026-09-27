@@ -26,7 +26,7 @@ export function bootTradeRoute(queryClient: QueryClient, pathname: string): Prom
 	return settleWithinBudget(preloads, TRADE_ROUTE_REVEAL_BUDGET_MS);
 }
 
-function settleWithinBudget(preloads: Promise<void>, budgetMs: number): Promise<void> {
+export function settleWithinBudget(preloads: Promise<void>, budgetMs: number): Promise<void> {
 	return new Promise((resolve) => {
 		const timer = setTimeout(resolve, budgetMs);
 		preloads.finally(() => {

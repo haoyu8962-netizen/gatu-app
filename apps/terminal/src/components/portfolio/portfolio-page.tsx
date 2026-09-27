@@ -2,6 +2,7 @@ import { Button, Tooltip } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, PaperPlaneTiltIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { Suspense, useCallback, useId, useState } from "react";
+import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
@@ -26,17 +27,12 @@ import {
 } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { AccountActivityFeedOwner } from "../trade/account-activity-feed-owner";
-import { TopNav } from "../trade/header/top-nav";
 import { MobileAccountTransfersTab } from "../trade/mobile/mobile-account-transfers-tab";
 import { MobileBalancesTab } from "../trade/mobile/mobile-balances-tab";
-import { MobileHeader } from "../trade/mobile/mobile-header";
 import { MobilePositionsView } from "../trade/mobile/mobile-positions-view";
-import { TestnetBanner } from "../trade/testnet-banner";
 import { AccountModeModal } from "../trade/tradebox/account-mode-modal";
 import { PortfolioOverview } from "./portfolio-overview";
 
-const FooterBar = createLazyComponent(() => import("../trade/footer/footer-bar"), "FooterBar");
-const GlobalModals = createLazyComponent(() => import("../trade/components/global-modals"), "GlobalModals");
 const PositionsPanel = createLazyComponent(() => import("../trade/positions/positions-panel"), "PositionsPanel");
 
 export function PortfolioPage() {
@@ -120,16 +116,7 @@ export function PortfolioPage() {
 				isMobile={isMobile}
 				bannerOffset={isTestnet}
 				testnet={isTestnet}
-				header={
-					isMobile ? (
-						<MobileHeader />
-					) : (
-						<>
-							<TestnetBanner />
-							<TopNav />
-						</>
-					)
-				}
+				header={<DashboardHeader isMobile={isMobile} />}
 				main={
 					<>
 						<div className="mb-6 flex flex-wrap items-start justify-between gap-4 min-[1001px]:mb-8">
