@@ -340,6 +340,7 @@ describe("TopNav", () => {
 		["/portfolio", "Portfolio"],
 		["/referrals", "Referrals"],
 		["/api-wallet", "API Wallet"],
+		["/fundingComparison", "Funding Comparison"],
 		["/vaults", "Vaults"],
 		["/vaults/0x123", "Vaults"],
 		["/staking", "Staking"],
@@ -402,7 +403,7 @@ describe("TopNav", () => {
 		expect(findLink("Referrals")?.dataset.to).toBe("/referrals");
 	});
 
-	it("links Statistics externally while keeping API Wallet on the app router", () => {
+	it("links Statistics externally while keeping Funding Comparison and API Wallet on the app router", () => {
 		renderNav();
 		expect(container.querySelectorAll('[data-testid="more-dropdown"]')).toHaveLength(1);
 		const statisticsItem = [
@@ -424,6 +425,16 @@ describe("TopNav", () => {
 		expect(apiWalletItem?.disabled).toBe(false);
 		act(() => apiWalletItem?.click());
 		expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/api-wallet" });
+
+		const fundingComparisonItem = [
+			...container.querySelectorAll<HTMLElement>('[data-testid="more-dropdown"] [role="menuitem"]'),
+		].find(
+			(item): item is HTMLButtonElement =>
+				item instanceof HTMLButtonElement && item.textContent?.trim() === "Funding Comparison",
+		);
+		expect(fundingComparisonItem?.disabled).toBe(false);
+		act(() => fundingComparisonItem?.click());
+		expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/fundingComparison" });
 	});
 
 	it("collapses navigation entries by header width and wallet state", () => {
@@ -439,7 +450,7 @@ describe("TopNav", () => {
 				"Referrals",
 				"Leaderboard",
 			]);
-			expect(moreMenuLabels()).toEqual(["Statistics", "API Wallet"]);
+			expect(moreMenuLabels()).toEqual(["Funding Comparison", "Statistics", "API Wallet"]);
 
 			stubViewportWidth(1181);
 			renderNav();
@@ -450,6 +461,7 @@ describe("TopNav", () => {
 				"Staking",
 				"Referrals",
 				"Leaderboard",
+				"Funding Comparison",
 				"Statistics",
 				"API Wallet",
 			]);
@@ -471,7 +483,7 @@ describe("TopNav", () => {
 			testState.isConnected = false;
 			renderNav();
 			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Vaults", "Staking", "Referrals", "Leaderboard"]);
-			expect(moreMenuLabels()).toEqual(["Earn — Soon", "Statistics", "API Wallet"]);
+			expect(moreMenuLabels()).toEqual(["Earn — Soon", "Funding Comparison", "Statistics", "API Wallet"]);
 			expect(findDesktopUtilitiesButton()).toBeUndefined();
 
 			stubViewportWidth(1100);
@@ -483,6 +495,7 @@ describe("TopNav", () => {
 				"Staking",
 				"Referrals",
 				"Leaderboard",
+				"Funding Comparison",
 				"Statistics",
 				"API Wallet",
 			]);
@@ -713,6 +726,7 @@ describe("TopNav", () => {
 				[DESKTOP_NAV_LABELS.soon.id]: "即将推出",
 				...Object.fromEntries(
 					[
+						["Funding Comparison", "资金费率对比"],
 						["Statistics", "统计"],
 						["API Wallet", "API 钱包"],
 					].map(([message, translation]) => [
@@ -727,14 +741,14 @@ describe("TopNav", () => {
 		const nav = container.querySelector("nav");
 		expect(nav?.textContent).toContain("交易");
 		expect(nav?.textContent).not.toMatch(
-			/Trade|Portfolio|Earn|Vaults|Staking|Referrals|Leaderboard|More|Statistics|API Wallet/,
+			/Trade|Portfolio|Earn|Vaults|Staking|Referrals|Leaderboard|More|Funding Comparison|Statistics|API Wallet/,
 		);
 		expect(nav?.textContent).not.toContain("Portfolio");
 		renderNav();
 		expect(container.querySelector("header")).toBe(header);
 		expect(container.querySelector("nav")).toBe(nav);
 		expect(nav?.textContent).not.toMatch(
-			/Trade|Portfolio|Earn|Vaults|Staking|Referrals|Leaderboard|More|Statistics|API Wallet/,
+			/Trade|Portfolio|Earn|Vaults|Staking|Referrals|Leaderboard|More|Funding Comparison|Statistics|API Wallet/,
 		);
 		expect(container.textContent).not.toContain("Loading");
 	});

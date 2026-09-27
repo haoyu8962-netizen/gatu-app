@@ -202,7 +202,7 @@ describe("MobileNavDrawer", () => {
 			"Referrals",
 			"Leaderboard",
 		]);
-		expect(moreItems.map(itemLabel)).toEqual(["Statistics", "API Wallet"]);
+		expect(moreItems.map(itemLabel)).toEqual(["Funding Comparison", "Statistics", "API Wallet"]);
 
 		const links = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')];
 		expect(links.map((link) => link.textContent?.trim())).toEqual([
@@ -212,6 +212,7 @@ describe("MobileNavDrawer", () => {
 			"Staking",
 			"Referrals",
 			"Leaderboard",
+			"Funding Comparison",
 			"Statistics",
 			"API Wallet",
 		]);
@@ -222,6 +223,7 @@ describe("MobileNavDrawer", () => {
 			"/staking",
 			"/referrals",
 			"/leaderboard",
+			"/fundingComparison",
 			undefined,
 			"/api-wallet",
 		]);
@@ -254,6 +256,21 @@ describe("MobileNavDrawer", () => {
 		);
 
 		act(() => apiWalletLink?.click());
+		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')).toBeNull();
+	});
+
+	it("marks Funding Comparison as the current More destination on its route", () => {
+		testState.pathname = "/fundingComparison";
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+
+		const moreNavigation = container.querySelector<HTMLElement>('nav[aria-label="More"]');
+		const current = [...(moreNavigation?.querySelectorAll<HTMLAnchorElement>('a[aria-current="page"]') ?? [])];
+		expect(current.map((link) => link.textContent?.trim())).toEqual(["Funding Comparison"]);
+		expect(current[0]?.dataset.to).toBe("/fundingComparison");
+		expect(current[0]?.className).toContain("bg-fill-hover");
+
+		act(() => current[0]?.click());
 		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')).toBeNull();
 	});
 

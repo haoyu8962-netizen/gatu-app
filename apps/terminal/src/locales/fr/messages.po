@@ -170,6 +170,10 @@ msgstr "{requestedPercent} % demandé ; {effectivePercent} % après application 
 msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} secondes"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "{venueName} rate higher"
+msgstr "Taux {venueName} plus élevé"
+
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "~2 minutes"
 msgstr "~2 minutes"
@@ -263,6 +267,10 @@ msgstr "7 jours"
 #: src/components/vaults/vaults-list.tsx
 msgid "7D"
 msgstr "7 j"
+
+#: src/config/funding-comparison.ts
+msgid "8 Hours"
+msgstr "8 heures"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
@@ -1071,6 +1079,10 @@ msgstr "Les soldes restent inconnus et toutes les actions de staking sont désac
 msgid "Bid"
 msgstr "Achat"
 
+#: src/config/funding-comparison.ts
+msgid "Binance-HL Arb"
+msgstr "Arbitrage Binance-HL"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
 msgstr "Bitcoin est un actif numérique décentralisé sécurisé par un réseau à preuve de travail."
@@ -1139,6 +1151,10 @@ msgstr "Acheter long"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "Par défaut, le TP/SL s'applique à toute la position et envoie un ordre au marché lorsque le prix mark atteint le déclencheur. Configurez un montant pour conserver une taille fixe, ou sélectionnez l'exécution limite pour soumettre à votre prix limite."
+
+#: src/config/funding-comparison.ts
+msgid "Bybit-HL Arb"
+msgstr "Arbitrage Bybit-HL"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
@@ -1239,10 +1255,12 @@ msgstr "Les dépôts CCTP sont en attente d’une vérification de bout en bout 
 #~ msgid "Change leverage"
 #~ msgstr "Modifier le levier"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to ascending order"
 msgstr "Passer à l’ordre croissant"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to descending order"
 msgstr "Passer à l’ordre décroissant"
@@ -2180,6 +2198,10 @@ msgstr "PnL actuel"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr "Validité actuelle"
+
+#: src/config/funding-comparison.ts
+msgid "Day"
+msgstr "Jour"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "days"
@@ -3309,6 +3331,16 @@ msgstr "Financement"
 #~ msgid "FUNDING"
 #~ msgstr "FUNDING"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding comparison"
+msgstr "Comparaison du financement"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
+msgid "Funding Comparison"
+msgstr "Comparaison du financement"
+
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
 #~ msgstr "Les données de financement n’ont pas pu être validées. Actualisez et réessayez."
@@ -3342,6 +3374,14 @@ msgstr "Pagination des paiements de financement"
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments will load automatically when the connection returns."
 msgstr "Les paiements de financement se chargeront automatiquement au rétablissement de la connexion."
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding period"
+msgstr "Période de financement"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding rate differences across exchanges."
+msgstr "Écarts de taux de financement entre plateformes d’échange."
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -3518,6 +3558,10 @@ msgstr ""
 msgid "Hour(s)"
 msgstr "Heure(s)"
 
+#: src/config/funding-comparison.ts
+msgid "Hourly"
+msgstr "Horaire"
+
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "Taux horaire payé par les positions longues aux positions courtes (s'il est négatif, les positions courtes paient les longues). Le funding n'a pas de frais associés ; il s'agit d'un transfert pair à pair entre utilisateurs pour rapprocher le prix du prix spot. Consultez la documentation pour plus de détails."
@@ -3567,6 +3611,14 @@ msgstr "L’historique d’Hyperliquid n’a pas confirmé cette opération. Ne 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid peut ne renvoyer qu’un sous-ensemble des déposants."
+
+#: src/config/funding-comparison.ts
+msgid "Hyperliquid OI"
+msgstr "Intérêt ouvert Hyperliquid"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Hyperliquid rate higher"
+msgstr "Taux Hyperliquid plus élevé"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
@@ -4027,6 +4079,10 @@ msgstr "Chargement des paiements de financement"
 msgid "Loading funding payments."
 msgstr "Chargement des paiements de financement."
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Loading funding rates"
+msgstr "Chargement des taux de financement"
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
 msgstr "Chargement du classement"
@@ -4300,6 +4356,7 @@ msgstr "Prix de marque : utilisé pour les calculs de marge, le PnL non réalis�
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/config/funding-comparison.ts
 #: src/config/trade-panel-labels.ts
 msgid "Market"
 msgstr "Marché"
@@ -4658,6 +4715,7 @@ msgstr "Page suivante des paiements de financement"
 msgid "Next order history page"
 msgstr "Page suivante de l’historique des ordres"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
 msgstr "Page suivante"
@@ -4783,6 +4841,10 @@ msgstr "Aucune exécution ne correspond aux filtres sélectionnés."
 msgid "No fills match these filters."
 msgstr "Aucune exécution ne correspond à ces filtres."
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "No funding comparison data"
+msgstr "Aucune donnée de comparaison du financement"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found"
 msgstr "Aucun paiement de financement trouvé"
@@ -4832,6 +4894,10 @@ msgstr "Pas de marché"
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "Aucun marché trouvé."
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "No markets match your search"
+msgstr "Aucun marché ne correspond à votre recherche"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No matching fills"
@@ -5781,6 +5847,14 @@ msgstr "Pré-IPO"
 msgid "Pre-launch"
 msgstr "Pré-lancement"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Predicted funding rates by market and exchange"
+msgstr "Taux de financement prévus par marché et plateforme"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Predicted rates for the next funding, converted to the selected period. Only Hyperliquid main perp markets are included. Differences do not include trading fees or payment timing."
+msgstr "Taux prévus pour le prochain financement, convertis sur la période sélectionnée. Seuls les marchés perpétuels principaux de Hyperliquid sont inclus. Les écarts ne tiennent pas compte des frais de trading ni du calendrier des paiements."
+
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Prefer an app-like experience?"
 msgstr "Vous préférez une expérience proche d’une application native ?"
@@ -5809,6 +5883,7 @@ msgstr "Page précédente des paiements de financement"
 msgid "Previous order history page"
 msgstr "Page précédente de l’historique des ordres"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
 msgstr "Page précédente"
@@ -6007,6 +6082,10 @@ msgstr "Classé selon"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "Taux"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Rates equal"
+msgstr "Taux identiques"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Read official referral rules"
@@ -6396,6 +6475,7 @@ msgid "Resume tracking"
 msgstr "Reprendre le suivi"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
@@ -6646,6 +6726,7 @@ msgstr "ROI"
 msgid "Role"
 msgstr "Rôle"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -6769,6 +6850,10 @@ msgstr ""
 msgid "SDK method"
 msgstr "Méthode du SDK"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Search by market"
+msgstr "Rechercher par marché"
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Search by vault, address, or leader"
 msgstr "Rechercher par coffre, adresse ou gestionnaire"
@@ -6781,6 +6866,7 @@ msgstr "Rechercher par adresse de portefeuille ou nom d’affichage"
 msgid "Search leaderboard"
 msgstr "Rechercher dans le classement"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets"
 msgstr "Rechercher des marchés"
@@ -7222,6 +7308,10 @@ msgstr "Bientôt"
 msgid "Sort API wallets by name"
 msgstr "Trier les portefeuilles API par nom"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Sort by"
+msgstr "Trier par"
+
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
@@ -7230,6 +7320,10 @@ msgstr "Trier par {sortLabel}"
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Sort leaderboard"
 msgstr "Trier le classement"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Sort markets"
+msgstr "Trier les marchés"
 
 #. placeholder {0}: getColumnSortLabel(sorting[0].id)
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7601,6 +7695,8 @@ msgstr "Échanger des stablecoins"
 #. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
 #. placeholder {0}: funding.coin
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -9796,6 +9892,10 @@ msgstr "Nous n'avons pas pu vérifier le statut juridique de ce portefeuille. V�
 msgid "Website"
 msgstr "Site web"
 
+#: src/config/funding-comparison.ts
+msgid "Week"
+msgstr "Semaine"
+
 #: src/config/account-ledger.ts
 msgid "Welcome Bonus"
 msgstr "Bonus de bienvenue"
@@ -9899,6 +9999,10 @@ msgstr "Retrait déverrouillé"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "Les retraits ne sont pas disponibles pour cette adresse."
+
+#: src/config/funding-comparison.ts
+msgid "Year"
+msgstr "Année"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx

@@ -4,6 +4,7 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const REACTIVE_COMPONENTS = [
+	"components/funding-comparison/funding-comparison-view.tsx",
 	"components/pages/application-error-page.tsx",
 	"components/pages/not-found-page.tsx",
 	"components/trade/chart/chart-panel.tsx",

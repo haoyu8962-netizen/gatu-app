@@ -20,6 +20,7 @@ describe("isTradeRoutePath", () => {
 		"/vaults/0x123",
 		"/staking",
 		"/leaderboard",
+		"/fundingComparison",
 	])("does not match the non-trading route %s", (pathname) => {
 		expect(isTradeRoutePath(pathname)).toBe(false);
 	});

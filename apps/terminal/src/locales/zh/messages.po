@@ -170,6 +170,10 @@ msgstr "设定 {requestedPercent}%；受数量精度限制，实际为 {effectiv
 msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} 秒"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "{venueName} rate higher"
+msgstr "{venueName} 费率更高"
+
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "~2 minutes"
 msgstr "~2 分钟"
@@ -263,6 +267,10 @@ msgstr "7 天"
 #: src/components/vaults/vaults-list.tsx
 msgid "7D"
 msgstr "7 天"
+
+#: src/config/funding-comparison.ts
+msgid "8 Hours"
+msgstr "8 小时"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
@@ -1071,6 +1079,10 @@ msgstr "在验证最新数据前，余额保持未知，所有质押操作均被
 msgid "Bid"
 msgstr "买盘"
 
+#: src/config/funding-comparison.ts
+msgid "Binance-HL Arb"
+msgstr "Binance-HL 套利"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
 msgstr "Bitcoin 是一种由工作量证明网络保障安全的去中心化数字资产。"
@@ -1139,6 +1151,10 @@ msgstr "买入做多"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "默认情况下，止盈止损应用于全部仓位，并在标记价格达到触发价时提交市价单。可设置固定数量，或选择限价执行并按指定限价提交。"
+
+#: src/config/funding-comparison.ts
+msgid "Bybit-HL Arb"
+msgstr "Bybit-HL 套利"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
@@ -1239,10 +1255,12 @@ msgstr "此网络的 CCTP 充值仍待完成有真实资金的端到端验证。
 #~ msgid "Change leverage"
 #~ msgstr "调整杠杆"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to ascending order"
 msgstr "切换为升序"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to descending order"
 msgstr "切换为降序"
@@ -2180,6 +2198,10 @@ msgstr "当前 PNL"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr "当前有效期"
+
+#: src/config/funding-comparison.ts
+msgid "Day"
+msgstr "每日"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "days"
@@ -3309,6 +3331,16 @@ msgstr "资金费"
 #~ msgid "FUNDING"
 #~ msgstr "资金费率"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding comparison"
+msgstr "资金费率对比"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
+msgid "Funding Comparison"
+msgstr "资金费率对比"
+
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
 #~ msgstr "无法验证资金费数据。请刷新后重试。"
@@ -3342,6 +3374,14 @@ msgstr "资金费支付记录分页"
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments will load automatically when the connection returns."
 msgstr "连接恢复后将自动加载资金费支付记录。"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding period"
+msgstr "资金费率周期"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding rate differences across exchanges."
+msgstr "各交易所之间的资金费率差异。"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -3518,6 +3558,10 @@ msgstr "按住以显示"
 msgid "Hour(s)"
 msgstr "小时"
 
+#: src/config/funding-comparison.ts
+msgid "Hourly"
+msgstr "每小时"
+
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "多头支付空头的小时费率（如果为负，则空头支付多头）。资金费没有关联费用，是用户之间的点对点转移，以将价格推向现货价格。详见文档。"
@@ -3567,6 +3611,14 @@ msgstr "Hyperliquid 的历史记录尚未确认这笔操作。请勿重复提交
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid 可能只返回部分存款人数据。"
+
+#: src/config/funding-comparison.ts
+msgid "Hyperliquid OI"
+msgstr "Hyperliquid 未平仓量"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Hyperliquid rate higher"
+msgstr "Hyperliquid 费率更高"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
@@ -4027,6 +4079,10 @@ msgstr "正在加载资金费支付记录"
 msgid "Loading funding payments."
 msgstr "正在加载资金费支付记录。"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Loading funding rates"
+msgstr "正在加载资金费率"
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
 msgstr "正在加载排行榜"
@@ -4300,6 +4356,7 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/config/funding-comparison.ts
 #: src/config/trade-panel-labels.ts
 msgid "Market"
 msgstr "市场"
@@ -4658,6 +4715,7 @@ msgstr "下一页资金费支付记录"
 msgid "Next order history page"
 msgstr "下一页委托历史"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
 msgstr "下一页"
@@ -4783,6 +4841,10 @@ msgstr "没有成交记录符合所选筛选条件。"
 msgid "No fills match these filters."
 msgstr "没有符合筛选条件的成交记录。"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "No funding comparison data"
+msgstr "暂无资金费率对比数据"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found"
 msgstr "未找到资金费支付记录"
@@ -4832,6 +4894,10 @@ msgstr "无市场"
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "未找到市场。"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "No markets match your search"
+msgstr "没有与搜索匹配的市场"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No matching fills"
@@ -5781,6 +5847,14 @@ msgstr "上市前"
 msgid "Pre-launch"
 msgstr "预上线"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Predicted funding rates by market and exchange"
+msgstr "按市场和交易所列出的预测资金费率"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Predicted rates for the next funding, converted to the selected period. Only Hyperliquid main perp markets are included. Differences do not include trading fees or payment timing."
+msgstr "下一次资金费的预测费率，已换算为所选周期。仅包含 Hyperliquid 主永续市场。差值未计入交易手续费和支付时间差异。"
+
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Prefer an app-like experience?"
 msgstr "希望获得接近原生应用的体验？"
@@ -5809,6 +5883,7 @@ msgstr "上一页资金费支付记录"
 msgid "Previous order history page"
 msgstr "上一页委托历史"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
 msgstr "上一页"
@@ -6007,6 +6082,10 @@ msgstr "排序依据"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "费率"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Rates equal"
+msgstr "费率相同"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Read official referral rules"
@@ -6396,6 +6475,7 @@ msgid "Resume tracking"
 msgstr "继续跟踪"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
@@ -6646,6 +6726,7 @@ msgstr "ROI"
 msgid "Role"
 msgstr "角色"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -6769,6 +6850,10 @@ msgstr "扫描桌面端 gatu 右上角二维码图标（关联移动设备）显
 msgid "SDK method"
 msgstr "SDK method"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Search by market"
+msgstr "按市场搜索"
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Search by vault, address, or leader"
 msgstr "按金库、地址或管理者搜索"
@@ -6781,6 +6866,7 @@ msgstr "按钱包地址或显示名称搜索"
 msgid "Search leaderboard"
 msgstr "搜索排行榜"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets"
 msgstr "搜索市场"
@@ -7222,6 +7308,10 @@ msgstr "即将推出"
 msgid "Sort API wallets by name"
 msgstr "按名称排序 API 钱包"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Sort by"
+msgstr "排序方式"
+
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
@@ -7230,6 +7320,10 @@ msgstr "按{sortLabel}排序"
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Sort leaderboard"
 msgstr "排行榜排序"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Sort markets"
+msgstr "市场排序"
 
 #. placeholder {0}: getColumnSortLabel(sorting[0].id)
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7601,6 +7695,8 @@ msgstr "稳定币兑换"
 #. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
 #. placeholder {0}: funding.coin
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -9796,6 +9892,10 @@ msgstr "无法验证此钱包的法律状态。请检查网络连接后重试。
 msgid "Website"
 msgstr "网站"
 
+#: src/config/funding-comparison.ts
+msgid "Week"
+msgstr "每周"
+
 #: src/config/account-ledger.ts
 msgid "Welcome Bonus"
 msgstr "欢迎奖励"
@@ -9899,6 +9999,10 @@ msgstr "提取已解锁"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "此地址暂不支持提款。"
+
+#: src/config/funding-comparison.ts
+msgid "Year"
+msgstr "每年"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx

@@ -37,7 +37,7 @@ describe("desktop navigation layout", () => {
 		}
 	});
 
-	it("shows every entry at wide widths and keeps Statistics and API Wallet in More", () => {
+	it("shows every entry at wide widths and keeps Funding Comparison, Statistics and API Wallet in More", () => {
 		const layout = resolveDesktopNavLayout({ compact: false, narrow: false, connected: true });
 		expect(ids(layout.topLevel)).toEqual([
 			"trade",
@@ -48,7 +48,7 @@ describe("desktop navigation layout", () => {
 			"referrals",
 			"leaderboard",
 		]);
-		expect(ids(layout.more)).toEqual(["statistics", "api-wallet"]);
+		expect(ids(layout.more)).toEqual(["funding-comparison", "statistics", "api-wallet"]);
 	});
 
 	it("collapses the Soon placeholder for everyone and the lower entries only when connected at compact widths", () => {
@@ -60,12 +60,13 @@ describe("desktop navigation layout", () => {
 			"staking",
 			"referrals",
 			"leaderboard",
+			"funding-comparison",
 			"statistics",
 			"api-wallet",
 		]);
 		const disconnected = resolveDesktopNavLayout({ compact: true, narrow: false, connected: false });
 		expect(ids(disconnected.topLevel)).toEqual(["trade", "portfolio", "vaults", "staking", "referrals", "leaderboard"]);
-		expect(ids(disconnected.more)).toEqual(["earn", "statistics", "api-wallet"]);
+		expect(ids(disconnected.more)).toEqual(["earn", "funding-comparison", "statistics", "api-wallet"]);
 	});
 
 	it("collapses the lower entries for every wallet state at narrow widths", () => {
@@ -78,6 +79,7 @@ describe("desktop navigation layout", () => {
 				"staking",
 				"referrals",
 				"leaderboard",
+				"funding-comparison",
 				"statistics",
 				"api-wallet",
 			]);
@@ -95,6 +97,9 @@ describe("desktop navigation layout", () => {
 		["vaults", "/vaultsx", false],
 		["staking", "/staking", true],
 		["api-wallet", "/api-wallet", true],
+		["funding-comparison", "/fundingComparison", true],
+		["funding-comparison", "/fundingComparison/BTC", false],
+		["funding-comparison", "/fundingHistory/0x123", false],
 		["statistics", "/statistics", false],
 		["earn", "/earn", false],
 	] as const)("derives %s activity from %s", (id, pathname, active) => {

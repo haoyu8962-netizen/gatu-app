@@ -9,6 +9,7 @@ vi.mock("@/components/trade/header/top-nav", () => ({ preloadTopNav }));
 
 const DASHBOARD_ROUTES = [
 	"api-wallet.tsx",
+	"fundingComparison.tsx",
 	"fundingHistory.$address.tsx",
 	"historicalOrders.$address.tsx",
 	"leaderboard.tsx",
