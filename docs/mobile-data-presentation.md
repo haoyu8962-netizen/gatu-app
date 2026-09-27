@@ -80,6 +80,7 @@
 - 成交历史、委托历史、资金费用、充值提现记录。
 - 下单面板的可用余额、主操作按钮与地区检查状态。
 - 移动订单簿、最近成交、资产组合图表。
+- 资金费率历史图（桌面图表区与手机行情区的 Funding 页签，桌面同样适用）：首次加载、重试和惰性块加载为空白绘图区加 `aria-busy` 与读屏专用加载说明；首次失败只给中性「重试」，不显示原因；已加载后刷新失败静默保留快照；离线保持空白；只有分页未截断、当前键、成功的空快照显示「暂无资金费率历史」。它使用上表已有的类别，不新增被动提示类别；详见[资金费率历史](market-funding-history.md)。
 - 移动端使用的兑换、发送、划转、充值提现、仓位设置和平仓弹窗。
 
 ## 验证与防回归
@@ -122,7 +123,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/open-interest-cap.test.ts \
   src/lib/tests/market-asset-info.test.tsx \
   tests/mobile-trade-size-validation-a11y.test.tsx \
-  tests/trade-panel-open-interest-cap.test.tsx
+  tests/trade-panel-open-interest-cap.test.tsx \
+  src/lib/tests/funding-history-panel.test.tsx
 ```
 
 契约测试的文案清单不能替代行为审查；新增入口仍须覆盖未知、失败、恢复和确认空快照，检查禁用逻辑是否独立于文案。

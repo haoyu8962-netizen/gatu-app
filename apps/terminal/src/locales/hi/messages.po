@@ -191,6 +191,11 @@ msgstr "1–20 वर्ण"
 msgid "14 Day Volume"
 msgstr "14 दिन का वॉल्यूम"
 
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "1h"
+msgstr "1 घंटा"
+
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "24 hours"
 msgstr "24 घंटे"
@@ -263,6 +268,11 @@ msgstr "7 दिन"
 #: src/components/vaults/vaults-list.tsx
 msgid "7D"
 msgstr "7 दिन"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "8h"
+msgstr "8 घंटे"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
@@ -1252,6 +1262,7 @@ msgstr "आरोही क्रम में बदलें"
 msgid "Change to descending order"
 msgstr "अवरोही क्रम में बदलें"
 
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "चार्ट"
@@ -1263,6 +1274,10 @@ msgstr "चार्ट डेटा पर अस्थायी दर सी�
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "चार्ट इतिहास अनुरोध का समय समाप्त हो गया"
+
+#: src/components/trade/chart/chart-panel.tsx
+msgid "Chart views"
+msgstr "चार्ट व्यू"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Check the wallet address or display name, or the account may not meet the current criteria."
@@ -2164,6 +2179,11 @@ msgstr "CSV निर्यात हो गया।"
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "यह पोज़िशन खुलने के बाद से भुगतान की गई या प्राप्त हुई संचयी फंडिंग।"
 
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Cumulative Funding Rate"
+msgstr "संचयी फंडिंग दर"
+
 #. placeholder {0}: formatNumber(cumulativeVolume)
 #: src/components/referrals/referral-code-card.tsx
 msgid "Cumulative volume: {0}"
@@ -2189,6 +2209,11 @@ msgstr "वर्तमान PNL"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr "वर्तमान वैधता"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "D"
+msgstr "दिन"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "days"
@@ -3306,6 +3331,10 @@ msgstr "परिणाम स्वीकार करने से पहल�
 msgid "From"
 msgstr "से"
 
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
+msgstr "{startTime} से {endTime} तक। नवीनतम फंडिंग दर {latestRate}; संचयी फंडिंग दर {cumulativeRate}। उच्चतम {maxRate}; निम्नतम {minRate}।"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "पूरी तरह निष्पादित"
@@ -3333,6 +3362,10 @@ msgstr "फंडिंग"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
 #~ msgstr "फंडिंग डेटा सत्यापित नहीं किया जा सका। रीफ़्रेश करके फिर प्रयास करें।"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding history interval"
+msgstr "फंडिंग इतिहास अंतराल"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -3363,6 +3396,15 @@ msgstr "फंडिंग भुगतान पेज नेविगेशन
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments will load automatically when the connection returns."
 msgstr "कनेक्शन वापस आने पर फंडिंग भुगतान अपने-आप लोड हो जाएँगे।"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding Rate"
+msgstr "फंडिंग दर"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "Funding rate history"
+msgstr "फंडिंग दर इतिहास"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -4141,6 +4183,8 @@ msgstr "वॉलेट लोड हो रहा है..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
@@ -4808,6 +4852,10 @@ msgstr "चुने गए फ़िल्टर से कोई फ़िल 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
 msgstr "इन फ़िल्टरों से मेल खाने वाली कोई फिल नहीं है।"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "No funding history"
+msgstr "फंडिंग का कोई इतिहास नहीं"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found"
@@ -6443,6 +6491,8 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx

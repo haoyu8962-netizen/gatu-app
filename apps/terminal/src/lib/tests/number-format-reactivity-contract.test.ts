@@ -15,6 +15,7 @@ const NUMBER_FORMATTERS = new Set([
 	"formatUSD",
 ]);
 const RENDER_HELPER_OWNERS = new Map([
+	["funding-history-chart.tsx", ["FundingHistoryChart"]],
 	["portfolio-performance-chart.tsx", ["PortfolioPerformanceChart"]],
 	["mobile-market-bar.tsx", ["MobileMarketBar"]],
 	["orders-tab.tsx", ["OrderRow"]],

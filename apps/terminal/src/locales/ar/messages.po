@@ -191,6 +191,11 @@ msgstr "من 1 إلى 20 حرفًا"
 msgid "14 Day Volume"
 msgstr "حجم التداول خلال 14 يومًا"
 
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "1h"
+msgstr "1 ساعة"
+
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "24 hours"
 msgstr "24 ساعة"
@@ -263,6 +268,11 @@ msgstr "7 أيام"
 #: src/components/vaults/vaults-list.tsx
 msgid "7D"
 msgstr "7 أيام"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "8h"
+msgstr "8 ساعات"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
@@ -1252,6 +1262,7 @@ msgstr "التغيير إلى ترتيب تصاعدي"
 msgid "Change to descending order"
 msgstr "التغيير إلى ترتيب تنازلي"
 
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "الرسم البياني"
@@ -1263,6 +1274,10 @@ msgstr "بيانات الرسم البياني مقيّدة المعدل مؤق�
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "انتهت مهلة طلب سجل الرسم البياني"
+
+#: src/components/trade/chart/chart-panel.tsx
+msgid "Chart views"
+msgstr "عروض الرسم البياني"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Check the wallet address or display name, or the account may not meet the current criteria."
@@ -2164,6 +2179,11 @@ msgstr "تم تصدير CSV."
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "التمويل التراكمي المدفوع أو المستلم منذ فتح هذا المركز."
 
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Cumulative Funding Rate"
+msgstr "معدل التمويل التراكمي"
+
 #. placeholder {0}: formatNumber(cumulativeVolume)
 #: src/components/referrals/referral-code-card.tsx
 msgid "Cumulative volume: {0}"
@@ -2189,6 +2209,11 @@ msgstr "الأرباح والخسائر الحالية"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr "الصلاحية الحالية"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "D"
+msgstr "يوم"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "days"
@@ -3306,6 +3331,10 @@ msgstr "جارٍ التحقق من بيانات extraAgents الحديثة قب�
 msgid "From"
 msgstr "من"
 
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
+msgstr "من {startTime} إلى {endTime}. أحدث معدل تمويل {latestRate}؛ معدل التمويل التراكمي {cumulativeRate}. الأعلى {maxRate}؛ الأدنى {minRate}."
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "تم التنفيذ بالكامل"
@@ -3333,6 +3362,10 @@ msgstr "التمويل"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
 #~ msgstr "تعذّر التحقق من صحة بيانات التمويل. حدّث الصفحة وحاول مرة أخرى."
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding history interval"
+msgstr "فاصل سجل التمويل"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -3363,6 +3396,15 @@ msgstr "ترقيم صفحات مدفوعات التمويل"
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments will load automatically when the connection returns."
 msgstr "ستُحمّل مدفوعات التمويل تلقائيًا عند عودة الاتصال."
+
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding Rate"
+msgstr "معدل التمويل"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "Funding rate history"
+msgstr "سجل معدلات التمويل"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -4141,6 +4183,8 @@ msgstr "جاري تحميل المحفظة..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
@@ -4808,6 +4852,10 @@ msgstr "لا توجد عمليات تنفيذ تطابق عوامل التصفي
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
 msgstr "لا توجد تنفيذات تطابق عوامل التصفية هذه."
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "No funding history"
+msgstr "لا يوجد سجل تمويل"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found"
@@ -6443,6 +6491,8 @@ msgstr "استئناف التتبع"
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx

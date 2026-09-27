@@ -94,7 +94,7 @@ export function MainWorkspace({ orderEntryDraftReady = true }: Props) {
 
 					<div key="chart" className="desktop-grid-panel overflow-hidden bg-surface">
 						<Suspense fallback={panelFallback}>
-							<ChartPanel />
+							<ChartPanel showFundingTab />
 						</Suspense>
 					</div>
 

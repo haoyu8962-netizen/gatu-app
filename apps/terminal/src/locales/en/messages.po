@@ -191,6 +191,11 @@ msgstr "1–20 characters"
 msgid "14 Day Volume"
 msgstr "14 Day Volume"
 
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "1h"
+msgstr "1h"
+
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "24 hours"
 msgstr "24 hours"
@@ -263,6 +268,11 @@ msgstr "7 days"
 #: src/components/vaults/vaults-list.tsx
 msgid "7D"
 msgstr "7D"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "8h"
+msgstr "8h"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
@@ -1252,6 +1262,7 @@ msgstr "Change to ascending order"
 msgid "Change to descending order"
 msgstr "Change to descending order"
 
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "Chart"
@@ -1263,6 +1274,10 @@ msgstr "Chart data is temporarily rate limited"
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "Chart history request timed out"
+
+#: src/components/trade/chart/chart-panel.tsx
+msgid "Chart views"
+msgstr "Chart views"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Check the wallet address or display name, or the account may not meet the current criteria."
@@ -2164,6 +2179,11 @@ msgstr "CSV exported."
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "Cumulative funding paid or received since this position was opened."
 
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Cumulative Funding Rate"
+msgstr "Cumulative Funding Rate"
+
 #. placeholder {0}: formatNumber(cumulativeVolume)
 #: src/components/referrals/referral-code-card.tsx
 msgid "Cumulative volume: {0}"
@@ -2189,6 +2209,11 @@ msgstr "Current PNL"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr "Current validity"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "D"
+msgstr "D"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "days"
@@ -3306,6 +3331,10 @@ msgstr "Fresh extraAgents data is being checked before the result is accepted."
 msgid "From"
 msgstr "From"
 
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
+msgstr "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "Fully filled"
@@ -3333,6 +3362,10 @@ msgstr "Funding"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
 #~ msgstr "Funding data could not be validated. Refresh and try again."
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding history interval"
+msgstr "Funding history interval"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -3363,6 +3396,15 @@ msgstr "Funding payments pagination"
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments will load automatically when the connection returns."
 msgstr "Funding payments will load automatically when the connection returns."
+
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding Rate"
+msgstr "Funding Rate"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "Funding rate history"
+msgstr "Funding rate history"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -4141,6 +4183,8 @@ msgstr "Loading wallet..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
@@ -4808,6 +4852,10 @@ msgstr "No fills match the selected filters."
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
 msgstr "No fills match these filters."
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "No funding history"
+msgstr "No funding history"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found"
@@ -6443,6 +6491,8 @@ msgstr "Resume tracking"
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx

@@ -1,10 +1,15 @@
 import { useLingui } from "@lingui/react/macro";
 import { type KeyboardEvent, useId, useRef, useState } from "react";
 import { tradeColumn } from "@/components/trade/mobile/mobile-trade-frame-view";
+import { MARKET_HEADER_LABELS } from "@/config/market-header";
+import { isFundingHistoryMarket } from "@/domain/market/funding-rate-history";
+import { useHasBeenActive } from "@/hooks/ui/use-has-been-active";
 import { cn } from "@/lib/cn";
-import { useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useOrderEntryActions, useSizeMode } from "@/stores/use-order-entry-store";
+import { FundingHistoryLoadBoundary } from "../chart/funding-history-load-boundary";
+import { FundingHistoryPanel, warmFundingHistoryPanel } from "../chart/lazy-funding-history-panel";
 import { MobileBalancesTab } from "./mobile-balances-tab";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileChartView } from "./mobile-chart-view";
@@ -16,7 +21,7 @@ import { MobileTradeOrderSplit } from "./mobile-trade-order-split";
 import { MobileTradeView } from "./mobile-trade-view";
 import type { MobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
 
-type TopView = "chart" | "book" | "trades";
+type TopView = "chart" | "book" | "trades" | "funding";
 
 interface Props {
 	active?: boolean;
@@ -50,6 +55,7 @@ export function MobileTradeLayout({
 			active={active}
 			showMarketBar={showMarketBar}
 			marketKey={marketKey}
+			market={selectedMarket}
 			disclosureStates={disclosureStates}
 		/>
 	);
@@ -123,32 +129,47 @@ function MarketsDataView({
 	active,
 	showMarketBar,
 	marketKey,
+	market,
 	disclosureStates,
 }: {
 	active: boolean;
 	showMarketBar: boolean;
 	marketKey: string;
+	market: UnifiedMarketInfo | undefined;
 	disclosureStates: MobilePositionsDisclosureStates;
 }) {
 	const { t } = useLingui();
-	const [topView, setTopView] = useState<TopView>("chart");
+	const [selectedTopView, setTopView] = useState<TopView>("chart");
 	const tabId = useId();
 	const tabRefs = useRef<Record<TopView, HTMLButtonElement | null>>({
 		chart: null,
 		book: null,
 		trades: null,
+		funding: null,
 	});
+	const fundingAvailable = isFundingHistoryMarket(market);
+	const topView: TopView = selectedTopView === "funding" && !fundingAvailable ? "chart" : selectedTopView;
+	const fundingMounted = useHasBeenActive(topView === "funding");
+	const bookVisible = topView === "book" || topView === "trades";
 
 	const tabs: { value: TopView; label: string }[] = [
 		{ value: "chart", label: t`Chart` },
 		{ value: "book", label: t`Order Book` },
 		{ value: "trades", label: t`Trades` },
+		...(fundingAvailable ? [{ value: "funding" as const, label: t(MARKET_HEADER_LABELS.funding) }] : []),
 	];
 
 	const bookView = topView === "trades" ? "trades" : "book";
 	const chartPanelId = `${tabId}-chart-panel`;
 	const bookPanelId = `${tabId}-book-panel`;
 	const tradesPanelId = `${tabId}-trades-panel`;
+	const fundingPanelId = `${tabId}-funding-panel`;
+	const panelIds: Record<TopView, string> = {
+		chart: chartPanelId,
+		book: bookPanelId,
+		trades: tradesPanelId,
+		funding: fundingPanelId,
+	};
 	const activeBookPanelId = bookView === "book" ? bookPanelId : tradesPanelId;
 	const inactiveBookPanelId = bookView === "book" ? tradesPanelId : bookPanelId;
 	const activeBookTabId = `${tabId}-${bookView}-tab`;
@@ -192,17 +213,19 @@ function MarketsDataView({
 							role="tab"
 							id={`${tabId}-${tab.value}-tab`}
 							aria-selected={isSelected}
-							aria-controls={tab.value === "chart" ? chartPanelId : tab.value === "book" ? bookPanelId : tradesPanelId}
+							aria-controls={panelIds[tab.value]}
 							tabIndex={isSelected ? 0 : -1}
 							onClick={() => setTopView(tab.value)}
 							onKeyDown={(event) => handleTabKeyDown(event, tab.value)}
+							onPointerEnter={tab.value === "funding" ? warmFundingHistoryPanel : undefined}
+							onFocus={tab.value === "funding" ? warmFundingHistoryPanel : undefined}
 							className={cn(
-								"relative flex-1 border-b-2 py-2 text-xs font-medium transition-colors after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] motion-reduce:transition-none",
+								"relative min-w-0 flex-1 border-b-2 px-1 py-2 text-xs font-medium transition-colors after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] motion-reduce:transition-none",
 								"focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus",
 								isSelected ? "border-fg text-fg" : "border-stroke-weak text-fg-muted hover:text-fg",
 							)}
 						>
-							{tab.label}
+							<span className="block min-w-0 truncate">{tab.label}</span>
 						</button>
 					);
 				})}
@@ -228,21 +251,36 @@ function MarketsDataView({
 					role="tabpanel"
 					id={activeBookPanelId}
 					aria-labelledby={activeBookTabId}
-					aria-hidden={topView === "chart"}
-					tabIndex={topView === "chart" ? -1 : 0}
+					aria-hidden={!bookVisible}
+					tabIndex={bookVisible ? 0 : -1}
 					className={cn(
 						"absolute inset-0 flex min-h-0 flex-col bg-background",
-						topView === "chart" ? "z-0 invisible pointer-events-none" : "z-10 visible pointer-events-auto",
+						bookVisible ? "z-10 visible pointer-events-auto" : "z-0 invisible pointer-events-none",
 					)}
 				>
-					<MobileBookView
-						active={active && topView !== "chart"}
-						inTabLayout
-						view={bookView}
-						className="flex-1 min-h-0"
-					/>
+					<MobileBookView active={active && bookVisible} inTabLayout view={bookView} className="flex-1 min-h-0" />
 				</div>
 				<div role="tabpanel" id={inactiveBookPanelId} aria-labelledby={inactiveBookTabId} aria-hidden="true" hidden />
+				{(fundingAvailable || fundingMounted) && (
+					<div
+						role="tabpanel"
+						id={fundingPanelId}
+						aria-labelledby={`${tabId}-funding-tab`}
+						aria-hidden={topView !== "funding"}
+						tabIndex={topView === "funding" ? 0 : -1}
+						data-funding-layer
+						className={cn(
+							"absolute inset-0 flex min-h-0 flex-col bg-background",
+							topView === "funding" ? "z-10 visible pointer-events-auto" : "z-0 invisible pointer-events-none",
+						)}
+					>
+						{fundingMounted && (
+							<FundingHistoryLoadBoundary>
+								<FundingHistoryPanel market={market} active={active && topView === "funding"} />
+							</FundingHistoryLoadBoundary>
+						)}
+					</div>
+				)}
 			</div>
 
 			{active && (

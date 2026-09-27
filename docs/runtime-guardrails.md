@@ -382,6 +382,15 @@ mobile regressions.
   stable.
 - Mobile tab switches must not destroy the chart widget unless the whole market
   surface is leaving.
+- The desktop chart panel hosts a `Chart | Funding` view strip
+  (`ChartPanel showFundingTab`, enabled only by the main workspace). Showing
+  Funding keeps the widget mounted: `TradingViewChart` receives `active={false}`
+  and its layer is hidden with `invisible opacity-0 pointer-events-none` plus
+  `aria-hidden`. Never hide that layer with `display:none`, never wrap it in the
+  `@gatu/ui` `TabsContent` (its `[&[hidden]]:!hidden` rule removes the chart), and
+  never remount the widget for a view change. The strip has a fixed height for
+  every market kind so the widget height does not change on spot/perp switches.
+  `docs/market-funding-history.md` owns the view.
 - Chart datafeed callbacks must not capture stale symbols. Use stable refs or
   request-scoped guards for async responses.
 - The widget iframe must remain interactive on mobile. Do not apply
@@ -430,6 +439,7 @@ mobile regressions.
 ### Important Files
 
 - `apps/terminal/src/components/trade/chart/tradingview-chart.tsx`
+- `apps/terminal/src/components/trade/chart/chart-panel.tsx`
 - `apps/terminal/src/components/trade/chart/datafeed.ts`
 - `apps/terminal/src/config/chart.ts`
 - `apps/terminal/src/config/security-headers.ts`
@@ -451,6 +461,12 @@ not separate app sessions.
 - Do not use hidden mounted views if they continue expensive subscriptions or
   effects. If a view is mounted for continuity, guard its effects by active
   state.
+- The Markets view shows a fourth Funding tab for perpetual and HIP-3 markets
+  only. While it is shown, `MobileChartView` and `MobileBookView` stay mounted
+  with `active={false}`: the book layer is visible and active only for Order
+  Book or Trades, and the funding query runs only while its own tab is shown.
+  The funding view mounts on first selection and then stays mounted; a switch to
+  a spot market falls back to Chart.
 - React `Activity` in `hidden` mode unmounts effects, which destroys the
   TradingView widget. The Markets view may start hidden to defer its first
   render, but once it has been shown it stays `visible` and hides through the
@@ -468,6 +484,7 @@ not separate app sessions.
 - `apps/terminal/src/components/trade/mobile/mobile-terminal.tsx`
 - `apps/terminal/src/components/trade/mobile/mobile-trade-view.tsx`
 - `apps/terminal/src/components/trade/mobile/mobile-chart-view.tsx`
+- `apps/terminal/src/components/trade/mobile/mobile-trade-layout.tsx`
 - `apps/terminal/src/components/trade/mobile/mobile-account-view.tsx`
 - `apps/terminal/src/components/trade/orderbook/*`
 

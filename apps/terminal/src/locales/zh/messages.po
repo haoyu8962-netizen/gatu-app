@@ -191,6 +191,11 @@ msgstr "1–20 个字符"
 msgid "14 Day Volume"
 msgstr "14 日交易量"
 
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "1h"
+msgstr "1小时"
+
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "24 hours"
 msgstr "24 小时"
@@ -263,6 +268,11 @@ msgstr "7 天"
 #: src/components/vaults/vaults-list.tsx
 msgid "7D"
 msgstr "7 天"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "8h"
+msgstr "8小时"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
@@ -1252,6 +1262,7 @@ msgstr "切换为升序"
 msgid "Change to descending order"
 msgstr "切换为降序"
 
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "图表"
@@ -1263,6 +1274,10 @@ msgstr "图表数据暂时受到速率限制"
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "图表历史数据请求超时"
+
+#: src/components/trade/chart/chart-panel.tsx
+msgid "Chart views"
+msgstr "图表视图"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Check the wallet address or display name, or the account may not meet the current criteria."
@@ -2164,6 +2179,11 @@ msgstr "CSV 已导出。"
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "自该仓位开仓以来累计支付或收取的资金费。"
 
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Cumulative Funding Rate"
+msgstr "累计资金费率"
+
 #. placeholder {0}: formatNumber(cumulativeVolume)
 #: src/components/referrals/referral-code-card.tsx
 msgid "Cumulative volume: {0}"
@@ -2189,6 +2209,11 @@ msgstr "当前 PNL"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr "当前有效期"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "D"
+msgstr "日"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "days"
@@ -3306,6 +3331,10 @@ msgstr "正在检查最新的 extraAgents 数据，确认后才会接受操作�
 msgid "From"
 msgstr "从"
 
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
+msgstr "从 {startTime} 到 {endTime}。最新资金费率 {latestRate}；累计资金费率 {cumulativeRate}。最高 {maxRate}；最低 {minRate}。"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "全部成交"
@@ -3333,6 +3362,10 @@ msgstr "资金费"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
 #~ msgstr "无法验证资金费数据。请刷新后重试。"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding history interval"
+msgstr "资金费率历史周期"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -3363,6 +3396,15 @@ msgstr "资金费支付记录分页"
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments will load automatically when the connection returns."
 msgstr "连接恢复后将自动加载资金费支付记录。"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding Rate"
+msgstr "资金费率"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "Funding rate history"
+msgstr "资金费率历史"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -4141,6 +4183,8 @@ msgstr "加载钱包中..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
@@ -4808,6 +4852,10 @@ msgstr "没有成交记录符合所选筛选条件。"
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
 msgstr "没有符合筛选条件的成交记录。"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "No funding history"
+msgstr "暂无资金费率历史"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found"
@@ -6443,6 +6491,8 @@ msgstr "继续跟踪"
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
