@@ -13,10 +13,13 @@ function matchesMobileLayout(): boolean {
 
 export function preloadDashboardChrome(): Promise<void> {
 	const footerAtStart = !matchesMobileLayout();
-	const lazyChrome = preloadLazyComponents(footerAtStart ? [GlobalModals, FooterBar] : [GlobalModals]).then(() =>
-		footerAtStart || matchesMobileLayout() ? undefined : FooterBar.preload?.(),
-	);
-	return Promise.all([preloadTopNav(), lazyChrome]).then(() => undefined);
+	const initial = Promise.all([
+		preloadTopNav(),
+		preloadLazyComponents(footerAtStart ? [GlobalModals, FooterBar] : [GlobalModals]),
+	]);
+	return initial
+		.then(() => (footerAtStart || matchesMobileLayout() ? undefined : FooterBar.preload?.()))
+		.then(() => undefined);
 }
 
 interface Props {

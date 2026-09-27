@@ -165,15 +165,39 @@ describe("dashboard chrome", () => {
 		expect(settled).toBe(true);
 	});
 
-	it("adds the footer when the viewport becomes desktop while the preload is pending", async () => {
+	it("adds the footer when the viewport becomes desktop while the account menu is still loading", async () => {
 		stubMatchMedia(true);
+		let releaseTopNav: () => void = () => {};
+		testState.preloadTopNav.mockImplementation(
+			() =>
+				new Promise<void>((resolveTopNav) => {
+					releaseTopNav = resolveTopNav;
+				}),
+		);
 		const chrome = await import("@/components/dashboard/dashboard-chrome");
-		const footerPreload = vi.spyOn(chrome.FooterBar, "preload");
-		const preload = chrome.preloadDashboardChrome();
+		let releaseFooter: () => void = () => {};
+		const footerPreload = vi.spyOn(chrome.FooterBar, "preload").mockImplementation(
+			() =>
+				new Promise<void>((resolveFooter) => {
+					releaseFooter = resolveFooter;
+				}),
+		);
+		let settled = false;
+		const preload = chrome.preloadDashboardChrome().then(() => {
+			settled = true;
+		});
+		await new Promise((resolveTick) => setTimeout(resolveTick, 0));
 		expect(footerPreload).not.toHaveBeenCalled();
+
 		testState.viewportIsMobile = false;
+		releaseTopNav();
+		await vi.waitFor(() => expect(footerPreload).toHaveBeenCalledTimes(1));
+		await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+		expect(settled).toBe(false);
+
+		releaseFooter();
 		await preload;
-		expect(footerPreload).toHaveBeenCalledTimes(1);
+		expect(settled).toBe(true);
 	});
 
 	it.each(DASHBOARD_PAGES)("%s renders the shared header and the preloaded footer and modal host", (page) => {
