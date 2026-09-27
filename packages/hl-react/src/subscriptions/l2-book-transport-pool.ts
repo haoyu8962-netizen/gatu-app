@@ -176,7 +176,7 @@ export function createL2BookTransportPool(createTransport: (isTestnet: boolean) 
 			// original receipt time travels with it so the store does not treat it as newer than it is.
 			const replay = receivedLiveFrame ? undefined : lease.latest();
 			if (replay) {
-				markFrameReceivedAt(replay.event.detail, replay.receivedAtWall);
+				markFrameReceivedAt(replay.event.detail, replay.receivedAtWall, replay.receivedAt);
 				listener(replay.event as CustomEvent<T>);
 			}
 			return {
