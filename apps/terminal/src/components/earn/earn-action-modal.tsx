@@ -4,7 +4,7 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PendingActionModal } from "@/components/trade/components/pending-action-modal";
 import { TradingActionButton } from "@/components/trade/components/trading-action-button";
@@ -49,11 +49,14 @@ import { EarnOutcomeToastContent, type EarnToastIdentity } from "./earn-outcome-
 
 interface Props {
 	open: boolean;
+	sessionId: number;
 	operation: EarnOperation;
 	initialToken: number | null;
 	data: EarnData;
 	onOpenChange: (open: boolean) => void;
 }
+
+const VISIBLE_RESTRICTIONS = new Set(["agent-only-session", "geo-restricted"]);
 
 interface EarnSubmission {
 	identity: object;
@@ -62,11 +65,12 @@ interface EarnSubmission {
 	verifiedAt: number | null;
 }
 
-export function EarnActionModal({ open, operation, initialToken, data, onOpenChange }: Props) {
+export function EarnActionModal({ open, sessionId, operation, initialToken, data, onOpenChange }: Props) {
 	return (
 		<EarnActionModalBody
-			key={`${operation}:${initialToken ?? "any"}:${open ? "open" : "closed"}`}
+			key={sessionId}
 			open={open}
+			sessionId={sessionId}
 			operation={operation}
 			initialToken={initialToken}
 			data={data}
@@ -86,6 +90,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 	const rows = snapshot ? getEarnOperationRows(operation, snapshot) : [];
 	const [selectedToken, setSelectedToken] = useState<number | null>(initialToken ?? rows[0]?.token ?? null);
 	const [amount, setAmount] = useState("");
+	const amountErrorId = useId();
 	const [openedPosition, setOpenedPosition] = useState<EarnPositionBaseline | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const dataRef = useRef(data);
@@ -124,19 +129,25 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 
 	const row = rows.find((candidate) => candidate.token === selectedToken) ?? null;
 	const accountReady = data.accountStatus === "ready";
+	const dataReady = accountReady && data.publicStatus === "ready";
 	if (row && accountReady && openedPosition?.token !== row.token) {
 		setOpenedPosition(createPositionBaseline(row));
 	}
 	const positionChanged = Boolean(row && accountReady && openedPosition && hasPositionChanged(openedPosition, row));
 	const spotAvailable = row ? getSpotAvailable(data, row.token) : null;
 	const maxAmount =
-		snapshot && row ? getEarnMaxAmount({ operation, row, summary: snapshot.summary, spotAvailable }) : null;
+		snapshot && row && dataReady
+			? getEarnMaxAmount({ operation, row, summary: snapshot.summary, spotAvailable })
+			: null;
 	const validation = row ? validateEarnAmount(amount, maxAmount, row.weiDecimals) : "unavailable";
 	const { mutateAsync: borrowLend, isPending } = useExchange("borrowLend", {
 		executionGuard: assertCurrentSubmission,
 	});
 	const pending = isSubmitting || isPending;
-	const canSubmit = availability.available && !data.portfolioMargin && validation === "valid" && !pending;
+	const canSubmit =
+		open && dataReady && availability.available && !data.portfolioMargin && validation === "valid" && !pending;
+	const visibleRestriction =
+		availability.reason && VISIBLE_RESTRICTIONS.has(availability.reason) ? availability.unavailableReason : null;
 
 	function assertCurrentSubmission(params: ExchangeParams<"borrowLend">) {
 		const submission = submissionRef.current;
@@ -158,7 +169,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 			verifiedAt: submission.verifiedAt,
 			now: Date.now(),
 			snapshot: latest.snapshot,
-			accountReady: latest.accountStatus === "ready",
+			accountReady: latest.accountStatus === "ready" && latest.publicStatus === "ready",
 			portfolioMargin: latest.portfolioMargin,
 			spotAvailable: getSpotAvailable(latest, submission.request.token),
 		});
@@ -326,10 +337,10 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 			</ModalHeader>
 			<ModalContent>
 				<div className="space-y-4">
-					{availability.unavailableReason ? (
+					{visibleRestriction ? (
 						<div className="flex items-center gap-2 rounded-16 border border-stroke-info-weak bg-info-soft p-2.5 text-xs text-info">
 							<WarningCircleIcon aria-hidden="true" className="size-3.5 shrink-0 text-icon-info" />
-							<span className="flex-1">{availability.unavailableReason}</span>
+							<span className="flex-1">{visibleRestriction}</span>
 						</div>
 					) : null}
 					<Select
@@ -361,23 +372,26 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 							disabled={pending || !row}
 							mobileSafe
 							aria-invalid={amountError ? true : undefined}
+							aria-describedby={amountError ? amountErrorId : undefined}
 							className={cn(
 								"w-full tabular-nums max-[1000px]:h-11",
 								amountError && "border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 						/>
 						{amountError ? (
-							<p role="alert" className="text-2xs text-error">
+							<p id={amountErrorId} role="alert" className="text-2xs text-error">
 								{amountError}
 							</p>
 						) : null}
 					</div>
 					{row ? <EarnActionSummary operation={operation} row={row} maxAmount={maxAmount} /> : null}
-					{positionChanged && !pending ? (
-						<p className="rounded-16 border border-stroke-info-weak bg-info-soft p-2.5 text-xs text-info">
-							{t`Your position changed since you opened this dialog. Review the amounts before confirming.`}
-						</p>
-					) : null}
+					<div aria-live="polite">
+						{positionChanged && !pending ? (
+							<p className="rounded-16 border border-stroke-info-weak bg-info-soft p-2.5 text-xs text-info">
+								{t`Your position changed since you opened this dialog. Review the amounts before confirming.`}
+							</p>
+						) : null}
+					</div>
 					<TradingActionButton
 						requiresBuilderFee={false}
 						requireReadyConfirmation

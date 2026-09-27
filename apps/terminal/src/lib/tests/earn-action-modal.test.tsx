@@ -33,6 +33,7 @@ const testState = vi.hoisted(() => ({
 	assertAccountAbstraction: vi.fn(),
 	assertFreshGeoAllowed: vi.fn(),
 	pending: false,
+	availability: { available: true, reason: null as string | null, unavailableReason: null as string | null },
 }));
 
 vi.mock("@gatu/ui", () => ({
@@ -80,7 +81,11 @@ vi.mock("@/components/ui/number-input", () => ({
 		onChange,
 		onLabelValueClick,
 		value,
+		"aria-describedby": describedBy,
+		"aria-invalid": invalid,
 	}: {
+		"aria-describedby"?: string;
+		"aria-invalid"?: boolean;
 		label: string;
 		labelValue: ReactNode;
 		onChange: (event: { target: { value: string } }) => void;
@@ -92,7 +97,14 @@ vi.mock("@/components/ui/number-input", () => ({
 			"div",
 			null,
 			createElement("button", { "data-testid": "max", onClick: onLabelValueClick, type: "button" }, labelValue),
-			createElement("input", { "aria-label": label, disabled, onChange, value }),
+			createElement("input", {
+				"aria-label": label,
+				"aria-describedby": describedBy,
+				"aria-invalid": invalid,
+				disabled,
+				onChange,
+				value,
+			}),
 		),
 }));
 
@@ -119,8 +131,8 @@ vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
 	},
 	useFundsActionAvailability: () => ({
 		assertFreshGeoAllowed: testState.assertFreshGeoAllowed,
-		internalTransfer: { available: true, reason: null, unavailableReason: null },
-		withdrawal: { available: true, reason: null, unavailableReason: null },
+		internalTransfer: testState.availability,
+		withdrawal: testState.availability,
 	}),
 }));
 
@@ -149,6 +161,7 @@ const RESERVES = [
 			ltv: "0.0",
 			totalSupplied: "547176704.26",
 			totalBorrowed: "347478659.20",
+			balance: "199698045.06",
 		},
 	],
 	[
@@ -161,6 +174,7 @@ const RESERVES = [
 			ltv: "0.65",
 			totalSupplied: "12011368.80",
 			totalBorrowed: "0.0",
+			balance: "12011368.80",
 		},
 	],
 ];
@@ -257,6 +271,7 @@ describe("earn action modal", () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.exchangeIdentity.exchangeLifecycle = { active: true, id: Symbol("exchange-lifecycle") };
 		testState.pending = false;
+		testState.availability = { available: true, reason: null, unavailableReason: null };
 		testState.borrowLend.mockReset();
 		testState.borrowLend.mockResolvedValue({ status: "ok", response: { type: "default" } });
 		testState.beforeSdk.mockReset();
@@ -278,7 +293,16 @@ describe("earn action modal", () => {
 
 	function render(operation: EarnOperation, token: number | null, data: EarnData, onOpenChange = vi.fn()) {
 		act(() =>
-			root.render(createElement(EarnActionModal, { open: true, operation, initialToken: token, data, onOpenChange })),
+			root.render(
+				createElement(EarnActionModal, {
+					open: true,
+					sessionId: 1,
+					operation,
+					initialToken: token,
+					data,
+					onOpenChange,
+				}),
+			),
 		);
 		return onOpenChange;
 	}
@@ -473,5 +497,68 @@ describe("earn action modal", () => {
 		} finally {
 			testState.exchangeIdentity.env = "Mainnet";
 		}
+	});
+	it("does not submit while public reserve data is failing, even with cached rows", () => {
+		render("supply", 0, { ...createData(), publicStatus: "error" });
+		act(() => setInputValue(getInput(container), "10"));
+		expect(getSubmit(container).disabled).toBe(true);
+		expect(container.textContent).not.toContain("Insufficient funds");
+	});
+
+	it("does not conclude insufficient funds while the account snapshot is not ready", () => {
+		render("withdraw", 150, { ...createData(), accountStatus: "loading" });
+		act(() => setInputValue(getInput(container), "5"));
+		expect(container.textContent).not.toContain("Insufficient funds");
+		expect(getSubmit(container).disabled).toBe(true);
+	});
+
+	it("shows only confirmed restrictions, never passive availability text", () => {
+		testState.availability = {
+			available: false,
+			reason: "geo-unresolved",
+			unavailableReason: "Checking regional availability. Funds actions are temporarily unavailable.",
+		};
+		render("supply", 0, createData());
+		expect(container.textContent).not.toContain("Checking regional availability");
+		testState.availability = {
+			available: false,
+			reason: "geo-restricted",
+			unavailableReason: "Funds actions are not available in your region.",
+		};
+		render("supply", 0, createData());
+		expect(container.textContent).toContain("Funds actions are not available in your region.");
+	});
+
+	it("keeps the same dialog instance while it closes and refuses to submit when closed", () => {
+		const onOpenChange = vi.fn();
+		const data = createData();
+		const renderWith = (open: boolean) =>
+			act(() =>
+				root.render(
+					createElement(EarnActionModal, {
+						open,
+						sessionId: 7,
+						operation: "supply",
+						initialToken: 0,
+						data,
+						onOpenChange,
+					}),
+				),
+			);
+		renderWith(true);
+		act(() => setInputValue(getInput(container), "10"));
+		renderWith(false);
+		renderWith(true);
+		expect(getInput(container).value).toBe("10");
+	});
+
+	it("links the amount error to the input and announces position changes politely", () => {
+		render("supply", 0, createData());
+		act(() => setInputValue(getInput(container), "701"));
+		const input = getInput(container);
+		const errorId = input.getAttribute("aria-describedby");
+		expect(errorId).toBeTruthy();
+		expect(container.querySelector(`[id="${errorId}"]`)?.textContent).toBe("Insufficient funds");
+		expect(container.querySelector('[aria-live="polite"]')).not.toBeNull();
 	});
 });

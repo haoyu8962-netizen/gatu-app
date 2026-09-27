@@ -17,6 +17,7 @@ import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import Big from "big.js";
 import { type ReactNode, useId, useState } from "react";
+import { TOUCH_PRESS_FADE_CLASS } from "@/components/ui/touch-press";
 import {
 	EARN_HIDDEN_UNLESS_HELD_TOKEN,
 	type EarnActionBlock,
@@ -26,6 +27,7 @@ import {
 	getHealthFactorDisplayRatio,
 } from "@/domain/earn";
 import type { EarnData } from "@/hooks/earn/use-earn-data";
+import { cn } from "@/lib/cn";
 import { formatDateTime, formatNumber, formatPercent, formatUSD } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { AccountLedgerRow } from "@/lib/trade/account-ledger";
@@ -120,7 +122,10 @@ export function EarnView({ data, isMobile, actionsAllowed, notice, onOpenAction 
 						>
 							<button
 								type="button"
-								className="cursor-help text-left underline decoration-dashed decoration-stroke-strong underline-offset-4"
+								className={cn(
+									"cursor-help text-start underline decoration-dashed decoration-stroke-strong underline-offset-4",
+									TOUCH_PRESS_FADE_CLASS,
+								)}
 							>
 								{t`Your Health Factor`}
 							</button>
@@ -188,9 +193,10 @@ function ActionButton({ label, primary, disabled, reason, onClick }: ActionButto
 			variant={primary ? "filled" : "outline"}
 			intent={primary ? "brand" : "neutral"}
 			disabled={disabled}
+			focusableWhenDisabled={Boolean(reason)}
 			onClick={onClick}
 			aria-describedby={reason ? descriptionId : undefined}
-			className="w-full min-[1001px]:w-auto min-[1001px]:min-w-24"
+			className="w-full max-[1000px]:min-h-11 min-[1001px]:w-auto min-[1001px]:min-w-24"
 		>
 			{label}
 			{reason ? (
@@ -201,11 +207,7 @@ function ActionButton({ label, primary, disabled, reason, onClick }: ActionButto
 		</Button>
 	);
 	if (!reason) return button;
-	return (
-		<Tooltip content={reason}>
-			<span className="inline-flex w-full min-[1001px]:w-auto">{button}</span>
-		</Tooltip>
-	);
+	return <Tooltip content={reason}>{button}</Tooltip>;
 }
 
 interface StatCardProps {
@@ -378,22 +380,28 @@ interface RowActionLinkProps {
 }
 
 function RowActionLink({ action, onClick }: RowActionLinkProps) {
+	const descriptionId = useId();
+	const describe = action.disabled && action.reason !== null;
 	const link = (
 		<button
 			type="button"
-			disabled={action.disabled}
-			onClick={onClick}
-			className="text-xs font-medium text-brand hover:underline disabled:cursor-default disabled:text-fg-disabled disabled:no-underline"
+			aria-disabled={action.disabled || undefined}
+			aria-describedby={describe ? descriptionId : undefined}
+			onClick={() => {
+				if (!action.disabled) onClick();
+			}}
+			className="text-xs font-medium text-brand hover:underline aria-disabled:cursor-default aria-disabled:text-fg-disabled aria-disabled:no-underline"
 		>
 			{action.label}
+			{describe ? (
+				<span id={descriptionId} className="sr-only">
+					{action.reason}
+				</span>
+			) : null}
 		</button>
 	);
-	if (!action.reason || !action.disabled) return link;
-	return (
-		<Tooltip content={action.reason}>
-			<span className="inline-flex">{link}</span>
-		</Tooltip>
-	);
+	if (!describe) return link;
+	return <Tooltip content={action.reason}>{link}</Tooltip>;
 }
 
 interface Cell {
@@ -531,7 +539,7 @@ function InterestTable({ data }: InterestTableProps) {
 						? data.interest.map((entry) => (
 								<TableRow key={`${entry.time}:${entry.token}`}>
 									<TableCell size="dense" className="text-fg-muted tabular-nums">
-										{formatDateTime(entry.time)}
+										<bdi dir="ltr">{formatDateTime(entry.time)}</bdi>
 									</TableCell>
 									<TableCell size="dense" className="font-semibold text-fg">
 										{entry.token}
@@ -578,7 +586,7 @@ function HistoryTable({ rows, ready }: HistoryTableProps) {
 						? rows.map((row) => (
 								<TableRow key={row.id}>
 									<TableCell size="dense" className="text-fg-muted tabular-nums">
-										{formatDateTime(row.time)}
+										<bdi dir="ltr">{formatDateTime(row.time)}</bdi>
 									</TableCell>
 									<TableCell size="dense" className="text-fg">
 										{getHistoryActionLabel(row.action, translate)}

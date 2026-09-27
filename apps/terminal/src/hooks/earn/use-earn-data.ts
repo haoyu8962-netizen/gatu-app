@@ -8,11 +8,11 @@ import {
 	type EarnSpotBalance,
 	type EarnTokenMeta,
 	type EarnUserState,
+	getEarnSpotAvailable,
 	parseEarnInterest,
 	parseEarnReserves,
 	parseEarnUserState,
 } from "@/domain/earn";
-import { getSpotAvailableValue } from "@/domain/trade/balances";
 import {
 	type AccountAbstraction,
 	isSupportedAccountAbstraction,
@@ -162,7 +162,7 @@ export function useEarnData(): EarnData {
 		spotBalances.set(balance.token, {
 			token: balance.token,
 			total: balance.total,
-			available: getSpotAvailableValue(balance, balances.spotAvailableAfterMaintenance),
+			available: getEarnSpotAvailable(balance, balances.spotAvailableAfterMaintenance),
 		});
 	}
 	const availableAfterMaintenance = new Map<number, string>(
@@ -171,8 +171,9 @@ export function useEarnData(): EarnData {
 	const snapshotInputs: EarnSnapshotInputs = { tokens, portfolioMargin, spotBalances, availableAfterMaintenance };
 
 	const publicMalformed = reservesQuery.data !== undefined && reserves === null;
-	const publicStatus: EarnDataStatus =
-		reservesQuery.isError || publicMalformed ? "error" : reserves && tokens.size > 0 ? "ready" : "loading";
+	let publicStatus: EarnDataStatus = "loading";
+	if (reservesQuery.isError || publicMalformed) publicStatus = "error";
+	else if (reserves && tokens.size > 0) publicStatus = "ready";
 
 	const spotReady =
 		balances.spotStateStatus === "success" &&

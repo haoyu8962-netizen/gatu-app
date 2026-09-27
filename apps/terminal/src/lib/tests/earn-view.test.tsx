@@ -40,6 +40,7 @@ const RESERVES = [
 			ltv: "0.0",
 			totalSupplied: "100",
 			totalBorrowed: "50",
+			balance: "50",
 		},
 	],
 	[
@@ -51,6 +52,7 @@ const RESERVES = [
 			ltv: "0.65",
 			totalSupplied: "10",
 			totalBorrowed: "0",
+			balance: "10",
 		},
 	],
 ];
@@ -138,5 +140,12 @@ describe("earn view", () => {
 	it("explains a disabled repay only from a complete snapshot", () => {
 		render(createData("ready"));
 		expect(container.textContent).toContain(NO_BORROWS);
+		const repay = [...container.querySelectorAll<HTMLButtonElement>("td button")].find(
+			(button) => button.getAttribute("aria-describedby") && button.textContent?.startsWith("Repay"),
+		);
+		expect(repay?.hasAttribute("disabled")).toBe(false);
+		expect(repay?.getAttribute("aria-disabled")).toBe("true");
+		const description = repay ? container.querySelector(`[id="${repay.getAttribute("aria-describedby")}"]`) : null;
+		expect(description?.textContent).toBe(NO_BORROWS);
 	});
 });

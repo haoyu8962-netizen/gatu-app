@@ -20,6 +20,7 @@ const GlobalModals = createLazyComponent(() => import("../trade/components/globa
 const VISIBLE_UNAVAILABLE_REASONS = new Set(["agent-only-session", "geo-restricted"]);
 
 interface EarnDialogState {
+	sessionId: number;
 	operation: EarnOperation;
 	token: number | null;
 	open: boolean;
@@ -45,7 +46,7 @@ export function EarnPage() {
 
 	function openAction(operation: EarnOperation, token: number | null) {
 		if (!availability.available || dialog?.open) return;
-		setDialog({ operation, token, open: true });
+		setDialog((current) => ({ sessionId: (current?.sessionId ?? 0) + 1, operation, token, open: true }));
 	}
 
 	function handleOpenChange(open: boolean) {
@@ -89,6 +90,7 @@ export function EarnPage() {
 			{dialog ? (
 				<EarnActionModal
 					open={dialog.open}
+					sessionId={dialog.sessionId}
 					operation={dialog.operation}
 					initialToken={dialog.token}
 					data={data}

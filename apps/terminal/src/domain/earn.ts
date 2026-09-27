@@ -1,5 +1,6 @@
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import { getSpotAvailableValue, getSpotTransferableValue } from "@/domain/trade/balances";
 import { toBig } from "@/lib/trade/numbers";
 
 export type EarnOperation = "supply" | "withdraw" | "borrow" | "repay";
@@ -20,6 +21,7 @@ export interface EarnTokenMeta {
 
 export interface EarnReserve {
 	token: number;
+	balance: string;
 	borrowYearlyRate: string;
 	supplyYearlyRate: string;
 	utilization: string | null;
@@ -52,6 +54,7 @@ export interface EarnAssetRow {
 	oraclePx: string;
 	totalSupplied: string;
 	totalBorrowed: string;
+	reserveBalance: string;
 	supplied: string;
 	suppliedInterest: string;
 	borrowed: string;
@@ -124,6 +127,7 @@ export function parseEarnReserves(data: unknown): EarnReserve[] | null {
 		const ltv = readNonNegativeDecimal(state.ltv);
 		const totalSupplied = readNonNegativeDecimal(state.totalSupplied);
 		const totalBorrowed = readNonNegativeDecimal(state.totalBorrowed);
+		const balance = readNonNegativeDecimal(state.balance);
 		if (
 			token === null ||
 			borrowYearlyRate === null ||
@@ -133,6 +137,7 @@ export function parseEarnReserves(data: unknown): EarnReserve[] | null {
 			Big(ltv).gte(1) ||
 			totalSupplied === null ||
 			totalBorrowed === null ||
+			balance === null ||
 			seen.has(token)
 		) {
 			return null;
@@ -140,6 +145,7 @@ export function parseEarnReserves(data: unknown): EarnReserve[] | null {
 		seen.add(token);
 		reserves.push({
 			token,
+			balance,
 			borrowYearlyRate,
 			supplyYearlyRate,
 			utilization: state.utilization === undefined ? null : readNonNegativeDecimal(state.utilization),
@@ -252,6 +258,7 @@ export function buildEarnSnapshot({
 		const supplied = position?.supply.value ?? "0";
 		const borrowed = position?.borrow.value ?? "0";
 		const price = Big(reserve.oraclePx);
+		if (price.lte(0) && (Big(supplied).gt(0) || Big(borrowed).gt(0))) return null;
 		const suppliedUsd = Big(supplied).times(price);
 		const borrowedUsd = Big(borrowed).times(price);
 		totalSuppliedUsd = totalSuppliedUsd.plus(suppliedUsd);
@@ -271,6 +278,7 @@ export function buildEarnSnapshot({
 			oraclePx: reserve.oraclePx,
 			totalSupplied: reserve.totalSupplied,
 			totalBorrowed: reserve.totalBorrowed,
+			reserveBalance: reserve.balance,
 			supplied,
 			suppliedInterest: position ? Big(supplied).minus(position.supply.basis).toFixed() : "0",
 			borrowed,
@@ -330,17 +338,19 @@ export function getEarnMaxAmount({ operation, row, summary, spotAvailable }: Ear
 		const available = toBig(spotAvailable);
 		return available ? floorToDecimals(available) : null;
 	}
+	const liquidity = Big(row.reserveBalance);
+	const withinLiquidity = (value: Big) => (value.lt(liquidity) ? value : liquidity);
 	if (operation === "withdraw") {
 		const supplied = Big(row.supplied);
-		if (!row.isCollateral) return floorToDecimals(supplied);
+		if (!row.isCollateral) return floorToDecimals(withinLiquidity(supplied));
 		const collateralValue = Big(row.oraclePx).times(row.ltv);
 		if (collateralValue.lte(0)) return null;
 		const collateralLimit = Big(summary.availableToBorrowUsd).div(collateralValue);
-		return floorToDecimals(supplied.lt(collateralLimit) ? supplied : collateralLimit);
+		return floorToDecimals(withinLiquidity(supplied.lt(collateralLimit) ? supplied : collateralLimit));
 	}
 	if (operation === "borrow") {
 		const price = Big(row.oraclePx);
-		return price.gt(0) ? floorToDecimals(Big(summary.availableToBorrowUsd).div(price)) : null;
+		return price.gt(0) ? floorToDecimals(withinLiquidity(Big(summary.availableToBorrowUsd).div(price))) : null;
 	}
 	const borrowed = Big(row.borrowed);
 	if (borrowed.lte(0)) return "0";
@@ -421,4 +431,14 @@ export function parseEarnInterest(data: unknown): EarnInterestEntry[] | null {
 		entries.push({ time: item.time, token: item.token, supply, borrow });
 	}
 	return entries.sort((left, right) => right.time - left.time);
+}
+
+export function getEarnSpotAvailable(
+	balance: Parameters<typeof getSpotTransferableValue>[0],
+	availableAfterMaintenance: Parameters<typeof getSpotAvailableValue>[1],
+): string {
+	const transferable = Big(getSpotTransferableValue(balance));
+	const afterMaintenance = Big(getSpotAvailableValue(balance, availableAfterMaintenance));
+	const available = transferable.lt(afterMaintenance) ? transferable : afterMaintenance;
+	return available.gt(0) ? available.toFixed() : "0";
 }

@@ -6,6 +6,7 @@ import {
 	getEarnActionBlock,
 	getEarnMaxAmount,
 	getEarnOperationRows,
+	getEarnSpotAvailable,
 	getHealthFactorDisplayRatio,
 	getLiquidationThreshold,
 	parseEarnInterest,
@@ -353,20 +354,25 @@ describe("earn snapshot completeness", () => {
 	});
 
 	it("treats a zero oracle price as unavailable instead of dividing by zero", () => {
-		const zeroPrice = RESERVES_RESPONSE.map(([token, state]) =>
-			token === 150 ? [token, { ...(state as object), oraclePx: "0" }] : [token, state],
-		);
-		const reserves = parseEarnReserves(zeroPrice);
+		const zeroPrice = (token: number) =>
+			RESERVES_RESPONSE.map(([id, state]) =>
+				id === token ? [id, { ...(state as object), oraclePx: "0" }] : [id, state],
+			);
 		const userState = parseEarnUserState(USER_RESPONSE);
-		if (!reserves || !userState) throw new Error("fixture must parse");
-		const snapshot = buildEarnSnapshot({ reserves, userState, ...snapshotInputs() });
-		const hype = snapshot?.supplyRows.find((row) => row.token === 150);
-		if (!snapshot || !hype) throw new Error("rows missing");
+		const exposedZero = parseEarnReserves(zeroPrice(0));
+		if (!userState || !exposedZero) throw new Error("fixture must parse");
+		expect(buildEarnSnapshot({ reserves: exposedZero, userState, ...snapshotInputs() })).toBeNull();
+
+		const idleZero = parseEarnReserves(zeroPrice(197));
+		if (!idleZero) throw new Error("fixture must parse");
+		const snapshot = buildEarnSnapshot({ reserves: idleZero, userState, ...snapshotInputs() });
+		const btc = snapshot?.supplyRows.find((row) => row.token === 197);
+		if (!snapshot || !btc) throw new Error("rows missing");
 		expect(
-			getEarnMaxAmount({ operation: "withdraw", row: hype, summary: snapshot.summary, spotAvailable: "0" }),
+			getEarnMaxAmount({ operation: "withdraw", row: btc, summary: snapshot.summary, spotAvailable: "0" }),
 		).toBeNull();
 		expect(
-			getEarnMaxAmount({ operation: "borrow", row: hype, summary: snapshot.summary, spotAvailable: "0" }),
+			getEarnMaxAmount({ operation: "borrow", row: btc, summary: snapshot.summary, spotAvailable: "0" }),
 		).toBeNull();
 	});
 });
@@ -392,5 +398,32 @@ describe("earn submission at the SDK boundary", () => {
 		expect(() =>
 			verifyEarnSubmissionAtBoundary({ ...base, request: { ...base.request, amount: "6000", displayedMax: "6000" } }),
 		).toThrow(EarnSubmissionStaleError);
+	});
+});
+
+describe("earn liquidity and spendable balance", () => {
+	it("caps borrow and withdraw by the reserve's available liquidity", () => {
+		const drained = RESERVES_RESPONSE.map(([id, state]) =>
+			id === 0 ? [id, { ...(state as object), balance: "120" }] : [id, state],
+		);
+		const reserves = parseEarnReserves(drained);
+		const userState = parseEarnUserState(USER_RESPONSE);
+		if (!reserves || !userState) throw new Error("fixture must parse");
+		const snapshot = buildEarnSnapshot({ reserves, userState, ...snapshotInputs() });
+		const usdc = snapshot?.supplyRows.find((row) => row.token === 0);
+		if (!snapshot || !usdc) throw new Error("rows missing");
+		expect(getEarnMaxAmount({ operation: "borrow", row: usdc, summary: snapshot.summary, spotAvailable: "700" })).toBe(
+			"120",
+		);
+		expect(
+			getEarnMaxAmount({ operation: "withdraw", row: usdc, summary: snapshot.summary, spotAvailable: "700" }),
+		).toBe("120");
+	});
+
+	it("uses the smaller of the transferable and post-maintenance balance", () => {
+		const balance = { coin: "USDC", token: 0, total: "100", hold: "80", entryNtl: "0" };
+		expect(getEarnSpotAvailable(balance, [[0, "60"]])).toBe("20");
+		expect(getEarnSpotAvailable(balance, [[0, "10"]])).toBe("10");
+		expect(getEarnSpotAvailable({ ...balance, hold: "0" }, [])).toBe("100");
 	});
 });
