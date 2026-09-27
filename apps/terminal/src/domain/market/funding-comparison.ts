@@ -57,6 +57,11 @@ export interface FundingComparisonMarketContext {
 	markPriceReceivedAt: number | undefined;
 }
 
+export interface FundingComparisonOpenInterestInput {
+	perpContextsLive: boolean;
+	now?: number;
+}
+
 export interface FundingComparisonSnapshotReceipt {
 	receivedAt: number;
 	monotonicDeadline: number;
@@ -222,7 +227,12 @@ function getArbDirection(difference: Big): FundingComparisonArbDirection {
 	return "equal";
 }
 
-function getOpenInterestUsd(market: FundingComparisonMarketContext, now: number): string | null {
+function getOpenInterestUsd(
+	market: FundingComparisonMarketContext,
+	perpContextsLive: boolean,
+	now: number,
+): string | null {
+	if (!perpContextsLive) return null;
 	if (!isLiveMarkPriceReady(market.markPriceStatus, market.markPx, market.markPriceReceivedAt, now)) return null;
 	const openInterest = toBig(market.openInterest);
 	const markPx = toBig(market.markPx);
@@ -233,7 +243,7 @@ function getOpenInterestUsd(market: FundingComparisonMarketContext, now: number)
 export function buildFundingComparisonRows(
 	snapshot: PredictedFundingsResponse,
 	perpMarkets: readonly FundingComparisonMarketContext[],
-	now = Date.now(),
+	{ perpContextsLive, now = Date.now() }: FundingComparisonOpenInterestInput,
 ): FundingComparisonSourceRow[] {
 	const marketsByName = new Map(perpMarkets.map((market) => [market.name, market]));
 	const rows: FundingComparisonSourceRow[] = [];
@@ -245,7 +255,7 @@ export function buildFundingComparisonRows(
 		if (!hasCexData) continue;
 		rows.push({
 			coin,
-			openInterestUsd: getOpenInterestUsd(market, now),
+			openInterestUsd: getOpenInterestUsd(market, perpContextsLive, now),
 			hourlyRates: {
 				HlPerp: getFundingComparisonHourlyRate("HlPerp", venueData.get("HlPerp")),
 				BinPerp: getFundingComparisonHourlyRate("BinPerp", venueData.get("BinPerp")),

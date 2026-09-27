@@ -57,7 +57,7 @@ const ROWS = buildFundingComparisonRows(
 		},
 		{ name: "ETH", markPriceStatus: "loading", markPriceReceivedAt: undefined },
 	],
-	PRICE_RECEIVED_AT,
+	{ perpContextsLive: true, now: PRICE_RECEIVED_AT },
 );
 
 function props(overrides: Partial<FundingComparisonViewProps> = {}): FundingComparisonViewProps {

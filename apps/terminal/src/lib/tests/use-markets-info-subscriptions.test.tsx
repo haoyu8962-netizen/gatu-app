@@ -19,18 +19,23 @@ const mocks = vi.hoisted(() => ({
 	compactDisabled: false,
 }));
 
-vi.mock("@gatu/hl-react", () => ({
-	canUseL2Decompression: () => true,
-	useHyperliquidTransport: () => ({ env: "Mainnet" }),
-	useSubscription: (...args: unknown[]) => {
-		mocks.useSubscription(...args);
-		if (args[0] === "fastAssetCtxs") return mocks.fastPriceSubscription;
-		const enabled = (args[2] as { enabled?: boolean } | undefined)?.enabled;
-		const response = mocks.responses[args[0] as string];
-		if (enabled && response) return response;
-		return { data: undefined, status: "idle", error: null, isStale: false, lastMessageAt: undefined };
-	},
-}));
+vi.mock("@gatu/hl-react", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@gatu/hl-react")>();
+	return {
+		canUseL2Decompression: () => true,
+		parseCompactPerpAssetCtxsView: actual.parseCompactPerpAssetCtxsView,
+		parseCompactSpotAssetCtxsView: actual.parseCompactSpotAssetCtxsView,
+		useHyperliquidTransport: () => ({ env: "Mainnet" }),
+		useSubscription: (...args: unknown[]) => {
+			mocks.useSubscription(...args);
+			if (args[0] === "fastAssetCtxs") return mocks.fastPriceSubscription;
+			const enabled = (args[2] as { enabled?: boolean } | undefined)?.enabled;
+			const response = mocks.responses[args[0] as string];
+			if (enabled && response) return response;
+			return { data: undefined, status: "idle", error: null, isStale: false, lastMessageAt: undefined };
+		},
+	};
+});
 
 vi.mock("@/lib/hyperliquid/markets/market-ctxs-fallback", () => ({
 	isCompactMarketCtxsDisabled: () => mocks.compactDisabled,
@@ -100,6 +105,21 @@ function Probe({ subscriptionsEnabled }: { subscriptionsEnabled: boolean }) {
 }
 
 let captured: ReturnType<typeof useMarketsInfoInternal>;
+
+const BTC_PERP_CTX = {
+	funding: "0.0000125",
+	openInterest: "12",
+	prevDayPx: "90000",
+	dayNtlVlm: "1000000",
+	oraclePx: "99990",
+	markPx: "100000",
+	midPx: "100001",
+	dayBaseVlm: "10",
+};
+
+function subscriptionResponse(data: unknown, overrides: Record<string, unknown> = {}) {
+	return { data, status: "active", error: undefined, isStale: false, lastMessageAt: 1, ...overrides };
+}
 
 describe("useMarketsInfoInternal subscription gate", () => {
 	let container: HTMLDivElement;
@@ -227,6 +247,73 @@ describe("useMarketsInfoInternal subscription gate", () => {
 		renderProbe(false);
 		expectLatestSubscriptionState(false);
 	});
+
+	it("reports live perp contexts only for an active, fresh compact frame", () => {
+		mocks.responses.pac = subscriptionResponse([["", [BTC_PERP_CTX]]]);
+		renderProbe(true);
+		expect(captured.perpContextsLive).toBe(true);
+		expect(captured.getMarketByName("BTC")).toMatchObject({ openInterest: "12" });
+	});
+
+	it.each([
+		["stale", { isStale: true }],
+		["recovering", { status: "subscribing" }],
+	])("does not report %s compact perp contexts as live and keeps the retained values", (_state, overrides) => {
+		mocks.responses.pac = subscriptionResponse([["", [BTC_PERP_CTX]]], overrides);
+		renderProbe(true);
+		expect(captured.perpContextsLive).toBe(false);
+		expect(captured.getMarketByName("BTC")).toMatchObject({ openInterest: "12" });
+	});
+
+	it("does not report an active compact subscription without a frame as live", () => {
+		mocks.responses.pac = subscriptionResponse(undefined);
+		renderProbe(true);
+		expect(captured.perpContextsLive).toBe(false);
+	});
+
+	it("does not report failed compact perp contexts as live", () => {
+		mocks.responses.pac = subscriptionResponse([["", [BTC_PERP_CTX]]], {
+			status: "error",
+			error: new Error("bad frame"),
+		});
+		renderProbe(true);
+		expect(mocks.disableCompactMarketCtxs).toHaveBeenCalledTimes(1);
+		expect(captured.perpContextsLive).toBe(false);
+	});
+
+	it("does not report session-cached perp contexts as live", () => {
+		sessionStorage.setItem(
+			"hl-mkt-stats-v2",
+			JSON.stringify({ env: "Mainnet", savedAt: Date.now(), allDexsCtxs: [["", [BTC_PERP_CTX]]] }),
+		);
+		mocks.responses.pac = subscriptionResponse(undefined, { status: "subscribing" });
+		renderProbe(true);
+		expect(captured.getMarketByName("BTC")).toMatchObject({ openInterest: "12" });
+		expect(captured.perpContextsLive).toBe(false);
+	});
+
+	it("does not report perp contexts as live while the route-level gate is closed", () => {
+		mocks.responses.pac = subscriptionResponse([["", [BTC_PERP_CTX]]]);
+		renderProbe(false);
+		expect(captured.perpContextsLive).toBe(false);
+	});
+
+	it.each([
+		["active and fresh", {}, true],
+		["stale", { isStale: true }, false],
+		["failed", { status: "error", error: new Error("closed") }, false],
+		["recovering", { status: "subscribing" }, false],
+	])(
+		"reports whether %s plain-channel perp contexts are live after the compact fallback",
+		(_state, overrides, live) => {
+			mocks.compactDisabled = true;
+			mocks.responses.allDexsAssetCtxs = subscriptionResponse({ ctxs: [["", [BTC_PERP_CTX]]] }, overrides);
+			renderProbe(true);
+			expectLatestSubscriptionState(true, false);
+			expect(captured.perpContextsLive).toBe(live);
+			expect(captured.getMarketByName("BTC")).toMatchObject({ openInterest: "12" });
+		},
+	);
 
 	it("uses aggregate stream receipt time for retained fast prices", () => {
 		mocks.fastPriceSubscription.data = {

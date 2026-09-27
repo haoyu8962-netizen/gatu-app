@@ -26,6 +26,7 @@ interface PerpMarketState {
 
 interface MarketsState {
 	perpMarkets: PerpMarketState[];
+	perpContextsLive: boolean;
 	catalogState: { status: "restoring" | "loading" | "paused" | "error" | "ready" };
 	catalogQueries: {
 		allPerpMetas: { status: "pending" | "error" | "success"; fetchStatus: "idle" | "fetching" | "paused" };
@@ -123,6 +124,7 @@ function perp(
 function markets(overrides: Partial<MarketsState> = {}): MarketsState {
 	return {
 		perpMarkets: [perp("BTC", "10", "100000"), perp("ETH", "100", "4000")],
+		perpContextsLive: true,
 		catalogState: { status: "ready" },
 		catalogQueries: { allPerpMetas: { status: "success", fetchStatus: "idle" } },
 		retryMarketCatalog: vi.fn(async () => undefined),
@@ -528,6 +530,50 @@ describe("useFundingComparisonController", () => {
 		expect(openInterestByCoin()).toEqual([
 			["ETH", "400000"],
 			["BTC", "1000000"],
+		]);
+	});
+
+	it("hides open interest while the perp asset contexts are not live, even with live prices and a fresh snapshot", () => {
+		const threeMarkets = () => [perp("BTC", "10", "100000"), perp("ETH", "1000", "4000"), perp("SOL", "100", "150")];
+		store.holder.state = {
+			fundings: fundings([
+				entry("BTC", "0.00001", "0.0001"),
+				entry("ETH", "0.00002", "0.00004"),
+				entry("SOL", "0.00003", "0.00005"),
+			]),
+			markets: markets({ perpMarkets: threeMarkets() }),
+		};
+		render();
+		const openInterestByCoin = () => current().rows.map((row) => [row.coin, row.openInterestUsd]);
+		expect(openInterestByCoin()).toEqual([
+			["ETH", "4000000"],
+			["BTC", "1000000"],
+			["SOL", "15000"],
+		]);
+
+		act(() => store.set({ markets: markets({ perpMarkets: threeMarkets(), perpContextsLive: false }) }));
+		expect(current()).toMatchObject({ pageState: "normal", totalRows: 3 });
+		expect(openInterestByCoin()).toEqual([
+			["BTC", null],
+			["ETH", null],
+			["SOL", null],
+		]);
+		expect(current().rows[0].rates.HlPerp.value).toBe("0.00008");
+		expect(current().rows[0].arbs.BinPerp?.value).toBe("0.00002");
+
+		act(() => current().onSort("openInterest"));
+		expect(current().sortDirection).toBe("ascending");
+		expect(openInterestByCoin()).toEqual([
+			["BTC", null],
+			["ETH", null],
+			["SOL", null],
+		]);
+
+		act(() => store.set({ markets: markets({ perpMarkets: threeMarkets() }) }));
+		expect(openInterestByCoin()).toEqual([
+			["SOL", "15000"],
+			["BTC", "1000000"],
+			["ETH", "4000000"],
 		]);
 	});
 

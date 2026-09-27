@@ -124,7 +124,7 @@ export function useFundingComparisonController() {
 	);
 
 	const fundingsQuery = useInfo("predictedFundings", undefined, FUNDING_COMPARISON_QUERY_OPTIONS);
-	const { perpMarkets, catalogState, catalogQueries, retryMarketCatalog } = useMarketsInfo();
+	const { perpMarkets, perpContextsLive, catalogState, catalogQueries, retryMarketCatalog } = useMarketsInfo();
 	const navigateToMarket = useMarketNavigation();
 	const snapshotFresh = useSnapshotFreshness(fundingsQuery.dataUpdatedAt);
 
@@ -139,7 +139,10 @@ export function useFundingComparisonController() {
 		perpMetaFetchStatus: catalogQueries.allPerpMetas.fetchStatus,
 		perpMetaStatus: catalogQueries.allPerpMetas.status,
 	});
-	const sourceRows = snapshot && catalogStatus === "ready" ? buildFundingComparisonRows(snapshot, perpMarkets) : [];
+	const sourceRows =
+		snapshot && catalogStatus === "ready"
+			? buildFundingComparisonRows(snapshot, perpMarkets, { perpContextsLive })
+			: [];
 	const result = deriveFundingComparisonPage({
 		rows: sourceRows,
 		period,
