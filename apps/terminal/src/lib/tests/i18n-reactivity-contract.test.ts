@@ -65,6 +65,7 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/tradebox/embedded-deposit-auto-bridge.tsx",
 	"components/trade/tradebox/leverage-editor.tsx",
 	"components/trade/tradebox/leverage-modal.tsx",
+	"components/trade/tradebox/leverage-position-limit-row.tsx",
 	"components/trade/tradebox/leverage-slider.tsx",
 	"components/trade/tradebox/margin-mode-modal.tsx",
 	"components/trade/tradebox/order-toast.tsx",

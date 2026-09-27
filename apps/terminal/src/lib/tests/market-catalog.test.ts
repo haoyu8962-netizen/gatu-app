@@ -69,6 +69,45 @@ describe("market catalog identity", () => {
 		expect(markets.builderPerp[0]?.quoteToken?.name).toBe("SPARSE");
 	});
 
+	it("attaches dex-scoped margin tiers to perp and builder perp markets", () => {
+		const spotMeta = {
+			tokens: [spotToken("USDC", 0), spotToken("USDH", 360)],
+			universe: [],
+		} as unknown as SpotMetaResponse;
+		const mainTiers = [
+			{ lowerBound: "0.0", maxLeverage: 40 },
+			{ lowerBound: "150000000.0", maxLeverage: 20 },
+		];
+		const builderTiers = [
+			{ lowerBound: "0.0", maxLeverage: 20 },
+			{ lowerBound: "5000000.0", maxLeverage: 10 },
+		];
+		const mainMeta = {
+			universe: [
+				{ name: "BTC", szDecimals: 5, maxLeverage: 40, marginTableId: 56 },
+				{ name: "IMPLICIT", szDecimals: 2, maxLeverage: 3, marginTableId: 3 },
+				{ name: "MISMATCH", szDecimals: 2, maxLeverage: 10, marginTableId: 3 },
+			],
+			marginTables: [[56, { description: "tiered 40x", marginTiers: mainTiers }]],
+			collateralToken: 0,
+		} as unknown as MetaResponse;
+		const builderMeta = {
+			universe: [{ name: "xyz:TEST", szDecimals: 2, maxLeverage: 20, marginTableId: 56 }],
+			marginTables: [[56, { description: "builder table", marginTiers: builderTiers }]],
+			collateralToken: 360,
+		} as unknown as MetaResponse;
+		const perpDexs = [null, { name: "xyz" }] as unknown as PerpDexsResponse;
+
+		const markets = createTestMarkets(spotMeta, [mainMeta, builderMeta], perpDexs);
+		const perpByName = new Map(markets.perp.map((market) => [market.name, market]));
+
+		expect(perpByName.get("BTC")?.marginTiers).toBe(mainTiers);
+		expect(perpByName.get("IMPLICIT")?.marginTiers).toEqual([{ lowerBound: "0", maxLeverage: 3 }]);
+		expect(perpByName.get("MISMATCH")?.marginTiers).toBeUndefined();
+		expect(markets.builderPerp[0]?.marginTiers).toBe(builderTiers);
+		expect(markets.builderPerp[0]?.quoteToken?.name).toBe("USDH");
+	});
+
 	it("derives stable pairs from quote-asset positions in the spot universe", () => {
 		const spotMeta = {
 			tokens: [spotToken("USDC", 0), spotToken("MOG", 43), spotToken("USDE", 235), spotToken("USDT0", 268)],

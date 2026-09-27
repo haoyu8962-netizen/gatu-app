@@ -4417,6 +4417,10 @@ msgstr "Max Drawdown"
 msgid "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
 msgstr "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
 
+#: src/components/trade/tradebox/leverage-position-limit-row.tsx
+msgid "Max position size"
+msgstr "Max position size"
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -4953,6 +4957,10 @@ msgstr "No staking actions"
 #: src/components/staking/staking-view.tsx
 msgid "No staking rewards"
 msgstr "No staking rewards"
+
+#: src/components/trade/tradebox/leverage-position-limit-row.tsx
+msgid "No tier limit"
+msgstr "No tier limit"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "No tokens with value found across supported chains"

@@ -63,6 +63,7 @@ import {
 	usesLimitPrice as usesLimitPriceForOrder,
 } from "@/lib/trade/order-types";
 import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/lib/trade/order-validation-presentation";
+import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import type { ActiveModal } from "@/lib/trade/types";
 import { useButtonContent } from "@/lib/trade/use-button-content";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
@@ -398,6 +399,7 @@ export function TradePanel() {
 		marginMode === "cross" ? crossMarginSnapshot.existingPosition : isolatedExistingPosition;
 
 	const { marginRequired } = getOrderMetrics({ sizeValue, price, leverage, reduceOnly });
+	const marginTiers = market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null;
 	const { liqPrice, liqWarning } = estimateProspectiveLiquidation({
 		price,
 		orderSize: sizeValue,
@@ -405,7 +407,7 @@ export function TradePanel() {
 		side,
 		marginMode,
 		accountMode: accountAbstraction,
-		marginTiers: market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null,
+		marginTiers,
 		dataReady:
 			(orderType === "market" || orderType === "limit") &&
 			positionStateReady &&
@@ -811,6 +813,8 @@ export function TradePanel() {
 							isUpdating={isLeverageUpdating}
 							onApply={handleLeverageApply}
 							marketIdentity={leverageInteractionIdentity}
+							marginTiers={marginTiers}
+							quoteSymbol={getTpSlCollateralSymbol(market)}
 						/>
 					</LazyDialogHost>
 					<LazyDialogHost
