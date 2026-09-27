@@ -1,10 +1,12 @@
 import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import Big from "big.js";
-import { fetchTimeRangeHistory } from "@/lib/trade/history-pagination";
+import type { Network } from "@/lib/network";
+import { fetchHistoryPageWithRetry, fetchTimeRangeHistory } from "@/lib/trade/history-pagination";
 import {
 	createInfoWeightPacer,
 	getItemWeightedInfoRequestWeight,
 	INFO_REST_WEIGHT_LIMIT_PER_MINUTE,
+	type InfoWeightPacer,
 	type InfoWeightPacerOptions,
 } from "@/lib/trade/info-weight-pacer";
 
@@ -15,6 +17,9 @@ export const TWAP_SLICE_FILLS_EXPORT_WEIGHT_PER_MINUTE = (INFO_REST_WEIGHT_LIMIT
 export const TWAP_SLICE_FILLS_OBSERVED_PAGE_SIZE = 2_000;
 /** Retry delay after a 429 without `Retry-After`, long enough for the per-minute budget to recover. */
 export const TWAP_SLICE_FILLS_EXPORT_RATE_LIMIT_FALLBACK_MS = 60_000;
+
+const TWAP_SLICE_FILLS_EXPORT_RESERVE_WEIGHT = getItemWeightedInfoRequestWeight(TWAP_SLICE_FILLS_OBSERVED_PAGE_SIZE);
+const twapSliceFillsExportPacers = new Map<Network, InfoWeightPacer>();
 
 const UNSIGNED_DECIMAL_PATTERN = /^\d+(?:\.\d+)?$/;
 const SIGNED_DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
@@ -101,9 +106,37 @@ export interface UserTwapSliceFillHistoryResult {
 	truncated: boolean;
 }
 
-interface FetchUserTwapSliceFillHistoryOptions extends Pick<InfoWeightPacerOptions, "now" | "wait"> {
+export function createTwapSliceFillsExportPacer(
+	options: Pick<InfoWeightPacerOptions, "now" | "wait"> = {},
+): InfoWeightPacer {
+	return createInfoWeightPacer({
+		...options,
+		reserveWeight: TWAP_SLICE_FILLS_EXPORT_RESERVE_WEIGHT,
+		weightPerWindow: TWAP_SLICE_FILLS_EXPORT_WEIGHT_PER_MINUTE,
+	});
+}
+
+/**
+ * Returns the export pacer of one request target, the network's API host. It lives as long as the
+ * tab, so weight recorded by an earlier export, whether it finished, failed or was aborted, still
+ * counts against the next one and the per-minute share holds across exports.
+ */
+export function getTwapSliceFillsExportPacer(network: Network): InfoWeightPacer {
+	const existingPacer = twapSliceFillsExportPacers.get(network);
+	if (existingPacer) return existingPacer;
+	const pacer = createTwapSliceFillsExportPacer();
+	twapSliceFillsExportPacers.set(network, pacer);
+	return pacer;
+}
+
+export function clearTwapSliceFillsExportPacersForTests(): void {
+	twapSliceFillsExportPacers.clear();
+}
+
+interface FetchUserTwapSliceFillHistoryOptions {
 	endTime: number;
 	maxPages?: number;
+	pacer: InfoWeightPacer;
 	signal: AbortSignal;
 }
 
@@ -111,27 +144,36 @@ interface FetchUserTwapSliceFillHistoryOptions extends Pick<InfoWeightPacerOptio
  * Walks `userTwapSliceFillsByTime` forward from the epoch. The page size of this endpoint is not
  * documented, so paging ends on an empty or overlap-only page instead of on a short page, and an
  * out-of-order page fails closed. Only the latest {@link TWAP_SLICE_FILLS_EXPORT_LIMIT} fills are kept.
- * Pages are paced so their item-weighted cost stays within
- * {@link TWAP_SLICE_FILLS_EXPORT_WEIGHT_PER_MINUTE} in any minute.
+ * Every attempt, retries included, waits for room in `pacer` and is recorded against it: a returned
+ * page at its item-weighted cost, any other outcome at the full-page reserve, since the server may
+ * have counted it. A 408, 429 or 5xx attempt is retried up to three times, and a 429 without
+ * `Retry-After` waits {@link TWAP_SLICE_FILLS_EXPORT_RATE_LIMIT_FALLBACK_MS}.
  */
 export async function fetchUserTwapSliceFillHistory(
-	fetchPage: (startTime: number, endTime: number, signal: AbortSignal) => Promise<UserTwapSliceFillsResponse>,
+	requestPage: (startTime: number, endTime: number, signal: AbortSignal) => Promise<UserTwapSliceFillsResponse>,
 	options: FetchUserTwapSliceFillHistoryOptions,
 ): Promise<UserTwapSliceFillHistoryResult> {
-	const pacer = createInfoWeightPacer({
-		now: options.now,
-		reserveWeight: getItemWeightedInfoRequestWeight(TWAP_SLICE_FILLS_OBSERVED_PAGE_SIZE),
-		wait: options.wait,
-		weightPerWindow: TWAP_SLICE_FILLS_EXPORT_WEIGHT_PER_MINUTE,
-	});
+	const { pacer } = options;
+
+	async function requestPacedPage(startTime: number, endTime: number, signal: AbortSignal) {
+		await pacer.acquire(signal);
+		let weight = TWAP_SLICE_FILLS_EXPORT_RESERVE_WEIGHT;
+		try {
+			const page = await requestPage(startTime, endTime, signal);
+			weight = getItemWeightedInfoRequestWeight(Array.isArray(page) ? page.length : 0);
+			return page;
+		} finally {
+			pacer.record(weight);
+		}
+	}
+
 	const result = await fetchTimeRangeHistory({
 		endTime: options.endTime,
-		fetchPage: async (startTime, endTime, signal) => {
-			await pacer.acquire(signal);
-			const page = await fetchPage(startTime, endTime, signal);
-			pacer.record(getItemWeightedInfoRequestWeight(Array.isArray(page) ? page.length : 0));
-			return page;
-		},
+		fetchPage: (startTime, endTime, signal) =>
+			fetchHistoryPageWithRetry((requestSignal) => requestPacedPage(startTime, endTime, requestSignal), {
+				rateLimitFallbackMs: TWAP_SLICE_FILLS_EXPORT_RATE_LIMIT_FALLBACK_MS,
+				signal,
+			}),
 		getKey: getUserTwapSliceFillKey,
 		getTime: (entry: UserTwapSliceFillsResponse[number]) => entry.fill.time,
 		...(options.maxPages === undefined ? {} : { maxPages: options.maxPages }),
