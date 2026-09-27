@@ -35,7 +35,7 @@
 | 被动加载与语言切换 | [数据展示契约](mobile-data-presentation.md)、[加载审查与证据](terminal-loading-audit.md)、[运行时翻译](i18n-presentation.md) |
 | 视觉与启动性能 | [UI 入口及优先级](ui-ux-guidelines.md)、[启动性能基线](terminal-performance-baseline.md)、[OG 资产](../designs/og-cards/README.md) |
 | 数字格式与日期 locale | [数字格式设置](number-format-setting.md)：数字跟随设置、日期跟随语言且固定拉丁数字、图表随设置重建、组件不得直接调用 `Intl` |
-| Hyperliquid API 核对 | [核对工作流](hyperliquid-sdk-reference.md)、[方法目录](hyperliquid-sdk-directory.md)、[独立 API Skill 资料](../packages/hyperliquid-api/README.md) |
+| Hyperliquid API 核对 | [核对工作流](hyperliquid-sdk-reference.md)、[方法目录](hyperliquid-sdk-directory.md)、[独立 API Skill 资料](../packages/hyperliquid-api/README.md)、[接口覆盖审查](hyperliquid-sdk-coverage-review.md)（`e3b5dd82` 基线的 SDK 调用覆盖与未接入接口分类） |
 | Across API 核对 | [共享阅读入口](across-reference.md)：官方索引、按需读取与接口 schema 核验；供 Codex、Claude 共用 |
 
 ## 拟实施方案
@@ -53,6 +53,7 @@
 | CSP 第二步：内联脚本哈希 | [计划](csp-inline-script-hashes-plan.md)：`script-src` 去掉 `'unsafe-inline'`，哈希随发布轮换并保留上一版集合，先 report-only 观察再强制；含现状数据、备选方案与需要决策的事项；B、C、D 阶段均已执行 |
 | 桌面 md 断点右列堆叠 | [计划](desktop-grid-stacked-right-column-plan.md)：1001–1420 px 时下单面板在上、订单簿在下、账户信息再下，图表列 10/14；含官方 fiber 实测几何、新默认几何、边界规则、v12 迁移与回归套件清单；已实施，决策见 ADR 0011 |
 | 资金类弹层的结果反馈 | [方案](funds-dialog-outcome-plan.md)：划转、发送、提现、充值对照官方终端的做法（保持打开到请求结束、无论成败都关闭、结果走通知、长时间状态放在通知与持久化的待处理列表）；分三步，含官方前端包取证、gatu 现状、三项需要决策的事项与验收标准；三步均已实施，未发布，未做真实钱包验收，偏差见文内「实施记录」 |
+| SDK 未接入接口 | [覆盖审查的收益排序](hyperliquid-sdk-coverage-review.md#收益排序)：优先资金费率历史、OI 上限预警与跨交易所资金费率；子账户、HIP-4 预测市场与 Agent 代签资金操作需先有设计与 ADR；均未排期 |
 
 ## 历史设计、调查与交付证据
 
