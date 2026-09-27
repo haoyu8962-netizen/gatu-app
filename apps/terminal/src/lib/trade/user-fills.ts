@@ -1,5 +1,8 @@
 import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import Big from "big.js";
+import { fetchTimeRangeHistory } from "@/lib/trade/history-pagination";
+
+export const TWAP_SLICE_FILLS_EXPORT_LIMIT = 10_000;
 
 const UNSIGNED_DECIMAL_PATTERN = /^\d+(?:\.\d+)?$/;
 const SIGNED_DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
@@ -79,6 +82,37 @@ export function getUserTwapSliceFillKey(entry: UserTwapSliceFillsResponse[number
 
 export function normalizeUserTwapSliceFills(entries: UserTwapSliceFillsResponse): UserFillsResponse {
 	return entries.map((entry) => ({ ...entry.fill, twapId: entry.twapId }));
+}
+
+export interface UserTwapSliceFillHistoryResult {
+	items: UserFillsResponse;
+	truncated: boolean;
+}
+
+/**
+ * Walks `userTwapSliceFillsByTime` forward from the epoch. The page size of this endpoint is not
+ * documented, so paging ends on an empty or overlap-only page instead of on a short page, and an
+ * out-of-order page fails closed. Only the latest {@link TWAP_SLICE_FILLS_EXPORT_LIMIT} fills are kept.
+ */
+export async function fetchUserTwapSliceFillHistory(
+	fetchPage: (startTime: number, endTime: number, signal: AbortSignal) => Promise<UserTwapSliceFillsResponse>,
+	options: { endTime: number; maxPages?: number; signal: AbortSignal },
+): Promise<UserTwapSliceFillHistoryResult> {
+	const result = await fetchTimeRangeHistory({
+		endTime: options.endTime,
+		fetchPage,
+		getKey: getUserTwapSliceFillKey,
+		getTime: (entry: UserTwapSliceFillsResponse[number]) => entry.fill.time,
+		...(options.maxPages === undefined ? {} : { maxPages: options.maxPages }),
+		requireAscending: true,
+		retainLatestItems: TWAP_SLICE_FILLS_EXPORT_LIMIT,
+		signal: options.signal,
+		validateItem: isValidUserTwapSliceFillHistoryItem,
+	});
+	return {
+		items: normalizeUserTwapSliceFills(result.items),
+		truncated: result.truncated || result.items.length >= TWAP_SLICE_FILLS_EXPORT_LIMIT,
+	};
 }
 
 export function getUserFillNotional(fill: UserFillsResponse[number]): string | null {

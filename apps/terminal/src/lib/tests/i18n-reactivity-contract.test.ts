@@ -37,6 +37,7 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/mobile/mobile-position-card.tsx",
 	"components/trade/mobile/mobile-positions-tab.tsx",
 	"components/trade/mobile/mobile-trade-view.tsx",
+	"components/trade/mobile/mobile-twap-fill-history-list.tsx",
 	"components/trade/mobile/mobile-twap-tab.tsx",
 	"components/trade/orderbook/orderbook-row.tsx",
 	"components/trade/positions/balances-tab.tsx",
@@ -54,6 +55,7 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/positions/positions-tab.tsx",
 	"components/trade/positions/send-modal.tsx",
 	"components/trade/positions/transfer-modal.tsx",
+	"components/trade/positions/twap-fill-history-table.tsx",
 	"components/trade/positions/twap-tab.tsx",
 	"components/trade/testnet-banner.tsx",
 	"components/trade/tradebox/account-panel.tsx",
@@ -84,6 +86,7 @@ const REACTIVE_COMPONENTS = [
 	"hooks/trade/use-position-limit-close-submit.ts",
 	"hooks/trade/use-position-market-close-submit.ts",
 	"hooks/trade/use-position-reverse-submit.ts",
+	"hooks/trade/use-twap-fill-history-csv.ts",
 ];
 
 describe("live localization source contract", () => {
