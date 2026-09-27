@@ -140,10 +140,12 @@ describe("useMarketFundingHistory", () => {
 	});
 
 	it("maps a complete snapshot to ready range buckets", async () => {
-		mocks.fundingHistory.mockResolvedValue(rows("BTC", 12));
+		const firstPage = deferred<unknown>();
+		mocks.fundingHistory.mockReturnValueOnce(firstPage.promise);
 
 		await render();
 		expect(current().status).toBe("loading");
+		await act(async () => firstPage.resolve(rows("BTC", 12)));
 		await flush();
 
 		expect(current().status).toBe("ready");
@@ -290,9 +292,11 @@ describe("useMarketFundingHistory", () => {
 		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
 		expect(current()).toMatchObject({ buckets: [], status: "disabled" });
 
-		mocks.fundingHistory.mockResolvedValueOnce(rows("BTC", 48));
+		const reactivatedPage = deferred<unknown>();
+		mocks.fundingHistory.mockReturnValueOnce(reactivatedPage.promise);
 		await render({ range: "1d" });
 		expect(current().status).toBe("loading");
+		await act(async () => reactivatedPage.resolve(rows("BTC", 48)));
 		await flush();
 
 		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
