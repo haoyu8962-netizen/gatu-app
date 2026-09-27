@@ -210,13 +210,12 @@ describe("PositionLimitCloseModal", () => {
 	let onSessionEnd: ReturnType<typeof vi.fn<(sessionId: string) => void>>;
 
 	function render() {
+		renderSession({ sessionId: SESSION_ID, position: { ...position } });
+	}
+
+	function renderSession(session: { sessionId: string; position: typeof position } | null) {
 		act(() => {
-			root.render(
-				createElement(PositionLimitCloseModal, {
-					session: { sessionId: SESSION_ID, position: { ...position } },
-					onSessionEnd,
-				}),
-			);
+			root.render(createElement(PositionLimitCloseModal, { session, onSessionEnd }));
 		});
 	}
 
@@ -621,6 +620,52 @@ describe("PositionLimitCloseModal", () => {
 				owner: "0x1111111111111111111111111111111111111111",
 				env: "Mainnet",
 			});
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("keeps the dialog mounted closed for its exit transition and never submits while closing", async () => {
+		vi.useFakeTimers();
+		try {
+			render();
+			enterPrice("101");
+			expect(testState.adaptiveProps?.open).toBe(true);
+			expect(getSubmitButton().disabled).toBe(false);
+
+			renderSession(null);
+			expect(container.querySelector('[data-testid="adaptive-modal"]')).not.toBeNull();
+			expect(testState.adaptiveProps?.open).toBe(false);
+			expect(getSubmitButton().disabled).toBe(true);
+			await act(async () => getSubmitButton().click());
+			expect(testState.submit).not.toHaveBeenCalled();
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[data-testid="adaptive-modal"]')).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("fades the HIP-3 disclaimer out after its Cancel ends the session", () => {
+		vi.useFakeTimers();
+		try {
+			testState.hip3Required = true;
+			render();
+			act(() => container.querySelector<HTMLButtonElement>('[data-testid="hip3-cancel"]')?.click());
+			expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
+
+			renderSession(null);
+			expect(container.querySelector('[data-testid="hip3-cancel"]')?.getAttribute("data-open")).toBe("false");
+			expect(testState.submitTarget).toBeNull();
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[data-testid="hip3-cancel"]')).toBeNull();
+			expect(testState.submitTarget).toBeNull();
 		} finally {
 			vi.useRealTimers();
 		}

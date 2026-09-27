@@ -45,6 +45,12 @@ function getButton(label: string): HTMLButtonElement {
 	return button;
 }
 
+function dispatchEscape() {
+	act(() => {
+		document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+	});
+}
+
 function getAcknowledgementCheckbox(): HTMLElement {
 	const checkbox = document.body.querySelector('[role="checkbox"]');
 	if (!(checkbox instanceof HTMLElement)) throw new Error("Acknowledgement checkbox not found");
@@ -179,6 +185,50 @@ describe("Hip3DeployerDisclaimer", () => {
 		expect(document.body.querySelector('button[aria-label="Close"]')).toBeNull();
 		expect(findButton("Leave this market")).toBeUndefined();
 		act(() => getButton("Cancel").click());
+		expect(onExit).toHaveBeenCalledOnce();
+		expect(testState.accept).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["desktop modal", false],
+		["phone drawer", true],
+	])("keeps the trade-page copy open on Escape in the %s", (_presentation, isMobile) => {
+		testState.isMobile = isMobile;
+		const onExit = vi.fn();
+		act(() => {
+			root.render(
+				createElement(Hip3DeployerDisclaimer, {
+					open: true,
+					documentationUrl: undefined,
+					exit: "leave-market",
+					onExit,
+				}),
+			);
+		});
+
+		dispatchEscape();
+		expect(onExit).not.toHaveBeenCalled();
+		expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
+	});
+
+	it.each([
+		["desktop modal", false],
+		["phone drawer", true],
+	])("ends the position flow on Escape in the %s", (_presentation, isMobile) => {
+		testState.isMobile = isMobile;
+		const onExit = vi.fn();
+		act(() => {
+			root.render(
+				createElement(Hip3DeployerDisclaimer, {
+					open: true,
+					documentationUrl: undefined,
+					exit: "cancel",
+					onExit,
+				}),
+			);
+		});
+
+		dispatchEscape();
 		expect(onExit).toHaveBeenCalledOnce();
 		expect(testState.accept).not.toHaveBeenCalled();
 	});

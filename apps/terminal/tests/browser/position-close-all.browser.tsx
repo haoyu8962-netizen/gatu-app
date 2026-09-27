@@ -61,6 +61,7 @@ interface FixtureState {
 	orders: OrderParams[];
 	settled: boolean;
 	activeTwap: boolean;
+	hip3Accepted: boolean;
 }
 
 export const useCloseAllFixture = create<FixtureState>(() => ({
@@ -76,6 +77,7 @@ export const useCloseAllFixture = create<FixtureState>(() => ({
 	orders: [],
 	settled: false,
 	activeTwap: false,
+	hip3Accepted: true,
 }));
 export const setCloseAllFixture = useCloseAllFixture.setState;
 let waiting: Array<() => void> = [];
@@ -203,13 +205,17 @@ export function usePositionMarketCloseAction() {
 	return { open: () => {}, pendingAssetId: null };
 }
 export function hasAcceptedHip3Disclaimer() {
-	return true;
+	return useCloseAllFixture.getState().hip3Accepted;
 }
-export function useHip3DisclaimerRequirement() {
-	return { isRequired: false, dex: undefined, documentationUrl: undefined };
+export function useHip3DisclaimerRequirement(target?: string | readonly string[] | null) {
+	const accepted = useCloseAllFixture((state) => state.hip3Accepted);
+	const names = typeof target === "string" ? [target] : (target ?? []);
+	const builderMarket = markets.find((market) => market.kind === "builderPerp" && names.includes(market.name));
+	const dex = builderMarket && "dex" in builderMarket ? builderMarket.dex : undefined;
+	return { isRequired: !!dex && !accepted, dex, documentationUrl: undefined };
 }
 export function useHip3DisclaimerActions() {
-	return { accept: () => {} };
+	return { accept: () => setCloseAllFixture({ hip3Accepted: true }) };
 }
 export function PositionPnlShareModal() {
 	return null;

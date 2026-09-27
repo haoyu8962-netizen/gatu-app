@@ -12,9 +12,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   returns to BTC; the scrim and Esc still do not dismiss it. Close All and Reverse now show the
   same cancellable disclaimer as Market Close and Limit Close before their confirmation instead of
   failing at submission, and Close All reads the account again when the disclaimer is accepted, so
-  its 30-second preview starts when the confirmation appears. The disclaimer fades out after Confirm
-  or Leave instead of disappearing, and it no longer shows a close button because its footer holds
-  the way out.
+  its 30-second preview restarts at that moment. The disclaimer fades out after Confirm, Leave or
+  Cancel instead of disappearing, and it no longer shows a close button because its footer holds
+  the way out. Limit Close now fades out as well when it is cancelled or submitted, like Close All
+  and Reverse, and its confirm button is disabled while it closes.
 
 - Link mobile device is now one sentence, one warning and one action. The header QR icon is the
   only entry (it loads the dialog while you hover or focus it, so the click opens the dialog

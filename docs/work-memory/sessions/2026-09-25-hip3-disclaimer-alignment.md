@@ -71,3 +71,4 @@
 - Codex 的变异推演另外指出：交易页副本的 `dismissible={false}` 没有测试钉住，Esc 与点遮罩只在应用内浏览器实测过。
 - 本会话另外核实的既有问题，不在本提交的改动里：免责声明 store 的 `merge` 直接读 `persisted.acceptedVersion`。首次访问没有存储记录时，zustand 以 `undefined` 调用 `merge`，抛出的错误被 persist 吞掉，补水不完成，状态停在默认的 0，行为恰好正确。用已安装的 zustand 5.0.9 写脚本复现：现写法首次访问时 `hasHydrated()` 为 false，加 `persisted ?? {}` 后为 true；老用户两种写法都正常。全局设置 store 的 `merge` 同样没有空值保护。仓库里没有代码依赖补水回调，目前没有可见影响。
 - 状态：以上发现均未修复，等待用户决定。
+- 2026-09-27 更新：以上发现已修复，store 的空值保护由后台任务完成并 cherry-pick 进本分支，见 [2026-09-27-hip3-alignment-review-fixes](2026-09-27-hip3-alignment-review-fixes.md)。
