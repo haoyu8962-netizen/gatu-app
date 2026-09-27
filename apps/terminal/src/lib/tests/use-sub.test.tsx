@@ -699,36 +699,42 @@ describe("useSub hook surface", () => {
 		expect(result?.isStale).toBe(true);
 	});
 
-	it("judges a replayed frame by its monotonic receipt when the system clock was set back before delivery", async () => {
-		const receivedAt = Date.now() + 60 * 60_000;
-		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
-		const l2Book = vi.fn(async (_params: unknown, listener: (data: unknown) => void) => {
-			const frame = { coin: "ETH", levels: [[], []], time: 1 };
-			markFrameReceivedAt(frame, receivedAt, performance.now() - 20_000);
-			listener(frame);
-			return { unsubscribe: vi.fn(async () => {}) };
-		});
-		const subscription = { l2Book } as unknown as CompactSubscriptionClient;
-		let result: SubscriptionResult<unknown> | undefined;
-		function Consumer() {
-			result = useSubscription("l2Book", { coin: "ETH" });
-			return null;
-		}
+	it.each([
+		{ path: "throttled", options: {} },
+		{ path: "direct", options: { throttleMs: 0 } },
+	])(
+		"judges a replayed frame by its monotonic receipt on the $path path when the system clock was set back before delivery",
+		async ({ options }) => {
+			const receivedAt = Date.now() + 60 * 60_000;
+			const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
+			const l2Book = vi.fn(async (_params: unknown, listener: (data: unknown) => void) => {
+				const frame = { coin: "ETH", levels: [[], []], time: 1 };
+				markFrameReceivedAt(frame, receivedAt, performance.now() - 20_000);
+				listener(frame);
+				return { unsubscribe: vi.fn(async () => {}) };
+			});
+			const subscription = { l2Book } as unknown as CompactSubscriptionClient;
+			let result: SubscriptionResult<unknown> | undefined;
+			function Consumer() {
+				result = useSubscription("l2Book", { coin: "ETH" }, options);
+				return null;
+			}
 
-		act(() => {
-			root.render(
-				<FullWrapper subscription={subscription}>
-					<Consumer />
-				</FullWrapper>,
-			);
-		});
-		await act(() => vi.advanceTimersByTimeAsync(50));
+			act(() => {
+				root.render(
+					<FullWrapper subscription={subscription}>
+						<Consumer />
+					</FullWrapper>,
+				);
+			});
+			await act(() => vi.advanceTimersByTimeAsync(50));
 
-		expect(result?.status).toBe("active");
-		expect(result?.lastMessageAt).toBe(receivedAt);
-		expect(result?.isStale).toBe(true);
-		expect(getStoreInternals(store).watchdog.isStale(key)).toBe(true);
-	});
+			expect(result?.status).toBe("active");
+			expect(result?.lastMessageAt).toBe(receivedAt);
+			expect(result?.isStale).toBe(true);
+			expect(getStoreInternals(store).watchdog.isStale(key)).toBe(true);
+		},
+	);
 
 	it.each([
 		{ method: "pac", frame: (sequence: number) => [["", [{ sequence }]]] },

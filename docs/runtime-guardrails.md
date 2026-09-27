@@ -503,12 +503,15 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   therefore cannot keep a silent stream fresh, while a forward jump, or a device
   sleep that `performance.now()` may not count, still ages the data as it did
   before. A negative wall-clock age on its own is not stale: otherwise setting
-  the clock back would mark every live stream stale at once and reconnect the
-  shared socket. Thresholds, keys and recovery paths are unchanged.
+  the clock back would mark every periodic stream that has not received a frame
+  since then stale on the next check, and several at once reconnect the shared
+  socket. Thresholds, keys and recovery paths are unchanged.
 - A transport that hands over a frame it received earlier (the order-book pool
   replay) passes both receipt times through `markFrameReceivedAt`, and throttled
-  delivery (`createThrottledUpdater`) paces on `performance.now()`, so a clock
-  change neither holds a throttled stream back nor makes a late frame look new.
+  delivery (`createThrottledUpdater`) measures the time since its last delivery
+  with the same `getReceiptAgeMs`, so setting the clock back neither holds a
+  throttled stream back nor makes a late frame look new, and a forward jump or a
+  sleep still releases the next frame at once.
 - `lastMessageAt` stays wall-clock for display and for consumers that compare it
   with `Date.now()`. Those consumers must treat a negative age as not fresh, as
   the execution guards in `domain/trade/market-price.ts`,

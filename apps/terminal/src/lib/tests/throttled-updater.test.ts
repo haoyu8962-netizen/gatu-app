@@ -59,7 +59,7 @@ describe("createThrottledUpdater", () => {
 		updater.destroy();
 	});
 
-	it("keeps its interval when the system clock is set back", () => {
+	it("keeps its interval in every round after the system clock is set back", () => {
 		const emissions: number[] = [];
 		const updater = createThrottledUpdater<number>((item) => {
 			emissions.push(item);
@@ -70,7 +70,59 @@ describe("createThrottledUpdater", () => {
 		vi.advanceTimersByTime(1_000);
 		updater.add(2);
 
+		vi.advanceTimersByTime(3_999);
+		expect(emissions).toEqual([1]);
+		vi.advanceTimersByTime(1);
+		expect(emissions).toEqual([1, 2]);
+
+		vi.advanceTimersByTime(1_000);
+		updater.add(3);
+		vi.advanceTimersByTime(3_999);
+		expect(emissions).toEqual([1, 2]);
+		vi.advanceTimersByTime(1);
+		expect(emissions).toEqual([1, 2, 3]);
+
+		vi.advanceTimersByTime(5_000);
+		updater.add(4);
+		expect(emissions).toEqual([1, 2, 3, 4]);
+
+		updater.destroy();
+	});
+
+	it("keeps its interval in the rounds after the system clock jumps forward", () => {
+		const emissions: number[] = [];
+		const updater = createThrottledUpdater<number>((item) => {
+			emissions.push(item);
+		}, 5_000);
+
+		updater.add(1);
+		vi.advanceTimersByTime(1_000);
+		updater.add(2);
+		vi.setSystemTime(Date.now() + 60 * 60_000);
 		vi.advanceTimersByTime(4_000);
+		expect(emissions).toEqual([1, 2]);
+
+		vi.advanceTimersByTime(1_000);
+		updater.add(3);
+		vi.advanceTimersByTime(3_999);
+		expect(emissions).toEqual([1, 2]);
+		vi.advanceTimersByTime(1);
+		expect(emissions).toEqual([1, 2, 3]);
+
+		updater.destroy();
+	});
+
+	it("delivers at once when the wall clock has passed the interval but the monotonic clock has not", () => {
+		const emissions: number[] = [];
+		const updater = createThrottledUpdater<number>((item) => {
+			emissions.push(item);
+		}, 5_000);
+
+		updater.add(1);
+		vi.advanceTimersByTime(1_000);
+		vi.setSystemTime(Date.now() + 60_000);
+		updater.add(2);
+
 		expect(emissions).toEqual([1, 2]);
 
 		updater.destroy();

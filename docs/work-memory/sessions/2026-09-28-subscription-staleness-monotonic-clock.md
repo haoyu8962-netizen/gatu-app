@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["market-recovery"],
-  "summary": "修复 Codex 在资金费率对比审查中复现的缺口：系统时间回拨后停止更新的订阅一直不被判过期。每帧携带墙钟与单调两个接收时间，巡检、隐藏缓冲提交、前台恢复过期与诊断都取两者年龄中较大者；节流投递改用单调时钟（原版在回拨后会把订单簿投递推迟约一小时，开发服务器对照已复现）。lastMessageAt 保持墙钟，阈值、订阅键与恢复路径不变；新增 ADR 0022。typecheck、Biome、订单簿与移动数据展示回归组、订阅套件与完整单测 601 文件 6876 项通过，10 个变异全部被抓住。资金费率对比文档与 perpContextsLive 测试在分支 claude/sdk-api-review-51a3ea，快进被权限拒绝，未改动。",
+  "summary": "修复 Codex 在资金费率对比审查中复现的缺口：系统时间回拨后停止更新的订阅一直不被判过期。每帧携带墙钟与单调两个接收时间，巡检、隐藏缓冲提交、前台恢复过期与诊断都取两者年龄中较大者；节流投递的间隔同样取两个时钟中较大者（原版在回拨后会把订单簿投递推迟约一小时，开发服务器对照已复现；首版只用单调时钟，Codex 对抗审查指出前跳与休眠后会多等一个节流窗口，已在第二个提交修正）。lastMessageAt 保持墙钟，阈值、订阅键与恢复路径不变；新增 ADR 0022。typecheck、Biome、订单簿与移动数据展示回归组、订阅套件与完整单测（审查修复后 601 文件 6882 项）通过，两轮共 16 个变异全部被抓住。资金费率对比文档与 perpContextsLive 测试在分支 claude/sdk-api-review-51a3ea，快进被权限拒绝，未改动。",
   "thread": null,
   "baseCommit": "e3b5dd82",
   "commits": [],
@@ -60,8 +60,8 @@
 保留墙钟 `lastMessageAt` 供显示与下游守卫，过期判断取单调年龄与墙钟年龄中较大者（`getReceiptAgeMs`），负的墙钟年龄单独不算过期；节流器改用单调时钟。完整取舍见 [ADR 0022](../../adr/0022-subscription-staleness-monotonic-clock.md)。
 
 - 选「两者取大」而非只用单调时钟：变异检查中只用单调时钟会让 `store-resume.test.ts` 的两条前台恢复测试（它们用 `vi.setSystemTime` 前跳墙钟模拟后台时长）和新的前跳测试失败，说明墙钟条件承担了既有行为；`performance.now()` 在设备休眠期间是否计时因平台而异，本次未核对。
-- 不采用「负年龄即过期」：变异检查中它让「回拨后持续推送仍新鲜」测试失败，`pac` 在回拨后第一次巡检（5 秒）就被判过期，意味着回拨会把所有周期流同时判过期并触发共享 socket 重连。
-- 节流器：`createThrottledUpdater` 用墙钟计间隔，回拨时若没有挂起的定时器，下一帧的间隔为负，投递被排到约一小时后。只修巡检会让这些流在回拨后持续过期约一小时，所以一并改为 `performance.now()`，首条仍立即投递（`lastCallTime` 初值改为 `undefined`，否则页面启动 5 秒内的首帧会被推迟）。
+- 不采用「负年龄即过期」：变异检查中它让「回拨后持续推送仍新鲜」测试失败，`pac` 在回拨后第一次巡检（5 秒）就被判过期，意味着回拨会把巡检前还没收到新帧的周期流都判过期，有多条时触发共享 socket 重连。（审查后修订：初稿写成「所有周期流同时判过期」，Codex 指出巡检前收到新帧的流已重新盖章，这一说法过强。）
+- 节流器：`createThrottledUpdater` 用墙钟计间隔，回拨时若没有挂起的定时器，下一帧的间隔为负，投递被排到约一小时后。只修巡检会让这些流在回拨后持续过期约一小时，所以一并修改，首条仍立即投递（`lastCallTime` 初值改为 `undefined`，否则页面启动 5 秒内的首帧会被推迟）。首版（`602df7d6`）只用 `performance.now()`；按下文补记改为记录上次投递的两种时刻，间隔用 `getReceiptAgeMs` 取较大者。
 - 订单簿回放帧经 `markFrameReceivedAt(frame, receivedAt, monotonicReceivedAt)` 交出两种接收时间，`takeFrameReceivedAt` 返回 `FrameReceipt`；更新了 ADR 0003 对应两条描述。
 
 ## 验证与限制
@@ -82,3 +82,20 @@
 - 待合入 `claude/sdk-api-review-51a3ea` 后处理：删除 `docs/funding-comparison.md` 第 4 节「这条上界依赖共享巡检……已另列后续任务」的回拨说明，改为引用 ADR 0022；同步第 10 节剩余限制里「这个上界只在系统时钟不回拨时成立」一句；在 `use-markets-info-subscriptions.test.tsx` 按真实 store 补 `perpContextsLive` 的回拨用例（本次在 `use-sub.test.tsx` 对 `pac` / `allDexsAssetCtxs` 断言了同一条件）。
 - 仍用墙钟、本次未改：`transport-monitor.ts` 的 socket 静默检测（回拨后失效到墙钟追上，巡检的多流重连仍可恢复）、`l2-subscription-gate.ts` 的截止时间、`order-reconciliation` / `twap-reconciliation` 的先后比较与期限定时器（回拨后撤单确认会等待）。
 - 下一次先查：ADR 0022、`docs/runtime-guardrails.md` §6、`packages/hl-react/src/internal/websocket/staleness.ts`。
+
+## 补记：Codex 对抗审查（2026-09-28）
+
+用户要求用 Codex 对抗审查 `602df7d6`。调用：`codex exec -m gpt-6-astra -s read-only -c approval_policy='"never"' -c model_reasoning_effort='"medium"'`，codex-cli 0.154.0，工作目录为本 worktree，约 9.8 万 token；Codex 未修改文件，它的内存对照不是正式 Vitest 运行。结论：核心回拨修复成立，无 P0/P1；报 1 项 P2、3 项 P3，逐条核对后全部成立，在第二个提交中处理：
+
+- **P2 节流器在前跳与休眠后行为改变**：首版只用单调时钟，上次投递后若墙钟前跳或单调时钟在休眠中没走，原版立即投递，首版要再等剩余的单调间隔（5 秒节流最多多等约 5 秒），与 ADR「其余行为不变」矛盾。修复：记录上次投递的两种时刻，间隔用 `getReceiptAgeMs` 取较大者。新增「墙钟越过间隔而单调时钟未越过时立即投递」用例，在 `602df7d6` 的源码上失败、修复后通过。
+- **P3 节流测试没有覆盖定时投递之后的下一轮**：Codex 用内存执行器证明，把定时器回调里的时刻单独改回墙钟，原有五项测试仍全部通过。补「回拨后连续几轮」与「前跳后连续几轮」两个用例，逐轮断言投递时刻。
+- **P3 直接接收路径、恢复事件年龄与其他频道缺少回拨断言**：回放帧回拨用例改为在节流与直接（`throttleMs: 0`）两条路径上各跑一次；`pac` 等回拨用例断言恢复事件 `staleForMs` 为 25 秒；回拨用例扩展到 `sac`、`spotAssetCtxs`；新增原始 `l2` 回拨后静默即过期、且不走通用恢复的用例。`pac` 的原始解码链路仍只由模拟订阅覆盖。
+- **P3 文档表述过强**：ADR 0022 的 API 调用方改为分列标记端（订单簿传输池）与消费端（`useSub` 两条接收路径）；「最多约 25 秒」限定为巡检按时运行（`setInterval` 在后台或被冻结的页面会延后），CHANGELOG 同步写「页面可见时」；「负年龄即过期会把所有周期流同时判过期」改为只影响巡检前还没收到新帧的流，runtime-guardrails §6 与本记录同步修订。
+- 审查确认成立的部分：新代码没有把墙钟值与单调值相减；单调接收时间只在进程内的 Map、WeakMap 与闭包中，不进存储、不跨标签；两处生产 `setSubscriptionData` 调用都传完整时间对；运行时两个字段成对更新，不会指向旧运行时；新增的 `performance.now()` 没有模块顶层调用；Vitest 4.0.16 默认伪造 `performance`，`setSystemTime` 只动墙钟。
+
+第二轮验证（工作区 = `602df7d6` 加审查修复，2026-09-28）：
+
+- 变异检查 6 项全部被抓住：节流只用单调 1 项失败；节流只用墙钟 3 项失败；定时回调只记墙钟 4 项失败；定时回调只记单调 3 项失败；直接路径不传单调时间 1 项失败；`staleForMs` 改回墙钟 4 项失败。
+- `pnpm typecheck` 通过；Biome 对 4 个改动文件通过；订单簿回归组 181 项、移动端数据展示回归组 74 项通过；订阅与 WebSocket 相关 14 个文件 175 项通过、1 项跳过。
+- 完整单测 `pnpm --filter @gatu/terminal test`：601 个文件通过、1 个跳过，6882 项通过、1 项跳过。
+- 没有重复浏览器核对：回拨时墙钟间隔为负，取大后等于单调间隔，与首版在开发服务器上核对过的行为相同；修复只改变「墙钟越过间隔而单调时钟未越过」时的投递时刻，这一点只有单元测试覆盖，真实前跳与设备休眠没有核对。

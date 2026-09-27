@@ -1,3 +1,5 @@
+import { getReceiptAgeMs } from "./staleness";
+
 type FlushCallback<T> = (items: T[]) => void;
 
 interface BatchedUpdater<T> {
@@ -58,18 +60,24 @@ export function createThrottledUpdater<T>(callback: (item: T) => void, intervalM
 	let lastItem: T | null = null;
 	let timeoutId: ReturnType<typeof setTimeout> | null = null;
 	let lastCallTime: number | undefined;
+	let lastCallMonotonicTime = 0;
+
+	function markCalled() {
+		lastCallTime = Date.now();
+		lastCallMonotonicTime = performance.now();
+	}
 
 	function scheduleUpdate() {
 		if (timeoutId !== null) return;
 
-		const now = performance.now();
-		const elapsed = lastCallTime === undefined ? Number.POSITIVE_INFINITY : now - lastCallTime;
+		const elapsed =
+			lastCallTime === undefined ? Number.POSITIVE_INFINITY : getReceiptAgeMs(lastCallTime, lastCallMonotonicTime);
 
 		if (elapsed >= intervalMs) {
 			if (lastItem !== null) {
 				callback(lastItem);
 				lastItem = null;
-				lastCallTime = now;
+				markCalled();
 			}
 		} else {
 			timeoutId = setTimeout(() => {
@@ -77,7 +85,7 @@ export function createThrottledUpdater<T>(callback: (item: T) => void, intervalM
 				if (lastItem !== null) {
 					callback(lastItem);
 					lastItem = null;
-					lastCallTime = performance.now();
+					markCalled();
 				}
 			}, intervalMs - elapsed);
 		}

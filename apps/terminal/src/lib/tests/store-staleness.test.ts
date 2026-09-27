@@ -321,7 +321,7 @@ describe("store staleness integration", () => {
 		store.getState().releaseSubscription(key);
 	});
 
-	it.each(["pac", "allDexsAssetCtxs"])(
+	it.each(["pac", "sac", "allDexsAssetCtxs", "spotAssetCtxs"])(
 		"marks a silent %s stream stale and resubscribes it after the system clock is set back",
 		async (method) => {
 			const triggerReconnect = vi.fn();
@@ -346,6 +346,10 @@ describe("store staleness integration", () => {
 			});
 			expect(subscribe).toHaveBeenCalledTimes(2);
 			expect(triggerReconnect).not.toHaveBeenCalled();
+			expect(getStoreInternals(store).recoveryEvents.at(-1)).toMatchObject({
+				cause: "stream-stale",
+				streams: [{ key, lastMessageAt: receivedAt, staleForMs: 25_000 }],
+			});
 
 			await vi.advanceTimersByTimeAsync(10 * 60_000);
 			expect(Date.now()).toBeLessThan(receivedAt);
@@ -385,6 +389,25 @@ describe("store staleness integration", () => {
 			store.getState().releaseSubscription(key);
 		},
 	);
+
+	it("marks a silent raw l2 stream stale after the system clock is set back and leaves recovery to its wrapper", async () => {
+		const triggerReconnect = vi.fn();
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
+		const subscribe = vi.fn(createFakeSubscription().subscribe);
+		const key = JSON.stringify(["hl", "subscription", "l2", { coin: "ETH" }]);
+
+		store.getState().acquireSubscription(key, subscribe);
+		await vi.advanceTimersByTimeAsync(0);
+		store.getState().setSubscriptionData(key, { coin: "ETH", sequence: 1 });
+
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		await vi.advanceTimersByTimeAsync(5_000);
+
+		expect(store.getState().subscriptions[key]?.isStale).toBe(true);
+		expect(subscribe).toHaveBeenCalledOnce();
+		expect(triggerReconnect).not.toHaveBeenCalled();
+		store.getState().releaseSubscription(key);
+	});
 
 	it("recovers a retained account snapshot on foreground resume after the system clock was set back", async () => {
 		const triggerReconnect = vi.fn();
