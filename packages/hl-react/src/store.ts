@@ -38,6 +38,7 @@ type SubscriptionEntry = {
 	error?: unknown;
 	isStale?: boolean;
 	lastMessageAt?: number;
+	monotonicLastMessageAt?: number;
 };
 
 type VisibilityBufferedValue = {
@@ -300,6 +301,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				error: undefined,
 				isStale,
 				lastMessageAt: buffered.receivedAt,
+				monotonicLastMessageAt: buffered.monotonicReceivedAt,
 			});
 		});
 	}
@@ -768,6 +770,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					current.error === undefined &&
 					current.isStale === isStale &&
 					current.lastMessageAt === receivedAt &&
+					current.monotonicLastMessageAt === monotonicReceivedAt &&
 					Object.is(current.data, data)
 				) {
 					return state;
@@ -779,6 +782,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					error: undefined,
 					isStale,
 					lastMessageAt: receivedAt,
+					monotonicLastMessageAt: monotonicReceivedAt,
 				};
 				return setSubscriptionEntry(state, key, nextEntry);
 			});

@@ -672,9 +672,10 @@ describe("useSub hook surface", () => {
 
 	it("keeps a replayed frame's original receipt time through confirmation and staleness", async () => {
 		const receivedAt = Date.now() - 20_000;
+		const monotonicReceivedAt = performance.now() - 20_000;
 		const l2Book = vi.fn(async (_params: unknown, listener: (data: unknown) => void) => {
 			const frame = { coin: "ETH", levels: [[], []], time: 1 };
-			markFrameReceivedAt(frame, receivedAt, performance.now() - 20_000);
+			markFrameReceivedAt(frame, receivedAt, monotonicReceivedAt);
 			listener(frame);
 			return { unsubscribe: vi.fn(async () => {}) };
 		});
@@ -696,6 +697,7 @@ describe("useSub hook surface", () => {
 
 		expect(result?.status).toBe("active");
 		expect(result?.lastMessageAt).toBe(receivedAt);
+		expect(result?.monotonicLastMessageAt).toBe(monotonicReceivedAt);
 		expect(result?.isStale).toBe(true);
 	});
 
@@ -777,6 +779,7 @@ describe("useSub hook surface", () => {
 
 			expect(result?.data).toEqual(frame(12));
 			expect(result?.lastMessageAt).toBe(Date.now());
+			expect(result?.monotonicLastMessageAt).toBe(performance.now());
 			expect(contextsLive()).toBe(true);
 
 			await act(() => vi.advanceTimersByTimeAsync(10 * 60_000));

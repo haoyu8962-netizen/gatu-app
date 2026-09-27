@@ -51,7 +51,13 @@ export type SubscriptionResult<TData> = {
 	status: SubscriptionStatus;
 	error: unknown;
 	isStale: boolean;
+	/** Wall-clock receipt of the latest frame, for display and for comparisons with `Date.now()`. */
 	lastMessageAt: number | undefined;
+	/**
+	 * `performance.now()` receipt of the same frame. Compare it only with `performance.now()` readings
+	 * taken in the same document, to order the frame against a local event (ADR 0022).
+	 */
+	monotonicLastMessageAt: number | undefined;
 	unsubscribe: (() => Promise<void>) | undefined;
 };
 

@@ -24,6 +24,7 @@ import {
 import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
+	TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
 } from "@/stores/use-pending-trading-action-store";
 import { getPendingTwapActions, hasPendingTwapForAsset } from "@/stores/use-pending-twap-store";
 import { createI18nRoot } from "./harness/react";
@@ -94,6 +95,7 @@ const mocks = vi.hoisted(() => ({
 		  }
 		| undefined,
 	activeLastMessageAt: undefined as number | undefined,
+	activeMonotonicLastMessageAt: undefined as number | undefined,
 	successToast: vi.fn(),
 	errorToast: vi.fn(),
 	warningToast: vi.fn(),
@@ -119,6 +121,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		error: null,
 		isStale: false,
 		lastMessageAt: method === "twapStates" ? mocks.activeLastMessageAt : undefined,
+		monotonicLastMessageAt: method === "twapStates" ? mocks.activeMonotonicLastMessageAt : undefined,
 	}),
 }));
 
@@ -216,6 +219,7 @@ describe("TwapReconciliation", () => {
 		mocks.dismissToast.mockReset();
 		mocks.clientKey = USER;
 		mocks.activeLastMessageAt = undefined;
+		mocks.activeMonotonicLastMessageAt = undefined;
 		getPendingTwapActions().prune(Number.MAX_SAFE_INTEGER);
 		getPendingTradingActionActions().reset();
 		window.localStorage.clear();
@@ -626,6 +630,7 @@ describe("TwapReconciliation", () => {
 
 	it("releases the active TWAP reservation before confirming a cancellation from a fresh snapshot", async () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const twapId = 60;
 		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
 			expect(
@@ -646,9 +651,10 @@ describe("TwapReconciliation", () => {
 			assetId: 7,
 		});
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
-		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2);
-		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1);
+		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
 		mocks.activeLastMessageAt = now;
+		mocks.activeMonotonicLastMessageAt = monotonicNow;
 
 		await act(async () => {
 			root.render(createReconciliation());
@@ -669,8 +675,72 @@ describe("TwapReconciliation", () => {
 		});
 	});
 
+	it("confirms a TWAP cancellation from a snapshot received after the system clock was set back", async () => {
+		const twapId = 65;
+		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
+			expect(
+				reserveOrderAssets(lease, {
+					submissionId: getActiveTwapReservationId(twapId),
+					intentKey: "active-twap-rollback-test",
+					exclusiveAssetLock: false,
+					isRiskReducing: false,
+					createdAt: Date.now(),
+					expiresAt: Date.now() + 60_000,
+				}),
+			).toBe(true);
+		});
+		const cancellation = getPendingTradingActionActions().claimTwapCancellation({
+			env: "Mainnet",
+			owner: USER,
+			twapId,
+			assetId: 7,
+		});
+		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
+		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id);
+		getPendingTradingActionActions().markTwapCancellationAwaiting(cancellation.id);
+
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		await act(() => vi.advanceTimersByTimeAsync(1_000));
+		mocks.activeLastMessageAt = Date.now();
+		mocks.activeMonotonicLastMessageAt = performance.now();
+		await act(async () => {
+			root.render(createReconciliation());
+			await Promise.resolve();
+			await Promise.resolve();
+		});
+
+		expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(0);
+		expectActionFeedback(cancellation.id, "success", "TWAP cancellation confirmed.");
+	});
+
+	it("times out an awaiting TWAP cancellation after the usual window when the system clock was set back", async () => {
+		const cancellation = getPendingTradingActionActions().claimTwapCancellation({
+			env: "Mainnet",
+			owner: USER,
+			twapId: 66,
+			assetId: 7,
+		});
+		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
+		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id);
+		getPendingTradingActionActions().markTwapCancellationAwaiting(cancellation.id);
+		act(() => root.render(createReconciliation()));
+
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		await act(() => vi.advanceTimersByTimeAsync(TRADING_ACTION_CONFIRMATION_TIMEOUT_MS - 1));
+		expect(getPendingTradingActionSnapshot().twapCancellations[0]?.phase).toBe("awaiting");
+
+		await act(() => vi.advanceTimersByTimeAsync(1));
+		expect(getPendingTradingActionSnapshot().twapCancellations[0]?.phase).toBe("unconfirmed");
+		expectActionFeedback(
+			cancellation.id,
+			"unconfirmed",
+			"TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying.",
+		);
+	});
+
 	it("does not use a pre-unconfirmed active snapshot to release a TWAP cancellation", async () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const twapId = 64;
 		const cancellation = getPendingTradingActionActions().claimTwapCancellation({
 			env: "Mainnet",
@@ -679,10 +749,11 @@ describe("TwapReconciliation", () => {
 			assetId: 7,
 		});
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
-		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2);
-		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now);
+		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now, monotonicNow);
 		mocks.activeData = { dex: "", user: USER, states: [[twapId, createTwapState()]] };
 		mocks.activeLastMessageAt = now - 1;
+		mocks.activeMonotonicLastMessageAt = monotonicNow - 1;
 
 		await act(async () => {
 			root.render(createReconciliation());
@@ -693,6 +764,7 @@ describe("TwapReconciliation", () => {
 
 		mocks.activeData = { dex: "", user: USER, states: [[twapId, createTwapState()]] };
 		mocks.activeLastMessageAt = now + 1;
+		mocks.activeMonotonicLastMessageAt = monotonicNow + 1;
 		await act(async () => {
 			root.render(createReconciliation());
 			await Promise.resolve();
@@ -707,6 +779,7 @@ describe("TwapReconciliation", () => {
 
 	it("retains a confirmed TWAP cancellation until reservation release can be retried", async () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const cancellation = getPendingTradingActionActions().claimTwapCancellation({
 			env: "Mainnet",
 			owner: USER,
@@ -714,9 +787,10 @@ describe("TwapReconciliation", () => {
 			assetId: 7,
 		});
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
-		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2);
-		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1);
+		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
 		mocks.activeLastMessageAt = now;
+		mocks.activeMonotonicLastMessageAt = monotonicNow;
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 
 		await act(async () => {
@@ -736,6 +810,7 @@ describe("TwapReconciliation", () => {
 
 	it("stops a scheduled reservation-release retry after the action is reset", async () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const cancellation = getPendingTradingActionActions().claimTwapCancellation({
 			env: "Mainnet",
 			owner: USER,
@@ -743,9 +818,10 @@ describe("TwapReconciliation", () => {
 			assetId: 7,
 		});
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
-		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2);
-		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1);
+		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
 		mocks.activeLastMessageAt = now;
+		mocks.activeMonotonicLastMessageAt = monotonicNow;
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 
 		await act(async () => {
@@ -764,6 +840,7 @@ describe("TwapReconciliation", () => {
 
 	it("bounds reservation-release retries while preserving the pending cancellation", async () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const cancellation = getPendingTradingActionActions().claimTwapCancellation({
 			env: "Mainnet",
 			owner: USER,
@@ -771,9 +848,10 @@ describe("TwapReconciliation", () => {
 			assetId: 7,
 		});
 		if (!cancellation) throw new Error("Expected TWAP cancellation claim");
-		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2);
-		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1);
+		getPendingTradingActionActions().markTwapCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markTwapCancellationUnconfirmed(cancellation.id, now - 1, monotonicNow - 1);
 		mocks.activeLastMessageAt = now;
+		mocks.activeMonotonicLastMessageAt = monotonicNow;
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 
 		await act(async () => {

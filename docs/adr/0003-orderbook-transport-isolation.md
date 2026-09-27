@@ -154,7 +154,9 @@ does not make an unrequested depth mode current data.
   and [mode tests](../../apps/terminal/src/lib/tests/mobile-orderbook-mode.test.tsx)
   cover downstream grouping/cache behavior. The separate
   [incremental subscription tests](../../apps/terminal/src/lib/tests/use-l2-book-subscription.test.tsx)
-  protect its first-snapshot timeout and disconnect gate.
+  protect its first-snapshot timeout and disconnect gate, and the gate's
+  five-second wait, which setting the system clock back cannot stretch
+  ([ADR 0022](0022-subscription-staleness-monotonic-clock.md)).
 
 The deterministic harness proves the application isolation rules, not an
 upstream ACK guarantee or sustained network reliability. Earlier browser and

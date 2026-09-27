@@ -1,6 +1,6 @@
 # ADR 0022：订阅过期判断以单调时钟计龄
 
-- 状态：已接受并实施，2026-09-28；尚未发布。验证包括单元与集成测试，以及在本地开发服务器上用页面脚本把 `Date.now` 往回拨一小时、观察真实 WebSocket 流；没有改动系统时间，也没有核对设备休眠。同日经 Codex 只读对抗审查后修订：节流器改为两个时钟取大（决策 4），并收窄了下文三处表述。
+- 状态：已接受并实施，2026-09-28；尚未发布。初版的验证包括单元与集成测试，以及在本地开发服务器上用页面脚本把 `Date.now` 往回拨一小时、观察真实 WebSocket 流。同日经 Codex 只读对抗审查后修订：节流器改为两个时钟取大（决策 4），并收窄了下文三处表述。[补充决策 5–8](#补充socket-静默检测l2-订阅闸门与交易动作对账) 也在同日实施，只有单元与组件测试。以上都没有改动系统时间，也没有核对设备休眠。
 - 归属 Reference：[运行时护栏 §6](../runtime-guardrails.md#6-websocket-and-account-data)。关联：[ADR 0003](0003-orderbook-transport-isolation.md)（订单簿回放帧携带接收时间）、[移动端数据展示](../mobile-data-presentation.md)。
 
 ## 背景与目标
@@ -20,7 +20,7 @@ hl-react 的订阅新鲜度巡检（`internal/websocket/staleness.ts`）服务�
 
 ## 决策
 
-1. **每帧两个接收时间。** `FrameReceipt = { receivedAt, monotonicReceivedAt }`：前者是墙钟，存入 `lastMessageAt`；后者是 `performance.now()`，只在 hl-react 内部使用。`useSub` 在收到帧时取两者（`receiveFrameNow()`），经节流器原样交给 `setSubscriptionData(key, data, receivedAt, monotonicReceivedAt)`；运行时记录 `monotonicLastMessageAt`，隐藏页面缓冲值也携带两者。订单簿传输池已有单调接收时间，回放时经 `markFrameReceivedAt(frame, receivedAt, monotonicReceivedAt)` 一并交出。
+1. **每帧两个接收时间。** `FrameReceipt = { receivedAt, monotonicReceivedAt }`：前者是墙钟，存入 `lastMessageAt`；后者是 `performance.now()`，初版只在 hl-react 内部使用，补充决策 6 起经 `monotonicLastMessageAt` 交给需要判断先后的消费方。`useSub` 在收到帧时取两者（`receiveFrameNow()`），经节流器原样交给 `setSubscriptionData(key, data, receivedAt, monotonicReceivedAt)`；运行时记录 `monotonicLastMessageAt`，隐藏页面缓冲值也携带两者。订单簿传输池已有单调接收时间，回放时经 `markFrameReceivedAt(frame, receivedAt, monotonicReceivedAt)` 一并交出。
 2. **年龄取两个时钟中较大者。** `getReceiptAgeMs(receivedAt, monotonicReceivedAt, now, monotonicNow)` 返回墙钟年龄与单调年龄的较大值。巡检、`arm`/`markFresh` 的即时判定、隐藏缓冲提交、前台恢复过期检查与恢复事件诊断的 `staleForMs` 都用它。单调年龄保证回拨后静默的流照常在阈值加一个巡检间隔内过期；墙钟年龄只会让判断更严格，保留前跳与休眠时的原有行为。
 3. **负的墙钟年龄单独不算过期。** 回拨后仍在推送的流，下一帧用回拨后的时钟重新盖章即恢复正常。
 4. **节流间隔同样取两个时钟中较大者。** `createThrottledUpdater` 记录上次投递的墙钟与单调时刻，用 `getReceiptAgeMs` 计算间隔，首条仍立即投递。回拨时单调间隔决定投递时刻，不再推迟约一小时；前跳，或休眠期间单调时钟没走而墙钟已越过间隔时，与改前一样立即投递。首版只用单调时钟，审查指出它在前跳与休眠后会多等最多一个节流窗口，与「其余行为不变」矛盾。
@@ -38,8 +38,49 @@ hl-react 的订阅新鲜度巡检（`internal/websocket/staleness.ts`）服务�
 
 - 回拨后静默的流在阈值加巡检间隔内过期（`pac`/`allDexsAssetCtxs` 最多约 25 秒；巡检依赖 `setInterval`，页面在后台或被冻结时回调可能延后，这个上界只在巡检按时运行时成立），走与未回拨时相同的恢复路径；回拨后仍在推送的节流流保持实时。
 - 回拨到新帧到达之间，与 `Date.now()` 比较 `lastMessageAt` 的消费方会看到负年龄并按不新鲜处理（执行守卫失败关闭）；这是既有行为，本次不改。
-- `transport-monitor.ts` 的 socket 静默检测、`l2-subscription-gate.ts` 的截止时间、开发用的 chaos 冻结仍用墙钟。回拨后 socket 静默检测会失效到墙钟追上为止；巡检过期后的多流重连仍会恢复连接。它们不在本次范围内，列为后续事项。
+- 初版把 `transport-monitor.ts` 的 socket 静默检测、`l2-subscription-gate.ts` 的截止时间与订单/TWAP 对账列为后续事项，已由下面的补充处理。开发用的 chaos 冻结仍用墙钟。
 - `markFrameReceivedAt` 多了一个必填参数（仓库内调用方：订单簿传输池与测试），`takeFrameReceivedAt` 改为返回 `FrameReceipt`（调用方：`useSub` 的节流与直接两条接收路径，以及测试）。`setSubscriptionData` 的两个时间参数都可省略，只传墙钟时间时单调时间取当前时刻，墙钟年龄照常生效。
+
+## 补充：socket 静默检测、l2 订阅闸门与交易动作对账
+
+2026-09-28 同日补充，处理初版留下的三处墙钟计时。
+
+### 背景
+
+- **socket 静默检测**（`internal/websocket/transport-monitor.ts`）：`Date.now() - lastMessageAt < inactivityThresholdMs` 在回拨后一直成立，socket 静默也不重连，直到墙钟追上；期间只能靠巡检的多流过期重连兜底。
+- **增量 `l2` 订阅闸门**（`subscriptions/l2-subscription-gate.ts`）：同一币种换分组时，新订阅最多等旧订阅退订 5 秒。截止时间是 `Date.now() + 5_000`，再次等待时剩余时间按 `deadlineAt - Date.now()` 计算。第一次等待的定时器是相对时间，不受回拨影响；闸门释放后又被第三个分组抢先占用、需要再等一次时，回拨量会原样加到剩余等待上。
+- **撤单、改单与 TWAP 撤单对账**（`components/trade/order-reconciliation.tsx`、`twap-reconciliation.tsx`）：用墙钟 `lastMessageAt <= requestStartedAt / unconfirmedAt / confirmationStartedAt` 判断快照是否晚于本地事件，15 秒确认超时也按墙钟计算。请求发出后回拨时，新快照被当作早于请求而不采用；超时定时器到点时墙钟年龄为负，动作不转为未确认，也不再重新安排。结果是撤单一直停在等待确认，同一订单不能再撤，直到墙钟追上。反方向也有缺口：快照在回拨前到达、请求在回拨后发起时，墙钟把请求前的快照当作请求之后的，可能据此确认撤单，这是失败开放的方向。
+
+### 决策
+
+5. **静默检测与闸门等待按两个时钟中较大的经过时间计算**，与巡检同用 `getReceiptAgeMs`。`transport-monitor` 在连接打开、收到消息和挂载时记录 `FrameReceipt`；闸门在开始获取时记录两个时钟的起点，每次等待都用 5 秒减去较大的经过时间。阈值、检查间隔与恢复路径不变。
+6. **帧与本地事件的先后只看单调时钟。** `SubscriptionResult` 新增 `monotonicLastMessageAt`，即与 `lastMessageAt` 同一帧的 `performance.now()` 接收时间（节流、隐藏缓冲与订单簿回放都保留真实接收时间）。待确认交易动作 store 记录 `requestStartedAt`、`confirmationStartedAt`、`unconfirmedAt` 时，同时记录 `monotonicRequestStartedAt`、`monotonicConfirmationStartedAt`、`monotonicUnconfirmedAt`；对账用 `wasReceivedAfter(monotonicLastMessageAt, monotonic*)` 判断快照是否晚于请求开始、确认开始或未确认，任一读数缺失都不算晚于。墙钟字段保留为可读记录，不再参与先后判断。
+7. **15 秒确认超时按两个时钟中较大的年龄计算**（`getTradingActionConfirmationRemainingMs`）。定时器按剩余时间向上取整安排（`getNextTradingActionExpiryDelayMs`）；到点后若仍有动作未满 15 秒（`performance.now()` 的精度被浏览器降低，读数可能比计时器时钟略小），按新的剩余时间再安排一次，而不是像以前那样只安排一次。
+8. **写入存储、跨标签页共享的时间保持墙钟。** 待确认下单与 TWAP 提交的 `createdAt`（两分钟确认窗口与 24 小时清理）、`nextCheckAt` 轮询退避，以及跨标签页资产预留的 `expiresAt`，由其他标签页和刷新后的页面读取；`performance.now()` 以各自文档为起点，不能跨文档比较。
+
+### 备选方案与代价
+
+| 方案 | 取舍 |
+| --- | --- |
+| 先后判断也用「取大」，即任一时钟说在后就算在后 | 取大是年龄的保守方向，用在先后上却是宽松方向：回拨前到达的快照在墙钟上仍晚于回拨后的请求，会被当作请求结果，保留上面的失败开放缺口。变异检查中「回拨前快照不当作新快照」的用例失败。未采用 |
+| 两个时钟都说在后才算在后 | 回拨后墙钟一直说早于，等同原行为，撤单照样等到墙钟追上。未采用 |
+| 先后判断只看单调时钟（采用） | 同一文档内的两个事件在单调时钟上先后始终正确；前跳与休眠不改变两个事件在任一时钟上的先后，所以这两种情况下结果与原来相同。代价是 `SubscriptionResult` 多一个必填字段，消费方必须遵守「只与同一文档的 `performance.now()` 比较」 |
+| 静默检测与闸门只用单调时钟 | 前跳与可能不计休眠的单调时钟会让唤醒后已静默的 socket 继续等满阈值，前跳后闸门等待也不再立即结束。变异检查中两条前跳用例失败。未采用 |
+| 持久化的提交窗口与资产预留也改单调时间（例如记录本文档首次看到时的两个时钟） | 只能覆盖本文档内的回拨，跨标签页与刷新仍回到墙钟，还要改动持久化结构与跨标签页合并。收益集中在「待确认提交期间恰好回拨」这一少见组合，本次未做，列为剩余限制 |
+
+### 后果与剩余限制
+
+- 回拨后静默的 socket 在阈值加一个检查间隔内重连；仍在收消息的 socket 不重连（负的墙钟年龄单独不算静默）；前跳后下一次检查照旧重连。
+- 闸门再次等待时仍在原 5 秒预算内以 `subscription_conflict` 结束；前跳后立即结束，与原行为相同。
+- 回拨后的新快照照常确认撤单、改单与 TWAP 撤单；无结果的动作在 15 秒后转为未确认；回拨前到达的快照不再被当作请求之后的。
+- `SubscriptionResult.monotonicLastMessageAt` 是必填字段；仓库内产生它的只有 `useSub` 与 `useOrderbookFeed` 的透传。它只能与同一文档内的 `performance.now()` 读数比较，不能写入存储或跨标签页传递。
+- 剩余限制：待确认提交期间回拨时，轮询暂停，两分钟确认窗口与资产预留都顺延回拨量，直到 WebSocket（`orderUpdates`、`twapStates`、`userTwapHistory`）给出结果或墙钟追上。这些路径不会误确认，只会推迟「未确认」结论和资产释放。执行守卫把 `lastMessageAt` 与 `Date.now()` 比较、负年龄按不新鲜处理，原样不变。
+
+### 补充的证据
+
+- 代码：`packages/hl-react/src/internal/websocket/transport-monitor.ts`、`packages/hl-react/src/subscriptions/l2-subscription-gate.ts`、`packages/hl-react/src/{store,types}.ts`、`packages/hl-react/src/hooks/utils/useSub.ts`、`apps/terminal/src/hooks/trade/use-orderbook-feed.ts`、`apps/terminal/src/stores/use-pending-trading-action-store.ts`、`apps/terminal/src/components/trade/{order,twap}-reconciliation.tsx`。
+- 测试（`apps/terminal/src/lib/tests/`）：`ws-transport-monitor.test.ts`（回拨后静默照常重连、回拨后仍收消息不重连、前跳后下一次检查重连）、`use-l2-book-subscription.test.tsx`（闸门再次等待时回拨不延长 5 秒预算、前跳立即结束）、`use-sub.test.tsx`（`monotonicLastMessageAt` 保留真实接收时间）、`pending-trading-action-store.test.ts`（回拨后按单调时间超时、只有墙钟前跳时照样超时、先后只看单调读数）、`order-reconciliation.test.tsx` 与 `twap-reconciliation.test.tsx`（回拨后新快照确认撤单、回拨后 15 秒转为未确认、回拨前快照不当作新快照、定时器早到时重新安排）。
+- 执行结果与变异检查见[补充的任务记录](../work-memory/sessions/2026-09-28-wall-clock-timers-follow-up.md)。
 
 ## 证据
 

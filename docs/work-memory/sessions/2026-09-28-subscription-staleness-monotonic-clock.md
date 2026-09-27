@@ -81,6 +81,7 @@
 - 不替代任何记录。
 - 待合入 `claude/sdk-api-review-51a3ea` 后处理：删除 `docs/funding-comparison.md` 第 4 节「这条上界依赖共享巡检……已另列后续任务」的回拨说明，改为引用 ADR 0022；同步第 10 节剩余限制里「这个上界只在系统时钟不回拨时成立」一句；在 `use-markets-info-subscriptions.test.tsx` 按真实 store 补 `perpContextsLive` 的回拨用例（本次在 `use-sub.test.tsx` 对 `pac` / `allDexsAssetCtxs` 断言了同一条件）。
 - 仍用墙钟、本次未改：`transport-monitor.ts` 的 socket 静默检测（回拨后失效到墙钟追上，巡检的多流重连仍可恢复）、`l2-subscription-gate.ts` 的截止时间、`order-reconciliation` / `twap-reconciliation` 的先后比较与期限定时器（回拨后撤单确认会等待）。
+  - 2026-09-28 补注：这三项已由[后续记录](2026-09-28-wall-clock-timers-follow-up.md)处理，见 ADR 0022「补充」一节。
 - 下一次先查：ADR 0022、`docs/runtime-guardrails.md` §6、`packages/hl-react/src/internal/websocket/staleness.ts`。
 
 ## 补记：Codex 对抗审查（2026-09-28）
