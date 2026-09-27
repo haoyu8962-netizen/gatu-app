@@ -33,6 +33,10 @@ export function getMarketFundingHistoryQueryKey(env: string, coin: string, range
 	return ["hl", "market-funding-history", env, coin, range] as const;
 }
 
+function hasEmptySnapshot(query: { state: { data: readonly FundingRateBucket[] | undefined } }) {
+	return query.state.data?.length === 0;
+}
+
 export function useMarketFundingHistory({ coin, enabled, range }: Options): MarketFundingHistoryResult {
 	const { env, info } = useHyperliquid();
 	const queryClient = useQueryClient();
@@ -45,8 +49,10 @@ export function useMarketFundingHistory({ coin, enabled, range }: Options): Mark
 			return bucketFundingRates(rows, FUNDING_HISTORY_RANGES[range].bucketMs);
 		},
 		queryKey: getMarketFundingHistoryQueryKey(env, coin, range),
+		refetchInterval: (current) => (hasEmptySnapshot(current) ? MARKET_FUNDING_HISTORY_STALE_TIME_MS : false),
+		refetchIntervalInBackground: false,
 		refetchOnReconnect: true,
-		refetchOnWindowFocus: false,
+		refetchOnWindowFocus: hasEmptySnapshot,
 		retry: false,
 		staleTime: MARKET_FUNDING_HISTORY_STALE_TIME_MS,
 	});
@@ -60,7 +66,7 @@ export function useMarketFundingHistory({ coin, enabled, range }: Options): Mark
 		});
 	}, [queryClient, queryEnabled, env, coin, range]);
 
-	const isCurrentSnapshot = query.status === "success" && query.fetchStatus === "idle" && isOnline;
+	const isCurrentSnapshot = query.status === "success" && query.fetchStatus === "idle" && !query.isStale && isOnline;
 	let status: MarketFundingHistoryStatus = "loading";
 	if (query.data !== undefined && (query.data.length > 0 || isCurrentSnapshot)) status = "ready";
 	else if (!queryEnabled) status = "disabled";
