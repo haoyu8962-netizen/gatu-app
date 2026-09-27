@@ -4417,6 +4417,10 @@ msgstr "最大回撤"
 msgid "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
 msgstr "尚无法验证剔除资金流影响后的历史净值，暂不显示最大回撤。"
 
+#: src/components/trade/tradebox/leverage-position-limit-row.tsx
+msgid "Max position size"
+msgstr "最大仓位"
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -4953,6 +4957,10 @@ msgstr "暂无质押操作"
 #: src/components/staking/staking-view.tsx
 msgid "No staking rewards"
 msgstr "暂无质押奖励"
+
+#: src/components/trade/tradebox/leverage-position-limit-row.tsx
+msgid "No tier limit"
+msgstr "无档位上限"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "No tokens with value found across supported chains"

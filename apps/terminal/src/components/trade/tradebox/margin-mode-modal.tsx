@@ -16,6 +16,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
 import { memo, useEffect, useRef, useState } from "react";
+import type { MarginTierInput } from "@/domain/trade/order/liquidation";
 import { cn } from "@/lib/cn";
 import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -77,6 +78,8 @@ interface Props {
 	onSettingsTabChange?: (tab: MobileTradeSettingsTab) => void;
 	accountModeForm?: Omit<AccountModeFormProps, "onClose">;
 	mobileView?: MobileTradeSettingsView;
+	marginTiers?: readonly MarginTierInput[] | null;
+	quoteSymbol?: string | null;
 }
 
 export type MobileTradeSettingsTab = "margin" | "account";
@@ -361,6 +364,8 @@ function MarginModeForm({
 	mobileView = "margin",
 	leverageDraft = null,
 	onLeverageDraftChange,
+	marginTiers,
+	quoteSymbol,
 }: FormProps) {
 	const { t } = useLingui();
 	const { clientKey, env } = useHyperliquid();
@@ -490,6 +495,8 @@ function MarginModeForm({
 						onDraftChange={handleLeverageGestureDraftChange}
 						onInputValidityChange={setLeverageInputValid}
 						variant={mobileLayout ? "sheet" : "modal"}
+						marginTiers={marginTiers}
+						quoteSymbol={quoteSymbol}
 					/>
 				)}
 

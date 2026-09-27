@@ -188,6 +188,14 @@ measured height of its size message row for the whole gesture and applies the cu
 validation result when the gesture ends (`docs/order-entry-surface-parity.md`). Holding the row is presentation
 only: submit availability and execution checks keep using the real validation result.
 
+The leverage editor's max position row (`docs/leverage-position-limit.md`) meets the
+same rule by construction instead of by holding: whether it is mounted depends only on
+the market's margin tiers, never on the previewed leverage, and it is a single
+non-wrapping line, so a gesture changes only its text. The existing high-leverage
+warning below it still mounts from the previewed leverage; source reading suggests it
+can shift the slider mid-drag, which has not been checked in a browser and is tracked
+outside that change.
+
 ## Quantity and execution boundaries
 
 Quantity arithmetic stays in domain modules and uses Big.js. Multiply the precise
@@ -244,6 +252,11 @@ Regression coverage includes:
   dynamic full-position protection, zero rejection, identity changes, draft recovery,
   and blocking confirmation during a gesture.
 - Slippage Confirm/Cancel/persistence and unchanged portfolio chart navigation.
+- The leverage max position row keeping one DOM node through slider previews,
+  cancellation and typed values, in the editor and in the mobile leverage drawer
+  without extra drawer-shell renders (`leverage-editor.test.tsx`,
+  `margin-mode-modal.test.tsx`, `leverage-position-limit-row.test.tsx`; jsdom with
+  script-invoked slider callbacks, not physical input).
 - Real Chromium pointer/touch interactions, 390/1000/1001/1333/1920px layouts in both
   themes, exact geometry, no horizontal clipping, and the existing all-order-form
   desktop layout suite.

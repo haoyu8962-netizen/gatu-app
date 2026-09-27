@@ -19,6 +19,7 @@ const RENDER_HELPER_OWNERS = new Map([
 	["mobile-market-bar.tsx", ["MobileMarketBar"]],
 	["orders-tab.tsx", ["OrderRow"]],
 	["order-toast.tsx", ["OrderToast"]],
+	["leverage-position-limit-row.tsx", ["LeveragePositionLimitRow"]],
 ]);
 
 describe("number format reactivity contract", () => {

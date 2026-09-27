@@ -1,7 +1,7 @@
 import { clearFeedback, feedbackErrorText, feedbackText, latestFeedback } from "./harness/order-feedback";
 /** @vitest-environment jsdom */
 
-import { act, createElement, type ReactNode } from "react";
+import { act, type ComponentProps, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LeverageModal } from "@/components/trade/tradebox/leverage-modal";
@@ -133,6 +133,7 @@ describe("LeverageModal", () => {
 		open = true,
 		marketIdentity = "HYPE",
 		committedLeverage: number | null = null,
+		extraProps: Partial<ComponentProps<typeof LeverageModal>> = {},
 	) {
 		act(() => {
 			root.render(
@@ -147,6 +148,7 @@ describe("LeverageModal", () => {
 					isUpdating={false}
 					onApply={onApply}
 					marketIdentity={marketIdentity}
+					{...extraProps}
 				/>,
 			);
 		});
@@ -344,6 +346,35 @@ describe("LeverageModal", () => {
 		renderModal();
 
 		expect(modalHarness.popupRenders).toBe(1);
+	});
+
+	it("forwards the market's margin tiers without rerendering the popup for the same reference", async () => {
+		const marginTiers = [
+			{ lowerBound: "0.0", maxLeverage: 10 },
+			{ lowerBound: "20000000.0", maxLeverage: 5 },
+		] as const;
+		const tierProps = { marginTiers, quoteSymbol: "USDC" };
+		renderModal(null, true, "HYPE", null, tierProps);
+
+		expect(modalHarness.editorProps?.marginTiers).toBe(marginTiers);
+		expect(modalHarness.editorProps?.quoteSymbol).toBe("USDC");
+		expect(modalHarness.popupRenders).toBe(1);
+
+		renderModal(null, true, "HYPE", null, tierProps);
+		expect(modalHarness.popupRenders).toBe(1);
+
+		const onDraftChange = modalHarness.editorProps?.onDraftChange as ((value: number | null) => void) | undefined;
+		act(() => onDraftChange?.(8));
+		expect(modalHarness.editorProps?.value).toBe(8);
+		expect(modalHarness.editorProps?.marginTiers).toBe(marginTiers);
+		expect(modalHarness.popupRenders).toBe(1);
+
+		act(() => onDraftChange?.(null));
+		renderModal(6, true, "HYPE", null, tierProps);
+		await act(async () => getButton(container, "Confirm").click());
+		expect(onApply).toHaveBeenCalledTimes(1);
+		expect(onApply).toHaveBeenCalledWith(6);
+		expect(getButton(container, "Confirm").textContent).toBe("Confirm");
 	});
 
 	it("drops an uncommitted drag when the account changes on the same market", () => {
