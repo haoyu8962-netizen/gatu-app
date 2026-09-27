@@ -108,6 +108,15 @@ Codex 标为“无法确认”的：最终构建体积（它读到的 `.output` 
 
 合并后验证（`a8499cf4` 合并 `cdd0ee60` 后的工作区）：`pnpm --filter @gatu/terminal typecheck` 退出码 0；Biome 检查改动的 9 个文件通过；`pnpm --filter @gatu/terminal test` 602 个文件通过、1 个跳过，6893 项通过、1 项跳过，零失败；`pnpm build`（Node v24.15.0）退出码 0，只预渲染 1 页，bundle 总计 3,106,960 gzip 字节（比基线少 47,747），交易页启动 1,544,154 gzip 字节，内联脚本哈希为 2 页 3 个。
 
+## 补记：第四轮 Codex 复审（合并后版本）
+
+用户要求对合并后的 `ee2ca281` 再复审一轮（gpt-6-astra，只读，medium，约 11 万 token）。结论：P0–P2 无发现；冲突解决核验通过（它在内存里按脚本逻辑重建 INDEX，116 条与文件逐字一致）；报了 2 项 P3 测试缺口，核实后成立并补上：
+
+- `legal-doc-page.test.tsx`（法律页首帧、六个路由的 boot 断言）不在 CI 的 “Test route provider lifecycles” 步骤里。→ 加入 `.github/workflows/terminal-tests.yml`。`scripts/ci-workflows.test.mjs` 没有锁定这份清单，本地 6 项通过。
+- `DASHBOARD_FRAMES.legal` 没有固定值断言，改宽正文或换背景测试都抓不到。→ `dashboard-frame-view.test.tsx` 的 “pins all preset classes” 补上 `legal`。
+
+验证：按 CI 该步骤原样执行（`--maxWorkers=1`，10 个文件）140 项通过。
+
 ## 后续与替代关系
 
 - ADR 0020 部分取代 ADR 0005/0006/0010 中与文档路由相关的决策；这些 ADR 的其余部分不变。
