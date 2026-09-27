@@ -1,6 +1,7 @@
-# ADR 0020：Earn 页接入借贷储备池
+# ADR 0021：Earn 页接入借贷储备池
 
 - 状态：已接受并实施，2026-09-27；尚未发布。真实账户验证：存入与 Max 全部取出已由用户在自己的主网账户完成并核对（见任务记录）；借入与偿还没有做真实测试，成功通知的实际显示没有观察到。
+- 编号：原为 0020。2026-09-27 合并 `dev` 前改为 0021，因为 `dev` 先合入的“文档与法律页并入应用外壳”已使用 0020；PR 讨论、审查记录与此前提交里的 “ADR 0020 Dn” 都指本文。
 - 归属 Reference：[Earn](../earn.md)。关联：[确认面契约](../confirmation-surfaces.md)、[资金类弹层的结果反馈](../funds-dialog-outcome-plan.md)、[ADR 0013](0013-desktop-navigation-collapse.md)、[ADR 0002](0002-exact-owner-trading-signers.md)。
 
 ## 背景与目标

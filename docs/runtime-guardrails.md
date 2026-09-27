@@ -793,10 +793,10 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   `resolveDesktopNavLayout` and the current entry with `isDesktopNavItemActive`; `TopNav` only
   renders that result and mounts one More dropdown.
 - Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
-  `DESKTOP_NAV_NARROW_MAX_PX` (1150; 1100 until Earn became a top-level link, ADR 0020 D8). The `nav-compact` Tailwind variant in `styles.css` must equal
+  `DESKTOP_NAV_NARROW_MAX_PX` (1150; 1100 until Earn became a top-level link, ADR 0021 D8). The `nav-compact` Tailwind variant in `styles.css` must equal
   the compact constant (`desktop-nav-layout` pins it); never write `max-[1181px]` again.
 - Collapse rule: at or below the compact width a Soon placeholder (none today; Earn links to `/earn`
-  since ADR 0020) leaves the top level and appears disabled in More; the lower entries move into More when the account chip is visible at the compact
+  since ADR 0021) leaves the top level and appears disabled in More; the lower entries move into More when the account chip is visible at the compact
   width or for every state at the narrow width. "Account chip visible" means `authenticated ||
   isConnected` from `useWalletSession`, the same condition under which `UserMenu` renders an
   identity instead of the Connect CTA, so Agent-only sessions collapse like wallet sessions;

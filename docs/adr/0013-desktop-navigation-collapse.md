@@ -43,4 +43,4 @@
 
 ## 补充（2026-09-27，Earn 上线）
 
-Earn 不再是 Soon 占位，改为链接 `/earn` 的常驻一级入口，决策 2 中关于 Earn（Soon）的收纳规则不再适用（`soon` 机制本身保留）。未连接用户在 1101–1181 px 因此多一个一级入口，法语在 1101 px 只余 6 px，窄屏阈值 `DESKTOP_NAV_NARROW_MAX_PX` 从 1100 调到 1150。实测数据与取舍见 [ADR 0020](0020-earn-borrow-lend-page.md) D8；本 ADR 其余决策不变。
+Earn 不再是 Soon 占位，改为链接 `/earn` 的常驻一级入口，决策 2 中关于 Earn（Soon）的收纳规则不再适用（`soon` 机制本身保留）。未连接用户在 1101–1181 px 因此多一个一级入口，法语在 1101 px 只余 6 px，窄屏阈值 `DESKTOP_NAV_NARROW_MAX_PX` 从 1100 调到 1150。实测数据与取舍见 [ADR 0021](0021-earn-borrow-lend-page.md) D8；本 ADR 其余决策不变。
