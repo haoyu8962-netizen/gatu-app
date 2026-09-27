@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const clients = vi.hoisted(() => {
 	const response = { status: "ok", response: { type: "default" } } as const;
 	const agentSetAbstraction = vi.fn(async () => response);
+	const borrowLend = vi.fn(async () => response);
 	const updateIsolatedMargin = vi.fn(async () => response);
 	const updateLeverage = vi.fn(async () => response);
 	const userPortfolioMargin = vi.fn(async () => response);
@@ -19,9 +20,11 @@ const clients = vi.hoisted(() => {
 	return {
 		agentPublicKey: "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf" as const,
 		agentSetAbstraction,
+		borrowLend,
 		response,
 		trading: {
 			agentSetAbstraction,
+			borrowLend,
 			updateIsolatedMargin,
 			updateLeverage,
 		},
@@ -65,6 +68,7 @@ vi.mock("@gatu/hl-react/provider", () => ({
 
 interface CapturedMutations {
 	agentSetAbstraction: (params: ExchangeParams<"agentSetAbstraction">) => Promise<unknown>;
+	borrowLend: (params: ExchangeParams<"borrowLend">) => Promise<unknown>;
 	updateIsolatedMargin: (params: ExchangeParams<"updateIsolatedMargin">) => Promise<unknown>;
 	updateLeverage: (params: ExchangeParams<"updateLeverage">) => Promise<unknown>;
 	userPortfolioMargin: (params: ExchangeParams<"userPortfolioMargin">) => Promise<unknown>;
@@ -88,6 +92,10 @@ const updateLeverageExecutionGuard = vi.fn((_params: ExchangeParams<"updateLever
 const withdrawalRouteAllowedRef = { current: true };
 const withdrawalPreExecutionGuard = vi.fn(async (_params: ExchangeParams<"withdraw3">) => {
 	if (!withdrawalRouteAllowedRef.current) throw new Error("The withdrawal route changed before signing");
+});
+const borrowLendAllowedRef = { current: true };
+const borrowLendPreExecutionGuard = vi.fn(async (_params: ExchangeParams<"borrowLend">) => {
+	if (!borrowLendAllowedRef.current) throw new Error("The Earn position changed inside the funds lock");
 });
 const requestedLockNames: string[] = [];
 
@@ -137,6 +145,7 @@ describe("useExchange portfolio margin policy", () => {
 		vi.clearAllMocks();
 		isolatedExecutionAllowedRef.current = true;
 		withdrawalRouteAllowedRef.current = true;
+		borrowLendAllowedRef.current = true;
 		requestedLockNames.length = 0;
 		window.localStorage.clear();
 		installExclusiveLockManager();
@@ -181,6 +190,7 @@ describe("useExchange portfolio margin policy", () => {
 
 	function Probe() {
 		const agentSetAbstraction = useExchange("agentSetAbstraction");
+		const borrowLend = useExchange("borrowLend", { preExecutionGuard: borrowLendPreExecutionGuard });
 		const updateIsolatedMargin = useExchange("updateIsolatedMargin", {
 			executionGuard: updateIsolatedMarginExecutionGuard,
 		});
@@ -196,6 +206,7 @@ describe("useExchange portfolio margin policy", () => {
 
 		capturedMutations = {
 			agentSetAbstraction: agentSetAbstraction.mutateAsync,
+			borrowLend: borrowLend.mutateAsync,
 			updateIsolatedMargin: updateIsolatedMargin.mutateAsync,
 			updateLeverage: updateLeverage.mutateAsync,
 			userPortfolioMargin: userPortfolioMargin.mutateAsync,
@@ -575,11 +586,39 @@ describe("useExchange portfolio margin policy", () => {
 
 		await act(async () => {
 			await expect(mutateWithPreExecutionGuard?.({ abstraction: "u" })).rejects.toThrow(
-				"Pre-execution guards are supported only for user-signed methods",
+				"Pre-execution guards are supported only for user-signed methods and opted-in trading funds actions",
 			);
 		});
 		expect(preExecutionGuard).not.toHaveBeenCalled();
 		expect(clients.agentSetAbstraction).not.toHaveBeenCalled();
+	});
+
+	it("runs the opted-in borrowLend pre-execution guard inside the funds and session locks", async () => {
+		renderPolicy(false);
+		const mutations = capturedMutations;
+		if (!mutations) throw new Error("Mutation hooks were not captured");
+
+		await act(async () => {
+			await expect(mutations.borrowLend({ operation: "withdraw", token: 0, amount: null })).resolves.toEqual(
+				clients.response,
+			);
+		});
+		expect(requestedLockNames).toEqual([
+			`hyperliquid_funds_action:Mainnet:${USER}`,
+			`hyperliquid_agent_registration_session:Mainnet:${USER}`,
+		]);
+		expect(borrowLendPreExecutionGuard).toHaveBeenCalledTimes(1);
+		expect(borrowLendPreExecutionGuard.mock.invocationCallOrder[0]).toBeLessThan(
+			clients.borrowLend.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+		);
+
+		borrowLendAllowedRef.current = false;
+		await act(async () => {
+			await expect(mutations.borrowLend({ operation: "withdraw", token: 0, amount: null })).rejects.toThrow(
+				"The Earn position changed inside the funds lock",
+			);
+		});
+		expect(clients.borrowLend).toHaveBeenCalledTimes(1);
 	});
 
 	it("rejects asynchronous execution guards before scheduling an SDK request", async () => {

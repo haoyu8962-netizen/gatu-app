@@ -16,6 +16,7 @@ import {
 	type EarnFullPosition,
 	type EarnMinimumIssue,
 	type EarnOperation,
+	type EarnSnapshot,
 	getEarnFullPosition,
 	getEarnMaxAmount,
 	getEarnMinimumIssue,
@@ -68,7 +69,8 @@ interface EarnSubmission {
 	identity: object;
 	sequence: number;
 	request: EarnSubmissionRequest;
-	verifiedAt: number | null;
+	enqueued: boolean;
+	verified: { at: number; snapshot: EarnSnapshot } | null;
 }
 
 export function EarnActionModal({ open, sessionId, operation, initialToken, data, onOpenChange }: Props) {
@@ -114,9 +116,10 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		walletAddress?.toLowerCase() ?? "no-wallet",
 		data.accountAbstraction,
 	].join(":");
-	const [draftIdentityKey, setDraftIdentityKey] = useState(identityKey);
-	if (draftIdentityKey !== identityKey) {
-		setDraftIdentityKey(identityKey);
+	const draftOwnerKey = [env, clientKey.toLowerCase(), data.ownerAddress?.toLowerCase() ?? "disconnected"].join(":");
+	const [draftOwner, setDraftOwner] = useState(draftOwnerKey);
+	if (draftOwner !== draftOwnerKey) {
+		setDraftOwner(draftOwnerKey);
 		setAmount("");
 		setFullIntent(null);
 		setOpenedPosition(null);
@@ -157,16 +160,24 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		snapshot && row && dataReady
 			? getEarnFullPosition({ operation, row, summary: snapshot.summary, spotAvailable })
 			: null;
-	const fullPosition =
-		row && fullIntent && isFullIntentCurrent(fullIntent, { identityKey, operation, token: row.token }, currentFull)
-			? currentFull
-			: null;
-	const fullIntentLost = fullIntent !== null && fullPosition === null;
+	const fullIntentStatus = getFullIntentStatus(fullIntent, {
+		ownerKey: draftOwnerKey,
+		operation,
+		token: row?.token ?? null,
+		verifiable: Boolean(snapshot && row && dataReady),
+		current: currentFull,
+	});
+	if (fullIntentStatus === "lost" && fullIntent && !fullIntent.invalidated) {
+		setFullIntent({ ...fullIntent, invalidated: true });
+	}
+	const fullPosition = fullIntentStatus === "valid" ? currentFull : null;
+	const fullIntentLost = fullIntentStatus === "lost";
 	const validation = row ? validateEarnAmount(amount, maxAmount, row.weiDecimals) : "unavailable";
 	const minimumIssue =
 		row && validation === "valid" && !fullIntent ? getEarnMinimumIssue(operation, row, amount) : null;
 	const { mutateAsync: borrowLend, isPending } = useExchange("borrowLend", {
 		executionGuard: assertCurrentSubmission,
+		preExecutionGuard: verifyInsideFundsLock,
 	});
 	const pending = isSubmitting || isPending;
 	const canSubmit =
@@ -176,16 +187,15 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		!data.portfolioMargin &&
 		validation === "valid" &&
 		minimumIssue === null &&
-		!fullIntentLost &&
+		(fullIntentStatus === "none" || fullIntentStatus === "valid") &&
 		!pending;
 	const visibleRestriction =
 		availability.reason && VISIBLE_RESTRICTIONS.has(availability.reason) ? availability.unavailableReason : null;
 
-	function assertCurrentSubmission(params: ExchangeParams<"borrowLend">) {
+	function getMatchingSubmission(params: ExchangeParams<"borrowLend">): EarnSubmission {
 		const submission = submissionRef.current;
 		if (
 			!submission ||
-			submission.verifiedAt === null ||
 			!exchangeLifecycle.active ||
 			submission.identity !== submissionIdentityRef.current ||
 			submission.sequence !== submissionSequenceRef.current ||
@@ -195,19 +205,37 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		) {
 			throw new ExchangeRequestInvalidatedError();
 		}
+		return submission;
+	}
+
+	function assertCurrentSubmission(params: ExchangeParams<"borrowLend">) {
+		const submission = getMatchingSubmission(params);
+		if (!submission.enqueued) {
+			submission.enqueued = true;
+			return;
+		}
+		if (!submission.verified) throw new ExchangeRequestInvalidatedError();
 		const latest = dataRef.current;
 		verifyEarnSubmissionAtBoundary({
 			request: submission.request,
-			verifiedAt: submission.verifiedAt,
+			verifiedAt: submission.verified.at,
 			now: Date.now(),
-			snapshot: latest.snapshot,
+			verifiedSnapshot: submission.verified.snapshot,
+			latestSnapshot: latest.snapshot,
 			accountReady: latest.accountStatus === "ready" && latest.publicStatus === "ready",
 			portfolioMargin: latest.portfolioMargin,
 			spotAvailable: getSpotAvailable(latest, submission.request.token),
 		});
 	}
 
-	async function verifyFreshState(request: EarnSubmissionRequest, signal: AbortSignal) {
+	async function verifyInsideFundsLock(params: ExchangeParams<"borrowLend">, signal: AbortSignal) {
+		const submission = getMatchingSubmission(params);
+		const snapshot = await verifyFreshState(submission.request, signal);
+		if (getMatchingSubmission(params) !== submission) throw new ExchangeRequestInvalidatedError();
+		submission.verified = { at: Date.now(), snapshot };
+	}
+
+	async function assertCurrentAccountMode(signal: AbortSignal) {
 		try {
 			await assertAccountAbstraction(signal);
 		} catch (error) {
@@ -219,6 +247,9 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 			}
 			throw error;
 		}
+	}
+
+	async function assertCurrentGeo(signal: AbortSignal) {
 		try {
 			await fundsAvailability.assertFreshGeoAllowed(signal);
 		} catch (error) {
@@ -228,7 +259,14 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 			}
 			throw error;
 		}
-		const fresh = await dataRef.current.fetchFreshState();
+	}
+
+	async function verifyFreshState(request: EarnSubmissionRequest, signal: AbortSignal): Promise<EarnSnapshot> {
+		const [, , fresh] = await Promise.all([
+			assertCurrentAccountMode(signal),
+			assertCurrentGeo(signal),
+			dataRef.current.fetchFreshState(),
+		]);
 		signal.throwIfAborted();
 		const latest = dataRef.current;
 		if (!fresh) throw fundsActionFeedbackCause("balance-unavailable");
@@ -240,13 +278,13 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 				throw fundsActionFeedbackCause(error.reason === "balance-changed" ? "balance-changed" : "balance-unavailable");
 			}
 		}
-		verifyFreshEarnSubmission({
+		return verifyFreshEarnSubmission({
 			request,
 			reserves: fresh.reserves,
 			userState: fresh.userState,
 			inputs: latest.snapshotInputs,
 			spotAvailable: getSpotAvailable(latest, request.token),
-		});
+		}).snapshot;
 	}
 
 	async function handleSubmit() {
@@ -261,17 +299,13 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 			displayedMax: maxAmount,
 			full: fullPosition,
 		};
-		const submission: EarnSubmission = { identity, sequence, request, verifiedAt: null };
+		const submission: EarnSubmission = { identity, sequence, request, enqueued: false, verified: null };
 		submissionRef.current = submission;
 		const isCurrent = () => submissionIdentityRef.current === identity && submissionSequenceRef.current === sequence;
-		const controller = new AbortController();
 		const tokenLabel = row.displayName;
 		const toastIdentity: EarnToastIdentity = { toastId: `earn:${sequence}:${Date.now()}`, env, clientKey };
 		setIsSubmitting(true);
 		try {
-			await verifyFreshState(request, controller.signal);
-			if (!isCurrent() || submissionRef.current !== submission) throw new ExchangeRequestInvalidatedError();
-			submission.verifiedAt = Date.now();
 			await borrowLend({
 				operation: request.operation,
 				token: request.token,
@@ -306,7 +340,6 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		} catch (error) {
 			if (isCurrent()) reportFailure(error, toastIdentity);
 		} finally {
-			controller.abort();
 			if (submissionRef.current === submission) submissionRef.current = null;
 			setIsSubmitting(false);
 			dataRef.current.retryAccount();
@@ -359,7 +392,11 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 	function handleMaxClick() {
 		if (pending || maxAmount === null || !row) return;
 		setAmount(maxAmount);
-		setFullIntent(currentFull ? { identityKey, operation, token: row.token, principal: currentFull.principal } : null);
+		setFullIntent(
+			currentFull
+				? { ownerKey: draftOwnerKey, operation, token: row.token, principal: currentFull.principal, invalidated: false }
+				: null,
+		);
 	}
 
 	const title = getTitle(operation, row, translate);
@@ -564,30 +601,35 @@ function getFullPositionNote(operation: EarnOperation, token: string): MessageDe
 }
 
 interface EarnFullIntent {
-	identityKey: string;
+	ownerKey: string;
 	operation: EarnOperation;
 	token: number;
 	principal: string;
+	invalidated: boolean;
 }
+
+type EarnFullIntentStatus = "none" | "valid" | "unverified" | "lost";
 
 interface EarnFullIntentContext {
-	identityKey: string;
+	ownerKey: string;
 	operation: EarnOperation;
-	token: number;
+	token: number | null;
+	verifiable: boolean;
+	current: EarnFullPosition | null;
 }
 
-function isFullIntentCurrent(
-	intent: EarnFullIntent,
-	context: EarnFullIntentContext,
-	current: EarnFullPosition | null,
-): boolean {
-	return (
+function getFullIntentStatus(intent: EarnFullIntent | null, context: EarnFullIntentContext): EarnFullIntentStatus {
+	if (!intent) return "none";
+	if (intent.invalidated) return "lost";
+	if (!context.verifiable) return "unverified";
+	const current = context.current;
+	const matches =
 		current !== null &&
-		intent.identityKey === context.identityKey &&
+		intent.ownerKey === context.ownerKey &&
 		intent.operation === context.operation &&
 		intent.token === context.token &&
-		intent.principal === current.principal
-	);
+		intent.principal === current.principal;
+	return matches ? "valid" : "lost";
 }
 
 function getFullPositionMessage(operation: EarnOperation, token: string): MessageDescriptor {

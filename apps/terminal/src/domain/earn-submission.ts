@@ -74,20 +74,26 @@ export interface VerifyFreshEarnSubmissionInput {
 	spotAvailable: string | null;
 }
 
+export interface EarnFreshVerification {
+	max: string;
+	snapshot: EarnSnapshot;
+}
+
 export function verifyFreshEarnSubmission({
 	request,
 	reserves,
 	userState,
 	inputs,
 	spotAvailable,
-}: VerifyFreshEarnSubmissionInput): string {
+}: VerifyFreshEarnSubmissionInput): EarnFreshVerification {
 	if (inputs.portfolioMargin) throw new EarnSubmissionStaleError("portfolioMargin");
 	const snapshot = buildEarnSnapshot({ reserves, userState, ...inputs });
 	const row = snapshot
 		? getEarnOperationRows(request.operation, snapshot).find((candidate) => candidate.token === request.token)
 		: undefined;
 	if (!snapshot || !row) throw new EarnSubmissionStaleError("unavailable");
-	return assertEarnSubmissionWithinState({ request, row, summary: snapshot.summary, spotAvailable });
+	const max = assertEarnSubmissionWithinState({ request, row, summary: snapshot.summary, spotAvailable });
+	return { max, snapshot };
 }
 
 export const EARN_VERIFICATION_TTL_MS = 20_000;
@@ -96,7 +102,8 @@ export interface VerifyEarnSubmissionAtBoundaryInput {
 	request: EarnSubmissionRequest;
 	verifiedAt: number;
 	now: number;
-	snapshot: EarnSnapshot | null;
+	verifiedSnapshot: EarnSnapshot;
+	latestSnapshot: EarnSnapshot | null;
 	accountReady: boolean;
 	portfolioMargin: boolean;
 	spotAvailable: string | null;
@@ -106,7 +113,8 @@ export function verifyEarnSubmissionAtBoundary({
 	request,
 	verifiedAt,
 	now,
-	snapshot,
+	verifiedSnapshot,
+	latestSnapshot,
 	accountReady,
 	portfolioMargin,
 	spotAvailable,
@@ -114,8 +122,12 @@ export function verifyEarnSubmissionAtBoundary({
 	const age = now - verifiedAt;
 	if (age < 0 || age > EARN_VERIFICATION_TTL_MS) throw new EarnSubmissionStaleError("unavailable");
 	if (portfolioMargin) throw new EarnSubmissionStaleError("portfolioMargin");
-	if (!accountReady || !snapshot) throw new EarnSubmissionStaleError("unavailable");
-	const row = getEarnOperationRows(request.operation, snapshot).find((candidate) => candidate.token === request.token);
-	if (!row) throw new EarnSubmissionStaleError("unavailable");
-	assertEarnSubmissionWithinState({ request, row, summary: snapshot.summary, spotAvailable });
+	if (!accountReady || !latestSnapshot) throw new EarnSubmissionStaleError("unavailable");
+	for (const snapshot of [verifiedSnapshot, latestSnapshot]) {
+		const row = getEarnOperationRows(request.operation, snapshot).find(
+			(candidate) => candidate.token === request.token,
+		);
+		if (!row) throw new EarnSubmissionStaleError("unavailable");
+		assertEarnSubmissionWithinState({ request, row, summary: snapshot.summary, spotAvailable });
+	}
 }

@@ -299,7 +299,7 @@ describe("fresh earn submission", () => {
 			verifyFreshEarnSubmission({
 				...base,
 				request: { operation: "borrow", token: 0, amount: "100", displayedMax: "5029.4", full: null },
-			}),
+			}).max,
 		).toBe("5029.4");
 		expect(() =>
 			verifyFreshEarnSubmission({
@@ -387,7 +387,8 @@ describe("earn submission at the SDK boundary", () => {
 			request: { operation: "borrow" as const, token: 0, amount: "100", displayedMax: "5029.4", full: null },
 			verifiedAt: 1_000,
 			now: 1_000,
-			snapshot,
+			verifiedSnapshot: snapshot,
+			latestSnapshot: snapshot,
 			accountReady: true,
 			portfolioMargin: false,
 			spotAvailable: "700",
@@ -485,7 +486,7 @@ describe("earn minimum position and full withdrawals", () => {
 			full: { principal: "495" },
 		};
 		expect(getEarnProtocolAmount(request)).toBeNull();
-		expect(verifyFreshEarnSubmission({ ...base, request })).toBe("500");
+		expect(verifyFreshEarnSubmission({ ...base, request }).max).toBe("500");
 		const accrued = parseEarnUserState({
 			...USER_RESPONSE,
 			tokenToState: [
@@ -543,5 +544,48 @@ describe("earn parsing strictness and repay-all allowance", () => {
 		expect(getEarnFullPosition({ operation: "repay", row: usdc, summary, spotAvailable: required.toFixed() })).toEqual({
 			principal: "990",
 		});
+	});
+});
+
+describe("earn submission at the SDK boundary with two snapshots", () => {
+	it("fails when either the in-lock snapshot or the latest cached snapshot moved the principal", () => {
+		const { snapshot } = buildSnapshot();
+		const topUp = parseEarnUserState({
+			...USER_RESPONSE,
+			tokenToState: [
+				[0, { borrow: { basis: "990", value: "1000" }, supply: { basis: "895", value: "900" } }],
+				USER_RESPONSE.tokenToState[1],
+			],
+		});
+		const reserves = parseEarnReserves(RESERVES_RESPONSE);
+		if (!topUp || !reserves) throw new Error("fixture must parse");
+		const moved = buildEarnSnapshot({ reserves, userState: topUp, ...snapshotInputs() });
+		if (!moved) throw new Error("snapshot must build");
+		const base = {
+			request: {
+				operation: "withdraw" as const,
+				token: 0,
+				amount: "500",
+				displayedMax: "500",
+				full: { principal: "495" },
+			},
+			verifiedAt: 1_000,
+			now: 1_000,
+			accountReady: true,
+			portfolioMargin: false,
+			spotAvailable: null,
+		};
+		expect(() =>
+			verifyEarnSubmissionAtBoundary({ ...base, verifiedSnapshot: snapshot, latestSnapshot: snapshot }),
+		).not.toThrow();
+		expect(() =>
+			verifyEarnSubmissionAtBoundary({ ...base, verifiedSnapshot: moved, latestSnapshot: snapshot }),
+		).toThrow(EarnSubmissionStaleError);
+		expect(() =>
+			verifyEarnSubmissionAtBoundary({ ...base, verifiedSnapshot: snapshot, latestSnapshot: moved }),
+		).toThrow(EarnSubmissionStaleError);
+		expect(() => verifyEarnSubmissionAtBoundary({ ...base, verifiedSnapshot: snapshot, latestSnapshot: null })).toThrow(
+			EarnSubmissionStaleError,
+		);
 	});
 });

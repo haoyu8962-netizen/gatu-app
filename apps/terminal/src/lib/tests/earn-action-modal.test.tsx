@@ -29,6 +29,7 @@ const testState = vi.hoisted(() => ({
 		sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
 	},
 	borrowLend: vi.fn(),
+	beforeGuard: vi.fn(),
 	beforeSdk: vi.fn(),
 	assertAccountAbstraction: vi.fn(),
 	assertFreshGeoAllowed: vi.fn(),
@@ -144,11 +145,19 @@ vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => testState.exchangeIdentity,
-	useExchange: (_method: string, options?: { executionGuard?: (params: unknown) => void }) => ({
+	useExchange: (
+		_method: string,
+		options?: {
+			executionGuard?: (params: unknown) => void;
+			preExecutionGuard?: (params: unknown, signal: AbortSignal) => Promise<void>;
+		},
+	) => ({
 		isPending: testState.pending,
 		mutateAsync: async (params: unknown) => {
 			const requestParams = { ...(params as Record<string, unknown>) };
 			options?.executionGuard?.(requestParams);
+			await testState.beforeGuard(requestParams);
+			await options?.preExecutionGuard?.(requestParams, new AbortController().signal);
 			await testState.beforeSdk(requestParams);
 			options?.executionGuard?.(requestParams);
 			return testState.borrowLend(requestParams);
@@ -310,6 +319,8 @@ describe("earn action modal", () => {
 		testState.availability = { available: true, reason: null, unavailableReason: null };
 		testState.borrowLend.mockReset();
 		testState.borrowLend.mockResolvedValue({ status: "ok", response: { type: "default" } });
+		testState.beforeGuard.mockReset();
+		testState.beforeGuard.mockResolvedValue(undefined);
 		testState.beforeSdk.mockReset();
 		testState.beforeSdk.mockResolvedValue(undefined);
 		testState.assertAccountAbstraction.mockReset();
@@ -714,7 +725,12 @@ describe("earn action modal", () => {
 		expect(container.textContent).not.toContain("Withdraws your entire USDC supply");
 		expect(getSubmit(container).disabled).toBe(true);
 		render("withdraw", 0, createUsdcData({ supplied: "100.00000001", basis: "100" }));
+		expect(container.textContent).toContain("This position changed. Use Max again or enter an amount.");
+		expect(getSubmit(container).disabled).toBe(true);
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		expect(container.textContent).not.toContain("This position changed");
 		expect(container.textContent).toContain("Withdraws your entire USDC supply");
+		expect(getSubmit(container).disabled).toBe(false);
 	});
 
 	it("clears the draft when the account changes", () => {
@@ -779,5 +795,55 @@ describe("earn action modal", () => {
 		act(() => getSubmit(container).click());
 		await flush();
 		expect(testState.borrowLend).not.toHaveBeenCalled();
+	});
+	it("re-reads the position inside the funds lock before sending a full withdrawal", async () => {
+		const data = createUsdcData({ supplied: "100" });
+		const reserves = parseEarnReserves(RESERVES);
+		const initial = parseEarnUserState({
+			tokenToState: [[0, { borrow: { basis: "0", value: "0" }, supply: { basis: "100", value: "100" } }]],
+			healthFactor: null,
+		});
+		const afterOtherTab = parseEarnUserState({
+			tokenToState: [[0, { borrow: { basis: "0", value: "0" }, supply: { basis: "600", value: "600" } }]],
+			healthFactor: null,
+		});
+		if (!reserves || !initial || !afterOtherTab) throw new Error("fixture must parse");
+		let otherTabFinished = false;
+		data.fetchFreshState = vi.fn(async () => ({ reserves, userState: otherTabFinished ? afterOtherTab : initial }));
+		testState.beforeGuard.mockImplementation(async () => {
+			otherTabFinished = true;
+		});
+		render("withdraw", 0, data);
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(data.fetchFreshState).toHaveBeenCalledTimes(1);
+		expect(testState.borrowLend).not.toHaveBeenCalled();
+		expect(toastText(toastMocks.error.mock.calls[0]?.[0])).toBe(
+			"Earn balances changed before submission. Review the updated amounts and try again.",
+		);
+	});
+
+	it("keeps the draft when the same account briefly loses its account mode", () => {
+		render("supply", 0, createData());
+		act(() => setInputValue(getInput(container), "20"));
+		render("supply", 0, { ...createData(), accountAbstraction: "unknown", accountStatus: "loading" });
+		expect(getInput(container).value).toBe("20");
+		expect(getSubmit(container).disabled).toBe(true);
+		render("supply", 0, createData());
+		expect(getInput(container).value).toBe("20");
+		expect(getSubmit(container).disabled).toBe(false);
+	});
+
+	it("stays silent when a full-position request cannot be verified for a moment", () => {
+		render("withdraw", 0, createUsdcData({ supplied: "100" }));
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		render("withdraw", 0, { ...createUsdcData({ supplied: "100" }), publicStatus: "error" });
+		expect(container.textContent).not.toContain("This position changed");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(getSubmit(container).disabled).toBe(true);
+		render("withdraw", 0, createUsdcData({ supplied: "100" }));
+		expect(container.textContent).toContain("Withdraws your entire USDC supply");
+		expect(getSubmit(container).disabled).toBe(false);
 	});
 });
