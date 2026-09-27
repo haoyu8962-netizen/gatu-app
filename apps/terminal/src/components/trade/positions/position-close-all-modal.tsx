@@ -2,13 +2,17 @@ import { ModalDescription, ModalTitle } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import type { PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
+import { useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
+import { useHip3DisclaimerPresentation } from "@/hooks/trade/use-hip3-disclaimer-presentation";
+import { usePositionCloseAllSnapshotResolver } from "@/hooks/trade/use-position-close-all-action";
 import { usePositionCloseAllSubmit } from "@/hooks/trade/use-position-close-all-submit";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatQuoteAmount } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
-import type { PositionCloseAllSession } from "@/stores/use-position-dialog-store";
+import { type PositionCloseAllSession, usePositionDialogActions } from "@/stores/use-position-dialog-store";
+import { Hip3DeployerDisclaimer } from "../components/hip3-deployer-disclaimer";
 import { TradingActionButton } from "../components/trading-action-button";
 import { PositionCloseAllTargets } from "./position-close-all-targets";
 import { PositionCloseDialogContent } from "./position-close-dialog-content";
@@ -28,8 +32,9 @@ export function PositionCloseAllController({ session, onSessionEnd }: Props) {
 	const displayedSession = useLingeringValue(session, DIALOG_EXIT_MS);
 	if (!displayedSession) return null;
 	return (
-		<PositionCloseAllContent
+		<PositionCloseAllDisclaimerGate
 			key={displayedSession.sessionId}
+			sessionId={displayedSession.sessionId}
 			snapshot={displayedSession.snapshot}
 			open={session?.sessionId === displayedSession.sessionId}
 			onOpenChange={(open) => {
@@ -43,6 +48,38 @@ interface ContentProps {
 	snapshot: PositionCloseAllSnapshot;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+}
+
+interface GateProps extends ContentProps {
+	sessionId: string;
+}
+
+function PositionCloseAllDisclaimerGate({ sessionId, snapshot, open, onOpenChange }: GateProps) {
+	const snapshotResolver = usePositionCloseAllSnapshotResolver();
+	const { refreshCloseAll } = usePositionDialogActions();
+	const hip3Requirement = useHip3DisclaimerRequirement(snapshot.targets.map((target) => target.coin));
+	const hip3Disclaimer = useHip3DisclaimerPresentation(hip3Requirement, "cancel", DIALOG_EXIT_MS);
+
+	function handleAccept() {
+		if (!snapshotResolver.identityReady || !snapshotResolver.dataReady) return;
+		const current = snapshotResolver.resolveSnapshot();
+		if (current.snapshot) refreshCloseAll(sessionId, current.snapshot);
+	}
+
+	if (hip3Disclaimer) {
+		return (
+			<Hip3DeployerDisclaimer
+				key={hip3Disclaimer.dex}
+				open={open && hip3Disclaimer.open}
+				documentationUrl={hip3Disclaimer.documentationUrl}
+				exit={hip3Disclaimer.exit}
+				onExit={() => onOpenChange(false)}
+				onAccept={handleAccept}
+			/>
+		);
+	}
+
+	return <PositionCloseAllContent snapshot={snapshot} open={open} onOpenChange={onOpenChange} />;
 }
 
 function PositionCloseAllContent({ snapshot, open, onOpenChange }: ContentProps) {

@@ -7,7 +7,7 @@ export interface BuildMetaInput {
 	commit: string;
 	release: string;
 	builtAt: string;
-	pairing: { createAndReveal: boolean; importFromQr: boolean };
+	pairing: { enabled: boolean };
 	cctpDeposits: { mainnetSponsoredWallet: boolean; testnetExternalWallet: boolean; testnetSponsoredWallet: boolean };
 	/** Content hash of the TradingView loader the build emitted under a hashed name; empty in development. */
 	chartLibraryHash?: string;
@@ -21,9 +21,9 @@ export interface BuildMeta {
 	builtAt: string;
 	/** The TradingView loader URL this build requests, so the shell can preload the same one. */
 	chartLibraryScript: string;
+	/** Whether this build exposes Link mobile device and phone import; the release tooling refuses an unacknowledged true. */
 	mobileSync: {
-		createAndReveal: boolean;
-		importFromQr: boolean;
+		enabled: boolean;
 	};
 	/** The gated deposit paths this build exposes; the release tooling refuses an unacknowledged sponsored Mainnet path. */
 	cctpDeposits: {
@@ -47,8 +47,7 @@ export function createBuildMeta(input: BuildMetaInput): BuildMeta {
 		builtAt: input.builtAt,
 		chartLibraryScript: createChartLibraryScriptUrl(input.chartLibraryHash || input.commit),
 		mobileSync: {
-			createAndReveal: input.pairing.createAndReveal,
-			importFromQr: input.pairing.importFromQr,
+			enabled: input.pairing.enabled,
 		},
 		cctpDeposits: {
 			mainnetSponsoredWallet: input.cctpDeposits.mainnetSponsoredWallet,

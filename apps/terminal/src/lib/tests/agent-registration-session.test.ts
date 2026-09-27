@@ -426,7 +426,6 @@ describe("Agent registration session coordination", () => {
 				agentName: `Mobile valid_until ${agentValidUntilMs}`,
 				agentValidUntilMs,
 				importedAtMs,
-				syncId: "mobile-sync-test",
 			}),
 		).toEqual({ status: "stored" });
 		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
@@ -435,7 +434,6 @@ describe("Agent registration session coordination", () => {
 			agentName: `Mobile valid_until ${agentValidUntilMs}`,
 			agentValidUntilMs,
 			importedAtMs,
-			syncId: "mobile-sync-test",
 		});
 	});
 
@@ -1080,7 +1078,6 @@ describe("Agent registration session coordination", () => {
 				agentName: `Mobile valid_until ${agentValidUntilMs}`,
 				agentValidUntilMs,
 				importedAtMs,
-				syncId: "different-entry-point",
 			}),
 		).toEqual({ status: "failed", reason: "registration_in_progress" });
 		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({

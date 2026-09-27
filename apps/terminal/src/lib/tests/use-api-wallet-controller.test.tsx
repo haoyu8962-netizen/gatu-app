@@ -217,7 +217,7 @@ describe("useApiWalletController", () => {
 
 		expect(testState.approveAgent).toHaveBeenCalledExactlyOnceWith(
 			{ agentAddress: API_WALLET_ZERO_ADDRESS, agentName: "Legacy Name" },
-			{ signal: expect.any(AbortSignal) },
+			{ signal: expect.any(AbortSignal), applicationReview: "confirmed" },
 		);
 		expect(current().action).toMatchObject({ stage: "done", result: "success" });
 		expect(current().action?.privateKey).toBeUndefined();

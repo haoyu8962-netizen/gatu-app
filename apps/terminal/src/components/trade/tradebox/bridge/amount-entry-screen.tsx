@@ -3,6 +3,7 @@ import { Trans } from "@lingui/react/macro";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import Big from "big.js";
 import { useState } from "react";
+import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { PERCENT_OPTIONS } from "@/config/bridge";
 import { isValidUsdInput, usdToTokenAmount } from "@/lib/bridge/format";
 import { cn } from "@/lib/cn";
@@ -23,7 +24,7 @@ export function AmountEntryScreen({ token, initialUsd, onBack, onContinue }: Pro
 	const [usdInput, setUsdInput] = useState(initialUsd);
 
 	function handleUsdChange(e: React.ChangeEvent<HTMLInputElement>) {
-		const raw = e.target.value;
+		const raw = normalizeDecimalInputEvent(e).target.value;
 		if (raw === "") {
 			setUsdInput("");
 			return;

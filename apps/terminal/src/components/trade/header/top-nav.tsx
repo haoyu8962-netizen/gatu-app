@@ -29,6 +29,7 @@ import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { DesktopUtilitiesMenu } from "./desktop-utilities-menu";
 import { HEADER_ICON_BUTTON_CLASS, HeaderIconButtonView } from "./header-icon-button-view";
 import { LanguageSwitcher } from "./language-switcher";
+import { preloadMobileAgentSyncModal } from "./mobile-agent-sync-modal-loader";
 import { DESKTOP_LANGUAGE_TRIGGER_CLASS, NavMenuTriggerView } from "./nav-menu-trigger-view";
 import { ThemeToggle } from "./theme-toggle";
 import {
@@ -66,7 +67,16 @@ export function TopNav({ mode = "default" }: Props) {
 	const isTestnet = useIsTestnet();
 	const tradeHomePath = useTradeHomePath();
 	const showsDepositEntry = hasWalletAccess || depositAvailability.path === "sponsored";
-	const showsLinkMobileEntry = hasWalletAccess && MOBILE_PAIRING_FEATURES.createAndReveal;
+	const showsLinkMobileEntry = hasWalletAccess && MOBILE_PAIRING_FEATURES.enabled;
+
+	function warmMobileSyncModal() {
+		void preloadMobileAgentSyncModal().catch(() => undefined);
+	}
+
+	async function handleOpenMobileSync() {
+		await preloadMobileAgentSyncModal().catch(() => undefined);
+		openMobileSyncModal();
+	}
 	const isMarketLoading = mode === "market-loading";
 	const accountChipVisible = authenticated || isConnected;
 
@@ -171,7 +181,9 @@ export function TopNav({ mode = "default" }: Props) {
 					<HeaderIconButtonView
 						className={HEADER_ICON_BUTTON_CLASS}
 						disabled={isMarketLoading}
-						onClick={isMarketLoading ? undefined : openMobileSyncModal}
+						onPointerEnter={isMarketLoading ? undefined : warmMobileSyncModal}
+						onFocus={isMarketLoading ? undefined : warmMobileSyncModal}
+						onClick={isMarketLoading ? undefined : handleOpenMobileSync}
 						aria-label={t`Link mobile device`}
 					>
 						<QrCodeIcon className="size-[18px]" />
@@ -190,13 +202,7 @@ export function TopNav({ mode = "default" }: Props) {
 			}
 			compactUtilities={
 				accountChipVisible && (
-					<DesktopUtilitiesMenu
-						settingsDisabled={isMarketLoading}
-						onOpenSettings={openSettingsDialog}
-						linkMobileVisible={showsLinkMobileEntry}
-						linkMobileDisabled={isMarketLoading}
-						onLinkMobile={openMobileSyncModal}
-					/>
+					<DesktopUtilitiesMenu settingsDisabled={isMarketLoading} onOpenSettings={openSettingsDialog} />
 				)
 			}
 		/>

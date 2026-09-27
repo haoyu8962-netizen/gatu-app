@@ -8,38 +8,41 @@ import {
 	ModalHeader,
 	ModalTitle,
 } from "@gatu/ui";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import type { Hip3DisclaimerExit } from "@/hooks/trade/use-hip3-disclaimer-presentation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHip3DisclaimerActions } from "@/stores/use-hip3-disclaimer-store";
 
 interface Props {
+	open: boolean;
 	documentationUrl: string | undefined;
-	onCancel?: () => void;
+	exit: Hip3DisclaimerExit;
+	onExit: () => void;
+	onAccept?: () => void;
 }
 
 const LINK_CLASS = "text-signal no-underline hover:text-signal-hover";
 
-export function Hip3DeployerDisclaimer({ documentationUrl, onCancel }: Props) {
-	const { t } = useLingui();
+export function Hip3DeployerDisclaimer({ open, documentationUrl, exit, onExit, onAccept }: Props) {
 	const isMobile = useIsMobile();
 	const [isAcknowledged, setIsAcknowledged] = useState(false);
 	const { accept } = useHip3DisclaimerActions();
 
 	function handleConfirm() {
-		if (!isAcknowledged) return;
+		if (!open || !isAcknowledged) return;
 		accept();
+		onAccept?.();
 	}
 
 	return (
 		<AdaptiveModal
-			open
-			onOpenChange={(open) => !open && onCancel?.()}
+			open={open}
+			onOpenChange={(nextOpen) => !nextOpen && onExit()}
 			size="lg"
-			showClose={!!onCancel}
-			closeLabel={t`Close`}
-			dismissible={!!onCancel}
+			showClose={false}
+			dismissible={exit === "cancel"}
 			presentation={isMobile ? "drawer" : "modal"}
 			layer="blocking"
 			overlayClassName="backdrop-blur-[2px] duration-100"
@@ -109,16 +112,22 @@ export function Hip3DeployerDisclaimer({ documentationUrl, onCancel }: Props) {
 			</ModalContent>
 
 			<ModalFooter className="px-6 pt-0 pb-5">
-				{onCancel && (
-					<Button type="button" variant="outline" intent="neutral" size="md" className="h-10 flex-1" onClick={onCancel}>
-						<Trans>Cancel</Trans>
-					</Button>
-				)}
+				<Button
+					type="button"
+					variant="outline"
+					intent="neutral"
+					size="md"
+					className="h-10 flex-1"
+					disabled={!open}
+					onClick={onExit}
+				>
+					{exit === "cancel" ? <Trans>Cancel</Trans> : <Trans>Leave this market</Trans>}
+				</Button>
 				<Button
 					type="button"
 					size="md"
 					className="h-10 flex-1 py-0 text-xs font-normal !shadow-none data-disabled:cursor-default data-disabled:bg-fill-disabled data-disabled:text-fg-disabled"
-					disabled={!isAcknowledged}
+					disabled={!open || !isAcknowledged}
 					onClick={handleConfirm}
 				>
 					<Trans>Confirm</Trans>

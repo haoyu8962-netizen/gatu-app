@@ -8,18 +8,15 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useHyperliquid, useMarkets, useUserPositions } from "@/lib/hyperliquid";
 import { usePositionCloseAllSession, usePositionDialogActions } from "@/stores/use-position-dialog-store";
 
-export function usePositionCloseAllAction() {
-	const { t } = useLingui();
+/** Resolves the Close All snapshot from the live account; the Close All entry and its HIP-3 gate share it. */
+export function usePositionCloseAllSnapshotResolver() {
 	const { address, isConnected } = useWalletSession();
 	const { clientKey, env } = useHyperliquid();
 	const markets = useMarkets();
 	const { positions, isLoading, hasError, isStale } = useUserPositions();
-	const session = usePositionCloseAllSession();
-	const { openCloseAll } = usePositionDialogActions();
 	const identityReady =
 		isConnected && !!address && clientKey !== "disconnected" && address.toLowerCase() === clientKey.toLowerCase();
 	const dataReady = !isLoading && !hasError && !isStale && !markets.isLoading && !markets.error;
-	const hasSession = !!address && session?.snapshot.owner === address.toLowerCase() && session.snapshot.env === env;
 
 	function resolveSnapshot() {
 		return resolvePositionCloseAllSnapshot({
@@ -42,6 +39,15 @@ export function usePositionCloseAllAction() {
 		});
 	}
 
+	return { address, env, identityReady, dataReady, resolveSnapshot };
+}
+
+export function usePositionCloseAllAction() {
+	const { t } = useLingui();
+	const { address, env, identityReady, dataReady, resolveSnapshot } = usePositionCloseAllSnapshotResolver();
+	const session = usePositionCloseAllSession();
+	const { openCloseAll } = usePositionDialogActions();
+	const hasSession = !!address && session?.snapshot.owner === address.toLowerCase() && session.snapshot.env === env;
 	const resolution = resolveSnapshot();
 	const issues: readonly PositionCloseAllSnapshotIssue[] = resolution.issues;
 	const canOpen = identityReady && dataReady && resolution.snapshot !== null && !hasSession;

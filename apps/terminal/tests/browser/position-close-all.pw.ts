@@ -244,6 +244,36 @@ test("rejects an expired snapshot and an active TWAP", async ({ page }) => {
 	await expect(page.getByTestId("sent-orders")).toHaveText("[]");
 });
 
+test("recaptures the snapshot when the HIP-3 disclaimer is accepted and sends what it then shows", async ({ page }) => {
+	await page.goto("/position-close-all.html");
+	await page.clock.install();
+	await page.getByRole("button", { name: "Require HIP-3 disclaimer", exact: true }).click();
+	await page.getByTestId("mobile-close-all-positions").click();
+	const disclaimer = page.getByRole("dialog");
+	await expect(disclaimer).toContainText("HIP-3 Deployer Disclaimer");
+	await expect(page.getByRole("list", { name: "Positions to close" })).toHaveCount(0);
+	const session = await page.getByTestId("session-id").textContent();
+	expect(session).not.toBe("none");
+
+	await page.getByText("Change size", { exact: true }).dispatchEvent("click");
+	await page.clock.fastForward(31000);
+	await disclaimer.getByRole("checkbox").click();
+	await disclaimer.getByRole("button", { name: "Confirm", exact: true }).click();
+
+	const targets = page.getByRole("list", { name: "Positions to close" }).getByRole("listitem");
+	await expect(targets).toHaveCount(2);
+	const sizes = (await targets.allTextContents()).map((text) => Big(text.split("·")[1].trim()).toString());
+	expect(sizes).toEqual(["3", "3"]);
+	await expect(page.getByTestId("session-id")).toHaveText(session!);
+	await expect(page.getByTestId("sent-orders")).toHaveText("[]");
+
+	await confirm(page);
+	await expect(page.locator("[data-order-feedback]")).toContainText("All positions closed");
+	const batches = JSON.parse((await page.getByTestId("sent-orders").textContent())!);
+	expect(batches).toHaveLength(1);
+	expect(batches[0].orders.map((order: { s: string }) => order.s)).toEqual(sizes);
+});
+
 for (const outcome of ["Partial", "Ambiguous"]) {
 	test(`reports ${outcome} without success or automatic resend`, async ({ page }) => {
 		await page.goto("/position-close-all.html");

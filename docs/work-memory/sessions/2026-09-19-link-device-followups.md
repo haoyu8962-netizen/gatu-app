@@ -14,7 +14,7 @@
   "baseCommit": "0af67e47",
   "commits": ["1c860ba1", "11403177", "988cf773", "463d8a09", "1982ae97", "da8af38e"],
   "sources": [
-    { "path": "apps/terminal/src/lib/mobile-sync/account-funding.ts" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/046b0de2/apps/terminal/src/lib/mobile-sync/account-funding.ts" },
     { "path": "apps/terminal/src/components/trade/components/mobile-agent-sync-modal.tsx" },
     { "path": "scripts/serve-spa-static.mjs" },
     { "path": "docs/adr/0015-link-device-alignment.md" },

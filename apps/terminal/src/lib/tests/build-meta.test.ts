@@ -21,7 +21,7 @@ describe("build metadata", () => {
 				commit: "abc123",
 				release: "release-1",
 				builtAt: "2026-09-13T00:00:00.000Z",
-				pairing: { createAndReveal: false, importFromQr: true },
+				pairing: { enabled: true },
 				cctpDeposits: { mainnetSponsoredWallet: true, testnetExternalWallet: false, testnetSponsoredWallet: true },
 			}),
 		).toEqual({
@@ -32,8 +32,7 @@ describe("build metadata", () => {
 			builtAt: "2026-09-13T00:00:00.000Z",
 			chartLibraryScript: "/charting_library/charting_library.js?v=abc123",
 			mobileSync: {
-				createAndReveal: false,
-				importFromQr: true,
+				enabled: true,
 			},
 			cctpDeposits: {
 				mainnetSponsoredWallet: true,
@@ -48,8 +47,8 @@ describe("build metadata", () => {
 		expect(meta.name).toBe(APP_NAME);
 		expect(meta.version).toBe(terminalPackage.version);
 		expect(meta.commit).not.toBe("");
-		expect(Object.keys(meta.mobileSync).sort()).toEqual(["createAndReveal", "importFromQr"]);
-		if (meta.mobileSync.createAndReveal) expect(meta.mobileSync.importFromQr).toBe(true);
+		expect(Object.keys(meta.mobileSync)).toEqual(["enabled"]);
+		expect(typeof meta.mobileSync.enabled).toBe("boolean");
 		expect(Object.keys(meta.cctpDeposits).sort()).toEqual([
 			"mainnetSponsoredWallet",
 			"testnetExternalWallet",

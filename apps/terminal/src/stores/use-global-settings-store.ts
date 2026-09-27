@@ -149,7 +149,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				};
 			},
 			merge: (persisted, current) => {
-				const p = persisted as Partial<GlobalSettingsStore>;
+				const p = (persisted ?? {}) as Partial<GlobalSettingsStore>;
 				const showOrderbookInQuote =
 					typeof p.showOrderbookInQuote === "boolean"
 						? p.showOrderbookInQuote
@@ -160,7 +160,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 						: DEFAULT_GLOBAL_SETTINGS.skipOrderConfirmation;
 				const slippagePercent = Math.min(
 					Math.max(
-						p?.marketOrderSlippagePercent ?? DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
+						p.marketOrderSlippagePercent ?? DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 						MARKET_ORDER_SLIPPAGE_MIN_PERCENT,
 					),
 					MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
@@ -175,8 +175,8 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 						typeof p.animateOrderbook === "boolean" ? p.animateOrderbook : DEFAULT_GLOBAL_SETTINGS.animateOrderbook,
 					skipOrderConfirmation,
 					marketOrderSlippagePercent: slippagePercent,
-					marginMode: p?.marginMode === "isolated" ? "isolated" : "cross",
-					theme: p?.theme === "light" ? "light" : "dark",
+					marginMode: p.marginMode === "isolated" ? "isolated" : "cross",
+					theme: p.theme === "light" ? "light" : "dark",
 					network: getNetwork(),
 				};
 			},
@@ -246,6 +246,10 @@ subscribeNetworkStorage((network) => {
 
 export function useTheme() {
 	return useGlobalSettingsStore((state) => state.theme);
+}
+
+export function useNumberFormatLocale() {
+	return useGlobalSettingsStore((state) => state.numberFormatLocale);
 }
 
 export function useSetTheme() {

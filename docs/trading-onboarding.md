@@ -80,7 +80,16 @@ The terminal must preserve this ordering:
    Explicit API-wallet management and desktop linking remain separate
    owner-approved operations. An embedded wallet may hide a duplicate Privy
    confirmation only when that entry point already completed its own application
-   permission review; other Agent approvals retain confirmation by default.
+   permission review; other Agent approvals retain confirmation by default. The
+   desktop Link mobile device dialog is such an entry point: its approval runs
+   only from the reviewed "Approve a mobile trading key" step and its revocation
+   only after the explicit "Review revoke" confirmation, so both pass
+   `applicationReview: "confirmed"` and the embedded wallet signs silently, as
+   the official terminal does with its global `showWalletUIs: false`. The API
+   wallet page's authorize and remove actions open in their own review stage
+   and sign only after the explicit confirmation click, so they pass the same
+   flag; their progress copy tells email users the wallet signs automatically
+   instead of asking them to confirm in a wallet.
    Page load and status checks never sign. Agent registration is separate from
    builder-fee approval.
 5. **Verify a requested new Agent (external-wallet flow).** Before opening the
@@ -129,7 +138,10 @@ Exchange write still revalidates legal status at execution. Preference-only
 dialogs, including Settings and the command menu, remain available while legal
 status is being checked; they do not grant any trading or signing capability. A
 required HIP-3 deployer disclaimer retains priority over ordinary trading
-dialogs once legal review and signer setup are complete.
+dialogs once legal review and signer setup are complete. On the trade page its
+only way out is Leave this market, which returns to the default market; the
+position close flows show a cancellable copy first. `docs/hip3-deployer-disclaimer.md`
+owns this behavior.
 
 The position-dialog host stays mounted at the page level in every legal state,
 outside the legal gate, and so does the Market Close submit host. Together they
@@ -506,12 +518,12 @@ builder-fee approval use the same owner wallet; builder approval remains tied
 to the first action needing the configured builder, never login or registration.
 
 
-## Mobile Agent QR client-only transfer (envelope v3)
+## Mobile Agent QR client-only transfer (payload v4)
 
-Optional Link Desktop moves the desktop-approved Agent key to the phone without any server state ([ADR 0015](adr/0015-link-device-alignment.md) D7, option B; [implementation plan](mobile-sync-ticketless-transfer-plan.md)). On reveal the desktop generates a random 16-byte `syncId` locally, encrypts the AES-GCM fragment envelope (v3, AAD-bound to `syncId`, creation and expiry; plaintext bound to origin, network and owner) with a 2-minute TTL, and shows the QR for 60 seconds measured on the local monotonic clock, never beyond the envelope expiry. The phone imports in this order: decrypt, local duplicate check on `syncId` (per network and owner, kept until envelope expiry plus skew), exact `extraAgents` verification, registration-epoch capture, persistence, owner activation and verification; cancellation keeps the existing epoch-aware rollback. The duplicate check runs before any registration epoch is captured, so a QR this phone already imported is refused without touching the access it already holds. That duplicate, an expired envelope, an envelope dated ahead of the phone beyond the clock skew, or a v2 envelope from the retired ticket protocol (answered with a refresh-both-devices message on the import page and in the in-app scanner) clears only the current QR draft. The phone holds a loaded QR for at most the envelope TTL plus the skew, whatever timestamps it carries. Network failures during approval verification retain the bounded draft for retry.
+Optional Link mobile device moves the desktop-approved Agent key to the phone without any server state ([ADR 0015](adr/0015-link-device-alignment.md) D7 option B and D8; [simplification plan](link-mobile-device-simplification-plan.md)). The desktop dialog has one instruction, one warning and one action: the exact owner approves a `Mobile valid_until <ms>` Agent (30 days) with a single explicit click, holds for 2 seconds to reveal (the button counts down), and the QR closes after 60 seconds, on window blur or when the page is hidden. The QR is a same-origin `/mobile-agent-sync` link whose fragment carries the plain JSON payload (version 4: network, owner, Agent key, Agent expiry, creation time and a 2-minute expiry). The fragment never leaves the browser, and encrypting it with a key carried in the same link would not protect against anyone holding the link, so the payload is not encrypted; there is no server ticket, draft storage, duplicate check or desktop `extraAgents` polling.
 
-Two properties of the former server ticket are deliberately given up: a second phone redeeming the same code is no longer rejected, and a server restart no longer invalidates outstanding codes. Neither stopped a captured QR; they are replaced by the 60-second visible window, the 2-minute envelope, the screen-sharing warning, the 4-second hold and desktop revocation, and the phone's success panel tells the user to revoke from desktop if they did not import it themselves. These limits bind honest clients only. The fragment carries both the ciphertext and its AES key, so anyone who obtains the complete QR or URL (a screenshot, a photo, or a system-camera scan that leaves the URL in browser history or history sync) can decrypt it at any time and holds the Agent private key until the Agent expires (30 days) or the desktop revokes it. This was equally true with the ticket; the in-app scanner never navigates to the QR URL and is the recommended path.
+The phone parses the fragment before its first paint and removes it from the address bar. It refuses a payload for another network, an expired payload, one created ahead of the phone beyond the 60-second clock skew, and any older envelope version (answered with a refresh-both-devices message on the import page and in the in-app scanner). It imports only on an explicit tap: one exact `extraAgents` verification of address, name base and `validUntil`, then registration-epoch capture, persistence in the local storage scope, owner activation and verification, with the existing epoch-aware rollback on failure. A reload after the scrub asks for a new scan; an unreachable verification reports itself and imports nothing; an unapproved key keeps the loaded link for a retry.
 
-Reveal, import, verification, refresh and QR recovery never sign or approve a builder fee. Explicit Mobile Agent approval still requires the exact master on desktop; the importing phone does not connect the master or enter a pairing code. Ordinary email trading continues to use the exact active Privy embedded owner without generating an Agent. QR recovery is limited to an existing approved-unrevealed desktop record; after rendering or losing that record a replacement needs an explicit new flow.
+These limits bind honest clients only: anyone who obtains the complete QR or URL (a screenshot, a photo, or a system-camera scan that leaves the URL in browser history or history sync) holds the Agent private key until the Agent expires (30 days) or the owner replaces it by approving again or removes it from the API wallet page. The in-app scanner opens the link itself and is the recommended path. Reveal, import, verification and refresh never sign or approve a builder fee. Explicit Mobile Agent approval still requires the exact master on desktop; the importing phone does not connect the master or enter a pairing code. Ordinary email trading continues to use the exact active Privy embedded owner without generating an Agent.
 
-The transfer works on the static CloudFront + S3 host; `/mobile-agent-sync-ticket` no longer exists (the viewer-request function and the Lambda handler answer 404). Both pairing build flags (`VITE_MOBILE_PAIRING_CREATE_ENABLED`, `VITE_MOBILE_PAIRING_IMPORT_ENABLED`) still default off and must stay off in production until the acceptance in the [implementation plan](mobile-sync-ticketless-transfer-plan.md) is complete: the [physical-device matrix](mobile-phone-access-device-validation.md) remains not run. Draft v1 is unchanged.
+The transfer works on the static CloudFront + S3 host; `/mobile-agent-sync-ticket` no longer exists (the viewer-request function and the Lambda handler answer 404). The single build flag `VITE_MOBILE_PAIRING_ENABLED` defaults off and must stay off in production until the [physical-device checklist](mobile-phone-access-device-validation.md) has been run and recorded.

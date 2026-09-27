@@ -176,7 +176,6 @@ describe("agent snapshot cache", () => {
 			agentName: `Mobile valid_until ${validUntilMs}`,
 			agentValidUntilMs: validUntilMs,
 			importedAtMs: validUntilMs - 1_000,
-			syncId: "canonical-storage",
 		};
 		const invalidRecords = [
 			{ ...canonical, agentName: `Mobile valid_until ${validUntilMs + 1}` },
@@ -204,7 +203,6 @@ describe("agent snapshot cache", () => {
 				agentName: "Mobile valid_until 2",
 				agentValidUntilMs: 2,
 				importedAtMs: 1,
-				syncId: "expired-reload",
 			}),
 		);
 

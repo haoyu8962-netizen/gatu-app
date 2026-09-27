@@ -11,6 +11,8 @@ const testState = vi.hoisted(() => ({
 	isMobile: false,
 }));
 
+const XYZ_DOCUMENTATION_URL = "https://docs.trade.xyz/consolidated-resources/specification-index";
+
 function renderChildren(children: ReactNode) {
 	return createElement(Fragment, null, children);
 }
@@ -32,10 +34,21 @@ vi.mock("@/stores/use-hip3-disclaimer-store", () => ({
 	useHip3DisclaimerActions: () => ({ accept: testState.accept }),
 }));
 
-function getConfirmButton(): HTMLButtonElement {
-	const button = [...document.body.querySelectorAll("button")].find((candidate) => candidate.textContent === "Confirm");
-	if (!(button instanceof HTMLButtonElement)) throw new Error("Confirm button not found");
+function findButton(label: string): HTMLButtonElement | undefined {
+	const button = [...document.body.querySelectorAll("button")].find((candidate) => candidate.textContent === label);
+	return button instanceof HTMLButtonElement ? button : undefined;
+}
+
+function getButton(label: string): HTMLButtonElement {
+	const button = findButton(label);
+	if (!button) throw new Error(`${label} button not found`);
 	return button;
+}
+
+function dispatchEscape() {
+	act(() => {
+		document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+	});
 }
 
 function getAcknowledgementCheckbox(): HTMLElement {
@@ -70,11 +83,15 @@ describe("Hip3DeployerDisclaimer", () => {
 		vi.clearAllMocks();
 	});
 
-	it("blocks dismissal and confirmation until the acknowledgement is checked", () => {
+	it("blocks dismissal on the trade page, exits through Leave this market and confirms only after acknowledgement", () => {
+		const onExit = vi.fn();
 		act(() => {
 			root.render(
 				createElement(Hip3DeployerDisclaimer, {
-					documentationUrl: "https://docs.trade.xyz/consolidated-resources/specification-index",
+					open: true,
+					documentationUrl: XYZ_DOCUMENTATION_URL,
+					exit: "leave-market",
+					onExit,
 				}),
 			);
 		});
@@ -95,22 +112,24 @@ describe("Hip3DeployerDisclaimer", () => {
 			expect(paragraph.classList.contains("leading-4")).toBe(true);
 		}
 		expect(document.body.querySelector("label .text-fg-muted")).not.toBeNull();
-		expect(getConfirmButton().disabled).toBe(true);
-		expect(getConfirmButton().classList.contains("h-10")).toBe(true);
-		const documentationLink = document.body.querySelector(
-			'a[href="https://docs.trade.xyz/consolidated-resources/specification-index"]',
-		);
+		expect(getButton("Confirm").disabled).toBe(true);
+		expect(getButton("Confirm").classList.contains("h-10")).toBe(true);
+		const documentationLink = document.body.querySelector(`a[href="${XYZ_DOCUMENTATION_URL}"]`);
 		const termsLink = document.body.querySelector('a[href="/terms"]');
 		expect(documentationLink?.classList.contains("text-signal")).toBe(true);
 		expect(termsLink?.classList.contains("text-signal")).toBe(true);
+
+		expect(findButton("Cancel")).toBeUndefined();
+		act(() => getButton("Leave this market").click());
+		expect(onExit).toHaveBeenCalledOnce();
 
 		const checkbox = getAcknowledgementCheckbox();
 		expect(checkbox.getAttribute("aria-checked")).toBe("false");
 		act(() => checkbox.click());
 
 		expect(checkbox.getAttribute("aria-checked")).toBe("true");
-		expect(getConfirmButton().disabled).toBe(false);
-		act(() => getConfirmButton().click());
+		expect(getButton("Confirm").disabled).toBe(false);
+		act(() => getButton("Confirm").click());
 		expect(testState.accept).toHaveBeenCalledOnce();
 	});
 
@@ -118,41 +137,99 @@ describe("Hip3DeployerDisclaimer", () => {
 		testState.isMobile = true;
 
 		act(() => {
-			root.render(createElement(Hip3DeployerDisclaimer, { documentationUrl: undefined }));
+			root.render(
+				createElement(Hip3DeployerDisclaimer, {
+					open: true,
+					documentationUrl: undefined,
+					exit: "leave-market",
+					onExit: vi.fn(),
+				}),
+			);
 		});
 
 		const dialog = document.body.querySelector('[role="dialog"]');
 		expect(dialog?.classList.contains("fixed")).toBe(true);
 		expect(dialog?.className).toContain("rounded-t-32");
 		expect(dialog?.className).not.toContain("min-[1000px]");
+		expect(document.body.querySelector('button[aria-label="Close"]')).toBeNull();
 		expect(document.body.querySelectorAll('a[target="_blank"]')).toHaveLength(1);
 		expect(document.body.querySelector('a[href="/terms"]')).not.toBeNull();
+		expect(getButton("Leave this market")).toBeDefined();
 
 		const checkbox = getAcknowledgementCheckbox();
 		const label = checkbox.closest("label");
 		if (!(label instanceof HTMLLabelElement)) throw new Error("Acknowledgement label not found");
-		expect(getConfirmButton().disabled).toBe(true);
+		expect(getButton("Confirm").disabled).toBe(true);
 		act(() => label.click());
 
 		expect(checkbox.getAttribute("aria-checked")).toBe("true");
-		expect(getConfirmButton().disabled).toBe(false);
-		act(() => getConfirmButton().click());
+		expect(getButton("Confirm").disabled).toBe(false);
+		act(() => getButton("Confirm").click());
 		expect(testState.accept).toHaveBeenCalledOnce();
 	});
 
-	it("allows an action-scoped disclaimer to cancel the pending market-close flow", () => {
-		const onCancel = vi.fn();
+	it("ends a position flow through its Cancel button", () => {
+		const onExit = vi.fn();
 
 		act(() => {
-			root.render(createElement(Hip3DeployerDisclaimer, { documentationUrl: undefined, onCancel }));
+			root.render(
+				createElement(Hip3DeployerDisclaimer, {
+					open: true,
+					documentationUrl: undefined,
+					exit: "cancel",
+					onExit,
+				}),
+			);
 		});
 
-		expect(document.body.querySelector('button[aria-label="Close"]')).not.toBeNull();
-		const cancelButton = [...document.body.querySelectorAll("button")].find(
-			(candidate) => candidate.textContent === "Cancel",
-		);
-		if (!(cancelButton instanceof HTMLButtonElement)) throw new Error("Cancel button not found");
-		act(() => cancelButton.click());
-		expect(onCancel).toHaveBeenCalledOnce();
+		expect(document.body.querySelector('button[aria-label="Close"]')).toBeNull();
+		expect(findButton("Leave this market")).toBeUndefined();
+		act(() => getButton("Cancel").click());
+		expect(onExit).toHaveBeenCalledOnce();
+		expect(testState.accept).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["desktop modal", false],
+		["phone drawer", true],
+	])("keeps the trade-page copy open on Escape in the %s", (_presentation, isMobile) => {
+		testState.isMobile = isMobile;
+		const onExit = vi.fn();
+		act(() => {
+			root.render(
+				createElement(Hip3DeployerDisclaimer, {
+					open: true,
+					documentationUrl: undefined,
+					exit: "leave-market",
+					onExit,
+				}),
+			);
+		});
+
+		dispatchEscape();
+		expect(onExit).not.toHaveBeenCalled();
+		expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
+	});
+
+	it.each([
+		["desktop modal", false],
+		["phone drawer", true],
+	])("ends the position flow on Escape in the %s", (_presentation, isMobile) => {
+		testState.isMobile = isMobile;
+		const onExit = vi.fn();
+		act(() => {
+			root.render(
+				createElement(Hip3DeployerDisclaimer, {
+					open: true,
+					documentationUrl: undefined,
+					exit: "cancel",
+					onExit,
+				}),
+			);
+		});
+
+		dispatchEscape();
+		expect(onExit).toHaveBeenCalledOnce();
+		expect(testState.accept).not.toHaveBeenCalled();
 	});
 });

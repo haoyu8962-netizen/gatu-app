@@ -13,6 +13,7 @@ import {
 	formatTime,
 	formatToken,
 	formatUSD,
+	normalizeDecimalInput,
 	shortenAddress,
 	szDecimalsToPriceDecimals,
 } from "@/lib/format";
@@ -83,6 +84,16 @@ describe("format", () => {
 		expect(formatUSD(12500, { decimals: 1 })).toBe(compactUsd);
 	});
 
+	it.each([
+		["en-US", "1,5", "1,5"],
+		["de-DE", "1,5", "1.5"],
+		["fr-FR", "12,", "12."],
+		["de-DE", "1.5", "1.5"],
+	] as const)("normalizes typed decimal input under the %s preset", (locale, typed, expected) => {
+		formatSettings.numberFormatLocale = locale;
+		expect(normalizeDecimalInput(typed)).toBe(expected);
+	});
+
 	it("formats dates from the active interface language independently of number separators", () => {
 		const value = new Date("2026-08-12T14:35:00Z");
 		const options = { timeZone: "UTC" } as const;
@@ -100,6 +111,39 @@ describe("format", () => {
 		formatSettings.numberFormatLocale = "de-DE";
 		expect(formatDateTimeShort(value, options)).toBe("12/08 14:35");
 		expect(formatDateTimeShort(value, { ...options, locale: "en-US" })).toBe("08/12, 14:35");
+	});
+
+	it("keeps Latin digits in dates for every interface language", () => {
+		const value = new Date("2026-08-12T14:35:09Z");
+		const options = { timeZone: "UTC" } as const;
+
+		i18n.loadAndActivate({ locale: "ar", messages: {} });
+		expect(formatTime(value, { ...options, hour: "2-digit", minute: "2-digit", hourCycle: "h23" })).toMatch(/^14:35$/);
+		expect(formatDateTime(value, { ...options, dateStyle: "medium", timeStyle: "short" })).toMatch(/2026/);
+		expect(formatDateTime(value, { ...options, dateStyle: "medium", timeStyle: "short" })).not.toMatch(/[٠-٩]/);
+		expect(formatDateTimeShort(value, options)).toContain("14:35");
+		expect(formatDateTimeShort(value, options)).not.toMatch(/[٠-٩]/);
+
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("respects an explicit date-only or time-only style instead of appending the defaults", () => {
+		const value = new Date("2026-08-12T14:35:00Z");
+		const options = { timeZone: "UTC" } as const;
+
+		expect(formatDateTime(value, { ...options, dateStyle: "medium" })).toBe("Aug 12, 2026");
+		expect(formatDateTime(value, { ...options, timeStyle: "short" })).toBe("2:35 PM");
+		expect(formatDateTime(value, options)).toBe("Aug 12, 2026, 2:35 PM");
+	});
+
+	it("maps an interface language code passed as locale to its Intl locale", () => {
+		const value = new Date("2026-08-12T14:35:00Z");
+		const options = { timeZone: "UTC" } as const;
+
+		expect(formatDateTime(value, { ...options, locale: "zh", dateStyle: "short", timeStyle: "short" })).toBe(
+			formatDateTime(value, { ...options, locale: "zh-CN", dateStyle: "short", timeStyle: "short" }),
+		);
+		expect(formatTime(value, { ...options, locale: "fr" })).toBe("14:35");
 	});
 
 	it("resolves sub-basis-point slippage instead of collapsing it to zero", () => {

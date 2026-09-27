@@ -32,7 +32,6 @@ const nonMobileMetadataSchema = {
 	agentName: z.never().optional(),
 	agentValidUntilMs: z.never().optional(),
 	importedAtMs: z.never().optional(),
-	syncId: z.never().optional(),
 };
 
 const sourcedAgentWalletSchema = z.discriminatedUnion("source", [
@@ -53,7 +52,6 @@ const sourcedAgentWalletSchema = z.discriminatedUnion("source", [
 			agentName: z.string().min(1),
 			agentValidUntilMs: z.number().int().positive().safe(),
 			importedAtMs: z.number().int().positive().safe(),
-			syncId: z.string().min(1),
 		})
 		.strict(),
 ]);
@@ -81,8 +79,7 @@ const agentWalletSchema = z
 		if (
 			agent.source === "mobile-sync" &&
 			(agent.agentName !== createMobileAgentName(agent.agentValidUntilMs) ||
-				agent.importedAtMs >= agent.agentValidUntilMs ||
-				agent.syncId.trim() !== agent.syncId)
+				agent.importedAtMs >= agent.agentValidUntilMs)
 		) {
 			ctx.addIssue({ code: "custom", message: "Invalid canonical mobile Agent metadata" });
 		}

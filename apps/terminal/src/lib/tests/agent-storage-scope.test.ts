@@ -184,7 +184,6 @@ describe("Agent storage scope", () => {
 				agentName: createMobileAgentName(agentValidUntilMs),
 				agentValidUntilMs,
 				importedAtMs,
-				syncId: "coordinated-registration-test",
 			}).status,
 		).toBe("stored");
 		window.localStorage.setItem(

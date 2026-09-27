@@ -7,6 +7,8 @@ import type { PositionReverseTarget } from "@/hooks/trade/use-position-reverse-s
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	hip3Required: false,
+	hip3Target: null as unknown,
 	modalProps: null as Record<string, unknown> | null,
 	submit: vi.fn(),
 	resetError: vi.fn(),
@@ -23,6 +25,24 @@ vi.mock("@/components/trade/positions/position-reverse-confirmation-modal", () =
 		mocks.modalProps = props;
 		return createElement("div", { role: "dialog" });
 	},
+}));
+
+vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
+	useHip3DisclaimerRequirement: (target: unknown) => {
+		mocks.hip3Target = target;
+		return mocks.hip3Required
+			? { isRequired: true, dex: "xyz", documentationUrl: undefined }
+			: { isRequired: false, dex: undefined, documentationUrl: undefined };
+	},
+}));
+
+vi.mock("@/components/trade/components/hip3-deployer-disclaimer", () => ({
+	Hip3DeployerDisclaimer: ({ open, exit, onExit }: { open: boolean; exit: string; onExit: () => void }) =>
+		createElement(
+			"button",
+			{ type: "button", "data-testid": "hip3-exit", "data-open": String(open), "data-exit": exit, onClick: onExit },
+			"HIP-3",
+		),
 }));
 
 vi.mock("@/hooks/trade/use-position-reverse-submit", () => ({
@@ -72,6 +92,8 @@ describe("PositionReverseConfirmationController", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.hip3Required = false;
+		mocks.hip3Target = null;
 		mocks.modalProps = null;
 		mocks.phase = "idle";
 		mocks.error = null;
@@ -108,6 +130,42 @@ describe("PositionReverseConfirmationController", () => {
 				vi.advanceTimersByTime(250);
 			});
 			expect(container.querySelector('[role="dialog"]')).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("shows the HIP-3 disclaimer for a builder-deployed position before the confirmation and ends the session on Cancel", () => {
+		const onSessionEnd = vi.fn();
+		mocks.hip3Required = true;
+		act(() => root.render(<PositionReverseConfirmationController session={session} onSessionEnd={onSessionEnd} />));
+
+		expect(mocks.hip3Target).toBe("xyz:CXMT");
+		expect(mocks.modalProps).toBeNull();
+		const disclaimer = container.querySelector<HTMLButtonElement>('[data-testid="hip3-exit"]');
+		expect(disclaimer?.getAttribute("data-exit")).toBe("cancel");
+		expect(disclaimer?.getAttribute("data-open")).toBe("true");
+
+		act(() => disclaimer?.click());
+		expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
+		expect(mocks.submit).not.toHaveBeenCalled();
+	});
+
+	it("mounts the confirmation once the disclaimer is accepted and its exit transition has run", () => {
+		vi.useFakeTimers();
+		try {
+			mocks.hip3Required = true;
+			act(() => root.render(<PositionReverseConfirmationController session={session} onSessionEnd={vi.fn()} />));
+			mocks.hip3Required = false;
+			act(() => root.render(<PositionReverseConfirmationController session={session} onSessionEnd={vi.fn()} />));
+			expect(container.querySelector('[data-testid="hip3-exit"]')?.getAttribute("data-open")).toBe("false");
+			expect(mocks.modalProps).toBeNull();
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[data-testid="hip3-exit"]')).toBeNull();
+			expect(mocks.modalProps).toMatchObject({ open: true, isConfirmDisabled: false });
 		} finally {
 			vi.useRealTimers();
 		}

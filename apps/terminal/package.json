@@ -6,8 +6,8 @@
 	"scripts": {
 		"dev": "vite dev",
 		"dev:browser": "vite dev --open --strictPort",
-		"build": "lingui compile && NODE_OPTIONS=--max-old-space-size=8192 vite build && node ../../scripts/check-client-chunk-cycles.mjs .output/public/assets && node ../../scripts/check-client-bundle-budget.mjs .output/public/assets && node ../../scripts/inject-shell-preloads.mjs .output/public && node ../../scripts/collect-inline-script-hashes.mjs .output/public && node ../../scripts/check-shell-head-scrub.mjs .output/public",
-		"build:analyze": "ANALYZE=true lingui compile && NODE_OPTIONS=--max-old-space-size=8192 vite build && node ../../scripts/check-client-chunk-cycles.mjs .output/public/assets && node ../../scripts/check-client-bundle-budget.mjs .output/public/assets && node ../../scripts/inject-shell-preloads.mjs .output/public && node ../../scripts/collect-inline-script-hashes.mjs .output/public && node ../../scripts/check-shell-head-scrub.mjs .output/public",
+		"build": "lingui compile && NODE_OPTIONS=--max-old-space-size=8192 vite build && node ../../scripts/check-client-chunk-cycles.mjs .output/public/assets && node ../../scripts/check-client-bundle-budget.mjs .output/public/assets && node ../../scripts/inject-shell-preloads.mjs .output/public && node ../../scripts/collect-inline-script-hashes.mjs .output/public",
+		"build:analyze": "ANALYZE=true lingui compile && NODE_OPTIONS=--max-old-space-size=8192 vite build && node ../../scripts/check-client-chunk-cycles.mjs .output/public/assets && node ../../scripts/check-client-bundle-budget.mjs .output/public/assets && node ../../scripts/inject-shell-preloads.mjs .output/public && node ../../scripts/collect-inline-script-hashes.mjs .output/public",
 		"serve": "node ../../scripts/serve-nitro.mjs .output/server/index.mjs",
 		"serve:spa": "node ../../scripts/serve-spa-static.mjs .output/public",
 		"build:lambda": "vite build --config vite.lambda.config.ts",

@@ -34,6 +34,7 @@ export interface PositionIsolatedMarginSession {
 
 interface PositionDialogActions {
 	openCloseAll: (snapshot: PositionCloseAllSnapshot) => void;
+	refreshCloseAll: (sessionId: string, snapshot: PositionCloseAllSnapshot) => void;
 	endCloseAll: (sessionId: string) => void;
 	openReverse: (target: PositionReverseTarget) => void;
 	endReverse: (sessionId: string) => void;
@@ -76,6 +77,11 @@ const usePositionDialogStore = create<PositionDialogStore>((set) => ({
 			set((state) => {
 				if (state.closeAll && isSameIdentity(state.closeAll.snapshot, snapshot)) return state;
 				return { closeAll: { sessionId: nextSessionId("close-all"), snapshot } };
+			}),
+		refreshCloseAll: (sessionId, snapshot) =>
+			set((state) => {
+				if (state.closeAll?.sessionId !== sessionId || !isSameIdentity(state.closeAll.snapshot, snapshot)) return state;
+				return { closeAll: { sessionId, snapshot } };
 			}),
 		endCloseAll: (sessionId) => set((state) => (state.closeAll?.sessionId === sessionId ? { closeAll: null } : state)),
 		openReverse: (target) =>

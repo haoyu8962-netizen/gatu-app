@@ -1,6 +1,6 @@
 # ADR 0015：链接移动设备体验对齐官方，保留更严格的凭证边界
 
-状态：D1–D6 已接受并实施（2026-09-18）；D7 于 2026-09-18 由用户选定方案 B（去服务端票据的纯客户端传输）并于同日完成代码实施（信封 v3、TTL 2 分钟、揭示后 60 秒单调时钟窗口、手机端 `syncId` 本地去重、票据端点与 EC2 时代发布脚本删除）；真机验收未执行，生产开关保持关闭，范围与验收见 [方案 B 规划](../mobile-sync-ticketless-transfer-plan.md)。作者：Claude Fable 5.1 会话（工作记录 `docs/work-memory/sessions/2026-09-18-link-device-alignment.md`）。
+状态：D1–D6 已接受并实施（2026-09-18）；D7 于 2026-09-18 由用户选定方案 B（去服务端票据的纯客户端传输）并于同日完成代码实施（信封 v3、TTL 2 分钟、揭示后 60 秒单调时钟窗口、手机端 `syncId` 本地去重、票据端点与 EC2 时代发布脚本删除），随 p22 上线、开关关闭；D8 于 2026-09-24 由用户按 [简化规划](../link-mobile-device-simplification-plan.md) 的推荐决定并实施，取代 D2 的预检与恢复记录、D5 的信封倒计时来源、D7 的加密信封与去重，真机清单缩为三行，生产开关仍关闭。作者：Claude Fable 5.1 会话（工作记录 `docs/work-memory/sessions/2026-09-18-link-device-alignment.md`）。
 
 ## 上下文
 
@@ -27,6 +27,7 @@
 - D4 按住显示：4 秒与取消语义不变；进度改为按钮内圆环（官方形态）并保留 `progressbar` 语义。
 - D5 倒计时：可见面板显示「{n} 秒后关闭」，从现有 `remainingQrLifetimeMs()`（信封、票据单调时钟、票据墙钟三者取小；D7 实施后改为信封墙钟到期与揭示后 60 秒单调时钟两者取小）每秒重算，`role="timer"` + `tabular-nums`，不做每秒 `aria-live` 播报；揭示时一次性 sr-only 说明。
 - D6 手机端：(a) 资金动作可用性新增 `agent-only-session` 原因（Deposit / Withdraw / Transfer 在 Agent-only 会话显示为禁用并给出「此手机使用桌面授权的交易密钥。存款、提款和划转需要在桌面连接主钱包。」），先在 `docs/mobile-data-presentation.md` 登记为已确认会话限制，不进入被动数据原因集合；(b) 扫描器删除无效的 constraints 参数，`start()` 后再 `listCameras` 选择非超广/长焦的后置相机，文案提示桌面右上角二维码图标；(c) 导入时显式传 `{ scope: "local" }`（原为隐式默认）并在成功面板披露「保留在此手机直到 {日期} 过期或从桌面撤销」。
+- D8 收敛到官方量级（2026-09-24，用户按简化规划推荐决定）：桌面弹窗只剩一句操作说明、一条风险提示和一个动作（`idle → signing → ready → revealed`，失败一行错误并可重按），签名仍是显式点击且带 `applicationReview: "confirmed"`，成功以交易所 `status: "ok"` 为准，不再做资金/builder fee 预检、注册租约、恢复记录、待核验态与桌面 `extraAgents` 轮询；揭示要按住 2 秒（2026-09-24 按用户反馈从官方的 4 秒缩短，按住时按钮显示剩余秒数），二维码 60 秒后或失焦/隐藏时关闭。载荷改为片段里的明文 JSON（版本 4：网络、owner、密钥、Agent 到期、创建与 2 分钟到期），去掉 AES-GCM 信封、`syncId` 去重、草稿存储、头部擦除脚本管线、交接对象、说明页与 Service Worker 之外的引导分支；手机页首帧前读取并擦除片段、拒绝其它网络/过期/超前/旧版本、显式 Import 前做一次 `extraAgents` 核验、失败走既有 epoch 回滚，刷新后要求重新扫码。入口只保留头部图标（紧凑宽度不再隐藏），删除工具菜单与用户菜单条目和撤销面板：再次授权即替换，API 钱包页面可移除。两个构建开关合并为 `VITE_MOBILE_PAIRING_ENABLED`，`build-meta.json` 记 `mobileSync.enabled`（发布脚本兼容旧形状），CI 生产构建从四组变两组；真机矩阵与校验器换成三行手工清单。保留的四点差别：显式点击、30 天有效期、片段传输、导入前一次链上核验。放弃的属性：同一码重复导入被拒、结果未知时的恢复、桌面撤销面板、擦除脚本先于应用执行——理由与官方对照见 [取证记录](../work-memory/sessions/2026-09-24-official-link-mobile-device-ux-trace.md)；边缘函数的配对响应头与 Service Worker 放行暂不动。
 - D7 凭证传输（已选定 B 并实施代码，真机验收未执行）：三个备选。A 保留票据并交付共享 CAS+TTL 存储（DynamoDB 条件写，两分支 consume：首次 `attribute_not_exists(consumerId) AND consumeExpiresAtMs > :now`，胜者重试 `consumerId = :c AND tombstoneExpiresAtMs > :now`；`MobileSyncTicketStore` 改为异步；Lambda 挂载处理器并移除 503 桩；限速改由 WAF）。B 去掉票据，改为与官方一致的纯客户端传输，信封 TTL 缩到 2 分钟，其余加固全部保留；失去「第二部手机兑换同一码被拒」和「重启失效」两个属性，但这两个属性都不阻止二维码被截取，且不再依赖任何服务端状态。C 手机生成密钥、只把公钥地址回传桌面（票据修复方案 §7），是唯一让截图无用的设计，但桌面需摄像头或人工输入，与官方体验相反。已选定 B 并实施；真机验收完成前 `createAndReveal` / `importFromQr` 在 CloudFront 构建中保持关闭。
 
 ## 备选方案
@@ -41,6 +42,7 @@
 - 弹窗打开即发只读请求；这些查询原本就在 `open && hasWalletAccess` 时启用，不新增签名。
 - `agent-only-session` 是已确认限制，允许展示原因；`PASSIVE_DATA_REASONS` 不变。
 - D7 实施后 Lambda 503 桩与 CloudFront 票据转发已删除，退役路径返回 404；生产开关仍未改变，需真机验收后另行打开。
+- 2026-09-24 补注：邮箱用户在弹窗里点「Approve」后仍会弹出 Privy 的「Approve mobile trading access」签名确认，原因是弹窗调用 `approveAgent.mutateAsync` 时没有声明 `applicationReview: "confirmed"`，`createPrivyAgentSigner` 按规则回退到显式 UI。官方（2026-09-24 产物 `index-58uVNh8f.js`）全局 `embeddedWallets.showWalletUIs: false`，`approveAgent` 经 Privy 钱包的 EIP-1193 provider 静默签名，应用代码没有任何按调用的 `uiOptions`；签名期间只显示转圈。现已让审批与撤销两处都传 `applicationReview: "confirmed"`（弹窗自身的审批面与「Review revoke」确认即应用层审查），行为与官方一致；同日按用户决定，API 钱包管理弹窗的授权/移除也声明 `applicationReview: "confirmed"`，进度文案对嵌入钱包改为「自动签名」而不是「在钱包里确认」。同日在开发构建（两个配对开关打开）上用真实邮箱账户走通审批 → 按住显示 → 同源第二标签导入 → 桌面撤销：审批与撤销都没有 Privy 弹窗、各约 2 秒，链上 `extraAgents` 先出现新 Mobile Agent、撤销后换成不可访问的替换密钥；撤销确认按钮对嵌入钱包改为静态的「Confirm revoke」并说明自动签名，外部钱包保留「Confirm revoke in wallet」；approving 态的「Approve QR code with wallet...」与官方签名期间文案相同、保持不变。见 [验证记录](../work-memory/sessions/2026-09-24-link-mobile-device-live-verification.md)。
 
 ## 证据
 

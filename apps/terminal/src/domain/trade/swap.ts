@@ -70,7 +70,7 @@ export function getAvailablePairTokens(token: string, spotMarkets: SpotMarketInf
 	return Array.from(tokenMap.values()).sort((a, b) => {
 		if (a.name === DEFAULT_QUOTE_TOKEN) return -1;
 		if (b.name === DEFAULT_QUOTE_TOKEN) return 1;
-		return a.displayName.localeCompare(b.displayName);
+		return a.displayName.localeCompare(b.displayName, undefined, { sensitivity: "base" });
 	});
 }
 

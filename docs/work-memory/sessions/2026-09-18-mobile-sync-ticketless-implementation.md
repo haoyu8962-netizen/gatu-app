@@ -17,7 +17,7 @@
     { "path": "docs/mobile-sync-ticketless-transfer-plan.md" },
     { "path": "docs/adr/0015-link-device-alignment.md" },
     { "path": "apps/terminal/src/lib/mobile-sync/sync-core.ts" },
-    { "path": "apps/terminal/src/lib/mobile-sync/imported-sync-ids.ts" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/046b0de2/apps/terminal/src/lib/mobile-sync/imported-sync-ids.ts" },
     { "path": "apps/terminal/src/routes/mobile-agent-sync.tsx" },
     { "path": "apps/terminal/src/components/trade/components/mobile-agent-sync-modal.tsx" },
     { "path": "deploy/cloudfront/functions/terminal-request.js" }

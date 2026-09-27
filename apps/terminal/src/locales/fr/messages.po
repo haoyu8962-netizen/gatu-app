@@ -726,12 +726,12 @@ msgid "Another funds operation is still in progress for this account. Try again 
 msgstr "Une autre opération sur les fonds est toujours en cours pour ce compte. Réessayez une fois celle-ci terminée."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Another mobile approval is already in progress for this wallet."
-msgstr "Une autre approbation mobile est déjà en cours pour ce portefeuille."
+#~ msgid "Another mobile approval is already in progress for this wallet."
+#~ msgstr "Une autre approbation mobile est déjà en cours pour ce portefeuille."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Another mobile approval is being prepared for this wallet."
-msgstr "Une autre approbation mobile est en cours de préparation pour ce portefeuille."
+#~ msgid "Another mobile approval is being prepared for this wallet."
+#~ msgstr "Une autre approbation mobile est en cours de préparation pour ce portefeuille."
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Another order for one of these markets is still being confirmed."
@@ -752,8 +752,8 @@ msgid "Any portion that is not immediately filled will be canceled."
 msgstr "Toute partie non exécutée immédiatement sera annulée."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Anyone who scans or captures the QR can trade as this Agent."
-msgstr "Quiconque scanne ou capture le QR peut trader en tant que cet Agent."
+#~ msgid "Anyone who scans or captures the QR can trade as this Agent."
+#~ msgstr "Quiconque scanne ou capture le QR peut trader en tant que cet Agent."
 
 #: src/components/api-wallet/api-wallet-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -802,16 +802,16 @@ msgid "Approval and removal require the matching master wallet."
 msgstr "L’autorisation et la suppression nécessitent le portefeuille principal correspondant."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Approval verification pending"
-msgstr "Vérification de l'approbation en attente"
+#~ msgid "Approval verification pending"
+#~ msgstr "Vérification de l'approbation en attente"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Approve a mobile trading key"
-msgstr "Approuver une clé de trading mobile"
+#~ msgid "Approve a mobile trading key"
+#~ msgstr "Approuver une clé de trading mobile"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
-msgstr ""
+#~ msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
+#~ msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
@@ -826,12 +826,12 @@ msgid "Approve mobile trading key"
 msgstr "Approuver la clé de trading mobile"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Approve QR code with wallet..."
-msgstr ""
+#~ msgid "Approve QR code with wallet..."
+#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Approving a new mobile key replaces the previous mobile key."
-msgstr "L'approbation d'une nouvelle clé mobile remplace la clé mobile précédente."
+#~ msgid "Approving a new mobile key replaces the previous mobile key."
+#~ msgstr "L'approbation d'une nouvelle clé mobile remplace la clé mobile précédente."
 
 #: src/components/staking/staking-view.tsx
 msgid "Approximate: the SDK parses the raw total as a JavaScript number."
@@ -1264,8 +1264,8 @@ msgid "Check the wallet address or display name, or the account may not meet the
 msgstr "Vérifiez l’adresse du portefeuille ou le nom d’affichage ; il est également possible que le compte ne remplisse pas les critères actuels."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Checking account..."
-msgstr "Vérification du compte..."
+#~ msgid "Checking account..."
+#~ msgstr "Vérification du compte..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Checking fresh API wallet data…"
@@ -1296,8 +1296,8 @@ msgstr "Vérification de la route de dépôt actuelle d’Hyperliquid…"
 #~ msgstr "Vérification de la route de retrait actuelle d’Hyperliquid…"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Checking..."
-msgstr "Vérification..."
+#~ msgid "Checking..."
+#~ msgstr "Vérification..."
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Child"
@@ -1417,7 +1417,6 @@ msgstr "Cliquez pour envoyer · Les transactions exécutées sont irréversibles
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-#: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/pending-action-modal.tsx
@@ -1736,8 +1735,12 @@ msgid "Confirm removal"
 msgstr "Confirmer la suppression"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Confirm revoke in wallet"
-msgstr "Confirmez la révocation dans le portefeuille"
+#~ msgid "Confirm revoke"
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Confirm revoke in wallet"
+#~ msgstr "Confirmez la révocation dans le portefeuille"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Confirm the approval only in the selected master wallet."
@@ -1831,8 +1834,8 @@ msgid "Connect the selected master wallet before linking a mobile device."
 msgstr "Connectez le portefeuille principal sélectionné avant de lier un appareil mobile."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Connect the selected master wallet before resetting mobile access."
-msgstr "Connectez le portefeuille principal sélectionné avant de réinitialiser l'accès mobile."
+#~ msgid "Connect the selected master wallet before resetting mobile access."
+#~ msgstr "Connectez le portefeuille principal sélectionné avant de réinitialiser l'accès mobile."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Connect the verified owner wallet to withdraw Vault equity."
@@ -2033,29 +2036,33 @@ msgstr "Copier le lien de parrainage"
 msgid "Copy token address"
 msgstr "Copier l’adresse du jeton"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not check this account on Hyperliquid. Nothing was signed. Retry the check."
+#: src/routes/mobile-agent-sync.tsx
+msgid "Could not check the approval on Hyperliquid. Nothing was imported. Try again."
 msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Could not check this account on Hyperliquid. Nothing was signed. Retry the check."
+#~ msgstr ""
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Could not fetch your token balances"
 msgstr "Impossible de récupérer vos soldes de tokens"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Could not import phone access. Retry or create a new desktop QR."
-msgstr "Impossible d'importer l'accès mobile. Réessayez ou créez un nouveau QR de bureau."
+#~ msgid "Could not import phone access. Retry or create a new desktop QR."
+#~ msgstr "Impossible d'importer l'accès mobile. Réessayez ou créez un nouveau QR de bureau."
 
 #: src/hooks/wallet/use-email-wallet-export.ts
 msgid "Could not open wallet export. Retry in your system browser on the same GATU site, using the same email."
 msgstr "Impossible d’ouvrir l’exportation. Réessayez dans le navigateur système, sur le même site GATU et avec le même e-mail."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not render QR. Create a new key."
-msgstr "Impossible d'afficher le QR. Créez une nouvelle clé."
+#~ msgid "Could not render QR. Create a new key."
+#~ msgstr "Impossible d'afficher le QR. Créez une nouvelle clé."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not verify current mobile access."
-msgstr "Impossible de vérifier l'accès mobile actuel."
+#~ msgid "Could not verify current mobile access."
+#~ msgstr "Impossible de vérifier l'accès mobile actuel."
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Create a code after Hyperliquid confirms your eligibility. It cannot be changed from this page later."
@@ -2411,8 +2418,8 @@ msgid "Desktop layout"
 msgstr "Disposition du bureau"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Desktop QR loaded"
-msgstr "QR de bureau chargé"
+#~ msgid "Desktop QR loaded"
+#~ msgstr "QR de bureau chargé"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -2468,8 +2475,8 @@ msgid "Direction"
 msgstr "Direction"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Discard"
-msgstr "Abandonner"
+#~ msgid "Discard"
+#~ msgstr "Abandonner"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Discard local key"
@@ -2527,8 +2534,8 @@ msgid "Do not submit again. Verify this operation against the public ledger firs
 msgstr "Ne soumettez pas à nouveau. Vérifiez d’abord cette opération dans le registre public."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Do not submit another revocation. Retry the read-only verification."
-msgstr "N'envoyez pas une autre révocation. Réessayez la vérification en lecture seule."
+#~ msgid "Do not submit another revocation. Retry the read-only verification."
+#~ msgstr "N'envoyez pas une autre révocation. Réessayez la vérification en lecture seule."
 
 #: src/components/staking/staking-view.tsx
 msgid "Do not submit another staking funds operation. The shared recovery panel will keep checking Hyperliquid history."
@@ -2629,8 +2636,8 @@ msgid "Enable Trading"
 msgstr "Activer le trading"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Enable trading and approve the builder fee on this desktop before linking a phone."
-msgstr "Activez le trading et approuvez les frais de builder sur cet ordinateur avant de lier un téléphone."
+#~ msgid "Enable trading and approve the builder fee on this desktop before linking a phone."
+#~ msgstr "Activez le trading et approuvez les frais de builder sur cet ordinateur avant de lier un téléphone."
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enabling"
@@ -2888,8 +2895,8 @@ msgid "Expired"
 msgstr "Expiré"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Expires {expiresAtLabel}."
-msgstr "Expire {expiresAtLabel}."
+#~ msgid "Expires {expiresAtLabel}."
+#~ msgstr "Expire {expiresAtLabel}."
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Expires today"
@@ -3488,12 +3495,24 @@ msgstr "Historique"
 #~ msgstr "Les données d'historique n'ont pas pu être validées. Actualisez et réessayez."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Hold for 4 seconds to reveal phone access QR"
-msgstr "Maintenez pendant 4 secondes pour afficher le QR d'accès téléphone"
+msgid "Hold for {holdSeconds} seconds to reveal the QR code"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Hold to reveal QR"
-msgstr "Maintenez pour afficher le QR"
+#~ msgid "Hold for 4 seconds to reveal phone access QR"
+#~ msgstr "Maintenez pendant 4 secondes pour afficher le QR d'accès téléphone"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Hold for 4 seconds to reveal the QR code"
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Hold to reveal"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Hold to reveal QR"
+#~ msgstr "Maintenez pour afficher le QR"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
@@ -3521,8 +3540,8 @@ msgid "Hyperliquid account"
 msgstr "Compte Hyperliquid"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Hyperliquid approval could not be checked. Check your connection and retry."
-msgstr "L'approbation Hyperliquid n'a pas pu être vérifiée. Vérifiez votre connexion et réessayez."
+#~ msgid "Hyperliquid approval could not be checked. Check your connection and retry."
+#~ msgstr "L'approbation Hyperliquid n'a pas pu être vérifiée. Vérifiez votre connexion et réessayez."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Hyperliquid calculates and adds the margin required to reach the target leverage."
@@ -3558,8 +3577,8 @@ msgid "Hyperliquid rejected the verified public request."
 msgstr "Hyperliquid a rejeté la requête publique vérifiée."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
-msgstr "Hyperliquid indique que cette clé de trading a été remplacée, modifiée ou a expiré."
+#~ msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
+#~ msgstr "Hyperliquid indique que cette clé de trading a été remplacée, modifiée ou a expiré."
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
@@ -3603,10 +3622,13 @@ msgid "Identity epoch"
 msgstr "Époque de l’identité"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
-msgstr ""
+#~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
+#~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "Import"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
 msgstr "Importer l'accès mobile"
@@ -3724,20 +3746,24 @@ msgid "Joined"
 msgstr "Inscription"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."
-msgstr "Continuez à maintenir pendant 4 secondes. Relâchez, quittez la zone, perdez le focus ou appuyez sur Échap pour annuler."
+msgid "Keep holding for {remainingSeconds}s"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Keep holding... {remainingSeconds}s"
-msgstr "Continuez à maintenir... {remainingSeconds} s"
+#~ msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."
+#~ msgstr "Continuez à maintenir pendant 4 secondes. Relâchez, quittez la zone, perdez le focus ou appuyez sur Échap pour annuler."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Keep holding... {remainingSeconds}s"
+#~ msgstr "Continuez à maintenir... {remainingSeconds} s"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Keep this window open and confirm or reject the request in your wallet. Do not submit another deposit."
 msgstr "Gardez cette fenêtre ouverte et confirmez ou refusez la demande dans votre portefeuille. N’effectuez pas un autre dépôt."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Keep this window open until Hyperliquid finishes checking the wallet action."
-msgstr "Gardez cette fenêtre ouverte jusqu'à ce qu'Hyperliquid ait fini de vérifier l'action du portefeuille."
+#~ msgid "Keep this window open until Hyperliquid finishes checking the wallet action."
+#~ msgstr "Gardez cette fenêtre ouverte jusqu'à ce qu'Hyperliquid ait fini de vérifier l'action du portefeuille."
 
 #: src/components/referrals/referral-action-modal.tsx
 #~ msgid "Keep this window open while Hyperliquid processes the request."
@@ -3795,6 +3821,10 @@ msgstr "Période du classement"
 #: src/components/vaults/vaults-list.tsx
 msgid "Leading"
 msgstr "Gérés"
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Leave this market"
+msgstr "Quitter ce marché"
 
 #: src/components/referrals/referral-activity.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3900,7 +3930,6 @@ msgid "Link Desktop Wallet"
 msgstr "Associer un portefeuille de bureau"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Link mobile device"
@@ -3965,6 +3994,7 @@ msgstr "Les données de trading en temps réel sont indisponibles. Attendez leur
 msgid "Load more"
 msgstr "Charger plus"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "Chargement"
@@ -4358,8 +4388,8 @@ msgid "Markets / Leaderboard"
 msgstr "Marchés / Classement"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Master wallet"
-msgstr "Portefeuille principal"
+#~ msgid "Master wallet"
+#~ msgstr "Portefeuille principal"
 
 #: src/components/staking/staking-view.tsx
 msgid "Master wallet required"
@@ -4494,19 +4524,14 @@ msgid "Minute(s)"
 msgstr "Minute(s)"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Mobile access revoked. The inaccessible replacement expires at {expiresAtLabel}."
-msgstr "Accès mobile révoqué. La clé de remplacement inaccessible expire à {expiresAtLabel}."
+#~ msgid "Mobile access revoked. The inaccessible replacement expires at {expiresAtLabel}."
+#~ msgstr "Accès mobile révoqué. La clé de remplacement inaccessible expire à {expiresAtLabel}."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Mobile QR creation is temporarily unavailable."
-msgstr "La création du QR mobile est temporairement indisponible."
+#~ msgid "Mobile QR creation is temporarily unavailable."
+#~ msgstr "La création du QR mobile est temporairement indisponible."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
-#: src/routes/mobile-agent-sync.tsx
-#: src/routes/mobile-agent-sync.tsx
-#: src/routes/mobile-agent-sync.tsx
-#: src/routes/mobile-agent-sync.tsx
-#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Mobile QR import is temporarily unavailable."
 msgstr "L'importation du QR mobile est temporairement indisponible."
@@ -4515,12 +4540,12 @@ msgstr "L'importation du QR mobile est temporairement indisponible."
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "Mobile QR import is unavailable and its temporary copy could not be cleared. Close this tab and clear this site's data."
-msgstr "L'importation du QR mobile est indisponible et sa copie temporaire n'a pas pu être effacée. Fermez cet onglet et effacez les données de ce site."
+#~ msgid "Mobile QR import is unavailable and its temporary copy could not be cleared. Close this tab and clear this site's data."
+#~ msgstr "L'importation du QR mobile est indisponible et sa copie temporaire n'a pas pu être effacée. Fermez cet onglet et effacez les données de ce site."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Mobile QR reveal is temporarily unavailable. Revoke this key if you no longer need it."
-msgstr "L'affichage du QR mobile est temporairement indisponible. Révoquez cette clé si vous n'en avez plus besoin."
+#~ msgid "Mobile QR reveal is temporarily unavailable. Revoke this key if you no longer need it."
+#~ msgstr "L'affichage du QR mobile est temporairement indisponible. Révoquez cette clé si vous n'en avez plus besoin."
 
 #: src/components/api-wallet/api-wallet-fixture.tsx
 msgid "Mock account"
@@ -4597,8 +4622,6 @@ msgstr "Net reçu"
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/funds-route-details.tsx
-#: src/routes/mobile-agent-sync.tsx
-#: src/routes/mobile-agent-sync.tsx
 msgid "Network"
 msgstr "Réseau"
 
@@ -4616,8 +4639,12 @@ msgid "New funds actions are locked until this record is resolved."
 msgstr "Les nouvelles actions sur les fonds sont verrouillées jusqu’à la résolution de cet enregistrement."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "New mobile pairing is temporarily unavailable"
-msgstr "La nouvelle association mobile est temporairement indisponible"
+#~ msgid "New mobile pairing is temporarily unavailable"
+#~ msgstr "La nouvelle association mobile est temporairement indisponible"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "New mobile pairing is temporarily unavailable."
+msgstr ""
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Next"
@@ -4674,18 +4701,17 @@ msgid "No API wallets authorized"
 msgstr "Aucun portefeuille API autorisé"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "No approved mobile Agent remains."
-msgstr "Il ne reste aucun Agent mobile approuvé."
+#~ msgid "No approved mobile Agent remains."
+#~ msgstr "Il ne reste aucun Agent mobile approuvé."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "No approved mobile Agent remains. Local mobile access was cleared."
-msgstr "Il ne reste aucun Agent mobile approuvé. L'accès mobile local a été effacé."
+#~ msgid "No approved mobile Agent remains. Local mobile access was cleared."
+#~ msgstr "Il ne reste aucun Agent mobile approuvé. L'accès mobile local a été effacé."
 
 #: src/lib/errors/definitions/balance.ts
 msgid "No balance"
 msgstr "Pas de solde"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/lib/errors/format.ts
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "Aucun solde sur Hyperliquid. Déposez d'abord."
@@ -4721,12 +4747,12 @@ msgid "No description was provided by the Vault."
 msgstr "Aucune description n’a été fournie par le coffre."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "No desktop QR is loaded. Return to the terminal scanner or scan a fresh QR with your system camera."
-msgstr "Aucun QR d'ordinateur n'est chargé. Revenez au scanner du terminal ou scannez un nouveau QR avec l'appareil photo du système."
+#~ msgid "No desktop QR is loaded. Return to the terminal scanner or scan a fresh QR with your system camera."
+#~ msgstr "Aucun QR d'ordinateur n'est chargé. Revenez au scanner du terminal ou scannez un nouveau QR avec l'appareil photo du système."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "No desktop wallet QR was found."
-msgstr "Aucun QR du portefeuille sur ordinateur n'a été trouvé."
+#~ msgid "No desktop wallet QR was found."
+#~ msgstr "Aucun QR du portefeuille sur ordinateur n'a été trouvé."
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "No eligible leaderboard accounts"
@@ -5030,7 +5056,17 @@ msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then l
 msgstr "Sur iPhone ou iPad, ouvrez le menu Partager, choisissez Sur l’écran d’accueil, puis lancez gatu depuis l’écran d’accueil."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code, or scan it with your phone camera."
+#~ msgid "On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code, or scan it with your phone camera."
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code."
+msgstr ""
+
+#. placeholder {0}: payload.env
+#. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale: i18n.locale })
+#: src/routes/mobile-agent-sync.tsx
+msgid "Once imported, this phone trades on {0} with the desktop-approved key until {1}. It cannot withdraw."
 msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
@@ -5372,8 +5408,8 @@ msgid "Owner"
 msgstr "Propriétaire"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Owner account"
-msgstr "Compte propriétaire"
+#~ msgid "Owner account"
+#~ msgstr "Compte propriétaire"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Page {visiblePage} of {totalPages}"
@@ -5521,16 +5557,16 @@ msgid "Perps PNL"
 msgstr "PnL des perpétuels"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Phone access could not be activated or fully removed from this device. Clear this site's data before retrying."
-msgstr "L'accès téléphone n'a pas pu être activé ni complètement supprimé de cet appareil. Effacez les données de ce site avant de réessayer."
+#~ msgid "Phone access could not be activated or fully removed from this device. Clear this site's data before retrying."
+#~ msgstr "L'accès téléphone n'a pas pu être activé ni complètement supprimé de cet appareil. Effacez les données de ce site avant de réessayer."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Phone access could not be saved on this device. Check browser storage and retry."
-msgstr "L'accès téléphone n'a pas pu être enregistré sur cet appareil. Vérifiez le stockage du navigateur et réessayez."
+#~ msgid "Phone access could not be saved on this device. Check browser storage and retry."
+#~ msgstr "L'accès téléphone n'a pas pu être enregistré sur cet appareil. Vérifiez le stockage du navigateur et réessayez."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Phone access is ready, but the temporary QR copy could not be cleared. Close this tab and clear this site's data."
-msgstr "L'accès téléphone est prêt, mais la copie temporaire du QR n'a pas pu être effacée. Fermez cet onglet et effacez les données de ce site."
+#~ msgid "Phone access is ready, but the temporary QR copy could not be cleared. Close this tab and clear this site's data."
+#~ msgstr "L'accès téléphone est prêt, mais la copie temporaire du QR n'a pas pu être effacée. Fermez cet onglet et effacez les données de ce site."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Phone access QR code"
@@ -5541,8 +5577,8 @@ msgid "Phone access ready"
 msgstr "Accès téléphone prêt"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Phone-access storage is unavailable. Close this tab and clear this site's data before scanning again."
-msgstr "Le stockage de l'accès téléphone est indisponible. Fermez cet onglet et effacez les données de ce site avant de scanner à nouveau."
+#~ msgid "Phone-access storage is unavailable. Close this tab and clear this site's data before scanning again."
+#~ msgstr "Le stockage de l'accès téléphone est indisponible. Fermez cet onglet et effacez les données de ce site avant de scanner à nouveau."
 
 #. placeholder {0}: input.sideLabel
 #: src/lib/trade/use-button-content.ts
@@ -5758,8 +5794,8 @@ msgid "Preparing your quote..."
 msgstr "Préparation de votre devis..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Press and hold for 4 seconds"
-msgstr "Appuyez et maintenez pendant 4 secondes"
+#~ msgid "Press and hold for 4 seconds"
+#~ msgstr "Appuyez et maintenez pendant 4 secondes"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Previous"
@@ -5920,8 +5956,8 @@ msgid "QR code linking to {0} market"
 msgstr "Code QR renvoyant vers le marché {0}"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "QR reveal progress"
-msgstr "Progression de l'affichage du QR"
+#~ msgid "QR reveal progress"
+#~ msgstr "Progression de l'affichage du QR"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "QR unavailable"
@@ -5985,8 +6021,8 @@ msgid "Read the official agent wallet documentation"
 msgstr "Consulter la documentation officielle sur les portefeuilles d’agent"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Ready for verification"
-msgstr "Prêt pour la vérification"
+#~ msgid "Ready for verification"
+#~ msgstr "Prêt pour la vérification"
 
 #: src/components/trade/twap-history-feedback.tsx
 #~ msgid "Real-time TWAP updates are unavailable. Showing the latest loaded data."
@@ -6013,8 +6049,8 @@ msgid "Recent Trades"
 msgstr "Transactions récentes"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Rechecking approval..."
-msgstr "Nouvelle vérification de l'approbation..."
+#~ msgid "Rechecking approval..."
+#~ msgstr "Nouvelle vérification de l'approbation..."
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Recommended"
@@ -6055,8 +6091,8 @@ msgid "Reconnect wallet"
 msgstr "Reconnecter le portefeuille"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Recovered in this tab. Expires {expiresAtLabel}."
-msgstr "Récupéré dans cet onglet. Expire {expiresAtLabel}."
+#~ msgid "Recovered in this tab. Expires {expiresAtLabel}."
+#~ msgstr "Récupéré dans cet onglet. Expire {expiresAtLabel}."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
@@ -6258,8 +6294,8 @@ msgid "Remaining Time"
 msgstr "Temps restant"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Remote access is revoked, but this browser could not fully clear its local mobile state. Clear this site's data before using mobile access here again."
-msgstr "L'accès à distance est révoqué, mais ce navigateur n'a pas pu effacer complètement son état mobile local. Effacez les données de ce site avant de réutiliser l'accès mobile ici."
+#~ msgid "Remote access is revoked, but this browser could not fully clear its local mobile state. Clear this site's data before using mobile access here again."
+#~ msgstr "L'accès à distance est révoqué, mais ce navigateur n'a pas pu effacer complètement son état mobile local. Effacez les données de ce site avant de réutiliser l'accès mobile ici."
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/api-wallet/api-wallet-list.tsx
@@ -6292,20 +6328,20 @@ msgid "Removing this approval immediately stops programs using this exact API wa
 msgstr "La suppression de cette autorisation arrête immédiatement les programmes utilisant précisément ce portefeuille API. Le rétablissement de l’accès nécessite une nouvelle autorisation."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Rendering QR"
-msgstr "Affichage du QR"
+#~ msgid "Rendering QR"
+#~ msgstr "Affichage du QR"
 
 #: src/config/account-ledger.ts
 msgid "Repay"
 msgstr "Rembourser"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Replaces the current mobile Agent with a temporary inaccessible key."
-msgstr "Remplace l'Agent mobile actuel par une clé temporaire inaccessible."
+#~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
+#~ msgstr "Remplace l'Agent mobile actuel par une clé temporaire inaccessible."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
-msgstr ""
+#~ msgid "Replaces the current mobile key <0>{existingMobileAgentLabel}</0>"
+#~ msgstr ""
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Request not confirmed"
@@ -6397,16 +6433,16 @@ msgid "Retry account data"
 msgstr "Réessayer de charger les données du compte"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Retry check"
-msgstr ""
+#~ msgid "Retry check"
+#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Retry read-only verification"
-msgstr "Réessayer la vérification en lecture seule"
+#~ msgid "Retry read-only verification"
+#~ msgstr "Réessayer la vérification en lecture seule"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Retry verification"
-msgstr "Réessayer la vérification"
+#~ msgid "Retry verification"
+#~ msgstr "Réessayer la vérification"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Return on equity (ROE)"
@@ -6476,8 +6512,8 @@ msgstr "Vérifiez les TWAP actifs avant de réessayer"
 #~ msgstr "Examiner à nouveau"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Review and import the desktop-approved trading key. No phone wallet is required."
-msgstr "Examinez et importez la clé de trading approuvée sur ordinateur. Aucun portefeuille sur téléphone n'est requis."
+#~ msgid "Review and import the desktop-approved trading key. No phone wallet is required."
+#~ msgstr "Examinez et importez la clé de trading approuvée sur ordinateur. Aucun portefeuille sur téléphone n'est requis."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Review fresh API wallet data before creating another signed request."
@@ -6504,8 +6540,8 @@ msgid "Review request"
 msgstr "Vérifier la demande"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Review revoke"
-msgstr "Examiner la révocation"
+#~ msgid "Review revoke"
+#~ msgstr "Examiner la révocation"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Review side, size and price before each order is sent."
@@ -6532,12 +6568,12 @@ msgid "Review the public fields and try again."
 msgstr "Vérifiez les champs publics et réessayez."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Revocation was submitted but is not yet confirmed."
-msgstr "La révocation a été soumise mais n'est pas encore confirmée."
+#~ msgid "Revocation was submitted but is not yet confirmed."
+#~ msgstr "La révocation a été soumise mais n'est pas encore confirmée."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Revoke mobile access"
-msgstr "Révoquer l'accès mobile"
+#~ msgid "Revoke mobile access"
+#~ msgstr "Révoquer l'accès mobile"
 
 #: src/components/staking/staking-view.tsx
 msgid "Reward"
@@ -6709,12 +6745,16 @@ msgid "Scale skew must be {SCALE_SKEW_MIN}-{SCALE_SKEW_MAX}"
 msgstr "L’asymétrie d’échelle doit être comprise entre {SCALE_SKEW_MIN} et {SCALE_SKEW_MAX}"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Scan on your phone"
-msgstr "Scannez avec votre téléphone"
+#~ msgid "Scan on your phone"
+#~ msgstr "Scannez avec votre téléphone"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Scan only with your phone. Anyone who captures this QR can use the trading key."
-msgstr "Scannez uniquement avec votre téléphone. Quiconque capture ce QR peut utiliser la clé de trading."
+#~ msgid "Scan only with your phone. Anyone who captures this QR can use the trading key."
+#~ msgstr "Scannez uniquement avec votre téléphone. Quiconque capture ce QR peut utiliser la clé de trading."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Scan the QR from Link mobile device on your desktop to load a trading key."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device)."
@@ -7028,6 +7068,10 @@ msgstr "Compte signataire"
 
 #: src/components/staking/staking-view.tsx
 msgid "Signing ready"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Signing with your email wallet"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -7389,9 +7433,14 @@ msgstr "État non confirmé"
 msgid "Stay Connected"
 msgstr "Rester connecté"
 
+#. placeholder {0}: formatDateTime(agentValidUntilMs, { locale: i18n.locale })
 #: src/routes/mobile-agent-sync.tsx
-msgid "Stays on this phone until {validUntilLabel} unless you disconnect it here or revoke it from the master wallet on desktop."
+msgid "Stays on this phone until {0} unless you revoke it from the master wallet on desktop."
 msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "Stays on this phone until {validUntilLabel} unless you disconnect it here or revoke it from the master wallet on desktop."
+#~ msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Step {currentStep} of 3"
@@ -7769,8 +7818,8 @@ msgid "Testnet queue: approximately five minutes"
 msgstr "File d’attente du Testnet : environ cinq minutes"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "That link could not be opened safely, so nothing was loaded. Create a new QR on your desktop and scan it again."
-msgstr ""
+#~ msgid "That link could not be opened safely, so nothing was loaded. Create a new QR on your desktop and scan it again."
+#~ msgstr ""
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
@@ -7805,12 +7854,12 @@ msgid "The API wallet request was rejected."
 msgstr "La demande de portefeuille API a été refusée."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The approval could not be rechecked. The QR remains hidden until read-only verification succeeds."
-msgstr "L'approbation n'a pas pu être revérifiée. Le QR reste masqué tant que la vérification en lecture seule n'a pas abouti."
+#~ msgid "The approval could not be rechecked. The QR remains hidden until read-only verification succeeds."
+#~ msgstr "L'approbation n'a pas pu être revérifiée. Le QR reste masqué tant que la vérification en lecture seule n'a pas abouti."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
-msgstr "Le résultat de l'approbation n'est pas confirmé. Réessayez la vérification en lecture seule avant toute autre action."
+#~ msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
+#~ msgstr "Le résultat de l'approbation n'est pas confirmé. Réessayez la vérification en lecture seule avant toute autre action."
 
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "The approved Agent signs this Vault transfer. Closing is disabled while authorization is active."
@@ -7859,6 +7908,10 @@ msgstr "La connexion n’a pas pu être vérifiée en toute sécurité. Aucune s
 msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
 msgstr "La connexion n’a pas pu être finalisée. Elle est peut-être déjà approuvée ; patientez un instant et réessayez."
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "The desktop has not approved this key. Create a new QR on desktop."
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr "Le nom exact et l’adresse publique figurent désormais dans les données extraAgents actualisées."
@@ -7893,8 +7946,8 @@ msgid "The gas-sponsored wallet is configured for a different Arbitrum network."
 msgstr "Le portefeuille dont les frais de gas sont pris en charge est configuré pour un autre réseau Arbitrum."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
-msgstr "La clé générée reste uniquement dans cet onglet. N'approuvez pas une autre clé et ne rechargez pas la page."
+#~ msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
+#~ msgstr "La clé générée reste uniquement dans cet onglet. N'approuvez pas une autre clé et ne rechargez pas la page."
 
 #: src/components/staking/staking-view.tsx
 msgid "The history response could not be verified."
@@ -7910,8 +7963,8 @@ msgid "The Hyperliquid withdrawal route changed. Review the updated route and fe
 msgstr "La route de retrait d’Hyperliquid a changé. Vérifiez la nouvelle route et les frais actualisés, puis soumettez à nouveau."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The key can trade on this account (orders, cancels, leverage, vault and sub-account moves) but cannot withdraw or send funds out of Hyperliquid; withdrawals and sends still need this master wallet."
-msgstr ""
+#~ msgid "The key can trade on this account (orders, cancels, leverage, vault and sub-account moves) but cannot withdraw or send funds out of Hyperliquid; withdrawals and sends still need this master wallet."
+#~ msgstr ""
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "The leader receives the commission shown above from profits."
@@ -8014,20 +8067,28 @@ msgid "The private key is created in this browser and is never uploaded or store
 msgstr "La clé privée est créée dans ce navigateur et n’est jamais téléversée ni stockée par Gatu."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The private key is created on this desktop and embedded in the QR code."
-msgstr "La clé privée est créée sur cet ordinateur et intégrée au code QR."
+#~ msgid "The private key is created on this desktop and embedded in the QR code."
+#~ msgstr "La clé privée est créée sur cet ordinateur et intégrée au code QR."
 
 #: src/components/vaults/vaults-list.tsx
 msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
 msgstr "Le flux public des coffres n’a pas pu être vérifié. Aucune ligne mise en cache ou provenant d’un autre réseau n’est affichée à sa place."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The QR closes automatically in about {announcedSeconds} seconds"
+msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
 msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The QR stays hidden until you deliberately reveal it."
-msgstr "Le QR reste masqué jusqu'à ce que vous le révéliez délibérément."
+#~ msgid "The QR closes automatically in about {announcedSeconds} seconds"
+#~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR could not be drawn. Approve a new key to try again."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "The QR stays hidden until you deliberately reveal it."
+#~ msgstr "Le QR reste masqué jusqu'à ce que vous le révéliez délibérément."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "The QR stays on this device and is never uploaded."
@@ -8038,8 +8099,8 @@ msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "L’instantané des transactions récentes n’a pas pu être chargé ou validé."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
-msgstr "Le remplacement a expiré avant que Hyperliquid ne le confirme. Vérifiez et signez une nouvelle révocation."
+#~ msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
+#~ msgstr "Le remplacement a expiré avant que Hyperliquid ne le confirme. Vérifiez et signez une nouvelle révocation."
 
 #: src/lib/errors/format.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
@@ -8071,8 +8132,8 @@ msgstr "La réponse relative aux récompenses n’a pas pu être vérifiée."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "The saved desktop QR was invalid. Scan a fresh QR."
-msgstr "Le QR de bureau enregistré était invalide. Scannez un nouveau QR."
+#~ msgid "The saved desktop QR was invalid. Scan a fresh QR."
+#~ msgstr "Le QR de bureau enregistré était invalide. Scannez un nouveau QR."
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "The saved record is malformed or browser storage is unavailable. It may represent a request that reached Hyperliquid, so the application will not overwrite it or enable another funds action."
@@ -8117,8 +8178,8 @@ msgstr "Les valeurs de début et de fin sont inchangées."
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
-msgstr "Le QR temporaire d'accès téléphone n'a pas pu être effacé. Fermez cet onglet et effacez les données de ce site avant de scanner à nouveau."
+#~ msgid "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
+#~ msgstr "Le QR temporaire d'accès téléphone n'a pas pu être effacé. Fermez cet onglet et effacez les données de ce site avant de scanner à nouveau."
 
 #: src/components/pages/application-error-page.tsx
 msgid "The terminal could not continue safely. Reload it before trading."
@@ -8209,12 +8270,12 @@ msgid "This action cannot be undone after execution."
 msgstr "Cette action est irréversible après exécution."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This approval recovery is no longer active."
-msgstr "Cette récupération d'approbation n'est plus active."
+#~ msgid "This approval recovery is no longer active."
+#~ msgstr "Cette récupération d'approbation n'est plus active."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This approval recovery is no longer available."
-msgstr "Cette récupération d'approbation n'est plus disponible."
+#~ msgid "This approval recovery is no longer available."
+#~ msgstr "Cette récupération d'approbation n'est plus disponible."
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "This bridge can only be resumed by the wallet that started it."
@@ -8252,32 +8313,32 @@ msgstr "Cette description a été fournie par le déployeur tiers du marché. Co
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "This desktop wallet QR expired, but its temporary copy could not be cleared. Close this tab and clear this site's data."
-msgstr "Ce QR de portefeuille de bureau a expiré, mais sa copie temporaire n'a pas pu être effacée. Fermez cet onglet et effacez les données de ce site."
+#~ msgid "This desktop wallet QR expired, but its temporary copy could not be cleared. Close this tab and clear this site's data."
+#~ msgstr "Ce QR de portefeuille de bureau a expiré, mais sa copie temporaire n'a pas pu être effacée. Fermez cet onglet et effacez les données de ce site."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "This desktop wallet QR expired."
-msgstr "Ce QR de portefeuille de bureau a expiré."
+#~ msgid "This desktop wallet QR expired."
+#~ msgstr "Ce QR de portefeuille de bureau a expiré."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This desktop wallet QR expired. Create a new QR on desktop."
 msgstr "Ce QR de portefeuille de bureau a expiré. Créez un nouveau QR sur l'ordinateur."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This desktop wallet QR is damaged or incomplete. Scan a new QR."
-msgstr "Ce QR de portefeuille de bureau est endommagé ou incomplet. Scannez un nouveau QR."
+#~ msgid "This desktop wallet QR is damaged or incomplete. Scan a new QR."
+#~ msgstr "Ce QR de portefeuille de bureau est endommagé ou incomplet. Scannez un nouveau QR."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
-msgid "This device could not securely hold the QR. Check browser storage and retry."
-msgstr "Cet appareil n'a pas pu conserver le QR en toute sécurité. Vérifiez le stockage du navigateur et réessayez."
+#~ msgid "This device could not securely hold the QR. Check browser storage and retry."
+#~ msgstr "Cet appareil n'a pas pu conserver le QR en toute sécurité. Vérifiez le stockage du navigateur et réessayez."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "This device could not securely hold the QR. Check browser storage and scan again."
-msgstr "Cet appareil n'a pas pu conserver le QR en toute sécurité. Vérifiez le stockage du navigateur et scannez à nouveau."
+#~ msgid "This device could not securely hold the QR. Check browser storage and scan again."
+#~ msgstr "Cet appareil n'a pas pu conserver le QR en toute sécurité. Vérifiez le stockage du navigateur et scannez à nouveau."
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "This gas-free signature creates a dedicated API wallet for fast trading. It cannot withdraw funds."
@@ -8297,8 +8358,8 @@ msgstr "Ceci est un QR WalletConnect. Scannez plutôt le QR Associer un portefeu
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "This is not a valid gatu desktop wallet QR."
-msgstr "Ceci n'est pas un QR de portefeuille de bureau gatu valide."
+#~ msgid "This is not a valid gatu desktop wallet QR."
+#~ msgstr "Ceci n'est pas un QR de portefeuille de bureau gatu valide."
 
 #: src/components/referrals/referral-activity.tsx
 msgid "This is the legacy earned-reward history. Current claims are shown in the previous tab."
@@ -8315,8 +8376,8 @@ msgid "This market only supports isolated margin mode."
 msgstr "Ce marché prend uniquement en charge le mode de marge isolée."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This mobile trading key has expired."
-msgstr "Cette clé de trading mobile a expiré."
+#~ msgid "This mobile trading key has expired."
+#~ msgstr "Cette clé de trading mobile a expiré."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This one-time QR closes automatically within 60 seconds."
@@ -8354,6 +8415,10 @@ msgstr "Ce type d'ordre ne peut pas être modifié en toute sécurité. Annulez-
 msgid "This panel could not be loaded. Try again, or reload the page. Reloading clears an order you have not sent."
 msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "This phone could not store the trading key. Clear this site's data and scan again."
+msgstr ""
+
 #: src/hooks/trade/use-deposit-availability.ts
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop."
@@ -8380,14 +8445,24 @@ msgid "This position is no longer using isolated margin."
 msgstr "Cette position n'utilise plus la marge isolée."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This QR belongs to a different owner account."
-msgstr "Ce QR appartient à un autre compte propriétaire."
+msgid "This QR belongs to a different network. Switch networks or create a new QR on desktop."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "This QR belongs to a different owner account."
+#~ msgstr "Ce QR appartient à un autre compte propriétaire."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This QR enables trading on your phone, but not deposits or withdrawals. Do not share the QR or screenshots of it with anyone. Make sure you are not sharing your screen."
+#~ msgid "This QR enables trading on your phone, but not deposits or withdrawals. Do not share the QR or screenshots of it with anyone. Make sure you are not sharing your screen."
+#~ msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR expired. Create a new QR on desktop."
 msgstr ""
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
+#: src/routes/mobile-agent-sync.tsx
 msgid "This QR is invalid or incomplete. Create a new QR on desktop."
 msgstr "Ce QR est invalide ou incomplet. Créez un nouveau QR sur l'ordinateur."
 
@@ -8396,16 +8471,16 @@ msgid "This QR is not a valid desktop wallet link."
 msgstr "Ce QR n'est pas un lien de portefeuille de bureau valide."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This QR was already imported on this phone. Create a new desktop QR to link again."
-msgstr ""
+#~ msgid "This QR was already imported on this phone. Create a new desktop QR to link again."
+#~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This QR was created for a different network."
-msgstr "Ce QR a été créé pour un autre réseau."
+#~ msgid "This QR was created for a different network."
+#~ msgstr "Ce QR a été créé pour un autre réseau."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This QR was created for a different site."
-msgstr "Ce QR a été créé pour un autre site."
+#~ msgid "This QR was created for a different site."
+#~ msgstr "Ce QR a été créé pour un autre site."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR's time does not match this phone. Check the date and time on both devices, then create a new QR."
@@ -8448,8 +8523,8 @@ msgid "This terminal has not enabled new portfolio margin activation. Existing a
 msgstr "Ce terminal ne permet pas encore de nouvelles activations de la marge de portefeuille. Les comptes existants peuvent passer à un autre mode."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
-msgstr "Cette clé de trading n'est pas le Mobile Agent actuellement approuvé. Créez un nouveau QR de bureau."
+#~ msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
+#~ msgstr "Cette clé de trading n'est pas le Mobile Agent actuellement approuvé. Créez un nouveau QR de bureau."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is closed and no longer accepts deposits."
@@ -8468,8 +8543,8 @@ msgid "This will close the current position and open an equal position in the op
 msgstr "Cela fermera la position actuelle et ouvrira une position équivalente dans la direction opposée au prix du marché."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This will replace any current mobile trading key with an inaccessible key. Existing phones will stop trading after Hyperliquid confirms the replacement."
-msgstr "Cela remplacera toute clé de trading mobile actuelle par une clé inaccessible. Les téléphones existants cesseront de trader une fois le remplacement confirmé par Hyperliquid."
+#~ msgid "This will replace any current mobile trading key with an inaccessible key. Existing phones will stop trading after Hyperliquid confirms the replacement."
+#~ msgstr "Cela remplacera toute clé de trading mobile actuelle par une clé inaccessible. Les téléphones existants cesseront de trader une fois le remplacement confirmé par Hyperliquid."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "This window stays locked until the request reaches a verifiable result."
@@ -8552,8 +8627,8 @@ msgid "Token metadata could not be loaded."
 msgstr "Impossible de charger les métadonnées du jeton."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
-msgstr "Trop d'approbations mobiles attendent une récupération dans cet onglet. Résolvez-en ou révoquez-en une d'abord."
+#~ msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
+#~ msgstr "Trop d'approbations mobiles attendent une récupération dans cet onglet. Résolvez-en ou révoquez-en une d'abord."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
@@ -8776,12 +8851,12 @@ msgid "Trading is not connected in this browser. Reconnect to create or replace 
 msgstr "La connexion de trading n’est pas établie dans ce navigateur. Reconnectez-vous pour créer ou remplacer sa clé de trading."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Trading key"
-msgstr "Clé de trading"
+#~ msgid "Trading key"
+#~ msgstr "Clé de trading"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Trading key approved"
-msgstr "Clé de trading approuvée"
+#~ msgid "Trading key approved"
+#~ msgstr "Clé de trading approuvée"
 
 #: src/components/referrals/referral-code-card.tsx
 #: src/components/referrals/referral-code-card.tsx
@@ -9558,8 +9633,8 @@ msgstr "Vérification"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "Verifying approval..."
-msgstr "Vérification de l'approbation..."
+#~ msgid "Verifying approval..."
+#~ msgstr "Vérification de l'approbation..."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Verifying from history"
@@ -9611,8 +9686,8 @@ msgid "Volume"
 msgstr "Volume"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Wait for the account check to finish before approving a mobile trading key."
-msgstr ""
+#~ msgid "Wait for the account check to finish before approving a mobile trading key."
+#~ msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Waiting for chain confirmation"
@@ -9650,8 +9725,8 @@ msgid "Wallet (<0>{0}</0>)"
 msgstr "Portefeuille (<0>{0}</0>)"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Wallet approval unavailable"
-msgstr "Approbation du portefeuille indisponible"
+#~ msgid "Wallet approval unavailable"
+#~ msgstr "Approbation du portefeuille indisponible"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -9897,8 +9972,8 @@ msgid "You can lose all principal, and historical APR does not predict future re
 msgstr "Vous pouvez perdre la totalité du capital, et le taux annuel historique ne prédit pas les rendements futurs."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "You can still verify and revoke existing mobile access below."
-msgstr "Vous pouvez toujours vérifier et révoquer l'accès mobile existant ci-dessous."
+#~ msgid "You can still verify and revoke existing mobile access below."
+#~ msgstr "Vous pouvez toujours vérifier et révoquer l'accès mobile existant ci-dessous."
 
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -9950,6 +10025,10 @@ msgstr "Votre stake délégué"
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "Votre portefeuille lié à l’e-mail est indisponible. Déconnectez-vous, reconnectez-vous avec la même adresse e-mail, puis réessayez."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."
+msgstr ""
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx

@@ -12,10 +12,12 @@ import {
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
 import { useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
+import { useHip3DisclaimerPresentation } from "@/hooks/trade/use-hip3-disclaimer-presentation";
 import {
 	type PositionLimitCloseTarget,
 	usePositionLimitCloseSubmit,
 } from "@/hooks/trade/use-position-limit-close-submit";
+import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
@@ -41,20 +43,24 @@ interface Props {
 	onSessionEnd: (sessionId: string) => void;
 }
 
+const DIALOG_EXIT_MS = 250;
+
 export function PositionLimitCloseModal({ session, onSessionEnd }: Props) {
-	if (!session) return null;
+	const displayedSession = useLingeringValue(session, DIALOG_EXIT_MS);
+	if (!displayedSession) return null;
 	return (
 		<PositionLimitCloseModalSession
-			key={session.sessionId}
-			position={session.position}
+			key={displayedSession.sessionId}
+			position={displayedSession.position}
+			open={session?.sessionId === displayedSession.sessionId}
 			onOpenChange={(open) => {
-				if (!open) onSessionEnd(session.sessionId);
+				if (!open) onSessionEnd(displayedSession.sessionId);
 			}}
 		/>
 	);
 }
 
-function PositionLimitCloseModalSession({ position, onOpenChange }: BodyProps) {
+function PositionLimitCloseModalSession({ position, open, onOpenChange }: BodyProps) {
 	const { clientKey, env } = useHyperliquid();
 	const openingTarget = useRef<PositionLimitCloseTarget>({
 		owner: clientKey === "disconnected" ? clientKey : clientKey.toLowerCase(),
@@ -66,23 +72,34 @@ function PositionLimitCloseModalSession({ position, onOpenChange }: BodyProps) {
 		signedPositionSize: position.signedPositionSize,
 		marginMode: position.marginMode,
 	}).current;
-	const hip3Disclaimer = useHip3DisclaimerRequirement(position.coin);
+	const hip3Requirement = useHip3DisclaimerRequirement(position.coin);
+	const hip3Disclaimer = useHip3DisclaimerPresentation(hip3Requirement, "cancel", DIALOG_EXIT_MS);
 
-	if (hip3Disclaimer.isRequired && hip3Disclaimer.dex) {
+	if (hip3Disclaimer) {
 		return (
 			<Hip3DeployerDisclaimer
 				key={hip3Disclaimer.dex}
+				open={open && hip3Disclaimer.open}
 				documentationUrl={hip3Disclaimer.documentationUrl}
-				onCancel={() => onOpenChange(false)}
+				exit={hip3Disclaimer.exit}
+				onExit={() => onOpenChange(false)}
 			/>
 		);
 	}
 
-	return <PositionLimitCloseModalBody position={position} openingTarget={openingTarget} onOpenChange={onOpenChange} />;
+	return (
+		<PositionLimitCloseModalBody
+			position={position}
+			openingTarget={openingTarget}
+			open={open}
+			onOpenChange={onOpenChange}
+		/>
+	);
 }
 
 interface BodyProps {
 	position: LimitClosePositionData;
+	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
@@ -90,7 +107,7 @@ interface ModalBodyProps extends BodyProps {
 	openingTarget: PositionLimitCloseTarget;
 }
 
-function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: ModalBodyProps) {
+function PositionLimitCloseModalBody({ position, openingTarget, open, onOpenChange }: ModalBodyProps) {
 	const { clientKey, env } = useHyperliquid();
 	useNumberFormatRevision();
 	const { t } = useLingui();
@@ -267,7 +284,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	}
 
 	async function handleSubmit() {
-		if (!canSubmit || sizingInteractionActiveRef.current || submittedRef.current) return;
+		if (!open || !canSubmit || sizingInteractionActiveRef.current || submittedRef.current) return;
 		submittedRef.current = true;
 		setIsSubmitted(true);
 		const submittedSize = sizing.normalizedSize;
@@ -282,7 +299,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 
 	return (
 		<PositionCloseDialogShell
-			open={!isSubmitted}
+			open={open && !isSubmitted}
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
 			dismissible
@@ -389,7 +406,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 					onClick={handleSubmit}
 					isActivationLocked={isSizingGestureActive}
 					requireReadyConfirmation
-					disabled={!canSubmit}
+					disabled={!open || !canSubmit}
 					intent="error"
 					size="lg"
 					aria-describedby={helperId}

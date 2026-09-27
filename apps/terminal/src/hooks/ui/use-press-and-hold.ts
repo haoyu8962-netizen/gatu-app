@@ -90,7 +90,7 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 			progressFrameRef.current = null;
 			if (completeTimerRef.current === null) return;
 
-			const elapsedMs = timestamp - startedAtRef.current;
+			const elapsedMs = Math.max(0, timestamp - startedAtRef.current);
 			setProgressPercent(Math.min(100, (elapsedMs / durationMs) * 100));
 			progressFrameRef.current = window.requestAnimationFrame(updateProgress);
 		}
@@ -132,9 +132,9 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 			window.removeEventListener("blur", handleWindowBlur);
 			window.removeEventListener("keydown", handleEscape);
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
-			clearTimers();
+			cancel();
 		};
-	}, [cancel, clearTimers, disabled]);
+	}, [cancel, disabled]);
 
 	useEffect(() => {
 		if (disabled) cancel();

@@ -1,9 +1,16 @@
 import { Trans } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useEffect } from "react";
+import { DEFAULT_MARKET_NAME } from "@/config/app";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { type Hip3DisclaimerRequirement, useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
+import {
+	type Hip3DisclaimerExit,
+	type Hip3DisclaimerPresentation,
+	useHip3DisclaimerPresentation,
+} from "@/hooks/trade/use-hip3-disclaimer-presentation";
 import { useLegalGate } from "@/hooks/trade/use-legal-gate";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -36,7 +43,17 @@ import { PositionMarketCloseSubmitHostGate } from "./position-market-close-submi
 import { TradingOnboardingGate } from "./trading-onboarding-gate";
 
 const GLOBAL_MODAL_EXIT_MS = 250;
+const NO_HIP3_DISCLAIMER: Hip3DisclaimerRequirement = {
+	isRequired: false,
+	dex: undefined,
+	documentationUrl: undefined,
+};
 type GlobalModalScope = "all" | "preferences";
+
+interface Hip3DisclaimerGate {
+	requirement: Hip3DisclaimerRequirement;
+	exit: Hip3DisclaimerExit;
+}
 
 interface Props {
 	enableHip3Disclaimer?: boolean;
@@ -138,11 +155,10 @@ function Hip3AwareGlobalModals({
 		: enableSelectedMarketHip3Disclaimer
 			? undefined
 			: null;
-	const hip3Disclaimer = useHip3DisclaimerRequirement(targetMarketName);
+	const requirement = useHip3DisclaimerRequirement(targetMarketName);
 	return (
 		<SharedGlobalModals
-			hip3Disclaimer={hip3Disclaimer}
-			onHip3DisclaimerCancel={marketCloseSession ? discardIdlePositionMarketCloseModal : undefined}
+			hip3Disclaimer={{ requirement, exit: marketCloseSession ? "cancel" : "leave-market" }}
 			enablePositionMarketClose={enablePositionMarketClose}
 		/>
 	);
@@ -150,12 +166,10 @@ function Hip3AwareGlobalModals({
 
 function SharedGlobalModals({
 	hip3Disclaimer,
-	onHip3DisclaimerCancel,
 	enablePositionMarketClose,
 	scope = "all",
 }: {
-	hip3Disclaimer?: Hip3DisclaimerRequirement;
-	onHip3DisclaimerCancel?: () => void;
+	hip3Disclaimer?: Hip3DisclaimerGate;
 	enablePositionMarketClose: boolean;
 	scope?: GlobalModalScope;
 }) {
@@ -168,7 +182,12 @@ function SharedGlobalModals({
 			? null
 			: lingeringModal;
 	const marketCloseSession = usePositionMarketCloseSession();
-	const isHip3DisclaimerRequired = hip3Disclaimer?.isRequired === true;
+	const isHip3DisclaimerRequired = hip3Disclaimer?.requirement.isRequired === true;
+	const hip3Presentation = useHip3DisclaimerPresentation(
+		hip3Disclaimer?.requirement ?? NO_HIP3_DISCLAIMER,
+		hip3Disclaimer?.exit ?? "cancel",
+		GLOBAL_MODAL_EXIT_MS,
+	);
 	const { open: openCommandMenu, close: closeCommandMenu } = useCommandMenuActions();
 	const transferDirection = useTransferModalDirection();
 	const { close: closeTransferModal } = useTransferModalActions();
@@ -204,12 +223,16 @@ function SharedGlobalModals({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [activeModal, closeCommandMenu, isHip3DisclaimerRequired, openCommandMenu]);
 
-	if (isHip3DisclaimerRequired && hip3Disclaimer.dex) {
-		return (
+	if (hip3Presentation) {
+		return hip3Presentation.exit === "leave-market" ? (
+			<SelectedMarketHip3Disclaimer key={hip3Presentation.dex} presentation={hip3Presentation} />
+		) : (
 			<Hip3DeployerDisclaimer
-				key={hip3Disclaimer.dex}
-				documentationUrl={hip3Disclaimer.documentationUrl}
-				onCancel={onHip3DisclaimerCancel}
+				key={hip3Presentation.dex}
+				open={hip3Presentation.open}
+				documentationUrl={hip3Presentation.documentationUrl}
+				exit="cancel"
+				onExit={discardIdlePositionMarketCloseModal}
 			/>
 		);
 	}
@@ -246,6 +269,18 @@ function SharedGlobalModals({
 				marketCloseSession &&
 				marketCloseSession.presentation !== "direct" && <PositionMarketCloseModal key={marketCloseSession.sessionId} />}
 		</Suspense>
+	);
+}
+
+function SelectedMarketHip3Disclaimer({ presentation }: { presentation: Hip3DisclaimerPresentation }) {
+	const navigateToMarket = useMarketNavigation();
+	return (
+		<Hip3DeployerDisclaimer
+			open={presentation.open}
+			documentationUrl={presentation.documentationUrl}
+			exit="leave-market"
+			onExit={() => navigateToMarket(DEFAULT_MARKET_NAME)}
+		/>
 	);
 }
 

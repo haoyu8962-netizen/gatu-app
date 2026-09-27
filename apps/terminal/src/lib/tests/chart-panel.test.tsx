@@ -27,6 +27,7 @@ vi.mock("@/lib/performance/render-profile", () => ({
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
+	useNumberFormatLocale: () => "en-US",
 	useTheme: () => "light",
 }));
 

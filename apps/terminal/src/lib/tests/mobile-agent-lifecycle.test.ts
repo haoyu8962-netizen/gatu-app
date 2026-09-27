@@ -3,12 +3,10 @@ import { getExchangeMethodConfig } from "@gatu/hl-react/registries/exchange";
 import type { AgentWalletMetadata } from "@gatu/hl-react/signing/agent-storage";
 import {
 	createMobileAgentApproval,
-	createMobileAgentRevocationApproval,
 	createMobileAgentStorageMetadata,
 	createMobileAgentWalletRecord,
 	getMobileAgentNameBase,
 	MOBILE_AGENT_NAME_BASE,
-	MOBILE_AGENT_REVOKE_VALIDITY_MS,
 	MOBILE_AGENT_VALIDITY_MS,
 	shouldClearMobileAgent,
 	verifyExpectedMobileAgent,
@@ -21,7 +19,6 @@ const NOW_MS = 1_779_364_227_000;
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
 const OLD_PRIVATE_KEY = `0x${"11".repeat(32)}` as const;
 const NEW_PRIVATE_KEY = `0x${"22".repeat(32)}` as const;
-const REVOKE_PRIVATE_KEY = `0x${"33".repeat(32)}` as const;
 
 function installStorage() {
 	const store = new Map<string, string>();
@@ -71,7 +68,6 @@ describe("mobile agent lifecycle", () => {
 			agentName: approval.agentName,
 			agentValidUntilMs: approval.agentValidUntilMs,
 			importedAtMs: NOW_MS,
-			syncId: "first-link",
 		});
 		const verification = verifyMobileAgent(
 			localAgent,
@@ -247,7 +243,6 @@ describe("mobile agent lifecycle", () => {
 			agentName: oldApproval.agentName,
 			agentValidUntilMs: oldApproval.agentValidUntilMs,
 			importedAtMs: NOW_MS,
-			syncId: "old-link",
 		});
 		const verification = verifyMobileAgent(
 			oldLocalAgent,
@@ -269,7 +264,6 @@ describe("mobile agent lifecycle", () => {
 			agentName: approval.agentName,
 			agentValidUntilMs: approval.agentValidUntilMs,
 			importedAtMs: NOW_MS - MOBILE_AGENT_VALIDITY_MS,
-			syncId: "expired-local",
 		});
 
 		const verification = verifyMobileAgent(
@@ -291,7 +285,6 @@ describe("mobile agent lifecycle", () => {
 			agentName: approval.agentName,
 			agentValidUntilMs: approval.agentValidUntilMs,
 			importedAtMs: NOW_MS,
-			syncId: "storage-reset",
 		}) satisfies AgentWalletMetadata;
 		const { readAgentFromStorage, removeAgentFromStorage, writeAgentToStorage } = await import(
 			"@gatu/hl-react/signing/agent-storage"
@@ -306,7 +299,6 @@ describe("mobile agent lifecycle", () => {
 			agentName: approval.agentName,
 			agentValidUntilMs: approval.agentValidUntilMs,
 			importedAtMs: NOW_MS,
-			syncId: "storage-reset",
 		});
 
 		removeAgentFromStorage("Mainnet", USER_ADDRESS);
@@ -323,7 +315,6 @@ describe("mobile agent lifecycle", () => {
 			agentName: approval.agentName,
 			agentValidUntilMs: approval.agentValidUntilMs,
 			importedAtMs: NOW_MS,
-			syncId: "verified-storage",
 		}) satisfies AgentWalletMetadata;
 		const { writeAgentToStorageAndVerify } = await import("@gatu/hl-react/signing/agent-storage");
 
@@ -340,7 +331,6 @@ describe("mobile agent lifecycle", () => {
 			agent: {
 				privateKey: approval.privateKey,
 				publicKey: approval.publicKey,
-				syncId: "verified-storage",
 			},
 		});
 	});
@@ -387,7 +377,6 @@ describe("mobile agent lifecycle", () => {
 			agentName: approval.agentName,
 			agentValidUntilMs: approval.agentValidUntilMs,
 			importedAtMs: NOW_MS,
-			syncId: "verification-failure",
 		});
 
 		expect(
@@ -421,7 +410,6 @@ describe("mobile agent lifecycle", () => {
 			agentName: approval.agentName,
 			agentValidUntilMs: approval.agentValidUntilMs,
 			importedAtMs: NOW_MS,
-			syncId: "runtime-contract",
 		});
 
 		const ready = deriveAgentRequirements(
@@ -464,7 +452,6 @@ describe("mobile agent lifecycle", () => {
 				agentName: `${MOBILE_AGENT_NAME_BASE} valid_until ${approval.agentValidUntilMs + 1}`,
 				agentValidUntilMs: approval.agentValidUntilMs,
 				importedAtMs: NOW_MS,
-				syncId: "wrong-local-name",
 			}),
 		},
 		{
@@ -477,7 +464,6 @@ describe("mobile agent lifecycle", () => {
 				agentName: approval.agentName,
 				agentValidUntilMs: approval.agentValidUntilMs,
 				importedAtMs: NOW_MS,
-				syncId: "mismatched-key-pair",
 			}),
 		},
 	])("fails closed for a mobile-sourced record with $label", ({ buildAgent }) => {
@@ -529,7 +515,6 @@ describe("mobile agent lifecycle", () => {
 			agentName: approval.agentName,
 			agentValidUntilMs: approval.agentValidUntilMs,
 			importedAtMs: NOW_MS,
-			syncId: "reconciliation-contract",
 		});
 		const freshOptions = {
 			requestSucceeded: true,
@@ -574,7 +559,6 @@ describe("mobile agent lifecycle", () => {
 			agentName: approval.agentName,
 			agentValidUntilMs: approval.agentValidUntilMs,
 			importedAtMs: NOW_MS - MOBILE_AGENT_VALIDITY_MS,
-			syncId: "expired-reload",
 		});
 
 		expect(
@@ -585,16 +569,6 @@ describe("mobile agent lifecycle", () => {
 				nowMs: NOW_MS,
 			}),
 		).toBe("expired_local");
-	});
-
-	it("creates a throwaway short-lived approval for main-wallet revocation", () => {
-		const revoke = createMobileAgentRevocationApproval(NOW_MS, REVOKE_PRIVATE_KEY);
-
-		expect(MOBILE_AGENT_REVOKE_VALIDITY_MS).toBe(10 * 60 * 1000);
-		expect(revoke.privateKey).toBe(REVOKE_PRIVATE_KEY);
-		expect(revoke.agentNameBase).toBe(MOBILE_AGENT_NAME_BASE);
-		expect(revoke.agentValidUntilMs).toBe(NOW_MS + MOBILE_AGENT_REVOKE_VALIDITY_MS);
-		expect(revoke.agentName).toBe(`${MOBILE_AGENT_NAME_BASE} valid_until ${revoke.agentValidUntilMs}`);
 	});
 
 	it("keeps sensitive account actions on the user-wallet signing path", () => {

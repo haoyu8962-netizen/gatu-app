@@ -1,6 +1,6 @@
 import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DotsThreeVerticalIcon, QrCodeIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
+import { DotsThreeVerticalIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
@@ -21,19 +21,9 @@ interface Props {
 	className?: string;
 	settingsDisabled?: boolean;
 	onOpenSettings: () => void;
-	linkMobileVisible?: boolean;
-	linkMobileDisabled?: boolean;
-	onLinkMobile?: () => void;
 }
 
-export function DesktopUtilitiesMenu({
-	className,
-	settingsDisabled = false,
-	onOpenSettings,
-	linkMobileVisible = false,
-	linkMobileDisabled = false,
-	onLinkMobile,
-}: Props) {
+export function DesktopUtilitiesMenu({ className, settingsDisabled = false, onOpenSettings }: Props) {
 	const { t } = useLingui();
 	const [open, setOpen] = useState(false);
 
@@ -41,12 +31,6 @@ export function DesktopUtilitiesMenu({
 		if (settingsDisabled) return;
 		setOpen(false);
 		onOpenSettings();
-	}
-
-	function handleLinkMobile() {
-		if (linkMobileDisabled || !onLinkMobile) return;
-		setOpen(false);
-		onLinkMobile();
 	}
 
 	return (
@@ -72,19 +56,6 @@ export function DesktopUtilitiesMenu({
 					</span>
 					<LanguageSwitcher className={UTILITY_ROW_CONTROL_CLASS} />
 				</div>
-				{linkMobileVisible && (
-					<Button
-						variant="ghost"
-						intent="neutral"
-						size="sm"
-						disabled={linkMobileDisabled}
-						className={UTILITY_ROW_BUTTON_CLASS}
-						onClick={linkMobileDisabled ? undefined : handleLinkMobile}
-						iconLeft={<QrCodeIcon className="size-[18px] text-trading-panel-muted" />}
-					>
-						<Trans>Link mobile device</Trans>
-					</Button>
-				)}
 				<Button
 					variant="ghost"
 					intent="neutral"

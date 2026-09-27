@@ -477,13 +477,14 @@ describe("UserMenu", () => {
 		});
 
 		expect(testState.mobileSyncModalModuleLoads).toBe(0);
-		const linkMobileButton = [...container.querySelectorAll("button")].find(
-			(button) => button.textContent === "Link mobile device",
-		);
-		await act(async () => linkMobileButton?.click());
-		expect(container.querySelector('[data-testid="user-menu-modal-loading-fallback"]')?.textContent).toContain(
-			"Connecting...",
-		);
+		expect(container.textContent).not.toContain("Link mobile device");
+		await act(async () => {
+			mobileSyncStore.set(true);
+		});
+		const loadingFallback = container.querySelector('[data-testid="user-menu-modal-loading-fallback"]');
+		expect(loadingFallback?.textContent).toContain("Loading");
+		expect(loadingFallback?.textContent).not.toContain("Connecting");
+		expect(container.querySelector('[role="dialog"]')?.textContent).toContain("Link mobile device");
 		expect(container.querySelector('[role="dialog"]')?.getAttribute("data-presentation")).toBe("drawer");
 
 		await act(async () => {
@@ -539,14 +540,7 @@ describe("UserMenu", () => {
 		expect(testState.mobileSyncModalModuleLoads).toBe(1);
 		expect(testState.mobileSyncModalOpen).toBe(true);
 		expect(container.querySelectorAll('[data-testid="mobile-sync-modal"]')).toHaveLength(1);
-
-		const linkMobileButton = [...container.querySelectorAll("button")].find(
-			(button) => button.textContent === "Link mobile device",
-		);
-		await act(async () => linkMobileButton?.click());
-		expect(testState.mobileSyncModalMounts).toBe(1);
-		expect(testState.mobileSyncModalUnmounts).toBe(0);
-		expect(container.querySelectorAll('[data-testid="mobile-sync-modal"]')).toHaveLength(1);
+		expect(container.textContent).not.toContain("Link mobile device");
 
 		await act(async () => {
 			container.querySelector<HTMLButtonElement>('[data-testid="mobile-sync-modal"]')?.click();
@@ -776,7 +770,7 @@ describe("UserMenu", () => {
 		expect(container.textContent).not.toContain("Reload page");
 		expect(container.textContent).not.toContain("Reconnect wallet");
 		expect(container.textContent).toContain("Copy Address");
-		expect(container.textContent).toContain("Link mobile device");
+		expect(container.textContent).not.toContain("Link mobile device");
 		expect(trigger?.querySelector("span.bg-success")).not.toBeNull();
 	});
 

@@ -4,7 +4,7 @@ import { ArrowClockwiseIcon, CrownIcon, WarningCircleIcon } from "@phosphor-icon
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
-import { shortenAddress } from "@/lib/format";
+import { formatTime, shortenAddress } from "@/lib/format";
 import {
 	formatVaultCompactUsd,
 	formatVaultRatio,
@@ -53,9 +53,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 	const groups = getVisibleGroups(pageRows, filter, selection.status === "ready" && selection.classificationAvailable);
 	const ageReferenceTime = fetchedAt ?? Date.now();
 	const fetchedLabel =
-		fetchedAt === null
-			? null
-			: new Intl.DateTimeFormat(i18n.locale, { hour: "2-digit", minute: "2-digit" }).format(fetchedAt);
+		fetchedAt === null ? null : formatTime(fetchedAt, { locale: i18n.locale, hour: "2-digit", minute: "2-digit" });
 
 	function changeFilter(nextFilter: VaultFilter) {
 		setFilter(nextFilter);

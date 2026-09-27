@@ -10,6 +10,7 @@ import {
 } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatVaultRatio, formatVaultUsd, type VaultDetail } from "./domain/vaults";
 
@@ -87,7 +88,7 @@ export function VaultActionModal({
 						<TextInput
 							label={t`Amount (USDC)`}
 							value={amount}
-							onChange={(event) => onAmountChange(event.target.value)}
+							onChange={(event) => onAmountChange(normalizeDecimalInputEvent(event).target.value)}
 							inputMode="decimal"
 							autoComplete="off"
 							placeholder="0.00"
