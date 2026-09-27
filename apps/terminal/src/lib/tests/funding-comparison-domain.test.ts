@@ -9,6 +9,7 @@ import {
 	getFundingComparisonHourlyRate,
 	getFundingComparisonPeriodRate,
 	getFundingComparisonRateTone,
+	isFundingComparisonSnapshotFresh,
 	parsePredictedFundings,
 	toggleFundingComparisonSort,
 } from "@/domain/market/funding-comparison";
@@ -150,6 +151,25 @@ describe("parsePredictedFundings", () => {
 		],
 	])("fails closed on %s", (_label, value) => {
 		expect(parsePredictedFundings(value)).toBeNull();
+	});
+});
+
+describe("isFundingComparisonSnapshotFresh", () => {
+	const RECEIVED = 1_800_000_000_000;
+	const MAX_AGE = 120_000;
+
+	it("accepts a snapshot younger than the bound and rejects it from the bound on", () => {
+		expect(isFundingComparisonSnapshotFresh(RECEIVED, RECEIVED, MAX_AGE)).toBe(true);
+		expect(isFundingComparisonSnapshotFresh(RECEIVED, RECEIVED + MAX_AGE - 1, MAX_AGE)).toBe(true);
+		expect(isFundingComparisonSnapshotFresh(RECEIVED, RECEIVED + MAX_AGE, MAX_AGE)).toBe(false);
+		expect(isFundingComparisonSnapshotFresh(RECEIVED, RECEIVED + 10 * MAX_AGE, MAX_AGE)).toBe(false);
+	});
+
+	it("fails closed without a receipt time or when the receipt is ahead of the local clock", () => {
+		expect(isFundingComparisonSnapshotFresh(0, RECEIVED, MAX_AGE)).toBe(false);
+		expect(isFundingComparisonSnapshotFresh(Number.NaN, RECEIVED, MAX_AGE)).toBe(false);
+		expect(isFundingComparisonSnapshotFresh(RECEIVED, Number.NaN, MAX_AGE)).toBe(false);
+		expect(isFundingComparisonSnapshotFresh(RECEIVED + 1, RECEIVED, MAX_AGE)).toBe(false);
 	});
 });
 

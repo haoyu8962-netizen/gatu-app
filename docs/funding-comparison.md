@@ -32,9 +32,12 @@
 | 请求节奏 | `requestTimeoutMs: 10_000`、`staleTime: 30_000`、`refetchInterval: 60_000`、`retry: 1`（`config/funding-comparison.ts` 的 `FUNDING_COMPARISON_QUERY_OPTIONS`）。TanStack 默认不在后台标签页轮询，回到页面且数据超过 30 秒时重新请求 |
 | 网络隔离 | 查询键含网络（hl-react `infoKey`），主网与测试网互不复用 |
 | 持久化 | 不持久化：查询键没有 `persisted` 前缀，`lib/query-persistence.ts` 不保存它 |
+| 新鲜度上限 | 快照自本地接收时间（TanStack `dataUpdatedAt`）起最多使用 `FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS` = 两个刷新周期（120 秒）；满 120 秒、接收时间晚于本地时钟、或查询因离线处于 `paused` 时，快照视为不可用（见第 6 节） |
 | 市场目录 | `useMarketsInfo().perpMarkets`：主 dex、已剔除 `isDelisted` 的永续；其资产上下文（`openInterest`、`markPx`）来自现有 `pac` / `allDexsAssetCtxs` 订阅。`/fundingComparison` 不在 `MARKET_STATS_IDLE_ROUTE_PREFIXES` 中，订阅保持开启 |
 
 `parsePredictedFundings` 对未知输入做严格校验，任一项不符即整份快照视为不可用（fail closed）：顶层须为数组；每项须为 `[非空字符串, 数组]`；场所项须为 `[非空字符串, 对象或 null]`；已知场所的 `fundingRate` 须匹配 `^-?\d+(\.\d+)?$`、`nextFundingTime` 须为安全整数、`fundingIntervalHours` 若存在须为正安全整数；资产或同一资产内的场所重复即失败。未知场所名只检查元组形状，数据被忽略，以便协议新增场所时页面不失效。
+
+新鲜度由 `isFundingComparisonSnapshotFresh(receivedAt, now, maxAgeMs)` 判断：接收时间须为正的有限数，`0 ≤ now − receivedAt < maxAgeMs`。控制器用一个按截止时刻（`dataUpdatedAt + 120 秒`）建立的本地时钟提供 `now`：`setTimeout` 在截止时刻触发一次重新渲染，页面重新可见（`visibilitychange`）或窗口获得焦点时再核对一次，以免后台标签页的计时器节流让过期数据在回到页面时多停留；新快照到达会生成新的截止时刻。两边都是本地时间，不拿交易所的 `nextFundingTime` 与本地时钟比较。
 
 ## 4. 计算
 
@@ -71,13 +74,16 @@
 
 | 状态 | 条件 | 展示 | 对应数据展示规范 |
 | --- | --- | --- | --- |
-| `loading` | 没有快照且查询未失败（首次请求、自动重试中、离线暂停）；或有快照但目录处于 restoring / loading / paused；或目录 ready 但主 dex 永续为空且 `allPerpMetas` 仍在请求 | 数据骨架；section 与骨架 `aria-busy="true"`；屏幕阅读器文字「Loading funding rates」 | 列表首次加载：骨架与 `aria-busy` |
-| `error` | 目录 `error`；目录 ready 但主 dex 永续为空且 `allPerpMetas` 已结束；没有快照且查询失败或响应格式不符；有快照、过滤后为 0 行且最近一次请求失败 | 空白区域中只有中性的「Retry」按钮（outline / neutral），重试进行中禁用但名称不变；没有图标、错误文字或 `role="alert"` | 后台刷新失败：空容器；允许中性重试 |
-| `empty` | 快照解析成功、目录就绪、最近一次请求成功、过滤后为 0 行 | 「No funding comparison data」 | 完整、当前、成功的空快照 |
+| `loading` | 没有可用快照且最近一次请求未失败（首次请求、自动重试中、离线暂停、快照已超过 120 秒而刷新仍在进行或尚未开始）；或有可用快照但目录处于 restoring / loading / paused；或目录 ready 但主 dex 永续为空且 `allPerpMetas` 仍在请求 | 数据骨架；section 与骨架 `aria-busy="true"`；屏幕阅读器文字「Loading funding rates」 | 列表首次加载、数据过期或重连：骨架与 `aria-busy` |
+| `error` | 目录 `error`；目录 ready 但主 dex 永续为空且 `allPerpMetas` 已结束；没有可用快照且最近一次请求失败或响应格式不符（包括快照超过 120 秒时刷新仍在失败）；有可用快照、过滤后为 0 行且最近一次请求失败 | 空白区域中只有中性的「Retry」按钮（outline / neutral），重试进行中禁用但名称不变；没有图标、错误文字或 `role="alert"` | 后台刷新失败：空容器；允许中性重试 |
+| `empty` | 快照解析成功且在新鲜度上限内、查询未暂停、目录就绪、最近一次请求成功、过滤后为 0 行 | 「No funding comparison data」 | 完整、当前、成功的空快照 |
 | `noResults` | 有行，但搜索没有匹配 | 「No markets match your search」 | 用户主动搜索的结果，不是数据状态 |
 | `normal` | 其余情况 | 表格或卡片 | — |
 
-- 已有非空快照时刷新失败：继续显示上一份快照，不提示。
+- 「可用快照」指解析成功、自本地接收起不到 120 秒、且查询不处于 `paused` 的快照。
+- 已有可用的非空快照时刷新失败：在新鲜度上限内继续显示这份快照，不提示；满 120 秒仍没有成功的刷新时，数据区换成中性「Retry」（最近一次请求失败）或骨架（刷新进行中、未失败），不再显示旧数值。
+- 浏览器离线使查询进入 `paused` 时，即使快照未满 120 秒也立即换成骨架（最近一次请求失败时为中性「Retry」）；恢复联网后 TanStack 继续请求，成功后恢复表格。
+- 接收时间晚于本地时钟（例如系统时间被往回调）的快照同样不可用，直到下一次成功请求用新的本地时间记录接收。
 - 「Retry」重新请求 `predictedFundings`；目录处于错误时同时调用 `retryMarketCatalog()`。
 - 页面不参与任何签名、资金、下单或可用性守卫，展示状态不影响其他页面。
 
@@ -94,7 +100,7 @@
 | 色调阈值 | CEX 用原始每期费率与阈值比较 | 统一用 8 小时等效值 |
 | 差值排序 | 按带符号值 | 按绝对值，与显示一致 |
 | 差值说明 | 悬浮提示写出「在 Hyperliquid 做多、在 CEX 做空」一类操作 | 可见的事实方向文字，不给操作建议 |
-| 数据刷新 | 进入时请求一次；失败时表格静默为空 | 可见时每 60 秒刷新；首份失败显示中性重试 |
+| 数据刷新 | 进入时请求一次；失败时表格静默为空 | 可见时每 60 秒刷新；首份失败显示中性重试；快照最多使用 120 秒，离线暂停时不显示 |
 | 收藏、颜色图例 | 收藏置顶；信息按钮打开颜色图例 | 都不做；页脚一句说明 |
 | 周期记忆 | 全局保存 | 仅当次访问 |
 | 行点击 | 整行打开 `/trade/<coin>` | 资产徽标（桌面）或卡片头（手机）打开交易页 |
@@ -107,6 +113,9 @@
 | --- | --- |
 | 持久化快照（`persist: true`） | 不采用。资金费率每小时变化，重新进入时展示旧值比短暂骨架更容易误导 |
 | 像排行榜一样显示「暂时不可用」提示 | 不采用。需要先修改数据展示规范并有产品依据；静默重试与官方的静默空表更接近 |
+| 刷新失败时无限期保留上一份快照 | 不采用（初版曾如此实现，审查意见 FC-1 指出）。本页是面向下一次资金费的当前数据，不是只读历史记录，数据展示规范的「数据过期、重连、后台刷新失败」一行不允许无期限展示；现改为 120 秒上限 |
+| 用 HL 条目的 `nextFundingTime` 早于本地时间作为过期条件 | 不采用。它是交易所时间，与用户本地时钟比较会受时钟偏差影响：本地时钟偏快会让刚到的快照立即失效，偏慢会让过期快照继续显示。按本地接收时间计龄只比较本地时间；120 秒上限意味着整点结算后最多再显示约两分钟的上一期预测 |
+| 离线暂停时在 120 秒内继续显示快照 | 不采用。离线时无法确认数据仍是当前的；骨架与数据展示规范的「重连」一行一致。代价是短暂断网且恰好遇到刷新时表格会换成骨架，恢复联网后自动回来 |
 | OI 用 `oraclePx` | 不采用。与官方一致，但与本终端行情头和代币选择器的 OI 不一致，同一市场会出现两个数 |
 | 复制官方的缺失间隔币种表 | 不采用。无法核实、会随交易所调整过期；2026-09-27 的主网数据中缺字段的 20 个 Binance 条目都属于已下架币，页面过滤后不受影响（见第 10 节） |
 | 差值按带符号值排序 | 不采用。显示的是绝对值，按符号排序会让最大的负差排在最后 |
@@ -129,7 +138,8 @@
 新增与更新的回归入口：
 
 - `src/lib/tests/funding-comparison-domain.test.ts`：解析的 fail-closed 条件、HL 与 CEX 每小时换算、缺失间隔、零费率、五个周期倍数（精确 Big 字符串，例如 PONS：HL `0.0000284027` → 8 小时 `0.0002272216`，Binance 4 小时 `0.00012985` → 8 小时 `0.0002597`，差值 `0.0000324784`）、差值方向与空值、色调阈值、目录过滤与 OI、空值排最后、差值按绝对值、同值按名称、搜索与分页夹取、排序切换。
-- `src/components/funding-comparison/__tests__/use-funding-comparison-controller.test.tsx`：查询参数与节奏、首份快照 / 目录 / 离线等待时保持 loading、首份失败与格式错误进入 error 并重试、目录失败时同时重试目录、刷新失败保留快照、只有成功的空快照才是 empty、搜索无结果、周期 / 排序 / 搜索 / 行数变化回到第 1 页、OI 在上下文到达前为空、选中市场调用导航。桩数据经 `useSyncExternalStore` 驱动（React Compiler 下的测试约定）。
+- `src/components/funding-comparison/__tests__/use-funding-comparison-controller.test.tsx`：查询参数与节奏、首份快照 / 目录 / 离线等待时保持 loading、首份失败与格式错误进入 error 并重试、目录失败时同时重试目录、只有成功的空快照才是 empty、搜索无结果、周期 / 排序 / 搜索 / 行数变化回到第 1 页、OI 在上下文到达前为空、选中市场调用导航。新鲜度（假计时器）：上限为两个刷新周期即 120 秒；刷新失败时差 1 毫秒满 120 秒仍显示、满 120 秒换成中性 Retry 且重试中禁用、新快照到达后恢复；未失败时满 120 秒为骨架；页面重新可见时立即核对；满 120 秒的空快照不再是 empty；`paused` 时立即不可用（有失败时为 error）；接收时间晚于本地时钟时不可用。桩数据经 `useSyncExternalStore` 驱动（React Compiler 下的测试约定）。
+- `src/lib/tests/funding-comparison-domain.test.ts` 另含 `isFundingComparisonSnapshotFresh` 的边界：年龄 0 与上限减 1 毫秒可用，等于上限及以上不可用；接收时间为 0 / NaN、当前时间为 NaN、接收时间晚于当前时间均不可用。
 - `src/components/funding-comparison/__tests__/funding-comparison-view.test.tsx`：桌面表头与 `aria-sort`、数字在 `<bdi dir="ltr">` 中、方向文字、色调、`--` 占位、徽标导航、分页边界、手机卡片与按压反馈、骨架与 `aria-busy`、错误态只有中性 Retry、空快照与无搜索结果的区分、en → zh 切换时 section 与输入框不重挂载且保留搜索值和周期。
 - `src/lib/tests/funding-comparison-catalogs.test.ts`：新文案在 en 保留原文，在 zh / es / fr / hi / ar 都有译文。
 - 更新：`dashboard-frame-view`（预设）、`boot-dashboard-route`（路由列表）、`desktop-nav-layout`、`top-nav`、`mobile-nav-drawer`（入口顺序、当前页与跳转）、`market-stats-subscription`（本路由保持订阅）、`app-route-surface`、`nav`、`history-table-scroll-accessibility`、`rtl-financial-ui-contract`、`i18n-reactivity-contract`（登记视图），以及浏览器 CSP 扫描 `tests/browser/csp-coverage.mjs` 的桌面路由列表（本任务未运行该浏览器脚本）。
@@ -148,6 +158,8 @@ pnpm --dir apps/terminal exec vitest run <上述新增与更新的测试> \
 ```
 
 以上全部通过；另外运行了 AGENTS.md 的启动渲染、数字与日期格式、移动数据展示和运行时翻译四组回归，均通过。对控制器做过两处变异（去掉 empty 前的失败检查、目录失败时放行已有快照），对应测试失败后已还原。
+
+审查修复（FC-1，2026-09-27，同一分支）后重新运行了 Biome、终端类型检查、本页控制器 / 视图 / 领域 / 目录测试、上面列出的扫描测试以及移动数据展示与运行时翻译两组回归，均通过。新鲜度逻辑做过四处变异并逐一还原：去掉新鲜度判断（5 个用例失败）、去掉 `paused` 判断（1 个失败）、去掉 `visibilitychange` 核对（1 个失败）、去掉截止时刻计时器（3 个失败）。计时行为只在 jsdom 假计时器下验证，没有在真实浏览器的后台标签页节流或真实断网下核对。
 
 响应形状核对：2026-09-27 用 curl 对主网 `POST /info {"type":"predictedFundings"}` 与 `{"type":"meta"}` 各请求一次（不含任何用户地址），按第 3 节的解析规则逐项检查，没有会导致整份快照失效的条目。共 234 个资产，每个资产都有 `BinPerp`、`HlPerp`、`BybitPerp` 三项（数据可为 `null`）；HL 间隔全为 1 小时，Binance 为 4 或 8 小时，Bybit 为 1、4 或 8 小时；缺少 `fundingIntervalHours` 的 20 个条目全是 Binance（19 个零费率、1 个 `0.0001`），都属于已下架币。按本页规则过滤后为 176 行（主 dex 未下架 178 个，其中 2 个没有交易所数据），这些行没有缺失间隔。这是对当时一份快照的检查，不代表协议保证。
 

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import {
 	FUNDING_COMPARISON_DEFAULT_PERIOD,
 	FUNDING_COMPARISON_DEFAULT_ROWS_PER_PAGE,
 	FUNDING_COMPARISON_DEFAULT_SORT_KEY,
+	FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS,
 	FUNDING_COMPARISON_QUERY_OPTIONS,
 	FUNDING_COMPARISON_ROWS_PER_PAGE_OPTIONS,
 	type FundingComparisonRowsPerPage,
@@ -13,6 +14,7 @@ import {
 	type FundingComparisonPeriod,
 	type FundingComparisonSortDirection,
 	type FundingComparisonSortKey,
+	isFundingComparisonSnapshotFresh,
 	parsePredictedFundings,
 	toggleFundingComparisonSort,
 } from "@/domain/market/funding-comparison";
@@ -27,6 +29,8 @@ import type {
 export type FundingComparisonPageState = "loading" | "error" | "empty" | "noResults" | "normal";
 type PerpCatalogStatus = "ready" | "loading" | "error";
 
+const MAX_TIMEOUT_MS = 2_147_483_647;
+
 interface PerpCatalogInput {
 	catalogState: MarketCatalogState;
 	perpMarketCount: number;
@@ -35,7 +39,7 @@ interface PerpCatalogInput {
 }
 
 interface PageStateInput {
-	hasSnapshot: boolean;
+	hasUsableSnapshot: boolean;
 	fundingsFailed: boolean;
 	catalogStatus: PerpCatalogStatus;
 	sourceRowCount: number;
@@ -56,11 +60,50 @@ function resolveCatalogStatus(input: PerpCatalogInput): PerpCatalogStatus {
 
 function resolvePageState(input: PageStateInput): FundingComparisonPageState {
 	if (input.catalogStatus === "error") return "error";
-	if (!input.hasSnapshot) return input.fundingsFailed ? "error" : "loading";
+	if (!input.hasUsableSnapshot) return input.fundingsFailed ? "error" : "loading";
 	if (input.catalogStatus === "loading") return "loading";
 	if (input.sourceRowCount === 0) return input.fundingsFailed ? "error" : "empty";
 	if (input.matchingRowCount === 0) return "noResults";
 	return "normal";
+}
+
+function createBoundaryClock(boundary: number | null) {
+	let snapshot = Date.now();
+	return {
+		getSnapshot: () => snapshot,
+		subscribe(onBoundaryReached: () => void) {
+			if (boundary === null || boundary <= snapshot) return () => {};
+			const deadline = boundary;
+			let reached = false;
+			let timeout: ReturnType<typeof setTimeout> | undefined;
+			function checkBoundary() {
+				if (reached) return;
+				if (timeout !== undefined) clearTimeout(timeout);
+				timeout = undefined;
+				const now = Date.now();
+				if (now < deadline) {
+					timeout = setTimeout(checkBoundary, Math.min(deadline - now, MAX_TIMEOUT_MS));
+					return;
+				}
+				reached = true;
+				snapshot = now;
+				onBoundaryReached();
+			}
+			checkBoundary();
+			window.addEventListener("focus", checkBoundary);
+			document.addEventListener("visibilitychange", checkBoundary);
+			return () => {
+				if (timeout !== undefined) clearTimeout(timeout);
+				window.removeEventListener("focus", checkBoundary);
+				document.removeEventListener("visibilitychange", checkBoundary);
+			};
+		},
+	};
+}
+
+function useNowAtBoundary(boundary: number | null): number {
+	const clock = useMemo(() => createBoundaryClock(boundary), [boundary]);
+	return useSyncExternalStore(clock.subscribe, clock.getSnapshot, clock.getSnapshot);
 }
 
 export function useFundingComparisonController() {
@@ -76,10 +119,17 @@ export function useFundingComparisonController() {
 	const fundingsQuery = useInfo("predictedFundings", undefined, FUNDING_COMPARISON_QUERY_OPTIONS);
 	const { perpMarkets, catalogState, catalogQueries, retryMarketCatalog } = useMarketsInfo();
 	const navigateToMarket = useMarketNavigation();
+	const receivedAt = fundingsQuery.dataUpdatedAt;
+	const now = useNowAtBoundary(receivedAt > 0 ? receivedAt + FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS : null);
 
-	const snapshot = parsePredictedFundings(fundingsQuery.data);
-	const malformed = fundingsQuery.data !== undefined && snapshot === null;
+	const parsedSnapshot = parsePredictedFundings(fundingsQuery.data);
+	const malformed = fundingsQuery.data !== undefined && parsedSnapshot === null;
 	const fundingsFailed = fundingsQuery.isError || malformed;
+	const snapshotUsable =
+		parsedSnapshot !== null &&
+		fundingsQuery.fetchStatus !== "paused" &&
+		isFundingComparisonSnapshotFresh(receivedAt, now, FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS);
+	const snapshot = snapshotUsable ? parsedSnapshot : null;
 	const catalogStatus = resolveCatalogStatus({
 		catalogState,
 		perpMarketCount: perpMarkets.length,
@@ -97,7 +147,7 @@ export function useFundingComparisonController() {
 		rowsPerPage,
 	});
 	const pageState = resolvePageState({
-		hasSnapshot: snapshot !== null,
+		hasUsableSnapshot: snapshot !== null,
 		fundingsFailed,
 		catalogStatus,
 		sourceRowCount: sourceRows.length,

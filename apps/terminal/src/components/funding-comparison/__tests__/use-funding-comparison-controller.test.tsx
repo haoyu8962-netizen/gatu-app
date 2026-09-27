@@ -3,12 +3,13 @@
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FUNDING_COMPARISON_QUERY_OPTIONS } from "@/config/funding-comparison";
+import { FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS, FUNDING_COMPARISON_QUERY_OPTIONS } from "@/config/funding-comparison";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { useFundingComparisonController } from "../use-funding-comparison-controller";
 
 interface FundingsQueryState {
 	data: unknown;
+	dataUpdatedAt: number;
 	isError: boolean;
 	fetchStatus: "idle" | "fetching" | "paused";
 	refetch: () => Promise<unknown>;
@@ -83,7 +84,14 @@ function entry(coin: string, hlRate: string, binanceRate: string) {
 }
 
 function fundings(data: unknown, overrides: Partial<FundingsQueryState> = {}): FundingsQueryState {
-	return { data, isError: false, fetchStatus: "idle", refetch: vi.fn(async () => undefined), ...overrides };
+	return {
+		data,
+		dataUpdatedAt: data === undefined ? 0 : Date.now(),
+		isError: false,
+		fetchStatus: "idle",
+		refetch: vi.fn(async () => undefined),
+		...overrides,
+	};
 }
 
 function markets(overrides: Partial<MarketsState> = {}): MarketsState {
@@ -131,6 +139,7 @@ describe("useFundingComparisonController", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		vi.useRealTimers();
 	});
 
 	function render() {
@@ -238,11 +247,97 @@ describe("useFundingComparisonController", () => {
 		expect(current().pageState).toBe("error");
 	});
 
-	it("keeps the last snapshot quietly when a refresh fails", () => {
+	it("bounds the snapshot age at two refresh intervals", () => {
+		expect(FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS).toBe(120_000);
+		expect(FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS).toBe(FUNDING_COMPARISON_QUERY_OPTIONS.refetchInterval * 2);
+	});
+
+	it("keeps a fresh snapshot through a failed refresh and drops it once it ages past the bound", () => {
+		vi.useFakeTimers({ now: 1_800_000_000_000 });
+		store.holder.state = {
+			fundings: fundings([entry("BTC", "0.00001", "0.0001"), entry("ETH", "0.00002", "0.00004")]),
+			markets: markets(),
+		};
 		render();
 		act(() => store.set({ fundings: { ...store.get().fundings, isError: true, fetchStatus: "idle" } }));
 		expect(current()).toMatchObject({ pageState: "normal", totalRows: 2 });
 		expect(current().rows.map((row) => row.coin)).toEqual(["BTC", "ETH"]);
+
+		act(() => vi.advanceTimersByTime(FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS - 1));
+		expect(current()).toMatchObject({ pageState: "normal", totalRows: 2 });
+
+		act(() => vi.advanceTimersByTime(1));
+		expect(current()).toMatchObject({ pageState: "error", rows: [], totalRows: 0, isRetrying: false });
+
+		act(() => current().onRetry());
+		expect(store.get().fundings.refetch).toHaveBeenCalledOnce();
+
+		act(() => store.set({ fundings: { ...store.get().fundings, fetchStatus: "fetching" } }));
+		expect(current()).toMatchObject({ pageState: "error", rows: [], isRetrying: true });
+
+		act(() => store.set({ fundings: fundings([entry("BTC", "0.00001", "0.0001")]) }));
+		expect(current()).toMatchObject({ pageState: "normal", totalRows: 1 });
+	});
+
+	it("stays quiet with a skeleton while an aged snapshot is refreshed without a failure", () => {
+		vi.useFakeTimers({ now: 1_800_000_000_000 });
+		store.holder.state = { fundings: fundings([entry("BTC", "0.00001", "0.0001")]), markets: markets() };
+		render();
+		expect(current().pageState).toBe("normal");
+
+		act(() => vi.advanceTimersByTime(FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS));
+		expect(current()).toMatchObject({ pageState: "loading", rows: [], totalRows: 0 });
+
+		act(() => store.set({ fundings: { ...store.get().fundings, fetchStatus: "fetching" } }));
+		expect(current()).toMatchObject({ pageState: "loading", rows: [] });
+
+		act(() => store.set({ fundings: fundings([entry("BTC", "0.00001", "0.0001")]) }));
+		expect(current()).toMatchObject({ pageState: "normal", totalRows: 1 });
+	});
+
+	it("rechecks the snapshot age when the page becomes visible again", () => {
+		vi.useFakeTimers({ now: 1_800_000_000_000 });
+		store.holder.state = { fundings: fundings([entry("BTC", "0.00001", "0.0001")]), markets: markets() };
+		render();
+		vi.setSystemTime(Date.now() + FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS);
+		expect(current().pageState).toBe("normal");
+
+		act(() => {
+			document.dispatchEvent(new Event("visibilitychange"));
+		});
+		expect(current()).toMatchObject({ pageState: "loading", rows: [] });
+	});
+
+	it("does not conclude an empty result from an aged empty snapshot", () => {
+		vi.useFakeTimers({ now: 1_800_000_000_000 });
+		store.holder.state = { fundings: fundings([]), markets: markets() };
+		render();
+		expect(current().pageState).toBe("empty");
+
+		act(() => vi.advanceTimersByTime(FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS));
+		expect(current().pageState).toBe("loading");
+
+		act(() => store.set({ fundings: { ...store.get().fundings, isError: true } }));
+		expect(current().pageState).toBe("error");
+	});
+
+	it("drops the snapshot while the refresh is paused offline or received ahead of the local clock", () => {
+		render();
+		expect(current().pageState).toBe("normal");
+
+		act(() => store.set({ fundings: { ...store.get().fundings, fetchStatus: "paused" } }));
+		expect(current()).toMatchObject({ pageState: "loading", rows: [], totalRows: 0 });
+
+		act(() => store.set({ fundings: { ...store.get().fundings, isError: true } }));
+		expect(current()).toMatchObject({ pageState: "error", rows: [] });
+
+		act(() => store.set({ fundings: fundings([entry("BTC", "0.00001", "0.0001")]) }));
+		expect(current()).toMatchObject({ pageState: "normal", totalRows: 1 });
+
+		act(() =>
+			store.set({ fundings: fundings([entry("BTC", "0.00001", "0.0001")], { dataUpdatedAt: Date.now() + 60_000 }) }),
+		);
+		expect(current()).toMatchObject({ pageState: "loading", rows: [] });
 	});
 
 	it("concludes empty only for a current successful snapshot and separates an empty search", () => {

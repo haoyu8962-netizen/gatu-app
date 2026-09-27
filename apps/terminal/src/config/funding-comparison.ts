@@ -20,6 +20,8 @@ export const FUNDING_COMPARISON_QUERY_OPTIONS = {
 	retry: 1,
 } as const;
 
+export const FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS = FUNDING_COMPARISON_QUERY_OPTIONS.refetchInterval * 2;
+
 export const FUNDING_COMPARISON_RATE_FORMAT = {
 	minimumFractionDigits: 4,
 	maximumFractionDigits: 4,

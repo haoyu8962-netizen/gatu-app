@@ -138,6 +138,12 @@ export function parsePredictedFundings(value: unknown): PredictedFundingsRespons
 	return value as PredictedFundingsResponse;
 }
 
+export function isFundingComparisonSnapshotFresh(receivedAt: number, now: number, maxAgeMs: number): boolean {
+	if (!Number.isFinite(receivedAt) || receivedAt <= 0 || !Number.isFinite(now)) return false;
+	const age = now - receivedAt;
+	return age >= 0 && age < maxAgeMs;
+}
+
 export function getFundingComparisonHourlyRate(
 	venue: FundingComparisonVenue,
 	data: PredictedFundingVenueData | null | undefined,
