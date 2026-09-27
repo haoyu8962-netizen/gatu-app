@@ -128,14 +128,8 @@ export function EarnView({ data, isMobile, actionsAllowed, notice, onOpenAction 
 					}
 					value={healthRatio === null ? "--" : formatPercent(healthRatio, { signDisplay: "auto" })}
 				/>
-				<StatCard
-					label={t`Your Total Supplied`}
-					value={summary ? formatUSD(summary.totalSuppliedUsd, { compact: isMobile }) : PLACEHOLDER}
-				/>
-				<StatCard
-					label={t`Your Total Borrowed`}
-					value={summary ? formatUSD(summary.totalBorrowedUsd, { compact: isMobile }) : PLACEHOLDER}
-				/>
+				<StatCard label={t`Your Total Supplied`} value={formatStatUsd(summary?.totalSuppliedUsd ?? "0", isMobile)} />
+				<StatCard label={t`Your Total Borrowed`} value={formatStatUsd(summary?.totalBorrowedUsd ?? "0", isMobile)} />
 			</div>
 
 			<section className="overflow-hidden rounded-24 bg-surface" aria-label={t`Earn details`}>
@@ -416,7 +410,7 @@ function getCells(
 	translate: Translate,
 ): Cell[] {
 	const amount = (value: string | undefined) =>
-		row && value !== undefined && accountReady ? formatAssetAmount(value, row) : PLACEHOLDER;
+		row ? formatAssetAmount(accountReady && value !== undefined ? value : "0", row) : PLACEHOLDER;
 	const cells: Cell[] = [];
 	cells.push({
 		key: "ltv",
@@ -483,6 +477,12 @@ function formatAssetAmount(value: string, row: EarnAssetRow) {
 			{formatNumber(value, row.amountDecimals)} {row.displayName}
 		</bdi>
 	);
+}
+
+function formatStatUsd(value: string, isMobile: boolean) {
+	return isMobile
+		? formatUSD(value, { compact: true, minimumFractionDigits: 0, maximumFractionDigits: 1 })
+		: formatUSD(value, { compact: false });
 }
 
 function formatRate(value: string) {

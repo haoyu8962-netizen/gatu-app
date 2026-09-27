@@ -128,6 +128,8 @@ describe("earn view", () => {
 	it("does not conclude there are no borrows before the account snapshot is ready", () => {
 		render(createData("loading"));
 		expect(container.textContent).not.toContain(NO_BORROWS);
+		expect(container.textContent).toContain("$0.00");
+		expect(container.textContent).toContain("0.00 HYPE");
 		expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
 		render(createData("error"));
 		expect(container.textContent).not.toContain(NO_BORROWS);
