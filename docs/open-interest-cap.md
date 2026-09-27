@@ -103,7 +103,7 @@
 
 ## 已知限制
 
-- 放行窗口：每次账本更新都会改变 `refreshKey`，`webData3` 重订阅期间数据为 `undefined`，这段时间里上限市场的限价单可以到达交易所，由交易所拒绝或撤销（终端已有 `positionIncreaseAtOpenInterestCapRejected`、`openInterestCapCanceled` 等状态的标签）。
+- 放行窗口：每次账本更新都会改变 `refreshKey`，`webData3` 重订阅期间数据为 `undefined`，这段时间里上限市场的限价单可以到达交易所，由交易所拒绝或撤销（终端已有 `positionIncreaseAtOpenInterestCapRejected`、`openInterestCapCanceled` 等状态的标签）。这个窗口由 `open-interest-cap-hooks.test.tsx` 的真实 hl-react store 用例钉住：新订阅确认后条目为 `active` 但没有数据，上一个订阅的迟到帧不计入，直到新订阅的快照列出该市场才恢复拦截。
 - 休眠：见文首现状说明，当前没有可以触发的真实市场。
 - HIP-3 币名在 `webData3` 中的形式是假定的（带前缀），未能在真实数据上核对。
 
@@ -119,7 +119,7 @@
 - 数据：`hooks/trade/use-account-balances.ts`、`hooks/trade/use-order-entry-data.ts`。
 - 校验与守卫：`lib/errors/definitions/open-interest-cap.ts`、`lib/errors/stacks/perp-order.ts`、`lib/errors/types.ts`、`lib/trade/use-order-validation.ts`、`domain/trade/order/entry-execution-guard.ts`、`lib/trade/order-submission-feedback.ts`。
 - 界面：`components/trade/tradebox/trade-panel.tsx`、`components/trade/mobile/mobile-trade-view.tsx`、`components/trade/components/market-asset-info.tsx`。
-- 测试：`src/lib/tests/open-interest-cap.test.ts`（领域规则、真实 `buildOrderPlan` 分类）、`src/lib/tests/open-interest-cap-hooks.test.tsx`（`webData3` 键不变、快照到布尔值的完整链路、各未知状态）、`order-validation.test.ts`、`entry-order-execution-guard.test.ts`、`order-submission-feedback.test.ts`、`market-asset-info.test.tsx`、`tests/mobile-trade-size-validation-a11y.test.tsx`、`tests/trade-panel-open-interest-cap.test.tsx`（真实桌面 `TradePanel`）。
+- 测试：`src/lib/tests/open-interest-cap.test.ts`（领域规则、真实 `buildOrderPlan` 分类）、`src/lib/tests/open-interest-cap-hooks.test.tsx`（`webData3` 参数与选项不变且 `refreshKey` 取自账本流、快照到布尔值的完整链路、各未知状态；另用真实 hl-react store 在同一次挂载中推进两次账本更新，钉住 `refreshKey` 随账本键变化、参数保持 `{ user }`、新快照到达前回到未知、到达后恢复拦截）、`order-validation.test.ts`、`entry-order-execution-guard.test.ts`、`order-submission-feedback.test.ts`、`market-asset-info.test.tsx`、`tests/mobile-trade-size-validation-a11y.test.tsx`、`tests/trade-panel-open-interest-cap.test.tsx`（真实桌面 `TradePanel`）。
 
 ## 验证
 
@@ -140,3 +140,27 @@ pnpm --dir apps/terminal exec vitest run \
 ```
 
 结果：Biome 与类型检查通过；上述测试及 `AGENTS.md` 的下单、确认面、滑杆、数据展示、数字格式与运行时翻译回归组全部通过。语言热切换在两端的真实面板上都验证了限制说明在同一 DOM 节点上从英文切到中文。未运行完整终端测试、生产构建与 Playwright 布局套件：约 130 字符的说明在 1001px 紧凑桌面与 320px 手机上可能折成三行，仍需集成时用 `tests/browser/trade-panel-all-orders.pw.ts`、`desktop-order-entry-layout.pw.ts` 与 `mobile-trade-all-orders` 套件核对不撑开网格、不产生内部滚动。
+
+2026-09-27 审查修复（分支 `claude/sdk-fix-r1-oi-cap`，基于集成头 `19af214b`）：Codex 只读审查未确认 P0–P2 缺陷，指出一项 P3 测试缺口——原用例把 `getAccountLedgerRefreshKey` 固定为 `"ledger-7"`，把生产调用改成固定 `refreshKey` 时仍会通过。本轮只改测试，没有生产代码改动：原用例改为从账本流夹具推导 `refreshKey`，并新增真实 hl-react store 用例（假订阅客户端、脚本触发的监听器回调，不是真实 WebSocket）。新用例在 `19af214b` 的生产代码上直接通过，符合审查“当前实现没有这个错误”的结论。实际运行：
+
+```bash
+pnpm exec biome check apps/terminal/src/lib/tests/open-interest-cap-hooks.test.tsx
+pnpm --filter @gatu/terminal typecheck
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/open-interest-cap.test.ts \
+  src/lib/tests/open-interest-cap-hooks.test.tsx \
+  src/lib/tests/order-validation.test.ts \
+  src/lib/tests/entry-order-execution-guard.test.ts \
+  src/lib/tests/order-submission-feedback.test.ts \
+  src/lib/tests/market-asset-info.test.tsx \
+  tests/mobile-trade-size-validation-a11y.test.tsx \
+  tests/trade-panel-open-interest-cap.test.tsx \
+  src/lib/tests/i18n-reactivity-contract.test.ts \
+  src/lib/tests/number-format-reactivity-contract.test.ts \
+  src/lib/tests/locale-format-contract.test.ts \
+  src/lib/tests/design-token-ratchet.test.ts \
+  src/lib/tests/action-progress-label-contract.test.ts \
+  src/lib/tests/mobile-data-presentation-contract.test.ts
+```
+
+结果：Biome 通过；Vitest 14 个文件 488 个用例全部通过。类型检查失败，4 个错误全部在本功能之外、本轮未改动的 `src/lib/tests/funding-history-load-boundary.test.tsx`（`createRetryableLazyComponent` 返回的 `Panel` 属性类型为 `never`，来自资金费历史功能的提交），本轮改动的文件没有类型错误。变异检查：把 `webData3` 的 `refreshKey` 临时改成固定的 `"ledger-7"`、或删除 `refreshKey`，原用例与新用例都失败；再临时去掉新用例里的选项、订阅键与订阅条目状态断言，只保留上限状态断言，删除 `refreshKey` 的变异仍让新用例在“新快照前回到未知”处失败；每次检查后都已还原生产代码。未运行完整终端测试、生产构建与 Playwright 套件。
