@@ -154,6 +154,18 @@ describe("FundingHistoryPanel", () => {
 		expect(container.querySelector("button[data-funding-history-range]")).not.toBeNull();
 	});
 
+	it("gives each range button a phone-sized hit area without changing its look", () => {
+		render();
+
+		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button[data-funding-history-range]")];
+		expect(buttons).toHaveLength(3);
+		for (const button of buttons) {
+			expect(button.className).toContain("relative");
+			expect(button.className).toContain("max-[1000px]:after:h-11");
+			expect(button.className).toContain("max-[1000px]:after:absolute");
+		}
+	});
+
 	it("shows only a neutral retry when the first load fails", () => {
 		render();
 		act(() => setHistory({ buckets: [], status: "error" }));
@@ -203,6 +215,7 @@ describe("FundingHistoryPanel", () => {
 		expect(plot()?.getAttribute("aria-label")).toBe("Funding rate history");
 		const summary = container.querySelector("[data-funding-history-summary]");
 		expect(plot()?.getAttribute("aria-describedby")).toBe(summary?.id);
+		expect(summary?.hasAttribute("hidden")).toBe(true);
 		expect(summary?.textContent).toContain(`Latest funding rate ${formatPercent("0.00008", 4)}`);
 		expect(summary?.textContent).toContain(`cumulative funding rate ${formatPercent("0.00013", 4)}`);
 		expect(summary?.textContent).toContain(`lowest ${formatPercent("-0.00005", 4)}`);

@@ -2,12 +2,12 @@ import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { TOUCH_PRESS_CLASS } from "@/components/ui/touch-press";
+import { isFundingHistoryMarket } from "@/domain/market/funding-history-market";
 import {
 	DEFAULT_FUNDING_HISTORY_RANGE,
 	FUNDING_HISTORY_RANGE_ORDER,
 	type FundingHistoryRange,
 	type FundingRateBucket,
-	isFundingHistoryMarket,
 } from "@/domain/market/funding-rate-history";
 import { type MarketFundingHistoryStatus, useMarketFundingHistory } from "@/hooks/trade/use-market-funding-history";
 import { cn } from "@/lib/cn";
@@ -63,7 +63,8 @@ export function FundingHistoryPanel({ active, market }: Props) {
 							data-funding-history-range={value}
 							onClick={() => setRange(value)}
 							className={cn(
-								"min-w-8 rounded-8 px-2 py-1 text-xs font-medium tabular-nums",
+								"relative min-w-8 rounded-8 px-2 py-1 text-xs font-medium tabular-nums",
+								"max-[1000px]:after:absolute max-[1000px]:after:top-1/2 max-[1000px]:after:left-0 max-[1000px]:after:h-11 max-[1000px]:after:w-full max-[1000px]:after:-translate-y-1/2 max-[1000px]:after:content-['']",
 								"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 								TOUCH_PRESS_CLASS,
 								range === value ? "bg-fill-weak text-fg" : "text-fg-muted hover:text-fg",

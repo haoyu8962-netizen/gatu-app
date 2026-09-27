@@ -4,7 +4,7 @@ import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { resolveChartLocale } from "@/config/chart";
 import { MARKET_HEADER_LABELS } from "@/config/market-header";
-import { isFundingHistoryMarket } from "@/domain/market/funding-rate-history";
+import { isFundingHistoryMarket } from "@/domain/market/funding-history-market";
 import { useHasBeenActive } from "@/hooks/ui/use-has-been-active";
 import { cn } from "@/lib/cn";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";

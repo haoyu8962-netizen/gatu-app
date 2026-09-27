@@ -311,7 +311,7 @@ function FundingHistorySummary({
 	const { t } = useLingui();
 
 	return (
-		<p id={id} className="sr-only" data-funding-history-summary>
+		<p id={id} hidden data-funding-history-summary>
 			{t`From ${startTime} to ${endTime}. Latest funding rate ${latestRate}; cumulative funding rate ${cumulativeRate}. Highest ${maxRate}; lowest ${minRate}.`}
 		</p>
 	);

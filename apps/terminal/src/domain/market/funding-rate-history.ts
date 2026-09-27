@@ -41,10 +41,6 @@ export const FUNDING_HISTORY_RANGE_ORDER: readonly FundingHistoryRange[] = ["1h"
 
 export const DEFAULT_FUNDING_HISTORY_RANGE: FundingHistoryRange = "8h";
 
-export function isFundingHistoryMarket(market: { kind: string } | null | undefined): boolean {
-	return market?.kind === "perp" || market?.kind === "builderPerp";
-}
-
 /**
  * Groups hourly funding records into buckets aligned to the UTC epoch. Records arrive a few
  * milliseconds after the hour, so flooring keeps each one in its own hour. A bucket's rate is the

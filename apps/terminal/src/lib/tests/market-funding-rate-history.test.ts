@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { isFundingHistoryMarket } from "@/domain/market/funding-history-market";
 import {
 	bucketFundingRates,
 	DEFAULT_FUNDING_HISTORY_RANGE,
 	FUNDING_HISTORY_RANGE_ORDER,
 	FUNDING_HISTORY_RANGES,
 	getFundingRateTone,
-	isFundingHistoryMarket,
 	summarizeFundingRateBuckets,
 } from "@/domain/market/funding-rate-history";
 

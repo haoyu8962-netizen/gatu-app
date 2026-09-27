@@ -73,6 +73,8 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 - `bucketFundingRates(rows, bucketMs)`：桶起点为 `floor(time / bucketMs) × bucketMs`，即按 UTC 纪元对齐（8 小时桶从 UTC 00:00、08:00、16:00 开始）；记录比整点晚的毫秒数不会把它推进下一个桶。桶内费率是小时费率之和，即整个桶期间持仓支付或收取的费率；`cumulativeRate` 是从第一个桶起的累计和。窗口从 `now − 窗口` 开始并不对齐，所以首桶和正在进行的末桶可能不完整，二者都保留，`samples` 记录桶内条数。同一时间戳的记录视为同一事件，后出现的覆盖先出现的。结果用 `Big.toFixed()` 输出，不出现科学计数法。
 - `summarizeFundingRateBuckets` 给读屏摘要提供起止时间、最新、累计、最高与最低费率；`getFundingRateTone` 按正负返回市场色调。
 
+`ChartPanel` 与手机 `MarketsDataView` 只需要判断市场类型，它们从不含 Big.js 的 `domain/market/funding-history-market.ts` 引入 `isFundingHistoryMarket`。如果改从 `funding-rate-history.ts` 引入，Rollup 会把分桶、摘要和区间表整个放进交易页启动块（集成审查实测 `trade-terminal-page` 多出约 1.8 KB gzip），惰性块就失去意义。
+
 ## 界面
 
 ### 桌面
@@ -97,12 +99,12 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 两端共用 `components/trade/chart/funding-history-panel.tsx`，经 `createRetryableLazyComponent` 放在独立的惰性块里（`lazy-funding-history-panel.ts`）：
 
 - 块在 Funding 页签收到 `pointerenter` 或 `focus` 时预热，第一次选中时才渲染；导入失败不重载页面（同页有未提交的下单草稿），`FundingHistoryLoadBoundary` 只显示中性「重试」，点击后重新导入。加载期间是空白的 `aria-busy` 区域与读屏专用的 `Loading...`。
-- 头部左侧是图例（资金费率：半绿半红短线；累计资金费率：灰色短线），右侧是 `1h / 8h / D` 三个 `aria-pressed` 按钮（`fieldset`，带读屏名称），选中项为 `bg-fill-weak`，手机有按压反馈。区间状态只在面板内，切换页签、语言或市场都保留，刷新页面回到 8h。
+- 头部左侧是图例（资金费率：半绿半红短线；累计资金费率：灰色短线），右侧是 `1h / 8h / D` 三个 `aria-pressed` 按钮（`fieldset`，带读屏名称），选中项为 `bg-fill-weak`，手机有按压反馈；1000px 及以下每个按钮有一层 44px 高的透明扩展点击区（`after:h-11`），外观不变。区间状态只在面板内，切换页签、语言或市场都保留，刷新页面回到 8h。
 - 图表（`funding-history-chart.tsx`）为手绘 SVG，`dir="ltr"`：
   - 左轴资金费率、右轴累计资金费率。两个轴都包含 0，共用一条虚线零线和同一组网格线：一共 4 个间隔，程序在「零线以上 / 以下各几格」之间挑选让两条曲线都尽量占满高度的分法（`lib/chart/funding-history-chart-model.ts`）。刻度步长取 1 / 2 / 2.5 / 5 / 10 × 10ⁿ，并留 8% 余量；百分比小数位 = 步长小数位 − 2。
   - 资金费率线用 `userSpaceOnUse` 线性渐变描边，在零线处硬切：零线以上 `text-market-up`，以下 `text-market-down`（`stop-color="currentColor"`，不写颜色字面量）。累计线为 `text-fg-muted`。只有一个桶时画两个点。
   - 指针悬停或触摸时显示竖向十字线、两条线上的点和提示框（`bg-overlay`、`border-stroke-weak`、`rounded-16`、`shadow-raised`）。触摸抬起后提示框保留，直到再次触摸或数据变化；鼠标离开或 `pointercancel` 时消失。绘图区为 `touch-pan-y`，手机页面仍可纵向滚动。
-  - 没有键盘逐点浏览（官方也没有）；绘图区是 `role="img"`，名称为「资金费率历史」，`aria-describedby` 指向读屏摘要：起止时间、最新与累计费率、最高与最低费率。
+  - 没有键盘逐点浏览（官方也没有）；绘图区是 `role="img"`，名称为「资金费率历史」，`aria-describedby` 指向读屏摘要：起止时间、最新与累计费率、最高与最低费率。摘要元素带 `hidden` 属性，不在阅读流里重复朗读，只作为图的描述。
 
 ## 状态
 
@@ -152,6 +154,7 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 - `pnpm --filter @gatu/terminal typecheck`：通过。
 - `pnpm exec biome check`（本功能改动的全部 TS / TSX 文件）：通过。
 - 新增测试：`market-funding-rate-history.test.ts`（区间表、UTC 纪元对齐、毫秒偏移、Big.js 精确求和与累计、负费率、乱序与重复、首尾不完整桶、空输入）、`market-funding-history-fetch.test.ts`（请求参数、包含式游标续页去重、短页结束、20 页上限、坐标与格式校验、HIP-3 前缀、429 重试、中止）、`use-market-funding-history.test.tsx`（停用不请求、状态映射、键隔离、刷新失败保留、离线、聚焦不刷新、重新激活后台刷新）、`funding-history-chart-model.test.ts`（零线与网格共享、点位落在各自轴上、正负单边、刻度小数位、单点、平坦数据、最近点查找、提示框位置）、`funding-history-panel.test.tsx`（请求参数、忙碌 / 错误 / 离线 / 空态、渐变色调与累计色、区间切换、提示框时间与 4 位小数、D 区间 UTC 日期、语言与数字格式切换不重挂载）、`mobile-trade-layout-funding-tab.test.tsx`（永续四个页签、现货三个、Funding 期间图表与订单簿不活跃、预热、四页签键盘与 RTL、切到现货回到 Chart、交易页不变）；扩展 `chart-panel.test.tsx`（无页签条时结构不变、Funding 期间 TradingView 同一节点且 `active=false`、现货与未知市场只有 Chart、切到现货回退、预热）。全部通过。
+- `funding-history-load-boundary.test.tsx`（集成时补充）：真实的 `createRetryableLazyComponent`，第一次导入失败时只显示中性「重试」、上报一次错误、不写入 TanStack 的重载标记；点击后第二次导入并渲染面板；加载中为空白 `aria-busy`；普通渲染错误交给外层边界。删掉重试里的 `loadError.retry()` 后该测试失败（变异检查，已还原）。
 - 契约与相关套件：`i18n-reactivity-contract`、`i18n-hot-switch`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`modal-surface-contract`、`action-progress-label-contract`（登记两个被动 `Loading...`）、`trading-action-button-label-contract`、`mobile-data-presentation-contract`、`dialog-dismiss-control-contract`，以及 AGENTS.md 中视觉、格式、移动数据展示、桌面布局与下单、启动渲染、运行时翻译各组：全部通过。
 
 未运行：完整终端测试、`pnpm build`（分块环与包体预算）、浏览器与真机核对。惰性块是否让 Rollup 拆出新的共享块、启动预算的变化，要以集成时的生产构建为准。
@@ -165,6 +168,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-market-funding-history.test.tsx \
   src/lib/tests/funding-history-chart-model.test.ts \
   src/lib/tests/funding-history-panel.test.tsx \
+  src/lib/tests/funding-history-load-boundary.test.tsx \
   src/lib/tests/chart-panel.test.tsx \
   src/lib/tests/mobile-trade-layout-funding-tab.test.tsx \
   src/lib/tests/mobile-trade-layout-market-reset.test.tsx \
