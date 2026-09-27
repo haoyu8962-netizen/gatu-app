@@ -14,7 +14,8 @@ import {
 	type FundingComparisonPeriod,
 	type FundingComparisonSortDirection,
 	type FundingComparisonSortKey,
-	isFundingComparisonSnapshotFresh,
+	getFundingComparisonSnapshotRemainingMs,
+	observeFundingComparisonSnapshot,
 	parsePredictedFundings,
 	toggleFundingComparisonSort,
 } from "@/domain/market/funding-comparison";
@@ -28,8 +29,6 @@ import type {
 
 export type FundingComparisonPageState = "loading" | "error" | "empty" | "noResults" | "normal";
 type PerpCatalogStatus = "ready" | "loading" | "error";
-
-const MAX_TIMEOUT_MS = 2_147_483_647;
 
 interface PerpCatalogInput {
 	catalogState: MarketCatalogState;
@@ -67,42 +66,50 @@ function resolvePageState(input: PageStateInput): FundingComparisonPageState {
 	return "normal";
 }
 
-function createBoundaryClock(boundary: number | null) {
-	let snapshot = Date.now();
+function createSnapshotFreshnessClock(receivedAt: number) {
+	const receipt = observeFundingComparisonSnapshot(
+		receivedAt,
+		Date.now(),
+		performance.now(),
+		FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS,
+	);
+	let fresh = receipt !== null;
 	return {
-		getSnapshot: () => snapshot,
-		subscribe(onBoundaryReached: () => void) {
-			if (boundary === null || boundary <= snapshot) return () => {};
-			const deadline = boundary;
-			let reached = false;
+		getSnapshot: () => fresh,
+		subscribe(onExpired: () => void) {
+			if (receipt === null) return () => {};
 			let timeout: ReturnType<typeof setTimeout> | undefined;
-			function checkBoundary() {
-				if (reached) return;
+			function checkFreshness() {
+				if (!fresh || receipt === null) return;
 				if (timeout !== undefined) clearTimeout(timeout);
 				timeout = undefined;
-				const now = Date.now();
-				if (now < deadline) {
-					timeout = setTimeout(checkBoundary, Math.min(deadline - now, MAX_TIMEOUT_MS));
+				const remainingMs = getFundingComparisonSnapshotRemainingMs(
+					receipt,
+					Date.now(),
+					performance.now(),
+					FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS,
+				);
+				if (remainingMs > 0) {
+					timeout = setTimeout(checkFreshness, remainingMs);
 					return;
 				}
-				reached = true;
-				snapshot = now;
-				onBoundaryReached();
+				fresh = false;
+				onExpired();
 			}
-			checkBoundary();
-			window.addEventListener("focus", checkBoundary);
-			document.addEventListener("visibilitychange", checkBoundary);
+			checkFreshness();
+			window.addEventListener("focus", checkFreshness);
+			document.addEventListener("visibilitychange", checkFreshness);
 			return () => {
 				if (timeout !== undefined) clearTimeout(timeout);
-				window.removeEventListener("focus", checkBoundary);
-				document.removeEventListener("visibilitychange", checkBoundary);
+				window.removeEventListener("focus", checkFreshness);
+				document.removeEventListener("visibilitychange", checkFreshness);
 			};
 		},
 	};
 }
 
-function useNowAtBoundary(boundary: number | null): number {
-	const clock = useMemo(() => createBoundaryClock(boundary), [boundary]);
+function useSnapshotFreshness(receivedAt: number): boolean {
+	const clock = useMemo(() => createSnapshotFreshnessClock(receivedAt), [receivedAt]);
 	return useSyncExternalStore(clock.subscribe, clock.getSnapshot, clock.getSnapshot);
 }
 
@@ -119,16 +126,12 @@ export function useFundingComparisonController() {
 	const fundingsQuery = useInfo("predictedFundings", undefined, FUNDING_COMPARISON_QUERY_OPTIONS);
 	const { perpMarkets, catalogState, catalogQueries, retryMarketCatalog } = useMarketsInfo();
 	const navigateToMarket = useMarketNavigation();
-	const receivedAt = fundingsQuery.dataUpdatedAt;
-	const now = useNowAtBoundary(receivedAt > 0 ? receivedAt + FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS : null);
+	const snapshotFresh = useSnapshotFreshness(fundingsQuery.dataUpdatedAt);
 
 	const parsedSnapshot = parsePredictedFundings(fundingsQuery.data);
 	const malformed = fundingsQuery.data !== undefined && parsedSnapshot === null;
 	const fundingsFailed = fundingsQuery.isError || malformed;
-	const snapshotUsable =
-		parsedSnapshot !== null &&
-		fundingsQuery.fetchStatus !== "paused" &&
-		isFundingComparisonSnapshotFresh(receivedAt, now, FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS);
+	const snapshotUsable = parsedSnapshot !== null && fundingsQuery.fetchStatus !== "paused" && snapshotFresh;
 	const snapshot = snapshotUsable ? parsedSnapshot : null;
 	const catalogStatus = resolveCatalogStatus({
 		catalogState,

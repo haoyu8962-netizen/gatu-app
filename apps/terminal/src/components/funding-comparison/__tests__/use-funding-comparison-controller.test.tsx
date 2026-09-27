@@ -4,6 +4,7 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS, FUNDING_COMPARISON_QUERY_OPTIONS } from "@/config/funding-comparison";
+import { LIVE_MARK_MAX_STALE_MS, type MarkPriceStatus } from "@/domain/trade/market-price";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { useFundingComparisonController } from "../use-funding-comparison-controller";
 
@@ -15,8 +16,16 @@ interface FundingsQueryState {
 	refetch: () => Promise<unknown>;
 }
 
+interface PerpMarketState {
+	name: string;
+	openInterest?: string;
+	markPx?: string;
+	markPriceStatus: MarkPriceStatus;
+	markPriceReceivedAt: number | undefined;
+}
+
 interface MarketsState {
-	perpMarkets: { name: string; openInterest?: string; markPx?: string }[];
+	perpMarkets: PerpMarketState[];
 	catalogState: { status: "restoring" | "loading" | "paused" | "error" | "ready" };
 	catalogQueries: {
 		allPerpMetas: { status: "pending" | "error" | "success"; fetchStatus: "idle" | "fetching" | "paused" };
@@ -94,12 +103,26 @@ function fundings(data: unknown, overrides: Partial<FundingsQueryState> = {}): F
 	};
 }
 
+function perp(
+	name: string,
+	openInterest?: string,
+	markPx?: string,
+	overrides: Partial<PerpMarketState> = {},
+): PerpMarketState {
+	const live = openInterest !== undefined && markPx !== undefined;
+	return {
+		name,
+		openInterest,
+		markPx,
+		markPriceStatus: live ? "success" : "loading",
+		markPriceReceivedAt: live ? Date.now() : undefined,
+		...overrides,
+	};
+}
+
 function markets(overrides: Partial<MarketsState> = {}): MarketsState {
 	return {
-		perpMarkets: [
-			{ name: "BTC", openInterest: "10", markPx: "100000" },
-			{ name: "ETH", openInterest: "100", markPx: "4000" },
-		],
+		perpMarkets: [perp("BTC", "10", "100000"), perp("ETH", "100", "4000")],
 		catalogState: { status: "ready" },
 		catalogQueries: { allPerpMetas: { status: "success", fetchStatus: "idle" } },
 		retryMarketCatalog: vi.fn(async () => undefined),
@@ -308,6 +331,61 @@ describe("useFundingComparisonController", () => {
 		expect(current()).toMatchObject({ pageState: "loading", rows: [] });
 	});
 
+	it("keeps measuring the snapshot age on the monotonic clock after the wall clock is rolled back", () => {
+		vi.useFakeTimers({ now: 1_800_000_000_000 });
+		store.holder.state = { fundings: fundings([entry("BTC", "0.00001", "0.0001")]), markets: markets() };
+		render();
+		act(() => store.set({ fundings: { ...store.get().fundings, isError: true } }));
+
+		act(() => vi.advanceTimersByTime(60_000));
+		act(() => vi.setSystemTime(Date.now() - 60_000));
+		act(() => vi.advanceTimersByTime(FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS - 60_000 - 1));
+		expect(current()).toMatchObject({ pageState: "normal", totalRows: 1 });
+
+		act(() => vi.advanceTimersByTime(1));
+		expect(current()).toMatchObject({ pageState: "error", rows: [], totalRows: 0 });
+	});
+
+	it("drops the snapshot once 120 s of monotonic time pass after the wall clock went back an hour", () => {
+		vi.useFakeTimers({ now: 1_800_000_000_000 });
+		store.holder.state = { fundings: fundings([entry("BTC", "0.00001", "0.0001")]), markets: markets() };
+		render();
+		act(() => store.set({ fundings: { ...store.get().fundings, isError: true } }));
+
+		act(() => vi.setSystemTime(Date.now() - 3_600_000));
+		act(() => vi.advanceTimersByTime(FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS));
+		expect(current()).toMatchObject({ pageState: "error", rows: [] });
+	});
+
+	it.each([
+		["focus", () => window.dispatchEvent(new Event("focus"))],
+		["visibilitychange", () => document.dispatchEvent(new Event("visibilitychange"))],
+	])("rechecks the monotonic snapshot age on %s after a throttled timer and a wall-clock rollback", (_event, fire) => {
+		vi.useFakeTimers({ now: 1_800_000_000_000 });
+		store.holder.state = { fundings: fundings([entry("BTC", "0.00001", "0.0001")]), markets: markets() };
+		render();
+		act(() => vi.clearAllTimers());
+		act(() => vi.advanceTimersByTime(FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS));
+		act(() => vi.setSystemTime(Date.now() - FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS));
+		expect(current().pageState).toBe("normal");
+
+		act(fire);
+		expect(current()).toMatchObject({ pageState: "loading", rows: [] });
+	});
+
+	it("treats a wall clock that went back behind the receipt as an unusable snapshot on the next check", () => {
+		vi.useFakeTimers({ now: 1_800_000_000_000 });
+		store.holder.state = { fundings: fundings([entry("BTC", "0.00001", "0.0001")]), markets: markets() };
+		render();
+		act(() => vi.setSystemTime(Date.now() - 3_600_000));
+		expect(current().pageState).toBe("normal");
+
+		act(() => {
+			window.dispatchEvent(new Event("focus"));
+		});
+		expect(current()).toMatchObject({ pageState: "loading", rows: [] });
+	});
+
 	it("does not conclude an empty result from an aged empty snapshot", () => {
 		vi.useFakeTimers({ now: 1_800_000_000_000 });
 		store.holder.state = { fundings: fundings([]), markets: markets() };
@@ -360,7 +438,7 @@ describe("useFundingComparisonController", () => {
 		const coins = Array.from({ length: 30 }, (_, index) => `C${String(index).padStart(2, "0")}`);
 		store.holder.state = {
 			fundings: fundings(coins.map((coin) => entry(coin, "0.00001", "0.0001"))),
-			markets: markets({ perpMarkets: coins.map((coin) => ({ name: coin, openInterest: "1", markPx: "1" })) }),
+			markets: markets({ perpMarkets: coins.map((coin) => perp(coin, "1", "1")) }),
 		};
 		render();
 		expect(current()).toMatchObject({ page: 1, totalPages: 2, start: 1, end: 25 });
@@ -398,13 +476,59 @@ describe("useFundingComparisonController", () => {
 	it("shows the open-interest placeholder until the market context arrives", () => {
 		store.holder.state = {
 			fundings: fundings([entry("BTC", "0.00001", "0.0001")]),
-			markets: markets({ perpMarkets: [{ name: "BTC" }] }),
+			markets: markets({ perpMarkets: [perp("BTC")] }),
 		};
 		render();
 		expect(current().rows[0].openInterestUsd).toBeNull();
 
-		act(() => store.set({ markets: markets({ perpMarkets: [{ name: "BTC", openInterest: "2", markPx: "50000" }] }) }));
+		act(() => store.set({ markets: markets({ perpMarkets: [perp("BTC", "2", "50000")] }) }));
 		expect(current().rows[0].openInterestUsd).toBe("100000");
+	});
+
+	it("hides open interest while the market price is not live, sorts it last and keeps the funding rates", () => {
+		render();
+		const openInterestByCoin = () => current().rows.map((row) => [row.coin, row.openInterestUsd]);
+		expect(openInterestByCoin()).toEqual([
+			["BTC", "1000000"],
+			["ETH", "400000"],
+		]);
+
+		const unavailable: Partial<PerpMarketState>[] = [
+			{ markPriceStatus: "loading" },
+			{ markPriceStatus: "stale" },
+			{ markPriceStatus: "error" },
+			{ markPriceStatus: "idle" },
+			{ markPriceReceivedAt: undefined },
+			{ markPriceReceivedAt: Date.now() - LIVE_MARK_MAX_STALE_MS - 1 },
+			{ markPriceReceivedAt: Date.now() + 60_000 },
+		];
+		for (const overrides of unavailable) {
+			act(() =>
+				store.set({
+					markets: markets({ perpMarkets: [perp("BTC", "10", "100000", overrides), perp("ETH", "100", "4000")] }),
+				}),
+			);
+			expect(current().pageState).toBe("normal");
+			expect(openInterestByCoin()).toEqual([
+				["ETH", "400000"],
+				["BTC", null],
+			]);
+			expect(current().rows[1].rates.HlPerp.value).toBe("0.00008");
+			expect(current().rows[1].arbs.BinPerp?.value).toBe("0.00002");
+		}
+
+		act(() => current().onSort("openInterest"));
+		expect(current().sortDirection).toBe("ascending");
+		expect(openInterestByCoin()).toEqual([
+			["ETH", "400000"],
+			["BTC", null],
+		]);
+
+		act(() => store.set({ markets: markets() }));
+		expect(openInterestByCoin()).toEqual([
+			["ETH", "400000"],
+			["BTC", "1000000"],
+		]);
 	});
 
 	it("opens the trade route for a selected market", () => {
