@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["static-hosting", "docs-governance"],
-  "summary": "按用户选择（改成应用页、6 页全改）删除文档路由表面与 DocumentChrome：/docs /support /terms /privacy /risk /cookies 改为仪表盘路由，桌面用 TopNav/FooterBar、移动用 MobileHeader；只预渲染 SPA 壳，Node 静态页、CloudFront 请求函数与 SW（v10）不再区分文档页，deploy verify 改查法律页返回壳；ADR 0020。Cookie Policy 未进全局底栏（官方也没有；1001px 下会压住 ⌘K 按钮约 80px）。补记：照官方做法把 Cookie 入口放进隐私政策第 4 节，手机抽屉加 Docs/Support，sync 删除遗留的 <route>/index.html，verify 要求 /terms/index.html 返回 404。类型检查、Biome、CloudFront 测试 40 项、完整单测、生产构建及开发服务器浏览器检查的结果见正文；未发布，未做真机检查。",
+  "summary": "按用户选择（改成应用页、6 页全改）删除文档路由表面与 DocumentChrome：/docs /support /terms /privacy /risk /cookies 改为仪表盘路由，桌面用 TopNav/FooterBar、移动用 MobileHeader；只预渲染 SPA 壳，Node 静态页、CloudFront 请求函数与 SW（v10）不再区分文档页，deploy verify 改查法律页返回壳；ADR 0020。Cookie Policy 未进全局底栏（官方也没有；1001px 下会压住 ⌘K 按钮约 80px）。补记：照官方做法把 Cookie 入口放进隐私政策第 4 节，手机抽屉加 Docs/Support，sync 删除遗留的 <route>/index.html，verify 要求 /terms/index.html 返回 404（PR #47 第二轮 Codex 审查后改为用壳覆盖六页、verify 逐页核对）。类型检查、Biome、CloudFront 测试 40 项、完整单测、生产构建及开发服务器浏览器检查的结果见正文；未发布，未做真机检查。",
   "thread": null,
   "baseCommit": "8b9950ce",
-  "commits": ["2e6c5214"],
+  "commits": ["2e6c5214", "5a136d71", "a141f856"],
   "sources": [
     { "path": "docs/adr/0020-legal-pages-in-app-shell.md" },
     { "path": "apps/terminal/src/components/legal/legal-doc-page.tsx" },
@@ -78,6 +78,18 @@
 修复后验证（基线 `5a136d71` 加上本次未提交的改动）：`pnpm --filter @gatu/terminal typecheck` 通过；Biome 检查改动的代码文件通过；`pnpm test:cloudfront` 42 项通过；`pnpm --filter @gatu/terminal test` 602 个文件通过、1 个跳过，6877 项通过、1 项跳过，零失败；`pnpm build`（Node v24.15.0）退出码 0，只预渲染 1 页，bundle 总计 3,116,284 gzip 字节（比基线少 38,423），交易页启动 1,547,574 gzip 字节，内联脚本哈希为 2 页 3 个。没有用 Node 22.15 复测精确字节数。
 
 Codex 标为“无法确认”的：最终构建体积（它读到的 `.output` 是旧产物）、真实部署与 SW 跨版本、真机与阿拉伯语布局、历史验证结论是否属实。
+
+## 补记：PR #47 与第二轮 Codex 审查
+
+用户要求推送、向 `dev` 开 PR 并用 Codex 最新模型对抗审查。分支推送为 `claude/legal-pages-app-shell`，PR 为 https://github.com/zora4523-bot/gatu-app/pull/47。`~/.codex/models_cache.json` 中优先级最高的是 `gpt-6-astra`（codex-cli 0.154.0；npm 上最新为 0.157.1，没有升级）。审查范围 `8b9950ce..a141f856`，只读、medium，约 13.5 万 token。它无法通过代理读取 PR 描述。结论：2 项 P2、1 项 P3，上一轮 4 项修复中 2 项成立、2 项不完整。逐条核实后全部成立：
+
+- **P2 跨版本回滚**：`functions` 先发布请求函数，再用 `--origin` 抓取线上页面计算 CSP 哈希。回滚到 ADR 0020 之前的构建时，旧请求函数把 `/terms` 改写到已经被 `aws s3 rm` 删除的 `/terms/index.html`，页面 404，哈希采集也会抛错中断。→ 废弃“删除”方案（上文补记与 `5a136d71`、`a141f856` 的描述保留为历史），改为 `sync` 用本次 `_shell.html` 覆盖六个遗留页（`aws s3 cp`，HTML 缓存策略）。
+- **P2 verify 只看 Terms**：另外五页残留或回滚内容不对时检查不出来。→ 合并为一项检查 “legal pages match the build”，逐页请求 `/<route>` 和 `/<route>/index.html`，与本地的壳或本地页比对；测试覆盖部分回滚（Terms 和 Privacy 为旧页）、单页正文错误、单页 404。
+- **P3 选中项没有按压反馈**：`--fill-hover` 与 `--fill-weak` 在两套主题里都是同一个值（styles.css 296/298、490/492 行）。→ 选中项改用 `TOUCH_PRESS_FADE_CLASS`，其余项仍用 `TOUCH_PRESS_CLASS`，测试同时断言两种情况。
+- **覆盖缺口**（Codex 的变异推演）：一项预加载失败、另一项还在等待时，`Promise.all` 会提前揭示页面。→ 改为 `Promise.allSettled`，并补测试。
+- 另外修正了 `deploy.mjs` 中 `FUNCTIONS_DIR =resolve` 缺空格的格式问题。这是第一轮修复时我的编辑引入的；Biome 不检查 `deploy/` 目录，所以当时没有发现。
+
+修复后验证（基线 `a141f856` 加上本次未提交的改动）：`pnpm --filter @gatu/terminal typecheck` 退出码 0；Biome 检查改动的 4 个 TS 文件通过；`pnpm test:cloudfront` 42 项通过；`boot-legal-route`、`mobile-nav-drawer`、`legal-doc-page`、`touch-press-feedback-contract`、启动渲染组（`root-startup-fallback`、`root-route-transition`、`trade-terminal-page-boot`、`top-nav`、`dashboard-frame-view`）、i18n 两个契约测试、`sw-navigation-cache`，共 12 个文件、308 项通过。这轮没有重跑完整单测和生产构建（改动集中在 `deploy.mjs`、抽屉样式和 boot 的等待方式，都有直接测试覆盖），也没有对真实的桶执行覆盖命令。
 
 ## 后续与替代关系
 

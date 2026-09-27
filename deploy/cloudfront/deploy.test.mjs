@@ -88,7 +88,7 @@ test("reupload rewrites the metadata of the selected objects in the bucket, neve
 	assert.equal(buildReuploadCommands({ bucket: "b", files: many, prefixes: ["charting_library/"] }).length, 3);
 });
 
-test("an executing sync removes the retired document pages unless the build still ships them", () => {
+test("an executing sync overwrites the retired document pages with the shell unless the build still ships them", () => {
 	assert.deepEqual(RETIRED_PAGE_KEYS, [
 		"cookies/index.html",
 		"docs/index.html",
@@ -97,13 +97,17 @@ test("an executing sync removes the retired document pages unless the build stil
 		"support/index.html",
 		"terms/index.html",
 	]);
-	const commands = buildRetiredPageCommands({ bucket: "b", files: ["_shell.html", "assets/a.js"] });
+	const commands = buildRetiredPageCommands({ publicDir: "/out", bucket: "b", files: ["_shell.html", "assets/a.js"] });
 	assert.deepEqual(
-		commands.map((command) => command.slice(0, 3)),
-		RETIRED_PAGE_KEYS.map((key) => ["s3", "rm", `s3://b/${key}`]),
+		commands.map((command) => command.slice(0, 4)),
+		RETIRED_PAGE_KEYS.map((key) => ["s3", "cp", join("/out", "_shell.html"), `s3://b/${key}`]),
 	);
-	assert.ok(commands.every((command) => !command.includes("--recursive")));
-	const rollback = buildRetiredPageCommands({ bucket: "b", files: ["_shell.html", "terms/index.html"] });
+	for (const command of commands) {
+		assert.equal(command[command.indexOf("--cache-control") + 1], HTML_CACHE_CONTROL);
+		assert.equal(command[command.indexOf("--content-type") + 1], "text/html; charset=utf-8");
+		assert.ok(!command.includes("rm") && !command.includes("--recursive") && !command.includes("--delete"));
+	}
+	const rollback = buildRetiredPageCommands({ publicDir: "/out", bucket: "b", files: ["_shell.html", "terms/index.html"] });
 	assert.ok(!rollback.flat().includes("s3://b/terms/index.html"));
 	assert.equal(rollback.length, 5);
 });
@@ -169,6 +173,15 @@ function edgeSequence(route) {
 	return () => ({ ...route, headers: { ...route.headers, "x-cache": hits++ === 0 ? "Miss from cloudfront" : "Hit from cloudfront" } });
 }
 
+function legalRoutes(body) {
+	const routes = {};
+	for (const route of ["cookies", "docs", "privacy", "risk", "support", "terms"]) {
+		routes[`/${route}`] = { body };
+		routes[`/${route}/index.html`] = { body };
+	}
+	return routes;
+}
+
 function fakeFetch(routes) {
 	return async (url, init) => {
 		const path = new URL(url).pathname;
@@ -191,7 +204,7 @@ test("verification passes when the edge serves the build with the expected heade
 			[SHELL_PRELOADS.at(-1)]: { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
 			"/api/health": { status: 204, body: null, headers: { "cache-control": NO_STORE } },
 			"/charting_library/bundles/runtime.4d986d07cb97d8edacba.js": edgeSequence({ body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } }),
-			"/terms": { body: SHELL_HTML, headers },
+			...legalRoutes(SHELL_HTML),
 			"/build-meta.json": { body: JSON.stringify(BUILD_META) },
 			"/api/geo": { body: JSON.stringify({ country: "GB", proxy: false, tradeRestricted: false }) },
 			"/api/referral-geo": (init) => ({
@@ -215,46 +228,46 @@ test("verification passes when the edge serves the build with the expected heade
 		results.filter((result) => !result.ok),
 		[],
 	);
-	assert.equal(results.length, 16);
+	assert.equal(results.length, 15);
 	assert.equal(results.find((result) => result.name === "shell preloads the startup closure")?.detail, "24 links");
 	assert.equal(results.find((result) => result.name === "inline scripts are allowed by the edge policy")?.detail, "1 pages, 1 inline scripts, report-only");
 	assert.equal(results.find((result) => result.name === "image sources follow the edge config")?.detail, "3 sources, report-only");
 	assert.equal(results.find((result) => result.name.startsWith("chart entry"))?.detail, CHART_ENTRY);
 	assert.equal(results.find((result) => result.name === "shell repeats from the edge")?.detail, "Hit from cloudfront");
-	assert.equal(results.find((result) => result.name === "legal page navigation matches the build")?.detail, "shell");
-	assert.equal(results.find((result) => result.name === "retired document pages answer 404")?.detail, "404");
+	assert.equal(results.find((result) => result.name === "legal pages match the build")?.detail, "6 shell, 0 standalone");
 	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
 	assert.equal(results.find((result) => result.name === "build metadata parity")?.detail, "abc / r1 / sponsored-mainnet-deposits=off mobile-pairing=off");
 });
 
-test("verifying a rollback to a build that still ships standalone legal pages expects those pages", async () => {
+test("verifying a rollback checks each legal page against the page the build ships", async () => {
 	const publicDir = createPublicDir();
-	mkdirSync(join(publicDir, "terms"), { recursive: true });
-	writeFileSync(join(publicDir, "terms", "index.html"), "<html>terms</html>");
-	async function run(termsBody) {
+	for (const route of ["terms", "privacy"]) {
+		mkdirSync(join(publicDir, route), { recursive: true });
+		writeFileSync(join(publicDir, route, "index.html"), `<html>${route}</html>`);
+	}
+	async function run(overrides) {
 		const results = await verifyDeployment({
 			origin: "https://app.gatu.ai",
 			publicDir,
 			network: "mainnet",
 			fetchImpl: fakeFetch({
-				"/terms": { body: termsBody },
+				...legalRoutes(SHELL_HTML),
+				"/terms": { body: "<html>terms</html>" },
 				"/terms/index.html": { body: "<html>terms</html>" },
+				"/privacy": { body: "<html>privacy</html>" },
+				"/privacy/index.html": { body: "<html>privacy</html>" },
+				...overrides,
 				"*": { status: 404, body: "missing" },
 			}),
 		});
-		return {
-			navigation: results.find((result) => result.name === "legal page navigation matches the build"),
-			retired: results.find((result) => result.name === "retired document pages answer 404"),
-		};
+		return results.find((result) => result.name === "legal pages match the build");
 	}
-	const rollback = await run("<html>terms</html>");
-	assert.equal(rollback.navigation.ok, true);
-	assert.equal(rollback.navigation.detail, "standalone page (build predates ADR 0020)");
-	assert.equal(rollback.retired.ok, true);
-	assert.match(rollback.retired.detail, /^skipped/);
-	const mismatched = await run(SHELL_HTML);
-	assert.equal(mismatched.navigation.ok, false);
-	assert.match(mismatched.navigation.detail, /differs from local terms\/index\.html/);
+	const rollback = await run({});
+	assert.equal(rollback.ok, true);
+	assert.equal(rollback.detail, "4 shell, 2 standalone");
+	assert.match((await run({ "/privacy": { body: SHELL_HTML } })).detail, /^\/privacy body differs from local privacy\/index\.html/);
+	assert.match((await run({ "/risk/index.html": { body: "<html>old risk</html>" } })).detail, /^\/risk\/index\.html body differs from local _shell\.html/);
+	assert.match((await run({ "/docs/index.html": { status: 404, body: "missing" } })).detail, /^\/docs\/index\.html status 404/);
 });
 
 test("verification fails when the live origin exposes a gate the local build does not", async () => {
@@ -328,14 +341,13 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 	const failed = results.filter((result) => !result.ok).map((result) => result.name);
 	assert.deepEqual(failed, [
 		"shell for a trade navigation",
-		"legal page navigation matches the build",
+		"legal pages match the build",
 		"build metadata parity",
 		"geo endpoint answers with a real verdict",
 		"signed lambda post with a payload hash",
 		"referral deep link headers",
 		"pairing page headers",
 		"missing files stay 404",
-		"retired document pages answer 404",
 		"chart entry is immutable and preloaded by the shell",
 		"shell preloads the startup closure",
 		"inline scripts are allowed by the edge policy",

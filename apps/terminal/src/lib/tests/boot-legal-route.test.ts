@@ -56,6 +56,29 @@ describe("bootLegalRoute", () => {
 		expect(settled).toBe(true);
 	});
 
+	it("keeps waiting for the other preload when one fails", async () => {
+		let finishDashboard: () => void = () => {};
+		preload.page.mockRejectedValue(new Error("chunk failed"));
+		preload.dashboard.mockReturnValue(
+			new Promise<void>((resolve) => {
+				finishDashboard = resolve;
+			}),
+		);
+		const { bootLegalRoute } = await import("@/lib/navigation/boot-legal-route");
+
+		let settled = false;
+		const boot = bootLegalRoute().then(() => {
+			settled = true;
+		});
+		await vi.waitFor(() => expect(preload.page).toHaveBeenCalledTimes(1));
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(settled).toBe(false);
+
+		finishDashboard();
+		await boot;
+		expect(settled).toBe(true);
+	});
+
 	it("does not block the route when a preload fails", async () => {
 		preload.page.mockRejectedValue(new Error("chunk failed"));
 		preload.dashboard.mockResolvedValue();

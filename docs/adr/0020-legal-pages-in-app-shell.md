@@ -26,7 +26,7 @@
 5. **地区判定对所有入口预取。** 已没有不加载运行时的入口，`shouldPrefetchGeo` 删除，引导入口总是预取 `/api/geo`。
 6. **Cookie 说明从隐私政策进入。** 官方没有单独的 Cookie 页，也没有底栏链接；它的隐私政策里有一段 “Cookie Policy:”。gatu 保留更详细的 `/cookies` 页，但入口照官方放在隐私政策里：第 4 节（Cookies, Local Storage, and Analytics）末尾加一句链到 `https://app.gatu.ai/cookies`，写法与法律文档之间现有的绝对链接一致，终端和营销站都能打开；隐私政策的 Last Updated 改为 2026-09-27。全局底栏保持 Docs / Support / Terms / Privacy Policy / Risk Disclosure。
 7. **移动抽屉放 Docs 与 Support，不放法律页。** 官方手机抽屉在更多类链接之后放 Docs 和 Support，Terms、Privacy 在手机上没有导航入口。gatu 的 `MobileNavDrawer` 在 More 分组的 Statistics、API Wallet 之后加 Docs（`/docs`）和 Support（`/support`）；抽屉所有条目加上 `TOUCH_PRESS_CLASS` 按压反馈，选中态按不区分大小写、去掉尾斜杠的路径判断，与路由匹配一致；Terms、Privacy Policy、Risk Disclosure、Cookie Policy 仍不进抽屉，照样可以从法律接受弹窗、正文里的互相链接和 URL 进入。
-8. **发布时删除遗留的文档页。** 官方任何路径都返回同一个 SPA 壳（实测 `/terms/index.html` 和不存在的 `.js` 都返回壳，6,831 字节），不存在过期的独立页面。gatu 的 `sync --execute` 上传完成后用 `aws s3 rm` 删除 ADR 0020 之前构建留下的六个 `<route>/index.html`；本次构建仍包含的不删，以便回滚到旧构建；桶有版本控制，删除可以恢复。`verify` 按本地构建决定期望：构建不含 `terms/index.html` 时要求 `/terms` 返回壳、`/terms/index.html` 返回 404；回滚到仍包含独立页面的旧构建时，要求 `/terms` 与该页面一致，并跳过 404 检查（请求函数也要随之回滚）。
+8. **发布时用壳覆盖遗留的文档页。** 官方任何路径都返回同一个 SPA 壳（实测 `/terms/index.html` 和不存在的 `.js` 都返回壳，6,831 字节），不存在过期的独立页面。gatu 的 `sync --execute` 上传完成后，用本次构建的 `_shell.html` 覆盖 ADR 0020 之前构建留下的六个 `<route>/index.html`（`aws s3 cp`，HTML 缓存策略，`text/html`）；本次构建仍包含的保持原样，以便回滚。最初的实现是删除这六个文件（`5a136d71`），第二轮审查指出回滚时旧请求函数会先把 `/terms` 指到已删除的文件，页面 404，`functions --origin` 抓取线上页面计算 CSP 哈希时也会中断，所以改为覆盖。`verify` 逐页检查六个路径：本地构建不含该页时，`/<route>` 与 `/<route>/index.html` 都必须等于本地壳；含该页时（回滚），两者都必须等于本地的那一页。
 
 ## 备选方案
 
@@ -38,13 +38,14 @@
 | 把 Cookie 政策并入隐私政策正文，删除 `/cookies` | 未采用。这会实质改写法律文本，需要法律审阅；交叉引用已经能达到与官方相同的入口位置 |
 | 移动抽屉也放 Terms / Privacy | 未采用。官方手机抽屉没有这两项 |
 | 保留桶里的遗留文档页 | 未采用。导航虽然不会指向它们，但显式请求 `/terms/index.html` 仍会读到内容冻结的旧条款；两次发布后旧页的内联脚本哈希不再在 CSP 里，页面还会被拦截 |
+| 删除遗留文档页 | 最初采用，后被替代。跨 ADR 0020 回滚时旧请求函数先于旧页面上线，`/terms` 会 404，CSP 哈希采集也会中断；用壳覆盖没有这个窗口 |
 
 ## 后果与边界
 
 - **首屏**：直接打开这些页面时先是空白播报，等运行时、语言目录和字体就绪后才出现外壳和正文，与 Portfolio 相同；页面会加载 Privy，并请求 `/api/geo`。
 - **SEO 与无脚本访问**：HTML 中不再有预渲染的法律正文和逐页 `<title>`/描述，爬虫和禁用脚本的访问只拿到壳。页面标题和描述在客户端由 `buildPageHead` 更新。
 - **移动端**：移动页和其他仪表盘页一样没有页脚。抽屉里有 Docs 和 Support，法律页照官方不进抽屉（`mobile-nav-drawer.test.tsx` 断言如此）；原文档外壳在窄屏上的横向文档导航随之移除，法律页之间靠正文里的互相链接切换。
-- **部署**：`sync` 仍不带 `--delete`，只额外删除六个指名的遗留文档页；发布顺序不变（先发布函数，再同步，再失效与 `verify`）。CSP 内联脚本哈希只需覆盖壳。
+- **部署**：`sync` 仍不带 `--delete`，也不删除对象，只额外用壳覆盖六个指名的遗留文档页；发布顺序不变（先发布函数，再同步，再失效与 `verify`）。CSP 内联脚本哈希只需覆盖壳。
 - **浏览器缓存**：已安装 v9 Service Worker 的浏览器，在新 SW 激活前的一次导航可能仍从 `documents-v9` 返回旧文档页；v10 激活时会删除它。
 
 ## 证据

@@ -10,9 +10,6 @@ import { settleWithinBudget, TRADE_ROUTE_REVEAL_BUDGET_MS } from "@/lib/trade/tr
 export function bootLegalRoute(): Promise<void> {
 	if (typeof window === "undefined") return Promise.resolve();
 	const page = import("@/components/legal/legal-doc-page").then((module) => module.preloadLegalDocPage());
-	const preloads = Promise.all([bootDashboardRoute(), page]).then(
-		() => undefined,
-		() => undefined,
-	);
+	const preloads = Promise.allSettled([bootDashboardRoute(), page]).then(() => undefined);
 	return settleWithinBudget(preloads, TRADE_ROUTE_REVEAL_BUDGET_MS);
 }

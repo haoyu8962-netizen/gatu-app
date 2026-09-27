@@ -112,24 +112,31 @@ export function buildSyncCommands({ publicDir, bucket, files }) {
 
 /**
  * Standalone document pages that builds before ADR 0020 prerendered. Navigations reach the shell
- * now, but a file-like request such as `/terms/index.html` would still read the frozen copy, so an
- * executing sync removes them once the new HTML is in place. A build that still ships one keeps it,
- * and the versioned bucket lets a rollback restore them.
+ * now, but a file-like request such as `/terms/index.html` would still read the frozen copy. An
+ * executing sync overwrites each of them with this build's shell instead of deleting it, so every
+ * legal path answers the shell as on the official terminal, and a rollback whose older request
+ * function still rewrites `/terms` to `/terms/index.html` keeps working until the older pages are
+ * uploaded again. A build that still ships one of these pages keeps its own copy.
  */
 export const RETIRED_PAGE_KEYS = ["cookies", "docs", "privacy", "risk", "support", "terms"].map(
 	(route) => `${route}/index.html`,
 );
 
-export function buildRetiredPageCommands({ bucket, files }) {
+export function buildRetiredPageCommands({ publicDir, bucket, files }) {
 	return RETIRED_PAGE_KEYS.filter((key) => !files.includes(key)).map((key) => [
 		"s3",
-		"rm",
+		"cp",
+		join(publicDir, "_shell.html"),
 		`s3://${bucket}/${key}`,
-		"--only-show-errors",
+		"--cache-control",
+		HTML_CACHE_CONTROL,
+		"--content-type",
+		"text/html; charset=utf-8",
+		"--no-progress",
 	]);
 }
 
-const FUNCTIONS_DIR =resolve(fileURLToPath(new URL(".", import.meta.url)), "functions");
+const FUNCTIONS_DIR = resolve(fileURLToPath(new URL(".", import.meta.url)), "functions");
 export const RESPONSE_FUNCTION_NAME = "gatu-terminal-response";
 export const CLOUDFRONT_FUNCTIONS = [
 	{ name: "gatu-terminal-request", file: "terminal-request.js" },
@@ -261,8 +268,6 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 	const base = origin.replace(/\/+$/, "");
 	const expectedApiOrigin = network === "testnet" ? "https://api.hyperliquid-testnet.xyz" : "https://api.hyperliquid.xyz";
 	const shell = readFileSync(join(publicDir, "_shell.html"));
-	const legacyTermsFile = join(publicDir, "terms", "index.html");
-	const legacyTerms = existsSync(legacyTermsFile) ? readFileSync(legacyTermsFile) : null;
 	const buildMeta = JSON.parse(readFileSync(join(publicDir, "build-meta.json"), "utf8"));
 	const results = [];
 	async function check(name, run) {
@@ -286,16 +291,22 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(link.includes(`<${expectedApiOrigin}>`) && link.includes("preconnect"), `missing ${expectedApiOrigin} preconnect`);
 		return `csp ok, preconnect ${expectedApiOrigin}`;
 	});
-	await check("legal page navigation matches the build", async () => {
-		const response = await fetchImpl(`${base}/terms`, { headers: { accept: "text/html" } });
-		expect(response.status === 200, `status ${response.status}`);
-		const body = sha256(Buffer.from(await response.arrayBuffer()));
-		if (legacyTerms) {
-			expect(body === sha256(legacyTerms), "body differs from local terms/index.html");
-			return "standalone page (build predates ADR 0020)";
+	await check("legal pages match the build", async () => {
+		const summary = { shell: 0, standalone: 0 };
+		for (const key of RETIRED_PAGE_KEYS) {
+			const localPage = join(publicDir, key);
+			const standalone = existsSync(localPage);
+			const expected = sha256(standalone ? readFileSync(localPage) : shell);
+			const expectedName = standalone ? `local ${key}` : "local _shell.html";
+			const route = `/${key.slice(0, -"/index.html".length)}`;
+			for (const path of [route, `/${key}`]) {
+				const response = await fetchImpl(`${base}${path}`, { headers: { accept: "text/html" } });
+				expect(response.status === 200, `${path} status ${response.status}`);
+				expect(sha256(Buffer.from(await response.arrayBuffer())) === expected, `${path} body differs from ${expectedName}`);
+			}
+			summary[standalone ? "standalone" : "shell"] += 1;
 		}
-		expect(body === sha256(shell), "body differs from local _shell.html");
-		return "shell";
+		return `${summary.shell} shell, ${summary.standalone} standalone`;
 	});
 	await check("build metadata parity", async () => {
 		const response = await fetchImpl(`${base}/build-meta.json`);
@@ -356,12 +367,6 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(chart.status === 404, `chart status ${chart.status}`);
 		const serverFn = await fetchImpl(`${base}/_serverFn/abc`);
 		expect(serverFn.status === 404, `server function status ${serverFn.status}`);
-	});
-	await check("retired document pages answer 404", async () => {
-		if (legacyTerms) return "skipped: the build still ships terms/index.html";
-		const response = await fetchImpl(`${base}/terms/index.html`, { headers: { accept: "text/html" } });
-		expect(response.status === 404, `status ${response.status}`);
-		return "404";
 	});
 	await check("chart entry is immutable and preloaded by the shell", async () => {
 		const href = /<link rel="preload" href="(\/charting_library\/charting_library\.[0-9a-f]{16}\.js)" as="script"/.exec(shell.toString("utf8"))?.[1];
@@ -668,7 +673,7 @@ async function main() {
 			for (const command of buildSyncCommands({ publicDir, bucket, files })) {
 				runAws(command, options.execute);
 			}
-			for (const command of buildRetiredPageCommands({ bucket, files })) {
+			for (const command of buildRetiredPageCommands({ publicDir, bucket, files })) {
 				runAws(command, options.execute);
 			}
 			if (options.execute) {

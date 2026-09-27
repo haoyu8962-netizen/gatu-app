@@ -4,7 +4,7 @@ import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
-import { TOUCH_PRESS_CLASS } from "@/components/ui/touch-press";
+import { TOUCH_PRESS_CLASS, TOUCH_PRESS_FADE_CLASS } from "@/components/ui/touch-press";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -40,8 +40,7 @@ export function MobileNavDrawer() {
 	function getNavLinkClass(active: boolean): string {
 		return cn(
 			"rounded-8 px-3 py-2.5 text-sm hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-			TOUCH_PRESS_CLASS,
-			active ? "bg-fill-hover font-medium text-action" : "text-fg",
+			active ? cn("bg-fill-hover font-medium text-action", TOUCH_PRESS_FADE_CLASS) : cn("text-fg", TOUCH_PRESS_CLASS),
 		);
 	}
 

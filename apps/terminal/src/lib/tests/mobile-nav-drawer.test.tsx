@@ -266,7 +266,13 @@ describe("MobileNavDrawer", () => {
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
 		const links = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')];
 		expect(links.length).toBeGreaterThan(0);
-		for (const link of links) expect(link.className, link.textContent ?? "").toContain("active:bg-fill-weak");
+		for (const link of links) {
+			const pressFeedback = link.getAttribute("aria-current") === "page" ? "active:opacity-60" : "active:bg-fill-weak";
+			expect(link.className, link.textContent ?? "").toContain(pressFeedback);
+		}
+		const current = links.find((link) => link.getAttribute("aria-current") === "page");
+		expect(current?.className).toContain("bg-fill-hover");
+		expect(current?.className).not.toContain("active:bg-fill-weak");
 	});
 
 	it.each([
