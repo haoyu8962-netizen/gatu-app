@@ -95,7 +95,7 @@ Routes live in [src/routes/](src/routes). URL parameters below use `:name`; file
 | `/` | Redirect to the selected/default trade market with `scope=all` |
 | `/trade`, `/trade/:symbol`, `/trade/:base/:quote` | Shared terminal parent with canonical market routes |
 | `/perp`, `/spot`, `/builders-perp`, `/builders-perp/:dex` | Category entry routes sharing the terminal page |
-| `/portfolio`, `/leaderboard`, `/referrals`, `/api-wallet` | Account and discovery dashboards |
+| `/portfolio`, `/leaderboard`, `/fundingComparison`, `/referrals`, `/api-wallet` | Account and discovery dashboards; `/fundingComparison` compares predicted Hyperliquid, Binance and Bybit funding for main perp markets ([funding comparison](../../docs/funding-comparison.md)) |
 | `/vaults`, `/vaults/:vaultAddress`, `/staking` | Vault and staking pages |
 | `/tradeHistory/:address`, `/fundingHistory/:address`, `/historicalOrders/:address` | Address-scoped history pages |
 | `/docs`, `/support`, `/terms`, `/privacy`, `/risk`, `/cookies` | Document pages that do not load the wallet runtime on direct entry |

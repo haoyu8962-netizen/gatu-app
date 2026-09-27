@@ -788,8 +788,12 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 
 - `config/desktop-nav.ts` is the single source of the desktop entries: `placement` is `primary`
   (always top level), `lower` (collapsible) or `more` (menu only); an entry has a router `path`,
-  an external `href`, or `soon: true` for a disabled placeholder. Statistics and API Wallet live
-  there too. `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
+  an external `href`, or `soon: true` for a disabled placeholder. The `more` entries live there
+  too, in this order: Funding Comparison (`/fundingComparison`, see
+  [funding comparison](funding-comparison.md)), Statistics and API Wallet; collapsed entries appear
+  before them. The mobile drawer's More section lists the same three entries in the same order;
+  `desktop-nav-layout`, `top-nav` and `mobile-nav-drawer` pin both lists.
+  `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
   `resolveDesktopNavLayout` and the current entry with `isDesktopNavItemActive`; `TopNav` only
   renders that result and mounts one More dropdown.
 - Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
@@ -823,6 +827,8 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `apps/terminal/src/lib/navigation/desktop-nav.ts`
 - `apps/terminal/src/components/trade/header/top-nav.tsx`
 - `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
+- `apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx`
+- `apps/terminal/src/lib/tests/mobile-nav-drawer.test.tsx`
 - `apps/terminal/src/lib/navigation/boot-dashboard-route.ts`
 - `apps/terminal/src/lib/tests/preload-trade-terminal-surface.test.ts`
 
