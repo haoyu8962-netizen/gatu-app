@@ -1,10 +1,13 @@
 import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MalformedHistoryPageError, waitForHistoryRetry } from "@/lib/trade/history-pagination";
 import { getItemWeightedInfoRequestWeight, INFO_REST_WEIGHT_LIMIT_PER_MINUTE } from "@/lib/trade/info-weight-pacer";
 import {
+	clearTwapSliceFillsExportPacersForTests,
+	createTwapSliceFillsExportPacer,
 	fetchUserTwapSliceFillHistory,
 	filterNonTwapUserFills,
+	getTwapSliceFillsExportPacer,
 	getUserFillNotional,
 	hasUserFillExplorerTransaction,
 	isValidUserFillHistoryItem,
@@ -146,7 +149,11 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		);
 		const fetchPage = serveAscendingPages(entries, 2_000);
 
-		const result = await fetchUserTwapSliceFillHistory(fetchPage, { endTime, signal: new AbortController().signal });
+		const result = await fetchUserTwapSliceFillHistory(fetchPage, {
+			endTime,
+			pacer: createTwapSliceFillsExportPacer(),
+			signal: new AbortController().signal,
+		});
 
 		expect(fetchPage.mock.calls.map(([startTime, pageEndTime]) => [startTime, pageEndTime])).toEqual([
 			[0, endTime],
@@ -165,7 +172,11 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		const entries = Array.from({ length: 1_200 }, (_, index) => createSliceFill(index + 1, index + 1));
 		const fetchPage = serveAscendingPages(entries, 500);
 
-		const result = await fetchUserTwapSliceFillHistory(fetchPage, { endTime, signal: new AbortController().signal });
+		const result = await fetchUserTwapSliceFillHistory(fetchPage, {
+			endTime,
+			pacer: createTwapSliceFillsExportPacer(),
+			signal: new AbortController().signal,
+		});
 
 		expect(fetchPage.mock.calls.map(([startTime]) => startTime)).toEqual([0, 500, 999, 1_200]);
 		expect(result.items).toHaveLength(1_200);
@@ -176,7 +187,11 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		const fetchPage = serveAscendingPages([], 2_000);
 
 		await expect(
-			fetchUserTwapSliceFillHistory(fetchPage, { endTime, signal: new AbortController().signal }),
+			fetchUserTwapSliceFillHistory(fetchPage, {
+				endTime,
+				pacer: createTwapSliceFillsExportPacer(),
+				signal: new AbortController().signal,
+			}),
 		).resolves.toEqual({ items: [], truncated: false });
 		expect(fetchPage).toHaveBeenCalledTimes(1);
 	});
@@ -185,7 +200,11 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		const entry: TwapSliceFill = { fill: createFill({ twapId: null }), twapId: 0 };
 		const fetchPage = serveAscendingPages([entry], 2_000);
 
-		const result = await fetchUserTwapSliceFillHistory(fetchPage, { endTime, signal: new AbortController().signal });
+		const result = await fetchUserTwapSliceFillHistory(fetchPage, {
+			endTime,
+			pacer: createTwapSliceFillsExportPacer(),
+			signal: new AbortController().signal,
+		});
 
 		expect(result.items).toEqual([{ ...entry.fill, twapId: 0 }]);
 	});
@@ -199,7 +218,11 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		const fetchPage = vi.fn(async (startTime: number) => (startTime === 0 ? page : []));
 
 		await expect(
-			fetchUserTwapSliceFillHistory(fetchPage, { endTime, signal: new AbortController().signal }),
+			fetchUserTwapSliceFillHistory(fetchPage, {
+				endTime,
+				pacer: createTwapSliceFillsExportPacer(),
+				signal: new AbortController().signal,
+			}),
 		).rejects.toBeInstanceOf(MalformedHistoryPageError);
 	});
 
@@ -208,7 +231,11 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		const fetchPage = vi.fn(async (startTime: number) => (startTime === 0 ? firstPage : [createSliceFill(3, 1_500)]));
 
 		await expect(
-			fetchUserTwapSliceFillHistory(fetchPage, { endTime, signal: new AbortController().signal }),
+			fetchUserTwapSliceFillHistory(fetchPage, {
+				endTime,
+				pacer: createTwapSliceFillsExportPacer(),
+				signal: new AbortController().signal,
+			}),
 		).rejects.toBeInstanceOf(MalformedHistoryPageError);
 	});
 
@@ -217,8 +244,8 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		const fetchPage = serveAscendingPages(entries, 2_000);
 
 		const result = await fetchUserTwapSliceFillHistory(fetchPage, {
-			...createPacingClock(),
 			endTime,
+			pacer: createTwapSliceFillsExportPacer(createPacingClock()),
 			signal: new AbortController().signal,
 		});
 
@@ -235,6 +262,7 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		const result = await fetchUserTwapSliceFillHistory(fetchPage, {
 			endTime,
 			maxPages: 2,
+			pacer: createTwapSliceFillsExportPacer(),
 			signal: new AbortController().signal,
 		});
 
@@ -256,8 +284,8 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		});
 
 		const result = await fetchUserTwapSliceFillHistory(fetchPage, {
-			...clock,
 			endTime: 40_000,
+			pacer: createTwapSliceFillsExportPacer(clock),
 			signal: new AbortController().signal,
 		});
 
@@ -285,8 +313,8 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		const entries = Array.from({ length: 3_688 }, (_, index) => createSliceFill(index + 1, index + 1));
 
 		await fetchUserTwapSliceFillHistory(serveAscendingPages(entries, 2_000), {
-			...clock,
 			endTime,
+			pacer: createTwapSliceFillsExportPacer(clock),
 			signal: new AbortController().signal,
 		});
 
@@ -303,7 +331,11 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		});
 
 		await expect(
-			fetchUserTwapSliceFillHistory(fetchPage, { endTime, now: () => 0, signal: controller.signal, wait }),
+			fetchUserTwapSliceFillHistory(fetchPage, {
+				endTime,
+				pacer: createTwapSliceFillsExportPacer({ now: () => 0, wait }),
+				signal: controller.signal,
+			}),
 		).rejects.toMatchObject({ name: "AbortError" });
 		expect(wait).toHaveBeenCalledTimes(1);
 		expect(fetchPage).toHaveBeenCalledTimes(6);
@@ -318,10 +350,114 @@ describe("fetchUserTwapSliceFillHistory", () => {
 		});
 
 		await expect(
-			fetchUserTwapSliceFillHistory(fetchPage, { endTime, signal: controller.signal }),
+			fetchUserTwapSliceFillHistory(fetchPage, {
+				endTime,
+				pacer: createTwapSliceFillsExportPacer(),
+				signal: controller.signal,
+			}),
 		).rejects.toMatchObject({
 			name: "AbortError",
 		});
 		expect(fetchPage).toHaveBeenCalledTimes(1);
+	});
+
+	it("keeps an aborted export's weight in its pacer, so the next export waits before its first request", async () => {
+		const clock = createPacingClock();
+		const firstRun = new AbortController();
+		const pacer = createTwapSliceFillsExportPacer({
+			now: clock.now,
+			wait: (delayMs, signal) => {
+				if (firstRun.signal.aborted) return clock.wait(delayMs, signal);
+				firstRun.abort();
+				return waitForHistoryRetry(delayMs, signal);
+			},
+		});
+		const entries = Array.from({ length: 12_001 }, (_, index) => createSliceFill(index + 1, index + 1));
+		const requests: { time: number; weight: number }[] = [];
+		const fetchPage = vi.fn(async (startTime: number, pageEndTime: number, _signal: AbortSignal) => {
+			const page = entries
+				.filter((entry) => entry.fill.time >= startTime && entry.fill.time <= pageEndTime)
+				.slice(0, 2_000);
+			requests.push({ time: clock.now(), weight: getItemWeightedInfoRequestWeight(page.length) });
+			return page;
+		});
+
+		await expect(
+			fetchUserTwapSliceFillHistory(fetchPage, { endTime, pacer, signal: firstRun.signal }),
+		).rejects.toMatchObject({ name: "AbortError" });
+		expect(requests.map((request) => request.time)).toEqual(Array.from({ length: 6 }, () => 0));
+
+		const result = await fetchUserTwapSliceFillHistory(fetchPage, {
+			endTime,
+			pacer,
+			signal: new AbortController().signal,
+		});
+
+		expect(clock.waits).toEqual([60_000, 60_000]);
+		expect(requests.slice(6).map((request) => request.time)).toEqual([
+			...Array.from({ length: 6 }, () => 60_000),
+			120_000,
+			120_000,
+		]);
+		for (const request of requests) {
+			const windowWeight = requests
+				.filter((other) => other.time > request.time - 60_000 && other.time <= request.time)
+				.reduce((sum, other) => sum + other.weight, 0);
+			expect(windowWeight).toBeLessThanOrEqual(TWAP_SLICE_FILLS_EXPORT_WEIGHT_PER_MINUTE);
+		}
+		expect(result.items).toHaveLength(TWAP_SLICE_FILLS_EXPORT_LIMIT);
+	});
+
+	it("paces and records every attempt, counting one that returns no page at the full-page reserve", async () => {
+		const pacer = { acquire: vi.fn(async (_signal: AbortSignal) => {}), record: vi.fn((_weight: number) => {}) };
+		const rateLimited = Object.assign(new Error("rate limited"), {
+			response: { headers: { get: () => "0" }, status: 429 },
+		});
+		const fetchPage = vi
+			.fn()
+			.mockRejectedValueOnce(rateLimited)
+			.mockResolvedValueOnce([createSliceFill(1, 1_000)])
+			.mockResolvedValue([]);
+
+		const result = await fetchUserTwapSliceFillHistory(fetchPage, {
+			endTime,
+			pacer,
+			signal: new AbortController().signal,
+		});
+
+		expect(result.items).toHaveLength(1);
+		expect(fetchPage).toHaveBeenCalledTimes(3);
+		expect(pacer.acquire).toHaveBeenCalledTimes(3);
+		expect(pacer.record.mock.calls).toEqual([[120], [21], [20]]);
+	});
+
+	it("records an attempt aborted in flight at the full-page reserve", async () => {
+		const pacer = { acquire: vi.fn(async (_signal: AbortSignal) => {}), record: vi.fn((_weight: number) => {}) };
+		const controller = new AbortController();
+		const fetchPage = vi.fn(
+			(_startTime: number, _endTime: number, signal: AbortSignal) =>
+				new Promise<UserTwapSliceFillsResponse>((_resolve, reject) => {
+					signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+					controller.abort();
+				}),
+		);
+
+		await expect(
+			fetchUserTwapSliceFillHistory(fetchPage, { endTime, pacer, signal: controller.signal }),
+		).rejects.toMatchObject({ name: "AbortError" });
+		expect(pacer.record.mock.calls).toEqual([[120]]);
+	});
+});
+
+describe("getTwapSliceFillsExportPacer", () => {
+	afterEach(() => {
+		clearTwapSliceFillsExportPacersForTests();
+	});
+
+	it("shares one export pacer per network for the life of the tab", () => {
+		const mainnetPacer = getTwapSliceFillsExportPacer("mainnet");
+
+		expect(getTwapSliceFillsExportPacer("mainnet")).toBe(mainnetPacer);
+		expect(getTwapSliceFillsExportPacer("testnet")).not.toBe(mainnetPacer);
 	});
 });

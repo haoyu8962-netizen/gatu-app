@@ -5,11 +5,11 @@ import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { buildCsvRows, downloadCsv } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { getInfoClient, useMarkets } from "@/lib/hyperliquid";
-import { fetchHistoryPageWithRetry } from "@/lib/trade/history-pagination";
+import { getNetwork } from "@/lib/network";
 import {
 	fetchUserTwapSliceFillHistory,
+	getTwapSliceFillsExportPacer,
 	hasUserFillExplorerTransaction,
-	TWAP_SLICE_FILLS_EXPORT_RATE_LIMIT_FALLBACK_MS,
 } from "@/lib/trade/user-fills";
 import { isHistoryAbortError, useHistoryExportRunner } from "./use-history-csv-export";
 
@@ -41,13 +41,9 @@ export function useTwapFillHistoryCsv(): TwapFillHistoryCsvResult {
 				const client = getInfoClient();
 				const endTime = Date.now();
 				return fetchUserTwapSliceFillHistory(
-					(startTime, pageEndTime, pageSignal) =>
-						fetchHistoryPageWithRetry(
-							(requestSignal) =>
-								client.userTwapSliceFillsByTime({ endTime: pageEndTime, startTime, user: address }, requestSignal),
-							{ rateLimitFallbackMs: TWAP_SLICE_FILLS_EXPORT_RATE_LIMIT_FALLBACK_MS, signal: pageSignal },
-						),
-					{ endTime, signal },
+					(startTime, pageEndTime, requestSignal) =>
+						client.userTwapSliceFillsByTime({ endTime: pageEndTime, startTime, user: address }, requestSignal),
+					{ endTime, pacer: getTwapSliceFillsExportPacer(getNetwork()), signal },
 				);
 			});
 			if (!history) {
