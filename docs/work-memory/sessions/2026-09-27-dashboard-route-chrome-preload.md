@@ -7,13 +7,14 @@
   "kind": "task",
   "status": "verified",
   "topics": ["static-hosting"],
-  "summary": "九个仪表盘页面改为从共享的 components/dashboard/dashboard-chrome.tsx 渲染 DashboardHeader、FooterBar 与 GlobalModals，bootDashboardRoute 动态导入该模块并在 1500 ms 上限内等待账户菜单、全局弹窗宿主与桌面页脚。只共享惰性包装的首版使 Rollup 拆分页面与交易页共享的头部块，桌面运行时启动超预算（+10,473 / 上限 10,000）；把头部并入同一模块后所有预算指标都低于基线构建。首帧测试、三处变异检查、完整单测 602 文件 6,878 项、Node 22.15 生产构建通过；未做浏览器冷加载时间线实测。",
+  "summary": "九个仪表盘页面改为从共享的 components/dashboard/dashboard-chrome.tsx 渲染 DashboardHeader、FooterBar 与 GlobalModals，bootDashboardRoute 动态导入该模块并在 1500 ms 上限内等待账户菜单、全局弹窗宿主与桌面页脚。只共享惰性包装的首版使 Rollup 拆分页面与交易页共享的头部块，桌面运行时启动超预算（+10,473 / 上限 10,000）；把头部并入同一模块后所有预算指标都低于基线构建。首帧测试、三处变异检查、完整单测 602 文件 6,878 项、Node 22.15 生产构建通过；未做浏览器冷加载时间线实测。补记：gpt-6-astra 只读对抗审查 48b7d386 报 2 项 P2（/join/$code 邀请路由漏接预加载；断点只在预加载开始时读一次）与 2 项 P3（CHANGELOG 夸大；一文件多个可渲染导出），前三项修复并以变异钉住，同时消除 boot 测试在并行负载下的 5 s 超时。",
   "thread": null,
   "baseCommit": "e3b5dd82",
-  "commits": [],
+  "commits": ["48b7d386"],
   "sources": [
     { "path": "apps/terminal/src/components/dashboard/dashboard-chrome.tsx" },
     { "path": "apps/terminal/src/lib/navigation/boot-dashboard-route.ts" },
+    { "path": "apps/terminal/src/routes/join.$code.tsx" },
     { "path": "apps/terminal/src/lib/tests/dashboard-chrome.test.tsx" },
     { "path": "apps/terminal/src/lib/tests/boot-dashboard-route.test.ts" },
     { "path": "apps/terminal/src/lib/tests/dashboard-frame-view.test.tsx" },
@@ -57,5 +58,22 @@
 
 ## 后续与替代关系
 
-- `worktree-06` 合入后，法律页的 `preloadLegalDocPage` 可以改用 `dashboard-chrome.tsx`：它渲染同样的头部、页脚和弹窗宿主，`bootLegalRoute` 也可以直接复用 `bootDashboardRoute`。合并时 `trade-route-boot.ts` 的 `settleWithinBudget` 导出两边相同，不会冲突。
+- `worktree-06` 合入时，法律页要整体迁移：页面改用 `DashboardHeader` 和共享的 `FooterBar`/`GlobalModals`，删除 `preloadLegalDocPage` 的页内实例，`bootLegalRoute` 直接复用 `bootDashboardRoute`。只改预加载目标、保留页内包装不行。该分支把 `legal` 加进了 `dashboard-frame-view.test.tsx` 的页面遍历，而本提交要求每个页面源码含 `DashboardHeader`，两边机械合并会让测试失败。`trade-route-boot.ts` 的 `settleWithinBudget` 导出两边相同。
 - Portfolio 的 `PositionsPanel` 仍是惰性加载，用骨架作 fallback，不在本次范围内。
+
+## Codex 对抗审查与修复（补记，2026-09-27）
+
+用 `codex exec -m gpt-6-astra -s read-only`（medium）对 48b7d386 做只读对抗审查，约 8.2 万 token。报告结论：无 P0/P1；共享实例预加载机制成立（核对了 TanStack `lazyRouteComponent` 预加载成功后写入闭包 `comp`、渲染跳过 `use(load())`）。以下各项已逐条自行核实：
+
+- P2，成立：`routes/join.$code.tsx` 渲染 `ReferralsPage`，但 `beforeLoad` 只校验邀请码。修复为校验通过后 `return bootDashboardRoute()`，无效邀请码仍立即 `notFound()`。
+- P2，成立：`preloadDashboardChrome` 只在开始时读一次断点，等待期间从移动端变为桌面时会漏掉页脚。修复为其余片段解析后若已是桌面再补预加载页脚；开始时就是桌面的只预加载一次。
+- P3，成立：CHANGELOG 把"宿主预加载"写成了"弹窗已加载、Ctrl/⌘K 立即可用"。实际上 CommandMenu 仍在首次使用时加载；法律接受分支不挂快捷键监听（`global-modals.tsx`）；1.5 秒上限此前只属于交易路由。已改写。
+- P3，不改：`dashboard-chrome.tsx` 导出一个声明组件 `DashboardHeader` 和两个惰性实例常量，与 `lazy-global-modals.ts` 导出多个惰性实例的既有做法一致。头部必须留在该模块里，否则分块预算回退（见上文）。
+- 变异推演指出测试钉不住的两项已补测试：删除 `preloadTopNav()`、断点查询字符串写错。另三项（`enableLegalGate` 值、api-wallet `!isFixture`、`typeof window` 保护）是本提交之前就有的行为，未扩大范围。
+
+修复后的验证（同一工作区，未提交前）：
+
+- 变异检查全部被抓住：去掉 `preloadTopNav`、错误断点字符串、去掉断点复核、`/join/$code` 去掉 boot，各致 1–2 项失败，改完即还原。
+- Node 22.15 `pnpm build` 通过全部预算：总 gzip 3,113,483；trade 静态 1,546,433；桌面运行时 +9,445；移动 +7,736。typecheck 通过。
+- 第一轮完整单测有 1 项失败：`boot-dashboard-route` 首个用例在并行负载下超过 5 s。该文件导入了 `trade-route-boot` 的真实依赖图，单独运行也要约 2.4 s，48b7d386 就有这个隐患，之前那轮完整单测是碰巧通过。已把 `app-runtime-overlays`、`market-catalog-bootstrap`、`orderbook-boot` 换成桩，保留真实的 `settleWithinBudget`，单文件耗时降到 128 ms。修复后的完整单测结果见下一条。
+- 修复后完整 `pnpm --filter @gatu/terminal test`：602 文件通过、1 跳过，6,881 项通过、1 跳过。Biome 通过。仍未做浏览器冷加载时间线与真机检查。

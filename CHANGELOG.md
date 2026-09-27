@@ -8,10 +8,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
-- Dashboard pages (Portfolio, Vaults, Staking, Referrals, Leaderboard, API wallet and the
-  history pages) now reveal with their footer and the global dialogs already loaded when opened
-  directly, so the footer no longer appears a moment after the page and Ctrl/⌘K works as soon as
-  the page shows. A slow connection still reveals the page after the existing 1.5-second limit.
+- Opening a dashboard page directly (Portfolio, Vaults, Staking, Referrals and referral
+  invitation links, Leaderboard, API wallet and the history pages) now waits up to 1.5 seconds,
+  the same limit as the trade page, for the footer and the global dialog host to load. They
+  normally appear together with the page instead of a moment later, and the Ctrl/⌘K listener is
+  installed as the page shows. The command menu itself still loads on first use, and a slow
+  connection reveals the page when the limit is reached.
 
 - The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market
   returns to BTC; the scrim and Esc still do not dismiss it. Close All and Reverse now show the

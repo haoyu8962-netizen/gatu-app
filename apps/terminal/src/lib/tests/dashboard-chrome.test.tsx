@@ -6,7 +6,11 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const testState = vi.hoisted(() => ({ isMobile: false }));
+const testState = vi.hoisted(() => ({
+	isMobile: false,
+	viewportIsMobile: false,
+	preloadTopNav: vi.fn(() => Promise.resolve()),
+}));
 
 vi.mock("@/hooks/use-mobile", () => ({
 	MOBILE_MEDIA_QUERY: "(max-width: 1000px)",
@@ -14,7 +18,7 @@ vi.mock("@/hooks/use-mobile", () => ({
 }));
 vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => false }));
 vi.mock("@/components/trade/header/top-nav", () => ({
-	preloadTopNav: () => Promise.resolve(),
+	preloadTopNav: testState.preloadTopNav,
 	TopNav: () => <header data-testid="top-nav">Top navigation</header>,
 }));
 vi.mock("@/components/trade/mobile/mobile-header", () => ({
@@ -62,10 +66,11 @@ const DASHBOARD_PAGES = [
 ];
 
 function stubMatchMedia(matches: boolean) {
+	testState.viewportIsMobile = matches;
 	vi.stubGlobal(
 		"matchMedia",
 		vi.fn((query: string) => ({
-			matches,
+			matches: query === "(max-width: 1000px)" && testState.viewportIsMobile,
 			media: query,
 			addEventListener: () => {},
 			removeEventListener: () => {},
@@ -80,6 +85,8 @@ describe("dashboard chrome", () => {
 	beforeEach(() => {
 		vi.resetModules();
 		testState.isMobile = false;
+		testState.preloadTopNav.mockReset();
+		testState.preloadTopNav.mockImplementation(() => Promise.resolve());
 		container = document.createElement("div");
 		document.body.appendChild(container);
 	});
@@ -135,6 +142,39 @@ describe("dashboard chrome", () => {
 			expect(container.querySelector('[data-testid="global-modals"]')).not.toBeNull();
 		},
 	);
+
+	it("waits for the account menu before settling", async () => {
+		stubMatchMedia(false);
+		let releaseTopNav: () => void = () => {};
+		testState.preloadTopNav.mockImplementation(
+			() =>
+				new Promise<void>((resolveTopNav) => {
+					releaseTopNav = resolveTopNav;
+				}),
+		);
+		const chrome = await import("@/components/dashboard/dashboard-chrome");
+		let settled = false;
+		const preload = chrome.preloadDashboardChrome().then(() => {
+			settled = true;
+		});
+		await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+		expect(testState.preloadTopNav).toHaveBeenCalledTimes(1);
+		expect(settled).toBe(false);
+		releaseTopNav();
+		await preload;
+		expect(settled).toBe(true);
+	});
+
+	it("adds the footer when the viewport becomes desktop while the preload is pending", async () => {
+		stubMatchMedia(true);
+		const chrome = await import("@/components/dashboard/dashboard-chrome");
+		const footerPreload = vi.spyOn(chrome.FooterBar, "preload");
+		const preload = chrome.preloadDashboardChrome();
+		expect(footerPreload).not.toHaveBeenCalled();
+		testState.viewportIsMobile = false;
+		await preload;
+		expect(footerPreload).toHaveBeenCalledTimes(1);
+	});
 
 	it.each(DASHBOARD_PAGES)("%s renders the shared header and the preloaded footer and modal host", (page) => {
 		const source = readFileSync(resolve(process.cwd(), `src/components/${page}.tsx`), "utf8");

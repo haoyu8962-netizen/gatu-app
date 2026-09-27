@@ -810,11 +810,14 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `UserMenu` decides its first frame from `useState(() => hasPersistedPrivySession())`, not from a
   mount effect: visitors without a stored Privy session see `Connect Wallet` on the first rendered
   frame, and the compact label keeps the ENS name for accounts without email. Dashboard routes
-  await `bootDashboardRoute()` in `beforeLoad`, within `TRADE_ROUTE_REVEAL_BUDGET_MS`, so the
+  (including the `/join/$code` referral invitation, after its code check) await
+  `bootDashboardRoute()` in `beforeLoad`, within `TRADE_ROUTE_REVEAL_BUDGET_MS`, so the
   account menu, the global modal host (and its Ctrl/⌘K listener) and the desktop footer are
   resolved before reveal. Dashboard pages render `DashboardHeader`, `FooterBar` and `GlobalModals`
   only from `components/dashboard/dashboard-chrome.tsx`, whose `preloadDashboardChrome()` preloads
   those exact lazy instances; a page-local `createLazyComponent` wrapper would not be preloaded.
+  The footer is skipped when the mobile layout matches at the start of the preload and added
+  if the viewport has become desktop by the time the other pieces resolve.
   The header lives in the same module so the dynamically imported chrome chunk shares the pages'
   header closure; without it Rollup regroups the shared header chunks and the trade desktop
   runtime startup exceeded its bundle budget.

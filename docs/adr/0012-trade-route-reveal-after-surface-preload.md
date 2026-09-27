@@ -50,4 +50,4 @@
 
 ## 补充（2026-09-27）：仪表盘路由
 
-仪表盘路由的 `bootDashboardRoute` 原先只等待 `preloadTopNav()`，而页面各自声明的 `FooterBar`（仅桌面）与 `GlobalModals` 惰性包装未被预加载：冷启动直达时页面先揭示，页脚与全局弹窗宿主（含 Ctrl/⌘K 监听）随后经 300 ms 节流才出现。现在九个仪表盘页面统一从 `components/dashboard/dashboard-chrome.tsx` 渲染 `DashboardHeader` 与同一组惰性实例，`bootDashboardRoute` 只动态导入该模块并等待 `preloadDashboardChrome()`（账户菜单、全局弹窗宿主、桌面页脚），并沿用本 ADR 的 `TRADE_ROUTE_REVEAL_BUDGET_MS` 上限与失败兜底；该模块动态导入，路由树块不引入钱包依赖。头部放在同一模块是为了让动态块与页面共享头部闭包：只放惰性包装时 Rollup 会拆分页面与交易页共享的头部块，桌面运行时启动体积超出预算。验证记录见 `docs/work-memory/sessions/2026-09-27-dashboard-route-chrome-preload.md`。
+仪表盘路由的 `bootDashboardRoute` 原先只等待 `preloadTopNav()`，而页面各自声明的 `FooterBar`（仅桌面）与 `GlobalModals` 惰性包装未被预加载：冷启动直达时页面先揭示，页脚与全局弹窗宿主（含 Ctrl/⌘K 监听）随后经 300 ms 节流才出现。现在九个仪表盘页面（及渲染 Referrals 的 `/join/$code` 邀请路由）统一从 `components/dashboard/dashboard-chrome.tsx` 渲染 `DashboardHeader` 与同一组惰性实例，`bootDashboardRoute` 只动态导入该模块并等待 `preloadDashboardChrome()`（账户菜单、全局弹窗宿主、桌面页脚），并沿用本 ADR 的 `TRADE_ROUTE_REVEAL_BUDGET_MS` 上限与失败兜底；该模块动态导入，路由树块不引入钱包依赖。头部放在同一模块是为了让动态块与页面共享头部闭包：只放惰性包装时 Rollup 会拆分页面与交易页共享的头部块，桌面运行时启动体积超出预算。验证记录见 `docs/work-memory/sessions/2026-09-27-dashboard-route-chrome-preload.md`。

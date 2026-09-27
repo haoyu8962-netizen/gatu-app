@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const preload = vi.hoisted(() => ({ chrome: vi.fn<() => Promise<void>>() }));
 vi.mock("@/components/dashboard/dashboard-chrome", () => ({ preloadDashboardChrome: preload.chrome }));
+vi.mock("@/components/app-runtime-overlays", () => ({ preloadAppRuntimeOverlays: () => Promise.resolve() }));
+vi.mock("@/lib/hyperliquid/markets/market-catalog-bootstrap", () => ({ startMarketCatalogBootstrap: () => {} }));
+vi.mock("@/lib/trade/orderbook-boot", () => ({ bootOrderbook: () => {} }));
 
 const DASHBOARD_ROUTES = [
 	"api-wallet.tsx",
@@ -80,6 +83,14 @@ describe("bootDashboardRoute", () => {
 		expect(source).toContain('import("@/components/dashboard/dashboard-chrome")');
 		expect(source).not.toMatch(/^import .*header\/top-nav/m);
 		expect(source).not.toMatch(/^import .*dashboard-chrome/m);
+	});
+
+	it("is awaited from the referral invitation route after its code check", () => {
+		const source = readFileSync(resolve(__dirname, "../../routes/join.$code.tsx"), "utf8");
+		expect(source).toContain(
+			"if (!isSafeReferralJoinCode(params.code)) throw notFound();\n\t\treturn bootDashboardRoute();",
+		);
+		expect(source).toContain("<ReferralsPage initialReferralCode={result.code} />");
 	});
 
 	it.each(DASHBOARD_ROUTES)("is awaited from the beforeLoad of %s", (file) => {
