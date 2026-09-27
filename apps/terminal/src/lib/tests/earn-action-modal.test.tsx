@@ -230,6 +230,30 @@ function createData(hypeSupplied = "100", freshHypeSupplied = hypeSupplied): Ear
 	};
 }
 
+function createUsdcData(options: { supplied?: string; borrowed?: string; spotUsdc?: string } = {}): EarnData {
+	const { supplied = "0", borrowed = "0", spotUsdc = "700" } = options;
+	const base = createData();
+	const reserves = parseEarnReserves(RESERVES);
+	const userState = parseEarnUserState({
+		tokenToState: [
+			[0, { borrow: { basis: borrowed, value: borrowed }, supply: { basis: supplied, value: supplied } }],
+			[150, { borrow: { basis: "0", value: "0" }, supply: { basis: "100", value: "100" } }],
+		],
+		healthFactor: null,
+	});
+	if (!reserves || !userState) throw new Error("fixture must parse");
+	const snapshotInputs = {
+		...base.snapshotInputs,
+		spotBalances: new Map([[0, { token: 0, available: spotUsdc, total: spotUsdc }]]),
+	};
+	return {
+		...base,
+		snapshot: buildEarnSnapshot({ reserves, userState, ...snapshotInputs }),
+		snapshotInputs,
+		fetchFreshState: vi.fn(async () => ({ reserves, userState })),
+	};
+}
+
 function getInput(container: HTMLElement): HTMLInputElement {
 	const input = container.querySelector("input");
 	if (!(input instanceof HTMLInputElement)) throw new Error("Amount input not found");
@@ -579,5 +603,77 @@ describe("earn action modal", () => {
 		expect(errorId).toBeTruthy();
 		expect(container.querySelector(`[id="${errorId}"]`)?.textContent).toBe("Insufficient funds");
 		expect(container.querySelector('[aria-live="polite"]')).not.toBeNull();
+	});
+	it("withdraws the entire supply with a full-position request when Max is used", async () => {
+		const onOpenChange = render("withdraw", 0, createUsdcData({ supplied: "29.9410999" }));
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		expect(getInput(container).value).toBe("29.9410999");
+		expect(container.textContent).toContain(
+			"Withdraws your entire USDC supply, including interest accrued until it executes.",
+		);
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).toHaveBeenCalledWith({ operation: "withdraw", token: 0, amount: null });
+		const [title, options] = toastMocks.success.mock.calls[0] as [unknown, { description: unknown }];
+		expect(toastText(title)).toBe("Withdrew USDC");
+		expect(toastText(options.description)).toBe("Entire USDC supply");
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("goes back to an exact amount once the user edits the Max value", async () => {
+		render("withdraw", 0, createUsdcData({ supplied: "29.9410999" }));
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		act(() => setInputValue(getInput(container), "10"));
+		expect(container.textContent).not.toContain("Withdraws your entire");
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).toHaveBeenCalledWith({ operation: "withdraw", token: 0, amount: "10" });
+	});
+
+	it("blocks a typed withdrawal that would leave less than $1 supplied", () => {
+		render("withdraw", 0, createUsdcData({ supplied: "29.9410999" }));
+		act(() => setInputValue(getInput(container), "29.5"));
+		expect(container.textContent).toContain("Withdraw everything with Max, or leave at least $1 supplied.");
+		expect(getSubmit(container).disabled).toBe(true);
+		act(() => setInputValue(getInput(container), "29.9410999"));
+		expect(getSubmit(container).disabled).toBe(true);
+		act(() => setInputValue(getInput(container), "28"));
+		expect(getSubmit(container).disabled).toBe(false);
+	});
+
+	it("blocks a supply that would leave the position below $1", () => {
+		render("supply", 0, createUsdcData());
+		act(() => setInputValue(getInput(container), "0.5"));
+		expect(container.textContent).toContain("The minimum supply is $1.");
+		expect(getSubmit(container).disabled).toBe(true);
+	});
+
+	it("repays the entire borrow with a full-position request only when the balance covers it", async () => {
+		render("repay", 0, createUsdcData({ borrowed: "25", spotUsdc: "700" }));
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).toHaveBeenCalledWith({ operation: "repay", token: 0, amount: null });
+
+		testState.borrowLend.mockClear();
+		render("repay", 0, createUsdcData({ borrowed: "25", spotUsdc: "10" }));
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).toHaveBeenCalledWith({ operation: "repay", token: 0, amount: "10" });
+	});
+
+	it("explains the exchange's $1 minimum instead of showing only the raw error", async () => {
+		const error = Object.assign(new Error("Borrow/Lend error: Minimum amount supplied is $1"), {
+			name: "ApiRequestError",
+		});
+		testState.borrowLend.mockRejectedValue(error);
+		render("withdraw", 0, createUsdcData({ supplied: "29.9410999" }));
+		act(() => setInputValue(getInput(container), "20"));
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(toastText(toastMocks.error.mock.calls[0]?.[0])).toBe(
+			"Hyperliquid requires at least $1 to stay supplied. Withdraw everything with Max, or leave at least $1.",
+		);
 	});
 });

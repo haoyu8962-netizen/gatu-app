@@ -2828,6 +2828,14 @@ msgstr "TP या SL कीमत दर्ज करें"
 msgid "Enter trigger price"
 msgstr "ट्रिगर कीमत दर्ज करें"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Entire {token} borrow"
+msgstr "पूरा {token} उधार"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Entire {token} supply"
+msgstr "पूरी {token} सप्लाई"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Entry price"
@@ -3657,6 +3665,10 @@ msgstr "Hyperliquid ने सत्यापित सार्वजनिक 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
 #~ msgstr "Hyperliquid के अनुसार यह ट्रेडिंग कुंजी प्रतिस्थापित, परिवर्तित या समाप्त हो चुकी है।"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Hyperliquid requires at least $1 to stay supplied. Withdraw everything with Max, or leave at least $1."
+msgstr "Hyperliquid के लिए कम से कम $1 सप्लाई में रहना ज़रूरी है। अधिकतम से सब कुछ निकालें, या कम से कम $1 रहने दें।"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
@@ -6466,6 +6478,10 @@ msgstr "कोलैटरल निकालने के लिए उधा�
 msgid "Repaying from Earn is not available in Portfolio Margin mode."
 msgstr "पोर्टफोलियो मार्जिन मोड में अर्न से चुकाना उपलब्ध नहीं है।"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repays your entire {token} borrow, including interest accrued until it executes."
+msgstr "आपका पूरा {token} उधार चुकाता है, जिसमें निष्पादन तक का ब्याज शामिल है।"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
 #~ msgstr "वर्तमान मोबाइल एजेंट को एक अस्थायी अप्राप्य कुंजी से बदल देता है।"
@@ -8150,6 +8166,10 @@ msgstr "मास्टर वॉलेट ने प्राधिकरण �
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr "मेल खाता मास्टर वॉलेट इस खाता-स्तरीय Agent स्वीकृति पर हस्ताक्षर करता है।"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "The minimum supply is $1."
+msgstr "न्यूनतम सप्लाई $1 है।"
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "The modification was not confirmed. Review the order before retrying."
@@ -10020,6 +10040,10 @@ msgctxt "Trading toolbar action"
 msgid "Withdraw"
 msgstr "निकासी"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdraw everything with Max, or leave at least $1 supplied."
+msgstr "अधिकतम से सब कुछ निकालें, या कम से कम $1 सप्लाई रहने दें।"
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Withdraw from Vault"
 msgstr "वॉल्ट से निकालें"
@@ -10089,6 +10113,10 @@ msgstr "निकासी अनलॉक है"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "इस पते के लिए निकासी उपलब्ध नहीं है।"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdraws your entire {token} supply, including interest accrued until it executes."
+msgstr "आपकी पूरी {token} सप्लाई निकालता है, जिसमें निष्पादन तक का ब्याज शामिल है।"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdrew {token}"

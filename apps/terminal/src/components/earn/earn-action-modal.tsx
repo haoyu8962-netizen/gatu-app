@@ -13,8 +13,11 @@ import { NumberInput } from "@/components/ui/number-input";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import {
 	type EarnAssetRow,
+	type EarnMinimumIssue,
 	type EarnOperation,
+	getEarnFullPosition,
 	getEarnMaxAmount,
+	getEarnMinimumIssue,
 	getEarnOperationRows,
 	toEarnProtocolAmount,
 	validateEarnAmount,
@@ -22,6 +25,7 @@ import {
 import {
 	type EarnSubmissionRequest,
 	EarnSubmissionStaleError,
+	getEarnProtocolAmount,
 	verifyEarnSubmissionAtBoundary,
 	verifyFreshEarnSubmission,
 } from "@/domain/earn-submission";
@@ -57,6 +61,7 @@ interface Props {
 }
 
 const VISIBLE_RESTRICTIONS = new Set(["agent-only-session", "geo-restricted"]);
+const MINIMUM_SUPPLY_EXCHANGE_ERROR = /minimum amount supplied is \$1/i;
 
 interface EarnSubmission {
 	identity: object;
@@ -90,6 +95,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 	const rows = snapshot ? getEarnOperationRows(operation, snapshot) : [];
 	const [selectedToken, setSelectedToken] = useState<number | null>(initialToken ?? rows[0]?.token ?? null);
 	const [amount, setAmount] = useState("");
+	const [fullRequested, setFullRequested] = useState(false);
 	const amountErrorId = useId();
 	const [openedPosition, setOpenedPosition] = useState<EarnPositionBaseline | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,13 +145,25 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		snapshot && row && dataReady
 			? getEarnMaxAmount({ operation, row, summary: snapshot.summary, spotAvailable })
 			: null;
+	const fullPosition =
+		fullRequested && snapshot && row && dataReady
+			? getEarnFullPosition({ operation, row, summary: snapshot.summary, spotAvailable })
+			: null;
 	const validation = row ? validateEarnAmount(amount, maxAmount, row.weiDecimals) : "unavailable";
+	const minimumIssue =
+		row && validation === "valid" && !fullPosition ? getEarnMinimumIssue(operation, row, amount) : null;
 	const { mutateAsync: borrowLend, isPending } = useExchange("borrowLend", {
 		executionGuard: assertCurrentSubmission,
 	});
 	const pending = isSubmitting || isPending;
 	const canSubmit =
-		open && dataReady && availability.available && !data.portfolioMargin && validation === "valid" && !pending;
+		open &&
+		dataReady &&
+		availability.available &&
+		!data.portfolioMargin &&
+		validation === "valid" &&
+		minimumIssue === null &&
+		!pending;
 	const visibleRestriction =
 		availability.reason && VISIBLE_RESTRICTIONS.has(availability.reason) ? availability.unavailableReason : null;
 
@@ -159,7 +177,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 			submission.sequence !== submissionSequenceRef.current ||
 			params.operation !== submission.request.operation ||
 			params.token !== submission.request.token ||
-			params.amount !== submission.request.amount
+			params.amount !== getEarnProtocolAmount(submission.request)
 		) {
 			throw new ExchangeRequestInvalidatedError();
 		}
@@ -227,6 +245,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 			token: row.token,
 			amount: toEarnProtocolAmount(amount),
 			displayedMax: maxAmount,
+			full: fullPosition,
 		};
 		const submission: EarnSubmission = { identity, sequence, request, verifiedAt: null };
 		submissionRef.current = submission;
@@ -239,7 +258,11 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 			await verifyFreshState(request, controller.signal);
 			if (!isCurrent() || submissionRef.current !== submission) throw new ExchangeRequestInvalidatedError();
 			submission.verifiedAt = Date.now();
-			await borrowLend({ operation: request.operation, token: request.token, amount: request.amount });
+			await borrowLend({
+				operation: request.operation,
+				token: request.token,
+				amount: getEarnProtocolAmount(request),
+			});
 			if (isCurrent()) {
 				toast.success(
 					<EarnOutcomeToastContent
@@ -251,11 +274,15 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 						description: (
 							<EarnOutcomeToastContent
 								{...toastIdentity}
-								render={() => (
-									<bdi dir="ltr">
-										{formatNumber(request.amount)} {tokenLabel}
-									</bdi>
-								)}
+								render={(translateMessage) =>
+									request.full ? (
+										translateMessage(getFullPositionMessage(operation, tokenLabel))
+									) : (
+										<bdi dir="ltr">
+											{formatNumber(request.amount)} {tokenLabel}
+										</bdi>
+									)
+								}
 							/>
 						),
 						duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
@@ -306,22 +333,25 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		setSelectedToken(Number(value));
 		setOpenedPosition(null);
 		setAmount("");
+		setFullRequested(false);
 	}
 
 	function handleAmountChange(value: string) {
 		if (!row) return;
 		setAmount(limitDecimalInput(value, row.weiDecimals));
+		setFullRequested(false);
 	}
 
 	function handleMaxClick() {
 		if (pending || maxAmount === null) return;
 		setAmount(maxAmount);
+		setFullRequested(operation === "withdraw" || operation === "repay");
 	}
 
 	const title = getTitle(operation, row, translate);
 	const description = getDescription(operation, row, translate);
 	const tokenOptions = getTokenOptions(operation, rows, translate);
-	const amountError = getAmountError(validation, translate);
+	const amountError = getAmountError(validation, minimumIssue, translate);
 	const submitLabel = getSubmitLabel(operation, translate);
 
 	return (
@@ -385,6 +415,9 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 						) : null}
 					</div>
 					{row ? <EarnActionSummary operation={operation} row={row} maxAmount={maxAmount} /> : null}
+					{row && fullPosition ? (
+						<p className="px-2 text-2xs text-fg-muted">{translate(getFullPositionNote(operation, row.displayName))}</p>
+					) : null}
 					<div aria-live="polite">
 						{positionChanged && !pending ? (
 							<p className="rounded-16 border border-stroke-info-weak bg-info-soft p-2.5 text-xs text-info">
@@ -494,10 +527,29 @@ function getTokenOptions(operation: EarnOperation, rows: readonly EarnAssetRow[]
 	];
 }
 
-function getAmountError(validation: ReturnType<typeof validateEarnAmount>, translate: Translate): string | null {
+function getAmountError(
+	validation: ReturnType<typeof validateEarnAmount>,
+	minimumIssue: EarnMinimumIssue,
+	translate: Translate,
+): string | null {
 	if (validation === "invalid") return translate(msg`Enter a valid amount`);
 	if (validation === "exceedsMax") return translate(msg`Insufficient funds`);
+	if (minimumIssue === "supplyBelowMinimum") return translate(msg`The minimum supply is $1.`);
+	if (minimumIssue === "withdrawLeavesDust") {
+		return translate(msg`Withdraw everything with Max, or leave at least $1 supplied.`);
+	}
 	return null;
+}
+
+function getFullPositionNote(operation: EarnOperation, token: string): MessageDescriptor {
+	if (operation === "repay")
+		return msg`Repays your entire ${token} borrow, including interest accrued until it executes.`;
+	return msg`Withdraws your entire ${token} supply, including interest accrued until it executes.`;
+}
+
+function getFullPositionMessage(operation: EarnOperation, token: string): MessageDescriptor {
+	if (operation === "repay") return msg`Entire ${token} borrow`;
+	return msg`Entire ${token} supply`;
 }
 
 function getSuccessMessage(operation: EarnOperation, token: string): MessageDescriptor {
@@ -511,6 +563,11 @@ function getFailureText(error: unknown, translate: Translate): string {
 	if (error instanceof FundsActionFeedbackCause) return formatFundsActionFeedback(error.code, translate);
 	if (error instanceof EarnSubmissionStaleError) {
 		return translate(msg`Earn balances changed before submission. Review the updated amounts and try again.`);
+	}
+	if (error instanceof Error && MINIMUM_SUPPLY_EXCHANGE_ERROR.test(error.message)) {
+		return translate(
+			msg`Hyperliquid requires at least $1 to stay supplied. Withdraw everything with Max, or leave at least $1.`,
+		);
 	}
 	return formatExchangeActionError(error, translate(msg`Earn request failed`));
 }

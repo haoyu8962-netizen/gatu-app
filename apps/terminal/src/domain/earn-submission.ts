@@ -2,11 +2,16 @@ import Big from "big.js";
 import {
 	type BuildEarnSnapshotInput,
 	buildEarnSnapshot,
+	type EarnAccountSummary,
+	type EarnAssetRow,
+	type EarnFullPosition,
 	type EarnOperation,
 	type EarnReserve,
 	type EarnSnapshot,
 	type EarnUserState,
+	getEarnFullPosition,
 	getEarnMaxAmount,
+	getEarnMinimumIssue,
 	getEarnOperationRows,
 } from "./earn";
 
@@ -15,13 +20,50 @@ export interface EarnSubmissionRequest {
 	token: number;
 	amount: string;
 	displayedMax: string;
+	full: EarnFullPosition | null;
 }
 
+export type EarnSubmissionStaleReason =
+	| "unavailable"
+	| "exceedsDisplayed"
+	| "exceedsFresh"
+	| "portfolioMargin"
+	| "positionChanged"
+	| "belowMinimum";
+
 export class EarnSubmissionStaleError extends Error {
-	constructor(readonly reason: "unavailable" | "exceedsDisplayed" | "exceedsFresh" | "portfolioMargin") {
+	constructor(readonly reason: EarnSubmissionStaleReason) {
 		super(`Earn submission is no longer valid: ${reason}`);
 		this.name = "EarnSubmissionStaleError";
 	}
+}
+
+export function getEarnProtocolAmount(request: EarnSubmissionRequest): string | null {
+	return request.full ? null : request.amount;
+}
+
+interface EarnSubmissionBoundInput {
+	request: EarnSubmissionRequest;
+	row: EarnAssetRow;
+	summary: EarnAccountSummary;
+	spotAvailable: string | null;
+}
+
+function assertEarnSubmissionWithinState({ request, row, summary, spotAvailable }: EarnSubmissionBoundInput): string {
+	const input = { operation: request.operation, row, summary, spotAvailable };
+	const latestMax = getEarnMaxAmount(input);
+	if (latestMax === null) throw new EarnSubmissionStaleError("unavailable");
+	if (request.full) {
+		const latestFull = getEarnFullPosition(input);
+		if (!latestFull) throw new EarnSubmissionStaleError("exceedsFresh");
+		if (latestFull.principal !== request.full.principal) throw new EarnSubmissionStaleError("positionChanged");
+		return latestMax;
+	}
+	const amount = Big(request.amount);
+	if (amount.lte(0) || amount.gt(request.displayedMax)) throw new EarnSubmissionStaleError("exceedsDisplayed");
+	if (amount.gt(latestMax)) throw new EarnSubmissionStaleError("exceedsFresh");
+	if (getEarnMinimumIssue(request.operation, row, request.amount)) throw new EarnSubmissionStaleError("belowMinimum");
+	return latestMax;
 }
 
 export interface VerifyFreshEarnSubmissionInput {
@@ -40,22 +82,12 @@ export function verifyFreshEarnSubmission({
 	spotAvailable,
 }: VerifyFreshEarnSubmissionInput): string {
 	if (inputs.portfolioMargin) throw new EarnSubmissionStaleError("portfolioMargin");
-	const amount = Big(request.amount);
-	if (amount.lte(0) || amount.gt(request.displayedMax)) throw new EarnSubmissionStaleError("exceedsDisplayed");
 	const snapshot = buildEarnSnapshot({ reserves, userState, ...inputs });
 	const row = snapshot
 		? getEarnOperationRows(request.operation, snapshot).find((candidate) => candidate.token === request.token)
 		: undefined;
 	if (!snapshot || !row) throw new EarnSubmissionStaleError("unavailable");
-	const freshMax = getEarnMaxAmount({
-		operation: request.operation,
-		row,
-		summary: snapshot.summary,
-		spotAvailable,
-	});
-	if (freshMax === null) throw new EarnSubmissionStaleError("unavailable");
-	if (amount.gt(freshMax)) throw new EarnSubmissionStaleError("exceedsFresh");
-	return freshMax;
+	return assertEarnSubmissionWithinState({ request, row, summary: snapshot.summary, spotAvailable });
 }
 
 export const EARN_VERIFICATION_TTL_MS = 20_000;
@@ -85,9 +117,5 @@ export function verifyEarnSubmissionAtBoundary({
 	if (!accountReady || !snapshot) throw new EarnSubmissionStaleError("unavailable");
 	const row = getEarnOperationRows(request.operation, snapshot).find((candidate) => candidate.token === request.token);
 	if (!row) throw new EarnSubmissionStaleError("unavailable");
-	const latestMax = getEarnMaxAmount({ operation: request.operation, row, summary: snapshot.summary, spotAvailable });
-	if (latestMax === null) throw new EarnSubmissionStaleError("unavailable");
-	const amount = Big(request.amount);
-	if (amount.gt(request.displayedMax)) throw new EarnSubmissionStaleError("exceedsDisplayed");
-	if (amount.gt(latestMax)) throw new EarnSubmissionStaleError("exceedsFresh");
+	assertEarnSubmissionWithinState({ request, row, summary: snapshot.summary, spotAvailable });
 }

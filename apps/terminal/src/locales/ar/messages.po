@@ -2828,6 +2828,14 @@ msgstr "أدخل سعر TP أو SL"
 msgid "Enter trigger price"
 msgstr "أدخل سعر التفعيل"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Entire {token} borrow"
+msgstr "كامل قرض {token}"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Entire {token} supply"
+msgstr "كامل إيداع {token}"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Entry price"
@@ -3657,6 +3665,10 @@ msgstr "رفضت Hyperliquid الطلب العام الذي تم التحقق م
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
 #~ msgstr "يفيد Hyperliquid بأن مفتاح التداول هذا تم استبداله أو تغييره أو انتهت صلاحيته."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Hyperliquid requires at least $1 to stay supplied. Withdraw everything with Max, or leave at least $1."
+msgstr "يتطلب Hyperliquid بقاء 1 دولار على الأقل مودعًا. اسحب كل شيء عبر الحد الأقصى، أو اترك 1 دولار على الأقل."
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
@@ -6466,6 +6478,10 @@ msgstr "سدّد القروض لسحب الضمان."
 msgid "Repaying from Earn is not available in Portfolio Margin mode."
 msgstr "السداد من صفحة العوائد غير متاح في وضع هامش المحفظة."
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repays your entire {token} borrow, including interest accrued until it executes."
+msgstr "يسدّد كامل قرضك من {token}، بما في ذلك الفائدة المتراكمة حتى التنفيذ."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
 #~ msgstr "يستبدل وكيل الهاتف الحالي بمفتاح مؤقت غير قابل للوصول."
@@ -8150,6 +8166,10 @@ msgstr "رفضت المحفظة الرئيسية التفويض."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr "توقّع المحفظة الرئيسية المطابقة موافقة الوكيل هذه على مستوى الحساب."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "The minimum supply is $1."
+msgstr "الحد الأدنى للإيداع هو 1 دولار."
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "The modification was not confirmed. Review the order before retrying."
@@ -10020,6 +10040,10 @@ msgctxt "Trading toolbar action"
 msgid "Withdraw"
 msgstr "سحب"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdraw everything with Max, or leave at least $1 supplied."
+msgstr "اسحب كل شيء عبر الحد الأقصى، أو اترك ما لا يقل عن 1 دولار مودعًا."
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Withdraw from Vault"
 msgstr "السحب من الخزنة"
@@ -10089,6 +10113,10 @@ msgstr "تم إلغاء قفل السحب"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "عمليات السحب غير متاحة لهذا العنوان."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdraws your entire {token} supply, including interest accrued until it executes."
+msgstr "يسحب كامل إيداعك من {token}، بما في ذلك الفائدة المتراكمة حتى التنفيذ."
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdrew {token}"

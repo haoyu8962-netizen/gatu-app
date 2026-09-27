@@ -4,7 +4,9 @@ import {
 	buildEarnSnapshot,
 	type EarnTokenMeta,
 	getEarnActionBlock,
+	getEarnFullPosition,
 	getEarnMaxAmount,
+	getEarnMinimumIssue,
 	getEarnOperationRows,
 	getEarnSpotAvailable,
 	getHealthFactorDisplayRatio,
@@ -18,6 +20,7 @@ import {
 import {
 	EARN_VERIFICATION_TTL_MS,
 	EarnSubmissionStaleError,
+	getEarnProtocolAmount,
 	verifyEarnSubmissionAtBoundary,
 	verifyFreshEarnSubmission,
 } from "@/domain/earn-submission";
@@ -295,13 +298,13 @@ describe("fresh earn submission", () => {
 		expect(
 			verifyFreshEarnSubmission({
 				...base,
-				request: { operation: "borrow", token: 0, amount: "100", displayedMax: "5029.4" },
+				request: { operation: "borrow", token: 0, amount: "100", displayedMax: "5029.4", full: null },
 			}),
 		).toBe("5029.4");
 		expect(() =>
 			verifyFreshEarnSubmission({
 				...base,
-				request: { operation: "borrow", token: 0, amount: "200", displayedMax: "100" },
+				request: { operation: "borrow", token: 0, amount: "200", displayedMax: "100", full: null },
 			}),
 		).toThrow(EarnSubmissionStaleError);
 		const lowerCollateral = parseEarnUserState({
@@ -316,14 +319,14 @@ describe("fresh earn submission", () => {
 			verifyFreshEarnSubmission({
 				...base,
 				userState: lowerCollateral,
-				request: { operation: "borrow", token: 0, amount: "300", displayedMax: "5029.4" },
+				request: { operation: "borrow", token: 0, amount: "300", displayedMax: "5029.4", full: null },
 			}),
 		).toThrow(EarnSubmissionStaleError);
 		expect(() =>
 			verifyFreshEarnSubmission({
 				...base,
 				inputs: snapshotInputs(true),
-				request: { operation: "supply", token: 0, amount: "1", displayedMax: "700" },
+				request: { operation: "supply", token: 0, amount: "1", displayedMax: "700", full: null },
 			}),
 		).toThrow(EarnSubmissionStaleError);
 	});
@@ -381,7 +384,7 @@ describe("earn submission at the SDK boundary", () => {
 	it("requires a recent verification and the latest maximum", () => {
 		const { snapshot } = buildSnapshot();
 		const base = {
-			request: { operation: "borrow" as const, token: 0, amount: "100", displayedMax: "5029.4" },
+			request: { operation: "borrow" as const, token: 0, amount: "100", displayedMax: "5029.4", full: null },
 			verifiedAt: 1_000,
 			now: 1_000,
 			snapshot,
@@ -396,7 +399,10 @@ describe("earn submission at the SDK boundary", () => {
 		expect(() => verifyEarnSubmissionAtBoundary({ ...base, accountReady: false })).toThrow(EarnSubmissionStaleError);
 		expect(() => verifyEarnSubmissionAtBoundary({ ...base, portfolioMargin: true })).toThrow(EarnSubmissionStaleError);
 		expect(() =>
-			verifyEarnSubmissionAtBoundary({ ...base, request: { ...base.request, amount: "6000", displayedMax: "6000" } }),
+			verifyEarnSubmissionAtBoundary({
+				...base,
+				request: { ...base.request, amount: "6000", displayedMax: "6000", full: null },
+			}),
 		).toThrow(EarnSubmissionStaleError);
 	});
 });
@@ -425,5 +431,83 @@ describe("earn liquidity and spendable balance", () => {
 		expect(getEarnSpotAvailable(balance, [[0, "60"]])).toBe("20");
 		expect(getEarnSpotAvailable(balance, [[0, "10"]])).toBe("10");
 		expect(getEarnSpotAvailable({ ...balance, hold: "0" }, [])).toBe("100");
+	});
+});
+
+describe("earn minimum position and full withdrawals", () => {
+	it("follows the exchange's $1 minimum supplied position", () => {
+		const { snapshot } = buildSnapshot();
+		const usdc = snapshot.supplyRows.find((row) => row.token === 0);
+		const btc = snapshot.supplyRows.find((row) => row.token === 197);
+		if (!usdc || !btc) throw new Error("rows missing");
+		expect(getEarnMinimumIssue("supply", btc, "0.00001")).toBe("supplyBelowMinimum");
+		expect(getEarnMinimumIssue("supply", btc, "0.0001")).toBeNull();
+		expect(getEarnMinimumIssue("supply", usdc, "0.5")).toBeNull();
+		expect(getEarnMinimumIssue("withdraw", usdc, "499.5")).toBe("withdrawLeavesDust");
+		expect(getEarnMinimumIssue("withdraw", usdc, "500")).toBe("withdrawLeavesDust");
+		expect(getEarnMinimumIssue("withdraw", usdc, "499")).toBeNull();
+		expect(getEarnMinimumIssue("borrow", usdc, "0.1")).toBeNull();
+	});
+
+	it("offers a full withdrawal only when nothing limits it", () => {
+		const { snapshot } = buildSnapshot();
+		const usdc = snapshot.supplyRows.find((row) => row.token === 0);
+		const hype = snapshot.supplyRows.find((row) => row.token === 150);
+		if (!usdc || !hype) throw new Error("rows missing");
+		const summary = snapshot.summary;
+		expect(getEarnFullPosition({ operation: "withdraw", row: usdc, summary, spotAvailable: null })).toEqual({
+			principal: "495",
+		});
+		expect(getEarnFullPosition({ operation: "withdraw", row: hype, summary, spotAvailable: null })).toBeNull();
+		expect(
+			getEarnFullPosition({
+				operation: "withdraw",
+				row: { ...usdc, reserveBalance: "100" },
+				summary,
+				spotAvailable: null,
+			}),
+		).toBeNull();
+		expect(getEarnFullPosition({ operation: "repay", row: usdc, summary, spotAvailable: "5000" })).toEqual({
+			principal: "990",
+		});
+		expect(getEarnFullPosition({ operation: "repay", row: usdc, summary, spotAvailable: "700" })).toBeNull();
+		expect(getEarnFullPosition({ operation: "supply", row: usdc, summary, spotAvailable: "700" })).toBeNull();
+	});
+
+	it("sends a full withdrawal only while the principal is unchanged", () => {
+		const { reserves, userState } = buildSnapshot();
+		const base = { reserves, userState, inputs: snapshotInputs(), spotAvailable: null };
+		const request = {
+			operation: "withdraw" as const,
+			token: 0,
+			amount: "500",
+			displayedMax: "500",
+			full: { principal: "495" },
+		};
+		expect(getEarnProtocolAmount(request)).toBeNull();
+		expect(verifyFreshEarnSubmission({ ...base, request })).toBe("500");
+		const accrued = parseEarnUserState({
+			...USER_RESPONSE,
+			tokenToState: [
+				[0, { borrow: { basis: "990", value: "1000" }, supply: { basis: "495", value: "500.01" } }],
+				USER_RESPONSE.tokenToState[1],
+			],
+		});
+		const topUp = parseEarnUserState({
+			...USER_RESPONSE,
+			tokenToState: [
+				[0, { borrow: { basis: "990", value: "1000" }, supply: { basis: "895", value: "900" } }],
+				USER_RESPONSE.tokenToState[1],
+			],
+		});
+		if (!accrued || !topUp) throw new Error("fixture must parse");
+		expect(() => verifyFreshEarnSubmission({ ...base, userState: accrued, request })).not.toThrow();
+		expect(() => verifyFreshEarnSubmission({ ...base, userState: topUp, request })).toThrow(EarnSubmissionStaleError);
+		expect(() =>
+			verifyFreshEarnSubmission({
+				...base,
+				request: { ...request, amount: "499.9", displayedMax: "500", full: null },
+			}),
+		).toThrow(EarnSubmissionStaleError);
 	});
 });

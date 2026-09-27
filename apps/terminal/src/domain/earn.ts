@@ -376,6 +376,46 @@ export function getEarnOperationRows(operation: EarnOperation, snapshot: EarnSna
 
 export type EarnAmountValidation = "empty" | "invalid" | "zero" | "exceedsMax" | "unavailable" | "valid";
 
+export const EARN_MIN_POSITION_USD = "1";
+
+export type EarnMinimumIssue = "supplyBelowMinimum" | "withdrawLeavesDust" | null;
+
+export function getEarnMinimumIssue(operation: EarnOperation, row: EarnAssetRow, amount: string): EarnMinimumIssue {
+	const price = Big(row.oraclePx);
+	if (operation === "supply") {
+		return Big(row.supplied).plus(amount).times(price).lt(EARN_MIN_POSITION_USD) ? "supplyBelowMinimum" : null;
+	}
+	if (operation === "withdraw") {
+		return Big(row.supplied).minus(amount).times(price).lt(EARN_MIN_POSITION_USD) ? "withdrawLeavesDust" : null;
+	}
+	return null;
+}
+
+export interface EarnFullPosition {
+	principal: string;
+}
+
+export function getEarnFullPosition({
+	operation,
+	row,
+	summary,
+	spotAvailable,
+}: EarnMaxAmountInput): EarnFullPosition | null {
+	if (operation === "withdraw") {
+		const supplied = Big(row.supplied);
+		const max = getEarnMaxAmount({ operation, row, summary, spotAvailable });
+		const fullAmount = supplied.round(row.weiDecimals, Big.roundDown);
+		return supplied.gt(0) && max !== null && Big(max).gte(fullAmount) ? { principal: row.suppliedBasis } : null;
+	}
+	if (operation === "repay") {
+		const borrowed = Big(row.borrowed);
+		const available = toBig(spotAvailable);
+		const required = borrowed.plus(Big(10).pow(-row.weiDecimals));
+		return borrowed.gt(0) && available?.gte(required) ? { principal: row.borrowedBasis } : null;
+	}
+	return null;
+}
+
 export function validateEarnAmount(
 	amount: string,
 	maxAmount: string | null,

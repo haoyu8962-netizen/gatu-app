@@ -2828,6 +2828,14 @@ msgstr "Introduce el precio de TP o SL"
 msgid "Enter trigger price"
 msgstr "Introduce el precio de activación"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Entire {token} borrow"
+msgstr "Todo el préstamo de {token}"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Entire {token} supply"
+msgstr "Todo el suministro de {token}"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Entry price"
@@ -3657,6 +3665,10 @@ msgstr "Hyperliquid rechazó la solicitud pública verificada."
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
 #~ msgstr "Hyperliquid informa que esta clave de trading fue reemplazada, modificada o expiró."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Hyperliquid requires at least $1 to stay supplied. Withdraw everything with Max, or leave at least $1."
+msgstr "Hyperliquid exige que queden al menos $1 suministrados. Retira todo con Máx o deja al menos $1."
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
@@ -6466,6 +6478,10 @@ msgstr "Reembolsa los préstamos para retirar colateral."
 msgid "Repaying from Earn is not available in Portfolio Margin mode."
 msgstr "El reembolso desde Rendimiento no está disponible en el modo Portfolio Margin."
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repays your entire {token} borrow, including interest accrued until it executes."
+msgstr "Reembolsa todo tu préstamo de {token}, incluidos los intereses acumulados hasta su ejecución."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
 #~ msgstr "Reemplaza el Agent móvil actual por una clave temporal inaccesible."
@@ -8150,6 +8166,10 @@ msgstr "La billetera principal rechazó la autorización."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr "El monedero maestro correspondiente firma esta aprobación de agente a nivel de cuenta."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "The minimum supply is $1."
+msgstr "El suministro mínimo es de $1."
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "The modification was not confirmed. Review the order before retrying."
@@ -10020,6 +10040,10 @@ msgctxt "Trading toolbar action"
 msgid "Withdraw"
 msgstr "Retirar"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdraw everything with Max, or leave at least $1 supplied."
+msgstr "Retira todo con Máx o deja al menos $1 suministrado."
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Withdraw from Vault"
 msgstr "Retirar de la bóveda"
@@ -10089,6 +10113,10 @@ msgstr "Retiro desbloqueado"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "Los retiros no están disponibles para esta dirección."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdraws your entire {token} supply, including interest accrued until it executes."
+msgstr "Retira todo tu suministro de {token}, incluidos los intereses acumulados hasta su ejecución."
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdrew {token}"

@@ -2828,6 +2828,14 @@ msgstr "Enter TP or SL price"
 msgid "Enter trigger price"
 msgstr "Enter trigger price"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Entire {token} borrow"
+msgstr "Entire {token} borrow"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Entire {token} supply"
+msgstr "Entire {token} supply"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Entry price"
@@ -3657,6 +3665,10 @@ msgstr "Hyperliquid rejected the verified public request."
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
 #~ msgstr "Hyperliquid reports that this trading key was replaced, changed, or expired."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Hyperliquid requires at least $1 to stay supplied. Withdraw everything with Max, or leave at least $1."
+msgstr "Hyperliquid requires at least $1 to stay supplied. Withdraw everything with Max, or leave at least $1."
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
@@ -6466,6 +6478,10 @@ msgstr "Repay borrows to withdraw collateral."
 msgid "Repaying from Earn is not available in Portfolio Margin mode."
 msgstr "Repaying from Earn is not available in Portfolio Margin mode."
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repays your entire {token} borrow, including interest accrued until it executes."
+msgstr "Repays your entire {token} borrow, including interest accrued until it executes."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
 #~ msgstr "Replaces the current mobile Agent with a temporary inaccessible key."
@@ -8150,6 +8166,10 @@ msgstr "The master wallet rejected the authorization."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr "The matching master wallet signs this account-level agent approval."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "The minimum supply is $1."
+msgstr "The minimum supply is $1."
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "The modification was not confirmed. Review the order before retrying."
@@ -10020,6 +10040,10 @@ msgctxt "Trading toolbar action"
 msgid "Withdraw"
 msgstr "Withdraw"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdraw everything with Max, or leave at least $1 supplied."
+msgstr "Withdraw everything with Max, or leave at least $1 supplied."
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Withdraw from Vault"
 msgstr "Withdraw from Vault"
@@ -10089,6 +10113,10 @@ msgstr "Withdrawal unlocked"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "Withdrawals are unavailable for this address."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdraws your entire {token} supply, including interest accrued until it executes."
+msgstr "Withdraws your entire {token} supply, including interest accrued until it executes."
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdrew {token}"
