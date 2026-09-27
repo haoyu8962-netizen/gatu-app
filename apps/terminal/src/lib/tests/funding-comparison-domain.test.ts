@@ -9,10 +9,13 @@ import {
 	getFundingComparisonHourlyRate,
 	getFundingComparisonPeriodRate,
 	getFundingComparisonRateTone,
+	getFundingComparisonSnapshotRemainingMs,
 	isFundingComparisonSnapshotFresh,
+	observeFundingComparisonSnapshot,
 	parsePredictedFundings,
 	toggleFundingComparisonSort,
 } from "@/domain/market/funding-comparison";
+import { LIVE_MARK_MAX_STALE_MS } from "@/domain/trade/market-price";
 
 const NEXT = 1_790_000_000_000;
 
@@ -64,11 +67,30 @@ const SNAPSHOT: PredictedFundingsResponse = [
 	],
 ];
 
+const PRICE_RECEIVED_AT = 1_800_000_000_000;
+
+function market(
+	name: string,
+	openInterest?: string,
+	markPx?: string,
+	overrides: Partial<FundingComparisonMarketContext> = {},
+): FundingComparisonMarketContext {
+	const live = openInterest !== undefined && markPx !== undefined;
+	return {
+		name,
+		openInterest,
+		markPx,
+		markPriceStatus: live ? "success" : "loading",
+		markPriceReceivedAt: live ? PRICE_RECEIVED_AT : undefined,
+		...overrides,
+	};
+}
+
 const MARKETS: FundingComparisonMarketContext[] = [
-	{ name: "PONS", openInterest: "1000", markPx: "0.5" },
-	{ name: "BTC", openInterest: "10.5", markPx: "100000" },
-	{ name: "HYPE", openInterest: "5", markPx: "40" },
-	{ name: "ZERO" },
+	market("PONS", "1000", "0.5"),
+	market("BTC", "10.5", "100000"),
+	market("HYPE", "5", "40"),
+	market("ZERO"),
 ];
 
 function sourceRow(coin: string, hourly: Partial<FundingComparisonSourceRow["hourlyRates"]>, oi: string | null) {
@@ -173,6 +195,42 @@ describe("isFundingComparisonSnapshotFresh", () => {
 	});
 });
 
+describe("funding comparison snapshot receipt", () => {
+	const RECEIVED = 1_800_000_000_000;
+	const OBSERVED = 5_000;
+	const MAX_AGE = 120_000;
+	const RECEIPT = { receivedAt: RECEIVED, monotonicDeadline: OBSERVED + MAX_AGE };
+
+	it("anchors the monotonic deadline to the local age at the first observation", () => {
+		expect(observeFundingComparisonSnapshot(RECEIVED, RECEIVED, OBSERVED, MAX_AGE)).toEqual(RECEIPT);
+		expect(observeFundingComparisonSnapshot(RECEIVED, RECEIVED + 50_000, OBSERVED, MAX_AGE)).toEqual({
+			receivedAt: RECEIVED,
+			monotonicDeadline: OBSERVED + 70_000,
+		});
+		expect(observeFundingComparisonSnapshot(RECEIVED, RECEIVED + MAX_AGE, OBSERVED, MAX_AGE)).toBeNull();
+		expect(observeFundingComparisonSnapshot(RECEIVED + 1, RECEIVED, OBSERVED, MAX_AGE)).toBeNull();
+		expect(observeFundingComparisonSnapshot(0, RECEIVED, OBSERVED, MAX_AGE)).toBeNull();
+		expect(observeFundingComparisonSnapshot(RECEIVED, RECEIVED, Number.NaN, MAX_AGE)).toBeNull();
+	});
+
+	it("keeps the monotonic bound when the wall clock is rolled back", () => {
+		expect(getFundingComparisonSnapshotRemainingMs(RECEIPT, RECEIVED, OBSERVED, MAX_AGE)).toBe(MAX_AGE);
+		expect(getFundingComparisonSnapshotRemainingMs(RECEIPT, RECEIVED + 30_000, OBSERVED + 90_000, MAX_AGE)).toBe(
+			30_000,
+		);
+		expect(getFundingComparisonSnapshotRemainingMs(RECEIPT, RECEIVED + 30_000, OBSERVED + MAX_AGE, MAX_AGE)).toBe(0);
+		expect(getFundingComparisonSnapshotRemainingMs(RECEIPT, RECEIVED - 3_600_000, OBSERVED + 1, MAX_AGE)).toBe(0);
+	});
+
+	it("keeps the wall-clock bound when the monotonic clock did not advance", () => {
+		expect(getFundingComparisonSnapshotRemainingMs(RECEIPT, RECEIVED + 100_000, OBSERVED + 10_000, MAX_AGE)).toBe(
+			20_000,
+		);
+		expect(getFundingComparisonSnapshotRemainingMs(RECEIPT, RECEIVED + MAX_AGE, OBSERVED + 10_000, MAX_AGE)).toBe(0);
+		expect(getFundingComparisonSnapshotRemainingMs(RECEIPT, RECEIVED, Number.NaN, MAX_AGE)).toBe(0);
+	});
+});
+
 describe("funding rate normalisation", () => {
 	it("keeps Hyperliquid hourly with or without an interval and divides exchange rates by their interval", () => {
 		expect(getFundingComparisonHourlyRate("HlPerp", venue("0.0000125"))).toBe("0.0000125");
@@ -231,7 +289,7 @@ describe("funding differences and tones", () => {
 
 describe("buildFundingComparisonRows", () => {
 	it("keeps catalog perps with exchange data and joins open interest from the market context", () => {
-		const rows = buildFundingComparisonRows(SNAPSHOT, MARKETS);
+		const rows = buildFundingComparisonRows(SNAPSHOT, MARKETS, PRICE_RECEIVED_AT);
 
 		expect(rows.map((row) => row.coin)).toEqual(["PONS", "BTC", "ZERO"]);
 		expect(rows[0]).toEqual({
@@ -248,12 +306,33 @@ describe("buildFundingComparisonRows", () => {
 	});
 
 	it("drops every asset that is missing from the catalog", () => {
-		expect(buildFundingComparisonRows(SNAPSHOT, [])).toEqual([]);
+		expect(buildFundingComparisonRows(SNAPSHOT, [], PRICE_RECEIVED_AT)).toEqual([]);
+	});
+
+	it("joins open interest only while the market's mark price is live and keeps the funding rates", () => {
+		function btcRow(overrides: Partial<FundingComparisonMarketContext>, now = PRICE_RECEIVED_AT) {
+			return buildFundingComparisonRows(SNAPSHOT, [market("BTC", "10.5", "100000", overrides)], now)[0];
+		}
+
+		expect(btcRow({}).openInterestUsd).toBe("1050000");
+		expect(btcRow({}, PRICE_RECEIVED_AT + LIVE_MARK_MAX_STALE_MS).openInterestUsd).toBe("1050000");
+		for (const markPriceStatus of ["idle", "loading", "stale", "error"] as const) {
+			expect(btcRow({ markPriceStatus })).toEqual({
+				coin: "BTC",
+				openInterestUsd: null,
+				hourlyRates: { HlPerp: "0.0000125", BinPerp: "0.0000125", BybitPerp: "-0.00005" },
+			});
+		}
+		expect(btcRow({}, PRICE_RECEIVED_AT + LIVE_MARK_MAX_STALE_MS + 1).openInterestUsd).toBeNull();
+		expect(btcRow({}, PRICE_RECEIVED_AT - 1).openInterestUsd).toBeNull();
+		expect(btcRow({ markPriceReceivedAt: undefined }).openInterestUsd).toBeNull();
+		expect(btcRow({ markPx: "0" }).openInterestUsd).toBeNull();
+		expect(btcRow({ openInterest: undefined }).openInterestUsd).toBeNull();
 	});
 });
 
 describe("deriveFundingComparisonPage", () => {
-	const rows = buildFundingComparisonRows(SNAPSHOT, MARKETS);
+	const rows = buildFundingComparisonRows(SNAPSHOT, MARKETS, PRICE_RECEIVED_AT);
 
 	it("derives period rates, differences and tones for each row", () => {
 		const result = page(rows);

@@ -1,5 +1,6 @@
 import type { PredictedFundingsResponse } from "@nktkas/hyperliquid";
 import type Big from "big.js";
+import { isLiveMarkPriceReady, type MarkPriceStatus } from "@/domain/trade/market-price";
 import { type Numeric, toBig } from "@/lib/trade/numbers";
 
 export type FundingComparisonVenue = "HlPerp" | "BinPerp" | "BybitPerp";
@@ -52,6 +53,13 @@ export interface FundingComparisonMarketContext {
 	name: string;
 	openInterest?: string;
 	markPx?: string;
+	markPriceStatus: MarkPriceStatus;
+	markPriceReceivedAt: number | undefined;
+}
+
+export interface FundingComparisonSnapshotReceipt {
+	receivedAt: number;
+	monotonicDeadline: number;
 }
 
 export interface FundingComparisonSourceRow {
@@ -144,6 +152,30 @@ export function isFundingComparisonSnapshotFresh(receivedAt: number, now: number
 	return age >= 0 && age < maxAgeMs;
 }
 
+export function observeFundingComparisonSnapshot(
+	receivedAt: number,
+	wallNow: number,
+	monotonicNow: number,
+	maxAgeMs: number,
+): FundingComparisonSnapshotReceipt | null {
+	if (!isFundingComparisonSnapshotFresh(receivedAt, wallNow, maxAgeMs) || !Number.isFinite(monotonicNow)) return null;
+	return { receivedAt, monotonicDeadline: monotonicNow + maxAgeMs - (wallNow - receivedAt) };
+}
+
+export function getFundingComparisonSnapshotRemainingMs(
+	receipt: FundingComparisonSnapshotReceipt,
+	wallNow: number,
+	monotonicNow: number,
+	maxAgeMs: number,
+): number {
+	if (!isFundingComparisonSnapshotFresh(receipt.receivedAt, wallNow, maxAgeMs) || !Number.isFinite(monotonicNow)) {
+		return 0;
+	}
+	const monotonicRemaining = receipt.monotonicDeadline - monotonicNow;
+	const wallRemaining = receipt.receivedAt + maxAgeMs - wallNow;
+	return Math.max(0, Math.min(monotonicRemaining, wallRemaining));
+}
+
 export function getFundingComparisonHourlyRate(
 	venue: FundingComparisonVenue,
 	data: PredictedFundingVenueData | null | undefined,
@@ -190,7 +222,8 @@ function getArbDirection(difference: Big): FundingComparisonArbDirection {
 	return "equal";
 }
 
-function getOpenInterestUsd(market: FundingComparisonMarketContext): string | null {
+function getOpenInterestUsd(market: FundingComparisonMarketContext, now: number): string | null {
+	if (!isLiveMarkPriceReady(market.markPriceStatus, market.markPx, market.markPriceReceivedAt, now)) return null;
 	const openInterest = toBig(market.openInterest);
 	const markPx = toBig(market.markPx);
 	if (!openInterest || !markPx) return null;
@@ -200,6 +233,7 @@ function getOpenInterestUsd(market: FundingComparisonMarketContext): string | nu
 export function buildFundingComparisonRows(
 	snapshot: PredictedFundingsResponse,
 	perpMarkets: readonly FundingComparisonMarketContext[],
+	now = Date.now(),
 ): FundingComparisonSourceRow[] {
 	const marketsByName = new Map(perpMarkets.map((market) => [market.name, market]));
 	const rows: FundingComparisonSourceRow[] = [];
@@ -211,7 +245,7 @@ export function buildFundingComparisonRows(
 		if (!hasCexData) continue;
 		rows.push({
 			coin,
-			openInterestUsd: getOpenInterestUsd(market),
+			openInterestUsd: getOpenInterestUsd(market, now),
 			hourlyRates: {
 				HlPerp: getFundingComparisonHourlyRate("HlPerp", venueData.get("HlPerp")),
 				BinPerp: getFundingComparisonHourlyRate("BinPerp", venueData.get("BinPerp")),

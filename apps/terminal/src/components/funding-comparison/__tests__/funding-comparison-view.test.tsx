@@ -22,6 +22,7 @@ vi.mock("@/lib/hyperliquid/markets/use-markets", () => ({
 }));
 
 const NEXT = 1_790_000_000_000;
+const PRICE_RECEIVED_AT = 1_800_000_000_000;
 
 function messageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -46,7 +47,17 @@ const ROWS = buildFundingComparisonRows(
 			],
 		],
 	],
-	[{ name: "BTC", openInterest: "10", markPx: "100000" }, { name: "ETH" }],
+	[
+		{
+			name: "BTC",
+			openInterest: "10",
+			markPx: "100000",
+			markPriceStatus: "success",
+			markPriceReceivedAt: PRICE_RECEIVED_AT,
+		},
+		{ name: "ETH", markPriceStatus: "loading", markPriceReceivedAt: undefined },
+	],
+	PRICE_RECEIVED_AT,
 );
 
 function props(overrides: Partial<FundingComparisonViewProps> = {}): FundingComparisonViewProps {
