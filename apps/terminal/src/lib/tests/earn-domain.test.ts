@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	buildEarnSnapshot,
 	type EarnTokenMeta,
+	findEarnPositionRow,
 	getEarnActionBlock,
 	getEarnFullPosition,
 	getEarnMaxAmount,
@@ -185,6 +186,17 @@ describe("earn snapshot", () => {
 		const { snapshot } = buildSnapshot();
 		expect(getEarnOperationRows("supply", snapshot).map((row) => row.isCollateral)).toEqual([false, false, true, true]);
 		expect(getEarnOperationRows("repay", snapshot).map((row) => row.token)).toEqual([0]);
+	});
+
+	it("finds a closed borrow in the complete snapshot even though repay no longer offers it", () => {
+		const { snapshot } = buildSnapshot({
+			tokenToState: [[150, { borrow: { basis: "0", value: "0" }, supply: { basis: "100", value: "100" } }]],
+			healthFactor: null,
+		});
+		expect(getEarnOperationRows("repay", snapshot)).toEqual([]);
+		expect(findEarnPositionRow("repay", snapshot, 0)).toMatchObject({ token: 0, borrowed: "0", borrowedBasis: "0" });
+		expect(findEarnPositionRow("withdraw", snapshot, 150)?.supplied).toBe("100");
+		expect(findEarnPositionRow("repay", snapshot, 150)).toBeNull();
 	});
 
 	it("uses the official liquidation threshold and price", () => {

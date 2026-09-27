@@ -267,8 +267,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/earn-domain.test.ts \
   src/lib/tests/earn-view.test.tsx \
   src/lib/tests/earn-interest-history.test.ts \
+  src/lib/tests/earn-fresh-state.test.ts \
   src/lib/tests/use-account-ledger.test.tsx \
   src/lib/tests/funds-action-lock.test.ts \
+  src/lib/tests/use-exchange-funds-action-lock.test.tsx \
+  src/lib/tests/use-exchange-portfolio-margin-policy.test.tsx \
   src/components/staking/__tests__/staking-view.test.tsx \
   src/lib/tests/action-progress-label-contract.test.ts \
   tests/slider-effective-leverage-regression.test.tsx \

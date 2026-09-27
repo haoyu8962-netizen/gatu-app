@@ -377,6 +377,15 @@ export function getEarnOperationRows(operation: EarnOperation, snapshot: EarnSna
 	return snapshot.borrowRows.filter((row) => Big(row.borrowed).gt(0));
 }
 
+export function findEarnPositionRow(
+	operation: EarnOperation,
+	snapshot: EarnSnapshot,
+	token: number,
+): EarnAssetRow | null {
+	const rows = operation === "supply" || operation === "withdraw" ? snapshot.supplyRows : snapshot.borrowRows;
+	return rows.find((row) => row.token === token) ?? null;
+}
+
 export type EarnAmountValidation = "empty" | "invalid" | "zero" | "exceedsMax" | "unavailable" | "valid";
 
 export const EARN_MIN_POSITION_USD = "1";

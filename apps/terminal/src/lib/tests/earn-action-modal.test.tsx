@@ -13,7 +13,7 @@ import {
 	parseEarnReserves,
 	parseEarnUserState,
 } from "@/domain/earn";
-import type { EarnData } from "@/hooks/earn/use-earn-data";
+import type { EarnData, EarnFreshState } from "@/hooks/earn/use-earn-data";
 import { createI18nRoot } from "./harness/react";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
@@ -33,6 +33,7 @@ const testState = vi.hoisted(() => ({
 	beforeSdk: vi.fn(),
 	assertAccountAbstraction: vi.fn(),
 	assertFreshGeoAllowed: vi.fn(),
+	guardController: null as AbortController | null,
 	pending: false,
 	availability: { available: true, reason: null as string | null, unavailableReason: null as string | null },
 }));
@@ -157,7 +158,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 			const requestParams = { ...(params as Record<string, unknown>) };
 			options?.executionGuard?.(requestParams);
 			await testState.beforeGuard(requestParams);
-			await options?.preExecutionGuard?.(requestParams, new AbortController().signal);
+			await options?.preExecutionGuard?.(requestParams, (testState.guardController ?? new AbortController()).signal);
 			await testState.beforeSdk(requestParams);
 			options?.executionGuard?.(requestParams);
 			return testState.borrowLend(requestParams);
@@ -316,6 +317,7 @@ describe("earn action modal", () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.exchangeIdentity.exchangeLifecycle = { active: true, id: Symbol("exchange-lifecycle") };
 		testState.pending = false;
+		testState.guardController = null;
 		testState.availability = { available: true, reason: null, unavailableReason: null };
 		testState.borrowLend.mockReset();
 		testState.borrowLend.mockResolvedValue({ status: "ok", response: { type: "default" } });
@@ -818,6 +820,7 @@ describe("earn action modal", () => {
 		act(() => getSubmit(container).click());
 		await flush();
 		expect(data.fetchFreshState).toHaveBeenCalledTimes(1);
+		expect(data.fetchFreshState).toHaveBeenCalledWith(expect.any(AbortSignal));
 		expect(testState.borrowLend).not.toHaveBeenCalled();
 		expect(toastText(toastMocks.error.mock.calls[0]?.[0])).toBe(
 			"Earn balances changed before submission. Review the updated amounts and try again.",
@@ -845,5 +848,68 @@ describe("earn action modal", () => {
 		render("withdraw", 0, createUsdcData({ supplied: "100" }));
 		expect(container.textContent).toContain("Withdraws your entire USDC supply");
 		expect(getSubmit(container).disabled).toBe(false);
+	});
+
+	it("keeps a repay-all request void after the borrow closes, even when the same borrow returns", async () => {
+		render("repay", 0, createUsdcData({ borrowed: "25", spotUsdc: "700" }));
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		expect(container.textContent).toContain("Repays your entire USDC borrow");
+		render("repay", 0, createUsdcData({ borrowed: "0", spotUsdc: "700" }));
+		expect(container.textContent).toContain(
+			"Your position changed since you opened this dialog. Review the amounts before confirming.",
+		);
+		expect(getSubmit(container).disabled).toBe(true);
+		render("repay", 0, createUsdcData({ borrowed: "25", spotUsdc: "700" }));
+		expect(container.textContent).toContain("This position changed. Use Max again or enter an amount.");
+		expect(container.textContent).not.toContain("Repays your entire USDC borrow");
+		expect(getSubmit(container).disabled).toBe(true);
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).not.toHaveBeenCalled();
+	});
+
+	it("does not show change notices while the dialog closes", () => {
+		const renderWith = (open: boolean, data: EarnData) =>
+			act(() =>
+				root.render(
+					createElement(EarnActionModal, {
+						open,
+						sessionId: 9,
+						operation: "withdraw",
+						initialToken: 0,
+						data,
+						onOpenChange: vi.fn(),
+					}),
+				),
+			);
+		renderWith(true, createUsdcData({ supplied: "100" }));
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		renderWith(false, createUsdcData({ supplied: "50" }));
+		expect(container.querySelector("section")?.getAttribute("data-open")).toBe("false");
+		expect(container.textContent).not.toContain("Your position changed");
+		expect(container.textContent).not.toContain("This position changed");
+	});
+
+	it("passes the funds-lock signal to the fresh read and does not send once it aborts", async () => {
+		const controller = new AbortController();
+		testState.guardController = controller;
+		const data = createUsdcData({ supplied: "100" });
+		const freshState = await data.fetchFreshState(new AbortController().signal);
+		let finishRead = () => {};
+		data.fetchFreshState = vi.fn(
+			() =>
+				new Promise<EarnFreshState | null>((resolve) => {
+					finishRead = () => resolve(freshState);
+				}),
+		);
+		render("withdraw", 0, data);
+		act(() => setInputValue(getInput(container), "10"));
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(data.fetchFreshState).toHaveBeenCalledWith(controller.signal);
+		controller.abort(new Error("guard timed out"));
+		finishRead();
+		await flush();
+		expect(testState.borrowLend).not.toHaveBeenCalled();
 	});
 });

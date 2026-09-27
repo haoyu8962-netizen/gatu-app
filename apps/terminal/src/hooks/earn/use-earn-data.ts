@@ -1,5 +1,5 @@
 import type { InfoClient } from "@nktkas/hyperliquid";
-import { useQuery } from "@tanstack/react-query";
+import { type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	buildEarnSnapshot,
 	type EarnInterestEntry,
@@ -21,7 +21,7 @@ import {
 } from "@/hooks/trade/use-account-balances";
 import { useAccountLedger } from "@/hooks/trade/use-account-ledger";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { useHyperliquid, useInfo, useSpotTokens } from "@/lib/hyperliquid";
+import { type HyperliquidEnv, infoQueryOptions, useHyperliquid, useInfo, useSpotTokens } from "@/lib/hyperliquid";
 import type { AccountLedgerRow } from "@/lib/trade/account-ledger";
 import {
 	fetchHistoryPageWithRetry,
@@ -63,7 +63,12 @@ export interface EarnData {
 	retryAccount: () => void;
 	retryInterest: () => void;
 	retryHistory: () => void;
-	fetchFreshState: () => Promise<{ reserves: EarnReserve[]; userState: EarnUserState } | null>;
+	fetchFreshState: (signal: AbortSignal) => Promise<EarnFreshState | null>;
+}
+
+export interface EarnFreshState {
+	reserves: EarnReserve[];
+	userState: EarnUserState;
 }
 
 export function getEarnInterestStartTime(now: number): number {
@@ -107,11 +112,49 @@ export async function fetchEarnInterest(
 	return requireCompleteHistorySnapshot(result);
 }
 
+export async function fetchFreshEarnState(
+	queryClient: QueryClient,
+	info: InfoClient,
+	env: HyperliquidEnv,
+	user: `0x${string}`,
+	signal: AbortSignal,
+): Promise<EarnFreshState | null> {
+	const requestOptions = { requestTimeoutMs: EARN_REQUEST_TIMEOUT_MS };
+	const reservesOptions = infoQueryOptions(info, "allBorrowLendReserveStates", undefined, env, requestOptions);
+	const userOptions = infoQueryOptions(info, "borrowLendUserState", { user }, env, requestOptions);
+	const cancelPageRequests = () =>
+		Promise.all([
+			queryClient.cancelQueries({ exact: true, queryKey: reservesOptions.queryKey }),
+			queryClient.cancelQueries({ exact: true, queryKey: userOptions.queryKey }),
+		]);
+	try {
+		signal.throwIfAborted();
+		await cancelPageRequests();
+		signal.throwIfAborted();
+		const [rawReserves, rawUserState] = await Promise.all([
+			reservesOptions.queryFn({ signal }),
+			userOptions.queryFn({ signal }),
+		]);
+		signal.throwIfAborted();
+		await cancelPageRequests();
+		signal.throwIfAborted();
+		queryClient.setQueryData(reservesOptions.queryKey, rawReserves);
+		queryClient.setQueryData(userOptions.queryKey, rawUserState);
+		const reserves = parseEarnReserves(rawReserves);
+		const userState = parseEarnUserState(rawUserState);
+		return reserves && userState ? { reserves, userState } : null;
+	} catch (error) {
+		if (signal.aborted) throw signal.reason ?? error;
+		return null;
+	}
+}
+
 export function useEarnData(): EarnData {
 	const { address, isConnected } = useWalletSession();
 	const ownerAddress = isConnected ? address : undefined;
 	const user = ownerAddress ?? EMPTY_USER;
 	const { env, info } = useHyperliquid();
+	const queryClient = useQueryClient();
 	const balances = useDefaultDexBalances();
 	const { tokens: spotTokens } = useSpotTokens();
 	const accountQueryOptions = {
@@ -208,16 +251,9 @@ export function useEarnData(): EarnData {
 				})
 			: null;
 
-	async function fetchFreshState() {
-		if (!ownerAddress) return null;
-		const [freshReserves, freshUser] = await Promise.all([
-			reservesQuery.refetch({ cancelRefetch: true }),
-			userStateQuery.refetch({ cancelRefetch: true }),
-		]);
-		if (freshReserves.error || freshUser.error) return null;
-		const parsedReserves = parseEarnReserves(freshReserves.data);
-		const parsedUser = parseEarnUserState(freshUser.data);
-		return parsedReserves && parsedUser ? { reserves: parsedReserves, userState: parsedUser } : null;
+	function fetchFreshState(signal: AbortSignal) {
+		if (!ownerAddress) return Promise.resolve(null);
+		return fetchFreshEarnState(queryClient, info, env, ownerAddress, signal);
 	}
 
 	return {

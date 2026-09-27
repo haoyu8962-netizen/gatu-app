@@ -17,6 +17,7 @@ import {
 	type EarnMinimumIssue,
 	type EarnOperation,
 	type EarnSnapshot,
+	findEarnPositionRow,
 	getEarnFullPosition,
 	getEarnMaxAmount,
 	getEarnMinimumIssue,
@@ -145,33 +146,41 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(data.accountAbstraction, data.ownerAddress);
 
 	const row = rows.find((candidate) => candidate.token === selectedToken) ?? null;
+	const positionRow =
+		snapshot && selectedToken !== null ? findEarnPositionRow(operation, snapshot, selectedToken) : null;
 	const accountReady = data.accountStatus === "ready";
 	const dataReady = accountReady && data.publicStatus === "ready";
-	if (row && accountReady && openedPosition?.token !== row.token) {
-		setOpenedPosition(createPositionBaseline(row));
+	if (positionRow && accountReady && openedPosition?.token !== positionRow.token) {
+		setOpenedPosition(createPositionBaseline(positionRow));
 	}
-	const positionChanged = Boolean(row && accountReady && openedPosition && hasPositionChanged(openedPosition, row));
+	const positionChanged = Boolean(
+		positionRow && accountReady && openedPosition && hasPositionChanged(openedPosition, positionRow),
+	);
 	const spotAvailable = row ? getSpotAvailable(data, row.token) : null;
 	const maxAmount =
 		snapshot && row && dataReady
 			? getEarnMaxAmount({ operation, row, summary: snapshot.summary, spotAvailable })
 			: null;
 	const currentFull =
-		snapshot && row && dataReady
-			? getEarnFullPosition({ operation, row, summary: snapshot.summary, spotAvailable })
+		snapshot && positionRow && dataReady
+			? getEarnFullPosition({
+					operation,
+					row: positionRow,
+					summary: snapshot.summary,
+					spotAvailable: getSpotAvailable(data, positionRow.token),
+				})
 			: null;
 	const fullIntentStatus = getFullIntentStatus(fullIntent, {
 		ownerKey: draftOwnerKey,
 		operation,
-		token: row?.token ?? null,
-		verifiable: Boolean(snapshot && row && dataReady),
+		token: selectedToken,
+		verifiable: Boolean(snapshot && dataReady),
 		current: currentFull,
 	});
 	if (fullIntentStatus === "lost" && fullIntent && !fullIntent.invalidated) {
 		setFullIntent({ ...fullIntent, invalidated: true });
 	}
 	const fullPosition = fullIntentStatus === "valid" ? currentFull : null;
-	const fullIntentLost = fullIntentStatus === "lost";
 	const validation = row ? validateEarnAmount(amount, maxAmount, row.weiDecimals) : "unavailable";
 	const minimumIssue =
 		row && validation === "valid" && !fullIntent ? getEarnMinimumIssue(operation, row, amount) : null;
@@ -180,6 +189,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		preExecutionGuard: verifyInsideFundsLock,
 	});
 	const pending = isSubmitting || isPending;
+	const reviewable = open && !pending;
 	const canSubmit =
 		open &&
 		dataReady &&
@@ -265,7 +275,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		const [, , fresh] = await Promise.all([
 			assertCurrentAccountMode(signal),
 			assertCurrentGeo(signal),
-			dataRef.current.fetchFreshState(),
+			dataRef.current.fetchFreshState(signal),
 		]);
 		signal.throwIfAborted();
 		const latest = dataRef.current;
@@ -402,7 +412,12 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 	const title = getTitle(operation, row, translate);
 	const description = getDescription(operation, row, translate);
 	const tokenOptions = getTokenOptions(operation, rows, translate);
-	const amountError = getAmountError(validation, minimumIssue, fullIntentLost, translate);
+	const amountError = getAmountError(
+		validation,
+		minimumIssue,
+		fullIntentStatus === "lost" && row !== null && reviewable,
+		translate,
+	);
 	const submitLabel = getSubmitLabel(operation, translate);
 
 	return (
@@ -470,7 +485,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 						<p className="px-2 text-2xs text-fg-muted">{translate(getFullPositionNote(operation, row.displayName))}</p>
 					) : null}
 					<div aria-live="polite">
-						{positionChanged && !pending ? (
+						{positionChanged && reviewable ? (
 							<p className="rounded-16 border border-stroke-info-weak bg-info-soft p-2.5 text-xs text-info">
 								{t`Your position changed since you opened this dialog. Review the amounts before confirming.`}
 							</p>
