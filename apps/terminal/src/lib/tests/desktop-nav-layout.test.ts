@@ -51,36 +51,28 @@ describe("desktop navigation layout", () => {
 		expect(ids(layout.more)).toEqual(["statistics", "api-wallet"]);
 	});
 
-	it("collapses the Soon placeholder for everyone and the lower entries only when connected at compact widths", () => {
+	it("keeps Earn at the top level and collapses the lower entries only when connected at compact widths", () => {
 		const connected = resolveDesktopNavLayout({ compact: true, narrow: false, connected: true });
-		expect(ids(connected.topLevel)).toEqual(["trade", "portfolio"]);
-		expect(ids(connected.more)).toEqual([
+		expect(ids(connected.topLevel)).toEqual(["trade", "portfolio", "earn"]);
+		expect(ids(connected.more)).toEqual(["vaults", "staking", "referrals", "leaderboard", "statistics", "api-wallet"]);
+		const disconnected = resolveDesktopNavLayout({ compact: true, narrow: false, connected: false });
+		expect(ids(disconnected.topLevel)).toEqual([
+			"trade",
+			"portfolio",
 			"earn",
 			"vaults",
 			"staking",
 			"referrals",
 			"leaderboard",
-			"statistics",
-			"api-wallet",
 		]);
-		const disconnected = resolveDesktopNavLayout({ compact: true, narrow: false, connected: false });
-		expect(ids(disconnected.topLevel)).toEqual(["trade", "portfolio", "vaults", "staking", "referrals", "leaderboard"]);
-		expect(ids(disconnected.more)).toEqual(["earn", "statistics", "api-wallet"]);
+		expect(ids(disconnected.more)).toEqual(["statistics", "api-wallet"]);
 	});
 
 	it("collapses the lower entries for every wallet state at narrow widths", () => {
 		for (const connected of [true, false]) {
 			const layout = resolveDesktopNavLayout({ compact: true, narrow: true, connected });
-			expect(ids(layout.topLevel)).toEqual(["trade", "portfolio"]);
-			expect(ids(layout.more)).toEqual([
-				"earn",
-				"vaults",
-				"staking",
-				"referrals",
-				"leaderboard",
-				"statistics",
-				"api-wallet",
-			]);
+			expect(ids(layout.topLevel)).toEqual(["trade", "portfolio", "earn"]);
+			expect(ids(layout.more)).toEqual(["vaults", "staking", "referrals", "leaderboard", "statistics", "api-wallet"]);
 		}
 	});
 
@@ -96,7 +88,8 @@ describe("desktop navigation layout", () => {
 		["staking", "/staking", true],
 		["api-wallet", "/api-wallet", true],
 		["statistics", "/statistics", false],
-		["earn", "/earn", false],
+		["earn", "/earn", true],
+		["earn", "/earnings", false],
 	] as const)("derives %s activity from %s", (id, pathname, active) => {
 		expect(isDesktopNavItemActive(byId(id), pathname)).toBe(active);
 	});

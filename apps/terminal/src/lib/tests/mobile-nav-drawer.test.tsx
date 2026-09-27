@@ -208,6 +208,7 @@ describe("MobileNavDrawer", () => {
 		expect(links.map((link) => link.textContent?.trim())).toEqual([
 			"Trade",
 			"Portfolio",
+			"Earn",
 			"Vaults",
 			"Staking",
 			"Referrals",
@@ -218,6 +219,7 @@ describe("MobileNavDrawer", () => {
 		expect(links.map((link) => link.dataset.to)).toEqual([
 			"/trade/HYPE",
 			"/portfolio",
+			"/earn",
 			"/vaults",
 			"/staking",
 			"/referrals",
@@ -230,14 +232,8 @@ describe("MobileNavDrawer", () => {
 		expect(statisticsLink?.target).toBe("_blank");
 		expect(statisticsLink?.rel).toBe("noopener noreferrer");
 
-		const upcomingItems = [
-			...container.querySelectorAll<HTMLButtonElement>('[data-testid="mobile-nav-drawer"] nav button'),
-		];
-		expect(upcomingItems.map(itemLabel)).toEqual(["Earn"]);
-		for (const item of upcomingItems) {
-			expect(item.disabled).toBe(true);
-			expect(item.textContent).toContain("Soon");
-		}
+		expect(container.querySelectorAll('[data-testid="mobile-nav-drawer"] nav button:disabled')).toHaveLength(0);
+		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')?.textContent).not.toContain("Soon");
 
 		const drawerText = container.querySelector('[data-testid="mobile-nav-drawer"]')?.textContent;
 		for (const removedLabel of ["Docs", "Support", "Terms", "Privacy Policy", "Risk Disclosure"])

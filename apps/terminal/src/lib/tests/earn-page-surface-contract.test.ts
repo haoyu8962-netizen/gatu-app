@@ -23,6 +23,16 @@ describe("earn page surface contract", () => {
 		expect(source).not.toContain("bg-portfolio-canvas");
 	});
 
+	it("keeps the Earn page frame on the dashboard canvas", () => {
+		const source = readFileSync(resolve(TEST_DIR, "../..", "components/earn/earn-page.tsx"), "utf8");
+
+		expect(source.match(/<DashboardFrameView/g)).toHaveLength(1);
+		expect(source.match(/DASHBOARD_FRAMES\["\/earn"\]/g)).toHaveLength(1);
+		expect(DASHBOARD_FRAMES["/earn"].canvasClassName).toBe("min-h-dvh bg-dashboard-canvas font-sans text-fg");
+		expect(source).not.toContain("bg-grid-container");
+		expect(source).not.toContain("bg-portfolio-canvas");
+	});
+
 	it("keeps the Vault fixture and live frames on the dashboard canvas", () => {
 		const source = readFileSync(resolve(TEST_DIR, "../..", VAULTS_PAGE_SOURCE), "utf8");
 

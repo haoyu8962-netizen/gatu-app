@@ -793,10 +793,10 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   `resolveDesktopNavLayout` and the current entry with `isDesktopNavItemActive`; `TopNav` only
   renders that result and mounts one More dropdown.
 - Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
-  `DESKTOP_NAV_NARROW_MAX_PX` (1100). The `nav-compact` Tailwind variant in `styles.css` must equal
+  `DESKTOP_NAV_NARROW_MAX_PX` (1150; 1100 until Earn became a top-level link, ADR 0020 D8). The `nav-compact` Tailwind variant in `styles.css` must equal
   the compact constant (`desktop-nav-layout` pins it); never write `max-[1181px]` again.
-- Collapse rule: at or below the compact width the Soon placeholder leaves the top level and appears
-  disabled in More; the lower entries move into More when the account chip is visible at the compact
+- Collapse rule: at or below the compact width a Soon placeholder (none today; Earn links to `/earn`
+  since ADR 0020) leaves the top level and appears disabled in More; the lower entries move into More when the account chip is visible at the compact
   width or for every state at the narrow width. "Account chip visible" means `authenticated ||
   isConnected` from `useWalletSession`, the same condition under which `UserMenu` renders an
   identity instead of the Connect CTA, so Agent-only sessions collapse like wallet sessions;
@@ -815,6 +815,10 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   gap between the navigation and the wallet controls after removing Earn): en 78px, zh 189px,
   hi 185px, es 53px, fr 2px, ar 109px. French leaves no margin, so every state collapses at
   1100px. Re-run that measurement before adding a locale or lengthening a label.
+- Evidence after Earn became a top-level link (2026-09-27, local dev server, disconnected, `/earn`):
+  at 1101px without collapsing the gap is en 124px, zh 237px, hi 243px, es 50px, fr 6px, ar 146px,
+  so the narrow width moved to 1150px; at 1151px fr keeps 56px and es 100px, at 1001px (collapsed)
+  fr keeps 226px. The connected header was not measured.
 
 ### Important Files
 

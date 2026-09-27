@@ -434,6 +434,10 @@ msgstr "खाता मूल्य"
 msgid "Account Value Change"
 msgstr "खाता मूल्य परिवर्तन"
 
+#: src/components/earn/earn-view.tsx
+msgid "Account Value weighted by LTV / Borrowed Amount. If this number is below 100%, the account cannot borrow more."
+msgstr "LTV से भारित खाता मूल्य / उधार राशि। यह 100% से कम होने पर खाता और उधार नहीं ले सकता।"
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Account Vault data could not be verified"
 msgstr "खाते का वॉल्ट डेटा सत्यापित नहीं किया जा सका"
@@ -443,6 +447,8 @@ msgid "Account-level agent approval"
 msgstr "खाता-स्तरीय Agent स्वीकृति"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -673,6 +679,8 @@ msgstr "पूरी अवधि का PNL"
 msgid "ALO (Add Liquidity Only)"
 msgstr "ALO (केवल लिक्विडिटी जोड़ें)"
 
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -698,6 +706,10 @@ msgstr "उपलब्ध ब्रिज मार्गों के लि�
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "राशि शून्य से अधिक होनी चाहिए और वर्तमान पोज़िशन से अधिक नहीं होनी चाहिए।"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Amount to repay"
+msgstr "चुकाने की राशि"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "An account is excluded only when both its account value is below $100,000 and its all-time volume is below $10,000,000. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this ranking does not claim exact parity with Hyperliquid's official leaderboard."
@@ -843,6 +855,10 @@ msgstr "अनुमानित: SDK कच्चे कुल मान को
 msgid "APR"
 msgstr "APR"
 
+#: src/components/earn/earn-view.tsx
+msgid "APY"
+msgstr "APY"
+
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Arbitrum (CCTP)"
 msgstr "Arbitrum (CCTP)"
@@ -865,6 +881,9 @@ msgstr "आवश्यकतानुसार पोज़िशन बंद 
 msgid "Ask"
 msgstr "बिक्री"
 
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -985,6 +1004,10 @@ msgstr "उपलब्ध स्टेकिंग HYPE डेलीगेट �
 msgid "Available to close"
 msgstr "बंद करने के लिए उपलब्ध"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Available to Withdraw"
+msgstr "निकासी के लिए उपलब्ध"
+
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Average Fill Price"
 msgstr "औसत निष्पादन मूल्य"
@@ -1075,9 +1098,31 @@ msgstr "खरीद"
 msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
 msgstr "बिटकॉइन एक विकेंद्रीकृत डिजिटल परिसंपत्ति है जिसकी सुरक्षा प्रूफ-ऑफ-वर्क नेटवर्क करता है।"
 
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/config/account-ledger.ts
 msgid "Borrow"
 msgstr "उधार लें"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Borrow against your supplied collateral. To borrow, manually supply HYPE or BTC."
+msgstr "सप्लाई किए गए कोलैटरल पर उधार लें। उधार लेने के लिए HYPE या BTC मैन्युअल रूप से सप्लाई करें।"
+
+#: src/components/earn/earn-view.tsx
+msgid "Borrow Interest"
+msgstr "उधार ब्याज"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Borrowed {token}"
+msgstr "{token} उधार लिया"
+
+#: src/components/earn/earn-view.tsx
+msgid "Borrowing is automated in Portfolio Margin mode."
+msgstr "पोर्टफोलियो मार्जिन मोड में उधार अपने-आप होता है।"
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "Bought {quantity}"
@@ -1258,6 +1303,10 @@ msgstr "चार्ट डेटा पर अस्थायी दर सी�
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "चार्ट इतिहास अनुरोध का समय समाप्त हो गया"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Check Earn Action History before retrying."
+msgstr "दोबारा प्रयास करने से पहले अर्न कार्रवाई इतिहास देखें।"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Check the wallet address or display name, or the account may not meet the current criteria."
@@ -2590,15 +2639,40 @@ msgstr "प्रत्येक पोज़िशन केवल अपने
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
 msgstr "प्रत्येक पोज़िशन केवल उसे आवंटित मार्जिन का उपयोग करती है। यदि मार्जिन अनुपात 100% तक पहुँच जाता है, तो पोज़िशन लिक्विडेट हो जाती है। मार्जिन जोड़ा जा सकता है, लेकिन पोज़िशन खुली रहने तक इसे निकाला नहीं जा सकता।"
 
+#: src/components/earn/earn-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 #: src/config/desktop-nav.ts
 msgid "Earn"
 msgstr "अर्न"
 
+#: src/components/earn/earn-view.tsx
+msgid "Earn Action History"
+msgstr "अर्न कार्रवाई इतिहास"
+
 #: src/components/portfolio/portfolio-overview.tsx
 #~ msgid "Earn Balance"
 #~ msgstr "अर्न बैलेंस"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Earn balances changed before submission. Review the updated amounts and try again."
+msgstr "सबमिट करने से पहले अर्न बैलेंस बदल गया। अपडेट की गई राशि देखें और फिर से प्रयास करें।"
+
+#: src/components/earn/earn-view.tsx
+msgid "Earn detail views"
+msgstr "अर्न विवरण दृश्य"
+
+#: src/components/earn/earn-view.tsx
+msgid "Earn details"
+msgstr "अर्न विवरण"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Earn request failed"
+msgstr "अर्न अनुरोध विफल"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Earn request status unknown"
+msgstr "अर्न अनुरोध की स्थिति अज्ञात"
 
 #: src/components/referrals/referral-legacy-history.tsx
 msgid "Earned"
@@ -2678,6 +2752,10 @@ msgstr "सामान्य ऑर्डर इतिहास देखने
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Enter a valid 0x account address to view trade history."
 msgstr "ट्रेड इतिहास देखने के लिए मान्य 0x खाता पता दर्ज करें।"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Enter a valid amount"
+msgstr "मान्य राशि दर्ज करें"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Enter a valid Ethereum address."
@@ -3676,9 +3754,17 @@ msgstr "अपर्याप्त <0/> बैलेंस"
 msgid "Insufficient balance"
 msgstr "अपर्याप्त बैलेंस"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Insufficient funds"
+msgstr "अपर्याप्त धनराशि"
+
 #: src/lib/errors/format.ts
 msgid "Insufficient funds for gas"
 msgstr "गैस के लिए अपर्याप्त फंड"
+
+#: src/components/earn/earn-view.tsx
+msgid "Interest"
+msgstr "ब्याज"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -3961,6 +4047,7 @@ msgstr "लिक्विडेशन प्राइस"
 msgid "Liquidated"
 msgstr "लिक्विडेट हो गया"
 
+#: src/components/earn/earn-view.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4179,6 +4266,10 @@ msgstr "हानि"
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Low balance"
 msgstr "कम बैलेंस"
+
+#: src/components/earn/earn-view.tsx
+msgid "LTV"
+msgstr "LTV"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/trade/components/global-settings-modal.tsx
@@ -4399,6 +4490,7 @@ msgstr "मास्टर वॉलेट आवश्यक है"
 msgid "Master wallet verified"
 msgstr "मास्टर वॉलेट सत्यापित है"
 
+#: src/components/earn/earn-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4592,6 +4684,12 @@ msgstr "स्टेकिंग HYPE को स्पॉट में ले �
 msgid "Move USDC between your Perp and Spot accounts."
 msgstr "अपने Perp और Spot खातों के बीच USDC ट्रांसफर करें।"
 
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+msgid "N/A"
+msgstr "लागू नहीं"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
@@ -4754,6 +4852,10 @@ msgstr "वॉल्ट ने कोई विवरण नहीं दिय�
 #~ msgid "No desktop wallet QR was found."
 #~ msgstr "कोई डेस्कटॉप वॉलेट QR नहीं मिला।"
 
+#: src/components/earn/earn-view.tsx
+msgid "No earn actions yet"
+msgstr "अभी तक कोई अर्न कार्रवाई नहीं"
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "No eligible leaderboard accounts"
 msgstr "कोई पात्र लीडरबोर्ड खाता नहीं है"
@@ -4803,6 +4905,10 @@ msgstr "चुने गए फ़िल्टर से कोई फंडि�
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 msgid "No funding payments match this direction."
 msgstr "इस दिशा से मेल खाने वाला कोई फंडिंग भुगतान नहीं है।"
+
+#: src/components/earn/earn-view.tsx
+msgid "No interest yet"
+msgstr "अभी तक कोई ब्याज नहीं"
 
 #: src/components/referrals/referral-activity.tsx
 msgid "No legacy reward history."
@@ -5204,6 +5310,10 @@ msgstr "ओरेकल"
 #: src/config/ui-text.ts
 #~ msgid "ORACLE"
 #~ msgstr "ऑरेकल"
+
+#: src/components/earn/earn-view.tsx
+msgid "Oracle Price"
+msgstr "ओरेकल मूल्य"
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "Order"
@@ -6331,9 +6441,30 @@ msgstr "यह स्वीकृति हटाते ही इसी API व
 #~ msgid "Rendering QR"
 #~ msgstr "QR रेंडर हो रहा है"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repaid {token}"
+msgstr "{token} चुकाया"
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/config/account-ledger.ts
 msgid "Repay"
 msgstr "चुकाएँ"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repay borrows from your {token} available balance."
+msgstr "अपने उपलब्ध {token} बैलेंस से उधार चुकाएँ।"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repay borrows to withdraw collateral."
+msgstr "कोलैटरल निकालने के लिए उधार चुकाएँ।"
+
+#: src/components/earn/earn-view.tsx
+msgid "Repaying from Earn is not available in Portfolio Margin mode."
+msgstr "पोर्टफोलियो मार्जिन मोड में अर्न से चुकाना उपलब्ध नहीं है।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
@@ -7213,7 +7344,6 @@ msgstr "कुछ ऑर्डर स्वीकार किए गए। प�
 msgid "Something went wrong"
 msgstr "कुछ गलत हो गया"
 
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "Soon"
 msgstr "जल्द ही"
@@ -7558,9 +7688,48 @@ msgstr "सबमिट हो रहा है…"
 msgid "Successful"
 msgstr "सफल"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Supplied {token}"
+msgstr "{token} सप्लाई किया"
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/config/account-ledger.ts
 msgid "Supply"
 msgstr "सप्लाई"
+
+#: src/components/earn/earn-view.tsx
+msgid "Supply a supported collateral asset to borrow."
+msgstr "उधार लेने के लिए समर्थित कोलैटरल संपत्ति सप्लाई करें।"
+
+#: src/components/earn/earn-view.tsx
+msgid "Supply and Borrow"
+msgstr "सप्लाई और उधार"
+
+#: src/components/earn/earn-view.tsx
+msgid "Supply Interest"
+msgstr "सप्लाई ब्याज"
+
+#: src/components/earn/earn-view.tsx
+msgid "Supply quote assets like USDC or USDT to earn interest or supply assets like HYPE or BTC as collateral to borrow against. Quote asset suppliers earn yield paid by borrowers. Borrowers pay interest, and collateral remains locked until the borrows are repaid."
+msgstr "ब्याज कमाने के लिए USDC या USDT जैसी कोट संपत्तियाँ सप्लाई करें, या उधार लेने के लिए HYPE या BTC जैसी संपत्तियाँ कोलैटरल के रूप में सप्लाई करें। कोट संपत्ति सप्लाई करने वाले उधारकर्ताओं द्वारा चुकाया गया प्रतिफल कमाते हैं। उधारकर्ता ब्याज देते हैं, और उधार चुकाए जाने तक कोलैटरल लॉक रहता है।"
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-action-modal.tsx
+msgid "Supply to Borrow"
+msgstr "उधार के लिए सप्लाई"
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-action-modal.tsx
+msgid "Supply to Earn"
+msgstr "कमाने के लिए सप्लाई"
+
+#: src/components/earn/earn-view.tsx
+msgid "Supplying and borrowing happen automatically on Portfolio Margin mode. Quote assets like USDC or USDT that are not being utilized are supplied and earn interest. Trades that require additional quote assets will borrow against collateral like HYPE or BTC. Borrows pay interest, and collateral remains locked until the borrows are repaid."
+msgstr "पोर्टफोलियो मार्जिन मोड में सप्लाई और उधार अपने-आप होते हैं। USDC या USDT जैसी कोट संपत्तियाँ जो उपयोग में नहीं हैं, सप्लाई होकर ब्याज कमाती हैं। जिन ट्रेडों को अतिरिक्त कोट संपत्ति चाहिए, वे HYPE या BTC जैसे कोलैटरल पर उधार लेते हैं। उधार पर ब्याज लगता है, और उधार चुकाए जाने तक कोलैटरल लॉक रहता है।"
 
 #: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
@@ -8555,6 +8724,8 @@ msgstr "अनुरोध का सत्यापन योग्य पर�
 msgid "TIF"
 msgstr "TIF"
 
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -8645,6 +8816,11 @@ msgstr "कुल"
 msgid "Total ({sizeToken})"
 msgstr ""
 
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+msgid "Total Borrowed"
+msgstr "कुल उधार"
+
 #: src/components/referrals/referral-rewards-card.tsx
 #~ msgid "Total claimable"
 #~ msgstr "कुल प्राप्त करने योग्य"
@@ -8670,6 +8846,11 @@ msgstr "कुल रन टाइम"
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Total Size"
 msgstr "कुल आकार"
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+msgid "Total Supplied"
+msgstr "कुल सप्लाई"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Total supply"
@@ -9800,10 +9981,19 @@ msgstr "वेबसाइट"
 msgid "Welcome Bonus"
 msgstr "स्वागत बोनस"
 
+#: src/components/earn/earn-view.tsx
+msgid "When portfolio margin is enabled, users automatically earn interest on assets not used for trading. Manual supplying and withdrawing is disabled."
+msgstr "पोर्टफोलियो मार्जिन सक्षम होने पर ट्रेडिंग में उपयोग न होने वाली संपत्तियों पर अपने-आप ब्याज मिलता है। मैन्युअल सप्लाई और निकासी अक्षम है।"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Whole position"
 msgstr "पूरी पोज़िशन"
 
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
@@ -9900,6 +10090,10 @@ msgstr "निकासी अनलॉक है"
 msgid "Withdrawals are unavailable for this address."
 msgstr "इस पते के लिए निकासी उपलब्ध नहीं है।"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdrew {token}"
+msgstr "{token} निकाला"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
@@ -9975,6 +10169,15 @@ msgstr "आप पूरी मूल राशि खो सकते हैं
 #~ msgid "You can still verify and revoke existing mobile access below."
 #~ msgstr "आप नीचे मौजूदा मोबाइल एक्सेस अब भी सत्यापित और निरस्त कर सकते हैं।"
 
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+msgid "You have no borrows to repay."
+msgstr "आपके पास चुकाने के लिए कोई उधार नहीं है।"
+
+#: src/components/earn/earn-view.tsx
+msgid "You have no supplied assets to withdraw."
+msgstr "आपके पास निकालने के लिए कोई सप्लाई की गई संपत्ति नहीं है।"
+
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -10010,6 +10213,10 @@ msgstr "आपके खाते को रेफ़र किया"
 msgid "Your all-time PNL"
 msgstr "आपका पूरी अवधि का PNL"
 
+#: src/components/earn/earn-view.tsx
+msgid "Your Borrowed"
+msgstr "आपका उधार"
+
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your bridge is still processing. Funds are safe."
 msgstr "आपका ब्रिज अभी भी प्रोसेस हो रहा है। फंड सुरक्षित हैं।"
@@ -10040,6 +10247,18 @@ msgstr "आपकी इक्विटी"
 msgid "Your funds were successfully deposited."
 msgstr "आपके फंड सफलतापूर्वक जमा हो गए।"
 
+#: src/components/earn/earn-view.tsx
+msgid "Your Health Factor"
+msgstr "आपका हेल्थ फैक्टर"
+
+#: src/components/earn/earn-view.tsx
+msgid "Your Interest Earned"
+msgstr "आपका अर्जित ब्याज"
+
+#: src/components/earn/earn-view.tsx
+msgid "Your Interest Owed"
+msgstr "आपका देय ब्याज"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
 #~ msgstr "आपका मास्टर वॉलेट एक ट्रेडिंग कुंजी स्वीकृत करता है। यह कुंजी धनराशि नहीं निकाल सकती।"
@@ -10055,6 +10274,18 @@ msgstr "आपके पुरस्कार"
 #: src/components/staking/staking-view.tsx
 msgid "Your stake"
 msgstr "आपका स्टेक"
+
+#: src/components/earn/earn-view.tsx
+msgid "Your Supplied"
+msgstr "आपकी सप्लाई"
+
+#: src/components/earn/earn-view.tsx
+msgid "Your Total Borrowed"
+msgstr "आपका कुल उधार"
+
+#: src/components/earn/earn-view.tsx
+msgid "Your Total Supplied"
+msgstr "आपकी कुल सप्लाई"
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Your trading wallet signs this request. Signed requests are never retried automatically."

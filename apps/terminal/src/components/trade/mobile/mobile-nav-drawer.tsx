@@ -1,4 +1,4 @@
-import { Badge, Button, ButtonIcon, Drawer, DrawerContent, DrawerTitle } from "@gatu/ui";
+import { Button, ButtonIcon, Drawer, DrawerContent, DrawerTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons/react";
 import { Link, useLocation } from "@tanstack/react-router";
@@ -33,7 +33,6 @@ export function MobileNavDrawer() {
 	const tradeHomePath = useTradeHomePath();
 	const tradeActive = isTradeRoutePath(pathname);
 	const vaultsActive = pathname === "/vaults" || pathname.startsWith("/vaults/");
-	const soonLabel = t`Soon`;
 	const showsDepositEntry = hasWalletAccess || sessionMode === "agent-only" || depositAvailability.path === "sponsored";
 
 	function getNavLinkClass(active: boolean): string {
@@ -163,7 +162,14 @@ export function MobileNavDrawer() {
 							>
 								<Trans>Portfolio</Trans>
 							</Link>
-							<UpcomingMobileNavItem label={t`Earn`} soonLabel={soonLabel} />
+							<Link
+								to="/earn"
+								onClick={close}
+								aria-current={pathname === "/earn" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/earn")}
+							>
+								<Trans>Earn</Trans>
+							</Link>
 							<Link
 								to="/vaults"
 								onClick={close}
@@ -272,25 +278,5 @@ export function MobileNavDrawer() {
 				</DrawerContent>
 			</Drawer>
 		</>
-	);
-}
-
-interface UpcomingMobileNavItemProps {
-	label: string;
-	soonLabel: string;
-}
-
-function UpcomingMobileNavItem({ label, soonLabel }: UpcomingMobileNavItemProps) {
-	return (
-		<button
-			type="button"
-			disabled
-			className="flex cursor-default items-center justify-between rounded-8 px-3 py-2.5 text-start text-sm text-fg-disabled"
-		>
-			<span>{label}</span>
-			<Badge tone="neutral" size="xxs" className="text-fg-disabled">
-				{soonLabel}
-			</Badge>
-		</button>
 	);
 }

@@ -6,6 +6,17 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ## Unreleased
 
+### Added
+
+- Earn is live. The new `/earn` page lists Hyperliquid's borrow and lend reserves with their LTV,
+  APY, oracle price and totals, your supplied and borrowed amounts, interest and liquidation
+  prices, plus your health factor, and lets you supply, withdraw, borrow and repay. Max follows the
+  official terminal's rules; the amount you see is the most that is sent, and the request stops if
+  your balances changed before it was submitted. Portfolio Margin accounts see the automatic-mode
+  explanation with manual actions disabled. Earn is now a regular navigation entry on desktop and
+  in the mobile menu; between 1101px and 1150px the lower navigation entries move into More so
+  French labels still fit.
+
 ### Changed
 
 - The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market

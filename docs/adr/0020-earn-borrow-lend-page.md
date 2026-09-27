@@ -1,0 +1,52 @@
+# ADR 0020：Earn 页接入借贷储备池
+
+- 状态：已接受并实施，2026-09-27；尚未发布，未做真实钱包验收。
+- 归属 Reference：[Earn](../earn.md)。关联：[确认面契约](../confirmation-surfaces.md)、[资金类弹层的结果反馈](../funds-dialog-outcome-plan.md)、[ADR 0013](0013-desktop-navigation-collapse.md)、[ADR 0002](0002-exact-owner-trading-signers.md)。
+
+## 背景与目标
+
+导航里的 Earn 一直是禁用的 “Soon” 占位。官方终端的 Earn 页是 HyperCore 借贷储备池的前端：存入计息资产赚息、存入抵押品借入、偿还与取出。产品负责人要求按官方开发文档、SDK 文档和官方终端的实际做法实现，文档说不清的地方以官方终端为准。
+
+目标是第一版覆盖标准账户与统一账户的四种操作，并保持现有签名、确认面、资金动作、被动数据展示和导航契约。
+
+## 约束
+
+- 签名身份按 ADR 0002：只用与所选 Hyperliquid 用户地址完全一致的签名方；邮箱账户不生成、不批准本地 Agent。
+- 确认面契约：执行不超过用户点击时看到的值；确认按钮名是静态动词；资金类弹层保持打开到请求结束，结果走通知。
+- 被动数据不显示加载、失效或错误文字；缺失、失败或不匹配的快照不能当作空账户。
+- 金额运算用 Big.js，协议值保持小数字符串。
+- 锁定的 SDK 为 0.33.3，不为本功能升级 SDK。
+
+## 决策
+
+1. **D1 交易签名方。** `borrowLend` 是 L1 action，走 `useExchange` 的交易客户端：邮箱账户用自己的嵌入式钱包，外部钱包用已验证的 Agent。官方前端同样传入 Agent 钱包签名。确认按钮使用 `TradingActionButton`（不要求 builder fee），签名方未就绪时先启用交易。
+2. **D2 永远发送精确数量。** 官方点击 Max 后发送 `amount: null`（链上按全额执行）。本项目改为发送弹窗展示的精确小数字符串，并在发送前用刷新后的储备池与仓位重算 Max，要求发送量 ≤ 展示的 Max 且 ≤ 最新 Max，否则失败关闭。这样执行量不会超过用户看到的值。
+3. **D3 资金类弹层生命周期。** 与划转、发送一致：请求期间弹窗保持打开且不可关闭，按钮名不变，结束后关闭并通过全局通知报告成功、失败或未知。传输结果不明报告为常驻警告，不当作失败。第一版不建持久化的资金动作标记。
+4. **D4 纳入跨标签页资金锁。** `borrowLend` 加入 hl-react 的 `FUNDS_ACTION_METHODS`，同一账户的资金动作串行执行，锁内强制刷新法律条款校验。
+5. **D5 门控。** 页面与弹窗复用 `useFundsActionAvailability`：地区受限或无法判定、手机 Agent-only 会话、没有钱包访问、账户模式未知或不支持、账户数据未就绪时禁用全部操作。在此之上按官方规则判定各按钮（没有存入不能取出、没有抵押品不能借入、没有借款不能偿还）。
+6. **D6 组合保证金账户。** 与官方一致，手动存入、取出、借入禁用并显示官方说明；已赚/应付利息列隐藏；清算价改用维持后可用额计算。偿还也禁用：官方在组合保证金下的偿还是卖出抵押品的现货兑换流程，本版未实现。
+7. **D7 利息与历史。** 利息页签用 `userBorrowLendInterest` info 接口轮询最近 30 天（SDK 0.33.3 没有这个订阅，官方用的是 WebSocket 推送）。操作历史复用共享账本中来源或去向为 Earn 的记录。
+8. **D8 导航。** Earn 改为常驻一级入口（`placement: "primary"`，链接 `/earn`），移动抽屉同步改为链接。1101–1181px 未连接钱包时一级入口因此多一个；实测法语余量不足（见后果），窄屏收纳阈值 `DESKTOP_NAV_NARROW_MAX_PX` 从 1100 调到 1150。
+
+## 备选方案与代价
+
+| 方案 | 取舍 |
+| --- | --- |
+| 照官方在 Max 时发送 `null` | 全额取出不留利息零头，但执行量可能超过展示值，违反确认面契约。未采用；代价是全额取出后可能留下提交期间新增的极小利息，用户可再取一次 |
+| 复用金库/质押的分阶段弹层与持久化标记 | 可以在结果未知时提供“再次核验”，但标记机制的对账数据源、状态基线都要为借贷扩展，改动面大。第一版未采用，结果未知只给常驻警告 |
+| 升级 SDK 以获得 `userBorrowLendInterest` 订阅，或给 SDK 打补丁 | 影响所有使用 SDK 的路径，超出本任务范围。未采用 |
+| 在组合保证金下实现官方的“卖出抵押品偿还” | 需要现货市价单、缓冲倍数与滑点处理，属于另一个交易流程。推迟 |
+| Earn 设为 `lower` 入口，与金库等一起收纳 | 不改断点，但与官方（Earn 常驻一级）不一致，已连接时在紧凑宽度会进入 More。未采用 |
+| 保持 1100 阈值 | 法语在 1101px 只剩 6px。未采用 |
+
+## 后果与边界
+
+- 1101–1150px 的未连接用户，金库、质押、推荐、排行榜改为在 More 中（原来 1101–1181px 都显示在一级）。
+- 导航余量实测（2026-09-27，本地开发服务器，未连接钱包，`/earn`，导航最后一项与右侧控件之间的距离）：1101px 下若不收纳为 en 124、zh 237、hi 243、es 50、fr 6、ar 146px；调整后 1151px（不收纳）fr 56、es 100px，1001px（收纳）fr 226px。已连接钱包的状态未实测。
+- 真实钱包的四种操作、通知观感与账本记录都没有验收。
+
+## 证据
+
+- 代码：`apps/terminal/src/domain/earn.ts`、`domain/earn-submission.ts`、`hooks/earn/use-earn-data.ts`、`components/earn/`、`routes/earn.tsx`、`config/desktop-nav.ts`、`config/layout.ts`、`packages/hl-react/src/internal/exchange/funds-action-lock.ts`。
+- 测试：`earn-domain.test.ts`、`earn-action-modal.test.tsx`（真实弹窗与提交路径，核对展示值等于发送值）、`desktop-nav-layout.test.ts`、`top-nav.test.tsx`、`mobile-nav-drawer.test.tsx`、`earn-page-surface-contract.test.ts`、`funds-action-lock.test.ts`。
+- 官方取证方法与结论见 [Earn](../earn.md) 的“依据与核对方式”；任务记录见 `docs/work-memory/sessions/2026-09-27-earn-page.md`。
