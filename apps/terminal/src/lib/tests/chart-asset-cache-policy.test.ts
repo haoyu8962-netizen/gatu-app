@@ -56,7 +56,7 @@ describe("TradingView asset cache policy", () => {
 	});
 
 	it("leaves TradingView delivery to HTTP caching and immediately updates the service worker", () => {
-		expect(serviceWorker).toContain('const CACHE_VERSION = "v9"');
+		expect(serviceWorker).toContain('const CACHE_VERSION = "v10"');
 		expect(serviceWorker).not.toContain("CHARTING_CACHE");
 		expect(serviceWorker).not.toContain('url.pathname.startsWith("/charting_library/")');
 		expect(rootRoute).toContain('scope: "/", updateViaCache: "none"');
@@ -75,7 +75,7 @@ describe("TradingView asset cache policy", () => {
 		expect(viteConfig).toMatch(/'\/join\/\*\*': \{[\s\S]*?headers: referralJoinHeaders/);
 	});
 
-	it("deletes only retired managed caches when v9 activates", async () => {
+	it("deletes only retired managed caches, the retired document cache included, when v10 activates", async () => {
 		const deleted: string[] = [];
 		const listeners = createServiceWorkerHarness({
 			caches: {
@@ -83,12 +83,11 @@ describe("TradingView asset cache policy", () => {
 					Promise.resolve([
 						"charting-v7",
 						"fonts-v7",
-						"shell-v8",
-						"documents-v8",
-						"fonts-v9",
-						"icons-v9",
 						"shell-v9",
 						"documents-v9",
+						"fonts-v10",
+						"icons-v10",
+						"shell-v10",
 						"unrelated-cache",
 					]),
 				delete: (key: string) => {
@@ -107,7 +106,7 @@ describe("TradingView asset cache policy", () => {
 		});
 		await activation;
 
-		expect(deleted).toEqual(["charting-v7", "fonts-v7", "shell-v8", "documents-v8"]);
+		expect(deleted).toEqual(["charting-v7", "fonts-v7", "shell-v9", "documents-v9"]);
 	});
 
 	it("claims clients and finishes activation when CacheStorage stalls", async () => {

@@ -1979,8 +1979,8 @@ msgid "Contract"
 msgstr "合约"
 
 #: src/components/legal/document-chrome.tsx
-msgid "Cookie Policy"
-msgstr "Cookie 政策"
+#~ msgid "Cookie Policy"
+#~ msgstr "Cookie 政策"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
@@ -2545,12 +2545,10 @@ msgstr "请勿提交另一笔质押资金操作。共享恢复面板会继续检
 msgid "Do not submit this operation again."
 msgstr "请勿再次提交此操作。"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "文档"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "文档与法律信息"
@@ -5882,7 +5880,6 @@ msgstr "价格精度"
 msgid "Price: Market"
 msgstr "价格：市价"
 
-#: src/components/legal/document-chrome.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
@@ -5893,7 +5890,6 @@ msgstr "主导航"
 msgid "Priority Gas Auction Fee"
 msgstr "优先 Gas 拍卖费"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "隐私政策"
@@ -6621,7 +6617,6 @@ msgstr "奖励已领取"
 msgid "Rewards compound automatically"
 msgstr "奖励自动复投"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "风险披露"
@@ -7562,7 +7557,6 @@ msgstr "成功"
 msgid "Supply"
 msgstr "存入借贷"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "支持"
@@ -7789,7 +7783,6 @@ msgstr "终止 TWAP 委托"
 #~ msgid "Terminating..."
 #~ msgstr "终止中..."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Terms"
 msgstr "条款"

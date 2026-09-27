@@ -8,6 +8,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Docs, Support, Terms, Privacy Policy, Risk Disclosure and Cookie Policy now open inside the
+  normal application chrome: the same top navigation and footer as the trading and dashboard
+  pages on desktop, and the application mobile header on phones. Their separate document
+  navigation is gone, and the account menu, Deposit and connection controls work on these pages.
+  Opening one directly now shows the usual blank startup until the app is ready, and the pages
+  are no longer prerendered as standalone HTML. The Cookie Policy link that lived only in the old
+  document footer is now reached from the legal acceptance dialog or its URL.
+
 - The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market
   returns to BTC; the scrim and Esc still do not dismiss it. Close All and Reverse now show the
   same cancellable disclaimer as Market Close and Limit Close before their confirmation instead of

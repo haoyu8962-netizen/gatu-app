@@ -1979,8 +1979,8 @@ msgid "Contract"
 msgstr "Contrat"
 
 #: src/components/legal/document-chrome.tsx
-msgid "Cookie Policy"
-msgstr "Politique relative aux cookies"
+#~ msgid "Cookie Policy"
+#~ msgstr "Politique relative aux cookies"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
@@ -2545,12 +2545,10 @@ msgstr "Ne soumettez pas d’autre opération de fonds de staking. Le panneau de
 msgid "Do not submit this operation again."
 msgstr "Ne soumettez pas cette opération à nouveau."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "Documentation"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "Documentation et informations légales"
@@ -5882,7 +5880,6 @@ msgstr "Précision du prix"
 msgid "Price: Market"
 msgstr "Prix : Marché"
 
-#: src/components/legal/document-chrome.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
@@ -5893,7 +5890,6 @@ msgstr "Navigation principale"
 msgid "Priority Gas Auction Fee"
 msgstr "Frais d'enchère de gas prioritaire"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "Politique de confidentialité"
@@ -6621,7 +6617,6 @@ msgstr "Récompenses réclamées"
 msgid "Rewards compound automatically"
 msgstr "Les récompenses sont automatiquement composées"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "Avertissement sur les risques"
@@ -7562,7 +7557,6 @@ msgstr "Réussi"
 msgid "Supply"
 msgstr "Fournir"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "Support"
@@ -7789,7 +7783,6 @@ msgstr "Terminer l'ordre TWAP"
 #~ msgid "Terminating..."
 #~ msgstr "Terminaison en cours..."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Terms"
 msgstr "Conditions"

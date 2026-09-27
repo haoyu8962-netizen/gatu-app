@@ -21,6 +21,12 @@ function required<T>(value: T | null | undefined): T {
 
 const routes = Object.keys(DASHBOARD_FRAMES) as (keyof typeof DASHBOARD_FRAMES)[];
 
+function pageSource(route: keyof typeof DASHBOARD_FRAMES) {
+	if (route === "legal") return { file: "legal/legal-doc-page.tsx", preset: "{...DASHBOARD_FRAMES.legal}" };
+	const name = route.slice(1);
+	return { file: `${name}/${name}-page.tsx`, preset: `{...DASHBOARD_FRAMES["${route}"]}` };
+}
+
 describe("dashboard frame runtime layout", () => {
 	it.each([false, true])("preserves desktop offsets and mobile flow for testnet=%s", (testnet) => {
 		for (const preset of Object.values(DASHBOARD_FRAMES))
@@ -67,10 +73,10 @@ describe("dashboard frame runtime layout", () => {
 	});
 
 	it.each(routes)("wires the %s page to its preset and preserves real chrome", (route) => {
-		const name = route.slice(1);
-		const source = readFileSync(resolve(__dirname, `../../components/${name}/${name}-page.tsx`), "utf8");
+		const { file, preset } = pageSource(route);
+		const source = readFileSync(resolve(__dirname, `../../components/${file}`), "utf8");
 		expect(source).toContain("<DashboardFrameView");
-		expect(source).toContain(`{...DASHBOARD_FRAMES["${route}"]}`);
+		expect(source).toContain(preset);
 		for (const chrome of ["MobileHeader", "TopNav", "FooterBar", "TestnetBanner"])
 			expect(source).toContain(`<${chrome} />`);
 		expect(source).toContain("isMobile={isMobile}");

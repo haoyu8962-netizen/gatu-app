@@ -39,7 +39,7 @@ describe("published legal policy contract", () => {
 		expect(cookies).toContain("Essential storage cannot be disabled through the Interface");
 		expect(cookies).toContain("support@gatu.ai");
 		expect(terminalRoute).toContain('createFileRoute("/cookies")');
-		expect(terminalRoute).toContain("ssr: true");
+		expect(terminalRoute).toContain("<LegalDocPage content={content} />");
 	});
 
 	it("publishes a completed disclosure for the product's material risk surfaces", () => {

@@ -132,11 +132,9 @@ const REPORT_ONLY_HEADER = `default-src 'self'; img-src 'self' data: https://app
 
 function createPublicDir() {
 	const dir = mkdtempSync(join(tmpdir(), "gatu-cf-verify-"));
-	mkdirSync(join(dir, "docs"), { recursive: true });
 	mkdirSync(join(dir, "assets"), { recursive: true });
 	for (const href of SHELL_PRELOADS) writeFileSync(join(dir, href.slice(1)), "js");
 	writeFileSync(join(dir, "_shell.html"), SHELL_HTML);
-	writeFileSync(join(dir, "docs", "index.html"), "<html>docs</html>");
 	writeFileSync(join(dir, "build-meta.json"), JSON.stringify(BUILD_META));
 	mkdirSync(join(dir, "charting_library", "bundles"), { recursive: true });
 	writeFileSync(join(dir, "charting_library", "bundles", "runtime.4d986d07cb97d8edacba.js"), "js");
@@ -171,7 +169,7 @@ test("verification passes when the edge serves the build with the expected heade
 			[SHELL_PRELOADS.at(-1)]: { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
 			"/api/health": { status: 204, body: null, headers: { "cache-control": NO_STORE } },
 			"/charting_library/bundles/runtime.4d986d07cb97d8edacba.js": edgeSequence({ body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } }),
-			"/docs": { body: "<html>docs</html>", headers: { "content-security-policy": "x", "content-security-policy-report-only": REPORT_ONLY_HEADER } },
+			"/terms": { body: SHELL_HTML, headers },
 			"/build-meta.json": { body: JSON.stringify(BUILD_META) },
 			"/api/geo": { body: JSON.stringify({ country: "GB", proxy: false, tradeRestricted: false }) },
 			"/api/referral-geo": (init) => ({
@@ -197,7 +195,7 @@ test("verification passes when the edge serves the build with the expected heade
 	);
 	assert.equal(results.length, 15);
 	assert.equal(results.find((result) => result.name === "shell preloads the startup closure")?.detail, "24 links");
-	assert.equal(results.find((result) => result.name === "inline scripts are allowed by the edge policy")?.detail, "2 pages, 1 inline scripts, report-only");
+	assert.equal(results.find((result) => result.name === "inline scripts are allowed by the edge policy")?.detail, "1 pages, 1 inline scripts, report-only");
 	assert.equal(results.find((result) => result.name === "image sources follow the edge config")?.detail, "3 sources, report-only");
 	assert.equal(results.find((result) => result.name.startsWith("chart entry"))?.detail, CHART_ENTRY);
 	assert.equal(results.find((result) => result.name === "shell repeats from the edge")?.detail, "Hit from cloudfront");
@@ -266,7 +264,6 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 		network: "testnet",
 		fetchImpl: fakeFetch({
 			"/trade/HYPE": { body: "<html>old shell</html>", headers: { "content-security-policy": "x", link: "<https://api.hyperliquid.xyz>; rel=preconnect" } },
-			"/docs": { body: "<html>docs</html>" },
 			"/build-meta.json": { body: JSON.stringify({ ...BUILD_META, commit: "old", release: "r0" }) },
 			"/api/geo": { status: 503, body: JSON.stringify({ error: "unavailable", reason: "missing_config" }) },
 			"/join/__gatu_healthcheck__": { body: "x", headers: { "cache-control": "no-store" } },
@@ -277,6 +274,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 	const failed = results.filter((result) => !result.ok).map((result) => result.name);
 	assert.deepEqual(failed, [
 		"shell for a trade navigation",
+		"shell for a legal page navigation",
 		"build metadata parity",
 		"geo endpoint answers with a real verdict",
 		"signed lambda post with a payload hash",
@@ -304,7 +302,6 @@ test("the enforced stage rejects a policy that still allows unsafe-inline or mis
 			scriptHashesMode: "enforce",
 			fetchImpl: fakeFetch({
 				"/trade/HYPE": { body: SHELL_HTML, headers: { "content-security-policy": header } },
-				"/docs": { body: "<html>docs</html>", headers: { "content-security-policy": header } },
 				"*": { status: 404, body: "missing" },
 			}),
 		});

@@ -235,14 +235,13 @@ function sha256(buffer) {
 
 /**
  * Checks the public origin exactly the way the old Node health check did, but through CloudFront:
- * shell and document parity with the local build, security and preconnect headers, the live geo
+ * shell parity with the local build, security and preconnect headers, the live geo
  * endpoint, referral deep-link headers, and 404s for missing files.
  */
 export async function verifyDeployment({ origin, publicDir, network, fetchImpl = fetch, scriptHashesMode = "report-only", imageSourcesMode = "report-only" }) {
 	const base = origin.replace(/\/+$/, "");
 	const expectedApiOrigin = network === "testnet" ? "https://api.hyperliquid-testnet.xyz" : "https://api.hyperliquid.xyz";
 	const shell = readFileSync(join(publicDir, "_shell.html"));
-	const docs = readFileSync(join(publicDir, "docs", "index.html"));
 	const buildMeta = JSON.parse(readFileSync(join(publicDir, "build-meta.json"), "utf8"));
 	const results = [];
 	async function check(name, run) {
@@ -266,11 +265,10 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(link.includes(`<${expectedApiOrigin}>`) && link.includes("preconnect"), `missing ${expectedApiOrigin} preconnect`);
 		return `csp ok, preconnect ${expectedApiOrigin}`;
 	});
-	await check("prerendered document route", async () => {
-		const response = await fetchImpl(`${base}/docs`, { headers: { accept: "text/html" } });
+	await check("shell for a legal page navigation", async () => {
+		const response = await fetchImpl(`${base}/terms`, { headers: { accept: "text/html" } });
 		expect(response.status === 200, `status ${response.status}`);
-		expect(sha256(Buffer.from(await response.arrayBuffer())) === sha256(docs), "body differs from local docs/index.html");
-		expect(!(response.headers.get("link") ?? "").includes("preconnect"), "document route must not preconnect the API");
+		expect(sha256(Buffer.from(await response.arrayBuffer())) === sha256(shell), "body differs from local _shell.html");
 	});
 	await check("build metadata parity", async () => {
 		const response = await fetchImpl(`${base}/build-meta.json`);
