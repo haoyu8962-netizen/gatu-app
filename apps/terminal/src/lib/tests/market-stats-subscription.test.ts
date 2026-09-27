@@ -14,6 +14,7 @@ describe("market stats subscription policy", () => {
 		{ pathname: "/referrals-archive", expected: true },
 		{ pathname: "/trade/BTC", expected: true },
 		{ pathname: "/portfolio", expected: true },
+		{ pathname: "/fundingComparison", expected: true },
 	])("returns $expected for $pathname", ({ pathname, expected }) => {
 		expect(shouldSubscribeToMarketStats(pathname)).toBe(expected);
 	});

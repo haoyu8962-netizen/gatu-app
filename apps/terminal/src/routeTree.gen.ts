@@ -17,6 +17,7 @@ import { Route as BuildersPerpRouteImport } from './routes/builders-perp'
 import { Route as ClientErrorReportRouteImport } from './routes/client-error-report'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as DocsRouteImport } from './routes/docs'
+import { Route as FundingComparisonRouteImport } from './routes/fundingComparison'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as MobileAgentSyncRouteImport } from './routes/mobile-agent-sync'
 import { Route as PerpRouteImport } from './routes/perp'
@@ -85,6 +86,11 @@ const CookiesRoute = CookiesRouteImport.update({
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
   path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FundingComparisonRoute = FundingComparisonRouteImport.update({
+  id: '/fundingComparison',
+  path: '/fundingComparison',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeaderboardRoute = LeaderboardRouteImport.update({
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/client-error-report': typeof ClientErrorReportRoute
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
+  '/fundingComparison': typeof FundingComparisonRoute
   '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
@@ -280,6 +287,7 @@ export interface FileRoutesByTo {
   '/client-error-report': typeof ClientErrorReportRoute
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
+  '/fundingComparison': typeof FundingComparisonRoute
   '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
@@ -318,6 +326,7 @@ export interface FileRoutesById {
   '/client-error-report': typeof ClientErrorReportRoute
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
+  '/fundingComparison': typeof FundingComparisonRoute
   '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/client-error-report'
     | '/cookies'
     | '/docs'
+    | '/fundingComparison'
     | '/leaderboard'
     | '/mobile-agent-sync'
     | '/perp'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/client-error-report'
     | '/cookies'
     | '/docs'
+    | '/fundingComparison'
     | '/leaderboard'
     | '/mobile-agent-sync'
     | '/perp'
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | '/client-error-report'
     | '/cookies'
     | '/docs'
+    | '/fundingComparison'
     | '/leaderboard'
     | '/mobile-agent-sync'
     | '/perp'
@@ -474,6 +486,7 @@ export interface RootRouteChildren {
   ClientErrorReportRoute: typeof ClientErrorReportRoute
   CookiesRoute: typeof CookiesRoute
   DocsRoute: typeof DocsRoute
+  FundingComparisonRoute: typeof FundingComparisonRoute
   LeaderboardRoute: typeof LeaderboardRoute
   MobileAgentSyncRoute: typeof MobileAgentSyncRoute
   PerpRoute: typeof PerpRoute
@@ -554,6 +567,13 @@ declare module '@tanstack/react-router' {
       path: '/docs'
       fullPath: '/docs'
       preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fundingComparison': {
+      id: '/fundingComparison'
+      path: '/fundingComparison'
+      fullPath: '/fundingComparison'
+      preLoaderRoute: typeof FundingComparisonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leaderboard': {
@@ -812,6 +832,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientErrorReportRoute: ClientErrorReportRoute,
   CookiesRoute: CookiesRoute,
   DocsRoute: DocsRoute,
+  FundingComparisonRoute: FundingComparisonRoute,
   LeaderboardRoute: LeaderboardRoute,
   MobileAgentSyncRoute: MobileAgentSyncRoute,
   PerpRoute: PerpRoute,

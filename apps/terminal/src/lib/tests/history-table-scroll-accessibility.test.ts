@@ -16,6 +16,10 @@ const SCROLLABLE_TABLES = [
 		label: "scrollableRegionLabel={t`Funding payments`}",
 	},
 	{
+		file: "src/components/funding-comparison/funding-comparison-view.tsx",
+		label: "scrollableRegionLabel={t`Funding comparison`}",
+	},
+	{
 		file: "src/components/vaults/vaults-list.tsx",
 		label: "scrollableRegionLabel={t`Vaults`}",
 	},

@@ -73,7 +73,7 @@ await run({ viewport: { width: 1440, height: 900 } }, async (page) => {
 	await page.keyboard.press("Escape").catch(() => {});
 	await tryClick(page, ['button:has-text("Limit")', '[role="tab"]:has-text("Limit")'], "desktop limit tab", results, 1500);
 	await tryClick(page, ['button:has-text("Buy")', 'button:has-text("Long")'], "desktop order button", results, 1500);
-	for (const route of ["/portfolio", "/leaderboard", "/vaults", "/staking", "/referrals", "/api-wallet", "/perp", "/spot", "/builders-perp", "/trade/HYPE/USDC", "/join/__gatu_healthcheck__", ...DOCUMENT_ROUTES]) {
+	for (const route of ["/portfolio", "/leaderboard", "/fundingComparison", "/vaults", "/staking", "/referrals", "/api-wallet", "/perp", "/spot", "/builders-perp", "/trade/HYPE/USDC", "/join/__gatu_healthcheck__", ...DOCUMENT_ROUTES]) {
 		await page.goto(`${origin}${route}`, { waitUntil: "load", timeout: 60000 });
 		await settle(page, 3500);
 		await collect(page, `desktop ${route}`, results);

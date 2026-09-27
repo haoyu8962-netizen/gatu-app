@@ -23,6 +23,7 @@ export const DESKTOP_NAV_ITEMS = [
 	{ id: "staking", label: msg`Staking`, placement: "lower", path: "/staking" },
 	{ id: "referrals", label: msg`Referrals`, placement: "lower", path: "/referrals" },
 	{ id: "leaderboard", label: msg`Leaderboard`, placement: "lower", path: "/leaderboard" },
+	{ id: "funding-comparison", label: msg`Funding Comparison`, placement: "more", path: "/fundingComparison" },
 	{ id: "statistics", label: msg`Statistics`, placement: "more", href: HYPERSCREENER_URL },
 	{ id: "api-wallet", label: msg`API Wallet`, placement: "more", path: "/api-wallet" },
 ] as const satisfies readonly DesktopNavItemConfig[];
