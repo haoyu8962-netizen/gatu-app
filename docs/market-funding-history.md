@@ -53,17 +53,21 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 
 - 查询键 `["hl", "market-funding-history", env, coin, range]`，不带 `persisted` 前缀，所以不进本地持久化缓存。网络、市场、区间各自独立；切换时没有 `placeholderData`，不会显示上一个市场或区间的数据。
 - 只在 Funding 视图可见（`active`）、市场是 `perp` 或 `builderPerp`、`coin` 非空时启用。
-- `staleTime` 5 分钟，`retry: false`（页级重试已处理可重试错误），不在窗口聚焦时刷新，网络恢复时刷新。缓存保留时间为 TanStack 默认值（5 分钟）；视图隐藏期间查询停用、缓存保留，重新显示时若已过期则在后台刷新并继续显示旧快照。
+- `staleTime` 5 分钟，`retry: false`（页级重试已处理可重试错误），不在窗口聚焦时刷新，网络恢复时刷新。缓存保留时间为 TanStack 默认值（5 分钟）；视图隐藏期间查询停用、缓存保留，重新显示时若已过期则在后台刷新。
+- 停用只会让 TanStack 不再发起新请求，不会中止已经在进行的请求。因此查询从启用变为停用时，hook 在 effect 里对当前键调用 `queryClient.cancelQueries({ queryKey, exact: true, type: "inactive" })`：请求的 `AbortSignal` 被中止，`fetchTimeRangeHistory` 不再请求下一页，`fetchHistoryPageWithRetry` 的等待与页级重试随之结束；取消默认 `revert`，缓存回到这次请求开始前的状态（已有快照保留，首次请求则回到无数据）。`type: "inactive"` 只匹配没有启用观察者的查询，同一键若还有别的活动视图在用，请求不会被取消。重新显示时按「无数据或已过期」重新请求。切换市场、区间或网络时旧键失去观察者，由 TanStack 自行中止（查询函数读取了 `signal`）。
 
-状态由数据是否存在决定：
+状态先看是否有可显示的记录，再区分空快照：
 
 | 条件 | `status` |
 | --- | --- |
-| 已有该键的数据（包括停用或后台刷新失败时） | `ready` |
-| 无数据且查询停用 | `disabled` |
-| 无数据且离线或查询被暂停 | `offline` |
-| 无数据、上次请求失败且当前没有在请求 | `error` |
-| 其余（首次请求或重试中） | `loading` |
+| 有非空记录（包括停用或后台刷新失败时） | `ready` |
+| 空快照，且该键最近一次请求成功（`status === "success"`）、当前没有请求在进行或暂停（`fetchStatus === "idle"`）、在线 | `ready` |
+| 上两行都不满足且查询停用 | `disabled` |
+| 上两行都不满足且离线或查询被暂停 | `offline` |
+| 上两行都不满足、上次请求失败且当前没有在请求 | `error` |
+| 其余（首次请求、重试中、空快照正在刷新） | `loading` |
+
+非空记录在刷新失败时静默保留；空快照是「没有记录」的结论，只能来自最近一次成功且此刻没有被刷新、暂停或离线推翻的请求。例如新市场第一次得到 `[]`，隐藏超过五分钟后重新打开：刷新期间是空白忙碌态，刷新失败显示中性「重试」，离线或暂停时保持空白，都不再显示「暂无资金费率历史」。
 
 ### 分桶
 
@@ -110,15 +114,15 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 
 | 情况 | 展示 | 禁止 |
 | --- | --- | --- |
-| 惰性块加载中、首次请求、重试中 | 空白绘图区，`aria-busy="true"`，读屏专用 `Loading...`；区间按钮可用 | 可见的加载文字、骨架动画、旋转图标 |
-| 首次请求失败（无数据） | 只有中性「重试」按钮，点击重新请求 | 错误文字、警告图标、`error.message`、`role="alert"` |
-| 已有数据后刷新失败 | 继续显示已加载的快照，不提示 | 清空图表、显示失败横条 |
-| 离线且无数据 | 空白，依靠全局离线提示 | 「无法加载」等文字 |
-| 完整成功的空快照（例如新上线的 HIP-3 市场） | 「暂无资金费率历史」 | 把截断、失败、未请求的快照当作空 |
+| 惰性块加载中、首次请求、重试中、空快照正在刷新 | 空白绘图区，`aria-busy="true"`，读屏专用 `Loading...`；区间按钮可用 | 可见的加载文字、骨架动画、旋转图标 |
+| 首次请求失败（无数据），或空快照刷新失败 | 只有中性「重试」按钮，点击重新请求 | 错误文字、警告图标、`error.message`、`role="alert"`、沿用旧的「暂无资金费率历史」 |
+| 已有非空数据后刷新失败 | 继续显示已加载的快照，不提示 | 清空图表、显示失败横条 |
+| 离线或请求暂停，且无数据或只有空快照 | 空白，依靠全局离线提示 | 「无法加载」「暂无资金费率历史」等文字 |
+| 最近一次请求成功、没有刷新在进行或暂停、在线的完整空快照（例如新上线的 HIP-3 市场） | 「暂无资金费率历史」 | 把截断、失败、未请求、正在刷新、暂停或离线时的空快照当作空 |
 | 完整快照 | 图表 | — |
 | 切换市场、区间或网络 | 新键首次请求时的空白忙碌态 | 显示其他市场或区间的数据 |
 | 现货 | 没有 Funding 页签，视图为 Chart | 显示空的 Funding 视图 |
-| 页签隐藏 | 查询停用，缓存保留，不在聚焦时刷新 | 隐藏时继续请求 |
+| 页签隐藏 | 查询停用，进行中的请求被中止（分页与页级重试停止），缓存保留，不在聚焦时刷新 | 隐藏时继续请求、翻页或重试 |
 
 ## 格式化与语言
 
@@ -159,6 +163,19 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 
 未运行：完整终端测试、`pnpm build`（分块环与包体预算）、浏览器与真机核对。惰性块是否让 Rollup 拆出新的共享块、启动预算的变化，要以集成时的生产构建为准。
 
+2026-09-27 对抗审查修复（分支 `claude/sdk-fix-r1-funding-history`，基于集成提交 `19af214b`；jsdom，脚本派发的事件）：
+
+- 先写回归测试并在 `19af214b` 上确认失败，再修复：
+  - `use-market-funding-history.test.tsx` 新增「第一页等待期间停用」：断言请求信号被中止、状态为 `disabled`、之后放行满页 500 条也不再请求第二页、重新启用后用新信号重新请求并出图；「另一个活动视图仍在用同一键时不取消」；「空快照过期后刷新失败」（刷新中 `loading`、失败后 `error`、点重试成功后回到空态）；「空快照过期后刷新因离线暂停」（`offline`，恢复网络后续请求并回到空态）；「应用离线时不确认空态」。在 `19af214b` 上，停用用例的中止断言失败；去掉该断言后，放行首页会发出第二页请求（2 次调用），与审查报告的内存复现一致；三个空快照用例都失败（旧映射对已有数据一律返回 `ready`）。
+  - 新增 `funding-history-panel-snapshot.test.tsx`：面板接真实 hook 与 QueryClient，空快照过期后刷新失败时正文只剩「重试」（无 `role="alert"`），离线暂停时正文为空；在 `19af214b` 上两例都仍显示「暂无资金费率历史」。
+  - `funding-history-panel.test.tsx` 补两条钉住用例（审查报告的变异表 P3，修复前后都通过）：`pointercancel` 让提示框与十字线消失；D 区间日期测试在用例内把 `process.env.TZ` 设为 `America/Los_Angeles`，并先断言本地时区格式与 UTC 格式不同，保证时区确实生效。
+- 变异检查（临时改生产代码后运行，均已还原）：删掉停用时的 `cancelQueries` effect，停用用例失败；去掉 `type: "inactive"`，共享观察者用例失败；把状态恢复成「有数据即 `ready`」，三个 hook 用例与两个面板用例失败；分别去掉空态条件中的 `status === "success"`、`fetchStatus === "idle"`、`isOnline`、`length > 0`，各有至少一个用例失败；删掉 `onPointerCancel`，`pointercancel` 用例失败；去掉 D 区间提示框日期的 UTC 时区，西半球用例失败（得到 `Sep 19, 2026`）。
+- `pnpm --filter @gatu/terminal typecheck`：`19af214b` 上已有 4 个错误，全部在 `funding-history-load-boundary.test.tsx`（`RealPanel` 无参数，`createRetryableLazyComponent` 推导出的 props 为 `never`）；给测试夹具加上 `_props: object` 后通过。该文件只改了夹具签名，3 个用例仍通过。
+- `pnpm exec biome check`（改动的 5 个 TS / TSX 文件）：通过。
+- 回归入口列出的 11 个文件，加上 `i18n-reactivity-contract`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`action-progress-label-contract`、`mobile-data-presentation-contract`：17 个文件、373 个用例全部通过。
+
+未运行：完整终端测试、`pnpm build`、浏览器与真机核对；隐藏页签后请求确实中止、空快照过期后的展示，只有 jsdom 证据。
+
 ## 回归入口
 
 ```bash
@@ -168,6 +185,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-market-funding-history.test.tsx \
   src/lib/tests/funding-history-chart-model.test.ts \
   src/lib/tests/funding-history-panel.test.tsx \
+  src/lib/tests/funding-history-panel-snapshot.test.tsx \
   src/lib/tests/funding-history-load-boundary.test.tsx \
   src/lib/tests/chart-panel.test.tsx \
   src/lib/tests/mobile-trade-layout-funding-tab.test.tsx \

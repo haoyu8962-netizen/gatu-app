@@ -465,8 +465,11 @@ not separate app sessions.
   only. While it is shown, `MobileChartView` and `MobileBookView` stay mounted
   with `active={false}`: the book layer is visible and active only for Order
   Book or Trades, and the funding query runs only while its own tab is shown.
-  The funding view mounts on first selection and then stays mounted; a switch to
-  a spot market falls back to Chart.
+  Disabling a TanStack query does not abort a request already in flight, so
+  hiding the funding view cancels its current key when no other active observer
+  uses it: the fetch signal aborts, pagination and page retries stop, and the
+  previous cache is kept. The funding view mounts on first selection and then
+  stays mounted; a switch to a spot market falls back to Chart.
 - React `Activity` in `hidden` mode unmounts effects, which destroys the
   TradingView widget. The Markets view may start hidden to defer its first
   render, but once it has been shown it stays `visible` and hides through the

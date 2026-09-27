@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
 	bucketFundingRates,
 	FUNDING_HISTORY_RANGES,
@@ -34,6 +35,7 @@ export function getMarketFundingHistoryQueryKey(env: string, coin: string, range
 
 export function useMarketFundingHistory({ coin, enabled, range }: Options): MarketFundingHistoryResult {
 	const { env, info } = useHyperliquid();
+	const queryClient = useQueryClient();
 	const isOnline = useOnlineStatus();
 	const queryEnabled = enabled && coin !== "";
 	const query = useQuery({
@@ -49,8 +51,18 @@ export function useMarketFundingHistory({ coin, enabled, range }: Options): Mark
 		staleTime: MARKET_FUNDING_HISTORY_STALE_TIME_MS,
 	});
 
+	useEffect(() => {
+		if (queryEnabled) return;
+		void queryClient.cancelQueries({
+			exact: true,
+			queryKey: getMarketFundingHistoryQueryKey(env, coin, range),
+			type: "inactive",
+		});
+	}, [queryClient, queryEnabled, env, coin, range]);
+
+	const isCurrentSnapshot = query.status === "success" && query.fetchStatus === "idle" && isOnline;
 	let status: MarketFundingHistoryStatus = "loading";
-	if (query.data !== undefined) status = "ready";
+	if (query.data !== undefined && (query.data.length > 0 || isCurrentSnapshot)) status = "ready";
 	else if (!queryEnabled) status = "disabled";
 	else if (!isOnline || query.fetchStatus === "paused") status = "offline";
 	else if (query.isError && !query.isFetching) status = "error";
