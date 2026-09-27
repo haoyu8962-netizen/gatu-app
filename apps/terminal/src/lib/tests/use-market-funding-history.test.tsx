@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { focusManager, onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -30,6 +30,11 @@ let latest: ReturnType<typeof useMarketFundingHistory> | null = null;
 
 function Probe({ coin, enabled, range }: { coin: string; enabled: boolean; range: FundingHistoryRange }) {
 	latest = useMarketFundingHistory({ coin, enabled, range });
+	return null;
+}
+
+function OtherView({ coin, range }: { coin: string; range: FundingHistoryRange }) {
+	useMarketFundingHistory({ coin, enabled: true, range });
 	return null;
 }
 
@@ -77,6 +82,7 @@ describe("useMarketFundingHistory", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		client.clear();
+		onlineManager.setOnline(true);
 		vi.restoreAllMocks();
 	});
 
@@ -85,6 +91,17 @@ describe("useMarketFundingHistory", () => {
 			root.render(
 				<QueryClientProvider client={client}>
 					<Probe coin={props.coin ?? "BTC"} enabled={props.enabled ?? true} range={props.range ?? "8h"} />
+				</QueryClientProvider>,
+			);
+		});
+	}
+
+	async function renderWithOtherView(props: { enabled: boolean; range: FundingHistoryRange }) {
+		await act(async () => {
+			root.render(
+				<QueryClientProvider client={client}>
+					<Probe coin="BTC" enabled={props.enabled} range={props.range} />
+					<OtherView coin="BTC" range={props.range} />
 				</QueryClientProvider>,
 			);
 		});
@@ -233,5 +250,114 @@ describe("useMarketFundingHistory", () => {
 		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
 		expect(current()).toMatchObject({ buckets: loaded, isRefreshing: true, status: "ready" });
 		await act(async () => pending.resolve(rows("BTC", 8)));
+	});
+
+	it("aborts an in-flight load when the view deactivates, and loads again on reactivation", async () => {
+		const firstPage = deferred<unknown>();
+		let firstSignal: AbortSignal | undefined;
+		mocks.fundingHistory.mockImplementationOnce((_params: unknown, signal: AbortSignal) => {
+			firstSignal = signal;
+			return firstPage.promise;
+		});
+		await render({ range: "1d" });
+		expect(current().status).toBe("loading");
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+
+		await render({ enabled: false, range: "1d" });
+		await flush();
+		expect(firstSignal?.aborted).toBe(true);
+		expect(current()).toMatchObject({ buckets: [], status: "disabled" });
+
+		await act(async () => firstPage.resolve(rows("BTC", 500)));
+		await flush();
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+		expect(current()).toMatchObject({ buckets: [], status: "disabled" });
+
+		mocks.fundingHistory.mockResolvedValueOnce(rows("BTC", 48));
+		await render({ range: "1d" });
+		expect(current().status).toBe("loading");
+		await flush();
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(mocks.fundingHistory.mock.calls[1]?.[1]?.aborted).toBe(false);
+		expect(current().status).toBe("ready");
+		expect(current().buckets).toHaveLength(2);
+	});
+
+	it("keeps an in-flight load that another active view still needs", async () => {
+		const firstPage = deferred<unknown>();
+		let firstSignal: AbortSignal | undefined;
+		mocks.fundingHistory.mockImplementationOnce((_params: unknown, signal: AbortSignal) => {
+			firstSignal = signal;
+			return firstPage.promise;
+		});
+		await renderWithOtherView({ enabled: true, range: "8h" });
+		await renderWithOtherView({ enabled: false, range: "8h" });
+		await flush();
+
+		expect(firstSignal?.aborted).toBe(false);
+		await act(async () => firstPage.resolve(rows("BTC", 8)));
+		await flush();
+		expect(current()).toMatchObject({ status: "ready" });
+		expect(current().buckets).toHaveLength(1);
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+	});
+
+	it("never confirms an empty history from a stale snapshot whose refresh failed", async () => {
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await flush();
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+
+		await render({ coin: "xyz:NEW", enabled: false });
+		vi.spyOn(Date, "now").mockReturnValue(NOW + 10 * 60_000);
+		const refresh = deferred<unknown>();
+		mocks.fundingHistory.mockReturnValueOnce(refresh.promise);
+		await render({ coin: "xyz:NEW" });
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(current()).toMatchObject({ buckets: [], status: "loading" });
+
+		await act(async () => refresh.reject(new Error("server error")));
+		await flush();
+		expect(current()).toMatchObject({ buckets: [], status: "error" });
+
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		act(() => current().refresh());
+		await flush();
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+	});
+
+	it("never confirms an empty history from a stale snapshot while its refresh is paused offline", async () => {
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await flush();
+
+		await render({ coin: "xyz:NEW", enabled: false });
+		vi.spyOn(Date, "now").mockReturnValue(NOW + 10 * 60_000);
+		mocks.isOnline = false;
+		onlineManager.setOnline(false);
+		await render({ coin: "xyz:NEW" });
+		await flush();
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+		expect(current()).toMatchObject({ buckets: [], status: "offline" });
+
+		mocks.isOnline = true;
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await act(async () => onlineManager.setOnline(true));
+		await flush();
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+	});
+
+	it("does not confirm an empty history while the app is offline", async () => {
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await flush();
+		expect(current().status).toBe("ready");
+
+		mocks.isOnline = false;
+		await render({ coin: "xyz:NEW" });
+		expect(current()).toMatchObject({ buckets: [], status: "offline" });
 	});
 });

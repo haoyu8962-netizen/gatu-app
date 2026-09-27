@@ -270,24 +270,44 @@ describe("FundingHistoryPanel", () => {
 		expect(tooltip()).toBeNull();
 	});
 
-	it("labels daily buckets with their UTC date only", () => {
+	it("hides the tooltip when the pointer is cancelled", () => {
 		render();
-		act(() => container.querySelector<HTMLButtonElement>('button[data-funding-history-range="1d"]')?.click());
-		const dayStart = Date.UTC(2026, 8, 20);
-		act(() =>
-			setHistory({
-				buckets: [
-					{ cumulativeRate: "0.0003", rate: "0.0003", samples: 24, time: dayStart },
-					{ cumulativeRate: "0.0005", rate: "0.0002", samples: 24, time: dayStart + 24 * HOUR_MS },
-				],
-				status: "ready",
-			}),
-		);
-
+		act(() => setHistory({ buckets: READY_BUCKETS, status: "ready" }));
 		hover(60);
-		expect(tooltip()?.firstElementChild?.textContent).toBe(
-			formatDateTime(dayStart, { day: "numeric", month: "short", timeZone: "UTC", year: "numeric" }),
-		);
+		expect(tooltip()).not.toBeNull();
+
+		act(() => {
+			plot()?.dispatchEvent(new MouseEvent("pointercancel", { bubbles: true }));
+		});
+		expect(tooltip()).toBeNull();
+		expect(container.querySelector("[data-funding-crosshair]")).toBeNull();
+	});
+
+	it("labels daily buckets with their UTC date only, also west of UTC", () => {
+		const previousTimeZone = process.env.TZ;
+		process.env.TZ = "America/Los_Angeles";
+		try {
+			render();
+			act(() => container.querySelector<HTMLButtonElement>('button[data-funding-history-range="1d"]')?.click());
+			const dayStart = Date.UTC(2026, 8, 20);
+			act(() =>
+				setHistory({
+					buckets: [
+						{ cumulativeRate: "0.0003", rate: "0.0003", samples: 24, time: dayStart },
+						{ cumulativeRate: "0.0005", rate: "0.0002", samples: 24, time: dayStart + 24 * HOUR_MS },
+					],
+					status: "ready",
+				}),
+			);
+
+			hover(60);
+			const utcDate = formatDateTime(dayStart, { day: "numeric", month: "short", timeZone: "UTC", year: "numeric" });
+			expect(formatDateTime(dayStart, { day: "numeric", month: "short", year: "numeric" })).not.toBe(utcDate);
+			expect(tooltip()?.firstElementChild?.textContent).toBe(utcDate);
+		} finally {
+			if (previousTimeZone === undefined) delete process.env.TZ;
+			else process.env.TZ = previousTimeZone;
+		}
 	});
 
 	it("follows language and number-format changes without remounting the chart", () => {

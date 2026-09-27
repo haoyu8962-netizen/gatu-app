@@ -21,7 +21,7 @@ import { createRetryableLazyComponent } from "@/lib/lazy";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-function RealPanel() {
+function RealPanel(_props: object) {
 	return <p data-testid="real-panel">funding panel</p>;
 }
 
