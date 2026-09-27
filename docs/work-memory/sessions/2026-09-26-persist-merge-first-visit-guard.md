@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review"],
-  "summary": "zustand 5.0.9 的 persist 在首次访问、存储数据未通过校验被清除、以及版本不同且没有 migrate 时都会调用 merge(undefined)；global-settings 与 HIP-3 免责声明两个 store 的 merge 没有防护，抛出的 TypeError 被吞掉，hasHydrated() 一直为 false。两处改为 persisted ?? {}，新增覆盖全部四个持久化 store 的水合回归测试（修复前 5 项失败，修复后 14 项通过）；默认值和归一化不变，market 与 order-entry 已经安全、未改动。",
+  "summary": "zustand 5.0.9 的 persist 在首次访问、存储数据未通过校验被清除、以及版本不同且没有 migrate 时都会调用 merge(undefined)；global-settings 与 HIP-3 免责声明两个 store 的 merge 没有防护，抛出的 TypeError 被吞掉，hasHydrated() 一直为 false。两处改为 persisted ?? {}，新增覆盖全部四个持久化 store 的水合回归测试（修复前 5 项失败，修复后 14 项通过），并加入 CI 的终端测试清单；默认值和归一化不变，market 与 order-entry 已经安全、未改动。",
   "thread": null,
   "baseCommit": "121e8e76",
-  "commits": ["06293549"],
+  "commits": ["06293549", "26d0b13b"],
   "sources": [
     { "path": "apps/terminal/src/stores/use-global-settings-store.ts" },
     { "path": "apps/terminal/src/stores/use-hip3-disclaimer-store.ts" },
@@ -18,7 +18,8 @@
     { "path": "apps/terminal/src/stores/use-order-entry-store.ts" },
     { "path": "apps/terminal/src/lib/storage/validated-storage.ts" },
     { "path": "apps/terminal/src/lib/tests/persisted-store-hydration.test.ts" },
-    { "path": "apps/terminal/package.json" }
+    { "path": "apps/terminal/package.json" },
+    { "path": ".github/workflows/terminal-tests.yml" }
   ],
   "supersedes": []
 }
@@ -56,9 +57,10 @@
 - 针对最终内容：`pnpm exec biome check`（三个改动文件）通过；`pnpm --filter @gatu/terminal typecheck` 通过；预跑 `pnpm i18n:extract` 没有产生 `.po` 变化，提交时 lefthook 的 biome 与 lingui-extract 也没有改动文件。
 - `git merge-tree --write-tree` 显示 `06293549` 与 `codex/reviewceshi`（`27ee060f`）及本地 `origin/dev`（`4e3197d5`，未 fetch）都能无冲突合并。
 - 未运行：终端全量单测、浏览器套件、生产构建，也没有在真实浏览器里观察首次访问（没有可见行为可观察）。没有生成 `.worklog` 快照，因为 `memory:capture` 只适配 Codex rollout 格式；命令日志只保存在会话临时目录，没有纳入仓库。
+- 2026-09-27 开 PR 前：用户选择按仓库规则把 PR 开到 `dev`，不直接进 `main`。`git fetch` 后 `origin/dev` 仍是 `4e3197d5`，比基线多出的只有 p23 发布记录（纯文档），`121e8e76` 相对其 dev 父提交 `42237b04` 没有内容差异。合并 `origin/dev` 时只有生成文件 `INDEX.md` 冲突，用 `pnpm memory:index` 重新生成后恰好是两边条目的并集，`memory:check` 通过，`memory:test` 8/8 通过（合并提交 `bbfee99d`）。按仓库惯例用单独提交 `26d0b13b` 把新测试加进 `terminal-tests.yml` 的「order draft and exchange session lifecycles」步骤：`node --test scripts/ci-workflows.test.mjs scripts/check-client-bundle-budget.test.mjs` 22/22 通过；按 CI 方式（`--maxWorkers=1`、同一次调用）在本地运行该步骤的 20 个文件，418 项全部通过。GitHub 上的 CI 结果不在本记录内。
 
 ## 后续与替代关系
 
 - 观察到但未改动：market store（version 3）和 order-entry store（version 2）都没有 `migrate`。以后提升它们的版本号时，zustand 会丢弃旧版本数据（例如收藏市场），改用默认值；如需保留用户数据，应同时加 `migrate`。同理，market store `merge` 里兼容旧字段 `selectedMarket` 的分支，只有在存储版本恰好为 3 或版本不是数字时才会执行。
-- 以后新增持久化 store 时，源码扫描用例会失败，提醒把它加进 `persisted-store-hydration.test.ts`，从而用 undefined 实际调用一遍它的 `merge`。
+- 以后新增持久化 store 时，源码扫描用例会失败，提醒把它加进 `persisted-store-hydration.test.ts`，从而用 undefined 实际调用一遍它的 `merge`。该文件已在 CI 的终端测试清单里，所以每个触发 Terminal Tests 的 PR 都会跑到这项检查。
 - 没有被替代的记录。
