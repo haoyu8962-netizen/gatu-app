@@ -43,6 +43,7 @@
   - `unlimited` → `No tier limit`（译文由组件传入）。
   - `unavailable`，或受限但缺少计价币符号 → `FALLBACK_VALUE_PLACEHOLDER`（`-`）。
   - 受限时先用 Big.js 把下界向零截断到整数（`round(0, Big.roundDown)`），再交给格式化器，所以显示的「最大」不会高于真实上限：分数下界 `3000000.5` 显示为 `$3,000,000`，不是按 `Intl` 默认规则进位的 `$3,000,001`。领域值本身保持精确。
+  - 截断后的整数大于 `Number.MAX_SAFE_INTEGER`（2^53 − 1 = `9007199254740991`）时显示 `FALLBACK_VALUE_PLACEHOLDER`。原因：共享格式化器 `formatUSD` / `formatQuoteAmount` 经 `parseNumberInput` 把字符串转成 JavaScript 数字，超出安全整数范围的整数会被重新舍入，而且可能向上（`9007199254740995.5` 截断为 `9007199254740995` 后曾显示为 `$9,007,199,254,740,996`，`123456789012345678901.5` 曾显示为 `$123,456,789,012,345,680,000`），又回到「显示高于真实上限」。这是已知限制，只影响合成数据：真实 Hyperliquid 分档下界远小于 2^53（当日主网最大为 1.5 亿）。截断后恰好等于安全整数上限（如 `9007199254740991.9`）或更小的值照常显示。`lib/format.ts` 不做改动，见 §7。
   - 计价币为 USDC → `formatUSD(truncated, { compact: false, decimals: 0 })`，例如 `$150,000,000`；数字格式为 `de-DE` 时是 `$150.000.000`。
   - 其他计价币 → `formatQuoteAmount(truncated, symbol, { compact: false, decimals: 0 })`，例如 `150,000,000 USDH`。
 - 计价币的取舍：下单面板的「订单价值」（`order-summary.tsx`）对所有市场都用 `formatUSD`，这是既有的简化；同一表单的止盈止损收益（`tp-sl-section.tsx`，经 `getTpSlCollateralSymbol(market)`）与持仓价值（`position-row.tsx`、`mobile-position-card.tsx`）按计价币区分。分档下界是该 dex 抵押币计的名义价值，所以这一行沿用后者：宿主传 `getTpSlCollateralSymbol(market)`（永续为 `USDC`，builder 永续为其 `quoteToken` 的显示名，缺失为 `null`）。缺少符号时不猜测为美元，显示占位符；「无档位上限」与单位无关，照常显示。
@@ -66,6 +67,7 @@
 | 单档表、隐式表（ID < 50）、分档表缺失或无效 | 整行不出现（按市场决定） | — |
 | 杠杆不是 1 到第一档最高杠杆之间的整数（防御情形） | 显示 | `-` |
 | 受限但计价币符号缺失 | 显示 | `-` |
+| 受限但截断后的下界大于 `Number.MAX_SAFE_INTEGER`（合成情形，真实分档表不会出现） | 显示 | `-` |
 | 未连接、已连接、Agent 会话 | 相同 | 与账户无关 |
 | 拖动中 | 同一节点 | 随预览杠杆更新（`TradeSlider` 至多每 15 ms 发布一次） |
 | 取消拖动、松手 | 同一节点 | 回到规范值 / 提交值 |
@@ -79,6 +81,7 @@
 ## 6. 滑杆手势与确认面
 
 - 拖动中编辑器的 `value` 是预览杠杆，这一行跟着改文字（例如 BTC 20x `No tier limit` → 25x `$150,000,000`）；行节点、是否存在与单行高度都不变，所以居中的桌面弹窗和贴底的移动抽屉都不会因为它移动滑杆。
+- 上一条是按结构推出的设计意图，尚未在浏览器或真机上测量。现有证据只有 jsdom 中的同一节点断言与类名断言（`whitespace-nowrap`、`truncate`、`shrink-0`），编辑器与抽屉测试由脚本调用滑杆回调；它们不能证明真实浏览器中滑杆坐标在拖动中不变、窄屏下不溢出或真实指针行为正确，例如按杠杆改变行的上下内边距而保留这些类名，现有测试仍会通过。第二轮审查（2026-09-27）把这一点列为「无法确认」的验证缺口，没有认定为布局缺陷，本次不改代码；在真人于桌面弹窗与移动抽屉中拖动真实滑杆并核对滑杆位置之前，这一条不算验证结论（见 §8）。
 - 这一行只读，不是提交上限：`updateLeverage` 不带仓位数量，确认面契约第 3 条的「展示 → 承诺」界在这里不适用。它不参与 `Confirm` 的禁用、不参与手势锁，也不改变结果通知。
 - 既有的高杠杆警告仍按预览杠杆（`riskValue`）在 10x 两侧挂载或卸载。侦察报告从源码几何推断它可能在拖动中移动滑杆，未经浏览器验证；它不属于本功能，本次没有改动，由单独任务处理。
 
@@ -96,6 +99,7 @@
 | 按目录新鲜度（`marginMetadataReady`）门控 | 侦察推测 5 分钟 `staleTime` 后可能周期性变为占位，未经运行时验证；数值只是说明 | 不采用，只看分档表本身 |
 | 在领域层把分数下界取整 | 领域值丢失精确度，其他调用方拿不到真实下界 | 不采用：领域值保持精确，只在展示层向零截断后再按 `decimals: 0` 格式化 |
 | 展示层按格式化器默认规则四舍五入 | 分数下界会进位，显示的「最大」高于真实上限（如 `3000000.5` → `$3,000,001`），错在不安全的方向；当日主网下界都以 `.0` 结尾，影响只是假设 | 不采用：审查后改为向零截断（2026-09-27） |
+| 在 `lib/format.ts` 增加保留十进制字符串精度的格式化路径（第二轮审查的建议） | 改动全站共享的数字格式化器及其全部调用方，数字格式设置、紧凑记法与各语言分组都要重新核对；收益只在超过 2^53 的合成下界 | 不采用：只在本行展示层对截断后超出安全整数范围的值显示占位符（2026-09-27 第二轮审查） |
 
 ## 8. 验证
 
@@ -114,6 +118,16 @@
 - `pnpm exec biome check`：改动的 3 个 TypeScript/TSX 文件，无问题；`pnpm --filter @gatu/terminal typecheck`：通过。
 - 本功能的回归入口（§9）、上述扫描器与数字/日期格式分组：22 个文件 516 个测试；`AGENTS.md` 确认面分组：41 个文件 882 个测试。
 - 变异核对：去掉截断后新用例得到 `$3,000,001` 而失败；分别从两个宿主删去 `marginTiers={marginTiers}` 或 `quoteSymbol={getTpSlCollateralSymbol(market)}`（共 4 次），源码契约用例每次都失败；恢复后通过。
+
+第二轮审查修复（2026-09-27，分支 `claude/sdk-fix-r1-leverage-limit`，基线为集成头 `19af214b`）实际运行：
+
+- 修复内容：展示层在向零截断之后，对大于 `Number.MAX_SAFE_INTEGER` 的下界显示占位符（§4.2）；布局稳定性的「无法确认」只在 §6 补充说明，没有代码改动。
+- 先写回归用例：`leverage-position-limit-row.test.tsx` 新增 8 个用例，下界 `9007199254740995.5`、`123456789012345678901.5`（超出安全整数范围，期望 `-`）与 `9007199254740991.9`、`9007199254740990.5`（截断后等于或低于上限，期望完整数值），USDC 与 USDH 各一例。在 `19af214b` 上超出范围的 4 例失败（得到 `$9,007,199,254,740,996`、`9,007,199,254,740,996 USDH`、`$123,456,789,012,345,680,000`、`123,456,789,012,345,680,000 USDH`），修复后 24 个用例全部通过。
+- `pnpm exec biome check`：改动的 2 个 TypeScript/TSX 文件，无问题。
+- `pnpm --filter @gatu/terminal typecheck`：失败，4 个错误都在 `src/lib/tests/funding-history-load-boundary.test.tsx`（资金费历史功能的 `7db5cf0b` 引入）；把本次两个文件恢复到 `19af214b` 后错误完全相同，与本功能无关，本次未处理。
+- 本功能的回归入口（§9）加上 `i18n-reactivity-contract`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`action-progress-label-contract`、`mobile-data-presentation-contract`：14 个文件 325 个测试，全部通过。
+- 变异核对：删去展示层的安全整数判断后，新增的 4 个超出范围用例失败，恢复后通过。
+- 文档：本文、[移动端数据展示规范](mobile-data-presentation.md) 的占位条件与[滑杆交互契约](slider-interactions.md) 的验证说明同步修改；`git diff --check` 无问题，文档修改后重跑 `mobile-data-presentation-contract` 与 `leverage-position-limit-row` 通过。
 
 输入路径：以上交互测试都是 jsdom 中由脚本调用滑杆回调与分发输入事件，不代表操作系统的指针事件顺序。未运行：浏览器夹具与 Playwright 滑杆套件（`test:browser:slider`）、完整终端测试、`pnpm build`（包体预算），也没有在真实设备上拖动真实弹层或连接钱包。按[滑杆交互契约](slider-interactions.md)，手势相关的结论在真人拖动真实控件之前不算验证完成。
 

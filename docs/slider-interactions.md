@@ -196,7 +196,11 @@ notice's presence from interaction start to interaction end
 The leverage editor's max position row (`docs/leverage-position-limit.md`) meets the
 same rule by construction instead of by holding: whether it is mounted depends only on
 the market's margin tiers, never on the previewed leverage, and it is a single
-non-wrapping line, so a gesture changes only its text. The existing high-leverage
+non-wrapping line, so a gesture changes only its text. That is a design argument, not a
+measurement: its tests assert the node identity and class names in jsdom, which cannot
+show that the slider keeps its coordinates, that narrow widths do not overflow or that
+real pointer input behaves, so it stays unverified until a person drags the real
+control in the desktop dialog and the mobile drawer. The existing high-leverage
 warning below it still mounts from the previewed leverage; source reading suggests it
 can shift the slider mid-drag, which has not been checked in a browser and is tracked
 outside that change.
