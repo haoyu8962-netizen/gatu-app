@@ -505,6 +505,7 @@ function PositionTpSlForm({
 	const workflowSubmittingRef = useRef(false);
 	const [isWorkflowSubmitting, setIsWorkflowSubmitting] = useState(false);
 	const amountInteractionSnapshotRef = useRef<{ identity: string; sizeInput: string } | null>(null);
+	const [slippageWarningHeld, setSlippageWarningHeld] = useState<boolean | null>(null);
 	const amountErrorId = useId();
 
 	function getSubmitFeedback(error: PositionTpSlSubmitError): OrderQueueItem["error"] {
@@ -730,11 +731,12 @@ function PositionTpSlForm({
 	});
 	const isSubmitting = isWorkflowSubmitting || isPlacing || isCancelling;
 	const maxMarketOrderNotionals = useMaxMarketOrderNotionals(open);
-	const showSlippageWarning = shouldWarnPositionTpSlSlippage({
+	const liveSlippageWarning = shouldWarnPositionTpSlSlippage({
 		tiers: maxMarketOrderNotionals,
 		positionLeverage: leverage,
 		positionValue: position.positionValue,
 	});
+	const showSlippageWarning = slippageWarningHeld ?? liveSlippageWarning;
 
 	const positionChanged =
 		!liveSignedSize ||
@@ -942,6 +944,7 @@ function PositionTpSlForm({
 	}
 
 	function handleAmountPercentStart() {
+		setSlippageWarningHeld(showSlippageWarning);
 		if (!canEditConfiguredAmount()) return;
 		const current = amountEditingRef.current;
 		amountInteractionSnapshotRef.current = { identity: current.identity, sizeInput: current.sizeInput };
@@ -949,6 +952,7 @@ function PositionTpSlForm({
 
 	function handleAmountPercentEnd() {
 		amountInteractionSnapshotRef.current = null;
+		setSlippageWarningHeld(null);
 	}
 
 	function isAmountGestureActive() {

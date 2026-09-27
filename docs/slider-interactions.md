@@ -187,6 +187,11 @@ the middle of a drag. The desktop order form therefore holds the presence and th
 measured height of its size message row for the whole gesture and applies the current
 validation result when the gesture ends (`docs/order-entry-surface-parity.md`). Holding the row is presentation
 only: submit availability and execution checks keep using the real validation result.
+The position TP/SL dialog does the same for the large-slippage notice below its amount
+slider: the notice follows live position value and the tier table, and the centred modal
+and the bottom drawer would move the slider row when it toggles, so the dialog keeps the
+notice's presence from interaction start to interaction end
+(`docs/position-tpsl-slippage-warning.md`).
 
 ## Quantity and execution boundaries
 

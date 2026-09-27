@@ -1956,6 +1956,48 @@ describe("PositionTpSlModal live data", () => {
 			expect(slippageWarning()).toBeNull();
 		});
 
+		it.each([false, true])(
+			"holds the notice's presence through an amount gesture on mobile=%s and applies the live result on release",
+			(isMobile) => {
+				testState.isMobile = isMobile;
+				testState.maxMarketOrderNtlsQuery = { data: undefined, isSuccess: false, status: "pending" };
+				setPositionSize("6000000");
+				renderModal();
+				act(() => getInput(container, "Configure amount").click());
+				const slider = testState.amountSliderProps;
+				if (!slider) throw new Error("Expected the configured amount slider");
+				expect(slippageWarning()).toBeNull();
+
+				act(() => slider.onPercentInteractionStart?.(slider.value));
+				act(() => setMaxMarketOrderNtlsQuery(successQuery));
+				expect(slippageWarning()).toBeNull();
+				act(() => testState.amountSliderProps?.onPercentChange(50));
+				expect(getInput(container, "Configured TP/SL amount").value).toBe("0.150");
+				expect(slippageWarning()).toBeNull();
+				act(() => testState.amountSliderProps?.onPercentCommit(50, { reason: "drag", event: new Event("pointerup") }));
+				expect(slippageWarning()).toBeNull();
+				act(() => testState.amountSliderProps?.onPercentInteractionEnd?.());
+				expect(slippageWarning()?.textContent).toBe(SLIPPAGE_WARNING_TEXT);
+				expect(getInput(container, "Configured TP/SL amount").value).toBe("0.150");
+
+				const nextSlider = testState.amountSliderProps;
+				if (!nextSlider) throw new Error("Expected the configured amount slider");
+				act(() => nextSlider.onPercentInteractionStart?.(nextSlider.value));
+				setPositionSize("4000000");
+				act(() => {
+					root.render(modalElement(positionRef));
+				});
+				expect(slippageWarning()?.textContent).toBe(SLIPPAGE_WARNING_TEXT);
+				act(() => testState.amountSliderProps?.onPercentCancel(nextSlider.value));
+				expect(slippageWarning()).not.toBeNull();
+				act(() => testState.amountSliderProps?.onPercentInteractionEnd?.());
+				expect(slippageWarning()).toBeNull();
+				expect(getInput(container, "Configured TP/SL amount").value).toBe("0.150");
+				expect(testState.placeOrder).not.toHaveBeenCalled();
+				expect(testState.cancelOrders).not.toHaveBeenCalled();
+			},
+		);
+
 		it("follows the tier table and live position value without touching the TP draft", () => {
 			testState.maxMarketOrderNtlsQuery = { data: undefined, isSuccess: false, status: "pending" };
 			setPositionSize("6000000");

@@ -13,7 +13,7 @@
 - 计算在领域层用 Big.js 完成，协议字段保持字符串；组件只读一个布尔值。
 - 被动数据：分档表加载中、失败、格式异常时不显示任何文字、图标或占位（[数据展示契约](mobile-data-presentation.md)的新增行）。
 - 确认面：确认按钮名称保持静态的 `Confirm`；提示不进入 `canSubmit`、执行守卫、`guardMessage` 或提交负载（[确认面契约](confirmation-surfaces.md) 不变量 1）。
-- 滑杆手势：提示位于数量滑杆下方，且不依赖数量草稿，拖动中不会出现或消失，不会把滑杆顶离指针（[滑杆手势](slider-interactions.md)）。
+- 滑杆手势：提示位于数量滑杆下方，不依赖数量草稿，但会随实时仓位价值或后到、刷新失败的分档表出现或消失。桌面弹层垂直居中（`packages/ui/src/modal.tsx` 的 `items-center`），移动抽屉按内容高度贴底（`packages/ui/src/drawer.tsx` 的 `bottom-0`），提示出现或消失会让滑杆所在行上下移动：居中弹层移动提示高度的一半，抽屉移动整个高度。因此数量滑杆手势期间保持手势开始时提示的有无，手势结束（松开或取消）后再按实时结果显示，不把滑杆顶离指针（[滑杆手势](slider-interactions.md)）。保持只影响展示，提交判断本来就不读提示。
 - 文案经响应式 Lingui `t` 渲染，随语言热切换；不显示数字，因此不经过数字格式化。
 - 不新增首屏惰性块：领域函数与 hook 由 TP/SL 弹窗静态引用，随按需加载的 `PositionDialogHost` 块（`lazy-global-modals.ts`）一起加载。
 
@@ -56,6 +56,8 @@
 
 样式按 [对话框内容块](../.claude/rules/style-ui-guide.md) 的 notice 层级：`rounded-16 border border-stroke-warning-weak bg-warning-soft p-3 text-xs text-warning`，图标为 `WarningIcon`（`text-icon-warning`，`aria-hidden`）。不设 `aria-live` 或 `role`：仓位价值在门槛附近随标记价变化时提示可能出现又消失，反复播报只会打扰。不显示金额或杠杆数字。
 
+手势期间的保持：`TradeSizeSlider` 在指针按下时调用 `onPercentInteractionStart`，此时弹窗记下提示当前是否显示（`slippageWarningHeld`），渲染用 `slippageWarningHeld ?? 实时结果`；`onPercentInteractionEnd` 清除记录。`TradeSlider` 在松开、`pointercancel`、Esc、编辑上下文变化、卸载以及 [滑杆手势](slider-interactions.md) 列出的其余取消路径上都会调用它，所以保持不会遗留到手势之后。键盘调整与百分比输入框不开始手势，不保持。保持与数量编辑是否可用无关：即使 `canEditConfiguredAmount` 拒绝这次拖动的数量回调，滑杆仍在指针下，版面照样固定。只保持有无，不像下单面板那样再固定测得的高度：提示高度只随文案（切换语言除外，手势期间不变）和容器宽度变化，而容器宽度变化会让滑杆宽度变化并取消手势。
+
 英文文案：「A market TP/SL may fill with large slippage because of this position's size. To reduce slippage, use limit execution with a limit price, or configure a smaller amount.」五个非英语目录已补齐翻译。
 
 | 情况 | 显示 |
@@ -63,7 +65,8 @@
 | 分档表加载中、失败、后台刷新失败、格式异常、没有适用档位 | 什么都不显示，不预留高度 |
 | 成功且仓位价值严格大于所选上限 | 提示可见 |
 | 成功但仓位价值不超过上限 | 什么都不显示 |
-| 勾选限价执行、切换整仓/部分数量、拖动数量滑杆 | 与之无关，保持原状 |
+| 勾选限价执行、切换整仓/部分数量、输入数量或百分比、拖动数量滑杆 | 与之无关，保持原状 |
+| 拖动数量滑杆期间，仓位价值跨过上限，或分档表后到、刷新失败 | 保持手势开始时的有无；手势结束（松开或取消）后按实时结果显示 |
 | 弹窗关闭中（250 ms） | 保持关闭前的状态 |
 | 点击确认 | 弹窗照常立即关闭，提交与通知不变 |
 
@@ -91,6 +94,8 @@
 | 只在 `liveDataReady` 时显示 | 提示来自弹窗表单正在使用的同一份实时仓位，且从不放行任何操作；额外门槛只会让提示在重连时闪烁 |
 | 照搬官方第二条建议「配置数量，在不同触发价分多笔部分 TP/SL」 | gatu 每个市场的持仓 TP 与持仓 SL 各只识别一笔，出现第二笔时 `buildTpSlOrdersByCoin` 把它标记为重复配置，弹窗随即阻止编辑并提示先逐笔取消；照搬会把用户引向死路，因此改为「配置更小的数量」 |
 | 分档表失败时提示「无法判断滑点」 | 违反数据展示契约：被动读取失败保持静默 |
+| 数量滑杆手势期间直接跟随实时结果 | 居中弹层与贴底抽屉里，提示出现或消失会把滑杆行顶离指针，违反滑杆手势契约；代价是手势期间提示最多滞后到松开 |
+| 始终为提示预留高度 | 违反数据展示契约：加载、失败与不适用时不预留占位；也会让普通仓位的弹窗多出一块空白 |
 
 ## 10. 验证
 
@@ -104,7 +109,14 @@
 - `AGENTS.md` 确认面回归组：41 个文件 893 项通过；数据展示、滑杆手势、运行时翻译回归组加 `position-tpsl-size`、`use-market-slippage-estimate`：17 个文件 355 项通过；引用该弹窗的 `global-modals-*` 与 `position-dialog-session-ownership`：4 个文件 45 项通过。
 - `pnpm exec biome check`（6 个改动的 TS/TSX 文件）无问题；`pnpm --filter @gatu/terminal typecheck` 通过。
 
-未做：浏览器目测、真实钱包、真机；完整终端测试与生产构建（包体预算）由集成方运行。
+审查修复（同日，同一分支的后续提交）：审查指出提示会随实时仓位价值或后到的分档表在拖动中出现或消失，而居中弹层与贴底抽屉会因此移动滑杆行，本文原先「拖动中不会出现或消失」的说法不准确。改为手势期间保持有无（第 2、6 节），并实际运行：
+
+- `position-tpsl-modal.test.tsx` 新增 2 项（桌面与抽屉）：手势开始时无提示，拖动中分档表到达、数量预览变化、提交回调之后仍无提示，`onPercentInteractionEnd` 后出现且数量保持 `0.150`；再次开始手势时有提示，仓位价值降到上限以下并重渲染、取消回调之后仍显示，手势结束后消失；全程不发单、不撤单。测试直接调用被包裹的 `TradeSizeSlider` 的回调（jsdom，脚本调用，不是物理指针输入）。
+- 变异核对：渲染改回只用实时结果、或在 `onPercentInteractionEnd` 中不清除保持，两处改动分别使这 2 项失败，恢复后通过。
+- 上述三个测试文件连同十个契约扫描：13 个文件 366 项通过；`AGENTS.md` 确认面回归组：41 个文件 895 项通过；数据展示、滑杆手势、运行时翻译回归组加 `position-tpsl-size`、`use-market-slippage-estimate`：17 个文件 355 项通过；`global-modals-*` 与 `position-dialog-session-ownership`：4 个文件 45 项通过。
+- `pnpm exec biome check`（改动的 2 个 TSX 文件）无问题；`pnpm --filter @gatu/terminal typecheck` 通过；`git diff --check` 无问题。
+
+未做：浏览器目测、真实钱包、真机，以及真人拖动真实控件（按[滑杆手势](slider-interactions.md)的规则，手势相关改动在此之前不算完成验证）；完整终端测试与生产构建（包体预算）由集成方运行。
 
 ## 11. 未验证事项
 
