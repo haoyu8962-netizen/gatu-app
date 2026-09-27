@@ -157,7 +157,6 @@ describe("Agent missing reason", () => {
 			agentName: "Mobile valid_until 10000",
 			agentValidUntilMs: 10_000,
 			importedAtMs: 100,
-			syncId: "test-sync",
 		});
 
 		expect(

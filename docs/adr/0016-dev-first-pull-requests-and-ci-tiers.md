@@ -46,6 +46,7 @@
 - 估算（由上面一次实测的步骤耗时推算，未经推送后的真实运行验证）：进 `dev` 的 PR 每次推送约 33 计费分钟（原约 68）——测试 6、单组构建 8、静态检查 3、浏览器两片各 8，网站工作流通常不触发——等待约 8 分钟（原约 12.5）；进 `main` 的 PR 另加三组构建约 24 分钟。
 - 其余三种配对组合的构建、体积预算与懒加载图要到 `dev → main` 才由 CI 验证；配对开关打开时才出现的体积超限会晚一步暴露。缓解：改动涉及配对代码或其体积时，在该分支用 `workflow_dispatch` 手动运行 `Production Builds`，它构建全部 4 组。
 - 标签模式为 `v[0-9]*` 与 `cloudfront-[0-9]*`（产品负责人确认，2026-09-19），例如 `v0.1.0`、`cloudfront-2026-09-17-p21`。仓库现有标签只有 `archive/2026-09-10/*`；`tags` 与 `tags-ignore` 不能同时使用，所以不靠排除，而是要求前缀后紧跟数字，`archive/**` 或其他只是以 `v` 开头的标签都不会触发 4 次生产构建。`scripts/ci-workflows.test.mjs` 用样例标签钉住这一点。
+- 2026-09-24 更正：配对开关合并为一个 `VITE_MOBILE_PAIRING_ENABLED`（ADR 0015 D8），`Production Builds` 在 `dev → main`、发布标签与手动运行时只构建开 / 关两组；上文的「三种组合」「4 组」按此理解。
 - 测试与构建并行、不设 `needs`：等待时间取两者较大值，代价是测试失败时构建不再被跳过。
 - `production-build.yml` 的路径过滤仍包含已移走测试的脚本路径；这是无害的超集，且被既有断言钉住。随网站 job 移走的三项（`designs/og-cards/**`、`tests/**`、`scripts/generate-og-cards.mjs`）已从中删除。
 - CI 的手选测试清单里 `src/lib/tests/geo-server-functions.test.ts` 已不存在（`5944465d` 删除），vitest 会静默忽略不匹配的参数。本次按原样搬移，未清理；全量单测成为闸门后这份清单应整体移除。

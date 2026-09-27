@@ -40,52 +40,8 @@ const BOOTSTRAP_FATAL_COPY: Readonly<Record<LocaleCode, TerminalFatalCopy>> = {
 	},
 };
 
-/**
- * Shown instead of the application when the pairing link could not be removed from the address bar,
- * or when its captured value went missing: a terminal security notice, not a startup placeholder.
- */
-const PAIRING_BLOCKED_COPY: Readonly<Record<LocaleCode, TerminalFatalCopy>> = {
-	en: {
-		heading: "This link could not be opened safely",
-		description: "Close this tab and do not share the link. On your desktop, create a new QR code and scan it again.",
-		reload: "Open the scan page",
-	},
-	zh: {
-		heading: "无法安全打开此链接",
-		description: "请关闭此标签页，不要分享该链接。回到桌面重新生成二维码，再扫描一次。",
-		reload: "打开扫码页面",
-	},
-	hi: {
-		heading: "यह लिंक सुरक्षित रूप से नहीं खोला जा सका",
-		description: "इस टैब को बंद करें और लिंक साझा न करें। अपने डेस्कटॉप पर नया QR कोड बनाएँ और उसे फिर से स्कैन करें।",
-		reload: "स्कैन पेज खोलें",
-	},
-	es: {
-		heading: "Este enlace no se pudo abrir de forma segura",
-		description:
-			"Cierre esta pestaña y no comparta el enlace. En su ordenador, cree un nuevo código QR y vuelva a escanearlo.",
-		reload: "Abrir la página de escaneo",
-	},
-	fr: {
-		heading: "Ce lien n’a pas pu être ouvert en toute sécurité",
-		description:
-			"Fermez cet onglet et ne partagez pas le lien. Sur votre ordinateur, créez un nouveau code QR et scannez-le à nouveau.",
-		reload: "Ouvrir la page de scan",
-	},
-	ar: {
-		heading: "تعذّر فتح هذا الرابط بأمان",
-		description: "أغلق علامة التبويب هذه ولا تشارك الرابط. أنشئ رمز QR جديدًا على حاسوبك وامسحه مرة أخرى.",
-		reload: "فتح صفحة المسح",
-	},
-};
-
-export type BootstrapFatalVariant = "startup" | "pairing-blocked";
-
-export function getBootstrapFatalCopy(
-	locale: LocaleCode,
-	variant: BootstrapFatalVariant = "startup",
-): TerminalFatalCopy {
-	return variant === "pairing-blocked" ? PAIRING_BLOCKED_COPY[locale] : BOOTSTRAP_FATAL_COPY[locale];
+export function getBootstrapFatalCopy(locale: LocaleCode): TerminalFatalCopy {
+	return BOOTSTRAP_FATAL_COPY[locale];
 }
 
 export function getBootstrapFatalLocale(storage: Pick<Storage, "getItem"> | null = getBrowserStorage()): LocaleCode {

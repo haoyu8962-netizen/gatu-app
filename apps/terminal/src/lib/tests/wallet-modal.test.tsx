@@ -60,7 +60,7 @@ vi.mock("@/providers/pwa-install", () => ({
 
 vi.mock("@/config/mobile-pairing", () => ({
 	MOBILE_PAIRING_FEATURES: {
-		get importFromQr() {
+		get enabled() {
 			return testState.importEnabled;
 		},
 	},

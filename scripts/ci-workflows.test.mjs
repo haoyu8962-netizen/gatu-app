@@ -37,9 +37,9 @@ test("builds the default pairing on pull requests and every pairing for main, re
 			builds,
 		) ?? [];
 
-	assert.deepEqual(JSON.parse(defaultPairings), [{ create: "false", import: "false" }]);
-	const combinations = JSON.parse(allPairings).map((pairing) => `${pairing.create}/${pairing.import}`);
-	assert.deepEqual(combinations.sort(), ["false/false", "false/true", "true/false", "true/true"]);
+	assert.deepEqual(JSON.parse(defaultPairings), [{ enabled: "false" }]);
+	const combinations = JSON.parse(allPairings).map((pairing) => pairing.enabled);
+	assert.deepEqual(combinations.sort(), ["false", "true"]);
 
 	assert.equal(/^\s+branches:/m.test(builds), false, "a base-branch filter would stop pull requests into dev from building");
 	assert.equal(/^  workflow_dispatch:/m.test(builds), true);

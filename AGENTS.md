@@ -53,7 +53,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - `docs/runtime-guardrails.md` §8 owns these rules. Terminal layout, wallet-connection surface and PWA installation are three independent decisions: `MOBILE_MEDIA_QUERY` switches the layout; `MOBILE_QR_SURFACE_MEDIA_QUERY` (which also covers coarse pointers and standalone display mode) must never switch it.
 - Offer Link Desktop only behind its fail-closed feature flag. Email login and the Ethereum-only Privy wallet directory remain the ordinary mobile connection paths; authenticated sessions use the explicit reconnect path.
-- Desktop Link mobile device entries (header icon, compact utilities menu, user menu) share one modal instance and appear only for an exact-owner session with `createAndReveal` enabled; the phone shows agent-only funds actions disabled with a single desktop-required reason instead of hiding them.
+- The desktop Link mobile device entry is the header QR icon alone: rendered only for an exact-owner session with the pairing flag on, kept visible at compact widths, and opening the single modal instance that the user menu hosts. The dialog has one instruction, one warning and one action; approving again replaces the Mobile Agent and the API wallet page removes it. The phone shows agent-only funds actions disabled with a single desktop-required reason instead of hiding them.
 - Show PWA installation only when a real browser install prompt or supported iOS instructions exist; a captured prompt is single-use, and wide desktop `beforeinstallprompt` behavior stays browser-owned.
 
 ## Mobile data presentation contract
@@ -87,6 +87,13 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Desktop order book and recent trades share one full-width, mutually exclusive tab panel; never mount duplicate book or trade subscriptions to simulate a stacked layout.
 - Derive trade price precision from the selected market under both Hyperliquid constraints (five significant figures and the perp/spot `szDecimals` decimal cap) instead of hard-coding decimal places. Keep WebSocket `px` and `sz` as strings until formatting or Big.js calculation, and compute quote-denominated sizes outside React components.
 - Use `(time, coin, tid)` for trade identity in both processed UI data and subscription accumulation.
+
+## Number and date formatting contract
+
+- `docs/number-format-setting.md` owns the number-format options, their storage and which surfaces follow them.
+- Numbers follow the number-format setting, never the interface language; dates and times follow the interface language with Latin digits. Components and business code format both through `lib/format.ts` and never call `toLocale*` or construct `Intl.*` formatters directly.
+- Typed decimal input stays a `.` protocol string; when the setting displays `,` as the decimal sign, a typed `,` is normalized to `.` before validation (`normalizeDecimalInput` / `normalizeDecimalInputEvent`), and every bare `<input inputMode="decimal">` must use that helper; `locale-format-contract` scans both rules.
+- The chart receives `numeric_formatting` at creation and follows a setting change through the same state-preserving rebuild as a locale change; a number-format change never reloads the page.
 
 ## Desktop trading layout contract
 
@@ -197,6 +204,15 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trades.test.ts \
   src/lib/tests/trades-panel.test.tsx \
   src/lib/tests/trade-row.test.tsx
+
+# Number and date formatting
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/format.test.ts \
+  src/lib/tests/number-format-settings.test.ts \
+  src/lib/tests/number-format-reactivity-contract.test.ts \
+  src/lib/tests/locale-format-contract.test.ts \
+  src/lib/tests/decimal-input-normalization.test.tsx \
+  src/lib/tests/tradingview-chart.test.tsx
 
 # Desktop trading layout and order entry
 pnpm --dir apps/terminal exec vitest run \

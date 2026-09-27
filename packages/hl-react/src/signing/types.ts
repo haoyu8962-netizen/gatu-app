@@ -19,5 +19,4 @@ export interface AgentWallet {
 	agentName?: string;
 	agentValidUntilMs?: number;
 	importedAtMs?: number;
-	syncId?: string;
 }

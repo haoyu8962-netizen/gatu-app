@@ -6,7 +6,6 @@ import { act, createElement, Fragment, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { QrScannerStart } from "@/components/trade/components/mobile-agent-qr-scanner";
-import { MOBILE_SYNC_DRAFT_STORAGE_KEY } from "../mobile-sync/draft-storage";
 import { createMobileAgentSyncUrl } from "../mobile-sync/sync-core";
 import { createI18nRoot } from "./harness/react";
 
@@ -77,7 +76,7 @@ vi.mock("@gatu/ui", () => ({
 
 vi.mock("@/config/mobile-pairing", () => ({
 	MOBILE_PAIRING_FEATURES: {
-		get importFromQr() {
+		get enabled() {
 			return featureState.importEnabled;
 		},
 	},
@@ -95,6 +94,7 @@ async function createSyncFixture() {
 		env: "Mainnet",
 		userAddress: USER_ADDRESS,
 		agentPrivateKey: AGENT_PRIVATE_KEY,
+		agentValidUntilMs: NOW_MS + 30 * 24 * 60 * 60 * 1000,
 		nowMs: NOW_MS,
 	});
 }
@@ -144,7 +144,7 @@ describe("MobileAgentQrScanner", () => {
 		vi.unstubAllGlobals();
 	});
 
-	it("starts the rear camera only after an explicit click and stores a valid same-origin QR", async () => {
+	it("starts the rear camera only after an explicit click and opens a valid same-origin QR link", async () => {
 		const onSyncReady = vi.fn();
 		const sync = await createSyncFixture();
 		const { MobileAgentQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
@@ -174,9 +174,9 @@ describe("MobileAgentQrScanner", () => {
 		});
 
 		expect(onSyncReady).toHaveBeenCalledTimes(1);
+		expect(onSyncReady).toHaveBeenCalledWith(sync.url);
 		expect(scannerState.controlsStop).toHaveBeenCalled();
 		expect(scannerState.trackStop).toHaveBeenCalled();
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
 	});
 
 	it("rejects a cross-origin QR without persisting or navigating", async () => {
@@ -202,20 +202,17 @@ describe("MobileAgentQrScanner", () => {
 		});
 
 		expect(onSyncReady).not.toHaveBeenCalled();
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
 		expect(container.textContent).toContain("not a valid desktop wallet link");
 		expect(container.textContent).not.toContain("evil.example");
 		expect(container.textContent).not.toContain("secret");
 	});
 
-	it("asks both devices to refresh when the scanned QR comes from the retired ticket protocol", async () => {
+	it("asks both devices to refresh when the scanned QR comes from the encrypted envelope protocol", async () => {
 		const onSyncReady = vi.fn();
 		const sync = await createSyncFixture();
 		const url = new URL(sync.url);
 		const params = new URLSearchParams(url.hash.slice(1));
-		const bytes = Buffer.from(params.get("ht-mobile-sync") ?? "", "base64url");
-		bytes[0] = 2;
-		params.set("ht-mobile-sync", bytes.toString("base64url"));
+		params.set("k", "legacy-envelope-key");
 		const { MobileAgentQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
 
 		act(() => {
@@ -235,7 +232,6 @@ describe("MobileAgentQrScanner", () => {
 		});
 
 		expect(onSyncReady).not.toHaveBeenCalled();
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
 		expect(container.textContent).toContain("Refresh both devices to update phone access, then create a new QR.");
 		expect(container.textContent).not.toContain("invalid or incomplete");
 	});
@@ -341,7 +337,6 @@ describe("MobileAgentQrScanner", () => {
 
 		expect(scannerState.startScanner).not.toHaveBeenCalled();
 		expect(container.textContent).toContain("temporarily unavailable");
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
 	});
 });
 

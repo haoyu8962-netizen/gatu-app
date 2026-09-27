@@ -8,6 +8,58 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market
+  returns to BTC; the scrim and Esc still do not dismiss it. Close All and Reverse now show the
+  same cancellable disclaimer as Market Close and Limit Close before their confirmation instead of
+  failing at submission, and Close All reads the account again when the disclaimer is accepted, so
+  its 30-second preview restarts at that moment. The disclaimer fades out after Confirm, Leave or
+  Cancel instead of disappearing, and it no longer shows a close button because its footer holds
+  the way out. Limit Close now fades out as well when it is cancelled or submitted, like Close All
+  and Reverse, and its confirm button is disabled while it closes.
+
+- Link mobile device is now one sentence, one warning and one action. The header QR icon is the
+  only entry (it loads the dialog while you hover or focus it, so the click opens the dialog
+  directly instead of a "Connecting" shell), the dialog approves the 30-day trading key with a single click (an email wallet signs
+  without a second prompt), a 2-second hold that counts down on the button reveals the QR (the progress ring now follows the hold exactly and the QR is drawn the moment the hold completes) and it closes after 60 seconds, immediately if the page is hidden. The phone
+  page scrubs the link, shows one sentence and imports on a single tap; a reload asks for a new scan.
+  The link now carries a plain payload in the URL fragment instead of an encrypted envelope, the
+  revoke panel is gone (approving again replaces the key and the API wallet page removes it), and
+  the two build switches became one `VITE_MOBILE_PAIRING_ENABLED`, still off in production.
+
+- Email users no longer see a second Privy signature prompt when approving or revoking
+  mobile trading access from the Link mobile device dialog, or when authorizing or removing an
+  API wallet. Each dialog's own review step is the confirmation, so the embedded wallet signs
+  silently like every other reviewed action, and the API wallet progress view says so instead
+  of asking for a wallet confirmation. The revoke confirmation in the Link mobile device dialog
+  says "Confirm revoke" for email users and keeps "Confirm revoke in wallet" for external
+  wallets; the phone pairing page formats the key's expiry in the interface language.
+
+- The Link mobile device dialog no longer stacks grey boxes: the master wallet is a plain
+  label row, "pairing temporarily unavailable" and "keep this window open" are info callouts,
+  "trading key approved" and "mobile access revoked" are success callouts, and the approval,
+  reveal, scan and revoke cards are outlined on the dialog surface. Warning callouts use the
+  semantic error stroke instead of an opacity modifier. The phone pairing page, the staking
+  operation reference and the pending-CCTP-deposit notice follow the same three tiers.
+
+- With the `1.234,56` or `1 234,56` number format, typing a comma in any amount, size or price
+  field now enters the decimal point instead of being ignored, so the decimal key on German and
+  French keyboards works; the field still shows the protocol value with a dot.
+
+- The chart now follows the number-format setting: its price axis, legend and crosshair
+  labels use the same decimal sign and grouping separator as the rest of the terminal, and a
+  setting change rebuilds the chart with its layout preserved instead of leaving `1.234,56`
+  in the tables next to `1.234` on the axis.
+
+- Dates and times keep Latin digits in every language (the Arabic interface previously
+  showed Arabic-Indic digits next to Latin-digit prices). Recent trades and the pairing pages,
+  which formatted times with the browser's own locale, now follow the interface language;
+  vault and API-wallet timestamps already did and keep their date-only or date-time shape.
+
+- Switching the interface language in the dark theme no longer flashes a light chart for a
+  moment. The chart's initialization mask now becomes opaque immediately when the
+  TradingView widget is rebuilt (it still fades out), so the library's default light body
+  background stays hidden until the terminal theme stylesheet has loaded inside the iframe.
+
 - Market Close submissions now run in a page-level host. A brief legal-status recheck
   (wallet reconnect or a failed background refresh) no longer cancels a confirmed close or
   releases its in-flight guard early, and switching the account tab, mobile view or layout

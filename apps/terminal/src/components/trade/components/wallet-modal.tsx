@@ -151,7 +151,7 @@ function MobileWalletChooser({
 				</ModalTitle>
 				<ModalDescription className={view === "choice" ? "sr-only" : undefined}>
 					{view === "choice" ? (
-						MOBILE_PAIRING_FEATURES.importFromQr ? (
+						MOBILE_PAIRING_FEATURES.enabled ? (
 							<Trans>Connect a wallet on this phone, or scan a desktop-approved trading key.</Trans>
 						) : (
 							<Trans>Connect a wallet on this phone to trade.</Trans>
@@ -171,7 +171,7 @@ function MobileWalletChooser({
 			<ModalContent className={view === "choice" ? "space-y-3 px-3 pt-2 pb-4" : "space-y-3"}>
 				{view === "choice" ? (
 					<>
-						{MOBILE_PAIRING_FEATURES.importFromQr && (
+						{MOBILE_PAIRING_FEATURES.enabled && (
 							<Button
 								type="button"
 								variant="ghost"

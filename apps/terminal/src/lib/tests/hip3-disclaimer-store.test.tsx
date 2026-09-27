@@ -2,7 +2,9 @@
 
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const STORAGE_KEY = "hip3-deployer-disclaimer-v1";
 
 describe("HIP-3 disclaimer store", () => {
 	let container: HTMLDivElement;
@@ -42,9 +44,37 @@ describe("HIP-3 disclaimer store", () => {
 
 		expect(container.textContent).toBe("true");
 		expect(hasAcceptedHip3Disclaimer()).toBe(true);
-		expect(JSON.parse(localStorage.getItem("hip3-deployer-disclaimer-v1") ?? "null")).toEqual({
+		expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null")).toEqual({
 			state: { acceptedVersion: 1 },
 			version: 1,
 		});
+	});
+
+	it("hydrates a stored acceptance so the disclaimer is not asked again after a reload", async () => {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { acceptedVersion: 1 }, version: 1 }));
+		vi.resetModules();
+		const { hasAcceptedHip3Disclaimer, useHasAcceptedHip3Disclaimer } = await import(
+			"@/stores/use-hip3-disclaimer-store"
+		);
+
+		function StoreProbe() {
+			return createElement("output", null, String(useHasAcceptedHip3Disclaimer()));
+		}
+
+		expect(hasAcceptedHip3Disclaimer()).toBe(true);
+		act(() => root.render(createElement(StoreProbe)));
+		expect(container.textContent).toBe("true");
+	});
+
+	it("treats a malformed or outdated stored acceptance as not accepted", async () => {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { acceptedVersion: "1" }, version: 1 }));
+		vi.resetModules();
+		const malformed = await import("@/stores/use-hip3-disclaimer-store");
+		expect(malformed.hasAcceptedHip3Disclaimer()).toBe(false);
+
+		localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { acceptedVersion: 0 }, version: 1 }));
+		vi.resetModules();
+		const outdated = await import("@/stores/use-hip3-disclaimer-store");
+		expect(outdated.hasAcceptedHip3Disclaimer()).toBe(false);
 	});
 });

@@ -27,16 +27,6 @@ const REVIEWED_PROGRESS_LABELS: Record<string, { labels: string[]; reason: strin
 		labels: ["Looking for the desktop wallet QR...", "Starting camera..."],
 		reason: "camera status",
 	},
-	"components/mobile-agent-sync-modal.tsx": {
-		labels: [
-			"Approve QR code with wallet...",
-			"Checking account...",
-			"Checking...",
-			"Rechecking approval...",
-			"Verifying approval...",
-		],
-		reason: "device linking handshake",
-	},
 	"components/wallet-modal.tsx": { labels: ["Connecting..."], reason: "wallet handshake" },
 	"header/user-menu-modal-boundary.tsx": { labels: ["Connecting..."], reason: "wallet handshake" },
 	"header/user-menu.tsx": { labels: ["Connecting..."], reason: "wallet handshake" },

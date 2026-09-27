@@ -477,7 +477,7 @@ export function DepositForm({
 				</Button>
 			) : null}
 			{pendingCctpRecovery ? (
-				<div className="rounded-[10px] border border-stroke-weak bg-fill-weak px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
+				<div className="rounded-[10px] border border-stroke-info-weak bg-info-soft px-3 py-2.5 text-center text-xs leading-relaxed text-info">
 					<Trans>A previous CCTP deposit is still being tracked. Do not resubmit the same transfer.</Trans>
 				</div>
 			) : null}

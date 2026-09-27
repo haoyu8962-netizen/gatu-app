@@ -15,11 +15,11 @@
   "commits": ["3d1d360e", "9a64fb69", "b7279527", "e666c1e9", "90ee27f5", "798f3a84"],
   "sources": [
     { "path": "docs/pairing-page-hardening-plan.md" },
-    { "path": "apps/terminal/src/lib/mobile-sync/pairing-location.ts" },
-    { "path": "apps/terminal/src/lib/mobile-sync/bootstrap-fragment.ts" },
-    { "path": "apps/terminal/scripts/render-pairing-head-scrub.mjs" },
-    { "path": "scripts/check-shell-head-scrub.mjs" },
-    { "path": "apps/terminal/tests/browser/pairing-head-scrub.mjs" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/046b0de2/apps/terminal/src/lib/mobile-sync/pairing-location.ts" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/046b0de2/apps/terminal/src/lib/mobile-sync/bootstrap-fragment.ts" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/046b0de2/apps/terminal/scripts/render-pairing-head-scrub.mjs" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/046b0de2/scripts/check-shell-head-scrub.mjs" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/blob/046b0de2/apps/terminal/tests/browser/pairing-head-scrub.mjs" },
     { "path": "apps/terminal/public/sw.js" },
     { "path": "docs/work-memory/sessions/2026-09-19-link-device-followups.md" }
   ],

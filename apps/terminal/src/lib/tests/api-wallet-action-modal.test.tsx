@@ -74,6 +74,29 @@ describe("API wallet action modal", () => {
 		container.remove();
 	});
 
+	it.each([
+		["embedded", "Signing with your email wallet", "signs the reviewed request automatically"],
+		["external", "Waiting for wallet signature", "Confirm the request in the matching master wallet"],
+	] as const)("describes the awaiting stage for an %s signer", (signer, title, description) => {
+		act(() =>
+			root.render(
+				<ApiWalletActionModal
+					action={createAction({ stage: "awaiting", signer, locked: true })}
+					onClose={vi.fn()}
+					onConfirm={vi.fn()}
+					onVerifyAgain={vi.fn()}
+					onTogglePrivateKey={vi.fn()}
+					onDownloadCredential={vi.fn()}
+					onCredentialSavedChange={vi.fn()}
+					onFinish={vi.fn()}
+				/>,
+			),
+		);
+		expect(container.textContent).toContain(title);
+		expect(container.textContent).toContain(description);
+		expect(container.textContent).not.toContain(signer === "embedded" ? "Confirm the request" : "email wallet");
+	});
+
 	it.each(["awaiting", "submitted", "reconciling"] as const)("locks dismissal during %s", (stage) => {
 		const onClose = vi.fn();
 		act(() =>

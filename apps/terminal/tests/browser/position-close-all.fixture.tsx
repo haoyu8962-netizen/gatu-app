@@ -124,6 +124,9 @@ function Fixture() {
 				<button type="button" onClick={() => setCloseAllFixture({ activeTwap: true })}>
 					Active TWAP
 				</button>
+				<button type="button" onClick={() => setCloseAllFixture({ hip3Accepted: false })}>
+					Require HIP-3 disclaimer
+				</button>
 				<button type="button" onClick={() => setCloseAllFixture({ outcome: "partial" })}>
 					Partial
 				</button>

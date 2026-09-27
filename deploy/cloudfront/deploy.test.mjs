@@ -124,7 +124,7 @@ const THEME_SCRIPT = '(()=>{document.documentElement.classList.add("dark")})();'
 const THEME_HASH = cspHash(THEME_SCRIPT);
 const SHELL_HTML = `<html><head><script>${THEME_SCRIPT}</script>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/><meta name="gatu-preload-desktop" content="/assets/chunk-1.js"/><meta name="gatu-preload-mobile" content=""/><meta name="gatu-chart-prefetch" content="/charting_library/sameorigin.html"/></head></html>`;
 const GATES_OFF = {
-	mobileSync: { createAndReveal: false, importFromQr: false },
+	mobileSync: { enabled: false },
 	cctpDeposits: { mainnetSponsoredWallet: false, testnetExternalWallet: false, testnetSponsoredWallet: false },
 };
 const BUILD_META = { commit: "abc", release: "r1", ...GATES_OFF };
@@ -230,6 +230,7 @@ test("an upload that exposes a funds or credential path needs its own acknowledg
 	assert.deepEqual(evaluateReleaseGates({ buildMeta: sponsored, acknowledged: ["sponsored-mainnet-deposits"] }).problems, []);
 
 	for (const mobileSync of [
+		{ enabled: true },
 		{ createAndReveal: false, importFromQr: true },
 		{ createAndReveal: true, importFromQr: true },
 	]) {
@@ -238,7 +239,7 @@ test("an upload that exposes a funds or credential path needs its own acknowledg
 		assert.deepEqual(evaluateReleaseGates({ buildMeta: pairing, acknowledged: ["mobile-pairing"] }).problems, []);
 	}
 
-	const both = evaluateReleaseGates({ buildMeta: { ...sponsored, mobileSync: { createAndReveal: true, importFromQr: true } }, acknowledged: ["mobile-pairing"] });
+	const both = evaluateReleaseGates({ buildMeta: { ...sponsored, mobileSync: { enabled: true } }, acknowledged: ["mobile-pairing"] });
 	assert.equal(both.problems.length, 1);
 	assert.match(both.problems[0], /sponsored Mainnet/);
 });

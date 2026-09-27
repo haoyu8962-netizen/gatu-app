@@ -10,9 +10,9 @@
 | 查目录、路由、Provider、命令 | [Terminal Reference](../apps/terminal/README.md)、[开发约定](../agent.md) |
 | 查共享包与营销站点 | [hl-react](../packages/hl-react/README.md)、[UI](../packages/ui/README.md)、[Website](../apps/website/README.md) |
 | 看用户可见变化 | [Changelog / Unreleased](../CHANGELOG.md)，不代表已经发布 |
-| 部署、入口保护与回滚 | [CloudFront 发布](../deploy/cloudfront/README.md)（现行宿主；移动配对为纯客户端传输、无服务端路由，两个配对开关在真机验收前保持关闭，见 [ADR 0015](adr/0015-link-device-alignment.md) D7）、[产物清单](../deploy/manifests/README.md)、[部署夹具](../deploy/fixtures/README.md) |
+| 部署、入口保护与回滚 | [CloudFront 发布](../deploy/cloudfront/README.md)（现行宿主；移动配对为纯客户端传输、无服务端路由，配对开关在真机清单记录前保持关闭，见 [ADR 0015](adr/0015-link-device-alignment.md) D7 与 D8）、[产物清单](../deploy/manifests/README.md)、[部署夹具](../deploy/fixtures/README.md) |
 | 接手续作与查历史证据 | 持续任务使用项目 `docs/work-memory/` 入口；[历史资料说明](../notes/README.md)、[历史与文档审查索引](../notes/index.md)补足原始 review |
-| 理解决策利弊 | [ADR 索引](adr/README.md)；移动配对去票据实施规划见 [方案 B 规划](mobile-sync-ticketless-transfer-plan.md)，其后续加固见 [配对页加固规划](pairing-page-hardening-plan.md)（已实施，未发布） |
+| 理解决策利弊 | [ADR 索引](adr/README.md)；移动配对去票据实施规划见 [方案 B 规划](mobile-sync-ticketless-transfer-plan.md)，其后续加固见 [配对页加固规划](pairing-page-hardening-plan.md)（已随 p22 上线，开关关闭）；对齐官方量级的收敛方案见 [关联移动设备简化规划](link-mobile-device-simplification-plan.md)（2026-09-24 已实施，ADR 0015 D8） |
 
 ## 当前设计与 Reference
 
@@ -22,17 +22,19 @@
 | --- | --- |
 | 产品稳定约束与运行边界 | [AGENTS](../AGENTS.md)、[Runtime guardrails](runtime-guardrails.md) |
 | 钱包身份与首次交易 | [首次交易](trading-onboarding.md)、[邮箱签名](email-trading-signing.md)、[签名机制](hyperliquid-signing.md)、[签名 ADR](adr/0002-exact-owner-trading-signers.md) |
-| 钱包调试与桌面配对 | [初始化调试](wallet-initialization-debugging.md)、[手机访问与扫码设计](mobile-phone-access-scanner-prd.md)、[设备验证矩阵](mobile-phone-access-device-validation.md) |
+| 钱包调试与桌面配对 | [初始化调试](wallet-initialization-debugging.md)、[手机访问与扫码设计](mobile-phone-access-scanner-prd.md)、[设备验证清单](mobile-phone-access-device-validation.md) |
 | 充值、提现与资金 | [CCTP 充值](cctp-deposits.md)、[提现路由](withdrawals.md)、[账户概要](account-overview.md)、[Portfolio 统计](portfolio-statistics.md) |
 | 账户共享模型 | [账户 ADR](adr/0001-account-overview-cross-shell-model.md)；账户概要与 Portfolio 的就绪条件不同 |
 | 市场身份、路由与展示价格 | [单交易路由迁移](architecture/trade-single-route-migration.md)、[价格来源审查](price-source-audit.md)、[资产资料来源](spot-asset-information.md) |
 | 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md)；[只减仓修复方案](reduce-only-repair-plan.md)记录已实施设计、官方有仓位表单观察与验收矩阵 |
 | 确认弹窗：展示与执行 | [确认面契约](confirmation-surfaces.md)、[ADR 0017](adr/0017-market-close-confirmed-size-ceiling.md)、[ADR 0014](adr/0014-market-close-submit-and-dismiss.md)；当前实施状态与保留例外见契约 |
+| HIP-3 部署者免责声明 | [行为、出口与官方对照](hip3-deployer-disclaimer.md)：交易页只能确认或「离开此市场」，四个平仓流程先显示可取消的声明，全部平仓在接受时重新生成快照 |
 | 交易通知与订单队列 | [全局操作通知规范](trading-notifications.md)、[ADR 0019](adr/0019-global-trading-notifications.md)：已实现单一 Sonner 宿主、带身份任务、批次明细与 pending 恢复；[反馈组件审查](trading-feedback-review.md)保留修复前证据与替代说明。通知不是完整交易历史，实际验证范围见[交付记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md) |
 | 订单簿数据、交互与动画 | [分组隔离修复依据](terminal-review-remediation.md)、[传输 ADR](adr/0003-orderbook-transport-isolation.md)、[累计悬浮](orderbook-hover.md)、[行几何](orderbook-layout.md)、[新增档位及数量反馈](orderbook-new-level-animation.md)、[最近成交面板](recent-trades.md) |
 | 响应式布局与控件 | [桌面网格](desktop-grid-layout.md)、[交易滑杆](slider-interactions.md)（含手势改动的验证规则与「滑杆跳回」的诊断步骤；缘由见 [ADR 0018](adr/0018-slider-gestures-end-on-release.md)）、[工具栏](trading-toolbar-redesign.md) |
 | 被动加载与语言切换 | [数据展示契约](mobile-data-presentation.md)、[加载审查与证据](terminal-loading-audit.md)、[运行时翻译](i18n-presentation.md) |
 | 视觉与启动性能 | [UI 入口及优先级](ui-ux-guidelines.md)、[启动性能基线](terminal-performance-baseline.md)、[OG 资产](../designs/og-cards/README.md) |
+| 数字格式与日期 locale | [数字格式设置](number-format-setting.md)：数字跟随设置、日期跟随语言且固定拉丁数字、图表随设置重建、组件不得直接调用 `Intl` |
 | Hyperliquid API 核对 | [核对工作流](hyperliquid-sdk-reference.md)、[方法目录](hyperliquid-sdk-directory.md)、[独立 API Skill 资料](../packages/hyperliquid-api/README.md) |
 | Across API 核对 | [共享阅读入口](across-reference.md)：官方索引、按需读取与接口 schema 核验；供 Codex、Claude 共用 |
 
@@ -42,6 +44,7 @@
 
 | 主题 | 方案与前置条件 |
 | --- | --- |
+| 数字格式与图表翻译对齐官方 | [规划](number-format-and-chart-translation-plan.md)：图表传 `numeric_formatting` 并随数字格式设置重建、日期/排序规则收口、输入框与阿拉伯语数字系统待决策；图表库内错译用 `custom_translate_function` 定点修补，先审计后收录、每条绑定库条目；数字格式四项（A-1/A-2a/A-3/A-4）已实施，归属见[数字格式设置](number-format-setting.md)，方案 B 待 zh + ar 审计 |
 | 移动持仓全部平仓 | [入口审查与实施说明](mobile-close-all-plan.md)：持仓工具栏已接入共享全账户市价链路；确认面列出实际目标并明示包含筛选隐藏仓位，后台提交跨页签和断点保持；批量限价和 TP/SL 清理仍为后续专项 |
 | Across 持久充值地址 | [接入设计](across-deposit-addresses.md)、[ADR 0004](adr/0004-across-deposit-addresses.md)：邮箱用户独立入口；生产权限、服务端身份/持久化、账户模式及资金验收待完成 |
 | 静态 SPA 壳与无服务器托管 | [ADR 0005](adr/0005-spa-static-shell.md)：运行时不再 SSR，Node 进程用预渲染的 `_shell.html` 与文档页回答导航，只执行可移植的 `/api/*` 处理器；发布健康检查含真实 geo 探针；把 `public/` 搬到 CDN 与边缘运行时挂载待完成 |

@@ -13,7 +13,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { ApiWalletCredentialBox } from "./api-wallet-credential-box";
-import type { ApiWalletActionResult, ApiWalletActionStage, ApiWalletActionView } from "./api-wallet-view";
+import type {
+	ApiWalletActionResult,
+	ApiWalletActionSigner,
+	ApiWalletActionStage,
+	ApiWalletActionView,
+} from "./api-wallet-view";
 
 const ACTION_STAGE_ORDER: ApiWalletActionStage[] = ["review", "awaiting", "submitted", "reconciling", "done"];
 
@@ -210,7 +215,16 @@ function ReviewContent({ action }: { action: ApiWalletActionView }) {
 	);
 }
 
-function ProgressContent({ stage, isMobile }: { stage: ApiWalletActionStage; isMobile: boolean }) {
+function ProgressContent({
+	stage,
+	signer,
+	isMobile,
+}: {
+	stage: ApiWalletActionStage;
+	signer: ApiWalletActionSigner | undefined;
+	isMobile: boolean;
+}) {
+	const signsSilently = signer === "embedded";
 	return (
 		<div className="flex flex-col items-center gap-3 py-2 text-center" aria-live="polite">
 			<div
@@ -229,7 +243,11 @@ function ProgressContent({ stage, isMobile }: { stage: ApiWalletActionStage; isM
 			<div>
 				<p className="text-sm font-bold text-api-wallet-fg">
 					{stage === "awaiting" ? (
-						<Trans>Waiting for wallet signature</Trans>
+						signsSilently ? (
+							<Trans>Signing with your email wallet</Trans>
+						) : (
+							<Trans>Waiting for wallet signature</Trans>
+						)
 					) : stage === "submitted" ? (
 						<Trans>Submitting to Hyperliquid</Trans>
 					) : (
@@ -238,7 +256,14 @@ function ProgressContent({ stage, isMobile }: { stage: ApiWalletActionStage; isM
 				</p>
 				<p className="mt-1 text-xs leading-5 text-api-wallet-muted">
 					{stage === "awaiting" ? (
-						<Trans>Confirm the request in the matching master wallet. Nothing changes before you approve it.</Trans>
+						signsSilently ? (
+							<Trans>
+								Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts
+								it.
+							</Trans>
+						) : (
+							<Trans>Confirm the request in the matching master wallet. Nothing changes before you approve it.</Trans>
+						)
 					) : stage === "submitted" ? (
 						<Trans>The signed request has been submitted. Keep this window open.</Trans>
 					) : (
@@ -390,7 +415,7 @@ export function ApiWalletActionModal({
 				<ActionStepper action={action} />
 				{action.stage === "review" ? <ReviewContent action={action} /> : null}
 				{action.stage === "review" && action.locked ? <ReviewPreflightStatus /> : null}
-				{isProgress ? <ProgressContent stage={action.stage} isMobile={isMobile} /> : null}
+				{isProgress ? <ProgressContent stage={action.stage} signer={action.signer} isMobile={isMobile} /> : null}
 				{action.stage === "done" ? (
 					<div>
 						<ResultContent action={action} />

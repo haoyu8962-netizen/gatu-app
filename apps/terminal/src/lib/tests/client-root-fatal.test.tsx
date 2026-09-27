@@ -15,7 +15,6 @@ describe("client root fatal fallback", () => {
 		vi.doUnmock("@tanstack/react-start/client");
 		vi.doUnmock("react-dom/client");
 		vi.doUnmock("../error-reporting/client");
-		vi.doUnmock("../mobile-sync/draft-storage");
 		vi.restoreAllMocks();
 		window.localStorage.clear();
 		document.body.replaceChildren();
@@ -34,7 +33,6 @@ describe("client root fatal fallback", () => {
 			},
 		}));
 		vi.doMock("../error-reporting/client", () => ({ reportClientError }));
-		vi.doMock("../mobile-sync/draft-storage", () => ({ armMobileSyncDraftExpiryCleanup: vi.fn() }));
 
 		await import("../../client-hydrate");
 		await vi.waitFor(() => expect(document.querySelector("[data-terminal-bootstrap-error]")).not.toBeNull());
@@ -65,7 +63,6 @@ describe("client root fatal fallback", () => {
 			}),
 		}));
 		vi.doMock("../error-reporting/client", () => ({ reportClientError }));
-		vi.doMock("../mobile-sync/draft-storage", () => ({ armMobileSyncDraftExpiryCleanup: vi.fn() }));
 
 		await import("../../client-hydrate");
 		const privateFailure = new Error("private repeated root detail");

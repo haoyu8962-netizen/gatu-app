@@ -1,19 +1,18 @@
 // @vitest-environment jsdom
 
-import { webcrypto } from "node:crypto";
 import { i18n } from "@lingui/core";
-import { I18nProvider } from "@lingui/react";
-import { act, type ComponentType, createElement, type ReactNode, StrictMode } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { MOBILE_SYNC_DRAFT_STORAGE_KEY } from "../mobile-sync/draft-storage";
-import { MOBILE_SYNC_IMPORTED_STORAGE_KEY, recordImportedMobileSyncId } from "../mobile-sync/imported-sync-ids";
-import { createMobileAgentSyncUrl, MOBILE_SYNC_ROUTE_PATH } from "../mobile-sync/sync-core";
+import { act, type ComponentType, createElement, type ReactNode } from "react";
+import type { Root } from "react-dom/client";
+import { privateKeyToAccount } from "viem/accounts";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createMobileAgentSyncUrl } from "../mobile-sync/sync-core";
 import { createI18nRoot } from "./harness/react";
 
 const NOW_MS = 1_779_364_227_000;
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
+const AGENT_ADDRESS = privateKeyToAccount(AGENT_PRIVATE_KEY).address.toLowerCase();
+const AGENT_VALID_UNTIL_MS = NOW_MS + 30 * 24 * 60 * 60 * 1000;
 const REGISTRATION_EPOCH = {
 	env: "Mainnet",
 	owner: USER_ADDRESS,
@@ -24,25 +23,15 @@ const testState = vi.hoisted(() => ({
 	activateAgentOwnerForRegistration: vi.fn(),
 	cancelAgentRegistrationEpochAndRemove: vi.fn(),
 	captureAgentRegistrationEpoch: vi.fn(),
-	fullNavigate: vi.fn(),
 	importEnabled: true,
-	extraAgents: [] as Array<{ address: string; name: string; validUntil: number | null }>,
 	infoExtraAgents: vi.fn(),
 	persistAgentForRegistration: vi.fn(),
-	waitForExpectedMobileAgent: vi.fn(),
 	verifyAgentRegistrationOrRemove: vi.fn(),
 }));
 
 function Icon({ className }: { className?: string }) {
 	return createElement("span", { className, "aria-hidden": true });
 }
-
-vi.mock("@lingui/core/macro", () => ({
-	t: (strings: TemplateStringsArray | string, ...values: unknown[]) =>
-		typeof strings === "string"
-			? strings
-			: strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, ""),
-}));
 
 vi.mock("@phosphor-icons/react", () => ({
 	CheckCircleIcon: Icon,
@@ -71,7 +60,7 @@ vi.mock("@gatu/ui", () => ({
 
 vi.mock("@/config/mobile-pairing", () => ({
 	MOBILE_PAIRING_FEATURES: {
-		get importFromQr() {
+		get enabled() {
 			return testState.importEnabled;
 		},
 	},
@@ -85,21 +74,6 @@ vi.mock("@/lib/hyperliquid", () => ({
 		},
 	}),
 }));
-
-vi.mock("@/lib/mobile-sync/remote-verification", () => ({
-	waitForExpectedMobileAgent: testState.waitForExpectedMobileAgent,
-}));
-
-vi.mock("@/lib/mobile-sync/sync-core", async () => {
-	const actual = await vi.importActual<typeof import("../mobile-sync/sync-core")>("@/lib/mobile-sync/sync-core");
-	return {
-		...actual,
-		readAndClearMobileSyncEnvelope: () =>
-			actual.readAndClearMobileSyncEnvelope(window.location, window.history, {
-				replace: testState.fullNavigate,
-			}),
-	};
-});
 
 vi.mock("@gatu/hl-react", async () => {
 	const actual = await vi.importActual<typeof import("@gatu/hl-react")>("@gatu/hl-react");
@@ -121,656 +95,184 @@ async function flushAsyncWork(times = 8) {
 	}
 }
 
-async function createSyncFixture({
-	appOrigin = window.location.origin,
-	env = "Mainnet",
-}: {
-	appOrigin?: string;
-	env?: "Mainnet" | "Testnet";
-} = {}) {
+function createLink({ env = "Mainnet", nowMs = NOW_MS }: { env?: "Mainnet" | "Testnet"; nowMs?: number } = {}) {
 	return createMobileAgentSyncUrl({
-		appOrigin,
+		appOrigin: window.location.origin,
 		env,
 		userAddress: USER_ADDRESS,
 		agentPrivateKey: AGENT_PRIVATE_KEY,
-		nowMs: NOW_MS,
+		agentValidUntilMs: nowMs + 30 * 24 * 60 * 60 * 1000,
+		nowMs,
 	});
 }
 
-function findButton(container: HTMLElement, label: string): HTMLButtonElement | undefined {
-	return [...container.querySelectorAll("button")].find((button) => button.textContent?.includes(label));
+function approvedRemoteAgent() {
+	return { address: AGENT_ADDRESS as `0x${string}`, name: "Mobile", validUntil: AGENT_VALID_UNTIL_MS };
 }
 
-describe("MobileAgentSyncRoute", () => {
+function findButton(container: HTMLElement, text: string) {
+	return [...container.querySelectorAll("button")].find((button) => button.textContent?.includes(text));
+}
+
+describe("mobile agent sync route", () => {
 	let container: HTMLDivElement;
 	let root: Root;
+	let RouteComponent: ComponentType;
 
-	// The first import pays the cold transform of the wallet runtime; under a full parallel run it
-	// exceeds the per-test timeout and the late import then corrupts the following tests.
-	beforeAll(async () => {
-		await import("@/routes/mobile-agent-sync");
-	}, 60_000);
-
-	beforeEach(() => {
+	beforeEach(async () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
-		vi.resetModules();
-		vi.stubGlobal("crypto", webcrypto);
-		Object.defineProperty(window, "crypto", { value: webcrypto, configurable: true });
-		vi.spyOn(Date, "now").mockReturnValue(NOW_MS);
-		window.sessionStorage.clear();
-		window.localStorage.clear();
-		window.history.replaceState(null, "", MOBILE_SYNC_ROUTE_PATH);
+		vi.spyOn(Date, "now").mockReturnValue(NOW_MS + 5_000);
+		testState.importEnabled = true;
+		testState.infoExtraAgents.mockReset();
+		testState.infoExtraAgents.mockResolvedValue([approvedRemoteAgent()]);
+		testState.captureAgentRegistrationEpoch.mockReset();
+		testState.captureAgentRegistrationEpoch.mockResolvedValue({ status: "ready", epoch: REGISTRATION_EPOCH });
+		testState.persistAgentForRegistration.mockReset();
+		testState.persistAgentForRegistration.mockResolvedValue({ status: "stored" });
+		testState.activateAgentOwnerForRegistration.mockReset();
+		testState.activateAgentOwnerForRegistration.mockResolvedValue({ status: "current" });
+		testState.verifyAgentRegistrationOrRemove.mockReset();
+		testState.verifyAgentRegistrationOrRemove.mockResolvedValue({ status: "current" });
+		testState.cancelAgentRegistrationEpochAndRemove.mockReset();
+		testState.cancelAgentRegistrationEpochAndRemove.mockResolvedValue({ status: "cancelled" });
+		window.history.replaceState(null, "", "/mobile-agent-sync");
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
-
-		testState.importEnabled = true;
-		testState.activateAgentOwnerForRegistration.mockReset();
-		testState.activateAgentOwnerForRegistration.mockResolvedValue({ status: "current" });
-		testState.cancelAgentRegistrationEpochAndRemove.mockReset();
-		testState.cancelAgentRegistrationEpochAndRemove.mockResolvedValue({ status: "cancelled" });
-		testState.captureAgentRegistrationEpoch.mockReset();
-		testState.captureAgentRegistrationEpoch.mockResolvedValue({
-			status: "ready",
-			epoch: REGISTRATION_EPOCH,
-		});
-		testState.fullNavigate.mockReset();
-		testState.extraAgents = [];
-		testState.infoExtraAgents.mockReset();
-		testState.infoExtraAgents.mockImplementation(async () => testState.extraAgents);
-		testState.waitForExpectedMobileAgent.mockReset();
-		testState.waitForExpectedMobileAgent.mockImplementation(async (load, expected) => {
-			const agents = await load(new AbortController().signal);
-			const remoteAgent = agents.find(
-				(agent: { address: string; name: string; validUntil: number | null }) =>
-					agent.address.toLowerCase() === expected.agentAddress.toLowerCase() &&
-					agent.name === expected.agentNameBase &&
-					agent.validUntil === expected.agentValidUntilMs,
-			);
-			return remoteAgent
-				? { status: "approved", attempts: 1, remoteAgent }
-				: {
-						status: "unverified",
-						attempts: 1,
-						hadNetworkError: false,
-						lastVerification: { status: "missing" },
-					};
-		});
-		testState.persistAgentForRegistration.mockReset();
-		testState.persistAgentForRegistration.mockResolvedValue({ status: "stored" });
-		testState.verifyAgentRegistrationOrRemove.mockReset();
-		testState.verifyAgentRegistrationOrRemove.mockResolvedValue({ status: "current" });
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		RouteComponent = (Route as unknown as { component: ComponentType }).component;
 	});
 
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
-		window.sessionStorage.clear();
-		window.localStorage.clear();
+		window.history.replaceState(null, "", "/");
 		vi.restoreAllMocks();
-		vi.unstubAllGlobals();
 	});
 
-	// React replays effects only when StrictMode is at or above the fiber it places on mount, so
-	// StrictMode has to wrap the provider here instead of sitting under the shared harness root.
-	function renderStrict(component: ComponentType): Root {
-		const host = document.createElement("div");
-		container.appendChild(host);
-		const strictRoot = createRoot(host);
-		act(() =>
-			strictRoot.render(
-				createElement(StrictMode, null, createElement(I18nProvider, { i18n }, createElement(component))),
-			),
-		);
-		return strictRoot;
+	function renderRoute(hash: string | null) {
+		if (hash !== null) window.location.hash = hash;
+		act(() => {
+			root.render(createElement(RouteComponent));
+		});
 	}
 
-	it("has no manual paste surface and keeps Import disabled without a QR", async () => {
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+	function linkHash(link: { url: string }) {
+		return new URL(link.url).hash;
+	}
 
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
+	it("scrubs the fragment before the first paint and waits for an explicit Import", async () => {
+		renderRoute(linkHash(createLink()));
 
-		expect(container.querySelector("input")).toBeNull();
-		expect(container.textContent).not.toContain("Paste");
-		expect(container.textContent).not.toContain("Use a different");
-		expect(findButton(container, "Import phone access")?.disabled).toBe(true);
-	});
-
-	it("scrubs a direct-load bearer fragment before the route renders and waits for explicit Import", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-
-		const { Route } = await import("@/routes/mobile-agent-sync");
 		expect(window.location.hash).toBe("");
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("Desktop QR loaded");
-		expect(container.textContent).not.toContain(sync.url);
-		expect(container.textContent).not.toContain(AGENT_PRIVATE_KEY);
+		expect(window.location.pathname).toBe("/mobile-agent-sync");
+		expect(container.textContent).toContain("Once imported, this phone trades on Mainnet");
+		expect(findButton(container, "Import")?.disabled).toBe(false);
 		expect(testState.infoExtraAgents).not.toHaveBeenCalled();
 		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
 	});
 
-	it("imports from a differently cased direct-load path the router still matches", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `/Mobile-Agent-Sync${url.hash}`);
-
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		expect(`${window.location.pathname}${window.location.hash}`).toBe(MOBILE_SYNC_ROUTE_PATH);
-
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
+	it("imports only after the exact approval is verified, then stores and activates the owner", async () => {
+		renderRoute(linkHash(createLink()));
+		act(() => findButton(container, "Import")?.click());
 		await flushAsyncWork();
 
-		expect(container.textContent).toContain("Desktop QR loaded");
+		expect(testState.infoExtraAgents).toHaveBeenCalledWith({ user: USER_ADDRESS }, expect.any(AbortSignal));
+		expect(testState.captureAgentRegistrationEpoch).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(testState.persistAgentForRegistration).toHaveBeenCalledWith(
+			REGISTRATION_EPOCH,
+			AGENT_PRIVATE_KEY,
+			AGENT_ADDRESS,
+			{
+				source: "mobile-sync",
+				agentNameBase: "Mobile",
+				agentName: `Mobile valid_until ${AGENT_VALID_UNTIL_MS}`,
+				agentValidUntilMs: AGENT_VALID_UNTIL_MS,
+				importedAtMs: NOW_MS + 5_000,
+			},
+			{ scope: "local" },
+		);
+		expect(testState.activateAgentOwnerForRegistration).toHaveBeenCalledWith(REGISTRATION_EPOCH, AGENT_ADDRESS);
+		expect(testState.verifyAgentRegistrationOrRemove).toHaveBeenCalledWith(REGISTRATION_EPOCH, AGENT_ADDRESS);
+		expect(testState.cancelAgentRegistrationEpochAndRemove).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Phone access ready");
+		expect(container.textContent).toContain(AGENT_ADDRESS);
+		expect(container.textContent).toContain("Open terminal");
+		expect(findButton(container, "Import")).toBeUndefined();
 	});
 
-	it("explains an unsafe link and never brings back an earlier QR draft", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const first = await import("@/routes/mobile-agent-sync");
-		const FirstRoute = (first.Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(FirstRoute)));
+	it("fails closed when the desktop has not approved this key and keeps the link for a retry", async () => {
+		testState.infoExtraAgents.mockResolvedValue([]);
+		renderRoute(linkHash(createLink()));
+		act(() => findButton(container, "Import")?.click());
 		await flushAsyncWork();
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
+
+		expect(container.textContent).toContain("The desktop has not approved this key.");
+		expect(testState.captureAgentRegistrationEpoch).not.toHaveBeenCalled();
+		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
+		expect(findButton(container, "Import")?.disabled).toBe(false);
+
+		testState.infoExtraAgents.mockResolvedValue([approvedRemoteAgent()]);
+		act(() => findButton(container, "Import")?.click());
+		await flushAsyncWork();
+		expect(container.textContent).toContain("Phone access ready");
+	});
+
+	it("reports an unreachable approval check without importing", async () => {
+		testState.infoExtraAgents.mockRejectedValue(new Error("network down"));
+		renderRoute(linkHash(createLink()));
+		act(() => findButton(container, "Import")?.click());
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("Could not check the approval on Hyperliquid.");
+		expect(container.textContent).not.toContain("network down");
+		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
+	});
+
+	it("rolls back the stored key when owner activation is no longer current", async () => {
+		testState.activateAgentOwnerForRegistration.mockResolvedValue({ status: "stale" });
+		renderRoute(linkHash(createLink()));
+		act(() => findButton(container, "Import")?.click());
+		await flushAsyncWork();
+
+		expect(testState.cancelAgentRegistrationEpochAndRemove).toHaveBeenCalledWith(REGISTRATION_EPOCH, AGENT_ADDRESS);
+		expect(container.textContent).toContain("This phone could not store the trading key.");
+		expect(container.textContent).not.toContain("Phone access ready");
+	});
+
+	it("rejects an expired QR, a QR from another network and a legacy encrypted link", async () => {
+		renderRoute(linkHash(createLink({ nowMs: NOW_MS - 10 * 60 * 1000 })));
+		expect(container.textContent).toContain("This QR expired.");
+		expect(findButton(container, "Import")?.disabled).toBe(true);
+
 		act(() => root.unmount());
 		root = createI18nRoot(container);
+		renderRoute(linkHash(createLink({ env: "Testnet" })));
+		expect(container.textContent).toContain("This QR belongs to a different network.");
+		expect(findButton(container, "Import")?.disabled).toBe(true);
 
-		vi.resetModules();
-		window.history.replaceState(null, "", `${MOBILE_SYNC_ROUTE_PATH}?notice=unsafe-link`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("That link could not be opened safely, so nothing was loaded.");
-		expect(container.textContent).not.toContain("Desktop QR loaded");
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(window.location.search).toBe("");
-		expect(findButton(container, "Import phone access")?.disabled).toBe(true);
-	});
-
-	it("captures and scrubs at beforeLoad when a preloaded route receives an SPA fragment", async () => {
-		window.history.replaceState(null, "", "/");
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-
-		(Route as unknown as { beforeLoad: () => void }).beforeLoad();
+		act(() => root.unmount());
+		root = createI18nRoot(container);
+		renderRoute("#ht-mobile-sync=abc&k=def");
+		expect(container.textContent).toContain("Refresh both devices to update phone access");
 		expect(window.location.hash).toBe("");
-
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-		expect(container.textContent).toContain("Desktop QR loaded");
+		expect(findButton(container, "Import")?.disabled).toBe(true);
 	});
 
-	it.each([
-		[
-			"query",
-			`${MOBILE_SYNC_ROUTE_PATH}?from=camera&ht-mobile-sync=secret-envelope&k=secret-key`,
-			`${MOBILE_SYNC_ROUTE_PATH}?from=camera`,
-		],
-		["nested path", `${MOBILE_SYNC_ROUTE_PATH}/ht-mobile-sync=secret-envelope/k=secret-key`, MOBILE_SYNC_ROUTE_PATH],
-	])("scrubs an invalid SPA %s before rendering and never imports it", async (_part, unsafeUrl, cleanUrl) => {
-		window.history.replaceState(null, "", "/");
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		window.history.replaceState(null, "", unsafeUrl);
+	it("keeps Import disabled without a fragment, so a reload asks for a new scan", async () => {
+		renderRoute(null);
 
-		(Route as unknown as { beforeLoad: () => void }).beforeLoad();
-		expect(`${window.location.pathname}${window.location.search}${window.location.hash}`).toBe(cleanUrl);
-
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("not a valid gatu desktop wallet QR");
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(testState.waitForExpectedMobileAgent).not.toHaveBeenCalled();
-		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Scan the QR from Link mobile device on your desktop");
+		expect(findButton(container, "Import")?.disabled).toBe(true);
 	});
 
-	it("aborts beforeLoad and requests a clean full navigation when replaceState silently leaves an SPA fragment", async () => {
-		window.history.replaceState(null, "", "/");
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
-
-		expect(() => (Route as unknown as { beforeLoad: () => void }).beforeLoad()).toThrow(
-			/A clean full-page navigation is required/,
-		);
-		expect(testState.fullNavigate).toHaveBeenCalledWith(MOBILE_SYNC_ROUTE_PATH);
-		expect(window.location.hash).not.toBe("");
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(testState.waitForExpectedMobileAgent).not.toHaveBeenCalled();
-		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
-	});
-
-	it("does not import from a hashchange when the address bar cannot be scrubbed", async () => {
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
-		window.dispatchEvent(new HashChangeEvent("hashchange"));
-		await flushAsyncWork();
-
-		expect(testState.fullNavigate).toHaveBeenCalledWith(MOBILE_SYNC_ROUTE_PATH);
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).not.toContain("Desktop QR loaded");
-		expect(testState.waitForExpectedMobileAgent).not.toHaveBeenCalled();
-		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
-	});
-
-	it("verifies the exact base name and expiry before strict storage and owner activation", async () => {
-		const fetchSpy = vi.spyOn(globalThis, "fetch");
-		const sync = await createSyncFixture();
-		testState.extraAgents = [
-			{
-				address: sync.agentAddress,
-				name: "Mobile",
-				validUntil: sync.agentValidUntilMs,
-			},
-		];
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-		testState.waitForExpectedMobileAgent.mockImplementationOnce(async (load) => {
-			const [remoteAgent] = await load(new AbortController().signal);
-			vi.mocked(Date.now).mockReturnValue(NOW_MS + 5_000);
-			return { status: "approved", attempts: 1, remoteAgent };
-		});
-
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(testState.infoExtraAgents).toHaveBeenCalledWith(
-			{ user: USER_ADDRESS.toLowerCase() },
-			expect.any(AbortSignal),
-		);
-		expect(testState.waitForExpectedMobileAgent).toHaveBeenCalledWith(
-			expect.any(Function),
-			{
-				agentAddress: sync.agentAddress.toLowerCase(),
-				agentNameBase: "Mobile",
-				agentValidUntilMs: sync.agentValidUntilMs,
-			},
-			{ signal: expect.any(AbortSignal) },
-		);
-		expect(testState.captureAgentRegistrationEpoch).toHaveBeenCalledWith("Mainnet", USER_ADDRESS.toLowerCase());
-		expect(testState.persistAgentForRegistration).toHaveBeenCalledTimes(1);
-		expect(testState.captureAgentRegistrationEpoch.mock.invocationCallOrder[0]).toBeLessThan(
-			testState.persistAgentForRegistration.mock.invocationCallOrder[0] ?? 0,
-		);
-		expect(testState.persistAgentForRegistration.mock.calls[0]?.[0]).toEqual(REGISTRATION_EPOCH);
-		expect(testState.persistAgentForRegistration.mock.calls[0]?.[3]).toMatchObject({
-			source: "mobile-sync",
-			importedAtMs: NOW_MS + 5_000,
-			syncId: sync.syncId,
-		});
-		expect(testState.activateAgentOwnerForRegistration).toHaveBeenCalledWith(
-			REGISTRATION_EPOCH,
-			sync.agentAddress.toLowerCase(),
-		);
-		expect(testState.persistAgentForRegistration.mock.invocationCallOrder[0]).toBeLessThan(
-			testState.activateAgentOwnerForRegistration.mock.invocationCallOrder[0] ?? 0,
-		);
-		expect(testState.verifyAgentRegistrationOrRemove).toHaveBeenCalledWith(
-			REGISTRATION_EPOCH,
-			sync.agentAddress.toLowerCase(),
-		);
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).toContain("Phone access ready");
-		expect(container.textContent).toContain("If you did not import this yourself, revoke phone access");
-		const importedRecord = window.localStorage.getItem(MOBILE_SYNC_IMPORTED_STORAGE_KEY) ?? "";
-		expect(importedRecord).toContain(sync.syncId);
-		expect(importedRecord).not.toContain(AGENT_PRIVATE_KEY.slice(2));
-		expect(fetchSpy).not.toHaveBeenCalled();
-		fetchSpy.mockRestore();
-	});
-
-	it("pins the imported key to local storage scope and discloses how long it stays on the phone", async () => {
-		const sync = await createSyncFixture();
-		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const { formatDateTime } = await import("@/lib/format");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(testState.persistAgentForRegistration).toHaveBeenCalledTimes(1);
-		expect(testState.persistAgentForRegistration.mock.calls[0]).toHaveLength(5);
-		expect(testState.persistAgentForRegistration.mock.calls[0]?.[4]).toEqual({ scope: "local" });
-		expect(container.textContent).toContain("Phone access ready");
-		expect(container.textContent).toContain(
-			`Stays on this phone until ${formatDateTime(sync.agentValidUntilMs)} unless you disconnect it here or revoke it from the master wallet on desktop.`,
-		);
-	});
-
-	it("still imports after StrictMode replays the route's effects", async () => {
-		const sync = await createSyncFixture();
-		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		const strictRoot = renderStrict(MobileAgentSyncRoute);
-		await flushAsyncWork();
-
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(container.textContent).toContain("Phone access ready");
-		expect(testState.persistAgentForRegistration).toHaveBeenCalledTimes(1);
-		act(() => strictRoot.unmount());
-	});
-
-	it("wipes the key bytes once the route really unmounts", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const core = await import("../mobile-sync/sync-core");
-		const parsed: Array<{ keyBytes: Uint8Array }> = [];
-		const parseMobileSyncUrl = core.parseMobileSyncUrl;
-		vi.spyOn(core, "parseMobileSyncUrl").mockImplementation((input) => {
-			const result = parseMobileSyncUrl(input);
-			parsed.push(result);
-			return result;
-		});
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		const strictRoot = renderStrict(MobileAgentSyncRoute);
-		await flushAsyncWork();
-		expect(parsed).toHaveLength(1);
-		expect(parsed[0]?.keyBytes.some((byte) => byte !== 0)).toBe(true);
-
-		act(() => strictRoot.unmount());
-		await flushAsyncWork();
-
-		expect(parsed[0]?.keyBytes.every((byte) => byte === 0)).toBe(true);
-	});
-
-	it("refuses a QR that this phone already imported, before local persistence", async () => {
-		const sync = await createSyncFixture();
-		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-		expect(
-			recordImportedMobileSyncId({
-				env: "Mainnet",
-				userAddress: USER_ADDRESS,
-				syncId: sync.syncId,
-				expiresAtMs: sync.expiresAtMs,
-			}),
-		).toBe(true);
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(testState.waitForExpectedMobileAgent).not.toHaveBeenCalled();
-		expect(testState.captureAgentRegistrationEpoch).not.toHaveBeenCalled();
-		expect(testState.cancelAgentRegistrationEpochAndRemove).not.toHaveBeenCalled();
-		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
-		expect(testState.activateAgentOwnerForRegistration).not.toHaveBeenCalled();
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).toContain("already imported on this phone");
-		expect(container.textContent).not.toContain("Clear this site's data");
-	});
-
-	it("asks both devices to refresh when the QR comes from the retired ticket protocol", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		const params = new URLSearchParams(url.hash.slice(1));
-		const bytes = Buffer.from(params.get("ht-mobile-sync") ?? "", "base64url");
-		bytes[0] = 2;
-		params.set("ht-mobile-sync", bytes.toString("base64url"));
-		window.history.replaceState(null, "", `${url.pathname}#${params.toString()}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("Refresh both devices to update phone access, then create a new QR.");
-		expect(findButton(container, "Import phone access")?.disabled).toBe(true);
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(window.location.hash).toBe("");
-	});
-
-	it("retains the bounded draft and never writes when remote approval is not exact", async () => {
-		const sync = await createSyncFixture();
-		testState.extraAgents = [
-			{
-				address: sync.agentAddress,
-				name: "Mobile",
-				validUntil: sync.agentValidUntilMs + 1,
-			},
-		];
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
-		expect(testState.activateAgentOwnerForRegistration).not.toHaveBeenCalled();
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
-		expect(container.textContent).toContain("not the currently approved Mobile Agent");
-	});
-
-	it("does not write or activate when logout invalidates the epoch before persistence", async () => {
-		const sync = await createSyncFixture();
-		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-		testState.persistAgentForRegistration.mockResolvedValue({
-			status: "failed",
-			reason: "registration_cancelled",
-		});
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(testState.cancelAgentRegistrationEpochAndRemove).toHaveBeenCalledWith(
-			REGISTRATION_EPOCH,
-			sync.agentAddress.toLowerCase(),
-		);
-		expect(testState.verifyAgentRegistrationOrRemove).not.toHaveBeenCalled();
-		expect(testState.activateAgentOwnerForRegistration).not.toHaveBeenCalled();
-		expect(container.textContent).not.toContain("Phone access ready");
-	});
-
-	it("does not activate when logout invalidates the epoch immediately after persistence", async () => {
-		const sync = await createSyncFixture();
-		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-		testState.activateAgentOwnerForRegistration.mockResolvedValueOnce({ status: "cancelled" });
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(testState.cancelAgentRegistrationEpochAndRemove).toHaveBeenCalledWith(
-			REGISTRATION_EPOCH,
-			sync.agentAddress.toLowerCase(),
-		);
-		expect(testState.verifyAgentRegistrationOrRemove).not.toHaveBeenCalled();
-		expect(container.textContent).not.toContain("Phone access ready");
-	});
-
-	it("delegates post-activation rollback to the epoch-aware cancellation helper", async () => {
-		const sync = await createSyncFixture();
-		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-		testState.verifyAgentRegistrationOrRemove.mockResolvedValueOnce({ status: "cancelled" });
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(testState.cancelAgentRegistrationEpochAndRemove).toHaveBeenCalledWith(
-			REGISTRATION_EPOCH,
-			sync.agentAddress.toLowerCase(),
-		);
-		expect(container.textContent).not.toContain("Phone access ready");
-	});
-
-	it("rolls back the Agent if verified owner activation fails", async () => {
-		const sync = await createSyncFixture();
-		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-		testState.activateAgentOwnerForRegistration.mockResolvedValue({
-			status: "failed",
-			reason: "owner_activation_failed",
-		});
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(testState.cancelAgentRegistrationEpochAndRemove).toHaveBeenCalledWith(
-			REGISTRATION_EPOCH,
-			sync.agentAddress.toLowerCase(),
-		);
-		expect(container.textContent).not.toContain("Phone access ready");
-		expect(container.textContent).toContain("could not be saved");
-	});
-
-	it("reports incomplete rollback when verified cancellation fails", async () => {
-		const sync = await createSyncFixture();
-		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-		testState.activateAgentOwnerForRegistration.mockResolvedValue({
-			status: "failed",
-			reason: "owner_activation_failed",
-		});
-		testState.cancelAgentRegistrationEpochAndRemove.mockResolvedValue({
-			status: "failed",
-			reason: "readback_mismatch",
-		});
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(container.textContent).toContain("could not be activated or fully removed");
-		expect(container.textContent).not.toContain("Phone access ready");
-	});
-
-	it("shows a cleanup warning when a successful import cannot remove the temporary QR draft", async () => {
-		const sync = await createSyncFixture();
-		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		const originalRemoveItem = Storage.prototype.removeItem;
-		vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (this: Storage, key: string) {
-			if (key === MOBILE_SYNC_DRAFT_STORAGE_KEY) return;
-			originalRemoveItem.call(this, key);
-		});
-		act(() => findButton(container, "Import phone access")?.click());
-		await flushAsyncWork(20);
-
-		expect(container.textContent).toContain("Phone access ready");
-		expect(container.textContent).toContain("temporary QR copy could not be cleared");
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
-	});
-
-	it("does not claim a QR was discarded when cleanup readback throws", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		const originalGetItem = Storage.prototype.getItem;
-		vi.spyOn(Storage.prototype, "getItem").mockImplementation(function (this: Storage, key: string) {
-			if (key === MOBILE_SYNC_DRAFT_STORAGE_KEY) throw new Error("readback blocked");
-			return originalGetItem.call(this, key);
-		});
-		act(() => findButton(container, "Discard")?.click());
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("temporary phone-access QR could not be cleared");
-		expect(container.textContent).not.toContain("No desktop QR is loaded");
-	});
-
-	it("scrubs and discards credentials while import is gated off", async () => {
+	it("scrubs and discards the fragment while pairing is gated off", async () => {
 		testState.importEnabled = false;
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.sessionStorage.setItem(MOBILE_SYNC_DRAFT_STORAGE_KEY, "stale-secret");
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		renderRoute(linkHash(createLink()));
 
-		const { Route } = await import("@/routes/mobile-agent-sync");
 		expect(window.location.hash).toBe("");
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-		act(() => root.render(createElement(MobileAgentSyncRoute)));
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("temporarily unavailable");
-		expect(findButton(container, "Import phone access")?.disabled).toBe(true);
-		expect(testState.waitForExpectedMobileAgent).not.toHaveBeenCalled();
-		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Mobile QR import is temporarily unavailable.");
+		expect(findButton(container, "Import")?.disabled).toBe(true);
+		expect(testState.infoExtraAgents).not.toHaveBeenCalled();
 	});
 });

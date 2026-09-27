@@ -49,7 +49,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 }));
 
-import { usePositionCloseAllAction } from "@/hooks/trade/use-position-close-all-action";
+import {
+	usePositionCloseAllAction,
+	usePositionCloseAllSnapshotResolver,
+} from "@/hooks/trade/use-position-close-all-action";
 import {
 	type PositionCloseAllSession,
 	resetPositionDialogSessions,
@@ -63,11 +66,13 @@ describe("shared close-all entry", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 	let action: ReturnType<typeof usePositionCloseAllAction>;
+	let resolver: ReturnType<typeof usePositionCloseAllSnapshotResolver>;
 	let session: PositionCloseAllSession | null;
 	let actions: ReturnType<typeof usePositionDialogActions>;
 
 	function Probe() {
 		action = usePositionCloseAllAction();
+		resolver = usePositionCloseAllSnapshotResolver();
 		session = usePositionCloseAllSession();
 		actions = usePositionDialogActions();
 		return null;
@@ -132,6 +137,33 @@ describe("shared close-all entry", () => {
 		expect(second?.snapshot.targets[0].signedPositionSize).toBe("3");
 		act(() => actions.endCloseAll(first.sessionId));
 		expect(session).toBe(second);
+	});
+
+	it("refreshes only the current session's snapshot, and only for the same owner and network", () => {
+		vi.spyOn(Date, "now").mockReturnValue(1000);
+		act(() => action.open());
+		const opened = session;
+		if (!opened) throw new Error("Missing session");
+
+		vi.spyOn(Date, "now").mockReturnValue(45000);
+		data.size = "2";
+		render();
+		const refreshed = resolver.resolveSnapshot().snapshot;
+		if (!refreshed) throw new Error("Missing refreshed snapshot");
+
+		act(() => actions.refreshCloseAll("close-all:stale", refreshed));
+		expect(session).toBe(opened);
+		act(() =>
+			actions.refreshCloseAll(opened.sessionId, { ...refreshed, owner: "0x2222222222222222222222222222222222222222" }),
+		);
+		expect(session).toBe(opened);
+		act(() => actions.refreshCloseAll(opened.sessionId, { ...refreshed, env: "Testnet" }));
+		expect(session).toBe(opened);
+
+		act(() => actions.refreshCloseAll(opened.sessionId, refreshed));
+		expect(session?.sessionId).toBe(opened.sessionId);
+		expect(session?.snapshot.capturedAtMs).toBe(45000);
+		expect(session?.snapshot.targets[0].signedPositionSize).toBe("2");
 	});
 
 	it.each(["isStale", "missingMarket"] as const)("does not create a partial snapshot when %s is true", (key) => {

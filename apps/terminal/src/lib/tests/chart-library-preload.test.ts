@@ -19,7 +19,7 @@ describe("chart library preload contract", () => {
 			commit: APP_BUILD_COMMIT,
 			release: "r",
 			builtAt: "2026-09-13T00:00:00.000Z",
-			pairing: { createAndReveal: false, importFromQr: false },
+			pairing: { enabled: false },
 			cctpDeposits: { mainnetSponsoredWallet: false, testnetExternalWallet: false, testnetSponsoredWallet: false },
 			chartLibraryHash: APP_CHART_LIBRARY_HASH,
 		});
@@ -44,7 +44,7 @@ describe("chart library preload contract", () => {
 			commit: "abc123",
 			release: "r",
 			builtAt: "2026-09-13T00:00:00.000Z",
-			pairing: { createAndReveal: false, importFromQr: false },
+			pairing: { enabled: false },
 			cctpDeposits: { mainnetSponsoredWallet: false, testnetExternalWallet: false, testnetSponsoredWallet: false },
 			chartLibraryHash: "0123456789abcdef",
 		});

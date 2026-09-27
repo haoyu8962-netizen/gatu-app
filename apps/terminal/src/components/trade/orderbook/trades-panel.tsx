@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function TradesPanel({ compact = false, showInQuote }: Props) {
-	const { t } = useLingui();
+	const { t, i18n } = useLingui();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const subscriptionCoin = selectedMarket?.name ?? "";
 	const params = useMemo(() => ({ coin: subscriptionCoin }), [subscriptionCoin]);
@@ -40,7 +40,10 @@ export function TradesPanel({ compact = false, showInQuote }: Props) {
 		!isStale &&
 		trades !== undefined &&
 		trades.every((trade) => trade.coin === subscriptionCoin);
-	const processed = useMemo(() => processTrades(hasCurrentSnapshot ? trades : []), [hasCurrentSnapshot, trades]);
+	const processed = useMemo(
+		() => processTrades(hasCurrentSnapshot ? trades : [], i18n.locale),
+		[hasCurrentSnapshot, i18n.locale, trades],
+	);
 	const initialTradeIds = useRef<Set<string> | null>(null);
 	if (initialTradeIds.current === null && processed.length > 0) {
 		initialTradeIds.current = new Set(processed.map((trade) => trade.id));

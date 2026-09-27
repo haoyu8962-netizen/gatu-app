@@ -4,12 +4,10 @@ import { StrictMode, startTransition } from "react";
 import { hydrateRoot, type Root } from "react-dom/client";
 import { renderBootstrapErrorPage } from "./lib/bootstrap-error-page";
 import { reportClientError } from "./lib/error-reporting/client";
-import { armMobileSyncDraftExpiryCleanup } from "./lib/mobile-sync/draft-storage";
 
 let root: Root | undefined;
 let rootFatalFallbackScheduled = false;
 
-armMobileSyncDraftExpiryCleanup();
 startTransition(() => {
 	root = hydrateRoot(
 		document,

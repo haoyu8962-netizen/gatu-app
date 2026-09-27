@@ -47,5 +47,10 @@
 		"id": "docs-governance",
 		"title": "Agent 规则与文档治理",
 		"documents": ["AGENTS.md", "docs/documentation-system.md", "docs/README.md"]
+	},
+	{
+		"id": "i18n-runtime",
+		"title": "运行时多语言与图表本地化",
+		"documents": ["docs/i18n-presentation.md", "docs/runtime-guardrails.md"]
 	}
 ]

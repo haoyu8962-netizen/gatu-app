@@ -100,7 +100,7 @@ Routes live in [src/routes/](src/routes). URL parameters below use `:name`; file
 | `/tradeHistory/:address`, `/fundingHistory/:address`, `/historicalOrders/:address` | Address-scoped history pages |
 | `/docs`, `/support`, `/terms`, `/privacy`, `/risk`, `/cookies` | Document pages that do not load the wallet runtime on direct entry |
 | `/join/:code`, `/join/*` | Referral-code entry and invalid-path handling |
-| `/mobile-agent-sync` | Feature-gated mobile Agent import surface; a client-only transfer with no server route (the retired `/mobile-agent-sync-ticket` path answers 404) |
+| `/mobile-agent-sync` | Feature-gated mobile Agent import page; reads the plain payload from the URL fragment, scrubs it and imports on an explicit tap (the retired `/mobile-agent-sync-ticket` path answers 404) |
 | `GET /api/geo` | Visitor jurisdiction verdict for trading and funds gates; portable handler in [lib/geo/geo-api.ts](src/lib/geo/geo-api.ts). The bootstrap entry prefetches it on application surfaces through [lib/geo/geo-prefetch.ts](src/lib/geo/geo-prefetch.ts) so the verdict is usually ready before the wallet runtime mounts |
 | `GET /api/health` | Liveness probe (204, `no-store`) for the CloudFront keep-warm schedule and release verification; Lambda only |
 | `POST /api/referral-geo` | Fresh same-origin geo decision before referral and staking actions |
@@ -194,7 +194,7 @@ Use [.env.example](.env.example) as the configuration inventory. Copy it to loca
 
 Mobile Agent pairing, portfolio-margin activation, LiFi bridge creation and gated CCTP paths have independent controls in `src/config/`; consult the example env file and each flow's document. Direct external-wallet mainnet CCTP deposits are enabled in code. A disabled feature does not imply missing credentials.
 
-Mobile Agent pairing is a client-only encrypted-fragment transfer ([ADR 0015](../../docs/adr/0015-link-device-alignment.md) D7, option B) that works on the static CloudFront + S3 host, but both `VITE_MOBILE_PAIRING_*` flags stay off in production until the acceptance in the [implementation plan](../../docs/mobile-sync-ticketless-transfer-plan.md) is complete, so the application gates fail closed. The [physical-device matrix](../../docs/mobile-phone-access-device-validation.md) remains not run.
+Mobile Agent pairing is a client-only plain-fragment transfer ([ADR 0015](../../docs/adr/0015-link-device-alignment.md) D7 and D8) that works on the static CloudFront + S3 host, but `VITE_MOBILE_PAIRING_ENABLED` stays off in production until the [physical-device checklist](../../docs/mobile-phone-access-device-validation.md) is recorded, so the application gate fails closed.
 
 ## Verification and maintenance
 

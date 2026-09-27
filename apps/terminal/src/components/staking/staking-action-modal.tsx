@@ -1,6 +1,7 @@
 import { AdaptiveModal, Alert, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle, TextInput } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useState } from "react";
+import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { formatDateTime, shortenAddress } from "@/lib/format";
 import type { FundsActionReference } from "../funds-action/funds-action-marker";
 import { type FundsActionState, getFundsActionSteps } from "../funds-action/funds-action-state";
@@ -105,7 +106,7 @@ export function StakingActionModal({
 							autoComplete="off"
 							value={amount}
 							onChange={(event) => {
-								setAmount(event.currentTarget.value);
+								setAmount(normalizeDecimalInputEvent(event).currentTarget.value);
 								setShowError(false);
 							}}
 							placeholder="0.00"
@@ -251,7 +252,7 @@ function ActionStatus({
 
 function StakingOperationReference({ reference }: { reference: FundsActionReference }) {
 	return (
-		<dl className="divide-y divide-stroke-weak rounded-8 border border-stroke-weak bg-fill-weaker px-3 text-xs">
+		<dl className="divide-y divide-stroke-weak rounded-16 border border-stroke-weak px-3 text-xs">
 			<ReferenceRow label={<Trans>Network</Trans>} value={reference.env} />
 			<ReferenceRow label={<Trans>Owner</Trans>} value={reference.owner} mono />
 			<ReferenceRow label={<Trans>SDK method</Trans>} value={reference.method} mono />

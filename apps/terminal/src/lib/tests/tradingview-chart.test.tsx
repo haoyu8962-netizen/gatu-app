@@ -447,6 +447,7 @@ describe("TradingViewChart", () => {
 			hasRecoverySpinner: true,
 			maskClassName: expect.stringContaining("opacity-100"),
 		});
+		expect(stateAtRemoval?.maskClassName).not.toContain("transition-opacity");
 		expect(widgetConstructor).toHaveBeenCalledOnce();
 
 		act(() => finishLoading?.());
@@ -1799,12 +1800,14 @@ describe("TradingViewChart", () => {
 		expect(loading?.querySelector("span")?.textContent).toBe("Loading...");
 		expect(mask?.className).toContain("bg-background");
 		expect(mask?.className).toContain("opacity-100");
+		expect(mask?.className).not.toContain("transition-opacity");
 		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");
 
 		act(() => readyCallback?.());
 		await flushChartEffects();
 
 		expect(mask?.className).toContain("opacity-0");
+		expect(mask?.className).toContain("transition-opacity");
 		expect(container.querySelector("[data-chart-loading]")).toBeNull();
 		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("false");
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
@@ -2491,6 +2494,163 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
 		expect(testState.datafeedDestroys[0]).toHaveBeenCalledOnce();
 		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ locale: "zh" }));
+	});
+
+	it("passes the number format separators to the widget at creation", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledWith(
+			expect.objectContaining({ numeric_formatting: { decimal_sign: ".", grouping_separator: "," } }),
+		);
+	});
+
+	it("rebuilds the widget with its saved layout when the number format changes", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		const savedState = { charts: [{ panes: [{ studies: ["Moving Average"] }] }] };
+		widget?.activeChart.mockReturnValue({
+			onSymbolChanged: vi.fn(() => createMockSubscription()),
+			resetData: vi.fn(),
+			resolution: vi.fn(() => "1D"),
+			symbol: vi.fn(() => "BTC"),
+		});
+		widget?.save.mockImplementation((callback: (state: object) => void) => callback(savedState));
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", numberFormatLocale: "de-DE" }),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widget?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				interval: "1D",
+				numeric_formatting: { decimal_sign: ",", grouping_separator: "." },
+				saved_data: savedState,
+			}),
+		);
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", numberFormatLocale: "de-DE" }),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+	});
+
+	it("merges a number format change into a locale state save that has not called back yet", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		let deliverState: ((state: object) => void) | undefined;
+		widget?.save.mockImplementation((callback: (state: object) => void) => {
+			deliverState = callback;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "fr" }));
+		});
+		await flushChartEffects();
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					locale: "fr",
+					numberFormatLocale: "fr-FR",
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widget?.save).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		const savedState = { charts: ["layout"] };
+		act(() => deliverState?.(savedState));
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				locale: "fr",
+				numeric_formatting: { decimal_sign: ",", grouping_separator: " " },
+				saved_data: savedState,
+			}),
+		);
+	});
+
+	it("cancels a pending number format rebuild when the format reverts before the state save calls back", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		let deliverState: ((state: object) => void) | undefined;
+		widget?.save.mockImplementation((callback: (state: object) => void) => {
+			deliverState = callback;
+		});
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", numberFormatLocale: "de-DE" }),
+			);
+		});
+		await flushChartEffects();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		act(() => deliverState?.({ charts: ["layout"] }));
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+		expect(widget?.remove).not.toHaveBeenCalled();
+	});
+
+	it("rebuilds once when the locale and the number format change in the same commit", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					locale: "fr",
+					numberFormatLocale: "fr-FR",
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				locale: "fr",
+				numeric_formatting: { decimal_sign: ",", grouping_separator: " " },
+			}),
+		);
 	});
 
 	it("preserves the current chart layout and interval when the locale changes", async () => {

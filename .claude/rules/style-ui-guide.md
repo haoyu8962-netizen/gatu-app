@@ -43,6 +43,12 @@
 - A dialog that can be dismissed always offers an explicit, focusable way out on the phone sheet: the close button, or a Cancel / Back / Close button in its body. The drawer handle is decoration (`aria-hidden`, not a control), and swipe, scrim tap and Esc are shortcuts, not the exit: with the keyboard open the scrim can be fully covered, and a screen reader cannot reach any of them. Hide the close button only while an action is pending. A `showClose` that depends on the layout, or is `false`, must be registered with its explicit exit in `dialog-dismiss-control-contract.test.ts`. Do not put a second label in a sheet header where the close button belongs.
 - Do not pass a smaller named radius (`rounded-t-16`, `min-[1001px]:rounded-16`) to `AdaptiveModal`; take the primitive default. The remaining off-scale sheet radii (`!rounded-t-[18px]`, `!rounded-t-[20px]`) and `min-[1001px]:!rounded-[16px]` come from the market-close design handoff and are pinned by its tests; replacing them needs a design decision because 18px and 20px are not on the named scale.
 
+### Dialog content blocks
+
+- Content inside a dialog uses three tiers, never a stack of grey boxes: a **key/value row** is plain text (`flex items-center justify-between text-xs`, label `text-fg-muted`, value `text-fg`), or an `InfoRowGroup` with dividers when there are several; a **notice** is a semantic callout (`rounded-16 border border-stroke-info-weak bg-info-soft text-info`, or the `success` / `warning` / `error` family) with its icon in the matching `text-icon-*`; a **card that carries an action or a control** is outlined on the dialog surface (`rounded-16 border border-stroke-weak p-3`, no fill).
+- `bg-fill-weak` / `bg-fill-weaker` are interactive fills for hover, press, chips, badges, segmented pills and skeletons; do not use them as the background of static content panels. Warning and error callouts use `border-stroke-*-weak`, never an opacity modifier on the strong stroke.
+- The Market Close / funds family keeps its handoff cards (`bg-market-close-card` / `bg-trading-panel-card` with `rounded-[10px]`); this rule covers the shared `@gatu/ui` dialogs and application modals that do not follow that handoff.
+
 ### Button states
 
 - A filled button moves through its state tokens (`bg-action` → `bg-action-hover` → `bg-action-active`); never add `hover:opacity-*` or `active:opacity-*` on top. In the dark theme `--action-hover` is brighter than `--action`, so fading the element cancels the hover and dims the label with it.

@@ -3,9 +3,11 @@ import { FALLBACK_VALUE_PLACEHOLDER, FORMAT_COMPACT_DEFAULT, FORMAT_COMPACT_THRE
 import {
 	defaultLocale,
 	defaultNumberFormatLocale,
+	isValidLocale,
 	type LocaleCode,
 	languageToIntlLocale,
 	type NumberFormatLocale,
+	numberSeparatorsByFormatLocale,
 } from "@/config/i18n";
 import { HL_PERP_PRICE_MAX_DECIMALS, HL_PRICE_MAX_DECIMALS } from "@/config/trade";
 import { toNumber } from "@/lib/trade/numbers";
@@ -16,12 +18,7 @@ type DateInput = Date | number | string | null | undefined;
 
 const formatterCache = new Map<string, Formatter>();
 const BASE_NUMBER_FORMAT_LOCALE = "en-US";
-
-const NUMBER_SEPARATORS_BY_FORMAT_LOCALE = {
-	"en-US": { group: ",", decimal: "." },
-	"de-DE": { group: ".", decimal: "," },
-	"fr-FR": { group: " ", decimal: "," },
-} as const satisfies Record<NumberFormatLocale, { group: string; decimal: string }>;
+const DATE_NUMBERING_SYSTEM = "latn";
 
 export interface FormatOptions extends Intl.NumberFormatOptions {
 	decimals?: number;
@@ -63,7 +60,13 @@ function getFormatter(
 		if (type === "number") {
 			formatterCache.set(key, new Intl.NumberFormat(resolvedLocale, opts as Intl.NumberFormatOptions));
 		} else {
-			formatterCache.set(key, new Intl.DateTimeFormat(resolvedLocale, opts as Intl.DateTimeFormatOptions));
+			formatterCache.set(
+				key,
+				new Intl.DateTimeFormat(resolvedLocale, {
+					numberingSystem: DATE_NUMBERING_SYSTEM,
+					...(opts as Intl.DateTimeFormatOptions),
+				}),
+			);
 		}
 	}
 
@@ -76,9 +79,7 @@ function getFormatter(
 
 function formatNumberParts(value: number, opts: Intl.NumberFormatOptions): string {
 	const formatter = getFormatter("number", BASE_NUMBER_FORMAT_LOCALE, opts);
-	const separators =
-		NUMBER_SEPARATORS_BY_FORMAT_LOCALE[getResolvedFormatLocale() as NumberFormatLocale] ??
-		NUMBER_SEPARATORS_BY_FORMAT_LOCALE[defaultNumberFormatLocale];
+	const separators = getActiveNumberSeparators();
 
 	return formatter
 		.formatToParts(value)
@@ -90,8 +91,48 @@ function formatNumberParts(value: number, opts: Intl.NumberFormatOptions): strin
 		.join("");
 }
 
+function getActiveNumberSeparators(): { group: string; decimal: string } {
+	return (
+		numberSeparatorsByFormatLocale[getResolvedFormatLocale() as NumberFormatLocale] ??
+		numberSeparatorsByFormatLocale[defaultNumberFormatLocale]
+	);
+}
+
+/**
+ * Typed decimal input stays a protocol string with `.` as the decimal point. When the active
+ * number format displays `,` as the decimal sign, a typed `,` is accepted as that decimal
+ * point; under the default format a `,` is left in place so the input validators reject it
+ * instead of silently reading `1,000` as one.
+ */
+export function normalizeDecimalInput(value: string): string {
+	if (getActiveNumberSeparators().decimal !== ",") return value;
+	return value.replaceAll(",", ".");
+}
+
 function getActiveLanguageIntlLocale(): string {
 	return languageToIntlLocale[i18n.locale as LocaleCode] ?? languageToIntlLocale[defaultLocale];
+}
+
+function resolveLanguageIntlLocale(locale: string | undefined): string {
+	if (!locale) return getActiveLanguageIntlLocale();
+	return isValidLocale(locale) ? languageToIntlLocale[locale] : locale;
+}
+
+export interface FormatListOptions extends Intl.ListFormatOptions {
+	locale?: string;
+}
+
+/**
+ * Join items the way the interface language does ("A, B and C").
+ * @example formatList(["Deposit", "Withdraw"]) -> "Deposit and Withdraw"
+ */
+export function formatList(items: readonly string[], opts?: FormatListOptions): string {
+	const { locale, ...rest } = opts ?? {};
+	return new Intl.ListFormat(resolveLanguageIntlLocale(locale), {
+		style: "short",
+		type: "conjunction",
+		...rest,
+	}).format(items);
 }
 
 // Helper to normalize options
@@ -365,6 +406,10 @@ function hasDateComponentOptions(opts: Intl.DateTimeFormatOptions): boolean {
 	return DATE_COMPONENT_KEYS.some((key) => key in opts);
 }
 
+function hasStyleOptions(opts: Intl.DateTimeFormatOptions): boolean {
+	return "dateStyle" in opts || "timeStyle" in opts;
+}
+
 /**
  * Format time only
  * @example formatTime(new Date()) -> "2:30 PM"
@@ -377,7 +422,7 @@ export function formatTime(value: DateInput, opts?: FormatDateOptions): string {
 	const { locale, ...rest } = opts ?? {};
 	const formatOpts: Intl.DateTimeFormatOptions = hasDateComponentOptions(rest) ? rest : { timeStyle: "short", ...rest };
 
-	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), formatOpts).format(toDate(value));
+	return getFormatter("date", resolveLanguageIntlLocale(locale), formatOpts).format(toDate(value));
 }
 
 /**
@@ -389,11 +434,12 @@ export function formatDateTime(value: DateInput, opts?: FormatDateOptions): stri
 	if (!isValidDate(value)) return FALLBACK_VALUE_PLACEHOLDER;
 
 	const { locale, ...rest } = opts ?? {};
-	const formatOpts: Intl.DateTimeFormatOptions = hasDateComponentOptions(rest)
-		? rest
-		: { dateStyle: "medium", timeStyle: "short", ...rest };
+	const formatOpts: Intl.DateTimeFormatOptions =
+		hasDateComponentOptions(rest) || hasStyleOptions(rest)
+			? rest
+			: { dateStyle: "medium", timeStyle: "short", ...rest };
 
-	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), formatOpts).format(toDate(value));
+	return getFormatter("date", resolveLanguageIntlLocale(locale), formatOpts).format(toDate(value));
 }
 
 export function formatDateTimeShort(value: DateInput, opts?: FormatDateOptions): string {
@@ -411,7 +457,7 @@ export function formatDateTimeShort(value: DateInput, opts?: FormatDateOptions):
 		...rest,
 	};
 
-	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), defaults).format(toDate(value));
+	return getFormatter("date", resolveLanguageIntlLocale(locale), defaults).format(toDate(value));
 }
 
 /**

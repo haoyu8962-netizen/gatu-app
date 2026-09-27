@@ -52,6 +52,14 @@ const WITHOUT_CLOSE_BUTTON: Record<string, Registration> = {
 		reason: "not dismissible by design; the way out is Disconnect",
 		exits: [{ file: "trade/components/legal-acceptance-modal.tsx", control: "<Trans>Disconnect</Trans>" }],
 	},
+	"trade/components/hip3-deployer-disclaimer.tsx": {
+		reason:
+			"the trade-page copy blocks by design and its way out is Leave this market; the position-flow copy ends with a Cancel button",
+		exits: [
+			{ file: "trade/components/hip3-deployer-disclaimer.tsx", control: "<Trans>Leave this market</Trans>" },
+			{ file: "trade/components/hip3-deployer-disclaimer.tsx", control: "<Trans>Cancel</Trans>" },
+		],
+	},
 };
 
 function listComponentFiles(directory: string): string[] {

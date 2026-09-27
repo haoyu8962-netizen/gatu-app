@@ -33,10 +33,13 @@ export type ApiWalletActionStage = "review" | "awaiting" | "submitted" | "reconc
 
 export type ApiWalletActionResult = "success" | "rejected" | "apiError" | "unknown";
 
+export type ApiWalletActionSigner = "embedded" | "external";
+
 export interface ApiWalletActionView {
 	open: boolean;
 	kind: ApiWalletActionKind;
 	stage: ApiWalletActionStage;
+	signer?: ApiWalletActionSigner;
 	result?: ApiWalletActionResult;
 	agentName: string;
 	agentAddress: string;

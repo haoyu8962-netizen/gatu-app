@@ -19,6 +19,7 @@ const testState = vi.hoisted(() => ({
 		dex: "xyz" as string | undefined,
 		documentationUrl: "https://docs.trade.xyz/consolidated-resources/specification-index" as string | undefined,
 	},
+	hip3Listeners: new Set<() => void>(),
 	hip3RequirementHook: vi.fn(),
 	legalGate: {
 		state: "accepted" as string,
@@ -29,6 +30,7 @@ const testState = vi.hoisted(() => ({
 		retryStatus: vi.fn(),
 	},
 	legalGateHook: vi.fn(),
+	navigateToMarket: vi.fn(),
 	openCommandMenu: vi.fn(),
 	closeSendModal: vi.fn(),
 	marketClosePresentation: "confirmation" as "confirmation" | "dismissed" | "direct",
@@ -39,9 +41,16 @@ const testState = vi.hoisted(() => ({
 
 vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
 	useHip3DisclaimerRequirement: (targetMarketName?: string | null) => {
+		const requirement = useSyncExternalStore(
+			(listener) => {
+				testState.hip3Listeners.add(listener);
+				return () => testState.hip3Listeners.delete(listener);
+			},
+			() => testState.hip3Disclaimer,
+		);
 		testState.hip3RequirementHook(targetMarketName);
 		if (targetMarketName === null) return { isRequired: false, dex: undefined, documentationUrl: undefined };
-		return testState.hip3Disclaimer;
+		return requirement;
 	},
 }));
 
@@ -50,6 +59,10 @@ vi.mock("@/hooks/trade/use-legal-gate", () => ({
 		testState.legalGateHook();
 		return testState.legalGate;
 	},
+}));
+
+vi.mock("@/hooks/trade/use-market-navigation", () => ({
+	useMarketNavigation: () => testState.navigateToMarket,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -69,7 +82,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 vi.mock("@/components/trade/components/hip3-deployer-disclaimer", () => ({
 	Hip3DeployerDisclaimer: (props: Record<string, unknown>) =>
-		createElement("div", { "data-props": JSON.stringify(props), "data-testid": "Hip3DeployerDisclaimer" }),
+		createElement(
+			"div",
+			{ "data-props": JSON.stringify(props), "data-testid": "Hip3DeployerDisclaimer" },
+			createElement("button", { type: "button", "data-testid": "hip3-exit", onClick: props.onExit as () => void }),
+		),
 }));
 
 vi.mock("@/components/trade/components/legal-acceptance-modal", () => ({
@@ -174,6 +191,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 			retryStatus: vi.fn(),
 		};
 		testState.legalGateHook.mockReset();
+		testState.navigateToMarket.mockReset();
 		testState.openCommandMenu.mockReset();
 		testState.marketClosePresentation = "confirmation";
 		testState.marketClosePhase = "idle";
@@ -194,14 +212,49 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 			const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
 			act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true })));
-			expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).not.toBeNull();
+			const disclaimer = container.querySelector('[data-testid="Hip3DeployerDisclaimer"]');
+			expect(disclaimer).not.toBeNull();
+			expect(disclaimer?.getAttribute("data-props")).toContain('"open":true');
+			expect(disclaimer?.getAttribute("data-props")).toContain('"exit":"leave-market"');
 			expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
 			expect(testState.hip3RequirementHook).toHaveBeenCalledTimes(1);
 
 			act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true })));
 			expect(testState.openCommandMenu).not.toHaveBeenCalled();
+
+			act(() => container.querySelector<HTMLButtonElement>('[data-testid="hip3-exit"]')?.click());
+			expect(testState.navigateToMarket).toHaveBeenCalledExactlyOnceWith("BTC");
+			expect(testState.discardIdlePositionMarketCloseModal).not.toHaveBeenCalled();
 		},
 	);
+
+	it("keeps the disclaimer mounted closed for its exit transition after acceptance", async () => {
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+		vi.useFakeTimers();
+		try {
+			act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true })));
+			expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')?.getAttribute("data-props")).toContain(
+				'"open":true',
+			);
+
+			act(() => {
+				testState.hip3Disclaimer = { isRequired: false, dex: undefined, documentationUrl: undefined };
+				for (const listener of testState.hip3Listeners) listener();
+			});
+			const closing = container.querySelector('[data-testid="Hip3DeployerDisclaimer"]');
+			expect(closing?.getAttribute("data-props")).toContain('"open":false');
+			expect(closing?.getAttribute("data-props")).toContain('"documentationUrl":"https://docs.trade.xyz/');
+			expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).toBeNull();
+			expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
 
 	it("renders the legal gate before the HIP-3 disclaimer and other global modals", async () => {
 		testState.legalGate.state = "required";
@@ -481,8 +534,14 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		);
 
 		expect(testState.hip3RequirementHook).toHaveBeenCalledWith("xyz:CXMT");
-		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).not.toBeNull();
+		const disclaimer = container.querySelector('[data-testid="Hip3DeployerDisclaimer"]');
+		expect(disclaimer).not.toBeNull();
+		expect(disclaimer?.getAttribute("data-props")).toContain('"exit":"cancel"');
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).toBeNull();
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="hip3-exit"]')?.click());
+		expect(testState.discardIdlePositionMarketCloseModal).toHaveBeenCalledOnce();
+		expect(testState.navigateToMarket).not.toHaveBeenCalled();
 	});
 
 	it("does not show a selected-market disclaimer on position-close-only pages", async () => {

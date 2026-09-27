@@ -126,8 +126,12 @@ vi.mock("@/components/trade/components/trading-action-button", () => ({
 }));
 
 vi.mock("@/components/trade/components/hip3-deployer-disclaimer", () => ({
-	Hip3DeployerDisclaimer: ({ onCancel }: { onCancel: () => void }) =>
-		createElement("button", { type: "button", "data-testid": "hip3-cancel", onClick: onCancel }, "HIP-3"),
+	Hip3DeployerDisclaimer: ({ open, exit, onExit }: { open: boolean; exit: string; onExit: () => void }) =>
+		createElement(
+			"button",
+			{ type: "button", "data-testid": "hip3-cancel", "data-open": String(open), "data-exit": exit, onClick: onExit },
+			"HIP-3",
+		),
 }));
 
 vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
@@ -206,13 +210,12 @@ describe("PositionLimitCloseModal", () => {
 	let onSessionEnd: ReturnType<typeof vi.fn<(sessionId: string) => void>>;
 
 	function render() {
+		renderSession({ sessionId: SESSION_ID, position: { ...position } });
+	}
+
+	function renderSession(session: { sessionId: string; position: typeof position } | null) {
 		act(() => {
-			root.render(
-				createElement(PositionLimitCloseModal, {
-					session: { sessionId: SESSION_ID, position: { ...position } },
-					onSessionEnd,
-				}),
-			);
+			root.render(createElement(PositionLimitCloseModal, { session, onSessionEnd }));
 		});
 	}
 
@@ -588,23 +591,83 @@ describe("PositionLimitCloseModal", () => {
 		render();
 
 		expect(testState.submitTarget).toBeNull();
-		act(() => container.querySelector<HTMLButtonElement>('[data-testid="hip3-cancel"]')?.click());
+		const disclaimer = container.querySelector<HTMLButtonElement>('[data-testid="hip3-cancel"]');
+		expect(disclaimer?.getAttribute("data-exit")).toBe("cancel");
+		expect(disclaimer?.getAttribute("data-open")).toBe("true");
+		act(() => disclaimer?.click());
 		expect(onSessionEnd).toHaveBeenCalledWith(SESSION_ID);
 	});
 
 	it("captures owner and environment before the HIP-3 disclaimer can switch accounts", () => {
-		testState.hip3Required = true;
-		render();
-		expect(testState.submitTarget).toBeNull();
+		vi.useFakeTimers();
+		try {
+			testState.hip3Required = true;
+			render();
+			expect(testState.submitTarget).toBeNull();
 
-		testState.clientKey = "0x2222222222222222222222222222222222222222";
-		testState.env = "Testnet";
-		testState.hip3Required = false;
-		render();
+			testState.clientKey = "0x2222222222222222222222222222222222222222";
+			testState.env = "Testnet";
+			testState.hip3Required = false;
+			render();
+			expect(container.querySelector('[data-testid="hip3-cancel"]')?.getAttribute("data-open")).toBe("false");
+			expect(testState.submitTarget).toBeNull();
 
-		expect(testState.submitTarget).toMatchObject({
-			owner: "0x1111111111111111111111111111111111111111",
-			env: "Mainnet",
-		});
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[data-testid="hip3-cancel"]')).toBeNull();
+			expect(testState.submitTarget).toMatchObject({
+				owner: "0x1111111111111111111111111111111111111111",
+				env: "Mainnet",
+			});
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("keeps the dialog mounted closed for its exit transition and never submits while closing", async () => {
+		vi.useFakeTimers();
+		try {
+			render();
+			enterPrice("101");
+			expect(testState.adaptiveProps?.open).toBe(true);
+			expect(getSubmitButton().disabled).toBe(false);
+
+			renderSession(null);
+			expect(container.querySelector('[data-testid="adaptive-modal"]')).not.toBeNull();
+			expect(testState.adaptiveProps?.open).toBe(false);
+			expect(getSubmitButton().disabled).toBe(true);
+			await act(async () => getSubmitButton().click());
+			expect(testState.submit).not.toHaveBeenCalled();
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[data-testid="adaptive-modal"]')).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("fades the HIP-3 disclaimer out after its Cancel ends the session", () => {
+		vi.useFakeTimers();
+		try {
+			testState.hip3Required = true;
+			render();
+			act(() => container.querySelector<HTMLButtonElement>('[data-testid="hip3-cancel"]')?.click());
+			expect(onSessionEnd).toHaveBeenCalledExactlyOnceWith(SESSION_ID);
+
+			renderSession(null);
+			expect(container.querySelector('[data-testid="hip3-cancel"]')?.getAttribute("data-open")).toBe("false");
+			expect(testState.submitTarget).toBeNull();
+
+			act(() => {
+				vi.advanceTimersByTime(250);
+			});
+			expect(container.querySelector('[data-testid="hip3-cancel"]')).toBeNull();
+			expect(testState.submitTarget).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

@@ -4,7 +4,7 @@ import { ArrowLeftIcon, ArrowSquareOutIcon, LockKeyIcon, WarningCircleIcon } fro
 import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import { cn } from "@/lib/cn";
-import { shortenAddress } from "@/lib/format";
+import { formatDateTime, shortenAddress } from "@/lib/format";
 import { getExplorerAddressUrl } from "@/lib/hyperliquid";
 import {
 	formatVaultCompactUsd,
@@ -526,5 +526,5 @@ function toneClass(tone: "positive" | "negative" | "neutral"): string {
 }
 
 function formatTimestamp(timestamp: number, locale: string): string {
-	return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(timestamp);
+	return formatDateTime(timestamp, { locale, dateStyle: "medium", timeStyle: "short" });
 }

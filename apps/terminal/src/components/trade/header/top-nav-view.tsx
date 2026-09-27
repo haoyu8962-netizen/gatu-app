@@ -119,10 +119,10 @@ export function TopNavView({
 			<div className="ms-auto flex min-h-9 items-center gap-2">
 				{pairing}
 				{wallet}
+				{linkMobile}
 				<div className={cn("contents", compactHiddenWhenConnected && "nav-compact:hidden")}>
 					{theme}
 					{language}
-					{linkMobile}
 					{settings}
 				</div>
 				{compactUtilities && <div className="hidden nav-compact:inline-flex">{compactUtilities}</div>}

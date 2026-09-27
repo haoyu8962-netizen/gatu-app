@@ -8,6 +8,23 @@
       "port": 3005
     },
     {
+      "name": "terminal-pairing",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "VITE_MOBILE_PAIRING_ENABLED=true",
+        "pnpm",
+        "--filter",
+        "@gatu/terminal",
+        "exec",
+        "vite",
+        "dev",
+        "--port",
+        "3005",
+        "--strictPort"
+      ],
+      "port": 3005
+    },
+    {
       "name": "terminal-inspect",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@gatu/terminal", "exec", "vite", "dev", "--port", "3015", "--strictPort"],
