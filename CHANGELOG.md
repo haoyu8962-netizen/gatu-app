@@ -6,6 +6,35 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ## Unreleased
 
+### Added
+
+- A Funding view next to the desktop chart and a fourth Funding tab in the mobile Markets view
+  show a perpetual or HIP-3 market's funding rate history with its cumulative rate, over 1h
+  buckets for 7 days, 8h buckets for 30 days (default) or daily buckets for 90 days. It loads
+  only when first opened, keeps TradingView mounted while it is shown, and spot markets show only
+  Chart. See [market funding history](docs/market-funding-history.md).
+- A Funding Comparison page (`/fundingComparison`, in the desktop More menu and the mobile drawer)
+  compares the predicted funding of Hyperliquid main perpetual markets with Binance and Bybit for
+  an hourly, 8-hour, daily, weekly or yearly period, with each venue's difference to Hyperliquid.
+  See [funding comparison](docs/funding-comparison.md).
+- When the exchange reports a perpetual or HIP-3 market at its open-interest cap, Limit, Stop
+  Limit and Take Profit Limit orders are disabled with an explanation on desktop and mobile, and
+  the submission guard checks it again; market, trigger-market, TWAP and Scale orders stay
+  available. HIP-3 asset information shows the market's open-interest cap. No reachable market is
+  capped today, so this has only test evidence. See [open-interest cap](docs/open-interest-cap.md)
+  and [ADR 0021](docs/adr/0021-open-interest-cap-advisory-check.md).
+- Manage TP/SL warns when the position is large enough that a market TP/SL may slip heavily,
+  using Hyperliquid's maximum market order value for the position's current leverage; submission
+  is unchanged. See [TP/SL slippage warning](docs/position-tpsl-slippage-warning.md).
+- TWAP Fill History can be exported as CSV on desktop and mobile. The export pages the complete
+  TWAP slice fill history rather than the 2,000 fills shown in the table, keeps the latest 10,000
+  with a warning when that limit is reached, and paces its requests; the trade history export
+  still excludes TWAP fills. See the Export section of
+  [TWAP regression tests](docs/twap-regression-tests.md).
+- The leverage dialog on desktop and mobile shows the maximum position size allowed at the
+  selected leverage for markets with more than one margin tier (for example BTC above 20x:
+  $150,000,000). See [leverage position limit](docs/leverage-position-limit.md).
+
 ### Changed
 
 - The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market

@@ -1,6 +1,6 @@
 # 杠杆弹窗的仓位上限
 
-状态：已实现（2026-09-27），未合入、未发布；分支 `claude/sdk-feat-leverage-limit`，基线 `dbc6036e`。范围：桌面杠杆弹窗 `LeverageModal` 与移动杠杆抽屉（`MarginModeModal` 的 `mobileView="leverage"`），主 dex 永续与 HIP-3 builder 永续；现货没有杠杆编辑器。本文是该行为的归属文档，批次取舍见 [SDK 接入规划](sdk-feature-integration-plan.md) 第 6 项。
+状态：已实现并集成到分支 `claude/sdk-api-review-51a3ea`（未推送、未合入 `dev`、未发布）。集成头经三轮 Codex 只读对抗审查，并通过类型检查、完整终端测试与 Node 22.15 生产构建（含包体预算）；批次验证结果与遗留问题见[接入规划](sdk-feature-integration-plan.md)的实施记录。2026-09-27 用内置浏览器在未连接钱包时打开桌面杠杆弹窗核对了显示（输入 25 倍显示 $150,000,000，未确认提交）；真人拖动未验收。日期：2026-09-27，2026-09-28 更新。范围：桌面杠杆弹窗 `LeverageModal` 与移动杠杆抽屉（`MarginModeModal` 的 `mobileView="leverage"`），主 dex 永续与 HIP-3 builder 永续；现货没有杠杆编辑器。本文是该行为的归属文档，批次取舍见 [SDK 接入规划](sdk-feature-integration-plan.md) 第 6 项。
 
 ## 1. 目标
 

@@ -18,7 +18,7 @@ TWAP tests must preserve the current execution and presentation contracts rather
 
 ## Export
 
-TWAP 成交历史 CSV 导出。状态：已实现，未发布；没有真实钱包、真机或 testnet 验收。日期：2026-09-27。范围：桌面与手机 TWAP「Fill History」子视图底部的「Export CSV」、`hooks/trade/use-twap-fill-history-csv.ts`、`lib/trade/user-fills.ts` 的 `fetchUserTwapSliceFillHistory` 与按网络共享的 `getTwapSliceFillsExportPacer`，以及它们使用的 `lib/trade/info-weight-pacer.ts`。TWAP 下单与撤单边界（`useTrackedTwapOrder`、`useTwapCancel`）不涉及，也没有改动。
+TWAP 成交历史 CSV 导出。状态：已实现并集成到分支 `claude/sdk-api-review-51a3ea`（未推送、未合入 `dev`、未发布）。集成头经三轮 Codex 只读对抗审查，并通过类型检查、完整终端测试与 Node 22.15 生产构建（含包体预算）；批次验证结果与遗留问题见[接入规划](sdk-feature-integration-plan.md)的实施记录。需要连接钱包，没有真实钱包、真机或 testnet 验收。日期：2026-09-27，2026-09-28 更新。范围：桌面与手机 TWAP「Fill History」子视图底部的「Export CSV」、`hooks/trade/use-twap-fill-history-csv.ts`、`lib/trade/user-fills.ts` 的 `fetchUserTwapSliceFillHistory` 与按网络共享的 `getTwapSliceFillsExportPacer`，以及它们使用的 `lib/trade/info-weight-pacer.ts`。TWAP 下单与撤单边界（`useTrackedTwapOrder`、`useTwapCancel`）不涉及，也没有改动。
 
 ### 目标
 

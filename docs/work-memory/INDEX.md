@@ -234,12 +234,14 @@
 
 当前规范：[docs/hyperliquid-sdk-reference.md](../../docs/hyperliquid-sdk-reference.md) · [docs/hyperliquid-sdk-coverage-review.md](../../docs/hyperliquid-sdk-coverage-review.md)
 
+- [SDK 第一批六项接入：多 worktree 并行实现、三轮 Codex 对抗审查与集成验证](sessions/2026-09-28-sdk-feature-batch-1.md) — 2026-09-28；已验证，范围见正文。按覆盖审查的收益排序实施六项：资金费率历史页签（fundingHistory）、未平仓量上限拦截（webData3 perpsAtOpenInterestCap + perpDexLimits，ADR 0021）、资金费率对比页（predictedFundings）、TP/SL 滑点提示（maxMarketOrderNtls）、TWAP 成交 CSV 导出（userTwapSliceFillsByTime）、杠杆弹窗仓位上限（复用分档）。六个独立 worktree 并行实现并各经一轮代理审查，集成到 claude/sdk-api-review-51a3ea 后做三轮 Codex 只读对抗审查（共 6 个 P2、6 个 P3，全部修复或有理由处理；第三轮残留的时钟回拨属于共享订阅巡检，另列后续任务）。最终头类型检查、Biome、Node 22.15 构建与包体预算通过，完整终端测试 7,490 项通过、1 个已知负载敏感文件超时（单独 5/5 通过）。服务端账户通知未实施（需要传输隔离决策）。未推送、未合入 dev，没有真实钱包与真机验收。
 - [Hyperliquid SDK 0.33.3 接口覆盖审查与接入收益排序](sessions/2026-09-27-sdk-api-coverage-review.md) — 2026-09-27；已验证，范围见正文。在独立 worktree 审查 SDK 四个客户端 169 个方法：生产代码调用 88 个（Info 42/77、Exchange 23/59、Subscription 23/28、Explorer 0/5）；未调用的 81 个分为建议接入 6、可选 15、战略级 12（子账户、HIP-4、金库管理）、分支中或被策略关闭 2、冗余 18、与终端无关 28。建议优先 fundingHistory、OI 上限（数据已随 webData3 到达）+ perpDexLimits、predictedFundings。官方前端证据来自 2026-09-27 未登录抓取的 395 个 JS 文件，公开数据为当日快照；只写审查文档，未改代码、未运行应用测试、未连接真实账户。
 
 ## 按记录日期检索
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-28 | [SDK 第一批六项接入：多 worktree 并行实现、三轮 Codex 对抗审查与集成验证](sessions/2026-09-28-sdk-feature-batch-1.md) | 未取得任务标识，见正文 | `dbc6036e` | 已验证，范围见正文 |
 | 2026-09-27 | [HIP-3 免责声明对齐：修复 Codex 审查发现](sessions/2026-09-27-hip3-alignment-review-fixes.md) | 未取得任务标识，见正文 | `27ee060f` | 已验证，范围见正文 |
 | 2026-09-27 | [Hyperliquid SDK 0.33.3 接口覆盖审查与接入收益排序](sessions/2026-09-27-sdk-api-coverage-review.md) | 未取得任务标识，见正文 | `e3b5dd82` | 已验证，范围见正文 |
 | 2026-09-26 | [zustand persist 首次访问时 merge 收到 undefined 的防护](sessions/2026-09-26-persist-merge-first-visit-guard.md) | 未取得任务标识，见正文 | `121e8e76` | 已验证，范围见正文 |

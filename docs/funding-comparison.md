@@ -1,6 +1,6 @@
 # 跨交易所资金费率对比页
 
-状态：已实现（2026-09-27，分支 `claude/sdk-feat-funding-comparison`），未合入、未发布；未做浏览器核对与真机验收。日期：2026-09-27。范围：`/fundingComparison` 路由、桌面「更多」菜单与手机抽屉入口、`predictedFundings` 数据、费率换算与差值计算、页面状态和回归入口。本文是该页的归属文档；批次范围与取舍见 [SDK 未接入接口的接入规划](sdk-feature-integration-plan.md) 第 3 项。
+状态：已实现并集成到分支 `claude/sdk-api-review-51a3ea`（未推送、未合入 `dev`、未发布）。集成头经三轮 Codex 只读对抗审查，并通过类型检查、完整终端测试与 Node 22.15 生产构建（含包体预算）；批次验证结果与遗留问题见[接入规划](sdk-feature-integration-plan.md)的实施记录。2026-09-27 在本分支开发服务器上用内置浏览器核对了桌面与手机 375px 宽度并与原始 `predictedFundings` 数据逐项对照，未做真机验收。日期：2026-09-27，2026-09-28 更新。范围：`/fundingComparison` 路由、桌面「更多」菜单与手机抽屉入口、`predictedFundings` 数据、费率换算与差值计算、页面状态和回归入口。本文是该页的归属文档；批次范围与取舍见 [SDK 未接入接口的接入规划](sdk-feature-integration-plan.md) 第 3 项。
 
 ## 1. 目标与非目标
 

@@ -1,6 +1,6 @@
 # 未平仓量上限：限价类订单拦截与 HIP-3 每币上限
 
-状态：已实现，2026-09-27；分支 `claude/sdk-feat-oi-cap`，基线 `dbc6036e`，尚未合入 `dev`，未发布。范围：桌面与移动下单面板的永续订单校验、入口订单的 SDK 执行守卫、HIP-3 资产信息弹窗。取舍记录见 [ADR 0021](adr/0021-open-interest-cap-advisory-check.md)；数据展示规则见[数据展示规范](mobile-data-presentation.md)的「已确认的市场未平仓量上限」一行；双端对照见[下单面板对照](order-entry-surface-parity.md)。
+状态：已实现并集成到分支 `claude/sdk-api-review-51a3ea`（未推送、未合入 `dev`、未发布）。集成头经三轮 Codex 只读对抗审查，并通过类型检查、完整终端测试与 Node 22.15 生产构建（含包体预算）；批次验证结果与遗留问题见[接入规划](sdk-feature-integration-plan.md)的实施记录。当前没有处于上限的可交易市场，功能处于休眠，只有单元与界面测试证据，未做真实账户验收。日期：2026-09-27，2026-09-28 更新。范围：桌面与移动下单面板的永续订单校验、入口订单的 SDK 执行守卫、HIP-3 资产信息弹窗。取舍记录见 [ADR 0021](adr/0021-open-interest-cap-advisory-check.md)；数据展示规则见[数据展示规范](mobile-data-presentation.md)的「已确认的市场未平仓量上限」一行；双端对照见[下单面板对照](order-entry-surface-parity.md)。
 
 **现状说明**：2026-09-27 主 dex 处于上限的 7 个币（CANTO、FTM、JELLY、LOOM、RLB、VINE、ZEREBRO）在 `meta` 中全部标记为已下架，终端的市场目录跳过已下架资产；10 个 HIP-3 dex 与测试网返回空列表。因此上线后拦截规则暂时处于休眠，任何真实市场都触发不了它，本功能只有单元与界面测试证据，没有真实账户或真机验收。
 

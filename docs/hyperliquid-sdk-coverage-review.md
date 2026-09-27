@@ -131,3 +131,18 @@ rg -n '"fundingHistory"|\.fundingHistory\(' apps/terminal/src packages/hl-react/
 - 按排序实施时从第 1–3 项开始：它们只读、公开、官方已用，且不触碰签名与资金契约。
 - 子账户、HIP-4、Agent 代签资金操作在实施前各自需要设计文档与 ADR。
 - 升级 SDK 时重跑本审查，确认新增方法以及 `userBorrowLendInterest` 订阅是否可用。
+
+## 后续：第一批实施（2026-09-28 追加）
+
+以上审查内容保持 `e3b5dd82` 基线时的原样，计数不随实施更新。按[接入规划](sdk-feature-integration-plan.md)实施的第一批六项已集成到分支 `claude/sdk-api-review-51a3ea`（未推送、未合入 `dev`、未发布），实施、三轮对抗审查与验证见规划的实施记录：
+
+| 本文排序 | 接口 | 实施结果 | 归属文档 |
+| ---: | --- | --- | --- |
+| 1 | `fundingHistory` | 图表区 Funding 页签（桌面与手机） | [市场资金费率历史](market-funding-history.md) |
+| 2 | `webData3.perpDexStates[].perpsAtOpenInterestCap`、`perpDexLimits` | 上限市场拦截限价、止损限价、止盈限价；HIP-3 资产信息显示每币上限；不新增订阅 | [未平仓量上限](open-interest-cap.md)、[ADR 0021](adr/0021-open-interest-cap-advisory-check.md) |
+| 3 | `predictedFundings` | `/fundingComparison` 对比页 | [资金费率对比](funding-comparison.md) |
+| 5 | `maxMarketOrderNtls` | 持仓 TP/SL 弹窗的滑点提示（按持仓当前杠杆选档，与官方前端一致；与本文把它描述为「避免被拒」的下单预检不同） | [TP/SL 滑点提示](position-tpsl-slippage-warning.md) |
+| 7 | `userTwapSliceFillsByTime` | TWAP 成交 CSV 导出；表格仍显示最近 2,000 条；不发送 `aggregateByTime` | [TWAP 回归](twap-regression-tests.md) 的 Export 一节 |
+| 冗余表中的 `marginTable` | 不调用；复用 `allPerpMetas` 已解析的分档 | 杠杆弹窗显示所选杠杆下的最大仓位 | [杠杆仓位上限](leverage-position-limit.md) |
+
+未实施的第 4 项服务端账户通知（订阅 `notification`）：实施前侦察发现 SDK 0.33.3 按频道分发帧且帧内没有用户字段，同一共享 socket 上切换账户时旧账户的帧可能进入新账户的监听，需要传输层隔离的架构决策；原因与前提见规划的「范围取舍」。其余第 6、8–15 项与战略级功能未排期。

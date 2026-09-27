@@ -1,6 +1,6 @@
 # 持仓 TP/SL 大额滑点提示
 
-状态：已实现（2026-09-27，分支 `claude/sdk-feat-tpsl-slippage`，基于 `dbc6036e`；第二轮审查修复在分支 `claude/sdk-fix-r1-tpsl-slippage`，基于集成头 `19af214b`，见第 10 节），未合入、未发布，未做真实钱包与真机验收。范围：持仓「管理 TP/SL」弹窗（`apps/terminal/src/components/trade/positions/position-tpsl-modal.tsx`），桌面弹层与移动抽屉共用同一份实现。本文是该提示的归属文档；批次规划见 [SDK 未接入接口的接入规划](sdk-feature-integration-plan.md) 第 4 项，被动提示的展示规则见 [数据展示契约](mobile-data-presentation.md)，确认面规则见 [确认面契约](confirmation-surfaces.md)。
+状态：已实现并集成到分支 `claude/sdk-api-review-51a3ea`（未推送、未合入 `dev`、未发布）。集成头经三轮 Codex 只读对抗审查，并通过类型检查、完整终端测试与 Node 22.15 生产构建（含包体预算）；批次验证结果与遗留问题见[接入规划](sdk-feature-integration-plan.md)的实施记录。需要持仓才能打开，未做真实钱包与真机验收。日期：2026-09-27，2026-09-28 更新。范围：持仓「管理 TP/SL」弹窗（`apps/terminal/src/components/trade/positions/position-tpsl-modal.tsx`），桌面弹层与移动抽屉共用同一份实现。本文是该提示的归属文档；批次规划见 [SDK 未接入接口的接入规划](sdk-feature-integration-plan.md) 第 4 项，被动提示的展示规则见 [数据展示契约](mobile-data-presentation.md)，确认面规则见 [确认面契约](confirmation-surfaces.md)。
 
 ## 1. 目标
 
