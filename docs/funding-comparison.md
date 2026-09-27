@@ -33,7 +33,7 @@
 | 网络隔离 | 查询键含网络（hl-react `infoKey`），主网与测试网互不复用 |
 | 持久化 | 不持久化：查询键没有 `persisted` 前缀，`lib/query-persistence.ts` 不保存它 |
 | 新鲜度上限 | 快照自本地接收（TanStack `dataUpdatedAt` 变化）起最多使用 `FUNDING_COMPARISON_MAX_SNAPSHOT_AGE_MS` = 两个刷新周期（120 秒）。年龄以本地单调时钟（`performance.now()`）计量，另以本地墙钟年龄（`Date.now() − dataUpdatedAt`）作只会更严格的第二道条件；任一时钟满 120 秒、墙钟年龄为负（接收时间晚于本地时钟，例如系统时间被往回调）、或查询因离线处于 `paused` 时，快照视为不可用（见第 6 节） |
-| 市场目录 | `useMarketsInfo().perpMarkets`：主 dex、已剔除 `isDelisted` 的永续；其资产上下文（`openInterest`、`markPx`）来自现有 `pac` / `allDexsAssetCtxs` 订阅，`markPx` 在 `fastAssetCtxs` 有实时价格时取实时价格，并带 `markPriceStatus` / `markPriceReceivedAt`（OI 用法见第 4 节）。`/fundingComparison` 不在 `MARKET_STATS_IDLE_ROUTE_PREFIXES` 中，订阅保持开启 |
+| 市场目录 | `useMarketsInfo().perpMarkets`：主 dex、已剔除 `isDelisted` 的永续；其资产上下文（`openInterest`、`markPx`）来自现有 `pac` / `allDexsAssetCtxs` 订阅，实时帧尚未到达时回退到会话统计缓存（`hl-mkt-stats-v2`）；`markPx` 在 `fastAssetCtxs` 有实时价格时取实时价格，并带 `markPriceStatus` / `markPriceReceivedAt`。`useMarketsInfo().perpContextsLive` 说明这些资产上下文是否来自当前实时订阅（OI 用法见第 4 节）。`/fundingComparison` 不在 `MARKET_STATS_IDLE_ROUTE_PREFIXES` 中，订阅保持开启 |
 
 `parsePredictedFundings` 对未知输入做严格校验，任一项不符即整份快照视为不可用（fail closed）：顶层须为数组；每项须为 `[非空字符串, 数组]`；场所项须为 `[非空字符串, 对象或 null]`；已知场所的 `fundingRate` 须匹配 `^-?\d+(\.\d+)?$`、`nextFundingTime` 须为安全整数、`fundingIntervalHours` 若存在须为正安全整数；资产或同一资产内的场所重复即失败。未知场所名只检查元组形状，数据被忽略，以便协议新增场所时页面不失效。
 
@@ -52,10 +52,20 @@
 | 每小时费率 | Hyperliquid：`fundingRate ÷ (fundingIntervalHours ?? 1)`（协议资金费按小时结算）。Binance、Bybit：`fundingRate ÷ fundingIntervalHours`；缺少 `fundingIntervalHours` 时为空，显示 `--`，不按 8 小时猜测 |
 | 周期费率 | 每小时费率 × 周期小时数：每小时 1、8 小时 8（默认）、每日 24、每周 168、每年 8760 |
 | 差值 | `场所周期费率 − Hyperliquid 周期费率`；显示绝对值（4 位小数百分比，无正负号）和方向文字：大于 0 为「{场所} 费率更高」，小于 0 为「Hyperliquid 费率更高」，等于 0 为「费率相同」；任一侧为空时显示 `--`，不显示方向 |
-| Hyperliquid OI | `openInterest × markPx`，与行情头 `getOiUsd` 同一口径；只在该市场的标记价格为实时时计算，规则与行情头判断标记价格可显示时相同：`isLiveMarkPriceReady(markPriceStatus, markPx, markPriceReceivedAt)`，即状态为 `success`、价格为正、本地接收不超过 `LIVE_MARK_MAX_STALE_MS`（10 秒）且不晚于本地时钟。资产上下文未到达，或标记价格处于 `idle` / `loading` / `stale` / `error`、接收过久或缺少接收时间时，OI 为空，显示 `--`，并在两个排序方向都排在最后；资金费率与差值照常显示。桌面为整数美元，手机为紧凑写法（如 `$1M`） |
+| Hyperliquid OI | `openInterest × markPx`，与行情头 `getOiUsd` 同一口径。两个条件同时成立才计算：一、持仓量所在的资产上下文是实时的，即 `useMarketsInfo().perpContextsLive` 为真（见下文）；二、该市场的标记价格为实时，规则与行情头判断标记价格可显示时相同：`isLiveMarkPriceReady(markPriceStatus, markPx, markPriceReceivedAt)`，即状态为 `success`、价格为正、本地接收不超过 `LIVE_MARK_MAX_STALE_MS`（10 秒）且不晚于本地时钟。任一条件不成立（资产上下文未到达、只有会话缓存、订阅过期 / 失败 / 恢复中，或标记价格处于 `idle` / `loading` / `stale` / `error`、接收过久或缺少接收时间）时，OI 为空，显示 `--`，并在两个排序方向都排在最后；资金费率与差值照常显示。桌面为整数美元，手机为紧凑写法（如 `$1M`） |
 | 费率色调 | 按每小时费率 × 8 的 8 小时等效值，与所选周期无关：小于 0 为负（`text-error`），0 到 0.0001（含）为中性（`text-fg-muted`），大于 0.0001 为正（`text-success`）；空值为中性。差值不着色（`text-fg`） |
 | 零费率 | 零是一个值，显示 `0.0000%`，不当作缺失 |
 | 格式 | 费率与差值经 `formatPercent`，固定 4 位小数；OI 经 `formatUSD`；数字包在 `<bdi dir="ltr">` 中 |
+
+`perpContextsLive` 由 `useMarketsInfoInternal` 按当前实际使用的持仓量来源判断，与 `livePerpCtxs = pac ?? allDexsAssetCtxs.ctxs` 的取值顺序一致：
+
+| 当前来源 | `perpContextsLive` |
+| --- | --- |
+| `pac` 有数据（紧凑频道） | `pac` 订阅 `status === "active"` 且 `isStale === false` 时为真 |
+| `pac` 无数据，`allDexsAssetCtxs` 有 `ctxs`（浏览器不支持解压或紧凑频道失败后的原频道） | `allDexsAssetCtxs` 订阅 `status === "active"` 且 `isStale === false` 时为真 |
+| 两条实时订阅都没有数据（首次加载、紧凑频道失败后切换期间、路由关闭订阅），不论会话缓存是否有值 | 假 |
+
+`status` 为 `subscribing`（过期恢复中重新订阅，保留旧数据）、`error` 或 `idle` 时都为假。`isStale` 来自 hl-react 的订阅新鲜度巡检：`pac` 与 `allDexsAssetCtxs` 的阈值都是 20 秒（`internal/websocket/reliability.ts`），巡检间隔 5 秒，因此最后一帧到达后最多约 25 秒页面仍按实时显示 OI，之后换成 `--`，新帧到达后恢复。这个字段只读取两条现有订阅的 `status` / `isStale`，不改订阅参数与选项，不新增订阅键；`useMarketsInfo` 的其他字段和其他使用方的行为不变。领域函数 `buildFundingComparisonRows(snapshot, perpMarkets, { perpContextsLive, now })` 保持纯函数，由控制器把该字段传入。
 
 搜索、排序、分页在 `deriveFundingComparisonPage` 中完成：
 
@@ -125,7 +135,9 @@
 | 只用本地墙钟计龄（`Date.now() − dataUpdatedAt`） | 不采用（初版如此实现，r1 审查 P2-1 指出）。截止计时器与焦点、可见性核对在墙钟未到截止时刻时既不重新判断也不发布状态，系统时间往回调一小时后，持续失败的刷新会让旧快照多显示约一小时。现以单调时钟计龄，每次核对到期都发布状态变化 |
 | 只用单调时钟计龄 | 不采用。页面不依赖单调时钟在系统休眠期间继续前进，因此保留墙钟年龄作只会更严格的第二道条件，休眠醒来后由它判定过期。代价是系统时间往前调时快照会提前失效，显示骨架或中性「Retry」，直到下一次成功刷新（页面可见时按 60 秒周期）恢复 |
 | OI 只要持仓量与价格字段存在就计算 | 不采用（初版如此实现，r1 审查 P2-2 指出）。`predictedFundings` 请求成功不能证明另一条 WebSocket 行情仍是实时的，过期 OI 会继续显示并参与默认排序。现采用行情头判断标记价格可显示的同一规则 `isLiveMarkPriceReady` |
-| 在 `useMarketsInfo` 中另外暴露资产上下文的接收状态 | 暂不做。需要改动全站共用的行情 hook；本页只使用它已暴露的标记价格状态与接收时间，遗留窗口见第 10 节 |
+| 在 `useMarketsInfo` 中另外暴露资产上下文的接收状态 | 采用（2026-09-28，r2 审查 P2）。r1 修复时暂未做，只看标记价格新鲜度，并把会话缓存持仓量乘实时价格的情况记为「短暂窗口」；r2 审查指出这个窗口没有上界：`pac` / `allDexsAssetCtxs` 停止、失败或尚未送达时，页面会一直按旧的或缓存的持仓量显示并排序。现以附加字段 `perpContextsLive` 暴露，只读现有订阅状态，不改其他使用方 |
+| OI 按每个市场的上下文接收时间判断 | 不可行。`pac` / `allDexsAssetCtxs` 是覆盖所有市场的单一聚合订阅，只有整条订阅的接收时间与过期状态，没有逐市场的接收时间 |
+| 为本页另设更短的上下文过期阈值（`maxStaleMs`） | 不采用。同一订阅由全站共享，改选项会影响其他使用方的过期与恢复行为；沿用 hl-react 的 20 秒阈值，代价是最后一帧之后最多约 25 秒仍显示 OI |
 | OI 用 `oraclePx` | 不采用。与官方一致，但与本终端行情头和代币选择器的 OI 不一致，同一市场会出现两个数 |
 | 复制官方的缺失间隔币种表 | 不采用。无法核实、会随交易所调整过期；2026-09-27 的主网数据中缺字段的 20 个 Binance 条目都属于已下架币，页面过滤后不受影响（见第 10 节） |
 | 差值按带符号值排序 | 不采用。显示的是绝对值，按符号排序会让最大的负差排在最后 |
@@ -147,8 +159,9 @@
 
 新增与更新的回归入口：
 
-- `src/lib/tests/funding-comparison-domain.test.ts`：解析的 fail-closed 条件、HL 与 CEX 每小时换算、缺失间隔、零费率、五个周期倍数（精确 Big 字符串，例如 PONS：HL `0.0000284027` → 8 小时 `0.0002272216`，Binance 4 小时 `0.00012985` → 8 小时 `0.0002597`，差值 `0.0000324784`）、差值方向与空值、色调阈值、目录过滤与 OI、空值排最后、差值按绝对值、同值按名称、搜索与分页夹取、排序切换。OI 只在标记价格实时时计算：`success` 且接收正好 10 秒时仍有值；`idle` / `loading` / `stale` / `error`、接收超过 10 秒、接收晚于当前时间、缺少接收时间、价格为 0 或缺少持仓量时为空，且同一行的每小时费率不变。
-- `src/components/funding-comparison/__tests__/use-funding-comparison-controller.test.tsx`：查询参数与节奏、首份快照 / 目录 / 离线等待时保持 loading、首份失败与格式错误进入 error 并重试、目录失败时同时重试目录、只有成功的空快照才是 empty、搜索无结果、周期 / 排序 / 搜索 / 行数变化回到第 1 页、OI 在上下文到达前为空、选中市场调用导航。新鲜度（假计时器）：上限为两个刷新周期即 120 秒；刷新失败时差 1 毫秒满 120 秒仍显示、满 120 秒换成中性 Retry 且重试中禁用、新快照到达后恢复；未失败时满 120 秒为骨架；页面重新可见时立即核对（墙钟前跳，模拟休眠醒来）；满 120 秒的空快照不再是 empty；`paused` 时立即不可用（有失败时为 error）；接收时间晚于本地时钟时不可用。时钟回拨（`dataUpdatedAt` 保持不变）：经过 60 秒后墙钟回拨 60 秒，单调时钟满 120 秒仍按时判为不可用；墙钟回拨一小时后单调时钟满 120 秒不可用；截止计时器被清除（模拟后台节流）且墙钟回拨后，`focus` 与 `visibilitychange` 各自按单调年龄判为不可用；墙钟回拨到接收之前时下一次 `focus` 核对即不可用。HTTP 快照成功而标记价格为 `loading` / `stale` / `error` / `idle`、缺少接收时间、接收超过 10 秒或晚于当前时间时，页面仍为 normal，BTC 的 OI 为空并在降序与升序中都排在 ETH 之后，费率与差值照常，行情恢复实时后 OI 回来。桩数据经 `useSyncExternalStore` 驱动（React Compiler 下的测试约定）。
+- `src/lib/tests/funding-comparison-domain.test.ts`：解析的 fail-closed 条件、HL 与 CEX 每小时换算、缺失间隔、零费率、五个周期倍数（精确 Big 字符串，例如 PONS：HL `0.0000284027` → 8 小时 `0.0002272216`，Binance 4 小时 `0.00012985` → 8 小时 `0.0002597`，差值 `0.0000324784`）、差值方向与空值、色调阈值、目录过滤与 OI、空值排最后、差值按绝对值、同值按名称、搜索与分页夹取、排序切换。OI 只在标记价格实时时计算：`success` 且接收正好 10 秒时仍有值；`idle` / `loading` / `stale` / `error`、接收超过 10 秒、接收晚于当前时间、缺少接收时间、价格为 0 或缺少持仓量时为空，且同一行的每小时费率不变。标记价格实时而 `perpContextsLive` 为假时 OI 为空、费率不变；此时全部 OI 为空，降序与升序都按市场名排列。
+- `src/components/funding-comparison/__tests__/use-funding-comparison-controller.test.tsx`：查询参数与节奏、首份快照 / 目录 / 离线等待时保持 loading、首份失败与格式错误进入 error 并重试、目录失败时同时重试目录、只有成功的空快照才是 empty、搜索无结果、周期 / 排序 / 搜索 / 行数变化回到第 1 页、OI 在上下文到达前为空、选中市场调用导航。新鲜度（假计时器）：上限为两个刷新周期即 120 秒；刷新失败时差 1 毫秒满 120 秒仍显示、满 120 秒换成中性 Retry 且重试中禁用、新快照到达后恢复；未失败时满 120 秒为骨架；页面重新可见时立即核对（墙钟前跳，模拟休眠醒来）；满 120 秒的空快照不再是 empty；`paused` 时立即不可用（有失败时为 error）；接收时间晚于本地时钟时不可用。时钟回拨（`dataUpdatedAt` 保持不变）：经过 60 秒后墙钟回拨 60 秒，单调时钟满 120 秒仍按时判为不可用；墙钟回拨一小时后单调时钟满 120 秒不可用；截止计时器被清除（模拟后台节流）且墙钟回拨后，`focus` 与 `visibilitychange` 各自按单调年龄判为不可用；墙钟回拨到接收之前时下一次 `focus` 核对即不可用。HTTP 快照成功而标记价格为 `loading` / `stale` / `error` / `idle`、缺少接收时间、接收超过 10 秒或晚于当前时间时，页面仍为 normal，BTC 的 OI 为空并在降序与升序中都排在 ETH 之后，费率与差值照常，行情恢复实时后 OI 回来。HTTP 快照成功、标记价格实时而 `perpContextsLive` 为假时，三个市场的 OI 都为空，降序与升序都按市场名排列（不再按旧持仓量排序），费率与差值照常，上下文恢复实时后按 OI 重新排序。桩数据经 `useSyncExternalStore` 驱动（React Compiler 下的测试约定）。
+- `src/lib/tests/use-markets-info-subscriptions.test.tsx`（`useMarketsInfoInternal`，桩 `useSubscription`，会话缓存解析用真实 `parseCompact*AssetCtxsView`）：`pac` 有帧、`active` 且未过期时 `perpContextsLive` 为真；`pac` 过期、`subscribing`（恢复中）、`active` 但尚无帧、`error`（随后切到原频道）时为假，前两种保留的持仓量仍照旧提供给其他使用方；只有会话缓存时为假而缓存持仓量照旧可读；路由关闭订阅时为假；紧凑频道禁用后的 `allDexsAssetCtxs` 路径：`active` 且未过期为真，过期、`error`、`subscribing` 为假。
 - `src/lib/tests/funding-comparison-domain.test.ts` 另含 `isFundingComparisonSnapshotFresh` 的边界：年龄 0 与上限减 1 毫秒可用，等于上限及以上不可用；接收时间为 0 / NaN、当前时间为 NaN、接收时间晚于当前时间均不可用。`observeFundingComparisonSnapshot` 以首次看到时的墙钟年龄折算单调截止时刻，接收时间为 0、晚于本地时钟、已满上限或单调时刻无效时为空；`getFundingComparisonSnapshotRemainingMs` 取两个时钟中较早的截止：墙钟回拨时按单调剩余，单调时钟未前进时按墙钟剩余，墙钟回拨到接收之前或单调时刻无效时为 0。
 - `src/components/funding-comparison/__tests__/funding-comparison-view.test.tsx`：桌面表头与 `aria-sort`、数字在 `<bdi dir="ltr">` 中、方向文字、色调、`--` 占位、徽标导航、分页边界、手机卡片与按压反馈、骨架与 `aria-busy`、错误态只有中性 Retry、空快照与无搜索结果的区分、en → zh 切换时 section 与输入框不重挂载且保留搜索值和周期。
 - `src/lib/tests/funding-comparison-catalogs.test.ts`：新文案在 en 保留原文，在 zh / es / fr / hi / ar 都有译文。
@@ -198,4 +211,19 @@ Biome 无问题；vitest 20 个文件 558 个用例全部通过。终端类型�
 - 完整终端测试与 `pnpm build`（含分块环检查与包体预算）。本路由的包体预算条目需在真实构建中测量后加入 `scripts/check-client-bundle-budget.mjs`。
 - 开发服务器上的桌面 lg / md / 紧凑与手机 375px、明暗主题、en / zh / ar 界面核对，以及与官方页同一周期下 BTC、PONS 行的数值对照。
 - 真机验收。
-- OI 的资产上下文新鲜度：`useMarketsInfo` 只暴露标记价格的状态与接收时间，没有单独暴露 `openInterest` 所在资产上下文（`pac` / `allDexsAssetCtxs`）的接收状态。实时资产上下文尚未到达的短暂窗口里（页面首次加载、紧凑订阅失败后改用 `allDexsAssetCtxs`），`openInterest` 可能来自 `useMarketsInfo` 的会话缓存，此时 OI 是实时标记价格乘缓存中的持仓量。关闭这个窗口需要改动共享 hook，本次未做。
+- OI 的资产上下文新鲜度：r1 遗留的「实时标记价格乘会话缓存或停止订阅中的持仓量」已由下文 r2 修复关闭，规则见第 4 节。剩余限制：上下文过期检测沿用订阅巡检，最后一帧到达后最多约 25 秒（20 秒阈值 + 5 秒巡检间隔）仍显示 OI；`status` / `isStale` 的真实转换（巡检、页面隐藏时的缓冲、恢复重订阅）只在单元测试的桩状态下覆盖，没有在真实浏览器断网或后台标签页中核对。
+
+r2 审查修复（2026-09-28，分支 `claude/sdk-fix-r2-funding-comparison`，基于集成头 `1411036c`）：P2 OI 只看标记价格新鲜度，持仓量可能来自停止、失败、未送达的订阅或会话缓存且没有时间上界。`useMarketsInfoInternal` 附加 `perpContextsLive`（第 4 节），领域与控制器在它为假时把 OI 置空。先写回归测试并确认在 `1411036c` 上失败，再修复：4 个测试文件共 18 个用例失败。其中控制器 1 个是行为断言（旧控制器在上下文非实时时仍按旧持仓量显示并排序），`useMarketsInfoInternal` 11 个是新字段缺失，领域 4 个与视图 2 个是旧代码把新的第三个参数当作 `now` 读取。领域的「上下文非实时时按市场名排序」一例在旧代码上因同一原因全部 OI 为空而通过，由下面的变异检查证明它有效。变异检查（逐一改动后运行领域、控制器、视图与 `use-markets-info-subscriptions` 4 个测试文件，再从备份还原）：领域去掉 `perpContextsLive` 条件，3 个失败；hook 不看 `isStale`，2 个失败；hook 不看 `status`，3 个失败；hook 把任何在用的上下文（含会话缓存）当作实时，7 个失败；原频道路径误读 `pac` 的状态，1 个失败；控制器固定传入 `true`，1 个失败。实际运行：
+
+```bash
+pnpm exec biome check <本次改动的 7 个 TS/TSX 文件>
+pnpm typecheck
+pnpm --dir apps/terminal exec vitest run \
+  <本页领域 / 目录 / 控制器 / 视图测试> src/lib/tests/use-markets-info-subscriptions.test.tsx \
+  <其余引用 useMarketsInfo / useSelectedMarketInfo / MarketsInfoProvider 的 42 个测试文件，含 market-overview 与 token-selector-wiring> \
+  src/lib/tests/market-stats-subscription.test.ts <另外 5 个 token-selector-* 测试> \
+  src/lib/tests/mobile-data-presentation-contract.test.ts src/lib/tests/i18n-reactivity-contract.test.ts \
+  src/lib/tests/number-format-reactivity-contract.test.ts
+```
+
+Biome 无问题；根目录类型检查（hl-react、ui、terminal）通过；vitest 56 个文件 1,129 个用例全部通过。没有运行完整终端测试、`pnpm build` 或浏览器核对。

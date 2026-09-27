@@ -68,6 +68,7 @@ const SNAPSHOT: PredictedFundingsResponse = [
 ];
 
 const PRICE_RECEIVED_AT = 1_800_000_000_000;
+const LIVE_CONTEXTS = { perpContextsLive: true, now: PRICE_RECEIVED_AT };
 
 function market(
 	name: string,
@@ -289,7 +290,7 @@ describe("funding differences and tones", () => {
 
 describe("buildFundingComparisonRows", () => {
 	it("keeps catalog perps with exchange data and joins open interest from the market context", () => {
-		const rows = buildFundingComparisonRows(SNAPSHOT, MARKETS, PRICE_RECEIVED_AT);
+		const rows = buildFundingComparisonRows(SNAPSHOT, MARKETS, LIVE_CONTEXTS);
 
 		expect(rows.map((row) => row.coin)).toEqual(["PONS", "BTC", "ZERO"]);
 		expect(rows[0]).toEqual({
@@ -306,12 +307,15 @@ describe("buildFundingComparisonRows", () => {
 	});
 
 	it("drops every asset that is missing from the catalog", () => {
-		expect(buildFundingComparisonRows(SNAPSHOT, [], PRICE_RECEIVED_AT)).toEqual([]);
+		expect(buildFundingComparisonRows(SNAPSHOT, [], LIVE_CONTEXTS)).toEqual([]);
 	});
 
 	it("joins open interest only while the market's mark price is live and keeps the funding rates", () => {
 		function btcRow(overrides: Partial<FundingComparisonMarketContext>, now = PRICE_RECEIVED_AT) {
-			return buildFundingComparisonRows(SNAPSHOT, [market("BTC", "10.5", "100000", overrides)], now)[0];
+			return buildFundingComparisonRows(SNAPSHOT, [market("BTC", "10.5", "100000", overrides)], {
+				perpContextsLive: true,
+				now,
+			})[0];
 		}
 
 		expect(btcRow({}).openInterestUsd).toBe("1050000");
@@ -329,10 +333,34 @@ describe("buildFundingComparisonRows", () => {
 		expect(btcRow({ markPx: "0" }).openInterestUsd).toBeNull();
 		expect(btcRow({ openInterest: undefined }).openInterestUsd).toBeNull();
 	});
+
+	it("joins open interest only while the perp asset contexts are live, even with a live mark price", () => {
+		const btc = [market("BTC", "10.5", "100000")];
+
+		expect(buildFundingComparisonRows(SNAPSHOT, btc, LIVE_CONTEXTS)[0].openInterestUsd).toBe("1050000");
+		expect(buildFundingComparisonRows(SNAPSHOT, btc, { perpContextsLive: false, now: PRICE_RECEIVED_AT })).toEqual([
+			{
+				coin: "BTC",
+				openInterestUsd: null,
+				hourlyRates: { HlPerp: "0.0000125", BinPerp: "0.0000125", BybitPerp: "-0.00005" },
+			},
+		]);
+	});
+
+	it("sorts rows without live perp contexts by market name in both directions and keeps their rates", () => {
+		const rows = buildFundingComparisonRows(SNAPSHOT, MARKETS, { perpContextsLive: false, now: PRICE_RECEIVED_AT });
+
+		expect(rows.map((row) => row.openInterestUsd)).toEqual([null, null, null]);
+		for (const sortDirection of ["descending", "ascending"] as const) {
+			const result = page(rows, { sortDirection });
+			expect(result.rows.map((row) => row.coin)).toEqual(["BTC", "PONS", "ZERO"]);
+			expect(result.rows[1].rates.HlPerp.value).toBe("0.0002272216");
+		}
+	});
 });
 
 describe("deriveFundingComparisonPage", () => {
-	const rows = buildFundingComparisonRows(SNAPSHOT, MARKETS, PRICE_RECEIVED_AT);
+	const rows = buildFundingComparisonRows(SNAPSHOT, MARKETS, LIVE_CONTEXTS);
 
 	it("derives period rates, differences and tones for each row", () => {
 		const result = page(rows);
