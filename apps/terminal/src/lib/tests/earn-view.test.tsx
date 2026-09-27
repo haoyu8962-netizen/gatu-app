@@ -148,4 +148,18 @@ describe("earn view", () => {
 		const description = repay ? container.querySelector(`[id="${repay.getAttribute("aria-describedby")}"]`) : null;
 		expect(description?.textContent).toBe(NO_BORROWS);
 	});
+	it("disables every action while reserve data is failing, even with cached rows", () => {
+		render({ ...createData("ready"), publicStatus: "error" });
+		const headerButtons = [...container.querySelectorAll<HTMLButtonElement>("section button")].slice(0, 4);
+		expect(headerButtons.map((button) => button.textContent?.replace(/You have.*|Supply a supported.*/, ""))).toEqual([
+			"Supply",
+			"Withdraw",
+			"Borrow",
+			"Repay",
+		]);
+		expect(headerButtons.every((button) => button.disabled)).toBe(true);
+		const rowActions = [...container.querySelectorAll<HTMLButtonElement>("td button")];
+		expect(rowActions.length).toBeGreaterThan(0);
+		expect(rowActions.every((button) => button.getAttribute("aria-disabled") === "true")).toBe(true);
+	});
 });

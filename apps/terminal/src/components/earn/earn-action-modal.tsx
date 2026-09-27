@@ -13,6 +13,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import {
 	type EarnAssetRow,
+	type EarnFullPosition,
 	type EarnMinimumIssue,
 	type EarnOperation,
 	getEarnFullPosition,
@@ -95,7 +96,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 	const rows = snapshot ? getEarnOperationRows(operation, snapshot) : [];
 	const [selectedToken, setSelectedToken] = useState<number | null>(initialToken ?? rows[0]?.token ?? null);
 	const [amount, setAmount] = useState("");
-	const [fullRequested, setFullRequested] = useState(false);
+	const [fullIntent, setFullIntent] = useState<EarnFullIntent | null>(null);
 	const amountErrorId = useId();
 	const [openedPosition, setOpenedPosition] = useState<EarnPositionBaseline | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -113,6 +114,13 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		walletAddress?.toLowerCase() ?? "no-wallet",
 		data.accountAbstraction,
 	].join(":");
+	const [draftIdentityKey, setDraftIdentityKey] = useState(identityKey);
+	if (draftIdentityKey !== identityKey) {
+		setDraftIdentityKey(identityKey);
+		setAmount("");
+		setFullIntent(null);
+		setOpenedPosition(null);
+	}
 	useLayoutEffect(() => {
 		const identity = { exchangeLifecycle, key: identityKey };
 		submissionIdentityRef.current = identity;
@@ -145,13 +153,18 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		snapshot && row && dataReady
 			? getEarnMaxAmount({ operation, row, summary: snapshot.summary, spotAvailable })
 			: null;
-	const fullPosition =
-		fullRequested && snapshot && row && dataReady
+	const currentFull =
+		snapshot && row && dataReady
 			? getEarnFullPosition({ operation, row, summary: snapshot.summary, spotAvailable })
 			: null;
+	const fullPosition =
+		row && fullIntent && isFullIntentCurrent(fullIntent, { identityKey, operation, token: row.token }, currentFull)
+			? currentFull
+			: null;
+	const fullIntentLost = fullIntent !== null && fullPosition === null;
 	const validation = row ? validateEarnAmount(amount, maxAmount, row.weiDecimals) : "unavailable";
 	const minimumIssue =
-		row && validation === "valid" && !fullPosition ? getEarnMinimumIssue(operation, row, amount) : null;
+		row && validation === "valid" && !fullIntent ? getEarnMinimumIssue(operation, row, amount) : null;
 	const { mutateAsync: borrowLend, isPending } = useExchange("borrowLend", {
 		executionGuard: assertCurrentSubmission,
 	});
@@ -163,6 +176,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		!data.portfolioMargin &&
 		validation === "valid" &&
 		minimumIssue === null &&
+		!fullIntentLost &&
 		!pending;
 	const visibleRestriction =
 		availability.reason && VISIBLE_RESTRICTIONS.has(availability.reason) ? availability.unavailableReason : null;
@@ -333,25 +347,25 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 		setSelectedToken(Number(value));
 		setOpenedPosition(null);
 		setAmount("");
-		setFullRequested(false);
+		setFullIntent(null);
 	}
 
 	function handleAmountChange(value: string) {
 		if (!row) return;
 		setAmount(limitDecimalInput(value, row.weiDecimals));
-		setFullRequested(false);
+		setFullIntent(null);
 	}
 
 	function handleMaxClick() {
-		if (pending || maxAmount === null) return;
+		if (pending || maxAmount === null || !row) return;
 		setAmount(maxAmount);
-		setFullRequested(operation === "withdraw" || operation === "repay");
+		setFullIntent(currentFull ? { identityKey, operation, token: row.token, principal: currentFull.principal } : null);
 	}
 
 	const title = getTitle(operation, row, translate);
 	const description = getDescription(operation, row, translate);
 	const tokenOptions = getTokenOptions(operation, rows, translate);
-	const amountError = getAmountError(validation, minimumIssue, translate);
+	const amountError = getAmountError(validation, minimumIssue, fullIntentLost, translate);
 	const submitLabel = getSubmitLabel(operation, translate);
 
 	return (
@@ -530,8 +544,10 @@ function getTokenOptions(operation: EarnOperation, rows: readonly EarnAssetRow[]
 function getAmountError(
 	validation: ReturnType<typeof validateEarnAmount>,
 	minimumIssue: EarnMinimumIssue,
+	fullIntentLost: boolean,
 	translate: Translate,
 ): string | null {
+	if (fullIntentLost) return translate(msg`This position changed. Use Max again or enter an amount.`);
 	if (validation === "invalid") return translate(msg`Enter a valid amount`);
 	if (validation === "exceedsMax") return translate(msg`Insufficient funds`);
 	if (minimumIssue === "supplyBelowMinimum") return translate(msg`The minimum supply is $1.`);
@@ -543,8 +559,35 @@ function getAmountError(
 
 function getFullPositionNote(operation: EarnOperation, token: string): MessageDescriptor {
 	if (operation === "repay")
-		return msg`Repays your entire ${token} borrow, including interest accrued until it executes.`;
-	return msg`Withdraws your entire ${token} supply, including interest accrued until it executes.`;
+		return msg`Repays your entire ${token} borrow at the moment it executes, including accrued interest.`;
+	return msg`Withdraws your entire ${token} supply at the moment it executes, including accrued interest.`;
+}
+
+interface EarnFullIntent {
+	identityKey: string;
+	operation: EarnOperation;
+	token: number;
+	principal: string;
+}
+
+interface EarnFullIntentContext {
+	identityKey: string;
+	operation: EarnOperation;
+	token: number;
+}
+
+function isFullIntentCurrent(
+	intent: EarnFullIntent,
+	context: EarnFullIntentContext,
+	current: EarnFullPosition | null,
+): boolean {
+	return (
+		current !== null &&
+		intent.identityKey === context.identityKey &&
+		intent.operation === context.operation &&
+		intent.token === context.token &&
+		intent.principal === current.principal
+	);
 }
 
 function getFullPositionMessage(operation: EarnOperation, token: string): MessageDescriptor {

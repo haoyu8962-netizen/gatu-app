@@ -6479,8 +6479,8 @@ msgid "Repaying from Earn is not available in Portfolio Margin mode."
 msgstr "组合保证金模式下暂不支持在收益页偿还。"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Repays your entire {token} borrow, including interest accrued until it executes."
-msgstr "将偿还你全部的 {token} 借款，包括执行前产生的利息。"
+msgid "Repays your entire {token} borrow at the moment it executes, including accrued interest."
+msgstr "将在执行时偿还你全部的 {token} 借款，包括已产生的利息。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
@@ -8623,6 +8623,10 @@ msgstr "仓位方向已发生变化。请关闭并重新打开此弹窗后再提
 msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
 msgstr "该仓位的方向已发生变化。请重新打开保证金调整窗口后再操作。"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "This position changed. Use Max again or enter an amount."
+msgstr "这个仓位已变化。请重新点“最大”，或输入数量。"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "This position is no longer open."
@@ -10115,8 +10119,8 @@ msgid "Withdrawals are unavailable for this address."
 msgstr "此地址暂不支持提款。"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Withdraws your entire {token} supply, including interest accrued until it executes."
-msgstr "将取出你全部的 {token} 存入，包括执行前产生的利息。"
+msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
+msgstr "将在执行时取出你全部的 {token} 存入，包括已产生的利息。"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdrew {token}"

@@ -6479,8 +6479,8 @@ msgid "Repaying from Earn is not available in Portfolio Margin mode."
 msgstr "पोर्टफोलियो मार्जिन मोड में अर्न से चुकाना उपलब्ध नहीं है।"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Repays your entire {token} borrow, including interest accrued until it executes."
-msgstr "आपका पूरा {token} उधार चुकाता है, जिसमें निष्पादन तक का ब्याज शामिल है।"
+msgid "Repays your entire {token} borrow at the moment it executes, including accrued interest."
+msgstr "निष्पादन के समय आपका पूरा {token} उधार चुकाता है, जिसमें अर्जित ब्याज शामिल है।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
@@ -8623,6 +8623,10 @@ msgstr "इस पोज़िशन की दिशा बदल गई। स
 msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
 msgstr "इस पोज़िशन की दिशा बदल गई है। मार्जिन समायोजित करने से पहले मार्जिन डायलॉग फिर से खोलें।"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "This position changed. Use Max again or enter an amount."
+msgstr "यह पोज़िशन बदल गई है। फिर से अधिकतम चुनें या राशि दर्ज करें।"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "This position is no longer open."
@@ -10115,8 +10119,8 @@ msgid "Withdrawals are unavailable for this address."
 msgstr "इस पते के लिए निकासी उपलब्ध नहीं है।"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Withdraws your entire {token} supply, including interest accrued until it executes."
-msgstr "आपकी पूरी {token} सप्लाई निकालता है, जिसमें निष्पादन तक का ब्याज शामिल है।"
+msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
+msgstr "निष्पादन के समय आपकी पूरी {token} सप्लाई निकालता है, जिसमें अर्जित ब्याज शामिल है।"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdrew {token}"

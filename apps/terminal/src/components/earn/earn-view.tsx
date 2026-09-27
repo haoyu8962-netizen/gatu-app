@@ -58,7 +58,7 @@ export function EarnView({ data, isMobile, actionsAllowed, notice, onOpenAction 
 	const borrowRows = snapshot?.borrowRows ?? [];
 	const availabilityInput = {
 		portfolioMargin: data.portfolioMargin,
-		accountReady: actionsAllowed && data.accountStatus === "ready",
+		accountReady: actionsAllowed && data.accountStatus === "ready" && data.publicStatus === "ready",
 		summary,
 		supplyRows,
 	};

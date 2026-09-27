@@ -10,6 +10,7 @@ export const EARN_OPERATIONS: readonly EarnOperation[] = ["supply", "withdraw", 
 export const EARN_HIDDEN_UNLESS_HELD_TOKEN = "USDH";
 
 const HEALTH_FACTOR_DISPLAY_CAP = Big(10);
+const HOURS_PER_YEAR = 8760;
 
 export interface EarnTokenMeta {
 	index: number;
@@ -130,6 +131,7 @@ export function parseEarnReserves(data: unknown): EarnReserve[] | null {
 		const totalSupplied = readNonNegativeDecimal(state.totalSupplied);
 		const totalBorrowed = readNonNegativeDecimal(state.totalBorrowed);
 		const balance = readNonNegativeDecimal(state.balance);
+		const utilization = state.utilization === undefined ? null : readNonNegativeDecimal(state.utilization);
 		if (
 			token === null ||
 			borrowYearlyRate === null ||
@@ -140,6 +142,7 @@ export function parseEarnReserves(data: unknown): EarnReserve[] | null {
 			totalSupplied === null ||
 			totalBorrowed === null ||
 			balance === null ||
+			(state.utilization !== undefined && utilization === null) ||
 			seen.has(token)
 		) {
 			return null;
@@ -150,7 +153,7 @@ export function parseEarnReserves(data: unknown): EarnReserve[] | null {
 			balance,
 			borrowYearlyRate,
 			supplyYearlyRate,
-			utilization: state.utilization === undefined ? null : readNonNegativeDecimal(state.utilization),
+			utilization,
 			oraclePx,
 			ltv,
 			totalSupplied,
@@ -162,7 +165,7 @@ export function parseEarnReserves(data: unknown): EarnReserve[] | null {
 
 function parsePosition(value: unknown): EarnPosition | null {
 	if (!isRecord(value)) return null;
-	const basis = readDecimal(value.basis);
+	const basis = readNonNegativeDecimal(value.basis);
 	const amount = readNonNegativeDecimal(value.value);
 	return basis === null || amount === null ? null : { basis, value: amount };
 }
@@ -410,7 +413,8 @@ export function getEarnFullPosition({
 	if (operation === "repay") {
 		const borrowed = Big(row.borrowed);
 		const available = toBig(spotAvailable);
-		const required = borrowed.plus(Big(10).pow(-row.weiDecimals));
+		const accrualAllowance = borrowed.times(row.borrowYearlyRate).div(HOURS_PER_YEAR);
+		const required = borrowed.plus(accrualAllowance).plus(Big(10).pow(-row.weiDecimals));
 		return borrowed.gt(0) && available?.gte(required) ? { principal: row.borrowedBasis } : null;
 	}
 	return null;

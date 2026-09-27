@@ -183,7 +183,8 @@ pnpm --dir apps/terminal exec vitest run \
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/chart-theme-colors.test.ts \
   src/lib/tests/tradingview-chart.test.tsx \
-  src/lib/tests/modal-surface-contract.test.ts
+  src/lib/tests/modal-surface-contract.test.ts \
+  src/lib/tests/earn-page-surface-contract.test.ts
 
 # Order book: geometry, transport, animation and palette
 pnpm --dir apps/terminal exec vitest run \
@@ -266,6 +267,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/earn-domain.test.ts \
   src/lib/tests/earn-view.test.tsx \
   src/lib/tests/earn-interest-history.test.ts \
+  src/lib/tests/use-account-ledger.test.tsx \
+  src/lib/tests/funds-action-lock.test.ts \
   src/components/staking/__tests__/staking-view.test.tsx \
   src/lib/tests/action-progress-label-contract.test.ts \
   tests/slider-effective-leverage-regression.test.tsx \
@@ -290,6 +293,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/root-route-transition.test.tsx \
   src/lib/tests/trade-terminal-page-boot.test.tsx \
   src/lib/tests/top-nav.test.tsx \
+  src/lib/tests/desktop-nav-layout.test.ts \
+  src/lib/tests/mobile-nav-drawer.test.tsx \
   src/lib/tests/dashboard-frame-view.test.tsx
 
 # Runtime translation contract (Change discipline)

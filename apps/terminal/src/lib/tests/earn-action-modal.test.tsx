@@ -38,7 +38,7 @@ const testState = vi.hoisted(() => ({
 
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({ children, open }: { children: ReactNode; open: boolean }) =>
-		open ? createElement("section", null, children) : null,
+		createElement("section", { "data-open": String(open) }, children),
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalDescription: ({ children }: { children: ReactNode }) => createElement("p", null, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
@@ -47,14 +47,20 @@ vi.mock("@gatu/ui", () => ({
 		options,
 		triggerAriaLabel,
 		value,
+		onValueChange,
 	}: {
 		options: Array<{ label: string; value?: string; options?: Array<{ label: string; value: string }> }>;
 		triggerAriaLabel?: string;
 		value: string | null;
+		onValueChange?: (value: string | null) => void;
 	}) =>
 		createElement(
 			"select",
-			{ "aria-label": triggerAriaLabel, value: value ?? "", onChange: () => {} },
+			{
+				"aria-label": triggerAriaLabel,
+				value: value ?? "",
+				onChange: (event: { target: { value: string } }) => onValueChange?.(event.target.value),
+			},
 			options
 				.flatMap((option) => option.options ?? [{ label: option.label, value: option.value ?? "" }])
 				.map((option) => createElement("option", { key: option.value, value: option.value }, option.label)),
@@ -230,13 +236,19 @@ function createData(hypeSupplied = "100", freshHypeSupplied = hypeSupplied): Ear
 	};
 }
 
-function createUsdcData(options: { supplied?: string; borrowed?: string; spotUsdc?: string } = {}): EarnData {
-	const { supplied = "0", borrowed = "0", spotUsdc = "700" } = options;
+function createUsdcData(
+	options: { supplied?: string; borrowed?: string; spotUsdc?: string; reserveBalance?: string; basis?: string } = {},
+): EarnData {
+	const { supplied = "0", borrowed = "0", spotUsdc = "700", reserveBalance, basis = supplied } = options;
 	const base = createData();
-	const reserves = parseEarnReserves(RESERVES);
+	const reserves = parseEarnReserves(
+		RESERVES.map(([token, state]) =>
+			token === 0 && reserveBalance ? [token, { ...(state as object), balance: reserveBalance }] : [token, state],
+		),
+	);
 	const userState = parseEarnUserState({
 		tokenToState: [
-			[0, { borrow: { basis: borrowed, value: borrowed }, supply: { basis: supplied, value: supplied } }],
+			[0, { borrow: { basis: borrowed, value: borrowed }, supply: { basis, value: supplied } }],
 			[150, { borrow: { basis: "0", value: "0" }, supply: { basis: "100", value: "100" } }],
 		],
 		healthFactor: null,
@@ -591,6 +603,10 @@ describe("earn action modal", () => {
 		renderWith(true);
 		act(() => setInputValue(getInput(container), "10"));
 		renderWith(false);
+		expect(container.querySelector("section")?.getAttribute("data-open")).toBe("false");
+		expect(getSubmit(container).disabled).toBe(true);
+		act(() => getSubmit(container).click());
+		expect(testState.borrowLend).not.toHaveBeenCalled();
 		renderWith(true);
 		expect(getInput(container).value).toBe("10");
 	});
@@ -609,7 +625,7 @@ describe("earn action modal", () => {
 		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
 		expect(getInput(container).value).toBe("29.9410999");
 		expect(container.textContent).toContain(
-			"Withdraws your entire USDC supply, including interest accrued until it executes.",
+			"Withdraws your entire USDC supply at the moment it executes, including accrued interest.",
 		);
 		act(() => getSubmit(container).click());
 		await flush();
@@ -675,5 +691,93 @@ describe("earn action modal", () => {
 		expect(toastText(toastMocks.error.mock.calls[0]?.[0])).toBe(
 			"Hyperliquid requires at least $1 to stay supplied. Withdraw everything with Max, or leave at least $1.",
 		);
+	});
+	it("keeps a limited Max exact even after the full position becomes available", async () => {
+		render("withdraw", 0, createUsdcData({ supplied: "100", reserveBalance: "50" }));
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		expect(getInput(container).value).toBe("50");
+		expect(container.textContent).not.toContain("Withdraws your entire");
+		render("withdraw", 0, createUsdcData({ supplied: "100", reserveBalance: "10000" }));
+		expect(getInput(container).value).toBe("50");
+		expect(container.textContent).not.toContain("Withdraws your entire");
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).toHaveBeenCalledWith({ operation: "withdraw", token: 0, amount: "50" });
+	});
+
+	it("drops a full-position request when the position changes", () => {
+		render("withdraw", 0, createUsdcData({ supplied: "100" }));
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		expect(container.textContent).toContain("Withdraws your entire USDC supply");
+		render("withdraw", 0, createUsdcData({ supplied: "50" }));
+		expect(container.textContent).toContain("This position changed. Use Max again or enter an amount.");
+		expect(container.textContent).not.toContain("Withdraws your entire USDC supply");
+		expect(getSubmit(container).disabled).toBe(true);
+		render("withdraw", 0, createUsdcData({ supplied: "100.00000001", basis: "100" }));
+		expect(container.textContent).toContain("Withdraws your entire USDC supply");
+	});
+
+	it("clears the draft when the account changes", () => {
+		const data = createUsdcData({ supplied: "10" });
+		render("withdraw", 0, data);
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		expect(container.textContent).toContain("Withdraws your entire USDC supply");
+		const previous = testState.exchangeIdentity.clientKey;
+		testState.exchangeIdentity.clientKey = "0x2222222222222222222222222222222222222222";
+		try {
+			render("withdraw", 0, createUsdcData({ supplied: "1000" }));
+			expect(getInput(container).value).toBe("");
+			expect(container.textContent).not.toContain("Withdraws your entire");
+			expect(getSubmit(container).disabled).toBe(true);
+		} finally {
+			testState.exchangeIdentity.clientKey = previous;
+		}
+	});
+
+	it("clears a full-position request when the asset changes", () => {
+		const data = createUsdcData({ supplied: "100" });
+		render("withdraw", 0, data);
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		expect(container.textContent).toContain("Withdraws your entire USDC supply");
+		const select = container.querySelector("select");
+		if (!select) throw new Error("asset select missing");
+		act(() => {
+			select.value = "150";
+			select.dispatchEvent(new Event("change", { bubbles: true }));
+		});
+		expect(getInput(container).value).toBe("");
+		expect(container.textContent).not.toContain("Withdraws your entire");
+	});
+
+	it("does not send a full withdrawal whose principal changes before the SDK boundary", async () => {
+		const data = createUsdcData({ supplied: "100" });
+		testState.beforeSdk.mockImplementation(async () => {
+			const reserves = parseEarnReserves(RESERVES);
+			const topUp = parseEarnUserState({
+				tokenToState: [[0, { borrow: { basis: "0", value: "0" }, supply: { basis: "600", value: "600" } }]],
+				healthFactor: null,
+			});
+			if (!reserves || !topUp) throw new Error("fixture must parse");
+			data.snapshot = buildEarnSnapshot({ reserves, userState: topUp, ...data.snapshotInputs });
+		});
+		render("withdraw", 0, data);
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="max"]')?.click());
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).not.toHaveBeenCalled();
+		expect(toastText(toastMocks.error.mock.calls[0]?.[0])).toBe(
+			"Earn balances changed before submission. Review the updated amounts and try again.",
+		);
+	});
+
+	it("rejects request parameters changed after the pre-send check", async () => {
+		testState.beforeSdk.mockImplementation(async (params: Record<string, unknown>) => {
+			params.amount = "999";
+		});
+		render("supply", 0, createData());
+		act(() => setInputValue(getInput(container), "10"));
+		act(() => getSubmit(container).click());
+		await flush();
+		expect(testState.borrowLend).not.toHaveBeenCalled();
 	});
 });

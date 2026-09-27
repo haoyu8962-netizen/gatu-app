@@ -45,7 +45,7 @@ export function EarnPage() {
 			: null;
 
 	function openAction(operation: EarnOperation, token: number | null) {
-		if (!availability.available || dialog?.open) return;
+		if (!availability.available || data.publicStatus !== "ready" || dialog?.open) return;
 		setDialog((current) => ({ sessionId: (current?.sessionId ?? 0) + 1, operation, token, open: true }));
 	}
 

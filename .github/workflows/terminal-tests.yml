@@ -71,6 +71,9 @@ jobs:
           pnpm exec vitest run --maxWorkers=1
           src/lib/tests/user-menu.test.tsx
           src/lib/tests/top-nav.test.tsx
+          src/lib/tests/desktop-nav-layout.test.ts
+          src/lib/tests/mobile-nav-drawer.test.tsx
+          src/lib/tests/earn-page-surface-contract.test.ts
           src/lib/tests/wallet-modal.test.tsx
           src/lib/tests/mobile-agent-sync-modal.test.tsx
           src/lib/tests/modal-surface-contract.test.ts
@@ -112,6 +115,8 @@ jobs:
         run: >-
           pnpm exec vitest run --maxWorkers=1
           src/lib/tests/account-activity-feed-owner.test.tsx
+          src/lib/tests/use-account-ledger.test.tsx
+          src/lib/tests/funds-action-lock.test.ts
           src/lib/tests/fast-asset-ctxs-subscription.test.tsx
           src/lib/tests/limit-price-prefill-contract.test.ts
           src/lib/tests/mobile-order-safety-contract.test.ts

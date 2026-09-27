@@ -511,3 +511,37 @@ describe("earn minimum position and full withdrawals", () => {
 		).toThrow(EarnSubmissionStaleError);
 	});
 });
+
+describe("earn parsing strictness and repay-all allowance", () => {
+	it("rejects negative principals and malformed utilization", () => {
+		expect(
+			parseEarnUserState({
+				tokenToState: [[0, { borrow: { basis: "0", value: "0" }, supply: { basis: "-1", value: "1" } }]],
+				healthFactor: null,
+			}),
+		).toBeNull();
+		expect(parseEarnReserves([[0, { ...(RESERVES_RESPONSE[0][1] as object), utilization: "abc" }]])).toBeNull();
+		expect(parseEarnReserves([[0, { ...(RESERVES_RESPONSE[0][1] as object), utilization: undefined }]])).not.toBeNull();
+	});
+
+	it("offers repay-all only when the balance also covers an hour of interest", () => {
+		const { snapshot } = buildSnapshot();
+		const usdc = snapshot.supplyRows.find((row) => row.token === 0);
+		if (!usdc) throw new Error("rows missing");
+		const summary = snapshot.summary;
+		const hourOfInterest = Big(1000).times("0.05").div(8760);
+		const required = Big(1000).plus(hourOfInterest).plus("0.00000001");
+		expect(getEarnFullPosition({ operation: "repay", row: usdc, summary, spotAvailable: "1000.00000001" })).toBeNull();
+		expect(
+			getEarnFullPosition({
+				operation: "repay",
+				row: usdc,
+				summary,
+				spotAvailable: required.minus("0.00000001").toFixed(),
+			}),
+		).toBeNull();
+		expect(getEarnFullPosition({ operation: "repay", row: usdc, summary, spotAvailable: required.toFixed() })).toEqual({
+			principal: "990",
+		});
+	});
+});

@@ -6479,8 +6479,8 @@ msgid "Repaying from Earn is not available in Portfolio Margin mode."
 msgstr "Le remboursement depuis Rendement n'est pas disponible en mode Portfolio Margin."
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Repays your entire {token} borrow, including interest accrued until it executes."
-msgstr "Rembourse la totalité de votre emprunt en {token}, intérêts accumulés jusqu'à l'exécution compris."
+msgid "Repays your entire {token} borrow at the moment it executes, including accrued interest."
+msgstr "Rembourse la totalité de votre emprunt en {token} au moment de l'exécution, intérêts accumulés compris."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
@@ -8623,6 +8623,10 @@ msgstr "Cette position a changé de sens. Fermez puis rouvrez cette boîte de di
 msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
 msgstr "La position a changé de sens. Rouvrez la fenêtre de marge avant de l’ajuster."
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "This position changed. Use Max again or enter an amount."
+msgstr "Cette position a changé. Utilisez à nouveau Max ou saisissez un montant."
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "This position is no longer open."
@@ -10115,8 +10119,8 @@ msgid "Withdrawals are unavailable for this address."
 msgstr "Les retraits ne sont pas disponibles pour cette adresse."
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Withdraws your entire {token} supply, including interest accrued until it executes."
-msgstr "Retire la totalité de votre fourniture en {token}, intérêts accumulés jusqu'à l'exécution compris."
+msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
+msgstr "Retire la totalité de votre fourniture en {token} au moment de l'exécution, intérêts accumulés compris."
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdrew {token}"

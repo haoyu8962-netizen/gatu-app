@@ -6479,8 +6479,8 @@ msgid "Repaying from Earn is not available in Portfolio Margin mode."
 msgstr "السداد من صفحة العوائد غير متاح في وضع هامش المحفظة."
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Repays your entire {token} borrow, including interest accrued until it executes."
-msgstr "يسدّد كامل قرضك من {token}، بما في ذلك الفائدة المتراكمة حتى التنفيذ."
+msgid "Repays your entire {token} borrow at the moment it executes, including accrued interest."
+msgstr "يسدّد كامل قرضك من {token} لحظة التنفيذ، بما في ذلك الفائدة المتراكمة."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
@@ -8623,6 +8623,10 @@ msgstr "تغيّر اتجاه هذا المركز. أغلق مربع الحوا�
 msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
 msgstr "تغيّر اتجاه المركز. أعد فتح نافذة الهامش قبل تعديل الهامش."
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "This position changed. Use Max again or enter an amount."
+msgstr "تغيّر هذا المركز. استخدم الحد الأقصى مرة أخرى أو أدخل مبلغًا."
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "This position is no longer open."
@@ -10115,8 +10119,8 @@ msgid "Withdrawals are unavailable for this address."
 msgstr "عمليات السحب غير متاحة لهذا العنوان."
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Withdraws your entire {token} supply, including interest accrued until it executes."
-msgstr "يسحب كامل إيداعك من {token}، بما في ذلك الفائدة المتراكمة حتى التنفيذ."
+msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
+msgstr "يسحب كامل إيداعك من {token} لحظة التنفيذ، بما في ذلك الفائدة المتراكمة."
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdrew {token}"
