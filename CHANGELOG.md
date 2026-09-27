@@ -8,6 +8,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Opening a dashboard page directly (Portfolio, Vaults, Staking, Referrals and referral
+  invitation links, Leaderboard, API wallet and the history pages) now waits up to 1.5 seconds,
+  the same limit as the trade page, for the footer and the global dialog host to load. When they
+  load in time they appear together with the page instead of a moment later, so Ctrl/⌘K works
+  from the first frame unless the terms-acceptance prompt is showing. The command menu itself
+  still loads on first use, and a slow connection reveals the page when the limit is reached.
+
 - The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market
   returns to BTC; the scrim and Esc still do not dismiss it. Close All and Reverse now show the
   same cancellable disclaimer as Market Close and Limit Close before their confirmation instead of

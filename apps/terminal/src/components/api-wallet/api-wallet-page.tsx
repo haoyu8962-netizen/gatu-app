@@ -1,18 +1,12 @@
 import { Suspense } from "react";
+import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
-import { TopNav } from "@/components/trade/header/top-nav";
-import { MobileHeader } from "@/components/trade/mobile/mobile-header";
-import { TestnetBanner } from "@/components/trade/testnet-banner";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { createLazyComponent } from "@/lib/lazy";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { ApiWalletFixture, getApiWalletFixtureFromLocation } from "./api-wallet-fixture";
 import { ApiWalletView } from "./api-wallet-view";
 import { useApiWalletController } from "./use-api-wallet-controller";
-
-const FooterBar = createLazyComponent(() => import("../trade/footer/footer-bar"), "FooterBar");
-const GlobalModals = createLazyComponent(() => import("../trade/components/global-modals"), "GlobalModals");
 
 export function ApiWalletPage() {
 	const isMobile = useIsMobile();
@@ -28,16 +22,7 @@ export function ApiWalletPage() {
 				bannerOffset={isTestnet}
 				testnet={isTestnet}
 				headerOffset={!isFixture}
-				header={
-					isFixture ? null : isMobile ? (
-						<MobileHeader />
-					) : (
-						<>
-							<TestnetBanner />
-							<TopNav />
-						</>
-					)
-				}
+				header={isFixture ? null : <DashboardHeader isMobile={isMobile} />}
 				main={fixture ? <ApiWalletFixture fixture={fixture} /> : <ApiWalletLive />}
 				footer={
 					!isFixture && !isMobile ? (
