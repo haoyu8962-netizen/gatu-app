@@ -321,6 +321,96 @@ describe("store staleness integration", () => {
 		store.getState().releaseSubscription(key);
 	});
 
+	it.each(["pac", "allDexsAssetCtxs"])(
+		"marks a silent %s stream stale and resubscribes it after the system clock is set back",
+		async (method) => {
+			const triggerReconnect = vi.fn();
+			const store = createHyperliquidStore({ ssr: false, triggerReconnect });
+			const subscribe = vi.fn(createFakeSubscription().subscribe);
+			const key = JSON.stringify(["hl", "subscription", method, null]);
+
+			store.getState().acquireSubscription(key, subscribe);
+			await vi.advanceTimersByTimeAsync(0);
+			store.getState().setSubscriptionData(key, { sequence: 1 });
+			const receivedAt = Date.now();
+
+			vi.setSystemTime(receivedAt - 60 * 60_000);
+			await vi.advanceTimersByTimeAsync(20_000);
+			expect(store.getState().subscriptions[key]?.isStale).toBe(false);
+
+			await vi.advanceTimersByTimeAsync(5_000);
+			expect(store.getState().subscriptions[key]).toMatchObject({
+				data: { sequence: 1 },
+				isStale: true,
+				lastMessageAt: receivedAt,
+			});
+			expect(subscribe).toHaveBeenCalledTimes(2);
+			expect(triggerReconnect).not.toHaveBeenCalled();
+
+			await vi.advanceTimersByTimeAsync(10 * 60_000);
+			expect(Date.now()).toBeLessThan(receivedAt);
+			expect(store.getState().subscriptions[key]?.isStale).toBe(true);
+
+			store.getState().setSubscriptionData(key, { sequence: 2 });
+			expect(store.getState().subscriptions[key]).toMatchObject({ isStale: false, lastMessageAt: Date.now() });
+
+			store.getState().releaseSubscription(key);
+		},
+	);
+
+	it.each([
+		{ method: "pac", params: null, retained: { sequence: 1 } },
+		{ method: "allMids", params: { dex: "" }, retained: undefined },
+	])(
+		"does not resume a $method snapshot buffered while hidden as fresh after the system clock was set back",
+		async ({ method, params, retained }) => {
+			const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+			const subscribe = vi.fn(createFakeSubscription().subscribe);
+			const key = JSON.stringify(["hl", "subscription", method, params]);
+
+			store.getState().acquireSubscription(key, subscribe);
+			await vi.advanceTimersByTimeAsync(0);
+			Object.defineProperty(document, "hidden", { value: true, configurable: true });
+			document.dispatchEvent(new Event("visibilitychange"));
+			store.getState().setSubscriptionData(key, { sequence: 1 });
+			expect(getStoreInternals(store).visibilityBuffer.has(key)).toBe(true);
+
+			vi.setSystemTime(Date.now() - 60 * 60_000);
+			await vi.advanceTimersByTimeAsync(30_000);
+			Object.defineProperty(document, "hidden", { value: false, configurable: true });
+			document.dispatchEvent(new Event("visibilitychange"));
+
+			expect(store.getState().subscriptions[key]?.data).toEqual(retained);
+			expect(store.getState().subscriptions[key]?.isStale).toBe(true);
+			store.getState().releaseSubscription(key);
+		},
+	);
+
+	it("recovers a retained account snapshot on foreground resume after the system clock was set back", async () => {
+		const triggerReconnect = vi.fn();
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
+		const subscribe = vi.fn(createFakeSubscription().subscribe);
+		const key = JSON.stringify(["hl", "subscription", "openOrders", { user: "0xabc" }]);
+
+		store.getState().acquireSubscription(key, subscribe);
+		await vi.advanceTimersByTimeAsync(0);
+		store.getState().setSubscriptionData(key, { sequence: 1 });
+		Object.defineProperty(document, "hidden", { value: true, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(store.getState().subscriptions[key]?.isStale).toBe(false);
+		Object.defineProperty(document, "hidden", { value: false, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+
+		expect(store.getState().subscriptions[key]).toMatchObject({ data: { sequence: 1 }, isStale: true });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(subscribe).toHaveBeenCalledTimes(2);
+		expect(triggerReconnect).not.toHaveBeenCalled();
+		store.getState().releaseSubscription(key);
+	});
+
 	it("reconnects the shared socket once when multiple periodic streams become stale together", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });

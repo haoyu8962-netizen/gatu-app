@@ -82,18 +82,21 @@ after the 2026-09-14 adversarial review, task record checkpoint 28):
   the frame's coin before it counts as a payload's live frame or overwrites its
   remembered snapshot. Otherwise another coin sharing the grouping transport
   would poison the memory and suppress the replay.
-- The remembered frame keeps its wall-clock receipt time and hands it to the
-  consumer through `markFrameReceivedAt`; `useSub` stamps `lastMessageAt` and
-  the staleness watchdog with that time instead of the delivery time. A
-  replayed frame is therefore exactly as fresh as it would have been for a
-  subscriber that had been listening all along, and never extends a staleness
-  deadline.
-- The store keeps that receipt time through the subscription confirmation
+- The remembered frame keeps its wall-clock and monotonic receipt times and
+  hands both to the consumer through `markFrameReceivedAt`; `useSub` stamps
+  `lastMessageAt` with the wall-clock time and the staleness watchdog with both,
+  instead of the delivery time. A replayed frame is therefore exactly as fresh
+  as it would have been for a subscriber that had been listening all along, and
+  never extends a staleness deadline. (Until 2026-09-28 only the wall-clock time
+  travelled; [ADR 0022](0022-subscription-staleness-monotonic-clock.md) added
+  the monotonic time so a clock set back between receipt and replay cannot
+  re-grant freshness.)
+- The store keeps those receipt times through the subscription confirmation
   (added after the 2026-09-15 review, task record checkpoint 29): a resolving
-  `subscribe` arms the watchdog with the runtime's `lastMessageAt` instead of
-  the present, and `setSubscriptionData` reads the watchdog's verdict after
-  marking the receipt, so a warmed stream whose last frame is already old is
-  stale from its first commit instead of gaining up to five seconds.
+  `subscribe` arms the watchdog with the runtime's last receipt instead of the
+  present, and `setSubscriptionData` reads the watchdog's verdict after marking
+  the receipt, so a warmed stream whose last frame is already old is stale from
+  its first commit instead of gaining up to five seconds.
 
 ## Alternatives and tradeoffs
 

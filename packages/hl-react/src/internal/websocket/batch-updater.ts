@@ -57,13 +57,13 @@ export function createBatchedUpdater<T>(flush: FlushCallback<T>): BatchedUpdater
 export function createThrottledUpdater<T>(callback: (item: T) => void, intervalMs = 16): BatchedUpdater<T> {
 	let lastItem: T | null = null;
 	let timeoutId: ReturnType<typeof setTimeout> | null = null;
-	let lastCallTime = 0;
+	let lastCallTime: number | undefined;
 
 	function scheduleUpdate() {
 		if (timeoutId !== null) return;
 
-		const now = Date.now();
-		const elapsed = now - lastCallTime;
+		const now = performance.now();
+		const elapsed = lastCallTime === undefined ? Number.POSITIVE_INFINITY : now - lastCallTime;
 
 		if (elapsed >= intervalMs) {
 			if (lastItem !== null) {
@@ -77,7 +77,7 @@ export function createThrottledUpdater<T>(callback: (item: T) => void, intervalM
 				if (lastItem !== null) {
 					callback(lastItem);
 					lastItem = null;
-					lastCallTime = Date.now();
+					lastCallTime = performance.now();
 				}
 			}, intervalMs - elapsed);
 		}

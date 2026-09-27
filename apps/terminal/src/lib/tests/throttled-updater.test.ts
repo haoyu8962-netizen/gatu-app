@@ -59,6 +59,23 @@ describe("createThrottledUpdater", () => {
 		updater.destroy();
 	});
 
+	it("keeps its interval when the system clock is set back", () => {
+		const emissions: number[] = [];
+		const updater = createThrottledUpdater<number>((item) => {
+			emissions.push(item);
+		}, 5_000);
+
+		updater.add(1);
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		vi.advanceTimersByTime(1_000);
+		updater.add(2);
+
+		vi.advanceTimersByTime(4_000);
+		expect(emissions).toEqual([1, 2]);
+
+		updater.destroy();
+	});
+
 	it("flush delivers pending item immediately", () => {
 		const emissions: number[] = [];
 		const updater = createThrottledUpdater<number>((item) => {

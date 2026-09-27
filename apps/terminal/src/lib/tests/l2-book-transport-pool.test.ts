@@ -437,13 +437,29 @@ describe("freshest-frame replay for late subscribers", () => {
 		const { pool, transports } = createHarness();
 		await pool.subscribe(false, { coin: "HYPE" }, vi.fn());
 		const receivedAt = Date.now();
+		const monotonicReceivedAt = performance.now();
 		transports[0].emit({ coin: "HYPE", levels: [[], []], time: 1 });
 		await vi.advanceTimersByTimeAsync(2_000);
 		const late = vi.fn();
 		await pool.subscribe(false, { coin: "HYPE" }, late);
 		expect(late).toHaveBeenCalledOnce();
-		expect(takeFrameReceivedAt(late.mock.calls[0][0].detail)).toBe(receivedAt);
+		expect(takeFrameReceivedAt(late.mock.calls[0][0].detail)).toEqual({ receivedAt, monotonicReceivedAt });
 		expect(Date.now() - receivedAt).toBeGreaterThanOrEqual(2_000);
+	});
+
+	it("keeps the replayed frame's monotonic receipt when the system clock is set back before the replay", async () => {
+		const { pool, transports } = createHarness();
+		await pool.subscribe(false, { coin: "HYPE" }, vi.fn());
+		const receivedAt = Date.now();
+		const monotonicReceivedAt = performance.now();
+		transports[0].emit({ coin: "HYPE", levels: [[], []], time: 1 });
+		vi.setSystemTime(receivedAt - 60 * 60_000);
+		await vi.advanceTimersByTimeAsync(2_000);
+		const late = vi.fn();
+		await pool.subscribe(false, { coin: "HYPE" }, late);
+		expect(late).toHaveBeenCalledOnce();
+		expect(takeFrameReceivedAt(late.mock.calls[0][0].detail)).toEqual({ receivedAt, monotonicReceivedAt });
+		expect(performance.now() - monotonicReceivedAt).toBe(2_000);
 	});
 
 	it("forgets the frame once the payload's last lease releases", async () => {

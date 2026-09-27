@@ -93,6 +93,7 @@
 
 当前规范：[docs/mobile-data-presentation.md](../../docs/mobile-data-presentation.md) · [docs/price-source-audit.md](../../docs/price-source-audit.md) · [docs/terminal-loading-audit.md](../../docs/terminal-loading-audit.md)
 
+- [订阅过期巡检改用单调时钟计龄](sessions/2026-09-28-subscription-staleness-monotonic-clock.md) — 2026-09-28；已验证，范围见正文。修复 Codex 在资金费率对比审查中复现的缺口：系统时间回拨后停止更新的订阅一直不被判过期。每帧携带墙钟与单调两个接收时间，巡检、隐藏缓冲提交、前台恢复过期与诊断都取两者年龄中较大者；节流投递改用单调时钟（原版在回拨后会把订单簿投递推迟约一小时，开发服务器对照已复现）。lastMessageAt 保持墙钟，阈值、订阅键与恢复路径不变；新增 ADR 0022。typecheck、Biome、订单簿与移动数据展示回归组、订阅套件与完整单测 601 文件 6876 项通过，10 个变异全部被抓住。资金费率对比文档与 perpContextsLive 测试在分支 claude/sdk-api-review-51a3ea，快进被权限拒绝，未改动。
 - [全部平仓：确认按钮改为静态动词，点击即关闭弹窗，结果只走右下角通知](sessions/2026-09-21-close-all-submit-and-dismiss.md) — 2026-09-21；已验证，范围见正文。产品负责人要求全部平仓的按钮不显示状态、与其他按钮一致、订单状态放到右下角通知。原实现把仓位数写进确认按钮，并在按钮上依次显示校验中、提交中、确认中与部分成功，弹窗等待结果。现改为静态的 Close All Positions，点击即关闭弹窗，组件保持挂载到提交结束，五种结局各发一条通知；持仓页在会话存在期间禁用入口。同日按「一并修复，还有下单弹窗按钮」的要求，限价平仓、反手确认与下单确认也改为同一做法，并写入确认面契约第 6 条；TP/SL、逐仓保证金、保证金模式、现货兑换与资金类弹窗仍在按钮上显示进度，未改。
 - [CloudFront 生产发布 p22：main 246c57bc，主网赞助充值开、移动配对关](sessions/2026-09-21-cloudfront-release-p22.md) — 2026-09-21；已验证，范围见正文。产品负责人要求把 dev 晋升到 main 并发布到线上。PR #38 以 merge commit 合入 main（246c57bc，九项检查含四种配对组合构建全部通过）。在干净的临时工作树从 main 构建 cloudfront-2026-09-21-p22：环境文件只软链不读取，命令行强制关闭移动配对、按产品负责人的选择打开主网赞助充值并在上传时带确认参数。按日常发布顺序执行函数、Lambda、同步、两条分发失效，主网 15 项与测试网 16 项 verify 全部 ok，浏览器 CSP 覆盖 32 步零违规。PR #37 的交易与资金弹层发布前没有做真实钱包验收。
 - [资金类弹层：官方终端前端包取证与修复方案（未实施）](sessions/2026-09-21-funds-dialog-official-practice.md) — 2026-09-21；已整理，验证见正文。产品负责人要求对照官方终端的做法规划划转、发送、充值、提现四个弹层的修复。只读取证官方前端包：资金弹层不是点击即关闭，而是保持打开并禁用到请求结束、无论成败都关闭、结果走通知；等待期间只有钱包握手提示 Confirm in Wallet；充值失败留在原地重试；长时间状态放在可原位更新的通知与持久化、自动核销的待处理列表里，入口在账户面板。据此写成三步方案与三项待决策事项，未改动任何代码。
@@ -234,6 +235,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-28 | [订阅过期巡检改用单调时钟计龄](sessions/2026-09-28-subscription-staleness-monotonic-clock.md) | 未取得任务标识，见正文 | `e3b5dd82` | 已验证，范围见正文 |
 | 2026-09-27 | [HIP-3 免责声明对齐：修复 Codex 审查发现](sessions/2026-09-27-hip3-alignment-review-fixes.md) | 未取得任务标识，见正文 | `27ee060f` | 已验证，范围见正文 |
 | 2026-09-26 | [zustand persist 首次访问时 merge 收到 undefined 的防护](sessions/2026-09-26-persist-merge-first-visit-guard.md) | 未取得任务标识，见正文 | `121e8e76` | 已验证，范围见正文 |
 | 2026-09-25 | [HIP-3 部署者免责声明：补出口、统一平仓把关与退出过渡](sessions/2026-09-25-hip3-disclaimer-alignment.md) | 未取得任务标识，见正文 | `cd2176a1` | 已验证，范围见正文 |

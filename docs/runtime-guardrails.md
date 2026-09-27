@@ -492,10 +492,34 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   and keep REST `/info` only as initial snapshot / reconnect fallback.
 - All subscription handlers must route strictly by channel/type to avoid account
   payloads entering market stores or vice versa.
+- Subscription staleness is measured on the local monotonic clock
+  ([ADR 0022](adr/0022-subscription-staleness-monotonic-clock.md)). Every frame
+  carries two receipt times (`FrameReceipt` in
+  `internal/websocket/frame-receipt.ts`): the wall-clock `receivedAt`, which the
+  store exposes as `lastMessageAt`, and a `performance.now()` receipt that stays
+  inside hl-react. The watchdog, the commit of a value buffered while the page
+  was hidden and the foreground-resume expiry all use `getReceiptAgeMs`, the
+  larger of the monotonic and the wall-clock age. Setting the system clock back
+  therefore cannot keep a silent stream fresh, while a forward jump, or a device
+  sleep that `performance.now()` may not count, still ages the data as it did
+  before. A negative wall-clock age on its own is not stale: otherwise setting
+  the clock back would mark every live stream stale at once and reconnect the
+  shared socket. Thresholds, keys and recovery paths are unchanged.
+- A transport that hands over a frame it received earlier (the order-book pool
+  replay) passes both receipt times through `markFrameReceivedAt`, and throttled
+  delivery (`createThrottledUpdater`) paces on `performance.now()`, so a clock
+  change neither holds a throttled stream back nor makes a late frame look new.
+- `lastMessageAt` stays wall-clock for display and for consumers that compare it
+  with `Date.now()`. Those consumers must treat a negative age as not fresh, as
+  the execution guards in `domain/trade/market-price.ts`,
+  `domain/trade/funds-execution-guard.ts`, `domain/trade/order/reduce-only.ts`
+  and `domain/trade/order/liquidation.ts` do. Never compare `lastMessageAt` with
+  `performance.now()`.
 
 ### Important Files
 
 - `packages/hl-react/src/internal/websocket/*`
+- `packages/hl-react/src/store.ts`
 - `packages/hl-react/src/registries/subscription.ts`
 - `apps/terminal/src/hooks/account/*`
 - `apps/terminal/src/components/trade/orderbook/*`
