@@ -16,8 +16,9 @@ import {
 	getSpotAssetSocials,
 	loadSpotAssetDescription,
 } from "@/domain/market/spot-asset-info";
+import { getPerpDexCoinOpenInterestCap } from "@/domain/trade/open-interest-cap";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatNumber, shortenAddress } from "@/lib/format";
+import { formatNumber, formatUSD, shortenAddress } from "@/lib/format";
 import { getExplorerTokenUrl, type UnifiedMarketInfo, useInfo } from "@/lib/hyperliquid";
 import { isTestnet } from "@/lib/network";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -28,6 +29,7 @@ const ANNOTATION_STALE_TIME_MS = 30 * 60 * 1_000;
 const ANNOTATION_GC_TIME_MS = 60 * 60 * 1_000;
 const CONCISE_ANNOTATIONS_STALE_TIME_MS = 5 * 60 * 1_000;
 const TOKEN_DETAILS_STALE_TIME_MS = 30 * 60 * 1_000;
+const PERP_DEX_LIMITS_STALE_TIME_MS = 5 * 60 * 1_000;
 const DISABLED_TOKEN_ID = "0x00000000000000000000000000000000";
 
 interface Props {
@@ -108,6 +110,7 @@ export function MarketAssetInfo({ market }: Props) {
 	const annotationCoin = reference?.kind === "perp" && reference.localDescriptionId === null ? reference.coin : null;
 	const tokenId = reference?.kind === "spot" ? reference.tokenId : null;
 	const spotAssetIdentity = getSpotAssetSnapshotIdentity(market);
+	const builderDex = market?.kind === "builderPerp" && market.dex ? market.dex : null;
 
 	const conciseAnnotationsQuery = useInfo("perpConciseAnnotations", undefined, {
 		enabled: annotationCoin !== null,
@@ -130,6 +133,15 @@ export function MarketAssetInfo({ market }: Props) {
 			enabled: open && tokenId !== null,
 			staleTime: TOKEN_DETAILS_STALE_TIME_MS,
 			gcTime: ANNOTATION_GC_TIME_MS,
+		},
+	);
+	const perpDexLimitsQuery = useInfo(
+		"perpDexLimits",
+		{ dex: builderDex ?? "" },
+		{
+			enabled: open && builderDex !== null,
+			staleTime: PERP_DEX_LIMITS_STALE_TIME_MS,
+			retry: 1,
 		},
 	);
 	const spotDescriptionQuery = useQuery({
@@ -199,6 +211,17 @@ export function MarketAssetInfo({ market }: Props) {
 			id: "maximum-leverage",
 			label: <Trans>Maximum leverage</Trans>,
 			value: `${market.maxLeverage}x`,
+		});
+	}
+	const openInterestCap =
+		market.kind === "builderPerp" && !perpDexLimitsQuery.isError
+			? getPerpDexCoinOpenInterestCap(perpDexLimitsQuery.data, market.name)
+			: null;
+	if (openInterestCap !== null) {
+		metadataRows.push({
+			id: "open-interest-cap",
+			label: <Trans>Open interest cap</Trans>,
+			value: formatUSD(openInterestCap, { compact: false }),
 		});
 	}
 

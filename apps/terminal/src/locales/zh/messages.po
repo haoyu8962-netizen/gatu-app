@@ -5131,6 +5131,10 @@ msgstr "打开存款功能以准备您的邮箱钱包。"
 msgid "Open Interest"
 msgstr "未平仓量"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Open interest cap"
+msgstr "未平仓量上限"
+
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
@@ -7969,6 +7973,11 @@ msgstr "Hyperliquid 提现路由已更改。请检查更新后的路由和费用
 #: src/components/vaults/vault-detail-view.tsx
 msgid "The leader receives the commission shown above from profits."
 msgstr "管理者会从利润中收取上方显示的佣金。"
+
+#: src/lib/errors/definitions/open-interest-cap.ts
+#: src/lib/trade/order-submission-feedback.ts
+msgid "The limit order would be canceled after resting because open interest is capped. Use market orders to close positions."
+msgstr "未平仓量已达上限，限价单挂出后会被撤销。请使用市价单平仓。"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."

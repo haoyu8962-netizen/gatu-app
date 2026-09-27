@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { SIDE_LABELS } from "@/config/trade-panel-labels";
 import type { SideLabels } from "@/config/ui-text";
 import { getSpotAvailableValue, getSpotBalance } from "@/domain/trade/balances";
+import { getMarketOpenInterestCapStatus } from "@/domain/trade/open-interest-cap";
 import {
 	type AssetAvailabilityStatus,
 	getOrderAvailabilityFlags,
@@ -36,6 +37,7 @@ interface OrderEntryData extends OrderEntryDerived {
 	conversionPrice: number;
 	isAvailabilityStale: boolean;
 	hasAvailabilityError: boolean;
+	isOpenInterestCapped: boolean;
 	sideLabels: SideLabels;
 
 	applySizePercent: (pct: number) => void;
@@ -97,6 +99,7 @@ export function useOrderEntryData({
 		spotAvailableAfterMaintenance,
 		spotStateStatus,
 		spotStateReceivedAt,
+		perpsAtOpenInterestCap,
 	} = useDefaultDexBalances();
 	const {
 		transactionIdentity: leverageInteractionIdentity,
@@ -142,6 +145,7 @@ export function useOrderEntryData({
 			: streamAvailabilityStatus;
 	const availabilityReceivedAt = isSpotMarket ? spotStateReceivedAt : subscriptionReceivedAt;
 	const availabilityMaxAgeMs = isSpotMarket ? 60_000 : 20_000;
+	const isOpenInterestCapped = getMarketOpenInterestCapStatus(perpsAtOpenInterestCap, market) === "capped";
 	const baseSpotBalance = getSpotBalance(
 		spotBalances,
 		market?.kind === "spot" ? (market.tokensInfo[0]?.name ?? "") : "",
@@ -266,6 +270,7 @@ export function useOrderEntryData({
 		conversionPrice,
 		isAvailabilityStale,
 		hasAvailabilityError,
+		isOpenInterestCapped,
 		...derived,
 		sideLabels,
 		leverage,

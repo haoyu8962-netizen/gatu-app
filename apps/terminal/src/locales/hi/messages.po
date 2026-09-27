@@ -5131,6 +5131,10 @@ msgstr "अपना ईमेल वॉलेट तैयार करने �
 msgid "Open Interest"
 msgstr "ओपन इंटरेस्ट"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Open interest cap"
+msgstr "ओपन इंटरेस्ट सीमा"
+
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
@@ -7969,6 +7973,11 @@ msgstr "Hyperliquid का निकासी रूट बदल गया ह�
 #: src/components/vaults/vault-detail-view.tsx
 msgid "The leader receives the commission shown above from profits."
 msgstr "लीडर को लाभ में से ऊपर दिखाया गया कमीशन मिलता है।"
+
+#: src/lib/errors/definitions/open-interest-cap.ts
+#: src/lib/trade/order-submission-feedback.ts
+msgid "The limit order would be canceled after resting because open interest is capped. Use market orders to close positions."
+msgstr "ओपन इंटरेस्ट अपनी सीमा पर पहुँच गया है, इसलिए लिमिट ऑर्डर बुक में लगने के बाद रद्द हो जाएगा। पोज़िशन बंद करने के लिए मार्केट ऑर्डर का उपयोग करें।"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."

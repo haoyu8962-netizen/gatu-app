@@ -27,6 +27,9 @@ const testState = vi.hoisted(() => ({
 	tokenDetailsError: false,
 	tokenDetailsPending: true,
 	tokenDetailsRefetch: vi.fn(),
+	perpDexLimits: undefined as unknown,
+	perpDexLimitsError: false,
+	perpDexLimitsPending: true,
 	isMobile: false,
 	useInfo: vi.fn(),
 	spotDescription: undefined as SpotAssetDescription | null | undefined,
@@ -48,6 +51,14 @@ vi.mock("@/lib/hyperliquid", () => ({
 				isError: testState.conciseError,
 				isPending: testState.concisePending,
 				refetch: testState.conciseRefetch,
+			};
+		}
+		if (method === "perpDexLimits") {
+			return {
+				data: testState.perpDexLimits,
+				isError: testState.perpDexLimitsError,
+				isPending: testState.perpDexLimitsPending,
+				refetch: vi.fn(),
 			};
 		}
 		if (method === "tokenDetails") {
@@ -263,6 +274,9 @@ describe("MarketAssetInfo", () => {
 		testState.tokenDetailsError = false;
 		testState.tokenDetailsPending = true;
 		testState.tokenDetailsRefetch.mockReset();
+		testState.perpDexLimits = undefined;
+		testState.perpDexLimitsError = false;
+		testState.perpDexLimitsPending = true;
 		testState.isMobile = false;
 		testState.useInfo.mockReset();
 		testState.spotDescription = undefined;
@@ -290,6 +304,122 @@ describe("MarketAssetInfo", () => {
 	function findInfoCall(method: string) {
 		return testState.useInfo.mock.calls.filter(([calledMethod]) => calledMethod === method).at(-1);
 	}
+
+	function getMetadataRow(label: string) {
+		return (
+			[...container.querySelectorAll('[data-testid="market-asset-info-card"] > div')].find(
+				(row) => row.querySelector("dt")?.textContent === label,
+			) ?? null
+		);
+	}
+
+	function openBuilderAssetInfo() {
+		testState.conciseAnnotations = [["xyz:BOT", { category: "stocks" }]];
+		testState.concisePending = false;
+		testState.annotation = { category: "stocks", description: "BOT details", displayName: "BOT", keywords: [] };
+		testState.annotationPending = false;
+		renderAssetInfo();
+		openDialog();
+	}
+
+	const DEX_LIMITS = {
+		totalOiCap: "5000000.0",
+		oiSzCapPerPerp: "1000000.0",
+		maxTransferNtl: "100000.0",
+		coinToOiCap: [
+			["xyz:TSLA", "90000.0"],
+			["xyz:BOT", "160000.0"],
+		],
+	};
+
+	it("requests HIP-3 dex limits only while the dialog is open and shows the exact coin cap", () => {
+		testState.conciseAnnotations = [["xyz:BOT", { category: "stocks" }]];
+		testState.concisePending = false;
+		renderAssetInfo();
+
+		expect(findInfoCall("perpDexLimits")).toEqual([
+			"perpDexLimits",
+			{ dex: "xyz" },
+			expect.objectContaining({ enabled: false, staleTime: 300_000 }),
+		]);
+
+		openDialog();
+
+		expect(findInfoCall("perpDexLimits")).toEqual([
+			"perpDexLimits",
+			{ dex: "xyz" },
+			expect.objectContaining({ enabled: true, staleTime: 300_000 }),
+		]);
+		expect(getMetadataRow("Open interest cap")).toBeNull();
+
+		testState.perpDexLimits = DEX_LIMITS;
+		testState.perpDexLimitsPending = false;
+		act(() => root.render(createElement(MarketAssetInfo, { market: BUILDER_MARKET })));
+
+		const row = getMetadataRow("Open interest cap");
+		expect(row?.querySelector("dd")?.textContent).toBe("$160,000.00");
+		expect(row?.previousElementSibling?.querySelector("dt")?.textContent).toBe("Maximum leverage");
+	});
+
+	it.each([
+		["loading", { perpDexLimits: undefined, perpDexLimitsPending: true, perpDexLimitsError: false }],
+		["failed", { perpDexLimits: undefined, perpDexLimitsPending: false, perpDexLimitsError: true }],
+		[
+			"failed after an earlier success",
+			{ perpDexLimits: DEX_LIMITS, perpDexLimitsPending: false, perpDexLimitsError: true },
+		],
+		["null", { perpDexLimits: null, perpDexLimitsPending: false, perpDexLimitsError: false }],
+		[
+			"missing the coin",
+			{
+				perpDexLimits: { ...DEX_LIMITS, coinToOiCap: [["xyz:TSLA", "90000.0"]] },
+				perpDexLimitsPending: false,
+				perpDexLimitsError: false,
+			},
+		],
+		[
+			"zero",
+			{
+				perpDexLimits: { ...DEX_LIMITS, coinToOiCap: [["xyz:BOT", "0.0"]] },
+				perpDexLimitsPending: false,
+				perpDexLimitsError: false,
+			},
+		],
+		[
+			"malformed",
+			{
+				perpDexLimits: { category: "stocks", description: "annotation-like" },
+				perpDexLimitsPending: false,
+				perpDexLimitsError: false,
+			},
+		],
+	])("keeps the HIP-3 cap row absent and silent while dex limits are %s", (_label, state) => {
+		Object.assign(testState, state);
+		openBuilderAssetInfo();
+
+		expect(container.textContent).toContain("BOT details");
+		expect(getMetadataRow("Maximum leverage")).not.toBeNull();
+		expect(getMetadataRow("Open interest cap")).toBeNull();
+		expect(container.textContent).not.toContain("Open interest");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+	});
+
+	it.each([
+		["native perp", HYPE_PERP_MARKET],
+		["spot", SPOT_MARKET],
+	])("never requests dex limits for a %s market", (_label, market) => {
+		testState.perpDexLimits = { ...DEX_LIMITS, coinToOiCap: [[market.name, "160000.0"]] };
+		testState.perpDexLimitsPending = false;
+		renderAssetInfo(market);
+		openDialog();
+
+		expect(findInfoCall("perpDexLimits")).toEqual([
+			"perpDexLimits",
+			{ dex: "" },
+			expect.objectContaining({ enabled: false }),
+		]);
+		expect(getMetadataRow("Open interest cap")).toBeNull();
+	});
 
 	it("requests the canonical HIP-3 coin only after concise metadata confirms an annotation", async () => {
 		testState.conciseAnnotations = [["xyz:BOT", { category: "stocks", displayName: "BOT" }]];

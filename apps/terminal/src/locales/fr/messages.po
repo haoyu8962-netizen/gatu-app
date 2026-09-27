@@ -5131,6 +5131,10 @@ msgstr "Ouvrez le dépôt pour préparer votre portefeuille associé à un e-mai
 msgid "Open Interest"
 msgstr "Intérêt ouvert"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Open interest cap"
+msgstr "Plafond d'intérêt ouvert"
+
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
@@ -7969,6 +7973,11 @@ msgstr "La route de retrait d’Hyperliquid a changé. Vérifiez la nouvelle rou
 #: src/components/vaults/vault-detail-view.tsx
 msgid "The leader receives the commission shown above from profits."
 msgstr "Le gestionnaire reçoit sur les bénéfices la commission indiquée ci-dessus."
+
+#: src/lib/errors/definitions/open-interest-cap.ts
+#: src/lib/trade/order-submission-feedback.ts
+msgid "The limit order would be canceled after resting because open interest is capped. Use market orders to close positions."
+msgstr "L'ordre limite serait annulé après sa mise en carnet, car l'intérêt ouvert a atteint son plafond. Utilisez des ordres au marché pour fermer vos positions."
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."
