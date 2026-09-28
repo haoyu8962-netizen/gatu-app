@@ -348,6 +348,7 @@ msgid "A staking link cannot be removed. The staking account gains full control 
 msgstr "Un lien de staking ne peut pas être supprimé. Le compte de staking obtient le contrôle total des fonds du compte de trading ; cette page ne propose donc aucune action de liaison."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
 msgstr "Une connexion de trading est déjà en cours d’établissement dans un autre onglet. Terminez-la ou annulez-la dans cet onglet avant de réessayer."
 
@@ -812,9 +813,17 @@ msgstr "Un autre ordre sur l'un de ces marchés est toujours en cours de confirm
 msgid "Another order for this market is still being confirmed."
 msgstr "Un autre ordre sur ce marché est toujours en cours de confirmation."
 
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Another referral request is already in progress. Try again after it finishes."
+msgstr "Une autre demande de parrainage est déjà en cours. Réessayez une fois qu'elle sera terminée."
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Another TWAP order for this market is still being confirmed."
 msgstr "Un autre ordre TWAP sur ce marché est toujours en cours de confirmation."
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Another wallet approval is already in progress. Try again after it finishes."
+msgstr "Une autre approbation dans le portefeuille est déjà en cours. Réessayez une fois qu'elle sera terminée."
 
 #: src/config/tooltips.ts
 msgid "Any portion that is not immediately filled will be canceled."
@@ -898,6 +907,10 @@ msgstr "Approuver la clé de trading mobile"
 #~ msgid "Approve QR code with wallet..."
 #~ msgstr ""
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Approving {symbol}..."
+msgstr "Approbation de {symbol}..."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approving a new mobile key replaces the previous mobile key."
 #~ msgstr "L'approbation d'une nouvelle clé mobile remplace la clé mobile précédente."
@@ -926,6 +939,7 @@ msgstr "Arbitrum (ancien pont)"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/tests/wrong-network-screen.test.tsx
 msgid "Arbitrum network switch was rejected."
 msgstr "Le passage au réseau Arbitrum a été refusé."
 
@@ -1203,13 +1217,34 @@ msgstr "Achat de {quantity}"
 msgid "Bridge"
 msgstr "Bridge"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Bridge complete"
+msgstr "Transfert inter-chaînes terminé"
+
+#: src/components/trade/tradebox/bridge/bridge-tab.tsx
+msgid "Bridge creation is paused. A route without a submitted source transaction cannot be retried."
+msgstr "La création de transferts inter-chaînes est suspendue. Un itinéraire sans transaction source soumise ne peut pas être relancé."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Bridge creation is paused. This route did not submit a source transaction and cannot be retried."
+msgstr "La création de transferts inter-chaînes est suspendue. Cet itinéraire n'a soumis aucune transaction source et ne peut pas être relancé."
+
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Bridge creation is temporarily unavailable"
 msgstr "La création du pont est temporairement indisponible"
 
+#: src/lib/lifi/bridge-execution-state.ts
+msgid "Bridge execution paused"
+msgstr "Exécution du transfert inter-chaînes suspendue"
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Bridge failed"
 msgstr "Échec du bridge"
+
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/bridge-tab-lifecycle.test.tsx
+msgid "Bridging to Hyperliquid..."
+msgstr "Transfert vers Hyperliquid..."
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Builder rewards (cumulative)"
@@ -1476,6 +1511,10 @@ msgstr "Vérification de la route de dépôt actuelle d’Hyperliquid…"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #~ msgid "Checking the current Hyperliquid withdrawal route..."
 #~ msgstr "Vérification de la route de retrait actuelle d’Hyperliquid…"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Checking the submitted bridge transaction..."
+msgstr "Vérification de la transaction inter-chaînes soumise..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking..."
@@ -1977,6 +2016,10 @@ msgstr "Confirmation en cours — ne renvoyez pas"
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Confirming exchange status..."
 #~ msgstr "Confirmation du statut par la plateforme..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Confirming on destination..."
+msgstr "Confirmation sur la destination..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "Confirming order status. Do not retry."
@@ -2509,6 +2552,7 @@ msgstr "Montant"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "Échec du dépôt"
 
@@ -2530,6 +2574,7 @@ msgstr "Déposer dans le coffre"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/tests/deposit-broadcast.test.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
 msgstr "La transaction de dépôt a été diffusée, mais la confirmation a expiré. Vérifiez Arbiscan avant de réessayer."
 
@@ -4249,6 +4294,10 @@ msgstr "La demande d'effet de levier ne correspond plus au marché sélectionné
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage updated to {leverage}x"
 msgstr "Effet de levier mis à jour à {leverage}x"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "LI.FI returned a bridge route that does not match the approved route."
+msgstr "LI.FI a renvoyé un itinéraire qui ne correspond pas à l'itinéraire approuvé."
 
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
@@ -6294,6 +6343,10 @@ msgstr "Vous préférez une expérience proche d’une application native ?"
 msgid "Preparing automatic USDC deposit..."
 msgstr "Préparation du dépôt automatique d'USDC..."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Preparing transaction..."
+msgstr "Préparation de la transaction..."
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."
 msgstr "Préparation de votre devis..."
@@ -6432,10 +6485,9 @@ msgstr "Traitement en cours"
 msgid "Processing time"
 msgstr "Délai de traitement"
 
-#: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#~ msgid "Processing..."
-#~ msgstr "Traitement en cours..."
+#: src/lib/lifi/use-bridge.ts
+msgid "Processing..."
+msgstr "Traitement en cours..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #~ msgid "Processing…"
@@ -6647,6 +6699,11 @@ msgstr "L’accès aux parrainages n’a pas pu être vérifié pour ce compte. 
 msgid "Referral access is still being verified."
 msgstr "L’accès aux parrainages est toujours en cours de vérification."
 
+#: src/hooks/trade/use-referral-actions.ts
+#: src/lib/tests/use-referral-actions.test.tsx
+msgid "Referral actions are not available in your region. This referral request was not submitted."
+msgstr "Les actions de parrainage ne sont pas disponibles dans votre région. Cette demande de parrainage n'a pas été envoyée."
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Referral activation progress"
 msgstr "Progression de l’activation du parrainage"
@@ -6696,8 +6753,14 @@ msgstr "Demande de parrainage"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/lib/tests/action-error.test.ts
 #: src/lib/tests/action-error.test.ts
+#: src/lib/tests/use-referral-actions.test.tsx
 msgid "Referral request could not be completed."
 msgstr "La demande de parrainage n’a pas pu être effectuée."
+
+#: src/hooks/trade/use-referral-actions.ts
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Referral request is no longer active."
+msgstr "La demande de parrainage n'est plus active."
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Referral stages, rewards, discount, and claim history are scoped to your Hyperliquid account."
@@ -6861,6 +6924,10 @@ msgstr "Rejeté en raison d'un trop grand nombre d'ordres ouverts"
 #: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Reload page"
 msgstr "Recharger la page"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Reload recovery could not be saved. Keep this tab open until the bridge completes."
+msgstr "Les données de reprise après rechargement n'ont pas pu être enregistrées. Gardez cet onglet ouvert jusqu'à la fin du transfert."
 
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"
@@ -7437,6 +7504,10 @@ msgstr "Ce navigateur ne permet pas de générer des nombres aléatoires sécuri
 msgid "Secure randomness is unavailable. Deposit was not submitted."
 msgstr "Aucune source d’aléa sécurisée n’est disponible. Le dépôt n’a pas été soumis."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Secure reload recovery is unavailable in this browser. Bridge execution was not started."
+msgstr "La reprise sécurisée après rechargement n'est pas disponible dans ce navigateur. Le transfert n'a pas été lancé."
+
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select {displayName} market"
 msgstr "Sélectionner le marché {displayName}"
@@ -7493,9 +7564,6 @@ msgstr "sélectionné"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 msgstr "Le portefeuille sélectionné ne correspond pas au compte connecté. Reconnectez votre portefeuille puis réessayez."
 
@@ -8254,6 +8322,14 @@ msgstr "Échanger des stablecoins"
 #~ msgid "Swap submitted"
 #~ msgstr "Échange soumis"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Swapping on same chain..."
+msgstr "Échange sur la même chaîne..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Swapping on source chain..."
+msgstr "Échange sur la chaîne source..."
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #~ msgid "Swapping..."
 #~ msgstr "Échange en cours..."
@@ -8502,11 +8578,18 @@ msgstr "Le compte ne comporte aucun ordre ordinaire dans l’historique disponib
 msgid "The active owner wallet or network changed."
 msgstr "Le portefeuille propriétaire actif ou le réseau a changé."
 
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/bridge-tab-lifecycle.test.tsx
+msgid "The active wallet does not match this bridge route."
+msgstr "Le portefeuille actif ne correspond pas à cet itinéraire."
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr "Le portefeuille actif n’est pas le portefeuille principal de ce compte"
 
 #: src/lib/errors/action-error.ts
+#: src/lib/tests/establish-connection-modal.test.tsx
+#: src/lib/tests/mobile-agent-sync-modal.test.tsx
 msgid "The active wallet or network changed. Review the account and try again."
 msgstr "Le portefeuille actif ou le réseau a changé. Vérifiez le compte puis réessayez."
 
@@ -8573,6 +8656,10 @@ msgstr "La réponse d'annulation n'a pas pu être confirmée. Actualisez les ord
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "L’annulation n’a pas été confirmée. Vérifiez les ordres ouverts avant de réessayer."
 
+#: src/lib/errors/action-error.ts
+msgid "The checks before this request took too long. Nothing was signed or sent. Try again."
+msgstr "Les vérifications préalables ont pris trop de temps. Rien n'a été signé ni envoyé. Réessayez."
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr "L’horodatage de verrouillage confirmé par le serveur détermine le moment où le retrait devient disponible."
@@ -8582,9 +8669,11 @@ msgid "The connection could not be checked safely. No wallet signature was reque
 msgstr "La connexion n’a pas pu être vérifiée en toute sécurité. Aucune signature de portefeuille n’a été demandée ; patientez un instant et réessayez."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
 msgstr "La connexion n’a pas pu être finalisée. Elle est peut-être déjà approuvée ; patientez un instant et réessayez."
 
+#: src/lib/tests/mobile-agent-sync-route.test.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The desktop has not approved this key. Create a new QR on desktop."
 msgstr ""
@@ -8812,6 +8901,10 @@ msgstr "L’instantané des transactions récentes n’a pas pu être chargé ou
 msgid "The refreshed Vault identity did not match this reviewed action."
 msgstr "L'identité actualisée du coffre ne correspond pas à cette action vérifiée."
 
+#: src/hooks/trade/use-referral-actions.ts
+msgid "The regional availability check expired before signing. This referral request was not submitted."
+msgstr "La vérification de disponibilité régionale a expiré avant la signature. Cette demande de parrainage n'a pas été envoyée."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
 #~ msgstr "Le remplacement a expiré avant que Hyperliquid ne le confirme. Vérifiez et signez une nouvelle révocation."
@@ -8902,6 +8995,10 @@ msgstr "La demande signée a peut-être abouti, mais le rapprochement a expiré.
 msgid "The start and end values are unchanged."
 msgstr "Les valeurs de début et de fin sont inchangées."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "The submitted bridge transaction could not be prepared for safe status tracking."
+msgstr "La transaction inter-chaînes soumise n'a pas pu être préparée pour un suivi sécurisé du statut."
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -8936,6 +9033,10 @@ msgstr "Le compte de trading ou le réseau a changé. Rouvrez l'éditeur et rée
 #: src/lib/trade/order-submission-feedback.ts
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr "Le compte de trading ou le réseau a changé. Vérifiez les ordres TWAP actifs avant de réessayer."
+
+#: src/lib/errors/action-error.ts
+msgid "The trading key stored in this browser is invalid. Reset the trading connection before trying again."
+msgstr "La clé de trading enregistrée dans ce navigateur est invalide. Réinitialisez la connexion de trading avant de réessayer."
 
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "The trading wallet could not be verified for this owner and network."
@@ -9019,11 +9120,20 @@ msgstr "Cette action est irréversible après exécution."
 msgid "This bridge can only be resumed by the wallet that started it."
 msgstr "Ce pont ne peut être repris que par le portefeuille qui l'a initié."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "This bridge route requires unsupported message signing and was not submitted."
+msgstr "Cet itinéraire nécessite une signature de message non prise en charge et n'a pas été soumis."
+
+#: src/lib/lifi/bridge-execution-state.ts
+msgid "This bridge was interrupted by a page reload. Retry to resume status tracking."
+msgstr "Ce transfert a été interrompu par un rechargement de la page. Réessayez pour reprendre le suivi du statut."
+
 #: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "Ce navigateur ne peut pas coordonner en toute sécurité les opérations sur les fonds entre les onglets. Utilisez un navigateur pris en charge."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 msgstr "Ce navigateur ne peut pas coordonner la connexion de trading en toute sécurité entre les onglets. Utilisez un navigateur compatible."
 
@@ -9031,7 +9141,16 @@ msgstr "Ce navigateur ne peut pas coordonner la connexion de trading en toute s�
 msgid "This browser could not coordinate the request safely across tabs. Close other tabs and try again."
 msgstr "Ce navigateur n'a pas pu coordonner la demande en toute sécurité entre les onglets. Fermez les autres onglets puis réessayez."
 
+#: src/lib/errors/action-error.ts
+msgid "This browser could not store deposit recovery data, so this deposit was not submitted. Allow site storage, then try again."
+msgstr "Ce navigateur n'a pas pu enregistrer les données de reprise du dépôt ; ce dépôt n'a donc pas été soumis. Autorisez le stockage du site puis réessayez."
+
+#: src/lib/errors/action-error.ts
+msgid "This browser could not store the trading key safely. Check that site storage is available, then try again."
+msgstr "Ce navigateur n'a pas pu enregistrer la clé de trading en toute sécurité. Vérifiez que le stockage du site est disponible, puis réessayez."
+
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
 msgstr "Ce navigateur ne dispose plus de la clé de trading exacte correspondant à l’approbation en attente. Réinitialisez la connexion de trading avant de réessayer."
 
@@ -9665,8 +9784,6 @@ msgid "Transaction breakdown"
 msgstr "Détail de la transaction"
 
 #: src/lib/errors/action-error.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction reverted on Arbitrum"
 msgstr "La transaction a été annulée sur Arbitrum"
 
@@ -9676,6 +9793,7 @@ msgstr "La transaction n'a pas été diffusée. Réessayez."
 
 #: src/lib/errors/action-error.ts
 #: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/action-error.test.ts
 msgid "Transaction was rejected"
 msgstr "La transaction a été rejetée"
 
@@ -9920,6 +10038,7 @@ msgstr "Impossible de charger les frais actuels de retrait CCTP."
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "Impossible de basculer le portefeuille vers {0}. Changez de réseau dans votre portefeuille, puis réessayez."
 
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "Impossible de passer le portefeuille sur Arbitrum. Changez de réseau dans votre portefeuille puis réessayez."
@@ -9946,10 +10065,13 @@ msgstr "Impossible de vérifier la disponibilité régionale. Ce dépôt n’a p
 
 #: src/hooks/trade/use-funds-action-availability.ts
 #: src/lib/lifi/use-bridge.ts
-#: src/lib/lifi/use-bridge.ts
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "Impossible de vérifier la disponibilité dans votre région. Cette opération sur les fonds n’a pas été soumise."
+
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Unable to verify regional availability. This referral request was not submitted."
+msgstr "Impossible de vérifier la disponibilité régionale. Cette demande de parrainage n'a pas été envoyée."
 
 #: src/lib/errors/action-error.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
@@ -9970,6 +10092,7 @@ msgstr "Impossible de vérifier le mode de compte actuel. La requête n’a pas 
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "Impossible de vérifier les frais Circle CCTP actuels et la capacité de Fast Transfer."
 
@@ -10075,9 +10198,9 @@ msgstr "Ratio du compte unifié"
 msgid "Unified Account Summary"
 msgstr "Résumé du compte unifié"
 
+#: src/components/trade/tradebox/bridge/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
 msgstr "Erreur inconnue"
 
@@ -10437,6 +10560,11 @@ msgstr "Vérifiez l’opération sur les fonds en attente avant d’en commencer
 msgid "Verifying"
 msgstr "Vérification"
 
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/lifi/use-bridge.ts
+msgid "Verifying access..."
+msgstr "Vérification de l'accès..."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Verifying approval..."
@@ -10545,11 +10673,9 @@ msgstr "Le délai d'approbation dans le portefeuille a expiré. Vérifiez votre 
 msgid "Wallet client not ready"
 msgstr "Client du portefeuille non prêt"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 #: src/lib/errors/action-error.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
 msgstr "La connexion au portefeuille a échoué. Déverrouillez votre portefeuille, approuvez la connexion puis réessayez."
 

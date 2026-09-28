@@ -348,6 +348,7 @@ msgid "A staking link cannot be removed. The staking account gains full control 
 msgstr "质押关联无法解除。质押账户将获得交易账户资金的完全控制权，因此本页面不提供关联操作。"
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
 msgstr "另一个标签页正在建立交易连接。请先在该标签页完成或取消，然后再试。"
 
@@ -812,9 +813,17 @@ msgstr "其中一个市场的另一笔委托仍在确认中。"
 msgid "Another order for this market is still being confirmed."
 msgstr "该市场的另一笔订单仍在确认中。"
 
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Another referral request is already in progress. Try again after it finishes."
+msgstr "另一项推荐请求正在进行中。请待其完成后再试。"
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Another TWAP order for this market is still being confirmed."
 msgstr "该市场的另一笔 TWAP 订单仍在确认中。"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Another wallet approval is already in progress. Try again after it finishes."
+msgstr "另一项钱包确认正在进行中。请待其完成后再试。"
 
 #: src/config/tooltips.ts
 msgid "Any portion that is not immediately filled will be canceled."
@@ -898,6 +907,10 @@ msgstr "授权移动交易密钥"
 #~ msgid "Approve QR code with wallet..."
 #~ msgstr "使用钱包批准二维码..."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Approving {symbol}..."
+msgstr "正在授权 {symbol}..."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approving a new mobile key replaces the previous mobile key."
 #~ msgstr "授权新的移动交易密钥将替换旧密钥。"
@@ -926,6 +939,7 @@ msgstr "Arbitrum（传统桥）"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/tests/wrong-network-screen.test.tsx
 msgid "Arbitrum network switch was rejected."
 msgstr "已拒绝切换到 Arbitrum 网络。"
 
@@ -1203,13 +1217,34 @@ msgstr "已买入 {quantity}"
 msgid "Bridge"
 msgstr "跨链"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Bridge complete"
+msgstr "跨链完成"
+
+#: src/components/trade/tradebox/bridge/bridge-tab.tsx
+msgid "Bridge creation is paused. A route without a submitted source transaction cannot be retried."
+msgstr "新建跨链已暂停。未提交源链交易的路径无法重试。"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Bridge creation is paused. This route did not submit a source transaction and cannot be retried."
+msgstr "新建跨链已暂停。此路径未提交源链交易，无法重试。"
+
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Bridge creation is temporarily unavailable"
 msgstr "暂时无法创建跨链桥交易"
 
+#: src/lib/lifi/bridge-execution-state.ts
+msgid "Bridge execution paused"
+msgstr "跨链执行已暂停"
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Bridge failed"
 msgstr "跨链失败"
+
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/bridge-tab-lifecycle.test.tsx
+msgid "Bridging to Hyperliquid..."
+msgstr "正在跨链至 Hyperliquid..."
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Builder rewards (cumulative)"
@@ -1476,6 +1511,10 @@ msgstr "正在检查 Hyperliquid 当前的充值路由..."
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #~ msgid "Checking the current Hyperliquid withdrawal route..."
 #~ msgstr "正在检查 Hyperliquid 当前的提现路由..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Checking the submitted bridge transaction..."
+msgstr "正在检查已提交的跨链交易..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking..."
@@ -1977,6 +2016,10 @@ msgstr "确认中，请勿重复提交"
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Confirming exchange status..."
 #~ msgstr "正在确认交易所状态..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Confirming on destination..."
+msgstr "正在目标链上确认..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "Confirming order status. Do not retry."
@@ -2509,6 +2552,7 @@ msgstr "金额"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "充值失败"
 
@@ -2530,6 +2574,7 @@ msgstr "存入金库"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/tests/deposit-broadcast.test.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
 msgstr "充值交易已广播，但确认超时。请先在 Arbiscan 上检查后再重试。"
 
@@ -4249,6 +4294,10 @@ msgstr "杠杆请求与所选市场不再一致"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage updated to {leverage}x"
 msgstr "杠杆已更新为 {leverage}x"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "LI.FI returned a bridge route that does not match the approved route."
+msgstr "LI.FI 返回的跨链路径与已批准的路径不一致。"
 
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
@@ -6294,6 +6343,10 @@ msgstr "希望获得接近原生应用的体验？"
 msgid "Preparing automatic USDC deposit..."
 msgstr "正在准备 USDC 自动存款..."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Preparing transaction..."
+msgstr "正在准备交易..."
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."
 msgstr "正在准备报价…"
@@ -6432,10 +6485,9 @@ msgstr "处理中"
 msgid "Processing time"
 msgstr "处理时间"
 
-#: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#~ msgid "Processing..."
-#~ msgstr "处理中…"
+#: src/lib/lifi/use-bridge.ts
+msgid "Processing..."
+msgstr "处理中…"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #~ msgid "Processing…"
@@ -6647,6 +6699,11 @@ msgstr "无法验证此账户的推荐功能访问权限。请刷新访问状态
 msgid "Referral access is still being verified."
 msgstr "仍在验证推荐功能访问权限。"
 
+#: src/hooks/trade/use-referral-actions.ts
+#: src/lib/tests/use-referral-actions.test.tsx
+msgid "Referral actions are not available in your region. This referral request was not submitted."
+msgstr "你所在地区无法使用推荐功能。本次推荐请求未提交。"
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Referral activation progress"
 msgstr "推荐功能启用进度"
@@ -6696,8 +6753,14 @@ msgstr "推荐请求"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/lib/tests/action-error.test.ts
 #: src/lib/tests/action-error.test.ts
+#: src/lib/tests/use-referral-actions.test.tsx
 msgid "Referral request could not be completed."
 msgstr "无法完成推荐请求。"
+
+#: src/hooks/trade/use-referral-actions.ts
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Referral request is no longer active."
+msgstr "该推荐请求已失效。"
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Referral stages, rewards, discount, and claim history are scoped to your Hyperliquid account."
@@ -6861,6 +6924,10 @@ msgstr "因当前委托过多而被拒绝"
 #: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Reload page"
 msgstr "重新加载页面"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Reload recovery could not be saved. Keep this tab open until the bridge completes."
+msgstr "无法保存刷新后的恢复信息。请保持此标签页打开，直到跨链完成。"
 
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"
@@ -7437,6 +7504,10 @@ msgstr "此浏览器不支持安全随机数生成。请使用受支持的浏览
 msgid "Secure randomness is unavailable. Deposit was not submitted."
 msgstr "安全随机数不可用。充值未提交。"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Secure reload recovery is unavailable in this browser. Bridge execution was not started."
+msgstr "此浏览器不支持安全的刷新恢复，跨链未开始执行。"
+
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select {displayName} market"
 msgstr "选择{displayName}市场"
@@ -7493,9 +7564,6 @@ msgstr "已选择"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/action-error.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 msgstr "所选钱包与当前连接账户不一致。请重新连接钱包后重试。"
 
@@ -8254,6 +8322,14 @@ msgstr "稳定币兑换"
 #~ msgid "Swap submitted"
 #~ msgstr "兑换已提交"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Swapping on same chain..."
+msgstr "正在同链兑换..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Swapping on source chain..."
+msgstr "正在源链兑换..."
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #~ msgid "Swapping..."
 #~ msgstr "兑换中..."
@@ -8502,11 +8578,18 @@ msgstr "该账户在可用历史中没有普通委托。"
 msgid "The active owner wallet or network changed."
 msgstr "当前所有者钱包或网络已变化。"
 
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/bridge-tab-lifecycle.test.tsx
+msgid "The active wallet does not match this bridge route."
+msgstr "当前钱包与此跨链路径不匹配。"
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr "当前钱包不是此账户的主钱包"
 
 #: src/lib/errors/action-error.ts
+#: src/lib/tests/establish-connection-modal.test.tsx
+#: src/lib/tests/mobile-agent-sync-modal.test.tsx
 msgid "The active wallet or network changed. Review the account and try again."
 msgstr "当前钱包或网络已变化。请检查账户后重试。"
 
@@ -8573,6 +8656,10 @@ msgstr "无法确认撤单响应。请刷新当前委托后再试。"
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "未能确认撤单。重试前请检查当前委托。"
 
+#: src/lib/errors/action-error.ts
+msgid "The checks before this request took too long. Nothing was signed or sent. Try again."
+msgstr "请求前的检查耗时过长。未进行任何签名或发送，请重试。"
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr "经确认的服务端锁定时间戳决定何时可以提取。"
@@ -8582,9 +8669,11 @@ msgid "The connection could not be checked safely. No wallet signature was reque
 msgstr "无法安全检查连接。未请求钱包签名；请稍候重试。"
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
 msgstr "无法完成连接。连接可能已获授权；请稍候重试。"
 
+#: src/lib/tests/mobile-agent-sync-route.test.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The desktop has not approved this key. Create a new QR on desktop."
 msgstr "桌面尚未授权此密钥。请在桌面重新生成二维码。"
@@ -8812,6 +8901,10 @@ msgstr "无法加载或验证近期成交快照。"
 msgid "The refreshed Vault identity did not match this reviewed action."
 msgstr "刷新后的金库信息与本次已确认的操作不一致。"
 
+#: src/hooks/trade/use-referral-actions.ts
+msgid "The regional availability check expired before signing. This referral request was not submitted."
+msgstr "签名前的地区可用性检查已过期。本次推荐请求未提交。"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
 #~ msgstr "替代密钥在 Hyperliquid 确认前已过期。请重新检查并签署新的撤销操作。"
@@ -8902,6 +8995,10 @@ msgstr "签名请求可能已成功，但对账已超时。请勿重复提交；
 msgid "The start and end values are unchanged."
 msgstr "起始值与结束值相同。"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "The submitted bridge transaction could not be prepared for safe status tracking."
+msgstr "已提交的跨链交易无法建立安全的状态跟踪。"
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -8936,6 +9033,10 @@ msgstr "交易账户或网络已变化。请重新打开编辑器后重试。"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr "交易账户或网络已变化。重试前请检查当前 TWAP 委托。"
+
+#: src/lib/errors/action-error.ts
+msgid "The trading key stored in this browser is invalid. Reset the trading connection before trying again."
+msgstr "此浏览器中保存的交易密钥无效。请重置交易连接后再试。"
 
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "The trading wallet could not be verified for this owner and network."
@@ -9019,11 +9120,20 @@ msgstr "成交后此操作无法撤销。"
 msgid "This bridge can only be resumed by the wallet that started it."
 msgstr "此跨链桥交易只能由发起它的钱包继续。"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "This bridge route requires unsupported message signing and was not submitted."
+msgstr "此跨链路径需要不受支持的消息签名，未提交。"
+
+#: src/lib/lifi/bridge-execution-state.ts
+msgid "This bridge was interrupted by a page reload. Retry to resume status tracking."
+msgstr "此次跨链因页面刷新而中断。请重试以恢复状态跟踪。"
+
 #: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "此浏览器无法安全协调不同标签页之间的资金操作。请使用受支持的浏览器。"
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 msgstr "此浏览器无法在多个标签页之间安全协调交易连接。请使用受支持的浏览器。"
 
@@ -9031,7 +9141,16 @@ msgstr "此浏览器无法在多个标签页之间安全协调交易连接。请
 msgid "This browser could not coordinate the request safely across tabs. Close other tabs and try again."
 msgstr "此浏览器无法在多个标签页之间安全协调该请求。请关闭其他标签页后重试。"
 
+#: src/lib/errors/action-error.ts
+msgid "This browser could not store deposit recovery data, so this deposit was not submitted. Allow site storage, then try again."
+msgstr "此浏览器无法保存存入恢复数据，因此本次存入未提交。请允许网站存储后再试。"
+
+#: src/lib/errors/action-error.ts
+msgid "This browser could not store the trading key safely. Check that site storage is available, then try again."
+msgstr "此浏览器无法安全保存交易密钥。请确认网站存储可用后再试。"
+
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
 msgstr "此浏览器已不再保存与待确认授权完全匹配的交易密钥。请先重置交易连接，然后重试。"
 
@@ -9665,8 +9784,6 @@ msgid "Transaction breakdown"
 msgstr "交易明细"
 
 #: src/lib/errors/action-error.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction reverted on Arbitrum"
 msgstr "交易已在 Arbitrum 上回滚"
 
@@ -9676,6 +9793,7 @@ msgstr "交易未广播。请重试。"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/action-error.test.ts
 msgid "Transaction was rejected"
 msgstr "交易被拒绝"
 
@@ -9920,6 +10038,7 @@ msgstr "无法加载当前的 CCTP 提款手续费。"
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "无法将钱包切换到 {0}。请在钱包中切换网络后重试。"
 
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "无法将钱包切换到 Arbitrum。请在钱包中切换网络后重试。"
@@ -9946,10 +10065,13 @@ msgstr "无法验证地区可用性，本次存款未提交。"
 
 #: src/hooks/trade/use-funds-action-availability.ts
 #: src/lib/lifi/use-bridge.ts
-#: src/lib/lifi/use-bridge.ts
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "无法验证地区可用性，本次资金操作未提交。"
+
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Unable to verify regional availability. This referral request was not submitted."
+msgstr "无法验证地区可用性。本次推荐请求未提交。"
 
 #: src/lib/errors/action-error.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
@@ -9970,6 +10092,7 @@ msgstr "无法验证当前账户模式。请求未提交。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "无法验证当前 Circle CCTP 费用和 Fast Transfer 容量。"
 
@@ -10075,9 +10198,9 @@ msgstr "统一账户比率"
 msgid "Unified Account Summary"
 msgstr "统一账户概要"
 
+#: src/components/trade/tradebox/bridge/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
 msgstr "未知错误"
 
@@ -10437,6 +10560,11 @@ msgstr "开始另一项操作前，请先验证待处理的资金操作。"
 msgid "Verifying"
 msgstr "正在验证"
 
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/lifi/use-bridge.ts
+msgid "Verifying access..."
+msgstr "正在验证访问权限..."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Verifying approval..."
@@ -10545,11 +10673,9 @@ msgstr "钱包确认超时。请检查钱包后重试。"
 msgid "Wallet client not ready"
 msgstr "钱包客户端未就绪"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 #: src/lib/errors/action-error.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
 msgstr "钱包连接失败。请解锁钱包，批准连接后重试。"
 
