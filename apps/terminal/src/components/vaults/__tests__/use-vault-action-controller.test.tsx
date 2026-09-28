@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
+import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +17,7 @@ import {
 import { getFundsActionHistoryStartTime } from "@/components/funds-action/funds-action-reconciliation";
 import type { VaultDetail, VaultOwnerViewState } from "@/components/vaults/domain/vaults";
 import { createVaultIdentityKey, useVaultActionController } from "@/components/vaults/use-vault-action-controller";
+import { describeActionFailure } from "@/lib/errors/action-error";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 
 const OWNER = "0x1111111111111111111111111111111111111111" as const;
@@ -386,9 +388,35 @@ describe("useVaultActionController", () => {
 
 		expect(current().action).toMatchObject({ state: { stage: "review", result: null } });
 		const error = current().action?.error;
-		expect(error && i18n._(error)).toBe("This Vault no longer accepts deposits.");
+		expect(error && describeActionFailure(error, (descriptor) => i18n._(descriptor))).toBe(
+			"This Vault no longer accepts deposits.",
+		);
 		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
 		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("reports a failed fresh history read as a failed operation instead of a wallet or network change", async () => {
+		await openAndReview();
+		mocks.history.mockRejectedValueOnce(new Error("Network request failed"));
+		await act(async () => current().confirm());
+
+		const error = current().action?.error;
+		expect(error && describeActionFailure(error, (descriptor) => i18n._(descriptor))).toBe(
+			"Vault operation failed. Verify current balances and history before trying again.",
+		);
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("shows an unknown exchange rejection of the Vault transfer exactly as the exchange sent it", async () => {
+		const text = "Vault withdrawal limit exceeded: 12.34 USDC";
+		mocks.exchangeMutate.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: text }, text));
+		await openAndReview();
+		await act(async () => current().confirm());
+
+		expect(current().action).toMatchObject({ state: { stage: "done", result: "apiError" } });
+		const error = current().action?.error;
+		expect(error && describeActionFailure(error, (descriptor) => i18n._(descriptor))).toBe(text);
 	});
 
 	it("hydrates and verifies the exact owner marker read-only in an Agent-only session", async () => {

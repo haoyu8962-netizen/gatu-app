@@ -92,7 +92,7 @@ describe("LI.FI execution wallet binding", () => {
 				42161,
 				() => sdkState.evmOptions?.getWalletClient(1) as Promise<unknown>,
 			),
-		).rejects.toThrow("requested a chain");
+		).rejects.toThrow("requested a network that does not match this bridge route");
 		expect(wagmiState.getConnectorClient).not.toHaveBeenCalled();
 
 		wagmiState.clientChainId = 1;
@@ -102,7 +102,7 @@ describe("LI.FI execution wallet binding", () => {
 				42161,
 				() => sdkState.evmOptions?.getWalletClient() as Promise<unknown>,
 			),
-		).rejects.toThrow("wallet client chain");
+		).rejects.toThrow("wallet network does not match this bridge route");
 
 		wagmiState.clientChainId = 42161;
 		wagmiState.clientAddress = OTHER_ADDRESS;
@@ -112,7 +112,7 @@ describe("LI.FI execution wallet binding", () => {
 				42161,
 				() => sdkState.evmOptions?.getWalletClient() as Promise<unknown>,
 			),
-		).rejects.toThrow("wallet client does not match");
+		).rejects.toThrow("active wallet does not match this bridge route");
 	});
 
 	it("only switches to the bound source chain and verifies the resulting client", async () => {
@@ -121,7 +121,7 @@ describe("LI.FI execution wallet binding", () => {
 
 		await expect(
 			runWithLiFiExecutionWallet(SOURCE_ADDRESS, 42161, () => sdkState.evmOptions?.switchChain(1) as Promise<unknown>),
-		).rejects.toThrow("requested a chain");
+		).rejects.toThrow("requested a network that does not match this bridge route");
 		expect(wagmiState.switchChain).not.toHaveBeenCalled();
 
 		wagmiState.address = OTHER_ADDRESS;

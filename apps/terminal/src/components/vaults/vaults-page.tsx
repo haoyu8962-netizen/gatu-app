@@ -9,6 +9,7 @@ import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view"
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { describeActionFailure } from "@/lib/errors/action-error";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { useVaultActionController } from "./use-vault-action-controller";
 import { useVaultDetailController, useVaultsController } from "./use-vaults-controller";
@@ -111,7 +112,9 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 			return;
 		}
 		toast.error(settledResult === "rejected" ? t`Authorization rejected` : t`Vault request failed`, {
-			description: activeAction.error ? t(activeAction.error) : undefined,
+			description: activeAction.error
+				? describeActionFailure(activeAction.error, (descriptor) => t(descriptor))
+				: undefined,
 			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
 		});
 		vaultAction.retry();
@@ -165,7 +168,9 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 					ownerAddress={activeAction.ownerAddress}
 					amount={activeAction.amount}
 					availableAmount={vaultAction.availableAmount}
-					errorMessage={activeAction.error ? t(activeAction.error) : undefined}
+					errorMessage={
+						activeAction.error ? describeActionFailure(activeAction.error, (descriptor) => t(descriptor)) : undefined
+					}
 					operationReference={activeAction.receipt?.operationReference ?? markerReference}
 					canReview={vaultAction.canReview}
 					canConfirm={vaultAction.canConfirm}

@@ -1,4 +1,3 @@
-import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -31,6 +30,8 @@ import {
 import { compareFundsAmounts, scaleFundsAmount, USDC_ATOMIC_DECIMALS } from "@/components/funds-action/funds-amount";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { type ActionFailure, classifyActionErrorOr, describeActionFailure } from "@/lib/errors/action-error";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import {
 	readPersistTradingConnection,
 	useActiveAgentOwner,
@@ -67,6 +68,14 @@ const ELIGIBILITY_LEASE_MS = 60_000;
 const RECONCILIATION_ATTEMPTS = 6;
 const RECONCILIATION_DELAY_MS = 600;
 
+const LEGAL_UNVERIFIED = msg`Legal eligibility could not be verified.`;
+const LOCATION_UNVERIFIED = msg`Location eligibility could not be verified.`;
+const SIGNER_UNVERIFIED = msg`The trading wallet could not be verified for this owner and network.`;
+const OWNER_CHANGED = msg`The active owner wallet or network changed.`;
+const VAULT_DATA_UNVERIFIED = msg`Fresh Vault balances and limits could not be verified.`;
+const MARKER_NOT_STORED = msg`The operation reference could not be stored safely, so nothing was signed.`;
+const VAULT_OPERATION_FAILED = msg`Vault operation failed. Verify current balances and history before trying again.`;
+
 export interface ActiveVaultAction {
 	id: string;
 	action: VaultFundsAction;
@@ -78,7 +87,7 @@ export interface ActiveVaultAction {
 	detail: VaultDetail;
 	marker?: FundsActionReference;
 	receipt?: VaultActionReceipt;
-	error?: MessageDescriptor;
+	error?: ActionFailure;
 	isPreflighting: boolean;
 	recoveredFromMarker?: boolean;
 }
@@ -376,7 +385,7 @@ export function useVaultActionController({
 			const [legal, geoResult] = await Promise.all([legalStatus.refetch(), geo.retry()]);
 			assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			if (legal.error || !legal.data?.acceptedTerms || !legal.data.userAllowed || !legal.data.canPerformActions) {
-				throw new Error("Vault legal eligibility could not be verified");
+				throw new LocalizedActionError(LEGAL_UNVERIFIED);
 			}
 			if (
 				geoResult.error ||
@@ -385,7 +394,7 @@ export function useVaultActionController({
 				geoResult.data.proxy ||
 				geoResult.data.tradeRestricted
 			) {
-				throw new Error("Vault location eligibility could not be verified");
+				throw new LocalizedActionError(LOCATION_UNVERIFIED);
 			}
 
 			let requirements = await tradingStatus.refetchSigner();
@@ -398,7 +407,7 @@ export function useVaultActionController({
 				requirements = await tradingStatus.refetchSigner(registeredAgent);
 				assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			}
-			if (!requirements.isSignerReady) throw new Error("Trading signer could not be verified");
+			if (!requirements.isSignerReady) throw new LocalizedActionError(SIGNER_UNVERIFIED);
 
 			assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			updateAction({
@@ -414,7 +423,7 @@ export function useVaultActionController({
 			});
 		} catch (error) {
 			if (!(error instanceof VaultActionContextChangedError)) {
-				toast.error(t(getVaultActionError(error)));
+				toast.error(describeActionFailure(getVaultActionFailure(error), (descriptor) => t(descriptor)));
 			}
 		} finally {
 			if (requestLeaseRef.current === requestLease) requestLeaseRef.current = null;
@@ -475,7 +484,7 @@ export function useVaultActionController({
 			);
 			const ownerAddress = startRoute.ownerAddress;
 			if (!ownerAddress || ownerAddress.toLowerCase() !== current.ownerAddress.toLowerCase()) {
-				throw new Error("The active owner wallet no longer matches this Vault action");
+				throw new LocalizedActionError(OWNER_CHANGED);
 			}
 			const startedAt = Date.now();
 
@@ -501,7 +510,7 @@ export function useVaultActionController({
 				preflightAbort.signal,
 			);
 			if (legal.error || !legal.data?.acceptedTerms || !legal.data.userAllowed || !legal.data.canPerformActions) {
-				throw new Error("Vault legal eligibility could not be verified");
+				throw new LocalizedActionError(LEGAL_UNVERIFIED);
 			}
 			if (
 				geoResult.error ||
@@ -510,13 +519,13 @@ export function useVaultActionController({
 				geoResult.data.proxy ||
 				geoResult.data.tradeRestricted
 			) {
-				throw new Error("Vault location eligibility could not be verified");
+				throw new LocalizedActionError(LOCATION_UNVERIFIED);
 			}
 			if (!requirements.isSignerReady) {
-				throw new Error("The trading signer is missing or could not be freshly verified");
+				throw new LocalizedActionError(SIGNER_UNVERIFIED);
 			}
 			if (freshDetail.error || freshEquities.error || freshClearinghouse.error) {
-				throw new Error("Fresh Vault account data could not be verified");
+				throw new LocalizedActionError(VAULT_DATA_UNVERIFIED);
 			}
 
 			const preflight = verifyVaultActionPreflight({
@@ -583,7 +592,7 @@ export function useVaultActionController({
 				preflightAbort.signal,
 			);
 			if (!acquired) {
-				throw new Error("The pending Vault operation could not be stored safely");
+				throw new LocalizedActionError(MARKER_NOT_STORED);
 			}
 
 			const awaitingState = transitionFundsAction(current.state, { type: "requestAuthorization" });
@@ -638,7 +647,7 @@ export function useVaultActionController({
 			updateAction({
 				...latest,
 				isPreflighting: false,
-				error: getVaultActionError(error),
+				error: getVaultActionFailure(error),
 			});
 		}
 	}
@@ -662,7 +671,7 @@ export function useVaultActionController({
 				...latest,
 				state: doneState,
 				isPreflighting: false,
-				error: getVaultActionError(error),
+				error: getVaultActionFailure(error),
 			});
 			return;
 		}
@@ -1107,7 +1116,12 @@ class VaultActionPreflightError extends Error {
 	}
 }
 
-function getVaultActionError(error: unknown): MessageDescriptor {
+/**
+ * What to show for a failed Vault action. The Vault preflight has its own reasons; everything else
+ * goes through the shared classifier, so exchange rejections keep their text and transport failures
+ * are never reported as a wallet or network change.
+ */
+function getVaultActionFailure(error: unknown): ActionFailure {
 	if (error instanceof VaultActionPreflightError) {
 		switch (error.reason) {
 			case "depositsClosed":
@@ -1123,24 +1137,12 @@ function getVaultActionError(error: unknown): MessageDescriptor {
 			case "equityUnavailable":
 			case "withdrawalUnavailable":
 			case "detailUnavailable":
-				return msg`Fresh Vault balances and limits could not be verified.`;
+				return VAULT_DATA_UNVERIFIED;
 		}
 	}
-	if (error instanceof Error) {
-		if (/user rejected|user denied/i.test(error.message)) return msg`Authorization was rejected in the wallet.`;
-		if (/location eligibility/i.test(error.message)) return msg`Location eligibility could not be verified.`;
-		if (/legal eligibility/i.test(error.message)) return msg`Legal eligibility could not be verified.`;
-		if (/agent|trading signer/i.test(error.message)) {
-			return msg`The trading wallet could not be verified for this owner and network.`;
-		}
-		if (/pending vault operation could not be stored/i.test(error.message)) {
-			return msg`The operation reference could not be stored safely, so nothing was signed.`;
-		}
-		if (/another|pending funds operation/i.test(error.message)) {
-			return msg`Verify the pending funds operation before starting another one.`;
-		}
-		if (/wallet|network|owner/i.test(error.message)) return msg`The active owner wallet or network changed.`;
-		return msg`Vault operation failed. Verify current balances and history before trying again.`;
+	const failure = classifyActionErrorOr(error, VAULT_OPERATION_FAILED);
+	if ("kind" in failure && failure.kind === "action-error" && failure.code === "wallet-rejected") {
+		return msg`Authorization was rejected in the wallet.`;
 	}
-	return msg`Vault operation failed.`;
+	return failure;
 }
