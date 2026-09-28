@@ -218,7 +218,33 @@ describe("order tracking", () => {
 			totalCount: 2,
 			acceptedCount: 1,
 			rejectedCount: 1,
-			errors: ["Order 2: filled 0.4 of 1."],
+			errors: [],
+		});
+	});
+
+	it("keeps only the exchange texts when an incomplete fill and a rejection share a batch", () => {
+		const resolution = resolveFilledOrderBatchResponse(
+			{
+				status: "ok",
+				response: {
+					type: "order",
+					data: {
+						statuses: [
+							{ filled: { totalSz: "0.4", avgPx: "10", oid: 1 } },
+							{ error: "No liquidity available for market order." },
+						],
+					},
+				},
+			},
+			["1", "1"],
+		);
+
+		expect(resolution).toEqual({
+			status: "rejected",
+			totalCount: 2,
+			acceptedCount: 0,
+			rejectedCount: 2,
+			errors: ["Order 2: No liquidity available for market order."],
 		});
 	});
 

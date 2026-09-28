@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 
-import { i18n } from "@lingui/core";
-import { HttpRequestError } from "@nktkas/hyperliquid";
+import { createHash } from "node:crypto";
+import { i18n, type MessageDescriptor } from "@lingui/core";
+import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
 import { reserveOrderAssets, runWithOrderAssetLocks } from "@/lib/trade/order-asset-lock";
+import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
+import { formatOrderChildError } from "@/lib/trade/order-status-reasons";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import {
 	beginPositionMarketCloseAttempt,
@@ -37,6 +40,10 @@ const BLOCKED_MESSAGE = "Another order for this market is still being confirmed.
 
 function localizedMessage(code: PositionSubmitFeedbackCode): string {
 	return formatPositionSubmitFeedback(localizedPositionSubmitFeedback(code), (descriptor) => i18n._(descriptor));
+}
+
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
 }
 
 interface LivePosition {
@@ -503,16 +510,51 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 	});
 
-	it("reports a raw SDK error in the queue and releases the session", async () => {
+	it("reports an unrecognised SDK error in the queue without its untranslated text and releases the session", async () => {
 		const sdkMessage = "SDK could not load the close snapshot";
 		mocks.clearinghouseState.mockRejectedValueOnce(new Error(sdkMessage));
 		const sessionId = openSession();
 
 		await act(async () => submitConfirmed(sessionId));
 
-		expect(queueErrorMessages()).toContain(sdkMessage);
+		expect(queueErrorMessages()).toEqual([localizedMessage("failed-market-close")]);
 		expect(getPositionMarketCloseModal()).toBeNull();
 		expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
+	});
+
+	it("shows an exchange rejection once, on the market line, in the active language", async () => {
+		const rejection = "Order could not immediately match against any resting orders.";
+		const response = {
+			status: "ok",
+			response: { type: "order", data: { statuses: [{ error: rejection }] } },
+		};
+		mocks.executeOrder.mockRejectedValueOnce(new ApiRequestError(response, `order 0: ${rejection}`));
+		const sessionId = openSession();
+
+		await act(async () => submitConfirmed(sessionId));
+
+		const failed = queueItems.find((item) => item.status === "failed");
+		expect(failed).toMatchObject({
+			error: { kind: "exchange-error", entries: [{ index: 0, text: rejection }] },
+			children: [{ market: COIN, status: "rejected", error: rejection }],
+		});
+		if (!failed) throw new Error("Expected a failed market close");
+		const translate = (descriptor: MessageDescriptor) => i18n._(descriptor);
+		expect(getOrderNotificationCopy(failed, translate).error).toBeUndefined();
+		expect(formatOrderChildError(rejection, translate)).toBe(
+			"The order could not immediately match any resting orders.",
+		);
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: {
+					[messageId("The order could not immediately match any resting orders.")]: "订单无法立即与挂单成交。",
+				},
+			}),
+		);
+		expect(formatOrderChildError(rejection, translate)).toBe("订单无法立即与挂单成交。");
+		expect(getPositionMarketCloseModal()).toBeNull();
 	});
 
 	it("dismisses the confirmation dialog before validation starts and never reopens it", async () => {
@@ -542,7 +584,7 @@ describe("usePositionMarketCloseSubmit", () => {
 			gate.release();
 			await submission;
 		});
-		expect(queueErrorMessages()).toContain("snapshot failed");
+		expect(queueErrorMessages()).toEqual([localizedMessage("failed-market-close")]);
 		expect(queueItems).toHaveLength(1);
 		expect(queueItems[0]).toMatchObject({ id: queueId, status: "failed" });
 		expect(getPositionMarketCloseModal()).toBeNull();

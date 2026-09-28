@@ -1,9 +1,20 @@
 // @vitest-environment jsdom
 
+import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { OrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { createI18nRoot } from "./harness/react";
+
+const SPOT_BALANCE_REJECTION = "Order has insufficient spot balance to trade";
+
+function spotBalanceRejection() {
+	return new ApiRequestError(
+		{ status: "ok", response: { type: "order", data: { statuses: [{ error: SPOT_BALANCE_REJECTION }] } } },
+		`order 0: ${SPOT_BALANCE_REJECTION}`,
+	);
+}
 
 const mocks = vi.hoisted(() => ({
 	closeSwap: vi.fn(),
@@ -253,11 +264,11 @@ describe("SpotSwapModal submission", () => {
 		act(() => confirm().click());
 		act(() => root.render(null));
 		await act(async () => {
-			rejectSubmission?.(new Error("Insufficient spot balance"));
+			rejectSubmission?.(spotBalanceRejection());
 		});
 		expect(queuedItem()).toMatchObject({
 			status: "failed",
-			error: { kind: "raw", message: "Insufficient spot balance" },
+			error: { kind: "exchange-error", entries: [{ index: 0, text: SPOT_BALANCE_REJECTION }] },
 		});
 		expect(mocks.closeSwap).not.toHaveBeenCalled();
 	});
@@ -283,7 +294,18 @@ describe("SpotSwapModal submission", () => {
 			new Error("Order could not immediately match against any resting orders"),
 			{ kind: "spot-swap", code: "no-liquidity" },
 		],
-		[new Error("Insufficient spot balance"), { kind: "raw", message: "Insufficient spot balance" }],
+		[spotBalanceRejection(), { kind: "exchange-error", entries: [{ index: 0, text: SPOT_BALANCE_REJECTION }] }],
+		[
+			new OrderBatchResolutionError({
+				status: "rejected",
+				totalCount: 1,
+				acceptedCount: 0,
+				rejectedCount: 1,
+				errors: ["A rejection the terminal does not know yet"],
+			}),
+			{ kind: "exchange-error", entries: [{ text: "A rejection the terminal does not know yet" }] },
+		],
+		[new Error("Swap request no longer matches the quote"), { kind: "spot-swap", code: "failed" }],
 		["not an error", { kind: "spot-swap", code: "failed" }],
 	])("keeps a stable semantic error in the failed task: %s", async (cause, error) => {
 		mocks.submitOrder.mockRejectedValueOnce(cause);

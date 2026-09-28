@@ -30,6 +30,8 @@ import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { type ActionFailure, type ExchangeActionFailure, exchangeActionFailure } from "@/lib/errors/action-error";
+import type { ExchangeErrorEntry } from "@/lib/errors/exchange-error-text";
 import {
 	formatPercent,
 	formatPrice,
@@ -72,6 +74,7 @@ import {
 	validateSlPrice,
 	validateTpPrice,
 } from "@/lib/trade/tpsl";
+import { classifyTradingActionError } from "@/lib/trade/trading-action-failure";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { addOrderQueueItem, type OrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import type { PositionTpSlSession } from "@/stores/use-position-dialog-store";
@@ -139,25 +142,27 @@ interface PositionTpSlLiveExecutionContext {
 
 type PositionTpSlSubmitError =
 	| OrderSubmissionFeedback
+	| ActionFailure
 	| { kind: "blocked" }
 	| { kind: "coordination-unavailable" }
 	| { kind: "failed" }
 	| { kind: "market-context-mismatch" }
-	| { kind: "raw"; message: string }
 	| { kind: "reconciling" }
 	| { kind: "trading-data-changed" };
 
 type PositionTpSlCancelResolution =
-	| { status: "accepted"; errors: string[] }
-	| { status: "partial"; errors: string[] }
-	| { status: "rejected"; errors: string[] };
+	| { status: "accepted"; errors: ExchangeErrorEntry[] }
+	| { status: "partial"; errors: ExchangeErrorEntry[] }
+	| { status: "rejected"; errors: ExchangeErrorEntry[] };
 
 class PositionTpSlMutationResponseError extends Error {
 	readonly uncertain: boolean;
+	readonly failure: ExchangeActionFailure | null;
 
-	constructor(message: string, uncertain: boolean) {
-		super(message);
+	constructor(failure: ExchangeActionFailure | null, uncertain: boolean) {
+		super(failure?.entries.map((entry) => entry.text).join("; ") ?? "");
 		this.name = "PositionTpSlMutationResponseError";
+		this.failure = failure;
 		this.uncertain = uncertain;
 	}
 }
@@ -229,7 +234,7 @@ function resolvePositionTpSlCancelResponse(
 ): PositionTpSlCancelResolution | null {
 	if (!Number.isSafeInteger(expectedCount) || expectedCount <= 0 || !isUnknownRecord(response)) return null;
 	if (response.status === "err" && typeof response.response === "string") {
-		return { status: "rejected", errors: [response.response] };
+		return { status: "rejected", errors: [{ text: response.response }] };
 	}
 	if (response.status !== "ok" || !isUnknownRecord(response.response) || response.response.type !== "cancel") {
 		return null;
@@ -239,11 +244,11 @@ function resolvePositionTpSlCancelResponse(
 	const statuses = data.statuses;
 	if (statuses.length === 1 && expectedCount > 1) {
 		const error = getCancelStatusError(statuses[0]);
-		return error ? { status: "rejected", errors: [error] } : null;
+		return error ? { status: "rejected", errors: [{ text: error }] } : null;
 	}
 	if (statuses.length !== expectedCount) return null;
 
-	const errors: string[] = [];
+	const errors: ExchangeErrorEntry[] = [];
 	let successCount = 0;
 	for (let index = 0; index < statuses.length; index += 1) {
 		const status = statuses[index];
@@ -253,7 +258,7 @@ function resolvePositionTpSlCancelResponse(
 		}
 		const error = getCancelStatusError(status);
 		if (!error) return null;
-		errors.push(error);
+		errors.push({ index, text: error });
 	}
 	if (successCount === expectedCount) return { status: "accepted", errors };
 	if (successCount === 0) return { status: "rejected", errors };
@@ -510,7 +515,7 @@ function PositionTpSlForm({
 	const amountErrorId = useId();
 
 	function getSubmitFeedback(error: PositionTpSlSubmitError): OrderQueueItem["error"] {
-		if (error.kind === "order-submission") {
+		if (!("kind" in error) || error.kind === "order-submission") {
 			return error;
 		}
 		if (error.kind === "blocked") return msg`Another order for this market is still being confirmed.`;
@@ -534,10 +539,8 @@ function PositionTpSlForm({
 		if (uncertain) return { kind: "reconciling" };
 		if (error instanceof PositionTpSlFreshStateError) return { kind: "trading-data-changed" };
 		if (error instanceof PositionTpSlExecutionContextError) return { kind: error.reason };
-		const trackedOrderFeedback = getOrderSubmissionFeedback(error);
-		if (trackedOrderFeedback) return trackedOrderFeedback;
-		if (error instanceof Error && error.message) return { kind: "raw", message: error.message };
-		return { kind: "failed" };
+		if (error instanceof PositionTpSlMutationResponseError) return error.failure ?? { kind: "failed" };
+		return getOrderSubmissionFeedback(error) ?? classifyTradingActionError(error) ?? { kind: "failed" };
 	}
 
 	function appendAllowedTpSlSnapshot(snapshot: TpSlOrderInfo | undefined): void {
@@ -646,16 +649,16 @@ function PositionTpSlForm({
 		const resolution = resolveOrderBatchResponse(response, expectedCount);
 		if (resolution?.status === "accepted") return;
 		const uncertain = resolution === null || resolution?.status === "partial";
-		const message = resolution?.errors.join("; ") ?? "";
-		throw new PositionTpSlMutationResponseError(message, uncertain);
+		const failure = resolution?.errors.length ? exchangeActionFailure(resolution.errors.join("; ")) : null;
+		throw new PositionTpSlMutationResponseError(failure, uncertain);
 	}
 
 	function assertCompleteCancelResponse(response: unknown, expectedCount: number): void {
 		const resolution = resolvePositionTpSlCancelResponse(response, expectedCount);
 		if (resolution?.status === "accepted") return;
 		const uncertain = resolution === null || resolution.status === "partial";
-		const message = resolution?.errors.join("; ") ?? "";
-		throw new PositionTpSlMutationResponseError(message, uncertain);
+		const failure = resolution?.errors.length ? { kind: "exchange-error" as const, entries: resolution.errors } : null;
+		throw new PositionTpSlMutationResponseError(failure, uncertain);
 	}
 
 	function assertOrdersMatchPosition(orders: readonly ExchangeParams<"order">["orders"][number][]): void {
@@ -1096,7 +1099,7 @@ function PositionTpSlForm({
 						assertCompleteCancelResponse(result, activeExpectedCount);
 						completedMutation = true;
 						if (!recordCompletedCancels(workflowCancels)) {
-							throw new PositionTpSlMutationResponseError("", true);
+							throw new PositionTpSlMutationResponseError(null, true);
 						}
 					}
 					if (workflowOrders.length > 0) {
@@ -1114,7 +1117,7 @@ function PositionTpSlForm({
 						);
 						if (submission.state === "blocked") {
 							if (completedMutation) {
-								throw new PositionTpSlMutationResponseError("", true);
+								throw new PositionTpSlMutationResponseError(null, true);
 							}
 							return { state: "blocked" } as const;
 						}

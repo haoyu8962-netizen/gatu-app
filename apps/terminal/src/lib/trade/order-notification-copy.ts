@@ -3,7 +3,11 @@ import { msg } from "@lingui/core/macro";
 import Big from "big.js";
 import { isValidOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import { formatActionFailure } from "@/lib/errors/action-error";
-import { formatExchangeErrorText } from "@/lib/errors/exchange-error-text";
+import {
+	type ExchangeErrorEntry,
+	formatExchangeErrorText,
+	parseExchangeErrorText,
+} from "@/lib/errors/exchange-error-text";
 import { formatPrice, formatToken } from "@/lib/format";
 import { formatOrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import { formatOrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
@@ -56,7 +60,7 @@ export function getOrderNotificationCopy(order: OrderQueueItem, translate: Trans
 		summary = getStatusSummary(order, label, ordinary, translate);
 	}
 	const count = getCountSummary(order, translate);
-	const error = getErrorCopy(order, translate);
+	const error = repeatsChildErrors(order) ? undefined : getErrorCopy(order, translate);
 	return {
 		label,
 		summary,
@@ -128,7 +132,6 @@ function getErrorCopy(order: OrderQueueItem, translate: Translate): string | und
 	if (error.kind === "exchange-error" || error.kind === "action-error") {
 		return formatActionFailure(error, translate) ?? undefined;
 	}
-	if (error.kind === "raw") return formatExchangeErrorText(error.message, translate);
 	if (error.kind === "spot-swap") return formatSpotSwapFeedback(error, translate);
 	if (error.kind === "order-reconciliation") {
 		if (error.code === "status-unconfirmed" && order.status === "unconfirmed") return;
@@ -150,6 +153,27 @@ function getErrorCopy(order: OrderQueueItem, translate: Translate): string | und
 		return;
 	if (error.kind === "order-submission") return formatOrderSubmissionFeedback(error, translate);
 	return formatPositionSubmitFeedback(error, translate);
+}
+
+/**
+ * True when the error only repeats the exchange texts already shown on the per-market lines, as a
+ * rejected Market Close or Close All reports each market's rejection on its own line.
+ */
+function repeatsChildErrors(order: OrderQueueItem): boolean {
+	const { children, error } = order;
+	if (!error || !children?.some((child) => child.error)) return false;
+	let entries: readonly ExchangeErrorEntry[];
+	if (typeof error === "string") entries = parseExchangeErrorText(error);
+	else if ("kind" in error && error.kind === "exchange-error" && !error.hint) entries = error.entries;
+	else return false;
+	return (
+		entries.length > 0 &&
+		entries.every((entry) =>
+			entry.index === undefined
+				? children.some((child) => child.error === entry.text)
+				: children[entry.index]?.error === entry.text,
+		)
+	);
 }
 
 function formatExecutionPrice(value: string, quoteToken: string): string {

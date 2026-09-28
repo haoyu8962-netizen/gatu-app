@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { setupI18n } from "@lingui/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
@@ -9,6 +10,10 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 }));
 
 const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
 const base: OrderQueueItem = {
 	id: "test",
 	owner: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -184,5 +189,90 @@ describe("compact order notification copy", () => {
 	it("retains raw failures in full, including an unbroken reference", () => {
 		const error = `Rejected:${"long_reference".repeat(30)}`;
 		expect(copy({ status: "failed", error })).toMatchObject({ summary: "HYPE order failed", error });
+	});
+	it("omits a Market Close or Close All error that only repeats the per-market lines", () => {
+		const rejection = "No liquidity available for market order.";
+		const marketClose = {
+			operation: "market-close" as const,
+			status: "failed" as const,
+			children: [{ assetId: 0, market: "HYPE", size: "1", status: "rejected" as const, error: rejection }],
+		};
+		expect(
+			copy({ ...marketClose, error: { kind: "exchange-error", entries: [{ index: 0, text: rejection }] } }).error,
+		).toBeUndefined();
+		expect(copy({ ...marketClose, error: rejection }).error).toBeUndefined();
+
+		const closeAll = {
+			operation: "close-all" as const,
+			status: "failed" as const,
+			children: [
+				{ assetId: 0, market: "HYPE", size: "1", status: "rejected" as const, error: rejection },
+				{ assetId: 1, market: "BTC", size: "2", status: "rejected" as const, error: "Invalid TP/SL price." },
+			],
+		};
+		expect(
+			copy({
+				...closeAll,
+				error: {
+					kind: "exchange-error",
+					entries: [
+						{ index: 0, text: rejection },
+						{ index: 1, text: "Invalid TP/SL price." },
+					],
+				},
+			}).error,
+		).toBeUndefined();
+		expect(
+			copy({ ...closeAll, error: { kind: "exchange-error", entries: [{ text: rejection }] } }).error,
+		).toBeUndefined();
+		expect(
+			copy({ ...closeAll, error: { kind: "exchange-error", entries: [{ index: 1, text: rejection }] } }).error,
+		).toBe("No liquidity is available for this market order.");
+	});
+	it("keeps an error that adds to the per-market lines", () => {
+		const children = [
+			{
+				assetId: 0,
+				market: "HYPE",
+				size: "1",
+				status: "rejected" as const,
+				error: "Insufficient margin to place order.",
+			},
+		];
+		expect(
+			copy({
+				status: "failed",
+				children,
+				error: {
+					kind: "exchange-error",
+					entries: [{ index: 0, text: "Insufficient margin to place order." }],
+					hint: { kind: "reduce-only" },
+				},
+			}).error,
+		).toBe("Insufficient margin to place order. Try using Reduce Only.");
+		expect(
+			copy({
+				status: "failed",
+				children,
+				error: { kind: "exchange-error", entries: [{ index: 0, text: "Price must be divisible by tick size." }] },
+			}).error,
+		).toBe("Price must be a multiple of the tick size.");
+		expect(copy({ status: "failed", children, error: { kind: "action-error", code: "rate-limited" } }).error).toBe(
+			"Too many requests. Wait a moment and try again.",
+		);
+	});
+	it("renders a stored failure in the language that is active when it is displayed", () => {
+		const failed = {
+			status: "failed" as const,
+			error: { kind: "exchange-error" as const, entries: [{ text: "Order must have minimum value of $10." }] },
+		};
+		expect(copy(failed).error).toBe("Order value must be at least $10.");
+
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: { [messageId(`Order value must be at least \${amount}.`)]: `订单价值至少为 \${amount}。` },
+		});
+
+		expect(copy(failed).error).toBe("订单价值至少为 $10。");
 	});
 });

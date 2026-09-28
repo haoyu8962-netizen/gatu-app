@@ -41,6 +41,7 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { type ActionFailure, formatActionFailure } from "@/lib/errors/action-error";
 import { formatDateTime, formatNumber, formatPercent, formatPrice, formatToken } from "@/lib/format";
 import {
 	type ExchangeParams,
@@ -58,8 +59,10 @@ import {
 	syncPendingTradingActionFeedback,
 	updatePendingTradingActionFeedback,
 } from "@/lib/trade/pending-trading-action-feedback";
+import { classifyTradingActionError } from "@/lib/trade/trading-action-failure";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
+import type { OrderQueueItem } from "@/stores/use-order-queue-store";
 import {
 	getPendingTradingActionActions,
 	usePendingOrderCancellations,
@@ -94,7 +97,7 @@ type OrderValidationError =
 	| { kind: "cancel-block"; reason: CancelAllConfirmationBlockReason }
 	| { kind: "modify-block"; reason: OpenOrderModifyBlockReason }
 	| { kind: "code"; code: OrderValidationErrorCode }
-	| { kind: "raw"; message: string };
+	| { kind: "failure"; failure: ActionFailure };
 
 class OrderValidationErrorCause extends Error {
 	constructor(
@@ -491,10 +494,11 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 
 	function getValidationErrorMessage(error: OrderValidationError | null): string | null {
 		if (!error) return null;
-		return error.kind === "raw" ? error.message : t(getValidationErrorDescriptor(error));
+		if (error.kind === "failure") return formatActionFailure(error.failure, (descriptor) => t(descriptor));
+		return t(getValidationErrorDescriptor(error));
 	}
 
-	function getValidationErrorDescriptor(error: Exclude<OrderValidationError, { kind: "raw" }>): MessageDescriptor {
+	function getValidationErrorDescriptor(error: Exclude<OrderValidationError, { kind: "failure" }>): MessageDescriptor {
 		switch (error.kind) {
 			case "cancel-block":
 				return getCancelAllBlockDescriptor(error.reason);
@@ -529,8 +533,12 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		fallbackCode: Extract<OrderValidationError, { kind: "code" }>["code"],
 	): OrderValidationError {
 		if (cause instanceof OrderValidationErrorCause) return cause.validationError;
-		if (cause instanceof Error) return { kind: "raw", message: cause.message };
-		return { kind: "code", code: fallbackCode };
+		const failure = classifyTradingActionError(cause);
+		return failure ? { kind: "failure", failure } : { kind: "code", code: fallbackCode };
+	}
+
+	function getValidationErrorFeedback(error: OrderValidationError): Pick<OrderQueueItem, "error" | "message"> {
+		return error.kind === "failure" ? { error: error.failure } : { message: getValidationErrorDescriptor(error) };
 	}
 
 	function buildPlanFromLive(target: OpenOrderModifyFormTarget, size: string, triggerPrice: string | undefined) {
@@ -763,9 +771,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 				const validationError = getValidationErrorFromCause(cause, "failed-to-modify");
 				updatePendingTradingActionFeedback(pendingAction, "modify", {
 					status: "failed",
-					...(validationError.kind === "raw"
-						? { error: validationError.message }
-						: { message: getValidationErrorDescriptor(validationError) }),
+					...getValidationErrorFeedback(validationError),
 				});
 			}
 			if (
@@ -894,9 +900,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 				const validationError = getValidationErrorFromCause(cause, "failed-to-cancel");
 				updatePendingTradingActionFeedback(feedbackIdentity, "cancel", {
 					status: "failed",
-					...(validationError.kind === "raw"
-						? { error: validationError.message }
-						: { message: getValidationErrorDescriptor(validationError) }),
+					...getValidationErrorFeedback(validationError),
 				});
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
 					setCancelValidationError(validationError);
