@@ -83,8 +83,13 @@ msgstr "{currentPage} of {totalPages}"
 
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "{days} days"
 msgstr "{days} days"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "{days} days left"
+msgstr "{days} days left"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
@@ -528,6 +533,11 @@ msgstr "Activates when mark ≥ {triggerPrice}"
 msgid "Active"
 msgstr "Active"
 
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Active asset data is unavailable"
+msgstr "Active asset data is unavailable"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Active referral discount"
 msgstr "Active referral discount"
@@ -580,6 +590,7 @@ msgstr "Adjust isolated margin for {displayName}"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Adjust leverage"
 msgstr "Adjust leverage"
@@ -733,6 +744,14 @@ msgstr "Amount"
 msgid "Amount (USDC)"
 msgstr "Amount (USDC)"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount exceeds the verified available balance."
+msgstr "Amount exceeds the verified available balance."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount is too large to submit safely."
+msgstr "Amount is too large to submit safely."
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Amount is too low for the available bridge routes."
 msgstr "Amount is too low for the available bridge routes."
@@ -740,6 +759,10 @@ msgstr "Amount is too low for the available bridge routes."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "Amount must be greater than zero and no more than the current position."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount must be greater than zero."
+msgstr "Amount must be greater than zero."
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Amount to repay"
@@ -963,6 +986,10 @@ msgstr "Attached TP/SL is placed only if the order fully fills, or if its remain
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "Authorization rejected"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Authorization was rejected in the wallet."
+msgstr "Authorization was rejected in the wallet."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Authorize"
@@ -1358,6 +1385,12 @@ msgstr "Canceled due to the open interest cap"
 msgid "Cancellation submitted. Waiting for the open-orders update."
 msgstr "Cancellation submitted. Waiting for the open-orders update."
 
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Cannot switch to isolated mode with an open position"
+msgstr "Cannot switch to isolated mode with an open position"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "Cannot switch to Isolated mode with an open position. Close your position first."
@@ -1386,6 +1419,11 @@ msgstr "Change to descending order"
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "Chart"
+
+#: src/components/trade/chart/datafeed.ts
+#: src/components/trade/chart/datafeed.ts
+msgid "Chart data could not be loaded"
+msgstr "Chart data could not be loaded"
 
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart data is temporarily rate limited"
@@ -1533,6 +1571,13 @@ msgstr "Classification unavailable"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Clear record"
 msgstr "Clear record"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Clear search"
+msgstr "Clear search"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Clear unreadable record"
@@ -2660,6 +2705,7 @@ msgstr "Disconnected"
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "Dismiss"
 
@@ -2911,6 +2957,14 @@ msgstr "Enter a valid trigger price"
 msgid "Enter a valid trigger price using the market's price precision."
 msgstr "Enter a valid trigger price using the market's price precision."
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Enter an amount."
+msgstr "Enter an amount."
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Enter an API wallet name."
+msgstr "Enter an API wallet name."
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Enter code"
 msgstr "Enter code"
@@ -3102,6 +3156,7 @@ msgstr "Expired"
 #~ msgstr "Expires {expiresAtLabel}."
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Expires today"
 msgstr "Expires today"
 
@@ -3494,6 +3549,10 @@ msgstr "Fresh eligibility or account data could not be verified. Review and try 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Fresh extraAgents data is being checked before the result is accepted."
 msgstr "Fresh extraAgents data is being checked before the result is accepted."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Fresh Vault balances and limits could not be verified."
+msgstr "Fresh Vault balances and limits could not be verified."
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "From"
@@ -3987,6 +4046,15 @@ msgstr "Invalid amount"
 msgid "Invalid destination address"
 msgstr "Invalid destination address"
 
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Invalid leverage"
+msgstr "Invalid leverage"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Invalid margin mode"
+msgstr "Invalid margin mode"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Invalid TP/SL price."
 msgstr "Invalid TP/SL price."
@@ -4147,6 +4215,10 @@ msgstr "Legacy DEX"
 msgid "Legacy reward history"
 msgstr "Legacy reward history"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Legal eligibility could not be verified."
+msgstr "Legal eligibility could not be verified."
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Lending Net Balance"
 msgstr "Lending Net Balance"
@@ -4157,9 +4229,21 @@ msgstr "Lending Net Balance"
 msgid "Leverage"
 msgstr "Leverage"
 
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage changed before margin mode update"
+msgstr "Leverage changed before margin mode update"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "Leverage is fixed at {currentLeverage}× for this market."
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage request no longer matches the confirmed settings"
+msgstr "Leverage request no longer matches the confirmed settings"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage request no longer matches the selected market"
+msgstr "Leverage request no longer matches the selected market"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -4435,6 +4519,10 @@ msgstr "Loading..."
 msgid "Loading…"
 msgstr "Loading…"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Location eligibility could not be verified."
+msgstr "Location eligibility could not be verified."
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Lock period progress"
 msgstr "Lock period progress"
@@ -4532,6 +4620,11 @@ msgstr "Margin and account risk at a glance"
 msgid "Margin mode"
 msgstr "Margin mode"
 
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Margin mode changed before leverage update"
+msgstr "Margin mode changed before leverage update"
+
+#: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/tests/action-error.test.ts
 msgid "Margin mode data is unavailable"
 msgstr "Margin mode data is unavailable"
@@ -4967,7 +5060,11 @@ msgstr "New funds actions are locked until this record is resolved."
 msgid "New mobile pairing is temporarily unavailable."
 msgstr "New mobile pairing is temporarily unavailable."
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Next"
 msgstr "Next"
 
@@ -5357,12 +5454,17 @@ msgstr "Not connected"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Not reported"
 msgstr "Not reported"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Notification details"
 msgstr "Notification details"
+
+#: src/components/ui/sonner.tsx
+msgid "Notifications"
+msgstr "Notifications"
 
 #: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
@@ -5784,6 +5886,13 @@ msgstr "Owner"
 #~ msgid "Owner account"
 #~ msgstr "Owner account"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Page {page}"
+msgstr "Page {page}"
+
 #: src/components/referrals/referred-traders.tsx
 msgid "Page {visiblePage} of {totalPages}"
 msgstr "Page {visiblePage} of {totalPages}"
@@ -6040,6 +6149,10 @@ msgstr "Portfolio history chart"
 msgid "Portfolio margin"
 msgstr "Portfolio margin"
 
+#: src/hooks/trade/use-account-abstraction-control.ts
+msgid "Portfolio margin activation is temporarily unavailable"
+msgstr "Portfolio margin activation is temporarily unavailable"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Portfolio margin eligibility and limits"
 msgstr "Portfolio margin eligibility and limits"
@@ -6083,6 +6196,16 @@ msgstr "Position"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Position changed before submission. Review the Reduce Only quantity and direction."
 msgstr "Position changed before submission. Review the Reduce Only quantity and direction."
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/lib/tests/margin-mode-modal.test.tsx
+#: src/lib/tests/position-submit-feedback.test.ts
+#: src/lib/tests/position-submit-feedback.test.ts
+#: src/lib/tests/position-submit-feedback.test.ts
+msgid "Position data is unavailable"
+msgstr "Position data is unavailable"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
@@ -6179,7 +6302,11 @@ msgstr "Preparing your quote..."
 #~ msgid "Press and hold for 4 seconds"
 #~ msgstr "Press and hold for 4 seconds"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Previous"
 msgstr "Previous"
 
@@ -8371,6 +8498,10 @@ msgstr "The account has no funding payments in the confirmed 30-day window."
 msgid "The account has no ordinary orders in the available history."
 msgstr "The account has no ordinary orders in the available history."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The active owner wallet or network changed."
+msgstr "The active owner wallet or network changed."
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr "The active wallet is not this account's master wallet"
@@ -8386,6 +8517,10 @@ msgstr "The address already has five pending withdrawals."
 #: src/components/vaults/vaults-page.tsx
 msgid "The address is invalid or Hyperliquid returned no Vault details for it."
 msgstr "The address is invalid or Hyperliquid returned no Vault details for it."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The amount exceeds the freshly verified maximum."
+msgstr "The amount exceeds the freshly verified maximum."
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."
@@ -8558,6 +8693,10 @@ msgstr "The network-matched public dataset could not be verified. Your account a
 #~ msgid "The one-time QR service is unavailable. Check your connection and retry."
 #~ msgstr "The one-time QR service is unavailable. Check your connection and retry."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The operation reference could not be stored safely, so nothing was signed."
+msgstr "The operation reference could not be stored safely, so nothing was signed."
+
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "The order can continue, but this confirmation preference could not be saved."
@@ -8668,6 +8807,10 @@ msgstr "The QR stays on this device and is never uploaded."
 #: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "The recent trade snapshot could not be loaded or validated."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The refreshed Vault identity did not match this reviewed action."
+msgstr "The refreshed Vault identity did not match this reviewed action."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
@@ -8974,6 +9117,12 @@ msgstr "This isolated position is no longer open."
 msgid "This market is at its open interest cap, so the order cannot increase open interest."
 msgstr "This market is at its open interest cap, so the order cannot increase open interest."
 
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "This market only supports isolated margin mode"
+msgstr "This market only supports isolated margin mode"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "This market only supports isolated margin mode."
 msgstr "This market only supports isolated margin mode."
@@ -8981,6 +9130,10 @@ msgstr "This market only supports isolated margin mode."
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This mobile trading key has expired."
 #~ msgstr "This mobile trading key has expired."
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "This name already exists. A duplicate would replace the existing API wallet."
+msgstr "This name already exists. A duplicate would replace the existing API wallet."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This one-time QR closes automatically within 60 seconds."
@@ -9140,6 +9293,10 @@ msgstr "This Vault is closed and no longer accepts deposits."
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is not accepting deposits."
 msgstr "This Vault is not accepting deposits."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "This Vault no longer accepts deposits."
+msgstr "This Vault no longer accepts deposits."
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
@@ -10052,6 +10209,14 @@ msgstr "USDC volume"
 msgid "Use {priceText} as limit price"
 msgstr "Use {priceText} as limit price"
 
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Use 2–16 letters, numbers, underscores, or hyphens."
+msgstr "Use 2–16 letters, numbers, underscores, or hyphens."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Use a valid HYPE amount with no more than eight decimal places."
+msgstr "Use a valid HYPE amount with no more than eight decimal places."
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Use max available balance"
@@ -10191,6 +10356,14 @@ msgstr "Vault lock status"
 msgid "Vault not found"
 msgstr "Vault not found"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Vault operation failed."
+msgstr "Vault operation failed."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Vault operation failed. Verify current balances and history before trying again."
+msgstr "Vault operation failed. Verify current balances and history before trying again."
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Vault pagination"
 msgstr "Vault pagination"
@@ -10255,6 +10428,7 @@ msgstr "Verify"
 msgid "Verify again"
 msgstr "Verify again"
 
+#: src/components/vaults/use-vault-action-controller.ts
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Verify the pending funds operation before starting another one."
 msgstr "Verify the pending funds operation before starting another one."
@@ -10398,6 +10572,11 @@ msgstr "Wallet did not return a transaction hash. Check your wallet activity bef
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 
+#: src/hooks/trade/use-account-abstraction-control.ts
+#: src/lib/tests/account-mode-modal.test.tsx
+msgid "Wallet is not ready to update account mode"
+msgstr "Wallet is not ready to update account mode"
+
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10518,6 +10697,10 @@ msgstr "Withdrawal failed"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "Withdrawal fee"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Withdrawal is still locked by the fresh server timestamp."
+msgstr "Withdrawal is still locked by the fresh server timestamp."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal locked"

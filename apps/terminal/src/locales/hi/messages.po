@@ -83,8 +83,13 @@ msgstr "{totalPages} में से {currentPage}"
 
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "{days} days"
 msgstr "{days} दिन"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "{days} days left"
+msgstr "{days} दिन शेष"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
@@ -528,6 +533,11 @@ msgstr "मार्क ≥ {triggerPrice} होने पर सक्रि�
 msgid "Active"
 msgstr "सक्रिय"
 
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Active asset data is unavailable"
+msgstr "सक्रिय एसेट डेटा उपलब्ध नहीं है"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Active referral discount"
 msgstr "सक्रिय रेफ़रल छूट"
@@ -580,6 +590,7 @@ msgstr "{displayName} का आइसोलेटेड मार्जिन �
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Adjust leverage"
 msgstr "लीवरेज समायोजित करें"
@@ -733,6 +744,14 @@ msgstr "राशि"
 msgid "Amount (USDC)"
 msgstr "राशि (USDC)"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount exceeds the verified available balance."
+msgstr "राशि सत्यापित उपलब्ध बैलेंस से अधिक है।"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount is too large to submit safely."
+msgstr "राशि सुरक्षित रूप से सबमिट करने के लिए बहुत बड़ी है।"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Amount is too low for the available bridge routes."
 msgstr "उपलब्ध ब्रिज मार्गों के लिए राशि बहुत कम है।"
@@ -740,6 +759,10 @@ msgstr "उपलब्ध ब्रिज मार्गों के लि�
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "राशि शून्य से अधिक होनी चाहिए और वर्तमान पोज़िशन से अधिक नहीं होनी चाहिए।"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount must be greater than zero."
+msgstr "राशि शून्य से अधिक होनी चाहिए।"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Amount to repay"
@@ -963,6 +986,10 @@ msgstr "संलग्न TP/SL केवल तभी लगाया जा�
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "अधिकृत करने का अनुरोध अस्वीकार हुआ"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Authorization was rejected in the wallet."
+msgstr "वॉलेट में प्राधिकरण अस्वीकार कर दिया गया।"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Authorize"
@@ -1358,6 +1385,12 @@ msgstr "ओपन इंटरेस्ट सीमा के कारण र�
 msgid "Cancellation submitted. Waiting for the open-orders update."
 msgstr "रद्द करने का अनुरोध भेज दिया गया। खुले ऑर्डर के अपडेट की प्रतीक्षा है।"
 
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Cannot switch to isolated mode with an open position"
+msgstr "खुली पोज़िशन रहते हुए आइसोलेटेड मोड पर नहीं बदला जा सकता"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "खुली पोज़िशन के साथ आइसोलेटेड मोड पर स्विच नहीं कर सकते। पहले अपनी पोज़िशन बंद करें।"
@@ -1386,6 +1419,11 @@ msgstr "अवरोही क्रम में बदलें"
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "चार्ट"
+
+#: src/components/trade/chart/datafeed.ts
+#: src/components/trade/chart/datafeed.ts
+msgid "Chart data could not be loaded"
+msgstr "चार्ट डेटा लोड नहीं हो सका"
 
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart data is temporarily rate limited"
@@ -1533,6 +1571,13 @@ msgstr "वर्गीकरण उपलब्ध नहीं है"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Clear record"
 msgstr "रिकॉर्ड साफ़ करें"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Clear search"
+msgstr "खोज साफ़ करें"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Clear unreadable record"
@@ -2660,6 +2705,7 @@ msgstr "डिस्कनेक्ट हो गया"
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "खारिज करें"
 
@@ -2911,6 +2957,14 @@ msgstr "मान्य ट्रिगर मूल्य दर्ज कर�
 msgid "Enter a valid trigger price using the market's price precision."
 msgstr "बाज़ार की मूल्य परिशुद्धता के अनुसार मान्य ट्रिगर मूल्य दर्ज करें।"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Enter an amount."
+msgstr "राशि दर्ज करें।"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Enter an API wallet name."
+msgstr "API वॉलेट का नाम दर्ज करें।"
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Enter code"
 msgstr "कोड दर्ज करें"
@@ -3102,6 +3156,7 @@ msgstr "समाप्त"
 #~ msgstr "{expiresAtLabel} को समाप्त होगा।"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Expires today"
 msgstr "आज समाप्त होगा"
 
@@ -3494,6 +3549,10 @@ msgstr "नवीनतम पात्रता या खाता डेट�
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Fresh extraAgents data is being checked before the result is accepted."
 msgstr "परिणाम स्वीकार करने से पहले नए extraAgents डेटा की जाँच की जा रही है।"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Fresh Vault balances and limits could not be verified."
+msgstr "वॉल्ट के नवीनतम बैलेंस और सीमाएँ सत्यापित नहीं हो सकीं।"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "From"
@@ -3987,6 +4046,15 @@ msgstr "अमान्य राशि"
 msgid "Invalid destination address"
 msgstr "गंतव्य पता अमान्य है"
 
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Invalid leverage"
+msgstr "अमान्य लीवरेज"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Invalid margin mode"
+msgstr "अमान्य मार्जिन मोड"
+
 #: src/lib/errors/exchange-error-text.ts
 msgid "Invalid TP/SL price."
 msgstr "अमान्य TP/SL मूल्य।"
@@ -4147,6 +4215,10 @@ msgstr "लीगेसी DEX"
 msgid "Legacy reward history"
 msgstr "पुराना पुरस्कार इतिहास"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Legal eligibility could not be verified."
+msgstr "कानूनी पात्रता सत्यापित नहीं हो सकी।"
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Lending Net Balance"
 msgstr "शुद्ध उधार शेष"
@@ -4157,9 +4229,21 @@ msgstr "शुद्ध उधार शेष"
 msgid "Leverage"
 msgstr "Leverage"
 
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage changed before margin mode update"
+msgstr "मार्जिन मोड अपडेट से पहले लीवरेज बदल गया"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "इस बाज़ार के लिए लीवरेज {currentLeverage}× पर निर्धारित है।"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage request no longer matches the confirmed settings"
+msgstr "लीवरेज अनुरोध अब पुष्टि की गई सेटिंग्स से मेल नहीं खाता"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage request no longer matches the selected market"
+msgstr "लीवरेज अनुरोध अब चुने गए मार्केट से मेल नहीं खाता"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -4435,6 +4519,10 @@ msgstr "लोड हो रहा है..."
 msgid "Loading…"
 msgstr "लोड हो रहा है…"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Location eligibility could not be verified."
+msgstr "स्थान पात्रता सत्यापित नहीं हो सकी।"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Lock period progress"
 msgstr "लॉक अवधि की प्रगति"
@@ -4532,6 +4620,11 @@ msgstr "मार्जिन और खाता जोखिम एक नज�
 msgid "Margin mode"
 msgstr "Margin मोड"
 
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Margin mode changed before leverage update"
+msgstr "लीवरेज अपडेट से पहले मार्जिन मोड बदल गया"
+
+#: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/tests/action-error.test.ts
 msgid "Margin mode data is unavailable"
 msgstr "मार्जिन मोड डेटा उपलब्ध नहीं है"
@@ -4967,7 +5060,11 @@ msgstr "इस रिकॉर्ड का समाधान होने त�
 msgid "New mobile pairing is temporarily unavailable."
 msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Next"
 msgstr "अगला"
 
@@ -5357,12 +5454,17 @@ msgstr "कनेक्टेड नहीं"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Not reported"
 msgstr "रिपोर्ट नहीं किया गया"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Notification details"
 msgstr "सूचना का विवरण"
+
+#: src/components/ui/sonner.tsx
+msgid "Notifications"
+msgstr "सूचनाएँ"
 
 #: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
@@ -5784,6 +5886,13 @@ msgstr "मालिक"
 #~ msgid "Owner account"
 #~ msgstr "मालिक खाता"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Page {page}"
+msgstr "पेज {page}"
+
 #: src/components/referrals/referred-traders.tsx
 msgid "Page {visiblePage} of {totalPages}"
 msgstr "{totalPages} में से पेज {visiblePage}"
@@ -6040,6 +6149,10 @@ msgstr "पोर्टफोलियो इतिहास चार्ट"
 msgid "Portfolio margin"
 msgstr "पोर्टफोलियो मार्जिन"
 
+#: src/hooks/trade/use-account-abstraction-control.ts
+msgid "Portfolio margin activation is temporarily unavailable"
+msgstr "पोर्टफ़ोलियो मार्जिन सक्रिय करना अस्थायी रूप से उपलब्ध नहीं है"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Portfolio margin eligibility and limits"
 msgstr "पोर्टफोलियो मार्जिन की पात्रता और सीमाएँ"
@@ -6083,6 +6196,16 @@ msgstr "पोजीशन"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Position changed before submission. Review the Reduce Only quantity and direction."
 msgstr "सबमिट करने से पहले पोज़िशन बदल गई। केवल घटाने की मात्रा और दिशा जाँचें।"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/lib/tests/margin-mode-modal.test.tsx
+#: src/lib/tests/position-submit-feedback.test.ts
+#: src/lib/tests/position-submit-feedback.test.ts
+#: src/lib/tests/position-submit-feedback.test.ts
+msgid "Position data is unavailable"
+msgstr "पोज़िशन डेटा उपलब्ध नहीं है"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
@@ -6179,7 +6302,11 @@ msgstr "आपका कोट तैयार किया जा रहा ह
 #~ msgid "Press and hold for 4 seconds"
 #~ msgstr "4 सेकंड तक दबाकर रखें"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Previous"
 msgstr "पिछला"
 
@@ -8371,6 +8498,10 @@ msgstr "पुष्टि की गई 30-दिन की अवधि मे
 msgid "The account has no ordinary orders in the available history."
 msgstr "उपलब्ध इतिहास में इस खाते का कोई सामान्य ऑर्डर नहीं है।"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The active owner wallet or network changed."
+msgstr "सक्रिय स्वामी वॉलेट या नेटवर्क बदल गया।"
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr "सक्रिय वॉलेट इस खाते का मास्टर वॉलेट नहीं है"
@@ -8386,6 +8517,10 @@ msgstr "इस पते पर पहले से पाँच निकास
 #: src/components/vaults/vaults-page.tsx
 msgid "The address is invalid or Hyperliquid returned no Vault details for it."
 msgstr "पता अमान्य है या Hyperliquid ने इसके लिए कोई वॉल्ट विवरण नहीं लौटाया।"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The amount exceeds the freshly verified maximum."
+msgstr "राशि हाल ही में सत्यापित अधिकतम सीमा से अधिक है।"
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."
@@ -8558,6 +8693,10 @@ msgstr "नेटवर्क से मेल खाने वाला सा�
 #~ msgid "The one-time QR service is unavailable. Check your connection and retry."
 #~ msgstr "वन-टाइम QR सेवा अनुपलब्ध है। अपना कनेक्शन जांचें और पुनः प्रयास करें।"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The operation reference could not be stored safely, so nothing was signed."
+msgstr "ऑपरेशन संदर्भ सुरक्षित रूप से सहेजा नहीं जा सका, इसलिए कुछ भी हस्ताक्षरित नहीं किया गया।"
+
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "ऑर्डर जारी रह सकता है, लेकिन यह पुष्टि प्राथमिकता सहेजी नहीं जा सकी।"
@@ -8668,6 +8807,10 @@ msgstr "QR इसी डिवाइस पर रहता है और कभ
 #: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "हाल का ट्रेड स्नैपशॉट लोड या सत्यापित नहीं किया जा सका।"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The refreshed Vault identity did not match this reviewed action."
+msgstr "रीफ़्रेश की गई वॉल्ट पहचान इस समीक्षा की गई कार्रवाई से मेल नहीं खाती।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
@@ -8974,6 +9117,12 @@ msgstr "यह आइसोलेटेड पोज़िशन अब खु�
 msgid "This market is at its open interest cap, so the order cannot increase open interest."
 msgstr "यह मार्केट अपनी ओपन इंटरेस्ट सीमा पर है, इसलिए ऑर्डर ओपन इंटरेस्ट नहीं बढ़ा सकता।"
 
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "This market only supports isolated margin mode"
+msgstr "यह मार्केट केवल आइसोलेटेड मार्जिन मोड का समर्थन करता है"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "This market only supports isolated margin mode."
 msgstr "यह बाज़ार केवल आइसोलेटेड मार्जिन मोड का समर्थन करता है।"
@@ -8981,6 +9130,10 @@ msgstr "यह बाज़ार केवल आइसोलेटेड म�
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This mobile trading key has expired."
 #~ msgstr "इस मोबाइल ट्रेडिंग कुंजी की समय-सीमा समाप्त हो गई है।"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "This name already exists. A duplicate would replace the existing API wallet."
+msgstr "यह नाम पहले से मौजूद है। डुप्लिकेट मौजूदा API वॉलेट को बदल देगा।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This one-time QR closes automatically within 60 seconds."
@@ -9140,6 +9293,10 @@ msgstr "यह वॉल्ट बंद है और अब जमा स्�
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is not accepting deposits."
 msgstr "यह वॉल्ट जमा स्वीकार नहीं कर रहा है।"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "This Vault no longer accepts deposits."
+msgstr "यह वॉल्ट अब जमा स्वीकार नहीं करता।"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
@@ -10052,6 +10209,14 @@ msgstr "USDC वॉल्यूम"
 msgid "Use {priceText} as limit price"
 msgstr "{priceText} को लिमिट मूल्य के रूप में उपयोग करें"
 
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Use 2–16 letters, numbers, underscores, or hyphens."
+msgstr "2–16 अक्षर, संख्याएँ, अंडरस्कोर या हाइफ़न का उपयोग करें।"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Use a valid HYPE amount with no more than eight decimal places."
+msgstr "आठ दशमलव स्थानों से अधिक के बिना मान्य HYPE राशि का उपयोग करें।"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Use max available balance"
@@ -10191,6 +10356,14 @@ msgstr "वॉल्ट लॉक स्थिति"
 msgid "Vault not found"
 msgstr "वॉल्ट नहीं मिला"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Vault operation failed."
+msgstr "वॉल्ट ऑपरेशन विफल रहा।"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Vault operation failed. Verify current balances and history before trying again."
+msgstr "वॉल्ट ऑपरेशन विफल रहा। फिर से प्रयास करने से पहले मौजूदा बैलेंस और इतिहास सत्यापित करें।"
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Vault pagination"
 msgstr "वॉल्ट पेज नेविगेशन"
@@ -10255,6 +10428,7 @@ msgstr "सत्यापित करें"
 msgid "Verify again"
 msgstr "फिर सत्यापित करें"
 
+#: src/components/vaults/use-vault-action-controller.ts
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Verify the pending funds operation before starting another one."
 msgstr "दूसरा फंड ऑपरेशन शुरू करने से पहले लंबित ऑपरेशन सत्यापित करें।"
@@ -10398,6 +10572,11 @@ msgstr "वॉलेट ने ट्रांज़ैक्शन हैश �
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "वॉलेट {0} से कनेक्ट नहीं है। अपने वॉलेट में नेटवर्क बदलें और दोबारा प्रयास करें।"
 
+#: src/hooks/trade/use-account-abstraction-control.ts
+#: src/lib/tests/account-mode-modal.test.tsx
+msgid "Wallet is not ready to update account mode"
+msgstr "खाता मोड अपडेट करने के लिए वॉलेट तैयार नहीं है"
+
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10518,6 +10697,10 @@ msgstr "निकासी विफल रही"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "निकासी शुल्क"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Withdrawal is still locked by the fresh server timestamp."
+msgstr "नवीनतम सर्वर टाइमस्टैम्प के अनुसार निकासी अभी भी लॉक है।"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal locked"
