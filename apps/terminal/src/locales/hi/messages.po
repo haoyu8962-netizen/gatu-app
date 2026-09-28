@@ -500,7 +500,7 @@ msgstr "DEX सक्रिय करें"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Activates when mark ≤ {triggerPrice}"
-msgstr ""
+msgstr "मार्क ≤ {triggerPrice} होने पर सक्रिय होता है"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #~ msgid "Activates when mark ≥ {0}"
@@ -508,7 +508,7 @@ msgstr ""
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Activates when mark ≥ {triggerPrice}"
-msgstr ""
+msgstr "मार्क ≥ {triggerPrice} होने पर सक्रिय होता है"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/staking/staking-view.tsx
@@ -1701,7 +1701,7 @@ msgstr "बंद PNL"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Closes in {remainingSeconds}s"
-msgstr ""
+msgstr "{remainingSeconds} सेकंड में बंद होगा"
 
 #: src/components/vaults/vaults-page.tsx
 msgid "Closing cost"
@@ -2609,11 +2609,11 @@ msgstr "डिस्प्ले"
 
 #: src/config/desktop-nav.ts
 msgid "Display and language"
-msgstr ""
+msgstr "डिस्प्ले और भाषा"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Display units"
-msgstr ""
+msgstr "डिस्प्ले इकाइयाँ"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -7070,7 +7070,7 @@ msgstr ""
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device)."
-msgstr ""
+msgstr "डेस्कटॉप पर gatu के ऊपर दाईं ओर QR आइकन (मोबाइल डिवाइस लिंक करें) से QR स्कैन करें।"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #~ msgid "Scan the QR shown by Link Mobile Device on your desktop."
@@ -7385,7 +7385,7 @@ msgstr "हस्ताक्षर करने वाला खाता"
 
 #: src/components/staking/staking-view.tsx
 msgid "Signing ready"
-msgstr ""
+msgstr "हस्ताक्षर के लिए तैयार"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Signing with your email wallet"
@@ -7461,7 +7461,7 @@ msgstr "साइज़ स्क्यू"
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
-msgstr ""
+msgstr "कुल साइज़ के लिए साइज़ स्क्यू बहुत अधिक है"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -8787,7 +8787,7 @@ msgstr "इस ऑर्डर प्रकार को सुरक्षि�
 
 #: src/components/ui/lazy-dialog-boundary.tsx
 msgid "This panel could not be loaded. Try again, or reload the page. Reloading clears an order you have not sent."
-msgstr ""
+msgstr "यह पैनल लोड नहीं हो सका। फिर से प्रयास करें या पेज रीलोड करें। रीलोड करने से वह ऑर्डर मिट जाता है जिसे आपने अभी भेजा नहीं है।"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This phone could not store the trading key. Clear this site's data and scan again."
@@ -8796,7 +8796,7 @@ msgstr ""
 #: src/hooks/trade/use-deposit-availability.ts
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop."
-msgstr ""
+msgstr "यह फ़ोन डेस्कटॉप से स्वीकृत ट्रेडिंग कुंजी का उपयोग करता है। जमा, निकासी और ट्रांसफ़र के लिए डेस्कटॉप पर मास्टर वॉलेट की आवश्यकता है।"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -8862,7 +8862,7 @@ msgstr "यह QR मान्य डेस्कटॉप वॉलेट ल�
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR's time does not match this phone. Check the date and time on both devices, then create a new QR."
-msgstr ""
+msgstr "इस QR का समय इस फ़ोन से मेल नहीं खाता। दोनों डिवाइस की तारीख और समय जाँचें, फिर नया QR बनाएँ।"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "This record predates baseline verification. It cannot be completed automatically. Verify account history and state independently before clearing it."
@@ -9024,7 +9024,7 @@ msgstr "कुल"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Total ({sizeToken})"
-msgstr ""
+msgstr "कुल ({sizeToken})"
 
 #: src/components/earn/earn-action-modal.tsx
 #: src/components/earn/earn-view.tsx

@@ -2,7 +2,7 @@
 
 Welcome to the official documentation for **gatu**, a professional trading terminal for the Hyperliquid decentralized exchange.
 
-> _Last updated: June 15, 2026_
+> _Last updated: September 28, 2026_
 
 ---
 
@@ -64,42 +64,6 @@ Follow these steps to place your first trade:
 - **Funding & bridging** — move assets into your trading account from supported networks.
 - **Mobile trading** — link your phone to trade away from your desktop.
 - **Portfolio monitoring** — track positions, balances, open orders, funding, and trade history.
-
----
-
-## Table of Contents (Detailed Guides)
-
-> The sections below are placeholders for more detailed documentation. Replace each link as your docs expand.
-
-1. **Getting Started**
-   - [Connecting a Wallet](#)
-   - [Depositing & Withdrawing](#)
-   - [Approving the Trading Agent](#)
-2. **Trading**
-   - [Placing Orders](#)
-   - [Order Types & Time-in-Force](#)
-   - [Leverage & Margin](#)
-   - [TWAP Orders](#)
-   - [Take-Profit & Stop-Loss](#)
-3. **Markets**
-   - [Perpetuals](#)
-   - [Spot](#)
-   - [Builder Markets](#)
-4. **Account Management**
-   - [Positions & Balances](#)
-   - [Order & Trade History](#)
-   - [Funding Payments](#)
-5. **Bridging & Transfers**
-   - [Cross-Chain Bridge](#)
-   - [Internal Transfers](#)
-6. **Mobile**
-   - [Linking a Device](#)
-   - [Security Model](#)
-7. **Reference**
-   - [Fees](#)
-   - [Supported Networks](#)
-   - [Glossary](#)
-   - [Keyboard Shortcuts](#)
 
 ---
 

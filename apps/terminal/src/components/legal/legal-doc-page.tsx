@@ -10,6 +10,11 @@ interface Props {
 	content: string;
 }
 
+function anchorOffsetClass(isMobile: boolean, isTestnet: boolean) {
+	if (isMobile) return "[--markdown-anchor-offset:calc(3.5rem+env(safe-area-inset-top))]";
+	return isTestnet ? "[--markdown-anchor-offset:5.5rem]" : "[--markdown-anchor-offset:3.5rem]";
+}
+
 export function LegalDocPage({ content }: Props) {
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
@@ -23,7 +28,7 @@ export function LegalDocPage({ content }: Props) {
 				testnet={isTestnet}
 				header={<DashboardHeader isMobile={isMobile} />}
 				main={
-					<article lang="en" dir="ltr">
+					<article lang="en" dir="ltr" className={anchorOffsetClass(isMobile, isTestnet)}>
 						{renderMarkdown(content)}
 					</article>
 				}

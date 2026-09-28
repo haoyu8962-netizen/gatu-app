@@ -373,6 +373,10 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(response.headers.get("x-gatu-route") === "mobile-agent-sync", "x-gatu-route marker missing");
 	});
 	await check("missing files stay 404", async () => {
+		for (const path of ["/missing.webmanifest", "/.env"]) {
+			const response = await fetchImpl(`${base}${path}`);
+			expect(response.status === 404, `${path} status ${response.status}`);
+		}
 		const asset = await fetchImpl(`${base}/assets/missing-${Date.now()}.js`);
 		expect(asset.status === 404, `asset status ${asset.status}`);
 		const chart = await fetchImpl(`${base}/charting_library/missing-${Date.now()}.js`);

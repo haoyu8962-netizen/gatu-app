@@ -500,7 +500,7 @@ msgstr "Activer le DEX"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Activates when mark ≤ {triggerPrice}"
-msgstr ""
+msgstr "S’active lorsque le prix mark ≤ {triggerPrice}"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #~ msgid "Activates when mark ≥ {0}"
@@ -508,7 +508,7 @@ msgstr ""
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Activates when mark ≥ {triggerPrice}"
-msgstr ""
+msgstr "S’active lorsque le prix mark ≥ {triggerPrice}"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/staking/staking-view.tsx
@@ -1701,7 +1701,7 @@ msgstr "PnL clôturé"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Closes in {remainingSeconds}s"
-msgstr ""
+msgstr "Se ferme dans {remainingSeconds}s"
 
 #: src/components/vaults/vaults-page.tsx
 msgid "Closing cost"
@@ -2609,11 +2609,11 @@ msgstr "Affichage"
 
 #: src/config/desktop-nav.ts
 msgid "Display and language"
-msgstr ""
+msgstr "Affichage et langue"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Display units"
-msgstr ""
+msgstr "Unités d'affichage"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -7070,7 +7070,7 @@ msgstr ""
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device)."
-msgstr ""
+msgstr "Scannez le QR affiché via l'icône QR en haut à droite de gatu sur ordinateur (Associer un appareil mobile)."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #~ msgid "Scan the QR shown by Link Mobile Device on your desktop."
@@ -7385,7 +7385,7 @@ msgstr "Compte signataire"
 
 #: src/components/staking/staking-view.tsx
 msgid "Signing ready"
-msgstr ""
+msgstr "Signature prête"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Signing with your email wallet"
@@ -7461,7 +7461,7 @@ msgstr "Asymétrie de taille"
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
-msgstr ""
+msgstr "L'asymétrie de taille est trop importante pour la taille totale"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -8787,7 +8787,7 @@ msgstr "Ce type d'ordre ne peut pas être modifié en toute sécurité. Annulez-
 
 #: src/components/ui/lazy-dialog-boundary.tsx
 msgid "This panel could not be loaded. Try again, or reload the page. Reloading clears an order you have not sent."
-msgstr ""
+msgstr "Ce panneau n'a pas pu être chargé. Réessayez ou rechargez la page. Le rechargement efface un ordre que vous n'avez pas envoyé."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This phone could not store the trading key. Clear this site's data and scan again."
@@ -8796,7 +8796,7 @@ msgstr ""
 #: src/hooks/trade/use-deposit-availability.ts
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop."
-msgstr ""
+msgstr "Ce téléphone utilise une clé de trading approuvée sur ordinateur. Les dépôts, retraits et transferts nécessitent le portefeuille principal sur ordinateur."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -8862,7 +8862,7 @@ msgstr "Ce QR n'est pas un lien de portefeuille de bureau valide."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR's time does not match this phone. Check the date and time on both devices, then create a new QR."
-msgstr ""
+msgstr "L'heure de ce QR ne correspond pas à celle de ce téléphone. Vérifiez la date et l'heure des deux appareils, puis créez un nouveau QR."
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "This record predates baseline verification. It cannot be completed automatically. Verify account history and state independently before clearing it."
@@ -9024,7 +9024,7 @@ msgstr "Total"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Total ({sizeToken})"
-msgstr ""
+msgstr "Total ({sizeToken})"
 
 #: src/components/earn/earn-action-modal.tsx
 #: src/components/earn/earn-view.tsx

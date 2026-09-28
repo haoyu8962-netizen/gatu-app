@@ -9,26 +9,27 @@ const HEADING_CLASS: Record<number, string> = {
 	6: "mt-4 mb-2 text-xs font-semibold text-fg-muted",
 };
 
-function Heading({ level, children }: { level: number; children: ReactNode }) {
-	const className = HEADING_CLASS[level] ?? HEADING_CLASS[6];
-	if (level === 1) return <h1 className={className}>{children}</h1>;
-	if (level === 2) return <h2 className={className}>{children}</h2>;
-	if (level === 3) return <h3 className={className}>{children}</h3>;
-	if (level === 4) return <h4 className={className}>{children}</h4>;
-	if (level === 5) return <h5 className={className}>{children}</h5>;
-	return <h6 className={className}>{children}</h6>;
+function Heading({ level, id, children }: { level: number; id: string; children: ReactNode }) {
+	const className = `${HEADING_CLASS[level] ?? HEADING_CLASS[6]} scroll-mt-[calc(var(--markdown-anchor-offset,0rem)+1rem)]`;
+	const Tag = `h${level}` as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+	return (
+		<Tag id={id} className={className}>
+			{children}
+		</Tag>
+	);
 }
 
-const INLINE = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`/g;
+const INLINE_SOURCE =
+	/\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|(?<![\p{L}\p{N}_])_([^_\s\n](?:[^_\n]*[^_\s\n])?)_(?![\p{L}\p{N}_])|(?<![\p{L}\p{N}*])\*([^*\s\n](?:[^*\n]*[^*\s\n])?)\*(?![\p{L}\p{N}*])/gu;
 
 function renderInline(text: string): ReactNode[] {
+	const inline = new RegExp(INLINE_SOURCE.source, INLINE_SOURCE.flags);
 	const nodes: ReactNode[] = [];
 	let lastIndex = 0;
 	let key = 0;
 	let match: RegExpExecArray | null;
-	INLINE.lastIndex = 0;
 	while (true) {
-		match = INLINE.exec(text);
+		match = inline.exec(text);
 		if (match === null) break;
 		if (match.index > lastIndex) {
 			nodes.push(<Fragment key={key++}>{text.slice(lastIndex, match.index)}</Fragment>);
@@ -59,7 +60,10 @@ function renderInline(text: string): ReactNode[] {
 				</code>,
 			);
 		}
-		lastIndex = INLINE.lastIndex;
+		if (match[5] !== undefined || match[6] !== undefined) {
+			nodes.push(<em key={key++}>{renderInline(match[5] ?? match[6])}</em>);
+		}
+		lastIndex = inline.lastIndex;
 	}
 	if (lastIndex < text.length) nodes.push(<Fragment key={key++}>{text.slice(lastIndex)}</Fragment>);
 	return nodes;
@@ -72,6 +76,42 @@ function parseTableRow(row: string): string[] {
 		.replace(/\|$/, "")
 		.split("|")
 		.map((cell) => cell.trim());
+}
+
+const LIST_ITEM = /^(\s*)([-*]|\d+\.)\s+(.*)$/;
+
+function parseList(lines: string[], start: number): { node: ReactNode; next: number } {
+	const first = LIST_ITEM.exec(lines[start]);
+	if (!first) return { node: null, next: start + 1 };
+	const indent = first[1].length;
+	const ordered = /\d/.test(first[2]);
+	const items: ReactNode[] = [];
+	let next = start;
+	while (next < lines.length) {
+		const item = LIST_ITEM.exec(lines[next]);
+		if (!item || item[1].length !== indent || /\d/.test(item[2]) !== ordered) break;
+		next++;
+		const children: ReactNode[] = [];
+		while (next < lines.length) {
+			const child = LIST_ITEM.exec(lines[next]);
+			if (!child || child[1].length <= indent) break;
+			const nested = parseList(lines, next);
+			children.push(<Fragment key={children.length}>{nested.node}</Fragment>);
+			next = nested.next;
+		}
+		items.push(
+			<li key={items.length} className="my-1">
+				{renderInline(item[3])}
+				{children}
+			</li>,
+		);
+	}
+	const node = ordered ? (
+		<ol className="my-3 list-decimal space-y-1 ps-6 text-sm text-fg-muted">{items}</ol>
+	) : (
+		<ul className="my-3 list-disc space-y-1 ps-6 text-sm text-fg-muted">{items}</ul>
+	);
+	return { node, next };
 }
 
 export function renderMarkdown(markdown: string): ReactNode[] {
@@ -107,7 +147,19 @@ export function renderMarkdown(markdown: string): ReactNode[] {
 		const heading = /^(#{1,6})\s+(.*)$/.exec(line);
 		if (heading) {
 			blocks.push(
-				<Heading key={key++} level={heading[1].length}>
+				<Heading
+					key={key++}
+					level={heading[1].length}
+					id={heading[2]
+						.replace(
+							new RegExp(INLINE_SOURCE.source, INLINE_SOURCE.flags),
+							(_match, link, _href, strong, code, underscore, asterisk) =>
+								link ?? strong ?? code ?? underscore ?? asterisk,
+						)
+						.toLowerCase()
+						.replace(/[^\p{L}\p{N} _-]/gu, "")
+						.replace(/ /g, "-")}
+				>
 					{renderInline(heading[2])}
 				</Heading>,
 			);
@@ -185,39 +237,10 @@ export function renderMarkdown(markdown: string): ReactNode[] {
 			continue;
 		}
 
-		if (/^\s*[-*]\s+/.test(line)) {
-			const items: ReactNode[] = [];
-			while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
-				items.push(
-					<li key={items.length} className="my-1">
-						{renderInline(lines[i].replace(/^\s*[-*]\s+/, ""))}
-					</li>,
-				);
-				i++;
-			}
-			blocks.push(
-				<ul key={key++} className="my-3 list-disc space-y-1 ps-6 text-sm text-fg-muted">
-					{items}
-				</ul>,
-			);
-			continue;
-		}
-
-		if (/^\s*\d+\.\s+/.test(line)) {
-			const items: ReactNode[] = [];
-			while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
-				items.push(
-					<li key={items.length} className="my-1">
-						{renderInline(lines[i].replace(/^\s*\d+\.\s+/, ""))}
-					</li>,
-				);
-				i++;
-			}
-			blocks.push(
-				<ol key={key++} className="my-3 list-decimal space-y-1 ps-6 text-sm text-fg-muted">
-					{items}
-				</ol>,
-			);
+		if (/^\s*(?:[-*]|\d+\.)\s+/.test(line)) {
+			const list = parseList(lines, i);
+			blocks.push(<Fragment key={key++}>{list.node}</Fragment>);
+			i = list.next;
 			continue;
 		}
 

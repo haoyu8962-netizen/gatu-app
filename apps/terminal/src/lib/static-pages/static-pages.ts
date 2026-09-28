@@ -18,7 +18,7 @@ const POST_ONLY_SERVER_PATHS = new Set<string>([
 	CLIENT_ERROR_REPORT_API_PATH,
 	LEGACY_CLIENT_ERROR_REPORT_PATH,
 ]);
-const FILE_EXTENSION = /\.[A-Za-z0-9]{1,8}$/;
+const FILE_EXTENSION = /\.[A-Za-z0-9]{1,16}$/;
 
 export type StaticPageDecision =
 	| { kind: "pass" }
