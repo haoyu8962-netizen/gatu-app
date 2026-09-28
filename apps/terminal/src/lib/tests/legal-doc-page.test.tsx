@@ -106,6 +106,25 @@ describe("LegalDocPage", () => {
 		expect(container.querySelector('[data-testid="testnet-banner"]')).not.toBeNull();
 	});
 
+	it.each([
+		{ isMobile: false, isTestnet: false, offset: "[--markdown-anchor-offset:3.5rem]" },
+		{ isMobile: false, isTestnet: true, offset: "[--markdown-anchor-offset:5.5rem]" },
+		{
+			isMobile: true,
+			isTestnet: true,
+			offset: "[--markdown-anchor-offset:calc(3.5rem+env(safe-area-inset-top))]",
+		},
+	])(
+		"offsets in-page anchors by the header shown (mobile $isMobile, testnet $isTestnet)",
+		async ({ isMobile, isTestnet, offset }) => {
+			testState.isMobile = isMobile;
+			testState.isTestnet = isTestnet;
+			await renderPage();
+
+			expect(container.querySelector("main article")?.classList).toContain(offset);
+		},
+	);
+
 	it("has no document-specific navigation of its own", () => {
 		expect(legalPageSource).not.toContain("DocumentChrome");
 		expect(legalPageSource).not.toContain("<nav");

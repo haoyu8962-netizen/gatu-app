@@ -350,6 +350,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The Docs page no longer shows its placeholder table of unfinished guide links, whose entries all
+  pointed nowhere, or the note telling authors to replace them.
+- The Quick Links on the Support page, and its other link to Troubleshooting, now jump to their
+  section and stop below the header on desktop, on testnet and on phones. Headings had no anchor,
+  so these links did nothing.
+- Italic text on the Docs and Support pages no longer shows its underscores or asterisks, and a
+  numbered list with nested bullets keeps one numbering instead of restarting at 1 for every entry.
 - Arabic, Spanish, French and Hindi translate 12 more strings that fell back to English, including
   the mobile order book's `Total` column header, the TWAP trigger hints and the Display and
   language menu. Two English source entries that were empty are filled.
