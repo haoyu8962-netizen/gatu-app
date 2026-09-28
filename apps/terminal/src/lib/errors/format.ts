@@ -5,10 +5,13 @@ import { describeActionError, isAmbiguousExchangeActionError } from "./action-er
 
 export { isAmbiguousExchangeActionError, isSmartWalletNonceConflict } from "./action-error";
 
-/** Describes a failed funds or wallet operation in the active language. */
-export function formatTransferError(error: Error | null, translate: Translate): string {
-	if (!error) return translate(msg`Unknown error`);
-	return describeActionError(error, translate);
+/**
+ * Describes a failed funds or wallet operation in the active language. Pass the surface's own
+ * message as the fallback for failures that have nothing more specific to say.
+ */
+export function formatTransferError(error: Error | null, translate: Translate, fallback?: string): string {
+	if (!error) return fallback ?? translate(msg`Unknown error`);
+	return describeActionError(error, translate, fallback);
 }
 
 /**
