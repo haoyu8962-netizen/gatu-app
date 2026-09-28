@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const startGeoPrefetch = vi.fn();
 const startSurfacePreloads = vi.fn();
-vi.mock("@/lib/geo/geo-prefetch", () => ({ shouldPrefetchGeo: () => true, startGeoPrefetch }));
+vi.mock("@/lib/geo/geo-prefetch", () => ({ startGeoPrefetch }));
 vi.mock("@/lib/preload/surface-preloads", () => ({ startSurfacePreloads }));
 
 describe("startEarlyPrefetches", () => {

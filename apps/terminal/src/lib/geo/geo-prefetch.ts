@@ -1,5 +1,4 @@
 import { GEO_API_PATH } from "@/config/api-paths";
-import { isDocumentRoutePath } from "@/config/app-route-surface";
 
 /** Shared by the prefetch and `getGeo`, so the early response is reusable by the later request. */
 export const GEO_REQUEST_INIT: RequestInit = {
@@ -10,10 +9,6 @@ export const GEO_REQUEST_INIT: RequestInit = {
 };
 
 let pendingGeoResponse: Promise<Response> | undefined;
-
-export function shouldPrefetchGeo(pathname: string): boolean {
-	return !isDocumentRoutePath(pathname);
-}
 
 /**
  * Starts the jurisdiction lookup from the bootstrap entry, before the wallet runtime chunks

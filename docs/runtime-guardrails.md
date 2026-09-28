@@ -115,22 +115,20 @@ inspect entry visibility at 375, 1100 and 1440 pixels without exposing a real ke
 
 ### Provider Lifetime During Navigation
 
-- The root route and client runtime gate must classify their surface using
-  the last presented `router.state.matches` pathname, with `location` only
-  as the initial fallback when no matches exist. The requested `location`
-  changes before `Outlet` replaces the previous route; `resolvedLocation`
-  can remain old after the destination is presented. Neither is a safe
-  standalone signal for mounting or removing route providers.
+- Every application route, the Docs, Support, Terms, Privacy, Risk and
+  Cookies pages included, renders inside the same client runtime gate.
+  There is no document/app provider boundary to switch on the pathname
+  ([ADR 0020](adr/0020-legal-pages-in-app-shell.md)); do not reintroduce a
+  route surface that skips the wallet runtime without a new decision.
 - Keep the current route's providers mounted throughout a pending or
-  cancelled navigation. Replace the document/app provider boundary when
-  the presented matches change, and preserve provider identity between
-  business routes. Initial document entries must remain independent of
-  the wallet runtime.
+  cancelled navigation, and preserve provider identity between routes:
+  moving between trading, dashboard and legal pages must not remount the
+  wallet or market runtime.
 - A departing market title synchronizer may clear only its own last
   applied title. It must preserve a destination title already installed
   by the router's head renderer.
-- Cover delayed navigation from business routes to every document route,
-  the reverse direction, cancellation and browser history with a real
+- Cover delayed navigation from trading and dashboard routes to every legal
+  page, the reverse direction, cancellation and browser history with a real
   router. Mocking only a pathname cannot verify provider/Outlet alignment.
 
 ### Important Files
@@ -856,7 +854,17 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `UserMenu` decides its first frame from `useState(() => hasPersistedPrivySession())`, not from a
   mount effect: visitors without a stored Privy session see `Connect Wallet` on the first rendered
   frame, and the compact label keeps the ENS name for accounts without email. Dashboard routes
-  await `bootDashboardRoute()` in `beforeLoad` so the account menu chunk is resolved before reveal.
+  (including the `/join/$code` referral invitation, after its code check) await
+  `bootDashboardRoute()` in `beforeLoad`, within `TRADE_ROUTE_REVEAL_BUDGET_MS`, so the
+  account menu, the global modal host (and its Ctrl/⌘K listener) and the desktop footer are
+  resolved before reveal. Dashboard pages render `DashboardHeader`, `FooterBar` and `GlobalModals`
+  only from `components/dashboard/dashboard-chrome.tsx`, whose `preloadDashboardChrome()` preloads
+  those exact lazy instances; a page-local `createLazyComponent` wrapper would not be preloaded.
+  The footer is skipped when the mobile layout matches at the start of the preload and added
+  if the viewport has become desktop once the account menu and the modal host have resolved.
+  The header lives in the same module so the dynamically imported chrome chunk shares the pages'
+  header closure; without it Rollup regroups the shared header chunks and the trade desktop
+  runtime startup exceeded its bundle budget.
 - Evidence for the narrow width (2026-09-17, local production build, disconnected, 1001px viewport,
   gap between the navigation and the wallet controls after removing Earn): en 78px, zh 189px,
   hi 185px, es 53px, fr 2px, ar 109px. French leaves no margin, so every state collapses at
@@ -870,6 +878,7 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `apps/terminal/src/components/trade/header/top-nav.tsx`
 - `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
 - `apps/terminal/src/lib/navigation/boot-dashboard-route.ts`
+- `apps/terminal/src/components/dashboard/dashboard-chrome.tsx`
 - `apps/terminal/src/lib/tests/preload-trade-terminal-surface.test.ts`
 
 ## Required Review Checklist

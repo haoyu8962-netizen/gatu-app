@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
-import { DOCUMENT_ROUTE_PATHS } from "@/config/document-routes";
 import { classifyStaticPageRequest } from "@/lib/static-pages/static-pages";
 
 const terminalRoot = resolve(__dirname, "../../..");
@@ -94,13 +93,13 @@ describe("service worker navigation caching", () => {
 		expect(() => network.clone()).toThrow();
 		expect(await body).toBe("first shell");
 		await refresh;
-		expect(await harness.stores.get("shell-v9")?.get(`${origin}/shell-v9`)?.clone().text()).toBe("first shell");
+		expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("first shell");
 	});
 
 	it("serves one shared application shell immediately with intact headers and refreshes in the background", async () => {
 		const harness = createHarness();
-		const cache = await harness.open("shell-v9");
-		await cache.put(`${origin}/shell-v9`, html("old"));
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("old"));
 		let finishFetch: ((response: Response) => void) | undefined;
 		harness.fetch.mockImplementationOnce(
 			() =>
@@ -120,24 +119,22 @@ describe("service worker navigation caching", () => {
 		const next = harness.navigate("/portfolio?tab=history");
 		expect(await (await next.response)?.text()).toBe("new");
 		await Promise.all(next.background);
-		expect([...(harness.stores.get("shell-v9")?.keys() ?? [])]).toEqual([`${origin}/shell-v9`]);
+		expect([...(harness.stores.get("shell-v10")?.keys() ?? [])]).toEqual([`${origin}/shell-v10`]);
 	});
 
-	it("stores a network miss, then uses per-URL document SWR without mixing documents and the shell", async () => {
+	it("answers legal pages from the same shell entry as every other application route", async () => {
 		const harness = createHarness();
-		for (const path of ["/trade/ETH", "/docs", "/terms", "/docs/?lang=en"]) {
-			harness.fetch.mockResolvedValueOnce(html(path));
-			const miss = harness.navigate(path);
-			expect(await (await miss.response)?.text()).toBe(path);
-			await Promise.all(miss.background);
+		harness.fetch.mockImplementation(() => Promise.resolve(html("shell")));
+		const miss = harness.navigate("/terms");
+		expect(await (await miss.response)?.text()).toBe("shell");
+		await Promise.all(miss.background);
+		for (const path of ["/docs", "/privacy/", "/risk?lang=en", "/support", "/cookies", "/trade/ETH"]) {
+			const hit = harness.navigate(path);
+			expect(await (await hit.response)?.text(), path).toBe("shell");
+			await Promise.all(hit.background);
 		}
-		expect(harness.stores.get("documents-v9")?.size).toBe(3);
-		harness.fetch.mockResolvedValueOnce(html("updated docs"));
-		const hit = harness.navigate("/docs");
-		expect(await (await hit.response)?.text()).toBe("/docs");
-		await Promise.all(hit.background);
-		expect(await harness.stores.get("documents-v9")?.get(`${origin}/docs`)?.clone().text()).toBe("updated docs");
-		expect(await harness.stores.get("documents-v9")?.get(`${origin}/terms`)?.clone().text()).toBe("/terms");
+		expect([...harness.stores.keys()]).toEqual(["shell-v10"]);
+		expect([...(harness.stores.get("shell-v10")?.keys() ?? [])]).toEqual([`${origin}/shell-v10`]);
 	});
 
 	it.each([
@@ -181,13 +178,13 @@ describe("service worker navigation caching", () => {
 		const navigation = harness.navigate("/trade/ETH");
 		expect(await navigation.response).toBe(network);
 		await Promise.all(navigation.background);
-		expect(harness.stores.get("shell-v9")?.size).toBe(0);
+		expect(harness.stores.get("shell-v10")?.size).toBe(0);
 	});
 
 	it("does not store redirected HTML or replace a good cached shell with an error", async () => {
 		const harness = createHarness();
-		const cache = await harness.open("shell-v9");
-		await cache.put(`${origin}/shell-v9`, html("old"));
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("old"));
 		const redirected = html("redirect destination");
 		Object.defineProperty(redirected, "redirected", { value: true });
 		for (const response of [redirected, new Response("missing", { status: 404 })]) {
@@ -195,14 +192,14 @@ describe("service worker navigation caching", () => {
 			const navigation = harness.navigate("/trade/ETH");
 			expect(await (await navigation.response)?.text()).toBe("old");
 			await Promise.all(navigation.background);
-			expect(await harness.stores.get("shell-v9")?.get(`${origin}/shell-v9`)?.clone().text()).toBe("old");
+			expect(await harness.stores.get("shell-v10")?.get(`${origin}/shell-v10`)?.clone().text()).toBe("old");
 		}
 	});
 
 	it("keeps cached HTML on a network failure and serves network HTML when CacheStorage fails", async () => {
 		const harness = createHarness();
-		const cache = await harness.open("shell-v9");
-		await cache.put(`${origin}/shell-v9`, html("old"));
+		const cache = await harness.open("shell-v10");
+		await cache.put(`${origin}/shell-v10`, html("old"));
 		harness.fetch.mockRejectedValueOnce(new Error("offline"));
 		const cached = harness.navigate("/trade/ETH");
 		expect(await (await cached.response)?.text()).toBe("old");
@@ -213,20 +210,13 @@ describe("service worker navigation caching", () => {
 		await Promise.all(uncached.background);
 	});
 
-	it("matches the canonical static-page document list and edge route classification", () => {
-		const { context } = createHarness();
-		const routes = runInNewContext("DOCUMENT_ROUTES", context) as string[];
-		expect([...routes]).toEqual([...DOCUMENT_ROUTE_PATHS]);
-		for (const route of routes) {
-			expect(classifyStaticPageRequest("GET", route)).toMatchObject({
-				kind: "page",
-				candidates: [`${route.slice(1)}/index.html`, "_shell.html"],
-			});
-		}
+	it("keeps no route-specific page list in the worker, the edge function or the static-page runtime", () => {
 		const edge = readFileSync(resolve(terminalRoot, "../../deploy/cloudfront/functions/terminal-request.js"), "utf8");
-		const edgeContext = {};
-		runInNewContext(edge, edgeContext);
-		expect([...runInNewContext("DOCUMENT_ROUTES", edgeContext)]).toEqual([...routes]);
+		expect(serviceWorker).not.toContain("DOCUMENT_ROUTES");
+		expect(edge).not.toContain("DOCUMENT_ROUTES");
+		for (const route of ["/cookies", "/docs", "/privacy", "/risk", "/support", "/terms"]) {
+			expect(classifyStaticPageRequest("GET", route)).toMatchObject({ kind: "page", candidates: ["_shell.html"] });
+		}
 		expect(serviceWorker).not.toContain("navigationPreload");
 	});
 });

@@ -4,6 +4,8 @@
 - 前置：[ADR 0005](0005-spa-static-shell.md)、[ADR 0006](0006-startup-preloads-and-edge-caching.md)。
 - 部分取代：[ADR 0009](0009-startup-placeholder-single-source.md) 决策 2–5、7；决策 1 的纯展示组件作为真实组件标记的唯一来源继续有效，决策 6 的市场头布局保持。
 
+> 2026-09-27 更正：决策 2 中保留文档路由分类与文档预渲染的部分已被 [ADR 0020](0020-legal-pages-in-app-shell.md) 取代。六个文档页改为仪表盘页，同样先显示空播报，再渲染自己的 `DashboardFrameView`。
+
 ## 背景与约束
 
 产品负责人提供的 2026-09-16 测量：刷新 `/portfolio` 首先显示按 trade 路径预渲染的终端占位，随后显示 portfolio；非英文刷新先显示英文占位 0.2–2 秒，阿拉伯语还会 LTR→RTL。`getHydrationRouteSurface` 为匹配单份 HTML 强制所有应用路由复现 terminal 壳，形成路由闪烁。

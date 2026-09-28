@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { isDocumentRoutePath } from "@/providers/client-runtime";
 
 const clientRootLoaderSource = readFileSync(resolve(process.cwd(), "src/providers/client-root-loader.ts"), "utf8");
 const rootProviderSource = readFileSync(resolve(process.cwd(), "src/providers/root.tsx"), "utf8");
@@ -10,17 +9,11 @@ const rootRouteSource = readFileSync(resolve(process.cwd(), "src/routes/__root.t
 const routerSource = readFileSync(resolve(process.cwd(), "src/router.tsx"), "utf8");
 
 describe("root provider startup split", () => {
-	it("classifies document routes without activating the wallet runtime", () => {
-		expect(isDocumentRoutePath("/docs")).toBe(true);
-		expect(isDocumentRoutePath("/terms/")).toBe(true);
-		expect(isDocumentRoutePath("/trade/HYPE")).toBe(false);
-	});
-
 	it("keeps wallet runtimes out of the statically imported root provider", () => {
 		expect(clientRootLoaderSource).toContain('import("@/providers/client-root")');
 		expect(clientRootLoaderSource).toContain("publish({ Provider: null, error: error ?? new Error(");
 		expect(rootProviderSource).toContain("clientRootLoader.load().catch(() => {});");
-		expect(rootProviderSource).toContain("!isDocumentRoutePath(window.location.pathname)");
+		expect(rootProviderSource).not.toContain("isDocumentRoutePath");
 		expect(rootProviderSource).toContain("useSyncExternalStore(");
 		expect(rootProviderSource).not.toContain("lazy(() =>");
 		expect(rootProviderSource).not.toContain("<Suspense");
@@ -43,8 +36,6 @@ describe("root provider startup split", () => {
 	it("activates the wallet runtime inside <body> through the client runtime gate", () => {
 		expect(rootProviderSource).toContain("export function ClientRuntimeGate");
 		expect(rootProviderSource).toContain("useHydrated()");
-		expect(rootProviderSource).toContain("useRouterState({ select: getPresentedRoutePathname })");
-		expect(rootProviderSource).toContain("isDocumentRoutePath(pathname)");
 		expect(rootProviderSource).toContain(
 			"<ClientRootProvider queryClient={queryClient}>{children}</ClientRootProvider>",
 		);
@@ -56,15 +47,9 @@ describe("root provider startup split", () => {
 		expect(rootRouteSource).not.toContain("<ClientOnly");
 	});
 
-	it("selects the same empty application fallback before mounting route content", () => {
-		expect(rootRouteSource).toContain("useRouterState({ select: getPresentedRoutePathname })");
-		expect(rootRouteSource).toContain("const routeSurface = getAppRouteSurface(pathname)");
-		expect(rootRouteSource).toMatch(
-			/if \(routeSurface === "document"\)[\s\S]*?<ApplicationErrorBoundary>[\s\S]*?<Outlet \/>/,
-		);
-		expect(rootRouteSource).toMatch(
-			/if \(routeSurface === "document"\)[\s\S]*?<Outlet \/>[\s\S]*?<DocumentOverlays \/>/,
-		);
+	it("selects the same empty application fallback before mounting any route content", () => {
+		expect(rootRouteSource).not.toContain("routeSurface");
+		expect(rootRouteSource).not.toContain("DocumentOverlays");
 		expect(rootRouteSource).toContain("<AppRuntimeOverlays />");
 		expect(rootRouteSource).toContain("const fallback = <StartupFallback />");
 		expect(rootRouteSource).not.toContain("getHydrationRouteSurface");

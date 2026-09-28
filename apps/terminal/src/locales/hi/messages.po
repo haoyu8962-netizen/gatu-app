@@ -1979,8 +1979,8 @@ msgid "Contract"
 msgstr "कॉन्ट्रैक्ट"
 
 #: src/components/legal/document-chrome.tsx
-msgid "Cookie Policy"
-msgstr "कुकी नीति"
+#~ msgid "Cookie Policy"
+#~ msgstr "कुकी नीति"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
@@ -2545,12 +2545,11 @@ msgstr "कोई दूसरा स्टेकिंग फंड ऑपर�
 msgid "Do not submit this operation again."
 msgstr "यह ऑपरेशन दोबारा न भेजें।"
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "दस्तावेज़"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "दस्तावेज़ और कानूनी जानकारी"
@@ -5882,7 +5881,6 @@ msgstr "मूल्य परिशुद्धता"
 msgid "Price: Market"
 msgstr "कीमत: मार्केट"
 
-#: src/components/legal/document-chrome.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
@@ -5893,7 +5891,6 @@ msgstr "प्राथमिक नेविगेशन"
 msgid "Priority Gas Auction Fee"
 msgstr "प्रायोरिटी गैस ऑक्शन शुल्क"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "गोपनीयता नीति"
@@ -6621,7 +6618,6 @@ msgstr "पुरस्कार प्राप्त हो गए"
 msgid "Rewards compound automatically"
 msgstr "पुरस्कार अपने-आप कंपाउंड होते हैं"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "जोखिम प्रकटीकरण"
@@ -7562,7 +7558,7 @@ msgstr "सफल"
 msgid "Supply"
 msgstr "सप्लाई"
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "सहायता"
@@ -7789,7 +7785,6 @@ msgstr "TWAP ऑर्डर समाप्त करें"
 #~ msgid "Terminating..."
 #~ msgstr "समाप्त किया जा रहा है..."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Terms"
 msgstr "शर्तें"
