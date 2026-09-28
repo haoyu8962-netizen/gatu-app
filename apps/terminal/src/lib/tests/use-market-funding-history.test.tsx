@@ -5,7 +5,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FundingHistoryRange } from "@/domain/market/funding-rate-history";
-import { useMarketFundingHistory } from "@/hooks/trade/use-market-funding-history";
+import { type MarketFundingHistoryStatus, useMarketFundingHistory } from "@/hooks/trade/use-market-funding-history";
 
 const HOUR_MS = 3_600_000;
 const NOW = 1_790_496_000_000 + 16 * HOUR_MS;
@@ -28,9 +28,11 @@ vi.mock("@/hooks/use-mobile", () => ({
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 let latest: ReturnType<typeof useMarketFundingHistory> | null = null;
+const renderedStatuses: MarketFundingHistoryStatus[] = [];
 
 function Probe({ coin, enabled, range }: { coin: string; enabled: boolean; range: FundingHistoryRange }) {
 	latest = useMarketFundingHistory({ coin, enabled, range });
+	renderedStatuses.push(latest.status);
 	return null;
 }
 
@@ -65,7 +67,10 @@ async function flush() {
 }
 
 function installFakeClock() {
-	vi.useFakeTimers({ now: NOW, toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+	vi.useFakeTimers({
+		now: NOW,
+		toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date", "performance"],
+	});
 }
 
 // Fake timers give a zero-delay timer created during a tick a 1 ms delay, so TanStack's notification
@@ -89,6 +94,7 @@ describe("useMarketFundingHistory", () => {
 		mocks.isOnline = true;
 		mocks.fundingHistory.mockReset();
 		latest = null;
+		renderedStatuses.length = 0;
 		client = new QueryClient();
 		container = document.createElement("div");
 		root = createRoot(container);
@@ -452,6 +458,149 @@ describe("useMarketFundingHistory", () => {
 
 		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
 		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+	});
+
+	it("expires a hidden empty snapshot after five minutes when the wall clock is set back, and refreshes it on return", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await advance(0);
+
+		act(() => focusManager.setFocused(false));
+		vi.setSystemTime(Date.now() - HOUR_MS);
+		await advance(STALE_TIME_MS);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+		expect(current()).toMatchObject({ buckets: [], status: "loading" });
+
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		act(() => focusManager.setFocused(true));
+		await advance(0);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+	});
+
+	it("ages an empty snapshot on the monotonic clock when the wall clock goes back less than its age", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await advance(0);
+
+		act(() => focusManager.setFocused(false));
+		await advance(3 * 60_000);
+		vi.setSystemTime(Date.now() - 2 * 60_000);
+		await advance(2 * 60_000 - 1_000);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+
+		await advance(1_000);
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+		expect(current()).toMatchObject({ buckets: [], status: "loading" });
+	});
+
+	it("refreshes an expired empty snapshot when the view is reactivated after the wall clock was set back", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await advance(0);
+
+		await render({ coin: "xyz:NEW", enabled: false });
+		vi.setSystemTime(Date.now() - HOUR_MS);
+		await advance(STALE_TIME_MS);
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+
+		const refresh = deferred<unknown>();
+		mocks.fundingHistory.mockReturnValueOnce(refresh.promise);
+		await render({ coin: "xyz:NEW" });
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(current()).toMatchObject({ buckets: [], status: "loading" });
+
+		await act(async () => refresh.resolve([]));
+		await advance(0);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+	});
+
+	it("reports a failed refresh of an expired empty snapshot once, without retrying it in a loop", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await advance(0);
+
+		await render({ coin: "xyz:NEW", enabled: false });
+		vi.setSystemTime(Date.now() - HOUR_MS);
+		await advance(STALE_TIME_MS);
+
+		mocks.fundingHistory.mockRejectedValue(new Error("server error"));
+		await render({ coin: "xyz:NEW" });
+		await advance(60_000);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(current()).toMatchObject({ buckets: [], status: "error" });
+	});
+
+	it("never confirms a remounted empty snapshot that expired while the wall clock was set back", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await advance(4 * 60_000);
+
+		await act(async () => root.render(<QueryClientProvider client={client}>{null}</QueryClientProvider>));
+		vi.setSystemTime(Date.now() - HOUR_MS);
+		await advance(2 * 60_000);
+
+		renderedStatuses.length = 0;
+		const refresh = deferred<unknown>();
+		mocks.fundingHistory.mockReturnValueOnce(refresh.promise);
+		await render({ coin: "xyz:NEW" });
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(renderedStatuses).not.toContain("ready");
+		expect(current()).toMatchObject({ buckets: [], status: "loading" });
+
+		await act(async () => refresh.resolve([]));
+		await advance(0);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+	});
+
+	it.each([
+		["focus", () => window.dispatchEvent(new Event("focus"))],
+		["visibilitychange", () => document.dispatchEvent(new Event("visibilitychange"))],
+	])("rechecks an empty snapshot on %s after throttled timers and a set-back clock", async (_event, fire) => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render({ coin: "xyz:NEW" });
+		await advance(0);
+
+		act(() => vi.clearAllTimers());
+		await advance(STALE_TIME_MS);
+		vi.setSystemTime(Date.now() - STALE_TIME_MS);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		act(fire);
+		await advance(0);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(current()).toMatchObject({ buckets: [], status: "ready" });
+	});
+
+	it("does not start refreshing a non-empty history after the wall clock is set back", async () => {
+		installFakeClock();
+		mocks.fundingHistory.mockResolvedValue(rows("BTC", 8));
+		await render();
+		await advance(0);
+
+		vi.setSystemTime(Date.now() - HOUR_MS);
+		await advance(3 * STALE_TIME_MS);
+		act(() => {
+			window.dispatchEvent(new Event("focus"));
+		});
+		await advance(0);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(1);
+		expect(current()).toMatchObject({ isRefreshing: false, status: "ready" });
+		expect(current().buckets).toHaveLength(1);
 	});
 
 	it("does not confirm an empty history while the app is offline", async () => {

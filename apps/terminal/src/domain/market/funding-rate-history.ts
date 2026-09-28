@@ -28,6 +28,11 @@ export interface FundingRateBucketSummary {
 	startTime: number;
 }
 
+export interface FundingHistorySnapshotReceipt {
+	monotonicReceivedAt: number;
+	receivedAt: number;
+}
+
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
 
@@ -85,6 +90,24 @@ export function bucketFundingRates(rows: readonly FundingRateSample[], bucketMs:
 	closeBucket();
 
 	return buckets;
+}
+
+/**
+ * Milliseconds a funding history snapshot stays usable. Its age is the larger of the wall-clock and
+ * monotonic ages, so setting the system clock back cannot keep it alive, while a forward jump or a
+ * device sleep that `performance.now()` may not count still ages it. A wall clock that has gone back
+ * behind the receipt leaves the real age unknown, so the snapshot is treated as expired.
+ */
+export function getFundingHistorySnapshotRemainingMs(
+	receipt: FundingHistorySnapshotReceipt,
+	wallNow: number,
+	monotonicNow: number,
+	maxAgeMs: number,
+): number {
+	const wallAgeMs = wallNow - receipt.receivedAt;
+	const monotonicAgeMs = monotonicNow - receipt.monotonicReceivedAt;
+	if (!Number.isFinite(wallAgeMs) || !Number.isFinite(monotonicAgeMs) || wallAgeMs < 0) return 0;
+	return Math.max(0, maxAgeMs - Math.max(wallAgeMs, monotonicAgeMs));
 }
 
 export function getFundingRateTone(rate: string): "down" | "neutral" | "up" {

@@ -5,6 +5,7 @@ import {
 	DEFAULT_FUNDING_HISTORY_RANGE,
 	FUNDING_HISTORY_RANGE_ORDER,
 	FUNDING_HISTORY_RANGES,
+	getFundingHistorySnapshotRemainingMs,
 	getFundingRateTone,
 	summarizeFundingRateBuckets,
 } from "@/domain/market/funding-rate-history";
@@ -142,5 +143,47 @@ describe("funding rate summaries", () => {
 		["-0.0", "neutral"],
 	])("classifies %s as %s", (rate, tone) => {
 		expect(getFundingRateTone(rate)).toBe(tone);
+	});
+});
+
+describe("funding history snapshot receipts", () => {
+	const MAX_AGE_MS = 5 * 60_000;
+	const receipt = { monotonicReceivedAt: 12_000, receivedAt: EIGHT_HOUR_START };
+
+	function remaining(wallAgeMs: number, monotonicAgeMs: number) {
+		return getFundingHistorySnapshotRemainingMs(
+			receipt,
+			receipt.receivedAt + wallAgeMs,
+			receipt.monotonicReceivedAt + monotonicAgeMs,
+			MAX_AGE_MS,
+		);
+	}
+
+	it("counts down on whichever clock has moved further", () => {
+		expect(remaining(0, 0)).toBe(MAX_AGE_MS);
+		expect(remaining(60_000, 60_000)).toBe(240_000);
+		expect(remaining(240_000, 60_000)).toBe(60_000);
+		expect(remaining(60_000, 180_000)).toBe(120_000);
+		expect(remaining(60_000, MAX_AGE_MS)).toBe(0);
+		expect(remaining(MAX_AGE_MS, 0)).toBe(0);
+	});
+
+	it("expires a snapshot once the wall clock is behind its receipt", () => {
+		expect(remaining(-1, 0)).toBe(0);
+		expect(remaining(-HOUR_MS, 1)).toBe(0);
+	});
+
+	it("expires a snapshot when a clock reading is unusable", () => {
+		expect(remaining(Number.NaN, 0)).toBe(0);
+		expect(remaining(0, Number.NaN)).toBe(0);
+		expect(remaining(Number.POSITIVE_INFINITY, 0)).toBe(0);
+		expect(
+			getFundingHistorySnapshotRemainingMs(
+				{ ...receipt, monotonicReceivedAt: Number.NaN },
+				receipt.receivedAt,
+				receipt.monotonicReceivedAt,
+				MAX_AGE_MS,
+			),
+		).toBe(0);
 	});
 });

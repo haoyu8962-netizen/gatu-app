@@ -62,7 +62,7 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 | 条件 | `status` |
 | --- | --- |
 | 有非空记录（包括停用或后台刷新失败时） | `ready` |
-| 空快照，且该键最近一次请求成功（`status === "success"`）、当前没有请求在进行或暂停（`fetchStatus === "idle"`）、未超过 `staleTime`（`isStale === false`）、在线 | `ready` |
+| 空快照，且该键最近一次请求成功（`status === "success"`）、当前没有请求在进行或暂停（`fetchStatus === "idle"`）、按接收时间计龄未满 5 分钟（见下文）且 TanStack 未判过期（`isStale === false`）、在线 | `ready` |
 | 上两行都不满足且查询停用 | `disabled` |
 | 上两行都不满足且离线或查询被暂停 | `offline` |
 | 上两行都不满足、上次请求失败且当前没有在请求 | `error` |
@@ -70,7 +70,13 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 
 非空记录在刷新失败时静默保留；空快照是「没有记录」的结论，只能来自最近一次成功、未过期，且此刻没有被刷新、暂停或离线推翻的请求。例如新市场第一次得到 `[]`，隐藏超过五分钟后重新打开：刷新期间是空白忙碌态，刷新失败显示中性「重试」，离线或暂停时保持空白，都不再显示「暂无资金费率历史」。Funding 视图一直可见时也一样：空快照满 5 分钟由 `refetchInterval` 刷新，刷新期间是空白忙碌态，成功后按新快照显示（仍为空则回到「暂无资金费率历史」，有记录则出图），失败则显示中性「重试」。
 
-过期判断读 TanStack 的 `isStale`，不在渲染里读 `Date.now()`。`useQuery` 的结果按读取过的字段通知组件，hook 读了 `isStale`，它就在被追踪的字段里；观察者本身在 `dataUpdatedAt + staleTime + 1ms` 设了定时器，到点重算结果，`isStale` 从 `false` 变成 `true`，组件随之重渲染。页面在后台时轮询跳过，就靠这个定时器让已过期的空快照从「暂无资金费率历史」变成空白忙碌态。TanStack 对停用的查询一律报告 `isStale === false`，所以停用视图里的空快照仍映射为 `ready`。此时 Funding 层不可见；重新启用时第一次渲染就用上了「正在请求」的乐观结果，状态为 `loading`（离线时为 `offline`），既有用例覆盖了这两种情况。
+空快照的年龄不能只看 TanStack 的 `isStale`：已安装的 `@tanstack/query-core` 5.90.16 用 `Date.now()` 计算它，负年龄算新鲜，观察者在 `dataUpdatedAt + staleTime + 1ms` 设的过期定时器到点时若还没过期也不再重排。系统时间回拨后只靠它，已满 5 分钟的空快照会继续显示「暂无资金费率历史」，回到前台、重新打开 Funding 或重新挂载面板时也不刷新，直到下一次前台轮询。
+
+因此查询函数返回快照时同时记下两个接收时间（`receipt`：墙钟 `Date.now()` 与单调时钟 `performance.now()`）。`getFundingHistorySnapshotRemainingMs` 取两者中较大的年龄计算剩余时间：回拨不会延长，前跳或设备休眠（单调时钟可能不计）只会让它更早过期；墙钟退到接收时间之前时年龄无从判断，直接按已过期处理，与[资金费率对比](funding-comparison.md)的快照一致。这里没有沿用 [ADR 0022](adr/0022-subscription-staleness-monotonic-clock.md) 决策 3「负的墙钟年龄单独不算过期」：那是为了不让大批推送流同时过期、触发共享 socket 重连，这里只是多发一次约 20 权重的请求。查询键不带 `persisted` 前缀，快照只存在于当前页面，单调时间可以比较。
+
+hook 只为空快照建一个到期时钟（`useSyncExternalStore`）：创建时在渲染中算出是否新鲜，所以重新挂载时第一帧就不会显示过期的空结论；订阅后按剩余时间设定时器，并在 `focus` 与 `visibilitychange` 时重新核对，后台节流推迟了定时器也能在回到页面时立即判定。到期后空态条件不再成立，渲染为空白忙碌态；同时对当前键调用 `invalidateQueries`（`cancelRefetch: false`，不打断进行中的请求）：页面可见（`focusManager.isFocused()`）时用 `refetchType: "active"`，只刷新有启用观察者的查询，停用视图不发请求；页面在后台时用 `"none"`，只标记失效。失效后 TanStack 的 `isStale` 为 `true`，原有的聚焦刷新、重新启用、挂载与网络恢复规则照常生效；刷新失败时快照与失效标记都保留，不会立即再请求，视图可见时仍按 5 分钟轮询重试。没有系统时间变化时，这次失效与 TanStack 自己的过期几乎同时发生，结果相同。
+
+空态条件保留 `!isStale`，查询被失效或墙钟前跳时照常生效。TanStack 对停用的查询一律报告 `isStale === false`，到期时钟不受此影响：停用视图里的空快照未到期时仍映射为 `ready`，到期后为 `disabled`。此时 Funding 层不可见；重新启用时第一次渲染就用上了「正在请求」的乐观结果，状态为 `loading`（离线时为 `offline`），既有用例覆盖了这两种情况。非空快照不建到期时钟、不因此失效，与之前一样不轮询、不聚焦刷新；重新启用时的后台刷新仍按 TanStack 的墙钟判断，回拨后会推迟，但显示的是真实记录，不产生「没有记录」的结论。
 
 ### 分桶
 
@@ -121,7 +127,7 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 | 首次请求失败（无数据），或空快照刷新失败 | 只有中性「重试」按钮，点击重新请求 | 错误文字、警告图标、`error.message`、`role="alert"`、沿用旧的「暂无资金费率历史」 |
 | 已有非空数据后刷新失败 | 继续显示已加载的快照，不提示 | 清空图表、显示失败横条 |
 | 离线或请求暂停，且无数据或只有空快照 | 空白，依靠全局离线提示 | 「无法加载」「暂无资金费率历史」等文字 |
-| 最近一次请求成功、未超过 5 分钟、没有刷新在进行或暂停、在线的完整空快照（例如新上线的 HIP-3 市场） | 「暂无资金费率历史」 | 把截断、失败、未请求、已过期、正在刷新、暂停或离线时的空快照当作空 |
+| 最近一次请求成功、未超过 5 分钟（墙钟与单调时钟取较大的年龄，系统时间回拨不会延长）、没有刷新在进行或暂停、在线的完整空快照（例如新上线的 HIP-3 市场） | 「暂无资金费率历史」 | 把截断、失败、未请求、已过期、正在刷新、暂停或离线时的空快照当作空 |
 | 完整快照 | 图表 | — |
 | 切换市场、区间或网络 | 新键首次请求时的空白忙碌态 | 显示其他市场或区间的数据 |
 | 现货 | 没有 Funding 页签，视图为 Chart | 显示空的 Funding 视图 |
@@ -200,6 +206,20 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 - 既有的偶发失败，与本次修复无关：`use-market-funding-history.test.tsx` 有几条旧用例在 mock 立即 resolve 的 `render` 之后马上断言 `loading`，结果取决于 TanStack 的真实 `setTimeout(0)` 通知是否赶在 React `act` 收尾之前。在未改动的 `1411036c` 文件上连续跑 20 次，失败 1 次（第 3 次，`maps a complete snapshot to ready range buckets`）。修复版在本次约 25 次运行里失败过 2 次，都在 `aborts an in-flight load when the view deactivates…` 的同一条断言上：一次是修复后第一次运行，另一次是去掉 `refetchInterval` 的变异运行。这两处都不经过新增的轮询与过期判断（数据为 `undefined`），本次没有改动。
 
 未运行：完整终端测试、`pnpm build`、浏览器与真机核对。真实标签页切换（`visibilitychange`）下后台不发请求、回到前台立即刷新，只有脚本切换 `focusManager` 的 jsdom 证据。
+
+2026-09-28 系统时间回拨修复（分支 `claude/codex-issue-review-07ec3b`，基于 `4c7ee2e1`；jsdom，Vitest 假计时器同时模拟 `setTimeout` / `setInterval` / `Date` / `performance`，`vi.setSystemTime` 只改墙钟、单调时钟照常推进；前后台由 `focusManager.setFocused` 或脚本派发的 `focus` / `visibilitychange` 切换，不代表真实的标签页切换，也没有真实修改系统时间）。问题来自同日的[对抗审查](work-memory/sessions/2026-09-28-claude-commits-adversarial-review.md)：空快照到达后系统时间回拨，页面在后台超过 5 分钟再回来，仍显示「暂无资金费率历史」且不刷新；复核发现，页面可见时切走再切回 Funding、重新挂载面板，也同样不刷新。方案取舍见[任务记录](work-memory/sessions/2026-09-28-funding-history-clock-rollback-fix.md)。
+
+- 先写回归测试，在 `4c7ee2e1` 的 hook 上确认失败，再修复：
+  - `use-market-funding-history.test.tsx` 新增 8 例：后台回拨一小时，满 5 分钟为 `loading`，回到前台发第 2 次请求；只回拨两分钟（墙钟仍晚于接收时间）时按单调时钟在满 5 分钟过期，4 分 59 秒仍为 `ready`；停用期间回拨，重新启用即刷新；重新挂载时从第一帧起不出现 `ready` 并立即刷新；定时器被清除（模拟后台节流）后，`focus` 与 `visibilitychange` 各自触发重新核对并刷新；回拨后刷新失败只请求一次、状态为 `error`，不会立即重试；回拨后非空历史不开始刷新。
+  - `funding-history-panel-snapshot.test.tsx` 新增 1 例：面板接真实 hook，停用期间回拨一小时并过 5 分钟，重新打开时发第 2 次请求、正文为读屏专用的 `Loading...`，成功后回到「No funding history」。
+  - `market-funding-rate-history.test.ts` 新增 3 例：剩余时间按较大年龄计算；墙钟退到接收时间之前即过期；任一读数不可用即过期。
+  - 在 `4c7ee2e1` 的 hook 上，新增的 hook 与面板用例共 8 例失败：两个后台用例停在 `ready`，其余停在 1 次请求；非空历史用例通过（钉住既有行为）。
+- 修复：见上文「查询」一节后的过期说明（接收时间、到期时钟与失效）。
+- 变异检查（临时改生产代码后运行上述三个测试文件，均已还原）：空态条件不看到期时钟、去掉失效、只用墙钟计龄、去掉「墙钟早于接收时间即过期」、失效时总是刷新、失效时从不刷新、非空快照也建到期时钟、没有空快照也失效、去掉 `focus` / `visibilitychange` 重新核对，每一项都有用例失败。实现过程中曾有两个守卫：失效前要求 `!isStale`，以及要求 `fetchStatus === "idle"`。去掉后都没有用例失败；核实它们只省掉一次多余的失效标记（进行中的请求不会被打断，成功后失效标记自动清除），已从实现中删除。
+- `pnpm exec biome check`（改动的 5 个 TS / TSX 文件）：通过。`pnpm --filter @gatu/terminal typecheck`（TypeScript 5.7.2）：通过。
+- 回归入口的 11 个文件，加上移动端数据展示组 4 个文件与 `i18n-reactivity-contract`、`locale-format-contract`、`action-progress-label-contract`：18 个文件、444 个用例全部通过。
+
+未运行：完整终端测试、`pnpm build`、浏览器与真机核对；没有真实修改系统时间，也没有核对设备休眠期间 `performance.now()` 是否计时。
 
 ## 回归入口
 
