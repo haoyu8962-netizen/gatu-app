@@ -1,3 +1,4 @@
+import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -77,7 +78,7 @@ export interface ActiveVaultAction {
 	detail: VaultDetail;
 	marker?: FundsActionReference;
 	receipt?: VaultActionReceipt;
-	errorMessage?: string;
+	error?: MessageDescriptor;
 	isPreflighting: boolean;
 	recoveredFromMarker?: boolean;
 }
@@ -413,7 +414,7 @@ export function useVaultActionController({
 			});
 		} catch (error) {
 			if (!(error instanceof VaultActionContextChangedError)) {
-				toast.error(getVaultActionErrorMessage(error, t));
+				toast.error(t(getVaultActionError(error)));
 			}
 		} finally {
 			if (requestLeaseRef.current === requestLease) requestLeaseRef.current = null;
@@ -423,14 +424,14 @@ export function useVaultActionController({
 	function setAmount(nextAmount: string) {
 		const current = actionRef.current;
 		if (!current || current.state.stage !== "input") return;
-		updateAction({ ...current, amount: nextAmount, errorMessage: undefined });
+		updateAction({ ...current, amount: nextAmount, error: undefined });
 	}
 
 	function review() {
 		const current = actionRef.current;
 		if (!current || !canReview) return;
 		const nextState = transitionFundsAction(current.state, { type: "review" });
-		updateAction({ ...current, state: nextState, errorMessage: undefined });
+		updateAction({ ...current, state: nextState, error: undefined });
 	}
 
 	function back() {
@@ -438,7 +439,7 @@ export function useVaultActionController({
 		if (!current || current.isPreflighting) return;
 		const nextState = transitionFundsAction(current.state, { type: "back" });
 		if (nextState === current.state) return;
-		updateAction({ ...current, state: nextState, errorMessage: undefined });
+		updateAction({ ...current, state: nextState, error: undefined });
 	}
 
 	function close() {
@@ -459,7 +460,7 @@ export function useVaultActionController({
 		const preflightAbort = new AbortController();
 		preflightAbortRef.current?.abort();
 		preflightAbortRef.current = preflightAbort;
-		updateAction({ ...current, isPreflighting: true, errorMessage: undefined });
+		updateAction({ ...current, isPreflighting: true, error: undefined });
 
 		let marker: FundsActionReference | undefined;
 		let markerAcquired = false;
@@ -637,7 +638,7 @@ export function useVaultActionController({
 			updateAction({
 				...latest,
 				isPreflighting: false,
-				errorMessage: getVaultActionErrorMessage(error, t),
+				error: getVaultActionError(error),
 			});
 		}
 	}
@@ -661,7 +662,7 @@ export function useVaultActionController({
 				...latest,
 				state: doneState,
 				isPreflighting: false,
-				errorMessage: getVaultActionErrorMessage(error, t),
+				error: getVaultActionError(error),
 			});
 			return;
 		}
@@ -737,7 +738,7 @@ export function useVaultActionController({
 		const storedMarker = findPendingFundsAction(current.marker.env, current.marker.owner);
 		if (!storedMarker || !fundsActionReferencesEqual(storedMarker, current.marker)) return;
 		const reconcilingState = transitionFundsAction(current.state, { type: "verify" });
-		updateAction({ ...current, state: reconcilingState, errorMessage: undefined });
+		updateAction({ ...current, state: reconcilingState, error: undefined });
 		const proof = await reconcileMarker(current.marker, hyperliquid.info);
 		await finishReconciliation(current.id, current.marker, proof);
 	}
@@ -760,7 +761,7 @@ export function useVaultActionController({
 			state: reviewState,
 			marker: undefined,
 			receipt: undefined,
-			errorMessage: undefined,
+			error: undefined,
 			isPreflighting: false,
 		});
 	}
@@ -1106,40 +1107,40 @@ class VaultActionPreflightError extends Error {
 	}
 }
 
-function getVaultActionErrorMessage(error: unknown, t: ReturnType<typeof useLingui>["t"]): string {
+function getVaultActionError(error: unknown): MessageDescriptor {
 	if (error instanceof VaultActionPreflightError) {
 		switch (error.reason) {
 			case "depositsClosed":
-				return t`This Vault no longer accepts deposits.`;
+				return msg`This Vault no longer accepts deposits.`;
 			case "withdrawalLocked":
-				return t`Withdrawal is still locked by the fresh server timestamp.`;
+				return msg`Withdrawal is still locked by the fresh server timestamp.`;
 			case "amountExceedsAvailable":
-				return t`The amount exceeds the freshly verified maximum.`;
+				return msg`The amount exceeds the freshly verified maximum.`;
 			case "ownerMismatch":
 			case "vaultMismatch":
-				return t`The refreshed Vault identity did not match this reviewed action.`;
+				return msg`The refreshed Vault identity did not match this reviewed action.`;
 			case "balanceUnavailable":
 			case "equityUnavailable":
 			case "withdrawalUnavailable":
 			case "detailUnavailable":
-				return t`Fresh Vault balances and limits could not be verified.`;
+				return msg`Fresh Vault balances and limits could not be verified.`;
 		}
 	}
 	if (error instanceof Error) {
-		if (/user rejected|user denied/i.test(error.message)) return t`Authorization was rejected in the wallet.`;
-		if (/location eligibility/i.test(error.message)) return t`Location eligibility could not be verified.`;
-		if (/legal eligibility/i.test(error.message)) return t`Legal eligibility could not be verified.`;
+		if (/user rejected|user denied/i.test(error.message)) return msg`Authorization was rejected in the wallet.`;
+		if (/location eligibility/i.test(error.message)) return msg`Location eligibility could not be verified.`;
+		if (/legal eligibility/i.test(error.message)) return msg`Legal eligibility could not be verified.`;
 		if (/agent|trading signer/i.test(error.message)) {
-			return t(msg`The trading wallet could not be verified for this owner and network.`);
+			return msg`The trading wallet could not be verified for this owner and network.`;
 		}
 		if (/pending vault operation could not be stored/i.test(error.message)) {
-			return t`The operation reference could not be stored safely, so nothing was signed.`;
+			return msg`The operation reference could not be stored safely, so nothing was signed.`;
 		}
 		if (/another|pending funds operation/i.test(error.message)) {
-			return t`Verify the pending funds operation before starting another one.`;
+			return msg`Verify the pending funds operation before starting another one.`;
 		}
-		if (/wallet|network|owner/i.test(error.message)) return t`The active owner wallet or network changed.`;
-		return t`Vault operation failed. Verify current balances and history before trying again.`;
+		if (/wallet|network|owner/i.test(error.message)) return msg`The active owner wallet or network changed.`;
+		return msg`Vault operation failed. Verify current balances and history before trying again.`;
 	}
-	return t`Vault operation failed.`;
+	return msg`Vault operation failed.`;
 }

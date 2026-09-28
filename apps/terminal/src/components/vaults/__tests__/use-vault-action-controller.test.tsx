@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n } from "@lingui/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -206,6 +208,24 @@ describe("useVaultActionController", () => {
 		act(() => root.unmount());
 		container.remove();
 		clearFundsActionMarkersForTests();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("reports a failed eligibility check in the language active when it fails", async () => {
+		mocks.geoRetry.mockResolvedValue({ data: { tradeRestricted: false, country: null, proxy: false }, error: null });
+
+		await act(async () => current().requestAction("deposit"));
+		expect(mocks.toastError).toHaveBeenLastCalledWith("Location eligibility could not be verified.");
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [messageId("Location eligibility could not be verified.")]: "无法验证所在地资格。" },
+			}),
+		);
+		await act(async () => current().requestAction("deposit"));
+		expect(mocks.toastError).toHaveBeenLastCalledWith("无法验证所在地资格。");
+		expect(current().action).toBeNull();
 	});
 
 	it("persists a public marker before the Agent-signed SDK call and succeeds only after exact ledger reconciliation", async () => {
@@ -310,7 +330,7 @@ describe("useVaultActionController", () => {
 		act(() => current().retry());
 		expect(current().action).toMatchObject({ state: { stage: "review", result: null } });
 		expect(current().action?.marker).toBeUndefined();
-		expect(current().action?.errorMessage).toBeUndefined();
+		expect(current().action?.error).toBeUndefined();
 		await act(async () => current().confirm());
 
 		expect(mocks.queries.get("vaultDetails")?.refetch).toHaveBeenCalledTimes(firstFreshDetailCalls + 1);
@@ -365,6 +385,8 @@ describe("useVaultActionController", () => {
 		await act(async () => current().confirm());
 
 		expect(current().action).toMatchObject({ state: { stage: "review", result: null } });
+		const error = current().action?.error;
+		expect(error && i18n._(error)).toBe("This Vault no longer accepts deposits.");
 		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
 		expect(getFundsActionMarkers()).toHaveLength(0);
 	});
@@ -957,6 +979,10 @@ describe("useVaultActionController", () => {
 
 function query(data: unknown): QueryState {
 	return { data, refetch: vi.fn().mockResolvedValue({ data, error: null }) };
+}
+
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
 }
 
 function createPendingVaultMarker({

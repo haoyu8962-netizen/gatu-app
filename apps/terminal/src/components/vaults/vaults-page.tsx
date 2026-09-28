@@ -111,7 +111,7 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 			return;
 		}
 		toast.error(settledResult === "rejected" ? t`Authorization rejected` : t`Vault request failed`, {
-			description: activeAction.errorMessage,
+			description: activeAction.error ? t(activeAction.error) : undefined,
 			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
 		});
 		vaultAction.retry();
@@ -165,7 +165,7 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 					ownerAddress={activeAction.ownerAddress}
 					amount={activeAction.amount}
 					availableAmount={vaultAction.availableAmount}
-					errorMessage={activeAction.errorMessage}
+					errorMessage={activeAction.error ? t(activeAction.error) : undefined}
 					operationReference={activeAction.receipt?.operationReference ?? markerReference}
 					canReview={vaultAction.canReview}
 					canConfirm={vaultAction.canConfirm}
