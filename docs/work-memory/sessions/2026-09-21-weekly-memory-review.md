@@ -170,3 +170,7 @@ PR #27–#29 经 PR #30 进入 main；#31–#36 是此后合入 dev 的工作，
 首次 `pnpm memory:index` 退出 1：本记录使用了自定义标题，缺少模板要求的“结论与依据”等固定章节；已按现有模板更正标题，没有修改校验器或绕过检查。
 
 修正后 `pnpm memory:index` 成功生成 54 份记录的索引，`pnpm memory:check` 通过，`pnpm memory:test` 8/8 通过，`git diff --check` 通过。`.worklog/` 的本次证据路径经 `git check-ignore` 确认保持忽略；PR 合并提交的祖先关系核对与本文 main/dev 边界一致。索引生成前检查记录指纹、Git 状态及写入者，本次 agent 列表仅返回当前任务，未修改记录的指纹与基线一致；不覆盖其他任务文件。
+
+## 合入补记（2026-09-28）
+
+本记录所在提交 `92ecaa78`（`codex/dorad`）一直未推送。2026-09-28 盘点未提 PR 的分支后，按用户决定以拣选方式带入分支 `docs/weekly-records-and-builder-delisting`，新提交为 `978a96ee`；拣选时只有生成的索引冲突，按当时的 `dev` 重新生成。正文内容未改。盘点过程见 [分支盘点记录](2026-09-28-branch-audit-and-docs-page-fixes.md)。
