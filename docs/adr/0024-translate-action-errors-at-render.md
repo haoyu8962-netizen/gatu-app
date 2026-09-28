@@ -13,7 +13,7 @@
 
 1. **保存语义，显示时翻译。** 失败值分三类，由 `apps/terminal/src/lib/errors/action-error.ts` 的 `classifyActionError` 判定：交易所拒绝文案（`exchange-error`，逐条保存，保留批次序号）；稳定代码（`action-error`，来自 SDK 与 hl-react 错误的 `name`、`reason`、HTTP 状态、钱包拒签等）；我们自己的消息（`LocalizedActionError` 携带 `msg` 描述符）。通知任务、组件状态与内联提示保存这些值，渲染时用订阅语言的翻译函数生成文字。
 2. **已知交易所文案翻译，未知的原样。** `apps/terminal/src/lib/errors/exchange-error-text.ts` 收录官方文档列出的 17 种下单与撤单错误、用户报告的降杠杆保证金不足、官方已翻译的「Action already expired」，以及原有的「Must deposit before performing actions」。翻译保留交易所给出的数值（金额、代币、最优买卖价）；匹配不到的文案逐字显示、不截断。新增规则只能来自文档或实际观测到的原文。
-3. **按官方做法附加保证金不足提示。** 下单被拒为「Insufficient margin to place order.」时，与官方相同地提示改用只减仓或先撤销该市场挂单，提示文案同样翻译。
+3. **按官方做法附加保证金不足提示。** 下单被拒为「Insufficient margin to place order.」、账户在该市场持有反向仓位且订单量不超过仓位的两倍时，与官方相同地提示改用只减仓（`domain/trade/insufficient-margin-hint.ts`），提示文案同样翻译。官方的另一种提示「先撤销该市场挂单」需要挂单数据，下单流程没有现成的挂单订阅，本次未实现；字典已支持该文案，接入挂单数据后即可使用。
 4. **非交易所错误从不原样显示。** 分类不出的错误显示翻译后的通用文案或调用方的兜底文案；原英文只保留在 `Error.message`，供日志与错误上报使用。
 5. **订单状态代码显示为原因。** 对账写入的 `perpMarginRejected` 等状态代码按官方状态提示的含义翻译（`apps/terminal/src/lib/trade/order-status-reasons.ts`）。
 6. **辅助函数只接收描述符翻译器。** 渲染期辅助函数的翻译依赖使用 `apps/terminal/src/lib/translate.ts` 的 `Translate`（只接受 `MessageDescriptor`），用 `msg` 构造文案；禁止把宏 `t` 传进辅助函数再用模板标签调用，由契约测试检查。

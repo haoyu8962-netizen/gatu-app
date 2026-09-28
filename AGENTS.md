@@ -308,7 +308,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/i18n-reactivity-contract.test.ts \
   src/lib/tests/i18n-hot-switch.test.tsx \
   src/lib/tests/action-error.test.ts \
-  src/lib/tests/errors.test.ts
+  src/lib/tests/errors.test.ts \
+  src/lib/tests/lingui-helper-translator-contract.test.ts
 ```
 
 Layout contracts also have browser suites: `docs/desktop-grid-layout.md` and `docs/runtime-guardrails.md` §9 name the Playwright configs under `apps/terminal/tests/browser/`. When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.
