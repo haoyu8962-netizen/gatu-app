@@ -133,6 +133,7 @@
 - 变异检查（改回旧行为确认测试变红，随后恢复）：Privy 授权文案、跨链桥倒计时标签、提交时读取仓位、分类顺序、契约测试扫描（临时放入括号加注释的违规文件后被报告，文件已删除）。
 - 目录：`pnpm i18n:extract` 后 ar/es/fr/hi 各 44、zh 3（含废弃条目，与实施前相同）；非废弃的空译文 es 18、zh 0（本人核对，Codex 报告 ar/fr/hi 同为 18，与基线一致）。
 - 生产构建（Node 22.15.0，CI 环境变量，配对关闭，代码同 `77a10abb`）：`pnpm --filter @gatu/terminal build` 通过（429 个分块无环、总量与各分块预算、shell 预加载注入与内联脚本哈希；当时脚本里是中间值 3,178,001，改为最终基线 3,175,556 后对同一产物重跑预算脚本，+0、退出码 0）；随后按 `production-build.yml` 跑 `perf:startup`（client-root 静态闭包 34 块、1,202,785 gzip 字节）、生产懒加载图核对（本地 3099 端口，解析到 `trade-terminal-page`）与 `deploy/verify-chart-build.mjs`，均通过；`scripts/check-client-bundle-budget.test.mjs` 16 项通过。配对开启的同口径构建（进 `main` 的 PR 与发布标签才运行）也通过：总量 3,176,963（比新基线 +1,407），`trade-terminal-page` 124,974。
+- PR #60 的 CI（2026-09-29）：浏览器回归分片 2 在 `position-close-all.pw.ts` 失败，断言仍期望交易所原文「Order could not immediately match against any resting orders.」，而该句现在按已知原文显示为翻译后的英文；改为期望「The order could not immediately match any resting orders.」（`d8c1a7db`）。本地完整运行关闭全部仓位（41 项）与通知（19 项）两个 Playwright 配置均通过；分片 2 因失败未跑到的通知组即后者。本地此前只跑了 Vitest，没有跑浏览器回归。
 - 未做：浏览器中实际切换语言查看通知、真实钱包签名与交易所拒单、Privy 确认框在真机上的中文显示；这些不能由单元测试证明。
 
 ## 后续与替代关系
