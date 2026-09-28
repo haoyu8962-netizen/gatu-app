@@ -34,7 +34,7 @@
 | 订单簿数据、交互与动画 | [分组隔离修复依据](terminal-review-remediation.md)、[传输 ADR](adr/0003-orderbook-transport-isolation.md)、[累计悬浮](orderbook-hover.md)、[行几何](orderbook-layout.md)、[新增档位及数量反馈](orderbook-new-level-animation.md)、[最近成交面板](recent-trades.md) |
 | 响应式布局与控件 | [桌面网格](desktop-grid-layout.md)、[交易滑杆](slider-interactions.md)（含手势改动的验证规则与「滑杆跳回」的诊断步骤；缘由见 [ADR 0018](adr/0018-slider-gestures-end-on-release.md)）、[工具栏](trading-toolbar-redesign.md) |
 | 行情数据页面 | [资金费率历史](market-funding-history.md)（图表区 Funding 页签）、[资金费率对比页](funding-comparison.md)（`/fundingComparison`） |
-| 被动加载与语言切换 | [数据展示契约](mobile-data-presentation.md)、[加载审查与证据](terminal-loading-audit.md)、[运行时翻译](i18n-presentation.md) |
+| 被动加载与语言切换 | [数据展示契约](mobile-data-presentation.md)、[加载审查与证据](terminal-loading-audit.md)、[运行时翻译](i18n-presentation.md)、[ADR 0024 错误在显示时翻译](adr/0024-translate-action-errors-at-render.md) |
 | 视觉与启动性能 | [UI 入口及优先级](ui-ux-guidelines.md)、[启动性能基线](terminal-performance-baseline.md)、[OG 资产](../designs/og-cards/README.md) |
 | 数字格式与日期 locale | [数字格式设置](number-format-setting.md)：数字跟随设置、日期跟随语言且固定拉丁数字、图表随设置重建、组件不得直接调用 `Intl` |
 | Hyperliquid API 核对 | [核对工作流](hyperliquid-sdk-reference.md)、[方法目录](hyperliquid-sdk-directory.md)、[独立 API Skill 资料](../packages/hyperliquid-api/README.md)、[接口覆盖审查](hyperliquid-sdk-coverage-review.md)（`e3b5dd82` 基线的 SDK 调用覆盖与未接入接口分类）、[第一批接入规划与实施记录](sdk-feature-integration-plan.md) |

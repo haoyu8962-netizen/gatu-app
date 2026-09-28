@@ -137,6 +137,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - `docs/trading-notifications.md` and `docs/adr/0019-global-trading-notifications.md` own notification routing, result semantics, timing and recovery. Application feedback shares the root `AppToaster` Sonner container; bridges render content into it instead of creating independent positioned stacks.
 - Trading tasks carry the initiating owner/environment and a stable logical ID. Late results update that task; only the current identity may see it. Presentation IDs must prevent stale dismissal callbacks or exit animations from removing a later display. Dismissing feedback never cancels requests or clears business guards, and an unchanged pending/unconfirmed state must not reopen a hidden notice.
 - Preserve the distinction between accepted orders, verified full/partial fills, status-only fills and confirmed flat positions. Optional persisted display metadata must never invalidate pending execution facts. Use semantic messages for task feedback and translate at render time; retain dedicated funds-verification and one-time key panels.
+- `docs/adr/0024-translate-action-errors-at-render.md` owns error text. Store classified failures (`lib/errors/action-error.ts`), not `Error.message` or strings translated when the error happened. Known exchange rejection texts are translated, unknown ones are shown exactly as sent and never truncated; our own, hl-react, SDK, network and wallet errors are never shown raw.
 
 ## Startup rendering contract
 
@@ -302,10 +303,12 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/mobile-nav-drawer.test.tsx \
   src/lib/tests/dashboard-frame-view.test.tsx
 
-# Runtime translation contract (Change discipline)
+# Runtime translation contract (Change discipline) and error text (ADR 0024)
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/i18n-reactivity-contract.test.ts \
-  src/lib/tests/i18n-hot-switch.test.tsx
+  src/lib/tests/i18n-hot-switch.test.tsx \
+  src/lib/tests/action-error.test.ts \
+  src/lib/tests/errors.test.ts
 ```
 
 Layout contracts also have browser suites: `docs/desktop-grid-layout.md` and `docs/runtime-guardrails.md` §9 name the Playwright configs under `apps/terminal/tests/browser/`. When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.
