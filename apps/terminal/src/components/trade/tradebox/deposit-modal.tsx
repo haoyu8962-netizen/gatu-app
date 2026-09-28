@@ -344,7 +344,7 @@ export function DepositModal() {
 
 	const reviewedDepositAmount = isEmbeddedDeposit ? maxDepositAmount : depositAmount;
 	const reviewedDepositAmountRaw = isEmbeddedDeposit ? maxDepositRaw : depositAmountRaw;
-	const baseDepositValidation = validateDeposit(reviewedDepositAmount);
+	const baseDepositValidation = validateDeposit(reviewedDepositAmount, (descriptor) => t(descriptor));
 	const embeddedWalletValidationError =
 		isEmbeddedDeposit && embeddedWalletError
 			? formatTransferError(normalizeError(embeddedWalletError, t`Unknown error`), (descriptor) => t(descriptor))
@@ -1315,7 +1315,7 @@ export function DepositModal() {
 				(descriptor) => t(descriptor),
 			);
 		}
-		return formatTransferError(depositError, (descriptor) => t(descriptor));
+		return formatTransferError(depositError, (descriptor) => t(descriptor), t`Deposit failed`);
 	}
 
 	let depositPendingHeading = <Trans>Confirm in wallet</Trans>;
@@ -1399,7 +1399,11 @@ export function DepositModal() {
 				title={<Trans>Deposit</Trans>}
 				icon="error"
 				heading={<Trans>Wallet connection unavailable</Trans>}
-				description={formatTransferError(walletProviderError, (descriptor) => t(descriptor))}
+				description={formatTransferError(
+					walletProviderError,
+					(descriptor) => t(descriptor),
+					t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`,
+				)}
 				onClose={handleClose}
 			>
 				<div className="flex w-full gap-2">

@@ -15,6 +15,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CCTP_DEPOSIT_NETWORKS } from "@/config/cctp-deposit";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
 import { type DepositReview, type UseDepositResult, useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { addressToBytes32, CCTP_EXTENSION_ABI, CCTP_EXTENSION_V2_ABI } from "@/lib/trade/cctp-deposit";
@@ -600,6 +601,27 @@ describe("useDeposit fresh USDC route guard", () => {
 		expect(testState.walletWriteContract).not.toHaveBeenCalled();
 		expect(capturedDeposit?.error?.message).toContain("Deposits are not available in your region");
 	});
+
+	it.each(["smart", "wallet"] as const)(
+		"reports an unavailable Circle fee quote before %s CCTP signing with a translatable reason",
+		async (mode) => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			vi.stubGlobal(
+				"fetch",
+				vi.fn(async () => new Response("unavailable", { status: 503 })),
+			);
+
+			await submit(mode, "cctp");
+
+			expect(testState.permitSign).not.toHaveBeenCalled();
+			expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error).toBeInstanceOf(LocalizedActionError);
+			expect(capturedDeposit?.error?.message).toBe(
+				"Unable to verify the current Circle CCTP fee and Fast Transfer capacity.",
+			);
+		},
+	);
 
 	it("uses the verified Circle CCTP path for an external wallet and never enters Bridge2", async () => {
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
