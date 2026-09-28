@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { msg } from "@lingui/core/macro";
 import type { ActiveAssetDataWsEvent } from "@nktkas/hyperliquid";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_MAX_LEVERAGE } from "@/config/trade";
@@ -8,6 +8,7 @@ import {
 	getPerpMarginConstraint,
 } from "@/domain/trade/isolated-margin";
 import type { AssetAvailabilityStatus } from "@/domain/trade/order/availability";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { type ExchangeParams, getMarketCapabilities, useExchange, useUserPositions } from "@/lib/hyperliquid";
 import { getMarginModeFromLeverage, type MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber } from "@/lib/trade/numbers";
@@ -67,7 +68,7 @@ function assertLeverageExecutionAllowed(params: ExchangeParams<"updateLeverage">
 		!Number.isSafeInteger(params.asset) ||
 		params.asset !== state.assetId
 	) {
-		throw new Error("Leverage request no longer matches the selected market");
+		throw new LocalizedActionError(msg`Leverage request no longer matches the selected market`);
 	}
 
 	if (
@@ -78,49 +79,49 @@ function assertLeverageExecutionAllowed(params: ExchangeParams<"updateLeverage">
 		params.leverage < 1 ||
 		params.leverage > state.maxLeverage
 	) {
-		throw new Error("Invalid leverage");
+		throw new LocalizedActionError(msg`Invalid leverage`);
 	}
 
 	if (typeof params.isCross !== "boolean") {
-		throw new Error("Invalid margin mode");
+		throw new LocalizedActionError(msg`Invalid margin mode`);
 	}
 
 	if (state.intent !== null) {
 		if (params.isCross !== (state.intent.mode === "cross") || params.leverage !== state.intent.leverage) {
-			throw new Error("Leverage request no longer matches the confirmed settings");
+			throw new LocalizedActionError(msg`Leverage request no longer matches the confirmed settings`);
 		}
 		if (state.intent.kind === "leverage" && state.marginMode !== state.intent.mode) {
-			throw new Error("Margin mode changed before leverage update");
+			throw new LocalizedActionError(msg`Margin mode changed before leverage update`);
 		}
 		if (state.intent.kind === "mode" && state.currentLeverage !== state.intent.leverage) {
-			throw new Error("Leverage changed before margin mode update");
+			throw new LocalizedActionError(msg`Leverage changed before margin mode update`);
 		}
 	}
 
 	if (params.isCross && (state.isOnlyIsolated || !state.allowsCrossMargin)) {
-		throw new Error("This market only supports isolated margin mode");
+		throw new LocalizedActionError(msg`This market only supports isolated margin mode`);
 	}
 
 	if (!state.isOnlyIsolated && !state.marginModeStateReady) {
-		throw new Error("Margin mode data is unavailable");
+		throw new LocalizedActionError(msg`Margin mode data is unavailable`);
 	}
 
 	if (!state.activeAssetStateReady) {
-		throw new Error("Active asset data is unavailable");
+		throw new LocalizedActionError(msg`Active asset data is unavailable`);
 	}
 	const activeAssetAge =
 		state.activeAssetReceivedAt === undefined ? Number.POSITIVE_INFINITY : Date.now() - state.activeAssetReceivedAt;
 	if (activeAssetAge < 0 || activeAssetAge > ACTIVE_ASSET_DATA_MAX_AGE_MS) {
-		throw new Error("Active asset data is unavailable");
+		throw new LocalizedActionError(msg`Active asset data is unavailable`);
 	}
 
 	if (!params.isCross && state.marginMode === "cross") {
 		const positionAge =
 			state.positionReceivedAt === undefined ? Number.POSITIVE_INFINITY : Date.now() - state.positionReceivedAt;
 		if (!state.positionStateReady || positionAge < 0 || positionAge > USER_POSITION_MAX_AGE_MS) {
-			throw new Error("Position data is unavailable");
+			throw new LocalizedActionError(msg`Position data is unavailable`);
 		}
-		if (state.hasPosition) throw new Error("Cannot switch to isolated mode with an open position");
+		if (state.hasPosition) throw new LocalizedActionError(msg`Cannot switch to isolated mode with an open position`);
 	}
 }
 
@@ -168,7 +169,7 @@ function normalizeLeverage(value: number, maxLeverage: number): number {
 }
 
 function leverageUpdateInProgressError(): Error {
-	return new Error(t`Another action for this market is already in progress.`);
+	return new LocalizedActionError(msg`Another action for this market is already in progress.`);
 }
 
 function getLeverageExecutionIntentKind(
@@ -451,7 +452,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		if (requestInFlightRef.current) throw leverageUpdateInProgressError();
 
 		if (isOnlyIsolated && mode === "cross") {
-			throw new Error("This market only supports isolated margin mode");
+			throw new LocalizedActionError(msg`This market only supports isolated margin mode`);
 		}
 
 		if (!isConnected) {
@@ -460,8 +461,8 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		}
 
 		if (mode === "isolated" && marginMode === "cross") {
-			if (!positionStateReady) throw new Error("Position data is unavailable");
-			if (hasPosition) throw new Error("Cannot switch to isolated mode with an open position");
+			if (!positionStateReady) throw new LocalizedActionError(msg`Position data is unavailable`);
+			if (hasPosition) throw new LocalizedActionError(msg`Cannot switch to isolated mode with an open position`);
 		}
 
 		operationTypeRef.current = "mode";
@@ -492,7 +493,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const applyMarginAndLeverage = useCallback(
 		async (mode: MarginMode, leverageValue: number) => {
 			if (!isPerpMarket || typeof assetId !== "number") return null;
-			if (!Number.isFinite(leverageValue)) throw new Error("Invalid leverage");
+			if (!Number.isFinite(leverageValue)) throw new LocalizedActionError(msg`Invalid leverage`);
 			if (requestInFlightRef.current) throw leverageUpdateInProgressError();
 
 			const clamped = normalizeLeverage(leverageValue, maxLeverage);
@@ -504,7 +505,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 			}
 
 			if (isOnlyIsolated && mode === "cross") {
-				throw new Error("This market only supports isolated margin mode");
+				throw new LocalizedActionError(msg`This market only supports isolated margin mode`);
 			}
 
 			if (!isConnected) {
@@ -515,8 +516,8 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 			}
 
 			if (mode === "isolated" && marginMode === "cross") {
-				if (!positionStateReady) throw new Error("Position data is unavailable");
-				if (hasPosition) throw new Error("Cannot switch to isolated mode with an open position");
+				if (!positionStateReady) throw new LocalizedActionError(msg`Position data is unavailable`);
+				if (hasPosition) throw new LocalizedActionError(msg`Cannot switch to isolated mode with an open position`);
 			}
 
 			const intentKind = getLeverageExecutionIntentKind(modeChanged, leverageChanged);

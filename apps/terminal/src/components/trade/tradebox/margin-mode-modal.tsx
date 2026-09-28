@@ -18,7 +18,7 @@ import { CaretDownIcon, CheckIcon, ShieldIcon, StackIcon, WarningIcon } from "@p
 import { memo, useEffect, useRef, useState } from "react";
 import type { MarginTierInput } from "@/domain/trade/order/liquidation";
 import { cn } from "@/lib/cn";
-import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import { classifyActionError, isAmbiguousExchangeActionError } from "@/lib/errors/action-error";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { addOrderQueueItem, removeOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
@@ -425,7 +425,12 @@ function MarginModeForm({
 			return;
 		applyInFlightRef.current = true;
 		const mode = showMarginControls ? selectedMode : currentMode;
-		const notificationId = addOrderQueueItem({ owner: clientKey, env, title: msg`Margin mode`, status: "pending" });
+		const notificationId = addOrderQueueItem({
+			owner: clientKey,
+			env,
+			title: modeDirty ? msg`Margin mode` : msg`Adjust leverage`,
+			status: "pending",
+		});
 		onClose();
 		try {
 			const leverage = await onApply(mode, showLeverageControls ? canonicalLeverage : effectiveLeverage);
@@ -441,7 +446,7 @@ function MarginModeForm({
 			const unknown = isAmbiguousExchangeActionError(error);
 			updateOrderQueueItem(notificationId, {
 				status: unknown ? "unconfirmed" : "failed",
-				error: error instanceof Error ? error.message : undefined,
+				error: unknown ? undefined : classifyActionError(error),
 				message: unknown ? msg`Update not confirmed. Check account settings before retrying.` : msg`Update failed`,
 			});
 		} finally {

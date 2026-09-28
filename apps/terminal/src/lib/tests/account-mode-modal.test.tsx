@@ -3,11 +3,14 @@ import { clearFeedback, feedbackErrorText, feedbackText, latestFeedback } from "
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { I18nProvider } from "@lingui/react";
+import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountModeModal } from "@/components/trade/tradebox/account-mode-modal";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 
 const zhTranslations: Record<string, string> = {
 	"Account type": "账户类型",
@@ -196,7 +199,18 @@ describe("AccountModeModal", () => {
 
 	it.each([
 		[undefined, "Failed to update account mode"],
-		[new Error("Wallet is not ready to update account mode"), "Wallet is not ready to update account mode"],
+		[new Error("Account mode request no longer matches the wallet"), "Failed to update account mode"],
+		[
+			new LocalizedActionError(msg`Wallet is not ready to update account mode`),
+			"Wallet is not ready to update account mode",
+		],
+		[
+			new ApiRequestError(
+				{ status: "err", response: "Must deposit before performing actions." },
+				"Must deposit before performing actions.",
+			),
+			"No balance on Hyperliquid. Deposit first.",
+		],
 	])("reports a failed switch through a notification after the dialog closed", async (cause, message) => {
 		const onApply = vi.fn().mockRejectedValue(cause);
 		const onOpenChange = vi.fn();
