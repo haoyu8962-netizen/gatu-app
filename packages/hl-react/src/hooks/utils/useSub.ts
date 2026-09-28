@@ -179,6 +179,7 @@ export function useSub<TData>(
 			error: undefined,
 			isStale: false,
 			lastMessageAt: undefined,
+			monotonicLastMessageAt: undefined,
 			unsubscribe: async () => store.getState().releaseSubscription(key),
 		};
 	}
@@ -189,6 +190,7 @@ export function useSub<TData>(
 		error: entry?.error,
 		isStale: entry?.isStale ?? false,
 		lastMessageAt: entry?.lastMessageAt,
+		monotonicLastMessageAt: entry?.monotonicLastMessageAt,
 		unsubscribe: async () => store.getState().releaseSubscription(key),
 	};
 }

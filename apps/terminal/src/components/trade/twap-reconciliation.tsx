@@ -14,11 +14,12 @@ import {
 } from "@/lib/trade/twap-order-asset-reservation";
 import { addOrderQueueItem, getOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import {
+	getNextTradingActionExpiryDelayMs,
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
 	type PendingTwapCancellation,
-	TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
 	usePendingTwapCancellations,
+	wasReceivedAfter,
 } from "@/stores/use-pending-trading-action-store";
 import {
 	getPendingTwapActions,
@@ -52,7 +53,7 @@ export function TwapReconciliation() {
 		data: activeTwaps,
 		status: activeTwapsStatus,
 		isStale: activeTwapsStale,
-		lastMessageAt: activeTwapsLastMessageAt,
+		monotonicLastMessageAt: activeTwapsReceivedAt,
 	} = useSubscription(
 		"twapStates",
 		{ user: address ?? "0x0000000000000000000000000000000000000000", dex: HL_ALL_DEXS },
@@ -63,16 +64,15 @@ export function TwapReconciliation() {
 		const awaiting = cancellations.filter(
 			(action) => action.phase === "awaiting" && action.confirmationStartedAt !== null,
 		);
-		const now = Date.now();
-		markExpiredTwapCancellations(awaiting, now);
-		const nextDeadline = Math.min(
-			...awaiting
-				.map((action) => (action.confirmationStartedAt ?? now) + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS)
-				.filter((deadline) => deadline > now),
-		);
-		if (!Number.isFinite(nextDeadline)) return;
-
-		const timer = window.setTimeout(() => markExpiredTwapCancellations(awaiting, Date.now()), nextDeadline - now);
+		let timer: number | undefined;
+		function expireDueCancellations() {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			markExpiredTwapCancellations(awaiting, now, monotonicNow);
+			const delay = getNextTradingActionExpiryDelayMs(awaiting, now, monotonicNow);
+			if (delay !== undefined) timer = window.setTimeout(expireDueCancellations, delay);
+		}
+		expireDueCancellations();
 		return () => window.clearTimeout(timer);
 	}, [cancellations]);
 
@@ -84,18 +84,10 @@ export function TwapReconciliation() {
 			if (cancellation.env !== env || cancellation.owner !== owner || cancellation.phase === "submitting") {
 				continue;
 			}
-			if (
-				typeof activeTwapsLastMessageAt !== "number" ||
-				cancellation.requestStartedAt === null ||
-				activeTwapsLastMessageAt <= cancellation.requestStartedAt
-			) {
-				continue;
-			}
+			if (!wasReceivedAfter(activeTwapsReceivedAt, cancellation.monotonicRequestStartedAt)) continue;
 			if (activeIds.has(cancellation.twapId)) {
 				if (cancellation.phase === "unconfirmed") {
-					if (cancellation.unconfirmedAt === null || activeTwapsLastMessageAt <= cancellation.unconfirmedAt) {
-						continue;
-					}
+					if (!wasReceivedAfter(activeTwapsReceivedAt, cancellation.monotonicUnconfirmedAt)) continue;
 					getPendingTradingActionActions().resolveTwapCancellation(cancellation.id);
 					updatePendingTradingActionFeedback(cancellation, "twap-cancel", {
 						status: "unconfirmed",
@@ -106,7 +98,7 @@ export function TwapReconciliation() {
 			}
 			void confirmTwapCancellation(cancellation);
 		}
-	}, [activeTwaps, activeTwapsLastMessageAt, activeTwapsStale, activeTwapsStatus, address, cancellations, env]);
+	}, [activeTwaps, activeTwapsReceivedAt, activeTwapsStale, activeTwapsStatus, address, cancellations, env]);
 	const { data: twapHistory } = useSubscription(
 		"userTwapHistory",
 		{ user: address ?? "0x0000000000000000000000000000000000000000" },
@@ -242,9 +234,10 @@ function findPendingTwapCancellation(expected: PendingTwapCancellation): Pending
 function markExpiredTwapCancellations(
 	cancellations: ReturnType<typeof usePendingTwapCancellations>,
 	now: number,
+	monotonicNow: number,
 ): void {
 	for (const cancellation of cancellations) {
-		if (!getPendingTradingActionActions().expireTwapCancellationAwaiting(cancellation.id, now)) continue;
+		if (!getPendingTradingActionActions().expireTwapCancellationAwaiting(cancellation.id, now, monotonicNow)) continue;
 		syncPendingTradingActionFeedback({ ...cancellation, phase: "unconfirmed" }, "twap-cancel");
 	}
 }

@@ -81,6 +81,7 @@
 - 不替代任何记录。
 - 资金费率对比文档的回拨限定已在合入评审分支后删除，见文末补记。`use-markets-info-subscriptions.test.tsx` 未改用真实 store 补 `perpContextsLive` 回拨用例，理由见补记。
 - 仍用墙钟、本次未改：`transport-monitor.ts` 的 socket 静默检测（回拨后失效到墙钟追上，巡检的多流重连仍可恢复）、`l2-subscription-gate.ts` 的截止时间、`order-reconciliation` / `twap-reconciliation` 的先后比较与期限定时器（回拨后撤单确认会等待）。
+  - 2026-09-28 补注：这三项已由[后续记录](2026-09-28-wall-clock-timers-follow-up.md)处理，见 ADR 0022「补充」一节。
 - 下一次先查：ADR 0022、`docs/runtime-guardrails.md` §6、`packages/hl-react/src/internal/websocket/staleness.ts`。
 
 ## 补记：Codex 对抗审查（2026-09-28）

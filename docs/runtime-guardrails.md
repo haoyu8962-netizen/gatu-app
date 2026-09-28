@@ -514,16 +514,19 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   ([ADR 0022](adr/0022-subscription-staleness-monotonic-clock.md)). Every frame
   carries two receipt times (`FrameReceipt` in
   `internal/websocket/frame-receipt.ts`): the wall-clock `receivedAt`, which the
-  store exposes as `lastMessageAt`, and a `performance.now()` receipt that stays
-  inside hl-react. The watchdog, the commit of a value buffered while the page
-  was hidden and the foreground-resume expiry all use `getReceiptAgeMs`, the
-  larger of the monotonic and the wall-clock age. Setting the system clock back
-  therefore cannot keep a silent stream fresh, while a forward jump, or a device
-  sleep that `performance.now()` may not count, still ages the data as it did
-  before. A negative wall-clock age on its own is not stale: otherwise setting
-  the clock back would mark every periodic stream that has not received a frame
-  since then stale on the next check, and several at once reconnect the shared
-  socket. Thresholds, keys and recovery paths are unchanged.
+  store exposes as `lastMessageAt`, and a `performance.now()` receipt, which it
+  exposes as `monotonicLastMessageAt`. The watchdog, the commit of a value
+  buffered while the page was hidden, the foreground-resume expiry, the socket
+  inactivity check (`transport-monitor.ts`) and the five-second wait of the
+  incremental `l2` gate (`subscriptions/l2-subscription-gate.ts`) all use
+  `getReceiptAgeMs`, the larger of the monotonic and the wall-clock age.
+  Setting the system clock back therefore cannot keep a silent stream fresh,
+  while a forward jump, or a device sleep that `performance.now()` may not
+  count, still ages the data as it did before. A negative wall-clock age on its
+  own is not stale: otherwise setting the clock back would mark every periodic
+  stream that has not received a frame since then stale on the next check, and
+  several at once reconnect the shared socket. Thresholds, keys and recovery
+  paths are unchanged.
 - A transport that hands over a frame it received earlier (the order-book pool
   replay) passes both receipt times through `markFrameReceivedAt`, and throttled
   delivery (`createThrottledUpdater`) measures the time since its last delivery
@@ -536,6 +539,22 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   `domain/trade/funds-execution-guard.ts`, `domain/trade/order/reduce-only.ts`
   and `domain/trade/order/liquidation.ts` do. Never compare `lastMessageAt` with
   `performance.now()`.
+- To decide whether a frame arrived after a local event, compare
+  `monotonicLastMessageAt` with a `performance.now()` reading taken at that
+  event in the same document, and nothing else. Order and TWAP reconciliation
+  record `monotonicRequestStartedAt`, `monotonicConfirmationStartedAt` and
+  `monotonicUnconfirmedAt` next to the wall-clock fields and order snapshots
+  with `wasReceivedAfter` (`stores/use-pending-trading-action-store.ts`). Do not
+  take the larger of the two clocks for ordering: a snapshot received before a
+  request would still count as newer after the clock was set back. Durations,
+  such as the 15-second trading-action confirmation timeout, use the larger of
+  the two ages. Never persist a monotonic reading or pass it to another tab.
+- Timestamps written to storage or shared between tabs (pending order and TWAP
+  submissions with their `nextCheckAt` backoff, and order-asset reservations)
+  stay wall-clock, because `performance.now()` restarts in every document. After
+  the clock is set back, their confirmation windows and reservations extend
+  until a WebSocket result arrives or the wall clock catches up; they never
+  confirm early ([ADR 0022](adr/0022-subscription-staleness-monotonic-clock.md)).
 
 ### Important Files
 
