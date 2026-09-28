@@ -72,6 +72,8 @@ gatu 与官方的差异：页签条对所有市场保持固定高度（现货只
 
 过期判断读 TanStack 的 `isStale`，不在渲染里读 `Date.now()`。`useQuery` 的结果按读取过的字段通知组件，hook 读了 `isStale`，它就在被追踪的字段里；观察者本身在 `dataUpdatedAt + staleTime + 1ms` 设了定时器，到点重算结果，`isStale` 从 `false` 变成 `true`，组件随之重渲染。页面在后台时轮询跳过，就靠这个定时器让已过期的空快照从「暂无资金费率历史」变成空白忙碌态。TanStack 对停用的查询一律报告 `isStale === false`，所以停用视图里的空快照仍映射为 `ready`。此时 Funding 层不可见；重新启用时第一次渲染就用上了「正在请求」的乐观结果，状态为 `loading`（离线时为 `offline`），既有用例覆盖了这两种情况。
 
+已知缺口（2026-09-28 对抗审查，尚未修复）：以上五分钟过期与返回前台立即刷新的保证依赖墙钟未回拨。已安装 TanStack Query 用 `Date.now()` 计算 `isStale`；空快照到达后在后台回拨一小时、实际推进十分钟再聚焦，仍为 `ready` 且没有第二次请求。无回拨对照正常刷新；父版本对照表明这是 `58e132ed` 的修复遗漏。WebSocket 的双时钟巡检不覆盖该 HTTP 缓存。仍须遵守空结论来自新鲜快照的要求，后续需补单调接收时间或时钟异常后的保守失效/刷新，详见[本轮审查及复现边界](work-memory/sessions/2026-09-28-claude-commits-adversarial-review.md)。
+
 ### 分桶
 
 `domain/market/funding-rate-history.ts`：
