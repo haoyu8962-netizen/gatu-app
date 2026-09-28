@@ -79,3 +79,4 @@
 - 与 [关联移动设备按 ADR 0015 D8 收敛](2026-09-24-link-mobile-device-simplification.md) 相关：那次删除菜单条目时同步了单测，漏了这个不在 CI 里的浏览器套件。改动入口或菜单结构时，除 `user-menu.test.tsx`、`top-nav.test.tsx` 外也要跑 `pnpm --dir apps/terminal test:browser:user-menu-recovery`。
 - 偶发失败：若再出现第 142 行的圆点颜色相等，先保留 `test-results/` 里的 trace 与错误上下文，再判断是样式注入时序还是测量对象问题；不要在原因不明时把它改成轮询断言掩盖掉。
 - 是否把该套件加入 CI 仍由维护者决定。
+- 合并去向（同日）：Codex 审查通过后，按用户决定以合并提交 `f3ce177f` 并入 [PR #55](https://github.com/zora4523-bot/gatu-app/pull/55) 的分支 `fix/docs-pages-and-translations`（base `dev`）。合并前 #55 的 CI 已全绿，推送后整套 CI 会重跑一次；合并时 `INDEX.md` 冲突用 `pnpm memory:index` 重建，合并后的代码树在该工作树里重跑：套件清空缓存 10/10、类型检查 0 错误、相关单测 4 文件 57 项通过。
