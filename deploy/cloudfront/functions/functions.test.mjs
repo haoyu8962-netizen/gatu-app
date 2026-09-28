@@ -83,6 +83,13 @@ test("server paths and file-like paths pass through untouched", () => {
 	assert.equal(onRequest(viewerRequest("/mobile-agent-sync")).uri, "/_shell.html");
 });
 
+test("file extension classification includes dotfiles and stops at sixteen characters", () => {
+	for (const uri of ["/missing.webmanifest", "/.env", `/missing.${"a".repeat(16)}`]) {
+		assert.equal(onRequest(viewerRequest(uri)).uri, uri);
+	}
+	assert.equal(onRequest(viewerRequest(`/missing.${"a".repeat(17)}`)).uri, "/_shell.html");
+});
+
 test("the response function sets the terminal or chart content security policy", () => {
 	const shell = onResponse({ request: onRequest(viewerRequest("/trade/BTC")), response: { statusCode: 200, headers: {} } });
 	const { cspReportUri, cspScriptHashes, cspImageSources } = readEdgeConfig();

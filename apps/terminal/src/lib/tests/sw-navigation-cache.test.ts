@@ -143,6 +143,8 @@ describe("service worker navigation caching", () => {
 		"/join/abc",
 		"/join/abc/",
 		"/assets/app.js",
+		"/missing.webmanifest",
+		"/.env",
 		"/docs/index.html",
 		"/font.woff2/",
 		"/api",
@@ -218,5 +220,13 @@ describe("service worker navigation caching", () => {
 			expect(classifyStaticPageRequest("GET", route)).toMatchObject({ kind: "page", candidates: ["_shell.html"] });
 		}
 		expect(serviceWorker).not.toContain("navigationPreload");
+	});
+
+	it("uses one file-extension bound in the worker, the edge function and the static-page runtime", () => {
+		const edge = readFileSync(resolve(terminalRoot, "../../deploy/cloudfront/functions/terminal-request.js"), "utf8");
+		const staticPages = readFileSync(resolve(terminalRoot, "src/lib/static-pages/static-pages.ts"), "utf8");
+		for (const source of [serviceWorker, edge, staticPages]) {
+			expect(source.match(/\[A-Za-z0-9\]\{1,(\d+)\}/)?.[1]).toBe("16");
+		}
 	});
 });

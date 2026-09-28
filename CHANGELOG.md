@@ -353,6 +353,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - Arabic, Spanish, French and Hindi translate 12 more strings that fell back to English, including
   the mobile order book's `Total` column header, the TWAP trigger hints and the Display and
   language menu. Two English source entries that were empty are filled.
+- A request for a missing file with a longer extension, such as `/missing.webmanifest`, or for a
+  file whose name starts with a dot, such as `/.env`, now returns Not Found from CloudFront, the
+  application server and the Service Worker instead of the application page.
 - Setting the computer's clock back no longer keeps stopped market or account data looking live.
   Prices, order books, market contexts and account streams that stop updating are marked stale
   after their usual threshold (for market contexts about 25 seconds while the page is visible)

@@ -75,6 +75,8 @@ describe("static page classification", () => {
 
 	it("refuses HTML for file-like paths and reports the server-function transport as gone", () => {
 		expect(classifyStaticPageRequest("GET", "/assets/missing.js")).toEqual({ kind: "not-found" });
+		expect(classifyStaticPageRequest("GET", "/missing.webmanifest")).toEqual({ kind: "not-found" });
+		expect(classifyStaticPageRequest("GET", "/.env")).toEqual({ kind: "not-found" });
 		expect(classifyStaticPageRequest("GET", "/favicon.ico")).toEqual({ kind: "not-found" });
 		expect(classifyStaticPageRequest("GET", "/_serverFn/abc")).toEqual({ kind: "gone" });
 	});

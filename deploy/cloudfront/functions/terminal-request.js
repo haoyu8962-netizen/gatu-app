@@ -2,11 +2,13 @@
 //
 // Mirrors apps/terminal/src/lib/static-pages/static-pages.ts for an S3 origin: every application
 // path maps to the SPA shell, and server paths are left untouched so their cache behaviors route
-// them to the API origin. Missing
-// files stay 404 (custom error response) instead of becoming HTML. The public host is copied
-// into x-gatu-forwarded-host so the API origin can rebuild the public origin. Join paths and the
-// pairing path are tagged so the viewer-response function can expose the route marker and give the
-// pairing page its uncached, referrer-free headers; a tag the viewer sent itself is dropped first.
+// them to the API origin. Missing files stay 404 (custom error response) instead of becoming
+// HTML. A final segment with a dot followed by 1-16 ASCII letters or digits is file-shaped,
+// including leading-dot files; the bound keeps longer dotted route segments from being mistaken
+// for files. The public host is copied into x-gatu-forwarded-host so the API origin can rebuild the
+// public origin. Join paths and the pairing path are tagged so the viewer-response function can
+// expose the route marker and give the pairing page its uncached, referrer-free headers; a tag the
+// viewer sent itself is dropped first.
 var SERVER_PATHS = ['/api', '/client-error-report'];
 var SERVER_PREFIXES = ['/api/'];
 var RETIRED_PATH = '/mobile-agent-sync-ticket';
@@ -14,7 +16,7 @@ var RETIRED_PATH = '/mobile-agent-sync-ticket';
 var PAIRING_PATH = '/mobile-agent-sync';
 var SERVER_FUNCTION_PREFIX = '/_serverFn/';
 var SHELL = '/_shell.html';
-var EXTENSION = /^[A-Za-z0-9]{1,8}$/;
+var EXTENSION = /^[A-Za-z0-9]{1,16}$/;
 
 function trimTrailingSlash(uri) {
 	var end = uri.length;
@@ -39,7 +41,7 @@ function startsWithAny(value, prefixes) {
 function hasFileExtension(uri) {
 	var segment = uri.slice(uri.lastIndexOf('/') + 1);
 	var dot = segment.lastIndexOf('.');
-	return dot > 0 && EXTENSION.test(segment.slice(dot + 1));
+	return dot >= 0 && EXTENSION.test(segment.slice(dot + 1));
 }
 
 function notFound(message) {

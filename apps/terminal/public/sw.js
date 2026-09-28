@@ -61,7 +61,7 @@ self.addEventListener("fetch", (event) => {
 			pathname.startsWith("/mobile-agent-sync-ticket/") ||
 			/^\/mobile-agent-sync(\/|$)/i.test(pathname) ||
 			pathname.startsWith("/_serverFn/") ||
-			(dot > 0 && /^[A-Za-z0-9]{1,8}$/.test(segment.slice(dot + 1)))
+			(dot >= 0 && /^[A-Za-z0-9]{1,16}$/.test(segment.slice(dot + 1)))
 		)
 			return;
 		const cacheKey = new URL(SHELL_CACHE, self.location.origin).href;
