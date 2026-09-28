@@ -10,7 +10,7 @@
   "summary": "处理 2026-09-25 Codex 对 7c9b3f21 的审查发现：把后台任务的 store 空值保护 06293549 与其记录 cherry-pick 进 codex/reviewceshi（518d0039、79ec5555，索引冲突后重新生成）；全部平仓浏览器夹具可要求免责声明，新增真实弹窗加真实提交路径的用例（声明期间改变持仓并拨过 31 秒，核对展示数量等于发单数量）；限价平仓保留会话 250 ms 播放退出动画，关闭中禁用确认；补交易页副本与平仓副本的 Esc 测试；改正确认面契约里市价平仓提交宿主的描述与 30 秒起算点。两处变异检查均被测试抓住。Biome、类型检查、回归组 48 文件 948 项、完整单测 601 文件 6862 项、全部平仓浏览器套件 41 项通过；应用内浏览器会话已登出，限价平仓未实测。补记：Codex 只读对抗审查 27ee060f..3d0e7667，无 P0 到 P3 发现，两条限定事项经核实不构成缺陷。",
   "thread": null,
   "baseCommit": "27ee060f",
-  "commits": ["518d0039", "79ec5555"],
+  "commits": ["518d0039", "79ec5555", "3d0e7667", "b80c0396"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/positions/position-limit-close-modal.tsx" },
     { "path": "apps/terminal/src/lib/tests/position-limit-close-modal.test.tsx" },

@@ -10,7 +10,7 @@
   "summary": "修复 StrictMode 重复发布、Sonner 迟到插入残留及同批关闭/成交丢结果；11项生命周期与5项浏览器回归通过，保留单容器、时长、身份及业务守卫。",
   "thread": { "id": "01a0c3b4-5aec-7f93-bc8b-6ecf0e661507", "title": "启动开发服务器" },
   "baseCommit": "938983d4",
-  "commits": [],
+  "commits": ["a999806b"],
   "sources": [
     { "path": "docs/trading-notifications.md" },
     { "path": "docs/work-memory/sessions/2026-09-22-stale-submitting-notification-review.md" },

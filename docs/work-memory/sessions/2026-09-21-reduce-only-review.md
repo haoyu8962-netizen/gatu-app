@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry"],
-  "summary": "只减仓开关与 r 字段有效，但百分比沿用普通下单容量，市价/限价/TWAP 缺少持仓方向与存在性校验，零可用余额会阻断合成平仓场景，保证金摘要仍按开仓计算。官方终端公开代码以反方向持仓量为上限。仅审查，未修复或真实发单。",
+  "summary": "只减仓历史审查：协议标记正确，容量和持仓校验缺口已由同日共享域模型、执行守卫及复审修复接续。原官方观察与零余额合成案例保持原范围，未补做真实交易。",
   "thread": null,
   "baseCommit": "5d232c25",
-  "commits": [],
+  "commits": ["7342b7f3", "0fafbc7f"],
   "sources": [
     { "path": "docs/order-entry-surface-parity.md" },
     { "path": "docs/hyperliquid-sdk-reference.md" },
@@ -85,3 +85,11 @@
 ## 同日补充
 
 用户随后提供已登录、有仓位的官方终端并要求继续调试和规划。现场证据见[补充记录](2026-09-21-reduce-only-official-followup.md)，实施设计见[只减仓修复方案](../../reduce-only-repair-plan.md)。新证据确认基础币50/100%以持仓为基准、超额保留输入、同方向与无仓位提示不可用、保证金N/A；没有进行真实发单，零可用余额持仓仍未实盘验证。上述历史证据范围保持原样。
+
+## 周整理补注（2026-09-28）
+
+后续已实施并修复复审三项问题；原已知 SSR 失败、浏览器重跑和真实账户/设备验收缺口保留，不能写成无条件全绿。
+
+后续来源：[2026-09-21-reduce-only-implementation](2026-09-21-reduce-only-implementation.md)；[2026-09-21-reduce-only-review-fixes](2026-09-21-reduce-only-review-fixes.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

@@ -10,10 +10,10 @@
     "market-recovery",
     "docs-governance"
   ],
-  "summary": "产品负责人要求对照官方终端的做法规划划转、发送、充值、提现四个弹层的修复。只读取证官方前端包：资金弹层不是点击即关闭，而是保持打开并禁用到请求结束、无论成败都关闭、结果走通知；等待期间只有钱包握手提示 Confirm in Wallet；充值失败留在原地重试；长时间状态放在可原位更新的通知与持久化、自动核销的待处理列表里，入口在账户面板。据此写成三步方案与三项待决策事项，未改动任何代码。",
+  "summary": "官方资金弹层取证与三步方案的历史记录；同日已按授权实施，见资金弹层结果反馈任务。资金弹层保持到请求结束，充值广播前失败可重试；官方静态取证与本项目实施、实盘验收是不同证据。",
   "thread": null,
   "baseCommit": "e15ee0de",
-  "commits": [],
+  "commits": ["951125e0", "daa5ec7f"],
   "sources": [
     { "path": "docs/funds-dialog-outcome-plan.md" },
     { "path": "docs/confirmation-surfaces.md" },
@@ -59,3 +59,11 @@
 - 等产品负责人对三项决策给出答复后再实施；实施时更新 `docs/confirmation-surfaces.md` 例外表与本方案文档的状态。
 - 2026-09-21 补记：产品负责人答复「要做第 2、3 步」，三步已实施，见 `2026-09-21-funds-dialog-outcomes.md`。
 - 下一次先查：`docs/funds-dialog-outcome-plan.md`、`funds-action-balances.test.tsx`（资金守卫用例）、`components/funds-action/`。
+
+## 周整理补注（2026-09-28）
+
+规划阶段的“未实施”已由同日实施接续，原官方前端包取证范围不变。
+
+后续来源：[2026-09-21-funds-dialog-outcomes](2026-09-21-funds-dialog-outcomes.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

@@ -10,7 +10,7 @@
   "summary": "按用户决策实施对齐规划的 A-1、A-3、A-4：TradingView 创建时收到 numeric_formatting，数字格式变化走与语言相同的保存状态重建（新 reason numeric-format，值未变不重建）；format.ts 的日期函数强制 numberingSystem latn 并接受界面语言代码；6 处绕过 format.ts 的 toLocale*/Intl.DateTimeFormat 调用改走 formatTime/formatDateTime，3 处用户可见名称排序加 sensitivity base；新增 locale-format-contract 扫描测试与归属文档 docs/number-format-setting.md、AGENTS.md 契约。内置浏览器实测 1.234,56 下图表轴、图例、订单簿、标题分隔符一致。第二个提交实施 A-2a（输入框接受设置的小数点），随后两轮对抗审查（GPT-6 astra、三路 Claude 工作流）的确认项已在第三、四个提交修复。",
   "thread": null,
   "baseCommit": "ce9fb539",
-  "commits": [],
+  "commits": ["91ec4d11", "949693a5", "afd66c40", "11f641ad"],
   "sources": [
     { "path": "docs/number-format-and-chart-translation-plan.md" },
     { "path": "docs/number-format-setting.md" },

@@ -10,7 +10,7 @@
   "summary": "内置浏览器显示邮箱身份，但交易输入与钱包菜单禁用；一次普通刷新后持仓、账户数值和钱包菜单恢复。首次失败请求未捕获，网络事件截断，不确认 token 或 iframe 根因。",
   "thread": null,
   "baseCommit": "246c57bc",
-  "commits": [],
+  "commits": ["5d232c25"],
   "sources": [
     { "path": "docs/wallet-initialization-debugging.md" },
     { "path": "docs/work-memory/sessions/2026-09-16-wallet-session-recovery.md" },

@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["order-entry", "pr-review"],
-  "summary": "对 4f7e046f 做合规与对抗审查：静态检查、类型检查与 15 套 341 项聚焦回归在本检出通过；无 P0/P1，2 项 P2（IOC 部分成交后取消状态会追加矛盾的取消错误行；Scale 分层挂单的正常首笔成交被标为 partial 警告并 3 秒隐藏）、5 项 P3。仅审查与记录，未修改生产代码。",
+  "summary": "4f7e046f 历史审查发现 IOC 取消矛盾、Scale 受理语义及 P3；后续两轮修复已处理，并收窄原 Alo 示例、共享数字格式与回包证据的推断。原 341 项通过不等于缺陷已被覆盖或当前版本验证。",
   "thread": { "id": "9b4fc2e8-a227-4578-bfd1-5db0594a392e", "title": "对抗审查 4f7e046f" },
   "baseCommit": "4f7e046f",
-  "commits": [],
+  "commits": ["966dca1c", "75a7fb01"],
   "sources": [
     { "path": "docs/trading-notifications.md" },
     { "path": "docs/adr/0019-global-trading-notifications.md" },
@@ -82,3 +82,11 @@
 2026-09-22 后续复核已启动，见[审查修复任务](2026-09-22-notification-review-remediation.md)。两项依据需收窄：本报告引用的 L1 取消示例实际为 `Alo`，不能充当 IOC 真实回包证据；普通单笔 IOC 有效部分成交 HTTP 回包会完成并删除 pending，对账问题限于仍需对账或恢复的记录。P3-1 的共享数字格式由用户数字预设控制，阿拉伯语并不自动切换数字系统；加权均价也不能机械套用委托价格 tick。原始审查推演保留，最终修复和验证以新任务记录为准。
 
 本记录只报告问题，不替代 `docs/trading-notifications.md` 与 [实施记录](2026-09-22-compact-notification-implementation.md)。若修复 P2-1/P2-2，需同步更新 Reference 的证据表格、`order-reconciliation.test.tsx` 与 `order-execution-summary.test.ts`，并在 CHANGELOG 记录语义变更。
+
+## 周整理补注（2026-09-28）
+
+后续首先修复 75a7fb01，再纠正实际市价 FrontendMarket 路径；保留本报告被后续收窄的证据归因，不再将两项 P2 笼统标为待实施。
+
+后续来源：[2026-09-22-notification-review-remediation](2026-09-22-notification-review-remediation.md)；[2026-09-22-notification-remediation-followup](2026-09-22-notification-remediation-followup.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

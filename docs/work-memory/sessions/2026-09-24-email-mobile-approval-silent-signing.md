@@ -10,7 +10,7 @@
   "summary": "用户截图：邮箱用户在 Link mobile device 弹窗点 Approve 后出现 Privy「Approve mobile trading access」确认。原因是弹窗调用 approveAgent.mutateAsync 时没有传 applicationReview: \"confirmed\"，createPrivyAgentSigner 按 trading-onboarding §4 的默认规则回退到显式 UI；官方产物全局 showWalletUIs:false 且无按调用 uiOptions，approveAgent 经 Privy provider 静默签名。已让审批与撤销两处声明应用层审查已完成，弹窗测试钉住该参数；API 钱包管理弹窗的 Privy 确认保留待决。",
   "thread": null,
   "baseCommit": "b14c3a12",
-  "commits": [],
+  "commits": ["d76f789e", "90568b06"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/components/mobile-agent-sync-modal.tsx" },
     { "path": "apps/terminal/src/hooks/wallet/use-explicit-agent-approval.ts" },

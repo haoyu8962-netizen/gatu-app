@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry", "pr-review"],
-  "summary": "核对请求量价与实际成交数据的缺口，提出单句结果、移动端自然分行及证据驱动的量价展示方案；本轮只规划，未改变通知实现或时长。",
+  "summary": "单句通知、移动分行和实际成交量价展示的规划记录；已由精简通知实施及两轮语义复审修复接续。文案、结果时长和证据规则以当前全局通知 Reference 为准。",
   "thread": { "id": "01a0c3b4-5aec-7f93-bc8b-6ecf0e661507", "title": "启动开发服务器" },
   "baseCommit": "a999806b",
-  "commits": [],
+  "commits": ["18365269", "4f7e046f"],
   "sources": [
     { "path": "docs/trading-notifications.md" },
     { "path": "docs/mobile-data-presentation.md" },
@@ -79,3 +79,11 @@ WS/REST 的 order-status 对账只有状态时，继续使用无量价的短句�
 ## 后续实施
 
 用户随后授权执行本方案，实施与验证记录见[精简交易通知实施](2026-09-22-compact-notification-implementation.md)。本文件保留规划时的证据与未实施状态；当前行为以全局操作通知 Reference 为准。
+
+## 周整理补注（2026-09-28）
+
+规划已实施，后续发现不能仅匹配 Ioc，市价实际路径 FrontendMarket 的修复另见后续记录。
+
+后续来源：[2026-09-22-compact-notification-implementation](2026-09-22-compact-notification-implementation.md)；[2026-09-22-notification-review-remediation](2026-09-22-notification-review-remediation.md)；[2026-09-22-notification-remediation-followup](2026-09-22-notification-remediation-followup.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["order-entry", "pr-review"],
-  "summary": "确认普通下单用持续订单队列，平仓用短暂 Sonner；复现晚到成功残留错误、离开交易页吞通知、跨账户迟到通知，以及双通知遮挡和移动断点错位，另确认部分成交计数文案错误及既有等待反馈缺口。134 项既有测试通过，3 项临时用例证明缺陷存在；只记录审查，未修业务代码。",
+  "summary": "历史审查复现结果一致性、身份隔离、双宿主与布局问题；后续全局通知、生命周期和成交语义任务已实施相关修复。保留原 134 项回归与 3 项缺陷复现的版本边界，不将历史待修复状态视为当前结论。",
   "thread": { "id": "01a0c3b4-5aec-7f93-bc8b-6ecf0e661507", "title": "启动开发服务器" },
   "baseCommit": "efe8389ee8f2a19f99c2b45673dc5e78b409a1f7",
-  "commits": [],
+  "commits": ["eeec5c67"],
   "sources": [
     { "path": "docs/trading-feedback-review.md" },
     { "path": "docs/confirmation-surfaces.md" },
@@ -73,3 +73,11 @@ pnpm --dir apps/terminal exec vitest run \
 ## 后续与替代关系
 
 补充[全部平仓队列复审](2026-09-21-close-all-queue-review.md)和[官方监听](2026-09-21-official-trade-feedback-observation.md)，不替代其历史范围。新增审查报告已从文档地图链接。建议先修结果一致性、身份与宿主，再协调通知布局、修正部分成交文案并接入持续反馈；全部建议尚未实施。本轮只提交审查文档。
+
+## 周整理补注（2026-09-28）
+
+相关修复已有独立来源记录。全局反馈宿主与交易执行宿主不同：离开交易页不丢已记录反馈，不表示尚未完成的市价平仓可以跨页面继续执行。
+
+后续来源：[2026-09-21-global-sonner-notifications](2026-09-21-global-sonner-notifications.md)；[2026-09-22-notification-lifecycle-fix](2026-09-22-notification-lifecycle-fix.md)；[2026-09-22-notification-remediation-followup](2026-09-22-notification-remediation-followup.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

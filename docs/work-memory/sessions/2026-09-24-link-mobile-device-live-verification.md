@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pairing-release"],
-  "summary": "用户要求检查「关联移动设备」是否正常可用，并授权在其主网邮箱账户上真实签名。开发构建打开两个配对开关后，桌面审批与撤销都静默签名（无 Privy 弹窗，各约 2 秒）、4 秒按住显示与 60 秒自动关闭正常、同源第二标签作为手机页导入成功、撤销后链上 Mobile 记录换成不可访问密钥且本地密钥被清理。三镜头对抗审计只剩 P3：本次修了撤销确认按钮按钱包类型分文案、手机成功页日期跟随语言、扫码器错误框样式、AGENTS.md 入口描述、CI 测试清单与两份规划的发布状态；签名前失败被当成待核验、成功面板焦点、四种语言缺译与 F1 产品决策留作后续。真机矩阵仍全部未跑，线上开关保持关闭。",
+  "summary": "旧双开关/v3 配对在开发构建真实邮箱账户上经工具注入完成审批、同源导入与撤销；不是手机真机验收。09-24 后续已按 ADR 0015 D8 改为 v4、单开关、头部唯一入口和 API 钱包移除；旧恢复/撤销面板待办不再适用，真机与缺译仍待处理。",
   "thread": null,
   "baseCommit": "90568b06",
-  "commits": [],
+  "commits": ["6be105da"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/components/mobile-agent-sync-modal.tsx" },
     { "path": "apps/terminal/src/routes/mobile-agent-sync.tsx" },
@@ -85,3 +85,11 @@
 
 - 不替代任何记录；接续 [2026-09-24-email-mobile-approval-silent-signing](2026-09-24-email-mobile-approval-silent-signing.md) 与 [2026-09-21-cloudfront-release-p22](2026-09-21-cloudfront-release-p22.md)。
 - 后续候选：签名前失败的稳定错误标记与待核验判定；成功面板状态语义；四种语言配对面缺译；F1 产品决策；真机矩阵。
+
+## 周整理补注（2026-09-28）
+
+失效范围仅限旧 v3 信封、双开关、待核验恢复、桌面撤销面板与旧矩阵。静默签名的历史观察保留，但同源第二标签和工具注入不能充当独立手机或物理输入证据。系统相机历史风险也不能因旧 F1 决策被新方案接续而当作已消除。
+
+后续来源：[2026-09-24-link-mobile-device-simplification](2026-09-24-link-mobile-device-simplification.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

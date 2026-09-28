@@ -10,13 +10,10 @@
     "market-recovery",
     "docs-governance"
   ],
-  "summary": "产品负责人要求全部平仓的按钮不显示状态、与其他按钮一致、订单状态放到右下角通知。原实现把仓位数写进确认按钮，并在按钮上依次显示校验中、提交中、确认中与部分成功，弹窗等待结果。现改为静态的 Close All Positions，点击即关闭弹窗，组件保持挂载到提交结束，五种结局各发一条通知；持仓页在会话存在期间禁用入口。同日按「一并修复，还有下单弹窗按钮」的要求，限价平仓、反手确认与下单确认也改为同一做法，并写入确认面契约第 6 条；TP/SL、逐仓保证金、保证金模式、现货兑换与资金类弹窗仍在按钮上显示进度，未改。",
+  "summary": "全部平仓、限价平仓、反手与下单确认改为静态按钮、点击即关闭、后台报告结果。09-28 整理：原摘要中的其余弹层待改状态已由同日后续实施接续；资金弹层仍有意等待请求结束，提交宿主与确认数量边界以现行契约为准。",
   "thread": null,
   "baseCommit": "cbdadae9",
-  "commits": [
-    "e96c10c3",
-    "c2015363"
-  ],
+  "commits": ["e96c10c3", "c2015363", "a4135973", "2429368b"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/positions/position-close-all-modal.tsx" },
     { "path": "apps/terminal/src/components/trade/positions/positions-tab.tsx" },
@@ -97,3 +94,11 @@
 - 不替代任何记录；使 ADR 0014「后果与边界」里「全部平仓仍等待结果后关闭」一句失效，已在该 ADR 的「后续」追加说明。
 - 待产品负责人决定：反手与限价平仓是否同样改为静态按钮、点击即关、结果走通知。
 - 下一次先查：`position-close-all-modal.tsx`、`positions-tab.tsx` 的 `closeAllSnapshot`、`docs/confirmation-surfaces.md` 的例外表。
+
+## 周整理补注（2026-09-28）
+
+原文的“待决定”和其余弹层进度状态仅适用于当时阶段。后续已处理静态按钮和退场；资金类保持到请求结束，不能据早期统一描述改成点击即关。展示数量与提交承诺仍须逐个确认面核对，不据按钮修复推断全部符合。
+
+后续来源：[2026-09-21-remaining-dialogs-submit-and-dismiss](2026-09-21-remaining-dialogs-submit-and-dismiss.md)；[2026-09-21-funds-dialog-outcomes](2026-09-21-funds-dialog-outcomes.md)；[2026-09-23-market-close-page-level-submit-host](2026-09-23-market-close-page-level-submit-host.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

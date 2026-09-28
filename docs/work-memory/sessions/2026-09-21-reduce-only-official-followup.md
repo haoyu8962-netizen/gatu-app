@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry"],
-  "summary": "用户提供已登录且有仓位的官方终端：实测50/100%以反方向持仓为基准，超额和同向提示不可用，开关保留数量，无仓位不能生成减仓量，保证金N/A。形成五步修复计划，业务代码未改、未发单。",
+  "summary": "官方已登录表单观察确认反方向持仓容量、超额保留输入和保证金 N/A；五步方案已由后续实施和复审修复接续。未实际发单，零可用余额持仓仍无实盘验证。",
   "thread": null,
   "baseCommit": "7342b7f3",
-  "commits": [],
+  "commits": ["0fafbc7f"],
   "sources": [
     { "path": "docs/reduce-only-repair-plan.md" },
     { "path": "docs/work-memory/sessions/2026-09-21-reduce-only-review.md" },
@@ -51,3 +51,11 @@ USDC 单位转换和50%金额输入已观察，但出现输入金额与订单价
 [修复计划](../../reduce-only-repair-plan.md)给出容量域模型、两端表单、最终执行守卫、摘要、测试矩阵和交付顺序。所有修复仍未实施；后续实施先更新现行契约，不把方案当现状。
 
 本记录补充首次审查的官方有仓位现场证据，不整体替代旧记录，也不将其中的零余额合成案例改写为实盘证据。
+
+## 周整理补注（2026-09-28）
+
+“所有修复仍未实施”仅描述当时规划；后续实施记录保留自动化失败和未覆盖范围，不将表单观察扩展为交易所成交证据。
+
+后续来源：[2026-09-21-reduce-only-implementation](2026-09-21-reduce-only-implementation.md)；[2026-09-21-reduce-only-review-fixes](2026-09-21-reduce-only-review-fixes.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

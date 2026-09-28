@@ -10,7 +10,7 @@
   "summary": "在内置浏览器只读调试 app.hyperliquid.xyz/trade/HYPE 并静态分析其生产包：语言用 react-intl，五个语言包（含英文）都是变量动态导入编译出的懒加载 chunk，消息 hook 在未缓存时 throw Promise 走根级无 fallback 的 Suspense；切换不 reload、不改 html lang、不重连 WS、不重建 TradingView（图表语言到下次刷新才变），但未用 startTransition，整棵应用被 display:none 约 66–68 ms；语言设置以 JSON 存 hyperliquid.locale-setting，数字格式是独立设置 hyperliquid.locale 且改动会 window.location.reload()；时间戳、图表坐标轴和排序都不跟随 UI 语言。八组静态结论经三路对抗核对与一路补漏，修正了目录键数（1,993）、导入映射来源（vite:dynamic-import-vars）等细节。与 gatu 的 Lingui 热切换、html lang/dir 同步、图表状态保存重建做了对照。",
   "thread": null,
   "baseCommit": "f03dcbc0",
-  "commits": [],
+  "commits": ["5815ad05"],
   "sources": [
     { "url": "https://app.hyperliquid.xyz/trade/HYPE" },
     { "url": "https://app.hyperliquid.xyz/assets/index-58uVNh8f.js" },
