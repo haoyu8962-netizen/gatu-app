@@ -134,7 +134,7 @@ rg -n '"fundingHistory"|\.fundingHistory\(' apps/terminal/src packages/hl-react/
 
 ## 后续：第一批实施（2026-09-28 追加）
 
-以上审查内容保持 `e3b5dd82` 基线时的原样，计数不随实施更新。按[接入规划](sdk-feature-integration-plan.md)实施的第一批六项已集成到分支 `claude/sdk-api-review-51a3ea`（未推送、未合入 `dev`、未发布），实施、三轮对抗审查与验证见规划的实施记录：
+以上审查内容保持 `e3b5dd82` 基线时的原样，计数不随实施更新。按[接入规划](sdk-feature-integration-plan.md)实施的第一批六项已于 2026-09-28 经 [PR #50](https://github.com/zora4523-bot/gatu-app/pull/50) 合入 `dev`（合并提交 `ac11f81b`），未晋升 `main`、未发布，实施、三轮对抗审查与验证见规划的实施记录：
 
 | 本文排序 | 接口 | 实施结果 | 归属文档 |
 | ---: | --- | --- | --- |
