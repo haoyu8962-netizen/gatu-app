@@ -103,3 +103,13 @@
 - 可以开 dev → main 的 PR；预期四路构建一次通过，是否合并由用户决定。合入 main 不等于上线（ADR 0016），真机验收与配对开关保持关闭仍是发布闸门。
 - 待用户决定：测试台是否入库；是否开 dev → main 的 PR。
 - 下一次先查：`docs/adr/0016-dev-first-pull-requests-and-ci-tiers.md`、`scripts/check-client-bundle-budget.mjs` 的基线表、字体审查记录。
+
+## 合入补记（2026-09-28）
+
+本记录的三个提交（`cbada9e6`、`143f75d9`、`c24d28d1`，分支 `docs/release-readiness-checks`）一直未推送，测试台的五个文件也一直是 `font-harness` worktree 里的未跟踪文件。2026-09-28 盘点未提 PR 的分支后，用户决定入库：三个提交以拣选方式带入分支 `docs/release-readiness-record-and-font-harness`（新提交 `cd509ff0`、`149b2188`、`8266ae0b`，冲突只在生成的索引），五个文件放在 `apps/terminal/tests/browser/font-migration*`。上文「是否入库尚未决定」由此了结；「是否开 dev → main 的 PR」已由之后的晋升处理，本补记不重述。
+
+入库时的改动只有两处：`font-migration.run.mjs` 改为在独立进程组里启动 Vite 并结束整个进程组，修掉上文记录的「vite 子进程不随 SIGTERM 退出、拖住进程」；两个脚本开头各加一行用法说明。类串对照表、夹具页面与判定逻辑未改。
+
+在当时的 `dev`（`68fc6f6a`）上重跑，本机 Chrome 153.0.8010.54（脚本优先用 Chrome 通道，该通道同一时间单独启动成功；运行日志本身未记录浏览器版本）：`node tests/browser/font-migration.run.mjs <输出>` 深色、浅色各五个宽度共 10 轮、6,880 次对比，差异 0，「字号规则缺失」0，16 秒后正常退出且 4199 端口无残留进程；`node tests/browser/font-migration.control.mjs` 共 24 次对比，报出 16 处差异（错误字号与缺少显式行高各 8 处），等值对照 0。每个元素的计算属性数为 855，比上文的 857 少 2，来自浏览器版本差异还是样式表变化未核实，不影响逐项比较的结论。
+
+用途边界：这是 `2c015279` 那次迁移的等值证明，类串对照表是当时从 diff 提取的静态清单，不会跟随之后的源码变化，也没有接入 Playwright 配置或 CI。登录态原地对比用的页内记录器是随调用注入的，当时没有保存，本次也未入库。
