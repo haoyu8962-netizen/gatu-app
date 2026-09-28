@@ -3,11 +3,7 @@ import { msg } from "@lingui/core/macro";
 import Big from "big.js";
 import { isValidOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import { formatActionFailure } from "@/lib/errors/action-error";
-import {
-	type ExchangeErrorEntry,
-	formatExchangeErrorText,
-	parseExchangeErrorText,
-} from "@/lib/errors/exchange-error-text";
+import { type ExchangeErrorEntry, formatExchangeErrorText } from "@/lib/errors/exchange-error-text";
 import { formatPrice, formatToken } from "@/lib/format";
 import { formatOrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import { formatOrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
@@ -163,7 +159,7 @@ function repeatsChildErrors(order: OrderQueueItem): boolean {
 	const { children, error } = order;
 	if (!error || !children?.some((child) => child.error)) return false;
 	let entries: readonly ExchangeErrorEntry[];
-	if (typeof error === "string") entries = parseExchangeErrorText(error);
+	if (typeof error === "string") entries = [{ text: error }];
 	else if ("kind" in error && error.kind === "exchange-error" && !error.hint) entries = error.entries;
 	else return false;
 	return (

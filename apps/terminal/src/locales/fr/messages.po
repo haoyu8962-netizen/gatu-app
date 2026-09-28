@@ -399,6 +399,10 @@ msgstr "Accès restreint"
 msgid "Account"
 msgstr "Compte"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Account {user} has no balance on Hyperliquid. Deposit first."
+msgstr "Le compte {user} n'a aucun solde sur Hyperliquid. Déposez d'abord."
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "Account / API Wallet"
 msgstr "Compte / portefeuille API"
@@ -4302,6 +4306,12 @@ msgstr "La demande d'effet de levier ne correspond plus au marché sélectionné
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage updated to {leverage}x"
 msgstr "Effet de levier mis à jour à {leverage}x"
+
+#: src/lib/lifi/config.ts
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
+msgid "LI.FI requested a network that does not match this bridge route."
+msgstr "LI.FI a demandé un réseau qui ne correspond pas à cet itinéraire."
 
 #: src/lib/lifi/use-bridge.ts
 msgid "LI.FI returned a bridge route that does not match the approved route."
@@ -8598,6 +8608,7 @@ msgstr "Le compte ne comporte aucun ordre ordinaire dans l’historique disponib
 msgid "The active owner wallet or network changed."
 msgstr "Le portefeuille propriétaire actif ou le réseau a changé."
 
+#: src/lib/lifi/config.ts
 #: src/lib/lifi/use-bridge.ts
 #: src/lib/tests/bridge-tab-lifecycle.test.tsx
 msgid "The active wallet does not match this bridge route."
@@ -9090,6 +9101,10 @@ msgstr "Le portefeuille n'a pas pu signer la demande. Réessayez."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
 msgstr "Le portefeuille n’a pas signé ; aucune demande n’a donc été soumise. Vous pouvez vérifier les détails et réessayer."
+
+#: src/lib/lifi/config.ts
+msgid "The wallet network does not match this bridge route. Switch networks in your wallet and try again."
+msgstr "Le réseau du portefeuille ne correspond pas à cet itinéraire. Changez de réseau dans votre portefeuille puis réessayez."
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
@@ -10500,8 +10515,8 @@ msgid "Vault not found"
 msgstr "Coffre introuvable"
 
 #: src/components/vaults/use-vault-action-controller.ts
-msgid "Vault operation failed."
-msgstr "L'opération sur le coffre a échoué."
+#~ msgid "Vault operation failed."
+#~ msgstr "L'opération sur le coffre a échoué."
 
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Vault operation failed. Verify current balances and history before trying again."
@@ -10571,7 +10586,6 @@ msgstr "Vérifier"
 msgid "Verify again"
 msgstr "Vérifier à nouveau"
 
-#: src/components/vaults/use-vault-action-controller.ts
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Verify the pending funds operation before starting another one."
 msgstr "Vérifiez l’opération sur les fonds en attente avant d’en commencer une autre."

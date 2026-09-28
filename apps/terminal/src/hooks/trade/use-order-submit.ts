@@ -9,7 +9,7 @@ import { buildTwapOrderDetails } from "@/domain/trade/twap-details";
 import { type ActionFailure, exchangeActionFailure } from "@/lib/errors/action-error";
 import { isInsufficientMarginText } from "@/lib/errors/exchange-error-text";
 import { useHyperliquid } from "@/lib/hyperliquid";
-import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
+import { deriveOrderOutcome, extractStatusErrors, extractStatusRejections } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive, toBig } from "@/lib/trade/numbers";
 import {
@@ -101,7 +101,8 @@ interface UseOrderSubmitOptions {
 	 */
 	onReset?: () => void;
 	/**
-	 * Reads the live signed position size of a market when it is known. Used only to suggest
+	 * Reads the live signed position size of a market when it is known. It is read when the order
+	 * is submitted, so a late rejection never uses another account's position, and only to suggest
 	 * Reduce Only after the exchange rejects a perp order for insufficient margin.
 	 */
 	getPositionSize?: (assetId: number) => string | undefined;
@@ -197,6 +198,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 
 		const hasTp = tpSlEnabled && canUseTpSl && isPositive(tpPriceNum);
 		const hasSl = tpSlEnabled && canUseTpSl && isPositive(slPriceNum);
+		const positionSizeAtSubmit = market.kind === "perp" ? options.getPositionSize?.(market.assetId) : undefined;
 
 		function withMarginHint(failure: ActionFailure | null): ActionFailure | undefined {
 			if (!failure) return undefined;
@@ -206,7 +208,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				side,
 				size: formattedSize,
 				reduceOnly,
-				positionSize: options.getPositionSize?.(market.assetId),
+				positionSize: positionSizeAtSubmit,
 			});
 			return hint ? { ...failure, hint } : failure;
 		}
@@ -331,10 +333,10 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				}
 
 				const statuses = submission.result.response?.data?.statuses ?? [];
-				const errors = extractStatusErrors(statuses);
+				const rejections = extractStatusRejections(statuses);
 
-				if (errors.length > 0) {
-					updateOrder(orderId, { status: "failed", error: withMarginHint(exchangeActionFailure(errors.join("; "))) });
+				if (rejections.length > 0) {
+					updateOrder(orderId, { status: "failed", error: withMarginHint(exchangeActionFailure(rejections)) });
 				} else {
 					updateOrder(orderId, {
 						status: execution?.completeness === "partial" && !input.scaleOrder ? "partial" : "success",

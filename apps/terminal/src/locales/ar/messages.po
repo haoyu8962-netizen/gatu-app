@@ -399,6 +399,10 @@ msgstr "الوصول مقيّد"
 msgid "Account"
 msgstr "الحساب"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Account {user} has no balance on Hyperliquid. Deposit first."
+msgstr "لا يوجد رصيد للحساب {user} على Hyperliquid. أودع أولاً."
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "Account / API Wallet"
 msgstr "الحساب / محفظة API"
@@ -4302,6 +4306,12 @@ msgstr "لم يعد طلب الرافعة المالية مطابقًا للسو
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage updated to {leverage}x"
 msgstr "تم تحديث الرافعة المالية إلى {leverage}x"
+
+#: src/lib/lifi/config.ts
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
+msgid "LI.FI requested a network that does not match this bridge route."
+msgstr "طلب LI.FI شبكة لا تطابق مسار الجسر هذا."
 
 #: src/lib/lifi/use-bridge.ts
 msgid "LI.FI returned a bridge route that does not match the approved route."
@@ -8598,6 +8608,7 @@ msgstr "لا يحتوي الحساب على أوامر عادية في السج�
 msgid "The active owner wallet or network changed."
 msgstr "تغيّرت محفظة المالك النشطة أو الشبكة."
 
+#: src/lib/lifi/config.ts
 #: src/lib/lifi/use-bridge.ts
 #: src/lib/tests/bridge-tab-lifecycle.test.tsx
 msgid "The active wallet does not match this bridge route."
@@ -9090,6 +9101,10 @@ msgstr "تعذّر على المحفظة توقيع الطلب. حاول مرة 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
 msgstr "لم توقّع المحفظة، لذلك لم يُرسل أي طلب. يمكنك مراجعة التفاصيل والمحاولة مجددًا."
+
+#: src/lib/lifi/config.ts
+msgid "The wallet network does not match this bridge route. Switch networks in your wallet and try again."
+msgstr "شبكة المحفظة لا تطابق مسار الجسر هذا. بدّل الشبكة من داخل المحفظة ثم أعد المحاولة."
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
@@ -10500,8 +10515,8 @@ msgid "Vault not found"
 msgstr "لم يتم العثور على الخزنة"
 
 #: src/components/vaults/use-vault-action-controller.ts
-msgid "Vault operation failed."
-msgstr "فشلت عملية الخزنة."
+#~ msgid "Vault operation failed."
+#~ msgstr "فشلت عملية الخزنة."
 
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Vault operation failed. Verify current balances and history before trying again."
@@ -10571,7 +10586,6 @@ msgstr "تحقق"
 msgid "Verify again"
 msgstr "تحقق مجددًا"
 
-#: src/components/vaults/use-vault-action-controller.ts
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Verify the pending funds operation before starting another one."
 msgstr "تحقق من عملية الأموال المعلقة قبل بدء عملية أخرى."

@@ -399,6 +399,10 @@ msgstr "पहुँच प्रतिबंधित"
 msgid "Account"
 msgstr "खाता"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Account {user} has no balance on Hyperliquid. Deposit first."
+msgstr "खाते {user} का Hyperliquid पर कोई बैलेंस नहीं है। पहले जमा करें।"
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "Account / API Wallet"
 msgstr "खाता / API वॉलेट"
@@ -4302,6 +4306,12 @@ msgstr "लीवरेज अनुरोध अब चुने गए मा�
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage updated to {leverage}x"
 msgstr "लीवरेज {leverage}x पर अपडेट किया गया"
+
+#: src/lib/lifi/config.ts
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
+msgid "LI.FI requested a network that does not match this bridge route."
+msgstr "LI.FI ने ऐसा नेटवर्क माँगा जो इस ब्रिज रूट से मेल नहीं खाता।"
 
 #: src/lib/lifi/use-bridge.ts
 msgid "LI.FI returned a bridge route that does not match the approved route."
@@ -8598,6 +8608,7 @@ msgstr "उपलब्ध इतिहास में इस खाते क�
 msgid "The active owner wallet or network changed."
 msgstr "सक्रिय स्वामी वॉलेट या नेटवर्क बदल गया।"
 
+#: src/lib/lifi/config.ts
 #: src/lib/lifi/use-bridge.ts
 #: src/lib/tests/bridge-tab-lifecycle.test.tsx
 msgid "The active wallet does not match this bridge route."
@@ -9090,6 +9101,10 @@ msgstr "वॉलेट अनुरोध पर हस्ताक्षर �
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
 msgstr "वॉलेट ने हस्ताक्षर नहीं किया, इसलिए कोई अनुरोध नहीं भेजा गया। आप विवरण की समीक्षा करके फिर प्रयास कर सकते हैं।"
+
+#: src/lib/lifi/config.ts
+msgid "The wallet network does not match this bridge route. Switch networks in your wallet and try again."
+msgstr "वॉलेट का नेटवर्क इस ब्रिज रूट से मेल नहीं खाता। अपने वॉलेट में नेटवर्क बदलें और फिर से प्रयास करें।"
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
@@ -10500,8 +10515,8 @@ msgid "Vault not found"
 msgstr "वॉल्ट नहीं मिला"
 
 #: src/components/vaults/use-vault-action-controller.ts
-msgid "Vault operation failed."
-msgstr "वॉल्ट ऑपरेशन विफल रहा।"
+#~ msgid "Vault operation failed."
+#~ msgstr "वॉल्ट ऑपरेशन विफल रहा।"
 
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Vault operation failed. Verify current balances and history before trying again."
@@ -10571,7 +10586,6 @@ msgstr "सत्यापित करें"
 msgid "Verify again"
 msgstr "फिर सत्यापित करें"
 
-#: src/components/vaults/use-vault-action-controller.ts
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Verify the pending funds operation before starting another one."
 msgstr "दूसरा फंड ऑपरेशन शुरू करने से पहले लंबित ऑपरेशन सत्यापित करें।"

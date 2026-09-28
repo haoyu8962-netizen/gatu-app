@@ -1,3 +1,5 @@
+import type { ExchangeErrorEntry } from "@/lib/errors/exchange-error-text";
+
 export type OrderOutcome = "filled" | "resting" | "triggerSet" | "twapStarted";
 
 export function extractStatusErrors(statuses: unknown[]): string[] {
@@ -8,6 +10,15 @@ export function extractStatusErrors(statuses: unknown[]): string[] {
 		}
 	}
 	return errors;
+}
+
+/** The rejection text of each rejected status with its zero-based position in the batch. */
+export function extractStatusRejections(statuses: unknown[]): ExchangeErrorEntry[] {
+	return statuses.flatMap((status, index) =>
+		status && typeof status === "object" && "error" in status && typeof status.error === "string"
+			? [{ index, text: status.error }]
+			: [],
+	);
 }
 
 export function deriveOrderOutcome(statuses: unknown[]): OrderOutcome {

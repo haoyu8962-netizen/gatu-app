@@ -649,7 +649,7 @@ function PositionTpSlForm({
 		const resolution = resolveOrderBatchResponse(response, expectedCount);
 		if (resolution?.status === "accepted") return;
 		const uncertain = resolution === null || resolution?.status === "partial";
-		const failure = resolution?.errors.length ? exchangeActionFailure(resolution.errors.join("; ")) : null;
+		const failure = resolution?.errors.length ? exchangeActionFailure(resolution.errors) : null;
 		throw new PositionTpSlMutationResponseError(failure, uncertain);
 	}
 

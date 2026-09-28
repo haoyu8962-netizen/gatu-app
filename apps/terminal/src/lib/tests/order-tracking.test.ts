@@ -135,7 +135,7 @@ describe("order tracking", () => {
 			totalCount: 3,
 			acceptedCount: 2,
 			rejectedCount: 1,
-			errors: ["Order 2: Order must have minimum value of $10."],
+			errors: [{ index: 1, text: "Order must have minimum value of $10." }],
 		});
 	});
 
@@ -153,7 +153,7 @@ describe("order tracking", () => {
 			totalCount: 4,
 			acceptedCount: 0,
 			rejectedCount: 4,
-			errors: ["Invalid order request"],
+			errors: [{ text: "Invalid order request" }],
 		});
 	});
 
@@ -244,7 +244,7 @@ describe("order tracking", () => {
 			totalCount: 2,
 			acceptedCount: 0,
 			rejectedCount: 2,
-			errors: ["Order 2: No liquidity available for market order."],
+			errors: [{ index: 1, text: "No liquidity available for market order." }],
 		});
 	});
 

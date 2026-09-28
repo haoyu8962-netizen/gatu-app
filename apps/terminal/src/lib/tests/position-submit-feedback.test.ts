@@ -60,7 +60,10 @@ describe("position submission feedback", () => {
 			totalCount: 2,
 			acceptedCount: 0,
 			rejectedCount: 2,
-			errors: ["Order 1: No liquidity available for market order.", "Order 2: A rejection nobody documented"],
+			errors: [
+				{ index: 0, text: "No liquidity available for market order." },
+				{ index: 1, text: "A rejection nobody documented" },
+			],
 		});
 
 		const feedback = positionSubmitFeedbackFromCause(cause, "failed-submit-close-orders");

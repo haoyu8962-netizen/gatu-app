@@ -121,12 +121,17 @@ const RULES: readonly ExchangeErrorRule[] = [
 		describe: () => msg`The request expired before the exchange processed it. Try again.`,
 	},
 	{
-		pattern: /^Must deposit before performing actions\.?/i,
-		describe: () => msg`No balance on Hyperliquid. Deposit first.`,
+		pattern: /^Must deposit before performing actions\.?(?: User: (0x[0-9a-f]{40})\.?)?$/i,
+		describe: (match) => {
+			const user = match[1];
+			if (!user) return msg`No balance on Hyperliquid. Deposit first.`;
+			return msg`Account ${user} has no balance on Hyperliquid. Deposit first.`;
+		},
 	},
 ];
 
 const OUR_BATCH_ENTRY = /^Order (\d+): (.+)$/s;
+const OUR_BATCH_SEPARATOR = /; (?=Order \d+: )/;
 const SDK_BATCH_ENTRY = /^[A-Za-z]+ (\d+): (.+)$/s;
 const SDK_BATCH_SEPARATOR = /, (?=[A-Za-z]+ \d+: )/;
 
@@ -146,16 +151,17 @@ export function isInsufficientMarginText(text: string): boolean {
 
 /**
  * Splits a combined rejection message into entries. Understands our order tracking format
- * ("Order 2: …" joined by "; ") and the SDK batch format ("order 1: …" joined by ", ").
+ * ("Order 2: …" joined by "; ") and the SDK batch format ("order 1: …" joined by ", "). It splits
+ * only where the next entry's prefix starts, so a separator inside an exchange text stays part of
+ * that text. Prefer the structured entries of a response; this is for a message that lost them.
  */
 export function parseExchangeErrorText(text: string): ExchangeErrorEntry[] {
-	const ours = text.split("; ");
-	if (ours.length > 1 || OUR_BATCH_ENTRY.test(text)) {
-		const entries = ours.map((part) => {
-			const match = part.match(OUR_BATCH_ENTRY);
-			return match ? { index: Number(match[1]) - 1, text: match[2] } : { text: part };
+	const ours = text.split(OUR_BATCH_SEPARATOR);
+	if (ours.every((part) => OUR_BATCH_ENTRY.test(part))) {
+		return ours.map((part) => {
+			const match = part.match(OUR_BATCH_ENTRY) as RegExpMatchArray;
+			return { index: Number(match[1]) - 1, text: match[2] };
 		});
-		if (entries.every((entry) => entry.index !== undefined)) return entries;
 	}
 	const sdkParts = text.split(SDK_BATCH_SEPARATOR);
 	if (sdkParts.every((part) => SDK_BATCH_ENTRY.test(part))) {
@@ -191,7 +197,7 @@ export function formatExchangeErrorEntries(
 		.join("; ");
 }
 
-/** Parses and renders a combined rejection message. */
+/** Renders one rejection text exactly as the exchange sent it, translated when it is known. */
 export function formatExchangeErrorText(text: string, translate: Translate, hint?: InsufficientMarginHint): string {
-	return formatExchangeErrorEntries(parseExchangeErrorText(text), translate, hint);
+	return formatExchangeErrorEntries([{ text }], translate, hint);
 }

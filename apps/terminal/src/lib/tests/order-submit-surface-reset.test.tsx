@@ -262,7 +262,7 @@ describe("useOrderSubmit surface reset", () => {
 				totalCount: 2,
 				acceptedCount: 1,
 				rejectedCount: 1,
-				errors: ["TP rejected"],
+				errors: [{ text: "TP rejected" }],
 			});
 		});
 		await submit(marketInput({ tpSlEnabled: true, canUseTpSl: true, tpPriceNum: 120 }));
@@ -352,7 +352,7 @@ describe("useOrderSubmit surface reset", () => {
 							totalCount: 2,
 							acceptedCount: 1,
 							rejectedCount: 1,
-							errors: ["Order 2: Order must have minimum value of $10."],
+							errors: [{ index: 1, text: "Order must have minimum value of $10." }],
 						}),
 					);
 				} else {
@@ -446,7 +446,7 @@ describe("useOrderSubmit surface reset", () => {
 					totalCount: 1,
 					acceptedCount: 0,
 					rejectedCount: 1,
-					errors: ["Order 1: Price must be divisible by tick size."],
+					errors: [{ index: 0, text: "Price must be divisible by tick size." }],
 				}),
 			)
 			.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: unknownRejection }, unknownRejection));
@@ -474,7 +474,7 @@ describe("useOrderSubmit surface reset", () => {
 				totalCount: 1,
 				acceptedCount: 0,
 				rejectedCount: 1,
-				errors: ["Order 1: Insufficient margin to place order."],
+				errors: [{ index: 0, text: "Insufficient margin to place order." }],
 			}),
 		);
 
@@ -487,6 +487,25 @@ describe("useOrderSubmit surface reset", () => {
 		);
 	});
 
+	it("uses the position read when the order was submitted, not the one when a late rejection arrives", async () => {
+		mocks.getPositionSize.mockReturnValue(undefined);
+		mocks.submitOrder.mockImplementationOnce(async () => {
+			mocks.getPositionSize.mockReturnValue("-5");
+			throw new OrderBatchResolutionError({
+				status: "rejected",
+				totalCount: 1,
+				acceptedCount: 0,
+				rejectedCount: 1,
+				errors: [{ index: 0, text: "Insufficient margin to place order." }],
+			});
+		});
+
+		await submit(marketInput({ side: "buy" }));
+
+		const [, update] = mocks.updateOrder.mock.calls.at(-1) ?? [];
+		expect(failureText(update?.error)).toBe("Insufficient margin to place order.");
+	});
+
 	it("does not suggest Reduce Only for a reduce-only or spot order", async () => {
 		mocks.getPositionSize.mockReturnValue("-5");
 		const insufficientMargin = () =>
@@ -495,7 +514,7 @@ describe("useOrderSubmit surface reset", () => {
 				totalCount: 1,
 				acceptedCount: 0,
 				rejectedCount: 1,
-				errors: ["Order 1: Insufficient margin to place order."],
+				errors: [{ index: 0, text: "Insufficient margin to place order." }],
 			});
 		mocks.submitOrder.mockRejectedValueOnce(insufficientMargin()).mockRejectedValueOnce(insufficientMargin());
 

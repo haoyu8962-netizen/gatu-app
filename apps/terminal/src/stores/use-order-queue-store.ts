@@ -44,7 +44,8 @@ export interface OrderQueueItem extends OrderQueueMetadata {
 	status: "pending" | "confirming" | "unconfirmed" | "partial" | "success" | "canceled" | "failed";
 	outcome?: OrderOutcome;
 	/**
-	 * A plain string is an exchange rejection text. Store anything else as a coded or translatable
+	 * A plain string is one exchange rejection text as the exchange sent it; store a batch as an
+	 * exchange failure with its entries. Store anything else as a coded or translatable
 	 * value so it is rendered in the active language.
 	 */
 	error?:

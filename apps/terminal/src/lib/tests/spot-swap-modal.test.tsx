@@ -301,7 +301,7 @@ describe("SpotSwapModal submission", () => {
 				totalCount: 1,
 				acceptedCount: 0,
 				rejectedCount: 1,
-				errors: ["A rejection the terminal does not know yet"],
+				errors: [{ text: "A rejection the terminal does not know yet" }],
 			}),
 			{ kind: "exchange-error", entries: [{ text: "A rejection the terminal does not know yet" }] },
 		],

@@ -1,10 +1,12 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { SDKError, UnknownError } from "@lifi/sdk";
 import { i18n, type Messages } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { AbstractWalletError, ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { OrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import {
 	classifyActionError,
 	classifyActionErrorOr,
@@ -16,6 +18,7 @@ import {
 } from "@/lib/errors/action-error";
 import {
 	describeExchangeErrorText,
+	formatExchangeErrorEntries,
 	formatExchangeErrorText,
 	parseExchangeErrorText,
 } from "@/lib/errors/exchange-error-text";
@@ -136,12 +139,31 @@ describe("exchange rejection texts", () => {
 			{ index: 0, text: "Invalid TP/SL price." },
 			{ index: 2, text: "Something new" },
 		]);
-		expect(formatExchangeErrorText("Order 1: Invalid TP/SL price.; Order 3: Something new", translate)).toBe(
-			"Order 1: Invalid TP/SL price.; Order 3: Something new",
+		expect(
+			formatExchangeErrorEntries(
+				parseExchangeErrorText("Order 1: Invalid TP/SL price.; Order 3: Something new"),
+				translate,
+			),
+		).toBe("Order 1: Invalid TP/SL price.; Order 3: Something new");
+		expect(
+			formatExchangeErrorEntries(parseExchangeErrorText("Order 2: Order must have minimum value of $10."), translate),
+		).toBe("Order value must be at least $10.");
+	});
+
+	it("keeps a separator inside an exchange text as part of that text", () => {
+		const combined = "Order 1: New rejection; detail; Order 2: Price must be divisible by tick size.";
+		expect(parseExchangeErrorText(combined)).toEqual([
+			{ index: 0, text: "New rejection; detail" },
+			{ index: 1, text: "Price must be divisible by tick size." },
+		]);
+		expect(formatExchangeErrorEntries(parseExchangeErrorText(combined), translate)).toBe(
+			"Order 1: New rejection; detail; Order 2: Price must be a multiple of the tick size.",
 		);
-		expect(formatExchangeErrorText("Order 2: Order must have minimum value of $10.", translate)).toBe(
-			"Order value must be at least $10.",
-		);
+	});
+
+	it("formats a single rejection text as one text, whatever it contains", () => {
+		const text = "Risk check failed; order 2: see details";
+		expect(formatExchangeErrorText(text, translate)).toBe(text);
 	});
 
 	it("parses the SDK batch format, including a text that contains a comma", () => {
@@ -151,9 +173,25 @@ describe("exchange rejection texts", () => {
 			{ index: 0, text: "Post only order would have immediately matched, bbo was 1@2." },
 			{ index: 1, text: "Price must be divisible by tick size." },
 		]);
-		expect(formatExchangeErrorText("cancel 0: Order was never placed, already canceled, or filled.", translate)).toBe(
-			"The order was never placed, was already canceled, or has filled.",
+		expect(
+			formatExchangeErrorEntries(
+				parseExchangeErrorText("cancel 0: Order was never placed, already canceled, or filled."),
+				translate,
+			),
+		).toBe("The order was never placed, was already canceled, or has filled.");
+	});
+
+	it("translates the deposit-required rejection only in its known forms and keeps the account address", () => {
+		expect(formatExchangeErrorText("Must deposit before performing actions.", translate)).toBe(
+			"No balance on Hyperliquid. Deposit first.",
 		);
+		const user = "0x1111111111111111111111111111111111111111";
+		expect(formatExchangeErrorText(`Must deposit before performing actions. User: ${user}`, translate)).toBe(
+			`Account ${user} has no balance on Hyperliquid. Deposit first.`,
+		);
+		const unknown = "Must deposit before performing actions. Required collateral: 25 USDC.";
+		expect(describeExchangeErrorText(unknown)).toBeNull();
+		expect(formatExchangeErrorText(unknown, translate)).toBe(unknown);
 	});
 
 	it("adds the official insufficient-margin hints", () => {
@@ -181,9 +219,13 @@ describe("exchange rejection texts", () => {
 
 describe("production Chinese catalog", () => {
 	it("translates every known exchange text and hint", () => {
-		const descriptors = [...DOCUMENTED_EXCHANGE_ERRORS, LEVERAGE_DECREASE_ERROR, "Action already expired"].map((text) =>
-			describeExchangeErrorText(text),
-		);
+		const descriptors = [
+			...DOCUMENTED_EXCHANGE_ERRORS,
+			LEVERAGE_DECREASE_ERROR,
+			"Action already expired",
+			"Must deposit before performing actions.",
+			"Must deposit before performing actions. User: 0x1111111111111111111111111111111111111111",
+		].map((text) => describeExchangeErrorText(text));
 		descriptors.push(
 			describeExchangeErrorText("Insufficient margin to place order.", { kind: "reduce-only" }),
 			describeExchangeErrorText("Insufficient margin to place order.", { kind: "cancel-orders", market: "BTC" }),
@@ -287,11 +329,70 @@ describe("classifyActionError", () => {
 		expect(formatActionFailure(failure, translate)).toBe("保证金模式数据不可用");
 	});
 
-	it("treats our order tracking batch errors as exchange texts", () => {
-		expect(classifyActionError(new Error("Order 1: Something the exchange said"))).toEqual({
-			kind: "exchange-error",
-			entries: [{ index: 0, text: "Something the exchange said" }],
+	it("keeps each rejected order's own text and position from our order tracking result", () => {
+		const error = new OrderBatchResolutionError({
+			status: "partial",
+			totalCount: 3,
+			acceptedCount: 1,
+			rejectedCount: 2,
+			errors: [
+				{ index: 0, text: "Risk cap exceeded; contact support" },
+				{ index: 2, text: "Price must be divisible by tick size." },
+			],
 		});
+		const failure = classifyActionError(error);
+		expect(failure).toEqual({
+			kind: "exchange-error",
+			entries: [
+				{ index: 0, text: "Risk cap exceeded; contact support" },
+				{ index: 2, text: "Price must be divisible by tick size." },
+			],
+		});
+		expect(formatActionFailure(failure, translate)).toBe(
+			"Order 1: Risk cap exceeded; contact support; Order 3: Price must be a multiple of the tick size.",
+		);
+	});
+
+	it("never takes a wallet or provider message for an exchange text because of its shape", () => {
+		const wrapped = new AbstractWalletError("Failed to sign the typed data using the wallet", {
+			cause: new Error("Error 0: Device disconnected"),
+		});
+		expect(classifyActionError(wrapped)).toEqual({ kind: "action-error", code: "signing-failed" });
+		expect(classifyActionError(new Error("Order 1: Something the exchange said"))).toEqual({
+			kind: "action-error",
+			code: "unknown",
+		});
+		expect(classifyActionError(new Error("Price must be divisible by tick size."))).toEqual({
+			kind: "exchange-error",
+			entries: [{ text: "Price must be divisible by tick size." }],
+		});
+	});
+
+	it("reads exchange rejections before looking for wallet rejection words", () => {
+		const statuses = [
+			{ error: "Account policy: user denied access." },
+			{ error: "Insufficient margin to place order." },
+		];
+		const error = new ApiRequestError(
+			{ status: "ok", response: { type: "order", data: { statuses } } },
+			"order 0: Account policy: user denied access., order 1: Insufficient margin to place order.",
+		);
+		expect(classifyActionError(error)).toEqual({
+			kind: "exchange-error",
+			entries: [
+				{ index: 0, text: "Account policy: user denied access." },
+				{ index: 1, text: "Insufficient margin to place order." },
+			],
+		});
+	});
+
+	it("finds our own message inside the errors the LI.FI SDK wraps around it", () => {
+		const ours = new LocalizedActionError(msg`LI.FI requested a network that does not match this bridge route.`);
+		const wrapped = new SDKError(new UnknownError(ours.message, ours));
+		expect(classifyActionError(wrapped)).toEqual(msg`LI.FI requested a network that does not match this bridge route.`);
+		expect(describeActionError(wrapped, translate)).toBe(
+			"LI.FI requested a network that does not match this bridge route.",
+		);
 	});
 
 	it("never shows an unrecognised English error", () => {

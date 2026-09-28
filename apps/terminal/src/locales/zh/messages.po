@@ -399,6 +399,10 @@ msgstr "访问受限"
 msgid "Account"
 msgstr "账户"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Account {user} has no balance on Hyperliquid. Deposit first."
+msgstr "账户 {user} 在 Hyperliquid 上无余额，请先充值。"
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "Account / API Wallet"
 msgstr "账户 / API 钱包"
@@ -4302,6 +4306,12 @@ msgstr "杠杆请求与所选市场不再一致"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage updated to {leverage}x"
 msgstr "杠杆已更新为 {leverage}x"
+
+#: src/lib/lifi/config.ts
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
+msgid "LI.FI requested a network that does not match this bridge route."
+msgstr "LI.FI 请求的网络与此跨链路径不匹配。"
 
 #: src/lib/lifi/use-bridge.ts
 msgid "LI.FI returned a bridge route that does not match the approved route."
@@ -8598,6 +8608,7 @@ msgstr "该账户在可用历史中没有普通委托。"
 msgid "The active owner wallet or network changed."
 msgstr "当前所有者钱包或网络已变化。"
 
+#: src/lib/lifi/config.ts
 #: src/lib/lifi/use-bridge.ts
 #: src/lib/tests/bridge-tab-lifecycle.test.tsx
 msgid "The active wallet does not match this bridge route."
@@ -9090,6 +9101,10 @@ msgstr "钱包未能签署该请求，请重试。"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
 msgstr "钱包未完成签名，因此请求尚未提交。你可以查看详情后重试。"
+
+#: src/lib/lifi/config.ts
+msgid "The wallet network does not match this bridge route. Switch networks in your wallet and try again."
+msgstr "钱包网络与此跨链路径不匹配。请在钱包中切换网络后重试。"
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
@@ -10500,8 +10515,8 @@ msgid "Vault not found"
 msgstr "未找到金库"
 
 #: src/components/vaults/use-vault-action-controller.ts
-msgid "Vault operation failed."
-msgstr "金库操作失败。"
+#~ msgid "Vault operation failed."
+#~ msgstr "金库操作失败。"
 
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Vault operation failed. Verify current balances and history before trying again."
@@ -10571,7 +10586,6 @@ msgstr "验证"
 msgid "Verify again"
 msgstr "再次验证"
 
-#: src/components/vaults/use-vault-action-controller.ts
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Verify the pending funds operation before starting another one."
 msgstr "开始另一项操作前，请先验证待处理的资金操作。"

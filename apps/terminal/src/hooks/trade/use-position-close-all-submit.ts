@@ -293,7 +293,7 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 					}
 					if (resolution?.status === "rejected") {
 						if (resolution.errors.length === 0) throw positionSubmitFeedbackCause("close-orders-rejected");
-						throw new PositionSubmitFeedbackCause(exchangeActionFailure(resolution.errors.join("; ")));
+						throw new PositionSubmitFeedbackCause(exchangeActionFailure(resolution.errors));
 					}
 
 					updateOrderQueueItem(queueId, {

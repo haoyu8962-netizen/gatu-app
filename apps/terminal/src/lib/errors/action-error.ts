@@ -244,8 +244,16 @@ export function createActionError(
 	return new LocalizedActionError(ACTION_ERROR_MESSAGES[code], options);
 }
 
-export function exchangeActionFailure(text: string, hint?: InsufficientMarginHint): ExchangeActionFailure {
-	return { kind: "exchange-error", entries: parseExchangeErrorText(text), ...(hint ? { hint } : {}) };
+/**
+ * A failure made of exchange rejection texts: one text exactly as the exchange sent it, or the
+ * entries of a batch with the position of each rejected item.
+ */
+export function exchangeActionFailure(
+	rejections: string | readonly ExchangeErrorEntry[],
+	hint?: InsufficientMarginHint,
+): ExchangeActionFailure {
+	const entries = typeof rejections === "string" ? [{ text: rejections }] : [...rejections];
+	return { kind: "exchange-error", entries, ...(hint ? { hint } : {}) };
 }
 
 export function isSmartWalletNonceConflict(error: Error | null): boolean {
@@ -262,12 +270,14 @@ export function isAmbiguousExchangeActionError(error: unknown): boolean {
 
 /** Classifies a thrown value without translating it. */
 export function classifyActionError(error: unknown): ActionFailure {
-	if (error instanceof LocalizedActionError) return error.descriptor;
+	const localized = findLocalizedActionError(error);
+	if (localized) return localized.descriptor;
 	if (error instanceof DefinitiveDepositSourceFailureError) return DEPOSIT_SOURCE_FAILURE_MESSAGES[error.code];
 	if (!isRecord(error)) return coded("unknown");
-	if (isWalletRejection(error)) return coded("wallet-rejected");
 	if (error.name === "ApiRequestError") return getApiRequestFailure(error);
 	if (error.name === "HttpRequestError") return getHttpFailure(error);
+	if (error.name === "OrderBatchResolutionError") return getOrderBatchFailure(error.resolution);
+	if (isWalletRejection(error)) return coded("wallet-rejected");
 	if (error.name === "AbstractWalletError") return getWalletSigningFailure(error.cause);
 	if (error.name === "LegalActionNotAllowedError" && typeof error.reason === "string") {
 		return coded(LEGAL_REASON_CODES[error.reason] ?? "access-unavailable");
@@ -280,10 +290,7 @@ export function classifyActionError(error: unknown): ActionFailure {
 	}
 	const message = typeof error.message === "string" ? error.message : "";
 	if (!message) return coded("unknown");
-	const entries = parseExchangeErrorText(message);
-	if (entries.some((entry) => entry.index !== undefined) || describeExchangeErrorText(message)) {
-		return { kind: "exchange-error", entries };
-	}
+	if (describeExchangeErrorText(message)) return { kind: "exchange-error", entries: [{ text: message }] };
 	for (const rule of MESSAGE_RULES) {
 		if (rule.pattern.test(message)) return rule.failure;
 	}
@@ -343,6 +350,34 @@ function getApiResponseEntries(response: unknown): ExchangeErrorEntry[] {
 	}
 	if (isRecord(data.status) && typeof data.status.error === "string") return [{ text: data.status.error }];
 	return [];
+}
+
+/**
+ * Finds our own error in the cause chain: the LI.FI SDK and wallet adapters wrap what our callbacks
+ * throw, and our message is the most specific thing to say.
+ */
+function findLocalizedActionError(error: unknown): LocalizedActionError | undefined {
+	let current: unknown = error;
+	for (let depth = 0; depth < 6 && isRecord(current); depth++) {
+		if (current instanceof LocalizedActionError) return current;
+		current = current.cause;
+	}
+	return undefined;
+}
+
+/** Keeps each rejected order's own text and position from our order tracking result. */
+function getOrderBatchFailure(resolution: unknown): ActionFailure {
+	if (!isRecord(resolution) || !Array.isArray(resolution.errors)) return coded("unknown");
+	const entries = resolution.errors.filter(isExchangeErrorEntry);
+	return entries.length > 0 ? { kind: "exchange-error", entries } : coded("unknown");
+}
+
+function isExchangeErrorEntry(value: unknown): value is ExchangeErrorEntry {
+	return (
+		isRecord(value) &&
+		typeof value.text === "string" &&
+		(value.index === undefined || (typeof value.index === "number" && Number.isSafeInteger(value.index)))
+	);
 }
 
 /**
