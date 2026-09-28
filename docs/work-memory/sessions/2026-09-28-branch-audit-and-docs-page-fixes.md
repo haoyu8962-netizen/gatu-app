@@ -31,13 +31,15 @@
 
 同步记录。用户在 PR #50 合入后要求检查「还有几个 worktree 或者分支没有提交 PR，是不是有遗漏或者重复」，看过盘点后决定「先做第 1、2 项和清理」。会话在 worktree `sdk-api-review-51a3ea` 进行，没有可核对的任务标识（`thread: null`）。第 3–6 项（Codex 的两批周记录整理、builder 市场下架记录、晋升前检查记录与字体对照脚本）本次没有处理。
 
-## 盘点结论
+## 结论与依据
+
+### 盘点
 
 - 按提交内容与文件内容比对 `origin/dev`，不只看分支名。远端分支要么已合入 `dev`，要么有开着的 PR（当时只有 #54）。
 - 本地未提 PR 的实质内容共 6 处：worktree-05 的 19 个未提交文件与 `fix/p22-followup` 的 1 个提交（第 1、2 项）；`codex/reviewceshi` 与 `codex/dorad` 两批周记录整理（覆盖不同周，只在索引重叠，不重复）；`codex/01-builder-market-catalog` 的 1 份新记录；`docs/release-readiness-checks` 的 3 个提交与 5 个未跟踪的字体对照脚本。
 - 真正重复的只有 `claude/sdk-review-staleness-merge`：它是第一次合并尝试，其记录已写明被 `-2` 分支取代，`-2` 的同名提交在 `dev`。
 
-## 第 1 项：worktree-05 的未提交修复
+### 第 1 项：worktree-05 的未提交修复
 
 这些改动写于 2026-09-21，基线是 `28c39643`。之后 #47（ADR 0020）把文档与法律页并入应用外壳，所以按当前 `dev` 重做，而不是整体套用：
 
@@ -45,11 +47,11 @@
 - 404 分类（`34bee211`）：最后一段含点、点后 1–16 位字母或数字即视为文件，包括以点开头的文件；静态页运行时、Service Worker 与 CloudFront 函数三处同一界限，并有测试钉住三处一致。冲突按 ADR 0020 的「不保留路由清单」解决。Service Worker 只改放行规则、不改缓存结构，未升版本。
 - 翻译（`0e884e17`）：原改动为 es/fr/hi/ar 各填 26 条、zh 2 条。当前目录里 zh 两条已有译文；四种语言各有 12 条仍为空，已填；其余 14 条的原文已在 ADR 0015 D8 的配对改造中删除。英文源目录 2 条空值一并补上（该目录其余条目都有值）。`docs/trading-toolbar-redesign.md` 追加更正：英文回退不是这些语言的常态政策；当日每种语言仍有 18 条未译，多为配对流程文案。
 
-## 第 2 项：p22 滑杆提交被取代
+### 第 2 项：p22 滑杆提交被取代
 
 `28c39643`（2026-09-21）让 React 与布局副作用用同一表达式计算 `disabled`，以保持预渲染标记与纯视图一致。`dev` 的 `a379d231`（2026-09-22）选了相反做法：纯视图不再带 `disabled`，由控制器的布局副作用写入，并新增水合测试证明交互前已写入。把 `28c39643` 拣选到当前 `dev` 后，`trade-form-views.test.tsx` 的 2 项失败，因此未采用，拣选已撤回。worktree-05 本身（分支与未提交文件）没有改动。
 
-## 清理
+### 清理
 
 - 删除 worktree：`main-dev`（分支已随 #34 合入；唯一本地改动是 `.claude/launch.json` 的格式化与多一个 3016 端口条目，删除前备份到本会话 scratchpad）、Codex 的 `pr22-ci-remediation`（已并入 `dev`）。两者删除前都确认没有进程以其为工作目录。
 - 删除本地分支（删除前确认未被检出、且是 `origin/dev` 的祖先或已被取代）：`claude/sdk-review-staleness-merge`（原头 `6e7a4958`，已被取代）、`claude/sdk-review-staleness-merge-2`、`claude/start-dev-server-eef652`、`codex/pr22-ci-remediation`、`fix/pairing-page-hardening`、`claude/integrate-hydration-leverage-warning`、`docs/slider-pause-record-pr49`、`claude/sdk-api-review-51a3ea`。远端分支未删。
