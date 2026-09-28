@@ -143,6 +143,33 @@ describe("FundingHistoryPanel snapshot states", () => {
 		expect(body().querySelector('[role="alert"]')).toBeNull();
 	});
 
+	it("does not confirm an empty history that aged past five minutes while the system clock was set back", async () => {
+		vi.useFakeTimers({
+			now: NOW,
+			toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date", "performance"],
+		});
+		mocks.fundingHistory.mockResolvedValueOnce([]);
+		await render(true);
+		await advance(0);
+		expect(body().textContent).toBe("No funding history");
+
+		await render(false);
+		vi.setSystemTime(Date.now() - HOUR_MS);
+		await advance(STALE_TIME_MS);
+
+		const refresh = deferred<unknown>();
+		mocks.fundingHistory.mockReturnValueOnce(refresh.promise);
+		await render(true);
+
+		expect(mocks.fundingHistory).toHaveBeenCalledTimes(2);
+		expect(body().textContent).toBe("Loading...");
+		expect(body().getAttribute("aria-busy")).toBe("true");
+
+		await act(async () => refresh.resolve([]));
+		await advance(0);
+		expect(body().textContent).toBe("No funding history");
+	});
+
 	it("keeps a stale empty snapshot blank while its refresh is paused offline", async () => {
 		await showStaleEmptySnapshot();
 		mocks.isOnline = false;
