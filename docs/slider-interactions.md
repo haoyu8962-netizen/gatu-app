@@ -200,10 +200,19 @@ non-wrapping line, so a gesture changes only its text. That is a design argument
 measurement: its tests assert the node identity and class names in jsdom, which cannot
 show that the slider keeps its coordinates, that narrow widths do not overflow or that
 real pointer input behaves, so it stays unverified until a person drags the real
-control in the desktop dialog and the mobile drawer. The existing high-leverage
-warning below it still mounts from the previewed leverage; source reading suggests it
-can shift the slider mid-drag, which has not been checked in a browser and is tracked
-outside that change.
+control in the desktop dialog and the mobile drawer. The high-leverage warning below it
+is held for the gesture instead, as the next paragraph describes.
+
+The shared `LeverageEditor` (the desktop Adjust leverage dialog and the mobile leverage sheet)
+does the same for its high-leverage warning below the leverage field. The desktop dialog is
+vertically centred and the sheet is anchored to the bottom, so a warning that appeared or
+disappeared when a drag crossed 10x moved the slider up or down: by 34.5px in the desktop dialog
+and 69px in the 375px sheet, measured on 2026-09-27 with protocol-injected mouse events in the
+desktop app's browser pane. The editor keeps the warning's presence at the gesture's start and
+applies the released value at the gesture end. The warning text is fixed, and a width change
+cancels the gesture, so holding its presence also holds its height. Typed values, arrow keys and
+native range input are not gestures and update the warning at once. The warning has no part in
+Confirm, which keeps using the ref lock and the committed pending leverage.
 
 ## Quantity and execution boundaries
 
@@ -261,6 +270,10 @@ Regression coverage includes:
   dynamic full-position protection, zero rejection, identity changes, draft recovery,
   and blocking confirmation during a gesture.
 - Slippage Confirm/Cancel/persistence and unchanged portfolio chart navigation.
+- Held layout under a gesture: the desktop size message row (`trade-size-error-a11y`) and
+  the high-leverage warning, which neither mounts nor unmounts while a drag crosses 10x in
+  either direction or is cancelled, in the editor (`leverage-editor`) and in the real desktop
+  dialog and mobile sheet driven through the real slider (`leverage-dialog-risk-warning`).
 - The leverage max position row keeping one DOM node through slider previews,
   cancellation and typed values, in the editor and in the mobile leverage drawer
   without extra drawer-shell renders (`leverage-editor.test.tsx`,

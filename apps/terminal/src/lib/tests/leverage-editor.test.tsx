@@ -117,21 +117,108 @@ describe("LeverageEditor", () => {
 		expect(container.querySelector("[data-slider-ticks]")).toBeNull();
 	});
 
-	it("does not mount the high leverage warning for an uncommitted drag value", () => {
-		act(() => {
-			root.render(
+	describe("high leverage warning during a slider gesture", () => {
+		const WARNING = "High leverage significantly increases liquidation risk";
+
+		function DraftingEditor({ initial, withDraft = true }: { initial: number; withDraft?: boolean }) {
+			const [canonical, setCanonical] = useState(initial);
+			const [draft, setDraft] = useState<number | null>(null);
+			return (
 				<LeverageEditor
-					value={12}
-					riskValue={9}
-					max={20}
+					value={draft ?? canonical}
+					max={40}
 					disabled={false}
-					onChange={vi.fn()}
-					onDraftChange={vi.fn()}
-				/>,
+					onChange={(next) => {
+						setDraft(null);
+						setCanonical(next);
+					}}
+					onDraftChange={withDraft ? setDraft : undefined}
+				/>
 			);
+		}
+
+		function findWarning(): HTMLParagraphElement | null {
+			return [...container.querySelectorAll("p")].find((node) => node.textContent?.includes(WARNING)) ?? null;
+		}
+
+		function slider() {
+			const props = sliderHarness.props;
+			if (!props) throw new Error("Leverage slider not rendered");
+			return {
+				start: props.onInteractionStart as (value: number) => void,
+				preview: props.onChange as (value: number) => void,
+				commit: props.onCommit as (value: number) => void,
+				cancel: props.onCancel as (() => void) | undefined,
+				end: props.onInteractionEnd as () => void,
+			};
+		}
+
+		it.each([
+			["with a drag draft", true],
+			["when previews change the value directly", false],
+		])("does not mount the warning while a drag crosses 10x upwards %s", (_label, withDraft) => {
+			act(() => root.render(<DraftingEditor initial={5} withDraft={withDraft} />));
+			expect(findWarning()).toBeNull();
+
+			act(() => slider().start(5));
+			for (const value of [9, 10, 11, 25, 40]) {
+				act(() => slider().preview(value));
+				expect(getInput().value).toBe(String(value));
+				expect(findWarning()).toBeNull();
+			}
+
+			act(() => {
+				slider().commit(40);
+				slider().end();
+			});
+			expect(getInput().value).toBe("40");
+			expect(findWarning()).not.toBeNull();
 		});
 
-		expect(container.textContent).not.toContain("High leverage significantly increases liquidation risk");
+		it("keeps the same warning node while a drag crosses 10x downwards", () => {
+			act(() => root.render(<DraftingEditor initial={25} />));
+			const warning = findWarning();
+			expect(warning).not.toBeNull();
+
+			act(() => slider().start(25));
+			for (const value of [11, 10, 9, 1]) {
+				act(() => slider().preview(value));
+				expect(getInput().value).toBe(String(value));
+				expect(findWarning()).toBe(warning);
+			}
+
+			act(() => {
+				slider().commit(1);
+				slider().end();
+			});
+			expect(warning?.isConnected).toBe(false);
+			expect(findWarning()).toBeNull();
+		});
+
+		it("restores the starting warning state when the drag is cancelled", () => {
+			act(() => root.render(<DraftingEditor initial={5} />));
+
+			act(() => slider().start(5));
+			act(() => slider().preview(30));
+			expect(findWarning()).toBeNull();
+
+			act(() => {
+				slider().cancel?.();
+				slider().end();
+			});
+			expect(getInput().value).toBe("5");
+			expect(findWarning()).toBeNull();
+		});
+
+		it("updates the warning at once for keyboard and typed values, which are not gestures", () => {
+			act(() => root.render(<DraftingEditor initial={5} />));
+
+			act(() => slider().commit(11));
+			expect(findWarning()).not.toBeNull();
+
+			act(() => changeInput(getInput(), "8"));
+			expect(findWarning()).toBeNull();
+		});
 	});
 
 	it("accepts only canonical decimal integers within the market maximum", () => {
@@ -237,7 +324,6 @@ describe("LeverageEditor", () => {
 			return (
 				<LeverageEditor
 					value={draft ?? value}
-					riskValue={draft ?? value}
 					max={40}
 					disabled={false}
 					onChange={(next) => {

@@ -134,6 +134,7 @@ jobs:
           src/lib/tests/order-submit-surface-lifecycle-integration.test.tsx
           src/lib/tests/order-submit-twap-details.test.tsx
           src/lib/tests/order-validation.test.ts
+          src/lib/tests/persisted-store-hydration.test.ts
           src/lib/tests/provider-address.test.tsx
           src/lib/tests/trade-terminal-page-boot.test.tsx
           src/lib/tests/twap-details.test.ts

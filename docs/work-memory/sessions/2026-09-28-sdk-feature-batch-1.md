@@ -55,9 +55,9 @@
 
 ## 后续与替代关系
 
-- 分支未推送；需要时按 `.claude/rules/git.md` 向 `dev` 开 PR。
+- 2026-09-28 已推送并开 PR #50 → `dev`（按 `.claude/rules/git.md`）。
 - 已另列后续任务：共享订阅巡检改为不受时钟回拨影响；杠杆弹窗高杠杆警告在拖动中挂载的既有问题。
-  - 2026-09-28 更新：前者已完成，见 [订阅过期巡检改用单调时钟计龄](2026-09-28-subscription-staleness-monotonic-clock.md)（合入本分支 `bd0b80f1`）；后者仍待处理。
+  - 2026-09-28 更新：前者已完成，见 [订阅过期巡检改用单调时钟计龄](2026-09-28-subscription-staleness-monotonic-clock.md)（合入本分支 `bd0b80f1`）；后者见 [杠杆警告手势期间保持](2026-09-27-leverage-warning-gesture-hold.md)，经 #53 合入 `dev`，随本分支合并 `dev` 进入。
 - 2026-09-28：PR #50 合入 `dev` 的 #48（Earn 借贷页）时，Earn 已占用 ADR 0021、PR #51 的订阅单调时钟占用 0022，未平仓量上限 ADR 改号为 0023，引用同步更新；导航冲突按「Earn 常驻一级、Funding Comparison 只在 More 且排在 Statistics 前」解决。
 - 本批新增测试未加入 AGENTS.md 回归分组与 CI 精选列表，入口在各归属文档。
 - 下一批可从规划的「范围取舍」表继续：服务端通知（先写传输隔离 ADR 并观察真实消息）、子账户与 HIP-4（需产品与合规决策）。
