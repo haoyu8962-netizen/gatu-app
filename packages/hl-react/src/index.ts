@@ -90,7 +90,7 @@ export { useTradingGuard } from "./hooks/useTradingGuard";
 export { useHttpTransport, useSubscriptionTransport } from "./hooks/useTransport";
 export { verifyLegalActionAllowed } from "./internal/exchange/legal-execution";
 export { enableHyperliquidDebug } from "./internal/websocket/debug";
-export { markFrameReceivedAt, takeFrameReceivedAt } from "./internal/websocket/frame-receipt";
+export { type FrameReceipt, markFrameReceivedAt, takeFrameReceivedAt } from "./internal/websocket/frame-receipt";
 export {
 	createHealthReport,
 	type HealthAlert,
