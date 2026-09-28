@@ -136,7 +136,6 @@ function LeverageModalContent({
 				<LeverageEditor
 					key={maxLeverage}
 					value={displayLeverage}
-					riskValue={dragLeverage ?? canonicalLeverage}
 					max={maxLeverage}
 					disabled={isUpdating || !open}
 					onChange={handleLeverageChange}
