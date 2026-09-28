@@ -77,3 +77,9 @@
 - 仍有运行中 Claude Code 会话的 worktree 未动：`determined-bell`、`eloquent-swartz`、`frosty-satoshi`、`vigilant-brahmagupta`、`start-dev-server-eef652`、`hungry-cartwright`（已被新会话切到 `claude/nifty-hofstadter-afde70`）；另有一个会话的工作目录 `create-worktree06-f9a914` 已不存在。
 - 第 3–5 项以拣选方式带入分支 `docs/weekly-records-and-builder-delisting`（基线 `5efa88fe`）：`92ecaa78` → `978a96ee`（09-21 周整理）、`c3151404` → `191e1f59`（builder 市场下架排查）、`1fd34ab9` → `2b3bb4cb`（09-28 周整理）。按时间先后拣选，冲突只在生成的索引与两份记录，处理方式写在各记录的「合入补记」。第 6 项（晋升前检查记录与字体对照脚本）等用户决定，未动。
 - 校验：每次拣选后 `pnpm memory:index`、`pnpm memory:check` 通过；另用脚本核对全部记录元数据里的 442 个提交引用都能从本分支、远端分支或标签到达，不依赖本机独有的提交。主检出 `codex/reviewceshi` 上的原提交 `1fd34ab9` 仍未推送；该分支若日后再推送或开 PR，会与本次拣选重复，需要先对照本分支。
+
+## 续：第 3–5 项合入与第 6 项入库（2026-09-28）
+
+- 第 3–5 项经 [PR #56](https://github.com/zora4523-bot/gatu-app/pull/56) 合入 `dev`（`68fc6f6a`）。只改文档、没有 CI 运行；合并前确认可干净合并、`dev` 未前进，并限定头提交。
+- 用户随后要求删除 `claude/goofy-poincare-1d8d21`（原头 `86540685`，已并入 `dev`）与 `fix/p22-followup`（原头 `28c39643`，即被 `a379d231` 取代的滑杆提交），两者都没有 worktree 占用、没有远端副本，已删除。
+- 第 6 项按用户决定入库：晋升前检查记录的三个提交与字体迁移测试台五个文件放在分支 `docs/release-readiness-record-and-font-harness`，处理与重跑结果写在[该记录](2026-09-20-release-readiness-checks.md)的「合入补记」。至此盘点出的六项都已处理：第 1 项经 #55 合入，第 2 项确认被取代，第 3–5 项经 #56 合入，第 6 项待本分支合入。仍有运行中会话的 worktree 与主检出 `codex/reviewceshi` 上的未推送原提交不在此列。
