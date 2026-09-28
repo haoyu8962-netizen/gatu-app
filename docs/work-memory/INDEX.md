@@ -125,6 +125,7 @@
 
 当前规范：[docs/account-overview.md](../../docs/account-overview.md) · [docs/withdrawals.md](../../docs/withdrawals.md) · [docs/cctp-deposits.md](../../docs/cctp-deposits.md)
 
+- [Earn 页：按官方文档、SDK 与官方终端实现借贷储备池](sessions/2026-09-27-earn-page.md) — 2026-09-27；已整理，验证见正文。用户要求按官方开发文档、SDK 文档与官方终端实践开发 Earn 页，并不再逐项征求决定。实现 /earn：储备池与仓位表、健康因子、利息与操作历史、存入/取出/借入/偿还弹窗；Max、门控、清算价与文案取自官方终端脚本。存入与借入发送精确数量并按最新状态二次封顶；取出与偿还点 Max 且可全额时发 null（交易所要求存入余额为 0 或 ≥ $1，精确数量因持续计息必留零头），全额意图在点击时冻结并绑定身份与本金，SDK 边界到执行之间的残余窗口作为契约例外记录。borrowLend 入跨标签页资金锁；Earn 成为常驻导航一级，窄屏阈值 1100 → 1150。五轮 Codex 只读对抗审查，发现逐条核对后修复；第四轮后 Earn 的核验移到资金锁内（useExchange 为 borrowLend 开放锁内异步守卫），第五轮后锁内改为直接请求并传入守卫信号，偿还的全额意图在借款还清后永久作废，锁内顺序有了真实 useExchange 的回归测试并进入 CI。第五轮后第二次合入 dev，Earn 的 ADR 因 dev 先占用 0020 改为 0021。用户主网账户实测存入与全部取出通过；借入与偿还未做真实测试。
 - [全局 Sonner 通知统一及遗漏操作补齐](sessions/2026-09-21-global-sonner-notifications.md) — 2026-09-21；已验证，范围见正文。单一全局 Sonner 容器与按需订单宿主落地，补齐操作反馈、owner/env 隔离、逐市场结果和 pending 恢复；6888项终端测试、生产构建与预算通过，未执行真实交易或发布。
 - [本地 3006 邮箱身份可见但钱包不可用，普通刷新恢复](sessions/2026-09-21-local-email-session-recovery.md) — 2026-09-21；已整理，验证见正文。内置浏览器显示邮箱身份，但交易输入与钱包菜单禁用；一次普通刷新后持仓、账户数值和钱包菜单恢复。首次失败请求未捕获，网络事件截断，不确认 token 或 iframe 根因。
 - [worktree-04 承接三项钱包审查并归档旧分支](sessions/2026-09-20-wallet-review-04.md) — 2026-09-20；已整理，验证见正文。迁移会话恢复、邮箱 UI 与发送/提款三份历史记录并复核已合并修复；分支先基于 main、复核后改为基于 dev，旧 Across 历史与根目录 17 个未提交修订均已用归档标签推送保存。
@@ -192,6 +193,7 @@
 
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md)
 
+- [Earn 页：按官方文档、SDK 与官方终端实现借贷储备池](sessions/2026-09-27-earn-page.md) — 2026-09-27；已整理，验证见正文。用户要求按官方开发文档、SDK 文档与官方终端实践开发 Earn 页，并不再逐项征求决定。实现 /earn：储备池与仓位表、健康因子、利息与操作历史、存入/取出/借入/偿还弹窗；Max、门控、清算价与文案取自官方终端脚本。存入与借入发送精确数量并按最新状态二次封顶；取出与偿还点 Max 且可全额时发 null（交易所要求存入余额为 0 或 ≥ $1，精确数量因持续计息必留零头），全额意图在点击时冻结并绑定身份与本金，SDK 边界到执行之间的残余窗口作为契约例外记录。borrowLend 入跨标签页资金锁；Earn 成为常驻导航一级，窄屏阈值 1100 → 1150。五轮 Codex 只读对抗审查，发现逐条核对后修复；第四轮后 Earn 的核验移到资金锁内（useExchange 为 borrowLend 开放锁内异步守卫），第五轮后锁内改为直接请求并传入守卫信号，偿还的全额意图在借款还清后永久作废，锁内顺序有了真实 useExchange 的回归测试并进入 CI。第五轮后第二次合入 dev，Earn 的 ADR 因 dev 先占用 0020 改为 0021。用户主网账户实测存入与全部取出通过；借入与偿还未做真实测试。
 - [文档与法律页并入应用外壳，对齐官方条款页](sessions/2026-09-27-legal-pages-app-shell.md) — 2026-09-27；已验证，范围见正文。按用户选择（改成应用页、6 页全改）删除文档路由表面与 DocumentChrome：/docs /support /terms /privacy /risk /cookies 改为仪表盘路由，桌面用 TopNav/FooterBar、移动用 MobileHeader；只预渲染 SPA 壳，Node 静态页、CloudFront 请求函数与 SW（v10）不再区分文档页，deploy verify 改查法律页返回壳；ADR 0020。Cookie Policy 未进全局底栏（官方也没有；1001px 下会压住 ⌘K 按钮约 80px）。补记：照官方做法把 Cookie 入口放进隐私政策第 4 节，手机抽屉加 Docs/Support，sync 删除遗留的 <route>/index.html，verify 要求 /terms/index.html 返回 404（PR #47 第二轮 Codex 审查后改为用壳覆盖六页、verify 逐页核对）。类型检查、Biome、CloudFront 测试 40 项、完整单测、生产构建及开发服务器浏览器检查的结果见正文；未发布，未做真机检查。
 - [CloudFront 生产发布 p23：main 121e8e76，主网赞助充值开、移动配对关](sessions/2026-09-24-cloudfront-release-p23.md) — 2026-09-24；已验证，范围见正文。用户要求推送 codex/reviewceshi、向 dev 开 PR、晋升 main 并发布。PR #40 五项检查通过后以 merge commit 合入 dev（42237b04）；PR #41 八项检查（含四种配对组合构建）通过后合入 main（121e8e76）。临时工作树从 main 构建 cloudfront-2026-09-24-p23，环境文件只软链不读取，命令行强制关闭移动配对、按用户选择保持主网赞助充值开启并带确认参数上传。函数、Lambda、同步、两条分发失效退出码全 0；主网 15 项、测试网 16 项 verify 全部 ok；CSP 覆盖三个汇总数组为空。市价平仓相关改动发布前没有真实钱包验收。
 - [全部平仓：确认按钮改为静态动词，点击即关闭弹窗，结果只走右下角通知](sessions/2026-09-21-close-all-submit-and-dismiss.md) — 2026-09-21；已验证，范围见正文。产品负责人要求全部平仓的按钮不显示状态、与其他按钮一致、订单状态放到右下角通知。原实现把仓位数写进确认按钮，并在按钮上依次显示校验中、提交中、确认中与部分成功，弹窗等待结果。现改为静态的 Close All Positions，点击即关闭弹窗，组件保持挂载到提交结束，五种结局各发一条通知；持仓页在会话存在期间禁用入口。同日按「一并修复，还有下单弹窗按钮」的要求，限价平仓、反手确认与下单确认也改为同一做法，并写入确认面契约第 6 条；TP/SL、逐仓保证金、保证金模式、现货兑换与资金类弹窗仍在按钮上显示进度，未改。
@@ -245,6 +247,7 @@
 | 2026-09-28 | [订阅过期巡检改用单调时钟计龄](sessions/2026-09-28-subscription-staleness-monotonic-clock.md) | 未取得任务标识，见正文 | `e3b5dd82` | 已验证，范围见正文 |
 | 2026-09-28 | [ADR 0022 后续：socket 静默检测、l2 闸门与撤单对账的墙钟计时](sessions/2026-09-28-wall-clock-timers-follow-up.md) | 未取得任务标识，见正文 | `6aa715d7` | 已验证，范围见正文 |
 | 2026-09-27 | [仪表盘路由揭示前预加载页脚与全局弹窗宿主](sessions/2026-09-27-dashboard-route-chrome-preload.md) | 未取得任务标识，见正文 | `e3b5dd82` | 已验证，范围见正文 |
+| 2026-09-27 | [Earn 页：按官方文档、SDK 与官方终端实现借贷储备池](sessions/2026-09-27-earn-page.md) | 未取得任务标识，见正文 | `e3b5dd82` | 已整理，验证见正文 |
 | 2026-09-27 | [HIP-3 免责声明对齐：修复 Codex 审查发现](sessions/2026-09-27-hip3-alignment-review-fixes.md) | 未取得任务标识，见正文 | `27ee060f` | 已验证，范围见正文 |
 | 2026-09-27 | [文档与法律页并入应用外壳，对齐官方条款页](sessions/2026-09-27-legal-pages-app-shell.md) | 未取得任务标识，见正文 | `8b9950ce` | 已验证，范围见正文 |
 | 2026-09-26 | [zustand persist 首次访问时 merge 收到 undefined 的防护](sessions/2026-09-26-persist-merge-first-visit-guard.md) | 未取得任务标识，见正文 | `121e8e76` | 已验证，范围见正文 |

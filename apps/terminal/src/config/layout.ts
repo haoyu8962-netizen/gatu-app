@@ -9,7 +9,7 @@ export const DESKTOP_MEDIA_QUERY = `(min-width: ${MOBILE_BREAKPOINT_PX + 1}px)`;
  * narrow width every wallet state moves the lower-priority entries into More.
  */
 export const DESKTOP_NAV_COMPACT_MAX_PX = 1181;
-export const DESKTOP_NAV_NARROW_MAX_PX = 1100;
+export const DESKTOP_NAV_NARROW_MAX_PX = 1150;
 export const DESKTOP_NAV_COMPACT_MEDIA_QUERY = `(max-width: ${DESKTOP_NAV_COMPACT_MAX_PX}px)`;
 export const DESKTOP_NAV_NARROW_MEDIA_QUERY = `(max-width: ${DESKTOP_NAV_NARROW_MAX_PX}px)`;
 

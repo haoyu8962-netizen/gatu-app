@@ -14,6 +14,7 @@ interface LabelReview {
 }
 
 const REVIEWED_LABELS: Record<string, LabelReview> = {
+	"earn/earn-action-modal.tsx": { dynamic: [], indirect: ["submitLabel"] },
 	"trade/components/spot-swap-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/positions/position-close-all-modal.tsx": { dynamic: [], indirect: [] },
 	"trade/positions/position-isolated-margin-modal.tsx": { dynamic: [], indirect: ["submitLabel"] },

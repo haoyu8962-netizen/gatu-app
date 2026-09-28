@@ -118,6 +118,10 @@ export function isAccountLedgerRewardsClaimUpdate(update: AccountLedgerUpdate): 
 	return isRecord(update.delta) && update.delta.type === "rewardsClaim";
 }
 
+export function isAccountLedgerEarnUpdate(update: AccountLedgerUpdate): boolean {
+	return isRecord(update.delta) && update.delta.type === "borrowLend";
+}
+
 export function mergeAccountLedgerUpdates(
 	...sources: ReadonlyArray<readonly AccountLedgerUpdate[] | undefined>
 ): AccountLedgerUpdate[] {

@@ -55,6 +55,7 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 const DASHBOARD_PAGES = [
 	"api-wallet/api-wallet-page",
+	"earn/earn-page",
 	"funding-history/funding-history-page",
 	"historical-orders/historical-orders-page",
 	"leaderboard/leaderboard-page",

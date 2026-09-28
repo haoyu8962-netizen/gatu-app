@@ -377,7 +377,7 @@ describe("TopNav", () => {
 		expect(testState.navigate).not.toHaveBeenCalled();
 	});
 
-	it("links the approved primary routes and keeps Earn unavailable", () => {
+	it("links the approved primary routes including Earn", () => {
 		renderNav();
 		const primaryNavigation = container.querySelector<HTMLElement>('nav[aria-label="Primary navigation"]');
 		const primaryEntries = [...(primaryNavigation?.querySelectorAll<HTMLElement>(":scope > a, :scope > button") ?? [])];
@@ -385,17 +385,14 @@ describe("TopNav", () => {
 		expect(primaryEntries.map((item) => item.textContent?.replace(/\s+/g, " ").trim())).toEqual([
 			"Trade",
 			"Portfolio",
-			"Earn — Soon",
+			"Earn",
 			"Vaults",
 			"Staking",
 			"Referrals",
 			"Leaderboard",
 		]);
 
-		const earnButton = primaryEntries.find((item) => item.textContent?.startsWith("Earn"));
-		expect(earnButton).toBeInstanceOf(HTMLButtonElement);
-		expect((earnButton as HTMLButtonElement).disabled).toBe(true);
-		expect(earnButton?.title).toBe("Soon");
+		expect(findLink("Earn")?.dataset.to).toBe("/earn");
 		expect(findLink("Vaults")?.dataset.to).toBe("/vaults");
 		expect(findLink("Staking")?.dataset.to).toBe("/staking");
 		expect(findLink("Leaderboard")?.dataset.to).toBe("/leaderboard");
@@ -430,33 +427,14 @@ describe("TopNav", () => {
 		try {
 			stubViewportWidth(1440);
 			renderNav();
-			expect(topLevelLabels()).toEqual([
-				"Trade",
-				"Portfolio",
-				"Earn — Soon",
-				"Vaults",
-				"Staking",
-				"Referrals",
-				"Leaderboard",
-			]);
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Earn", "Vaults", "Staking", "Referrals", "Leaderboard"]);
 			expect(moreMenuLabels()).toEqual(["Statistics", "API Wallet"]);
 
 			stubViewportWidth(1181);
 			renderNav();
-			expect(topLevelLabels()).toEqual(["Trade", "Portfolio"]);
-			expect(moreMenuLabels()).toEqual([
-				"Earn — Soon",
-				"Vaults",
-				"Staking",
-				"Referrals",
-				"Leaderboard",
-				"Statistics",
-				"API Wallet",
-			]);
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Earn"]);
+			expect(moreMenuLabels()).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API Wallet"]);
 			const menuItems = [...container.querySelectorAll<HTMLElement>('[data-testid="more-dropdown"] [role="menuitem"]')];
-			const earnItem = menuItems.find((item) => item.textContent?.trim() === "Earn — Soon");
-			expect(earnItem).toBeInstanceOf(HTMLButtonElement);
-			expect((earnItem as HTMLButtonElement).disabled).toBe(true);
 			const referralsItem = menuItems.find((item) => item.textContent?.trim() === "Referrals");
 			act(() => referralsItem?.click());
 			expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/referrals" });
@@ -465,27 +443,19 @@ describe("TopNav", () => {
 			testState.authenticated = false;
 			testState.isConnected = true;
 			renderNav();
-			expect(topLevelLabels()).toEqual(["Trade", "Portfolio"]);
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Earn"]);
 			expect(findDesktopUtilitiesButton()).not.toBeUndefined();
 
 			testState.isConnected = false;
 			renderNav();
-			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Vaults", "Staking", "Referrals", "Leaderboard"]);
-			expect(moreMenuLabels()).toEqual(["Earn — Soon", "Statistics", "API Wallet"]);
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Earn", "Vaults", "Staking", "Referrals", "Leaderboard"]);
+			expect(moreMenuLabels()).toEqual(["Statistics", "API Wallet"]);
 			expect(findDesktopUtilitiesButton()).toBeUndefined();
 
 			stubViewportWidth(1100);
 			renderNav();
-			expect(topLevelLabels()).toEqual(["Trade", "Portfolio"]);
-			expect(moreMenuLabels()).toEqual([
-				"Earn — Soon",
-				"Vaults",
-				"Staking",
-				"Referrals",
-				"Leaderboard",
-				"Statistics",
-				"API Wallet",
-			]);
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Earn"]);
+			expect(moreMenuLabels()).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API Wallet"]);
 		} finally {
 			Reflect.deleteProperty(window, "matchMedia");
 		}
@@ -625,14 +595,14 @@ describe("TopNav", () => {
 				locale: "zh",
 				messages: {
 					[DESKTOP_NAV_ITEMS[0].label.id ?? ""]: "交易",
+					[DESKTOP_NAV_ITEMS[2].label.id ?? ""]: "收益",
 					[DESKTOP_NAV_LABELS.primary.id ?? ""]: "主导航",
-					[DESKTOP_NAV_LABELS.soon.id ?? ""]: "即将推出",
 				},
 			}),
 		);
 		expect(findLink("交易")).toBe(trade);
+		expect(findLink("收益")?.dataset.to).toBe("/earn");
 		expect(navigation?.getAttribute("aria-label")).toBe("主导航");
-		expect(navigation?.querySelector(".sr-only")?.textContent).toBe(" — 即将推出");
 		expect(container.querySelector('[data-testid="UserMenu"]')).toBe(wallet);
 		act(() => i18n.activate("en"));
 		expect(findLink("Trade")).toBe(trade);
