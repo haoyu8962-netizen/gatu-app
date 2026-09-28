@@ -202,45 +202,47 @@ describe("MobileNavDrawer", () => {
 			"Referrals",
 			"Leaderboard",
 		]);
-		expect(moreItems.map(itemLabel)).toEqual(["Statistics", "API Wallet"]);
+		expect(moreItems.map(itemLabel)).toEqual(["Funding Comparison", "Statistics", "API Wallet", "Docs", "Support"]);
 
 		const links = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')];
 		expect(links.map((link) => link.textContent?.trim())).toEqual([
 			"Trade",
 			"Portfolio",
+			"Earn",
 			"Vaults",
 			"Staking",
 			"Referrals",
 			"Leaderboard",
+			"Funding Comparison",
 			"Statistics",
 			"API Wallet",
+			"Docs",
+			"Support",
 		]);
 		expect(links.map((link) => link.dataset.to)).toEqual([
 			"/trade/HYPE",
 			"/portfolio",
+			"/earn",
 			"/vaults",
 			"/staking",
 			"/referrals",
 			"/leaderboard",
+			"/fundingComparison",
 			undefined,
 			"/api-wallet",
+			"/docs",
+			"/support",
 		]);
 		const statisticsLink = links.find((link) => link.textContent?.trim() === "Statistics");
 		expect(statisticsLink?.href).toBe(HYPERSCREENER_URL);
 		expect(statisticsLink?.target).toBe("_blank");
 		expect(statisticsLink?.rel).toBe("noopener noreferrer");
 
-		const upcomingItems = [
-			...container.querySelectorAll<HTMLButtonElement>('[data-testid="mobile-nav-drawer"] nav button'),
-		];
-		expect(upcomingItems.map(itemLabel)).toEqual(["Earn"]);
-		for (const item of upcomingItems) {
-			expect(item.disabled).toBe(true);
-			expect(item.textContent).toContain("Soon");
-		}
+		expect(container.querySelectorAll('[data-testid="mobile-nav-drawer"] nav button:disabled')).toHaveLength(0);
+		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')?.textContent).not.toContain("Soon");
 
 		const drawerText = container.querySelector('[data-testid="mobile-nav-drawer"]')?.textContent;
-		for (const removedLabel of ["Docs", "Support", "Terms", "Privacy Policy", "Risk Disclosure"])
+		for (const removedLabel of ["Terms", "Privacy Policy", "Risk Disclosure", "Cookie Policy"])
 			expect(drawerText).not.toContain(removedLabel);
 
 		const apiWalletLink = links.find((link) => link.textContent?.trim() === "API Wallet");
@@ -255,6 +257,51 @@ describe("MobileNavDrawer", () => {
 
 		act(() => apiWalletLink?.click());
 		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')).toBeNull();
+	});
+
+	it("marks Funding Comparison as the current More destination on its route", () => {
+		testState.pathname = "/fundingComparison";
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+
+		const moreNavigation = container.querySelector<HTMLElement>('nav[aria-label="More"]');
+		const current = [...(moreNavigation?.querySelectorAll<HTMLAnchorElement>('a[aria-current="page"]') ?? [])];
+		expect(current.map((link) => link.textContent?.trim())).toEqual(["Funding Comparison"]);
+		expect(current[0]?.dataset.to).toBe("/fundingComparison");
+		expect(current[0]?.className).toContain("bg-fill-hover");
+
+		act(() => current[0]?.click());
+		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')).toBeNull();
+	});
+
+	it("gives every destination touch press feedback", () => {
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+		const links = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')];
+		expect(links.length).toBeGreaterThan(0);
+		for (const link of links) {
+			const pressFeedback = link.getAttribute("aria-current") === "page" ? "active:opacity-60" : "active:bg-fill-weak";
+			expect(link.className, link.textContent ?? "").toContain(pressFeedback);
+		}
+		const current = links.find((link) => link.getAttribute("aria-current") === "page");
+		expect(current?.className).toContain("bg-fill-hover");
+		expect(current?.className).not.toContain("active:bg-fill-weak");
+	});
+
+	it.each([
+		["/DOCS/", "Docs"],
+		["/Support", "Support"],
+		["/Portfolio", "Portfolio"],
+		["/fundingcomparison/", "Funding Comparison"],
+	])("highlights the destination for the case-insensitive path %s", (pathname, label) => {
+		testState.pathname = pathname;
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+		const link = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')].find(
+			(item) => item.textContent?.trim() === label,
+		);
+		expect(link?.getAttribute("aria-current")).toBe("page");
+		expect(link?.className).toContain("text-action");
 	});
 
 	it("keeps the drawer visible while Settings loads and opens it only after the drawer closes", async () => {

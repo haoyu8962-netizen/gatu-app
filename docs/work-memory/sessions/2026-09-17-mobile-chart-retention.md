@@ -12,7 +12,7 @@
   "summary": "实测确认 Markets→Trade→Markets 每次重建 TradingView iframe，根因是 ade94020 引入的 Activity hidden 卸载效果；改为首次展示后常驻 visible，单测红绿与无头探针均确认同一 iframe 贯穿切换，与官方终端做法一致。",
   "thread": null,
   "baseCommit": "0ad17aea771213eae608d5d0dff78de0e249b94b",
-  "commits": [],
+  "commits": ["44a4d411", "652cfa1e"],
   "sources": [
     { "path": "docs/runtime-guardrails.md" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-terminal.tsx" },

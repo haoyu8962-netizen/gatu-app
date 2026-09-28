@@ -4,7 +4,6 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
-import { DOCUMENT_ROUTE_PATHS } from "../../../apps/terminal/src/config/document-routes.ts";
 import {
 	chartingLibraryContentSecurityPolicy,
 	contentSecurityPolicy,
@@ -30,12 +29,8 @@ function viewerRequest(uri, headers = { host: { value: "app.gatu.ai" } }) {
 	return { request: { method: "GET", uri, querystring: {}, headers: { ...headers }, cookies: {} } };
 }
 
-const { handler: onRequest, DOCUMENT_ROUTES } = loadFunction("terminal-request.js", ", DOCUMENT_ROUTES: DOCUMENT_ROUTES");
+const { handler: onRequest } = loadFunction("terminal-request.js");
 const { handler: onResponse } = loadFunction("terminal-response.js");
-
-test("the request function embeds the same document routes as the application", () => {
-	assert.deepEqual([...DOCUMENT_ROUTES].sort(), [...DOCUMENT_ROUTE_PATHS].sort());
-});
 
 test("the rendered response function matches the template and the application headers", () => {
 	const committed = readFileSync(join(directory, "terminal-response.js"), "utf8");
@@ -43,15 +38,23 @@ test("the rendered response function matches the template and the application he
 	assert.ok(Buffer.byteLength(committed, "utf8") <= FUNCTION_CODE_LIMIT_BYTES);
 });
 
-test("application navigations rewrite to the shell and document routes to their index files", () => {
-	for (const uri of ["/trade/BTC", "/trade/xyz:CXMT/", "/portfolio", "/", "/no/such/page"]) {
+test("application navigations, legal pages included, rewrite to the shell", () => {
+	for (const uri of [
+		"/trade/BTC",
+		"/trade/xyz:CXMT/",
+		"/portfolio",
+		"/",
+		"/no/such/page",
+		"/terms",
+		"/privacy/",
+		"/risk",
+		"/docs",
+		"/support",
+		"/cookies",
+	]) {
 		const result = onRequest(viewerRequest(uri));
 		assert.equal(result.uri, "/_shell.html", uri);
 		assert.equal(result.headers["x-gatu-forwarded-host"].value, "app.gatu.ai");
-	}
-	for (const path of DOCUMENT_ROUTE_PATHS) {
-		assert.equal(onRequest(viewerRequest(path)).uri, `${path}/index.html`);
-		assert.equal(onRequest(viewerRequest(`${path}/`)).uri, `${path}/index.html`);
 	}
 });
 
@@ -78,6 +81,13 @@ test("server paths and file-like paths pass through untouched", () => {
 		assert.equal(retired.uri, undefined);
 	}
 	assert.equal(onRequest(viewerRequest("/mobile-agent-sync")).uri, "/_shell.html");
+});
+
+test("file extension classification includes dotfiles and stops at sixteen characters", () => {
+	for (const uri of ["/missing.webmanifest", "/.env", `/missing.${"a".repeat(16)}`]) {
+		assert.equal(onRequest(viewerRequest(uri)).uri, uri);
+	}
+	assert.equal(onRequest(viewerRequest(`/missing.${"a".repeat(17)}`)).uri, "/_shell.html");
 });
 
 test("the response function sets the terminal or chart content security policy", () => {

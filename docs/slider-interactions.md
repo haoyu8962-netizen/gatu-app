@@ -187,6 +187,32 @@ the middle of a drag. The desktop order form therefore holds the presence and th
 measured height of its size message row for the whole gesture and applies the current
 validation result when the gesture ends (`docs/order-entry-surface-parity.md`). Holding the row is presentation
 only: submit availability and execution checks keep using the real validation result.
+The position TP/SL dialog does the same for the large-slippage notice below its amount
+slider: the notice follows live position value and the tier table, and the centred modal
+and the bottom drawer would move the slider row when it toggles, so the dialog keeps the
+notice's presence from interaction start to interaction end
+(`docs/position-tpsl-slippage-warning.md`).
+
+The leverage editor's max position row (`docs/leverage-position-limit.md`) meets the
+same rule by construction instead of by holding: whether it is mounted depends only on
+the market's margin tiers, never on the previewed leverage, and it is a single
+non-wrapping line, so a gesture changes only its text. That is a design argument, not a
+measurement: its tests assert the node identity and class names in jsdom, which cannot
+show that the slider keeps its coordinates, that narrow widths do not overflow or that
+real pointer input behaves, so it stays unverified until a person drags the real
+control in the desktop dialog and the mobile drawer. The high-leverage warning below it
+is held for the gesture instead, as the next paragraph describes.
+
+The shared `LeverageEditor` (the desktop Adjust leverage dialog and the mobile leverage sheet)
+does the same for its high-leverage warning below the leverage field. The desktop dialog is
+vertically centred and the sheet is anchored to the bottom, so a warning that appeared or
+disappeared when a drag crossed 10x moved the slider up or down: by 34.5px in the desktop dialog
+and 69px in the 375px sheet, measured on 2026-09-27 with protocol-injected mouse events in the
+desktop app's browser pane. The editor keeps the warning's presence at the gesture's start and
+applies the released value at the gesture end. The warning text is fixed, and a width change
+cancels the gesture, so holding its presence also holds its height. Typed values, arrow keys and
+native range input are not gestures and update the warning at once. The warning has no part in
+Confirm, which keeps using the ref lock and the committed pending leverage.
 
 ## Quantity and execution boundaries
 
@@ -244,6 +270,15 @@ Regression coverage includes:
   dynamic full-position protection, zero rejection, identity changes, draft recovery,
   and blocking confirmation during a gesture.
 - Slippage Confirm/Cancel/persistence and unchanged portfolio chart navigation.
+- Held layout under a gesture: the desktop size message row (`trade-size-error-a11y`) and
+  the high-leverage warning, which neither mounts nor unmounts while a drag crosses 10x in
+  either direction or is cancelled, in the editor (`leverage-editor`) and in the real desktop
+  dialog and mobile sheet driven through the real slider (`leverage-dialog-risk-warning`).
+- The leverage max position row keeping one DOM node through slider previews,
+  cancellation and typed values, in the editor and in the mobile leverage drawer
+  without extra drawer-shell renders (`leverage-editor.test.tsx`,
+  `margin-mode-modal.test.tsx`, `leverage-position-limit-row.test.tsx`; jsdom with
+  script-invoked slider callbacks, not physical input).
 - Real Chromium pointer/touch interactions, 390/1000/1001/1333/1920px layouts in both
   themes, exact geometry, no horizontal clipping, and the existing all-order-form
   desktop layout suite.

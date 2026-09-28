@@ -10,7 +10,7 @@
   "summary": "核对官方协议及锁定 SDK，补齐 FrontendMarket 部分成交证据与限定关联 TP/SL 的普通取消语义，并处理数字格式契约、区域命名和 Scale 冗余分支；全量终端与 19 项通知浏览器回归通过，未执行真实交易或发布。",
   "thread": null,
   "baseCommit": "46f50c64",
-  "commits": [],
+  "commits": ["e52739d2"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-09-22-notification-remediation-adversarial-review.md" },
     { "path": "docs/trading-notifications.md" },

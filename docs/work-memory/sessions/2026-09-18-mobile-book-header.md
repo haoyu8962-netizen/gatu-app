@@ -12,7 +12,7 @@
   ],
   "thread": null,
   "baseCommit": "6a96f9b7",
-  "commits": [],
+  "commits": ["62500870"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/mobile/mobile-book-view.tsx" },
     { "path": "docs/orderbook-layout.md" }

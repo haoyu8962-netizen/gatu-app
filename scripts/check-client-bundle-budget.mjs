@@ -29,7 +29,10 @@ export const TRADE_DESKTOP_RUNTIME_MODULE_IDS = [
 const budgets = {
 	largestChunkRawBytes: 4_050_000,
 	largestChunkGzipBytes: 1_200_000,
-	totalGzipBaselineBytes: 3_154_707,
+	// Re-baselined 2026-09-29 for ADR 0024 (translated action errors): +17,895 gzip bytes over the CI build of
+	// dev on 2026-09-28 (3,157,661), 12.0 kB of it in the five non-English catalogs, of which a viewer loads
+	// one (Node 22.15.0, NODE_ENV=production, pairing off, as in CI).
+	totalGzipBaselineBytes: 3_175_556,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
@@ -68,6 +71,9 @@ const budgets = {
 		{ name: "leaderboard", baselineGzipBytes: 12_083, allowedIncreaseBytes: 1_500 },
 		{ name: "staking", baselineGzipBytes: 23_131, allowedIncreaseBytes: 2_500 },
 		{ name: "vaults-page", baselineGzipBytes: 27_075, allowedIncreaseBytes: 3_000 },
+		// Added 2026-09-27 with the Funding Comparison route (Node 22.15.0 build of the SDK feature batch).
+		{ name: "fundingComparison", baselineGzipBytes: 11_133, allowedIncreaseBytes: 1_500 },
+		{ name: "funding-history-panel", baselineGzipBytes: 8_661, allowedIncreaseBytes: 1_500 },
 	],
 };
 

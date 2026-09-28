@@ -12,7 +12,7 @@
   "summary": "盘点 bg-modal 语义误用（16 文件 36 处，终端两主题下视觉零变化）与 6 处无按压反馈的可点击表面；换为 bg-surface、加共享 active 类，契约测试与设计规则同步；双色卡结构保留并记录。",
   "thread": null,
   "baseCommit": "3a80b36081648b8bb3a8b5efa1087fd24c69fcec",
-  "commits": [],
+  "commits": ["0ad17aea"],
   "sources": [
     { "path": ".claude/rules/design-tokens.md" },
     { "path": ".claude/rules/style-ui-guide.md" },

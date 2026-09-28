@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pairing-release"],
-  "summary": "用户按简化规划的推荐决定实施。桌面弹窗改为一句说明、一条提示、一个动作（idle → signing → ready → revealed，失败一行错误可重按），签名仍是显式点击且静默；手机页首帧前擦除片段、显式导入、一次 extraAgents 核验、既有 epoch 回滚；载荷改为片段里的明文 JSON v4；删除信封加密、去重、草稿、恢复记录、待核验、桌面轮询、撤销面板、资金预检、擦除脚本管线、说明页、工具/用户菜单入口，两个开关合并为 VITE_MOBILE_PAIRING_ENABLED，真机矩阵与校验器换成三行清单。实现从 5,165 行降到 1,757 行（含共用审批 hook 256 行），测试从 4,574 降到 1,315 行，配对面文案约 45 条。typecheck、Biome、定向 32 文件 566 项、全量 600 文件、生产构建全部通过；开发构建上用真实邮箱账户走通授权 → 按住显示 → 导入 → API 钱包页移除，签名静默。es/fr/hi/ar 缺译、三行真机清单未跑，线上开关保持关闭。",
+  "summary": "ADR 0015 D8 已实施 v4 明文片段、单开关与头部唯一入口；同日追加改为按住 2 秒、意图预加载及圆环修复。来源报告类型检查、定向 566 项和构建通过；全量曾有一项 RTL 契约失败，修正后该文件 32 项通过，不能写成该阶段全量复跑通过。工具注入真实邮箱流程完成，四语缺译、三行真机清单与倒计时显示细节仍待办。",
   "thread": null,
   "baseCommit": "046b0de2",
-  "commits": [],
+  "commits": ["e62e4733", "d3ad2e23", "25350e62", "0a067ab7", "3ab82488", "f736d8a9"],
   "sources": [
     { "path": "docs/link-mobile-device-simplification-plan.md" },
     { "path": "docs/adr/0015-link-device-alignment.md" },
@@ -80,3 +80,9 @@
 
 - 接续 [2026-09-24-official-link-mobile-device-ux-trace](2026-09-24-official-link-mobile-device-ux-trace.md) 与 [2026-09-24-link-mobile-device-live-verification](2026-09-24-link-mobile-device-live-verification.md)；旧记录里描述的信封 v3、去重、恢复记录与撤销面板自本记录起为历史。
 - 后续候选：四种语言的配对文案；真机三行清单；下次边缘发布时决定是否去掉配对页的专用响应头与 Service Worker 放行；是否让 API 钱包页把 `Mobile` Agent 显示得更友好。
+
+## 周整理补注（2026-09-28）
+
+本次纠正摘要“全量全部通过”与正文不一致：原全量含 RTL 契约失败，正文只提供修正后单文件 32 项通过，未提供该阶段再次全量运行记录。09-27 的独立全量结果绑定其后版本，不能回填为 09-24 的通过。当前代码 QR_REVEAL_HOLD_MS 为 2000，协议版本为 4；旧 4 秒/v3 描述是历史。来源中的 Resource Timing 延迟分解为当次观测及推断，不推广为稳定性能保证。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

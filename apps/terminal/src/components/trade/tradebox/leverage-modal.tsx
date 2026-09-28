@@ -2,7 +2,8 @@ import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, Moda
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useEffect, useRef, useState } from "react";
-import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import type { MarginTierInput } from "@/domain/trade/order/liquidation";
+import { classifyActionError, isAmbiguousExchangeActionError } from "@/lib/errors/action-error";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import { addOrderQueueItem, removeOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import { TradingActionButton } from "../components/trading-action-button";
@@ -19,6 +20,8 @@ interface Props {
 	isUpdating: boolean;
 	onApply: (leverage: number) => Promise<number | null>;
 	marketIdentity?: string;
+	marginTiers?: readonly MarginTierInput[] | null;
+	quoteSymbol?: string | null;
 }
 
 function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...contentProps }: Props) {
@@ -58,6 +61,8 @@ function LeverageModalContent({
 	onPendingLeverageChange,
 	isUpdating,
 	onApply,
+	marginTiers,
+	quoteSymbol,
 }: LeverageModalContentProps) {
 	const { clientKey, env } = useHyperliquid();
 	const [dragLeverage, setDragLeverage] = useState<number | null>(null);
@@ -117,7 +122,7 @@ function LeverageModalContent({
 			const unknown = isAmbiguousExchangeActionError(error);
 			updateOrderQueueItem(notificationId, {
 				status: unknown ? "unconfirmed" : "failed",
-				error: error instanceof Error ? error.message : undefined,
+				error: unknown ? undefined : classifyActionError(error),
 				message: unknown ? msg`Update not confirmed. Check account settings before retrying.` : msg`Update failed`,
 			});
 		} finally {
@@ -136,13 +141,14 @@ function LeverageModalContent({
 				<LeverageEditor
 					key={maxLeverage}
 					value={displayLeverage}
-					riskValue={dragLeverage ?? canonicalLeverage}
 					max={maxLeverage}
 					disabled={isUpdating || !open}
 					onChange={handleLeverageChange}
 					onDraftChange={handleLeverageDraftChange}
 					onInputValidityChange={setLeverageInputValid}
 					variant="modal"
+					marginTiers={marginTiers}
+					quoteSymbol={quoteSymbol}
 				/>
 			</ModalContent>
 			<ModalFooter>

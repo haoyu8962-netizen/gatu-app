@@ -9,10 +9,10 @@
   "topics": [
     "pr-review"
   ],
-  "summary": "grok-4.6-build 只读审查 PR #26 冻结快照，报告 2 P1 / 4 P2 / 1 P3；本会话逐条核实全部成立，其中 5 条为 PR 之前既有、被首帧真实 chrome 放大；未修改代码，修复待决策。",
+  "summary": "PR #26 审查后的修复与第二次复审已写入正文并提交；初始缺陷和失败保留，已连接与 Agent-only 紧凑视口的真实会话测量仍无完成证据。",
   "thread": null,
   "baseCommit": "e4c0c4129f1c48cda50d365f347bacc5b6a9893c",
-  "commits": [],
+  "commits": ["3a6e9b99", "3be15c87", "8cb1b98a", "c59d13a8"],
   "sources": [
     { "path": "docs/adr/0013-desktop-navigation-collapse.md" },
     { "path": "docs/adr/0012-trade-route-reveal-after-surface-preload.md" },
@@ -95,3 +95,7 @@ Codex 明确检查且未发现新增缺陷：账户芯片收纳与加载态解�
 ## 后续与替代关系
 
 修复候选（待用户决策）：(1) `compactHiddenWhenConnected` 改为按账户芯片存在判定，kebab 内只禁用 Settings；(2) `UserMenu` 用惰性初始值同步读 session hint 去掉 `mounted` 门，仪表盘路由也预加载 `UserMenu`；(3) 紧凑标签保留 ENS；(4) 工具菜单改用独立无障碍名；(5) 收纳与 `connected` 改用账户芯片可见性；(6) 为 `preloadTradeTerminalSurface` 增加钉住等待集合的单测；(7) 补齐 i18n 契约名单。
+
+## 周整理追加（2026-09-21）
+
+摘要及末尾“修复候选待决策”停留在初轮。正文“实施”与“Codex 复审”已记录 8cb1b98a、c59d13a8 的修复，PR #26 后续合并状态见周整理记录。原全量失败、沙箱限制及未测场景不因此抹除。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

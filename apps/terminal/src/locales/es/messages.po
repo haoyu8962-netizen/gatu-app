@@ -83,8 +83,13 @@ msgstr "{currentPage} de {totalPages}"
 
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "{days} days"
 msgstr "{days} días"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "{days} days left"
+msgstr "Quedan {days} días"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
@@ -170,6 +175,10 @@ msgstr "Se solicitó el {requestedPercent} %; queda en el {effectivePercent} % t
 msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} segundos"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "{venueName} rate higher"
+msgstr "Tasa de {venueName} más alta"
+
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "~2 minutes"
 msgstr "~2 minutos"
@@ -190,6 +199,11 @@ msgstr "1–20 caracteres"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "14 Day Volume"
 msgstr "Volumen de 14 días"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "1h"
+msgstr "1 h"
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "24 hours"
@@ -264,6 +278,15 @@ msgstr "7 días"
 msgid "7D"
 msgstr "7 d"
 
+#: src/config/funding-comparison.ts
+msgid "8 Hours"
+msgstr "8 horas"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "8h"
+msgstr "8 h"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
 msgstr "Financiación 8 h"
@@ -280,6 +303,10 @@ msgstr "Se muestra una confirmación antes de cada cierre a mercado."
 msgid "A funds operation is awaiting verification"
 msgstr "Una operación de fondos está pendiente de verificación"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "A market TP/SL may fill with large slippage because of this position's size. To reduce slippage, use limit execution with a limit price, or configure a smaller amount."
+msgstr "Un TP/SL a mercado puede ejecutarse con un deslizamiento elevado debido al tamaño de esta posición. Para reducir el deslizamiento, usa la ejecución límite con un precio límite o configura una cantidad menor."
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "A new delegation is locked to this validator for one day. Rewards are distributed daily and automatically redelegated."
 msgstr "Una nueva delegación está bloqueada en este validador por un día. Las recompensas se distribuyen diariamente y se redelegan automáticamente."
@@ -292,6 +319,10 @@ msgstr "Un nuevo evento exacto del historial coincide con esta solicitud. Abre l
 msgid "A position may be liquidated when the mark price reaches its liquidation price."
 msgstr "Una posición puede liquidarse cuando el precio de marca alcanza su precio de liquidación."
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "A Post Only order would have matched immediately. Best bid and offer: {bbo}."
+msgstr "Una orden Post Only se habría ejecutado de inmediato. Mejor compra y venta: {bbo}."
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "Se sigue realizando el seguimiento de un depósito CCTP anterior. No vuelvas a enviar la misma transferencia."
@@ -299,6 +330,10 @@ msgstr "Se sigue realizando el seguimiento de un depósito CCTP anterior. No vue
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "Todavía se está conciliando un intento de conexión anterior. Al volver a intentarlo se comprobará la misma clave de trading y no se solicitará otra firma."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "A Reduce Only order cannot increase the position."
+msgstr "Una orden Solo reducir no puede aumentar la posición."
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
@@ -313,6 +348,7 @@ msgid "A staking link cannot be removed. The staking account gains full control 
 msgstr "No se puede eliminar un vínculo de staking. La cuenta de staking obtiene el control total de los fondos de la cuenta de trading, por lo que esta página no ofrece una acción para vincularla."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
 msgstr "Ya se está estableciendo una conexión de trading en otra pestaña. Complétala o cancélala allí antes de volver a intentarlo."
 
@@ -336,6 +372,10 @@ msgstr "Acepta el descargo de responsabilidad del deployer HIP-3 antes de operar
 msgid "Accept the HIP-3 deployer disclaimer before trading this market."
 msgstr "Acepta el descargo de responsabilidad del deployer HIP-3 antes de operar en este mercado."
 
+#: src/lib/errors/action-error.ts
+msgid "Accept the Hyperliquid terms before continuing."
+msgstr "Acepta los términos de Hyperliquid antes de continuar."
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Accepted"
 msgstr "Aceptada"
@@ -358,6 +398,10 @@ msgstr "Acceso restringido"
 #: src/config/trade-panel-labels.ts
 msgid "Account"
 msgstr "Cuenta"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Account {user} has no balance on Hyperliquid. Deposit first."
+msgstr "La cuenta {user} no tiene saldo en Hyperliquid. Deposita primero."
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "Account / API Wallet"
@@ -434,6 +478,10 @@ msgstr "Valor de la cuenta"
 msgid "Account Value Change"
 msgstr "Cambio en el valor de la cuenta"
 
+#: src/components/earn/earn-view.tsx
+msgid "Account Value weighted by LTV / Borrowed Amount. If this number is below 100%, the account cannot borrow more."
+msgstr "Valor de la cuenta ponderado por LTV / importe prestado. Si este valor es inferior al 100 %, la cuenta no puede pedir más prestado."
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Account Vault data could not be verified"
 msgstr "No se pudieron verificar los datos de la bóveda de la cuenta"
@@ -443,6 +491,8 @@ msgid "Account-level agent approval"
 msgstr "Aprobación de agente a nivel de cuenta"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -472,7 +522,7 @@ msgstr "Activar DEX"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Activates when mark ≤ {triggerPrice}"
-msgstr ""
+msgstr "Se activa cuando el precio de marca ≤ {triggerPrice}"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #~ msgid "Activates when mark ≥ {0}"
@@ -480,13 +530,18 @@ msgstr ""
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Activates when mark ≥ {triggerPrice}"
-msgstr ""
+msgstr "Se activa cuando el precio de marca ≥ {triggerPrice}"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
 msgid "Active"
 msgstr "Activo"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Active asset data is unavailable"
+msgstr "Los datos del activo no están disponibles"
 
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Active referral discount"
@@ -540,6 +595,7 @@ msgstr "Ajustar el margen aislado de {displayName}"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Adjust leverage"
 msgstr "Ajustar apalancamiento"
@@ -673,6 +729,8 @@ msgstr "PNL histórico"
 msgid "ALO (Add Liquidity Only)"
 msgstr "ALO (Add Liquidity Only)"
 
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -691,6 +749,14 @@ msgstr "Importe"
 msgid "Amount (USDC)"
 msgstr "Importe (USDC)"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount exceeds the verified available balance."
+msgstr "El importe supera el saldo disponible verificado."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount is too large to submit safely."
+msgstr "El importe es demasiado grande para enviarlo de forma segura."
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Amount is too low for the available bridge routes."
 msgstr "El importe es demasiado bajo para las rutas de puente disponibles."
@@ -698,6 +764,14 @@ msgstr "El importe es demasiado bajo para las rutas de puente disponibles."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "La cantidad debe ser mayor que cero y no superar la posición actual."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount must be greater than zero."
+msgstr "El importe debe ser mayor que cero."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Amount to repay"
+msgstr "Importe a reembolsar"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "An account is excluded only when both its account value is below $100,000 and its all-time volume is below $10,000,000. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this ranking does not claim exact parity with Hyperliquid's official leaderboard."
@@ -721,7 +795,7 @@ msgstr "Apareció otro monedero API con este mismo nombre durante la verificaci�
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "Todavía hay otro depósito de Circle CCTP pendiente para esta cuenta. Espera a que finalice antes de enviar otro depósito."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Another funds operation is still in progress for this account. Try again after it finishes."
 msgstr "Hay otra operación de fondos en curso para esta cuenta. Inténtalo de nuevo cuando finalice."
 
@@ -743,9 +817,17 @@ msgstr "Todavía se está confirmando otra orden para uno de estos mercados."
 msgid "Another order for this market is still being confirmed."
 msgstr "Todavía se está confirmando otra orden para este mercado."
 
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Another referral request is already in progress. Try again after it finishes."
+msgstr "Ya hay otra solicitud de referido en curso. Vuelve a intentarlo cuando termine."
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Another TWAP order for this market is still being confirmed."
 msgstr "Otra orden TWAP para este mercado aún se está confirmando."
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Another wallet approval is already in progress. Try again after it finishes."
+msgstr "Ya hay otra aprobación de billetera en curso. Vuelve a intentarlo cuando termine."
 
 #: src/config/tooltips.ts
 msgid "Any portion that is not immediately filled will be canceled."
@@ -813,6 +895,10 @@ msgstr "La aprobación y la eliminación requieren el monedero maestro correspon
 #~ msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
 #~ msgstr ""
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve access"
+msgstr "Aprobar acceso"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
 msgstr "Aprobar en el monedero"
@@ -821,6 +907,10 @@ msgstr "Aprobar en el monedero"
 #~ msgid "Approve in wallet..."
 #~ msgstr "Aprobar en el monedero..."
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve mobile trading access"
+msgstr "Aprobar el acceso de trading móvil"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve mobile trading key"
 msgstr "Aprobar clave de trading móvil"
@@ -828,6 +918,10 @@ msgstr "Aprobar clave de trading móvil"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approve QR code with wallet..."
 #~ msgstr ""
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Approving {symbol}..."
+msgstr "Aprobando {symbol}..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approving a new mobile key replaces the previous mobile key."
@@ -843,6 +937,10 @@ msgstr "Aproximado: el SDK interpreta el total bruto como un número de JavaScri
 msgid "APR"
 msgstr "APR"
 
+#: src/components/earn/earn-view.tsx
+msgid "APY"
+msgstr "APY"
+
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Arbitrum (CCTP)"
 msgstr "Arbitrum (CCTP)"
@@ -851,8 +949,9 @@ msgstr "Arbitrum (CCTP)"
 msgid "Arbitrum (Legacy)"
 msgstr "Arbitrum (heredado)"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/tests/wrong-network-screen.test.tsx
 msgid "Arbitrum network switch was rejected."
 msgstr "Se rechazó el cambio a la red Arbitrum."
 
@@ -865,6 +964,9 @@ msgstr "Cierre de posición según sea necesario"
 msgid "Ask"
 msgstr "Venta"
 
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -885,6 +987,7 @@ msgstr "Venta"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit/funds-route-details.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Asset"
 msgstr "Activo"
 
@@ -909,6 +1012,10 @@ msgstr "El TP/SL adjunto solo se coloca si la orden se ejecuta por completo o si
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "Autorización rechazada"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Authorization was rejected in the wallet."
+msgstr "La autorización fue rechazada en la billetera."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Authorize"
@@ -984,6 +1091,10 @@ msgstr "El HYPE disponible para staking puede delegarse, pero no puede operarse 
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Available to close"
 msgstr "Disponible para cerrar"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Available to Withdraw"
+msgstr "Disponible para retirar"
 
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Average Fill Price"
@@ -1071,13 +1182,39 @@ msgstr "Los saldos no están disponibles y todas las acciones de staking permane
 msgid "Bid"
 msgstr "Compra"
 
+#: src/config/funding-comparison.ts
+msgid "Binance-HL Arb"
+msgstr "Arbitraje Binance-HL"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
 msgstr "Bitcoin es un activo digital descentralizado protegido por una red de prueba de trabajo."
 
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/config/account-ledger.ts
 msgid "Borrow"
 msgstr "Pedir prestado"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Borrow against your supplied collateral. To borrow, manually supply HYPE or BTC."
+msgstr "Pide prestado con tu colateral suministrado. Para pedir prestado, suministra HYPE o BTC manualmente."
+
+#: src/components/earn/earn-view.tsx
+msgid "Borrow Interest"
+msgstr "Interés de préstamo"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Borrowed {token}"
+msgstr "{token} prestado"
+
+#: src/components/earn/earn-view.tsx
+msgid "Borrowing is automated in Portfolio Margin mode."
+msgstr "En el modo Portfolio Margin el préstamo es automático."
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "Bought {quantity}"
@@ -1092,13 +1229,34 @@ msgstr "Comprado: {quantity}"
 msgid "Bridge"
 msgstr "Bridge"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Bridge complete"
+msgstr "Puente completado"
+
+#: src/components/trade/tradebox/bridge/bridge-tab.tsx
+msgid "Bridge creation is paused. A route without a submitted source transaction cannot be retried."
+msgstr "La creación de puentes está en pausa. Una ruta sin transacción de origen enviada no se puede reintentar."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Bridge creation is paused. This route did not submit a source transaction and cannot be retried."
+msgstr "La creación de puentes está en pausa. Esta ruta no envió una transacción de origen y no se puede reintentar."
+
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Bridge creation is temporarily unavailable"
 msgstr "La creación del puente no está disponible temporalmente"
 
+#: src/lib/lifi/bridge-execution-state.ts
+msgid "Bridge execution paused"
+msgstr "Ejecución del puente en pausa"
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Bridge failed"
 msgstr "Bridge fallido"
+
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/bridge-tab-lifecycle.test.tsx
+msgid "Bridging to Hyperliquid..."
+msgstr "Enviando por puente a Hyperliquid..."
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Builder rewards (cumulative)"
@@ -1139,6 +1297,10 @@ msgstr "Comprar largo"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "Por defecto, el TP/SL se aplica a toda la posición y envía una orden a mercado cuando el precio de marca alcanza el disparador. Configura una cantidad para mantener un tamaño fijo o selecciona la ejecución límite para enviar a tu precio límite."
+
+#: src/config/funding-comparison.ts
+msgid "Bybit-HL Arb"
+msgstr "Arbitraje Bybit-HL"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
@@ -1210,8 +1372,53 @@ msgstr "Cancelar órdenes seleccionadas"
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-reconciliation-feedback.ts
+#: src/lib/trade/order-status-reasons.ts
 msgid "Canceled"
 msgstr "Cancelada"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the asset was delisted"
+msgstr "Cancelada porque el activo fue retirado de la lista"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the linked order filled"
+msgstr "Cancelada porque la orden vinculada se ejecutó"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the outcome has settled"
+msgstr "Cancelada porque el resultado ya se liquidó"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by self-trade prevention"
+msgstr "Cancelada por la prevención de autonegociación"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by the exchange"
+msgstr "Cancelada por el exchange"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by the scheduled cancel"
+msgstr "Cancelada por la cancelación programada"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to a vault withdrawal"
+msgstr "Cancelada por un retiro de la bóveda"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to insufficient margin"
+msgstr "Cancelada por margen insuficiente"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to liquidation"
+msgstr "Cancelada por liquidación"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to Reduce Only"
+msgstr "Cancelada por Solo reducir"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to the open interest cap"
+msgstr "Cancelada por el límite de interés abierto"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
@@ -1224,6 +1431,12 @@ msgstr "Cancelada"
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "Cancellation submitted. Waiting for the open-orders update."
 msgstr "Cancelación enviada. Esperando la actualización de las órdenes abiertas."
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Cannot switch to isolated mode with an open position"
+msgstr "No se puede cambiar al modo aislado con una posición abierta"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
@@ -1239,17 +1452,25 @@ msgstr "Los depósitos CCTP están pendientes de una verificación integral con 
 #~ msgid "Change leverage"
 #~ msgstr "Cambiar apalancamiento"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to ascending order"
 msgstr "Cambiar a orden ascendente"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to descending order"
 msgstr "Cambiar a orden descendente"
 
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "Gráfico"
+
+#: src/components/trade/chart/datafeed.ts
+#: src/components/trade/chart/datafeed.ts
+msgid "Chart data could not be loaded"
+msgstr "No se pudieron cargar los datos del gráfico"
 
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart data is temporarily rate limited"
@@ -1258,6 +1479,14 @@ msgstr "Los datos del gráfico están limitados temporalmente por la frecuencia 
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "Se agotó el tiempo de espera de la solicitud del historial del gráfico"
+
+#: src/components/trade/chart/chart-panel.tsx
+msgid "Chart views"
+msgstr "Vistas del gráfico"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Check Earn Action History before retrying."
+msgstr "Revisa el historial de acciones de Rendimiento antes de reintentar."
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Check the wallet address or display name, or the account may not meet the current criteria."
@@ -1294,6 +1523,10 @@ msgstr "Comprobando la ruta de depósito actual de Hyperliquid..."
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #~ msgid "Checking the current Hyperliquid withdrawal route..."
 #~ msgstr "Comprobando la ruta de retiro actual de Hyperliquid..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Checking the submitted bridge transaction..."
+msgstr "Comprobando la transacción del puente enviada..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking..."
@@ -1389,6 +1622,13 @@ msgstr "Clasificación no disponible"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Clear record"
 msgstr "Borrar registro"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Clear search"
+msgstr "Borrar búsqueda"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Clear unreadable record"
@@ -1494,6 +1734,7 @@ msgstr "Cerrar la confirmación de cerrar todo"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Close Long"
 msgstr "Cerrar largo"
 
@@ -1560,6 +1801,7 @@ msgstr "Cerrar la confirmación de inversión"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Close Short"
 msgstr "Cerrar corto"
 
@@ -1612,7 +1854,7 @@ msgstr "PnL cerrado"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Closes in {remainingSeconds}s"
-msgstr ""
+msgstr "Se cierra en {remainingSeconds}s"
 
 #: src/components/vaults/vaults-page.tsx
 msgid "Closing cost"
@@ -1786,6 +2028,10 @@ msgstr "Confirmando — no vuelvas a enviar"
 #: src/components/trade/positions/position-close-all-modal.tsx
 #~ msgid "Confirming exchange status..."
 #~ msgstr "Confirmando el estado en el exchange..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Confirming on destination..."
+msgstr "Confirmando en el destino..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "Confirming order status. Do not retry."
@@ -1979,8 +2225,8 @@ msgid "Contract"
 msgstr "Contrato"
 
 #: src/components/legal/document-chrome.tsx
-msgid "Cookie Policy"
-msgstr "Política de cookies"
+#~ msgid "Cookie Policy"
+#~ msgstr "Política de cookies"
 
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
@@ -2129,6 +2375,10 @@ msgstr "Apalancamiento cruzado"
 msgid "Cross Maintenance Margin"
 msgstr "Margen de mantenimiento cruzado"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Cross positions do not have enough available margin to lower the leverage. Deposit more collateral to lower it."
+msgstr "Las posiciones cruzadas no tienen suficiente margen disponible para reducir el apalancamiento. Deposita más garantía para reducirlo."
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
 msgstr "Cripto"
@@ -2137,6 +2387,7 @@ msgstr "Cripto"
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "CSV export reached the history limit. Some records were not included."
 msgstr "La exportación CSV alcanzó el límite del historial. Algunos registros no se incluyeron."
 
@@ -2144,6 +2395,7 @@ msgstr "La exportación CSV alcanzó el límite del historial. Algunos registros
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "CSV exported."
 msgstr "CSV exportado."
 
@@ -2154,6 +2406,11 @@ msgstr "CSV exportado."
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "Financiación acumulada pagada o recibida desde que se abrió esta posición."
+
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Cumulative Funding Rate"
+msgstr "Tasa de financiación acumulada"
 
 #. placeholder {0}: formatNumber(cumulativeVolume)
 #: src/components/referrals/referral-code-card.tsx
@@ -2180,6 +2437,15 @@ msgstr "PNL actual"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr "Vigencia actual"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "D"
+msgstr "D"
+
+#: src/config/funding-comparison.ts
+msgid "Day"
+msgstr "Día"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "days"
@@ -2298,6 +2564,7 @@ msgstr "Importe"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "Depósito fallido"
 
@@ -2317,8 +2584,9 @@ msgstr "Depósito exitoso"
 msgid "Deposit to Vault"
 msgstr "Depositar en la bóveda"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/tests/deposit-broadcast.test.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
 msgstr "La transacción de depósito se transmitió, pero agotó el tiempo de confirmación. Revisa Arbiscan antes de intentarlo de nuevo."
 
@@ -2326,7 +2594,7 @@ msgstr "La transacción de depósito se transmitió, pero agotó el tiempo de co
 msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
 msgstr "La transacción de depósito se transmitió, pero falló la confirmación RPC de Arbitrum. Revisa Arbiscan antes de volver a intentarlo."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "La transacción de depósito se envió, pero no se confirmó en Arbitrum. Es posible que el nonce de tu billetera no esté sincronizado con la red. Borra la actividad pendiente o restablece los datos de nonce en tu billetera y vuelve a intentarlo."
@@ -2471,6 +2739,7 @@ msgstr "Dirección de destino"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Direction"
 msgstr "Dirección"
 
@@ -2493,6 +2762,7 @@ msgstr "Desconectado"
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "Descartar"
 
@@ -2503,11 +2773,11 @@ msgstr "Pantalla"
 
 #: src/config/desktop-nav.ts
 msgid "Display and language"
-msgstr ""
+msgstr "Pantalla e idioma"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Display units"
-msgstr ""
+msgstr "Unidades de visualización"
 
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 msgid "Distance from mid"
@@ -2545,12 +2815,11 @@ msgstr "No envíes otra operación de fondos de staking. El panel compartido de 
 msgid "Do not submit this operation again."
 msgstr "No vuelvas a enviar esta operación."
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Docs"
 msgstr "Documentación"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Documentation and legal"
 msgstr "Documentación y avisos legales"
@@ -2590,15 +2859,40 @@ msgstr "Cada posición usa solo su margen asignado. Si el ratio de margen alcanz
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
 msgstr "Cada posición utiliza únicamente el margen que tiene asignado. Si la ratio de margen alcanza el 100 %, la posición se liquida. Se puede añadir margen, pero no retirarlo mientras la posición esté abierta."
 
+#: src/components/earn/earn-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 #: src/config/desktop-nav.ts
 msgid "Earn"
 msgstr "Rendimiento"
 
+#: src/components/earn/earn-view.tsx
+msgid "Earn Action History"
+msgstr "Historial de acciones"
+
 #: src/components/portfolio/portfolio-overview.tsx
 #~ msgid "Earn Balance"
 #~ msgstr "Saldo de Earn"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Earn balances changed before submission. Review the updated amounts and try again."
+msgstr "Los saldos de Rendimiento cambiaron antes del envío. Revisa los importes actualizados e inténtalo de nuevo."
+
+#: src/components/earn/earn-view.tsx
+msgid "Earn detail views"
+msgstr "Vistas de detalle de Rendimiento"
+
+#: src/components/earn/earn-view.tsx
+msgid "Earn details"
+msgstr "Detalles de Rendimiento"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Earn request failed"
+msgstr "La solicitud de Rendimiento falló"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Earn request status unknown"
+msgstr "Estado de la solicitud de Rendimiento desconocido"
 
 #: src/components/referrals/referral-legacy-history.tsx
 msgid "Earned"
@@ -2679,6 +2973,10 @@ msgstr "Introduce una dirección de cuenta 0x válida para ver el historial de �
 msgid "Enter a valid 0x account address to view trade history."
 msgstr "Introduce una dirección de cuenta 0x válida para ver el historial de operaciones."
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Enter a valid amount"
+msgstr "Introduce un importe válido"
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Enter a valid Ethereum address."
 msgstr "Introduce una dirección de Ethereum válida."
@@ -2716,6 +3014,14 @@ msgstr "Introduce un precio de activación válido"
 msgid "Enter a valid trigger price using the market's price precision."
 msgstr "Introduce un precio de activación válido usando la precisión de precio del mercado."
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Enter an amount."
+msgstr "Introduce un importe."
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Enter an API wallet name."
+msgstr "Introduce un nombre para el monedero API."
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Enter code"
 msgstr "Introduce el código"
@@ -2749,6 +3055,14 @@ msgstr "Introduce el precio de TP o SL"
 #: src/lib/errors/definitions/order-input.ts
 msgid "Enter trigger price"
 msgstr "Introduce el precio de activación"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Entire {token} borrow"
+msgstr "Todo el préstamo de {token}"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Entire {token} supply"
+msgstr "Todo el suministro de {token}"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -2899,6 +3213,7 @@ msgstr "Caducado"
 #~ msgstr "Caduca {expiresAtLabel}."
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Expires today"
 msgstr "Caduca hoy"
 
@@ -2924,10 +3239,12 @@ msgstr "Explorador"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Export CSV"
 msgstr "Exportar CSV"
 
@@ -2955,6 +3272,10 @@ msgstr "Exportando historial de órdenes..."
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting trade history..."
 msgstr "Exportando historial de operaciones..."
+
+#: src/hooks/trade/use-twap-fill-history-csv.ts
+msgid "Exporting TWAP fill history..."
+msgstr "Exportando historial de ejecuciones TWAP..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "failed"
@@ -3013,6 +3334,10 @@ msgstr "No se pudo exportar el historial de órdenes."
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export trade history."
 msgstr "No se pudo exportar el historial de operaciones."
+
+#: src/hooks/trade/use-twap-fill-history-csv.ts
+msgid "Failed to export TWAP fill history."
+msgstr "No se pudo exportar el historial de ejecuciones TWAP."
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Failed to load balances"
@@ -3120,6 +3445,7 @@ msgstr "Favoritos"
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Fee"
 msgstr "Comisión"
 
@@ -3281,9 +3607,17 @@ msgstr "No se pudieron verificar los datos recientes de elegibilidad o de la cue
 msgid "Fresh extraAgents data is being checked before the result is accepted."
 msgstr "Se están comprobando datos actualizados de extraAgents antes de aceptar el resultado."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Fresh Vault balances and limits could not be verified."
+msgstr "No se pudieron verificar los saldos y límites actualizados de la bóveda."
+
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "From"
 msgstr "Desde"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
+msgstr "Del {startTime} al {endTime}. Última tasa de financiación: {latestRate}; tasa de financiación acumulada: {cumulativeRate}. Máxima: {maxRate}; mínima: {minRate}."
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
@@ -3309,9 +3643,23 @@ msgstr "Financiación"
 #~ msgid "FUNDING"
 #~ msgstr "FUNDING"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding comparison"
+msgstr "Comparación de financiación"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
+msgid "Funding Comparison"
+msgstr "Comparación de financiación"
+
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
 #~ msgstr "No se pudieron validar los datos de financiación. Actualiza e inténtalo de nuevo."
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding history interval"
+msgstr "Intervalo del historial de financiación"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -3342,6 +3690,23 @@ msgstr "Paginación de pagos de financiación"
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments will load automatically when the connection returns."
 msgstr "Los pagos de financiación se cargarán automáticamente cuando vuelva la conexión."
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding period"
+msgstr "Periodo de financiación"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding Rate"
+msgstr "Tasa de financiación"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding rate differences across exchanges."
+msgstr "Diferencias de tasas de financiación entre exchanges."
+
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "Funding rate history"
+msgstr "Historial de tasas de financiación"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -3518,6 +3883,10 @@ msgstr ""
 msgid "Hour(s)"
 msgstr "Hora(s)"
 
+#: src/config/funding-comparison.ts
+msgid "Hourly"
+msgstr "Por hora"
+
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "Tasa horaria que los largos pagan a los cortos (si es negativa, los cortos pagan a los largos). La financiación no tiene comisiones asociadas; es una transferencia punto a punto entre usuarios para acercar el precio al precio spot. Consulta la documentación para más detalles."
@@ -3551,7 +3920,7 @@ msgstr "Hyperliquid calcula y añade el margen necesario para alcanzar el apalan
 msgid "Hyperliquid documents a four-day lock after the latest HLP deposit and a one-day lock for user Vaults. The returned server timestamp remains authoritative for this deposit."
 msgstr "Hyperliquid documenta un bloqueo de cuatro días tras el depósito más reciente en HLP y otro de un día para las bóvedas de usuarios. La marca de tiempo devuelta por el servidor sigue siendo la referencia determinante para este depósito."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
 msgstr "Hyperliquid no considera actualmente que esta cuenta reúna los requisitos para crear un código de referido."
 
@@ -3568,6 +3937,14 @@ msgstr "El historial de Hyperliquid no ha confirmado esta operación. No la env�
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid puede devolver solo un subconjunto de depositantes."
 
+#: src/config/funding-comparison.ts
+msgid "Hyperliquid OI"
+msgstr "Interés abierto en Hyperliquid"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Hyperliquid rate higher"
+msgstr "Tasa de Hyperliquid más alta"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
 msgstr "Hyperliquid rechazó la solicitud"
@@ -3579,6 +3956,10 @@ msgstr "Hyperliquid rechazó la solicitud pública verificada."
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
 #~ msgstr "Hyperliquid informa que esta clave de trading fue reemplazada, modificada o expiró."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Hyperliquid requires at least $1 to stay supplied. Withdraw everything with Max, or leave at least $1."
+msgstr "Hyperliquid exige que queden al menos $1 suministrados. Retira todo con Máx o deja al menos $1."
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
@@ -3676,9 +4057,33 @@ msgstr "Saldo de <0/> insuficiente"
 msgid "Insufficient balance"
 msgstr "Saldo insuficiente"
 
-#: src/lib/errors/format.ts
+#: src/components/earn/earn-action-modal.tsx
+msgid "Insufficient funds"
+msgstr "Fondos insuficientes"
+
+#: src/lib/errors/action-error.ts
 msgid "Insufficient funds for gas"
 msgstr "Fondos insuficientes para el gas"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order."
+msgstr "Margen insuficiente para colocar la orden."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order. Try canceling open {market} orders."
+msgstr "Margen insuficiente para colocar la orden. Prueba a cancelar las órdenes abiertas de {market}."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order. Try using Reduce Only."
+msgstr "Margen insuficiente para colocar la orden. Prueba con Solo reducir."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient spot balance for this order."
+msgstr "Saldo spot insuficiente para esta orden."
+
+#: src/components/earn/earn-view.tsx
+msgid "Interest"
+msgstr "Intereses"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -3697,6 +4102,19 @@ msgstr "Cantidad no válida"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Invalid destination address"
 msgstr "Dirección de destino no válida"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Invalid leverage"
+msgstr "Apalancamiento no válido"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Invalid margin mode"
+msgstr "Modo de margen no válido"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Invalid TP/SL price."
+msgstr "Precio de TP/SL no válido."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invitation ready to review"
@@ -3854,6 +4272,10 @@ msgstr "DEX heredado"
 msgid "Legacy reward history"
 msgstr "Historial anterior de recompensas"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Legal eligibility could not be verified."
+msgstr "No se pudo verificar la elegibilidad legal."
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Lending Net Balance"
 msgstr "Saldo neto de préstamos"
@@ -3864,14 +4286,36 @@ msgstr "Saldo neto de préstamos"
 msgid "Leverage"
 msgstr "Apalancamiento"
 
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage changed before margin mode update"
+msgstr "El apalancamiento cambió antes de actualizar el modo de margen"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "El apalancamiento está fijado en {currentLeverage}× para este mercado."
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage request no longer matches the confirmed settings"
+msgstr "La solicitud de apalancamiento ya no coincide con la configuración confirmada"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage request no longer matches the selected market"
+msgstr "La solicitud de apalancamiento ya no coincide con el mercado seleccionado"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage updated to {leverage}x"
 msgstr "Apalancamiento actualizado a {leverage}x"
+
+#: src/lib/lifi/config.ts
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
+msgid "LI.FI requested a network that does not match this bridge route."
+msgstr "LI.FI solicitó una red que no coincide con esta ruta de puente."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "LI.FI returned a bridge route that does not match the approved route."
+msgstr "LI.FI devolvió una ruta de puente que no coincide con la ruta aprobada."
 
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
@@ -3958,9 +4402,11 @@ msgstr "Precio liq."
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Liquidated"
 msgstr "Liquidada"
 
+#: src/components/earn/earn-view.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4026,6 +4472,10 @@ msgstr "Cargando pagos de financiación"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Loading funding payments."
 msgstr "Cargando pagos de financiación."
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Loading funding rates"
+msgstr "Cargando tasas de financiación"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
@@ -4119,6 +4569,8 @@ msgstr "Cargando billetera..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
@@ -4133,6 +4585,10 @@ msgstr "Cargando..."
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Loading…"
 msgstr "Cargando…"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Location eligibility could not be verified."
+msgstr "No se pudo verificar la elegibilidad por ubicación."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Lock period progress"
@@ -4180,6 +4636,10 @@ msgstr "Pérdida"
 msgid "Low balance"
 msgstr "Saldo bajo"
 
+#: src/components/earn/earn-view.tsx
+msgid "LTV"
+msgstr "LTV"
+
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Mainnet"
@@ -4226,6 +4686,15 @@ msgstr "Margen y riesgo de la cuenta de un vistazo"
 #: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "Modo de margen"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Margin mode changed before leverage update"
+msgstr "El modo de margen cambió antes de actualizar el apalancamiento"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/lib/tests/action-error.test.ts
+msgid "Margin mode data is unavailable"
+msgstr "Los datos del modo de margen no están disponibles"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode updated"
@@ -4300,6 +4769,7 @@ msgstr "Precio de marca: se usa para calcular margen, PnL no realizado, liquidac
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/config/funding-comparison.ts
 #: src/config/trade-panel-labels.ts
 msgid "Market"
 msgstr "Mercado"
@@ -4399,6 +4869,7 @@ msgstr "Se requiere el monedero maestro"
 msgid "Master wallet verified"
 msgstr "Monedero maestro verificado"
 
+#: src/components/earn/earn-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4416,6 +4887,10 @@ msgstr "Caída máxima"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
 msgstr "La caída máxima no está disponible hasta verificar el historial ajustado por flujos de capital."
+
+#: src/components/trade/tradebox/leverage-position-limit-row.tsx
+msgid "Max position size"
+msgstr "Tamaño máximo de posición"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -4592,6 +5067,12 @@ msgstr "Mover HYPE de staking a Spot"
 msgid "Move USDC between your Perp and Spot accounts."
 msgstr "Mueve USDC entre tus cuentas Perp y Spot."
 
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+msgid "N/A"
+msgstr "N/D"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
@@ -4646,7 +5127,11 @@ msgstr "Las nuevas acciones de fondos están bloqueadas hasta que se resuelva es
 msgid "New mobile pairing is temporarily unavailable."
 msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Next"
 msgstr "Siguiente"
 
@@ -4658,6 +5143,7 @@ msgstr "Página siguiente de pagos de financiación"
 msgid "Next order history page"
 msgstr "Página siguiente del historial de órdenes"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
 msgstr "Página siguiente"
@@ -4712,7 +5198,7 @@ msgstr "No hay monederos API autorizados"
 msgid "No balance"
 msgstr "Sin saldo"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/exchange-error-text.ts
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "Sin saldo en Hyperliquid. Deposita primero."
 
@@ -4754,6 +5240,10 @@ msgstr "La bóveda no tiene descripción."
 #~ msgid "No desktop wallet QR was found."
 #~ msgstr "No se encontró ningún QR de billetera de escritorio."
 
+#: src/components/earn/earn-view.tsx
+msgid "No earn actions yet"
+msgstr "Aún no hay acciones de Rendimiento"
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "No eligible leaderboard accounts"
 msgstr "No hay cuentas de clasificación elegibles"
@@ -4783,6 +5273,14 @@ msgstr "Ninguna ejecución coincide con los filtros seleccionados."
 msgid "No fills match these filters."
 msgstr "Ninguna ejecución coincide con estos filtros."
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "No funding comparison data"
+msgstr "No hay datos de comparación de financiación"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "No funding history"
+msgstr "Sin historial de financiación"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found"
 msgstr "No se encontraron pagos de financiación"
@@ -4804,9 +5302,17 @@ msgstr "Ningún pago de financiación coincide con los filtros seleccionados."
 msgid "No funding payments match this direction."
 msgstr "Ningún pago de financiamiento coincide con esta dirección."
 
+#: src/components/earn/earn-view.tsx
+msgid "No interest yet"
+msgstr "Aún no hay intereses"
+
 #: src/components/referrals/referral-activity.tsx
 msgid "No legacy reward history."
 msgstr "No hay historial anterior de recompensas."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "No liquidity is available for this market order."
+msgstr "No hay liquidez disponible para esta orden de mercado."
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
@@ -4832,6 +5338,10 @@ msgstr "Sin mercado"
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "No se encontraron mercados."
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "No markets match your search"
+msgstr "Ningún mercado coincide con tu búsqueda"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No matching fills"
@@ -4954,6 +5464,10 @@ msgstr "No hay acciones de staking"
 msgid "No staking rewards"
 msgstr "No hay recompensas de staking"
 
+#: src/components/trade/tradebox/leverage-position-limit-row.tsx
+msgid "No tier limit"
+msgstr "Sin límite por nivel"
+
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "No tokens with value found across supported chains"
 msgstr "No se encontraron tokens con valor en las redes compatibles"
@@ -5007,12 +5521,17 @@ msgstr "No conectado"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Not reported"
 msgstr "No reportado"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Notification details"
 msgstr "Detalles de la notificación"
+
+#: src/components/ui/sonner.tsx
+msgid "Notifications"
+msgstr "Notificaciones"
 
 #: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
@@ -5131,11 +5650,16 @@ msgstr "Abre Depósito para preparar tu monedero vinculado por correo electróni
 msgid "Open Interest"
 msgstr "Interés abierto"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Open interest cap"
+msgstr "Límite de interés abierto"
+
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Open Long"
 msgstr "Abrir largo"
 
@@ -5173,6 +5697,7 @@ msgstr "Abrir página relacionada"
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Open Short"
 msgstr "Abrir corto"
 
@@ -5205,6 +5730,10 @@ msgstr "Oráculo"
 #~ msgid "ORACLE"
 #~ msgstr "ORÁCULO"
 
+#: src/components/earn/earn-view.tsx
+msgid "Oracle Price"
+msgstr "Precio del oráculo"
+
 #: src/lib/trade/order-notification-copy.ts
 msgid "Order"
 msgstr "Orden"
@@ -5213,6 +5742,10 @@ msgstr "Orden"
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Order {0}"
 msgstr "Orden {0}"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order {order}: {line}"
+msgstr "Orden {order}: {line}"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
@@ -5244,6 +5777,7 @@ msgid "Order cancellation confirmed."
 msgstr "Cancelación de la orden confirmada."
 
 #: src/hooks/trade/use-order-confirmation.ts
+#: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Order conditions changed before it was confirmed. Review the order and submit it again."
 msgstr "Las condiciones de la orden cambiaron antes de confirmarla. Revisa la orden y vuelve a enviarla."
@@ -5352,6 +5886,14 @@ msgstr "Tipo de orden"
 msgid "Order Value"
 msgstr "Valor orden"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order value must be at least {amount} {token}."
+msgstr "El valor de la orden debe ser de al menos {amount} {token}."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order value must be at least ${amount}."
+msgstr "El valor de la orden debe ser de al menos ${amount}."
+
 #: src/config/tooltips.ts
 msgid "Order will exist only as a limit order on the book. Also known as post-only."
 msgstr "La orden solo existirá como orden límite en el libro. También conocida como post-only."
@@ -5410,6 +5952,13 @@ msgstr "Propietario"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Owner account"
 #~ msgstr "Cuenta propietaria"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Page {page}"
+msgstr "Página {page}"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Page {visiblePage} of {totalPages}"
@@ -5615,6 +6164,7 @@ msgstr "Datos de bóveda de ejemplo para revisión visual."
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-performance-chart.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "PNL"
 msgstr "PNL"
 
@@ -5666,6 +6216,10 @@ msgstr "Gráfico del historial de la cartera"
 msgid "Portfolio margin"
 msgstr "Margen de cartera"
 
+#: src/hooks/trade/use-account-abstraction-control.ts
+msgid "Portfolio margin activation is temporarily unavailable"
+msgstr "La activación del margen de cartera no está disponible temporalmente"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Portfolio margin eligibility and limits"
 msgstr "Requisitos y límites del margen de cartera"
@@ -5709,6 +6263,16 @@ msgstr "Posición"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Position changed before submission. Review the Reduce Only quantity and direction."
 msgstr "La posición cambió antes del envío. Revisa la cantidad y la dirección de Solo reducir."
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/lib/tests/margin-mode-modal.test.tsx
+#: src/lib/tests/position-submit-feedback.test.ts
+#: src/lib/tests/position-submit-feedback.test.ts
+#: src/lib/tests/position-submit-feedback.test.ts
+msgid "Position data is unavailable"
+msgstr "Los datos de la posición no están disponibles"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
@@ -5773,6 +6337,10 @@ msgstr "PNL positivo"
 msgid "Post Only"
 msgstr "Post Only"
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Powered by <0/>"
+msgstr "Con la tecnología de <0/>"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Pre-IPO"
 msgstr "Pre-IPO"
@@ -5780,6 +6348,14 @@ msgstr "Pre-IPO"
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Pre-launch"
 msgstr "Prelanzamiento"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Predicted funding rates by market and exchange"
+msgstr "Tasas de financiación previstas por mercado y exchange"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Predicted rates for the next funding, converted to the selected period. Only Hyperliquid main perp markets are included. Differences do not include trading fees or payment timing."
+msgstr "Tasas previstas para la próxima financiación, convertidas al periodo seleccionado. Solo se incluyen los mercados perpetuos principales de Hyperliquid. Las diferencias no incluyen comisiones de trading ni el calendario de pagos."
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Prefer an app-like experience?"
@@ -5789,6 +6365,10 @@ msgstr "¿Prefieres una experiencia similar a una aplicación?"
 msgid "Preparing automatic USDC deposit..."
 msgstr "Preparando depósito automático de USDC..."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Preparing transaction..."
+msgstr "Preparando la transacción..."
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."
 msgstr "Preparando tu cotización..."
@@ -5797,7 +6377,11 @@ msgstr "Preparando tu cotización..."
 #~ msgid "Press and hold for 4 seconds"
 #~ msgstr "Mantén pulsado 4 segundos"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Previous"
 msgstr "Anterior"
 
@@ -5809,6 +6393,7 @@ msgstr "Página anterior de pagos de financiación"
 msgid "Previous order history page"
 msgstr "Página anterior del historial de órdenes"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
 msgstr "Página anterior"
@@ -5858,6 +6443,7 @@ msgstr "Página anterior de bóvedas"
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Price"
 msgstr "Precio"
 
@@ -5874,6 +6460,10 @@ msgstr "Precio inferior a {price}"
 msgid "Price grouping"
 msgstr "Agrupación de precios"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Price must be a multiple of the tick size."
+msgstr "El precio debe ser un múltiplo del tamaño de tick."
+
 #: src/config/orderbook-labels.ts
 msgid "Price precision"
 msgstr "Precisión de precio"
@@ -5882,7 +6472,6 @@ msgstr "Precisión de precio"
 msgid "Price: Market"
 msgstr "Precio: Mercado"
 
-#: src/components/legal/document-chrome.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
@@ -5893,7 +6482,6 @@ msgstr "Navegación principal"
 msgid "Priority Gas Auction Fee"
 msgstr "Comisión de subasta de gas prioritaria"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Privacy Policy"
 msgstr "Política de privacidad"
@@ -5919,10 +6507,9 @@ msgstr "Procesando"
 msgid "Processing time"
 msgstr "Tiempo de procesamiento"
 
-#: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#~ msgid "Processing..."
-#~ msgstr "Procesando..."
+#: src/lib/lifi/use-bridge.ts
+msgid "Processing..."
+msgstr "Procesando..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #~ msgid "Processing…"
@@ -5962,6 +6549,10 @@ msgstr "Código QR que enlaza al mercado {0}"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "QR unavailable"
 msgstr "QR no disponible"
+
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Quote countdown"
+msgstr "Cuenta atrás de la cotización"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Quote expired. Refresh it before confirming."
@@ -6007,6 +6598,10 @@ msgstr "Clasificación por"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "Tasa"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Rates equal"
+msgstr "Tasas iguales"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Read official referral rules"
@@ -6122,13 +6717,18 @@ msgstr "La cantidad de Solo reducir supera la posición"
 msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
 msgstr "Reduce esta posición al precio de mercado actual. Las operaciones ejecutadas no se pueden revertir."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral access could not be verified for this account. Refresh access status before retrying."
 msgstr "No se pudo verificar el acceso a referidos de esta cuenta. Actualiza el estado del acceso antes de volver a intentarlo."
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Referral access is still being verified."
 msgstr "El acceso a referidos aún se está verificando."
+
+#: src/hooks/trade/use-referral-actions.ts
+#: src/lib/tests/use-referral-actions.test.tsx
+msgid "Referral actions are not available in your region. This referral request was not submitted."
+msgstr "Las acciones de referidos no están disponibles en tu región. Esta solicitud de referido no se envió."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Referral activation progress"
@@ -6156,11 +6756,11 @@ msgid "Referral code created"
 msgstr "Código de referido creado"
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral codes cannot be applied after cumulative volume exceeds $10,000."
 msgstr "Los códigos de referido no se pueden aplicar cuando el volumen acumulado supera los $10,000."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral codes must be between 1 and 20 characters."
 msgstr "Los códigos de referido deben tener entre 1 y 20 caracteres."
 
@@ -6177,8 +6777,16 @@ msgid "Referral request"
 msgstr "Solicitud de referido"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/use-referral-actions.test.tsx
 msgid "Referral request could not be completed."
 msgstr "No se pudo completar la solicitud de referido."
+
+#: src/hooks/trade/use-referral-actions.ts
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Referral request is no longer active."
+msgstr "La solicitud de referido ya no está activa."
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Referral stages, rewards, discount, and claim history are scoped to your Hyperliquid account."
@@ -6272,14 +6880,80 @@ msgstr "Actualizando…"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-status-reasons.ts
 msgid "Rejected"
 msgstr "Rechazada"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because a Reduce Only order would increase the position"
+msgstr "Rechazada porque una orden Solo reducir aumentaría la posición"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because it exceeds the maximum position size at the current leverage"
+msgstr "Rechazada porque supera el tamaño máximo de posición con el apalancamiento actual"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because open interest would increase too quickly"
+msgstr "Rechazada porque el interés abierto aumentaría demasiado rápido"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the IOC order could not match"
+msgstr "Rechazada porque la orden IOC no pudo ejecutarse"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the order value is below the minimum"
+msgstr "Rechazada porque el valor de la orden está por debajo del mínimo"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the Post Only order would have matched immediately"
+msgstr "Rechazada porque la orden Post Only se habría ejecutado de inmediato"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the price is too aggressive at the open interest cap"
+msgstr "Rechazada porque el precio es demasiado agresivo con el límite de interés abierto"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the price is too far from the oracle price"
+msgstr "Rechazada porque el precio está demasiado lejos del precio del oráculo"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to a lack of liquidity for the market order"
+msgstr "Rechazada por falta de liquidez para la orden de mercado"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to an invalid tick price"
+msgstr "Rechazada por un precio que no respeta el tamaño de tick"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to an invalid TP/SL price"
+msgstr "Rechazada por un precio de TP/SL no válido"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to insufficient margin"
+msgstr "Rechazada por margen insuficiente"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to insufficient spot balance"
+msgstr "Rechazada por saldo spot insuficiente"
+
+#: src/lib/trade/order-status-reasons.ts
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to the open interest cap"
+msgstr "Rechazada por el límite de interés abierto"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to too many open orders"
+msgstr "Rechazada por tener demasiadas órdenes abiertas"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Reload page"
 msgstr "Recargar página"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Reload recovery could not be saved. Keep this tab open until the bridge completes."
+msgstr "No se pudo guardar la recuperación tras recargar. Mantén esta pestaña abierta hasta que termine el puente."
 
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"
@@ -6331,9 +7005,34 @@ msgstr "La eliminación de esta aprobación detiene inmediatamente los programas
 #~ msgid "Rendering QR"
 #~ msgstr "Generando QR"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repaid {token}"
+msgstr "{token} reembolsado"
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/config/account-ledger.ts
 msgid "Repay"
 msgstr "Reembolsar"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repay borrows from your {token} available balance."
+msgstr "Reembolsa préstamos con tu saldo disponible de {token}."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repay borrows to withdraw collateral."
+msgstr "Reembolsa los préstamos para retirar colateral."
+
+#: src/components/earn/earn-view.tsx
+msgid "Repaying from Earn is not available in Portfolio Margin mode."
+msgstr "El reembolso desde Rendimiento no está disponible en el modo Portfolio Margin."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repays your entire {token} borrow at the moment it executes, including accrued interest."
+msgstr "Reembolsa todo tu préstamo de {token} en el momento de su ejecución, incluidos los intereses acumulados."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current mobile Agent with a temporary inaccessible key."
@@ -6396,6 +7095,7 @@ msgid "Resume tracking"
 msgstr "Reanudar seguimiento"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
@@ -6405,6 +7105,8 @@ msgstr "Reanudar seguimiento"
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
@@ -6510,6 +7212,10 @@ msgstr "Revisa los TWAP activos antes de reintentar"
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "Review again"
 #~ msgstr "Revisar de nuevo"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Review and approve this Hyperliquid Agent permission."
+msgstr "Revisa y aprueba este permiso de agente de Hyperliquid."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Review and import the desktop-approved trading key. No phone wallet is required."
@@ -6621,7 +7327,6 @@ msgstr "Recompensas reclamadas"
 msgid "Rewards compound automatically"
 msgstr "Las recompensas se reinvierten automáticamente"
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Risk Disclosure"
 msgstr "Divulgación de riesgos"
@@ -6646,6 +7351,7 @@ msgstr "ROI"
 msgid "Role"
 msgstr "Rol"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -6758,7 +7464,7 @@ msgstr ""
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device)."
-msgstr ""
+msgstr "Escanea el QR del icono QR en la esquina superior derecha de gatu en el escritorio (Vincular dispositivo móvil)."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #~ msgid "Scan the QR shown by Link Mobile Device on your desktop."
@@ -6768,6 +7474,10 @@ msgstr ""
 #: src/components/staking/staking-action-modal.tsx
 msgid "SDK method"
 msgstr "Método SDK"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Search by market"
+msgstr "Buscar por mercado"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Search by vault, address, or leader"
@@ -6781,6 +7491,7 @@ msgstr "Buscar por dirección de monedero o nombre visible"
 msgid "Search leaderboard"
 msgstr "Buscar en la clasificación"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets"
 msgstr "Buscar mercados"
@@ -6822,6 +7533,10 @@ msgstr "Este navegador no permite generar números aleatorios seguros. Usa un na
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Secure randomness is unavailable. Deposit was not submitted."
 msgstr "No hay una fuente segura de aleatoriedad disponible. El depósito no se ha enviado."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Secure reload recovery is unavailable in this browser. Bridge execution was not started."
+msgstr "La recuperación segura tras recargar no está disponible en este navegador. No se inició la ejecución del puente."
 
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select {displayName} market"
@@ -6878,11 +7593,7 @@ msgid "selected"
 msgstr "seleccionado"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/lib/errors/format.ts
-#: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/errors/action-error.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 msgstr "La billetera seleccionada no coincide con la cuenta conectada. Reconecta tu billetera y vuelve a intentarlo."
 
@@ -7068,7 +7779,7 @@ msgstr "Cuenta firmante"
 
 #: src/components/staking/staking-view.tsx
 msgid "Signing ready"
-msgstr ""
+msgstr "Firma lista"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Signing with your email wallet"
@@ -7115,6 +7826,7 @@ msgstr "Firmando..."
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Size"
 msgstr "Tamaño"
 
@@ -7143,7 +7855,7 @@ msgstr "Sesgo de tamaño"
 #: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Size skew is too aggressive for the total size"
-msgstr ""
+msgstr "El sesgo de tamaño es demasiado elevado para el tamaño total"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -7178,7 +7890,7 @@ msgstr "Tolerancia de slippage"
 msgid "Smart wallet client not ready"
 msgstr "El cliente de monedero inteligente no está listo"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked."
 msgstr "El estado del depósito de la billetera inteligente se está sincronizando. No envíes otro depósito mientras se verifica el saldo."
@@ -7213,7 +7925,6 @@ msgstr "Se aceptaron algunas órdenes. Revise las órdenes abiertas antes de vol
 msgid "Something went wrong"
 msgstr "Algo salió mal"
 
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "Soon"
 msgstr "Pronto"
@@ -7221,6 +7932,10 @@ msgstr "Pronto"
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Sort API wallets by name"
 msgstr "Ordenar monederos API por nombre"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Sort by"
+msgstr "Ordenar por"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7230,6 +7945,10 @@ msgstr "Ordenar por {sortLabel}"
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Sort leaderboard"
 msgstr "Ordenar la clasificación"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Sort markets"
+msgstr "Ordenar mercados"
 
 #. placeholder {0}: getColumnSortLabel(sorting[0].id)
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7558,11 +8277,50 @@ msgstr "Enviando…"
 msgid "Successful"
 msgstr "Exitoso"
 
+#: src/components/earn/earn-action-modal.tsx
+msgid "Supplied {token}"
+msgstr "{token} suministrado"
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/config/account-ledger.ts
 msgid "Supply"
 msgstr "Suministrar"
 
-#: src/components/legal/document-chrome.tsx
+#: src/components/earn/earn-view.tsx
+msgid "Supply a supported collateral asset to borrow."
+msgstr "Suministra un activo de colateral admitido para pedir prestado."
+
+#: src/components/earn/earn-view.tsx
+msgid "Supply and Borrow"
+msgstr "Suministrar y pedir prestado"
+
+#: src/components/earn/earn-view.tsx
+msgid "Supply Interest"
+msgstr "Interés de suministro"
+
+#: src/components/earn/earn-view.tsx
+msgid "Supply quote assets like USDC or USDT to earn interest or supply assets like HYPE or BTC as collateral to borrow against. Quote asset suppliers earn yield paid by borrowers. Borrowers pay interest, and collateral remains locked until the borrows are repaid."
+msgstr "Suministra activos de cotización como USDC o USDT para ganar intereses, o suministra activos como HYPE o BTC como colateral para pedir prestado. Quienes suministran activos de cotización obtienen el rendimiento que pagan los prestatarios. Los prestatarios pagan intereses y el colateral permanece bloqueado hasta que se reembolsan los préstamos."
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-action-modal.tsx
+msgid "Supply to Borrow"
+msgstr "Suministrar para pedir prestado"
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-action-modal.tsx
+msgid "Supply to Earn"
+msgstr "Suministrar para ganar"
+
+#: src/components/earn/earn-view.tsx
+msgid "Supplying and borrowing happen automatically on Portfolio Margin mode. Quote assets like USDC or USDT that are not being utilized are supplied and earn interest. Trades that require additional quote assets will borrow against collateral like HYPE or BTC. Borrows pay interest, and collateral remains locked until the borrows are repaid."
+msgstr "En el modo Portfolio Margin, el suministro y el préstamo son automáticos. Los activos de cotización como USDC o USDT que no se utilizan se suministran y generan intereses. Las operaciones que necesitan más activos de cotización piden prestado contra colateral como HYPE o BTC. Los préstamos pagan intereses y el colateral permanece bloqueado hasta que se reembolsan."
+
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/footer-links.ts
 msgid "Support"
 msgstr "Soporte"
@@ -7594,6 +8352,14 @@ msgstr "Intercambiar stablecoins"
 #~ msgid "Swap submitted"
 #~ msgstr "Intercambio enviado"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Swapping on same chain..."
+msgstr "Intercambiando en la misma cadena..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Swapping on source chain..."
+msgstr "Intercambiando en la cadena de origen..."
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #~ msgid "Swapping..."
 #~ msgstr "Intercambiando..."
@@ -7601,6 +8367,8 @@ msgstr "Intercambiar stablecoins"
 #. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
 #. placeholder {0}: funding.coin
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -7789,7 +8557,6 @@ msgstr "Terminar orden TWAP"
 #~ msgid "Terminating..."
 #~ msgstr "Terminando..."
 
-#: src/components/legal/document-chrome.tsx
 #: src/config/footer-links.ts
 msgid "Terms"
 msgstr "Términos"
@@ -7837,9 +8604,25 @@ msgstr "La cuenta no tiene pagos de financiación en la ventana confirmada de 30
 msgid "The account has no ordinary orders in the available history."
 msgstr "La cuenta no tiene órdenes ordinarias en el historial disponible."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The active owner wallet or network changed."
+msgstr "La billetera propietaria activa o la red cambió."
+
+#: src/lib/lifi/config.ts
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/bridge-tab-lifecycle.test.tsx
+msgid "The active wallet does not match this bridge route."
+msgstr "La billetera activa no coincide con esta ruta de puente."
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr "El monedero activo no es el monedero maestro de esta cuenta"
+
+#: src/lib/errors/action-error.ts
+#: src/lib/tests/establish-connection-modal.test.tsx
+#: src/lib/tests/mobile-agent-sync-modal.test.tsx
+msgid "The active wallet or network changed. Review the account and try again."
+msgstr "La billetera activa o la red cambió. Revisa la cuenta y vuelve a intentarlo."
 
 #: src/components/staking/staking-view.tsx
 msgid "The address already has five pending withdrawals."
@@ -7848,6 +8631,10 @@ msgstr "La dirección ya tiene cinco retiros pendientes."
 #: src/components/vaults/vaults-page.tsx
 msgid "The address is invalid or Hyperliquid returned no Vault details for it."
 msgstr "La dirección no es válida o Hyperliquid no devolvió detalles de la bóveda."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The amount exceeds the freshly verified maximum."
+msgstr "El importe supera el máximo verificado recientemente."
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."
@@ -7868,6 +8655,10 @@ msgstr "La solicitud del monedero API fue rechazada."
 #: src/components/referrals/referral-action-modal.tsx
 #~ msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
 #~ msgstr "El Agent de Hyperliquid aprobado firma esta solicitud. Las solicitudes firmadas nunca se reintentan automáticamente."
+
+#: src/lib/errors/action-error.ts
+msgid "The Arbitrum transaction did not match the reviewed deposit. Check your wallet activity before retrying."
+msgstr "La transacción de Arbitrum no coincide con el depósito revisado. Revisa la actividad de tu billetera antes de volver a intentarlo."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
@@ -7896,6 +8687,10 @@ msgstr "No se pudo confirmar la respuesta de cancelación. Actualiza las órdene
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "No se confirmó la cancelación. Revisa las órdenes abiertas antes de volver a intentarlo."
 
+#: src/lib/errors/action-error.ts
+msgid "The checks before this request took too long. Nothing was signed or sent. Try again."
+msgstr "Las comprobaciones previas a esta solicitud tardaron demasiado. No se firmó ni se envió nada. Vuelve a intentarlo."
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr "La marca de tiempo de bloqueo confirmada por el servidor determina cuándo estará disponible el retiro."
@@ -7905,9 +8700,11 @@ msgid "The connection could not be checked safely. No wallet signature was reque
 msgstr "No se pudo comprobar la conexión de forma segura. No se solicitó ninguna firma del monedero; espera un momento y vuelve a intentarlo."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
 msgstr "No se pudo completar la conexión. Es posible que ya se haya aprobado; espera un momento y vuelve a intentarlo."
 
+#: src/lib/tests/mobile-agent-sync-route.test.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The desktop has not approved this key. Create a new QR on desktop."
 msgstr ""
@@ -7970,6 +8767,11 @@ msgstr "La ruta de retiro de Hyperliquid cambió. Revisa la ruta y la comisión 
 msgid "The leader receives the commission shown above from profits."
 msgstr "El líder recibe de las ganancias la comisión indicada arriba."
 
+#: src/lib/errors/definitions/open-interest-cap.ts
+#: src/lib/trade/order-submission-feedback.ts
+msgid "The limit order would be canceled after resting because open interest is capped. Use market orders to close positions."
+msgstr "La orden límite se cancelaría después de quedar en el libro porque el interés abierto alcanzó su límite. Usa órdenes de mercado para cerrar posiciones."
+
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "Es posible que la actualización del margen se haya aplicado. Actualiza los datos de la posición antes de volver a intentarlo."
@@ -7981,6 +8783,10 @@ msgstr "La billetera principal rechazó la autorización."
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr "El monedero maestro correspondiente firma esta aprobación de agente a nivel de cuenta."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "The minimum supply is $1."
+msgstr "El suministro mínimo es de $1."
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "The modification was not confirmed. Review the order before retrying."
@@ -8007,6 +8813,10 @@ msgstr "No se pudo verificar el conjunto de datos público correspondiente a la 
 #~ msgid "The one-time QR service is unavailable. Check your connection and retry."
 #~ msgstr "El servicio de QR de un solo uso no está disponible. Verifica tu conexión e inténtalo de nuevo."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The operation reference could not be stored safely, so nothing was signed."
+msgstr "No se pudo guardar la referencia de la operación de forma segura, así que no se firmó nada."
+
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "La orden puede continuar, pero esta preferencia de confirmación no se pudo guardar."
@@ -8015,15 +8825,35 @@ msgstr "La orden puede continuar, pero esta preferencia de confirmación no se p
 msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
 msgstr "La orden cambió antes de que se confirmara la modificación solicitada. Revisa la orden más reciente antes de volver a intentarlo."
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order could not immediately match any resting orders."
+msgstr "La orden no pudo ejecutarse de inmediato contra ninguna orden en el libro."
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
 #~ msgstr "La orden todavía se está confirmando."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order price is too far from the oracle price."
+msgstr "El precio de la orden está demasiado lejos del precio del oráculo."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "La actualización de la orden no fue confirmada por los datos en vivo. Actualiza antes de volver a intentarlo; la cancelación sigue disponible."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order was never placed, was already canceled, or has filled."
+msgstr "La orden nunca se colocó, ya se canceló o ya se ejecutó."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order would exceed the maximum position size at the current leverage."
+msgstr "La orden superaría el tamaño máximo de posición con el apalancamiento actual."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order would increase open interest too quickly."
+msgstr "La orden aumentaría el interés abierto demasiado rápido."
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The page is matching a new Vault ledger event and refreshed account state. It will not sign again."
@@ -8098,11 +8928,35 @@ msgstr "El QR permanece en este dispositivo y nunca se sube."
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "No se pudo cargar ni validar la instantánea reciente de operaciones."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The refreshed Vault identity did not match this reviewed action."
+msgstr "La identidad actualizada de la bóveda no coincide con esta acción revisada."
+
+#: src/hooks/trade/use-referral-actions.ts
+msgid "The regional availability check expired before signing. This referral request was not submitted."
+msgstr "La comprobación de disponibilidad regional caducó antes de firmar. Esta solicitud de referido no se envió."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
 #~ msgstr "El reemplazo caducó antes de que Hyperliquid lo confirmara. Revisa y firma una nueva revocación."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
+msgid "The request could not be completed. Try again."
+msgstr "No se pudo completar la solicitud. Vuelve a intentarlo."
+
+#: src/lib/errors/action-error.ts
+msgid "The request could not be prepared. Refresh the page and try again."
+msgstr "No se pudo preparar la solicitud. Actualiza la página y vuelve a intentarlo."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The request expired before the exchange processed it. Try again."
+msgstr "La solicitud caducó antes de que el exchange la procesara. Vuelve a intentarlo."
+
+#: src/lib/errors/action-error.ts
+msgid "The request status could not be confirmed. Review your account before retrying."
+msgstr "No se pudo confirmar el estado de la solicitud. Revisa tu cuenta antes de volver a intentarlo."
+
+#: src/lib/errors/action-error.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
 msgstr "La solicitud se envió, pero su estado final aún se está actualizando. Consulta los datos de referidos y el historial de reclamaciones antes de volver a intentarlo."
 
@@ -8152,6 +9006,10 @@ msgstr "El entorno de Hyperliquid seleccionado devolvió una lista de bóvedas v
 msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
 msgstr "El mercado seleccionado cambió. Vuelve a abrir el cuadro de margen antes de ajustarlo."
 
+#: src/lib/errors/action-error.ts
+msgid "The server rejected the request. Try again later."
+msgstr "El servidor rechazó la solicitud. Vuelve a intentarlo más tarde."
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The signed {action} request is dispatched once and will not be retried automatically."
 msgstr "La solicitud {action} firmada se envía una vez y no se volverá a intentar automáticamente."
@@ -8167,6 +9025,10 @@ msgstr "Es posible que la solicitud firmada se haya completado, pero la concilia
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "The start and end values are unchanged."
 msgstr "Los valores inicial y final no cambian."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "The submitted bridge transaction could not be prepared for safe status tracking."
+msgstr "No se pudo preparar la transacción de puente enviada para un seguimiento seguro del estado."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -8203,6 +9065,10 @@ msgstr "La cuenta de trading o la red cambió. Vuelve a abrir el editor e intén
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr "La cuenta de trading o la red cambiaron. Revisa las órdenes TWAP activas antes de volver a intentarlo."
 
+#: src/lib/errors/action-error.ts
+msgid "The trading key stored in this browser is invalid. Reset the trading connection before trying again."
+msgstr "La clave de trading guardada en este navegador no es válida. Restablece la conexión de trading antes de volver a intentarlo."
+
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "The trading wallet could not be verified for this owner and network."
 msgstr "No se pudo verificar la cartera de trading para este propietario y esta red."
@@ -8228,9 +9094,17 @@ msgstr "El conjunto de datos verificado no contenía una cuenta elegible para es
 msgid "The verified owner data is read-only in this session. An Agent/API wallet is never used as the staking owner or signer."
 msgstr "Los datos del propietario verificado son de solo lectura en esta sesión. Nunca se utiliza un monedero Agent/API como propietario ni firmante de staking."
 
+#: src/lib/errors/action-error.ts
+msgid "The wallet could not sign the request. Try again."
+msgstr "La billetera no pudo firmar la solicitud. Vuelve a intentarlo."
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
 msgstr "El monedero no firmó, por lo que no se envió ninguna solicitud. Puedes revisar los detalles y volver a intentarlo."
+
+#: src/lib/lifi/config.ts
+msgid "The wallet network does not match this bridge route. Switch networks in your wallet and try again."
+msgstr "La red de la billetera no coincide con esta ruta de puente. Cambia la red en tu billetera y vuelve a intentarlo."
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
@@ -8240,16 +9114,16 @@ msgstr "No se pudo cerrar la sesión del monedero, pero la clave de trading loca
 #~ msgid "There are no eligible rewards available to claim."
 #~ msgstr "No hay recompensas elegibles disponibles para reclamar."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "There are no unclaimed rewards available to claim."
 msgstr "No hay recompensas sin reclamar disponibles."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "Esta cuenta ya tiene un código de referido y no puede aplicar otro."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
 msgstr "Esta cuenta no tiene permiso actualmente para realizar operaciones de trading en Hyperliquid."
 
@@ -8281,15 +9155,37 @@ msgstr "Esta acción no se puede deshacer después de la ejecución."
 msgid "This bridge can only be resumed by the wallet that started it."
 msgstr "Este puente solo puede reanudarse con la billetera que lo inició."
 
-#: src/lib/errors/format.ts
+#: src/lib/lifi/use-bridge.ts
+msgid "This bridge route requires unsupported message signing and was not submitted."
+msgstr "Esta ruta de puente requiere una firma de mensaje no compatible y no se envió."
+
+#: src/lib/lifi/bridge-execution-state.ts
+msgid "This bridge was interrupted by a page reload. Retry to resume status tracking."
+msgstr "Este puente se interrumpió al recargar la página. Vuelve a intentarlo para reanudar el seguimiento del estado."
+
+#: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "Este navegador no puede coordinar de forma segura las operaciones de fondos entre pestañas. Usa un navegador compatible."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 msgstr "Este navegador no puede coordinar de forma segura la conexión de trading entre pestañas. Usa un navegador compatible."
 
+#: src/lib/errors/action-error.ts
+msgid "This browser could not coordinate the request safely across tabs. Close other tabs and try again."
+msgstr "Este navegador no pudo coordinar la solicitud de forma segura entre pestañas. Cierra las demás pestañas y vuelve a intentarlo."
+
+#: src/lib/errors/action-error.ts
+msgid "This browser could not store deposit recovery data, so this deposit was not submitted. Allow site storage, then try again."
+msgstr "Este navegador no pudo guardar los datos de recuperación del depósito, así que este depósito no se envió. Permite el almacenamiento del sitio y vuelve a intentarlo."
+
+#: src/lib/errors/action-error.ts
+msgid "This browser could not store the trading key safely. Check that site storage is available, then try again."
+msgstr "Este navegador no pudo guardar la clave de trading de forma segura. Comprueba que el almacenamiento del sitio esté disponible y vuelve a intentarlo."
+
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
 msgstr "Este navegador ya no conserva la clave de trading exacta correspondiente a la aprobación pendiente. Restablece la conexión de trading antes de volver a intentarlo."
 
@@ -8371,6 +9267,16 @@ msgstr "Este es el historial anterior de recompensas obtenidas. Las reclamacione
 msgid "This isolated position is no longer open."
 msgstr "Esta posición aislada ya no está abierta."
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "This market is at its open interest cap, so the order cannot increase open interest."
+msgstr "Este mercado está en su límite de interés abierto, por lo que la orden no puede aumentar el interés abierto."
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "This market only supports isolated margin mode"
+msgstr "Este mercado solo admite el modo de margen aislado"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "This market only supports isolated margin mode."
 msgstr "Este mercado solo admite el modo de margen aislado."
@@ -8378,6 +9284,10 @@ msgstr "Este mercado solo admite el modo de margen aislado."
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This mobile trading key has expired."
 #~ msgstr "Esta clave de trading móvil ha caducado."
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "This name already exists. A duplicate would replace the existing API wallet."
+msgstr "Este nombre ya existe. Un duplicado reemplazaría el monedero API existente."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This one-time QR closes automatically within 60 seconds."
@@ -8413,7 +9323,7 @@ msgstr "Este tipo de orden no se puede modificar de forma segura. Cancélala y r
 
 #: src/components/ui/lazy-dialog-boundary.tsx
 msgid "This panel could not be loaded. Try again, or reload the page. Reloading clears an order you have not sent."
-msgstr ""
+msgstr "No se pudo cargar este panel. Reintenta o recarga la página. Al recargar se borra cualquier orden que no hayas enviado."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This phone could not store the trading key. Clear this site's data and scan again."
@@ -8422,7 +9332,7 @@ msgstr ""
 #: src/hooks/trade/use-deposit-availability.ts
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "This phone uses a desktop-approved trading key. Deposits, withdrawals and transfers need the master wallet on desktop."
-msgstr ""
+msgstr "Este teléfono usa una clave de trading aprobada en el escritorio. Los depósitos, retiros y transferencias necesitan la billetera principal en el escritorio."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -8433,6 +9343,10 @@ msgstr "Esta posición cambió de lado. Cierra y vuelve a abrir este diálogo an
 #: src/lib/trade/position-submit-feedback.ts
 msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
 msgstr "La posición cambió de dirección. Vuelve a abrir el cuadro de margen antes de ajustarlo."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "This position changed. Use Max again or enter an amount."
+msgstr "Esta posición cambió. Usa Máx de nuevo o introduce un importe."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -8484,7 +9398,7 @@ msgstr "Este QR no es un enlace válido de monedero de escritorio."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR's time does not match this phone. Check the date and time on both devices, then create a new QR."
-msgstr ""
+msgstr "La hora de este QR no coincide con la del teléfono. Comprueba la fecha y hora de ambos dispositivos y crea un nuevo QR."
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "This record predates baseline verification. It cannot be completed automatically. Verify account history and state independently before clearing it."
@@ -8534,6 +9448,10 @@ msgstr "Esta bóveda está cerrada y ya no acepta depósitos."
 msgid "This Vault is not accepting deposits."
 msgstr "Esta bóveda no acepta depósitos."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "This Vault no longer accepts deposits."
+msgstr "Esta bóveda ya no acepta depósitos."
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
 msgstr "Esta bóveda utiliza el cierre proporcional de posiciones al retirar."
@@ -8555,6 +9473,8 @@ msgstr "Esta ventana permanece bloqueada hasta que la solicitud alcance un resul
 msgid "TIF"
 msgstr "TIF"
 
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -8583,6 +9503,7 @@ msgstr "TIF"
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Time"
 msgstr "Hora"
 
@@ -8630,6 +9551,10 @@ msgstr "No se pudieron cargar los metadatos del token."
 #~ msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 #~ msgstr "Demasiadas aprobaciones móviles esperan recuperación en esta pestaña. Resuelve o revoca una primero."
 
+#: src/lib/errors/action-error.ts
+msgid "Too many requests. Wait a moment and try again."
+msgstr "Demasiadas solicitudes. Espera un momento y vuelve a intentarlo."
+
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
@@ -8643,7 +9568,12 @@ msgstr "Total"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Total ({sizeToken})"
-msgstr ""
+msgstr "Total ({sizeToken})"
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+msgid "Total Borrowed"
+msgstr "Total prestado"
 
 #: src/components/referrals/referral-rewards-card.tsx
 #~ msgid "Total claimable"
@@ -8670,6 +9600,11 @@ msgstr "Tiempo total de ejecución"
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Total Size"
 msgstr "Tamaño total"
+
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+msgid "Total Supplied"
+msgstr "Total suministrado"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Total supply"
@@ -8823,6 +9758,10 @@ msgstr "Cuenta de trading"
 msgid "Trading connection could not be reset."
 msgstr "No se pudo restablecer la conexión de trading."
 
+#: src/lib/errors/action-error.ts
+msgid "Trading could not be enabled. Try again."
+msgstr "No se pudo habilitar el trading. Vuelve a intentarlo."
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
@@ -8871,6 +9810,7 @@ msgstr "Finanzas tradicionales"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Transaction"
 msgstr "Transacción"
 
@@ -8878,17 +9818,17 @@ msgstr "Transacción"
 msgid "Transaction breakdown"
 msgstr "Desglose de la transacción"
 
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/errors/action-error.ts
 msgid "Transaction reverted on Arbitrum"
 msgstr "La transacción se revirtió en Arbitrum"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Transaction was not broadcast. Please retry."
 msgstr "La transacción no se transmitió. Vuelve a intentarlo."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/action-error.test.ts
 msgid "Transaction was rejected"
 msgstr "La transacción fue rechazada"
 
@@ -9001,6 +9941,7 @@ msgstr "TVL"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "TWAP"
 msgstr "TWAP"
@@ -9109,6 +10050,7 @@ msgstr "Interés abierto bilateral: suma de las posiciones largas y cortas de es
 #: src/components/trade/positions/orders-tab.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Type"
 msgstr "Tipo"
 
@@ -9131,7 +10073,8 @@ msgstr "No se pudo cargar la tarifa actual de retiro mediante CCTP."
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "No se pudo cambiar el monedero a {0}. Cambia de red en tu monedero y vuelve a intentarlo."
 
-#: src/lib/errors/format.ts
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "No se pudo cambiar la billetera a Arbitrum. Cambia la red en tu billetera y vuelve a intentarlo."
 
@@ -9157,12 +10100,15 @@ msgstr "No se pudo verificar la disponibilidad regional. Este depósito no se en
 
 #: src/hooks/trade/use-funds-action-availability.ts
 #: src/lib/lifi/use-bridge.ts
-#: src/lib/lifi/use-bridge.ts
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "No se ha podido verificar la disponibilidad en tu región. Esta operación con fondos no se envió."
 
-#: src/lib/errors/format.ts
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Unable to verify regional availability. This referral request was not submitted."
+msgstr "No se pudo verificar la disponibilidad regional. Esta solicitud de referido no se envió."
+
+#: src/lib/errors/action-error.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "No se pudo verificar la disponibilidad regional. El trading no está disponible temporalmente."
 
@@ -9181,6 +10127,7 @@ msgstr "No se puede verificar el modo de cuenta actual. La solicitud no se envi�
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "No se han podido verificar la comisión actual de Circle CCTP ni la capacidad de Fast Transfer."
 
@@ -9286,9 +10233,9 @@ msgstr "Ratio de la cuenta unificada"
 msgid "Unified Account Summary"
 msgstr "Resumen de la cuenta unificada"
 
+#: src/components/trade/tradebox/bridge/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
 msgstr "Error desconocido"
 
@@ -9419,6 +10366,14 @@ msgstr "Volumen en USDC"
 #: src/components/trade/orderbook/orderbook-row.tsx
 msgid "Use {priceText} as limit price"
 msgstr "Usar {priceText} como precio límite"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Use 2–16 letters, numbers, underscores, or hyphens."
+msgstr "Usa de 2 a 16 letras, números, guiones bajos o guiones."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Use a valid HYPE amount with no more than eight decimal places."
+msgstr "Usa un importe de HYPE válido con un máximo de ocho decimales."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -9559,6 +10514,14 @@ msgstr "Estado de bloqueo de la bóveda"
 msgid "Vault not found"
 msgstr "Bóveda no encontrada"
 
+#: src/components/vaults/use-vault-action-controller.ts
+#~ msgid "Vault operation failed."
+#~ msgstr "La operación de la bóveda falló."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Vault operation failed. Verify current balances and history before trying again."
+msgstr "La operación de la bóveda falló. Verifica los saldos y el historial actuales antes de volver a intentarlo."
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Vault pagination"
 msgstr "Paginación de la bóveda"
@@ -9630,6 +10593,11 @@ msgstr "Verifica la operación de fondos pendiente antes de iniciar otra."
 #: src/components/staking/staking-action-modal.tsx
 msgid "Verifying"
 msgstr "Verificando"
+
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/lifi/use-bridge.ts
+msgid "Verifying access..."
+msgstr "Verificando el acceso..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -9724,6 +10692,10 @@ msgstr "Billetera"
 msgid "Wallet (<0>{0}</0>)"
 msgstr "Cartera (<0>{0}</0>)"
 
+#: src/lib/errors/action-error.ts
+msgid "Wallet approval timed out. Check your wallet and try again."
+msgstr "Se agotó el tiempo para la aprobación en la billetera. Revisa tu billetera y vuelve a intentarlo."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Wallet approval unavailable"
 #~ msgstr "Aprobación del monedero no disponible"
@@ -9735,16 +10707,13 @@ msgstr "Cartera (<0>{0}</0>)"
 msgid "Wallet client not ready"
 msgstr "Cliente de billetera no está listo"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/hooks/wallet/use-wallet-session.ts
-#: src/lib/errors/format.ts
-#: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
 msgstr "La conexión de la billetera falló. Desbloquea tu billetera, aprueba la conexión y vuelve a intentarlo."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet connection request was rejected."
 msgstr "Se rechazó la solicitud de conexión de la billetera."
@@ -9753,7 +10722,7 @@ msgstr "Se rechazó la solicitud de conexión de la billetera."
 msgid "Wallet connection unavailable"
 msgstr "La conexión del monedero no está disponible"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
 msgstr "La billetera no devolvió un hash de transacción. Revisa la actividad de tu billetera antes de reintentar para evitar enviar el depósito dos veces."
 
@@ -9762,6 +10731,11 @@ msgstr "La billetera no devolvió un hash de transacción. Revisa la actividad d
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "El monedero no está conectado a {0}. Cambia de red en tu monedero y vuelve a intentarlo."
+
+#: src/hooks/trade/use-account-abstraction-control.ts
+#: src/lib/tests/account-mode-modal.test.tsx
+msgid "Wallet is not ready to update account mode"
+msgstr "La billetera no está lista para actualizar el modo de cuenta"
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
@@ -9777,11 +10751,11 @@ msgstr "Billetera no conectada"
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "El monedero o la red cambiaron antes de que se completara la conexión. Vuelve a abrir la acción para la cuenta actual."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."
 msgstr "El monedero o la red cambió antes de que pudiera confirmarse la solicitud de referido. Vuelve a abrir la acción y revisa la cuenta actual."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "La billetera devolvió un hash de transacción, pero aún no es visible en Arbitrum. Revisa la actividad de tu billetera o Arbiscan antes de reintentar para evitar enviar el depósito dos veces."
@@ -9796,14 +10770,31 @@ msgstr "No pudimos verificar el estado legal de este monedero. Compruebe la cone
 msgid "Website"
 msgstr "Sitio web"
 
+#: src/config/funding-comparison.ts
+msgid "Week"
+msgstr "Semana"
+
 #: src/config/account-ledger.ts
 msgid "Welcome Bonus"
 msgstr "Bono de bienvenida"
+
+#: src/components/earn/earn-view.tsx
+msgid "When portfolio margin is enabled, users automatically earn interest on assets not used for trading. Manual supplying and withdrawing is disabled."
+msgstr "Con Portfolio Margin activado, los activos que no se usan para operar generan intereses automáticamente. El suministro y el retiro manuales están desactivados."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "While this market is at its open interest cap, the price cannot be more aggressive than the oracle price."
+msgstr "Mientras este mercado esté en su límite de interés abierto, el precio no puede ser más agresivo que el precio del oráculo."
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Whole position"
 msgstr "Posición completa"
 
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-action-modal.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
@@ -9829,6 +10820,10 @@ msgstr "Retirar"
 msgctxt "Trading toolbar action"
 msgid "Withdraw"
 msgstr "Retirar"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdraw everything with Max, or leave at least $1 supplied."
+msgstr "Retira todo con Máx o deja al menos $1 suministrado."
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Withdraw from Vault"
@@ -9862,6 +10857,10 @@ msgstr "Error en el retiro"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "Tarifa de retiro"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Withdrawal is still locked by the fresh server timestamp."
+msgstr "El retiro sigue bloqueado según la marca de tiempo actualizada del servidor."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal locked"
@@ -9899,6 +10898,18 @@ msgstr "Retiro desbloqueado"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "Los retiros no están disponibles para esta dirección."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
+msgstr "Retira todo tu suministro de {token} en el momento de su ejecución, incluidos los intereses acumulados."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdrew {token}"
+msgstr "{token} retirado"
+
+#: src/config/funding-comparison.ts
+msgid "Year"
+msgstr "Año"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
@@ -9975,6 +10986,15 @@ msgstr "Puedes perder todo el capital, y el APR histórico no predice los rendim
 #~ msgid "You can still verify and revoke existing mobile access below."
 #~ msgstr "Aún puedes verificar y revocar el acceso móvil existente más abajo."
 
+#: src/components/earn/earn-view.tsx
+#: src/components/earn/earn-view.tsx
+msgid "You have no borrows to repay."
+msgstr "No tienes préstamos que reembolsar."
+
+#: src/components/earn/earn-view.tsx
+msgid "You have no supplied assets to withdraw."
+msgstr "No tienes activos suministrados para retirar."
+
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -10010,6 +11030,10 @@ msgstr "Tu cuenta fue referida por"
 msgid "Your all-time PNL"
 msgstr "Tu PNL histórico"
 
+#: src/components/earn/earn-view.tsx
+msgid "Your Borrowed"
+msgstr "Tu préstamo"
+
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your bridge is still processing. Funds are safe."
 msgstr "Tu bridge aún se está procesando. Los fondos están seguros."
@@ -10021,6 +11045,10 @@ msgstr "Tu posición abierta actual en este mercado"
 #: src/components/staking/staking-view.tsx
 msgid "Your delegated stake"
 msgstr "Tu participación delegada"
+
+#: src/lib/errors/action-error.ts
+msgid "Your device clock is out of sync. Correct the date and time, then try again."
+msgstr "El reloj de tu dispositivo no está sincronizado. Corrige la fecha y la hora y vuelve a intentarlo."
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
@@ -10040,9 +11068,25 @@ msgstr "Tu participación"
 msgid "Your funds were successfully deposited."
 msgstr "Tus fondos se depositaron correctamente."
 
+#: src/components/earn/earn-view.tsx
+msgid "Your Health Factor"
+msgstr "Tu factor de salud"
+
+#: src/components/earn/earn-view.tsx
+msgid "Your Interest Earned"
+msgstr "Tus intereses ganados"
+
+#: src/components/earn/earn-view.tsx
+msgid "Your Interest Owed"
+msgstr "Tus intereses adeudados"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
 #~ msgstr "Tu monedero principal aprueba una clave de trading. La clave no puede retirar fondos."
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Your position changed since you opened this dialog. Review the amounts before confirming."
+msgstr "Tu posición cambió desde que abriste este diálogo. Revisa los importes antes de confirmar."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Your referral"
@@ -10055,6 +11099,18 @@ msgstr "Tus recompensas"
 #: src/components/staking/staking-view.tsx
 msgid "Your stake"
 msgstr "Tu participación"
+
+#: src/components/earn/earn-view.tsx
+msgid "Your Supplied"
+msgstr "Tu suministro"
+
+#: src/components/earn/earn-view.tsx
+msgid "Your Total Borrowed"
+msgstr "Tu total prestado"
+
+#: src/components/earn/earn-view.tsx
+msgid "Your Total Supplied"
+msgstr "Tu total suministrado"
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Your trading wallet signs this request. Signed requests are never retried automatically."

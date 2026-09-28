@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+	getNextTradingActionExpiryDelayMs,
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
 	TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
+	wasReceivedAfter,
 } from "@/stores/use-pending-trading-action-store";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
@@ -150,5 +152,65 @@ describe("pending trading action store", () => {
 			phase: "unconfirmed",
 			unconfirmedAt: 2_000 + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
 		});
+	});
+
+	it("times out an awaiting action on the monotonic clock after the system clock is set back", () => {
+		const actions = getPendingTradingActionActions();
+		const cancellation = actions.claimOrderCancellation({ env: "Mainnet", owner: OWNER, oids: [52] });
+		if (!cancellation) throw new Error("Expected cancellation claim");
+		const startedAt = 1_790_000_000_000;
+		const rolledBackAt = startedAt - 60 * 60_000;
+		actions.markOrderCancellationAwaiting(cancellation.id, startedAt, 1_000);
+		const [awaiting] = getPendingTradingActionSnapshot().orderCancellations;
+		if (!awaiting) throw new Error("Expected awaiting cancellation");
+
+		expect(getNextTradingActionExpiryDelayMs([awaiting], rolledBackAt, 1_000 + 5_000)).toBe(
+			TRADING_ACTION_CONFIRMATION_TIMEOUT_MS - 5_000,
+		);
+		expect(
+			actions.expireOrderCancellationAwaiting(
+				cancellation.id,
+				rolledBackAt + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS - 1,
+				1_000 + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS - 1,
+			),
+		).toBe(false);
+		expect(
+			actions.expireOrderCancellationAwaiting(
+				cancellation.id,
+				rolledBackAt + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
+				1_000 + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
+			),
+		).toBe(true);
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]).toMatchObject({
+			phase: "unconfirmed",
+			unconfirmedAt: rolledBackAt + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
+			monotonicUnconfirmedAt: 1_000 + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
+		});
+	});
+
+	it("still times out an awaiting action when only the wall clock moved forward", () => {
+		const actions = getPendingTradingActionActions();
+		const modification = actions.claimModification({
+			env: "Mainnet",
+			owner: OWNER,
+			oid: 53,
+			originalSize: "2",
+			originalTriggerPx: "0",
+			expectedSize: "1",
+		});
+		if (!modification) throw new Error("Expected modification claim");
+		actions.markModificationAwaiting(modification.id, 1_000, 1_000);
+
+		expect(
+			actions.expireModificationAwaiting(modification.id, 1_000 + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS, 1_001),
+		).toBe(true);
+	});
+
+	it("orders a frame after a local event only by their monotonic readings", () => {
+		expect(wasReceivedAfter(1_001, 1_000)).toBe(true);
+		expect(wasReceivedAfter(1_000, 1_000)).toBe(false);
+		expect(wasReceivedAfter(999, 1_000)).toBe(false);
+		expect(wasReceivedAfter(undefined, 1_000)).toBe(false);
+		expect(wasReceivedAfter(1_001, null)).toBe(false);
 	});
 });

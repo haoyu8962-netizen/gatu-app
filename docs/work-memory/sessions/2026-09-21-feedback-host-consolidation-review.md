@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["order-entry", "pr-review"],
-  "summary": "官方当前交易页有一个 toaster；普通订单以同 ID 更新 loading/结果，全部平仓以 errorsOnly 后汇总调用同一通知入口。建议 gatu 保留交易状态与对账，用一个 Sonner 宿主管理普通及任务内容；多宿主不是天然错误，但当前两套同区浮层没有必要。仅文档建议，未实施。",
+  "summary": "官方单一 toaster 的架构对照；建议已在全局 Sonner 任务实施，后续补齐生命周期、文案和成交语义。原观察不是本次重新调试或实盘验收。",
   "thread": { "id": "01a0c3b4-5aec-7f93-bc8b-6ecf0e661507", "title": "启动开发服务器" },
   "baseCommit": "eeec5c67b32fda7f98cb5fde02efd027f9ee598f",
-  "commits": [],
+  "commits": ["ae2f11d4"],
   "sources": [
     { "path": "docs/trading-feedback-review.md" },
     { "path": "docs/work-memory/sessions/2026-09-21-trading-feedback-components-review.md" },
@@ -53,3 +53,11 @@ Sonner 文档站的 `/toast`、`/toaster` 本轮 web 查询不可访问；尝试
 ## 后续与替代关系
 
 本记录补充[反馈组件复审](2026-09-21-trading-feedback-components-review.md)的架构建议，不覆盖其缺陷清单或[官方实际反馈监听](2026-09-21-official-trade-feedback-observation.md)的历史边界。[审查报告](../../trading-feedback-review.md)新增官方宿主数量、实践对照和统一方案；方案尚未实施。
+
+## 周整理补注（2026-09-28）
+
+“方案尚未实施”是审查结束时状态。一个全局宿主已经落地，但通知持续时间和语义要继续查 09-22 后续及当前 Reference。
+
+后续来源：[2026-09-21-global-sonner-notifications](2026-09-21-global-sonner-notifications.md)；[2026-09-22-notification-lifecycle-fix](2026-09-22-notification-lifecycle-fix.md)；[2026-09-22-notification-remediation-followup](2026-09-22-notification-remediation-followup.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

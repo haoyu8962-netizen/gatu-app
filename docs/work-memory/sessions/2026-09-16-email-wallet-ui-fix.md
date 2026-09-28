@@ -12,7 +12,7 @@
   "summary": "修复紧凑布局邮箱身份显示，补齐精确所有者邮箱钱包导出入口，区分 HyperCore 发送与 Arbitrum 提款；真实密钥导出未执行。",
   "thread": null,
   "baseCommit": "f5010ee7",
-  "commits": [],
+  "commits": ["df4ed89f"],
   "sources": [
     {
       "path": "docs/runtime-guardrails.md"

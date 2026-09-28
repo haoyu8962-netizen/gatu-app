@@ -1,6 +1,7 @@
 import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { formatTransferError } from "@/lib/errors/format";
 
 interface Props {
 	open: boolean;
@@ -46,7 +47,11 @@ export function WrongNetworkScreen({ open, onClose, onSwitch, isSwitching, error
 				</div>
 				{error && (
 					<p role="alert" className="px-1 text-xs text-error">
-						{error.message}
+						{formatTransferError(
+							error,
+							(descriptor) => t(descriptor),
+							t`Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry.`,
+						)}
 					</p>
 				)}
 				<Button variant="filled" intent="neutral" onClick={onSwitch} disabled={isSwitching} className="w-full">

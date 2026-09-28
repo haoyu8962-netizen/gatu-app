@@ -9,6 +9,7 @@ const FUNDS_ACTION_METHODS: ReadonlySet<ExchangeMethod> = new Set([
 	"agentEnableDexAbstraction",
 	"agentSendAsset",
 	"agentSetAbstraction",
+	"borrowLend",
 	"cDeposit",
 	"cWithdraw",
 	"claimRewards",

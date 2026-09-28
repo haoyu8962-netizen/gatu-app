@@ -10,19 +10,10 @@
     "pr-review",
     "order-entry"
   ],
-  "summary": "审查 b82dd443..cf76c54a 的 8 个 Claude 联署提交：确认 3 项 P2，涉及懒加载等待期间确认未封存、重复调用提前清除宿主运行标记，以及 TP/SL 文案遗漏保证金不足取消的官方例外；现有 439 项聚焦单测与 9 项浏览器布局测试通过，另以隔离复现验证前两项；未改交易实现、未执行真实交易。",
+  "summary": "八提交历史审查确认等待期间未封存、重复调用清理标记与 TP/SL 保证金例外三项 P2；已由点击即封存任务处理，并由 09-24 后续修复宿主加载及离页等待尝试。原 439 项单测、9 项浏览器结果不作为本次验证。",
   "thread": null,
   "baseCommit": "cf76c54a",
-  "commits": [
-    "85525d49",
-    "9fb13653",
-    "ab060288",
-    "40ca2237",
-    "1cc83fbf",
-    "79542991",
-    "683f7590",
-    "cf76c54a"
-  ],
+  "commits": ["85525d49", "9fb13653", "ab060288", "40ca2237", "1cc83fbf", "79542991", "683f7590", "cf76c54a", "173585a4", "145adad5"],
   "sources": [
     {
       "path": "apps/terminal/src/lib/trade/position-market-close-submitter.ts"
@@ -178,3 +169,11 @@
 本记录只限定两个历史结论：“只有全成才下达 TP/SL”的说明不完整；“宿主卸载始终失败关闭”的验证没有覆盖重复尝试组合。不整体废弃前述历史记录，也不改写其已发生的测试结果。
 
 同日后续：F1、F2、F3 以及 `account-actions` 浏览器夹具缺少账户身份的问题已在[点击即封存与 TP/SL 例外修复](2026-09-23-market-close-attempt-sealing-fix.md)中处理；本记录的审查结论与证据保持原样。
+
+## 周整理补注（2026-09-28）
+
+三项发现已有后续实施；其后仍发现按需加载与等待尝试跨页问题，须连同 09-24 的修复阅读，不止停在第一轮修复。
+
+后续来源：[2026-09-23-market-close-attempt-sealing-fix](2026-09-23-market-close-attempt-sealing-fix.md)；[2026-09-24-gpt6-review-market-close-host-fixes](2026-09-24-gpt6-review-market-close-host-fixes.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

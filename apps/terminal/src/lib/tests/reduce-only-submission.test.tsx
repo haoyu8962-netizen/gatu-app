@@ -230,6 +230,7 @@ describe("Reduce Only displayed commitment through real submit/tracking/exchange
 			executionReferencePx: "100",
 			executionPriceReceivedAt: Date.now(),
 			slippageBps: 250,
+			openInterestCapped: false,
 		};
 		container = document.createElement("div");
 		document.body.append(container);

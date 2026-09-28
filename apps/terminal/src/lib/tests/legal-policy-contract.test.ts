@@ -15,6 +15,12 @@ const cookies = readRepositoryFile("legal/cookies.md");
 const legalReadme = readRepositoryFile("legal/README.md");
 
 describe("published legal policy contract", () => {
+	it("keeps authoring instructions and dead links out of published documentation", () => {
+		const docs = readRepositoryFile("legal/docs.md");
+		expect(docs).not.toContain("](#)");
+		expect(docs).not.toContain("placeholders for more detailed documentation");
+		expect(docs).not.toContain("Replace each link");
+	});
 	it("keeps the Terms as the governing source for supplemental policies", () => {
 		expect(terms).toContain("laws of England and Wales");
 		expect(terms).toMatch(/London\s+Court of International Arbitration \(LCIA\)/);
@@ -25,7 +31,8 @@ describe("published legal policy contract", () => {
 	});
 
 	it("describes current data handling without claiming an unused analytics provider", () => {
-		expect(privacy).toContain("**Last Updated:** July 21, 2026");
+		expect(privacy).toContain("**Last Updated:** September 27, 2026");
+		expect(privacy).toContain("[Cookie and Browser Storage Policy](https://app.gatu.ai/cookies)");
 		expect(privacy).toContain("does not integrate a product-analytics SDK");
 		expect(privacy).not.toContain("Mixpanel");
 		expect(privacy).toContain("support@gatu.ai");
@@ -39,7 +46,7 @@ describe("published legal policy contract", () => {
 		expect(cookies).toContain("Essential storage cannot be disabled through the Interface");
 		expect(cookies).toContain("support@gatu.ai");
 		expect(terminalRoute).toContain('createFileRoute("/cookies")');
-		expect(terminalRoute).toContain("ssr: true");
+		expect(terminalRoute).toContain("<LegalDocPage content={content} />");
 	});
 
 	it("publishes a completed disclosure for the product's material risk surfaces", () => {

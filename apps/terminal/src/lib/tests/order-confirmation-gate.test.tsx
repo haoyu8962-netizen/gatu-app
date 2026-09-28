@@ -296,6 +296,7 @@ function guardState(referencePx: string): EntryOrderExecutionState {
 		executionReferencePx: referencePx,
 		executionPriceReceivedAt: now,
 		slippageBps: SLIPPAGE_BPS,
+		openInterestCapped: false,
 	};
 }
 

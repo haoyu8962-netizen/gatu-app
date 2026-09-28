@@ -9,10 +9,10 @@
   "topics": [
     "static-hosting"
   ],
-  "summary": "补上 2026-09-18 清理 EC2 部署代码时发现的缺口：旧脚本会拒绝「主网赞助充值开关」与运营方二次确认不一致的构建，CloudFront 流程没有等价检查。现在构建把实际生效的赞助充值开关写进 build-meta.json（cctpDeposits，与应用同一个解析函数），deploy.mjs sync 读取构建产物：开了主网赞助充值或移动配对而没带 --allow-* 参数、带了参数而构建没开、或构建没有记录闸门，--execute 一律拒绝；verify 比较线上与本地的闸门状态。环境文件拼写类检查（Privy ID、Agent 名、默认网络）未移植并已写明。只在本地分支实现，未推送、未发布。",
+  "summary": "按 build-meta 实际开关阻止未确认的充值或配对上传；PR #29 已合入 dev，并随 PR #30 进入 main。原本地测试/演练保留，生产部署及真机验收未在本轮核验。",
   "thread": null,
   "baseCommit": "a7cef26a",
-  "commits": ["a59dfca8"],
+  "commits": ["a59dfca8", "9264b04d"],
   "sources": [
     { "path": "deploy/cloudfront/deploy.mjs" },
     { "path": "deploy/cloudfront/README.md" },
@@ -54,3 +54,7 @@
 
 - 本记录关闭 `2026-09-18-retire-ec2-deploy-files` 的「发现的遗留缺口」一节，并替换 `docs/cctp-deposits.md` 里的 Known gap 段落。
 - 会话里为同一件事生成的任务卡片 `task_7ec2a709` 已不再需要。
+
+## 周整理追加（2026-09-21）
+
+原“只在本地、未推送”是本记录建立时状态。2026-09-21 的 GitHub 查询确认 PR #29 与 #30 已合并，检查绑定各自 head；查询详情见周整理记录。未查询线上 build-meta，不将合并等同部署，也不将 --allow-* 参数等同验收证据。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

@@ -397,7 +397,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 				toast.error(
 					err instanceof FundsActionFeedbackCause
 						? formatFundsActionFeedback(err.code, (descriptor) => t(descriptor))
-						: formatExchangeActionError(err, t`Send failed`),
+						: formatExchangeActionError(err, t`Send failed`, (descriptor) => t(descriptor)),
 				);
 			}
 		} finally {

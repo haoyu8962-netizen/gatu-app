@@ -9,10 +9,10 @@
   "topics": [
     "static-hosting"
   ],
-  "summary": "流量层已完全切到 CloudFront/S3/Lambda（DNS、分发源、Lambda、verify 全部核实）；旧 EC2 仍在运行且其 Caddy 已被改为代理到 CloudFront、22/80/443 对全网开放，尚未按 runbook 第 11 步退役；deploy/README.md 与两份计划文档仍把 EC2 描述为现状。",
+  "summary": "保留迁移审计时 EC2 尚未退役的发现；后续记录已报告资源退役与受限发布身份，旧部署文件已移除，当前入口为 CloudFront 手册。",
   "thread": null,
   "baseCommit": "74c80c1a9e61d2045848dca2389e1af627c23609",
-  "commits": [],
+  "commits": ["bde33928", "e1965d13", "87d6e51e"],
   "sources": [
     { "path": "deploy/cloudfront/README.md" },
     { "url": "https://github.com/zora4523-bot/gatu-app/blob/5d3935721f070075c5d976d61a3c27d12b5dc607/deploy/README.md" },
@@ -59,3 +59,7 @@
 ## 后续与替代关系
 
 退役清单（需用户决策后执行，均为不可逆或对外操作）：停止 `gatu.service` 与 Caddy → 观察一个周期后停机/终止实例或至少收紧安全组 → 删除 Cloudflare 上任何残留的 EC2 记录 → 把 `deploy/README.md` 改写为历史资料并在开头指向 `deploy/cloudfront/README.md` → 删除 `routeRules` CSP 与 `compressPublicAssets` → 更新两份计划文档的待办。发布凭据换成受限 IAM 用户仍是独立待办。
+
+## 周整理追加（2026-09-21）
+
+“旧 EC2 仍在运行、尚未退役”属于初次审计。后续见 [退役记录](2026-09-17-ec2-retirement.md) 及 [文件移除记录](2026-09-18-retire-ec2-deploy-files.md)。资源删除与线上状态为来源任务报告，本次没有调用云平台或复核生产资源。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

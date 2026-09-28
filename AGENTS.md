@@ -120,7 +120,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Execution may recompute from fresher data, but never beyond what the user saw at the click. A confirmation surface passes the value it displayed into the submit path as a bound and fails closed when the recomputed value exceeds it. The direction of the bound belongs to each action; for close size it is executed ≤ displayed.
 - The ready-state name of a confirm control is a static verb. Runtime quantities, prices and counts belong in the dialog body, from the same render value that is submitted; an accessible description may repeat it, the control's name may not.
 - When the object being confirmed differs from what the dialog opened with, say so next to the value to review, only while the confirmation is visible and editable, and never gate submission on the notice.
-- Trading confirmations and editors (Market Close, Close All, Limit Close, Reverse, the order confirmation, TP/SL, isolated margin, Cancel All Orders, order modification, Swap, account type, leverage, margin mode) never show submission status in the confirm control or the dialog body, and order-list buttons (`Cancel`, `Cancel selected`, `Cancel all`, `Terminate`) keep their names while a request is pending. Confirming closes the dialog at once, the submission runs in the background and every outcome is reported through a notification. Guard the click with a synchronous ref and keep the component that owns the submit hook mounted until the submission settles. A dismissed dialog no longer blocks the page, so that owner must not live inside a tab panel or a layout branch: position dialog sessions live in `use-position-dialog-store` and are mounted by the page-level `PositionDialogHost`, Market Close submissions run only in the page-level `PositionMarketCloseSubmitHost` (layout and legal-gate branch changes may discard idle sessions only), each open gets a new session id, and a second open is ignored while a session exists. A success notification states the value the exchange call actually applied, never the value the dialog remembered. Funds dialogs (Transfer, Send, Deposit, Withdraw) keep static button names (an external wallet shows the handshake hint `Confirm in wallet`) and deliberately stay open until the request settles, then close and report the outcome through a notification; closing the dialog is what invalidates a queued funds request, so never turn them into close-at-click. Report an outcome only for the attempt that is still current by object identity, not by comparing context strings. Long-running deposit progress belongs to the page-level `CctpDepositTrackingNotifier`, not to the dialog. `docs/funds-dialog-outcome-plan.md` owns the comparison with the official terminal and the deviations; `docs/confirmation-surfaces.md` lists the surfaces that do not follow this yet. `action-progress-label-contract.test.ts` registers every remaining label that ends in an ellipsis.
+- Trading confirmations and editors (Market Close, Close All, Limit Close, Reverse, the order confirmation, TP/SL, isolated margin, Cancel All Orders, order modification, Swap, account type, leverage, margin mode) never show submission status in the confirm control or the dialog body, and order-list buttons (`Cancel`, `Cancel selected`, `Cancel all`, `Terminate`) keep their names while a request is pending. Confirming closes the dialog at once, the submission runs in the background and every outcome is reported through a notification. Guard the click with a synchronous ref and keep the component that owns the submit hook mounted until the submission settles. A dismissed dialog no longer blocks the page, so that owner must not live inside a tab panel or a layout branch: position dialog sessions live in `use-position-dialog-store` and are mounted by the page-level `PositionDialogHost`, Market Close submissions run only in the page-level `PositionMarketCloseSubmitHost` (layout and legal-gate branch changes may discard idle sessions only), each open gets a new session id, and a second open is ignored while a session exists. A success notification states the value the exchange call actually applied, never the value the dialog remembered. Funds dialogs (Transfer, Send, Deposit, Withdraw, Earn) keep static button names (an external wallet shows the handshake hint `Confirm in wallet`) and deliberately stay open until the request settles, then close and report the outcome through a notification; closing the dialog is what invalidates a queued funds request, so never turn them into close-at-click. Report an outcome only for the attempt that is still current by object identity, not by comparing context strings. Long-running deposit progress belongs to the page-level `CctpDepositTrackingNotifier`, not to the dialog. `docs/funds-dialog-outcome-plan.md` owns the comparison with the official terminal and the deviations; `docs/confirmation-surfaces.md` lists the surfaces that do not follow this yet. `action-progress-label-contract.test.ts` registers every remaining label that ends in an ellipsis.
 - A redesign that changes what a confirm control displays or commits to is a behavior change: document it and keep a test that renders the real dialog with the real submit path and compares the displayed value with the value sent. Testing the dialog and the submit hook separately does not cover this.
 
 ## Slider gesture contract
@@ -137,11 +137,12 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - `docs/trading-notifications.md` and `docs/adr/0019-global-trading-notifications.md` own notification routing, result semantics, timing and recovery. Application feedback shares the root `AppToaster` Sonner container; bridges render content into it instead of creating independent positioned stacks.
 - Trading tasks carry the initiating owner/environment and a stable logical ID. Late results update that task; only the current identity may see it. Presentation IDs must prevent stale dismissal callbacks or exit animations from removing a later display. Dismissing feedback never cancels requests or clears business guards, and an unchanged pending/unconfirmed state must not reopen a hidden notice.
 - Preserve the distinction between accepted orders, verified full/partial fills, status-only fills and confirmed flat positions. Optional persisted display metadata must never invalidate pending execution facts. Use semantic messages for task feedback and translate at render time; retain dedicated funds-verification and one-time key panels.
+- `docs/adr/0024-translate-action-errors-at-render.md` owns error text. Store classified failures (`lib/errors/action-error.ts`), not `Error.message` or strings translated when the error happened. Known exchange rejection texts are translated, unknown ones are shown exactly as sent and never truncated; our own, hl-react, SDK, network and wallet errors are never shown raw.
 
 ## Startup rendering contract
 
 - `docs/adr/0010-blank-until-ready-startup.md` and `.claude/rules/startup-rendering.md` own this contract. Every application route prerenders and hydrates the same visually empty `StartupFallback`: `aria-busy` and one screen-reader-only output, with no visible skeleton or chrome.
-- Keep theme bootstrap, head preloads, Service Worker registration and shell caching. Wait for the client runtime and persisted locale catalog before rendering real chrome; document routes retain independent prerendered content.
+- Keep theme bootstrap, head preloads, Service Worker registration and shell caching. Wait for the client runtime and persisted locale catalog before rendering real chrome. Docs, Support and the legal pages are dashboard routes inside the same application chrome, with no separate document navigation or prerendered page (`docs/adr/0020-legal-pages-in-app-shell.md`).
 - Desktop and mobile trade loading states use their real frame/header/navigation/footer with an empty busy workspace. Reveal market content inside the existing frame when ready, preserving chrome DOM identity and mobile navigation state. Dashboard pending routes use the empty announcement; loaded pages own their real frame.
 - Runtime views stay pure, deterministic and props-only. Preserve mounted component behavior, translated labels, drafts, protocol values and every signing/data-availability guard. Do not reintroduce placeholder trees, shell-specific English catalogs or hydration route-surface overrides.
 - Application webfonts use `font-display: block`, and the startup gate waits (bounded) for the persisted locale catalog and the preloaded startup fonts before the first real render, so text never paints in a fallback font and reflows.
@@ -183,7 +184,8 @@ pnpm --dir apps/terminal exec vitest run \
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/chart-theme-colors.test.ts \
   src/lib/tests/tradingview-chart.test.tsx \
-  src/lib/tests/modal-surface-contract.test.ts
+  src/lib/tests/modal-surface-contract.test.ts \
+  src/lib/tests/earn-page-surface-contract.test.ts
 
 # Order book: geometry, transport, animation and palette
 pnpm --dir apps/terminal exec vitest run \
@@ -262,6 +264,15 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/api-wallet-action-modal.test.tsx \
   src/lib/tests/vault-action-modal.test.tsx \
   src/lib/tests/vault-detail-page-outcomes.test.tsx \
+  src/lib/tests/earn-action-modal.test.tsx \
+  src/lib/tests/earn-domain.test.ts \
+  src/lib/tests/earn-view.test.tsx \
+  src/lib/tests/earn-interest-history.test.ts \
+  src/lib/tests/earn-fresh-state.test.ts \
+  src/lib/tests/use-account-ledger.test.tsx \
+  src/lib/tests/funds-action-lock.test.ts \
+  src/lib/tests/use-exchange-funds-action-lock.test.tsx \
+  src/lib/tests/use-exchange-portfolio-margin-policy.test.tsx \
   src/components/staking/__tests__/staking-view.test.tsx \
   src/lib/tests/action-progress-label-contract.test.ts \
   tests/slider-effective-leverage-regression.test.tsx \
@@ -277,6 +288,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trade-size-slider.test.tsx \
   src/lib/tests/trade-size-slider-a11y.test.tsx \
   src/lib/tests/leverage-slider.test.tsx \
+  src/lib/tests/leverage-editor.test.tsx \
+  src/lib/tests/leverage-dialog-risk-warning.test.tsx \
   src/lib/tests/use-size-slider-interaction.test.tsx \
   src/lib/tests/size-percent-input.test.tsx
 
@@ -286,12 +299,17 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/root-route-transition.test.tsx \
   src/lib/tests/trade-terminal-page-boot.test.tsx \
   src/lib/tests/top-nav.test.tsx \
+  src/lib/tests/desktop-nav-layout.test.ts \
+  src/lib/tests/mobile-nav-drawer.test.tsx \
   src/lib/tests/dashboard-frame-view.test.tsx
 
-# Runtime translation contract (Change discipline)
+# Runtime translation contract (Change discipline) and error text (ADR 0024)
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/i18n-reactivity-contract.test.ts \
-  src/lib/tests/i18n-hot-switch.test.tsx
+  src/lib/tests/i18n-hot-switch.test.tsx \
+  src/lib/tests/action-error.test.ts \
+  src/lib/tests/errors.test.ts \
+  src/lib/tests/lingui-helper-translator-contract.test.ts
 ```
 
 Layout contracts also have browser suites: `docs/desktop-grid-layout.md` and `docs/runtime-guardrails.md` §9 name the Playwright configs under `apps/terminal/tests/browser/`. When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.

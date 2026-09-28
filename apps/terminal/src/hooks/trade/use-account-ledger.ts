@@ -8,6 +8,7 @@ import {
 	type AccountLedgerUpdate,
 	buildAccountLedgerRows,
 	getAccountLedgerUpdateKey,
+	isAccountLedgerEarnUpdate,
 	isAccountLedgerRewardsClaimUpdate,
 	isValidAccountLedgerUpdate,
 	mergeAccountLedgerUpdates,
@@ -31,6 +32,7 @@ export function accountLedgerQueryKey(env: "Mainnet" | "Testnet", user: string) 
 }
 
 interface AccountLedgerResult {
+	earnRows: AccountLedgerRow[];
 	error: unknown;
 	isConnected: boolean;
 	rewardClaimRows: AccountLedgerRow[];
@@ -61,7 +63,7 @@ export async function fetchRecentAccountLedgerUpdates(
 		getKey: getAccountLedgerUpdateKey,
 		getTime: (update) => update.time,
 		retainLatestItems: MAX_HISTORY_ROWS,
-		retainItemsMatching: isAccountLedgerRewardsClaimUpdate,
+		retainItemsMatching: (update) => isAccountLedgerRewardsClaimUpdate(update) || isAccountLedgerEarnUpdate(update),
 		signal,
 		startTime,
 		validateItem: isValidAccountLedgerUpdate,
@@ -100,6 +102,9 @@ export function useAccountLedger({ enabled: requestedEnabled = true }: AccountLe
 	const allRows = buildAccountLedgerRows(updates, user);
 	const rows = allRows.slice(0, MAX_HISTORY_ROWS);
 	const rewardClaimRows = allRows.filter((row) => row.action === "rewardsClaim").slice(0, MAX_HISTORY_ROWS);
+	const earnRows = allRows
+		.filter((row) => row.source.kind === "earn" || row.destination.kind === "earn")
+		.slice(0, MAX_HISTORY_ROWS);
 
 	let status: AccountLedgerStatus = "unavailable";
 	if (!enabled) {
@@ -115,6 +120,7 @@ export function useAccountLedger({ enabled: requestedEnabled = true }: AccountLe
 	}
 
 	return {
+		earnRows,
 		error:
 			status === "error"
 				? (ledgerQuery.error ?? (hasMalformedRealtime ? new MalformedHistoryPageError() : undefined))

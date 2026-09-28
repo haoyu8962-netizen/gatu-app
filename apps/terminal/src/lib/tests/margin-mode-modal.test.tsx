@@ -1,11 +1,33 @@
 import { clearFeedback, feedbackErrorText, feedbackText, latestFeedback } from "./harness/order-feedback";
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MarginModeModal } from "@/components/trade/tradebox/margin-mode-modal";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { createI18nRoot } from "./harness/react";
+
+const LEVERAGE_DECREASE_ERROR =
+	"Cross position does not have sufficient margin available to decrease leverage. To decrease leverage, deposit more collateral.";
+const LEVERAGE_DECREASE_MESSAGE =
+	"Cross positions do not have enough available margin to lower the leverage. Deposit more collateral to lower it.";
+const CHINESE_LEVERAGE_DECREASE_MESSAGE = "全仓仓位的可用保证金不足，无法降低杠杆。请存入更多抵押品后再降低杠杆。";
+
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const CHINESE_MESSAGES: Messages = {
+	[messageId("Adjust leverage")]: "调整杠杆",
+	[messageId("Update failed")]: "更新失败",
+	[messageId(LEVERAGE_DECREASE_MESSAGE)]: CHINESE_LEVERAGE_DECREASE_MESSAGE,
+	[messageId("Position data is unavailable")]: "持仓数据不可用",
+};
 
 const modalHarness = vi.hoisted(() => ({
 	isActivationLocked: undefined as (() => boolean) | undefined,
@@ -180,6 +202,7 @@ describe("MarginModeModal", () => {
 	let onApply: ReturnType<typeof vi.fn<(mode: "cross" | "isolated", leverage: number) => Promise<number | null>>>;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		feedbackIdentity.clientKey = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 		feedbackIdentity.env = "Mainnet";
 		clearFeedback();
@@ -650,7 +673,9 @@ describe("MarginModeModal", () => {
 	});
 
 	it("reports a failed mobile leverage update through a notification and allows retrying it", async () => {
-		onApply.mockRejectedValueOnce(new Error("Mobile leverage request failed"));
+		onApply.mockRejectedValueOnce(
+			new ApiRequestError({ status: "err", response: LEVERAGE_DECREASE_ERROR }, LEVERAGE_DECREASE_ERROR),
+		);
 		const onOpenChange = vi.fn();
 		const sharedProps = {
 			onOpenChange,
@@ -663,12 +688,86 @@ describe("MarginModeModal", () => {
 		await act(async () => getButton(container, "Confirm").click());
 
 		expect(onOpenChange).toHaveBeenCalledWith(false);
-		expect(feedbackErrorText(latestFeedback("failed"))).toBe("Mobile leverage request failed");
+		expect(feedbackText("failed", "title")).toBe("Adjust leverage");
+		expect(feedbackErrorText(latestFeedback("failed"))).toBe(LEVERAGE_DECREASE_MESSAGE);
 		expect(container.querySelector('[role="alert"]')).toBeNull();
 
 		onApply.mockResolvedValueOnce(7);
 		await act(async () => getButton(container, "Confirm").click());
 		expect(onApply).toHaveBeenCalledTimes(2);
+	});
+
+	it("titles a leverage-only notification Adjust leverage and a margin mode change Margin mode", async () => {
+		renderModal({ presentation: "drawer", pendingLeverage: 7, mobileView: "leverage" });
+		await act(async () => getButton(container, "Confirm").click());
+		expect(feedbackText("success", "title")).toBe("Adjust leverage");
+
+		clearFeedback();
+		renderModal({ pendingLeverage: 7, showLeverage: true });
+		await act(async () => getButton(container, "Confirm").click());
+		expect(feedbackText("success", "title")).toBe("Adjust leverage");
+		expect(feedbackText("success")).toBe("Leverage updated to 7x");
+
+		clearFeedback();
+		renderModal({ open: false });
+		renderModal({ pendingLeverage: 7 });
+		act(() => getButton(container, "Isolated").click());
+		await act(async () => getButton(container, "Confirm").click());
+		expect(feedbackText("success", "title")).toBe("Margin mode");
+
+		clearFeedback();
+		renderModal({ open: false });
+		renderModal({ presentation: "drawer", mobileView: "margin" });
+		act(() => getButton(container, "Isolated").click());
+		onApply.mockRejectedValueOnce(new Error("request failed"));
+		await act(async () => getButton(container, "Confirm").click());
+		expect(feedbackText("failed", "title")).toBe("Margin mode");
+	});
+
+	it("re-renders a stored exchange rejection in the language the user switches to", async () => {
+		onApply.mockRejectedValueOnce(
+			new ApiRequestError({ status: "err", response: LEVERAGE_DECREASE_ERROR }, LEVERAGE_DECREASE_ERROR),
+		);
+		renderModal({ presentation: "drawer", pendingLeverage: 7, mobileView: "leverage" });
+		await act(async () => getButton(container, "Confirm").click());
+		const failed = latestFeedback("failed");
+		expect(feedbackErrorText(failed)).toBe(LEVERAGE_DECREASE_MESSAGE);
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: CHINESE_MESSAGES }));
+
+		expect(feedbackText("failed", "title")).toBe("调整杠杆");
+		expect(feedbackText("failed")).toBe("更新失败");
+		expect(feedbackErrorText(failed)).toBe(CHINESE_LEVERAGE_DECREASE_MESSAGE);
+	});
+
+	it("shows an unknown exchange text unchanged and never an untranslated error of our own", async () => {
+		const unknownRejection = "Leverage cannot be changed while an order is resting.";
+		onApply.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: unknownRejection }, unknownRejection));
+		renderModal({ presentation: "drawer", pendingLeverage: 7, mobileView: "leverage" });
+		await act(async () => getButton(container, "Confirm").click());
+		expect(feedbackErrorText(latestFeedback("failed"))).toBe(unknownRejection);
+
+		clearFeedback();
+		onApply.mockRejectedValueOnce(new Error("Leverage request no longer matches the selected market"));
+		await act(async () => getButton(container, "Confirm").click());
+		expect(feedbackText("failed")).toBe("Update failed");
+		expect(feedbackErrorText(latestFeedback("failed"))).toBe("");
+
+		clearFeedback();
+		onApply.mockRejectedValueOnce(new LocalizedActionError(msg`Position data is unavailable`));
+		await act(async () => getButton(container, "Confirm").click());
+		expect(feedbackErrorText(latestFeedback("failed"))).toBe("Position data is unavailable");
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: CHINESE_MESSAGES }));
+		expect(feedbackErrorText(latestFeedback("failed"))).toBe("持仓数据不可用");
+	});
+
+	it("reports an ambiguous result as unconfirmed without repeating it in an error line", async () => {
+		onApply.mockRejectedValueOnce(new HttpRequestError({ detail: "Request timed out after 10000 ms" }));
+		renderModal({ presentation: "drawer", pendingLeverage: 7, mobileView: "leverage" });
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(latestFeedback("unconfirmed")?.error).toBeUndefined();
+		expect(feedbackText("unconfirmed")).toBe("Update not confirmed. Check account settings before retrying.");
 	});
 
 	it("keeps the desktop dialog dismissible while a margin or leverage request is in flight", async () => {
@@ -724,6 +823,67 @@ describe("MarginModeModal", () => {
 		expect(onPendingLeverageChange).toHaveBeenCalledTimes(1);
 		expect(onPendingLeverageChange).toHaveBeenCalledWith(13);
 		expect(onApply).not.toHaveBeenCalled();
+	});
+
+	it("shows the max position row in the mobile leverage drawer and follows drags below the drawer shell", async () => {
+		const marginTiers = [
+			{ lowerBound: "0.0", maxLeverage: 20 },
+			{ lowerBound: "70000000.0", maxLeverage: 10 },
+		] as const;
+		const onPendingLeverageChange = vi.fn();
+		const onOpenChange = vi.fn();
+		const drawerProps = {
+			presentation: "drawer" as const,
+			mobileView: "leverage" as const,
+			onOpenChange,
+			onPendingLeverageChange,
+			marginTiers,
+			quoteSymbol: "USDC",
+		};
+		renderModal(drawerProps);
+		const row = container.querySelector('[data-slot="info-row"]');
+		const rowValue = () => container.querySelector('[data-slot="info-row-value"]')?.textContent;
+		const initialDrawerRenders = modalHarness.adaptiveModalRenders;
+		expect(row).not.toBeNull();
+		expect(rowValue()).toBe("No tier limit");
+
+		const onChange = modalHarness.leverageSliderProps?.onChange as ((value: number) => void) | undefined;
+		act(() => onChange?.(11));
+		expect(rowValue()).toBe("$70,000,000");
+		act(() => onChange?.(10));
+		expect(rowValue()).toBe("No tier limit");
+		act(() => onChange?.(15));
+		expect(rowValue()).toBe("$70,000,000");
+		expect(container.querySelector('[data-slot="info-row"]')).toBe(row);
+		expect(modalHarness.adaptiveModalRenders).toBe(initialDrawerRenders);
+		expect(onPendingLeverageChange).not.toHaveBeenCalled();
+
+		const onCommit = modalHarness.leverageSliderProps?.onCommit as ((value: number) => void) | undefined;
+		act(() => onCommit?.(15));
+		expect(onPendingLeverageChange).toHaveBeenCalledWith(15);
+
+		renderModal({ ...drawerProps, pendingLeverage: 15 });
+		expect(container.querySelector('[data-slot="info-row"]')).toBe(row);
+		expect(rowValue()).toBe("$70,000,000");
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(onApply).toHaveBeenCalledTimes(1);
+		expect(onApply).toHaveBeenCalledWith("cross", 15);
+		expect(getButton(container, "Confirm").textContent).toBe("Confirm");
+	});
+
+	it("does not show the max position row where no leverage editor is rendered", () => {
+		const marginTiers = [
+			{ lowerBound: "0.0", maxLeverage: 20 },
+			{ lowerBound: "70000000.0", maxLeverage: 10 },
+		] as const;
+
+		renderModal({ presentation: "drawer", mobileView: "margin", marginTiers, quoteSymbol: "USDC" });
+		expect(container.querySelector('[data-slot="info-row"]')).toBeNull();
+
+		renderModal({ presentation: "modal", showLeverage: false, marginTiers, quoteSymbol: "USDC" });
+		expect(container.querySelector('input[aria-label="Leverage"]')).toBeNull();
+		expect(container.querySelector('[data-slot="info-row"]')).toBeNull();
 	});
 
 	it("does not rerender the mobile drawer when parent props remain referentially stable", () => {

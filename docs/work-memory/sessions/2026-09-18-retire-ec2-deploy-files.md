@@ -10,10 +10,10 @@
     "static-hosting",
     "docs-governance"
   ],
-  "summary": "EC2 宿主 2026-09-17 停机、服务端票据 2026-09-18 移除之后，仓库里仍留着 12 个 EC2 部署文件和 6 份票据时期文档。本次把它们从工作树移除（原文保留在提交 5d393572），四个读取这些文件的 Vitest 契约改为钉住 CloudFront 模块或去掉已无对象的断言，现行文档的链接改指 CloudFront 手册，四份旧工作记录的 sources 改为该提交的永久链接。核对中发现一处迁移遗留缺口：旧脚本对 CCTP 主网赞助开关的二次确认校验在 CloudFront 发布流程里没有等价物，已在 cctp-deposits.md 如实写明，未补实现。",
+  "summary": "移除退役 EC2 文件并保留历史来源；审查发现的赞助充值发布校验缺口已由后续 CloudFront 闸门处理，原超时与未验证范围保留。",
   "thread": null,
   "baseCommit": "5d393572",
-  "commits": ["87d6e51e"],
+  "commits": ["87d6e51e", "a5cfaa1b", "a59dfca8"],
   "sources": [
     { "path": "deploy/cloudfront/README.md" },
     { "path": "deploy/cloudfront/response-headers-policies.mjs" },
@@ -64,3 +64,7 @@
 - 本记录补充 `2026-09-17-ec2-retirement`：那次把 EC2 文件标为历史资料，这次从工作树移除。
 - 待决定：是否为 CloudFront 发布补构建环境校验（见上）；根目录 26 份旧审查报告是否整理仍未决定。
 - 2026-09-19 补充：上述缺口已由 `2026-09-19-cloudfront-release-gates` 处理（按构建产物核对的发布闸门）；本记录「发现的遗留缺口」一节保留为当时的状态。
+
+## 周整理追加（2026-09-21）
+
+原“是否补环境校验待决定”已由 [发布闸门记录](2026-09-19-cloudfront-release-gates.md) 更新：按实际构建产物核对二次确认，未声称移植全部环境文件检查。本轮不操作部署或云端资源。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

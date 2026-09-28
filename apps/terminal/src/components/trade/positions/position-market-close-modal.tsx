@@ -112,7 +112,9 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	]);
 	const canEdit = phase === "idle" && !isClosing && positionStatus === null;
 	const isSizingPaused = phase === "idle" && !isClosing && isPositionDataPending(positionStatus);
-	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
+	const sizingError = sizing.errors[0]
+		? getPositionMarketCloseErrorMessage(sizing.errors[0], (descriptor) => t(descriptor))
+		: null;
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
 	const visibleError = positionStatusMessage ?? (positionStatus === null ? visibleSizingError : null);
 	const canSubmit = canEdit && sizing.errors.length === 0;

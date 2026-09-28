@@ -8,6 +8,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
 import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const NOTIFICATION_ID = expect.stringMatching(new RegExp(`^embedded-cctp-auto-deposit:Testnet:${USER_ADDRESS}:\\d+$`));
@@ -15,6 +16,8 @@ const HASH = "0x0000000000000000000000000000000000000000000000000000000000000001
 const DEPOSIT_ROUTE_CHANGED =
 	"The Hyperliquid deposit route changed before signing. Review the updated route and retry.";
 const DEPOSIT_ROUTE_CHANGED_AR = "تغير مسار إيداع Hyperliquid قبل التوقيع. راجع المسار المحدّث وأعد المحاولة.";
+const FAST_TRANSFER_UNAVAILABLE = "Circle Fast Transfer capacity is temporarily unavailable. Try again later.";
+const FAST_TRANSFER_UNAVAILABLE_AR = "سعة Circle Fast Transfer غير متاحة مؤقتًا. حاول مرة أخرى لاحقًا.";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -22,6 +25,7 @@ function getMessageId(message: string): string {
 
 const arabicMessages: Messages = {
 	[getMessageId(DEPOSIT_ROUTE_CHANGED)]: DEPOSIT_ROUTE_CHANGED_AR,
+	[getMessageId(FAST_TRANSFER_UNAVAILABLE)]: FAST_TRANSFER_UNAVAILABLE_AR,
 };
 
 const testState = vi.hoisted(() => ({
@@ -515,6 +519,39 @@ describe("EmbeddedDepositAutoBridge", () => {
 			expect.objectContaining({ id: NOTIFICATION_ID }),
 		);
 		expect(testState.toastError.mock.calls.flat()).not.toContain(DEPOSIT_ROUTE_CHANGED);
+	});
+
+	it("localizes a deposit failure raised by the deposit flow when it is reported", async () => {
+		i18n.loadAndActivate({ locale: "ar", messages: arabicMessages });
+		testState.depositStatus = "error";
+		testState.depositError = new LocalizedActionError({
+			id: getMessageId(FAST_TRANSFER_UNAVAILABLE),
+			message: FAST_TRANSFER_UNAVAILABLE,
+		});
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.toastError).toHaveBeenCalledWith(
+			FAST_TRANSFER_UNAVAILABLE_AR,
+			expect.objectContaining({ id: NOTIFICATION_ID }),
+		);
+	});
+
+	it("reports an unrecognised failure with the automatic deposit message instead of its raw text", async () => {
+		testState.depositStatus = "error";
+		testState.depositError = new Error("Paymaster policy rejected sponsored call");
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Automatic USDC deposit failed",
+			expect.objectContaining({ id: NOTIFICATION_ID }),
+		);
+		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("Paymaster");
 	});
 
 	it("dismisses an active loading toast when the deposit returns to idle", async () => {

@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n } from "@lingui/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,6 +26,22 @@ describe("LeaderboardFixture", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("names the search clear button in the active language", () => {
+		render("no-results");
+		const clearButton = container.querySelector('button[aria-label="Clear search"]');
+		expect(clearButton).not.toBeNull();
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [createHash("sha256").update("Clear search\x1f").digest("base64").slice(0, 6)]: "清除搜索" },
+			}),
+		);
+
+		expect(container.querySelector('button[aria-label="清除搜索"]')).toBe(clearButton);
 	});
 
 	it("accepts only documented DEV fixture queries", () => {

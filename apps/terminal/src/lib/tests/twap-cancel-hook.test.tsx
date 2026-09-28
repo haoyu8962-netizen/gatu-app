@@ -2,7 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
-import { HttpRequestError } from "@nktkas/hyperliquid";
+import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,13 +24,24 @@ const USER = "0x1111111111111111111111111111111111111111" as const;
 const MARKET_UNAVAILABLE_MESSAGE = "Unable to identify this TWAP market. Refresh market data before retrying.";
 const MARKET_UNAVAILABLE_MESSAGE_AR = "تعذر تحديد سوق TWAP هذا. حدّث بيانات السوق قبل إعادة المحاولة.";
 
+const CANCEL_FAILED_MESSAGE = "Failed to cancel TWAP order.";
+const CANCEL_FAILED_MESSAGE_AR = "تعذر إلغاء أمر TWAP.";
+
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
 }
 
 const arabicMessages: Messages = {
 	[getMessageId(MARKET_UNAVAILABLE_MESSAGE)]: MARKET_UNAVAILABLE_MESSAGE_AR,
+	[getMessageId(CANCEL_FAILED_MESSAGE)]: CANCEL_FAILED_MESSAGE_AR,
 };
+
+function twapCancelRejection(text: string) {
+	return new ApiRequestError(
+		{ status: "ok", response: { type: "twapCancel", data: { status: { error: text } } } },
+		text,
+	);
+}
 
 const mocks = vi.hoisted(() => ({
 	assetId: 7 as number | undefined,
@@ -263,19 +274,40 @@ describe("useTwapCancel", () => {
 	});
 
 	it("surfaces a definitive exchange or HTTP rejection", async () => {
-		mocks.mutateAsync.mockRejectedValueOnce(new Error("TWAP 45 is not active"));
+		mocks.mutateAsync.mockRejectedValueOnce(twapCancelRejection("TWAP 45 is not active"));
 
 		await act(async () => {
 			await hookValue?.cancelTwap("ETH", 45);
 		});
 
 		expect(mocks.errorToast).not.toHaveBeenCalled();
-		expect(queueItems.at(-1)).toMatchObject({ status: "failed", error: "TWAP 45 is not active" });
+		expect(queueItems.at(-1)).toMatchObject({
+			status: "failed",
+			error: { kind: "exchange-error", entries: [{ text: "TWAP 45 is not active" }] },
+		});
 		expect(hookValue?.feedback).toEqual({ tone: "error", message: "TWAP 45 is not active" });
 
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
 
 		expect(hookValue?.feedback).toEqual({ tone: "error", message: "TWAP 45 is not active" });
+	});
+
+	it("never shows an unrecognised error untranslated and translates its fallback when displayed", async () => {
+		mocks.mutateAsync.mockRejectedValueOnce(new Error("TWAP cancel request no longer matches"));
+
+		await act(async () => {
+			await hookValue?.cancelTwap("ETH", 49);
+		});
+
+		expect(queueItems.at(-1)).toMatchObject({
+			status: "failed",
+			error: { kind: "order-submission", code: "twap-cancel-failed" },
+		});
+		expect(hookValue?.feedback).toEqual({ tone: "error", message: CANCEL_FAILED_MESSAGE });
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(hookValue?.feedback).toEqual({ tone: "error", message: CANCEL_FAILED_MESSAGE_AR });
 	});
 
 	it("hides deterministic feedback after the trading identity changes", async () => {
@@ -308,7 +340,7 @@ describe("useTwapCancel", () => {
 		act(() => root.render(createElement(Probe)));
 
 		await act(async () => {
-			rejectRequest?.(new Error("TWAP 66 is not active"));
+			rejectRequest?.(twapCancelRejection("TWAP 66 is not active"));
 			await cancellation;
 		});
 
@@ -318,7 +350,7 @@ describe("useTwapCancel", () => {
 			owner: USER,
 			env: "Mainnet",
 			status: "failed",
-			error: "TWAP 66 is not active",
+			error: { kind: "exchange-error", entries: [{ text: "TWAP 66 is not active" }] },
 		});
 	});
 

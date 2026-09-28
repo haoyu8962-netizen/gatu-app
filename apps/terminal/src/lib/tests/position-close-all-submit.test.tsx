@@ -7,6 +7,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
 import { usePositionCloseAllSubmit } from "@/hooks/trade/use-position-close-all-submit";
+import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import {
 	getOrderQueueItem,
 	type OrderQueueItem,
@@ -434,6 +435,49 @@ describe("usePositionCloseAllSubmit", () => {
 			expect(await currentHook().submit()).toEqual({ state: "blocked" });
 		});
 		expect(mocks.clearinghouseState).toHaveBeenCalledTimes(2);
+	});
+
+	it("reports each rejected market once, on its own line, when every close order is rejected", async () => {
+		mocks.executeOrder.mockRejectedValueOnce({
+			name: "ApiRequestError",
+			response: {
+				status: "ok",
+				response: {
+					type: "order",
+					data: {
+						statuses: [
+							{ error: "No liquidity available for market order." },
+							{ error: "A rejection nobody documented" },
+						],
+					},
+				},
+			},
+		});
+
+		await act(async () => {
+			await expect(currentHook().submit()).rejects.toThrow();
+		});
+
+		expect(queueItems[0]).toMatchObject({
+			status: "failed",
+			error: {
+				kind: "exchange-error",
+				entries: [
+					{ index: 0, text: "No liquidity available for market order." },
+					{ index: 1, text: "A rejection nobody documented" },
+				],
+			},
+			children: [
+				{ market: MAIN_COIN, status: "rejected", error: "No liquidity available for market order." },
+				{ market: BUILDER_COIN, status: "rejected", error: "A rejection nobody documented" },
+			],
+		});
+		const failed = queueItems[0];
+		if (!failed) throw new Error("Expected the close-all notification");
+		expect(getOrderNotificationCopy(failed, (descriptor) => i18n._(descriptor)).error).toBeUndefined();
+		expect(currentHook().error).toBe(
+			"Order 1: No liquidity is available for this market order.; Order 2: A rejection nobody documented",
+		);
 	});
 
 	it("retranslates an existing partial result with its counts when the locale changes", async () => {

@@ -192,7 +192,7 @@ export function TradingActionButton({
 			</Button>
 			{error && (
 				<p role="alert" className="w-full text-xs leading-normal text-error">
-					{formatTransferError(error)}
+					{formatTransferError(error, (descriptor) => t(descriptor))}
 				</p>
 			)}
 		</div>

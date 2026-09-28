@@ -11,6 +11,7 @@ import {
 	noMarketValidator,
 	noMarkPriceValidator,
 } from "../definitions/market";
+import { limitOrderOpenInterestCapValidator, type OpenInterestCapContext } from "../definitions/open-interest-cap";
 import {
 	enterLimitPriceValidator,
 	enterSizeValidator,
@@ -61,7 +62,13 @@ import {
 } from "../definitions/twap";
 import { runValidators, type ValidationError, type Validator } from "../types";
 
-export interface PerpOrderContext extends OrderInputContext, TpSlContext, TriggerContext, ScaleContext, TwapContext {
+export interface PerpOrderContext
+	extends OrderInputContext,
+		OpenInterestCapContext,
+		TpSlContext,
+		TriggerContext,
+		ScaleContext,
+		TwapContext {
 	isConnected: boolean;
 	isWalletLoading: boolean;
 	isReadyToTrade: boolean;
@@ -89,6 +96,7 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	marketNotReadyValidator,
 	signerNotReadyValidator,
 	liveMarkPriceValidator,
+	limitOrderOpenInterestCapValidator,
 	noMarkPriceValidator,
 	enterLimitPriceValidator,
 	enterTriggerPriceValidator,

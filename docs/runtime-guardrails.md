@@ -115,22 +115,20 @@ inspect entry visibility at 375, 1100 and 1440 pixels without exposing a real ke
 
 ### Provider Lifetime During Navigation
 
-- The root route and client runtime gate must classify their surface using
-  the last presented `router.state.matches` pathname, with `location` only
-  as the initial fallback when no matches exist. The requested `location`
-  changes before `Outlet` replaces the previous route; `resolvedLocation`
-  can remain old after the destination is presented. Neither is a safe
-  standalone signal for mounting or removing route providers.
+- Every application route, the Docs, Support, Terms, Privacy, Risk and
+  Cookies pages included, renders inside the same client runtime gate.
+  There is no document/app provider boundary to switch on the pathname
+  ([ADR 0020](adr/0020-legal-pages-in-app-shell.md)); do not reintroduce a
+  route surface that skips the wallet runtime without a new decision.
 - Keep the current route's providers mounted throughout a pending or
-  cancelled navigation. Replace the document/app provider boundary when
-  the presented matches change, and preserve provider identity between
-  business routes. Initial document entries must remain independent of
-  the wallet runtime.
+  cancelled navigation, and preserve provider identity between routes:
+  moving between trading, dashboard and legal pages must not remount the
+  wallet or market runtime.
 - A departing market title synchronizer may clear only its own last
   applied title. It must preserve a destination title already installed
   by the router's head renderer.
-- Cover delayed navigation from business routes to every document route,
-  the reverse direction, cancellation and browser history with a real
+- Cover delayed navigation from trading and dashboard routes to every legal
+  page, the reverse direction, cancellation and browser history with a real
   router. Mocking only a pathname cannot verify provider/Outlet alignment.
 
 ### Important Files
@@ -382,6 +380,15 @@ mobile regressions.
   stable.
 - Mobile tab switches must not destroy the chart widget unless the whole market
   surface is leaving.
+- The desktop chart panel hosts a `Chart | Funding` view strip
+  (`ChartPanel showFundingTab`, enabled only by the main workspace). Showing
+  Funding keeps the widget mounted: `TradingViewChart` receives `active={false}`
+  and its layer is hidden with `invisible opacity-0 pointer-events-none` plus
+  `aria-hidden`. Never hide that layer with `display:none`, never wrap it in the
+  `@gatu/ui` `TabsContent` (its `[&[hidden]]:!hidden` rule removes the chart), and
+  never remount the widget for a view change. The strip has a fixed height for
+  every market kind so the widget height does not change on spot/perp switches.
+  `docs/market-funding-history.md` owns the view.
 - Chart datafeed callbacks must not capture stale symbols. Use stable refs or
   request-scoped guards for async responses.
 - The widget iframe must remain interactive on mobile. Do not apply
@@ -430,6 +437,7 @@ mobile regressions.
 ### Important Files
 
 - `apps/terminal/src/components/trade/chart/tradingview-chart.tsx`
+- `apps/terminal/src/components/trade/chart/chart-panel.tsx`
 - `apps/terminal/src/components/trade/chart/datafeed.ts`
 - `apps/terminal/src/config/chart.ts`
 - `apps/terminal/src/config/security-headers.ts`
@@ -451,6 +459,15 @@ not separate app sessions.
 - Do not use hidden mounted views if they continue expensive subscriptions or
   effects. If a view is mounted for continuity, guard its effects by active
   state.
+- The Markets view shows a fourth Funding tab for perpetual and HIP-3 markets
+  only. While it is shown, `MobileChartView` and `MobileBookView` stay mounted
+  with `active={false}`: the book layer is visible and active only for Order
+  Book or Trades, and the funding query runs only while its own tab is shown.
+  Disabling a TanStack query does not abort a request already in flight, so
+  hiding the funding view cancels its current key when no other active observer
+  uses it: the fetch signal aborts, pagination and page retries stop, and the
+  previous cache is kept. The funding view mounts on first selection and then
+  stays mounted; a switch to a spot market falls back to Chart.
 - React `Activity` in `hidden` mode unmounts effects, which destroys the
   TradingView widget. The Markets view may start hidden to defer its first
   render, but once it has been shown it stays `visible` and hides through the
@@ -468,6 +485,7 @@ not separate app sessions.
 - `apps/terminal/src/components/trade/mobile/mobile-terminal.tsx`
 - `apps/terminal/src/components/trade/mobile/mobile-trade-view.tsx`
 - `apps/terminal/src/components/trade/mobile/mobile-chart-view.tsx`
+- `apps/terminal/src/components/trade/mobile/mobile-trade-layout.tsx`
 - `apps/terminal/src/components/trade/mobile/mobile-account-view.tsx`
 - `apps/terminal/src/components/trade/orderbook/*`
 
@@ -492,10 +510,56 @@ transport. Adding account subscriptions must not disturb market subscriptions.
   and keep REST `/info` only as initial snapshot / reconnect fallback.
 - All subscription handlers must route strictly by channel/type to avoid account
   payloads entering market stores or vice versa.
+- Subscription staleness is measured on the local monotonic clock
+  ([ADR 0022](adr/0022-subscription-staleness-monotonic-clock.md)). Every frame
+  carries two receipt times (`FrameReceipt` in
+  `internal/websocket/frame-receipt.ts`): the wall-clock `receivedAt`, which the
+  store exposes as `lastMessageAt`, and a `performance.now()` receipt, which it
+  exposes as `monotonicLastMessageAt`. The watchdog, the commit of a value
+  buffered while the page was hidden, the foreground-resume expiry, the socket
+  inactivity check (`transport-monitor.ts`) and the five-second wait of the
+  incremental `l2` gate (`subscriptions/l2-subscription-gate.ts`) all use
+  `getReceiptAgeMs`, the larger of the monotonic and the wall-clock age.
+  Setting the system clock back therefore cannot keep a silent stream fresh,
+  while a forward jump, or a device sleep that `performance.now()` may not
+  count, still ages the data as it did before. A negative wall-clock age on its
+  own is not stale: otherwise setting the clock back would mark every periodic
+  stream that has not received a frame since then stale on the next check, and
+  several at once reconnect the shared socket. Thresholds, keys and recovery
+  paths are unchanged.
+- A transport that hands over a frame it received earlier (the order-book pool
+  replay) passes both receipt times through `markFrameReceivedAt`, and throttled
+  delivery (`createThrottledUpdater`) measures the time since its last delivery
+  with the same `getReceiptAgeMs`, so setting the clock back neither holds a
+  throttled stream back nor makes a late frame look new, and a forward jump or a
+  sleep still releases the next frame at once.
+- `lastMessageAt` stays wall-clock for display and for consumers that compare it
+  with `Date.now()`. Those consumers must treat a negative age as not fresh, as
+  the execution guards in `domain/trade/market-price.ts`,
+  `domain/trade/funds-execution-guard.ts`, `domain/trade/order/reduce-only.ts`
+  and `domain/trade/order/liquidation.ts` do. Never compare `lastMessageAt` with
+  `performance.now()`.
+- To decide whether a frame arrived after a local event, compare
+  `monotonicLastMessageAt` with a `performance.now()` reading taken at that
+  event in the same document, and nothing else. Order and TWAP reconciliation
+  record `monotonicRequestStartedAt`, `monotonicConfirmationStartedAt` and
+  `monotonicUnconfirmedAt` next to the wall-clock fields and order snapshots
+  with `wasReceivedAfter` (`stores/use-pending-trading-action-store.ts`). Do not
+  take the larger of the two clocks for ordering: a snapshot received before a
+  request would still count as newer after the clock was set back. Durations,
+  such as the 15-second trading-action confirmation timeout, use the larger of
+  the two ages. Never persist a monotonic reading or pass it to another tab.
+- Timestamps written to storage or shared between tabs (pending order and TWAP
+  submissions with their `nextCheckAt` backoff, and order-asset reservations)
+  stay wall-clock, because `performance.now()` restarts in every document. After
+  the clock is set back, their confirmation windows and reservations extend
+  until a WebSocket result arrives or the wall clock catches up; they never
+  confirm early ([ADR 0022](adr/0022-subscription-staleness-monotonic-clock.md)).
 
 ### Important Files
 
 - `packages/hl-react/src/internal/websocket/*`
+- `packages/hl-react/src/store.ts`
 - `packages/hl-react/src/registries/subscription.ts`
 - `apps/terminal/src/hooks/account/*`
 - `apps/terminal/src/components/trade/orderbook/*`
@@ -702,6 +766,14 @@ applies `resolve.alias` to them, so one un-stubbed import of `@privy-io/wagmi`
 makes the pre-bundle fail and the fixture render nothing. The fixture also seeds
 the SDK session token key before rendering, because the header only shows
 `Connecting...` for a returning session (see the connection UI rules above).
+`UserMenu` reads no pairing flag, so the fixture's Vite configuration pins
+`VITE_MOBILE_PAIRING_ENABLED` to `"true"` through `define` and the test checks
+that premise before asserting that the recovered account menu lists no Link
+mobile device item (§8); the shell environment cannot change that premise. At
+desktop width the test opens the single dialog `UserMenu` hosts the way the
+header QR icon does (warm the chunk, ignoring a failed preload, then open the
+modal store); the icon's own visibility rule belongs to `top-nav.test.tsx`,
+because the fixture renders no `TopNav`.
 
 The real mobile order-entry fixture uses `node_modules/.vite-mobile-trade-all-orders`
 and scans only `mobile-trade-all-orders.html`. Run it with
@@ -788,15 +860,21 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 
 - `config/desktop-nav.ts` is the single source of the desktop entries: `placement` is `primary`
   (always top level), `lower` (collapsible) or `more` (menu only); an entry has a router `path`,
-  an external `href`, or `soon: true` for a disabled placeholder. Statistics and API Wallet live
-  there too. `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
+  an external `href`, or `soon: true` for a disabled placeholder. The `more` entries live there
+  too, in this order: Funding Comparison (`/fundingComparison`, see
+  [funding comparison](funding-comparison.md)), Statistics and API Wallet; collapsed entries appear
+  before them. The mobile drawer's More section lists the same three entries in the same order,
+  followed by the drawer-only Docs and Support entries ([ADR 0020](adr/0020-legal-pages-in-app-shell.md)); the
+  drawer matches its current entry on the lower-cased path, so `/fundingComparison` is compared as
+  `/fundingcomparison`. `desktop-nav-layout`, `top-nav` and `mobile-nav-drawer` pin both lists.
+  `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
   `resolveDesktopNavLayout` and the current entry with `isDesktopNavItemActive`; `TopNav` only
   renders that result and mounts one More dropdown.
 - Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
-  `DESKTOP_NAV_NARROW_MAX_PX` (1100). The `nav-compact` Tailwind variant in `styles.css` must equal
+  `DESKTOP_NAV_NARROW_MAX_PX` (1150; 1100 until Earn became a top-level link, ADR 0021 D8). The `nav-compact` Tailwind variant in `styles.css` must equal
   the compact constant (`desktop-nav-layout` pins it); never write `max-[1181px]` again.
-- Collapse rule: at or below the compact width the Soon placeholder leaves the top level and appears
-  disabled in More; the lower entries move into More when the account chip is visible at the compact
+- Collapse rule: at or below the compact width a Soon placeholder (none today; Earn links to `/earn`
+  since ADR 0021) leaves the top level and appears disabled in More; the lower entries move into More when the account chip is visible at the compact
   width or for every state at the narrow width. "Account chip visible" means `authenticated ||
   isConnected` from `useWalletSession`, the same condition under which `UserMenu` renders an
   identity instead of the Connect CTA, so Agent-only sessions collapse like wallet sessions;
@@ -810,11 +888,25 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `UserMenu` decides its first frame from `useState(() => hasPersistedPrivySession())`, not from a
   mount effect: visitors without a stored Privy session see `Connect Wallet` on the first rendered
   frame, and the compact label keeps the ENS name for accounts without email. Dashboard routes
-  await `bootDashboardRoute()` in `beforeLoad` so the account menu chunk is resolved before reveal.
+  (including the `/join/$code` referral invitation, after its code check) await
+  `bootDashboardRoute()` in `beforeLoad`, within `TRADE_ROUTE_REVEAL_BUDGET_MS`, so the
+  account menu, the global modal host (and its Ctrl/⌘K listener) and the desktop footer are
+  resolved before reveal. Dashboard pages render `DashboardHeader`, `FooterBar` and `GlobalModals`
+  only from `components/dashboard/dashboard-chrome.tsx`, whose `preloadDashboardChrome()` preloads
+  those exact lazy instances; a page-local `createLazyComponent` wrapper would not be preloaded.
+  The footer is skipped when the mobile layout matches at the start of the preload and added
+  if the viewport has become desktop once the account menu and the modal host have resolved.
+  The header lives in the same module so the dynamically imported chrome chunk shares the pages'
+  header closure; without it Rollup regroups the shared header chunks and the trade desktop
+  runtime startup exceeded its bundle budget.
 - Evidence for the narrow width (2026-09-17, local production build, disconnected, 1001px viewport,
   gap between the navigation and the wallet controls after removing Earn): en 78px, zh 189px,
   hi 185px, es 53px, fr 2px, ar 109px. French leaves no margin, so every state collapses at
   1100px. Re-run that measurement before adding a locale or lengthening a label.
+- Evidence after Earn became a top-level link (2026-09-27, local dev server, disconnected, `/earn`):
+  at 1101px without collapsing the gap is en 124px, zh 237px, hi 243px, es 50px, fr 6px, ar 146px,
+  so the narrow width moved to 1150px; at 1151px fr keeps 56px and es 100px, at 1001px (collapsed)
+  fr keeps 226px. The connected header was not measured.
 
 ### Important Files
 
@@ -823,7 +915,10 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `apps/terminal/src/lib/navigation/desktop-nav.ts`
 - `apps/terminal/src/components/trade/header/top-nav.tsx`
 - `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
+- `apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx`
+- `apps/terminal/src/lib/tests/mobile-nav-drawer.test.tsx`
 - `apps/terminal/src/lib/navigation/boot-dashboard-route.ts`
+- `apps/terminal/src/components/dashboard/dashboard-chrome.tsx`
 - `apps/terminal/src/lib/tests/preload-trade-terminal-surface.test.ts`
 
 ## Required Review Checklist

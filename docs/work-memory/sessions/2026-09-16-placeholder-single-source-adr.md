@@ -10,10 +10,10 @@
     "static-hosting",
     "docs-governance"
   ],
-  "summary": "核对确认桌面壳九个 frame、移动壳与运行时占位是三份手写实现，唯一共享的是网格几何；采纳「展示组件是几何唯一来源」的架构：只接 props 的 *-view.tsx 由运行时容器与壳共同渲染，占位 props 单一来源，导入边界与一致性测试钉住，inert 取代禁止交互元素；本轮只落 ADR、规则与索引，迁移未开始。",
+  "summary": "ADR 0009 后续已有七个表面迁移；占位决策 2–5、7 被 ADR 0010 部分取代，props-only 真实展示组件与市场头布局规则保留。",
   "thread": null,
   "baseCommit": "ade94020",
-  "commits": [],
+  "commits": ["0c812745", "998515a5"],
   "sources": [
     {
       "path": "docs/adr/0009-startup-placeholder-single-source.md"
@@ -56,3 +56,7 @@
 - `apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx`
 - `apps/terminal/src/components/trade/layout/terminal-loading-workspace.tsx`
 - `apps/terminal/src/components/trade/mobile/mobile-loading-fallback.tsx`
+
+## 周整理追加（2026-09-21）
+
+“迁移未开始”只描述本记录建立时。后续迁移和 ADR 0010 已有独立记录；本次按 ADR 0010 的明确范围标记部分取代，不把整个 ADR 或真实展示组件设计判为废弃。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

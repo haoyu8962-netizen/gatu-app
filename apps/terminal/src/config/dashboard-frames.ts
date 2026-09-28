@@ -12,6 +12,10 @@ export const DASHBOARD_FRAMES = {
 		canvasClassName: "min-h-dvh bg-dashboard-canvas font-sans text-fg",
 		mainClassName: "mx-auto w-full max-w-[var(--earn-frame-wide-max)] py-4 min-[1001px]:px-10 min-[1001px]:py-6",
 	},
+	"/earn": {
+		canvasClassName: "min-h-dvh bg-dashboard-canvas font-sans text-fg",
+		mainClassName: "mx-auto w-full max-w-[var(--earn-frame-wide-max)] px-4 py-4 min-[1001px]:px-10 min-[1001px]:py-6",
+	},
 	"/staking": {
 		canvasClassName: "min-h-dvh bg-dashboard-canvas font-sans text-fg",
 		mainClassName:
@@ -22,6 +26,10 @@ export const DASHBOARD_FRAMES = {
 		mainClassName: "mx-auto w-full max-w-[1440px] py-5 min-[1001px]:px-10 min-[1001px]:py-6",
 	},
 	"/leaderboard": {
+		canvasClassName: "min-h-dvh bg-dashboard-canvas font-sans text-fg",
+		mainClassName: "mx-auto w-full max-w-[var(--earn-frame-max)] py-4 min-[1001px]:px-10 min-[1001px]:py-6",
+	},
+	"/funding-comparison": {
 		canvasClassName: "min-h-dvh bg-dashboard-canvas font-sans text-fg",
 		mainClassName: "mx-auto w-full max-w-[var(--earn-frame-max)] py-4 min-[1001px]:px-10 min-[1001px]:py-6",
 	},
@@ -40,5 +48,9 @@ export const DASHBOARD_FRAMES = {
 	"/trade-history": {
 		canvasClassName: "min-h-dvh bg-grid-container font-sans text-fg",
 		mainClassName: "mx-auto w-full max-w-[1440px] px-4 py-5 min-[1001px]:px-10 min-[1001px]:py-6",
+	},
+	legal: {
+		canvasClassName: "min-h-dvh bg-background font-sans text-fg",
+		mainClassName: "mx-auto w-full max-w-3xl px-5 py-8 min-[1001px]:py-12",
 	},
 } as const satisfies Record<string, DashboardFramePreset>;

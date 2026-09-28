@@ -47,6 +47,7 @@ import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interact
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { formatTransferError } from "@/lib/errors/format";
 import { formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
 import {
 	getMarketCapabilities,
@@ -288,6 +289,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		conversionPrice,
 		isAvailabilityStale,
 		hasAvailabilityError,
+		isOpenInterestCapped,
 		availableBalanceToken,
 		spotBalance,
 		maxSize,
@@ -349,6 +351,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		executionReferencePx: market?.midPx ?? market?.markPx,
 		executionPriceReceivedAt: market?.midPx !== undefined ? market.midPriceReceivedAt : market?.markPriceReceivedAt,
 		slippageBps,
+		openInterestCapped: isOpenInterestCapped,
 	});
 	orderExecutionStateRef.current = {
 		active,
@@ -367,6 +370,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		executionReferencePx: market?.midPx ?? market?.markPx,
 		executionPriceReceivedAt: market?.midPx !== undefined ? market.midPriceReceivedAt : market?.markPriceReceivedAt,
 		slippageBps,
+		openInterestCapped: isOpenInterestCapped,
 	};
 	const executionGuard = useCallback(
 		(params: Parameters<typeof assertEntryOrderExecutionAllowed>[0]) =>
@@ -378,6 +382,10 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			assertEntryTwapExecutionAllowed(params, orderExecutionStateRef.current),
 		[],
 	);
+	function getLivePositionSize(assetId: number) {
+		const state = orderExecutionStateRef.current;
+		return state.assetId === assetId && state.positionStateReady ? state.positionSignedSize : undefined;
+	}
 	const {
 		captureDraftResetToken,
 		isDraftResetTokenCurrent,
@@ -386,6 +394,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	} = useOrderSubmit({
 		executionGuard,
 		twapExecutionGuard,
+		getPositionSize: getLivePositionSize,
 	});
 	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 
@@ -447,6 +456,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const prospectiveExistingPosition =
 		marginMode === "cross" ? crossMarginSnapshot.existingPosition : isolatedExistingPosition;
 
+	const marginTiers = market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null;
 	const { liqPrice, liqWarning } = estimateProspectiveLiquidation({
 		price,
 		orderSize: sizeValue,
@@ -454,7 +464,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		side,
 		marginMode,
 		accountMode: accountAbstraction,
-		marginTiers: market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null,
+		marginTiers,
 		dataReady:
 			(orderType === "market" || orderType === "limit") &&
 			positionStateReady &&
@@ -514,6 +524,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					positionSize: validatedPositionSize,
 					sizeForOrder,
 					reduceOnly,
+					openInterestCapped: isOpenInterestCapped,
 					tpSlEnabled,
 					canUseTpSl,
 					tpSlReturnInvalid,
@@ -849,6 +860,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					settingsTab={settingsTab}
 					onSettingsTabChange={setSettingsTab}
 					accountModeForm={accountModeForm}
+					marginTiers={marginTiers}
+					quoteSymbol={getTpSlCollateralSymbol(market)}
 				/>
 			</LazyDialogHost>
 			<div className={cn("shrink-0 border-b border-stroke-weak/60 bg-surface px-4 py-2", embedded && "hidden")}>
@@ -1159,7 +1172,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 export function MobileTradingApprovalErrorMessage({ cause }: { cause: unknown }) {
 	const { t } = useLingui();
-	return cause instanceof Error ? cause.message : t`Failed to enable trading`;
+	return cause instanceof Error
+		? formatTransferError(cause, (descriptor) => t(descriptor))
+		: t`Failed to enable trading`;
 }
 
 function getLiquidationPriceClassName(liqPrice: number | null, liqWarning: boolean): string | undefined {

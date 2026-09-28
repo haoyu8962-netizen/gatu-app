@@ -1,3 +1,4 @@
+import { getReceiptAgeMs } from "@gatu/hl-react/internal/websocket/staleness";
 import { create } from "zustand";
 
 export const TRADING_ACTION_CONFIRMATION_TIMEOUT_MS = 15_000;
@@ -22,6 +23,9 @@ export interface PendingOrderModification extends TradingActionIdentity {
 	requestStartedAt: number | null;
 	confirmationStartedAt: number | null;
 	unconfirmedAt: number | null;
+	monotonicRequestStartedAt: number | null;
+	monotonicConfirmationStartedAt: number | null;
+	monotonicUnconfirmedAt: number | null;
 }
 
 interface ClaimOrderModificationInput extends TradingActionIdentity {
@@ -40,6 +44,9 @@ export interface PendingOrderCancellation extends TradingActionIdentity {
 	requestStartedAt: number | null;
 	confirmationStartedAt: number | null;
 	unconfirmedAt: number | null;
+	monotonicRequestStartedAt: number | null;
+	monotonicConfirmationStartedAt: number | null;
+	monotonicUnconfirmedAt: number | null;
 }
 
 interface ClaimOrderCancellationInput extends TradingActionIdentity {
@@ -55,6 +62,9 @@ export interface PendingTwapCancellation extends TradingActionIdentity {
 	requestStartedAt: number | null;
 	confirmationStartedAt: number | null;
 	unconfirmedAt: number | null;
+	monotonicRequestStartedAt: number | null;
+	monotonicConfirmationStartedAt: number | null;
+	monotonicUnconfirmedAt: number | null;
 }
 
 interface ClaimTwapCancellationInput extends TradingActionIdentity {
@@ -68,23 +78,23 @@ interface PendingTradingActionStore {
 	twapCancellations: PendingTwapCancellation[];
 	actions: {
 		claimModification: (input: ClaimOrderModificationInput) => PendingOrderModification | null;
-		markModificationRequestStarted: (id: string, now?: number) => void;
-		markModificationAwaiting: (id: string, now?: number) => void;
-		markModificationUnconfirmed: (id: string, now?: number) => void;
-		expireModificationAwaiting: (id: string, now?: number) => boolean;
+		markModificationRequestStarted: (id: string, now?: number, monotonicNow?: number) => void;
+		markModificationAwaiting: (id: string, now?: number, monotonicNow?: number) => void;
+		markModificationUnconfirmed: (id: string, now?: number, monotonicNow?: number) => void;
+		expireModificationAwaiting: (id: string, now?: number, monotonicNow?: number) => boolean;
 		resolveModification: (id: string) => void;
 		claimOrderCancellation: (input: ClaimOrderCancellationInput) => PendingOrderCancellation | null;
-		markOrderCancellationRequestStarted: (id: string, now?: number) => void;
-		markOrderCancellationAwaiting: (id: string, now?: number) => void;
-		markOrderCancellationUnconfirmed: (id: string, now?: number) => void;
-		expireOrderCancellationAwaiting: (id: string, now?: number) => boolean;
+		markOrderCancellationRequestStarted: (id: string, now?: number, monotonicNow?: number) => void;
+		markOrderCancellationAwaiting: (id: string, now?: number, monotonicNow?: number) => void;
+		markOrderCancellationUnconfirmed: (id: string, now?: number, monotonicNow?: number) => void;
+		expireOrderCancellationAwaiting: (id: string, now?: number, monotonicNow?: number) => boolean;
 		releaseOrderCancellation: (id: string) => void;
 		confirmOrderCancellation: (id: string) => void;
 		claimTwapCancellation: (input: ClaimTwapCancellationInput) => PendingTwapCancellation | null;
-		markTwapCancellationRequestStarted: (id: string, now?: number) => void;
-		markTwapCancellationAwaiting: (id: string, now?: number) => void;
-		markTwapCancellationUnconfirmed: (id: string, now?: number) => void;
-		expireTwapCancellationAwaiting: (id: string, now?: number) => boolean;
+		markTwapCancellationRequestStarted: (id: string, now?: number, monotonicNow?: number) => void;
+		markTwapCancellationAwaiting: (id: string, now?: number, monotonicNow?: number) => void;
+		markTwapCancellationUnconfirmed: (id: string, now?: number, monotonicNow?: number) => void;
+		expireTwapCancellationAwaiting: (id: string, now?: number, monotonicNow?: number) => boolean;
 		resolveTwapCancellation: (id: string) => void;
 		reset: () => void;
 	};
@@ -103,18 +113,62 @@ function hasIdentity(action: Pick<TradingActionIdentity, "env" | "owner">, env: 
 	return action.env === env && action.owner === normalizeOwner(owner);
 }
 
-function transitionAction<
-	T extends {
-		id: string;
-		phase: PendingTradingActionPhase;
-		confirmationStartedAt: number | null;
-		unconfirmedAt: number | null;
-	},
->(
+type ConfirmationClock = Pick<
+	PendingOrderModification,
+	"phase" | "confirmationStartedAt" | "monotonicConfirmationStartedAt"
+>;
+
+type TransitionableAction = ConfirmationClock &
+	Pick<PendingOrderModification, "id" | "unconfirmedAt" | "monotonicUnconfirmedAt">;
+
+/**
+ * Milliseconds left before an awaiting action times out, or null when its confirmation has not
+ * started. The larger of the wall-clock and monotonic ages counts, so setting the system clock back
+ * cannot hold an action in `awaiting`, while a forward jump or a sleep still expires it (ADR 0022).
+ */
+export function getTradingActionConfirmationRemainingMs(
+	action: ConfirmationClock,
+	now = Date.now(),
+	monotonicNow = performance.now(),
+): number | null {
+	if (action.confirmationStartedAt === null || action.monotonicConfirmationStartedAt === null) return null;
+	return (
+		TRADING_ACTION_CONFIRMATION_TIMEOUT_MS -
+		getReceiptAgeMs(action.confirmationStartedAt, action.monotonicConfirmationStartedAt, now, monotonicNow)
+	);
+}
+
+/** Delay until the next awaiting action in `actions` times out, or undefined when none is left. */
+export function getNextTradingActionExpiryDelayMs(
+	actions: readonly ConfirmationClock[],
+	now = Date.now(),
+	monotonicNow = performance.now(),
+): number | undefined {
+	let next: number | undefined;
+	for (const action of actions) {
+		if (action.phase !== "awaiting") continue;
+		const remainingMs = getTradingActionConfirmationRemainingMs(action, now, monotonicNow);
+		if (remainingMs === null || remainingMs <= 0) continue;
+		next = next === undefined ? remainingMs : Math.min(next, remainingMs);
+	}
+	return next === undefined ? undefined : Math.ceil(next);
+}
+
+/**
+ * Whether a frame received at `monotonicReceivedAt` arrived after the local event marked at
+ * `monotonicMarkedAt`. Both are `performance.now()` readings from this document, so the order holds
+ * whatever the system clock does; a missing reading never counts as after.
+ */
+export function wasReceivedAfter(monotonicReceivedAt: number | undefined, monotonicMarkedAt: number | null): boolean {
+	return monotonicReceivedAt !== undefined && monotonicMarkedAt !== null && monotonicReceivedAt > monotonicMarkedAt;
+}
+
+function transitionAction<T extends TransitionableAction>(
 	actions: readonly T[],
 	id: string,
 	phase: Extract<PendingTradingActionPhase, "awaiting" | "unconfirmed">,
 	now: number,
+	monotonicNow: number,
 ): T[] {
 	return actions.map((action) =>
 		action.id === id
@@ -122,45 +176,46 @@ function transitionAction<
 					...action,
 					phase,
 					confirmationStartedAt: action.confirmationStartedAt ?? now,
+					monotonicConfirmationStartedAt: action.monotonicConfirmationStartedAt ?? monotonicNow,
 					unconfirmedAt: phase === "unconfirmed" ? (action.unconfirmedAt ?? now) : action.unconfirmedAt,
+					monotonicUnconfirmedAt:
+						phase === "unconfirmed" ? (action.monotonicUnconfirmedAt ?? monotonicNow) : action.monotonicUnconfirmedAt,
 				}
 			: action,
 	);
 }
 
-function markRequestStarted<T extends { id: string; requestStartedAt: number | null }>(
-	actions: readonly T[],
-	id: string,
-	now: number,
-): T[] {
+function markRequestStarted<
+	T extends { id: string; requestStartedAt: number | null; monotonicRequestStartedAt: number | null },
+>(actions: readonly T[], id: string, now: number, monotonicNow: number): T[] {
 	return actions.map((action) =>
-		action.id === id ? { ...action, requestStartedAt: action.requestStartedAt ?? now } : action,
+		action.id === id
+			? {
+					...action,
+					requestStartedAt: action.requestStartedAt ?? now,
+					monotonicRequestStartedAt: action.monotonicRequestStartedAt ?? monotonicNow,
+				}
+			: action,
 	);
 }
 
-function expireAwaitingAction<
-	T extends {
-		id: string;
-		phase: PendingTradingActionPhase;
-		confirmationStartedAt: number | null;
-		unconfirmedAt: number | null;
-	},
->(actions: T[], id: string, now: number): { actions: T[]; expired: boolean } {
+function expireAwaitingAction<T extends TransitionableAction>(
+	actions: T[],
+	id: string,
+	now: number,
+	monotonicNow: number,
+): { actions: T[]; expired: boolean } {
 	let expired = false;
 	const next = actions.map((action) => {
-		if (
-			action.id !== id ||
-			action.phase !== "awaiting" ||
-			action.confirmationStartedAt === null ||
-			now - action.confirmationStartedAt < TRADING_ACTION_CONFIRMATION_TIMEOUT_MS
-		) {
-			return action;
-		}
+		if (action.id !== id || action.phase !== "awaiting") return action;
+		const remainingMs = getTradingActionConfirmationRemainingMs(action, now, monotonicNow);
+		if (remainingMs === null || remainingMs > 0) return action;
 		expired = true;
 		return {
 			...action,
 			phase: "unconfirmed" as const,
 			unconfirmedAt: action.unconfirmedAt ?? now,
+			monotonicUnconfirmedAt: action.monotonicUnconfirmedAt ?? monotonicNow,
 		};
 	});
 	return expired ? { actions: next, expired } : { actions, expired };
@@ -198,23 +253,26 @@ const usePendingTradingActionStore = create<PendingTradingActionStore>()((set, g
 				requestStartedAt: null,
 				confirmationStartedAt: null,
 				unconfirmedAt: null,
+				monotonicRequestStartedAt: null,
+				monotonicConfirmationStartedAt: null,
+				monotonicUnconfirmedAt: null,
 			};
 			set((current) => ({ modifications: [...current.modifications, action] }));
 			return action;
 		},
-		markModificationRequestStarted: (id, now = Date.now()) => {
-			set((state) => ({ modifications: markRequestStarted(state.modifications, id, now) }));
+		markModificationRequestStarted: (id, now = Date.now(), monotonicNow = performance.now()) => {
+			set((state) => ({ modifications: markRequestStarted(state.modifications, id, now, monotonicNow) }));
 		},
-		markModificationAwaiting: (id, now = Date.now()) => {
-			set((state) => ({ modifications: transitionAction(state.modifications, id, "awaiting", now) }));
+		markModificationAwaiting: (id, now = Date.now(), monotonicNow = performance.now()) => {
+			set((state) => ({ modifications: transitionAction(state.modifications, id, "awaiting", now, monotonicNow) }));
 		},
-		markModificationUnconfirmed: (id, now = Date.now()) => {
-			set((state) => ({ modifications: transitionAction(state.modifications, id, "unconfirmed", now) }));
+		markModificationUnconfirmed: (id, now = Date.now(), monotonicNow = performance.now()) => {
+			set((state) => ({ modifications: transitionAction(state.modifications, id, "unconfirmed", now, monotonicNow) }));
 		},
-		expireModificationAwaiting: (id, now = Date.now()) => {
+		expireModificationAwaiting: (id, now = Date.now(), monotonicNow = performance.now()) => {
 			let expired = false;
 			set((state) => {
-				const result = expireAwaitingAction(state.modifications, id, now);
+				const result = expireAwaitingAction(state.modifications, id, now, monotonicNow);
 				expired = result.expired;
 				return result.expired ? { modifications: result.actions } : state;
 			});
@@ -249,27 +307,30 @@ const usePendingTradingActionStore = create<PendingTradingActionStore>()((set, g
 				requestStartedAt: null,
 				confirmationStartedAt: null,
 				unconfirmedAt: null,
+				monotonicRequestStartedAt: null,
+				monotonicConfirmationStartedAt: null,
+				monotonicUnconfirmedAt: null,
 			};
 			set((current) => ({ orderCancellations: [...current.orderCancellations, action] }));
 			return action;
 		},
-		markOrderCancellationRequestStarted: (id, now = Date.now()) => {
-			set((state) => ({ orderCancellations: markRequestStarted(state.orderCancellations, id, now) }));
+		markOrderCancellationRequestStarted: (id, now = Date.now(), monotonicNow = performance.now()) => {
+			set((state) => ({ orderCancellations: markRequestStarted(state.orderCancellations, id, now, monotonicNow) }));
 		},
-		markOrderCancellationAwaiting: (id, now = Date.now()) => {
+		markOrderCancellationAwaiting: (id, now = Date.now(), monotonicNow = performance.now()) => {
 			set((state) => ({
-				orderCancellations: transitionAction(state.orderCancellations, id, "awaiting", now),
+				orderCancellations: transitionAction(state.orderCancellations, id, "awaiting", now, monotonicNow),
 			}));
 		},
-		markOrderCancellationUnconfirmed: (id, now = Date.now()) => {
+		markOrderCancellationUnconfirmed: (id, now = Date.now(), monotonicNow = performance.now()) => {
 			set((state) => ({
-				orderCancellations: transitionAction(state.orderCancellations, id, "unconfirmed", now),
+				orderCancellations: transitionAction(state.orderCancellations, id, "unconfirmed", now, monotonicNow),
 			}));
 		},
-		expireOrderCancellationAwaiting: (id, now = Date.now()) => {
+		expireOrderCancellationAwaiting: (id, now = Date.now(), monotonicNow = performance.now()) => {
 			let expired = false;
 			set((state) => {
-				const result = expireAwaitingAction(state.orderCancellations, id, now);
+				const result = expireAwaitingAction(state.orderCancellations, id, now, monotonicNow);
 				expired = result.expired;
 				return result.expired ? { orderCancellations: result.actions } : state;
 			});
@@ -308,27 +369,30 @@ const usePendingTradingActionStore = create<PendingTradingActionStore>()((set, g
 				requestStartedAt: null,
 				confirmationStartedAt: null,
 				unconfirmedAt: null,
+				monotonicRequestStartedAt: null,
+				monotonicConfirmationStartedAt: null,
+				monotonicUnconfirmedAt: null,
 			};
 			set((current) => ({ twapCancellations: [...current.twapCancellations, action] }));
 			return action;
 		},
-		markTwapCancellationRequestStarted: (id, now = Date.now()) => {
-			set((state) => ({ twapCancellations: markRequestStarted(state.twapCancellations, id, now) }));
+		markTwapCancellationRequestStarted: (id, now = Date.now(), monotonicNow = performance.now()) => {
+			set((state) => ({ twapCancellations: markRequestStarted(state.twapCancellations, id, now, monotonicNow) }));
 		},
-		markTwapCancellationAwaiting: (id, now = Date.now()) => {
+		markTwapCancellationAwaiting: (id, now = Date.now(), monotonicNow = performance.now()) => {
 			set((state) => ({
-				twapCancellations: transitionAction(state.twapCancellations, id, "awaiting", now),
+				twapCancellations: transitionAction(state.twapCancellations, id, "awaiting", now, monotonicNow),
 			}));
 		},
-		markTwapCancellationUnconfirmed: (id, now = Date.now()) => {
+		markTwapCancellationUnconfirmed: (id, now = Date.now(), monotonicNow = performance.now()) => {
 			set((state) => ({
-				twapCancellations: transitionAction(state.twapCancellations, id, "unconfirmed", now),
+				twapCancellations: transitionAction(state.twapCancellations, id, "unconfirmed", now, monotonicNow),
 			}));
 		},
-		expireTwapCancellationAwaiting: (id, now = Date.now()) => {
+		expireTwapCancellationAwaiting: (id, now = Date.now(), monotonicNow = performance.now()) => {
 			let expired = false;
 			set((state) => {
-				const result = expireAwaitingAction(state.twapCancellations, id, now);
+				const result = expireAwaitingAction(state.twapCancellations, id, now, monotonicNow);
 				expired = result.expired;
 				return result.expired ? { twapCancellations: result.actions } : state;
 			});

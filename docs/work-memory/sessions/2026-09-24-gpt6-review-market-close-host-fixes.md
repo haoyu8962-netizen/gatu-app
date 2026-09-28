@@ -10,7 +10,7 @@
   "summary": "用 codex exec（gpt-6-astra，read-only，medium）对 b82dd443..15196136 做对抗审查：确认 2 项 P2——提交宿主在挂载后无条件下载但未计入启动预算、宿主注册前封存的尝试离开页面后可被其他页面接手。已改为按意图加载宿主、门控卸载时废弃等待中的尝试；未发现 P0/P1，TP/SL 文案与官方规则一致。",
   "thread": null,
   "baseCommit": "15196136",
-  "commits": ["81add820"],
+  "commits": ["81add820", "416b2ed7"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/components/position-market-close-submit-host-loader.ts" },
     { "path": "apps/terminal/src/components/trade/components/position-market-close-submit-host-gate.tsx" },
@@ -52,3 +52,9 @@ GPT 未确认其他缺陷：封存上限、重复调用、宿主执行守卫、l
 
 - 局部替代 [点击即封存与 TP/SL 例外修复](2026-09-23-market-close-attempt-sealing-fix.md) 中「宿主按需加载、只比 HEAD 多 522 B」的表述：那次统计没有把动态加载计入；本次改为按意图加载后无交互不下载。
 - 待用户决定：`user-menu-recovery` 是否入 CI；是否推送并向 `dev` 开 PR。
+
+## 周整理补注（2026-09-28）
+
+GitHub 只读查询（2026-09-28T01:05:38.487091+00:00）：后续 PR #40 已合入 dev，PR #41 已合入 main；具体 head/检查集合见本周记录。“是否推送并开 PR”已是历史待办；当前 checkout 的 CI 浏览器清单仍未包含 user-menu-recovery，是否纳入仍待单独决定。合并状态不代表本次部署或真实交易验收。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

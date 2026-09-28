@@ -1,10 +1,17 @@
 import { i18n } from "@lingui/core";
+import { preloadMobileAgentSyncModal } from "@/components/trade/header/mobile-agent-sync-modal-loader";
 import { UserMenu } from "@/components/trade/header/user-menu";
+import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { messages as englishMessages } from "@/locales/en/messages.po";
 import { messages as chineseMessages } from "@/locales/zh/messages.po";
-import { recoveryCalls, setRecoverySession, type UserMenuRecoverySession } from "./user-menu-recovery.browser";
+import {
+	recoveryCalls,
+	setMobileSyncOpen,
+	setRecoverySession,
+	type UserMenuRecoverySession,
+} from "./user-menu-recovery.browser";
 import "./trade-slider.css";
 
 declare global {
@@ -12,6 +19,8 @@ declare global {
 		__gatuUserMenuRecovery: {
 			setSession: (patch: Partial<UserMenuRecoverySession>) => void;
 			setLocale: (locale: "en" | "zh") => void;
+			openLinkMobileDevice: () => Promise<void>;
+			pairingEnabled: boolean;
 			calls: typeof recoveryCalls;
 		};
 	}
@@ -25,9 +34,17 @@ i18n.activate("en");
 // src/lib/wallet/privy-session-hint.ts); a fresh browser context would otherwise show "Connect".
 window.localStorage.setItem("privy:token", "fixture-session");
 
+// The fixture renders UserMenu without TopNav. openLinkMobileDevice follows the header QR icon's click
+// handler (warm the dialog chunk, then open the global modal store), so a test can reach the single
+// Link mobile device dialog that UserMenu hosts. pairingEnabled exposes the flag the Vite config pins.
 window.__gatuUserMenuRecovery = {
 	setSession: setRecoverySession,
 	setLocale: (locale) => i18n.activate(locale),
+	openLinkMobileDevice: async () => {
+		await preloadMobileAgentSyncModal().catch(() => undefined);
+		setMobileSyncOpen(true);
+	},
+	pairingEnabled: MOBILE_PAIRING_FEATURES.enabled,
 	calls: recoveryCalls,
 };
 

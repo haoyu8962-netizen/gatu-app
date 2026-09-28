@@ -294,6 +294,40 @@ function normalizeMarginTiers(tiers: readonly MarginTierInput[]): NormalizedMarg
 	return normalized;
 }
 
+export type LeveragePositionLimit =
+	| { status: "limited"; maxPositionNotional: string }
+	| { status: "unlimited" }
+	| { status: "unavailable" };
+
+/**
+ * Whether the market's margin table caps the position notional at some
+ * leverage. Only valid tables with more than one tier do; the official
+ * terminal uses the same `marginTiers.length > 1` condition.
+ */
+export function hasLeveragePositionLimits(tiers: readonly MarginTierInput[] | null | undefined): boolean {
+	const normalized = tiers ? normalizeMarginTiers(tiers) : null;
+	return normalized !== null && normalized.length > 1;
+}
+
+/**
+ * Resolves the position notional up to which `leverage` can be opened: the
+ * lower bound of the first tier whose maximum leverage is below it, because a
+ * position at or above that bound must use that tier's lower leverage. Invalid
+ * tables and leverages outside the first tier fail closed.
+ */
+export function getLeveragePositionLimit(
+	tiers: readonly MarginTierInput[] | null | undefined,
+	leverage: number,
+): LeveragePositionLimit {
+	const normalized = tiers ? normalizeMarginTiers(tiers) : null;
+	if (!normalized || !Number.isSafeInteger(leverage) || leverage < 1) return { status: "unavailable" };
+	if (Big(leverage).gt(normalized[0].maxLeverage)) return { status: "unavailable" };
+
+	const limitingTier = normalized.find((tier) => tier.maxLeverage.lt(leverage));
+	if (!limitingTier) return { status: "unlimited" };
+	return { status: "limited", maxPositionNotional: limitingTier.lowerBound.toFixed() };
+}
+
 function getTierForNotional(tiers: readonly NormalizedMarginTier[], notional: Big) {
 	return tiers.find(
 		(tier) => notional.gte(tier.lowerBound) && (tier.upperBound === null || notional.lt(tier.upperBound)),

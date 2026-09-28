@@ -110,6 +110,32 @@ export function buildSyncCommands({ publicDir, bucket, files }) {
 	return commands;
 }
 
+/**
+ * Standalone document pages that builds before ADR 0020 prerendered. Navigations reach the shell
+ * now, but a file-like request such as `/terms/index.html` would still read the frozen copy. An
+ * executing sync overwrites each of them with this build's shell instead of deleting it, so every
+ * legal path answers the shell as on the official terminal, and a rollback whose older request
+ * function still rewrites `/terms` to `/terms/index.html` keeps working until the older pages are
+ * uploaded again. A build that still ships one of these pages keeps its own copy.
+ */
+export const RETIRED_PAGE_KEYS = ["cookies", "docs", "privacy", "risk", "support", "terms"].map(
+	(route) => `${route}/index.html`,
+);
+
+export function buildRetiredPageCommands({ publicDir, bucket, files }) {
+	return RETIRED_PAGE_KEYS.filter((key) => !files.includes(key)).map((key) => [
+		"s3",
+		"cp",
+		join(publicDir, "_shell.html"),
+		`s3://${bucket}/${key}`,
+		"--cache-control",
+		HTML_CACHE_CONTROL,
+		"--content-type",
+		"text/html; charset=utf-8",
+		"--no-progress",
+	]);
+}
+
 const FUNCTIONS_DIR = resolve(fileURLToPath(new URL(".", import.meta.url)), "functions");
 export const RESPONSE_FUNCTION_NAME = "gatu-terminal-response";
 export const CLOUDFRONT_FUNCTIONS = [
@@ -141,13 +167,25 @@ export function servedPageRoutes(publicDir) {
 		.map((page) => (page === "_shell.html" ? "/trade/HYPE" : `/${page.slice(0, -"/index.html".length)}`));
 }
 
-/** Inline script hashes of the pages the origin serves right now, so a rotation never drops them. */
+/**
+ * Inline script hashes of the pages the origin serves right now, so a rotation never drops them.
+ * The retired legal page files are read by their file URL as well: an interrupted sync can leave one
+ * of them on an older build than the shell, and navigations to `/terms` would only show the shell. A
+ * bucket that never held such a file answers 404, which is skipped.
+ */
 export async function collectServedScriptHashes({ origin, publicDir, fetchImpl = fetch }) {
 	const base = origin.replace(/\/+$/, "");
 	const hashes = new Set();
+	const headers = { accept: "text/html", "cache-control": "no-cache" };
 	for (const route of servedPageRoutes(publicDir)) {
-		const response = await fetchImpl(`${base}${route}`, { headers: { accept: "text/html", "cache-control": "no-cache" } });
+		const response = await fetchImpl(`${base}${route}`, { headers });
 		if (!response.ok) throw new Error(`${route} answered ${response.status} while reading the served inline script hashes`);
+		for (const script of collectInlineScripts(await response.text())) hashes.add(script.hash);
+	}
+	for (const key of RETIRED_PAGE_KEYS) {
+		const response = await fetchImpl(`${base}/${key}`, { headers });
+		if (response.status === 404) continue;
+		if (!response.ok) throw new Error(`/${key} answered ${response.status} while reading the served inline script hashes`);
 		for (const script of collectInlineScripts(await response.text())) hashes.add(script.hash);
 	}
 	return [...hashes].sort();
@@ -235,14 +273,13 @@ function sha256(buffer) {
 
 /**
  * Checks the public origin exactly the way the old Node health check did, but through CloudFront:
- * shell and document parity with the local build, security and preconnect headers, the live geo
+ * shell parity with the local build, security and preconnect headers, the live geo
  * endpoint, referral deep-link headers, and 404s for missing files.
  */
 export async function verifyDeployment({ origin, publicDir, network, fetchImpl = fetch, scriptHashesMode = "report-only", imageSourcesMode = "report-only" }) {
 	const base = origin.replace(/\/+$/, "");
 	const expectedApiOrigin = network === "testnet" ? "https://api.hyperliquid-testnet.xyz" : "https://api.hyperliquid.xyz";
 	const shell = readFileSync(join(publicDir, "_shell.html"));
-	const docs = readFileSync(join(publicDir, "docs", "index.html"));
 	const buildMeta = JSON.parse(readFileSync(join(publicDir, "build-meta.json"), "utf8"));
 	const results = [];
 	async function check(name, run) {
@@ -266,11 +303,22 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(link.includes(`<${expectedApiOrigin}>`) && link.includes("preconnect"), `missing ${expectedApiOrigin} preconnect`);
 		return `csp ok, preconnect ${expectedApiOrigin}`;
 	});
-	await check("prerendered document route", async () => {
-		const response = await fetchImpl(`${base}/docs`, { headers: { accept: "text/html" } });
-		expect(response.status === 200, `status ${response.status}`);
-		expect(sha256(Buffer.from(await response.arrayBuffer())) === sha256(docs), "body differs from local docs/index.html");
-		expect(!(response.headers.get("link") ?? "").includes("preconnect"), "document route must not preconnect the API");
+	await check("legal pages match the build", async () => {
+		const summary = { shell: 0, standalone: 0 };
+		for (const key of RETIRED_PAGE_KEYS) {
+			const localPage = join(publicDir, key);
+			const standalone = existsSync(localPage);
+			const expected = sha256(standalone ? readFileSync(localPage) : shell);
+			const expectedName = standalone ? `local ${key}` : "local _shell.html";
+			const route = `/${key.slice(0, -"/index.html".length)}`;
+			for (const path of [route, `/${key}`]) {
+				const response = await fetchImpl(`${base}${path}`, { headers: { accept: "text/html" } });
+				expect(response.status === 200, `${path} status ${response.status}`);
+				expect(sha256(Buffer.from(await response.arrayBuffer())) === expected, `${path} body differs from ${expectedName}`);
+			}
+			summary[standalone ? "standalone" : "shell"] += 1;
+		}
+		return `${summary.shell} shell, ${summary.standalone} standalone`;
 	});
 	await check("build metadata parity", async () => {
 		const response = await fetchImpl(`${base}/build-meta.json`);
@@ -325,6 +373,10 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		expect(response.headers.get("x-gatu-route") === "mobile-agent-sync", "x-gatu-route marker missing");
 	});
 	await check("missing files stay 404", async () => {
+		for (const path of ["/missing.webmanifest", "/.env"]) {
+			const response = await fetchImpl(`${base}${path}`);
+			expect(response.status === 404, `${path} status ${response.status}`);
+		}
 		const asset = await fetchImpl(`${base}/assets/missing-${Date.now()}.js`);
 		expect(asset.status === 404, `asset status ${asset.status}`);
 		const chart = await fetchImpl(`${base}/charting_library/missing-${Date.now()}.js`);
@@ -633,7 +685,11 @@ async function main() {
 				for (const problem of gates.problems) console.warn(`An executing sync would refuse this build: ${problem}`);
 			}
 			if (options.execute) assertLivePolicyAllowsBuild(publicDir);
-			for (const command of buildSyncCommands({ publicDir, bucket, files: listPublicFiles(publicDir) })) {
+			const files = listPublicFiles(publicDir);
+			for (const command of buildSyncCommands({ publicDir, bucket, files })) {
+				runAws(command, options.execute);
+			}
+			for (const command of buildRetiredPageCommands({ publicDir, bucket, files })) {
 				runAws(command, options.execute);
 			}
 			if (options.execute) {

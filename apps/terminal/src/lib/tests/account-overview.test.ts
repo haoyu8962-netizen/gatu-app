@@ -22,6 +22,7 @@ function createBalances(overrides: Partial<AccountBalances> = {}): AccountBalanc
 			totalRawUsd: "100",
 		} as AccountBalances["marginSummary"],
 		perpPositions: [],
+		perpsAtOpenInterestCap: null,
 		perpStateReceivedAt: 1,
 		perpStateStatus: "success",
 		perpSummary: {

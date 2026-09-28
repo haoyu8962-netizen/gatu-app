@@ -67,7 +67,7 @@ export function useDisconnectWallet() {
 
 let mobileSyncOpen = false;
 
-function setMobileSyncOpen(next: boolean) {
+export function setMobileSyncOpen(next: boolean) {
 	if (mobileSyncOpen === next) return;
 	mobileSyncOpen = next;
 	for (const listener of listeners) listener();

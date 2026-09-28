@@ -8,6 +8,7 @@ import type { ISubscription, ISubscriptionTransport } from "@nktkas/hyperliquid"
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { acquireL2SubscriptionGate } from "../../../../../packages/hl-react/src/subscriptions/l2-subscription-gate";
 
 interface TransportCall {
 	payload: unknown;
@@ -438,5 +439,58 @@ describe("useL2BookSubscription", () => {
 		expect(captured?.data).toBeUndefined();
 		expect(captured?.status).toBe("error");
 		expect(captured?.error).toMatchObject({ code: "invalid_frame" });
+	});
+});
+
+describe("acquireL2SubscriptionGate", () => {
+	beforeEach(() => {
+		vi.useFakeTimers({ now: new Date("2026-09-28T00:00:00Z") });
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	async function waitBehindAReoccupiedGate(clockChangeMs: number): Promise<() => unknown> {
+		const transport = { subscribe: vi.fn() } as unknown as ISubscriptionTransport;
+		const first = await acquireL2SubscriptionGate(transport, { type: "l2", c: "BTC", s: 5 });
+		let outcome: unknown = "pending";
+		void acquireL2SubscriptionGate(transport, { type: "l2", c: "BTC", s: 5, m: 2 }).then(
+			() => {
+				outcome = "acquired";
+			},
+			(error: unknown) => {
+				outcome = error;
+			},
+		);
+		await vi.advanceTimersByTimeAsync(1_000);
+		vi.setSystemTime(Date.now() + clockChangeMs);
+
+		// The released gate frees one microtask before the waiter resumes, so a third grouping takes it
+		// first and the waiter has to wait again within its original five-second budget.
+		void first.release(() => Promise.resolve());
+		await Promise.resolve();
+		void acquireL2SubscriptionGate(transport, { type: "l2", c: "BTC", s: 5, m: 5 });
+		await vi.advanceTimersByTimeAsync(0);
+		return () => outcome;
+	}
+
+	it("keeps the five-second wait budget when the system clock is set back during the wait", async () => {
+		const outcome = await waitBehindAReoccupiedGate(-60 * 60_000);
+		expect(outcome()).toBe("pending");
+
+		await vi.advanceTimersByTimeAsync(3_999);
+		expect(outcome()).toBe("pending");
+
+		await vi.advanceTimersByTimeAsync(1);
+		expect(outcome()).toBeInstanceOf(L2BookStreamError);
+		expect((outcome() as L2BookStreamError).code).toBe("subscription_conflict");
+	});
+
+	it("still spends the wait budget at once when the system clock jumps forward", async () => {
+		const outcome = await waitBehindAReoccupiedGate(60 * 60_000);
+
+		expect(outcome()).toBeInstanceOf(L2BookStreamError);
+		expect((outcome() as L2BookStreamError).code).toBe("subscription_conflict");
 	});
 });

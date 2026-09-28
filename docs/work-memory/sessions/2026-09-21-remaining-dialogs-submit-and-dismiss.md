@@ -13,15 +13,7 @@
   "summary": "产品负责人要求继续修复其余仍在按钮上显示进度的弹层。止盈止损、逐仓保证金、取消全部委托、移动端改单、现货兑换、账户模式、杠杆与保证金模式改为点击即关闭、结果走通知；委托列表的撤单按钮、桌面行内改单、TWAP 终止与桌面下单按钮去掉进度文案与转圈。止盈止损与逐仓保证金的会话并入页面级的持仓弹层宿主。杠杆通知报告的是实际生效的杠杆：回归测试抓到弹层想报 15x、实际提交 10x 的情形，应用函数因此改为返回生效值。资金类（划转、发送、充值、提现）只把按钮名称改为静态，有意不改成点击即关闭。新增进度文案契约测试。",
   "thread": null,
   "baseCommit": "2429368b",
-  "commits": [
-    "27f83f35",
-    "58d510aa",
-    "9102f9ca",
-    "dbfb372b",
-    "05f3fed7",
-    "bb2e2917",
-    "8318d893"
-  ],
+  "commits": ["27f83f35", "58d510aa", "9102f9ca", "dbfb372b", "05f3fed7", "bb2e2917", "8318d893", "e15ee0de"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/positions/position-tpsl-modal.tsx" },
     { "path": "apps/terminal/src/components/trade/positions/position-isolated-margin-modal.tsx" },

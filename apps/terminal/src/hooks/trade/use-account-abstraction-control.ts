@@ -1,7 +1,9 @@
+import { msg } from "@lingui/core/macro";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { infoKey, useExchange, useHyperliquid, useHyperliquidClients } from "@/lib/hyperliquid";
 import {
 	type AccountAbstraction,
@@ -22,7 +24,7 @@ export function assertPortfolioMarginActivationAllowed(
 	activationEnabled = PORTFOLIO_MARGIN_FEATURES.activationEnabled,
 ): void {
 	if (nextAccountAbstraction === "portfolioMargin" && !activationEnabled) {
-		throw new Error("Portfolio margin activation is temporarily unavailable");
+		throw new LocalizedActionError(msg`Portfolio margin activation is temporarily unavailable`);
 	}
 }
 
@@ -41,7 +43,7 @@ export function useAccountAbstractionControl(resolvedAccountAbstraction: Account
 	const setAccountAbstraction = useCallback(
 		async (nextAccountAbstraction: SelectableAccountAbstraction) => {
 			if (!address || !canSet) {
-				throw new Error("Wallet is not ready to update account mode");
+				throw new LocalizedActionError(msg`Wallet is not ready to update account mode`);
 			}
 			if (currentAccountAbstraction === nextAccountAbstraction) return false;
 			assertPortfolioMarginActivationAllowed(selectableAccountAbstraction, nextAccountAbstraction);

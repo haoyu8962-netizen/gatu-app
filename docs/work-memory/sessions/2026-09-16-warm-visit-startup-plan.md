@@ -10,7 +10,7 @@
   "summary": "三次连续访问实测：热访问壳 0.16–0.28 s、真实终端 0.43–0.65 s（4× CPU 1.36–1.42 s，全是 JS 求值与 provider 挂载）；官方站热访问空白 1.4–1.7 s（4× 3.1–3.6 s）且资源每次重验证，照抄是回归。真正多余的等待是持久化目录丢失（尾沿节流无隐藏时写回）、24 h 播种上限、壳 HTML 每次 304。P1 三项已实现；Round 2 修复 SW 响应体克隆竞态并实现 Markets Activity 与弹窗 matchMedia 两项 P2。未发布，性能与真机复测待完成。",
   "thread": null,
   "baseCommit": "f5010ee7",
-  "commits": [],
+  "commits": ["70add4bd", "ade94020", "7d80e46b"],
   "sources": [
     { "path": "apps/terminal/src/lib/query-persistence.ts" },
     { "path": "apps/terminal/src/providers/client-root.tsx" },

@@ -1,12 +1,14 @@
 import { useActiveAgentOwner } from "@gatu/hl-react";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import type { Address, Hex } from "viem";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { formatExchangeActionError } from "@/lib/errors/format";
+import { type ActionFailure, classifyActionErrorOr, formatActionFailure } from "@/lib/errors/action-error";
 import { formatDateTime } from "@/lib/format";
 import { type InfoResponse, useHyperliquid, useInfo } from "@/lib/hyperliquid";
+import type { Translate } from "@/lib/translate";
 import {
 	type ApiWalletActionState,
 	createApiWalletActionState,
@@ -41,13 +43,15 @@ import type {
 
 type ExtraAgentsResponse = InfoResponse<"extraAgents">;
 
+const API_WALLET_REQUEST_REJECTED = msg`The API wallet request was rejected.`;
+
 interface ActiveAction {
 	state: ApiWalletActionState;
 	identityKey: string;
 	ownerAddress: string;
 	approval?: ApiWalletApproval;
 	removal?: ApiWalletRemoval;
-	errorMessage?: string;
+	failure?: ActionFailure;
 	isPreflighting?: boolean;
 	privateKeyVisible: boolean;
 	credentialDownloaded: boolean;
@@ -76,6 +80,7 @@ export function useApiWalletController({
 	createCredential = createApiWalletCredential,
 }: ApiWalletControllerOptions = {}): ApiWalletController {
 	const { t, i18n } = useLingui();
+	const translate: Translate = (descriptor) => t(descriptor);
 	const wallet = useWalletSession();
 	const { env } = useHyperliquid();
 	const activeAgentOwner = useActiveAgentOwner();
@@ -138,9 +143,9 @@ export function useApiWalletController({
 		isError: agentsQuery.isError || hasMalformedSnapshot,
 		agents: validatedAgents,
 	});
-	const agents = createAgentViews(validatedAgents ?? [], i18n.locale, Date.now(), t);
+	const agents = createAgentViews(validatedAgents ?? [], i18n.locale, Date.now(), translate);
 	const nameValidation = validateApiWalletName(name, validatedAgents);
-	const nameError = getNameError(name, nameValidation.error, t);
+	const nameError = getNameError(name, nameValidation.error, translate);
 	const canOperate = isApiWalletPageOperable(pageState) && !identityBoundAction && !approvalMutation.isPending;
 	const canGenerate = canOperate;
 	const visibleGeneratedAddress = identityBoundCredential ? generatedAddress : undefined;
@@ -233,7 +238,7 @@ export function useApiWalletController({
 		if (current.state.stage === "done") {
 			const retriedState = transitionApiWalletAction(current.state, { type: "retry" });
 			if (retriedState === current.state || retriedState.stage !== "review") return;
-			updateAction({ ...current, state: retriedState, errorMessage: undefined });
+			updateAction({ ...current, state: retriedState, failure: undefined });
 			return;
 		}
 		if (current.state.stage !== "review") return;
@@ -251,7 +256,7 @@ export function useApiWalletController({
 			return;
 		}
 		const lease = startExecution(current.identityKey);
-		updateAction({ ...current, errorMessage: undefined, isPreflighting: true });
+		updateAction({ ...current, failure: undefined, isPreflighting: true });
 		let freshSnapshot: Awaited<ReturnType<typeof agentsQuery.refetch>>;
 		try {
 			freshSnapshot = await agentsQuery.refetch({ cancelRefetch: true });
@@ -261,7 +266,7 @@ export function useApiWalletController({
 			if (latest) {
 				updateAction({
 					...latest,
-					errorMessage: t`Fresh API wallet data could not be verified before signing.`,
+					failure: msg`Fresh API wallet data could not be verified before signing.`,
 					isPreflighting: false,
 				});
 			}
@@ -275,7 +280,7 @@ export function useApiWalletController({
 				if (latest) {
 					updateAction({
 						...latest,
-						errorMessage: t`Fresh API wallet data could not be verified before signing.`,
+						failure: msg`Fresh API wallet data could not be verified before signing.`,
 						isPreflighting: false,
 					});
 				}
@@ -287,7 +292,7 @@ export function useApiWalletController({
 				if (latest) {
 					updateAction({
 						...latest,
-						errorMessage: t`API wallet data changed before signing. Close this request and review the refreshed list.`,
+						failure: msg`API wallet data changed before signing. Close this request and review the refreshed list.`,
 						isPreflighting: false,
 					});
 				}
@@ -340,7 +345,7 @@ export function useApiWalletController({
 			updateAction({
 				...latest,
 				state: transitionApiWalletAction(submitted, { type: "resolve", result: "apiError" }),
-				errorMessage: formatExchangeActionError(error, t`The API wallet request was rejected.`),
+				failure: classifyActionErrorOr(error, API_WALLET_REQUEST_REJECTED),
 			});
 			finishExecution(lease);
 		}
@@ -365,9 +370,9 @@ export function useApiWalletController({
 					type: "resolve",
 					result: result.status === "success" ? "success" : "unknown",
 				}),
-				errorMessage:
+				failure:
 					result.status === "unknown" && result.reason === "conflict"
-						? t`Another API wallet with this exact name appeared while removal was being verified.`
+						? msg`Another API wallet with this exact name appeared while removal was being verified.`
 						: undefined,
 			});
 			if (result.status !== "success" && current.state.action === "authorize") {
@@ -445,7 +450,7 @@ export function useApiWalletController({
 		identityBoundCredential?.privateKey,
 		i18n.locale,
 		actionSigner,
-		t,
+		translate,
 	);
 
 	return {
@@ -517,7 +522,7 @@ function createActionView(
 	privateKey: Hex | undefined,
 	locale: string,
 	signer: ApiWalletActionSigner,
-	t: ReturnType<typeof useLingui>["t"],
+	translate: Translate,
 ): ApiWalletActionView | null {
 	if (!action || action.state.stage === "input") return null;
 	const approval = action.approval;
@@ -534,9 +539,9 @@ function createActionView(
 		agentAddress: approval?.address ?? action.removal?.target.address ?? "",
 		validityLabel:
 			action.state.action === "authorize"
-				? formatValidityDays(approval ? Math.ceil((approval.validUntil - Date.now()) / 86_400_000) : 0, t)
-				: formatValidityDate(action.removal?.target.validUntil ?? null, locale, t),
-		errorMessage: action.errorMessage,
+				? formatValidityDays(approval ? Math.ceil((approval.validUntil - Date.now()) / 86_400_000) : 0, translate)
+				: formatValidityDate(action.removal?.target.validUntil ?? null, locale, translate),
+		errorMessage: action.failure ? formatApiWalletFailure(action.failure, translate) : undefined,
 		privateKey: result === "success" && action.state.action === "authorize" ? privateKey : undefined,
 		privateKeyVisible: action.privateKeyVisible,
 		credentialDownloaded: action.credentialDownloaded,
@@ -545,11 +550,15 @@ function createActionView(
 	};
 }
 
+function formatApiWalletFailure(failure: ActionFailure, translate: Translate): string {
+	return formatActionFailure(failure, translate) ?? translate(API_WALLET_REQUEST_REJECTED);
+}
+
 function createAgentViews(
 	agents: ExtraAgentsResponse,
 	locale: string,
 	nowMs: number,
-	t: ReturnType<typeof useLingui>["t"],
+	translate: Translate,
 ): ApiWalletAgentView[] {
 	return agents.map((agent) => {
 		const status = deriveApiWalletAgentStatus(agent.validUntil, nowMs);
@@ -558,9 +567,9 @@ function createAgentViews(
 			name: agent.name,
 			address: agent.address,
 			expiresAt: agent.validUntil === null ? null : new Date(agent.validUntil).toISOString(),
-			expiryLabel: formatValidityDate(agent.validUntil, locale, t),
+			expiryLabel: formatValidityDate(agent.validUntil, locale, translate),
 			status: mapAgentStatus(status),
-			statusDetail: getStatusDetail(status, agent.validUntil, nowMs, t),
+			statusDetail: getStatusDetail(status, agent.validUntil, nowMs, translate),
 		};
 	});
 }
@@ -573,32 +582,34 @@ function getStatusDetail(
 	status: ReturnType<typeof deriveApiWalletAgentStatus>,
 	validUntil: number | null,
 	nowMs: number,
-	t: ReturnType<typeof useLingui>["t"],
+	translate: Translate,
 ): string | undefined {
-	if (status === "today") return t`Expires today`;
+	if (status === "today") return translate(msg`Expires today`);
 	if (status !== "expiring" || validUntil === null) return undefined;
 	const days = Math.max(1, Math.ceil((validUntil - nowMs) / 86_400_000));
-	return t`${days} days left`;
+	return translate(msg`${days} days left`);
 }
 
 function getNameError(
 	name: string,
 	error: ReturnType<typeof validateApiWalletName>["error"],
-	t: ReturnType<typeof useLingui>["t"],
+	translate: Translate,
 ): string | undefined {
 	if (!name) return undefined;
-	if (error === "required") return t`Enter an API wallet name.`;
-	if (error === "format") return t`Use 2–16 letters, numbers, underscores, or hyphens.`;
-	if (error === "duplicate") return t`This name already exists. A duplicate would replace the existing API wallet.`;
+	if (error === "required") return translate(msg`Enter an API wallet name.`);
+	if (error === "format") return translate(msg`Use 2–16 letters, numbers, underscores, or hyphens.`);
+	if (error === "duplicate") {
+		return translate(msg`This name already exists. A duplicate would replace the existing API wallet.`);
+	}
 	return undefined;
 }
 
-function formatValidityDays(days: number, t: ReturnType<typeof useLingui>["t"]): string {
-	return t`${days} days`;
+function formatValidityDays(days: number, translate: Translate): string {
+	return translate(msg`${days} days`);
 }
 
-function formatValidityDate(validUntil: number | null, locale: string, t: ReturnType<typeof useLingui>["t"]): string {
-	if (validUntil === null) return t`Not reported`;
+function formatValidityDate(validUntil: number | null, locale: string, translate: Translate): string {
+	if (validUntil === null) return translate(msg`Not reported`);
 	return formatDateTime(validUntil, { locale, dateStyle: "medium" });
 }
 

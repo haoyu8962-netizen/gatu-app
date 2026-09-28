@@ -133,7 +133,8 @@ for (const width of [390, 1333]) {
 			await expect(page.getByRole("menuitem", { name: "Reload page", exact: true })).toHaveCount(0);
 			await expect(page.getByRole("menuitem", { name: "Reconnect wallet", exact: true })).toHaveCount(0);
 			await expect(page.getByRole("menuitem", { name: "Copy Address", exact: true })).toBeEnabled();
-			await expect(page.getByRole("menuitem", { name: "Link mobile device", exact: true })).toBeEnabled();
+			expect(await page.evaluate(() => window.__gatuUserMenuRecovery.pairingEnabled)).toBe(true);
+			await expect(page.getByRole("menuitem", { name: "Link mobile device", exact: true })).toHaveCount(0);
 			const connectedDot = await account
 				.locator("span[aria-hidden]")
 				.first()
@@ -142,7 +143,6 @@ for (const width of [390, 1333]) {
 			await page.evaluate(() => window.__gatuUserMenuRecovery.setLocale("zh"));
 			const localizedAccount = page.getByRole("button", { name: "账户与钱包", exact: true });
 			await expect(page.getByRole("menuitem", { name: "复制地址", exact: true })).toBeEnabled();
-			await expect(page.getByRole("menuitem", { name: "关联移动设备", exact: true })).toBeEnabled();
 			expect(await localizedAccount.evaluate((node, original) => node === original, accountNode)).toBe(true);
 			expect(await draft.evaluate((node, original) => node === original, draftNode)).toBe(true);
 			await expect(draft).toHaveValue("3.1415");
@@ -155,6 +155,15 @@ for (const width of [390, 1333]) {
 			await expect(disconnect).toBeFocused();
 			await page.keyboard.press("Enter");
 			await expect.poll(() => page.evaluate(() => window.__gatuUserMenuRecovery.calls.disconnect)).toBe(1);
+			if (desktop) {
+				await page.evaluate(() => window.__gatuUserMenuRecovery.openLinkMobileDevice());
+				const linkMobile = page.getByRole("dialog", { name: "Fixture mobile link" });
+				await expect(linkMobile).toHaveCount(1);
+				await linkMobile.getByRole("button", { name: "Close fixture mobile link" }).click();
+				await expect(linkMobile).toHaveCount(0);
+				expect(await localizedAccount.evaluate((node, original) => node === original, accountNode)).toBe(true);
+				await expect(draft).toHaveValue("3.1415");
+			}
 			await localizedAccount.click();
 			await setSession(page, { walletDirectoryReady: false, hasWalletAccess: false, isConnected: false });
 			await expect(page.getByRole("menuitem", { name: "重新连接钱包", exact: true })).toBeDisabled();

@@ -39,6 +39,8 @@ describe("query retry policy", () => {
 		expect(parseRetryAfterMs("120")).toBe(60_000);
 		expect(getQueryRetryDelayMs(0, httpError(429, "7"), () => 1)).toBe(7_000);
 		expect(getQueryRetryDelayMs(0, httpError(429), () => 0)).toBe(10_000);
+		expect(getQueryRetryDelayMs(0, httpError(429), () => 0, 60_000)).toBe(60_000);
+		expect(getQueryRetryDelayMs(0, httpError(429, "7"), () => 0, 60_000)).toBe(7_000);
 	});
 
 	it("parses Retry-After dates and uses bounded jittered backoff otherwise", () => {

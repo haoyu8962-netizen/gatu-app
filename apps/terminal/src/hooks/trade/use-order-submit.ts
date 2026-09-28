@@ -1,12 +1,15 @@
 import type { ExchangeExecutionGuard, HyperliquidExchangeSessionLease } from "@gatu/hl-react";
 import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
+import { getReduceOnlyMarginHint } from "@/domain/trade/insufficient-margin-hint";
 import { getOrderExecutionSummary, type OrderExecutionSummary } from "@/domain/trade/order-execution-summary";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError, type TrackedOrderParams } from "@/domain/trade/order-tracking";
-import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
+import { formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import { buildTwapOrderDetails } from "@/domain/trade/twap-details";
+import { type ActionFailure, exchangeActionFailure } from "@/lib/errors/action-error";
+import { isInsufficientMarginText } from "@/lib/errors/exchange-error-text";
 import { useHyperliquid } from "@/lib/hyperliquid";
-import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
+import { deriveOrderOutcome, extractStatusErrors, extractStatusRejections } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive, toBig } from "@/lib/trade/numbers";
 import {
@@ -14,6 +17,7 @@ import {
 	getOrderSubmissionFeedback,
 	orderSubmissionFeedback,
 } from "@/lib/trade/order-submission-feedback";
+import { classifyTradingActionError } from "@/lib/trade/trading-action-failure";
 import type { Side } from "@/lib/trade/types";
 import {
 	getOrderEntryDraftResetToken,
@@ -96,6 +100,12 @@ interface UseOrderSubmitOptions {
 	 * clears exactly on the outcomes that clear the store.
 	 */
 	onReset?: () => void;
+	/**
+	 * Reads the live signed position size of a market when it is known. It is read when the order
+	 * is submitted, so a late rejection never uses another account's position, and only to suggest
+	 * Reduce Only after the exchange rejects a perp order for insufficient margin.
+	 */
+	getPositionSize?: (assetId: number) => string | undefined;
 }
 
 type QueueOrderType = "twap" | "scale" | "trigger" | "limit" | "market";
@@ -188,6 +198,20 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 
 		const hasTp = tpSlEnabled && canUseTpSl && isPositive(tpPriceNum);
 		const hasSl = tpSlEnabled && canUseTpSl && isPositive(slPriceNum);
+		const positionSizeAtSubmit = market.kind === "perp" ? options.getPositionSize?.(market.assetId) : undefined;
+
+		function withMarginHint(failure: ActionFailure | null): ActionFailure | undefined {
+			if (!failure) return undefined;
+			if (market.kind !== "perp" || !("kind" in failure) || failure.kind !== "exchange-error") return failure;
+			if (!failure.entries.some((entry) => isInsufficientMarginText(entry.text))) return failure;
+			const hint = getReduceOnlyMarginHint({
+				side,
+				size: formattedSize,
+				reduceOnly,
+				positionSize: positionSizeAtSubmit,
+			});
+			return hint ? { ...failure, hint } : failure;
+		}
 
 		const orderId = addOrder({
 			owner: clientKey,
@@ -251,7 +275,11 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					resetSubmittedForm(draftResetToken);
 					return;
 				}
-				throwIfResponseError(submission.result.response?.data?.status);
+				const [twapError] = extractStatusErrors([submission.result.response?.data?.status]);
+				if (twapError) {
+					updateOrder(orderId, { status: "failed", error: withMarginHint(exchangeActionFailure(twapError)) });
+					return;
+				}
 				updateOrder(orderId, { status: "success", outcome: "twapStarted" });
 			} else {
 				const plan = buildOrderPlan({
@@ -305,10 +333,10 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				}
 
 				const statuses = submission.result.response?.data?.statuses ?? [];
-				const errors = extractStatusErrors(statuses);
+				const rejections = extractStatusRejections(statuses);
 
-				if (errors.length > 0) {
-					updateOrder(orderId, { status: "failed", error: errors.join("; ") });
+				if (rejections.length > 0) {
+					updateOrder(orderId, { status: "failed", error: withMarginHint(exchangeActionFailure(rejections)) });
 				} else {
 					updateOrder(orderId, {
 						status: execution?.completeness === "partial" && !input.scaleOrder ? "partial" : "success",
@@ -321,26 +349,30 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 		} catch (error) {
 			if (isOrderBatchResolutionError(error)) {
 				const { resolution } = error;
+				const failure = withMarginHint(classifyTradingActionError(error));
 				if (resolution.status === "partial") {
 					updateOrder(orderId, {
 						status: "partial",
 						acceptedCount: resolution.acceptedCount,
 						totalCount: resolution.totalCount,
-						error: resolution.errors.join("; ") || undefined,
+						error: failure,
 					});
 					resetSubmittedForm(draftResetToken);
 					return;
 				}
 				updateOrder(orderId, {
 					status: "failed",
-					error: resolution.errors.join("; ") || orderSubmissionFeedback("exchange-order-rejected"),
+					error: failure ?? orderSubmissionFeedback("exchange-order-rejected"),
 				});
 				return;
 			}
-			const errorMessage =
-				getOrderSubmissionFeedback(error) ??
-				(error instanceof Error ? error.message : orderSubmissionFeedback("order-failed"));
-			updateOrder(orderId, { status: "failed", error: errorMessage });
+			updateOrder(orderId, {
+				status: "failed",
+				error:
+					getOrderSubmissionFeedback(error) ??
+					withMarginHint(classifyTradingActionError(error)) ??
+					orderSubmissionFeedback("order-failed"),
+			});
 		}
 	}
 

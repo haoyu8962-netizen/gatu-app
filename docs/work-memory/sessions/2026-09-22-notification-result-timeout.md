@@ -13,7 +13,7 @@
     "title": "启动开发服务器"
   },
   "baseCommit": "a379d231f2a5bddf2bc602d0545aed8e14630581",
-  "commits": [],
+  "commits": ["15b0d1c8"],
   "sources": [
     { "path": "docs/trading-notifications.md" },
     { "path": "apps/terminal/src/components/trade/order-notification-host.tsx" },

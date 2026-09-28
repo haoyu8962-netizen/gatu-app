@@ -1,9 +1,7 @@
-const CACHE_VERSION = "v9";
+const CACHE_VERSION = "v10";
 const FONT_CACHE = `fonts-${CACHE_VERSION}`;
 const ICON_CACHE = `icons-${CACHE_VERSION}`;
 const SHELL_CACHE = `shell-${CACHE_VERSION}`;
-const DOCUMENT_CACHE = `documents-${CACHE_VERSION}`;
-const DOCUMENT_ROUTES = ["/cookies", "/docs", "/privacy", "/risk", "/support", "/terms"];
 const RETIRED_CACHE_CLEANUP_TIMEOUT_MS = 1_500;
 
 const MAX_ICON_ENTRIES = 500;
@@ -24,7 +22,7 @@ self.addEventListener("activate", (event) => {
 function isRetiredManagedCache(key) {
 	return (
 		/^(?:charting|fonts|icons|shell|documents)-/.test(key) &&
-		![FONT_CACHE, ICON_CACHE, SHELL_CACHE, DOCUMENT_CACHE].includes(key)
+		![FONT_CACHE, ICON_CACHE, SHELL_CACHE].includes(key)
 	);
 }
 
@@ -63,13 +61,11 @@ self.addEventListener("fetch", (event) => {
 			pathname.startsWith("/mobile-agent-sync-ticket/") ||
 			/^\/mobile-agent-sync(\/|$)/i.test(pathname) ||
 			pathname.startsWith("/_serverFn/") ||
-			(dot > 0 && /^[A-Za-z0-9]{1,8}$/.test(segment.slice(dot + 1)))
+			(dot >= 0 && /^[A-Za-z0-9]{1,16}$/.test(segment.slice(dot + 1)))
 		)
 			return;
-		const isDocument = DOCUMENT_ROUTES.includes(pathname);
-		const cacheName = isDocument ? DOCUMENT_CACHE : SHELL_CACHE;
-		const cacheKey = isDocument ? request : new URL(SHELL_CACHE, self.location.origin).href;
-		event.respondWith(navigationStaleWhileRevalidate(request, cacheName, cacheKey, event));
+		const cacheKey = new URL(SHELL_CACHE, self.location.origin).href;
+		event.respondWith(navigationStaleWhileRevalidate(request, SHELL_CACHE, cacheKey, event));
 		return;
 	}
 

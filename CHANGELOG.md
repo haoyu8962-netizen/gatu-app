@@ -6,7 +6,65 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ## Unreleased
 
+### Added
+
+- Earn is live. The new `/earn` page lists Hyperliquid's borrow and lend reserves with their LTV,
+  APY, oracle price and totals, your supplied and borrowed amounts, interest and liquidation
+  prices, plus your health factor, and lets you supply, withdraw, borrow and repay. Max follows the
+  official terminal's rules; for supplies and borrows the amount you see is the most that is sent,
+  withdraw-all and repay-all with Max close the whole position including interest accrued until it
+  executes, amounts that would leave less than $1 supplied are blocked with an explanation, and the
+  request stops if your balances changed before it was submitted. Portfolio Margin accounts see the
+  automatic-mode explanation with manual actions disabled. Earn is now a regular navigation entry on desktop and
+  in the mobile menu; between 1101px and 1150px the lower navigation entries move into More so
+  French labels still fit.
+- A Funding view next to the desktop chart and a fourth Funding tab in the mobile Markets view
+  show a perpetual or HIP-3 market's funding rate history with its cumulative rate, over 1h
+  buckets for 7 days, 8h buckets for 30 days (default) or daily buckets for 90 days. It loads
+  only when first opened, keeps TradingView mounted while it is shown, and spot markets show only
+  Chart. See [market funding history](docs/market-funding-history.md).
+- A Funding Comparison page (`/fundingComparison`, in the desktop More menu and the mobile drawer)
+  compares the predicted funding of Hyperliquid main perpetual markets with Binance and Bybit for
+  an hourly, 8-hour, daily, weekly or yearly period, with each venue's difference to Hyperliquid.
+  See [funding comparison](docs/funding-comparison.md).
+- When the exchange reports a perpetual or HIP-3 market at its open-interest cap, Limit, Stop
+  Limit and Take Profit Limit orders are disabled with an explanation on desktop and mobile, and
+  the submission guard checks it again; market, trigger-market, TWAP and Scale orders stay
+  available. HIP-3 asset information shows the market's open-interest cap. No reachable market is
+  capped today, so this has only test evidence. See [open-interest cap](docs/open-interest-cap.md)
+  and [ADR 0023](docs/adr/0023-open-interest-cap-advisory-check.md).
+- Manage TP/SL warns when the position is large enough that a market TP/SL may slip heavily,
+  using Hyperliquid's maximum market order value for the position's current leverage; submission
+  is unchanged. See [TP/SL slippage warning](docs/position-tpsl-slippage-warning.md).
+- TWAP Fill History can be exported as CSV on desktop and mobile. The export pages the complete
+  TWAP slice fill history rather than the 2,000 fills shown in the table, keeps the latest 10,000
+  with a warning when that limit is reached, and paces its requests; the trade history export
+  still excludes TWAP fills. See the Export section of
+  [TWAP regression tests](docs/twap-regression-tests.md).
+- The leverage dialog on desktop and mobile shows the maximum position size allowed at the
+  selected leverage for markets with more than one margin tier (for example BTC above 20x:
+  $150,000,000). See [leverage position limit](docs/leverage-position-limit.md).
+
 ### Changed
+
+- Docs, Support, Terms, Privacy Policy, Risk Disclosure and Cookie Policy now open inside the
+  normal application chrome: the same top navigation and footer as the trading and dashboard
+  pages on desktop, and the application mobile header on phones. Their separate document
+  navigation is gone, and the account menu, Deposit and connection controls work on these pages.
+  Opening one directly now shows the usual blank startup until the app is ready, then waits like
+  the other dashboard pages for the footer and dialog host, and the pages are no longer
+  prerendered as standalone HTML. As on the official terminal, the Cookie Policy is reached from
+  Section 4 of the Privacy Policy (updated September 27, 2026) instead of a footer
+  link, and the phone navigation drawer now lists Docs and Support. Releases replace the old
+  standalone page files with the app, so a URL such as `/terms/index.html` no longer shows an
+  outdated copy.
+
+- Opening a dashboard page directly (Portfolio, Vaults, Staking, Referrals and referral
+  invitation links, Leaderboard, API wallet and the history pages) now waits up to 1.5 seconds,
+  the same limit as the trade page, for the footer and the global dialog host to load. When they
+  load in time they appear together with the page instead of a moment later, so Ctrl/⌘K works
+  from the first frame unless the terms-acceptance prompt is showing. The command menu itself
+  still loads on first use, and a slow connection reveals the page when the limit is reached.
 
 - The HIP-3 deployer disclaimer now always has a way out. On the trade page, Leave this market
   returns to BTC; the scrim and Esc still do not dismiss it. Close All and Reverse now show the
@@ -292,10 +350,72 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Error messages follow the interface language. The order and cancellation rejections that
+  Hyperliquid documents (such as tick size, minimum order value, insufficient margin, reduce-only,
+  post-only, open-interest caps, oracle price limits and maximum position), not having enough cross
+  margin to decrease leverage, an expired action and a required first deposit are translated and
+  keep the amounts, prices and account address the exchange reported. As on the official terminal,
+  an order rejected for insufficient margin while the account holds an opposite position suggests
+  Reduce Only. Any other exchange message is still shown word for word, but no longer cut to its
+  first line or 100 characters, and a rejected Market Close or Close All no longer repeats each
+  market's message on its summary line. Wallet, signing, network and other failures that do not
+  come from the exchange show a translated explanation instead of English technical text. Trading
+  notifications and dialog errors that are already on screen change language with the page; short
+  confirmations that close by themselves keep the language they opened in. See
+  [ADR 0024](docs/adr/0024-translate-action-errors-at-render.md).
+- Vault action errors, staking amount errors and the API wallet name check, expiry and status labels
+  are no longer blank. The helpers that built them returned empty text in every language. A Vault
+  transfer the exchange rejects shows the exchange's reason, and a Vault request that fails on the
+  network is reported as a failed operation, not as a change of wallet or network.
+- On phones, a leverage change made in the leverage drawer is reported under Adjust leverage. Its
+  notifications were titled Margin mode even when the margin mode did not change.
+- An order that the exchange rejected or canceled after it was submitted shows the reason in words,
+  such as a rejection for insufficient margin, instead of a status code such as
+  `perpMarginRejected`.
+- The chart reports a translated reason when market history cannot be loaded instead of the
+  network error text.
+- The Previous, Next and page labels of the history tables, the Clear search button, the
+  screen-reader names of the notification region and its close buttons, the embedded wallet's Agent
+  approval prompt, the LI.FI credit and the bridge quote countdown are translated.
+- The Docs page no longer shows its placeholder table of unfinished guide links, whose entries all
+  pointed nowhere, or the note telling authors to replace them.
+- The Quick Links on the Support page, and its other link to Troubleshooting, now jump to their
+  section and stop below the header on desktop, on testnet and on phones. Headings had no anchor,
+  so these links did nothing.
+- Italic text on the Docs and Support pages no longer shows its underscores or asterisks, and a
+  numbered list with nested bullets keeps one numbering instead of restarting at 1 for every entry.
+- Arabic, Spanish, French and Hindi translate 12 more strings that fell back to English, including
+  the mobile order book's `Total` column header, the TWAP trigger hints and the Display and
+  language menu. Two English source entries that were empty are filled.
+- A request for a missing file with a longer extension, such as `/missing.webmanifest`, or for a
+  file whose name starts with a dot, such as `/.env`, now returns Not Found from CloudFront, the
+  application server and the Service Worker instead of the application page.
+- Setting the computer's clock back no longer keeps stopped market or account data looking live.
+  Prices, order books, market contexts and account streams that stop updating are marked stale
+  after their usual threshold (for market contexts about 25 seconds while the page is visible)
+  whatever the clock does, and order books and market contexts that keep arriving are no longer
+  held back for as long as the clock was moved back. Staleness thresholds and reconnection are
+  unchanged.
+
+- Setting the computer's clock back no longer leaves order cancellations, order edits and TWAP
+  cancellations waiting for confirmation for as long as the clock was moved back. A fresh
+  open-orders or active-TWAP update confirms them as usual, a request with no answer is reported as
+  unconfirmed after the usual 15 seconds, and an update that arrived before the request is no longer
+  taken as its result. A connection that stops sending data is still reconnected, and after a change
+  of order-book grouping the book waits no longer than its usual five seconds for the previous
+  grouping to close. Pending orders that are shared between browser tabs still follow the
+  computer's clock.
+
 - On phones the Market Close and Limit Close sheets have a close button again. Since the redesign
   they could only be left by swiping down, tapping outside or pressing Esc, and the only button on
   the sheet was the confirm button. The close button takes the place of the `Price: Market` and
   `Limit` labels in the sheet header, which repeated the title.
+- The leverage slider in the desktop Adjust leverage dialog and the mobile leverage sheet no longer
+  moves under the pointer when a drag crosses 10x. The high-leverage warning below the field used to
+  appear or disappear in the middle of the drag, which moved the centred desktop dialog by about
+  35px and the bottom sheet by about 70px. The warning now keeps the state it had when the drag began
+  and follows the released value. Typed values and arrow keys still update it at once, and Confirm
+  still submits the released value.
 - On the desktop order form the size slider no longer jumps up or down while it is being dragged.
   The size message under the quantity field (`Min order $10`, `Enter size`, `Exceeds max size`)
   used to appear or disappear in the middle of a drag and move the slider row by 24px. A message

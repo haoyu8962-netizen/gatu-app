@@ -1,21 +1,26 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type KeyboardEvent, useEffect, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
+import type { MarginTierInput } from "@/domain/trade/order/liquidation";
 import { cn } from "@/lib/cn";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
+import { LeveragePositionLimitRow } from "./leverage-position-limit-row";
 import { LeverageSlider } from "./leverage-slider";
 
 type LeverageEditorVariant = "sheet" | "modal";
 
+const HIGH_LEVERAGE_WARNING_ABOVE = 10;
+
 interface LeverageEditorProps {
 	value: number;
-	riskValue?: number;
 	max: number;
 	disabled: boolean;
 	onChange: (value: number) => void;
 	onDraftChange?: (value: number | null) => void;
 	onInputValidityChange?: (isValid: boolean) => void;
 	variant?: LeverageEditorVariant;
+	marginTiers?: readonly MarginTierInput[] | null;
+	quoteSymbol?: string | null;
 }
 
 export function parseLeverageInput(text: string, max: number): number | null {
@@ -27,17 +32,20 @@ export function parseLeverageInput(text: string, max: number): number | null {
 
 export function LeverageEditor({
 	value,
-	riskValue = value,
 	max,
 	disabled,
 	onChange,
 	onDraftChange,
 	onInputValidityChange,
 	variant = "sheet",
+	marginTiers,
+	quoteSymbol,
 }: LeverageEditorProps) {
 	const { t } = useLingui();
 	const isSheet = variant === "sheet";
 	const [draftText, setDraftText] = useState<string | null>(null);
+	const [heldHighLeverageWarning, setHeldHighLeverageWarning] = useState<boolean | null>(null);
+	const showHighLeverageWarning = heldHighLeverageWarning ?? value > HIGH_LEVERAGE_WARNING_ABOVE;
 
 	useEffect(() => {
 		if (!disabled || draftText === null) return;
@@ -62,6 +70,16 @@ export function LeverageEditor({
 
 	function handleSliderCancel() {
 		clearTextDraft();
+		onDraftChange?.(null);
+	}
+
+	function handleSliderInteractionStart(startValue: number) {
+		setHeldHighLeverageWarning(showHighLeverageWarning);
+		onDraftChange?.(startValue);
+	}
+
+	function handleSliderInteractionEnd() {
+		setHeldHighLeverageWarning(null);
 		onDraftChange?.(null);
 	}
 
@@ -98,8 +116,8 @@ export function LeverageEditor({
 					value={value}
 					onChange={handleSliderDrag}
 					onCommit={handlePick}
-					onInteractionStart={(startValue) => onDraftChange?.(startValue)}
-					onInteractionEnd={() => onDraftChange?.(null)}
+					onInteractionStart={handleSliderInteractionStart}
+					onInteractionEnd={handleSliderInteractionEnd}
 					onCancel={onDraftChange ? handleSliderCancel : undefined}
 					max={max}
 					disabled={disabled}
@@ -122,7 +140,8 @@ export function LeverageEditor({
 				/>
 				<span className="ms-2 shrink-0 text-xs text-trading-panel-muted">x</span>
 			</div>
-			{riskValue > 10 && (
+			<LeveragePositionLimitRow marginTiers={marginTiers} quoteSymbol={quoteSymbol} leverage={value} />
+			{showHighLeverageWarning && (
 				<p className="rounded-[10px] border border-stroke-error-weak bg-trading-panel-error-soft px-2.5 py-2 text-xs leading-relaxed text-trading-panel-error">
 					<Trans>High leverage significantly increases liquidation risk. Use with caution.</Trans>
 				</p>

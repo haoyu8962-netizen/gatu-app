@@ -1,25 +1,22 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { DEFAULT_SWAP_SLIPPAGE_BPS } from "@/domain/trade/swap";
+import type { ActionFailure } from "@/lib/errors/action-error";
 import { getOrderSubmissionFeedback, type OrderSubmissionFeedback } from "./order-submission-feedback";
+import { classifyTradingActionError } from "./trading-action-failure";
 
 export interface SpotSwapFeedback {
 	kind: "spot-swap";
 	code: "no-liquidity" | "failed";
 }
 
-export function getSpotSwapFeedback(
-	cause: unknown,
-): SpotSwapFeedback | OrderSubmissionFeedback | { kind: "raw"; message: string } {
+export function getSpotSwapFeedback(cause: unknown): SpotSwapFeedback | OrderSubmissionFeedback | ActionFailure {
 	const submissionFeedback = getOrderSubmissionFeedback(cause);
 	if (submissionFeedback) return submissionFeedback;
-	if (cause instanceof Error) {
-		if (cause.message.toLowerCase().includes("could not immediately match")) {
-			return { kind: "spot-swap", code: "no-liquidity" };
-		}
-		return { kind: "raw", message: cause.message };
+	if (cause instanceof Error && cause.message.toLowerCase().includes("could not immediately match")) {
+		return { kind: "spot-swap", code: "no-liquidity" };
 	}
-	return { kind: "spot-swap", code: "failed" };
+	return classifyTradingActionError(cause) ?? { kind: "spot-swap", code: "failed" };
 }
 
 export function formatSpotSwapFeedback(

@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
+import type { OrderParameters } from "@nktkas/hyperliquid";
 import { I18nProvider } from "@lingui/react";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -16,6 +17,7 @@ const testState = vi.hoisted(() => ({
 	markPx: "100",
 	markPriceStatus: "success" as "success" | "loading" | "stale" | "error",
 	maxSize: 10,
+	openInterestCapped: false,
 	orderType: "market",
 	orderValue: 100,
 	quoteAvailable: 100,
@@ -24,6 +26,7 @@ const testState = vi.hoisted(() => ({
 	sizeValue: 1,
 	requestSubmit: vi.fn(),
 	submitOrder: vi.fn(),
+	executionGuard: undefined as ((params: OrderParameters) => void) | undefined,
 	tradingReady: true,
 	authorize: vi.fn(async () => {}),
 	actions: {
@@ -125,7 +128,7 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 		committedLeverage: null,
 		toggleSizeDenomination: vi.fn(),
 		currentLeverage: 10,
-		executionAvailability: {},
+		executionAvailability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
 		applySizePercent: vi.fn(),
 		hasAvailabilityError: testState.availabilityStatus === "error",
 		hasPosition: false,
@@ -135,6 +138,7 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 		isAvailabilityLoading: testState.availabilityStatus === "loading",
 		isAvailabilityStale: testState.availabilityStatus === "stale",
 		isSpotMarket: testState.kind === "spot",
+		isOpenInterestCapped: testState.openInterestCapped,
 		isSwitchingMode: false,
 		leverage: 10,
 		marginMode: "cross",
@@ -158,21 +162,24 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-order-submit", () => ({
-	useOrderSubmit: () => ({
-		captureDraftResetToken: () => ({
-			orderEntry: { marketIdentity: "Mainnet:BTC", draftRevision: 0 },
-			exchangeSession: {
-				id: Symbol("mobile-size-validation-session"),
-				env: "Mainnet",
-				clientKey: "0xabc",
-				sessionMode: "wallet",
-				active: true,
-			},
-		}),
-		isDraftResetTokenCurrent: () => true,
-		handleSubmit: testState.submitOrder,
-		isSubmitting: false,
-	}),
+	useOrderSubmit: (options: { executionGuard?: (params: OrderParameters) => void }) => {
+		testState.executionGuard = options.executionGuard;
+		return {
+			captureDraftResetToken: () => ({
+				orderEntry: { marketIdentity: "Mainnet:BTC", draftRevision: 0 },
+				exchangeSession: {
+					id: Symbol("mobile-size-validation-session"),
+					env: "Mainnet",
+					clientKey: "0xabc",
+					sessionMode: "wallet",
+					active: true,
+				},
+			}),
+			isDraftResetTokenCurrent: () => true,
+			handleSubmit: testState.submitOrder,
+			isSubmitting: false,
+		};
+	},
 }));
 
 vi.mock("@/hooks/trade/use-prospective-cross-margin-account", () => ({
@@ -281,8 +288,11 @@ vi.mock("@/stores/use-orderbook-actions-store", () => ({
 }));
 
 import { MobileTradeView } from "@/components/trade/mobile/mobile-trade-view";
+import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
 
 const LOCALES = ["en", "zh", "hi", "es", "fr", "ar"] as const;
+const OPEN_INTEREST_CAP_COPY =
+	"The limit order would be canceled after resting because open interest is capped. Use market orders to close positions.";
 type Locale = (typeof LOCALES)[number];
 
 function getMessageId(message: string): string {
@@ -296,6 +306,7 @@ function getLocaleMessages(locale: Locale): Messages {
 		[getMessageId("Exceeds max size")]: `${locale}: max size`,
 		[getMessageId("Insufficient {0} balance")]: `${locale}: insufficient balance`,
 		[getMessageId("Min order $10")]: `${locale}: perp minimum`,
+		[getMessageId(OPEN_INTEREST_CAP_COPY)]: `${locale}: open interest cap`,
 	};
 }
 
@@ -463,6 +474,99 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		);
 	}
 
+	it.each(LOCALES)("explains a confirmed open-interest cap on a limit order and blocks it in %s", async (locale) => {
+		activateLocale(locale);
+		testState.orderType = "limit";
+		testState.limitPrice = "100";
+		testState.openInterestCapped = true;
+		await renderView(root);
+
+		expect(getPriceInput(container).value).toBe("100");
+		expect(getValidationError(container)?.textContent).toBe(
+			locale === "en" ? OPEN_INTEREST_CAP_COPY : `${locale}: open interest cap`,
+		);
+		for (const control of getSizeControls(container)) expectDescriptionCleared(control);
+		expect(getOrderButton(container).textContent?.trim()).toBe("Buy");
+		await expectSubmissionBlocked(container);
+	});
+
+	it("shows the cap restriction before a limit price is typed", async () => {
+		activateLocale("en");
+		testState.orderType = "limit";
+		testState.openInterestCapped = true;
+		await renderView(root);
+
+		expect(getPriceInput(container).value).toBe("");
+		expect(getValidationError(container)?.textContent).toBe(OPEN_INTEREST_CAP_COPY);
+		await expectSubmissionBlocked(container);
+	});
+
+	it("keeps a market order on a capped market available and quiet", async () => {
+		activateLocale("en");
+		testState.openInterestCapped = true;
+		await renderView(root);
+
+		expect(getValidationError(container)).toBeNull();
+		expect(getOrderButton(container).disabled).toBe(false);
+		await act(async () => getOrderButton(container).click());
+		expect(testState.requestSubmit).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ orderType: "market" }),
+			expect.anything(),
+		);
+	});
+
+	it("keeps an uncapped or unknown limit order unchanged", async () => {
+		activateLocale("en");
+		testState.orderType = "limit";
+		testState.limitPrice = "100";
+		await renderView(root);
+
+		expect(getValidationError(container)).toBeNull();
+		expect(getOrderButton(container).disabled).toBe(false);
+	});
+
+	it("re-checks the latest cap state in the SDK execution guard", async () => {
+		activateLocale("en");
+		const limitOrder: OrderParameters = {
+			orders: [{ a: 0, b: true, p: "100", s: "1", r: false, t: { limit: { tif: "Alo" } } }],
+			grouping: "na",
+		};
+		testState.orderType = "limit";
+		testState.limitPrice = "100";
+		await renderView(root);
+		expect(testState.executionGuard).toBeTypeOf("function");
+		expect(() => testState.executionGuard?.(limitOrder)).not.toThrow();
+
+		testState.openInterestCapped = true;
+		await renderView(root);
+
+		let failure: unknown;
+		try {
+			testState.executionGuard?.(limitOrder);
+		} catch (error) {
+			failure = error;
+		}
+		expect(failure).toBeInstanceOf(EntryExecutionError);
+		expect(failure).toMatchObject({ reason: "open-interest-capped" });
+	});
+
+	it("keeps the cap restriction on the same node when the language changes", async () => {
+		activateLocale("en");
+		testState.orderType = "limit";
+		testState.limitPrice = "100";
+		testState.openInterestCapped = true;
+		await renderView(root);
+		const restriction = getValidationError(container);
+		expect(restriction?.textContent).toBe(OPEN_INTEREST_CAP_COPY);
+
+		await act(async () => activateLocale("zh"));
+
+		expect(getValidationError(container)).toBe(restriction);
+		expect(getPriceInput(container).value).toBe("100");
+		expect(restriction?.textContent).toBe("zh: open interest cap");
+		await expectSubmissionBlocked(container);
+	});
+
 	for (const source of ["account", "market"] as const) {
 		it.each(["loading", "stale", "error"] as const)(
 			`blocks an otherwise valid draft while ${source} data is %s without passive error text`,
@@ -612,6 +716,7 @@ function setValidPerpScenario() {
 	testState.markPx = "100";
 	testState.markPriceStatus = "success";
 	testState.maxSize = 10;
+	testState.openInterestCapped = false;
 	testState.orderType = "market";
 	testState.orderValue = 100;
 	testState.quoteAvailable = 100;

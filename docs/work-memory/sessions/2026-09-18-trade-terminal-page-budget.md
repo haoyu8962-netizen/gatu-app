@@ -12,7 +12,7 @@
   "summary": "PR #27 的四个 Build terminal 任务因 trade-terminal-page 128,778 B 超出 127,242 B 上限而失败（main 为 127,085）；增量来自 MobileAccountView 去掉提前 return 后被 React Compiler 编译，以及移动端订单簿表头芯片。未重定基线，改为把保证金模式、杠杆、账户模式三个弹窗移出启动 chunk：首次打开才加载、指针或焦点到达下单表单时按意图预热，失败时不刷新页面而是给出重试与显式刷新。trade-terminal-page 降到 126,255 B，桌面与移动端总启动分别减少 5.7 KB 与 4.1 KB。最初的空闲预热版本按基线文档的计数规则会让桌面运行时预算超限，已弃用。",
   "thread": null,
   "baseCommit": "35146f69",
-  "commits": ["652cfa1e"],
+  "commits": ["652cfa1e", "5d393572"],
   "sources": [
     { "path": "docs/terminal-performance-baseline.md" },
     { "path": "apps/terminal/src/lib/lazy.ts" },

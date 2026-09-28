@@ -13,7 +13,7 @@
   "summary": "用户要求推送 codex/reviewceshi、向 dev 开 PR、晋升 main 并发布。PR #40 五项检查通过后以 merge commit 合入 dev（42237b04）；PR #41 八项检查（含四种配对组合构建）通过后合入 main（121e8e76）。临时工作树从 main 构建 cloudfront-2026-09-24-p23，环境文件只软链不读取，命令行强制关闭移动配对、按用户选择保持主网赞助充值开启并带确认参数上传。函数、Lambda、同步、两条分发失效退出码全 0；主网 15 项、测试网 16 项 verify 全部 ok；CSP 覆盖三个汇总数组为空。市价平仓相关改动发布前没有真实钱包验收。",
   "thread": null,
   "baseCommit": "42237b04",
-  "commits": [],
+  "commits": ["0deec754"],
   "sources": [
     { "path": "deploy/cloudfront/README.md" },
     { "path": "docs/confirmation-surfaces.md" },

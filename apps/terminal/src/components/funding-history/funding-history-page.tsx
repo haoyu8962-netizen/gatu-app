@@ -3,11 +3,9 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, ArrowLeftIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, Suspense, useMemo, useState } from "react";
+import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
-import { TopNav } from "@/components/trade/header/top-nav";
-import { MobileHeader } from "@/components/trade/mobile/mobile-header";
-import { TestnetBanner } from "@/components/trade/testnet-banner";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { getToolbarAbsoluteSize } from "@/domain/trade/trading-toolbar-metrics";
 import { useFundingHistory } from "@/hooks/trade/use-funding-history";
@@ -18,7 +16,6 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, shortenAddress } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { createLazyComponent } from "@/lib/lazy";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	DEFAULT_FUNDING_HISTORY_PAGE_SIZE,
@@ -37,8 +34,6 @@ import { getUserFundingKey } from "@/lib/trade/user-funding";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
-const FooterBar = createLazyComponent(() => import("@/components/trade/footer/footer-bar"), "FooterBar");
-const GlobalModals = createLazyComponent(() => import("@/components/trade/components/global-modals"), "GlobalModals");
 const FUNDING_HISTORY_SKELETON_ROWS = ["row-1", "row-2", "row-3", "row-4", "row-5", "row-6"] as const;
 const ALL_FUNDING_MARKETS_VALUE = "__all_funding_markets__";
 
@@ -418,6 +413,9 @@ export function FundingHistoryPage({ address }: Props) {
 								navigationLabel={t`Funding payments pagination`}
 								previousPageLabel={t`Previous funding payments page`}
 								nextPageLabel={t`Next funding payments page`}
+								previousText={t`Previous`}
+								nextText={t`Next`}
+								getPageLabel={(page) => t`Page ${page}`}
 								mobilePageSummary={t`${pagination.currentPage} of ${pagination.totalPages}`}
 								className="min-w-0 flex-1 min-[1001px]:justify-end min-[1001px]:gap-8"
 							/>
@@ -435,16 +433,7 @@ export function FundingHistoryPage({ address }: Props) {
 				isMobile={isMobile}
 				bannerOffset={isTestnet}
 				testnet={isTestnet}
-				header={
-					isMobile ? (
-						<MobileHeader />
-					) : (
-						<>
-							<TestnetBanner />
-							<TopNav />
-						</>
-					)
-				}
+				header={<DashboardHeader isMobile={isMobile} />}
 				main={
 					<>
 						<div className="mb-4 flex flex-wrap items-start justify-between gap-4">

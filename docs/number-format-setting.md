@@ -10,6 +10,7 @@
 4. **图表跟随数字格式。** `ChartPanel` 用 `useNumberFormatLocale()` 读设置传给 `TradingViewChart`，widget 创建时收到 `numeric_formatting: { decimal_sign, grouping_separator }`。该选项只能在构造时给，所以设置变化走与语言变化相同的「保存状态 → 重建 iframe」路径（`requestStatePreservingRebuild(widget, "numeric-format")`），`appliedNumberFormatRef` 与创建时的值比较，值未变不重建。库的 `widget.save` 在 v28.3 里同步回调，所以同一次 commit 里语言与数字格式先后变化时，第二个变化落在「widget 未就绪」分支并重新开始初始化，最终只创建一个带两个新值的 widget；若某个宿主让 `save` 异步回调，未回调期间的第二个变化并入同一次保存，变回原值则取消（两种路径都有测试）。
 5. **用户可见名称的排序** 用 `localeCompare(other, undefined, { sensitivity: "base" })`（报价币种分类、Swap 代币列表、API 钱包名称）；id、hash、地址的排序仍是无参 `localeCompare`，它们只需要稳定顺序。
 6. **输入框接受设置的小数点，值仍是协议串。** 当设置的小数点是 `,`（`de-DE`、`fr-FR`）时，输入框里打出的 `,` 在到达任何校验或状态之前被改写成 `.`；默认格式下 `,` 保持原样并被既有校验拒绝，避免把 `1,000` 读成一。输入框显示的仍是 `.` 形式的协议串（`1.5`），只有表格与标签按设置显示 `1,5`。两层接入：`NumberInput` 在 keydown 放行设置的小数键并在 `handleChange` 里用 `normalizeDecimalInputEvent` 改写 DOM 值（覆盖桌面下单表单尺寸/价格/触发价/TP/SL、移动端尺寸与价格、划转、发送、提现、充值、Swap、Scale、TWAP、逐仓保证金）；不经 `NumberInput` 的裸输入（`PriceInputWithPercent` 三个输入、Across 金额、移动端改单两个输入、内联改单、质押金额、金库金额）在 `onChange` 里同样调用 `normalizeDecimalInputEvent`，先改写 DOM 再读值，这样 React 的受控还原不会把光标推到末尾。新增裸 `<input inputMode="decimal">` 必须接同一个 helper，`locale-format-contract` 会扫描。
+7. **资金费率历史图跟随数字格式，时间跟随语言。** 桌面图表区与手机行情区的 Funding 视图（[资金费率历史](market-funding-history.md)）：坐标轴刻度、提示框与读屏摘要里的百分比经 `formatPercent`，按设置替换分隔符（德式格式下 `+0,0100%`）；提示框与横轴的时间经 `formatDateTime` 跟随界面语言并固定拉丁数字，D 区间按 UTC 日期显示。标签 helper（`lib/chart/funding-history-chart-labels.ts`）从调用方接收 `i18n.locale` 与 `useNumberFormatRevision()` 的值作为参数，React Compiler 才会在设置变化时重算；`number-format-reactivity-contract` 把 `FundingHistoryChart` 登记为该 helper 的订阅方。
 
 ## 选项与存储
 
@@ -43,6 +44,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/locale-format-contract.test.ts \
   src/lib/tests/decimal-input-normalization.test.tsx \
   src/lib/tests/tradingview-chart.test.tsx \
+  src/lib/tests/funding-history-panel.test.tsx \
   src/lib/tests/trades.test.ts \
   src/lib/tests/global-settings-store.test.ts
 ```

@@ -13,13 +13,7 @@
   "summary": "移动端的市价平仓与限价平仓弹层既没有关闭按钮也没有取消按钮，弹层里唯一的按钮是确认键；只能下滑、点遮罩或按 Esc 离开，把手是 aria-hidden 的装饰。来历是 2026-08-04 重设计把移动端关闭按钮换成把手，测试也钉住了这一点。逐个核对其余隐藏关闭按钮的弹层，正文里都有取消、返回或关闭按钮，缺口只有这两个。已恢复关闭按钮并按产品负责人指示移除标题栏里与标题重复的 Price: Market 与 Limit 标识，新增契约测试与样式规则防止再出现。",
   "thread": null,
   "baseCommit": "c0a9e8bd",
-  "commits": [
-    "5341c3df",
-    "928cebf1",
-    "2f6411b5",
-    "ee080cff",
-    "5595d281"
-  ],
+  "commits": ["5341c3df", "928cebf1", "2f6411b5", "ee080cff", "5595d281", "cbdadae9"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/positions/position-close-dialog-shell.tsx" },
     { "path": "apps/terminal/src/components/trade/positions/position-market-close-modal.tsx" },

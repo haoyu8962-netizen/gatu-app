@@ -193,7 +193,9 @@ function PositionLimitCloseModalBody({ position, openingTarget, open, onOpenChan
 	});
 	const priceValid = (priceValue?.gt(0) ?? false) && normalizedPrice !== "0";
 	const priceError = showPriceError && !priceValid ? t`Enter limit price` : null;
-	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
+	const sizingError = sizing.errors[0]
+		? getPositionMarketCloseErrorMessage(sizing.errors[0], (descriptor) => t(descriptor))
+		: null;
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
 	const canEdit = !isSubmitted && positionStatus === null;
 	const isSizingPaused = !isSubmitted && isPositionDataPending(positionStatus);

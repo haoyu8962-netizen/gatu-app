@@ -4,14 +4,12 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, Suspense, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
-import { TopNav } from "@/components/trade/header/top-nav";
-import { MobileHeader } from "@/components/trade/mobile/mobile-header";
-import { TestnetBanner } from "@/components/trade/testnet-banner";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { createLazyComponent } from "@/lib/lazy";
+import { describeActionFailure } from "@/lib/errors/action-error";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { useVaultActionController } from "./use-vault-action-controller";
 import { useVaultDetailController, useVaultsController } from "./use-vaults-controller";
@@ -26,8 +24,6 @@ import {
 } from "./vaults-fixture";
 import { VaultsList } from "./vaults-list";
 
-const FooterBar = createLazyComponent(() => import("../trade/footer/footer-bar"), "FooterBar");
-const GlobalModals = createLazyComponent(() => import("../trade/components/global-modals"), "GlobalModals");
 const VAULT_DETAIL_SKELETON_KEYS = ["metric-1", "metric-2", "metric-3", "metric-4"] as const;
 
 export function VaultsPage() {
@@ -116,7 +112,9 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 			return;
 		}
 		toast.error(settledResult === "rejected" ? t`Authorization rejected` : t`Vault request failed`, {
-			description: activeAction.errorMessage,
+			description: activeAction.error
+				? describeActionFailure(activeAction.error, (descriptor) => t(descriptor))
+				: undefined,
 			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
 		});
 		vaultAction.retry();
@@ -170,7 +168,9 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 					ownerAddress={activeAction.ownerAddress}
 					amount={activeAction.amount}
 					availableAmount={vaultAction.availableAmount}
-					errorMessage={activeAction.errorMessage}
+					errorMessage={
+						activeAction.error ? describeActionFailure(activeAction.error, (descriptor) => t(descriptor)) : undefined
+					}
 					operationReference={activeAction.receipt?.operationReference ?? markerReference}
 					canReview={vaultAction.canReview}
 					canConfirm={vaultAction.canConfirm}
@@ -200,16 +200,7 @@ function VaultPageFrame({ children }: { children: ReactNode }) {
 				isMobile={isMobile}
 				bannerOffset={isTestnet}
 				testnet={isTestnet}
-				header={
-					isMobile ? (
-						<MobileHeader />
-					) : (
-						<>
-							<TestnetBanner />
-							<TopNav />
-						</>
-					)
-				}
+				header={<DashboardHeader isMobile={isMobile} />}
 				main={children}
 				footer={
 					!isMobile ? (

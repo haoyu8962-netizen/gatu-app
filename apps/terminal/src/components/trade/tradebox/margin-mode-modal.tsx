@@ -16,8 +16,9 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
 import { memo, useEffect, useRef, useState } from "react";
+import type { MarginTierInput } from "@/domain/trade/order/liquidation";
 import { cn } from "@/lib/cn";
-import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import { classifyActionError, isAmbiguousExchangeActionError } from "@/lib/errors/action-error";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { addOrderQueueItem, removeOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
@@ -77,6 +78,8 @@ interface Props {
 	onSettingsTabChange?: (tab: MobileTradeSettingsTab) => void;
 	accountModeForm?: Omit<AccountModeFormProps, "onClose">;
 	mobileView?: MobileTradeSettingsView;
+	marginTiers?: readonly MarginTierInput[] | null;
+	quoteSymbol?: string | null;
 }
 
 export type MobileTradeSettingsTab = "margin" | "account";
@@ -361,6 +364,8 @@ function MarginModeForm({
 	mobileView = "margin",
 	leverageDraft = null,
 	onLeverageDraftChange,
+	marginTiers,
+	quoteSymbol,
 }: FormProps) {
 	const { t } = useLingui();
 	const { clientKey, env } = useHyperliquid();
@@ -420,7 +425,12 @@ function MarginModeForm({
 			return;
 		applyInFlightRef.current = true;
 		const mode = showMarginControls ? selectedMode : currentMode;
-		const notificationId = addOrderQueueItem({ owner: clientKey, env, title: msg`Margin mode`, status: "pending" });
+		const notificationId = addOrderQueueItem({
+			owner: clientKey,
+			env,
+			title: modeDirty ? msg`Margin mode` : msg`Adjust leverage`,
+			status: "pending",
+		});
 		onClose();
 		try {
 			const leverage = await onApply(mode, showLeverageControls ? canonicalLeverage : effectiveLeverage);
@@ -436,7 +446,7 @@ function MarginModeForm({
 			const unknown = isAmbiguousExchangeActionError(error);
 			updateOrderQueueItem(notificationId, {
 				status: unknown ? "unconfirmed" : "failed",
-				error: error instanceof Error ? error.message : undefined,
+				error: unknown ? undefined : classifyActionError(error),
 				message: unknown ? msg`Update not confirmed. Check account settings before retrying.` : msg`Update failed`,
 			});
 		} finally {
@@ -483,13 +493,14 @@ function MarginModeForm({
 					<LeverageEditor
 						key={maxLeverage}
 						value={displayLeverage}
-						riskValue={leverageDraft ?? canonicalLeverage}
 						max={maxLeverage}
 						disabled={isUpdating || !sessionOpen}
 						onChange={handleLeverageChange}
 						onDraftChange={handleLeverageGestureDraftChange}
 						onInputValidityChange={setLeverageInputValid}
 						variant={mobileLayout ? "sheet" : "modal"}
+						marginTiers={marginTiers}
+						quoteSymbol={quoteSymbol}
 					/>
 				)}
 

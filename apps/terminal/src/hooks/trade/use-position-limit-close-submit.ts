@@ -288,7 +288,7 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 		isReconciling: phase === "reconciling",
 		error: error
 			? formatPositionSubmitFeedback(error, (descriptor) => t(descriptor))
-			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => t(descriptor)),
+			: formatTrackedPositionSubmitError(trackedOrder.error, "failed-limit-close", (descriptor) => t(descriptor)),
 		resetError,
 	};
 }

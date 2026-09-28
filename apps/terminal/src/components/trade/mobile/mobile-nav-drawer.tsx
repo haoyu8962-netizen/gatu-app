@@ -1,9 +1,10 @@
-import { Badge, Button, ButtonIcon, Drawer, DrawerContent, DrawerTitle } from "@gatu/ui";
+import { Button, ButtonIcon, Drawer, DrawerContent, DrawerTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons/react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
+import { TOUCH_PRESS_CLASS, TOUCH_PRESS_FADE_CLASS } from "@/components/ui/touch-press";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -18,7 +19,7 @@ import { ThemeToggle } from "../header/theme-toggle";
 
 export function MobileNavDrawer() {
 	const { t } = useLingui();
-	const { pathname } = useLocation();
+	const pathname = normalizeActivePathname(useLocation().pathname);
 	const [open, setOpen] = useState(false);
 	const [pendingModal, setPendingModal] = useState<PreloadableGlobalModal | null>(null);
 	const [preloadFailed, setPreloadFailed] = useState(false);
@@ -33,13 +34,12 @@ export function MobileNavDrawer() {
 	const tradeHomePath = useTradeHomePath();
 	const tradeActive = isTradeRoutePath(pathname);
 	const vaultsActive = pathname === "/vaults" || pathname.startsWith("/vaults/");
-	const soonLabel = t`Soon`;
 	const showsDepositEntry = hasWalletAccess || sessionMode === "agent-only" || depositAvailability.path === "sponsored";
 
 	function getNavLinkClass(active: boolean): string {
 		return cn(
-			"rounded-8 px-3 py-2.5 text-sm transition-colors hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-			active ? "bg-fill-hover font-medium text-action" : "text-fg",
+			"rounded-8 px-3 py-2.5 text-sm hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+			active ? cn("bg-fill-hover font-medium text-action", TOUCH_PRESS_FADE_CLASS) : cn("text-fg", TOUCH_PRESS_CLASS),
 		);
 	}
 
@@ -163,7 +163,14 @@ export function MobileNavDrawer() {
 							>
 								<Trans>Portfolio</Trans>
 							</Link>
-							<UpcomingMobileNavItem label={t`Earn`} soonLabel={soonLabel} />
+							<Link
+								to="/earn"
+								onClick={close}
+								aria-current={pathname === "/earn" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/earn")}
+							>
+								<Trans>Earn</Trans>
+							</Link>
 							<Link
 								to="/vaults"
 								onClick={close}
@@ -201,6 +208,14 @@ export function MobileNavDrawer() {
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
 								<Trans>More</Trans>
 							</p>
+							<Link
+								to="/fundingComparison"
+								onClick={close}
+								aria-current={pathname === "/fundingcomparison" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/fundingcomparison")}
+							>
+								<Trans>Funding Comparison</Trans>
+							</Link>
 							<a
 								href={HYPERSCREENER_URL}
 								target="_blank"
@@ -217,6 +232,22 @@ export function MobileNavDrawer() {
 								className={getNavLinkClass(pathname === "/api-wallet")}
 							>
 								<Trans>API Wallet</Trans>
+							</Link>
+							<Link
+								to="/docs"
+								onClick={close}
+								aria-current={pathname === "/docs" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/docs")}
+							>
+								<Trans>Docs</Trans>
+							</Link>
+							<Link
+								to="/support"
+								onClick={close}
+								aria-current={pathname === "/support" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/support")}
+							>
+								<Trans>Support</Trans>
 							</Link>
 						</nav>
 					</div>
@@ -275,22 +306,7 @@ export function MobileNavDrawer() {
 	);
 }
 
-interface UpcomingMobileNavItemProps {
-	label: string;
-	soonLabel: string;
-}
-
-function UpcomingMobileNavItem({ label, soonLabel }: UpcomingMobileNavItemProps) {
-	return (
-		<button
-			type="button"
-			disabled
-			className="flex cursor-default items-center justify-between rounded-8 px-3 py-2.5 text-start text-sm text-fg-disabled"
-		>
-			<span>{label}</span>
-			<Badge tone="neutral" size="xxs" className="text-fg-disabled">
-				{soonLabel}
-			</Badge>
-		</button>
-	);
+function normalizeActivePathname(pathname: string): string {
+	const lowerCase = pathname.toLowerCase();
+	return lowerCase.length > 1 ? lowerCase.replace(/\/+$/, "") : lowerCase;
 }

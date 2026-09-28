@@ -355,7 +355,7 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 		isReconciling: phase === "reconciling",
 		error: error
 			? formatPositionSubmitFeedback(error, (descriptor) => t(descriptor))
-			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => t(descriptor)),
+			: formatTrackedPositionSubmitError(trackedOrder.error, "failed-reverse", (descriptor) => t(descriptor)),
 		resetError,
 	};
 }

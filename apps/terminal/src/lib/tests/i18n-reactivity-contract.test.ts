@@ -4,9 +4,13 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const REACTIVE_COMPONENTS = [
+	"components/funding-comparison/funding-comparison-view.tsx",
 	"components/pages/application-error-page.tsx",
 	"components/pages/not-found-page.tsx",
 	"components/trade/chart/chart-panel.tsx",
+	"components/trade/chart/funding-history-chart.tsx",
+	"components/trade/chart/funding-history-load-boundary.tsx",
+	"components/trade/chart/funding-history-panel.tsx",
 	"components/trade/header/desktop-utilities-menu.tsx",
 	"components/trade/chart/token-selector.tsx",
 	"components/trade/header/top-nav.tsx",
@@ -36,7 +40,9 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/mobile/mobile-orders-tab.tsx",
 	"components/trade/mobile/mobile-position-card.tsx",
 	"components/trade/mobile/mobile-positions-tab.tsx",
+	"components/trade/mobile/mobile-trade-layout.tsx",
 	"components/trade/mobile/mobile-trade-view.tsx",
+	"components/trade/mobile/mobile-twap-fill-history-list.tsx",
 	"components/trade/mobile/mobile-twap-tab.tsx",
 	"components/trade/orderbook/orderbook-row.tsx",
 	"components/trade/positions/balances-tab.tsx",
@@ -54,6 +60,7 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/positions/positions-tab.tsx",
 	"components/trade/positions/send-modal.tsx",
 	"components/trade/positions/transfer-modal.tsx",
+	"components/trade/positions/twap-fill-history-table.tsx",
 	"components/trade/positions/twap-tab.tsx",
 	"components/trade/testnet-banner.tsx",
 	"components/trade/tradebox/account-panel.tsx",
@@ -65,6 +72,7 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/tradebox/embedded-deposit-auto-bridge.tsx",
 	"components/trade/tradebox/leverage-editor.tsx",
 	"components/trade/tradebox/leverage-modal.tsx",
+	"components/trade/tradebox/leverage-position-limit-row.tsx",
 	"components/trade/tradebox/leverage-slider.tsx",
 	"components/trade/tradebox/margin-mode-modal.tsx",
 	"components/trade/tradebox/order-toast.tsx",
@@ -84,6 +92,7 @@ const REACTIVE_COMPONENTS = [
 	"hooks/trade/use-position-limit-close-submit.ts",
 	"hooks/trade/use-position-market-close-submit.ts",
 	"hooks/trade/use-position-reverse-submit.ts",
+	"hooks/trade/use-twap-fill-history-csv.ts",
 ];
 
 describe("live localization source contract", () => {

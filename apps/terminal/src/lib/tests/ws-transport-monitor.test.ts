@@ -177,6 +177,53 @@ describe("WebSocket transport monitor", () => {
 		unsubscribe();
 	});
 
+	it("reconnects a silent socket on its usual schedule after the system clock is set back", async () => {
+		vi.useFakeTimers({ now: new Date("2026-09-28T00:00:00Z") });
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, { inactivityThresholdMs: 1_000, checkIntervalMs: 100 });
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		socket.message();
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		await vi.advanceTimersByTimeAsync(900);
+		expect(socket.reconnect).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(100);
+		expect(socket.reconnect).toHaveBeenCalledTimes(1);
+		unsubscribe();
+	});
+
+	it("keeps a socket that still receives messages connected after the system clock is set back", async () => {
+		vi.useFakeTimers({ now: new Date("2026-09-28T00:00:00Z") });
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, { inactivityThresholdMs: 1_000, checkIntervalMs: 100 });
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		socket.message();
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		for (let tick = 0; tick < 10; tick += 1) {
+			await vi.advanceTimersByTimeAsync(500);
+			socket.message();
+		}
+
+		expect(socket.reconnect).not.toHaveBeenCalled();
+		unsubscribe();
+	});
+
+	it("still reconnects on the next check after the system clock jumps forward", async () => {
+		vi.useFakeTimers({ now: new Date("2026-09-28T00:00:00Z") });
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket, { inactivityThresholdMs: 1_000, checkIntervalMs: 100 });
+		const unsubscribe = monitor.subscribeReconnect(vi.fn());
+
+		socket.message();
+		vi.setSystemTime(Date.now() + 60 * 60_000);
+		await vi.advanceTimersByTimeAsync(100);
+
+		expect(socket.reconnect).toHaveBeenCalledTimes(1);
+		unsubscribe();
+	});
+
 	it("keeps a healthy open socket connected after a foreground resume", () => {
 		let visibilityListener: ((state: "visible" | "hidden") => void) | undefined;
 		const socket = new FakeSocket();

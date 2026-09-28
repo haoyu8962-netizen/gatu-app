@@ -12,7 +12,7 @@
   ],
   "thread": null,
   "baseCommit": "6df02047",
-  "commits": [],
+  "commits": ["d13435d2", "ba5a580b"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/mobile/mobile-account-view.tsx" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-positions-tab.tsx" },

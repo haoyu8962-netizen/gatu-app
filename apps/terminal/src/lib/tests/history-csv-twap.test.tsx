@@ -1,13 +1,18 @@
 // @vitest-environment jsdom
 
-import type { HistoricalOrdersResponse, UserFillsResponse } from "@nktkas/hyperliquid";
+import type { HistoricalOrdersResponse, UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
+import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useHistoricalOrdersCsvExport, useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
+import { useTwapFillHistoryCsv } from "@/hooks/trade/use-twap-fill-history-csv";
+import { formatDateTimeShort, formatToken, formatUSD } from "@/lib/format";
+import { clearTwapSliceFillsExportPacersForTests } from "@/lib/trade/user-fills";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	address: "0x1111111111111111111111111111111111111111" as `0x${string}`,
 	downloadCsv: vi.fn(),
 	historicalOrders: vi.fn(),
 	userFillsByTime: vi.fn(),
@@ -16,12 +21,13 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
-		address: "0x1111111111111111111111111111111111111111",
+		address: mocks.address,
 		isConnected: true,
 	}),
 }));
 
-vi.mock("@/lib/csv", () => ({
+vi.mock("@/lib/csv", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/csv")>()),
 	downloadCsv: mocks.downloadCsv,
 }));
 
@@ -31,9 +37,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 		userFillsByTime: mocks.userFillsByTime,
 		userTwapSliceFillsByTime: mocks.userTwapSliceFillsByTime,
 	}),
+	useMarkets: () => ({
+		getSzDecimals: (coin: string) => (coin === "BTC" ? 5 : 2),
+	}),
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
+	getResolvedFormatLocale: () => "en-US",
 	useIsTestnet: () => false,
 }));
 
@@ -100,6 +110,7 @@ describe("account history CSV exports", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.address = "0x1111111111111111111111111111111111111111";
 		mocks.historicalOrders.mockReset();
 		mocks.userFillsByTime.mockReset();
 		mocks.userTwapSliceFillsByTime.mockReset();
@@ -247,5 +258,355 @@ describe("account history CSV exports", () => {
 		await act(async () => hookValue?.exportCsv());
 
 		expect(mocks.downloadCsv).not.toHaveBeenCalled();
+	});
+});
+
+function createSliceFill(fill: Partial<UserFillsResponse[number]>, twapId = 7): UserTwapSliceFillsResponse[number] {
+	return { fill: createFill({ twapId: null, ...fill }), twapId };
+}
+
+function serveTwapPages(entries: readonly UserTwapSliceFillsResponse[number][], pageSize = 2_000) {
+	mocks.userTwapSliceFillsByTime.mockImplementation(
+		async ({ endTime, startTime }: { endTime: number; startTime: number }) =>
+			entries.filter((entry) => entry.fill.time >= startTime && entry.fill.time <= endTime).slice(0, pageSize),
+	);
+}
+
+describe("TWAP fill history CSV export", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+	let hookValue: ReturnType<typeof useTwapFillHistoryCsv> | null;
+
+	function Probe() {
+		hookValue = useTwapFillHistoryCsv();
+		return null;
+	}
+
+	function renderProbe() {
+		act(() => root.render(<Probe />));
+		if (!hookValue) throw new Error("Missing TWAP fill export hook");
+		return hookValue;
+	}
+
+	beforeEach(() => {
+		mocks.address = "0x1111111111111111111111111111111111111111";
+		mocks.downloadCsv.mockReset();
+		mocks.userFillsByTime.mockReset();
+		mocks.userTwapSliceFillsByTime.mockReset();
+		clearTwapSliceFillsExportPacersForTests();
+		hookValue = null;
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createI18nRoot(container);
+	});
+
+	afterEach(() => {
+		act(() => root.unmount());
+		container.remove();
+		vi.useRealTimers();
+		vi.clearAllMocks();
+	});
+
+	function startExport(hook: ReturnType<typeof useTwapFillHistoryCsv>) {
+		let pendingExport: Promise<void> | undefined;
+		act(() => {
+			pendingExport = hook.exportCsv();
+		});
+		return pendingExport;
+	}
+
+	async function advancePacedExport(delayMs: number) {
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(delayMs);
+		});
+	}
+
+	it("requests the slice fill endpoint from the epoch without aggregation and never the general fills endpoint", async () => {
+		serveTwapPages([createSliceFill({ time: 1_000 })]);
+		const hook = renderProbe();
+
+		await act(async () => hook.exportCsv());
+
+		expect(mocks.userFillsByTime).not.toHaveBeenCalled();
+		const [params, signal] = mocks.userTwapSliceFillsByTime.mock.calls[0] ?? [];
+		expect(Object.keys(params).sort()).toEqual(["endTime", "startTime", "user"]);
+		expect(params).toEqual({
+			endTime: expect.any(Number),
+			startTime: 0,
+			user: "0x1111111111111111111111111111111111111111",
+		});
+		expect(signal).toBeInstanceOf(AbortSignal);
+	});
+
+	it("downloads every slice fill in ascending order with the trade history columns", async () => {
+		const zeroHashFill = createSliceFill({ closedPnl: "0", hash: `0x${"0".repeat(64)}`, time: 1_000 });
+		const closingFill = createSliceFill(
+			{
+				closedPnl: "-1.5",
+				coin: "ETH",
+				dir: "Close Long",
+				fee: "0.25",
+				hash: `0x${"a".repeat(64)}`,
+				oid: 50,
+				px: "2500.5",
+				side: "A",
+				sz: "1.5",
+				tid: 101,
+				time: 2_000,
+			},
+			8,
+		);
+		const liquidatedFill = createSliceFill({
+			liquidation: { markPx: "62000", method: "market" },
+			oid: 51,
+			tid: 102,
+			time: 3_000,
+		});
+		serveTwapPages([zeroHashFill, closingFill, liquidatedFill]);
+		const hook = renderProbe();
+
+		await act(async () => hook.exportCsv());
+
+		expect(mocks.downloadCsv).toHaveBeenCalledTimes(1);
+		const [filename, rows] = mocks.downloadCsv.mock.calls[0] as [string, string[][]];
+		expect(filename).toBe("twap_fill_history.csv");
+		expect(rows).toEqual([
+			["Time", "Asset", "Direction", "Type", "Price", "Size", "Fee", "PNL", "Transaction"],
+			[
+				formatDateTimeShort(1_000),
+				"BTC",
+				"Open Long",
+				"TWAP",
+				formatUSD("63000"),
+				"0.01000",
+				formatToken("0.01", { symbol: "USDC" }),
+				"-",
+				"-",
+			],
+			[
+				formatDateTimeShort(2_000),
+				"ETH",
+				"Close Long",
+				"TWAP",
+				formatUSD("2500.5"),
+				"1.50",
+				formatToken("0.25", { symbol: "USDC" }),
+				formatUSD("-1.5", { signDisplay: "exceptZero" }),
+				`0x${"a".repeat(64)}`,
+			],
+			[
+				formatDateTimeShort(3_000),
+				"BTC",
+				"Liquidated",
+				"TWAP",
+				formatUSD("63000"),
+				"0.01000",
+				formatToken("0.01", { symbol: "USDC" }),
+				"-",
+				`0x${"1".repeat(64)}`,
+			],
+		]);
+		expect(toast.loading).toHaveBeenCalledWith("Exporting TWAP fill history...");
+		expect(toast.success).toHaveBeenCalledWith("CSV exported.", { id: "toast-id" });
+		expect(toast.warning).not.toHaveBeenCalled();
+	});
+
+	it("paces pages past the export's weight share and warns when it keeps only the latest 10000 slice fills", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+		serveTwapPages(
+			Array.from({ length: 12_001 }, (_, index) =>
+				createSliceFill({ oid: index + 1, tid: index + 1, time: index + 1 }),
+			),
+		);
+		const hook = renderProbe();
+
+		const pendingExport = startExport(hook);
+		await advancePacedExport(59_000);
+
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(6);
+		expect(mocks.downloadCsv).not.toHaveBeenCalled();
+		expect(hookValue?.isExporting).toBe(true);
+
+		await advancePacedExport(1_000);
+		await act(async () => pendingExport);
+
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(8);
+		const rows = mocks.downloadCsv.mock.calls[0]?.[1] as string[][];
+		expect(rows).toHaveLength(10_001);
+		expect(rows[1]?.[0]).toBe(formatDateTimeShort(2_002));
+		expect(rows.at(-1)?.[0]).toBe(formatDateTimeShort(12_001));
+		expect(toast.warning).toHaveBeenCalledWith(
+			"CSV export reached the history limit. Some records were not included.",
+			{
+				id: "toast-id",
+			},
+		);
+		expect(toast.success).not.toHaveBeenCalled();
+	});
+
+	it("keeps the weight an aborted export spent, so an export started right after it still waits", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+		serveTwapPages(
+			Array.from({ length: 12_001 }, (_, index) =>
+				createSliceFill({ oid: index + 1, tid: index + 1, time: index + 1 }),
+			),
+		);
+
+		const firstExport = startExport(renderProbe());
+		await advancePacedExport(1_000);
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(6);
+
+		act(() => root.unmount());
+		await act(async () => firstExport);
+		root = createI18nRoot(container);
+		expect(toast.dismiss).toHaveBeenCalledWith("toast-id");
+
+		const secondExport = startExport(renderProbe());
+		await advancePacedExport(58_999);
+
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(6);
+		expect(mocks.downloadCsv).not.toHaveBeenCalled();
+
+		await advancePacedExport(1);
+
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(12);
+
+		await advancePacedExport(60_000);
+		await act(async () => secondExport);
+
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(14);
+		expect(mocks.downloadCsv).toHaveBeenCalledTimes(1);
+	});
+
+	it("counts every retried attempt against the export's weight share", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+		serveTwapPages(
+			Array.from({ length: 12_001 }, (_, index) =>
+				createSliceFill({ oid: index + 1, tid: index + 1, time: index + 1 }),
+			),
+		);
+		const rateLimited = Object.assign(new Error("rate limited"), {
+			response: { headers: { get: () => "0" }, status: 429 },
+		});
+		mocks.userTwapSliceFillsByTime.mockRejectedValueOnce(rateLimited).mockRejectedValueOnce(rateLimited);
+
+		const pendingExport = startExport(renderProbe());
+		await advancePacedExport(59_999);
+
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(6);
+		expect(mocks.downloadCsv).not.toHaveBeenCalled();
+
+		await advancePacedExport(1_000);
+		await act(async () => pendingExport);
+
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(10);
+		expect(mocks.downloadCsv).toHaveBeenCalledTimes(1);
+	});
+
+	it("waits a full minute before retrying a rate-limited page that carries no Retry-After", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+		mocks.userTwapSliceFillsByTime
+			.mockRejectedValueOnce(
+				Object.assign(new Error("rate limited"), { response: { headers: { get: () => null }, status: 429 } }),
+			)
+			.mockResolvedValueOnce([createSliceFill({ time: 1_000 })])
+			.mockResolvedValue([]);
+		const hook = renderProbe();
+
+		const pendingExport = startExport(hook);
+		await advancePacedExport(59_000);
+
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(1);
+		expect(toast.error).not.toHaveBeenCalled();
+
+		await advancePacedExport(1_000);
+		await act(async () => pendingExport);
+
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(3);
+		expect(mocks.downloadCsv).toHaveBeenCalledTimes(1);
+		expect(toast.success).toHaveBeenCalledWith("CSV exported.", { id: "toast-id" });
+	});
+
+	it.each([
+		["a malformed page", () => mocks.userTwapSliceFillsByTime.mockResolvedValue([{ fill: createFill(), twapId: -1 }])],
+		[
+			"a rejected request",
+			() => mocks.userTwapSliceFillsByTime.mockRejectedValue(new Error("upstream detail 0xdeadbeef")),
+		],
+	])("reports %s without raw error text or a download", async (_label, arrange) => {
+		arrange();
+		const hook = renderProbe();
+
+		await act(async () => hook.exportCsv());
+
+		expect(mocks.downloadCsv).not.toHaveBeenCalled();
+		expect(toast.error).toHaveBeenCalledExactlyOnceWith("Failed to export TWAP fill history.", { id: "toast-id" });
+		expect(toast.success).not.toHaveBeenCalled();
+	});
+
+	it("runs a single export at a time", async () => {
+		let resolvePage: ((page: UserTwapSliceFillsResponse) => void) | undefined;
+		mocks.userTwapSliceFillsByTime.mockImplementationOnce(
+			() =>
+				new Promise<UserTwapSliceFillsResponse>((resolve) => {
+					resolvePage = resolve;
+				}),
+		);
+		mocks.userTwapSliceFillsByTime.mockResolvedValue([]);
+		const hook = renderProbe();
+
+		let firstExport: Promise<void> | undefined;
+		act(() => {
+			firstExport = hook.exportCsv();
+		});
+		expect(hookValue?.isExporting).toBe(true);
+		await act(async () => hookValue?.exportCsv());
+		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalledTimes(1);
+
+		await act(async () => {
+			resolvePage?.([createSliceFill({ time: 1_000 })]);
+			await firstExport;
+		});
+
+		expect(mocks.downloadCsv).toHaveBeenCalledTimes(1);
+		expect(hookValue?.isExporting).toBe(false);
+	});
+
+	it.each([
+		[
+			"the owner changes",
+			() => {
+				mocks.address = "0x2222222222222222222222222222222222222222";
+				act(() => root.render(<Probe />));
+			},
+		],
+		[
+			"the surface unmounts",
+			() => {
+				act(() => root.unmount());
+				root = createI18nRoot(container);
+			},
+		],
+	])("discards the export silently when %s", async (_label, interrupt) => {
+		let requestSignal: AbortSignal | undefined;
+		mocks.userTwapSliceFillsByTime.mockImplementation(
+			(_params: unknown, signal: AbortSignal) =>
+				new Promise((_resolve, reject) => {
+					requestSignal = signal;
+					signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+				}),
+		);
+		const hook = renderProbe();
+
+		const pendingExport = startExport(hook);
+		await act(async () => {});
+		expect(requestSignal?.aborted).toBe(false);
+		interrupt();
+		await act(async () => pendingExport);
+
+		expect(requestSignal?.aborted).toBe(true);
+		expect(mocks.downloadCsv).not.toHaveBeenCalled();
+		expect(toast.dismiss).toHaveBeenCalledWith("toast-id");
+		expect(toast.error).not.toHaveBeenCalled();
 	});
 });

@@ -19,6 +19,7 @@ import {
 	type PositionCloseAllTarget,
 } from "@/domain/trade/position-close-all";
 import { type TrackedOrderResult, useTrackedOrder } from "@/hooks/trade/use-tracked-order";
+import { exchangeActionFailure } from "@/lib/errors/action-error";
 import {
 	type ExchangeParams,
 	parseAssetId,
@@ -291,8 +292,8 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 						return { ...resolution, state: "partial" as const };
 					}
 					if (resolution?.status === "rejected") {
-						if (resolution.errors[0]) throw new Error(resolution.errors[0]);
-						throw positionSubmitFeedbackCause("close-orders-rejected");
+						if (resolution.errors.length === 0) throw positionSubmitFeedbackCause("close-orders-rejected");
+						throw new PositionSubmitFeedbackCause(exchangeActionFailure(resolution.errors));
 					}
 
 					updateOrderQueueItem(queueId, {
@@ -387,7 +388,9 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 		isPartial: phase === "partial",
 		error: error
 			? formatPositionSubmitFeedback(error, (descriptor) => t(descriptor))
-			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => t(descriptor)),
+			: formatTrackedPositionSubmitError(trackedOrder.error, "failed-submit-close-orders", (descriptor) =>
+					t(descriptor),
+				),
 		resetError,
 	};
 }

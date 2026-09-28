@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["pairing-release"],
-  "summary": "用户问官方 app.hyperliquid.xyz/trade 的关联移动设备是怎么设计的、gatu 是否需要现在这么复杂。对官方 2026-09-24 线上产物（config-DWLPMyx3.js、index-58uVNh8f.js、zh-CN-CL54VvS6.js）与已登录会话的真实 DOM 取证：入口是无角色无名称的 32px div 图标，点击即生成随机密钥并 approveAgent（名称 Mobile QR、永久有效），弹窗只有「签名中」与「就绪」两态，4 秒按住显示、揭示 60 秒后关闭且无可见倒计时，二维码是 /trade?link= 加 base64 明文私钥；手机扫码或直接打开链接即写入 hyperliquid.api_wallet，无显式导入、无过期、无去重，会话解析时若 extraAgents 里找不到才懒删除；撤销走 API 钱包页面或再次授权替换。桌面+手机核心约 100 行压缩代码、11 条文案；gatu 为 5,165 行实现、4,574 行测试、140 条文案、18 个状态、2 个开关、5 份文档与真机矩阵工具。给出保留项与可裁剪项清单，决定待用户。未点击官方图标（会在用户账户上创建永久 Agent）。",
+  "summary": "官方关联移动设备的 DOM/产物只读取证，未点击会授权永久 Agent 的图标；旧项目复杂度对照促成 ADR 0015 D8，后续已实施 v4 单开关简化。原 5165 行等规模数字属于裁剪前，保留显式动作和限期的差别，真机验收仍缺。",
   "thread": null,
   "baseCommit": "6be105da",
-  "commits": [],
+  "commits": ["eca604ff"],
   "sources": [
     { "url": "https://app.hyperliquid.xyz/assets/config-DWLPMyx3.js" },
     { "url": "https://app.hyperliquid.xyz/assets/index-58uVNh8f.js" },
@@ -77,3 +77,11 @@
 
 - 不替代 ADR 0015 的 2026-09-18 分析；补充当日复核与规模对照。接续 [2026-09-24-link-mobile-device-live-verification](2026-09-24-link-mobile-device-live-verification.md)。
 - 若用户决定简化：先改 ADR 0015 记录新决策，再按上表裁剪，协议版本号递增（线上开关关闭，无存量用户）。
+
+## 周整理补注（2026-09-28）
+
+“决定待用户”和旧项目规模属于取证阶段，后续已选定并实施简化。官方证据仍仅是该日期产物和已观察 DOM，未在本周重新调试官方交易终端。
+
+后续来源：[2026-09-24-link-mobile-device-simplification](2026-09-24-link-mobile-device-simplification.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

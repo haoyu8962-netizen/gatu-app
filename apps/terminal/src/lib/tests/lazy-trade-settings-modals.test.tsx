@@ -24,6 +24,14 @@ const SOURCE_ROOT = resolve(__dirname, "../..");
 const TRADE_PANEL = readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8");
 const MOBILE_TRADE_VIEW = readFileSync(resolve(SOURCE_ROOT, "components/trade/mobile/mobile-trade-view.tsx"), "utf8");
 
+const MARKET_MARGIN_TIERS =
+	'const marginTiers = market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null;';
+const POSITION_LIMIT_PROPS = ["marginTiers={marginTiers}", "quoteSymbol={getTpSlCollateralSymbol(market)}"];
+
+function dialogElements(source: string, component: "LeverageModal" | "MarginModeModal"): string[] {
+	return source.match(new RegExp(`<${component}\\b[\\s\\S]*?\\/>`, "g")) ?? [];
+}
+
 function preloadedNames(call: number): string[] | undefined {
 	return mocks.preloadLazyComponents.mock.calls[call]?.[0].map((component) => component.exportName);
 }
@@ -112,5 +120,25 @@ describe("lazy trade settings modals", () => {
 		expect(MOBILE_TRADE_VIEW.match(/<LazyDialogHost\b/g)).toHaveLength(1);
 		expect(TRADE_PANEL).toContain("onIntent={warmDesktopTradeSettingsModals}");
 		expect(MOBILE_TRADE_VIEW).toContain("onIntent={warmMobileTradeSettingsModals}");
+	});
+
+	it("hands the selected market's margin tiers and collateral symbol to every leverage editor", () => {
+		for (const source of [TRADE_PANEL, MOBILE_TRADE_VIEW]) {
+			expect(source).toContain(MARKET_MARGIN_TIERS);
+			expect(source).toMatch(/estimateProspectiveLiquidation\(\{[^}]*\n\t\tmarginTiers,\n/);
+		}
+
+		const desktopLeverage = dialogElements(TRADE_PANEL, "LeverageModal");
+		const desktopMarginMode = dialogElements(TRADE_PANEL, "MarginModeModal");
+		expect(desktopLeverage).toHaveLength(1);
+		expect(desktopMarginMode).toHaveLength(1);
+		for (const prop of POSITION_LIMIT_PROPS) expect(desktopLeverage[0]).toContain(prop);
+		expect(desktopMarginMode[0]).toContain("showLeverage={false}");
+		expect(desktopMarginMode[0]).not.toContain("marginTiers=");
+
+		const mobileMarginMode = dialogElements(MOBILE_TRADE_VIEW, "MarginModeModal");
+		expect(mobileMarginMode).toHaveLength(1);
+		expect(mobileMarginMode[0]).toContain("showLeverage={capabilities.isLeveraged}");
+		for (const prop of POSITION_LIMIT_PROPS) expect(mobileMarginMode[0]).toContain(prop);
 	});
 });

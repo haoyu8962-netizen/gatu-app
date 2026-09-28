@@ -1,6 +1,7 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { create } from "zustand";
 import type { OrderExecutionSummary } from "@/domain/trade/order-execution-summary";
+import type { CodedActionFailure, ExchangeActionFailure } from "@/lib/errors/action-error";
 import type { OrderOutcome } from "@/lib/trade/extract-order-status";
 import type { OrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import type { OrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
@@ -42,8 +43,15 @@ export interface OrderQueueItem extends OrderQueueMetadata {
 	dismissed?: boolean;
 	status: "pending" | "confirming" | "unconfirmed" | "partial" | "success" | "canceled" | "failed";
 	outcome?: OrderOutcome;
+	/**
+	 * A plain string is one exchange rejection text as the exchange sent it; store a batch as an
+	 * exchange failure with its entries. Store anything else as a coded or translatable
+	 * value so it is rendered in the active language.
+	 */
 	error?:
 		| string
+		| ExchangeActionFailure
+		| CodedActionFailure
 		| OrderReconciliationError
 		| OrderSubmissionFeedback
 		| PositionSubmitFeedback

@@ -29,9 +29,12 @@ export type IsolatedManagementExchangeMethod = "topUpIsolatedOnlyMargin" | "upda
 export type ExchangeExecutionGuard<M extends ExchangeMethod> = (params: ExchangeParams<M>) => void;
 
 /**
- * Runs for user-signed methods under the signing-session lock after queueing.
- * Funds actions can await legal verification afterward; use executionGuard for final synchronous SDK-boundary checks.
- * Honor the signal and do not call another Exchange mutation or signing-session API from this guard.
+ * Runs for user-signed methods, and for the trading-signed funds actions in
+ * `TRADING_PRE_EXECUTION_GUARD_METHODS`, under the signing-session lock after queueing. Funds actions
+ * run it inside the cross-tab funds lock, so it sees any funds action another tab completed first.
+ * User-signed funds actions await legal verification afterward; trading-signed ones verify it before.
+ * Use executionGuard for final synchronous SDK-boundary checks. Honor the signal and do not call
+ * another Exchange mutation or signing-session API from this guard.
  */
 export type ExchangePreExecutionGuard<M extends ExchangeMethod> = (
 	params: ExchangeParams<M>,
@@ -55,7 +58,15 @@ export type GuardedExchangeMutationOptions<M extends IsolatedManagementExchangeM
 
 const EXECUTION_GUARD_REQUIRED_MESSAGE = "An execution guard is required for isolated margin management";
 const ASYNC_EXECUTION_GUARD_MESSAGE = "Execution guards must complete synchronously";
-const PRE_EXECUTION_GUARD_USER_CLIENT_MESSAGE = "Pre-execution guards are supported only for user-signed methods";
+const PRE_EXECUTION_GUARD_USER_CLIENT_MESSAGE =
+	"Pre-execution guards are supported only for user-signed methods and opted-in trading funds actions";
+
+// Trading-signed funds actions that may re-read account state inside the funds lock before signing.
+const TRADING_PRE_EXECUTION_GUARD_METHODS: ReadonlySet<ExchangeMethod> = new Set(["borrowLend"]);
+
+function supportsTradingPreExecutionGuard(method: ExchangeMethod): boolean {
+	return TRADING_PRE_EXECUTION_GUARD_METHODS.has(method) && requiresFundsActionLock(method);
+}
 
 function requiresExecutionGuard(method: ExchangeMethod): method is IsolatedManagementExchangeMethod {
 	return method === "topUpIsolatedOnlyMargin" || method === "updateIsolatedMargin" || method === "updateLeverage";
@@ -104,7 +115,9 @@ export function useExchange<M extends ExchangeMethod>(
 
 	const mutationFn = (params: ExchangeParams<M>): Promise<ExchangeResponse<M>> => {
 		ownerSigner?.assertCurrent();
-		if (preExecutionGuard && config.client !== "user") throw new Error(PRE_EXECUTION_GUARD_USER_CLIENT_MESSAGE);
+		if (preExecutionGuard && config.client !== "user" && !supportsTradingPreExecutionGuard(method)) {
+			throw new Error(PRE_EXECUTION_GUARD_USER_CLIENT_MESSAGE);
+		}
 		assertExchangeMutationAllowed(method, params, portfolioMarginActivationEnabled);
 		const requestParams =
 			params != null && typeof params === "object" && !Array.isArray(params)
@@ -178,6 +191,7 @@ export function useExchange<M extends ExchangeMethod>(
 					};
 				} else {
 					await verifyLegalAccess(true);
+					fundsPreExecutionGuard = defaultPreExecutionGuard;
 				}
 
 				const started = await startWithSessionLease(start, fundsPreExecutionGuard);

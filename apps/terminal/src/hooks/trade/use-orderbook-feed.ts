@@ -81,6 +81,7 @@ export function useOrderbookFeed({ compact, enabled, env, params }: UseOrderbook
 		error: result.error,
 		isStale: result.isStale,
 		lastMessageAt: result.lastMessageAt,
+		monotonicLastMessageAt: result.monotonicLastMessageAt,
 	};
 }
 

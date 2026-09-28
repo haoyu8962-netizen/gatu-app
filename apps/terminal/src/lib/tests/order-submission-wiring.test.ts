@@ -36,8 +36,8 @@ describe("order submission wiring", () => {
 		expect(readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-order-submit.ts"), "utf8")).toMatch(
 			/useTrackedTwapOrder\(\{\s*executionGuard: options\.twapExecutionGuard,/,
 		);
-		expect(readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8")).toContain(
-			"useOrderSubmit({ executionGuard, twapExecutionGuard })",
+		expect(readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8")).toMatch(
+			/useOrderSubmit\(\{\s*executionGuard,\s*twapExecutionGuard,/,
 		);
 		expect(readFileSync(resolve(SOURCE_ROOT, "components/trade/mobile/mobile-trade-view.tsx"), "utf8")).toMatch(
 			/useOrderSubmit\(\{\s*executionGuard,\s*twapExecutionGuard,/,

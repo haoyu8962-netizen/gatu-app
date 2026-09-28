@@ -1,6 +1,6 @@
 import { getInfoClient as getSdkInfoClient } from "@gatu/hl-react";
 import { runWithFundsActionLock } from "@gatu/hl-react/internal/exchange/funds-action-lock";
-import { t } from "@lingui/core/macro";
+import { msg } from "@lingui/core/macro";
 import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
 import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -21,6 +21,7 @@ import { useChainId, usePublicClient } from "wagmi";
 import {
 	CCTP_MAX_DEPOSIT_USDC,
 	CCTP_TESTNET_MAX_DEPOSIT_USDC,
+	type CctpDepositConfig,
 	getCctpDepositConfig,
 	isCctpExternalDepositEnabled,
 	isCctpSponsoredDepositEnabled,
@@ -36,6 +37,8 @@ import { useFreshLegalActionGuard } from "@/hooks/trade/use-fresh-legal-action-g
 import { useAssertFreshDepositRoute } from "@/hooks/trade/use-usdc-routing";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { createActionError } from "@/lib/errors/action-error";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import {
 	finishDepositExecution,
 	isCurrentDepositExecution,
@@ -72,6 +75,7 @@ import {
 	saveCctpDepositTrackingRecord,
 	saveCctpSponsoredAuthorizationIntent,
 } from "@/lib/trade/cctp-deposit-tracking";
+import type { Translate } from "@/lib/translate";
 import { hasSameWalletAddress, isPrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
@@ -133,7 +137,7 @@ export interface UseDepositResult {
 	walletResponseDelayed: boolean;
 	deposit: (amount: string, review?: DepositReview) => Promise<void>;
 	refreshBalance: () => Promise<bigint | undefined>;
-	validate: (amount: string) => ValidationResult;
+	validate: (amount: string, translate: Translate) => ValidationResult;
 	reset: () => void;
 }
 
@@ -211,7 +215,7 @@ const DEPOSIT_CHAINS = {
 } as const;
 function createAuthorizationNonce(): Hex {
 	if (!globalThis.crypto?.getRandomValues)
-		throw new Error(t`Secure randomness is unavailable. Deposit was not submitted.`);
+		throw new LocalizedActionError(msg`Secure randomness is unavailable. Deposit was not submitted.`);
 	const bytes = new Uint8Array(32);
 	globalThis.crypto.getRandomValues(bytes);
 	return bytesToHex(bytes);
@@ -229,7 +233,7 @@ function getDepositChain(network: DepositNetwork): Chain {
 	return DEPOSIT_CHAINS[network];
 }
 
-function validateAmount(amount: string, maxDepositRaw: bigint | undefined): ValidationResult {
+function validateAmount(amount: string, maxDepositRaw: bigint | undefined, translate: Translate): ValidationResult {
 	const trimmed = amount.trim();
 	if (!trimmed) return { valid: false, error: null };
 	if (maxDepositRaw === undefined) return { valid: false, error: null };
@@ -237,11 +241,11 @@ function validateAmount(amount: string, maxDepositRaw: bigint | undefined): Vali
 	try {
 		const raw = parseUnits(trimmed, USDC_DECIMALS);
 		if (raw === 0n) return { valid: false, error: null };
-		if (raw < MIN_DEPOSIT_USDC) return { valid: false, error: t`Minimum deposit is 5 USDC` };
-		if (raw > maxDepositRaw) return { valid: false, error: t`Insufficient balance` };
+		if (raw < MIN_DEPOSIT_USDC) return { valid: false, error: translate(msg`Minimum deposit is 5 USDC`) };
+		if (raw > maxDepositRaw) return { valid: false, error: translate(msg`Insufficient balance`) };
 		return { valid: true, error: null };
 	} catch {
-		return { valid: false, error: t`Invalid amount` };
+		return { valid: false, error: translate(msg`Invalid amount`) };
 	}
 }
 
@@ -271,7 +275,7 @@ function createSponsoredCctpReadinessState(
 
 function toError(error: unknown): Error {
 	if (error instanceof Error) return error;
-	return new Error(typeof error === "string" ? error : t`Unknown error`);
+	return new Error(typeof error === "string" ? error : "Unknown error");
 }
 
 function getProviderRpcError(error: unknown): ProviderRpcErrorLike {
@@ -308,19 +312,24 @@ function isPendingTransaction(transaction: RpcTransactionLike | null) {
 	return !!transaction && transaction.blockNumber === null;
 }
 
-function createWalletConnectionError(error: unknown): Error {
-	const message = getProviderErrorMessage(error);
-	if (isUserRejectedRequest(error)) return new Error(t`Wallet connection request was rejected.`);
-	if (/unlock/i.test(message)) return new Error(t`Unlock your wallet and try again.`);
-	if (/failed to connect|not connected|disconnected|restore|session/i.test(message)) {
-		return new Error(t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`);
+function createWalletConnectionError(error: unknown): LocalizedActionError {
+	if (isUserRejectedRequest(error)) {
+		return new LocalizedActionError(msg`Wallet connection request was rejected.`, { cause: error });
 	}
-	return new Error(message || t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`);
+	if (/unlock/i.test(getProviderErrorMessage(error))) {
+		return new LocalizedActionError(msg`Unlock your wallet and try again.`, { cause: error });
+	}
+	return createActionError("wallet-unavailable", { cause: error });
 }
 
-function createChainSwitchError(config: DepositChainConfig, error: unknown): Error {
-	if (isUserRejectedRequest(error)) return new Error(t`Arbitrum network switch was rejected.`);
-	return new Error(t`Unable to switch wallet to ${config.chainName}. Switch networks in your wallet and retry.`);
+function createChainSwitchError(config: DepositChainConfig, error: unknown): LocalizedActionError {
+	if (isUserRejectedRequest(error)) {
+		return new LocalizedActionError(msg`Arbitrum network switch was rejected.`, { cause: error });
+	}
+	return new LocalizedActionError(
+		msg`Unable to switch wallet to ${config.chainName}. Switch networks in your wallet and retry.`,
+		{ cause: error },
+	);
 }
 
 function sleep(ms: number) {
@@ -372,11 +381,13 @@ async function readDepositUsdcBalance(
 		signal,
 	});
 
-	if (!response.ok) throw new Error(t`Unable to load Arbitrum USDC balance`);
+	if (!response.ok) throw new LocalizedActionError(msg`Unable to load Arbitrum USDC balance`);
 
 	const payload = (await response.json()) as { result?: string; error?: { message?: string } };
-	if (payload.error) throw new Error(payload.error.message || t`Unable to load Arbitrum USDC balance`);
-	if (!payload.result) throw new Error(t`Unable to load Arbitrum USDC balance`);
+	if (payload.error) {
+		throw new LocalizedActionError(msg`Unable to load Arbitrum USDC balance`, { cause: payload.error });
+	}
+	if (!payload.result) throw new LocalizedActionError(msg`Unable to load Arbitrum USDC balance`);
 	return BigInt(payload.result);
 }
 
@@ -407,11 +418,9 @@ async function getDepositProvider(wallet: ConnectedWallet): Promise<Eip1193Provi
 }
 
 function assertConnectedAccount(accounts: unknown, address: `0x${string}`) {
-	if (!Array.isArray(accounts)) {
-		throw new Error(t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`);
-	}
+	if (!Array.isArray(accounts)) throw createActionError("wallet-unavailable");
 	if (!accounts.some((account) => typeof account === "string" && hasSameWalletAddress(account, address))) {
-		throw new Error(t`Selected wallet does not match the connected account. Reconnect your wallet and try again.`);
+		throw createActionError("wallet-mismatch");
 	}
 }
 
@@ -512,13 +521,17 @@ async function ensureDepositChain(provider: Eip1193Provider, config: DepositChai
 
 	const nextChainId = await getProviderChainId(provider);
 	if (nextChainId !== chainId) {
-		throw new Error(t`Wallet is not connected to ${config.chainName}. Switch networks in your wallet and retry.`);
+		throw new LocalizedActionError(
+			msg`Wallet is not connected to ${config.chainName}. Switch networks in your wallet and retry.`,
+		);
 	}
 }
 
 async function assertDepositChainStillActive(provider: Eip1193Provider, config: DepositChainConfig) {
 	if ((await getProviderChainId(provider)) !== toChainHex(config.chainId)) {
-		throw new Error(t`Wallet is not connected to ${config.chainName}. Switch networks in your wallet and retry.`);
+		throw new LocalizedActionError(
+			msg`Wallet is not connected to ${config.chainName}. Switch networks in your wallet and retry.`,
+		);
 	}
 }
 
@@ -549,6 +562,16 @@ async function getDepositProviderForChain(wallet: ConnectedWallet, config: Depos
 	return nextProvider;
 }
 
+async function fetchCctpDepositTerms(config: CctpDepositConfig) {
+	try {
+		return await Promise.all([fetchCctpDepositFees(config), fetchCctpFastAllowance(config)]);
+	} catch (cause) {
+		throw new LocalizedActionError(msg`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`, {
+			cause,
+		});
+	}
+}
+
 export function waitForWalletTransactionHash<T>(
 	promise: Promise<T>,
 	timeoutMs = DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
@@ -571,12 +594,10 @@ async function getReadyWalletDepositContext({
 	publicClient: PublicClient | undefined;
 	wallet: ConnectedWallet | undefined;
 }): Promise<ReadyDepositContext> {
-	if (!address) throw new Error(t`Wallet not connected`);
-	if (!publicClient) throw new Error(t`No response from exchange`);
-	if (!wallet) throw new Error(t`Wallet client not ready`);
-	if (!hasSameWalletAddress(wallet.address, address)) {
-		throw new Error(t`Selected wallet does not match the connected account. Reconnect your wallet and try again.`);
-	}
+	if (!address) throw new LocalizedActionError(msg`Wallet not connected`);
+	if (!publicClient) throw new LocalizedActionError(msg`No response from exchange`);
+	if (!wallet) throw new LocalizedActionError(msg`Wallet client not ready`);
+	if (!hasSameWalletAddress(wallet.address, address)) throw createActionError("wallet-mismatch");
 
 	const provider = await getDepositProviderForChain(wallet, config);
 	await ensureProviderAccount(provider, address);
@@ -601,12 +622,10 @@ async function getReadyPermitSignerContext({
 	publicClient: PublicClient | undefined;
 	wallet: ConnectedWallet | undefined;
 }): Promise<ReadyDepositContext> {
-	if (!address) throw new Error(t`Wallet not connected`);
-	if (!publicClient) throw new Error(t`No response from exchange`);
-	if (!wallet) throw new Error(t`Wallet client not ready`);
-	if (!hasSameWalletAddress(wallet.address, address)) {
-		throw new Error(t`Selected wallet does not match the connected account. Reconnect your wallet and try again.`);
-	}
+	if (!address) throw new LocalizedActionError(msg`Wallet not connected`);
+	if (!publicClient) throw new LocalizedActionError(msg`No response from exchange`);
+	if (!wallet) throw new LocalizedActionError(msg`Wallet client not ready`);
+	if (!hasSameWalletAddress(wallet.address, address)) throw createActionError("wallet-mismatch");
 
 	const provider = await getDepositProvider(wallet);
 	await ensureProviderAccount(provider, address);
@@ -657,8 +676,8 @@ export async function waitForBroadcastedTransaction(
 		await sleep(Math.min(pollingIntervalMs, remainingMs));
 	}
 
-	throw new Error(
-		t`Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice.`,
+	throw new LocalizedActionError(
+		msg`Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice.`,
 	);
 }
 
@@ -684,7 +703,7 @@ export async function waitForConfirmedReceipt(
 			if (isRevertedReceipt(publicReceipt)) {
 				throw new DefinitiveDepositSourceFailureError(
 					"source-transaction-reverted",
-					t`Transaction reverted on Arbitrum`,
+					"Transaction reverted on Arbitrum",
 				);
 			}
 			return publicReceipt;
@@ -702,7 +721,7 @@ export async function waitForConfirmedReceipt(
 		lastError = toError(error);
 	}
 	if (providerReceipt && isRevertedReceipt(providerReceipt)) {
-		throw new DefinitiveDepositSourceFailureError("source-transaction-reverted", t`Transaction reverted on Arbitrum`);
+		throw new DefinitiveDepositSourceFailureError("source-transaction-reverted", "Transaction reverted on Arbitrum");
 	}
 
 	let transaction: RpcTransactionLike | null = null;
@@ -721,18 +740,21 @@ export async function waitForConfirmedReceipt(
 	}
 
 	if (isPendingTransaction(transaction)) {
-		throw new Error(
-			t`Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry.`,
+		throw new LocalizedActionError(
+			msg`Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry.`,
 		);
 	}
 
 	if (lastError && isNetworkRequestError(lastError)) {
-		throw new Error(
-			t`Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying.`,
+		throw new LocalizedActionError(
+			msg`Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying.`,
+			{ cause: lastError },
 		);
 	}
 
-	throw new Error(t`Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.`);
+	throw new LocalizedActionError(
+		msg`Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.`,
+	);
 }
 
 interface DepositChainConfig {
@@ -760,7 +782,7 @@ function useDepositChain(
 		if (!enabled || !address || !wallet) {
 			setProviderChainState(
 				enabled && address
-					? createProviderChainState(walletKey, "error", new Error(t`Wallet client not ready`))
+					? createProviderChainState(walletKey, "error", new LocalizedActionError(msg`Wallet client not ready`))
 					: createProviderChainState(),
 			);
 			return;
@@ -799,7 +821,10 @@ function useDepositChain(
 	const switchToArbitrum = useCallback(() => {
 		if (!enabled) return;
 		if (!address || !wallet) {
-			setSwitchState({ ...createArbitrumSwitchState(walletKey), error: new Error(t`Wallet not connected`) });
+			setSwitchState({
+				...createArbitrumSwitchState(walletKey),
+				error: new LocalizedActionError(msg`Wallet not connected`),
+			});
 			return;
 		}
 
@@ -838,7 +863,9 @@ function useDepositChain(
 	const walletProviderStatus =
 		!address || !wallet ? "error" : (currentProviderChainState?.status ?? ("loading" as WalletProviderStatus));
 	const walletProviderError =
-		!address || !wallet ? new Error(t`Wallet client not ready`) : (currentProviderChainState?.error ?? null);
+		!address || !wallet
+			? new LocalizedActionError(msg`Wallet client not ready`)
+			: (currentProviderChainState?.error ?? null);
 
 	return {
 		isArbitrum: effectiveChainId === config.chainId,
@@ -1117,7 +1144,10 @@ export function useDeposit({
 	const { verify: verifyFreshLegalAction } = useFreshLegalActionGuard();
 	const { retry: refreshGeoRestriction } = useGeoRestriction();
 
-	const validate = useCallback((amount: string) => validateAmount(amount, maxDepositRaw), [maxDepositRaw]);
+	const validate = useCallback(
+		(amount: string, translate: Translate) => validateAmount(amount, maxDepositRaw, translate),
+		[maxDepositRaw],
+	);
 
 	const deposit = useCallback(
 		async (amount: string, review?: DepositReview) => {
@@ -1130,8 +1160,8 @@ export function useDeposit({
 			if (operationId === null) {
 				setBlockedDepositExecution(
 					executionKey,
-					new Error(
-						t`Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked.`,
+					new LocalizedActionError(
+						msg`Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked.`,
 					),
 				);
 				return;
@@ -1140,7 +1170,9 @@ export function useDeposit({
 			try {
 				await assertFreshSelectedDepositRoute();
 				if (depositRoute !== "cctp") {
-					throw new Error(t`Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted.`);
+					throw new LocalizedActionError(
+						msg`Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted.`,
+					);
 				}
 				const amountRaw = parseUnits(amount, USDC_DECIMALS);
 				if (network === "mainnet" && mode === "smart") {
@@ -1149,10 +1181,10 @@ export function useDeposit({
 						review?.expectedBalanceRaw === undefined ||
 						review.expectedCctpMaxFeeRaw === undefined
 					) {
-						throw new Error(t`This confirmation is required before finishing.`);
+						throw new LocalizedActionError(msg`This confirmation is required before finishing.`);
 					}
 					if (amountRaw !== review.expectedBalanceRaw) {
-						throw new Error(t`Available amount is not verified`);
+						throw new LocalizedActionError(msg`Available amount is not verified`);
 					}
 				}
 				const markWalletResponseDelayed = () => {
@@ -1178,37 +1210,43 @@ export function useDeposit({
 							});
 				if (mode === "smart") {
 					if (!isCctpSponsoredDepositEnabled(network === "testnet")) {
-						throw new Error(t`Gas-sponsored CCTP deposits are not enabled for this network.`);
+						throw new LocalizedActionError(msg`Gas-sponsored CCTP deposits are not enabled for this network.`);
 					}
 				} else if (!isCctpExternalDepositEnabled(network === "testnet")) {
-					throw new Error(t`CCTP deposits are awaiting funded end-to-end verification for this network.`);
+					throw new LocalizedActionError(
+						msg`CCTP deposits are awaiting funded end-to-end verification for this network.`,
+					);
 				}
-				if (!isAddress(ready.address)) throw new Error(t`Wallet not connected`);
+				if (!isAddress(ready.address)) throw new LocalizedActionError(msg`Wallet not connected`);
 				const provider = mode === "wallet" ? ready.provider : undefined;
 				const cctpDepositUser = ready.address;
 				const cctpTrackingEnv = network === "testnet" ? "Testnet" : "Mainnet";
 				const hash = await runWithFundsActionLock(cctpTrackingEnv, ready.address, async () => {
 					const freshGeo = await refreshGeoRestriction();
 					if (freshGeo.isError || !freshGeo.data?.country || !/^[A-Z]{2}$/.test(freshGeo.data.country)) {
-						throw new Error(t`Unable to verify regional availability. This deposit was not submitted.`);
+						throw new LocalizedActionError(
+							msg`Unable to verify regional availability. This deposit was not submitted.`,
+						);
 					}
 					if (freshGeo.data.tradeRestricted || freshGeo.data.proxy) {
-						throw new Error(t`Deposits are not available in your region. This deposit was not submitted.`);
+						throw new LocalizedActionError(
+							msg`Deposits are not available in your region. This deposit was not submitted.`,
+						);
 					}
 					if (amountRaw > CCTP_MAX_DEPOSIT_USDC) {
-						throw new Error(t`Circle CCTP deposits are limited to 10,000,000 USDC per transfer.`);
+						throw new LocalizedActionError(msg`Circle CCTP deposits are limited to 10,000,000 USDC per transfer.`);
 					}
 					if (network === "testnet" && amountRaw > CCTP_TESTNET_MAX_DEPOSIT_USDC) {
-						throw new Error(t`Circle testnet deposits are limited to 1,000 USDC per transfer.`);
+						throw new LocalizedActionError(msg`Circle testnet deposits are limited to 1,000 USDC per transfer.`);
 					}
 					if (readCctpDepositTrackingRecords(cctpTrackingEnv, ready.address).length > 0) {
-						throw new Error(
-							t`Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit.`,
+						throw new LocalizedActionError(
+							msg`Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit.`,
 						);
 					}
 					if (mode === "smart" && readCctpSponsoredAuthorizationIntent(cctpTrackingEnv, ready.address)) {
-						throw new Error(
-							t`Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit.`,
+						throw new LocalizedActionError(
+							msg`Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit.`,
 						);
 					}
 					assertCctpDepositTrackingStorageWritable(cctpTrackingEnv, ready.address);
@@ -1216,7 +1254,7 @@ export function useDeposit({
 						if (review?.expectedBalanceRaw === undefined) return;
 						const freshBalanceRaw = await readDepositUsdcBalance(depositConfig, ready.address);
 						if (amountRaw !== review.expectedBalanceRaw || freshBalanceRaw !== review.expectedBalanceRaw) {
-							throw new Error(t`Available amount is not verified`);
+							throw new LocalizedActionError(msg`Available amount is not verified`);
 						}
 					}
 					await assertFreshSelectedDepositRoute();
@@ -1229,19 +1267,20 @@ export function useDeposit({
 					const destinationRecipientState =
 						network === "testnet" ? getHyperCoreRecipientState(recipientRoles[1]) : mainnetRecipientState;
 					if (mainnetRecipientState === "agent" || destinationRecipientState === "agent") {
-						throw new Error(
-							t`Agent/API wallet addresses cannot receive CCTP deposits. Connect the owner account instead.`,
+						throw new LocalizedActionError(
+							msg`Agent/API wallet addresses cannot receive CCTP deposits. Connect the owner account instead.`,
 						);
 					}
 					if (network === "testnet" && mainnetRecipientState === "missing") {
-						throw new Error(t`Circle testnet deposits require this address to already exist on Hyperliquid mainnet.`);
+						throw new LocalizedActionError(
+							msg`Circle testnet deposits require this address to already exist on Hyperliquid mainnet.`,
+						);
 					}
-					const [feeQuote, fastAllowanceRaw] = await Promise.all([
-						fetchCctpDepositFees(cctpDepositConfig),
-						fetchCctpFastAllowance(cctpDepositConfig),
-					]);
+					const [feeQuote, fastAllowanceRaw] = await fetchCctpDepositTerms(cctpDepositConfig);
 					if (fastAllowanceRaw < amountRaw) {
-						throw new Error(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
+						throw new LocalizedActionError(
+							msg`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`,
+						);
 					}
 					const parameters =
 						mode === "smart"
@@ -1265,16 +1304,18 @@ export function useDeposit({
 						executionScope === "manual" &&
 						(reviewedCctpMaxFeeRaw === undefined || parameters.depositForBurn.maxFee !== reviewedCctpMaxFeeRaw)
 					) {
-						throw new Error(t`Circle fees changed before submission. Review the updated fee and retry.`);
+						throw new LocalizedActionError(
+							msg`Circle fees changed before submission. Review the updated fee and retry.`,
+						);
 					}
 					const smartClient = mode === "smart" ? await getClientForChain({ id: cctpDepositConfig.chainId }) : undefined;
 					if (mode === "smart") {
-						if (!smartClient) throw new Error(t`Smart wallet client not ready`);
+						if (!smartClient) throw new LocalizedActionError(msg`Smart wallet client not ready`);
 						if (getClientChainId(smartClient) !== cctpDepositConfig.chainId) {
-							throw new Error(t`Smart wallet client not ready`);
+							throw new LocalizedActionError(msg`Smart wallet client not ready`);
 						}
 						if (!smartClient.paymaster) {
-							throw new Error(t`Gas-sponsored CCTP deposits are not enabled for this network.`);
+							throw new LocalizedActionError(msg`Gas-sponsored CCTP deposits are not enabled for this network.`);
 						}
 					}
 					await assertReviewedBalanceUnchanged();
@@ -1284,15 +1325,16 @@ export function useDeposit({
 						...parameters.typedData,
 					});
 					await assertFreshSelectedDepositRoute();
-					const [freshFeeQuote, freshFastAllowanceRaw] = await Promise.all([
-						fetchCctpDepositFees(cctpDepositConfig),
-						fetchCctpFastAllowance(cctpDepositConfig),
-					]);
+					const [freshFeeQuote, freshFastAllowanceRaw] = await fetchCctpDepositTerms(cctpDepositConfig);
 					if (freshFastAllowanceRaw < amountRaw) {
-						throw new Error(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
+						throw new LocalizedActionError(
+							msg`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`,
+						);
 					}
 					if (calculateCctpDepositFee(amountRaw, freshFeeQuote).maxFeeRaw !== parameters.depositForBurn.maxFee) {
-						throw new Error(t`Circle fees changed before submission. Review the updated fee and retry.`);
+						throw new LocalizedActionError(
+							msg`Circle fees changed before submission. Review the updated fee and retry.`,
+						);
 					}
 					await assertFreshSelectedDepositRoute();
 					let sourceHash: Hash;
@@ -1305,13 +1347,13 @@ export function useDeposit({
 							functionName: "batchSponsorDepositForBurn",
 							args: buildCctpSponsoredDepositContractArgs(sponsoredParameters, authorizationSignature),
 						});
-						if (!smartClient) throw new Error(t`Smart wallet client not ready`);
+						if (!smartClient) throw new LocalizedActionError(msg`Smart wallet client not ready`);
 						await assertFreshSelectedDepositRoute();
 						await assertReviewedBalanceUnchanged();
 						await verifyFreshLegalAction({ env: cctpTrackingEnv });
 						await assertProviderAccountStillActive(ready.provider, ready.address);
 						if (getClientChainId(smartClient) !== cctpDepositConfig.chainId || !smartClient.paymaster) {
-							throw new Error(t`Smart wallet client not ready`);
+							throw new LocalizedActionError(msg`Smart wallet client not ready`);
 						}
 						saveCctpSponsoredAuthorizationIntent({
 							env: cctpTrackingEnv,
@@ -1345,7 +1387,9 @@ export function useDeposit({
 						]);
 						const bufferedGas = (gas * GAS_BUFFER_NUMERATOR + GAS_BUFFER_DENOMINATOR - 1n) / GAS_BUFFER_DENOMINATOR;
 						if (gasBalance < bufferedGas * gasPrice) {
-							throw new Error(t`Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry.`);
+							throw new LocalizedActionError(
+								msg`Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry.`,
+							);
 						}
 						await assertFreshSelectedDepositRoute();
 						await verifyFreshLegalAction({ env: cctpTrackingEnv });
@@ -1369,7 +1413,7 @@ export function useDeposit({
 						const trackingAmount = formatUnits(amountRaw, USDC_DECIMALS);
 						if (mode === "smart") {
 							if (!cctpAuthorizationNonce || !sponsoredAuthorizationValidBefore) {
-								throw new Error(t`Unable to verify the CCTP authorization.`);
+								throw new LocalizedActionError(msg`Unable to verify the CCTP authorization.`);
 							}
 							saveCctpDepositTrackingRecord({
 								...cctpTrackingRecord,
@@ -1404,14 +1448,14 @@ export function useDeposit({
 				) {
 					return;
 				}
-				if (!publicClient) throw new Error(t`No response from exchange`);
+				if (!publicClient) throw new LocalizedActionError(msg`No response from exchange`);
 				await waitForBroadcastedTransaction(publicClient, hash, { provider });
 
 				if (!isCurrentDepositExecution(executionKey, operationId)) return;
 				const receipt = await waitForConfirmedReceipt(publicClient, hash, { provider });
-				if (!cctpDepositUser || !isAddress(cctpDepositUser)) throw new Error(t`Wallet not connected`);
+				if (!cctpDepositUser || !isAddress(cctpDepositUser)) throw new LocalizedActionError(msg`Wallet not connected`);
 				if (mode === "smart") {
-					if (!cctpAuthorizationNonce) throw new Error(t`Unable to verify the CCTP authorization.`);
+					if (!cctpAuthorizationNonce) throw new LocalizedActionError(msg`Unable to verify the CCTP authorization.`);
 					try {
 						assertCctpSponsoredDepositReceipt({
 							amountRaw,

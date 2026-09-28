@@ -13,11 +13,7 @@
   "summary": "产品负责人要求先处理清点出的同类功能块。推荐弹层改为点击即关闭、结果走通知；API 钱包只把按钮改为静态名称并把预检状态移到正文，分阶段弹层因一次性私钥而保留；金库与质押保留签名、提交、对账期间的进度面板，对账得出结论后由页面层上报通知并关闭或回到复核，状态未知仍留在弹层里。顺带修复质押错误说明一直渲染为空的既有缺陷，并给转账、兑换、充值、提现、金库、质押通知里的金额与哈希加上从左到右隔离。LiFi 跨链桥未改。未做真实钱包验收。",
   "thread": null,
   "baseCommit": "daa5ec7f",
-  "commits": [
-    "3098da44",
-    "82431efe",
-    "54a65716"
-  ],
+  "commits": ["3098da44", "82431efe", "54a65716", "51f2ccff"],
   "sources": [
     { "path": "docs/confirmation-surfaces.md" },
     { "path": "apps/terminal/src/components/referrals/referral-action-modal.tsx" },

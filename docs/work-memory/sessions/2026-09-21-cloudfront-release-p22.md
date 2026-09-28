@@ -13,7 +13,7 @@
   "summary": "产品负责人要求把 dev 晋升到 main 并发布到线上。PR #38 以 merge commit 合入 main（246c57bc，九项检查含四种配对组合构建全部通过）。在干净的临时工作树从 main 构建 cloudfront-2026-09-21-p22：环境文件只软链不读取，命令行强制关闭移动配对、按产品负责人的选择打开主网赞助充值并在上传时带确认参数。按日常发布顺序执行函数、Lambda、同步、两条分发失效，主网 15 项与测试网 16 项 verify 全部 ok，浏览器 CSP 覆盖 32 步零违规。PR #37 的交易与资金弹层发布前没有做真实钱包验收。",
   "thread": null,
   "baseCommit": "23c106c2",
-  "commits": [],
+  "commits": ["eb74bf14"],
   "sources": [
     { "path": "deploy/cloudfront/README.md" },
     { "path": "deploy/env.build.example" },

@@ -70,6 +70,7 @@ const mocks = vi.hoisted(() => ({
 	orderUpdatesData: undefined as Array<{ order: { cloid?: `0x${string}` }; status: OrderProcessingStatus }> | undefined,
 	openOrdersData: undefined as { orders: Array<{ oid: number; sz: string; triggerPx: string }> } | undefined,
 	openOrdersLastMessageAt: undefined as number | undefined,
+	openOrdersMonotonicLastMessageAt: undefined as number | undefined,
 }));
 
 vi.mock("sonner", () => ({
@@ -91,6 +92,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 					status: "active",
 					isStale: false,
 					lastMessageAt: mocks.openOrdersLastMessageAt,
+					monotonicLastMessageAt: mocks.openOrdersMonotonicLastMessageAt,
 				}
 			: { data: mocks.orderUpdatesData },
 }));
@@ -129,6 +131,7 @@ describe("OrderReconciliation", () => {
 		mocks.orderUpdatesData = undefined;
 		mocks.openOrdersData = undefined;
 		mocks.openOrdersLastMessageAt = undefined;
+		mocks.openOrdersMonotonicLastMessageAt = undefined;
 		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
 		getPendingTradingActionActions().reset();
 		container = document.createElement("div");
@@ -799,6 +802,7 @@ describe("OrderReconciliation", () => {
 
 	it("uses a fresh open-orders snapshot to confirm an update that arrived before the HTTP response", () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const action = getPendingTradingActionActions().claimModification({
 			env: "Mainnet",
 			owner: USER,
@@ -808,10 +812,11 @@ describe("OrderReconciliation", () => {
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
-		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2);
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
 		mocks.openOrdersData = { orders: [{ oid: 42, sz: "1", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now - 1;
-		getPendingTradingActionActions().markModificationAwaiting(action.id, now);
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow - 1;
+		getPendingTradingActionActions().markModificationAwaiting(action.id, now, monotonicNow);
 
 		act(() => root.render(createReconciliation()));
 
@@ -821,6 +826,7 @@ describe("OrderReconciliation", () => {
 
 	it("releases an unconfirmed modification after a fresh snapshot shows the original order", () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const action = getPendingTradingActionActions().claimModification({
 			env: "Mainnet",
 			owner: USER,
@@ -830,10 +836,11 @@ describe("OrderReconciliation", () => {
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
-		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2);
-		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now - 1);
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now - 1, monotonicNow - 1);
 		mocks.openOrdersData = { orders: [{ oid: 43, sz: "2", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
 
 		act(() => root.render(createReconciliation()));
 
@@ -847,6 +854,7 @@ describe("OrderReconciliation", () => {
 
 	it("does not use a pre-unconfirmed snapshot to release a modification", () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const action = getPendingTradingActionActions().claimModification({
 			env: "Mainnet",
 			owner: USER,
@@ -856,10 +864,11 @@ describe("OrderReconciliation", () => {
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
-		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2);
-		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now);
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now, monotonicNow);
 		mocks.openOrdersData = { orders: [{ oid: 47, sz: "2", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now - 1;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow - 1;
 
 		act(() => root.render(createReconciliation()));
 		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(1);
@@ -867,6 +876,7 @@ describe("OrderReconciliation", () => {
 
 		mocks.openOrdersData = { orders: [{ oid: 47, sz: "2", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now + 1;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow + 1;
 		act(() => root.render(createReconciliation()));
 		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
 		expectActionFeedback(
@@ -878,6 +888,7 @@ describe("OrderReconciliation", () => {
 
 	it("does not use a pre-response snapshot to report an awaiting modification conflict", () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const action = getPendingTradingActionActions().claimModification({
 			env: "Mainnet",
 			owner: USER,
@@ -887,10 +898,11 @@ describe("OrderReconciliation", () => {
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
-		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2);
-		getPendingTradingActionActions().markModificationAwaiting(action.id, now);
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationAwaiting(action.id, now, monotonicNow);
 		mocks.openOrdersData = { orders: [{ oid: 48, sz: "1.5", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now - 1;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow - 1;
 
 		act(() => root.render(createReconciliation()));
 		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(1);
@@ -898,6 +910,7 @@ describe("OrderReconciliation", () => {
 
 		mocks.openOrdersData = { orders: [{ oid: 48, sz: "1.5", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now + 1;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow + 1;
 		act(() => root.render(createReconciliation()));
 		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
 		expectActionFeedback(
@@ -909,6 +922,7 @@ describe("OrderReconciliation", () => {
 
 	it("does not use a pre-unconfirmed snapshot to report a modification conflict", () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const action = getPendingTradingActionActions().claimModification({
 			env: "Mainnet",
 			owner: USER,
@@ -918,10 +932,11 @@ describe("OrderReconciliation", () => {
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
-		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2);
-		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now);
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now, monotonicNow);
 		mocks.openOrdersData = { orders: [{ oid: 49, sz: "1.5", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now - 1;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow - 1;
 
 		act(() => root.render(createReconciliation()));
 		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(1);
@@ -929,6 +944,7 @@ describe("OrderReconciliation", () => {
 
 		mocks.openOrdersData = { orders: [{ oid: 49, sz: "1.5", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now + 1;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow + 1;
 		act(() => root.render(createReconciliation()));
 		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
 		expectActionFeedback(
@@ -940,6 +956,7 @@ describe("OrderReconciliation", () => {
 
 	it("does not resolve a pending action belonging to another owner", () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const action = getPendingTradingActionActions().claimModification({
 			env: "Mainnet",
 			owner: "0x2222222222222222222222222222222222222222",
@@ -949,10 +966,11 @@ describe("OrderReconciliation", () => {
 			expectedSize: "1",
 		});
 		if (!action) throw new Error("Expected modification claim");
-		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2);
-		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now - 1);
+		getPendingTradingActionActions().markModificationRequestStarted(action.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markModificationUnconfirmed(action.id, now - 1, monotonicNow - 1);
 		mocks.openOrdersData = { orders: [{ oid: 44, sz: "1", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
 
 		act(() => root.render(createReconciliation()));
 
@@ -962,6 +980,7 @@ describe("OrderReconciliation", () => {
 
 	it("confirms a cancellation from a fresh missing-order snapshot and clears matching modify uncertainty", () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const modification = getPendingTradingActionActions().claimModification({
 			env: "Mainnet",
 			owner: USER,
@@ -971,18 +990,19 @@ describe("OrderReconciliation", () => {
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
-		getPendingTradingActionActions().markModificationRequestStarted(modification.id, now - 4);
-		getPendingTradingActionActions().markModificationUnconfirmed(modification.id, now - 3);
+		getPendingTradingActionActions().markModificationRequestStarted(modification.id, now - 4, monotonicNow - 4);
+		getPendingTradingActionActions().markModificationUnconfirmed(modification.id, now - 3, monotonicNow - 3);
 		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
 			env: "Mainnet",
 			owner: USER,
 			oids: [45],
 		});
 		if (!cancellation) throw new Error("Expected cancellation claim");
-		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2);
-		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id, now - 1);
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id, now - 1, monotonicNow - 1);
 		mocks.openOrdersData = { orders: [] };
 		mocks.openOrdersLastMessageAt = now;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
 
 		act(() => root.render(createReconciliation()));
 
@@ -998,14 +1018,15 @@ describe("OrderReconciliation", () => {
 
 	it("replaces a persistent cancellation timeout with one finite confirmed notification", () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
 			env: "Mainnet",
 			owner: USER,
 			oids: [60],
 		});
 		if (!cancellation) throw new Error("Expected cancellation claim");
-		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 1);
-		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id, now);
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 1, monotonicNow - 1);
+		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id, now, monotonicNow);
 		act(() => root.render(createReconciliation()));
 
 		act(() => vi.advanceTimersByTime(TRADING_ACTION_CONFIRMATION_TIMEOUT_MS));
@@ -1017,12 +1038,105 @@ describe("OrderReconciliation", () => {
 
 		mocks.openOrdersData = { orders: [] };
 		mocks.openOrdersLastMessageAt = Date.now() + 1;
+		mocks.openOrdersMonotonicLastMessageAt = performance.now() + 1;
 		act(() => root.render(createReconciliation()));
 		expectActionFeedback(cancellation.id, "success", "Order cancellation confirmed.");
 	});
 
+	it("confirms a cancellation from a snapshot received after the system clock was set back", () => {
+		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+			env: "Mainnet",
+			owner: USER,
+			oids: [61],
+		});
+		if (!cancellation) throw new Error("Expected cancellation claim");
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id);
+		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id);
+		act(() => root.render(createReconciliation()));
+
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		act(() => vi.advanceTimersByTime(1_000));
+		mocks.openOrdersData = { orders: [] };
+		mocks.openOrdersLastMessageAt = Date.now();
+		mocks.openOrdersMonotonicLastMessageAt = performance.now();
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().orderCancellations).toHaveLength(0);
+		expectActionFeedback(cancellation.id, "success", "Order cancellation confirmed.");
+	});
+
+	it("times out an awaiting cancellation after the usual window when the system clock was set back", () => {
+		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+			env: "Mainnet",
+			owner: USER,
+			oids: [62],
+		});
+		if (!cancellation) throw new Error("Expected cancellation claim");
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id);
+		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id);
+		act(() => root.render(createReconciliation()));
+
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		act(() => vi.advanceTimersByTime(TRADING_ACTION_CONFIRMATION_TIMEOUT_MS - 1));
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
+
+		act(() => vi.advanceTimersByTime(1));
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("unconfirmed");
+		expectActionFeedback(
+			cancellation.id,
+			"unconfirmed",
+			"The cancellation response could not be confirmed. Refresh open orders before retrying.",
+		);
+	});
+
+	it("re-arms the timeout when its timer fires just before the monotonic deadline", () => {
+		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+			env: "Mainnet",
+			owner: USER,
+			oids: [64],
+		});
+		if (!cancellation) throw new Error("Expected cancellation claim");
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id);
+		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id);
+		act(() => root.render(createReconciliation()));
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		const timerClockNow = performance.now.bind(performance);
+		const lagging = vi.spyOn(performance, "now").mockImplementation(() => timerClockNow() - 0.25);
+
+		act(() => vi.advanceTimersByTime(TRADING_ACTION_CONFIRMATION_TIMEOUT_MS));
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
+
+		act(() => vi.advanceTimersByTime(1));
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("unconfirmed");
+		lagging.mockRestore();
+	});
+
+	it("does not treat a snapshot received before the request as newer after the system clock was set back", () => {
+		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
+			env: "Mainnet",
+			owner: USER,
+			oids: [63],
+		});
+		if (!cancellation) throw new Error("Expected cancellation claim");
+		mocks.openOrdersData = { orders: [] };
+		mocks.openOrdersLastMessageAt = Date.now();
+		mocks.openOrdersMonotonicLastMessageAt = performance.now();
+
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		act(() => vi.advanceTimersByTime(1_000));
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id);
+		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id);
+		act(() => root.render(createReconciliation()));
+
+		expect(getPendingTradingActionSnapshot().orderCancellations).toMatchObject([
+			{ id: cancellation.id, phase: "awaiting" },
+		]);
+		expect(getOrderQueueItem(`pending-trading-action:${cancellation.id}`)?.status).not.toBe("success");
+	});
+
 	it("uses one sufficiently fresh snapshot to release an unconfirmed cancellation and modification", () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const modification = getPendingTradingActionActions().claimModification({
 			env: "Mainnet",
 			owner: USER,
@@ -1032,18 +1146,19 @@ describe("OrderReconciliation", () => {
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
-		getPendingTradingActionActions().markModificationRequestStarted(modification.id, now - 4);
-		getPendingTradingActionActions().markModificationUnconfirmed(modification.id, now - 3);
+		getPendingTradingActionActions().markModificationRequestStarted(modification.id, now - 4, monotonicNow - 4);
+		getPendingTradingActionActions().markModificationUnconfirmed(modification.id, now - 3, monotonicNow - 3);
 		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
 			env: "Mainnet",
 			owner: USER,
 			oids: [46],
 		});
 		if (!cancellation) throw new Error("Expected cancellation claim");
-		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2);
-		getPendingTradingActionActions().markOrderCancellationUnconfirmed(cancellation.id, now);
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markOrderCancellationUnconfirmed(cancellation.id, now, monotonicNow);
 		mocks.openOrdersData = { orders: [{ oid: 46, sz: "2", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now - 1;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow - 1;
 
 		act(() => root.render(createReconciliation()));
 		expect(getPendingTradingActionSnapshot()).toMatchObject({
@@ -1053,6 +1168,7 @@ describe("OrderReconciliation", () => {
 
 		mocks.openOrdersData = { orders: [{ oid: 46, sz: "2", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now + 1;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow + 1;
 		act(() => root.render(createReconciliation()));
 
 		expect(getPendingTradingActionSnapshot()).toMatchObject({
@@ -1063,6 +1179,7 @@ describe("OrderReconciliation", () => {
 
 	it("keeps modify uncertainty while a matching cancellation still awaits confirmation", () => {
 		const now = Date.now();
+		const monotonicNow = performance.now();
 		const modification = getPendingTradingActionActions().claimModification({
 			env: "Mainnet",
 			owner: USER,
@@ -1072,18 +1189,19 @@ describe("OrderReconciliation", () => {
 			expectedSize: "1",
 		});
 		if (!modification) throw new Error("Expected modification claim");
-		getPendingTradingActionActions().markModificationRequestStarted(modification.id, now - 4);
-		getPendingTradingActionActions().markModificationUnconfirmed(modification.id, now - 3);
+		getPendingTradingActionActions().markModificationRequestStarted(modification.id, now - 4, monotonicNow - 4);
+		getPendingTradingActionActions().markModificationUnconfirmed(modification.id, now - 3, monotonicNow - 3);
 		const cancellation = getPendingTradingActionActions().claimOrderCancellation({
 			env: "Mainnet",
 			owner: USER,
 			oids: [50],
 		});
 		if (!cancellation) throw new Error("Expected cancellation claim");
-		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2);
-		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id, now - 1);
+		getPendingTradingActionActions().markOrderCancellationRequestStarted(cancellation.id, now - 2, monotonicNow - 2);
+		getPendingTradingActionActions().markOrderCancellationAwaiting(cancellation.id, now - 1, monotonicNow - 1);
 		mocks.openOrdersData = { orders: [{ oid: 50, sz: "2", triggerPx: "0" }] };
 		mocks.openOrdersLastMessageAt = now;
+		mocks.openOrdersMonotonicLastMessageAt = monotonicNow;
 
 		act(() => root.render(createReconciliation()));
 

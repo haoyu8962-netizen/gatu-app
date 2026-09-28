@@ -7,13 +7,13 @@
   "kind": "task",
   "status": "verified",
   "topics": ["order-entry", "pr-review"],
-  "summary": "真实 Chrome 页面确认同一任务出现不同 Sonner 展示 ID，队列清空后旧 pending 卡片仍残留；StrictMode 诊断复现短暂重复，长期残留的精确调度时序尚未稳定复现。本轮仅审查与记录，未修改生产代码。",
+  "summary": "真实 Chrome 观察到重复展示和旧 pending 残留；同日后续以受控 timer/RAF 红绿回归覆盖残留路径并实施生命周期修复。原观察阶段未稳定复现的限制保留，不据合成回归宣称真实设备验收。",
   "thread": {
     "id": "01a0c3b4-5aec-7f93-bc8b-6ecf0e661507",
     "title": "启动开发服务器"
   },
   "baseCommit": "15b0d1c83df19d6490bb2f3012296f4c69954108",
-  "commits": [],
+  "commits": ["938983d4", "a999806b"],
   "sources": [
     { "path": "docs/trading-notifications.md" },
     { "path": "apps/terminal/src/components/trade/order-notification-host.tsx" },
@@ -85,3 +85,11 @@ Sonner 2.0.7 的 observer dismissal 经 `requestAnimationFrame` 发布，Toaster
 本记录补充全局通知及三秒时长任务的验证边界，不整体替代其架构决策或历史结果；当前实现仍待修复。
 
 后续：同日用户授权后已实施[生命周期修复](2026-09-22-notification-lifecycle-fix.md)，新增受控 timer/RAF 红绿回归，覆盖本记录当时未稳定复现的残留路径。本记录的「未修复」是审查结束时状态，最终实现与验证以该后续任务和当前 Reference 为准。
+
+## 周整理补注（2026-09-28）
+
+正文已追加后续修复，但索引摘要仍停在审查阶段；本次只同步检索状态，不改写原现场观察或重跑浏览器。
+
+后续来源：[2026-09-22-notification-lifecycle-fix](2026-09-22-notification-lifecycle-fix.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。
