@@ -314,6 +314,10 @@ msgstr "इतिहास की एक नई सटीक घटना इस
 msgid "A position may be liquidated when the mark price reaches its liquidation price."
 msgstr "जब मार्क मूल्य पोज़िशन के लिक्विडेशन मूल्य तक पहुँचता है, तो पोज़िशन लिक्विडेट हो सकती है।"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "A Post Only order would have matched immediately. Best bid and offer: {bbo}."
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "पिछले CCTP जमा को अभी भी ट्रैक किया जा रहा है। उसी ट्रांसफ़र को दोबारा सबमिट न करें।"
@@ -321,6 +325,10 @@ msgstr "पिछले CCTP जमा को अभी भी ट्रैक �
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "पिछला कनेक्शन प्रयास अभी भी मिलान किया जा रहा है। दोबारा प्रयास करने पर उसी ट्रेडिंग कुंजी की जाँच होगी और किसी अन्य हस्ताक्षर का अनुरोध नहीं किया जाएगा।"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "A Reduce Only order cannot increase the position."
+msgstr ""
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
@@ -357,6 +365,10 @@ msgstr "इन बाज़ारों में ट्रेडिंग स�
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Accept the HIP-3 deployer disclaimer before trading this market."
 msgstr "इस बाज़ार में ट्रेडिंग से पहले HIP-3 डिप्लॉयर अस्वीकरण स्वीकार करें।"
+
+#: src/lib/errors/action-error.ts
+msgid "Accept the Hyperliquid terms before continuing."
+msgstr ""
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Accepted"
@@ -755,7 +767,7 @@ msgstr "हटाने का सत्यापन चल रहा था, �
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "इस खाते के लिए एक अन्य Circle CCTP जमा अभी भी लंबित है। दूसरा जमा सबमिट करने से पहले उसके पूरा होने की प्रतीक्षा करें।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Another funds operation is still in progress for this account. Try again after it finishes."
 msgstr "इस खाते के लिए धनराशि से जुड़ा एक और ऑपरेशन अभी जारी है। उसके पूरा होने के बाद फिर से कोशिश करें।"
 
@@ -889,7 +901,7 @@ msgstr "Arbitrum (CCTP)"
 msgid "Arbitrum (Legacy)"
 msgstr "Arbitrum (लेगेसी)"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Arbitrum network switch was rejected."
 msgstr "Arbitrum नेटवर्क स्विच अस्वीकार कर दिया गया।"
@@ -1286,8 +1298,53 @@ msgstr "चयनित ऑर्डर रद्द करें"
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-reconciliation-feedback.ts
+#: src/lib/trade/order-status-reasons.ts
 msgid "Canceled"
 msgstr "रद्द"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the asset was delisted"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the linked order filled"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the outcome has settled"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by self-trade prevention"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by the exchange"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by the scheduled cancel"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to a vault withdrawal"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to insufficient margin"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to liquidation"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to Reduce Only"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to the open interest cap"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
@@ -2218,6 +2275,10 @@ msgstr "क्रॉस लीवरेज"
 msgid "Cross Maintenance Margin"
 msgstr "क्रॉस मेंटेनेंस मार्जिन"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Cross positions do not have enough available margin to lower the leverage. Deposit more collateral to lower it."
+msgstr ""
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
 msgstr "क्रिप्टो"
@@ -2422,7 +2483,7 @@ msgstr "डिपॉज़िट सफल"
 msgid "Deposit to Vault"
 msgstr "वॉल्ट में जमा करें"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
 msgstr "जमा लेनदेन ब्रॉडकास्ट हो गया, लेकिन पुष्टि समय समाप्त हो गया। दोबारा प्रयास करने से पहले Arbiscan पर जांचें।"
@@ -2431,7 +2492,7 @@ msgstr "जमा लेनदेन ब्रॉडकास्ट हो ग�
 msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
 msgstr "जमा लेनदेन प्रसारित हो गया, लेकिन Arbitrum RPC पुष्टि विफल रही। दोबारा प्रयास करने से पहले Arbiscan पर जाँच करें।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "जमा लेनदेन सबमिट हो गया, लेकिन Arbitrum पर पुष्टि नहीं हुई। आपके वॉलेट का nonce नेटवर्क से सिंक नहीं हो सकता है। वॉलेट में लंबित गतिविधि साफ करें या nonce डेटा रीसेट करें, फिर दोबारा प्रयास करें।"
@@ -3743,7 +3804,7 @@ msgstr "Hyperliquid लक्ष्य लीवरेज तक पहुँच
 msgid "Hyperliquid documents a four-day lock after the latest HLP deposit and a one-day lock for user Vaults. The returned server timestamp remains authoritative for this deposit."
 msgstr "Hyperliquid के दस्तावेज़ों के अनुसार नवीनतम HLP जमा के बाद चार दिन का लॉक और उपयोगकर्ता वॉल्ट के लिए एक दिन का लॉक होता है। इस जमा के लिए सर्वर से मिला टाइमस्टैम्प ही निर्णायक रहेगा।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
 msgstr "Hyperliquid अभी इस खाते को रेफ़रल कोड बनाने के लिए पात्र नहीं दिखाता है।"
 
@@ -3884,9 +3945,25 @@ msgstr "अपर्याप्त बैलेंस"
 msgid "Insufficient funds"
 msgstr "अपर्याप्त धनराशि"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Insufficient funds for gas"
 msgstr "गैस के लिए अपर्याप्त फंड"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order."
+msgstr ""
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order. Try canceling open {market} orders."
+msgstr ""
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order. Try using Reduce Only."
+msgstr ""
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient spot balance for this order."
+msgstr ""
 
 #: src/components/earn/earn-view.tsx
 msgid "Interest"
@@ -3909,6 +3986,10 @@ msgstr "अमान्य राशि"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Invalid destination address"
 msgstr "गंतव्य पता अमान्य है"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Invalid TP/SL price."
+msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invitation ready to review"
@@ -4451,6 +4532,10 @@ msgstr "मार्जिन और खाता जोखिम एक नज�
 msgid "Margin mode"
 msgstr "Margin मोड"
 
+#: src/lib/tests/action-error.test.ts
+msgid "Margin mode data is unavailable"
+msgstr ""
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode updated"
 msgstr "Margin मोड अपडेट किया गया"
@@ -4949,7 +5034,7 @@ msgstr "कोई API वॉलेट अधिकृत नहीं है"
 msgid "No balance"
 msgstr "कोई बैलेंस नहीं"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/exchange-error-text.ts
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "Hyperliquid पर कोई बैलेंस नहीं। पहले जमा करें।"
 
@@ -5060,6 +5145,10 @@ msgstr "अभी तक कोई ब्याज नहीं"
 #: src/components/referrals/referral-activity.tsx
 msgid "No legacy reward history."
 msgstr "कोई पुराना पुरस्कार इतिहास नहीं है।"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "No liquidity is available for this market order."
+msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
@@ -5485,6 +5574,10 @@ msgstr "ऑर्डर"
 msgid "Order {0}"
 msgstr "ऑर्डर {0}"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order {order}: {line}"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/config/orderbook-labels.ts
@@ -5515,6 +5608,7 @@ msgid "Order cancellation confirmed."
 msgstr "ऑर्डर रद्दीकरण की पुष्टि हो गई।"
 
 #: src/hooks/trade/use-order-confirmation.ts
+#: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Order conditions changed before it was confirmed. Review the order and submit it again."
 msgstr "पुष्टि से पहले ऑर्डर की शर्तें बदल गईं। ऑर्डर की समीक्षा करके उसे फिर भेजें।"
@@ -5622,6 +5716,14 @@ msgstr "ऑर्डर प्रकार"
 #: src/config/ui-text.ts
 msgid "Order Value"
 msgstr "ऑर्डर वैल्यू"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order value must be at least {amount} {token}."
+msgstr ""
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order value must be at least ${amount}."
+msgstr ""
 
 #: src/config/tooltips.ts
 msgid "Order will exist only as a limit order on the book. Also known as post-only."
@@ -6156,6 +6258,10 @@ msgstr "कीमत {price} से नीचे"
 msgid "Price grouping"
 msgstr "प्राइस ग्रुपिंग"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Price must be a multiple of the tick size."
+msgstr ""
+
 #: src/config/orderbook-labels.ts
 msgid "Price precision"
 msgstr "मूल्य परिशुद्धता"
@@ -6406,7 +6512,7 @@ msgstr "केवल घटाने की मात्रा पोज़ि�
 msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
 msgstr "मौजूदा बाज़ार मूल्य पर यह पोज़िशन घटाएँ। भरे जा चुके ट्रेड वापस नहीं किए जा सकते।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral access could not be verified for this account. Refresh access status before retrying."
 msgstr "इस खाते के लिए रेफ़रल एक्सेस सत्यापित नहीं किया जा सका। दोबारा प्रयास करने से पहले एक्सेस स्थिति रीफ़्रेश करें।"
 
@@ -6440,11 +6546,11 @@ msgid "Referral code created"
 msgstr "रेफ़रल कोड बन गया"
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral codes cannot be applied after cumulative volume exceeds $10,000."
 msgstr "संचयी वॉल्यूम $10,000 से अधिक होने के बाद रेफ़रल कोड लागू नहीं किए जा सकते।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral codes must be between 1 and 20 characters."
 msgstr "रेफ़रल कोड 1 से 20 वर्णों के बीच होना चाहिए।"
 
@@ -6461,6 +6567,8 @@ msgid "Referral request"
 msgstr "रेफ़रल अनुरोध"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
 msgid "Referral request could not be completed."
 msgstr "रेफ़रल अनुरोध पूरा नहीं किया जा सका।"
 
@@ -6556,8 +6664,70 @@ msgstr "रीफ़्रेश हो रहा है…"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-status-reasons.ts
 msgid "Rejected"
 msgstr "अस्वीकृत"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because a Reduce Only order would increase the position"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because it exceeds the maximum position size at the current leverage"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because open interest would increase too quickly"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the IOC order could not match"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the order value is below the minimum"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the Post Only order would have matched immediately"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the price is too aggressive at the open interest cap"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the price is too far from the oracle price"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to a lack of liquidity for the market order"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to an invalid tick price"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to an invalid TP/SL price"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to insufficient margin"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to insufficient spot balance"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to the open interest cap"
+msgstr ""
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to too many open orders"
+msgstr ""
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -7195,8 +7365,7 @@ msgid "selected"
 msgstr "चयनित"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/lib/errors/format.ts
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -7496,7 +7665,7 @@ msgstr "Slippage सहनशीलता"
 msgid "Smart wallet client not ready"
 msgstr "स्मार्ट वॉलेट क्लाइंट तैयार नहीं है"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked."
 msgstr "स्मार्ट वॉलेट जमा स्थिति सिंक हो रही है। शेष राशि की जाँच पूरी होने तक दूसरा जमा सबमिट न करें।"
@@ -8206,6 +8375,10 @@ msgstr "उपलब्ध इतिहास में इस खाते क�
 msgid "The active wallet is not this account's master wallet"
 msgstr "सक्रिय वॉलेट इस खाते का मास्टर वॉलेट नहीं है"
 
+#: src/lib/errors/action-error.ts
+msgid "The active wallet or network changed. Review the account and try again."
+msgstr ""
+
 #: src/components/staking/staking-view.tsx
 msgid "The address already has five pending withdrawals."
 msgstr "इस पते पर पहले से पाँच निकासी लंबित हैं।"
@@ -8233,6 +8406,10 @@ msgstr "API वॉलेट अनुरोध अस्वीकार कर �
 #: src/components/referrals/referral-action-modal.tsx
 #~ msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
 #~ msgstr "स्वीकृत Hyperliquid Agent इस अनुरोध पर हस्ताक्षर करता है। हस्ताक्षरित अनुरोधों का अपने-आप दोबारा प्रयास कभी नहीं किया जाता।"
+
+#: src/lib/errors/action-error.ts
+msgid "The Arbitrum transaction did not match the reviewed deposit. Check your wallet activity before retrying."
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
@@ -8389,15 +8566,35 @@ msgstr "ऑर्डर जारी रह सकता है, लेकिन
 msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
 msgstr "अनुरोधित संशोधन की पुष्टि होने से पहले ऑर्डर बदल गया। फिर से प्रयास करने से पहले नवीनतम ऑर्डर की समीक्षा करें।"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order could not immediately match any resting orders."
+msgstr ""
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
 #~ msgstr "ऑर्डर की पुष्टि अभी जारी है।"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order price is too far from the oracle price."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "लाइव डेटा से ऑर्डर अपडेट की पुष्टि नहीं हुई। फिर से प्रयास करने से पहले रीफ़्रेश करें; रद्दीकरण अभी भी उपलब्ध है।"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order was never placed, was already canceled, or has filled."
+msgstr ""
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order would exceed the maximum position size at the current leverage."
+msgstr ""
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order would increase open interest too quickly."
+msgstr ""
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The page is matching a new Vault ledger event and refreshed account state. It will not sign again."
@@ -8476,7 +8673,23 @@ msgstr "हाल का ट्रेड स्नैपशॉट लोड य�
 #~ msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
 #~ msgstr "Hyperliquid द्वारा पुष्टि किए जाने से पहले प्रतिस्थापन की समय-सीमा समाप्त हो गई। नए निरसन की समीक्षा करें और उस पर हस्ताक्षर करें।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
+msgid "The request could not be completed. Try again."
+msgstr ""
+
+#: src/lib/errors/action-error.ts
+msgid "The request could not be prepared. Refresh the page and try again."
+msgstr ""
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The request expired before the exchange processed it. Try again."
+msgstr ""
+
+#: src/lib/errors/action-error.ts
+msgid "The request status could not be confirmed. Review your account before retrying."
+msgstr ""
+
+#: src/lib/errors/action-error.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
 msgstr "अनुरोध सबमिट हो गया है, लेकिन इसकी अंतिम स्थिति अभी अपडेट हो रही है। दोबारा प्रयास करने से पहले रेफ़रल डेटा और प्राप्ति इतिहास जांचें।"
 
@@ -8525,6 +8738,10 @@ msgstr "चुने गए Hyperliquid एनवायरनमेंट ने
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
 msgstr "चुना गया बाज़ार बदल गया है। मार्जिन समायोजित करने से पहले मार्जिन डायलॉग फिर से खोलें।"
+
+#: src/lib/errors/action-error.ts
+msgid "The server rejected the request. Try again later."
+msgstr ""
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The signed {action} request is dispatched once and will not be retried automatically."
@@ -8602,6 +8819,10 @@ msgstr "सत्यापित डेटासेट में इस ने�
 msgid "The verified owner data is read-only in this session. An Agent/API wallet is never used as the staking owner or signer."
 msgstr "इस सत्र में सत्यापित मालिक डेटा केवल पढ़ने योग्य है। Agent/API वॉलेट को कभी भी स्टेकिंग मालिक या हस्ताक्षरकर्ता के रूप में उपयोग नहीं किया जाता।"
 
+#: src/lib/errors/action-error.ts
+msgid "The wallet could not sign the request. Try again."
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
 msgstr "वॉलेट ने हस्ताक्षर नहीं किया, इसलिए कोई अनुरोध नहीं भेजा गया। आप विवरण की समीक्षा करके फिर प्रयास कर सकते हैं।"
@@ -8614,16 +8835,16 @@ msgstr "वॉलेट सत्र बंद नहीं किया जा 
 #~ msgid "There are no eligible rewards available to claim."
 #~ msgstr "प्राप्त करने के लिए कोई पात्र पुरस्कार उपलब्ध नहीं है।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "There are no unclaimed rewards available to claim."
 msgstr "दावा करने के लिए कोई दावा न किया गया पुरस्कार उपलब्ध नहीं है।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "इस खाते पर पहले से रेफ़रल कोड लागू है और दूसरा कोड लागू नहीं किया जा सकता।"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
 msgstr "इस खाते को अभी Hyperliquid पर ट्रेडिंग कार्रवाई करने की अनुमति नहीं है।"
 
@@ -8655,13 +8876,17 @@ msgstr "निष्पादन के बाद यह कार्रवा�
 msgid "This bridge can only be resumed by the wallet that started it."
 msgstr "यह ब्रिज केवल उसी वॉलेट से फिर से शुरू किया जा सकता है जिसने इसे शुरू किया था।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "यह ब्राउज़र सभी टैब में धनराशि के ऑपरेशन सुरक्षित रूप से समन्वित नहीं कर सकता। समर्थित ब्राउज़र इस्तेमाल करें।"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 msgstr "यह ब्राउज़र अलग-अलग टैब में ट्रेडिंग कनेक्शन को सुरक्षित रूप से समन्वित नहीं कर सकता। समर्थित ब्राउज़र का उपयोग करें।"
+
+#: src/lib/errors/action-error.ts
+msgid "This browser could not coordinate the request safely across tabs. Close other tabs and try again."
+msgstr ""
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
@@ -8744,6 +8969,10 @@ msgstr "यह पुराना अर्जित-पुरस्कार �
 #: src/lib/trade/position-submit-feedback.ts
 msgid "This isolated position is no longer open."
 msgstr "यह आइसोलेटेड पोज़िशन अब खुली नहीं है।"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "This market is at its open interest cap, so the order cannot increase open interest."
+msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "This market only supports isolated margin mode."
@@ -9011,6 +9240,10 @@ msgstr "टोकन मेटाडेटा लोड नहीं किय�
 #~ msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 #~ msgstr "इस टैब में बहुत सारी मोबाइल स्वीकृतियाँ पुनर्प्राप्ति की प्रतीक्षा में हैं। पहले किसी एक को हल करें या निरस्त करें।"
 
+#: src/lib/errors/action-error.ts
+msgid "Too many requests. Wait a moment and try again."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
@@ -9214,6 +9447,10 @@ msgstr "ट्रेडिंग खाता"
 msgid "Trading connection could not be reset."
 msgstr "ट्रेडिंग कनेक्शन रीसेट नहीं हो सका।"
 
+#: src/lib/errors/action-error.ts
+msgid "Trading could not be enabled. Try again."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
@@ -9270,16 +9507,17 @@ msgstr "लेनदेन"
 msgid "Transaction breakdown"
 msgstr "लेन-देन विवरण"
 
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction reverted on Arbitrum"
 msgstr "Arbitrum पर लेनदेन रिवर्ट हो गया"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Transaction was not broadcast. Please retry."
 msgstr "लेनदेन प्रसारित नहीं हुआ। कृपया पुनः प्रयास करें।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/lifi/use-bridge.ts
 msgid "Transaction was rejected"
 msgstr "लेन-देन अस्वीकार कर दिया गया"
@@ -9525,7 +9763,7 @@ msgstr "वर्तमान CCTP निकासी शुल्क लोड 
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "वॉलेट को {0} पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और दोबारा प्रयास करें।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "वॉलेट को Arbitrum पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और फिर से प्रयास करें।"
 
@@ -9556,7 +9794,7 @@ msgstr "क्षेत्रीय उपलब्धता सत्याप�
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "आपके क्षेत्र में उपलब्धता सत्यापित नहीं की जा सकी। यह धन संबंधी कार्रवाई सबमिट नहीं की गई।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "क्षेत्रीय उपलब्धता सत्यापित नहीं की जा सकी। ट्रेडिंग अस्थायी रूप से उपलब्ध नहीं है।"
 
@@ -10118,6 +10356,10 @@ msgstr "वॉलेट"
 msgid "Wallet (<0>{0}</0>)"
 msgstr "वॉलेट (<0>{0}</0>)"
 
+#: src/lib/errors/action-error.ts
+msgid "Wallet approval timed out. Check your wallet and try again."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Wallet approval unavailable"
 #~ msgstr "वॉलेट स्वीकृति अनुपलब्ध"
@@ -10130,15 +10372,14 @@ msgid "Wallet client not ready"
 msgstr "वॉलेट क्लाइंट तैयार नहीं है"
 
 #: src/hooks/wallet/use-wallet-session.ts
-#: src/lib/errors/format.ts
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
 msgstr "वॉलेट कनेक्शन विफल रहा। अपना वॉलेट अनलॉक करें, कनेक्शन स्वीकार करें, फिर पुनः प्रयास करें।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet connection request was rejected."
 msgstr "वॉलेट कनेक्शन अनुरोध अस्वीकार कर दिया गया।"
@@ -10147,7 +10388,7 @@ msgstr "वॉलेट कनेक्शन अनुरोध अस्वी
 msgid "Wallet connection unavailable"
 msgstr "वॉलेट कनेक्शन उपलब्ध नहीं है"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
 msgstr "वॉलेट ने ट्रांज़ैक्शन हैश वापस नहीं किया। दोबारा जमा भेजने से बचने के लिए पुनः प्रयास करने से पहले वॉलेट गतिविधि जांचें।"
 
@@ -10171,11 +10412,11 @@ msgstr "वॉलेट कनेक्ट नहीं है"
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "कनेक्शन पूरा होने से पहले वॉलेट या नेटवर्क बदल गया। वर्तमान खाते के लिए कार्रवाई दोबारा खोलें।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."
 msgstr "रेफ़रल अनुरोध की पुष्टि से पहले वॉलेट या नेटवर्क बदल गया। कार्रवाई फिर से खोलें और मौजूदा खाते की समीक्षा करें।"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "वॉलेट ने लेनदेन हैश लौटाया है, लेकिन वह अभी Arbitrum पर दिखाई नहीं दे रहा है। जमा दो बार भेजने से बचने के लिए दोबारा प्रयास करने से पहले वॉलेट गतिविधि या Arbiscan जांचें."
@@ -10201,6 +10442,10 @@ msgstr "स्वागत बोनस"
 #: src/components/earn/earn-view.tsx
 msgid "When portfolio margin is enabled, users automatically earn interest on assets not used for trading. Manual supplying and withdrawing is disabled."
 msgstr "पोर्टफोलियो मार्जिन सक्षम होने पर ट्रेडिंग में उपयोग न होने वाली संपत्तियों पर अपने-आप ब्याज मिलता है। मैन्युअल सप्लाई और निकासी अक्षम है।"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "While this market is at its open interest cap, the price cannot be more aggressive than the oracle price."
+msgstr ""
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Whole position"
@@ -10457,6 +10702,10 @@ msgstr "इस मार्केट पर आपकी वर्तमान �
 #: src/components/staking/staking-view.tsx
 msgid "Your delegated stake"
 msgstr "आपका डेलीगेट किया गया स्टेक"
+
+#: src/lib/errors/action-error.ts
+msgid "Your device clock is out of sync. Correct the date and time, then try again."
+msgstr ""
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."

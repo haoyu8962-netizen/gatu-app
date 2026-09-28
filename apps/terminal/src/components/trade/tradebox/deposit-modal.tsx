@@ -347,7 +347,7 @@ export function DepositModal() {
 	const baseDepositValidation = validateDeposit(reviewedDepositAmount);
 	const embeddedWalletValidationError =
 		isEmbeddedDeposit && embeddedWalletError
-			? formatTransferError(normalizeError(embeddedWalletError, t`Unknown error`))
+			? formatTransferError(normalizeError(embeddedWalletError, t`Unknown error`), (descriptor) => t(descriptor))
 			: isEmbeddedDeposit && (needsEmbeddedWallet || isCreatingEmbeddedWallet || !depositEmbeddedWalletAddress)
 				? t`Creating your wallet. Please wait...`
 				: null;
@@ -1101,7 +1101,7 @@ export function DepositModal() {
 			toast.error(formatFundsActionFeedback(error.code, (descriptor) => t(descriptor)));
 			return;
 		}
-		const message = formatExchangeActionError(error, t`Withdrawal failed`);
+		const message = formatExchangeActionError(error, t`Withdrawal failed`, (descriptor) => t(descriptor));
 		if (isAmbiguousExchangeActionError(error)) {
 			toast.warning(t`Withdrawal status unknown`, { description: message, duration: Infinity, closeButton: true });
 			return;
@@ -1315,7 +1315,7 @@ export function DepositModal() {
 				(descriptor) => t(descriptor),
 			);
 		}
-		return formatTransferError(depositError);
+		return formatTransferError(depositError, (descriptor) => t(descriptor));
 	}
 
 	let depositPendingHeading = <Trans>Confirm in wallet</Trans>;
@@ -1399,7 +1399,7 @@ export function DepositModal() {
 				title={<Trans>Deposit</Trans>}
 				icon="error"
 				heading={<Trans>Wallet connection unavailable</Trans>}
-				description={formatTransferError(walletProviderError)}
+				description={formatTransferError(walletProviderError, (descriptor) => t(descriptor))}
 				onClose={handleClose}
 			>
 				<div className="flex w-full gap-2">

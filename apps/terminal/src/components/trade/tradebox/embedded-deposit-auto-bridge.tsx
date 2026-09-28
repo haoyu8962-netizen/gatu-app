@@ -358,7 +358,7 @@ export function EmbeddedDepositAutoBridge() {
 							(descriptor) => t(descriptor),
 						)
 					: depositError
-						? formatTransferError(depositError)
+						? formatTransferError(depositError, (descriptor) => t(descriptor))
 						: t`Automatic USDC deposit failed`;
 			toast.error(depositErrorMessage, getNotificationOptions());
 		}

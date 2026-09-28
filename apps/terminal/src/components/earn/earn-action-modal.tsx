@@ -669,7 +669,7 @@ function getFailureText(error: unknown, translate: Translate): string {
 			msg`Hyperliquid requires at least $1 to stay supplied. Withdraw everything with Max, or leave at least $1.`,
 		);
 	}
-	return formatExchangeActionError(error, translate(msg`Earn request failed`));
+	return formatExchangeActionError(error, translate(msg`Earn request failed`), translate);
 }
 
 interface EarnPositionBaseline {

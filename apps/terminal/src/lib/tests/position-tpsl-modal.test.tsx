@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TradeSizeSlider } from "@/components/trade/components/trade-size-slider";
 import type { TpSlPositionTarget } from "@/components/trade/positions/position-dialog-types";
 import { PositionTpSlModal } from "@/components/trade/positions/position-tpsl-modal";
+import { formatActionFailure } from "@/lib/errors/action-error";
 import type { Position } from "@/lib/hyperliquid";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import { getOrderAssetLockName } from "@/lib/trade/order-asset-lock";
@@ -32,6 +33,9 @@ function lastQueueMessage(): string {
 	if (!error) return "";
 	if (typeof error === "string") return error;
 	if (!("kind" in error)) return i18n._(error);
+	if (error.kind === "exchange-error" || error.kind === "action-error") {
+		return formatActionFailure(error, (descriptor) => i18n._(descriptor)) ?? "";
+	}
 	if (error.kind === "order-reconciliation" || error.kind === "spot-swap") throw new Error("Unexpected feedback kind");
 	return formatPositionSubmitFeedback(error, (descriptor) => i18n._(descriptor));
 }

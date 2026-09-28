@@ -73,9 +73,11 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 	if (error) {
 		errorMessage = errorDescriptor
 			? _(errorDescriptor)
-			: formatExchangeActionError(error, _(connectionFallbackMessage));
+			: formatExchangeActionError(error, _(connectionFallbackMessage), (descriptor) => _(descriptor));
 	}
-	const resetErrorMessage = resetError ? formatExchangeActionError(resetError, _(resetFailureMessage)) : null;
+	const resetErrorMessage = resetError
+		? formatExchangeActionError(resetError, _(resetFailureMessage), (descriptor) => _(descriptor))
+		: null;
 	let connectButtonLabel = <Trans>Establish Connection</Trans>;
 	if (status === "approving_agent") {
 		connectButtonLabel = walletIntent === "embedded" ? <Trans>Connecting...</Trans> : <Trans>Confirm in wallet</Trans>;

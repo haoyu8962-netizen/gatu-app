@@ -244,7 +244,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 				toast.error(
 					err instanceof FundsActionFeedbackCause
 						? formatFundsActionFeedback(err.code, (descriptor) => t(descriptor))
-						: formatExchangeActionError(err, t`Transfer failed`),
+						: formatExchangeActionError(err, t`Transfer failed`, (descriptor) => t(descriptor)),
 				);
 			}
 		} finally {

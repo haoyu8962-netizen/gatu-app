@@ -2,14 +2,15 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import Big from "big.js";
 import { isValidOrderExecutionSummary } from "@/domain/trade/order-execution-summary";
+import { formatActionFailure } from "@/lib/errors/action-error";
+import { formatExchangeErrorText } from "@/lib/errors/exchange-error-text";
 import { formatPrice, formatToken } from "@/lib/format";
 import { formatOrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import { formatOrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 import { formatPositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
 import { formatSpotSwapFeedback } from "@/lib/trade/spot-swap-feedback";
+import type { Translate } from "@/lib/translate";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
-
-type Translate = (descriptor: MessageDescriptor) => string;
 
 export interface OrderNotificationCopy {
 	label: string;
@@ -122,9 +123,12 @@ function getCountSummary(order: OrderQueueItem, translate: Translate): string | 
 function getErrorCopy(order: OrderQueueItem, translate: Translate): string | undefined {
 	const error = order.error;
 	if (!error) return;
-	if (typeof error === "string") return error;
+	if (typeof error === "string") return formatExchangeErrorText(error, translate);
 	if (!("kind" in error)) return translate(error);
-	if (error.kind === "raw") return error.message;
+	if (error.kind === "exchange-error" || error.kind === "action-error") {
+		return formatActionFailure(error, translate) ?? undefined;
+	}
+	if (error.kind === "raw") return formatExchangeErrorText(error.message, translate);
 	if (error.kind === "spot-swap") return formatSpotSwapFeedback(error, translate);
 	if (error.kind === "order-reconciliation") {
 		if (error.code === "status-unconfirmed" && order.status === "unconfirmed") return;

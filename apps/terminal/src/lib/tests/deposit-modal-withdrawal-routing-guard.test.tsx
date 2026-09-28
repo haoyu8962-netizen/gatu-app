@@ -3,7 +3,7 @@
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { HttpRequestError } from "@nktkas/hyperliquid";
+import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type ButtonHTMLAttributes, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -1360,7 +1360,9 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		const rawExchangeMessage = "Hyperliquid SDK rejected withdrawal TEST-RAW";
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
-		testState.exchangeSdkCalls.get("sendToEvmWithData")?.mockRejectedValueOnce(new Error(rawExchangeMessage));
+		testState.exchangeSdkCalls
+			.get("sendToEvmWithData")
+			?.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: rawExchangeMessage }, rawExchangeMessage));
 
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
 
@@ -1940,7 +1942,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await rerender();
 
 		expect(toastMocks.error).toHaveBeenCalledOnce();
-		expect(getToastText(toastMocks.error.mock.calls[0])).toContain("Deposit failed 交易已在 Arbitrum 上回滚");
+		expect(getToastText(toastMocks.error.mock.calls[0])).toContain("Deposit failed Transaction reverted on Arbitrum");
 		expect(getToastText(toastMocks.error.mock.calls[0])).toContain("View on explorer");
 		expect(toastMocks.warning).not.toHaveBeenCalled();
 		expect(container.querySelector('[data-testid="status-screen"]')).toBeNull();

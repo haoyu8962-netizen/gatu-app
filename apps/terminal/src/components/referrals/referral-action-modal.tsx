@@ -15,7 +15,8 @@ import { useRef, useState } from "react";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { type ReferralAction, ReferralActionStatusUnknownError } from "@/hooks/trade/use-referral-actions";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import { classifyActionErrorOr } from "@/lib/errors/action-error";
+import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatToken } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -83,7 +84,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 				status: unknown ? "unconfirmed" : "failed",
 				title: msg`Request not confirmed`,
 				message: msg`Refresh referral data before submitting another signed request.`,
-				error: formatExchangeActionError(submitError, "") || msg`Referral request could not be completed.`,
+				error: classifyActionErrorOr(submitError, msg`Referral request could not be completed.`),
 			});
 		}
 	}

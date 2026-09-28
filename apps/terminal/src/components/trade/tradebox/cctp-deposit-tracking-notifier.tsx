@@ -110,7 +110,7 @@ export function CctpDepositTrackingNotifier() {
 					...lifecycle,
 					description: (
 						<span className="flex flex-col gap-1">
-							<span>{formatTransferError(notification.error)}</span>
+							<span>{formatTransferError(notification.error, (descriptor) => t(descriptor))}</span>
 							{explorerLink}
 						</span>
 					),

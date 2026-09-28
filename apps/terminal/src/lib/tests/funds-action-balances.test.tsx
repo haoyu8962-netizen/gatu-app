@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
+import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, Fragment, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import type { Root } from "react-dom/client";
@@ -863,7 +864,9 @@ describe("funds action balance wiring", () => {
 		["send", () => renderValidSend(root, container), "spotSend"],
 		["transfer", () => renderValidTransfer(root, container), "usdClassTransfer"],
 	] as const)("reports a raw %s exchange error unchanged in any locale", async (_, render, method) => {
-		testState.exchangeMutations[method].mockRejectedValueOnce(new Error(RAW_EXCHANGE_ERROR));
+		testState.exchangeMutations[method].mockRejectedValueOnce(
+			new ApiRequestError({ status: "err", response: RAW_EXCHANGE_ERROR }, RAW_EXCHANGE_ERROR),
+		);
 		testState.runGuardsOnMutation = true;
 		render();
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));

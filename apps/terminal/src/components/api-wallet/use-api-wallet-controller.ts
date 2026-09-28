@@ -340,7 +340,9 @@ export function useApiWalletController({
 			updateAction({
 				...latest,
 				state: transitionApiWalletAction(submitted, { type: "resolve", result: "apiError" }),
-				errorMessage: formatExchangeActionError(error, t`The API wallet request was rejected.`),
+				errorMessage: formatExchangeActionError(error, t`The API wallet request was rejected.`, (descriptor) =>
+					t(descriptor),
+				),
 			});
 			finishExecution(lease);
 		}

@@ -8,6 +8,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IsolatedMarginPositionTarget } from "@/components/trade/positions/position-dialog-types";
 import { PositionIsolatedMarginModal } from "@/components/trade/positions/position-isolated-margin-modal";
+import { formatActionFailure } from "@/lib/errors/action-error";
 import type { Position } from "@/lib/hyperliquid";
 import { getOrderAssetLockName } from "@/lib/trade/order-asset-lock";
 import { formatPositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
@@ -25,6 +26,9 @@ function lastQueueMessage(): string {
 	if (!error) return "";
 	if (typeof error === "string") return error;
 	if (!("kind" in error)) return i18n._(error);
+	if (error.kind === "exchange-error" || error.kind === "action-error") {
+		return formatActionFailure(error, (descriptor) => i18n._(descriptor)) ?? "";
+	}
 	if (error.kind === "order-reconciliation" || error.kind === "spot-swap") throw new Error("Unexpected feedback kind");
 	return formatPositionSubmitFeedback(error, (descriptor) => i18n._(descriptor));
 }
