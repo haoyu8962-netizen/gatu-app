@@ -24,6 +24,6 @@ ADR 记录采用某个方案的理由、备选方案和后果，完整实现契�
 | [0018](0018-slider-gestures-end-on-release.md) | 已接受并实施（2026-09-20）；兼作缺陷复盘 | 滑杆手势只在 `pointerup`、`pointercancel` 或编辑上下文结束时结束，`lostpointercapture` 不是取消；移动与松手由文档级监听处理；每条结束路径写入 `data-gesture-end`；新增取消路径须有真实输入证据；手势改动以物理输入验证，报告的缺陷以报告人的场景确认 |
 | [0019](0019-global-trading-notifications.md) | 已接受并实施（2026-09-21）；未发布 | 订单、平仓与普通提示共用全局 Sonner 堆叠；任务绑定 owner/env，同 ID 更新并从现有 pending 恢复，成功到最前台才计时；保留资金核验与密钥保存面板 |
 | [0020](0020-legal-pages-in-app-shell.md) | 已接受并实施（2026-09-27）；未发布 | Docs、Support、Terms、Privacy、Risk、Cookies 六页并入应用外壳：桌面用 TopNav/FooterBar、移动用 MobileHeader，删除文档路由表面与 DocumentChrome；只预渲染 SPA 壳，边缘函数与 SW（v10）不再区分文档页；照官方把 Cookie 入口放进隐私政策、手机抽屉加 Docs/Support、发布时用壳覆盖遗留文档页 |
-| [0022](0022-subscription-staleness-monotonic-clock.md) | 已接受并实施（2026-09-28）；未发布 | 订阅过期以单调与墙钟两个年龄中较大者判断，系统时间回拨不再让静默流保持新鲜；每帧携带两种接收时间，`lastMessageAt` 保持墙钟；节流间隔同样两个时钟取大；阈值、订阅键与恢复路径不变 |
+| [0022](0022-subscription-staleness-monotonic-clock.md) | 已接受并实施（2026-09-28）；未发布 | 订阅过期以单调与墙钟两个年龄中较大者判断，系统时间回拨不再让静默流保持新鲜；每帧携带两种接收时间，`lastMessageAt` 保持墙钟；节流间隔同样两个时钟取大；阈值、订阅键与恢复路径不变。补充：socket 静默检测与增量 l2 闸门的等待同样取大；撤单、改单与 TWAP 撤单对账用 `monotonicLastMessageAt` 只按单调时间判断快照先后，15 秒超时取大；写入存储、跨标签页共享的时间仍用墙钟 |
 
 新 ADR 至少包含：状态与日期、上下文、目标/约束、决策、备选方案及利弊、后果与边界、代码/测试/Reference 证据。验证命令与本次执行结果分别标明。文档维护要求见[文档体系](../documentation-system.md)。
