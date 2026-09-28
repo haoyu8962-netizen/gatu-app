@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { useStore } from "zustand";
 import { OversizedWebSocketPayloadError } from "../../errors";
 import { createThrottledUpdater } from "../../internal/websocket/batch-updater";
-import { takeFrameReceivedAt } from "../../internal/websocket/frame-receipt";
+import { type FrameReceipt, receiveFrameNow, takeFrameReceivedAt } from "../../internal/websocket/frame-receipt";
 import { isPayloadOversized } from "../../internal/websocket/payload-guard";
 import {
 	getPayloadLimitBytesForSubscriptionKey,
@@ -67,10 +67,10 @@ export function useSub<TData>(
 			const method = getSubscriptionMethodForKey(key);
 			const shouldDiscardQueuedDataOnError = method === "l2Book" || method === "bbo";
 			let subscriptionGeneration = 0;
-			const updater = createThrottledUpdater<{ data: TData; isCurrent: () => boolean; receivedAt: number }>(
-				({ data, isCurrent, receivedAt }) => {
+			const updater = createThrottledUpdater<{ data: TData; isCurrent: () => boolean; receipt: FrameReceipt }>(
+				({ data, isCurrent, receipt }) => {
 					if (!isCurrent()) return;
-					state.setSubscriptionData(key, data, receivedAt);
+					state.setSubscriptionData(key, data, receipt.receivedAt, receipt.monotonicReceivedAt);
 				},
 				throttleMs,
 			);
@@ -99,12 +99,12 @@ export function useSub<TData>(
 					};
 					const promise = subscribeRef.current((data) => {
 						if (!isCurrentGeneration()) return;
-						const receivedAt = takeFrameReceivedAt(data) ?? Date.now();
+						const receipt = takeFrameReceivedAt(data) ?? receiveFrameNow();
 						if (shouldDropPayload(data)) {
 							if (shouldDiscardQueuedDataOnError) updater.destroy();
 							return;
 						}
-						updater.add({ data, isCurrent: isCurrentGeneration, receivedAt });
+						updater.add({ data, isCurrent: isCurrentGeneration, receipt });
 					}, guardedFailureOptions);
 
 					return promise.catch((error) => {
@@ -148,9 +148,9 @@ export function useSub<TData>(
 				return subscribeRef
 					.current((data) => {
 						if (!isCurrentGeneration()) return;
-						const receivedAt = takeFrameReceivedAt(data) ?? Date.now();
+						const receipt = takeFrameReceivedAt(data) ?? receiveFrameNow();
 						if (shouldDropPayload(data)) return;
-						state.setSubscriptionData(key, data, receivedAt);
+						state.setSubscriptionData(key, data, receipt.receivedAt, receipt.monotonicReceivedAt);
 					}, guardedFailureOptions)
 					.catch((error) => {
 						if (isCurrentGeneration()) subscriptionGeneration += 1;
@@ -179,6 +179,7 @@ export function useSub<TData>(
 			error: undefined,
 			isStale: false,
 			lastMessageAt: undefined,
+			monotonicLastMessageAt: undefined,
 			unsubscribe: async () => store.getState().releaseSubscription(key),
 		};
 	}
@@ -189,6 +190,7 @@ export function useSub<TData>(
 		error: entry?.error,
 		isStale: entry?.isStale ?? false,
 		lastMessageAt: entry?.lastMessageAt,
+		monotonicLastMessageAt: entry?.monotonicLastMessageAt,
 		unsubscribe: async () => store.getState().releaseSubscription(key),
 	};
 }

@@ -1,4 +1,5 @@
 import type { ISubscriptionTransport } from "@nktkas/hyperliquid";
+import { getReceiptAgeMs } from "../internal/websocket/staleness";
 import { L2BookStreamError, type L2SubscriptionPayload } from "./l2";
 
 interface CoinGate {
@@ -14,6 +15,15 @@ interface CoinGate {
 
 interface L2SubscriptionGateLease {
 	release: (unsubscribe: () => Promise<void>) => Promise<void>;
+}
+
+/**
+ * When the acquisition began, on both clocks. The wait budget is spent by the larger of the two
+ * elapsed times, so setting the system clock back cannot stretch it (ADR 0022).
+ */
+interface GateAcquisitionStart {
+	startedAt: number;
+	monotonicStartedAt: number;
 }
 
 const transportGates = new WeakMap<ISubscriptionTransport, Map<string, CoinGate>>();
@@ -32,13 +42,16 @@ export async function acquireL2SubscriptionGate(
 	transport: ISubscriptionTransport,
 	payload: L2SubscriptionPayload,
 ): Promise<L2SubscriptionGateLease> {
-	return acquireL2SubscriptionGateBefore(transport, payload, Date.now() + L2_SUBSCRIPTION_GATE_TIMEOUT_MS);
+	return acquireL2SubscriptionGateSince(transport, payload, {
+		startedAt: Date.now(),
+		monotonicStartedAt: performance.now(),
+	});
 }
 
-async function acquireL2SubscriptionGateBefore(
+async function acquireL2SubscriptionGateSince(
 	transport: ISubscriptionTransport,
 	payload: L2SubscriptionPayload,
-	deadlineAt: number,
+	start: GateAcquisitionStart,
 ): Promise<L2SubscriptionGateLease> {
 	const gates = getCoinGates(transport);
 	const existing = gates.get(payload.c);
@@ -54,11 +67,11 @@ async function acquireL2SubscriptionGateBefore(
 			existing.pendingPayloadKey = payloadKey;
 		}
 		const pendingGeneration = existing.pendingGeneration;
-		await waitUntilAvailable(existing.available, deadlineAt);
+		await waitUntilAvailable(existing.available, start);
 		if (existing.pendingGeneration !== pendingGeneration) {
 			throw new L2BookStreamError("subscription_conflict");
 		}
-		return acquireL2SubscriptionGateBefore(transport, payload, deadlineAt);
+		return acquireL2SubscriptionGateSince(transport, payload, start);
 	}
 
 	const gate = existing ?? {
@@ -119,8 +132,8 @@ async function acquireL2SubscriptionGateBefore(
 	};
 }
 
-function waitUntilAvailable(available: Promise<void>, deadlineAt: number): Promise<void> {
-	const remainingMs = deadlineAt - Date.now();
+function waitUntilAvailable(available: Promise<void>, start: GateAcquisitionStart): Promise<void> {
+	const remainingMs = L2_SUBSCRIPTION_GATE_TIMEOUT_MS - getReceiptAgeMs(start.startedAt, start.monotonicStartedAt);
 	if (remainingMs <= 0) return Promise.reject(new L2BookStreamError("subscription_conflict"));
 
 	return new Promise((resolve, reject) => {

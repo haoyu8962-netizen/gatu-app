@@ -142,6 +142,66 @@ describe("staleness watchdog", () => {
 		expect(watchdog.getLastMessageAt("key:a")).toBe(Date.now());
 	});
 
+	it("keeps aging a silent stream on the monotonic clock after the system clock is set back", () => {
+		watchdog.register("key:a", 20_000);
+		const listener = vi.fn();
+		watchdog.subscribe("key:a", listener);
+		watchdog.markFresh("key:a");
+		const receivedAt = Date.now();
+
+		vi.setSystemTime(receivedAt - 60 * 60_000);
+		vi.advanceTimersByTime(20_000);
+		expect(watchdog.isStale("key:a")).toBe(false);
+
+		vi.advanceTimersByTime(10 * 60_000 - 20_000);
+
+		expect(Date.now() - receivedAt).toBe(-50 * 60_000);
+		expect(watchdog.isStale("key:a")).toBe(true);
+		expect(listener).toHaveBeenCalledOnce();
+		expect(listener).toHaveBeenCalledWith(true);
+		expect(watchdog.getLastMessageAt("key:a")).toBe(receivedAt);
+	});
+
+	it("keeps a live stream fresh across a system clock rollback", () => {
+		watchdog.register("key:a", 20_000);
+		const listener = vi.fn();
+		watchdog.subscribe("key:a", listener);
+		watchdog.markFresh("key:a");
+
+		vi.setSystemTime(Date.now() - 60 * 60_000);
+		for (let second = 0; second < 60; second += 5) {
+			vi.advanceTimersByTime(5_000);
+			watchdog.markFresh("key:a");
+		}
+
+		expect(watchdog.isStale("key:a")).toBe(false);
+		expect(watchdog.getLastMessageAt("key:a")).toBe(Date.now());
+		expect(listener).not.toHaveBeenCalled();
+	});
+
+	it("still stales a stream when the system clock jumps forward", () => {
+		watchdog.register("key:a", 20_000);
+		watchdog.markFresh("key:a");
+
+		vi.setSystemTime(Date.now() + 60 * 60_000);
+		vi.advanceTimersByTime(1_000);
+
+		expect(watchdog.isStale("key:a")).toBe(true);
+	});
+
+	it("judges a late-delivered receipt by its monotonic receipt time", () => {
+		watchdog.register("key:a", 20_000);
+
+		watchdog.markFresh("key:a", Date.now(), performance.now() - 15_000);
+		expect(watchdog.isStale("key:a")).toBe(false);
+
+		vi.advanceTimersByTime(6_000);
+		expect(watchdog.isStale("key:a")).toBe(true);
+
+		watchdog.arm("key:a", Date.now(), performance.now() - 25_000);
+		expect(watchdog.isStale("key:a")).toBe(true);
+	});
+
 	it("returns false for unregistered keys", () => {
 		expect(watchdog.isStale("nonexistent")).toBe(false);
 		expect(watchdog.getLastMessageAt("nonexistent")).toBeUndefined();

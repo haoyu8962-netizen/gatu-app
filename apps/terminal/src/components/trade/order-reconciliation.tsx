@@ -33,10 +33,11 @@ import {
 	usePendingOrderSubmissions,
 } from "@/stores/use-pending-order-store";
 import {
+	getNextTradingActionExpiryDelayMs,
 	getPendingTradingActionActions,
-	TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
 	usePendingOrderCancellations,
 	usePendingOrderModifications,
+	wasReceivedAfter,
 } from "@/stores/use-pending-trading-action-store";
 
 const RECONCILIATION_TICK_MS = 3_000;
@@ -62,7 +63,7 @@ export function OrderReconciliation() {
 		data: openOrdersEvent,
 		status: openOrdersStatus,
 		isStale: openOrdersStale,
-		lastMessageAt: openOrdersLastMessageAt,
+		monotonicLastMessageAt: openOrdersReceivedAt,
 	} = useSubscription(
 		"openOrders",
 		{ user: address ?? "0x0000000000000000000000000000000000000000", dex: HL_ALL_DEXS },
@@ -78,16 +79,15 @@ export function OrderReconciliation() {
 		const awaiting = [...modifications, ...cancellations].filter(
 			(action) => action.phase === "awaiting" && action.confirmationStartedAt !== null,
 		);
-		const now = Date.now();
-		markExpiredTradingActions(awaiting, now);
-		const nextDeadline = Math.min(
-			...awaiting
-				.map((action) => (action.confirmationStartedAt ?? now) + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS)
-				.filter((deadline) => deadline > now),
-		);
-		if (!Number.isFinite(nextDeadline)) return;
-
-		const timer = window.setTimeout(() => markExpiredTradingActions(awaiting, Date.now()), nextDeadline - now);
+		let timer: number | undefined;
+		function expireDueActions() {
+			const now = Date.now();
+			const monotonicNow = performance.now();
+			markExpiredTradingActions(awaiting, now, monotonicNow);
+			const delay = getNextTradingActionExpiryDelayMs(awaiting, now, monotonicNow);
+			if (delay !== undefined) timer = window.setTimeout(expireDueActions, delay);
+		}
+		expireDueActions();
 		return () => window.clearTimeout(timer);
 	}, [cancellations, modifications]);
 
@@ -102,18 +102,11 @@ export function OrderReconciliation() {
 			if (cancellation.env !== env || cancellation.owner !== owner || cancellation.phase === "submitting") {
 				continue;
 			}
-			if (
-				typeof openOrdersLastMessageAt !== "number" ||
-				cancellation.requestStartedAt === null ||
-				openOrdersLastMessageAt <= cancellation.requestStartedAt
-			) {
-				continue;
-			}
+			if (!wasReceivedAfter(openOrdersReceivedAt, cancellation.monotonicRequestStartedAt)) continue;
 			if (stillOpen) {
 				if (
 					cancellation.phase !== "unconfirmed" ||
-					cancellation.unconfirmedAt === null ||
-					openOrdersLastMessageAt <= cancellation.unconfirmedAt
+					!wasReceivedAfter(openOrdersReceivedAt, cancellation.monotonicUnconfirmedAt)
 				) {
 					for (const oid of cancellation.oids) activeCancellationOids.add(oid);
 					continue;
@@ -155,13 +148,7 @@ export function OrderReconciliation() {
 			) {
 				continue;
 			}
-			if (
-				typeof openOrdersLastMessageAt !== "number" ||
-				modification.requestStartedAt === null ||
-				openOrdersLastMessageAt <= modification.requestStartedAt
-			) {
-				continue;
-			}
+			if (!wasReceivedAfter(openOrdersReceivedAt, modification.monotonicRequestStartedAt)) continue;
 			const matches = openOrders.filter((order) => order.oid === modification.oid);
 			if (matches.length === 0) {
 				getPendingTradingActionActions().resolveModification(modification.id);
@@ -184,10 +171,10 @@ export function OrderReconciliation() {
 			}
 			if (hasModificationTargetChanged(modification, latest)) {
 				const negativeConclusionStartedAt =
-					modification.phase === "unconfirmed" ? modification.unconfirmedAt : modification.confirmationStartedAt;
-				if (negativeConclusionStartedAt === null || openOrdersLastMessageAt <= negativeConclusionStartedAt) {
-					continue;
-				}
+					modification.phase === "unconfirmed"
+						? modification.monotonicUnconfirmedAt
+						: modification.monotonicConfirmationStartedAt;
+				if (!wasReceivedAfter(openOrdersReceivedAt, negativeConclusionStartedAt)) continue;
 				getPendingTradingActionActions().resolveModification(modification.id);
 				updatePendingTradingActionFeedback(modification, "modify", {
 					status: "failed",
@@ -196,9 +183,7 @@ export function OrderReconciliation() {
 				continue;
 			}
 			if (modification.phase === "unconfirmed") {
-				if (modification.unconfirmedAt === null || openOrdersLastMessageAt <= modification.unconfirmedAt) {
-					continue;
-				}
+				if (!wasReceivedAfter(openOrdersReceivedAt, modification.monotonicUnconfirmedAt)) continue;
 				getPendingTradingActionActions().resolveModification(modification.id);
 				updatePendingTradingActionFeedback(modification, "modify", {
 					status: "unconfirmed",
@@ -212,7 +197,7 @@ export function OrderReconciliation() {
 		env,
 		modifications,
 		openOrdersEvent,
-		openOrdersLastMessageAt,
+		openOrdersReceivedAt,
 		openOrdersStale,
 		openOrdersStatus,
 	]);
@@ -315,14 +300,14 @@ type AwaitingTradingAction =
 	| ReturnType<typeof usePendingOrderModifications>[number]
 	| ReturnType<typeof usePendingOrderCancellations>[number];
 
-function markExpiredTradingActions(actions: AwaitingTradingAction[], now: number): void {
+function markExpiredTradingActions(actions: AwaitingTradingAction[], now: number, monotonicNow: number): void {
 	for (const action of actions) {
 		if ("oid" in action) {
-			if (!getPendingTradingActionActions().expireModificationAwaiting(action.id, now)) continue;
+			if (!getPendingTradingActionActions().expireModificationAwaiting(action.id, now, monotonicNow)) continue;
 			syncPendingTradingActionFeedback({ ...action, phase: "unconfirmed" }, "modify");
 			continue;
 		}
-		if (!getPendingTradingActionActions().expireOrderCancellationAwaiting(action.id, now)) continue;
+		if (!getPendingTradingActionActions().expireOrderCancellationAwaiting(action.id, now, monotonicNow)) continue;
 		syncPendingTradingActionFeedback({ ...action, phase: "unconfirmed" }, "cancel");
 	}
 }

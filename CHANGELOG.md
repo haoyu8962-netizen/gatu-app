@@ -324,6 +324,22 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Setting the computer's clock back no longer keeps stopped market or account data looking live.
+  Prices, order books, market contexts and account streams that stop updating are marked stale
+  after their usual threshold (for market contexts about 25 seconds while the page is visible)
+  whatever the clock does, and order books and market contexts that keep arriving are no longer
+  held back for as long as the clock was moved back. Staleness thresholds and reconnection are
+  unchanged.
+
+- Setting the computer's clock back no longer leaves order cancellations, order edits and TWAP
+  cancellations waiting for confirmation for as long as the clock was moved back. A fresh
+  open-orders or active-TWAP update confirms them as usual, a request with no answer is reported as
+  unconfirmed after the usual 15 seconds, and an update that arrived before the request is no longer
+  taken as its result. A connection that stops sending data is still reconnected, and after a change
+  of order-book grouping the book waits no longer than its usual five seconds for the previous
+  grouping to close. Pending orders that are shared between browser tabs still follow the
+  computer's clock.
+
 - On phones the Market Close and Limit Close sheets have a close button again. Since the redesign
   they could only be left by swiping down, tapping outside or pressing Esc, and the only button on
   the sheet was the confirm button. The close button takes the place of the `Price: Market` and

@@ -672,9 +672,10 @@ describe("useSub hook surface", () => {
 
 	it("keeps a replayed frame's original receipt time through confirmation and staleness", async () => {
 		const receivedAt = Date.now() - 20_000;
+		const monotonicReceivedAt = performance.now() - 20_000;
 		const l2Book = vi.fn(async (_params: unknown, listener: (data: unknown) => void) => {
 			const frame = { coin: "ETH", levels: [[], []], time: 1 };
-			markFrameReceivedAt(frame, receivedAt);
+			markFrameReceivedAt(frame, receivedAt, monotonicReceivedAt);
 			listener(frame);
 			return { unsubscribe: vi.fn(async () => {}) };
 		});
@@ -696,6 +697,96 @@ describe("useSub hook surface", () => {
 
 		expect(result?.status).toBe("active");
 		expect(result?.lastMessageAt).toBe(receivedAt);
+		expect(result?.monotonicLastMessageAt).toBe(monotonicReceivedAt);
 		expect(result?.isStale).toBe(true);
 	});
+
+	it.each([
+		{ path: "throttled", options: {} },
+		{ path: "direct", options: { throttleMs: 0 } },
+	])(
+		"judges a replayed frame by its monotonic receipt on the $path path when the system clock was set back before delivery",
+		async ({ options }) => {
+			const receivedAt = Date.now() + 60 * 60_000;
+			const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
+			const l2Book = vi.fn(async (_params: unknown, listener: (data: unknown) => void) => {
+				const frame = { coin: "ETH", levels: [[], []], time: 1 };
+				markFrameReceivedAt(frame, receivedAt, performance.now() - 20_000);
+				listener(frame);
+				return { unsubscribe: vi.fn(async () => {}) };
+			});
+			const subscription = { l2Book } as unknown as CompactSubscriptionClient;
+			let result: SubscriptionResult<unknown> | undefined;
+			function Consumer() {
+				result = useSubscription("l2Book", { coin: "ETH" }, options);
+				return null;
+			}
+
+			act(() => {
+				root.render(
+					<FullWrapper subscription={subscription}>
+						<Consumer />
+					</FullWrapper>,
+				);
+			});
+			await act(() => vi.advanceTimersByTimeAsync(50));
+
+			expect(result?.status).toBe("active");
+			expect(result?.lastMessageAt).toBe(receivedAt);
+			expect(result?.isStale).toBe(true);
+			expect(getStoreInternals(store).watchdog.isStale(key)).toBe(true);
+		},
+	);
+
+	it.each([
+		{ method: "pac", frame: (sequence: number) => [["", [{ sequence }]]] },
+		{ method: "allDexsAssetCtxs", frame: (sequence: number) => ({ ctxs: [["", [{ sequence }]]] }) },
+	] as const)(
+		"keeps $method contexts live across a clock rollback and not live once they go silent",
+		async ({ method, frame }) => {
+			let emit: ((event: unknown) => void) | undefined;
+			const subscribeChannel = vi.fn(async (listener: (event: unknown) => void) => {
+				emit = listener;
+				return { unsubscribe: vi.fn(async () => {}) };
+			});
+			const subscription = { [method]: subscribeChannel } as unknown as CompactSubscriptionClient;
+			let result: SubscriptionResult<unknown> | undefined;
+			function Consumer() {
+				result = useSubscription(method, undefined, { throttleMs: 5_000 });
+				return null;
+			}
+			function contextsLive() {
+				return result?.data !== undefined && result.status === "active" && !result.isStale;
+			}
+
+			act(() => {
+				root.render(
+					<FullWrapper subscription={subscription}>
+						<Consumer />
+					</FullWrapper>,
+				);
+			});
+			await act(() => vi.advanceTimersByTimeAsync(0));
+			act(() => emit?.(frame(0)));
+			expect(contextsLive()).toBe(true);
+
+			vi.setSystemTime(Date.now() - 60 * 60_000);
+			for (let sequence = 1; sequence <= 12; sequence += 1) {
+				await act(() => vi.advanceTimersByTimeAsync(5_000));
+				act(() => emit?.(frame(sequence)));
+			}
+			await act(() => vi.advanceTimersByTimeAsync(0));
+
+			expect(result?.data).toEqual(frame(12));
+			expect(result?.lastMessageAt).toBe(Date.now());
+			expect(result?.monotonicLastMessageAt).toBe(performance.now());
+			expect(contextsLive()).toBe(true);
+
+			await act(() => vi.advanceTimersByTimeAsync(10 * 60_000));
+
+			expect(result?.data).toEqual(frame(12));
+			expect(result?.isStale).toBe(true);
+			expect(contextsLive()).toBe(false);
+		},
+	);
 });

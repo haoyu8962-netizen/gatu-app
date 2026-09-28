@@ -9,7 +9,7 @@ import {
 	isUserStreamKey,
 	WS_RELIABILITY_LIMITS,
 } from "./internal/websocket/reliability";
-import { createStalenessWatchdog, type StalenessWatchdog } from "./internal/websocket/staleness";
+import { createStalenessWatchdog, getReceiptAgeMs, type StalenessWatchdog } from "./internal/websocket/staleness";
 import { getVisibilityState, subscribeVisibility } from "./internal/websocket/visibility";
 import type { HyperliquidConfig, SubscribeFailureOptions, SubscriptionStatus, WebSocketStatus } from "./types";
 
@@ -26,7 +26,7 @@ export type HyperliquidStoreState = {
 		pauseWhenHidden?: boolean,
 	) => void;
 	releaseSubscription: (key: string) => void;
-	setSubscriptionData: (key: string, data: unknown, receivedAt?: number) => void;
+	setSubscriptionData: (key: string, data: unknown, receivedAt?: number, monotonicReceivedAt?: number) => void;
 	setSubscriptionError: (key: string, error: unknown) => void;
 };
 
@@ -38,11 +38,13 @@ type SubscriptionEntry = {
 	error?: unknown;
 	isStale?: boolean;
 	lastMessageAt?: number;
+	monotonicLastMessageAt?: number;
 };
 
 type VisibilityBufferedValue = {
 	data: unknown;
 	receivedAt: number;
+	monotonicReceivedAt: number;
 };
 
 export type SubscriptionRuntime = {
@@ -58,6 +60,7 @@ export type SubscriptionRuntime = {
 	recoverStale?: () => void;
 	staleRecoveryPromise?: Promise<void>;
 	lastMessageAt?: number;
+	monotonicLastMessageAt?: number;
 };
 
 type SubscriptionMap = Record<string, SubscriptionEntry>;
@@ -202,13 +205,18 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			cause,
 			action,
 			streams: keys.map((key) => {
-				const lastMessageAt = subscriptionRuntime.get(key)?.lastMessageAt;
+				const runtime = subscriptionRuntime.get(key);
+				const lastMessageAt = runtime?.lastMessageAt;
+				const monotonicLastMessageAt = runtime?.monotonicLastMessageAt;
 				return {
 					key,
 					method: getSubscriptionMethodForKey(key),
 					lastMessageAt,
-					staleForMs: lastMessageAt === undefined ? undefined : timestamp - lastMessageAt,
-					thresholdMs: subscriptionRuntime.get(key)?.stalenessThresholdMs,
+					staleForMs:
+						lastMessageAt === undefined || monotonicLastMessageAt === undefined
+							? undefined
+							: getReceiptAgeMs(lastMessageAt, monotonicLastMessageAt, timestamp),
+					thresholdMs: runtime?.stalenessThresholdMs,
 				};
 			}),
 			visibility: getVisibilityState(),
@@ -275,9 +283,13 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 
 	function commitBufferedValue(store: StoreApi<HyperliquidStoreState>, key: string, buffered: VisibilityBufferedValue) {
 		const runtime = subscriptionRuntime.get(key);
-		if (runtime) runtime.lastMessageAt = buffered.receivedAt;
+		if (runtime) {
+			runtime.lastMessageAt = buffered.receivedAt;
+			runtime.monotonicLastMessageAt = buffered.monotonicReceivedAt;
+		}
 		const isStale =
-			runtime?.stalenessThresholdMs !== undefined && Date.now() - buffered.receivedAt > runtime.stalenessThresholdMs;
+			runtime?.stalenessThresholdMs !== undefined &&
+			getReceiptAgeMs(buffered.receivedAt, buffered.monotonicReceivedAt) > runtime.stalenessThresholdMs;
 
 		store.setState((state) => {
 			const current = state.subscriptions[key];
@@ -289,6 +301,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				error: undefined,
 				isStale,
 				lastMessageAt: buffered.receivedAt,
+				monotonicLastMessageAt: buffered.monotonicReceivedAt,
 			});
 		});
 	}
@@ -341,12 +354,15 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			} else if (wasHidden) {
 				wasHidden = false;
 				const resumedAtMs = Date.now();
+				const monotonicResumedAt = performance.now();
 				const expiredSnapshotKeys = markRetainedFreshSnapshotsStale(store, (key) => {
 					const runtime = subscriptionRuntime.get(key);
 					return (
 						runtime?.lastMessageAt !== undefined &&
+						runtime.monotonicLastMessageAt !== undefined &&
 						runtime.stalenessThresholdMs !== undefined &&
-						resumedAtMs - runtime.lastMessageAt >= runtime.stalenessThresholdMs
+						getReceiptAgeMs(runtime.lastMessageAt, runtime.monotonicLastMessageAt, resumedAtMs, monotonicResumedAt) >=
+							runtime.stalenessThresholdMs
 					);
 				});
 				flushVisibilityBuffer(store);
@@ -618,7 +634,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 						) {
 							// A frame that arrived before the confirmation (the order book replay) keeps its own
 							// receipt time; only a stream with no frame yet starts its first-frame deadline now.
-							watchdog.arm(key, runtime.lastMessageAt);
+							watchdog.arm(key, runtime.lastMessageAt, runtime.monotonicLastMessageAt);
 						}
 
 						set((state) => {
@@ -733,14 +749,17 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				void runUnsubscribe(subscription);
 			}
 		},
-		setSubscriptionData: (key, data, receivedAt = Date.now()) => {
+		setSubscriptionData: (key, data, receivedAt = Date.now(), monotonicReceivedAt = performance.now()) => {
 			if (chaos.messageFrozenUntil > receivedAt) return;
 			const runtime = subscriptionRuntime.get(key);
-			if (runtime) runtime.lastMessageAt = receivedAt;
-			watchdog.markFresh(key, receivedAt);
+			if (runtime) {
+				runtime.lastMessageAt = receivedAt;
+				runtime.monotonicLastMessageAt = monotonicReceivedAt;
+			}
+			watchdog.markFresh(key, receivedAt, monotonicReceivedAt);
 			const isStale = watchdog.isStale(key);
 			if (getVisibilityState() === "hidden" && shouldPauseKey(key)) {
-				visibilityBuffer.set(key, { data, receivedAt });
+				visibilityBuffer.set(key, { data, receivedAt, monotonicReceivedAt });
 				return;
 			}
 			set((state) => {
@@ -751,6 +770,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					current.error === undefined &&
 					current.isStale === isStale &&
 					current.lastMessageAt === receivedAt &&
+					current.monotonicLastMessageAt === monotonicReceivedAt &&
 					Object.is(current.data, data)
 				) {
 					return state;
@@ -762,6 +782,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					error: undefined,
 					isStale,
 					lastMessageAt: receivedAt,
+					monotonicLastMessageAt: monotonicReceivedAt,
 				};
 				return setSubscriptionEntry(state, key, nextEntry);
 			});

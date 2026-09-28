@@ -1,5 +1,7 @@
+import { type FrameReceipt, receiveFrameNow } from "./frame-receipt";
 import { getNetworkState, subscribeNetworkStatus } from "./network-status";
 import { WS_RELIABILITY_LIMITS } from "./reliability";
+import { getReceiptAgeMs } from "./staleness";
 import { getVisibilityState, subscribeVisibility } from "./visibility";
 
 type SocketEventName = "open" | "close" | "error" | "message";
@@ -49,7 +51,7 @@ export function createWsTransportMonitor(
 	let disconnectedAfterOpen = false;
 	let reconnectRequested = false;
 	let generation = 0;
-	let lastMessageAt = 0;
+	let lastActivity: FrameReceipt = { receivedAt: 0, monotonicReceivedAt: 0 };
 	let checkTimer: ReturnType<typeof setInterval> | undefined;
 	let detachVisibility: (() => void) | undefined;
 	let detachNetwork: (() => void) | undefined;
@@ -83,7 +85,7 @@ export function createWsTransportMonitor(
 		hasOpened = true;
 		disconnectedAfterOpen = false;
 		reconnectRequested = false;
-		lastMessageAt = Date.now();
+		lastActivity = receiveFrameNow();
 
 		if (!shouldNotify) return;
 		generation += 1;
@@ -99,7 +101,7 @@ export function createWsTransportMonitor(
 	};
 
 	const handleMessage: EventListener = () => {
-		lastMessageAt = Date.now();
+		lastActivity = receiveFrameNow();
 	};
 
 	const attach = () => {
@@ -108,7 +110,7 @@ export function createWsTransportMonitor(
 		hasOpened = socket.readyState === SOCKET_OPEN;
 		disconnectedAfterOpen = false;
 		reconnectRequested = false;
-		lastMessageAt = Date.now();
+		lastActivity = receiveFrameNow();
 		wasHidden = readVisibility() === "hidden";
 		wasOffline = readNetwork() === "offline";
 
@@ -119,7 +121,9 @@ export function createWsTransportMonitor(
 
 		checkTimer = setInterval(() => {
 			if (wasHidden || wasOffline || socket.readyState !== SOCKET_OPEN) return;
-			if (Date.now() - lastMessageAt < inactivityThresholdMs) return;
+			// The larger of the wall-clock and monotonic ages, so setting the system clock back cannot
+			// keep a silent socket looking active (ADR 0022).
+			if (getReceiptAgeMs(lastActivity.receivedAt, lastActivity.monotonicReceivedAt) < inactivityThresholdMs) return;
 			requestReconnect();
 		}, checkIntervalMs);
 
