@@ -132,6 +132,16 @@ describe("errors", () => {
 		expect(formatted).not.toContain("callData");
 	});
 
+	it("uses the surface's own fallback only when a failure has nothing more specific to say", () => {
+		expect(
+			formatTransferError(new Error("Paymaster policy rejected sponsored call"), translate, "Deposit failed"),
+		).toBe("Deposit failed");
+		expect(formatTransferError(null, translate, "Automatic USDC deposit failed")).toBe("Automatic USDC deposit failed");
+		expect(formatTransferError(new Error("Wallet client not ready"), translate, "Deposit failed")).toBe(
+			"Wallet connection failed. Unlock your wallet, approve the connection, then retry.",
+		);
+	});
+
 	it("shows a translated generic message instead of an unrecognised English error", () => {
 		expect(formatTransferError(new Error("Withdraw confirmation timed out."), translate)).toBe(
 			"The request could not be completed. Try again.",

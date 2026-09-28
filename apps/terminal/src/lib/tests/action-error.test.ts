@@ -8,7 +8,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
 	classifyActionError,
 	classifyActionErrorOr,
+	createActionError,
 	describeActionError,
+	describeActionFailure,
 	exchangeActionFailure,
 	formatActionFailure,
 } from "@/lib/errors/action-error";
@@ -301,6 +303,127 @@ describe("classifyActionError", () => {
 			msg`Referral request could not be completed.`,
 		);
 		expect(classifyActionError("a thrown string")).toEqual({ kind: "action-error", code: "unknown" });
+	});
+
+	it("throws shared reasons that render in the language active when they are displayed", () => {
+		const error = createActionError("identity-changed", { cause: new Error("lease invalidated") });
+		expect(error).toBeInstanceOf(LocalizedActionError);
+		expect(error.message).toBe("The active wallet or network changed. Review the account and try again.");
+		const failure = classifyActionError(error);
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: {
+				[messageId("The active wallet or network changed. Review the account and try again.")]:
+					"当前钱包或网络已变化。请检查账户后重试。",
+			},
+		});
+		expect(describeActionFailure(failure, translate)).toBe("当前钱包或网络已变化。请检查账户后重试。");
+	});
+
+	it("keeps our own reason when the SDK wraps a failure raised while a wallet signs", () => {
+		const wrapped = new AbstractWalletError("Failed to sign the typed data using the wallet", {
+			cause: createActionError("identity-changed"),
+		});
+		expect(describeActionError(wrapped, translate)).toBe(
+			"The active wallet or network changed. Review the account and try again.",
+		);
+		const legal = new AbstractWalletError("Failed to sign the typed data using the wallet", {
+			cause: Object.assign(new Error("Hyperliquid terms must be accepted before this action"), {
+				name: "LegalActionNotAllowedError",
+				reason: "terms_required",
+			}),
+		});
+		expect(describeActionError(legal, translate)).toBe("Accept the Hyperliquid terms before continuing.");
+	});
+
+	it("describes a stored failure with the caller's fallback or the generic message", () => {
+		const unknown = classifyActionError(new Error("Something internal"));
+		expect(describeActionFailure(unknown, translate)).toBe("The request could not be completed. Try again.");
+		expect(describeActionFailure(unknown, translate, "Bridge failed")).toBe("Bridge failed");
+		expect(describeActionFailure(msg`Transaction was rejected`, translate, "Bridge failed")).toBe(
+			"Transaction was rejected",
+		);
+	});
+
+	it.each([
+		[
+			"The active embedded wallet does not match the selected Hyperliquid account.",
+			"Selected wallet does not match the connected account. Reconnect your wallet and try again.",
+		],
+		[
+			"The active external wallet does not match the selected Hyperliquid account.",
+			"Selected wallet does not match the connected account. Reconnect your wallet and try again.",
+		],
+		[
+			"A trading connection is already being established in another tab.",
+			"A trading connection is already being established in another tab. Finish or cancel it there before trying again.",
+		],
+		[
+			"Secure Agent registration requires Web Locks support. Update your browser and try again.",
+			"This browser cannot safely coordinate the trading connection across tabs. Use a supported browser.",
+		],
+		[
+			"Stored Agent key is invalid",
+			"The trading key stored in this browser is invalid. Reset the trading connection before trying again.",
+		],
+		...[
+			"Agent key storage could not be verified",
+			"Agent private key could not be stored securely",
+			"Agent storage unavailable",
+			"Secure Agent registration session is unavailable",
+			"Agent registration cleanup could not be verified",
+			"Agent approval submission state could not be stored safely",
+			"Agent approval submission coordination could not be rolled back safely",
+		].map((message) => [
+			message,
+			"This browser could not store the trading key safely. Check that site storage is available, then try again.",
+		]),
+		...["Agent approval could not be confirmed", "Agent registration session changed"].map((message) => [
+			message,
+			"The connection could not be completed. It may already be approved; wait a moment and try again.",
+		]),
+		["Agent registration is disabled for owner-wallet trading", "Trading could not be enabled. Try again."],
+		["Agent verification is disabled for owner-wallet trading", "Trading could not be enabled. Try again."],
+		[
+			"Wallet or network changed and Agent registration cleanup failed",
+			"The active wallet or network changed. Review the account and try again.",
+		],
+	])("maps the hl-react and wallet adapter message %s", (message, expected) => {
+		expect(describeActionError(new Error(message), translate)).toBe(expected);
+	});
+
+	it("uses stable hl-react and deposit error names instead of their English messages", () => {
+		const resetRequired = Object.assign(new Error("The previous trading connection cannot be resumed safely"), {
+			name: "AgentRegistrationResetRequiredError",
+		});
+		expect(describeActionError(resetRequired, translate)).toBe(
+			"This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again.",
+		);
+		const guardTimeout = Object.assign(
+			new Error("The pre-execution guard timed out before the signing request could start."),
+			{ name: "AgentRegistrationPreExecutionGuardTimeoutError" },
+		);
+		expect(describeActionError(guardTimeout, translate, "Transfer failed")).toBe(
+			"The checks before this request took too long. Nothing was signed or sent. Try again.",
+		);
+		const rateLimited = Object.assign(new Error("Could not load agent status"), {
+			name: "AgentStatusError",
+			reason: "rate_limited",
+		});
+		expect(describeActionError(rateLimited, translate)).toBe("Too many requests. Wait a moment and try again.");
+		const statusUnavailable = Object.assign(new Error("Could not load agent status"), {
+			name: "AgentStatusError",
+			reason: "network",
+		});
+		expect(describeActionError(statusUnavailable, translate)).toBe("Trading could not be enabled. Try again.");
+		const recoveryStorage = Object.assign(new Error("CCTP deposit tracking storage is unavailable."), {
+			name: "CctpDepositTrackingPersistenceError",
+		});
+		expect(describeActionError(recoveryStorage, translate)).toBe(
+			"This browser could not store deposit recovery data, so this deposit was not submitted. Allow site storage, then try again.",
+		);
+		const prototypeName = Object.assign(new Error("Something internal"), { name: "toString" });
+		expect(classifyActionError(prototypeName)).toEqual({ kind: "action-error", code: "unknown" });
 	});
 });
 

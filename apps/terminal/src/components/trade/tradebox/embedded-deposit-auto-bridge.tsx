@@ -357,9 +357,7 @@ export function EmbeddedDepositAutoBridge() {
 							depositError.reason === "changed" ? "deposit-route-changed" : "deposit-route-unavailable",
 							(descriptor) => t(descriptor),
 						)
-					: depositError
-						? formatTransferError(depositError, (descriptor) => t(descriptor))
-						: t`Automatic USDC deposit failed`;
+					: formatTransferError(depositError, (descriptor) => t(descriptor), t`Automatic USDC deposit failed`);
 			toast.error(depositErrorMessage, getNotificationOptions());
 		}
 	}, [

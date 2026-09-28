@@ -134,7 +134,10 @@ const MESSAGE_RULES: readonly MessageRule[] = [
 		failure: msg`Referral access could not be verified for this account. Refresh access status before retrying.`,
 	},
 	{ pattern: /connect the selected owner wallet before continuing/i, failure: coded("wallet-unavailable") },
-	{ pattern: /the active wallet does not match this hyperliquid account/i, failure: coded("wallet-mismatch") },
+	{
+		pattern: /the active (?:embedded |external )?wallet does not match (?:this|the selected) hyperliquid account/i,
+		failure: coded("wallet-mismatch"),
+	},
 	{ pattern: /selected wallet does not match/i, failure: coded("wallet-mismatch") },
 	{ pattern: /another funds operation is still in progress/i, failure: coded("funds-operation-busy") },
 	{
@@ -144,8 +147,29 @@ const MESSAGE_RULES: readonly MessageRule[] = [
 	{ pattern: /wallet approval timed out/i, failure: coded("wallet-approval-timeout") },
 	{
 		pattern:
-			/trading authorization could not be confirmed|builder fee approval could not be confirmed|builder fee configuration is unavailable|could not load builder fee status/i,
+			/trading authorization could not be confirmed|builder fee approval could not be confirmed|builder fee configuration is unavailable|could not load builder fee status|agent (?:registration|verification) is disabled for owner-wallet trading/i,
 		failure: coded("trading-authorization"),
+	},
+	{
+		pattern: /trading connection is already being established in another tab/i,
+		failure: msg`A trading connection is already being established in another tab. Finish or cancel it there before trying again.`,
+	},
+	{
+		pattern: /secure agent registration requires web locks support/i,
+		failure: msg`This browser cannot safely coordinate the trading connection across tabs. Use a supported browser.`,
+	},
+	{
+		pattern: /stored agent key is invalid/i,
+		failure: msg`The trading key stored in this browser is invalid. Reset the trading connection before trying again.`,
+	},
+	{
+		pattern:
+			/agent key storage could not be verified|agent private key could not be stored securely|agent storage unavailable|secure agent registration session is unavailable|agent registration cleanup could not be verified|agent approval submission (?:state|coordination)/i,
+		failure: msg`This browser could not store the trading key safely. Check that site storage is available, then try again.`,
+	},
+	{
+		pattern: /agent approval could not be confirmed|agent registration session changed/i,
+		failure: msg`The connection could not be completed. It may already be approved; wait a moment and try again.`,
 	},
 	{
 		pattern:
@@ -200,14 +224,25 @@ const LEGAL_REASON_CODES: Record<string, ActionErrorCode> = {
 	terms_required: "terms-required",
 };
 
-const NAMED_ERROR_CODES: Record<string, ActionErrorCode> = {
-	ExchangeRequestInvalidatedError: "identity-changed",
-	FundsActionLockTimeoutError: "funds-operation-busy",
-	FundsActionLockUnavailableError: "funds-coordination-unavailable",
-	MissingWalletError: "wallet-unavailable",
-	ValidationError: "request-invalid",
-	WalletAccountMismatchError: "wallet-mismatch",
+const NAMED_ERROR_FAILURES: Record<string, ActionFailure> = {
+	AgentRegistrationPreExecutionGuardTimeoutError: msg`The checks before this request took too long. Nothing was signed or sent. Try again.`,
+	AgentRegistrationResetRequiredError: msg`This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again.`,
+	CctpDepositTrackingPersistenceError: msg`This browser could not store deposit recovery data, so this deposit was not submitted. Allow site storage, then try again.`,
+	ExchangeRequestInvalidatedError: coded("identity-changed"),
+	FundsActionLockTimeoutError: coded("funds-operation-busy"),
+	FundsActionLockUnavailableError: coded("funds-coordination-unavailable"),
+	MissingWalletError: coded("wallet-unavailable"),
+	ValidationError: coded("request-invalid"),
+	WalletAccountMismatchError: coded("wallet-mismatch"),
 };
+
+/** Creates the error our code throws when a user action fails for one of the shared reasons. */
+export function createActionError(
+	code: Exclude<ActionErrorCode, "unknown">,
+	options?: { cause?: unknown },
+): LocalizedActionError {
+	return new LocalizedActionError(ACTION_ERROR_MESSAGES[code], options);
+}
 
 export function exchangeActionFailure(text: string, hint?: InsufficientMarginHint): ExchangeActionFailure {
 	return { kind: "exchange-error", entries: parseExchangeErrorText(text), ...(hint ? { hint } : {}) };
@@ -233,12 +268,16 @@ export function classifyActionError(error: unknown): ActionFailure {
 	if (isWalletRejection(error)) return coded("wallet-rejected");
 	if (error.name === "ApiRequestError") return getApiRequestFailure(error);
 	if (error.name === "HttpRequestError") return getHttpFailure(error);
-	if (error.name === "AbstractWalletError") return coded("signing-failed");
+	if (error.name === "AbstractWalletError") return getWalletSigningFailure(error.cause);
 	if (error.name === "LegalActionNotAllowedError" && typeof error.reason === "string") {
 		return coded(LEGAL_REASON_CODES[error.reason] ?? "access-unavailable");
 	}
-	const namedCode = typeof error.name === "string" ? NAMED_ERROR_CODES[error.name] : undefined;
-	if (namedCode) return coded(namedCode);
+	if (error.name === "AgentStatusError") {
+		return coded(error.reason === "rate_limited" ? "rate-limited" : "trading-authorization");
+	}
+	if (typeof error.name === "string" && Object.hasOwn(NAMED_ERROR_FAILURES, error.name)) {
+		return NAMED_ERROR_FAILURES[error.name];
+	}
 	const message = typeof error.message === "string" ? error.message : "";
 	if (!message) return coded("unknown");
 	const entries = parseExchangeErrorText(message);
@@ -257,7 +296,7 @@ export function classifyActionError(error: unknown): ActionFailure {
  */
 export function classifyActionErrorOr(error: unknown, fallback: MessageDescriptor): ActionFailure {
 	const failure = classifyActionError(error);
-	return "kind" in failure && failure.kind === "action-error" && failure.code === "unknown" ? fallback : failure;
+	return isUnknownFailure(failure) ? fallback : failure;
 }
 
 /** Renders a classified failure in the active language, or null when there is nothing specific to say. */
@@ -270,13 +309,18 @@ export function formatActionFailure(failure: ActionFailure, translate: Translate
 	return translate(ACTION_ERROR_MESSAGES[failure.code]);
 }
 
+/** Renders a stored failure in the active language, falling back to the caller's or a generic message. */
+export function describeActionFailure(failure: ActionFailure, translate: Translate, fallback?: string): string {
+	return formatActionFailure(failure, translate) ?? fallback ?? translate(GENERIC_FAILURE);
+}
+
 /**
  * Describes any thrown value in the active language. Exchange rejection texts are translated when
  * known and otherwise shown unchanged; everything else is translated, falling back to a generic
  * message instead of showing an untranslated `Error.message`.
  */
 export function describeActionError(error: unknown, translate: Translate, fallback?: string): string {
-	return formatActionFailure(classifyActionError(error), translate) ?? fallback ?? translate(GENERIC_FAILURE);
+	return describeActionFailure(classifyActionError(error), translate, fallback);
 }
 
 function getApiRequestFailure(error: Record<string, unknown>): ActionFailure {
@@ -299,6 +343,22 @@ function getApiResponseEntries(response: unknown): ExchangeErrorEntry[] {
 	}
 	if (isRecord(data.status) && typeof data.status.error === "string") return [{ text: data.status.error }];
 	return [];
+}
+
+/**
+ * The SDK wraps whatever a wallet adapter throws while signing, including our own checks that run
+ * just before the signature is returned; keep their reason instead of a generic signing failure.
+ */
+function getWalletSigningFailure(cause: unknown): ActionFailure {
+	if (isRecord(cause) && cause.name !== "AbstractWalletError") {
+		const failure = classifyActionError(cause);
+		if (!isUnknownFailure(failure)) return failure;
+	}
+	return coded("signing-failed");
+}
+
+function isUnknownFailure(failure: ActionFailure): boolean {
+	return "kind" in failure && failure.kind === "action-error" && failure.code === "unknown";
 }
 
 function getHttpFailure(error: Record<string, unknown>): CodedActionFailure {

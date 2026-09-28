@@ -1,3 +1,4 @@
+import { msg } from "@lingui/core/macro";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import { useSignTypedData } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -5,6 +6,8 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { isAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { useWalletClient } from "wagmi";
+import { createActionError } from "@/lib/errors/action-error";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import type { AgentApprovalOptions, ExchangeParams, ExchangeResponse } from "@/lib/hyperliquid";
 import {
 	captureAgentRegistrationExecutionLease,
@@ -84,20 +87,16 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 		const applicationReview = options.applicationReview === "confirmed" ? "confirmed" : undefined;
 		const registrationPublicKey = options.registrationPublicKey;
 		throwIfApprovalAborted(options.signal);
-		if (!isAddress(params.agentAddress)) {
-			throw new Error("A valid Agent address is required.");
-		}
+		if (!isAddress(params.agentAddress)) throw createActionError("request-invalid");
 		if (
 			registrationPublicKey &&
 			(!isAddress(registrationPublicKey) || registrationPublicKey.toLowerCase() !== params.agentAddress.toLowerCase())
 		) {
-			throw new Error("The pending Agent address changed before approval.");
+			throw createActionError("request-invalid");
 		}
-		if (!hasWalletAccess || !walletAddress) {
-			throw new Error("Connect the selected Hyperliquid master wallet before approving mobile access.");
-		}
+		if (!hasWalletAccess || !walletAddress) throw createActionError("wallet-unavailable");
 		if (inFlightRef.current) {
-			throw new Error("A mobile access approval is already pending.");
+			throw new LocalizedActionError(msg`Another wallet approval is already in progress. Try again after it finishes.`);
 		}
 
 		const attempt = Symbol("explicit-agent-approval");
@@ -111,19 +110,17 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 		try {
 			const approvalWalletIntent = walletIntent;
 			if (approvalWalletIntent !== "embedded" && approvalWalletIntent !== "external") {
-				throw new Error("The active wallet does not match the selected Hyperliquid account.");
+				throw createActionError("wallet-mismatch");
 			}
-			if (!hasSameWalletAddress(connectedWalletAddress, walletAddress)) {
-				throw new Error("The active wallet does not match the selected Hyperliquid account.");
-			}
+			if (!hasSameWalletAddress(connectedWalletAddress, walletAddress)) throw createActionError("wallet-mismatch");
 			if (approvalWalletIntent === "embedded" && !hasSameWalletAddress(embeddedWalletAddress, walletAddress)) {
-				throw new Error("The active embedded wallet does not match the selected Hyperliquid account.");
+				throw createActionError("wallet-mismatch");
 			}
 			if (
 				approvalWalletIntent === "external" &&
 				(!walletClient || !hasSameWalletAddress(walletClient.account?.address, walletAddress))
 			) {
-				throw new Error("The active external wallet does not match the selected Hyperliquid account.");
+				throw createActionError("wallet-mismatch");
 			}
 			const assertApprovalSessionCurrent = () => {
 				throwIfApprovalAborted(options.signal);
@@ -136,16 +133,16 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 					!hasSameWalletAddress(current.walletAddress, walletAddress) ||
 					!hasSameWalletAddress(current.connectedWalletAddress, walletAddress)
 				) {
-					throw new Error("The wallet session changed before mobile access approval.");
+					throw createActionError("identity-changed");
 				}
 				if (
 					approvalWalletIntent === "embedded" &&
 					!hasSameWalletAddress(current.embeddedWalletAddress, walletAddress)
 				) {
-					throw new Error("The wallet session changed before mobile access approval.");
+					throw createActionError("identity-changed");
 				}
 				if (approvalWalletIntent === "external" && !hasSameWalletAddress(current.walletClientAddress, walletAddress)) {
-					throw new Error("The wallet session changed before mobile access approval.");
+					throw createActionError("identity-changed");
 				}
 			};
 
@@ -165,7 +162,7 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 				registrationPublicKey ? { agentPublicKey: registrationPublicKey } : undefined,
 			);
 			if (!registrationLease) {
-				throw new Error("The wallet session changed before mobile access approval.");
+				throw createActionError("identity-changed");
 			}
 			const canSubmit = () => {
 				try {
@@ -189,7 +186,7 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 					}
 					assertApprovalSessionCurrent();
 					if (!(await isAgentRegistrationExecutionLeaseCurrent(registrationLease))) {
-						throw new Error("The wallet session changed before mobile access approval.");
+						throw createActionError("identity-changed");
 					}
 					assertApprovalSessionCurrent();
 				};
@@ -205,9 +202,7 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 						beforeSubmit,
 					});
 				} else {
-					if (!walletClient) {
-						throw new Error("The active external wallet does not match the selected Hyperliquid account.");
-					}
+					if (!walletClient) throw createActionError("wallet-mismatch");
 					signer = createExternalAgentSigner({
 						expectedAddress: walletAddress,
 						walletClient,
@@ -224,7 +219,7 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 							? await startAgentRegistrationSubmission(registrationLease, canSubmit, execute)
 							: await startAgentRegistrationExecution(registrationLease, canSubmit, execute);
 						if (submission.status === "invalidated") {
-							throw new Error("The wallet session changed before mobile access approval.");
+							throw createActionError("identity-changed");
 						}
 						return await submission.execution;
 					},
@@ -233,7 +228,7 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 				return client.approveAgent(params, options.signal ? { signal: options.signal } : undefined);
 			});
 			if (guarded.status === "invalidated") {
-				throw new Error("The wallet session changed before mobile access approval.");
+				throw createActionError("identity-changed");
 			}
 			return await guarded.execution;
 		} finally {
