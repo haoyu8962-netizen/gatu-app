@@ -207,7 +207,7 @@ hook 只为空快照建一个到期时钟（`useSyncExternalStore`）：创建�
 
 未运行：完整终端测试、`pnpm build`、浏览器与真机核对。真实标签页切换（`visibilitychange`）下后台不发请求、回到前台立即刷新，只有脚本切换 `focusManager` 的 jsdom 证据。
 
-2026-09-28 系统时间回拨修复（分支 `claude/codex-issue-review-07ec3b`，基于 `4c7ee2e1`；jsdom，Vitest 假计时器同时模拟 `setTimeout` / `setInterval` / `Date` / `performance`，`vi.setSystemTime` 只改墙钟、单调时钟照常推进；前后台由 `focusManager.setFocused` 或脚本派发的 `focus` / `visibilitychange` 切换，不代表真实的标签页切换，也没有真实修改系统时间）。问题来自同日的[对抗审查](work-memory/sessions/2026-09-28-claude-commits-adversarial-review.md)：空快照到达后系统时间回拨，页面在后台超过 5 分钟再回来，仍显示「暂无资金费率历史」且不刷新；复核发现，页面可见时切走再切回 Funding、重新挂载面板，也同样不刷新。
+2026-09-28 系统时间回拨修复（分支 `claude/codex-issue-review-07ec3b`，基于 `4c7ee2e1`；jsdom，Vitest 假计时器同时模拟 `setTimeout` / `setInterval` / `Date` / `performance`，`vi.setSystemTime` 只改墙钟、单调时钟照常推进；前后台由 `focusManager.setFocused` 或脚本派发的 `focus` / `visibilitychange` 切换，不代表真实的标签页切换，也没有真实修改系统时间）。问题来自同日的[对抗审查](work-memory/sessions/2026-09-28-claude-commits-adversarial-review.md)：空快照到达后系统时间回拨，页面在后台超过 5 分钟再回来，仍显示「暂无资金费率历史」且不刷新；复核发现，页面可见时切走再切回 Funding、重新挂载面板，也同样不刷新。方案取舍见[任务记录](work-memory/sessions/2026-09-28-funding-history-clock-rollback-fix.md)。
 
 - 先写回归测试，在 `4c7ee2e1` 的 hook 上确认失败，再修复：
   - `use-market-funding-history.test.tsx` 新增 8 例：后台回拨一小时，满 5 分钟为 `loading`，回到前台发第 2 次请求；只回拨两分钟（墙钟仍晚于接收时间）时按单调时钟在满 5 分钟过期，4 分 59 秒仍为 `ready`；停用期间回拨，重新启用即刷新；重新挂载时从第一帧起不出现 `ready` 并立即刷新；定时器被清除（模拟后台节流）后，`focus` 与 `visibilitychange` 各自触发重新核对并刷新；回拨后刷新失败只请求一次、状态为 `error`，不会立即重试；回拨后非空历史不开始刷新。

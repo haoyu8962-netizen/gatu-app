@@ -11,7 +11,7 @@
     "hyperliquid-api",
     "market-recovery"
   ],
-  "summary": "对照官方协议、SDK 0.33.3 与官方 HYPE/Funding Comparison 页面，审查原列出的 40 个 Claude 署名提交。确认 1 项 P2 修复遗漏：空资金费率历史在后台时钟回拨后仍被当作新鲜且聚焦不刷新；父版本对照证明是 58e132ed 未修完的边界，非新增回归。未改生产代码，验证及限制见正文。",
+  "summary": "对照官方协议、SDK 0.33.3 与官方 HYPE/Funding Comparison 页面，审查原列出的 40 个 Claude 署名提交。确认 1 项 P2 修复遗漏：空资金费率历史在后台时钟回拨后仍被当作新鲜且聚焦不刷新；父版本对照证明是 58e132ed 未修完的边界，非新增回归。未改生产代码，验证及限制见正文。同日复核更正：所报基线类型检查失败系主检出残留的 TypeScript 5.9.3 所致，锁定的 5.7.2 下通过；P2 另影响切回页签与重新挂载，已由 a1d93307 修复。",
   "thread": null,
   "baseCommit": "8cc8a3238082106b0c8199e9059570a4a4460348",
   "commits": [
@@ -143,3 +143,19 @@
 ## 后续与替代关系
 
 本任务只审查并记录，不修改生产逻辑。后续修复空历史在回拨后的过期与聚焦刷新；先读 `docs/market-funding-history.md` 和本文的反例，新增回归再实施。另需独立处理资金锁测试的类型错误。本文补充 `58e132ed` 的验证边界，不整体替代既有记录。未运行全量终端测试或生产构建，没有发布、交易或真机验收。
+
+## 更正（2026-09-28 复核）
+
+同日在独立 worktree 复核了本记录的两项结论：分支 `claude/codex-issue-review-07ec3b`，同一基线 `8cc8a323`，按锁文件新装依赖，Node 24.15.0、pnpm 10.21.0。上文原文不改，修订由本节说明，原措辞保留在 `4c7ee2e1`。
+
+- **「当前基线类型检查失败」不成立。**
+  - 原因：审查所用的主检出里，`pnpm --filter @gatu/terminal exec tsc --version` 输出 5.9.3。`apps/terminal/node_modules/.bin/tsc` 是 2026-08-28 生成的链接，指向 `typescript@5.9.3`；pnpm 运行脚本时，包内 `.bin` 优先于根目录。
+  - 锁定版本：根 `package.json` 锁定 5.7.2。`git log --all -S'"typescript":' -- apps/terminal/package.json` 没有结果，即任何分支的终端包都没有声明过 typescript，新装依赖也不会生成这个链接。
+  - 实测：新装依赖的 worktree 里，同一基线 `typecheck` 退出 0。手动用 5.9.3 的 `tsc` 运行，退出 2，只有 `use-exchange-funds-action-lock.test.tsx:150` 一个 TS2322。原因是 5.9 的 `lib.dom.d.ts` 把 `LockManager.request` 声明为返回 `Promise<T>` 的泛型（5.7.2 为 `Promise<any>`），而测试里的回调返回 `Promise<void>`。
+  - CI：PR #57 的 head `ef3e88a9` 已包含 `798829fb`，其 CI「Validate TypeScript, lint and translation catalogs」通过。
+  - 结论：「另需独立处理资金锁测试的类型错误」只在将来升级到 TypeScript 5.9 及以上时才需要。本记录没有借历史结果宣称类型检查通过，这一点仍然成立；错在把本地依赖残留当成了基线失败。
+- **P2 成立，影响面比上文更大。**
+  - 另外两条路径：页面可见时切走再切回 Funding 页签，以及已缓存的空快照随面板重新挂载。回拨后两者都不刷新，仍显示空结论，直到下一次前台轮询。
+  - TanStack 的过期定时器只触发一次，到点时若因回拨尚未过期就不再重排。所以哪怕只回拨两分钟，后台那次转为空白也会丢失；回来时墙钟年龄已满 5 分钟，仍会刷新。
+  - 父版本对照：`58e132ed^` 在页签切回路径上回拨后不刷新，也没有轮询兜底（6 分钟观察窗口内一直只有 1 次请求）；`58e132ed` 靠轮询把它限制在一个周期内。归类为修复遗漏仍然正确。
+- **已修复**：`a1d93307`，见 [2026-09-28-funding-history-clock-rollback-fix](2026-09-28-funding-history-clock-rollback-fix.md)。「后续与替代关系」的第一项因此完成；[资金费率历史](../../market-funding-history.md)里的「已知缺口」段落已改写为现行行为。
