@@ -316,7 +316,7 @@ msgstr "当标记价格达到强平价格时，仓位可能被强制平仓。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Post Only order would have matched immediately. Best bid and offer: {bbo}."
-msgstr ""
+msgstr "只挂单订单会立即与现有订单成交。最优买卖价：{bbo}。"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
@@ -328,7 +328,7 @@ msgstr "上一次连接尝试仍在核对中。重试只会检查同一个交易
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Reduce Only order cannot increase the position."
-msgstr ""
+msgstr "只减仓订单不能增加仓位。"
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
@@ -368,7 +368,7 @@ msgstr "请先接受该市场的 HIP-3 部署者免责声明再交易。"
 
 #: src/lib/errors/action-error.ts
 msgid "Accept the Hyperliquid terms before continuing."
-msgstr ""
+msgstr "请先接受 Hyperliquid 条款再继续。"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Accepted"
@@ -1304,47 +1304,47 @@ msgstr "已取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
-msgstr ""
+msgstr "因资产下架而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the linked order filled"
-msgstr ""
+msgstr "因关联订单已成交而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the outcome has settled"
-msgstr ""
+msgstr "因结果已结算而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled by self-trade prevention"
-msgstr ""
+msgstr "因自成交保护而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled by the exchange"
-msgstr ""
+msgstr "已被交易所取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled by the scheduled cancel"
-msgstr ""
+msgstr "因定时撤单而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to a vault withdrawal"
-msgstr ""
+msgstr "因金库提取而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to insufficient margin"
-msgstr ""
+msgstr "因保证金不足而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to liquidation"
-msgstr ""
+msgstr "因强平而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to Reduce Only"
-msgstr ""
+msgstr "因只减仓而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to the open interest cap"
-msgstr ""
+msgstr "因未平仓量上限而取消"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
@@ -2277,7 +2277,7 @@ msgstr "全仓维持保证金"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Cross positions do not have enough available margin to lower the leverage. Deposit more collateral to lower it."
-msgstr ""
+msgstr "全仓仓位的可用保证金不足，无法降低杠杆。请存入更多抵押品后再降低杠杆。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
@@ -3951,19 +3951,19 @@ msgstr "Gas 余额不足"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient margin to place order."
-msgstr ""
+msgstr "保证金不足，无法下单。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient margin to place order. Try canceling open {market} orders."
-msgstr ""
+msgstr "保证金不足，无法下单。请尝试取消 {market} 的当前委托。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient margin to place order. Try using Reduce Only."
-msgstr ""
+msgstr "保证金不足，无法下单。请尝试使用只减仓。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient spot balance for this order."
-msgstr ""
+msgstr "现货余额不足，无法完成此订单。"
 
 #: src/components/earn/earn-view.tsx
 msgid "Interest"
@@ -3989,7 +3989,7 @@ msgstr "目的地址无效"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Invalid TP/SL price."
-msgstr ""
+msgstr "止盈 / 止损价格无效。"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invitation ready to review"
@@ -4534,7 +4534,7 @@ msgstr "保证金模式"
 
 #: src/lib/tests/action-error.test.ts
 msgid "Margin mode data is unavailable"
-msgstr ""
+msgstr "保证金模式数据不可用"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode updated"
@@ -5148,7 +5148,7 @@ msgstr "暂无旧版奖励历史。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "No liquidity is available for this market order."
-msgstr ""
+msgstr "此市价单当前没有可用流动性。"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
@@ -5576,7 +5576,7 @@ msgstr "委托 {0}"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Order {order}: {line}"
-msgstr ""
+msgstr "订单 {order}：{line}"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
@@ -5719,11 +5719,11 @@ msgstr "订单价值"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Order value must be at least {amount} {token}."
-msgstr ""
+msgstr "订单价值至少为 {amount} {token}。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Order value must be at least ${amount}."
-msgstr ""
+msgstr "订单价值至少为 ${amount}。"
 
 #: src/config/tooltips.ts
 msgid "Order will exist only as a limit order on the book. Also known as post-only."
@@ -6260,7 +6260,7 @@ msgstr "价格合并"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
-msgstr ""
+msgstr "价格必须是最小价格变动单位的整数倍。"
 
 #: src/config/orderbook-labels.ts
 msgid "Price precision"
@@ -6670,64 +6670,64 @@ msgstr "已拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because a Reduce Only order would increase the position"
-msgstr ""
+msgstr "因只减仓订单会增加仓位而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because it exceeds the maximum position size at the current leverage"
-msgstr ""
+msgstr "因超过当前杠杆下的最大仓位规模而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because open interest would increase too quickly"
-msgstr ""
+msgstr "因未平仓量增长过快而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the IOC order could not match"
-msgstr ""
+msgstr "因 IOC 订单无法立即成交而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the order value is below the minimum"
-msgstr ""
+msgstr "因订单价值低于最低要求而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the Post Only order would have matched immediately"
-msgstr ""
+msgstr "因只挂单订单会立即成交而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the price is too aggressive at the open interest cap"
-msgstr ""
+msgstr "因在未平仓量上限时价格过于激进而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the price is too far from the oracle price"
-msgstr ""
+msgstr "因价格偏离预言机价格过远而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to a lack of liquidity for the market order"
-msgstr ""
+msgstr "因市价单缺乏流动性而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to an invalid tick price"
-msgstr ""
+msgstr "因价格不符合最小价格变动单位而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to an invalid TP/SL price"
-msgstr ""
+msgstr "因止盈 / 止损价格无效而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to insufficient margin"
-msgstr ""
+msgstr "因保证金不足而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to insufficient spot balance"
-msgstr ""
+msgstr "因现货余额不足而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to the open interest cap"
-msgstr ""
+msgstr "因未平仓量上限而被拒绝"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to too many open orders"
-msgstr ""
+msgstr "因当前委托过多而被拒绝"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -8377,7 +8377,7 @@ msgstr "当前钱包不是此账户的主钱包"
 
 #: src/lib/errors/action-error.ts
 msgid "The active wallet or network changed. Review the account and try again."
-msgstr ""
+msgstr "当前钱包或网络已变化。请检查账户后重试。"
 
 #: src/components/staking/staking-view.tsx
 msgid "The address already has five pending withdrawals."
@@ -8409,7 +8409,7 @@ msgstr "API 钱包请求已被拒绝。"
 
 #: src/lib/errors/action-error.ts
 msgid "The Arbitrum transaction did not match the reviewed deposit. Check your wallet activity before retrying."
-msgstr ""
+msgstr "Arbitrum 交易与已确认的存入信息不一致。重试前请检查钱包活动记录。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
@@ -8568,7 +8568,7 @@ msgstr "委托在本次修改确认前已发生变化。重试前请检查最新
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order could not immediately match any resting orders."
-msgstr ""
+msgstr "订单无法立即与任何挂单成交。"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
@@ -8576,7 +8576,7 @@ msgstr ""
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order price is too far from the oracle price."
-msgstr ""
+msgstr "订单价格偏离预言机价格过远。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8586,15 +8586,15 @@ msgstr "实时数据尚未确认委托更新。重试前请刷新；仍可取消
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order was never placed, was already canceled, or has filled."
-msgstr ""
+msgstr "该订单未曾下达、已被取消或已成交。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order would exceed the maximum position size at the current leverage."
-msgstr ""
+msgstr "该订单会超过当前杠杆下的最大仓位规模。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order would increase open interest too quickly."
-msgstr ""
+msgstr "该订单会使未平仓量增长过快。"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The page is matching a new Vault ledger event and refreshed account state. It will not sign again."
@@ -8675,19 +8675,19 @@ msgstr "无法加载或验证近期成交快照。"
 
 #: src/lib/errors/action-error.ts
 msgid "The request could not be completed. Try again."
-msgstr ""
+msgstr "请求未能完成，请重试。"
 
 #: src/lib/errors/action-error.ts
 msgid "The request could not be prepared. Refresh the page and try again."
-msgstr ""
+msgstr "请求无法生成。请刷新页面后重试。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The request expired before the exchange processed it. Try again."
-msgstr ""
+msgstr "请求在交易所处理前已过期，请重试。"
 
 #: src/lib/errors/action-error.ts
 msgid "The request status could not be confirmed. Review your account before retrying."
-msgstr ""
+msgstr "无法确认请求状态。重试前请先检查账户。"
 
 #: src/lib/errors/action-error.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
@@ -8741,7 +8741,7 @@ msgstr "所选市场已发生变化。请重新打开保证金调整窗口后再
 
 #: src/lib/errors/action-error.ts
 msgid "The server rejected the request. Try again later."
-msgstr ""
+msgstr "服务器拒绝了该请求，请稍后重试。"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The signed {action} request is dispatched once and will not be retried automatically."
@@ -8821,7 +8821,7 @@ msgstr "本次会话中，已验证的所有者数据为只读。Agent/API 钱�
 
 #: src/lib/errors/action-error.ts
 msgid "The wallet could not sign the request. Try again."
-msgstr ""
+msgstr "钱包未能签署该请求，请重试。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
@@ -8886,7 +8886,7 @@ msgstr "此浏览器无法在多个标签页之间安全协调交易连接。请
 
 #: src/lib/errors/action-error.ts
 msgid "This browser could not coordinate the request safely across tabs. Close other tabs and try again."
-msgstr ""
+msgstr "此浏览器无法在多个标签页之间安全协调该请求。请关闭其他标签页后重试。"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
@@ -8972,7 +8972,7 @@ msgstr "该逐仓仓位已不再持有。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "This market is at its open interest cap, so the order cannot increase open interest."
-msgstr ""
+msgstr "该市场已达未平仓量上限，订单不能再增加未平仓量。"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "This market only supports isolated margin mode."
@@ -9242,7 +9242,7 @@ msgstr "无法加载代币元数据。"
 
 #: src/lib/errors/action-error.ts
 msgid "Too many requests. Wait a moment and try again."
-msgstr ""
+msgstr "请求过于频繁，请稍候再试。"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
@@ -9449,7 +9449,7 @@ msgstr "无法重置交易连接。"
 
 #: src/lib/errors/action-error.ts
 msgid "Trading could not be enabled. Try again."
-msgstr ""
+msgstr "无法启用交易，请重试。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -10358,7 +10358,7 @@ msgstr "钱包（<0>{0}</0>）"
 
 #: src/lib/errors/action-error.ts
 msgid "Wallet approval timed out. Check your wallet and try again."
-msgstr ""
+msgstr "钱包确认超时。请检查钱包后重试。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Wallet approval unavailable"
@@ -10445,7 +10445,7 @@ msgstr "启用组合保证金后，未用于交易的资产会自动赚取利息
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "While this market is at its open interest cap, the price cannot be more aggressive than the oracle price."
-msgstr ""
+msgstr "该市场处于未平仓量上限期间，价格不能比预言机价格更激进。"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Whole position"
@@ -10705,7 +10705,7 @@ msgstr "您的已委托质押"
 
 #: src/lib/errors/action-error.ts
 msgid "Your device clock is out of sync. Correct the date and time, then try again."
-msgstr ""
+msgstr "设备时钟不同步。请校正日期和时间后重试。"
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."

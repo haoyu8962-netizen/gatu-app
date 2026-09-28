@@ -316,7 +316,7 @@ msgstr "जब मार्क मूल्य पोज़िशन के ल�
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Post Only order would have matched immediately. Best bid and offer: {bbo}."
-msgstr ""
+msgstr "पोस्ट ओनली ऑर्डर तुरंत मैच हो जाता। सर्वोत्तम बोली और पेशकश: {bbo}।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
@@ -328,7 +328,7 @@ msgstr "पिछला कनेक्शन प्रयास अभी भ�
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Reduce Only order cannot increase the position."
-msgstr ""
+msgstr "केवल कम करें ऑर्डर पोज़िशन नहीं बढ़ा सकता।"
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
@@ -368,7 +368,7 @@ msgstr "इस बाज़ार में ट्रेडिंग से प�
 
 #: src/lib/errors/action-error.ts
 msgid "Accept the Hyperliquid terms before continuing."
-msgstr ""
+msgstr "जारी रखने से पहले Hyperliquid की शर्तें स्वीकार करें।"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Accepted"
@@ -1304,47 +1304,47 @@ msgstr "रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
-msgstr ""
+msgstr "एसेट डीलिस्ट होने के कारण रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the linked order filled"
-msgstr ""
+msgstr "जुड़े हुए ऑर्डर के भरने के कारण रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the outcome has settled"
-msgstr ""
+msgstr "परिणाम का निपटान होने के कारण रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled by self-trade prevention"
-msgstr ""
+msgstr "सेल्फ-ट्रेड रोकथाम के कारण रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled by the exchange"
-msgstr ""
+msgstr "एक्सचेंज द्वारा रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled by the scheduled cancel"
-msgstr ""
+msgstr "निर्धारित रद्दीकरण द्वारा रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to a vault withdrawal"
-msgstr ""
+msgstr "वॉल्ट निकासी के कारण रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to insufficient margin"
-msgstr ""
+msgstr "अपर्याप्त मार्जिन के कारण रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to liquidation"
-msgstr ""
+msgstr "लिक्विडेशन के कारण रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to Reduce Only"
-msgstr ""
+msgstr "केवल कम करें के कारण रद्द"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to the open interest cap"
-msgstr ""
+msgstr "ओपन इंटरेस्ट सीमा के कारण रद्द"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
@@ -2277,7 +2277,7 @@ msgstr "क्रॉस मेंटेनेंस मार्जिन"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Cross positions do not have enough available margin to lower the leverage. Deposit more collateral to lower it."
-msgstr ""
+msgstr "लीवरेज कम करने के लिए क्रॉस पोज़िशन में पर्याप्त उपलब्ध मार्जिन नहीं है। इसे कम करने के लिए अधिक कोलैटरल जमा करें।"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
@@ -3951,19 +3951,19 @@ msgstr "गैस के लिए अपर्याप्त फंड"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient margin to place order."
-msgstr ""
+msgstr "ऑर्डर देने के लिए अपर्याप्त मार्जिन।"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient margin to place order. Try canceling open {market} orders."
-msgstr ""
+msgstr "ऑर्डर देने के लिए अपर्याप्त मार्जिन। {market} के खुले ऑर्डर रद्द करके देखें।"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient margin to place order. Try using Reduce Only."
-msgstr ""
+msgstr "ऑर्डर देने के लिए अपर्याप्त मार्जिन। केवल कम करें का उपयोग करके देखें।"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient spot balance for this order."
-msgstr ""
+msgstr "इस ऑर्डर के लिए अपर्याप्त स्पॉट बैलेंस।"
 
 #: src/components/earn/earn-view.tsx
 msgid "Interest"
@@ -3989,7 +3989,7 @@ msgstr "गंतव्य पता अमान्य है"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Invalid TP/SL price."
-msgstr ""
+msgstr "अमान्य TP/SL मूल्य।"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invitation ready to review"
@@ -4534,7 +4534,7 @@ msgstr "Margin मोड"
 
 #: src/lib/tests/action-error.test.ts
 msgid "Margin mode data is unavailable"
-msgstr ""
+msgstr "मार्जिन मोड डेटा उपलब्ध नहीं है"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode updated"
@@ -5148,7 +5148,7 @@ msgstr "कोई पुराना पुरस्कार इतिहास
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "No liquidity is available for this market order."
-msgstr ""
+msgstr "इस मार्केट ऑर्डर के लिए कोई लिक्विडिटी उपलब्ध नहीं है।"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
@@ -5576,7 +5576,7 @@ msgstr "ऑर्डर {0}"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Order {order}: {line}"
-msgstr ""
+msgstr "ऑर्डर {order}: {line}"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
@@ -5719,11 +5719,11 @@ msgstr "ऑर्डर वैल्यू"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Order value must be at least {amount} {token}."
-msgstr ""
+msgstr "ऑर्डर वैल्यू कम से कम {amount} {token} होनी चाहिए।"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Order value must be at least ${amount}."
-msgstr ""
+msgstr "ऑर्डर वैल्यू कम से कम ${amount} होनी चाहिए।"
 
 #: src/config/tooltips.ts
 msgid "Order will exist only as a limit order on the book. Also known as post-only."
@@ -6260,7 +6260,7 @@ msgstr "प्राइस ग्रुपिंग"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
-msgstr ""
+msgstr "मूल्य टिक साइज़ का गुणज होना चाहिए।"
 
 #: src/config/orderbook-labels.ts
 msgid "Price precision"
@@ -6670,64 +6670,64 @@ msgstr "अस्वीकृत"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because a Reduce Only order would increase the position"
-msgstr ""
+msgstr "अस्वीकृत, क्योंकि केवल कम करें ऑर्डर पोज़िशन बढ़ा देता"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because it exceeds the maximum position size at the current leverage"
-msgstr ""
+msgstr "अस्वीकृत, क्योंकि यह मौजूदा लीवरेज पर अधिकतम पोज़िशन आकार से अधिक है"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because open interest would increase too quickly"
-msgstr ""
+msgstr "अस्वीकृत, क्योंकि ओपन इंटरेस्ट बहुत तेज़ी से बढ़ता"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the IOC order could not match"
-msgstr ""
+msgstr "अस्वीकृत, क्योंकि IOC ऑर्डर मैच नहीं हो सका"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the order value is below the minimum"
-msgstr ""
+msgstr "अस्वीकृत, क्योंकि ऑर्डर वैल्यू न्यूनतम से कम है"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the Post Only order would have matched immediately"
-msgstr ""
+msgstr "अस्वीकृत, क्योंकि पोस्ट ओनली ऑर्डर तुरंत मैच हो जाता"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the price is too aggressive at the open interest cap"
-msgstr ""
+msgstr "अस्वीकृत, क्योंकि ओपन इंटरेस्ट सीमा पर मूल्य बहुत आक्रामक है"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the price is too far from the oracle price"
-msgstr ""
+msgstr "अस्वीकृत, क्योंकि मूल्य ओरेकल मूल्य से बहुत दूर है"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to a lack of liquidity for the market order"
-msgstr ""
+msgstr "मार्केट ऑर्डर के लिए लिक्विडिटी न होने के कारण अस्वीकृत"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to an invalid tick price"
-msgstr ""
+msgstr "अमान्य टिक मूल्य के कारण अस्वीकृत"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to an invalid TP/SL price"
-msgstr ""
+msgstr "अमान्य TP/SL मूल्य के कारण अस्वीकृत"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to insufficient margin"
-msgstr ""
+msgstr "अपर्याप्त मार्जिन के कारण अस्वीकृत"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to insufficient spot balance"
-msgstr ""
+msgstr "अपर्याप्त स्पॉट बैलेंस के कारण अस्वीकृत"
 
 #: src/lib/trade/order-status-reasons.ts
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to the open interest cap"
-msgstr ""
+msgstr "ओपन इंटरेस्ट सीमा के कारण अस्वीकृत"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to too many open orders"
-msgstr ""
+msgstr "बहुत अधिक खुले ऑर्डर होने के कारण अस्वीकृत"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -8377,7 +8377,7 @@ msgstr "सक्रिय वॉलेट इस खाते का मास�
 
 #: src/lib/errors/action-error.ts
 msgid "The active wallet or network changed. Review the account and try again."
-msgstr ""
+msgstr "सक्रिय वॉलेट या नेटवर्क बदल गया। खाते की जाँच करें और फिर से प्रयास करें।"
 
 #: src/components/staking/staking-view.tsx
 msgid "The address already has five pending withdrawals."
@@ -8409,7 +8409,7 @@ msgstr "API वॉलेट अनुरोध अस्वीकार कर �
 
 #: src/lib/errors/action-error.ts
 msgid "The Arbitrum transaction did not match the reviewed deposit. Check your wallet activity before retrying."
-msgstr ""
+msgstr "Arbitrum लेन-देन समीक्षा किए गए जमा से मेल नहीं खाता। फिर से प्रयास करने से पहले अपने वॉलेट की गतिविधि जाँचें।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
@@ -8568,7 +8568,7 @@ msgstr "अनुरोधित संशोधन की पुष्टि �
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order could not immediately match any resting orders."
-msgstr ""
+msgstr "ऑर्डर तुरंत किसी भी मौजूदा ऑर्डर से मैच नहीं हो सका।"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
@@ -8576,7 +8576,7 @@ msgstr ""
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order price is too far from the oracle price."
-msgstr ""
+msgstr "ऑर्डर मूल्य ओरेकल मूल्य से बहुत दूर है।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8586,15 +8586,15 @@ msgstr "लाइव डेटा से ऑर्डर अपडेट की 
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order was never placed, was already canceled, or has filled."
-msgstr ""
+msgstr "ऑर्डर कभी दिया ही नहीं गया, पहले ही रद्द हो चुका है, या भर चुका है।"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order would exceed the maximum position size at the current leverage."
-msgstr ""
+msgstr "यह ऑर्डर मौजूदा लीवरेज पर अधिकतम पोज़िशन आकार से अधिक हो जाएगा।"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order would increase open interest too quickly."
-msgstr ""
+msgstr "यह ऑर्डर ओपन इंटरेस्ट को बहुत तेज़ी से बढ़ा देगा।"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The page is matching a new Vault ledger event and refreshed account state. It will not sign again."
@@ -8675,19 +8675,19 @@ msgstr "हाल का ट्रेड स्नैपशॉट लोड य�
 
 #: src/lib/errors/action-error.ts
 msgid "The request could not be completed. Try again."
-msgstr ""
+msgstr "अनुरोध पूरा नहीं हो सका। फिर से प्रयास करें।"
 
 #: src/lib/errors/action-error.ts
 msgid "The request could not be prepared. Refresh the page and try again."
-msgstr ""
+msgstr "अनुरोध तैयार नहीं किया जा सका। पेज रीफ़्रेश करें और फिर से प्रयास करें।"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The request expired before the exchange processed it. Try again."
-msgstr ""
+msgstr "एक्सचेंज द्वारा संसाधित किए जाने से पहले अनुरोध की समय-सीमा समाप्त हो गई। फिर से प्रयास करें।"
 
 #: src/lib/errors/action-error.ts
 msgid "The request status could not be confirmed. Review your account before retrying."
-msgstr ""
+msgstr "अनुरोध की स्थिति की पुष्टि नहीं हो सकी। फिर से प्रयास करने से पहले अपना खाता जाँचें।"
 
 #: src/lib/errors/action-error.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
@@ -8741,7 +8741,7 @@ msgstr "चुना गया बाज़ार बदल गया है। 
 
 #: src/lib/errors/action-error.ts
 msgid "The server rejected the request. Try again later."
-msgstr ""
+msgstr "सर्वर ने अनुरोध अस्वीकार कर दिया। बाद में फिर से प्रयास करें।"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The signed {action} request is dispatched once and will not be retried automatically."
@@ -8821,7 +8821,7 @@ msgstr "इस सत्र में सत्यापित मालिक �
 
 #: src/lib/errors/action-error.ts
 msgid "The wallet could not sign the request. Try again."
-msgstr ""
+msgstr "वॉलेट अनुरोध पर हस्ताक्षर नहीं कर सका। फिर से प्रयास करें।"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
@@ -8886,7 +8886,7 @@ msgstr "यह ब्राउज़र अलग-अलग टैब में 
 
 #: src/lib/errors/action-error.ts
 msgid "This browser could not coordinate the request safely across tabs. Close other tabs and try again."
-msgstr ""
+msgstr "यह ब्राउज़र टैब के बीच अनुरोध का सुरक्षित समन्वय नहीं कर सका। अन्य टैब बंद करें और फिर से प्रयास करें।"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
@@ -8972,7 +8972,7 @@ msgstr "यह आइसोलेटेड पोज़िशन अब खु�
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "This market is at its open interest cap, so the order cannot increase open interest."
-msgstr ""
+msgstr "यह मार्केट अपनी ओपन इंटरेस्ट सीमा पर है, इसलिए ऑर्डर ओपन इंटरेस्ट नहीं बढ़ा सकता।"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "This market only supports isolated margin mode."
@@ -9242,7 +9242,7 @@ msgstr "टोकन मेटाडेटा लोड नहीं किय�
 
 #: src/lib/errors/action-error.ts
 msgid "Too many requests. Wait a moment and try again."
-msgstr ""
+msgstr "बहुत अधिक अनुरोध। थोड़ी देर प्रतीक्षा करें और फिर से प्रयास करें।"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
@@ -9449,7 +9449,7 @@ msgstr "ट्रेडिंग कनेक्शन रीसेट नही
 
 #: src/lib/errors/action-error.ts
 msgid "Trading could not be enabled. Try again."
-msgstr ""
+msgstr "ट्रेडिंग सक्षम नहीं की जा सकी। फिर से प्रयास करें।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -10358,7 +10358,7 @@ msgstr "वॉलेट (<0>{0}</0>)"
 
 #: src/lib/errors/action-error.ts
 msgid "Wallet approval timed out. Check your wallet and try again."
-msgstr ""
+msgstr "वॉलेट स्वीकृति का समय समाप्त हो गया। अपना वॉलेट जाँचें और फिर से प्रयास करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Wallet approval unavailable"
@@ -10445,7 +10445,7 @@ msgstr "पोर्टफोलियो मार्जिन सक्षम 
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "While this market is at its open interest cap, the price cannot be more aggressive than the oracle price."
-msgstr ""
+msgstr "जब तक यह मार्केट अपनी ओपन इंटरेस्ट सीमा पर है, मूल्य ओरेकल मूल्य से अधिक आक्रामक नहीं हो सकता।"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Whole position"
@@ -10705,7 +10705,7 @@ msgstr "आपका डेलीगेट किया गया स्टे�
 
 #: src/lib/errors/action-error.ts
 msgid "Your device clock is out of sync. Correct the date and time, then try again."
-msgstr ""
+msgstr "आपके डिवाइस की घड़ी सिंक में नहीं है। तारीख और समय ठीक करें, फिर प्रयास करें।"
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."

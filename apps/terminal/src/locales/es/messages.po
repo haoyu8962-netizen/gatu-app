@@ -316,7 +316,7 @@ msgstr "Una posición puede liquidarse cuando el precio de marca alcanza su prec
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Post Only order would have matched immediately. Best bid and offer: {bbo}."
-msgstr ""
+msgstr "Una orden Post Only se habría ejecutado de inmediato. Mejor compra y venta: {bbo}."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
@@ -328,7 +328,7 @@ msgstr "Todavía se está conciliando un intento de conexión anterior. Al volve
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "A Reduce Only order cannot increase the position."
-msgstr ""
+msgstr "Una orden Solo reducir no puede aumentar la posición."
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
@@ -368,7 +368,7 @@ msgstr "Acepta el descargo de responsabilidad del deployer HIP-3 antes de operar
 
 #: src/lib/errors/action-error.ts
 msgid "Accept the Hyperliquid terms before continuing."
-msgstr ""
+msgstr "Acepta los términos de Hyperliquid antes de continuar."
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Accepted"
@@ -1304,47 +1304,47 @@ msgstr "Cancelada"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the asset was delisted"
-msgstr ""
+msgstr "Cancelada porque el activo fue retirado de la lista"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the linked order filled"
-msgstr ""
+msgstr "Cancelada porque la orden vinculada se ejecutó"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled because the outcome has settled"
-msgstr ""
+msgstr "Cancelada porque el resultado ya se liquidó"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled by self-trade prevention"
-msgstr ""
+msgstr "Cancelada por la prevención de autonegociación"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled by the exchange"
-msgstr ""
+msgstr "Cancelada por el exchange"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled by the scheduled cancel"
-msgstr ""
+msgstr "Cancelada por la cancelación programada"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to a vault withdrawal"
-msgstr ""
+msgstr "Cancelada por un retiro de la bóveda"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to insufficient margin"
-msgstr ""
+msgstr "Cancelada por margen insuficiente"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to liquidation"
-msgstr ""
+msgstr "Cancelada por liquidación"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to Reduce Only"
-msgstr ""
+msgstr "Cancelada por Solo reducir"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to the open interest cap"
-msgstr ""
+msgstr "Cancelada por el límite de interés abierto"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
@@ -2277,7 +2277,7 @@ msgstr "Margen de mantenimiento cruzado"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Cross positions do not have enough available margin to lower the leverage. Deposit more collateral to lower it."
-msgstr ""
+msgstr "Las posiciones cruzadas no tienen suficiente margen disponible para reducir el apalancamiento. Deposita más garantía para reducirlo."
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
@@ -3951,19 +3951,19 @@ msgstr "Fondos insuficientes para el gas"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient margin to place order."
-msgstr ""
+msgstr "Margen insuficiente para colocar la orden."
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient margin to place order. Try canceling open {market} orders."
-msgstr ""
+msgstr "Margen insuficiente para colocar la orden. Prueba a cancelar las órdenes abiertas de {market}."
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient margin to place order. Try using Reduce Only."
-msgstr ""
+msgstr "Margen insuficiente para colocar la orden. Prueba con Solo reducir."
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Insufficient spot balance for this order."
-msgstr ""
+msgstr "Saldo spot insuficiente para esta orden."
 
 #: src/components/earn/earn-view.tsx
 msgid "Interest"
@@ -3989,7 +3989,7 @@ msgstr "Dirección de destino no válida"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Invalid TP/SL price."
-msgstr ""
+msgstr "Precio de TP/SL no válido."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invitation ready to review"
@@ -4534,7 +4534,7 @@ msgstr "Modo de margen"
 
 #: src/lib/tests/action-error.test.ts
 msgid "Margin mode data is unavailable"
-msgstr ""
+msgstr "Los datos del modo de margen no están disponibles"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode updated"
@@ -5148,7 +5148,7 @@ msgstr "No hay historial anterior de recompensas."
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "No liquidity is available for this market order."
-msgstr ""
+msgstr "No hay liquidez disponible para esta orden de mercado."
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
@@ -5576,7 +5576,7 @@ msgstr "Orden {0}"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Order {order}: {line}"
-msgstr ""
+msgstr "Orden {order}: {line}"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
@@ -5719,11 +5719,11 @@ msgstr "Valor orden"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Order value must be at least {amount} {token}."
-msgstr ""
+msgstr "El valor de la orden debe ser de al menos {amount} {token}."
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Order value must be at least ${amount}."
-msgstr ""
+msgstr "El valor de la orden debe ser de al menos ${amount}."
 
 #: src/config/tooltips.ts
 msgid "Order will exist only as a limit order on the book. Also known as post-only."
@@ -6260,7 +6260,7 @@ msgstr "Agrupación de precios"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Price must be a multiple of the tick size."
-msgstr ""
+msgstr "El precio debe ser un múltiplo del tamaño de tick."
 
 #: src/config/orderbook-labels.ts
 msgid "Price precision"
@@ -6670,64 +6670,64 @@ msgstr "Rechazada"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because a Reduce Only order would increase the position"
-msgstr ""
+msgstr "Rechazada porque una orden Solo reducir aumentaría la posición"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because it exceeds the maximum position size at the current leverage"
-msgstr ""
+msgstr "Rechazada porque supera el tamaño máximo de posición con el apalancamiento actual"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because open interest would increase too quickly"
-msgstr ""
+msgstr "Rechazada porque el interés abierto aumentaría demasiado rápido"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the IOC order could not match"
-msgstr ""
+msgstr "Rechazada porque la orden IOC no pudo ejecutarse"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the order value is below the minimum"
-msgstr ""
+msgstr "Rechazada porque el valor de la orden está por debajo del mínimo"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the Post Only order would have matched immediately"
-msgstr ""
+msgstr "Rechazada porque la orden Post Only se habría ejecutado de inmediato"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the price is too aggressive at the open interest cap"
-msgstr ""
+msgstr "Rechazada porque el precio es demasiado agresivo con el límite de interés abierto"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected because the price is too far from the oracle price"
-msgstr ""
+msgstr "Rechazada porque el precio está demasiado lejos del precio del oráculo"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to a lack of liquidity for the market order"
-msgstr ""
+msgstr "Rechazada por falta de liquidez para la orden de mercado"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to an invalid tick price"
-msgstr ""
+msgstr "Rechazada por un precio que no respeta el tamaño de tick"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to an invalid TP/SL price"
-msgstr ""
+msgstr "Rechazada por un precio de TP/SL no válido"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to insufficient margin"
-msgstr ""
+msgstr "Rechazada por margen insuficiente"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to insufficient spot balance"
-msgstr ""
+msgstr "Rechazada por saldo spot insuficiente"
 
 #: src/lib/trade/order-status-reasons.ts
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to the open interest cap"
-msgstr ""
+msgstr "Rechazada por el límite de interés abierto"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Rejected due to too many open orders"
-msgstr ""
+msgstr "Rechazada por tener demasiadas órdenes abiertas"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -8377,7 +8377,7 @@ msgstr "El monedero activo no es el monedero maestro de esta cuenta"
 
 #: src/lib/errors/action-error.ts
 msgid "The active wallet or network changed. Review the account and try again."
-msgstr ""
+msgstr "La billetera activa o la red cambió. Revisa la cuenta y vuelve a intentarlo."
 
 #: src/components/staking/staking-view.tsx
 msgid "The address already has five pending withdrawals."
@@ -8409,7 +8409,7 @@ msgstr "La solicitud del monedero API fue rechazada."
 
 #: src/lib/errors/action-error.ts
 msgid "The Arbitrum transaction did not match the reviewed deposit. Check your wallet activity before retrying."
-msgstr ""
+msgstr "La transacción de Arbitrum no coincide con el depósito revisado. Revisa la actividad de tu billetera antes de volver a intentarlo."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
@@ -8568,7 +8568,7 @@ msgstr "La orden cambió antes de que se confirmara la modificación solicitada.
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order could not immediately match any resting orders."
-msgstr ""
+msgstr "La orden no pudo ejecutarse de inmediato contra ninguna orden en el libro."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
@@ -8576,7 +8576,7 @@ msgstr ""
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order price is too far from the oracle price."
-msgstr ""
+msgstr "El precio de la orden está demasiado lejos del precio del oráculo."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8586,15 +8586,15 @@ msgstr "La actualización de la orden no fue confirmada por los datos en vivo. A
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order was never placed, was already canceled, or has filled."
-msgstr ""
+msgstr "La orden nunca se colocó, ya se canceló o ya se ejecutó."
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order would exceed the maximum position size at the current leverage."
-msgstr ""
+msgstr "La orden superaría el tamaño máximo de posición con el apalancamiento actual."
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The order would increase open interest too quickly."
-msgstr ""
+msgstr "La orden aumentaría el interés abierto demasiado rápido."
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The page is matching a new Vault ledger event and refreshed account state. It will not sign again."
@@ -8675,19 +8675,19 @@ msgstr "No se pudo cargar ni validar la instantánea reciente de operaciones."
 
 #: src/lib/errors/action-error.ts
 msgid "The request could not be completed. Try again."
-msgstr ""
+msgstr "No se pudo completar la solicitud. Vuelve a intentarlo."
 
 #: src/lib/errors/action-error.ts
 msgid "The request could not be prepared. Refresh the page and try again."
-msgstr ""
+msgstr "No se pudo preparar la solicitud. Actualiza la página y vuelve a intentarlo."
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "The request expired before the exchange processed it. Try again."
-msgstr ""
+msgstr "La solicitud caducó antes de que el exchange la procesara. Vuelve a intentarlo."
 
 #: src/lib/errors/action-error.ts
 msgid "The request status could not be confirmed. Review your account before retrying."
-msgstr ""
+msgstr "No se pudo confirmar el estado de la solicitud. Revisa tu cuenta antes de volver a intentarlo."
 
 #: src/lib/errors/action-error.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
@@ -8741,7 +8741,7 @@ msgstr "El mercado seleccionado cambió. Vuelve a abrir el cuadro de margen ante
 
 #: src/lib/errors/action-error.ts
 msgid "The server rejected the request. Try again later."
-msgstr ""
+msgstr "El servidor rechazó la solicitud. Vuelve a intentarlo más tarde."
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The signed {action} request is dispatched once and will not be retried automatically."
@@ -8821,7 +8821,7 @@ msgstr "Los datos del propietario verificado son de solo lectura en esta sesión
 
 #: src/lib/errors/action-error.ts
 msgid "The wallet could not sign the request. Try again."
-msgstr ""
+msgstr "La billetera no pudo firmar la solicitud. Vuelve a intentarlo."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
@@ -8886,7 +8886,7 @@ msgstr "Este navegador no puede coordinar de forma segura la conexión de tradin
 
 #: src/lib/errors/action-error.ts
 msgid "This browser could not coordinate the request safely across tabs. Close other tabs and try again."
-msgstr ""
+msgstr "Este navegador no pudo coordinar la solicitud de forma segura entre pestañas. Cierra las demás pestañas y vuelve a intentarlo."
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
@@ -8972,7 +8972,7 @@ msgstr "Esta posición aislada ya no está abierta."
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "This market is at its open interest cap, so the order cannot increase open interest."
-msgstr ""
+msgstr "Este mercado está en su límite de interés abierto, por lo que la orden no puede aumentar el interés abierto."
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "This market only supports isolated margin mode."
@@ -9242,7 +9242,7 @@ msgstr "No se pudieron cargar los metadatos del token."
 
 #: src/lib/errors/action-error.ts
 msgid "Too many requests. Wait a moment and try again."
-msgstr ""
+msgstr "Demasiadas solicitudes. Espera un momento y vuelve a intentarlo."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
@@ -9449,7 +9449,7 @@ msgstr "No se pudo restablecer la conexión de trading."
 
 #: src/lib/errors/action-error.ts
 msgid "Trading could not be enabled. Try again."
-msgstr ""
+msgstr "No se pudo habilitar el trading. Vuelve a intentarlo."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -10358,7 +10358,7 @@ msgstr "Cartera (<0>{0}</0>)"
 
 #: src/lib/errors/action-error.ts
 msgid "Wallet approval timed out. Check your wallet and try again."
-msgstr ""
+msgstr "Se agotó el tiempo para la aprobación en la billetera. Revisa tu billetera y vuelve a intentarlo."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Wallet approval unavailable"
@@ -10445,7 +10445,7 @@ msgstr "Con Portfolio Margin activado, los activos que no se usan para operar ge
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "While this market is at its open interest cap, the price cannot be more aggressive than the oracle price."
-msgstr ""
+msgstr "Mientras este mercado esté en su límite de interés abierto, el precio no puede ser más agresivo que el precio del oráculo."
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Whole position"
@@ -10705,7 +10705,7 @@ msgstr "Tu participación delegada"
 
 #: src/lib/errors/action-error.ts
 msgid "Your device clock is out of sync. Correct the date and time, then try again."
-msgstr ""
+msgstr "El reloj de tu dispositivo no está sincronizado. Corrige la fecha y la hora y vuelve a intentarlo."
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."

@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { i18n, type Messages } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { AbstractWalletError, ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
@@ -20,6 +22,49 @@ import { describeOrderStatusReason, formatOrderChildError } from "@/lib/trade/or
 import type { Translate } from "@/lib/translate";
 
 const translate: Translate = (descriptor) => i18n._(descriptor);
+
+const zhCatalog = readFileSync(resolve(process.cwd(), "src/locales/zh/messages.po"), "utf8");
+
+function productionChinese(english: string | undefined): string | undefined {
+	if (!english) return undefined;
+	const msgid = english.replace(/[\\"]/g, (character) => `\\${character}`);
+	const start = zhCatalog.indexOf(`msgid "${msgid}"\nmsgstr "`);
+	if (start < 0) return undefined;
+	const valueStart = start + `msgid "${msgid}"\nmsgstr "`.length;
+	return zhCatalog.slice(valueStart, zhCatalog.indexOf('"\n', valueStart)) || undefined;
+}
+
+const ORDER_STATUS_CODES = [
+	"badAloPxRejected",
+	"badTriggerPxRejected",
+	"insufficientSpotBalanceRejected",
+	"iocCancelRejected",
+	"marketOrderNoLiquidityRejected",
+	"minTradeNtlRejected",
+	"openInterestIncreaseRejected",
+	"oracleRejected",
+	"perpMarginRejected",
+	"perpMaxPositionRejected",
+	"positionFlipAtOpenInterestCapRejected",
+	"positionIncreaseAtOpenInterestCapRejected",
+	"reduceOnlyRejected",
+	"rejected",
+	"tickRejected",
+	"tooAggressiveAtOpenInterestCapRejected",
+	"tooManyOpenOrdersRejected",
+	"canceled",
+	"delistedCanceled",
+	"internalCancel",
+	"liquidatedCanceled",
+	"marginCanceled",
+	"openInterestCapCanceled",
+	"outcomeSettledCanceled",
+	"reduceOnlyCanceled",
+	"scheduledCancel",
+	"selfTradeCanceled",
+	"siblingFilledCanceled",
+	"vaultWithdrawalCanceled",
+];
 
 function messageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -129,6 +174,37 @@ describe("exchange rejection texts", () => {
 		expect(formatActionFailure(failure, translate)).toBe(
 			"全仓仓位的可用保证金不足，无法降低杠杆。请存入更多抵押品后再降低杠杆。",
 		);
+	});
+});
+
+describe("production Chinese catalog", () => {
+	it("translates every known exchange text and hint", () => {
+		const descriptors = [...DOCUMENTED_EXCHANGE_ERRORS, LEVERAGE_DECREASE_ERROR, "Action already expired"].map((text) =>
+			describeExchangeErrorText(text),
+		);
+		descriptors.push(
+			describeExchangeErrorText("Insufficient margin to place order.", { kind: "reduce-only" }),
+			describeExchangeErrorText("Insufficient margin to place order.", { kind: "cancel-orders", market: "BTC" }),
+		);
+		for (const descriptor of descriptors) {
+			expect(descriptor?.message, "known exchange text").toBeTruthy();
+			expect(productionChinese(descriptor?.message), descriptor?.message).toBeTruthy();
+		}
+	});
+
+	it("translates every order status reason", () => {
+		for (const status of ORDER_STATUS_CODES) {
+			const descriptor = describeOrderStatusReason(status);
+			expect(descriptor?.message, status).toBeTruthy();
+			expect(productionChinese(descriptor?.message), status).toBeTruthy();
+		}
+	});
+
+	it("renders the reported leverage rejection in Chinese", () => {
+		const chinese = productionChinese(LEVERAGE_DECREASE_MESSAGE);
+		expect(chinese).toBe("全仓仓位的可用保证金不足，无法降低杠杆。请存入更多抵押品后再降低杠杆。");
+		i18n.loadAndActivate({ locale: "zh", messages: { [messageId(LEVERAGE_DECREASE_MESSAGE)]: chinese as string } });
+		expect(formatExchangeErrorText(LEVERAGE_DECREASE_ERROR, translate)).toBe(chinese);
 	});
 });
 
