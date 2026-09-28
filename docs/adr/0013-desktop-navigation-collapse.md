@@ -40,3 +40,7 @@
 ## 验证
 
 单测：新增 `desktop-nav-layout.test.ts`（各状态与宽度的收纳结果、active 规则、常量与 CSS 变体契约）；更新 `top-nav.test.tsx`（连接/未连接 × 紧凑/窄的链接显隐与 More 内容、Earn 禁用项、外链与路由项）；`user-menu`、翻译契约；typecheck、Biome。浏览器：本地生产构建在 1440 / 1181 / 1100 / 1001 px、六种语言、未连接状态下 header 无裁切与重叠。实际结果记录在任务记录中。
+
+## 补充（2026-09-27，Earn 上线）
+
+Earn 不再是 Soon 占位，改为链接 `/earn` 的常驻一级入口，决策 2 中关于 Earn（Soon）的收纳规则不再适用（`soon` 机制本身保留）。未连接用户在 1101–1181 px 因此多一个一级入口，法语在 1101 px 只余 6 px，窄屏阈值 `DESKTOP_NAV_NARROW_MAX_PX` 从 1100 调到 1150。实测数据与取舍见 [ADR 0021](0021-earn-borrow-lend-page.md) D8；本 ADR 其余决策不变。

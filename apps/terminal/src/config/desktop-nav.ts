@@ -18,7 +18,7 @@ export interface DesktopNavItemConfig {
 export const DESKTOP_NAV_ITEMS = [
 	{ id: "trade", label: msg`Trade`, placement: "primary", path: "/" },
 	{ id: "portfolio", label: msg`Portfolio`, placement: "primary", path: "/portfolio" },
-	{ id: "earn", label: msg`Earn`, placement: "primary", soon: true },
+	{ id: "earn", label: msg`Earn`, placement: "primary", path: "/earn" },
 	{ id: "vaults", label: msg`Vaults`, placement: "lower", path: "/vaults", matchPrefix: true },
 	{ id: "staking", label: msg`Staking`, placement: "lower", path: "/staking" },
 	{ id: "referrals", label: msg`Referrals`, placement: "lower", path: "/referrals" },

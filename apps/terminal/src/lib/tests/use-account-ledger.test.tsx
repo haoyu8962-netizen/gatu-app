@@ -147,6 +147,27 @@ describe("useAccountLedger", () => {
 		expect(result.rows.at(-1)?.time).toBe(rangeStart + 1_001);
 	});
 
+	it("keeps Earn records that fall outside the latest display window", async () => {
+		const rangeStart = NOW - LOOKBACK_MS;
+		const earn: UserNonFundingLedgerUpdatesResponse[number] = {
+			delta: { type: "borrowLend", token: "USDC", operation: "supply", amount: "25", interestAmount: "0" },
+			hash: `0x${"e".repeat(64)}`,
+			time: rangeStart + 1,
+		} as UserNonFundingLedgerUpdatesResponse[number];
+		const updates = [earn, ...Array.from({ length: 1_200 }, (_, index) => createDeposit(rangeStart + index + 2))];
+		mocks.userNonFundingLedgerUpdates.mockImplementation(async ({ startTime }: { startTime: number }) =>
+			updates.filter((update) => update.time >= startTime).slice(0, 500),
+		);
+
+		renderHook();
+		const result = await waitUntilReady();
+
+		expect(result.rows).toHaveLength(200);
+		expect(result.rows.some((row) => row.action === "supply")).toBe(false);
+		expect(result.earnRows).toHaveLength(1);
+		expect(result.earnRows[0]).toMatchObject({ action: "supply", token: "USDC", amount: "-25" });
+	});
+
 	it("reports an incomplete same-timestamp REST snapshot even when realtime data is active", async () => {
 		const page = Array.from({ length: 500 }, () => createDeposit(NOW - 1_000));
 		page.forEach((update, index) => {

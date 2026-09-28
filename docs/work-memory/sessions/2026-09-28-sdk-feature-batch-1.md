@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["hyperliquid-api"],
-  "summary": "按覆盖审查的收益排序实施六项：资金费率历史页签（fundingHistory）、未平仓量上限拦截（webData3 perpsAtOpenInterestCap + perpDexLimits，ADR 0021）、资金费率对比页（predictedFundings）、TP/SL 滑点提示（maxMarketOrderNtls）、TWAP 成交 CSV 导出（userTwapSliceFillsByTime）、杠杆弹窗仓位上限（复用分档）。六个独立 worktree 并行实现并各经一轮代理审查，集成到 claude/sdk-api-review-51a3ea 后做三轮 Codex 只读对抗审查（共 6 个 P2、6 个 P3，全部修复或有理由处理；第三轮残留的时钟回拨属于共享订阅巡检，另列后续任务）。最终头类型检查、Biome、Node 22.15 构建与包体预算通过，完整终端测试 7,490 项通过、1 个已知负载敏感文件超时（单独 5/5 通过）。服务端账户通知未实施（需要传输隔离决策）。未推送、未合入 dev，没有真实钱包与真机验收。",
+  "summary": "按覆盖审查的收益排序实施六项：资金费率历史页签（fundingHistory）、未平仓量上限拦截（webData3 perpsAtOpenInterestCap + perpDexLimits，ADR 0023）、资金费率对比页（predictedFundings）、TP/SL 滑点提示（maxMarketOrderNtls）、TWAP 成交 CSV 导出（userTwapSliceFillsByTime）、杠杆弹窗仓位上限（复用分档）。六个独立 worktree 并行实现并各经一轮代理审查，集成到 claude/sdk-api-review-51a3ea 后做三轮 Codex 只读对抗审查（共 6 个 P2、6 个 P3，全部修复或有理由处理；第三轮残留的时钟回拨属于共享订阅巡检，另列后续任务）。最终头类型检查、Biome、Node 22.15 构建与包体预算通过，完整终端测试 7,490 项通过、1 个已知负载敏感文件超时（单独 5/5 通过）。服务端账户通知未实施（需要传输隔离决策）。未推送、未合入 dev，没有真实钱包与真机验收。",
   "thread": null,
   "baseCommit": "dbc6036e",
   "commits": ["1190bd41", "282a58ba", "5eb85082", "a36c67ad", "0c404f44", "bd6bb81b", "7db5cf0b", "19af214b", "746ef421", "db676ae4", "fcc5624e", "b8e880c3", "21a3c1e4", "8c1ec5da", "58e132ed", "1829fc8e", "88c7466c", "7084ea7b"],
@@ -16,7 +16,7 @@
     { "path": "docs/hyperliquid-sdk-coverage-review.md" },
     { "path": "docs/market-funding-history.md" },
     { "path": "docs/open-interest-cap.md" },
-    { "path": "docs/adr/0021-open-interest-cap-advisory-check.md" },
+    { "path": "docs/adr/0023-open-interest-cap-advisory-check.md" },
     { "path": "docs/funding-comparison.md" },
     { "path": "docs/position-tpsl-slippage-warning.md" },
     { "path": "docs/twap-regression-tests.md" },
@@ -58,6 +58,7 @@
 - 分支未推送；需要时按 `.claude/rules/git.md` 向 `dev` 开 PR。
 - 已另列后续任务：共享订阅巡检改为不受时钟回拨影响；杠杆弹窗高杠杆警告在拖动中挂载的既有问题。
   - 2026-09-28 更新：前者已完成，见 [订阅过期巡检改用单调时钟计龄](2026-09-28-subscription-staleness-monotonic-clock.md)（合入本分支 `bd0b80f1`）；后者仍待处理。
+- 2026-09-28：PR #50 合入 `dev` 的 #48（Earn 借贷页）时，Earn 已占用 ADR 0021、PR #51 的订阅单调时钟占用 0022，未平仓量上限 ADR 改号为 0023，引用同步更新；导航冲突按「Earn 常驻一级、Funding Comparison 只在 More 且排在 Statistics 前」解决。
 - 本批新增测试未加入 AGENTS.md 回归分组与 CI 精选列表，入口在各归属文档。
 - 下一批可从规划的「范围取舍」表继续：服务端通知（先写传输隔离 ADR 并观察真实消息）、子账户与 HIP-4（需产品与合规决策）。
 - 没有被替代的记录；[2026-09-27 覆盖审查](2026-09-27-sdk-api-coverage-review.md)仍有效，其追加的「后续」一节链接本批结果。

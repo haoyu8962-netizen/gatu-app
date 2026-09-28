@@ -9,7 +9,7 @@
 | 顺序 | 功能 | 接口 | 归属文档（实施时新建或更新） |
 | ---: | --- | --- | --- |
 | 1 | 资金费率历史（图表区 Funding 页签） | `fundingHistory` | `docs/market-funding-history.md` |
-| 2 | OI 上限：限价类订单拦截与 HIP-3 每币上限 | `webData3.perpDexStates[].perpsAtOpenInterestCap`、`perpDexLimits` | `docs/open-interest-cap.md`、`docs/adr/0021-open-interest-cap-advisory-check.md` |
+| 2 | OI 上限：限价类订单拦截与 HIP-3 每币上限 | `webData3.perpDexStates[].perpsAtOpenInterestCap`、`perpDexLimits` | `docs/open-interest-cap.md`、`docs/adr/0023-open-interest-cap-advisory-check.md` |
 | 3 | 跨交易所资金费率对比页 | `predictedFundings` | `docs/funding-comparison.md` |
 | 4 | 持仓 TP/SL 大额滑点提示 | `maxMarketOrderNtls` | `docs/position-tpsl-slippage-warning.md` |
 | 5 | TWAP 成交历史 CSV 导出 | `userTwapSliceFillsByTime` | `docs/twap-regression-tests.md`（导出一节） |
@@ -46,7 +46,7 @@
 ### 2. OI 上限
 
 - 官方：市场处于 OI 上限时，提交限价、止损限价、止盈限价订单被拦截并提示「限价单挂出后会因未平仓量上限被撤销，请用市价单平仓」；市价、触发市价、TWAP、分段订单不拦截；HIP-3 按 dex 查询 `perpDexLimits`。
-- 方案：从现有 `webData3` 订阅（同一订阅键，不新增订阅）派生上限币种集合，经账户余额与下单数据传到桌面与手机共用的校验栈；新增校验项在选中限价类订单时给出准确的限制说明并禁用提交；执行守卫在提交时复核。只有当前、成功、同一账户的快照明确列出该币时才拦截，未知状态放行，交易所仍是最终裁决（理由写入 ADR 0021）。HIP-3 资产信息弹窗在打开时查询 `perpDexLimits`，显示该币的 OI 上限。
+- 方案：从现有 `webData3` 订阅（同一订阅键，不新增订阅）派生上限币种集合，经账户余额与下单数据传到桌面与手机共用的校验栈；新增校验项在选中限价类订单时给出准确的限制说明并禁用提交；执行守卫在提交时复核。只有当前、成功、同一账户的快照明确列出该币时才拦截，未知状态放行，交易所仍是最终裁决（理由写入 ADR 0023）。HIP-3 资产信息弹窗在打开时查询 `perpDexLimits`，显示该币的 OI 上限。
 - 非目标：限价平仓弹窗拦截、官方的 HIP-3 市价买单限价钳制、交易所错误原文映射、行情区上限徽标。
 - 现状说明：2026-09-27 主 dex 处于上限的 7 个市场全部已下架，10 个 HIP-3 dex 为空，功能上线后暂时处于休眠，只能靠单元与界面测试验证。
 

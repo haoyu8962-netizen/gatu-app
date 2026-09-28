@@ -114,6 +114,7 @@ describe("cross-tab funds action lock", () => {
 			"agentEnableDexAbstraction",
 			"agentSendAsset",
 			"agentSetAbstraction",
+			"borrowLend",
 			"cDeposit",
 			"cWithdraw",
 			"claimRewards",

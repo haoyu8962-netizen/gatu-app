@@ -102,4 +102,4 @@ pnpm --dir apps/terminal exec playwright test \
 
 只有当前、成功、同账户的快照列出该永续或 HIP-3 市场时，限价、止损限价、止盈限价（只减仓与所有 TIF 都不豁免）才显示限制说明并禁用提交；市价、止损市价、止盈市价、TWAP、分段与现货不受影响；未知快照与改动前完全相同。提示位置沿用各端已有的校验行：桌面在底部动作区 CTA 之上的错误行，手机在动作按钮上方的 `role="alert"` 行。CTA 名称保持 `Place … Order` / 方向标签，由 `canSubmit` 禁用。提示只取决于订单类型与快照，不影响数量控件的 `aria-invalid`，也不在滑杆手势中移动滑杆。切换市场重新判定，不重置草稿与订单类型。
 
-真实组件回归：`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（移动）覆盖上限时的说明、禁用与未提交，市价单保持可用，未上限保持原状，执行守卫读取最新快照，以及语言热切换时同一节点更新。约 130 字符的说明在 1001px 与 320px 下可能折成三行，尚未用浏览器布局套件核对。设计与取舍见 [OI 上限说明](open-interest-cap.md) 与 [ADR 0021](adr/0021-open-interest-cap-advisory-check.md)。
+真实组件回归：`tests/trade-panel-open-interest-cap.test.tsx`（桌面）与 `tests/mobile-trade-size-validation-a11y.test.tsx`（移动）覆盖上限时的说明、禁用与未提交，市价单保持可用，未上限保持原状，执行守卫读取最新快照，以及语言热切换时同一节点更新。约 130 字符的说明在 1001px 与 320px 下可能折成三行，尚未用浏览器布局套件核对。设计与取舍见 [OI 上限说明](open-interest-cap.md) 与 [ADR 0023](adr/0023-open-interest-cap-advisory-check.md)。

@@ -1,7 +1,7 @@
-# ADR 0021：未平仓量上限检查只在确认的快照上生效，未知状态放行
+# ADR 0023：未平仓量上限检查只在确认的快照上生效，未知状态放行
 
 - 状态：已接受并实施（2026-09-27，分支 `claude/sdk-feat-oi-cap`，基线 `dbc6036e`）；未合入、未发布，没有真实账户验收（当前没有可触发的市场）。
-- 关联：[OI 上限说明](../open-interest-cap.md)（完整实现契约）；[数据展示规范](../mobile-data-presentation.md)（新增「已确认的市场未平仓量上限」一行）；[SDK 接入规划](../sdk-feature-integration-plan.md)第 2 项；[下单面板对照](../order-entry-surface-parity.md)；`AGENTS.md`「First-use trading onboarding contract」中「Errors or missing snapshots fail closed」的适用范围。编号说明：0020 已被尚未合入的分支使用，本记录直接取 0021。
+- 关联：[OI 上限说明](../open-interest-cap.md)（完整实现契约）；[数据展示规范](../mobile-data-presentation.md)（新增「已确认的市场未平仓量上限」一行）；[SDK 接入规划](../sdk-feature-integration-plan.md)第 2 项；[下单面板对照](../order-entry-surface-parity.md)；`AGENTS.md`「First-use trading onboarding contract」中「Errors or missing snapshots fail closed」的适用范围。编号说明：起初取 0021（当时 0020 已被尚未合入的分支使用）；合入 `dev` 时 0021 已由 Earn 借贷页占用、0022 由订阅单调时钟占用，改为 0023。
 
 ## 背景与约束
 

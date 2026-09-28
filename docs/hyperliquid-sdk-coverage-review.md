@@ -139,7 +139,7 @@ rg -n '"fundingHistory"|\.fundingHistory\(' apps/terminal/src packages/hl-react/
 | 本文排序 | 接口 | 实施结果 | 归属文档 |
 | ---: | --- | --- | --- |
 | 1 | `fundingHistory` | 图表区 Funding 页签（桌面与手机） | [市场资金费率历史](market-funding-history.md) |
-| 2 | `webData3.perpDexStates[].perpsAtOpenInterestCap`、`perpDexLimits` | 上限市场拦截限价、止损限价、止盈限价；HIP-3 资产信息显示每币上限；不新增订阅 | [未平仓量上限](open-interest-cap.md)、[ADR 0021](adr/0021-open-interest-cap-advisory-check.md) |
+| 2 | `webData3.perpDexStates[].perpsAtOpenInterestCap`、`perpDexLimits` | 上限市场拦截限价、止损限价、止盈限价；HIP-3 资产信息显示每币上限；不新增订阅 | [未平仓量上限](open-interest-cap.md)、[ADR 0023](adr/0023-open-interest-cap-advisory-check.md) |
 | 3 | `predictedFundings` | `/fundingComparison` 对比页 | [资金费率对比](funding-comparison.md) |
 | 5 | `maxMarketOrderNtls` | 持仓 TP/SL 弹窗的滑点提示（按持仓当前杠杆选档，与官方前端一致；与本文把它描述为「避免被拒」的下单预检不同） | [TP/SL 滑点提示](position-tpsl-slippage-warning.md) |
 | 7 | `userTwapSliceFillsByTime` | TWAP 成交 CSV 导出；表格仍显示最近 2,000 条；不发送 `aggregateByTime` | [TWAP 回归](twap-regression-tests.md) 的 Export 一节 |

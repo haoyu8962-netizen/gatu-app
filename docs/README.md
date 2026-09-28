@@ -24,9 +24,10 @@
 | 钱包身份与首次交易 | [首次交易](trading-onboarding.md)、[邮箱签名](email-trading-signing.md)、[签名机制](hyperliquid-signing.md)、[签名 ADR](adr/0002-exact-owner-trading-signers.md) |
 | 钱包调试与桌面配对 | [初始化调试](wallet-initialization-debugging.md)、[手机访问与扫码设计](mobile-phone-access-scanner-prd.md)、[设备验证清单](mobile-phone-access-device-validation.md) |
 | 充值、提现与资金 | [CCTP 充值](cctp-deposits.md)、[提现路由](withdrawals.md)、[账户概要](account-overview.md)、[Portfolio 统计](portfolio-statistics.md) |
+| Earn 借贷储备池 | [Earn](earn.md)、[ADR 0021](adr/0021-earn-borrow-lend-page.md)：数据来源、Max 与清算价公式、按钮门控、提交核验、与官方终端的偏差；未做真实钱包验收 |
 | 账户共享模型 | [账户 ADR](adr/0001-account-overview-cross-shell-model.md)；账户概要与 Portfolio 的就绪条件不同 |
 | 市场身份、路由与展示价格 | [单交易路由迁移](architecture/trade-single-route-migration.md)、[价格来源审查](price-source-audit.md)、[资产资料来源](spot-asset-information.md) |
-| 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md)（含 TWAP 成交 CSV 导出）、[未平仓量上限拦截](open-interest-cap.md)（[ADR 0021](adr/0021-open-interest-cap-advisory-check.md)）；[只减仓修复方案](reduce-only-repair-plan.md)记录已实施设计、官方有仓位表单观察与验收矩阵 |
+| 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md)（含 TWAP 成交 CSV 导出）、[未平仓量上限拦截](open-interest-cap.md)（[ADR 0023](adr/0023-open-interest-cap-advisory-check.md)）；[只减仓修复方案](reduce-only-repair-plan.md)记录已实施设计、官方有仓位表单观察与验收矩阵 |
 | 确认弹窗：展示与执行 | [确认面契约](confirmation-surfaces.md)、[ADR 0017](adr/0017-market-close-confirmed-size-ceiling.md)、[ADR 0014](adr/0014-market-close-submit-and-dismiss.md)；当前实施状态与保留例外见契约。[TP/SL 大额滑点提示](position-tpsl-slippage-warning.md)与[杠杆弹窗仓位上限](leverage-position-limit.md)是只读提示，不参与提交 |
 | HIP-3 部署者免责声明 | [行为、出口与官方对照](hip3-deployer-disclaimer.md)：交易页只能确认或「离开此市场」，四个平仓流程先显示可取消的声明，全部平仓在接受时重新生成快照 |
 | 交易通知与订单队列 | [全局操作通知规范](trading-notifications.md)、[ADR 0019](adr/0019-global-trading-notifications.md)：已实现单一 Sonner 宿主、带身份任务、批次明细与 pending 恢复；[反馈组件审查](trading-feedback-review.md)保留修复前证据与替代说明。通知不是完整交易历史，实际验证范围见[交付记录](work-memory/sessions/2026-09-21-global-sonner-notifications.md) |

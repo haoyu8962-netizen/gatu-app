@@ -11,6 +11,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const OWNER = "0x1234567890abcdef1234567890abcdef12345678";
 const SESSION_STORAGE_KEY = `hyperliquid_agent_registration_session_Mainnet_${OWNER}`;
 const FUNDS_LOCK_NAME = `hyperliquid_funds_action:Mainnet:${OWNER}`;
+const SESSION_LOCK_NAME = `hyperliquid_agent_registration_session:Mainnet:${OWNER}`;
+const AGENT_STORAGE_KEY = `hyperliquid_agent_Mainnet_${OWNER}`;
+const AGENT_PRIVATE_KEY = `0x${"0".repeat(63)}1`;
 const LEGAL_ACCESS = { acceptedTerms: true, userAllowed: true, restrictions: "n" } as const;
 
 const clients = vi.hoisted(() => {
@@ -18,7 +21,10 @@ const clients = vi.hoisted(() => {
 	const firstWithdraw = vi.fn(async () => response);
 	const secondWithdraw = vi.fn(async () => response);
 	const tokenDelegate = vi.fn(async () => response);
+	const borrowLend = vi.fn(async () => response);
 	return {
+		agentPublicKey: "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf" as const,
+		borrowLend,
 		first: { tokenDelegate, withdraw3: firstWithdraw },
 		firstWithdraw,
 		hookCallCount: 0,
@@ -26,6 +32,7 @@ const clients = vi.hoisted(() => {
 		second: { withdraw3: secondWithdraw },
 		secondWithdraw,
 		tokenDelegate,
+		trading: { borrowLend },
 	};
 });
 
@@ -43,10 +50,10 @@ vi.mock("@gatu/hl-react/hooks/useClients", () => ({
 		const user = hookIndex === 1 ? clients.second : clients.first;
 		clients.hookCallCount += 1;
 		return {
-			agentPublicKey: undefined,
+			agentPublicKey: clients.agentPublicKey,
 			info: {},
 			subscription: {},
-			trading: {},
+			trading: clients.trading,
 			user,
 			userWalletMismatch: false,
 		};
@@ -86,7 +93,7 @@ function setLockManager(manager: LockManager | undefined): void {
 	});
 }
 
-function installExclusiveLockManager(onAcquire?: () => void): void {
+function installExclusiveLockManager(onAcquire?: () => void): { isHeld: (name: string) => boolean } {
 	const active = new Set<string>();
 	const pending: PendingLockRequest[] = [];
 
@@ -128,6 +135,19 @@ function installExclusiveLockManager(onAcquire?: () => void): void {
 			});
 		},
 	} as unknown as LockManager);
+	return { isHeld: (name) => active.has(name) };
+}
+
+function holdLock(name: string): { held: Promise<void>; release: () => void } {
+	let release = () => {};
+	const held = navigator.locks.request(
+		name,
+		() =>
+			new Promise<void>((resolve) => {
+				release = resolve;
+			}),
+	);
+	return { held, release: () => release() };
 }
 
 function installNeverGrantFundsLockManager(): { getRequestCount: () => number } {
@@ -317,6 +337,74 @@ describe("useExchange funds action lock integration", () => {
 		);
 		expect(providerState.legalCheck.mock.invocationCallOrder[0]).toBeLessThan(
 			clients.firstWithdraw.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+		);
+	});
+
+	it("runs an opted-in trading funds guard after fresh legal access while holding the funds and session locks", async () => {
+		window.localStorage.setItem(
+			AGENT_STORAGE_KEY,
+			JSON.stringify({
+				privateKey: AGENT_PRIVATE_KEY,
+				publicKey: clients.agentPublicKey,
+				source: "local-registration",
+			}),
+		);
+		const locks = installExclusiveLockManager();
+		providerState.enforceLegalActions = true;
+		const releaseLegalCheck = deferLegalCheck();
+		const observed: Array<{ fundsLock: boolean; sessionLock: boolean; legalChecks: number }> = [];
+		const guard = vi.fn(async () => {
+			observed.push({
+				fundsLock: locks.isHeld(FUNDS_LOCK_NAME),
+				sessionLock: locks.isHeld(SESSION_LOCK_NAME),
+				legalChecks: providerState.legalCheck.mock.calls.length,
+			});
+		});
+		let borrowLend: ((params: ExchangeParams<"borrowLend">) => Promise<unknown>) | null = null;
+		function TradingProbe() {
+			borrowLend = useExchange("borrowLend", { preExecutionGuard: guard }).mutateAsync;
+			return null;
+		}
+		act(() => {
+			root.render(
+				<QueryClientProvider client={queryClient}>
+					<TradingProbe />
+				</QueryClientProvider>,
+			);
+		});
+		const otherTab = holdLock(FUNDS_LOCK_NAME);
+		let request: Promise<unknown> | undefined;
+
+		await act(async () => {
+			request = borrowLend?.({ operation: "supply", token: 0, amount: "10" });
+			await flushMicrotasks();
+		});
+		expect(providerState.legalCheck).not.toHaveBeenCalled();
+		expect(guard).not.toHaveBeenCalled();
+
+		const session = holdLock(SESSION_LOCK_NAME);
+		await act(async () => {
+			otherTab.release();
+			await otherTab.held;
+			await waitUntil(() => providerState.legalCheck.mock.calls.length === 1);
+		});
+		expect(guard).not.toHaveBeenCalled();
+
+		await act(async () => {
+			releaseLegalCheck();
+			await flushMicrotasks();
+		});
+		expect(guard).not.toHaveBeenCalled();
+		expect(clients.borrowLend).not.toHaveBeenCalled();
+
+		await act(async () => {
+			session.release();
+			await session.held;
+			await expect(request).resolves.toEqual(clients.response);
+		});
+		expect(observed).toEqual([{ fundsLock: true, sessionLock: true, legalChecks: 1 }]);
+		expect(guard.mock.invocationCallOrder[0]).toBeLessThan(
+			clients.borrowLend.mock.invocationCallOrder[0] ?? Number.NEGATIVE_INFINITY,
 		);
 	});
 

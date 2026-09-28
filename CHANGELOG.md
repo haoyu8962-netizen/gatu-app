@@ -8,6 +8,16 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Added
 
+- Earn is live. The new `/earn` page lists Hyperliquid's borrow and lend reserves with their LTV,
+  APY, oracle price and totals, your supplied and borrowed amounts, interest and liquidation
+  prices, plus your health factor, and lets you supply, withdraw, borrow and repay. Max follows the
+  official terminal's rules; for supplies and borrows the amount you see is the most that is sent,
+  withdraw-all and repay-all with Max close the whole position including interest accrued until it
+  executes, amounts that would leave less than $1 supplied are blocked with an explanation, and the
+  request stops if your balances changed before it was submitted. Portfolio Margin accounts see the
+  automatic-mode explanation with manual actions disabled. Earn is now a regular navigation entry on desktop and
+  in the mobile menu; between 1101px and 1150px the lower navigation entries move into More so
+  French labels still fit.
 - A Funding view next to the desktop chart and a fourth Funding tab in the mobile Markets view
   show a perpetual or HIP-3 market's funding rate history with its cumulative rate, over 1h
   buckets for 7 days, 8h buckets for 30 days (default) or daily buckets for 90 days. It loads
@@ -22,7 +32,7 @@ changes, not evidence that a build has been deployed or accepted on real devices
   the submission guard checks it again; market, trigger-market, TWAP and Scale orders stay
   available. HIP-3 asset information shows the market's open-interest cap. No reachable market is
   capped today, so this has only test evidence. See [open-interest cap](docs/open-interest-cap.md)
-  and [ADR 0021](docs/adr/0021-open-interest-cap-advisory-check.md).
+  and [ADR 0023](docs/adr/0023-open-interest-cap-advisory-check.md).
 - Manage TP/SL warns when the position is large enough that a market TP/SL may slip heavily,
   using Hyperliquid's maximum market order value for the position's current leverage; submission
   is unchanged. See [TP/SL slippage warning](docs/position-tpsl-slippage-warning.md).
