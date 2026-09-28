@@ -891,6 +891,10 @@ msgstr "授权和移除都需要匹配的主钱包。"
 #~ msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
 #~ msgstr "在此桌面授权一个交易密钥，并仅通过二维码将其转移到手机。"
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve access"
+msgstr "授权"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
 msgstr "在钱包中批准"
@@ -898,6 +902,10 @@ msgstr "在钱包中批准"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approve in wallet..."
 #~ msgstr "在钱包中授权…"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve mobile trading access"
+msgstr "授权移动交易权限"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve mobile trading key"
@@ -7186,6 +7194,10 @@ msgstr "重试前请核对进行中的 TWAP 订单"
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "Review again"
 #~ msgstr "重新检查"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Review and approve this Hyperliquid Agent permission."
+msgstr "请核对并授权此 Hyperliquid Agent 权限。"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Review and import the desktop-approved trading key. No phone wallet is required."

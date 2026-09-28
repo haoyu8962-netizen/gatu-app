@@ -891,6 +891,10 @@ msgstr "يتطلب التفويض والإزالة المحفظة الرئيسي
 #~ msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
 #~ msgstr ""
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve access"
+msgstr "الموافقة على الوصول"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
 msgstr "وافق في المحفظة"
@@ -898,6 +902,10 @@ msgstr "وافق في المحفظة"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approve in wallet..."
 #~ msgstr "وافق في المحفظة..."
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve mobile trading access"
+msgstr "الموافقة على الوصول إلى التداول عبر الهاتف"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve mobile trading key"
@@ -7186,6 +7194,10 @@ msgstr "راجع أوامر TWAP النشطة قبل إعادة المحاولة
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "Review again"
 #~ msgstr "المراجعة مرة أخرى"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Review and approve this Hyperliquid Agent permission."
+msgstr "راجع إذن وكيل Hyperliquid هذا ووافق عليه."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Review and import the desktop-approved trading key. No phone wallet is required."

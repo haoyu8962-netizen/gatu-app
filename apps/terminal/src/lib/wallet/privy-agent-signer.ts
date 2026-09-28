@@ -18,6 +18,13 @@ export type PrivySignTypedData = (
 	options?: PrivySignTypedDataOptions,
 ) => Promise<{ signature: string }>;
 
+/** Translated text for Privy's own confirmation, shown only when the application did not review the approval. */
+export interface PrivyApprovalReviewCopy {
+	title: string;
+	description: string;
+	buttonText: string;
+}
+
 interface CreatePrivyAgentSignerOptions extends AgentApprovalOptions {
 	expectedAddress: `0x${string}`;
 	activeAddress: `0x${string}` | undefined;
@@ -25,6 +32,7 @@ interface CreatePrivyAgentSignerOptions extends AgentApprovalOptions {
 	chainId: number;
 	signTypedData: PrivySignTypedData;
 	beforeSubmit: () => void | Promise<void>;
+	reviewCopy: PrivyApprovalReviewCopy;
 }
 
 interface HyperliquidTypedData {
@@ -52,6 +60,7 @@ export function createPrivyAgentSigner({
 	chainId,
 	signTypedData,
 	beforeSubmit,
+	reviewCopy,
 }: CreatePrivyAgentSignerOptions) {
 	if (
 		!hasSameWalletAddress(expectedAddress, activeAddress) ||
@@ -72,9 +81,7 @@ export function createPrivyAgentSigner({
 						? { showWalletUIs: false }
 						: {
 								showWalletUIs: true,
-								title: "Approve mobile trading access",
-								description: "Review and approve this Hyperliquid Agent permission.",
-								buttonText: "Approve access",
+								...reviewCopy,
 								isCancellable: true,
 							},
 			});

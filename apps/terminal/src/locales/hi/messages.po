@@ -891,6 +891,10 @@ msgstr "स्वीकृति और हटाने के लिए मे�
 #~ msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
 #~ msgstr ""
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve access"
+msgstr "पहुँच स्वीकृत करें"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
 msgstr "वॉलेट में स्वीकृत करें"
@@ -898,6 +902,10 @@ msgstr "वॉलेट में स्वीकृत करें"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approve in wallet..."
 #~ msgstr "वॉलेट में स्वीकृत करें..."
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve mobile trading access"
+msgstr "मोबाइल ट्रेडिंग पहुँच स्वीकृत करें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve mobile trading key"
@@ -7186,6 +7194,10 @@ msgstr "दोबारा प्रयास से पहले सक्र�
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "Review again"
 #~ msgstr "फिर से समीक्षा करें"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Review and approve this Hyperliquid Agent permission."
+msgstr "इस Hyperliquid Agent अनुमति की समीक्षा करें और स्वीकृत करें।"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Review and import the desktop-approved trading key. No phone wallet is required."

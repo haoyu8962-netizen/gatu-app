@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
@@ -21,6 +22,10 @@ interface Deferred<T> {
 
 interface TestTransport {
 	request: (endpoint: "info" | "exchange", payload: unknown, signal?: AbortSignal) => Promise<unknown>;
+}
+
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
 }
 
 function createDeferred<T>(): Deferred<T> {
@@ -228,6 +233,36 @@ describe("useExplicitAgentApproval", () => {
 
 		expect(testState.createPrivyAgentSigner).toHaveBeenCalledWith(
 			expect.objectContaining({ applicationReview: "confirmed" }),
+		);
+	});
+
+	it("translates the embedded-wallet confirmation in the language active at approval time", async () => {
+		const hook = await renderApprovalHook();
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: {
+				[messageId("Approve mobile trading access")]: "授权移动交易权限",
+				[messageId("Review and approve this Hyperliquid Agent permission.")]: "请核对并授权此 Hyperliquid Agent 权限。",
+				[messageId("Approve access")]: "授权",
+			},
+		});
+
+		try {
+			await act(async () => {
+				await hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" });
+			});
+		} finally {
+			i18n.loadAndActivate({ locale: "en", messages: {} });
+		}
+
+		expect(testState.createPrivyAgentSigner).toHaveBeenCalledWith(
+			expect.objectContaining({
+				reviewCopy: {
+					title: "授权移动交易权限",
+					description: "请核对并授权此 Hyperliquid Agent 权限。",
+					buttonText: "授权",
+				},
+			}),
 		);
 	});
 

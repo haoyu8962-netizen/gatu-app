@@ -891,6 +891,10 @@ msgstr "Approval and removal require the matching master wallet."
 #~ msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
 #~ msgstr "Approve a trading key on this desktop and move it to your phone only through the QR code."
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve access"
+msgstr "Approve access"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
 msgstr "Approve in wallet"
@@ -898,6 +902,10 @@ msgstr "Approve in wallet"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approve in wallet..."
 #~ msgstr "Approve in wallet..."
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve mobile trading access"
+msgstr "Approve mobile trading access"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve mobile trading key"
@@ -7186,6 +7194,10 @@ msgstr "Review active TWAP orders before retrying"
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "Review again"
 #~ msgstr "Review again"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Review and approve this Hyperliquid Agent permission."
+msgstr "Review and approve this Hyperliquid Agent permission."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Review and import the desktop-approved trading key. No phone wallet is required."

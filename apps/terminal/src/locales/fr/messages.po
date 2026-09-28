@@ -891,6 +891,10 @@ msgstr "L’autorisation et la suppression nécessitent le portefeuille principa
 #~ msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
 #~ msgstr ""
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve access"
+msgstr "Autoriser l’accès"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
 msgstr "Approuver dans le portefeuille"
@@ -898,6 +902,10 @@ msgstr "Approuver dans le portefeuille"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approve in wallet..."
 #~ msgstr "Approuver dans le portefeuille..."
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve mobile trading access"
+msgstr "Autoriser l’accès au trading mobile"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve mobile trading key"
@@ -7186,6 +7194,10 @@ msgstr "Vérifiez les TWAP actifs avant de réessayer"
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "Review again"
 #~ msgstr "Examiner à nouveau"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Review and approve this Hyperliquid Agent permission."
+msgstr "Vérifiez et autorisez cette permission d’agent Hyperliquid."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Review and import the desktop-approved trading key. No phone wallet is required."

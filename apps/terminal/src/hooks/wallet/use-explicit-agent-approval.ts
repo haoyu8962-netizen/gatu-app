@@ -1,3 +1,4 @@
+import { i18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import { useSignTypedData } from "@privy-io/react-auth";
@@ -200,6 +201,11 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 						chainId: env === "Testnet" ? arbitrumSepolia.id : arbitrum.id,
 						signTypedData,
 						beforeSubmit,
+						reviewCopy: {
+							title: i18n._(msg`Approve mobile trading access`),
+							description: i18n._(msg`Review and approve this Hyperliquid Agent permission.`),
+							buttonText: i18n._(msg`Approve access`),
+						},
 					});
 				} else {
 					if (!walletClient) throw createActionError("wallet-mismatch");
