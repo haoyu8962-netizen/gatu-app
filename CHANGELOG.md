@@ -350,6 +350,31 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Error messages follow the interface language. The order and cancellation rejections that
+  Hyperliquid documents (such as tick size, minimum order value, insufficient margin, reduce-only,
+  post-only, open-interest caps, oracle price limits and maximum position), not having enough cross
+  margin to decrease leverage, an expired action and a required first deposit are translated and
+  keep the amounts and prices the exchange reported. As on the official terminal, an order rejected
+  for insufficient margin while the account holds an opposite position suggests Reduce Only. Any
+  other exchange message is still shown word for word, but no longer cut to its first line or 100
+  characters, and a rejected Market Close or Close All no longer repeats each market's message on
+  its summary line. Wallet, signing, network and other failures that do not come from the exchange
+  show a translated explanation instead of English technical text. Trading notifications and dialog
+  errors that are already on screen change language with the page; short confirmations that close
+  by themselves keep the language they opened in. See
+  [ADR 0024](docs/adr/0024-translate-action-errors-at-render.md).
+- Vault action errors, staking amount errors and the API wallet name check, expiry and status labels
+  are no longer blank. The helpers that built them returned empty text in every language.
+- On phones, a leverage change made in the leverage drawer is reported under Adjust leverage. Its
+  notifications were titled Margin mode even when the margin mode did not change.
+- An order that the exchange rejected or canceled after it was submitted shows the reason in words,
+  such as a rejection for insufficient margin, instead of a status code such as
+  `perpMarginRejected`.
+- The chart reports a translated reason when market history cannot be loaded instead of the
+  network error text.
+- The Previous, Next and page labels of the history tables, the Clear search button, the
+  screen-reader names of the notification region and its close buttons, the embedded wallet's Agent
+  approval prompt, the LI.FI credit and the bridge quote countdown are translated.
 - The Docs page no longer shows its placeholder table of unfinished guide links, whose entries all
   pointed nowhere, or the note telling authors to replace them.
 - The Quick Links on the Support page, and its other link to Troubleshooting, now jump to their
