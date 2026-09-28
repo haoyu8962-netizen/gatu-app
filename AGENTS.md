@@ -287,6 +287,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trade-size-slider.test.tsx \
   src/lib/tests/trade-size-slider-a11y.test.tsx \
   src/lib/tests/leverage-slider.test.tsx \
+  src/lib/tests/leverage-editor.test.tsx \
+  src/lib/tests/leverage-dialog-risk-warning.test.tsx \
   src/lib/tests/use-size-slider-interaction.test.tsx \
   src/lib/tests/size-percent-input.test.tsx
 

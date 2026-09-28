@@ -483,7 +483,6 @@ function MarginModeForm({
 					<LeverageEditor
 						key={maxLeverage}
 						value={displayLeverage}
-						riskValue={leverageDraft ?? canonicalLeverage}
 						max={maxLeverage}
 						disabled={isUpdating || !sessionOpen}
 						onChange={handleLeverageChange}

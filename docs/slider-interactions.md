@@ -188,6 +188,17 @@ measured height of its size message row for the whole gesture and applies the cu
 validation result when the gesture ends (`docs/order-entry-surface-parity.md`). Holding the row is presentation
 only: submit availability and execution checks keep using the real validation result.
 
+The shared `LeverageEditor` (the desktop Adjust leverage dialog and the mobile leverage sheet)
+does the same for its high-leverage warning below the leverage field. The desktop dialog is
+vertically centred and the sheet is anchored to the bottom, so a warning that appeared or
+disappeared when a drag crossed 10x moved the slider up or down: by 34.5px in the desktop dialog
+and 69px in the 375px sheet, measured on 2026-09-27 with protocol-injected mouse events in the
+desktop app's browser pane. The editor keeps the warning's presence at the gesture's start and
+applies the released value at the gesture end. The warning text is fixed, and a width change
+cancels the gesture, so holding its presence also holds its height. Typed values, arrow keys and
+native range input are not gestures and update the warning at once. The warning has no part in
+Confirm, which keeps using the ref lock and the committed pending leverage.
+
 ## Quantity and execution boundaries
 
 Quantity arithmetic stays in domain modules and uses Big.js. Multiply the precise
@@ -244,6 +255,10 @@ Regression coverage includes:
   dynamic full-position protection, zero rejection, identity changes, draft recovery,
   and blocking confirmation during a gesture.
 - Slippage Confirm/Cancel/persistence and unchanged portfolio chart navigation.
+- Held layout under a gesture: the desktop size message row (`trade-size-error-a11y`) and
+  the high-leverage warning, which neither mounts nor unmounts while a drag crosses 10x in
+  either direction or is cancelled, in the editor (`leverage-editor`) and in the real desktop
+  dialog and mobile sheet driven through the real slider (`leverage-dialog-risk-warning`).
 - Real Chromium pointer/touch interactions, 390/1000/1001/1333/1920px layouts in both
   themes, exact geometry, no horizontal clipping, and the existing all-order-form
   desktop layout suite.
