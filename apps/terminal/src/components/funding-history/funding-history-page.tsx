@@ -413,6 +413,9 @@ export function FundingHistoryPage({ address }: Props) {
 								navigationLabel={t`Funding payments pagination`}
 								previousPageLabel={t`Previous funding payments page`}
 								nextPageLabel={t`Next funding payments page`}
+								previousText={t`Previous`}
+								nextText={t`Next`}
+								getPageLabel={(page) => t`Page ${page}`}
 								mobilePageSummary={t`${pagination.currentPage} of ${pagination.totalPages}`}
 								className="min-w-0 flex-1 min-[1001px]:justify-end min-[1001px]:gap-8"
 							/>

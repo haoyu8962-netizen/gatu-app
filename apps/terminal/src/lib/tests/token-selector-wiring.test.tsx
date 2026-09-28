@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import type { PerpConciseAnnotationsResponse } from "@nktkas/hyperliquid";
@@ -509,6 +510,58 @@ describe("token selector wiring", () => {
 		expect(closeButton?.className).toContain("size-11");
 		act(() => closeButton?.click());
 		expect(onClose).toHaveBeenCalledTimes(1);
+	});
+
+	it("names the market search clear button in the active language", () => {
+		const table = {
+			getHeaderGroups: () => [{ headers: [] }],
+		} as unknown as ReturnType<typeof useTokenSelector>["table"];
+
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<TokenSelectorContent
+						selectedMarket={undefined}
+						scope="all"
+						subcategory="all"
+						subcategories={[]}
+						search="btc"
+						setSearch={NOOP}
+						isLoading={false}
+						hasClassificationError={false}
+						onRetryClassifications={NOOP}
+						isFavorite={() => false}
+						sorting={[]}
+						handleSort={NOOP}
+						handleSelect={NOOP}
+						handleSubcategorySelect={NOOP}
+						handleScopeSelect={NOOP}
+						toggleFavorite={NOOP}
+						table={table}
+						rows={[]}
+						virtualItems={[]}
+						virtualTotalSize={0}
+						containerRef={{ current: null }}
+						filteredMarkets={[]}
+						highlightedIndex={-1}
+						headingId="market-search-clear-label"
+					/>
+				</I18nProvider>,
+			);
+		});
+		const clearButton = container.querySelector<HTMLButtonElement>('button[aria-label="Clear search"]');
+		expect(clearButton).not.toBeNull();
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: {
+					[createHash("sha256").update("Clear search\x1f").digest("base64").slice(0, 6)]: "清除搜索",
+				},
+			}),
+		);
+
+		expect(container.querySelector('button[aria-label="清除搜索"]')).toBe(clearButton);
 	});
 
 	it("routes list navigation keys only from search and uses the official scope labels", () => {

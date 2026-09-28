@@ -184,6 +184,7 @@ export function TokenSelectorContent({
 						onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
 						onKeyDown={handleListKeyDown}
 						onClear={() => setSearch("")}
+						clearLabel={t`Clear search`}
 						size={mobile ? "md" : "sm"}
 						className={cn(
 							"min-w-0 flex-1 [&>div]:rounded-[10px] [&>div]:border-trading-panel-stroke-input [&>div]:bg-transparent focus-within:[&>div]:border-trading-panel-focus",

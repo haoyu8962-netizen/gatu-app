@@ -5,7 +5,7 @@ import { i18n } from "@lingui/core";
 import { act, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FUNDING_COMPARISON_PERIOD_OPTIONS } from "@/config/funding-comparison";
+import { FUNDING_COMPARISON_COLUMN_LABELS, FUNDING_COMPARISON_PERIOD_OPTIONS } from "@/config/funding-comparison";
 import {
 	buildFundingComparisonRows,
 	deriveFundingComparisonPage,
@@ -264,6 +264,8 @@ describe("FundingComparisonView", () => {
 		const input = container.querySelector<HTMLInputElement>('input[aria-label="Search markets"]');
 		expect(input?.value).toBe("BTC");
 		expect(buttonByName(container, "Funding period").textContent).toContain("Day");
+		expect(buttonByName(container, "Clear search")).toBeDefined();
+		expect(container.querySelector("thead th")?.textContent?.trim()).toBe("Market");
 
 		act(() =>
 			i18n.loadAndActivate({
@@ -272,6 +274,8 @@ describe("FundingComparisonView", () => {
 					[messageId("Funding Comparison")]: "资金费率对比",
 					[messageId("Search markets")]: "搜索市场",
 					[messageId("Funding period")]: "资金费率周期",
+					[messageId("Clear search")]: "清除搜索",
+					[FUNDING_COMPARISON_COLUMN_LABELS.market.id]: "市场",
 					[dayLabel.id]: "每日",
 				},
 			}),
@@ -283,5 +287,7 @@ describe("FundingComparisonView", () => {
 		expect(translatedInput).toBe(input);
 		expect(translatedInput?.value).toBe("BTC");
 		expect(buttonByName(container, "资金费率周期").textContent).toContain("每日");
+		expect(buttonByName(container, "清除搜索")).toBeDefined();
+		expect(container.querySelector("thead th")?.textContent?.trim()).toBe("市场");
 	});
 });

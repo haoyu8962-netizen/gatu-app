@@ -38,6 +38,7 @@ interface SearchInputProps
 	helperText?: string;
 	errorMessage?: string;
 	inputClassName?: string;
+	clearLabel?: string;
 	onClear?: () => void;
 }
 
@@ -74,6 +75,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 			value,
 			defaultValue,
 			onChange,
+			clearLabel = "Clear search",
 			onClear,
 			id,
 			...props
@@ -141,7 +143,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 							type="button"
 							onClick={handleClear}
 							tabIndex={-1}
-							aria-label="Clear search"
+							aria-label={clearLabel}
 							className="relative shrink-0 cursor-pointer text-icon hover:text-fg transition-colors duration-150 motion-reduce:transition-none after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11"
 						>
 							<XIcon size={iconSize} weight="bold" />

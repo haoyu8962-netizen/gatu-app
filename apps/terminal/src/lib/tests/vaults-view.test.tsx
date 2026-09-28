@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { act } from "react";
@@ -297,6 +298,30 @@ describe("Vault views", () => {
 		expect(pagination?.textContent).toContain("2 of 2");
 		expect(container.textContent).toContain("Vault 21");
 		expect(container.textContent).not.toContain("Vault 1");
+	});
+
+	it("names the Vault search clear button in the active language", () => {
+		render(
+			<VaultsList state="normal" rows={[createListRow()]} account={{ status: "disconnected" }} onRetry={vi.fn()} />,
+		);
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Search vaults"]');
+		if (!input) throw new Error("Missing Vault search");
+		act(() => {
+			Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, "alpha");
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+		const clearButton = container.querySelector('button[aria-label="Clear search"]');
+		expect(clearButton).not.toBeNull();
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [createHash("sha256").update("Clear search\x1f").digest("base64").slice(0, 6)]: "清除搜索" },
+			}),
+		);
+
+		expect(container.querySelector('button[aria-label="清除搜索"]')).toBe(clearButton);
+		expect(input.value).toBe("alpha");
 	});
 
 	function render(element: React.ReactNode) {
