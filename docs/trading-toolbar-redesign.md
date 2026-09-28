@@ -163,6 +163,8 @@ The toolbar messages include:
 
 `pnpm --filter @gatu/terminal i18n:extract` and `i18n:compile` are part of the verification pass. English source messages and Chinese translations are registered, including close-all lifecycle/error states, the disabled TWAP explanation, margin-mode filtering, and PnL-share/Testnet states. Existing untranslated Arabic, Spanish, French, and Hindi entries continue to use the project's English fallback rather than hard-coded UI text.
 
+Correction (2026-09-28): English fallback is not a standing policy for these maintained languages. The Arabic, Spanish, French and Hindi strings from this work that were still untranslated, including the mobile order book `Total ({sizeToken})` header and the TWAP trigger hints, are now translated. On that date 18 entries per language remained untranslated, mostly from the mobile pairing flow.
+
 ## Production decisions
 
 - The TWAP pause control remains present but disabled with an explanation because the exchange has no pause/resume action.
