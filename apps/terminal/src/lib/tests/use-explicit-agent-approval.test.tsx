@@ -511,9 +511,7 @@ describe("useExplicitAgentApproval", () => {
 		let rejection: unknown;
 
 		await act(async () => {
-			rejection = await hook
-				.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" })
-				.catch((error: unknown) => error);
+			rejection = await hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" }).catch((error: unknown) => error);
 		});
 
 		expect(rejection).toBeInstanceOf(LocalizedActionError);
