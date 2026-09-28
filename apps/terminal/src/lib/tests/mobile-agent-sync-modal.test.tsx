@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 
 import { i18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { act, createElement, Fragment, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createActionError } from "@/lib/errors/action-error";
 import { createI18nRoot } from "./harness/react";
 
 const NOW_MS = 1_779_364_227_000;
@@ -12,6 +14,7 @@ const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 const AGENT_ADDRESS = "0x2222222222222222222222222222222222222222";
 const AGENT_VALID_UNTIL_MS = NOW_MS + 30 * 24 * 60 * 60 * 1000;
 const AGENT_NAME = `Mobile valid_until ${AGENT_VALID_UNTIL_MS}`;
+const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the account and try again.`;
 
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
@@ -189,6 +192,7 @@ describe("MobileAgentSyncModal", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		vi.clearAllMocks();
 		vi.useRealTimers();
 	});
@@ -252,6 +256,26 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.textContent).not.toContain("...");
 		act(() => button.click());
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
+	});
+
+	it("shows an approval failure in the active language and follows a language switch", async () => {
+		testState.approveAgent.mockRejectedValueOnce(createActionError("identity-changed"));
+		await renderModal();
+		act(() => getButton(container, "Approve mobile trading key").click());
+		await flushAsyncWork();
+
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+			"The active wallet or network changed. Review the account and try again.",
+		);
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [IDENTITY_CHANGED.id]: "当前钱包或网络已变化。请检查账户后重试。" },
+			}),
+		);
+
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("当前钱包或网络已变化。请检查账户后重试。");
 	});
 
 	it("shows the signing failure and lets the user approve again", async () => {

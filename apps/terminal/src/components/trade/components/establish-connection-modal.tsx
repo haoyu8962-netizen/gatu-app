@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatExchangeActionError } from "@/lib/errors/format";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import {
 	type AgentMissingReason,
 	type AgentRegistrationFailurePhase,
@@ -112,7 +113,7 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 			await resetConnection();
 			setResetConfirmationIdentity(null);
 		} catch (resetFailure) {
-			setResetError(resetFailure instanceof Error ? resetFailure : new Error("Trading connection reset failed"));
+			setResetError(resetFailure instanceof Error ? resetFailure : new LocalizedActionError(resetFailureMessage));
 		} finally {
 			setIsResetting(false);
 		}

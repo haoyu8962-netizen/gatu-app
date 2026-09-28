@@ -1,14 +1,20 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ReferralActionStatusUnknownError, useReferralActions } from "@/hooks/trade/use-referral-actions";
+import { classifyActionErrorOr, formatActionFailure } from "@/lib/errors/action-error";
 import type { ReferralData } from "@/lib/trade/referral";
+import type { Translate } from "@/lib/translate";
 
 const OWNER = "0x1111111111111111111111111111111111111111" as const;
 const OTHER_OWNER = "0x2222222222222222222222222222222222222222" as const;
+const GEO_BLOCKED = msg`Referral actions are not available in your region. This referral request was not submitted.`;
+const translate: Translate = (descriptor) => i18n._(descriptor);
 
 const testState = vi.hoisted(() => ({
 	claimRewards: vi.fn(),
@@ -150,6 +156,7 @@ describe("useReferralActions", () => {
 		vi.useRealTimers();
 		queryClient.clear();
 		container.remove();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 	});
 
 	function renderHook(refetchReferral: () => Promise<ReferralData>) {
@@ -238,10 +245,34 @@ describe("useReferralActions", () => {
 		const hook = renderHook(refetchReferral);
 
 		await act(async () => {
-			await expect(hook.submit("apply", "GATU")).rejects.toThrow("Referral location eligibility could not be verified");
+			await expect(hook.submit("apply", "GATU")).rejects.toThrow(
+				"Unable to verify regional availability. This referral request was not submitted.",
+			);
 		});
 
 		expect(refetchReferral).toHaveBeenCalledOnce();
+		expect(testState.setReferrer).not.toHaveBeenCalled();
+	});
+
+	it("reports a blocked location in the language shown when the failure is displayed", async () => {
+		testState.geoDecision = { checkedAt: Date.now(), country: "US", reason: "jurisdiction", status: "blocked" };
+		const hook = renderHook(vi.fn().mockResolvedValue(createReferralData()));
+		let rejection: unknown;
+
+		await act(async () => {
+			rejection = await hook.submit("apply", "GATU").catch((error: unknown) => error);
+		});
+
+		const failure = classifyActionErrorOr(rejection, msg`Referral request could not be completed.`);
+		expect(failure).toEqual(GEO_BLOCKED);
+		expect(formatActionFailure(failure, translate)).toBe(
+			"Referral actions are not available in your region. This referral request was not submitted.",
+		);
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: { [GEO_BLOCKED.id]: "你所在的地区无法使用推荐操作，此推荐请求未提交。" },
+		});
+		expect(formatActionFailure(failure, translate)).toBe("你所在的地区无法使用推荐操作，此推荐请求未提交。");
 		expect(testState.setReferrer).not.toHaveBeenCalled();
 	});
 
@@ -257,7 +288,7 @@ describe("useReferralActions", () => {
 
 		await act(async () => {
 			await expect(hook.submit("apply", "GATU")).rejects.toThrow(
-				"Referral location eligibility expired before the request could be signed",
+				"The regional availability check expired before signing. This referral request was not submitted.",
 			);
 		});
 

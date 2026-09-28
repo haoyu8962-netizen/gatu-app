@@ -1,14 +1,18 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
+import { formatTransferError } from "@/lib/errors/format";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
 const AGENT = "0x2222222222222222222222222222222222222222";
 const OTHER_OWNER = "0x3333333333333333333333333333333333333333";
+const SESSION_CHANGED = "The active wallet or network changed. Review the account and try again.";
 
 interface Deferred<T> {
 	promise: Promise<T>;
@@ -265,9 +269,7 @@ describe("useExplicitAgentApproval", () => {
 		const params = { agentAddress: AGENT, agentName: "Mobile" };
 
 		await act(async () => {
-			await expect(hook.mutateAsync(params, { registrationPublicKey: AGENT })).rejects.toThrow(
-				"The wallet session changed before mobile access approval.",
-			);
+			await expect(hook.mutateAsync(params, { registrationPublicKey: AGENT })).rejects.toThrow(SESSION_CHANGED);
 		});
 
 		expect(testState.captureRegistrationLease).toHaveBeenCalledWith("Mainnet", OWNER, {
@@ -318,7 +320,7 @@ describe("useExplicitAgentApproval", () => {
 		await act(async () => {
 			await expect(
 				hook.mutateAsync({ agentAddress: AGENT, agentName: "gatu" }, { registrationPublicKey: AGENT }),
-			).rejects.toThrow("The wallet session changed before mobile access approval.");
+			).rejects.toThrow(SESSION_CHANGED);
 		});
 		expect(testState.transportRequest).not.toHaveBeenCalled();
 	});
@@ -344,7 +346,7 @@ describe("useExplicitAgentApproval", () => {
 		legal.resolve({});
 
 		await act(async () => {
-			await expect(request).rejects.toThrow("The wallet session changed before mobile access approval.");
+			await expect(request).rejects.toThrow(SESSION_CHANGED);
 		});
 		expect(testState.captureRegistrationLease).not.toHaveBeenCalled();
 		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
@@ -469,7 +471,7 @@ describe("useExplicitAgentApproval", () => {
 		signed.resolve();
 
 		await act(async () => {
-			await expect(request).rejects.toThrow("The wallet session changed before mobile access approval.");
+			await expect(request).rejects.toThrow(SESSION_CHANGED);
 		});
 		expect(testState.isRegistrationLeaseCurrent).not.toHaveBeenCalled();
 	});
@@ -496,11 +498,30 @@ describe("useExplicitAgentApproval", () => {
 		signed.resolve();
 
 		await act(async () => {
-			await expect(request).rejects.toThrow("The wallet session changed before mobile access approval.");
+			await expect(request).rejects.toThrow(SESSION_CHANGED);
 		});
 		expect(testState.isRegistrationLeaseCurrent).toHaveBeenCalledWith(
 			expect.objectContaining({ epoch: expect.objectContaining({ env: "Mainnet", owner: OWNER }) }),
 		);
+	});
+
+	it("rejects without wallet access with a reason that renders in the active language", async () => {
+		testState.hasWalletAccess = false;
+		const hook = await renderApprovalHook();
+		let rejection: unknown;
+
+		await act(async () => {
+			rejection = await hook
+				.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" })
+				.catch((error: unknown) => error);
+		});
+
+		expect(rejection).toBeInstanceOf(LocalizedActionError);
+		expect(formatTransferError(rejection as Error, (descriptor) => i18n._(descriptor))).toBe(
+			"Wallet connection failed. Unlock your wallet, approve the connection, then retry.",
+		);
+		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
+		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
 	});
 
 	it("does not create a signer or dispatch when already aborted", async () => {
@@ -570,9 +591,7 @@ describe("useExplicitAgentApproval", () => {
 		const hook = await renderApprovalHook();
 
 		await act(async () => {
-			await expect(hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" })).rejects.toThrow(
-				"The wallet session changed before mobile access approval.",
-			);
+			await expect(hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" })).rejects.toThrow(SESSION_CHANGED);
 		});
 
 		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
@@ -604,7 +623,7 @@ describe("useExplicitAgentApproval", () => {
 		start.resolve({ status: "invalidated" });
 
 		await act(async () => {
-			await expect(request).rejects.toThrow("The wallet session changed before mobile access approval.");
+			await expect(request).rejects.toThrow(SESSION_CHANGED);
 		});
 		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
 		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
@@ -635,7 +654,7 @@ describe("useExplicitAgentApproval", () => {
 		signed.resolve();
 
 		await act(async () => {
-			await expect(request).rejects.toThrow("The wallet session changed before mobile access approval.");
+			await expect(request).rejects.toThrow(SESSION_CHANGED);
 		});
 		expect(testState.isRegistrationLeaseCurrent).not.toHaveBeenCalled();
 	});
@@ -660,7 +679,7 @@ describe("useExplicitAgentApproval", () => {
 		signed.resolve();
 
 		await act(async () => {
-			await expect(request).rejects.toThrow("The wallet session changed before mobile access approval.");
+			await expect(request).rejects.toThrow(SESSION_CHANGED);
 		});
 		expect(testState.isRegistrationLeaseCurrent).toHaveBeenCalledWith(
 			expect.objectContaining({ epoch: expect.objectContaining({ env: "Mainnet", owner: OWNER }) }),

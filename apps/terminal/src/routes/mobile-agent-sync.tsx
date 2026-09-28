@@ -7,7 +7,7 @@ import {
 } from "@gatu/hl-react";
 import { createMobileAgentWalletRecord, verifyExpectedMobileAgent } from "@gatu/hl-react/signing/mobile-agent";
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckCircleIcon, DeviceMobileIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -25,6 +25,7 @@ import {
 	parseMobileSyncFragment,
 } from "@/lib/mobile-sync/sync-core";
 import { buildPageHead } from "@/lib/seo";
+import type { Translate } from "@/lib/translate";
 
 export const Route = createFileRoute("/mobile-agent-sync")({
 	ssr: false,
@@ -67,7 +68,7 @@ function takeLocationFragment(): string {
 }
 
 function MobileAgentSyncRoute() {
-	const { i18n } = useLingui();
+	const { i18n, t } = useLingui();
 	const { env, info } = useHyperliquid();
 	const [loadState, setLoadState] = useState<LoadState>({ state: "empty" });
 	const [status, setStatus] = useState<ImportStatus>({ state: "idle", error: null });
@@ -135,8 +136,10 @@ function MobileAgentSyncRoute() {
 		}
 	}
 
-	const loadError = loadState.state === "error" ? getLoadErrorMessage(loadState.code) : null;
-	const importError = status.state === "idle" && status.error ? getImportErrorMessage(status.error) : null;
+	const loadError =
+		loadState.state === "error" ? getLoadErrorMessage(loadState.code, (descriptor) => t(descriptor)) : null;
+	const importError =
+		status.state === "idle" && status.error ? getImportErrorMessage(status.error, (descriptor) => t(descriptor)) : null;
 	const isImporting = status.state === "importing";
 
 	return (
@@ -226,34 +229,36 @@ async function storeImportedAgent(payload: MobileAgentSyncPayload) {
 	}
 }
 
-function getLoadErrorMessage(code: LoadErrorCode): string {
+function getLoadErrorMessage(code: LoadErrorCode, translate: Translate): string {
 	switch (code) {
 		case "unavailable":
-			return t`Mobile QR import is temporarily unavailable.`;
+			return translate(msg`Mobile QR import is temporarily unavailable.`);
 		case "expired_payload":
-			return t`This QR expired. Create a new QR on desktop.`;
+			return translate(msg`This QR expired. Create a new QR on desktop.`);
 		case "not_yet_valid":
-			return t`This QR's time does not match this phone. Check the date and time on both devices, then create a new QR.`;
+			return translate(
+				msg`This QR's time does not match this phone. Check the date and time on both devices, then create a new QR.`,
+			);
 		case "env_mismatch":
-			return t`This QR belongs to a different network. Switch networks or create a new QR on desktop.`;
+			return translate(msg`This QR belongs to a different network. Switch networks or create a new QR on desktop.`);
 		case "unsupported_version":
-			return t`Refresh both devices to update phone access, then create a new QR.`;
+			return translate(msg`Refresh both devices to update phone access, then create a new QR.`);
 		case "missing_fragment":
 		case "invalid_payload":
-			return t`This QR is invalid or incomplete. Create a new QR on desktop.`;
+			return translate(msg`This QR is invalid or incomplete. Create a new QR on desktop.`);
 	}
 }
 
-function getImportErrorMessage(code: ImportErrorCode): string {
+function getImportErrorMessage(code: ImportErrorCode, translate: Translate): string {
 	switch (code) {
 		case "not_approved":
-			return t`The desktop has not approved this key. Create a new QR on desktop.`;
+			return translate(msg`The desktop has not approved this key. Create a new QR on desktop.`);
 		case "remote_unavailable":
-			return t`Could not check the approval on Hyperliquid. Nothing was imported. Try again.`;
+			return translate(msg`Could not check the approval on Hyperliquid. Nothing was imported. Try again.`);
 		case "storage_failed":
-			return t`This phone could not store the trading key. Clear this site's data and scan again.`;
+			return translate(msg`This phone could not store the trading key. Clear this site's data and scan again.`);
 		case "expired_payload":
-			return t`This QR expired. Create a new QR on desktop.`;
+			return translate(msg`This QR expired. Create a new QR on desktop.`);
 	}
 }
 

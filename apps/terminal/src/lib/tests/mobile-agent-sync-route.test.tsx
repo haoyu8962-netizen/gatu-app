@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { i18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { act, type ComponentType, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { privateKeyToAccount } from "viem/accounts";
@@ -13,6 +14,7 @@ const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 const AGENT_ADDRESS = privateKeyToAccount(AGENT_PRIVATE_KEY).address.toLowerCase();
 const AGENT_VALID_UNTIL_MS = NOW_MS + 30 * 24 * 60 * 60 * 1000;
+const NOT_APPROVED = msg`The desktop has not approved this key. Create a new QR on desktop.`;
 const REGISTRATION_EPOCH = {
 	env: "Mainnet",
 	owner: USER_ADDRESS,
@@ -216,6 +218,25 @@ describe("mobile agent sync route", () => {
 		act(() => findButton(container, "Import")?.click());
 		await flushAsyncWork();
 		expect(container.textContent).toContain("Phone access ready");
+	});
+
+	it("renders an import failure in the active language and follows a language switch", async () => {
+		testState.infoExtraAgents.mockResolvedValue([]);
+		renderRoute(linkHash(createLink()));
+		act(() => findButton(container, "Import")?.click());
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("The desktop has not approved this key.");
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [NOT_APPROVED.id]: "桌面端尚未批准此密钥。请在桌面端创建新的二维码。" },
+			}),
+		);
+
+		expect(container.textContent).toContain("桌面端尚未批准此密钥。请在桌面端创建新的二维码。");
+		expect(container.textContent).not.toContain("The desktop has not approved this key.");
 	});
 
 	it("reports an unreachable approval check without importing", async () => {
