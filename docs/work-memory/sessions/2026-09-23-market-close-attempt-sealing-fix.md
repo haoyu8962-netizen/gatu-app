@@ -10,7 +10,7 @@
   "summary": "修复对抗审查 F1–F3：确认点击时同步封存不可变的提交尝试并按会话去重，宿主按尝试对象记录执行；部分成交 TP/SL 提示完整写出官方的保证金不足例外；给 account-actions 浏览器夹具补账户身份。全量单测、CI 条件构建与 5 个 CI 浏览器套件通过，未做真实钱包或真实成交验收。",
   "thread": null,
   "baseCommit": "155f36aa",
-  "commits": ["7fe62d3e", "b6f726ce", "4429b067"],
+  "commits": ["7fe62d3e", "b6f726ce", "4429b067", "145adad5", "416b2ed7"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-09-23-claude-eight-commit-adversarial-review.md" },
     { "path": "apps/terminal/src/lib/trade/position-market-close-submitter.ts" },

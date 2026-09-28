@@ -9,10 +9,10 @@
   "topics": [
     "static-hosting"
   ],
-  "summary": "表面 4 桌面下单共享视图迁移；Round 2 删除 slider/percent 应用复制树、共用纯输入样式、同步持久化滑点；reviewer 前版几何测量与本轮验证范围分别记录。",
+  "summary": "下单框架共享视图迁移及后续 reviewer 验证已记录；启动占位部分已由 ADR 0010 取代，真实展示组件继续使用，历史失败和验证边界保留。",
   "thread": null,
   "baseCommit": "3ecb960e8df1e2360be9c62ac59881b9f56ec622",
-  "commits": [],
+  "commits": ["bfdae535", "998515a5"],
   "sources": [
     {
       "path": "docs/adr/0009-startup-placeholder-single-source.md"
@@ -395,3 +395,7 @@ Playwright（Round 1 代码）：`playwright.config.ts` 107 例 106 通过，唯
 - `.claude/rules/placeholder-parity.md`
 - `apps/terminal/src/components/trade/layout/desktop-placeholders.ts`
 - `apps/terminal/src/lib/tests/trade-panel-view-parity.test.tsx`
+
+## 周整理追加（2026-09-21）
+
+初轮待 reviewer 的状态不代表最终记录，正文已有后续复核与检查。当前 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 移除启动占位，但保留 props-only 真实视图；本次只更新检索摘要，不把旧占位几何测量当成新启动流程的验收。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

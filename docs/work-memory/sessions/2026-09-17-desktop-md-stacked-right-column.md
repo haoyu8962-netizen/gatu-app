@@ -13,7 +13,7 @@
   "summary": "按 ADR 0011 把 1001–1420 px 桌面网格改为图表列 10/14 + 右列堆叠（下单面板、订单簿、账户信息），存储键升到 v12；验证结果与限制见正文。",
   "thread": null,
   "baseCommit": "a7fb284656651e6f8440cdfd584ed056ed158ff1",
-  "commits": [],
+  "commits": ["c7518ce9"],
   "sources": [
     { "path": "docs/adr/0011-desktop-md-stacked-right-column.md" },
     { "path": "docs/desktop-grid-stacked-right-column-plan.md" },

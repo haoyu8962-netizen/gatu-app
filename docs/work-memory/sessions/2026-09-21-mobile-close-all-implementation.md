@@ -10,7 +10,7 @@
   "summary": "移动全部平仓入口已接入共享全账户市价链路，确认面明示筛选隐藏仓位和逐仓目标；冷缓存 38 项浏览器通过，最终标签 18 项与 153 项定向回归通过，全量 6805 通过、1 跳过、1 项既有 SSR 失败。",
   "thread": { "id": "01a0c3b4-5aec-7f93-bc8b-6ecf0e661507", "title": "启动开发服务器" },
   "baseCommit": "f924c61185644bdf6776c516db83466953338f64",
-  "commits": [],
+  "commits": ["8770d86d"],
   "sources": [
     { "path": "docs/mobile-close-all-plan.md" },
     { "path": "docs/work-memory/sessions/2026-09-21-mobile-close-all-audit.md" },

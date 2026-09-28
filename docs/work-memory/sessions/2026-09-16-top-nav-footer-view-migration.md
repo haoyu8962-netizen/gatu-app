@@ -9,10 +9,10 @@
   "topics": [
     "static-hosting"
   ],
-  "summary": "表面 2：六个纯视图共享桌面顶栏、页脚、外框与按钮几何；Dropdown 增加 opt-in renderTrigger；匿名 CTA 144px、时钟占位及 compact 收折统一。自动验证见正文，Playwright 待 reviewer。",
+  "summary": "顶栏、页脚与外框共享视图迁移及后续 reviewer 验证已记录；启动占位部分已由 ADR 0010 取代，真实展示组件继续使用，历史失败和验证边界保留。",
   "thread": null,
   "baseCommit": "d43d50683a2641aa79d4a851d629e68568e3c4af",
-  "commits": [],
+  "commits": ["dc68631a", "998515a5"],
   "sources": [
     {
       "path": "docs/adr/0009-startup-placeholder-single-source.md"
@@ -173,3 +173,7 @@ Biome 的 25 个文件为上文全部 18 个变更实现/配置文件与 7 个�
 
 - `apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx`
 - `apps/terminal/src/lib/tests/top-nav-footer-view-parity.test.tsx`
+
+## 周整理追加（2026-09-21）
+
+初轮待 reviewer 的状态不代表最终记录，正文已有后续复核与检查。当前 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 移除启动占位，但保留 props-only 真实视图；本次只更新检索摘要，不把旧占位几何测量当成新启动流程的验收。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

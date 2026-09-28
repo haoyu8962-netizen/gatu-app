@@ -9,10 +9,10 @@
   "topics": [
     "static-hosting"
   ],
-  "summary": "表面 7 统一 dashboard 页面与占位 frame、路由 preset 和 chrome；341 项自动回归及类型、格式检查通过，盒子实测留给 reviewer。",
+  "summary": "Dashboard 共享视图迁移及后续 reviewer 验证已记录；启动占位部分已由 ADR 0010 取代，真实展示组件继续使用，历史失败和验证边界保留。",
   "thread": null,
   "baseCommit": "cde152e54ae32ed6dd63e9d7a3cc08d787bd73e1",
-  "commits": [],
+  "commits": ["0f7e97ac"],
   "sources": [
     {
       "path": "docs/adr/0009-startup-placeholder-single-source.md"
@@ -141,3 +141,7 @@ Reviewer 完成上述盒子测量并记录结果后，才能声明表面 7 视�
 
 - `pnpm --filter @gatu/terminal test`（571 文件 / 6440 用例，在契约修正前启动）：12 文件失败——9 个基线红文件失败数不变；`api-wallet-ui-contract`(1) 与 `referral-ui-contract` 多出的 1 条即上文两条读取旧 frame 类的断言，修正后单独运行分别 4/4 通过、回到基线 3 条无关失败；`mobile-agent-sync-route`(18) 与 `portfolio-overview`(1) 为并发敏感（此前单独运行通过）。本表面未引入其他失败。
 - `pnpm build` 通过：trade 静态启动闭包 1,582,399 gzip 字节（较表面 6 重设后的基线 +1,183）；客户端总 gzip 3,086,848（较总基线 −67,859）；移动运行时增量 111,634、桌面 194,046。构建不是发布。
+
+## 周整理追加（2026-09-21）
+
+初轮待 reviewer 的状态不代表最终记录，正文已有后续复核与检查。当前 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 移除启动占位，但保留 props-only 真实视图；本次只更新检索摘要，不把旧占位几何测量当成新启动流程的验收。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

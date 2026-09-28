@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["order-entry", "pr-review"],
-  "summary": "确认移动持仓只接展开/收起，桌面已有全部平仓；官方全部关闭打开含市价/中间价限价的确认面。拟共享桌面全账户市价链路并明示筛选范围，批量限价和 TP/SL 清理另验；本轮仅审查规划，未修改交易代码或真实提交。",
+  "summary": "移动全部平仓入口缺失的审查与规划，后续已接入共享全账户市价链路；批量限价、筛选范围平仓与关联 TP/SL 清理仍是独立范围。未在本轮执行真实提交。",
   "thread": null,
   "baseCommit": "307cc26f1485861d1046d980692ed6a22073b3c5",
-  "commits": [],
+  "commits": ["f924c611"],
   "sources": [
     { "path": "docs/mobile-close-all-plan.md" },
     { "path": "docs/confirmation-surfaces.md" },
@@ -53,3 +53,11 @@
 ## 后续与替代关系
 
 不替代既有提交/退场生命周期记录。后续按方案的共享入口、移动布局和范围说明、跨边界回归、浏览器验收、文档交付五步实施。批量限价、按筛选范围平仓、关联 TP/SL 清理验证为独立后续。此次规划完成不表示功能已上线。
+
+## 周整理补注（2026-09-28）
+
+移动入口已有实施记录；不能由本规划或入口完成推断所有批量平仓能力已交付。
+
+后续来源：[2026-09-21-mobile-close-all-implementation](2026-09-21-mobile-close-all-implementation.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

@@ -12,7 +12,7 @@
   "summary": "按 CloudFront 日常发布 runbook 把 claude/placeholder-parity@c59d13a8 发布到 app.gatu.ai 与 testnet.gatu.ai：函数、Lambda、S3 同步、两个失效、两个 verify 全部通过；发布前后线上加载与几何对比见正文。",
   "thread": null,
   "baseCommit": "c59d13a8188093e1de0c5f247a9bc625f4a18a34",
-  "commits": [],
+  "commits": ["74c80c1a"],
   "sources": [
     { "path": "deploy/cloudfront/README.md" },
     { "path": "docs/adr/0011-desktop-md-stacked-right-column.md" },

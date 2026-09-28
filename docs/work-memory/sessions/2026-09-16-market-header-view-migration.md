@@ -12,7 +12,7 @@
   "summary": "表面 1 抽取五个纯视图，真实界面与静态及运行时占位共用标记；指标改为内容宽度和 32px 间距，标签统一首字母大写。初轮指定回归 207 项通过；round 2 改用隐形典型文本预留宽度及路由已知名称/类型，指定回归 81 项、补充回归 102 项通过，浏览器复测留给 reviewer。",
   "thread": null,
   "baseCommit": "0c8127456044390c95f7e5b4301fbbdd43a658e1",
-  "commits": [],
+  "commits": ["d43d5068", "998515a5"],
   "sources": [
     {
       "path": "docs/adr/0009-startup-placeholder-single-source.md"

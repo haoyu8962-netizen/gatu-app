@@ -10,10 +10,10 @@
     "static-hosting",
     "docs-governance"
   ],
-  "summary": "用户 2026-09-17 10:35Z 停机 EC2 i-058ca09d0533fc11d；仓库随之关闭 Nitro 预压缩、CI 去掉 Caddyfile 校验与 EC2 发布脚本测试并改跑 CloudFront 工具测试、deploy/README.md 标为历史资料、ADR 0005 与计划文档补退役状态；routeRules CSP 因两个契约测试仍钉住而留待后续。",
+  "summary": "正文已报告 EC2、EIP、卷及安全组清理、受限 IAM 发布身份切换；后续旧部署文件已从工作树移除。云端结果为当时来源报告，本轮未复查。",
   "thread": null,
   "baseCommit": "bde33928b43c1823ddd716d728accce71ef979e5",
-  "commits": [],
+  "commits": ["e1965d13", "7ba2eb13", "075ab75f", "eec4d2d3", "812b163e", "87d6e51e"],
   "sources": [
     { "path": "deploy/cloudfront/README.md" },
     { "url": "https://github.com/zora4523-bot/gatu-app/blob/5d3935721f070075c5d976d61a3c27d12b5dc607/deploy/README.md" },
@@ -84,3 +84,7 @@
 
 - 已完成：终止实例、释放 EIP、删除安全组、发布凭据切换到受限 IAM 用户（见上文）。旧架构相关待办已清零。
 - 后续代码清理：把 `routeRules` 的头部契约迁到 CloudFront 响应头策略测试后删除 Nitro 侧 CSP；确认无旧客户端后删除 `/client-error-report` 别名；可将 `deploy/` 下 EC2 文件移入 `deploy/legacy-ec2/`（需同步更新多份验证文档的路径）。
+
+## 周整理追加（2026-09-21）
+
+原“保留旧部署文件、后续可移目录”已由 [文件移除记录](2026-09-18-retire-ec2-deploy-files.md) 更新。资源清理、凭据切换及历史 CI 失败保留其原始日期和范围；本轮仅整理 Git 与文档证据。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

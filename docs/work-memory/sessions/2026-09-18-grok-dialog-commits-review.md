@@ -6,13 +6,13 @@
   "title": "Grok 4.6 对抗审查六个弹窗/平仓提交：2 P1 属实并修复",
   "kind": "task",
   "status": "recorded",
-  "summary": "grok-4.6 只读审查 0ad17aea…08e2057d 冻结快照，报告 2 P1 / 2 P2 / 3 P3；F1/F2/F4/F5/F6/F7 已修（守卫经变异检查钉住），F3 记为 ADR 已知限制；逐条核实：反手与全部平仓退场窗口内确认按钮仍可点（P1）、市价平仓取消退场期间 canSubmit 未含 isClosing（P1）属实；后台执行绑在随路由卸载的弹窗实例（P2）与 PnL 分享退场仍直接卸载（P2）属实；ADR §6 引用、CHANGELOG「一条通知」措辞、idle 预热测试不覆盖 requestIdleCallback 三条 P3 属实。其「无过渡时 onOpenChangeComplete 同步触发会卡会话」的存疑项经 Base UI 源码核实不成立。未修改代码。",
+  "summary": "复审确认退场窗口重复提交等问题；F1/F2/F4/F5/F6/F7 已在 6df02047 修复，F3 路由卸载与执行生命周期限制仍待独立处理。",
   "topics": [
     "pr-review"
   ],
   "thread": null,
   "baseCommit": "08e2057d",
-  "commits": [],
+  "commits": ["ad36d441", "6df02047"],
   "sources": [
     { "path": "docs/adr/0014-market-close-submit-and-dismiss.md" },
     { "path": "apps/terminal/src/components/trade/positions/position-reverse-confirmation-controller.tsx" },
@@ -59,3 +59,7 @@ Grok 认为成立的安全面（会话 idle 门、dismiss/close 相位限制、�
 ## 后续与替代关系
 
 - 不替代任何记录；补充 `2026-09-18-dialog-transitions-and-preload.md` 与 ADR 0014。
+
+## 周整理追加（2026-09-21）
+
+原摘要同时写“已修”与“未修改代码”，分别来自不同阶段。正文用户确认后的修复与变异检查属于后续实施，已补提交引用；F3 未实施及存疑项不成立的结论保持。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

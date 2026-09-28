@@ -19,7 +19,7 @@
     "title": "启动开发服务器"
   },
   "baseCommit": "ae2f11d4634ec7e2651c5caf60ff0d3cd32d580c",
-  "commits": [],
+  "commits": ["a379d231"],
   "sources": [
     {
       "path": "docs/trading-notifications.md"

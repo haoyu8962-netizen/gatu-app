@@ -10,7 +10,7 @@
   "summary": "真实成交摘要与精简通知已实施，保留部分/未知及附属单异常，修复长错误和短视口溢出；终端6946项与浏览器17项通过，未真实交易或发布。",
   "thread": { "id": "01a0c3b4-5aec-7f93-bc8b-6ecf0e661507", "title": "启动开发服务器" },
   "baseCommit": "18365269",
-  "commits": ["4f7e046f"],
+  "commits": ["4f7e046f", "75a7fb01"],
   "sources": [
     { "path": "docs/trading-notifications.md" },
     { "path": "docs/work-memory/sessions/2026-09-22-compact-notification-copy-plan.md" },

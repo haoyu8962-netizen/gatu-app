@@ -10,7 +10,7 @@
   "summary": "user-menu-recovery 套件 10 项全红的原因是夹具缺口而非产品缺陷：df4ed89f 给页头加的 useEmailWalletExport 需要 PrivyProvider 且引入了桩没有的导出，8cb1b98a 起未就绪页头只对已有会话显示 Connecting...，51c5ace3/67d4212e 改了移动端文案。补桩、种会话标记、按宽度更新断言后 10/10 通过；未改产品代码，套件仍不在 CI。",
   "thread": null,
   "baseCommit": "145adad5",
-  "commits": ["6cd0bb1a"],
+  "commits": ["6cd0bb1a", "15196136"],
   "sources": [
     { "path": "apps/terminal/tests/browser/user-menu-recovery.vite.config.ts" },
     { "path": "apps/terminal/tests/browser/user-menu-recovery.browser.tsx" },

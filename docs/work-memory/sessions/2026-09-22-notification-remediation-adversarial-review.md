@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["order-entry", "pr-review"],
-  "summary": "对 75a7fb01 复审：Scale 受理语义、均价共享格式、按需焦点停靠点与测试冷导入修复成立并通过本检出 430 项聚焦回归；1 项 P1：IOC 余量取消识别只匹配 tif Ioc，而市价单实际发送 FrontendMarket，主场景修复未生效且文档声明不符；另 4 项 P3。仅审查与记录，未修改生产代码。",
+  "summary": "75a7fb01 历史复审确认市价实际使用 FrontendMarket，Ioc-only 识别未覆盖主场景；P1 与四项 P3 已由 e52739d2 后续处理。430 项回归属于原复审，未在周整理重跑应用测试。",
   "thread": { "id": "9b4fc2e8-a227-4578-bfd1-5db0594a392e", "title": "对抗审查 4f7e046f" },
   "baseCommit": "75a7fb01",
-  "commits": [],
+  "commits": ["46f50c64"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-09-22-notification-review-remediation.md" },
     { "path": "docs/work-memory/sessions/2026-09-22-compact-notification-adversarial-review.md" },
@@ -74,3 +74,11 @@
 ## 后续与替代关系
 
 本记录不替代修复记录与 Reference；已在[修复任务记录](2026-09-22-notification-review-remediation.md)末尾追加指向本记录的更正。若修复 P1，需同步 `order-execution-summary.ts`、市价路径 submit 测试、`docs/trading-notifications.md` 的证据表格与 CHANGELOG。
+
+## 周整理补注（2026-09-28）
+
+本报告中的待修复状态已由后续任务接续；“余量取消”仍要求真实回包和绑定证据，不凭 market 类型猜测。
+
+后续来源：[2026-09-22-notification-remediation-followup](2026-09-22-notification-remediation-followup.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

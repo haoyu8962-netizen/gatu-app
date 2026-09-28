@@ -9,10 +9,10 @@
   "topics": [
     "static-hosting"
   ],
-  "summary": "表面 5 共享账户页签、概览与按钮纯视图；394 项通过，18 项既有 mock 失败前后不变；类型、Biome 与 memory 检查通过，浏览器因沙箱 EPERM 待 reviewer。",
+  "summary": "账户面板共享视图迁移及后续 reviewer 验证已记录；启动占位部分已由 ADR 0010 取代，真实展示组件继续使用，历史失败和验证边界保留。",
   "thread": null,
   "baseCommit": "bfdae535adcb567dd8a763d71c31eb9b94b284bd",
-  "commits": [],
+  "commits": ["b77a8790"],
   "sources": [
     {
       "path": "docs/adr/0009-startup-placeholder-single-source.md"
@@ -268,3 +268,7 @@ git diff --check: exit 0，无输出
 - Playwright `account-actions.playwright.config.ts`：24/24 通过（1.4 min）。
 - `pnpm --filter @gatu/terminal test`（569 文件 / 6333 用例）：12 文件失败，全部为已记录项——9 个基线红文件失败数不变；`chart-store`(1)、`establish-connection-modal`(1)、`mobile-agent-sync-route`(18) 为并发/计时敏感（此前单独运行分别 11/11、15/15 或 1 例超时、20/20）。本表面未引入新失败。
 - `pnpm build` 通过：客户端总预算 3,083,842 gzip 字节（较表面 4 提交后 −187，较基线 −70,865）；trade 静态启动闭包 1,578,798（+8,577）；桌面运行时增量 194,038（+2,050）。预渲染壳核对（`grep -a`）：`positions-toolbar-header` 1、`data-positions-tab=` 7、`disconnected-account-overview` 1、`Account Summary` 1、`0.00x` 1、`Withdraw` 1。构建不是发布。
+
+## 周整理追加（2026-09-21）
+
+初轮待 reviewer 的状态不代表最终记录，正文已有后续复核与检查。当前 [ADR 0010](../../adr/0010-blank-until-ready-startup.md) 移除启动占位，但保留 props-only 真实视图；本次只更新检索摘要，不把旧占位几何测量当成新启动流程的验收。 本次依据与版本边界见 [周整理记录](2026-09-21-weekly-memory-review.md)。

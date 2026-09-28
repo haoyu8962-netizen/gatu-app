@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review"],
-  "summary": "用户问 HIP-3 部署者免责声明的签署次数是否合规、是否与官方一致。对官方 2026-09-24 产物取证：组件 uC/dC 只在交易页渲染，任何 builder 永续市场触发，复选框必勾才能确认，确认把 hyperliquid.discard_hip3_disclaimer 写成 true（全局、永久、不分 deployer、无版本），点遮罩可不接受就关闭但换市场/刷新会再弹，无 Esc、无 X。gatu：同样每浏览器一次、全局、永久（带版本），实机验证接受一次后刷新与切换其它 deployer 市场都不再弹。差异：gatu 页面级弹窗不可关闭且未在 dismiss 契约登记；市价/限价平仓给可取消副本，全部平仓与反手则提交时拒绝且无接受入口；三个版本旋钮只有一个是有意的；缺补水回归测试。顺路发现抵押品非 USDC 的 builder dex（hyna、flx、cash、vntl、km）没进目录，直接打开 404。未改代码。2026-09-25 更正：这些 dex 的资产全部已下架，目录按 isDelisted 跳过属预期，与抵押品无关，见正文末尾。",
+  "summary": "HIP-3 官方取证及本地签署持久化审查；出口、平仓接受入口和补水测试已在 09-25/09-27 实施并修复复审发现。非 USDC builder 缺失已更正为资产全部下架；四种平仓仍待真实 HIP-3 仓位验证。",
   "thread": null,
   "baseCommit": "f736d8a9",
-  "commits": [],
+  "commits": ["cd2176a1", "7c9b3f21"],
   "sources": [
     { "url": "https://app.hyperliquid.xyz/assets/index-58uVNh8f.js" },
     { "url": "https://app.hyperliquid.xyz/assets/config-DWLPMyx3.js" },
@@ -77,3 +77,13 @@
 ## 更正（2026-09-25）
 
 「顺路发现」一节的归因有误。用户指出这些市场全部已下架，随后用公开 API 复核（`meta`，按 dex 查询）：hyna 25/25、flx 16/16、vntl 15/15、km 23/23、cash 17/17 以及 abcd 1/1 的资产全部带 `isDelisted: true`。目录构建在 `use-markets.tsx` 跳过已下架资产，所以这些市场不在目录里、直接打开是 404，属于预期行为，与抵押品不是 USDC 无关。当时只核对了抵押品字段，没有核对 `isDelisted`。仍在交易的 builder 市场（xyz、para、mkts、io）抵押品都是 USDC，目前没有抵押品非 USDC 且仍在交易的市场，非 USDC 抵押品的路径无法据此验证。候选处理中的「单独排查非 USDC 抵押品 builder dex 缺失」撤销；其余候选处理由 [2026-09-25-hip3-disclaimer-alignment](2026-09-25-hip3-disclaimer-alignment.md) 实施。
+
+另一条在独立 worktree 进行的[后续排查](2026-09-25-builder-market-delisting-investigation.md)独立得出同一结论（API 标记下架、目录按下架标志剔除）；它没有重审免责声明结论。
+
+## 周整理补注（2026-09-28）
+
+保留 09-25 的 isDelisted 归因更正；其余候选已有实施和复审修复，不能继续把候选清单当作当前未实现行为。
+
+后续来源：[2026-09-25-hip3-disclaimer-alignment](2026-09-25-hip3-disclaimer-alignment.md)；[2026-09-27-hip3-alignment-review-fixes](2026-09-27-hip3-alignment-review-fixes.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

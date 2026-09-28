@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["order-entry"],
-  "summary": "按用户决定实施 2026-09-24 审查的候选处理：交易页免责声明加「离开此市场」（回到 BTC，遮罩与 Esc 仍不关闭）并在 dismiss 契约登记两个出口；全部平仓与反手改为与市价、限价平仓一致的可取消免责声明，接受后才挂载确认面；全部平仓的快照 30 秒有效，接受时按当时账户重新生成（refreshCloseAll）；open 由接受状态派生，关闭后保留 250 ms 播放退出动画，出口类型同步保留；补补水回归测试。新增归属文档 docs/hip3-deployer-disclaimer.md。Biome、类型检查、完整单测（600 文件 6842 项）与全部平仓浏览器套件（40 项）通过，应用内浏览器实测交易页两条出口与手机抽屉；四个平仓流程未在持有 HIP-3 仓位的真实账户上操作。补记：Codex 只读对抗审查 7c9b3f21，无 P0、P1，3 项 P2 经核对均成立（全部平仓快照刷新缺真实提交路径测试、限价平仓取消时无退出动画而文档称有、确认面文档误称市价平仓提交钩子接受后才挂载），另核实 store merge 在首次访问时补水不完成的既有问题；均未修复。",
+  "summary": "HIP-3 出口、全平/反手免责声明、30 秒快照刷新与退出过渡已实施；原 Codex 三项 P2 及 persist 空值问题已由 09-27 修复接续。原全量 6842 项与浏览器 40 项属 09-25 版本；四种平仓真实 HIP-3 账户验收仍缺。",
   "thread": null,
   "baseCommit": "cd2176a1",
-  "commits": [],
+  "commits": ["7c9b3f21", "27ee060f", "3d0e7667"],
   "sources": [
     { "path": "docs/hip3-deployer-disclaimer.md" },
     { "path": "apps/terminal/src/components/trade/components/hip3-deployer-disclaimer.tsx" },
@@ -72,3 +72,11 @@
 - 本会话另外核实的既有问题，不在本提交的改动里：免责声明 store 的 `merge` 直接读 `persisted.acceptedVersion`。首次访问没有存储记录时，zustand 以 `undefined` 调用 `merge`，抛出的错误被 persist 吞掉，补水不完成，状态停在默认的 0，行为恰好正确。用已安装的 zustand 5.0.9 写脚本复现：现写法首次访问时 `hasHydrated()` 为 false，加 `persisted ?? {}` 后为 true；老用户两种写法都正常。全局设置 store 的 `merge` 同样没有空值保护。仓库里没有代码依赖补水回调，目前没有可见影响。
 - 状态：以上发现均未修复，等待用户决定。
 - 2026-09-27 更新：以上发现已修复，store 的空值保护由后台任务完成并 cherry-pick 进本分支，见 [2026-09-27-hip3-alignment-review-fixes](2026-09-27-hip3-alignment-review-fixes.md)。
+
+## 周整理补注（2026-09-28）
+
+正文已写 09-27 修复，元数据却仍称“均未修复”；本次修正索引摘要。现有代码保留 persisted ?? {}、关闭中拒绝限价平仓提交与 leave-market/cancel 分别控制 dismissible；这是静态核对，不是新的应用回归。
+
+后续来源：[2026-09-27-hip3-alignment-review-fixes](2026-09-27-hip3-alignment-review-fixes.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

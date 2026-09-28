@@ -13,12 +13,7 @@
   "summary": "按 docs/funds-dialog-outcome-plan.md 实施三步。划转与发送保持打开到请求结束、随后关闭、结果走通知，发送失败保留内存草稿，外部钱包等待签名时显示 Confirm in wallet。提现请求结束后关闭，成功、失败走通知，状态未知为常驻警告。充值新增页面级 CCTP 跟踪通知器，弹层的成功、失败、状态未知状态页改为通知，广播前失败回到表单重试。偏差：没有新建持久化的待处理提现列表。既有守卫测试拦下一处缺陷：旧请求的失败被当成当前结果上报并关闭弹层，已改为按尝试的对象身份判断。未做真实钱包验收。",
   "thread": null,
   "baseCommit": "951125e0",
-  "commits": [
-    "11efedc4",
-    "d050a219",
-    "40e31ea6",
-    "0cf6d20b"
-  ],
+  "commits": ["11efedc4", "d050a219", "40e31ea6", "0cf6d20b", "daa5ec7f"],
   "sources": [
     { "path": "docs/funds-dialog-outcome-plan.md" },
     { "path": "apps/terminal/src/components/trade/positions/transfer-modal.tsx" },

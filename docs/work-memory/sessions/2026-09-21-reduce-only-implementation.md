@@ -1,5 +1,5 @@
 <!-- work-memory
-{"schemaVersion":1,"id":"2026-09-21-reduce-only-implementation","date":"2026-09-21","title":"只减仓容量、表单与执行边界修复","kind":"task","status":"recorded","topics":["order-entry"],"summary":"按官方表单审查计划实施共享持仓容量、精确数量草稿、零开仓余额流程、全入口执行守卫和保证金占位，已完成实现；自动化验证与已知基线失败见正文。","thread":null,"baseCommit":"0fafbc7f","commits":[],"sources":[{"path":"docs/reduce-only-repair-plan.md"},{"path":"docs/order-entry-surface-parity.md"},{"path":"apps/terminal/src/domain/trade/order/reduce-only.ts"}],"supersedes":[]}
+{"schemaVersion":1,"id":"2026-09-21-reduce-only-implementation","date":"2026-09-21","title":"只减仓容量、表单与执行边界修复","kind":"task","status":"recorded","topics":["order-entry"],"summary":"按官方表单审查计划实施共享持仓容量、精确数量草稿、零开仓余额流程、全入口执行守卫和保证金占位，已完成实现；自动化验证与已知基线失败见正文。","thread":null,"baseCommit":"0fafbc7f","commits": ["372460f2"],"sources":[{"path":"docs/reduce-only-repair-plan.md"},{"path":"docs/order-entry-surface-parity.md"},{"path":"apps/terminal/src/domain/trade/order/reduce-only.ts"}],"supersedes":[]}
 -->
 # 只减仓修复实施
 

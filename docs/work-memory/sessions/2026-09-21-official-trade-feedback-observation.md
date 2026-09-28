@@ -10,7 +10,7 @@
   "summary": "用户自行确认官方全部平仓，DOM 监听捕获确认面消失后新增市价平仓汇总通知，约 7 秒后节点移除；本次未捕获新增等待通知或持续队列。区分先前普通成交提示与本次汇总，不以通知证明全部成交或仓位归零；仅更新审查文档。",
   "thread": { "id": "01a0c3b4-5aec-7f93-bc8b-6ecf0e661507", "title": "启动开发服务器" },
   "baseCommit": "639239c9cc802708543ada00a13829c8c550f9fd",
-  "commits": [],
+  "commits": ["efe8389e"],
   "sources": [
     { "path": "docs/mobile-close-all-plan.md" },
     { "path": "docs/work-memory/sessions/2026-09-21-close-all-queue-review.md" },

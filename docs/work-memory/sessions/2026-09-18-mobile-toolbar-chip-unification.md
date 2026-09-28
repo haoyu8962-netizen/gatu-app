@@ -12,7 +12,7 @@
   ],
   "thread": null,
   "baseCommit": "707657d5",
-  "commits": [],
+  "commits": ["6a96f9b7"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/mobile/mobile-filter-chip.ts" },
     { "path": "apps/terminal/src/components/trade/positions/position-filter-toolbar.tsx" },

@@ -12,7 +12,7 @@
   "summary": "按 ADR 0014 实施：submit 先 dismiss 会话再校验，弹窗组件在 dismissed 期间保持挂载但对话框关闭；删除会话 error 字段与 setError/resetError；失败与被锁走通知并关闭会话，对账在任何结局释放会话；7 个测试文件 112 pass，唯一红项为分支既有的 440px 摘要样式断言。",
   "thread": null,
   "baseCommit": "44a4d411b859c06827a8fd4c4675e487938e3231",
-  "commits": [],
+  "commits": ["82d81313"],
   "sources": [
     { "path": "docs/adr/0014-market-close-submit-and-dismiss.md" },
     { "path": "apps/terminal/src/stores/use-global-modal-store.ts" },

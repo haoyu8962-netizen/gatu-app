@@ -10,7 +10,7 @@
   "summary": "zustand 5.0.9 的 persist 在首次访问、存储数据未通过校验被清除、以及版本不同且没有 migrate 时都会调用 merge(undefined)；global-settings 与 HIP-3 免责声明两个 store 的 merge 没有防护，抛出的 TypeError 被吞掉，hasHydrated() 一直为 false。两处改为 persisted ?? {}，新增覆盖全部四个持久化 store 的水合回归测试（修复前 5 项失败，修复后 14 项通过），并加入 CI 的终端测试清单；默认值和归一化不变，market 与 order-entry 已经安全、未改动。",
   "thread": null,
   "baseCommit": "121e8e76",
-  "commits": ["06293549", "26d0b13b"],
+  "commits": ["06293549", "79ec5555", "26d0b13b"],
   "sources": [
     { "path": "apps/terminal/src/stores/use-global-settings-store.ts" },
     { "path": "apps/terminal/src/stores/use-hip3-disclaimer-store.ts" },
@@ -64,3 +64,11 @@
 - 观察到但未改动：market store（version 3）和 order-entry store（version 2）都没有 `migrate`。以后提升它们的版本号时，zustand 会丢弃旧版本数据（例如收藏市场），改用默认值；如需保留用户数据，应同时加 `migrate`。同理，market store `merge` 里兼容旧字段 `selectedMarket` 的分支，只有在存储版本恰好为 3 或版本不是数字时才会执行。
 - 以后新增持久化 store 时，源码扫描用例会失败，提醒把它加进 `persisted-store-hydration.test.ts`，从而用 undefined 实际调用一遍它的 `merge`。该文件已在 CI 的终端测试清单里，所以每个触发 Terminal Tests 的 PR 都会跑到这项检查。
 - 没有被替代的记录。
+
+## 周整理补注（2026-09-28）
+
+原实现 06293549 已以相同补丁 cherry-pick 为 518d0039，记录经 79ec5555 带入本分支。后续记录更正复现归属：复现由来源会话完成并写入后台任务描述，不能沿原文误称用户亲自复现。PR #43 在本周查询时仍开放，不因内容已 cherry-pick 自动关闭或合并。
+
+后续来源：[2026-09-27-hip3-alignment-review-fixes](2026-09-27-hip3-alignment-review-fixes.md)。
+
+本条为事后整理；本轮仅核对 Git、现行文档和相关实现入口，原验证结果仍归属来源任务，未重跑业务测试。详见 [本周整理](2026-09-28-weekly-memory-review.md)。

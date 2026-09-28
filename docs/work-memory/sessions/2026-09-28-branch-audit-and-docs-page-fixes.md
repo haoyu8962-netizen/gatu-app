@@ -69,3 +69,11 @@
 - 本分支待推送并向 `dev` 开 PR。合入后 worktree-05 的未提交改动即被本次提交取代，是否删除该 worktree 由用户决定。
 - 第 3–6 项仍待处理；有运行中会话的 worktree 需先在应用里归档或结束对应会话再清理。
 - 没有被整体替代的记录。
+
+## 续：合并、剩余清理与第 3–5 项（2026-09-28）
+
+- 本分支经 [PR #55](https://github.com/zora4523-bot/gatu-app/pull/55) 合入 `dev`（`f0e053c3`），五项检查通过；另一会话把 user-menu-recovery 夹具修复也并进了该 PR。补记 PR #50 的 [PR #54](https://github.com/zora4523-bot/gatu-app/pull/54) 随后合入（`5efa88fe`），合并前在临时 worktree 模拟合入并通过索引校验。
+- 用户看过重新盘点后决定继续清理：删除 `goofy-poincare`（已并入 `dev`，无 Claude 会话，只有应用终端的一个 shell）、`worktree-05`（19 个未提交文件已由 #55 移植或被 `a379d231` 取代，删除前再次备份完整补丁到会话 scratchpad）、遗留目录 `umr-bisect`（只有一个测试结果文件，不是 Git worktree），以及本地分支 `claude/hungry-cartwright-aa350f`（原头 `d2a0d6c3`，已并入 `dev`，远端保留）。分支 `claude/goofy-poincare-1d8d21` 与 `fix/p22-followup`（含被取代的 `28c39643`）未删。
+- 仍有运行中 Claude Code 会话的 worktree 未动：`determined-bell`、`eloquent-swartz`、`frosty-satoshi`、`vigilant-brahmagupta`、`start-dev-server-eef652`、`hungry-cartwright`（已被新会话切到 `claude/nifty-hofstadter-afde70`）；另有一个会话的工作目录 `create-worktree06-f9a914` 已不存在。
+- 第 3–5 项以拣选方式带入分支 `docs/weekly-records-and-builder-delisting`（基线 `5efa88fe`）：`92ecaa78` → `978a96ee`（09-21 周整理）、`c3151404` → `191e1f59`（builder 市场下架排查）、`1fd34ab9` → `2b3bb4cb`（09-28 周整理）。按时间先后拣选，冲突只在生成的索引与两份记录，处理方式写在各记录的「合入补记」。第 6 项（晋升前检查记录与字体对照脚本）等用户决定，未动。
+- 校验：每次拣选后 `pnpm memory:index`、`pnpm memory:check` 通过；另用脚本核对全部记录元数据里的 442 个提交引用都能从本分支、远端分支或标签到达，不依赖本机独有的提交。主检出 `codex/reviewceshi` 上的原提交 `1fd34ab9` 仍未推送；该分支若日后再推送或开 PR，会与本次拣选重复，需要先对照本分支。

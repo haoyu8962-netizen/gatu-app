@@ -12,7 +12,7 @@
   "summary": "热刷新路由揭示被 React 300 ms fallback 节流拖到 447 ms；bootTradeRoute 改为返回等待首屏惰性片段的 Promise 并由 beforeLoad await，带 1500 ms 上限；改动前后本地时间线与验证见正文。",
   "thread": null,
   "baseCommit": "b80bd533bbf7c66e41817615a441e0cd973989ab",
-  "commits": [],
+  "commits": ["c51751bb", "ac21911a"],
   "sources": [
     { "path": "docs/adr/0012-trade-route-reveal-after-surface-preload.md" },
     { "path": "apps/terminal/src/lib/trade/trade-route-boot.ts" },

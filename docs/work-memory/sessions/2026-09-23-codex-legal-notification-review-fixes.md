@@ -10,7 +10,7 @@
   "summary": "审查 e52739d2..b82dd443：b82dd443 把持仓弹窗宿主移入 legal gate 并永久清理弹窗（确认面契约测试失败），e52739d2 留下类型检查错误；已恢复页面层宿主、去掉清理与可见检查提示（对齐官方终端），按官方 TP/SL 文档给带 TP/SL 的部分成交加规则说明，并按实际 20px 行高和 8px 行距把选项点击区收成互不重叠的 28px（同时修复控件自带 44px 点击层抢点下一行的已有缺陷，并按用户要求修了桌面 TWAP 选项的同类问题）；未做真实钱包或设备验收。",
   "thread": null,
   "baseCommit": "b82dd443",
-  "commits": ["85525d49", "9fb13653", "ab060288", "1cc83fbf"],
+  "commits": ["85525d49", "9fb13653", "ab060288", "1cc83fbf", "40ca2237", "79542991", "cf76c54a", "145adad5"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/components/global-modals.tsx" },
     { "path": "apps/terminal/src/lib/tests/position-dialog-session-ownership.test.tsx" },

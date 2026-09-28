@@ -12,7 +12,7 @@
   "summary": "1181 魔法数改为 DESKTOP_NAV_COMPACT/NARROW 常量与 nav-compact 变体；Earn（Soon）紧凑时进 More，低优先级入口仅在已连接且 ≤1181 或 ≤1100 时收纳；入口与 More 由 DESKTOP_NAV_ITEMS 单一派生；官方对照与六语言余量实测见正文。",
   "thread": null,
   "baseCommit": "8dd0f1a9b5ebf65c190067755b9403336e2ef27f",
-  "commits": [],
+  "commits": ["e4c0c412"],
   "sources": [
     { "path": "docs/adr/0013-desktop-navigation-collapse.md" },
     { "path": "apps/terminal/src/lib/navigation/desktop-nav.ts" },

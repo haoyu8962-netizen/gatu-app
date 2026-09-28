@@ -10,7 +10,7 @@
   "summary": "复核并修复 Scale 受理/成交进度混淆、IOC 恢复对账取消误报、均价数字偏好和多余焦点；保留用户指定三秒时长，补记历史 SHA 并隔离测试冷导入。6972 项终端测试及 19 项浏览器回归通过，未真实交易或发布。",
   "thread": { "id": "01a0c3b4-5aec-7f93-bc8b-6ecf0e661507", "title": "启动开发服务器" },
   "baseCommit": "966dca1c",
-  "commits": [],
+  "commits": ["75a7fb01", "46f50c64", "e52739d2"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-09-22-compact-notification-adversarial-review.md" },
     { "path": "docs/trading-notifications.md" },

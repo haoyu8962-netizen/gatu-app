@@ -10,7 +10,7 @@
   "summary": "全部平仓有内部阶段、持久订单跟踪与对账，但未接入可见 Order Queue，等待无即时反馈，3 秒通知短于 2 分钟核对窗口。官方公开实现使用 errorsOnly 加汇总通知，同样没有持续进度队列；本轮仅审查及建议，69 项定向测试通过，未真实交易。",
   "thread": { "id": "01a0c3b4-5aec-7f93-bc8b-6ecf0e661507", "title": "启动开发服务器" },
   "baseCommit": "8770d86de2fbf71d4a13318933369ca67c501619",
-  "commits": [],
+  "commits": ["639239c9", "efe8389e"],
   "sources": [
     { "path": "docs/mobile-close-all-plan.md" },
     { "path": "docs/confirmation-surfaces.md" },
