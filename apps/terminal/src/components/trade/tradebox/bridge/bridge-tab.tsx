@@ -1,6 +1,8 @@
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LIFI_BRIDGE_FEATURES } from "@/config/lifi-bridge";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { describeActionFailure } from "@/lib/errors/action-error";
 import { initLiFi } from "@/lib/lifi/config";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
 import { useBridgeExecutor } from "@/lib/lifi/use-bridge";
@@ -16,6 +18,7 @@ import { SuccessScreen } from "./success-screen";
 import type { BridgeScreen } from "./types";
 
 export function BridgeTab() {
+	const { t } = useLingui();
 	const { walletAddress, hasWalletAccess } = useWalletSession();
 	const [screen, setScreen] = useState<BridgeScreen>("select");
 	const [selectedToken, setSelectedToken] = useState<BridgeToken | null>(null);
@@ -91,11 +94,15 @@ export function BridgeTab() {
 	if (bridge.status === "error") {
 		const retryUnavailableMessage =
 			bridge.retryMode === null && !LIFI_BRIDGE_FEATURES.createNewRoute
-				? "Bridge creation is paused. A route without a submitted source transaction cannot be retried."
+				? t`Bridge creation is paused. A route without a submitted source transaction cannot be retried.`
 				: null;
 		return (
 			<BridgeErrorScreen
-				error={[bridge.error ?? "Unknown error", bridge.recoveryWarning, retryUnavailableMessage]
+				error={[
+					bridge.error ? describeActionFailure(bridge.error, (descriptor) => t(descriptor)) : t`Unknown error`,
+					bridge.recoveryWarning ? t(bridge.recoveryWarning) : null,
+					retryUnavailableMessage,
+				]
 					.filter(Boolean)
 					.join(" ")}
 				onRetry={bridge.retryMode ? handleRetry : undefined}
@@ -124,10 +131,10 @@ export function BridgeTab() {
 		return (
 			<ExecutingScreen
 				address={bridge.sourceAddress ?? walletAddress ?? ""}
-				statusText={bridge.statusText}
+				statusText={bridge.statusText ? t(bridge.statusText) : ""}
 				txHash={bridge.txHash}
 				onDone={handleExecutionClose}
-				recoveryWarning={bridge.recoveryWarning}
+				recoveryWarning={bridge.recoveryWarning ? t(bridge.recoveryWarning) : null}
 			/>
 		);
 	}
