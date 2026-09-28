@@ -702,6 +702,14 @@ applies `resolve.alias` to them, so one un-stubbed import of `@privy-io/wagmi`
 makes the pre-bundle fail and the fixture render nothing. The fixture also seeds
 the SDK session token key before rendering, because the header only shows
 `Connecting...` for a returning session (see the connection UI rules above).
+`UserMenu` reads no pairing flag, so the fixture's Vite configuration pins
+`VITE_MOBILE_PAIRING_ENABLED` to `"true"` through `define` and the test checks
+that premise before asserting that the recovered account menu lists no Link
+mobile device item (§8); the result never depends on the shell environment. At
+desktop width the test opens the single dialog `UserMenu` hosts the way the
+header QR icon does (warm the chunk, then open the modal store); the icon's own
+visibility rule belongs to `top-nav.test.tsx`, because the fixture renders no
+`TopNav`.
 
 The real mobile order-entry fixture uses `node_modules/.vite-mobile-trade-all-orders`
 and scans only `mobile-trade-all-orders.html`. Run it with

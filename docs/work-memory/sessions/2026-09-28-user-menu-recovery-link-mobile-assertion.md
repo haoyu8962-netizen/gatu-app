@@ -1,0 +1,73 @@
+<!-- work-memory
+{
+  "schemaVersion": 1,
+  "id": "2026-09-28-user-menu-recovery-link-mobile-assertion",
+  "date": "2026-09-28",
+  "title": "user-menu-recovery 套件的 Link mobile device 断言过时：按 ADR 0015 D8 改为断言菜单无此项并显式固定配对开关",
+  "kind": "task",
+  "status": "verified",
+  "topics": ["vite-cache", "pairing-release"],
+  "summary": "user-menu-recovery 套件 2/10 失败（两个宽度的迟到钱包恢复用例都在断言菜单里有启用的 Link mobile device）。原因是断言过时而非产品回归：e62e4733 按 ADR 0015 D8 删除了用户菜单条目，入口只剩头部二维码图标，单测当时已改为不含此项，浏览器用例（约 20 小时前由 6cd0bb1a 修过）未同步。改为断言菜单无此项，夹具 Vite 配置用 define 把 VITE_MOBILE_PAIRING_ENABLED 固定为 true 且用例先核对该前提，桌面宽度再按头部图标的路径打开 UserMenu 托管的唯一弹窗。修改后 10/10，两处变异都被捕获；首轮出现过一次无法复现的圆点颜色比较失败。未改产品代码，套件仍不在 CI。",
+  "thread": null,
+  "baseCommit": "e3b5dd82",
+  "commits": [],
+  "sources": [
+    { "path": "apps/terminal/tests/browser/user-menu-recovery.pw.ts" },
+    { "path": "apps/terminal/tests/browser/user-menu-recovery.fixture.tsx" },
+    { "path": "apps/terminal/tests/browser/user-menu-recovery.browser.tsx" },
+    { "path": "apps/terminal/tests/browser/user-menu-recovery.vite.config.ts" },
+    { "path": "apps/terminal/src/components/trade/header/user-menu.tsx" },
+    { "path": "apps/terminal/src/components/trade/header/top-nav.tsx" },
+    { "path": "apps/terminal/src/components/trade/header/mobile-agent-sync-modal-loader.ts" },
+    { "path": "apps/terminal/src/config/mobile-pairing.ts" },
+    { "path": "apps/terminal/src/lib/tests/user-menu.test.tsx" },
+    { "path": "apps/terminal/src/lib/tests/top-nav.test.tsx" },
+    { "path": "docs/adr/0015-link-device-alignment.md" },
+    { "path": "docs/runtime-guardrails.md" },
+    { "path": "AGENTS.md" }
+  ],
+  "supersedes": []
+}
+-->
+# user-menu-recovery 套件的 Link mobile device 断言过时：按 ADR 0015 D8 改为断言菜单无此项并显式固定配对开关
+
+## 背景与范围
+
+用户报告 `user-menu-recovery.playwright.config.ts` 10 项里 2 项失败：`user-menu-recovery.pw.ts:104`「recovers late wallets in place, preserves drafts, and updates open-menu translations」在 390px 与 1333px 都停在第 136 行，`getByRole("menuitem", { name: "Link mobile device" })` 找不到元素。用户称已在 `dbc6036e`（main `e3b5dd82` 加纯文档提交）上复现，属于既有问题；该套件不在 CI 里。本会话以 `e3b5dd82` 为基线（worktree 分支 `claude/nifty-hofstadter-afde70`，开始时工作区干净），先在基线上复现了同样的 2 项失败（8 通过，38.3 秒），`dbc6036e` 上的复现来自用户报告，本会话未重跑。同步记录，没有可核对的会话标识。
+
+## 结论与依据
+
+判断为用例过时，不是产品回归，依据按时间排列：
+
+1. `6cd0bb1a`（2026-09-24 00:16 +0800）修夹具时，用户菜单在 `hasWalletAccess` 时仍列出「Link mobile device」，所以用例断言它可用。
+2. `e62e4733`（同日 20:17 +0800，「simplify link mobile device pairing」）按 ADR 0015 D8 删除了该菜单条目（「入口只保留头部图标…删除工具菜单与用户菜单条目和撤销面板」），同一提交把 `src/lib/tests/user-menu.test.tsx` 的三处断言改成菜单「不含」此项；浏览器用例没有同步。`0a067ab7`（20:59）把弹窗懒组件移到 `header/mobile-agent-sync-modal-loader.ts`，头部图标在点击前预加载。
+3. 当前契约：AGENTS.md「Mobile connection and PWA contract」写明桌面入口只有头部二维码图标，只对精确所有者会话且配对开关开启时渲染，打开由用户菜单托管的唯一弹窗；`docs/runtime-guardrails.md` §8 写明 `UserMenu` 保留懒加载宿主、错误边界与重试，「no longer lists a menu item」。
+
+因此按契约修测试，不改产品代码：
+
+- 第 136 行改为断言菜单里没有「Link mobile device」（`toHaveCount(0)`），并删掉对应的中文「关联移动设备」可用断言；切换语言后的菜单翻译仍由「复制地址」「断开连接」覆盖。
+- 配对开关前提显式化。`UserMenu` 本身不读开关（开关只在 `TopNav`、钱包弹窗与配对弹窗里读，后两者在夹具里都被别名成桩），夹具此前的结果取决于运行者的 shell 环境。夹具 Vite 配置用 `define` 把 `import.meta.env.VITE_MOBILE_PAIRING_ENABLED` 固定为 `"true"`（Vite 7.3 开发模式会把 `import.meta.env.*` 的用户 define 并入整个 `import.meta.env` 对象，`resolveMobilePairingFeatureFlags(import.meta.env)` 因此读得到），夹具在 `window.__gatuUserMenuRecovery.pairingEnabled` 暴露 `MOBILE_PAIRING_FEATURES.enabled`，用例先断言它为 true，再断言菜单无此项。选择开启而不是关闭，是因为开启时断言更强：即使在打开配对的构建里，账户菜单也不提供入口。
+- 保留原断言的意图（恢复后的钱包会话仍能到达 Link mobile device）。夹具新增 `openLinkMobileDevice()`，按头部图标 `handleOpenMobileSync` 的路径先 `preloadMobileAgentSyncModal()` 再打开模态 store；用例只在桌面宽度（入口只在桌面头部）打开，断言恢复后的 `UserMenu` 恰好渲染一个弹窗、关闭后消失、账户按钮 DOM 与草稿值不变。图标自身的可见性规则（`hasWalletAccess && enabled`）仍由 `top-nav.test.tsx` 覆盖，因为夹具不渲染 `TopNav`。
+- `docs/runtime-guardrails.md` §9 的夹具段落补充了上述开关固定与弹窗打开方式。
+
+未采用：把菜单条目加回产品（与 ADR 0015 D8 和 AGENTS.md 冲突）；在夹具里渲染真实 `TopNav`（需要路由、存款可用性等大量提供者，超出这个夹具的职责）；只删掉失败行（会丢掉恢复后能到达配对弹窗这层覆盖，也不交代开关前提）。
+
+## 验证与限制
+
+均在 `e3b5dd82` 加本次工作区改动上运行，2026-09-28，本机 Chrome 通道、Node v24.15.0。
+
+- 修改前（基线）：套件 8 通过、2 失败，失败点即第 136 行，与报告一致。
+- 修改后第一次运行（刚清空 `.vite-user-menu-recovery` 缓存）：9 通过，1 失败，失败的是 390px 的同一用例第 142 行 `expect(connectedDot).not.toBe(neutralDot)`（连接后账户圆点颜色与未连接时相同）。紧接着单跑该用例通过；随后冷缓存全量 4 次 40/40、`--grep "recovers late" --repeat-each 6` 12/12、`--grep 390px --repeat-each 12` 60/60，都没有再现。这条断言不是本次新增，390px 也不走本次新增的桌面弹窗分支；首次失败的期望值与实际值没有保存下来（下一次运行覆盖了 `test-results/`），原因未查明，只记为一次无法复现的偶发失败。
+- 最终：`pnpm --dir apps/terminal test:browser:user-menu-recovery` 清空缓存后 1 次、保留缓存 2 次，均 10/10 通过（约 46 秒）。
+- 变异检查（改完即 `git checkout` 还原，还原后 `apps/terminal/src` 无差异）：在 `user-menu.tsx` 重新加回 `hasWalletAccess` 时的「Link mobile device」菜单项，两个宽度都在新断言处失败（期望 0，实际 1）；让 `UserMenu` 不再渲染配对弹窗宿主，1333px 在「恰好一个弹窗」处失败（期望 1，实际 0）。
+- `pnpm --filter @gatu/terminal typecheck` 0 错误（tsconfig 覆盖 `tests/browser`）。Biome 的 `files.includes` 不含 `tests/browser`，直接传路径会被忽略；改用 `biome check --write --stdin-file-path=apps/terminal/src/__biome_probe__/<文件名>` 逐个检查四个夹具文件，输出与原文件逐字相同（stdin 模式对干净的对照文件 `src/config/mobile-pairing.ts` 同样打印通用提示 “The contents aren't fixed”，不是诊断）。
+- Vitest：`tests/browser/user-menu-recovery-cache.test.ts`、`src/lib/tests/user-menu.test.tsx`、`src/lib/tests/top-nav.test.tsx`、`src/lib/tests/mobile-pairing-feature-gate.test.ts` 4 文件 56 项通过。
+- 执行前确认 shell 里没有设置 `VITE_MOBILE_PAIRING_ENABLED`，`tests/browser/` 下也没有 `.env*` 文件，所以 `pairingEnabled === true` 只能来自夹具的 define。
+- 未执行：CI（该套件不在 `.github/workflows` 里）、真实 Privy 登录与真机。这些断言依据当前代码与契约文档，不等于设计验收。
+
+## 后续与替代关系
+
+- 接续 [user-menu-recovery 浏览器夹具修复](2026-09-24-user-menu-recovery-fixture-repair.md)；那次记录的 10/10 通过属于 `6cd0bb1a` 版本，`e62e4733` 之后不再成立，本记录给出修复后的版本与结果。
+- 与 [关联移动设备按 ADR 0015 D8 收敛](2026-09-24-link-mobile-device-simplification.md) 相关：那次删除菜单条目时同步了单测，漏了这个不在 CI 里的浏览器套件。改动入口或菜单结构时，除 `user-menu.test.tsx`、`top-nav.test.tsx` 外也要跑 `pnpm --dir apps/terminal test:browser:user-menu-recovery`。
+- 偶发失败：若再出现第 142 行的圆点颜色相等，先保留 `test-results/` 里的 trace 与错误上下文，再判断是样式注入时序还是测量对象问题；不要在原因不明时把它改成轮询断言掩盖掉。
+- 是否把该套件加入 CI 仍由维护者决定。

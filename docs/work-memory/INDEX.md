@@ -112,6 +112,7 @@
 
 当前规范：[docs/runtime-guardrails.md](../../docs/runtime-guardrails.md)
 
+- [user-menu-recovery 套件的 Link mobile device 断言过时：按 ADR 0015 D8 改为断言菜单无此项并显式固定配对开关](sessions/2026-09-28-user-menu-recovery-link-mobile-assertion.md) — 2026-09-28；已验证，范围见正文。user-menu-recovery 套件 2/10 失败（两个宽度的迟到钱包恢复用例都在断言菜单里有启用的 Link mobile device）。原因是断言过时而非产品回归：e62e4733 按 ADR 0015 D8 删除了用户菜单条目，入口只剩头部二维码图标，单测当时已改为不含此项，浏览器用例（约 20 小时前由 6cd0bb1a 修过）未同步。改为断言菜单无此项，夹具 Vite 配置用 define 把 VITE_MOBILE_PAIRING_ENABLED 固定为 true 且用例先核对该前提，桌面宽度再按头部图标的路径打开 UserMenu 托管的唯一弹窗。修改后 10/10，两处变异都被捕获；首轮出现过一次无法复现的圆点颜色比较失败。未改产品代码，套件仍不在 CI。
 - [user-menu-recovery 浏览器夹具修复](sessions/2026-09-24-user-menu-recovery-fixture-repair.md) — 2026-09-24；已验证，范围见正文。user-menu-recovery 套件 10 项全红的原因是夹具缺口而非产品缺陷：df4ed89f 给页头加的 useEmailWalletExport 需要 PrivyProvider 且引入了桩没有的导出，8cb1b98a 起未就绪页头只对已有会话显示 Connecting...，51c5ace3/67d4212e 改了移动端文案。补桩、种会话标记、按宽度更新断言后 10/10 通过；未改产品代码，套件仍不在 CI。
 - [全局 Sonner 通知统一及遗漏操作补齐](sessions/2026-09-21-global-sonner-notifications.md) — 2026-09-21；已验证，范围见正文。单一全局 Sonner 容器与按需订单宿主落地，补齐操作反馈、owner/env 隔离、逐市场结果和 pending 恢复；6888项终端测试、生产构建与预算通过，未执行真实交易或发布。
 - [PR #22：复审、夹具隔离及版本化验证](sessions/2026-09-12-pr22-review.md) — 2026-09-12；已整理，验证见正文。保留早期 CI 失败及版本边界；后续修复 head 42349cb1 的八项检查通过并合并 PR #22，完成证据见追加记录。
@@ -140,6 +141,7 @@
 
 当前规范：[docs/adr/0015-link-device-alignment.md](../../docs/adr/0015-link-device-alignment.md) · [deploy/cloudfront/README.md](../../deploy/cloudfront/README.md)
 
+- [user-menu-recovery 套件的 Link mobile device 断言过时：按 ADR 0015 D8 改为断言菜单无此项并显式固定配对开关](sessions/2026-09-28-user-menu-recovery-link-mobile-assertion.md) — 2026-09-28；已验证，范围见正文。user-menu-recovery 套件 2/10 失败（两个宽度的迟到钱包恢复用例都在断言菜单里有启用的 Link mobile device）。原因是断言过时而非产品回归：e62e4733 按 ADR 0015 D8 删除了用户菜单条目，入口只剩头部二维码图标，单测当时已改为不含此项，浏览器用例（约 20 小时前由 6cd0bb1a 修过）未同步。改为断言菜单无此项，夹具 Vite 配置用 define 把 VITE_MOBILE_PAIRING_ENABLED 固定为 true 且用例先核对该前提，桌面宽度再按头部图标的路径打开 UserMenu 托管的唯一弹窗。修改后 10/10，两处变异都被捕获；首轮出现过一次无法复现的圆点颜色比较失败。未改产品代码，套件仍不在 CI。
 - [邮箱用户在 Link mobile device 弹窗里仍弹出 Privy 签名确认：原因与对齐官方的静默签名](sessions/2026-09-24-email-mobile-approval-silent-signing.md) — 2026-09-24；已验证，范围见正文。用户截图：邮箱用户在 Link mobile device 弹窗点 Approve 后出现 Privy「Approve mobile trading access」确认。原因是弹窗调用 approveAgent.mutateAsync 时没有传 applicationReview: "confirmed"，createPrivyAgentSigner 按 trading-onboarding §4 的默认规则回退到显式 UI；官方产物全局 showWalletUIs:false 且无按调用 uiOptions，approveAgent 经 Privy provider 静默签名。已让审批与撤销两处声明应用层审查已完成，弹窗测试钉住该参数；API 钱包管理弹窗的 Privy 确认保留待决。
 - [Link mobile device 在真实邮箱账户上走通：审批 → 按住显示 → 同源导入 → 撤销，及审计 P3 处置](sessions/2026-09-24-link-mobile-device-live-verification.md) — 2026-09-24；已验证，范围见正文。用户要求检查「关联移动设备」是否正常可用，并授权在其主网邮箱账户上真实签名。开发构建打开两个配对开关后，桌面审批与撤销都静默签名（无 Privy 弹窗，各约 2 秒）、4 秒按住显示与 60 秒自动关闭正常、同源第二标签作为手机页导入成功、撤销后链上 Mobile 记录换成不可访问密钥且本地密钥被清理。三镜头对抗审计只剩 P3：本次修了撤销确认按钮按钱包类型分文案、手机成功页日期跟随语言、扫码器错误框样式、AGENTS.md 入口描述、CI 测试清单与两份规划的发布状态；签名前失败被当成待核验、成功面板焦点、四种语言缺译与 F1 产品决策留作后续。真机矩阵仍全部未跑，线上开关保持关闭。
 - [关联移动设备按 ADR 0015 D8 收敛：一句说明、一个动作，明文片段载荷 v4，单开关](sessions/2026-09-24-link-mobile-device-simplification.md) — 2026-09-24；已验证，范围见正文。用户按简化规划的推荐决定实施。桌面弹窗改为一句说明、一条提示、一个动作（idle → signing → ready → revealed，失败一行错误可重按），签名仍是显式点击且静默；手机页首帧前擦除片段、显式导入、一次 extraAgents 核验、既有 epoch 回滚；载荷改为片段里的明文 JSON v4；删除信封加密、去重、草稿、恢复记录、待核验、桌面轮询、撤销面板、资金预检、擦除脚本管线、说明页、工具/用户菜单入口，两个开关合并为 VITE_MOBILE_PAIRING_ENABLED，真机矩阵与校验器换成三行清单。实现从 5,165 行降到 1,757 行（含共用审批 hook 256 行），测试从 4,574 降到 1,315 行，配对面文案约 45 条。typecheck、Biome、定向 32 文件 566 项、全量 600 文件、生产构建全部通过；开发构建上用真实邮箱账户走通授权 → 按住显示 → 导入 → API 钱包页移除，签名静默。es/fr/hi/ar 缺译、三行真机清单未跑，线上开关保持关闭。
@@ -234,6 +236,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-28 | [user-menu-recovery 套件的 Link mobile device 断言过时：按 ADR 0015 D8 改为断言菜单无此项并显式固定配对开关](sessions/2026-09-28-user-menu-recovery-link-mobile-assertion.md) | 未取得任务标识，见正文 | `e3b5dd82` | 已验证，范围见正文 |
 | 2026-09-27 | [HIP-3 免责声明对齐：修复 Codex 审查发现](sessions/2026-09-27-hip3-alignment-review-fixes.md) | 未取得任务标识，见正文 | `27ee060f` | 已验证，范围见正文 |
 | 2026-09-26 | [zustand persist 首次访问时 merge 收到 undefined 的防护](sessions/2026-09-26-persist-merge-first-visit-guard.md) | 未取得任务标识，见正文 | `121e8e76` | 已验证，范围见正文 |
 | 2026-09-25 | [HIP-3 部署者免责声明：补出口、统一平仓把关与退出过渡](sessions/2026-09-25-hip3-disclaimer-alignment.md) | 未取得任务标识，见正文 | `cd2176a1` | 已验证，范围见正文 |
