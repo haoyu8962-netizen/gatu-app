@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfirmationScreen } from "@/components/trade/tradebox/bridge/confirmation-screen";
+import { PoweredByLiFi } from "@/components/trade/tradebox/bridge/shared-ui";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
 import type { BridgeQuote } from "@/lib/lifi/use-quote";
 
@@ -50,6 +52,10 @@ function createQuote(overrides: Partial<BridgeQuote> = {}): BridgeQuote {
 		totalFeesUSD: "0.01",
 		...overrides,
 	};
+}
+
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
 }
 
 function findButton(container: HTMLElement, label: string): HTMLButtonElement {
@@ -149,5 +155,41 @@ describe("bridge quote confirmation", () => {
 		await act(async () => findButton(container, "Confirm").click());
 
 		expect(onConfirm).not.toHaveBeenCalled();
+	});
+
+	it("names the quote countdown and the LI.FI credit in the language that is currently active", () => {
+		const quote = createQuote();
+		render({
+			data: quote,
+			isLoading: false,
+			isError: false,
+			error: null,
+			dataUpdatedAt: Date.now(),
+			refetch: vi.fn(),
+		});
+		const countdown = () => container.querySelector('svg[role="img"][aria-label]:not([aria-label="LI.FI"])');
+		expect(countdown()?.getAttribute("aria-label")).toBe("Quote countdown");
+
+		act(() => {
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: {
+					[messageId("Quote countdown")]: "报价倒计时",
+					[messageId("Powered by <0/>")]: "由 <0/> 提供支持",
+				},
+			});
+		});
+		expect(countdown()?.getAttribute("aria-label")).toBe("报价倒计时");
+
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<PoweredByLiFi />
+				</I18nProvider>,
+			);
+		});
+		const credit = container.querySelector('a[href="https://li.fi"]');
+		expect(credit?.textContent?.replace(/\s+/g, " ").trim()).toBe("由 提供支持");
+		expect(credit?.querySelector('svg[aria-label="LI.FI"]')).not.toBeNull();
 	});
 });

@@ -6327,6 +6327,10 @@ msgstr "धनात्मक PNL"
 msgid "Post Only"
 msgstr "पोस्ट ओनली"
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Powered by <0/>"
+msgstr "<0/> द्वारा संचालित"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Pre-IPO"
 msgstr "प्री-IPO"
@@ -6535,6 +6539,10 @@ msgstr "{0} बाज़ार से लिंक करने वाला QR 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "QR unavailable"
 msgstr "QR अनुपलब्ध"
+
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Quote countdown"
+msgstr "कोट काउंटडाउन"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Quote expired. Refresh it before confirming."

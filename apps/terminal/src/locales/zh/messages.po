@@ -6327,6 +6327,10 @@ msgstr "盈亏为正"
 msgid "Post Only"
 msgstr "只挂单"
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Powered by <0/>"
+msgstr "由 <0/> 提供支持"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Pre-IPO"
 msgstr "上市前"
@@ -6535,6 +6539,10 @@ msgstr "链接到 {0} 市场的二维码"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "QR unavailable"
 msgstr "二维码不可用"
+
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Quote countdown"
+msgstr "报价倒计时"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Quote expired. Refresh it before confirming."

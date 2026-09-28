@@ -6327,6 +6327,10 @@ msgstr "أرباح وخسائر موجبة"
 msgid "Post Only"
 msgstr "Post Only"
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Powered by <0/>"
+msgstr "مدعوم من <0/>"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Pre-IPO"
 msgstr "ما قبل الاكتتاب"
@@ -6535,6 +6539,10 @@ msgstr "رمز QR يؤدي إلى سوق {0}"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "QR unavailable"
 msgstr "رمز QR غير متاح"
+
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Quote countdown"
+msgstr "العد التنازلي لعرض السعر"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Quote expired. Refresh it before confirming."

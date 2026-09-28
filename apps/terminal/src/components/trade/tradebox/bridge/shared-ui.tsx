@@ -1,4 +1,4 @@
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CoinIcon, WalletIcon } from "@phosphor-icons/react";
 import { BRIDGE_QUOTE_VALIDITY_MS } from "@/config/bridge";
 import { cn } from "@/lib/cn";
@@ -39,10 +39,11 @@ export function PoweredByLiFi() {
 			href="https://li.fi"
 			target="_blank"
 			rel="noopener noreferrer"
-			className="flex items-center justify-center gap-1.5 text-fg-disabled opacity-70 hover:opacity-100 transition-opacity"
+			className="flex items-center justify-center gap-1.5 text-3xs text-fg-disabled opacity-70 hover:opacity-100 transition-opacity"
 		>
-			<span className="text-3xs">Powered by</span>
-			<LiFiLogo className="h-2.5" />
+			<Trans>
+				Powered by <LiFiLogo className="h-2.5" />
+			</Trans>
 		</a>
 	);
 }
@@ -157,12 +158,13 @@ const QUOTE_COUNTDOWN_RADIUS = 10;
 const QUOTE_COUNTDOWN_DURATION_S = BRIDGE_QUOTE_VALIDITY_MS / 1000;
 
 export function QuoteCountdown({ remaining }: { remaining: number }) {
+	const { t } = useLingui();
 	const circumference = 2 * Math.PI * QUOTE_COUNTDOWN_RADIUS;
 	const offset = circumference * (1 - remaining / QUOTE_COUNTDOWN_DURATION_S);
 
 	return (
 		<div className="relative flex size-7 items-center justify-center shrink-0">
-			<svg className="size-7 -rotate-90" viewBox="0 0 24 24" role="img" aria-label="Quote countdown">
+			<svg className="size-7 -rotate-90" viewBox="0 0 24 24" role="img" aria-label={t`Quote countdown`}>
 				<circle
 					cx="12"
 					cy="12"

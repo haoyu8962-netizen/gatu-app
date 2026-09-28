@@ -6327,6 +6327,10 @@ msgstr "PNL positivo"
 msgid "Post Only"
 msgstr "Post Only"
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Powered by <0/>"
+msgstr "Con la tecnología de <0/>"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Pre-IPO"
 msgstr "Pre-IPO"
@@ -6535,6 +6539,10 @@ msgstr "Código QR que enlaza al mercado {0}"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "QR unavailable"
 msgstr "QR no disponible"
+
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Quote countdown"
+msgstr "Cuenta atrás de la cotización"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Quote expired. Refresh it before confirming."

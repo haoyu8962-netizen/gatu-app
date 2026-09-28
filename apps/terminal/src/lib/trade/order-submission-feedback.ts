@@ -179,15 +179,6 @@ export function formatOrderSubmissionFeedback(
 	return translate(messages[feedback.code]);
 }
 
-export function formatOrderSubmissionCause(
-	cause: Error | null | undefined,
-	translate: (descriptor: MessageDescriptor) => string,
-): string | null {
-	if (!cause) return null;
-	const feedback = getOrderSubmissionFeedback(cause);
-	return feedback ? formatOrderSubmissionFeedback(feedback, translate) : cause.message;
-}
-
 export function getDefaultOrderSubmissionFeedbackMessage(feedback: OrderSubmissionFeedback): string {
 	switch (feedback.code) {
 		case "balance-changed":
