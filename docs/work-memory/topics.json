@@ -52,5 +52,10 @@
 		"id": "i18n-runtime",
 		"title": "运行时多语言与图表本地化",
 		"documents": ["docs/i18n-presentation.md", "docs/runtime-guardrails.md"]
+	},
+	{
+		"id": "hyperliquid-api",
+		"title": "Hyperliquid API 接入与覆盖",
+		"documents": ["docs/hyperliquid-sdk-reference.md", "docs/hyperliquid-sdk-coverage-review.md"]
 	}
 ]

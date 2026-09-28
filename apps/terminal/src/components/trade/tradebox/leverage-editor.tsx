@@ -1,8 +1,10 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type KeyboardEvent, useEffect, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
+import type { MarginTierInput } from "@/domain/trade/order/liquidation";
 import { cn } from "@/lib/cn";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
+import { LeveragePositionLimitRow } from "./leverage-position-limit-row";
 import { LeverageSlider } from "./leverage-slider";
 
 type LeverageEditorVariant = "sheet" | "modal";
@@ -17,6 +19,8 @@ interface LeverageEditorProps {
 	onDraftChange?: (value: number | null) => void;
 	onInputValidityChange?: (isValid: boolean) => void;
 	variant?: LeverageEditorVariant;
+	marginTiers?: readonly MarginTierInput[] | null;
+	quoteSymbol?: string | null;
 }
 
 export function parseLeverageInput(text: string, max: number): number | null {
@@ -34,6 +38,8 @@ export function LeverageEditor({
 	onDraftChange,
 	onInputValidityChange,
 	variant = "sheet",
+	marginTiers,
+	quoteSymbol,
 }: LeverageEditorProps) {
 	const { t } = useLingui();
 	const isSheet = variant === "sheet";
@@ -134,6 +140,7 @@ export function LeverageEditor({
 				/>
 				<span className="ms-2 shrink-0 text-xs text-trading-panel-muted">x</span>
 			</div>
+			<LeveragePositionLimitRow marginTiers={marginTiers} quoteSymbol={quoteSymbol} leverage={value} />
 			{showHighLeverageWarning && (
 				<p className="rounded-[10px] border border-stroke-error-weak bg-trading-panel-error-soft px-2.5 py-2 text-xs leading-relaxed text-trading-panel-error">
 					<Trans>High leverage significantly increases liquidation risk. Use with caution.</Trans>

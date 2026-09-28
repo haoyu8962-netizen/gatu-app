@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { headerActions } from "@/components/trade/mobile/mobile-header-view";
 
 const LOGICAL_NAVIGATION_SOURCES = [
+	"components/funding-comparison/funding-comparison-view.tsx",
 	"components/funding-history/funding-history-page.tsx",
 	"components/historical-orders/historical-orders-page.tsx",
 	"components/leaderboard/leaderboard-view.tsx",

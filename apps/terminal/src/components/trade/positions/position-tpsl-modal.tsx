@@ -1,6 +1,7 @@
 import { Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
+import { WarningIcon } from "@phosphor-icons/react";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { InfoRow } from "@/components/ui/info-row";
@@ -22,6 +23,8 @@ import {
 	resolveOrderBatchResponse,
 } from "@/domain/trade/order-tracking";
 import { getPositionTpSlSizeForPercent, getPositionTpSlSizePercent } from "@/domain/trade/position-tpsl-size";
+import { shouldWarnPositionTpSlSlippage } from "@/domain/trade/position-tpsl-slippage";
+import { useMaxMarketOrderNotionals } from "@/hooks/trade/use-max-market-order-notionals";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -502,6 +505,8 @@ function PositionTpSlForm({
 	const workflowSubmittingRef = useRef(false);
 	const [isWorkflowSubmitting, setIsWorkflowSubmitting] = useState(false);
 	const amountInteractionSnapshotRef = useRef<{ identity: string; sizeInput: string } | null>(null);
+	const [slippageWarningHeld, setSlippageWarningHeld] = useState<boolean | null>(null);
+	const [closedSlippageWarning, setClosedSlippageWarning] = useState<boolean | null>(null);
 	const amountErrorId = useId();
 
 	function getSubmitFeedback(error: PositionTpSlSubmitError): OrderQueueItem["error"] {
@@ -726,6 +731,16 @@ function PositionTpSlForm({
 		executionGuard: assertCancelExecution,
 	});
 	const isSubmitting = isWorkflowSubmitting || isPlacing || isCancelling;
+	const maxMarketOrderNotionals = useMaxMarketOrderNotionals(open);
+	const liveSlippageWarning = shouldWarnPositionTpSlSlippage({
+		tiers: maxMarketOrderNotionals,
+		positionLeverage: leverage,
+		positionValue: position.positionValue,
+	});
+	const dialogOpen = open && !isSubmitted;
+	const openSlippageWarning = slippageWarningHeld ?? liveSlippageWarning;
+	if (!dialogOpen && closedSlippageWarning === null) setClosedSlippageWarning(openSlippageWarning);
+	const showSlippageWarning = closedSlippageWarning ?? openSlippageWarning;
 
 	const positionChanged =
 		!liveSignedSize ||
@@ -933,6 +948,7 @@ function PositionTpSlForm({
 	}
 
 	function handleAmountPercentStart() {
+		setSlippageWarningHeld(showSlippageWarning);
 		if (!canEditConfiguredAmount()) return;
 		const current = amountEditingRef.current;
 		amountInteractionSnapshotRef.current = { identity: current.identity, sizeInput: current.sizeInput };
@@ -940,6 +956,7 @@ function PositionTpSlForm({
 
 	function handleAmountPercentEnd() {
 		amountInteractionSnapshotRef.current = null;
+		setSlippageWarningHeld(null);
 	}
 
 	function isAmountGestureActive() {
@@ -1194,7 +1211,7 @@ function PositionTpSlForm({
 
 	return (
 		<PositionRiskDialogShell
-			open={open && !isSubmitted}
+			open={dialogOpen}
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
 			dismissible={!isSubmitting}
@@ -1427,6 +1444,17 @@ function PositionTpSlForm({
 					<p className="text-2xs leading-relaxed text-market-close-subtle">
 						{t`By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price.`}
 					</p>
+					{showSlippageWarning ? (
+						<div
+							data-testid="position-tpsl-slippage-warning"
+							className="flex items-start gap-2 rounded-16 border border-stroke-warning-weak bg-warning-soft p-3 text-xs text-warning"
+						>
+							<WarningIcon aria-hidden="true" weight="fill" className="mt-0.5 size-3.5 shrink-0 text-icon-warning" />
+							<p className="leading-relaxed">
+								{t`A market TP/SL may fill with large slippage because of this position's size. To reduce slippage, use limit execution with a limit price, or configure a smaller amount.`}
+							</p>
+						</div>
+					) : null}
 				</div>
 
 				{guardMessage && (

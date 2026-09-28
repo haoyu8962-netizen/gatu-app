@@ -726,6 +726,67 @@ describe("MarginModeModal", () => {
 		expect(onApply).not.toHaveBeenCalled();
 	});
 
+	it("shows the max position row in the mobile leverage drawer and follows drags below the drawer shell", async () => {
+		const marginTiers = [
+			{ lowerBound: "0.0", maxLeverage: 20 },
+			{ lowerBound: "70000000.0", maxLeverage: 10 },
+		] as const;
+		const onPendingLeverageChange = vi.fn();
+		const onOpenChange = vi.fn();
+		const drawerProps = {
+			presentation: "drawer" as const,
+			mobileView: "leverage" as const,
+			onOpenChange,
+			onPendingLeverageChange,
+			marginTiers,
+			quoteSymbol: "USDC",
+		};
+		renderModal(drawerProps);
+		const row = container.querySelector('[data-slot="info-row"]');
+		const rowValue = () => container.querySelector('[data-slot="info-row-value"]')?.textContent;
+		const initialDrawerRenders = modalHarness.adaptiveModalRenders;
+		expect(row).not.toBeNull();
+		expect(rowValue()).toBe("No tier limit");
+
+		const onChange = modalHarness.leverageSliderProps?.onChange as ((value: number) => void) | undefined;
+		act(() => onChange?.(11));
+		expect(rowValue()).toBe("$70,000,000");
+		act(() => onChange?.(10));
+		expect(rowValue()).toBe("No tier limit");
+		act(() => onChange?.(15));
+		expect(rowValue()).toBe("$70,000,000");
+		expect(container.querySelector('[data-slot="info-row"]')).toBe(row);
+		expect(modalHarness.adaptiveModalRenders).toBe(initialDrawerRenders);
+		expect(onPendingLeverageChange).not.toHaveBeenCalled();
+
+		const onCommit = modalHarness.leverageSliderProps?.onCommit as ((value: number) => void) | undefined;
+		act(() => onCommit?.(15));
+		expect(onPendingLeverageChange).toHaveBeenCalledWith(15);
+
+		renderModal({ ...drawerProps, pendingLeverage: 15 });
+		expect(container.querySelector('[data-slot="info-row"]')).toBe(row);
+		expect(rowValue()).toBe("$70,000,000");
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(onApply).toHaveBeenCalledTimes(1);
+		expect(onApply).toHaveBeenCalledWith("cross", 15);
+		expect(getButton(container, "Confirm").textContent).toBe("Confirm");
+	});
+
+	it("does not show the max position row where no leverage editor is rendered", () => {
+		const marginTiers = [
+			{ lowerBound: "0.0", maxLeverage: 20 },
+			{ lowerBound: "70000000.0", maxLeverage: 10 },
+		] as const;
+
+		renderModal({ presentation: "drawer", mobileView: "margin", marginTiers, quoteSymbol: "USDC" });
+		expect(container.querySelector('[data-slot="info-row"]')).toBeNull();
+
+		renderModal({ presentation: "modal", showLeverage: false, marginTiers, quoteSymbol: "USDC" });
+		expect(container.querySelector('input[aria-label="Leverage"]')).toBeNull();
+		expect(container.querySelector('[data-slot="info-row"]')).toBeNull();
+	});
+
 	it("does not rerender the mobile drawer when parent props remain referentially stable", () => {
 		const onOpenChange = vi.fn();
 		const onPendingLeverageChange = vi.fn();

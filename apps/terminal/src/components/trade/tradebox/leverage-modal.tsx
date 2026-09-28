@@ -2,6 +2,7 @@ import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, Moda
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useEffect, useRef, useState } from "react";
+import type { MarginTierInput } from "@/domain/trade/order/liquidation";
 import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import { addOrderQueueItem, removeOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
@@ -19,6 +20,8 @@ interface Props {
 	isUpdating: boolean;
 	onApply: (leverage: number) => Promise<number | null>;
 	marketIdentity?: string;
+	marginTiers?: readonly MarginTierInput[] | null;
+	quoteSymbol?: string | null;
 }
 
 function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...contentProps }: Props) {
@@ -58,6 +61,8 @@ function LeverageModalContent({
 	onPendingLeverageChange,
 	isUpdating,
 	onApply,
+	marginTiers,
+	quoteSymbol,
 }: LeverageModalContentProps) {
 	const { clientKey, env } = useHyperliquid();
 	const [dragLeverage, setDragLeverage] = useState<number | null>(null);
@@ -142,6 +147,8 @@ function LeverageModalContent({
 					onDraftChange={handleLeverageDraftChange}
 					onInputValidityChange={setLeverageInputValid}
 					variant="modal"
+					marginTiers={marginTiers}
+					quoteSymbol={quoteSymbol}
 				/>
 			</ModalContent>
 			<ModalFooter>

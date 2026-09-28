@@ -37,7 +37,7 @@ describe("desktop navigation layout", () => {
 		}
 	});
 
-	it("shows every entry at wide widths and keeps Statistics and API Wallet in More", () => {
+	it("shows every entry at wide widths and keeps Funding Comparison, Statistics and API Wallet in More", () => {
 		const layout = resolveDesktopNavLayout({ compact: false, narrow: false, connected: true });
 		expect(ids(layout.topLevel)).toEqual([
 			"trade",
@@ -48,13 +48,21 @@ describe("desktop navigation layout", () => {
 			"referrals",
 			"leaderboard",
 		]);
-		expect(ids(layout.more)).toEqual(["statistics", "api-wallet"]);
+		expect(ids(layout.more)).toEqual(["funding-comparison", "statistics", "api-wallet"]);
 	});
 
 	it("keeps Earn at the top level and collapses the lower entries only when connected at compact widths", () => {
 		const connected = resolveDesktopNavLayout({ compact: true, narrow: false, connected: true });
 		expect(ids(connected.topLevel)).toEqual(["trade", "portfolio", "earn"]);
-		expect(ids(connected.more)).toEqual(["vaults", "staking", "referrals", "leaderboard", "statistics", "api-wallet"]);
+		expect(ids(connected.more)).toEqual([
+			"vaults",
+			"staking",
+			"referrals",
+			"leaderboard",
+			"funding-comparison",
+			"statistics",
+			"api-wallet",
+		]);
 		const disconnected = resolveDesktopNavLayout({ compact: true, narrow: false, connected: false });
 		expect(ids(disconnected.topLevel)).toEqual([
 			"trade",
@@ -65,14 +73,22 @@ describe("desktop navigation layout", () => {
 			"referrals",
 			"leaderboard",
 		]);
-		expect(ids(disconnected.more)).toEqual(["statistics", "api-wallet"]);
+		expect(ids(disconnected.more)).toEqual(["funding-comparison", "statistics", "api-wallet"]);
 	});
 
 	it("collapses the lower entries for every wallet state at narrow widths", () => {
 		for (const connected of [true, false]) {
 			const layout = resolveDesktopNavLayout({ compact: true, narrow: true, connected });
 			expect(ids(layout.topLevel)).toEqual(["trade", "portfolio", "earn"]);
-			expect(ids(layout.more)).toEqual(["vaults", "staking", "referrals", "leaderboard", "statistics", "api-wallet"]);
+			expect(ids(layout.more)).toEqual([
+				"vaults",
+				"staking",
+				"referrals",
+				"leaderboard",
+				"funding-comparison",
+				"statistics",
+				"api-wallet",
+			]);
 		}
 	});
 
@@ -87,6 +103,9 @@ describe("desktop navigation layout", () => {
 		["vaults", "/vaultsx", false],
 		["staking", "/staking", true],
 		["api-wallet", "/api-wallet", true],
+		["funding-comparison", "/fundingComparison", true],
+		["funding-comparison", "/fundingComparison/BTC", false],
+		["funding-comparison", "/fundingHistory/0x123", false],
 		["statistics", "/statistics", false],
 		["earn", "/earn", true],
 		["earn", "/earnings", false],

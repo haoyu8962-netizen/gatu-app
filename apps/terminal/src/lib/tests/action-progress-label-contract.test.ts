@@ -8,6 +8,8 @@ const PROGRESS_LABEL = /(?:t`|<Trans>|message: ")([^`<"]*?(?:\.\.\.|…))(?:`|<\
 
 const REVIEWED_PROGRESS_LABELS: Record<string, { labels: string[]; reason: string }> = {
 	"chart/chart-panel.tsx": { labels: ["Loading..."], reason: "passive chart loading" },
+	"chart/funding-history-load-boundary.tsx": { labels: ["Loading..."], reason: "lazy chunk fallback" },
+	"chart/funding-history-panel.tsx": { labels: ["Loading..."], reason: "passive funding history loading" },
 	"chart/token-selector-content.tsx": {
 		labels: ["Loading markets...", "Search markets..."],
 		reason: "passive loading and an input placeholder",

@@ -47,6 +47,7 @@ function executionState(slippageBps: number): EntryOrderExecutionState {
 		executionReferencePx: "10",
 		executionPriceReceivedAt: 1_000,
 		slippageBps,
+		openInterestCapped: false,
 	};
 }
 

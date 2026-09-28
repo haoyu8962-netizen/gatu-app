@@ -98,7 +98,7 @@
 
 当前规范：[docs/mobile-data-presentation.md](../../docs/mobile-data-presentation.md) · [docs/price-source-audit.md](../../docs/price-source-audit.md) · [docs/terminal-loading-audit.md](../../docs/terminal-loading-audit.md)
 
-- [订阅过期巡检改用单调时钟计龄](sessions/2026-09-28-subscription-staleness-monotonic-clock.md) — 2026-09-28；已验证，范围见正文。修复 Codex 在资金费率对比审查中复现的缺口：系统时间回拨后停止更新的订阅一直不被判过期。每帧携带墙钟与单调两个接收时间，巡检、隐藏缓冲提交、前台恢复过期与诊断都取两者年龄中较大者；节流投递的间隔同样取两个时钟中较大者（原版在回拨后会把订单簿投递推迟约一小时，开发服务器对照已复现；首版只用单调时钟，Codex 对抗审查指出前跳与休眠后会多等一个节流窗口，已在第二个提交修正）。lastMessageAt 保持墙钟，阈值、订阅键与恢复路径不变；新增 ADR 0022。typecheck、Biome、订单簿与移动数据展示回归组、订阅套件与完整单测（审查修复后 601 文件 6882 项）通过，两轮共 16 个变异全部被抓住。资金费率对比文档与 perpContextsLive 测试在分支 claude/sdk-api-review-51a3ea，快进被权限拒绝，未改动。
+- [订阅过期巡检改用单调时钟计龄](sessions/2026-09-28-subscription-staleness-monotonic-clock.md) — 2026-09-28；已验证，范围见正文。修复 Codex 在资金费率对比审查中复现的缺口：系统时间回拨后停止更新的订阅一直不被判过期。每帧携带墙钟与单调两个接收时间，巡检、隐藏缓冲提交、前台恢复过期与诊断都取两者年龄中较大者；节流投递的间隔同样取两个时钟中较大者（原版在回拨后会把订单簿投递推迟约一小时，开发服务器对照已复现；首版只用单调时钟，Codex 对抗审查指出前跳与休眠后会多等一个节流窗口，已在第二个提交修正）。lastMessageAt 保持墙钟，阈值、订阅键与恢复路径不变；新增 ADR 0022。typecheck、Biome、订单簿与移动数据展示回归组、订阅套件与完整单测（审查修复后 601 文件 6882 项）通过，两轮共 16 个变异全部被抓住。之后按用户要求合入 claude/sdk-api-review-51a3ea（合并提交 bd0b80f1，因评审 worktree 有其他会话在用，先在本 worktree 的临时分支上完成再快进评审分支），并删除资金费率对比文档的回拨限定。
 - [ADR 0022 后续：socket 静默检测、l2 闸门与撤单对账的墙钟计时](sessions/2026-09-28-wall-clock-timers-follow-up.md) — 2026-09-28；已验证，范围见正文。处理 ADR 0022 初版留下的三处墙钟计时：socket 静默检测与增量 l2 闸门的 5 秒等待按墙钟与单调两种经过时间取大；SubscriptionResult 新增 monotonicLastMessageAt，撤单、改单与 TWAP 撤单对账的快照先后只看单调时间，15 秒确认超时按两种年龄取大并在定时器早到时重新安排。先后判断不用取大，因为取大会把回拨前到达的快照当作请求之后的结果。写入存储、跨标签页共享的提交窗口、轮询退避与资产预留仍用墙钟，列为剩余限制。typecheck、Biome、相关回归组与完整单测见正文；未做浏览器或真实系统时间验证。
 - [全部平仓：确认按钮改为静态动词，点击即关闭弹窗，结果只走右下角通知](sessions/2026-09-21-close-all-submit-and-dismiss.md) — 2026-09-21；已验证，范围见正文。产品负责人要求全部平仓的按钮不显示状态、与其他按钮一致、订单状态放到右下角通知。原实现把仓位数写进确认按钮，并在按钮上依次显示校验中、提交中、确认中与部分成功，弹窗等待结果。现改为静态的 Close All Positions，点击即关闭弹窗，组件保持挂载到提交结束，五种结局各发一条通知；持仓页在会话存在期间禁用入口。同日按「一并修复，还有下单弹窗按钮」的要求，限价平仓、反手确认与下单确认也改为同一做法，并写入确认面契约第 6 条；TP/SL、逐仓保证金、保证金模式、现货兑换与资金类弹窗仍在按钮上显示进度，未改。
 - [CloudFront 生产发布 p22：main 246c57bc，主网赞助充值开、移动配对关](sessions/2026-09-21-cloudfront-release-p22.md) — 2026-09-21；已验证，范围见正文。产品负责人要求把 dev 晋升到 main 并发布到线上。PR #38 以 merge commit 合入 main（246c57bc，九项检查含四种配对组合构建全部通过）。在干净的临时工作树从 main 构建 cloudfront-2026-09-21-p22：环境文件只软链不读取，命令行强制关闭移动配对、按产品负责人的选择打开主网赞助充值并在上传时带确认参数。按日常发布顺序执行函数、Lambda、同步、两条分发失效，主网 15 项与测试网 16 项 verify 全部 ok，浏览器 CSP 覆盖 32 步零违规。PR #37 的交易与资金弹层发布前没有做真实钱包验收。
@@ -242,11 +242,19 @@
 - [图表跟随数字格式设置、日期固定拉丁数字、原生 Intl 调用收口、输入框接受设置的小数点（规划 A-1/A-2a/A-3/A-4）](sessions/2026-09-24-number-format-chart-and-date-rules.md) — 2026-09-24；已验证，范围见正文。按用户决策实施对齐规划的 A-1、A-3、A-4：TradingView 创建时收到 numeric_formatting，数字格式变化走与语言相同的保存状态重建（新 reason numeric-format，值未变不重建）；format.ts 的日期函数强制 numberingSystem latn 并接受界面语言代码；6 处绕过 format.ts 的 toLocale*/Intl.DateTimeFormat 调用改走 formatTime/formatDateTime，3 处用户可见名称排序加 sensitivity base；新增 locale-format-contract 扫描测试与归属文档 docs/number-format-setting.md、AGENTS.md 契约。内置浏览器实测 1.234,56 下图表轴、图例、订单簿、标题分隔符一致。第二个提交实施 A-2a（输入框接受设置的小数点），随后两轮对抗审查（GPT-6 astra、三路 Claude 工作流）的确认项已在第三、四个提交修复。
 - [官方终端切换语言实践取证：react-intl + Suspense 懒加载语言包，图表只在创建时取语言](sessions/2026-09-24-official-terminal-language-switch-trace.md) — 2026-09-24；已验证，范围见正文。在内置浏览器只读调试 app.hyperliquid.xyz/trade/HYPE 并静态分析其生产包：语言用 react-intl，五个语言包（含英文）都是变量动态导入编译出的懒加载 chunk，消息 hook 在未缓存时 throw Promise 走根级无 fallback 的 Suspense；切换不 reload、不改 html lang、不重连 WS、不重建 TradingView（图表语言到下次刷新才变），但未用 startTransition，整棵应用被 display:none 约 66–68 ms；语言设置以 JSON 存 hyperliquid.locale-setting，数字格式是独立设置 hyperliquid.locale 且改动会 window.location.reload()；时间戳、图表坐标轴和排序都不跟随 UI 语言。八组静态结论经三路对抗核对与一路补漏，修正了目录键数（1,993）、导入映射来源（vite:dynamic-import-vars）等细节。与 gatu 的 Lingui 热切换、html lang/dir 同步、图表状态保存重建做了对照。
 
+### Hyperliquid API 接入与覆盖
+
+当前规范：[docs/hyperliquid-sdk-reference.md](../../docs/hyperliquid-sdk-reference.md) · [docs/hyperliquid-sdk-coverage-review.md](../../docs/hyperliquid-sdk-coverage-review.md)
+
+- [SDK 第一批六项接入：多 worktree 并行实现、三轮 Codex 对抗审查与集成验证](sessions/2026-09-28-sdk-feature-batch-1.md) — 2026-09-28；已验证，范围见正文。按覆盖审查的收益排序实施六项：资金费率历史页签（fundingHistory）、未平仓量上限拦截（webData3 perpsAtOpenInterestCap + perpDexLimits，ADR 0023）、资金费率对比页（predictedFundings）、TP/SL 滑点提示（maxMarketOrderNtls）、TWAP 成交 CSV 导出（userTwapSliceFillsByTime）、杠杆弹窗仓位上限（复用分档）。六个独立 worktree 并行实现并各经一轮代理审查，集成到 claude/sdk-api-review-51a3ea 后做三轮 Codex 只读对抗审查（共 6 个 P2、6 个 P3，全部修复或有理由处理；第三轮残留的时钟回拨属于共享订阅巡检，另列后续任务）。最终头类型检查、Biome、Node 22.15 构建与包体预算通过，完整终端测试 7,490 项通过、1 个已知负载敏感文件超时（单独 5/5 通过）。服务端账户通知未实施（需要传输隔离决策）。未推送、未合入 dev，没有真实钱包与真机验收。
+- [Hyperliquid SDK 0.33.3 接口覆盖审查与接入收益排序](sessions/2026-09-27-sdk-api-coverage-review.md) — 2026-09-27；已验证，范围见正文。在独立 worktree 审查 SDK 四个客户端 169 个方法：生产代码调用 88 个（Info 42/77、Exchange 23/59、Subscription 23/28、Explorer 0/5）；未调用的 81 个分为建议接入 6、可选 15、战略级 12（子账户、HIP-4、金库管理）、分支中或被策略关闭 2、冗余 18、与终端无关 28。建议优先 fundingHistory、OI 上限（数据已随 webData3 到达）+ perpDexLimits、predictedFundings。官方前端证据来自 2026-09-27 未登录抓取的 395 个 JS 文件，公开数据为当日快照；只写审查文档，未改代码、未运行应用测试、未连接真实账户。
+
 ## 按记录日期检索
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
 | 2026-09-28 | [集成 PR：持久化水合的 CI 覆盖与杠杆警告拖动保持](sessions/2026-09-28-integrate-hydration-leverage-warning.md) | 未取得任务标识，见正文 | `5c7ccbd1` | 已验证，范围见正文 |
+| 2026-09-28 | [SDK 第一批六项接入：多 worktree 并行实现、三轮 Codex 对抗审查与集成验证](sessions/2026-09-28-sdk-feature-batch-1.md) | 未取得任务标识，见正文 | `dbc6036e` | 已验证，范围见正文 |
 | 2026-09-28 | [滑杆暂停测试的预览基线竞态](sessions/2026-09-28-slider-pause-preview-baseline.md) | 未取得任务标识，见正文 | `24444b5b` | 已验证，范围见正文 |
 | 2026-09-28 | [订阅过期巡检改用单调时钟计龄](sessions/2026-09-28-subscription-staleness-monotonic-clock.md) | 未取得任务标识，见正文 | `e3b5dd82` | 已验证，范围见正文 |
 | 2026-09-28 | [ADR 0022 后续：socket 静默检测、l2 闸门与撤单对账的墙钟计时](sessions/2026-09-28-wall-clock-timers-follow-up.md) | 未取得任务标识，见正文 | `6aa715d7` | 已验证，范围见正文 |
@@ -255,6 +263,7 @@
 | 2026-09-27 | [HIP-3 免责声明对齐：修复 Codex 审查发现](sessions/2026-09-27-hip3-alignment-review-fixes.md) | 未取得任务标识，见正文 | `27ee060f` | 已验证，范围见正文 |
 | 2026-09-27 | [文档与法律页并入应用外壳，对齐官方条款页](sessions/2026-09-27-legal-pages-app-shell.md) | 未取得任务标识，见正文 | `8b9950ce` | 已验证，范围见正文 |
 | 2026-09-27 | [杠杆编辑器的高杠杆警告在滑杆手势期间冻结有无，拖过 10x 时不再移动滑杆](sessions/2026-09-27-leverage-warning-gesture-hold.md) | 未取得任务标识，见正文 | `24444b5b` | 已验证，范围见正文 |
+| 2026-09-27 | [Hyperliquid SDK 0.33.3 接口覆盖审查与接入收益排序](sessions/2026-09-27-sdk-api-coverage-review.md) | 未取得任务标识，见正文 | `e3b5dd82` | 已验证，范围见正文 |
 | 2026-09-26 | [zustand persist 首次访问时 merge 收到 undefined 的防护](sessions/2026-09-26-persist-merge-first-visit-guard.md) | 未取得任务标识，见正文 | `121e8e76` | 已验证，范围见正文 |
 | 2026-09-25 | [HIP-3 部署者免责声明：补出口、统一平仓把关与退出过渡](sessions/2026-09-25-hip3-disclaimer-alignment.md) | 未取得任务标识，见正文 | `cd2176a1` | 已验证，范围见正文 |
 | 2026-09-24 | [CloudFront 生产发布 p23：main 121e8e76，主网赞助充值开、移动配对关](sessions/2026-09-24-cloudfront-release-p23.md) | 未取得任务标识，见正文 | `42237b04` | 已验证，范围见正文 |

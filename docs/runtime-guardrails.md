@@ -380,6 +380,15 @@ mobile regressions.
   stable.
 - Mobile tab switches must not destroy the chart widget unless the whole market
   surface is leaving.
+- The desktop chart panel hosts a `Chart | Funding` view strip
+  (`ChartPanel showFundingTab`, enabled only by the main workspace). Showing
+  Funding keeps the widget mounted: `TradingViewChart` receives `active={false}`
+  and its layer is hidden with `invisible opacity-0 pointer-events-none` plus
+  `aria-hidden`. Never hide that layer with `display:none`, never wrap it in the
+  `@gatu/ui` `TabsContent` (its `[&[hidden]]:!hidden` rule removes the chart), and
+  never remount the widget for a view change. The strip has a fixed height for
+  every market kind so the widget height does not change on spot/perp switches.
+  `docs/market-funding-history.md` owns the view.
 - Chart datafeed callbacks must not capture stale symbols. Use stable refs or
   request-scoped guards for async responses.
 - The widget iframe must remain interactive on mobile. Do not apply
@@ -428,6 +437,7 @@ mobile regressions.
 ### Important Files
 
 - `apps/terminal/src/components/trade/chart/tradingview-chart.tsx`
+- `apps/terminal/src/components/trade/chart/chart-panel.tsx`
 - `apps/terminal/src/components/trade/chart/datafeed.ts`
 - `apps/terminal/src/config/chart.ts`
 - `apps/terminal/src/config/security-headers.ts`
@@ -449,6 +459,15 @@ not separate app sessions.
 - Do not use hidden mounted views if they continue expensive subscriptions or
   effects. If a view is mounted for continuity, guard its effects by active
   state.
+- The Markets view shows a fourth Funding tab for perpetual and HIP-3 markets
+  only. While it is shown, `MobileChartView` and `MobileBookView` stay mounted
+  with `active={false}`: the book layer is visible and active only for Order
+  Book or Trades, and the funding query runs only while its own tab is shown.
+  Disabling a TanStack query does not abort a request already in flight, so
+  hiding the funding view cancels its current key when no other active observer
+  uses it: the fetch signal aborts, pagination and page retries stop, and the
+  previous cache is kept. The funding view mounts on first selection and then
+  stays mounted; a switch to a spot market falls back to Chart.
 - React `Activity` in `hidden` mode unmounts effects, which destroys the
   TradingView widget. The Markets view may start hidden to defer its first
   render, but once it has been shown it stays `visible` and hides through the
@@ -466,6 +485,7 @@ not separate app sessions.
 - `apps/terminal/src/components/trade/mobile/mobile-terminal.tsx`
 - `apps/terminal/src/components/trade/mobile/mobile-trade-view.tsx`
 - `apps/terminal/src/components/trade/mobile/mobile-chart-view.tsx`
+- `apps/terminal/src/components/trade/mobile/mobile-trade-layout.tsx`
 - `apps/terminal/src/components/trade/mobile/mobile-account-view.tsx`
 - `apps/terminal/src/components/trade/orderbook/*`
 
@@ -832,8 +852,14 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 
 - `config/desktop-nav.ts` is the single source of the desktop entries: `placement` is `primary`
   (always top level), `lower` (collapsible) or `more` (menu only); an entry has a router `path`,
-  an external `href`, or `soon: true` for a disabled placeholder. Statistics and API Wallet live
-  there too. `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
+  an external `href`, or `soon: true` for a disabled placeholder. The `more` entries live there
+  too, in this order: Funding Comparison (`/fundingComparison`, see
+  [funding comparison](funding-comparison.md)), Statistics and API Wallet; collapsed entries appear
+  before them. The mobile drawer's More section lists the same three entries in the same order,
+  followed by the drawer-only Docs and Support entries ([ADR 0020](adr/0020-legal-pages-in-app-shell.md)); the
+  drawer matches its current entry on the lower-cased path, so `/fundingComparison` is compared as
+  `/fundingcomparison`. `desktop-nav-layout`, `top-nav` and `mobile-nav-drawer` pin both lists.
+  `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
   `resolveDesktopNavLayout` and the current entry with `isDesktopNavItemActive`; `TopNav` only
   renders that result and mounts one More dropdown.
 - Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
@@ -881,6 +907,8 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `apps/terminal/src/lib/navigation/desktop-nav.ts`
 - `apps/terminal/src/components/trade/header/top-nav.tsx`
 - `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
+- `apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx`
+- `apps/terminal/src/lib/tests/mobile-nav-drawer.test.tsx`
 - `apps/terminal/src/lib/navigation/boot-dashboard-route.ts`
 - `apps/terminal/src/components/dashboard/dashboard-chrome.tsx`
 - `apps/terminal/src/lib/tests/preload-trade-terminal-surface.test.ts`

@@ -170,6 +170,10 @@ msgstr "{requestedPercent}% अनुरोध किया गया; साइ
 msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} सेकंड"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "{venueName} rate higher"
+msgstr "{venueName} की दर अधिक"
+
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "~2 minutes"
 msgstr "~2 मिनट"
@@ -190,6 +194,11 @@ msgstr "1–20 वर्ण"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "14 Day Volume"
 msgstr "14 दिन का वॉल्यूम"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "1h"
+msgstr "1 घंटा"
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "24 hours"
@@ -264,6 +273,15 @@ msgstr "7 दिन"
 msgid "7D"
 msgstr "7 दिन"
 
+#: src/config/funding-comparison.ts
+msgid "8 Hours"
+msgstr "8 घंटे"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "8h"
+msgstr "8 घंटे"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
 msgstr "8 घंटे की फंडिंग"
@@ -279,6 +297,10 @@ msgstr "हर मार्केट क्लोज़ से पहले ए�
 #: src/components/staking/staking-view.tsx
 msgid "A funds operation is awaiting verification"
 msgstr "एक फंड ऑपरेशन सत्यापन की प्रतीक्षा में है"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "A market TP/SL may fill with large slippage because of this position's size. To reduce slippage, use limit execution with a limit price, or configure a smaller amount."
+msgstr "इस पोज़िशन के आकार के कारण मार्केट TP/SL बड़े स्लिपेज के साथ निष्पादित हो सकता है। स्लिपेज कम करने के लिए, लिमिट प्राइस के साथ लिमिट निष्पादन का उपयोग करें, या कम राशि कॉन्फ़िगर करें।"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "A new delegation is locked to this validator for one day. Rewards are distributed daily and automatically redelegated."
@@ -904,6 +926,7 @@ msgstr "बिक्री"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit/funds-route-details.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Asset"
 msgstr "संपत्ति"
 
@@ -1094,6 +1117,10 @@ msgstr "नया डेटा सत्यापित होने तक ब�
 msgid "Bid"
 msgstr "खरीद"
 
+#: src/config/funding-comparison.ts
+msgid "Binance-HL Arb"
+msgstr "Binance-HL आर्बिट्राज"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
 msgstr "बिटकॉइन एक विकेंद्रीकृत डिजिटल परिसंपत्ति है जिसकी सुरक्षा प्रूफ-ऑफ-वर्क नेटवर्क करता है।"
@@ -1184,6 +1211,10 @@ msgstr "लॉन्ग खरीदें"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "डिफ़ॉल्ट रूप से, TP/SL पूरी पोज़िशन पर लागू होता है और मार्क मूल्य ट्रिगर तक पहुँचने पर मार्केट ऑर्डर सबमिट करता है। निश्चित आकार रखने के लिए राशि कॉन्फ़िगर करें, या अपनी लिमिट प्राइस पर सबमिट करने के लिए लिमिट निष्पादन चुनें।"
+
+#: src/config/funding-comparison.ts
+msgid "Bybit-HL Arb"
+msgstr "Bybit-HL आर्बिट्राज"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
@@ -1284,14 +1315,17 @@ msgstr "इस नेटवर्क पर CCTP जमा का वास्�
 #~ msgid "Change leverage"
 #~ msgstr "लेवरेज बदलें"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to ascending order"
 msgstr "आरोही क्रम में बदलें"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to descending order"
 msgstr "अवरोही क्रम में बदलें"
 
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "चार्ट"
@@ -1303,6 +1337,10 @@ msgstr "चार्ट डेटा पर अस्थायी दर सी�
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "चार्ट इतिहास अनुरोध का समय समाप्त हो गया"
+
+#: src/components/trade/chart/chart-panel.tsx
+msgid "Chart views"
+msgstr "चार्ट व्यू"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Check Earn Action History before retrying."
@@ -1543,6 +1581,7 @@ msgstr "सभी बंद करने की पुष्टि बंद क
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Close Long"
 msgstr "लॉन्ग क्लोज़"
 
@@ -1609,6 +1648,7 @@ msgstr "रिवर्स पुष्टि बंद करें"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Close Short"
 msgstr "शॉर्ट क्लोज़"
 
@@ -2186,6 +2226,7 @@ msgstr "क्रिप्टो"
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "CSV export reached the history limit. Some records were not included."
 msgstr "CSV निर्यात इतिहास सीमा तक पहुँच गया। कुछ रिकॉर्ड शामिल नहीं किए गए।"
 
@@ -2193,6 +2234,7 @@ msgstr "CSV निर्यात इतिहास सीमा तक पह�
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "CSV exported."
 msgstr "CSV निर्यात हो गया।"
 
@@ -2203,6 +2245,11 @@ msgstr "CSV निर्यात हो गया।"
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "यह पोज़िशन खुलने के बाद से भुगतान की गई या प्राप्त हुई संचयी फंडिंग।"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Cumulative Funding Rate"
+msgstr "संचयी फंडिंग दर"
 
 #. placeholder {0}: formatNumber(cumulativeVolume)
 #: src/components/referrals/referral-code-card.tsx
@@ -2229,6 +2276,15 @@ msgstr "वर्तमान PNL"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr "वर्तमान वैधता"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "D"
+msgstr "दिन"
+
+#: src/config/funding-comparison.ts
+msgid "Day"
+msgstr "दिन"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "days"
@@ -2520,6 +2576,7 @@ msgstr "गंतव्य पता"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Direction"
 msgstr "दिशा"
 
@@ -3009,10 +3066,12 @@ msgstr "एक्सप्लोरर"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Export CSV"
 msgstr "CSV निर्यात करें"
 
@@ -3040,6 +3099,10 @@ msgstr "ऑर्डर इतिहास निर्यात हो रह�
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting trade history..."
 msgstr "ट्रेड इतिहास निर्यात हो रहा है..."
+
+#: src/hooks/trade/use-twap-fill-history-csv.ts
+msgid "Exporting TWAP fill history..."
+msgstr "TWAP निष्पादन इतिहास निर्यात हो रहा है..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "failed"
@@ -3098,6 +3161,10 @@ msgstr "ऑर्डर इतिहास निर्यात करने �
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export trade history."
 msgstr "ट्रेड इतिहास निर्यात करने में विफल।"
+
+#: src/hooks/trade/use-twap-fill-history-csv.ts
+msgid "Failed to export TWAP fill history."
+msgstr "TWAP निष्पादन इतिहास निर्यात करने में विफल।"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Failed to load balances"
@@ -3205,6 +3272,7 @@ msgstr "पसंदीदा"
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Fee"
 msgstr "शुल्क"
 
@@ -3370,6 +3438,10 @@ msgstr "परिणाम स्वीकार करने से पहल�
 msgid "From"
 msgstr "से"
 
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
+msgstr "{startTime} से {endTime} तक। नवीनतम फंडिंग दर {latestRate}; संचयी फंडिंग दर {cumulativeRate}। उच्चतम {maxRate}; निम्नतम {minRate}।"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "पूरी तरह निष्पादित"
@@ -3394,9 +3466,23 @@ msgstr "फंडिंग"
 #~ msgid "FUNDING"
 #~ msgstr "फंडिंग"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding comparison"
+msgstr "फंडिंग तुलना"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
+msgid "Funding Comparison"
+msgstr "फंडिंग तुलना"
+
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
 #~ msgstr "फंडिंग डेटा सत्यापित नहीं किया जा सका। रीफ़्रेश करके फिर प्रयास करें।"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding history interval"
+msgstr "फंडिंग इतिहास अंतराल"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -3427,6 +3513,23 @@ msgstr "फंडिंग भुगतान पेज नेविगेशन
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments will load automatically when the connection returns."
 msgstr "कनेक्शन वापस आने पर फंडिंग भुगतान अपने-आप लोड हो जाएँगे।"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding period"
+msgstr "फंडिंग अवधि"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding Rate"
+msgstr "फंडिंग दर"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding rate differences across exchanges."
+msgstr "एक्सचेंजों के बीच फंडिंग दर का अंतर।"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "Funding rate history"
+msgstr "फंडिंग दर इतिहास"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -3603,6 +3706,10 @@ msgstr ""
 msgid "Hour(s)"
 msgstr "घंटे"
 
+#: src/config/funding-comparison.ts
+msgid "Hourly"
+msgstr "प्रति घंटा"
+
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "लॉन्ग द्वारा शॉर्ट को चुकाई जाने वाली प्रति घंटे की दर (यदि नकारात्मक हो, तो शॉर्ट लॉन्ग को भुगतान करते हैं)। फंडिंग से कोई अतिरिक्त शुल्क नहीं जुड़ा है; यह कीमत को स्पॉट कीमत की ओर ले जाने के लिए उपयोगकर्ताओं के बीच पीयर-टू-पीयर ट्रांसफर है। विवरण के लिए दस्तावेज़ देखें।"
@@ -3652,6 +3759,14 @@ msgstr "Hyperliquid के इतिहास ने इस ऑपरेशन �
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid जमाकर्ताओं का केवल एक उपसमूह लौटा सकता है।"
+
+#: src/config/funding-comparison.ts
+msgid "Hyperliquid OI"
+msgstr "Hyperliquid ओपन इंटरेस्ट"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Hyperliquid rate higher"
+msgstr "Hyperliquid की दर अधिक"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
@@ -4055,6 +4170,7 @@ msgstr "लिक्विडेशन प्राइस"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Liquidated"
 msgstr "लिक्विडेट हो गया"
 
@@ -4124,6 +4240,10 @@ msgstr "फंडिंग भुगतान लोड हो रहे है�
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Loading funding payments."
 msgstr "फंडिंग भुगतान लोड हो रहे हैं।"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Loading funding rates"
+msgstr "फंडिंग दरें लोड हो रही हैं"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
@@ -4217,6 +4337,8 @@ msgstr "वॉलेट लोड हो रहा है..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
@@ -4402,6 +4524,7 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/config/funding-comparison.ts
 #: src/config/trade-panel-labels.ts
 msgid "Market"
 msgstr "बाज़ार"
@@ -4519,6 +4642,10 @@ msgstr "अधिकतम गिरावट"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
 msgstr "नकदी प्रवाह के प्रभाव से समायोजित इतिहास की पुष्टि होने तक अधिकतम गिरावट उपलब्ध नहीं है।"
+
+#: src/components/trade/tradebox/leverage-position-limit-row.tsx
+msgid "Max position size"
+msgstr "अधिकतम पोज़िशन आकार"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -4767,6 +4894,7 @@ msgstr "फंडिंग भुगतान का अगला पेज"
 msgid "Next order history page"
 msgstr "ऑर्डर इतिहास का अगला पेज"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
 msgstr "अगला पेज"
@@ -4896,6 +5024,14 @@ msgstr "चुने गए फ़िल्टर से कोई फ़िल 
 msgid "No fills match these filters."
 msgstr "इन फ़िल्टरों से मेल खाने वाली कोई फिल नहीं है।"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "No funding comparison data"
+msgstr "कोई फंडिंग तुलना डेटा नहीं"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "No funding history"
+msgstr "फंडिंग का कोई इतिहास नहीं"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found"
 msgstr "कोई फंडिंग भुगतान नहीं मिला"
@@ -4949,6 +5085,10 @@ msgstr "कोई मार्केट नहीं"
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "कोई बाज़ार नहीं मिला।"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "No markets match your search"
+msgstr "आपकी खोज से कोई बाज़ार मेल नहीं खाता"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No matching fills"
@@ -5070,6 +5210,10 @@ msgstr "कोई स्टेकिंग कार्रवाई नहीं
 #: src/components/staking/staking-view.tsx
 msgid "No staking rewards"
 msgstr "कोई स्टेकिंग पुरस्कार नहीं"
+
+#: src/components/trade/tradebox/leverage-position-limit-row.tsx
+msgid "No tier limit"
+msgstr "कोई टियर सीमा नहीं"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "No tokens with value found across supported chains"
@@ -5248,11 +5392,16 @@ msgstr "अपना ईमेल वॉलेट तैयार करने �
 msgid "Open Interest"
 msgstr "ओपन इंटरेस्ट"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Open interest cap"
+msgstr "ओपन इंटरेस्ट सीमा"
+
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Open Long"
 msgstr "ओपन लॉन्ग"
 
@@ -5290,6 +5439,7 @@ msgstr "संबंधित पेज खोलें"
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Open Short"
 msgstr "ओपन शॉर्ट"
 
@@ -5736,6 +5886,7 @@ msgstr "विज़ुअल समीक्षा के लिए प्ल�
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-performance-chart.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "PNL"
 msgstr "PNL"
 
@@ -5902,6 +6053,14 @@ msgstr "प्री-IPO"
 msgid "Pre-launch"
 msgstr "प्री-लॉन्च"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Predicted funding rates by market and exchange"
+msgstr "बाज़ार और एक्सचेंज के अनुसार अनुमानित फंडिंग दरें"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Predicted rates for the next funding, converted to the selected period. Only Hyperliquid main perp markets are included. Differences do not include trading fees or payment timing."
+msgstr "अगली फंडिंग के लिए अनुमानित दरें, चुनी गई अवधि में बदली गई। केवल Hyperliquid के मुख्य perp बाज़ार शामिल हैं। अंतर में ट्रेडिंग शुल्क या भुगतान का समय शामिल नहीं है।"
+
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Prefer an app-like experience?"
 msgstr "ऐप जैसा अनुभव पसंद करेंगे?"
@@ -5930,6 +6089,7 @@ msgstr "फंडिंग भुगतान का पिछला पेज"
 msgid "Previous order history page"
 msgstr "ऑर्डर इतिहास का पिछला पेज"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
 msgstr "पिछला पेज"
@@ -5979,6 +6139,7 @@ msgstr "वॉल्ट का पिछला पेज"
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Price"
 msgstr "मूल्य"
 
@@ -6126,6 +6287,10 @@ msgstr "इसके अनुसार रैंक"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "दर"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Rates equal"
+msgstr "दरें बराबर"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Read official referral rules"
@@ -6540,6 +6705,7 @@ msgid "Resume tracking"
 msgstr "ट्रैकिंग फिर से शुरू करें"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
@@ -6549,6 +6715,8 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
@@ -6789,6 +6957,7 @@ msgstr "ROI"
 msgid "Role"
 msgstr "भूमिका"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -6912,6 +7081,10 @@ msgstr ""
 msgid "SDK method"
 msgstr "SDK विधि"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Search by market"
+msgstr "बाज़ार के अनुसार खोजें"
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Search by vault, address, or leader"
 msgstr "वॉल्ट, पते या लीडर से खोजें"
@@ -6924,6 +7097,7 @@ msgstr "वॉलेट पते या डिस्प्ले नाम स�
 msgid "Search leaderboard"
 msgstr "लीडरबोर्ड खोजें"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets"
 msgstr "बाज़ार खोजें"
@@ -7258,6 +7432,7 @@ msgstr "साइन हो रहा है..."
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Size"
 msgstr "आकार"
 
@@ -7364,6 +7539,10 @@ msgstr "जल्द ही"
 msgid "Sort API wallets by name"
 msgstr "API वॉलेट को नाम के अनुसार क्रमबद्ध करें"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Sort by"
+msgstr "इसके अनुसार क्रमबद्ध करें"
+
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
@@ -7372,6 +7551,10 @@ msgstr "{sortLabel} के अनुसार क्रमबद्ध करे
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Sort leaderboard"
 msgstr "लीडरबोर्ड क्रमबद्ध करें"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Sort markets"
+msgstr "बाज़ार क्रमबद्ध करें"
 
 #. placeholder {0}: getColumnSortLabel(sorting[0].id)
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7782,6 +7965,8 @@ msgstr "स्टेबलकॉइन स्वैप करें"
 #. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
 #. placeholder {0}: funding.coin
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -8149,6 +8334,11 @@ msgstr "Hyperliquid का निकासी रूट बदल गया ह�
 #: src/components/vaults/vault-detail-view.tsx
 msgid "The leader receives the commission shown above from profits."
 msgstr "लीडर को लाभ में से ऊपर दिखाया गया कमीशन मिलता है।"
+
+#: src/lib/errors/definitions/open-interest-cap.ts
+#: src/lib/trade/order-submission-feedback.ts
+msgid "The limit order would be canceled after resting because open interest is capped. Use market orders to close positions."
+msgstr "ओपन इंटरेस्ट अपनी सीमा पर पहुँच गया है, इसलिए लिमिट ऑर्डर बुक में लगने के बाद रद्द हो जाएगा। पोज़िशन बंद करने के लिए मार्केट ऑर्डर का उपयोग करें।"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."
@@ -8773,6 +8963,7 @@ msgstr "TIF"
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Time"
 msgstr "समय"
 
@@ -9071,6 +9262,7 @@ msgstr "पारंपरिक वित्त"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Transaction"
 msgstr "लेनदेन"
 
@@ -9201,6 +9393,7 @@ msgstr "TVL"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "TWAP"
 msgstr "TWAP"
@@ -9309,6 +9502,7 @@ msgstr "दो-तरफ़ा ओपन इंटरेस्ट: इस कॉ
 #: src/components/trade/positions/orders-tab.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Type"
 msgstr "प्रकार"
 
@@ -9996,6 +10190,10 @@ msgstr "हम इस वॉलेट की कानूनी स्थित�
 msgid "Website"
 msgstr "वेबसाइट"
 
+#: src/config/funding-comparison.ts
+msgid "Week"
+msgstr "सप्ताह"
+
 #: src/config/account-ledger.ts
 msgid "Welcome Bonus"
 msgstr "स्वागत बोनस"
@@ -10120,6 +10318,10 @@ msgstr "निष्पादन के समय आपकी पूरी {tok
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdrew {token}"
 msgstr "{token} निकाला"
+
+#: src/config/funding-comparison.ts
+msgid "Year"
+msgstr "वर्ष"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx

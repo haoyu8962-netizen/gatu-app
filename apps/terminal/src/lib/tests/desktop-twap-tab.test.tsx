@@ -3,24 +3,30 @@
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import type { TwapHistoryResponse, UserFillsResponse } from "@nktkas/hyperliquid";
-import { act } from "react";
+import { act, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
 	cancelTwap: vi.fn(),
 	cancellingTwapId: null as number | null,
+	exportTwapFills: vi.fn(async () => undefined),
+	exportListeners: new Set<() => void>(),
 	hasActiveOrder: true,
 	hasMoreTwapFills: false,
 	hasMoreTwapHistory: false,
+	isExportingTwapFills: false,
+	isTwapFillsEmpty: false,
 	isTwapFillsRealtimeDegraded: false,
 	isTwapHistoryRealtimeDegraded: false,
+	isWalletConnected: true,
 	loadMoreTwapFills: vi.fn(),
 	loadMoreTwapHistory: vi.fn(),
 	navigateToMarket: vi.fn(),
 	retryTwapFillsRealtime: vi.fn(),
 	retryTwapHistoryRealtime: vi.fn(),
 	setOrderType: vi.fn(),
+	twapFillsStatus: "ready" as "error" | "idle" | "loading" | "ready",
 	twapHistory: [
 		{
 			state: {
@@ -112,19 +118,33 @@ vi.mock("@/hooks/trade/use-twap-history", () => ({
 vi.mock("@/hooks/trade/use-twap-slice-fills", () => ({
 	useTwapSliceFills: () => ({
 		error: undefined,
-		fills: testState.twapFills,
+		fills: testState.isTwapFillsEmpty ? [] : testState.twapFills,
 		hasMore: testState.hasMoreTwapFills,
-		isConnected: true,
+		isConnected: testState.isWalletConnected,
 		isRealtimeDegraded: testState.isTwapFillsRealtimeDegraded,
 		loadMore: testState.loadMoreTwapFills,
 		realtimeError: testState.isTwapFillsRealtimeDegraded ? new Error("Fill stream unavailable") : undefined,
 		retryRealtime: testState.retryTwapFillsRealtime,
-		status: "ready",
+		status: testState.twapFillsStatus,
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-twap-fill-history-csv", () => ({
+	useTwapFillHistoryCsv: () => ({
+		exportCsv: testState.exportTwapFills,
+		isExporting: useSyncExternalStore(
+			(listener) => {
+				testState.exportListeners.add(listener);
+				return () => testState.exportListeners.delete(listener);
+			},
+			() => testState.isExportingTwapFills,
+		),
 	}),
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: "0x1234", isConnected: true }),
+	useWalletSession: () =>
+		testState.isWalletConnected ? { address: "0x1234", isConnected: true } : { address: undefined, isConnected: false },
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -164,9 +184,14 @@ describe("desktop TWAP toolbar", () => {
 		testState.hasActiveOrder = true;
 		testState.hasMoreTwapFills = false;
 		testState.hasMoreTwapHistory = false;
+		testState.isExportingTwapFills = false;
+		testState.isTwapFillsEmpty = false;
 		testState.isTwapFillsRealtimeDegraded = false;
 		testState.isTwapHistoryRealtimeDegraded = false;
+		testState.isWalletConnected = true;
+		testState.twapFillsStatus = "ready";
 		testState.cancelTwap.mockReset();
+		testState.exportTwapFills.mockClear();
 		testState.loadMoreTwapFills.mockReset();
 		testState.loadMoreTwapHistory.mockReset();
 		testState.navigateToMarket.mockReset();
@@ -194,6 +219,25 @@ describe("desktop TWAP toolbar", () => {
 				</I18nProvider>,
 			);
 		});
+	}
+
+	function selectSubview(label: string) {
+		const tab = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find(
+			(candidate) => candidate.textContent === label,
+		);
+		expect(tab).toBeDefined();
+		act(() => tab?.click());
+	}
+
+	function setExportingTwapFills(isExporting: boolean) {
+		act(() => {
+			testState.isExportingTwapFills = isExporting;
+			for (const listener of testState.exportListeners) listener();
+		});
+	}
+
+	function getTwapFillFooter() {
+		return container.querySelector<HTMLElement>('[data-testid="twap-fill-history-footer"]');
 	}
 
 	it.each([
@@ -356,5 +400,71 @@ describe("desktop TWAP toolbar", () => {
 		act(() => loadMore?.click());
 		expect(testState.retryTwapHistoryRealtime).toHaveBeenCalledTimes(1);
 		expect(testState.loadMoreTwapHistory).toHaveBeenCalledTimes(1);
+	});
+
+	it("offers the full TWAP fill export only on the Fill History subview", () => {
+		render();
+		expect(getTwapFillFooter()).toBeNull();
+		selectSubview("History");
+		expect(getTwapFillFooter()).toBeNull();
+
+		selectSubview("Fill History");
+		const footer = getTwapFillFooter();
+		expect(footer?.className).toContain("h-[38px]");
+		const table = container.querySelector('table[aria-label="TWAP fill history"]');
+		expect(table?.compareDocumentPosition(footer as Node)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+		const buttons = Array.from(footer?.querySelectorAll<HTMLButtonElement>("button") ?? []);
+		expect(buttons.map((button) => button.textContent)).toEqual(["Export CSV"]);
+		expect(buttons[0]?.disabled).toBe(false);
+
+		act(() => buttons[0]?.click());
+		expect(testState.exportTwapFills).toHaveBeenCalledTimes(1);
+
+		setExportingTwapFills(true);
+		const busyButton = getTwapFillFooter()?.querySelector<HTMLButtonElement>("button");
+		expect(busyButton?.disabled).toBe(true);
+		expect(busyButton?.textContent).toBe("Export CSV");
+
+		setExportingTwapFills(false);
+		expect(getTwapFillFooter()?.querySelector<HTMLButtonElement>("button")?.disabled).toBe(false);
+
+		selectSubview("Current");
+		expect(getTwapFillFooter()).toBeNull();
+	});
+
+	it.each([
+		{ status: "idle", empty: false },
+		{ status: "loading", empty: false },
+		{ status: "error", empty: false },
+		{ status: "ready", empty: true },
+	] as const)(
+		"keeps the export available while the displayed fills are $status (empty: $empty)",
+		({ status, empty }) => {
+			testState.twapFillsStatus = status;
+			testState.isTwapFillsEmpty = empty;
+			render();
+			selectSubview("Fill History");
+
+			expect(container.querySelector('table[aria-label="TWAP fill history"]')).toBeNull();
+			if (empty) expect(container.textContent).toContain("No TWAP fills found.");
+			else {
+				expect(container.querySelector('[data-slot="passive-data-placeholder"]')).not.toBeNull();
+				expect(container.textContent).not.toContain("No TWAP fills found.");
+			}
+			expect(container.textContent).not.toMatch(/Loading|Failed|Exporting/);
+			const exportButton = getTwapFillFooter()?.querySelector<HTMLButtonElement>("button");
+			expect(exportButton?.textContent).toBe("Export CSV");
+			expect(exportButton?.disabled).toBe(false);
+		},
+	);
+
+	it("does not offer the TWAP fill export without a connected wallet", () => {
+		testState.isWalletConnected = false;
+		render();
+		selectSubview("Fill History");
+
+		expect(container.textContent).toContain("Connect your wallet to view TWAP fill history.");
+		expect(getTwapFillFooter()).toBeNull();
+		expect(testState.exportTwapFills).not.toHaveBeenCalled();
 	});
 });

@@ -170,6 +170,10 @@ msgstr "{requestedPercent} % demandé ; {effectivePercent} % après application 
 msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} secondes"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "{venueName} rate higher"
+msgstr "Taux {venueName} plus élevé"
+
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "~2 minutes"
 msgstr "~2 minutes"
@@ -190,6 +194,11 @@ msgstr "1–20 caractères"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "14 Day Volume"
 msgstr "Volume sur 14 jours"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "1h"
+msgstr "1 h"
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "24 hours"
@@ -264,6 +273,15 @@ msgstr "7 jours"
 msgid "7D"
 msgstr "7 j"
 
+#: src/config/funding-comparison.ts
+msgid "8 Hours"
+msgstr "8 heures"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "8h"
+msgstr "8 h"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
 msgstr "Financement 8 h"
@@ -279,6 +297,10 @@ msgstr "Une confirmation est affichée avant chaque clôture au marché."
 #: src/components/staking/staking-view.tsx
 msgid "A funds operation is awaiting verification"
 msgstr "Une opération sur les fonds est en attente de vérification"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "A market TP/SL may fill with large slippage because of this position's size. To reduce slippage, use limit execution with a limit price, or configure a smaller amount."
+msgstr "Un TP/SL au marché peut être exécuté avec un glissement important en raison de la taille de cette position. Pour réduire le glissement, utilisez l'exécution limite avec un prix limite, ou configurez un montant plus petit."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "A new delegation is locked to this validator for one day. Rewards are distributed daily and automatically redelegated."
@@ -904,6 +926,7 @@ msgstr "Vente"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit/funds-route-details.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Asset"
 msgstr "Actif"
 
@@ -1094,6 +1117,10 @@ msgstr "Les soldes restent inconnus et toutes les actions de staking sont désac
 msgid "Bid"
 msgstr "Achat"
 
+#: src/config/funding-comparison.ts
+msgid "Binance-HL Arb"
+msgstr "Arbitrage Binance-HL"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
 msgstr "Bitcoin est un actif numérique décentralisé sécurisé par un réseau à preuve de travail."
@@ -1184,6 +1211,10 @@ msgstr "Acheter long"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "Par défaut, le TP/SL s'applique à toute la position et envoie un ordre au marché lorsque le prix mark atteint le déclencheur. Configurez un montant pour conserver une taille fixe, ou sélectionnez l'exécution limite pour soumettre à votre prix limite."
+
+#: src/config/funding-comparison.ts
+msgid "Bybit-HL Arb"
+msgstr "Arbitrage Bybit-HL"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
@@ -1284,14 +1315,17 @@ msgstr "Les dépôts CCTP sont en attente d’une vérification de bout en bout 
 #~ msgid "Change leverage"
 #~ msgstr "Modifier le levier"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to ascending order"
 msgstr "Passer à l’ordre croissant"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Change to descending order"
 msgstr "Passer à l’ordre décroissant"
 
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "Graphique"
@@ -1303,6 +1337,10 @@ msgstr "Les données du graphique sont temporairement limitées"
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "La requête d’historique du graphique a expiré"
+
+#: src/components/trade/chart/chart-panel.tsx
+msgid "Chart views"
+msgstr "Vues du graphique"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Check Earn Action History before retrying."
@@ -1543,6 +1581,7 @@ msgstr "Fermer la confirmation de fermeture globale"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Close Long"
 msgstr "Fermer Long"
 
@@ -1609,6 +1648,7 @@ msgstr "Fermer la confirmation d'inversion"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Close Short"
 msgstr "Fermer Short"
 
@@ -2186,6 +2226,7 @@ msgstr "Crypto"
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "CSV export reached the history limit. Some records were not included."
 msgstr "L’exportation CSV a atteint la limite de l’historique. Certains enregistrements n’ont pas été inclus."
 
@@ -2193,6 +2234,7 @@ msgstr "L’exportation CSV a atteint la limite de l’historique. Certains enre
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "CSV exported."
 msgstr "CSV exporté."
 
@@ -2203,6 +2245,11 @@ msgstr "CSV exporté."
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "Financement cumulé payé ou reçu depuis l'ouverture de cette position."
+
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Cumulative Funding Rate"
+msgstr "Taux de financement cumulé"
 
 #. placeholder {0}: formatNumber(cumulativeVolume)
 #: src/components/referrals/referral-code-card.tsx
@@ -2229,6 +2276,15 @@ msgstr "PnL actuel"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr "Validité actuelle"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgctxt "Funding history range"
+msgid "D"
+msgstr "J"
+
+#: src/config/funding-comparison.ts
+msgid "Day"
+msgstr "Jour"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "days"
@@ -2520,6 +2576,7 @@ msgstr "Adresse de destination"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Direction"
 msgstr "Direction"
 
@@ -3009,10 +3066,12 @@ msgstr "Explorateur"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Export CSV"
 msgstr "Exporter en CSV"
 
@@ -3040,6 +3099,10 @@ msgstr "Export de l'historique des ordres..."
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting trade history..."
 msgstr "Export de l'historique des transactions..."
+
+#: src/hooks/trade/use-twap-fill-history-csv.ts
+msgid "Exporting TWAP fill history..."
+msgstr "Export de l'historique des exécutions TWAP..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "failed"
@@ -3098,6 +3161,10 @@ msgstr "Échec de l'exportation de l'historique des ordres."
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export trade history."
 msgstr "Échec de l'exportation de l'historique des transactions."
+
+#: src/hooks/trade/use-twap-fill-history-csv.ts
+msgid "Failed to export TWAP fill history."
+msgstr "Échec de l'exportation de l'historique des exécutions TWAP."
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Failed to load balances"
@@ -3205,6 +3272,7 @@ msgstr "Favoris"
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Fee"
 msgstr "Frais"
 
@@ -3370,6 +3438,10 @@ msgstr "Les données extraAgents actualisées sont vérifiées avant l’accepta
 msgid "From"
 msgstr "De"
 
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "From {startTime} to {endTime}. Latest funding rate {latestRate}; cumulative funding rate {cumulativeRate}. Highest {maxRate}; lowest {minRate}."
+msgstr "Du {startTime} au {endTime}. Dernier taux de financement : {latestRate} ; taux de financement cumulé : {cumulativeRate}. Maximum : {maxRate} ; minimum : {minRate}."
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Fully filled"
 msgstr "Entièrement exécuté"
@@ -3394,9 +3466,23 @@ msgstr "Financement"
 #~ msgid "FUNDING"
 #~ msgstr "FUNDING"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding comparison"
+msgstr "Comparaison du financement"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/desktop-nav.ts
+msgid "Funding Comparison"
+msgstr "Comparaison du financement"
+
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding data could not be validated. Refresh and try again."
 #~ msgstr "Les données de financement n’ont pas pu être validées. Actualisez et réessayez."
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding history interval"
+msgstr "Intervalle de l’historique de financement"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -3427,6 +3513,23 @@ msgstr "Pagination des paiements de financement"
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments will load automatically when the connection returns."
 msgstr "Les paiements de financement se chargeront automatiquement au rétablissement de la connexion."
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding period"
+msgstr "Période de financement"
+
+#: src/components/trade/chart/funding-history-chart.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "Funding Rate"
+msgstr "Taux de financement"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Funding rate differences across exchanges."
+msgstr "Écarts de taux de financement entre plateformes d’échange."
+
+#: src/components/trade/chart/funding-history-chart.tsx
+msgid "Funding rate history"
+msgstr "Historique des taux de financement"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -3603,6 +3706,10 @@ msgstr ""
 msgid "Hour(s)"
 msgstr "Heure(s)"
 
+#: src/config/funding-comparison.ts
+msgid "Hourly"
+msgstr "Horaire"
+
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "Taux horaire payé par les positions longues aux positions courtes (s'il est négatif, les positions courtes paient les longues). Le funding n'a pas de frais associés ; il s'agit d'un transfert pair à pair entre utilisateurs pour rapprocher le prix du prix spot. Consultez la documentation pour plus de détails."
@@ -3652,6 +3759,14 @@ msgstr "L’historique d’Hyperliquid n’a pas confirmé cette opération. Ne 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid peut ne renvoyer qu’un sous-ensemble des déposants."
+
+#: src/config/funding-comparison.ts
+msgid "Hyperliquid OI"
+msgstr "Intérêt ouvert Hyperliquid"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Hyperliquid rate higher"
+msgstr "Taux Hyperliquid plus élevé"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
@@ -4055,6 +4170,7 @@ msgstr "Prix liq."
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Liquidated"
 msgstr "Liquidé"
 
@@ -4124,6 +4240,10 @@ msgstr "Chargement des paiements de financement"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Loading funding payments."
 msgstr "Chargement des paiements de financement."
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Loading funding rates"
+msgstr "Chargement des taux de financement"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
@@ -4217,6 +4337,8 @@ msgstr "Chargement du portefeuille..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
@@ -4402,6 +4524,7 @@ msgstr "Prix de marque : utilisé pour les calculs de marge, le PnL non réalis�
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/config/funding-comparison.ts
 #: src/config/trade-panel-labels.ts
 msgid "Market"
 msgstr "Marché"
@@ -4519,6 +4642,10 @@ msgstr "Baisse maximale"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
 msgstr "La perte maximale est indisponible tant que l’historique ajusté des flux de capitaux ne peut pas être vérifié."
+
+#: src/components/trade/tradebox/leverage-position-limit-row.tsx
+msgid "Max position size"
+msgstr "Taille de position maximale"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -4767,6 +4894,7 @@ msgstr "Page suivante des paiements de financement"
 msgid "Next order history page"
 msgstr "Page suivante de l’historique des ordres"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
 msgstr "Page suivante"
@@ -4896,6 +5024,14 @@ msgstr "Aucune exécution ne correspond aux filtres sélectionnés."
 msgid "No fills match these filters."
 msgstr "Aucune exécution ne correspond à ces filtres."
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "No funding comparison data"
+msgstr "Aucune donnée de comparaison du financement"
+
+#: src/components/trade/chart/funding-history-panel.tsx
+msgid "No funding history"
+msgstr "Aucun historique de financement"
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found"
 msgstr "Aucun paiement de financement trouvé"
@@ -4949,6 +5085,10 @@ msgstr "Pas de marché"
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "Aucun marché trouvé."
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "No markets match your search"
+msgstr "Aucun marché ne correspond à votre recherche"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No matching fills"
@@ -5070,6 +5210,10 @@ msgstr "Aucune action de staking"
 #: src/components/staking/staking-view.tsx
 msgid "No staking rewards"
 msgstr "Aucune récompense de staking"
+
+#: src/components/trade/tradebox/leverage-position-limit-row.tsx
+msgid "No tier limit"
+msgstr "Aucune limite de palier"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "No tokens with value found across supported chains"
@@ -5248,11 +5392,16 @@ msgstr "Ouvrez le dépôt pour préparer votre portefeuille associé à un e-mai
 msgid "Open Interest"
 msgstr "Intérêt ouvert"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Open interest cap"
+msgstr "Plafond d'intérêt ouvert"
+
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Open Long"
 msgstr "Ouverture Long"
 
@@ -5290,6 +5439,7 @@ msgstr "Ouvrir la page associée"
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Open Short"
 msgstr "Ouverture Short"
 
@@ -5736,6 +5886,7 @@ msgstr "Données fictives de coffre pour le contrôle visuel."
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-performance-chart.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "PNL"
 msgstr "PNL"
 
@@ -5902,6 +6053,14 @@ msgstr "Pré-IPO"
 msgid "Pre-launch"
 msgstr "Pré-lancement"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Predicted funding rates by market and exchange"
+msgstr "Taux de financement prévus par marché et plateforme"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Predicted rates for the next funding, converted to the selected period. Only Hyperliquid main perp markets are included. Differences do not include trading fees or payment timing."
+msgstr "Taux prévus pour le prochain financement, convertis sur la période sélectionnée. Seuls les marchés perpétuels principaux de Hyperliquid sont inclus. Les écarts ne tiennent pas compte des frais de trading ni du calendrier des paiements."
+
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Prefer an app-like experience?"
 msgstr "Vous préférez une expérience proche d’une application native ?"
@@ -5930,6 +6089,7 @@ msgstr "Page précédente des paiements de financement"
 msgid "Previous order history page"
 msgstr "Page précédente de l’historique des ordres"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
 msgstr "Page précédente"
@@ -5979,6 +6139,7 @@ msgstr "Page précédente des coffres"
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Price"
 msgstr "Prix"
 
@@ -6126,6 +6287,10 @@ msgstr "Classé selon"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "Taux"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Rates equal"
+msgstr "Taux identiques"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Read official referral rules"
@@ -6540,6 +6705,7 @@ msgid "Resume tracking"
 msgstr "Reprendre le suivi"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-overview.tsx
@@ -6549,6 +6715,8 @@ msgstr "Reprendre le suivi"
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/chart/funding-history-load-boundary.tsx
+#: src/components/trade/chart/funding-history-panel.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
@@ -6789,6 +6957,7 @@ msgstr "ROI"
 msgid "Role"
 msgstr "Rôle"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -6912,6 +7081,10 @@ msgstr ""
 msgid "SDK method"
 msgstr "Méthode du SDK"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Search by market"
+msgstr "Rechercher par marché"
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Search by vault, address, or leader"
 msgstr "Rechercher par coffre, adresse ou gestionnaire"
@@ -6924,6 +7097,7 @@ msgstr "Rechercher par adresse de portefeuille ou nom d’affichage"
 msgid "Search leaderboard"
 msgstr "Rechercher dans le classement"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets"
 msgstr "Rechercher des marchés"
@@ -7258,6 +7432,7 @@ msgstr "Signature..."
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Size"
 msgstr "Taille"
 
@@ -7364,6 +7539,10 @@ msgstr "Bientôt"
 msgid "Sort API wallets by name"
 msgstr "Trier les portefeuilles API par nom"
 
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Sort by"
+msgstr "Trier par"
+
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
@@ -7372,6 +7551,10 @@ msgstr "Trier par {sortLabel}"
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Sort leaderboard"
 msgstr "Trier le classement"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+msgid "Sort markets"
+msgstr "Trier les marchés"
 
 #. placeholder {0}: getColumnSortLabel(sorting[0].id)
 #: src/components/trade/chart/token-selector-content.tsx
@@ -7782,6 +7965,8 @@ msgstr "Échanger des stablecoins"
 #. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
 #. placeholder {0}: funding.coin
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/funding-comparison/funding-comparison-view.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
@@ -8149,6 +8334,11 @@ msgstr "La route de retrait d’Hyperliquid a changé. Vérifiez la nouvelle rou
 #: src/components/vaults/vault-detail-view.tsx
 msgid "The leader receives the commission shown above from profits."
 msgstr "Le gestionnaire reçoit sur les bénéfices la commission indiquée ci-dessus."
+
+#: src/lib/errors/definitions/open-interest-cap.ts
+#: src/lib/trade/order-submission-feedback.ts
+msgid "The limit order would be canceled after resting because open interest is capped. Use market orders to close positions."
+msgstr "L'ordre limite serait annulé après sa mise en carnet, car l'intérêt ouvert a atteint son plafond. Utilisez des ordres au marché pour fermer vos positions."
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."
@@ -8773,6 +8963,7 @@ msgstr "TIF"
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Time"
 msgstr "Heure"
 
@@ -9071,6 +9262,7 @@ msgstr "Finance traditionnelle"
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Transaction"
 msgstr "Transaction"
 
@@ -9201,6 +9393,7 @@ msgstr "TVL"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "TWAP"
 msgstr "TWAP"
@@ -9309,6 +9502,7 @@ msgstr "Intérêt ouvert bilatéral : somme des positions longues et courtes sur
 #: src/components/trade/positions/orders-tab.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
+#: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Type"
 msgstr "Type"
 
@@ -9996,6 +10190,10 @@ msgstr "Nous n'avons pas pu vérifier le statut juridique de ce portefeuille. V�
 msgid "Website"
 msgstr "Site web"
 
+#: src/config/funding-comparison.ts
+msgid "Week"
+msgstr "Semaine"
+
 #: src/config/account-ledger.ts
 msgid "Welcome Bonus"
 msgstr "Bonus de bienvenue"
@@ -10120,6 +10318,10 @@ msgstr "Retire la totalité de votre fourniture en {token} au moment de l'exécu
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdrew {token}"
 msgstr "{token} retiré"
+
+#: src/config/funding-comparison.ts
+msgid "Year"
+msgstr "Année"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx

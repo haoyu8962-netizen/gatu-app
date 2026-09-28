@@ -312,6 +312,117 @@ describe("LeverageEditor", () => {
 		expect(onChange).toHaveBeenCalledWith(12);
 	});
 
+	describe("max position row", () => {
+		const BTC_TIERS = [
+			{ lowerBound: "0.0", maxLeverage: 40 },
+			{ lowerBound: "150000000.0", maxLeverage: 20 },
+		] as const;
+
+		function DraftingEditor({ onCommit }: { onCommit: (value: number) => void }) {
+			const [value, setValue] = useState(20);
+			const [draft, setDraft] = useState<number | null>(null);
+			return (
+				<LeverageEditor
+					value={draft ?? value}
+					max={40}
+					disabled={false}
+					onChange={(next) => {
+						onCommit(next);
+						setDraft(null);
+						setValue(next);
+					}}
+					onDraftChange={setDraft}
+					marginTiers={BTC_TIERS}
+					quoteSymbol="USDC"
+				/>
+			);
+		}
+
+		function getRow(): HTMLElement {
+			const row = container.querySelector('[data-slot="info-row"]');
+			if (!(row instanceof HTMLElement)) throw new Error("Position limit row not found");
+			return row;
+		}
+
+		function getRowValue(): string | null | undefined {
+			return container.querySelector('[data-slot="info-row-value"]')?.textContent;
+		}
+
+		function previewSlider(value: number) {
+			(sliderHarness.props?.onChange as (value: number) => void)(value);
+		}
+
+		it("follows slider previews on the same row node without committing", () => {
+			const onCommit = vi.fn();
+			act(() => root.render(<DraftingEditor onCommit={onCommit} />));
+			const row = getRow();
+			expect(getRowValue()).toBe("No tier limit");
+
+			act(() => previewSlider(21));
+			expect(getRow()).toBe(row);
+			expect(getRowValue()).toBe("$150,000,000");
+
+			act(() => previewSlider(20));
+			expect(getRow()).toBe(row);
+			expect(getRowValue()).toBe("No tier limit");
+
+			act(() => previewSlider(25));
+			expect(getRow()).toBe(row);
+			expect(getRowValue()).toBe("$150,000,000");
+			expect(onCommit).not.toHaveBeenCalled();
+
+			act(() => (sliderHarness.props?.onCancel as () => void)());
+			expect(getRow()).toBe(row);
+			expect(getRowValue()).toBe("No tier limit");
+			expect(onCommit).not.toHaveBeenCalled();
+		});
+
+		it("follows a valid typed leverage and keeps the canonical value for invalid text", () => {
+			act(() => root.render(<DraftingEditor onCommit={vi.fn()} />));
+			const input = getInput();
+
+			act(() => changeInput(input, "25"));
+			expect(getRowValue()).toBe("$150,000,000");
+
+			act(() => changeInput(input, "41"));
+			expect(input.getAttribute("aria-invalid")).toBe("true");
+			expect(getRowValue()).toBe("$150,000,000");
+
+			act(() => changeInput(input, ""));
+			expect(getRowValue()).toBe("$150,000,000");
+		});
+
+		it("sits between the leverage input and the high leverage warning", () => {
+			act(() => {
+				root.render(
+					<LeverageEditor
+						value={25}
+						max={40}
+						disabled={false}
+						onChange={vi.fn()}
+						onDraftChange={vi.fn()}
+						marginTiers={BTC_TIERS}
+						quoteSymbol="USDC"
+					/>,
+				);
+			});
+			const warning = [...container.querySelectorAll("p")].find((node) =>
+				node.textContent?.includes("High leverage significantly increases liquidation risk"),
+			);
+			if (!warning) throw new Error("High leverage warning not found");
+
+			expect(getInput().compareDocumentPosition(getRow()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+			expect(getRow().compareDocumentPosition(warning) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		});
+
+		it("renders nothing extra without margin tiers", () => {
+			renderEditor(vi.fn(), vi.fn());
+
+			expect(container.querySelector('[data-slot="info-row"]')).toBeNull();
+			expect(container.textContent).not.toContain("Max position size");
+		});
+	});
+
 	it("keeps an invalid Enter draft visible and non-committing", () => {
 		const onChange = vi.fn();
 		const onInputValidityChange = vi.fn();

@@ -12,6 +12,7 @@ vi.mock("@/lib/trade/orderbook-boot", () => ({ bootOrderbook: () => {} }));
 
 const DASHBOARD_ROUTES = [
 	"api-wallet.tsx",
+	"fundingComparison.tsx",
 	"fundingHistory.$address.tsx",
 	"historicalOrders.$address.tsx",
 	"leaderboard.tsx",

@@ -16,6 +16,7 @@ describe("application route surface classification", () => {
 		"/vaults",
 		"/vaults/0x1234",
 		"/leaderboard",
+		"/fundingComparison",
 		"/staking",
 		"/tradeHistory/0x1234",
 		"/mobile-agent-sync",

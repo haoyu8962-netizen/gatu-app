@@ -25,6 +25,7 @@ function executionState(overrides: Partial<EntryOrderExecutionState> = {}): Entr
 		executionReferencePx: "100",
 		executionPriceReceivedAt: 1_000,
 		slippageBps: 250,
+		openInterestCapped: false,
 		...overrides,
 	};
 }
@@ -603,6 +604,98 @@ describe("all reduce-only entry paths", () => {
 				executionState({ positionStateReady: false, positionSignedSize: undefined }),
 				now,
 			),
+		).not.toThrow();
+	});
+});
+
+describe("open-interest cap SDK re-check", () => {
+	function limitOrder(tif: "Gtc" | "Ioc" | "Alo", reduceOnly = false): OrderParameters {
+		return {
+			orders: [{ a: 0, b: true, p: "100", s: "1", r: reduceOnly, t: { limit: { tif } } }],
+			grouping: "na",
+		};
+	}
+
+	function stopLimitOrder(): OrderParameters {
+		return {
+			orders: [
+				{
+					a: 0,
+					b: true,
+					p: "111",
+					s: "1",
+					r: false,
+					t: { trigger: { isMarket: false, triggerPx: "110", tpsl: "sl" } },
+				},
+			],
+			grouping: "na",
+		};
+	}
+
+	function marketWithAttachedTpSl(): OrderParameters {
+		const params = limitWithAttachedTpSl();
+		params.orders[0] = { ...params.orders[0], p: "102.5", t: { limit: { tif: "FrontendMarket" } } };
+		return params;
+	}
+
+	function scaleOrder(): OrderParameters {
+		return {
+			orders: [
+				{ a: 0, b: true, p: "99", s: "0.6", r: false, t: { limit: { tif: "Gtc" } } },
+				{ a: 0, b: true, p: "98", s: "0.6", r: false, t: { limit: { tif: "Gtc" } } },
+			],
+			grouping: "na",
+		};
+	}
+
+	const capped = () => executionState({ openInterestCapped: true });
+
+	it.each([
+		["a Gtc limit", limitOrder("Gtc")],
+		["an Ioc limit", limitOrder("Ioc")],
+		["an Alo limit", limitOrder("Alo")],
+		["a reduce-only limit", limitOrder("Gtc", true)],
+		["a stop-limit trigger", stopLimitOrder()],
+		["a limit parent with attached TP/SL", limitWithAttachedTpSl()],
+	])("rejects %s while the market is confirmed capped and accepts it otherwise", (_label, params) => {
+		expectExecutionReason(() => assertEntryOrderExecutionAllowed(params, capped(), 1_001), "open-interest-capped");
+		expect(() => assertEntryOrderExecutionAllowed(params, executionState(), 1_001)).not.toThrow();
+	});
+
+	it("checks the cap before availability so a stale snapshot cannot hide the reason", () => {
+		expectExecutionReason(
+			() =>
+				assertEntryOrderExecutionAllowed(
+					limitOrder("Gtc"),
+					executionState({ openInterestCapped: true, availabilityStatus: "stale" }),
+					1_001,
+				),
+			"open-interest-capped",
+		);
+		expectExecutionReason(
+			() =>
+				assertEntryOrderExecutionAllowed(
+					limitOrder("Gtc"),
+					executionState({ openInterestCapped: true, assetId: 1 }),
+					1_001,
+				),
+			"market-context-mismatch",
+		);
+	});
+
+	it.each([
+		["a market order", marketOrder(true, "102.5")],
+		["a stop-market trigger", triggerOrder(true, "sl", "110")],
+		["a take-profit-market trigger", triggerOrder(true, "tp", "90")],
+		["a market parent with attached TP/SL", marketWithAttachedTpSl()],
+		["a multi-level Scale order", scaleOrder()],
+	])("keeps %s available on a capped market", (_label, params) => {
+		expect(() => assertEntryOrderExecutionAllowed(params, capped(), 1_001)).not.toThrow();
+	});
+
+	it("does not add a cap check to TWAP orders", () => {
+		expect(() =>
+			assertEntryTwapExecutionAllowed({ twap: { a: 0, b: true, s: "1", r: false, m: 10, t: false } }, capped(), 1_001),
 		).not.toThrow();
 	});
 });

@@ -18,6 +18,7 @@ import { Route as ClientErrorReportRouteImport } from './routes/client-error-rep
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as EarnRouteImport } from './routes/earn'
+import { Route as FundingComparisonRouteImport } from './routes/fundingComparison'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as MobileAgentSyncRouteImport } from './routes/mobile-agent-sync'
 import { Route as PerpRouteImport } from './routes/perp'
@@ -91,6 +92,11 @@ const DocsRoute = DocsRouteImport.update({
 const EarnRoute = EarnRouteImport.update({
   id: '/earn',
   path: '/earn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FundingComparisonRoute = FundingComparisonRouteImport.update({
+  id: '/fundingComparison',
+  path: '/fundingComparison',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeaderboardRoute = LeaderboardRouteImport.update({
@@ -249,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
   '/earn': typeof EarnRoute
+  '/fundingComparison': typeof FundingComparisonRoute
   '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
   '/earn': typeof EarnRoute
+  '/fundingComparison': typeof FundingComparisonRoute
   '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
@@ -327,6 +335,7 @@ export interface FileRoutesById {
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
   '/earn': typeof EarnRoute
+  '/fundingComparison': typeof FundingComparisonRoute
   '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
@@ -369,6 +378,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/docs'
     | '/earn'
+    | '/fundingComparison'
     | '/leaderboard'
     | '/mobile-agent-sync'
     | '/perp'
@@ -408,6 +418,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/docs'
     | '/earn'
+    | '/fundingComparison'
     | '/leaderboard'
     | '/mobile-agent-sync'
     | '/perp'
@@ -446,6 +457,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/docs'
     | '/earn'
+    | '/fundingComparison'
     | '/leaderboard'
     | '/mobile-agent-sync'
     | '/perp'
@@ -487,6 +499,7 @@ export interface RootRouteChildren {
   CookiesRoute: typeof CookiesRoute
   DocsRoute: typeof DocsRoute
   EarnRoute: typeof EarnRoute
+  FundingComparisonRoute: typeof FundingComparisonRoute
   LeaderboardRoute: typeof LeaderboardRoute
   MobileAgentSyncRoute: typeof MobileAgentSyncRoute
   PerpRoute: typeof PerpRoute
@@ -574,6 +587,13 @@ declare module '@tanstack/react-router' {
       path: '/earn'
       fullPath: '/earn'
       preLoaderRoute: typeof EarnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fundingComparison': {
+      id: '/fundingComparison'
+      path: '/fundingComparison'
+      fullPath: '/fundingComparison'
+      preLoaderRoute: typeof FundingComparisonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leaderboard': {
@@ -833,6 +853,7 @@ const rootRouteChildren: RootRouteChildren = {
   CookiesRoute: CookiesRoute,
   DocsRoute: DocsRoute,
   EarnRoute: EarnRoute,
+  FundingComparisonRoute: FundingComparisonRoute,
   LeaderboardRoute: LeaderboardRoute,
   MobileAgentSyncRoute: MobileAgentSyncRoute,
   PerpRoute: PerpRoute,

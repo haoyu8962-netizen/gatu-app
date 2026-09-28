@@ -212,6 +212,28 @@ describe("history pagination", () => {
 		expect(wait).toHaveBeenCalledWith(0, controller.signal);
 	});
 
+	it("uses a caller-supplied delay for a 429 without Retry-After and keeps honoring Retry-After", async () => {
+		const controller = new AbortController();
+		const request = vi
+			.fn<() => Promise<string>>()
+			.mockRejectedValueOnce(
+				Object.assign(new Error("rate limited"), { response: { headers: { get: () => null }, status: 429 } }),
+			)
+			.mockRejectedValueOnce(
+				Object.assign(new Error("rate limited"), { response: { headers: { get: () => "5" }, status: 429 } }),
+			)
+			.mockResolvedValue("ok");
+		const wait = vi.fn(async () => undefined);
+
+		await expect(
+			fetchHistoryPageWithRetry(request, { rateLimitFallbackMs: 60_000, signal: controller.signal, wait }),
+		).resolves.toBe("ok");
+		expect(wait.mock.calls).toEqual([
+			[60_000, controller.signal],
+			[5_000, controller.signal],
+		]);
+	});
+
 	it("does not retry deterministic client errors", async () => {
 		const controller = new AbortController();
 		const error = Object.assign(new Error("bad request"), { response: { status: 400 } });

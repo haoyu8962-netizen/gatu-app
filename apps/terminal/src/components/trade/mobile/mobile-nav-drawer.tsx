@@ -208,6 +208,14 @@ export function MobileNavDrawer() {
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
 								<Trans>More</Trans>
 							</p>
+							<Link
+								to="/fundingComparison"
+								onClick={close}
+								aria-current={pathname === "/fundingcomparison" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/fundingcomparison")}
+							>
+								<Trans>Funding Comparison</Trans>
+							</Link>
 							<a
 								href={HYPERSCREENER_URL}
 								target="_blank"
