@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["vite-cache", "pairing-release"],
-  "summary": "user-menu-recovery 套件 2/10 失败（两个宽度的迟到钱包恢复用例都在断言菜单里有启用的 Link mobile device）。原因是断言过时而非产品回归：e62e4733 按 ADR 0015 D8 删除了用户菜单条目，入口只剩头部二维码图标，单测当时已改为不含此项，浏览器用例（约 20 小时前由 6cd0bb1a 修过）未同步。改为断言菜单无此项，夹具 Vite 配置用 define 把 VITE_MOBILE_PAIRING_ENABLED 固定为 true 且用例先核对该前提，桌面宽度再按头部图标的路径打开 UserMenu 托管的唯一弹窗。修改后 10/10，两处变异都被捕获；首轮出现过一次无法复现的圆点颜色比较失败。未改产品代码，套件仍不在 CI。",
+  "summary": "user-menu-recovery 套件 2/10 失败（两个宽度的迟到钱包恢复用例都在断言菜单里有启用的 Link mobile device）。原因是断言过时而非产品回归：e62e4733 按 ADR 0015 D8 删除了用户菜单条目，入口只剩头部二维码图标，单测当时已改为不含此项，浏览器用例（约 20 小时前由 6cd0bb1a 修过）未同步。改为断言菜单无此项，夹具 Vite 配置用 define 把 VITE_MOBILE_PAIRING_ENABLED 固定为 true 且用例先核对该前提，桌面宽度再按头部图标的路径打开 UserMenu 托管的唯一弹窗。修改后 10/10，两处变异都被捕获；首轮出现过一次无法复现的圆点颜色比较失败。Codex 只读对抗审查无 P0–P2，两项 P3（记录误称此前结果依赖 shell 环境、辅助函数少了预加载失败时的 catch）已修正。未改产品代码，套件仍不在 CI。",
   "thread": null,
   "baseCommit": "e3b5dd82",
   "commits": [],
@@ -40,14 +40,14 @@
 判断为用例过时，不是产品回归，依据按时间排列：
 
 1. `6cd0bb1a`（2026-09-24 00:16 +0800）修夹具时，用户菜单在 `hasWalletAccess` 时仍列出「Link mobile device」，所以用例断言它可用。
-2. `e62e4733`（同日 20:17 +0800，「simplify link mobile device pairing」）按 ADR 0015 D8 删除了该菜单条目（「入口只保留头部图标…删除工具菜单与用户菜单条目和撤销面板」），同一提交把 `src/lib/tests/user-menu.test.tsx` 的三处断言改成菜单「不含」此项；浏览器用例没有同步。`0a067ab7`（20:59）把弹窗懒组件移到 `header/mobile-agent-sync-modal-loader.ts`，头部图标在点击前预加载。
+2. `e62e4733`（同日 20:17 +0800 作者时间，提交时间 20:19，「simplify link mobile device pairing」）按 ADR 0015 D8 删除了该菜单条目（「入口只保留头部图标…删除工具菜单与用户菜单条目和撤销面板」），同一提交把 `src/lib/tests/user-menu.test.tsx` 的三处断言改成菜单「不含」此项；浏览器用例没有同步。`0a067ab7`（20:59）把弹窗懒组件移到 `header/mobile-agent-sync-modal-loader.ts`，头部图标在点击前预加载。
 3. 当前契约：AGENTS.md「Mobile connection and PWA contract」写明桌面入口只有头部二维码图标，只对精确所有者会话且配对开关开启时渲染，打开由用户菜单托管的唯一弹窗；`docs/runtime-guardrails.md` §8 写明 `UserMenu` 保留懒加载宿主、错误边界与重试，「no longer lists a menu item」。
 
 因此按契约修测试，不改产品代码：
 
 - 第 136 行改为断言菜单里没有「Link mobile device」（`toHaveCount(0)`），并删掉对应的中文「关联移动设备」可用断言；切换语言后的菜单翻译仍由「复制地址」「断开连接」覆盖。
-- 配对开关前提显式化。`UserMenu` 本身不读开关（开关只在 `TopNav`、钱包弹窗与配对弹窗里读，后两者在夹具里都被别名成桩），夹具此前的结果取决于运行者的 shell 环境。夹具 Vite 配置用 `define` 把 `import.meta.env.VITE_MOBILE_PAIRING_ENABLED` 固定为 `"true"`（Vite 7.3 开发模式会把 `import.meta.env.*` 的用户 define 并入整个 `import.meta.env` 对象，`resolveMobilePairingFeatureFlags(import.meta.env)` 因此读得到），夹具在 `window.__gatuUserMenuRecovery.pairingEnabled` 暴露 `MOBILE_PAIRING_FEATURES.enabled`，用例先断言它为 true，再断言菜单无此项。选择开启而不是关闭，是因为开启时断言更强：即使在打开配对的构建里，账户菜单也不提供入口。
-- 保留原断言的意图（恢复后的钱包会话仍能到达 Link mobile device）。夹具新增 `openLinkMobileDevice()`，按头部图标 `handleOpenMobileSync` 的路径先 `preloadMobileAgentSyncModal()` 再打开模态 store；用例只在桌面宽度（入口只在桌面头部）打开，断言恢复后的 `UserMenu` 恰好渲染一个弹窗、关闭后消失、账户按钮 DOM 与草稿值不变。图标自身的可见性规则（`hasWalletAccess && enabled`）仍由 `top-nav.test.tsx` 覆盖，因为夹具不渲染 `TopNav`。
+- 配对开关前提显式化。`UserMenu` 本身不读开关（开关只在 `TopNav`、钱包弹窗与配对弹窗里读，后两者在夹具里都被别名成桩），所以开关此前对这个夹具的结果没有任何影响（被删掉的菜单项当时也只看 `hasWalletAccess`，不看开关）。固定开关是为了建立一个明确的「配对开启」回归场景，并让这个前提不受 shell 环境左右：夹具 Vite 配置用 `define` 把 `import.meta.env.VITE_MOBILE_PAIRING_ENABLED` 固定为 `"true"`（Vite 7.3 开发模式会把 `import.meta.env.*` 的用户 define 并入整个 `import.meta.env` 对象，`resolveMobilePairingFeatureFlags(import.meta.env)` 因此读得到），夹具在 `window.__gatuUserMenuRecovery.pairingEnabled` 暴露 `MOBILE_PAIRING_FEATURES.enabled`，用例先断言它为 true，再断言菜单无此项。选择开启而不是关闭，是因为开启时断言更强：即使在打开配对的构建里，账户菜单也不提供入口。
+- 保留原断言的意图（恢复后的钱包会话仍能到达 Link mobile device）。夹具新增 `openLinkMobileDevice()`，按头部图标 `handleOpenMobileSync` 的路径先 `preloadMobileAgentSyncModal().catch(() => undefined)` 再打开模态 store（预加载失败也照样打开，交给宿主的错误边界与重试）；用例只在桌面宽度（入口只在桌面头部）打开，断言恢复后的 `UserMenu` 恰好渲染一个弹窗、关闭后消失、账户按钮 DOM 与草稿值不变。图标自身的可见性规则（`hasWalletAccess && enabled`）仍由 `top-nav.test.tsx` 覆盖，因为夹具不渲染 `TopNav`。
 - `docs/runtime-guardrails.md` §9 的夹具段落补充了上述开关固定与弹窗打开方式。
 
 未采用：把菜单条目加回产品（与 ADR 0015 D8 和 AGENTS.md 冲突）；在夹具里渲染真实 `TopNav`（需要路由、存款可用性等大量提供者，超出这个夹具的职责）；只删掉失败行（会丢掉恢复后能到达配对弹窗这层覆盖，也不交代开关前提）。
@@ -64,6 +64,14 @@
 - Vitest：`tests/browser/user-menu-recovery-cache.test.ts`、`src/lib/tests/user-menu.test.tsx`、`src/lib/tests/top-nav.test.tsx`、`src/lib/tests/mobile-pairing-feature-gate.test.ts` 4 文件 56 项通过。
 - 执行前确认 shell 里没有设置 `VITE_MOBILE_PAIRING_ENABLED`，`tests/browser/` 下也没有 `.env*` 文件，所以 `pairingEnabled === true` 只能来自夹具的 define。
 - 未执行：CI（该套件不在 `.github/workflows` 里）、真实 Privy 登录与真机。这些断言依据当前代码与契约文档，不等于设计验收。
+
+### Codex 只读对抗审查（同日，对 `f8ee170f`）
+
+- 调用：`codex exec -m gpt-6-astra -s read-only -c approval_policy='"never"' -c model_reasoning_effort='"medium"'`，11 条命令、约 8.0 万 token，未改文件、未起服务、未跑测试；它能核对的只有代码、Git 历史与 `node_modules` 里的 Vite 源码，本记录的运行结果对它而言仍是作者报告。
+- 结论：无 P0–P2。确认了过时判断（`e62e4733` 改了单测三处断言）、`define` 在 Vite 7.3 里会覆盖到整个 `import.meta.env`、别名确实把加载器的导入指到桩、缓存与扫描隔离不受影响、Window 类型声明与用法一致。
+- 两项 P3，核对后都成立，已在后续提交修正：一是本记录原先说「夹具此前的结果取决于 shell 环境」，实际上开关此前对夹具没有影响；二是夹具的 `openLinkMobileDevice` 少了 TopNav 的 `.catch(() => undefined)`，只模拟了预加载成功的路径。Vite 配置注释与 `runtime-guardrails.md` §9 的同类措辞一并改正。修正后在清空缓存与保留缓存下各跑一次套件，均 10/10；类型检查 0 错误；两个改动的夹具文件经 Biome stdin `check --write` 输出不变。
+- 它的变异推演里这个夹具抓不到的：TopNav 图标的点击处理被删（由 `top-nav.test.tsx` 覆盖）、真实弹窗与 store 内部（夹具里都是桩）、只在中文出现的菜单项（无此项断言只在英文下跑）、去掉预加载但懒加载宿主仍能渲染（数量断言会等到最终渲染）。这些是覆盖边界，不算缺陷。
+- 第 142 行偶发失败：它只给出推断（样式表被替换的瞬间两次取色都可能是透明），同时指出圆点没有过渡、类名是静态字面量、`@source "../../src"` 首次扫描就包含两个类，所以这个解释并不有力；没有原始取值与 trace，原因仍未查明。
 
 ## 后续与替代关系
 

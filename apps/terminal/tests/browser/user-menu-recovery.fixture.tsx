@@ -41,7 +41,7 @@ window.__gatuUserMenuRecovery = {
 	setSession: setRecoverySession,
 	setLocale: (locale) => i18n.activate(locale),
 	openLinkMobileDevice: async () => {
-		await preloadMobileAgentSyncModal();
+		await preloadMobileAgentSyncModal().catch(() => undefined);
 		setMobileSyncOpen(true);
 	},
 	pairingEnabled: MOBILE_PAIRING_FEATURES.enabled,

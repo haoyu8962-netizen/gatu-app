@@ -12,8 +12,8 @@ export default defineConfig({
 	cacheDir: fileURLToPath(new URL("../../node_modules/.vite-user-menu-recovery", import.meta.url)),
 	optimizeDeps: { entries: ["user-menu-recovery.html"] },
 	// UserMenu reads no pairing flag; the header QR icon in TopNav does (top-nav.test.tsx). Pin the flag on so
-	// the fixture's "no Link mobile device menu item" assertion covers the pairing-enabled build instead of
-	// silently depending on the shell environment.
+	// the fixture's "no Link mobile device menu item" assertion is an explicit pairing-enabled scenario whose
+	// premise (asserted through pairingEnabled) the shell environment cannot change.
 	define: { "import.meta.env.VITE_MOBILE_PAIRING_ENABLED": JSON.stringify("true") },
 	plugins: [
 		lingui(),
