@@ -83,8 +83,13 @@ msgstr "{currentPage} من {totalPages}"
 
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "{days} days"
 msgstr "{days} يومًا"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "{days} days left"
+msgstr "متبقٍ {days} يومًا"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
@@ -314,6 +319,10 @@ msgstr "يطابق حدث جديد ودقيق في السجل هذا الطلب.
 msgid "A position may be liquidated when the mark price reaches its liquidation price."
 msgstr "قد يُصفّى المركز عندما يصل سعر العلامة إلى سعر التصفية الخاص به."
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "A Post Only order would have matched immediately. Best bid and offer: {bbo}."
+msgstr "كان أمر Post Only سيُنفَّذ فورًا. أفضل سعر شراء وبيع: {bbo}."
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "لا يزال إيداع CCTP سابق قيد التتبع. لا تُعد إرسال التحويل نفسه."
@@ -321,6 +330,10 @@ msgstr "لا يزال إيداع CCTP سابق قيد التتبع. لا تُع�
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "لا تزال محاولة اتصال سابقة قيد التسوية. ستتحقق إعادة المحاولة من مفتاح التداول نفسه ولن تطلب توقيعًا آخر."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "A Reduce Only order cannot increase the position."
+msgstr "لا يمكن لأمر التقليل فقط زيادة المركز."
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
@@ -335,6 +348,7 @@ msgid "A staking link cannot be removed. The staking account gains full control 
 msgstr "لا يمكن إزالة ارتباط التخزين. يحصل حساب التخزين على تحكم كامل في أموال حساب التداول، لذلك لا تتيح هذه الصفحة إجراءً لإنشاء الارتباط."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
 msgstr "يجري حاليًا إنشاء اتصال تداول في علامة تبويب أخرى. أكمله أو ألغِه هناك قبل إعادة المحاولة."
 
@@ -358,6 +372,10 @@ msgstr "اقبل إخلاء مسؤولية جهة نشر HIP-3 قبل التدا
 msgid "Accept the HIP-3 deployer disclaimer before trading this market."
 msgstr "اقبل إخلاء مسؤولية جهة نشر HIP-3 قبل التداول في هذا السوق."
 
+#: src/lib/errors/action-error.ts
+msgid "Accept the Hyperliquid terms before continuing."
+msgstr "وافق على شروط Hyperliquid قبل المتابعة."
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Accepted"
 msgstr "مقبول"
@@ -380,6 +398,10 @@ msgstr "الوصول مقيّد"
 #: src/config/trade-panel-labels.ts
 msgid "Account"
 msgstr "الحساب"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Account {user} has no balance on Hyperliquid. Deposit first."
+msgstr "لا يوجد رصيد للحساب {user} على Hyperliquid. أودع أولاً."
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "Account / API Wallet"
@@ -516,6 +538,11 @@ msgstr "يُفعّل عندما يكون السعر العادل ≥ {triggerPri
 msgid "Active"
 msgstr "نشط"
 
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Active asset data is unavailable"
+msgstr "بيانات الأصل الحالي غير متاحة"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Active referral discount"
 msgstr "خصم الإحالة النشط"
@@ -568,6 +595,7 @@ msgstr "تعديل الهامش المعزول لـ {displayName}"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Adjust leverage"
 msgstr "تعديل الرافعة المالية"
@@ -721,6 +749,14 @@ msgstr "المبلغ"
 msgid "Amount (USDC)"
 msgstr "المبلغ (USDC)"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount exceeds the verified available balance."
+msgstr "المبلغ يتجاوز الرصيد المتاح الذي تم التحقق منه."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount is too large to submit safely."
+msgstr "المبلغ كبير جدًا بحيث لا يمكن إرساله بأمان."
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Amount is too low for the available bridge routes."
 msgstr "المبلغ منخفض جدًا بالنسبة لمسارات الجسر المتاحة."
@@ -728,6 +764,10 @@ msgstr "المبلغ منخفض جدًا بالنسبة لمسارات الجس�
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "يجب أن يكون المبلغ أكبر من صفر وألا يتجاوز المركز الحالي."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount must be greater than zero."
+msgstr "يجب أن يكون المبلغ أكبر من صفر."
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Amount to repay"
@@ -755,7 +795,7 @@ msgstr "ظهرت محفظة API أخرى بالاسم نفسه تمامًا أث
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "لا تزال هناك عملية إيداع أخرى عبر Circle CCTP معلّقة لهذا الحساب. انتظر حتى تكتمل قبل إرسال عملية إيداع أخرى."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Another funds operation is still in progress for this account. Try again after it finishes."
 msgstr "لا تزال عملية أموال أخرى قيد التنفيذ لهذا الحساب. حاول مجددًا بعد اكتمالها."
 
@@ -777,9 +817,17 @@ msgstr "لا يزال تأكيد أمر آخر لأحد هذه الأسواق ج
 msgid "Another order for this market is still being confirmed."
 msgstr "لا يزال تأكيد طلب آخر لهذا السوق جارياً."
 
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Another referral request is already in progress. Try again after it finishes."
+msgstr "هناك طلب إحالة آخر قيد التنفيذ بالفعل. حاول مرة أخرى بعد انتهائه."
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Another TWAP order for this market is still being confirmed."
 msgstr "لا يزال تأكيد أمر TWAP آخر لهذا السوق جارياً."
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Another wallet approval is already in progress. Try again after it finishes."
+msgstr "هناك موافقة أخرى في المحفظة قيد التنفيذ بالفعل. حاول مرة أخرى بعد انتهائها."
 
 #: src/config/tooltips.ts
 msgid "Any portion that is not immediately filled will be canceled."
@@ -847,6 +895,10 @@ msgstr "يتطلب التفويض والإزالة المحفظة الرئيسي
 #~ msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
 #~ msgstr ""
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve access"
+msgstr "الموافقة على الوصول"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
 msgstr "وافق في المحفظة"
@@ -855,6 +907,10 @@ msgstr "وافق في المحفظة"
 #~ msgid "Approve in wallet..."
 #~ msgstr "وافق في المحفظة..."
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve mobile trading access"
+msgstr "الموافقة على الوصول إلى التداول عبر الهاتف"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve mobile trading key"
 msgstr "الموافقة على مفتاح تداول الهاتف"
@@ -862,6 +918,10 @@ msgstr "الموافقة على مفتاح تداول الهاتف"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approve QR code with wallet..."
 #~ msgstr ""
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Approving {symbol}..."
+msgstr "جارٍ اعتماد {symbol}..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approving a new mobile key replaces the previous mobile key."
@@ -889,8 +949,9 @@ msgstr "Arbitrum (CCTP)"
 msgid "Arbitrum (Legacy)"
 msgstr "Arbitrum (قديم)"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/tests/wrong-network-screen.test.tsx
 msgid "Arbitrum network switch was rejected."
 msgstr "تم رفض التبديل إلى شبكة Arbitrum."
 
@@ -951,6 +1012,10 @@ msgstr "لا يُوضع TP/SL المرفق إلا إذا نُفِّذ الأمر
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "رُفض التفويض"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Authorization was rejected in the wallet."
+msgstr "تم رفض التفويض في المحفظة."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Authorize"
@@ -1164,13 +1229,34 @@ msgstr "تم شراء {quantity}"
 msgid "Bridge"
 msgstr "جسر"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Bridge complete"
+msgstr "اكتمل الجسر"
+
+#: src/components/trade/tradebox/bridge/bridge-tab.tsx
+msgid "Bridge creation is paused. A route without a submitted source transaction cannot be retried."
+msgstr "إنشاء الجسور متوقف مؤقتًا. لا يمكن إعادة محاولة مسار لم تُرسَل له معاملة المصدر."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Bridge creation is paused. This route did not submit a source transaction and cannot be retried."
+msgstr "إنشاء الجسور متوقف مؤقتًا. لم يُرسِل هذا المسار معاملة المصدر ولا يمكن إعادة محاولته."
+
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Bridge creation is temporarily unavailable"
 msgstr "إنشاء الجسر غير متاح مؤقتًا"
 
+#: src/lib/lifi/bridge-execution-state.ts
+msgid "Bridge execution paused"
+msgstr "تنفيذ الجسر متوقف مؤقتًا"
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Bridge failed"
 msgstr "فشل الجسر"
+
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/bridge-tab-lifecycle.test.tsx
+msgid "Bridging to Hyperliquid..."
+msgstr "جارٍ النقل عبر الجسر إلى Hyperliquid..."
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Builder rewards (cumulative)"
@@ -1286,8 +1372,53 @@ msgstr "إلغاء الأوامر المحددة"
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-reconciliation-feedback.ts
+#: src/lib/trade/order-status-reasons.ts
 msgid "Canceled"
 msgstr "ملغي"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the asset was delisted"
+msgstr "أُلغي لأن الأصل أُزيل من الإدراج"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the linked order filled"
+msgstr "أُلغي لأن الأمر المرتبط نُفِّذ"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the outcome has settled"
+msgstr "أُلغي لأن النتيجة قد سُوِّيت"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by self-trade prevention"
+msgstr "أُلغي بسبب منع التداول الذاتي"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by the exchange"
+msgstr "ألغته منصة التداول"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by the scheduled cancel"
+msgstr "أُلغي بواسطة الإلغاء المجدول"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to a vault withdrawal"
+msgstr "أُلغي بسبب سحب من الخزنة"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to insufficient margin"
+msgstr "أُلغي بسبب عدم كفاية الهامش"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to liquidation"
+msgstr "أُلغي بسبب التصفية"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to Reduce Only"
+msgstr "أُلغي بسبب التقليل فقط"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to the open interest cap"
+msgstr "أُلغي بسبب حد العقود المفتوحة"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
@@ -1300,6 +1431,12 @@ msgstr "ملغي"
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "Cancellation submitted. Waiting for the open-orders update."
 msgstr "تم إرسال طلب الإلغاء. بانتظار تحديث الأوامر المفتوحة."
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Cannot switch to isolated mode with an open position"
+msgstr "لا يمكن التبديل إلى الوضع المعزول مع وجود مركز مفتوح"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
@@ -1329,6 +1466,11 @@ msgstr "التغيير إلى ترتيب تنازلي"
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "الرسم البياني"
+
+#: src/components/trade/chart/datafeed.ts
+#: src/components/trade/chart/datafeed.ts
+msgid "Chart data could not be loaded"
+msgstr "تعذّر تحميل بيانات الرسم البياني"
 
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart data is temporarily rate limited"
@@ -1381,6 +1523,10 @@ msgstr "جارٍ التحقق من مسار الإيداع الحالي في Hyp
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #~ msgid "Checking the current Hyperliquid withdrawal route..."
 #~ msgstr "جارٍ التحقق من مسار السحب الحالي في Hyperliquid..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Checking the submitted bridge transaction..."
+msgstr "جارٍ التحقق من معاملة الجسر المرسَلة..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking..."
@@ -1476,6 +1622,13 @@ msgstr "التصنيف غير متاح"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Clear record"
 msgstr "مسح السجل"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Clear search"
+msgstr "مسح البحث"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Clear unreadable record"
@@ -1876,6 +2029,10 @@ msgstr "جارٍ التأكيد — لا تُعِد الإرسال"
 #~ msgid "Confirming exchange status..."
 #~ msgstr "جارٍ تأكيد الحالة لدى المنصة..."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Confirming on destination..."
+msgstr "جارٍ التأكيد في الوجهة..."
+
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "Confirming order status. Do not retry."
 #~ msgstr "جارٍ تأكيد حالة الطلب. لا تحاول مرة أخرى."
@@ -2218,6 +2375,10 @@ msgstr "الرافعة المتقاطعة"
 msgid "Cross Maintenance Margin"
 msgstr "هامش الصيانة المتقاطع"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Cross positions do not have enough available margin to lower the leverage. Deposit more collateral to lower it."
+msgstr "لا يتوفر لمراكز الهامش المشترك هامش كافٍ لخفض الرافعة المالية. أودع مزيدًا من الضمان لخفضها."
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
 msgstr "العملات المشفرة"
@@ -2403,6 +2564,7 @@ msgstr "المبلغ"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "فشل الإيداع"
 
@@ -2422,8 +2584,9 @@ msgstr "تم الإيداع بنجاح"
 msgid "Deposit to Vault"
 msgstr "الإيداع في الخزنة"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/tests/deposit-broadcast.test.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
 msgstr "تم بث معاملة الإيداع، لكن انتهت مهلة التأكيد. تحقق من Arbiscan قبل إعادة المحاولة."
 
@@ -2431,7 +2594,7 @@ msgstr "تم بث معاملة الإيداع، لكن انتهت مهلة ال�
 msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
 msgstr "تم بث معاملة الإيداع، لكن فشل تأكيد Arbitrum RPC. تحقق من Arbiscan قبل إعادة المحاولة."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "تم إرسال معاملة الإيداع لكنها لم تُؤكَّد على Arbitrum. قد يكون رقم nonce في محفظتك غير متزامن مع الشبكة. امسح النشاط المعلّق أو أعد ضبط بيانات nonce في المحفظة، ثم أعد المحاولة."
@@ -2599,6 +2762,7 @@ msgstr "غير متصل"
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "تجاهل"
 
@@ -2850,6 +3014,14 @@ msgstr "أدخل سعر تفعيل صالحًا"
 msgid "Enter a valid trigger price using the market's price precision."
 msgstr "أدخل سعر تفعيل صالحاً وفق دقة السعر الخاصة بالسوق."
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Enter an amount."
+msgstr "أدخل مبلغًا."
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Enter an API wallet name."
+msgstr "أدخل اسمًا لمحفظة API."
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Enter code"
 msgstr "أدخل الرمز"
@@ -3041,6 +3213,7 @@ msgstr "منتهي الصلاحية"
 #~ msgstr "تنتهي الصلاحية {expiresAtLabel}."
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Expires today"
 msgstr "تنتهي صلاحيته اليوم"
 
@@ -3434,6 +3607,10 @@ msgstr "تعذّر التحقق من أحدث بيانات الأهلية أو �
 msgid "Fresh extraAgents data is being checked before the result is accepted."
 msgstr "جارٍ التحقق من بيانات extraAgents الحديثة قبل قبول النتيجة."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Fresh Vault balances and limits could not be verified."
+msgstr "تعذّر التحقق من أحدث أرصدة الخزنة وحدودها."
+
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "From"
 msgstr "من"
@@ -3743,7 +3920,7 @@ msgstr "يحسب Hyperliquid الهامش المطلوب للوصول إلى ا�
 msgid "Hyperliquid documents a four-day lock after the latest HLP deposit and a one-day lock for user Vaults. The returned server timestamp remains authoritative for this deposit."
 msgstr "توثّق Hyperliquid فترة قفل مدتها أربعة أيام بعد أحدث إيداع في HLP، وفترة يوم واحد لخزائن المستخدمين. يظل الطابع الزمني الذي يعيده الخادم هو المرجع المعتمد لهذا الإيداع."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
 msgstr "لا يُظهر Hyperliquid حاليًا أن هذا الحساب مؤهل لإنشاء رمز إحالة."
 
@@ -3884,9 +4061,25 @@ msgstr "رصيد غير كافٍ"
 msgid "Insufficient funds"
 msgstr "رصيد غير كافٍ"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Insufficient funds for gas"
 msgstr "أموال غير كافية لرسوم الغاز"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order."
+msgstr "الهامش غير كافٍ لتقديم الأمر."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order. Try canceling open {market} orders."
+msgstr "الهامش غير كافٍ لتقديم الأمر. جرّب إلغاء الأوامر المفتوحة على {market}."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order. Try using Reduce Only."
+msgstr "الهامش غير كافٍ لتقديم الأمر. جرّب استخدام التقليل فقط."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient spot balance for this order."
+msgstr "رصيد السوق الفوري غير كافٍ لهذا الأمر."
 
 #: src/components/earn/earn-view.tsx
 msgid "Interest"
@@ -3909,6 +4102,19 @@ msgstr "مبلغ غير صالح"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Invalid destination address"
 msgstr "عنوان الوجهة غير صالح"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Invalid leverage"
+msgstr "رافعة مالية غير صالحة"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Invalid margin mode"
+msgstr "وضع هامش غير صالح"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Invalid TP/SL price."
+msgstr "سعر TP/SL غير صالح."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invitation ready to review"
@@ -4066,6 +4272,10 @@ msgstr "DEX القديم"
 msgid "Legacy reward history"
 msgstr "سجل المكافآت القديم"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Legal eligibility could not be verified."
+msgstr "تعذّر التحقق من الأهلية القانونية."
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Lending Net Balance"
 msgstr "صافي رصيد الإقراض والاقتراض"
@@ -4076,14 +4286,36 @@ msgstr "صافي رصيد الإقراض والاقتراض"
 msgid "Leverage"
 msgstr "الرافعة المالية"
 
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage changed before margin mode update"
+msgstr "تغيّرت الرافعة المالية قبل تحديث وضع الهامش"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "الرافعة المالية ثابتة عند {currentLeverage}× لهذا السوق."
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage request no longer matches the confirmed settings"
+msgstr "لم يعد طلب الرافعة المالية مطابقًا للإعدادات المؤكَّدة"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage request no longer matches the selected market"
+msgstr "لم يعد طلب الرافعة المالية مطابقًا للسوق المحدد"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage updated to {leverage}x"
 msgstr "تم تحديث الرافعة المالية إلى {leverage}x"
+
+#: src/lib/lifi/config.ts
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
+msgid "LI.FI requested a network that does not match this bridge route."
+msgstr "طلب LI.FI شبكة لا تطابق مسار الجسر هذا."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "LI.FI returned a bridge route that does not match the approved route."
+msgstr "أعاد LI.FI مسار جسر لا يطابق المسار المعتمد."
 
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
@@ -4354,6 +4586,10 @@ msgstr "جارٍ التحميل..."
 msgid "Loading…"
 msgstr "جارٍ التحميل…"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Location eligibility could not be verified."
+msgstr "تعذّر التحقق من الأهلية حسب الموقع."
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Lock period progress"
 msgstr "تقدم فترة القفل"
@@ -4450,6 +4686,15 @@ msgstr "نظرة سريعة على الهامش ومخاطر الحساب"
 #: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "وضع الهامش"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Margin mode changed before leverage update"
+msgstr "تغيّر وضع الهامش قبل تحديث الرافعة المالية"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/lib/tests/action-error.test.ts
+msgid "Margin mode data is unavailable"
+msgstr "بيانات وضع الهامش غير متاحة"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode updated"
@@ -4882,7 +5127,11 @@ msgstr "إجراءات الأموال الجديدة مقفلة حتى تسوي�
 msgid "New mobile pairing is temporarily unavailable."
 msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Next"
 msgstr "التالي"
 
@@ -4949,7 +5198,7 @@ msgstr "لا توجد محافظ API مصرح بها"
 msgid "No balance"
 msgstr "لا يوجد رصيد"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/exchange-error-text.ts
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "لا يوجد رصيد على Hyperliquid. أودع أولاً."
 
@@ -5060,6 +5309,10 @@ msgstr "لا توجد فوائد بعد"
 #: src/components/referrals/referral-activity.tsx
 msgid "No legacy reward history."
 msgstr "لا يوجد سجل قديم للمكافآت."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "No liquidity is available for this market order."
+msgstr "لا تتوفر سيولة لهذا الأمر بسعر السوق."
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
@@ -5268,12 +5521,17 @@ msgstr "غير متصل"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Not reported"
 msgstr "غير مُبلّغ عنه"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Notification details"
 msgstr "تفاصيل الإشعار"
+
+#: src/components/ui/sonner.tsx
+msgid "Notifications"
+msgstr "الإشعارات"
 
 #: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
@@ -5485,6 +5743,10 @@ msgstr "أمر"
 msgid "Order {0}"
 msgstr "الأمر {0}"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order {order}: {line}"
+msgstr "الأمر {order}: {line}"
+
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/config/orderbook-labels.ts
@@ -5515,6 +5777,7 @@ msgid "Order cancellation confirmed."
 msgstr "تم تأكيد إلغاء الأمر."
 
 #: src/hooks/trade/use-order-confirmation.ts
+#: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Order conditions changed before it was confirmed. Review the order and submit it again."
 msgstr "تغيرت شروط الأمر قبل تأكيده. راجع الأمر وأرسله مجددًا."
@@ -5623,6 +5886,14 @@ msgstr "نوع الأمر"
 msgid "Order Value"
 msgstr "قيمة الطلب"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order value must be at least {amount} {token}."
+msgstr "يجب ألا تقل قيمة الأمر عن {amount} {token}."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order value must be at least ${amount}."
+msgstr "يجب ألا تقل قيمة الأمر عن ${amount}."
+
 #: src/config/tooltips.ts
 msgid "Order will exist only as a limit order on the book. Also known as post-only."
 msgstr "سيوجد الأمر فقط كأمر محدد في الدفتر. يُعرف أيضاً بـ post-only."
@@ -5681,6 +5952,13 @@ msgstr "المالك"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Owner account"
 #~ msgstr "حساب المالك"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Page {page}"
+msgstr "الصفحة {page}"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Page {visiblePage} of {totalPages}"
@@ -5938,6 +6216,10 @@ msgstr "مخطط سجل المحفظة الاستثمارية"
 msgid "Portfolio margin"
 msgstr "هامش المحفظة"
 
+#: src/hooks/trade/use-account-abstraction-control.ts
+msgid "Portfolio margin activation is temporarily unavailable"
+msgstr "تفعيل هامش المحفظة غير متاح مؤقتًا"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Portfolio margin eligibility and limits"
 msgstr "أهلية هامش المحفظة وحدوده"
@@ -5981,6 +6263,16 @@ msgstr "المركز"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Position changed before submission. Review the Reduce Only quantity and direction."
 msgstr "تغير المركز قبل الإرسال. راجع كمية التقليل فقط واتجاهها."
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/lib/tests/margin-mode-modal.test.tsx
+#: src/lib/tests/position-submit-feedback.test.ts
+#: src/lib/tests/position-submit-feedback.test.ts
+#: src/lib/tests/position-submit-feedback.test.ts
+msgid "Position data is unavailable"
+msgstr "بيانات المركز غير متاحة"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
@@ -6045,6 +6337,10 @@ msgstr "أرباح وخسائر موجبة"
 msgid "Post Only"
 msgstr "Post Only"
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Powered by <0/>"
+msgstr "مدعوم من <0/>"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Pre-IPO"
 msgstr "ما قبل الاكتتاب"
@@ -6069,6 +6365,10 @@ msgstr "هل تفضّل تجربة تشبه التطبيق؟"
 msgid "Preparing automatic USDC deposit..."
 msgstr "جارٍ تحضير إيداع USDC تلقائي..."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Preparing transaction..."
+msgstr "جارٍ تجهيز المعاملة..."
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."
 msgstr "جارٍ تجهيز عرض السعر..."
@@ -6077,7 +6377,11 @@ msgstr "جارٍ تجهيز عرض السعر..."
 #~ msgid "Press and hold for 4 seconds"
 #~ msgstr "اضغط مع الاستمرار لمدة 4 ثوانٍ"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Previous"
 msgstr "السابق"
 
@@ -6156,6 +6460,10 @@ msgstr "السعر أدنى من {price}"
 msgid "Price grouping"
 msgstr "تجميع الأسعار"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Price must be a multiple of the tick size."
+msgstr "يجب أن يكون السعر من مضاعفات حجم التكة."
+
 #: src/config/orderbook-labels.ts
 msgid "Price precision"
 msgstr "دقة السعر"
@@ -6199,10 +6507,9 @@ msgstr "جارٍ المعالجة"
 msgid "Processing time"
 msgstr "وقت المعالجة"
 
-#: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#~ msgid "Processing..."
-#~ msgstr "جارٍ المعالجة..."
+#: src/lib/lifi/use-bridge.ts
+msgid "Processing..."
+msgstr "جارٍ المعالجة..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #~ msgid "Processing…"
@@ -6242,6 +6549,10 @@ msgstr "رمز QR يؤدي إلى سوق {0}"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "QR unavailable"
 msgstr "رمز QR غير متاح"
+
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Quote countdown"
+msgstr "العد التنازلي لعرض السعر"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Quote expired. Refresh it before confirming."
@@ -6406,13 +6717,18 @@ msgstr "حجم التقليل فقط يتجاوز حجم المركز"
 msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
 msgstr "قلّل هذا المركز بسعر السوق الحالي. لا يمكن التراجع عن الصفقات المنفذة."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral access could not be verified for this account. Refresh access status before retrying."
 msgstr "تعذّر التحقق من صلاحية الإحالة لهذا الحساب. حدّث حالة الصلاحية قبل إعادة المحاولة."
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Referral access is still being verified."
 msgstr "لا يزال التحقق من صلاحية الإحالة جاريًا."
+
+#: src/hooks/trade/use-referral-actions.ts
+#: src/lib/tests/use-referral-actions.test.tsx
+msgid "Referral actions are not available in your region. This referral request was not submitted."
+msgstr "إجراءات الإحالة غير متاحة في منطقتك. لم يُرسَل طلب الإحالة هذا."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Referral activation progress"
@@ -6440,11 +6756,11 @@ msgid "Referral code created"
 msgstr "تم إنشاء رمز الإحالة"
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral codes cannot be applied after cumulative volume exceeds $10,000."
 msgstr "لا يمكن تطبيق رموز الإحالة بعد أن يتجاوز حجم التداول التراكمي 10,000 دولار."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral codes must be between 1 and 20 characters."
 msgstr "يجب أن تتكون رموز الإحالة من 1 إلى 20 حرفًا."
 
@@ -6461,8 +6777,16 @@ msgid "Referral request"
 msgstr "طلب إحالة"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/use-referral-actions.test.tsx
 msgid "Referral request could not be completed."
 msgstr "تعذّر إكمال طلب الإحالة."
+
+#: src/hooks/trade/use-referral-actions.ts
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Referral request is no longer active."
+msgstr "لم يعد طلب الإحالة نشطًا."
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Referral stages, rewards, discount, and claim history are scoped to your Hyperliquid account."
@@ -6556,14 +6880,80 @@ msgstr "جارٍ التحديث…"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-status-reasons.ts
 msgid "Rejected"
 msgstr "مرفوض"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because a Reduce Only order would increase the position"
+msgstr "رُفض لأن أمر التقليل فقط كان سيزيد المركز"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because it exceeds the maximum position size at the current leverage"
+msgstr "رُفض لأنه يتجاوز الحد الأقصى لحجم المركز عند الرافعة المالية الحالية"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because open interest would increase too quickly"
+msgstr "رُفض لأن العقود المفتوحة كانت ستزداد بسرعة كبيرة"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the IOC order could not match"
+msgstr "رُفض لأن أمر IOC لم يتمكن من المطابقة"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the order value is below the minimum"
+msgstr "رُفض لأن قيمة الأمر أقل من الحد الأدنى"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the Post Only order would have matched immediately"
+msgstr "رُفض لأن أمر Post Only كان سيُنفَّذ فورًا"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the price is too aggressive at the open interest cap"
+msgstr "رُفض لأن السعر مندفع جدًا عند حد العقود المفتوحة"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the price is too far from the oracle price"
+msgstr "رُفض لأن السعر بعيد جدًا عن سعر أوراكل"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to a lack of liquidity for the market order"
+msgstr "رُفض لعدم توفر سيولة للأمر بسعر السوق"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to an invalid tick price"
+msgstr "رُفض بسبب سعر لا يطابق حجم التكة"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to an invalid TP/SL price"
+msgstr "رُفض بسبب سعر TP/SL غير صالح"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to insufficient margin"
+msgstr "رُفض بسبب عدم كفاية الهامش"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to insufficient spot balance"
+msgstr "رُفض بسبب عدم كفاية رصيد السوق الفوري"
+
+#: src/lib/trade/order-status-reasons.ts
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to the open interest cap"
+msgstr "رُفض بسبب حد العقود المفتوحة"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to too many open orders"
+msgstr "رُفض بسبب وجود عدد كبير جدًا من الأوامر المفتوحة"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Reload page"
 msgstr "إعادة تحميل الصفحة"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Reload recovery could not be saved. Keep this tab open until the bridge completes."
+msgstr "تعذّر حفظ بيانات الاستعادة بعد إعادة التحميل. أبقِ علامة التبويب هذه مفتوحة حتى يكتمل الجسر."
 
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"
@@ -6822,6 +7212,10 @@ msgstr "راجع أوامر TWAP النشطة قبل إعادة المحاولة
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "Review again"
 #~ msgstr "المراجعة مرة أخرى"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Review and approve this Hyperliquid Agent permission."
+msgstr "راجع إذن وكيل Hyperliquid هذا ووافق عليه."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Review and import the desktop-approved trading key. No phone wallet is required."
@@ -7140,6 +7534,10 @@ msgstr "لا يدعم هذا المتصفح إنشاء أرقام عشوائية
 msgid "Secure randomness is unavailable. Deposit was not submitted."
 msgstr "العشوائية الآمنة غير متاحة. لم يتم إرسال الإيداع."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Secure reload recovery is unavailable in this browser. Bridge execution was not started."
+msgstr "الاستعادة الآمنة بعد إعادة التحميل غير متاحة في هذا المتصفح. لم يبدأ تنفيذ الجسر."
+
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select {displayName} market"
 msgstr "اختر سوق {displayName}"
@@ -7195,11 +7593,7 @@ msgid "selected"
 msgstr "محدد"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/lib/errors/format.ts
-#: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/errors/action-error.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 msgstr "المحفظة المحددة لا تطابق الحساب المتصل. أعد توصيل المحفظة ثم أعد المحاولة."
 
@@ -7496,7 +7890,7 @@ msgstr "حدّ تحمّل الانزلاق السعري"
 msgid "Smart wallet client not ready"
 msgstr "عميل المحفظة الذكية غير جاهز"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked."
 msgstr "تجري مزامنة حالة إيداع المحفظة الذكية. لا ترسل إيداعًا آخر أثناء التحقق من الرصيد."
@@ -7958,6 +8352,14 @@ msgstr "تبديل العملات المستقرة"
 #~ msgid "Swap submitted"
 #~ msgstr "تم إرسال المبادلة"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Swapping on same chain..."
+msgstr "جارٍ التبديل على السلسلة نفسها..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Swapping on source chain..."
+msgstr "جارٍ التبديل على سلسلة المصدر..."
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #~ msgid "Swapping..."
 #~ msgstr "جارٍ المبادلة..."
@@ -8202,9 +8604,25 @@ msgstr "لا يحتوي الحساب على مدفوعات تمويل ضمن ن�
 msgid "The account has no ordinary orders in the available history."
 msgstr "لا يحتوي الحساب على أوامر عادية في السجل المتاح."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The active owner wallet or network changed."
+msgstr "تغيّرت محفظة المالك النشطة أو الشبكة."
+
+#: src/lib/lifi/config.ts
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/bridge-tab-lifecycle.test.tsx
+msgid "The active wallet does not match this bridge route."
+msgstr "المحفظة النشطة لا تطابق مسار الجسر هذا."
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr "المحفظة النشطة ليست المحفظة الرئيسية لهذا الحساب"
+
+#: src/lib/errors/action-error.ts
+#: src/lib/tests/establish-connection-modal.test.tsx
+#: src/lib/tests/mobile-agent-sync-modal.test.tsx
+msgid "The active wallet or network changed. Review the account and try again."
+msgstr "تغيّرت المحفظة النشطة أو الشبكة. راجع الحساب ثم حاول مرة أخرى."
 
 #: src/components/staking/staking-view.tsx
 msgid "The address already has five pending withdrawals."
@@ -8213,6 +8631,10 @@ msgstr "لدى العنوان بالفعل خمسة طلبات سحب معلقة
 #: src/components/vaults/vaults-page.tsx
 msgid "The address is invalid or Hyperliquid returned no Vault details for it."
 msgstr "العنوان غير صالح أو لم تُرجع Hyperliquid أي تفاصيل خزنة له."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The amount exceeds the freshly verified maximum."
+msgstr "المبلغ يتجاوز الحد الأقصى الذي تم التحقق منه مؤخرًا."
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."
@@ -8233,6 +8655,10 @@ msgstr "رُفض طلب محفظة API."
 #: src/components/referrals/referral-action-modal.tsx
 #~ msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
 #~ msgstr "يوقّع Agent المعتمد من Hyperliquid هذا الطلب. لا تُعاد محاولة الطلبات الموقّعة تلقائيًا مطلقًا."
+
+#: src/lib/errors/action-error.ts
+msgid "The Arbitrum transaction did not match the reviewed deposit. Check your wallet activity before retrying."
+msgstr "معاملة Arbitrum لا تطابق الإيداع الذي راجعته. تحقّق من نشاط محفظتك قبل إعادة المحاولة."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
@@ -8261,6 +8687,10 @@ msgstr "تعذر تأكيد استجابة الإلغاء. حدّث الأوام
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "لم يُؤكد الإلغاء. راجع الأوامر المفتوحة قبل إعادة المحاولة."
 
+#: src/lib/errors/action-error.ts
+msgid "The checks before this request took too long. Nothing was signed or sent. Try again."
+msgstr "استغرقت الفحوصات السابقة لهذا الطلب وقتًا طويلًا. لم يُوقَّع أو يُرسَل أي شيء. حاول مرة أخرى."
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr "يحدد طابع القفل الزمني المؤكد من الخادم وقت إتاحة السحب."
@@ -8270,9 +8700,11 @@ msgid "The connection could not be checked safely. No wallet signature was reque
 msgstr "تعذر التحقق من الاتصال بأمان. لم يُطلب أي توقيع من المحفظة؛ انتظر قليلًا ثم أعد المحاولة."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
 msgstr "تعذر إكمال الاتصال. ربما تمت الموافقة عليه بالفعل؛ انتظر قليلًا ثم أعد المحاولة."
 
+#: src/lib/tests/mobile-agent-sync-route.test.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The desktop has not approved this key. Create a new QR on desktop."
 msgstr ""
@@ -8381,6 +8813,10 @@ msgstr "تعذر التحقق من مجموعة البيانات العامة ا
 #~ msgid "The one-time QR service is unavailable. Check your connection and retry."
 #~ msgstr "خدمة رمز QR لمرة واحدة غير متاحة. تحقق من اتصالك وأعد المحاولة."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The operation reference could not be stored safely, so nothing was signed."
+msgstr "تعذّر حفظ مرجع العملية بأمان، لذلك لم يُوقَّع أي شيء."
+
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "يمكن متابعة الأمر، لكن تعذر حفظ تفضيل التأكيد هذا."
@@ -8389,15 +8825,35 @@ msgstr "يمكن متابعة الأمر، لكن تعذر حفظ تفضيل ا�
 msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
 msgstr "تغيّر الأمر قبل تأكيد التعديل المطلوب. راجع أحدث حالة للأمر قبل إعادة المحاولة."
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order could not immediately match any resting orders."
+msgstr "تعذّر مطابقة الأمر فورًا مع أي أوامر قائمة."
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
 #~ msgstr "لا يزال تأكيد الأمر جارياً."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order price is too far from the oracle price."
+msgstr "سعر الأمر بعيد جدًا عن سعر أوراكل."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "لم تؤكد البيانات المباشرة تحديث الأمر. حدّث قبل إعادة المحاولة؛ ويظل الإلغاء متاحًا."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order was never placed, was already canceled, or has filled."
+msgstr "لم يُقدَّم الأمر مطلقًا، أو أُلغي بالفعل، أو نُفِّذ."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order would exceed the maximum position size at the current leverage."
+msgstr "سيتجاوز الأمر الحد الأقصى لحجم المركز عند الرافعة المالية الحالية."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order would increase open interest too quickly."
+msgstr "سيزيد الأمر العقود المفتوحة بسرعة كبيرة."
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The page is matching a new Vault ledger event and refreshed account state. It will not sign again."
@@ -8472,11 +8928,35 @@ msgstr "يبقى رمز QR على هذا الجهاز ولا يُرفع أبدً
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "تعذر تحميل لقطة الصفقات الأخيرة أو التحقق من صحتها."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The refreshed Vault identity did not match this reviewed action."
+msgstr "هوية الخزنة المحدَّثة لا تطابق هذا الإجراء الذي راجعته."
+
+#: src/hooks/trade/use-referral-actions.ts
+msgid "The regional availability check expired before signing. This referral request was not submitted."
+msgstr "انتهت صلاحية التحقق من التوفر الإقليمي قبل التوقيع. لم يُرسَل طلب الإحالة هذا."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
 #~ msgstr "انتهت صلاحية الاستبدال قبل أن يؤكده Hyperliquid. راجع ووقّع عملية إلغاء جديدة."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
+msgid "The request could not be completed. Try again."
+msgstr "تعذّر إكمال الطلب. حاول مرة أخرى."
+
+#: src/lib/errors/action-error.ts
+msgid "The request could not be prepared. Refresh the page and try again."
+msgstr "تعذّر تجهيز الطلب. حدّث الصفحة ثم حاول مرة أخرى."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The request expired before the exchange processed it. Try again."
+msgstr "انتهت صلاحية الطلب قبل أن تعالجه منصة التداول. حاول مرة أخرى."
+
+#: src/lib/errors/action-error.ts
+msgid "The request status could not be confirmed. Review your account before retrying."
+msgstr "تعذّر تأكيد حالة الطلب. راجع حسابك قبل إعادة المحاولة."
+
+#: src/lib/errors/action-error.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
 msgstr "تم إرسال الطلب، لكن حالته النهائية لا تزال قيد التحديث. تحقق من بيانات الإحالة وسجل المطالبات قبل إعادة المحاولة."
 
@@ -8526,6 +9006,10 @@ msgstr "أعادت بيئة Hyperliquid المحددة قائمة خزائن ف�
 msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
 msgstr "تغيّر السوق المحدد. أعد فتح نافذة الهامش قبل تعديل الهامش."
 
+#: src/lib/errors/action-error.ts
+msgid "The server rejected the request. Try again later."
+msgstr "رفض الخادم الطلب. حاول مرة أخرى لاحقًا."
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The signed {action} request is dispatched once and will not be retried automatically."
 msgstr "يُرسل طلب {action} الموقّع مرة واحدة ولن تُعاد محاولته تلقائيًا."
@@ -8541,6 +9025,10 @@ msgstr "ربما نجح الطلب الموقّع، لكن انتهت مهلة �
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "The start and end values are unchanged."
 msgstr "لم تتغير قيمتا البداية والنهاية."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "The submitted bridge transaction could not be prepared for safe status tracking."
+msgstr "تعذّر تجهيز معاملة الجسر المرسَلة لتتبع حالتها بأمان."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -8577,6 +9065,10 @@ msgstr "تغيّر حساب التداول أو الشبكة. أعد فتح ال
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr "تغير حساب التداول أو الشبكة. راجع أوامر TWAP النشطة قبل إعادة المحاولة."
 
+#: src/lib/errors/action-error.ts
+msgid "The trading key stored in this browser is invalid. Reset the trading connection before trying again."
+msgstr "مفتاح التداول المحفوظ في هذا المتصفح غير صالح. أعد ضبط اتصال التداول قبل إعادة المحاولة."
+
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "The trading wallet could not be verified for this owner and network."
 msgstr "تعذّر التحقق من محفظة التداول لهذا المالك وهذه الشبكة."
@@ -8602,9 +9094,17 @@ msgstr "لم تتضمن مجموعة البيانات المتحقق منها ح
 msgid "The verified owner data is read-only in this session. An Agent/API wallet is never used as the staking owner or signer."
 msgstr "بيانات المالك المتحقق منه للقراءة فقط في هذه الجلسة. لا تُستخدم محفظة الوكيل/API مطلقًا بصفتها مالك التخزين أو الموقّع."
 
+#: src/lib/errors/action-error.ts
+msgid "The wallet could not sign the request. Try again."
+msgstr "تعذّر على المحفظة توقيع الطلب. حاول مرة أخرى."
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
 msgstr "لم توقّع المحفظة، لذلك لم يُرسل أي طلب. يمكنك مراجعة التفاصيل والمحاولة مجددًا."
+
+#: src/lib/lifi/config.ts
+msgid "The wallet network does not match this bridge route. Switch networks in your wallet and try again."
+msgstr "شبكة المحفظة لا تطابق مسار الجسر هذا. بدّل الشبكة من داخل المحفظة ثم أعد المحاولة."
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
@@ -8614,16 +9114,16 @@ msgstr "تعذر إغلاق جلسة المحفظة، لكن تمت إزالة �
 #~ msgid "There are no eligible rewards available to claim."
 #~ msgstr "لا توجد مكافآت مؤهلة متاحة للمطالبة."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "There are no unclaimed rewards available to claim."
 msgstr "لا توجد مكافآت غير مطالب بها متاحة للمطالبة."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "لدى هذا الحساب رمز إحالة بالفعل، ولا يمكنه تطبيق رمز آخر."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
 msgstr "هذا الحساب غير مسموح له حاليًا بتنفيذ إجراءات التداول على Hyperliquid."
 
@@ -8655,15 +9155,37 @@ msgstr "لا يمكن التراجع عن هذا الإجراء بعد التن�
 msgid "This bridge can only be resumed by the wallet that started it."
 msgstr "لا يمكن استئناف هذا الجسر إلا بواسطة المحفظة التي بدأته."
 
-#: src/lib/errors/format.ts
+#: src/lib/lifi/use-bridge.ts
+msgid "This bridge route requires unsupported message signing and was not submitted."
+msgstr "يتطلب مسار الجسر هذا توقيع رسالة غير مدعوم، ولم يُرسَل."
+
+#: src/lib/lifi/bridge-execution-state.ts
+msgid "This bridge was interrupted by a page reload. Retry to resume status tracking."
+msgstr "انقطع هذا الجسر بسبب إعادة تحميل الصفحة. أعد المحاولة لاستئناف تتبع الحالة."
+
+#: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "لا يستطيع هذا المتصفح تنسيق عمليات الأموال بأمان بين علامات التبويب. استخدم متصفحًا مدعومًا."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 msgstr "لا يستطيع هذا المتصفح تنسيق اتصال التداول بأمان عبر علامات التبويب. استخدم متصفحًا مدعومًا."
 
+#: src/lib/errors/action-error.ts
+msgid "This browser could not coordinate the request safely across tabs. Close other tabs and try again."
+msgstr "تعذّر على هذا المتصفح تنسيق الطلب بأمان بين علامات التبويب. أغلق علامات التبويب الأخرى ثم حاول مرة أخرى."
+
+#: src/lib/errors/action-error.ts
+msgid "This browser could not store deposit recovery data, so this deposit was not submitted. Allow site storage, then try again."
+msgstr "تعذّر على هذا المتصفح حفظ بيانات استعادة الإيداع، لذلك لم يُرسَل هذا الإيداع. اسمح بتخزين الموقع ثم حاول مرة أخرى."
+
+#: src/lib/errors/action-error.ts
+msgid "This browser could not store the trading key safely. Check that site storage is available, then try again."
+msgstr "تعذّر على هذا المتصفح حفظ مفتاح التداول بأمان. تحقّق من توفر تخزين الموقع ثم حاول مرة أخرى."
+
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
 msgstr "لم يعد هذا المتصفح يحتفظ بمفتاح التداول المطابق تمامًا للموافقة المعلّقة. أعد تعيين اتصال التداول قبل المحاولة مرة أخرى."
 
@@ -8745,6 +9267,16 @@ msgstr "هذا هو السجل القديم للمكافآت المكتسبة. �
 msgid "This isolated position is no longer open."
 msgstr "لم يعد هذا المركز المعزول مفتوحًا."
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "This market is at its open interest cap, so the order cannot increase open interest."
+msgstr "بلغ هذا السوق حد العقود المفتوحة، لذا لا يمكن للأمر زيادة العقود المفتوحة."
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "This market only supports isolated margin mode"
+msgstr "يدعم هذا السوق وضع الهامش المعزول فقط"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "This market only supports isolated margin mode."
 msgstr "يدعم هذا السوق وضع الهامش المعزول فقط."
@@ -8752,6 +9284,10 @@ msgstr "يدعم هذا السوق وضع الهامش المعزول فقط."
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This mobile trading key has expired."
 #~ msgstr "انتهت صلاحية مفتاح التداول الخاص بالهاتف."
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "This name already exists. A duplicate would replace the existing API wallet."
+msgstr "هذا الاسم موجود بالفعل. سيؤدي التكرار إلى استبدال محفظة API الحالية."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This one-time QR closes automatically within 60 seconds."
@@ -8912,6 +9448,10 @@ msgstr "هذه الخزنة مغلقة ولم تعد تقبل الإيداعات
 msgid "This Vault is not accepting deposits."
 msgstr "هذه الخزنة لا تقبل الإيداعات."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "This Vault no longer accepts deposits."
+msgstr "لم تعد هذه الخزنة تقبل الإيداعات."
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
 msgstr "تستخدم هذه الخزنة إغلاق المراكز بالتناسب عند السحب."
@@ -9010,6 +9550,10 @@ msgstr "تعذر تحميل البيانات الوصفية للرمز."
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 #~ msgstr "هناك عدد كبير جدًا من موافقات الهاتف بانتظار الاستعادة في علامة التبويب هذه. قم بحل إحداها أو إلغائها أولاً."
+
+#: src/lib/errors/action-error.ts
+msgid "Too many requests. Wait a moment and try again."
+msgstr "طلبات كثيرة جدًا. انتظر لحظة ثم حاول مرة أخرى."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
@@ -9214,6 +9758,10 @@ msgstr "حساب التداول"
 msgid "Trading connection could not be reset."
 msgstr "تعذّر إعادة تعيين اتصال التداول."
 
+#: src/lib/errors/action-error.ts
+msgid "Trading could not be enabled. Try again."
+msgstr "تعذّر تفعيل التداول. حاول مرة أخرى."
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
@@ -9270,17 +9818,17 @@ msgstr "المعاملة"
 msgid "Transaction breakdown"
 msgstr "تفاصيل المعاملة"
 
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/errors/action-error.ts
 msgid "Transaction reverted on Arbitrum"
 msgstr "تم التراجع عن المعاملة على Arbitrum"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Transaction was not broadcast. Please retry."
 msgstr "لم يتم بث المعاملة. يرجى إعادة المحاولة."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/action-error.test.ts
 msgid "Transaction was rejected"
 msgstr "تم رفض المعاملة"
 
@@ -9525,7 +10073,8 @@ msgstr "تعذر تحميل رسوم السحب الحالية عبر CCTP."
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "تعذّر تبديل المحفظة إلى {0}. بدّل الشبكة في محفظتك ثم أعد المحاولة."
 
-#: src/lib/errors/format.ts
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "تعذّر تبديل المحفظة إلى Arbitrum. بدّل الشبكة من داخل المحفظة ثم أعد المحاولة."
 
@@ -9551,12 +10100,15 @@ msgstr "تعذر التحقق من التوفر الإقليمي. لم يُرس�
 
 #: src/hooks/trade/use-funds-action-availability.ts
 #: src/lib/lifi/use-bridge.ts
-#: src/lib/lifi/use-bridge.ts
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "تعذّر التحقق من التوفر في منطقتك. لم يتم إرسال عملية إدارة الأموال هذه."
 
-#: src/lib/errors/format.ts
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Unable to verify regional availability. This referral request was not submitted."
+msgstr "تعذّر التحقق من التوفر الإقليمي. لم يُرسَل طلب الإحالة هذا."
+
+#: src/lib/errors/action-error.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "تعذر التحقق من التوفر الإقليمي. التداول غير متاح مؤقتًا."
 
@@ -9575,6 +10127,7 @@ msgstr "تعذّر التحقق من وضع الحساب الحالي. لم يت
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "تعذر التحقق من رسوم Circle CCTP الحالية وسعة Fast Transfer."
 
@@ -9680,9 +10233,9 @@ msgstr "نسبة الحساب الموحد"
 msgid "Unified Account Summary"
 msgstr "ملخص الحساب الموحد"
 
+#: src/components/trade/tradebox/bridge/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
 msgstr "خطأ غير معروف"
 
@@ -9813,6 +10366,14 @@ msgstr "حجم تداول USDC"
 #: src/components/trade/orderbook/orderbook-row.tsx
 msgid "Use {priceText} as limit price"
 msgstr "استخدام {priceText} كسعر حد"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Use 2–16 letters, numbers, underscores, or hyphens."
+msgstr "استخدم من 2 إلى 16 حرفًا أو رقمًا أو شرطة سفلية أو شرطة."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Use a valid HYPE amount with no more than eight decimal places."
+msgstr "استخدم مبلغ HYPE صالحًا بثماني منازل عشرية كحد أقصى."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -9953,6 +10514,14 @@ msgstr "حالة قفل الخزنة"
 msgid "Vault not found"
 msgstr "لم يتم العثور على الخزنة"
 
+#: src/components/vaults/use-vault-action-controller.ts
+#~ msgid "Vault operation failed."
+#~ msgstr "فشلت عملية الخزنة."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Vault operation failed. Verify current balances and history before trying again."
+msgstr "فشلت عملية الخزنة. تحقّق من الأرصدة والسجل الحاليين قبل إعادة المحاولة."
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Vault pagination"
 msgstr "ترقيم صفحات الخزائن"
@@ -10024,6 +10593,11 @@ msgstr "تحقق من عملية الأموال المعلقة قبل بدء ع�
 #: src/components/staking/staking-action-modal.tsx
 msgid "Verifying"
 msgstr "جارٍ التحقق"
+
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/lifi/use-bridge.ts
+msgid "Verifying access..."
+msgstr "جارٍ التحقق من الوصول..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -10118,6 +10692,10 @@ msgstr "المحفظة"
 msgid "Wallet (<0>{0}</0>)"
 msgstr "المحفظة (<0>{0}</0>)"
 
+#: src/lib/errors/action-error.ts
+msgid "Wallet approval timed out. Check your wallet and try again."
+msgstr "انتهت مهلة الموافقة في المحفظة. تحقّق من محفظتك ثم حاول مرة أخرى."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Wallet approval unavailable"
 #~ msgstr "موافقة المحفظة غير متاحة"
@@ -10129,16 +10707,13 @@ msgstr "المحفظة (<0>{0}</0>)"
 msgid "Wallet client not ready"
 msgstr "عميل المحفظة غير جاهز"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/hooks/wallet/use-wallet-session.ts
-#: src/lib/errors/format.ts
-#: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
 msgstr "فشل الاتصال بالمحفظة. افتح قفل المحفظة ووافق على الاتصال ثم أعد المحاولة."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet connection request was rejected."
 msgstr "تم رفض طلب الاتصال بالمحفظة."
@@ -10147,7 +10722,7 @@ msgstr "تم رفض طلب الاتصال بالمحفظة."
 msgid "Wallet connection unavailable"
 msgstr "اتصال المحفظة غير متاح"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
 msgstr "لم تُرجع المحفظة تجزئة معاملة. تحقق من نشاط المحفظة قبل إعادة المحاولة لتجنب إرسال الإيداع مرتين."
 
@@ -10156,6 +10731,11 @@ msgstr "لم تُرجع المحفظة تجزئة معاملة. تحقق من ن
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "المحفظة غير متصلة بـ {0}. بدّل الشبكة في محفظتك ثم أعد المحاولة."
+
+#: src/hooks/trade/use-account-abstraction-control.ts
+#: src/lib/tests/account-mode-modal.test.tsx
+msgid "Wallet is not ready to update account mode"
+msgstr "المحفظة غير جاهزة لتحديث وضع الحساب"
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
@@ -10171,11 +10751,11 @@ msgstr "المحفظة غير متصلة"
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "تغيرت المحفظة أو الشبكة قبل اكتمال الاتصال. أعد فتح الإجراء للحساب الحالي."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."
 msgstr "تغيّرت المحفظة أو الشبكة قبل تأكيد طلب الإحالة. أعد فتح الإجراء وراجع الحساب الحالي."
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "أعادت المحفظة تجزئة معاملة، لكنها غير ظاهرة على Arbitrum بعد. تحقق من نشاط المحفظة أو Arbiscan قبل إعادة المحاولة لتجنب إرسال الإيداع مرتين."
@@ -10201,6 +10781,10 @@ msgstr "مكافأة الترحيب"
 #: src/components/earn/earn-view.tsx
 msgid "When portfolio margin is enabled, users automatically earn interest on assets not used for trading. Manual supplying and withdrawing is disabled."
 msgstr "عند تفعيل هامش المحفظة تكسب الأصول غير المستخدمة في التداول فائدة تلقائيًا. الإيداع والسحب اليدويان معطّلان."
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "While this market is at its open interest cap, the price cannot be more aggressive than the oracle price."
+msgstr "ما دام هذا السوق عند حد العقود المفتوحة، لا يمكن أن يكون السعر أكثر اندفاعًا من سعر أوراكل."
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Whole position"
@@ -10273,6 +10857,10 @@ msgstr "فشل السحب"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "رسوم السحب"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Withdrawal is still locked by the fresh server timestamp."
+msgstr "لا يزال السحب مقفلًا وفقًا لأحدث طابع زمني للخادم."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal locked"
@@ -10457,6 +11045,10 @@ msgstr "مركزك المفتوح الحالي في هذا السوق"
 #: src/components/staking/staking-view.tsx
 msgid "Your delegated stake"
 msgstr "حصتك المفوّضة"
+
+#: src/lib/errors/action-error.ts
+msgid "Your device clock is out of sync. Correct the date and time, then try again."
+msgstr "ساعة جهازك غير متزامنة. صحّح التاريخ والوقت ثم حاول مرة أخرى."
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."

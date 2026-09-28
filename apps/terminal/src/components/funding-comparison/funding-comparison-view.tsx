@@ -46,6 +46,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import type { Translate } from "@/lib/translate";
 import type { FundingComparisonController } from "./use-funding-comparison-controller";
 
 export type FundingComparisonViewProps = FundingComparisonController;
@@ -60,22 +61,22 @@ const TONE_CLASS: Readonly<Record<FundingComparisonTone, string>> = {
 
 const SKELETON_ROWS = ["row-1", "row-2", "row-3", "row-4", "row-5", "row-6"] as const;
 
-function getColumnLabels(t: ReturnType<typeof useLingui>["t"]): ColumnLabels {
+function getColumnLabels(translate: Translate): ColumnLabels {
 	return {
-		market: t(FUNDING_COMPARISON_COLUMN_LABELS.market),
-		openInterest: t(FUNDING_COMPARISON_COLUMN_LABELS.openInterest),
+		market: translate(FUNDING_COMPARISON_COLUMN_LABELS.market),
+		openInterest: translate(FUNDING_COMPARISON_COLUMN_LABELS.openInterest),
 		HlPerp: FUNDING_COMPARISON_VENUE_NAMES.HlPerp,
 		BinPerp: FUNDING_COMPARISON_VENUE_NAMES.BinPerp,
-		binanceArb: t(FUNDING_COMPARISON_COLUMN_LABELS.binanceArb),
+		binanceArb: translate(FUNDING_COMPARISON_COLUMN_LABELS.binanceArb),
 		BybitPerp: FUNDING_COMPARISON_VENUE_NAMES.BybitPerp,
-		bybitArb: t(FUNDING_COMPARISON_COLUMN_LABELS.bybitArb),
+		bybitArb: translate(FUNDING_COMPARISON_COLUMN_LABELS.bybitArb),
 	};
 }
 
 export function FundingComparisonView(props: FundingComparisonViewProps) {
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
-	const columnLabels = getColumnLabels(t);
+	const columnLabels = getColumnLabels((descriptor) => t(descriptor));
 	const periodOptions = FUNDING_COMPARISON_PERIOD_OPTIONS.map((option) => ({
 		value: option.value,
 		label: t(option.label),
@@ -110,6 +111,7 @@ export function FundingComparisonView(props: FundingComparisonViewProps) {
 					value={props.query}
 					onChange={(event) => props.onQueryChange(event.target.value)}
 					onClear={props.onClearQuery}
+					clearLabel={t`Clear search`}
 					placeholder={t`Search by market`}
 					aria-label={t`Search markets`}
 					className={isMobile ? "min-w-0 flex-1" : "max-w-[var(--earn-search-max)]"}

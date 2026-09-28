@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n } from "@lingui/core";
+import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +17,7 @@ import {
 import { getFundsActionHistoryStartTime } from "@/components/funds-action/funds-action-reconciliation";
 import type { VaultDetail, VaultOwnerViewState } from "@/components/vaults/domain/vaults";
 import { createVaultIdentityKey, useVaultActionController } from "@/components/vaults/use-vault-action-controller";
+import { describeActionFailure } from "@/lib/errors/action-error";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 
 const OWNER = "0x1111111111111111111111111111111111111111" as const;
@@ -206,6 +210,24 @@ describe("useVaultActionController", () => {
 		act(() => root.unmount());
 		container.remove();
 		clearFundsActionMarkersForTests();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("reports a failed eligibility check in the language active when it fails", async () => {
+		mocks.geoRetry.mockResolvedValue({ data: { tradeRestricted: false, country: null, proxy: false }, error: null });
+
+		await act(async () => current().requestAction("deposit"));
+		expect(mocks.toastError).toHaveBeenLastCalledWith("Location eligibility could not be verified.");
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [messageId("Location eligibility could not be verified.")]: "无法验证所在地资格。" },
+			}),
+		);
+		await act(async () => current().requestAction("deposit"));
+		expect(mocks.toastError).toHaveBeenLastCalledWith("无法验证所在地资格。");
+		expect(current().action).toBeNull();
 	});
 
 	it("persists a public marker before the Agent-signed SDK call and succeeds only after exact ledger reconciliation", async () => {
@@ -310,7 +332,7 @@ describe("useVaultActionController", () => {
 		act(() => current().retry());
 		expect(current().action).toMatchObject({ state: { stage: "review", result: null } });
 		expect(current().action?.marker).toBeUndefined();
-		expect(current().action?.errorMessage).toBeUndefined();
+		expect(current().action?.error).toBeUndefined();
 		await act(async () => current().confirm());
 
 		expect(mocks.queries.get("vaultDetails")?.refetch).toHaveBeenCalledTimes(firstFreshDetailCalls + 1);
@@ -365,8 +387,36 @@ describe("useVaultActionController", () => {
 		await act(async () => current().confirm());
 
 		expect(current().action).toMatchObject({ state: { stage: "review", result: null } });
+		const error = current().action?.error;
+		expect(error && describeActionFailure(error, (descriptor) => i18n._(descriptor))).toBe(
+			"This Vault no longer accepts deposits.",
+		);
 		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
 		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("reports a failed fresh history read as a failed operation instead of a wallet or network change", async () => {
+		await openAndReview();
+		mocks.history.mockRejectedValueOnce(new Error("Network request failed"));
+		await act(async () => current().confirm());
+
+		const error = current().action?.error;
+		expect(error && describeActionFailure(error, (descriptor) => i18n._(descriptor))).toBe(
+			"Vault operation failed. Verify current balances and history before trying again.",
+		);
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("shows an unknown exchange rejection of the Vault transfer exactly as the exchange sent it", async () => {
+		const text = "Vault withdrawal limit exceeded: 12.34 USDC";
+		mocks.exchangeMutate.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: text }, text));
+		await openAndReview();
+		await act(async () => current().confirm());
+
+		expect(current().action).toMatchObject({ state: { stage: "done", result: "apiError" } });
+		const error = current().action?.error;
+		expect(error && describeActionFailure(error, (descriptor) => i18n._(descriptor))).toBe(text);
 	});
 
 	it("hydrates and verifies the exact owner marker read-only in an Agent-only session", async () => {
@@ -957,6 +1007,10 @@ describe("useVaultActionController", () => {
 
 function query(data: unknown): QueryState {
 	return { data, refetch: vi.fn().mockResolvedValue({ data, error: null }) };
+}
+
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
 }
 
 function createPendingVaultMarker({

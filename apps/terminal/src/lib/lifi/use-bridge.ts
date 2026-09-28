@@ -7,10 +7,13 @@ import {
 	resumeRoute,
 	updateRouteExecution,
 } from "@lifi/sdk";
-import { t } from "@lingui/core/macro";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { useCallback } from "react";
 import { LIFI_BRIDGE_FEATURES } from "@/config/lifi-bridge";
 import { useFreshLegalActionGuard } from "@/hooks/trade/use-fresh-legal-action-guard";
+import { classifyActionError, classifyActionErrorOr } from "@/lib/errors/action-error";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { isSafeHttpUrl } from "@/lib/safe-url";
 import {
 	type BridgeRouteIdentity,
@@ -41,8 +44,9 @@ export type BridgeLegalActionGuard = () => Promise<void>;
 let bridgeExecutionEpoch = 0;
 
 const MISSING_LEGAL_ACTION_GUARD: BridgeLegalActionGuard = () => Promise.reject(new Error("Legal guard unavailable"));
-const UNSUPPORTED_MESSAGE_SIGNING_ERROR =
-	"This bridge route requires unsupported message signing and was not submitted.";
+const UNSUPPORTED_MESSAGE_SIGNING = msg`This bridge route requires unsupported message signing and was not submitted.`;
+const LEGAL_CHECK_UNAVAILABLE = msg`Unable to verify regional availability. This funds action was not submitted.`;
+const ROUTE_WALLET_MISMATCH = msg`The active wallet does not match this bridge route.`;
 
 function requiresUnsupportedMessageSigning(route: RouteExtended): boolean {
 	return route.steps.some((step) => {
@@ -64,18 +68,18 @@ function assertBridgeRouteDoesNotRequireMessageSigning(
 ): void {
 	if (!requiresUnsupportedMessageSigning(route)) return;
 	if (options.allowCommittedTracking && hasCommittedBridgeFunds(route)) return;
-	throw new Error(UNSUPPORTED_MESSAGE_SIGNING_ERROR);
+	throw new LocalizedActionError(UNSUPPORTED_MESSAGE_SIGNING);
 }
 
 async function assertBridgeWriteAllowed(guard: BridgeLegalActionGuard, identity: BridgeRouteIdentity): Promise<void> {
 	try {
 		await guard();
 	} catch {
-		throw new Error(t`Unable to verify regional availability. This funds action was not submitted.`);
+		throw new LocalizedActionError(LEGAL_CHECK_UNAVAILABLE);
 	}
 
 	if (!hasSameAddress(getActiveLiFiWalletAddress(), identity.sourceAddress)) {
-		throw new Error("The active wallet does not match this bridge route.");
+		throw new LocalizedActionError(ROUTE_WALLET_MISMATCH);
 	}
 }
 
@@ -88,10 +92,7 @@ async function verifyBridgeWriteAllowed(
 	} catch (error) {
 		useBridgeExecutionState.setState({
 			status: "error",
-			error:
-				error instanceof Error
-					? error.message
-					: t`Unable to verify regional availability. This funds action was not submitted.`,
+			error: classifyActionErrorOr(error, LEGAL_CHECK_UNAVAILABLE),
 			endTime: Date.now(),
 			canAbandon: true,
 			isBackgrounded: false,
@@ -101,25 +102,28 @@ async function verifyBridgeWriteAllowed(
 	return true;
 }
 
-function getProcessStatusText(route: RouteExtended): string {
+function getProcessStatus(route: RouteExtended): MessageDescriptor {
 	for (const step of route.steps) {
 		if (!step.execution) continue;
 		for (const process of step.execution.process) {
 			if (process.status === "DONE") continue;
-			if (process.message) return process.message;
 			switch (process.type) {
-				case "TOKEN_ALLOWANCE":
-					return `Approving ${step.action.fromToken.symbol}...`;
+				case "TOKEN_ALLOWANCE": {
+					const symbol = step.action.fromToken.symbol;
+					return msg`Approving ${symbol}...`;
+				}
 				case "SWAP":
-					return `Swapping on ${step.action.fromChainId === step.action.toChainId ? "same chain" : "source chain"}...`;
+					return step.action.fromChainId === step.action.toChainId
+						? msg`Swapping on same chain...`
+						: msg`Swapping on source chain...`;
 				case "CROSS_CHAIN":
-					return "Bridging to Hyperliquid...";
+					return msg`Bridging to Hyperliquid...`;
 				case "RECEIVING_CHAIN":
-					return "Confirming on destination...";
+					return msg`Confirming on destination...`;
 			}
 		}
 	}
-	return "Processing...";
+	return msg`Processing...`;
 }
 
 function getLastTxHash(route: RouteExtended): string | null {
@@ -180,7 +184,7 @@ function updateBridgeRoute(route: RouteExtended, expectedIdentity: BridgeRouteId
 	if (executionEpoch !== bridgeExecutionEpoch) return;
 	const identity = getBridgeRouteIdentity(route);
 	if (!hasSameBridgeRouteIdentity(identity, expectedIdentity)) {
-		throw new Error("LI.FI returned a bridge route that does not match the approved route.");
+		throw new LocalizedActionError(msg`LI.FI returned a bridge route that does not match the approved route.`);
 	}
 
 	const current = useBridgeExecutionState.getState();
@@ -192,7 +196,7 @@ function updateBridgeRoute(route: RouteExtended, expectedIdentity: BridgeRouteId
 		clearPersistedBridgeExecution();
 		useBridgeExecutionState.setState({
 			status: "success",
-			statusText: "Bridge complete",
+			statusText: msg`Bridge complete`,
 			error: null,
 			txHash,
 			receivedAmount: getRouteToAmount(route, current.expectedToAmount ?? "0"),
@@ -218,11 +222,11 @@ function updateBridgeRoute(route: RouteExtended, expectedIdentity: BridgeRouteId
 		});
 		recoveryWarning = persisted
 			? null
-			: "Reload recovery could not be saved. Keep this tab open until the bridge completes.";
+			: msg`Reload recovery could not be saved. Keep this tab open until the bridge completes.`;
 	}
 
 	useBridgeExecutionState.setState({
-		statusText: getProcessStatusText(route),
+		statusText: getProcessStatus(route),
 		txHash: txHash ?? current.txHash,
 		processDetails,
 		latestRoute: route,
@@ -279,7 +283,7 @@ async function runBridgeRoute(
 
 		useBridgeExecutionState.setState({
 			status: "error",
-			error: t`Request status could not be confirmed. Check balances and transfer history before retrying.`,
+			error: msg`Request status could not be confirmed. Check balances and transfer history before retrying.`,
 			endTime: Date.now(),
 		});
 		return "error";
@@ -306,7 +310,7 @@ async function runBridgeRoute(
 			} else {
 				useBridgeExecutionState.setState({
 					status: "error",
-					error: t`Transaction was rejected`,
+					error: msg`Transaction was rejected`,
 					endTime: Date.now(),
 					canAbandon: true,
 					isBackgrounded: false,
@@ -317,7 +321,7 @@ async function runBridgeRoute(
 
 		useBridgeExecutionState.setState({
 			status: "error",
-			error: error instanceof Error ? error.message : "Bridge failed",
+			error: classifyActionError(error),
 			endTime: Date.now(),
 			canAbandon,
 			isBackgrounded: false,
@@ -335,7 +339,7 @@ export async function executeBridgeQuote(
 	if (!isBridgeRecoveryStorageAvailable()) {
 		useBridgeExecutionState.setState({
 			status: "error",
-			error: "Secure reload recovery is unavailable in this browser. Bridge execution was not started.",
+			error: msg`Secure reload recovery is unavailable in this browser. Bridge execution was not started.`,
 			endTime: Date.now(),
 		});
 		return "error";
@@ -347,7 +351,7 @@ export async function executeBridgeQuote(
 	} catch (error) {
 		useBridgeExecutionState.setState({
 			status: "error",
-			error: error instanceof Error ? error.message : "Bridge failed",
+			error: classifyActionError(error),
 			endTime: Date.now(),
 		});
 		return "error";
@@ -362,7 +366,7 @@ export async function executeBridgeQuote(
 	) {
 		useBridgeExecutionState.setState({
 			status: "error",
-			error: "The active wallet does not match this bridge route.",
+			error: ROUTE_WALLET_MISMATCH,
 			endTime: Date.now(),
 		});
 		return "error";
@@ -372,14 +376,14 @@ export async function executeBridgeQuote(
 	} catch (error) {
 		useBridgeExecutionState.setState({
 			status: "error",
-			error: error instanceof Error ? error.message : UNSUPPORTED_MESSAGE_SIGNING_ERROR,
+			error: classifyActionErrorOr(error, UNSUPPORTED_MESSAGE_SIGNING),
 			endTime: Date.now(),
 		});
 		return "error";
 	}
 	useBridgeExecutionState.setState({
 		status: "executing",
-		statusText: "Verifying access...",
+		statusText: msg`Verifying access...`,
 		error: null,
 		txHash: null,
 		receivedAmount: null,
@@ -397,7 +401,7 @@ export async function executeBridgeQuote(
 	});
 	if (!(await verifyBridgeWriteAllowed(legalActionGuard, identity))) return "error";
 	clearPersistedBridgeExecution();
-	useBridgeExecutionState.setState({ statusText: "Preparing transaction..." });
+	useBridgeExecutionState.setState({ statusText: msg`Preparing transaction...` });
 
 	const executionEpoch = ++bridgeExecutionEpoch;
 	return runBridgeRoute(route, executeRoute, identity, executionEpoch, true, legalActionGuard);
@@ -433,7 +437,7 @@ export async function retryBridgeExecution(
 			assertBridgeRouteDoesNotRequireMessageSigning(current.latestRoute);
 		} catch (error) {
 			useBridgeExecutionState.setState({
-				error: error instanceof Error ? error.message : UNSUPPORTED_MESSAGE_SIGNING_ERROR,
+				error: classifyActionErrorOr(error, UNSUPPORTED_MESSAGE_SIGNING),
 				endTime: Date.now(),
 				canAbandon: true,
 				isBackgrounded: false,
@@ -443,7 +447,7 @@ export async function retryBridgeExecution(
 	}
 	if (!LIFI_BRIDGE_FEATURES.createNewRoute && !hasCommittedTransaction) {
 		useBridgeExecutionState.setState({
-			error: "Bridge creation is paused. This route did not submit a source transaction and cannot be retried.",
+			error: msg`Bridge creation is paused. This route did not submit a source transaction and cannot be retried.`,
 			endTime: Date.now(),
 		});
 		return "disabled";
@@ -453,7 +457,7 @@ export async function retryBridgeExecution(
 		: current.latestRoute;
 	if (!route) {
 		useBridgeExecutionState.setState({
-			error: "The submitted bridge transaction could not be prepared for safe status tracking.",
+			error: msg`The submitted bridge transaction could not be prepared for safe status tracking.`,
 			endTime: Date.now(),
 		});
 		return "error";
@@ -461,7 +465,7 @@ export async function retryBridgeExecution(
 
 	useBridgeExecutionState.setState({
 		status: "executing",
-		statusText: hasCommittedTransaction ? "Checking the submitted bridge transaction..." : "Verifying access...",
+		statusText: hasCommittedTransaction ? msg`Checking the submitted bridge transaction...` : msg`Verifying access...`,
 		error: null,
 		endTime: null,
 		latestRoute: route,
@@ -470,7 +474,7 @@ export async function retryBridgeExecution(
 	if (!hasCommittedTransaction && !(await verifyBridgeWriteAllowed(legalActionGuard, current.routeIdentity))) {
 		return "error";
 	}
-	if (!hasCommittedTransaction) useBridgeExecutionState.setState({ statusText: getProcessStatusText(route) });
+	if (!hasCommittedTransaction) useBridgeExecutionState.setState({ statusText: getProcessStatus(route) });
 
 	const executionEpoch = ++bridgeExecutionEpoch;
 	return runBridgeRoute(

@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n } from "@lingui/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +16,30 @@ const OWNER = "0x1111111111111111111111111111111111111111" as const;
 const OTHER_OWNER = "0x9999999999999999999999999999999999999999" as const;
 const AGENT_ADDRESS = "0x2222222222222222222222222222222222222222" as const;
 const PRIVATE_KEY = `0x${"11".repeat(32)}` as const;
+const DAY_MS = 86_400_000;
+const DUPLICATE_NAME = "This name already exists. A duplicate would replace the existing API wallet.";
+const CHANGED_BEFORE_SIGNING =
+	"API wallet data changed before signing. Close this request and review the refreshed list.";
+const ZH_TRANSLATIONS: Record<string, string> = {
+	"{days} days left": "剩余 {days} 天",
+	"Expires today": "今日到期",
+	"{days} days": "{days} 天",
+	"Not reported": "未报告",
+	[DUPLICATE_NAME]: "该名称已存在。重复的名称会替换现有的 API 钱包。",
+	[CHANGED_BEFORE_SIGNING]: "签名前 API 钱包数据已发生变化。请关闭本次请求并查看刷新后的列表。",
+};
+
+function activateChinese() {
+	i18n.loadAndActivate({
+		locale: "zh",
+		messages: Object.fromEntries(
+			Object.entries(ZH_TRANSLATIONS).map(([message, translation]) => [
+				createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6),
+				translation,
+			]),
+		),
+	});
+}
 
 const testState = vi.hoisted(() => ({
 	activeOwner: null as null | { env: "Mainnet" | "Testnet"; address: `0x${string}` },
@@ -115,6 +141,7 @@ describe("useApiWalletController", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.useRealTimers();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 	});
 
 	function current() {
@@ -134,6 +161,78 @@ describe("useApiWalletController", () => {
 		if (!agent) throw new Error("Expected an API wallet fixture agent");
 		return agent;
 	}
+
+	it("labels API wallet expiry and a duplicate name in the active language", () => {
+		const now = Date.now();
+		testState.agents = [
+			{ name: "grid-bot", address: AGENT_ADDRESS, validUntil: now + 2.5 * DAY_MS },
+			{ name: "hedge-bot", address: OTHER_OWNER, validUntil: now + DAY_MS / 4 },
+		];
+		act(() => root.render(<Probe />));
+		act(() => current().onNameChange("GRID-BOT"));
+
+		expect(current().agents.map((agent) => agent.statusDetail)).toEqual(["3 days left", "Expires today"]);
+		expect(current().nameError).toBe(DUPLICATE_NAME);
+
+		act(() => activateChinese());
+
+		expect(current().agents.map((agent) => agent.statusDetail)).toEqual(["剩余 3 天", "今日到期"]);
+		expect(current().nameError).toBe(ZH_TRANSLATIONS[DUPLICATE_NAME]);
+		expect(current().name).toBe("GRID-BOT");
+	});
+
+	it.each([
+		["  ", "Enter an API wallet name."],
+		["a", "Use 2–16 letters, numbers, underscores, or hyphens."],
+	])("explains why the API wallet name %j cannot be used", (name, message) => {
+		act(() => current().onNameChange(name));
+
+		expect(current().nameError).toBe(message);
+	});
+
+	it("shows the reviewed validity and a stored preflight failure in the active language", async () => {
+		prepareAuthorization("Grid-Bot");
+		testState.refetch.mockResolvedValueOnce(
+			createQueryResult([{ name: "gRID-bOT", address: OTHER_OWNER, validUntil: null }]),
+		);
+		await act(async () => current().onConfirmAction());
+		expect(current().action).toMatchObject({ validityLabel: "90 days", errorMessage: CHANGED_BEFORE_SIGNING });
+
+		act(() => activateChinese());
+
+		expect(current().action).toMatchObject({
+			stage: "review",
+			validityLabel: "90 天",
+			errorMessage: ZH_TRANSLATIONS[CHANGED_BEFORE_SIGNING],
+		});
+	});
+
+	it("shows an unreported removal validity in the active language", () => {
+		testState.agents = [{ name: "grid-bot", address: AGENT_ADDRESS, validUntil: null }];
+		act(() => root.render(<Probe />));
+		act(() => current().onRemove(firstAgent()));
+		expect(current().action?.validityLabel).toBe("Not reported");
+
+		act(() => activateChinese());
+
+		expect(current().action?.validityLabel).toBe("未报告");
+	});
+
+	it.each([
+		["ValidationError", "invalid agent payload", "The request could not be prepared. Refresh the page and try again."],
+		["ApiRequestError", "Agent name is already in use", "Agent name is already in use"],
+		["ApiRequestError", "", "The API wallet request was rejected."],
+	] as const)("describes a deterministic %s rejection %j", async (errorName, message, expected) => {
+		prepareAuthorization();
+		testState.refetch.mockResolvedValueOnce(createQueryResult([]));
+		const approvalError = new Error(message);
+		approvalError.name = errorName;
+		testState.approveAgent.mockRejectedValueOnce(approvalError);
+
+		await act(async () => current().onConfirmAction());
+
+		expect(current().action).toMatchObject({ result: "apiError", errorMessage: expected });
+	});
 
 	it("authorizes using only the public tuple and reveals the key after exact reconciliation", async () => {
 		prepareAuthorization();

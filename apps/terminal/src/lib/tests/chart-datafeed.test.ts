@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { i18n } from "@lingui/core";
 import type { CandleWsEvent } from "@nktkas/hyperliquid";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDatafeed } from "@/components/trade/chart/datafeed";
@@ -30,6 +32,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 	getSubscriptionClient: () => subscriptionClient,
 }));
 
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
 function resolveDatafeedSymbol(datafeed: ReturnType<typeof createDatafeed>, symbolName: string) {
 	return new Promise<LibrarySymbolInfo>((resolve, reject) => {
 		datafeed.resolveSymbol(symbolName, resolve, reject, {});
@@ -59,6 +65,7 @@ describe("TradingView datafeed", () => {
 
 	afterEach(() => {
 		vi.useRealTimers();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 	});
 
 	it("uses canonical spot symbols while preserving display metadata", async () => {
@@ -1877,8 +1884,51 @@ describe("TradingView datafeed", () => {
 			targetGeneration: 0,
 		});
 		expect(onHistorySuccess).not.toHaveBeenCalled();
-		expect(onError).toHaveBeenCalledWith("network down");
+		expect(onError).toHaveBeenCalledWith("Chart data could not be loaded");
 		datafeed.destroy();
+	});
+
+	it("never hands raw transport text to TradingView and follows the active language", async () => {
+		const transportError = Object.assign(
+			new Error("503 Service Unavailable - <html><body>upstream connect error</body></html>"),
+			{ name: "HttpRequestError", response: { status: 503 } },
+		);
+		infoClient.candleSnapshot.mockRejectedValueOnce(transportError);
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "OUTAGE"
+					? { name: "OUTAGE-USDC", ticker: "OUTAGE", description: "OUTAGE-USDC", pricescale: 100 }
+					: undefined,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "OUTAGE");
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: { [messageId("Chart data could not be loaded")]: "图表数据无法加载" },
+		});
+		vi.useFakeTimers();
+		const onError = vi.fn();
+
+		datafeed.getBars(
+			symbol,
+			"60" as ResolutionString,
+			{ countBack: 1, firstDataRequest: true, from: 1, to: 2 },
+			vi.fn(),
+			onError,
+		);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(onError).toHaveBeenCalledExactlyOnceWith("图表数据无法加载");
+		datafeed.destroy();
+	});
+
+	it("reports an unexpected symbol resolution failure without its internal message", async () => {
+		const datafeed = createDatafeed({
+			getSymbolInfo: () => {
+				throw new Error("Cannot read properties of undefined (reading 'szDecimals')");
+			},
+		});
+
+		await expect(resolveDatafeedSymbol(datafeed, "HYPE")).rejects.toBe("Chart data could not be loaded");
 	});
 
 	it("joins concurrent identical history requests into one HTTP request", async () => {

@@ -99,6 +99,7 @@ export function LeaderboardView(props: LeaderboardViewProps) {
 					maxLength={LEADERBOARD_API_MAX_QUERY_LENGTH}
 					onChange={(event) => props.onQueryChange(event.target.value)}
 					onClear={props.onClearQuery}
+					clearLabel={t`Clear search`}
 					placeholder={t`Search by wallet address or display name`}
 					aria-label={t`Search leaderboard`}
 					className={isMobile ? "w-full" : "max-w-[var(--earn-search-max)]"}

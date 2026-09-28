@@ -9,7 +9,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
+	authorize: vi.fn(async () => {}),
 	availableBalance: 100,
+	isReady: true,
 	limitPrice: "100",
 	openInterestCapped: false,
 	orderType: "limit",
@@ -172,10 +174,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 			szDecimals: 3,
 		},
 	}),
-	useTradingAuthorization: () => ({ authorize: vi.fn(async () => {}), status: "idle" }),
+	useTradingAuthorization: () => ({ authorize: testState.authorize, status: "idle" }),
 	useTradingStatus: () => ({
 		isBuilderFeeLoading: false,
-		isReady: true,
+		isReady: testState.isReady,
 		isSignerLoading: false,
 		isSignerReady: true,
 		signerMode: "wallet",
@@ -241,6 +243,8 @@ import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard"
 
 const OPEN_INTEREST_CAP_COPY =
 	"The limit order would be canceled after resting because open interest is capped. Use market orders to close positions.";
+const GENERIC_FAILURE = "The request could not be completed. Try again.";
+const APPROVAL_FAILURE = "Failed to enable trading";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -253,6 +257,8 @@ function activateLocale(locale: "en" | "zh") {
 			: {
 					[getMessageId(OPEN_INTEREST_CAP_COPY)]: "zh: open interest cap",
 					[getMessageId("Place {0} Order")]: "zh: place {0} order",
+					[getMessageId(GENERIC_FAILURE)]: "zh: request failed",
+					[getMessageId(APPROVAL_FAILURE)]: "zh: failed to enable trading",
 				};
 	i18n.loadAndActivate({ locale, messages });
 }
@@ -410,5 +416,46 @@ describe("desktop TradePanel open-interest cap restriction", () => {
 		expect(restriction?.textContent).toBe("zh: open interest cap");
 		expect(button.textContent?.trim()).toBe("zh: place Buy order");
 		await expectSubmissionBlocked(container);
+	});
+});
+
+describe("desktop TradePanel trading approval errors", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		activateLocale("en");
+		testState.isReady = false;
+		testState.openInterestCapped = false;
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+	});
+
+	afterEach(async () => {
+		await act(async () => root.unmount());
+		container.remove();
+		vi.clearAllMocks();
+		testState.isReady = true;
+		activateLocale("en");
+	});
+
+	it.each([
+		[new Error("Agent registration returned an unexpected payload"), GENERIC_FAILURE, "zh: request failed"],
+		["declined", APPROVAL_FAILURE, "zh: failed to enable trading"],
+	])("renders a failed approval in the active language, never its raw text: %s", async (cause, english, chinese) => {
+		testState.authorize.mockRejectedValueOnce(cause);
+		await renderPanel(root);
+		const button = getOrderButton(container);
+		expect(button.textContent?.trim()).toBe("Enable Trading");
+
+		await act(async () => button.click());
+
+		expect(getRestriction(container)?.textContent).toBe(english);
+		expect(getFooter(container).textContent).not.toContain("unexpected payload");
+
+		await act(async () => activateLocale("zh"));
+
+		expect(getRestriction(container)?.textContent).toBe(chinese);
 	});
 });

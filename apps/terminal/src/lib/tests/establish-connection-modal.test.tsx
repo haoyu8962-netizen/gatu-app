@@ -1,10 +1,14 @@
 // @vitest-environment jsdom
 
 import { i18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { createActionError } from "@/lib/errors/action-error";
 import { createI18nRoot } from "./harness/react";
+
+const IDENTITY_CHANGED = msg`The active wallet or network changed. Review the account and try again.`;
 
 const testState = vi.hoisted(() => ({
 	agentMissingReason: null as
@@ -51,10 +55,6 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 	useHyperliquid: () => ({ clientKey: testState.clientKey, env: testState.env }),
 	writePersistTradingConnection: testState.writePersistTradingConnection,
-}));
-
-vi.mock("@/lib/errors/format", () => ({
-	formatExchangeActionError: (error: Error) => error.message,
 }));
 
 vi.mock("@gatu/ui", () => ({
@@ -148,6 +148,7 @@ describe("EstablishConnectionModal", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		vi.clearAllMocks();
 	});
 
@@ -195,12 +196,12 @@ describe("EstablishConnectionModal", () => {
 		expect(container.textContent).toContain("browser profile");
 	});
 
-	it("allows dismissal and surfaces a recoverable registration error", async () => {
+	it("allows dismissal and surfaces a recoverable registration error without its raw text", async () => {
 		testState.error = new Error("Wallet rejected request");
 		testState.status = "error";
 		await renderModal();
 
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Wallet rejected request");
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Connection could not be established.");
 		const close = [...container.querySelectorAll("button")].find((button) => button.textContent === "Close");
 		act(() => close?.click());
 		expect(onClose).toHaveBeenCalledOnce();
@@ -363,8 +364,46 @@ describe("EstablishConnectionModal", () => {
 		);
 		await act(async () => resetButton?.click());
 
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Reset was blocked");
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Trading connection could not be reset.");
+		expect(container.textContent).not.toContain("Reset was blocked");
 		expect(container.textContent).toContain("If it was already approved");
+	});
+
+	it("reports a reset failure that is not an Error with the translated reset message", async () => {
+		testState.canResetConnection = true;
+		testState.resetConnection.mockRejectedValue("coordination busy");
+		await renderModal();
+
+		let resetButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		act(() => resetButton?.click());
+		resetButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		await act(async () => resetButton?.click());
+
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Trading connection could not be reset.");
+	});
+
+	it("renders an approval failure in the active language and follows a language switch", async () => {
+		testState.error = createActionError("identity-changed");
+		testState.failurePhase = "approval";
+		testState.status = "error";
+		await renderModal();
+
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+			"The active wallet or network changed. Review the account and try again.",
+		);
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [IDENTITY_CHANGED.id]: "当前钱包或网络已变化。请检查账户后重试。" },
+			}),
+		);
+
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("当前钱包或网络已变化。请检查账户后重试。");
 	});
 
 	it("does not mask an other-tab conflict as an ambiguous approval result", async () => {

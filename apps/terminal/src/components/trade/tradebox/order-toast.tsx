@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
+import { formatOrderChildError } from "@/lib/trade/order-status-reasons";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
 
 const scrollRegionClassName =
@@ -142,7 +143,7 @@ export function OrderToast({ order, onDismiss }: Props) {
 								)}
 								{child.error && (
 									<p dir="auto" className="text-warning break-words">
-										{child.error}
+										{formatOrderChildError(child.error, (descriptor) => t(descriptor))}
 									</p>
 								)}
 							</li>

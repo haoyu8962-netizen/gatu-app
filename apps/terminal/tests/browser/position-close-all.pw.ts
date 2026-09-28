@@ -289,7 +289,7 @@ for (const outcome of ["Partial", "Ambiguous"]) {
 			await expect(feedback.getByText("Fully filled", { exact: true })).toHaveCount(1);
 			await expect(feedback.getByText("Rejected", { exact: true })).toHaveCount(1);
 			await expect(feedback).toContainText("Filled: 1.25 / 1.25");
-			await expect(feedback).toContainText("Order could not immediately match against any resting orders.");
+			await expect(feedback).toContainText("The order could not immediately match any resting orders.");
 		} else {
 			await expect(feedback).toContainText("Confirming — do not resubmit");
 			await expect(feedback.getByText("Status unconfirmed", { exact: true })).toHaveCount(2);

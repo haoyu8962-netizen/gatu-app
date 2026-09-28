@@ -1,8 +1,10 @@
+import { msg } from "@lingui/core/macro";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { accountLedgerQueryKey } from "@/hooks/trade/use-account-ledger";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { getReferralActionGeo, type ReferralActionGeoDecision } from "@/lib/geo/get-referral-action-geo";
 import { infoKey, infoPersistedKey, useExchange, useHyperliquid, useLegalStatus } from "@/lib/hyperliquid";
 import type { ReferralData } from "@/lib/trade/referral";
@@ -86,9 +88,15 @@ function getDevGeoOverride(): string | null {
 function assertGeoAllowed(
 	decision: ReferralActionGeoDecision,
 ): asserts decision is Extract<ReferralActionGeoDecision, { status: "allowed" }> {
-	if (decision.status === "blocked") throw new Error("Referral actions are not available in this location");
+	if (decision.status === "blocked") {
+		throw new LocalizedActionError(
+			msg`Referral actions are not available in your region. This referral request was not submitted.`,
+		);
+	}
 	if (decision.status === "unavailable") {
-		throw new Error("Referral location eligibility could not be verified");
+		throw new LocalizedActionError(
+			msg`Unable to verify regional availability. This referral request was not submitted.`,
+		);
 	}
 }
 
@@ -114,16 +122,18 @@ export function useReferralActions({ refetchReferral, refreshAfterAction }: Inpu
 		};
 	}, []);
 	const assertRequestActive = (startIdentity: ReferralActionIdentity) => {
-		if (!mountedRef.current) throw new Error("Referral request is no longer active");
+		if (!mountedRef.current) throw new LocalizedActionError(msg`Referral request is no longer active.`);
 		assertIdentityUnchanged(startIdentity, identityRef.current);
 	};
 	const executionGuard = () => {
 		const pendingIdentity = pendingIdentityRef.current;
-		if (!pendingIdentity) throw new Error("Referral request is no longer active");
+		if (!pendingIdentity) throw new LocalizedActionError(msg`Referral request is no longer active.`);
 		assertRequestActive(pendingIdentity);
 		const geoLease = geoLeaseRef.current;
 		if (!geoLease || performance.now() >= geoLease.deadline) {
-			throw new Error("Referral location eligibility expired before the request could be signed");
+			throw new LocalizedActionError(
+				msg`The regional availability check expired before signing. This referral request was not submitted.`,
+			);
 		}
 	};
 	const setReferrer = useExchange("setReferrer", { executionGuard });
@@ -133,7 +143,11 @@ export function useReferralActions({ refetchReferral, refreshAfterAction }: Inpu
 
 	async function submit(action: ReferralAction, code?: string): Promise<void> {
 		const startIdentity = identity;
-		if (pendingIdentityRef.current) throw new Error("Another referral request is already in progress");
+		if (pendingIdentityRef.current) {
+			throw new LocalizedActionError(
+				msg`Another referral request is already in progress. Try again after it finishes.`,
+			);
+		}
 		pendingIdentityRef.current = startIdentity;
 		geoLeaseRef.current = null;
 		try {

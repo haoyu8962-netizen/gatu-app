@@ -63,6 +63,7 @@ const zhTranslations: Record<string, string> = {
 	"Estimated PnL excludes fees": "预估盈亏不含手续费",
 	"The position size has changed since you opened this dialog. Review the close size before submitting.":
 		"自打开此弹窗以来仓位数量已变化，请在提交前核对平仓数量。",
+	"Close size exceeds current position": "平仓数量超过当前仓位",
 };
 
 function getMessageId(message: string): string {
@@ -742,6 +743,18 @@ describe("PositionMarketCloseModal", () => {
 		render();
 		expect(testState.adaptiveProps).toMatchObject({ open: false });
 		expect(container.textContent).not.toContain("Confirming...");
+	});
+
+	it("shows a sizing error in the active language after a language switch", () => {
+		testState.session.sizingIntent = { kind: "size", value: "5" };
+		render();
+		const alert = container.querySelector<HTMLElement>('[role="alert"]');
+		expect(alert?.textContent).toBe("Close size exceeds current position");
+
+		act(() => activateLocale("zh"));
+
+		expect(container.querySelector('[role="alert"]')).toBe(alert);
+		expect(alert?.textContent).toBe("平仓数量超过当前仓位");
 	});
 
 	it("reactively switches visible and ARIA copy without remounting or losing opt-out state", () => {

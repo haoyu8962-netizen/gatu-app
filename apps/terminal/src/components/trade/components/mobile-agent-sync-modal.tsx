@@ -24,7 +24,7 @@ interface MobileAgentSyncDialogProps extends MobileAgentSyncModalProps {
 	walletAddress: Address | undefined;
 }
 
-type SyncError = { code: "qr_render_failed" } | { code: "approval_failed"; detail: string };
+type SyncError = { code: "qr_render_failed" } | { code: "approval_failed"; cause: unknown };
 
 type SyncState =
 	| { status: "idle" }
@@ -126,7 +126,7 @@ function MobileAgentSyncDialog({
 			if (operation.signal.aborted) return;
 			setState({
 				status: "error",
-				error: { code: "approval_failed", detail: formatTransferError(error instanceof Error ? error : new Error()) },
+				error: { code: "approval_failed", cause: error },
 			});
 		} finally {
 			if (operationRef.current === operation) operationRef.current = null;
@@ -239,9 +239,10 @@ function MobileAgentSyncDialog({
 }
 
 function SyncErrorText({ error }: { error: SyncError }) {
+	const { t } = useLingui();
 	if (error.code === "qr_render_failed")
 		return <Trans>The QR could not be drawn. Approve a new key to try again.</Trans>;
-	return <>{error.detail}</>;
+	return <>{formatTransferError(error.cause instanceof Error ? error.cause : null, (descriptor) => t(descriptor))}</>;
 }
 
 function RevealButton({ onReveal }: { onReveal: () => void }) {

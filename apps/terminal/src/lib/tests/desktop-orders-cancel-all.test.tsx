@@ -2,7 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
-import { HttpRequestError } from "@nktkas/hyperliquid";
+import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -25,6 +25,13 @@ let queueItems: OrderQueueItem[] = [];
 function ReviewedOrders() {
 	queueItems = useOrderQueue();
 	return <OrdersTab />;
+}
+
+function cancelRejection(text: string) {
+	return new ApiRequestError(
+		{ status: "ok", response: { type: "cancel", data: { statuses: [{ error: text }] } } },
+		`cancel 0: ${text}`,
+	);
 }
 
 const mocks = vi.hoisted(() => ({
@@ -844,17 +851,38 @@ describe("desktop cancel all orders confirmation", () => {
 		act(() => root.render(<ReviewedOrders />));
 
 		await act(async () => {
-			accountACallbacks?.onError(new Error("Account A cancellation failed"));
+			accountACallbacks?.onError(cancelRejection("Account A cancellation failed"));
 			await Promise.resolve();
 		});
 
-		expect(mocks.cancelError?.message).toBe("Account A cancellation failed");
+		expect(mocks.cancelError?.message).toBe("cancel 0: Account A cancellation failed");
 		expect(container.textContent).not.toContain("Account A cancellation failed");
 		expect(getOrderQueueItem(feedbackId)).toMatchObject({
 			owner: "0x1111111111111111111111111111111111111111",
 			status: "failed",
-			error: "Account A cancellation failed",
+			error: { kind: "exchange-error", entries: [{ index: 0, text: "Account A cancellation failed" }] },
 		});
+	});
+
+	it("shows a known cancellation rejection translated and an unrecognised error as the fallback", async () => {
+		act(() => root.render(<ReviewedOrders />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.click());
+		const firstCallbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void } | undefined;
+		await act(async () => {
+			firstCallbacks?.onError(cancelRejection("Order was never placed, already canceled, or filled."));
+			await Promise.resolve();
+		});
+		expect(container.textContent).toContain("The order was never placed, was already canceled, or has filled.");
+		expect(container.textContent).not.toContain("Order was never placed, already canceled, or filled.");
+
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.click());
+		const secondCallbacks = mocks.cancelOrders.mock.calls[1]?.[1] as { onError: (cause: Error) => void } | undefined;
+		await act(async () => {
+			secondCallbacks?.onError(new Error("Cancellation request no longer matches"));
+			await Promise.resolve();
+		});
+		expect(container.textContent).toContain("Failed to cancel order.");
+		expect(container.textContent).not.toContain("Cancellation request no longer matches");
 	});
 
 	it("cancels an outcome order with its protocol action asset and keeps modification unavailable", () => {

@@ -1,6 +1,9 @@
 import type { RouteExtended } from "@lifi/sdk";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { useEffect } from "react";
 import { create } from "zustand";
+import type { ActionFailure } from "@/lib/errors/action-error";
 import { type BridgeRouteIdentity, loadPersistedBridgeExecution } from "./bridge-execution-persistence";
 
 export type BridgeStatus = "idle" | "executing" | "success" | "error";
@@ -13,10 +16,11 @@ export interface ProcessDetail {
 	doneAt: number | null;
 }
 
+/** Progress, errors and warnings are kept untranslated so the bridge view renders them in the active language. */
 export interface BridgeState {
 	status: BridgeStatus;
-	statusText: string;
-	error: string | null;
+	statusText: MessageDescriptor | null;
+	error: ActionFailure | null;
 	txHash: string | null;
 	receivedAmount: string | null;
 	startTime: number | null;
@@ -29,12 +33,12 @@ export interface BridgeState {
 	sourceChainId: number | null;
 	canAbandon: boolean;
 	isBackgrounded: boolean;
-	recoveryWarning: string | null;
+	recoveryWarning: MessageDescriptor | null;
 }
 
 export const INITIAL_BRIDGE_STATE: BridgeState = {
 	status: "idle",
-	statusText: "",
+	statusText: null,
 	error: null,
 	txHash: null,
 	receivedAmount: null,
@@ -68,8 +72,8 @@ export function useHasExistingBridgeExecution(walletAddress: string | undefined)
 
 		useBridgeExecutionState.setState({
 			status: "error",
-			statusText: "Bridge execution paused",
-			error: "This bridge was interrupted by a page reload. Retry to resume status tracking.",
+			statusText: msg`Bridge execution paused`,
+			error: msg`This bridge was interrupted by a page reload. Retry to resume status tracking.`,
 			txHash: null,
 			receivedAmount: null,
 			startTime: persisted.startTime,

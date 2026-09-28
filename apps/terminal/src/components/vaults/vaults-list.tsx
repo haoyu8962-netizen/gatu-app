@@ -148,6 +148,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 						setQuery("");
 						setPage(1);
 					}}
+					clearLabel={t`Clear search`}
 					placeholder={t`Search by vault, address, or leader`}
 					aria-label={t`Search vaults`}
 				/>
@@ -197,6 +198,9 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 								navigationLabel={t`Vault pagination`}
 								previousPageLabel={t`Previous Vault page`}
 								nextPageLabel={t`Next Vault page`}
+								previousText={t`Previous`}
+								nextText={t`Next`}
+								getPageLabel={(page) => t`Page ${page}`}
 								mobilePageSummary={mobilePageSummary}
 							/>
 						) : null}

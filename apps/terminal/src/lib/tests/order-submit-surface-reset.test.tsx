@@ -1,13 +1,20 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
+import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
 import { OrderBatchResolutionError, type TrackedOrderParams, trackOrderRequest } from "@/domain/trade/order-tracking";
 import { type OrderSubmitInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
+import { type ActionFailure, formatActionFailure } from "@/lib/errors/action-error";
 import { orderSubmissionFeedbackCause } from "@/lib/trade/order-submission-feedback";
 import { createI18nRoot } from "./harness/react";
+
+function failureText(error: ActionFailure): string {
+	return formatActionFailure(error, (descriptor) => i18n._(descriptor)) ?? "";
+}
 
 const mocks = vi.hoisted(() => ({
 	exchangeSession: {
@@ -24,6 +31,7 @@ const mocks = vi.hoisted(() => ({
 	updateOrder: vi.fn(),
 	resetFormIfCurrent: vi.fn(() => true),
 	onReset: vi.fn(),
+	getPositionSize: vi.fn<(assetId: number) => string | undefined>(),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -52,7 +60,7 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 let hookValue: ReturnType<typeof useOrderSubmit> | null = null;
 
 function Probe() {
-	hookValue = useOrderSubmit({ onReset: mocks.onReset });
+	hookValue = useOrderSubmit({ onReset: mocks.onReset, getPositionSize: mocks.getPositionSize });
 	return null;
 }
 
@@ -132,6 +140,8 @@ describe("useOrderSubmit surface reset", () => {
 		mocks.updateOrder.mockReset();
 		mocks.resetFormIfCurrent.mockReset().mockReturnValue(true);
 		mocks.onReset.mockReset();
+		mocks.getPositionSize.mockReset();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		mocks.submitOrder.mockResolvedValue(CONFIRMED_ORDER);
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -252,7 +262,7 @@ describe("useOrderSubmit surface reset", () => {
 				totalCount: 2,
 				acceptedCount: 1,
 				rejectedCount: 1,
-				errors: ["TP rejected"],
+				errors: [{ text: "TP rejected" }],
 			});
 		});
 		await submit(marketInput({ tpSlEnabled: true, canUseTpSl: true, tpPriceNum: 120 }));
@@ -261,7 +271,10 @@ describe("useOrderSubmit surface reset", () => {
 		});
 		expect(mocks.updateOrder).toHaveBeenLastCalledWith(
 			"queue-1",
-			expect.objectContaining({ status: "partial", error: "TP rejected" }),
+			expect.objectContaining({
+				status: "partial",
+				error: { kind: "exchange-error", entries: [{ text: "TP rejected" }] },
+			}),
 		);
 	});
 
@@ -339,7 +352,7 @@ describe("useOrderSubmit surface reset", () => {
 							totalCount: 2,
 							acceptedCount: 1,
 							rejectedCount: 1,
-							errors: ["Order 2 was rejected"],
+							errors: [{ index: 1, text: "Order must have minimum value of $10." }],
 						}),
 					);
 				} else {
@@ -355,7 +368,14 @@ describe("useOrderSubmit surface reset", () => {
 			if (outcome === "partial") {
 				expect(mocks.updateOrder).toHaveBeenCalledWith(
 					"queue-1",
-					expect.objectContaining({ status: "partial", acceptedCount: 1, error: "Order 2 was rejected" }),
+					expect.objectContaining({
+						status: "partial",
+						acceptedCount: 1,
+						error: {
+							kind: "exchange-error",
+							entries: [{ index: 1, text: "Order must have minimum value of $10." }],
+						},
+					}),
 				);
 			}
 		},
@@ -406,13 +426,105 @@ describe("useOrderSubmit surface reset", () => {
 		});
 	});
 
-	it("keeps an external SDK order failure raw", async () => {
-		const sdkMessage = "SDK rejected the order request";
-		mocks.submitOrder.mockRejectedValueOnce(new Error(sdkMessage));
+	it("never stores an unrecognised failure as untranslated text", async () => {
+		mocks.submitOrder.mockRejectedValueOnce(new Error("SDK rejected the order request"));
 
 		await submit(marketInput());
 
-		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", { status: "failed", error: sdkMessage });
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
+			status: "failed",
+			error: { kind: "order-submission", code: "order-failed" },
+		});
+	});
+
+	it("stores exchange rejections as data rendered in the active language", async () => {
+		const unknownRejection = "Order rejected by a rule the terminal does not know yet.";
+		mocks.submitOrder
+			.mockRejectedValueOnce(
+				new OrderBatchResolutionError({
+					status: "rejected",
+					totalCount: 1,
+					acceptedCount: 0,
+					rejectedCount: 1,
+					errors: [{ index: 0, text: "Price must be divisible by tick size." }],
+				}),
+			)
+			.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: unknownRejection }, unknownRejection));
+
+		await submit(marketInput());
+		await submit(marketInput());
+
+		const [known, unknown] = mocks.updateOrder.mock.calls
+			.filter(([, update]) => update.status === "failed")
+			.map(([, update]) => failureText(update.error));
+		expect(known).toBe("Price must be a multiple of the tick size.");
+		expect(unknown).toBe(unknownRejection);
+	});
+
+	it.each([
+		{ label: "an opposite position the order can reduce", side: "buy", positionSize: "-0.5", hint: true },
+		{ label: "an order more than twice the opposite position", side: "buy", positionSize: "-0.49", hint: false },
+		{ label: "a position on the same side", side: "sell", positionSize: "-0.5", hint: false },
+		{ label: "no position", side: "buy", positionSize: undefined, hint: false },
+	] as const)("suggests Reduce Only for insufficient margin with $label", async ({ side, positionSize, hint }) => {
+		mocks.getPositionSize.mockReturnValue(positionSize);
+		mocks.submitOrder.mockRejectedValueOnce(
+			new OrderBatchResolutionError({
+				status: "rejected",
+				totalCount: 1,
+				acceptedCount: 0,
+				rejectedCount: 1,
+				errors: [{ index: 0, text: "Insufficient margin to place order." }],
+			}),
+		);
+
+		await submit(marketInput({ side }));
+
+		expect(mocks.getPositionSize).toHaveBeenCalledWith(0);
+		const [, update] = mocks.updateOrder.mock.calls.at(-1) ?? [];
+		expect(failureText(update?.error)).toBe(
+			hint ? "Insufficient margin to place order. Try using Reduce Only." : "Insufficient margin to place order.",
+		);
+	});
+
+	it("uses the position read when the order was submitted, not the one when a late rejection arrives", async () => {
+		mocks.getPositionSize.mockReturnValue(undefined);
+		mocks.submitOrder.mockImplementationOnce(async () => {
+			mocks.getPositionSize.mockReturnValue("-5");
+			throw new OrderBatchResolutionError({
+				status: "rejected",
+				totalCount: 1,
+				acceptedCount: 0,
+				rejectedCount: 1,
+				errors: [{ index: 0, text: "Insufficient margin to place order." }],
+			});
+		});
+
+		await submit(marketInput({ side: "buy" }));
+
+		const [, update] = mocks.updateOrder.mock.calls.at(-1) ?? [];
+		expect(failureText(update?.error)).toBe("Insufficient margin to place order.");
+	});
+
+	it("does not suggest Reduce Only for a reduce-only or spot order", async () => {
+		mocks.getPositionSize.mockReturnValue("-5");
+		const insufficientMargin = () =>
+			new OrderBatchResolutionError({
+				status: "rejected",
+				totalCount: 1,
+				acceptedCount: 0,
+				rejectedCount: 1,
+				errors: [{ index: 0, text: "Insufficient margin to place order." }],
+			});
+		mocks.submitOrder.mockRejectedValueOnce(insufficientMargin()).mockRejectedValueOnce(insufficientMargin());
+
+		await submit(marketInput({ reduceOnly: true }));
+		await submit(marketInput({ market: { assetId: 10_107, kind: "spot", name: "@107", szDecimals: 2 } }));
+
+		const texts = mocks.updateOrder.mock.calls
+			.filter(([, update]) => update.status === "failed")
+			.map(([, update]) => failureText(update.error));
+		expect(texts).toEqual(["Insufficient margin to place order.", "Insufficient margin to place order."]);
 	});
 
 	it("expands a scale order into one queued plan and resets both form halves", async () => {

@@ -1,3 +1,4 @@
+import { i18n } from "@lingui/core";
 import type { Address, Hex, TransactionReceipt } from "viem";
 import { encodeAbiParameters, encodeEventTopics, encodeFunctionData, keccak256 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -10,6 +11,8 @@ import {
 	getCctpDepositConfig,
 	resolveCctpDepositFeatureFlags,
 } from "@/config/cctp-deposit";
+import { describeActionError } from "@/lib/errors/action-error";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import {
 	addressToBytes32,
 	assertCctpDepositReceipt,
@@ -33,11 +36,22 @@ import {
 	normalizeCctpFastAllowance,
 	splitCctpAuthorizationSignature,
 } from "@/lib/trade/cctp-deposit";
+import type { Translate } from "@/lib/translate";
 
 const USER = "0x1111111111111111111111111111111111111111" as Address;
 const OTHER_USER = "0x2222222222222222222222222222222222222222" as Address;
 const NONCE = `0x${"ab".repeat(32)}` as const;
 const AMOUNT_RAW = 5_000_000n;
+const translate: Translate = (descriptor) => i18n._(descriptor);
+
+function captureError(action: () => unknown): unknown {
+	try {
+		action();
+	} catch (error) {
+		return error;
+	}
+	throw new Error("Expected the action to throw");
+}
 
 function createFeePayload(minimumFee = 0, forwardFee = 200_000) {
 	return [
@@ -370,6 +384,28 @@ describe("CCTP deposit parameters", () => {
 			user: USER,
 		});
 		expect(buildCctpDepositContractArgs(parameters, signature)[0]).toMatchObject({ v: 27, r: `0x${"11".repeat(32)}` });
+	});
+
+	it("reports a malformed wallet signature and an impossible device clock as translatable reasons", () => {
+		const signature = `0x${"11".repeat(32)}${"22".repeat(32)}05` as const;
+		const signatureFailure = captureError(() => splitCctpAuthorizationSignature(signature));
+		expect(signatureFailure).toBeInstanceOf(LocalizedActionError);
+		expect(describeActionError(signatureFailure, translate)).toBe("The wallet could not sign the request. Try again.");
+
+		const clockFailure = captureError(() =>
+			createCctpDepositParameters({
+				amountRaw: AMOUNT_RAW,
+				config: CCTP_DEPOSIT_NETWORKS.mainnet,
+				feeQuote: normalizeCctpDepositFees(createFeePayload()),
+				nonce: NONCE,
+				nowSeconds: 60,
+				user: USER,
+			}),
+		);
+		expect(clockFailure).toBeInstanceOf(LocalizedActionError);
+		expect(describeActionError(clockFailure, translate)).toBe(
+			"Your device clock is out of sync. Correct the date and time, then try again.",
+		);
 	});
 });
 

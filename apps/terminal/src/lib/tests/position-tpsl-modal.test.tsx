@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TradeSizeSlider } from "@/components/trade/components/trade-size-slider";
 import type { TpSlPositionTarget } from "@/components/trade/positions/position-dialog-types";
 import { PositionTpSlModal } from "@/components/trade/positions/position-tpsl-modal";
+import { formatActionFailure } from "@/lib/errors/action-error";
 import type { Position } from "@/lib/hyperliquid";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import { getOrderAssetLockName } from "@/lib/trade/order-asset-lock";
@@ -32,6 +33,9 @@ function lastQueueMessage(): string {
 	if (!error) return "";
 	if (typeof error === "string") return error;
 	if (!("kind" in error)) return i18n._(error);
+	if (error.kind === "exchange-error" || error.kind === "action-error") {
+		return formatActionFailure(error, (descriptor) => i18n._(descriptor)) ?? "";
+	}
 	if (error.kind === "order-reconciliation" || error.kind === "spot-swap") throw new Error("Unexpected feedback kind");
 	return formatPositionSubmitFeedback(error, (descriptor) => i18n._(descriptor));
 }
@@ -1226,6 +1230,34 @@ describe("PositionTpSlModal live data", () => {
 		await act(async () => getButton(container, "Confirm").click());
 		await vi.waitFor(() => expect(testState.placeOrder).toHaveBeenCalledTimes(1));
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(2);
+	});
+
+	it("reports each rejected cancel leg in the active language", async () => {
+		testState.orders = [
+			openOrder(),
+			openOrder({
+				oid: 8,
+				orderType: "Stop Market",
+				triggerCondition: "Price above 31000",
+				triggerPx: "31000",
+			}),
+		];
+		const rejection = "Order was never placed, already canceled, or filled.";
+		testState.cancelOrders.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "cancel", data: { statuses: [{ error: rejection }, { error: "A new cancel rule" }] } },
+		});
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		act(() => setInputValue(getInput(container, "Stop Loss"), "32000"));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expectDismissedWith(
+			"failed",
+			"Order 1: The order was never placed, was already canceled, or has filled.; Order 2: A new cancel rule",
+		);
 	});
 
 	it.each([{}, { status: "ok", response: { type: "cancel", data: { statuses: ["unexpected"] } } }])(

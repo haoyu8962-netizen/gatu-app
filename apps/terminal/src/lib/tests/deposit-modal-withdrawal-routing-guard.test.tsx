@@ -3,7 +3,7 @@
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { HttpRequestError } from "@nktkas/hyperliquid";
+import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, type ButtonHTMLAttributes, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -12,6 +12,7 @@ import { DepositModal } from "@/components/trade/tradebox/deposit-modal";
 import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
 import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
 import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
 
 const WITHDRAWAL_MESSAGES = {
@@ -138,6 +139,8 @@ const testState = vi.hoisted(() => ({
 	useDepositOptions: null as Record<string, unknown> | null,
 	walletIntentOverride: undefined as "ambiguous" | "embedded" | "external" | "unavailable" | undefined,
 	walletAddress: "0x1111111111111111111111111111111111111111",
+	walletProviderError: null as Error | null,
+	walletProviderStatus: "idle" as "idle" | "loading" | "ready" | "error",
 	withdrawable: "10",
 	withdrawDraft: "2",
 	withdrawSubmit: null as null | (() => Promise<void> | void),
@@ -427,8 +430,8 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			switchError: null,
 			switchToArbitrum: vi.fn(),
 			validate: () => ({ error: null, valid: true }),
-			walletProviderError: null,
-			walletProviderStatus: "idle",
+			walletProviderError: testState.walletProviderError,
+			walletProviderStatus: testState.walletProviderStatus,
 			walletResponseDelayed: false,
 			cctpRecoveryUnavailable: false,
 			submissionOutcomeUnknown: testState.submissionOutcomeUnknown,
@@ -692,6 +695,8 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.useDepositOptions = null;
 		testState.walletIntentOverride = undefined;
 		testState.walletAddress = "0x1111111111111111111111111111111111111111";
+		testState.walletProviderError = null;
+		testState.walletProviderStatus = "idle";
 		testState.withdrawable = "10";
 		testState.withdrawDraft = "2";
 		testState.withdrawSubmit = null;
@@ -1360,7 +1365,9 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		const rawExchangeMessage = "Hyperliquid SDK rejected withdrawal TEST-RAW";
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
-		testState.exchangeSdkCalls.get("sendToEvmWithData")?.mockRejectedValueOnce(new Error(rawExchangeMessage));
+		testState.exchangeSdkCalls
+			.get("sendToEvmWithData")
+			?.mockRejectedValueOnce(new ApiRequestError({ status: "err", response: rawExchangeMessage }, rawExchangeMessage));
 
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
 
@@ -1940,7 +1947,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await rerender();
 
 		expect(toastMocks.error).toHaveBeenCalledOnce();
-		expect(getToastText(toastMocks.error.mock.calls[0])).toContain("Deposit failed 交易已在 Arbitrum 上回滚");
+		expect(getToastText(toastMocks.error.mock.calls[0])).toContain("Deposit failed Transaction reverted on Arbitrum");
 		expect(getToastText(toastMocks.error.mock.calls[0])).toContain("View on explorer");
 		expect(toastMocks.warning).not.toHaveBeenCalled();
 		expect(container.querySelector('[data-testid="status-screen"]')).toBeNull();
@@ -1958,6 +1965,42 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(WITHDRAWAL_MESSAGES_AR.depositRouteChanged);
 		expect(resetDeposit).toHaveBeenCalledOnce();
 		expect(closeDepositModal).not.toHaveBeenCalled();
+	});
+
+	it("reports a deposit failure raised by the deposit flow in the active language", async () => {
+		const feeChanged = "Circle fees changed before submission. Review the updated fee and retry.";
+		const feeChangedAr = "تغيرت رسوم Circle قبل الإرسال. راجع الرسوم المحدّثة وأعد المحاولة.";
+		testState.modalOpen = true;
+		testState.depositStatus = "error";
+		testState.depositError = new LocalizedActionError({ id: getMessageId(feeChanged), message: feeChanged });
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: { [getMessageId(feeChanged)]: feeChangedAr } }));
+
+		await rerender();
+
+		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(feeChangedAr);
+	});
+
+	it("reports an unrecognised deposit failure with the deposit message instead of its raw text", async () => {
+		testState.modalOpen = true;
+		testState.depositStatus = "error";
+		testState.depositError = new Error("Paymaster policy rejected sponsored call");
+
+		await rerender();
+
+		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith("Deposit failed");
+		expect(resetDeposit).toHaveBeenCalledOnce();
+	});
+
+	it("explains an unavailable wallet provider without its raw provider text", async () => {
+		testState.modalOpen = true;
+		testState.walletProviderStatus = "error";
+		testState.walletProviderError = new Error("Internal JSON-RPC error.");
+
+		await rerender();
+
+		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(
+			"Wallet connection failed. Unlock your wallet, approve the connection, then retry.",
+		);
 	});
 
 	it("does not infer a definitive outcome from an unstructured error message", async () => {

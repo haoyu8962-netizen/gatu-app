@@ -40,6 +40,12 @@ const typedData = {
 	},
 };
 
+const REVIEW_COPY = {
+	title: "批准手机交易权限",
+	description: "请检查并批准此 Hyperliquid Agent 权限。",
+	buttonText: "批准权限",
+};
+
 describe("createPrivyAgentSigner", () => {
 	it("targets the exact embedded wallet and forces an explicit approval UI", async () => {
 		const signTypedData = vi.fn().mockResolvedValue({ signature: `0x${"1".repeat(130)}` });
@@ -50,6 +56,7 @@ describe("createPrivyAgentSigner", () => {
 			chainId: 42161,
 			signTypedData,
 			beforeSubmit: vi.fn(),
+			reviewCopy: REVIEW_COPY,
 		});
 
 		await signer.signTypedData(typedData);
@@ -60,10 +67,7 @@ describe("createPrivyAgentSigner", () => {
 			typedData,
 			expect.objectContaining({
 				address: EXPECTED_ADDRESS,
-				uiOptions: expect.objectContaining({
-					showWalletUIs: true,
-					isCancellable: true,
-				}),
+				uiOptions: { showWalletUIs: true, ...REVIEW_COPY, isCancellable: true },
 			}),
 		);
 	});
@@ -78,6 +82,7 @@ describe("createPrivyAgentSigner", () => {
 			chainId: 42161,
 			signTypedData,
 			beforeSubmit: vi.fn(),
+			reviewCopy: REVIEW_COPY,
 		});
 
 		await signer.signTypedData(typedData);
@@ -98,6 +103,7 @@ describe("createPrivyAgentSigner", () => {
 			chainId: 42161,
 			signTypedData,
 			beforeSubmit: vi.fn(),
+			reviewCopy: REVIEW_COPY,
 		});
 
 		expect(signer.signTypedData.length).toBe(1);
@@ -152,6 +158,7 @@ describe("createPrivyAgentSigner", () => {
 			chainId: 42161,
 			signTypedData,
 			beforeSubmit,
+			reviewCopy: REVIEW_COPY,
 		});
 		const request = vi.fn().mockResolvedValue({ status: "ok", response: { type: "default" } });
 		const client = new ExchangeClient({
@@ -184,6 +191,7 @@ describe("createPrivyAgentSigner", () => {
 			chainId: 42161,
 			signTypedData,
 			beforeSubmit,
+			reviewCopy: REVIEW_COPY,
 		});
 		const request = vi.fn().mockResolvedValue({ status: "ok", response: { type: "default" } });
 		const client = new ExchangeClient({
@@ -211,6 +219,7 @@ describe("createPrivyAgentSigner", () => {
 				chainId: 42161,
 				signTypedData: vi.fn(),
 				beforeSubmit: vi.fn(),
+				reviewCopy: REVIEW_COPY,
 			}),
 		).toThrow(/does not match/);
 	});
@@ -224,6 +233,7 @@ describe("createPrivyAgentSigner", () => {
 				chainId: 42161,
 				signTypedData: vi.fn(),
 				beforeSubmit: vi.fn(),
+				reviewCopy: REVIEW_COPY,
 			}),
 		).toThrow(/does not match/);
 	});

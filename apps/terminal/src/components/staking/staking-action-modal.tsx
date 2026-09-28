@@ -1,8 +1,10 @@
 import { AdaptiveModal, Alert, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle, TextInput } from "@gatu/ui";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useState } from "react";
 import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { formatDateTime, shortenAddress } from "@/lib/format";
+import type { Translate } from "@/lib/translate";
 import type { FundsActionReference } from "../funds-action/funds-action-marker";
 import { type FundsActionState, getFundsActionSteps } from "../funds-action/funds-action-state";
 import {
@@ -113,7 +115,9 @@ export function StakingActionModal({
 							mobileSafe
 							className="max-[1000px]:min-h-11"
 							iconRight={<span className="text-xs font-semibold">HYPE</span>}
-							error={showError && !validation.valid ? getAmountError(validation, t) : undefined}
+							error={
+								showError && !validation.valid ? getAmountError(validation, (descriptor) => t(descriptor)) : undefined
+							}
 						/>
 						<div className="flex items-center justify-between gap-3 text-xs text-fg-muted">
 							<span>
@@ -425,18 +429,18 @@ function ReviewRow({ label, value, ltr = false }: { label: string; value: string
 	);
 }
 
-function getAmountError(validation: HypeAmountValidation, t: ReturnType<typeof useLingui>["t"]): string {
+function getAmountError(validation: HypeAmountValidation, translate: Translate): string {
 	if (validation.valid) return "";
 	switch (validation.reason) {
 		case "required":
-			return t`Enter an amount.`;
+			return translate(msg`Enter an amount.`);
 		case "format":
-			return t`Use a valid HYPE amount with no more than eight decimal places.`;
+			return translate(msg`Use a valid HYPE amount with no more than eight decimal places.`);
 		case "positive":
-			return t`Amount must be greater than zero.`;
+			return translate(msg`Amount must be greater than zero.`);
 		case "maximum":
-			return t`Amount exceeds the verified available balance.`;
+			return translate(msg`Amount exceeds the verified available balance.`);
 		case "unsafe":
-			return t`Amount is too large to submit safely.`;
+			return translate(msg`Amount is too large to submit safely.`);
 	}
 }

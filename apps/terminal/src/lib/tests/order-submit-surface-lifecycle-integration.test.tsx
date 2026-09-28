@@ -263,7 +263,7 @@ describe("useOrderSubmit surface lifecycle with the real draft store", () => {
 							acceptedCount: 1,
 							rejectedCount: 1,
 							totalCount: 2,
-							errors: ["rejected child"],
+							errors: [{ text: "rejected child" }],
 						}),
 					);
 				else resolve(outcome.includes("reconciling") ? { state: "reconciling" } : CONFIRMED_ORDER);

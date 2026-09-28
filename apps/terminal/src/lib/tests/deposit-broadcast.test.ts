@@ -1,5 +1,9 @@
+import { i18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import type { Hash, PublicClient } from "viem";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { formatTransferError } from "@/lib/errors/format";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import {
 	DefinitiveDepositSourceFailureError,
 	isDefinitiveDepositSourceFailure,
@@ -9,20 +13,20 @@ import {
 	waitForConfirmedReceipt,
 	waitForWalletTransactionHash,
 } from "@/lib/hyperliquid/use-deposit";
-
-vi.mock("@lingui/core/macro", () => ({
-	msg: (strings: TemplateStringsArray, ...values: unknown[]) =>
-		strings.reduce((result, part, index) => `${result}${part}${values[index] ?? ""}`, ""),
-	t: (strings: TemplateStringsArray, ...values: unknown[]) =>
-		strings.reduce((result, part, index) => `${result}${part}${values[index] ?? ""}`, ""),
-}));
+import type { Translate } from "@/lib/translate";
 
 const HASH = "0x0000000000000000000000000000000000000000000000000000000000000001" as Hash;
+const CONFIRMATION_TIMED_OUT = msg`Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.`;
+const translate: Translate = (descriptor) => i18n._(descriptor);
 function createPublicClientMock(overrides: Partial<PublicClient>): PublicClient {
 	return overrides as PublicClient;
 }
 
 describe("deposit broadcast confirmation", () => {
+	afterEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
 	it("classifies definitive failures by structured code instead of localized wording", () => {
 		expect(
 			isDefinitiveDepositSourceFailure(
@@ -139,6 +143,29 @@ describe("deposit broadcast confirmation", () => {
 
 		await expect(waitForConfirmedReceipt(publicClient, HASH, { timeoutMs: 0 })).rejects.toThrow(
 			"Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying.",
+		);
+	});
+
+	it("reports a confirmation timeout in the language active when it is displayed", async () => {
+		const publicClient = createPublicClientMock({
+			getTransactionReceipt: vi.fn().mockResolvedValue(null),
+			getTransaction: vi.fn().mockResolvedValue(null),
+		});
+
+		const failure = await waitForConfirmedReceipt(publicClient, HASH, { timeoutMs: 0 }).catch(
+			(error: unknown) => error,
+		);
+
+		expect(failure).toBeInstanceOf(LocalizedActionError);
+		expect(formatTransferError(failure as Error, translate, "Deposit failed")).toBe(
+			"Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.",
+		);
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: { [CONFIRMATION_TIMED_OUT.id]: "充值交易已广播，但确认超时。重试前请先在 Arbiscan 上检查。" },
+		});
+		expect(formatTransferError(failure as Error, translate, "充值失败")).toBe(
+			"充值交易已广播，但确认超时。重试前请先在 Arbiscan 上检查。",
 		);
 	});
 

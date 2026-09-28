@@ -1,5 +1,7 @@
 /** @vitest-environment jsdom */
 
+import { createHash } from "node:crypto";
+import { i18n } from "@lingui/core";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -282,6 +284,31 @@ describe("PositionLimitCloseModal", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("shows a sizing error in the active language after a language switch", () => {
+		render();
+		act(() => {
+			(testState.numberInputs.get("Close size")?.onChange as (event: { target: { value: string } }) => void)({
+				target: { value: "5" },
+			});
+		});
+		const alert = container.querySelector<HTMLElement>('[role="alert"]');
+		expect(alert?.textContent).toBe("Close size exceeds current position");
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: {
+					[createHash("sha256").update("Close size exceeds current position\x1f").digest("base64").slice(0, 6)]:
+						"平仓数量超过当前仓位",
+				},
+			}),
+		);
+
+		expect(container.querySelector('[role="alert"]')).toBe(alert);
+		expect(alert?.textContent).toBe("平仓数量超过当前仓位");
 	});
 
 	it("reuses the desktop close shell and renders limit-specific price and GTC semantics", () => {

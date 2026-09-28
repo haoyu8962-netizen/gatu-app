@@ -83,8 +83,13 @@ msgstr "第 {currentPage} 页，共 {totalPages} 页"
 
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "{days} days"
 msgstr "{days} 天"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "{days} days left"
+msgstr "剩余 {days} 天"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
@@ -314,6 +319,10 @@ msgstr "新的精确历史事件与此请求匹配。请打开相关页面核对
 msgid "A position may be liquidated when the mark price reaches its liquidation price."
 msgstr "当标记价格达到强平价格时，仓位可能被强制平仓。"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "A Post Only order would have matched immediately. Best bid and offer: {bbo}."
+msgstr "只挂单订单会立即与现有订单成交。最优买卖价：{bbo}。"
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "先前的 CCTP 充值仍在跟踪中。请勿重复提交同一笔转账。"
@@ -321,6 +330,10 @@ msgstr "先前的 CCTP 充值仍在跟踪中。请勿重复提交同一笔转账
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
 msgstr "上一次连接尝试仍在核对中。重试只会检查同一个交易密钥，不会再次请求签名。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "A Reduce Only order cannot increase the position."
+msgstr "只减仓订单不能增加仓位。"
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
@@ -335,6 +348,7 @@ msgid "A staking link cannot be removed. The staking account gains full control 
 msgstr "质押关联无法解除。质押账户将获得交易账户资金的完全控制权，因此本页面不提供关联操作。"
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
 msgstr "另一个标签页正在建立交易连接。请先在该标签页完成或取消，然后再试。"
 
@@ -358,6 +372,10 @@ msgstr "请先接受这些市场的 HIP-3 部署者免责声明再交易。"
 msgid "Accept the HIP-3 deployer disclaimer before trading this market."
 msgstr "请先接受该市场的 HIP-3 部署者免责声明再交易。"
 
+#: src/lib/errors/action-error.ts
+msgid "Accept the Hyperliquid terms before continuing."
+msgstr "请先接受 Hyperliquid 条款再继续。"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Accepted"
 msgstr "已受理"
@@ -380,6 +398,10 @@ msgstr "访问受限"
 #: src/config/trade-panel-labels.ts
 msgid "Account"
 msgstr "账户"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Account {user} has no balance on Hyperliquid. Deposit first."
+msgstr "账户 {user} 在 Hyperliquid 上无余额，请先充值。"
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "Account / API Wallet"
@@ -516,6 +538,11 @@ msgstr "标记价 ≥ {triggerPrice} 时激活"
 msgid "Active"
 msgstr "有效"
 
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Active asset data is unavailable"
+msgstr "当前资产数据不可用"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Active referral discount"
 msgstr "当前推荐折扣"
@@ -568,6 +595,7 @@ msgstr "调整 {displayName} 的逐仓保证金"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Adjust leverage"
 msgstr "调整杠杆"
@@ -721,6 +749,14 @@ msgstr "数量"
 msgid "Amount (USDC)"
 msgstr "金额（USDC）"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount exceeds the verified available balance."
+msgstr "数量超过已核实的可用余额。"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount is too large to submit safely."
+msgstr "数量过大，无法安全提交。"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Amount is too low for the available bridge routes."
 msgstr "金额过低，当前桥接路由均不可用。"
@@ -728,6 +764,10 @@ msgstr "金额过低，当前桥接路由均不可用。"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "数量必须大于零且不得超过当前仓位。"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Amount must be greater than zero."
+msgstr "数量必须大于零。"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Amount to repay"
@@ -755,7 +795,7 @@ msgstr "验证移除结果时，出现了另一个同名的 API 钱包。"
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "此账户仍有另一笔 Circle CCTP 存款待处理。请等待其完成后再提交新的存款。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Another funds operation is still in progress for this account. Try again after it finishes."
 msgstr "此账户还有一项资金操作正在进行中。请等待其完成后重试。"
 
@@ -777,9 +817,17 @@ msgstr "其中一个市场的另一笔委托仍在确认中。"
 msgid "Another order for this market is still being confirmed."
 msgstr "该市场的另一笔订单仍在确认中。"
 
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Another referral request is already in progress. Try again after it finishes."
+msgstr "另一项推荐请求正在进行中。请待其完成后再试。"
+
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Another TWAP order for this market is still being confirmed."
 msgstr "该市场的另一笔 TWAP 订单仍在确认中。"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Another wallet approval is already in progress. Try again after it finishes."
+msgstr "另一项钱包确认正在进行中。请待其完成后再试。"
 
 #: src/config/tooltips.ts
 msgid "Any portion that is not immediately filled will be canceled."
@@ -847,6 +895,10 @@ msgstr "授权和移除都需要匹配的主钱包。"
 #~ msgid "Approve a trading key on this desktop and move it to your phone only through the QR code."
 #~ msgstr "在此桌面授权一个交易密钥，并仅通过二维码将其转移到手机。"
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve access"
+msgstr "授权"
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Approve in wallet"
 msgstr "在钱包中批准"
@@ -855,6 +907,10 @@ msgstr "在钱包中批准"
 #~ msgid "Approve in wallet..."
 #~ msgstr "在钱包中授权…"
 
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Approve mobile trading access"
+msgstr "授权移动交易权限"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve mobile trading key"
 msgstr "授权移动交易密钥"
@@ -862,6 +918,10 @@ msgstr "授权移动交易密钥"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approve QR code with wallet..."
 #~ msgstr "使用钱包批准二维码..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Approving {symbol}..."
+msgstr "正在授权 {symbol}..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Approving a new mobile key replaces the previous mobile key."
@@ -889,8 +949,9 @@ msgstr "Arbitrum（CCTP）"
 msgid "Arbitrum (Legacy)"
 msgstr "Arbitrum（传统桥）"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/tests/wrong-network-screen.test.tsx
 msgid "Arbitrum network switch was rejected."
 msgstr "已拒绝切换到 Arbitrum 网络。"
 
@@ -951,6 +1012,10 @@ msgstr "附带的止盈 / 止损只在订单完全成交，或剩余部分因保
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "授权已拒绝"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Authorization was rejected in the wallet."
+msgstr "授权已在钱包中被拒绝。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Authorize"
@@ -1164,13 +1229,34 @@ msgstr "已买入 {quantity}"
 msgid "Bridge"
 msgstr "跨链"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Bridge complete"
+msgstr "跨链完成"
+
+#: src/components/trade/tradebox/bridge/bridge-tab.tsx
+msgid "Bridge creation is paused. A route without a submitted source transaction cannot be retried."
+msgstr "新建跨链已暂停。未提交源链交易的路径无法重试。"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Bridge creation is paused. This route did not submit a source transaction and cannot be retried."
+msgstr "新建跨链已暂停。此路径未提交源链交易，无法重试。"
+
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Bridge creation is temporarily unavailable"
 msgstr "暂时无法创建跨链桥交易"
 
+#: src/lib/lifi/bridge-execution-state.ts
+msgid "Bridge execution paused"
+msgstr "跨链执行已暂停"
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Bridge failed"
 msgstr "跨链失败"
+
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/bridge-tab-lifecycle.test.tsx
+msgid "Bridging to Hyperliquid..."
+msgstr "正在跨链至 Hyperliquid..."
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Builder rewards (cumulative)"
@@ -1286,8 +1372,53 @@ msgstr "取消选中的订单"
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-reconciliation-feedback.ts
+#: src/lib/trade/order-status-reasons.ts
 msgid "Canceled"
 msgstr "已取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the asset was delisted"
+msgstr "因资产下架而取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the linked order filled"
+msgstr "因关联订单已成交而取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled because the outcome has settled"
+msgstr "因结果已结算而取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by self-trade prevention"
+msgstr "因自成交保护而取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by the exchange"
+msgstr "已被交易所取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled by the scheduled cancel"
+msgstr "因定时撤单而取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to a vault withdrawal"
+msgstr "因金库提取而取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to insufficient margin"
+msgstr "因保证金不足而取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to liquidation"
+msgstr "因强平而取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to Reduce Only"
+msgstr "因只减仓而取消"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Canceled due to the open interest cap"
+msgstr "因未平仓量上限而取消"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
@@ -1300,6 +1431,12 @@ msgstr "已取消"
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "Cancellation submitted. Waiting for the open-orders update."
 msgstr "撤单请求已提交，正在等待当前委托更新。"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Cannot switch to isolated mode with an open position"
+msgstr "持有仓位时无法切换到逐仓模式"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
@@ -1329,6 +1466,11 @@ msgstr "切换为降序"
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "图表"
+
+#: src/components/trade/chart/datafeed.ts
+#: src/components/trade/chart/datafeed.ts
+msgid "Chart data could not be loaded"
+msgstr "无法加载图表数据"
 
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart data is temporarily rate limited"
@@ -1381,6 +1523,10 @@ msgstr "正在检查 Hyperliquid 当前的充值路由..."
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #~ msgid "Checking the current Hyperliquid withdrawal route..."
 #~ msgstr "正在检查 Hyperliquid 当前的提现路由..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Checking the submitted bridge transaction..."
+msgstr "正在检查已提交的跨链交易..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking..."
@@ -1476,6 +1622,13 @@ msgstr "分类不可用"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Clear record"
 msgstr "清除记录"
+
+#: src/components/funding-comparison/funding-comparison-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Clear search"
+msgstr "清除搜索"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Clear unreadable record"
@@ -1876,6 +2029,10 @@ msgstr "确认中，请勿重复提交"
 #~ msgid "Confirming exchange status..."
 #~ msgstr "正在确认交易所状态..."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Confirming on destination..."
+msgstr "正在目标链上确认..."
+
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "Confirming order status. Do not retry."
 #~ msgstr "正在确认订单状态，请勿重试。"
@@ -2218,6 +2375,10 @@ msgstr "全仓杠杆"
 msgid "Cross Maintenance Margin"
 msgstr "全仓维持保证金"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Cross positions do not have enough available margin to lower the leverage. Deposit more collateral to lower it."
+msgstr "全仓仓位的可用保证金不足，无法降低杠杆。请存入更多抵押品后再降低杠杆。"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
 msgstr "加密货币"
@@ -2403,6 +2564,7 @@ msgstr "金额"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "充值失败"
 
@@ -2422,8 +2584,9 @@ msgstr "充值成功"
 msgid "Deposit to Vault"
 msgstr "存入金库"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/tests/deposit-broadcast.test.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
 msgstr "充值交易已广播，但确认超时。请先在 Arbiscan 上检查后再重试。"
 
@@ -2431,7 +2594,7 @@ msgstr "充值交易已广播，但确认超时。请先在 Arbiscan 上检查�
 msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
 msgstr "充值交易已广播，但 Arbitrum RPC 确认失败。请先在 Arbiscan 上检查后再重试。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "充值交易已提交，但未在 Arbitrum 上确认。你的钱包 nonce 可能与链上状态不同步。请在钱包中清除待处理活动或重置 nonce 数据后重试。"
@@ -2599,6 +2762,7 @@ msgstr "已断开连接"
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "关闭"
 
@@ -2850,6 +3014,14 @@ msgstr "请输入有效的触发价"
 msgid "Enter a valid trigger price using the market's price precision."
 msgstr "请按该市场的价格精度输入有效触发价格。"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Enter an amount."
+msgstr "请输入数量。"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Enter an API wallet name."
+msgstr "请输入 API 钱包名称。"
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Enter code"
 msgstr "输入推荐码"
@@ -3041,6 +3213,7 @@ msgstr "已过期"
 #~ msgstr "{expiresAtLabel} 到期。"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Expires today"
 msgstr "今日到期"
 
@@ -3434,6 +3607,10 @@ msgstr "无法核验最新的资格或账户数据。请复核后重试。"
 msgid "Fresh extraAgents data is being checked before the result is accepted."
 msgstr "正在检查最新的 extraAgents 数据，确认后才会接受操作结果。"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Fresh Vault balances and limits could not be verified."
+msgstr "无法核实最新的金库余额与限额。"
+
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "From"
 msgstr "从"
@@ -3743,7 +3920,7 @@ msgstr "Hyperliquid 会计算并补充达到目标杠杆所需的保证金。"
 msgid "Hyperliquid documents a four-day lock after the latest HLP deposit and a one-day lock for user Vaults. The returned server timestamp remains authoritative for this deposit."
 msgstr "Hyperliquid 文档说明：最近一次存入 HLP 后锁定 4 天，用户金库存款锁定 1 天。本次存款仍以服务器返回的时间戳为准。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
 msgstr "Hyperliquid 当前未将此账户标记为符合创建推荐码的条件。"
 
@@ -3884,9 +4061,25 @@ msgstr "余额不足"
 msgid "Insufficient funds"
 msgstr "余额不足"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Insufficient funds for gas"
 msgstr "Gas 余额不足"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order."
+msgstr "保证金不足，无法下单。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order. Try canceling open {market} orders."
+msgstr "保证金不足，无法下单。请尝试取消 {market} 的当前委托。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient margin to place order. Try using Reduce Only."
+msgstr "保证金不足，无法下单。请尝试使用只减仓。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Insufficient spot balance for this order."
+msgstr "现货余额不足，无法完成此订单。"
 
 #: src/components/earn/earn-view.tsx
 msgid "Interest"
@@ -3909,6 +4102,19 @@ msgstr "金额无效"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Invalid destination address"
 msgstr "目的地址无效"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Invalid leverage"
+msgstr "杠杆无效"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Invalid margin mode"
+msgstr "保证金模式无效"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Invalid TP/SL price."
+msgstr "止盈 / 止损价格无效。"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invitation ready to review"
@@ -4066,6 +4272,10 @@ msgstr "旧版 DEX"
 msgid "Legacy reward history"
 msgstr "旧版奖励历史"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Legal eligibility could not be verified."
+msgstr "无法核实合规资格。"
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Lending Net Balance"
 msgstr "借贷净余额"
@@ -4076,14 +4286,36 @@ msgstr "借贷净余额"
 msgid "Leverage"
 msgstr "杠杆"
 
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage changed before margin mode update"
+msgstr "更新保证金模式前杠杆已变化"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "该市场的杠杆固定为 {currentLeverage}×。"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage request no longer matches the confirmed settings"
+msgstr "杠杆请求与已确认的设置不再一致"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Leverage request no longer matches the selected market"
+msgstr "杠杆请求与所选市场不再一致"
 
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage updated to {leverage}x"
 msgstr "杠杆已更新为 {leverage}x"
+
+#: src/lib/lifi/config.ts
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
+msgid "LI.FI requested a network that does not match this bridge route."
+msgstr "LI.FI 请求的网络与此跨链路径不匹配。"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "LI.FI returned a bridge route that does not match the approved route."
+msgstr "LI.FI 返回的跨链路径与已批准的路径不一致。"
 
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Lifetime USDC rewards"
@@ -4354,6 +4586,10 @@ msgstr "加载中..."
 msgid "Loading…"
 msgstr "加载中…"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Location eligibility could not be verified."
+msgstr "无法核实所在地区资格。"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Lock period progress"
 msgstr "锁定期进度"
@@ -4450,6 +4686,15 @@ msgstr "保证金与账户风险一览"
 #: src/config/trade-panel-labels.ts
 msgid "Margin mode"
 msgstr "保证金模式"
+
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "Margin mode changed before leverage update"
+msgstr "更新杠杆前保证金模式已变化"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/lib/tests/action-error.test.ts
+msgid "Margin mode data is unavailable"
+msgstr "保证金模式数据不可用"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode updated"
@@ -4882,7 +5127,11 @@ msgstr "在此记录得到处理前，新的资金操作已锁定。"
 msgid "New mobile pairing is temporarily unavailable."
 msgstr "新的移动配对暂不可用。"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Next"
 msgstr "下一页"
 
@@ -4949,7 +5198,7 @@ msgstr "尚未授权任何 API 钱包"
 msgid "No balance"
 msgstr "无余额"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/exchange-error-text.ts
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "Hyperliquid 上无余额，请先充值。"
 
@@ -5060,6 +5309,10 @@ msgstr "暂无利息"
 #: src/components/referrals/referral-activity.tsx
 msgid "No legacy reward history."
 msgstr "暂无旧版奖励历史。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "No liquidity is available for this market order."
+msgstr "此市价单当前没有可用流动性。"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
@@ -5268,12 +5521,17 @@ msgstr "未连接"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Not reported"
 msgstr "未报告"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Notification details"
 msgstr "通知详情"
+
+#: src/components/ui/sonner.tsx
+msgid "Notifications"
+msgstr "通知"
 
 #: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
@@ -5485,6 +5743,10 @@ msgstr "委托"
 msgid "Order {0}"
 msgstr "委托 {0}"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order {order}: {line}"
+msgstr "订单 {order}：{line}"
+
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/config/orderbook-labels.ts
@@ -5515,6 +5777,7 @@ msgid "Order cancellation confirmed."
 msgstr "撤单已确认。"
 
 #: src/hooks/trade/use-order-confirmation.ts
+#: src/lib/errors/format.ts
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Order conditions changed before it was confirmed. Review the order and submit it again."
 msgstr "订单条件在确认前发生变化，请重新核对后再提交。"
@@ -5623,6 +5886,14 @@ msgstr "订单类型"
 msgid "Order Value"
 msgstr "订单价值"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order value must be at least {amount} {token}."
+msgstr "订单价值至少为 {amount} {token}。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "Order value must be at least ${amount}."
+msgstr "订单价值至少为 ${amount}。"
+
 #: src/config/tooltips.ts
 msgid "Order will exist only as a limit order on the book. Also known as post-only."
 msgstr "委托将仅作为限价单挂在订单簿上，即只挂单（post-only）。"
@@ -5681,6 +5952,13 @@ msgstr "所有者"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Owner account"
 #~ msgstr "所有者账户"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Page {page}"
+msgstr "第 {page} 页"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Page {visiblePage} of {totalPages}"
@@ -5938,6 +6216,10 @@ msgstr "投资组合历史图表"
 msgid "Portfolio margin"
 msgstr "投资组合保证金"
 
+#: src/hooks/trade/use-account-abstraction-control.ts
+msgid "Portfolio margin activation is temporarily unavailable"
+msgstr "暂时无法启用投资组合保证金"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Portfolio margin eligibility and limits"
 msgstr "投资组合保证金的准入条件与限额"
@@ -5981,6 +6263,16 @@ msgstr "仓位"
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Position changed before submission. Review the Reduce Only quantity and direction."
 msgstr "提交前持仓已变化，请重新核对只减仓数量和方向。"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/lib/tests/margin-mode-modal.test.tsx
+#: src/lib/tests/position-submit-feedback.test.ts
+#: src/lib/tests/position-submit-feedback.test.ts
+#: src/lib/tests/position-submit-feedback.test.ts
+msgid "Position data is unavailable"
+msgstr "仓位数据不可用"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
@@ -6045,6 +6337,10 @@ msgstr "盈亏为正"
 msgid "Post Only"
 msgstr "只挂单"
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Powered by <0/>"
+msgstr "由 <0/> 提供支持"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Pre-IPO"
 msgstr "上市前"
@@ -6069,6 +6365,10 @@ msgstr "希望获得接近原生应用的体验？"
 msgid "Preparing automatic USDC deposit..."
 msgstr "正在准备 USDC 自动存款..."
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Preparing transaction..."
+msgstr "正在准备交易..."
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."
 msgstr "正在准备报价…"
@@ -6077,7 +6377,11 @@ msgstr "正在准备报价…"
 #~ msgid "Press and hold for 4 seconds"
 #~ msgstr "按住 4 秒"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Previous"
 msgstr "上一页"
 
@@ -6156,6 +6460,10 @@ msgstr "价格低于 {price}"
 msgid "Price grouping"
 msgstr "价格合并"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "Price must be a multiple of the tick size."
+msgstr "价格必须是最小价格变动单位的整数倍。"
+
 #: src/config/orderbook-labels.ts
 msgid "Price precision"
 msgstr "价格精度"
@@ -6199,10 +6507,9 @@ msgstr "处理中"
 msgid "Processing time"
 msgstr "处理时间"
 
-#: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#~ msgid "Processing..."
-#~ msgstr "处理中…"
+#: src/lib/lifi/use-bridge.ts
+msgid "Processing..."
+msgstr "处理中…"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #~ msgid "Processing…"
@@ -6242,6 +6549,10 @@ msgstr "链接到 {0} 市场的二维码"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "QR unavailable"
 msgstr "二维码不可用"
+
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Quote countdown"
+msgstr "报价倒计时"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Quote expired. Refresh it before confirming."
@@ -6406,13 +6717,18 @@ msgstr "只减仓数量超过持仓数量"
 msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
 msgstr "以当前市场价格减仓，成交后不可撤销。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral access could not be verified for this account. Refresh access status before retrying."
 msgstr "无法验证此账户的推荐功能访问权限。请刷新访问状态后重试。"
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Referral access is still being verified."
 msgstr "仍在验证推荐功能访问权限。"
+
+#: src/hooks/trade/use-referral-actions.ts
+#: src/lib/tests/use-referral-actions.test.tsx
+msgid "Referral actions are not available in your region. This referral request was not submitted."
+msgstr "你所在地区无法使用推荐功能。本次推荐请求未提交。"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Referral activation progress"
@@ -6440,11 +6756,11 @@ msgid "Referral code created"
 msgstr "推荐码已创建"
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral codes cannot be applied after cumulative volume exceeds $10,000."
 msgstr "累计成交量超过 10,000 美元后无法绑定推荐码。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Referral codes must be between 1 and 20 characters."
 msgstr "推荐码长度必须为 1–20 个字符。"
 
@@ -6461,8 +6777,16 @@ msgid "Referral request"
 msgstr "推荐请求"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/action-error.test.ts
+#: src/lib/tests/use-referral-actions.test.tsx
 msgid "Referral request could not be completed."
 msgstr "无法完成推荐请求。"
+
+#: src/hooks/trade/use-referral-actions.ts
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Referral request is no longer active."
+msgstr "该推荐请求已失效。"
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Referral stages, rewards, discount, and claim history are scoped to your Hyperliquid account."
@@ -6556,14 +6880,80 @@ msgstr "刷新中…"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-status-reasons.ts
 msgid "Rejected"
 msgstr "已拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because a Reduce Only order would increase the position"
+msgstr "因只减仓订单会增加仓位而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because it exceeds the maximum position size at the current leverage"
+msgstr "因超过当前杠杆下的最大仓位规模而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because open interest would increase too quickly"
+msgstr "因未平仓量增长过快而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the IOC order could not match"
+msgstr "因 IOC 订单无法立即成交而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the order value is below the minimum"
+msgstr "因订单价值低于最低要求而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the Post Only order would have matched immediately"
+msgstr "因只挂单订单会立即成交而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the price is too aggressive at the open interest cap"
+msgstr "因在未平仓量上限时价格过于激进而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected because the price is too far from the oracle price"
+msgstr "因价格偏离预言机价格过远而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to a lack of liquidity for the market order"
+msgstr "因市价单缺乏流动性而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to an invalid tick price"
+msgstr "因价格不符合最小价格变动单位而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to an invalid TP/SL price"
+msgstr "因止盈 / 止损价格无效而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to insufficient margin"
+msgstr "因保证金不足而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to insufficient spot balance"
+msgstr "因现货余额不足而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to the open interest cap"
+msgstr "因未平仓量上限而被拒绝"
+
+#: src/lib/trade/order-status-reasons.ts
+msgid "Rejected due to too many open orders"
+msgstr "因当前委托过多而被拒绝"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/ui/lazy-dialog-boundary.tsx
 msgid "Reload page"
 msgstr "重新加载页面"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Reload recovery could not be saved. Keep this tab open until the bridge completes."
+msgstr "无法保存刷新后的恢复信息。请保持此标签页打开，直到跨链完成。"
 
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"
@@ -6822,6 +7212,10 @@ msgstr "重试前请核对进行中的 TWAP 订单"
 #: src/components/vaults/vault-action-modal.tsx
 #~ msgid "Review again"
 #~ msgstr "重新检查"
+
+#: src/hooks/wallet/use-explicit-agent-approval.ts
+msgid "Review and approve this Hyperliquid Agent permission."
+msgstr "请核对并授权此 Hyperliquid Agent 权限。"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Review and import the desktop-approved trading key. No phone wallet is required."
@@ -7140,6 +7534,10 @@ msgstr "此浏览器不支持安全随机数生成。请使用受支持的浏览
 msgid "Secure randomness is unavailable. Deposit was not submitted."
 msgstr "安全随机数不可用。充值未提交。"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Secure reload recovery is unavailable in this browser. Bridge execution was not started."
+msgstr "此浏览器不支持安全的刷新恢复，跨链未开始执行。"
+
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select {displayName} market"
 msgstr "选择{displayName}市场"
@@ -7195,11 +7593,7 @@ msgid "selected"
 msgstr "已选择"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/lib/errors/format.ts
-#: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/errors/action-error.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 msgstr "所选钱包与当前连接账户不一致。请重新连接钱包后重试。"
 
@@ -7496,7 +7890,7 @@ msgstr "滑点容忍度"
 msgid "Smart wallet client not ready"
 msgstr "智能钱包客户端尚未就绪"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked."
 msgstr "智能钱包入金状态正在同步。余额核对完成前，请勿再次提交入金。"
@@ -7958,6 +8352,14 @@ msgstr "稳定币兑换"
 #~ msgid "Swap submitted"
 #~ msgstr "兑换已提交"
 
+#: src/lib/lifi/use-bridge.ts
+msgid "Swapping on same chain..."
+msgstr "正在同链兑换..."
+
+#: src/lib/lifi/use-bridge.ts
+msgid "Swapping on source chain..."
+msgstr "正在源链兑换..."
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #~ msgid "Swapping..."
 #~ msgstr "兑换中..."
@@ -8202,9 +8604,25 @@ msgstr "该账户在已确认的 30 天时间窗口内没有资金费支付记�
 msgid "The account has no ordinary orders in the available history."
 msgstr "该账户在可用历史中没有普通委托。"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The active owner wallet or network changed."
+msgstr "当前所有者钱包或网络已变化。"
+
+#: src/lib/lifi/config.ts
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/bridge-tab-lifecycle.test.tsx
+msgid "The active wallet does not match this bridge route."
+msgstr "当前钱包与此跨链路径不匹配。"
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr "当前钱包不是此账户的主钱包"
+
+#: src/lib/errors/action-error.ts
+#: src/lib/tests/establish-connection-modal.test.tsx
+#: src/lib/tests/mobile-agent-sync-modal.test.tsx
+msgid "The active wallet or network changed. Review the account and try again."
+msgstr "当前钱包或网络已变化。请检查账户后重试。"
 
 #: src/components/staking/staking-view.tsx
 msgid "The address already has five pending withdrawals."
@@ -8213,6 +8631,10 @@ msgstr "该地址已有 5 笔待处理提取。"
 #: src/components/vaults/vaults-page.tsx
 msgid "The address is invalid or Hyperliquid returned no Vault details for it."
 msgstr "该地址无效，或 Hyperliquid 未返回其金库详情。"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The amount exceeds the freshly verified maximum."
+msgstr "数量超过最新核实的上限。"
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."
@@ -8233,6 +8655,10 @@ msgstr "API 钱包请求已被拒绝。"
 #: src/components/referrals/referral-action-modal.tsx
 #~ msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
 #~ msgstr "此请求由已批准的 Hyperliquid Agent 签名。已签名的请求绝不会自动重试。"
+
+#: src/lib/errors/action-error.ts
+msgid "The Arbitrum transaction did not match the reviewed deposit. Check your wallet activity before retrying."
+msgstr "Arbitrum 交易与已确认的存入信息不一致。重试前请检查钱包活动记录。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
@@ -8261,6 +8687,10 @@ msgstr "无法确认撤单响应。请刷新当前委托后再试。"
 msgid "The cancellation was not confirmed. Review open orders before retrying."
 msgstr "未能确认撤单。重试前请检查当前委托。"
 
+#: src/lib/errors/action-error.ts
+msgid "The checks before this request took too long. Nothing was signed or sent. Try again."
+msgstr "请求前的检查耗时过长。未进行任何签名或发送，请重试。"
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr "经确认的服务端锁定时间戳决定何时可以提取。"
@@ -8270,9 +8700,11 @@ msgid "The connection could not be checked safely. No wallet signature was reque
 msgstr "无法安全检查连接。未请求钱包签名；请稍候重试。"
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
 msgstr "无法完成连接。连接可能已获授权；请稍候重试。"
 
+#: src/lib/tests/mobile-agent-sync-route.test.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The desktop has not approved this key. Create a new QR on desktop."
 msgstr "桌面尚未授权此密钥。请在桌面重新生成二维码。"
@@ -8381,6 +8813,10 @@ msgstr "无法验证与当前网络匹配的公开数据集。您的账户和交
 #~ msgid "The one-time QR service is unavailable. Check your connection and retry."
 #~ msgstr "一次性二维码服务不可用。请检查网络连接后重试。"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The operation reference could not be stored safely, so nothing was signed."
+msgstr "无法安全保存操作记录，因此未进行任何签名。"
+
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "订单可继续提交，但无法保存此确认偏好。"
@@ -8389,15 +8825,35 @@ msgstr "订单可继续提交，但无法保存此确认偏好。"
 msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
 msgstr "委托在本次修改确认前已发生变化。重试前请检查最新委托。"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order could not immediately match any resting orders."
+msgstr "订单无法立即与任何挂单成交。"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "The order is still being confirmed."
 #~ msgstr "订单仍在确认中。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order price is too far from the oracle price."
+msgstr "订单价格偏离预言机价格过远。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "实时数据尚未确认委托更新。重试前请刷新；仍可取消该委托。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order was never placed, was already canceled, or has filled."
+msgstr "该订单未曾下达、已被取消或已成交。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order would exceed the maximum position size at the current leverage."
+msgstr "该订单会超过当前杠杆下的最大仓位规模。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The order would increase open interest too quickly."
+msgstr "该订单会使未平仓量增长过快。"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The page is matching a new Vault ledger event and refreshed account state. It will not sign again."
@@ -8472,11 +8928,35 @@ msgstr "二维码仅保留在此设备上，绝不会上传。"
 msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "无法加载或验证近期成交快照。"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The refreshed Vault identity did not match this reviewed action."
+msgstr "刷新后的金库信息与本次已确认的操作不一致。"
+
+#: src/hooks/trade/use-referral-actions.ts
+msgid "The regional availability check expired before signing. This referral request was not submitted."
+msgstr "签名前的地区可用性检查已过期。本次推荐请求未提交。"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
 #~ msgstr "替代密钥在 Hyperliquid 确认前已过期。请重新检查并签署新的撤销操作。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
+msgid "The request could not be completed. Try again."
+msgstr "请求未能完成，请重试。"
+
+#: src/lib/errors/action-error.ts
+msgid "The request could not be prepared. Refresh the page and try again."
+msgstr "请求无法生成。请刷新页面后重试。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "The request expired before the exchange processed it. Try again."
+msgstr "请求在交易所处理前已过期，请重试。"
+
+#: src/lib/errors/action-error.ts
+msgid "The request status could not be confirmed. Review your account before retrying."
+msgstr "无法确认请求状态。重试前请先检查账户。"
+
+#: src/lib/errors/action-error.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
 msgstr "请求已提交，但最终状态仍在更新。重试前请检查推荐数据和领取历史。"
 
@@ -8526,6 +9006,10 @@ msgstr "所选 Hyperliquid 环境明确返回了空的金库列表。"
 msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
 msgstr "所选市场已发生变化。请重新打开保证金调整窗口后再操作。"
 
+#: src/lib/errors/action-error.ts
+msgid "The server rejected the request. Try again later."
+msgstr "服务器拒绝了该请求，请稍后重试。"
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The signed {action} request is dispatched once and will not be retried automatically."
 msgstr "已签名的 {action} 请求只会发送一次，不会自动重试。"
@@ -8541,6 +9025,10 @@ msgstr "签名请求可能已成功，但对账已超时。请勿重复提交；
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "The start and end values are unchanged."
 msgstr "起始值与结束值相同。"
+
+#: src/lib/lifi/use-bridge.ts
+msgid "The submitted bridge transaction could not be prepared for safe status tracking."
+msgstr "已提交的跨链交易无法建立安全的状态跟踪。"
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -8577,6 +9065,10 @@ msgstr "交易账户或网络已变化。请重新打开编辑器后重试。"
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr "交易账户或网络已变化。重试前请检查当前 TWAP 委托。"
 
+#: src/lib/errors/action-error.ts
+msgid "The trading key stored in this browser is invalid. Reset the trading connection before trying again."
+msgstr "此浏览器中保存的交易密钥无效。请重置交易连接后再试。"
+
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "The trading wallet could not be verified for this owner and network."
 msgstr "无法验证此账户和网络的交易钱包。"
@@ -8602,9 +9094,17 @@ msgstr "已验证的数据集中没有符合当前网络条件的账户。"
 msgid "The verified owner data is read-only in this session. An Agent/API wallet is never used as the staking owner or signer."
 msgstr "本次会话中，已验证的所有者数据为只读。Agent/API 钱包绝不会用作质押所有者或签名者。"
 
+#: src/lib/errors/action-error.ts
+msgid "The wallet could not sign the request. Try again."
+msgstr "钱包未能签署该请求，请重试。"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
 msgstr "钱包未完成签名，因此请求尚未提交。你可以查看详情后重试。"
+
+#: src/lib/lifi/config.ts
+msgid "The wallet network does not match this bridge route. Switch networks in your wallet and try again."
+msgstr "钱包网络与此跨链路径不匹配。请在钱包中切换网络后重试。"
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
@@ -8614,16 +9114,16 @@ msgstr "钱包会话未能关闭，但本地交易密钥已移除。请重试断
 #~ msgid "There are no eligible rewards available to claim."
 #~ msgstr "暂无符合条件的可领取奖励。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "There are no unclaimed rewards available to claim."
 msgstr "没有未领取奖励可供领取。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "This account already has a referral code and cannot apply another one."
 msgstr "此账户已绑定推荐码，无法再绑定其他推荐码。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
 msgstr "该账户当前无权在 Hyperliquid 上执行交易操作。"
 
@@ -8655,15 +9155,37 @@ msgstr "成交后此操作无法撤销。"
 msgid "This bridge can only be resumed by the wallet that started it."
 msgstr "此跨链桥交易只能由发起它的钱包继续。"
 
-#: src/lib/errors/format.ts
+#: src/lib/lifi/use-bridge.ts
+msgid "This bridge route requires unsupported message signing and was not submitted."
+msgstr "此跨链路径需要不受支持的消息签名，未提交。"
+
+#: src/lib/lifi/bridge-execution-state.ts
+msgid "This bridge was interrupted by a page reload. Retry to resume status tracking."
+msgstr "此次跨链因页面刷新而中断。请重试以恢复状态跟踪。"
+
+#: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "此浏览器无法安全协调不同标签页之间的资金操作。请使用受支持的浏览器。"
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 msgstr "此浏览器无法在多个标签页之间安全协调交易连接。请使用受支持的浏览器。"
 
+#: src/lib/errors/action-error.ts
+msgid "This browser could not coordinate the request safely across tabs. Close other tabs and try again."
+msgstr "此浏览器无法在多个标签页之间安全协调该请求。请关闭其他标签页后重试。"
+
+#: src/lib/errors/action-error.ts
+msgid "This browser could not store deposit recovery data, so this deposit was not submitted. Allow site storage, then try again."
+msgstr "此浏览器无法保存存入恢复数据，因此本次存入未提交。请允许网站存储后再试。"
+
+#: src/lib/errors/action-error.ts
+msgid "This browser could not store the trading key safely. Check that site storage is available, then try again."
+msgstr "此浏览器无法安全保存交易密钥。请确认网站存储可用后再试。"
+
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/lib/errors/action-error.ts
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
 msgstr "此浏览器已不再保存与待确认授权完全匹配的交易密钥。请先重置交易连接，然后重试。"
 
@@ -8745,6 +9267,16 @@ msgstr "这里显示旧版已赚取奖励历史。当前领取记录显示在上
 msgid "This isolated position is no longer open."
 msgstr "该逐仓仓位已不再持有。"
 
+#: src/lib/errors/exchange-error-text.ts
+msgid "This market is at its open interest cap, so the order cannot increase open interest."
+msgstr "该市场已达未平仓量上限，订单不能再增加未平仓量。"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+msgid "This market only supports isolated margin mode"
+msgstr "该市场仅支持逐仓保证金模式"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "This market only supports isolated margin mode."
 msgstr "该市场仅支持逐仓保证金模式。"
@@ -8752,6 +9284,10 @@ msgstr "该市场仅支持逐仓保证金模式。"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This mobile trading key has expired."
 #~ msgstr "此移动交易密钥已过期。"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "This name already exists. A duplicate would replace the existing API wallet."
+msgstr "该名称已存在。重名将替换现有的 API 钱包。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This one-time QR closes automatically within 60 seconds."
@@ -8912,6 +9448,10 @@ msgstr "此 Vault 已关闭，不再接受存款。"
 msgid "This Vault is not accepting deposits."
 msgstr "此 Vault 当前不接受存款。"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "This Vault no longer accepts deposits."
+msgstr "该金库已不再接受存入。"
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
 msgstr "此金库在提取时采用按比例平仓。"
@@ -9010,6 +9550,10 @@ msgstr "无法加载代币元数据。"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 #~ msgstr "此标签页中有过多移动授权等待恢复。请先解决或撤销其中一项。"
+
+#: src/lib/errors/action-error.ts
+msgid "Too many requests. Wait a moment and try again."
+msgstr "请求过于频繁，请稍候再试。"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
@@ -9214,6 +9758,10 @@ msgstr "交易账户"
 msgid "Trading connection could not be reset."
 msgstr "无法重置交易连接。"
 
+#: src/lib/errors/action-error.ts
+msgid "Trading could not be enabled. Try again."
+msgstr "无法启用交易，请重试。"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
@@ -9270,17 +9818,17 @@ msgstr "交易哈希"
 msgid "Transaction breakdown"
 msgstr "交易明细"
 
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/errors/action-error.ts
 msgid "Transaction reverted on Arbitrum"
 msgstr "交易已在 Arbitrum 上回滚"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Transaction was not broadcast. Please retry."
 msgstr "交易未广播。请重试。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/lifi/use-bridge.ts
+#: src/lib/tests/action-error.test.ts
 msgid "Transaction was rejected"
 msgstr "交易被拒绝"
 
@@ -9525,7 +10073,8 @@ msgstr "无法加载当前的 CCTP 提款手续费。"
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
 msgstr "无法将钱包切换到 {0}。请在钱包中切换网络后重试。"
 
-#: src/lib/errors/format.ts
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/lib/errors/action-error.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "无法将钱包切换到 Arbitrum。请在钱包中切换网络后重试。"
 
@@ -9551,12 +10100,15 @@ msgstr "无法验证地区可用性，本次存款未提交。"
 
 #: src/hooks/trade/use-funds-action-availability.ts
 #: src/lib/lifi/use-bridge.ts
-#: src/lib/lifi/use-bridge.ts
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "无法验证地区可用性，本次资金操作未提交。"
 
-#: src/lib/errors/format.ts
+#: src/hooks/trade/use-referral-actions.ts
+msgid "Unable to verify regional availability. This referral request was not submitted."
+msgstr "无法验证地区可用性。本次推荐请求未提交。"
+
+#: src/lib/errors/action-error.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "无法验证地区可用性，交易暂时不可用。"
 
@@ -9575,6 +10127,7 @@ msgstr "无法验证当前账户模式。请求未提交。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "无法验证当前 Circle CCTP 费用和 Fast Transfer 容量。"
 
@@ -9680,9 +10233,9 @@ msgstr "统一账户比率"
 msgid "Unified Account Summary"
 msgstr "统一账户概要"
 
+#: src/components/trade/tradebox/bridge/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
 msgstr "未知错误"
 
@@ -9813,6 +10366,14 @@ msgstr "USDC 成交量"
 #: src/components/trade/orderbook/orderbook-row.tsx
 msgid "Use {priceText} as limit price"
 msgstr "将 {priceText} 用作限价"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Use 2–16 letters, numbers, underscores, or hyphens."
+msgstr "请使用 2–16 个字母、数字、下划线或连字符。"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Use a valid HYPE amount with no more than eight decimal places."
+msgstr "请输入有效的 HYPE 数量，最多保留八位小数。"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -9953,6 +10514,14 @@ msgstr "金库锁定状态"
 msgid "Vault not found"
 msgstr "未找到金库"
 
+#: src/components/vaults/use-vault-action-controller.ts
+#~ msgid "Vault operation failed."
+#~ msgstr "金库操作失败。"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Vault operation failed. Verify current balances and history before trying again."
+msgstr "金库操作失败。重试前请核对当前余额和历史记录。"
+
 #: src/components/vaults/vaults-list.tsx
 msgid "Vault pagination"
 msgstr "金库分页"
@@ -10024,6 +10593,11 @@ msgstr "开始另一项操作前，请先验证待处理的资金操作。"
 #: src/components/staking/staking-action-modal.tsx
 msgid "Verifying"
 msgstr "正在验证"
+
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/lifi/use-bridge.ts
+msgid "Verifying access..."
+msgstr "正在验证访问权限..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -10118,6 +10692,10 @@ msgstr "钱包"
 msgid "Wallet (<0>{0}</0>)"
 msgstr "钱包（<0>{0}</0>）"
 
+#: src/lib/errors/action-error.ts
+msgid "Wallet approval timed out. Check your wallet and try again."
+msgstr "钱包确认超时。请检查钱包后重试。"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Wallet approval unavailable"
 #~ msgstr "钱包授权不可用"
@@ -10129,16 +10707,13 @@ msgstr "钱包（<0>{0}</0>）"
 msgid "Wallet client not ready"
 msgstr "钱包客户端未就绪"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/hooks/wallet/use-wallet-session.ts
-#: src/lib/errors/format.ts
-#: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
 msgstr "钱包连接失败。请解锁钱包，批准连接后重试。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet connection request was rejected."
 msgstr "钱包连接请求已被拒绝。"
@@ -10147,7 +10722,7 @@ msgstr "钱包连接请求已被拒绝。"
 msgid "Wallet connection unavailable"
 msgstr "钱包连接不可用"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
 msgstr "钱包没有返回交易哈希。重试前请先检查钱包活动，避免重复发送充值交易。"
 
@@ -10156,6 +10731,11 @@ msgstr "钱包没有返回交易哈希。重试前请先检查钱包活动，避
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "钱包未连接到 {0}。请在钱包中切换网络后重试。"
+
+#: src/hooks/trade/use-account-abstraction-control.ts
+#: src/lib/tests/account-mode-modal.test.tsx
+msgid "Wallet is not ready to update account mode"
+msgstr "钱包尚未就绪，无法更新账户模式"
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
@@ -10171,11 +10751,11 @@ msgstr "钱包未连接"
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "钱包或网络在连接完成前发生变化。请为当前账户重新打开操作。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."
 msgstr "推荐请求确认前，钱包或网络已发生变化。请重新打开操作并核对当前账户。"
 
-#: src/lib/errors/format.ts
+#: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "钱包已返回交易哈希，但该交易暂时还无法在 Arbitrum 上查到。请先检查钱包活动或 Arbiscan，避免重复发送同一笔存款。"
@@ -10201,6 +10781,10 @@ msgstr "欢迎奖励"
 #: src/components/earn/earn-view.tsx
 msgid "When portfolio margin is enabled, users automatically earn interest on assets not used for trading. Manual supplying and withdrawing is disabled."
 msgstr "启用组合保证金后，未用于交易的资产会自动赚取利息。手动存入和提取已禁用。"
+
+#: src/lib/errors/exchange-error-text.ts
+msgid "While this market is at its open interest cap, the price cannot be more aggressive than the oracle price."
+msgstr "该市场处于未平仓量上限期间，价格不能比预言机价格更激进。"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Whole position"
@@ -10273,6 +10857,10 @@ msgstr "提现失败"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "提款手续费"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Withdrawal is still locked by the fresh server timestamp."
+msgstr "根据最新的服务器时间，提取仍处于锁定期。"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal locked"
@@ -10457,6 +11045,10 @@ msgstr "您在此市场的当前持仓"
 #: src/components/staking/staking-view.tsx
 msgid "Your delegated stake"
 msgstr "您的已委托质押"
+
+#: src/lib/errors/action-error.ts
+msgid "Your device clock is out of sync. Correct the date and time, then try again."
+msgstr "设备时钟不同步。请校正日期和时间后重试。"
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."

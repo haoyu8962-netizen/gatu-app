@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
+import { i18n } from "@lingui/core";
 import Big from "big.js";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	estimatePositionMarketClosePnl,
 	formatPositionMarketClosePercent,
@@ -8,6 +10,7 @@ import {
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
 import { getPositionMarketCloseErrorMessage } from "@/lib/trade/position-market-close-errors";
+import type { Translate } from "@/lib/translate";
 
 vi.mock("@lingui/core/macro", () => ({
 	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
@@ -20,7 +23,17 @@ vi.mock("@lingui/core/macro", () => ({
 	},
 }));
 
+const translate: Translate = (descriptor) => i18n._(descriptor);
+
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
 describe("position market close sizing", () => {
+	afterEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
 	it.each([
 		"Close percentage must be a decimal number",
 		"Close percentage must be between 0 and 100",
@@ -32,7 +45,18 @@ describe("position market close sizing", () => {
 		"Position size must be a non-zero number",
 		"Size precision must be a non-negative integer",
 	])("maps the sizing error through the localized UI boundary: %s", (error) => {
-		expect(getPositionMarketCloseErrorMessage(error)).toBe(error);
+		expect(getPositionMarketCloseErrorMessage(error, translate)).toBe(error);
+	});
+
+	it("translates a sizing error with the translator the dialog passes in", () => {
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: { [messageId("Close size exceeds current position")]: "平仓数量超过当前仓位" },
+		});
+
+		expect(getPositionMarketCloseErrorMessage("Close size exceeds current position", translate)).toBe(
+			"平仓数量超过当前仓位",
+		);
 	});
 
 	it("uses the exact absolute position size for 100 percent without number conversion", () => {

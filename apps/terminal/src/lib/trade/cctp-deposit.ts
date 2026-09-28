@@ -19,6 +19,7 @@ import {
 	CCTP_FAST_FINALITY_THRESHOLD,
 	type CctpDepositConfig,
 } from "@/config/cctp-deposit";
+import { createActionError } from "@/lib/errors/action-error";
 
 export const CCTP_EXTENSION_ABI = [
 	{
@@ -460,11 +461,11 @@ export function createCctpDepositParameters({
 	user: Address;
 }): CctpDepositParameters {
 	if (typeof nowSeconds === "number" && (!Number.isSafeInteger(nowSeconds) || nowSeconds < 0)) {
-		throw new Error("CCTP authorization timestamp is invalid");
+		throw createActionError("device-clock");
 	}
 	const now = typeof nowSeconds === "bigint" ? nowSeconds : BigInt(nowSeconds);
 	const validityWindow = BigInt(CCTP_AUTHORIZATION_WINDOW_SECONDS);
-	if (now < validityWindow) throw new Error("CCTP authorization timestamp is invalid");
+	if (now < validityWindow) throw createActionError("device-clock");
 	const authValidAfter = now - validityWindow;
 	const authValidBefore = now + validityWindow;
 	const fee = calculateCctpDepositFee(amountRaw, feeQuote);
@@ -596,11 +597,11 @@ export function createCctpSponsoredDepositParameters({
 	user: Address;
 }): CctpSponsoredDepositParameters {
 	if (typeof nowSeconds === "number" && (!Number.isSafeInteger(nowSeconds) || nowSeconds < 0)) {
-		throw new Error("CCTP authorization timestamp is invalid");
+		throw createActionError("device-clock");
 	}
 	const now = typeof nowSeconds === "bigint" ? nowSeconds : BigInt(nowSeconds);
 	const validityWindow = BigInt(CCTP_AUTHORIZATION_WINDOW_SECONDS);
-	if (now < validityWindow) throw new Error("CCTP authorization timestamp is invalid");
+	if (now < validityWindow) throw createActionError("device-clock");
 	const authValidAfter = now - validityWindow;
 	const authValidBefore = now + validityWindow;
 	const fee = calculateCctpDepositFee(amountRaw, feeQuote);
@@ -646,12 +647,12 @@ export function createCctpSponsoredDepositParameters({
 
 export function splitCctpAuthorizationSignature(signature: Hex) {
 	if (!isHex(signature, { strict: true }) || size(signature) !== 65) {
-		throw new Error("CCTP authorization signature must be exactly 65 bytes");
+		throw createActionError("signing-failed");
 	}
 	const normalized = signature.slice(2);
 	let v = Number.parseInt(normalized.slice(128, 130), 16);
 	if (v < 27) v += 27;
-	if (v !== 27 && v !== 28) throw new Error("CCTP authorization signature recovery id is invalid");
+	if (v !== 27 && v !== 28) throw createActionError("signing-failed");
 
 	return {
 		v,

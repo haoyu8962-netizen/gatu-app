@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatExchangeActionError } from "@/lib/errors/format";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import {
 	type AgentMissingReason,
 	type AgentRegistrationFailurePhase,
@@ -73,9 +74,11 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 	if (error) {
 		errorMessage = errorDescriptor
 			? _(errorDescriptor)
-			: formatExchangeActionError(error, _(connectionFallbackMessage));
+			: formatExchangeActionError(error, _(connectionFallbackMessage), (descriptor) => _(descriptor));
 	}
-	const resetErrorMessage = resetError ? formatExchangeActionError(resetError, _(resetFailureMessage)) : null;
+	const resetErrorMessage = resetError
+		? formatExchangeActionError(resetError, _(resetFailureMessage), (descriptor) => _(descriptor))
+		: null;
 	let connectButtonLabel = <Trans>Establish Connection</Trans>;
 	if (status === "approving_agent") {
 		connectButtonLabel = walletIntent === "embedded" ? <Trans>Connecting...</Trans> : <Trans>Confirm in wallet</Trans>;
@@ -110,7 +113,7 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 			await resetConnection();
 			setResetConfirmationIdentity(null);
 		} catch (resetFailure) {
-			setResetError(resetFailure instanceof Error ? resetFailure : new Error("Trading connection reset failed"));
+			setResetError(resetFailure instanceof Error ? resetFailure : new LocalizedActionError(resetFailureMessage));
 		} finally {
 			setIsResetting(false);
 		}

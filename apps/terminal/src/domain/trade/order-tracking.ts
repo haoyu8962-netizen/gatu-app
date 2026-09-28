@@ -1,5 +1,6 @@
 import type { InfoClient } from "@nktkas/hyperliquid";
 import Big from "big.js";
+import type { ExchangeErrorEntry } from "@/lib/errors/exchange-error-text";
 import type { ExchangeParams } from "@/lib/hyperliquid";
 
 export const ORDER_RECONCILIATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -41,7 +42,12 @@ interface OrderBatchResolutionData {
 	totalCount: number;
 	acceptedCount: number;
 	rejectedCount: number;
-	errors: string[];
+	/**
+	 * Exchange rejection texts only, as the exchange sent them, with the zero-based position of the
+	 * rejected order when the batch reported them per order. Rendered as exchange texts, so never add
+	 * our own wording here.
+	 */
+	errors: ExchangeErrorEntry[];
 }
 
 export type OrderBatchResolution =
@@ -162,7 +168,7 @@ export function resolveOrderBatchResponse(response: unknown, expectedCount: numb
 			totalCount: expectedCount,
 			acceptedCount: 0,
 			rejectedCount: expectedCount,
-			errors: [response.response],
+			errors: [{ text: response.response }],
 		};
 	}
 
@@ -176,18 +182,18 @@ export function resolveOrderBatchResponse(response: unknown, expectedCount: numb
 			totalCount: expectedCount,
 			acceptedCount: 0,
 			rejectedCount: expectedCount,
-			errors: [error],
+			errors: [{ text: error }],
 		};
 	}
 	if (statuses.length !== expectedCount) return null;
 
-	const errors: string[] = [];
+	const errors: ExchangeErrorEntry[] = [];
 	let acceptedCount = 0;
 	for (let index = 0; index < statuses.length; index += 1) {
 		const status = statuses[index];
 		const error = getOrderStatusError(status);
 		if (error) {
-			errors.push(`Order ${index + 1}: ${error}`);
+			errors.push({ index, text: error });
 			continue;
 		}
 		if (!isAcceptedOrderResponseStatus(status)) return null;
@@ -204,7 +210,8 @@ export function resolveOrderBatchResponse(response: unknown, expectedCount: numb
 /**
  * Resolves a filled-confirmation batch only when every child has a terminal
  * exchange response. A filled child is accepted only when `totalSz` exactly
- * matches the submitted size.
+ * matches the submitted size; any other fill counts as not accepted without an
+ * error text, because the per-order feedback already shows the filled quantity.
  */
 export function resolveFilledOrderBatchResponse(
 	response: unknown,
@@ -219,13 +226,13 @@ export function resolveFilledOrderBatchResponse(
 	const statuses = getOrderStatuses(response);
 	if (!statuses || statuses.length !== expectedSizes.length) return null;
 
-	const errors: string[] = [];
+	const errors: ExchangeErrorEntry[] = [];
 	let acceptedCount = 0;
 	for (let index = 0; index < statuses.length; index += 1) {
 		const status = statuses[index];
 		const exchangeError = getOrderStatusError(status);
 		if (exchangeError) {
-			errors.push(`Order ${index + 1}: ${exchangeError}`);
+			errors.push({ index, text: exchangeError });
 			continue;
 		}
 
@@ -233,10 +240,7 @@ export function resolveFilledOrderBatchResponse(
 		if (filledSize === null) return null;
 		const expectedSize = parsePositiveDecimal(expectedSizes[index]);
 		const actualSize = parsePositiveDecimal(filledSize);
-		if (!expectedSize || !actualSize || !actualSize.eq(expectedSize)) {
-			errors.push(`Order ${index + 1}: filled ${filledSize} of ${expectedSizes[index] ?? "unknown"}.`);
-			continue;
-		}
+		if (!expectedSize || !actualSize || !actualSize.eq(expectedSize)) continue;
 		acceptedCount += 1;
 	}
 
@@ -325,7 +329,9 @@ function parsePositiveDecimal(value: string | undefined): Big | null {
 }
 
 function getOrderBatchResolutionMessage(resolution: RejectedOrderBatchResolution): string {
-	const details = resolution.errors.join("; ");
+	const details = resolution.errors
+		.map((entry) => (entry.index === undefined ? entry.text : `Order ${entry.index + 1}: ${entry.text}`))
+		.join("; ");
 	if (resolution.status === "partial") {
 		const summary = `${resolution.acceptedCount} of ${resolution.totalCount} orders were accepted. Review open orders before retrying.`;
 		return details ? `${summary} ${details}` : summary;
