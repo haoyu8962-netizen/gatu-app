@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 
 const SRC_DIR = resolve(__dirname, "../..");
 const MACRO_TRANSLATOR_TYPE = /ReturnType<\s*typeof\s+useLingui\s*>/g;
-const TAGGED_TEMPLATE_CANDIDATE = /[\w$]\s*`/;
+const TEMPLATE_CANDIDATE = /`/;
+const REPOSITORY_SCAN_TIMEOUT_MS = 20_000;
 const MACRO_TRANSLATOR_REASON =
 	"The Lingui macro only rewrites `t` tagged templates inside the component that called useLingui(). " +
 	"A helper that receives that `t` runs the template untransformed, renders an empty string in every language, " +
@@ -26,15 +27,19 @@ describe("Lingui helper translator contract", () => {
 		expect(violations, MACRO_TRANSLATOR_REASON).toEqual([]);
 	});
 
-	it("never uses a function parameter or a translator property as a tagged template", () => {
-		const violations = findSourceFiles(SRC_DIR).flatMap((filePath) => {
-			const source = readFileSync(filePath, "utf8");
-			if (!TAGGED_TEMPLATE_CANDIDATE.test(source)) return [];
-			return findParameterTaggedTemplates(source, filePath).map((line) => `${relative(SRC_DIR, filePath)}:${line}`);
-		});
+	it(
+		"never uses a function parameter or a translator property as a tagged template",
+		() => {
+			const violations = findSourceFiles(SRC_DIR).flatMap((filePath) =>
+				findTranslatorTagViolations(readFileSync(filePath, "utf8"), filePath).map(
+					(line) => `${relative(SRC_DIR, filePath)}:${line}`,
+				),
+			);
 
-		expect(violations, MACRO_TRANSLATOR_REASON).toEqual([]);
-	});
+			expect(violations, MACRO_TRANSLATOR_REASON).toEqual([]);
+		},
+		REPOSITORY_SCAN_TIMEOUT_MS,
+	);
 });
 
 describe("parameter tagged-template detector", () => {
@@ -48,8 +53,15 @@ describe("parameter tagged-template detector", () => {
 		["an underscore translator", "const label = (_) => _`Hello`;", [1]],
 		["the t property of a translator object", "function label(lingui) {\n  return lingui.t`Hello`;\n}", [2]],
 		["the core translator method", "function label() {\n  return i18n._`Hello`;\n}", [2]],
+		[
+			"a comment between the tag and the template",
+			"function label(translate) {\n  return translate /* note */ `Hi!`;\n}",
+			[2],
+		],
+		["a parenthesized tag", "function label(translate) {\n  return (translate)`Hi!`;\n}", [2]],
+		["a tag behind a type assertion", "function label(translate) {\n  return (translate as Tag)`Hi!`;\n}", [2]],
 	])("flags %s", (_case, source, lines) => {
-		expect(findParameterTaggedTemplates(source)).toEqual(lines);
+		expect(findTranslatorTagViolations(source)).toEqual(lines);
 	});
 
 	it.each([
@@ -71,12 +83,18 @@ describe("parameter tagged-template detector", () => {
 			"a module-level tag",
 			'import { msg } from "@lingui/core/macro";\nfunction label(count) {\n  return msg`Hello`;\n}',
 		],
+		[
+			"a parameter declared as a template tag function",
+			"function style(css: (strings: TemplateStringsArray) => string) {\n  return css`color: red;`;\n}",
+		],
 	])("allows %s", (_case, source) => {
-		expect(findParameterTaggedTemplates(source)).toEqual([]);
+		expect(findTranslatorTagViolations(source)).toEqual([]);
 	});
 });
 
-function findParameterTaggedTemplates(source: string, fileName = "source.tsx"): number[] {
+/** The lines of a file that call a translator as a tagged template the Lingui macro never rewrites. */
+function findTranslatorTagViolations(source: string, fileName = "source.tsx"): number[] {
+	if (!TEMPLATE_CANDIDATE.test(source)) return [];
 	const scriptKind = fileName.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
 	const sourceFile = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, scriptKind);
 	const lines: number[] = [];
@@ -93,20 +111,49 @@ function findParameterTaggedTemplates(source: string, fileName = "source.tsx"): 
 /**
  * The Lingui macro rewrites only the tagged templates of the macro imports and of the t that
  * useLingui() returns in the same component. A tag bound to a function parameter, whatever its
- * name, or the t or _ property of an object reaches the runtime untransformed.
+ * name, or the t or _ property of an object reaches the runtime untransformed. A parameter that is
+ * declared as a template tag function (its first parameter is a TemplateStringsArray) is a
+ * deliberate tag and is allowed.
  */
 function isUntransformedTranslatorTag(node: ts.TaggedTemplateExpression): boolean {
-	const { tag } = node;
-	if (ts.isIdentifier(tag)) return isBoundToParameter(node, tag.text);
+	const tag = unwrapExpression(node.tag);
+	if (ts.isIdentifier(tag)) {
+		const parameter = findBindingParameter(node, tag.text);
+		return !!parameter && !isDeclaredTemplateTag(parameter);
+	}
 	return ts.isPropertyAccessExpression(tag) && (tag.name.text === "t" || tag.name.text === "_");
 }
 
-function isBoundToParameter(node: ts.Node, name: string): boolean {
-	for (let scope = node.parent; scope; scope = scope.parent) {
-		if (ts.isFunctionLike(scope) && scope.parameters.some((parameter) => bindsName(parameter.name, name))) return true;
-		if (declaresName(scope, name)) return false;
+function unwrapExpression(expression: ts.Expression): ts.Expression {
+	let current = expression;
+	while (
+		ts.isParenthesizedExpression(current) ||
+		ts.isAsExpression(current) ||
+		ts.isTypeAssertionExpression(current) ||
+		ts.isNonNullExpression(current) ||
+		ts.isSatisfiesExpression(current)
+	) {
+		current = current.expression;
 	}
-	return false;
+	return current;
+}
+
+function isDeclaredTemplateTag(parameter: ts.ParameterDeclaration): boolean {
+	const type = parameter.type;
+	if (!type || !ts.isFunctionTypeNode(type)) return false;
+	const first = type.parameters[0]?.type;
+	return !!first && ts.isTypeReferenceNode(first) && first.typeName.getText() === "TemplateStringsArray";
+}
+
+function findBindingParameter(node: ts.Node, name: string): ts.ParameterDeclaration | undefined {
+	for (let scope = node.parent; scope; scope = scope.parent) {
+		if (ts.isFunctionLike(scope)) {
+			const parameter = scope.parameters.find((candidate) => bindsName(candidate.name, name));
+			if (parameter) return parameter;
+		}
+		if (declaresName(scope, name)) return undefined;
+	}
+	return undefined;
 }
 
 function declaresName(scope: ts.Node, name: string): boolean {
