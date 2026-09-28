@@ -1232,6 +1232,34 @@ describe("PositionTpSlModal live data", () => {
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(2);
 	});
 
+	it("reports each rejected cancel leg in the active language", async () => {
+		testState.orders = [
+			openOrder(),
+			openOrder({
+				oid: 8,
+				orderType: "Stop Market",
+				triggerCondition: "Price above 31000",
+				triggerPx: "31000",
+			}),
+		];
+		const rejection = "Order was never placed, already canceled, or filled.";
+		testState.cancelOrders.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "cancel", data: { statuses: [{ error: rejection }, { error: "A new cancel rule" }] } },
+		});
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		act(() => setInputValue(getInput(container, "Stop Loss"), "32000"));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expectDismissedWith(
+			"failed",
+			"Order 1: The order was never placed, was already canceled, or has filled.; Order 2: A new cancel rule",
+		);
+	});
+
 	it.each([{}, { status: "ok", response: { type: "cancel", data: { statuses: ["unexpected"] } } }])(
 		"does not place a replacement after a malformed cancel response",
 		async (cancelResponse) => {

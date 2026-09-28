@@ -2,7 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
-import { HttpRequestError } from "@nktkas/hyperliquid";
+import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -35,6 +35,8 @@ function lastQueueMessage(): string {
 
 const AMBIGUOUS_MESSAGE = "The margin update may have been applied. Refresh position data before trying again.";
 const AMBIGUOUS_MESSAGE_AR = "ربما تم تطبيق تحديث الهامش. حدّث بيانات المركز قبل إعادة المحاولة.";
+const UPDATE_FAILED_MESSAGE = "Failed to update isolated margin";
+const UPDATE_FAILED_MESSAGE_AR = "تعذر تحديث الهامش المعزول";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -42,6 +44,7 @@ function getMessageId(message: string): string {
 
 const arabicMessages: Messages = {
 	[getMessageId(AMBIGUOUS_MESSAGE)]: AMBIGUOUS_MESSAGE_AR,
+	[getMessageId(UPDATE_FAILED_MESSAGE)]: UPDATE_FAILED_MESSAGE_AR,
 };
 
 const testState = vi.hoisted(() => ({
@@ -561,7 +564,7 @@ describe("PositionIsolatedMarginModal", () => {
 		expect(testState.updateMargin).toHaveBeenCalledOnce();
 	});
 
-	it("reports an external SDK error message raw in any locale", async () => {
+	it("reports an unrecognised SDK error with the localized fallback in any locale", async () => {
 		const sdkMessage = "SDK rejected the isolated margin update";
 		testState.updateMargin.mockRejectedValueOnce(new Error(sdkMessage));
 		renderModal();
@@ -570,8 +573,22 @@ describe("PositionIsolatedMarginModal", () => {
 		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
 		await act(async () => getButton(container, "Add Margin").click());
 
-		expectDismissedWith("failed", sdkMessage);
+		expectDismissedWith("failed", UPDATE_FAILED_MESSAGE_AR);
+		expect(lastQueueMessage()).not.toContain(sdkMessage);
 		expect(testState.updateMargin).toHaveBeenCalledOnce();
+	});
+
+	it("reports an exchange rejection text unchanged when it is not a known text", async () => {
+		const rejection = "Isolated margin cannot be removed right now.";
+		testState.updateMargin.mockRejectedValueOnce(
+			new ApiRequestError({ status: "err", response: rejection }, rejection),
+		);
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		await act(async () => getButton(container, "Add Margin").click());
+
+		expectDismissedWith("failed", rejection);
 	});
 
 	it("fails closed when the exchange returns a malformed success response", async () => {

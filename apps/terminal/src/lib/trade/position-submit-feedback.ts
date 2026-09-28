@@ -1,13 +1,14 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
+import { type ActionFailure, formatActionFailure } from "@/lib/errors/action-error";
 import {
-	formatOrderSubmissionCause,
 	formatOrderSubmissionFeedback,
 	getDefaultOrderSubmissionFeedbackMessage,
 	getOrderSubmissionFeedback,
 	type OrderSubmissionFeedback,
 	OrderSubmissionFeedbackCause,
 } from "@/lib/trade/order-submission-feedback";
+import { classifyTradingActionError } from "@/lib/trade/trading-action-failure";
 
 export type PositionSubmitFeedbackCode =
 	| "accept-hip3-market"
@@ -53,11 +54,15 @@ export type PositionSubmitFeedbackCode =
 	| "size-precision-nonnegative"
 	| "trading-data-changed";
 
+/**
+ * What to show for a failed position action. Exchange rejection texts and other classified failures
+ * are kept as data so they are rendered in the active language.
+ */
 export type PositionSubmitFeedback =
 	| OrderSubmissionFeedback
+	| ActionFailure
 	| { kind: "localized"; code: PositionSubmitFeedbackCode }
-	| { kind: "partial-close-all"; acceptedCount: number; totalCount: number }
-	| { kind: "raw"; message: string };
+	| { kind: "partial-close-all"; acceptedCount: number; totalCount: number };
 
 const messages: Record<PositionSubmitFeedbackCode, MessageDescriptor> = {
 	"accept-hip3-market": msg`Accept the HIP-3 deployer disclaimer before trading this market.`,
@@ -133,19 +138,24 @@ export function positionSubmitFeedbackFromCause(
 	fallbackCode: PositionSubmitFeedbackCode,
 ): PositionSubmitFeedback {
 	if (cause instanceof PositionSubmitFeedbackCause) return cause.feedback;
-	if (cause instanceof OrderSubmissionFeedbackCause) return cause.feedback;
-	const orderSubmissionFeedback = getOrderSubmissionFeedback(cause);
-	if (orderSubmissionFeedback) return orderSubmissionFeedback;
-	if (cause instanceof Error) return { kind: "raw", message: cause.message };
-	return localizedPositionSubmitFeedback(fallbackCode);
+	return (
+		getOrderSubmissionFeedback(cause) ??
+		classifyTradingActionError(cause) ??
+		localizedPositionSubmitFeedback(fallbackCode)
+	);
 }
 
 export function formatPositionSubmitFeedback(
 	feedback: PositionSubmitFeedback,
 	translate: (descriptor: MessageDescriptor) => string,
 ): string {
-	if (feedback.kind === "order-submission") return formatOrderSubmissionFeedback(feedback, translate);
+	if (!("kind" in feedback)) return translate(feedback);
 	switch (feedback.kind) {
+		case "order-submission":
+			return formatOrderSubmissionFeedback(feedback, translate);
+		case "exchange-error":
+		case "action-error":
+			return formatActionFailure(feedback, translate) ?? "";
 		case "localized":
 			return translate(messages[feedback.code]);
 		case "partial-close-all":
@@ -153,8 +163,6 @@ export function formatPositionSubmitFeedback(
 				...partialCloseAllMessage,
 				values: { acceptedCount: feedback.acceptedCount, totalCount: feedback.totalCount },
 			});
-		case "raw":
-			return feedback.message;
 	}
 }
 
@@ -180,11 +188,11 @@ export function localizePositionSubmitFeedbackCause(
 
 export function formatTrackedPositionSubmitError(
 	error: Error | null | undefined,
+	fallbackCode: PositionSubmitFeedbackCode,
 	translate: (descriptor: MessageDescriptor) => string,
 ): string | null {
 	if (!error) return null;
-	if (error instanceof PositionSubmitFeedbackCause) return formatPositionSubmitFeedback(error.feedback, translate);
-	return formatOrderSubmissionCause(error, translate);
+	return formatPositionSubmitFeedback(positionSubmitFeedbackFromCause(error, fallbackCode), translate);
 }
 
 export function getPositionMarketClosePlanFeedback(error: string | undefined): PositionSubmitFeedback {
@@ -210,13 +218,15 @@ export function getPositionMarketClosePlanFeedback(error: string | undefined): P
 		case undefined:
 			return localizedPositionSubmitFeedback("failed-market-close");
 		default:
-			return { kind: "raw", message: error };
+			return localizedPositionSubmitFeedback("failed-build-close-order");
 	}
 }
 
 function getDefaultPositionSubmitFeedbackMessage(feedback: PositionSubmitFeedback): string {
+	if (!("kind" in feedback)) return feedback.message ?? feedback.id;
 	if (feedback.kind === "order-submission") return getDefaultOrderSubmissionFeedbackMessage(feedback);
-	if (feedback.kind === "raw") return feedback.message;
+	if (feedback.kind === "exchange-error") return feedback.entries.map((entry) => entry.text).join("; ");
+	if (feedback.kind === "action-error") return feedback.code;
 	if (feedback.kind === "partial-close-all") {
 		return `${feedback.acceptedCount} of ${feedback.totalCount} close orders were accepted. Review positions before retrying.`;
 	}

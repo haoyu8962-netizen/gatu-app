@@ -1,12 +1,20 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type MessageDescriptor } from "@lingui/core";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAssetLeverage } from "@/hooks/trade/use-asset-leverage";
+import { describeActionError } from "@/lib/errors/action-error";
+import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 
 const USER = "0x1111111111111111111111111111111111111111";
+
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
 
 interface UpdateLeverageParams {
 	asset: number;
@@ -772,6 +780,50 @@ describe("useAssetLeverage", () => {
 		expect(second.setPendingLeverage).toBe(firstSetPending);
 		expect(second.resetPending).toBe(firstReset);
 		expect(second.applyMarginAndLeverage).toBe(firstApply);
+	});
+
+	it("throws user-facing failures as errors translated when they are displayed", async () => {
+		renderHook();
+		const executionGuard = currentExecutionGuard();
+		mocks.positionLoading = true;
+		renderHook();
+		let guardError: unknown;
+		try {
+			executionGuard({ asset: 1, isCross: false, leverage: 5 });
+		} catch (error) {
+			guardError = error;
+		}
+		expect(guardError).toBeInstanceOf(LocalizedActionError);
+
+		mocks.positionLoading = false;
+		const deferred = createDeferred();
+		mocks.executeLeverage.mockReturnValue(deferred.promise);
+		renderHook();
+		let firstRequest!: Promise<number | null>;
+		act(() => {
+			firstRequest = currentHook().applyMarginAndLeverage("cross", 5);
+		});
+		const busyError = await currentHook()
+			.applyMarginAndLeverage("cross", 5)
+			.catch((error: unknown) => error);
+		deferred.resolve();
+		await act(async () => firstRequest);
+		expect(busyError).toBeInstanceOf(LocalizedActionError);
+
+		const translate = (descriptor: MessageDescriptor) => i18n._(descriptor);
+		i18n.loadAndActivate({
+			locale: "zh",
+			messages: {
+				[messageId("Position data is unavailable")]: "持仓数据不可用",
+				[messageId("Another action for this market is already in progress.")]: "该市场的另一项操作仍在进行中。",
+			},
+		});
+		try {
+			expect(describeActionError(guardError, translate)).toBe("持仓数据不可用");
+			expect(describeActionError(busyError, translate)).toBe("该市场的另一项操作仍在进行中。");
+		} finally {
+			i18n.loadAndActivate({ locale: "en", messages: {} });
+		}
 	});
 
 	it("keeps an in-flight leverage request observable and rejects duplicate execution", async () => {

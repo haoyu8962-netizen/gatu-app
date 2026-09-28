@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 
+import { ApiRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,6 +22,13 @@ let queueItems: OrderQueueItem[] = [];
 function ReviewedOrders() {
 	queueItems = useOrderQueue();
 	return <MobileOrdersTab scrollMode="page" />;
+}
+
+function cancelRejection(text: string) {
+	return new ApiRequestError(
+		{ status: "ok", response: { type: "cancel", data: { statuses: [{ error: text }] } } },
+		`cancel 0: ${text}`,
+	);
 }
 
 const mocks = vi.hoisted(() => ({
@@ -527,10 +535,27 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(mocks.cancelOrders).toHaveBeenCalledOnce();
 		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void };
 		mocks.isStale = true;
-		await act(async () => callbacks.onError(new Error("Cancellation rejected")));
+		await act(async () => callbacks.onError(cancelRejection("Order was never placed, already canceled, or filled.")));
 		renderOrders({ expandFirst: false });
 		expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
-		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Cancellation rejected");
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+			"The order was never placed, was already canceled, or has filled.",
+		);
+	});
+
+	it("never shows an unrecognised cancellation error untranslated", async () => {
+		renderOrders();
+		const cancel = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent?.trim() === "Cancel",
+		);
+		act(() => cancel?.click());
+		const feedbackId = queueItems.at(-1)?.id;
+		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void };
+		await act(async () => callbacks.onError(new Error("Cancellation request no longer matches")));
+
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Failed to cancel order.");
+		expect(getOrderQueueItem(feedbackId)).toMatchObject({ status: "failed", error: undefined });
+		expect(JSON.stringify(getOrderQueueItem(feedbackId))).not.toContain("Cancellation request no longer matches");
 	});
 
 	it("fails closed when the cancellation owner does not match the trading client", () => {
@@ -642,16 +667,16 @@ describe("MobileOrdersTab disclosure card", () => {
 		renderOrders();
 
 		await act(async () => {
-			accountACallbacks?.onError(new Error("Account A cancellation failed"));
+			accountACallbacks?.onError(cancelRejection("Account A cancellation failed"));
 			await Promise.resolve();
 		});
 
-		expect(mocks.cancelError?.message).toBe("Account A cancellation failed");
+		expect(mocks.cancelError?.message).toBe("cancel 0: Account A cancellation failed");
 		expect(container.textContent).not.toContain("Account A cancellation failed");
 		expect(getOrderQueueItem(feedbackId)).toMatchObject({
 			owner: "0x1111111111111111111111111111111111111111",
 			status: "failed",
-			error: "Account A cancellation failed",
+			error: { kind: "exchange-error", entries: [{ index: 0, text: "Account A cancellation failed" }] },
 		});
 	});
 
@@ -665,13 +690,13 @@ describe("MobileOrdersTab disclosure card", () => {
 		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void } | undefined;
 		act(() => root.render(null));
 		await act(async () => {
-			callbacks?.onError(new Error("Cancellation failed after leaving the list"));
+			callbacks?.onError(cancelRejection("Cancellation failed after leaving the list"));
 			await Promise.resolve();
 		});
 		expect(getOrderQueueItem(feedbackId)).toMatchObject({
 			owner: "0x1111111111111111111111111111111111111111",
 			status: "failed",
-			error: "Cancellation failed after leaving the list",
+			error: { kind: "exchange-error", entries: [{ index: 0, text: "Cancellation failed after leaving the list" }] },
 		});
 		expect(mocks.toastError).not.toHaveBeenCalled();
 	});

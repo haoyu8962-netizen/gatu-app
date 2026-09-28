@@ -42,6 +42,7 @@ import { useProspectiveCrossMarginAccount } from "@/hooks/trade/use-prospective-
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { formatTransferError } from "@/lib/errors/format";
 import {
 	getMarketCapabilities,
 	useMarketsInfo,
@@ -267,12 +268,16 @@ export function TradePanel() {
 			assertEntryTwapExecutionAllowed(params, orderExecutionStateRef.current),
 		[],
 	);
+	function getLivePositionSize(assetId: number) {
+		const state = orderExecutionStateRef.current;
+		return state.assetId === assetId && state.positionStateReady ? state.positionSignedSize : undefined;
+	}
 	const {
 		captureDraftResetToken,
 		isDraftResetTokenCurrent,
 		handleSubmit: submitOrder,
 		isSubmitting,
-	} = useOrderSubmit({ executionGuard, twapExecutionGuard });
+	} = useOrderSubmit({ executionGuard, twapExecutionGuard, getPositionSize: getLivePositionSize });
 	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 
 	useEffect(() => {
@@ -325,7 +330,7 @@ export function TradePanel() {
 
 	const { setSide, setOrderType, setLimitPriceFromUser } = useOrderEntryActions();
 
-	const [approvalError, setApprovalError] = useState<string | null>(null);
+	const [approvalError, setApprovalError] = useState<{ cause: unknown } | null>(null);
 	const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 	function handleAccountModeModalOpenChange(open: boolean) {
 		setActiveModal(open ? "accountMode" : null);
@@ -563,10 +568,15 @@ export function TradePanel() {
 		}
 
 		authorize().catch((error: unknown) => {
-			const message = error instanceof Error ? error.message : t`Failed to enable trading`;
-			setApprovalError(message);
+			setApprovalError({ cause: error });
 			setTimeout(() => setApprovalError(null), APPROVAL_ERROR_DISMISS_MS);
 		});
+	}
+
+	function getApprovalErrorMessage(cause: unknown): string {
+		return cause instanceof Error
+			? formatTransferError(cause, (descriptor) => t(descriptor))
+			: t`Failed to enable trading`;
 	}
 
 	async function handleSubmit() {
@@ -881,7 +891,9 @@ export function TradePanel() {
 						<>
 							{displayValidationError && <div className="text-xs text-error">{displayValidationError}</div>}
 
-							{approvalError && <div className="text-xs text-error">{approvalError}</div>}
+							{approvalError && (
+								<div className="text-xs text-error">{getApprovalErrorMessage(approvalError.cause)}</div>
+							)}
 
 							{tradeRestricted && !buttonContent.disabledReason ? (
 								<TradeCtaView

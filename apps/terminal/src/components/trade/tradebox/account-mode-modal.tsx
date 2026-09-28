@@ -10,7 +10,7 @@ import {
 import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
 import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
 import { cn } from "@/lib/cn";
-import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import { classifyActionError, isAmbiguousExchangeActionError } from "@/lib/errors/action-error";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import { addOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 
@@ -125,7 +125,7 @@ export function AccountModeForm({
 			const unknown = isAmbiguousExchangeActionError(error);
 			updateOrderQueueItem(notificationId, {
 				status: unknown ? "unconfirmed" : "failed",
-				error: error instanceof Error ? error.message : undefined,
+				error: unknown ? undefined : classifyActionError(error),
 				message: unknown
 					? msg`Update not confirmed. Check account settings before retrying.`
 					: msg`Failed to update account mode`,

@@ -41,6 +41,10 @@ interface OrderBatchResolutionData {
 	totalCount: number;
 	acceptedCount: number;
 	rejectedCount: number;
+	/**
+	 * Exchange rejection texts only, as the exchange sent them, prefixed "Order N: " when the batch
+	 * reported them per order. Rendered as exchange texts, so never add our own wording here.
+	 */
 	errors: string[];
 }
 
@@ -204,7 +208,8 @@ export function resolveOrderBatchResponse(response: unknown, expectedCount: numb
 /**
  * Resolves a filled-confirmation batch only when every child has a terminal
  * exchange response. A filled child is accepted only when `totalSz` exactly
- * matches the submitted size.
+ * matches the submitted size; any other fill counts as not accepted without an
+ * error text, because the per-order feedback already shows the filled quantity.
  */
 export function resolveFilledOrderBatchResponse(
 	response: unknown,
@@ -233,10 +238,7 @@ export function resolveFilledOrderBatchResponse(
 		if (filledSize === null) return null;
 		const expectedSize = parsePositiveDecimal(expectedSizes[index]);
 		const actualSize = parsePositiveDecimal(filledSize);
-		if (!expectedSize || !actualSize || !actualSize.eq(expectedSize)) {
-			errors.push(`Order ${index + 1}: filled ${filledSize} of ${expectedSizes[index] ?? "unknown"}.`);
-			continue;
-		}
+		if (!expectedSize || !actualSize || !actualSize.eq(expectedSize)) continue;
 		acceptedCount += 1;
 	}
 
