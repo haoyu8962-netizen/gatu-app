@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["market-recovery", "pr-review"],
-  "summary": "修复 Codex 审查确认的 P2：空资金费率历史改按墙钟与单调时钟中较大的年龄计算 5 分钟有效期，墙钟退到接收时间之前即过期；到期后渲染不再给出空结论，并让查询失效（页面可见时立即刷新），覆盖后台回来、切回页签与重新挂载三条路径。新增 12 个用例，其中 9 个 hook 与面板用例在修复前有 8 个失败；9 个变异全部被抓到。同时更正审查记录：基线类型检查失败系主检出残留的 TypeScript 5.9.3 所致。只有 jsdom 证据，未真实修改系统时间，未做浏览器、休眠或生产构建核对。",
+  "summary": "修复 Codex 审查确认的 P2：空资金费率历史改按墙钟与单调时钟中较大的年龄计算 5 分钟有效期，墙钟退到接收时间之前即过期；到期后渲染不再给出空结论，并让查询失效（页面可见时立即刷新），覆盖后台回来、切回页签与重新挂载三条路径。新增 12 个用例，其中 9 个 hook 与面板用例在修复前有 8 个失败；9 个变异全部被抓到。同时更正审查记录：基线类型检查失败系主检出残留的 TypeScript 5.9.3 所致。只有 jsdom 证据，未真实修改系统时间，未做浏览器、休眠或生产构建核对。经 PR #58 五项检查全部通过后以 merge commit 合入 dev（504e9ca0），未晋升 main、未发布。",
   "thread": null,
   "baseCommit": "4c7ee2e1",
-  "commits": ["a1d93307"],
+  "commits": ["a1d93307", "47d79056", "504e9ca0"],
   "sources": [
     { "path": "apps/terminal/src/hooks/trade/use-market-funding-history.ts" },
     { "path": "apps/terminal/src/domain/market/funding-rate-history.ts" },
@@ -21,7 +21,8 @@
     { "path": "docs/market-funding-history.md" },
     { "path": "docs/mobile-data-presentation.md" },
     { "path": "docs/adr/0022-subscription-staleness-monotonic-clock.md" },
-    { "path": "docs/work-memory/sessions/2026-09-28-claude-commits-adversarial-review.md" }
+    { "path": "docs/work-memory/sessions/2026-09-28-claude-commits-adversarial-review.md" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/pull/58" }
   ],
   "supersedes": []
 }
@@ -32,7 +33,7 @@
 
 用户先要求复核 Codex 对 40 个提交的[对抗审查](2026-09-28-claude-commits-adversarial-review.md)（记录在 `4c7ee2e1`）所报的两项问题，随后要求修复其中的 P2，并在审查记录里追加更正。本记录为同步记录，没有取得可核对的会话 ID。
 
-工作在 worktree `claude/codex-issue-review-07ec3b` 进行。复核阶段在基线 `8cc8a323` 上按锁文件新装依赖；实施前快进到 `4c7ee2e1`，它的父提交就是 `8cc8a323`，只多了审查记录。修复提交为 `a1d93307`，本记录和审查记录的更正在其后的提交里。
+工作在 worktree `claude/codex-issue-review-07ec3b` 进行。复核阶段在基线 `8cc8a323` 上按锁文件新装依赖；实施前快进到 `4c7ee2e1`，它的父提交就是 `8cc8a323`，只多了审查记录。修复提交为 `a1d93307`，本记录和审查记录的更正在 `47d79056`；两者经 PR #58 合入 `dev`，见文末补记。
 
 改动范围：`use-market-funding-history.ts` 里空快照的新鲜度与刷新触发、领域计龄函数、对应测试，以及 `market-funding-history.md` 与 `mobile-data-presentation.md`。查询选项、非空历史的缓存策略和面板展示都不变。
 
@@ -80,6 +81,14 @@
   - 去掉 `focus` / `visibilitychange` 重新核对：2 个失败。
 - **输入路径**：jsdom；Vitest 假计时器同时伪造 `setTimeout`、`setInterval`、`Date` 与 `performance`，`vi.setSystemTime` 只改墙钟；前后台由 `focusManager.setFocused` 与脚本派发的事件切换。
 - **没有做的**：真实修改系统时间、真实标签页切换、核对设备休眠期间 `performance.now()` 是否计时、浏览器或真机核对、`pnpm build`、完整终端测试。临时复现测试与变异脚本放在会话临时目录，没有进仓库。
+
+## 补记：PR #58 与合并
+
+2026-09-28 推送分支 `claude/codex-issue-review-07ec3b`，并开 [PR #58](https://github.com/zora4523-bot/gatu-app/pull/58)（base `dev`，创建于 15:30 UTC）。`4c7ee2e1` 此前只在本地分支 `claude/from-dev-0928` 上，随这次推送一并进入远端。推送前 `dev` 仍为基线 `8cc8a323`，不需要合并 `dev`。
+
+合并前用 `gh` 只读核对：head 为 `47d79056`；Build terminal (pairing false)、Validate TypeScript, lint and translation catalogs、Test terminal and release tooling，以及 Terminal browser regressions 的两个分片，五项检查全部通过；`mergeStateStatus` 为 `CLEAN`，`dev` 仍为 `8cc8a323`。只核对了检查结论，没有逐项读取 CI 日志里的用例数。
+
+没有使用自动合并：仓库的 `allow_auto_merge` 为 false；`dev` 也没有分支保护、规则集或必需检查，即使开启，GitHub 也不会等 CI。按用户「CI 通过后合并到 dev」的要求，在用户确认 CI 通过、上述核对无误后，执行 `gh pr merge 58 --merge --match-head-commit 47d79056dc4f1c38f6f4fc1cd4c04ecf87ef211e`。合并提交为 `504e9ca0`（2026-09-28 17:37 UTC，即北京时间 09-29 01:37），父提交为 `8cc8a323` 与 `47d79056`。本记录引用的三个分支提交都在 `dev` 的历史里，远端分支没有删除；未晋升 `main`、未发布。
 
 ## 后续与替代关系
 
