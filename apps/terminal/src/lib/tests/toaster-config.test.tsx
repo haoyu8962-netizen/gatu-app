@@ -1,14 +1,21 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n } from "@lingui/core";
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Toaster } from "@/components/ui/sonner";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
+import { createI18nRoot } from "./harness/react";
 
 const viewport = vi.hoisted(() => ({ mobile: false }));
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => viewport.mobile }));
+
+function messageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
 
 describe("Toaster configuration", () => {
 	let container: HTMLDivElement;
@@ -19,7 +26,7 @@ describe("Toaster configuration", () => {
 		viewport.mobile = false;
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createRoot(container);
+		root = createI18nRoot(container);
 		act(() => root.render(<Toaster />));
 	});
 
@@ -31,6 +38,29 @@ describe("Toaster configuration", () => {
 		});
 		container.remove();
 		vi.useRealTimers();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("names the notification region and close buttons in the active language", async () => {
+		await act(async () => {
+			toast.warning("Withdrawal status unknown", { duration: Infinity, closeButton: true });
+			await vi.advanceTimersByTimeAsync(0);
+		});
+		const region = container.querySelector("section[aria-live]");
+		const closeButton = container.querySelector("[data-close-button]");
+		expect(region?.getAttribute("aria-label")).toMatch(/^Notifications /);
+		expect(closeButton?.getAttribute("aria-label")).toBe("Dismiss");
+
+		act(() =>
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [messageId("Notifications")]: "通知", [messageId("Dismiss")]: "关闭" },
+			}),
+		);
+
+		expect(container.querySelector("section[aria-live]")?.getAttribute("aria-label")).toMatch(/^通知 /);
+		expect(container.querySelector("[data-close-button]")).toBe(closeButton);
+		expect(closeButton?.getAttribute("aria-label")).toBe("关闭");
 	});
 
 	it("offsets mobile toasts above the bottom navigation", async () => {
@@ -63,7 +93,7 @@ describe("Toaster configuration", () => {
 	it("replays notifications received before the lazy container mounted", async () => {
 		act(() => root.unmount());
 		toast.info("Recovered notification", { id: "pre-host", duration: Infinity });
-		root = createRoot(container);
+		root = createI18nRoot(container);
 		act(() => root.render(<Toaster />));
 		await act(() => vi.advanceTimersByTimeAsync(0));
 		expect(container.textContent).toContain("Recovered notification");

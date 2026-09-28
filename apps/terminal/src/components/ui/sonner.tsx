@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import { CheckCircleIcon, InfoIcon, SpinnerGapIcon, WarningIcon, WarningOctagonIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { Toaster as Sonner, type ToasterProps, toast } from "sonner";
@@ -12,6 +13,7 @@ const MOBILE_TOAST_BOTTOM_OFFSET = `calc(env(safe-area-inset-bottom) + ${MOBILE_
 const MOBILE_TOAST_INLINE_OFFSET = "max(16px, var(--sal), var(--sar))";
 
 function Toaster(props: ToasterProps) {
+	const { t } = useLingui();
 	const theme = useTheme();
 	const isMobile = useIsMobile();
 	useEffect(() => {
@@ -38,6 +40,7 @@ function Toaster(props: ToasterProps) {
 				right: MOBILE_TOAST_INLINE_OFFSET,
 			}}
 			richColors
+			containerAriaLabel={t`Notifications`}
 			duration={TOAST_DEFAULT_DURATION_MS}
 			icons={{
 				success: <CheckCircleIcon className="size-4" />,
@@ -48,6 +51,7 @@ function Toaster(props: ToasterProps) {
 			}}
 			toastOptions={{
 				className: "text-xs font-sans",
+				closeButtonAriaLabel: t`Dismiss`,
 			}}
 			style={
 				{

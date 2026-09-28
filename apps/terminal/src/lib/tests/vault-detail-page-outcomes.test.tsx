@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type MessageDescriptor } from "@lingui/core";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,7 +17,7 @@ const testState = vi.hoisted(() => ({
 		detail: { name: string };
 		ownerAddress: string;
 		amount: string;
-		errorMessage?: string;
+		error?: MessageDescriptor;
 		receipt?: { hash: string; finalAmount?: string; commission?: string; closingCost?: string };
 	},
 	close: vi.fn(),
@@ -89,6 +91,12 @@ vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => false
 import { VaultDetailPage } from "@/components/vaults/vaults-page";
 
 const VAULT = "0x1111111111111111111111111111111111111111";
+const WITHDRAWAL_LOCKED = "Withdrawal is still locked by the fresh server timestamp.";
+const WITHDRAWAL_LOCKED_ZH = "提款仍被服务器最新时间戳锁定。";
+
+function descriptor(message: string): MessageDescriptor {
+	return { id: createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6), message };
+}
 
 function settledAction(result: Result, id = "vault-action-1") {
 	return {
@@ -98,7 +106,7 @@ function settledAction(result: Result, id = "vault-action-1") {
 		detail: { name: "Safety Vault" },
 		ownerAddress: "0x2222222222222222222222222222222222222222",
 		amount: "25",
-		errorMessage: result === "apiError" ? "Vault is locked" : undefined,
+		error: result === "apiError" ? descriptor(WITHDRAWAL_LOCKED) : undefined,
 		receipt:
 			result === "success"
 				? { hash: `0x${"a".repeat(64)}`, finalAmount: "24.5", commission: "0.3", closingCost: "0.2" }
@@ -123,6 +131,7 @@ describe("VaultDetailPage settled outcomes", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.clearAllMocks();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 	});
 
 	function render() {
@@ -167,6 +176,31 @@ describe("VaultDetailPage settled outcomes", () => {
 		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(title, expect.anything());
 		expect(testState.retry).toHaveBeenCalledOnce();
 		expect(testState.close).not.toHaveBeenCalled();
+	});
+
+	it("describes a failed request with its stored reason", () => {
+		testState.action = settledAction("apiError");
+		render();
+
+		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(
+			"Vault request failed",
+			expect.objectContaining({ description: WITHDRAWAL_LOCKED }),
+		);
+	});
+
+	it("renders the stored review error in the active language after a language switch", () => {
+		testState.action = {
+			...settledAction("apiError"),
+			state: { stage: "review", result: null },
+		};
+		render();
+		expect(testState.modalProps).toMatchObject({ stage: "review", errorMessage: WITHDRAWAL_LOCKED });
+
+		act(() =>
+			i18n.loadAndActivate({ locale: "zh", messages: { [descriptor(WITHDRAWAL_LOCKED).id]: WITHDRAWAL_LOCKED_ZH } }),
+		);
+
+		expect(testState.modalProps).toMatchObject({ stage: "review", errorMessage: WITHDRAWAL_LOCKED_ZH });
 	});
 
 	it("leaves an unknown result to the in-dialog verification path", () => {

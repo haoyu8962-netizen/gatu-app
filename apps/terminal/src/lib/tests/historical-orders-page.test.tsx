@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
@@ -37,23 +38,32 @@ vi.mock("@gatu/ui", () => ({
 	),
 	Pagination: ({
 		currentPage,
+		getPageLabel,
 		nextPageLabel,
+		nextText,
 		onPageChange,
+		previousText,
 		totalPages,
 	}: {
 		currentPage: number;
+		getPageLabel?: (page: number) => string;
 		nextPageLabel: string;
+		nextText?: ReactNode;
 		onPageChange?: (page: number) => void;
+		previousText?: ReactNode;
 		totalPages: number;
 	}) => (
-		<button
-			type="button"
-			aria-label={nextPageLabel}
-			disabled={currentPage >= totalPages}
-			onClick={() => onPageChange?.(currentPage + 1)}
-		>
-			Next
-		</button>
+		<nav data-testid="pagination" data-page-label={getPageLabel?.(currentPage)}>
+			<span data-testid="pagination-previous">{previousText}</span>
+			<button
+				type="button"
+				aria-label={nextPageLabel}
+				disabled={currentPage >= totalPages}
+				onClick={() => onPageChange?.(currentPage + 1)}
+			>
+				{nextText}
+			</button>
+		</nav>
 	),
 	Select: ({
 		label,
@@ -138,6 +148,26 @@ vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+const ZH_PAGINATION_MESSAGES = Object.fromEntries(
+	[
+		["Previous", "上一页"],
+		["Next", "下一页"],
+		["Page {page}", "第 {page} 页"],
+	].map(([message, translation]) => [
+		createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6),
+		translation,
+	]),
+);
+
+function paginationLabels(container: HTMLElement) {
+	const pagination = container.querySelector('[data-testid="pagination"]');
+	return [
+		pagination?.querySelector('[data-testid="pagination-previous"]')?.textContent,
+		pagination?.querySelector("button")?.textContent,
+		pagination?.getAttribute("data-page-label"),
+	];
+}
+
 function createOrder(index: number): HistoricalOrdersResponse[number] {
 	const isEth = index >= 26;
 	return {
@@ -206,6 +236,15 @@ describe("HistoricalOrdersPage", () => {
 			),
 		);
 	}
+
+	it("labels the pagination controls in the active language", () => {
+		renderPage();
+		expect(paginationLabels(container)).toEqual(["Previous", "Next", "Page 1"]);
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: ZH_PAGINATION_MESSAGES }));
+
+		expect(paginationLabels(container)).toEqual(["上一页", "下一页", "第 1 页"]);
+	});
 
 	it("paginates at 25 rows and resets to page one when a local filter changes", () => {
 		renderPage();

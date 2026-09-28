@@ -92,7 +92,7 @@ type HistoryCallbackState = {
 };
 
 function createHistoryTimeoutError(): Error {
-	const error = new Error(t`Chart history request timed out`);
+	const error = new Error("Chart history request timed out");
 	error.name = "TimeoutError";
 	return error;
 }
@@ -229,11 +229,13 @@ async function waitForHistoryRetry(
 	});
 }
 
+// TradingView shows this reason in the chart legend, so it is never a transport message.
 function describeHistoryError(error: unknown): string {
 	if (error instanceof CandleRateLimitError || getHttpStatus(error) === 429) {
 		return t`Chart data is temporarily rate limited`;
 	}
-	return error instanceof Error ? error.message : String(error);
+	if (error instanceof Error && error.name === "TimeoutError") return t`Chart history request timed out`;
+	return t`Chart data could not be loaded`;
 }
 
 function clampCountBack(periodParams: PeriodParams): number {
@@ -547,8 +549,8 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 
 				rememberResolvedCoin(rawSymbolName, symbolInfo);
 				resolveAsync(() => onResolve(symbolInfo));
-			})().catch((error) => {
-				resolveAsync(() => onError(error instanceof Error ? error.message : String(error)));
+			})().catch(() => {
+				resolveAsync(() => onError(t`Chart data could not be loaded`));
 			});
 		},
 

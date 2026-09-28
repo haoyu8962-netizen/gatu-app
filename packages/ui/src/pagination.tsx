@@ -111,6 +111,9 @@ interface PaginationProps extends React.HTMLAttributes<HTMLElement>, VariantProp
 	navigationLabel?: string;
 	previousPageLabel?: string;
 	nextPageLabel?: string;
+	previousText?: React.ReactNode;
+	nextText?: React.ReactNode;
+	getPageLabel?: (page: number) => string;
 	mobilePageSummary?: React.ReactNode;
 }
 
@@ -128,6 +131,9 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 			navigationLabel = "Pagination",
 			previousPageLabel = "Previous page",
 			nextPageLabel = "Next page",
+			previousText = "Previous",
+			nextText = "Next",
+			getPageLabel = (page) => `Page ${page}`,
 			mobilePageSummary,
 			...props
 		},
@@ -204,7 +210,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 						className={cn(navButtonVariants({ variant: "desktop" }), navBtnH, "pr-4")}
 					>
 						<ArrowLeftIcon size={iconSize} className="shrink-0 text-icon" />
-						Previous
+						{previousText}
 					</button>
 
 					{pages.map((page, index) =>
@@ -222,7 +228,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 							<button
 								key={page}
 								onClick={() => handlePageChange(page)}
-								aria-label={`Page ${page}`}
+								aria-label={getPageLabel(page)}
 								aria-current={page === currentPage ? "page" : undefined}
 								className={cn(pageButtonVariants({ current: page === currentPage }), pageBtnSize)}
 							>
@@ -238,7 +244,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 						aria-label={nextPageLabel}
 						className={cn(navButtonVariants({ variant: "desktop" }), navBtnH, "pl-4")}
 					>
-						Next
+						{nextText}
 						<ArrowRightIcon size={iconSize} className="shrink-0 text-icon" />
 					</button>
 				</div>
