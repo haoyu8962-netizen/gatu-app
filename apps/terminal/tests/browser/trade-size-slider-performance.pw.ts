@@ -1,4 +1,4 @@
-import { type CDPSession, expect, type Page, test } from "@playwright/test";
+import { type CDPSession, expect, type Locator, type Page, test } from "@playwright/test";
 
 interface SliderAuditSnapshot {
 	previewIntervals: number[];
@@ -141,9 +141,8 @@ test("keeps focus and the gesture when the value source pauses mid-drag, then re
 	await page.mouse.down();
 	await page.mouse.move(percentX(geometry, 60), y, { steps: 6 });
 	await expect.poll(async () => (await stopAuditSnapshot(page)).previewCallbacks).toBeGreaterThanOrEqual(1);
-	const previewsBeforePause = (await stopAuditSnapshot(page)).previewCallbacks;
 
-	await page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderSetPaused(true));
+	const previewsAtPause = await pauseAndReadPreviewCount(input);
 	await page.waitForTimeout(80);
 	await expect(control).toHaveAttribute("data-dragging", "true");
 	await expect(input).toBeFocused();
@@ -152,12 +151,12 @@ test("keeps focus and the gesture when the value source pauses mid-drag, then re
 
 	await page.mouse.move(percentX(geometry, 80), y, { steps: 6 });
 	await page.waitForTimeout(80);
-	expect((await stopAuditSnapshot(page)).previewCallbacks).toBe(previewsBeforePause);
+	expect((await stopAuditSnapshot(page)).previewCallbacks).toBe(previewsAtPause);
 	expect(await readThumbPercent(page)).toBeCloseTo(80, 0);
 	await expect(control).toHaveAttribute("data-dragging", "true");
 
 	await page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderSetPaused(false));
-	await expect.poll(async () => (await stopAuditSnapshot(page)).previewCallbacks).toBe(previewsBeforePause + 1);
+	await expect.poll(async () => (await stopAuditSnapshot(page)).previewCallbacks).toBe(previewsAtPause + 1);
 	await expect(input).not.toHaveAttribute("aria-disabled", "true");
 
 	await page.mouse.up();
@@ -375,6 +374,27 @@ async function stopAudit(page: Page): Promise<SliderAuditSnapshot> {
 
 async function stopAuditSnapshot(page: Page): Promise<SliderAuditSnapshot> {
 	return page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPerf.snapshot());
+}
+
+async function pauseAndReadPreviewCount(input: Locator): Promise<number> {
+	return input.evaluate(
+		(element) =>
+			new Promise<number>((resolve, reject) => {
+				const auditWindow = window as unknown as SliderAuditWindow;
+				const observer = new MutationObserver(() => {
+					if (element.getAttribute("aria-disabled") !== "true") return;
+					observer.disconnect();
+					clearTimeout(timeout);
+					resolve(auditWindow.__gatuSliderPerf.snapshot().previewCallbacks);
+				});
+				const timeout = setTimeout(() => {
+					observer.disconnect();
+					reject(new Error("The pause did not mark the held slider input aria-disabled"));
+				}, 5_000);
+				observer.observe(element, { attributeFilter: ["aria-disabled"] });
+				auditWindow.__gatuSliderSetPaused(true);
+			}),
+	);
 }
 
 async function readValue(page: Page): Promise<number> {

@@ -418,6 +418,19 @@ describe("TradeSlider lifecycle isolation", () => {
 		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
 	});
 
+	it("cancels the pending preview timer on pause, so a short pause restarts the preview interval", () => {
+		drag();
+		advance(5);
+		render({ paused: true });
+		advance(4);
+		render({ paused: false });
+
+		advance(14);
+		expect(props.onPreview).not.toHaveBeenCalled();
+		advance(1);
+		expect(props.onPreview).toHaveBeenCalledExactlyOnceWith(80);
+	});
+
 	it("republishes an already published value after a pause, because the same percent may mean a new size", () => {
 		drag(true);
 		render({ paused: true });
