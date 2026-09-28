@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["hyperliquid-api"],
-  "summary": "按覆盖审查的收益排序实施六项：资金费率历史页签（fundingHistory）、未平仓量上限拦截（webData3 perpsAtOpenInterestCap + perpDexLimits，ADR 0023）、资金费率对比页（predictedFundings）、TP/SL 滑点提示（maxMarketOrderNtls）、TWAP 成交 CSV 导出（userTwapSliceFillsByTime）、杠杆弹窗仓位上限（复用分档）。六个独立 worktree 并行实现并各经一轮代理审查，集成到 claude/sdk-api-review-51a3ea 后做三轮 Codex 只读对抗审查（共 6 个 P2、6 个 P3，全部修复或有理由处理；第三轮残留的时钟回拨属于共享订阅巡检，另列后续任务）。最终头类型检查、Biome、Node 22.15 构建与包体预算通过，完整终端测试 7,490 项通过、1 个已知负载敏感文件超时（单独 5/5 通过）。服务端账户通知未实施（需要传输隔离决策）。未推送、未合入 dev，没有真实钱包与真机验收。",
+  "summary": "按覆盖审查的收益排序实施六项：资金费率历史页签（fundingHistory）、未平仓量上限拦截（webData3 perpsAtOpenInterestCap + perpDexLimits，ADR 0023）、资金费率对比页（predictedFundings）、TP/SL 滑点提示（maxMarketOrderNtls）、TWAP 成交 CSV 导出（userTwapSliceFillsByTime）、杠杆弹窗仓位上限（复用分档）。六个独立 worktree 并行实现并各经一轮代理审查，集成到 claude/sdk-api-review-51a3ea 后做三轮 Codex 只读对抗审查（共 6 个 P2、6 个 P3，全部修复或有理由处理；第三轮残留的时钟回拨属于共享订阅巡检，另列后续任务）。最终头类型检查、Biome、Node 22.15 构建与包体预算通过，完整终端测试 7,490 项通过、1 个已知负载敏感文件超时（单独 5/5 通过）。服务端账户通知未实施（需要传输隔离决策）。2026-09-28 经 PR #50 四次合并 dev（含 Earn 导致的 ADR 改号 0023）后，五项 CI 检查全部通过，以 merge commit 合入 dev（ac11f81b），未晋升 main、未发布；没有真实钱包与真机验收。",
   "thread": null,
   "baseCommit": "dbc6036e",
-  "commits": ["1190bd41", "282a58ba", "5eb85082", "a36c67ad", "0c404f44", "bd6bb81b", "7db5cf0b", "19af214b", "746ef421", "db676ae4", "fcc5624e", "b8e880c3", "21a3c1e4", "8c1ec5da", "58e132ed", "1829fc8e", "88c7466c", "7084ea7b"],
+  "commits": ["1190bd41", "282a58ba", "5eb85082", "a36c67ad", "0c404f44", "bd6bb81b", "7db5cf0b", "19af214b", "746ef421", "db676ae4", "fcc5624e", "b8e880c3", "21a3c1e4", "8c1ec5da", "58e132ed", "1829fc8e", "88c7466c", "7084ea7b", "0a5b6a02", "95064568", "0297d677", "defb6021", "ac11f81b"],
   "sources": [
     { "path": "docs/sdk-feature-integration-plan.md" },
     { "path": "docs/hyperliquid-sdk-coverage-review.md" },
@@ -23,7 +23,8 @@
     { "path": "docs/leverage-position-limit.md" },
     { "path": "scripts/check-client-bundle-budget.mjs" },
     { "url": "https://app.hyperliquid.xyz/trade/BTC" },
-    { "url": "https://app.hyperliquid.xyz/fundingComparison" }
+    { "url": "https://app.hyperliquid.xyz/fundingComparison" },
+    { "url": "https://github.com/zora4523-bot/gatu-app/pull/50" }
   ],
   "supersedes": []
 }
@@ -55,10 +56,20 @@
 
 ## 后续与替代关系
 
-- 2026-09-28 已推送并开 PR #50 → `dev`（按 `.claude/rules/git.md`）。
+- 2026-09-28 已推送并开 PR #50 → `dev`（按 `.claude/rules/git.md`），CI 通过后合入 `dev`（`ac11f81b`），见下方补记。
 - 已另列后续任务：共享订阅巡检改为不受时钟回拨影响；杠杆弹窗高杠杆警告在拖动中挂载的既有问题。
   - 2026-09-28 更新：前者已完成，见 [订阅过期巡检改用单调时钟计龄](2026-09-28-subscription-staleness-monotonic-clock.md)（合入本分支 `bd0b80f1`）；后者见 [杠杆警告手势期间保持](2026-09-27-leverage-warning-gesture-hold.md)，经 #53 合入 `dev`，随本分支合并 `dev` 进入。
 - 2026-09-28：PR #50 合入 `dev` 的 #48（Earn 借贷页）时，Earn 已占用 ADR 0021、PR #51 的订阅单调时钟占用 0022，未平仓量上限 ADR 改号为 0023，引用同步更新；导航冲突按「Earn 常驻一级、Funding Comparison 只在 More 且排在 Statistics 前」解决。
 - 本批新增测试未加入 AGENTS.md 回归分组与 CI 精选列表，入口在各归属文档。
 - 下一批可从规划的「范围取舍」表继续：服务端通知（先写传输隔离 ADR 并观察真实消息）、子账户与 HIP-4（需产品与合规决策）。
 - 没有被替代的记录；[2026-09-27 覆盖审查](2026-09-27-sdk-api-coverage-review.md)仍有效，其追加的「后续」一节链接本批结果。
+
+## 补记：PR #50 与合并
+
+2026-09-28 推送分支 `claude/sdk-api-review-51a3ea` 并开 [PR #50](https://github.com/zora4523-bot/gatu-app/pull/50)（base `dev`，UTC 2026-09-27 18:53 创建）。开 PR 前在 `0a5b6a02` 合并过一次 `dev`（#46 共享仪表盘外壳、#47 法律页并入应用外壳）；之后应用的 Auto-fix 报告与 `dev` 冲突，又合并了三次：
+
+- `95064568`：带入 #49，工作记录索引冲突按重新生成解决。
+- `0297d677`：带入 #48 Earn。导航与三个导航测试按「Earn 常驻一级、Funding Comparison 只在 More 且排在 Statistics 前」合并；Earn 已占用 ADR 0021，#51 占用 0022，未平仓量上限 ADR 改号为 0023；路由树由开发服务器重新生成；六种语言目录用重新提取加两侧译文回填，新增条目均无空译文。本地类型检查、完整终端测试 627 个文件 7,639 项通过（1 项跳过）、Node 22.15 构建与包体预算通过。
+- `defb6021`：带入 #51、#52、#53。杠杆编辑器保留最大仓位行，高杠杆警告改用 #53 的手势期间保持条件，测试去掉 #53 删除的 `riskValue` 属性；滑杆与杠杆上限文档里「警告会在拖动中移动滑杆」的说明改为已由 #53 修复。本地类型检查、杠杆/滑杆/水合/巡检相关 14 个文件 290 项、完整终端测试 628 个文件 7,649 项通过（1 项跳过）、Node 22.15 构建与包体预算通过（总 gzip 比脚本基线 +5,488 字节，`trade-terminal-page` 124,831，允许 127,242）。浏览器套件在这三次合并后没有在本地重跑。
+
+用 `gh` 只读核对，head `defb6021` 上 Production Builds、Static Checks、Terminal Tests 与两片 Terminal Browser Tests 五项检查全部通过。仓库的 `allow_auto_merge` 为 false；按用户「CI 通过后合并 PR 到 dev」的要求，以 `gh pr merge --merge --match-head-commit defb6021…` 手动合并，合并提交 `ac11f81b`（UTC 2026-09-28 08:52:36，父提交 `236210c2` 与 `defb6021`）。远端分支没有删除；14 个辅助 worktree 与 28 个未推送的本地辅助分支已在确认均已并入后清理。
