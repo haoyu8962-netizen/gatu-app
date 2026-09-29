@@ -1,6 +1,14 @@
 import { expect, type Page, test } from "@playwright/test";
 
 const LONG_NAME = "[ Systemic Strategies ] ♾️ HyperGrowth ♾️";
+const LARGE_EQUITY = "$12,345,678.90";
+const DETAIL_ADDRESS = "0x0000000000000000000000000000000000000101";
+
+async function waitForFonts(page: Page) {
+	await page.evaluate(async () => {
+		await document.fonts.ready;
+	});
+}
 
 async function cardGeometry(page: Page) {
 	return page.evaluate(() => {
@@ -30,6 +38,7 @@ async function cardGeometry(page: Page) {
 					leftGap: box.left - panelBox.left,
 					rightOverflow: box.right - panelBox.right,
 					contentOverflow: contentRight - contentEdge,
+					values: [...card.querySelectorAll("dd")].map((value) => value.textContent ?? ""),
 					truncatedValues: [...card.querySelectorAll("dd")]
 						.filter((value) => value.scrollWidth > value.clientWidth)
 						.map((value) => value.textContent ?? ""),
@@ -69,6 +78,7 @@ for (const locale of ["en", "zh"]) {
 			await page.setViewportSize(viewport);
 			await page.goto(`/vaults-list.html?locale=${locale}`);
 			await expect(page.getByRole("link", { name: /HyperGrowth/ })).toBeVisible();
+			await waitForFonts(page);
 
 			const geometry = await cardGeometry(page);
 			expect(geometry.cards).toHaveLength(4);
@@ -83,7 +93,9 @@ for (const locale of ["en", "zh"]) {
 				expect(card.truncatedValues, card.name).toEqual([]);
 				expect(card.mark, card.name).toMatch(/^[\p{L}\p{N}]{1,2}$/u);
 			}
-			expect(geometry.cards.find((card) => card.name === LONG_NAME)?.mark).toBe("SY");
+			const longNameCard = geometry.cards.find((card) => card.name === LONG_NAME);
+			expect(longNameCard?.mark).toBe("SY");
+			expect(longNameCard?.values).toContain(LARGE_EQUITY);
 			expect(errors).toEqual([]);
 		});
 	}
@@ -93,31 +105,47 @@ for (const viewport of [
 	{ width: 320, height: 640 },
 	{ width: 375, height: 812 },
 ]) {
-	test(`keeps the Vault detail panel and full address inside the page gutter at ${viewport.width}px`, async ({
+	test(`shows the whole Vault detail, including its full address, inside the page gutter at ${viewport.width}px`, async ({
 		page,
 	}) => {
 		const errors: string[] = [];
 		page.on("pageerror", (error) => errors.push(error.message));
 		await page.setViewportSize(viewport);
 		await page.goto("/vaults-list.html?view=detail");
-		const address = page.getByText("0x0000000000000000000000000000000000000101", { exact: true });
-		await expect(address).toBeVisible();
+		await expect(page.getByText(DETAIL_ADDRESS, { exact: true })).toBeVisible();
+		await waitForFonts(page);
 
-		const geometry = await page.evaluate(() => {
+		const geometry = await page.evaluate((addressText) => {
 			const panel = document.querySelector("article[data-vault-detail-state]");
 			if (!panel) throw new Error("Missing Vault detail");
 			const box = panel.getBoundingClientRect();
+			const hidesContent = (element: Element) => {
+				const style = getComputedStyle(element);
+				const clips = style.overflowX === "hidden" || style.overflowX === "clip" || style.textOverflow === "ellipsis";
+				return clips && element.scrollWidth > element.clientWidth;
+			};
+			const address = [...panel.querySelectorAll("bdi")].find((element) => element.textContent === addressText);
+			if (!address?.parentElement) throw new Error("Missing Vault address");
+			const addressBox = address.parentElement.getBoundingClientRect();
 			return {
 				pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
 				panelOverflow: panel.scrollWidth - panel.clientWidth,
 				panelStartGutter: box.left,
 				panelEndGutter: window.innerWidth - box.right,
+				addressHidden: hidesContent(address.parentElement),
+				addressOutsidePanel: addressBox.right - box.right,
+				hiddenContent: [...panel.querySelectorAll("*")]
+					.filter((element) => !element.closest(".sr-only") && hidesContent(element))
+					.map((element) => element.textContent?.trim().slice(0, 60) ?? ""),
 			};
-		});
+		}, DETAIL_ADDRESS);
 		expect(geometry.pageOverflow).toBeLessThanOrEqual(0);
 		expect(geometry.panelOverflow).toBeLessThanOrEqual(0);
 		expect(geometry.panelStartGutter).toBe(16);
 		expect(geometry.panelEndGutter).toBe(16);
+		expect(geometry.addressHidden).toBe(false);
+		expect(geometry.addressOutsidePanel).toBeLessThanOrEqual(0);
+		expect(geometry.hiddenContent).toEqual([]);
 		expect(errors).toEqual([]);
 	});
 }
@@ -132,6 +160,7 @@ for (const viewport of [
 		await page.setViewportSize(viewport);
 		await page.goto("/vaults-list.html");
 		await expect(page.getByRole("link", { name: /HyperGrowth/ })).toBeVisible();
+		await waitForFonts(page);
 
 		const headers = await headerAlignment(page);
 		expect(headers.map((header) => header.label)).toEqual([

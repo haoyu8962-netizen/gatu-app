@@ -105,7 +105,7 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 							>
 								{complete ? <CheckIcon className="size-2.5" weight="bold" /> : step}
 							</span>
-							<p className="min-w-0 flex-1 truncate text-2xs font-medium text-fg-muted">{label}</p>
+							<p className="min-w-0 flex-1 break-words text-2xs font-medium text-fg-muted">{label}</p>
 						</li>
 					);
 				})}

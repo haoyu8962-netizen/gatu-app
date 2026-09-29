@@ -1,7 +1,7 @@
 import { i18n } from "@lingui/core";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
-import type { VaultListItem } from "@/components/vaults/domain/vaults";
+import type { VaultAccountFactsState, VaultListItem } from "@/components/vaults/domain/vaults";
 import { VaultDetailFixture } from "@/components/vaults/vaults-fixture";
 import { VaultsList } from "@/components/vaults/vaults-list";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
@@ -19,6 +19,13 @@ const ROWS: readonly VaultListItem[] = [
 	createRow(3, "Quantitative Market Neutral Strategy", "980000", "0.1212", 88),
 	createRow(4, "drkmttr", "13400000", "1.4309", 293),
 ];
+const ACCOUNT: VaultAccountFactsState = {
+	status: "ready",
+	facts: {
+		depositsByAddress: new Map([[ROWS[1].vaultAddress, "12345678.90"]]),
+		leadingAddresses: new Set([ROWS[1].vaultAddress]),
+	},
+};
 
 function createRow(index: number, name: string, tvl: string, apr: string, ageDays: number): VaultListItem {
 	return {
@@ -53,7 +60,7 @@ function Fixture() {
 					<VaultsList
 						state="normal"
 						rows={ROWS}
-						account={{ status: "disconnected" }}
+						account={ACCOUNT}
 						fetchedAt={FETCHED_AT}
 						onRetry={() => undefined}
 					/>

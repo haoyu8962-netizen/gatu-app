@@ -10,7 +10,7 @@
   "summary": "用户问为什么金库页在手机上没有边距。查明 8 月 14 日同一提交里质押页写了 px-4、金库页漏写，推荐页从 8 月 12 日起就没有，9 月 16 日统一页面框架时照搬；排行榜、资金费率对比、API 钱包是有意的直角整页白底。修复：/vaults 与 /referrals 框架加 px-4；金库卡片数值改为标签在上（否则 375 宽 20 个管理者地址全部截断）；详情页完整地址加 break-all（320 宽会被切 6px）；规则写进 style-ui-guide 并加契约测试与浏览器测试。旧配置下契约测试只报这两页，旧卡片与旧详情页各自让浏览器测试失败。单测 22 个文件 426 项、共享配置浏览器测试 42 项通过，锁定的 TypeScript 5.7.2 通过；开发服务器 320/375/1440 真实数据核对通过。未做连接钱包状态、深色、其他语言、真机与生产构建。",
   "thread": null,
   "baseCommit": "77a70867",
-  "commits": [],
+  "commits": ["fad8f3d4"],
   "sources": [
     { "path": "apps/terminal/src/config/dashboard-frames.ts" },
     { "path": "apps/terminal/src/components/vaults/vaults-list.tsx" },
@@ -82,3 +82,5 @@
 
 - 仍待用户决定：金库长名字最多显示两行；只有一组时隐藏重复的组名；详情页「账户价值」数值压在折线上；中文翻译 11 条「Vault」未译；各页卡片圆角是否统一；排行榜三页是否也改成留边距的卡片。
 - 部分更正 [金库列表修复记录](2026-09-29-vaults-list-mobile-clipping.md) 第四条后续事项的描述，不整体替代。下次先看 `.claude/rules/style-ui-guide.md` 的 Dashboard page gutters 与 `dashboard-frame-view.test.tsx`。
+
+补记（2026-09-29）：本记录的提交为 `fad8f3d4`。随后的 [对抗审查与修复记录](2026-09-29-gutter-adversarial-review.md) 更正了本记录的三处结论：规则测试当时只证明桌面分支有圆角，拦不住手机圆角与 `px-0`；详情浏览器测试只测外框，测不到地址本身被截断；推荐页只核对了未连接状态，连接钱包后邀请码卡片的步骤标签在 375 宽中文下被新截断。三处都已在那条记录里修复。

@@ -364,7 +364,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - On phones, the Vaults, Vault detail and Referrals pages (including referral invitation links) now
   keep the same 16px side margin as Staking, Earn and Portfolio instead of pressing a rounded panel
   against the screen edges. Vault cards show each value under its label, so leader addresses stay
-  complete at the narrower width.
+  complete at the narrower width. The three referral steps (Trade, Create code, Invite traders)
+  now wrap onto more lines instead of being cut off with an ellipsis, which the narrower width had
+  started to do in Chinese and several labels already did in English and French.
 
 - Error messages follow the interface language. The order and cancellation rejections that
   Hyperliquid documents (such as tick size, minimum order value, insufficient margin, reduce-only,
