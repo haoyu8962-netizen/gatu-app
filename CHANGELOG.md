@@ -355,6 +355,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- On phones, Vault cards no longer run off the right edge of the screen when the list contains a
+  long Vault name, so APR, equity, age and the performance line stay visible; a long name now ends
+  with an ellipsis. On desktop, the Vault and Leader column headers line up with their columns. A
+  Vault's mark now skips punctuation and emoji, so `[ Systemic Strategies ] …` shows `SY` instead
+  of `[`.
+
 - Error messages follow the interface language. The order and cancellation rejections that
   Hyperliquid documents (such as tick size, minimum order value, insufficient margin, reduce-only,
   post-only, open-interest caps, oracle price limits and maximum position), not having enough cross

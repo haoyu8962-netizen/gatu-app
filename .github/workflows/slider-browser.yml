@@ -56,14 +56,15 @@ jobs:
           --config tests/browser/playwright.config.ts
           --fully-parallel --shard=${{ matrix.shard }}/2
 
-      # One invocation for the other three specs of the shared config, so that the single
+      # One invocation for the other four specs of the shared config, so that the single
       # orderbook CLS test does not leave one shard starting the server for nothing.
-      - name: Run orderbook CLS, drawer and orderbook interaction regressions
+      - name: Run orderbook CLS, drawer, orderbook interaction and Vault list regressions
         run: >-
           pnpm --dir apps/terminal exec playwright test
           tests/browser/mobile-orderbook-cls.pw.ts
           tests/browser/drawer-interactions.pw.ts
           tests/browser/orderbook-hover.pw.ts
+          tests/browser/vaults-list.pw.ts
           --config tests/browser/playwright.config.ts
           --fully-parallel --shard=${{ matrix.shard }}/2
 

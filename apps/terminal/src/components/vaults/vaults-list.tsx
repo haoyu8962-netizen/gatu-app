@@ -11,6 +11,7 @@ import {
 	formatVaultUsd,
 	getVaultAgeDays,
 	getVaultDeposit,
+	getVaultMark,
 	getVaultPeriodSeries,
 	groupVaultRows,
 	isLeadingVault,
@@ -235,10 +236,10 @@ function VaultGroup({
 			>
 				<thead>
 					<tr className="border-y border-stroke-weak text-2xs text-fg-muted">
-						<th className="px-5 py-2 font-semibold">
+						<th className="px-5 py-2 text-start font-semibold">
 							<Trans>Vault</Trans>
 						</th>
-						<th className="px-3 py-2 font-semibold">
+						<th className="px-3 py-2 text-start font-semibold">
 							<Trans>Leader</Trans>
 						</th>
 						<th className="px-3 py-2 text-right font-semibold">
@@ -264,7 +265,7 @@ function VaultGroup({
 					))}
 				</tbody>
 			</Table>
-			<div className="grid gap-2 px-4 min-[1001px]:hidden">
+			<div className="grid grid-cols-1 gap-2 px-4 min-[1001px]:hidden">
 				{group.rows.map((row) => (
 					<VaultMobileCard key={row.vaultAddress} row={row} period={period} account={account} now={now} />
 				))}
@@ -454,13 +455,12 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 
 function VaultMark({ name }: { name: string }) {
-	const mark = name.trim().slice(0, 2).toUpperCase() || "V";
 	return (
 		<span
 			aria-hidden
 			className="grid size-7 shrink-0 place-items-center rounded-full bg-fill text-3xs font-bold text-fg-inverse"
 		>
-			{mark}
+			{getVaultMark(name)}
 		</span>
 	);
 }
