@@ -47,6 +47,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The phone navigation drawer no longer shows the Navigation and More headings. As on the
+  official terminal, a divider now separates the main destinations from Funding Comparison,
+  Statistics, API Wallet, Docs and Support, which leaves more room for the list on small screens.
+  Screen readers still announce the two groups as the primary navigation and More.
+
 - Docs, Support, Terms, Privacy Policy, Risk Disclosure and Cookie Policy now open inside the
   normal application chrome: the same top navigation and footer as the trading and dashboard
   pages on desktop, and the application mobile header on phones. Their separate document

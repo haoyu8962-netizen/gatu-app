@@ -5042,7 +5042,6 @@ msgstr "Modify Order"
 #~ msgstr "Modifying..."
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "More"
 msgstr "More"
@@ -5080,7 +5079,6 @@ msgstr "N/A"
 msgid "Name"
 msgstr "Name"
 
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "Navigation"

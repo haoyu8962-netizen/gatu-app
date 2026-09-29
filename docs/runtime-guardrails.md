@@ -867,6 +867,9 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   followed by the drawer-only Docs and Support entries ([ADR 0020](adr/0020-legal-pages-in-app-shell.md)); the
   drawer matches its current entry on the lower-cased path, so `/fundingComparison` is compared as
   `/fundingcomparison`. `desktop-nav-layout`, `top-nav` and `mobile-nav-drawer` pin both lists.
+  As in the official drawer, neither drawer group shows a visible heading: a full-width divider
+  starts the More section, whose `nav` keeps the accessible name `More` (`mobile-nav-drawer` pins
+  this). The drawer's hidden `Navigation` title stays as the dialog's accessible name.
   `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
   `resolveDesktopNavLayout` and the current entry with `isDesktopNavItemActive`; `TopNav` only
   renders that result and mounts one More dropdown.

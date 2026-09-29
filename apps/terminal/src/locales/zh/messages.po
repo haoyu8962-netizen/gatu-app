@@ -5042,7 +5042,6 @@ msgstr "修改订单"
 #~ msgstr "正在修改..."
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "More"
 msgstr "更多"
@@ -5080,7 +5079,6 @@ msgstr "不适用"
 msgid "Name"
 msgstr "名称"
 
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "导航"

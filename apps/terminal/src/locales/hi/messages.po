@@ -5042,7 +5042,6 @@ msgstr "ऑर्डर संशोधित करें"
 #~ msgstr "संशोधित किया जा रहा है..."
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "More"
 msgstr "और"
@@ -5080,7 +5079,6 @@ msgstr "लागू नहीं"
 msgid "Name"
 msgstr "नाम"
 
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "नेविगेशन"

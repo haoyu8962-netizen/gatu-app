@@ -5042,7 +5042,6 @@ msgstr "تعديل الطلب"
 #~ msgstr "جارٍ التعديل..."
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "More"
 msgstr "المزيد"
@@ -5080,7 +5079,6 @@ msgstr "غير متاح"
 msgid "Name"
 msgstr "الاسم"
 
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "التنقل"

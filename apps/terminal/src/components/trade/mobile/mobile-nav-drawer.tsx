@@ -143,9 +143,6 @@ export function MobileNavDrawer() {
 
 					<div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
 						<nav className="flex flex-col p-2" aria-label={t`Primary navigation`}>
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
-								<Trans>Navigation</Trans>
-							</p>
 							<Link
 								to={tradeHomePath}
 								search={{ scope: "all" }}
@@ -204,10 +201,7 @@ export function MobileNavDrawer() {
 								<Trans>Leaderboard</Trans>
 							</Link>
 						</nav>
-						<nav className="flex flex-col p-2 pt-0" aria-label={t`More`}>
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
-								<Trans>More</Trans>
-							</p>
+						<nav className="flex flex-col border-t border-stroke-weak/60 p-2" aria-label={t`More`}>
 							<Link
 								to="/fundingComparison"
 								onClick={close}

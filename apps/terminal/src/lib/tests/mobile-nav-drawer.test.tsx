@@ -259,6 +259,24 @@ describe("MobileNavDrawer", () => {
 		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')).toBeNull();
 	});
 
+	it("separates the More group with a divider instead of visible group headings", () => {
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+
+		const navigations = [...container.querySelectorAll<HTMLElement>('[data-testid="mobile-nav-drawer"] nav')];
+		expect(navigations.map((navigation) => navigation.getAttribute("aria-label"))).toEqual([
+			"Primary navigation",
+			"More",
+		]);
+		for (const navigation of navigations)
+			expect([...navigation.children].every((child) => child instanceof HTMLAnchorElement)).toBe(true);
+
+		const [primaryNavigation, moreNavigation] = navigations;
+		expect(primaryNavigation?.classList.contains("border-t")).toBe(false);
+		expect(moreNavigation?.classList.contains("border-t")).toBe(true);
+		expect(moreNavigation?.classList.contains("border-stroke-weak/60")).toBe(true);
+	});
+
 	it("marks Funding Comparison as the current More destination on its route", () => {
 		testState.pathname = "/fundingComparison";
 		act(() => root.render(<MobileNavDrawer />));
