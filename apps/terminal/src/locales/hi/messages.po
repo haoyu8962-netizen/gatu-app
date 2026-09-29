@@ -3739,8 +3739,8 @@ msgid "Funds are in Spot account"
 msgstr "धन Spot खाते में है"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
-msgstr "Arbitrum पर निकासी की पुष्टि होने के बाद राशि पहुँचेगी। प्राप्ति की जाँच गंतव्य खाते में करें।"
+#~ msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
+#~ msgstr "Arbitrum पर निकासी की पुष्टि होने के बाद राशि पहुँचेगी। प्राप्ति की जाँच गंतव्य खाते में करें।"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Funds operation record cannot be read"
@@ -5091,7 +5091,6 @@ msgstr "ऋणात्मक PNL"
 msgid "Neither the exact name nor the old public address appears in fresh extraAgents data."
 msgstr "नए extraAgents डेटा में न तो सटीक नाम और न ही पुराना सार्वजनिक पता मौजूद है।"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Net received"
 msgstr "शुद्ध प्राप्त"
@@ -10851,7 +10850,6 @@ msgstr "हस्ताक्षर से पहले निकासी क�
 msgid "Withdrawal failed"
 msgstr "निकासी विफल रही"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "निकासी शुल्क"
@@ -11014,6 +11012,10 @@ msgstr "आपको रेफ़रल कोड {initialReferralCode} के �
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "You will approximately receive"
 msgstr "आपको लगभग प्राप्त होगा"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "You'll receive <0>${netReceived}</0> on Arbitrum after confirmation."
+msgstr "पुष्टि के बाद आपको Arbitrum पर <0>${netReceived}</0> मिलेंगे।"
 
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx

@@ -1071,25 +1071,21 @@ export function DepositModal() {
 	}
 
 	function notifyWithdrawalSubmitted(amount: string, routeFee: string, activationFee: string) {
-		const netReceived = getWithdrawalNetReceived(amount, routeFee);
-		const amounts = [
-			{ label: t`Net received`, value: formatNumber(netReceived ?? "0", 2) },
-			{ label: t`Withdrawal fee`, value: formatNumber(routeFee, 2) },
-		];
-		if (isPositiveDecimal(activationFee)) {
-			amounts.push({ label: t`One-time account activation fee`, value: formatNumber(activationFee, 2) });
-		}
+		const netReceived = formatNumber(getWithdrawalNetReceived(amount, routeFee) ?? "0", 2);
+		const chargedActivationFee = isPositiveDecimal(activationFee) ? formatNumber(activationFee, 2) : null;
 		toast.success(t`Withdrawal submitted`, {
 			description: (
-				<span className="flex flex-col gap-1">
-					{amounts.map((amount) => (
-						<span key={amount.label} className="tabular-nums">
-							{amount.label}: <bdi dir="ltr">${amount.value}</bdi>
-						</span>
-					))}
+				<span className="flex flex-col gap-1 tabular-nums">
 					<span>
-						{t`Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt.`}
+						<Trans>
+							You'll receive <bdi dir="ltr">${netReceived}</bdi> on Arbitrum after confirmation.
+						</Trans>
 					</span>
+					{chargedActivationFee ? (
+						<span>
+							{t`One-time account activation fee`}: <bdi dir="ltr">${chargedActivationFee}</bdi>
+						</span>
+					) : null}
 				</span>
 			),
 			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,

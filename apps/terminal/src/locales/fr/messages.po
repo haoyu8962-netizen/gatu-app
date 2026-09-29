@@ -3739,8 +3739,8 @@ msgid "Funds are in Spot account"
 msgstr "Les fonds sont sur le compte Spot"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
-msgstr "Les fonds arrivent après la confirmation du retrait sur Arbitrum. Vérifiez leur réception sur le compte destinataire."
+#~ msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
+#~ msgstr "Les fonds arrivent après la confirmation du retrait sur Arbitrum. Vérifiez leur réception sur le compte destinataire."
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Funds operation record cannot be read"
@@ -5091,7 +5091,6 @@ msgstr "PnL négatif"
 msgid "Neither the exact name nor the old public address appears in fresh extraAgents data."
 msgstr "Ni le nom exact ni l’ancienne adresse publique ne figurent dans les données extraAgents actualisées."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Net received"
 msgstr "Net reçu"
@@ -10851,7 +10850,6 @@ msgstr "Les conditions de retrait ont changé avant la signature. Vérifiez le r
 msgid "Withdrawal failed"
 msgstr "Échec du retrait"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "Frais de retrait"
@@ -11014,6 +11012,10 @@ msgstr "Vous avez été invité avec le code de parrainage {initialReferralCode}
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "You will approximately receive"
 msgstr "Vous recevrez environ"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "You'll receive <0>${netReceived}</0> on Arbitrum after confirmation."
+msgstr "Vous recevrez <0>${netReceived}</0> sur Arbitrum après confirmation."
 
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx

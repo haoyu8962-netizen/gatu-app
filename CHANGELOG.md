@@ -47,6 +47,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The notification after a withdrawal is submitted is shorter: under `Withdrawal submitted` it now
+  says only how much you'll receive on Arbitrum after confirmation, for example "You'll receive
+  $239.80 on Arbitrum after confirmation." The route fee is no longer repeated there, since the form
+  showed it before you confirmed; a one-time account activation fee still appears when it was
+  charged. The Chinese text no longer calls the pending amount "实际到账" or mixes 提现 and 提款.
+
 - The phone navigation drawer no longer shows the Navigation and More headings. As on the
   official terminal, a divider now separates the main destinations from Funding Comparison,
   Statistics, API Wallet, Docs and Support, which leaves more room for the list on small screens.

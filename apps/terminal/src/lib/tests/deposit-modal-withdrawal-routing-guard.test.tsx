@@ -978,7 +978,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			expect(testState.exchangeMutations.get(method)).toHaveBeenCalledOnce();
 		});
 
-		it("reports a submitted withdrawal with its fees and closes the dialog", async () => {
+		it("reports a submitted withdrawal with the amount to receive and closes the dialog", async () => {
 			const { release, submission } = await pauseAfterPreflight();
 			await rerender();
 			await act(async () => {
@@ -990,9 +990,37 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 				"Withdrawal submitted",
 				expect.objectContaining({ description: expect.anything() }),
 			);
+			expect(getToastText(toastMocks.success.mock.calls[0])).toBe(
+				"Withdrawal submitted You'll receive $1.00 on Arbitrum after confirmation.",
+			);
 			expect(toastMocks.error).not.toHaveBeenCalled();
 			expect(container.querySelector('[data-testid="status-screen"]')).toBeNull();
 			expect(closeDepositModal).toHaveBeenCalledOnce();
+		});
+
+		it("keeps the amount to receive isolated inside the translated sentence", async () => {
+			const sentence = `You'll receive <0>\${netReceived}</0> on Arbitrum after confirmation.`;
+			act(() =>
+				i18n.loadAndActivate({
+					locale: "ar",
+					messages: { [getMessageId(sentence)]: `ستتلقى <0>\${netReceived}</0> على Arbitrum بعد التأكيد.` },
+				}),
+			);
+			const { release, submission } = await pauseAfterPreflight();
+			await rerender();
+			await act(async () => {
+				release();
+				await submission;
+			});
+			const options = toastMocks.success.mock.calls[0]?.[1] as { description?: ReactNode } | undefined;
+			const host = document.createElement("div");
+			const descriptionRoot = createRoot(host);
+			act(() => descriptionRoot.render(createElement(I18nProvider, { i18n }, options?.description)));
+			const amount = host.querySelector("bdi");
+			expect(host.textContent).toBe("ستتلقى $1.00 على Arbitrum بعد التأكيد.");
+			expect(amount?.getAttribute("dir")).toBe("ltr");
+			expect(amount?.textContent).toBe("$1.00");
+			act(() => descriptionRoot.unmount());
 		});
 
 		it.each([
@@ -1012,6 +1040,10 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			expect(testState.exchangeSdkCalls.get(method)).toHaveBeenCalledTimes(allowed ? 1 : 0);
 			if (allowed) {
 				expect(testState.exchangeErrors.get(method)).toBeUndefined();
+				const activationLine = route === "cctp" ? "One-time account activation fee: $1.00" : "";
+				expect(getToastText(toastMocks.success.mock.calls[0])).toBe(
+					`Withdrawal submitted You'll receive $1.00 on Arbitrum after confirmation.${activationLine}`,
+				);
 			} else {
 				expect(testState.exchangeErrors.get(method)).toMatchObject({ code: "balance-changed" });
 			}

@@ -116,7 +116,7 @@ would change the signed action and fee outside the protocol-selected route.
 
 ## Request and completion semantics
 
-Both SDK methods return an acknowledgement that Hyperliquid accepted the action; they do not return an Arbitrum transaction hash and do not prove destination-chain completion. The success screen therefore says `Withdrawal submitted`, not `Withdrawal completed`.
+Both SDK methods return an acknowledgement that Hyperliquid accepted the action; they do not return an Arbitrum transaction hash and do not prove destination-chain completion. The success screen therefore says `Withdrawal submitted`, not `Withdrawal completed`. Its notification keeps to the facts the user still needs: the title `Withdrawal submitted` and one sentence with the amount the destination account will receive once Arbitrum confirms, computed from the withdrawal amount and the route fee used for the submission. The route fee is not listed separately because the form showed it before the user confirmed. The forwarding fee is read again at the click and a change between that read and the signing boundary aborts the request, but a change between the form and that read is currently used as is, so the amount in the notification can be lower than the form's estimate. A one-time account activation fee is added as a second line only when it was actually charged.
 
 HTTP timeouts, status 408, and 5xx responses are ambiguous: the request may already have been accepted. The UI instructs the user to check balances and transfer history and does not offer an immediate retry. Deterministic rejections, including HTTP 429, may return to the form for a fresh attempt.
 

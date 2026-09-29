@@ -3739,8 +3739,8 @@ msgid "Funds are in Spot account"
 msgstr "资金在现货账户"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
-msgstr "提款在 Arbitrum 上确认后到账，请在目标账户查看收款。"
+#~ msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
+#~ msgstr "提款在 Arbitrum 上确认后到账，请在目标账户查看收款。"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Funds operation record cannot be read"
@@ -5091,7 +5091,6 @@ msgstr "盈亏为负"
 msgid "Neither the exact name nor the old public address appears in fresh extraAgents data."
 msgstr "在最新的 extraAgents 数据中，原名称和旧公开地址均已不存在。"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Net received"
 msgstr "实际到账"
@@ -10851,7 +10850,6 @@ msgstr "签名前提现条件已发生变化。请检查提现信息后重新提
 msgid "Withdrawal failed"
 msgstr "提现失败"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "提款手续费"
@@ -11014,6 +11012,10 @@ msgstr "您通过推荐码 {initialReferralCode} 收到了邀请。应用前请�
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "You will approximately receive"
 msgstr "预计收到"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "You'll receive <0>${netReceived}</0> on Arbitrum after confirmation."
+msgstr "Arbitrum 确认后，您将收到 <0>${netReceived}</0>。"
 
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx

@@ -3739,8 +3739,8 @@ msgid "Funds are in Spot account"
 msgstr "الأموال في حساب Spot"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
-msgstr "تصل الأموال بعد تأكيد السحب على Arbitrum. تحقق من الحساب المستلم للتأكد من وصولها."
+#~ msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
+#~ msgstr "تصل الأموال بعد تأكيد السحب على Arbitrum. تحقق من الحساب المستلم للتأكد من وصولها."
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Funds operation record cannot be read"
@@ -5091,7 +5091,6 @@ msgstr "أرباح وخسائر سالبة"
 msgid "Neither the exact name nor the old public address appears in fresh extraAgents data."
 msgstr "لا يظهر الاسم الدقيق ولا العنوان العام القديم في بيانات extraAgents الجديدة."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Net received"
 msgstr "الصافي المستلم"
@@ -10851,7 +10850,6 @@ msgstr "تغيّرت شروط السحب قبل التوقيع. راجع عمل�
 msgid "Withdrawal failed"
 msgstr "فشل السحب"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "رسوم السحب"
@@ -11014,6 +11012,10 @@ msgstr "تمت دعوتك باستخدام رمز الإحالة {initialReferra
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "You will approximately receive"
 msgstr "ستتلقى تقريبًا"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "You'll receive <0>${netReceived}</0> on Arbitrum after confirmation."
+msgstr "ستتلقى <0>${netReceived}</0> على Arbitrum بعد التأكيد."
 
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
