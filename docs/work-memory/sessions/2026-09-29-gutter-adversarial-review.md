@@ -75,3 +75,5 @@ Codex 的结论与复核：
 - 推荐领取历史与被推荐交易者卡片的金额仍没有浏览器覆盖。
 - 规则测试仍只检查源码字符串；要核对最终渲染，需要给三个整页白底页面做浏览器夹具。
 - 部分更正 [手机页面边距记录](2026-09-29-dashboard-mobile-gutters.md) 的结论，不整体替代。下次先看 `tests/browser/referral-code-card.pw.ts`、`vaults-list.pw.ts` 与 `dashboard-frame-view.test.tsx`。
+
+补记（2026-09-29）：推荐码单行截断与中文步骤标签单字成行已由[通知审查后续记录](2026-09-29-funds-ui-followups.md)修复；同时发现并修复了推荐页手机网格没有显式列、邀请链接把卡片撑宽后被外层 `overflow-hidden` 裁掉的问题，浏览器用例改为比较卡片与所在列。
