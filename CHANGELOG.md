@@ -53,10 +53,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   showed it before you confirmed; a one-time account activation fee still appears when it was
   charged. The Chinese text no longer calls the pending amount "实际到账" or mixes 提现 and 提款.
 
-- A withdrawal no longer fails when Circle's forwarding fee changes while it is being submitted. It
-  uses the fee read when you press Withdraw, and the `Withdrawal submitted` notification shows the
-  amount that fee leaves. It still stops and keeps the form open if the fee cannot be read or your
-  amount is below the minimum at that fee. See [withdrawals](docs/withdrawals.md#cctp-route).
+- The terminal no longer cancels a withdrawal because Circle's forwarding fee changed after you
+  pressed Withdraw. The withdrawal uses the fee read when you press Withdraw, and the `Withdrawal
+  submitted` notification estimates the amount you'll receive from that fee. It still stops and
+  keeps the form open if the fee cannot be read or your amount is below the minimum at that fee.
+  See [withdrawals](docs/withdrawals.md#cctp-route).
 
 - Chinese text now uses 存款 for deposits and 提款 for withdrawals everywhere, matching the Deposit
   and Withdraw buttons. Forty-eight messages that said 充值, 提现 or 入金 were updated, including
