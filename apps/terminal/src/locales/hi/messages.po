@@ -2039,8 +2039,8 @@ msgid "Confirmed"
 msgstr "पुष्टि हो गई"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
-msgstr "Arbitrum पर पुष्टि हो गई। Hyperliquid क्रेडिट आम तौर पर एक मिनट के भीतर आ जाता है।"
+#~ msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+#~ msgstr "Arbitrum पर पुष्टि हो गई। Hyperliquid क्रेडिट आम तौर पर एक मिनट के भीतर आ जाता है।"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "confirming"
@@ -2602,8 +2602,8 @@ msgid "Deposit status unknown"
 msgstr "जमा की स्थिति अज्ञात है"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Deposit submitted"
-msgstr "जमा सबमिट हो गया"
+#~ msgid "Deposit submitted"
+#~ msgstr "जमा सबमिट हो गया"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4317,8 +4317,8 @@ msgid "Legacy"
 msgstr "पुराना रिकॉर्ड"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
-msgstr "पुराने Bridge2 जमा अब स्वीकार नहीं किए जाते। स्वचालित जमा रोक दिए गए हैं।"
+#~ msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
+#~ msgstr "पुराने Bridge2 जमा अब स्वीकार नहीं किए जाते। स्वचालित जमा रोक दिए गए हैं।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx

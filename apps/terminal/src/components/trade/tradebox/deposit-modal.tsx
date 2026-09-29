@@ -284,9 +284,6 @@ export function DepositModal() {
 		poll: !isEmbeddedDeposit,
 		sourceHash: depositExecutionRoute === "cctp" ? depositHash : undefined,
 	});
-	const isCurrentCctpDeposit =
-		!!depositHash &&
-		(depositExecutionRoute === "cctp" || cctpDepositTracking.recoveryRecord?.sourceHash === depositHash.toLowerCase());
 	const defaultBalances = useDefaultDexBalances();
 	const accountAbstraction = defaultBalances.accountAbstraction;
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, walletAddress);
@@ -1232,22 +1229,7 @@ export function DepositModal() {
 			<DepositExplorerLink txHash={depositHash} txChain={depositTxChain} label={t`View on explorer`} />
 		);
 		if (depositStatus === "success") {
-			if (!isCurrentCctpDeposit) {
-				toast.success(t`Deposit submitted`, {
-					description: (
-						<span className="flex flex-col gap-1">
-							<span>
-								<bdi dir="ltr" className="tabular-nums">
-									{displayedDepositAmount} USDC
-								</bdi>{" "}
-								{t`confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute.`}
-							</span>
-							{explorerLink}
-						</span>
-					),
-					duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
-				});
-			} else if (cctpRecoveryUnavailable) {
+			if (cctpRecoveryUnavailable) {
 				toast.warning(t`Forwarding deposit`, {
 					description: (
 						<span className="flex flex-col gap-1">

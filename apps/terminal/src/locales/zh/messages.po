@@ -2039,8 +2039,8 @@ msgid "Confirmed"
 msgstr "已确认"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
-msgstr "已在 Arbitrum 确认。Hyperliquid 通常会在一分钟内入账。"
+#~ msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+#~ msgstr "已在 Arbitrum 确认。Hyperliquid 通常会在一分钟内入账。"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "confirming"
@@ -2602,8 +2602,8 @@ msgid "Deposit status unknown"
 msgstr "存款状态未知"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Deposit submitted"
-msgstr "存款已提交"
+#~ msgid "Deposit submitted"
+#~ msgstr "存款已提交"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4317,8 +4317,8 @@ msgid "Legacy"
 msgstr "旧版记录"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
-msgstr "不再接受旧版 Bridge2 存款。自动存款已暂停。"
+#~ msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
+#~ msgstr "不再接受旧版 Bridge2 存款。自动存款已暂停。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx

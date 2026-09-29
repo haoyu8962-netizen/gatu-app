@@ -188,9 +188,9 @@ implementation.
 - Smart Wallet sponsorship is a Privy/paymaster concern and must be configured
   per chain. UI must not claim sponsorship is available unless the chain is
   configured and the transaction path uses the smart wallet client.
-- Bridge2 is retired for new deposits. Preserve read-only history and recovery
-  for already-broadcast Bridge2 transactions, but never request a new Bridge2
-  signature or submission.
+- Bridge2 is retired for deposits: never request a Bridge2 signature or
+  submission. The app never stored recovery data for Bridge2 deposits; past ones
+  appear in the account ledger like any other deposit.
 - Hyperliquid SDK `usdcRouting` is the sole runtime source for deposit and
   withdrawal protocol selection. Validate the response as unknown data and
   accept only exact `bridge` or `cctp` values for both fields.

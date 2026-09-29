@@ -159,7 +159,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			refreshBalance: testState.refreshBalance,
 			reset: testState.resetDeposit,
 			networkName: "Arbitrum",
-			sponsoredCctpEnabled: testState.sponsoredEnabled,
+			sponsoredCctpEnabled: testState.sponsoredEnabled && options.depositRoute === "cctp",
 		};
 	},
 }));

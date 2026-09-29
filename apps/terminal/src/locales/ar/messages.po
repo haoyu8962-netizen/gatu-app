@@ -2039,8 +2039,8 @@ msgid "Confirmed"
 msgstr "مؤكّد"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
-msgstr "تم التأكيد على Arbitrum. عادةً ما يصل رصيد Hyperliquid خلال دقيقة."
+#~ msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+#~ msgstr "تم التأكيد على Arbitrum. عادةً ما يصل رصيد Hyperliquid خلال دقيقة."
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "confirming"
@@ -2602,8 +2602,8 @@ msgid "Deposit status unknown"
 msgstr "حالة الإيداع غير معروفة"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Deposit submitted"
-msgstr "تم إرسال الإيداع"
+#~ msgid "Deposit submitted"
+#~ msgstr "تم إرسال الإيداع"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4317,8 +4317,8 @@ msgid "Legacy"
 msgstr "السجل القديم"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
-msgstr "لم تعد إيداعات Bridge2 القديمة مقبولة. تم إيقاف الإيداعات التلقائية مؤقتًا."
+#~ msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
+#~ msgstr "لم تعد إيداعات Bridge2 القديمة مقبولة. تم إيقاف الإيداعات التلقائية مؤقتًا."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx

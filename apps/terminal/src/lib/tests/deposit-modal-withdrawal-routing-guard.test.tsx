@@ -2069,20 +2069,6 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(toastMocks.error).not.toHaveBeenCalled();
 	});
 
-	it("reports a confirmed bridge deposit with its amount and closes the dialog", async () => {
-		testState.modalOpen = true;
-		testState.depositStatus = "success";
-		testState.depositHash = `0x${"3".repeat(64)}`;
-		testState.depositExecutionRoute = "bridge";
-
-		await rerender();
-
-		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Deposit submitted", expect.anything());
-		expect(getToastText(toastMocks.success.mock.calls[0])).toContain("confirmed on Arbitrum");
-		expect(container.querySelector('[data-testid="status-screen"]')).toBeNull();
-		expect(closeDepositModal).toHaveBeenCalledOnce();
-	});
-
 	it("hands a confirmed CCTP deposit to the page-level tracker without a notification of its own", async () => {
 		testState.modalOpen = true;
 		testState.depositStatus = "success";

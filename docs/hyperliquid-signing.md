@@ -268,7 +268,7 @@ await exchangeClient.withdraw3({
 | Native USDC (Arbitrum) | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
 | CctpExtension (Arbitrum) | `0xA95d9c1F655341597C94393fDdc30cf3c08E4fcE` |
 | CctpExtensionV2 (Arbitrum) | `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` |
-| Bridge2 (legacy recovery only) | `0x2df1c51e09aecf9cacb7bc98cb1742757f163df7` |
+| Bridge2 (retired; no code uses it) | `0x2df1c51e09aecf9cacb7bc98cb1742757f163df7` |
 | CoreDepositWallet (HyperEVM) | `0x6b9e773128f453f5c2c60935ee2de2cbc5390a24` |
 | CoreWriter (HyperEVM) | `0x3333333333333333333333333333333333333333` |
 

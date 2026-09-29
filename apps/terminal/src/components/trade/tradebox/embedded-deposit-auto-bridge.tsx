@@ -305,12 +305,6 @@ export function EmbeddedDepositAutoBridge() {
 			if (usdcRoutingStatus === "loading") {
 				loadingToastActiveRef.current = true;
 				toast.loading(t`Checking the current Hyperliquid deposit route...`, getNotificationOptions());
-			} else if (usdcRoutingStatus === "ready" && usdcRoutingQuery.data?.depositRoute === "bridge") {
-				loadingToastActiveRef.current = false;
-				toast.error(
-					t`Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused.`,
-					getNotificationOptions(),
-				);
 			} else {
 				loadingToastActiveRef.current = false;
 				toast.error(
@@ -367,7 +361,6 @@ export function EmbeddedDepositAutoBridge() {
 		depositStatus,
 		isEmbeddedDeposit,
 		notificationIdentity,
-		usdcRoutingQuery.data?.depositRoute,
 		usdcRoutingStatus,
 		t,
 	]);
