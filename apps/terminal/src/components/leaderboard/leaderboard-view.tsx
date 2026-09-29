@@ -151,7 +151,7 @@ function LeaderboardDataNoticeBanner({ notice }: { notice: Exclude<LeaderboardDa
 	return (
 		<output
 			data-testid="leaderboard-data-notice"
-			className="mx-5 mb-3 flex items-start gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs leading-5 text-fg-muted"
+			className="mx-5 mb-3 flex items-start gap-2 rounded-16 border border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs leading-5 text-fg-muted"
 		>
 			<WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-warning" />
 			<div>
@@ -357,7 +357,7 @@ function MobileLeaderboard(props: CommonLeaderboardProps) {
 			</div>
 			<div className="space-y-2.5">
 				{props.rows.map((row) => (
-					<article key={row.address} className="rounded-12 border border-stroke-weak bg-fill-weaker p-3">
+					<article key={row.address} className="rounded-16 border border-stroke-weak bg-fill-weaker p-3">
 						<div className="mb-3 flex items-center justify-between gap-3 border-b border-stroke-weak pb-3">
 							<TraderLink href={row.href} address={row.address} displayName={row.displayName} />
 							<Rank rank={row.rank} />
@@ -480,7 +480,7 @@ function LeaderboardSkeleton({ isMobile }: { isMobile: boolean }) {
 			{Array.from({ length: 6 }, (_, index) => (
 				<div
 					key={`leaderboard-skeleton-${index + 1}`}
-					className={cn("bg-fill-weak", isMobile ? "h-44 rounded-12" : "mb-1 h-11 rounded-8")}
+					className={cn("bg-fill-weak", isMobile ? "h-44 rounded-16" : "mb-1 h-11 rounded-8")}
 				/>
 			))}
 		</div>

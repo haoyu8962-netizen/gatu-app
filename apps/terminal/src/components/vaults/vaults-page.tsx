@@ -245,15 +245,15 @@ function VaultDetailSkeleton() {
 			data-state="loading"
 			aria-busy="true"
 			aria-label={t`Loading Vault details`}
-			className="space-y-3 rounded-12 bg-surface p-4 shadow-raised min-[1001px]:p-5"
+			className="space-y-3 rounded-24 bg-surface p-4 shadow-raised min-[1001px]:p-5"
 		>
-			<div className="h-14 animate-pulse rounded-10 bg-fill-weak motion-reduce:animate-none" />
+			<div className="h-14 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
 			<div className="grid grid-cols-2 gap-2 min-[1001px]:grid-cols-4">
 				{VAULT_DETAIL_SKELETON_KEYS.map((key) => (
-					<div key={key} className="h-20 animate-pulse rounded-10 bg-fill-weak motion-reduce:animate-none" />
+					<div key={key} className="h-20 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
 				))}
 			</div>
-			<div className="h-72 animate-pulse rounded-12 bg-fill-weak motion-reduce:animate-none" />
+			<div className="h-72 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
 		</section>
 	);
 }
@@ -273,7 +273,7 @@ function VaultDetailMessage({
 		<div
 			data-state={state}
 			role="alert"
-			className="flex min-h-80 flex-col items-center justify-center rounded-12 bg-surface px-6 text-center shadow-raised"
+			className="flex min-h-80 flex-col items-center justify-center rounded-24 bg-surface px-6 text-center shadow-raised"
 		>
 			<WarningCircleIcon className="size-9 text-error" weight="fill" />
 			<h1 className="mt-3 text-lg font-bold text-fg">{title}</h1>

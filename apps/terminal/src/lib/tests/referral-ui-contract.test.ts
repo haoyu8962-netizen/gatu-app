@@ -22,7 +22,7 @@ describe("referral UI governance contract", () => {
 	it("keeps every data state inside one compact responsive surface", () => {
 		const dashboard = readReferralComponent("referral-dashboard.tsx");
 
-		expect(dashboard).toContain("overflow-hidden rounded-32 bg-surface shadow-raised");
+		expect(dashboard).toContain("overflow-hidden rounded-24 bg-surface shadow-raised");
 		expect(dashboard.match(/<ReferralSurface/g)).toHaveLength(1);
 		expect(dashboard).not.toContain('<div className="mb-4">{header}</div>');
 		expect(dashboard).toContain("aria-busy={busy || undefined}");
@@ -107,8 +107,8 @@ describe("referral UI governance contract", () => {
 		const code = readReferralComponent("referral-code-card.tsx");
 		const rewards = readReferralComponent("referral-rewards-card.tsx");
 
-		expect(code).toContain("rounded-20 border border-stroke-weak bg-surface");
-		expect(rewards).toContain("rounded-20 border border-stroke-weak bg-surface");
+		expect(code).toContain("rounded-16 border border-stroke-weak bg-surface");
+		expect(rewards).toContain("rounded-16 border border-stroke-weak bg-surface");
 		expect(code).toContain("rounded-16 bg-fill-weaker");
 		expect(rewards).toContain('<details className="group mt-3">');
 		expect(rewards).not.toContain("group mt-3 rounded-20 bg-fill-weaker");

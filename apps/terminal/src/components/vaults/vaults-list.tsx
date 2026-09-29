@@ -63,7 +63,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 
 	return (
 		<section
-			className="overflow-hidden rounded-12 bg-surface shadow-raised"
+			className="overflow-hidden rounded-24 bg-surface shadow-raised"
 			data-state={state}
 			data-vaults-state={state}
 		>
@@ -363,7 +363,7 @@ function VaultMobileCard({
 		<Link
 			to="/vaults/$vaultAddress"
 			params={{ vaultAddress: row.vaultAddress }}
-			className="rounded-12 border border-stroke-weak p-3 focus-visible:outline-2 focus-visible:outline-stroke-focus"
+			className="rounded-16 border border-stroke-weak p-3 focus-visible:outline-2 focus-visible:outline-stroke-focus"
 		>
 			<div className="flex min-w-0 items-center gap-2">
 				<VaultMark name={row.name} />

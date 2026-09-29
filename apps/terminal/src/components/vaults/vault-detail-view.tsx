@@ -88,7 +88,7 @@ export function VaultDetailView({
 
 	return (
 		<article
-			className="overflow-hidden rounded-12 bg-surface shadow-raised"
+			className="overflow-hidden rounded-24 bg-surface shadow-raised"
 			data-state="normal"
 			data-vault-detail-state="normal"
 		>
@@ -168,7 +168,7 @@ export function VaultDetailView({
 
 			{owner.status === "ready" && getVaultValueTone(owner.equity) !== "neutral" ? (
 				<section
-					className="mx-4 mb-3 rounded-12 border border-stroke-weak p-3 min-[1001px]:mx-5"
+					className="mx-4 mb-3 rounded-16 border border-stroke-weak p-3 min-[1001px]:mx-5"
 					aria-label={t`Vault lock status`}
 				>
 					<div className="flex flex-wrap items-center justify-between gap-3">
@@ -211,7 +211,7 @@ export function VaultDetailView({
 			{owner.status === "error" ? (
 				<div
 					role="alert"
-					className="mx-4 mb-3 flex items-start gap-2 rounded-10 bg-error-soft px-3 py-2.5 text-xs text-error min-[1001px]:mx-5"
+					className="mx-4 mb-3 flex items-start gap-2 rounded-16 bg-error-soft px-3 py-2.5 text-xs text-error min-[1001px]:mx-5"
 				>
 					<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
 					<div className="min-w-0 flex-1">
@@ -226,7 +226,7 @@ export function VaultDetailView({
 			) : null}
 
 			<div className="grid gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,1.5fr)_minmax(var(--vault-detail-sidebar-min),1fr)] min-[1001px]:px-5">
-				<section className="overflow-hidden rounded-12 border border-stroke-weak" aria-label={t`Vault performance`}>
+				<section className="overflow-hidden rounded-16 border border-stroke-weak" aria-label={t`Vault performance`}>
 					<div className="flex flex-wrap items-center justify-between gap-2 border-b border-stroke-weak px-3 py-2">
 						<fieldset className="flex gap-1">
 							<legend className="sr-only">{t`Vault chart metric`}</legend>
@@ -262,7 +262,7 @@ export function VaultDetailView({
 					</div>
 				</section>
 
-				<aside className="rounded-12 border border-stroke-weak p-4">
+				<aside className="rounded-16 border border-stroke-weak p-4">
 					<h2 className="text-sm font-bold text-fg">
 						<Trans>About this Vault</Trans>
 					</h2>
@@ -294,7 +294,7 @@ export function VaultDetailView({
 			</div>
 
 			<section
-				className="mx-4 mb-4 rounded-12 bg-warning-soft px-4 py-3 text-warning min-[1001px]:mx-5"
+				className="mx-4 mb-4 rounded-16 bg-warning-soft px-4 py-3 text-warning min-[1001px]:mx-5"
 				aria-labelledby={riskTitleId}
 			>
 				<div className="flex items-start gap-2">

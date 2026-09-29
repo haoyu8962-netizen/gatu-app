@@ -107,5 +107,5 @@ All the above also work as `ring-stroke-*`, `outline-stroke-*`, `divide-stroke-*
 
 ### Border Radius
 - Use named radius utilities so `--radius-factor` can tune the product consistently; never use arbitrary pixel radii.
-- Shared controls default to the radius provided by `@gatu/ui` (currently `rounded-8`). Page compositions may use named scale values such as `rounded-20`, `rounded-24`, or `rounded-32` for larger cards and surfaces.
+- Shared controls default to the radius provided by `@gatu/ui` (currently `rounded-8`). Dashboard pages use `rounded-24` for page surfaces and `rounded-16` for the cards and notices inside them (`style-ui-guide.md`, Dashboard page gutters); dialogs keep `rounded-32` and menus `rounded-24`.
 - Use `rounded-full` only for pills, tags, and circular indicators. Document and test any design exception instead of embedding a raw pixel value.

@@ -496,7 +496,7 @@ export function FundingHistoryPage({ address }: Props) {
 						<section
 							data-testid="funding-history-page"
 							data-state={history.status}
-							className="overflow-hidden rounded-12 bg-surface shadow-raised"
+							className="overflow-hidden rounded-24 bg-surface shadow-raised"
 						>
 							{content}
 						</section>

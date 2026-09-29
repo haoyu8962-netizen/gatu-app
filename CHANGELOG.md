@@ -47,6 +47,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Dashboard pages share one set of corners. Page panels are rounded 12px and carry the same soft
+  shadow, and the cards, sections and notices inside them are rounded 8px. Before, Portfolio,
+  Staking, Vaults and the history pages used 6px panels, Referrals and API Wallet 16px, Portfolio,
+  Earn and Staking had no shadow, and cards ranged from 6px to 12px.
+
 - When a transfer or send may have gone through but its result could not be confirmed, for example
   after a timeout or a lost connection, the notification now stays on screen as a warning, "Transfer
   status unknown" or "Send status unknown", and asks you to check your balances and the Deposits &

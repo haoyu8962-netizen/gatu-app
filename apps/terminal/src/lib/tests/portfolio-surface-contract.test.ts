@@ -23,7 +23,7 @@ describe("portfolio surface contract", () => {
 		);
 		expect(PORTFOLIO_PAGE).toContain('{...DASHBOARD_FRAMES["/portfolio"]}');
 		expect(DASHBOARD_FRAMES["/portfolio"].canvasClassName).toContain("bg-portfolio-canvas");
-		expect(PORTFOLIO_PAGE).toContain("rounded-12 bg-surface");
+		expect(PORTFOLIO_PAGE).toContain("rounded-24 bg-surface shadow-raised");
 	});
 
 	it("exposes transfer history only through the portfolio account activity surface", () => {

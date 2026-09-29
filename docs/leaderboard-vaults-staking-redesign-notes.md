@@ -392,6 +392,8 @@ Correction (2026-09-29, names and chart): the mobile Vault cards and the desktop
 
 Correction (2026-09-29, group heading): the neutral group that holds unclassified rows (always the case while the feed carries no official/user classification, and for the Deposited and Leading filters) showed the heading Vaults directly under the page title Vaults. That group now has no visible heading; the Official Vaults and User Vaults headings remain when every row is classified. `vaults-view.test.tsx` covers both cases and `vaults-list.pw.ts` checks that the fixture list has no group heading.
 
+Correction (2026-09-29, corners): the three pages were delivered with different radii: Vault and Staking surfaces at `rounded-12` (Staking without a shadow), the Leaderboard at `rounded-24`, and cards at `rounded-12`. They now follow the dashboard-wide tiers: page surfaces `rounded-24` with `shadow-raised`, cards, sections and notices inside them `rounded-16`, controls unchanged. See `.claude/rules/style-ui-guide.md` (Dashboard page gutters) and `dashboard-surface-radius-contract.test.ts`.
+
 ### 8.3 Changed-file inventory
 
 Only the following delivery-owned categories belong to this redesign:
