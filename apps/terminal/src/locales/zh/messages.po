@@ -1098,7 +1098,7 @@ msgstr "可平数量"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Available to Withdraw"
-msgstr "可提取"
+msgstr "可提款"
 
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Average Fill Price"
@@ -1410,7 +1410,7 @@ msgstr "因定时撤单而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to a vault withdrawal"
-msgstr "因金库提取而取消"
+msgstr "因金库提款而取消"
 
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled due to insufficient margin"
@@ -2576,7 +2576,7 @@ msgstr "存款"
 #: src/components/trade/positions/positions-panel.tsx
 msgctxt "Trading toolbar action"
 msgid "Deposit"
-msgstr "存入"
+msgstr "存款"
 
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
@@ -3902,11 +3902,11 @@ msgstr "HIP-3 部署者免责声明"
 
 #: src/config/account-ledger.ts
 msgid "HIP-3 Liquidator Deposit"
-msgstr "HIP-3 清算人存入"
+msgstr "HIP-3 清算人存款"
 
 #: src/config/account-ledger.ts
 msgid "HIP-3 Liquidator Withdrawal"
-msgstr "HIP-3 清算人提取"
+msgstr "HIP-3 清算人提款"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Historical APR does not predict future performance; the displayed APR can change."
@@ -4983,12 +4983,12 @@ msgstr "最大供应量"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Maximum withdrawable"
-msgstr "最大可提取金额"
+msgstr "最大可提款金额"
 
 #. placeholder {0}: formatVaultUsd(availableAmount)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Maximum withdrawable: {0}"
-msgstr "最大可提取金额：{0}"
+msgstr "最大可提款金额：{0}"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Meme"
@@ -5589,7 +5589,7 @@ msgstr "当前没有可提取的金库权益。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "No withdrawal queue"
-msgstr "没有提取队列"
+msgstr "没有提款队列"
 
 #: src/lib/errors/definitions/connection.ts
 msgid "Not connected"
@@ -5692,11 +5692,11 @@ msgstr "仅显示本次请求的时间窗口。更早的资金费支付记录尚
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
-msgstr "只有此转账会启动 7 天队列。Hyperliquid 每个地址最多允许 5 笔待处理提取。"
+msgstr "只有此转账会启动 7 天队列。Hyperliquid 每个地址最多允许 5 笔待处理提款。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Only this transfer starts the Testnet queue, which takes approximately five minutes. Hyperliquid allows at most five pending withdrawals per address."
-msgstr "只有此转账会启动耗时约 5 分钟的测试网队列。Hyperliquid 每个地址最多允许 5 笔待处理提取。"
+msgstr "只有此转账会启动耗时约 5 分钟的测试网队列。Hyperliquid 每个地址最多允许 5 笔待处理提款。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -8135,7 +8135,7 @@ msgstr "仅质押余额"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Staking deposit"
-msgstr "质押存入"
+msgstr "质押存款"
 
 #: src/components/staking/staking-view.tsx
 msgid "Staking detail views"
@@ -8175,7 +8175,7 @@ msgstr "质押转入 Spot · 已发起"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Staking withdrawal"
-msgstr "质押提取"
+msgstr "质押提款"
 
 #: src/lib/errors/definitions/scale.ts
 msgid "Start and end must differ"
@@ -8766,7 +8766,7 @@ msgstr "当前钱包或网络已变化。请检查账户后重试。"
 
 #: src/components/staking/staking-view.tsx
 msgid "The address already has five pending withdrawals."
-msgstr "该地址已有 5 笔待处理提取。"
+msgstr "该地址已有 5 笔待处理提款。"
 
 #: src/components/vaults/vaults-page.tsx
 msgid "The address is invalid or Hyperliquid returned no Vault details for it."
@@ -8798,7 +8798,7 @@ msgstr "API 钱包请求已被拒绝。"
 
 #: src/lib/errors/action-error.ts
 msgid "The Arbitrum transaction did not match the reviewed deposit. Check your wallet activity before retrying."
-msgstr "Arbitrum 交易与已确认的存入信息不一致。重试前请检查钱包活动记录。"
+msgstr "Arbitrum 交易与已确认的存款信息不一致。重试前请检查钱包活动记录。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
@@ -8833,7 +8833,7 @@ msgstr "请求前的检查耗时过长。未进行任何签名或发送，请重
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
-msgstr "经确认的服务端锁定时间戳决定何时可以提取。"
+msgstr "经确认的服务端锁定时间戳决定何时可以提款。"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "The connection could not be checked safely. No wallet signature was requested; wait a moment and try again."
@@ -9318,7 +9318,7 @@ msgstr "此浏览器无法在多个标签页之间安全协调该请求。请关
 
 #: src/lib/errors/action-error.ts
 msgid "This browser could not store deposit recovery data, so this deposit was not submitted. Allow site storage, then try again."
-msgstr "此浏览器无法保存存入恢复数据，因此本次存入未提交。请允许网站存储后再试。"
+msgstr "此浏览器无法保存存款恢复数据，因此本次存款未提交。请允许网站存储后再试。"
 
 #: src/lib/errors/action-error.ts
 msgid "This browser could not store the trading key safely. Check that site storage is available, then try again."
@@ -9590,11 +9590,11 @@ msgstr "此金库当前不接受存款。"
 
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "This Vault no longer accepts deposits."
-msgstr "该金库已不再接受存入。"
+msgstr "该金库已不再接受存款。"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
-msgstr "此金库在提取时采用按比例平仓。"
+msgstr "此金库在提款时采用按比例平仓。"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This will close the current position and open an equal position in the opposite direction at market price."
@@ -10656,7 +10656,7 @@ msgstr "金库数据不可用"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Vault deposit"
-msgstr "金库存入"
+msgstr "金库存款"
 
 #: src/config/account-ledger.ts
 msgid "Vault Deposit"
@@ -10724,7 +10724,7 @@ msgstr "金库价值"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Vault withdrawal"
-msgstr "金库提取"
+msgstr "金库提款"
 
 #: src/config/account-ledger.ts
 msgid "Vault Withdrawal"
@@ -10960,7 +10960,7 @@ msgstr "欢迎奖励"
 
 #: src/components/earn/earn-view.tsx
 msgid "When portfolio margin is enabled, users automatically earn interest on assets not used for trading. Manual supplying and withdrawing is disabled."
-msgstr "启用组合保证金后，未用于交易的资产会自动赚取利息。手动存入和提取已禁用。"
+msgstr "启用组合保证金后，未用于交易的资产会自动赚取利息。手动存入和提款已禁用。"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "While this market is at its open interest cap, the price cannot be more aggressive than the oracle price."
@@ -10999,7 +10999,7 @@ msgstr "提款"
 #: src/components/trade/positions/positions-panel.tsx
 msgctxt "Trading toolbar action"
 msgid "Withdraw"
-msgstr "提取"
+msgstr "提款"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdraw everything with Max, or leave at least $1 supplied."
@@ -11007,7 +11007,7 @@ msgstr "请用“最大”全部取出，或至少保留 $1 的存入。"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Withdraw from Vault"
-msgstr "从金库提取"
+msgstr "从金库提款"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdraw to Arbitrum"
@@ -11023,7 +11023,7 @@ msgstr "提款"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal can cancel orders, close positions, incur slippage, and return less than requested."
-msgstr "提取可能会取消委托、平掉仓位、产生滑点，最终返回金额可能低于请求金额。"
+msgstr "提款可能会取消委托、平掉仓位、产生滑点，最终返回金额可能低于请求金额。"
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawal conditions changed before signing. Review the withdrawal and submit it again."
@@ -11039,19 +11039,19 @@ msgstr "提款手续费"
 
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Withdrawal is still locked by the fresh server timestamp."
-msgstr "根据最新的服务器时间，提取仍处于锁定期。"
+msgstr "根据最新的服务器时间，提款仍处于锁定期。"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal locked"
-msgstr "提取已锁定"
+msgstr "提款已锁定"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Withdrawal may cancel orders, close positions, incur slippage, and return less than requested."
-msgstr "提取可能会取消委托、平掉仓位、产生滑点，最终返回金额可能低于请求金额。"
+msgstr "提款可能会取消委托、平掉仓位、产生滑点，最终返回金额可能低于请求金额。"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal policy"
-msgstr "提取规则"
+msgstr "提款规则"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal remains locked until the server-reported unlock time."
@@ -11071,7 +11071,7 @@ msgstr "提款已提交"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal unlocked"
-msgstr "提取已解锁"
+msgstr "提款已解锁"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/trade/funds-action-feedback.ts
@@ -11330,4 +11330,4 @@ msgstr "您的交易正在处理中"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
-msgstr "无法验证您的金库余额。账户价值和提取功能仍不可用。"
+msgstr "无法验证您的金库余额。账户价值和提款功能仍不可用。"

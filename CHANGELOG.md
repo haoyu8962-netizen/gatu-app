@@ -105,10 +105,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
     successful one says "Changes may take a moment to appear."
   - Transfer and Send amounts follow the number-format setting.
 
-- Chinese text now uses 存款 for deposits and 提款 for withdrawals everywhere, matching the Deposit
-  and Withdraw buttons. Forty-eight messages that said 充值, 提现 or 入金 were updated, including
+- Chinese text now uses 存款 for deposits and 提款 for withdrawals, matching the Deposit and
+  Withdraw buttons. Forty-eight messages that said 充值, 提现 or 入金 were updated, including
   the withdrawal form's `Withdraw to Arbitrum` button, the deposit address and status messages,
-  and the deposit and withdrawal notifications.
+  and the deposit and withdrawal notifications. Thirty more labels that said 存入 or 提取 now
+  follow the same buttons, among them the desktop positions toolbar's Deposit and Withdraw buttons
+  (previously 存入 and 提取), the Vault and staking withdrawal labels (提款已锁定, 提款规则, 从金库提款,
+  待处理提款) and the funds recovery reminders. Phrases with an object keep 存入 and 提取, such as
+  提取金库权益, and Earn keeps 存入 for Supply.
 
 - Other notifications follow the buttons they come from:
   - Disconnect failures start with "Disconnect failed:" instead of "Secure disconnect failed
