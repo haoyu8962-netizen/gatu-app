@@ -28,7 +28,7 @@ import {
 } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatExchangeActionError } from "@/lib/errors/format";
+import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
 import { type ExchangeParams, useExchange, useHyperliquid } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
@@ -390,7 +390,16 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			clearSendDraft();
 			if (isCurrentSubmission()) toast.success(t`Sent ${sentAmount} ${sentToken}`);
 		} catch (err) {
-			if (isCurrentSubmission()) {
+			if (isAmbiguousExchangeActionError(err)) {
+				clearSendDraft();
+				if (isCurrentSubmission()) {
+					toast.warning(t`Send status unknown`, {
+						description: t`Check your balances and the Deposits & Withdrawals history before retrying.`,
+						duration: Number.POSITIVE_INFINITY,
+						closeButton: true,
+					});
+				}
+			} else if (isCurrentSubmission()) {
 				saveSendDraft({
 					ownerKey: draftOwnerKey,
 					destination,

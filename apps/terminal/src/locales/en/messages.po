@@ -1508,6 +1508,11 @@ msgstr "Check the wallet address or display name, or the account may not meet th
 msgid "Check your balance and withdrawal history before retrying."
 msgstr "Check your balance and withdrawal history before retrying."
 
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Check your balances and the Deposits & Withdrawals history before retrying."
+msgstr "Check your balances and the Deposits & Withdrawals history before retrying."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking account..."
 #~ msgstr "Checking account..."
@@ -7729,6 +7734,10 @@ msgid "Send failed"
 msgstr "Send failed"
 
 #: src/components/trade/positions/send-modal.tsx
+msgid "Send status unknown"
+msgstr "Send status unknown"
+
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
 msgstr "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
 
@@ -9984,6 +9993,10 @@ msgstr "Transfer confirmed"
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
 msgstr "Transfer failed"
+
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Transfer status unknown"
+msgstr "Transfer status unknown"
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer USDC"

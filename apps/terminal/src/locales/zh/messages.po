@@ -1508,6 +1508,11 @@ msgstr "请检查钱包地址或显示名称；该账户也可能不符合当前
 msgid "Check your balance and withdrawal history before retrying."
 msgstr "重试前请核对余额和提款记录。"
 
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Check your balances and the Deposits & Withdrawals history before retrying."
+msgstr "重试前请核对余额和“存款和提款”中的记录。"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking account..."
 #~ msgstr "正在检查账户…"
@@ -7729,6 +7734,10 @@ msgid "Send failed"
 msgstr "发送失败"
 
 #: src/components/trade/positions/send-modal.tsx
+msgid "Send status unknown"
+msgstr "发送状态未知"
+
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
 msgstr "发送至其他 Hyperliquid 账户。如需在 Arbitrum 接收 USDC，请使用“提款”。"
 
@@ -9984,6 +9993,10 @@ msgstr "划转已确认"
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
 msgstr "划转失败"
+
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Transfer status unknown"
+msgstr "划转状态未知"
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer USDC"

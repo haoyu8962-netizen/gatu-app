@@ -1508,6 +1508,11 @@ msgstr "تحقق من عنوان المحفظة أو اسم العرض، أو ق
 msgid "Check your balance and withdrawal history before retrying."
 msgstr "تحقق من رصيدك وسجل السحوبات قبل إعادة المحاولة."
 
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Check your balances and the Deposits & Withdrawals history before retrying."
+msgstr "تحقق من أرصدتك وسجل الإيداعات والسحوبات قبل إعادة المحاولة."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking account..."
 #~ msgstr "جارٍ التحقق من الحساب..."
@@ -7729,6 +7734,10 @@ msgid "Send failed"
 msgstr "فشل الإرسال"
 
 #: src/components/trade/positions/send-modal.tsx
+msgid "Send status unknown"
+msgstr "حالة الإرسال غير معروفة"
+
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
 msgstr "أرسل إلى حساب Hyperliquid آخر. لاستلام USDC على Arbitrum، استخدم السحب."
 
@@ -9984,6 +9993,10 @@ msgstr "تم تأكيد التحويل"
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
 msgstr "فشل التحويل"
+
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Transfer status unknown"
+msgstr "حالة التحويل غير معروفة"
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer USDC"

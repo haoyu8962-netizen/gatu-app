@@ -47,6 +47,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- When a transfer or send may have gone through but its result could not be confirmed, for example
+  after a timeout or a lost connection, the notification now stays on screen as a warning, "Transfer
+  status unknown" or "Send status unknown", and asks you to check your balances and the Deposits &
+  Withdrawals history before retrying. It used to look like a failure and disappear after three
+  seconds. A send whose result is unknown no longer refills the recipient and amount the next time
+  you open Send, so it cannot be repeated with one tap.
+
 - The notification after a withdrawal is submitted is shorter: under `Withdrawal submitted` it now
   says only how much you'll receive on Arbitrum after confirmation, for example "You'll receive
   $239.80 on Arbitrum after confirmation." The route fee is no longer repeated there, since the form
