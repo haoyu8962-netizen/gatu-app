@@ -222,7 +222,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 						usdcRewardsEarned={referrals.usdcRewardsEarned ?? "0"}
 					/>
 				</div>
-				<div className="grid gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5 min-[1001px]:pb-0">
+				<div className="grid grid-cols-1 gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5 min-[1001px]:pb-0">
 					<div className="order-1">
 						<ReferralCodeCard
 							actionsDisabled={actionBusy}

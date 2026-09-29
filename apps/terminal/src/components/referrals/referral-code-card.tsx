@@ -90,8 +90,8 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 							key={label}
 							className={
 								active
-									? "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-16 bg-fill-weaker px-2 py-2"
-									: "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-16 px-2 py-2"
+									? "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-16 bg-fill-weaker px-1.5 py-2 min-[1001px]:px-2"
+									: "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-16 px-1.5 py-2 min-[1001px]:px-2"
 							}
 						>
 							<span
@@ -105,7 +105,7 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 							>
 								{complete ? <CheckIcon className="size-2.5" weight="bold" /> : step}
 							</span>
-							<p className="min-w-0 flex-1 break-words text-2xs font-medium text-fg-muted">{label}</p>
+							<p className="min-w-0 flex-1 text-balance break-words text-2xs font-medium text-fg-muted">{label}</p>
 						</li>
 					);
 				})}
@@ -163,7 +163,7 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 							<Trans>Referral code</Trans>
 						</p>
 						<div className="mt-1 flex min-h-[50px] items-center gap-2 rounded-20 border border-stroke-weak bg-fill-weaker px-3 py-2.5">
-							<span className="min-w-0 flex-1 truncate text-lg font-bold tracking-wider text-fg">{code}</span>
+							<span className="min-w-0 flex-1 break-all text-lg font-bold tracking-wider text-fg">{code}</span>
 							<ButtonIcon
 								variant="ghost"
 								intent="neutral"

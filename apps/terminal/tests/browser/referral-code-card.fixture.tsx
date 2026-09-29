@@ -13,6 +13,7 @@ import { messages as zh } from "@/locales/zh/messages.po";
 import "./referral-code-card.css";
 
 const catalogs = { en, zh, fr, es, hi, ar };
+const params = new URLSearchParams(location.search);
 
 const DATA: ReferralData = {
 	referredBy: null,
@@ -22,7 +23,7 @@ const DATA: ReferralData = {
 	builderRewards: "0",
 	referrerState: {
 		stage: "ready",
-		data: { code: "GATU", nReferrals: 0, referralStates: [] },
+		data: { code: params.get("code") ?? "GATU", nReferrals: 0, referralStates: [] },
 	},
 	rewardHistory: [],
 	tokenToState: [],
@@ -36,7 +37,7 @@ function Fixture() {
 			headerOffset={false}
 			main={
 				<section className="overflow-hidden rounded-32 bg-surface shadow-raised">
-					<div className="grid gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5 min-[1001px]:pb-0">
+					<div className="grid grid-cols-1 gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5 min-[1001px]:pb-0">
 						<div className="order-1">
 							<ReferralCodeCard
 								actionsDisabled={false}
@@ -54,7 +55,7 @@ function Fixture() {
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing fixture root");
-const requested = new URLSearchParams(location.search).get("locale") ?? "en";
+const requested = params.get("locale") ?? "en";
 const locale = requested in catalogs ? (requested as keyof typeof catalogs) : "en";
 i18n.loadAndActivate({ locale, messages: catalogs[locale] });
 document.documentElement.lang = locale;

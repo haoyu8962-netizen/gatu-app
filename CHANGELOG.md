@@ -440,6 +440,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   now wrap onto more lines instead of being cut off with an ellipsis, which the narrower width had
   started to do in Chinese and several labels already did in English and French.
 
+- On phones, the Referrals page shows your whole referral code, wrapping a long code onto another
+  line instead of cutting it off. At 320px the referral card no longer grows 25px wider than its
+  column, where the panel cut off its right edge. Chinese step labels no longer leave a single
+  character on a line of its own.
+
 - On a Vault's page, the Account value or PNL figure sits above the chart instead of on top of it,
   where the line could run through the number. In Chinese, the page's notices say 金库 like the rest
   of the page instead of the English word Vault.
