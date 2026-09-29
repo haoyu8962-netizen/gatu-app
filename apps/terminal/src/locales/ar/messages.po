@@ -1008,7 +1008,7 @@ msgstr "المنازل العشرية للوحدة الذرية"
 msgid "Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL."
 msgstr "لا يُوضع TP/SL المرفق إلا إذا نُفِّذ الأمر بالكامل، أو أُلغي الجزء المتبقي بسبب عدم كفاية الهامش. راجع TP/SL لمركزك."
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "رُفض التفويض"
@@ -1209,8 +1209,12 @@ msgid "Borrow Interest"
 msgstr "فائدة الاقتراض"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Borrowed {token}"
-msgstr "تم اقتراض {token}"
+msgid "Borrowed {quantity}"
+msgstr "تم اقتراض {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Borrowed {token}"
+#~ msgstr "تم اقتراض {token}"
 
 #: src/components/earn/earn-view.tsx
 msgid "Borrowing is automated in Portfolio Margin mode."
@@ -1462,6 +1466,10 @@ msgstr "التغيير إلى ترتيب تصاعدي"
 msgid "Change to descending order"
 msgstr "التغيير إلى ترتيب تنازلي"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Changes may take a moment to appear."
+msgstr "قد يستغرق ظهور التغييرات بعض الوقت."
+
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
@@ -1491,6 +1499,10 @@ msgstr "راجع سجل إجراءات العوائد قبل إعادة المح
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Check the wallet address or display name, or the account may not meet the current criteria."
 msgstr "تحقق من عنوان المحفظة أو اسم العرض، أو قد يكون الحساب غير مستوفٍ للمعايير الحالية."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Check your balance and withdrawal history before retrying."
+msgstr "تحقق من رصيدك وسجل السحوبات قبل إعادة المحاولة."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking account..."
@@ -1572,13 +1584,18 @@ msgstr "تغيرت رسوم Circle. راجع الرسوم المحدّثة، ث�
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
-msgstr "تقوم Circle بسك USDC وتحويله إلى Hyperliquid. لا تُعد إرسال التحويل نفسه."
+msgid "Circle is forwarding your USDC to Hyperliquid. Do not submit this deposit again."
+msgstr "تقوم Circle بتحويل USDC الخاصة بك إلى Hyperliquid. لا تُرسل هذا الإيداع مرة أخرى."
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
-msgstr "أرسلت Circle معاملة التحويل إلى HyperEVM. قد يستغرق قيد HyperCore وقتًا إضافيًا."
+#~ msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
+#~ msgstr "تقوم Circle بسك USDC وتحويله إلى Hyperliquid. لا تُعد إرسال التحويل نفسه."
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#~ msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
+#~ msgstr "أرسلت Circle معاملة التحويل إلى HyperEVM. قد يستغرق قيد HyperCore وقتًا إضافيًا."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -1904,7 +1921,6 @@ msgid "Collapse market details"
 msgstr "طي تفاصيل السوق"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/vaults/vaults-page.tsx
 msgid "Commission"
 msgstr "العمولة"
 
@@ -2485,6 +2501,10 @@ msgstr "فوّض HYPE إلى جهات التحقق لدعم آلية الإجم�
 msgid "Delegated"
 msgstr "مفوّض"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Delegated {amount} HYPE"
+msgstr "تم تفويض {amount} HYPE"
+
 #: src/components/staking/staking-view.tsx
 msgid "Delegated to {validator}"
 msgstr "مفوّض إلى {validator}"
@@ -2575,6 +2595,13 @@ msgstr "حالة الإيداع غير معروفة"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit submitted"
 msgstr "تم إرسال الإيداع"
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/tests/cctp-deposit-notification-lifecycle.test.tsx
+#: src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
+msgid "Deposit submitted to Hyperliquid"
+msgstr "تم إرسال الإيداع إلى Hyperliquid"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
@@ -3057,12 +3084,12 @@ msgid "Enter trigger price"
 msgstr "أدخل سعر التفعيل"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Entire {token} borrow"
-msgstr "كامل قرض {token}"
+#~ msgid "Entire {token} borrow"
+#~ msgstr "كامل قرض {token}"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Entire {token} supply"
-msgstr "كامل إيداع {token}"
+#~ msgid "Entire {token} supply"
+#~ msgstr "كامل إيداع {token}"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -3553,8 +3580,8 @@ msgid "Filter validators"
 msgstr "تصفية جهات التحقق"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Final amount"
-msgstr "المبلغ النهائي"
+#~ msgid "Final amount"
+#~ msgstr "المبلغ النهائي"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Finish"
@@ -3581,8 +3608,8 @@ msgstr "على سبيل المثال: grid-bot"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/tests/cctp-deposit-notification-lifecycle.test.tsx
 #: src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
-msgid "Forward transaction submitted"
-msgstr "تم إرسال معاملة التحويل"
+#~ msgid "Forward transaction submitted"
+#~ msgstr "تم إرسال معاملة التحويل"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4217,6 +4244,7 @@ msgstr "القائد"
 
 #: src/components/vaults/vault-action-modal.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Leader commission"
 msgstr "عمولة القائد"
 
@@ -5066,6 +5094,10 @@ msgstr "نقل HYPE من التخزين إلى الحساب الفوري"
 msgid "Move USDC between your Perp and Spot accounts."
 msgstr "نقل USDC بين حسابي Perp وSpot الخاصين بك."
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Moved {amount} HYPE to staking"
+msgstr "تم نقل {amount} HYPE إلى التخزين"
+
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
@@ -5207,6 +5239,10 @@ msgstr "لم يُعثر على أرصدة"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "لم يتم العثور على أرصدة. أودع أموالاً لبدء التداول."
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "No changes were made."
+msgstr "لم يتم إجراء أي تغييرات."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "No data point selected"
@@ -5365,7 +5401,8 @@ msgstr "لا توجد خزائن مطابقة"
 msgid "No open orders."
 msgstr "لا توجد أوامر مفتوحة."
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
+#: src/components/vaults/vaults-page.tsx
 msgid "No operation was submitted."
 msgstr "لم تُرسل أي عملية."
 
@@ -5712,8 +5749,8 @@ msgstr "فتح الرمز في المستكشف"
 #~ msgstr "العملية قيد التنفيذ"
 
 #: src/components/staking/staking-view.tsx
-msgid "Operation verified"
-msgstr "تم التحقق من العملية"
+#~ msgid "Operation verified"
+#~ msgstr "تم التحقق من العملية"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "OR"
@@ -7003,8 +7040,16 @@ msgstr "تؤدي إزالة هذه الموافقة إلى إيقاف البرا
 #~ msgstr "جارٍ عرض رمز QR"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Repaid {token}"
-msgstr "تم سداد {token}"
+msgid "Repaid {quantity}"
+msgstr "تم سداد {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Repaid {token}"
+#~ msgstr "تم سداد {token}"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repaid entire {token} borrow"
+msgstr "تم سداد كامل قرض {token}"
 
 #: src/components/earn/earn-action-modal.tsx
 #: src/components/earn/earn-action-modal.tsx
@@ -7043,7 +7088,11 @@ msgstr "يسدّد كامل قرضك من {token} لحظة التنفيذ، بم
 msgid "Request not confirmed"
 msgstr "لم يتم تأكيد الطلب"
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Request not submitted"
+msgstr "لم يُرسل الطلب"
+
+#: src/components/staking/domain/staking-action-feedback.ts
 msgid "Request rejected"
 msgstr "رُفض الطلب"
 
@@ -7266,9 +7315,13 @@ msgstr "قبل التداول، راجع <0>وثائق</0> جهة النشر و<
 msgid "Review the order before it is sent to the exchange."
 msgstr "راجع الأمر قبل إرساله إلى البورصة."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Review the pending funds operation before starting another one."
+msgstr "راجع عملية الأموال المعلقة قبل بدء عملية أخرى."
+
 #: src/components/staking/staking-view.tsx
-msgid "Review the public fields and try again."
-msgstr "راجع الحقول العامة وحاول مجددًا."
+#~ msgid "Review the public fields and try again."
+#~ msgstr "راجع الحقول العامة وحاول مجددًا."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Revocation was submitted but is not yet confirmed."
@@ -8093,6 +8146,10 @@ msgstr "سعر البداية"
 msgid "Started"
 msgstr "بدأ"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Started moving {amount} HYPE to Spot"
+msgstr "بدأ نقل {amount} HYPE إلى الحساب الفوري"
+
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
@@ -8275,8 +8332,12 @@ msgid "Successful"
 msgstr "ناجح"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Supplied {token}"
-msgstr "تم إيداع {token}"
+msgid "Supplied {quantity}"
+msgstr "تم إيداع {quantity} للإقراض"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Supplied {token}"
+#~ msgstr "تم إيداع {token}"
 
 #: src/components/earn/earn-action-modal.tsx
 #: src/components/earn/earn-view.tsx
@@ -8857,8 +8918,8 @@ msgid "The page is matching a new Vault ledger event and refreshed account state
 msgstr "تطابق الصفحة حدثًا جديدًا في دفتر الخزنة مع حالة الحساب المحدّثة. لن توقّع مجددًا."
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
-msgstr "تُحدّث الصفحة بياناتها من Hyperliquid. قد تستغرق التغييرات الحديثة بعض الوقت للظهور."
+#~ msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
+#~ msgstr "تُحدّث الصفحة بياناتها من Hyperliquid. قد تستغرق التغييرات الحديثة بعض الوقت للظهور."
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "The page loads one recent-fill snapshot. Export CSV to request a broader accessible history."
@@ -10190,6 +10251,10 @@ msgstr "إلغاء التفويض"
 msgid "Undelegate HYPE"
 msgstr "إلغاء تفويض HYPE"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Undelegated {amount} HYPE"
+msgstr "تم إلغاء تفويض {amount} HYPE"
+
 #: src/components/staking/staking-view.tsx
 msgid "Undelegated from {validator}"
 msgstr "أُلغي التفويض من {validator}"
@@ -10344,8 +10409,12 @@ msgstr "مبلغ USDC"
 #~ msgstr "مكافآت USDC القابلة للمطالبة"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "USDC deposit submitted to Hyperliquid"
-msgstr "تم إرسال إيداع USDC إلى Hyperliquid"
+msgid "USDC deposit confirmed on Arbitrum"
+msgstr "تم تأكيد إيداع USDC على Arbitrum"
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+#~ msgid "USDC deposit submitted to Hyperliquid"
+#~ msgstr "تم إرسال إيداع USDC إلى Hyperliquid"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"
@@ -10487,6 +10556,10 @@ msgstr "إيداع في الخزنة"
 msgid "Vault Deposit"
 msgstr "إيداع في الخزنة"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault deposit confirmed"
+msgstr "تم تأكيد الإيداع في الخزنة"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault depositors"
 msgstr "مودعو الخزنة"
@@ -10536,8 +10609,8 @@ msgid "Vault risk"
 msgstr "مخاطر الخزنة"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault transfer confirmed"
-msgstr "تم تأكيد تحويل الخزنة"
+#~ msgid "Vault transfer confirmed"
+#~ msgstr "تم تأكيد تحويل الخزنة"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault value"
@@ -10550,6 +10623,10 @@ msgstr "سحب من الخزنة"
 #: src/config/account-ledger.ts
 msgid "Vault Withdrawal"
 msgstr "سحب من الخزنة"
+
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault withdrawal confirmed"
+msgstr "تم تأكيد السحب من الخزنة"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -10584,8 +10661,8 @@ msgid "Verify again"
 msgstr "تحقق مجددًا"
 
 #: src/components/vaults/use-vault-action-controller.ts
-msgid "Verify the pending funds operation before starting another one."
-msgstr "تحقق من عملية الأموال المعلقة قبل بدء عملية أخرى."
+#~ msgid "Verify the pending funds operation before starting another one."
+#~ msgstr "تحقق من عملية الأموال المعلقة قبل بدء عملية أخرى."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Verifying"
@@ -10900,8 +10977,16 @@ msgid "Withdraws your entire {token} supply at the moment it executes, including
 msgstr "يسحب كامل إيداعك من {token} لحظة التنفيذ، بما في ذلك الفائدة المتراكمة."
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Withdrew {token}"
-msgstr "تم سحب {token}"
+msgid "Withdrew {quantity}"
+msgstr "تم سحب {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Withdrew {token}"
+#~ msgstr "تم سحب {token}"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdrew entire {token} supply"
+msgstr "تم سحب كامل إيداعك من {token}"
 
 #: src/config/funding-comparison.ts
 msgid "Year"
@@ -10999,6 +11084,10 @@ msgstr "لا توجد لديك أصول مودَعة لسحبها."
 msgid "You receive"
 msgstr "أنت تستلم"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "You received <0>{amount} USDC</0>."
+msgstr "لقد استلمت <0>{amount} USDC</0>."
+
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -11029,6 +11118,11 @@ msgstr "تمت إحالة حسابك بواسطة"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your all-time PNL"
 msgstr "أرباحك وخسائرك طوال الوقت"
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Your balance updates once Hyperliquid credits it."
+msgstr "سيتم تحديث رصيدك بمجرد أن تضيفه Hyperliquid."
 
 #: src/components/earn/earn-view.tsx
 msgid "Your Borrowed"

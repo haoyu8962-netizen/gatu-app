@@ -75,17 +75,20 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 			updateOrderQueueItem(notificationId, {
 				status: "success",
 				title: getSuccessTitle(),
-				message: msg`The page is refreshing from Hyperliquid. Recent changes can take a moment to appear.`,
+				message: msg`Changes may take a moment to appear.`,
 			});
 		} catch (submitError) {
-			const unknown =
-				submitError instanceof ReferralActionStatusUnknownError || isAmbiguousExchangeActionError(submitError);
-			updateOrderQueueItem(notificationId, {
-				status: unknown ? "unconfirmed" : "failed",
-				title: msg`Request not confirmed`,
-				message: msg`Refresh referral data before submitting another signed request.`,
-				error: classifyActionErrorOr(submitError, msg`Referral request could not be completed.`),
-			});
+			const error = classifyActionErrorOr(submitError, msg`Referral request could not be completed.`);
+			if (submitError instanceof ReferralActionStatusUnknownError || isAmbiguousExchangeActionError(submitError)) {
+				updateOrderQueueItem(notificationId, {
+					status: "unconfirmed",
+					title: msg`Request not confirmed`,
+					message: msg`Refresh referral data before submitting another signed request.`,
+					error,
+				});
+				return;
+			}
+			updateOrderQueueItem(notificationId, { status: "failed", error });
 		}
 	}
 

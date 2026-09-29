@@ -1008,7 +1008,7 @@ msgstr "एटॉमिक दशमलव"
 msgid "Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL."
 msgstr "संलग्न TP/SL केवल तभी लगाया जाता है जब ऑर्डर पूरी तरह निष्पादित हो जाए, या शेष भाग अपर्याप्त मार्जिन के कारण रद्द हो जाए। अपनी पोज़िशन का TP/SL जाँचें।"
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "अधिकृत करने का अनुरोध अस्वीकार हुआ"
@@ -1209,8 +1209,12 @@ msgid "Borrow Interest"
 msgstr "उधार ब्याज"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Borrowed {token}"
-msgstr "{token} उधार लिया"
+msgid "Borrowed {quantity}"
+msgstr "{quantity} उधार लिया गया"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Borrowed {token}"
+#~ msgstr "{token} उधार लिया"
 
 #: src/components/earn/earn-view.tsx
 msgid "Borrowing is automated in Portfolio Margin mode."
@@ -1462,6 +1466,10 @@ msgstr "आरोही क्रम में बदलें"
 msgid "Change to descending order"
 msgstr "अवरोही क्रम में बदलें"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Changes may take a moment to appear."
+msgstr "बदलाव दिखने में कुछ समय लग सकता है।"
+
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
@@ -1491,6 +1499,10 @@ msgstr "दोबारा प्रयास करने से पहले �
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Check the wallet address or display name, or the account may not meet the current criteria."
 msgstr "वॉलेट पता या डिस्प्ले नाम जाँचें; संभव है कि खाता मौजूदा मानदंडों को पूरा न करता हो।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Check your balance and withdrawal history before retrying."
+msgstr "दोबारा कोशिश करने से पहले अपना बैलेंस और निकासी इतिहास जाँचें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking account..."
@@ -1572,13 +1584,18 @@ msgstr "Circle शुल्क बदल गए हैं। अपडेट क
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
-msgstr "Circle USDC मिंट करके Hyperliquid को फ़ॉरवर्ड कर रहा है। उसी ट्रांसफ़र को दोबारा सबमिट न करें।"
+msgid "Circle is forwarding your USDC to Hyperliquid. Do not submit this deposit again."
+msgstr "Circle आपके USDC को Hyperliquid पर फ़ॉरवर्ड कर रहा है। यह जमा दोबारा सबमिट न करें।"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
-msgstr "Circle ने HyperEVM फ़ॉरवर्डिंग ट्रांज़ैक्शन सबमिट कर दिया है। HyperCore में क्रेडिट होने में अतिरिक्त समय लग सकता है।"
+#~ msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
+#~ msgstr "Circle USDC मिंट करके Hyperliquid को फ़ॉरवर्ड कर रहा है। उसी ट्रांसफ़र को दोबारा सबमिट न करें।"
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#~ msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
+#~ msgstr "Circle ने HyperEVM फ़ॉरवर्डिंग ट्रांज़ैक्शन सबमिट कर दिया है। HyperCore में क्रेडिट होने में अतिरिक्त समय लग सकता है।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -1904,7 +1921,6 @@ msgid "Collapse market details"
 msgstr "बाज़ार विवरण समेटें"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/vaults/vaults-page.tsx
 msgid "Commission"
 msgstr "कमीशन"
 
@@ -2485,6 +2501,10 @@ msgstr "कंसेंसस को समर्थन देने और प�
 msgid "Delegated"
 msgstr "डेलीगेट किया गया"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Delegated {amount} HYPE"
+msgstr "{amount} HYPE डेलीगेट किया गया"
+
 #: src/components/staking/staking-view.tsx
 msgid "Delegated to {validator}"
 msgstr "{validator} को डेलीगेट किया गया"
@@ -2575,6 +2595,13 @@ msgstr "जमा की स्थिति अज्ञात है"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit submitted"
 msgstr "जमा सबमिट हो गया"
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/tests/cctp-deposit-notification-lifecycle.test.tsx
+#: src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
+msgid "Deposit submitted to Hyperliquid"
+msgstr "जमा Hyperliquid को सबमिट किया गया"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
@@ -3057,12 +3084,12 @@ msgid "Enter trigger price"
 msgstr "ट्रिगर कीमत दर्ज करें"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Entire {token} borrow"
-msgstr "पूरा {token} उधार"
+#~ msgid "Entire {token} borrow"
+#~ msgstr "पूरा {token} उधार"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Entire {token} supply"
-msgstr "पूरी {token} सप्लाई"
+#~ msgid "Entire {token} supply"
+#~ msgstr "पूरी {token} सप्लाई"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -3553,8 +3580,8 @@ msgid "Filter validators"
 msgstr "वैलिडेटर फ़िल्टर करें"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Final amount"
-msgstr "अंतिम राशि"
+#~ msgid "Final amount"
+#~ msgstr "अंतिम राशि"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Finish"
@@ -3581,8 +3608,8 @@ msgstr "उदाहरण: grid-bot"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/tests/cctp-deposit-notification-lifecycle.test.tsx
 #: src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
-msgid "Forward transaction submitted"
-msgstr "फ़ॉरवर्ड ट्रांज़ैक्शन सबमिट किया गया"
+#~ msgid "Forward transaction submitted"
+#~ msgstr "फ़ॉरवर्ड ट्रांज़ैक्शन सबमिट किया गया"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4217,6 +4244,7 @@ msgstr "लीडर"
 
 #: src/components/vaults/vault-action-modal.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Leader commission"
 msgstr "लीडर कमीशन"
 
@@ -5066,6 +5094,10 @@ msgstr "स्टेकिंग HYPE को स्पॉट में ले �
 msgid "Move USDC between your Perp and Spot accounts."
 msgstr "अपने Perp और Spot खातों के बीच USDC ट्रांसफर करें।"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Moved {amount} HYPE to staking"
+msgstr "{amount} HYPE स्टेकिंग में भेजा गया"
+
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
@@ -5207,6 +5239,10 @@ msgstr "कोई बैलेंस नहीं मिला"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "कोई शेष नहीं मिला। ट्रेडिंग शुरू करने के लिए धन जमा करें।"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "No changes were made."
+msgstr "कोई बदलाव नहीं किया गया।"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "No data point selected"
@@ -5365,7 +5401,8 @@ msgstr "कोई मेल खाता वॉल्ट नहीं"
 msgid "No open orders."
 msgstr "कोई खुला ऑर्डर नहीं।"
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
+#: src/components/vaults/vaults-page.tsx
 msgid "No operation was submitted."
 msgstr "कोई ऑपरेशन भेजा नहीं गया।"
 
@@ -5712,8 +5749,8 @@ msgstr "एक्सप्लोरर में टोकन खोलें"
 #~ msgstr "ऑपरेशन जारी है"
 
 #: src/components/staking/staking-view.tsx
-msgid "Operation verified"
-msgstr "ऑपरेशन सत्यापित हुआ"
+#~ msgid "Operation verified"
+#~ msgstr "ऑपरेशन सत्यापित हुआ"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "OR"
@@ -7003,8 +7040,16 @@ msgstr "यह स्वीकृति हटाते ही इसी API व
 #~ msgstr "QR रेंडर हो रहा है"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Repaid {token}"
-msgstr "{token} चुकाया"
+msgid "Repaid {quantity}"
+msgstr "{quantity} चुकाया गया"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Repaid {token}"
+#~ msgstr "{token} चुकाया"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repaid entire {token} borrow"
+msgstr "पूरा {token} उधार चुकाया गया"
 
 #: src/components/earn/earn-action-modal.tsx
 #: src/components/earn/earn-action-modal.tsx
@@ -7043,7 +7088,11 @@ msgstr "निष्पादन के समय आपका पूरा {tok
 msgid "Request not confirmed"
 msgstr "अनुरोध की पुष्टि नहीं हुई"
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Request not submitted"
+msgstr "अनुरोध सबमिट नहीं हुआ"
+
+#: src/components/staking/domain/staking-action-feedback.ts
 msgid "Request rejected"
 msgstr "अनुरोध अस्वीकार हुआ"
 
@@ -7266,9 +7315,13 @@ msgstr "ट्रेडिंग से पहले डिप्लॉयर �
 msgid "Review the order before it is sent to the exchange."
 msgstr "एक्सचेंज को भेजने से पहले ऑर्डर की समीक्षा करें।"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Review the pending funds operation before starting another one."
+msgstr "नया ऑपरेशन शुरू करने से पहले लंबित फंड ऑपरेशन की समीक्षा करें।"
+
 #: src/components/staking/staking-view.tsx
-msgid "Review the public fields and try again."
-msgstr "सार्वजनिक फ़ील्ड की समीक्षा करके फिर प्रयास करें।"
+#~ msgid "Review the public fields and try again."
+#~ msgstr "सार्वजनिक फ़ील्ड की समीक्षा करके फिर प्रयास करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Revocation was submitted but is not yet confirmed."
@@ -8093,6 +8146,10 @@ msgstr "प्रारंभ मूल्य"
 msgid "Started"
 msgstr "शुरू हुआ"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Started moving {amount} HYPE to Spot"
+msgstr "{amount} HYPE को स्पॉट में भेजना शुरू हुआ"
+
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
@@ -8275,8 +8332,12 @@ msgid "Successful"
 msgstr "सफल"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Supplied {token}"
-msgstr "{token} सप्लाई किया"
+msgid "Supplied {quantity}"
+msgstr "{quantity} सप्लाई किया गया"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Supplied {token}"
+#~ msgstr "{token} सप्लाई किया"
 
 #: src/components/earn/earn-action-modal.tsx
 #: src/components/earn/earn-view.tsx
@@ -8857,8 +8918,8 @@ msgid "The page is matching a new Vault ledger event and refreshed account state
 msgstr "पेज नए वॉल्ट लेजर इवेंट और रीफ़्रेश की गई खाता स्थिति का मिलान कर रहा है। यह दोबारा हस्ताक्षर नहीं करेगा।"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
-msgstr "पेज Hyperliquid से रीफ़्रेश हो रहा है। हाल के बदलाव दिखने में थोड़ा समय लग सकता है।"
+#~ msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
+#~ msgstr "पेज Hyperliquid से रीफ़्रेश हो रहा है। हाल के बदलाव दिखने में थोड़ा समय लग सकता है।"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "The page loads one recent-fill snapshot. Export CSV to request a broader accessible history."
@@ -10190,6 +10251,10 @@ msgstr "अनडेलीगेट करें"
 msgid "Undelegate HYPE"
 msgstr "HYPE अनडेलीगेट करें"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Undelegated {amount} HYPE"
+msgstr "{amount} HYPE अनडेलीगेट किया गया"
+
 #: src/components/staking/staking-view.tsx
 msgid "Undelegated from {validator}"
 msgstr "{validator} से अनडेलीगेट किया गया"
@@ -10344,8 +10409,12 @@ msgstr "USDC राशि"
 #~ msgstr "दावा योग्य USDC"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "USDC deposit submitted to Hyperliquid"
-msgstr "USDC जमा Hyperliquid को भेज दिया गया"
+msgid "USDC deposit confirmed on Arbitrum"
+msgstr "USDC जमा की Arbitrum पर पुष्टि हो गई"
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+#~ msgid "USDC deposit submitted to Hyperliquid"
+#~ msgstr "USDC जमा Hyperliquid को भेज दिया गया"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"
@@ -10487,6 +10556,10 @@ msgstr "वॉल्ट जमा"
 msgid "Vault Deposit"
 msgstr "वॉल्ट जमा"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault deposit confirmed"
+msgstr "वॉल्ट जमा की पुष्टि हो गई"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault depositors"
 msgstr "वॉल्ट जमाकर्ता"
@@ -10536,8 +10609,8 @@ msgid "Vault risk"
 msgstr "वॉल्ट जोखिम"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault transfer confirmed"
-msgstr "वॉल्ट ट्रांसफ़र की पुष्टि हुई"
+#~ msgid "Vault transfer confirmed"
+#~ msgstr "वॉल्ट ट्रांसफ़र की पुष्टि हुई"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault value"
@@ -10550,6 +10623,10 @@ msgstr "वॉल्ट निकासी"
 #: src/config/account-ledger.ts
 msgid "Vault Withdrawal"
 msgstr "वॉल्ट निकासी"
+
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault withdrawal confirmed"
+msgstr "वॉल्ट निकासी की पुष्टि हो गई"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -10584,8 +10661,8 @@ msgid "Verify again"
 msgstr "फिर सत्यापित करें"
 
 #: src/components/vaults/use-vault-action-controller.ts
-msgid "Verify the pending funds operation before starting another one."
-msgstr "दूसरा फंड ऑपरेशन शुरू करने से पहले लंबित ऑपरेशन सत्यापित करें।"
+#~ msgid "Verify the pending funds operation before starting another one."
+#~ msgstr "दूसरा फंड ऑपरेशन शुरू करने से पहले लंबित ऑपरेशन सत्यापित करें।"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Verifying"
@@ -10900,8 +10977,16 @@ msgid "Withdraws your entire {token} supply at the moment it executes, including
 msgstr "निष्पादन के समय आपकी पूरी {token} सप्लाई निकालता है, जिसमें अर्जित ब्याज शामिल है।"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Withdrew {token}"
-msgstr "{token} निकाला"
+msgid "Withdrew {quantity}"
+msgstr "{quantity} निकाला गया"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Withdrew {token}"
+#~ msgstr "{token} निकाला"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdrew entire {token} supply"
+msgstr "पूरी {token} सप्लाई निकाली गई"
 
 #: src/config/funding-comparison.ts
 msgid "Year"
@@ -10999,6 +11084,10 @@ msgstr "आपके पास निकालने के लिए कोई 
 msgid "You receive"
 msgstr "आपको प्राप्त होगा"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "You received <0>{amount} USDC</0>."
+msgstr "आपको <0>{amount} USDC</0> मिले।"
+
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -11029,6 +11118,11 @@ msgstr "आपके खाते को रेफ़र किया"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your all-time PNL"
 msgstr "आपका पूरी अवधि का PNL"
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Your balance updates once Hyperliquid credits it."
+msgstr "Hyperliquid द्वारा क्रेडिट होते ही आपका बैलेंस अपडेट हो जाएगा।"
 
 #: src/components/earn/earn-view.tsx
 msgid "Your Borrowed"

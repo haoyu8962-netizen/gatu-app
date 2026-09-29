@@ -1008,7 +1008,7 @@ msgstr "原子单位小数位"
 msgid "Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL."
 msgstr "附带的止盈 / 止损只在订单完全成交，或剩余部分因保证金不足被取消时才会下达。请检查持仓的止盈 / 止损。"
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "授权已拒绝"
@@ -1209,8 +1209,12 @@ msgid "Borrow Interest"
 msgstr "借入利息"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Borrowed {token}"
-msgstr "已借入 {token}"
+msgid "Borrowed {quantity}"
+msgstr "已借入 {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Borrowed {token}"
+#~ msgstr "已借入 {token}"
 
 #: src/components/earn/earn-view.tsx
 msgid "Borrowing is automated in Portfolio Margin mode."
@@ -1462,6 +1466,10 @@ msgstr "切换为升序"
 msgid "Change to descending order"
 msgstr "切换为降序"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Changes may take a moment to appear."
+msgstr "变更可能需要片刻才会显示。"
+
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
@@ -1491,6 +1499,10 @@ msgstr "重试前请先查看收益操作历史。"
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Check the wallet address or display name, or the account may not meet the current criteria."
 msgstr "请检查钱包地址或显示名称；该账户也可能不符合当前条件。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Check your balance and withdrawal history before retrying."
+msgstr "重试前请核对余额和提款记录。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking account..."
@@ -1572,13 +1584,18 @@ msgstr "Circle 费用已变化。请检查更新后的费用，然后再次提�
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
-msgstr "Circle 正在铸造 USDC 并将其转发至 Hyperliquid。请勿重复提交同一笔转账。"
+msgid "Circle is forwarding your USDC to Hyperliquid. Do not submit this deposit again."
+msgstr "Circle 正在将您的 USDC 转发至 Hyperliquid，请勿重复提交这笔存款。"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
-msgstr "Circle 已提交 HyperEVM 转发交易。HyperCore 入账可能还需要一些时间。"
+#~ msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
+#~ msgstr "Circle 正在铸造 USDC 并将其转发至 Hyperliquid。请勿重复提交同一笔转账。"
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#~ msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
+#~ msgstr "Circle 已提交 HyperEVM 转发交易。HyperCore 入账可能还需要一些时间。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -1904,7 +1921,6 @@ msgid "Collapse market details"
 msgstr "收起市场详情"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/vaults/vaults-page.tsx
 msgid "Commission"
 msgstr "佣金"
 
@@ -2485,6 +2501,10 @@ msgstr "将 HYPE 委托给验证者，以支持共识并赚取奖励。解除委
 msgid "Delegated"
 msgstr "已委托"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Delegated {amount} HYPE"
+msgstr "已委托 {amount} HYPE"
+
 #: src/components/staking/staking-view.tsx
 msgid "Delegated to {validator}"
 msgstr "已委托给 {validator}"
@@ -2575,6 +2595,13 @@ msgstr "存款状态未知"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit submitted"
 msgstr "存款已提交"
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/tests/cctp-deposit-notification-lifecycle.test.tsx
+#: src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
+msgid "Deposit submitted to Hyperliquid"
+msgstr "存款已提交至 Hyperliquid"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
@@ -3057,12 +3084,12 @@ msgid "Enter trigger price"
 msgstr "输入触发价格"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Entire {token} borrow"
-msgstr "全部 {token} 借款"
+#~ msgid "Entire {token} borrow"
+#~ msgstr "全部 {token} 借款"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Entire {token} supply"
-msgstr "全部 {token} 存入"
+#~ msgid "Entire {token} supply"
+#~ msgstr "全部 {token} 存入"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -3553,8 +3580,8 @@ msgid "Filter validators"
 msgstr "筛选验证者"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Final amount"
-msgstr "最终金额"
+#~ msgid "Final amount"
+#~ msgstr "最终金额"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Finish"
@@ -3581,8 +3608,8 @@ msgstr "例如：grid-bot"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/tests/cctp-deposit-notification-lifecycle.test.tsx
 #: src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
-msgid "Forward transaction submitted"
-msgstr "转发交易已提交"
+#~ msgid "Forward transaction submitted"
+#~ msgstr "转发交易已提交"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4217,6 +4244,7 @@ msgstr "管理者"
 
 #: src/components/vaults/vault-action-modal.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Leader commission"
 msgstr "管理者佣金"
 
@@ -5066,6 +5094,10 @@ msgstr "将质押 HYPE 转入 Spot"
 msgid "Move USDC between your Perp and Spot accounts."
 msgstr "在合约账户与现货账户之间划转 USDC。"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Moved {amount} HYPE to staking"
+msgstr "已将 {amount} HYPE 转入质押"
+
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
@@ -5207,6 +5239,10 @@ msgstr "未找到余额"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "未找到余额。存入资金开始交易。"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "No changes were made."
+msgstr "未做任何更改。"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "No data point selected"
@@ -5365,7 +5401,8 @@ msgstr "没有匹配的金库"
 msgid "No open orders."
 msgstr "暂无当前委托"
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
+#: src/components/vaults/vaults-page.tsx
 msgid "No operation was submitted."
 msgstr "未提交任何操作。"
 
@@ -5712,8 +5749,8 @@ msgstr "在浏览器中打开代币"
 #~ msgstr "操作进行中"
 
 #: src/components/staking/staking-view.tsx
-msgid "Operation verified"
-msgstr "操作已验证"
+#~ msgid "Operation verified"
+#~ msgstr "操作已验证"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "OR"
@@ -6024,7 +6061,7 @@ msgstr "等待处理"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Pending funds operation"
-msgstr "待验证资金操作"
+msgstr "待处理资金操作"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Pending operation needs verification"
@@ -7003,8 +7040,16 @@ msgstr "移除此授权会立即停止使用这个 API 钱包的程序。若要�
 #~ msgstr "正在生成二维码"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Repaid {token}"
-msgstr "已偿还 {token}"
+msgid "Repaid {quantity}"
+msgstr "已偿还 {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Repaid {token}"
+#~ msgstr "已偿还 {token}"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repaid entire {token} borrow"
+msgstr "已偿还全部 {token} 借款"
 
 #: src/components/earn/earn-action-modal.tsx
 #: src/components/earn/earn-action-modal.tsx
@@ -7043,7 +7088,11 @@ msgstr "将在执行时偿还你全部的 {token} 借款，包括已产生的利
 msgid "Request not confirmed"
 msgstr "请求尚未确认"
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Request not submitted"
+msgstr "请求未提交"
+
+#: src/components/staking/domain/staking-action-feedback.ts
 msgid "Request rejected"
 msgstr "请求已拒绝"
 
@@ -7266,9 +7315,13 @@ msgstr "交易前，请查看部署者的<0>文档</0>及我们的<1>使用条�
 msgid "Review the order before it is sent to the exchange."
 msgstr "在提交到交易所之前检查该订单。"
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Review the pending funds operation before starting another one."
+msgstr "开始新的资金操作前，请先核对待处理的资金操作。"
+
 #: src/components/staking/staking-view.tsx
-msgid "Review the public fields and try again."
-msgstr "请检查公开字段后重试。"
+#~ msgid "Review the public fields and try again."
+#~ msgstr "请检查公开字段后重试。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Revocation was submitted but is not yet confirmed."
@@ -8093,6 +8146,10 @@ msgstr "起始价"
 msgid "Started"
 msgstr "开始时间"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Started moving {amount} HYPE to Spot"
+msgstr "已开始将 {amount} HYPE 转入 Spot"
+
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
@@ -8275,8 +8332,12 @@ msgid "Successful"
 msgstr "成功"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Supplied {token}"
-msgstr "已存入 {token}"
+msgid "Supplied {quantity}"
+msgstr "已存入 {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Supplied {token}"
+#~ msgstr "已存入 {token}"
 
 #: src/components/earn/earn-action-modal.tsx
 #: src/components/earn/earn-view.tsx
@@ -8857,8 +8918,8 @@ msgid "The page is matching a new Vault ledger event and refreshed account state
 msgstr "页面正在匹配新的金库账本事件及刷新后的账户状态，不会再次签名。"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
-msgstr "页面正在从 Hyperliquid 刷新。最新变更可能需要片刻才会显示。"
+#~ msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
+#~ msgstr "页面正在从 Hyperliquid 刷新。最新变更可能需要片刻才会显示。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "The page loads one recent-fill snapshot. Export CSV to request a broader accessible history."
@@ -10190,6 +10251,10 @@ msgstr "解除委托"
 msgid "Undelegate HYPE"
 msgstr "解除委托 HYPE"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Undelegated {amount} HYPE"
+msgstr "已解除委托 {amount} HYPE"
+
 #: src/components/staking/staking-view.tsx
 msgid "Undelegated from {validator}"
 msgstr "已从 {validator} 解除委托"
@@ -10344,8 +10409,12 @@ msgstr "USDC 金额"
 #~ msgstr "可领取 USDC"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "USDC deposit submitted to Hyperliquid"
-msgstr "USDC 存款已提交到 Hyperliquid"
+msgid "USDC deposit confirmed on Arbitrum"
+msgstr "USDC 存款已在 Arbitrum 确认"
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+#~ msgid "USDC deposit submitted to Hyperliquid"
+#~ msgstr "USDC 存款已提交到 Hyperliquid"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"
@@ -10487,6 +10556,10 @@ msgstr "金库存入"
 msgid "Vault Deposit"
 msgstr "金库存款"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault deposit confirmed"
+msgstr "金库存款已确认"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault depositors"
 msgstr "金库存款人"
@@ -10536,8 +10609,8 @@ msgid "Vault risk"
 msgstr "金库风险"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault transfer confirmed"
-msgstr "金库转账已确认"
+#~ msgid "Vault transfer confirmed"
+#~ msgstr "金库转账已确认"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault value"
@@ -10550,6 +10623,10 @@ msgstr "金库提取"
 #: src/config/account-ledger.ts
 msgid "Vault Withdrawal"
 msgstr "金库提款"
+
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault withdrawal confirmed"
+msgstr "金库提款已确认"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -10584,8 +10661,8 @@ msgid "Verify again"
 msgstr "再次验证"
 
 #: src/components/vaults/use-vault-action-controller.ts
-msgid "Verify the pending funds operation before starting another one."
-msgstr "开始另一项操作前，请先验证待处理的资金操作。"
+#~ msgid "Verify the pending funds operation before starting another one."
+#~ msgstr "开始另一项操作前，请先验证待处理的资金操作。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Verifying"
@@ -10880,7 +10957,7 @@ msgstr "在所有者余额完成核验前，提款不可用。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
-msgstr "无法确认提款状态"
+msgstr "提款状态未知"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal submitted"
@@ -10893,15 +10970,23 @@ msgstr "提取已解锁"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
-msgstr "此地址暂不支持提款。"
+msgstr "此地址不支持提款。"
 
 #: src/components/earn/earn-action-modal.tsx
 msgid "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
 msgstr "将在执行时取出你全部的 {token} 存入，包括已产生的利息。"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Withdrew {token}"
-msgstr "已提取 {token}"
+msgid "Withdrew {quantity}"
+msgstr "已提款 {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Withdrew {token}"
+#~ msgstr "已提取 {token}"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdrew entire {token} supply"
+msgstr "全部已存入的 {token} 已提款"
 
 #: src/config/funding-comparison.ts
 msgid "Year"
@@ -10999,6 +11084,10 @@ msgstr "你没有可提取的存入资产。"
 msgid "You receive"
 msgstr "您将收到"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "You received <0>{amount} USDC</0>."
+msgstr "您已收到 <0>{amount} USDC</0>。"
+
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -11029,6 +11118,11 @@ msgstr "您的账户推荐人"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your all-time PNL"
 msgstr "您的全部时间 PNL"
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Your balance updates once Hyperliquid credits it."
+msgstr "Hyperliquid 入账后，余额即会更新。"
 
 #: src/components/earn/earn-view.tsx
 msgid "Your Borrowed"

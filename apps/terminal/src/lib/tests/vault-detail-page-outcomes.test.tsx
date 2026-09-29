@@ -86,7 +86,10 @@ vi.mock("@/components/trade/mobile/mobile-header", () => ({ MobileHeader: () => 
 vi.mock("@/components/trade/testnet-banner", () => ({ TestnetBanner: () => null }));
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 vi.mock("@/lib/lazy", () => ({ createLazyComponent: () => () => null }));
-vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => false }));
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	useIsTestnet: () => false,
+}));
 
 import { VaultDetailPage } from "@/components/vaults/vaults-page";
 
@@ -152,18 +155,57 @@ describe("VaultDetailPage settled outcomes", () => {
 		return text;
 	}
 
-	it("reports a verified transfer once with its final amounts and closes the dialog", () => {
+	it("reports a verified withdrawal once with the amount received and its charges, then closes the dialog", () => {
 		testState.action = settledAction("success");
 		render();
 		render();
 
-		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Vault transfer confirmed", expect.anything());
+		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Vault withdrawal confirmed", expect.anything());
 		const description = getDescriptionText(toastMocks.success.mock.calls[0]);
-		expect(description).toContain("Final amount: 24.5 USDC");
-		expect(description).toContain("Commission: 0.3 USDC");
-		expect(description).toContain("Closing cost: 0.2 USDC");
+		expect(description).toContain("You received 24.50 USDC.");
+		expect(description).toContain("Leader commission: 0.30 USDC");
+		expect(description).toContain("Closing cost: 0.20 USDC");
+		expect(description).not.toContain(`0x${"a".repeat(64)}`);
 		expect(testState.close).toHaveBeenCalledOnce();
 		expect(testState.retry).not.toHaveBeenCalled();
+	});
+
+	it("leaves out charges that are zero", () => {
+		testState.action = {
+			...settledAction("success"),
+			receipt: { hash: `0x${"a".repeat(64)}`, finalAmount: "24.5", commission: "0.0", closingCost: "0" },
+		};
+		render();
+
+		const description = getDescriptionText(toastMocks.success.mock.calls[0]);
+		expect(description).toContain("You received 24.50 USDC.");
+		expect(description).not.toContain("Leader commission");
+		expect(description).not.toContain("Closing cost");
+	});
+
+	it("reports a verified deposit with the amount deposited", () => {
+		const action = settledAction("success");
+		testState.action = {
+			...action,
+			action: "deposit",
+			receipt: { hash: action.receipt?.hash, finalAmount: "25" },
+		} as unknown as ReturnType<typeof settledAction>;
+		render();
+
+		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Vault deposit confirmed", expect.anything());
+		const description = getDescriptionText(toastMocks.success.mock.calls[0]);
+		expect(description).toContain("25.00 USDC");
+		expect(description).not.toContain("You received");
+	});
+
+	it("tells the user that nothing was submitted when the wallet rejected the authorization", () => {
+		testState.action = settledAction("rejected");
+		render();
+
+		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(
+			"Authorization rejected",
+			expect.objectContaining({ description: "No operation was submitted." }),
+		);
 	});
 
 	it.each([

@@ -41,7 +41,7 @@ import {
 	type StakingLink,
 	type StakingValidatorStatus,
 } from "./domain/staking";
-import { formatStakingActionError } from "./domain/staking-action-feedback";
+import { getStakingActionFailureNotice, getStakingActionSuccessMessage } from "./domain/staking-action-feedback";
 import { StakingActionModal } from "./staking-action-modal";
 import type { StakingActionSession } from "./use-staking-actions";
 import type { StakingController } from "./use-staking-controller";
@@ -82,7 +82,8 @@ export function StakingView(props: StakingViewProps) {
 		reportedOutcomeRef.current = outcomeKey;
 		if (settledResult === "success") {
 			const hash = session.match?.hash;
-			toast.success(t`Operation verified`, {
+			const amount = formatStakingAmount(session.submission.amount, 8);
+			toast.success(t(getStakingActionSuccessMessage(session.submission.request.kind, amount)), {
 				description: hash ? (
 					<a
 						href={getExplorerTxUrl(hash, props.env === "Testnet")}
@@ -98,10 +99,9 @@ export function StakingView(props: StakingViewProps) {
 			props.onActionClose?.();
 			return;
 		}
-		const fallback =
-			settledResult === "rejected" ? t`No operation was submitted.` : t`Review the public fields and try again.`;
-		toast.error(settledResult === "rejected" ? t`Authorization rejected` : t`Request rejected`, {
-			description: formatStakingActionError(session.errorMessage, (descriptor) => t(descriptor)) ?? fallback,
+		const failure = getStakingActionFailureNotice(settledResult, session.errorMessage);
+		toast.error(t(failure.title), {
+			description: t(failure.description),
 			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
 		});
 		props.onActionRetry?.();

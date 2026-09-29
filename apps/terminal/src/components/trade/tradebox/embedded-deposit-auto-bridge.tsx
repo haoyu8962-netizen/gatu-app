@@ -345,7 +345,7 @@ export function EmbeddedDepositAutoBridge() {
 
 		if (depositStatus === "success") {
 			loadingToastActiveRef.current = false;
-			toast.success(t`USDC deposit submitted to Hyperliquid`, getNotificationOptions());
+			toast.success(t`USDC deposit confirmed on Arbitrum`, getNotificationOptions());
 			return;
 		}
 

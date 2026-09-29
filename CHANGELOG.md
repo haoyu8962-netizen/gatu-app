@@ -53,6 +53,28 @@ changes, not evidence that a build has been deployed or accepted on real devices
   showed it before you confirmed; a one-time account activation fee still appears when it was
   charged. The Chinese text no longer calls the pending amount "实际到账" or mixes 提现 and 提款.
 
+- Funds notifications say what happened and stop repeating themselves:
+  - A withdrawal whose status is unknown now says "Check your balance and withdrawal history before
+    retrying." instead of restating that the status could not be confirmed.
+  - The automatic testnet deposit reports "USDC deposit confirmed on Arbitrum" when the Arbitrum
+    transaction confirms, instead of claiming it was already submitted to Hyperliquid.
+  - Once Circle forwards a CCTP deposit, the notification and the deposit screen say "Deposit
+    submitted to Hyperliquid" and "Your balance updates once Hyperliquid credits it." While
+    forwarding, they say "Circle is forwarding your USDC to Hyperliquid. Do not submit this
+    deposit again."
+  - Vault results are titled "Vault deposit confirmed" or "Vault withdrawal confirmed". A
+    withdrawal says "You received X USDC." and lists the leader commission and closing cost only
+    when they are above zero. The transaction is a short explorer link instead of the full hash.
+    A rejected authorization says "No operation was submitted."
+  - Staking results name the action and amount, such as "Delegated 10 HYPE". A request that
+    failed its checks before sending is titled "Request not submitted" instead of "Request
+    rejected".
+  - Earn results are one line with the amount, such as "Borrowed 5,029.4 USDC". Max withdrawals
+    and repayments say "Withdrew entire USDC supply" or "Repaid entire USDC borrow".
+  - A referral request that definitely failed is no longer titled "Request not confirmed", and a
+    successful one says "Changes may take a moment to appear."
+  - Transfer and Send amounts follow the number-format setting.
+
 - Chinese text now uses 存款 for deposits and 提款 for withdrawals everywhere, matching the Deposit
   and Withdraw buttons. Forty-eight messages that said 充值, 提现 or 入金 were updated, including
   the withdrawal form's `Withdraw to Arbitrum` button, the deposit address and status messages,

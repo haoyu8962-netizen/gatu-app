@@ -1097,12 +1097,15 @@ export function DepositModal() {
 			toast.error(formatFundsActionFeedback(error.code, (descriptor) => t(descriptor)));
 			return;
 		}
-		const message = formatExchangeActionError(error, t`Withdrawal failed`, (descriptor) => t(descriptor));
 		if (isAmbiguousExchangeActionError(error)) {
-			toast.warning(t`Withdrawal status unknown`, { description: message, duration: Infinity, closeButton: true });
+			toast.warning(t`Withdrawal status unknown`, {
+				description: t`Check your balance and withdrawal history before retrying.`,
+				duration: Infinity,
+				closeButton: true,
+			});
 			return;
 		}
-		toast.error(message);
+		toast.error(formatExchangeActionError(error, t`Withdrawal failed`, (descriptor) => t(descriptor)));
 	}
 
 	async function handleWithdrawalPrerequisiteRetry() {
@@ -1327,19 +1330,17 @@ export function DepositModal() {
 				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon={forwardSubmitted ? "success" : "loading"}
-				heading={forwardSubmitted ? <Trans>Forward transaction submitted</Trans> : <Trans>Forwarding deposit</Trans>}
+				heading={forwardSubmitted ? <Trans>Deposit submitted to Hyperliquid</Trans> : <Trans>Forwarding deposit</Trans>}
 				description={
 					forwardSubmitted ? (
-						<Trans>
-							Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time.
-						</Trans>
+						<Trans>Your balance updates once Hyperliquid credits it.</Trans>
 					) : cctpDepositTracking.isError ? (
 						<Trans>
 							The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume
 							when you return.
 						</Trans>
 					) : (
-						<Trans>Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer.</Trans>
+						<Trans>Circle is forwarding your USDC to Hyperliquid. Do not submit this deposit again.</Trans>
 					)
 				}
 				txHash={recoveredCctpDeposit.sourceHash}

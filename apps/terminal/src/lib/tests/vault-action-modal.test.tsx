@@ -51,7 +51,7 @@ describe("Vault action modal", () => {
 			expect(container.querySelector('[role="alert"]')).toBeNull();
 			expect(container.querySelector("footer button, button")).toBeNull();
 			expect(container.textContent).not.toContain("Review again");
-			expect(container.textContent).not.toContain("Vault transfer confirmed");
+			expect(container.textContent).not.toContain("Vault withdrawal confirmed");
 		},
 	);
 
