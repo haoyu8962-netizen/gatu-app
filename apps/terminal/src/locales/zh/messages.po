@@ -2193,7 +2193,7 @@ msgstr "连接钱包查看交易历史。"
 
 #: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Connect your wallet to view TWAP fill history."
-msgstr "连接钱包查看 TWAP 填充历史。"
+msgstr "连接钱包查看 TWAP 成交记录。"
 
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Connect your wallet to view TWAP history."
@@ -2787,9 +2787,26 @@ msgstr "丢弃本地私钥"
 msgid "Disconnect"
 msgstr "断开连接"
 
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the active trading account could not be verified. Please retry."
+msgstr "断开连接失败：无法校验当前交易账户。请重试。"
+
+#: src/hooks/wallet/use-wallet-session.ts
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the local trading key could not be removed. Please retry."
+msgstr "断开连接失败：无法移除本地交易密钥。请重试。"
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the local trading session could not be cleared. Please retry."
+msgstr "断开连接失败：无法清除本地交易会话。请重试。"
+
 #: src/config/footer-links.ts
 msgid "Disconnected"
 msgstr "已断开连接"
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnecting requires Web Locks support. Update your browser and try again."
+msgstr "断开连接需要浏览器支持 Web Locks。请升级浏览器后重试。"
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
@@ -3298,15 +3315,15 @@ msgstr "正在导出资金费支付记录..."
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting order history..."
-msgstr "正在导出委托历史……"
+msgstr "正在导出委托历史..."
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting trade history..."
-msgstr "正在导出成交历史……"
+msgstr "正在导出成交历史..."
 
 #: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Exporting TWAP fill history..."
-msgstr "正在导出 TWAP 填充历史……"
+msgstr "正在导出 TWAP 成交记录..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "failed"
@@ -3352,7 +3369,7 @@ msgstr "启用交易失败"
 
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Failed to export deposits and withdrawals."
-msgstr "存款和提款记录导出失败。"
+msgstr "导出存款和提款记录失败。"
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export funding payments."
@@ -3368,7 +3385,7 @@ msgstr "导出成交历史失败。"
 
 #: src/hooks/trade/use-twap-fill-history-csv.ts
 msgid "Failed to export TWAP fill history."
-msgstr "导出 TWAP 填充历史失败。"
+msgstr "导出 TWAP 成交记录失败。"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Failed to load balances"
@@ -3441,8 +3458,12 @@ msgid "Failed to reverse position"
 msgstr "反向仓位失败"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-msgid "Failed to save share image"
-msgstr "保存分享图片失败"
+msgid "Failed to save image"
+msgstr "保存图片失败"
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+#~ msgid "Failed to save share image"
+#~ msgstr "保存分享图片失败"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to submit close orders"
@@ -3507,7 +3528,7 @@ msgstr "获取时间：{fetchedLabel}"
 
 #: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "Fill History"
-msgstr "填充历史"
+msgstr "成交记录"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
@@ -4041,6 +4062,10 @@ msgstr "身份版本"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr "如果这不是你本人导入的，请立即在电脑端用主钱包撤销手机访问权限。"
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Image saved"
+msgstr "图片已保存"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import"
@@ -7576,21 +7601,21 @@ msgid "Secure connection established. Continue with the referral action."
 msgstr "安全连接已建立。请继续完成推荐操作。"
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
-msgstr "安全断开失败：无法校验当前交易账户。请重试。"
+#~ msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
+#~ msgstr "安全断开失败：无法校验当前交易账户。请重试。"
 
 #: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
-msgstr "安全断开失败：无法移除本地交易密钥。请重试。"
+#~ msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
+#~ msgstr "安全断开失败：无法移除本地交易密钥。请重试。"
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
-msgstr "安全断开失败：无法清除本地交易会话。请重试。"
+#~ msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
+#~ msgstr "安全断开失败：无法清除本地交易会话。请重试。"
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
-msgstr "安全断开需要浏览器支持 Web Locks。请升级浏览器后重试。"
+#~ msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
+#~ msgstr "安全断开需要浏览器支持 Web Locks。请升级浏览器后重试。"
 
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Secure random number generation is unavailable in this browser. Use a supported browser before placing an order."
@@ -7758,8 +7783,8 @@ msgid "Share"
 msgstr "分享"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-msgid "Share image saved"
-msgstr "分享图片已保存"
+#~ msgid "Share image saved"
+#~ msgstr "分享图片已保存"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-row.tsx
@@ -9214,7 +9239,7 @@ msgstr "钱包网络与此跨链路径不匹配。请在钱包中切换网络后
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
-msgstr "钱包会话未能关闭，但本地交易密钥已移除。请重试断开钱包。"
+msgstr "钱包会话未能关闭，但本地交易密钥已移除。请再次断开连接。"
 
 #: src/lib/errors/format.ts
 #~ msgid "There are no eligible rewards available to claim."
@@ -10088,7 +10113,7 @@ msgstr "TWAP 执行进度"
 
 #: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "TWAP fill history"
-msgstr "TWAP 填充历史"
+msgstr "TWAP 成交记录"
 
 #: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP finished"
@@ -11213,8 +11238,12 @@ msgid "Your device clock is out of sync. Correct the date and time, then try aga
 msgstr "设备时钟不同步。请校正日期和时间后重试。"
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
-msgstr "邮箱钱包不可用。请退出登录并使用同一邮箱重新登录，然后重试。"
+msgid "Your email wallet is unavailable. Disconnect, then log in again with the same email."
+msgstr "邮箱钱包不可用。请断开连接，然后使用同一邮箱重新登录。"
+
+#: src/hooks/wallet/use-wallet-session.ts
+#~ msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+#~ msgstr "邮箱钱包不可用。请退出登录并使用同一邮箱重新登录，然后重试。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."

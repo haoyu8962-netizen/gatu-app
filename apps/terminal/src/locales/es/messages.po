@@ -2787,9 +2787,26 @@ msgstr "Descartar clave local"
 msgid "Disconnect"
 msgstr "Desconectar"
 
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the active trading account could not be verified. Please retry."
+msgstr "No se pudo desconectar: no se pudo verificar la cuenta de trading activa. Vuelve a intentarlo."
+
+#: src/hooks/wallet/use-wallet-session.ts
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the local trading key could not be removed. Please retry."
+msgstr "No se pudo desconectar: no se pudo eliminar la clave de trading local. Vuelve a intentarlo."
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the local trading session could not be cleared. Please retry."
+msgstr "No se pudo desconectar: no se pudo borrar la sesión de trading local. Vuelve a intentarlo."
+
 #: src/config/footer-links.ts
 msgid "Disconnected"
 msgstr "Desconectado"
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnecting requires Web Locks support. Update your browser and try again."
+msgstr "Para desconectar se necesita compatibilidad con Web Locks. Actualiza tu navegador y vuelve a intentarlo."
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
@@ -3441,8 +3458,12 @@ msgid "Failed to reverse position"
 msgstr "No se pudo invertir la posición"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-msgid "Failed to save share image"
-msgstr "No se pudo guardar la imagen para compartir"
+msgid "Failed to save image"
+msgstr "No se pudo guardar la imagen"
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+#~ msgid "Failed to save share image"
+#~ msgstr "No se pudo guardar la imagen para compartir"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to submit close orders"
@@ -4041,6 +4062,10 @@ msgstr "Época de identidad"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr ""
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Image saved"
+msgstr "Imagen guardada"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import"
@@ -7576,21 +7601,21 @@ msgid "Secure connection established. Continue with the referral action."
 msgstr "Conexión segura establecida. Continúa con la acción de referido."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
-msgstr "La desconexión segura falló porque no se pudo verificar la cuenta de trading activa. Vuelve a intentarlo."
+#~ msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
+#~ msgstr "La desconexión segura falló porque no se pudo verificar la cuenta de trading activa. Vuelve a intentarlo."
 
 #: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
-msgstr "La desconexión segura falló porque no se pudo eliminar la clave de trading local. Vuelve a intentarlo."
+#~ msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
+#~ msgstr "La desconexión segura falló porque no se pudo eliminar la clave de trading local. Vuelve a intentarlo."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
-msgstr "La desconexión segura falló porque no se pudo borrar la sesión de trading local. Vuelve a intentarlo."
+#~ msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
+#~ msgstr "La desconexión segura falló porque no se pudo borrar la sesión de trading local. Vuelve a intentarlo."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
-msgstr "La desconexión segura requiere compatibilidad con Web Locks. Actualiza tu navegador y vuelve a intentarlo."
+#~ msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
+#~ msgstr "La desconexión segura requiere compatibilidad con Web Locks. Actualiza tu navegador y vuelve a intentarlo."
 
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Secure random number generation is unavailable in this browser. Use a supported browser before placing an order."
@@ -7758,8 +7783,8 @@ msgid "Share"
 msgstr "Compartir"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-msgid "Share image saved"
-msgstr "Imagen para compartir guardada"
+#~ msgid "Share image saved"
+#~ msgstr "Imagen para compartir guardada"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-row.tsx
@@ -11213,8 +11238,12 @@ msgid "Your device clock is out of sync. Correct the date and time, then try aga
 msgstr "El reloj de tu dispositivo no está sincronizado. Corrige la fecha y la hora y vuelve a intentarlo."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
-msgstr "Tu billetera de correo electrónico no está disponible. Cierra sesión y vuelve a iniciarla con el mismo correo electrónico; luego inténtalo de nuevo."
+msgid "Your email wallet is unavailable. Disconnect, then log in again with the same email."
+msgstr "Tu billetera de correo electrónico no está disponible. Desconéctala y vuelve a iniciar sesión con el mismo correo electrónico."
+
+#: src/hooks/wallet/use-wallet-session.ts
+#~ msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+#~ msgstr "Tu billetera de correo electrónico no está disponible. Cierra sesión y vuelve a iniciarla con el mismo correo electrónico; luego inténtalo de nuevo."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."

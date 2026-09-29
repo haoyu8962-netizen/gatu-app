@@ -2787,9 +2787,26 @@ msgstr "Discard local key"
 msgid "Disconnect"
 msgstr "Disconnect"
 
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the active trading account could not be verified. Please retry."
+msgstr "Disconnect failed: the active trading account could not be verified. Please retry."
+
+#: src/hooks/wallet/use-wallet-session.ts
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the local trading key could not be removed. Please retry."
+msgstr "Disconnect failed: the local trading key could not be removed. Please retry."
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the local trading session could not be cleared. Please retry."
+msgstr "Disconnect failed: the local trading session could not be cleared. Please retry."
+
 #: src/config/footer-links.ts
 msgid "Disconnected"
 msgstr "Disconnected"
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnecting requires Web Locks support. Update your browser and try again."
+msgstr "Disconnecting requires Web Locks support. Update your browser and try again."
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
@@ -3441,8 +3458,12 @@ msgid "Failed to reverse position"
 msgstr "Failed to reverse position"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-msgid "Failed to save share image"
-msgstr "Failed to save share image"
+msgid "Failed to save image"
+msgstr "Failed to save image"
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+#~ msgid "Failed to save share image"
+#~ msgstr "Failed to save share image"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to submit close orders"
@@ -4041,6 +4062,10 @@ msgstr "Identity epoch"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Image saved"
+msgstr "Image saved"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import"
@@ -7576,21 +7601,21 @@ msgid "Secure connection established. Continue with the referral action."
 msgstr "Secure connection established. Continue with the referral action."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
-msgstr "Secure disconnect failed because the active trading account could not be verified. Please retry."
+#~ msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
+#~ msgstr "Secure disconnect failed because the active trading account could not be verified. Please retry."
 
 #: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
-msgstr "Secure disconnect failed because the local trading key could not be removed. Please retry."
+#~ msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
+#~ msgstr "Secure disconnect failed because the local trading key could not be removed. Please retry."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
-msgstr "Secure disconnect failed because the local trading session could not be cleared. Please retry."
+#~ msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
+#~ msgstr "Secure disconnect failed because the local trading session could not be cleared. Please retry."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
-msgstr "Secure disconnect requires Web Locks support. Update your browser and try again."
+#~ msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
+#~ msgstr "Secure disconnect requires Web Locks support. Update your browser and try again."
 
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Secure random number generation is unavailable in this browser. Use a supported browser before placing an order."
@@ -7758,8 +7783,8 @@ msgid "Share"
 msgstr "Share"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-msgid "Share image saved"
-msgstr "Share image saved"
+#~ msgid "Share image saved"
+#~ msgstr "Share image saved"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-row.tsx
@@ -11213,8 +11238,12 @@ msgid "Your device clock is out of sync. Correct the date and time, then try aga
 msgstr "Your device clock is out of sync. Correct the date and time, then try again."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
-msgstr "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+msgid "Your email wallet is unavailable. Disconnect, then log in again with the same email."
+msgstr "Your email wallet is unavailable. Disconnect, then log in again with the same email."
+
+#: src/hooks/wallet/use-wallet-session.ts
+#~ msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+#~ msgstr "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."

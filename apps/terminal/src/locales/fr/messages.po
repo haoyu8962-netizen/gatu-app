@@ -2787,9 +2787,26 @@ msgstr "Supprimer la clé locale"
 msgid "Disconnect"
 msgstr "Déconnecter"
 
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the active trading account could not be verified. Please retry."
+msgstr "Échec de la déconnexion : le compte de trading actif n'a pas pu être vérifié. Veuillez réessayer."
+
+#: src/hooks/wallet/use-wallet-session.ts
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the local trading key could not be removed. Please retry."
+msgstr "Échec de la déconnexion : la clé de trading locale n'a pas pu être supprimée. Veuillez réessayer."
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the local trading session could not be cleared. Please retry."
+msgstr "Échec de la déconnexion : la session de trading locale n'a pas pu être effacée. Veuillez réessayer."
+
 #: src/config/footer-links.ts
 msgid "Disconnected"
 msgstr "Déconnecté"
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnecting requires Web Locks support. Update your browser and try again."
+msgstr "La déconnexion nécessite la prise en charge des Web Locks. Mettez à jour votre navigateur et réessayez."
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
@@ -3441,8 +3458,12 @@ msgid "Failed to reverse position"
 msgstr "Échec de l'inversion de la position"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-msgid "Failed to save share image"
-msgstr "Échec de l'enregistrement de l'image de partage"
+msgid "Failed to save image"
+msgstr "Échec de l'enregistrement de l'image"
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+#~ msgid "Failed to save share image"
+#~ msgstr "Échec de l'enregistrement de l'image de partage"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to submit close orders"
@@ -4041,6 +4062,10 @@ msgstr "Époque de l’identité"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr ""
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Image saved"
+msgstr "Image enregistrée"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import"
@@ -7576,21 +7601,21 @@ msgid "Secure connection established. Continue with the referral action."
 msgstr "Connexion sécurisée établie. Poursuivez l’action de parrainage."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
-msgstr "La déconnexion sécurisée a échoué car le compte de trading actif n'a pas pu être vérifié. Veuillez réessayer."
+#~ msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
+#~ msgstr "La déconnexion sécurisée a échoué car le compte de trading actif n'a pas pu être vérifié. Veuillez réessayer."
 
 #: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
-msgstr "La déconnexion sécurisée a échoué car la clé de trading locale n'a pas pu être supprimée. Veuillez réessayer."
+#~ msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
+#~ msgstr "La déconnexion sécurisée a échoué car la clé de trading locale n'a pas pu être supprimée. Veuillez réessayer."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
-msgstr "La déconnexion sécurisée a échoué car la session de trading locale n'a pas pu être effacée. Veuillez réessayer."
+#~ msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
+#~ msgstr "La déconnexion sécurisée a échoué car la session de trading locale n'a pas pu être effacée. Veuillez réessayer."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
-msgstr "La déconnexion sécurisée nécessite la prise en charge des Web Locks. Mettez à jour votre navigateur et réessayez."
+#~ msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
+#~ msgstr "La déconnexion sécurisée nécessite la prise en charge des Web Locks. Mettez à jour votre navigateur et réessayez."
 
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Secure random number generation is unavailable in this browser. Use a supported browser before placing an order."
@@ -7758,8 +7783,8 @@ msgid "Share"
 msgstr "Partager"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-msgid "Share image saved"
-msgstr "Image de partage enregistrée"
+#~ msgid "Share image saved"
+#~ msgstr "Image de partage enregistrée"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-row.tsx
@@ -11213,8 +11238,12 @@ msgid "Your device clock is out of sync. Correct the date and time, then try aga
 msgstr "L'horloge de votre appareil n'est pas synchronisée. Corrigez la date et l'heure, puis réessayez."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
-msgstr "Votre portefeuille lié à l’e-mail est indisponible. Déconnectez-vous, reconnectez-vous avec la même adresse e-mail, puis réessayez."
+msgid "Your email wallet is unavailable. Disconnect, then log in again with the same email."
+msgstr "Votre portefeuille lié à l’e-mail est indisponible. Déconnectez-le, puis reconnectez-vous avec la même adresse e-mail."
+
+#: src/hooks/wallet/use-wallet-session.ts
+#~ msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+#~ msgstr "Votre portefeuille lié à l’e-mail est indisponible. Déconnectez-vous, reconnectez-vous avec la même adresse e-mail, puis réessayez."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."

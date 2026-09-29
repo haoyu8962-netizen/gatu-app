@@ -103,6 +103,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
   the withdrawal form's `Withdraw to Arbitrum` button, the deposit address and status messages,
   and the deposit and withdrawal notifications.
 
+- Other notifications follow the buttons they come from:
+  - Disconnect failures start with "Disconnect failed:" instead of "Secure disconnect failed
+    because", and an unavailable email wallet says "Disconnect, then log in again with the same
+    email." like the Disconnect button.
+  - Saving a PnL share image says "Image saved" only after the image was downloaded. When a phone
+    opens the share sheet instead, no notification appears. A failure says "Failed to save image".
+  - In Chinese, TWAP Fill History is 成交记录 instead of 填充历史 on the tab, the table and the
+    export messages, and the export progress messages use the same ellipsis as the others.
+
 - The phone navigation drawer no longer shows the Navigation and More headings. As on the
   official terminal, a divider now separates the main destinations from Funding Comparison,
   Statistics, API Wallet, Docs and Support, which leaves more room for the list on small screens.
