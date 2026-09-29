@@ -47,6 +47,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Notices on the Staking page and in the Staking, Referral, API wallet and Vault dialogs are rounded
+  8px like the other notices; they were 4px to 10px.
+
 - Dashboard pages share one set of corners. Page panels are rounded 12px and carry the same soft
   shadow, and the cards, sections and notices inside them are rounded 8px, including the position,
   order and history cards Portfolio shows on phones (the Trade page keeps its own cards). Before,
