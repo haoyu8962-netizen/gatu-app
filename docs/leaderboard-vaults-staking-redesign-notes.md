@@ -388,6 +388,8 @@ Correction (2026-09-29): the page-overflow check cannot see content clipped insi
 
 Correction (2026-09-29, page gutter): the Vault routes were delivered without the 16px mobile side padding that the same delivery gave Staking, so the rounded, shadowed Vault panel touched both screen edges; the acceptance screenshot `vaults-normal.png` already shows this. `DASHBOARD_FRAMES["/vaults"]` now has `px-4`, and the mobile Vault cards stack each label above its value so leader addresses are not truncated at the narrower width. Leaderboard keeps its intended flat full-width sheet on phones. The rule for both surfaces lives in `.claude/rules/style-ui-guide.md` (Dashboard page gutters).
 
+Correction (2026-09-29, names and chart): the mobile Vault cards and the desktop table still cut a long name to one line with an ellipsis (at 375px in Chinese, 6 of the first 40 live Vaults, HLP included), and the detail chart drew its line under the absolutely positioned Account value / PNL caption (on HLP's 30-day account value, 66 of 400 sampled line points fell inside the caption box at 375px and 29 at 1466px). Names now wrap in full on both surfaces, and the caption sits above the plot in normal flow while the figure keeps its height. `vaults-list.pw.ts` also checks that no mobile card hides part of its name and that the detail caption ends above the plot; both checks fail against the previous layout.
+
 ### 8.3 Changed-file inventory
 
 Only the following delivery-owned categories belong to this redesign:

@@ -303,7 +303,7 @@ function VaultDesktopRow({
 				>
 					<VaultMark name={row.name} />
 					<div className="min-w-0">
-						<p className="max-w-72 truncate text-xs font-semibold text-fg">
+						<p className="max-w-72 break-words text-xs font-semibold text-fg">
 							{row.name || <bdi dir="ltr">{shortenAddress(row.vaultAddress)}</bdi>}
 						</p>
 						<div className="mt-0.5 flex gap-1">
@@ -363,7 +363,7 @@ function VaultMobileCard({
 			<div className="flex min-w-0 items-center gap-2">
 				<VaultMark name={row.name} />
 				<div className="min-w-0 flex-1">
-					<p className="truncate text-sm font-bold text-fg">
+					<p className="break-words text-sm font-bold text-fg">
 						{row.name || <bdi dir="ltr">{shortenAddress(row.vaultAddress)}</bdi>}
 					</p>
 					<div className="mt-0.5 flex flex-wrap gap-1">

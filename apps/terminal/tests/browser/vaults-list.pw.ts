@@ -32,8 +32,10 @@ async function cardGeometry(page: Page) {
 						.filter((element) => !element.closest(".sr-only"))
 						.map((element) => element.getBoundingClientRect().right),
 				);
+				const name = card.querySelector("p");
 				return {
-					name: card.querySelector("p")?.textContent ?? "",
+					name: name?.textContent ?? "",
+					nameHidden: !!name && (name.scrollWidth > name.clientWidth || name.scrollHeight > name.clientHeight),
 					mark: card.querySelector('[aria-hidden="true"]')?.textContent ?? "",
 					leftGap: box.left - panelBox.left,
 					rightOverflow: box.right - panelBox.right,
@@ -91,6 +93,7 @@ for (const locale of ["en", "zh"]) {
 				expect(card.rightOverflow, card.name).toBeLessThanOrEqual(0);
 				expect(card.contentOverflow, card.name).toBeLessThanOrEqual(0.5);
 				expect(card.truncatedValues, card.name).toEqual([]);
+				expect(card.nameHidden, card.name).toBe(false);
 				expect(card.mark, card.name).toMatch(/^[\p{L}\p{N}]{1,2}$/u);
 			}
 			const longNameCard = geometry.cards.find((card) => card.name === LONG_NAME);
@@ -127,6 +130,10 @@ for (const viewport of [
 			const address = [...panel.querySelectorAll("bdi")].find((element) => element.textContent === addressText);
 			if (!address?.parentElement) throw new Error("Missing Vault address");
 			const addressBox = address.parentElement.getBoundingClientRect();
+			const chart = panel.querySelector("[data-vault-performance-chart]");
+			const caption = chart?.querySelector("figcaption")?.getBoundingClientRect();
+			const plot = chart?.querySelector("svg")?.getBoundingClientRect();
+			if (!caption || !plot) throw new Error("Missing Vault chart");
 			return {
 				pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
 				panelOverflow: panel.scrollWidth - panel.clientWidth,
@@ -134,6 +141,7 @@ for (const viewport of [
 				panelEndGutter: window.innerWidth - box.right,
 				addressHidden: hidesContent(address.parentElement),
 				addressOutsidePanel: addressBox.right - box.right,
+				captionOverPlot: caption.bottom - plot.top,
 				hiddenContent: [...panel.querySelectorAll("*")]
 					.filter((element) => !element.closest(".sr-only") && hidesContent(element))
 					.map((element) => element.textContent?.trim().slice(0, 60) ?? ""),
@@ -145,6 +153,7 @@ for (const viewport of [
 		expect(geometry.panelEndGutter).toBe(16);
 		expect(geometry.addressHidden).toBe(false);
 		expect(geometry.addressOutsidePanel).toBeLessThanOrEqual(0);
+		expect(geometry.captionOverPlot).toBeLessThanOrEqual(0);
 		expect(geometry.hiddenContent).toEqual([]);
 		expect(errors).toEqual([]);
 	});

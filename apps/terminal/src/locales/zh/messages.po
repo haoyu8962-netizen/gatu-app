@@ -1535,7 +1535,7 @@ msgstr "正在检查地区可用性，资金操作暂时不可用。"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Checking regional availability. Vault actions are temporarily unavailable."
-msgstr "正在核验地区可用性，Vault 操作暂不可用。"
+msgstr "正在核验地区可用性，金库操作暂不可用。"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -2110,7 +2110,7 @@ msgstr "关联移动设备前，请先连接所选主钱包。"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Connect the verified owner wallet to withdraw Vault equity."
-msgstr "请连接已验证的所有者钱包以提取 Vault 权益。"
+msgstr "请连接已验证的所有者钱包以提取金库权益。"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Connect to view authorized API wallets"
@@ -5585,7 +5585,7 @@ msgstr "未返回任何金库"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No withdrawable Vault equity is available."
-msgstr "当前没有可提取的 Vault 权益。"
+msgstr "当前没有可提取的金库权益。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "No withdrawal queue"
@@ -6944,7 +6944,7 @@ msgstr "正在刷新质押数据…"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Refreshing Vault data. Actions are temporarily unavailable."
-msgstr "正在刷新 Vault 数据，操作暂不可用。"
+msgstr "正在刷新金库数据，操作暂不可用。"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
@@ -9582,11 +9582,11 @@ msgstr "本终端暂未开放投资组合保证金的新开通。已开通账户
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is closed and no longer accepts deposits."
-msgstr "此 Vault 已关闭，不再接受存款。"
+msgstr "此金库已关闭，不再接受存款。"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "This Vault is not accepting deposits."
-msgstr "此 Vault 当前不接受存款。"
+msgstr "此金库当前不接受存款。"
 
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "This Vault no longer accepts deposits."
@@ -10271,7 +10271,7 @@ msgstr "无法验证地区可用性，交易暂时不可用。"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
-msgstr "无法核验地区可用性，Vault 操作暂不可用。"
+msgstr "无法核验地区可用性，金库操作暂不可用。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10628,11 +10628,11 @@ msgstr "金库"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault actions are not available in your region."
-msgstr "您所在地区不支持 Vault 操作。"
+msgstr "您所在地区不支持金库操作。"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault actions are temporarily unavailable."
-msgstr "Vault 操作暂不可用。"
+msgstr "金库操作暂不可用。"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault chart metric"
@@ -10749,7 +10749,7 @@ msgstr "验证参考"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Verified Vault details are unavailable."
-msgstr "无法获取已验证的 Vault 详情。"
+msgstr "无法获取已验证的金库详情。"
 
 #. placeholder {0}: formatVaultUsd(availableAmount)
 #: src/components/vaults/vault-action-modal.tsx
@@ -10790,7 +10790,7 @@ msgstr "正在通过历史记录验证"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Verifying the owner Vault balance before enabling withdrawals."
-msgstr "正在核验所有者的 Vault 余额，核验完成后才能提款。"
+msgstr "正在核验所有者的金库余额，核验完成后才能提款。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"

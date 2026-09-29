@@ -428,10 +428,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 ### Fixed
 
 - On phones, Vault cards no longer run off the right edge of the screen when the list contains a
-  long Vault name, so APR, equity, age and the performance line stay visible; a long name now ends
-  with an ellipsis. On desktop, the Vault and Leader column headers line up with their columns. A
-  Vault's mark now skips punctuation and emoji, so `[ Systemic Strategies ] …` shows `SY` instead
-  of `[`.
+  long Vault name, so APR, equity, age and the performance line stay visible; a long name wraps onto
+  more lines instead of being cut off, on phones and in the desktop table alike. On desktop, the
+  Vault and Leader column headers line up with their columns. A Vault's mark now skips punctuation
+  and emoji, so `[ Systemic Strategies ] …` shows `SY` instead of `[`.
 
 - On phones, the Vaults, Vault detail and Referrals pages (including referral invitation links) now
   keep the same 16px side margin as Staking, Earn and Portfolio instead of pressing a rounded panel
@@ -439,6 +439,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   complete at the narrower width. The three referral steps (Trade, Create code, Invite traders)
   now wrap onto more lines instead of being cut off with an ellipsis, which the narrower width had
   started to do in Chinese and several labels already did in English and French.
+
+- On a Vault's page, the Account value or PNL figure sits above the chart instead of on top of it,
+  where the line could run through the number. In Chinese, the page's notices say 金库 like the rest
+  of the page instead of the English word Vault.
 
 - Error messages follow the interface language. The order and cancellation rejections that
   Hyperliquid documents (such as tick size, minimum order value, insufficient margin, reduce-only,
