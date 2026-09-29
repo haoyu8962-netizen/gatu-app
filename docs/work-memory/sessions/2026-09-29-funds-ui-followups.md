@@ -85,3 +85,5 @@
 - 本记录处理了[通知文案审查](2026-09-29-notification-copy-review.md)「后续」里除 CCTP 手续费（另一会话 `claude/withdrawal-fee-review-bound` 处理）与圆角统一之外的各项，以及[页面边距对抗审查](2026-09-29-gutter-adversarial-review.md)里推荐码截断与中文单字成行两项；不整体替代它们。
 - 仍未做：推荐领取历史与被推荐交易者卡片的浏览器覆盖；三个整页白底页面的浏览器夹具；各页卡片圆角是否统一；金库列表只有一组时的重复组名。
 - 与另一会话的分支 `claude/withdrawal-fee-review-bound` 同改 `deposit-modal.tsx`、存款路由测试与各语言目录，改动区域不重叠；合并预演结果见「验证与限制」。
+
+补记（2026-09-29）：「仍未做」里的各页卡片圆角与金库单组时的重复组名已处理，另一会话的 `claude/withdrawal-fee-review-bound` 也已合并，见[合并与圆角统一记录](2026-09-29-dashboard-radius-and-fee-merge.md)。

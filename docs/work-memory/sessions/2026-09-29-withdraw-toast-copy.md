@@ -56,3 +56,5 @@
 
 - 待办：CCTP 手续费在表单与点击之间变化时失败关闭（另开任务）。修好后，`docs/withdrawals.md` 里「目前按原样使用」的说明要随之更正。
 - 部分更新 `docs/funds-dialog-outcome-plan.md` 第二步实施记录中对通知内容的描述（以追加小节的方式），不整体替代。
+
+补记（2026-09-29）：上面「CCTP 手续费在表单与点击之间变化时失败关闭」的待办已被取代。另一会话按产品负责人的决定改为不设门禁：点击时读取的手续费直接用于提交与通知，不与表单显示的值比较（[提现手续费记录](2026-09-29-withdrawal-fee-review-bound.md)，`docs/withdrawals.md` 的 CCTP route 一节已随之更正）。该分支于 2026-09-29 以 `58acbf22` 合并进 `claude/dashboard-followups`，见[合并与圆角统一记录](2026-09-29-dashboard-radius-and-fee-merge.md)。
