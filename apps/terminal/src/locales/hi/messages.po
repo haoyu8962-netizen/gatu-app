@@ -438,8 +438,8 @@ msgid "Account mode changed before the request was submitted. Review balances an
 msgstr "अनुरोध भेजे जाने से पहले खाता मोड बदल गया। शेष राशि की समीक्षा करें और फिर से प्रयास करें।"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Account mode updated"
-msgstr "खाता मोड अपडेट किया गया"
+#~ msgid "Account mode updated"
+#~ msgstr "खाता मोड अपडेट किया गया"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking data unavailable"
@@ -772,6 +772,10 @@ msgstr "राशि शून्य से अधिक होनी चाह�
 #: src/components/earn/earn-action-modal.tsx
 msgid "Amount to repay"
 msgstr "चुकाने की राशि"
+
+#: src/lib/trade/order-reconciliation-feedback.ts
+msgid "An accepted order was canceled afterward. Review open orders and positions before retrying."
+msgstr "एक स्वीकृत ऑर्डर बाद में रद्द हो गया। दोबारा प्रयास से पहले खुले ऑर्डर और पोज़िशन जाँचें।"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "An account is excluded only when both its account value is below $100,000 and its all-time volume is below $10,000,000. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this ranking does not claim exact parity with Hyperliquid's official leaderboard."
@@ -1370,12 +1374,12 @@ msgstr "चयनित ऑर्डर रद्द करें"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
-#: src/lib/trade/order-reconciliation-feedback.ts
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled"
 msgstr "रद्द"
@@ -1433,8 +1437,8 @@ msgstr "ओपन इंटरेस्ट सीमा के कारण र�
 #~ msgstr "रद्द हो रहा है..."
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "Cancellation submitted. Waiting for the open-orders update."
-msgstr "रद्द करने का अनुरोध भेज दिया गया। खुले ऑर्डर के अपडेट की प्रतीक्षा है।"
+#~ msgid "Cancellation submitted. Waiting for the open-orders update."
+#~ msgstr "रद्द करने का अनुरोध भेज दिया गया। खुले ऑर्डर के अपडेट की प्रतीक्षा है।"
 
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/hooks/trade/use-asset-leverage.ts
@@ -3324,8 +3328,8 @@ msgid "Failed to cancel order."
 msgstr "ऑर्डर रद्द नहीं किया जा सका।"
 
 #: src/lib/trade/order-submission-feedback.ts
-msgid "Failed to cancel TWAP order."
-msgstr "TWAP ऑर्डर रद्द नहीं किया जा सका।"
+#~ msgid "Failed to cancel TWAP order."
+#~ msgstr "TWAP ऑर्डर रद्द नहीं किया जा सका।"
 
 #: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -3444,17 +3448,21 @@ msgstr "शेयर इमेज सहेजने में विफल"
 msgid "Failed to submit close orders"
 msgstr "क्लोज़ ऑर्डर सबमिट करने में विफल"
 
+#: src/lib/trade/order-submission-feedback.ts
+msgid "Failed to terminate TWAP."
+msgstr "TWAP समाप्त नहीं हो सका।"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Failed to update account mode"
-msgstr "खाता मोड अपडेट करने में विफल"
+#~ msgid "Failed to update account mode"
+#~ msgstr "खाता मोड अपडेट करने में विफल"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to update isolated margin"
 msgstr "आइसोलेटेड मार्जिन अपडेट नहीं हो सका"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Failed to update TP/SL orders"
-msgstr "TP/SL ऑर्डर अपडेट करने में विफल"
+#~ msgid "Failed to update TP/SL orders"
+#~ msgstr "TP/SL ऑर्डर अपडेट करने में विफल"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Favorites"
@@ -3512,6 +3520,7 @@ msgstr "फिल स्थिति"
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Filled"
 msgstr "पूर्ण"
 
@@ -4174,8 +4183,8 @@ msgid "Isolated margin"
 msgstr "आइसोलेटेड मार्जिन"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Isolated margin updated"
-msgstr "आइसोलेटेड मार्जिन अपडेट हो गया"
+#~ msgid "Isolated margin updated"
+#~ msgstr "आइसोलेटेड मार्जिन अपडेट हो गया"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -4725,12 +4734,12 @@ msgid "Margin mode data is unavailable"
 msgstr "मार्जिन मोड डेटा उपलब्ध नहीं है"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin mode updated"
-msgstr "Margin मोड अपडेट किया गया"
+#~ msgid "Margin mode updated"
+#~ msgstr "Margin मोड अपडेट किया गया"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin mode updated. Leverage updated to {leverage}x"
-msgstr "मार्जिन मोड अपडेट हो गया। लीवरेज {leverage}x पर अपडेट किया गया"
+#~ msgid "Margin mode updated. Leverage updated to {leverage}x"
+#~ msgstr "मार्जिन मोड अपडेट हो गया। लीवरेज {leverage}x पर अपडेट किया गया"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -5053,6 +5062,10 @@ msgstr "मोबाइल QR आयात अस्थायी रूप स�
 #: src/components/api-wallet/api-wallet-fixture.tsx
 msgid "Mock account"
 msgstr "मॉक खाता"
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "Modified"
+msgstr "संशोधित किया गया"
 
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "Modify order"
@@ -5807,8 +5820,8 @@ msgid "Order canceled"
 msgstr "ऑर्डर रद्द"
 
 #: src/components/trade/order-reconciliation.tsx
-msgid "Order cancellation confirmed."
-msgstr "ऑर्डर रद्दीकरण की पुष्टि हो गई।"
+#~ msgid "Order cancellation confirmed."
+#~ msgstr "ऑर्डर रद्दीकरण की पुष्टि हो गई।"
 
 #: src/hooks/trade/use-order-confirmation.ts
 #: src/lib/errors/format.ts
@@ -5832,7 +5845,6 @@ msgid "Order failed"
 msgstr "ऑर्डर विफल"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
-#: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "Order filled"
 msgstr "ऑर्डर भर गया"
@@ -5868,12 +5880,12 @@ msgid "Order market context does not match the submitted asset."
 msgstr "ऑर्डर का बाज़ार संदर्भ सबमिट किए गए एसेट से मेल नहीं खाता।"
 
 #: src/components/trade/order-reconciliation.tsx
-msgid "Order modification confirmed."
-msgstr "ऑर्डर संशोधन की पुष्टि हो गई।"
+#~ msgid "Order modification confirmed."
+#~ msgstr "ऑर्डर संशोधन की पुष्टि हो गई।"
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "Order modification submitted. Waiting for the open-orders update."
-msgstr "ऑर्डर संशोधन सबमिट किया गया। खुले ऑर्डर के अपडेट की प्रतीक्षा है।"
+#~ msgid "Order modification submitted. Waiting for the open-orders update."
+#~ msgstr "ऑर्डर संशोधन सबमिट किया गया। खुले ऑर्डर के अपडेट की प्रतीक्षा है।"
 
 #: src/lib/errors/definitions/reduce-only.ts
 msgid "Order must reduce your current position"
@@ -5899,7 +5911,6 @@ msgstr "ऑर्डर स्थिति"
 msgid "Order submitted"
 msgstr "ऑर्डर सबमिट किया गया"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "ऑर्डर सबमिट हो गया है। एक्सचेंज की स्थिति की पुष्टि की जा रही है; दोबारा प्रयास न करें।"
@@ -6024,6 +6035,7 @@ msgid "Partially completed"
 msgstr "आंशिक रूप से पूरा हुआ"
 
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Partially filled"
 msgstr "आंशिक रूप से निष्पादित"
 
@@ -7287,6 +7299,10 @@ msgstr "केवल समीक्षा"
 #~ msgid "Review phone access with the selected master wallet before approving it."
 #~ msgstr "स्वीकृत करने से पहले चयनित मास्टर वॉलेट के साथ फ़ोन एक्सेस की समीक्षा करें।"
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Review positions"
+msgstr "पोज़िशन जाँचें"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Review request"
 msgstr "अनुरोध की समीक्षा करें"
@@ -7963,8 +7979,8 @@ msgid "Some order markets are unavailable. Refresh and try again."
 msgstr "कुछ ऑर्डर बाज़ार अनुपलब्ध हैं। रीफ़्रेश करें और फिर से प्रयास करें।"
 
 #: src/lib/trade/order-reconciliation-feedback.ts
-msgid "Some orders were accepted. Review open orders before retrying."
-msgstr "कुछ ऑर्डर स्वीकार किए गए। पुनः प्रयास करने से पहले खुले ऑर्डर जाँचें।"
+#~ msgid "Some orders were accepted. Review open orders before retrying."
+#~ msgstr "कुछ ऑर्डर स्वीकार किए गए। पुनः प्रयास करने से पहले खुले ऑर्डर जाँचें।"
 
 #: src/components/pages/application-error-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
@@ -8498,6 +8514,34 @@ msgstr "लाइट मोड में बदलें"
 msgid "Switch to Mainnet"
 msgstr "Mainnet पर स्विच करें"
 
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Cross margin"
+msgstr "क्रॉस मार्जिन पर स्विच किया गया"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Cross margin at {leverage}x"
+msgstr "{leverage}x पर क्रॉस मार्जिन पर स्विच किया गया"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Isolated margin"
+msgstr "आइसोलेटेड मार्जिन पर स्विच किया गया"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Isolated margin at {leverage}x"
+msgstr "{leverage}x पर आइसोलेटेड मार्जिन पर स्विच किया गया"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Manual"
+msgstr "मैन्युअल पर स्विच किया गया"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Portfolio margin"
+msgstr "पोर्टफोलियो मार्जिन पर स्विच किया गया"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Unified account"
+msgstr "एकीकृत खाते पर स्विच किया गया"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
@@ -8609,6 +8653,10 @@ msgstr "TWAP समाप्त करें"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Terminate TWAP order"
 msgstr "TWAP ऑर्डर समाप्त करें"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "Terminated"
+msgstr "समाप्त किया गया"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -9707,8 +9755,12 @@ msgid "TP/SL"
 msgstr "TP/SL"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "TP/SL orders updated"
-msgstr "TP/SL ऑर्डर अपडेट किए गए"
+msgid "TP/SL may have changed. Review this position's TP/SL before retrying."
+msgstr "TP/SL बदल गया हो सकता है। दोबारा प्रयास से पहले इस पोज़िशन का TP/SL जाँचें।"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#~ msgid "TP/SL orders updated"
+#~ msgstr "TP/SL ऑर्डर अपडेट किए गए"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "TP/SL size scope"
@@ -10009,21 +10061,21 @@ msgid "TWAP activity"
 msgstr "TWAP गतिविधि"
 
 #: src/components/trade/twap-reconciliation.tsx
-msgid "TWAP cancellation confirmed."
-msgstr "TWAP रद्दीकरण की पुष्टि हो गई।"
+#~ msgid "TWAP cancellation confirmed."
+#~ msgstr "TWAP रद्दीकरण की पुष्टि हो गई।"
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "TWAP cancellation submitted. Waiting for the active TWAP update."
-msgstr "TWAP रद्द करने का अनुरोध भेज दिया गया। सक्रिय TWAP के अपडेट की प्रतीक्षा है।"
+#~ msgid "TWAP cancellation submitted. Waiting for the active TWAP update."
+#~ msgstr "TWAP रद्द करने का अनुरोध भेज दिया गया। सक्रिय TWAP के अपडेट की प्रतीक्षा है।"
 
 #: src/components/trade/twap-reconciliation.tsx
-msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
-msgstr "TWAP रद्दीकरण की पुष्टि नहीं हुई। फिर प्रयास करने से पहले सक्रिय TWAP ऑर्डर की समीक्षा करें।"
+#~ msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+#~ msgstr "TWAP रद्दीकरण की पुष्टि नहीं हुई। फिर प्रयास करने से पहले सक्रिय TWAP ऑर्डर की समीक्षा करें।"
 
 #: src/lib/trade/order-submission-feedback.ts
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
-msgstr "TWAP रद्दीकरण अनुरोध भेज दिया गया, लेकिन उसकी स्थिति की पुष्टि नहीं हो सकी। पुनः प्रयास करने से पहले सक्रिय TWAP सूची देखें।"
+#~ msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
+#~ msgstr "TWAP रद्दीकरण अनुरोध भेज दिया गया, लेकिन उसकी स्थिति की पुष्टि नहीं हो सकी। पुनः प्रयास करने से पहले सक्रिय TWAP सूची देखें।"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "TWAP data may be stale while the connection recovers."
@@ -10075,6 +10127,15 @@ msgstr "TWAP रुक गया"
 #: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP terminated"
 msgstr "TWAP समाप्त किया गया"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP termination was not confirmed. Review active TWAPs before retrying."
+msgstr "TWAP समाप्ति की पुष्टि नहीं हुई। दोबारा प्रयास से पहले सक्रिय TWAP जाँचें।"
+
+#: src/lib/trade/order-submission-feedback.ts
+#: src/lib/trade/pending-trading-action-feedback.ts
+msgid "TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying."
+msgstr "TWAP समाप्ति सबमिट की गई, लेकिन उसकी स्थिति की पुष्टि नहीं हो सकी। दोबारा प्रयास से पहले सक्रिय TWAP जाँचें।"
 
 #: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP waiting for trigger"
@@ -10238,6 +10299,10 @@ msgstr "दावा न किया गया USDC"
 #~ msgstr "अपुष्ट"
 
 #: src/lib/trade/order-notification-copy.ts
+msgid "Unconfirmed"
+msgstr "पुष्टि नहीं हुई"
+
+#: src/lib/trade/order-notification-copy.ts
 msgid "Unconfirmed — review before retrying"
 msgstr "पुष्टि नहीं हुई — दोबारा प्रयास से पहले जाँचें"
 
@@ -10354,6 +10419,7 @@ msgstr "अधिकतम {ORDER_HISTORY_API_LIMIT} नवीनतम सा�
 msgid "Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills"
 msgstr "अधिकतम {TRADE_HISTORY_SNAPSHOT_LIMIT} नवीनतम फ़िल"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Update failed"
@@ -10372,6 +10438,8 @@ msgstr "अपडेट की पुष्टि नहीं हुई। द�
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Updated"
 msgstr "अपडेट किया गया"
 

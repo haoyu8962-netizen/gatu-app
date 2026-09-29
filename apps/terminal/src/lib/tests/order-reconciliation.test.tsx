@@ -821,7 +821,7 @@ describe("OrderReconciliation", () => {
 		act(() => root.render(createReconciliation()));
 
 		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
-		expectActionFeedback(action.id, "success", "Order modification confirmed.");
+		expectActionFeedback(action.id, "success", "Modified");
 	});
 
 	it("releases an unconfirmed modification after a fresh snapshot shows the original order", () => {
@@ -1010,7 +1010,7 @@ describe("OrderReconciliation", () => {
 			modifications: [],
 			orderCancellations: [],
 		});
-		expectActionFeedback(cancellation.id, "success", "Order cancellation confirmed.");
+		expectActionFeedback(cancellation.id, "success", "Canceled");
 		expectActionFeedback(modification.id, "canceled", "The modified order was canceled.");
 		act(() => root.render(createReconciliation()));
 		expect(mocks.successToast).not.toHaveBeenCalled();
@@ -1040,7 +1040,7 @@ describe("OrderReconciliation", () => {
 		mocks.openOrdersLastMessageAt = Date.now() + 1;
 		mocks.openOrdersMonotonicLastMessageAt = performance.now() + 1;
 		act(() => root.render(createReconciliation()));
-		expectActionFeedback(cancellation.id, "success", "Order cancellation confirmed.");
+		expectActionFeedback(cancellation.id, "success", "Canceled");
 	});
 
 	it("confirms a cancellation from a snapshot received after the system clock was set back", () => {
@@ -1062,7 +1062,7 @@ describe("OrderReconciliation", () => {
 		act(() => root.render(createReconciliation()));
 
 		expect(getPendingTradingActionSnapshot().orderCancellations).toHaveLength(0);
-		expectActionFeedback(cancellation.id, "success", "Order cancellation confirmed.");
+		expectActionFeedback(cancellation.id, "success", "Canceled");
 	});
 
 	it("times out an awaiting cancellation after the usual window when the system clock was set back", () => {

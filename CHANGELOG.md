@@ -53,6 +53,29 @@ changes, not evidence that a build has been deployed or accepted on real devices
   showed it before you confirmed; a one-time account activation fee still appears when it was
   charged. The Chinese text no longer calls the pending amount "实际到账" or mixes 提现 and 提款.
 
+- Trading notifications are more accurate and repeat less:
+  - When a Position TP/SL update cannot be confirmed, the notification says "TP/SL may have
+    changed. Review this position's TP/SL before retrying." It no longer claims an order was
+    submitted and tells you not to retry, which could be false after the old TP/SL were canceled.
+  - When an accepted order is canceled afterward, the notification says so in one sentence
+    instead of joining "Canceled" to a second sentence.
+  - Terminate TWAP notifications say "termination" throughout, matching the Terminate button.
+  - Margin mode and account type changes state what was applied, such as "Switched to Isolated
+    margin at 7x" or "Switched to Unified account".
+  - A generic reason that only repeats "Failed" (such as "Order failed" or "Failed to close
+    position") is no longer shown under a failed notification; specific reasons still are.
+  - Successful cancel, modify, isolated margin and TP/SL updates end with "Canceled", "Modified"
+    or "Updated" instead of restating the action, and the confirming step uses the standard
+    "Confirming — do not resubmit" line.
+  - An unconfirmed result that already has a line explaining what to review is summarized as
+    "Unconfirmed" instead of repeating the advice.
+  - A partial fill of a single position (Market Close, Reverse, Swap) says "Partially filled" and
+    "Review positions" instead of "Partially completed" and "Fully filled 0/1".
+  - A Swap's market line shows the pair name, such as HYPE/USDC, instead of an internal id such as
+    @107. Filled close, reverse and swap results say "Filled" instead of "Order filled".
+  - In Chinese, order results use 委托 like the Open Orders tab, cancellations use 取消 like the
+    Cancel buttons, and the accepted and fully filled labels match their count lines.
+
 - Funds notifications say what happened and stop repeating themselves:
   - A withdrawal whose status is unknown now says "Check your balance and withdrawal history before
     retrying." instead of restating that the status could not be confirmed.

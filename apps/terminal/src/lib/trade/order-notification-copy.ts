@@ -12,6 +12,16 @@ import { formatSpotSwapFeedback } from "@/lib/trade/spot-swap-feedback";
 import type { Translate } from "@/lib/translate";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
 
+const GENERIC_FAILURE_CODES: ReadonlySet<string> = new Set([
+	"order-failed",
+	"twap-cancel-failed",
+	"failed-market-close",
+	"failed-submit-close-orders",
+	"failed-limit-close",
+	"failed-reverse",
+	"failed-update-isolated-margin",
+]);
+
 export interface OrderNotificationCopy {
 	label: string;
 	summary: string;
@@ -28,6 +38,7 @@ export function getOrderNotificationCopy(order: OrderQueueItem, translate: Trans
 	const execution = order.execution && isValidOrderExecutionSummary(order.execution) ? order.execution : undefined;
 	const showExecution =
 		ordinary && execution && market && order.side && (order.status === "success" || order.status === "partial");
+	const error = repeatsChildErrors(order) ? undefined : getErrorCopy(order, translate);
 	let summary: string;
 	let detail: string | undefined;
 	let notice: string | undefined;
@@ -53,10 +64,9 @@ export function getOrderNotificationCopy(order: OrderQueueItem, translate: Trans
 			detail = translate(msg`Avg. ${price}`);
 		}
 	} else {
-		summary = getStatusSummary(order, label, ordinary, translate);
+		summary = getStatusSummary(order, label, ordinary, translate, Boolean(error));
 	}
 	const count = getCountSummary(order, translate);
-	const error = repeatsChildErrors(order) ? undefined : getErrorCopy(order, translate);
 	return {
 		label,
 		summary,
@@ -76,7 +86,13 @@ function getActionLabel(order: OrderQueueItem, translate: Translate): string {
 	return translate(msg`Order`);
 }
 
-function getStatusSummary(order: OrderQueueItem, label: string, ordinary: boolean, translate: Translate): string {
+function getStatusSummary(
+	order: OrderQueueItem,
+	label: string,
+	ordinary: boolean,
+	translate: Translate,
+	hasErrorLine: boolean,
+): string {
 	const market = order.market || "";
 	const context = ordinary ? market : [label, market].filter(Boolean).join(" · ");
 	function contextual(message: MessageDescriptor): string {
@@ -88,7 +104,7 @@ function getStatusSummary(order: OrderQueueItem, label: string, ordinary: boolea
 		case "confirming":
 			return contextual(msg`Confirming — do not resubmit`);
 		case "unconfirmed":
-			return contextual(msg`Unconfirmed — review before retrying`);
+			return contextual(hasErrorLine ? msg`Unconfirmed` : msg`Unconfirmed — review before retrying`);
 		case "failed":
 			if (ordinary) return market ? translate(msg`${market} order failed`) : translate(msg`Order failed`);
 			return contextual(msg`Failed`);
@@ -96,12 +112,12 @@ function getStatusSummary(order: OrderQueueItem, label: string, ordinary: boolea
 			if (ordinary) return market ? translate(msg`${market} order canceled`) : translate(msg`Order canceled`);
 			return contextual(msg`Canceled`);
 		case "partial":
-			return contextual(msg`Partially completed`);
+			return contextual(order.totalCount === 1 ? msg`Partially filled` : msg`Partially completed`);
 		case "success":
 			if (order.outcome === "twapStarted") return contextual(msg`Created`);
 			if (order.outcome === "filled") {
 				if (ordinary) return market ? translate(msg`${market} order filled`) : translate(msg`Order filled`);
-				return contextual(msg`Order filled`);
+				return contextual(msg`Filled`);
 			}
 			if (order.outcome === "resting" || order.outcome === "triggerSet") {
 				if (ordinary) return market ? translate(msg`${market} order submitted`) : translate(msg`Order submitted`);
@@ -116,13 +132,18 @@ function getCountSummary(order: OrderQueueItem, translate: Translate): string | 
 	const accepted = order.acceptedCount;
 	const total = order.totalCount;
 	if (order.execution?.completeness === "partial" && accepted === total) return;
-	if (order.countMode === "filled") return translate(msg`Fully filled ${accepted}/${total} · Review positions`);
+	if (order.countMode === "filled") {
+		return total === 1
+			? translate(msg`Review positions`)
+			: translate(msg`Fully filled ${accepted}/${total} · Review positions`);
+	}
 	return translate(msg`Accepted ${accepted}/${total} · Review orders`);
 }
 
 function getErrorCopy(order: OrderQueueItem, translate: Translate): string | undefined {
 	const error = order.error;
 	if (!error) return;
+	if (order.status === "failed" && isGenericFailure(error)) return;
 	if (typeof error === "string") return formatExchangeErrorText(error, translate);
 	if (!("kind" in error)) return translate(error);
 	if (error.kind === "exchange-error" || error.kind === "action-error") {
@@ -170,6 +191,14 @@ function repeatsChildErrors(order: OrderQueueItem): boolean {
 				: children[entry.index]?.error === entry.text,
 		)
 	);
+}
+
+/** True when the error only says that the action failed, which the "Failed" summary already states. */
+function isGenericFailure(error: NonNullable<OrderQueueItem["error"]>): boolean {
+	if (typeof error === "string" || !("kind" in error)) return false;
+	if (error.kind === "spot-swap") return error.code === "failed";
+	if (error.kind === "order-submission" || error.kind === "localized") return GENERIC_FAILURE_CODES.has(error.code);
+	return false;
 }
 
 function formatExecutionPrice(value: string, quoteToken: string): string {

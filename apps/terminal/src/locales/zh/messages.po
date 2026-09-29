@@ -117,7 +117,7 @@ msgstr "{periodLabel}内暂无{label}历史数据。"
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "{market} order canceled"
-msgstr "{market} 订单已撤销"
+msgstr "{market} 委托已取消"
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "{market} order failed"
@@ -125,11 +125,11 @@ msgstr "{market} 下单失败"
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "{market} order filled"
-msgstr "{market} 订单已成交"
+msgstr "{market} 委托已成交"
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "{market} order submitted"
-msgstr "{market} 订单已提交"
+msgstr "{market} 委托已提交"
 
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "{orderCount, plural, one {This will cancel the open order, including protective stop orders. Your position may no longer be protected.} other {This will cancel all # open orders, including protective stop orders. Your positions will no longer be protected.}}"
@@ -378,11 +378,11 @@ msgstr "请先接受 Hyperliquid 条款再继续。"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Accepted"
-msgstr "已受理"
+msgstr "已接受"
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "Accepted {accepted}/{total} · Review orders"
-msgstr "已接受 {accepted}/{total} · 请核对订单"
+msgstr "已接受 {accepted}/{total} · 请核对委托"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Access disabled"
@@ -438,8 +438,8 @@ msgid "Account mode changed before the request was submitted. Review balances an
 msgstr "提交请求前账户模式已更改。请核对余额后重试。"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Account mode updated"
-msgstr "账户模式已更新"
+#~ msgid "Account mode updated"
+#~ msgstr "账户模式已更新"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking data unavailable"
@@ -773,6 +773,10 @@ msgstr "数量必须大于零。"
 msgid "Amount to repay"
 msgstr "偿还数量"
 
+#: src/lib/trade/order-reconciliation-feedback.ts
+msgid "An accepted order was canceled afterward. Review open orders and positions before retrying."
+msgstr "已接受的委托随后被取消。重试前请核对当前委托和持仓。"
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "An account is excluded only when both its account value is below $100,000 and its all-time volume is below $10,000,000. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this ranking does not claim exact parity with Hyperliquid's official leaderboard."
 msgstr "仅当账户价值低于 $100,000 且历史总交易量低于 $10,000,000 时，该账户才会被排除。ROI 使用当前官方应用数据源返回的值。金库账户通过网络匹配的金库数据集排除。由于尚无经审核的协议与国库地址策略，本排行榜不声称与 Hyperliquid 官方排行榜完全一致。"
@@ -815,7 +819,7 @@ msgstr "其中一个市场的另一笔委托仍在确认中。"
 #: src/lib/trade/order-submission-feedback.ts
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Another order for this market is still being confirmed."
-msgstr "该市场的另一笔订单仍在确认中。"
+msgstr "该市场的另一笔委托仍在确认中。"
 
 #: src/hooks/trade/use-referral-actions.ts
 msgid "Another referral request is already in progress. Try again after it finishes."
@@ -823,7 +827,7 @@ msgstr "另一项推荐请求正在进行中。请待其完成后再试。"
 
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Another TWAP order for this market is still being confirmed."
-msgstr "该市场的另一笔 TWAP 订单仍在确认中。"
+msgstr "该市场的另一笔 TWAP 委托仍在确认中。"
 
 #: src/hooks/wallet/use-explicit-agent-approval.ts
 msgid "Another wallet approval is already in progress. Try again after it finishes."
@@ -1358,7 +1362,7 @@ msgstr "取消订单"
 
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "Cancel orders"
-msgstr "撤销委托"
+msgstr "取消委托"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Cancel selected"
@@ -1370,12 +1374,12 @@ msgstr "取消选中的订单"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
-#: src/lib/trade/order-reconciliation-feedback.ts
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled"
 msgstr "已取消"
@@ -1433,8 +1437,8 @@ msgstr "因未平仓量上限而取消"
 #~ msgstr "取消中..."
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "Cancellation submitted. Waiting for the open-orders update."
-msgstr "撤单请求已提交，正在等待当前委托更新。"
+#~ msgid "Cancellation submitted. Waiting for the open-orders update."
+#~ msgstr "撤单请求已提交，正在等待当前委托更新。"
 
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/hooks/trade/use-asset-leverage.ts
@@ -3321,11 +3325,11 @@ msgstr "无法生成平仓委托"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Failed to cancel order."
-msgstr "撤单失败。"
+msgstr "取消委托失败。"
 
 #: src/lib/trade/order-submission-feedback.ts
-msgid "Failed to cancel TWAP order."
-msgstr "TWAP 订单撤销失败。"
+#~ msgid "Failed to cancel TWAP order."
+#~ msgstr "TWAP 订单撤销失败。"
 
 #: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -3434,7 +3438,7 @@ msgstr "限价平仓委托下单失败"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to reverse position"
-msgstr "反向开仓失败"
+msgstr "反向仓位失败"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Failed to save share image"
@@ -3444,17 +3448,21 @@ msgstr "保存分享图片失败"
 msgid "Failed to submit close orders"
 msgstr "提交平仓委托失败"
 
+#: src/lib/trade/order-submission-feedback.ts
+msgid "Failed to terminate TWAP."
+msgstr "TWAP 终止失败。"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Failed to update account mode"
-msgstr "账户模式更新失败"
+#~ msgid "Failed to update account mode"
+#~ msgstr "账户模式更新失败"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to update isolated margin"
 msgstr "调整逐仓保证金失败"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Failed to update TP/SL orders"
-msgstr "更新 TP/SL 委托失败"
+#~ msgid "Failed to update TP/SL orders"
+#~ msgstr "更新 TP/SL 委托失败"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Favorites"
@@ -3512,6 +3520,7 @@ msgstr "成交状态"
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Filled"
 msgstr "已成交"
 
@@ -3652,7 +3661,7 @@ msgstr "全部成交"
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "Fully filled {accepted}/{total} · Review positions"
-msgstr "完全成交 {accepted}/{total} · 请核对持仓"
+msgstr "全部成交 {accepted}/{total} · 请核对持仓"
 
 #: src/config/market-header.ts
 msgid "Funding"
@@ -4174,8 +4183,8 @@ msgid "Isolated margin"
 msgstr "逐仓保证金"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Isolated margin updated"
-msgstr "逐仓保证金已更新"
+#~ msgid "Isolated margin updated"
+#~ msgstr "逐仓保证金已更新"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -4725,12 +4734,12 @@ msgid "Margin mode data is unavailable"
 msgstr "保证金模式数据不可用"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin mode updated"
-msgstr "保证金模式已更新"
+#~ msgid "Margin mode updated"
+#~ msgstr "保证金模式已更新"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin mode updated. Leverage updated to {leverage}x"
-msgstr "保证金模式已更新，杠杆已调整为 {leverage} 倍"
+#~ msgid "Margin mode updated. Leverage updated to {leverage}x"
+#~ msgstr "保证金模式已更新，杠杆已调整为 {leverage} 倍"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -5053,6 +5062,10 @@ msgstr "暂时无法导入移动端二维码。"
 #: src/components/api-wallet/api-wallet-fixture.tsx
 msgid "Mock account"
 msgstr "模拟账户"
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "Modified"
+msgstr "已修改"
 
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "Modify order"
@@ -5804,11 +5817,11 @@ msgstr "订单簿视图"
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "Order canceled"
-msgstr "订单已撤销"
+msgstr "委托已取消"
 
 #: src/components/trade/order-reconciliation.tsx
-msgid "Order cancellation confirmed."
-msgstr "撤单已确认。"
+#~ msgid "Order cancellation confirmed."
+#~ msgstr "撤单已确认。"
 
 #: src/hooks/trade/use-order-confirmation.ts
 #: src/lib/errors/format.ts
@@ -5832,7 +5845,6 @@ msgid "Order failed"
 msgstr "下单失败"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
-#: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "Order filled"
 msgstr "委托已成交"
@@ -5868,12 +5880,12 @@ msgid "Order market context does not match the submitted asset."
 msgstr "委托的市场上下文与提交的资产不匹配。"
 
 #: src/components/trade/order-reconciliation.tsx
-msgid "Order modification confirmed."
-msgstr "委托修改已确认。"
+#~ msgid "Order modification confirmed."
+#~ msgstr "委托修改已确认。"
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "Order modification submitted. Waiting for the open-orders update."
-msgstr "委托修改已提交，正在等待当前委托更新。"
+#~ msgid "Order modification submitted. Waiting for the open-orders update."
+#~ msgstr "委托修改已提交，正在等待当前委托更新。"
 
 #: src/lib/errors/definitions/reduce-only.ts
 msgid "Order must reduce your current position"
@@ -5899,7 +5911,6 @@ msgstr "委托状态"
 msgid "Order submitted"
 msgstr "委托已提交"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "订单已提交，正在确认交易所状态；请勿重试。"
@@ -6024,6 +6035,7 @@ msgid "Partially completed"
 msgstr "部分完成"
 
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Partially filled"
 msgstr "部分成交"
 
@@ -7252,7 +7264,7 @@ msgstr "核对"
 
 #: src/lib/trade/order-notification-copy.ts
 msgid "Review active TWAP orders before retrying"
-msgstr "重试前请核对进行中的 TWAP 订单"
+msgstr "重试前请核对进行中的 TWAP"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -7286,6 +7298,10 @@ msgstr "仅查看"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Review phone access with the selected master wallet before approving it."
 #~ msgstr "授权前，请使用所选主钱包检查手机访问权限。"
+
+#: src/lib/trade/order-notification-copy.ts
+msgid "Review positions"
+msgstr "请核对持仓"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Review request"
@@ -7963,8 +7979,8 @@ msgid "Some order markets are unavailable. Refresh and try again."
 msgstr "部分委托市场暂不可用，请刷新后重试。"
 
 #: src/lib/trade/order-reconciliation-feedback.ts
-msgid "Some orders were accepted. Review open orders before retrying."
-msgstr "部分订单已被接受。重试前请检查当前委托。"
+#~ msgid "Some orders were accepted. Review open orders before retrying."
+#~ msgstr "部分订单已被接受。重试前请检查当前委托。"
 
 #: src/components/pages/application-error-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
@@ -8498,6 +8514,34 @@ msgstr "切换到浅色模式"
 msgid "Switch to Mainnet"
 msgstr "切换至主网"
 
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Cross margin"
+msgstr "已切换为全仓"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Cross margin at {leverage}x"
+msgstr "已切换为全仓，杠杆 {leverage}x"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Isolated margin"
+msgstr "已切换为逐仓"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Isolated margin at {leverage}x"
+msgstr "已切换为逐仓，杠杆 {leverage}x"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Manual"
+msgstr "已切换为手动"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Portfolio margin"
+msgstr "已切换为投资组合保证金"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Unified account"
+msgstr "已切换为统一账户"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
@@ -8609,6 +8653,10 @@ msgstr "终止 TWAP"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Terminate TWAP order"
 msgstr "终止 TWAP 委托"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "Terminated"
+msgstr "已终止"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -8739,11 +8787,11 @@ msgstr "Arbitrum 交易已提交，但无法验证其最终状态。重试前请
 #: src/components/trade/positions/orders-tab.tsx
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
-msgstr "无法确认撤单响应。请刷新当前委托后再试。"
+msgstr "无法确认取消结果。请刷新当前委托后再试。"
 
 #: src/components/trade/order-reconciliation.tsx
 msgid "The cancellation was not confirmed. Review open orders before retrying."
-msgstr "未能确认撤单。重试前请检查当前委托。"
+msgstr "未能确认取消。重试前请检查当前委托。"
 
 #: src/lib/errors/action-error.ts
 msgid "The checks before this request took too long. Nothing was signed or sent. Try again."
@@ -9707,8 +9755,12 @@ msgid "TP/SL"
 msgstr "止盈 / 止损"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "TP/SL orders updated"
-msgstr "止盈/止损委托已更新"
+msgid "TP/SL may have changed. Review this position's TP/SL before retrying."
+msgstr "止盈止损可能已变化。重试前请检查该持仓的止盈止损。"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#~ msgid "TP/SL orders updated"
+#~ msgstr "止盈/止损委托已更新"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "TP/SL size scope"
@@ -10009,21 +10061,21 @@ msgid "TWAP activity"
 msgstr "TWAP 活动"
 
 #: src/components/trade/twap-reconciliation.tsx
-msgid "TWAP cancellation confirmed."
-msgstr "TWAP 撤销已确认。"
+#~ msgid "TWAP cancellation confirmed."
+#~ msgstr "TWAP 撤销已确认。"
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "TWAP cancellation submitted. Waiting for the active TWAP update."
-msgstr "TWAP 终止请求已提交，正在等待运行中的 TWAP 更新。"
+#~ msgid "TWAP cancellation submitted. Waiting for the active TWAP update."
+#~ msgstr "TWAP 终止请求已提交，正在等待运行中的 TWAP 更新。"
 
 #: src/components/trade/twap-reconciliation.tsx
-msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
-msgstr "未能确认 TWAP 撤销。重试前请检查当前 TWAP 委托。"
+#~ msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+#~ msgstr "未能确认 TWAP 撤销。重试前请检查当前 TWAP 委托。"
 
 #: src/lib/trade/order-submission-feedback.ts
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
-msgstr "TWAP 撤销请求已提交，但无法确认其状态。重试前请检查当前 TWAP 列表。"
+#~ msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
+#~ msgstr "TWAP 撤销请求已提交，但无法确认其状态。重试前请检查当前 TWAP 列表。"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "TWAP data may be stale while the connection recovers."
@@ -10075,6 +10127,15 @@ msgstr "TWAP 已停止"
 #: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP terminated"
 msgstr "TWAP 已终止"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP termination was not confirmed. Review active TWAPs before retrying."
+msgstr "未能确认 TWAP 终止。重试前请检查运行中的 TWAP。"
+
+#: src/lib/trade/order-submission-feedback.ts
+#: src/lib/trade/pending-trading-action-feedback.ts
+msgid "TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying."
+msgstr "TWAP 终止请求已提交，但无法确认其状态。重试前请检查运行中的 TWAP。"
 
 #: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP waiting for trigger"
@@ -10238,8 +10299,12 @@ msgstr "未领取 USDC"
 #~ msgstr "未确认"
 
 #: src/lib/trade/order-notification-copy.ts
+msgid "Unconfirmed"
+msgstr "结果待确认"
+
+#: src/lib/trade/order-notification-copy.ts
 msgid "Unconfirmed — review before retrying"
-msgstr "结果待确认，请先核对订单"
+msgstr "结果待确认，重试前请先核对"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -10354,6 +10419,7 @@ msgstr "最多显示最近 {ORDER_HISTORY_API_LIMIT} 笔普通委托"
 msgid "Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills"
 msgstr "最多显示最近 {TRADE_HISTORY_SNAPSHOT_LIMIT} 笔成交"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Update failed"
@@ -10372,6 +10438,8 @@ msgstr "更新尚未确认。重试前请核对账户设置。"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Updated"
 msgstr "已更新"
 

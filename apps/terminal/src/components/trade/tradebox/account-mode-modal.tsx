@@ -1,4 +1,5 @@
 import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
+import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon } from "@phosphor-icons/react";
@@ -120,15 +121,13 @@ export function AccountModeForm({
 		onClose();
 		try {
 			await onApply(selectedMode);
-			updateOrderQueueItem(notificationId, { status: "success", message: msg`Account mode updated` });
+			updateOrderQueueItem(notificationId, { status: "success", message: getAccountModeAppliedMessage(selectedMode) });
 		} catch (error) {
 			const unknown = isAmbiguousExchangeActionError(error);
 			updateOrderQueueItem(notificationId, {
 				status: unknown ? "unconfirmed" : "failed",
 				error: unknown ? undefined : classifyActionError(error),
-				message: unknown
-					? msg`Update not confirmed. Check account settings before retrying.`
-					: msg`Failed to update account mode`,
+				message: unknown ? msg`Update not confirmed. Check account settings before retrying.` : msg`Update failed`,
 			});
 		} finally {
 			applyInFlightRef.current = false;
@@ -234,4 +233,10 @@ export function AccountModeForm({
 			</div>
 		</>
 	);
+}
+
+function getAccountModeAppliedMessage(mode: SelectableAccountAbstraction): MessageDescriptor {
+	if (mode === "unifiedAccount") return msg`Switched to Unified account`;
+	if (mode === "portfolioMargin") return msg`Switched to Portfolio margin`;
+	return msg`Switched to Manual`;
 }

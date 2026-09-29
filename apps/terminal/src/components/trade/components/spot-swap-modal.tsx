@@ -305,7 +305,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 			size: expectedOrder.s,
 			orderType: "market",
 			status: "pending",
-			children: [{ assetId: expectedOrder.a, market: spotMarket.name, size: expectedOrder.s, status: "pending" }],
+			children: [{ assetId: expectedOrder.a, market: spotMarket.pairName, size: expectedOrder.s, status: "pending" }],
 		});
 
 		submittedRef.current = true;
@@ -323,7 +323,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 			} else {
 				throwIfAnyResponseError(submission.result.response?.data?.statuses);
 				const children = getCloseOrderFeedbackChildren(
-					[{ assetId: expectedOrder.a, market: spotMarket.name, size: expectedOrder.s }],
+					[{ assetId: expectedOrder.a, market: spotMarket.pairName, size: expectedOrder.s }],
 					submission.result,
 				);
 				const child = children[0];

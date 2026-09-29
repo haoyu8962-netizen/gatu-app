@@ -538,7 +538,9 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	}
 
 	function getValidationErrorFeedback(error: OrderValidationError): Pick<OrderQueueItem, "error" | "message"> {
-		return error.kind === "failure" ? { error: error.failure } : { message: getValidationErrorDescriptor(error) };
+		if (error.kind === "failure") return { error: error.failure };
+		if (error.kind === "code" && (error.code === "failed-to-cancel" || error.code === "failed-to-modify")) return {};
+		return { message: getValidationErrorDescriptor(error) };
 	}
 
 	function buildPlanFromLive(target: OpenOrderModifyFormTarget, size: string, triggerPrice: string | undefined) {

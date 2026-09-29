@@ -438,8 +438,8 @@ msgid "Account mode changed before the request was submitted. Review balances an
 msgstr "El modo de cuenta cambió antes de enviar la solicitud. Revisa los saldos e inténtalo de nuevo."
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Account mode updated"
-msgstr "Modo de cuenta actualizado"
+#~ msgid "Account mode updated"
+#~ msgstr "Modo de cuenta actualizado"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking data unavailable"
@@ -772,6 +772,10 @@ msgstr "El importe debe ser mayor que cero."
 #: src/components/earn/earn-action-modal.tsx
 msgid "Amount to repay"
 msgstr "Importe a reembolsar"
+
+#: src/lib/trade/order-reconciliation-feedback.ts
+msgid "An accepted order was canceled afterward. Review open orders and positions before retrying."
+msgstr "Una orden aceptada se canceló después. Revisa las órdenes abiertas y las posiciones antes de reintentar."
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "An account is excluded only when both its account value is below $100,000 and its all-time volume is below $10,000,000. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this ranking does not claim exact parity with Hyperliquid's official leaderboard."
@@ -1370,12 +1374,12 @@ msgstr "Cancelar órdenes seleccionadas"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
-#: src/lib/trade/order-reconciliation-feedback.ts
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled"
 msgstr "Cancelada"
@@ -1433,8 +1437,8 @@ msgstr "Cancelada por el límite de interés abierto"
 #~ msgstr "Cancelando..."
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "Cancellation submitted. Waiting for the open-orders update."
-msgstr "Cancelación enviada. Esperando la actualización de las órdenes abiertas."
+#~ msgid "Cancellation submitted. Waiting for the open-orders update."
+#~ msgstr "Cancelación enviada. Esperando la actualización de las órdenes abiertas."
 
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/hooks/trade/use-asset-leverage.ts
@@ -3324,8 +3328,8 @@ msgid "Failed to cancel order."
 msgstr "No se pudo cancelar la orden."
 
 #: src/lib/trade/order-submission-feedback.ts
-msgid "Failed to cancel TWAP order."
-msgstr "No se pudo cancelar la orden TWAP."
+#~ msgid "Failed to cancel TWAP order."
+#~ msgstr "No se pudo cancelar la orden TWAP."
 
 #: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -3444,17 +3448,21 @@ msgstr "No se pudo guardar la imagen para compartir"
 msgid "Failed to submit close orders"
 msgstr "No se pudieron enviar las órdenes de cierre"
 
+#: src/lib/trade/order-submission-feedback.ts
+msgid "Failed to terminate TWAP."
+msgstr "No se pudo terminar el TWAP."
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Failed to update account mode"
-msgstr "No se pudo actualizar el modo de cuenta"
+#~ msgid "Failed to update account mode"
+#~ msgstr "No se pudo actualizar el modo de cuenta"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to update isolated margin"
 msgstr "No se pudo actualizar el margen aislado"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Failed to update TP/SL orders"
-msgstr "No se pudieron actualizar las órdenes TP/SL"
+#~ msgid "Failed to update TP/SL orders"
+#~ msgstr "No se pudieron actualizar las órdenes TP/SL"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Favorites"
@@ -3512,6 +3520,7 @@ msgstr "Estado de ejecución"
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Filled"
 msgstr "Ejecutado"
 
@@ -4174,8 +4183,8 @@ msgid "Isolated margin"
 msgstr "Margen aislado"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Isolated margin updated"
-msgstr "Margen aislado actualizado"
+#~ msgid "Isolated margin updated"
+#~ msgstr "Margen aislado actualizado"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -4725,12 +4734,12 @@ msgid "Margin mode data is unavailable"
 msgstr "Los datos del modo de margen no están disponibles"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin mode updated"
-msgstr "Modo de margen actualizado"
+#~ msgid "Margin mode updated"
+#~ msgstr "Modo de margen actualizado"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin mode updated. Leverage updated to {leverage}x"
-msgstr "Modo de margen actualizado. Apalancamiento actualizado a {leverage}x"
+#~ msgid "Margin mode updated. Leverage updated to {leverage}x"
+#~ msgstr "Modo de margen actualizado. Apalancamiento actualizado a {leverage}x"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -5053,6 +5062,10 @@ msgstr "La importación del QR móvil no está disponible temporalmente."
 #: src/components/api-wallet/api-wallet-fixture.tsx
 msgid "Mock account"
 msgstr "Cuenta simulada"
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "Modified"
+msgstr "Modificada"
 
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "Modify order"
@@ -5807,8 +5820,8 @@ msgid "Order canceled"
 msgstr "Orden cancelada"
 
 #: src/components/trade/order-reconciliation.tsx
-msgid "Order cancellation confirmed."
-msgstr "Cancelación de la orden confirmada."
+#~ msgid "Order cancellation confirmed."
+#~ msgstr "Cancelación de la orden confirmada."
 
 #: src/hooks/trade/use-order-confirmation.ts
 #: src/lib/errors/format.ts
@@ -5832,7 +5845,6 @@ msgid "Order failed"
 msgstr "Orden fallida"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
-#: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "Order filled"
 msgstr "Orden ejecutada"
@@ -5868,12 +5880,12 @@ msgid "Order market context does not match the submitted asset."
 msgstr "El contexto de mercado de la orden no coincide con el activo enviado."
 
 #: src/components/trade/order-reconciliation.tsx
-msgid "Order modification confirmed."
-msgstr "Modificación de la orden confirmada."
+#~ msgid "Order modification confirmed."
+#~ msgstr "Modificación de la orden confirmada."
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "Order modification submitted. Waiting for the open-orders update."
-msgstr "Modificación de la orden enviada. Esperando la actualización de órdenes abiertas."
+#~ msgid "Order modification submitted. Waiting for the open-orders update."
+#~ msgstr "Modificación de la orden enviada. Esperando la actualización de órdenes abiertas."
 
 #: src/lib/errors/definitions/reduce-only.ts
 msgid "Order must reduce your current position"
@@ -5899,7 +5911,6 @@ msgstr "Estado de la orden"
 msgid "Order submitted"
 msgstr "Orden enviada"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "Orden enviada. Confirmando el estado en el exchange; no vuelva a intentarlo."
@@ -6024,6 +6035,7 @@ msgid "Partially completed"
 msgstr "Completado parcialmente"
 
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Partially filled"
 msgstr "Ejecutado parcialmente"
 
@@ -7287,6 +7299,10 @@ msgstr "Revisión únicamente"
 #~ msgid "Review phone access with the selected master wallet before approving it."
 #~ msgstr "Revisa el acceso del teléfono con la billetera principal seleccionada antes de aprobarlo."
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Review positions"
+msgstr "Revisa las posiciones"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Review request"
 msgstr "Solicitud de revisión"
@@ -7963,8 +7979,8 @@ msgid "Some order markets are unavailable. Refresh and try again."
 msgstr "Algunos mercados de las órdenes no están disponibles. Actualiza y vuelve a intentarlo."
 
 #: src/lib/trade/order-reconciliation-feedback.ts
-msgid "Some orders were accepted. Review open orders before retrying."
-msgstr "Se aceptaron algunas órdenes. Revise las órdenes abiertas antes de volver a intentarlo."
+#~ msgid "Some orders were accepted. Review open orders before retrying."
+#~ msgstr "Se aceptaron algunas órdenes. Revise las órdenes abiertas antes de volver a intentarlo."
 
 #: src/components/pages/application-error-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
@@ -8498,6 +8514,34 @@ msgstr "Cambiar a modo claro"
 msgid "Switch to Mainnet"
 msgstr "Cambiar a Mainnet"
 
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Cross margin"
+msgstr "Cambiado a margen cruzado"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Cross margin at {leverage}x"
+msgstr "Cambiado a margen cruzado con {leverage}x"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Isolated margin"
+msgstr "Cambiado a margen aislado"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Isolated margin at {leverage}x"
+msgstr "Cambiado a margen aislado con {leverage}x"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Manual"
+msgstr "Cambiado a manual"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Portfolio margin"
+msgstr "Cambiado a margen de cartera"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Unified account"
+msgstr "Cambiado a cuenta unificada"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
@@ -8609,6 +8653,10 @@ msgstr "Terminar TWAP"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Terminate TWAP order"
 msgstr "Terminar orden TWAP"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "Terminated"
+msgstr "Terminado"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -9707,8 +9755,12 @@ msgid "TP/SL"
 msgstr "TP/SL"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "TP/SL orders updated"
-msgstr "Órdenes TP/SL actualizadas"
+msgid "TP/SL may have changed. Review this position's TP/SL before retrying."
+msgstr "Es posible que el TP/SL haya cambiado. Revisa el TP/SL de esta posición antes de reintentar."
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#~ msgid "TP/SL orders updated"
+#~ msgstr "Órdenes TP/SL actualizadas"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "TP/SL size scope"
@@ -10009,21 +10061,21 @@ msgid "TWAP activity"
 msgstr "Actividad de TWAP"
 
 #: src/components/trade/twap-reconciliation.tsx
-msgid "TWAP cancellation confirmed."
-msgstr "Cancelación de TWAP confirmada."
+#~ msgid "TWAP cancellation confirmed."
+#~ msgstr "Cancelación de TWAP confirmada."
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "TWAP cancellation submitted. Waiting for the active TWAP update."
-msgstr "Cancelación de TWAP enviada. Esperando la actualización de las órdenes TWAP activas."
+#~ msgid "TWAP cancellation submitted. Waiting for the active TWAP update."
+#~ msgstr "Cancelación de TWAP enviada. Esperando la actualización de las órdenes TWAP activas."
 
 #: src/components/trade/twap-reconciliation.tsx
-msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
-msgstr "No se confirmó la cancelación de TWAP. Revisa las órdenes TWAP activas antes de volver a intentarlo."
+#~ msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+#~ msgstr "No se confirmó la cancelación de TWAP. Revisa las órdenes TWAP activas antes de volver a intentarlo."
 
 #: src/lib/trade/order-submission-feedback.ts
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
-msgstr "La cancelación de TWAP se envió, pero no se pudo confirmar su estado. Comprueba la lista de TWAP activos antes de volver a intentarlo."
+#~ msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
+#~ msgstr "La cancelación de TWAP se envió, pero no se pudo confirmar su estado. Comprueba la lista de TWAP activos antes de volver a intentarlo."
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "TWAP data may be stale while the connection recovers."
@@ -10075,6 +10127,15 @@ msgstr "TWAP detenido"
 #: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP terminated"
 msgstr "TWAP terminado"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP termination was not confirmed. Review active TWAPs before retrying."
+msgstr "No se confirmó la terminación del TWAP. Revisa los TWAP activos antes de reintentar."
+
+#: src/lib/trade/order-submission-feedback.ts
+#: src/lib/trade/pending-trading-action-feedback.ts
+msgid "TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying."
+msgstr "Se envió la terminación del TWAP, pero no se pudo confirmar su estado. Revisa los TWAP activos antes de reintentar."
 
 #: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP waiting for trigger"
@@ -10238,6 +10299,10 @@ msgstr "USDC sin reclamar"
 #~ msgstr "sin confirmar"
 
 #: src/lib/trade/order-notification-copy.ts
+msgid "Unconfirmed"
+msgstr "Sin confirmar"
+
+#: src/lib/trade/order-notification-copy.ts
 msgid "Unconfirmed — review before retrying"
 msgstr "Sin confirmar — revisa antes de reintentar"
 
@@ -10354,6 +10419,7 @@ msgstr "Hasta {ORDER_HISTORY_API_LIMIT} órdenes ordinarias más recientes"
 msgid "Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills"
 msgstr "Hasta {TRADE_HISTORY_SNAPSHOT_LIMIT} ejecuciones más recientes"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Update failed"
@@ -10372,6 +10438,8 @@ msgstr "Actualización sin confirmar. Comprueba la configuración de la cuenta a
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Updated"
 msgstr "Actualizado"
 
