@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["i18n-runtime", "pr-review"],
-  "summary": "用户在中文界面的手机杠杆抽屉降杠杆失败，通知正文是交易所英文原文、标题误为「保证金模式」。审查发现原文按当时规则有意原样显示（官方同），但同一通道还泄漏我们自己的与 SDK/钱包/网络英文，金库、质押、API 钱包的辅助函数因把宏 t 当参数返回空串，另有冻结翻译、状态代码原样显示与共享组件写死英文。用户决定修复并像官方一样翻译已知交易所原文：按 ADR 0024 改为保存分类后的失败值、显示时翻译，已知交易所原文翻译、未知的逐字显示；四路 Codex 对抗审查的 1 项 P1 与 10 项 P2 中 10 项已修复、1 项经官方包核对不改、1 项疑似问题记为限制，复核补修契约测试。类型检查、完整单测与 Node 22.15 生产构建已跑；包体总量预算按惯例刷新；2026-09-29 推送并开 PR #60 → dev（未合并），未做浏览器与真实钱包验收。",
+  "summary": "用户在中文界面的手机杠杆抽屉降杠杆失败，通知正文是交易所英文原文、标题误为「保证金模式」。审查发现原文按当时规则有意原样显示（官方同），但同一通道还泄漏我们自己的与 SDK/钱包/网络英文，金库、质押、API 钱包的辅助函数因把宏 t 当参数返回空串，另有冻结翻译、状态代码原样显示与共享组件写死英文。用户决定修复并像官方一样翻译已知交易所原文：按 ADR 0024 改为保存分类后的失败值、显示时翻译，已知交易所原文翻译、未知的逐字显示；四路 Codex 对抗审查的 1 项 P1 与 10 项 P2 中 10 项已修复、1 项经官方包核对不改、1 项疑似问题记为限制，复核补修契约测试。类型检查、完整单测与 Node 22.15 生产构建已跑；包体总量预算按惯例刷新；2026-09-29 经 PR #60 合入 dev（e38d5203），同日随 PR #61 晋升 main（86191b56），未发布；未做浏览器与真实钱包验收。",
   "thread": null,
   "baseCommit": "8cc8a323",
   "commits": [
@@ -72,7 +72,7 @@
 
 同步记录。用户在本地开发服务器（`dev` `8cc8a323`，中文界面，手机布局）降低杠杆失败，通知标题为「保证金模式 · 更新失败」，正文是英文「Cross position does not have sufficient margin available to decrease leverage. To decrease leverage, deposit more collateral.」。用户问这是否缺陷、其他语言是否一样，要求审查相关代码并排查全站同类问题，允许新开 worktree。本次在新 worktree `exchange-error-i18n-review`（分支 `claude/exchange-error-i18n-review`，基线 `8cc8a323`）先只读审查：本人核对根因、文档与官方做法，另派三个只读代理分别覆盖交易操作、资金与账户、共享层与被动数据，本人再抽查其关键结论（`ee94163c`）。
 
-2026-09-28 用户看完审查后决定「先做第 1 步，交易所原文也按官方做法翻译」：修空文案与标题，非交易所错误改为按代码或描述符保存并在显示时翻译，去掉冻结翻译，翻译订单状态代码，共享组件文案可翻译，并像官方那样翻译已知的交易所原文、未知的原样显示。2026-09-29 用户要求「等代理完成后调用 codex 来对抗 review 一遍」。实施、审查与修复都在同一 worktree 与分支上进行。2026-09-29 用户要求推送并开 PR：推送前后两次合并最新 `dev`（#58 的 `504e9ca0`、#59 的 `79e0ba68`），两次都只有生成文件 `docs/work-memory/INDEX.md` 冲突，用 `pnpm memory:index` 重建解决；随后开 [PR #60](https://github.com/zora4523-bot/gatu-app/pull/60) 到 `dev`。
+2026-09-28 用户看完审查后决定「先做第 1 步，交易所原文也按官方做法翻译」：修空文案与标题，非交易所错误改为按代码或描述符保存并在显示时翻译，去掉冻结翻译，翻译订单状态代码，共享组件文案可翻译，并像官方那样翻译已知的交易所原文、未知的原样显示。2026-09-29 用户要求「等代理完成后调用 codex 来对抗 review 一遍」。实施、审查与修复都在同一 worktree 与分支上进行。2026-09-29 用户要求推送并开 PR：推送前后两次合并最新 `dev`（#58 的 `504e9ca0`、#59 的 `79e0ba68`），两次都只有生成文件 `docs/work-memory/INDEX.md` 冲突，用 `pnpm memory:index` 重建解决；随后开 [PR #60](https://github.com/zora4523-bot/gatu-app/pull/60) 到 `dev`，首轮 CI 失败修正后全绿，2026-09-29 以合并提交 `e38d5203` 合入 `dev`。同日 `dev` 经 [PR #61](https://github.com/zora4523-bot/gatu-app/pull/61) 晋升 `main`（合并提交 `86191b56`），该晋升不是本任务执行的；补记时没有包含这些提交的发布标签。
 
 ## 结论与依据
 
@@ -138,6 +138,7 @@
 
 ## 后续与替代关系
 
-- [PR #60](https://github.com/zora4523-bot/gatu-app/pull/60) → `dev` 待 CI 与合并，未晋升 `main`、未发布；合并后清理三个代理 worktree 与 `claude/err-i18n-trading`、`claude/err-i18n-ui`、`claude/err-i18n-funds` 分支。
+- 已合入 `dev`（`e38d5203`）并随 PR #61 进入 `main`（`86191b56`），未发布。
+- 2026-09-29 按用户要求清理本地：三个代理 worktree 用不带 `--force` 的 `git worktree remove` 删除（均无未提交内容）；已合并的 `claude/err-i18n-trading`、`claude/err-i18n-ui`、`claude/err-i18n-funds`、`claude/exchange-error-i18n-review`，以及此前各文档 PR 的已合并本地分支和代理工具建的 `worktree-agent-*` 分支用 `git branch -d` 删除。`codex/dorad`（`92ecaa78`）与 `codex/reviewceshi`（`1fd34ab9`，未推送）的内容已由 PR #56 以 `978a96ee`、`2b3bb4cb` 合入（差异只在重建的 INDEX.md 与合入时的整理），提交号不同，用 `git branch -D` 删除。保留：仍有进程或会话在用的 worktree、主检出、其他会话名下的 worktree，以及 Codex 应用自己的 worktree（`codex/01-builder-market-catalog`，内容已由 `191e1f59` 合入）。
 - 后续事项：下单表单校验器（`apps/terminal/src/lib/errors/definitions/*`）仍在校验时读全局 `t`，依赖组件重渲染更新；「先撤销该市场挂单」提示待接入挂单数据；图表错误原因的 en↔hi 限制待浏览器确认；发送前失败的 `HttpRequestError` 仍保守地报告为「未确认」；`throwIfAnyResponseError` 仍抛普通 `Error`（SDK 会先抛 `ApiRequestError`，此路径实际不可达）。
 - 本记录取代自身 2026-09-28 版本中「待用户决定修复范围」的后续结论；没有其他被替代的记录。
