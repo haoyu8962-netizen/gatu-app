@@ -1583,7 +1583,6 @@ msgstr "Circle Fast Transfer capacity is temporarily unavailable. Try again late
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/trade/funds-action-feedback.ts
 msgid "Circle fees changed before submission. Review the updated fee and retry."
 msgstr "Circle fees changed before submission. Review the updated fee and retry."
 

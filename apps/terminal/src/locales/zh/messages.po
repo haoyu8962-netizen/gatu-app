@@ -1583,7 +1583,6 @@ msgstr "Circle Fast Transfer 当前容量暂不可用。请稍后重试。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/trade/funds-action-feedback.ts
 msgid "Circle fees changed before submission. Review the updated fee and retry."
 msgstr "提交前 Circle 费用已变化。请检查更新后的费用并重试。"
 

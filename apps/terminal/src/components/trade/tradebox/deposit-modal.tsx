@@ -110,7 +110,6 @@ interface WithdrawalExecutionReview {
 	attempt: WithdrawalPreflightAttempt;
 	cctpPreTransfer: CctpPreTransferReview | null;
 	route: WithdrawalRoute;
-	routeFee: string;
 }
 
 function normalizeError(error: unknown, fallbackMessage: string): Error {
@@ -654,22 +653,6 @@ export function DepositModal() {
 		}
 	}
 
-	async function assertFreshCctpWithdrawalFee(reviewedFee: string, signal: AbortSignal) {
-		try {
-			signal.throwIfAborted();
-			const result = await cctpFeeQuery.refetch();
-			signal.throwIfAborted();
-			const reviewed = toBig(reviewedFee);
-			const current = result.data ? toBig(result.data) : null;
-			if (!reviewed || !current || result.isError) throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
-			if (!current.eq(reviewed)) throw fundsActionFeedbackCause("withdrawal-fee-changed");
-		} catch (error) {
-			if (signal.aborted) throw signal.reason ?? error;
-			if (error instanceof FundsActionFeedbackCause) throw error;
-			throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
-		}
-	}
-
 	function assertCurrentWithdrawalExecutionReview(
 		expectedRoute: WithdrawalRoute,
 		amount: unknown,
@@ -732,10 +715,7 @@ export function DepositModal() {
 		];
 		if (expectedRoute === "arbitrum-cctp") {
 			if (!review.cctpPreTransfer) throw fundsActionFeedbackCause("withdrawal-eligibility-unavailable");
-			guards.push(
-				assertFreshCctpPreTransferCheck(review.cctpPreTransfer, signal),
-				assertFreshCctpWithdrawalFee(review.routeFee, signal),
-			);
+			guards.push(assertFreshCctpPreTransferCheck(review.cctpPreTransfer, signal));
 		}
 		await Promise.all(guards);
 		signal.throwIfAborted();
@@ -1008,7 +988,6 @@ export function DepositModal() {
 						attempt,
 						cctpPreTransfer: cctpPreTransferReview,
 						route: expectedWithdrawalRoute,
-						routeFee: freshRouteFee,
 					};
 					if (expectedWithdrawalRoute === "arbitrum-cctp") {
 						if (!cctpPreTransferReview) throw new PreTransferCheckExecutionError("unavailable");

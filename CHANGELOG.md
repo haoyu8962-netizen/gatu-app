@@ -60,6 +60,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
   showed it before you confirmed; a one-time account activation fee still appears when it was
   charged. The Chinese text no longer calls the pending amount "实际到账" or mixes 提现 and 提款.
 
+- The terminal no longer cancels a withdrawal because Circle's forwarding fee changed after you
+  pressed Withdraw. The withdrawal uses the fee read when you press Withdraw, and the `Withdrawal
+  submitted` notification estimates the amount you'll receive from that fee. It still stops and
+  keeps the form open if the fee cannot be read or your amount is below the minimum at that fee.
+  See [withdrawals](docs/withdrawals.md#cctp-route).
+
 - Trading notifications are more accurate and repeat less:
   - When a Position TP/SL update cannot be confirmed, the notification says "TP/SL may have
     changed. Review this position's TP/SL before retrying." It no longer claims an order was
