@@ -400,7 +400,7 @@ function MobileFundingCard({ row, columnLabels, onSelectMarket }: MobileFundingC
 				onClick={() => onSelectMarket(row.coin)}
 				aria-label={t`Switch to ${row.coin} market`}
 				className={cn(
-					"flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-t-12 px-3 py-2 text-start",
+					"flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-t-16 px-3 py-2 text-start",
 					TOUCH_PRESS_CLASS,
 				)}
 			>

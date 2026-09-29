@@ -1295,7 +1295,10 @@ function MobileOrderCard({
 	const isNearMark = isToolbarOrderNearMark(metrics.markDistanceRatio);
 
 	return (
-		<article className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface">
+		<article
+			data-account-card
+			className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface"
+		>
 			<MobileDisclosureHeader
 				expanded={expanded}
 				label={expanded ? t`Collapse ${marketLabel} order details` : t`Expand ${marketLabel} order details`}

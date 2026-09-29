@@ -237,7 +237,7 @@ export function PortfolioPage() {
 						>
 							{isMobile ? (
 								<MobilePositionsView
-									className="min-h-80 py-1"
+									className="min-h-80 py-1 [&_[data-account-card]]:rounded-16"
 									scrollMode="page"
 									includeBottomNavSpacer={false}
 									balancesContent={<MobileBalancesTab />}
