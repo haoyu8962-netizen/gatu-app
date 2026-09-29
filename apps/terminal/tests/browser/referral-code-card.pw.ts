@@ -61,6 +61,7 @@ const LONG_CODE = "WMWMWMWMWMWMWMWMWMWM";
 
 for (const viewport of [
 	{ width: 320, height: 640 },
+	{ width: 360, height: 780 },
 	{ width: 375, height: 812 },
 ]) {
 	test(`shows a 20-character referral code in full at ${viewport.width}px`, async ({ page }) => {
