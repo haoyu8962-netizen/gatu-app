@@ -386,6 +386,8 @@ Browser QA covered all four routes at desktop and 375px mobile widths. The inspe
 
 Correction (2026-09-29): the page-overflow check cannot see content clipped inside an `overflow-hidden` panel, and the fixture rows had short names. With live data, one long Vault name (`[ Systemic Strategies ] ♾️ HyperGrowth ♾️`) sized the mobile card list's implicit grid column to 416px, so the Vault list panel silently cut every card by 57px at 375px and 112px at 320px, hiding APR, equity and age values. The desktop Vault and Leader headers were also centered by the browser's default `th` alignment, and the Vault mark took the first two characters, so punctuation such as `[` could become the mark. The mobile list now uses a `grid-cols-1` track, both headers are start-aligned, and `getVaultMark` keeps the first two letters or digits. `apps/terminal/tests/browser/vaults-list.pw.ts` checks card and content containment with long names at 320px and 375px in English and Chinese, and header alignment at 1001px and 1440px.
 
+Correction (2026-09-29, page gutter): the Vault routes were delivered without the 16px mobile side padding that the same delivery gave Staking, so the rounded, shadowed Vault panel touched both screen edges; the acceptance screenshot `vaults-normal.png` already shows this. `DASHBOARD_FRAMES["/vaults"]` now has `px-4`, and the mobile Vault cards stack each label above its value so leader addresses are not truncated at the narrower width. Leaderboard keeps its intended flat full-width sheet on phones. The rule for both surfaces lives in `.claude/rules/style-ui-guide.md` (Dashboard page gutters).
+
 ### 8.3 Changed-file inventory
 
 Only the following delivery-owned categories belong to this redesign:

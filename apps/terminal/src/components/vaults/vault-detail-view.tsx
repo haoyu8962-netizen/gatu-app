@@ -99,7 +99,7 @@ export function VaultDetailView({
 						<Trans>Vaults</Trans>
 					</Link>
 					<h1 className="mt-1 break-words text-xl font-bold text-fg min-[1001px]:text-2xl">{detail.name}</h1>
-					<p className="mt-1 font-mono text-2xs tabular-nums text-fg-muted">
+					<p className="mt-1 break-all font-mono text-2xs tabular-nums text-fg-muted">
 						<bdi dir="ltr">{detail.vaultAddress}</bdi>
 					</p>
 				</div>

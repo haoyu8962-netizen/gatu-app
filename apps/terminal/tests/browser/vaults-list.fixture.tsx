@@ -2,6 +2,7 @@ import { i18n } from "@lingui/core";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";
 import type { VaultListItem } from "@/components/vaults/domain/vaults";
+import { VaultDetailFixture } from "@/components/vaults/vaults-fixture";
 import { VaultsList } from "@/components/vaults/vaults-list";
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { createI18nRoot } from "@/lib/tests/harness/react";
@@ -46,13 +47,17 @@ function Fixture() {
 			header={null}
 			headerOffset={false}
 			main={
-				<VaultsList
-					state="normal"
-					rows={ROWS}
-					account={{ status: "disconnected" }}
-					fetchedAt={FETCHED_AT}
-					onRetry={() => undefined}
-				/>
+				view === "detail" ? (
+					<VaultDetailFixture />
+				) : (
+					<VaultsList
+						state="normal"
+						rows={ROWS}
+						account={{ status: "disconnected" }}
+						fetchedAt={FETCHED_AT}
+						onRetry={() => undefined}
+					/>
+				)
 			}
 		/>
 	);
@@ -60,7 +65,9 @@ function Fixture() {
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing fixture root");
-const locale = new URLSearchParams(location.search).get("locale") === "zh" ? "zh" : "en";
+const params = new URLSearchParams(location.search);
+const view = params.get("view");
+const locale = params.get("locale") === "zh" ? "zh" : "en";
 i18n.loadAndActivate({ locale, messages: locale === "zh" ? zh : en });
 document.documentElement.lang = locale;
 const router = createRouter({

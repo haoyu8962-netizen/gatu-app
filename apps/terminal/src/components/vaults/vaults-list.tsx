@@ -374,7 +374,7 @@ function VaultMobileCard({
 					<bdi dir="ltr">{formatVaultRatio(row.apr, 2, true)}</bdi>
 				</p>
 			</div>
-			<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+			<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
 				<MobileMetric label={<Trans>TVL</Trans>} value={<bdi dir="ltr">{formatVaultCompactUsd(row.tvl)}</bdi>} />
 				<MobileMetric label={<Trans>Your equity</Trans>} value={<bdi dir="ltr">{formatVaultUsd(deposit)}</bdi>} />
 				<MobileMetric label={<Trans>Leader</Trans>} value={<bdi dir="ltr">{shortenAddress(row.leader)}</bdi>} mono />
@@ -403,9 +403,9 @@ function MobileMetric({
 	mono?: boolean;
 }) {
 	return (
-		<div className="flex min-w-0 justify-between gap-2">
-			<dt className="shrink-0 text-fg-muted">{label}</dt>
-			<dd className={cn("min-w-0 truncate text-right font-semibold tabular-nums text-fg", mono && "font-mono")}>
+		<div className="flex min-w-0 flex-col gap-0.5">
+			<dt className="text-fg-muted">{label}</dt>
+			<dd className={cn("min-w-0 truncate font-semibold tabular-nums text-fg", mono && "font-mono")}>
 				{value}
 				{suffix ? <> {suffix}</> : null}
 			</dd>

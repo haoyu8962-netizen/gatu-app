@@ -10,7 +10,7 @@ export const DASHBOARD_FRAMES = {
 	},
 	"/vaults": {
 		canvasClassName: "min-h-dvh bg-dashboard-canvas font-sans text-fg",
-		mainClassName: "mx-auto w-full max-w-[var(--earn-frame-wide-max)] py-4 min-[1001px]:px-10 min-[1001px]:py-6",
+		mainClassName: "mx-auto w-full max-w-[var(--earn-frame-wide-max)] px-4 py-4 min-[1001px]:px-10 min-[1001px]:py-6",
 	},
 	"/earn": {
 		canvasClassName: "min-h-dvh bg-dashboard-canvas font-sans text-fg",
@@ -23,7 +23,7 @@ export const DASHBOARD_FRAMES = {
 	},
 	"/referrals": {
 		canvasClassName: "min-h-dvh bg-dashboard-canvas font-sans text-fg",
-		mainClassName: "mx-auto w-full max-w-[1440px] py-5 min-[1001px]:px-10 min-[1001px]:py-6",
+		mainClassName: "mx-auto w-full max-w-[1440px] px-4 py-5 min-[1001px]:px-10 min-[1001px]:py-6",
 	},
 	"/leaderboard": {
 		canvasClassName: "min-h-dvh bg-dashboard-canvas font-sans text-fg",

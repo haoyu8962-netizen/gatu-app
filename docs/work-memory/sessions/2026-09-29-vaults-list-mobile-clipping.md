@@ -10,7 +10,7 @@
   "summary": "审查 /vaults 发现手机卡片列表的隐式网格列被一个长金库名撑到 416px，外框 overflow-hidden 把每张卡片静默切掉 57px（375 宽）或 112px（320 宽），APR、权益、运行时间看不全；交付验收只查页面横向溢出且用短名字示例数据，所以没发现。修复：列表加 grid-cols-1，两个原生 th 加 text-start，头像改由领域函数 getVaultMark 取前两个字母或数字。新增 vaults-list.pw.ts 浏览器测试并挂进 CI 的共享配置步骤；旧组件上 6 个用例全失败、只回退头像也失败。单测 86 项、浏览器 6 项、CI 结构测试 6 项通过，锁定的 TypeScript 5.7.2 通过；开发服务器真实数据 375 与 1440 宽核对通过。320 宽地址二次截断、长名字换行、单组标题、手机外框、详情页折线压字和 11 条中文「Vault」未译待用户决定。",
   "thread": null,
   "baseCommit": "fe2d8bc8",
-  "commits": [],
+  "commits": ["77a70867"],
   "sources": [
     { "path": "apps/terminal/src/components/vaults/vaults-list.tsx" },
     { "path": "apps/terminal/src/components/vaults/domain/vaults.ts" },
@@ -74,3 +74,5 @@
 - 详情页「账户价值」数值压在折线上；中文翻译有 11 条 `msgstr` 直接写「Vault」，其他 68 处译作「金库」。
 
 没有被替代的记录。下次先看 `apps/terminal/src/components/vaults/vaults-list.tsx`、`tests/browser/vaults-list.pw.ts` 和重构文档第 8 节的更正。
+
+补记（2026-09-29）：本记录的修复提交为 `77a70867`。上面第一条（320 宽地址截断）和第四条（手机页面边距）已由 [手机仪表盘页面边距记录](2026-09-29-dashboard-mobile-gutters.md) 处理。第四条的描述有误，更正如下：排行榜、资金费率对比、API 钱包在手机上是有意的直角整页白底（圆角只在桌面端加），不是贴边却带圆角；真正贴边又带圆角和阴影的只有金库（列表与详情）和推荐页。

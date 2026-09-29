@@ -13,6 +13,8 @@ async function cardGeometry(page: Page) {
 		return {
 			pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
 			panelOverflow: panel.scrollWidth - panel.clientWidth,
+			panelStartGutter: panelBox.left,
+			panelEndGutter: window.innerWidth - panelBox.right,
 			cards: cards.map((card) => {
 				const box = card.getBoundingClientRect();
 				const style = getComputedStyle(card);
@@ -28,6 +30,9 @@ async function cardGeometry(page: Page) {
 					leftGap: box.left - panelBox.left,
 					rightOverflow: box.right - panelBox.right,
 					contentOverflow: contentRight - contentEdge,
+					truncatedValues: [...card.querySelectorAll("dd")]
+						.filter((value) => value.scrollWidth > value.clientWidth)
+						.map((value) => value.textContent ?? ""),
 				};
 			}),
 		};
@@ -56,7 +61,7 @@ for (const locale of ["en", "zh"]) {
 		{ width: 320, height: 640 },
 		{ width: 375, height: 812 },
 	]) {
-		test(`keeps every Vault card and its values inside the list at ${viewport.width}px in ${locale}`, async ({
+		test(`keeps every Vault card and its full values inside the page gutter at ${viewport.width}px in ${locale}`, async ({
 			page,
 		}) => {
 			const errors: string[] = [];
@@ -69,16 +74,52 @@ for (const locale of ["en", "zh"]) {
 			expect(geometry.cards).toHaveLength(4);
 			expect(geometry.pageOverflow).toBeLessThanOrEqual(0);
 			expect(geometry.panelOverflow).toBeLessThanOrEqual(0);
+			expect(geometry.panelStartGutter).toBe(16);
+			expect(geometry.panelEndGutter).toBe(16);
 			for (const card of geometry.cards) {
 				expect(card.leftGap, card.name).toBeGreaterThanOrEqual(0);
 				expect(card.rightOverflow, card.name).toBeLessThanOrEqual(0);
 				expect(card.contentOverflow, card.name).toBeLessThanOrEqual(0.5);
+				expect(card.truncatedValues, card.name).toEqual([]);
 				expect(card.mark, card.name).toMatch(/^[\p{L}\p{N}]{1,2}$/u);
 			}
 			expect(geometry.cards.find((card) => card.name === LONG_NAME)?.mark).toBe("SY");
 			expect(errors).toEqual([]);
 		});
 	}
+}
+
+for (const viewport of [
+	{ width: 320, height: 640 },
+	{ width: 375, height: 812 },
+]) {
+	test(`keeps the Vault detail panel and full address inside the page gutter at ${viewport.width}px`, async ({
+		page,
+	}) => {
+		const errors: string[] = [];
+		page.on("pageerror", (error) => errors.push(error.message));
+		await page.setViewportSize(viewport);
+		await page.goto("/vaults-list.html?view=detail");
+		const address = page.getByText("0x0000000000000000000000000000000000000101", { exact: true });
+		await expect(address).toBeVisible();
+
+		const geometry = await page.evaluate(() => {
+			const panel = document.querySelector("article[data-vault-detail-state]");
+			if (!panel) throw new Error("Missing Vault detail");
+			const box = panel.getBoundingClientRect();
+			return {
+				pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
+				panelOverflow: panel.scrollWidth - panel.clientWidth,
+				panelStartGutter: box.left,
+				panelEndGutter: window.innerWidth - box.right,
+			};
+		});
+		expect(geometry.pageOverflow).toBeLessThanOrEqual(0);
+		expect(geometry.panelOverflow).toBeLessThanOrEqual(0);
+		expect(geometry.panelStartGutter).toBe(16);
+		expect(geometry.panelEndGutter).toBe(16);
+		expect(errors).toEqual([]);
+	});
 }
 
 for (const viewport of [

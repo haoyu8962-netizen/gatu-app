@@ -20,6 +20,12 @@
 - Every tappable surface that is reachable on the mobile terminal must show press feedback, not only hover: use `TOUCH_PRESS_CLASS` (`active:bg-fill-weak`) or `TOUCH_PRESS_FADE_CLASS` (`active:opacity-60`) from `@/components/ui/touch-press`. Hover-only styling (`hover:*`, `min-[1001px]:hover:*`) is invisible on touch screens.
 - Disclosure cards (`MobileDisclosureHeader`) keep their tinted `bg-market-close-card` header over the `bg-surface` card body; the press tint overlays the header through the full-card button. Keep that two-tone structure unless a design decision changes it.
 
+### Dashboard page gutters
+
+- On phones a dashboard page uses one of two surfaces. **Inset panels**: the `DASHBOARD_FRAMES` entry keeps a mobile side padding (`px-4`, or `px-5` for the legal pages) and panels keep their radius and shadow, as on Portfolio, Earn, Staking, Vaults, Referrals and the history pages. **One flat sheet**: the frame has no mobile side padding, the page renders a single full-width `bg-surface` sheet that pads its own content, and the sheet takes its radius only on desktop (`!isMobile && "… rounded-24"`), as on Leaderboard, Funding Comparison and API Wallet.
+- Never let a rounded or shadowed panel touch the screen edges: its corners and shadow read as a card that lost its margin. `dashboard-frame-view.test.tsx` fails when a frame without a mobile side padding is not one of the flat sheets, or when a flat sheet rounds its corners on phones.
+- A mobile card that loses width to the gutter must still show its values in full: stack a label above its value instead of truncating addresses or amounts (see the Vault cards and `tests/browser/vaults-list.pw.ts`).
+
 ### Dialog transitions
 
 - `Modal` and `Drawer` from `@gatu/ui` gate an initially-open mount so Base UI still runs the enter transition; do not bypass them with `Dialog.Root` directly for app dialogs.

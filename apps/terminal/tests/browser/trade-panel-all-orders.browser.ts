@@ -3,6 +3,7 @@ import { useSelectedMarketInfo as useOrderbookMarket } from "./mobile-orderbook-
 
 
 export {
+	getExplorerAddressUrl,
 	getExplorerTxUrl,
 	useHyperliquid,
 	useOrderbookFeed,
