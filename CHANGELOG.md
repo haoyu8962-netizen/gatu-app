@@ -53,6 +53,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   showed it before you confirmed; a one-time account activation fee still appears when it was
   charged. The Chinese text no longer calls the pending amount "实际到账" or mixes 提现 and 提款.
 
+- Chinese text now uses 存款 for deposits and 提款 for withdrawals everywhere, matching the Deposit
+  and Withdraw buttons. Forty-eight messages that said 充值, 提现 or 入金 were updated, including
+  the withdrawal form's `Withdraw to Arbitrum` button, the deposit address and status messages,
+  and the deposit and withdrawal notifications.
+
 - The phone navigation drawer no longer shows the Navigation and More headings. As on the
   official terminal, a divider now separates the main destinations from Funding Comparison,
   Statistics, API Wallet, Docs and Support, which leaves more room for the list on small screens.

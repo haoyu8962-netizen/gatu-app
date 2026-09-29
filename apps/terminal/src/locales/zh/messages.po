@@ -325,7 +325,7 @@ msgstr "只挂单订单会立即与现有订单成交。最优买卖价：{bbo}�
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
-msgstr "先前的 CCTP 充值仍在跟踪中。请勿重复提交同一笔转账。"
+msgstr "先前的 CCTP 存款仍在跟踪中。请勿重复提交同一笔转账。"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
@@ -401,7 +401,7 @@ msgstr "账户"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "Account {user} has no balance on Hyperliquid. Deposit first."
-msgstr "账户 {user} 在 Hyperliquid 上无余额，请先充值。"
+msgstr "账户 {user} 在 Hyperliquid 上无余额，请先存款。"
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "Account / API Wallet"
@@ -632,7 +632,7 @@ msgstr "运行时间"
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Agent/API wallet addresses cannot receive CCTP deposits. Connect the owner account instead."
-msgstr "Agent/API 钱包地址无法接收 CCTP 充值。请改为连接所有者账户。"
+msgstr "Agent/API 钱包地址无法接收 CCTP 存款。请改为连接所有者账户。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "AI"
@@ -779,7 +779,7 @@ msgstr "仅当账户价值低于 $100,000 且历史总交易量低于 $10,000,00
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
-msgstr "已授权的 API 钱包可签署委托的 L1 操作，例如下单、撤单，以及调整杠杆或保证金模式。授权无法按操作细分。包括外部提现在内的仅限主钱包操作仍需由主钱包执行。"
+msgstr "已授权的 API 钱包可签署委托的 L1 操作，例如下单、撤单，以及调整杠杆或保证金模式。授权无法按操作细分。包括外部提款在内的仅限主钱包操作仍需由主钱包执行。"
 
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/trade/position-submit-feedback.ts
@@ -1446,7 +1446,7 @@ msgstr "持有仓位时无法切换到逐仓模式。请先平仓。"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "CCTP deposits are awaiting funded end-to-end verification for this network."
-msgstr "此网络的 CCTP 充值仍待完成有真实资金的端到端验证。"
+msgstr "此网络的 CCTP 存款仍待完成有真实资金的端到端验证。"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #~ msgid "Change leverage"
@@ -1518,7 +1518,7 @@ msgstr "正在核验地区可用性，Vault 操作暂不可用。"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
-msgstr "正在检查 Hyperliquid 当前的充值路由..."
+msgstr "正在检查 Hyperliquid 当前的存款路由..."
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #~ msgid "Checking the current Hyperliquid withdrawal route..."
@@ -1551,7 +1551,7 @@ msgstr "请选择其他市场、方向、类型或状态筛选条件。"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Circle CCTP deposits are limited to 10,000,000 USDC per transfer."
-msgstr "每笔 Circle CCTP 充值上限为 10,000,000 USDC。"
+msgstr "每笔 Circle CCTP 存款上限为 10,000,000 USDC。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1583,11 +1583,11 @@ msgstr "Circle 已提交 HyperEVM 转发交易。HyperCore 入账可能还需要
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Circle testnet deposits are limited to 1,000 USDC per transfer."
-msgstr "Circle 测试网每笔充值上限为 1,000 USDC。"
+msgstr "Circle 测试网每笔存款上限为 1,000 USDC。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Circle testnet deposits require this address to already exist on Hyperliquid mainnet."
-msgstr "Circle 测试网充值要求此地址已存在于 Hyperliquid 主网。"
+msgstr "Circle 测试网存款要求此地址已存在于 Hyperliquid 主网。"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Circulating supply"
@@ -2263,7 +2263,7 @@ msgstr "复制地址"
 
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copy deposit address"
-msgstr "复制充值地址"
+msgstr "复制存款地址"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Copy link"
@@ -2552,11 +2552,11 @@ msgstr "存入"
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Deposit address"
-msgstr "充值地址"
+msgstr "存款地址"
 
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Deposit address QR code"
-msgstr "充值地址二维码"
+msgstr "存款地址二维码"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 msgid "Deposit amount"
@@ -2566,11 +2566,11 @@ msgstr "金额"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
-msgstr "充值失败"
+msgstr "存款失败"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit status unknown"
-msgstr "充值状态未知"
+msgstr "存款状态未知"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit submitted"
@@ -2578,7 +2578,7 @@ msgstr "存款已提交"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
-msgstr "充值成功"
+msgstr "存款成功"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Deposit to Vault"
@@ -2588,16 +2588,16 @@ msgstr "存入金库"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/tests/deposit-broadcast.test.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
-msgstr "充值交易已广播，但确认超时。请先在 Arbiscan 上检查后再重试。"
+msgstr "存款交易已广播，但确认超时。请先在 Arbiscan 上检查后再重试。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
-msgstr "充值交易已广播，但 Arbitrum RPC 确认失败。请先在 Arbiscan 上检查后再重试。"
+msgstr "存款交易已广播，但 Arbitrum RPC 确认失败。请先在 Arbiscan 上检查后再重试。"
 
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
-msgstr "充值交易已提交，但未在 Arbitrum 上确认。你的钱包 nonce 可能与链上状态不同步。请在钱包中清除待处理活动或重置 nonce 数据后重试。"
+msgstr "存款交易已提交，但未在 Arbitrum 上确认。你的钱包 nonce 可能与链上状态不同步。请在钱包中清除待处理活动或重置 nonce 数据后重试。"
 
 #: src/hooks/trade/use-deposit-availability.ts
 msgid "Deposit unavailable"
@@ -2647,11 +2647,11 @@ msgstr "存款和提款"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposits and withdrawals are not allowed."
-msgstr "暂不支持充值和提现。"
+msgstr "暂不支持存款和提款。"
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Deposits and withdrawals remain available."
-msgstr "充值与提现仍可正常使用。"
+msgstr "存款与提款仍可正常使用。"
 
 #: src/hooks/trade/use-deposit-availability.ts
 msgid "Deposits are not available in your region."
@@ -3588,7 +3588,7 @@ msgstr "转发交易已提交"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Forwarding deposit"
-msgstr "正在转发充值"
+msgstr "正在转发存款"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
@@ -3770,7 +3770,7 @@ msgstr "Gas（{0}）"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Gas-sponsored CCTP deposits are not enabled for this network."
-msgstr "当前网络尚未启用 Gas 代付的 CCTP 充值。"
+msgstr "当前网络尚未启用 Gas 代付的 CCTP 存款。"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Gatu invitation link"
@@ -4177,7 +4177,7 @@ msgstr "继续按住 {remainingSeconds} 秒"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Keep this window open and confirm or reject the request in your wallet. Do not submit another deposit."
-msgstr "请保持此窗口打开，并在钱包中确认或拒绝请求。请勿再次提交入金。"
+msgstr "请保持此窗口打开，并在钱包中确认或拒绝请求。请勿再次提交存款。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Keep this window open until Hyperliquid finishes checking the wallet action."
@@ -4251,18 +4251,18 @@ msgstr "旧版记录"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
-msgstr "不再接受旧版 Bridge2 充值。自动充值已暂停。"
+msgstr "不再接受旧版 Bridge2 存款。自动存款已暂停。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Legacy Bridge2 deposits are no longer accepted. Deposits are paused."
-msgstr "不再接受旧版 Bridge2 充值。充值已暂停。"
+msgstr "不再接受旧版 Bridge2 存款。存款已暂停。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted."
-msgstr "不再接受旧版 Bridge2 充值。本次充值未提交。"
+msgstr "不再接受旧版 Bridge2 存款。本次存款未提交。"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy DEX"
@@ -4971,11 +4971,11 @@ msgstr "最低值 <0>{0}</0>；最高值 <1>{1}</1>。"
 #. placeholder {0}: ctx.minDeposit
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
-msgstr "最低充值为 {0} USDC"
+msgstr "最低存款为 {0} USDC"
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Minimum deposit is 5 USDC"
-msgstr "最低充值为 5 USDC"
+msgstr "最低存款为 5 USDC"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."
@@ -4984,7 +4984,7 @@ msgstr "数量取整后，最低订单价值必须达到 {ORDER_MIN_NOTIONAL_USD
 #. placeholder {0}: ctx.minWithdraw
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum withdrawal is ${0}"
-msgstr "最低提现为 ${0}"
+msgstr "最低提款为 ${0}"
 
 #: src/lib/trade/withdrawal.ts
 msgid "Minimum withdrawal is ${minimum}"
@@ -5110,7 +5110,7 @@ msgstr "全网质押量"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "New deposit"
-msgstr "新充值"
+msgstr "新存款"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "New funds actions are locked until this record is resolved."
@@ -5197,7 +5197,7 @@ msgstr "无余额"
 
 #: src/lib/errors/exchange-error-text.ts
 msgid "No balance on Hyperliquid. Deposit first."
-msgstr "Hyperliquid 上无余额，请先充值。"
+msgstr "Hyperliquid 上无余额，请先存款。"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "No balances found"
@@ -5583,7 +5583,7 @@ msgstr "在手机上打开 gatu，点「连接」→「链接桌面钱包」，�
 #. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale: i18n.locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Once imported, this phone trades on {0} with the desktop-approved key until {1}. It cannot withdraw."
-msgstr "导入后，这部手机可用桌面授权的密钥在 {0} 上交易至 {1}，不能提现。"
+msgstr "导入后，这部手机可用桌面授权的密钥在 {0} 上交易至 {1}，不能提款。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "One-day validator lock"
@@ -7529,7 +7529,7 @@ msgstr "此浏览器不支持安全随机数生成。请使用受支持的浏览
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Secure randomness is unavailable. Deposit was not submitted."
-msgstr "安全随机数不可用。充值未提交。"
+msgstr "安全随机数不可用。存款未提交。"
 
 #: src/lib/lifi/use-bridge.ts
 msgid "Secure reload recovery is unavailable in this browser. Bridge execution was not started."
@@ -7890,7 +7890,7 @@ msgstr "智能钱包客户端尚未就绪"
 #: src/lib/errors/action-error.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked."
-msgstr "智能钱包入金状态正在同步。余额核对完成前，请勿再次提交入金。"
+msgstr "智能钱包存款状态正在同步。余额核对完成前，请勿再次提交存款。"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
@@ -8423,7 +8423,7 @@ msgstr "切换到 Arbitrum"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 msgid "Switch to Arbitrum to deposit USDC to Hyperliquid"
-msgstr "切换至 Arbitrum 以向 Hyperliquid 充值 USDC"
+msgstr "切换至 Arbitrum 以向 Hyperliquid 存入 USDC"
 
 #: src/config/desktop-nav.ts
 msgid "Switch to dark mode"
@@ -8749,12 +8749,12 @@ msgstr "无法验证历史响应。"
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
-msgstr "Hyperliquid 充值路由在签名前已变化。请检查更新后的路由并重试。"
+msgstr "Hyperliquid 存款路由在签名前已变化。请检查更新后的路由并重试。"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
-msgstr "Hyperliquid 提现路由已更改。请检查更新后的路由和费用，然后再次提交。"
+msgstr "Hyperliquid 提款路由已更改。请检查更新后的路由和费用，然后再次提交。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The key can trade on this account (orders, cancels, leverage, vault and sub-account moves) but cannot withdraw or send funds out of Hyperliquid; withdrawals and sends still need this master wallet."
@@ -8903,7 +8903,7 @@ msgstr "无法验证公开金库数据源。不会改为显示缓存数据或其
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen."
-msgstr "二维码只能交易、不能提现。不要分享、截图，或在共享屏幕时显示它。"
+msgstr "二维码只能交易、不能提款。不要分享、截图，或在共享屏幕时显示它。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR closes automatically in about {announcedSeconds} seconds"
@@ -10134,16 +10134,16 @@ msgstr "无法验证当前 Circle CCTP 费用和 Fast Transfer 容量。"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused."
-msgstr "无法验证 Hyperliquid 当前的充值路由。自动充值已暂停。"
+msgstr "无法验证 Hyperliquid 当前的存款路由。自动存款已暂停。"
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted."
-msgstr "无法验证 Hyperliquid 当前的充值路由。充值未提交。"
+msgstr "无法验证 Hyperliquid 当前的存款路由。存款未提交。"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify the current Hyperliquid withdrawal route."
-msgstr "无法验证 Hyperliquid 当前的提现路由。"
+msgstr "无法验证 Hyperliquid 当前的提款路由。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Unable to verify withdrawal eligibility."
@@ -10151,7 +10151,7 @@ msgstr "无法验证 Hyperliquid 当前的提现路由。"
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify withdrawal eligibility. Request was not submitted."
-msgstr "无法验证提现资格。请求未提交。"
+msgstr "无法验证提款资格。请求未提交。"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -10721,7 +10721,7 @@ msgstr "钱包连接不可用"
 
 #: src/lib/errors/action-error.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
-msgstr "钱包没有返回交易哈希。重试前请先检查钱包活动，避免重复发送充值交易。"
+msgstr "钱包没有返回交易哈希。重试前请先检查钱包活动，避免重复发送存款交易。"
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -10828,7 +10828,7 @@ msgstr "从金库提取"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdraw to Arbitrum"
-msgstr "提现至 Arbitrum"
+msgstr "提款至 Arbitrum"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdraw USDC to Arbitrum"
@@ -10844,11 +10844,11 @@ msgstr "提取可能会取消委托、平掉仓位、产生滑点，最终返回
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawal conditions changed before signing. Review the withdrawal and submit it again."
-msgstr "签名前提现条件已发生变化。请检查提现信息后重新提交。"
+msgstr "签名前提款条件已发生变化。请检查提款信息后重新提交。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"
-msgstr "提现失败"
+msgstr "提款失败"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
@@ -10884,7 +10884,7 @@ msgstr "无法确认提款状态"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal submitted"
-msgstr "提现已提交"
+msgstr "提款已提交"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal unlocked"
@@ -11066,7 +11066,7 @@ msgstr "您的权益"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Your funds were successfully deposited."
-msgstr "您的资金已成功充值。"
+msgstr "您的资金已成功存入。"
 
 #: src/components/earn/earn-view.tsx
 msgid "Your Health Factor"

@@ -56,7 +56,7 @@ const zhTranslations: Record<string, string> = {
 	"Portfolio Value": "投资组合价值",
 	"Perps Maintenance Margin": "合约维持保证金",
 	Withdraw: "提款",
-	Deposit: "充值",
+	Deposit: "存款",
 	"Account Summary": "账户概览",
 	"Account Margin Ratio": "账户保证金比率",
 	Language: "语言",
@@ -667,7 +667,7 @@ describe("language hot switching", () => {
 		expect(container.querySelector('[data-slot="disconnected-account-overview"]')).toBe(overview);
 		expect(overview?.querySelector("button")).toBe(button);
 		expect(overview?.querySelector('[data-slot="info-row"]')).toBe(row);
-		expect(button?.textContent).toBe("充值");
+		expect(button?.textContent).toBe("存款");
 		expect(overview?.querySelector("h3")?.textContent).toBe("账户概览");
 		expect(row?.textContent).toContain("账户保证金比率");
 	});

@@ -138,10 +138,10 @@ describe("embedded deposit notifications with real Sonner", () => {
 		expect(container.textContent).toContain("Depositing USDC to Hyperliquid...");
 		const message = "Depositing USDC to Hyperliquid...";
 		const messageId = createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
-		act(() => i18n.loadAndActivate({ locale: "zh", messages: { [messageId]: "正在向 Hyperliquid 充值 USDC…" } }));
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: { [messageId]: "正在向 Hyperliquid 存入 USDC…" } }));
 		await act(() => vi.advanceTimersByTimeAsync(0));
 		expect(toast.getToasts()[0]?.id).toBe(notificationId);
 		expect(container.querySelectorAll("[data-sonner-toast]")).toHaveLength(1);
-		expect(container.textContent).toContain("正在向 Hyperliquid 充值 USDC…");
+		expect(container.textContent).toContain("正在向 Hyperliquid 存入 USDC…");
 	});
 });
