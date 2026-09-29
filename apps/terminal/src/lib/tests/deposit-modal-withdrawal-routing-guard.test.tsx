@@ -1272,6 +1272,49 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(closeDepositModal).not.toHaveBeenCalled();
 	});
 
+	it("reports the amount from the fee read at the click when the cached fee changes before submission", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.withdrawable = "100";
+		testState.withdrawDraft = "10";
+		testState.cctpWithdrawalFeeRefetch.mockImplementation(async () => {
+			testState.cctpWithdrawalFee = "2";
+			return { data: "2", isError: false };
+		});
+		let release!: () => void;
+		testState.exchangeFinalWait.mockReturnValueOnce(
+			new Promise<void>((resolve) => {
+				release = resolve;
+			}),
+		);
+		await rerender();
+		act(() => getButton("Set amount").click());
+		let submission!: Promise<void>;
+		await act(async () => {
+			if (!testState.withdrawSubmit) throw new Error("Missing withdrawal submit handler");
+			submission = Promise.resolve(testState.withdrawSubmit());
+			await vi.waitFor(() => expect(testState.exchangeFinalWait).toHaveBeenCalledOnce());
+		});
+
+		testState.cctpWithdrawalFee = "3";
+		await rerender();
+		expect(container.querySelector('[data-testid="withdraw-routing-status"]')?.getAttribute("data-route-fee")).toBe(
+			"3",
+		);
+		await act(async () => {
+			release();
+			await submission;
+		});
+
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ amount: "10" }),
+		);
+		expect(testState.cctpWithdrawalFeeRefetch).toHaveBeenCalledOnce();
+		expect(getToastText(toastMocks.success.mock.calls[0])).toBe(
+			"Withdrawal submitted You'll receive $8.00 on Arbitrum after confirmation.",
+		);
+	});
+
 	it("keeps an ambiguous Privy identity out of both embedded and external deposit execution", async () => {
 		testState.modalOpen = true;
 		testState.emailAddress = "trader@example.com";
