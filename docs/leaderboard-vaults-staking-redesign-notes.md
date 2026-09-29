@@ -390,6 +390,8 @@ Correction (2026-09-29, page gutter): the Vault routes were delivered without th
 
 Correction (2026-09-29, names and chart): the mobile Vault cards and the desktop table still cut a long name to one line with an ellipsis (at 375px in Chinese, 6 of the first 40 live Vaults, HLP included), and the detail chart drew its line under the absolutely positioned Account value / PNL caption (on HLP's 30-day account value, 66 of 400 sampled line points fell inside the caption box at 375px and 29 at 1466px). Names now wrap in full on both surfaces, and the caption sits above the plot in normal flow while the figure keeps its height. `vaults-list.pw.ts` also checks that no mobile card hides part of its name and that the detail caption ends above the plot; both checks fail against the previous layout.
 
+Correction (2026-09-29, group heading): the neutral group that holds unclassified rows (always the case while the feed carries no official/user classification, and for the Deposited and Leading filters) showed the heading Vaults directly under the page title Vaults. That group now has no visible heading; the Official Vaults and User Vaults headings remain when every row is classified. `vaults-view.test.tsx` covers both cases and `vaults-list.pw.ts` checks that the fixture list has no group heading.
+
 ### 8.3 Changed-file inventory
 
 Only the following delivery-owned categories belong to this redesign:

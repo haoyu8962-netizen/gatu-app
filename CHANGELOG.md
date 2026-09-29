@@ -455,6 +455,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   column, where the panel cut off its right edge. Chinese step labels no longer leave a single
   character on a line of its own.
 
+- The Vaults list no longer repeats its Vaults title as a group heading. When Vaults are not
+  classified as official or user, or the Deposited or Leading filter is on, the list is a single
+  group with no heading; a classified list still shows Official Vaults and User Vaults.
+
 - On a Vault's page, the Account value or PNL figure sits above the chart instead of on top of it,
   where the line could run through the number. In Chinese, the page's notices say 金库 like the rest
   of the page instead of the English word Vault.

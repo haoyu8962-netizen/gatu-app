@@ -225,10 +225,15 @@ function VaultGroup({
 }) {
 	const { t } = useLingui();
 	return (
-		<section className="mt-3 first:mt-0" aria-labelledby={`vault-group-${group.id}`}>
-			<h2 id={`vault-group-${group.id}`} className="px-4 pb-2 text-xs font-bold text-fg min-[1001px]:px-5">
-				<GroupLabel group={group.id} />
-			</h2>
+		<section
+			className="mt-3 first:mt-0"
+			aria-labelledby={group.id === "unclassified" ? undefined : `vault-group-${group.id}`}
+		>
+			{group.id === "unclassified" ? null : (
+				<h2 id={`vault-group-${group.id}`} className="px-4 pb-2 text-xs font-bold text-fg min-[1001px]:px-5">
+					<GroupLabel group={group.id} />
+				</h2>
+			)}
 			<Table
 				scrollableRegionLabel={t`Vaults`}
 				containerClassName="hidden min-[1001px]:block"
@@ -544,10 +549,8 @@ function FilterLabel({ filter }: { filter: VaultFilter }) {
 	return <Trans>All Vaults</Trans>;
 }
 
-function GroupLabel({ group }: { group: VaultListGroup["id"] }) {
-	if (group === "official") return <Trans>Official Vaults</Trans>;
-	if (group === "user") return <Trans>User Vaults</Trans>;
-	return <Trans>Vaults</Trans>;
+function GroupLabel({ group }: { group: Exclude<VaultListGroup["id"], "unclassified"> }) {
+	return group === "official" ? <Trans>Official Vaults</Trans> : <Trans>User Vaults</Trans>;
 }
 
 function getVisibleGroups(

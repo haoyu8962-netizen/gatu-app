@@ -96,6 +96,7 @@ for (const locale of ["en", "zh"]) {
 				expect(card.nameHidden, card.name).toBe(false);
 				expect(card.mark, card.name).toMatch(/^[\p{L}\p{N}]{1,2}$/u);
 			}
+			await expect(page.locator("section[data-vaults-state] h2")).toHaveCount(0);
 			const longNameCard = geometry.cards.find((card) => card.name === LONG_NAME);
 			expect(longNameCard?.mark).toBe("SY");
 			expect(longNameCard?.values).toContain(LARGE_EQUITY);
