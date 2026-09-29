@@ -366,6 +366,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- A withdrawal no longer goes ahead with a Circle forwarding fee different from the one the form
+  showed. If the fee has changed when you press Withdraw, higher or lower, nothing is sent: the form
+  stays open with your amount, shows the updated fee and "Circle fees changed before submission.
+  Review the updated fee and retry.", and you can submit again. The amount in the `Withdrawal
+  submitted` notification now matches the form's estimate when you pressed Withdraw. See
+  [withdrawals](docs/withdrawals.md#cctp-route).
+
 - On phones, Vault cards no longer run off the right edge of the screen when the list contains a
   long Vault name, so APR, equity, age and the performance line stay visible; a long name now ends
   with an ellipsis. On desktop, the Vault and Leader column headers line up with their columns. A

@@ -556,6 +556,7 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		onAmountChange,
 		onRetryPrerequisites,
 		onSubmit,
+		routeFee,
 		routingStatus,
 		routingPreflightFailed,
 		showSpotFundsNotice,
@@ -571,6 +572,7 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		onAmountChange: (amount: string) => void;
 		onRetryPrerequisites: () => void;
 		onSubmit: () => void;
+		routeFee: string | null;
 		routingStatus: string;
 		routingPreflightFailed?: boolean;
 		showSpotFundsNotice: boolean;
@@ -583,6 +585,7 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 				"data-amount": amount,
 				"data-available": available,
 				"data-max-amount": maxAmount,
+				"data-route-fee": routeFee,
 				"data-show-spot-funds-notice": showSpotFundsNotice,
 				"data-testid": "withdraw-routing-status",
 				"data-status": routingStatus,
@@ -1237,6 +1240,52 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
 		await expectWithdrawalErrorNotified("feeUnavailable");
 	});
+
+	it.each([
+		{ direction: "higher", displayedFee: "1", clickTimeFee: "2", received: "$8.00" },
+		{ direction: "lower", displayedFee: "2", clickTimeFee: "1", received: "$9.00" },
+	])(
+		"keeps the form open without signing when the click-time CCTP fee is $direction than the displayed fee",
+		async ({ displayedFee, clickTimeFee, received }) => {
+			testState.modalOpen = true;
+			testState.activeTab = "withdraw";
+			testState.withdrawable = "100";
+			testState.withdrawDraft = "10";
+			testState.cctpWithdrawalFee = displayedFee;
+			testState.cctpWithdrawalFeeRefetch.mockImplementation(async () => {
+				testState.cctpWithdrawalFee = clickTimeFee;
+				return { data: clickTimeFee, isError: false };
+			});
+			await rerender();
+			act(() => getButton("Set amount").click());
+			const form = () => container.querySelector('[data-testid="withdraw-routing-status"]');
+			expect(form()?.getAttribute("data-route-fee")).toBe(displayedFee);
+
+			await act(async () => getButton("Submit withdrawal").click());
+
+			expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+			expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
+			expect(testState.cctpWithdrawalFeeRefetch).toHaveBeenCalledOnce();
+			expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe(
+				WITHDRAWAL_MESSAGES.feeChanged,
+			);
+			expect(toastMocks.success).not.toHaveBeenCalled();
+			expect(toastMocks.error).not.toHaveBeenCalled();
+			expect(closeDepositModal).not.toHaveBeenCalled();
+			expect(form()?.getAttribute("data-amount")).toBe("10");
+			expect(form()?.getAttribute("data-route-fee")).toBe(clickTimeFee);
+
+			await act(async () => getButton("Submit withdrawal").click());
+
+			expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).toHaveBeenCalledExactlyOnceWith(
+				expect.objectContaining({ amount: "10" }),
+			);
+			expect(getToastText(toastMocks.success.mock.calls[0])).toBe(
+				`Withdrawal submitted You'll receive ${received} on Arbitrum after confirmation.`,
+			);
+			expect(closeDepositModal).toHaveBeenCalledOnce();
+		},
+	);
 
 	it("keeps an ambiguous Privy identity out of both embedded and external deposit execution", async () => {
 		testState.modalOpen = true;

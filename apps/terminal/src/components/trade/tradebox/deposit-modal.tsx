@@ -66,6 +66,7 @@ import {
 } from "@/lib/trade/funds-action-feedback";
 import { toBig } from "@/lib/trade/numbers";
 import {
+	assertWithdrawalRouteFeeMatchesReview,
 	buildCctpWithdrawalParameters,
 	getMaximumWithdrawal,
 	getWithdrawalNetReceived,
@@ -662,10 +663,8 @@ export function DepositModal() {
 			signal.throwIfAborted();
 			const result = await cctpFeeQuery.refetch();
 			signal.throwIfAborted();
-			const reviewed = toBig(reviewedFee);
-			const current = result.data ? toBig(result.data) : null;
-			if (!reviewed || !current || result.isError) throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
-			if (!current.eq(reviewed)) throw fundsActionFeedbackCause("withdrawal-fee-changed");
+			if (result.isError) throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
+			assertWithdrawalRouteFeeMatchesReview(reviewedFee, result.data);
 		} catch (error) {
 			if (signal.aborted) throw signal.reason ?? error;
 			if (error instanceof FundsActionFeedbackCause) throw error;
@@ -902,6 +901,7 @@ export function DepositModal() {
 		const attempt = beginWithdrawalPreflight();
 		if (!attempt) return;
 		const reviewedAmount = withdrawAmount;
+		const reviewedRouteFee = withdrawalRouteFee;
 		setWithdrawalPreflightFeedback(null);
 		setIsWithdrawalPreflighting(true);
 		let mutationStarted = false;
@@ -981,6 +981,7 @@ export function DepositModal() {
 				reportPreflightFailure("withdrawal-fee-unavailable");
 				return;
 			}
+			assertWithdrawalRouteFeeMatchesReview(reviewedRouteFee, freshRouteFee);
 
 			const freshValidation = validateWithdrawal(
 				{
