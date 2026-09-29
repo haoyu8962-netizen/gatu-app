@@ -20,7 +20,6 @@ const WITHDRAWAL_MESSAGES = {
 	balanceChanged: "Balance changed before submission. Review the updated balance and try again.",
 	balanceUnavailable: "Balance data is unavailable. Try again after the connection recovers.",
 	depositRouteChanged: "The Hyperliquid deposit route changed before signing. Review the updated route and retry.",
-	feeChanged: "Circle fees changed before submission. Review the updated fee and retry.",
 	feeUnavailable: "Unable to load the current CCTP withdrawal fee.",
 	geoUnavailable: "Unable to verify regional availability. This funds action was not submitted.",
 	preTransferChanged: "The account activation fee changed before signing. Review the updated fee and try again.",
@@ -35,7 +34,6 @@ const WITHDRAWAL_MESSAGES_AR: Record<keyof typeof WITHDRAWAL_MESSAGES, string> =
 	balanceChanged: "تغيّر الرصيد قبل الإرسال. راجع الرصيد المحدّث وحاول مرة أخرى.",
 	balanceUnavailable: "بيانات الرصيد غير متاحة. حاول مرة أخرى بعد استعادة الاتصال.",
 	depositRouteChanged: "تغيّر مسار الإيداع في Hyperliquid قبل التوقيع. راجع المسار المحدّث وأعد المحاولة.",
-	feeChanged: "تغيرت رسوم Circle قبل الإرسال. راجع الرسوم المحدّثة وأعد المحاولة.",
 	feeUnavailable: "تعذر تحميل رسوم السحب الحالية عبر CCTP.",
 	geoUnavailable: "تعذّر التحقق من التوفر في منطقتك. لم يتم إرسال عملية إدارة الأموال هذه.",
 	preTransferChanged: "تغيرت رسوم تفعيل الحساب قبل التوقيع. راجع الرسوم المحدّثة وحاول مرة أخرى.",
@@ -1213,39 +1211,11 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.deposit).not.toHaveBeenCalled();
 	});
 
-	it("rejects a CCTP fee change at the SDK boundary and reports it from its stable code", async () => {
-		testState.modalOpen = true;
-		testState.activeTab = "withdraw";
-		testState.cctpWithdrawalFeeRefetch
-			.mockResolvedValueOnce({ data: "1", isError: false })
-			.mockResolvedValueOnce({ data: "2", isError: false });
-
-		await submitWithdrawal();
-
-		expect(testState.exchangeMutations.get("sendToEvmWithData")).toHaveBeenCalledOnce();
-		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-		await expectWithdrawalErrorNotified("feeChanged");
-	});
-
-	it("rejects an unavailable CCTP fee at the SDK boundary", async () => {
-		testState.modalOpen = true;
-		testState.activeTab = "withdraw";
-		testState.cctpWithdrawalFeeRefetch
-			.mockResolvedValueOnce({ data: "1", isError: false })
-			.mockResolvedValueOnce({ data: undefined, isError: true });
-
-		await submitWithdrawal();
-
-		expect(testState.exchangeMutations.get("sendToEvmWithData")).toHaveBeenCalledOnce();
-		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-		await expectWithdrawalErrorNotified("feeUnavailable");
-	});
-
 	it.each([
 		{ direction: "higher", displayedFee: "1", clickTimeFee: "2", received: "$8.00" },
 		{ direction: "lower", displayedFee: "2", clickTimeFee: "1", received: "$9.00" },
 	])(
-		"keeps the form open without signing when the click-time CCTP fee is $direction than the displayed fee",
+		"submits with a $direction CCTP fee read at the click and reports the amount it leaves",
 		async ({ displayedFee, clickTimeFee, received }) => {
 			testState.modalOpen = true;
 			testState.activeTab = "withdraw";
@@ -1258,34 +1228,49 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			});
 			await rerender();
 			act(() => getButton("Set amount").click());
-			const form = () => container.querySelector('[data-testid="withdraw-routing-status"]');
-			expect(form()?.getAttribute("data-route-fee")).toBe(displayedFee);
-
-			await act(async () => getButton("Submit withdrawal").click());
-
-			expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
-			expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
-			expect(testState.cctpWithdrawalFeeRefetch).toHaveBeenCalledOnce();
-			expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe(
-				WITHDRAWAL_MESSAGES.feeChanged,
+			expect(container.querySelector('[data-testid="withdraw-routing-status"]')?.getAttribute("data-route-fee")).toBe(
+				displayedFee,
 			);
-			expect(toastMocks.success).not.toHaveBeenCalled();
-			expect(toastMocks.error).not.toHaveBeenCalled();
-			expect(closeDepositModal).not.toHaveBeenCalled();
-			expect(form()?.getAttribute("data-amount")).toBe("10");
-			expect(form()?.getAttribute("data-route-fee")).toBe(clickTimeFee);
 
 			await act(async () => getButton("Submit withdrawal").click());
 
 			expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).toHaveBeenCalledExactlyOnceWith(
 				expect.objectContaining({ amount: "10" }),
 			);
+			expect(testState.cctpWithdrawalFeeRefetch).toHaveBeenCalledOnce();
 			expect(getToastText(toastMocks.success.mock.calls[0])).toBe(
 				`Withdrawal submitted You'll receive ${received} on Arbitrum after confirmation.`,
 			);
+			expect(toastMocks.error).not.toHaveBeenCalled();
 			expect(closeDepositModal).toHaveBeenCalledOnce();
 		},
 	);
+
+	it("stays in the form when the fee read at the click raises the minimum above the amount", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.withdrawable = "100";
+		testState.withdrawDraft = "10";
+		testState.cctpWithdrawalFeeRefetch.mockImplementation(async () => {
+			testState.cctpWithdrawalFee = "6";
+			return { data: "6", isError: false };
+		});
+
+		await submitWithdrawal();
+
+		const form = container.querySelector('[data-testid="withdraw-routing-status"]');
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe(
+			"Withdrawal conditions changed before signing. Review the withdrawal and submit it again.",
+		);
+		expect(form?.getAttribute("data-amount")).toBe("10");
+		expect(form?.getAttribute("data-route-fee")).toBe("6");
+		expect(getButton("Submit withdrawal").disabled).toBe(true);
+		expect(toastMocks.success).not.toHaveBeenCalled();
+		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(closeDepositModal).not.toHaveBeenCalled();
+	});
 
 	it("keeps an ambiguous Privy identity out of both embedded and external deposit execution", async () => {
 		testState.modalOpen = true;
@@ -1461,14 +1446,14 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 	it("formats a guard rejection from its stable code in the locale that is active when it fails", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
-		testState.cctpWithdrawalFeeRefetch
-			.mockResolvedValueOnce({ data: "1", isError: false })
-			.mockResolvedValueOnce({ data: "2", isError: false });
+		testState.preTransferFresh = { ...testState.preTransferFresh, fee: "0.5" };
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
 
 		await submitWithdrawal();
 
-		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(WITHDRAWAL_MESSAGES_AR.feeChanged));
+		await vi.waitFor(() =>
+			expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(WITHDRAWAL_MESSAGES_AR.preTransferChanged),
+		);
 	});
 
 	it("keeps an unconfirmed withdrawal on screen as a warning until it is dismissed", async () => {

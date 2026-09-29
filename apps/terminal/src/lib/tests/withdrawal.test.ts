@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { ARBITRUM_CCTP_DOMAIN, CCTP_NETWORKS } from "@/config/cctp";
 import { getCctpWithdrawalFeeRequest } from "@/hooks/trade/use-cctp-withdrawal-fee";
 import {
-	assertWithdrawalRouteFeeMatchesReview,
 	buildCctpWithdrawalParameters,
 	getMaximumWithdrawal,
 	getMinimumWithdrawal,
@@ -125,26 +124,6 @@ describe("withdrawal amounts", () => {
 				(descriptor) => i18n._(descriptor),
 			),
 		).toEqual({ valid: true, error: null });
-	});
-
-	it("accepts only a current route fee equal to the reviewed fee", () => {
-		expect(() => assertWithdrawalRouteFeeMatchesReview("0.2", "0.200000")).not.toThrow();
-		for (const current of ["0.200001", "0.199999"]) {
-			expect(() => assertWithdrawalRouteFeeMatchesReview("0.2", current)).toThrow(
-				expect.objectContaining({ code: "withdrawal-fee-changed" }),
-			);
-		}
-		for (const [reviewed, current] of [
-			["0.2", undefined],
-			["0.2", null],
-			["0.2", "-0.2"],
-			["0.2", "abc"],
-			["abc", "0.2"],
-		] as const) {
-			expect(() => assertWithdrawalRouteFeeMatchesReview(reviewed, current)).toThrow(
-				expect.objectContaining({ code: "withdrawal-fee-unavailable" }),
-			);
-		}
 	});
 
 	it("calculates the received amount without floating-point arithmetic", () => {

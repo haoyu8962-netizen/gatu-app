@@ -10,7 +10,6 @@ import {
 	LEGACY_MINIMUM_WITHDRAWAL_USDC,
 	LEGACY_WITHDRAWAL_FEE_USDC,
 } from "@/config/cctp";
-import { fundsActionFeedbackCause } from "@/lib/trade/funds-action-feedback";
 
 export type WithdrawalRoute = "arbitrum-cctp" | "arbitrum-legacy";
 export type WithdrawalSourceDex = "" | "spot";
@@ -56,16 +55,6 @@ function toUnsignedBig(value: string): Big | null {
 
 export function getWithdrawalRouteFee(route: WithdrawalRoute, cctpFee: string | null): string | null {
 	return route === "arbitrum-legacy" ? LEGACY_WITHDRAWAL_FEE_USDC : cctpFee;
-}
-
-export function assertWithdrawalRouteFeeMatchesReview(
-	reviewedFee: string,
-	currentFee: string | null | undefined,
-): void {
-	const reviewed = toUnsignedBig(reviewedFee);
-	const current = currentFee == null ? null : toUnsignedBig(currentFee);
-	if (!reviewed || !current) throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
-	if (!current.eq(reviewed)) throw fundsActionFeedbackCause("withdrawal-fee-changed");
 }
 
 export function getMinimumWithdrawal(route: WithdrawalRoute, routeFee: string | null): string | null {

@@ -125,4 +125,4 @@ gatu 的状态未知指引、CCTP 跟踪与资金动作锁比官方更严格，�
 
 状态：已实施、未发布、未做真实钱包验收。上文第二步实施记录中「描述里带净到账、手续费、可选的激活费与到账说明」一句是当时的实现，现改为：标题仍是 `Withdrawal submitted`，描述只剩一句「You'll receive $X on Arbitrum after confirmation.」，金额是提现额减去路径手续费；路径手续费不再单列（确认前表单已显示；到账金额按实际提交所用的手续费计算，表单显示之后、点击时重新读取之前手续费若有变化，目前不会中止，见任务记录）；一次性账户激活费只在实际收取时作为第二行出现。原因：原通知四行，中文里「实际到账」与「确认后到账」相互矛盾，且同一条通知混用「提现」「提款」。官方终端同一场景只有 `Withdrawal initiated` 一行。取舍与验证见[任务记录](work-memory/sessions/2026-09-29-withdraw-toast-copy.md)。
 
-同日后续：上一段括号里「目前不会中止」已不成立。点击时重新读取的路径手续费必须等于表单显示的值（更高、更低都拒绝），否则以 `withdrawal-fee-changed` 中止、不发交易所请求并留在表单内，复核后可重新提交；因此通知里的到账金额等于点击时表单的估算。规则与取舍见[提现](withdrawals.md#cctp-route)与[确认面契约](confirmation-surfaces.md)的例外表，验证见[任务记录](work-memory/sessions/2026-09-29-withdrawal-fee-review-bound.md)。
+同日后续：产品负责人决定提现手续费不设门禁，上一段括号里「目前不会中止」是有意的行为。点击时重新读取的手续费直接用于提交与通知，不与表单显示的值比较；SDK 签名边界也不再重读（原先两次读取不相等时会关闭弹窗并报错）。只有读不到手续费，或金额低于按最新手续费计算的最低值时，才留在表单内提示。理由与依据见[提现](withdrawals.md#cctp-route)，过程见[任务记录](work-memory/sessions/2026-09-29-withdrawal-fee-review-bound.md)。

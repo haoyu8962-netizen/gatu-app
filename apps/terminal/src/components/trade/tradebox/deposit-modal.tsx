@@ -66,7 +66,6 @@ import {
 } from "@/lib/trade/funds-action-feedback";
 import { toBig } from "@/lib/trade/numbers";
 import {
-	assertWithdrawalRouteFeeMatchesReview,
 	buildCctpWithdrawalParameters,
 	getMaximumWithdrawal,
 	getWithdrawalNetReceived,
@@ -111,7 +110,6 @@ interface WithdrawalExecutionReview {
 	attempt: WithdrawalPreflightAttempt;
 	cctpPreTransfer: CctpPreTransferReview | null;
 	route: WithdrawalRoute;
-	routeFee: string;
 }
 
 function normalizeError(error: unknown, fallbackMessage: string): Error {
@@ -658,20 +656,6 @@ export function DepositModal() {
 		}
 	}
 
-	async function assertFreshCctpWithdrawalFee(reviewedFee: string, signal: AbortSignal) {
-		try {
-			signal.throwIfAborted();
-			const result = await cctpFeeQuery.refetch();
-			signal.throwIfAborted();
-			if (result.isError) throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
-			assertWithdrawalRouteFeeMatchesReview(reviewedFee, result.data);
-		} catch (error) {
-			if (signal.aborted) throw signal.reason ?? error;
-			if (error instanceof FundsActionFeedbackCause) throw error;
-			throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
-		}
-	}
-
 	function assertCurrentWithdrawalExecutionReview(
 		expectedRoute: WithdrawalRoute,
 		amount: unknown,
@@ -734,10 +718,7 @@ export function DepositModal() {
 		];
 		if (expectedRoute === "arbitrum-cctp") {
 			if (!review.cctpPreTransfer) throw fundsActionFeedbackCause("withdrawal-eligibility-unavailable");
-			guards.push(
-				assertFreshCctpPreTransferCheck(review.cctpPreTransfer, signal),
-				assertFreshCctpWithdrawalFee(review.routeFee, signal),
-			);
+			guards.push(assertFreshCctpPreTransferCheck(review.cctpPreTransfer, signal));
 		}
 		await Promise.all(guards);
 		signal.throwIfAborted();
@@ -901,7 +882,6 @@ export function DepositModal() {
 		const attempt = beginWithdrawalPreflight();
 		if (!attempt) return;
 		const reviewedAmount = withdrawAmount;
-		const reviewedRouteFee = withdrawalRouteFee;
 		setWithdrawalPreflightFeedback(null);
 		setIsWithdrawalPreflighting(true);
 		let mutationStarted = false;
@@ -981,7 +961,6 @@ export function DepositModal() {
 				reportPreflightFailure("withdrawal-fee-unavailable");
 				return;
 			}
-			assertWithdrawalRouteFeeMatchesReview(reviewedRouteFee, freshRouteFee);
 
 			const freshValidation = validateWithdrawal(
 				{
@@ -1012,7 +991,6 @@ export function DepositModal() {
 						attempt,
 						cctpPreTransfer: cctpPreTransferReview,
 						route: expectedWithdrawalRoute,
-						routeFee: freshRouteFee,
 					};
 					if (expectedWithdrawalRoute === "arbitrum-cctp") {
 						if (!cctpPreTransferReview) throw new PreTransferCheckExecutionError("unavailable");

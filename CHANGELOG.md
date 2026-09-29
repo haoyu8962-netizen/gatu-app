@@ -53,6 +53,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   showed it before you confirmed; a one-time account activation fee still appears when it was
   charged. The Chinese text no longer calls the pending amount "实际到账" or mixes 提现 and 提款.
 
+- A withdrawal no longer fails when Circle's forwarding fee changes while it is being submitted. It
+  uses the fee read when you press Withdraw, and the `Withdrawal submitted` notification shows the
+  amount that fee leaves. It still stops and keeps the form open if the fee cannot be read or your
+  amount is below the minimum at that fee. See [withdrawals](docs/withdrawals.md#cctp-route).
+
 - Chinese text now uses 存款 for deposits and 提款 for withdrawals everywhere, matching the Deposit
   and Withdraw buttons. Forty-eight messages that said 充值, 提现 or 入金 were updated, including
   the withdrawal form's `Withdraw to Arbitrum` button, the deposit address and status messages,
@@ -365,13 +370,6 @@ changes, not evidence that a build has been deployed or accepted on real devices
   says so, together with the expiry date and the desktop revoke path.
 
 ### Fixed
-
-- A withdrawal no longer goes ahead with a Circle forwarding fee different from the one the form
-  showed. If the fee has changed when you press Withdraw, higher or lower, nothing is sent: the form
-  stays open with your amount, shows the updated fee and "Circle fees changed before submission.
-  Review the updated fee and retry.", and you can submit again. The amount in the `Withdrawal
-  submitted` notification now matches the form's estimate when you pressed Withdraw. See
-  [withdrawals](docs/withdrawals.md#cctp-route).
 
 - On phones, Vault cards no longer run off the right edge of the screen when the list contains a
   long Vault name, so APR, equity, age and the performance line stay visible; a long name now ends
