@@ -438,8 +438,8 @@ msgid "Account mode changed before the request was submitted. Review balances an
 msgstr "Account mode changed before the request was submitted. Review balances and try again."
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Account mode updated"
-msgstr "Account mode updated"
+#~ msgid "Account mode updated"
+#~ msgstr "Account mode updated"
 
 #: src/components/staking/staking-view.tsx
 msgid "Account staking data unavailable"
@@ -773,6 +773,10 @@ msgstr "Amount must be greater than zero."
 msgid "Amount to repay"
 msgstr "Amount to repay"
 
+#: src/lib/trade/order-reconciliation-feedback.ts
+msgid "An accepted order was canceled afterward. Review open orders and positions before retrying."
+msgstr "An accepted order was canceled afterward. Review open orders and positions before retrying."
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "An account is excluded only when both its account value is below $100,000 and its all-time volume is below $10,000,000. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this ranking does not claim exact parity with Hyperliquid's official leaderboard."
 msgstr "An account is excluded only when both its account value is below $100,000 and its all-time volume is below $10,000,000. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this ranking does not claim exact parity with Hyperliquid's official leaderboard."
@@ -1008,7 +1012,7 @@ msgstr "Atomic decimals"
 msgid "Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL."
 msgstr "Attached TP/SL is placed only if the order fully fills, or if its remainder is canceled for insufficient margin. Review your position's TP/SL."
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
 #: src/components/vaults/vaults-page.tsx
 msgid "Authorization rejected"
 msgstr "Authorization rejected"
@@ -1209,8 +1213,12 @@ msgid "Borrow Interest"
 msgstr "Borrow Interest"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Borrowed {token}"
-msgstr "Borrowed {token}"
+msgid "Borrowed {quantity}"
+msgstr "Borrowed {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Borrowed {token}"
+#~ msgstr "Borrowed {token}"
 
 #: src/components/earn/earn-view.tsx
 msgid "Borrowing is automated in Portfolio Margin mode."
@@ -1366,12 +1374,12 @@ msgstr "Cancel selected orders"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/lib/trade/order-notification-copy.ts
-#: src/lib/trade/order-reconciliation-feedback.ts
 #: src/lib/trade/order-status-reasons.ts
 msgid "Canceled"
 msgstr "Canceled"
@@ -1429,8 +1437,8 @@ msgstr "Canceled due to the open interest cap"
 #~ msgstr "Canceling..."
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "Cancellation submitted. Waiting for the open-orders update."
-msgstr "Cancellation submitted. Waiting for the open-orders update."
+#~ msgid "Cancellation submitted. Waiting for the open-orders update."
+#~ msgstr "Cancellation submitted. Waiting for the open-orders update."
 
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/hooks/trade/use-asset-leverage.ts
@@ -1462,6 +1470,10 @@ msgstr "Change to ascending order"
 msgid "Change to descending order"
 msgstr "Change to descending order"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Changes may take a moment to appear."
+msgstr "Changes may take a moment to appear."
+
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
@@ -1491,6 +1503,16 @@ msgstr "Check Earn Action History before retrying."
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Check the wallet address or display name, or the account may not meet the current criteria."
 msgstr "Check the wallet address or display name, or the account may not meet the current criteria."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#~ msgid "Check your balance and withdrawal history before retrying."
+#~ msgstr "Check your balance and withdrawal history before retrying."
+
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Check your balances and the Deposits & Withdrawals history before retrying."
+msgstr "Check your balances and the Deposits & Withdrawals history before retrying."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Checking account..."
@@ -1562,7 +1584,6 @@ msgstr "Circle Fast Transfer capacity is temporarily unavailable. Try again late
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/trade/funds-action-feedback.ts
 msgid "Circle fees changed before submission. Review the updated fee and retry."
 msgstr "Circle fees changed before submission. Review the updated fee and retry."
 
@@ -1572,13 +1593,18 @@ msgstr "Circle fees changed. Review the updated fee, then submit again."
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
-msgstr "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
+msgid "Circle is forwarding your USDC to Hyperliquid. Do not submit this deposit again."
+msgstr "Circle is forwarding your USDC to Hyperliquid. Do not submit this deposit again."
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
-msgstr "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
+#~ msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
+#~ msgstr "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#~ msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
+#~ msgstr "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -1904,7 +1930,6 @@ msgid "Collapse market details"
 msgstr "Collapse market details"
 
 #: src/components/staking/staking-view.tsx
-#: src/components/vaults/vaults-page.tsx
 msgid "Commission"
 msgstr "Commission"
 
@@ -2014,8 +2039,8 @@ msgid "Confirmed"
 msgstr "Confirmed"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
-msgstr "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+#~ msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+#~ msgstr "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "confirming"
@@ -2485,6 +2510,10 @@ msgstr "Delegate HYPE to validators to support consensus and earn rewards. Undel
 msgid "Delegated"
 msgstr "Delegated"
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Delegated {amount} HYPE"
+msgstr "Delegated {amount} HYPE"
+
 #: src/components/staking/staking-view.tsx
 msgid "Delegated to {validator}"
 msgstr "Delegated to {validator}"
@@ -2573,8 +2602,15 @@ msgid "Deposit status unknown"
 msgstr "Deposit status unknown"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Deposit submitted"
-msgstr "Deposit submitted"
+#~ msgid "Deposit submitted"
+#~ msgstr "Deposit submitted"
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/tests/cctp-deposit-notification-lifecycle.test.tsx
+#: src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
+msgid "Deposit submitted to Hyperliquid"
+msgstr "Deposit submitted to Hyperliquid"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
@@ -2756,9 +2792,26 @@ msgstr "Discard local key"
 msgid "Disconnect"
 msgstr "Disconnect"
 
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the active trading account could not be verified. Please retry."
+msgstr "Disconnect failed: the active trading account could not be verified. Please retry."
+
+#: src/hooks/wallet/use-wallet-session.ts
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the local trading key could not be removed. Please retry."
+msgstr "Disconnect failed: the local trading key could not be removed. Please retry."
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnect failed: the local trading session could not be cleared. Please retry."
+msgstr "Disconnect failed: the local trading session could not be cleared. Please retry."
+
 #: src/config/footer-links.ts
 msgid "Disconnected"
 msgstr "Disconnected"
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Disconnecting requires Web Locks support. Update your browser and try again."
+msgstr "Disconnecting requires Web Locks support. Update your browser and try again."
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
@@ -3057,12 +3110,12 @@ msgid "Enter trigger price"
 msgstr "Enter trigger price"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Entire {token} borrow"
-msgstr "Entire {token} borrow"
+#~ msgid "Entire {token} borrow"
+#~ msgstr "Entire {token} borrow"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Entire {token} supply"
-msgstr "Entire {token} supply"
+#~ msgid "Entire {token} supply"
+#~ msgstr "Entire {token} supply"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -3297,8 +3350,8 @@ msgid "Failed to cancel order."
 msgstr "Failed to cancel order."
 
 #: src/lib/trade/order-submission-feedback.ts
-msgid "Failed to cancel TWAP order."
-msgstr "Failed to cancel TWAP order."
+#~ msgid "Failed to cancel TWAP order."
+#~ msgstr "Failed to cancel TWAP order."
 
 #: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -3410,24 +3463,32 @@ msgid "Failed to reverse position"
 msgstr "Failed to reverse position"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-msgid "Failed to save share image"
-msgstr "Failed to save share image"
+msgid "Failed to save image"
+msgstr "Failed to save image"
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+#~ msgid "Failed to save share image"
+#~ msgstr "Failed to save share image"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to submit close orders"
 msgstr "Failed to submit close orders"
 
+#: src/lib/trade/order-submission-feedback.ts
+msgid "Failed to terminate TWAP."
+msgstr "Failed to terminate TWAP."
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Failed to update account mode"
-msgstr "Failed to update account mode"
+#~ msgid "Failed to update account mode"
+#~ msgstr "Failed to update account mode"
 
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to update isolated margin"
 msgstr "Failed to update isolated margin"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Failed to update TP/SL orders"
-msgstr "Failed to update TP/SL orders"
+#~ msgid "Failed to update TP/SL orders"
+#~ msgstr "Failed to update TP/SL orders"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Favorites"
@@ -3485,6 +3546,7 @@ msgstr "Fill status"
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-notification-copy.ts
 msgid "Filled"
 msgstr "Filled"
 
@@ -3553,8 +3615,8 @@ msgid "Filter validators"
 msgstr "Filter validators"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Final amount"
-msgstr "Final amount"
+#~ msgid "Final amount"
+#~ msgstr "Final amount"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Finish"
@@ -3581,8 +3643,8 @@ msgstr "For example: grid-bot"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/tests/cctp-deposit-notification-lifecycle.test.tsx
 #: src/lib/tests/cctp-deposit-tracking-notifier.test.tsx
-msgid "Forward transaction submitted"
-msgstr "Forward transaction submitted"
+#~ msgid "Forward transaction submitted"
+#~ msgstr "Forward transaction submitted"
 
 #: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3739,8 +3801,8 @@ msgid "Funds are in Spot account"
 msgstr "Funds are in Spot account"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
-msgstr "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
+#~ msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
+#~ msgstr "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Funds operation record cannot be read"
@@ -4006,6 +4068,10 @@ msgstr "Identity epoch"
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Image saved"
+msgstr "Image saved"
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import"
 msgstr "Import"
@@ -4147,8 +4213,8 @@ msgid "Isolated margin"
 msgstr "Isolated margin"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Isolated margin updated"
-msgstr "Isolated margin updated"
+#~ msgid "Isolated margin updated"
+#~ msgstr "Isolated margin updated"
 
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -4217,6 +4283,7 @@ msgstr "Leader"
 
 #: src/components/vaults/vault-action-modal.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Leader commission"
 msgstr "Leader commission"
 
@@ -4250,8 +4317,8 @@ msgid "Legacy"
 msgstr "Legacy"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
-msgstr "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
+#~ msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
+#~ msgstr "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -4697,12 +4764,12 @@ msgid "Margin mode data is unavailable"
 msgstr "Margin mode data is unavailable"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin mode updated"
-msgstr "Margin mode updated"
+#~ msgid "Margin mode updated"
+#~ msgstr "Margin mode updated"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin mode updated. Leverage updated to {leverage}x"
-msgstr "Margin mode updated. Leverage updated to {leverage}x"
+#~ msgid "Margin mode updated. Leverage updated to {leverage}x"
+#~ msgstr "Margin mode updated. Leverage updated to {leverage}x"
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -5026,6 +5093,10 @@ msgstr "Mobile QR import is temporarily unavailable."
 msgid "Mock account"
 msgstr "Mock account"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "Modified"
+msgstr "Modified"
+
 #: src/lib/trade/pending-trading-action-feedback.ts
 msgid "Modify order"
 msgstr "Modify order"
@@ -5041,7 +5112,6 @@ msgstr "Modify Order"
 #~ msgid "Modifying..."
 #~ msgstr "Modifying..."
 
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/desktop-nav.ts
 msgid "More"
@@ -5067,6 +5137,10 @@ msgstr "Move staking HYPE to Spot"
 msgid "Move USDC between your Perp and Spot accounts."
 msgstr "Move USDC between your Perp and Spot accounts."
 
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Moved {amount} HYPE to staking"
+msgstr "Moved {amount} HYPE to staking"
+
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
 #: src/components/earn/earn-view.tsx
@@ -5081,7 +5155,6 @@ msgid "Name"
 msgstr "Name"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "Navigation"
 
@@ -5093,7 +5166,6 @@ msgstr "Negative PNL"
 msgid "Neither the exact name nor the old public address appears in fresh extraAgents data."
 msgstr "Neither the exact name nor the old public address appears in fresh extraAgents data."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Net received"
 msgstr "Net received"
@@ -5210,6 +5282,10 @@ msgstr "No balances found"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "No balances found. Deposit funds to start trading."
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "No changes were made."
+msgstr "No changes were made."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "No data point selected"
@@ -5368,7 +5444,8 @@ msgstr "No matching Vaults"
 msgid "No open orders."
 msgstr "No open orders."
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
+#: src/components/vaults/vaults-page.tsx
 msgid "No operation was submitted."
 msgstr "No operation was submitted."
 
@@ -5715,8 +5792,8 @@ msgstr "Open token in explorer"
 #~ msgstr "Operation in progress"
 
 #: src/components/staking/staking-view.tsx
-msgid "Operation verified"
-msgstr "Operation verified"
+#~ msgid "Operation verified"
+#~ msgstr "Operation verified"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "OR"
@@ -5773,8 +5850,8 @@ msgid "Order canceled"
 msgstr "Order canceled"
 
 #: src/components/trade/order-reconciliation.tsx
-msgid "Order cancellation confirmed."
-msgstr "Order cancellation confirmed."
+#~ msgid "Order cancellation confirmed."
+#~ msgstr "Order cancellation confirmed."
 
 #: src/hooks/trade/use-order-confirmation.ts
 #: src/lib/errors/format.ts
@@ -5798,7 +5875,6 @@ msgid "Order failed"
 msgstr "Order failed"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
-#: src/lib/trade/order-notification-copy.ts
 #: src/lib/trade/order-notification-copy.ts
 msgid "Order filled"
 msgstr "Order filled"
@@ -5834,12 +5910,12 @@ msgid "Order market context does not match the submitted asset."
 msgstr "Order market context does not match the submitted asset."
 
 #: src/components/trade/order-reconciliation.tsx
-msgid "Order modification confirmed."
-msgstr "Order modification confirmed."
+#~ msgid "Order modification confirmed."
+#~ msgstr "Order modification confirmed."
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "Order modification submitted. Waiting for the open-orders update."
-msgstr "Order modification submitted. Waiting for the open-orders update."
+#~ msgid "Order modification submitted. Waiting for the open-orders update."
+#~ msgstr "Order modification submitted. Waiting for the open-orders update."
 
 #: src/lib/errors/definitions/reduce-only.ts
 msgid "Order must reduce your current position"
@@ -5865,7 +5941,6 @@ msgstr "Order status"
 msgid "Order submitted"
 msgstr "Order submitted"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "Order submitted. Confirming exchange status; do not retry."
@@ -5990,6 +6065,7 @@ msgid "Partially completed"
 msgstr "Partially completed"
 
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/lib/trade/order-notification-copy.ts
 msgid "Partially filled"
 msgstr "Partially filled"
 
@@ -7006,8 +7082,16 @@ msgstr "Removing this approval immediately stops programs using this exact API w
 #~ msgstr "Rendering QR"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Repaid {token}"
-msgstr "Repaid {token}"
+msgid "Repaid {quantity}"
+msgstr "Repaid {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Repaid {token}"
+#~ msgstr "Repaid {token}"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Repaid entire {token} borrow"
+msgstr "Repaid entire {token} borrow"
 
 #: src/components/earn/earn-action-modal.tsx
 #: src/components/earn/earn-action-modal.tsx
@@ -7046,7 +7130,11 @@ msgstr "Repays your entire {token} borrow at the moment it executes, including a
 msgid "Request not confirmed"
 msgstr "Request not confirmed"
 
-#: src/components/staking/staking-view.tsx
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Request not submitted"
+msgstr "Request not submitted"
+
+#: src/components/staking/domain/staking-action-feedback.ts
 msgid "Request rejected"
 msgstr "Request rejected"
 
@@ -7241,6 +7329,10 @@ msgstr "Review only"
 #~ msgid "Review phone access with the selected master wallet before approving it."
 #~ msgstr "Review phone access with the selected master wallet before approving it."
 
+#: src/lib/trade/order-notification-copy.ts
+msgid "Review positions"
+msgstr "Review positions"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Review request"
 msgstr "Review request"
@@ -7269,9 +7361,13 @@ msgstr "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> b
 msgid "Review the order before it is sent to the exchange."
 msgstr "Review the order before it is sent to the exchange."
 
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Review the pending funds operation before starting another one."
+msgstr "Review the pending funds operation before starting another one."
+
 #: src/components/staking/staking-view.tsx
-msgid "Review the public fields and try again."
-msgstr "Review the public fields and try again."
+#~ msgid "Review the public fields and try again."
+#~ msgstr "Review the public fields and try again."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Revocation was submitted but is not yet confirmed."
@@ -7510,21 +7606,21 @@ msgid "Secure connection established. Continue with the referral action."
 msgstr "Secure connection established. Continue with the referral action."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
-msgstr "Secure disconnect failed because the active trading account could not be verified. Please retry."
+#~ msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
+#~ msgstr "Secure disconnect failed because the active trading account could not be verified. Please retry."
 
 #: src/hooks/wallet/use-wallet-session.ts
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
-msgstr "Secure disconnect failed because the local trading key could not be removed. Please retry."
+#~ msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
+#~ msgstr "Secure disconnect failed because the local trading key could not be removed. Please retry."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
-msgstr "Secure disconnect failed because the local trading session could not be cleared. Please retry."
+#~ msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
+#~ msgstr "Secure disconnect failed because the local trading session could not be cleared. Please retry."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
-msgstr "Secure disconnect requires Web Locks support. Update your browser and try again."
+#~ msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
+#~ msgstr "Secure disconnect requires Web Locks support. Update your browser and try again."
 
 #: src/lib/trade/order-submission-feedback.ts
 msgid "Secure random number generation is unavailable in this browser. Use a supported browser before placing an order."
@@ -7638,6 +7734,10 @@ msgid "Send failed"
 msgstr "Send failed"
 
 #: src/components/trade/positions/send-modal.tsx
+msgid "Send status unknown"
+msgstr "Send status unknown"
+
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
 msgstr "Send to another Hyperliquid account. To receive USDC on Arbitrum, use Withdraw."
 
@@ -7692,8 +7792,8 @@ msgid "Share"
 msgstr "Share"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-msgid "Share image saved"
-msgstr "Share image saved"
+#~ msgid "Share image saved"
+#~ msgstr "Share image saved"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-row.tsx
@@ -7913,8 +8013,8 @@ msgid "Some order markets are unavailable. Refresh and try again."
 msgstr "Some order markets are unavailable. Refresh and try again."
 
 #: src/lib/trade/order-reconciliation-feedback.ts
-msgid "Some orders were accepted. Review open orders before retrying."
-msgstr "Some orders were accepted. Review open orders before retrying."
+#~ msgid "Some orders were accepted. Review open orders before retrying."
+#~ msgstr "Some orders were accepted. Review open orders before retrying."
 
 #: src/components/pages/application-error-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
@@ -8095,6 +8195,10 @@ msgstr "Start Price"
 #: src/components/staking/staking-action-modal.tsx
 msgid "Started"
 msgstr "Started"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Started moving {amount} HYPE to Spot"
+msgstr "Started moving {amount} HYPE to Spot"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
@@ -8278,8 +8382,12 @@ msgid "Successful"
 msgstr "Successful"
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Supplied {token}"
-msgstr "Supplied {token}"
+msgid "Supplied {quantity}"
+msgstr "Supplied {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Supplied {token}"
+#~ msgstr "Supplied {token}"
 
 #: src/components/earn/earn-action-modal.tsx
 #: src/components/earn/earn-view.tsx
@@ -8440,6 +8548,34 @@ msgstr "Switch to light mode"
 msgid "Switch to Mainnet"
 msgstr "Switch to Mainnet"
 
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Cross margin"
+msgstr "Switched to Cross margin"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Cross margin at {leverage}x"
+msgstr "Switched to Cross margin at {leverage}x"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Isolated margin"
+msgstr "Switched to Isolated margin"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Switched to Isolated margin at {leverage}x"
+msgstr "Switched to Isolated margin at {leverage}x"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Manual"
+msgstr "Switched to Manual"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Portfolio margin"
+msgstr "Switched to Portfolio margin"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switched to Unified account"
+msgstr "Switched to Unified account"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
@@ -8551,6 +8687,10 @@ msgstr "Terminate TWAP"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Terminate TWAP order"
 msgstr "Terminate TWAP order"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "Terminated"
+msgstr "Terminated"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -8860,8 +9000,8 @@ msgid "The page is matching a new Vault ledger event and refreshed account state
 msgstr "The page is matching a new Vault ledger event and refreshed account state. It will not sign again."
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
-msgstr "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
+#~ msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
+#~ msgstr "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "The page loads one recent-fill snapshot. Export CSV to request a broader accessible history."
@@ -9649,8 +9789,12 @@ msgid "TP/SL"
 msgstr "TP/SL"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "TP/SL orders updated"
-msgstr "TP/SL orders updated"
+msgid "TP/SL may have changed. Review this position's TP/SL before retrying."
+msgstr "TP/SL may have changed. Review this position's TP/SL before retrying."
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#~ msgid "TP/SL orders updated"
+#~ msgstr "TP/SL orders updated"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "TP/SL size scope"
@@ -9851,6 +9995,10 @@ msgid "Transfer failed"
 msgstr "Transfer failed"
 
 #: src/components/trade/positions/transfer-modal.tsx
+msgid "Transfer status unknown"
+msgstr "Transfer status unknown"
+
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer USDC"
 msgstr "Transfer USDC"
 
@@ -9951,21 +10099,21 @@ msgid "TWAP activity"
 msgstr "TWAP activity"
 
 #: src/components/trade/twap-reconciliation.tsx
-msgid "TWAP cancellation confirmed."
-msgstr "TWAP cancellation confirmed."
+#~ msgid "TWAP cancellation confirmed."
+#~ msgstr "TWAP cancellation confirmed."
 
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "TWAP cancellation submitted. Waiting for the active TWAP update."
-msgstr "TWAP cancellation submitted. Waiting for the active TWAP update."
+#~ msgid "TWAP cancellation submitted. Waiting for the active TWAP update."
+#~ msgstr "TWAP cancellation submitted. Waiting for the active TWAP update."
 
 #: src/components/trade/twap-reconciliation.tsx
-msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
-msgstr "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+#~ msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+#~ msgstr "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
 
 #: src/lib/trade/order-submission-feedback.ts
 #: src/lib/trade/pending-trading-action-feedback.ts
-msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
-msgstr "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
+#~ msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
+#~ msgstr "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "TWAP data may be stale while the connection recovers."
@@ -10017,6 +10165,15 @@ msgstr "TWAP stopped"
 #: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP terminated"
 msgstr "TWAP terminated"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP termination was not confirmed. Review active TWAPs before retrying."
+msgstr "TWAP termination was not confirmed. Review active TWAPs before retrying."
+
+#: src/lib/trade/order-submission-feedback.ts
+#: src/lib/trade/pending-trading-action-feedback.ts
+msgid "TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying."
+msgstr "TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying."
 
 #: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP waiting for trigger"
@@ -10180,6 +10337,10 @@ msgstr "Unclaimed USDC"
 #~ msgstr "unconfirmed"
 
 #: src/lib/trade/order-notification-copy.ts
+msgid "Unconfirmed"
+msgstr "Unconfirmed"
+
+#: src/lib/trade/order-notification-copy.ts
 msgid "Unconfirmed — review before retrying"
 msgstr "Unconfirmed — review before retrying"
 
@@ -10192,6 +10353,10 @@ msgstr "Undelegate"
 #: src/components/staking/staking-action-modal.tsx
 msgid "Undelegate HYPE"
 msgstr "Undelegate HYPE"
+
+#: src/components/staking/domain/staking-action-feedback.ts
+msgid "Undelegated {amount} HYPE"
+msgstr "Undelegated {amount} HYPE"
 
 #: src/components/staking/staking-view.tsx
 msgid "Undelegated from {validator}"
@@ -10292,6 +10457,7 @@ msgstr "Up to {ORDER_HISTORY_API_LIMIT} most recent ordinary orders"
 msgid "Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills"
 msgstr "Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Update failed"
@@ -10310,6 +10476,8 @@ msgstr "Update not confirmed. Check account settings before retrying."
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Updated"
 msgstr "Updated"
 
@@ -10347,8 +10515,12 @@ msgstr "USDC Amount"
 #~ msgstr "USDC claimable"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "USDC deposit submitted to Hyperliquid"
-msgstr "USDC deposit submitted to Hyperliquid"
+msgid "USDC deposit confirmed on Arbitrum"
+msgstr "USDC deposit confirmed on Arbitrum"
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+#~ msgid "USDC deposit submitted to Hyperliquid"
+#~ msgstr "USDC deposit submitted to Hyperliquid"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"
@@ -10490,6 +10662,10 @@ msgstr "Vault deposit"
 msgid "Vault Deposit"
 msgstr "Vault Deposit"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault deposit confirmed"
+msgstr "Vault deposit confirmed"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault depositors"
 msgstr "Vault depositors"
@@ -10539,8 +10715,8 @@ msgid "Vault risk"
 msgstr "Vault risk"
 
 #: src/components/vaults/vaults-page.tsx
-msgid "Vault transfer confirmed"
-msgstr "Vault transfer confirmed"
+#~ msgid "Vault transfer confirmed"
+#~ msgstr "Vault transfer confirmed"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault value"
@@ -10554,9 +10730,12 @@ msgstr "Vault withdrawal"
 msgid "Vault Withdrawal"
 msgstr "Vault Withdrawal"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault withdrawal confirmed"
+msgstr "Vault withdrawal confirmed"
+
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
-#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/config/desktop-nav.ts
@@ -10587,8 +10766,8 @@ msgid "Verify again"
 msgstr "Verify again"
 
 #: src/components/vaults/use-vault-action-controller.ts
-msgid "Verify the pending funds operation before starting another one."
-msgstr "Verify the pending funds operation before starting another one."
+#~ msgid "Verify the pending funds operation before starting another one."
+#~ msgstr "Verify the pending funds operation before starting another one."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Verifying"
@@ -10853,7 +11032,6 @@ msgstr "Withdrawal conditions changed before signing. Review the withdrawal and 
 msgid "Withdrawal failed"
 msgstr "Withdrawal failed"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "Withdrawal fee"
@@ -10904,8 +11082,16 @@ msgid "Withdraws your entire {token} supply at the moment it executes, including
 msgstr "Withdraws your entire {token} supply at the moment it executes, including accrued interest."
 
 #: src/components/earn/earn-action-modal.tsx
-msgid "Withdrew {token}"
-msgstr "Withdrew {token}"
+msgid "Withdrew {quantity}"
+msgstr "Withdrew {quantity}"
+
+#: src/components/earn/earn-action-modal.tsx
+#~ msgid "Withdrew {token}"
+#~ msgstr "Withdrew {token}"
+
+#: src/components/earn/earn-action-modal.tsx
+msgid "Withdrew entire {token} supply"
+msgstr "Withdrew entire {token} supply"
 
 #: src/config/funding-comparison.ts
 msgid "Year"
@@ -11003,6 +11189,10 @@ msgstr "You have no supplied assets to withdraw."
 msgid "You receive"
 msgstr "You receive"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "You received <0>{amount} USDC</0>."
+msgstr "You received <0>{amount} USDC</0>."
+
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -11017,6 +11207,10 @@ msgstr "You were invited with referral code {initialReferralCode}. Review it bef
 msgid "You will approximately receive"
 msgstr "You will approximately receive"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "You'll receive <0>${netReceived}</0> on Arbitrum after confirmation."
+msgstr "You'll receive <0>${netReceived}</0> on Arbitrum after confirmation."
+
 #: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 msgid "You're offline"
@@ -11029,6 +11223,11 @@ msgstr "Your account was referred by"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your all-time PNL"
 msgstr "Your all-time PNL"
+
+#: src/components/trade/tradebox/cctp-deposit-tracking-notifier.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Your balance updates once Hyperliquid credits it."
+msgstr "Your balance updates once Hyperliquid credits it."
 
 #: src/components/earn/earn-view.tsx
 msgid "Your Borrowed"
@@ -11051,8 +11250,12 @@ msgid "Your device clock is out of sync. Correct the date and time, then try aga
 msgstr "Your device clock is out of sync. Correct the date and time, then try again."
 
 #: src/hooks/wallet/use-wallet-session.ts
-msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
-msgstr "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+msgid "Your email wallet is unavailable. Disconnect, then log in again with the same email."
+msgstr "Your email wallet is unavailable. Disconnect, then log in again with the same email."
+
+#: src/hooks/wallet/use-wallet-session.ts
+#~ msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+#~ msgstr "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Your email wallet signs the reviewed request automatically. Nothing changes before Hyperliquid accepts it."

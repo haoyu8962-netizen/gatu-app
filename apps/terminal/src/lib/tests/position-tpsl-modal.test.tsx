@@ -1153,7 +1153,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
+		expectDismissedWith("unconfirmed", "Review this position's TP/SL before retrying.");
 
 		act(() => {
 			root.render(modalElement(positionRef, vi.fn(), "tpsl-2"));
@@ -1190,7 +1190,7 @@ describe("PositionTpSlModal live data", () => {
 
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
+		expectDismissedWith("unconfirmed", "Review this position's TP/SL before retrying.");
 	});
 
 	it("treats a single cancel error as a definitive whole-batch rejection and permits a safe retry", async () => {
@@ -1272,7 +1272,7 @@ describe("PositionTpSlModal live data", () => {
 
 			expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 			expect(testState.placeOrder).not.toHaveBeenCalled();
-			expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
+			expectDismissedWith("unconfirmed", "Review this position's TP/SL before retrying.");
 		},
 	);
 
@@ -1537,7 +1537,7 @@ describe("PositionTpSlModal live data", () => {
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
 		expect(onOpenChange).toHaveBeenCalledWith(false);
-		expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
+		expectDismissedWith("unconfirmed", "Review this position's TP/SL before retrying.");
 
 		act(() => {
 			root.render(modalElement(positionRef, vi.fn(), "tpsl-2"));
@@ -1659,7 +1659,7 @@ describe("PositionTpSlModal live data", () => {
 		);
 		expect(onOpenChange).toHaveBeenCalledTimes(1);
 		expect(onOpenChange).toHaveBeenCalledWith(false);
-		expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
+		expectDismissedWith("unconfirmed", "Review this position's TP/SL before retrying.");
 		expect(lastQueueItem()?.status).not.toBe("success");
 	});
 
@@ -1748,7 +1748,7 @@ describe("PositionTpSlModal live data", () => {
 
 		await vi.waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expectDismissedWith("unconfirmed", "Confirming exchange status; do not retry.");
+		expectDismissedWith("unconfirmed", "Review this position's TP/SL before retrying.");
 		expect(lastQueueItem()?.status).not.toBe("success");
 	});
 

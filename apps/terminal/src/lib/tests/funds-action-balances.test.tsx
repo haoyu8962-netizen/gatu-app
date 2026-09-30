@@ -2,7 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
-import { ApiRequestError } from "@nktkas/hyperliquid";
+import { ApiRequestError, HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, Fragment, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import type { Root } from "react-dom/client";
@@ -25,6 +25,7 @@ const GEO_UNAVAILABLE_AR = "تعذّر التحقق من التوفر في من�
 const INVALID_DESTINATION = "Enter a valid Ethereum address.";
 const INVALID_DESTINATION_AR = "أدخل عنوان Ethereum صالحًا.";
 const RAW_EXCHANGE_ERROR = "Exchange rejected the funds action with code TEST-RAW";
+const STATUS_UNKNOWN_DESCRIPTION = "Check your balances and the Deposits & Withdrawals history before retrying.";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -38,7 +39,7 @@ const arabicMessages: Messages = {
 	[getMessageId(INVALID_DESTINATION)]: INVALID_DESTINATION_AR,
 };
 
-const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
+const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning: vi.fn() }));
 vi.mock("sonner", () => ({ toast: toastMocks }));
 
 const testState = vi.hoisted(() => ({
@@ -666,6 +667,92 @@ describe("funds action balance wiring", () => {
 		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
 		const destination = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
 		expect(destination?.value).toBe("");
+	});
+
+	it.each([
+		["send", "spotSend", "Send status unknown"],
+		["transfer", "usdClassTransfer", "Transfer status unknown"],
+	] as const)("keeps an unconfirmed %s on screen as a warning until it is dismissed", async (kind, method, title) => {
+		testState.exchangeMutations[method].mockRejectedValueOnce(new HttpRequestError({ detail: "Request timed out" }));
+		const onOpenChange = vi.fn();
+		if (kind === "send") renderValidSend(root, container, onOpenChange);
+		else renderValidTransfer(root, container, onOpenChange);
+
+		await clickAndFlush(getGuardedSubmitButton(method));
+
+		await vi.waitFor(() =>
+			expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith(title, {
+				closeButton: true,
+				description: STATUS_UNKNOWN_DESCRIPTION,
+				duration: Number.POSITIVE_INFINITY,
+			}),
+		);
+		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+	});
+
+	it("forgets a restored send draft when the resend's outcome is unknown", async () => {
+		testState.exchangeMutations.spotSend
+			.mockRejectedValueOnce(new Error(RAW_EXCHANGE_ERROR))
+			.mockRejectedValueOnce(new HttpRequestError({ detail: "Request timed out" }));
+		renderValidSend(root, container);
+		await clickAndFlush(getGuardedSubmitButton("spotSend"));
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledOnce());
+
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: false })));
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		expect(getAmountInput(container).value).toBe("1");
+		await clickAndFlush(getGuardedSubmitButton("spotSend"));
+		await vi.waitFor(() => expect(toastMocks.warning).toHaveBeenCalledOnce());
+
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: false })));
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const destination = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+		expect(destination?.value).toBe("");
+		expect(getAmountInput(container).value).toBe("");
+		expect(testState.exchangeMutations.spotSend).toHaveBeenCalledTimes(2);
+		expect(toastMocks.error).toHaveBeenCalledOnce();
+	});
+
+	it("keeps the draft of a send the exchange rejected before accepting it", async () => {
+		testState.exchangeMutations.spotSend.mockRejectedValueOnce(
+			new HttpRequestError({ response: new Response("slow down", { status: 429 }) }),
+		);
+		renderValidSend(root, container);
+		await clickAndFlush(getGuardedSubmitButton("spotSend"));
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledOnce());
+		expect(toastMocks.warning).not.toHaveBeenCalled();
+
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: false })));
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		expect(getAmountInput(container).value).toBe("1");
+	});
+
+	it("forgets the draft of a replaced send whose outcome is unknown without reporting it", async () => {
+		testState.exchangeMutations.spotSend.mockRejectedValueOnce(new Error(RAW_EXCHANGE_ERROR));
+		renderValidSend(root, container);
+		await clickAndFlush(getGuardedSubmitButton("spotSend"));
+		await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledOnce());
+
+		let rejectMutation!: (error: unknown) => void;
+		testState.exchangeMutations.spotSend.mockReturnValueOnce(
+			new Promise<void>((_resolve, reject) => {
+				rejectMutation = reject;
+			}),
+		);
+		act(() => getButton(container, "Send").click());
+		await vi.waitFor(() => expect(testState.exchangeMutations.spotSend).toHaveBeenCalledTimes(2));
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: false })));
+		await act(async () => {
+			rejectMutation(new HttpRequestError({ detail: "Request timed out" }));
+			await Promise.resolve();
+			await Promise.resolve();
+		});
+
+		expect(toastMocks.warning).not.toHaveBeenCalled();
+		expect(toastMocks.error).toHaveBeenCalledOnce();
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		expect(getAmountInput(container).value).toBe("");
 	});
 
 	it.each([

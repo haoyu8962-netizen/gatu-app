@@ -184,7 +184,38 @@ describe("compact order notification copy", () => {
 	});
 	it("labels TWAP creation and swap without pretending base quantity is the market pair", () => {
 		expect(copy({ orderType: "twap", outcome: "twapStarted" }).summary).toBe("TWAP · HYPE · Created");
-		expect(copy({ operation: "spot-swap", market: "USDC → HYPE" }).summary).toBe("Swap · USDC → HYPE · Order filled");
+		expect(copy({ operation: "spot-swap", market: "USDC → HYPE" }).summary).toBe("Swap · USDC → HYPE · Filled");
+	});
+	it("keeps the unconfirmed summary short when a line below already says what to review", () => {
+		expect(
+			copy({
+				orderType: "twap",
+				status: "unconfirmed",
+				error: { kind: "order-reconciliation", code: "twap-status-unconfirmed" },
+			}),
+		).toMatchObject({ summary: "TWAP · HYPE · Unconfirmed", error: "Review active TWAP orders before retrying" });
+		expect(copy({ status: "unconfirmed" }).summary).toBe("HYPE · Unconfirmed — review before retrying");
+	});
+	it("does not repeat a generic failure reason that the Failed summary already states", () => {
+		expect(copy({ status: "failed", error: { kind: "order-submission", code: "order-failed" } })).toMatchObject({
+			summary: "HYPE order failed",
+			error: undefined,
+		});
+		expect(
+			copy({ operation: "market-close", status: "failed", error: { kind: "localized", code: "failed-market-close" } })
+				.error,
+		).toBeUndefined();
+		expect(
+			copy({
+				operation: "spot-swap",
+				market: "USDC → HYPE",
+				status: "failed",
+				error: { kind: "spot-swap", code: "failed" },
+			}).error,
+		).toBeUndefined();
+		expect(copy({ status: "failed", error: { kind: "order-submission", code: "blocked-order" } }).error).toBe(
+			"Another order for this market is still being confirmed.",
+		);
 	});
 	it("retains raw failures in full, including an unbroken reference", () => {
 		const error = `Rejected:${"long_reference".repeat(30)}`;

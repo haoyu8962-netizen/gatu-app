@@ -11,6 +11,7 @@ import {
 	formatVaultUsd,
 	getVaultAgeDays,
 	getVaultDeposit,
+	getVaultMark,
 	getVaultPeriodSeries,
 	groupVaultRows,
 	isLeadingVault,
@@ -62,7 +63,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 
 	return (
 		<section
-			className="overflow-hidden rounded-12 bg-surface shadow-raised"
+			className="overflow-hidden rounded-24 bg-surface shadow-raised"
 			data-state={state}
 			data-vaults-state={state}
 		>
@@ -224,10 +225,15 @@ function VaultGroup({
 }) {
 	const { t } = useLingui();
 	return (
-		<section className="mt-3 first:mt-0" aria-labelledby={`vault-group-${group.id}`}>
-			<h2 id={`vault-group-${group.id}`} className="px-4 pb-2 text-xs font-bold text-fg min-[1001px]:px-5">
-				<GroupLabel group={group.id} />
-			</h2>
+		<section
+			className="mt-3 first:mt-0"
+			aria-labelledby={group.id === "unclassified" ? undefined : `vault-group-${group.id}`}
+		>
+			{group.id === "unclassified" ? null : (
+				<h2 id={`vault-group-${group.id}`} className="px-4 pb-2 text-xs font-bold text-fg min-[1001px]:px-5">
+					<GroupLabel group={group.id} />
+				</h2>
+			)}
 			<Table
 				scrollableRegionLabel={t`Vaults`}
 				containerClassName="hidden min-[1001px]:block"
@@ -235,10 +241,10 @@ function VaultGroup({
 			>
 				<thead>
 					<tr className="border-y border-stroke-weak text-2xs text-fg-muted">
-						<th className="px-5 py-2 font-semibold">
+						<th className="px-5 py-2 text-start font-semibold">
 							<Trans>Vault</Trans>
 						</th>
-						<th className="px-3 py-2 font-semibold">
+						<th className="px-3 py-2 text-start font-semibold">
 							<Trans>Leader</Trans>
 						</th>
 						<th className="px-3 py-2 text-right font-semibold">
@@ -264,7 +270,7 @@ function VaultGroup({
 					))}
 				</tbody>
 			</Table>
-			<div className="grid gap-2 px-4 min-[1001px]:hidden">
+			<div className="grid grid-cols-1 gap-2 px-4 min-[1001px]:hidden">
 				{group.rows.map((row) => (
 					<VaultMobileCard key={row.vaultAddress} row={row} period={period} account={account} now={now} />
 				))}
@@ -302,7 +308,7 @@ function VaultDesktopRow({
 				>
 					<VaultMark name={row.name} />
 					<div className="min-w-0">
-						<p className="max-w-72 truncate text-xs font-semibold text-fg">
+						<p className="max-w-72 break-words text-xs font-semibold text-fg">
 							{row.name || <bdi dir="ltr">{shortenAddress(row.vaultAddress)}</bdi>}
 						</p>
 						<div className="mt-0.5 flex gap-1">
@@ -357,12 +363,12 @@ function VaultMobileCard({
 		<Link
 			to="/vaults/$vaultAddress"
 			params={{ vaultAddress: row.vaultAddress }}
-			className="rounded-12 border border-stroke-weak p-3 focus-visible:outline-2 focus-visible:outline-stroke-focus"
+			className="rounded-16 border border-stroke-weak p-3 focus-visible:outline-2 focus-visible:outline-stroke-focus"
 		>
 			<div className="flex min-w-0 items-center gap-2">
 				<VaultMark name={row.name} />
 				<div className="min-w-0 flex-1">
-					<p className="truncate text-sm font-bold text-fg">
+					<p className="break-words text-sm font-bold text-fg">
 						{row.name || <bdi dir="ltr">{shortenAddress(row.vaultAddress)}</bdi>}
 					</p>
 					<div className="mt-0.5 flex flex-wrap gap-1">
@@ -373,7 +379,7 @@ function VaultMobileCard({
 					<bdi dir="ltr">{formatVaultRatio(row.apr, 2, true)}</bdi>
 				</p>
 			</div>
-			<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+			<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
 				<MobileMetric label={<Trans>TVL</Trans>} value={<bdi dir="ltr">{formatVaultCompactUsd(row.tvl)}</bdi>} />
 				<MobileMetric label={<Trans>Your equity</Trans>} value={<bdi dir="ltr">{formatVaultUsd(deposit)}</bdi>} />
 				<MobileMetric label={<Trans>Leader</Trans>} value={<bdi dir="ltr">{shortenAddress(row.leader)}</bdi>} mono />
@@ -402,9 +408,9 @@ function MobileMetric({
 	mono?: boolean;
 }) {
 	return (
-		<div className="flex min-w-0 justify-between gap-2">
-			<dt className="shrink-0 text-fg-muted">{label}</dt>
-			<dd className={cn("min-w-0 truncate text-right font-semibold tabular-nums text-fg", mono && "font-mono")}>
+		<div className="flex min-w-0 flex-col gap-0.5">
+			<dt className="text-fg-muted">{label}</dt>
+			<dd className={cn("min-w-0 truncate font-semibold tabular-nums text-fg", mono && "font-mono")}>
 				{value}
 				{suffix ? <> {suffix}</> : null}
 			</dd>
@@ -454,13 +460,12 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 
 function VaultMark({ name }: { name: string }) {
-	const mark = name.trim().slice(0, 2).toUpperCase() || "V";
 	return (
 		<span
 			aria-hidden
 			className="grid size-7 shrink-0 place-items-center rounded-full bg-fill text-3xs font-bold text-fg-inverse"
 		>
-			{mark}
+			{getVaultMark(name)}
 		</span>
 	);
 }
@@ -544,10 +549,8 @@ function FilterLabel({ filter }: { filter: VaultFilter }) {
 	return <Trans>All Vaults</Trans>;
 }
 
-function GroupLabel({ group }: { group: VaultListGroup["id"] }) {
-	if (group === "official") return <Trans>Official Vaults</Trans>;
-	if (group === "user") return <Trans>User Vaults</Trans>;
-	return <Trans>Vaults</Trans>;
+function GroupLabel({ group }: { group: Exclude<VaultListGroup["id"], "unclassified"> }) {
+	return group === "official" ? <Trans>Official Vaults</Trans> : <Trans>User Vaults</Trans>;
 }
 
 function getVisibleGroups(

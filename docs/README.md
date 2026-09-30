@@ -22,7 +22,7 @@
 | --- | --- |
 | 产品稳定约束与运行边界 | [AGENTS](../AGENTS.md)、[Runtime guardrails](runtime-guardrails.md) |
 | 钱包身份与首次交易 | [首次交易](trading-onboarding.md)、[邮箱签名](email-trading-signing.md)、[签名机制](hyperliquid-signing.md)、[签名 ADR](adr/0002-exact-owner-trading-signers.md) |
-| 钱包调试与桌面配对 | [初始化调试](wallet-initialization-debugging.md)、[手机访问与扫码设计](mobile-phone-access-scanner-prd.md)、[设备验证清单](mobile-phone-access-device-validation.md) |
+| 钱包调试与桌面配对 | [初始化调试](wallet-initialization-debugging.md)、[Privy 主题与钱包稳定性](adr/0026-privy-follows-theme-after-upgrade.md)、[手机访问与扫码设计](mobile-phone-access-scanner-prd.md)、[设备验证清单](mobile-phone-access-device-validation.md) |
 | 充值、提现与资金 | [CCTP 充值](cctp-deposits.md)、[提现路由](withdrawals.md)、[账户概要](account-overview.md)、[Portfolio 统计](portfolio-statistics.md) |
 | Earn 借贷储备池 | [Earn](earn.md)、[ADR 0021](adr/0021-earn-borrow-lend-page.md)：数据来源、Max 与清算价公式、按钮门控、提交核验、与官方终端的偏差；未做真实钱包验收 |
 | 账户共享模型 | [账户 ADR](adr/0001-account-overview-cross-shell-model.md)；账户概要与 Portfolio 的就绪条件不同 |
@@ -55,6 +55,7 @@
 | CSP 第二步：内联脚本哈希 | [计划](csp-inline-script-hashes-plan.md)：`script-src` 去掉 `'unsafe-inline'`，哈希随发布轮换并保留上一版集合，先 report-only 观察再强制；含现状数据、备选方案与需要决策的事项；B、C、D 阶段均已执行 |
 | 桌面 md 断点右列堆叠 | [计划](desktop-grid-stacked-right-column-plan.md)：1001–1420 px 时下单面板在上、订单簿在下、账户信息再下，图表列 10/14；含官方 fiber 实测几何、新默认几何、边界规则、v12 迁移与回归套件清单；已实施，决策见 ADR 0011 |
 | 资金类弹层的结果反馈 | [方案](funds-dialog-outcome-plan.md)：划转、发送、提现、充值对照官方终端的做法（保持打开到请求结束、无论成败都关闭、结果走通知、长时间状态放在通知与持久化的待处理列表）；分三步，含官方前端包取证、gatu 现状、三项需要决策的事项与验收标准；三步均已实施，未发布，未做真实钱包验收，偏差见文内「实施记录」 |
+| 公告功能 | [方案](announcements-plan.md)：参照官方终端的静态公告源，gatu 自有内容放在同源 `/feeds/announcements/`，Markdown 正文不注入 HTML，桌面提示走共享通知宿主、手机只显示圆点；含官方做法对照、分步实施、四项需要决定的事项与验收标准；未实施 |
 | SDK 未接入接口 | [覆盖审查的收益排序](hyperliquid-sdk-coverage-review.md#收益排序)：第一批六项已在集成分支实现（见[接入规划](sdk-feature-integration-plan.md)的实施记录，未合入 `dev`、未发布）；服务端账户通知、子账户、HIP-4 预测市场与 Agent 代签资金操作需先有设计与 ADR，未排期 |
 
 ## 历史设计、调查与交付证据

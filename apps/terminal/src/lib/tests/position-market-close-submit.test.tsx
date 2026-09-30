@@ -517,7 +517,10 @@ describe("usePositionMarketCloseSubmit", () => {
 
 		await act(async () => submitConfirmed(sessionId));
 
-		expect(queueErrorMessages()).toEqual([localizedMessage("failed-market-close")]);
+		expect(queueItems.filter((item) => item.status === "failed").map((item) => item.error)).toEqual([
+			localizedPositionSubmitFeedback("failed-market-close"),
+		]);
+		expect(queueErrorMessages()).toEqual([""]);
 		expect(getPositionMarketCloseModal()).toBeNull();
 		expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
 	});
@@ -584,7 +587,10 @@ describe("usePositionMarketCloseSubmit", () => {
 			gate.release();
 			await submission;
 		});
-		expect(queueErrorMessages()).toEqual([localizedMessage("failed-market-close")]);
+		expect(queueItems.filter((item) => item.status === "failed").map((item) => item.error)).toEqual([
+			localizedPositionSubmitFeedback("failed-market-close"),
+		]);
+		expect(queueErrorMessages()).toEqual([""]);
 		expect(queueItems).toHaveLength(1);
 		expect(queueItems[0]).toMatchObject({ id: queueId, status: "failed" });
 		expect(getPositionMarketCloseModal()).toBeNull();

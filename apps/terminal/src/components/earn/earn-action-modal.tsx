@@ -325,24 +325,14 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 				toast.success(
 					<EarnOutcomeToastContent
 						{...toastIdentity}
-						render={(translateMessage) => translateMessage(getSuccessMessage(operation, tokenLabel))}
+						render={(translateMessage) =>
+							translateMessage(
+								getSuccessMessage(operation, tokenLabel, request.full ? null : formatNumber(request.amount)),
+							)
+						}
 					/>,
 					{
 						id: toastIdentity.toastId,
-						description: (
-							<EarnOutcomeToastContent
-								{...toastIdentity}
-								render={(translateMessage) =>
-									request.full ? (
-										translateMessage(getFullPositionMessage(operation, tokenLabel))
-									) : (
-										<bdi dir="ltr">
-											{formatNumber(request.amount)} {tokenLabel}
-										</bdi>
-									)
-								}
-							/>
-						),
 						duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
 					},
 				);
@@ -647,16 +637,20 @@ function getFullIntentStatus(intent: EarnFullIntent | null, context: EarnFullInt
 	return matches ? "valid" : "lost";
 }
 
-function getFullPositionMessage(operation: EarnOperation, token: string): MessageDescriptor {
-	if (operation === "repay") return msg`Entire ${token} borrow`;
-	return msg`Entire ${token} supply`;
+function getSuccessMessage(operation: EarnOperation, token: string, amount: string | null): MessageDescriptor {
+	if (amount === null) {
+		if (operation === "repay") return msg`Repaid entire ${token} borrow`;
+		return msg`Withdrew entire ${token} supply`;
+	}
+	const quantity = isolate(`${amount} ${token}`);
+	if (operation === "supply") return msg`Supplied ${quantity}`;
+	if (operation === "withdraw") return msg`Withdrew ${quantity}`;
+	if (operation === "borrow") return msg`Borrowed ${quantity}`;
+	return msg`Repaid ${quantity}`;
 }
 
-function getSuccessMessage(operation: EarnOperation, token: string): MessageDescriptor {
-	if (operation === "supply") return msg`Supplied ${token}`;
-	if (operation === "withdraw") return msg`Withdrew ${token}`;
-	if (operation === "borrow") return msg`Borrowed ${token}`;
-	return msg`Repaid ${token}`;
+function isolate(value: string): string {
+	return `\u2068${value}\u2069`;
 }
 
 function getFailureText(error: unknown, translate: Translate): string {

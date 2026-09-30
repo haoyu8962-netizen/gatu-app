@@ -352,9 +352,10 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
   be fetched again immediately before a signature or submission.
 - A route change between review and submission aborts the action and requires
   renewed review. A routing error never falls back to another protocol.
-- The manual and automatic Bridge2 paths are retired for new deposits. Keep
-  existing history/recovery and independent `withdraw3` withdrawal behavior,
-  but a `bridge` route never permits a new Bridge2 signature or submission.
+- The manual and automatic Bridge2 paths are retired for deposits. Past
+  deposits stay visible in the account ledger and the independent `withdraw3`
+  withdrawal route is unaffected, but a `bridge` route never permits a Bridge2
+  signature or submission.
 - External CCTP deposits use route-specific Circle native USDC, EIP-3009,
   current fees and allowance, the official forwarder hook, strict receipt
   validation, and source-hash recovery. Sponsored email deposits additionally
@@ -471,8 +472,8 @@ At minimum, changes to this flow must cover:
 - a route change immediately before deposit or withdrawal aborting without a
   signature or submission and requiring renewed review;
 - manual and automatic Bridge2 paths remaining blocked for new deposits in
-  every routing state, with no CCTP-to-Bridge2 fallback, while existing
-  Bridge2 recovery and independent `withdraw3` withdrawals remain available;
+  every routing state, with no CCTP-to-Bridge2 fallback, while independent
+  `withdraw3` withdrawals remain available;
 - external CCTP fee/allowance changes, testnet mainnet-state and 1,000-USDC
   gates, receipt mismatch, and recovery after refresh;
 - sponsored CCTP exact-wallet activation, deterministic nonce binding,

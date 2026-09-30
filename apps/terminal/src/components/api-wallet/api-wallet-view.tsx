@@ -116,7 +116,7 @@ export function ApiWalletView({
 			data-api-wallet-state={pageState}
 			className={cn(
 				"mx-auto flex w-full max-w-[var(--api-wallet-content-max)] flex-col bg-surface text-api-wallet-fg shadow-api-wallet-page",
-				!isMobile && "min-h-[var(--api-wallet-page-min-height)] overflow-hidden rounded-32",
+				!isMobile && "min-h-[var(--api-wallet-page-min-height)] overflow-hidden rounded-24",
 			)}
 		>
 			<header className={cn("flex flex-wrap items-start justify-between gap-4 pt-4 pb-3", isMobile ? "px-4" : "px-5")}>
@@ -185,7 +185,7 @@ export function ApiWalletView({
 			{pageState === "nonMaster" ? (
 				<div
 					role="alert"
-					className={cn("mb-3 flex items-start gap-3 rounded-24 bg-error-soft px-3.5 py-3", isMobile ? "mx-4" : "mx-5")}
+					className={cn("mb-3 flex items-start gap-3 rounded-16 bg-error-soft px-3.5 py-3", isMobile ? "mx-4" : "mx-5")}
 				>
 					<WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-error" weight="fill" />
 					<div>

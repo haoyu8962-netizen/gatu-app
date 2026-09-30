@@ -520,7 +520,9 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	}
 
 	function getValidationErrorFeedback(error: OrderValidationError): Pick<OrderQueueItem, "error" | "message"> {
-		return error.kind === "failure" ? { error: error.failure } : { message: getValidationErrorDescriptor(error) };
+		if (error.kind === "failure") return { error: error.failure };
+		if (error.kind === "code" && (error.code === "failed-to-cancel" || error.code === "failed-to-modify")) return {};
+		return { message: getValidationErrorDescriptor(error) };
 	}
 
 	function buildPlanFromLive(target: OpenOrderModifyTarget, value: string) {

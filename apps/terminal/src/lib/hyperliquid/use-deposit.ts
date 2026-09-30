@@ -22,11 +22,12 @@ import {
 	CCTP_MAX_DEPOSIT_USDC,
 	CCTP_TESTNET_MAX_DEPOSIT_USDC,
 	type CctpDepositConfig,
+	type CctpDepositNetwork,
 	getCctpDepositConfig,
 	isCctpExternalDepositEnabled,
 	isCctpSponsoredDepositEnabled,
 } from "@/config/cctp-deposit";
-import { DEPOSIT_NETWORKS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
+import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import {
 	DEPOSIT_BROADCAST_TIMEOUT_MS,
 	DEPOSIT_CONFIRMATION_TIMEOUT_MS,
@@ -84,8 +85,7 @@ type BalanceStatus = "idle" | "loading" | "success" | "error";
 type DepositMode = "wallet" | "smart";
 export type DepositRoute = "bridge" | "cctp";
 type DepositExecutionScope = "manual" | "automatic";
-type DepositNetwork = keyof typeof DEPOSIT_NETWORKS;
-type DepositNetworkConfig = (typeof DEPOSIT_NETWORKS)[DepositNetwork];
+type DepositNetwork = CctpDepositNetwork;
 type WalletProviderStatus = "idle" | "loading" | "ready" | "error";
 
 export type SponsoredCctpReadinessFailure =
@@ -223,10 +223,6 @@ function createAuthorizationNonce(): Hex {
 
 function getDepositNetwork(isTestnet: boolean): DepositNetwork {
 	return isTestnet ? "testnet" : "mainnet";
-}
-
-function getDepositConfig(network: DepositNetwork): DepositNetworkConfig {
-	return DEPOSIT_NETWORKS[network];
 }
 
 function getDepositChain(network: DepositNetwork): Chain {
@@ -1104,9 +1100,7 @@ export function useDeposit({
 	sponsoredReadinessEnabled = false,
 }: UseDepositOptions): UseDepositResult {
 	const network = getDepositNetwork(useIsTestnet());
-	const bridgeDepositConfig = getDepositConfig(network);
 	const cctpDepositConfig = getCctpDepositConfig(network === "testnet");
-	const depositConfig = depositRoute === "cctp" ? cctpDepositConfig : bridgeDepositConfig;
 	const depositChain = getDepositChain(network);
 	const { walletAddress: sessionWalletAddress } = useWalletSession();
 	const walletAddress = walletAddressOverride ?? sessionWalletAddress;
@@ -1126,7 +1120,7 @@ export function useDeposit({
 		walletAddress,
 		walletsReady,
 	});
-	const chain = useDepositChain(depositWallet, walletAddress, depositConfig, mode === "wallet");
+	const chain = useDepositChain(depositWallet, walletAddress, cctpDepositConfig, mode === "wallet");
 	const {
 		balanceRaw,
 		maxDepositRaw,
@@ -1135,8 +1129,8 @@ export function useDeposit({
 		status: balanceStatus,
 		error: balanceError,
 		refetch,
-	} = useDepositUsdcBalance(depositConfig, walletAddress, balanceEnabled && !!walletAddress, balancePollIntervalMs);
-	const publicClient = usePublicClient({ chainId: depositConfig.chainId });
+	} = useDepositUsdcBalance(cctpDepositConfig, walletAddress, balanceEnabled && !!walletAddress, balancePollIntervalMs);
+	const publicClient = usePublicClient({ chainId: cctpDepositConfig.chainId });
 	const executionKey = `${network}:${executionScope}:${mode}:${walletAddress?.toLowerCase() ?? "unavailable"}`;
 	const executionLockKey = `${network}:${mode}:${walletAddress?.toLowerCase() ?? "unavailable"}`;
 	const state = useDepositExecutionState(executionKey);
@@ -1204,7 +1198,7 @@ export function useDeposit({
 						: await getReadyWalletDepositContext({
 								address: walletAddress,
 								chain: depositChain,
-								config: depositConfig,
+								config: cctpDepositConfig,
 								publicClient,
 								wallet: depositWallet,
 							});
@@ -1252,7 +1246,7 @@ export function useDeposit({
 					assertCctpDepositTrackingStorageWritable(cctpTrackingEnv, ready.address);
 					async function assertReviewedBalanceUnchanged() {
 						if (review?.expectedBalanceRaw === undefined) return;
-						const freshBalanceRaw = await readDepositUsdcBalance(depositConfig, ready.address);
+						const freshBalanceRaw = await readDepositUsdcBalance(cctpDepositConfig, ready.address);
 						if (amountRaw !== review.expectedBalanceRaw || freshBalanceRaw !== review.expectedBalanceRaw) {
 							throw new LocalizedActionError(msg`Available amount is not verified`);
 						}
@@ -1394,7 +1388,7 @@ export function useDeposit({
 						await assertFreshSelectedDepositRoute();
 						await verifyFreshLegalAction({ env: cctpTrackingEnv });
 						await assertProviderAccountStillActive(ready.provider, ready.address);
-						await assertDepositChainStillActive(ready.provider, depositConfig);
+						await assertDepositChainStillActive(ready.provider, cctpDepositConfig);
 						sourceHash = await waitForWalletTransactionHash(
 							ready.walletClient.writeContract({
 								account: ready.address,
@@ -1527,7 +1521,6 @@ export function useDeposit({
 			assertFreshSelectedDepositRoute,
 			cctpDepositConfig,
 			depositChain,
-			depositConfig,
 			depositRoute,
 			depositWallet,
 			executionKey,
@@ -1551,7 +1544,7 @@ export function useDeposit({
 
 	return {
 		...chain,
-		networkName: depositConfig.displayName,
+		networkName: cctpDepositConfig.displayName,
 		sponsoredCctpEnabled,
 		sponsoredCctpReadiness,
 		depositRoute,

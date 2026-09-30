@@ -1,6 +1,6 @@
 # ADR 0024：操作错误在显示时翻译，已知交易所拒绝文案按官方做法翻译
 
-- 状态：已接受并实施（2026-09-28，分支 `claude/exchange-error-i18n-review`；2026-09-29 按四路 Codex 只读对抗审查修订来源判定、批次保存、保证金提示的仓位读取时机与金库错误）；未合入、未发布。修订 [ADR 0019](0019-global-trading-notifications.md) 决策 3 中「原始交易所错误保持原文」一句，以及 [交易通知](../trading-notifications.md)的对应规则。
+- 状态：已接受并实施（2026-09-28，分支 `claude/exchange-error-i18n-review`；2026-09-29 按四路 Codex 只读对抗审查修订来源判定、批次保存、保证金提示的仓位读取时机与金库错误）；2026-09-29 经 [PR #60](https://github.com/zora4523-bot/gatu-app/pull/60) 合入 `dev`（合并提交 `e38d5203`），同日随 [PR #61](https://github.com/zora4523-bot/gatu-app/pull/61) 晋升 `main`（`86191b56`），未发布。修订 [ADR 0019](0019-global-trading-notifications.md) 决策 3 中「原始交易所错误保持原文」一句，以及 [交易通知](../trading-notifications.md)的对应规则。
 - 关联：[错误提示多语言审查](../work-memory/sessions/2026-09-28-exchange-error-i18n-review.md)（成因、全站清单与官方对照）；[运行时多语言](../i18n-presentation.md)；Hyperliquid 文档 [Error responses](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/error-responses)。
 
 ## 背景与约束

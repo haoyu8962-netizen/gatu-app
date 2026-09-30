@@ -178,7 +178,25 @@ describe("ReferralActionModal invitation flow", () => {
 
 		await act(async () => settle());
 		expect(feedbackText("success", "title")).toBe("Rewards claimed");
+		expect(feedbackText("success", "message")).toBe("Changes may take a moment to appear.");
 		expect(onClose).toHaveBeenCalledOnce();
+	});
+
+	it("reports a definitive failure as a failed referral request, not as an unconfirmed one", async () => {
+		const onSubmit = vi.fn().mockRejectedValue(undefined);
+		await act(async () => {
+			root.render(<ReferralActionModal action="claim" unclaimedRewards={[]} onClose={vi.fn()} onSubmit={onSubmit} />);
+		});
+		const claim = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Claim all");
+		await act(async () => {
+			claim?.click();
+			await Promise.resolve();
+		});
+
+		expect(feedbackText("failed", "title")).toBe("Referral request");
+		expect(feedbackText("failed", "message")).toBe("");
+		expect(feedbackErrorText(latestFeedback("failed"))).toContain(REFERRAL_FAILURE);
+		expect(latestFeedback("unconfirmed")).toBeUndefined();
 	});
 
 	it("reports a failed request in the locale that is active when it fails, without resubmitting", async () => {

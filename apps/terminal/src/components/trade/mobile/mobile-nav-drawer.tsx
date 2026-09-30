@@ -1,8 +1,8 @@
 import { Button, ButtonIcon, Drawer, DrawerContent, DrawerTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons/react";
-import { Link, useLocation } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, type RegisteredRouter, useLocation, useRouter, type ValidateLinkOptions } from "@tanstack/react-router";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
 import { TOUCH_PRESS_CLASS, TOUCH_PRESS_FADE_CLASS } from "@/components/ui/touch-press";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
@@ -18,6 +18,8 @@ import { HeaderIconButtonView } from "../header/header-icon-button-view";
 import { ThemeToggle } from "../header/theme-toggle";
 
 export function MobileNavDrawer() {
+	const router = useRouter();
+	const pendingNavigationRef = useRef<(() => Promise<void>) | null>(null);
 	const { t } = useLingui();
 	const pathname = normalizeActivePathname(useLocation().pathname);
 	const [open, setOpen] = useState(false);
@@ -43,16 +45,18 @@ export function MobileNavDrawer() {
 		);
 	}
 
-	const cancelPendingModal = useCallback(() => {
+	function cancelPendingAction() {
+		pendingNavigationRef.current = null;
 		preloadRequestRef.current += 1;
 		pendingModalRef.current = null;
 		closingForModalRef.current = false;
 		setPendingModal(null);
 		setPreloadFailed(false);
-	}, []);
+	}
 
 	useEffect(
 		() => () => {
+			pendingNavigationRef.current = null;
 			preloadRequestRef.current += 1;
 			pendingModalRef.current = null;
 			closingForModalRef.current = false;
@@ -60,18 +64,52 @@ export function MobileNavDrawer() {
 		[],
 	);
 
+	useEffect(
+		() =>
+			router.subscribe("onBeforeNavigate", () => {
+				pendingNavigationRef.current = null;
+			}),
+		[router],
+	);
+
+	function navigationLinkProps<TOptions>(target: ValidateLinkOptions<RegisteredRouter, TOptions>) {
+		return {
+			...target,
+			onClick(event: MouseEvent<HTMLAnchorElement>) {
+				const anchor = event.currentTarget;
+				if (
+					event.defaultPrevented ||
+					event.button !== 0 ||
+					event.metaKey ||
+					event.ctrlKey ||
+					event.shiftKey ||
+					event.altKey ||
+					anchor.hasAttribute("download") ||
+					(anchor.target && anchor.target !== "_self")
+				)
+					return;
+				event.preventDefault();
+				if (pendingNavigationRef.current) return;
+				cancelPendingAction();
+				pendingNavigationRef.current = () => router.navigate(target);
+				void router.preloadRoute(target).catch(() => {});
+				setOpen(false);
+			},
+		};
+	}
+
 	function close() {
-		cancelPendingModal();
+		cancelPendingAction();
 		setOpen(false);
 	}
 
 	function handleOpenChange(nextOpen: boolean) {
-		if (!nextOpen && !closingForModalRef.current) cancelPendingModal();
+		if (nextOpen || !closingForModalRef.current) cancelPendingAction();
 		setOpen(nextOpen);
 	}
 
 	function requestGlobalModal(modal: PreloadableGlobalModal) {
-		if (pendingModalRef.current) return;
+		if (pendingModalRef.current || pendingNavigationRef.current) return;
 
 		const requestId = preloadRequestRef.current + 1;
 		preloadRequestRef.current = requestId;
@@ -95,7 +133,20 @@ export function MobileNavDrawer() {
 	}
 
 	function handleOpenChangeComplete(completedOpen: boolean) {
-		if (completedOpen || !closingForModalRef.current) return;
+		if (completedOpen) return;
+		const navigation = pendingNavigationRef.current;
+		pendingNavigationRef.current = null;
+		if (navigation) {
+			const originLocation = router.latestLocation;
+			const requestId = ++preloadRequestRef.current;
+			void navigation().catch(() => {
+				if (preloadRequestRef.current !== requestId || router.latestLocation !== originLocation) return;
+				setPreloadFailed(true);
+				setOpen(true);
+			});
+			return;
+		}
+		if (!closingForModalRef.current) return;
 
 		const modal = pendingModalRef.current;
 		closingForModalRef.current = false;
@@ -114,7 +165,7 @@ export function MobileNavDrawer() {
 				className="touch-target"
 				aria-label={t(DESKTOP_NAV_LABELS.openNavigation)}
 				onClick={() => {
-					cancelPendingModal();
+					cancelPendingAction();
 					setOpen(true);
 				}}
 			>
@@ -128,9 +179,7 @@ export function MobileNavDrawer() {
 					</DrawerTitle>
 					<div className="h-[calc(3rem+env(safe-area-inset-top))] px-3 pt-[env(safe-area-inset-top)] flex items-center justify-between border-b border-stroke-weak/60 shrink-0">
 						<Link
-							to={tradeHomePath}
-							search={{ scope: "all" }}
-							onClick={close}
+							{...navigationLinkProps({ to: tradeHomePath, search: { scope: "all" } })}
 							aria-label="GATU"
 							className="flex items-center gap-1.5 rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
@@ -143,74 +192,59 @@ export function MobileNavDrawer() {
 
 					<div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
 						<nav className="flex flex-col p-2" aria-label={t`Primary navigation`}>
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
-								<Trans>Navigation</Trans>
-							</p>
 							<Link
-								to={tradeHomePath}
-								search={{ scope: "all" }}
-								onClick={close}
+								{...navigationLinkProps({ to: tradeHomePath, search: { scope: "all" } })}
 								aria-current={tradeActive ? "page" : undefined}
 								className={getNavLinkClass(tradeActive)}
 							>
 								<Trans>Trade</Trans>
 							</Link>
 							<Link
-								to="/portfolio"
-								onClick={close}
+								{...navigationLinkProps({ to: "/portfolio" })}
 								aria-current={pathname === "/portfolio" ? "page" : undefined}
 								className={getNavLinkClass(pathname === "/portfolio")}
 							>
 								<Trans>Portfolio</Trans>
 							</Link>
 							<Link
-								to="/earn"
-								onClick={close}
+								{...navigationLinkProps({ to: "/earn" })}
 								aria-current={pathname === "/earn" ? "page" : undefined}
 								className={getNavLinkClass(pathname === "/earn")}
 							>
 								<Trans>Earn</Trans>
 							</Link>
 							<Link
-								to="/vaults"
-								onClick={close}
+								{...navigationLinkProps({ to: "/vaults" })}
 								aria-current={vaultsActive ? "page" : undefined}
 								className={getNavLinkClass(vaultsActive)}
 							>
 								<Trans>Vaults</Trans>
 							</Link>
 							<Link
-								to="/staking"
-								onClick={close}
+								{...navigationLinkProps({ to: "/staking" })}
 								aria-current={pathname === "/staking" ? "page" : undefined}
 								className={getNavLinkClass(pathname === "/staking")}
 							>
 								<Trans>Staking</Trans>
 							</Link>
 							<Link
-								to="/referrals"
-								onClick={close}
+								{...navigationLinkProps({ to: "/referrals" })}
 								aria-current={pathname === "/referrals" ? "page" : undefined}
 								className={getNavLinkClass(pathname === "/referrals")}
 							>
 								<Trans>Referrals</Trans>
 							</Link>
 							<Link
-								to="/leaderboard"
-								onClick={close}
+								{...navigationLinkProps({ to: "/leaderboard" })}
 								aria-current={pathname === "/leaderboard" ? "page" : undefined}
 								className={getNavLinkClass(pathname === "/leaderboard")}
 							>
 								<Trans>Leaderboard</Trans>
 							</Link>
 						</nav>
-						<nav className="flex flex-col p-2 pt-0" aria-label={t`More`}>
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
-								<Trans>More</Trans>
-							</p>
+						<nav className="flex flex-col border-t border-stroke-weak/60 p-2" aria-label={t`More`}>
 							<Link
-								to="/fundingComparison"
-								onClick={close}
+								{...navigationLinkProps({ to: "/fundingComparison" })}
 								aria-current={pathname === "/fundingcomparison" ? "page" : undefined}
 								className={getNavLinkClass(pathname === "/fundingcomparison")}
 							>
@@ -226,24 +260,21 @@ export function MobileNavDrawer() {
 								<Trans>Statistics</Trans>
 							</a>
 							<Link
-								to="/api-wallet"
-								onClick={close}
+								{...navigationLinkProps({ to: "/api-wallet" })}
 								aria-current={pathname === "/api-wallet" ? "page" : undefined}
 								className={getNavLinkClass(pathname === "/api-wallet")}
 							>
 								<Trans>API Wallet</Trans>
 							</Link>
 							<Link
-								to="/docs"
-								onClick={close}
+								{...navigationLinkProps({ to: "/docs" })}
 								aria-current={pathname === "/docs" ? "page" : undefined}
 								className={getNavLinkClass(pathname === "/docs")}
 							>
 								<Trans>Docs</Trans>
 							</Link>
 							<Link
-								to="/support"
-								onClick={close}
+								{...navigationLinkProps({ to: "/support" })}
 								aria-current={pathname === "/support" ? "page" : undefined}
 								className={getNavLinkClass(pathname === "/support")}
 							>

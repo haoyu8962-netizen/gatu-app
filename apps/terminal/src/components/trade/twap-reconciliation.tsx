@@ -91,7 +91,7 @@ export function TwapReconciliation() {
 					getPendingTradingActionActions().resolveTwapCancellation(cancellation.id);
 					updatePendingTradingActionFeedback(cancellation, "twap-cancel", {
 						status: "unconfirmed",
-						message: msg`TWAP cancellation was not confirmed. Review active TWAP orders before retrying.`,
+						message: msg`TWAP termination was not confirmed. Review active TWAPs before retrying.`,
 					});
 				}
 				continue;
@@ -196,7 +196,7 @@ async function confirmTwapCancellation(cancellation: PendingTwapCancellation, at
 		activeTwapCancellationReleases.delete(cancellation.id);
 		updatePendingTradingActionFeedback(latest, "twap-cancel", {
 			status: "success",
-			message: msg`TWAP cancellation confirmed.`,
+			message: msg`Terminated`,
 		});
 		return;
 	}

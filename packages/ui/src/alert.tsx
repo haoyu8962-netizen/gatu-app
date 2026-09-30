@@ -14,7 +14,7 @@ type AlertTone =
 	| "inverse-neutral"
 	| "inverse-brand";
 
-const alertVariants = cva(["flex items-start overflow-clip rounded-8"], {
+const alertVariants = cva(["flex items-start overflow-clip rounded-16"], {
 	variants: {
 		tone: {
 			error: "bg-error-soft border border-stroke-error-weak",

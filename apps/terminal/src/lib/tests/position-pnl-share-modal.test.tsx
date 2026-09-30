@@ -144,7 +144,7 @@ describe("PositionPnlShareModal", () => {
 			"data:image/png;base64,QR",
 		);
 		expect(mocks.download).toHaveBeenCalledOnce();
-		expect(mocks.toastSuccess).toHaveBeenCalledOnce();
+		expect(mocks.toastSuccess).toHaveBeenCalledExactlyOnceWith("Image saved");
 
 		act(() => getButton(container, "Close").click());
 		expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -181,10 +181,10 @@ describe("PositionPnlShareModal", () => {
 		await act(async () => getButton(container, "Save image").click());
 		expect(mocks.renderPng).not.toHaveBeenCalled();
 		expect(mocks.download).not.toHaveBeenCalled();
-		expect(mocks.toastError).toHaveBeenCalledOnce();
+		expect(mocks.toastError).toHaveBeenCalledExactlyOnceWith("Failed to save image");
 	});
 
-	it("uses file sharing on mobile before falling back to a download", async () => {
+	it("uses file sharing on mobile without a save notification", async () => {
 		mocks.isMobile = true;
 		mocks.sharePng.mockResolvedValue(true);
 		await act(async () => {
@@ -195,7 +195,21 @@ describe("PositionPnlShareModal", () => {
 		await act(async () => getButton(container, "Save image").click());
 		expect(mocks.sharePng).toHaveBeenCalledOnce();
 		expect(mocks.download).not.toHaveBeenCalled();
-		expect(mocks.toastSuccess).toHaveBeenCalledOnce();
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+	});
+
+	it("downloads and confirms the save on mobile when file sharing is unavailable", async () => {
+		mocks.isMobile = true;
+		mocks.sharePng.mockResolvedValue(false);
+		await act(async () => {
+			root.render(<PositionPnlShareModal position={position} onOpenChange={vi.fn()} />);
+			await Promise.resolve();
+		});
+
+		await act(async () => getButton(container, "Save image").click());
+		expect(mocks.sharePng).toHaveBeenCalledOnce();
+		expect(mocks.download).toHaveBeenCalledOnce();
+		expect(mocks.toastSuccess).toHaveBeenCalledExactlyOnceWith("Image saved");
 	});
 
 	it("suppresses download and toast when the dialog unmounts during rendering", async () => {

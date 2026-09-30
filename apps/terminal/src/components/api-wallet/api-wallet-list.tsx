@@ -79,7 +79,7 @@ function ListMessage({ pageState, onRetry, isMobile }: Pick<Props, "pageState" |
 						className={cn(
 							"animate-pulse border-api-wallet-stroke-card",
 							isMobile
-								? "space-y-2 rounded-24 border p-3"
+								? "space-y-2 rounded-16 border p-3"
 								: "grid h-[var(--api-wallet-row-min-height)] grid-cols-5 items-center gap-4 border-b",
 						)}
 					>
@@ -282,7 +282,7 @@ function MobileAgentCards({ agents, pageState, onRemove, onRetry }: Props) {
 	return (
 		<div className="flex flex-col gap-2.5 px-4 pb-4">
 			{agents.map((agent) => (
-				<article key={agent.id} className="flex flex-col gap-2.5 rounded-24 border border-api-wallet-stroke-card p-3">
+				<article key={agent.id} className="flex flex-col gap-2.5 rounded-16 border border-api-wallet-stroke-card p-3">
 					<div className="flex min-w-0 flex-wrap items-center gap-2">
 						<h3 className="min-w-0 truncate text-sm font-bold text-api-wallet-fg">{agent.name}</h3>
 						<AgentStatus agent={agent} />

@@ -90,6 +90,27 @@ Do not collapse these states into one boolean.
   `PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
   Ethereum-only wallet selection, and customize radius through Privy's
   supported public CSS variables rather than generated DOM classes.
+- `ClientRootProvider` passes `PRIVY_CONFIG_BY_THEME[theme]` from the live
+  theme store, following Privy's documented system-theme recipe, so the login
+  window follows a theme toggle without a reload
+  ([ADR 0026](adr/0026-privy-follows-theme-after-upgrade.md)). Re-rendering
+  `PrivyProvider` is safe only while `useWallets()` keeps the same array
+  across theme-only provider renders: `@privy-io/wagmi` answers every new array with
+  `reconnect()` on the `setActiveWalletForWagmi` path, and `useWalletSession`
+  drops the address while wagmi reports `reconnecting`. `@privy-io/react-auth`
+  3.32.2 preserves the array for unchanged nonempty embedded-wallet lists;
+  `patches/@privy-io__react-auth@3.32.2.patch` does the same for an empty
+  embedded list (external-wallet and logged-out sessions). Before upgrading
+  Privy, run `privy-theme-switch-wallet-stability.test.tsx` against the new
+  version and drop the patch only when the test passes without it.
+- The nonempty embedded-wallet path (ordinary email trading) has no behavioral
+  test: no test can log in a real embedded owner. The same test file only
+  checks that the SDK's field comparison (address, chain, connector type and
+  connection time) is still present in both builds. An upgrade that fails that
+  check needs a manual theme toggle with a logged-in email account before it
+  ships. The comparison also fails when `connectedAt` falls back to
+  `Date.now()` because the connection history could not be stored, so such a
+  session still reconnects on every theme toggle.
 
 ### Email Wallet Identity And Export
 
@@ -188,9 +209,9 @@ implementation.
 - Smart Wallet sponsorship is a Privy/paymaster concern and must be configured
   per chain. UI must not claim sponsorship is available unless the chain is
   configured and the transaction path uses the smart wallet client.
-- Bridge2 is retired for new deposits. Preserve read-only history and recovery
-  for already-broadcast Bridge2 transactions, but never request a new Bridge2
-  signature or submission.
+- Bridge2 is retired for deposits: never request a Bridge2 signature or
+  submission. The app never stored recovery data for Bridge2 deposits; past ones
+  appear in the account ledger like any other deposit.
 - Hyperliquid SDK `usdcRouting` is the sole runtime source for deposit and
   withdrawal protocol selection. Validate the response as unknown data and
   accept only exact `bridge` or `cctp` values for both fields.
@@ -867,9 +888,22 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   followed by the drawer-only Docs and Support entries ([ADR 0020](adr/0020-legal-pages-in-app-shell.md)); the
   drawer matches its current entry on the lower-cased path, so `/fundingComparison` is compared as
   `/fundingcomparison`. `desktop-nav-layout`, `top-nav` and `mobile-nav-drawer` pin both lists.
+  As in the official drawer, neither drawer group shows a visible heading: a full-width divider
+  starts the More section, whose `nav` keeps the accessible name `More` (`mobile-nav-drawer` pins
+  this). The drawer's hidden `Navigation` title stays as the dialog's accessible name.
   `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
   `resolveDesktopNavLayout` and the current entry with `isDesktopNavItemActive`; `TopNav` only
   renders that result and mounts one More dropdown.
+- Mobile drawer route links preload their destination on an ordinary primary click, close the
+  drawer, then navigate only from `onOpenChangeComplete(false)`. Preloading runs concurrently
+  and must not gate navigation; never substitute a fixed animation timeout. Keep native modified
+  clicks, new-tab links and external destinations intact, including Trade's search parameters.
+  Reopening, explicit cancellation, another navigation or unmount invalidates the queued target;
+  one close completion can consume it only once. This keeps the route-owned drawer mounted through
+  its exit without moving the shared header/provider hierarchy. A persistent route-independent
+  drawer is a larger alternative, not required for this behavior. Verify actual Router links,
+  duplicate/cancelled completions and a browser transition at the reported 946 × 891 viewport;
+  mocked Drawer tests alone cannot prove exit animation continuity.
 - Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
   `DESKTOP_NAV_NARROW_MAX_PX` (1150; 1100 until Earn became a top-level link, ADR 0021 D8). The `nav-compact` Tailwind variant in `styles.css` must equal
   the compact constant (`desktop-nav-layout` pins it); never write `max-[1181px]` again.
@@ -917,6 +951,7 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
 - `apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx`
 - `apps/terminal/src/lib/tests/mobile-nav-drawer.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-nav-drawer-navigation.test.tsx`
 - `apps/terminal/src/lib/navigation/boot-dashboard-route.ts`
 - `apps/terminal/src/components/dashboard/dashboard-chrome.tsx`
 - `apps/terminal/src/lib/tests/preload-trade-terminal-surface.test.ts`

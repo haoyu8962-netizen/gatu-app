@@ -663,7 +663,7 @@ describe("TwapReconciliation", () => {
 		});
 
 		expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(0);
-		expectActionFeedback(cancellation.id, "success", "TWAP cancellation confirmed.");
+		expectActionFeedback(cancellation.id, "success", "Terminated");
 		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
 			expect(
 				getOrderAssetReservationState(lease, {
@@ -710,7 +710,7 @@ describe("TwapReconciliation", () => {
 		});
 
 		expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(0);
-		expectActionFeedback(cancellation.id, "success", "TWAP cancellation confirmed.");
+		expectActionFeedback(cancellation.id, "success", "Terminated");
 	});
 
 	it("times out an awaiting TWAP cancellation after the usual window when the system clock was set back", async () => {
@@ -734,7 +734,7 @@ describe("TwapReconciliation", () => {
 		expectActionFeedback(
 			cancellation.id,
 			"unconfirmed",
-			"TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying.",
+			"TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying.",
 		);
 	});
 
@@ -773,7 +773,7 @@ describe("TwapReconciliation", () => {
 		expectActionFeedback(
 			cancellation.id,
 			"unconfirmed",
-			"TWAP cancellation was not confirmed. Review active TWAP orders before retrying.",
+			"TWAP termination was not confirmed. Review active TWAPs before retrying.",
 		);
 	});
 
@@ -805,7 +805,7 @@ describe("TwapReconciliation", () => {
 		await act(() => vi.advanceTimersByTimeAsync(1_000));
 
 		expect(getPendingTradingActionSnapshot().twapCancellations).toHaveLength(0);
-		expectActionFeedback(cancellation.id, "success", "TWAP cancellation confirmed.");
+		expectActionFeedback(cancellation.id, "success", "Terminated");
 	});
 
 	it("stops a scheduled reservation-release retry after the action is reset", async () => {

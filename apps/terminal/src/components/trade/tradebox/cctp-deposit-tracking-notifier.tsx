@@ -118,13 +118,11 @@ export function CctpDepositTrackingNotifier() {
 					closeButton: true,
 				});
 			} else if (notification.phase === "success") {
-				toast.success(t`Forward transaction submitted`, {
+				toast.success(t`Deposit submitted to Hyperliquid`, {
 					...lifecycle,
 					description: (
 						<span className="flex flex-col gap-1">
-							<span>
-								{t`Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time.`}
-							</span>
+							<span>{t`Your balance updates once Hyperliquid credits it.`}</span>
 							{explorerLink}
 						</span>
 					),
@@ -138,7 +136,7 @@ export function CctpDepositTrackingNotifier() {
 							<span>
 								{notification.statusUnavailable
 									? t`The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume when you return.`
-									: t`Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer.`}
+									: t`Circle is forwarding your USDC to Hyperliquid. Do not submit this deposit again.`}
 							</span>
 							{explorerLink}
 						</span>

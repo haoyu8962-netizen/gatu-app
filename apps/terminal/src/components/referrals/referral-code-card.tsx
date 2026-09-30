@@ -65,7 +65,7 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 	}
 
 	return (
-		<article className="h-full rounded-20 border border-stroke-weak bg-surface px-3 py-3 min-[1001px]:rounded-24 min-[1001px]:px-4 min-[1001px]:py-3.5">
+		<article className="h-full rounded-16 border border-stroke-weak bg-surface px-3 py-3 min-[1001px]:px-4 min-[1001px]:py-3.5">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<h2 className="text-xs font-bold text-fg min-[1001px]:text-2sm">
@@ -90,8 +90,8 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 							key={label}
 							className={
 								active
-									? "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-16 bg-fill-weaker px-2 py-2"
-									: "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-16 px-2 py-2"
+									? "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-16 bg-fill-weaker px-1.5 py-2 min-[1001px]:px-2"
+									: "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-16 px-1.5 py-2 min-[1001px]:px-2"
 							}
 						>
 							<span
@@ -105,14 +105,14 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 							>
 								{complete ? <CheckIcon className="size-2.5" weight="bold" /> : step}
 							</span>
-							<p className="min-w-0 flex-1 truncate text-2xs font-medium text-fg-muted">{label}</p>
+							<p className="min-w-0 flex-1 text-balance break-words text-2xs font-medium text-fg-muted">{label}</p>
 						</li>
 					);
 				})}
 			</ol>
 
 			{data.referrerState.stage === "needToTrade" ? (
-				<div className="mt-3 rounded-20 bg-warning-soft px-3 py-2.5">
+				<div className="mt-3 rounded-16 bg-warning-soft px-3 py-2.5">
 					<div className="flex items-center justify-between gap-3 text-xs">
 						<span className="text-fg-muted">
 							<Trans>Trading volume progress</Trans>
@@ -162,8 +162,8 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 						<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
 							<Trans>Referral code</Trans>
 						</p>
-						<div className="mt-1 flex min-h-[50px] items-center gap-2 rounded-20 border border-stroke-weak bg-fill-weaker px-3 py-2.5">
-							<span className="min-w-0 flex-1 truncate text-lg font-bold tracking-wider text-fg">{code}</span>
+						<div className="mt-1 flex min-h-[50px] items-center gap-2 rounded-16 border border-stroke-weak bg-fill-weaker px-3 py-2.5">
+							<span className="min-w-0 flex-1 break-all text-lg font-bold tracking-wider text-fg">{code}</span>
 							<ButtonIcon
 								variant="ghost"
 								intent="neutral"
@@ -179,7 +179,7 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 						<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
 							{usesGatuInvitationLink ? <Trans>Gatu invitation link</Trans> : <Trans>Official referral link</Trans>}
 						</p>
-						<div className="mt-1 flex min-h-[39px] items-center gap-2 rounded-20 border border-stroke-weak px-3 py-2">
+						<div className="mt-1 flex min-h-[39px] items-center gap-2 rounded-16 border border-stroke-weak px-3 py-2">
 							<LinkSimpleIcon className="size-4 shrink-0 text-fg-muted" />
 							<span className="min-w-0 flex-1 truncate text-xs text-fg min-[1001px]:text-2sm">{referralUrl}</span>
 							<ButtonIcon

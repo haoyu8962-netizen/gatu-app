@@ -46,7 +46,7 @@ function notifyWalletConnectionFailure(): void {
 }
 
 function notifyEmailWalletUnavailable(): void {
-	toast.error(t`Your email wallet is unavailable. Sign out and log in again with the same email, then retry.`);
+	toast.error(t`Your email wallet is unavailable. Disconnect, then log in again with the same email.`);
 }
 
 /** @internal — exported only for deterministic session-boundary tests. */
@@ -253,9 +253,7 @@ export function useDisconnectWallet() {
 				walletIntent,
 			});
 			if (!ownerAddress) {
-				toast.error(
-					t`Secure disconnect failed because the active trading account could not be verified. Please retry.`,
-				);
+				toast.error(t`Disconnect failed: the active trading account could not be verified. Please retry.`);
 				return;
 			}
 
@@ -263,16 +261,16 @@ export function useDisconnectWallet() {
 			try {
 				shutdown = await closeAgentRegistrationSessionAndRemove(env, ownerAddress);
 			} catch {
-				toast.error(t`Secure disconnect failed because the local trading key could not be removed. Please retry.`);
+				toast.error(t`Disconnect failed: the local trading key could not be removed. Please retry.`);
 				return;
 			}
 			if (shutdown.status === "failed") {
 				toast.error(
 					shutdown.reason === "lock_unavailable"
-						? t`Secure disconnect requires Web Locks support. Update your browser and try again.`
+						? t`Disconnecting requires Web Locks support. Update your browser and try again.`
 						: shutdown.reason === "owner_cleanup_failed"
-							? t`Secure disconnect failed because the local trading session could not be cleared. Please retry.`
-							: t`Secure disconnect failed because the local trading key could not be removed. Please retry.`,
+							? t`Disconnect failed: the local trading session could not be cleared. Please retry.`
+							: t`Disconnect failed: the local trading key could not be removed. Please retry.`,
 				);
 				return;
 			}

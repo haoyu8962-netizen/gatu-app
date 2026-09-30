@@ -88,7 +88,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 					const explorerUrl = getAccountLedgerExplorerUrl(row, isTestnet);
 
 					return (
-						<div key={row.id} className="overflow-hidden rounded-xs border border-stroke-weak bg-surface">
+						<div key={row.id} className="overflow-hidden rounded-16 border border-stroke-weak bg-surface">
 							<div className="flex items-center justify-between border-b border-stroke-weak px-3 py-1.5">
 								<div className="min-w-0">
 									<p className="truncate text-xs font-medium text-fg">{getActionLabel(row.action, row.rawType)}</p>

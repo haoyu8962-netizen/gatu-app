@@ -538,7 +538,9 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	}
 
 	function getValidationErrorFeedback(error: OrderValidationError): Pick<OrderQueueItem, "error" | "message"> {
-		return error.kind === "failure" ? { error: error.failure } : { message: getValidationErrorDescriptor(error) };
+		if (error.kind === "failure") return { error: error.failure };
+		if (error.kind === "code" && (error.code === "failed-to-cancel" || error.code === "failed-to-modify")) return {};
+		return { message: getValidationErrorDescriptor(error) };
 	}
 
 	function buildPlanFromLive(target: OpenOrderModifyFormTarget, size: string, triggerPrice: string | undefined) {
@@ -1293,7 +1295,10 @@ function MobileOrderCard({
 	const isNearMark = isToolbarOrderNearMark(metrics.markDistanceRatio);
 
 	return (
-		<article className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface">
+		<article
+			data-account-card
+			className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface"
+		>
 			<MobileDisclosureHeader
 				expanded={expanded}
 				label={expanded ? t`Collapse ${marketLabel} order details` : t`Expand ${marketLabel} order details`}

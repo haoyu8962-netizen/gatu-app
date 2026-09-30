@@ -9,6 +9,11 @@ import { HYPERSCREENER_URL } from "@/config/nav";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
+	router: {
+		navigate: vi.fn(async () => {}),
+		preloadRoute: vi.fn(async () => {}),
+		subscribe: vi.fn(() => () => {}),
+	},
 	depositOpen: vi.fn(),
 	depositAvailable: true,
 	depositPath: "external" as "external" | "sponsored",
@@ -115,6 +120,7 @@ vi.mock("@tanstack/react-router", () => ({
 			children,
 		),
 	useLocation: () => ({ pathname: testState.pathname }),
+	useRouter: () => testState.router,
 }));
 
 vi.mock("@/components/trade/header/theme-toggle", () => ({
@@ -257,6 +263,24 @@ describe("MobileNavDrawer", () => {
 
 		act(() => apiWalletLink?.click());
 		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')).toBeNull();
+	});
+
+	it("separates the More group with a divider instead of visible group headings", () => {
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+
+		const navigations = [...container.querySelectorAll<HTMLElement>('[data-testid="mobile-nav-drawer"] nav')];
+		expect(navigations.map((navigation) => navigation.getAttribute("aria-label"))).toEqual([
+			"Primary navigation",
+			"More",
+		]);
+		for (const navigation of navigations)
+			expect([...navigation.children].every((child) => child instanceof HTMLAnchorElement)).toBe(true);
+
+		const [primaryNavigation, moreNavigation] = navigations;
+		expect(primaryNavigation?.classList.contains("border-t")).toBe(false);
+		expect(moreNavigation?.classList.contains("border-t")).toBe(true);
+		expect(moreNavigation?.classList.contains("border-stroke-weak/60")).toBe(true);
 	});
 
 	it("marks Funding Comparison as the current More destination on its route", () => {

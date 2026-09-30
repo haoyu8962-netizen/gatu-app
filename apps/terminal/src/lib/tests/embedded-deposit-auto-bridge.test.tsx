@@ -159,7 +159,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			refreshBalance: testState.refreshBalance,
 			reset: testState.resetDeposit,
 			networkName: "Arbitrum",
-			sponsoredCctpEnabled: testState.sponsoredEnabled,
+			sponsoredCctpEnabled: testState.sponsoredEnabled && options.depositRoute === "cctp",
 		};
 	},
 }));
@@ -591,7 +591,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		});
 
 		expect(testState.toastSuccess).toHaveBeenCalledWith(
-			"USDC deposit submitted to Hyperliquid",
+			"USDC deposit confirmed on Arbitrum",
 			expect.objectContaining({ id: NOTIFICATION_ID }),
 		);
 		expect(testState.toastDismiss).not.toHaveBeenCalled();

@@ -91,7 +91,7 @@ export function PortfolioOverview() {
 			</div>
 
 			<section
-				className="flex h-60 flex-col rounded-12 bg-surface min-[1001px]:h-[249px]"
+				className="flex h-60 flex-col rounded-24 bg-surface shadow-raised min-[1001px]:h-[249px]"
 				aria-label={t`Portfolio summary`}
 			>
 				<div className="flex min-h-10 items-center justify-between gap-2 border-b border-stroke-weak px-2">
@@ -180,7 +180,7 @@ export function PortfolioOverview() {
 
 function MetricCard({ label, value, control }: { label: React.ReactNode; value: string; control?: React.ReactNode }) {
 	return (
-		<section className="flex min-h-30 flex-col rounded-12 bg-surface p-3">
+		<section className="flex min-h-30 flex-col rounded-24 bg-surface p-3 shadow-raised">
 			<div className="flex items-start justify-between gap-2 text-xs text-fg-muted">
 				<span>{label}</span>
 				{control}

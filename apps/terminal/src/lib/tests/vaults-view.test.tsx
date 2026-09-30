@@ -54,6 +54,32 @@ describe("Vault views", () => {
 		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "User")).toBe(false);
 	});
 
+	it("does not repeat the page title as the heading of a single unclassified Vault group", () => {
+		render(
+			<VaultsList state="normal" rows={[createListRow()]} account={{ status: "disconnected" }} onRetry={vi.fn()} />,
+		);
+		expect([...container.querySelectorAll("h1, h2")].map((heading) => heading.textContent)).toEqual(["Vaults"]);
+		expect(container.textContent).toContain("Alpha Vault");
+	});
+
+	it("names each Vault group when every row is classified", () => {
+		render(
+			<VaultsList
+				state="normal"
+				rows={[
+					{ ...createListRow(), classification: "official" },
+					{ ...createListRow(), vaultAddress: `0x${"2".repeat(40)}`, name: "Beta Vault", classification: "user" },
+				]}
+				account={{ status: "disconnected" }}
+				onRetry={vi.fn()}
+			/>,
+		);
+		expect([...container.querySelectorAll("h2")].map((heading) => heading.textContent)).toEqual([
+			"Official Vaults",
+			"User Vaults",
+		]);
+	});
+
 	it("renders distinct loading, feed-error, and definitive-empty states", () => {
 		for (const [state, expected] of [
 			["loading", "Loading Vaults"],

@@ -642,7 +642,7 @@ describe("MarginModeModal", () => {
 
 		expect(onApply).toHaveBeenCalledWith("isolated", 7);
 		expect(latestFeedback("success")).toBeDefined();
-		expect(feedbackText("success")).toBe("Margin mode updated. Leverage updated to 7x");
+		expect(feedbackText("success")).toBe("Switched to Isolated margin at 7x");
 	});
 
 	it("keeps a new mobile draft ahead of an older commit as that commit is confirmed", () => {
