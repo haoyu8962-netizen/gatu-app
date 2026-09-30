@@ -23,8 +23,18 @@ const PENDING_EXCEPTIONS = [
 		count: 1,
 	},
 	{
+		file: "components/trade/positions/position-limit-close-modal.tsx",
+		contains: "rounded-8 p-2.5 text-xs text-fg-muted bg-error-soft",
+		count: 1,
+	},
+	{
 		file: "components/trade/positions/position-market-close-modal.tsx",
 		contains: "flex items-start gap-2 rounded-8 bg-warning-soft p-2.5",
+		count: 1,
+	},
+	{
+		file: "components/trade/positions/position-market-close-modal.tsx",
+		contains: "rounded-8 p-2.5 text-xs text-fg-muted bg-error-soft",
 		count: 1,
 	},
 	{
@@ -49,14 +59,53 @@ const PENDING_EXCEPTIONS = [
 	},
 ] as const;
 
+const DIALOG_FILE_NAME = /modal|dialog|drawer|sheet/;
+const DIALOG_ELEMENT = /<(?:AdaptiveModal|Modal|ModalPopup|Drawer|DrawerContent)\b/;
+const STRING_LITERAL = /"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/g;
+
 function listDialogSources(dir: string): string[] {
 	return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
 		const path = resolve(dir, entry.name);
 		if (entry.isDirectory()) return entry.name === "__tests__" ? [] : listDialogSources(path);
-		return entry.name.endsWith(".tsx") && /modal|dialog|drawer|sheet/.test(entry.name)
-			? [relative(TERMINAL_SRC, path)]
-			: [];
+		if (!entry.name.endsWith(".tsx")) return [];
+		const isDialog = DIALOG_FILE_NAME.test(entry.name) || DIALOG_ELEMENT.test(readFileSync(path, "utf8"));
+		return isDialog ? [relative(TERMINAL_SRC, path)] : [];
 	});
+}
+
+function literalValue(match: RegExpMatchArray): string {
+	return match[1] ?? match[2] ?? match[3] ?? "";
+}
+
+function findCallEnd(source: string, start: number): number {
+	let depth = 1;
+	let index = start;
+	while (index < source.length && depth > 0) {
+		const character = source[index];
+		if (character === '"' || character === "'" || character === "`") {
+			index = source.indexOf(character, index + 1) + 1;
+			continue;
+		}
+		if (character === "(") depth += 1;
+		if (character === ")") depth -= 1;
+		index += 1;
+	}
+	return index;
+}
+
+// A cn() call is one class list even when the background and the radius sit in different arguments.
+function classLists(source: string): string[] {
+	const calls = [...source.matchAll(/\bcn\(/g)].map((match) => {
+		const start = match.index ?? 0;
+		return { start, end: findCallEnd(source, start + 3) };
+	});
+	const merged = calls.map(({ start, end }) =>
+		[...source.slice(start, end).matchAll(STRING_LITERAL)].map(literalValue).join(" "),
+	);
+	const standalone = [...source.matchAll(STRING_LITERAL)]
+		.filter((match) => !calls.some(({ start, end }) => (match.index ?? 0) >= start && (match.index ?? 0) < end))
+		.map(literalValue);
+	return [...merged, ...standalone];
 }
 
 const DIALOG_SOURCES = listDialogSources(resolve(TERMINAL_SRC, "components")).sort();
@@ -69,8 +118,8 @@ function radiusClasses(value: string): string[] {
 }
 
 const NOTICES = DIALOG_SOURCES.flatMap((file) =>
-	[...readFileSync(resolve(TERMINAL_SRC, file), "utf8").matchAll(/"([^"\n]*)"/g)]
-		.map((match) => ({ file, value: match[1] }))
+	classLists(readFileSync(resolve(TERMINAL_SRC, file), "utf8"))
+		.map((value) => ({ file, value }))
 		.filter(({ value }) => NOTICE_BACKGROUND.test(value) && radiusClasses(value).length > 0),
 );
 
@@ -81,6 +130,7 @@ function isPendingException({ file, value }: { file: string; value: string }): b
 describe("dialog notice radius contract", () => {
 	it("rounds every notice inside a dialog to 8px unless it is a listed pending exception", () => {
 		expect(DIALOG_SOURCES.length).toBeGreaterThan(20);
+		expect(DIALOG_SOURCES).toContain("components/funds-action/funds-action-recovery-host.tsx");
 		for (const notice of NOTICES.filter((entry) => !isPendingException(entry))) {
 			expect(radiusClasses(notice.value), `${notice.file}: ${notice.value}`).toEqual(["rounded-16"]);
 		}
