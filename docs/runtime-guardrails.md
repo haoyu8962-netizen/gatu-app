@@ -883,6 +883,16 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   `lib/navigation/desktop-nav.ts` derives the top-level list and the More menu with
   `resolveDesktopNavLayout` and the current entry with `isDesktopNavItemActive`; `TopNav` only
   renders that result and mounts one More dropdown.
+- Mobile drawer route links preload their destination on an ordinary primary click, close the
+  drawer, then navigate only from `onOpenChangeComplete(false)`. Preloading runs concurrently
+  and must not gate navigation; never substitute a fixed animation timeout. Keep native modified
+  clicks, new-tab links and external destinations intact, including Trade's search parameters.
+  Reopening, explicit cancellation, another navigation or unmount invalidates the queued target;
+  one close completion can consume it only once. This keeps the route-owned drawer mounted through
+  its exit without moving the shared header/provider hierarchy. A persistent route-independent
+  drawer is a larger alternative, not required for this behavior. Verify actual Router links,
+  duplicate/cancelled completions and a browser transition at the reported 946 × 891 viewport;
+  mocked Drawer tests alone cannot prove exit animation continuity.
 - Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
   `DESKTOP_NAV_NARROW_MAX_PX` (1150; 1100 until Earn became a top-level link, ADR 0021 D8). The `nav-compact` Tailwind variant in `styles.css` must equal
   the compact constant (`desktop-nav-layout` pins it); never write `max-[1181px]` again.
@@ -930,6 +940,7 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
 - `apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx`
 - `apps/terminal/src/lib/tests/mobile-nav-drawer.test.tsx`
+- `apps/terminal/src/lib/tests/mobile-nav-drawer-navigation.test.tsx`
 - `apps/terminal/src/lib/navigation/boot-dashboard-route.ts`
 - `apps/terminal/src/components/dashboard/dashboard-chrome.tsx`
 - `apps/terminal/src/lib/tests/preload-trade-terminal-surface.test.ts`

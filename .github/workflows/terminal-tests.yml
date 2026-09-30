@@ -74,6 +74,7 @@ jobs:
           src/lib/tests/top-nav.test.tsx
           src/lib/tests/desktop-nav-layout.test.ts
           src/lib/tests/mobile-nav-drawer.test.tsx
+          src/lib/tests/mobile-nav-drawer-navigation.test.tsx
           src/lib/tests/earn-page-surface-contract.test.ts
           src/lib/tests/wallet-modal.test.tsx
           src/lib/tests/mobile-agent-sync-modal.test.tsx

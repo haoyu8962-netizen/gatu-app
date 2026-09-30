@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [方案 A：移动菜单退出完成后再导航](sessions/2026-09-30-mobile-navigation-close-before-route.md) — 2026-09-30；已验证，范围见正文。实施用户选择的方案 A：目标预加载与抽屉退出并行，关闭完成后导航；137 项回归和 946 × 891 浏览器动画验证通过，Earn 列表位移未改。
 - [946 × 891 菜单跳转抖动复核](sessions/2026-09-30-mobile-navigation-jitter-review.md) — 2026-09-30；已验证，范围见正文。浏览器逐帧确认菜单路由跳转截断退出动画；Earn 首次列表填充有局部位移，未观察到顶部横移；仅复核，未修复。
 - [承接 Privy 方案 B：升级、即时主题与钱包列表稳定性](sessions/2026-09-30-privy-theme-upgrade.md) — 2026-09-30；已验证，范围见正文。方案 B 升级 Privy、恢复即时主题并稳定钱包数组；提交后复核补齐 CI 覆盖遗漏，CI 同版 Node 下 7869 项终端测试、60 项 Privy 专项、全仓类型与 Biome 检查通过；真实钱包验收及历史浏览器异常归因未完成，未发布。
 - [当日 Claude 署名提交对抗审查：官方协议、SDK 字段与 HYPE 页面核对](sessions/2026-09-28-claude-commits-adversarial-review.md) — 2026-09-28；已整理，验证见正文。对照官方协议、SDK 0.33.3 与官方 HYPE/Funding Comparison 页面，审查原列出的 40 个 Claude 署名提交。确认 1 项 P2 修复遗漏：空资金费率历史在后台时钟回拨后仍被当作新鲜且聚焦不刷新；父版本对照证明是 58e132ed 未修完的边界，非新增回归。未改生产代码，验证及限制见正文。同日复核更正：所报基线类型检查失败系主检出残留的 TypeScript 5.9.3 所致，锁定的 5.7.2 下通过；P2 另影响切回页签与重新挂载，已由 a1d93307 修复。
@@ -279,6 +280,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-30 | [方案 A：移动菜单退出完成后再导航](sessions/2026-09-30-mobile-navigation-close-before-route.md) | 未取得任务标识，见正文 | `89f1e578` | 已验证，范围见正文 |
 | 2026-09-30 | [946 × 891 菜单跳转抖动复核](sessions/2026-09-30-mobile-navigation-jitter-review.md) | 未取得任务标识，见正文 | `819ee5adaf49c8205a2807c4de7be3cc07fc300a` | 已验证，范围见正文 |
 | 2026-09-30 | [承接 Privy 方案 B：升级、即时主题与钱包列表稳定性](sessions/2026-09-30-privy-theme-upgrade.md) | 未取得任务标识，见正文 | `5bac5ac7` | 已验证，范围见正文 |
 | 2026-09-28 | [未提 PR 的 worktree 与分支盘点：补回文档页、404 与翻译修复，清理已合入的本地分支](sessions/2026-09-28-branch-audit-and-docs-page-fixes.md) | 未取得任务标识，见正文 | `ac11f81b` | 已验证，范围见正文 |
