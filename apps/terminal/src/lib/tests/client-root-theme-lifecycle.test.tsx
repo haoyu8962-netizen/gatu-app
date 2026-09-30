@@ -13,7 +13,6 @@ const runtime = vi.hoisted(() => ({
 	childMounts: 0,
 	childUnmounts: 0,
 	privyConfigs: [] as PrivyClientConfig[],
-	privyRenders: 0,
 }));
 
 vi.mock("@gatu/hl-react", () => ({
@@ -26,7 +25,6 @@ vi.mock("@gatu/hl-react", () => ({
 
 vi.mock("@privy-io/react-auth", () => ({
 	PrivyProvider: ({ children, config }: { children: React.ReactNode; config: PrivyClientConfig }) => {
-		runtime.privyRenders += 1;
 		runtime.privyConfigs.push(config);
 		return children;
 	},
@@ -109,7 +107,12 @@ function ThemeProbe() {
 		};
 	}, []);
 
-	return <output data-testid="theme-probe">{theme}</output>;
+	return (
+		<>
+			<output data-testid="theme-probe">{theme}</output>
+			<input aria-label="Draft" defaultValue="" />
+		</>
+	);
 }
 
 describe("ClientRootProvider theme lifecycle", () => {
@@ -121,7 +124,6 @@ describe("ClientRootProvider theme lifecycle", () => {
 		runtime.childMounts = 0;
 		runtime.childUnmounts = 0;
 		runtime.privyConfigs.length = 0;
-		runtime.privyRenders = 0;
 		setTheme = undefined;
 		window.localStorage.clear();
 		container = document.createElement("div");
@@ -138,7 +140,7 @@ describe("ClientRootProvider theme lifecycle", () => {
 		window.localStorage.clear();
 	});
 
-	it("keeps Privy outside live theme updates", () => {
+	it("passes the current theme's Privy config without remounting the application", () => {
 		act(() => {
 			root.render(
 				<ClientRootProvider queryClient={queryClient}>
@@ -148,19 +150,29 @@ describe("ClientRootProvider theme lifecycle", () => {
 		});
 
 		const initialTheme = container.querySelector('[data-testid="theme-probe"]')?.textContent;
-		const initialPrivyConfig = runtime.privyConfigs[0];
 		expect(initialTheme === "dark" || initialTheme === "light").toBe(true);
-		expect(runtime.privyRenders).toBe(1);
-		expect(Object.values(PRIVY_CONFIG_BY_THEME)).toContain(initialPrivyConfig);
-		expect(runtime.privyConfigs).toEqual([initialPrivyConfig]);
+		if (initialTheme !== "dark" && initialTheme !== "light") return;
+		const nextTheme = initialTheme === "dark" ? "light" : "dark";
+		const draft = container.querySelector("input");
+		if (!draft) throw new Error("Missing draft probe");
+		draft.value = "123.45";
+		expect(runtime.privyConfigs.at(-1)).toBe(PRIVY_CONFIG_BY_THEME[initialTheme]);
 		expect(runtime.childMounts).toBe(1);
 		expect(runtime.childUnmounts).toBe(0);
 
-		act(() => setTheme?.(initialTheme === "dark" ? "light" : "dark"));
+		act(() => setTheme?.(nextTheme));
 
-		expect(container.querySelector('[data-testid="theme-probe"]')?.textContent).not.toBe(initialTheme);
-		expect(runtime.privyRenders).toBe(1);
-		expect(runtime.privyConfigs).toEqual([initialPrivyConfig]);
+		expect(container.querySelector('[data-testid="theme-probe"]')?.textContent).toBe(nextTheme);
+		expect(runtime.privyConfigs.at(-1)).toBe(PRIVY_CONFIG_BY_THEME[nextTheme]);
+		expect(runtime.childMounts).toBe(1);
+		expect(runtime.childUnmounts).toBe(0);
+
+		act(() => setTheme?.(initialTheme));
+
+		expect(runtime.privyConfigs.at(-1)).toBe(PRIVY_CONFIG_BY_THEME[initialTheme]);
+		expect(new Set(runtime.privyConfigs)).toEqual(new Set(Object.values(PRIVY_CONFIG_BY_THEME)));
+		expect(container.querySelector("input")).toBe(draft);
+		expect(draft.value).toBe("123.45");
 		expect(runtime.childMounts).toBe(1);
 		expect(runtime.childUnmounts).toBe(0);
 	});

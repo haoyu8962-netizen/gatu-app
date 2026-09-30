@@ -350,6 +350,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The Privy login window now follows theme changes immediately, while unchanged wallets keep
+  their connection instead of reconnecting on each toggle.
+
 - Error messages follow the interface language. The order and cancellation rejections that
   Hyperliquid documents (such as tick size, minimum order value, insufficient margin, reduce-only,
   post-only, open-interest caps, oracle price limits and maximum position), not having enough cross

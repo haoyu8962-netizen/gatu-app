@@ -90,6 +90,19 @@ Do not collapse these states into one boolean.
   `PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
   Ethereum-only wallet selection, and customize radius through Privy's
   supported public CSS variables rather than generated DOM classes.
+- `ClientRootProvider` passes `PRIVY_CONFIG_BY_THEME[theme]` from the live
+  theme store, following Privy's documented system-theme recipe, so the login
+  window follows a theme toggle without a reload
+  ([ADR 0026](adr/0026-privy-follows-theme-after-upgrade.md)). Re-rendering
+  `PrivyProvider` is safe only while `useWallets()` keeps the same array
+  across theme-only provider renders: `@privy-io/wagmi` answers every new array with
+  `reconnect()` on the `setActiveWalletForWagmi` path, and `useWalletSession`
+  drops the address while wagmi reports `reconnecting`. `@privy-io/react-auth`
+  3.32.2 preserves the array for unchanged nonempty embedded-wallet lists;
+  `patches/@privy-io__react-auth@3.32.2.patch` does the same for an empty
+  embedded list (external-wallet and logged-out sessions). Before upgrading
+  Privy, run `privy-theme-switch-wallet-stability.test.tsx` against the new
+  version and drop the patch only when the test passes without it.
 
 ### Email Wallet Identity And Export
 
