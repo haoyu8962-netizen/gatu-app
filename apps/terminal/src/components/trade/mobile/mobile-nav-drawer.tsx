@@ -1,8 +1,8 @@
 import { Button, ButtonIcon, Drawer, DrawerContent, DrawerTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons/react";
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
-import { type MouseEvent, useCallback, useEffect, useRef, useState } from "react";
+import { Link, type RegisteredRouter, useLocation, useRouter, type ValidateLinkOptions } from "@tanstack/react-router";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
 import { TOUCH_PRESS_CLASS, TOUCH_PRESS_FADE_CLASS } from "@/components/ui/touch-press";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
@@ -17,14 +17,9 @@ import { type PreloadableGlobalModal, preloadGlobalModal } from "../components/l
 import { HeaderIconButtonView } from "../header/header-icon-button-view";
 import { ThemeToggle } from "../header/theme-toggle";
 
-interface NavigationTarget {
-	to: string;
-	search?: { scope: "all" };
-}
-
 export function MobileNavDrawer() {
 	const router = useRouter();
-	const pendingNavigationRef = useRef<NavigationTarget | null>(null);
+	const pendingNavigationRef = useRef<(() => Promise<void>) | null>(null);
 	const { t } = useLingui();
 	const pathname = normalizeActivePathname(useLocation().pathname);
 	const [open, setOpen] = useState(false);
@@ -50,14 +45,14 @@ export function MobileNavDrawer() {
 		);
 	}
 
-	const cancelPendingAction = useCallback(() => {
+	function cancelPendingAction() {
 		pendingNavigationRef.current = null;
 		preloadRequestRef.current += 1;
 		pendingModalRef.current = null;
 		closingForModalRef.current = false;
 		setPendingModal(null);
 		setPreloadFailed(false);
-	}, []);
+	}
 
 	useEffect(
 		() => () => {
@@ -77,7 +72,7 @@ export function MobileNavDrawer() {
 		[router],
 	);
 
-	function navigationLinkProps(target: NavigationTarget) {
+	function navigationLinkProps<TOptions>(target: ValidateLinkOptions<RegisteredRouter, TOptions>) {
 		return {
 			...target,
 			onClick(event: MouseEvent<HTMLAnchorElement>) {
@@ -96,7 +91,7 @@ export function MobileNavDrawer() {
 				event.preventDefault();
 				if (pendingNavigationRef.current) return;
 				cancelPendingAction();
-				pendingNavigationRef.current = target;
+				pendingNavigationRef.current = () => router.navigate(target);
 				void router.preloadRoute(target).catch(() => {});
 				setOpen(false);
 			},
@@ -144,7 +139,7 @@ export function MobileNavDrawer() {
 		if (navigation) {
 			const originLocation = router.latestLocation;
 			const requestId = ++preloadRequestRef.current;
-			void router.navigate(navigation).catch(() => {
+			void navigation().catch(() => {
 				if (preloadRequestRef.current !== requestId || router.latestLocation !== originLocation) return;
 				setPreloadFailed(true);
 				setOpen(true);
