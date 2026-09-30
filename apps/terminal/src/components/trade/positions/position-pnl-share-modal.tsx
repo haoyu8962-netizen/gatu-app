@@ -169,14 +169,16 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 			const filename = `${APP_NAME}-${position.coin}-pnl-${new Date(position.capturedAtMs).toISOString()}.png`;
 			const shared = isMobile ? await sharePositionPnlPng(blob, filename) : false;
 			if (!isSaveOperationCurrent(saveOperationRef.current, operationEpoch)) return;
-			if (!shared) downloadPositionPnlSharePng(blob, filename);
-			toast.success(t`Share image saved`);
+			if (!shared) {
+				downloadPositionPnlSharePng(blob, filename);
+				toast.success(t`Image saved`);
+			}
 		} catch (error) {
 			if (
 				isSaveOperationCurrent(saveOperationRef.current, operationEpoch) &&
 				!(error instanceof DOMException && error.name === "AbortError")
 			) {
-				toast.error(t`Failed to save share image`);
+				toast.error(t`Failed to save image`);
 			}
 		} finally {
 			if (isSaveOperationCurrent(saveOperationRef.current, operationEpoch)) setIsSaving(false);

@@ -82,7 +82,7 @@ export function EarnView({ data, isMobile, actionsAllowed, notice, onOpenAction 
 
 	return (
 		<div className="space-y-3 font-market-close" aria-busy={busy || undefined}>
-			<section className="rounded-24 bg-surface p-4 min-[1001px]:p-5" aria-labelledby={titleId}>
+			<section className="rounded-24 bg-surface p-4 shadow-raised min-[1001px]:p-5" aria-labelledby={titleId}>
 				<div className="flex flex-col gap-4 min-[1001px]:flex-row min-[1001px]:items-start min-[1001px]:justify-between">
 					<div className="min-w-0">
 						<h1 id={titleId} className="text-xl font-bold text-fg">
@@ -137,7 +137,7 @@ export function EarnView({ data, isMobile, actionsAllowed, notice, onOpenAction 
 				<StatCard label={t`Your Total Borrowed`} value={formatStatUsd(summary?.totalBorrowedUsd ?? "0", isMobile)} />
 			</div>
 
-			<section className="overflow-hidden rounded-24 bg-surface" aria-label={t`Earn details`}>
+			<section className="overflow-hidden rounded-24 bg-surface shadow-raised" aria-label={t`Earn details`}>
 				<Tabs value={tab} onValueChange={(value) => setTab(value as EarnTab)}>
 					<div className="px-3 pt-2">
 						<TabsList aria-label={t`Earn detail views`} className="overflow-x-auto">
@@ -217,7 +217,7 @@ interface StatCardProps {
 
 function StatCard({ label, value }: StatCardProps) {
 	return (
-		<div className="rounded-24 bg-surface p-4">
+		<div className="rounded-24 bg-surface p-4 shadow-raised">
 			<div className="text-xs text-fg-muted">{label}</div>
 			<div className="mt-3 text-lg font-semibold text-fg tabular-nums">
 				<bdi dir="ltr">{value}</bdi>

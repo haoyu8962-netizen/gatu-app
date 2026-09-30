@@ -371,7 +371,7 @@ export function useVaultActionController({
 			return;
 		}
 		if (findPendingFundsAction(startRoute.env, signingOwner)) {
-			toast.error(t`Verify the pending funds operation before starting another one.`);
+			toast.error(t`Review the pending funds operation before starting another one.`);
 			return;
 		}
 		const requestLease: VaultRequestLease = {

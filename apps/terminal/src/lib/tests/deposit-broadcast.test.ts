@@ -162,10 +162,10 @@ describe("deposit broadcast confirmation", () => {
 		);
 		i18n.loadAndActivate({
 			locale: "zh",
-			messages: { [CONFIRMATION_TIMED_OUT.id]: "充值交易已广播，但确认超时。重试前请先在 Arbiscan 上检查。" },
+			messages: { [CONFIRMATION_TIMED_OUT.id]: "存款交易已广播，但确认超时。重试前请先在 Arbiscan 上检查。" },
 		});
-		expect(formatTransferError(failure as Error, translate, "充值失败")).toBe(
-			"充值交易已广播，但确认超时。重试前请先在 Arbiscan 上检查。",
+		expect(formatTransferError(failure as Error, translate, "存款失败")).toBe(
+			"存款交易已广播，但确认超时。重试前请先在 Arbiscan 上检查。",
 		);
 	});
 

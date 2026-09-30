@@ -275,7 +275,7 @@ export function PortfolioPerformanceChart({
 
 	return (
 		<section
-			className="flex h-60 flex-col overflow-hidden rounded-12 bg-surface min-[1001px]:h-[249px]"
+			className="flex h-60 flex-col overflow-hidden rounded-24 bg-surface shadow-raised min-[1001px]:h-[249px]"
 			aria-label={t`Portfolio performance`}
 			aria-busy={isLoading}
 		>

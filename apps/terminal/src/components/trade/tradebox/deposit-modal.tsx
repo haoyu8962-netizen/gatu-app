@@ -110,7 +110,6 @@ interface WithdrawalExecutionReview {
 	attempt: WithdrawalPreflightAttempt;
 	cctpPreTransfer: CctpPreTransferReview | null;
 	route: WithdrawalRoute;
-	routeFee: string;
 }
 
 function normalizeError(error: unknown, fallbackMessage: string): Error {
@@ -284,9 +283,6 @@ export function DepositModal() {
 		poll: !isEmbeddedDeposit,
 		sourceHash: depositExecutionRoute === "cctp" ? depositHash : undefined,
 	});
-	const isCurrentCctpDeposit =
-		!!depositHash &&
-		(depositExecutionRoute === "cctp" || cctpDepositTracking.recoveryRecord?.sourceHash === depositHash.toLowerCase());
 	const defaultBalances = useDefaultDexBalances();
 	const accountAbstraction = defaultBalances.accountAbstraction;
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, walletAddress);
@@ -657,22 +653,6 @@ export function DepositModal() {
 		}
 	}
 
-	async function assertFreshCctpWithdrawalFee(reviewedFee: string, signal: AbortSignal) {
-		try {
-			signal.throwIfAborted();
-			const result = await cctpFeeQuery.refetch();
-			signal.throwIfAborted();
-			const reviewed = toBig(reviewedFee);
-			const current = result.data ? toBig(result.data) : null;
-			if (!reviewed || !current || result.isError) throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
-			if (!current.eq(reviewed)) throw fundsActionFeedbackCause("withdrawal-fee-changed");
-		} catch (error) {
-			if (signal.aborted) throw signal.reason ?? error;
-			if (error instanceof FundsActionFeedbackCause) throw error;
-			throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
-		}
-	}
-
 	function assertCurrentWithdrawalExecutionReview(
 		expectedRoute: WithdrawalRoute,
 		amount: unknown,
@@ -735,10 +715,7 @@ export function DepositModal() {
 		];
 		if (expectedRoute === "arbitrum-cctp") {
 			if (!review.cctpPreTransfer) throw fundsActionFeedbackCause("withdrawal-eligibility-unavailable");
-			guards.push(
-				assertFreshCctpPreTransferCheck(review.cctpPreTransfer, signal),
-				assertFreshCctpWithdrawalFee(review.routeFee, signal),
-			);
+			guards.push(assertFreshCctpPreTransferCheck(review.cctpPreTransfer, signal));
 		}
 		await Promise.all(guards);
 		signal.throwIfAborted();
@@ -1011,7 +988,6 @@ export function DepositModal() {
 						attempt,
 						cctpPreTransfer: cctpPreTransferReview,
 						route: expectedWithdrawalRoute,
-						routeFee: freshRouteFee,
 					};
 					if (expectedWithdrawalRoute === "arbitrum-cctp") {
 						if (!cctpPreTransferReview) throw new PreTransferCheckExecutionError("unavailable");
@@ -1071,25 +1047,21 @@ export function DepositModal() {
 	}
 
 	function notifyWithdrawalSubmitted(amount: string, routeFee: string, activationFee: string) {
-		const netReceived = getWithdrawalNetReceived(amount, routeFee);
-		const amounts = [
-			{ label: t`Net received`, value: formatNumber(netReceived ?? "0", 2) },
-			{ label: t`Withdrawal fee`, value: formatNumber(routeFee, 2) },
-		];
-		if (isPositiveDecimal(activationFee)) {
-			amounts.push({ label: t`One-time account activation fee`, value: formatNumber(activationFee, 2) });
-		}
+		const netReceived = formatNumber(getWithdrawalNetReceived(amount, routeFee) ?? "0", 2);
+		const chargedActivationFee = isPositiveDecimal(activationFee) ? formatNumber(activationFee, 2) : null;
 		toast.success(t`Withdrawal submitted`, {
 			description: (
-				<span className="flex flex-col gap-1">
-					{amounts.map((amount) => (
-						<span key={amount.label} className="tabular-nums">
-							{amount.label}: <bdi dir="ltr">${amount.value}</bdi>
-						</span>
-					))}
+				<span className="flex flex-col gap-1 tabular-nums">
 					<span>
-						{t`Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt.`}
+						<Trans>
+							You'll receive <bdi dir="ltr">${netReceived}</bdi> on Arbitrum after confirmation.
+						</Trans>
 					</span>
+					{chargedActivationFee ? (
+						<span>
+							{t`One-time account activation fee`}: <bdi dir="ltr">${chargedActivationFee}</bdi>
+						</span>
+					) : null}
 				</span>
 			),
 			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
@@ -1101,12 +1073,15 @@ export function DepositModal() {
 			toast.error(formatFundsActionFeedback(error.code, (descriptor) => t(descriptor)));
 			return;
 		}
-		const message = formatExchangeActionError(error, t`Withdrawal failed`, (descriptor) => t(descriptor));
 		if (isAmbiguousExchangeActionError(error)) {
-			toast.warning(t`Withdrawal status unknown`, { description: message, duration: Infinity, closeButton: true });
+			toast.warning(t`Withdrawal status unknown`, {
+				description: t`Check your balances and the Deposits & Withdrawals history before retrying.`,
+				duration: Infinity,
+				closeButton: true,
+			});
 			return;
 		}
-		toast.error(message);
+		toast.error(formatExchangeActionError(error, t`Withdrawal failed`, (descriptor) => t(descriptor)));
 	}
 
 	async function handleWithdrawalPrerequisiteRetry() {
@@ -1233,22 +1208,7 @@ export function DepositModal() {
 			<DepositExplorerLink txHash={depositHash} txChain={depositTxChain} label={t`View on explorer`} />
 		);
 		if (depositStatus === "success") {
-			if (!isCurrentCctpDeposit) {
-				toast.success(t`Deposit submitted`, {
-					description: (
-						<span className="flex flex-col gap-1">
-							<span>
-								<bdi dir="ltr" className="tabular-nums">
-									{displayedDepositAmount} USDC
-								</bdi>{" "}
-								{t`confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute.`}
-							</span>
-							{explorerLink}
-						</span>
-					),
-					duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
-				});
-			} else if (cctpRecoveryUnavailable) {
+			if (cctpRecoveryUnavailable) {
 				toast.warning(t`Forwarding deposit`, {
 					description: (
 						<span className="flex flex-col gap-1">
@@ -1331,19 +1291,17 @@ export function DepositModal() {
 				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon={forwardSubmitted ? "success" : "loading"}
-				heading={forwardSubmitted ? <Trans>Forward transaction submitted</Trans> : <Trans>Forwarding deposit</Trans>}
+				heading={forwardSubmitted ? <Trans>Deposit submitted to Hyperliquid</Trans> : <Trans>Forwarding deposit</Trans>}
 				description={
 					forwardSubmitted ? (
-						<Trans>
-							Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time.
-						</Trans>
+						<Trans>Your balance updates once Hyperliquid credits it.</Trans>
 					) : cctpDepositTracking.isError ? (
 						<Trans>
 							The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume
 							when you return.
 						</Trans>
 					) : (
-						<Trans>Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer.</Trans>
+						<Trans>Circle is forwarding your USDC to Hyperliquid. Do not submit this deposit again.</Trans>
 					)
 				}
 				txHash={recoveredCctpDeposit.sourceHash}

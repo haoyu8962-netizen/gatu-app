@@ -75,17 +75,20 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 			updateOrderQueueItem(notificationId, {
 				status: "success",
 				title: getSuccessTitle(),
-				message: msg`The page is refreshing from Hyperliquid. Recent changes can take a moment to appear.`,
+				message: msg`Changes may take a moment to appear.`,
 			});
 		} catch (submitError) {
-			const unknown =
-				submitError instanceof ReferralActionStatusUnknownError || isAmbiguousExchangeActionError(submitError);
-			updateOrderQueueItem(notificationId, {
-				status: unknown ? "unconfirmed" : "failed",
-				title: msg`Request not confirmed`,
-				message: msg`Refresh referral data before submitting another signed request.`,
-				error: classifyActionErrorOr(submitError, msg`Referral request could not be completed.`),
-			});
+			const error = classifyActionErrorOr(submitError, msg`Referral request could not be completed.`);
+			if (submitError instanceof ReferralActionStatusUnknownError || isAmbiguousExchangeActionError(submitError)) {
+				updateOrderQueueItem(notificationId, {
+					status: "unconfirmed",
+					title: msg`Request not confirmed`,
+					message: msg`Refresh referral data before submitting another signed request.`,
+					error,
+				});
+				return;
+			}
+			updateOrderQueueItem(notificationId, { status: "failed", error });
 		}
 	}
 
@@ -160,7 +163,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 								<p className="mt-1 break-all text-lg font-semibold text-fg">{submittedCode}</p>
 							</div>
 						)}
-						<p className="flex items-start gap-2 rounded-20 bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning">
+						<p className="flex items-start gap-2 rounded-16 bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning">
 							<WarningCircleIcon className="mt-0.5 size-4 shrink-0" />
 							<span>
 								<Trans>Your trading wallet signs this request. Signed requests are never retried automatically.</Trans>

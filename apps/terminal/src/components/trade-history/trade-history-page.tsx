@@ -607,7 +607,7 @@ export function TradeHistoryPage({ address }: Props) {
 						<section
 							data-testid="trade-history-page"
 							data-state={history.status}
-							className="overflow-hidden rounded-12 bg-surface shadow-raised"
+							className="overflow-hidden rounded-24 bg-surface shadow-raised"
 						>
 							{history.status === "ready" && (history.error || history.isOffline) ? (
 								<div role="alert" className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs text-warning">

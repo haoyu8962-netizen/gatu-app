@@ -9,6 +9,7 @@ import {
 	formatVaultRatio,
 	formatVaultSignedUsd,
 	formatVaultUsd,
+	getVaultMark,
 	getVaultRequestAvailability,
 	groupVaultRows,
 	parseVaultDetailsSnapshot,
@@ -154,6 +155,18 @@ describe("Vault list domain", () => {
 		expect(formatVaultCompactUsd("125000000.25")).toBe("$125M");
 		expect(formatVaultRatio("0.098", 1, true)).toBe("+9.8%");
 		expect(formatVaultUsd("not-a-number")).toBe("—");
+	});
+
+	it("marks a Vault with its first two letters or digits, skipping punctuation and emoji", () => {
+		expect(getVaultMark("Hyperliquidity Provider (HLP)")).toBe("HY");
+		expect(getVaultMark("[ Systemic Strategies ] ♾️ HyperGrowth ♾️")).toBe("SY");
+		expect(getVaultMark("♾️ 42 Fund")).toBe("42");
+		expect(getVaultMark("x🚀y")).toBe("XY");
+		expect(getVaultMark("示例核心金库")).toBe("示例");
+		expect(getVaultMark("éclair")).toBe("ÉC");
+		expect(getVaultMark("हिंदी वॉल्ट")).toBe("हिंदी");
+		expect(getVaultMark("🚀 ♾️")).toBe("V");
+		expect(getVaultMark("")).toBe("V");
 	});
 });
 

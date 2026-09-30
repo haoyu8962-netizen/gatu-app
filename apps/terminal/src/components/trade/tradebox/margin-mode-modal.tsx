@@ -12,6 +12,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@gatu/ui";
+import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
@@ -438,10 +439,10 @@ function MarginModeForm({
 				removeOrderQueueItem(notificationId);
 				return;
 			}
-			let message = msg`Margin mode updated`;
-			if (!modeDirty) message = msg`Leverage updated to ${leverage}x`;
-			else if (leverageDirty) message = msg`Margin mode updated. Leverage updated to ${leverage}x`;
-			updateOrderQueueItem(notificationId, { status: "success", message });
+			updateOrderQueueItem(notificationId, {
+				status: "success",
+				message: getMarginUpdateMessage(mode, leverage, modeDirty, leverageDirty),
+			});
 		} catch (error) {
 			const unknown = isAmbiguousExchangeActionError(error);
 			updateOrderQueueItem(notificationId, {
@@ -564,4 +565,16 @@ function MarginModeForm({
 			</ModalFooter>
 		</>
 	);
+}
+
+function getMarginUpdateMessage(
+	mode: MarginMode,
+	leverage: number,
+	modeChanged: boolean,
+	leverageChanged: boolean,
+): MessageDescriptor {
+	if (!modeChanged) return msg`Leverage updated to ${leverage}x`;
+	if (mode === "cross")
+		return leverageChanged ? msg`Switched to Cross margin at ${leverage}x` : msg`Switched to Cross margin`;
+	return leverageChanged ? msg`Switched to Isolated margin at ${leverage}x` : msg`Switched to Isolated margin`;
 }

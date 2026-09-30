@@ -43,7 +43,7 @@ function ReferralSurface({
 		<section
 			aria-busy={busy || undefined}
 			aria-labelledby={titleId}
-			className="overflow-hidden rounded-32 bg-surface shadow-raised"
+			className="overflow-hidden rounded-24 bg-surface shadow-raised"
 		>
 			{children}
 		</section>
@@ -170,13 +170,13 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 						{[0, 1, 2, 3].map((item) => (
 							<div
 								key={item}
-								className="h-[62px] animate-pulse rounded-20 bg-fill-weak motion-reduce:animate-none min-[1001px]:h-[74px] min-[1001px]:rounded-24"
+								className="h-[62px] animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none min-[1001px]:h-[74px]"
 							/>
 						))}
 					</div>
 					<div className="grid gap-3 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4">
-						<div className="h-72 animate-pulse rounded-20 bg-fill-weak motion-reduce:animate-none min-[1001px]:rounded-24" />
-						<div className="h-72 animate-pulse rounded-20 bg-fill-weak motion-reduce:animate-none min-[1001px]:rounded-24" />
+						<div className="h-72 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
+						<div className="h-72 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
 						<div className="h-36 animate-pulse bg-fill-weak motion-reduce:animate-none min-[1001px]:col-span-2" />
 					</div>
 				</div>
@@ -222,7 +222,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 						usdcRewardsEarned={referrals.usdcRewardsEarned ?? "0"}
 					/>
 				</div>
-				<div className="grid gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5 min-[1001px]:pb-0">
+				<div className="grid grid-cols-1 gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5 min-[1001px]:pb-0">
 					<div className="order-1">
 						<ReferralCodeCard
 							actionsDisabled={actionBusy}

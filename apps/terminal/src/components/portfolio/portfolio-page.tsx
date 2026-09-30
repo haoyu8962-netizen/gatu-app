@@ -231,10 +231,13 @@ export function PortfolioPage() {
 
 						<PortfolioOverview />
 
-						<section className="mt-2 overflow-hidden rounded-12 bg-surface" aria-label={t`Account activity`}>
+						<section
+							className="mt-2 overflow-hidden rounded-24 bg-surface shadow-raised"
+							aria-label={t`Account activity`}
+						>
 							{isMobile ? (
 								<MobilePositionsView
-									className="min-h-80 py-1"
+									className="min-h-80 py-1 [&_[data-account-card]]:rounded-16"
 									scrollMode="page"
 									includeBottomNavSpacer={false}
 									balancesContent={<MobileBalancesTab />}

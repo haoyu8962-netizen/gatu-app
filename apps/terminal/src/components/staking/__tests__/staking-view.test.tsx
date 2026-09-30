@@ -171,26 +171,34 @@ describe("StakingView", () => {
 		act(() => root.render(<StakingView {...viewProps} />));
 		act(() => root.render(<StakingView {...viewProps} />));
 
-		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Operation verified", expect.anything());
+		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Moved 1 HYPE to staking", expect.anything());
 		expect(onActionClose).toHaveBeenCalledOnce();
 		expect(onActionRetry).not.toHaveBeenCalled();
 		expect(document.body.textContent).not.toContain("Operation in progress");
 	});
 
 	it.each([
-		["rejected", "Authorization rejected", "The master wallet rejected the authorization."],
-		["apiError", "Request rejected", "Hyperliquid rejected the verified public request."],
-	] as const)("reports a %s staking request and returns to the review step", (result, title, description) => {
-		const onActionClose = vi.fn();
-		const onActionRetry = vi.fn();
-		act(() =>
-			root.render(<StakingView {...props({ actionSession: settledSession(result), onActionClose, onActionRetry })} />),
-		);
+		["rejected", "rejected", "Authorization rejected", "No operation was submitted."],
+		["apiError", "apiError", "Request rejected", "No changes were made."],
+		[
+			"apiError",
+			"preflightFailed",
+			"Request not submitted",
+			"Fresh eligibility or account data could not be verified. Review and try again.",
+		],
+	] as const)(
+		"reports a %s (%s) staking request and returns to the review step",
+		(result, code, title, description) => {
+			const onActionClose = vi.fn();
+			const onActionRetry = vi.fn();
+			const actionSession = { ...settledSession(result), errorMessage: code } as StakingViewProps["actionSession"];
+			act(() => root.render(<StakingView {...props({ actionSession, onActionClose, onActionRetry })} />));
 
-		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(title, expect.objectContaining({ description }));
-		expect(onActionRetry).toHaveBeenCalledOnce();
-		expect(onActionClose).not.toHaveBeenCalled();
-	});
+			expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(title, expect.objectContaining({ description }));
+			expect(onActionRetry).toHaveBeenCalledOnce();
+			expect(onActionClose).not.toHaveBeenCalled();
+		},
+	);
 
 	it("leaves an unconfirmed staking operation to the in-dialog verification path", () => {
 		const onActionClose = vi.fn();

@@ -272,7 +272,7 @@ export function MobilePositionCard({
 		/>
 	);
 	return (
-		<div className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface">
+		<div data-account-card className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface">
 			<MobileDisclosureHeader
 				expanded={isExpanded}
 				label={isExpanded ? t`Collapse ${displayName} position details` : t`Expand ${displayName} position details`}

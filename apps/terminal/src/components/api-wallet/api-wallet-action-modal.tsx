@@ -164,7 +164,7 @@ function ReviewContent({ action }: { action: ApiWalletActionView }) {
 	return (
 		<div className="space-y-3">
 			{action.errorMessage ? (
-				<p role="alert" className="rounded-20 bg-error-soft px-3 py-2 text-xs leading-5 text-error">
+				<p role="alert" className="rounded-16 bg-error-soft px-3 py-2 text-xs leading-5 text-error">
 					{action.errorMessage}
 				</p>
 			) : null}
@@ -327,7 +327,7 @@ function ResultContent({ action }: { action: ApiWalletActionView }) {
 				<p className="text-sm font-bold text-api-wallet-fg">{title}</p>
 				<p className="mt-1 text-xs leading-5 text-api-wallet-muted">{description}</p>
 				{result === "apiError" && action.errorMessage ? (
-					<p className="mt-2 rounded-20 bg-error-soft px-3 py-2 font-mono text-xs text-error">{action.errorMessage}</p>
+					<p className="mt-2 rounded-16 bg-error-soft px-3 py-2 font-mono text-xs text-error">{action.errorMessage}</p>
 				) : null}
 				{result === "unknown" ? (
 					<div className="mt-3 rounded-20 border border-api-wallet-stroke-card bg-api-wallet-card px-3 py-2 text-start">

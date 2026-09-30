@@ -18,8 +18,7 @@ export interface OrderReconciliationError {
 	code: OrderReconciliationErrorCode;
 }
 
-const canceledMessage = msg`Canceled`;
-const someAcceptedMessage = msg`Some orders were accepted. Review open orders before retrying.`;
+const acceptedOrdersCanceledMessage = msg`An accepted order was canceled afterward. Review open orders and positions before retrying.`;
 const batchRejectedMessage = msg`The exchange did not accept every order.`;
 const orderRejectedMessage = msg`The exchange did not accept the order.`;
 const statusUnconfirmedMessage = msg`The exchange did not return a final order status. Review open orders and positions before retrying.`;
@@ -36,7 +35,7 @@ export function formatOrderReconciliationError(
 ): string {
 	switch (code) {
 		case "accepted-orders-canceled":
-			return `${translate(canceledMessage)}. ${translate(someAcceptedMessage)}`;
+			return translate(acceptedOrdersCanceledMessage);
 		case "batch-rejected":
 			return translate(batchRejectedMessage);
 		case "order-rejected":

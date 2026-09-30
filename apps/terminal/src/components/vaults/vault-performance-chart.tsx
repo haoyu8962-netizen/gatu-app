@@ -118,11 +118,11 @@ export function VaultPerformanceChart({ snapshot, kind, period, compact = false 
 		<figure
 			data-vault-performance-chart
 			role="img"
-			className="relative h-52 w-full overflow-hidden min-[1001px]:h-64"
+			className="flex h-52 w-full flex-col overflow-hidden min-[1001px]:h-64"
 			aria-labelledby={accessibleNameId}
 			aria-describedby={accessibleDescriptionId}
 		>
-			<figcaption className="absolute top-3 start-3 z-10">
+			<figcaption className="px-3 pt-3">
 				<span id={accessibleNameId} className="sr-only">
 					{label} {periodLabel}
 				</span>
@@ -139,7 +139,9 @@ export function VaultPerformanceChart({ snapshot, kind, period, compact = false 
 					<bdi dir="ltr">{latestValue}</bdi>
 				</p>
 			</figcaption>
-			{chartVisual}
+			<div data-vault-chart-plot className="min-h-0 flex-1 pt-2">
+				{chartVisual}
+			</div>
 		</figure>
 	);
 }

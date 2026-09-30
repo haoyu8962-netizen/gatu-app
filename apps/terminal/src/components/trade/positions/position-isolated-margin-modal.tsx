@@ -362,7 +362,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 				return;
 			}
 
-			updateOrderQueueItem(queueId, { status: "success", message: msg`Isolated margin updated` });
+			updateOrderQueueItem(queueId, { status: "success", message: msg`Updated` });
 		} catch (error) {
 			updateOrderQueueItem(queueId, {
 				status: "failed",

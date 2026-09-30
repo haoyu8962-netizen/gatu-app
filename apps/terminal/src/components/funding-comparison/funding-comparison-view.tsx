@@ -394,13 +394,13 @@ function MobileFundingCard({ row, columnLabels, onSelectMarket }: MobileFundingC
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	return (
-		<article className="rounded-12 border border-stroke-weak">
+		<article className="rounded-16 border border-stroke-weak">
 			<button
 				type="button"
 				onClick={() => onSelectMarket(row.coin)}
 				aria-label={t`Switch to ${row.coin} market`}
 				className={cn(
-					"flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-t-12 px-3 py-2 text-start",
+					"flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-t-16 px-3 py-2 text-start",
 					TOUCH_PRESS_CLASS,
 				)}
 			>
@@ -508,7 +508,7 @@ function FundingComparisonSkeleton({ isMobile }: { isMobile: boolean }) {
 				<Trans>Loading funding rates</Trans>
 			</span>
 			{SKELETON_ROWS.map((key) => (
-				<div key={key} className={cn("bg-fill-weak", isMobile ? "h-56 rounded-12" : "mb-1 h-11 rounded-8")} />
+				<div key={key} className={cn("bg-fill-weak", isMobile ? "h-56 rounded-16" : "mb-1 h-11 rounded-8")} />
 			))}
 		</div>
 	);

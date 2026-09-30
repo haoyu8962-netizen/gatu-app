@@ -523,7 +523,7 @@ function PositionTpSlForm({
 			return msg`Safe action coordination across tabs is unavailable in this browser.`;
 		}
 		if (error.kind === "reconciling") {
-			return msg`Order submitted. Confirming exchange status; do not retry.`;
+			return msg`TP/SL may have changed. Review this position's TP/SL before retrying.`;
 		}
 		if (error.kind === "trading-data-changed") {
 			return msg`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
@@ -531,7 +531,7 @@ function PositionTpSlForm({
 		if (error.kind === "market-context-mismatch") {
 			return msg`Order market context does not match the submitted asset.`;
 		}
-		if (error.kind === "failed") return msg`Failed to update TP/SL orders`;
+		if (error.kind === "failed") return undefined;
 		return error;
 	}
 
@@ -1169,14 +1169,14 @@ function PositionTpSlForm({
 			} else if (lockResult.value.state === "blocked") {
 				updateOrderQueueItem(queueId, { status: "failed", error: getSubmitFeedback({ kind: "blocked" }) });
 			} else if (lockResult.value.state === "uncertain") {
-				updateOrderQueueItem(queueId, { status: "confirming", error: getSubmitFeedback({ kind: "reconciling" }) });
+				updateOrderQueueItem(queueId, { status: "confirming" });
 			} else if (lockResult.value.state === "failed") {
 				updateOrderQueueItem(queueId, {
 					status: lockResult.value.uncertain ? "unconfirmed" : "failed",
 					error: getSubmitFeedback(toSubmitError(lockResult.value.error, lockResult.value.uncertain)),
 				});
 			} else {
-				updateOrderQueueItem(queueId, { status: "success", message: msg`TP/SL orders updated` });
+				updateOrderQueueItem(queueId, { status: "success", message: msg`Updated` });
 			}
 		} catch (err) {
 			updateOrderQueueItem(queueId, { status: "failed", error: getSubmitFeedback(toSubmitError(err)) });

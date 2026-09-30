@@ -119,7 +119,7 @@ describe("CctpDepositTrackingNotifier", () => {
 		render();
 
 		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith(
-			"Forward transaction submitted",
+			"Deposit submitted to Hyperliquid",
 			expect.objectContaining({
 				id: expect.stringMatching(
 					new RegExp(`^cctp-deposit:Mainnet:${EXTERNAL_WALLET}:${SOURCE_HASH}:presentation:\\d+$`),
@@ -214,9 +214,12 @@ describe("CctpDepositTrackingNotifier", () => {
 		testState.tracking = { ...testState.tracking, data: undefined, recoveryRecord: null, trackedSourceHash: undefined };
 		render();
 		act(() =>
-			i18n.loadAndActivate({ locale: "zh", messages: { [msg`Forward transaction submitted`.id]: "转发交易已提交" } }),
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [msg`Deposit submitted to Hyperliquid`.id]: "存款已提交至 Hyperliquid" },
+			}),
 		);
-		expect(toastMocks.success).toHaveBeenLastCalledWith("转发交易已提交", expect.anything());
+		expect(toastMocks.success).toHaveBeenLastCalledWith("存款已提交至 Hyperliquid", expect.anything());
 		expect(toastMocks.success).toHaveBeenCalledTimes(2);
 		expect(toastMocks.success.mock.calls[1]?.[1]?.id).toBe(toastMocks.success.mock.calls[0]?.[1]?.id);
 		expect(toastMocks.success.mock.calls[1]?.[1]).toMatchObject({

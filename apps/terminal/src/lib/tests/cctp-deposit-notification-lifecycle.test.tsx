@@ -74,7 +74,7 @@ describe("CCTP notification presentation lifecycle with real Sonner", () => {
 	it.each([
 		["waiting", "Forwarding deposit"],
 		["failed", "Deposit failed"],
-		["forward-submitted", "Forward transaction submitted"],
+		["forward-submitted", "Deposit submitted to Hyperliquid"],
 	] as const)("keeps the %s notification after quickly leaving and returning to the owner", async (phase, message) => {
 		state.phase = phase;
 		await renderNotifier();
@@ -109,14 +109,17 @@ describe("CCTP notification presentation lifecycle with real Sonner", () => {
 		await renderNotifier();
 		expect(visibleNotifications()).toHaveLength(1);
 		expect(visibleNotifications()[0]).toBe(notification);
-		expect(notification?.textContent).toContain("Forward transaction submitted");
+		expect(notification?.textContent).toContain("Deposit submitted to Hyperliquid");
 		act(() =>
-			i18n.loadAndActivate({ locale: "zh", messages: { [msg`Forward transaction submitted`.id]: "转发交易已提交" } }),
+			i18n.loadAndActivate({
+				locale: "zh",
+				messages: { [msg`Deposit submitted to Hyperliquid`.id]: "存款已提交至 Hyperliquid" },
+			}),
 		);
 		await act(() => vi.advanceTimersByTimeAsync(500));
 		expect(visibleNotifications()).toHaveLength(1);
 		expect(visibleNotifications()[0]).toBe(notification);
-		expect(notification?.textContent).toContain("转发交易已提交");
+		expect(notification?.textContent).toContain("存款已提交至 Hyperliquid");
 	});
 	it("keeps forwarding progress after quickly switching the network away and back", async () => {
 		await renderNotifier();

@@ -369,9 +369,9 @@ describe("earn action modal", () => {
 		expect(testState.borrowLend).toHaveBeenCalledTimes(1);
 		expect(testState.borrowLend).toHaveBeenCalledWith({ operation: "borrow", token: 0, amount: "5029.4" });
 		expect(toastMocks.success).toHaveBeenCalledTimes(1);
-		const [title, options] = toastMocks.success.mock.calls[0] as [unknown, { description: unknown }];
-		expect(toastText(title)).toBe("Borrowed USDC");
-		expect(toastText(options.description)).toBe("5,029.4 USDC");
+		const [title, options] = toastMocks.success.mock.calls[0] as [unknown, { description?: unknown }];
+		expect(toastText(title)).toBe("Borrowed \u20685,029.4 USDC\u2069");
+		expect(options.description).toBeUndefined();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
@@ -643,9 +643,9 @@ describe("earn action modal", () => {
 		act(() => getSubmit(container).click());
 		await flush();
 		expect(testState.borrowLend).toHaveBeenCalledWith({ operation: "withdraw", token: 0, amount: null });
-		const [title, options] = toastMocks.success.mock.calls[0] as [unknown, { description: unknown }];
-		expect(toastText(title)).toBe("Withdrew USDC");
-		expect(toastText(options.description)).toBe("Entire USDC supply");
+		const [title, options] = toastMocks.success.mock.calls[0] as [unknown, { description?: unknown }];
+		expect(toastText(title)).toBe("Withdrew entire USDC supply");
+		expect(options.description).toBeUndefined();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 

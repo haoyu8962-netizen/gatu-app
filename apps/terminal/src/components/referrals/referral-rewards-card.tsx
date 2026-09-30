@@ -11,7 +11,7 @@ interface Props {
 export function ReferralRewardsCard({ rewards }: Props) {
 	useNumberFormatRevision();
 	return (
-		<article className="h-full rounded-20 border border-stroke-weak bg-surface px-3 py-3 min-[1001px]:rounded-24 min-[1001px]:px-4 min-[1001px]:py-3.5">
+		<article className="h-full rounded-16 border border-stroke-weak bg-surface px-3 py-3 min-[1001px]:px-4 min-[1001px]:py-3.5">
 			<div className="flex items-start justify-between gap-3">
 				<div>
 					<h2 className="text-xs font-bold text-fg min-[1001px]:text-2sm">

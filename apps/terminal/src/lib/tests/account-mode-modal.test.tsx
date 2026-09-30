@@ -21,7 +21,6 @@ const zhTranslations: Record<string, string> = {
 	Current: "当前",
 	Unavailable: "不可用",
 	Confirm: "确认",
-	"Failed to update account mode": "更新账户模式失败",
 	"Unable to load the current account mode. Reconnect your wallet and try again.":
 		"无法加载当前账户模式。请重新连接钱包后重试。",
 };
@@ -140,6 +139,7 @@ describe("AccountModeModal", () => {
 		await act(async () => resolveApply?.());
 		expect(onOpenChange).toHaveBeenCalledOnce();
 		expect(latestFeedback("failed")).toBeUndefined();
+		expect(feedbackText("success")).toBe("Switched to Unified account");
 	});
 
 	it("requires an explicit supported selection for the protocol default", async () => {
@@ -198,8 +198,8 @@ describe("AccountModeModal", () => {
 	});
 
 	it.each([
-		[undefined, "Failed to update account mode"],
-		[new Error("Account mode request no longer matches the wallet"), "Failed to update account mode"],
+		[undefined, "Update failed"],
+		[new Error("Account mode request no longer matches the wallet"), "Update failed"],
 		[
 			new LocalizedActionError(msg`Wallet is not ready to update account mode`),
 			"Wallet is not ready to update account mode",

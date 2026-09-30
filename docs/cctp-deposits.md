@@ -267,12 +267,13 @@ second network request for the same recovery record.
 
 ## Bridge2 Retirement
 
-No new manual or automatic Bridge2 deposit may be signed or submitted. Existing
-Bridge2 history and already-broadcast recovery data remain readable while they
-are reconciled. Hyperliquid's independent legacy withdrawal route may still use
-`withdraw3`; stopping Bridge2 deposits must not disable or reinterpret that
-withdrawal operation. If runtime routing later reports `bridge`, deposits pause
-rather than reverting to the retired path.
+No new manual or automatic Bridge2 deposit may be signed or submitted. The app
+never stored recovery data for Bridge2 deposits, and past ones appear in the
+account ledger like any other deposit; the leftover Bridge2 success notification
+and configuration were removed on 2026-09-29. Hyperliquid's independent legacy
+withdrawal route may still use `withdraw3`; stopping Bridge2 deposits must not
+disable or reinterpret that withdrawal operation. If runtime routing later
+reports `bridge`, deposits pause rather than reverting to the retired path.
 
 ## Official References
 

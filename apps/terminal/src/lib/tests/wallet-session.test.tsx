@@ -247,7 +247,7 @@ describe("useDisconnectWallet", () => {
 		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
 		expect(testState.logout).not.toHaveBeenCalled();
 		expect(testState.toastError).toHaveBeenCalledWith(
-			"Secure disconnect failed because the local trading key could not be removed. Please retry.",
+			"Disconnect failed: the local trading key could not be removed. Please retry.",
 		);
 		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBe(AGENT_STORAGE_VALUE);
 	});
@@ -266,7 +266,7 @@ describe("useDisconnectWallet", () => {
 		expect(testState.removeAgent).not.toHaveBeenCalled();
 		expect(testState.logout).not.toHaveBeenCalled();
 		expect(testState.toastError).toHaveBeenCalledWith(
-			"Secure disconnect requires Web Locks support. Update your browser and try again.",
+			"Disconnecting requires Web Locks support. Update your browser and try again.",
 		);
 	});
 
@@ -285,7 +285,7 @@ describe("useDisconnectWallet", () => {
 
 		expect(testState.logout).not.toHaveBeenCalled();
 		expect(testState.toastError).toHaveBeenCalledWith(
-			"Secure disconnect failed because the local trading key could not be removed. Please retry.",
+			"Disconnect failed: the local trading key could not be removed. Please retry.",
 		);
 	});
 
@@ -303,7 +303,7 @@ describe("useDisconnectWallet", () => {
 		expect(testState.removeAgent).not.toHaveBeenCalled();
 		expect(testState.logout).not.toHaveBeenCalled();
 		expect(testState.toastError).toHaveBeenCalledWith(
-			"Secure disconnect failed because the active trading account could not be verified. Please retry.",
+			"Disconnect failed: the active trading account could not be verified. Please retry.",
 		);
 	});
 
@@ -482,7 +482,7 @@ describe("useDisconnectWallet", () => {
 
 		expect(testState.logout).not.toHaveBeenCalled();
 		expect(testState.toastError).toHaveBeenCalledWith(
-			"Secure disconnect failed because the local trading session could not be cleared. Please retry.",
+			"Disconnect failed: the local trading session could not be cleared. Please retry.",
 		);
 	});
 
@@ -600,7 +600,7 @@ describe("useDisconnectWallet", () => {
 		expect(testState.setActiveWallet).not.toHaveBeenCalled();
 		expect(testState.connectWallet).not.toHaveBeenCalled();
 		expect(testState.toastError).toHaveBeenCalledWith(
-			"Your email wallet is unavailable. Sign out and log in again with the same email, then retry.",
+			"Your email wallet is unavailable. Disconnect, then log in again with the same email.",
 		);
 	});
 
@@ -802,7 +802,7 @@ describe("useDisconnectWallet", () => {
 		expect(testState.setActiveWallet).not.toHaveBeenCalled();
 		expect(testState.connectWallet).not.toHaveBeenCalled();
 		expect(testState.toastError).toHaveBeenCalledWith(
-			"Your email wallet is unavailable. Sign out and log in again with the same email, then retry.",
+			"Your email wallet is unavailable. Disconnect, then log in again with the same email.",
 		);
 	});
 
@@ -845,7 +845,7 @@ describe("useDisconnectWallet", () => {
 		expect(testState.setActiveWallet).toHaveBeenCalledWith(embeddedWallet);
 		expect(testState.connectWallet).not.toHaveBeenCalled();
 		expect(testState.toastError).toHaveBeenCalledWith(
-			"Your email wallet is unavailable. Sign out and log in again with the same email, then retry.",
+			"Your email wallet is unavailable. Disconnect, then log in again with the same email.",
 		);
 	});
 });

@@ -47,6 +47,102 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- Notices on the Staking page and in the Staking, Referral, API wallet and Vault dialogs are rounded
+  8px like the other notices; they were 4px to 10px.
+
+- Dashboard pages share one set of corners. Page panels are rounded 12px and carry the same soft
+  shadow, and the cards, sections and notices inside them are rounded 8px, including the position,
+  order and history cards Portfolio shows on phones (the Trade page keeps its own cards). Before,
+  Portfolio, Staking, Vaults and the history pages used 6px panels, Referrals and API Wallet 16px,
+  Portfolio, Earn and Staking had no shadow, and cards used anything from 2px to 14px.
+
+- When a transfer or send may have gone through but its result could not be confirmed, for example
+  after a timeout or a lost connection, the notification now stays on screen as a warning, "Transfer
+  status unknown" or "Send status unknown", and asks you to check your balances and the Deposits &
+  Withdrawals history before retrying. It used to look like a failure and disappear after three
+  seconds. A send whose result is unknown no longer refills the recipient and amount the next time
+  you open Send, so it cannot be repeated with one tap.
+
+- The notification after a withdrawal is submitted is shorter: under `Withdrawal submitted` it now
+  says only how much you'll receive on Arbitrum after confirmation, for example "You'll receive
+  $239.80 on Arbitrum after confirmation." The route fee is no longer repeated there, since the form
+  showed it before you confirmed; a one-time account activation fee still appears when it was
+  charged. The Chinese text no longer calls the pending amount "实际到账" or mixes 提现 and 提款.
+
+- The terminal no longer cancels a withdrawal because Circle's forwarding fee changed after you
+  pressed Withdraw. The withdrawal uses the fee read when you press Withdraw, and the `Withdrawal
+  submitted` notification estimates the amount you'll receive from that fee. It still stops and
+  keeps the form open if the fee cannot be read or your amount is below the minimum at that fee.
+  See [withdrawals](docs/withdrawals.md#cctp-route).
+
+- Trading notifications are more accurate and repeat less:
+  - When a Position TP/SL update cannot be confirmed, the notification says "TP/SL may have
+    changed. Review this position's TP/SL before retrying." It no longer claims an order was
+    submitted and tells you not to retry, which could be false after the old TP/SL were canceled.
+  - When an accepted order is canceled afterward, the notification says so in one sentence
+    instead of joining "Canceled" to a second sentence.
+  - Terminate TWAP notifications say "termination" throughout, matching the Terminate button.
+  - Margin mode and account type changes state what was applied, such as "Switched to Isolated
+    margin at 7x" or "Switched to Unified account".
+  - A generic reason that only repeats "Failed" (such as "Order failed" or "Failed to close
+    position") is no longer shown under a failed notification; specific reasons still are.
+  - Successful cancel, modify, isolated margin and TP/SL updates end with "Canceled", "Modified"
+    or "Updated" instead of restating the action, and the confirming step uses the standard
+    "Confirming — do not resubmit" line.
+  - An unconfirmed result that already has a line explaining what to review is summarized as
+    "Unconfirmed" instead of repeating the advice.
+  - A partial fill of a single position (Market Close, Reverse, Swap) says "Partially filled" and
+    "Review positions" instead of "Partially completed" and "Fully filled 0/1".
+  - A Swap's market line shows the pair name, such as HYPE/USDC, instead of an internal id such as
+    @107. Filled close, reverse and swap results say "Filled" instead of "Order filled".
+  - In Chinese, order results use 委托 like the Open Orders tab, cancellations use 取消 like the
+    Cancel buttons, and the accepted and fully filled labels match their count lines.
+
+- Funds notifications say what happened and stop repeating themselves:
+  - A withdrawal whose status is unknown now says "Check your balance and withdrawal history before
+    retrying." instead of restating that the status could not be confirmed.
+  - The automatic testnet deposit reports "USDC deposit confirmed on Arbitrum" when the Arbitrum
+    transaction confirms, instead of claiming it was already submitted to Hyperliquid.
+  - Once Circle forwards a CCTP deposit, the notification and the deposit screen say "Deposit
+    submitted to Hyperliquid" and "Your balance updates once Hyperliquid credits it." While
+    forwarding, they say "Circle is forwarding your USDC to Hyperliquid. Do not submit this
+    deposit again."
+  - Vault results are titled "Vault deposit confirmed" or "Vault withdrawal confirmed". A
+    withdrawal says "You received X USDC." and lists the leader commission and closing cost only
+    when they are above zero. The transaction is a short explorer link instead of the full hash.
+    A rejected authorization says "No operation was submitted."
+  - Staking results name the action and amount, such as "Delegated 10 HYPE". A request that
+    failed its checks before sending is titled "Request not submitted" instead of "Request
+    rejected".
+  - Earn results are one line with the amount, such as "Borrowed 5,029.4 USDC". Max withdrawals
+    and repayments say "Withdrew entire USDC supply" or "Repaid entire USDC borrow".
+  - A referral request that definitely failed is no longer titled "Request not confirmed", and a
+    successful one says "Changes may take a moment to appear."
+  - Transfer and Send amounts follow the number-format setting.
+
+- Chinese text now uses 存款 for deposits and 提款 for withdrawals, matching the Deposit and
+  Withdraw buttons. Forty-eight messages that said 充值, 提现 or 入金 were updated, including
+  the withdrawal form's `Withdraw to Arbitrum` button, the deposit address and status messages,
+  and the deposit and withdrawal notifications. Thirty more labels that said 存入 or 提取 now
+  follow the same buttons, among them the desktop positions toolbar's Deposit and Withdraw buttons
+  (previously 存入 and 提取), the Vault and staking withdrawal labels (提款已锁定, 提款规则, 从金库提款,
+  待处理提款) and the funds recovery reminders. Phrases with an object keep 存入 and 提取, such as
+  提取金库权益, and Earn keeps 存入 for Supply.
+
+- Other notifications follow the buttons they come from:
+  - Disconnect failures start with "Disconnect failed:" instead of "Secure disconnect failed
+    because", and an unavailable email wallet says "Disconnect, then log in again with the same
+    email." like the Disconnect button.
+  - Saving a PnL share image says "Image saved" only after the image was downloaded. When a phone
+    opens the share sheet instead, no notification appears. A failure says "Failed to save image".
+  - In Chinese, TWAP Fill History is 成交记录 instead of 填充历史 on the tab, the table and the
+    export messages, and the export progress messages use the same ellipsis as the others.
+
+- The phone navigation drawer no longer shows the Navigation and More headings. As on the
+  official terminal, a divider now separates the main destinations from Funding Comparison,
+  Statistics, API Wallet, Docs and Support, which leaves more room for the list on small screens.
+  Screen readers still announce the two groups as the primary navigation and More.
+
 - Docs, Support, Terms, Privacy Policy, Risk Disclosure and Cookie Policy now open inside the
   normal application chrome: the same top navigation and footer as the trading and dashboard
   pages on desktop, and the application mobile header on phones. Their separate document
@@ -349,6 +445,38 @@ changes, not evidence that a build has been deployed or accepted on real devices
   says so, together with the expiry date and the desktop revoke path.
 
 ### Fixed
+
+- On phones, Vault cards no longer run off the right edge of the screen when the list contains a
+  long Vault name, so APR, equity, age and the performance line stay visible; a long name wraps onto
+  more lines instead of being cut off, on phones and in the desktop table alike. On desktop, the
+  Vault and Leader column headers line up with their columns. A Vault's mark now skips punctuation
+  and emoji, so `[ Systemic Strategies ] …` shows `SY` instead of `[`.
+
+- On phones, the Vaults, Vault detail and Referrals pages (including referral invitation links) now
+  keep the same 16px side margin as Staking, Earn and Portfolio instead of pressing a rounded panel
+  against the screen edges. Vault cards show each value under its label, so leader addresses stay
+  complete at the narrower width. The three referral steps (Trade, Create code, Invite traders)
+  now wrap onto more lines instead of being cut off with an ellipsis, which the narrower width had
+  started to do in Chinese and several labels already did in English and French.
+
+- On phones, the Referrals page shows your whole referral code, wrapping a long code onto another
+  line instead of cutting it off. At 320px the referral card no longer grows 25px wider than its
+  column, where the panel cut off its right edge. Chinese step labels no longer leave a single
+  character on a line of its own.
+
+- The Vaults list no longer repeats its Vaults title as a group heading. When Vaults are not
+  classified as official or user, or the Deposited or Leading filter is on, the list is a single
+  group with no heading; a classified list still shows Official Vaults and User Vaults.
+
+- On a Vault's page, the Account value or PNL figure sits above the chart instead of on top of it,
+  where the line could run through the number. In Chinese, the page's notices say 金库 like the rest
+  of the page instead of the English word Vault.
+
+- Mobile navigation now finishes closing the menu before switching pages, while preloading the
+  destination during the exit animation to avoid the menu disappearing abruptly.
+
+- The Privy login window now follows theme changes immediately, while unchanged wallets keep
+  their connection instead of reconnecting on each toggle.
 
 - Error messages follow the interface language. The order and cancellation rejections that
   Hyperliquid documents (such as tick size, minimum order value, insufficient margin, reduce-only,

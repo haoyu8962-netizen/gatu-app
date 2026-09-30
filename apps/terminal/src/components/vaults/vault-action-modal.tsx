@@ -121,7 +121,7 @@ export function VaultActionModal({
 						</dl>
 						<VaultActionRisk action={action} alwaysCloseOnWithdraw={detail.alwaysCloseOnWithdraw} />
 						{errorMessage ? (
-							<p role="alert" className="rounded-10 bg-error-soft px-3 py-2 text-xs leading-5 text-error">
+							<p role="alert" className="rounded-16 bg-error-soft px-3 py-2 text-xs leading-5 text-error">
 								{errorMessage}
 							</p>
 						) : null}
@@ -174,7 +174,7 @@ function VaultActionRisk({
 	alwaysCloseOnWithdraw: boolean;
 }) {
 	return (
-		<div className="flex items-start gap-2 rounded-10 bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning">
+		<div className="flex items-start gap-2 rounded-16 bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning">
 			<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
 			<ul className="list-disc space-y-1 ps-4">
 				{action === "deposit" ? (

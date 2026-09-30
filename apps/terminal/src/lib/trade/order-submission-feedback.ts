@@ -71,10 +71,10 @@ const messages: Record<OrderSubmissionFeedbackCode, MessageDescriptor> = {
 	"scale-size-too-small": msg`Scale size is too small for the selected number of orders`,
 	"scale-skew-invalid": msg`Enter a valid scale skew`,
 	"secure-random-unavailable": msg`Secure random number generation is unavailable in this browser. Use a supported browser before placing an order.`,
-	"twap-cancel-failed": msg`Failed to cancel TWAP order.`,
+	"twap-cancel-failed": msg`Failed to terminate TWAP.`,
 	"twap-cancel-identity-changed": msg`The trading account or network changed. Review active TWAP orders before retrying.`,
 	"twap-cancel-market-unavailable": msg`Unable to identify this TWAP market. Refresh market data before retrying.`,
-	"twap-cancel-unconfirmed": msg`TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying.`,
+	"twap-cancel-unconfirmed": msg`TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying.`,
 	"twap-min-notional": msg`TWAP order value must be at least $${TWAP_MIN_NOTIONAL_USD}.`,
 	"twap-minutes-range": msg`TWAP minutes must be ${TWAP_MINUTES_MIN}-${TWAP_MINUTES_MAX}`,
 	"twap-state-unavailable": msg`TWAP order state is still loading. Please retry in a moment.`,
@@ -226,13 +226,13 @@ export function getDefaultOrderSubmissionFeedbackMessage(feedback: OrderSubmissi
 		case "secure-random-unavailable":
 			return "Secure random number generation is unavailable in this browser. Use a supported browser before placing an order.";
 		case "twap-cancel-failed":
-			return "Failed to cancel TWAP order.";
+			return "Failed to terminate TWAP.";
 		case "twap-cancel-identity-changed":
 			return "The trading account or network changed. Review active TWAP orders before retrying.";
 		case "twap-cancel-market-unavailable":
 			return "Unable to identify this TWAP market. Refresh market data before retrying.";
 		case "twap-cancel-unconfirmed":
-			return "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying.";
+			return "TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying.";
 		case "twap-min-notional":
 			return `TWAP order value must be at least $${TWAP_MIN_NOTIONAL_USD}.`;
 		case "twap-minutes-range":

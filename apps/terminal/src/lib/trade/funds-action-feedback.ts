@@ -13,7 +13,6 @@ export type FundsActionFeedbackCode =
 	| "withdrawal-activation-fee-changed"
 	| "withdrawal-conditions-changed"
 	| "withdrawal-eligibility-unavailable"
-	| "withdrawal-fee-changed"
 	| "withdrawal-fee-unavailable"
 	| "withdrawal-route-changed"
 	| "withdrawal-route-unavailable"
@@ -31,7 +30,6 @@ const messages: Record<FundsActionFeedbackCode, MessageDescriptor> = {
 	"withdrawal-activation-fee-changed": msg`The account activation fee changed before signing. Review the updated fee and try again.`,
 	"withdrawal-conditions-changed": msg`Withdrawal conditions changed before signing. Review the withdrawal and submit it again.`,
 	"withdrawal-eligibility-unavailable": msg`Unable to verify withdrawal eligibility. Request was not submitted.`,
-	"withdrawal-fee-changed": msg`Circle fees changed before submission. Review the updated fee and retry.`,
 	"withdrawal-fee-unavailable": msg`Unable to load the current CCTP withdrawal fee.`,
 	"withdrawal-route-changed": msg`The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again.`,
 	"withdrawal-route-unavailable": msg`Unable to verify the current Hyperliquid withdrawal route.`,
@@ -80,8 +78,6 @@ function getDefaultMessage(code: FundsActionFeedbackCode): string {
 			return "Withdrawal conditions changed before signing. Review the withdrawal and submit it again.";
 		case "withdrawal-eligibility-unavailable":
 			return "Unable to verify withdrawal eligibility. Request was not submitted.";
-		case "withdrawal-fee-changed":
-			return "Circle fees changed before submission. Review the updated fee and retry.";
 		case "withdrawal-fee-unavailable":
 			return "Unable to load the current CCTP withdrawal fee.";
 		case "withdrawal-route-changed":

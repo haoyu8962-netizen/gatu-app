@@ -134,7 +134,7 @@ export function OrderReconciliation() {
 			}
 			updatePendingTradingActionFeedback(cancellation, "cancel", {
 				status: "success",
-				message: msg`Order cancellation confirmed.`,
+				message: msg`Canceled`,
 			});
 		}
 
@@ -165,7 +165,7 @@ export function OrderReconciliation() {
 				getPendingTradingActionActions().resolveModification(modification.id);
 				updatePendingTradingActionFeedback(modification, "modify", {
 					status: "success",
-					message: msg`Order modification confirmed.`,
+					message: msg`Modified`,
 				});
 				continue;
 			}

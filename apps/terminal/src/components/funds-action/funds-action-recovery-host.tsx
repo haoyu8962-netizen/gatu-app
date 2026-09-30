@@ -119,14 +119,14 @@ export function FundsActionRecoveryHost() {
 						</Trans>
 					</p>
 					{!activeMarker.historyBaseline || !activeMarker.stateBaseline ? (
-						<p role="alert" className="rounded-10 bg-warning-soft px-3 py-2 text-xs leading-5 text-warning">
+						<p role="alert" className="rounded-16 bg-warning-soft px-3 py-2 text-xs leading-5 text-warning">
 							<Trans>
 								This record predates baseline verification. It cannot be completed automatically. Verify account history
 								and state independently before clearing it.
 							</Trans>
 						</p>
 					) : matchedHistory ? (
-						<output className="block rounded-10 bg-success-soft px-3 py-2 text-xs leading-5 text-success">
+						<output className="block rounded-16 bg-success-soft px-3 py-2 text-xs leading-5 text-success">
 							<Trans>
 								A new exact history event matches this request. Open the related page to verify fresh account state; the
 								record remains locked until both checks pass.
@@ -146,7 +146,7 @@ export function FundsActionRecoveryHost() {
 						<RecoveryRow label={t`Identity epoch`} value={activeMarker.identityEpoch} />
 					</dl>
 					{confirmClear ? (
-						<p role="alert" className="rounded-10 bg-error-soft px-3 py-2 text-xs leading-5 text-error">
+						<p role="alert" className="rounded-16 bg-error-soft px-3 py-2 text-xs leading-5 text-error">
 							<Trans>
 								Clearing this record does not cancel the on-chain operation. Verify account history independently before
 								submitting the same action again.
@@ -238,7 +238,7 @@ function CorruptMarkerRecovery() {
 						</Trans>
 					</p>
 					{confirmClear ? (
-						<p role="alert" className="rounded-10 bg-error-soft px-3 py-2 text-xs leading-5 text-error">
+						<p role="alert" className="rounded-16 bg-error-soft px-3 py-2 text-xs leading-5 text-error">
 							<Trans>
 								Clearing unreadable storage does not cancel any on-chain operation. Independently verify every account
 								history before confirming.

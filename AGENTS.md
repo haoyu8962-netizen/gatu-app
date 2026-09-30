@@ -47,7 +47,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Privy is the sole managed authentication and external-wallet directory; do not add a parallel Reown/AppKit chooser. Login stays limited to `wallet` and `email`, and Passkey login stays disabled until an explicit enrollment, recovery and support design exists.
 - `WalletModal` owns the primary interactive Connect surface, and `PRIVY_WALLET_LIST` is the single source of recommended-wallet ordering. Close the application drawer before launching Privy.
 - Privy authentication is not proof that the required signing wallet is active; reconnect and email-wallet flows must activate the exact expected wallet under the wallet signing contract above.
-- Theme changes alter Privy appearance only: wallet ordering, authentication behavior and the provider hierarchy stay identical across themes.
+- Theme changes alter Privy appearance only: wallet ordering, authentication behavior and the provider hierarchy stay identical across themes. The login window follows a live theme toggle because `PrivyProvider` receives the current theme's config; that is safe only while the locked Privy keeps `useWallets()` stable across theme-only provider renders (`docs/adr/0026-privy-follows-theme-after-upgrade.md`).
 
 ## Mobile connection and PWA contract
 
@@ -69,6 +69,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Application modals and drawers use the dedicated `bg-modal` surface. Do not change `bg-overlay` to achieve this; tooltips, toasts and selection indicators depend on its raised contrast.
 - TradingView runs in an iframe and cannot inherit application tokens; `docs/runtime-guardrails.md` §4 owns its theme stylesheet rules, including the `#1D1E26` raised-layer color and the single theme-aware stylesheet.
 - Keep theme colors in shared tokens or existing style abstractions instead of scattering new literals.
+- Dashboard surfaces, the cards inside them and dialog notices follow the corner tiers in `.claude/rules/style-ui-guide.md` (Dashboard page gutters, Dialog content blocks). `dashboard-surface-radius-contract.test.ts` and `dialog-notice-radius-contract.test.ts` enforce them with explicit exception lists; a new visual rule follows the same pattern (Checking a visual rule).
 
 ## Order book contract
 
@@ -168,6 +169,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/mobile-agent-lifecycle.test.ts \
   src/lib/tests/legal-gate.test.ts \
   src/lib/tests/privy-config.test.ts \
+  src/lib/tests/privy-theme-switch-wallet-stability.test.tsx \
+  src/lib/tests/client-root-theme-lifecycle.test.tsx \
   src/lib/tests/wallet-modal.test.tsx \
   src/lib/tests/wallet-session.test.tsx \
   src/lib/tests/pwa-install.test.tsx \
@@ -185,7 +188,9 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/chart-theme-colors.test.ts \
   src/lib/tests/tradingview-chart.test.tsx \
   src/lib/tests/modal-surface-contract.test.ts \
-  src/lib/tests/earn-page-surface-contract.test.ts
+  src/lib/tests/earn-page-surface-contract.test.ts \
+  src/lib/tests/dashboard-surface-radius-contract.test.ts \
+  src/lib/tests/dialog-notice-radius-contract.test.ts
 
 # Order book: geometry, transport, animation and palette
 pnpm --dir apps/terminal exec vitest run \
@@ -301,6 +306,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/top-nav.test.tsx \
   src/lib/tests/desktop-nav-layout.test.ts \
   src/lib/tests/mobile-nav-drawer.test.tsx \
+  src/lib/tests/mobile-nav-drawer-navigation.test.tsx \
   src/lib/tests/dashboard-frame-view.test.tsx
 
 # Runtime translation contract (Change discipline) and error text (ADR 0024)

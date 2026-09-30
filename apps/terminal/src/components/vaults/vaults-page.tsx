@@ -1,4 +1,5 @@
 import { Button } from "@gatu/ui";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
@@ -9,8 +10,13 @@ import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view"
 import { DASHBOARD_FRAMES } from "@/config/dashboard-frames";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { describeActionFailure } from "@/lib/errors/action-error";
+import { type ActionFailure, describeActionFailure } from "@/lib/errors/action-error";
+import { formatNumber, shortenAddress } from "@/lib/format";
+import { getExplorerTxUrl } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import type { Translate } from "@/lib/translate";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { getVaultValueTone } from "./domain/vaults";
 import { useVaultActionController } from "./use-vault-action-controller";
 import { useVaultDetailController, useVaultsController } from "./use-vaults-controller";
 import { formatVaultOperationReference } from "./vault-action-domain";
@@ -66,6 +72,7 @@ export function VaultDetailPage({ vaultAddress, onRequestAction }: VaultDetailPa
 
 function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps) {
 	const { t } = useLingui();
+	useNumberFormatRevision();
 	const isTestnet = useIsTestnet();
 	const controller = useVaultDetailController(vaultAddress);
 	const vaultAction = useVaultActionController({
@@ -86,23 +93,37 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 		reportedOutcomeRef.current = outcomeKey;
 		if (settledResult === "success") {
 			const receipt = activeAction.receipt;
-			const amounts = [
-				{ label: t`Final amount`, value: receipt?.finalAmount },
-				{ label: t`Commission`, value: receipt?.commission },
+			const isDeposit = activeAction.action === "deposit";
+			const amount = formatNumber(receipt?.finalAmount ?? activeAction.amount, 2);
+			const charges = [
+				{ label: t`Leader commission`, value: receipt?.commission },
 				{ label: t`Closing cost`, value: receipt?.closingCost },
-			].filter((amount) => !!amount.value);
-			toast.success(t`Vault transfer confirmed`, {
+			].filter((charge) => getVaultValueTone(charge.value) === "positive");
+			toast.success(isDeposit ? t`Vault deposit confirmed` : t`Vault withdrawal confirmed`, {
 				description: (
-					<span className="flex flex-col gap-1">
-						{amounts.map((amount) => (
-							<span key={amount.label} className="tabular-nums">
-								{amount.label}: <bdi dir="ltr">{amount.value} USDC</bdi>
+					<span className="flex flex-col gap-1 tabular-nums">
+						{isDeposit ? <bdi dir="ltr">{amount} USDC</bdi> : null}
+						{!isDeposit && receipt?.finalAmount ? (
+							<span>
+								<Trans>
+									You received <bdi dir="ltr">{amount} USDC</bdi>.
+								</Trans>
+							</span>
+						) : null}
+						{charges.map((charge) => (
+							<span key={charge.label}>
+								{charge.label}: <bdi dir="ltr">{formatNumber(charge.value, 2)} USDC</bdi>
 							</span>
 						))}
 						{receipt?.hash ? (
-							<bdi dir="ltr" className="break-all font-mono">
-								{receipt.hash}
-							</bdi>
+							<a
+								href={getExplorerTxUrl(receipt.hash, isTestnet)}
+								target="_blank"
+								rel="noopener"
+								className="text-signal hover:text-signal-hover hover:underline"
+							>
+								<bdi dir="ltr">{shortenAddress(receipt.hash, 6, 6)}</bdi>
+							</a>
 						) : null}
 					</span>
 				),
@@ -111,10 +132,9 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 			vaultAction.close();
 			return;
 		}
-		toast.error(settledResult === "rejected" ? t`Authorization rejected` : t`Vault request failed`, {
-			description: activeAction.error
-				? describeActionFailure(activeAction.error, (descriptor) => t(descriptor))
-				: undefined,
+		const isRejected = settledResult === "rejected";
+		toast.error(isRejected ? t`Authorization rejected` : t`Vault request failed`, {
+			description: getVaultFailureDescription(isRejected, activeAction.error, (descriptor) => t(descriptor)),
 			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
 		});
 		vaultAction.retry();
@@ -224,15 +244,15 @@ function VaultDetailSkeleton() {
 			data-state="loading"
 			aria-busy="true"
 			aria-label={t`Loading Vault details`}
-			className="space-y-3 rounded-12 bg-surface p-4 shadow-raised min-[1001px]:p-5"
+			className="space-y-3 rounded-24 bg-surface p-4 shadow-raised min-[1001px]:p-5"
 		>
-			<div className="h-14 animate-pulse rounded-10 bg-fill-weak motion-reduce:animate-none" />
+			<div className="h-14 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
 			<div className="grid grid-cols-2 gap-2 min-[1001px]:grid-cols-4">
 				{VAULT_DETAIL_SKELETON_KEYS.map((key) => (
-					<div key={key} className="h-20 animate-pulse rounded-10 bg-fill-weak motion-reduce:animate-none" />
+					<div key={key} className="h-20 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
 				))}
 			</div>
-			<div className="h-72 animate-pulse rounded-12 bg-fill-weak motion-reduce:animate-none" />
+			<div className="h-72 animate-pulse rounded-16 bg-fill-weak motion-reduce:animate-none" />
 		</section>
 	);
 }
@@ -252,7 +272,7 @@ function VaultDetailMessage({
 		<div
 			data-state={state}
 			role="alert"
-			className="flex min-h-80 flex-col items-center justify-center rounded-12 bg-surface px-6 text-center shadow-raised"
+			className="flex min-h-80 flex-col items-center justify-center rounded-24 bg-surface px-6 text-center shadow-raised"
 		>
 			<WarningCircleIcon className="size-9 text-error" weight="fill" />
 			<h1 className="mt-3 text-lg font-bold text-fg">{title}</h1>
@@ -269,4 +289,13 @@ function VaultDetailMessage({
 			</div>
 		</div>
 	);
+}
+
+function getVaultFailureDescription(
+	rejected: boolean,
+	error: ActionFailure | undefined,
+	translate: Translate,
+): string | undefined {
+	if (rejected) return translate(msg`No operation was submitted.`);
+	return error ? describeActionFailure(error, translate) : undefined;
 }

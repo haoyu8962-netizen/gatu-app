@@ -24,8 +24,8 @@ const USER = "0x1111111111111111111111111111111111111111" as const;
 const MARKET_UNAVAILABLE_MESSAGE = "Unable to identify this TWAP market. Refresh market data before retrying.";
 const MARKET_UNAVAILABLE_MESSAGE_AR = "تعذر تحديد سوق TWAP هذا. حدّث بيانات السوق قبل إعادة المحاولة.";
 
-const CANCEL_FAILED_MESSAGE = "Failed to cancel TWAP order.";
-const CANCEL_FAILED_MESSAGE_AR = "تعذر إلغاء أمر TWAP.";
+const CANCEL_FAILED_MESSAGE = "Failed to terminate TWAP.";
+const CANCEL_FAILED_MESSAGE_AR = "تعذر إنهاء TWAP.";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);

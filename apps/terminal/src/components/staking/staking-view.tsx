@@ -41,7 +41,7 @@ import {
 	type StakingLink,
 	type StakingValidatorStatus,
 } from "./domain/staking";
-import { formatStakingActionError } from "./domain/staking-action-feedback";
+import { getStakingActionFailureNotice, getStakingActionSuccessMessage } from "./domain/staking-action-feedback";
 import { StakingActionModal } from "./staking-action-modal";
 import type { StakingActionSession } from "./use-staking-actions";
 import type { StakingController } from "./use-staking-controller";
@@ -82,7 +82,8 @@ export function StakingView(props: StakingViewProps) {
 		reportedOutcomeRef.current = outcomeKey;
 		if (settledResult === "success") {
 			const hash = session.match?.hash;
-			toast.success(t`Operation verified`, {
+			const amount = formatStakingAmount(session.submission.amount, 8);
+			toast.success(t(getStakingActionSuccessMessage(session.submission.request.kind, amount)), {
 				description: hash ? (
 					<a
 						href={getExplorerTxUrl(hash, props.env === "Testnet")}
@@ -98,10 +99,9 @@ export function StakingView(props: StakingViewProps) {
 			props.onActionClose?.();
 			return;
 		}
-		const fallback =
-			settledResult === "rejected" ? t`No operation was submitted.` : t`Review the public fields and try again.`;
-		toast.error(settledResult === "rejected" ? t`Authorization rejected` : t`Request rejected`, {
-			description: formatStakingActionError(session.errorMessage, (descriptor) => t(descriptor)) ?? fallback,
+		const failure = getStakingActionFailureNotice(settledResult, session.errorMessage);
+		toast.error(t(failure.title), {
+			description: t(failure.description),
 			duration: FUNDS_OUTCOME_TOAST_DURATION_MS,
 		});
 		props.onActionRetry?.();
@@ -152,7 +152,7 @@ export function StakingView(props: StakingViewProps) {
 					description={t`Do not submit another staking funds operation. The shared recovery panel will keep checking Hyperliquid history.`}
 				/>
 			) : null}
-			<section className="rounded-12 bg-surface p-4 min-[1001px]:p-5" aria-labelledby={titleId}>
+			<section className="rounded-24 bg-surface p-4 shadow-raised min-[1001px]:p-5" aria-labelledby={titleId}>
 				<div className="flex flex-col gap-4 min-[1001px]:flex-row min-[1001px]:items-start min-[1001px]:justify-between">
 					<div>
 						<h1 id={titleId} className="text-xl font-bold text-fg">
@@ -210,7 +210,7 @@ export function StakingView(props: StakingViewProps) {
 			</section>
 
 			<div className="grid gap-3 min-[1001px]:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-				<section className="rounded-12 bg-surface p-4" aria-label={t`Staking overview`}>
+				<section className="rounded-24 bg-surface p-4 shadow-raised" aria-label={t`Staking overview`}>
 					<div className="grid grid-cols-2 gap-2">
 						<MetricCard
 							label={<Trans>Network stake</Trans>}
@@ -253,11 +253,11 @@ export function StakingView(props: StakingViewProps) {
 					</div>
 				</section>
 
-				<section className="rounded-12 bg-surface p-4" aria-label={t`Account staking status`}>
+				<section className="rounded-24 bg-surface p-4 shadow-raised" aria-label={t`Account staking status`}>
 					<AccountStatePanel {...props} />
 					{account ? (
 						<>
-							<div className="mt-3 rounded-8 border border-stroke-warning-weak bg-warning-soft p-3">
+							<div className="mt-3 rounded-16 border border-stroke-warning-weak bg-warning-soft p-3">
 								<div className="flex items-center justify-between gap-3">
 									<div className="flex items-center gap-2">
 										<LockKeyIcon aria-hidden="true" className="size-4 text-icon-warning" />
@@ -292,7 +292,7 @@ export function StakingView(props: StakingViewProps) {
 				</section>
 			</div>
 
-			<section className="overflow-hidden rounded-12 bg-surface" aria-label={t`Staking details`}>
+			<section className="overflow-hidden rounded-24 bg-surface shadow-raised" aria-label={t`Staking details`}>
 				<Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as StakingTab)}>
 					<div className="flex flex-col gap-2 px-3 pt-2 min-[1001px]:flex-row min-[1001px]:items-center min-[1001px]:justify-between">
 						<TabsList aria-label={t`Staking detail views`} className="overflow-x-auto">
@@ -459,7 +459,7 @@ function AccountStatePanel(props: StakingViewProps) {
 		);
 	}
 	return (
-		<div className="flex items-center justify-between gap-3 rounded-8 border border-stroke-success-weak bg-success-soft p-3">
+		<div className="flex items-center justify-between gap-3 rounded-16 border border-stroke-success-weak bg-success-soft p-3">
 			<div>
 				<h2 className="text-xs font-semibold text-fg">
 					<Trans>Master wallet verified</Trans>
@@ -807,7 +807,7 @@ function getHistoryActionLabel(action: StakingHistoryAction, validatorNames: Rea
 
 function StakingLinkCard({ link }: { link: StakingLink }) {
 	return (
-		<div className="mt-3 rounded-8 border border-stroke-weak p-3">
+		<div className="mt-3 rounded-16 border border-stroke-weak p-3">
 			<div className="flex items-center gap-2">
 				<LinkIcon aria-hidden="true" className="size-4 text-icon" />
 				<h2 className="text-xs font-semibold text-fg">

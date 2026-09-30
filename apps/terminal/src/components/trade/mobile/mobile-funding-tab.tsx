@@ -229,6 +229,7 @@ function MobileFundingTabContent({
 								return (
 									<article
 										key={cardKey}
+										data-account-card
 										className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-surface"
 									>
 										<MobileDisclosureHeader

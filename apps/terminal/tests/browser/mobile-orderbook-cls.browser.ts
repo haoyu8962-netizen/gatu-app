@@ -116,3 +116,7 @@ export function useOrderbookMidPrice() {
 export function getExplorerTxUrl() {
 	return "https://app.hyperliquid.xyz/explorer/tx/test";
 }
+
+export function getExplorerAddressUrl(address: string) {
+	return `https://app.hyperliquid.xyz/explorer/address/${address}`;
+}

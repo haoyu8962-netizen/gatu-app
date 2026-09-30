@@ -18,8 +18,10 @@ import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/tr
 import { FundsActionGeoExecutionError, useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatExchangeActionError } from "@/lib/errors/format";
+import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import { formatNumber } from "@/lib/format";
 import { type ExchangeParams, useExchange, useHyperliquid } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	FundsActionFeedbackCause,
 	formatFundsActionFeedback,
@@ -62,6 +64,7 @@ interface BodyProps {
 
 function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) {
 	const { t } = useLingui();
+	useNumberFormatRevision();
 	const submissionSequenceRef = useRef(0);
 	const submissionIdentityRef = useRef<object | null>(null);
 	const submissionRef = useRef<TransferSubmission | null>(null);
@@ -213,6 +216,22 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 		setAmount("");
 	}
 
+	function notifyTransferFailure(error: unknown) {
+		if (error instanceof FundsActionFeedbackCause) {
+			toast.error(formatFundsActionFeedback(error.code, (descriptor) => t(descriptor)));
+			return;
+		}
+		if (isAmbiguousExchangeActionError(error)) {
+			toast.warning(t`Transfer status unknown`, {
+				description: t`Check your balances and the Deposits & Withdrawals history before retrying.`,
+				duration: Number.POSITIVE_INFINITY,
+				closeButton: true,
+			});
+			return;
+		}
+		toast.error(formatExchangeActionError(error, t`Transfer failed`, (descriptor) => t(descriptor)));
+	}
+
 	async function handleTransfer() {
 		if (!isValidAmount || !accountDataReady || isPending || !walletAddress || internalTransfersDisabled) return;
 
@@ -231,7 +250,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 		const transferSummary = (
 			<span>
 				<bdi dir="ltr">
-					{amount} {DEFAULT_QUOTE_TOKEN}
+					{formatNumber(amount)} {DEFAULT_QUOTE_TOKEN}
 				</bdi>{" "}
 				· {fromLabel} → {toLabel}
 			</span>
@@ -240,13 +259,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 			await usdClassTransfer({ amount, toPerp: direction === "toPerp" });
 			if (isCurrentSubmission()) toast.success(t`Transfer confirmed`, { description: transferSummary });
 		} catch (err) {
-			if (isCurrentSubmission()) {
-				toast.error(
-					err instanceof FundsActionFeedbackCause
-						? formatFundsActionFeedback(err.code, (descriptor) => t(descriptor))
-						: formatExchangeActionError(err, t`Transfer failed`, (descriptor) => t(descriptor)),
-				);
-			}
+			if (isCurrentSubmission()) notifyTransferFailure(err);
 		} finally {
 			if (submissionRef.current === submission) submissionRef.current = null;
 			if (isCurrentSubmission()) onOpenChange(false);

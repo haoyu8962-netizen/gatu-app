@@ -24,16 +24,10 @@ const titles = {
 	"twap-cancel": msg`Terminate TWAP`,
 };
 
-const awaitingMessages = {
-	modify: msg`Order modification submitted. Waiting for the open-orders update.`,
-	cancel: msg`Cancellation submitted. Waiting for the open-orders update.`,
-	"twap-cancel": msg`TWAP cancellation submitted. Waiting for the active TWAP update.`,
-};
-
 const unconfirmedMessages = {
 	modify: msg`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`,
 	cancel: msg`The cancellation response could not be confirmed. Refresh open orders before retrying.`,
-	"twap-cancel": msg`TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying.`,
+	"twap-cancel": msg`TWAP termination was submitted, but its status could not be confirmed. Check active TWAPs before retrying.`,
 };
 
 export function ensurePendingTradingActionFeedback(
@@ -61,7 +55,7 @@ export function syncPendingTradingActionFeedback(
 		message = undefined;
 	} else if (action.phase === "awaiting") {
 		status = "confirming";
-		message = awaitingMessages[kind];
+		message = undefined;
 	}
 	if (current?.status === status) return;
 	updateOrderQueueItem(id, { status, message });
