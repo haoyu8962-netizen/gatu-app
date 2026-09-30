@@ -285,6 +285,7 @@
 
 当前规范：[docs/hyperliquid-sdk-reference.md](../../docs/hyperliquid-sdk-reference.md) · [docs/hyperliquid-sdk-coverage-review.md](../../docs/hyperliquid-sdk-coverage-review.md)
 
+- [官方终端公告实践取证：独立 CDN 静态 JSON、根级 5 分钟轮询、Draft.js 正文直接注入](sessions/2026-09-30-official-terminal-announcements-trace.md) — 2026-09-30；已验证，范围见正文。只读取证 app.hyperliquid.xyz/announcements（未登录、未连接钱包）：公告不走 api-ui 的 info 接口、WebSocket 或第三方平台，而是独立 CloudFront/S3 上的静态 JSON（列表 entries.json 110 条，详情 entry-<uuid>.json，正文为 Draft.js 原始内容且图片以 base64 内嵌，单条可达 1.6 MB）；应用根部 Provider 用裸 fetch 加 setInterval 每 5 分钟轮询列表，任何页面都会请求；未读条目在所有非公告页面右下角弹出最多 3 条的浮层，已读状态存 localStorage 的 hyperliquid.viewed_announcements（元素为 hash ?? uuid）；详情把 Draft.js 转成 HTML 后用 dangerouslySetInnerHTML 注入，产物里查不到净化步骤；正文、分类徽章不随界面语言变化，日期跟浏览器语言；失败与空态没有任何文案。gatu 当前没有公告功能。受限地区表现、后台标签页轮询和发布管线未确认。
 - [当日 Claude 署名提交对抗审查：官方协议、SDK 字段与 HYPE 页面核对](sessions/2026-09-28-claude-commits-adversarial-review.md) — 2026-09-28；已整理，验证见正文。对照官方协议、SDK 0.33.3 与官方 HYPE/Funding Comparison 页面，审查原列出的 40 个 Claude 署名提交。确认 1 项 P2 修复遗漏：空资金费率历史在后台时钟回拨后仍被当作新鲜且聚焦不刷新；父版本对照证明是 58e132ed 未修完的边界，非新增回归。未改生产代码，验证及限制见正文。同日复核更正：所报基线类型检查失败系主检出残留的 TypeScript 5.9.3 所致，锁定的 5.7.2 下通过；P2 另影响切回页签与重新挂载，已由 a1d93307 修复。
 - [SDK 第一批六项接入：多 worktree 并行实现、三轮 Codex 对抗审查与集成验证](sessions/2026-09-28-sdk-feature-batch-1.md) — 2026-09-28；已验证，范围见正文。按覆盖审查的收益排序实施六项：资金费率历史页签（fundingHistory）、未平仓量上限拦截（webData3 perpsAtOpenInterestCap + perpDexLimits，ADR 0023）、资金费率对比页（predictedFundings）、TP/SL 滑点提示（maxMarketOrderNtls）、TWAP 成交 CSV 导出（userTwapSliceFillsByTime）、杠杆弹窗仓位上限（复用分档）。六个独立 worktree 并行实现并各经一轮代理审查，集成到 claude/sdk-api-review-51a3ea 后做三轮 Codex 只读对抗审查（共 6 个 P2、6 个 P3，全部修复或有理由处理；第三轮残留的时钟回拨属于共享订阅巡检，另列后续任务）。最终头类型检查、Biome、Node 22.15 构建与包体预算通过，完整终端测试 7,490 项通过、1 个已知负载敏感文件超时（单独 5/5 通过）。服务端账户通知未实施（需要传输隔离决策）。2026-09-28 经 PR #50 四次合并 dev（含 Earn 导致的 ADR 改号 0023）后，五项 CI 检查全部通过，以 merge commit 合入 dev（ac11f81b），未晋升 main、未发布；没有真实钱包与真机验收。
 - [Hyperliquid SDK 0.33.3 接口覆盖审查与接入收益排序](sessions/2026-09-27-sdk-api-coverage-review.md) — 2026-09-27；已验证，范围见正文。在独立 worktree 审查 SDK 四个客户端 169 个方法：生产代码调用 88 个（Info 42/77、Exchange 23/59、Subscription 23/28、Explorer 0/5）；未调用的 81 个分为建议接入 6、可选 15、战略级 12（子账户、HIP-4、金库管理）、分支中或被策略关闭 2、冗余 18、与终端无关 28。建议优先 fundingHistory、OI 上限（数据已随 webData3 到达）+ perpDexLimits、predictedFundings。官方前端证据来自 2026-09-27 未登录抓取的 395 个 JS 文件，公开数据为当日快照；只写审查文档，未改代码、未运行应用测试、未连接真实账户。
@@ -293,6 +294,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-09-30 | [官方终端公告实践取证：独立 CDN 静态 JSON、根级 5 分钟轮询、Draft.js 正文直接注入](sessions/2026-09-30-official-terminal-announcements-trace.md) | 未取得任务标识，见正文 | `86191b56` | 已验证，范围见正文 |
 | 2026-09-29 | [手机仪表盘页面边距：金库与推荐页补上 16px 边距并写成规则](sessions/2026-09-29-dashboard-mobile-gutters.md) | 未取得任务标识，见正文 | `77a70867` | 已整理，验证见正文 |
 | 2026-09-29 | [合并提款手续费分支、金库单组标题去重、仪表盘圆角统一与 Codex 对抗审查](sessions/2026-09-29-dashboard-radius-and-fee-merge.md) | 未取得任务标识，见正文 | `9aac238e` | 已整理，验证见正文 |
 | 2026-09-29 | [通知审查的后续：划转/发送结果不明、金库与推荐卡显示、中文存款/提款用词、Bridge2 残留](sessions/2026-09-29-funds-ui-followups.md) | 未取得任务标识，见正文 | `ddb7b566` | 已整理，验证见正文 |
