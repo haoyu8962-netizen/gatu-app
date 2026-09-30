@@ -47,7 +47,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Privy is the sole managed authentication and external-wallet directory; do not add a parallel Reown/AppKit chooser. Login stays limited to `wallet` and `email`, and Passkey login stays disabled until an explicit enrollment, recovery and support design exists.
 - `WalletModal` owns the primary interactive Connect surface, and `PRIVY_WALLET_LIST` is the single source of recommended-wallet ordering. Close the application drawer before launching Privy.
 - Privy authentication is not proof that the required signing wallet is active; reconnect and email-wallet flows must activate the exact expected wallet under the wallet signing contract above.
-- Theme changes alter Privy appearance only: wallet ordering, authentication behavior and the provider hierarchy stay identical across themes.
+- Theme changes alter Privy appearance only: wallet ordering, authentication behavior and the provider hierarchy stay identical across themes. The login window follows a live theme toggle because `PrivyProvider` receives the current theme's config; that is safe only while the locked Privy keeps `useWallets()` stable across theme-only provider renders (`docs/adr/0026-privy-follows-theme-after-upgrade.md`).
 
 ## Mobile connection and PWA contract
 
@@ -169,6 +169,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/mobile-agent-lifecycle.test.ts \
   src/lib/tests/legal-gate.test.ts \
   src/lib/tests/privy-config.test.ts \
+  src/lib/tests/privy-theme-switch-wallet-stability.test.tsx \
+  src/lib/tests/client-root-theme-lifecycle.test.tsx \
   src/lib/tests/wallet-modal.test.tsx \
   src/lib/tests/wallet-session.test.tsx \
   src/lib/tests/pwa-install.test.tsx \

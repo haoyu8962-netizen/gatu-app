@@ -9,6 +9,11 @@ import { HYPERSCREENER_URL } from "@/config/nav";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
+	router: {
+		navigate: vi.fn(async () => {}),
+		preloadRoute: vi.fn(async () => {}),
+		subscribe: vi.fn(() => () => {}),
+	},
 	depositOpen: vi.fn(),
 	depositAvailable: true,
 	depositPath: "external" as "external" | "sponsored",
@@ -115,6 +120,7 @@ vi.mock("@tanstack/react-router", () => ({
 			children,
 		),
 	useLocation: () => ({ pathname: testState.pathname }),
+	useRouter: () => testState.router,
 }));
 
 vi.mock("@/components/trade/header/theme-toggle", () => ({

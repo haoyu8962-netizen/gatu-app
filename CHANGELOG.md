@@ -472,6 +472,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   where the line could run through the number. In Chinese, the page's notices say 金库 like the rest
   of the page instead of the English word Vault.
 
+- Mobile navigation now finishes closing the menu before switching pages, while preloading the
+  destination during the exit animation to avoid the menu disappearing abruptly.
+- The Privy login window now follows theme changes immediately, while unchanged wallets keep
+  their connection instead of reconnecting on each toggle.
+
 - Error messages follow the interface language. The order and cancellation rejections that
   Hyperliquid documents (such as tick size, minimum order value, insufficient margin, reduce-only,
   post-only, open-interest caps, oracle price limits and maximum position), not having enough cross

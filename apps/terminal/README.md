@@ -12,7 +12,7 @@ Dependency versions are maintained in [package.json](package.json) and the works
 | Runtime and bundler | React `19.2.0`, React Compiler `1.0.0`, Vite `7.3.0` |
 | Server/client state | TanStack Query `5.90.16`, Zustand `5.0.9` |
 | UI | Tailwind `4.0.6`, Base UI `1.3.0`, `@gatu/ui`, react-grid-layout `2.2.3` |
-| Wallets | Privy React Auth `^3.30.0`, Privy wagmi `^4.0.12`, wagmi `3.1.0`, viem `2.42.1` |
+| Wallets | Privy React Auth `3.32.2` (with a patch in `patches/`), Privy wagmi `4.0.13`, wagmi `3.1.0`, viem `2.42.1` |
 | Exchange and funding | Hyperliquid SDK `0.33.3`, LiFi SDK `3.16.3`, CCTP application flows |
 | Charts | Vendored TradingView Charting Library and application datafeed |
 | Numbers and validation | Big.js `7.0.1`, Zod `4.3.4` |
@@ -142,7 +142,7 @@ PwaInstallProvider
 
 The final locale/scope/market-info gate is composed by `AppRuntime` in `__root.tsx`. `MarketsProvider` provides the market catalog; `MarketsInfoProvider` is a distinct application layer. [config/wagmi.ts](src/config/wagmi.ts) configures bridge chains/transports and intentionally supplies no parallel connector list: Privy owns wallet selection.
 
-The client runtime captures Privy appearance at startup so a terminal theme toggle does not reconnect the wallet. A later page load picks up the persisted theme. Dark/light Privy configurations retain identical authentication methods and wallet ordering. Preserve this provider lifetime when changing appearance.
+`ClientRootProvider` passes the current theme's Privy configuration, as Privy's system-theme recipe does, so the login window follows a theme toggle without a reload. This relies on the locked `@privy-io/react-auth` keeping its `useWallets()` array stable when only the theme changes; otherwise `@privy-io/wagmi` reconnects the wallet on every toggle ([ADR 0026](../../docs/adr/0026-privy-follows-theme-after-upgrade.md)). Dark/light Privy configurations retain identical authentication methods and wallet ordering. Never remount the provider to change appearance.
 
 ### Signing and first-use onboarding
 
