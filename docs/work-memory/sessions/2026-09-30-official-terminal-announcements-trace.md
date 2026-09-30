@@ -17,7 +17,8 @@
     { "url": "https://app.hyperliquid.xyz/assets/config-B3kWIW3_.js" },
     { "url": "https://app.hyperliquid.xyz/assets/AnnouncementsPage-bf3Q9d9L.js" },
     { "url": "https://dzjnlsk4rxci0.cloudfront.net/mainnet/entries.json" },
-    { "path": "docs/work-memory/sessions/2026-09-24-official-terminal-language-switch-trace.md" }
+    { "path": "docs/work-memory/sessions/2026-09-24-official-terminal-language-switch-trace.md" },
+    { "path": "docs/announcements-plan.md" }
   ],
   "supersedes": []
 }
@@ -131,4 +132,6 @@ gatu 没有对应功能，本次未形成是否实现的决定。若将来消费
 
 ## 后续与替代关系
 
-没有被替代的记录。是否在 gatu 做公告功能、以及是否直接消费官方数据源，待用户决定；决定前不需要再次抓包，先读本记录。与官方前端整体栈和语言切换相关的既有事实见 `2026-09-24-official-terminal-language-switch-trace.md`。
+没有被替代的记录。决定前不需要再次抓包，先读本记录。
+
+2026-09-30 同一会话后续：用户要求参照官方做法给出 gatu 的实现方案，已写成 [公告功能实现方案](../../announcements-plan.md)（状态为拟议，未实施）。方案推荐 gatu 自有公告源而不是运行时读取官方源，数据来源、内容发布方式、提示形式、内容语言四项待用户决定。写方案时只读了仓库代码与文档，没有运行应用测试或构建。与官方前端整体栈和语言切换相关的既有事实见 `2026-09-24-official-terminal-language-switch-trace.md`。
