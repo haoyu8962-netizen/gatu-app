@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review", "docs-governance"],
-  "summary": "按用户要求把 claude/agent-verify-official-announcements-eb8c45 与 claude/privy-theme-css-vars 以 --no-ff 并入 claude/from-dev-0928（PR 63），冲突只在生成的 INDEX.md 与 CHANGELOG.md（取两边条目）。随后五路只读对抗审查全 PR（32 个提交、156 个文件）：无 P0/P1，3 项 P2 全部核实成立并修复——金库提款成功通知在账本缺净额时把请求金额写成已收到；hyperliquid-signing.md 仍称 Bridge2 旧记录可用于恢复；Privy 非空嵌入式钱包路径没有测试保护（改为钉住 SDK 两个产物里的字段比较并在 ADR 0026 与 runtime-guardrails 写明限制）。同时修复文档类 P3；推送后按用户要求处理代码类 P3（弹窗提示圆角契约改为按弹窗元素识别并合并 cn() 参数、金库徽标保留组合符号、抽屉路由目标恢复类型检查、提现状态未知说明指向存款和提款页签），其中金库卡片截断经浏览器测试证实不成立，提现通知措辞改为写明有意不加估算词。未做真机与真实钱包验收。",
+  "summary": "按用户要求把 claude/agent-verify-official-announcements-eb8c45 与 claude/privy-theme-css-vars 以 --no-ff 并入 claude/from-dev-0928（PR 63），冲突只在生成的 INDEX.md 与 CHANGELOG.md（取两边条目）。随后五路只读对抗审查全 PR（32 个提交、156 个文件）：无 P0/P1，3 项 P2 全部核实成立并修复——金库提款成功通知在账本缺净额时把请求金额写成已收到；hyperliquid-signing.md 仍称 Bridge2 旧记录可用于恢复；Privy 非空嵌入式钱包路径没有测试保护（改为钉住 SDK 两个产物里的字段比较并在 ADR 0026 与 runtime-guardrails 写明限制）。同时修复文档类 P3；推送后按用户要求处理代码类 P3（弹窗提示圆角契约改为按弹窗元素识别并合并 cn() 参数、金库徽标保留组合符号、抽屉路由目标恢复类型检查、提现状态未知说明指向存款和提款页签），其中金库卡片截断经浏览器测试证实不成立，提现通知措辞改为写明有意不加估算词。未做真机与真实钱包验收。2026-10-01 CI 六项全部通过后，PR 63 以 merge commit 合入 dev（b4b0ae1b），未晋升 main、未发布。",
   "thread": null,
   "baseCommit": "a613e212",
-  "commits": ["60715765", "fc6ef195", "e4e5a5ee", "cd32df0d", "c65cf6ee", "4881a36b", "f3db8117", "b637e30e", "f3ad86f6"],
+  "commits": ["60715765", "fc6ef195", "e4e5a5ee", "cd32df0d", "c65cf6ee", "4881a36b", "f3db8117", "b637e30e", "f3ad86f6", "4cac8683", "b4b0ae1b"],
   "sources": [
     { "path": "apps/terminal/src/components/vaults/vaults-page.tsx" },
     { "path": "apps/terminal/src/lib/tests/vault-detail-page-outcomes.test.tsx" },
@@ -70,3 +70,7 @@
 - 未处理：审查未证实的「单目标部分成交摘要只看 `totalCount === 1`」没有找到成交后还会抛错的实际路径，未改。
 
 验证（Node 22.15，`f3ad86f6` 之前的工作区）：终端类型检查通过；Biome 通过；14 个相关文件 430 项通过（提现路由守卫、资金余额、金库领域与视图、移动抽屉两份、两份圆角契约、弹窗表面、设计令牌棘轮、i18n 响应式、locale 格式契约、金库操作弹窗、质押视图），`funds-action-recovery-host.test.tsx` 13 项通过；`vaults-list.pw.ts` 8 项通过（共享浏览器配置，端口 4179）。完整终端单测（`f3ad86f6`）：639 个文件中 638 通过、1 跳过，7,917 项通过、1 项跳过，无失败；本轮 `chart-build-assets.test.ts` 也通过。未做真机与真实钱包验收。
+
+## 追加：合入 dev
+
+2026-10-01 推送 `4cac8683` 后，PR 63 的六项检查（TypeScript/lint/目录校验、网站构建、终端生产构建（配对关）、两组终端浏览器回归、终端与发布工具测试）全部通过；`dev` 没有新提交，用 `gh pr merge --merge --match-head-commit` 以 merge commit 合入 `dev`，合并提交 `b4b0ae1b`。未晋升 `main`，未发布；真实钱包与真机验收仍未执行。
