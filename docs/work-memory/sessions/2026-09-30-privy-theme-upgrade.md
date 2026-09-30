@@ -10,7 +10,7 @@
   "summary": "方案 B 升级 Privy、恢复即时主题并稳定钱包数组；提交后复核补齐 CI 覆盖遗漏，CI 同版 Node 下 7869 项终端测试、60 项 Privy 专项、全仓类型与 Biome 检查通过；真实钱包验收及历史浏览器异常归因未完成，未发布。",
   "thread": null,
   "baseCommit": "5bac5ac7",
-  "commits": ["dca93a04"],
+  "commits": ["dca93a04", "819ee5ad"],
   "sources": [
     { "path": "docs/adr/0026-privy-follows-theme-after-upgrade.md" },
     { "path": "apps/terminal/src/providers/client-root.tsx" },

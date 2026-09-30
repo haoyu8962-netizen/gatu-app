@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["pr-review"],
-  "summary": "实施用户选择的方案 A：目标预加载与抽屉退出并行，关闭完成后导航；137 项回归和 946 × 891 浏览器动画验证通过，Earn 列表位移未改。",
+  "summary": "实施用户选择的方案 A：目标预加载与抽屉退出并行，关闭完成后导航；137 项回归和 946 × 891 浏览器动画验证通过，Earn 列表位移未改；未经人工真机确认原始体感。",
   "thread": null,
   "baseCommit": "89f1e578",
-  "commits": [],
+  "commits": ["c1267cde"],
   "sources": [
     { "path": "docs/runtime-guardrails.md" },
     { "path": "apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx" },

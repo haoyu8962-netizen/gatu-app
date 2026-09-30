@@ -81,3 +81,4 @@
 - 关闭了[提现通知精简任务](2026-09-29-withdraw-toast-copy.md)「后续」里的待办：点击前后手续费不一致不中止，这是有意的行为，文档已写明。该记录本身不被替代。
 - 未做：发送、划转、充值的展示 → 承诺核对。
 - 分支未推送，叠在尚未合入 `dev` 的 `claude/withdraw-toast-copy` 之上；开 PR 前要先确定那条分支的去向，并与另一会话在 `deposit-modal.tsx` 上的未提交改动合并。
+- 2026-10-01 补记：上一条的分支去向已定。本分支经合并提交 `58acbf22` 并入 `claude/dashboard-followups`，随 `claude/from-dev-0928` 以 PR #63 推送；`claude/withdraw-toast-copy` 的提交也在其中。

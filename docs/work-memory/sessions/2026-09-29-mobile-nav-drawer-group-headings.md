@@ -10,7 +10,7 @@
   "summary": "用户在内置浏览器里选中手机导航抽屉的两个可见分组标题并要求审查。结论：「导航」是 7 月遗留、与弹层隐藏标题和主导航地标重复，直接删除；「更多」保留分组但标题换成与抽屉头尾边框同源的通栏分隔线，nav 的无障碍名称 More 不变，与官方手机抽屉一致（官方无分组标题，靠分隔线和字号分主次）。改动组件、新增 1 个用例（旧组件上失败）、runtime-guardrails §11、CHANGELOG，六个 .po 各少两行重复来源注释。16 个测试文件 330 项通过；项目类型检查脚本因主检出残留 TypeScript 5.9.3 报已知假错误，锁定的 5.7.2 通过；开发服务器 375×812 中文浅色与深色核对通过。未做真机、已连接状态、生产构建和全量单测。",
   "thread": null,
   "baseCommit": "5bac5ac7",
-  "commits": [],
+  "commits": ["fe2d8bc8"],
   "sources": [
     { "path": "apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx" },
     { "path": "apps/terminal/src/lib/tests/mobile-nav-drawer.test.tsx" },
