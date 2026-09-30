@@ -31,5 +31,13 @@
 2. 使用安装的真实 Privy / wagmi 运行主题切换回归；确认数组身份与钱包选择保持稳定，真实钱包变化仍生效。移除补丁的对照应失败。
 3. `pnpm install --frozen-lockfile` 成功；终端 `tsc --version` 为 5.7.2；Biome、类型检查、钱包/连接回归与终端全量测试通过。升级运行时依赖后检查生产构建及包体约束。
 4. 浏览器验证登录窗口深浅主题；自动化不能证明真实邮箱钱包 iframe、浏览器扩展或手机切后台的完整生命周期。未执行的验收明确保留。
+5. 非空嵌入式钱包路径（普通邮箱交易）没有行为测试：测试无法登录真实的嵌入式 owner。回归文件只检查 SDK 的字段比较（地址、链、连接器类型、连接时间）仍在 ESM 与 CJS 两个产物中各出现一次；升级后此检查失败时，发布前须用已登录的邮箱账户手动切换主题确认不重连。连接历史写不进存储、`connectedAt` 退回 `Date.now()` 时比较失效，该会话每次切换主题仍会重连，这是已知限制。
+
+## 证据
+
+- 代码：`apps/terminal/src/providers/client-root.tsx`、`apps/terminal/src/config/privy.ts`（`PRIVY_CONFIG_BY_THEME`）。
+- 补丁与版本：`patches/@privy-io__react-auth@3.32.2.patch`、`pnpm-workspace.yaml`（`patchedDependencies`）、`apps/terminal/package.json`。
+- 测试：`apps/terminal/src/lib/tests/privy-theme-switch-wallet-stability.test.tsx`、`apps/terminal/src/lib/tests/client-root-theme-lifecycle.test.tsx`。
+- 参考：[运行约束 §1](../runtime-guardrails.md#privy-authentication-and-connection-ui)。
 
 本次实际执行结果见[任务记录](../work-memory/sessions/2026-09-30-privy-theme-upgrade.md)。

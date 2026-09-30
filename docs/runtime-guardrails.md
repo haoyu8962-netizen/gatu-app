@@ -103,6 +103,14 @@ Do not collapse these states into one boolean.
   embedded list (external-wallet and logged-out sessions). Before upgrading
   Privy, run `privy-theme-switch-wallet-stability.test.tsx` against the new
   version and drop the patch only when the test passes without it.
+- The nonempty embedded-wallet path (ordinary email trading) has no behavioral
+  test: no test can log in a real embedded owner. The same test file only
+  checks that the SDK's field comparison (address, chain, connector type and
+  connection time) is still present in both builds. An upgrade that fails that
+  check needs a manual theme toggle with a logged-in email account before it
+  ships. The comparison also fails when `connectedAt` falls back to
+  `Date.now()` because the connection history could not be stored, so such a
+  session still reconnects on every theme toggle.
 
 ### Email Wallet Identity And Export
 

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -29,6 +29,22 @@ const { a: walletStore } = (await import(pathToFileURL(resolve(sdkDirectory, sto
 		setState(state: { ethereumEmbedded?: ConnectedWallet[]; ethereumExternal?: ConnectedWallet[] }): void;
 	};
 };
+
+// Email sessions with an embedded owner stay connected only because the SDK keeps the old array when
+// every embedded wallet keeps its address, chain, connector and connection time. No test here can log
+// in a real embedded owner, so pin that comparison in both builds instead.
+const EMBEDDED_WALLET_COMPARISON =
+	/ethereumEmbedded\.length===\w+\.length&&\w+\.ethereumEmbedded\.every\(\(\(\w+,\w+\)=>\{let \w+=\w+\[\w+\];return \w+\.address===\w+\.address&&\w+\.chainId===\w+\.chainId&&\w+\.connectorType===\w+\.connectorType&&\w+\.connectedAt===\w+\.connectedAt\}\)\)\?\{\}:\{ethereumEmbedded:\w+\}/g;
+
+function countEmbeddedWalletComparisons(directory: string, extension: string) {
+	return readdirSync(directory)
+		.filter((name) => name.startsWith("index-") && name.endsWith(extension))
+		.reduce(
+			(count, name) =>
+				count + (readFileSync(resolve(directory, name), "utf8").match(EMBEDDED_WALLET_COMPARISON)?.length ?? 0),
+			0,
+		);
+}
 
 type Theme = keyof typeof PRIVY_CONFIG_BY_THEME;
 
@@ -154,6 +170,11 @@ describe("Privy theme switch", () => {
 		await settle();
 		expect(wagmiConfig.state.status).toBe("disconnected");
 		expect(wagmiConfig.state.connections.size).toBe(0);
+	});
+
+	it("relies on the SDK keeping an unchanged embedded wallet list in both builds", () => {
+		expect(countEmbeddedWalletComparisons(sdkDirectory, ".mjs")).toBe(1);
+		expect(countEmbeddedWalletComparisons(resolve(sdkDirectory, "../cjs"), ".js")).toBe(1);
 	});
 
 	it("clears a nonempty embedded list when the provider has no embedded owner", async () => {
