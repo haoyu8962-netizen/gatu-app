@@ -1505,11 +1505,12 @@ msgid "Check the wallet address or display name, or the account may not meet the
 msgstr "Check the wallet address or display name, or the account may not meet the current criteria."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Check your balance and withdrawal history before retrying."
-msgstr "Check your balance and withdrawal history before retrying."
+#~ msgid "Check your balance and withdrawal history before retrying."
+#~ msgstr "Check your balance and withdrawal history before retrying."
 
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Check your balances and the Deposits & Withdrawals history before retrying."
 msgstr "Check your balances and the Deposits & Withdrawals history before retrying."
 

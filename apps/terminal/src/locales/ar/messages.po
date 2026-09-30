@@ -1505,11 +1505,12 @@ msgid "Check the wallet address or display name, or the account may not meet the
 msgstr "تحقق من عنوان المحفظة أو اسم العرض، أو قد يكون الحساب غير مستوفٍ للمعايير الحالية."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Check your balance and withdrawal history before retrying."
-msgstr "تحقق من رصيدك وسجل السحوبات قبل إعادة المحاولة."
+#~ msgid "Check your balance and withdrawal history before retrying."
+#~ msgstr "تحقق من رصيدك وسجل السحوبات قبل إعادة المحاولة."
 
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Check your balances and the Deposits & Withdrawals history before retrying."
 msgstr "تحقق من أرصدتك وسجل الإيداعات والسحوبات قبل إعادة المحاولة."
 

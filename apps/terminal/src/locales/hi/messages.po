@@ -1505,11 +1505,12 @@ msgid "Check the wallet address or display name, or the account may not meet the
 msgstr "वॉलेट पता या डिस्प्ले नाम जाँचें; संभव है कि खाता मौजूदा मानदंडों को पूरा न करता हो।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Check your balance and withdrawal history before retrying."
-msgstr "दोबारा कोशिश करने से पहले अपना बैलेंस और निकासी इतिहास जाँचें।"
+#~ msgid "Check your balance and withdrawal history before retrying."
+#~ msgstr "दोबारा कोशिश करने से पहले अपना बैलेंस और निकासी इतिहास जाँचें।"
 
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Check your balances and the Deposits & Withdrawals history before retrying."
 msgstr "दोबारा कोशिश करने से पहले अपने बैलेंस और जमा और निकासी का इतिहास जाँचें।"
 

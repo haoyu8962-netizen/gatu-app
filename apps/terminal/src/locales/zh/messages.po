@@ -1505,11 +1505,12 @@ msgid "Check the wallet address or display name, or the account may not meet the
 msgstr "请检查钱包地址或显示名称；该账户也可能不符合当前条件。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Check your balance and withdrawal history before retrying."
-msgstr "重试前请核对余额和提款记录。"
+#~ msgid "Check your balance and withdrawal history before retrying."
+#~ msgstr "重试前请核对余额和提款记录。"
 
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Check your balances and the Deposits & Withdrawals history before retrying."
 msgstr "重试前请核对余额和“存款和提款”中的记录。"
 

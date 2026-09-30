@@ -1511,7 +1511,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await vi.waitFor(() =>
 			expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith("Withdrawal status unknown", {
 				closeButton: true,
-				description: "Check your balance and withdrawal history before retrying.",
+				description: "Check your balances and the Deposits & Withdrawals history before retrying.",
 				duration: Number.POSITIVE_INFINITY,
 			}),
 		);

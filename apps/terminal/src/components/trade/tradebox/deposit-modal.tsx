@@ -1075,7 +1075,7 @@ export function DepositModal() {
 		}
 		if (isAmbiguousExchangeActionError(error)) {
 			toast.warning(t`Withdrawal status unknown`, {
-				description: t`Check your balance and withdrawal history before retrying.`,
+				description: t`Check your balances and the Deposits & Withdrawals history before retrying.`,
 				duration: Infinity,
 				closeButton: true,
 			});
