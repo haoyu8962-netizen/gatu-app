@@ -94,7 +94,7 @@ for (const locale of ["en", "zh"]) {
 				expect(card.contentOverflow, card.name).toBeLessThanOrEqual(0.5);
 				expect(card.truncatedValues, card.name).toEqual([]);
 				expect(card.nameHidden, card.name).toBe(false);
-				expect(card.mark, card.name).toMatch(/^[\p{L}\p{N}]{1,2}$/u);
+				expect(card.mark, card.name).toMatch(/^(?:[\p{L}\p{N}]\p{M}*){1,2}$/u);
 			}
 			await expect(page.locator("section[data-vaults-state] h2")).toHaveCount(0);
 			const longNameCard = geometry.cards.find((card) => card.name === LONG_NAME);

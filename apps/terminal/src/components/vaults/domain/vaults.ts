@@ -170,7 +170,7 @@ interface VaultGeoAvailabilityInput {
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 const UNSIGNED_DECIMAL_PATTERN = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 const SIGNED_DECIMAL_PATTERN = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/;
-const VAULT_MARK_CHARACTER_PATTERN = /^[\p{L}\p{N}]$/u;
+const VAULT_MARK_CHARACTER_PATTERN = /[\p{L}\p{N}]\p{M}*/gu;
 
 export function isVaultAddress(value: unknown): value is `0x${string}` {
 	return typeof value === "string" && ADDRESS_PATTERN.test(value);
@@ -591,9 +591,7 @@ export function getVaultValueTone(value: string | null | undefined): "positive" 
 }
 
 export function getVaultMark(name: string): string {
-	const characters = Array.from(name.normalize("NFC").toUpperCase()).filter((character) =>
-		VAULT_MARK_CHARACTER_PATTERN.test(character),
-	);
+	const characters = name.normalize("NFC").toUpperCase().match(VAULT_MARK_CHARACTER_PATTERN) ?? [];
 	return characters.slice(0, 2).join("") || "V";
 }
 

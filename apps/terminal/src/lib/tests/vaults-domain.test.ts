@@ -164,6 +164,7 @@ describe("Vault list domain", () => {
 		expect(getVaultMark("x🚀y")).toBe("XY");
 		expect(getVaultMark("示例核心金库")).toBe("示例");
 		expect(getVaultMark("éclair")).toBe("ÉC");
+		expect(getVaultMark("हिंदी वॉल्ट")).toBe("हिंदी");
 		expect(getVaultMark("🚀 ♾️")).toBe("V");
 		expect(getVaultMark("")).toBe("V");
 	});
