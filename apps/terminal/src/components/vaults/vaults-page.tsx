@@ -102,15 +102,14 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 			toast.success(isDeposit ? t`Vault deposit confirmed` : t`Vault withdrawal confirmed`, {
 				description: (
 					<span className="flex flex-col gap-1 tabular-nums">
-						{isDeposit ? (
-							<bdi dir="ltr">{amount} USDC</bdi>
-						) : (
+						{isDeposit ? <bdi dir="ltr">{amount} USDC</bdi> : null}
+						{!isDeposit && receipt?.finalAmount ? (
 							<span>
 								<Trans>
 									You received <bdi dir="ltr">{amount} USDC</bdi>.
 								</Trans>
 							</span>
-						)}
+						) : null}
 						{charges.map((charge) => (
 							<span key={charge.label}>
 								{charge.label}: <bdi dir="ltr">{formatNumber(charge.value, 2)} USDC</bdi>

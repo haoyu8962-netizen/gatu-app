@@ -183,6 +183,20 @@ describe("VaultDetailPage settled outcomes", () => {
 		expect(description).not.toContain("Closing cost");
 	});
 
+	it("does not report the requested amount as received when the ledger omits the net withdrawal", () => {
+		testState.action = {
+			...settledAction("success"),
+			receipt: { hash: `0x${"a".repeat(64)}`, commission: "0.3" },
+		};
+		render();
+
+		expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Vault withdrawal confirmed", expect.anything());
+		const description = getDescriptionText(toastMocks.success.mock.calls[0]);
+		expect(description).not.toContain("You received");
+		expect(description).not.toContain("25.00 USDC");
+		expect(description).toContain("Leader commission: 0.30 USDC");
+	});
+
 	it("reports a verified deposit with the amount deposited", () => {
 		const action = settledAction("success");
 		testState.action = {
