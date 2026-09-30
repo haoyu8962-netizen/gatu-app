@@ -98,7 +98,8 @@ preTransferCheck({ user: usdcSystemAddress, source: ownerWalletAddress })
 The metadata lookup and pre-transfer check both fail closed. They are repeated
 before submission, and the pre-transfer check runs once more at the SDK signing
 boundary while the account's cross-tab funds lock is held. A sanction result or
-fee change aborts the request so the user can review the current state.
+activation fee change aborts the request so the user can review the current state.
+The route fee is not compared again; see the accepted risk above.
 
 The response fields are handled independently:
 

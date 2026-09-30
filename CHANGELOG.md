@@ -474,6 +474,7 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 - Mobile navigation now finishes closing the menu before switching pages, while preloading the
   destination during the exit animation to avoid the menu disappearing abruptly.
+
 - The Privy login window now follows theme changes immediately, while unchanged wallets keep
   their connection instead of reconnecting on each toggle.
 

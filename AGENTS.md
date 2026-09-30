@@ -306,6 +306,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/top-nav.test.tsx \
   src/lib/tests/desktop-nav-layout.test.ts \
   src/lib/tests/mobile-nav-drawer.test.tsx \
+  src/lib/tests/mobile-nav-drawer-navigation.test.tsx \
   src/lib/tests/dashboard-frame-view.test.tsx
 
 # Runtime translation contract (Change discipline) and error text (ADR 0024)

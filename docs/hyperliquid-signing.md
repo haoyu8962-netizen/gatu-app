@@ -193,7 +193,7 @@ Deposits authorize native USDC with EIP-3009 and submit an on-chain CCTP call on
 
 ### Code Example (Current Implementation)
 
-The implementation lives in `apps/terminal/src/lib/hyperliquid/use-deposit.ts`, with pure EIP-3009/CCTP parameter and receipt validation in `apps/terminal/src/lib/trade/cctp-deposit.ts`. It revalidates the owner, route, fee quote, fast-burn allowance, and contract result at the relevant signing and submission boundaries. New Bridge2 deposits are intentionally fail-closed; legacy records remain available only for recovery and reconciliation.
+The implementation lives in `apps/terminal/src/lib/hyperliquid/use-deposit.ts`, with pure EIP-3009/CCTP parameter and receipt validation in `apps/terminal/src/lib/trade/cctp-deposit.ts`. It revalidates the owner, route, fee quote, fast-burn allowance, and contract result at the relevant signing and submission boundaries. New Bridge2 deposits are intentionally fail-closed. The app never stored recovery data for Bridge2 deposits; past ones appear in the account ledger like any other deposit.
 
 ---
 
