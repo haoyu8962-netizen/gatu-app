@@ -397,7 +397,7 @@ describe("usePositionReverseSubmit", () => {
 		expect(mocks.clearinghouseState).toHaveBeenCalledWith({ user: USER, dex: "xyz" });
 		expect(mocks.metaAndAssetCtxs).toHaveBeenCalledWith({ dex: "xyz" });
 		expect(mocks.lockRequest).toHaveBeenCalledWith(
-			`gatu-order-asset-v1:mainnet:${USER}:${ASSET_ID}`,
+			`sairn-order-asset-v1:mainnet:${USER}:${ASSET_ID}`,
 			{ mode: "exclusive", ifAvailable: true },
 			expect.any(Function),
 		);

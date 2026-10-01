@@ -8,7 +8,7 @@ import { useHyperliquid } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	canApplyReferralCode,
-	getGatuReferralUrl,
+	getBrandReferralUrl,
 	getOfficialReferralUrl,
 	getReferralActivationProgress,
 	getReferralActivationTargetVolume,
@@ -34,10 +34,10 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 	const readyState = data.referrerState.stage === "ready" ? data.referrerState : null;
 	const code = readyState?.data.code ?? null;
 	const officialReferralUrl = code ? getOfficialReferralUrl(code, env) : null;
-	const usesGatuInvitationLink = code ? isSafeReferralJoinCode(code) : false;
+	const usesBrandInvitationLink = code ? isSafeReferralJoinCode(code) : false;
 	const referralUrl = code
-		? usesGatuInvitationLink
-			? getGatuReferralUrl(code, env)
+		? usesBrandInvitationLink
+			? getBrandReferralUrl(code, env)
 			: getOfficialReferralUrl(code, env)
 		: null;
 	const activationProgress = getReferralActivationProgress(data);
@@ -178,7 +178,7 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 					</div>
 					<div>
 						<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
-							{usesGatuInvitationLink ? (
+							{usesBrandInvitationLink ? (
 								<Trans>{BRAND_NAME} invitation link</Trans>
 							) : (
 								<Trans>Official referral link</Trans>
@@ -208,7 +208,7 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 						>
 							<Trans>Share</Trans>
 						</Button>
-						{usesGatuInvitationLink ? (
+						{usesBrandInvitationLink ? (
 							<Button
 								variant="outline"
 								intent="neutral"

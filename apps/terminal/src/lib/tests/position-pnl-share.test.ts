@@ -82,7 +82,7 @@ describe("position PNL share URL", () => {
 
 describe("position PNL share filename", () => {
 	it("returns a portable PNG filename", () => {
-		expect(sanitizePositionPnlShareFilename(" GATU / BTC:* PNL.png ")).toBe("GATU-BTC-PNL.png");
+		expect(sanitizePositionPnlShareFilename(" SAIRN / BTC:* PNL.png ")).toBe("SAIRN-BTC-PNL.png");
 		expect(sanitizePositionPnlShareFilename("CON")).toBe("position-CON.png");
 		expect(sanitizePositionPnlShareFilename("\u0000\n")).toBe("position-pnl.png");
 	});
@@ -155,10 +155,10 @@ describe("position PNL share browser failures", () => {
 		vi.useFakeTimers();
 
 		try {
-			downloadPositionPnlSharePng(new Blob(["png"], { type: "image/png" }), "GATU/BTC?.png");
+			downloadPositionPnlSharePng(new Blob(["png"], { type: "image/png" }), "SAIRN/BTC?.png");
 
 			expect(click).toHaveBeenCalledOnce();
-			expect(downloadedFilename).toBe("GATU-BTC.png");
+			expect(downloadedFilename).toBe("SAIRN-BTC.png");
 			expect(createObjectUrl).toHaveBeenCalledOnce();
 			expect(document.querySelector("a[download]")).toBeNull();
 			vi.runAllTimers();

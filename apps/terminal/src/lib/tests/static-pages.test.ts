@@ -36,7 +36,7 @@ describe("static page classification", () => {
 	});
 
 	it("stamps the referral route marker only on join paths", () => {
-		expect(classifyStaticPageRequest("GET", "/join/__gatu_healthcheck__")).toEqual({
+		expect(classifyStaticPageRequest("GET", "/join/__sairn_healthcheck__")).toEqual({
 			kind: "page",
 			candidates: [STATIC_SHELL_FILE],
 			marker: REFERRAL_JOIN_ROUTE_MARKER,
@@ -97,13 +97,13 @@ describe("public directory lookup", () => {
 	it("checks the configured directory, the working directory layouts, then the server entry's sibling", () => {
 		expect(
 			listPublicDirCandidates({
-				configuredDir: " /srv/gatu/public ",
+				configuredDir: " /srv/sairn/public ",
 				cwd: "/repo",
 				entryFile: "/repo/apps/terminal/.output/server/index.mjs",
 			}),
 		).toEqual(
 			[
-				"/srv/gatu/public",
+				"/srv/sairn/public",
 				resolve("/repo/public"),
 				resolve("/repo/.output/public"),
 				resolve("/repo/apps/terminal/.output/public"),
@@ -114,8 +114,8 @@ describe("public directory lookup", () => {
 
 	it("finds a release directory from its own server entry without any configuration", () => {
 		expect(
-			listPublicDirCandidates({ configuredDir: undefined, cwd: "/", entryFile: "/opt/gatu/current/server/index.mjs" }),
-		).toContain(resolve("/opt/gatu/current/public"));
+			listPublicDirCandidates({ configuredDir: undefined, cwd: "/", entryFile: "/opt/sairn/current/server/index.mjs" }),
+		).toContain(resolve("/opt/sairn/current/public"));
 		expect(listPublicDirCandidates({ configuredDir: "", cwd: "/x", entryFile: undefined })).toEqual([
 			resolve("/x/public"),
 			resolve("/x/.output/public"),

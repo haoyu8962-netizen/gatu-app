@@ -8,7 +8,7 @@ export interface PrivyLoginIntent {
 	walletAddress?: string;
 }
 
-export const PRIVY_LOGIN_INTENT_STORAGE_KEY_PREFIX = "gatu:privy-login-intent:v2:";
+export const PRIVY_LOGIN_INTENT_STORAGE_KEY_PREFIX = "sairn:privy-login-intent:v2:";
 
 const listenersByUser = new Map<string, Set<() => void>>();
 

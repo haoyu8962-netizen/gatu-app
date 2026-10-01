@@ -196,7 +196,7 @@ describe("MobileAgentQrScanner", () => {
 		await flushAsyncWork();
 
 		act(() => {
-			scannerState.callback?.("https://evil.example/mobile-agent-sync#ht-mobile-sync=payload&k=secret", {
+			scannerState.callback?.("https://evil.example/mobile-agent-sync#sairn-mobile-sync=payload&k=secret", {
 				stop: scannerState.controlsStop,
 			});
 		});

@@ -12,7 +12,7 @@ import {
 } from "../mobile-sync/sync-core";
 
 const NOW_MS = 1_779_364_227_000;
-const ORIGIN = "https://app.gatu.test";
+const ORIGIN = "https://app.sairn.test";
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
 const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 const AGENT_VALID_UNTIL_MS = NOW_MS + 30 * 24 * 60 * 60 * 1000;
@@ -30,7 +30,7 @@ function createLink(overrides: Partial<Parameters<typeof createMobileAgentSyncUr
 }
 
 function encodeFragment(wire: Record<string, unknown>) {
-	return `#ht-mobile-sync=${Buffer.from(JSON.stringify(wire)).toString("base64url")}`;
+	return `#sairn-mobile-sync=${Buffer.from(JSON.stringify(wire)).toString("base64url")}`;
 }
 
 function rejectionCode(run: () => unknown) {
@@ -61,7 +61,7 @@ describe("mobile sync core", () => {
 		expect(parsedUrl.origin).toBe(ORIGIN);
 		expect(parsedUrl.pathname).toBe(MOBILE_SYNC_ROUTE_PATH);
 		expect(parsedUrl.search).toBe("");
-		expect(parsedUrl.hash.startsWith("#ht-mobile-sync=")).toBe(true);
+		expect(parsedUrl.hash.startsWith("#sairn-mobile-sync=")).toBe(true);
 		expect(parsedUrl.hash).not.toContain("k=");
 
 		const imported = parseMobileSyncUrl(url, { expectedEnv: "Mainnet", nowMs: NOW_MS + 5_000 });
@@ -89,7 +89,7 @@ describe("mobile sync core", () => {
 		expect(rejectionCode(() => parseMobileSyncUrl(`${ORIGIN}/trade?link=abc`, { nowMs: NOW_MS }))).toBe(
 			"missing_fragment",
 		);
-		expect(rejectionCode(() => parseMobileSyncFragment("#ht-mobile-sync=abc&k=def", { nowMs: NOW_MS }))).toBe(
+		expect(rejectionCode(() => parseMobileSyncFragment("#sairn-mobile-sync=abc&k=def", { nowMs: NOW_MS }))).toBe(
 			"unsupported_version",
 		);
 		expect(
@@ -98,7 +98,7 @@ describe("mobile sync core", () => {
 	});
 
 	it("rejects malformed payloads before deriving anything from them", () => {
-		expect(rejectionCode(() => parseMobileSyncFragment("#ht-mobile-sync=%%%", { nowMs: NOW_MS }))).toBe(
+		expect(rejectionCode(() => parseMobileSyncFragment("#sairn-mobile-sync=%%%", { nowMs: NOW_MS }))).toBe(
 			"invalid_payload",
 		);
 		for (const wire of [

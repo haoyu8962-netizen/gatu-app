@@ -240,7 +240,7 @@ for (const viewport of [
 }
 
 test("keeps the size slider still while its message row would change during a drag", async ({ page }) => {
-	type SizeMessageWindow = Window & { __gatuSetSizeMessage: (message: string) => void };
+	type SizeMessageWindow = Window & { __sairnSetSizeMessage: (message: string) => void };
 	const longMessage =
 		"The order value is below the ten dollar minimum for this market, so increase the size or choose a larger share of the available balance before submitting.";
 	await page.setViewportSize({ width: 1440, height: 900 });
@@ -255,7 +255,7 @@ test("keeps the size slider still while its message row would change during a dr
 	const y = resting.y + resting.height / 2;
 	await page.mouse.move(resting.x + 30, y);
 	await page.mouse.down();
-	await page.evaluate((message) => (window as unknown as SizeMessageWindow).__gatuSetSizeMessage(message), longMessage);
+	await page.evaluate((message) => (window as unknown as SizeMessageWindow).__sairnSetSizeMessage(message), longMessage);
 	await page.mouse.move(resting.x + 90, y, { steps: 5 });
 	await expect(row).toHaveCount(0);
 	expect((await control.boundingBox())?.y).toBe(resting.y);
@@ -271,7 +271,7 @@ test("keeps the size slider still while its message row would change during a dr
 	const pushedY = pushed.y + pushed.height / 2;
 	await page.mouse.move(pushed.x + 90, pushedY);
 	await page.mouse.down();
-	await page.evaluate(() => (window as unknown as SizeMessageWindow).__gatuSetSizeMessage(""));
+	await page.evaluate(() => (window as unknown as SizeMessageWindow).__sairnSetSizeMessage(""));
 	await page.mouse.move(pushed.x + 40, pushedY, { steps: 5 });
 	await expect(row).toHaveText("");
 	expect((await row.boundingBox())?.height).toBe(rowBox.height);

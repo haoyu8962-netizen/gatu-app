@@ -274,7 +274,7 @@ describe("mobile agent sync route", () => {
 
 		act(() => root.unmount());
 		root = createI18nRoot(container);
-		renderRoute("#ht-mobile-sync=abc&k=def");
+		renderRoute("#sairn-mobile-sync=abc&k=def");
 		expect(container.textContent).toContain("Refresh both devices to update phone access");
 		expect(window.location.hash).toBe("");
 		expect(findButton(container, "Import")?.disabled).toBe(true);

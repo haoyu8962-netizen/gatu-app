@@ -56,7 +56,7 @@ const terminalPackage = JSON.parse(readFileSync(new URL('./package.json', import
 }
 
 function resolveBuildSha() {
-  const environmentSha = process.env.GATU_BUILD_SHA?.trim() || process.env.GITHUB_SHA?.trim()
+  const environmentSha = process.env.SAIRN_BUILD_SHA?.trim() || process.env.GITHUB_SHA?.trim()
   if (environmentSha) return environmentSha
 
   try {
@@ -71,7 +71,7 @@ function resolveBuildSha() {
 
 function createClientChunkGraphPlugin(): Plugin {
   return {
-    name: 'gatu-client-chunk-graph',
+    name: 'sairn-client-chunk-graph',
     apply: 'build',
     applyToEnvironment: (environment) => environment.name === 'client',
     buildStart() {
@@ -109,22 +109,22 @@ function createPresentationChunksPlugin(name: string, modules: string[]): Plugin
 }
 
 export function createOrderSummaryChunksPlugin(): Plugin {
-  return createPresentationChunksPlugin('gatu-order-summary-chunks', [
+  return createPresentationChunksPlugin('sairn-order-summary-chunks', [
     'tradebox/twap-order-summary',
     'tradebox/scale-order-summary',
   ])
 }
 
 export function createTerminalViewChunksPlugin(): Plugin {
-  return createPresentationChunksPlugin('gatu-terminal-view-chunks', [
+  return createPresentationChunksPlugin('sairn-terminal-view-chunks', [
     'mobile/mobile-book-chrome-view',
     'market-overview-view',
   ])
 }
 
 const buildSha = resolveBuildSha()
-const releaseId = process.env.GATU_RELEASE_ID?.trim() || 'local'
-const buildTime = process.env.GATU_BUILD_TIME?.trim() || new Date().toISOString()
+const releaseId = process.env.SAIRN_RELEASE_ID?.trim() || 'local'
+const buildTime = process.env.SAIRN_BUILD_TIME?.trim() || new Date().toISOString()
 const chartLibraryEntryPath = fileURLToPath(new URL('./public/charting_library/charting_library.js', import.meta.url))
 const chartLibraryEntry = existsSync(chartLibraryEntryPath) ? readFileSync(chartLibraryEntryPath) : undefined
 // Names the immutable copy of the TradingView loader; see `config/chart-library.ts`.
@@ -160,7 +160,7 @@ export function createBuildMetaForMode(mode: string): BuildMeta {
 
 export function createBuildMetaPlugin(meta: BuildMeta): Plugin {
   return {
-    name: 'gatu-build-meta',
+    name: 'sairn-build-meta',
     apply: 'build',
     applyToEnvironment: (environment) => environment.name === 'client',
     generateBundle() {
@@ -174,7 +174,7 @@ export function createBuildMetaPlugin(meta: BuildMeta): Plugin {
 
 function createReferralJoinDevRequestGuard(): Plugin {
   return {
-    name: 'gatu-referral-join-dev-request-guard',
+    name: 'sairn-referral-join-dev-request-guard',
     enforce: 'pre',
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
@@ -220,7 +220,7 @@ export function compactLinguiCatalogModule(code: string) {
 
 function createCompactLinguiCatalogPlugin(): Plugin {
   return {
-    name: 'gatu-compact-lingui-catalog',
+    name: 'sairn-compact-lingui-catalog',
     enforce: 'post',
     transform(code, id) {
       const pathname = id.replace(/\?.*$/, '').replaceAll('\\', '/')
@@ -264,10 +264,10 @@ export function createManualChunks(id: string) {
 const config = defineConfig({
   define: {
     'process.env.DRAGGABLE_DEBUG': 'false',
-    'import.meta.env.VITE_GATU_APP_VERSION': JSON.stringify(terminalPackage.version),
-    'import.meta.env.VITE_GATU_BUILD_SHA': JSON.stringify(buildSha),
-    'import.meta.env.VITE_GATU_RELEASE_ID': JSON.stringify(releaseId),
-    'import.meta.env.VITE_GATU_BUILD_TIME': JSON.stringify(buildTime),
+    'import.meta.env.VITE_SAIRN_APP_VERSION': JSON.stringify(terminalPackage.version),
+    'import.meta.env.VITE_SAIRN_BUILD_SHA': JSON.stringify(buildSha),
+    'import.meta.env.VITE_SAIRN_RELEASE_ID': JSON.stringify(releaseId),
+    'import.meta.env.VITE_SAIRN_BUILD_TIME': JSON.stringify(buildTime),
   },
   server: {
     strictPort: true,
@@ -385,7 +385,7 @@ export default defineConfig(({ command, mode }) => ({
   ...config,
   define: {
     ...config.define,
-    'import.meta.env.VITE_GATU_CHART_LIBRARY_HASH': JSON.stringify(resolveChartLibraryHashForCommand(command)),
+    'import.meta.env.VITE_SAIRN_CHART_LIBRARY_HASH': JSON.stringify(resolveChartLibraryHashForCommand(command)),
   },
   plugins: [...(config.plugins ?? []), createBuildMetaPlugin(createBuildMetaForMode(mode))],
 }))

@@ -3,30 +3,30 @@ import { isSafeReferralJoinCode, parseReferralJoinPath, resolveReferralJoinInten
 
 describe("referral join links", () => {
 	it("resolves canonical hosts to immutable Hyperliquid environments", () => {
-		expect(resolveReferralJoinIntent("/join/gatuappweb3", "https://app.gatu.ai")).toEqual({
-			code: "gatuappweb3",
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.gatu.ai")).toEqual({
+			code: "sairnappweb3",
 			env: "Mainnet",
 		});
-		expect(resolveReferralJoinIntent("/join/gatuappweb3", "https://testnet.gatu.ai")).toEqual({
-			code: "gatuappweb3",
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://testnet.gatu.ai")).toEqual({
+			code: "sairnappweb3",
 			env: "Testnet",
 		});
 	});
 
 	it("rejects unknown and hostname-confusion origins", () => {
-		expect(resolveReferralJoinIntent("/join/gatuappweb3", "https://app.gatu.ai.evil.example")).toBeNull();
-		expect(resolveReferralJoinIntent("/join/gatuappweb3", "https://preview.gatu.ai")).toBeNull();
-		expect(resolveReferralJoinIntent("/join/gatuappweb3", "http://app.gatu.ai")).toBeNull();
-		expect(resolveReferralJoinIntent("/join/gatuappweb3", "https://app.gatu.ai:8443")).toBeNull();
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.gatu.ai.evil.example")).toBeNull();
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://preview.gatu.ai")).toBeNull();
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "http://app.gatu.ai")).toBeNull();
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.gatu.ai:8443")).toBeNull();
 	});
 
 	it("round-trips exact case, spaces, and Unicode once", () => {
-		expect(parseReferralJoinPath("/join/Gatu%20Code")).toBe("Gatu Code");
+		expect(parseReferralJoinPath("/join/Sairn%20Code")).toBe("Sairn Code");
 		expect(parseReferralJoinPath(`/join/${encodeURIComponent("邀请")}`)).toBe("邀请");
 	});
 
 	it("accepts equivalent percent-encoding without changing the decoded code", () => {
-		expect(parseReferralJoinPath("/join/%67atuappweb3")).toBe("gatuappweb3");
+		expect(parseReferralJoinPath("/join/%73airnappweb3")).toBe("sairnappweb3");
 		expect(parseReferralJoinPath("/join/%e9%82%80%e8%af%b7")).toBe("邀请");
 	});
 

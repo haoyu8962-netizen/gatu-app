@@ -250,7 +250,7 @@ async function waitForBootProbe(page, runTimeout) {
 	while (Date.now() < deadline) {
 		const ready = await page
 			.evaluate(() => {
-				const probe = window.__gatuBootTiming;
+				const probe = window.__sairnBootTiming;
 				return Boolean(
 					probe?.hydrationCompleteAt &&
 						probe?.clientRootModuleCompleteAt &&
@@ -275,7 +275,7 @@ async function collectSnapshot(page) {
 		const paints = Object.fromEntries(performance.getEntriesByType("paint").map((entry) => [entry.name, entry.startTime]));
 		const resources = performance.getEntriesByType("resource");
 		const clientRootResource = resources.find((entry) => /\/client-root-[^/]+\.js(?:$|\?)/.test(entry.name));
-		const probe = window.__gatuBootTiming ?? {};
+		const probe = window.__sairnBootTiming ?? {};
 		const topNavCommit = probe.profileCommits?.["top-nav"]?.commitTime ?? null;
 		const mainWorkspaceCommit = probe.profileCommits?.["main-workspace"]?.commitTime ?? null;
 		const renderSnapshot = window.__terminal_render_profile?.() ?? null;
@@ -717,7 +717,7 @@ function installBootProbe({ expectedOrigin, expectedLocale, expectedMarket }) {
 			firstMarketSubscription: null,
 		},
 	};
-	window.__gatuBootTiming = state;
+	window.__sairnBootTiming = state;
 
 	try {
 		localStorage.setItem("terminal-perf-enabled", "1");

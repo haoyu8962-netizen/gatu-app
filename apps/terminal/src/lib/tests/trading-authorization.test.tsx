@@ -115,7 +115,7 @@ describe("trading authorization contracts", () => {
 	}
 
 	it("derives Agent and builder readiness independently", () => {
-		const remoteAgent = { address: AGENT, name: "Gatu", validUntil: Date.now() + 60_000 };
+		const remoteAgent = { address: AGENT, name: "Sairn", validUntil: Date.now() + 60_000 };
 		const localAgent = { privateKey: "0x01" as const, publicKey: AGENT, source: "local-registration" as const };
 
 		expect(deriveAgentRequirements(0, [remoteAgent], localAgent, { b: BUILDER, f: 10 })).toMatchObject({

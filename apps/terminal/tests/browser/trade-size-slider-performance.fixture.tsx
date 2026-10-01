@@ -74,7 +74,7 @@ function snapshot() {
 }
 
 Object.assign(window, {
-	__gatuSliderPerf: {
+	__sairnSliderPerf: {
 		reset() {
 			audit.callbackDurations = [];
 			audit.previewTimes = [];
@@ -124,7 +124,7 @@ function SliderPerformanceFixture() {
 	const sliderValue = precision ? getSliderValue(Number(size), 0.003) : value;
 
 	useLayoutEffect(() => {
-		Object.assign(window, { __gatuSliderSetPaused: setPaused });
+		Object.assign(window, { __sairnSliderSetPaused: setPaused });
 	}, []);
 
 	useLayoutEffect(() => {

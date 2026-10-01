@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
 	buildReferralRewardRows,
 	canApplyReferralCode,
+	getBrandReferralUrl,
 	getDisplayedReferralDiscountPercent,
-	getGatuReferralUrl,
 	getOfficialReferralUrl,
 	getReferralActivationProgress,
 	getReferralActivationTargetVolume,
@@ -39,7 +39,7 @@ function createReadyReferralResponse(): ReadyReferralData {
 		referrerState: {
 			stage: "ready",
 			data: {
-				code: "GATU",
+				code: "SAIRN",
 				nReferrals: 1,
 				referralStates: [
 					{
@@ -316,13 +316,15 @@ describe("referral display derivations", () => {
 	});
 
 	it("builds environment-specific official referral links", () => {
-		expect(getOfficialReferralUrl("GATU code", "Mainnet")).toBe("https://app.hyperliquid.xyz/join/GATU%20code");
-		expect(getOfficialReferralUrl("GATU code", "Testnet")).toBe("https://app.hyperliquid-testnet.xyz/join/GATU%20code");
+		expect(getOfficialReferralUrl("SAIRN code", "Mainnet")).toBe("https://app.hyperliquid.xyz/join/SAIRN%20code");
+		expect(getOfficialReferralUrl("SAIRN code", "Testnet")).toBe(
+			"https://app.hyperliquid-testnet.xyz/join/SAIRN%20code",
+		);
 	});
 
-	it("builds environment-specific Gatu invitation links from canonical origins", () => {
-		expect(getGatuReferralUrl("GATU code", "Mainnet")).toBe("https://app.gatu.ai/join/GATU%20code");
-		expect(getGatuReferralUrl("GATU code", "Testnet")).toBe("https://testnet.gatu.ai/join/GATU%20code");
+	it("builds environment-specific Sairn invitation links from canonical origins", () => {
+		expect(getBrandReferralUrl("SAIRN code", "Mainnet")).toBe("https://app.gatu.ai/join/SAIRN%20code");
+		expect(getBrandReferralUrl("SAIRN code", "Testnet")).toBe("https://testnet.gatu.ai/join/SAIRN%20code");
 	});
 
 	it("validates only the SDK code length contract", () => {
@@ -374,7 +376,7 @@ describe("referral display derivations", () => {
 		const rewardState = before.tokenToState[0]?.[1];
 		if (!rewardState) throw new Error("Expected reward state fixture");
 		expect(isReferralMutationReconciled("apply", { ...before, referredBy: null }, before, "REFERRED")).toBe(true);
-		expect(isReferralMutationReconciled("create", before, before, "GATU")).toBe(true);
+		expect(isReferralMutationReconciled("create", before, before, "SAIRN")).toBe(true);
 		expect(
 			isReferralMutationReconciled("claim", before, {
 				...before,

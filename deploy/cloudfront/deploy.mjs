@@ -29,7 +29,7 @@ const HASHED_CHART_ENTRY = /^charting_library\/charting_library\.[0-9a-f]{16}\.j
 /** The build injects the trade startup closure into the shell; a shell with fewer links skipped that step. */
 const MIN_SHELL_PRELOADS = 20;
 /** Surface-specific preload lists the bootstrap entry reads; written by scripts/inject-shell-preloads.mjs. */
-const SURFACE_PRELOAD_META_NAMES = ["gatu-preload-desktop", "gatu-preload-mobile", "gatu-chart-prefetch"];
+const SURFACE_PRELOAD_META_NAMES = ["sairn-preload-desktop", "sairn-preload-mobile", "sairn-chart-prefetch"];
 
 /** Cache policy for one object in the public directory; `null` means the file is not uploaded. */
 export function objectCacheControl(relativePath) {
@@ -192,7 +192,7 @@ export async function collectServedScriptHashes({ origin, publicDir, fetchImpl =
 }
 
 function functionComment(file) {
-	return file === "terminal-request.js" ? "gatu shell rewrite" : "gatu route marker + csp";
+	return file === "terminal-request.js" ? "sairn shell rewrite" : "sairn route marker + csp";
 }
 
 /**
@@ -358,19 +358,19 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		return `status ${decision.status}`;
 	});
 	await check("referral deep link headers", async () => {
-		const response = await fetchImpl(`${base}/join/__gatu_healthcheck__`, { headers: { accept: "text/html" } });
+		const response = await fetchImpl(`${base}/join/__sairn_healthcheck__`, { headers: { accept: "text/html" } });
 		expect(response.status === 200, `status ${response.status}`);
 		expect(response.headers.get("cache-control") === "no-store", "cache-control must be no-store");
 		expect(response.headers.get("referrer-policy") === "no-referrer", "referrer-policy must be no-referrer");
 		expect((response.headers.get("x-robots-tag") ?? "").includes("noindex"), "x-robots-tag must be noindex");
-		expect(response.headers.get("x-gatu-route") === "referral-join", "x-gatu-route marker missing");
+		expect(response.headers.get("x-sairn-route") === "referral-join", "x-sairn-route marker missing");
 	});
 	await check("pairing page headers", async () => {
 		const response = await fetchImpl(`${base}/mobile-agent-sync`, { headers: { accept: "text/html" } });
 		expect(response.status === 200, `status ${response.status}`);
 		expect(response.headers.get("cache-control") === "no-store", "cache-control must be no-store");
 		expect(response.headers.get("referrer-policy") === "no-referrer", "referrer-policy must be no-referrer");
-		expect(response.headers.get("x-gatu-route") === "mobile-agent-sync", "x-gatu-route marker missing");
+		expect(response.headers.get("x-sairn-route") === "mobile-agent-sync", "x-sairn-route marker missing");
 	});
 	await check("missing files stay 404", async () => {
 		for (const path of ["/missing.webmanifest", "/.env"]) {
@@ -719,7 +719,7 @@ async function main() {
 			const certificateArn = requireOption(options, "certificateArn");
 			const live = readAwsJson(["cloudfront", "get-distribution-config", "--id", distributionId]);
 			const updated = applyDistributionAliases(live.DistributionConfig, { aliases, certificateArn });
-			const file = join(tmpdir(), `gatu-distribution-${distributionId}-${process.pid}.json`);
+			const file = join(tmpdir(), `sairn-distribution-${distributionId}-${process.pid}.json`);
 			writeFileSync(file, `${JSON.stringify(updated, null, 2)}\n`);
 			console.log(`Distribution ${distributionId}: aliases ${aliases.join(", ")} with certificate ${certificateArn} (ETag ${live.ETag}) → ${file}`);
 			runAws(

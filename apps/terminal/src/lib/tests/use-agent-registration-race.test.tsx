@@ -41,7 +41,7 @@ const testState = vi.hoisted(() => ({
 
 vi.mock("@gatu/hl-react/provider", () => ({
 	useHyperliquid: () => ({
-		agentName: "gatu",
+		agentName: "sairn",
 		builderConfig: {},
 		clientKey: testState.clientKey,
 		env: testState.env,
@@ -293,7 +293,7 @@ describe("useAgentRegistration logout races", () => {
 		const registeredAddress = await registrationPromise;
 		expect(testState.approveAgent).toHaveBeenCalledWith({
 			agentAddress: registeredAddress,
-			agentName: "gatu",
+			agentName: "sairn",
 		});
 		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
 		expect(testState.refetchAgent).toHaveBeenLastCalledWith(registeredAddress);
@@ -338,7 +338,7 @@ describe("useAgentRegistration logout races", () => {
 		expect(innerApproval).toHaveBeenCalledWith(
 			{
 				agentAddress: registeredAddress,
-				agentName: "gatu",
+				agentName: "sairn",
 			},
 			expect.objectContaining({
 				registrationPublicKey: registeredAddress,
@@ -394,7 +394,7 @@ describe("useAgentRegistration logout races", () => {
 		expect(approval).toHaveBeenCalledWith(
 			{
 				agentAddress: registeredAddress,
-				agentName: "gatu",
+				agentName: "sairn",
 			},
 			expect.objectContaining({
 				applicationReview: "confirmed",

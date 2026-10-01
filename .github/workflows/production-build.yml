@@ -70,8 +70,8 @@ jobs:
       - name: Build production terminal and enforce bundle budget
         run: pnpm --filter @gatu/terminal build
         env:
-          GATU_BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          GATU_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          SAIRN_BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SAIRN_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
           NODE_ENV: production
           NITRO_PRESET: node-server
           VITE_MOBILE_PAIRING_ENABLED: ${{ matrix.pairing.enabled }}

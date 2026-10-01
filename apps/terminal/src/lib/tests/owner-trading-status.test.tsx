@@ -30,7 +30,7 @@ vi.mock("@gatu/hl-react/provider", () => ({
 		env: "Mainnet",
 		sessionMode: "wallet",
 		clientKey: OWNER,
-		agentName: "gatu-dev",
+		agentName: "sairn-dev",
 		builderConfig: { b: BUILDER, f: 10 },
 	}),
 }));
@@ -186,7 +186,7 @@ describe("owner and Agent trading readiness", () => {
 		render(null);
 		expect(observed).toMatchObject({ signerMode: "agent", isSignerReady: false, isReady: false });
 		state.fee = 10;
-		state.agents = [{ address: AGENT, name: "gatu-dev", validUntil: null }];
+		state.agents = [{ address: AGENT, name: "sairn-dev", validUntil: null }];
 		render(null);
 		expect(observed).toMatchObject({ signerMode: "agent", isSignerReady: true, isReady: true, signerAddress: AGENT });
 		expect(state.queryCalls.some(({ method, enabled }) => method === "extraAgents" && enabled)).toBe(true);

@@ -14,7 +14,7 @@ it("revalidates optimized dependencies and rejects a second server on the same p
 		"silent",
 	);
 	expect(loaded).not.toBeNull();
-	const root = await realpath(await mkdtemp(join(tmpdir(), "gatu-vite-cache-")));
+	const root = await realpath(await mkdtemp(join(tmpdir(), "sairn-vite-cache-")));
 	await mkdir(join(root, "node_modules/cache-fixture"), { recursive: true });
 	await writeFile(join(root, "node_modules/cache-fixture/package.json"), JSON.stringify({ main: "index.js" }));
 	await writeFile(join(root, "node_modules/cache-fixture/index.js"), "module.exports = 42;");

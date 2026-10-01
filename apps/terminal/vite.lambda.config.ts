@@ -8,10 +8,10 @@ import { buildIdentity } from './vite.config'
 // the build identity with the client bundle so `release`/`commit` in error reports match.
 export default defineConfig({
   define: {
-    'import.meta.env.VITE_GATU_APP_VERSION': JSON.stringify(buildIdentity.version),
-    'import.meta.env.VITE_GATU_BUILD_SHA': JSON.stringify(buildIdentity.commit),
-    'import.meta.env.VITE_GATU_RELEASE_ID': JSON.stringify(buildIdentity.release),
-    'import.meta.env.VITE_GATU_BUILD_TIME': JSON.stringify(buildIdentity.builtAt),
+    'import.meta.env.VITE_SAIRN_APP_VERSION': JSON.stringify(buildIdentity.version),
+    'import.meta.env.VITE_SAIRN_BUILD_SHA': JSON.stringify(buildIdentity.commit),
+    'import.meta.env.VITE_SAIRN_RELEASE_ID': JSON.stringify(buildIdentity.release),
+    'import.meta.env.VITE_SAIRN_BUILD_TIME': JSON.stringify(buildIdentity.builtAt),
   },
   publicDir: false,
   plugins: [viteTsConfigPaths({ projects: ['./tsconfig.json'] })],

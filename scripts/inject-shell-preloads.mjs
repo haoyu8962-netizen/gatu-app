@@ -9,8 +9,8 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { analyzeClientBundle } from "./check-client-bundle-budget.mjs";
 
-export const SHELL_PRELOAD_START = "<!--gatu-shell-preloads-->";
-export const SHELL_PRELOAD_END = "<!--/gatu-shell-preloads-->";
+export const SHELL_PRELOAD_START = "<!--sairn-shell-preloads-->";
+export const SHELL_PRELOAD_END = "<!--/sairn-shell-preloads-->";
 const SHELL_FILE = "_shell.html";
 const BUILD_META_FILE = "build-meta.json";
 /** The terminal switches to its mobile surface at and below 1000px (`MOBILE_BREAKPOINT_PX`). */
@@ -21,7 +21,7 @@ const CHART_BUNDLE_PATTERNS = { runtime: /^runtime\.[0-9a-f]{20}\.js$/, library:
 const CHART_STATIC_PREFETCHES = ["/charting_library/sameorigin.html", "/tradingview-theme-dark.css"];
 
 /** Names of the `<meta>` tags the bootstrap entry reads (`src/lib/preload/surface-preloads.ts`). */
-export const SURFACE_PRELOAD_META = { desktop: "gatu-preload-desktop", mobile: "gatu-preload-mobile", chart: "gatu-chart-prefetch" };
+export const SURFACE_PRELOAD_META = { desktop: "sairn-preload-desktop", mobile: "sairn-preload-mobile", chart: "sairn-chart-prefetch" };
 
 /**
  * Splits the startup assets into what every surface needs (static closure plus files both runtime

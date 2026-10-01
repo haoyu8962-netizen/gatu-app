@@ -167,7 +167,7 @@ export function validateOptions(options) {
 export function createApiCachePolicyConfig() {
 	return {
 		Name: API_CACHE_POLICY_NAME,
-		Comment: "gatu API responses cached by origin s-maxage, keyed by query string",
+		Comment: "sairn API responses cached by origin s-maxage, keyed by query string",
 		DefaultTTL: 0,
 		MaxTTL: 1800,
 		MinTTL: 0,
@@ -195,7 +195,7 @@ export function createApiOriginRequestPolicyConfig() {
 				"Referer",
 				"Sec-Fetch-Site",
 				"User-Agent",
-				"X-Gatu-Forwarded-Host",
+				"X-Sairn-Forwarded-Host",
 				"CloudFront-Viewer-Address",
 				"CloudFront-Viewer-Country",
 			]),
@@ -220,7 +220,7 @@ export function createDistributionConfig(options) {
 		responseHeadersPolicyIds,
 		functionArns,
 		callerReference = `gatu-terminal-${network}-${randomUUID()}`,
-		comment = `gatu trading terminal (${network}): static shell on S3, API on Lambda`,
+		comment = `sairn trading terminal (${network}): static shell on S3, API on Lambda`,
 		policies = MANAGED_POLICIES,
 	} = options;
 

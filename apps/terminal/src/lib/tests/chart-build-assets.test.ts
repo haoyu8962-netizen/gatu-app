@@ -16,7 +16,7 @@ const ZSTD_LAZY_FIXTURE = Buffer.from("KLUv/QRYIQAAbGF6eabvl34=", "base64");
 const temporaryDirectories: string[] = [];
 
 function createPublicRoots() {
-	const root = mkdtempSync(resolve(tmpdir(), "gatu-chart-build-"));
+	const root = mkdtempSync(resolve(tmpdir(), "sairn-chart-build-"));
 	temporaryDirectories.push(root);
 	const source = resolve(root, "source");
 	const output = resolve(root, "output");

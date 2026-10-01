@@ -4,6 +4,7 @@ import {
 	FORWARDED_HOST_HEADER,
 	type LambdaEnvironment,
 	type LambdaFunctionUrlEvent,
+	LEGACY_FORWARDED_HOST_HEADER,
 	resolveClientIp,
 	resolveRequestOrigin,
 	stripViewerAddressPort,
@@ -53,13 +54,22 @@ describe("lambda function url adapter", () => {
 	});
 
 	it("rebuilds the public request url from the forwarded host and never trusts a viewer-supplied client ip", () => {
-		const forwarded = event({ headers: { [FORWARDED_HOST_HEADER]: "App.Gatu.Ai", "x-gatu-client-ip": "1.1.1.1" } });
+		const forwarded = event({ headers: { [FORWARDED_HOST_HEADER]: "App.Gatu.Ai", "x-sairn-client-ip": "1.1.1.1" } });
 		expect(resolveRequestOrigin(forwarded, undefined)).toBe("https://app.gatu.ai");
 		expect(resolveRequestOrigin(event(), "https://testnet.gatu.ai/")).toBe("https://testnet.gatu.ai");
 		expect(resolveRequestOrigin(event(), undefined)).toBe("https://abc.lambda-url.ap-northeast-1.on.aws");
+		expect(resolveRequestOrigin(event({ headers: { [LEGACY_FORWARDED_HOST_HEADER]: "app.gatu.ai" } }), undefined)).toBe(
+			"https://app.gatu.ai",
+		);
+		expect(
+			resolveRequestOrigin(
+				event({ headers: { [FORWARDED_HOST_HEADER]: "app.sairn.ai", [LEGACY_FORWARDED_HOST_HEADER]: "app.gatu.ai" } }),
+				undefined,
+			),
+		).toBe("https://app.sairn.ai");
 		const request = toRequest(forwarded, environment({ trustViewerAddress: false }));
 		expect(request.url).toBe("https://app.gatu.ai/api/geo");
-		expect(request.headers.get("x-gatu-client-ip")).toBe("198.51.100.7");
+		expect(request.headers.get("x-sairn-client-ip")).toBe("198.51.100.7");
 	});
 
 	it("routes geo lookups with the trusted viewer address", async () => {

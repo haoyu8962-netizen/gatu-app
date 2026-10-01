@@ -9,7 +9,7 @@ async function resolvePublicDir(): Promise<string | null> {
 	const { resolve } = await import("node:path");
 	const { listPublicDirCandidates } = await import("@/lib/static-pages/public-dir");
 	const candidates = listPublicDirCandidates({
-		configuredDir: process.env.GATU_PUBLIC_DIR,
+		configuredDir: process.env.SAIRN_PUBLIC_DIR,
 		cwd: process.cwd(),
 		entryFile: process.argv[1],
 	});
@@ -27,7 +27,7 @@ async function createResponder(): Promise<StaticPagesResponder> {
 	return createStaticPagesResponder({
 		publicDir: await resolvePublicDir(),
 		readFile: (file) => readFile(file, "utf8"),
-		allowRuntimeSsr: process.env.GATU_RUNTIME_SSR === "true",
+		allowRuntimeSsr: process.env.SAIRN_RUNTIME_SSR === "true",
 		warn: (message) => console.warn(`[static-pages] ${message}`),
 	});
 }

@@ -220,9 +220,9 @@ function syncDocumentTheme() {
 	applyThemeClass(useGlobalSettingsStore.getState().theme);
 }
 
-const globalScope = globalThis as { __gatuThemeDocSync?: boolean };
-if (typeof document !== "undefined" && !globalScope.__gatuThemeDocSync) {
-	globalScope.__gatuThemeDocSync = true;
+const globalScope = globalThis as { __sairnThemeDocSync?: boolean };
+if (typeof document !== "undefined" && !globalScope.__sairnThemeDocSync) {
+	globalScope.__sairnThemeDocSync = true;
 	syncDocumentTheme();
 	new MutationObserver(() => applyThemeClass(useGlobalSettingsStore.getState().theme, true)).observe(
 		document.documentElement,

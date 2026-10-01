@@ -908,7 +908,7 @@ describe("useDeposit fresh USDC route guard", () => {
 		let successfulProbeWrites = 0;
 		const originalSetItem = Storage.prototype.setItem;
 		const persistSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
-			if (key.startsWith("gatu:cctp-deposit-tracking-probe:v1:")) {
+			if (key.startsWith("sairn:cctp-deposit-tracking-probe:v1:")) {
 				successfulProbeWrites += 1;
 				return originalSetItem.call(this, key, value);
 			}
@@ -1269,7 +1269,7 @@ describe("useDeposit fresh USDC route guard", () => {
 
 	it("fails closed before signing when unresolved sponsored authorization storage is invalid", async () => {
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
-		const key = `gatu:cctp-sponsored-authorization-intent:v1:mainnet:${WALLET_ADDRESS}`;
+		const key = `sairn:cctp-sponsored-authorization-intent:v1:mainnet:${WALLET_ADDRESS}`;
 		window.localStorage.setItem(key, "not-json");
 
 		await submit("smart", "cctp");

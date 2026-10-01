@@ -6,7 +6,7 @@ import {
 import { type Address, type Hex, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-export const MOBILE_SYNC_FRAGMENT_KEY = "ht-mobile-sync";
+export const MOBILE_SYNC_FRAGMENT_KEY = "sairn-mobile-sync";
 export const MOBILE_SYNC_ROUTE_PATH = "/mobile-agent-sync";
 export const MOBILE_SYNC_PAYLOAD_TTL_MS = 2 * 60 * 1000;
 export const MOBILE_SYNC_QR_VISIBLE_MS = 60 * 1000;

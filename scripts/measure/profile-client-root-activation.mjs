@@ -34,7 +34,7 @@ const headless = !parseBoolean(args.headed ?? false, "headed");
 const tag = sanitizeTag(args.tag ?? "client-root-activation");
 const assetDir = resolve(String(args.assets ?? DEFAULT_ASSET_DIR));
 const requestedUrl = createMeasurementUrl(baseUrl, route);
-const profileTitle = `gatu-client-root-activation-${tag}`;
+const profileTitle = `sairn-client-root-activation-${tag}`;
 const outputFile = resolve(OUT, `client-root-activation-${tag}.json`);
 const profileFile = resolve(OUT, `client-root-activation-${tag}.cpuprofile`);
 
@@ -215,7 +215,7 @@ async function waitForActivationProbe(pageInstance, runTimeoutMs) {
 	while (Date.now() < deadline) {
 		const complete = await pageInstance
 			.evaluate(() => {
-				const probe = window.__gatuClientRootActivation;
+				const probe = window.__sairnClientRootActivation;
 				return Boolean(
 					probe?.hydrationCompleteAt !== null &&
 						probe?.clientRuntimeReadyAt !== null &&
@@ -232,7 +232,7 @@ async function waitForActivationProbe(pageInstance, runTimeoutMs) {
 
 async function collectProbeSnapshot(pageInstance) {
 	return pageInstance.evaluate(() => ({
-		probe: window.__gatuClientRootActivation ?? null,
+		probe: window.__sairnClientRootActivation ?? null,
 		navigation: (() => {
 			const entry = performance.getEntriesByType("navigation")[0];
 			return entry
@@ -646,7 +646,7 @@ function installActivationProbe({ expectedOrigin, expectedLocale, profileTitle }
 		cpuProfileOpen: false,
 		persistedQueryReads: [],
 	};
-	window.__gatuClientRootActivation = state;
+	window.__sairnClientRootActivation = state;
 	try {
 		localStorage.setItem("terminal-perf-enabled", "1");
 		localStorage.setItem("locale-v1", expectedLocale);
@@ -674,7 +674,7 @@ function installActivationProbe({ expectedOrigin, expectedLocale, profileTitle }
 					state.hydrationCompleteAt = at;
 					state.cpuProfileStarted = true;
 					state.cpuProfileOpen = true;
-					mark("gatu:activation-profile-start");
+					mark("sairn:activation-profile-start");
 					console.profile(profileTitle);
 				}
 				if (
@@ -683,7 +683,7 @@ function installActivationProbe({ expectedOrigin, expectedLocale, profileTitle }
 					at >= state.clientRuntimeRenderSignalAt
 				) {
 					state.clientRuntimeReadyAt = at;
-					mark("gatu:activation-profile-end");
+					mark("sairn:activation-profile-end");
 					if (state.cpuProfileOpen) {
 						state.cpuProfileOpen = false;
 						console.profileEnd(profileTitle);

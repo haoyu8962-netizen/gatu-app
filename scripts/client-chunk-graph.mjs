@@ -11,7 +11,7 @@ function isClientGraphAsset(file) {
 }
 
 export function resolveClientChunkGraphCacheFile(terminalDirectory) {
-	return resolve(terminalDirectory, "node_modules/.cache/gatu", CLIENT_CHUNK_GRAPH_FILE);
+	return resolve(terminalDirectory, "node_modules/.cache/sairn", CLIENT_CHUNK_GRAPH_FILE);
 }
 
 export function removeClientChunkGraphFile(graphFile) {

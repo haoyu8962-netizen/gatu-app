@@ -54,6 +54,7 @@ test("application navigations, legal pages included, rewrite to the shell", () =
 	]) {
 		const result = onRequest(viewerRequest(uri));
 		assert.equal(result.uri, "/_shell.html", uri);
+		assert.equal(result.headers["x-sairn-forwarded-host"].value, "app.gatu.ai");
 		assert.equal(result.headers["x-gatu-forwarded-host"].value, "app.gatu.ai");
 	}
 });
@@ -188,23 +189,23 @@ test("the renderer rejects unknown modes, unsafe values and templates without pl
 });
 
 test("join paths carry the referral marker through to the response headers", () => {
-	const request = onRequest(viewerRequest("/join/__gatu_healthcheck__"));
+	const request = onRequest(viewerRequest("/join/__sairn_healthcheck__"));
 	assert.equal(request.uri, "/_shell.html");
-	assert.equal(request.headers["x-gatu-route"].value, "referral-join");
+	assert.equal(request.headers["x-sairn-route"].value, "referral-join");
 	const response = onResponse({ request, response: { statusCode: 200, headers: {} } });
-	assert.equal(response.headers["x-gatu-route"].value, "referral-join");
+	assert.equal(response.headers["x-sairn-route"].value, "referral-join");
 
 	const plain = onRequest(viewerRequest("/joiner"));
-	assert.equal(plain.headers["x-gatu-route"], undefined);
+	assert.equal(plain.headers["x-sairn-route"], undefined);
 	const untouched = onResponse({ request: plain, response: { statusCode: 200, headers: {} } });
-	assert.equal(untouched.headers["x-gatu-route"], undefined);
+	assert.equal(untouched.headers["x-sairn-route"], undefined);
 });
 
 test("the pairing page is never stored and never sends a referrer, in any letter case", () => {
 	for (const uri of ["/mobile-agent-sync", "/mobile-agent-sync/", "/Mobile-Agent-Sync"]) {
 		const request = onRequest(viewerRequest(uri));
 		assert.equal(request.uri, "/_shell.html", uri);
-		assert.equal(request.headers["x-gatu-route"].value, "mobile-agent-sync", uri);
+		assert.equal(request.headers["x-sairn-route"].value, "mobile-agent-sync", uri);
 		const policyHeaders = { "referrer-policy": { value: "strict-origin-when-cross-origin" } };
 		const response = onResponse({ request, response: { statusCode: 200, headers: policyHeaders } });
 		assert.equal(response.headers["cache-control"].value, "no-store", uri);
@@ -220,15 +221,15 @@ test("the pairing page is never stored and never sends a referrer, in any letter
 });
 
 test("a route tag sent by the viewer never reaches the response", () => {
-	const forged = { host: { value: "app.gatu.ai" }, "x-gatu-route": { value: "mobile-agent-sync" } };
+	const forged = { host: { value: "app.gatu.ai" }, "x-sairn-route": { value: "mobile-agent-sync" } };
 	const request = onRequest(viewerRequest("/trade/HYPE", forged));
-	assert.equal(request.headers["x-gatu-route"], undefined);
+	assert.equal(request.headers["x-sairn-route"], undefined);
 	const response = onResponse({ request, response: { statusCode: 200, headers: {} } });
-	assert.equal(response.headers["x-gatu-route"], undefined);
+	assert.equal(response.headers["x-sairn-route"], undefined);
 	assert.equal(response.headers["cache-control"], undefined);
 
 	const asset = onRequest(viewerRequest("/assets/app.js", forged));
-	assert.equal(asset.headers["x-gatu-route"], undefined);
+	assert.equal(asset.headers["x-sairn-route"], undefined);
 });
 
 test("the report-only policy is emitted only when a report receiver is configured", () => {

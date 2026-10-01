@@ -24,7 +24,7 @@ export const Route = createFileRoute("/join/$code")({
 			path: "/referrals",
 			noIndex: true,
 		});
-		return { ...head, meta: [...head.meta, { name: "gatu-route", content: "referral-join" }] };
+		return { ...head, meta: [...head.meta, { name: "sairn-route", content: "referral-join" }] };
 	},
 	component: ReferralJoinRoute,
 });

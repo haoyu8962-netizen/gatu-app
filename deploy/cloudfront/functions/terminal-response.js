@@ -1,4 +1,4 @@
-// CloudFront Function (viewer-response, JavaScript runtime 2.0) for the gatu trading terminal.
+// CloudFront Function (viewer-response, JavaScript runtime 2.0) for the sairn trading terminal.
 //
 // GENERATED FILE: rendered from terminal-response.template.js by render-functions.mjs; do not
 // edit by hand. The application's Content-Security-Policy is longer than the 1,783 characters a
@@ -50,9 +50,9 @@ function isChartAsset(uri) {
 function handler(event) {
 	var request = event.request;
 	var response = event.response;
-	var route = request.headers['x-gatu-route'];
+	var route = request.headers['x-sairn-route'];
 	if (route && route.value) {
-		response.headers['x-gatu-route'] = { value: route.value };
+		response.headers['x-sairn-route'] = { value: route.value };
 	}
 	if (route && route.value === 'mobile-agent-sync') {
 		response.headers['cache-control'] = { value: 'no-store' };

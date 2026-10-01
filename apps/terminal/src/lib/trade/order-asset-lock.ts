@@ -1,7 +1,7 @@
 import { ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS } from "@/domain/trade/order-tracking";
 
-const ORDER_ASSET_LOCK_PREFIX = "gatu-order-asset-v1";
-const ORDER_ASSET_RESERVATION_PREFIX = "gatu-order-asset-reservations-v1";
+const ORDER_ASSET_LOCK_PREFIX = "sairn-order-asset-v1";
+const ORDER_ASSET_RESERVATION_PREFIX = "sairn-order-asset-reservations-v1";
 const ORDER_ASSET_RESERVATION_VERSION = 1;
 const activeLeases = new WeakSet<object>();
 

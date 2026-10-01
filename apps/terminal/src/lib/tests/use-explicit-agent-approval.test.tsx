@@ -329,7 +329,7 @@ describe("useExplicitAgentApproval", () => {
 
 		await act(async () => {
 			await hook.mutateAsync(
-				{ agentAddress: AGENT, agentName: "gatu" },
+				{ agentAddress: AGENT, agentName: "sairn" },
 				{ registrationPublicKey: AGENT, signal: controller.signal },
 			);
 		});
@@ -354,7 +354,7 @@ describe("useExplicitAgentApproval", () => {
 
 		await act(async () => {
 			await expect(
-				hook.mutateAsync({ agentAddress: AGENT, agentName: "gatu" }, { registrationPublicKey: AGENT }),
+				hook.mutateAsync({ agentAddress: AGENT, agentName: "sairn" }, { registrationPublicKey: AGENT }),
 			).rejects.toThrow(SESSION_CHANGED);
 		});
 		expect(testState.transportRequest).not.toHaveBeenCalled();
@@ -582,7 +582,7 @@ describe("useExplicitAgentApproval", () => {
 		let firstRequest: Promise<unknown> | undefined;
 		await act(async () => {
 			firstRequest = hook.mutateAsync(
-				{ agentAddress: AGENT, agentName: "gatu" },
+				{ agentAddress: AGENT, agentName: "sairn" },
 				{ registrationPublicKey: AGENT, signal: controller.signal },
 			);
 			await vi.waitFor(() => expect(testState.clientApproveAgent).toHaveBeenCalledOnce());
@@ -598,7 +598,7 @@ describe("useExplicitAgentApproval", () => {
 		expect(approval?.isPending).toBe(false);
 
 		await act(async () => {
-			await approval?.mutateAsync({ agentAddress: AGENT, agentName: "gatu" }, { registrationPublicKey: AGENT });
+			await approval?.mutateAsync({ agentAddress: AGENT, agentName: "sairn" }, { registrationPublicKey: AGENT });
 		});
 		expect(testState.clientApproveAgent).toHaveBeenCalledTimes(2);
 	});

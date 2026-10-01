@@ -313,7 +313,7 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.querySelector("canvas")).not.toBeNull();
 		await vi.waitFor(() => expect(testState.qrToCanvas).toHaveBeenCalledTimes(1));
 		const [, url] = testState.qrToCanvas.mock.calls[0] as [unknown, string];
-		expect(url.startsWith(`${window.location.origin}/mobile-agent-sync#ht-mobile-sync=`)).toBe(true);
+		expect(url.startsWith(`${window.location.origin}/mobile-agent-sync#sairn-mobile-sync=`)).toBe(true);
 		expect(url).not.toContain("k=");
 		expect(container.textContent).toContain("Closes in 60s");
 

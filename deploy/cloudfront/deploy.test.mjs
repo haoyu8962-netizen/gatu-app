@@ -63,10 +63,10 @@ test("html and build metadata upload after every asset, precompressed siblings a
 		plan.late.map((item) => item.file),
 		["_shell.html", "build-meta.json", "docs/index.html"],
 	);
-	const commands = buildSyncCommands({ publicDir: "/out/public", bucket: "gatu-terminal", files });
+	const commands = buildSyncCommands({ publicDir: "/out/public", bucket: "sairn-terminal", files });
 	assert.equal(commands.length, 4);
 	for (const command of commands) {
-		assert.deepEqual(command.slice(0, 4), ["s3", "sync", "/out/public", "s3://gatu-terminal"]);
+		assert.deepEqual(command.slice(0, 4), ["s3", "sync", "/out/public", "s3://sairn-terminal"]);
 		assert.ok(!command.includes("--delete"));
 		assert.ok(command.includes("--exclude") && command.includes("--cache-control"));
 	}
@@ -124,10 +124,10 @@ test("a sync that stopped before the shell is reported instead of passing silent
 });
 
 test("cloudfront functions are updated from their files and published with the returned etag", () => {
-	const [update, publish] = buildFunctionUpdateCommands({ name: "gatu-terminal-response", file: "/repo/deploy/cloudfront/functions/terminal-response.js", etag: "E1", comment: "gatu route marker + csp" });
+	const [update, publish] = buildFunctionUpdateCommands({ name: "gatu-terminal-response", file: "/repo/deploy/cloudfront/functions/terminal-response.js", etag: "E1", comment: "sairn route marker + csp" });
 	assert.deepEqual(update.slice(0, 6), ["cloudfront", "update-function", "--name", "gatu-terminal-response", "--if-match", "E1"]);
 	assert.ok(update.includes("fileb:///repo/deploy/cloudfront/functions/terminal-response.js"));
-	assert.ok(update.includes("Comment=gatu route marker + csp,Runtime=cloudfront-js-2.0"));
+	assert.ok(update.includes("Comment=sairn route marker + csp,Runtime=cloudfront-js-2.0"));
 	assert.deepEqual(publish, ["cloudfront", "publish-function", "--name", "gatu-terminal-response", "--if-match", "<updated-etag>"]);
 });
 
@@ -149,7 +149,7 @@ const SHELL_PRELOADS = Array.from({ length: 24 }, (_, index) => `/assets/chunk-$
 const CHART_ENTRY = "/charting_library/charting_library.0123456789abcdef.js";
 const THEME_SCRIPT = '(()=>{document.documentElement.classList.add("dark")})();';
 const THEME_HASH = cspHash(THEME_SCRIPT);
-const SHELL_HTML = `<html><head><script>${THEME_SCRIPT}</script>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/><meta name="gatu-preload-desktop" content="/assets/chunk-1.js"/><meta name="gatu-preload-mobile" content=""/><meta name="gatu-chart-prefetch" content="/charting_library/sameorigin.html"/></head></html>`;
+const SHELL_HTML = `<html><head><script>${THEME_SCRIPT}</script>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/><meta name="sairn-preload-desktop" content="/assets/chunk-1.js"/><meta name="sairn-preload-mobile" content=""/><meta name="sairn-chart-prefetch" content="/charting_library/sameorigin.html"/></head></html>`;
 const GATES_OFF = {
 	mobileSync: { enabled: false },
 	cctpDeposits: { mainnetSponsoredWallet: false, testnetExternalWallet: false, testnetSponsoredWallet: false },
@@ -158,7 +158,7 @@ const BUILD_META = { commit: "abc", release: "r1", ...GATES_OFF };
 const REPORT_ONLY_HEADER = `default-src 'self'; img-src 'self' data: https://app.hyperliquid.xyz; script-src 'self' 'report-sample' '${THEME_HASH}'; report-uri https://reports.example/`;
 
 function createPublicDir() {
-	const dir = mkdtempSync(join(tmpdir(), "gatu-cf-verify-"));
+	const dir = mkdtempSync(join(tmpdir(), "sairn-cf-verify-"));
 	mkdirSync(join(dir, "assets"), { recursive: true });
 	for (const href of SHELL_PRELOADS) writeFileSync(join(dir, href.slice(1)), "js");
 	writeFileSync(join(dir, "_shell.html"), SHELL_HTML);
@@ -212,13 +212,13 @@ test("verification passes when the edge serves the build with the expected heade
 				status: init?.method === "POST" && /^[0-9a-f]{64}$/.test(init.headers?.["x-amz-content-sha256"] ?? "") ? 200 : 403,
 				body: JSON.stringify({ checkedAt: 1, country: "GB", status: "allowed", ttlMs: 60_000 }),
 			}),
-			"/join/__gatu_healthcheck__": {
+			"/join/__sairn_healthcheck__": {
 				body: SHELL_HTML,
-				headers: { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-robots-tag": "noindex, nofollow", "x-gatu-route": "referral-join" },
+				headers: { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-robots-tag": "noindex, nofollow", "x-sairn-route": "referral-join" },
 			},
 			"/mobile-agent-sync": {
 				body: SHELL_HTML,
-				headers: { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-gatu-route": "mobile-agent-sync" },
+				headers: { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-sairn-route": "mobile-agent-sync" },
 			},
 			[CHART_ENTRY]: { body: "js", headers: { "cache-control": IMMUTABLE_CACHE_CONTROL } },
 			"/charting_library/charting_library.js": { body: "js", headers: { "cache-control": REVALIDATE_CACHE_CONTROL } },
@@ -334,7 +334,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 			"/trade/HYPE": { body: "<html>old shell</html>", headers: { "content-security-policy": "x", link: "<https://api.hyperliquid.xyz>; rel=preconnect" } },
 			"/build-meta.json": { body: JSON.stringify({ ...BUILD_META, commit: "old", release: "r0" }) },
 			"/api/geo": { status: 503, body: JSON.stringify({ error: "unavailable", reason: "missing_config" }) },
-			"/join/__gatu_healthcheck__": { body: "x", headers: { "cache-control": "no-store" } },
+			"/join/__sairn_healthcheck__": { body: "x", headers: { "cache-control": "no-store" } },
 			[CHART_ENTRY]: { body: "js", headers: { "cache-control": "max-age=0" } },
 			"*": { status: 200, body: "<html>shell</html>" },
 		}),
