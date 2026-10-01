@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BRAND_SOURCE = "brand/brand.json";
 const LOADER_DIRECTORY = "brand/loader";
+const LOADER_SUPPLEMENT_DIRECTORY = "brand/loader-supplement";
 const LOGO_GEOMETRY_OUTPUT = "apps/terminal/src/lib/brand/logo-geometry.gen.ts";
 // Only the variants the terminal renders go into its runtime bundle; the wordmark and the 16-grid mark stay in brand/.
 const LOGO_VARIANTS = {
@@ -269,15 +270,25 @@ function checkSource(brand) {
 }
 
 function checkLoaderProvenance() {
+	return [
+		...checkExportProvenance(LOADER_DIRECTORY, []),
+		...checkExportProvenance(LOADER_SUPPLEMENT_DIRECTORY, ["README.md", "definitions.js"]),
+	];
+}
+
+function checkExportProvenance(directory, sourceFiles) {
 	const problems = [];
-	const provenance = readJson(`${LOADER_DIRECTORY}/PROVENANCE.json`);
+	const provenance = readJson(`${directory}/PROVENANCE.json`);
 	if (sha256(readFileSync(resolve(REPOSITORY_ROOT, provenance.source))) !== provenance.sourceSha256) {
-		problems.push(`${provenance.source} changed since ${LOADER_DIRECTORY} was exported; rerun scripts/brand-export-motion.mjs`);
+		problems.push(`${provenance.source} changed since ${directory} was exported; rerun scripts/brand-export-motion.mjs`);
+	}
+	if (provenance.definitions && sha256(readFileSync(resolve(REPOSITORY_ROOT, provenance.definitions))) !== provenance.definitionsSha256) {
+		problems.push(`${provenance.definitions} changed since ${directory} was exported; rerun scripts/brand-export-motion.mjs`);
 	}
 	const recorded = new Map(Object.entries(provenance.files));
-	for (const file of listFiles(LOADER_DIRECTORY)) {
-		const name = relative(LOADER_DIRECTORY, file).split(sep).join("/");
-		if (name === "PROVENANCE.json") continue;
+	for (const file of listFiles(directory)) {
+		const name = relative(directory, file).split(sep).join("/");
+		if (name === "PROVENANCE.json" || sourceFiles.includes(name)) continue;
 		const expected = recorded.get(name);
 		recorded.delete(name);
 		if (!expected) problems.push(`${file} is not part of the recorded motion export`);
@@ -285,7 +296,7 @@ function checkLoaderProvenance() {
 			problems.push(`${file} differs from the recorded motion export`);
 		}
 	}
-	for (const missing of recorded.keys()) problems.push(`${LOADER_DIRECTORY}/${missing} is missing`);
+	for (const missing of recorded.keys()) problems.push(`${directory}/${missing} is missing`);
 	return problems;
 }
 
