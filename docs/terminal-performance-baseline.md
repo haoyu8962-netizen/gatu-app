@@ -36,7 +36,7 @@ The production build enforces three complementary models:
 - Static trade startup is one transitive Rollup closure seeded by those route preloads, the root runtime scripts, and the uniquely named `client-root` and `trade-terminal-page` chunks. JavaScript, Vite-imported CSS (including `?url` stylesheet assets), and their static edges are included; `import()` edges are deliberately excluded.
 - Runtime startup adds the static closures reached by the root runtime entry and manually reviewed first-render or idle-preload source modules. Mobile and desktop are measured separately, and files already counted by static startup are removed from the runtime increment.
 
-The client-only Vite hook records graph schema v3 at `apps/terminal/node_modules/.cache/gatu/client-chunk-graph.json`. It combines Rollup imports with Vite's imported CSS and asset metadata, and uses repository-relative module identifiers so runtime profiles follow source-module identity rather than unstable chunk hashes. It is diagnostic build metadata, not a deployable artifact.
+The client-only Vite hook records graph schema v3 at `apps/terminal/node_modules/.cache/sairn/client-chunk-graph.json`. It combines Rollup imports with Vite's imported CSS and asset metadata, and uses repository-relative module identifiers so runtime profiles follow source-module identity rather than unstable chunk hashes. It is diagnostic build metadata, not a deployable artifact.
 
 The checker fails closed when:
 

@@ -5,12 +5,12 @@
   "date": "2026-10-01",
   "title": "gatu → Sairn 品牌迁移：执行记录",
   "kind": "task",
-  "status": "recorded",
+  "status": "verified",
   "topics": ["brand-identity", "i18n-runtime", "docs-governance"],
-  "summary": "按 docs/brand-migration-plan.md 分步执行 gatu → Sairn 品牌迁移（进行中）。用户决定：所有品牌标识（含存储键、Agent 槽位名）改为 sairn，目前没有用户，需要重新签名就重新签名；域名 sairn.ai；法律实体 Sairn Corp.；历史记录全部替换（命令、域名、AWS 资源名等事实保留原值）；界面强调色换成青色与薄荷色、按钮保持中性；缺失素材由 Claude 按基础稿补做。已完成：brand/ 整理与单一来源 brand/brand.json、CI 品牌测试组与防静默失效、读取方接线（官网前后构建逐字节一致）、Logo/图标/manifest/图表加载动效/Privy logo、名称与六种语言目录（{BRAND_NAME} 占位）与法律文本、品牌强调色。详见正文的步骤表与验证。",
+  "summary": "按 docs/brand-migration-plan.md 与用户决定完成 gatu → Sairn 品牌迁移（未发布）：brand/ 单一来源与设计交付物、Logo/图标/加载动效/Privy logo/OG 卡/盈亏分享卡、名称与六种语言目录（{BRAND_NAME} 占位）、法律实体 Sairn Corp.、青色与薄荷强调色、存储键与锁名/Agent 槽位名 sairn/请求头/环境变量/包作用域 @sairn、规范域名 sairn.ai（gatu.ai 过渡期继续识别）、现行文档与历史记录的产品名。最终验证：全仓类型检查、改动文件 Biome、终端 640 文件 7,938 项、官网测试与构建、脚本与 CloudFront 测试、test:brand、记录检查、Node 22.15 生产构建（预算 +7,166）与 Lambda 构建、7 组浏览器套件 216 项全部通过。未做：状态动效、已连接页头测量、真机与非 Chromium 浏览器、任何发布与仓库外操作（DNS、证书、CloudFront 别名与源站请求策略、Privy、邮件、LI.FI 登记）。",
   "thread": null,
   "baseCommit": "8274cc3d",
-  "commits": ["c2d47191", "721cf233", "42f002e1", "4bba29b1", "a19e7cd3", "0722f231", "cf9479d0"],
+  "commits": ["c2d47191", "721cf233", "42f002e1", "4bba29b1", "a19e7cd3", "0722f231", "cf9479d0", "afd39a12", "64be35b2", "e79d026e", "3f502cb7", "7e228768", "4d1286b8", "5cd45ab8", "94175c1c"],
   "sources": [
     { "path": "docs/brand-migration-plan.md" },
     { "path": "docs/brand-assets.md" },
@@ -52,6 +52,13 @@
 | `0722f231` | 名称切换为 Sairn：`brand.json`、manifest、10 条翻译消息改用 `{BRAND_NAME}` 占位并迁移 5 种语言译文、删除带旧名的废弃条目、路由 head、官网标语与博客标题、法律文本名称与 Sairn Corp. | 完整终端测试 640 文件 7,936 项通过；6 种语言在用条目逐条核对除占位外无变化、缺译集合不变；提取幂等；新目录契约测试做了变异检查 |
 | `cf9479d0` | 品牌强调色：`--signal` 浅色 `#176b64`、深色 `#86e5d3`，悬停与 soft 同步；三份样式表与 `brand.json` 一致；10 处等待转圈改中性色；启动出错页按钮；对比度契约 | 完整终端测试通过（颜色改动后仅 `bootstrap-error-page` 一项需要更新期望值）；对比度契约做了变异检查；无头 Chromium 截图核对深浅两种主题的桌面与手机交易页 |
 
+| `e79d026e` | OG 卡：`designs/og-cards/cards.html` 按 Sairn 深色令牌重画，内嵌横版组合与标志路径，终端卡沿用原中文描述（字体子集只含这些字），官网卡用口号英文版两行；字体与模板改为中性名称 | `og:generate` 删除旧图后生成，`og:check` 复验；两张图人工查看 |
+| `3f502cb7` | 盈亏分享卡：画布用 `Path2D` 绘制 24 px 横版组合，弹窗预览用 `BrandLogo`；卡面两种主题都是深色，所以 Logo 固定用深底配色；几何模块移到 `lib/brand/` | 相关 10 个测试文件 306 项通过；无头 Chromium 经开发服务器加载模块渲染深浅两种主题的分享卡并人工查看（首版浅色主题下 Logo 看不清，已改为固定深底配色） |
+| `7e228768` | 内部标识：存储键与锁名、调试全局变量、`<meta>` 名称、Vite 插件名、环境变量 `SAIRN_*`、请求头 `x-sairn-*`、配对片段键 `sairn-mobile-sync`、LI.FI integrator 与 Agent 槽位名 `sairn`、测试数据、`.deepsec` 项目；AWS 资源名不变；转发主机名请求头双写新旧名、Lambda 先读新再读旧；发布手册写明过渡步骤 | 终端完整测试、CloudFront 44 项、脚本测试、全仓类型检查通过 |
+| `4d1286b8` | 包作用域 `@gatu/*` → `@sairn/*`（351 个文件，锁文件两处），离线重装后工作区链接到 `@sairn` | 全仓类型检查、终端完整测试、生产与 Lambda 构建、官网测试与构建、CloudFront 测试通过 |
+| `5cd45ab8` | 规范域名 `sairn.ai`：`brand.json` 主域名与旧域名组、静态文件、法律文本、测试数据；新增旧域名过渡测试；`docs/brand-assets.md` 写上线顺序 | 终端完整测试 7,938 项通过；`brand:check`、CloudFront、官网构建（canonical 为 `https://sairn.ai/`）通过 |
+| `94175c1c` 及收尾提交 | 文档：现行文档按现行标识替换（命令、包名、环境变量、请求头），带日期的历史事实恢复原值；历史记录只替换正文里的产品名，代码、命令、链接、路径、域名与 AWS 名称保留；清理 HyperTerminal 残留；迁移计划追加实施状态 | 153 个改动的 Markdown 文件相对链接无断链；`git diff --check`；记录索引与检查 |
+
 ### 发现与处理
 
 - CSS 注释里写了 `svg/*/page-loading.svg`，`*/` 提前结束注释导致整份样式表解析失败；单元测试按文本读 CSS，没能发现，是在开发服务器上看到的。已改正，并在之后用生产构建做验证。
@@ -60,11 +67,19 @@
 
 ## 验证与限制
 
-- 已运行：上表各项；`pnpm test:brand`；官网测试与构建；终端类型检查；Biome；`node --test scripts/ci-workflows.test.mjs`。
-- 已连接钱包状态下的页头没有测量：法语在 1182 px 未连接时只剩 29 px 余量。
-- 没有在 Safari、Firefox、真机或已安装的 PWA 上验证图标与加载动效；没有发布。
-- 首次提交这份记录（`afd39a12`）时索引生成因缺少「结论与依据」小节失败，而命令链没有在失败后停止提交；随后的提交补齐了小节和索引。
+最终一轮（`94175c1c` 之后的收尾提交）实际运行并通过：`pnpm typecheck`；本次改动的 422 个源文件 Biome；终端完整 Vitest 640 文件 7,938 项（1 项跳过）；官网测试 5 项与构建；`node --test scripts/*.test.mjs`；`pnpm test:cloudfront` 44 项；`pnpm test:brand`；`node --test tests/*.test.mjs`；`pnpm memory:check`、`memory:test`；Node 22.15、`NODE_ENV=production` 的 `pnpm build`（总包体 +7,166，基线已按 Logo 成本上调 3,821）与 `build:lambda`；CI 的 6 组浏览器套件与用户菜单恢复套件共 216 项。
+
+- 全仓 `pnpm check` 失败，原因是 `.claude/worktrees/` 里另一会话工作区的嵌套 `biome.json`，与本任务无关；改为检查本次改动的文件。
+- 收尾时曾误执行 `git checkout 99ddc6b4 -- biome.json`，立即从 HEAD 恢复并确认内容一致，没有提交。
+- 没有测量已连接钱包时的页头；没有在 Safari、Firefox、真机或已安装 PWA 上验证；没有发布，也没有执行任何仓库外操作。
 
 ## 后续与替代关系
 
-没有被替代的记录。继续执行：OG 卡、PnL 分享卡、内部标识（存储键、锁名、Agent 槽位名、CSS 类名、请求头、环境变量、包名）、域名 `sairn.ai`、现行文档与历史记录的品牌词替换。
+没有被替代的记录。仓库外待办（顺序见 `docs/brand-assets.md` 的「域名切换到 sairn.ai」与 `deploy/cloudfront/README.md` 顶部说明）：
+
+- 注册并配置 `sairn.ai`（DNS、证书、CloudFront 别名、邮件 `support@sairn.ai`），旧域名保持续费，稳定后再做 301 跳转并从 `brand.json` 删除旧域名组。
+- 更新 API 源站请求策略的转发头为 `X-Sairn-Forwarded-Host`，发布验证后删除代码里的旧头双写；Lambda 环境变量改名为 `SAIRN_*`（当前值等于默认值，不改也不影响行为）。
+- 发布构建设置 `VITE_HYPERLIQUID_AGENT_NAME=sairn`；外部钱包用户需重新授权 Agent。
+- Privy 后台添加新 origin、改应用名；LI.FI 如需按 integrator 计费，登记 `sairn`；社交头像用 `brand/social`；GitHub 仓库名 `gatu-app` 是否改名由用户决定。
+- 官网自 2026-07-19 起未发布，首次发布前审查累计差异。
+- 设计方：确认悬停色 `#A8EEE1` / `#0F524D`；补 partial、info、warning 三个状态符号后再接入状态动效；`designs/mockups.pen` 仍是旧品牌设计稿。
