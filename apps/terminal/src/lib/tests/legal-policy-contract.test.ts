@@ -21,6 +21,20 @@ describe("published legal policy contract", () => {
 		expect(docs).not.toContain("placeholders for more detailed documentation");
 		expect(docs).not.toContain("Replace each link");
 	});
+	it("lists the first-trade steps in the order the terminal enforces (docs/trading-onboarding.md)", () => {
+		const docs = readRepositoryFile("legal/docs.md");
+		const steps = [
+			"**Connect your wallet**",
+			"**Accept the terms**",
+			"**Enable trading**",
+			"**Fund your account if it is empty**",
+			"**Place a trade**",
+		].map((step) => docs.indexOf(step));
+		expect(steps.every((index) => index >= 0)).toBe(true);
+		expect([...steps].sort((a, b) => a - b)).toEqual(steps);
+		expect(docs).toContain("Email sign-in skips this step");
+	});
+
 	it("keeps the Terms as the governing source for supplemental policies", () => {
 		expect(terms).toContain("laws of England and Wales");
 		expect(terms).toMatch(/London\s+Court of International Arbitration \(LCIA\)/);

@@ -49,9 +49,10 @@ Follow these steps to place your first trade:
 
 1. **Open Sairn** — navigate to https://app.sairn.ai.
 2. **Connect your wallet** — click **Connect Wallet** and choose your preferred method (external wallet or email sign-in).
-3. **Fund your account** — deposit USDC from Arbitrum.
-4. **Approve the trading agent** — with an external wallet, approve the agent (API) wallet the first time you trade. This is a one-time signature that enables fast order signing. Email sign-in skips this step.
-5. **Place a trade** — select a market, choose your order type and size, and submit.
+3. **Accept the terms** — the first time a wallet connects, agree to the Terms of Use, the Privacy Policy and the Hyperliquid Terms of Use. Your main wallet signs the acknowledgement, and acceptance is linked to that wallet.
+4. **Enable trading** — with an external wallet, click **Enable Trading** and approve the agent (API) wallet. This one-time signature lets routine orders be signed quickly. Email sign-in skips this step: your embedded wallet signs directly.
+5. **Fund your account if it is empty** — when Sairn confirms that your Hyperliquid account holds no funds, it offers a USDC deposit from Arbitrum. A balance you already hold on Hyperliquid can be traded right away.
+6. **Place a trade** — select a market, choose your order type and size, and submit.
 
 > **Tip:** Sensitive actions such as agent approval, builder-fee acknowledgement, deposits, and withdrawals are signed by your **main wallet**. With an external wallet, routine order placement and cancellation are signed by the **local agent key** for speed; with email sign-in, your embedded wallet signs them.
 
