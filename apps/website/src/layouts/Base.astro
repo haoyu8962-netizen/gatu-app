@@ -43,7 +43,7 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		<meta property="og:site_name" content={SEO_DEFAULTS.siteName} />
 		<meta property="og:title" content={seo.ogTitle} />
 		<meta property="og:description" content={seo.description} />
-		<meta property="og:url" content={seo.canonical} />
+		{seo.canonical && <meta property="og:url" content={seo.canonical} />}
 		<meta property="og:locale" content={SEO_DEFAULTS.locale} />
 		<meta property="og:image" content={seo.ogImage} />
 		<meta property="og:image:alt" content={seo.ogImageAlt} />
@@ -64,7 +64,7 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		<meta name="twitter:image" content={seo.ogImage} />
 		<meta name="twitter:image:alt" content={seo.ogImageAlt} />
 
-		<link rel="canonical" href={seo.canonical} />
+		{seo.canonical && <link rel="canonical" href={seo.canonical} />}
 		<link rel="sitemap" href="/sitemap-index.xml" />
 
 		<link rel="preconnect" href={APP_URL} />

@@ -26,7 +26,6 @@ export const SEO_BASE_KEYWORDS = [
 	"perps",
 	"spot trading",
 	"hip-3",
-	"open source",
 	"crypto",
 	"defi",
 ] as const;
@@ -38,13 +37,12 @@ export const ROUTE_SEO = {
 		ogTitle: SEO_DEFAULTS.defaultOgTitle,
 		description: SEO_DEFAULTS.defaultDescription,
 		path: "/",
-		keywords: ["wallet-native", "self-hosted", "websocket", "leverage"],
+		keywords: ["wallet-native", "non-custodial", "websocket", "leverage"],
 	},
 	BLOG_INDEX: {
 		title: "Blog",
-		description:
-			`Notes from building ${BRAND_NAME} — architecture, signing flows, self-hosting, and the weekly changelog.`,
-		path: "/blog",
-		keywords: ["changelog", "architecture", "self-hosting", "signing"],
+		description: `Notes from building ${BRAND_NAME} — architecture, signing flows, and release notes.`,
+		path: "/blog/",
+		keywords: ["changelog", "architecture", "signing"],
 	},
 } as const;

@@ -36,8 +36,8 @@ const jsonLd = [
 	}),
 	breadcrumbSchema([
 		{ name: "Home", path: "/" },
-		{ name: "Blog", path: "/blog" },
-		{ name: post.data.title, path: `/blog/${slug}` },
+		{ name: "Blog", path: "/blog/" },
+		{ name: post.data.title, path: `/blog/${slug}/` },
 	]),
 ];
 
@@ -51,7 +51,7 @@ const formatter = new Intl.DateTimeFormat("en-US", {
 <Base
 	title={post.data.title}
 	description={post.data.description}
-	path={`/blog/${slug}`}
+	path={`/blog/${slug}/`}
 	ogType="article"
 	publishedTime={publishedTime}
 	modifiedTime={modifiedTime}
@@ -62,7 +62,7 @@ const formatter = new Intl.DateTimeFormat("en-US", {
 	<main>
 		<article class="mx-auto w-full max-w-2xl px-5 sm:px-6 pt-16 pb-20 md:pt-24 md:pb-28">
 			<a
-				href="/blog"
+				href="/blog/"
 				class="inline-flex items-center gap-1.5 text-2xs uppercase tracking-uppercase text-fg-faint hover:text-fg-muted transition-colors duration-200"
 			>
 				<svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">

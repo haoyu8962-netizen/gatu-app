@@ -6,15 +6,15 @@ const year = new Date().getFullYear();
 
 const product = [
 	{ label: "Open terminal", href: appUrl, icon: "terminal", external: true },
-	{ label: "Features", href: "#features", icon: "sparkle" },
-	{ label: "Blog", href: "/blog", icon: "article" },
-	{ label: "FAQ", href: "#faq", icon: "question" },
+	{ label: "Features", href: "/#features", icon: "sparkle" },
+	{ label: "Blog", href: "/blog/", icon: "article" },
+	{ label: "FAQ", href: "/#faq", icon: "question" },
 ];
 
 const resources = [
 	{ label: "Hyperliquid", href: "https://hyperliquid.xyz", icon: "link", external: true },
-	{ label: "Support", href: "/support", icon: "question" },
-	{ label: "Risk disclosure", href: "/risk", icon: "scale" },
+	{ label: "Support", href: "/support/", icon: "question" },
+	{ label: "Risk disclosure", href: "/risk/", icon: "scale" },
 	{ label: "Contact", href: `mailto:${SUPPORT_EMAIL}`, icon: "mail" },
 ];
 
@@ -52,7 +52,7 @@ const iconSvg: Record<string, string> = {
 			<div class="col-span-2">
 				<Logo />
 				<p class="mt-4 max-w-xs text-xs text-fg-muted leading-relaxed">
-					The open-source terminal for Hyperliquid. Read it, fork it, run it yourself.
+					The trading terminal for Hyperliquid. See the market clearly. Decide for yourself.
 				</p>
 			</div>
 
@@ -106,14 +106,14 @@ const iconSvg: Record<string, string> = {
 		<div class="mt-10 md:mt-14 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-t border-stroke-weaker pt-6">
 			<p class="text-2xs text-fg-faint">
 				© {year} {BRAND_NAME} · Not financial advice. Trade at your own risk. ·
-				<a href="/privacy" class="hover:text-fg-muted transition-colors duration-150">Privacy</a> ·
-				<a href="/terms" class="hover:text-fg-muted transition-colors duration-150">Terms</a> ·
-				<a href="/risk" class="hover:text-fg-muted transition-colors duration-150">Risk</a>
+				<a href="/privacy/" class="hover:text-fg-muted transition-colors duration-150">Privacy</a> ·
+				<a href="/terms/" class="hover:text-fg-muted transition-colors duration-150">Terms</a> ·
+				<a href="/risk/" class="hover:text-fg-muted transition-colors duration-150">Risk</a>
 			</p>
 			<div class="flex items-center gap-3 text-2xs text-fg-faint">
 				<span class="inline-flex items-center gap-1.5">
 					<svg width="11" height="11" viewBox="0 0 256 256" aria-hidden="true" set:html={iconSvg.scale} />
-					<span class="uppercase tracking-uppercase">MIT licensed</span>
+					<span class="uppercase tracking-uppercase">Non-custodial</span>
 				</span>
 				<span class="h-3 w-px bg-stroke-weaker"></span>
 				<span class="inline-flex items-center gap-1.5">

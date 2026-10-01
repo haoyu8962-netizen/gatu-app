@@ -388,7 +388,6 @@
 
 	.word-stagger .word {
 		display: inline-block;
-		margin-right: 0.28em;
 		opacity: 0;
 		transform: translateY(0.4em);
 		transition:

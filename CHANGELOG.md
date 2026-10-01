@@ -477,6 +477,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - The Vault dialog shows an unknown result in amber with the unknown glyph instead of a red error
   icon, and an API wallet signature you declined shows a neutral cancelled glyph, because nothing
   was submitted.
+- The website's copy now matches the product: it no longer calls the terminal open source, MIT
+  licensed or self-hostable (the repository is private and the Terms forbid redistribution), shows
+  Hyperliquid's fee together with the 0.01% builder fee, no longer claims 50× leverage, "no
+  email" or "no backend", lists the current wallets and the Arbitrum USDC deposit, fixes the footer
+  anchors on inner pages and drops the placeholder blog post. The hero screenshots show the Sairn
+  terminal and are served from hashed paths. A release runbook is in `deploy/website/README.md`;
+  the website has not been released since 2026-07-19.
 - The support page and product docs describe the current phone linking (scan a short-lived QR
   code from the desktop header, where available) and USDC deposits from Arbitrum, instead of a
   pairing code and a built-in bridge; the legal documents carry the date of the Sairn rename.

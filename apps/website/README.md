@@ -8,35 +8,25 @@ The trading app lives at **app.sairn.ai** (`apps/terminal`).
 
 ```bash
 pnpm --filter @sairn/website dev      # http://localhost:3010
+pnpm --filter @sairn/website test     # brand and copy contracts (tests/*.test.mjs)
 pnpm --filter @sairn/website build    # → dist/
 pnpm --filter @sairn/website preview
 ```
 
-## Deploying to Vercel (apex domain)
+## Deploying
 
-The website's Vercel configuration points at this directory. The terminal has a separate [CloudFront + S3 + Lambda deployment workflow](../../deploy/cloudfront/README.md); do not infer its deployment target from the website configuration. Domain assignments below describe the intended website setup, not a live DNS verification.
+The website is a static build uploaded to a private S3 bucket behind CloudFront. Follow the [website release runbook](../../deploy/website/README.md): it lists the prerequisites for the sairn.ai domain, the cache groups, the upload and invalidation commands, the post-release checks and the rollback. Nothing in it is automated.
 
-### One-time setup
+The terminal has a separate [CloudFront + S3 + Lambda deployment workflow](../../deploy/cloudfront/README.md); its `deploy.mjs` only handles the terminal build. `vercel.json` in this directory is left over from an earlier Vercel setup and is not used by CI or the current hosting.
 
-1. In Vercel, **New Project** → import the same Git repo.
-2. **Root Directory:** `apps/website`
-3. Framework: auto-detected as Astro (or set manually).
-4. Install Command: leave default — `apps/website/vercel.json` overrides it.
-5. Build Command: leave default — same.
-6. Output Directory: leave default — same.
-7. After first deploy, **Settings → Domains** → add `sairn.ai` (apex) and `www.sairn.ai`.
-8. Set the apex as the Production Domain.
+### Why two deployments, not one?
 
-### DNS
+The terminal is a TanStack Start application with edge API endpoints. The website is fully static. Separate delivery keeps their build, runtime and caching requirements independent.
 
-At your registrar:
+## Content rules
 
-- For `sairn.ai` and `www.sairn.ai`, use the exact record types and targets shown by the website project's Domains configuration. This repository does not establish the current DNS targets.
-- Configure only the website domains here; terminal domain and CDN configuration belong to the [terminal deployment workflow](../../deploy/cloudfront/README.md).
-
-### Why two projects, not one?
-
-The terminal is a TanStack Start application with Nitro server endpoints. The website is fully static. Separate delivery keeps their build, runtime and caching requirements independent.
+- Product claims must match the terminal. `tests/copy-contract.test.mjs` fails on retired claims (open source, MIT, self-hosting, a fixed leverage maximum, 19+ chains, LiFi, "no accounts", "no backend") and requires the builder fee next to quoted trading fees.
+- Images that can change (the hero screenshots) live in `src/assets/` and are imported, so Astro emits them under content-hashed `_astro/` URLs. Files in `public/` keep a fixed URL; only put files there whose URL must stay stable (favicon, social card, robots.txt).
 
 ## Design notes
 
