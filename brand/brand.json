@@ -58,6 +58,7 @@
 	},
 	"pwa": {
 		"themeColor": "#0F1A1F",
+		"lightThemeColor": "#FFFFFF",
 		"backgroundColor": "#0F1A1F"
 	}
 }

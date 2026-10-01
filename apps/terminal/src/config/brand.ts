@@ -17,3 +17,4 @@ export const BRAND_LEGACY_DOMAINS: readonly BrandDomainGroup[] = brand.domains.l
 export const SUPPORT_EMAIL: string = brand.emails.support;
 
 export const PWA_THEME_COLOR: string = brand.pwa.themeColor;
+export const PWA_LIGHT_THEME_COLOR: string = brand.pwa.lightThemeColor;

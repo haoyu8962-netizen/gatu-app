@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme-color";
 
 const clientRootLoaderSource = readFileSync(resolve(process.cwd(), "src/providers/client-root-loader.ts"), "utf8");
 const rootProviderSource = readFileSync(resolve(process.cwd(), "src/providers/root.tsx"), "utf8");
@@ -85,10 +86,22 @@ describe("root provider startup split", () => {
 		expect(rootRouteSource).toContain(
 			'<html lang={documentLocale} dir={documentDirection} className="dark" suppressHydrationWarning>',
 		);
-		expect(rootRouteSource).toContain('localStorage.getItem("global-settings-v2")');
+		expect(THEME_BOOTSTRAP_SCRIPT).toContain('localStorage.getItem("global-settings-v2")');
+		expect(rootRouteSource).toContain(
+			'import { getDocumentThemeColor, THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme-color";',
+		);
 		expect(rootRouteSource).toContain("<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>");
 		expect(themeScript).toBeGreaterThanOrEqual(0);
 		expect(stylesheet).toBeGreaterThan(themeScript);
+	});
+
+	it("builds the root head theme color from the theme the bootstrap applied", () => {
+		const headContent = rootRouteSource.indexOf("<HeadContent />");
+		const themeScript = rootRouteSource.indexOf("<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>");
+
+		expect(rootRouteSource).toContain("head: () => buildRootHead(FONT_PRELOAD_URLS, getDocumentThemeColor()),");
+		expect(headContent).toBeGreaterThanOrEqual(0);
+		expect(themeScript).toBeGreaterThan(headContent);
 	});
 
 	it("registers the terminal stylesheet as a hoistable resource that survives shell re-renders", () => {

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { SEO_DEFAULTS } from "@/config/seo";
+import { THEME_COLORS } from "@/lib/theme-color";
 
 interface WebAppManifest {
 	background_color: string;
@@ -74,7 +75,7 @@ describe("PWA manifest", () => {
 		}
 	});
 
-	it("keeps the install and browser theme colors on the dark terminal canvas token", () => {
+	it("keeps the install and dark browser theme colors on the dark terminal canvas token", () => {
 		const publicRoot = new URL("../../../public/", import.meta.url);
 		const manifest = JSON.parse(readFileSync(new URL("manifest.json", publicRoot), "utf8")) as WebAppManifest;
 		const styles = readFileSync(new URL("../../styles.css", import.meta.url), "utf8");
@@ -85,5 +86,16 @@ describe("PWA manifest", () => {
 		expect(manifest.theme_color.toLowerCase()).toBe(canvas?.toLowerCase());
 		expect(manifest.background_color.toLowerCase()).toBe(canvas?.toLowerCase());
 		expect(SEO_DEFAULTS.themeColor.toLowerCase()).toBe(canvas?.toLowerCase());
+		expect(THEME_COLORS.dark).toBe(SEO_DEFAULTS.themeColor);
+	});
+
+	it("keeps the light browser theme color on the light terminal page background token", () => {
+		const styles = readFileSync(new URL("../../styles.css", import.meta.url), "utf8");
+		const lightBlock = styles.slice(styles.indexOf("\n  :root {"), styles.indexOf("\n  .dark {"));
+		const background = /--bg-base:\s*(#[0-9a-f]{6})\s*;/i.exec(lightBlock)?.[1];
+
+		expect(THEME_COLORS.light).toBe("#FFFFFF");
+		expect(background).toBeDefined();
+		expect(THEME_COLORS.light.toLowerCase()).toBe(background?.toLowerCase());
 	});
 });

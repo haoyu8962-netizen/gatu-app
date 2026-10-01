@@ -476,6 +476,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- In the light theme, browsers that tint their toolbar or status bar from the page's theme color
+  (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
+  terminal teal. The theme color follows the theme chosen in Settings from the first paint and on
+  every switch; the dark theme and the installed app's manifest color stay `#0F1A1F`.
 - The Vault dialog shows an unknown result in amber with the unknown glyph instead of a red error
   icon, and an API wallet signature you declined shows a neutral cancelled glyph, because nothing
   was submitted.
