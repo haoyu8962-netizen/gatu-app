@@ -83,8 +83,11 @@ Do not collapse these states into one boolean.
 - Login methods remain `wallet` and `email`; Passkey login is intentionally
   disabled. Embedded Ethereum wallets are created only for users without a
   wallet, and Privy's embedded wallet UI remains hidden.
-- Dark/light Privy configuration changes appearance and accent color only.
-  Wallet ordering and authentication behavior stay identical across themes,
+- Dark/light Privy configuration changes appearance, accent color and the
+  login-window logo only. The logo is the brand lockup for that theme, a
+  same-origin file (`/brand/lockup-on-dark.svg`, `/brand/lockup-on-light.svg`)
+  that `pnpm brand:sync` copies from `brand/svg`; it overrides the dashboard
+  `logo_url`, so the dashboard logo is never the source of truth. Wallet ordering and authentication behavior stay identical across themes,
   and the authentication provider is never remounted merely to change theme.
   Preserve `PwaInstallProvider > PrivyProvider > SmartWalletsProvider >`
   `PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
@@ -677,7 +680,15 @@ have an install capability.
   prompting and after installation. Do not intercept the native install flow
   on wide desktop surfaces.
 - Keep the PWA manifest and browser theme color aligned with the terminal dark
-  canvas (`#0F1A1F`).
+  canvas (`#0F1A1F`); `pwa-manifest.test.ts` pins the literal and its equality
+  with the dark `--bg-base`. The logo kit's icon background `#0A3038` only
+  fills the icons themselves.
+- Install icons come from `brand/web` through `pnpm brand:sync`
+  ([brand assets](brand-assets.md)): `favicon.ico` carries the kit's 16, 32
+  and 48 px frames and is declared as such in the manifest and the head;
+  `icon-maskable-192.png` and `icon.svg` are derived from the kit geometry by
+  `pnpm brand:derive-icons`. The manifest keeps `"id": "/"`, relative icon
+  paths and no `lang`, because the interface language changes at runtime.
 - Installation support does not imply offline navigation support. Do not
   advertise the terminal as offline-capable unless the service worker gains a
   tested application-shell/navigation strategy.
@@ -941,6 +952,14 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   at 1101px without collapsing the gap is en 124px, zh 237px, hi 243px, es 50px, fr 6px, ar 146px,
   so the narrow width moved to 1150px; at 1151px fr keeps 56px and es 100px, at 1001px (collapsed)
   fr keeps 226px. The connected header was not measured.
+- Evidence after the Sairn logo moved to the logo kit's 24px minimum (2026-10-01, local dev server,
+  disconnected, `/earn`; each width loaded fresh, because the in-app browser's viewport emulation
+  does not deliver media-query change events to an open page): the desktop lockup is 90.5px wide
+  (81.4px before). en 1182px 154px, 1151px 165px, 1150px (collapsed) 467px, 1001px 318px;
+  fr 1182px 29px, 1151px 47px (56px before), 1001px 217px; es 1182px 76px, 1151px 91px (100px
+  before). zh, hi and ar were not re-measured. The connected header is still unmeasured: at 1182px
+  French leaves 29px for any extra width of the deposit button and account chip over
+  `Connecter le portefeuille` (183px).
 
 ### Important Files
 

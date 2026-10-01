@@ -274,7 +274,7 @@ jobs:
         run: >-
           pnpm exec vitest run --maxWorkers=1
           src/lib/tests/brand-semantics-contract.test.ts
-          src/lib/tests/gatu-logo.test.tsx
+          src/lib/tests/brand-logo.test.tsx
           src/lib/tests/root-startup-fallback.test.tsx
           src/lib/tests/mobile-header-brand.test.tsx
           src/lib/tests/pwa-manifest.test.ts

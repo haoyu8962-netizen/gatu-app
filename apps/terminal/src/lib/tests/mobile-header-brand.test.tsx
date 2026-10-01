@@ -72,7 +72,7 @@ describe("MobileHeader brand link", () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 	});
 
-	it("uses the approved 22px micro mark in a 44px focusable target", () => {
+	it("uses the 24px Sairn mark in a 44px focusable target", () => {
 		const container = document.createElement("div");
 		container.innerHTML = renderToStaticMarkup(
 			<I18nProvider i18n={i18n}>
@@ -81,13 +81,13 @@ describe("MobileHeader brand link", () => {
 		);
 
 		const logoLink = container.querySelector<HTMLAnchorElement>("a[data-brand-home-link]");
-		const brandMark = logoLink?.querySelector<SVGElement>('[data-gatu-logo="mark"]');
+		const brandMark = logoLink?.querySelector<SVGElement>('[data-brand-logo="mark"]');
 
 		expect(logoLink?.getAttribute("aria-label")).toBe("GATU");
 		expect(logoLink?.className).toContain("touch-target");
 		expect(logoLink?.className).toContain("focus-visible:outline-stroke-focus");
 		expect(logoLink?.className).toContain("max-[359px]:hidden");
-		expect(brandMark?.getAttribute("class")).toContain("size-[22px]");
-		expect(brandMark?.querySelector("path")?.getAttribute("stroke-width")).toBe("6.5");
+		expect(brandMark?.getAttribute("class")).toBe("h-6 w-auto");
+		expect(brandMark?.querySelectorAll("path")).toHaveLength(2);
 	});
 });

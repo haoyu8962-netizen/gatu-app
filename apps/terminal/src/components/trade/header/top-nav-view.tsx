@@ -39,9 +39,9 @@ export const TOP_NAV_ITEM_CLASS =
 	"rounded-[8px] px-2.5 py-2 font-semibold whitespace-nowrap transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg";
 export const TOP_NAV_LOGO_CLASS =
 	"flex shrink-0 items-center gap-2 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus";
-export const TOP_NAV_WORDMARK_CLASS = "h-[18px] w-auto shrink-0";
+export const TOP_NAV_WORDMARK_CLASS = "h-6 w-auto shrink-0";
 export const TOP_NAV_CONNECTED_WORDMARK_CLASS = "nav-compact:hidden";
-export const TOP_NAV_MARK_CLASS = "hidden size-[22px] shrink-0 nav-compact:block";
+export const TOP_NAV_MARK_CLASS = "hidden h-6 w-auto shrink-0 nav-compact:block";
 
 export function TopNavView({
 	items,

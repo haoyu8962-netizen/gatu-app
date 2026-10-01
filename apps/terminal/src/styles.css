@@ -275,8 +275,11 @@
     --signal-soft: rgb(102 115 17 / 10%);
     --focus: var(--signal);
     --chart-accent: #4c64d9;
-    --logo-ink: #15171e;
-    --logo-node: #15171e;
+    /* Logo kit v1.3 colors on light surfaces (brand/brand.json logo.light) and the darkest loader frame. */
+    --logo-signal: #176b64;
+    --logo-choice: #99621f;
+    --logo-wordmark: #08262e;
+    --logo-loader-floor: 0.78;
 
     /* Text */
     --text-strong: #000626e5;
@@ -469,8 +472,11 @@
     --signal-soft: rgb(215 255 63 / 14%);
     --focus: var(--signal);
     --chart-accent: #b2bcf1;
-    --logo-ink: #edeef2;
-    --logo-node: #d7ff3f;
+    /* Logo kit v1.3 colors on dark surfaces (brand/brand.json logo.dark) and the darkest loader frame. */
+    --logo-signal: #86e5d3;
+    --logo-choice: #e6b766;
+    --logo-wordmark: #ffffff;
+    --logo-loader-floor: 0.55;
 
     /* Text */
     --text-strong: #ffffff;
@@ -921,36 +927,30 @@
 }
 
 @layer components {
-  .gatu-orbit-loader__track {
-    opacity: 0.2;
+  /* Motion library v1.3 page-loading: the two panels breathe in turn, see brand/loader/svg/on-dark/page-loading.svg. */
+  .brand-page-loader__signal {
+    animation: brand-page-loader-breathe 2000ms ease-in-out infinite;
   }
 
-  .gatu-orbit-loader__segment {
-    animation: gatu-orbit-loader 1.5s linear infinite;
+  .brand-page-loader__choice {
+    animation: brand-page-loader-breathe 2000ms -1000ms ease-in-out infinite;
   }
 
-  .gatu-orbit-loader__static-node {
-    opacity: 0;
-  }
+  @keyframes brand-page-loader-breathe {
+    0%,
+    100% {
+      opacity: 1;
+    }
 
-  @keyframes gatu-orbit-loader {
-    to {
-      stroke-dashoffset: -100;
+    50% {
+      opacity: var(--logo-loader-floor, 0.55);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .gatu-orbit-loader__track {
-      opacity: 1;
-    }
-
-    .gatu-orbit-loader__segment {
+    .brand-page-loader__signal,
+    .brand-page-loader__choice {
       animation: none;
-      opacity: 0;
-    }
-
-    .gatu-orbit-loader__static-node {
-      opacity: 1;
     }
   }
 

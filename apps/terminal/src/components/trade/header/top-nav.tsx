@@ -3,7 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, QrCodeIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { GatuLogo } from "@/components/brand/gatu-logo";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { BRAND_NAME } from "@/config/brand";
 import { DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import {
@@ -141,8 +141,8 @@ export function TopNav({ mode = "default" }: Props) {
 					data-brand-home-link=""
 					className={TOP_NAV_LOGO_CLASS}
 				>
-					<GatuLogo className={cn(TOP_NAV_WORDMARK_CLASS, accountChipVisible && TOP_NAV_CONNECTED_WORDMARK_CLASS)} />
-					{accountChipVisible ? <GatuLogo variant="mark" micro className={TOP_NAV_MARK_CLASS} /> : null}
+					<BrandLogo className={cn(TOP_NAV_WORDMARK_CLASS, accountChipVisible && TOP_NAV_CONNECTED_WORDMARK_CLASS)} />
+					{accountChipVisible ? <BrandLogo variant="mark" className={TOP_NAV_MARK_CLASS} /> : null}
 				</Link>
 			}
 			moreTrigger={

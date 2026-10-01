@@ -80,7 +80,7 @@ describe("seo", () => {
 	it("publishes the dedicated vector favicon alongside ICO and Apple fallbacks", () => {
 		const iconLinks = buildRootHead().links.filter((link) => link.rel === "icon" || link.rel === "apple-touch-icon");
 		expect(iconLinks).toEqual([
-			{ rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48 64x64", type: "image/x-icon" },
+			{ rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
 			{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 		]);

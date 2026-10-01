@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import faviconUrl from "../../../../brand/web/favicon.svg?url";
 import { APP_URL } from "@/config/brand";
 import { SEO_DEFAULTS } from "@/config/seo";
 import { resolveSeo, type PageSeo } from "@/lib/seo";
@@ -25,8 +26,8 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="theme-color" content={SEO_DEFAULTS.themeColor} />
 		<meta name="color-scheme" content="dark light" />
-		<link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48 64x64" href="/favicon.ico" />
-		<link rel="icon" type="image/svg+xml" sizes="any" href="/favicon.svg" />
+		<link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48" href="/favicon.ico" />
+		<link rel="icon" type="image/svg+xml" sizes="any" href={faviconUrl} />
 		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
 		<title>{seo.title}</title>

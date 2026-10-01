@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
-import { GatuLogo } from "@/components/brand/gatu-logo";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { headerLanguage, headerLogo, headerSettings } from "@/components/trade/mobile/mobile-header-view";
 import { BRAND_NAME } from "@/config/brand";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
@@ -33,7 +33,7 @@ export function MobileHeader({ className }: Props) {
 					data-brand-home-link=""
 					className={headerLogo}
 				>
-					<GatuLogo variant="mark" micro className="size-[22px]" />
+					<BrandLogo variant="mark" className="h-6 w-auto" />
 				</Link>
 			}
 			account={<UserMenu />}

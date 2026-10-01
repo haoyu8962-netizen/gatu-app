@@ -3,7 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons/react";
 import { Link, type RegisteredRouter, useLocation, useRouter, type ValidateLinkOptions } from "@tanstack/react-router";
 import { type MouseEvent, useEffect, useRef, useState } from "react";
-import { GatuLogo } from "@/components/brand/gatu-logo";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { TOUCH_PRESS_CLASS, TOUCH_PRESS_FADE_CLASS } from "@/components/ui/touch-press";
 import { BRAND_NAME } from "@/config/brand";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
@@ -185,7 +185,7 @@ export function MobileNavDrawer() {
 							data-brand-home-link=""
 							className="flex items-center gap-1.5 rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
-							<GatuLogo className="h-4 w-auto" />
+							<BrandLogo className="h-6 w-auto" />
 						</Link>
 						<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label={t`Close navigation`} onClick={close}>
 							<XIcon className="size-4" />

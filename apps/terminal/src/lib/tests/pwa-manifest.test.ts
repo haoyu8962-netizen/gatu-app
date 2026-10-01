@@ -4,6 +4,7 @@ import { SEO_DEFAULTS } from "@/config/seo";
 
 interface WebAppManifest {
 	background_color: string;
+	id: string;
 	display: string;
 	icons: Array<{
 		purpose?: string;
@@ -29,12 +30,13 @@ describe("PWA manifest", () => {
 		expect(manifest.display).toBe("standalone");
 		expect(manifest.name).toBe("GATU");
 		expect(manifest.short_name).toBe("GATU");
+		expect(manifest.id).toBe("/");
 		expect(manifest.start_url).toBe("/");
 		expect(manifest.scope).toBe("/");
 		expect(manifest.icons).toEqual([
 			{
 				src: "favicon.ico",
-				sizes: "16x16 32x32 48x48 64x64",
+				sizes: "16x16 32x32 48x48",
 				type: "image/x-icon",
 			},
 			{

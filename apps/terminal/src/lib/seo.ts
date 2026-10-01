@@ -61,7 +61,7 @@ export function buildRootHead(fontPreloadUrls: readonly string[] = []): HeadOutp
 			{ name: "author", content: SEO_DEFAULTS.siteName },
 		],
 		links: [
-			{ rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48 64x64", type: "image/x-icon" },
+			{ rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
 			{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 			{ rel: "manifest", href: "/manifest.json" },

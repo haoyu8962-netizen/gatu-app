@@ -97,6 +97,11 @@ All the above also work as `ring-stroke-*`, `outline-stroke-*`, `divide-stroke-*
 - Every `text-[Npx]` that carried its own `leading-*` in the same class string now uses the named size. What the ratchet still counts either inherits its line height, so the named size would change it and its children and needs a visual check, or has no named equivalent (7, 8, 9, 15, 17, 18, 32px) and needs a design decision. `text-[28px]`, `text-[40px]` and `text-[56px]` are not `text-xl` / `text-2xl` / `text-3xl`, because those three shrink at 1000px.
 - Write `leading-*` after the font size it belongs to. `cn()` treats a font size as replacing any earlier `leading-*` of the same variant, so `cn("leading-5 text-2sm")` renders `text-2sm` with its default 18px line height while `cn("text-2sm leading-5")` keeps 20px.
 
+### Brand logo
+- `--logo-signal`, `--logo-choice`, `--logo-wordmark`: the three parts of the logo kit v1.3, per theme (light `#176b64` / `#99621f` / `#08262e`, dark `#86e5d3` / `#e6b766` / `#ffffff`), equal to `logo` in `brand/brand.json`. Only `BrandLogo` and `BrandPageLoader` use them; they are not UI accents.
+- `--logo-loader-floor`: the darkest opacity of the page-loading motion (light `0.78`, dark `0.55`), the kit's 3:1 contrast floor.
+- See [docs/brand-assets.md](../../docs/brand-assets.md) for the logo sizes and the components.
+
 ### Market / Trading Extensions
 - Order-book tokens are scoped to `apps/terminal/src/styles.css`: `--orderbook-depth-bid/ask` for 15% solid depth fills, `--orderbook-price-bid/ask` for price text, `--orderbook-flash-bid/ask` for quantity changes, `--orderbook-level-pulse-bid/ask` for full-row pulses, and `--orderbook-muted` for secondary text. Do not replace these with global market colors. Both themes and all desktop/mobile layouts share their semantic roles; palettes and composed contrast requirements are documented in `docs/orderbook-new-level-animation.md`.
 - `text-market-up` / `bg-market-up` positive PnL, price up (green)

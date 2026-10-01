@@ -1,3 +1,4 @@
+import logoImageUrl from "../../../../brand/social/sairn-avatar-light-1024.png?url";
 import { APP_URL, BRAND_NAME, SITE_URL } from "./brand";
 
 export const SEO_DEFAULTS = {
@@ -13,7 +14,7 @@ export const SEO_DEFAULTS = {
 	ogImageWidth: 1200,
 	ogImageHeight: 630,
 	ogImageAlt: `${BRAND_NAME} — Gateway to on-chain transactions`,
-	logoImage: "/gatu-logo-1024.png",
+	logoImage: logoImageUrl,
 } as const;
 
 export const SEO_BASE_KEYWORDS = [

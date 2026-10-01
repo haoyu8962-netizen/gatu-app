@@ -420,7 +420,7 @@ describe("TradingViewChart", () => {
 		widgets[0]?.remove.mockImplementationOnce(() => {
 			stateAtRemoval = {
 				ariaBusy: container.firstElementChild?.getAttribute("aria-busy"),
-				hasBrandLoader: container.querySelector('[data-gatu-loader="orbit"]') !== null,
+				hasBrandLoader: container.querySelector('[data-brand-loader="page-loading"]') !== null,
 				hasLoadingOutput: container.querySelector("[data-chart-loading]") !== null,
 				hasRecoverySpinner: container.querySelector("[data-chart-loading] svg.animate-spin") !== null,
 				maskClassName: container.querySelector("[data-chart-initializing]")?.className,
@@ -1754,7 +1754,7 @@ describe("TradingViewChart", () => {
 		expect(widgets[1]?.remove).not.toHaveBeenCalled();
 		expect(container.textContent).toContain("Loading...");
 		expect(container.textContent).not.toContain("Retry");
-		expect(container.querySelector('[data-gatu-loader="orbit"]')).not.toBeNull();
+		expect(container.querySelector('[data-brand-loader="page-loading"]')).not.toBeNull();
 		expect(container.querySelector("[data-chart-loading] svg.animate-spin")).toBeNull();
 
 		await act(async () => {
@@ -1794,7 +1794,7 @@ describe("TradingViewChart", () => {
 		expect(loading?.className).toContain("flex");
 		expect(loading?.className).toContain("text-fg-muted");
 		expect(loading?.className).not.toContain("sr-only");
-		expect(loading?.querySelector('[data-gatu-loader="orbit"]')?.getAttribute("class")).toContain("size-9");
+		expect(loading?.querySelector('[data-brand-loader="page-loading"]')?.getAttribute("class")).toContain("size-12");
 		expect(loading?.querySelector("svg.animate-spin")).toBeNull();
 		expect(loading?.querySelector("span")?.className).toContain("sr-only");
 		expect(loading?.querySelector("span")?.textContent).toBe("Loading...");
@@ -1842,7 +1842,7 @@ describe("TradingViewChart", () => {
 		expect(loadTradingViewScript).toHaveBeenCalledTimes(3);
 		expect(mask?.className).toContain("opacity-100");
 		expect(chart?.getAttribute("aria-busy")).toBe("true");
-		expect(container.querySelector('[data-gatu-loader="orbit"]')).not.toBeNull();
+		expect(container.querySelector('[data-brand-loader="page-loading"]')).not.toBeNull();
 		expect(container.querySelector("[data-chart-loading] svg.animate-spin")).toBeNull();
 
 		act(() => keepRetryPending?.());

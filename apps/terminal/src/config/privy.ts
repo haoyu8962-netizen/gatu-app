@@ -15,12 +15,17 @@ const PRIVY_APPEARANCE_BY_THEME = {
 	dark: {
 		theme: "#0F1A1F",
 		accentColor: "#EDEEF2",
+		logo: "/brand/lockup-on-dark.svg",
 	},
 	light: {
 		theme: "#FFFFFF",
 		accentColor: "#15171E",
+		logo: "/brand/lockup-on-light.svg",
 	},
-} as const satisfies Record<PrivyTheme, Pick<NonNullable<PrivyClientConfig["appearance"]>, "accentColor" | "theme">>;
+} as const satisfies Record<
+	PrivyTheme,
+	Pick<NonNullable<PrivyClientConfig["appearance"]>, "accentColor" | "logo" | "theme">
+>;
 
 export const PRIVY_WALLET_LIST = [
 	"binance",
