@@ -58,5 +58,24 @@ describe("deposit StatusScreen semantics", () => {
 		expect(description?.parentElement?.tagName).toBe("DIV");
 		expect(liveRegion?.contains(description ?? null)).toBe(true);
 		expect(liveRegion?.contains(action ?? null)).toBe(false);
+		expect(liveRegion?.querySelector("svg[data-brand-motion]")?.getAttribute("data-brand-motion")).toBe("success");
+	});
+
+	it.each([
+		["wallet", "wallet-awaiting", "status", true],
+		["awaiting", "awaiting-result", "status", true],
+		["error", "error", "alert", false],
+	] as const)("draws the %s screen with the %s motion", (icon, motion, role, loading) => {
+		act(() => {
+			root.render(
+				createElement(StatusScreen, { heading: "Deposit", icon, onClose: () => {}, open: true, title: "Deposit" }),
+			);
+		});
+
+		const svg = document.body.querySelector(`[role="${role}"] svg[data-brand-motion]`);
+		expect(svg?.getAttribute("data-brand-motion")).toBe(motion);
+		expect(svg?.getAttribute("width")).toBe("64");
+		expect(svg?.hasAttribute("data-loading-indicator")).toBe(loading);
+		expect(document.body.querySelector(".animate-spin, .animate-ping")).toBeNull();
 	});
 });

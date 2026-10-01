@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { renderStatusMotion, STATUS_MOTION_CSS_OUTPUT, STATUS_MOTION_OUTPUT } from "./brand-status-motion.mjs";
+import { renderStatusMotion, STATUS_MOTION_CSS_OUTPUT } from "./brand-status-motion.mjs";
 
 const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BRAND_SOURCE = "brand/brand.json";
@@ -72,7 +72,7 @@ if (problems.length > 0) {
 function syncBrand() {
 	writeFileSync(resolve(REPOSITORY_ROOT, LOGO_GEOMETRY_OUTPUT), renderLogoGeometry(readJson(BRAND_SOURCE)));
 	const statusMotion = renderStatusMotion(markGeometry());
-	writeFileSync(resolve(REPOSITORY_ROOT, STATUS_MOTION_OUTPUT), statusMotion.ts);
+	for (const [output, text] of Object.entries(statusMotion.modules)) writeFileSync(resolve(REPOSITORY_ROOT, output), text);
 	writeFileSync(resolve(REPOSITORY_ROOT, STATUS_MOTION_CSS_OUTPUT), statusMotion.css);
 	for (const [source, target] of SYNCED_FILES) {
 		mkdirSync(dirname(resolve(REPOSITORY_ROOT, target)), { recursive: true });
@@ -224,10 +224,7 @@ function checkSyncedAssets(brand) {
 	} catch (error) {
 		return [...problems, error.message];
 	}
-	for (const [output, expected] of [
-		[STATUS_MOTION_OUTPUT, statusMotion.ts],
-		[STATUS_MOTION_CSS_OUTPUT, statusMotion.css],
-	]) {
+	for (const [output, expected] of [...Object.entries(statusMotion.modules), [STATUS_MOTION_CSS_OUTPUT, statusMotion.css]]) {
 		if (readTextIfPresent(output) !== expected) problems.push(`${output} is out of date; run pnpm brand:sync`);
 	}
 	for (const [source, target] of SYNCED_FILES) {

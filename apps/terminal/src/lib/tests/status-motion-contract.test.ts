@@ -2,15 +2,20 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import type { BrandMotionDefinition, StatusGlyphDefinition, StatusTone } from "@/lib/brand/status-motion.gen";
-import * as statusMotion from "@/lib/brand/status-motion.gen";
+import * as brandMotions from "@/lib/brand/brand-motion.gen";
+import * as buttonLoading from "@/lib/brand/button-loading.gen";
+import type { BrandMotionDefinition, StatusGlyphDefinition, StatusTone } from "@/lib/brand/status-glyph.gen";
+import * as statusGlyphs from "@/lib/brand/status-glyph.gen";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_ROOT = resolve(TEST_DIR, "../../..");
 const REPOSITORY_ROOT = resolve(TERMINAL_ROOT, "../..");
 const TERMINAL_STYLES = readFileSync(resolve(TERMINAL_ROOT, "src/styles.css"), "utf8");
 const GENERATED_CSS = readFileSync(resolve(TERMINAL_ROOT, "src/lib/brand/status-motion.gen.css"), "utf8");
-const GENERATED_MODULE = readFileSync(resolve(TERMINAL_ROOT, "src/lib/brand/status-motion.gen.ts"), "utf8");
+const GENERATED_MODULES = ["status-glyph.gen.ts", "button-loading.gen.ts", "brand-motion.gen.ts"].map((file) => ({
+	file,
+	text: readFileSync(resolve(TERMINAL_ROOT, "src/lib/brand", file), "utf8"),
+}));
 const MOTION_TOKENS = JSON.parse(
 	readFileSync(resolve(REPOSITORY_ROOT, "brand/loader/sairn-motion.tokens.json"), "utf8"),
 );
@@ -29,10 +34,10 @@ const TONE_TOKENS: Record<StatusTone, string> = {
 	info: "--text-info",
 };
 
-const glyphs = Object.entries(statusMotion)
+const glyphs = Object.entries(statusGlyphs)
 	.filter(([name]) => name.startsWith("STATUS_GLYPH_"))
 	.map(([, value]) => value as StatusGlyphDefinition);
-const motions = Object.entries(statusMotion)
+const motions = Object.entries({ ...buttonLoading, ...brandMotions })
 	.filter(([name]) => name.startsWith("BRAND_MOTION_"))
 	.map(([, value]) => value as BrandMotionDefinition);
 
@@ -41,8 +46,17 @@ describe("status motion contract", () => {
 		const { renderStatusMotion } = await import(resolve(REPOSITORY_ROOT, "scripts/brand-status-motion.mjs"));
 		const { BRAND_LOGO_GEOMETRY } = await import("@/lib/brand/logo-geometry.gen");
 		const rendered = renderStatusMotion(BRAND_LOGO_GEOMETRY.mark);
-		expect(rendered.ts).toBe(GENERATED_MODULE);
+		for (const { file, text } of GENERATED_MODULES) {
+			expect(rendered.modules[`apps/terminal/src/lib/brand/${file}`], file).toBe(text);
+		}
+		expect(Object.keys(rendered.modules)).toHaveLength(GENERATED_MODULES.length);
 		expect(rendered.css).toBe(GENERATED_CSS);
+	});
+
+	it("keeps the illustrations out of the modules that load at startup", () => {
+		expect(Object.keys(statusGlyphs).filter((name) => name.startsWith("BRAND_MOTION_"))).toEqual([]);
+		expect(Object.keys(buttonLoading)).toEqual(["BRAND_MOTION_BUTTON_LOADING"]);
+		expect(Object.keys(brandMotions)).not.toContain("BRAND_MOTION_BUTTON_LOADING");
 	});
 
 	it("covers the delivered and supplementary glyphs on both grids and the motions the terminal renders", () => {
@@ -85,7 +99,7 @@ describe("status motion contract", () => {
 	it("never maps an unknown result to the error tone and loops only the in-progress states", () => {
 		const tone = Object.fromEntries(glyphs.map((glyph) => [glyph.id, glyph.tone]));
 		expect(tone.unknown).toBe("attention");
-		expect(statusMotion.BRAND_MOTION_UNKNOWN.tone).toBe("attention");
+		expect(brandMotions.BRAND_MOTION_UNKNOWN.tone).toBe("attention");
 		expect(
 			glyphs
 				.filter((glyph) => glyph.loop)
@@ -101,8 +115,10 @@ describe("status motion contract", () => {
 	});
 
 	it("keeps literal colors and titles out of the generated module and the components", () => {
-		expect(GENERATED_MODULE).not.toMatch(/#[0-9a-f]{3,8}\b/i);
-		expect(GENERATED_MODULE).not.toContain("<title");
+		for (const { file, text } of GENERATED_MODULES) {
+			expect(text, file).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+			expect(text, file).not.toContain("<title");
+		}
 		expect(GENERATED_CSS).not.toMatch(/#[0-9a-f]{3,8}\b/i);
 		for (const file of COMPONENT_FILES) {
 			const source = readFileSync(resolve(TERMINAL_ROOT, file), "utf8");

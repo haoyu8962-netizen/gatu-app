@@ -1,5 +1,5 @@
 import type { SVGProps } from "react";
-import type { StatusGlyphDefinition } from "@/lib/brand/status-motion.gen";
+import type { StatusGlyphDefinition } from "@/lib/brand/status-glyph.gen";
 import { cn } from "@/lib/cn";
 import { MotionDrawingShapes } from "./motion-drawing-shapes";
 

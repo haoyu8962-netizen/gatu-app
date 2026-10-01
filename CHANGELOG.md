@@ -58,6 +58,19 @@ changes, not evidence that a build has been deployed or accepted on real devices
   stay neutral and waiting spinners are grey. The desktop logo is now 24px high, so
   the header has 9px less room before its navigation collapses; see
   [brand assets](docs/brand-assets.md).
+- Notifications, funds and signing status screens and wallet handshake buttons use the Sairn
+  motion kit instead of spinning icons: order notifications show a glyph for submitting,
+  confirming, unconfirmed, partially filled, filled or accepted, cancelled and failed;
+  standard notifications show success, info, warning, error and pending glyphs; results whose
+  status is unknown always show the amber unknown glyph, never an error. Deposit, Vault, API
+  wallet and bridge status screens show the kit's 64px illustrations (waiting for the wallet,
+  submitting, awaiting the result, success, error, unknown, cancelled), buttons waiting for a
+  wallet show the breathing two-panel indicator in the button's own colour, and 16px copy
+  buttons draw a check. Passive loading, lazy dialog placeholders, refresh buttons and chart
+  recovery keep the neutral spinner. Reduced motion shows every glyph in its final state. The
+  partial, info and warning glyphs are drawn by the kit's own engine pending the designer's
+  confirmation; see [brand assets](docs/brand-assets.md) and
+  [ADR 0029](docs/adr/0029-brand-status-motion.md).
 - The canonical domain is now `sairn.ai` (`app.sairn.ai`, `testnet.sairn.ai`, `support@sairn.ai`);
   `gatu.ai` stays recognised until it is retired. Browser storage keys, the Hyperliquid Agent slot,
   internal headers, build variables and package names now use `sairn`, so external wallets must
@@ -461,6 +474,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The Vault dialog shows an unknown result in amber with the unknown glyph instead of a red error
+  icon, and an API wallet signature you declined shows a neutral cancelled glyph, because nothing
+  was submitted.
 - The support page and product docs describe the current phone linking (scan a short-lived QR
   code from the desktop header, where available) and USDC deposits from Arbitrum, instead of a
   pairing code and a built-in bridge; the legal documents carry the date of the Sairn rename.

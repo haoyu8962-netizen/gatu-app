@@ -1,9 +1,11 @@
 import { Trans } from "@lingui/react/macro";
-import { ClockIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
+import { ClockIcon, WalletIcon } from "@phosphor-icons/react";
 import { Badge, Button } from "@sairn/ui";
 import { useEffect, useRef, useState } from "react";
+import { BrandMotion } from "@/components/brand/brand-motion";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { BRIDGE_TIMEOUT_MS, LIFI_EXPLORER_URL } from "@/config/bridge";
+import { BRAND_MOTION_AWAITING_RESULT, BRAND_MOTION_WALLET_AWAITING } from "@/lib/brand/brand-motion.gen";
 import { shortenAddress } from "@/lib/format";
 import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
 import { ExplorerLink } from "./shared-ui";
@@ -70,9 +72,11 @@ export function ExecutingScreen({ address, statusText, txHash, onDone, recoveryW
 	return (
 		<div className="flex flex-1 flex-col gap-4">
 			<div className="flex flex-1 flex-col items-center justify-center gap-4">
-				<div className="flex size-12 items-center justify-center rounded-full border border-stroke-signal/30 bg-signal-soft">
-					<SpinnerGapIcon className="size-6 animate-spin text-fg-muted" />
-				</div>
+				<BrandMotion
+					key={txHash ? "awaiting" : "wallet"}
+					motion={txHash ? BRAND_MOTION_AWAITING_RESULT : BRAND_MOTION_WALLET_AWAITING}
+					size={64}
+				/>
 				<div className="text-center space-y-1">
 					<p className="text-sm font-medium text-fg">{statusText}</p>
 					<p className="text-xs text-fg-muted">

@@ -85,6 +85,11 @@ test("shards every browser invocation by test, in two jobs", () => {
 		true,
 		"the connected header width regression must run in the browser job",
 	);
+	assert.equal(
+		browser.includes("--config tests/browser/brand-surfaces.playwright.config.ts"),
+		true,
+		"the brand surface regression must run in the browser job",
+	);
 });
 
 test("keeps the merged static checks in one job", () => {

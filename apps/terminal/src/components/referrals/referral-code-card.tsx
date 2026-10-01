@@ -1,8 +1,10 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon, LinkSimpleIcon, ShareNetworkIcon } from "@phosphor-icons/react";
 import { Button, ButtonIcon } from "@sairn/ui";
+import { BrandMotion } from "@/components/brand/brand-motion";
 import { BRAND_NAME } from "@/config/brand";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { BRAND_MOTION_COPY_FEEDBACK } from "@/lib/brand/brand-motion.gen";
 import { formatNumber, formatUSD, shortenAddress } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -172,7 +174,11 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 								aria-label={codeCopy.copied ? t`Code copied` : t`Copy referral code`}
 								onClick={() => void codeCopy.copy(code)}
 							>
-								{codeCopy.copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
+								{codeCopy.copied ? (
+									<BrandMotion motion={BRAND_MOTION_COPY_FEEDBACK} size={16} />
+								) : (
+									<CopyIcon className="size-4" />
+								)}
 							</ButtonIcon>
 						</div>
 					</div>
@@ -194,7 +200,11 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 								aria-label={linkCopy.copied ? t`Link copied` : t`Copy referral link`}
 								onClick={() => void linkCopy.copy(referralUrl)}
 							>
-								{linkCopy.copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
+								{linkCopy.copied ? (
+									<BrandMotion motion={BRAND_MOTION_COPY_FEEDBACK} size={16} />
+								) : (
+									<CopyIcon className="size-4" />
+								)}
 							</ButtonIcon>
 						</div>
 					</div>

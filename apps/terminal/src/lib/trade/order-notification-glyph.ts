@@ -7,7 +7,7 @@ import {
 	STATUS_GLYPH_SUCCESS,
 	STATUS_GLYPH_UNKNOWN,
 	type StatusGlyphDefinition,
-} from "@/lib/brand/status-motion.gen";
+} from "@/lib/brand/status-glyph.gen";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
 
 /**

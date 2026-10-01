@@ -6,7 +6,7 @@ import { type ReactNode, useMemo, useState } from "react";
 import { zeroAddress } from "viem";
 import { StatusGlyph } from "@/components/brand/status-glyph";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-motion.gen";
+import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 import { formatDateTime } from "@/lib/format";
 import { useActiveAgentOwner, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 import {

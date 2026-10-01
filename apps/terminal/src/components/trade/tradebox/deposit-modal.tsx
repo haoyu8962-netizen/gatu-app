@@ -49,7 +49,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-motion.gen";
+import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
 import { infoQueryOptions, useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
@@ -1294,7 +1294,7 @@ export function DepositModal() {
 				open={open}
 				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
-				icon={forwardSubmitted ? "success" : "loading"}
+				icon={forwardSubmitted ? "success" : "awaiting"}
 				heading={forwardSubmitted ? <Trans>Deposit submitted to Hyperliquid</Trans> : <Trans>Forwarding deposit</Trans>}
 				description={
 					forwardSubmitted ? (
@@ -1325,7 +1325,7 @@ export function DepositModal() {
 				open={open}
 				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
-				icon="loading"
+				icon={depositStatus === "confirming" ? "awaiting" : "wallet"}
 				heading={depositPendingHeading}
 				description={
 					<span className="flex flex-col gap-1">

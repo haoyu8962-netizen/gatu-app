@@ -14,6 +14,7 @@
 | `ios/`、`android/`、`harmonyos/` | 原生 App 图标集 | 设计方原件；仓库没有原生工程，仅存档 |
 | `tools/` | Motion Library 与 Share Studio 两个离线 HTML 工具 | 设计方原件；产品代码不引用 |
 | `loader/` | 动效库导出：16 种动效（三种外观、动态与静态终态）、7 个状态符号、时长令牌；`PROVENANCE.json` 记录来源哈希 | 由 `node scripts/brand-export-motion.mjs` 从 `tools/` 导出 |
+| `loader-supplement/` | 动效库缺少的三个状态符号（部分成交、提示、警告），三种外观 × 两种网格 | Claude 依据 v1.3 规则补做、待设计方确认；由同一条导出命令用库自己的引擎渲染 `definitions.js`，`PROVENANCE.json` 记录哈希，说明见其 `README.md` |
 | `tokens/sairn.tokens.json` | 设计令牌（调色板、深浅主题的表面、文字、状态色） | 由同一脚本从两个 HTML 工具中提取，并校验两者一致 |
 | `share-cards/` | 分享卡与链接预览卡素材 | 设计方未交付；两张 1200×630 链接预览卡由 `designs/og-cards/cards.html` 按 Sairn 视觉生成（`pnpm og:generate`），持仓盈亏分享卡在终端代码里绘制 |
 | `fonts/` | 品牌字体与授权文件 | 当前没有专用字体 |
@@ -31,5 +32,5 @@
 
 1. 设计方的新版本覆盖到对应目录，原始压缩包放进 `_source/`。
 2. 动效库或分享卡工具更新后，运行 `pnpm brand:export-motion` 重新导出，再用 `node scripts/brand-export-motion.mjs --check` 确认导出可以复现。
-3. 不要手工修改 `loader/` 与 `tokens/` 下的文件，它们以 `PROVENANCE.json` 与工具原件为准。
+3. 不要手工修改 `loader/`、`loader-supplement/glyphs/` 与 `tokens/` 下的文件，它们以 `PROVENANCE.json` 与工具原件为准；补充符号只改 `loader-supplement/definitions.js` 后重新导出。设计方交付含这三个符号的新版动效库后，删除 `loader-supplement/` 并把 `scripts/brand-status-motion.mjs` 里的来源改回 `brand/loader`。
 4. 改了 `brand.json` 或任何素材后运行 `pnpm brand:check` 与 `pnpm test:brand`；读取方和校验清单见 [docs/brand-assets.md](../docs/brand-assets.md)。

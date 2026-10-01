@@ -850,6 +850,16 @@ availability, catalogs and stylesheet; the wallet session, geo verdict, pairing 
 modals are stubs, and nothing signs. The shared config excludes `top-nav-connected.pw.ts`;
 the regression matrix runs in both CI browser shards.
 
+The brand surface fixture uses the sibling cache `node_modules/.vite-brand-surfaces` and also
+serves its page from memory (`/brand-surfaces.html`). Run it with
+`pnpm --dir apps/terminal test:browser:brand-surfaces`; `BRAND_SURFACES_ENGINES=webkit,firefox`
+adds WebKit and Firefox locally (`BRAND_SURFACES_FIREFOX` must point at an installed Firefox
+executable; nothing is downloaded), and `BRAND_SURFACES_OUT` keeps its screenshots. It renders the
+real logo, chart loader, status glyphs, motions, button indicator and Sonner icons in both themes
+and compares computed fills with the terminal tokens and the running animations with reduced
+motion on and off. The shared config excludes `brand-surfaces.pw.ts`; CI runs it in Chromium in
+both browser shards.
+
 Shared desktop/mobile order summaries are emitted as separate implicit chunks
 after the client runtime entry. The trade route imports them statically inside its
 existing dynamic page boundary, and TanStack Start retains one client entry.

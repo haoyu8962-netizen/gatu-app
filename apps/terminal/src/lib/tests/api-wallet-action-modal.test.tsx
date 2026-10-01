@@ -202,6 +202,22 @@ describe("API wallet action modal", () => {
 		expect(container.querySelector("footer button")).toBeNull();
 		expect(container.textContent).toContain("Submitting to Hyperliquid");
 		expect(container.textContent).not.toContain("Processing…");
+		expect(container.querySelector(".animate-spin")).toBeNull();
+	});
+
+	it.each([
+		[{ stage: "awaiting", signer: "external" }, "wallet-awaiting"],
+		[{ stage: "awaiting", signer: "embedded" }, "submitting"],
+		[{ stage: "submitted" }, "submitting"],
+		[{ stage: "reconciling" }, "awaiting-result"],
+		[{ stage: "done", result: "success" }, "success"],
+		[{ stage: "done", result: "rejected" }, "cancelled"],
+		[{ stage: "done", result: "apiError" }, "error"],
+		[{ stage: "done", result: "unknown" }, "unknown"],
+	] as const)("draws the %o state with the %s motion", (state, motion) => {
+		renderAction(createAction({ locked: state.stage !== "done", ...state }));
+
+		expect(container.querySelector("svg[data-brand-motion]")?.getAttribute("data-brand-motion")).toBe(motion);
 	});
 
 	it("announces the current, completed, and failed action steps", () => {

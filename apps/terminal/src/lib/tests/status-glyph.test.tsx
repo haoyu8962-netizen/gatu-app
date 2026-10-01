@@ -4,13 +4,8 @@ import { describe, expect, it } from "vitest";
 import { BrandMotion } from "@/components/brand/brand-motion";
 import { ButtonLoading } from "@/components/brand/button-loading";
 import { StatusGlyph } from "@/components/brand/status-glyph";
-import {
-	BRAND_MOTION_SUCCESS,
-	BRAND_MOTION_WALLET_AWAITING,
-	STATUS_GLYPH_PENDING,
-	STATUS_GLYPH_SUCCESS,
-	STATUS_GLYPH_UNKNOWN,
-} from "@/lib/brand/status-motion.gen";
+import { BRAND_MOTION_SUCCESS, BRAND_MOTION_WALLET_AWAITING } from "@/lib/brand/brand-motion.gen";
+import { STATUS_GLYPH_PENDING, STATUS_GLYPH_SUCCESS, STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 
 function render(element: React.ReactElement) {
 	const container = document.createElement("div");

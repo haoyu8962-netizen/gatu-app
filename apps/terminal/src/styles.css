@@ -203,9 +203,6 @@
     --api-wallet-mobile-control-height: 3rem;
     --api-wallet-state-icon-size: 2.75rem;
     --api-wallet-mobile-state-icon-size: 2.5rem;
-    --api-wallet-progress-ring-size: 3.75rem;
-    --api-wallet-mobile-progress-ring-size: 3.5rem;
-    --api-wallet-progress-ring-stroke: 0.1875rem;
     --api-wallet-step-dot-size: 1rem;
     --api-wallet-skeleton-line-height: 0.6875rem;
     --api-wallet-secret-tracking: 0.18em;

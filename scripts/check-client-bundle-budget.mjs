@@ -36,7 +36,11 @@ const budgets = {
 	// geometry replace the rectangle GATU logo in the shared header chunk (+2.7 kB in the trade startup closure),
 	// plus the page-loading chart loader and the brand.json domain groups. Measured as the local Node 22.15.0
 	// build (3,185,839) minus the dev CI build at 99ddc6b4 (3,182,018); the +6,462 dev had already used stays counted.
-	totalGzipBaselineBytes: 3_179_377,
+	// Raised 2026-10-01 by +6,544 for the Sairn status motion (ADR 0029): generated glyph, button-indicator and
+	// illustration data (about 2.3 kB), their keyframes in the stylesheet (0.8 kB) and the three components, split
+	// so the illustrations load only with their dialogs (desktop runtime startup +769, mobile +151). Measured as the
+	// local Node 22.15.0 build (3,193,087) minus the local build of f440fa1b before the change (3,186,543).
+	totalGzipBaselineBytes: 3_185_921,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],

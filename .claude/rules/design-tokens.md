@@ -103,8 +103,9 @@ All the above also work as `ring-stroke-*`, `outline-stroke-*`, `divide-stroke-*
 - Write `leading-*` after the font size it belongs to. `cn()` treats a font size as replacing any earlier `leading-*` of the same variant, so `cn("leading-5 text-2sm")` renders `text-2sm` with its default 18px line height while `cn("text-2sm leading-5")` keeps 20px.
 
 ### Brand logo
-- `--logo-signal`, `--logo-choice`, `--logo-wordmark`: the three parts of the logo kit v1.3, per theme (light `#176b64` / `#99621f` / `#08262e`, dark `#86e5d3` / `#e6b766` / `#ffffff`), equal to `logo` in `brand/brand.json`. Only `BrandLogo` and `BrandPageLoader` use them; they are not UI accents.
-- `--logo-loader-floor`: the darkest opacity of the page-loading motion (light `0.78`, dark `0.55`), the kit's 3:1 contrast floor.
+- `--logo-signal`, `--logo-choice`, `--logo-wordmark`: the three parts of the logo kit v1.3, per theme (light `#176b64` / `#99621f` / `#08262e`, dark `#86e5d3` / `#e6b766` / `#ffffff`), equal to `logo` in `brand/brand.json`. Only `BrandLogo`, `BrandPageLoader` and the mark inside `BrandMotion` illustrations use them; they are not UI accents.
+- `--logo-loader-floor`: the darkest opacity of the page-loading motion (light `0.78`, dark `0.55`), the kit's 3:1 contrast floor; looping status motions follow it through `--srm-floor`.
+- Status motion (`StatusGlyph`, `BrandMotion`, `ButtonLoading`; ADR 0029) adds no colour token: `styles.css` maps `data-tone` to `--status-tone` from the existing text tokens (success → `--text-success`, error → `--text-error`, attention → `--text-warning`, neutral → `--text-weak`, info → `--text-info`), the badge cut-out `--status-on` to `--on-action`, and `--srm-floor` to `--logo-loader-floor` (mono button indicator `0.78`). Keep the kit's own palette out of the terminal; `status-motion-contract` pins the mapping.
 - See [docs/brand-assets.md](../../docs/brand-assets.md) for the logo sizes and the components.
 
 ### Market / Trading Extensions

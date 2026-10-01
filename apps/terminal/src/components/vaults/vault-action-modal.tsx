@@ -1,5 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import {
 	AdaptiveModal,
 	Button,
@@ -10,8 +10,14 @@ import {
 	ModalTitle,
 	TextInput,
 } from "@sairn/ui";
+import { BrandMotion } from "@/components/brand/brand-motion";
 import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+	BRAND_MOTION_AWAITING_RESULT,
+	BRAND_MOTION_SUBMITTING,
+	BRAND_MOTION_UNKNOWN,
+} from "@/lib/brand/brand-motion.gen";
 import { formatVaultRatio, formatVaultUsd, type VaultDetail } from "./domain/vaults";
 
 export type VaultActionStage = "input" | "review" | "awaiting" | "submitted" | "reconciling" | "done";
@@ -221,7 +227,11 @@ function VaultPendingStage({
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content in this status panel.
 		<div role="status" className="flex flex-col items-center gap-3 py-8 text-center">
-			<SpinnerGapIcon className="size-8 animate-spin text-fg-muted motion-reduce:animate-none" />
+			<BrandMotion
+				key={stage}
+				motion={stage === "awaiting" ? BRAND_MOTION_SUBMITTING : BRAND_MOTION_AWAITING_RESULT}
+				size={64}
+			/>
 			<p className="text-sm font-bold text-fg">
 				{stage === "awaiting" ? (
 					<Trans>Authorizing request</Trans>
@@ -251,7 +261,7 @@ function VaultPendingStage({
 function VaultActionUnknownResult({ operationReference }: Pick<VaultActionModalProps, "operationReference">) {
 	return (
 		<div role="alert" className="flex flex-col items-center gap-3 py-7 text-center">
-			<WarningCircleIcon className="size-9 text-error" weight="fill" />
+			<BrandMotion motion={BRAND_MOTION_UNKNOWN} size={48} />
 			<p className="text-sm font-bold text-fg">
 				<Trans>Result not yet known</Trans>
 			</p>

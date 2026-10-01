@@ -11,7 +11,7 @@ import {
 	STATUS_GLYPH_PENDING,
 	STATUS_GLYPH_SUCCESS,
 	STATUS_GLYPH_WARNING,
-} from "@/lib/brand/status-motion.gen";
+} from "@/lib/brand/status-glyph.gen";
 import "./sonner.css";
 import { useTheme } from "@/stores/use-global-settings-store";
 

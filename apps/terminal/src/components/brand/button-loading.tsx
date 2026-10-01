@@ -1,4 +1,4 @@
-import { BRAND_MOTION_BUTTON_LOADING } from "@/lib/brand/status-motion.gen";
+import { BRAND_MOTION_BUTTON_LOADING } from "@/lib/brand/button-loading.gen";
 import { BrandMotion } from "./brand-motion";
 
 interface Props {

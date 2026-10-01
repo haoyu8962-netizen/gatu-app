@@ -42,7 +42,7 @@ import {
 import { FundsActionGeoExecutionError, useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-motion.gen";
+import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";

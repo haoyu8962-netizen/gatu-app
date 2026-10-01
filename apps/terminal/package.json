@@ -17,6 +17,7 @@
 		"test:browser:slider": "playwright test tests/browser/trade-size-slider-performance.pw.ts --config tests/browser/playwright.config.ts",
 		"test:browser:user-menu-recovery": "playwright test --config tests/browser/user-menu-recovery.playwright.config.ts",
 		"test:browser:top-nav-connected": "playwright test --config tests/browser/top-nav-connected.playwright.config.ts",
+		"test:browser:brand-surfaces": "playwright test --config tests/browser/brand-surfaces.playwright.config.ts",
 		"typecheck": "tsc --noEmit --pretty false",
 		"i18n:extract": "lingui extract",
 		"i18n:compile": "lingui compile",

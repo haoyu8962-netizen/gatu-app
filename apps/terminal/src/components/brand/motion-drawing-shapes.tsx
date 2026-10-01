@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { BRAND_LOGO_GEOMETRY } from "@/lib/brand/logo-geometry.gen";
-import type { MotionDrawing } from "@/lib/brand/status-motion.gen";
+import type { MotionDrawing } from "@/lib/brand/status-glyph.gen";
 import { BRAND_LOGO_FILL } from "./brand-logo-fill";
 import { MOTION_PAINT } from "./motion-paint";
 

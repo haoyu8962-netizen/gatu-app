@@ -9,6 +9,7 @@
 | 名称、法律实体、域名、邮箱、界面品牌色、Logo 颜色、PWA 主题色 | [`brand/brand.json`](../brand/brand.json) | 应用、脚本和测试只读这里；不要在代码里再写品牌名、域名或邮箱字面量 |
 | Logo 与图标 | `brand/svg`、`brand/png`、`brand/web`、`brand/social` | 设计方原件，规则见 [`brand/LOGO-KIT.md`](../brand/LOGO-KIT.md) |
 | 加载与状态动效 | `brand/loader` | 由 `pnpm brand:export-motion` 从 `brand/tools` 的动效库导出，`PROVENANCE.json` 记录哈希 |
+| 补充状态符号（部分成交、提示、警告） | `brand/loader-supplement` | 动效库 v1.3 缺这三个符号；同一条导出命令用库自己的引擎渲染 `definitions.js`，待设计方确认，设计方交付后删除（`brand/loader-supplement/README.md`） |
 | 设计令牌 | `brand/tokens/sairn.tokens.json` | 由同一脚本从两个设计工具中提取 |
 
 ### `brand.json` 的域名分组
@@ -32,7 +33,7 @@
 - `apps/terminal/public/manifest.json` 的名称与主题色；
 - `apps/terminal/public/robots.txt`、`sitemap.xml` 与 `apps/website/public/robots.txt` 只指向主域名；
 - `legal/*.md` 里的链接与邮箱只使用主域名组，条款写明的法律实体等于 `name.legalEntity`；
-- `brand/loader` 的每个文件与导出记录一致。
+- `brand/loader` 与 `brand/loader-supplement` 的每个文件与导出记录一致，补充符号的定义文件与记录的哈希一致。
 
 ## Logo、图标与加载动效
 
@@ -54,6 +55,34 @@
 - `brand/web/icon.svg`：按设计方 `icon-512.png` 量出的几何（472 px 圆角方、内缩 20 px、圆角 106 px、标志高 60.2%）绘制的矢量图标；与原图逐像素比较的平均通道差为 0.11。
 - `brand/web/icon-maskable-192.png`：与 `icon-maskable-512.png` 相同构图（满版底色、标志高 60.2%）在 Chromium 中按 192 px 渲染；与 512 原图缩小后的平均通道差为 0.2。
 - `brand/web/email-logo.png`：Privy 登录验证码邮件的 Logo。360×180 白底，浅底横版组合占宽 80% 居中，在 Chromium 中渲染；`pnpm brand:sync` 复制到终端的 `/brand/email-logo.png`。
+
+## 状态动效
+
+用户发起的动作（下单、资金操作、签名握手、复制）用动效库的状态符号和插图表示状态与结果；被动的数据加载、懒加载占位和图表重建仍用原来的中性转圈，不新增被动提示（`docs/mobile-data-presentation.md`）。决定与取舍见 [ADR 0029](adr/0029-brand-status-motion.md)。
+
+| 组成 | 实现 | 规则 |
+|---|---|---|
+| 几何与关键帧 | `lib/brand/status-motion.gen.ts`、`status-motion.gen.css`，由 `pnpm brand:sync`（`scripts/brand-status-motion.mjs`）从 `brand/loader` 与 `brand/loader-supplement` 的 on-light 文件生成 | 每个符号与插图一个具名导出，便于按需打包；关键帧和每个动效的规则逐字取自导出文件，共用规则只保留用到的部分；生成器核对深浅两套文件几何一致、插图里的标志与 Logo 套件完全相同；不要手改 |
+| 状态符号 | `StatusGlyph`（`components/brand/status-glyph.tsx`） | 16 px 用 16 网格，大于 18 px 用 24 网格；通知 16 px，资金恢复提醒 20 px |
+| 插图 | `BrandMotion`（`components/brand/brand-motion.tsx`） | 进行中 64 px（`wallet-awaiting`、`submitting`、`awaiting-result`），结果至少 48 px；复制反馈 `copy-feedback` 16 px |
+| 按钮加载 | `ButtonLoading`（`components/brand/button-loading.tsx`） | 16 px、mono（`currentColor`），只用于钱包握手、安装、扫码等已点击的按钮；设计方配色放在实心按钮上对比度只有 1.28:1（深色）和 2.83:1（浅色） |
+| 颜色 | `styles.css` 按 `data-tone` 映射 | success、error、attention、neutral、info 分别取 `--text-success`、`--text-error`、`--text-warning`、`--text-weak`、`--text-info`，与旁边的通知文字同色；镂空记号取 `--on-action`；插图里的标志取 `--logo-*`；循环最暗帧 `--srm-floor` 跟随 `--logo-loader-floor`（浅色 0.78、深色 0.55），mono 固定 0.78 |
+| 无障碍 | 组件默认 `aria-hidden`，单独出现时由调用方传 `label`（已翻译） | 不输出 `<title>`；循环中的组件带 `data-loading-indicator`，测试用 `harness/loading-indicator.ts` 的选择器判断「没有进度」 |
+| 减少动态效果 | 生成的 `@media (prefers-reduced-motion:reduce){.srm .srm-anim{animation:none!important}}` 加全局规则 | 直接显示终态几何；动画结束不触发任何业务状态 |
+
+状态对应关系：
+
+| 场景 | 符号或插图 |
+|---|---|
+| 订单通知：提交中 / 确认中 / 未确认 / 部分成交 / 成功（含已受理）/ 已取消 / 失败 | `submitting` / `pending` / `unknown` / `partial` / `success` / `cancelled` / `error` |
+| Sonner：success / info / warning / error / loading | `success` / `info` / `warning` / `error` / `pending` |
+| 资金与 Earn「状态未知」通知、待核验的资金操作提醒 | `unknown`（调用方传 `icon`，从不显示成 error） |
+| 充值状态页：等待钱包 / 链上确认与转发 / 已提交 / 钱包连接失败 | `wallet-awaiting` / `awaiting-result` / `success` / `error` |
+| 金库弹层：授权并提交 / 已提交与对账 / 结果未知 | `submitting` / `awaiting-result` / `unknown`（此前误用红色） |
+| API 钱包弹层：等待外部钱包 / 邮箱钱包签名与提交 / 核验；成功 / 用户拒签 / 交易所拒绝 / 未知 | `wallet-awaiting` / `submitting` / `awaiting-result`；`success` / `cancelled` / `error` / `unknown` |
+| 跨链执行：等待钱包 / 已有交易哈希 | `wallet-awaiting` / `awaiting-result` |
+
+`status-motion-surface-contract.test.ts` 列出仍保留转圈的文件、数量和理由，新增转圈或回退已接入的界面都会失败；`status-motion-contract.test.ts` 核对生成结果最新、没有字面颜色与 `<title>`、语调映射与减少动态效果规则；`tests/browser/brand-surfaces.pw.ts` 在真实浏览器里核对 Logo、加载器、符号、插图与通知图标的实际填色和动画（CI 跑 Chromium，本地可加 WebKit 与 Firefox）。
 
 ## 设计稿
 
@@ -77,10 +106,11 @@
 | 命令 | 覆盖 |
 |---|---|
 | `pnpm brand:check` | 上面的静态文件与动效导出、几何模块与同步的公共文件是否最新、图标 PNG 的尺寸与不透明度；同时校验 `brand.json` 的结构（域名小写、子域名属于同一顶级域、邮箱使用主域名、主机不重复） |
-| `pnpm brand:sync` | 重新生成几何模块并复制公共文件，然后执行同样的检查 |
+| `pnpm brand:sync` | 重新生成 Logo 几何、状态动效模块与样式，复制公共文件，然后执行同样的检查 |
 | `node --test tests/brand-cross-app.test.mjs` | `packages/ui`、终端、官网三份样式表的品牌色等于 `brand.json` |
 | `pnpm test:brand` | 以上两项、OG 卡、终端品牌契约测试与官网测试 |
-| `pnpm brand:export-motion`、`node scripts/brand-export-motion.mjs --check` | 重新导出动效并确认导出可以复现（需要 Chromium，不在 CI 中运行） |
+| `pnpm brand:export-motion`、`node scripts/brand-export-motion.mjs --check` | 重新导出动效与补充符号，并确认导出可以复现（需要 Chromium，不在 CI 中运行） |
+| `pnpm --dir apps/terminal test:browser:brand-surfaces` | 真实浏览器中的品牌表面填色与动画；`BRAND_SURFACES_ENGINES=webkit,firefox`（Firefox 另需 `BRAND_SURFACES_FIREFOX` 指向可执行文件）加测其他引擎 |
 
 CI 中，`Terminal Tests` 在 `brand/**`、`legal/**` 变化时运行 `pnpm brand:check` 和终端品牌测试组；`Website and Brand` 运行 `pnpm test:brand`。路径与测试清单由 `scripts/ci-workflows.test.mjs` 固定。
 
