@@ -1,6 +1,6 @@
 # Sairn - Cookie and Browser Storage Policy
 
-**Last Updated:** August 3, 2026
+**Last Updated:** October 1, 2026
 
 This policy explains how Sairn Corp. ("Sairn," "we," "us," or "our") uses cookies and browser storage in the trading interface available at [https://app.sairn.ai](https://app.sairn.ai).
 

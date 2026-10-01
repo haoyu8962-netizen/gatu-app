@@ -1,6 +1,6 @@
 # Sairn - Terms of Use
 
-**Last Updated:** July 20, 2026
+**Last Updated:** October 1, 2026
 
 These Terms of Use ("Terms") govern your access to and use of the Sairn website-hosted
 trading interface available at [https://app.sairn.ai](https://app.sairn.ai), together with

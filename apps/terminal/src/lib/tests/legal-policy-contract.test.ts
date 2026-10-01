@@ -31,7 +31,7 @@ describe("published legal policy contract", () => {
 	});
 
 	it("describes current data handling without claiming an unused analytics provider", () => {
-		expect(privacy).toContain("**Last Updated:** September 27, 2026");
+		expect(privacy).toContain("**Last Updated:** October 1, 2026");
 		expect(privacy).toContain("[Cookie and Browser Storage Policy](https://app.sairn.ai/cookies)");
 		expect(privacy).toContain("does not integrate a product-analytics SDK");
 		expect(privacy).not.toContain("Mixpanel");
@@ -41,7 +41,7 @@ describe("published legal policy contract", () => {
 	it("publishes an accurate cookie and browser-storage policy", () => {
 		const terminalRoute = readRepositoryFile("apps/terminal/src/routes/cookies.tsx");
 
-		expect(cookies).toContain("**Last Updated:** August 3, 2026");
+		expect(cookies).toContain("**Last Updated:** October 1, 2026");
 		expect(cookies).toContain("does not integrate a product-analytics SDK");
 		expect(cookies).toContain("Essential storage cannot be disabled through the Interface");
 		expect(cookies).toContain("support@sairn.ai");
@@ -50,7 +50,7 @@ describe("published legal policy contract", () => {
 	});
 
 	it("publishes a completed disclosure for the product's material risk surfaces", () => {
-		expect(risk).toContain("**Last Updated:** July 21, 2026");
+		expect(risk).toContain("**Last Updated:** October 1, 2026");
 		expect(risk).not.toContain("DRAFT");
 		expect(risk).not.toContain("【");
 		for (const topic of [

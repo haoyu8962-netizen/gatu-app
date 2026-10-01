@@ -1,6 +1,6 @@
 # Sairn - Risk Disclosure
 
-**Last Updated:** July 21, 2026
+**Last Updated:** October 1, 2026
 
 This Risk Disclosure supplements the Sairn [Terms of Use](https://app.sairn.ai/terms). It
 highlights material risks but cannot describe every possible risk. If this Risk Disclosure

@@ -1,6 +1,6 @@
 # Sairn - Privacy Policy
 
-**Last Updated:** September 27, 2026
+**Last Updated:** October 1, 2026
 
 This Privacy Policy ("Policy") explains how Sairn Corp. ("Sairn," "we," "us," or "our")
 handles personal data in connection with the interface available at

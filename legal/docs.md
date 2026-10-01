@@ -2,7 +2,7 @@
 
 Welcome to the official documentation for **Sairn**, a professional trading terminal for the Hyperliquid decentralized exchange.
 
-> _Last updated: September 28, 2026_
+> _Last updated: October 1, 2026_
 
 ---
 
@@ -35,11 +35,11 @@ Guiding principles:
 - **Agent (API) wallet** — approve a delegated trading key once to enable seamless, pop-up-free order signing. The agent key can place and cancel orders but cannot withdraw your funds.
 - **Deposits & withdrawals** — manage your exchange balance directly from the terminal.
 
-### Cross-Chain Bridging
-- Move assets from supported networks into your trading account using an integrated bridge.
+### USDC Deposits From Arbitrum
+- Send USDC from Arbitrum to your trading account; the terminal moves it to Hyperliquid through Circle's CCTP.
 
 ### Mobile Device Linking
-- Securely link a mobile device using an encrypted, time-limited pairing flow protected by a separate pairing code.
+- Where available, link a phone by approving a trading key on desktop and scanning a short-lived QR code from the desktop header.
 
 ---
 
@@ -49,7 +49,7 @@ Follow these steps to place your first trade:
 
 1. **Open Sairn** — navigate to https://app.sairn.ai.
 2. **Connect your wallet** — click **Connect Wallet** and choose your preferred method (external wallet or email sign-in).
-3. **Fund your account** — deposit funds directly, or use the built-in bridge to move assets from another network.
+3. **Fund your account** — deposit USDC from Arbitrum.
 4. **Approve the trading agent** — the first time you trade, approve the agent (API) wallet. This is a one-time signature that enables fast order signing.
 5. **Place a trade** — select a market, choose your order type and size, and submit.
 
@@ -61,7 +61,7 @@ Follow these steps to place your first trade:
 
 - **Active perps trading** — manage leverage, positions, and risk with advanced order types.
 - **Spot trading & swaps** — trade spot markets or swap tokens with real-time pricing.
-- **Funding & bridging** — move assets into your trading account from supported networks.
+- **Funding** — deposit USDC from Arbitrum and withdraw it back.
 - **Mobile trading** — link your phone to trade away from your desktop.
 - **Portfolio monitoring** — track positions, balances, open orders, funding, and trade history.
 

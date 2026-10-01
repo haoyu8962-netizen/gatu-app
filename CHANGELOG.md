@@ -461,6 +461,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The support page and product docs describe the current phone linking (scan a short-lived QR
+  code from the desktop header, where available) and USDC deposits from Arbitrum, instead of a
+  pairing code and a built-in bridge; the legal documents carry the date of the Sairn rename.
 - With a wallet connected, the desktop header no longer overlaps between 1182px and about 1450px:
   in Spanish and French the deposit button covered More (clicking More opened the deposit dialog)
   and Settings could be pushed off screen. The header now switches to its compact layout at 1379px

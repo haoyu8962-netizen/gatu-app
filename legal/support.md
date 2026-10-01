@@ -2,7 +2,7 @@
 
 Welcome to Sairn Support. This page helps you find answers, troubleshoot common issues, and get in touch with our team.
 
-> _Last updated: June 15, 2026_
+> _Last updated: October 1, 2026_
 
 ---
 
@@ -42,7 +42,7 @@ Email sign-in creates an embedded wallet for you. You can view its address in th
 ### Trading
 
 **How do I deposit funds?**
-Deposit directly to your trading account, or use the built-in bridge to move assets from a supported network.
+Open **Deposit** and send USDC from Arbitrum. The terminal moves it to your Hyperliquid trading account through Circle's CCTP.
 
 **Why was my order rejected or not filled?**
 Common reasons include insufficient margin, the price moving away from a limit order, or temporary network/exchange conditions. See [Troubleshooting](#troubleshooting).
@@ -53,7 +53,7 @@ Open the account/deposit panel and follow the withdrawal flow. Withdrawals are s
 ### Mobile
 
 **How do I link my phone?**
-Use the **Link mobile device** option to generate a secure, time-limited pairing link and code. Open the link on your phone and enter the pairing code to complete the link. Connect the **same wallet** on both devices.
+Where phone linking is available, click the QR code icon in the desktop header, approve the request with your main wallet, then reveal the QR code and scan it with your phone. The phone then trades with the trading key you approved; deposits, withdrawals and transfers still need your main wallet on desktop. Approving again replaces the phone's key, and you can remove it on the API Wallet page.
 
 ---
 
@@ -76,9 +76,9 @@ Use the **Link mobile device** option to generate a secure, time-limited pairing
 - Disable browser extensions that may block real-time connections.
 
 ### Mobile link not working
-- Pairing links are short-lived — generate a new one if it expired.
-- Make sure you entered the correct pairing code.
-- Ensure you connect the **same wallet** on both devices.
+- The QR code is short-lived and closes when you leave the window — reveal a new one and scan it right away.
+- Make sure the phone opens the same network (mainnet or testnet) as the desktop.
+- If importing fails, approve again on desktop and scan the new code.
 
 > If an issue persists, please contact support with details (see below).
 
