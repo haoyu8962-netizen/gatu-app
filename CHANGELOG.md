@@ -73,6 +73,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   partial, info and warning glyphs are drawn by the kit's own engine pending the designer's
   confirmation; see [brand assets](docs/brand-assets.md) and
   [ADR 0029](docs/adr/0029-brand-status-motion.md).
+- The mobile order button now matches desktop: while an order is being sent it keeps its Buy or
+  Sell name and shows no indicator, because the order's status appears in the notifications. Only
+  the Enable Trading wallet signature shows progress, with the Sairn button indicator instead of
+  the spinning icon it showed in both cases before.
 - The canonical domain is now `sairn.ai` (`app.sairn.ai`, `testnet.sairn.ai`, `support@sairn.ai`);
   `gatu.ai` stays recognised until it is retired. Browser storage keys, the Hyperliquid Agent slot,
   internal headers, build variables and package names now use `sairn`, so external wallets must

@@ -70,6 +70,7 @@
 
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
+- [移动端下单按钮的提交状态与桌面一致](sessions/2026-10-01-mobile-order-button-status.md) — 2026-10-01；已验证，范围见正文。移动端下单按钮提交订单时不再转圈、名称保持方向标签，只有启用交易的钱包签名阶段显示 ButtonLoading，与桌面一致；状态动效契约移除该转圈豁免，渲染真实 MobileTradeView 的用例钉住两种状态（旧代码上 4 例失败）；未做真机与真实钱包验收。
 - [集成 PR：持久化水合的 CI 覆盖与杠杆警告拖动保持](sessions/2026-09-28-integrate-hydration-leverage-warning.md) — 2026-09-28；已验证，范围见正文。按用户要求把 PR 43（claude/hungry-cartwright-aa350f）与没有 PR 的 claude/heuristic-goldberg-e91886 合成一个集成分支，基于 dev 5c7ccbd1 做两次 --no-ff 合并。PR 43 的修复提交已由 518d0039 以相同补丁进入 dev，实际新增的只有 CI 清单一行和记录补充；冲突只在工作记录（取分支版本，它包含 dev 上的副本）和生成的 INDEX.md（重新生成）。杠杆警告分支合并无冲突。集成分支上 typecheck、Biome、CI 结构测试、全量单测（608 个文件 / 6,985 项）与滑杆浏览器套件（22 项）通过；没有做真人拖动验证，GitHub CI 以 PR 为准。
 - [滑杆暂停测试的预览基线竞态](sessions/2026-09-28-slider-pause-preview-baseline.md) — 2026-09-28；已验证，范围见正文。滑杆浏览器测试「值来源在拖动中暂停」在 PR 48 的 CI 上偶发 Expected 5 / Received 6。代码分析与本地复现支持的根因在测试的读取顺序：基线在一次 evaluate 里读、暂停在下一次 evaluate 才设，其间 15ms 尾随预览会合法发布并被多计。改为先挂 MutationObserver 再暂停，在暂停提交之后的微任务里读基线；6 倍 CPU 节流下原测试 2/25 以同一签名失败、新测试 25/25 通过。Codex 只读对抗审查无 P0–P2，指出的两处表述过强经变异复核后已更正：暂停提交内同步发布的预览会被新基线吸收（由单测覆盖）。审查还发现暂停时取消待发定时器原先没有测试覆盖，已按用户决定补单测，只去掉取消分支的变异下它是唯一失败的用例。未改 trade-slider.tsx；PR 49 的五项检查全部通过后以 merge commit 合入 dev（d0e6a79b）。
 - [HIP-3 免责声明对齐：修复 Codex 审查发现](sessions/2026-09-27-hip3-alignment-review-fixes.md) — 2026-09-27；已验证，范围见正文。处理 2026-09-25 Codex 对 7c9b3f21 的审查发现：把后台任务的 store 空值保护 06293549 与其记录 cherry-pick 进 codex/reviewceshi（518d0039、79ec5555，索引冲突后重新生成）；全部平仓浏览器夹具可要求免责声明，新增真实弹窗加真实提交路径的用例（声明期间改变持仓并拨过 31 秒，核对展示数量等于发单数量）；限价平仓保留会话 250 ms 播放退出动画，关闭中禁用确认；补交易页副本与平仓副本的 Esc 测试；改正确认面契约里市价平仓提交宿主的描述与 30 秒起算点。两处变异检查均被测试抓住。Biome、类型检查、回归组 48 文件 948 项、完整单测 601 文件 6862 项、全部平仓浏览器套件 41 项通过；应用内浏览器会话已登出，限价平仓未实测。补记：Codex 只读对抗审查 27ee060f..3d0e7667，无 P0 到 P3 发现，两条限定事项经核实不构成缺陷。
@@ -308,6 +309,7 @@
 
 当前规范：[docs/brand-migration-plan.md](../../docs/brand-migration-plan.md)
 
+- [移动端下单按钮的提交状态与桌面一致](sessions/2026-10-01-mobile-order-button-status.md) — 2026-10-01；已验证，范围见正文。移动端下单按钮提交订单时不再转圈、名称保持方向标签，只有启用交易的钱包签名阶段显示 ButtonLoading，与桌面一致；状态动效契约移除该转圈豁免，渲染真实 MobileTradeView 的用例钉住两种状态（旧代码上 4 例失败）；未做真机与真实钱包验收。
 - [Sairn 品牌迁移的五项遗留：页头、设计稿、官网、跨浏览器、状态动效](sessions/2026-10-01-sairn-brand-followups.md) — 2026-10-01；已验证，范围见正文。处理品牌迁移执行记录的五项遗留（未推送、未发布）：已连接页头在 1182–约 1450 px 重叠，紧凑宽度改为 1379 px、不可存款按钮只显示图标并加回归测试；动效库缺的部分成交、提示、警告由库自己的引擎补做，状态符号、插图与按钮加载从导出文件生成后接入通知、状态页与握手按钮（ADR 0029，总包体基线 +6,544）；官网纠正开源/MIT/50×/无邮箱/无后端等不实说法并重拍截图、写发布手册；法律文本补日期并更新手机连接与充值说明；Privy 登录邮件 PNG Logo；三引擎品牌表面回归；补写 ADR 0027–0031 与 AGENTS 品牌契约；设计稿只换名称标签。sairn.ai 已于 2026-10-01 11:40Z 在 Cloudflare 注册，其余上线步骤未做。
 - [gatu → Sairn 品牌迁移：执行记录](sessions/2026-10-01-sairn-brand-migration-execution.md) — 2026-10-01；已验证，范围见正文。按 docs/brand-migration-plan.md 与用户决定完成 gatu → Sairn 品牌迁移（未发布）：brand/ 单一来源与设计交付物、Logo/图标/加载动效/Privy logo/OG 卡/盈亏分享卡、名称与六种语言目录（{BRAND_NAME} 占位）、法律实体 Sairn Corp.、青色与薄荷强调色、存储键与锁名/Agent 槽位名 sairn/请求头/环境变量/包作用域 @sairn、规范域名 sairn.ai（gatu.ai 过渡期继续识别）、现行文档与历史记录的产品名。最终验证：全仓类型检查、改动文件 Biome、终端 640 文件 7,938 项、官网测试与构建、脚本与 CloudFront 测试、test:brand、记录检查、Node 22.15 生产构建（预算 +7,166）与 Lambda 构建、7 组浏览器套件 216 项全部通过。未做：状态动效、已连接页头测量、真机与非 Chromium 浏览器、任何发布与仓库外操作（DNS、证书、CloudFront 别名与源站请求策略、Privy、邮件、LI.FI 登记）。
 - [gatu → Sairn 品牌迁移：素材核验与分阶段计划](sessions/2026-10-01-sairn-brand-migration-plan.md) — 2026-10-01；已整理，验证见正文。用户把 Sairn 设计交付物（Logo/图标套件 v1.3、Motion Library 与 Share Studio 两个 HTML 工具、iOS/Android/鸿蒙图标集）放进 brand/ 并要求规划替换。六路只读调查加两路对抗审查后形成 docs/brand-migration-plan.md：交付物缺 OG 卡、PnL 标注稿、maskable-192、域名与邮箱；存储键、Web Lock 名与 Agent 槽位名 gatu 默认保留（改名或换域名都会让资金与下单守卫失效）；页头三处 Logo 低于新规则的 24px；PWA 主题色按 runtime-guardrails §8 保持 #0F1A1F；官网线上版本停在 2026-07-19 且旧文件按 immutable 缓存一年。计划含 24 项待用户决定事项、阶段 0a–7 与仓库外清单。只改文档，未运行任何仓库测试，未实施任何阶段，brand/ 下的交付物仍未入库。
@@ -318,6 +320,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-01 | [移动端下单按钮的提交状态与桌面一致](sessions/2026-10-01-mobile-order-button-status.md) | 未取得任务标识，见正文 | `2baa44e2` | 已验证，范围见正文 |
 | 2026-10-01 | [PR 63 并入公告与 Privy 分支、五路对抗审查与修复](sessions/2026-10-01-pr63-merge-and-adversarial-review.md) | 未取得任务标识，见正文 | `a613e212` | 已验证，范围见正文 |
 | 2026-10-01 | [Sairn 品牌迁移的五项遗留：页头、设计稿、官网、跨浏览器、状态动效](sessions/2026-10-01-sairn-brand-followups.md) | 未取得任务标识，见正文 | `f440fa1b` | 已验证，范围见正文 |
 | 2026-10-01 | [gatu → Sairn 品牌迁移：执行记录](sessions/2026-10-01-sairn-brand-migration-execution.md) | 未取得任务标识，见正文 | `8274cc3d` | 已验证，范围见正文 |
