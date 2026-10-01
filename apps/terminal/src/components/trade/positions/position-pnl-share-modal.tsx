@@ -1,6 +1,6 @@
-import { Modal, ModalPopup, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CheckIcon, CopyIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
+import { Modal, ModalPopup, ModalTitle } from "@sairn/ui";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BrandLogo } from "@/components/brand/brand-logo";

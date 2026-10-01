@@ -1,4 +1,4 @@
-import { createSubscriptionEventAccumulator } from "@gatu/hl-react/registries/subscription";
+import { createSubscriptionEventAccumulator } from "@sairn/hl-react/registries/subscription";
 import { describe, expect, it } from "vitest";
 
 describe("fastAssetCtxs event accumulator", () => {

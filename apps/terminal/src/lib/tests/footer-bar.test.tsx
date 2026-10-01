@@ -19,7 +19,7 @@ const arabicMessages: Messages = {
 		DOCUMENTATION_AND_LEGAL_AR,
 };
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Divider: ({ className }: { className?: string }) => <hr className={className} />,
 }));
 

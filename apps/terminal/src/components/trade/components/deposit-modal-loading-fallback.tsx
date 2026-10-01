@@ -1,6 +1,6 @@
-import { ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDepositModalActions, useDepositModalTab } from "@/stores/use-global-modal-store";
 import { PendingActionModal } from "./pending-action-modal";

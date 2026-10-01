@@ -1,6 +1,6 @@
-import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { reportClientError } from "@/lib/error-reporting/client";
 import { LazyComponentLoadError } from "@/lib/lazy";

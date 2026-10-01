@@ -82,7 +82,7 @@ vi.mock("@/hooks/wallet/use-email-wallet-export", () => ({
 	}),
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	buttonVariants: () => "",
 	AdaptiveModal: ({
 		children,

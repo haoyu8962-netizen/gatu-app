@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { Button, Dropdown } from "@gatu/ui";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { Button, Dropdown } from "@sairn/ui";
 import { act, createRef, type ReactNode } from "react";
 import { createRoot, hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";

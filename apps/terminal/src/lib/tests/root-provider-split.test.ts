@@ -19,7 +19,7 @@ describe("root provider startup split", () => {
 		expect(rootProviderSource).not.toContain("<Suspense");
 		expect(rootProviderSource).not.toContain('from "@privy-io/react-auth"');
 		expect(rootProviderSource).not.toContain('from "@privy-io/wagmi"');
-		expect(rootProviderSource).not.toContain('from "@gatu/hl-react"');
+		expect(rootProviderSource).not.toContain('from "@sairn/hl-react"');
 	});
 
 	it("keeps the document shell provider structurally stable across hydration", () => {

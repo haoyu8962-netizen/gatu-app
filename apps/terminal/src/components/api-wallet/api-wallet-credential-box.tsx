@@ -1,6 +1,6 @@
-import { Badge, Button, Checkbox } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { DownloadSimpleIcon, EyeIcon, EyeSlashIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { Badge, Button, Checkbox } from "@sairn/ui";
 import { BRAND_NAME } from "@/config/brand";
 import { ApiWalletCopyButton } from "./api-wallet-copy-button";
 

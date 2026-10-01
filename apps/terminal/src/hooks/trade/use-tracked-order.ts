@@ -1,4 +1,4 @@
-import type { ExchangeExecutionGuard } from "@gatu/hl-react";
+import type { ExchangeExecutionGuard } from "@sairn/hl-react";
 import { useRef, useState } from "react";
 import { doesOrderBatchMatchRiskContext, type OrderRiskContext } from "@/domain/trade/order-risk-context";
 import {

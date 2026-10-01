@@ -1,6 +1,6 @@
-import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import { formatTransferError } from "@/lib/errors/format";
 
 interface Props {

@@ -69,7 +69,7 @@ vi.mock("@phosphor-icons/react", () => ({
 	WarningCircleIcon: () => null,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) =>
 		createElement("button", { disabled, onClick, type: "button" }, children),
 }));

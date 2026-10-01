@@ -1,3 +1,12 @@
+import { Trans, useLingui } from "@lingui/react/macro";
+import {
+	ArrowDownIcon,
+	ArrowUpIcon,
+	CaretLeftIcon,
+	CaretRightIcon,
+	InfoIcon,
+	MagnifyingGlassIcon,
+} from "@phosphor-icons/react";
 import {
 	Button,
 	ButtonIcon,
@@ -9,16 +18,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from "@gatu/ui";
-import { Trans, useLingui } from "@lingui/react/macro";
-import {
-	ArrowDownIcon,
-	ArrowUpIcon,
-	CaretLeftIcon,
-	CaretRightIcon,
-	InfoIcon,
-	MagnifyingGlassIcon,
-} from "@phosphor-icons/react";
+} from "@sairn/ui";
 import type { ReactNode } from "react";
 import { AssetBadge } from "@/components/trade/components/asset-badge";
 import { AssetDisplay } from "@/components/trade/components/asset-display";

@@ -1,5 +1,5 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { Button } from "@sairn/ui";
 import { useState } from "react";
 import { TOUCH_PRESS_CLASS } from "@/components/ui/touch-press";
 import { isFundingHistoryMarket } from "@/domain/market/funding-history-market";

@@ -1,6 +1,6 @@
-import { Button, Table } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowLeftIcon, ArrowSquareOutIcon, LockKeyIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { Button, Table } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import { cn } from "@/lib/cn";

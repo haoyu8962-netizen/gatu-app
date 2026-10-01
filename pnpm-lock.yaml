@@ -59,10 +59,10 @@ importers:
       '@fontsource-variable/inter':
         specifier: 5.2.8
         version: 5.2.8
-      '@gatu/hl-react':
+      '@sairn/hl-react':
         specifier: workspace:*
         version: link:../../packages/hl-react
-      '@gatu/ui':
+      '@sairn/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@lifi/sdk':

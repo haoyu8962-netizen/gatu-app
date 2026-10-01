@@ -1,5 +1,5 @@
-import { Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";

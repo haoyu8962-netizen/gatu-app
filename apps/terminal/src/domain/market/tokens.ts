@@ -1,4 +1,4 @@
-import type { MarketSpotToken as SpotToken } from "@gatu/hl-react";
+import type { MarketSpotToken as SpotToken } from "@sairn/hl-react";
 import { DEFAULT_QUOTE_TOKEN, TOKEN_ICON_BASE_URL, USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { ASSET_REPLACEMENTS, categoryMapping, type MarketCategory, NO_SPOT_PREFIX_ASSETS } from "@/config/tokens";
 import { PERP_MARKET_NAME_SEPARATOR, SPOT_MARKET_NAME_SEPARATOR } from "./display";

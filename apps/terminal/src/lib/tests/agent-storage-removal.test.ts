@@ -84,7 +84,7 @@ describe("verified Agent storage removal", () => {
 		const { storage, store } = installDom();
 		store.set(STORAGE_KEY, STORAGE_VALUE);
 		store.set(OTHER_STORAGE_KEY, STORAGE_VALUE);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
 		const callback = vi.fn();
 		const unsubscribe = storageModule.subscribeToStorage(callback);
 
@@ -101,15 +101,15 @@ describe("verified Agent storage removal", () => {
 
 	it("treats an already absent key as an idempotent success", async () => {
 		installDom();
-		const { removeAgentFromStorageAndVerify } = await import("@gatu/hl-react/signing/agent-storage");
+		const { removeAgentFromStorageAndVerify } = await import("@sairn/hl-react/signing/agent-storage");
 
 		expect(removeAgentFromStorageAndVerify("Mainnet", OWNER)).toEqual({ status: "removed" });
 	});
 
 	it("invalidates selected exchange work before Agent removal reaches browser storage", async () => {
 		installDom();
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
-		const schedulerModule = await import("@gatu/hl-react/internal/exchange/request-scheduler");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
+		const schedulerModule = await import("@sairn/hl-react/internal/exchange/request-scheduler");
 		const scheduler = new schedulerModule.ExchangeRequestScheduler();
 		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "wallet");
 		const run = vi.fn(async () => "unexpected");
@@ -124,8 +124,8 @@ describe("verified Agent storage removal", () => {
 
 	it("invalidates selected exchange work when another tab changes the Agent key", async () => {
 		installDom();
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
-		const schedulerModule = await import("@gatu/hl-react/internal/exchange/request-scheduler");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
+		const schedulerModule = await import("@sairn/hl-react/internal/exchange/request-scheduler");
 		const unsubscribe = storageModule.subscribeToStorage(vi.fn());
 		const scheduler = new schedulerModule.ExchangeRequestScheduler();
 		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "agent-only");
@@ -146,8 +146,8 @@ describe("verified Agent storage removal", () => {
 			SESSION_STORAGE_KEY,
 			JSON.stringify({ version: 1, epoch: "closing-registration-epoch", state: "closing" }),
 		);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
-		const schedulerModule = await import("@gatu/hl-react/internal/exchange/request-scheduler");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
+		const schedulerModule = await import("@sairn/hl-react/internal/exchange/request-scheduler");
 		const unsubscribe = storageModule.subscribeToStorage(vi.fn());
 		const scheduler = new schedulerModule.ExchangeRequestScheduler();
 		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "wallet");
@@ -165,7 +165,7 @@ describe("verified Agent storage removal", () => {
 	it("reports unavailable storage without throwing and invalidates the cached snapshot", async () => {
 		const { controls, store } = installDom();
 		store.set(STORAGE_KEY, STORAGE_VALUE);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
 		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).not.toBeNull();
 
 		controls.accessFails = true;
@@ -180,7 +180,7 @@ describe("verified Agent storage removal", () => {
 	it("reports remove failures without throwing and invalidates the cached snapshot", async () => {
 		const { controls, store } = installDom();
 		store.set(STORAGE_KEY, STORAGE_VALUE);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
 		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).not.toBeNull();
 
 		controls.removeFails = true;
@@ -201,7 +201,7 @@ describe("verified Agent storage removal", () => {
 	it("quarantines an undeletable key until a later verified write replaces it", async () => {
 		const { controls, storage, store } = installDom();
 		store.set(STORAGE_KEY, STORAGE_VALUE);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
 		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).not.toBeNull();
 
 		controls.removeFails = true;
@@ -238,7 +238,7 @@ describe("verified Agent storage removal", () => {
 			SESSION_STORAGE_KEY,
 			JSON.stringify({ version: 1, epoch: "closing-registration-epoch", state: "closing" }),
 		);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
 
 		expect(storageModule.readAgentFromStorage("Mainnet", OWNER)).toBeNull();
 		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).toBeNull();
@@ -255,7 +255,7 @@ describe("verified Agent storage removal", () => {
 	it("distinguishes a failed readback from a key that remains present", async () => {
 		const { controls, store } = installDom();
 		store.set(STORAGE_KEY, STORAGE_VALUE);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
 
 		controls.readFails = true;
 		expect(storageModule.removeAgentFromStorageAndVerify("Mainnet", OWNER)).toEqual({
@@ -275,7 +275,7 @@ describe("verified Agent storage removal", () => {
 	it("reports notification failures after invalidating the removed Agent snapshot", async () => {
 		const { controls, store } = installDom();
 		store.set(STORAGE_KEY, STORAGE_VALUE);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
 		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).not.toBeNull();
 
 		controls.notificationFails = true;
@@ -290,7 +290,7 @@ describe("verified Agent storage removal", () => {
 
 	it("exposes verified removal without changing the legacy clear action", async () => {
 		const { store } = installDom();
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
 		const getActions = storageModule.useAgentWalletActions;
 		const actions = getActions();
 
@@ -305,9 +305,9 @@ describe("verified Agent storage removal", () => {
 	it("evicts the exact in-memory signer and trading client after verified removal", async () => {
 		const { store } = installDom();
 		store.set(STORAGE_KEY, STORAGE_VALUE);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
-		const signerModule = await import("@gatu/hl-react/signing/agent-signer-cache");
-		const clientsModule = await import("@gatu/hl-react/clients");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
+		const signerModule = await import("@sairn/hl-react/signing/agent-signer-cache");
+		const clientsModule = await import("@sairn/hl-react/clients");
 
 		const signer = signerModule.getCachedAgentSigner(PRIVATE_KEY);
 		expect(signer).not.toBeNull();
@@ -331,9 +331,9 @@ describe("verified Agent storage removal", () => {
 			SESSION_STORAGE_KEY,
 			JSON.stringify({ version: 1, epoch: "closing-registration-epoch", state: "closing" }),
 		);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
-		const signerModule = await import("@gatu/hl-react/signing/agent-signer-cache");
-		const clientsModule = await import("@gatu/hl-react/clients");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
+		const signerModule = await import("@sairn/hl-react/signing/agent-signer-cache");
+		const clientsModule = await import("@sairn/hl-react/clients");
 
 		const signer = signerModule.getCachedAgentSigner(PRIVATE_KEY);
 		expect(signer).not.toBeNull();
@@ -356,9 +356,9 @@ describe("verified Agent storage removal", () => {
 	it("revalidates storage after every unobserved interval instead of reviving a stale cached key", async () => {
 		const { store } = installDom();
 		store.set(STORAGE_KEY, STORAGE_VALUE);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
-		const signerModule = await import("@gatu/hl-react/signing/agent-signer-cache");
-		const clientsModule = await import("@gatu/hl-react/clients");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
+		const signerModule = await import("@sairn/hl-react/signing/agent-signer-cache");
+		const clientsModule = await import("@sairn/hl-react/clients");
 
 		const unsubscribe = storageModule.subscribeToStorage(vi.fn());
 		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).not.toBeNull();
@@ -383,16 +383,16 @@ describe("verified Agent storage removal", () => {
 	it("evicts every sensitive Agent cache when another tab clears localStorage", async () => {
 		const { store } = installDom();
 		store.set(STORAGE_KEY, STORAGE_VALUE);
-		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
-		const signerModule = await import("@gatu/hl-react/signing/agent-signer-cache");
-		const clientsModule = await import("@gatu/hl-react/clients");
+		const storageModule = await import("@sairn/hl-react/signing/agent-storage");
+		const signerModule = await import("@sairn/hl-react/signing/agent-signer-cache");
+		const clientsModule = await import("@sairn/hl-react/clients");
 
 		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).not.toBeNull();
 		const signer = signerModule.getCachedAgentSigner(PRIVATE_KEY);
 		expect(signer).not.toBeNull();
 		if (!signer) throw new Error("Expected Agent signer");
 		const tradingClient = clientsModule.getTradingClient(signer, false);
-		const schedulerModule = await import("@gatu/hl-react/internal/exchange/request-scheduler");
+		const schedulerModule = await import("@sairn/hl-react/internal/exchange/request-scheduler");
 		const scheduler = new schedulerModule.ExchangeRequestScheduler();
 		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "wallet");
 		const run = vi.fn(async () => "unexpected");

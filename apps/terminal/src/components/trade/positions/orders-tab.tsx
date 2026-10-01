@@ -1,3 +1,7 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Plural, useLingui } from "@lingui/react/macro";
+import { ListIcon, PencilIcon } from "@phosphor-icons/react";
 import {
 	Button,
 	Checkbox,
@@ -9,11 +13,7 @@ import {
 	TableHeader,
 	TableRow,
 	Tooltip,
-} from "@gatu/ui";
-import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
-import { Plural, useLingui } from "@lingui/react/macro";
-import { ListIcon, PencilIcon } from "@phosphor-icons/react";
+} from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";

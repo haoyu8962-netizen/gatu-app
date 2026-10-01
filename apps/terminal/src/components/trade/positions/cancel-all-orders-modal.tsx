@@ -1,5 +1,5 @@
-import { AdaptiveModal, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
+import { AdaptiveModal, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Props {

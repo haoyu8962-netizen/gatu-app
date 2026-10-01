@@ -1,7 +1,7 @@
-import { createMobileAgentApproval, type MobileAgentApproval } from "@gatu/hl-react/signing/mobile-agent";
-import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DeviceMobileIcon, QrCodeIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { createMobileAgentApproval, type MobileAgentApproval } from "@sairn/hl-react/signing/mobile-agent";
+import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Address } from "viem";
 import { BRAND_NAME } from "@/config/brand";

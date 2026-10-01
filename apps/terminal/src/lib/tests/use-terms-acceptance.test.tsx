@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
-import { infoKey } from "@gatu/hl-react/hooks/useInfo";
-import type { TermsAcceptanceWalletResolver } from "@gatu/hl-react/signing/use-terms-acceptance";
-import { useTermsAcceptance } from "@gatu/hl-react/signing/use-terms-acceptance";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
+import { infoKey } from "@sairn/hl-react/hooks/useInfo";
+import type { TermsAcceptanceWalletResolver } from "@sairn/hl-react/signing/use-terms-acceptance";
+import { useTermsAcceptance } from "@sairn/hl-react/signing/use-terms-acceptance";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -23,7 +23,7 @@ const testState = vi.hoisted(() => ({
 	walletSignTypedData: vi.fn(),
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		clientKey: testState.clientKey,
 		env: testState.env,
@@ -31,7 +31,7 @@ vi.mock("@gatu/hl-react/provider", () => ({
 	}),
 }));
 
-vi.mock("@gatu/hl-react/hooks/useTransport", () => ({
+vi.mock("@sairn/hl-react/hooks/useTransport", () => ({
 	useHttpTransport: () => ({ isTestnet: testState.env === "Testnet", request: testState.request }),
 }));
 

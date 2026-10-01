@@ -13,7 +13,7 @@ const modalState = vi.hoisted(() => ({
 	onOpenChange: undefined as ((open: boolean) => void) | undefined,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		dismissible,

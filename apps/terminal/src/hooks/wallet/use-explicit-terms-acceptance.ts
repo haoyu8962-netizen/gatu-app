@@ -1,5 +1,5 @@
-import { useHyperliquidOwnerSigner } from "@gatu/hl-react";
 import { useSignTypedData } from "@privy-io/react-auth";
+import { useHyperliquidOwnerSigner } from "@sairn/hl-react";
 import { useCallback, useRef } from "react";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { type TermsAcceptanceWalletResolver, useTermsAcceptance } from "@/lib/hyperliquid";

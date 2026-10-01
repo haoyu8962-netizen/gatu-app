@@ -1,4 +1,3 @@
-import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	ArrowSquareOutIcon,
@@ -7,6 +6,7 @@ import {
 	WalletIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
+import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import type { Chain } from "viem";
 import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";

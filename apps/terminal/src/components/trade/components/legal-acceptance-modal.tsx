@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import {
 	AdaptiveModal,
 	Button,
@@ -7,8 +8,7 @@ import {
 	ModalFooter,
 	ModalHeader,
 	ModalTitle,
-} from "@gatu/ui";
-import { Trans } from "@lingui/react/macro";
+} from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
 import { BRAND_NAME } from "@/config/brand";

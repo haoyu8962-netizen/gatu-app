@@ -1,6 +1,6 @@
-import { Modal, ModalDescription, ModalPopup, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { Modal, ModalDescription, ModalPopup, ModalTitle } from "@sairn/ui";
 import { Command as CommandPrimitive } from "cmdk";
 import type * as React from "react";
 import { cn } from "@/lib/cn";

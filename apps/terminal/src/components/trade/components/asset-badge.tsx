@@ -1,4 +1,4 @@
-import { Button } from "@gatu/ui";
+import { Button } from "@sairn/ui";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { Side } from "@/lib/trade/types";

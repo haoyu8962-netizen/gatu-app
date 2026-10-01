@@ -732,7 +732,7 @@ async function main() {
 		case "lambda": {
 			const functionName = requireOption(options, "functionName");
 			const bundle = resolve(options.lambdaDir, options.lambdaEntry);
-			if (!existsSync(bundle) || !statSync(bundle).isFile()) throw new Error(`No Lambda bundle at ${bundle}; run pnpm --filter @gatu/terminal build:lambda`);
+			if (!existsSync(bundle) || !statSync(bundle).isFile()) throw new Error(`No Lambda bundle at ${bundle}; run pnpm --filter @sairn/terminal build:lambda`);
 			const zipPath = resolve(options.lambdaDir, `${options.lambdaEntry.replace(/\.mjs$/, "")}.zip`);
 			console.log(`zip -j ${zipPath} ${bundle}`);
 			if (options.execute) execFileSync("zip", ["-j", "-q", zipPath, bundle], { stdio: "inherit" });

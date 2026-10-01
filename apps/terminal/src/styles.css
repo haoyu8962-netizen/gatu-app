@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@gatu/ui/globals.css";
+@import "@sairn/ui/globals.css";
 @import "react-grid-layout/css/styles.css";
 @source "../../../packages/ui/src";
 
@@ -101,7 +101,7 @@
   --font-mono: ui-monospace, "SF Mono", monospace;
 
   /* ---- Typography Scale (Desktop) ----
-     Equal to the @gatu/ui scale (typography-scale-contract); Layer 4 shrinks xl/2xl/3xl at 1000px.
+     Equal to the @sairn/ui scale (typography-scale-contract); Layer 4 shrinks xl/2xl/3xl at 1000px.
      size/line-height → Tailwind class
      10/14 → text-3xs    11/16 → text-2xs    12/16 → text-xs     13/18 → text-2sm
      14/20 → text-sm     16/24 → text-base   20/28 → text-lg     28/36 → text-xl

@@ -1,4 +1,4 @@
-import { Button } from "@gatu/ui";
+import { Button } from "@sairn/ui";
 import { i18n } from "@lingui/core";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";

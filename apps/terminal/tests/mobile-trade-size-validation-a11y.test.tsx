@@ -44,8 +44,8 @@ const testState = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock("@gatu/ui", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@gatu/ui")>()),
+vi.mock("@sairn/ui", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@sairn/ui")>()),
 	Button: ({
 		children,
 		iconLeft: _iconLeft,

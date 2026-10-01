@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileHeader } from "@/components/trade/mobile/mobile-header";
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	buttonVariants: () => "",
 	ButtonIcon: ({
 		"aria-label": ariaLabel,

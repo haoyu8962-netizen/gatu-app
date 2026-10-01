@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";

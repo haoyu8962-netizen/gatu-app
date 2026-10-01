@@ -11,7 +11,7 @@
  * a made-up constant and gives the tests a real-world reference point.
  */
 
-import { createL1AgentWallet } from "@gatu/hl-react/signing/l1-agent-wallet";
+import { createL1AgentWallet } from "@sairn/hl-react/signing/l1-agent-wallet";
 import { recoverTypedDataAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { describe, expect, it } from "vitest";

@@ -21,7 +21,7 @@ const drawerState = vi.hoisted(() => ({
 	preloadGlobalModal: vi.fn(async (): Promise<void> => undefined),
 }));
 
-vi.mock("@gatu/ui", () => {
+vi.mock("@sairn/ui", () => {
 	function Button({
 		children,
 		onClick,

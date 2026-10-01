@@ -1,4 +1,4 @@
-import { useHyperliquidTransport } from "@gatu/hl-react";
+import { useHyperliquidTransport } from "@sairn/hl-react";
 import { useQuery } from "@tanstack/react-query";
 import { PORTFOLIO_REFRESH_INTERVAL_MS } from "@/domain/portfolio";
 import { type InfoMethod, type InfoParams, infoQueryOptions } from "@/lib/hyperliquid";

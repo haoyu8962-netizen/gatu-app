@@ -53,7 +53,7 @@ describe("agent snapshot cache", () => {
 		const store = installDom();
 		store.set("hyperliquid_agent_Mainnet_0x1234", STORAGE_VALUE);
 
-		const { readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { readAgentFromStorage } = await import("@sairn/hl-react/signing/agent-storage");
 
 		const first = readAgentFromStorage("Mainnet", "0x1234");
 		const second = readAgentFromStorage("Mainnet", "0x1234");
@@ -65,7 +65,9 @@ describe("agent snapshot cache", () => {
 	it("returns null when localStorage is empty", async () => {
 		installDom();
 
-		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import(
+			"@sairn/hl-react/signing/agent-storage"
+		);
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
 		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(false);
@@ -75,7 +77,9 @@ describe("agent snapshot cache", () => {
 		const store = installDom();
 		store.set("hyperliquid_agent_Mainnet_0x1234", "not-json");
 
-		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import(
+			"@sairn/hl-react/signing/agent-storage"
+		);
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
 		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
@@ -95,7 +99,9 @@ describe("agent snapshot cache", () => {
 			}),
 		);
 
-		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import(
+			"@sairn/hl-react/signing/agent-storage"
+		);
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
 		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
@@ -123,7 +129,9 @@ describe("agent snapshot cache", () => {
 			}),
 		);
 
-		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import(
+			"@sairn/hl-react/signing/agent-storage"
+		);
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
 		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(false);
@@ -141,7 +149,9 @@ describe("agent snapshot cache", () => {
 			}),
 		);
 
-		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import(
+			"@sairn/hl-react/signing/agent-storage"
+		);
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
 		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
@@ -158,7 +168,9 @@ describe("agent snapshot cache", () => {
 			}),
 		);
 
-		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import(
+			"@sairn/hl-react/signing/agent-storage"
+		);
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
 		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
@@ -182,7 +194,9 @@ describe("agent snapshot cache", () => {
 			{ ...canonical, publicKey: MISMATCHED_PUBLIC_KEY },
 			{ ...canonical, agentValidUntilMs: null },
 		];
-		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import(
+			"@sairn/hl-react/signing/agent-storage"
+		);
 
 		for (const record of invalidRecords) {
 			store.set(storageKey, JSON.stringify(record));
@@ -206,7 +220,9 @@ describe("agent snapshot cache", () => {
 			}),
 		);
 
-		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import(
+			"@sairn/hl-react/signing/agent-storage"
+		);
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toMatchObject({
 			source: "mobile-sync",
@@ -228,7 +244,7 @@ describe("agent snapshot cache", () => {
 		);
 
 		const { getCachedAgentSnapshot, hasInvalidAgentStorageRecord, readAgentFromStorage } = await import(
-			"@gatu/hl-react/signing/agent-storage"
+			"@sairn/hl-react/signing/agent-storage"
 		);
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
@@ -239,7 +255,7 @@ describe("agent snapshot cache", () => {
 	it("LRU cap (4) evicts the oldest (env,address) pair on the 5th unique read", async () => {
 		installDom();
 
-		const { getCachedAgentSnapshot, snapshotCache } = await import("@gatu/hl-react/signing/agent-storage");
+		const { getCachedAgentSnapshot, snapshotCache } = await import("@sairn/hl-react/signing/agent-storage");
 
 		getCachedAgentSnapshot("Mainnet", "0xaaaa");
 		getCachedAgentSnapshot("Mainnet", "0xbbbb");
@@ -261,7 +277,7 @@ describe("agent snapshot cache", () => {
 		installDom();
 
 		const { getCachedAgentSnapshot, subscribeToStorage, writeAgentToStorage } = await import(
-			"@gatu/hl-react/signing/agent-storage"
+			"@sairn/hl-react/signing/agent-storage"
 		);
 
 		// Mirror the runtime flow: useSyncExternalStore registers the listener
@@ -287,7 +303,7 @@ describe("agent snapshot cache", () => {
 		const publicKey = privateKeyToAccount(privateKey).address;
 		const owner = "0x9999999999999999999999999999999999999999";
 		const { getCachedAgentSnapshot, writeAgentToStorageAndVerify } = await import(
-			"@gatu/hl-react/signing/agent-storage"
+			"@sairn/hl-react/signing/agent-storage"
 		);
 
 		expect(getCachedAgentSnapshot("Mainnet", owner)).toBeNull();

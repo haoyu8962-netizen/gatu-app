@@ -67,8 +67,8 @@ const GROUP_DEFINITIONS = [
 	},
 	{
 		key: "hlReact",
-		label: "@gatu/hl-react",
-		matchers: ["/node_modules/@gatu/hl-react/", "/packages/hl-react/"],
+		label: "@sairn/hl-react",
+		matchers: ["/node_modules/@sairn/hl-react/", "/packages/hl-react/"],
 	},
 ];
 
@@ -121,7 +121,7 @@ const payload = {
 			"Each emitted chunk's measured gzip bytes apportioned to its modules by visualizer gzipLength (rendered length or equal weights as fallback) with largest-remainder integer reconciliation.",
 		inclusive:
 			"Directly matched modules plus their transitive static module imports that have emitted parts inside the client-root chunk closure.",
-		walletUnion: `Deduplicated union of inclusive ${WALLET_UNION_GROUP_KEYS.join(", ")}; @gatu/hl-react is reported separately.`,
+		walletUnion: `Deduplicated union of inclusive ${WALLET_UNION_GROUP_KEYS.join(", ")}; @sairn/hl-react is reported separately.`,
 		unmatched:
 			"Emitted closure modules outside every reported inclusive group. Chunks without matching visualizer module parts are reported separately as unallocated chunks.",
 	},

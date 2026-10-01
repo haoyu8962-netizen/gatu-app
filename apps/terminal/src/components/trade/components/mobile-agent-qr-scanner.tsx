@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowLeftIcon, CameraIcon, QrCodeIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";

@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { WarningIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { APP_BANNER_HEIGHT_CLASS } from "@/config/layout";
 import { cn } from "@/lib/cn";
 import { useGlobalSettingsActions, useIsTestnet } from "@/stores/use-global-settings-store";

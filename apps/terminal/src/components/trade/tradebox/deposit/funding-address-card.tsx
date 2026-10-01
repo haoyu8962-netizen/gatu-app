@@ -1,6 +1,6 @@
-import { ButtonIcon } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon, CopyIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ButtonIcon } from "@sairn/ui";
 import { type ReactNode, useEffect, useRef } from "react";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 

@@ -104,7 +104,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 }));
 
-vi.mock("@gatu/ui", () => {
+vi.mock("@sairn/ui", () => {
 	const passthrough =
 		(tag: string) =>
 		({ children, divider: _divider, ...props }: { children?: ReactNode; divider?: boolean }) =>

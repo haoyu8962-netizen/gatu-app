@@ -1,6 +1,6 @@
-import { TableCell, TableRow, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ShareIcon } from "@phosphor-icons/react";
+import { TableCell, TableRow, Tooltip } from "@sairn/ui";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";

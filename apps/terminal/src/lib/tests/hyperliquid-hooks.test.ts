@@ -1,5 +1,5 @@
-import { CompactSubscriptionClient } from "@gatu/hl-react";
 import { ExchangeClient, InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
+import { CompactSubscriptionClient } from "@sairn/hl-react";
 import { describe, expect, it } from "vitest";
 import type { ExchangeMethod, InfoMethod, SubMethod } from "@/lib/hyperliquid";
 

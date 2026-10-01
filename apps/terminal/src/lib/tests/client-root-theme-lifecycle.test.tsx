@@ -15,7 +15,7 @@ const runtime = vi.hoisted(() => ({
 	privyConfigs: [] as PrivyClientConfig[],
 }));
 
-vi.mock("@gatu/hl-react", () => ({
+vi.mock("@sairn/hl-react", () => ({
 	HyperliquidAgentApprovalProvider: ({ children }: { children: React.ReactNode }) => children,
 	HyperliquidExchangePolicyProvider: ({ children }: { children: React.ReactNode }) => children,
 	HyperliquidOwnerSignerProvider: ({ children }: { children: React.ReactNode }) => children,

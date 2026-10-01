@@ -3,7 +3,7 @@ import {
 	getStalenessThresholdForKey,
 	isUserStreamKey,
 	WS_RELIABILITY_LIMITS,
-} from "@gatu/hl-react/internal/websocket/reliability";
+} from "@sairn/hl-react/internal/websocket/reliability";
 import { describe, expect, it, vi } from "vitest";
 
 function key(method: string) {

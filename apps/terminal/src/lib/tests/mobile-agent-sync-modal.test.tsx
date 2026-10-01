@@ -49,7 +49,7 @@ vi.mock("@/hooks/use-mobile", () => ({
 	useIsMobile: () => testState.isMobile,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		onOpenChange,
@@ -101,8 +101,8 @@ vi.mock("@gatu/ui", () => ({
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 }));
 
-vi.mock("@gatu/hl-react/signing/mobile-agent", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@gatu/hl-react/signing/mobile-agent")>();
+vi.mock("@sairn/hl-react/signing/mobile-agent", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@sairn/hl-react/signing/mobile-agent")>();
 	return {
 		...actual,
 		createMobileAgentApproval: () => ({

@@ -1,3 +1,5 @@
+import { Trans, useLingui } from "@lingui/react/macro";
+import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import {
 	AdaptiveModal,
 	Button,
@@ -7,9 +9,7 @@ import {
 	ModalHeader,
 	ModalTitle,
 	TextInput,
-} from "@gatu/ui";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+} from "@sairn/ui";
 import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatVaultRatio, formatVaultUsd, type VaultDetail } from "./domain/vaults";

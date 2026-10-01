@@ -35,7 +35,7 @@ const mocks = vi.hoisted(() => ({
 	stakingHistory: [] as unknown[],
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children, open, presentation }: { children: ReactNode; open: boolean; presentation?: string }) =>
 		open ? (
 			<section data-presentation={presentation} data-testid="recovery-modal">

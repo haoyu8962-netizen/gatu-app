@@ -146,7 +146,7 @@ export function parseClientChunkGraph(source) {
 export function readClientChunkGraphFile(graphFile) {
 	if (!existsSync(graphFile)) {
 		throw new Error(
-			`client chunk graph cache was not found at ${graphFile}. Run "pnpm --filter @gatu/terminal build" to generate and check it.`,
+			`client chunk graph cache was not found at ${graphFile}. Run "pnpm --filter @sairn/terminal build" to generate and check it.`,
 		);
 	}
 

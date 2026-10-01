@@ -11,7 +11,7 @@ import {
 } from "@/components/trade/components/spot-market-social-links";
 import { createI18nRoot } from "./harness/react";
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Tooltip: ({ children, content }: { children: ReactNode; content: ReactNode }) =>
 		createElement("span", { "data-tooltip": String(content) }, children),
 }));

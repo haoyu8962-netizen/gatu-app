@@ -1,6 +1,6 @@
-import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, useMemo, useState } from "react";
 import { zeroAddress } from "viem";

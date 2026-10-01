@@ -1,5 +1,5 @@
-import { RingBuffer } from "@gatu/hl-react/internal/circular-buffer/ring-buffer";
-import { getAccumulateConfig } from "@gatu/hl-react/registries/subscription";
+import { RingBuffer } from "@sairn/hl-react/internal/circular-buffer/ring-buffer";
+import { getAccumulateConfig } from "@sairn/hl-react/registries/subscription";
 import { describe, expect, it } from "vitest";
 
 describe("user fills accumulator", () => {

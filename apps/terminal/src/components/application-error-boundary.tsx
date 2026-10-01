@@ -1,4 +1,4 @@
-import { invalidateAllExchangeRequestIdentities } from "@gatu/hl-react/internal/exchange/request-scheduler";
+import { invalidateAllExchangeRequestIdentities } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { ApplicationErrorPage } from "@/components/pages/application-error-page";
 import { reportClientError } from "@/lib/error-reporting/client";

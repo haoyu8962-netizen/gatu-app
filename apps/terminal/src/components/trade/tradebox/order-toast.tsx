@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CheckIcon, SpinnerGapIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";

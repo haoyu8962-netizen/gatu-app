@@ -1,5 +1,5 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { Button } from "@sairn/ui";
 import { Component, type ErrorInfo, type ReactNode, Suspense } from "react";
 import { reportClientError } from "@/lib/error-reporting/client";
 import { LazyComponentLoadError } from "@/lib/lazy";

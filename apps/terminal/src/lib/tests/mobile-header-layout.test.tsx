@@ -5,7 +5,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	buttonVariants: () => "",
 	ButtonIcon: ({
 		"aria-label": ariaLabel,

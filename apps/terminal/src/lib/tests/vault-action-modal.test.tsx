@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VaultActionModal, type VaultActionModalProps } from "@/components/vaults/vault-action-modal";
 import { createI18nRoot } from "./harness/react";
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) => (
 		<button type="button" disabled={disabled} onClick={onClick}>

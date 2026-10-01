@@ -102,7 +102,7 @@ function renderChildren(children: ReactNode) {
 	return createElement(Fragment, null, children);
 }
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children, open }: { children: ReactNode; open: boolean }) =>
 		open ? createElement("section", null, children) : null,
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>

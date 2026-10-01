@@ -2,15 +2,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFakeSubscription } from "./harness/subscription";
 
-let createHyperliquidStore: typeof import("@gatu/hl-react/store").createHyperliquidStore;
-let getStoreInternals: typeof import("@gatu/hl-react/store").getStoreInternals;
+let createHyperliquidStore: typeof import("@sairn/hl-react/store").createHyperliquidStore;
+let getStoreInternals: typeof import("@sairn/hl-react/store").getStoreInternals;
 
 describe("store-driven resume via singletons", () => {
 	beforeEach(async () => {
 		vi.resetModules();
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true });
-		const mod = await import("@gatu/hl-react/store");
+		const mod = await import("@sairn/hl-react/store");
 		createHyperliquidStore = mod.createHyperliquidStore;
 		getStoreInternals = mod.getStoreInternals;
 	});
@@ -135,7 +135,7 @@ describe("store-driven resume via singletons", () => {
 		const { subscribe } = createFakeSubscription();
 		store.getState().acquireSubscription("test:throwing-reconnect", subscribe);
 		await new Promise<void>((resolve) => setTimeout(resolve, 0));
-		const { subscribeNetworkStatus } = await import("@gatu/hl-react/internal/websocket/network-status");
+		const { subscribeNetworkStatus } = await import("@sairn/hl-react/internal/websocket/network-status");
 		const laterListener = vi.fn();
 		const unsubscribe = subscribeNetworkStatus(laterListener);
 

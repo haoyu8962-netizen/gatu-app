@@ -1,4 +1,3 @@
-import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	CheckCircleIcon,
@@ -8,6 +7,7 @@ import {
 	WarningCircleIcon,
 	XCircleIcon,
 } from "@phosphor-icons/react";
+import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import type { ReactNode } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";

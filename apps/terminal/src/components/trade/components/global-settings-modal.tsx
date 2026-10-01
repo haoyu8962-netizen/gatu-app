@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import {
 	Button,
 	Modal,
@@ -8,10 +11,7 @@ import {
 	SegmentedControlItem,
 	SegmentedControls,
 	Toggle,
-} from "@gatu/ui";
-import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+} from "@sairn/ui";
 import type { ChangeEvent, ReactNode } from "react";
 import { useId, useReducer, useState } from "react";
 import { toast } from "sonner";

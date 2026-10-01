@@ -1,4 +1,4 @@
-import { ModalFooter } from "@gatu/ui";
+import { ModalFooter } from "@sairn/ui";
 import type { ReactNode } from "react";
 
 interface Props {

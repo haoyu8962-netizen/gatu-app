@@ -1,4 +1,4 @@
-import { warmL2BookSubscription } from "@gatu/hl-react";
+import { warmL2BookSubscription } from "@sairn/hl-react";
 import { getTradeRouteMarketFromPath, isSafeTradeRouteMarketName } from "@/lib/hyperliquid/market-route";
 import { isTestnet } from "@/lib/network";
 import { getStoredSelectedMarket } from "@/stores/use-market-store";

@@ -1,3 +1,8 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
+import { Trans, useLingui as useLinguiMacro } from "@lingui/react/macro";
+import { SpinnerGapIcon } from "@phosphor-icons/react";
 import {
 	AdaptiveModal,
 	Button,
@@ -7,12 +12,7 @@ import {
 	ModalFooter,
 	ModalHeader,
 	ModalTitle,
-} from "@gatu/ui";
-import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
-import { Trans, useLingui as useLinguiMacro } from "@lingui/react/macro";
-import { SpinnerGapIcon } from "@phosphor-icons/react";
+} from "@sairn/ui";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";

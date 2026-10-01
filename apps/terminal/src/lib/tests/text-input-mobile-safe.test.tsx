@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { TextInput } from "@gatu/ui";
+import { TextInput } from "@sairn/ui";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";

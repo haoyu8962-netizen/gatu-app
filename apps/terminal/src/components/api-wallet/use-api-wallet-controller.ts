@@ -1,6 +1,6 @@
-import { useActiveAgentOwner } from "@gatu/hl-react";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
+import { useActiveAgentOwner } from "@sairn/hl-react";
 import { useEffect, useRef, useState } from "react";
 import type { Address, Hex } from "viem";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";

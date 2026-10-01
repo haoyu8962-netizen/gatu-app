@@ -1,6 +1,6 @@
-import { Button, ButtonIcon } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon, LinkSimpleIcon, ShareNetworkIcon } from "@phosphor-icons/react";
+import { Button, ButtonIcon } from "@sairn/ui";
 import { BRAND_NAME } from "@/config/brand";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { formatNumber, formatUSD, shortenAddress } from "@/lib/format";

@@ -68,7 +68,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build production terminal and enforce bundle budget
-        run: pnpm --filter @gatu/terminal build
+        run: pnpm --filter @sairn/terminal build
         env:
           SAIRN_BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           SAIRN_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
@@ -77,7 +77,7 @@ jobs:
           VITE_MOBILE_PAIRING_ENABLED: ${{ matrix.pairing.enabled }}
 
       - name: Measure client-root startup closure
-        run: pnpm --filter @gatu/terminal perf:startup
+        run: pnpm --filter @sairn/terminal perf:startup
 
       - name: Verify production lazy client graph
         run: |

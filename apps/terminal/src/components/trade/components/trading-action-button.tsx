@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { type ComponentProps, type MouseEvent, type ReactNode, useCallback } from "react";
 import { usePressAndHold } from "@/hooks/ui/use-press-and-hold";
 import { cn } from "@/lib/cn";

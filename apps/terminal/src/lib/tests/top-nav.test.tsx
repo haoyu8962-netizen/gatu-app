@@ -32,7 +32,7 @@ const testState = vi.hoisted(() => ({
 	userMenuUnmounts: 0,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({
 		"aria-label": ariaLabel,
 		children,

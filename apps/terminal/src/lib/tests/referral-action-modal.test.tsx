@@ -22,7 +22,7 @@ const arabicMessages: Messages = {
 	[getMessageId(REFERRAL_FAILURE)]: ARABIC_REFERRAL_FAILURE,
 };
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 	Button: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
 		<button type="button" onClick={onClick}>

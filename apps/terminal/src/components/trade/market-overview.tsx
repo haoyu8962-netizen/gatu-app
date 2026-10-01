@@ -1,6 +1,6 @@
-import { Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
+import { Tooltip } from "@sairn/ui";
 import { useEffect, useState } from "react";
 import { MARKET_HEADER_LABELS } from "@/config/market-header";
 import {

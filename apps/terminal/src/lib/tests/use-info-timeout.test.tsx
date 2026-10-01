@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { useInfo } from "@gatu/hl-react";
-import { HyperliquidContext, type HyperliquidContextValue } from "@gatu/hl-react/provider";
 import type { InfoClient } from "@nktkas/hyperliquid";
+import { useInfo } from "@sairn/hl-react";
+import { HyperliquidContext, type HyperliquidContextValue } from "@sairn/hl-react/provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";

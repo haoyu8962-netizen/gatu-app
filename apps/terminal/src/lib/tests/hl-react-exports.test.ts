@@ -38,7 +38,7 @@ function getExportTargetPaths(target: PackageJsonExportTarget): string[] {
 	return Object.values(target).flatMap(getExportTargetPaths);
 }
 
-describe("@gatu/hl-react package exports", () => {
+describe("@sairn/hl-react package exports", () => {
 	it("points every subpath export at an existing source file", () => {
 		for (const [subpath, target] of Object.entries(packageJson.exports)) {
 			for (const targetPath of getExportTargetPaths(target)) {

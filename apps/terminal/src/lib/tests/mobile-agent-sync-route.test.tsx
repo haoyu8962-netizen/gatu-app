@@ -46,7 +46,7 @@ vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: unknown) => options,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({
 		children,
 		disabled,
@@ -77,8 +77,8 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 }));
 
-vi.mock("@gatu/hl-react", async () => {
-	const actual = await vi.importActual<typeof import("@gatu/hl-react")>("@gatu/hl-react");
+vi.mock("@sairn/hl-react", async () => {
+	const actual = await vi.importActual<typeof import("@sairn/hl-react")>("@sairn/hl-react");
 	return {
 		...actual,
 		activateAgentOwnerForRegistration: testState.activateAgentOwnerForRegistration,

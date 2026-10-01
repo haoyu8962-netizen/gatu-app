@@ -1,5 +1,5 @@
-import type { UnifiedMarket } from "@gatu/hl-react";
 import type { PerpConciseAnnotationsResponse } from "@nktkas/hyperliquid";
+import type { UnifiedMarket } from "@sairn/hl-react";
 import { describe, expect, it } from "vitest";
 import { canOpenMarketAssetInfo, getMarketAssetReference, hasPerpAnnotation } from "@/domain/market/asset-info";
 

@@ -1,6 +1,6 @@
-import { Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { GlobeSimpleIcon, TelegramLogoIcon, XLogoIcon } from "@phosphor-icons/react";
+import { Tooltip } from "@sairn/ui";
 import type { ReactNode } from "react";
 import { hasSpotSocialLinks, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { cn } from "@/lib/cn";

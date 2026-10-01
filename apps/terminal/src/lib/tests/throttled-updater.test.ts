@@ -1,4 +1,4 @@
-import { createThrottledUpdater } from "@gatu/hl-react/internal/websocket/batch-updater";
+import { createThrottledUpdater } from "@sairn/hl-react/internal/websocket/batch-updater";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("createThrottledUpdater", () => {

@@ -4,7 +4,7 @@ import {
 	type AgentApprovalMutateAsync,
 	type AgentApprovalOptions,
 	HyperliquidAgentApprovalProvider,
-} from "@gatu/hl-react/signing/agent-approval-provider";
+} from "@sairn/hl-react/signing/agent-approval-provider";
 import {
 	activateAgentRegistrationSession,
 	captureAgentRegistrationEpoch,
@@ -12,8 +12,8 @@ import {
 	closeAgentRegistrationSessionAndRemove,
 	persistAgentForRegistration,
 	startAgentRegistrationSubmission,
-} from "@gatu/hl-react/signing/agent-registration-session";
-import { type AgentRegistrationOptions, useAgentRegistration } from "@gatu/hl-react/signing/use-agent-registration";
+} from "@sairn/hl-react/signing/agent-registration-session";
+import { type AgentRegistrationOptions, useAgentRegistration } from "@sairn/hl-react/signing/use-agent-registration";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -39,7 +39,7 @@ const testState = vi.hoisted(() => ({
 	storageInspectionMode: "real" as "real" | "failed" | "invalid" | "pending_then_verified",
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		agentName: "sairn",
 		builderConfig: {},
@@ -48,8 +48,8 @@ vi.mock("@gatu/hl-react/provider", () => ({
 	}),
 }));
 
-vi.mock("@gatu/hl-react/signing/agent-storage", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@gatu/hl-react/signing/agent-storage")>();
+vi.mock("@sairn/hl-react/signing/agent-storage", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@sairn/hl-react/signing/agent-storage")>();
 	return {
 		...actual,
 		inspectAgentStorageRecord: (...args: Parameters<typeof actual.inspectAgentStorageRecord>) => {
@@ -70,7 +70,7 @@ vi.mock("@gatu/hl-react/signing/agent-storage", async (importOriginal) => {
 	};
 });
 
-vi.mock("@gatu/hl-react/signing/use-agent-status", () => ({
+vi.mock("@sairn/hl-react/signing/use-agent-status", () => ({
 	useAgentStatus: () => ({
 		agentAddress: null,
 		agentMissingReason: testState.agentMissingReason,

@@ -108,7 +108,7 @@ vi.mock("@/components/trade/components/trade-size-slider", async (importOriginal
 	};
 });
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		dismissible,

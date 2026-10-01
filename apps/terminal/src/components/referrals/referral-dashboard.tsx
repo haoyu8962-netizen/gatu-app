@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, GiftIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { type ReactNode, useId, useState } from "react";
 import { toast } from "sonner";
 import { EstablishConnectionModal } from "@/components/trade/components/establish-connection-modal";

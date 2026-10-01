@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { useBuilderFeeApproval } from "@gatu/hl-react/signing/use-builder-fee-approval";
+import { useBuilderFeeApproval } from "@sairn/hl-react/signing/use-builder-fee-approval";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -14,14 +14,14 @@ const testState = vi.hoisted(() => ({
 	refetchBuilderFee: vi.fn(),
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		builderConfig: { b: BUILDER, f: 10 },
 		clientKey: OWNER,
 	}),
 }));
 
-vi.mock("@gatu/hl-react/hooks/useExchange", () => ({
+vi.mock("@sairn/hl-react/hooks/useExchange", () => ({
 	useExchange: () => ({ mutateAsync: testState.approveBuilderFee }),
 }));
 

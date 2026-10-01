@@ -1,4 +1,4 @@
-import { HyperliquidOwnerSignerProvider } from "@gatu/hl-react";
+import { HyperliquidOwnerSignerProvider } from "@sairn/hl-react";
 import type { ReactNode } from "react";
 import { usePrivyOwnerSigner } from "@/hooks/wallet/use-privy-owner-signer";
 

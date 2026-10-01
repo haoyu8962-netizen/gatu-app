@@ -1,4 +1,3 @@
-import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	ArrowLeftIcon,
@@ -9,6 +8,7 @@ import {
 	WalletIcon,
 } from "@phosphor-icons/react";
 import { type LoginModalOptions, usePrivy } from "@privy-io/react-auth";
+import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useEffect, useRef, useState } from "react";
 import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";

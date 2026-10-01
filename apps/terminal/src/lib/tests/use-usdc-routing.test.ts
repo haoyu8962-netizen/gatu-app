@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { type HyperliquidEnv, infoKey } from "@gatu/hl-react";
 import type { InfoClient } from "@nktkas/hyperliquid";
+import { type HyperliquidEnv, infoKey } from "@sairn/hl-react";
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import {

@@ -25,7 +25,7 @@ const modalHarness = vi.hoisted(() => ({
 	showClose: true,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
 		createElement("button", { ...props, type: "button" }, children),
 	Modal: ({

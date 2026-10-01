@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DotsThreeVerticalIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";

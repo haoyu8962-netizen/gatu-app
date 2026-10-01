@@ -9,7 +9,7 @@ const testState = vi.hoisted(() => ({
 	cleanupAgentRegistrationIfMatches: vi.fn(),
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		env: "Mainnet",
 		builderConfig: undefined,
@@ -17,7 +17,7 @@ vi.mock("@gatu/hl-react/provider", () => ({
 	}),
 }));
 
-vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
+vi.mock("@sairn/hl-react/hooks/useInfo", () => ({
 	useInfo: () => ({
 		data: undefined,
 		error: null,
@@ -28,17 +28,17 @@ vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
 	}),
 }));
 
-vi.mock("@gatu/hl-react/signing/agent-registration-session", () => ({
+vi.mock("@sairn/hl-react/signing/agent-registration-session", () => ({
 	cleanupAgentRegistrationIfMatches: testState.cleanupAgentRegistrationIfMatches,
 }));
 
-vi.mock("@gatu/hl-react/signing/agent-storage", () => ({
+vi.mock("@sairn/hl-react/signing/agent-storage", () => ({
 	readAgentFromStorage: () => null,
 	useAgentWalletStorage: () => null,
 	useInvalidAgentStorageRecord: () => true,
 }));
 
-import { useAgentStatus } from "@gatu/hl-react/signing/use-agent-status";
+import { useAgentStatus } from "@sairn/hl-react/signing/use-agent-status";
 
 describe("useAgentStatus invalid storage cleanup", () => {
 	beforeEach(() => {

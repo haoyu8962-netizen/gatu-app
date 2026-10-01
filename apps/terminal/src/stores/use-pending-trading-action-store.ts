@@ -1,4 +1,4 @@
-import { getReceiptAgeMs } from "@gatu/hl-react/internal/websocket/staleness";
+import { getReceiptAgeMs } from "@sairn/hl-react/internal/websocket/staleness";
 import { create } from "zustand";
 
 export const TRADING_ACTION_CONFIRMATION_TIMEOUT_MS = 15_000;

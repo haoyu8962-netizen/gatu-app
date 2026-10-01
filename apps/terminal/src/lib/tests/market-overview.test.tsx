@@ -109,7 +109,7 @@ function createSpotMarket(overrides: Record<string, unknown> = {}): Record<strin
 	};
 }
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Tooltip: ({ children, content }: { children: ReactNode; content: ReactNode }) => (
 		<>
 			{children}

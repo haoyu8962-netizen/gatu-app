@@ -2,9 +2,9 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import type { CompactSubscriptionClient, HyperliquidContextValue } from "@gatu/hl-react";
-import { HyperliquidContext, HyperliquidStoreContext } from "@gatu/hl-react/provider";
-import { createHyperliquidStore, getStoreInternals, type HyperliquidStore } from "@gatu/hl-react/store";
+import type { CompactSubscriptionClient, HyperliquidContextValue } from "@sairn/hl-react";
+import { HyperliquidContext, HyperliquidStoreContext } from "@sairn/hl-react/provider";
+import { createHyperliquidStore, getStoreInternals, type HyperliquidStore } from "@sairn/hl-react/store";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

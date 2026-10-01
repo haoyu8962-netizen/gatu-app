@@ -1,6 +1,6 @@
-import { Badge, Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { ClockIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
+import { Badge, Button } from "@sairn/ui";
 import { useEffect, useRef, useState } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { BRIDGE_TIMEOUT_MS, LIFI_EXPLORER_URL } from "@/config/bridge";

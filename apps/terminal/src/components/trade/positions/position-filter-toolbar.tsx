@@ -1,6 +1,6 @@
-import { Dropdown } from "@gatu/ui";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
+import { Dropdown } from "@sairn/ui";
 import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";
 import type {
 	PositionDirectionFilter,

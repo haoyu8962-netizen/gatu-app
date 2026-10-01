@@ -332,7 +332,7 @@ test("writes graph cache atomically and explains a missing cache", (context) => 
 	);
 	assert.throws(
 		() => readClientChunkGraphFile(join(temporaryDirectory, "missing.json")),
-		/pnpm --filter @gatu\/terminal build/,
+		/pnpm --filter @sairn\/terminal build/,
 	);
 });
 
@@ -434,7 +434,7 @@ test("keeps graph helpers and tests in the production workflow path filter", () 
 	assert.equal(workflow.includes('- "scripts/check-client-bundle-budget.test.mjs"'), true);
 	assert.equal(workflow.includes('- "scripts/client-chunk-graph.*"'), true);
 	assert.equal(workflow.includes("scripts/check-client-bundle-budget.test.mjs"), true);
-	assert.equal(workflow.includes("pnpm --filter @gatu/terminal perf:startup"), true);
+	assert.equal(workflow.includes("pnpm --filter @sairn/terminal perf:startup"), true);
 });
 
 test("runs the budget tests once from the terminal test workflow, outside the build matrix", () => {

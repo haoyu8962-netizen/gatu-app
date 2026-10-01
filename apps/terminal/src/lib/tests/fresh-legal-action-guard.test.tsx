@@ -17,8 +17,8 @@ const testState = vi.hoisted(() => ({
 	verifyLegalActionAllowed: vi.fn(),
 }));
 
-vi.mock("@gatu/hl-react", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@gatu/hl-react")>();
+vi.mock("@sairn/hl-react", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@sairn/hl-react")>();
 	return {
 		...original,
 		useHyperliquid: () => ({

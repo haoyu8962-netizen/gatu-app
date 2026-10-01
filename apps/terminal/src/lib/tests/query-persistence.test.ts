@@ -1,4 +1,4 @@
-import { infoKey, infoKeys, infoPersistedKey } from "@gatu/hl-react";
+import { infoKey, infoKeys, infoPersistedKey } from "@sairn/hl-react";
 import { QueryClient } from "@tanstack/react-query";
 import type { PersistedClient, Persister } from "@tanstack/react-query-persist-client";
 import { describe, expect, it } from "vitest";

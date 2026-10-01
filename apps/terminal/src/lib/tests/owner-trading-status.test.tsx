@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { useTradingAuthorization } from "@gatu/hl-react/signing/use-trading-authorization";
 import type { AbstractViemJsonRpcAccount } from "@nktkas/hyperliquid/signing";
+import { useTradingAuthorization } from "@sairn/hl-react/signing/use-trading-authorization";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -25,7 +25,7 @@ const state = vi.hoisted(() => ({
 	registerAgent: vi.fn(),
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		env: "Mainnet",
 		sessionMode: "wallet",
@@ -34,7 +34,7 @@ vi.mock("@gatu/hl-react/provider", () => ({
 		builderConfig: { b: BUILDER, f: 10 },
 	}),
 }));
-vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
+vi.mock("@sairn/hl-react/hooks/useInfo", () => ({
 	useInfo: (method: string, _params: unknown, options: { enabled: boolean }) => {
 		state.queryCalls.push({ method, enabled: options.enabled });
 		if (method === "extraAgents")
@@ -56,16 +56,16 @@ vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
 		};
 	},
 }));
-vi.mock("@gatu/hl-react/signing/agent-storage", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@gatu/hl-react/signing/agent-storage")>()),
+vi.mock("@sairn/hl-react/signing/agent-storage", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@sairn/hl-react/signing/agent-storage")>()),
 	useAgentWalletStorage: () => ({ publicKey: AGENT, privateKey: "0x01", source: "local-registration" }),
 	useInvalidAgentStorageRecord: () => false,
 	readAgentFromStorage: () => ({ publicKey: AGENT, privateKey: "0x01", source: "local-registration" }),
 }));
-vi.mock("@gatu/hl-react/signing/use-agent-registration", () => ({
+vi.mock("@sairn/hl-react/signing/use-agent-registration", () => ({
 	useAgentRegistration: () => ({ register: state.registerAgent, status: "idle", error: null }),
 }));
-vi.mock("@gatu/hl-react/signing/use-builder-fee-approval", () => ({
+vi.mock("@sairn/hl-react/signing/use-builder-fee-approval", () => ({
 	useBuilderFeeApproval: () => ({ approve: state.approveFee, status: "idle", error: null }),
 }));
 

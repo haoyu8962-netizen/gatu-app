@@ -1,5 +1,5 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@sairn/ui";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { positionsTab, positionsTabs } from "@/components/trade/mobile/mobile-positions-tabs-view";
 import { Spinner } from "@/components/ui/spinner";

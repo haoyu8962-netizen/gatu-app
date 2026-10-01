@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { drawerContentVariants, modalPopupVariants, tooltipPopupVariants } from "@gatu/ui";
+import { drawerContentVariants, modalPopupVariants, tooltipPopupVariants } from "@sairn/ui";
 import { describe, expect, it } from "vitest";
 import { menuPopupSelectionSkinClass, menuPopupSkinClass, menuPopupSurfaceClass } from "@/lib/ui/menu-popup-skin";
 import { tradingPanelDropdownPopupClass } from "@/lib/ui/trading-dropdown";

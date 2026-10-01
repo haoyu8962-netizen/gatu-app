@@ -1,7 +1,7 @@
-import { Button } from "@gatu/ui";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, Suspense, useEffect, useRef } from "react";
 import { toast } from "sonner";

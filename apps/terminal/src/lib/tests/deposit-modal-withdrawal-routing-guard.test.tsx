@@ -146,7 +146,7 @@ const testState = vi.hoisted(() => ({
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({ children, disabled, onClick }: ButtonHTMLAttributes<HTMLButtonElement>) =>
 		createElement("button", { disabled, onClick, type: "button" }, children),
 	ModalContent: ({ children }: { children?: ReactNode }) => createElement("div", null, children),

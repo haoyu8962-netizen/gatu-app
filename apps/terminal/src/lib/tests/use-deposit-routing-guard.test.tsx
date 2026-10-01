@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { getFundsActionLockName } from "@gatu/hl-react/internal/exchange/funds-action-lock";
+import { getFundsActionLockName } from "@sairn/hl-react/internal/exchange/funds-action-lock";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -143,7 +143,7 @@ const testState = vi.hoisted(() => {
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-vi.mock("@gatu/hl-react", () => ({
+vi.mock("@sairn/hl-react", () => ({
 	getInfoClient: (isTestnet: boolean) => ({
 		userRole: (params: unknown, signal?: AbortSignal) => testState.getUserRole(isTestnet, params, signal),
 	}),

@@ -1,5 +1,5 @@
-import type { UnifiedMarket } from "@gatu/hl-react";
 import type { PerpConciseAnnotationsResponse } from "@nktkas/hyperliquid";
+import type { UnifiedMarket } from "@sairn/hl-react";
 
 export type LocalAssetDescriptionId = "bitcoin" | "ethereum" | "hype" | "solana" | "spcxd";
 export type LocalAssetProviderId = "unit";

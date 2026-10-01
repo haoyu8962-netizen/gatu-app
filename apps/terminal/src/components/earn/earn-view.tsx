@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import {
 	Button,
 	Table,
@@ -11,10 +14,7 @@ import {
 	TabsList,
 	TabsTrigger,
 	Tooltip,
-} from "@gatu/ui";
-import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+} from "@sairn/ui";
 import Big from "big.js";
 import { type ReactNode, useId, useState } from "react";
 import { TOUCH_PRESS_FADE_CLASS } from "@/components/ui/touch-press";

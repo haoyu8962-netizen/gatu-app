@@ -43,7 +43,7 @@ const mocks = vi.hoisted(() => ({
 	refetchFees: vi.fn(),
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
 		<button type="button" onClick={onClick}>
 			{children}

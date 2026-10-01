@@ -14,7 +14,7 @@ const modalHarness = vi.hoisted(() => ({
 	showClose: true,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		closeLabel,

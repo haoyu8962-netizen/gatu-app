@@ -19,7 +19,7 @@ const feedbackIdentity = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/hyperliquid", () => ({ useHyperliquid: () => feedbackIdentity }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children, open }: { children: ReactNode; open: boolean }) =>
 		open ? createElement("section", null, children) : null,
 	Button: ({

@@ -25,7 +25,7 @@ const testState = vi.hoisted(() => ({
 	refetchError: null as Error | null,
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		env: "Mainnet",
 		builderConfig: undefined,
@@ -34,7 +34,7 @@ vi.mock("@gatu/hl-react/provider", () => ({
 	}),
 }));
 
-vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
+vi.mock("@sairn/hl-react/hooks/useInfo", () => ({
 	useInfo: (method: string) =>
 		method === "extraAgents"
 			? {
@@ -55,13 +55,13 @@ vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
 				},
 }));
 
-vi.mock("@gatu/hl-react/signing/agent-storage", () => ({
+vi.mock("@sairn/hl-react/signing/agent-storage", () => ({
 	readAgentFromStorage: () => testState.localAgent,
 	useAgentWalletStorage: () => testState.localAgent,
 	useInvalidAgentStorageRecord: () => false,
 }));
 
-import { AgentStatusError, useAgentStatus } from "@gatu/hl-react/signing/use-agent-status";
+import { AgentStatusError, useAgentStatus } from "@sairn/hl-react/signing/use-agent-status";
 
 let observedStatus: ReturnType<typeof useAgentStatus> | undefined;
 

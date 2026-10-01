@@ -1,6 +1,6 @@
-import { Button, Pagination, SearchInput, Select, Table } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, CrownIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { Button, Pagination, SearchInput, Select, Table } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";

@@ -38,7 +38,7 @@ const testState = vi.hoisted(() => ({
 	availability: { available: true, reason: null as string | null, unavailableReason: null as string | null },
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children, open }: { children: ReactNode; open: boolean }) =>
 		createElement("section", { "data-open": String(open) }, children),
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),

@@ -1,4 +1,4 @@
-import { Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
+import { Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import type { ReactNode } from "react";
 
 interface Props {

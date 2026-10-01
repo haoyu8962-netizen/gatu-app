@@ -66,7 +66,7 @@ vi.mock("@/config/mobile-pairing", () => ({
 	},
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children, open }: { children: ReactNode; open: boolean }) =>
 		open ? createElement("div", null, children) : null,
 	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) =>

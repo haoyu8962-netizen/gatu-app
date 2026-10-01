@@ -2,7 +2,7 @@ import {
 	createMobileAgentName,
 	MOBILE_AGENT_NAME_BASE,
 	MOBILE_AGENT_VALIDITY_MS,
-} from "@gatu/hl-react/signing/mobile-agent";
+} from "@sairn/hl-react/signing/mobile-agent";
 import { type Address, type Hex, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 

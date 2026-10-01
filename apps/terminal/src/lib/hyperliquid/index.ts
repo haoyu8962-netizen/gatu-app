@@ -192,7 +192,7 @@ export {
 	WS_RELIABILITY_LIMITS,
 	writeAgentToStorage,
 	writePersistTradingConnection,
-} from "@gatu/hl-react";
+} from "@sairn/hl-react";
 
 export type { MarketKind } from "@/domain/market";
 
@@ -200,7 +200,7 @@ import {
 	getInfoClient as getInfoClientBase,
 	getSubscriptionClient as getSubscriptionClientBase,
 	subscribeWsReconnect as subscribeWsReconnectBase,
-} from "@gatu/hl-react";
+} from "@sairn/hl-react";
 import { isTestnet } from "@/lib/network";
 
 export function getInfoClient() {

@@ -49,7 +49,7 @@ const modalHarness = vi.hoisted(() => ({
 	tabValue: "margin",
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		className,
