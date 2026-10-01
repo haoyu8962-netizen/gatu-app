@@ -1,8 +1,8 @@
-import { getInfoClient as getSdkInfoClient } from "@gatu/hl-react";
-import { runWithFundsActionLock } from "@gatu/hl-react/internal/exchange/funds-action-lock";
 import { msg } from "@lingui/core/macro";
 import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
 import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
+import { getInfoClient as getSdkInfoClient } from "@sairn/hl-react";
+import { runWithFundsActionLock } from "@sairn/hl-react/internal/exchange/funds-action-lock";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
 	Account,

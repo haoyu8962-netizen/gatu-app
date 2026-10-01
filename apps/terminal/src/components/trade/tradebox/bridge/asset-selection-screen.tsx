@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { SpinnerGapIcon, WalletIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { formatTokenBalance } from "@/lib/bridge/format";
 import { cn } from "@/lib/cn";
 import { formatUSD } from "@/lib/format";

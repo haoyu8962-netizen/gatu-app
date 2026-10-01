@@ -54,9 +54,10 @@
 | 启动性能对齐官方站 | [修复计划](terminal-startup-performance-plan.md)：壳内预加载交易页静态闭包、壳与图表包边缘缓存、地区判定预取与 Lambda 保温、分块整理；含同环境冷缓存对比数据与需要决策的事项；各项状态见文内 |
 | CSP 第二步：内联脚本哈希 | [计划](csp-inline-script-hashes-plan.md)：`script-src` 去掉 `'unsafe-inline'`，哈希随发布轮换并保留上一版集合，先 report-only 观察再强制；含现状数据、备选方案与需要决策的事项；B、C、D 阶段均已执行 |
 | 桌面 md 断点右列堆叠 | [计划](desktop-grid-stacked-right-column-plan.md)：1001–1420 px 时下单面板在上、订单簿在下、账户信息再下，图表列 10/14；含官方 fiber 实测几何、新默认几何、边界规则、v12 迁移与回归套件清单；已实施，决策见 ADR 0011 |
-| 资金类弹层的结果反馈 | [方案](funds-dialog-outcome-plan.md)：划转、发送、提现、充值对照官方终端的做法（保持打开到请求结束、无论成败都关闭、结果走通知、长时间状态放在通知与持久化的待处理列表）；分三步，含官方前端包取证、gatu 现状、三项需要决策的事项与验收标准；三步均已实施，未发布，未做真实钱包验收，偏差见文内「实施记录」 |
-| 公告功能 | [方案](announcements-plan.md)：参照官方终端的静态公告源，gatu 自有内容放在同源 `/feeds/announcements/`，Markdown 正文不注入 HTML，桌面提示走共享通知宿主、手机只显示圆点；含官方做法对照、分步实施、四项需要决定的事项与验收标准；未实施 |
+| 资金类弹层的结果反馈 | [方案](funds-dialog-outcome-plan.md)：划转、发送、提现、充值对照官方终端的做法（保持打开到请求结束、无论成败都关闭、结果走通知、长时间状态放在通知与持久化的待处理列表）；分三步，含官方前端包取证、Sairn 现状、三项需要决策的事项与验收标准；三步均已实施，未发布，未做真实钱包验收，偏差见文内「实施记录」 |
+| 公告功能 | [方案](announcements-plan.md)：参照官方终端的静态公告源，Sairn 自有内容放在同源 `/feeds/announcements/`，Markdown 正文不注入 HTML，桌面提示走共享通知宿主、手机只显示圆点；含官方做法对照、分步实施、四项需要决定的事项与验收标准；未实施 |
 | SDK 未接入接口 | [覆盖审查的收益排序](hyperliquid-sdk-coverage-review.md#收益排序)：第一批六项已在集成分支实现（见[接入规划](sdk-feature-integration-plan.md)的实施记录，未合入 `dev`、未发布）；服务端账户通知、子账户、HIP-4 预测市场与 Agent 代签资金操作需先有设计与 ADR，未排期 |
+| 品牌迁移 gatu → Sairn | [品牌标识与素材](brand-assets.md)（唯一来源 `brand/brand.json`、读取方与校验）；[计划](brand-migration-plan.md)：设计交付物核验、改名范围、需要用户决定的 24 项、分阶段实施（单一来源、Logo 与图标、动效、分享卡、名称与多语言、品牌色、域名切换）、仓库外清单与风险；已按用户决定实施（内部标识、Agent 槽位名、包作用域与域名都改为 sairn），过程见[执行记录](work-memory/sessions/2026-10-01-sairn-brand-migration-execution.md)，域名切换按用户决定改为 gatu.ai 直接下线，执行方案见 [gatu.ai 下线、切换到 sairn.ai](sairn-domain-cutover-plan.md)（执行中，决策见 [ADR 0032](adr/0032-gatu-offline-cutover-to-sairn.md)） |
 
 ## 历史设计、调查与交付证据
 

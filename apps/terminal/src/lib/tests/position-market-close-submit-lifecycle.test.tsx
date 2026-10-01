@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { useTradingGuard } from "@gatu/hl-react/hooks/useTradingGuard";
 import { i18n } from "@lingui/core";
+import { useTradingGuard } from "@sairn/hl-react/hooks/useTradingGuard";
 import { act, createElement, Fragment, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -112,7 +112,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 }));
 
-vi.mock("@gatu/ui", () => {
+vi.mock("@sairn/ui", () => {
 	const passthrough =
 		(tag: string) =>
 		({ children, divider: _divider, ...props }: { children?: ReactNode; divider?: boolean }) =>
@@ -149,7 +149,7 @@ vi.mock("@/components/trade/components/trade-size-slider", () => ({
 	},
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({ clientKey: USER, env: "Mainnet", sessionMode: "wallet" }),
 }));
 vi.mock("../../../../../packages/hl-react/src/signing/use-trading-status", () => ({
@@ -162,7 +162,7 @@ vi.mock("../../../../../packages/hl-react/src/signing/use-trading-status", () =>
 		isBuilderFeeLoading: false,
 	}),
 }));
-vi.mock("@gatu/hl-react/signing/use-trading-authorization", () => ({
+vi.mock("@sairn/hl-react/signing/use-trading-authorization", () => ({
 	useTradingAuthorization: () => ({ authorize: async () => {}, status: "idle", error: null }),
 }));
 

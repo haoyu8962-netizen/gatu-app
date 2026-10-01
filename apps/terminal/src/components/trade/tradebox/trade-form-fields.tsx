@@ -1,5 +1,5 @@
-import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { Button, Tooltip } from "@sairn/ui";
 import { useEffect, useId, useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { getFormattedMidPrice } from "@/components/ui/price-input";

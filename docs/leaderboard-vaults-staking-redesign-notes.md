@@ -21,7 +21,7 @@ Sources are applied in this order:
 
 1. Hyperliquid's current official developer and product documentation is the hard behavioral constraint.
 2. The delivery-package READMEs define product intent where they do not conflict with official behavior.
-3. The project's pinned `@nktkas/hyperliquid@0.33.3` types and existing `@gatu/hl-react` integration define the callable SDK surface used to realize that intent.
+3. The project's pinned `@nktkas/hyperliquid@0.33.3` types and existing `@sairn/hl-react` integration define the callable SDK surface used to realize that intent.
 4. Current production behavior at `app.hyperliquid.xyz` fills the two approved public-list source gaps only through the contained boundaries described below: a browser adapter for Vaults and a same-origin server endpoint for Leaderboard. It cannot override documented protocol behavior or the handoff's product intent and is marked undocumented and potentially unstable.
 5. The `.dc.html` files define visual composition and interaction references only. Their code and fixture values must not enter the project.
 
@@ -298,7 +298,7 @@ The handoff token source is `designs/Gatu标志加载动画/docs/hl-ui-spec/toke
 | Undelegate enters a seven-day queue | Undelegate returns funds immediately to Staking available after its one-day delegation lock. Only `cWithdraw` starts the withdrawal queue; it is seven days on Mainnet and approximately five minutes on Testnet, with at most five pending | Correct every label, review, state transition, and reconciliation rule, and render the duration from the selected environment. |
 | Staking link can be unlinked / rewards belong to trading account | Linking permanently attributes staking to a trading account for fee discounts; no unlink exists. The staking user obtains complete control over trading funds and gives up its own discount | Delivered read-only link status and permanent-control warning. No signing or `stakingLinkDisableTradingUser` “unlink” control is exposed. |
 | Validator commission can rise at any time | Official rules constrain an increase unless the new commission is at most 1% | Remove the absolute claim; render the returned commission only. |
-| Jailed validators always reject a new delegation | Official docs say jailed validators do not produce blocks or rewards, but do not document this exact API rejection | A Gatu safety policy may disable delegation to jailed validators, labeled as product protection rather than protocol fact. |
+| Jailed validators always reject a new delegation | Official docs say jailed validators do not produce blocks or rewards, but do not document this exact API rejection | A Sairn safety policy may disable delegation to jailed validators, labeled as product protection rather than protocol fact. |
 | Reward source is a validator | `delegatorRewards` exposes only `delegation` or `commission` | Rename to Reward source and show only the returned enum. |
 | Staking rewards need a Claim action | Rewards are distributed daily and automatically redelegated/compounded | Show the automatic-compounding explanation and no Claim button. Section 18c's Claim flow remains Referrals-only. |
 | A per-withdrawal unlock queue/progress is available | The API exposes only aggregate pending amount/count plus initiated/finalized history, without stable queue IDs or unlock timestamps | Show aggregate and exact history; omit fabricated rows/countdowns. |
@@ -316,13 +316,13 @@ The handoff token source is `designs/Gatu标志加载动画/docs/hl-ui-spec/toke
 
 The user approved the recommended boundary after this audit. The implementation applies it as follows:
 
-1. **Undocumented public data accepted with containment.** Vault discovery remains in the environment-specific `@gatu/hl-react` browser adapter: it uses a plain CORS-safe GET/native browser cache without application-supplied conditional headers and stream-enforces byte/row/schema limits. Leaderboard uses same-origin `GET /api/leaderboard`; only the server fetches and normalizes the full environment-matched upstream datasets, may use upstream validators, and returns a bounded page. Both paths fail visibly and never fall back to fixture or another network.
+1. **Undocumented public data accepted with containment.** Vault discovery remains in the environment-specific `@sairn/hl-react` browser adapter: it uses a plain CORS-safe GET/native browser cache without application-supplied conditional headers and stream-enforces byte/row/schema limits. Leaderboard uses same-origin `GET /api/leaderboard`; only the server fetches and normalizes the full environment-matched upstream datasets, may use upstream validators, and returns a bounded page. Both paths fail visibly and never fall back to fixture or another network.
 2. **Shared funds safety accepted.** `vaultTransfer`, `cDeposit`, `cWithdraw`, and `tokenDelegate` use the integration layer's cross-tab lock and `retry:false` behavior. An app-shell recovery host and non-secret operation marker retain ambiguous operations across page navigation and reload. Marker storage uses an atomic global lock; unknown actions can only perform read-only verification.
 3. **Validator detail deferred.** `/staking/validators/$validator` was not added because no screen or field contract exists. Validator rows remain part of `/staking`.
 4. **Staking linking writes deferred.** The page renders verified linking status and the permanent-control warning, but does not call `linkStakingUser`. There is no unlink control.
 5. **Pending withdrawal remains aggregate.** The UI uses returned total/count and exact history, without fabricated queue identifiers, unlock timestamps, or progress bars.
 6. **Scope is limited to the audited routes.** Referrals remains unchanged and section 18c is excluded.
-7. **Leaderboard parity is deliberately partial and disclosed.** The page implements all four periods and sorts, the observed AND threshold, exact feed values, network-matched Vault-address exclusion, and protected explorer links. No reviewed protocol/treasury special-address list exists, so policy `gatu-vault-feed-only-2026-08-14` explicitly does not claim exact parity with Hyperliquid's official ranking.
+7. **Leaderboard parity is deliberately partial and disclosed.** The page implements all four periods and sorts, the observed AND threshold, exact feed values, network-matched Vault-address exclusion, and protected explorer links. No reviewed protocol/treasury special-address list exists, so policy `sairn-vault-feed-only-2026-08-14` explicitly does not claim exact parity with Hyperliquid's official ranking.
 8. **Vault classification is omitted instead of guessed.** Official/User controls and badges are absent until a reviewed policy exists. Deposited and Leading use verified owner snapshots; public rows remain unclassified.
 
 ## 8. Final verification and delivery evidence
@@ -341,7 +341,7 @@ The `.dc.html` files and their runtimes were used only for visual and interactio
 | Staking per-withdrawal progress rows | Replaced with the authoritative aggregate amount/count and initiated/finalized history because the API exposes no stable queue ID or unlock timestamp. |
 | Staking Claim and unlink controls | Omitted. Rewards auto-compound, and staking linking is permanent rather than unlinkable. Linking status and risk copy are read-only under this delivery boundary. |
 | Validator detail route | Omitted because the handoff contains no detail screen, field contract, or state specification. Validator selection and current delegation remain on `/staking`. |
-| Leaderboard exact official parity | Explicitly not claimed. Policy `gatu-vault-feed-only-2026-08-14` applies the observed threshold rule and network-matched Vault-feed exclusion, but no reviewed protocol/treasury special-address list exists. |
+| Leaderboard exact official parity | Explicitly not claimed. Policy `sairn-vault-feed-only-2026-08-14` applies the observed threshold rule and network-matched Vault-feed exclusion, but no reviewed protocol/treasury special-address list exists. |
 | Unknown financial result with a transaction hash | Never fabricates a hash. The UI retains the exact non-secret operation tuple, blocks resubmission, and reveals a real hash only after a matching ledger/history record appears. |
 | Handoff geometry and colors | Mapped to existing semantic project tokens; only missing `--earn-*`, `--staking-*`, `--vault-detail-*`, and `--funds-action-*` values were added centrally. Responsive behavior uses the project's inclusive 1000px mobile breakpoint. |
 

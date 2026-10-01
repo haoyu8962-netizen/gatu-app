@@ -57,5 +57,10 @@
 		"id": "hyperliquid-api",
 		"title": "Hyperliquid API 接入与覆盖",
 		"documents": ["docs/hyperliquid-sdk-reference.md", "docs/hyperliquid-sdk-coverage-review.md"]
+	},
+	{
+		"id": "brand-identity",
+		"title": "品牌标识与改名迁移",
+		"documents": ["docs/brand-migration-plan.md"]
 	}
 ]

@@ -11,7 +11,7 @@ describe("client root fatal fallback", () => {
 	});
 
 	afterEach(() => {
-		vi.doUnmock("@gatu/hl-react/internal/exchange/request-scheduler");
+		vi.doUnmock("@sairn/hl-react/internal/exchange/request-scheduler");
 		vi.doUnmock("@tanstack/react-start/client");
 		vi.doUnmock("react-dom/client");
 		vi.doUnmock("../error-reporting/client");
@@ -24,7 +24,7 @@ describe("client root fatal fallback", () => {
 		const privateFailure = new Error("private root failure detail");
 		const invalidateAllExchangeRequestIdentities = vi.fn();
 		const reportClientError = vi.fn();
-		vi.doMock("@gatu/hl-react/internal/exchange/request-scheduler", () => ({
+		vi.doMock("@sairn/hl-react/internal/exchange/request-scheduler", () => ({
 			invalidateAllExchangeRequestIdentities,
 		}));
 		vi.doMock("@tanstack/react-start/client", () => ({
@@ -51,7 +51,7 @@ describe("client root fatal fallback", () => {
 		const reportClientError = vi.fn();
 		const unmount = vi.fn();
 		let onUncaughtError: ((error: unknown, info: { componentStack: string }) => void) | undefined;
-		vi.doMock("@gatu/hl-react/internal/exchange/request-scheduler", () => ({
+		vi.doMock("@sairn/hl-react/internal/exchange/request-scheduler", () => ({
 			invalidateAllExchangeRequestIdentities,
 		}));
 		vi.doMock("@tanstack/react-start/client", () => ({ StartClient: () => null }));

@@ -1,3 +1,4 @@
+import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
 import {
 	type BuilderPerpMarket,
 	type Markets,
@@ -6,8 +7,7 @@ import {
 	type MarketSpotToken as SpotToken,
 	type UnifiedMarket,
 	useInfo,
-} from "@gatu/hl-react";
-import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
+} from "@sairn/hl-react";
 import { useIsRestoring } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useMemo } from "react";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";

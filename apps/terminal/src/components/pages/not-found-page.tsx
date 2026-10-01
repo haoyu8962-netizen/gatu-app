@@ -1,5 +1,5 @@
-import { buttonVariants } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { buttonVariants } from "@sairn/ui";
 
 export function NotFoundPage() {
 	const { t } = useLingui();

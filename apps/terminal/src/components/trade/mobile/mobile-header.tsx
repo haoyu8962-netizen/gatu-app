@@ -1,8 +1,9 @@
 import { useLingui } from "@lingui/react/macro";
 import { GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
-import { GatuLogo } from "@/components/brand/gatu-logo";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { headerLanguage, headerLogo, headerSettings } from "@/components/trade/mobile/mobile-header-view";
+import { BRAND_NAME } from "@/config/brand";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { HeaderIconButtonView } from "../header/header-icon-button-view";
@@ -25,8 +26,14 @@ export function MobileHeader({ className }: Props) {
 			className={className}
 			drawer={<MobileNavDrawer />}
 			logo={
-				<Link to={tradeHomePath} search={{ scope: "all" }} aria-label="GATU" className={headerLogo}>
-					<GatuLogo variant="mark" micro className="size-[22px]" />
+				<Link
+					to={tradeHomePath}
+					search={{ scope: "all" }}
+					aria-label={BRAND_NAME}
+					data-brand-home-link=""
+					className={headerLogo}
+				>
+					<BrandLogo variant="mark" className="h-6 w-auto" />
 				</Link>
 			}
 			account={<UserMenu />}

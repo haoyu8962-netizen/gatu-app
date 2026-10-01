@@ -27,7 +27,7 @@
 
 ## 与官方终端的差异
 
-官方（2026-09-24 取证）把数字格式存为 `hyperliquid.locale`、模块顶层读一次、改动整页 `window.location.reload()`，图表只传 `decimal_sign`，时间戳、图表坐标轴和排序用浏览器默认 locale。gatu 保留热切换，图表同时传小数点与分组符，日期跟随语言并固定拉丁数字。
+官方（2026-09-24 取证）把数字格式存为 `hyperliquid.locale`、模块顶层读一次、改动整页 `window.location.reload()`，图表只传 `decimal_sign`，时间戳、图表坐标轴和排序用浏览器默认 locale。Sairn 保留热切换，图表同时传小数点与分组符，日期跟随语言并固定拉丁数字。
 
 ## 未完成
 

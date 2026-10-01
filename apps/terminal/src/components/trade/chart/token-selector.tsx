@@ -1,6 +1,6 @@
-import { infoKey, infoPersistedKey } from "@gatu/hl-react";
-import { Drawer, DrawerTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { infoKey, infoPersistedKey } from "@sairn/hl-react";
+import { Drawer, DrawerTrigger } from "@sairn/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";

@@ -30,7 +30,7 @@ describe("leaderboard API query contract", () => {
 			page: 42,
 			pageSize: 25,
 		};
-		const url = new URL(getLeaderboardApiUrl(query), "https://gatu.test");
+		const url = new URL(getLeaderboardApiUrl(query), "https://sairn.test");
 
 		expect(parseLeaderboardApiQuery(url.searchParams)).toEqual(query);
 	});

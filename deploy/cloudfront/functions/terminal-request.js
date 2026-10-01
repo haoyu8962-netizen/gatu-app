@@ -1,11 +1,11 @@
-// CloudFront Function (viewer-request, JavaScript runtime 2.0) for the gatu trading terminal.
+// CloudFront Function (viewer-request, JavaScript runtime 2.0) for the sairn trading terminal.
 //
 // Mirrors apps/terminal/src/lib/static-pages/static-pages.ts for an S3 origin: every application
 // path maps to the SPA shell, and server paths are left untouched so their cache behaviors route
 // them to the API origin. Missing files stay 404 (custom error response) instead of becoming
 // HTML. A final segment with a dot followed by 1-16 ASCII letters or digits is file-shaped,
 // including leading-dot files; the bound keeps longer dotted route segments from being mistaken
-// for files. The public host is copied into x-gatu-forwarded-host so the API origin can rebuild the
+// for files. The public host is copied into x-sairn-forwarded-host so the API origin can rebuild the
 // public origin. Join paths and the pairing path are tagged so the viewer-response function can
 // expose the route marker and give the pairing page its uncached, referrer-free headers; a tag the
 // viewer sent itself is dropped first.
@@ -56,10 +56,20 @@ function notFound(message) {
 	};
 }
 
+// A release publishes this function before the viewer-response function, and a rollback does the same with the
+// previous pair, so until the gatu.ai group retires both marker names are written and both are read.
+function tagRoute(request, value) {
+	request.headers['x-sairn-route'] = { value: value };
+	request.headers['x-gatu-route'] = { value: value };
+}
+
 function handler(event) {
 	var request = event.request;
 	var host = request.headers.host ? request.headers.host.value : '';
+	request.headers['x-sairn-forwarded-host'] = { value: host };
+	// Pre-rename name, still forwarded by API origin request policies that predate X-Sairn-Forwarded-Host.
 	request.headers['x-gatu-forwarded-host'] = { value: host };
+	delete request.headers['x-sairn-route'];
 	delete request.headers['x-gatu-route'];
 
 	var uri = trimTrailingSlash(request.uri);
@@ -69,9 +79,9 @@ function handler(event) {
 	if (hasFileExtension(uri)) return request;
 
 	if (uri === '/join' || uri.indexOf('/join/') === 0) {
-		request.headers['x-gatu-route'] = { value: 'referral-join' };
+		tagRoute(request, 'referral-join');
 	} else if (uri.toLowerCase() === PAIRING_PATH) {
-		request.headers['x-gatu-route'] = { value: 'mobile-agent-sync' };
+		tagRoute(request, 'mobile-agent-sync');
 	}
 	request.uri = SHELL;
 	return request;

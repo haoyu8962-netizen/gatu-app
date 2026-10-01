@@ -1,5 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, InfoIcon, ShieldCheckIcon, WalletIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { BRAND_NAME } from "@/config/brand";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
@@ -167,7 +168,7 @@ export function ApiWalletView({
 					<p className="flex items-start gap-1.5 text-xs leading-5 text-api-wallet-muted">
 						<ShieldCheckIcon className="mt-0.5 size-3.5 shrink-0 text-api-wallet-success" weight="fill" />
 						<span>
-							<Trans>The private key is created in this browser and is never uploaded or stored by Gatu.</Trans>{" "}
+							<Trans>The private key is created in this browser and is never uploaded or stored by {BRAND_NAME}.</Trans>{" "}
 							<a
 								href={OFFICIAL_AGENT_WALLET_DOCS_URL}
 								target="_blank"

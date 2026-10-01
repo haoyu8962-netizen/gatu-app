@@ -85,6 +85,123 @@ describe("global order notifications", () => {
 	async function flush() {
 		await act(() => vi.advanceTimersByTimeAsync(0));
 	}
+	it("shows the status glyph of each order state and never an error glyph for an unknown result", async () => {
+		const expected: [OrderQueueItem["status"], string, boolean][] = [
+			["pending", "submitting", true],
+			["confirming", "pending", true],
+			["unconfirmed", "unknown", false],
+			["partial", "warning", false],
+			["success", "success", false],
+			["canceled", "cancelled", false],
+			["failed", "error", false],
+		];
+		let id = "";
+		act(() => {
+			id = add();
+		});
+		for (const [status, glyph, loading] of expected) {
+			act(() => updateOrderQueueItem(id, { status }));
+			await flush();
+			const icon = container.querySelector(`[data-order-feedback="${id}"] svg[data-status-glyph]`);
+			expect(icon?.getAttribute("data-status-glyph"), status).toBe(glyph);
+			expect(icon?.getAttribute("aria-hidden"), status).toBe("true");
+			expect(icon?.hasAttribute("data-loading-indicator"), status).toBe(loading);
+			expect(container.querySelector(`[data-order-feedback="${id}"] .animate-spin`), status).toBeNull();
+		}
+	});
+	it("draws the partial-fill glyph only for a verified partial fill", async () => {
+		const cases: [Partial<OrderQueueItem>, string][] = [
+			[{ countMode: "filled", acceptedCount: 1, totalCount: 2 }, "partial"],
+			[
+				{
+					execution: {
+						evidence: "exchange-response",
+						filledSize: "0.4",
+						requestedSize: "1",
+						averagePrice: "100",
+						orderIds: [1],
+						completeness: "partial",
+					},
+				},
+				"partial",
+			],
+			[{ countMode: "accepted", acceptedCount: 7, totalCount: 10 }, "warning"],
+			[
+				{ countMode: "filled", acceptedCount: 1, totalCount: 2, error: orderReconciliationError("status-unconfirmed") },
+				"warning",
+			],
+			[
+				{
+					countMode: "filled",
+					acceptedCount: 1,
+					totalCount: 2,
+					children: [
+						{ assetId: 0, market: "HYPE", size: "1.25", filledSize: "1.25", status: "filled" },
+						{
+							assetId: 1,
+							market: "BTC",
+							size: "2.5",
+							status: "rejected",
+							error: "No liquidity available for market order.",
+						},
+					],
+				},
+				"warning",
+			],
+			...(["canceled", "unknown"] as const).map((status): [Partial<OrderQueueItem>, string] => [
+				{
+					countMode: "filled",
+					acceptedCount: 1,
+					totalCount: 2,
+					children: [
+						{ assetId: 0, market: "HYPE", size: "1", filledSize: "1", status: "filled" },
+						{ assetId: 1, market: "BTC", size: "1", status },
+					],
+				},
+				"warning",
+			]),
+			[
+				{
+					execution: {
+						evidence: "exchange-response",
+						filledSize: "0.4",
+						requestedSize: "1",
+						averagePrice: "100",
+						orderIds: [1],
+						completeness: "partial",
+					},
+					children: [{ assetId: 1, market: "BTC", size: "1", status: "rejected" }],
+				},
+				"warning",
+			],
+			[
+				{
+					countMode: "filled",
+					acceptedCount: 1,
+					totalCount: 2,
+					children: [
+						{ assetId: 0, market: "HYPE", size: "1", filledSize: "1", status: "filled" },
+						{ assetId: 1, market: "BTC", size: "2", filledSize: "1", status: "partial" },
+					],
+				},
+				"partial",
+			],
+		];
+		for (const [update, glyph] of cases) {
+			let id = "";
+			act(() => {
+				id = add();
+				updateOrderQueueItem(id, { status: "partial", ...update });
+			});
+			await flush();
+			expect(
+				container
+					.querySelector(`[data-order-feedback="${id}"] svg[data-status-glyph]`)
+					?.getAttribute("data-status-glyph"),
+				JSON.stringify(update),
+			).toBe(glyph);
+		}
+	});
 	it("keeps short live feedback out of the tab order", async () => {
 		vi.stubGlobal("ResizeObserver", undefined);
 		let id = "";

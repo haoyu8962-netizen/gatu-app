@@ -1,4 +1,4 @@
-import { AdaptiveModal } from "@gatu/ui";
+import { AdaptiveModal } from "@sairn/ui";
 import type { ReactNode } from "react";
 
 interface Props {

@@ -58,6 +58,11 @@ Each works as `bg-*` and `text-*`:
 
 For **borders / rings / outlines / dividers** using these semantic colors, use the stroke variants (see Strokes section) to preserve the intended alpha values.
 
+### Brand roles — `--signal`, `--action`, `--focus`
+- `--signal` is the Sairn accent (light `#176b64` teal, dark `#86e5d3` mint; hover `#0f524d` / `#a8eee1`; soft 10 % / 14 %). `text-brand`, `text-signal`, `bg-signal-soft` and the focus ring (`--focus: var(--signal)`) use it. The values live in `brand/brand.json` and must be identical in `packages/ui/src/globals.css`, the terminal and the website; `tests/brand-cross-app.test.mjs` pins the equality and a 4.5:1 text contrast on every terminal surface.
+- `--action` stays neutral (light `#15171e`, dark `#edeef2`): filled primary buttons are not tinted with the brand, so they cannot be mistaken for the green Buy button.
+- Waiting spinners use `text-fg-muted`, never `text-signal`: the kit's mint is also its success colour, and a mint spinner reads as "done".
+
 ### Fills — interactive state backgrounds
 - `bg-fill-weak` / `bg-fill-weaker` subtle tinted fills (for hover, chips)
 - `bg-fill-hover` / `bg-fill-press` interactive state fills
@@ -97,6 +102,12 @@ All the above also work as `ring-stroke-*`, `outline-stroke-*`, `divide-stroke-*
 - Every `text-[Npx]` that carried its own `leading-*` in the same class string now uses the named size. What the ratchet still counts either inherits its line height, so the named size would change it and its children and needs a visual check, or has no named equivalent (7, 8, 9, 15, 17, 18, 32px) and needs a design decision. `text-[28px]`, `text-[40px]` and `text-[56px]` are not `text-xl` / `text-2xl` / `text-3xl`, because those three shrink at 1000px.
 - Write `leading-*` after the font size it belongs to. `cn()` treats a font size as replacing any earlier `leading-*` of the same variant, so `cn("leading-5 text-2sm")` renders `text-2sm` with its default 18px line height while `cn("text-2sm leading-5")` keeps 20px.
 
+### Brand logo
+- `--logo-signal`, `--logo-choice`, `--logo-wordmark`: the three parts of the logo kit v1.3, per theme (light `#176b64` / `#99621f` / `#08262e`, dark `#86e5d3` / `#e6b766` / `#ffffff`), equal to `logo` in `brand/brand.json`. Only `BrandLogo`, `BrandPageLoader` and the mark inside `BrandMotion` illustrations use them; they are not UI accents.
+- `--logo-loader-floor`: the darkest opacity of the page-loading motion (light `0.78`, dark `0.55`), the kit's 3:1 contrast floor; looping status motions follow it through `--srm-floor`.
+- Status motion (`StatusGlyph`, `BrandMotion`, `ButtonLoading`; ADR 0029) adds no colour token: `styles.css` maps `data-tone` to `--status-tone` from the existing text tokens (success → `--text-success`, error → `--text-error`, attention → `--text-warning`, neutral → `--text-weak`, info → `--text-info`), the badge cut-out `--status-on` to `--on-action`, and `--srm-floor` to `--logo-loader-floor` (mono button indicator `0.78`). A looping in-flight glyph or motion never takes the success tone, for the same reason as the waiting spinners above; the kit's `submitting` (drawn in its success colour) renders neutral. Keep the kit's own palette out of the terminal; `status-motion-contract` pins the mapping.
+- See [docs/brand-assets.md](../../docs/brand-assets.md) for the logo sizes and the components.
+
 ### Market / Trading Extensions
 - Order-book tokens are scoped to `apps/terminal/src/styles.css`: `--orderbook-depth-bid/ask` for 15% solid depth fills, `--orderbook-price-bid/ask` for price text, `--orderbook-flash-bid/ask` for quantity changes, `--orderbook-level-pulse-bid/ask` for full-row pulses, and `--orderbook-muted` for secondary text. Do not replace these with global market colors. Both themes and all desktop/mobile layouts share their semantic roles; palettes and composed contrast requirements are documented in `docs/orderbook-new-level-animation.md`.
 - `text-market-up` / `bg-market-up` positive PnL, price up (green)
@@ -107,5 +118,5 @@ All the above also work as `ring-stroke-*`, `outline-stroke-*`, `divide-stroke-*
 
 ### Border Radius
 - Use named radius utilities so `--radius-factor` can tune the product consistently; never use arbitrary pixel radii.
-- Shared controls default to the radius provided by `@gatu/ui` (currently `rounded-8`). Dashboard pages use `rounded-24` for page surfaces and `rounded-16` for the cards and notices inside them (`style-ui-guide.md`, Dashboard page gutters); dialogs keep `rounded-32` and menus `rounded-24`.
+- Shared controls default to the radius provided by `@sairn/ui` (currently `rounded-8`). Dashboard pages use `rounded-24` for page surfaces and `rounded-16` for the cards and notices inside them (`style-ui-guide.md`, Dashboard page gutters); dialogs keep `rounded-32` and menus `rounded-24`.
 - Use `rounded-full` only for pills, tags, and circular indicators. Document and test any design exception instead of embedding a raw pixel value.

@@ -1,5 +1,5 @@
-import { Button, Select } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Button, Select } from "@sairn/ui";
 import Big from "big.js";
 import { useState } from "react";
 import {

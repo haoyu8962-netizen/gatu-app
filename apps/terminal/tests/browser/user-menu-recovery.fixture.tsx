@@ -16,7 +16,7 @@ import "./trade-slider.css";
 
 declare global {
 	interface Window {
-		__gatuUserMenuRecovery: {
+		__sairnUserMenuRecovery: {
 			setSession: (patch: Partial<UserMenuRecoverySession>) => void;
 			setLocale: (locale: "en" | "zh") => void;
 			openLinkMobileDevice: () => Promise<void>;
@@ -37,7 +37,7 @@ window.localStorage.setItem("privy:token", "fixture-session");
 // The fixture renders UserMenu without TopNav. openLinkMobileDevice follows the header QR icon's click
 // handler (warm the dialog chunk, then open the global modal store), so a test can reach the single
 // Link mobile device dialog that UserMenu hosts. pairingEnabled exposes the flag the Vite config pins.
-window.__gatuUserMenuRecovery = {
+window.__sairnUserMenuRecovery = {
 	setSession: setRecoverySession,
 	setLocale: (locale) => i18n.activate(locale),
 	openLinkMobileDevice: async () => {

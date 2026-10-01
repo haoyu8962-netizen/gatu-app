@@ -1,4 +1,4 @@
-import { ModalHeader } from "@gatu/ui";
+import { ModalHeader } from "@sairn/ui";
 import type { ReactNode } from "react";
 
 interface Props {

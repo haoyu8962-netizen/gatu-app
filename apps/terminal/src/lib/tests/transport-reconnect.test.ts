@@ -1,4 +1,4 @@
-import { getSdkReconnectionDelayMs } from "@gatu/hl-react/internal/websocket/reliability";
+import { getSdkReconnectionDelayMs } from "@sairn/hl-react/internal/websocket/reliability";
 import { describe, expect, it, vi } from "vitest";
 
 describe("SDK reconnect backoff constant", () => {
@@ -23,7 +23,7 @@ describe("createWsReconnectTrigger SDK coupling", () => {
 	// was called. Surfaces any SDK breakage in tests rather than silently in
 	// production.
 	it("invokes socket.reconnect() against a real WebSocketTransport", async () => {
-		const { createWsReconnectTrigger, getWsTransport } = await import("@gatu/hl-react/clients");
+		const { createWsReconnectTrigger, getWsTransport } = await import("@sairn/hl-react/clients");
 
 		// Retrieve the module-cached transport the trigger will target.
 		const transport = getWsTransport(true);
@@ -49,7 +49,7 @@ describe("createWsReconnectTrigger SDK coupling", () => {
 
 describe("store reconnect with fake subscriptions", () => {
 	it("store acquires and releases subscriptions correctly", async () => {
-		const { createHyperliquidStore } = await import("@gatu/hl-react/store");
+		const { createHyperliquidStore } = await import("@sairn/hl-react/store");
 		const store = createHyperliquidStore({ ssr: false });
 
 		store.getState().acquireSubscription("test:key", async () => ({
@@ -69,7 +69,7 @@ describe("store reconnect with fake subscriptions", () => {
 	});
 
 	it("store schedules reconnect on subscription failure", async () => {
-		const { createHyperliquidStore } = await import("@gatu/hl-react/store");
+		const { createHyperliquidStore } = await import("@sairn/hl-react/store");
 		const store = createHyperliquidStore({ ssr: false });
 
 		let reportError: ((error: unknown) => void) | undefined;
@@ -92,7 +92,7 @@ describe("store reconnect with fake subscriptions", () => {
 	});
 
 	it("recovers after repeated failures: cycles through errors then lands active", async () => {
-		const { createHyperliquidStore } = await import("@gatu/hl-react/store");
+		const { createHyperliquidStore } = await import("@sairn/hl-react/store");
 		const store = createHyperliquidStore({ ssr: false });
 
 		const key = "test:retry-then-success";

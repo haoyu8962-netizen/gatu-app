@@ -9,7 +9,7 @@ import {
 	PUBLIC_STATS_DATA_LIMITS,
 	PublicStatsDataError,
 	publicStatsDataKeys,
-} from "@gatu/hl-react";
+} from "@sairn/hl-react";
 import { getAddress } from "viem";
 import { afterEach, describe, expect, it, vi } from "vitest";
 

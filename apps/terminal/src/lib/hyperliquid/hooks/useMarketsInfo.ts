@@ -10,7 +10,7 @@ import {
 	type SubscriptionStatus,
 	useHyperliquidTransport,
 	useSubscription,
-} from "@gatu/hl-react";
+} from "@sairn/hl-react";
 import { useEffect, useMemo, useState } from "react";
 import { STORAGE_KEYS } from "@/config/app";
 import { MARKETS_STATS_TTL_MS } from "@/config/time";

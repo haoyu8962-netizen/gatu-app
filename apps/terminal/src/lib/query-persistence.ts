@@ -1,4 +1,4 @@
-import { PERSISTED_QUERY_PREFIX } from "@gatu/hl-react";
+import { PERSISTED_QUERY_PREFIX } from "@sairn/hl-react";
 import { defaultShouldDehydrateQuery, dehydrate, type Query, type QueryClient } from "@tanstack/react-query";
 import { type Persister, persistQueryClientSave } from "@tanstack/react-query-persist-client";
 import { RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";

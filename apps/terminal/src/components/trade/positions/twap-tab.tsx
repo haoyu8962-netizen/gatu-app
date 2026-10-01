@@ -1,5 +1,5 @@
-import { Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { Tooltip } from "@sairn/ui";
 import { useMemo, useState } from "react";
 import { type TwapSubview, TwapSubviewTabs } from "@/components/trade/twap/twap-subview-tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";

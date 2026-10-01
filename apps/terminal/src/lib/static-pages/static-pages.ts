@@ -8,7 +8,7 @@ import {
 
 export const STATIC_SHELL_FILE = "_shell.html";
 export const SERVER_FUNCTION_PATH_PREFIX = "/_serverFn/";
-export const REFERRAL_JOIN_ROUTE_MARKER = '<meta name="gatu-route" content="referral-join"/>';
+export const REFERRAL_JOIN_ROUTE_MARKER = '<meta name="sairn-route" content="referral-join"/>';
 export const LEGACY_CLIENT_ERROR_REPORT_PATH = "/client-error-report";
 export const RETIRED_MOBILE_SYNC_TICKET_PATH = "/mobile-agent-sync-ticket";
 

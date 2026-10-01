@@ -2,13 +2,13 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { i18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import {
 	captureExchangeRequestGeneration,
 	ExchangeRequestInvalidatedError,
 	ExchangeRequestScheduler,
-} from "@gatu/hl-react/internal/exchange/request-scheduler";
-import { i18n } from "@lingui/core";
-import { I18nProvider } from "@lingui/react";
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

@@ -133,7 +133,7 @@ Specific to on-chain vault models:
 Revenue from trades executed through the platform:
 
 - **Maker/taker fees**: Hyperliquid charges 0.01% maker / 0.035% taker for most perpetuals.
-- **Referral rebates**: gatu could capture a portion of referral fees for trades routed through its interface.
+- **Referral rebates**: Sairn could capture a portion of referral fees for trades routed through its interface.
 - **Volume-based tiers**: Higher-volume strategies generate more fee revenue.
 - **HLP fee share**: The Hyperliquidity Provider accrues a portion of all trading fees, creating a baseline yield for liquidity providers.
 
@@ -166,9 +166,9 @@ The Virtuals Revenue Network enables autonomous agent-to-agent commerce:
 - **Revenue sharing**: Economic benefits from agent activity flow to token holders.
 - **Permissionless participation**: Anyone can launch, invest in, or build on top of agents.
 
-### Relevance to gatu
+### Relevance to Sairn
 
-The Virtuals model suggests a path where gatu trading agents could be:
+The Virtuals model suggests a path where Sairn trading agents could be:
 1. Tokenized via HyperEVM, enabling fractional ownership of strategy alpha.
 2. Measured by on-chain aGDP metrics (trade volume, P&L, fees generated).
 3. Composed into agent-to-agent workflows (e.g., a sentiment agent selling signals to a trading agent).
@@ -280,21 +280,21 @@ Web3 platforms are building signal systems secured by smart contracts, improving
 
 ---
 
-## 10. Opportunities for gatu
+## 10. Opportunities for Sairn
 
 ### Near-Term (3-6 Months)
 
 1. **Vault discovery dashboard**: Surface all Hyperliquid vaults with standardized risk metrics, sortable leaderboards, and filtering by strategy type (trend-following, mean-reversion, market-making).
-2. **One-click vault deposit**: Streamlined UX for depositing into vaults directly from the gatu interface.
+2. **One-click vault deposit**: Streamlined UX for depositing into vaults directly from the Sairn interface.
 3. **Agent strategy templates**: Pre-built agent configurations that users can deploy as vaults with minimal setup.
-4. **Referral fee capture**: Route trades through gatu's referral code to capture a share of trading fees.
+4. **Referral fee capture**: Route trades through Sairn's referral code to capture a share of trading fees.
 
 ### Medium-Term (6-12 Months)
 
 5. **Strategy marketplace**: Allow users to list, discover, and subscribe to agent strategies with transparent track records.
 6. **Subscription tiers**: Free tier (basic vault browsing), Pro tier ($30-50/mo for advanced analytics, alerts, priority execution), Enterprise tier ($100+/mo for API access, custom agents).
 7. **Performance fee infrastructure**: Build tooling for vault leaders to configure fee schedules (performance fees, management fees, high-water marks) via HyperEVM contracts.
-8. **Social trading layer**: Follow traders, share signals, and discuss strategies within the gatu interface.
+8. **Social trading layer**: Follow traders, share signals, and discuss strategies within the Sairn interface.
 
 ### Long-Term (12+ Months)
 
@@ -335,15 +335,15 @@ Web3 platforms are building signal systems secured by smart contracts, improving
 
 ## 12. Open Questions
 
-1. **Fee structure**: What is the optimal split between performance fees, subscription fees, and transaction fees for gatu's marketplace? Should the platform take a percentage of vault leader fees (like Cryptohopper's 30%) or charge separately?
+1. **Fee structure**: What is the optimal split between performance fees, subscription fees, and transaction fees for Sairn's marketplace? Should the platform take a percentage of vault leader fees (like Cryptohopper's 30%) or charge separately?
 
 2. **Curation vs. open listing**: Should the marketplace be fully permissionless (anyone can list a strategy) or curated (minimum track record, risk review)? What are the liability implications of curation?
 
-3. **Agent tokenization**: Should gatu pursue Virtuals-style agent tokenization on HyperEVM, allowing fractional ownership of trading agents? What are the regulatory implications?
+3. **Agent tokenization**: Should Sairn pursue Virtuals-style agent tokenization on HyperEVM, allowing fractional ownership of trading agents? What are the regulatory implications?
 
 4. **Signal vs. execution**: Should the marketplace sell signals (what to trade) or execution (automated copy trading)? Signal-only reduces liability but increases friction; execution increases value but increases risk.
 
-5. **Open-source strategy**: Should gatu open-source its agent framework to attract community developers, or keep it proprietary to maintain competitive advantage? The hybrid model (open framework, proprietary signals) appears most promising.
+5. **Open-source strategy**: Should Sairn open-source its agent framework to attract community developers, or keep it proprietary to maintain competitive advantage? The hybrid model (open framework, proprietary signals) appears most promising.
 
 6. **Cross-platform portability**: Should strategies be portable across platforms, or should lock-in be a feature? Portable strategies attract more creators but reduce switching costs.
 

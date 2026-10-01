@@ -47,6 +47,44 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The product is now Sairn. The terminal and the website show the Sairn name, the logo kit v1.3
+  (lockup, mark and its two-colour signal and choice panels), new favicons, PWA and Apple touch
+  icons, the Sairn logo in the Privy login window and on the position PNL share image, and new link preview
+  images for the terminal and the website. The page title, the startup announcement,
+  the installed app name and every translated message use the new name, and the legal documents
+  name Sairn Corp. The chart's first load shows the Sairn page-loading motion (the two panels
+  breathe in turn; a static mark when reduced motion is on). Links, brand text and focus rings use
+  the Sairn accent (teal in the light theme, mint in the dark theme) instead of lime; primary buttons
+  stay neutral and waiting spinners are grey. The desktop logo is now 24px high, so
+  the header has 9px less room before its navigation collapses; see
+  [brand assets](docs/brand-assets.md).
+- Notifications, funds and signing status screens and wallet handshake buttons use the Sairn
+  motion kit instead of spinning icons: order notifications show a glyph for submitting,
+  confirming, unconfirmed, partially filled (only for a verified partial fill; a batch that was
+  only partly accepted, or that has rejected, cancelled or unknown orders, shows a warning),
+  filled or accepted, cancelled and failed; standard notifications show success, info, warning,
+  error and pending glyphs; results whose status is unknown always show the amber unknown glyph,
+  never an error, and waiting indicators are never green. Deposit, Vault, API wallet and bridge
+  status screens show the kit's illustrations, 64px while waiting for the wallet, submitting or
+  awaiting the result and 48px or larger for success, error, unknown and cancelled results;
+  buttons waiting for a wallet show the breathing two-panel indicator in the button's own colour,
+  and 16px copy buttons draw a check. Passive loading, lazy dialog placeholders, refresh buttons and chart
+  recovery keep the neutral spinner. Reduced motion shows every glyph in its final state. The
+  partial, info and warning glyphs are drawn by the kit's own engine pending the designer's
+  confirmation; see [brand assets](docs/brand-assets.md) and
+  [ADR 0029](docs/adr/0029-brand-status-motion.md).
+- The mobile order button now matches desktop: while an order is being sent it keeps its Buy or
+  Sell name and shows no indicator, because the order's status appears in the notifications. Only
+  the Enable Trading wallet signature shows progress, with the Sairn button indicator instead of
+  the spinning icon it showed in both cases before.
+- The canonical domain is now `sairn.ai` (`app.sairn.ai`, `testnet.sairn.ai`, `support@sairn.ai`).
+  When the domain switches, `gatu.ai` goes offline without a redirect, and settings, sign-in and saved
+  trading keys from `gatu.ai` do not carry over. Browser storage keys, the Hyperliquid Agent slot,
+  internal headers, build variables and package names now use `sairn`, so external wallets must
+  approve a new Agent once. Email sign-in moves to a new Privy app, so an email account gets a new
+  embedded wallet address; move funds from the old address before the switch. See
+  [ADR 0032](docs/adr/0032-gatu-offline-cutover-to-sairn.md) and the
+  [cutover plan](docs/sairn-domain-cutover-plan.md).
 - Notices on the Staking page and in the Staking, Referral, API wallet and Vault dialogs are rounded
   8px like the other notices; they were 4px to 10px.
 
@@ -433,7 +471,7 @@ changes, not evidence that a build has been deployed or accepted on real devices
   `Approve mobile trading key` button signs, and the pending label reads
   `Approve QR code with wallet...`.
 - The pre-approval panel merges the create and review points, lists what the key can and cannot
-  do, and adds phone instructions (open gatu on the phone, tap Connect, then Link Desktop
+  do, and adds phone instructions (open Sairn on the phone, tap Connect, then Link Desktop
   Wallet); the screen-sharing warning now appears before `Hold to reveal QR`.
 - `Hold to reveal QR` draws its progress as a ring inside the button, and the revealed panel
   shows a visible seconds countdown to auto-close derived from the envelope expiry and the
@@ -446,6 +484,30 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- In the light theme, browsers that tint their toolbar or status bar from the page's theme color
+  (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
+  terminal teal. The theme color follows the theme chosen in Settings from the first paint and on
+  every switch; the dark theme and the installed app's manifest color stay `#0F1A1F`.
+- The Vault dialog shows an unknown result in amber with the unknown glyph instead of a red error
+  icon, and an API wallet signature you declined shows a neutral cancelled glyph, because nothing
+  was submitted.
+- The website's copy now matches the product: it no longer calls the terminal open source, MIT
+  licensed or self-hostable (the repository is private and the Terms forbid redistribution), shows
+  Hyperliquid's fee together with the 0.01% builder fee, no longer claims 50× leverage, "no
+  email" or "no backend", lists the current wallets and the Arbitrum USDC deposit, fixes the footer
+  anchors on inner pages and drops the placeholder blog post. The hero screenshots show the Sairn
+  terminal and are served from hashed paths. A release runbook is in `deploy/website/README.md`;
+  the website has not been released since 2026-07-19.
+- The support page and product docs describe the current phone linking (scan a short-lived QR
+  code from the desktop header, where available) and USDC deposits from Arbitrum, instead of a
+  pairing code and a built-in bridge; the legal documents carry the date of the Sairn rename.
+- With a wallet connected, the desktop header no longer overlaps between 1182px and about 1450px:
+  in Spanish and French the deposit button covered More (clicking More opened the deposit dialog)
+  and Settings could be pushed off screen. The header now switches to its compact layout at 1379px
+  instead of 1181px, and a deposit button that is unavailable shows only its icon, with the reason
+  in its tooltip. On 1280px and 1366px screens the connected header therefore shows Trade,
+  Portfolio and Earn with the rest in More, and the disconnected header shows the language icon
+  without its name. See [ADR 0013](docs/adr/0013-desktop-navigation-collapse.md).
 - On phones, Vault cards no longer run off the right edge of the screen when the list contains a
   long Vault name, so APR, equity, age and the performance line stay visible; a long name wraps onto
   more lines instead of being cut off, on phones and in the desktop table alike. On desktop, the

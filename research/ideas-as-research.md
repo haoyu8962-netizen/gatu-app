@@ -1,6 +1,6 @@
-# gatu: Differentiation Brainstorm
+# Sairn: Differentiation Brainstorm
 
-A wide-angle survey of what Hyperliquid actually exposes, mapped against gaps from traditional markets — and where gatu can plant a flag.
+A wide-angle survey of what Hyperliquid actually exposes, mapped against gaps from traditional markets — and where Sairn can plant a flag.
 
 ---
 
@@ -136,7 +136,7 @@ Each persona is a separate product wedge. Most crypto terminals optimize for (b)
 - **Multi-account allocator** — PM enters one order, it splits across sub-accounts by allocation
 - **Pre-trade compliance rules** — max notional, restricted list, concentration limits
 - **Audit trail export** — MiFID-style record of every order, mod, cancel
-- **White-label terminal** — prop shop runs gatu with their branding; we split builder fees
+- **White-label terminal** — prop shop runs Sairn with their branding; we split builder fees
 
 ### J. Event / prediction / novelty markets (HIP-3)
 - **Event perp launcher wizard** — anyone with a HIP-3 slot can launch a market; we provide tooling
@@ -188,7 +188,7 @@ Each persona is a separate product wedge. Most crypto terminals optimize for (b)
 
 ## 6. Suggested north star
 
-**Position gatu as "the professional's terminal for 24/7 markets"** — the terminal a Goldman ex-trader would open on their personal account. Win persona (a) with charting, persona (b) with execution/algos, persona (c) with portfolio/tax tooling. The three layers compound: serious traders stream signals → retail copies via vaults → wealth clients get exposure via structured products. Every layer feeds builder fees back to us.
+**Position Sairn as "the professional's terminal for 24/7 markets"** — the terminal a Goldman ex-trader would open on their personal account. Win persona (a) with charting, persona (b) with execution/algos, persona (c) with portfolio/tax tooling. The three layers compound: serious traders stream signals → retail copies via vaults → wealth clients get exposure via structured products. Every layer feeds builder fees back to us.
 
 The wedge against CEX terminals isn't speed — it's **transparency + permissionless breadth + professional tooling on-chain**. Nothing stopping us.
 

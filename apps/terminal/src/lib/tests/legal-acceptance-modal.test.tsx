@@ -41,7 +41,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	}),
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		className,

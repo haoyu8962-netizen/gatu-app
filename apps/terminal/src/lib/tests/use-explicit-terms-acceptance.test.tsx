@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { HyperliquidOwnerSigner } from "@gatu/hl-react";
+import type { HyperliquidOwnerSigner } from "@sairn/hl-react";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,7 +21,7 @@ const testState = vi.hoisted(() => ({
 	legalSignerOptions: undefined as { beforeSubmit?: () => void } | undefined,
 }));
 
-vi.mock("@gatu/hl-react", () => ({
+vi.mock("@sairn/hl-react", () => ({
 	useHyperliquidOwnerSigner: () => testState.ownerSigner,
 }));
 

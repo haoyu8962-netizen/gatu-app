@@ -80,6 +80,21 @@ test("shards every browser invocation by test, in two jobs", () => {
 		true,
 		"the notification lifecycle regression must run in the browser job",
 	);
+	assert.equal(
+		browser.includes("--config tests/browser/top-nav-connected.playwright.config.ts"),
+		true,
+		"the connected header width regression must run in the browser job",
+	);
+	assert.equal(
+		browser.includes("--config tests/browser/brand-surfaces.playwright.config.ts"),
+		true,
+		"the brand surface regression must run in the browser job",
+	);
+	assert.equal(
+		Number(/timeout-minutes: (\d+)/.exec(browser)?.[1]) >= 25,
+		true,
+		"a shard runs every browser suite and outran a 15-minute limit; keep at least 25 minutes",
+	);
 });
 
 test("keeps the merged static checks in one job", () => {
@@ -115,8 +130,57 @@ test("keeps brand coverage when the website workflow only starts for its own inp
 
 	const terminalBrandTests = packageScripts["test:brand"].match(/src\/lib\/tests\/\S+\.test\.tsx?/g) ?? [];
 	assert.equal(terminalBrandTests.length >= 5, true);
+	assert.equal(
+		terminalBrandTests.includes("src/lib/tests/status-motion-surface-contract.test.ts"),
+		true,
+		"the spinner registry must run with the brand tests",
+	);
 	for (const file of terminalBrandTests) {
 		assert.equal(terminalTests.includes(file), true, `${file} only runs when the website workflow starts`);
 	}
 	assert.equal(/vitest run|pnpm test:brand/.test(readWorkflow("production-build.yml")), false);
+});
+
+test("re-runs the brand and legal guards whenever the brand source or legal text changes", () => {
+	const filtersOf = (name) => new Set([...readWorkflow(name).matchAll(/^      - "([^"]+)"$/gm)].map((match) => match[1]));
+
+	for (const [name, paths] of [
+		["terminal-tests.yml", ["brand/**", "legal/**", "scripts/brand*.mjs"]],
+		["production-build.yml", ["brand/**", "legal/**"]],
+		["static-checks.yml", ["brand/brand.json"]],
+		[
+			"website-build.yml",
+			[
+				"brand/**",
+				"legal/**",
+				"apps/terminal/public/manifest.json",
+				"apps/terminal/public/robots.txt",
+				"apps/terminal/public/sitemap.xml",
+				"apps/terminal/src/config/**",
+			],
+		],
+	]) {
+		const filters = filtersOf(name);
+		for (const path of paths) {
+			assert.equal(filters.has(path), true, `${name} does not start for ${path}`);
+		}
+	}
+
+	const terminalTests = readWorkflow("terminal-tests.yml");
+	assert.equal(terminalTests.includes("run: pnpm brand:check"), true, "terminal tests never check the brand source");
+	for (const file of [
+		"public-origins.test.ts",
+		"brand-catalog-contract.test.ts",
+		"pwa-manifest.test.ts",
+		"network-storage.test.ts",
+		"referral-join.test.ts",
+		"referral.test.ts",
+		"terms-content.test.ts",
+		"legal-policy-contract.test.ts",
+		"trading-agent-config.test.ts",
+		"order-summary.test.tsx",
+		"twap-order-summary.test.tsx",
+	]) {
+		assert.equal(terminalTests.includes(`src/lib/tests/${file}`), true, `${file} never runs in CI`);
+	}
 });

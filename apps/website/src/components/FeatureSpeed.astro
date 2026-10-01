@@ -1,12 +1,12 @@
 ---
 const stats = [
-	{ value: "50×", count: 50, suffix: "×", label: "max leverage", icon: "gauge" },
+	{ value: "8", count: 8, suffix: "", label: "order types", icon: "orders" },
 	{ value: "100+", count: 100, suffix: "+", label: "perp markets", icon: "grid" },
 	{ value: "Live", count: undefined, suffix: "", label: "WebSocket streams", icon: "bolt" },
 ];
 
 const iconSvg: Record<string, string> = {
-	gauge: '<path d="M40,176a88,88,0,0,1,176,0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="128" y1="176" x2="168" y2="120" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
+	orders: '<line x1="40" y1="64" x2="216" y2="64" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="40" y1="128" x2="216" y2="128" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="40" y1="192" x2="216" y2="192" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
 	grid: '<rect x="40" y="40" width="72" height="72" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><rect x="144" y="40" width="72" height="72" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><rect x="40" y="144" width="72" height="72" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><rect x="144" y="144" width="72" height="72" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
 	bolt: '<polygon points="160,16 48,144 120,144 96,240 208,112 136,112 160,16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
 };
@@ -18,7 +18,7 @@ const iconSvg: Record<string, string> = {
 			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">Performance</span>
 			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">Direct to Hyperliquid. No middlemen.</h2>
 			<p class="mt-4 mx-auto max-w-md text-sm text-fg-muted leading-relaxed">
-				No backend, no servers, no relayers. The terminal talks straight to Hyperliquid's WebSocket and signs locally with your wallet.
+				Orders are signed with your keys and sent from your browser straight to Hyperliquid — no relayer in between. Market data streams live from Hyperliquid's WebSocket.
 			</p>
 		</div>
 

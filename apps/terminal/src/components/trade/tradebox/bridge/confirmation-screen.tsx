@@ -1,4 +1,3 @@
-import { Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import {
 	ArrowLeftIcon,
@@ -9,6 +8,7 @@ import {
 	WalletIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import Big from "big.js";
 import { useEffect, useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";

@@ -469,7 +469,7 @@ the product decisions and the official comparison are in
 For comparison, the official terminal encodes the raw Agent private key as
 base64 JSON in a `?link=` query string with no expiry, signs as soon as its
 icon is clicked, imports on the phone without an explicit step and approves a
-permanent `Mobile QR` agent that each re-link replaces. gatu keeps the four
+permanent `Mobile QR` agent that each re-link replaces. Sairn keeps the four
 differences that matter (exact owner and an explicit click, 30-day expiry,
 fragment instead of query string, one `extraAgents` verification before
 import) and otherwise matches the official entry, copy and step count.

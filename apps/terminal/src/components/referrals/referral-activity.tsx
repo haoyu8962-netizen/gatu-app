@@ -1,5 +1,5 @@
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@sairn/ui";
 import { useRef } from "react";
 import type { AccountLedgerStatus } from "@/hooks/trade/use-account-ledger";
 import type { ReferralClaimHistoryRow } from "@/hooks/trade/use-referrals";

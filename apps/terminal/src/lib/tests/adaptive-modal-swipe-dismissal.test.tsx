@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { AdaptiveModal } from "@gatu/ui";
+import { AdaptiveModal } from "@sairn/ui";
 import { act, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

@@ -34,14 +34,16 @@ interface Props {
 export const TOP_NAV_DEPOSIT_CLASS =
 	"h-9 min-h-9 shrink-0 gap-[7px] rounded-[10px] bg-market-close-control px-3.5 font-market-close text-2sm leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control nav-compact:size-9 nav-compact:px-0";
 export const TOP_NAV_DEPOSIT_LABEL_CLASS = "nav-compact:sr-only";
+export const TOP_NAV_DEPOSIT_ICON_ONLY_CLASS = "size-9 px-0";
+export const TOP_NAV_DEPOSIT_ICON_ONLY_LABEL_CLASS = "sr-only";
 
 export const TOP_NAV_ITEM_CLASS =
 	"rounded-[8px] px-2.5 py-2 font-semibold whitespace-nowrap transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg";
 export const TOP_NAV_LOGO_CLASS =
 	"flex shrink-0 items-center gap-2 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus";
-export const TOP_NAV_WORDMARK_CLASS = "h-[18px] w-auto shrink-0";
+export const TOP_NAV_WORDMARK_CLASS = "h-6 w-auto shrink-0";
 export const TOP_NAV_CONNECTED_WORDMARK_CLASS = "nav-compact:hidden";
-export const TOP_NAV_MARK_CLASS = "hidden size-[22px] shrink-0 nav-compact:block";
+export const TOP_NAV_MARK_CLASS = "hidden h-6 w-auto shrink-0 nav-compact:block";
 
 export function TopNavView({
 	items,

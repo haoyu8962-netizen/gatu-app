@@ -27,7 +27,7 @@ const mocks = vi.hoisted(() => ({
 	twapOrder: vi.fn(),
 	session: { id: Symbol("reduce-only-integration"), active: true },
 }));
-vi.mock("@gatu/hl-react/hooks/useClients", () => ({
+vi.mock("@sairn/hl-react/hooks/useClients", () => ({
 	useHyperliquidClients: () => ({
 		trading: { order: mocks.order, twapOrder: mocks.twapOrder },
 		user: {},
@@ -39,7 +39,7 @@ vi.mock("@gatu/hl-react/hooks/useClients", () => ({
 vi.mock("../../../../../packages/hl-react/src/signing/owner-signer-provider", () => ({
 	useHyperliquidOwnerSigner: () => ({ assertCurrent: () => {} }),
 }));
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		clientKey: mocks.owner,
 		env: "Mainnet",
@@ -52,8 +52,8 @@ vi.mock("@gatu/hl-react/provider", () => ({
 	}),
 }));
 vi.mock("@/lib/hyperliquid", async () => ({
-	useExchange: (await import("@gatu/hl-react/hooks/useExchange")).useExchange,
-	useHyperliquid: (await import("@gatu/hl-react/provider")).useHyperliquid,
+	useExchange: (await import("@sairn/hl-react/hooks/useExchange")).useExchange,
+	useHyperliquid: (await import("@sairn/hl-react/provider")).useHyperliquid,
 	useSubscription: (method: string) => ({
 		status: "active",
 		isStale: false,

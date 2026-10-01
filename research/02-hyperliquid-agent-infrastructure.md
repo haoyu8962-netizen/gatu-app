@@ -1,6 +1,6 @@
 # Hyperliquid's Native Agent & Vault Infrastructure
 
-_Research prepared for gatu — March 2026_
+_Research prepared for Sairn — March 2026_
 
 ---
 
@@ -263,9 +263,9 @@ Real-time data via WebSocket:
 
 **Connection limits**: 100 simultaneous connections, 1,000 subscriptions per connection on the public endpoint.
 
-### Relevance to gatu
+### Relevance to Sairn
 
-The SDK already powers gatu's data layer (via `hl-react` hooks like `useSubL2Book`, `useSubTrades`). For agentic features, the ExchangeClient can be used server-side for agent execution while the InfoClient and WebSocket subscriptions continue to power the real-time UI.
+The SDK already powers Sairn's data layer (via `hl-react` hooks like `useSubL2Book`, `useSubTrades`). For agentic features, the ExchangeClient can be used server-side for agent execution while the InfoClient and WebSocket subscriptions continue to power the real-time UI.
 
 ---
 
@@ -381,7 +381,7 @@ Builder fees are **in addition to** native trading fees.
 
 ### Revenue Model Implications
 
-For gatu with agentic features:
+For Sairn with agentic features:
 
 | Scenario | Daily Volume Captured | Builder Fee | Daily Revenue | Annual Revenue |
 |----------|----------------------|-------------|---------------|----------------|
@@ -425,7 +425,7 @@ At Hyperliquid's current ~$5B daily perps volume, capturing even 1% with a 5 bps
 | **Event-driven triggers** | No native system for triggering agent actions on market events (beyond price triggers) | Low |
 | **Simulation/paper trading** | Testnet exists but no integrated paper trading mode | Low |
 
-### What gatu Needs to Build
+### What Sairn Needs to Build
 
 1. **Agent orchestration layer**: Manage strategy lifecycle (create, configure, start, monitor, stop) using Hyperliquid's agent wallets and sub-accounts
 2. **Risk management framework**: Position limits, drawdown controls, exposure limits, kill switches — enforced before orders reach Hyperliquid
@@ -435,7 +435,7 @@ At Hyperliquid's current ~$5B daily perps volume, capturing even 1% with a 5 bps
 
 ---
 
-## Opportunities for gatu
+## Opportunities for Sairn
 
 ### 1. Copilot-Assisted Trading (Near-Term)
 
@@ -510,15 +510,15 @@ Serve professional traders and funds:
 
 ## Open Questions
 
-1. **Server-side vs client-side agent execution?** Running agents server-side provides reliability and lower latency but requires users to trust gatu with agent wallet keys. Client-side execution (browser) keeps keys local but is unreliable (tab closes, network drops).
+1. **Server-side vs client-side agent execution?** Running agents server-side provides reliability and lower latency but requires users to trust Sairn with agent wallet keys. Client-side execution (browser) keeps keys local but is unreliable (tab closes, network drops).
 
-2. **How to handle the agent wallet limit?** With only 3 named agents per account + 2 per sub-account, how should gatu allocate agents across strategies? Should one agent serve multiple strategies, or should each strategy get a dedicated agent?
+2. **How to handle the agent wallet limit?** With only 3 named agents per account + 2 per sub-account, how should Sairn allocate agents across strategies? Should one agent serve multiple strategies, or should each strategy get a dedicated agent?
 
 3. **Should strategies execute via CoreWriter (on-chain) or the Exchange API (off-chain signing)?** CoreWriter provides on-chain verifiability but adds EVM gas costs and latency. The Exchange API is faster and free but execution is off-chain.
 
 4. **What is the right abstraction for strategy definition?** Options range from natural language ("buy dips and sell rips on ETH") to visual flow builders to TypeScript SDK code. Each has different user segments.
 
-5. **How to handle vault creation and management?** Should gatu create vaults on behalf of users, or should users create vaults directly and connect them to gatu? Who is the vault leader?
+5. **How to handle vault creation and management?** Should Sairn create vaults on behalf of users, or should users create vaults directly and connect them to Sairn? Who is the vault leader?
 
 6. **What data should agents have access to?** HyperCore data (order book, trades, funding) is available via the SDK. But agents may also need external data (CEX prices, news, social sentiment). How to integrate external data sources?
 

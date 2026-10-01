@@ -1,6 +1,6 @@
-import { Button, Pagination, Select, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, ArrowLeftIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { Button, Pagination, Select, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, Suspense, useMemo, useState } from "react";
 import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";

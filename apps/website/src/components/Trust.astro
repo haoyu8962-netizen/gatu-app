@@ -11,16 +11,16 @@ const pillars = [
 		icon: "book",
 	},
 	{
-		title: "Open source",
-		body: "The client that signs your trades is code you can read, audit, fork, and run yourself.",
-		icon: "code",
+		title: "Fees on the record",
+		body: "Hyperliquid's trading fee, plus a 0.01% builder fee on perp orders and spot sells — both charged by the protocol and shown on your fills.",
+		icon: "receipt",
 	},
 ];
 
 const iconSvg: Record<string, string> = {
 	key: '<circle cx="96" cy="164" r="52" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="132" y1="128" x2="208" y2="52" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="176" y1="84" x2="204" y2="112" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
 	book: '<path d="M128,88a32,32,0,0,1,32-32h72V200H160a32,32,0,0,0-32,32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M24,200H96a32,32,0,0,1,32,32V88A32,32,0,0,0,96,56H24Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
-	code: '<polyline points="64,88 16,128 64,168" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="192,88 240,128 192,168" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="160" y1="40" x2="96" y2="216" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
+	receipt: '<path d="M32,208V56a8,8,0,0,1,8-8H216a8,8,0,0,1,8,8V208l-32-16-32,16-32-16-32,16-32-16Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="80" y1="104" x2="176" y2="104" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="80" y1="136" x2="176" y2="136" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
 };
 ---
 
@@ -30,7 +30,7 @@ const iconSvg: Record<string, string> = {
 			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">Trust</span>
 			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">Verify, don't trust.</h2>
 			<p class="mt-4 mx-auto max-w-md text-sm text-fg-muted leading-relaxed">
-				A decentralized exchange is only as honest as its client. Ours is built to be checked.
+				Your funds, orders, and fees all live on Hyperliquid's public ledger, so you can check every one of them.
 			</p>
 		</div>
 

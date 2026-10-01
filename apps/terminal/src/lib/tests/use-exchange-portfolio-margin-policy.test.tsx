@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import type { ExchangeParams } from "@gatu/hl-react";
-import { HyperliquidExchangePolicyProvider } from "@gatu/hl-react/exchange-policy";
-import { useExchange } from "@gatu/hl-react/hooks/useExchange";
+import type { ExchangeParams } from "@sairn/hl-react";
+import { HyperliquidExchangePolicyProvider } from "@sairn/hl-react/exchange-policy";
+import { useExchange } from "@sairn/hl-react/hooks/useExchange";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -45,7 +45,7 @@ const providerState = vi.hoisted(() => ({
 	exchangeLifecycle: { id: Symbol("portfolio-margin-policy-test"), active: true },
 }));
 
-vi.mock("@gatu/hl-react/hooks/useClients", () => ({
+vi.mock("@sairn/hl-react/hooks/useClients", () => ({
 	useHyperliquidClients: () => ({
 		agentPublicKey: clients.agentPublicKey,
 		info: {},
@@ -56,7 +56,7 @@ vi.mock("@gatu/hl-react/hooks/useClients", () => ({
 	}),
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		builderConfig: { b: "0x0000000000000000000000000000000000000000", f: 0 },
 		clientKey: "0x1234567890abcdef1234567890abcdef12345678",

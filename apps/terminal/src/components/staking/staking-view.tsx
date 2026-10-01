@@ -1,3 +1,12 @@
+import { Trans, useLingui } from "@lingui/react/macro";
+import {
+	ArrowClockwiseIcon,
+	ArrowRightIcon,
+	LinkIcon,
+	LockKeyIcon,
+	SpinnerGapIcon,
+	WarningCircleIcon,
+} from "@phosphor-icons/react";
 import {
 	Alert,
 	Badge,
@@ -13,16 +22,7 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
-} from "@gatu/ui";
-import { Trans, useLingui } from "@lingui/react/macro";
-import {
-	ArrowClockwiseIcon,
-	ArrowRightIcon,
-	LinkIcon,
-	LockKeyIcon,
-	SpinnerGapIcon,
-	WarningCircleIcon,
-} from "@phosphor-icons/react";
+} from "@sairn/ui";
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";

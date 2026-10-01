@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Responsive, useContainerWidth } from "react-grid-layout";
+import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_BREAKPOINT_PX } from "@/config/layout";
 import { getSpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -133,7 +134,7 @@ export function MainWorkspace({ orderEntryDraftReady = true }: Props) {
 					</div>
 				</Responsive>
 			) : (
-				<output className="sr-only">Loading GATU...</output>
+				<output className="sr-only">{`Loading ${BRAND_NAME}...`}</output>
 			)}
 		</main>
 	);

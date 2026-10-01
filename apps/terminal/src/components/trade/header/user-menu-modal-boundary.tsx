@@ -1,6 +1,6 @@
-import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { reportClientError } from "@/lib/error-reporting/client";
 import { UserMenuModalLoadError } from "./user-menu-modal-load";
@@ -38,7 +38,7 @@ export function UserMenuModalLoadingFallback({ open, onOpenChange, presentation,
 					aria-busy="true"
 					aria-live="polite"
 				>
-					<SpinnerGapIcon className="size-4 animate-spin text-signal motion-reduce:animate-none" aria-hidden="true" />
+					<SpinnerGapIcon className="size-4 animate-spin text-fg-muted motion-reduce:animate-none" aria-hidden="true" />
 					{label ?? <Trans>Connecting...</Trans>}
 				</output>
 			</ModalContent>

@@ -3,7 +3,7 @@ import {
 	LegalActionNotAllowedError,
 	useHyperliquid,
 	verifyLegalActionAllowed,
-} from "@gatu/hl-react";
+} from "@sairn/hl-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef } from "react";
 import { isAddress } from "viem";

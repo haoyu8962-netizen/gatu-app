@@ -7,7 +7,7 @@ import {
 	OUTCOME_ASSET_ID_OFFSET,
 	parseAssetId,
 	parseOutcomeCoin,
-} from "@gatu/hl-react";
+} from "@sairn/hl-react";
 import { describe, expect, it } from "vitest";
 
 describe("Hyperliquid outcome asset IDs", () => {

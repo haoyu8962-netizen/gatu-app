@@ -106,7 +106,7 @@ Despite Hyperliquid preventing duplicate *native* markets, **HIP-3 builders CAN 
 4. **No consolidated order book** — Must choose which version to trade
 5. **Retail confusion** — Community documented: "there's now two versions of Tesla on Hyperliquid"
 
-### gatu Opportunity
+### Sairn Opportunity
 
 **Be the interface that solves this.** Show ONE "TSLA" to the user, automatically route to best price/liquidity across builders. Like a DEX aggregator but for Hyperliquid's fragmented HIP-3 markets.
 
@@ -129,7 +129,7 @@ Despite Hyperliquid preventing duplicate *native* markets, **HIP-3 builders CAN 
 
 ---
 
-## Market Sizing for gatu
+## Market Sizing for Sairn
 
 ### Total Addressable Market
 - Crypto trading platforms: **$54.1B (2025) → $200.5B (2035)** at 14% CAGR

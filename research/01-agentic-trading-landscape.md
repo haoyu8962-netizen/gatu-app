@@ -1,6 +1,6 @@
 # The State of Agentic Trading in 2026
 
-_Research prepared for gatu — March 2026_
+_Research prepared for Sairn — March 2026_
 
 ---
 
@@ -79,7 +79,7 @@ Bloomberg has embedded agentic AI directly into the Bloomberg Terminal with ASKB
 - **What it does**: Natural-language conversational interface that queries companies, markets, and investment themes. Replaces command-based navigation with structured analytical outputs.
 - **Multi-step workflows**: Pre-earnings preparation, post-earnings analysis, meeting prep — assembled automatically from Bloomberg's proprietary datasets.
 - **Technical foundation**: Built on commercial and open-weight LLMs, grounded in Bloomberg's structured data with transparent attribution.
-- **Why it matters for gatu**: Bloomberg is validating that the future terminal UX is conversational and agent-assisted. A Hyperliquid-native terminal should internalize this lesson.
+- **Why it matters for Sairn**: Bloomberg is validating that the future terminal UX is conversational and agent-assisted. A Hyperliquid-native terminal should internalize this lesson.
 
 ### OKX OnchainOS and Agentic Wallet
 
@@ -177,7 +177,7 @@ AI is collapsing the capability gap between institutional and retail traders. As
 
 ### The Opportunity
 
-gatu sits at a unique intersection:
+Sairn sits at a unique intersection:
 
 1. **Hyperliquid is the highest-volume on-chain perps venue** ($50B+ weekly derivatives volume, ~$5B daily)
 2. **Native agent infrastructure exists** (agent wallets, sub-accounts, vaults, builder codes)
@@ -230,13 +230,13 @@ gatu sits at a unique intersection:
 
 2. **How should agent strategies be risk-scored and presented?** What metrics matter: Sharpe ratio, max drawdown, win rate, time-weighted returns?
 
-3. **Should gatu build agent execution in-house or integrate third-party agents?** Building provides control but requires AI expertise. Integrating is faster but creates dependency.
+3. **Should Sairn build agent execution in-house or integrate third-party agents?** Building provides control but requires AI expertise. Integrating is faster but creates dependency.
 
 4. **What is the minimum viable agent feature set?** Natural language trade execution? Automated stop-loss management? Portfolio rebalancing? Strategy backtesting?
 
 5. **How to handle agent failures gracefully?** Circuit breakers, fallback strategies, user notifications, automatic position closure?
 
-6. **What data moats can gatu build?** Proprietary trading signals, user behavior data, strategy performance databases?
+6. **What data moats can Sairn build?** Proprietary trading signals, user behavior data, strategy performance databases?
 
 7. **How does the regulatory landscape affect feature rollout?** Should autonomous features be gated by jurisdiction? How to handle KYC for agent-managed funds?
 

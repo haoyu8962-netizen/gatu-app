@@ -43,7 +43,7 @@
 - 擦除逻辑只写一份：`lib/mobile-sync/pairing-location.ts` 里的自包含函数（不引用模块作用域、不导入任何东西），输入 `location` / `history` 的最小接口，输出 `{ status, capturedUrl, invalid }`。`bootstrap-fragment.ts` 直接调用它。
 - 内联脚本由生成器从同一个源文件得到：用 `vite` 导出的 `transformWithEsbuild`（`vite` 锁定 7.3.0，esbuild 版本由 lockfile 固定）去类型、压缩成 IIFE，写入提交的 `head-scrub-script.generated.ts`。一个测试断言提交的字符串等于重新生成的结果（与 `deploy/cloudfront/functions/terminal-response.js` 的「渲染后提交 + 相等性测试」同一做法），并断言产物不含 `</script`、不含未绑定标识符。esbuild 升级导致输出变化时测试变红、重新生成即可；CSP 哈希由构建自动收集，TanStack 流屏障的哈希本来就逐次构建变化，哈希变化不是问题。
 - 位置：`RootDocument` 里保持 `<HeadContent />`（含 `<meta charset>`）在最前，擦除脚本紧随其后、位于主题引导脚本之前，是文档里**第一个可执行脚本**，也先于 `<Scripts />` 输出的模块入口标签。内联经典脚本在解析到时同步执行，`async` 模块入口只能在它自己的标签被解析之后执行，所以顺序有保证。
-- 交接用一个带**非秘密状态**的对象，而不是会自删的裸函数：`window.__gatuPairingBootstrap = { v: 1, status, take }`，其中 `status` 为 `"none" | "captured" | "invalid" | "blocked"`，`take()` 第一次返回 URL 并把闭包置空，之后返回 `null`；对象用 `Object.defineProperty` 定义为不可写、不可配置。
+- 交接用一个带**非秘密状态**的对象，而不是会自删的裸函数：`window.__sairnPairingBootstrap = { v: 1, status, take }`，其中 `status` 为 `"none" | "captured" | "invalid" | "blocked"`，`take()` 第一次返回 URL 并把闭包置空，之后返回 `null`；对象用 `Object.defineProperty` 定义为不可写、不可配置。
 - `bootstrap-fragment.ts` 求值时：
   - 对象不存在（脚本被 CSP 拦截、极旧的壳）→ 自己执行同一个擦除函数，行为与今天一致。
   - `status === "captured"` 但 `take()` 返回空、或对象形状 / 版本不符 → 视为 `blocked`：有人抢先消费或环境异常，不水合，显示第 2 节的说明。

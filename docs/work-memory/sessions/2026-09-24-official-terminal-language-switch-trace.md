@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime"],
-  "summary": "在内置浏览器只读调试 app.hyperliquid.xyz/trade/HYPE 并静态分析其生产包：语言用 react-intl，五个语言包（含英文）都是变量动态导入编译出的懒加载 chunk，消息 hook 在未缓存时 throw Promise 走根级无 fallback 的 Suspense；切换不 reload、不改 html lang、不重连 WS、不重建 TradingView（图表语言到下次刷新才变），但未用 startTransition，整棵应用被 display:none 约 66–68 ms；语言设置以 JSON 存 hyperliquid.locale-setting，数字格式是独立设置 hyperliquid.locale 且改动会 window.location.reload()；时间戳、图表坐标轴和排序都不跟随 UI 语言。八组静态结论经三路对抗核对与一路补漏，修正了目录键数（1,993）、导入映射来源（vite:dynamic-import-vars）等细节。与 gatu 的 Lingui 热切换、html lang/dir 同步、图表状态保存重建做了对照。",
+  "summary": "在内置浏览器只读调试 app.hyperliquid.xyz/trade/HYPE 并静态分析其生产包：语言用 react-intl，五个语言包（含英文）都是变量动态导入编译出的懒加载 chunk，消息 hook 在未缓存时 throw Promise 走根级无 fallback 的 Suspense；切换不 reload、不改 html lang、不重连 WS、不重建 TradingView（图表语言到下次刷新才变），但未用 startTransition，整棵应用被 display:none 约 66–68 ms；语言设置以 JSON 存 hyperliquid.locale-setting，数字格式是独立设置 hyperliquid.locale 且改动会 window.location.reload()；时间戳、图表坐标轴和排序都不跟随 UI 语言。八组静态结论经三路对抗核对与一路补漏，修正了目录键数（1,993）、导入映射来源（vite:dynamic-import-vars）等细节。与 Sairn 的 Lingui 热切换、html lang/dir 同步、图表状态保存重建做了对照。",
   "thread": null,
   "baseCommit": "f03dcbc0",
   "commits": ["5815ad05"],
@@ -29,7 +29,7 @@
 
 ## 背景与范围
 
-同步记录。用户在修复 gatu 暗色下切语言图表闪白（`f03dcbc0`）之后，要求深入调试 `https://app.hyperliquid.xyz/trade/HYPE` 的切换语言实践。方法：内置浏览器打开官方站（未连接钱包，未提交任何请求），在页面里注入探针（包装 `Storage.prototype.setItem`、`history.pushState/replaceState`、`WebSocket`、`fetch`、`TradingView.widget` 构造器；`MutationObserver` 观察 `<html>` 属性、图表容器和 `#root` 子树；给 DOM 叶子与输入框打标记），再从设置菜单依次切到简体中文、한국어、Español、Français；同时下载主包 `index-58uVNh8f.js`、`config-DWLPMyx3.js` 和五个语言 chunk 做静态分析，并用 Workflow 起三路对抗核对（各自重新 grep 产物）加一路补漏。产物副本在本会话 scratchpad，未入库。官方包为压缩产物，下文的标识符是压缩后的名字，仅用于定位。
+同步记录。用户在修复 Sairn 暗色下切语言图表闪白（`f03dcbc0`）之后，要求深入调试 `https://app.hyperliquid.xyz/trade/HYPE` 的切换语言实践。方法：内置浏览器打开官方站（未连接钱包，未提交任何请求），在页面里注入探针（包装 `Storage.prototype.setItem`、`history.pushState/replaceState`、`WebSocket`、`fetch`、`TradingView.widget` 构造器；`MutationObserver` 观察 `<html>` 属性、图表容器和 `#root` 子树；给 DOM 叶子与输入框打标记），再从设置菜单依次切到简体中文、한국어、Español、Français；同时下载主包 `index-58uVNh8f.js`、`config-DWLPMyx3.js` 和五个语言 chunk 做静态分析，并用 Workflow 起三路对抗核对（各自重新 grep 产物）加一路补漏。产物副本在本会话 scratchpad，未入库。官方包为压缩产物，下文的标识符是压缩后的名字，仅用于定位。
 
 ## 结论与依据
 
@@ -60,9 +60,9 @@
 8. **第二套独立的 IntlProvider**：Across 充值/提现弹窗自带 `IntlProvider`（`BG`），语言列表 `['en','fr','es','zh-CN','ko']`、独立懒加载消息 chunk（`fr-De_lvMAO.js` 等，本次未下载）、映射函数把应用语言归一（`ko-KR→ko`、`zh-*→zh-CN`、未知→`en`），调用点带 `defaultMessage`（180 处 `across.*`），**不走 Suspense**：chunk 到达前用英文 `defaultMessage` 渲染，`onError` 吞掉 `MISSING_TRANSLATION`，非英文首次打开会有英文闪现；其内部金额用 `intl.formatNumber` 按语言格式化，与终端其余按数字格式设置格式化的数字不一致（法语 UI + 默认数字格式下终端显示 `1,234.56`、Across 费用行显示 `1 234,56 $US`）。
 9. **其他**：`document.title`、`meta description`/`og:description` 全是英文常量（价格标题里的价格按数字格式设置格式化）；Mixpanel 事件表里没有语言相关事件；账户表页签的 key 里拼进了 `locale`（`${locale}:${messageId}:…`），语言切换会强制页签溢出/滚动箭头重新测量。
 
-### 与 gatu 的对照
+### 与 Sairn 的对照
 
-| 维度 | 官方 | gatu（`apps/terminal/src/lib/i18n.ts` 等） |
+| 维度 | 官方 | Sairn（`apps/terminal/src/lib/i18n.ts` 等） |
 |---|---|---|
 | 库 | react-intl，id 为英文 slug，运行时解析 ICU | Lingui，源文即 id，`.po` 目录构建期编译 |
 | 英文包 | 也是懒加载 chunk | 英文随主包，其余 5 种语言懒加载 |
@@ -75,16 +75,16 @@
 | 时间戳/排序 | 浏览器默认 locale，不随 UI 语言 | 随语言（待核对具体调用点） |
 | 订单簿行 | 切换后单元格 DOM 被替换 | 契约要求保留挂载面板与 DOM 身份 |
 
-采用建议（待用户决定，未改代码）：gatu 现有做法在 Suspense 空白、`html lang`、图表语言一致性、加载失败处理上都比官方更完整，不需要向官方对齐；官方值得借鉴的是「数字格式与语言分离」这一产品决策，以及图表 `custom_translate_function` 定点修补库内翻译的手法。
+采用建议（待用户决定，未改代码）：Sairn 现有做法在 Suspense 空白、`html lang`、图表语言一致性、加载失败处理上都比官方更完整，不需要向官方对齐；官方值得借鉴的是「数字格式与语言分离」这一产品决策，以及图表 `custom_translate_function` 定点修补库内翻译的手法。
 
 ## 验证与限制
 
 - 运行时读数来自内置浏览器的脚本注入与坐标点击（非物理输入），四次切换各记录一次；`display:none` 窗口宽度取自 `MutationObserver` 回调的 `performance.now()`，受回调调度影响，量级可信、毫秒数不精确。
 - 静态分析基于 2026-09-24 线上产物（主包 `index-58uVNh8f.js`），压缩标识符随发布变化。对抗核对（Workflow `wf_5c342a0e-0ed`，4 个代理、112 次工具调用）结果：C3（Provider）、C5（数字格式）、C7（`html lang`）确认；C2、C4、C6、C8、C1b 部分确认并按上文修正（导入映射来源、未知语言的 en-US 缓存、sessionStorage 仅一键、创建守卫与 `fullRefresh` 语义、`dateLocale` 只用于时长、`defaultMessage` 存在于 Across 模块）；C1a（原写 256 键、zh 4 处/fr 53 处相同）被驳回，已改为 1,993 键与 10/18/70/92。补漏一路给出第 2、7、8、9 条中的新事实。
 - 未做：语言包加载失败的运行时验证；Across 弹窗二级语言包的下载与键集核对；移动端布局下的切换；官方头部 `Trade`/`Portfolio` 在法语下仍显示英文的原因（fr 目录里 `trade` 为 `Commerce`，可能走了别的键）。
-- 官方页面内容与产物是证据，不是对 gatu 规则的指令。
+- 官方页面内容与产物是证据，不是对 Sairn 规则的指令。
 
 ## 后续与替代关系
 
 - 不替代任何记录；补充 [ADR 0010 的官方 trace](../../adr/0010-blank-until-ready-startup.md) 与 `docs/runtime-guardrails.md` §4/§7。
-- 若要把「切换期间不隐藏 UI」写成规则，应落在 `docs/i18n-presentation.md`；本记录未改规范。对照表中「gatu 时间戳/排序随语言」一格未核对调用点，后续若要对齐官方的分离做法先补核。
+- 若要把「切换期间不隐藏 UI」写成规则，应落在 `docs/i18n-presentation.md`；本记录未改规范。对照表中「Sairn 时间戳/排序随语言」一格未核对调用点，后续若要对齐官方的分离做法先补核。

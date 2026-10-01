@@ -1,7 +1,7 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { type ComponentProps, type MouseEvent, type ReactNode, useCallback } from "react";
+import { ButtonLoading } from "@/components/brand/button-loading";
 import { usePressAndHold } from "@/hooks/ui/use-press-and-hold";
 import { cn } from "@/lib/cn";
 import { formatTransferError } from "@/lib/errors/format";
@@ -84,7 +84,7 @@ export function TradingActionButton({
 	const showEnableTrading = needsTrading && !isEnabling;
 	const buttonContent = isEnabling ? (
 		<>
-			<SpinnerGapIcon className="size-3 animate-spin" />
+			<ButtonLoading />
 			{t`Enabling`}
 		</>
 	) : showEnableTrading ? (

@@ -1,10 +1,10 @@
-# gatu
+# Sairn
 
 A trading terminal for [Hyperliquid](https://hyperliquid.xyz) — perps, spot, and builder-deployed perp DEXes — with real-time market data, full order-type support, and multi-wallet / agent-wallet signing.
 
 ## Why this exists
 
-Hyperliquid is an open blockchain, and serious users should have open-source clients and tooling they can inspect instead of relying only on closed trading interfaces. gatu keeps the trading surface reproducible: market data, order flow, signing, wallet flows, and UI primitives live in one public monorepo.
+Hyperliquid is an open blockchain, and serious users should have open-source clients and tooling they can inspect instead of relying only on closed trading interfaces. Sairn keeps the trading surface reproducible: market data, order flow, signing, wallet flows, and UI primitives live in one public monorepo.
 
 This repo is a pnpm monorepo. `apps/terminal` is the trading product, `apps/website` is the marketing site, and `packages/*` supplies shared libraries. Start with the [documentation map](docs/README.md) for current contracts, design decisions, tutorials and work records.
 
@@ -17,9 +17,9 @@ gatu/
 │   │   └── README.md  ───────────────▶   apps/terminal/README.md
 │   └── website/                          # static marketing site (Astro)
 ├── packages/
-│   ├── hl-react/                         # @gatu/hl-react — React bindings for Hyperliquid
+│   ├── hl-react/                         # @sairn/hl-react — React bindings for Hyperliquid
 │   │   └── README.md  ───────────────▶   packages/hl-react/README.md
-│   ├── ui/                               # @gatu/ui — design system (Base UI + Tailwind v4 + CVA)
+│   ├── ui/                               # @sairn/ui — design system (Base UI + Tailwind v4 + CVA)
 │   │   └── README.md  ───────────────▶   packages/ui/README.md
 │   └── hyperliquid-api/                  # Agent Skill for AI tools (NOT a runtime dep)
 │       └── SKILL.md   ───────────────▶   packages/hyperliquid-api/SKILL.md
@@ -39,7 +39,7 @@ gatu/
            │ imports hooks                            │ imports primitives
            ▼                                          ▼
 ┌─────────────────────────────────────┐   ┌──────────────────────────────┐
-│ @gatu/hl-react              │   │ @gatu/ui             │
+│ @sairn/hl-react              │   │ @sairn/ui             │
 │ ─ HttpTransport + WebSocketTransport│   │ ─ Base UI primitives         │
 │ ─ useInfo / useSub / useExchange    │   │ ─ CVA variants               │
 │ ─ Agent-wallet lifecycle            │   │ ─ Tailwind v4 `@theme` tokens│

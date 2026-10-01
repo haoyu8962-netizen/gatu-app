@@ -1,6 +1,6 @@
-import { Button, SearchInput } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowDownIcon, ArrowsDownUpIcon, ArrowUpIcon, MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
+import { Button, SearchInput } from "@sairn/ui";
 import type { ChangeEvent } from "react";
 import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";

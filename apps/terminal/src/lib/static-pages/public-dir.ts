@@ -1,7 +1,7 @@
 import { dirname, resolve } from "node:path";
 
 export interface PublicDirLookup {
-	/** `GATU_PUBLIC_DIR` from the environment, when set. */
+	/** `SAIRN_PUBLIC_DIR` from the environment, when set. */
 	configuredDir: string | undefined;
 	cwd: string;
 	/** The server entry script (`process.argv[1]`), `.output/server/index.mjs` in a Nitro build. */

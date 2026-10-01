@@ -1,0 +1,50 @@
+{
+  "note": "Not a designer delivery: glyphs the v1.3 library lacks, rendered by its engine from definitions.js pending the designer's confirmation.",
+  "source": "brand/tools/Sairn-Motion-Library-v1.3.html",
+  "sourceSha256": "adc0dba31bc962fb6216b5c2ffe6464fe90d9362b72b7ad2de5d680bdd42ac48",
+  "definitions": "brand/loader-supplement/definitions.js",
+  "definitionsSha256": "8f73bb5fbe8aefc01cd2825274d2dd87dc518ada43ad033a5b73a5e7059391c2",
+  "exporter": "scripts/brand-export-motion.mjs",
+  "method": "In the same Chromium page as the library export: renderGlyph reproduces every delivered glyph byte for byte, the attention and info palette roles are added from the design tokens, definitions.js is appended to GLYPHS and rendered with renderGlyph.",
+  "reproducedDeliveredGlyphs": 66,
+  "paletteAdditions": {
+    "on-dark": {
+      "attention": "#E6B766",
+      "info": "#A5BFBC"
+    },
+    "on-light": {
+      "attention": "#99621F",
+      "info": "#536C70"
+    },
+    "mono": {
+      "attention": "currentColor",
+      "info": "currentColor"
+    }
+  },
+  "files": {
+    "glyphs/mono/16/info.svg": "75a7ca62798712241c1f2f13516ac27a0e396736085f5548ee4eabce85741557",
+    "glyphs/mono/16/partial.svg": "9ff0fe3a21d14cb487da06cbc0d3f6d34805adbbd0459a8d266bbb8d9ed0f21a",
+    "glyphs/mono/16/static/partial.svg": "bd6a225924808a19d08c57fc1a0ac70e767f3eca56e700b2cfbcc1493845885f",
+    "glyphs/mono/16/warning.svg": "c094677780eda7eb3db3b9218b8cda12d4f97d77bc294240e86cfeefa2c0015a",
+    "glyphs/mono/info.svg": "2d5ce58645901a97d9836530a7f2c553fb7729dbc44f1950a892ba0f63197bc0",
+    "glyphs/mono/partial.svg": "0c8a591495e4f7a210b7a914c4d273440fbbbcfdf376a77a226a520775454aa6",
+    "glyphs/mono/static/partial.svg": "8207370fdd048c4048deeb337b34a3d4363e31aff9677946dd9236a85974d9b9",
+    "glyphs/mono/warning.svg": "f5dda595ce8e33009b8d4f4e49c2f85a1e37d019c95f225082c7ba948f3804d4",
+    "glyphs/on-dark/16/info.svg": "72b286200877d6d90f02c53eaf9903c0fc7987579dabf35c7c570ab2cac05767",
+    "glyphs/on-dark/16/partial.svg": "30680e76ebc10a5cb31cb81c9ac77fd92b09d52b8e8e7272300748151bd704cd",
+    "glyphs/on-dark/16/static/partial.svg": "bceb686cc5f1b67d81ee9bc0314277c4ae67790980604b9fe6aeb84958e172a0",
+    "glyphs/on-dark/16/warning.svg": "f0b94d2d24190c64f0379e72a17e30fdb63c61bc3ce3987f871a0be4587f3cf9",
+    "glyphs/on-dark/info.svg": "a9e1e4073f05bb2d1a2490c0b9d0839909c22279a85d86c11919cfa1ce9cae81",
+    "glyphs/on-dark/partial.svg": "fd2a3d369167f6accaa7ad10c0bd1ab7044481c9cb749a13c5bccd2753af4052",
+    "glyphs/on-dark/static/partial.svg": "1dc0d8c1f338a832b159279cf3b245e4f1abfe6ddbbdaa76cb066401123afc46",
+    "glyphs/on-dark/warning.svg": "d10caacd1a883d08d28c17b51165bf2f245390845cafbfefede24aba1061b44a",
+    "glyphs/on-light/16/info.svg": "91bfb9853940322d7a0e854e7b6b64800bdd9f9993a67ecfbc5b55935a189542",
+    "glyphs/on-light/16/partial.svg": "3244bd2f16deb2634f40f8b7be6bb3fc61884093b7fa3253cf76b87e5d83eb52",
+    "glyphs/on-light/16/static/partial.svg": "7319a2365661cb5fee3b7e4f71d3e1c7b07d6e49b0c908df29dba0e2f6f1d516",
+    "glyphs/on-light/16/warning.svg": "6d157d3600612c43873d43e0a1e6f30cd2717ef1270423c16afb00e09e4c65c7",
+    "glyphs/on-light/info.svg": "7d09ec26dcf95209bd18c56a998c8a93a887070ee348acdcde0c0bb9eb8fcc62",
+    "glyphs/on-light/partial.svg": "57ab969b1476c931296086beb204c24760bc8aa0028ebc1311efafba590d87c6",
+    "glyphs/on-light/static/partial.svg": "9f1a95c9242062bf9eeadefd41204a8f5cff3a31be3f287b6edd1525f5ff7027",
+    "glyphs/on-light/warning.svg": "a7d0854855b390870aaa09bab3171922a7c0bd76d385f0252138da1fa1edc644"
+  }
+}

@@ -1,4 +1,4 @@
-# @gatu/hl-react
+# @sairn/hl-react
 
 React bindings for the Hyperliquid API. Wraps [`@nktkas/hyperliquid`](https://github.com/nktkas/hyperliquid) with hooks for info queries, WebSocket subscriptions, signed exchange mutations, and owner/Agent signer lifecycles.
 
@@ -71,7 +71,7 @@ Minimal disconnected data example, inside the host's `WagmiProvider` and
 `QueryClientProvider`:
 
 ```tsx
-import { HyperliquidProvider } from "@gatu/hl-react";
+import { HyperliquidProvider } from "@sairn/hl-react";
 
 <HyperliquidProvider
   env="Mainnet"
@@ -245,12 +245,12 @@ No runtime dependencies — everything is peer, so the consuming app controls ve
 Fine-grained entry points for consumers that want only part of the surface:
 
 ```ts
-import { useHyperliquidStore } from "@gatu/hl-react/store";
-import { useExchange } from "@gatu/hl-react/hooks/useExchange";
-import type { PerpMarket } from "@gatu/hl-react/markets/types";
-import { getAccumulateConfig } from "@gatu/hl-react/registries/subscription";
-import { estimatePayloadSizeBytes } from "@gatu/hl-react/internal/websocket/payload-guard";
-import { RingBuffer } from "@gatu/hl-react/internal/circular-buffer/ring-buffer";
+import { useHyperliquidStore } from "@sairn/hl-react/store";
+import { useExchange } from "@sairn/hl-react/hooks/useExchange";
+import type { PerpMarket } from "@sairn/hl-react/markets/types";
+import { getAccumulateConfig } from "@sairn/hl-react/registries/subscription";
+import { estimatePayloadSizeBytes } from "@sairn/hl-react/internal/websocket/payload-guard";
+import { RingBuffer } from "@sairn/hl-react/internal/circular-buffer/ring-buffer";
 ```
 
 ## Conventions

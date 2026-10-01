@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import {
 	AdaptiveModal,
 	Button,
@@ -7,8 +8,7 @@ import {
 	ModalFooter,
 	ModalHeader,
 	ModalTitle,
-} from "@gatu/ui";
-import { Trans } from "@lingui/react/macro";
+} from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import type { Hip3DisclaimerExit } from "@/hooks/trade/use-hip3-disclaimer-presentation";

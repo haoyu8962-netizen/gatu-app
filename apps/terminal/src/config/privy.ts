@@ -1,6 +1,7 @@
 import type { PrivyClientConfig, WalletListEntry } from "@privy-io/react-auth";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { getNetwork } from "@/lib/network";
+import { BRAND_ACTION_COLORS, PWA_LIGHT_THEME_COLOR, PWA_THEME_COLOR } from "./brand";
 import { BRIDGE_CHAINS } from "./wagmi";
 
 export const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID as string | undefined;
@@ -13,14 +14,19 @@ type PrivyClientConfigWithPasskeysDisabled = PrivyClientConfig & {
 
 const PRIVY_APPEARANCE_BY_THEME = {
 	dark: {
-		theme: "#0F1A1F",
-		accentColor: "#EDEEF2",
+		theme: PWA_THEME_COLOR,
+		accentColor: BRAND_ACTION_COLORS.dark,
+		logo: "/brand/lockup-on-dark.svg",
 	},
 	light: {
-		theme: "#FFFFFF",
-		accentColor: "#15171E",
+		theme: PWA_LIGHT_THEME_COLOR,
+		accentColor: BRAND_ACTION_COLORS.light,
+		logo: "/brand/lockup-on-light.svg",
 	},
-} as const satisfies Record<PrivyTheme, Pick<NonNullable<PrivyClientConfig["appearance"]>, "accentColor" | "theme">>;
+} as const satisfies Record<
+	PrivyTheme,
+	Pick<NonNullable<PrivyClientConfig["appearance"]>, "accentColor" | "logo" | "theme">
+>;
 
 export const PRIVY_WALLET_LIST = [
 	"binance",

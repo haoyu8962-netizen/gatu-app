@@ -3,7 +3,7 @@ import type { HyperliquidEnv } from "@/lib/hyperliquid";
 export const POSITION_MARKET_CLOSE_CONFIRMATION_POLICY_VERSION = 1;
 
 const POSITION_MARKET_CLOSE_CONFIRMATION_STORAGE_SCHEMA_VERSION = 1;
-const POSITION_MARKET_CLOSE_CONFIRMATION_STORAGE_PREFIX = "gatu:position-market-close-confirmation:v1";
+const POSITION_MARKET_CLOSE_CONFIRMATION_STORAGE_PREFIX = "sairn:position-market-close-confirmation:v1";
 const EVM_ADDRESS_PATTERN = /^0x[a-f0-9]{40}$/;
 
 export type PositionMarketCloseConfirmationPreferenceStatus = "dismissed" | "required" | "unavailable";

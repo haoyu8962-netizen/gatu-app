@@ -1,3 +1,7 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
+import { Trans, useLingui as useLinguiMacro } from "@lingui/react/macro";
 import {
 	AdaptiveModal,
 	Button,
@@ -7,13 +11,9 @@ import {
 	ModalFooter,
 	ModalHeader,
 	ModalTitle,
-} from "@gatu/ui";
-import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
-import { Trans, useLingui as useLinguiMacro } from "@lingui/react/macro";
-import { SpinnerGapIcon } from "@phosphor-icons/react";
+} from "@sairn/ui";
 import { useState } from "react";
+import { ButtonLoading } from "@/components/brand/button-loading";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatExchangeActionError } from "@/lib/errors/format";
@@ -218,7 +218,7 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 							disabled={isBusy}
 							onClick={() => void handleResetConnection()}
 						>
-							{isResetting ? <SpinnerGapIcon className="size-4 animate-spin" /> : null}
+							{isResetting ? <ButtonLoading /> : null}
 							<Trans>Reset trading connection</Trans>
 						</Button>
 					</>
@@ -233,13 +233,13 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 						disabled={isBusy}
 						onClick={handleRequestResetConnection}
 					>
-						{isResetting ? <SpinnerGapIcon className="size-4 animate-spin" /> : null}
+						{isResetting ? <ButtonLoading /> : null}
 						<Trans>Reset trading connection</Trans>
 					</Button>
 				) : null}
 				{isResetConfirmationOpen ? null : (
 					<Button type="button" size="md" className="h-10 w-full" disabled={isBusy} onClick={handleConnect}>
-						{isRegistrationPending ? <SpinnerGapIcon className="size-4 animate-spin" /> : null}
+						{isRegistrationPending ? <ButtonLoading /> : null}
 						{connectButtonLabel}
 					</Button>
 				)}

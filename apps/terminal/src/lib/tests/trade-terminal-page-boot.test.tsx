@@ -435,7 +435,7 @@ describe("trade terminal page boot", () => {
 		expect(header).not.toBeNull();
 		expect(nav).not.toBeNull();
 		expect(container.querySelector('main[aria-busy="true"]')?.innerHTML).toBe(
-			'<output class="sr-only">Loading GATU...</output>',
+			'<output class="sr-only">Loading Sairn...</output>',
 		);
 
 		testState.catalogState = catalogState();

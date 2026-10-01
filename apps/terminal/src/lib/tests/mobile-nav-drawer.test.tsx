@@ -25,7 +25,7 @@ const testState = vi.hoisted(() => ({
 	settingsOpen: vi.fn(),
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Badge: ({ children }: { children: ReactNode }) => createElement("span", null, children),
 	Button: ({
 		"aria-label": ariaLabel,

@@ -1,4 +1,4 @@
-import { Dropdown, type DropdownItem } from "@gatu/ui";
+import { Dropdown, type DropdownItem } from "@sairn/ui";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import type { SpotToken } from "@/lib/hyperliquid/markets";

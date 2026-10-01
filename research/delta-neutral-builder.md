@@ -208,7 +208,7 @@ API downtime during rebalancing, bot failures, clock sync issues, oracle manipul
 
 ---
 
-## 4. Delta Neutral Builder — Product Ideas for gatu
+## 4. Delta Neutral Builder — Product Ideas for Sairn
 
 ### 4.1 Delta Neutral Calculator
 
@@ -596,7 +596,7 @@ src/
 | CoinGlass | Scanner only | CEX-focused, no HL-specific features |
 | Ethena | Stablecoin | Abstracted away, ~3.7% yield, no control |
 
-### 7.2 gatu Differentiation
+### 7.2 Sairn Differentiation
 
 1. **Integrated into existing trading UI** — not a separate app or vault deposit. Users see DN alongside their regular trading.
 2. **Transparency** — every calculation visible, no black-box vault. Users understand exactly what they're paying and earning.

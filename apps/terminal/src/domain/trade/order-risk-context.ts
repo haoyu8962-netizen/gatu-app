@@ -1,4 +1,4 @@
-import { getAssetIdKind } from "@gatu/hl-react";
+import { getAssetIdKind } from "@sairn/hl-react";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 
 export type OrderRiskContext =

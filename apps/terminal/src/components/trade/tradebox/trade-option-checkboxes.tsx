@@ -1,5 +1,5 @@
-import { Checkbox } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { Checkbox } from "@sairn/ui";
 import type { ReactNode } from "react";
 import { option, optionControl, optionLabel } from "@/components/trade/tradebox/trade-option-checkboxes-view";
 import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";

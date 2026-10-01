@@ -57,7 +57,7 @@ Privy 子代理实时读取[导出](https://docs.privy.io/wallets/wallets/export
 
 ## 验证与限制
 
-本轮验证基于 `965e0590` 的纯文档工作区。2026-09-13 完成 `pnpm memory:index`、`pnpm memory:check`、`pnpm memory:test`（8/8）及 `git diff --check`，均通过；检查本次修改/新增 Markdown（含索引）的78个本地文件/目录链接，全部存在，不覆盖页内 anchor 或远端链接可用性。未跑应用 tsc/lint/build、浏览器或资金测试；未创建地址、读取秘密、签名、导出钱包、部署或推送。未取得 GATU 权限、legalCheck 字段/权重确认、费用净额和真实退款证据；这些依赖仍阻止生产启用。
+本轮验证基于 `965e0590` 的纯文档工作区。2026-09-13 完成 `pnpm memory:index`、`pnpm memory:check`、`pnpm memory:test`（8/8）及 `git diff --check`，均通过；检查本次修改/新增 Markdown（含索引）的78个本地文件/目录链接，全部存在，不覆盖页内 anchor 或远端链接可用性。未跑应用 tsc/lint/build、浏览器或资金测试；未创建地址、读取秘密、签名、导出钱包、部署或推送。未取得 Sairn 权限、legalCheck 字段/权重确认、费用净额和真实退款证据；这些依赖仍阻止生产启用。
 
 ## 后续与替代关系
 

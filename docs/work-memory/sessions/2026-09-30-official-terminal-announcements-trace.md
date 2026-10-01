@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["hyperliquid-api"],
-  "summary": "只读取证 app.hyperliquid.xyz/announcements（未登录、未连接钱包）：公告不走 api-ui 的 info 接口、WebSocket 或第三方平台，而是独立 CloudFront/S3 上的静态 JSON（列表 entries.json 110 条，详情 entry-<uuid>.json，正文为 Draft.js 原始内容且图片以 base64 内嵌，单条可达 1.6 MB）；应用根部 Provider 用裸 fetch 加 setInterval 每 5 分钟轮询列表，任何页面都会请求；未读条目在所有非公告页面右下角弹出最多 3 条的浮层，已读状态存 localStorage 的 hyperliquid.viewed_announcements（元素为 hash ?? uuid）；详情把 Draft.js 转成 HTML 后用 dangerouslySetInnerHTML 注入，产物里查不到净化步骤；正文、分类徽章不随界面语言变化，日期跟浏览器语言；失败与空态没有任何文案。gatu 当前没有公告功能。受限地区表现、后台标签页轮询和发布管线未确认。",
+  "summary": "只读取证 app.hyperliquid.xyz/announcements（未登录、未连接钱包）：公告不走 api-ui 的 info 接口、WebSocket 或第三方平台，而是独立 CloudFront/S3 上的静态 JSON（列表 entries.json 110 条，详情 entry-<uuid>.json，正文为 Draft.js 原始内容且图片以 base64 内嵌，单条可达 1.6 MB）；应用根部 Provider 用裸 fetch 加 setInterval 每 5 分钟轮询列表，任何页面都会请求；未读条目在所有非公告页面右下角弹出最多 3 条的浮层，已读状态存 localStorage 的 hyperliquid.viewed_announcements（元素为 hash ?? uuid）；详情把 Draft.js 转成 HTML 后用 dangerouslySetInnerHTML 注入，产物里查不到净化步骤；正文、分类徽章不随界面语言变化，日期跟浏览器语言；失败与空态没有任何文案。Sairn 当前没有公告功能。受限地区表现、后台标签页轮询和发布管线未确认。",
   "thread": null,
   "baseCommit": "86191b56",
   "commits": [],
@@ -27,13 +27,13 @@
 
 ## 背景与范围
 
-同步记录。用户要求安排 agent 核查官方交易终端的公告页 `https://app.hyperliquid.xyz/announcements` 是如何实现的。本次只做取证，不改动 gatu 的实现。
+同步记录。用户要求安排 agent 核查官方交易终端的公告页 `https://app.hyperliquid.xyz/announcements` 是如何实现的。本次只做取证，不改动 Sairn 的实现。
 
 取证时间 2026-09-30 08:19–08:37 UTC。当日官方 `index.html` 的 `Last-Modified` 为 2026-09-26 08:31:40 GMT，产物为入口 `index-DMtAfrK3.js`（1,328,441 B）、主代码 `config-B3kWIW3_.js`（2,146,017 B）、公告页懒加载块 `AnnouncementsPage-bf3Q9d9L.js`（4,545 B）。官方包是压缩产物，下文的标识符是压缩后的名字，仅用于定位。
 
 方法：由一个子 agent 先静态分析产物，再用无头 Chromium 147（Playwright 1.59.1，页面脚本执行前注入探针包装 `fetch`、`WebSocket`、`Storage.prototype.setItem`，并用 `page.on("request")` 独立记录）观察运行时，视口为桌面 1440×900 与手机 390×844；数据接口另用 `curl` 复核。全程未登录、未连接钱包、未签名，未出现条款或 Cookie 弹窗。所有点击都是 Playwright 注入，不是物理输入。主会话随后独立重跑了列表接口请求与产物检索（见「验证与限制」）。
 
-gatu 仓库在基线 `86191b56` 没有公告功能：检索 `announcement` 只命中无障碍播报等无关代码。
+Sairn 仓库在基线 `86191b56` 没有公告功能：检索 `announcement` 只命中无障碍播报等无关代码。
 
 ## 结论与依据
 
@@ -103,9 +103,9 @@ gatu 仓库在基线 `86191b56` 没有公告功能：检索 `announcement` 只�
 - 详情失败或 uuid 不存在（运行时）：返回 `null`，页面显示完整列表，URL 不变，不写已读。
 - 加载态（静态）：懒加载块期间是空白底框；详情请求期间是圆形加载图标；列表首次返回前短暂是空列表，没有骨架。
 
-### 与 gatu 的关系
+### 与 Sairn 的关系
 
-gatu 没有对应功能，本次未形成是否实现的决定。若将来消费同一数据源，从本次事实可以直接得出三点约束：正文必须自行净化后再渲染，且外链 `target` 不可原样采用；全局浮层与根级轮询属于被动数据展示，需先对照 `docs/mobile-data-presentation.md`；详情 JSON 可达 1.6 MB，不宜预取。
+Sairn 没有对应功能，本次未形成是否实现的决定。若将来消费同一数据源，从本次事实可以直接得出三点约束：正文必须自行净化后再渲染，且外链 `target` 不可原样采用；全局浮层与根级轮询属于被动数据展示，需先对照 `docs/mobile-data-presentation.md`；详情 JSON 可达 1.6 MB，不宜预取。
 
 ## 验证与限制
 
@@ -134,4 +134,4 @@ gatu 没有对应功能，本次未形成是否实现的决定。若将来消费
 
 没有被替代的记录。决定前不需要再次抓包，先读本记录。
 
-2026-09-30 同一会话后续：用户要求参照官方做法给出 gatu 的实现方案，已写成 [公告功能实现方案](../../announcements-plan.md)（状态为拟议，未实施）。方案推荐 gatu 自有公告源而不是运行时读取官方源，数据来源、内容发布方式、提示形式、内容语言四项待用户决定。写方案时只读了仓库代码与文档，没有运行应用测试或构建。与官方前端整体栈和语言切换相关的既有事实见 `2026-09-24-official-terminal-language-switch-trace.md`。
+2026-09-30 同一会话后续：用户要求参照官方做法给出 Sairn 的实现方案，已写成 [公告功能实现方案](../../announcements-plan.md)（状态为拟议，未实施）。方案推荐 Sairn 自有公告源而不是运行时读取官方源，数据来源、内容发布方式、提示形式、内容语言四项待用户决定。写方案时只读了仓库代码与文档，没有运行应用测试或构建。与官方前端整体栈和语言切换相关的既有事实见 `2026-09-24-official-terminal-language-switch-trace.md`。

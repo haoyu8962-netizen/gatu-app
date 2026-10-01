@@ -1,4 +1,4 @@
-import { buttonVariants } from "@gatu/ui";
+import { buttonVariants } from "@sairn/ui";
 import type { ComponentPropsWithRef } from "react";
 import { HEADER_ACCOUNT_CONTROL_HEIGHT_CLASS, HEADER_TOUCH_HIT_AREA_CLASS } from "@/config/layout";
 import { cn } from "@/lib/cn";

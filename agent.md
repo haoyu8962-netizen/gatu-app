@@ -1,10 +1,10 @@
-# gatu — AI Agent Guide
+# Sairn — AI Agent Guide
 
 This is the implementation map for this checkout. Read [AGENTS.md](AGENTS.md) first for durable product and safety contracts, and use the [documentation index](docs/README.md) to find design decisions, working records and delivery documentation. Update the relevant documentation alongside behavior changes.
 
 ## Repository boundaries
 
-gatu is a pnpm monorepo for a Hyperliquid trading terminal, its public website and shared packages. Paths below are relative to the repository root; the terminal's `@/` alias resolves to `apps/terminal/src/`.
+Sairn is a pnpm monorepo for a Hyperliquid trading terminal, its public website and shared packages. Paths below are relative to the repository root; the terminal's `@/` alias resolves to `apps/terminal/src/`.
 
 | Location | Responsibility |
 |---|---|
@@ -60,7 +60,7 @@ Detailed conventions live in [code-style.md](.claude/rules/code-style.md), [hype
 
 ### Adding data, actions and state
 
-Prefer existing typed exports from `@gatu/hl-react`: `useInfo*` for requests, `useSub*` for subscriptions and `useAction*` for mutations. Shared implementations live in [packages/hl-react/src/hooks](packages/hl-react/src/hooks), with behavior declared in [registries](packages/hl-react/src/registries). Add app-specific composition under `apps/terminal/src/hooks/` or `lib/`; do not recreate the former app-local info/subscription/exchange directories or bypass shared execution guards.
+Prefer existing typed exports from `@sairn/hl-react`: `useInfo*` for requests, `useSub*` for subscriptions and `useAction*` for mutations. Shared implementations live in [packages/hl-react/src/hooks](packages/hl-react/src/hooks), with behavior declared in [registries](packages/hl-react/src/registries). Add app-specific composition under `apps/terminal/src/hooks/` or `lib/`; do not recreate the former app-local info/subscription/exchange directories or bypass shared execution guards.
 
 Draft and preference stores live in `apps/terminal/src/stores/`. Add persistence only where the lifecycle requires it; validate persisted data with [validated storage](apps/terminal/src/lib/storage/validated-storage.ts). Financial action execution must recheck current identity, market, legal status and required snapshot availability, not merely trust displayed component values. Requested-action feedback follows the [global notification contract](docs/trading-notifications.md): use the shared Sonner host and owner/environment-scoped task updates without making presentation state an execution guard.
 
@@ -80,9 +80,9 @@ pnpm dev --port 3000                   # Explicit local terminal port
 pnpm dev:browser --port 3006           # System browser; requested port must be free
 pnpm build                            # Terminal build + chunk-cycle and bundle-budget checks
 pnpm serve                            # Local preview of the built Nitro output; production is CloudFront + S3 + Lambda
-pnpm --filter @gatu/terminal typecheck
+pnpm --filter @sairn/terminal typecheck
 pnpm typecheck                        # hl-react, ui and terminal
-pnpm --filter @gatu/terminal test      # Terminal Vitest run
+pnpm --filter @sairn/terminal test      # Terminal Vitest run
 pnpm test                             # OG check, terminal + website suites, cross-app brand test
 pnpm exec biome check <changed-files>
 pnpm i18n:extract

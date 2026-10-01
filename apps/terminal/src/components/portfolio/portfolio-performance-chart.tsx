@@ -1,5 +1,5 @@
-import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Button } from "@sairn/ui";
 import Big from "big.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PortfolioPeriod, PortfolioSnapshot } from "@/domain/portfolio";

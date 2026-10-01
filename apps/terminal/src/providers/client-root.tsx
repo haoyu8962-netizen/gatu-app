@@ -1,15 +1,15 @@
-import {
-	HyperliquidAgentApprovalProvider,
-	HyperliquidExchangePolicyProvider,
-	HyperliquidProvider,
-	useLegalStatusLifecycle,
-} from "@gatu/hl-react";
 import { i18n } from "@lingui/core";
 import { t } from "@lingui/core/macro";
 import { I18nProvider } from "@lingui/react";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
 import { WagmiProvider } from "@privy-io/wagmi";
+import {
+	HyperliquidAgentApprovalProvider,
+	HyperliquidExchangePolicyProvider,
+	HyperliquidProvider,
+	useLegalStatusLifecycle,
+} from "@sairn/hl-react";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import type { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";

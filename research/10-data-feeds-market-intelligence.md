@@ -39,7 +39,7 @@ Hyperliquid exposes a rich data layer through two primary interfaces: WebSocket 
 
 ### 1.3 Data Architecture for Agents
 
-The gatu codebase already uses `useSubL2Book` and `useSubTrades` hooks for real-time data in UI components. For agent consumption, the same WebSocket channels can feed a parallel data pipeline:
+The Sairn codebase already uses `useSubL2Book` and `useSubTrades` hooks for real-time data in UI components. For agent consumption, the same WebSocket channels can feed a parallel data pipeline:
 
 ```
 Hyperliquid WS API
@@ -391,11 +391,11 @@ Agents should weight and combine signals using a structured framework:
 
 ---
 
-## 11. Opportunities for gatu
+## 11. Opportunities for Sairn
 
 ### Near-Term (3-6 Months)
 
-1. **Enhanced data visualization**: Surface funding rates, open interest, and liquidation data alongside price charts in the existing UI -- data gatu already has access to via Hyperliquid's API.
+1. **Enhanced data visualization**: Surface funding rates, open interest, and liquidation data alongside price charts in the existing UI -- data Sairn already has access to via Hyperliquid's API.
 2. **Technical indicator overlay**: Add RSI, MACD, Bollinger Bands, and VWAP to the existing charting component, calculated from candle data already flowing through WebSocket subscriptions.
 3. **Funding rate dashboard**: Cross-market funding rate comparison for identifying carry trade and basis trade opportunities.
 4. **Whale alert integration**: Display large trade notifications (from Hyperliquid's trade stream) and on-chain whale movements (via Nansen/Arkham APIs) in a unified alert feed.
@@ -446,21 +446,21 @@ Agents should weight and combine signals using a structured framework:
 
 ## 13. Open Questions
 
-1. **Signal priority**: Which signal types should gatu prioritize for agent consumption? Technical indicators are well-understood but crowded; sentiment and on-chain signals are higher-alpha but noisier and more expensive to source.
+1. **Signal priority**: Which signal types should Sairn prioritize for agent consumption? Technical indicators are well-understood but crowded; sentiment and on-chain signals are higher-alpha but noisier and more expensive to source.
 
-2. **Build vs. buy**: Should gatu build its own sentiment analysis pipeline (fine-tuned LLM on crypto Twitter) or integrate with existing providers (LunarCrush, Santiment)? Build offers customization; buy offers speed-to-market.
+2. **Build vs. buy**: Should Sairn build its own sentiment analysis pipeline (fine-tuned LLM on crypto Twitter) or integrate with existing providers (LunarCrush, Santiment)? Build offers customization; buy offers speed-to-market.
 
-3. **Data monetization**: Should gatu's processed signals be a free feature to drive platform adoption, or a premium product generating direct revenue? The TrendSpider model (free basic, paid premium) is instructive.
+3. **Data monetization**: Should Sairn's processed signals be a free feature to drive platform adoption, or a premium product generating direct revenue? The TrendSpider model (free basic, paid premium) is instructive.
 
 4. **Hyperliquid-native signals**: What unique signals can be derived from Hyperliquid-specific data that competitors cannot replicate? Funding rate patterns, vault flow analysis, HLP behavior, and liquidation cascade prediction are candidates.
 
 5. **Agent signal consumption format**: What is the optimal API format for agents to consume signals -- real-time WebSocket streams, polling REST endpoints, or event-driven webhooks? Each has latency, reliability, and complexity tradeoffs.
 
-6. **Backtesting infrastructure**: Should gatu provide backtesting capabilities for agents against historical Hyperliquid data? This is a significant engineering investment but dramatically increases the value of the signal platform.
+6. **Backtesting infrastructure**: Should Sairn provide backtesting capabilities for agents against historical Hyperliquid data? This is a significant engineering investment but dramatically increases the value of the signal platform.
 
 7. **Cross-chain expansion**: Should the data pipeline be designed for Hyperliquid-only data, or architected for future expansion to other chains and exchanges? Over-engineering for multi-chain adds complexity; under-engineering creates migration pain later.
 
-8. **Privacy considerations**: How should gatu handle user trading data? Aggregated and anonymized data (e.g., "top 10% of traders are long BTC") is valuable but raises privacy questions. Clear opt-in/opt-out mechanisms are needed.
+8. **Privacy considerations**: How should Sairn handle user trading data? Aggregated and anonymized data (e.g., "top 10% of traders are long BTC") is valuable but raises privacy questions. Clear opt-in/opt-out mechanisms are needed.
 
 ---
 

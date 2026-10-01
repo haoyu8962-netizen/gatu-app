@@ -1,6 +1,6 @@
 # Funding Rate Arbitrage Automation: Manual Workflows, Pain Points & Blueprint
 
-Research into how traders currently monitor and execute funding rate arb manually across Hyperliquid & other DEXs, with real user examples from 2025-2026 and a blueprint for automated Funding Scanner + Executor in gatu.
+Research into how traders currently monitor and execute funding rate arb manually across Hyperliquid & other DEXs, with real user examples from 2025-2026 and a blueprint for automated Funding Scanner + Executor in Sairn.
 
 ---
 
@@ -209,7 +209,7 @@ Funding Rate (F) = Average Premium Index (P) + clamp(Interest Rate - P, -0.0005,
 
 ---
 
-## 7. Blueprint: Automated Funding Scanner + Executor for gatu
+## 7. Blueprint: Automated Funding Scanner + Executor for Sairn
 
 ### Core Problem Statement
 
@@ -334,7 +334,7 @@ UI Layer (gatu components)
 
 ### Competitive Positioning
 
-| Feature | CoinGlass | Loris | Hummingbot | **gatu** |
+| Feature | CoinGlass | Loris | Hummingbot | **Sairn** |
 |---------|-----------|-------|------------|------------------|
 | Cross-venue rates | Yes | Yes | Limited | Yes |
 | Real-time updates | ~1min | ~1min | Real-time | Real-time (WS) |

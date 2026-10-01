@@ -69,7 +69,7 @@ vi.mock("@phosphor-icons/react", () => ({
 	WarningCircleIcon: () => null,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) =>
 		createElement("button", { disabled, onClick, type: "button" }, children),
 }));
@@ -160,7 +160,7 @@ describe("MobileAgentQrScanner", () => {
 		});
 		expect(scannerState.startScanner).not.toHaveBeenCalled();
 		expect(container.textContent).toContain(
-			"Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device).",
+			"Scan the QR from the QR icon in the top-right of Sairn on desktop (Link mobile device).",
 		);
 
 		act(() => findButton(container, "Start camera")?.click());
@@ -196,7 +196,7 @@ describe("MobileAgentQrScanner", () => {
 		await flushAsyncWork();
 
 		act(() => {
-			scannerState.callback?.("https://evil.example/mobile-agent-sync#ht-mobile-sync=payload&k=secret", {
+			scannerState.callback?.("https://evil.example/mobile-agent-sync#sairn-mobile-sync=payload&k=secret", {
 				stop: scannerState.controlsStop,
 			});
 		});

@@ -4,7 +4,7 @@
 
 ## 1. 目标
 
-仓位足够大时，市价 TP/SL 触发后可能在订单簿上吃出较大滑点。官方终端在持仓 TP/SL 弹窗里读取 `maxMarketOrderNtls`，仓位价值超过分档上限时在确认按钮上方显示一条滑点警告。gatu 对齐这一提示：让用户在确认前知道风险，并指向两种现有的缓解方式（限价执行、配置更小的数量）。
+仓位足够大时，市价 TP/SL 触发后可能在订单簿上吃出较大滑点。官方终端在持仓 TP/SL 弹窗里读取 `maxMarketOrderNtls`，仓位价值超过分档上限时在确认按钮上方显示一条滑点警告。Sairn 对齐这一提示：让用户在确认前知道风险，并指向两种现有的缓解方式（限价执行、配置更小的数量）。
 
 提示只是建议。它不预测交易所会拒单，也不改变能否提交、提交什么。
 
@@ -74,7 +74,7 @@
 
 ## 7. 与协议规格的差异
 
-协议规格和 SDK 的字段名都按**资产最大杠杆**（`position.maxLeverage`）分档；官方前端和 gatu 按**仓位当前杠杆**分档。仓位的当前杠杆通常不高于资产最大杠杆，所以 gatu 选出的上限通常不高于协议口径的上限，提示只会更早出现：例如资产最大杠杆为 40 倍的市场，仓位以 10 倍杠杆持有、价值 $3,000,000 时会提示，而协议口径的上限是 $30,000,000。
+协议规格和 SDK 的字段名都按**资产最大杠杆**（`position.maxLeverage`）分档；官方前端和 Sairn 按**仓位当前杠杆**分档。仓位的当前杠杆通常不高于资产最大杠杆，所以 Sairn 选出的上限通常不高于协议口径的上限，提示只会更早出现：例如资产最大杠杆为 40 倍的市场，仓位以 10 倍杠杆持有、价值 $3,000,000 时会提示，而协议口径的上限是 $30,000,000。
 
 选择官方口径的理由：这是对齐官方终端的建议提示，不是拒单预测；较大仓位在较低杠杆下出现提示的代价是偶尔多一条建议，不会阻止任何操作。若以后要改用协议口径，只需把调用处的 `positionLeverage` 改为 `position.maxLeverage`，`position-tpsl-modal.test.tsx` 里「按当前杠杆而不是资产最大杠杆选档」的用例会随之失败，提醒同步修改本文。
 
@@ -94,7 +94,7 @@
 | 勾选限价执行时隐藏提示 | 官方不隐藏；限价是建议的缓解方式之一，勾选后仍保留提示的代价是提示与已采取的措施并存 |
 | 用配置数量（而不是整个仓位）计算价值 | 官方只看整个仓位；按数量计算会让提示在拖动滑杆时变化，违反滑杆手势契约 |
 | 只在 `liveDataReady` 时显示 | 提示来自弹窗表单正在使用的同一份实时仓位，且从不放行任何操作；额外门槛只会让提示在重连时闪烁 |
-| 照搬官方第二条建议「配置数量，在不同触发价分多笔部分 TP/SL」 | gatu 每个市场的持仓 TP 与持仓 SL 各只识别一笔，出现第二笔时 `buildTpSlOrdersByCoin` 把它标记为重复配置，弹窗随即阻止编辑并提示先逐笔取消；照搬会把用户引向死路，因此改为「配置更小的数量」 |
+| 照搬官方第二条建议「配置数量，在不同触发价分多笔部分 TP/SL」 | Sairn 每个市场的持仓 TP 与持仓 SL 各只识别一笔，出现第二笔时 `buildTpSlOrdersByCoin` 把它标记为重复配置，弹窗随即阻止编辑并提示先逐笔取消；照搬会把用户引向死路，因此改为「配置更小的数量」 |
 | 分档表失败时提示「无法判断滑点」 | 违反数据展示契约：被动读取失败保持静默 |
 | 数量滑杆手势期间直接跟随实时结果 | 居中弹层与贴底抽屉里，提示出现或消失会把滑杆行顶离指针，违反滑杆手势契约；代价是手势期间提示最多滞后到松开 |
 | 始终为提示预留高度 | 违反数据展示契约：加载、失败与不适用时不预留占位；也会让普通仓位的弹窗多出一块空白 |
@@ -109,14 +109,14 @@
 - 变异核对：把选档改为 `position.maxLeverage`、让 hook 在失败时也返回旧数据、在限价执行时隐藏提示，三处改动分别使上述测试失败，恢复后通过。
 - 契约扫描（`i18n-reactivity-contract`、`i18n-hot-switch`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`modal-surface-contract`、`action-progress-label-contract`、`trading-action-button-label-contract`、`mobile-data-presentation-contract`、`dialog-dismiss-control-contract`）连同上述三个文件：13 个文件 364 项通过。
 - `AGENTS.md` 确认面回归组：41 个文件 893 项通过；数据展示、滑杆手势、运行时翻译回归组加 `position-tpsl-size`、`use-market-slippage-estimate`：17 个文件 355 项通过；引用该弹窗的 `global-modals-*` 与 `position-dialog-session-ownership`：4 个文件 45 项通过。
-- `pnpm exec biome check`（6 个改动的 TS/TSX 文件）无问题；`pnpm --filter @gatu/terminal typecheck` 通过。
+- `pnpm exec biome check`（6 个改动的 TS/TSX 文件）无问题；`pnpm --filter @sairn/terminal typecheck` 通过。
 
 审查修复（同日，同一分支的后续提交）：审查指出提示会随实时仓位价值或后到的分档表在拖动中出现或消失，而居中弹层与贴底抽屉会因此移动滑杆行，本文原先「拖动中不会出现或消失」的说法不准确。改为手势期间保持有无（第 2、6 节），并实际运行：
 
 - `position-tpsl-modal.test.tsx` 新增 2 项（桌面与抽屉）：手势开始时无提示，拖动中分档表到达、数量预览变化、提交回调之后仍无提示，`onPercentInteractionEnd` 后出现且数量保持 `0.150`；再次开始手势时有提示，仓位价值降到上限以下并重渲染、取消回调之后仍显示，手势结束后消失；全程不发单、不撤单。测试直接调用被包裹的 `TradeSizeSlider` 的回调（jsdom，脚本调用，不是物理指针输入）。
 - 变异核对：渲染改回只用实时结果、或在 `onPercentInteractionEnd` 中不清除保持，两处改动分别使这 2 项失败，恢复后通过。
 - 上述三个测试文件连同十个契约扫描：13 个文件 366 项通过；`AGENTS.md` 确认面回归组：41 个文件 895 项通过；数据展示、滑杆手势、运行时翻译回归组加 `position-tpsl-size`、`use-market-slippage-estimate`：17 个文件 355 项通过；`global-modals-*` 与 `position-dialog-session-ownership`：4 个文件 45 项通过。
-- `pnpm exec biome check`（改动的 2 个 TSX 文件）无问题；`pnpm --filter @gatu/terminal typecheck` 通过；`git diff --check` 无问题。
+- `pnpm exec biome check`（改动的 2 个 TSX 文件）无问题；`pnpm --filter @sairn/terminal typecheck` 通过；`git diff --check` 无问题。
 
 第二轮审查修复（2026-09-27，分支 `claude/sdk-fix-r1-tpsl-slippage`，基于集成头 `19af214b`）：只读审查确认两项 P3。一是分档项只检查了 `length < 2`，`[[20,"5000000","extra"]]` 这类超长元组仍被采用；二是第 5、6 节原先承诺「关闭中保持关闭前的状态」，但 `enabled: false` 不会冻结已发出的请求，退出期间成功返回会让提示出现、刷新失败会让它消失。修复为：分档项必须恰好两个元素（第 4 节）；外壳第一次以关闭状态渲染时记下提示的有无，之后只用该记录（第 5、6 节），关闭包括会话结束后的退出动画和点击确认后外壳关闭两种情况。先写回归测试并确认它们在 `19af214b` 上失败，再修改实现。实际运行：
 
@@ -124,11 +124,11 @@
 - `position-tpsl-modal.test.tsx` 新增 4 项：会话结束后的退出期间与点击确认后外壳关闭期间各两项，分别是「关闭前加载中、关闭后成功返回，提示仍不出现」与「关闭前已显示、关闭后刷新失败，提示仍显示」。测试桩的 `AdaptiveModal` 增加开关，关闭后仍渲染内容并标 `data-open="false"`，模拟 Base UI 在退出动画期间保留弹层；会话结束用假计时器，确保 250 ms 的保留计时不在断言前触发。在 `19af214b` 上 4 项都在「提示状态」这条断言失败（此前的「弹层处于关闭中」断言已通过），修复后 93 项全部通过。
 - 变异核对（临时改回生产代码后运行，随后恢复并逐字节比对备份）：分档项检查改回 `length < 2`，新增 2 项领域测试失败；渲染改回只用未关闭时的结果（去掉关闭记录），新增 4 项弹窗测试失败；记录条件从外壳关闭（`open && !isSubmitted` 为假）改为只看 `open`，点击确认的 2 项失败。
 - 上述三个测试文件连同 `i18n-reactivity-contract`、`i18n-hot-switch`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`modal-surface-contract`、`action-progress-label-contract`、`trading-action-button-label-contract`、`mobile-data-presentation-contract`、`dialog-dismiss-control-contract`：13 个文件 381 项通过；`global-modals-*`（3 个文件）、`position-dialog-session-ownership`、`position-tpsl-size`、`trade-size-slider-pointer-lifecycle`、`trade-size-slider`、`use-size-slider-interaction`：8 个文件 116 项通过。
-- `pnpm exec biome check`（改动的 4 个 TS/TSX 文件）无问题；`git diff --check` 无问题。`pnpm --filter @gatu/terminal typecheck` 报 4 个错误，全部在 `funding-history-load-boundary.test.tsx`（第 88、125 行 `Panel` 的 JSX 类型），与本修复无关：把本次改动的 4 个 TS 文件临时换回 `19af214b` 版本后同样是这 4 个错误，恢复后错误不变、没有新增。
+- `pnpm exec biome check`（改动的 4 个 TS/TSX 文件）无问题；`git diff --check` 无问题。`pnpm --filter @sairn/terminal typecheck` 报 4 个错误，全部在 `funding-history-load-boundary.test.tsx`（第 88、125 行 `Panel` 的 JSX 类型），与本修复无关：把本次改动的 4 个 TS 文件临时换回 `19af214b` 版本后同样是这 4 个错误，恢复后错误不变、没有新增。
 
 未做：浏览器目测、真实钱包、真机，以及真人拖动真实控件（按[滑杆手势](slider-interactions.md)的规则，手势相关改动在此之前不算完成验证）；退出动画期间的保持只在 jsdom 中验证，没有在浏览器里观察真实的 Base UI 退出动画；完整终端测试与生产构建（包体预算）由集成方运行。
 
 ## 11. 未验证事项
 
-- 官方英文原句只在 2026-09-27 的批次取证中见过，本地 2026-09-21 包只含消息 ID `tp.sl.slippage.warning`；gatu 文案是改写，不是逐字对齐。
-- HIP-3 builder 永续（含非 USDC 计价）是否适用同一上限未验证。官方前端直接比较仓位价值与美元上限，gatu 同样处理；非 USDC 计价时仓位价值以该计价币表示。
+- 官方英文原句只在 2026-09-27 的批次取证中见过，本地 2026-09-21 包只含消息 ID `tp.sl.slippage.warning`；Sairn 文案是改写，不是逐字对齐。
+- HIP-3 builder 永续（含非 USDC 计价）是否适用同一上限未验证。官方前端直接比较仓位价值与美元上限，Sairn 同样处理；非 USDC 计价时仓位价值以该计价币表示。

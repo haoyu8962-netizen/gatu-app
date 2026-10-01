@@ -173,7 +173,7 @@ All spacing is multiples of 4px.
 | Avatars, status dots, toggle tracks | full | `rounded-full` |
 | Pill badges, label dots | full | `rounded-full` |
 
-**Key difference from current gatu**: Linear uses 6px for buttons/inputs (your `rounded-md`), while gatu uses 4px (`rounded-sm`). Linear's modals are 12px (your `rounded-xl`), gatu uses 8px (`rounded-lg`).
+**Key difference from current Sairn**: Linear uses 6px for buttons/inputs (your `rounded-md`), while Sairn uses 4px (`rounded-sm`). Linear's modals are 12px (your `rounded-xl`), Sairn uses 8px (`rounded-lg`).
 
 ---
 
@@ -429,9 +429,9 @@ No excessive shadow usage. Most of the UI is flat.
 
 ---
 
-## 11. Comparison: Linear vs Current gatu
+## 11. Comparison: Linear vs Current Sairn
 
-| Aspect | Linear | gatu Current | Gap |
+| Aspect | Linear | Sairn Current | Gap |
 |--------|--------|---------------------|-----|
 | Color space | LCH/OKLCH-based | OKLCH | Aligned |
 | Text not pure white/black | `#e8e8ea` / `#1A1A1A` | `oklch(0.985 0 0)` / `oklch(0.141 ...)` | Aligned |
@@ -439,19 +439,19 @@ No excessive shadow usage. Most of the UI is flat.
 | Button radius | 6px | 4px (`rounded-sm`) | Linear is rounder |
 | Input radius | 6px | 4px (`rounded-sm`) | Linear is rounder |
 | Modal radius | 12px | 8px (`rounded-lg`) | Linear is rounder |
-| Body text | 13-14px | 12px (`text-xs`) | gatu is denser |
+| Body text | 13-14px | 12px (`text-xs`) | Sairn is denser |
 | Sidebar items | 13px | `text-nav` (13px) | Aligned |
 | Input height | 36-40px | h-8 (32px) | Linear is taller |
 | Row height | 36-40px | varies | Similar |
 | Font | Inter | Figtree | Different family |
 | Font features | tabular-nums | not enabled | Gap |
 | Tab style | Underline | Mixed (underline + pill) | Should standardize |
-| Shadow levels | 4 distinct levels | 6 levels defined | gatu has more |
+| Shadow levels | 4 distinct levels | 6 levels defined | Sairn has more |
 | Popover shadow | shadow + 1px border | shadow only | Minor |
 
 ---
 
-## 12. Actionable Takeaways for gatu
+## 12. Actionable Takeaways for Sairn
 
 ### What to adopt directly:
 1. **Never pure black/white** — already doing this with OKLCH

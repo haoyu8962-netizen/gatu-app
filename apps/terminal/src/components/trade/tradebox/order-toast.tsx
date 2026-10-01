@@ -1,10 +1,12 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CheckIcon, SpinnerGapIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { useEffect, useRef, useState } from "react";
+import { StatusGlyph } from "@/components/brand/status-glyph";
 import { cn } from "@/lib/cn";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
+import { getOrderNotificationGlyph } from "@/lib/trade/order-notification-glyph";
 import { formatOrderChildError } from "@/lib/trade/order-status-reasons";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
 
@@ -41,7 +43,7 @@ export function OrderToast({ order, onDismiss }: Props) {
 	const { t } = useLingui();
 	useNumberFormatRevision();
 	const copy = getOrderNotificationCopy(order, (descriptor) => t(descriptor));
-	const waiting = order.status === "pending" || order.status === "confirming";
+	const glyph = getOrderNotificationGlyph(order);
 	const successful = order.status === "success";
 	const failed = order.status === "failed";
 	const hasChildren = Boolean(order.children?.length);
@@ -64,10 +66,7 @@ export function OrderToast({ order, onDismiss }: Props) {
 			className="w-full rounded-8 border border-stroke-weak bg-overlay p-3 shadow-overlay font-sans text-xs"
 		>
 			<div className="flex items-start gap-3">
-				{waiting && <SpinnerGapIcon className="size-4 shrink-0 animate-spin text-signal" />}
-				{successful && <CheckIcon className="size-4 shrink-0 text-success" />}
-				{failed && <XIcon className="size-4 shrink-0 text-error" />}
-				{!waiting && !successful && !failed && <WarningCircleIcon className="size-4 shrink-0 text-warning" />}
+				<StatusGlyph key={glyph.id} glyph={glyph} />
 				<div className="min-w-0 flex-1 space-y-1">
 					<section
 						ref={bodyRegion.ref}

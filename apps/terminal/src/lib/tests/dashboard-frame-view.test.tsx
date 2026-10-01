@@ -94,7 +94,9 @@ describe("dashboard frame runtime layout", () => {
 	it.each(["dashboard-frame-view.tsx"])("keeps %s pure", (file) => {
 		const source = readFileSync(resolve(__dirname, "../../components/dashboard", file), "utf8");
 		expect(source).toContain("interface Props");
-		expect(source).not.toMatch(/\buse[A-Z]|@lingui|@gatu\/ui|\/stores\/|\bwindow\b|\bdocument\b|\bDate\b|Math\.random/);
+		expect(source).not.toMatch(
+			/\buse[A-Z]|@lingui|@sairn\/ui|\/stores\/|\bwindow\b|\bdocument\b|\bDate\b|Math\.random/,
+		);
 	});
 });
 

@@ -94,7 +94,7 @@
 
 ## 背景与范围
 
-2026-09-28 的 GATU 工作记忆 heartbeat。起始分支 `codex/reviewceshi`，HEAD `0caba9bb198bf3b2ae72f5f5cb96e8eda5e3c37b`，工作区和暂存区干净。读取当前 AGENTS.md、agent.md、记忆 README/INDEX 与文档体系约定；初始 `pnpm memory:check` 通过。本次不改变业务、签名、资金、部署或 CI 实现，不切分支、不推送、不合并、不部署。
+2026-09-28 的 Sairn 工作记忆 heartbeat。起始分支 `codex/reviewceshi`，HEAD `0caba9bb198bf3b2ae72f5f5cb96e8eda5e3c37b`，工作区和暂存区干净。读取当前 AGENTS.md、agent.md、记忆 README/INDEX 与文档体系约定；初始 `pnpm memory:check` 通过。本次不改变业务、签名、资金、部署或 CI 实现，不切分支、不推送、不合并、不部署。
 
 上次周整理在 `codex/dorad` 的 `92ecaa78`，本次通过 `git show` 读取其任务记录。该提交不是当前 HEAD 的祖先，当前目录也没有那份周记录；这是分支边界，不能据此宣称整理丢失或回退，也不自动 cherry-pick 那批修改。上周记录可在本地 `git show 92ecaa78:docs/work-memory/sessions/2026-09-21-weekly-memory-review.md` 检索。本轮聚焦本目录 09-21 至 09-27 的 46 份新记录及关联后续，未重复修订上周那批旧文件。
 

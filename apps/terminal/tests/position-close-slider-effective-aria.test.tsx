@@ -23,7 +23,7 @@ const sliderState = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	Button: ({ children, intent: _intent, size: _size, variant: _variant, ...props }: Record<string, unknown>) =>
 		createElement("button", { ...props, type: "button" }, children as ReactNode),

@@ -10,7 +10,7 @@ const walletPending: Partial<UserMenuRecoverySession> = {
 };
 
 async function setSession(page: Page, patch: Partial<UserMenuRecoverySession>) {
-	await page.evaluate((value) => window.__gatuUserMenuRecovery.setSession(value), patch);
+	await page.evaluate((value) => window.__sairnUserMenuRecovery.setSession(value), patch);
 }
 
 async function setup(page: Page) {
@@ -41,7 +41,7 @@ for (const width of [390, 1333]) {
 			const draft = page.getByLabel("Order quantity draft");
 			await draft.fill("0.125");
 			const draftNode = await draft.elementHandle();
-			await page.evaluate(() => window.__gatuUserMenuRecovery.setLocale("zh"));
+			await page.evaluate(() => window.__sairnUserMenuRecovery.setLocale("zh"));
 			await expect(page.getByRole("button", { name: "连接中...", exact: true })).toBeDisabled();
 			const initialNavigations = navigations;
 			await page.clock.fastForward(30_001);
@@ -82,8 +82,8 @@ for (const width of [390, 1333]) {
 			const reload = page.getByRole("menuitem", { name: "Reload page", exact: true });
 			await expect(reload).toBeEnabled();
 			expect(navigations).toBe(initialNavigations);
-			expect(await page.evaluate(() => window.__gatuUserMenuRecovery.calls.reconnect)).toBe(0);
-			expect(await page.evaluate(() => window.__gatuUserMenuRecovery.calls.disconnect)).toBe(0);
+			expect(await page.evaluate(() => window.__sairnUserMenuRecovery.calls.reconnect)).toBe(0);
+			expect(await page.evaluate(() => window.__sairnUserMenuRecovery.calls.disconnect)).toBe(0);
 			await page.keyboard.press("Home");
 			const exportWallet = page.getByRole("menuitem", { name: "Export email wallet", exact: true });
 			await expect(exportWallet).toBeFocused();
@@ -93,7 +93,7 @@ for (const width of [390, 1333]) {
 			await page.keyboard.press("ArrowDown");
 			await expect(page.getByRole("menuitem", { name: "Reconnect wallet", exact: true })).toBeFocused();
 			await page.keyboard.press("Enter");
-			expect(await page.evaluate(() => window.__gatuUserMenuRecovery.calls.reconnect)).toBe(0);
+			expect(await page.evaluate(() => window.__sairnUserMenuRecovery.calls.reconnect)).toBe(0);
 			await page.keyboard.press("ArrowDown");
 			await expect(reload).toBeFocused();
 			await page.keyboard.press("Enter");
@@ -122,7 +122,7 @@ for (const width of [390, 1333]) {
 			const reconnect = page.getByRole("menuitem", { name: "Reconnect wallet", exact: true });
 			await expect(reconnect).toBeEnabled();
 			await reconnect.click();
-			await expect.poll(() => page.evaluate(() => window.__gatuUserMenuRecovery.calls.reconnect)).toBe(1);
+			await expect.poll(() => page.evaluate(() => window.__sairnUserMenuRecovery.calls.reconnect)).toBe(1);
 			await account.click();
 			await setSession(page, {
 				walletDirectoryReady: true,
@@ -133,14 +133,14 @@ for (const width of [390, 1333]) {
 			await expect(page.getByRole("menuitem", { name: "Reload page", exact: true })).toHaveCount(0);
 			await expect(page.getByRole("menuitem", { name: "Reconnect wallet", exact: true })).toHaveCount(0);
 			await expect(page.getByRole("menuitem", { name: "Copy Address", exact: true })).toBeEnabled();
-			expect(await page.evaluate(() => window.__gatuUserMenuRecovery.pairingEnabled)).toBe(true);
+			expect(await page.evaluate(() => window.__sairnUserMenuRecovery.pairingEnabled)).toBe(true);
 			await expect(page.getByRole("menuitem", { name: "Link mobile device", exact: true })).toHaveCount(0);
 			const connectedDot = await account
 				.locator("span[aria-hidden]")
 				.first()
 				.evaluate((node) => getComputedStyle(node).backgroundColor);
 			expect(connectedDot).not.toBe(neutralDot);
-			await page.evaluate(() => window.__gatuUserMenuRecovery.setLocale("zh"));
+			await page.evaluate(() => window.__sairnUserMenuRecovery.setLocale("zh"));
 			const localizedAccount = page.getByRole("button", { name: "账户与钱包", exact: true });
 			await expect(page.getByRole("menuitem", { name: "复制地址", exact: true })).toBeEnabled();
 			expect(await localizedAccount.evaluate((node, original) => node === original, accountNode)).toBe(true);
@@ -154,9 +154,9 @@ for (const width of [390, 1333]) {
 			await page.keyboard.press("End");
 			await expect(disconnect).toBeFocused();
 			await page.keyboard.press("Enter");
-			await expect.poll(() => page.evaluate(() => window.__gatuUserMenuRecovery.calls.disconnect)).toBe(1);
+			await expect.poll(() => page.evaluate(() => window.__sairnUserMenuRecovery.calls.disconnect)).toBe(1);
 			if (desktop) {
-				await page.evaluate(() => window.__gatuUserMenuRecovery.openLinkMobileDevice());
+				await page.evaluate(() => window.__sairnUserMenuRecovery.openLinkMobileDevice());
 				const linkMobile = page.getByRole("dialog", { name: "Fixture mobile link" });
 				await expect(linkMobile).toHaveCount(1);
 				await linkMobile.getByRole("button", { name: "Close fixture mobile link" }).click();
@@ -195,7 +195,7 @@ for (const width of [390, 1333]) {
 			await page.clock.fastForward(30_001);
 			await expect(page.getByRole("menuitem", { name: "Reload page", exact: true })).toHaveCount(0);
 			await expect(page.getByRole("menuitem", { name: "Reconnect wallet", exact: true })).toHaveCount(0);
-			expect(await page.evaluate(() => window.__gatuUserMenuRecovery.calls.reconnect)).toBe(0);
+			expect(await page.evaluate(() => window.__sairnUserMenuRecovery.calls.reconnect)).toBe(0);
 			expect(failures).toEqual([]);
 		});
 

@@ -1,9 +1,9 @@
 export { APP_NAME } from "./build-meta";
-export const APP_RELEASE_VERSION = import.meta.env.VITE_GATU_APP_VERSION?.trim() || "0.1.0";
-export const APP_BUILD_COMMIT = import.meta.env.VITE_GATU_BUILD_SHA?.trim() || "dev";
-export const APP_RELEASE_ID = import.meta.env.VITE_GATU_RELEASE_ID?.trim() || "local";
-export const APP_BUILD_TIME = import.meta.env.VITE_GATU_BUILD_TIME?.trim() || "unknown";
-export const APP_CHART_LIBRARY_HASH = import.meta.env.VITE_GATU_CHART_LIBRARY_HASH?.trim() || "";
+export const APP_RELEASE_VERSION = import.meta.env.VITE_SAIRN_APP_VERSION?.trim() || "0.1.0";
+export const APP_BUILD_COMMIT = import.meta.env.VITE_SAIRN_BUILD_SHA?.trim() || "dev";
+export const APP_RELEASE_ID = import.meta.env.VITE_SAIRN_RELEASE_ID?.trim() || "local";
+export const APP_BUILD_TIME = import.meta.env.VITE_SAIRN_BUILD_TIME?.trim() || "unknown";
+export const APP_CHART_LIBRARY_HASH = import.meta.env.VITE_SAIRN_CHART_LIBRARY_HASH?.trim() || "";
 export const APP_VERSION =
 	APP_BUILD_COMMIT === "dev"
 		? `v${APP_RELEASE_VERSION}-dev`
@@ -45,4 +45,4 @@ export const RQ_CACHE_BUSTER = "v3";
 
 export const TOKEN_ICON_BASE_URL = "https://app.hyperliquid.xyz/coins";
 
-export const LIFI_INTEGRATOR = "gatu";
+export const LIFI_INTEGRATOR = "sairn";

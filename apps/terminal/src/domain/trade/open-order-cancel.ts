@@ -1,4 +1,4 @@
-import { getOutcomeAssetIdFromCoin } from "@gatu/hl-react";
+import { getOutcomeAssetIdFromCoin } from "@sairn/hl-react";
 
 export interface OpenOrderCancelTarget {
 	coin: string;

@@ -1,17 +1,20 @@
+import logoImageUrl from "../../../../brand/social/sairn-avatar-light-1024.png?url";
+import { APP_URL, BRAND_NAME, SITE_URL } from "./brand";
+
 export const SEO_DEFAULTS = {
-	siteName: "GATU",
-	siteUrl: "https://gatu.ai",
-	appUrl: "https://app.gatu.ai",
-	defaultTitle: "GATU — Gateway to on-chain transactions",
-	defaultOgTitle: "GATU",
-	defaultDescription: "Perpetual and spot trading—direct on-chain access via a single gateway.",
+	siteName: BRAND_NAME,
+	siteUrl: SITE_URL,
+	appUrl: APP_URL,
+	defaultTitle: `${BRAND_NAME} — See the market clearly. Decide for yourself.`,
+	defaultOgTitle: BRAND_NAME,
+	defaultDescription: "Perpetual and spot trading on Hyperliquid—direct on-chain access from your own wallet.",
 	locale: "en_US",
 	themeColor: "#0a0a0a",
 	ogImage: "/og-website-1200x630.png",
 	ogImageWidth: 1200,
 	ogImageHeight: 630,
-	ogImageAlt: "GATU — Gateway to on-chain transactions",
-	logoImage: "/gatu-logo-1024.png",
+	ogImageAlt: `${BRAND_NAME} — See the market clearly. Decide for yourself.`,
+	logoImage: logoImageUrl,
 } as const;
 
 export const SEO_BASE_KEYWORDS = [
@@ -23,7 +26,6 @@ export const SEO_BASE_KEYWORDS = [
 	"perps",
 	"spot trading",
 	"hip-3",
-	"open source",
 	"crypto",
 	"defi",
 ] as const;
@@ -35,13 +37,12 @@ export const ROUTE_SEO = {
 		ogTitle: SEO_DEFAULTS.defaultOgTitle,
 		description: SEO_DEFAULTS.defaultDescription,
 		path: "/",
-		keywords: ["wallet-native", "self-hosted", "websocket", "leverage"],
+		keywords: ["wallet-native", "non-custodial", "websocket", "leverage"],
 	},
 	BLOG_INDEX: {
 		title: "Blog",
-		description:
-			"Notes from building GATU — architecture, signing flows, self-hosting, and the weekly changelog.",
-		path: "/blog",
-		keywords: ["changelog", "architecture", "self-hosting", "signing"],
+		description: `Notes from building ${BRAND_NAME} — architecture, signing flows, and release notes.`,
+		path: "/blog/",
+		keywords: ["changelog", "architecture", "signing"],
 	},
 } as const;

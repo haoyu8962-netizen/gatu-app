@@ -1,5 +1,5 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { Button } from "@sairn/ui";
 import { cn } from "@/lib/cn";
 
 interface RealtimeRetryProps {

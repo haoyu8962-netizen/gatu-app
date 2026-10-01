@@ -49,7 +49,7 @@ function jsonResponse(value: unknown, etag: string): Response {
 
 function request(headers: HeadersInit = {}, parameters: Readonly<Record<string, string>> = {}): Request {
 	const url = new URL(
-		"https://gatu.test/api/leaderboard?env=Mainnet&period=month&sortKey=pnl&sortDirection=descending&query=&page=1&pageSize=5",
+		"https://sairn.test/api/leaderboard?env=Mainnet&period=month&sortKey=pnl&sortDirection=descending&query=&page=1&pageSize=5",
 	);
 	for (const [key, value] of Object.entries(parameters)) url.searchParams.set(key, value);
 	return new Request(url, { headers });
@@ -264,7 +264,7 @@ describe("leaderboard API server", () => {
 	it("rejects invalid requests before contacting upstream", async () => {
 		const fetchImplementation = vi.fn();
 		const handler = createLeaderboardApiHandler({ fetch: fetchImplementation });
-		const response = await handler(new Request("https://gatu.test/api/leaderboard?env=Mainnet&pageSize=500"));
+		const response = await handler(new Request("https://sairn.test/api/leaderboard?env=Mainnet&pageSize=500"));
 
 		expect(response.status).toBe(400);
 		expect(await response.json()).toEqual({ error: "invalid_request" });

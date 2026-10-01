@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VaultActionModal, type VaultActionModalProps } from "@/components/vaults/vault-action-modal";
 import { createI18nRoot } from "./harness/react";
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) => (
 		<button type="button" disabled={disabled} onClick={onClick}>
@@ -48,6 +48,9 @@ describe("Vault action modal", () => {
 			act(() => root.render(<VaultActionModal {...props({ result })} />));
 
 			expect(container.querySelector('[role="status"]')).not.toBeNull();
+			expect(container.querySelector('[role="status"] svg[data-brand-motion]')?.getAttribute("data-brand-motion")).toBe(
+				"awaiting-result",
+			);
 			expect(container.querySelector('[role="alert"]')).toBeNull();
 			expect(container.querySelector("footer button, button")).toBeNull();
 			expect(container.textContent).not.toContain("Review again");
@@ -62,6 +65,9 @@ describe("Vault action modal", () => {
 		const verify = [...container.querySelectorAll("button")].find((button) => button.textContent === "Verify again");
 		expect(verify).toBeDefined();
 		expect(container.textContent).not.toContain("Review again");
+		const motion = container.querySelector('[role="alert"] svg[data-brand-motion]');
+		expect(motion?.getAttribute("data-brand-motion")).toBe("unknown");
+		expect(motion?.getAttribute("data-tone")).toBe("attention");
 		act(() => verify?.click());
 		expect(onVerifyAgain).toHaveBeenCalledOnce();
 	});

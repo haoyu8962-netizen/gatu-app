@@ -381,7 +381,7 @@ async function stopAndReadTrace(session) {
 
 async function collectProbeSnapshot(pageInstance) {
 	return pageInstance.evaluate(() => {
-		const probe = window.__gatuClientRootWaterfall ?? null;
+		const probe = window.__sairnClientRootWaterfall ?? null;
 		const navigation = performance.getEntriesByType("navigation")[0];
 		return {
 			probe,
@@ -411,7 +411,7 @@ async function waitForWaterfallProbe(pageInstance, runTimeoutMs) {
 	while (Date.now() < deadline) {
 		const complete = await pageInstance
 			.evaluate(() => {
-				const probe = window.__gatuClientRootWaterfall;
+				const probe = window.__sairnClientRootWaterfall;
 				return Boolean(
 					probe?.hydrationCompleteAt !== null &&
 						probe?.clientRootModuleCompleteAt !== null &&
@@ -623,7 +623,7 @@ function analyzeTrace(buffer, { staticClosureLastFinishMs, clientRootModuleCompl
 		(event) => event.ph === "M" && event.name === "thread_name" && event.args?.name === "CrRendererMain",
 	);
 	const mainThread = threadMetadata ? { pid: threadMetadata.pid, tid: threadMetadata.tid } : null;
-	const navigationMarker = events.find((event) => event.name === "gatu:navigation-probe-installed");
+	const navigationMarker = events.find((event) => event.name === "sairn:navigation-probe-installed");
 	const markerStartMs = navigationMarker?.args?.data?.startTime;
 	const markerTraceMs = Number.isFinite(navigationMarker?.ts) ? navigationMarker.ts / 1_000 : null;
 	const traceOriginMs =
@@ -907,7 +907,7 @@ function unionDuration(intervals) {
 function installWaterfallProbe({ expectedOrigin, expectedLocale, expectedMarket }) {
 	if (window.top !== window || location.origin !== expectedOrigin) return;
 	performance.setResourceTimingBufferSize?.(4_000);
-	performance.mark("gatu:navigation-probe-installed");
+	performance.mark("sairn:navigation-probe-installed");
 	const now = () => performance.now();
 	const mark = (name) => {
 		try {
@@ -937,7 +937,7 @@ function installWaterfallProbe({ expectedOrigin, expectedLocale, expectedMarket 
 			firstMarketSubscription: null,
 		},
 	};
-	window.__gatuClientRootWaterfall = state;
+	window.__sairnClientRootWaterfall = state;
 	try {
 		localStorage.setItem("terminal-perf-enabled", "1");
 		localStorage.setItem("locale-v1", expectedLocale);
@@ -964,7 +964,7 @@ function installWaterfallProbe({ expectedOrigin, expectedLocale, expectedMarket 
 				const at = now();
 				if (state.hydrationCompleteAt === null && state.originalSkeletonSeenAt !== null) {
 					state.hydrationCompleteAt = at;
-					mark("gatu:hydration-complete");
+					mark("sairn:hydration-complete");
 				}
 				if (
 					state.clientRuntimeReadyAt === null &&
@@ -972,7 +972,7 @@ function installWaterfallProbe({ expectedOrigin, expectedLocale, expectedMarket 
 					at >= state.clientRuntimeRenderSignalAt
 				) {
 					state.clientRuntimeReadyAt = at;
-					mark("gatu:client-runtime-ready");
+					mark("sairn:client-runtime-ready");
 				}
 			},
 			onCommitFiberUnmount() {},
@@ -992,7 +992,7 @@ function installWaterfallProbe({ expectedOrigin, expectedLocale, expectedMarket 
 				state.clientRuntimeRenderSignalAt === null
 			) {
 				state.clientRuntimeRenderSignalAt = now();
-				mark("gatu:client-runtime-render-signal");
+				mark("sairn:client-runtime-render-signal");
 			}
 			return value;
 		};
@@ -1002,7 +1002,7 @@ function installWaterfallProbe({ expectedOrigin, expectedLocale, expectedMarket 
 			} finally {
 				if (key === "hl-markets-meta-v1" && state.clientRootModuleCompleteAt === null) {
 					state.clientRootModuleCompleteAt = now();
-					mark("gatu:client-root-module-complete");
+					mark("sairn:client-root-module-complete");
 				}
 			}
 		};
@@ -1072,11 +1072,11 @@ function installWaterfallProbe({ expectedOrigin, expectedLocale, expectedMarket 
 			if (!loadingWorkspace && currentLoading) {
 				loadingWorkspace = currentLoading;
 				state.dom.loadingWorkspaceAt = at;
-				mark("gatu:loading-workspace");
+				mark("sairn:loading-workspace");
 			}
 			if (loadingWorkspace && !loadingWorkspace.isConnected && state.dom.loadingWorkspaceRemovedAt === null) {
 				state.dom.loadingWorkspaceRemovedAt = at;
-				mark("gatu:loading-workspace-removed");
+				mark("sairn:loading-workspace-removed");
 			}
 			const mainWorkspace = document.querySelector("[data-main-workspace]");
 			if (mainWorkspace && currentLoading && state.dom.readyWorkspaceWhileLoadingAt === null) {
@@ -1084,7 +1084,7 @@ function installWaterfallProbe({ expectedOrigin, expectedLocale, expectedMarket 
 			}
 			if (mainWorkspace && state.dom.mainWorkspaceAt === null) {
 				state.dom.mainWorkspaceAt = at;
-				mark("gatu:main-workspace");
+				mark("sairn:main-workspace");
 			}
 		};
 		new MutationObserver(inspect).observe(document, { subtree: true, childList: true });

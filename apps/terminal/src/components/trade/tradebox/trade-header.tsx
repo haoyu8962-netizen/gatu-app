@@ -1,5 +1,5 @@
-import { Dropdown } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { Dropdown } from "@sairn/ui";
 import { orderControl } from "@/components/trade/mobile/mobile-trade-header-view";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";

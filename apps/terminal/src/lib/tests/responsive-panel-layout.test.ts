@@ -130,7 +130,7 @@ describe("responsive panel layout contract", () => {
 
 	it("keeps the workspace empty until it is measured", () => {
 		expect(MAIN_WORKSPACE_SOURCE).toContain("aria-busy={!mounted}");
-		expect(MAIN_WORKSPACE_SOURCE).toContain('<output className="sr-only">Loading GATU...</output>');
+		expect(MAIN_WORKSPACE_SOURCE).toMatch(/<output className="sr-only">\{`Loading \$\{BRAND_NAME\}\.\.\.`\}<\/output>/);
 		expect(MAIN_WORKSPACE_SOURCE).not.toContain("Skeleton");
 	});
 

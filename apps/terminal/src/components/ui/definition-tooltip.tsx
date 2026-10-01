@@ -1,4 +1,4 @@
-import { Tooltip } from "@gatu/ui";
+import { Tooltip } from "@sairn/ui";
 import type { ReactElement } from "react";
 import { getTooltip, type TooltipId } from "@/config/tooltips";
 

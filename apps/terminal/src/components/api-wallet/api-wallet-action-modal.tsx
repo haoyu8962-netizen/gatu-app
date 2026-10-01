@@ -1,15 +1,19 @@
-import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-	CheckCircleIcon,
-	CheckIcon,
-	QuestionIcon,
-	SpinnerGapIcon,
-	WarningCircleIcon,
-	XCircleIcon,
-} from "@phosphor-icons/react";
+import { CheckIcon, SpinnerGapIcon, XCircleIcon } from "@phosphor-icons/react";
+import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import type { ReactNode } from "react";
+import { BrandMotion } from "@/components/brand/brand-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+	BRAND_MOTION_AWAITING_RESULT,
+	BRAND_MOTION_CANCELLED,
+	BRAND_MOTION_ERROR,
+	BRAND_MOTION_SUBMITTING,
+	BRAND_MOTION_SUCCESS,
+	BRAND_MOTION_UNKNOWN,
+	BRAND_MOTION_WALLET_AWAITING,
+} from "@/lib/brand/brand-motion.gen";
+import type { BrandMotionDefinition } from "@/lib/brand/status-glyph.gen";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { ApiWalletCredentialBox } from "./api-wallet-credential-box";
@@ -215,31 +219,34 @@ function ReviewContent({ action }: { action: ApiWalletActionView }) {
 	);
 }
 
+function getApiWalletProgressMotion(stage: ApiWalletActionStage, signsSilently: boolean): BrandMotionDefinition {
+	if (stage === "awaiting") return signsSilently ? BRAND_MOTION_SUBMITTING : BRAND_MOTION_WALLET_AWAITING;
+	if (stage === "submitted") return BRAND_MOTION_SUBMITTING;
+	return BRAND_MOTION_AWAITING_RESULT;
+}
+
+function getApiWalletResultMotion(result: ApiWalletActionResult): BrandMotionDefinition {
+	if (result === "success") return BRAND_MOTION_SUCCESS;
+	if (result === "rejected") return BRAND_MOTION_CANCELLED;
+	if (result === "apiError") return BRAND_MOTION_ERROR;
+	return BRAND_MOTION_UNKNOWN;
+}
+
 function ProgressContent({
 	stage,
 	signer,
-	isMobile,
 }: {
 	stage: ApiWalletActionStage;
 	signer: ApiWalletActionSigner | undefined;
-	isMobile: boolean;
 }) {
 	const signsSilently = signer === "embedded";
+	const progressMotion = getApiWalletProgressMotion(stage, signsSilently);
 	return (
 		<div className="flex flex-col items-center gap-3 py-2 text-center" aria-live="polite">
-			<div
-				className={cn(
-					"grid place-items-center rounded-full border-[length:var(--api-wallet-progress-ring-stroke)] border-api-wallet-stroke-card border-t-api-wallet-control",
-					"animate-spin motion-reduce:animate-none",
-					isMobile
-						? "size-[var(--api-wallet-mobile-progress-ring-size)]"
-						: "size-[var(--api-wallet-progress-ring-size)]",
-				)}
-			>
-				<span className="sr-only">
-					<Trans>Processing</Trans>
-				</span>
-			</div>
+			<BrandMotion key={progressMotion.id} motion={progressMotion} size={64} />
+			<span className="sr-only">
+				<Trans>Processing</Trans>
+			</span>
 			<div>
 				<p className="text-sm font-bold text-api-wallet-fg">
 					{stage === "awaiting" ? (
@@ -281,15 +288,7 @@ function ProgressContent({
 function ResultContent({ action }: { action: ApiWalletActionView }) {
 	const result = action.result ?? "unknown";
 	const isSuccess = result === "success";
-	const icon = isSuccess ? (
-		<CheckCircleIcon className="size-full text-success" weight="fill" />
-	) : result === "rejected" ? (
-		<XCircleIcon className="size-full text-error" weight="fill" />
-	) : result === "apiError" ? (
-		<WarningCircleIcon className="size-full text-error" weight="fill" />
-	) : (
-		<QuestionIcon className="size-full text-warning" weight="fill" />
-	);
+	const resultMotion = getApiWalletResultMotion(result);
 	const title = isSuccess ? (
 		action.kind === "authorize" ? (
 			<Trans>API wallet authorized</Trans>
@@ -322,7 +321,7 @@ function ResultContent({ action }: { action: ApiWalletActionView }) {
 
 	return (
 		<div className="flex flex-col items-center gap-3 py-1 text-center" aria-live="polite">
-			<div className="size-[var(--api-wallet-state-icon-size)]">{icon}</div>
+			<BrandMotion key={resultMotion.id} motion={resultMotion} size={48} />
 			<div>
 				<p className="text-sm font-bold text-api-wallet-fg">{title}</p>
 				<p className="mt-1 text-xs leading-5 text-api-wallet-muted">{description}</p>
@@ -415,7 +414,7 @@ export function ApiWalletActionModal({
 				<ActionStepper action={action} />
 				{action.stage === "review" ? <ReviewContent action={action} /> : null}
 				{action.stage === "review" && action.locked ? <ReviewPreflightStatus /> : null}
-				{isProgress ? <ProgressContent stage={action.stage} signer={action.signer} isMobile={isMobile} /> : null}
+				{isProgress ? <ProgressContent stage={action.stage} signer={action.signer} /> : null}
 				{action.stage === "done" ? (
 					<div>
 						<ResultContent action={action} />

@@ -11,7 +11,7 @@ function isClientGraphAsset(file) {
 }
 
 export function resolveClientChunkGraphCacheFile(terminalDirectory) {
-	return resolve(terminalDirectory, "node_modules/.cache/gatu", CLIENT_CHUNK_GRAPH_FILE);
+	return resolve(terminalDirectory, "node_modules/.cache/sairn", CLIENT_CHUNK_GRAPH_FILE);
 }
 
 export function removeClientChunkGraphFile(graphFile) {
@@ -146,7 +146,7 @@ export function parseClientChunkGraph(source) {
 export function readClientChunkGraphFile(graphFile) {
 	if (!existsSync(graphFile)) {
 		throw new Error(
-			`client chunk graph cache was not found at ${graphFile}. Run "pnpm --filter @gatu/terminal build" to generate and check it.`,
+			`client chunk graph cache was not found at ${graphFile}. Run "pnpm --filter @sairn/terminal build" to generate and check it.`,
 		);
 	}
 

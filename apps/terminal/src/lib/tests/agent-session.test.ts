@@ -8,12 +8,12 @@ import {
 	setActiveAgentOwner,
 	setActiveAgentOwnerAndVerify,
 	useActiveAgentOwner,
-} from "@gatu/hl-react";
+} from "@sairn/hl-react";
 import {
 	captureExchangeRequestGeneration,
 	ExchangeRequestInvalidatedError,
 	ExchangeRequestScheduler,
-} from "@gatu/hl-react/internal/exchange/request-scheduler";
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";

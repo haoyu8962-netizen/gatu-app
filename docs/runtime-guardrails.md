@@ -83,8 +83,11 @@ Do not collapse these states into one boolean.
 - Login methods remain `wallet` and `email`; Passkey login is intentionally
   disabled. Embedded Ethereum wallets are created only for users without a
   wallet, and Privy's embedded wallet UI remains hidden.
-- Dark/light Privy configuration changes appearance and accent color only.
-  Wallet ordering and authentication behavior stay identical across themes,
+- Dark/light Privy configuration changes appearance, accent color and the
+  login-window logo only. The logo is the brand lockup for that theme, a
+  same-origin file (`/brand/lockup-on-dark.svg`, `/brand/lockup-on-light.svg`)
+  that `pnpm brand:sync` copies from `brand/svg`; it overrides the dashboard
+  `logo_url`, so the dashboard logo is never the source of truth. Wallet ordering and authentication behavior stay identical across themes,
   and the authentication provider is never remounted merely to change theme.
   Preserve `PwaInstallProvider > PrivyProvider > SmartWalletsProvider >`
   `PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
@@ -128,7 +131,7 @@ Privy. Privy owns verification/MFA and the isolated export interface. Closing th
 interface is not proof that a key was copied or funds recovered. Duplicate clicks
 are blocked and late failures after an identity change or unmount remain silent.
 
-Use the same GATU origin in a system browser if the export interface cannot open.
+Use the same Sairn origin in a system browser if the export interface cannot open.
 An independent recovery entry is preferred over moving unverified Across funding
 features into this runtime. Verify owner mismatch, logout, stale completion,
 repeated clicks, settings dismissal and English/Chinese reactivity with mocks;
@@ -406,7 +409,7 @@ mobile regressions.
   Funding keeps the widget mounted: `TradingViewChart` receives `active={false}`
   and its layer is hidden with `invisible opacity-0 pointer-events-none` plus
   `aria-hidden`. Never hide that layer with `display:none`, never wrap it in the
-  `@gatu/ui` `TabsContent` (its `[&[hidden]]:!hidden` rule removes the chart), and
+  `@sairn/ui` `TabsContent` (its `[&[hidden]]:!hidden` rule removes the chart), and
   never remount the widget for a view change. The strip has a fixed height for
   every market kind so the widget height does not change on spot/perp switches.
   `docs/market-funding-history.md` owns the view.
@@ -676,8 +679,31 @@ have an install capability.
 - A captured `beforeinstallprompt` event is single-use. Clear it before
   prompting and after installation. Do not intercept the native install flow
   on wide desktop surfaces.
-- Keep the PWA manifest and browser theme color aligned with the terminal dark
-  canvas (`#0F1A1F`).
+- The PWA manifest `theme_color` and `background_color` stay on the terminal
+  dark canvas (`#0F1A1F`): a manifest holds one value and cannot follow the
+  in-app theme setting. The browser `<meta name="theme-color">` follows the
+  applied theme instead: `#0F1A1F` (dark `--bg-base`) or `#FFFFFF` (light
+  `--bg-base`, the header surface), from `brand.json` `pwa.themeColor` and
+  `pwa.lightThemeColor` through `lib/theme-color.ts`. The theme is chosen in
+  Settings, not by the OS, so a `media` attribute cannot express it. Three
+  writers share that module: the head bootstrap script sets the class and the
+  meta from one read before first paint; `applyThemeClass` sets both on every
+  theme change and every `<html>` class mutation, syncing the meta before its
+  early return; and the root route's `head()` derives the content from the
+  `<html>` theme class. TanStack runs `head()` again in the browser before
+  hydration, and React 19 claims an existing `<meta>` only when its `content`
+  matches, so a `head()` value that differs from the bootstrap's would append
+  a second, stale tag. `pwa-manifest.test.ts` pins both literals against each
+  theme's `--bg-base`; `theme-bootstrap.test.ts` and
+  `theme-document-sync.test.tsx` cover the bootstrap, the hydration value and
+  the store. The logo kit's icon background `#0A3038` only fills the icons
+  themselves.
+- Install icons come from `brand/web` through `pnpm brand:sync`
+  ([brand assets](brand-assets.md)): `favicon.ico` carries the kit's 16, 32
+  and 48 px frames and is declared as such in the manifest and the head;
+  `icon-maskable-192.png` and `icon.svg` are derived from the kit geometry by
+  `pnpm brand:derive-icons`. The manifest keeps `"id": "/"`, relative icon
+  paths and no `lang`, because the interface language changes at runtime.
 - Installation support does not imply offline navigation support. Do not
   advertise the terminal as offline-capable unless the service worker gains a
   tested application-shell/navigation strategy.
@@ -829,6 +855,26 @@ synthetic tasks without signing or sending exchange requests. The dedicated suit
 checks repeated mounts, same-card result updates, late results and shared stack
 geometry, and is included in both CI browser shards.
 
+The connected header fixture uses the sibling cache `node_modules/.vite-top-nav-connected`
+and serves its page from memory (`/top-nav-connected.html`), so the shared optimizer's
+`**/*.html` scan never reaches its TopNav graph. Run it with
+`pnpm --dir apps/terminal test:browser:top-nav-connected`; `TOP_NAV_CONNECTED_MATRIX=full`
+measures every locale, session, deposit and pairing state, and `TOP_NAV_CONNECTED_OUT`
+chooses where its JSONL measurements go. It mounts the real `TopNav`, `UserMenu`, deposit
+availability, catalogs and stylesheet; the wallet session, geo verdict, pairing flag and
+modals are stubs, and nothing signs. The shared config excludes `top-nav-connected.pw.ts`;
+the regression matrix runs in both CI browser shards.
+
+The brand surface fixture uses the sibling cache `node_modules/.vite-brand-surfaces` and also
+serves its page from memory (`/brand-surfaces.html`). Run it with
+`pnpm --dir apps/terminal test:browser:brand-surfaces`; `BRAND_SURFACES_ENGINES=webkit,firefox`
+adds WebKit and Firefox locally (`BRAND_SURFACES_FIREFOX` must point at an installed Firefox
+executable; nothing is downloaded), and `BRAND_SURFACES_OUT` keeps its screenshots. It renders the
+real logo, chart loader, status glyphs, motions, button indicator and Sonner icons in both themes
+and compares computed fills with the terminal tokens and the running animations with reduced
+motion on and off. The shared config excludes `brand-surfaces.pw.ts`; CI runs it in Chromium in
+both browser shards.
+
 Shared desktop/mobile order summaries are emitted as separate implicit chunks
 after the client runtime entry. The trade route imports them statically inside its
 existing dynamic page boundary, and TanStack Start retains one client entry.
@@ -904,9 +950,20 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   drawer is a larger alternative, not required for this behavior. Verify actual Router links,
   duplicate/cancelled completions and a browser transition at the reported 946 × 891 viewport;
   mocked Drawer tests alone cannot prove exit animation continuity.
-- Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
+- Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1379; 1181 until
+  the connected header was measured, ADR 0013 addendum 2026-10-01) and
   `DESKTOP_NAV_NARROW_MAX_PX` (1150; 1100 until Earn became a top-level link, ADR 0021 D8). The `nav-compact` Tailwind variant in `styles.css` must equal
-  the compact constant (`desktop-nav-layout` pins it); never write `max-[1181px]` again.
+  the compact constant (`desktop-nav-layout` pins it); never write a literal `max-[…px]` for it.
+- An unavailable deposit button (for any reason: region restricted or still unresolved, or the
+  deposit path disabled for the wallet or network) shows only its icon, centred, at every desktop
+  width, with the unavailable label as its accessible name and the reason as its title; an
+  available one keeps its `Deposit` label above the compact width. The
+  unavailable labels are 39–80px longer than `Deposit`, and a visible label that differs from the
+  accessible name would fail WCAG 2.5.3.
+- Above the compact width every connected combination must keep 16px between the navigation and
+  the wallet controls; `tests/browser/top-nav-connected.pw.ts` measures it. Re-run the full matrix
+  before adding a locale, lengthening a header label, adding a header control or widening the
+  account chip.
 - Collapse rule: at or below the compact width a Soon placeholder (none today; Earn links to `/earn`
   since ADR 0021) leaves the top level and appears disabled in More; the lower entries move into More when the account chip is visible at the compact
   width or for every state at the narrow width. "Account chip visible" means `authenticated ||
@@ -941,6 +998,37 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   at 1101px without collapsing the gap is en 124px, zh 237px, hi 243px, es 50px, fr 6px, ar 146px,
   so the narrow width moved to 1150px; at 1151px fr keeps 56px and es 100px, at 1001px (collapsed)
   fr keeps 226px. The connected header was not measured.
+- Evidence after the Sairn logo moved to the logo kit's 24px minimum (2026-10-01, local dev server,
+  disconnected, `/earn`; each width loaded fresh, because the in-app browser's viewport emulation
+  does not deliver media-query change events to an open page): the desktop lockup is 90.5px wide
+  (81.4px before). en 1182px 154px, 1151px 165px, 1150px (collapsed) 467px, 1001px 318px;
+  fr 1182px 29px, 1151px 47px (56px before), 1001px 217px; es 1182px 76px, 1151px 91px (100px
+  before). zh, hi and ar were not re-measured. The connected header is still unmeasured: at 1182px
+  French leaves 29px for any extra width of the deposit button and account chip over
+  `Connecter le portefeuille` (183px).
+- Evidence for the connected header before the fix (2026-10-01, fixture
+  `tests/browser/top-nav-connected.*` mounting the real `TopNav` and `UserMenu` with a stubbed
+  wallet session, local Vite dev server, Chrome 154 on macOS, each width loaded fresh; its
+  disconnected calibration reproduced the figures above within 0.5px). With an external wallet
+  (`0x8a3f...1d3e`), `Deposit` available and pairing off, the gap at 1182px was en 55px, zh 180px,
+  hi 199px, es −36px, fr −34px, ar 104px: in Spanish and French the deposit button covered More,
+  and a hit test at the centre of More landed on the deposit button. A long ENS name or e-mail
+  (capped at 11rem) added 65–92px, `Deposit unavailable` 39–80px and the Link mobile device icon
+  44px; Settings was pushed out of the viewport in 27 of 72 combinations at 1182px. Above the
+  compact width the gap changes by exactly one pixel per viewport pixel. WebKit 26.4 and
+  Firefox 140 agreed within 0.2px.
+- Evidence after the fix (2026-10-01, same fixture and browser). A first full matrix with the
+  compact width at 1369px (804 measurements: six locales, address/ENS/e-mail, deposit
+  available/unavailable, pairing on/off, ten widths, plus English and French in the light theme)
+  showed the widest connected case (es, e-mail, `Deposit`, pairing on) keeping 16.3px at 1370px,
+  so the compact width moved to 1379px for 10px of headroom. The full matrix was then re-run at
+  1379px with the icon-only button centred (all 75 tests passed, 804 measurements, none
+  overlapping, wrapping or off screen): the widest connected case keeps 26.3px at 1380px (es) and
+  28px (fr); at the compact width and below every connected case keeps at least 294px (fr,
+  1001px); the icon-only deposit button is centred in all 660 icon-only measurements. The
+  disconnected header gains the compact language trigger from 1379px down: fr keeps 78px at
+  1182px (29px before) and 47px at 1151px (unchanged), es 122px and 91px. Windows fonts, real
+  devices and a real-wallet session were not measured.
 
 ### Important Files
 
@@ -949,6 +1037,7 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `apps/terminal/src/lib/navigation/desktop-nav.ts`
 - `apps/terminal/src/components/trade/header/top-nav.tsx`
 - `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
+- `apps/terminal/tests/browser/top-nav-connected.pw.ts`
 - `apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx`
 - `apps/terminal/src/lib/tests/mobile-nav-drawer.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-nav-drawer-navigation.test.tsx`
@@ -967,7 +1056,7 @@ Before merging any change that touches the areas above:
 4. Verify the mobile path separately from desktop.
 5. Run focused `biome check` on changed files.
 6. Run the smallest relevant Vitest test(s).
-7. For terminal-facing changes, run `pnpm --filter @gatu/terminal build`.
+7. For terminal-facing changes, run `pnpm --filter @sairn/terminal build`.
 8. Keep generated or unrelated files out of the commit.
 
 ## Known Anti-Patterns

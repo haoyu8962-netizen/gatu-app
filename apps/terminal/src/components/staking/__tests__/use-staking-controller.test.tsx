@@ -33,7 +33,7 @@ const mocks = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock("@gatu/hl-react", () => ({ useActiveAgentOwner: () => mocks.activeOwner }));
+vi.mock("@sairn/hl-react", () => ({ useActiveAgentOwner: () => mocks.activeOwner }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useReconnectWallet: () => ({ reconnectWallet: mocks.reconnectWallet, isReconnecting: false }),

@@ -570,7 +570,7 @@ describe("TwapReconciliation", () => {
 		await reservePendingSubmission(submission, submission.createdAt + 60 * 60_000);
 		const nativeSetItem = Storage.prototype.setItem;
 		const storageSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
-			if (key.startsWith("gatu-order-asset-reservations") && value.includes("active-twap:58")) {
+			if (key.startsWith("sairn-order-asset-reservations") && value.includes("active-twap:58")) {
 				throw new Error("storage unavailable");
 			}
 			return nativeSetItem.call(this, key, value);

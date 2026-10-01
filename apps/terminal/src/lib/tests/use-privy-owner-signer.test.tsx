@@ -51,7 +51,7 @@ vi.mock("@/lib/wallet/privy-login-method", async (importOriginal) => ({
 	usePrivyLoginIntent: () => state.loginIntent,
 }));
 
-vi.mock("@gatu/hl-react", () => ({
+vi.mock("@sairn/hl-react", () => ({
 	HyperliquidOwnerSignerProvider: ({
 		value,
 		children,

@@ -101,7 +101,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({ address: testState.walletAddress, isConnected: true }),
 }));
 
-vi.mock("@gatu/ui", async () => {
+vi.mock("@sairn/ui", async () => {
 	const React = await import("react");
 	const SegmentedContext = React.createContext<((value: string) => void) | null>(null);
 

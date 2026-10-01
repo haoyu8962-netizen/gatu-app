@@ -32,7 +32,15 @@ const budgets = {
 	// Re-baselined 2026-09-29 for ADR 0024 (translated action errors): +17,895 gzip bytes over the CI build of
 	// dev on 2026-09-28 (3,157,661), 12.0 kB of it in the five non-English catalogs, of which a viewer loads
 	// one (Node 22.15.0, NODE_ENV=production, pairing off, as in CI).
-	totalGzipBaselineBytes: 3_175_556,
+	// Raised 2026-10-01 by +3,821 for the Sairn logo kit (docs/brand-assets.md): filled-path lockup and mark
+	// geometry replace the rectangle GATU logo in the shared header chunk (+2.7 kB in the trade startup closure),
+	// plus the page-loading chart loader and the brand.json domain groups. Measured as the local Node 22.15.0
+	// build (3,185,839) minus the dev CI build at 99ddc6b4 (3,182,018); the +6,462 dev had already used stays counted.
+	// Raised 2026-10-01 by +6,544 for the Sairn status motion (ADR 0029): generated glyph, button-indicator and
+	// illustration data (about 2.3 kB), their keyframes in the stylesheet (0.8 kB) and the three components, split
+	// so the illustrations load only with their dialogs (desktop runtime startup +769, mobile +151). Measured as the
+	// local Node 22.15.0 build (3,193,087) minus the local build of f440fa1b before the change (3,186,543).
+	totalGzipBaselineBytes: 3_185_921,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],

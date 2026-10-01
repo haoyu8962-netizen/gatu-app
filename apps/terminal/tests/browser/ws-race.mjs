@@ -1,9 +1,9 @@
-// WebSocket timing on a cold load via CDP for the gatu terminal and the official app: when sockets
+// WebSocket timing on a cold load via CDP for the sairn terminal and the official app: when sockets
 // open, what the first subscriptions are and when the first data frames arrive.
 // Usage: node apps/terminal/tests/browser/ws-race.mjs
 import { chromium } from "@playwright/test";
 const targets = [
-	{ name: "gatu", url: "https://d2i25dhfjwco8b.cloudfront.net/trade/HYPE" },
+	{ name: "sairn", url: "https://d2i25dhfjwco8b.cloudfront.net/trade/HYPE" },
 	{ name: "official", url: "https://app.hyperliquid.xyz/trade/HYPE" },
 ];
 const browser = await chromium.launch({ headless: true });

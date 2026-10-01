@@ -41,7 +41,7 @@ Fill History 表格显示 `userTwapSliceFills` 快照与实时订阅合并后的
 - 耗时：约 10,000 条以内（至多 5 整页加 1 次结束请求）不等待；12,001 条需要 8 次请求，第 7 次等约 60 秒；30,000 条需要 17 次请求，约 2 分钟；默认 `maxPages` 200 页用满约 33 分钟。前一次导出在最近 60 秒内用掉的权重照样占用预算，所以紧接着重新导出时，第一页也可能要等。等待期间一直显示 loading 提示。
 - 文件：`twap_fill_history.csv`，列与 `trade_history.csv` 相同，两份文件可以直接拼接：Time（`formatDateTimeShort`）、Asset（`coin`）、Direction（强平为 `Liquidated`，否则为方向标签）、Type（固定 `TWAP`）、Price（`formatUSD`）、Size（`formatNumber` 加市场 `szDecimals`）、Fee（`formatToken` 加 `feeToken`）、PNL（非零时 `formatUSD` 带符号，否则 `FALLBACK_VALUE_PLACEHOLDER`）、Transaction（`hasUserFillExplorerTransaction` 判定为全零哈希时为 `FALLBACK_VALUE_PLACEHOLDER`，与表格不给这类成交浏览器链接一致）。
 - 提示：开始时 `Exporting TWAP fill history...`（loading）；成功为 `CSV exported.`；达到保留上限为 `CSV export reached the history limit. Some records were not included.`（warning）；其他错误为 `Failed to export TWAP fill history.`，不显示原始错误。三者复用同一个 toast id。账户或网络切换、组件卸载会中止请求，撤掉提示，不下载文件。
-- 界面：桌面 `TwapFillHistoryTable` 在表格外壳之后增加 38px 页脚（`data-testid="twap-fill-history-footer"`），按钮样式与成交历史页脚相同，只在钱包已连接且有地址时渲染；没有「View all」，因为 gatu 没有 TWAP 成交历史页面。手机 `MobileTwapFillHistoryList` 在等待、确认空和列表三种状态渲染页脚（`data-testid="mobile-twap-fill-history-footer"`，按钮 38px 高、`after:h-11` 触控热区、`active:text-market-close-fg` 按压反馈）；列表状态放在卡片与「Load more」之后，contained 模式下位于滚动内容末尾，page 模式下跟随内容；未连接时不渲染。Current 与 History 子视图不显示该页脚。
+- 界面：桌面 `TwapFillHistoryTable` 在表格外壳之后增加 38px 页脚（`data-testid="twap-fill-history-footer"`），按钮样式与成交历史页脚相同，只在钱包已连接且有地址时渲染；没有「View all」，因为 Sairn 没有 TWAP 成交历史页面。手机 `MobileTwapFillHistoryList` 在等待、确认空和列表三种状态渲染页脚（`data-testid="mobile-twap-fill-history-footer"`，按钮 38px 高、`after:h-11` 触控热区、`active:text-market-close-fg` 按压反馈）；列表状态放在卡片与「Load more」之后，contained 模式下位于滚动内容末尾，page 模式下跟随内容；未连接时不渲染。Current 与 History 子视图不显示该页脚。
 
 ### 状态
 
@@ -61,7 +61,7 @@ Fill History 表格显示 `userTwapSliceFills` 快照与实时订阅合并后的
 
 - 表格显示超过 2,000 行：按时间分页只能从 `startTime` 向后读，SDK 0.33.3 的该方法没有 `reversed`，要读到更早的记录就得从 0 走完全程，还需要新的状态语义。本次不做。
 - 固定 `pageLimit: 2000`：保留超页防护，但依赖未公开的页大小。本次不固定，理由见上。
-- 发送 `aggregateByTime`：需要修改 SDK 补丁并增加「按时间合并成交」设置；官方终端按用户设置发送。gatu 的文件与表格一样是逐笔记录，一个分片跨多个挂单成交时，行数可能多于官方开启合并后的文件。
+- 发送 `aggregateByTime`：需要修改 SDK 补丁并增加「按时间合并成交」设置；官方终端按用户设置发送。Sairn 的文件与表格一样是逐笔记录，一个分片跨多个挂单成交时，行数可能多于官方开启合并后的文件。
 - 列集合：采用 `trade_history.csv` 的列，而不是表格列（Market、Trade Value、带报价币的 Closed PNL）或官方原始键（time、coin、dir、px、sz、ntl、fee、closedPnl）。代价是继承成交历史导出的限制：USDH 等报价的市场价格与 PNL 也以 `$` 显示；以 `-`、`=`、`+` 开头的单元格（包括占位符和负数）由 `escapeCsvCell` 加前置单引号；没有 TWAP ID 列。
 - 保留上限 10,000：沿用成交历史导出的取舍，不是接口限制；官方最多读 200 页，不设保留上限。更活跃的账户只得到最新 10,000 条，并收到截断提示。
 - hook 放在 Fill History 组件内：切换子视图或账户页签会卸载组件并中止导出，与其他导出一致。改放在 `TwapTab` / `MobileTwapTab` 并向下传递可以跨子视图保留导出，本次不做。
@@ -86,7 +86,7 @@ Fill History 表格显示 `userTwapSliceFills` 快照与实时订阅合并后的
 - 先写回归测试，在 `19af214b` 上确认失败：`history-csv-twap.test.tsx`「中止后立即重新导出仍要等待」在旧代码上，第二次导出立即又发 6 页（期望累计 6 次，实际 12 次）；「每次重试都计入预算」在旧代码上，两次 429 不记账，59,999 ms 内发出 8 次（期望 6 次）。
 - 修复后新增并通过：`user-fills.test.ts` 让两次导出共用一个注入的节流器（第一次在第 7 页等待时中止），第二次的首个请求在 60 秒发出，两次合计在任意 60 秒内不超过 720；用伪节流器验证 429 重试、一条的页、空页依次记 120、21、20，请求途中被中止记 120；`getTwapSliceFillsExportPacer` 同一网络返回同一实例，不同网络返回不同实例。`history-csv-twap.test.tsx` 每个用例前重置共享节流器；上述两条 hook 用例用 vitest 假定时器（`setTimeout`、`clearTimeout`、`performance`）运行。`Retry-After: 0` 的重试被假定时器按 1 ms 调度，所以用例在 60 秒后再推进 1 秒，让最后几页发完。其余 `fetchUserTwapSliceFillHistory` 用例改为显式传入 `createTwapSliceFillsExportPacer(...)`，断言不变。无 `Retry-After` 的 429 等 60 秒的回退现在由 `fetchUserTwapSliceFillHistory` 传给 `fetchHistoryPageWithRetry`，不再由 hook 传入；原有 429 用例仍经 hook 验证。
 - 变异检查（本地临时改动，已还原，未提交）：hook 改回每次导出新建节流器，「中止后立即重新导出」失败（12 次对 6 次）；注册表每次返回新实例，该用例与注册表用例失败；把重试移回节流之外、只记成功页，三条记账用例失败；分页函数忽略传入的节流器，六条用例失败（其中四条超时）。
-- `pnpm exec biome check`（4 个改动的 TS/TSX 文件）通过。`pnpm --filter @gatu/terminal typecheck` 报 4 个错误，全部在 `funding-history-load-boundary.test.tsx` 的第 88、125 行；把本次改动的文件临时换回 `19af214b` 版本后错误相同，属于既有问题，本次改动没有新增类型错误。
+- `pnpm exec biome check`（4 个改动的 TS/TSX 文件）通过。`pnpm --filter @sairn/terminal typecheck` 报 4 个错误，全部在 `funding-history-load-boundary.test.tsx` 的第 88、125 行；把本次改动的文件临时换回 `19af214b` 版本后错误相同，属于既有问题，本次改动没有新增类型错误。
 - `vitest run` 本页下方 TWAP 回归命令的 11 个文件，加 `query-retry`、`i18n-reactivity-contract`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`action-progress-label-contract`：17 个文件、339 个用例全部通过。未跑全量测试和 `pnpm build`，也没有做浏览器、真机或真实网络检查。
 
 未做：浏览器与真机检查（38px 页脚在桌面 lg、md 与紧凑宽度下压缩表格可视高度的实际效果）、真实钱包导出、testnet 分页形状核对、大账户在真实网络下的限流表现（节流只经假时钟单元测试验证，服务端实际计数方式与不满 20 条的计法未核实）。

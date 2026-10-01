@@ -5,8 +5,8 @@ const warmL2BookSubscription = vi.fn();
 const isTestnet = vi.fn(() => false);
 const storedMarkets: Record<string, string | undefined> = {};
 
-vi.mock("@gatu/hl-react", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@gatu/hl-react")>()),
+vi.mock("@sairn/hl-react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@sairn/hl-react")>()),
 	warmL2BookSubscription,
 }));
 vi.mock("@/lib/network", () => ({ isTestnet }));

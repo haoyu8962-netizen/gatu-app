@@ -196,7 +196,7 @@ describe("cross-tab order asset locks", () => {
 		expect(await runWithAvailableOrderAssetLocks(IDENTITY, async () => undefined)).toEqual({ supported: false });
 		expect(ran).toBe(false);
 		expect(getOrderAssetLockName(IDENTITY, 42)).toBe(
-			"gatu-order-asset-v1:mainnet:0x1111111111111111111111111111111111111111:42",
+			"sairn-order-asset-v1:mainnet:0x1111111111111111111111111111111111111111:42",
 		);
 	});
 });

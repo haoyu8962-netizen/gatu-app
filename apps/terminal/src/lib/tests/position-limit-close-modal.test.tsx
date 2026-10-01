@@ -47,7 +47,7 @@ const testState = vi.hoisted(() => ({
 	toastWarning: vi.fn(),
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) => {
 		testState.adaptiveProps = props;
 		return createElement("div", { "data-testid": "adaptive-modal" }, children);

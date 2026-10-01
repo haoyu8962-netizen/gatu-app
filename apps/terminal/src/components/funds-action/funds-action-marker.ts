@@ -2,8 +2,8 @@ import { useSyncExternalStore } from "react";
 import { isAddress, zeroAddress } from "viem";
 import type { HyperliquidEnv, SessionMode } from "@/lib/hyperliquid";
 
-export const FUNDS_ACTION_MARKER_STORAGE_KEY = "gatu.funds_action.pending.v1";
-export const FUNDS_ACTION_MARKER_LOCK_NAME = "gatu_funds_action_marker_storage_v1";
+export const FUNDS_ACTION_MARKER_STORAGE_KEY = "sairn.funds_action.pending.v1";
+export const FUNDS_ACTION_MARKER_LOCK_NAME = "sairn_funds_action_marker_storage_v1";
 
 export type FundsActionMethod = "vaultTransfer" | "cDeposit" | "cWithdraw" | "tokenDelegate";
 export type FundsActionDirection = "deposit" | "withdraw" | "delegate" | "undelegate";

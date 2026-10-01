@@ -1,10 +1,12 @@
-import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, useMemo, useState } from "react";
 import { zeroAddress } from "viem";
+import { StatusGlyph } from "@/components/brand/status-glyph";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 import { formatDateTime } from "@/lib/format";
 import { useActiveAgentOwner, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 import {
@@ -81,7 +83,7 @@ export function FundsActionRecoveryHost() {
 					role="status"
 					className="flex w-full items-center gap-3 rounded-12 border border-stroke-warning-strong bg-overlay p-3 shadow-overlay"
 				>
-					<WarningCircleIcon className="size-5 shrink-0 text-warning" weight="fill" />
+					<StatusGlyph glyph={STATUS_GLYPH_UNKNOWN} size={20} />
 					<div className="min-w-0">
 						<p className="text-xs font-bold text-fg">
 							<Trans>Pending funds operation</Trans>

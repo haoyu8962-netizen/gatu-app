@@ -12,7 +12,9 @@ import { TransferModal } from "@/components/trade/positions/transfer-modal";
 import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
 import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
 import { clearSendDraft } from "@/stores/use-send-draft-store";
+import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 import { createI18nRoot } from "./harness/react";
+import { unknownStatusToastIcon } from "./harness/status-glyph";
 
 const BALANCE_UNAVAILABLE = "Balance data is unavailable. Try again after the connection recovers.";
 const BALANCE_UNAVAILABLE_AR = "بيانات الرصيد غير متاحة. حاول مرة أخرى بعد استعادة الاتصال.";
@@ -102,7 +104,7 @@ function renderChildren(children: ReactNode) {
 	return createElement(Fragment, null, children);
 }
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children, open }: { children: ReactNode; open: boolean }) =>
 		open ? createElement("section", null, children) : null,
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
@@ -685,6 +687,7 @@ describe("funds action balance wiring", () => {
 				closeButton: true,
 				description: STATUS_UNKNOWN_DESCRIPTION,
 				duration: Number.POSITIVE_INFINITY,
+				icon: unknownStatusToastIcon(),
 			}),
 		);
 		expect(toastMocks.error).not.toHaveBeenCalled();
@@ -767,7 +770,7 @@ describe("funds action balance wiring", () => {
 		expect(control?.textContent?.trim()).toBe(label);
 		expect(control?.disabled).toBe(true);
 		expect(container.textContent).not.toContain("Transferring");
-		expect(container.querySelector(".animate-spin")).toBeNull();
+		expect(container.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
 	});
 
 	it.each([

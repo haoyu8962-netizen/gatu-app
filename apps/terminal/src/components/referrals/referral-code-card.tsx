@@ -1,13 +1,16 @@
-import { Button, ButtonIcon } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon, LinkSimpleIcon, ShareNetworkIcon } from "@phosphor-icons/react";
+import { Button, ButtonIcon } from "@sairn/ui";
+import { BrandMotion } from "@/components/brand/brand-motion";
+import { BRAND_NAME } from "@/config/brand";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { BRAND_MOTION_COPY_FEEDBACK } from "@/lib/brand/brand-motion.gen";
 import { formatNumber, formatUSD, shortenAddress } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	canApplyReferralCode,
-	getGatuReferralUrl,
+	getBrandReferralUrl,
 	getOfficialReferralUrl,
 	getReferralActivationProgress,
 	getReferralActivationTargetVolume,
@@ -33,10 +36,10 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 	const readyState = data.referrerState.stage === "ready" ? data.referrerState : null;
 	const code = readyState?.data.code ?? null;
 	const officialReferralUrl = code ? getOfficialReferralUrl(code, env) : null;
-	const usesGatuInvitationLink = code ? isSafeReferralJoinCode(code) : false;
+	const usesBrandInvitationLink = code ? isSafeReferralJoinCode(code) : false;
 	const referralUrl = code
-		? usesGatuInvitationLink
-			? getGatuReferralUrl(code, env)
+		? usesBrandInvitationLink
+			? getBrandReferralUrl(code, env)
 			: getOfficialReferralUrl(code, env)
 		: null;
 	const activationProgress = getReferralActivationProgress(data);
@@ -171,13 +174,21 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 								aria-label={codeCopy.copied ? t`Code copied` : t`Copy referral code`}
 								onClick={() => void codeCopy.copy(code)}
 							>
-								{codeCopy.copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
+								{codeCopy.copied ? (
+									<BrandMotion motion={BRAND_MOTION_COPY_FEEDBACK} size={16} />
+								) : (
+									<CopyIcon className="size-4" />
+								)}
 							</ButtonIcon>
 						</div>
 					</div>
 					<div>
 						<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
-							{usesGatuInvitationLink ? <Trans>Gatu invitation link</Trans> : <Trans>Official referral link</Trans>}
+							{usesBrandInvitationLink ? (
+								<Trans>{BRAND_NAME} invitation link</Trans>
+							) : (
+								<Trans>Official referral link</Trans>
+							)}
 						</p>
 						<div className="mt-1 flex min-h-[39px] items-center gap-2 rounded-16 border border-stroke-weak px-3 py-2">
 							<LinkSimpleIcon className="size-4 shrink-0 text-fg-muted" />
@@ -189,7 +200,11 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 								aria-label={linkCopy.copied ? t`Link copied` : t`Copy referral link`}
 								onClick={() => void linkCopy.copy(referralUrl)}
 							>
-								{linkCopy.copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
+								{linkCopy.copied ? (
+									<BrandMotion motion={BRAND_MOTION_COPY_FEEDBACK} size={16} />
+								) : (
+									<CopyIcon className="size-4" />
+								)}
 							</ButtonIcon>
 						</div>
 					</div>
@@ -203,7 +218,7 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 						>
 							<Trans>Share</Trans>
 						</Button>
-						{usesGatuInvitationLink ? (
+						{usesBrandInvitationLink ? (
 							<Button
 								variant="outline"
 								intent="neutral"

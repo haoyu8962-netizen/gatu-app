@@ -2,7 +2,7 @@ import { defineConfig } from "deepsec/config";
 
 export default defineConfig({
   projects: [
-    { id: "gatu", root: ".." },
+    { id: "sairn", root: ".." },
     // <deepsec:projects-insert-above>
   ],
 });

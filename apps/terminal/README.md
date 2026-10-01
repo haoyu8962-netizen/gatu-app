@@ -1,6 +1,6 @@
 # apps/terminal
 
-The gatu trading application composes `@gatu/hl-react` (Hyperliquid data, signing and transports) and `@gatu/ui` (shared primitives and tokens). This document describes the current checkout. Start with the [root README](../../README.md) for repository setup and the [documentation index](../../docs/README.md) for design contracts, tutorials and review records.
+The Sairn trading application composes `@sairn/hl-react` (Hyperliquid data, signing and transports) and `@sairn/ui` (shared primitives and tokens). This document describes the current checkout. Start with the [root README](../../README.md) for repository setup and the [documentation index](../../docs/README.md) for design contracts, tutorials and review records.
 
 ## Stack and build
 
@@ -11,7 +11,7 @@ Dependency versions are maintained in [package.json](package.json) and the works
 | Framework | TanStack Start `1.168.32`, Router `1.170.18`, Nitro `3.0.260311-beta` |
 | Runtime and bundler | React `19.2.0`, React Compiler `1.0.0`, Vite `7.3.0` |
 | Server/client state | TanStack Query `5.90.16`, Zustand `5.0.9` |
-| UI | Tailwind `4.0.6`, Base UI `1.3.0`, `@gatu/ui`, react-grid-layout `2.2.3` |
+| UI | Tailwind `4.0.6`, Base UI `1.3.0`, `@sairn/ui`, react-grid-layout `2.2.3` |
 | Wallets | Privy React Auth `3.32.2` (with a patch in `patches/`), Privy wagmi `4.0.13`, wagmi `3.1.0`, viem `2.42.1` |
 | Exchange and funding | Hyperliquid SDK `0.33.3`, LiFi SDK `3.16.3`, CCTP application flows |
 | Charts | Vendored TradingView Charting Library and application datafeed |
@@ -21,7 +21,7 @@ Dependency versions are maintained in [package.json](package.json) and the works
 
 [vite.config.ts](vite.config.ts) composes `nitro()` from `nitro/vite`, `tanstackStart`, React Compiler, Lingui and Tailwind plugins. It also defines build identity, security/cache headers, compact non-English catalogs and client chunk metadata. Manual chunking groups selected UI/TanStack dependencies; web3 dependencies use Rollup's dependency-aware splitting. The build checks static chunk cycles and bundle budgets before succeeding. See [runtime guardrails](../../docs/runtime-guardrails.md) and [performance baseline](../../docs/terminal-performance-baseline.md) before altering these boundaries.
 
-TanStack Start SPA mode is enabled (`createTanstackStartOptions()` in `vite.config.ts`). After the server build, the same `pnpm build` prerenders the client-rendered application shell to `.output/public/_shell.html` (masked at `/trade`, because `/` redirects on the server); no route-specific page is prerendered ([ADR 0020](../../docs/adr/0020-legal-pages-in-app-shell.md)). Runtime server rendering is off. [src/start.ts](src/start.ts) registers the static-pages request middleware ([lib/static-pages/](src/lib/static-pages)): in production the Nitro process answers every navigation with the prerendered `_shell.html` and the Nitro route-rule headers, refuses HTML for file-like paths, answers `/_serverFn/*` with 404, answers `GET`/`HEAD` on POST-only server paths with 405 and unknown `/api/*` paths with 404, and only executes the `/api/*` handlers. Missing shell output fails closed with 503 unless `GATU_RUNTIME_SSR=true`; `GATU_PUBLIC_DIR` overrides the output lookup. The dev server and the build-time prerender still render on the server, so module-level code must stay SSR-safe. The client no longer uses TanStack server functions: every server endpoint it calls lives under `/api/` ([config/api-paths.ts](src/config/api-paths.ts)) as a Web-standard `Request → Response` handler that Nitro mounts today and that [src/edge/lambda-handler.ts](src/edge/lambda-handler.ts) adapts to an AWS Lambda function URL (`pnpm --filter @gatu/terminal build:lambda` writes the single-file bundle to `dist-lambda/`). `/build-meta.json` is also written as a static file, and `public/404.html` is the static not-found page for missing files on a CDN. See [ADR 0005](../../docs/adr/0005-spa-static-shell.md) and the [CloudFront deployment](../../deploy/cloudfront/README.md). After the budget checks, `scripts/inject-shell-preloads.mjs` writes the trade startup closure (static closure plus both runtime profiles) into `_shell.html` as `modulepreload`/stylesheet preloads, so a cold navigation downloads every startup chunk in one wave; on desktop widths it also preloads the TradingView loader named by `build-meta.json`. Desktop-only and mobile-only startup chunks and the chart iframe's main bundles are written as `<meta name="gatu-preload-*">` lists that [lib/preload/surface-preloads.ts](src/lib/preload/surface-preloads.ts) turns into links for the current surface, because Chromium ignores `media` on `modulepreload` and `prefetch` links. The block sits between `<!--gatu-shell-preloads-->` markers.
+TanStack Start SPA mode is enabled (`createTanstackStartOptions()` in `vite.config.ts`). After the server build, the same `pnpm build` prerenders the client-rendered application shell to `.output/public/_shell.html` (masked at `/trade`, because `/` redirects on the server); no route-specific page is prerendered ([ADR 0020](../../docs/adr/0020-legal-pages-in-app-shell.md)). Runtime server rendering is off. [src/start.ts](src/start.ts) registers the static-pages request middleware ([lib/static-pages/](src/lib/static-pages)): in production the Nitro process answers every navigation with the prerendered `_shell.html` and the Nitro route-rule headers, refuses HTML for file-like paths, answers `/_serverFn/*` with 404, answers `GET`/`HEAD` on POST-only server paths with 405 and unknown `/api/*` paths with 404, and only executes the `/api/*` handlers. Missing shell output fails closed with 503 unless `SAIRN_RUNTIME_SSR=true`; `SAIRN_PUBLIC_DIR` overrides the output lookup. The dev server and the build-time prerender still render on the server, so module-level code must stay SSR-safe. The client no longer uses TanStack server functions: every server endpoint it calls lives under `/api/` ([config/api-paths.ts](src/config/api-paths.ts)) as a Web-standard `Request → Response` handler that Nitro mounts today and that [src/edge/lambda-handler.ts](src/edge/lambda-handler.ts) adapts to an AWS Lambda function URL (`pnpm --filter @sairn/terminal build:lambda` writes the single-file bundle to `dist-lambda/`). `/build-meta.json` is also written as a static file, and `public/404.html` is the static not-found page for missing files on a CDN. See [ADR 0005](../../docs/adr/0005-spa-static-shell.md) and the [CloudFront deployment](../../deploy/cloudfront/README.md). After the budget checks, `scripts/inject-shell-preloads.mjs` writes the trade startup closure (static closure plus both runtime profiles) into `_shell.html` as `modulepreload`/stylesheet preloads, so a cold navigation downloads every startup chunk in one wave; on desktop widths it also preloads the TradingView loader named by `build-meta.json`. Desktop-only and mobile-only startup chunks and the chart iframe's main bundles are written as `<meta name="sairn-preload-*">` lists that [lib/preload/surface-preloads.ts](src/lib/preload/surface-preloads.ts) turns into links for the current surface, because Chromium ignores `media` on `modulepreload` and `prefetch` links. The block sits between `<!--sairn-shell-preloads-->` markers.
 
 ## Commands
 
@@ -31,15 +31,15 @@ Run from the repository root; Node `>=22.15.0` and the pinned pnpm `10.21.0` are
 pnpm install --frozen-lockfile
 pnpm dev --port 3000
 pnpm dev:browser --port 3006
-pnpm --filter @gatu/terminal typecheck
-pnpm --filter @gatu/terminal test
+pnpm --filter @sairn/terminal typecheck
+pnpm --filter @sairn/terminal test
 pnpm build
 pnpm serve
 ```
 
 The dev server uses a strict port. Its config does not set `3000`, so the examples explicitly choose a port. Reuse an existing server when possible. `dev:browser` opens the system browser for wallet testing; embedded previews can block the external-wallet iframe. See [wallet initialization debugging](../../docs/wallet-initialization-debugging.md).
 
-`pnpm build` compiles catalogs and creates `.output/`; `pnpm serve` runs the Nitro server through `scripts/serve-nitro.mjs` for local preview only (production is CloudFront + S3 + Lambda, see `deploy/cloudfront/README.md`). `pnpm --filter @gatu/terminal serve:spa` serves `.output/public` on `127.0.0.1:3030` the way a CDN would: existing files first, application routes rewritten to `_shell.html`, and the server-only paths (`/api/*`, `/_serverFn/*`, `/client-error-report`, `/mobile-agent-sync-ticket`) answered with a JSON 404 so the client never parses the shell as data. `/build-meta.json` is the static file the build wrote, served with `no-store` as the CDN serves it and never proxied. Without an API origin the geo lookup fails closed, which disables trading and funds actions while browsing keeps working; pass `--api http://127.0.0.1:3000` (or `SPA_API_ORIGIN`) to proxy those paths to a running `pnpm serve` and exercise the complete application from the static files. For the visualizer-enabled build, run `ANALYZE=true pnpm --filter @gatu/terminal build`; `ANALYZE` must reach the Vite process. Root `pnpm test` additionally checks generated OG cards, the website and cross-app brand behavior; it is broader than the terminal Vitest command above.
+`pnpm build` compiles catalogs and creates `.output/`; `pnpm serve` runs the Nitro server through `scripts/serve-nitro.mjs` for local preview only (production is CloudFront + S3 + Lambda, see `deploy/cloudfront/README.md`). `pnpm --filter @sairn/terminal serve:spa` serves `.output/public` on `127.0.0.1:3030` the way a CDN would: existing files first, application routes rewritten to `_shell.html`, and the server-only paths (`/api/*`, `/_serverFn/*`, `/client-error-report`, `/mobile-agent-sync-ticket`) answered with a JSON 404 so the client never parses the shell as data. `/build-meta.json` is the static file the build wrote, served with `no-store` as the CDN serves it and never proxied. Without an API origin the geo lookup fails closed, which disables trading and funds actions while browsing keeps working; pass `--api http://127.0.0.1:3000` (or `SPA_API_ORIGIN`) to proxy those paths to a running `pnpm serve` and exercise the complete application from the static files. For the visualizer-enabled build, run `ANALYZE=true pnpm --filter @sairn/terminal build`; `ANALYZE` must reach the Vite process. Root `pnpm test` additionally checks generated OG cards, the website and cross-app brand behavior; it is broader than the terminal Vitest command above.
 
 ## Directory layout
 
@@ -168,7 +168,7 @@ Read [trading onboarding](../../docs/trading-onboarding.md) and [email trading s
 
 ## Styling and localization
 
-[styles.css](src/styles.css) imports Tailwind, animation utilities, Inter, `@gatu/ui/globals.css` and react-grid-layout styles, and registers IBM Plex Sans. It scans `packages/ui/src` through `@source`. Use semantic tokens defined there and in the UI package; follow the [design token rules](../../.claude/rules/design-tokens.md).
+[styles.css](src/styles.css) imports Tailwind, animation utilities, Inter, `@sairn/ui/globals.css` and react-grid-layout styles, and registers IBM Plex Sans. It scans `packages/ui/src` through `@source`. Use semantic tokens defined there and in the UI package; follow the [design token rules](../../.claude/rules/design-tokens.md).
 
 The dark terminal canvas and modal surface resolve to `#0F1A1F`. Modals/drawers use `bg-modal`; raised lightweight UI retains `bg-overlay`. TradingView iframe backgrounds require their own theme variables, with raised interactive layers kept separate from the canvas. Order-book depth, price and animation tokens have their own contrast contract in [order-book animation](../../docs/orderbook-new-level-animation.md).
 
@@ -201,9 +201,9 @@ Most unit and integration suites live in [src/lib/tests/](src/lib/tests); browse
 
 ```bash
 pnpm --dir apps/terminal exec vitest run src/lib/tests/privy-config.test.ts
-pnpm --filter @gatu/terminal test:browser:user-menu-recovery
-pnpm --filter @gatu/terminal perf:ws-soak:30m
-pnpm --filter @gatu/terminal perf:budget
+pnpm --filter @sairn/terminal test:browser:user-menu-recovery
+pnpm --filter @sairn/terminal perf:ws-soak:30m
+pnpm --filter @sairn/terminal perf:budget
 ```
 
 The soak suite is opt-in; its script sets `WS_SOAK_RUN`, `WS_SOAK_DURATION_MS`, `WS_SOAK_SAMPLE_MS` and `WS_SOAK_OP_MS`. Bundle checks inspect the existing production output, so build first. Run relevant checks for each change and record actual results; old verification counts do not establish the state of a new checkout or release.

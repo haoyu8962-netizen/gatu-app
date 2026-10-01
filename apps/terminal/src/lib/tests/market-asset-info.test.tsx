@@ -92,7 +92,7 @@ vi.mock("@/components/trade/components/asset-display", () => ({
 	AssetDisplay: ({ coin }: { coin: string }) => createElement("span", { "data-coin": coin }),
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		className,

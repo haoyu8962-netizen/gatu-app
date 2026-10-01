@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useExportWallet } from "@privy-io/react-auth";
 import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { BRAND_NAME } from "@/config/brand";
 import { getPrivyEmailAddress, getPrivyEmbeddedWalletAddress, hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
 import { useWalletSession } from "./use-wallet-session";
 
@@ -49,7 +50,7 @@ export function useEmailWalletExport() {
 		} catch {
 			if (current.current === epoch)
 				toast.error(
-					t`Could not open wallet export. Retry in your system browser on the same GATU site, using the same email.`,
+					t`Could not open wallet export. Retry in your system browser on the same ${BRAND_NAME} site, using the same email.`,
 				);
 		} finally {
 			inFlight.current = false;

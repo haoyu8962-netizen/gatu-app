@@ -3,7 +3,7 @@ import {
 	normalizePublicLeaderboard,
 	PUBLIC_STATS_DATA_LIMITS,
 	type PublicLeaderboardRow,
-} from "@gatu/hl-react/public-stats-data";
+} from "@sairn/hl-react/public-stats-data";
 import Big from "big.js";
 import { isAddress } from "viem";
 import {

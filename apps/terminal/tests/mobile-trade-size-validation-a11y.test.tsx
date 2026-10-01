@@ -28,6 +28,8 @@ const testState = vi.hoisted(() => ({
 	submitOrder: vi.fn(),
 	executionGuard: undefined as ((params: OrderParameters) => void) | undefined,
 	tradingReady: true,
+	isSubmitting: false,
+	registerStatus: "idle" as "idle" | "approving_fee" | "approving_agent" | "verifying",
 	authorize: vi.fn(async () => {}),
 	actions: {
 		markDraftEdited: vi.fn(),
@@ -44,8 +46,8 @@ const testState = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock("@gatu/ui", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@gatu/ui")>()),
+vi.mock("@sairn/ui", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@sairn/ui")>()),
 	Button: ({
 		children,
 		iconLeft: _iconLeft,
@@ -177,7 +179,7 @@ vi.mock("@/hooks/trade/use-order-submit", () => ({
 			}),
 			isDraftResetTokenCurrent: () => true,
 			handleSubmit: testState.submitOrder,
-			isSubmitting: false,
+			isSubmitting: testState.isSubmitting,
 		};
 	},
 }));
@@ -228,7 +230,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		},
 	}),
 	useInfo: () => ({ data: undefined }),
-	useTradingAuthorization: () => ({ authorize: testState.authorize, status: "idle" }),
+	useTradingAuthorization: () => ({ authorize: testState.authorize, status: testState.registerStatus }),
 	useUserPositions: () => ({
 		getPosition: () => null,
 		hasError: false,
@@ -289,6 +291,7 @@ vi.mock("@/stores/use-orderbook-actions-store", () => ({
 
 import { MobileTradeView } from "@/components/trade/mobile/mobile-trade-view";
 import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
+import { LOADING_INDICATOR_SELECTOR } from "@/lib/tests/harness/loading-indicator";
 
 const LOCALES = ["en", "zh", "hi", "es", "fr", "ar"] as const;
 const OPEN_INTEREST_CAP_COPY =
@@ -630,6 +633,67 @@ describe("MobileTradeView order-size validation accessibility", () => {
 	);
 });
 
+describe("MobileTradeView order button status", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		setValidPerpScenario();
+		activateLocale("en");
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+	});
+
+	afterEach(async () => {
+		await act(async () => root.unmount());
+		container.remove();
+		vi.clearAllMocks();
+	});
+
+	it("keeps the order button name static and shows no indicator while an order is submitting", async () => {
+		await renderView(root);
+		const button = getOrderButton(container);
+		expect(button.disabled).toBe(false);
+		expect(button.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
+
+		testState.isSubmitting = true;
+		await renderView(root);
+
+		expect(getOrderButton(container)).toBe(button);
+		expect(button.textContent?.trim()).toBe("Buy");
+		expect(button.disabled).toBe(true);
+		expect(button.querySelector("svg")).toBeNull();
+		expect(button.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
+		await act(async () => button.click());
+		expect(testState.requestSubmit).not.toHaveBeenCalled();
+		expect(testState.submitOrder).not.toHaveBeenCalled();
+	});
+
+	it.each(["approving_fee", "approving_agent", "verifying"] as const)(
+		"shows the Sairn button indicator instead of a spinner while trading is enabled (%s)",
+		async (status) => {
+			testState.tradingReady = false;
+			await renderView(root);
+			const enable = getCtaButton(container, "Enable Trading");
+			expect(enable.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
+
+			testState.registerStatus = status;
+			await renderView(root);
+
+			const signing = getCtaButton(container, "Signing...");
+			expect(signing.disabled).toBe(true);
+			const indicator = signing.querySelector('svg[data-brand-motion="button-loading"]');
+			expect(indicator?.getAttribute("data-appearance")).toBe("mono");
+			expect(indicator?.getAttribute("aria-hidden")).toBe("true");
+			expect(signing.querySelectorAll(LOADING_INDICATOR_SELECTOR)).toHaveLength(1);
+			expect(signing.querySelector(".animate-spin")).toBeNull();
+			await act(async () => signing.click());
+			expect(testState.authorize).not.toHaveBeenCalled();
+		},
+	);
+});
+
 function sliderPointer(type: string, clientX: number): MouseEvent {
 	const event = new MouseEvent(type, { bubbles: true, button: 0, buttons: type === "pointerdown" ? 1 : 0, clientX });
 	Object.defineProperties(event, {
@@ -678,10 +742,14 @@ function getPriceInput(container: HTMLElement): HTMLInputElement {
 }
 
 function getOrderButton(container: HTMLElement): HTMLButtonElement {
+	return getCtaButton(container, "Buy");
+}
+
+function getCtaButton(container: HTMLElement, label: string): HTMLButtonElement {
 	const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button.w-full")).find(
-		(candidate) => candidate.textContent?.trim() === "Buy",
+		(candidate) => candidate.textContent?.trim() === label,
 	);
-	if (!button) throw new Error("Expected the order submit button");
+	if (!button) throw new Error(`Expected the ${label} button`);
 	return button;
 }
 
@@ -708,6 +776,8 @@ function expectDescriptionCleared(control: HTMLInputElement) {
 
 function setValidPerpScenario() {
 	testState.tradingReady = true;
+	testState.isSubmitting = false;
+	testState.registerStatus = "idle";
 	testState.availableBalance = 100;
 	testState.baseAvailable = 100;
 	testState.availabilityStatus = "success";

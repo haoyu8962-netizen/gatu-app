@@ -1,7 +1,7 @@
-import { Select } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
 import type { UserFillsResponse } from "@nktkas/hyperliquid";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
+import { Select } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { MOBILE_FILTER_CHIP_CLASS } from "@/components/trade/mobile/mobile-filter-chip";

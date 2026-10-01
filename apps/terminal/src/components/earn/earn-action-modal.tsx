@@ -1,11 +1,12 @@
-import { ExchangeRequestInvalidatedError } from "@gatu/hl-react/internal/exchange/request-scheduler";
-import { ModalContent, ModalDescription, ModalHeader, ModalTitle, Select } from "@gatu/ui";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+import { ExchangeRequestInvalidatedError } from "@sairn/hl-react/internal/exchange/request-scheduler";
+import { ModalContent, ModalDescription, ModalHeader, ModalTitle, Select } from "@sairn/ui";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { StatusGlyph } from "@/components/brand/status-glyph";
 import { PendingActionModal } from "@/components/trade/components/pending-action-modal";
 import { TradingActionButton } from "@/components/trade/components/trading-action-button";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
@@ -41,6 +42,7 @@ import {
 import { FundsActionGeoExecutionError, useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
@@ -357,6 +359,7 @@ function EarnActionModalBody({ open, operation, initialToken, data, onOpenChange
 				/>,
 				{
 					id: identity.toastId,
+					icon: <StatusGlyph glyph={STATUS_GLYPH_UNKNOWN} />,
 					description: (
 						<EarnOutcomeToastContent
 							{...identity}

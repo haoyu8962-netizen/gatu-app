@@ -1,4 +1,4 @@
-import { type MarketKind, type UnifiedMarket, useInfo } from "@gatu/hl-react";
+import { type MarketKind, type UnifiedMarket, useInfo } from "@sairn/hl-react";
 import {
 	ORDER_FEE_RATE_MAKER,
 	ORDER_FEE_RATE_SPOT_MAKER,

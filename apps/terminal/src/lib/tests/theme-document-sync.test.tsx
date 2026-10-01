@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { THEME_COLORS } from "@/lib/theme-color";
 import { useSetTheme } from "@/stores/use-global-settings-store";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
@@ -37,6 +38,17 @@ async function flushThemeTransitionGuard() {
 	await nextAnimationFrame();
 }
 
+function addThemeColorMeta(content: string) {
+	const meta = document.createElement("meta");
+	meta.setAttribute("name", "theme-color");
+	meta.setAttribute("content", content);
+	document.head.append(meta);
+}
+
+function themeColorContents() {
+	return [...document.querySelectorAll('meta[name="theme-color"]')].map((meta) => meta.getAttribute("content"));
+}
+
 describe("document theme sync", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -45,6 +57,7 @@ describe("document theme sync", () => {
 		container = document.createElement("div");
 		document.body.append(container);
 		root = createRoot(container);
+		addThemeColorMeta(THEME_COLORS.dark);
 		act(() => root.render(<ThemeProbe />));
 	});
 
@@ -54,6 +67,7 @@ describe("document theme sync", () => {
 		await flushThemeTransitionGuard();
 		act(() => root.unmount());
 		container.remove();
+		for (const meta of document.querySelectorAll('meta[name="theme-color"]')) meta.remove();
 	});
 
 	it("does not suppress transitions during the initial document sync", () => {
@@ -87,6 +101,44 @@ describe("document theme sync", () => {
 		await flushObservers();
 		expect(html.classList.contains("dark")).toBe(true);
 		expect(html.classList.contains("light")).toBe(false);
+	});
+
+	it("points the theme-color meta at each explicit theme change", async () => {
+		act(() => setThemeRef?.("light"));
+		await flushObservers();
+		expect(themeColorContents()).toEqual(["#FFFFFF"]);
+
+		act(() => setThemeRef?.("dark"));
+		await flushObservers();
+		expect(themeColorContents()).toEqual(["#0F1A1F"]);
+	});
+
+	it("re-syncs a stale theme-color tag when a shell re-render clobbers the <html> class", async () => {
+		const html = document.documentElement;
+		act(() => setThemeRef?.("light"));
+		await flushObservers();
+
+		addThemeColorMeta(THEME_COLORS.dark);
+		html.className = "dark";
+		await flushObservers();
+
+		expect(html.classList.contains("light")).toBe(true);
+		expect(themeColorContents()).toEqual(["#FFFFFF", "#FFFFFF"]);
+	});
+
+	it("re-syncs a stale theme-color tag even when the theme class is already correct", async () => {
+		const html = document.documentElement;
+		act(() => setThemeRef?.("light"));
+		await flushObservers();
+
+		addThemeColorMeta(THEME_COLORS.dark);
+		html.classList.add("unrelated-class");
+		await flushObservers();
+		html.classList.remove("unrelated-class");
+		await flushObservers();
+
+		expect(html.classList.contains("light")).toBe(true);
+		expect(themeColorContents()).toEqual(["#FFFFFF", "#FFFFFF"]);
 	});
 
 	it("suppresses transitions until the switched theme has painted", async () => {

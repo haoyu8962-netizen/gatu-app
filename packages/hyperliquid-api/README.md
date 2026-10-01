@@ -1,8 +1,8 @@
-# @gatu/hyperliquid-api-skill
+# @sairn/hyperliquid-api-skill
 
 **This is not a runtime dependency.** It's an [Agent Skill](https://www.anthropic.com/news/agent-skills) — installable tooling for AI coding agents (Claude Code, Codex, etc.) that guides them toward correct Hyperliquid API usage.
 
-Runtime Hyperliquid integration lives in [`@gatu/hl-react`](../hl-react/README.md).
+Runtime Hyperliquid integration lives in [`@sairn/hl-react`](../hl-react/README.md).
 
 ## What's inside
 
@@ -29,11 +29,11 @@ Hyperliquid has four API surfaces — `Info` (read), `Exchange` (write/signed), 
 ## Install
 
 ```bash
-npx gatu-install-hyperliquid-api-skill
+npx sairn-install-hyperliquid-api-skill
 ```
 
 This is the `bin` declared in `package.json` — it drops the skill files into wherever the agent client loads skills from. Read `SKILL.md` for the decision rules the agent follows.
 
 ## Not for human reading
 
-If you're a developer working on gatu, you almost never need this package. Look at `packages/hl-react` instead.
+If you're a developer working on Sairn, you almost never need this package. Look at `packages/hl-react` instead.

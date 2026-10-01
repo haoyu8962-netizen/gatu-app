@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { WarningCircleIcon, WifiSlashIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 
 interface Props {
 	isPaused: boolean;

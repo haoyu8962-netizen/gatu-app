@@ -1,5 +1,5 @@
-import { AdaptiveModal } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { AdaptiveModal } from "@sairn/ui";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 

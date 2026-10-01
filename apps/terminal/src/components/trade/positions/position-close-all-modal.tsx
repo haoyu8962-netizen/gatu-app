@@ -1,5 +1,5 @@
-import { ModalDescription, ModalTitle } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
+import { ModalDescription, ModalTitle } from "@sairn/ui";
 import { useRef, useState } from "react";
 import type { PositionCloseAllSnapshot } from "@/domain/trade/position-close-all";
 import { useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";

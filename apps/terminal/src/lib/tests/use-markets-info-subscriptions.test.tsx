@@ -19,8 +19,8 @@ const mocks = vi.hoisted(() => ({
 	compactDisabled: false,
 }));
 
-vi.mock("@gatu/hl-react", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@gatu/hl-react")>();
+vi.mock("@sairn/hl-react", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@sairn/hl-react")>();
 	return {
 		canUseL2Decompression: () => true,
 		parseCompactPerpAssetCtxsView: actual.parseCompactPerpAssetCtxsView,

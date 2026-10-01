@@ -1,6 +1,6 @@
-import { Button, Tooltip } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, PaperPlaneTiltIcon, UploadSimpleIcon } from "@phosphor-icons/react";
+import { Button, Tooltip } from "@sairn/ui";
 import { Suspense, useCallback, useId, useState } from "react";
 import { DashboardHeader, FooterBar, GlobalModals } from "@/components/dashboard/dashboard-chrome";
 import { DashboardFrameView } from "@/components/dashboard/dashboard-frame-view";

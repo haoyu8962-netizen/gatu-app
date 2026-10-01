@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { useState } from "react";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";

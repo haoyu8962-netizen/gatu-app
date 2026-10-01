@@ -7,9 +7,9 @@ import { DESKTOP_MEDIA_QUERY } from "@/config/layout";
  * phone never downloads desktop panels or the chart iframe bundles it will not mount.
  */
 export const SURFACE_PRELOAD_META = {
-	desktop: "gatu-preload-desktop",
-	mobile: "gatu-preload-mobile",
-	chart: "gatu-chart-prefetch",
+	desktop: "sairn-preload-desktop",
+	mobile: "sairn-preload-mobile",
+	chart: "sairn-chart-prefetch",
 } as const;
 
 export interface SurfacePreloadResult {

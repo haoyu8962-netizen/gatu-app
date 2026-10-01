@@ -1,4 +1,4 @@
-import { Button } from "@gatu/ui";
+import { Button } from "@sairn/ui";
 import { i18n } from "@lingui/core";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
@@ -44,7 +44,7 @@ const feeQuote = buildOrderFeeQuote({
 	execution: "order",
 });
 
-type SizeMessageWindow = Window & { __gatuSetSizeMessage?: (message: string) => void };
+type SizeMessageWindow = Window & { __sairnSetSizeMessage?: (message: string) => void };
 
 interface FixtureTradePanelProps {
 	feedback: boolean;
@@ -235,9 +235,9 @@ function Fixture() {
 	const [sizeMessage, setSizeMessage] = useState("");
 	useEffect(() => {
 		const fixtureWindow = window as SizeMessageWindow;
-		fixtureWindow.__gatuSetSizeMessage = setSizeMessage;
+		fixtureWindow.__sairnSetSizeMessage = setSizeMessage;
 		return () => {
-			delete fixtureWindow.__gatuSetSizeMessage;
+			delete fixtureWindow.__sairnSetSizeMessage;
 		};
 	}, []);
 	return (

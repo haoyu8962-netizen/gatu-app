@@ -1,9 +1,11 @@
-import { createMobileAgentApproval, type MobileAgentApproval } from "@gatu/hl-react/signing/mobile-agent";
-import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DeviceMobileIcon, QrCodeIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { DeviceMobileIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { createMobileAgentApproval, type MobileAgentApproval } from "@sairn/hl-react/signing/mobile-agent";
+import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Address } from "viem";
+import { ButtonLoading } from "@/components/brand/button-loading";
+import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { usePressAndHold } from "@/hooks/ui/use-press-and-hold";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -173,7 +175,7 @@ function MobileAgentSyncDialog({
 					</ModalTitle>
 				</div>
 				<ModalDescription>
-					<Trans>On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code.</Trans>
+					<Trans>On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet and scan this code.</Trans>
 				</ModalDescription>
 			</ModalHeader>
 
@@ -224,7 +226,7 @@ function MobileAgentSyncDialog({
 						onClick={handleApprove}
 						iconLeft={
 							state.status === "signing" ? (
-								<SpinnerGapIcon className="size-3.5 animate-spin" aria-hidden />
+								<ButtonLoading className="-m-px" />
 							) : (
 								<QrCodeIcon className="size-3.5" aria-hidden />
 							)

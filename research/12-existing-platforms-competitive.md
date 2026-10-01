@@ -5,7 +5,7 @@
 - The agentic trading landscape in 2026 spans a wide spectrum from no-code natural language bots (Katoshi, GPTrader) to open-source developer frameworks (Hummingbot, OctoBot) to institutional-grade AI interfaces (Bloomberg ASKB).
 - Hyperliquid-native platforms are few --- Katoshi is the dominant player with natural language strategy creation and copy-trading groups. Hummingbot and OctoBot provide connectors but are exchange-agnostic.
 - The crypto-native DeFAI space (GRIFFAIN, Orbit) focuses on multi-chain agent coordination but lacks the depth of a dedicated trading terminal. They optimize for breadth across chains rather than depth on a single exchange.
-- MCP-based trading assistants (Trade Copilot) represent an emerging pattern that aligns well with gatu's architecture: protocol-based tool integration rather than monolithic bot platforms.
+- MCP-based trading assistants (Trade Copilot) represent an emerging pattern that aligns well with Sairn's architecture: protocol-based tool integration rather than monolithic bot platforms.
 - The primary gap in the market is a Hyperliquid-native terminal that combines professional trading UI, embedded AI agents, transparent on-chain performance tracking, and protocol-standard tool interfaces (MCP/AG-UI).
 
 ---
@@ -37,7 +37,7 @@
 - Opaque execution: users trust Katoshi's infrastructure rather than running their own agents
 - No MCP/protocol-standard integration
 
-**What gatu can learn**: Natural language strategy creation is powerful for onboarding. But coupling it with a professional terminal UI would serve both casual and advanced users. Copy-trading groups drive strong retention.
+**What Sairn can learn**: Natural language strategy creation is powerful for onboarding. But coupling it with a professional terminal UI would serve both casual and advanced users. Copy-trading groups drive strong retention.
 
 ---
 
@@ -68,7 +68,7 @@
 - Not AI-native: strategies are code-first, not prompt-first
 - No integrated charting or market analysis
 
-**What gatu can learn**: Hummingbot proves there is demand for open, auditable trading automation. Their market making strategies and connector architecture are best-in-class. But the developer-only UX leaves a massive gap for traders who want automation without coding.
+**What Sairn can learn**: Hummingbot proves there is demand for open, auditable trading automation. Their market making strategies and connector architecture are best-in-class. But the developer-only UX leaves a massive gap for traders who want automation without coding.
 
 ---
 
@@ -98,7 +98,7 @@
 - Self-hosted version requires Docker/server management
 - Limited real-time monitoring and analytics
 
-**What gatu can learn**: TradingView integration is table stakes for many traders. OctoBot's zero-fee model shows the power of open source in this space. But "AI integration" as a ChatGPT wrapper is not the same as truly agentic trading.
+**What Sairn can learn**: TradingView integration is table stakes for many traders. OctoBot's zero-fee model shows the power of open source in this space. But "AI integration" as a ChatGPT wrapper is not the same as truly agentic trading.
 
 ---
 
@@ -128,7 +128,7 @@
 - No copy-trading or social features
 - Subscription-based pricing
 
-**What gatu can learn**: Backtesting is essential for user confidence. News sentiment overlays add value beyond pure technical analysis. But extraordinary performance claims erode trust --- transparent, verifiable performance is more credible.
+**What Sairn can learn**: Backtesting is essential for user confidence. News sentiment overlays add value beyond pure technical analysis. But extraordinary performance claims erode trust --- transparent, verifiable performance is more credible.
 
 ---
 
@@ -156,7 +156,7 @@
 - Token-gated features create friction
 - Early stage: reliability and uptime unclear
 
-**What gatu can learn**: Multi-agent coordination is the future --- having specialized agents collaborate on complex trading tasks is more powerful than a single monolithic bot. SAIMP shows the value of standardized agent communication (analogous to A2A).
+**What Sairn can learn**: Multi-agent coordination is the future --- having specialized agents collaborate on complex trading tasks is more powerful than a single monolithic bot. SAIMP shows the value of standardized agent communication (analogous to A2A).
 
 ---
 
@@ -184,7 +184,7 @@
 - No professional trading features (charts, order book, position management)
 - Unproven execution reliability across so many chains
 
-**What gatu can learn**: Cross-chain breadth is impressive but not what gatu needs. The conversational interface for complex operations (like managing LP positions) is a pattern worth studying. The key lesson is: depth on one exchange beats breadth across 117 chains for a trading terminal.
+**What Sairn can learn**: Cross-chain breadth is impressive but not what Sairn needs. The conversational interface for complex operations (like managing LP positions) is a pattern worth studying. The key lesson is: depth on one exchange beats breadth across 117 chains for a trading terminal.
 
 ---
 
@@ -211,7 +211,7 @@
 - Not autonomous: assists human analysts rather than executing trades independently
 - Slow to innovate on execution: focuses on research/analysis, not automated trading
 
-**What gatu can learn**: ASKB validates the concept of conversational AI in a trading terminal. Their workflow approach (multi-step analysis assembled from a natural language prompt) is directly applicable. Source attribution builds trust. The key insight: even Bloomberg is building agentic AI into their terminal.
+**What Sairn can learn**: ASKB validates the concept of conversational AI in a trading terminal. Their workflow approach (multi-step analysis assembled from a natural language prompt) is directly applicable. Source attribution builds trust. The key insight: even Bloomberg is building agentic AI into their terminal.
 
 ---
 
@@ -239,7 +239,7 @@
 - No execution capability (analysis only, no trading)
 - Requires MCP client setup (Claude Desktop, etc.)
 
-**What gatu can learn**: Trade Copilot validates MCP as the right protocol layer for trading tools. Their evolution from single-agent to multi-agent swarm mirrors the industry trend. RAG-MCP for tool selection is worth investigating for gatu's own tool routing.
+**What Sairn can learn**: Trade Copilot validates MCP as the right protocol layer for trading tools. Their evolution from single-agent to multi-agent swarm mirrors the industry trend. RAG-MCP for tool selection is worth investigating for Sairn's own tool routing.
 
 ---
 
@@ -268,7 +268,7 @@
 - No automated execution: signals only, manual trading
 - No agentic capabilities: AI generates signals but does not manage positions
 
-**What gatu can learn**: The all-in-one dashboard approach (charts + AI + risk + portfolio) is the right product shape. Wallet-based auth with SIWE is clean for crypto users. But signal generation without execution is half the value proposition.
+**What Sairn can learn**: The all-in-one dashboard approach (charts + AI + risk + portfolio) is the right product shape. Wallet-based auth with SIWE is clean for crypto users. But signal generation without execution is half the value proposition.
 
 ---
 
@@ -298,7 +298,7 @@
 - No natural language strategy creation
 - No multi-agent or agentic capabilities
 
-**What gatu can learn**: Free Premium for Hyperliquid users is a smart growth strategy. WalletConnect auth is smoother than API keys. DCA and Grid bots are table-stakes features. But rule-based bots are the previous generation --- AI agents are the next.
+**What Sairn can learn**: Free Premium for Hyperliquid users is a smart growth strategy. WalletConnect auth is smoother than API keys. DCA and Grid bots are table-stakes features. But rule-based bots are the previous generation --- AI agents are the next.
 
 ---
 
@@ -321,23 +321,23 @@
 
 ---
 
-## Differentiation Opportunities for gatu
+## Differentiation Opportunities for Sairn
 
 ### 1. Terminal-First, Agent-Enhanced
 
-No competitor combines a professional-grade trading terminal (charts, order book, position management, the UX gatu already has) with embedded AI agents. Katoshi has agents but no terminal. Bloomberg has a terminal but no crypto. This is gatu's primary differentiator.
+No competitor combines a professional-grade trading terminal (charts, order book, position management, the UX Sairn already has) with embedded AI agents. Katoshi has agents but no terminal. Bloomberg has a terminal but no crypto. This is Sairn's primary differentiator.
 
 ### 2. Protocol-Native Architecture
 
-Building on MCP for tool interfaces and AG-UI for agent-frontend communication positions gatu as the most architecturally modern platform. No competitor in the Hyperliquid space uses these protocols.
+Building on MCP for tool interfaces and AG-UI for agent-frontend communication positions Sairn as the most architecturally modern platform. No competitor in the Hyperliquid space uses these protocols.
 
 ### 3. On-Chain Verifiable Performance
 
-Hyperliquid's transparent trade history enables verifiable agent performance tracking. Unlike Katoshi or GPTrader where performance claims are unverifiable, gatu can prove agent performance on-chain.
+Hyperliquid's transparent trade history enables verifiable agent performance tracking. Unlike Katoshi or GPTrader where performance claims are unverifiable, Sairn can prove agent performance on-chain.
 
 ### 4. Graduated Autonomy UX
 
-No competitor offers a clear progression from manual trading to AI-assisted to fully autonomous. gatu can provide:
+No competitor offers a clear progression from manual trading to AI-assisted to fully autonomous. Sairn can provide:
 - Level 0: Manual trading with AI analysis sidebar
 - Level 1: AI suggests trades, human approves
 - Level 2: AI executes within parameters, human monitors
@@ -345,7 +345,7 @@ No competitor offers a clear progression from manual trading to AI-assisted to f
 
 ### 5. Open Agent Ecosystem
 
-Allow third-party agents to plug into gatu via MCP, creating a marketplace of trading agents that users can compare, backtest, and deploy. No competitor has this.
+Allow third-party agents to plug into Sairn via MCP, creating a marketplace of trading agents that users can compare, backtest, and deploy. No competitor has this.
 
 ---
 

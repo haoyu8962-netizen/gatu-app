@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 
 const BRIDGE_MESSAGE_MAX_WIDTH = "max-w-70";
 

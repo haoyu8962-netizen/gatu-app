@@ -6,7 +6,7 @@ import {
 	getFundsActionLockName,
 	requiresFundsActionLock,
 	runWithFundsActionLock,
-} from "@gatu/hl-react/internal/exchange/funds-action-lock";
+} from "@sairn/hl-react/internal/exchange/funds-action-lock";
 import { getAddress } from "viem";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { readCctpDepositTrackingRecords, saveCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";

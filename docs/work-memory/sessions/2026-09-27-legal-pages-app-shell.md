@@ -53,7 +53,7 @@
 - `pnpm --filter @gatu/terminal test`（改完上面这些之后的第一轮）：602 个文件，4 个失败、597 个通过、1 个跳过；6869 项里 4 项失败。其中 3 项是本次遗漏的测试：`dashboard-frame-view`（遍历预设键时找不到 `legal` 对应的页面文件）、`legal-policy-contract`（断言 `/cookies` 为 `ssr: true`）、`root-provider-runtime`（文档路由绕过运行时门），已修正。第 4 项 `chart-build-assets` 在并行负载下 5 秒超时，单独运行 17 项通过，1.7 秒，与本次改动无关。修正后这 4 个文件单独重跑，43 项通过；修正后没有再跑整套。
 - `pnpm i18n:extract`：只去掉已删除文件的引用，并把不再使用的 “Cookie Policy” 标为废弃；缺失翻译数没有变化（ar/es/fr/hi 各 56 条，zh 3 条，是原有的）。
 - `pnpm build`（Node v24.15.0，默认配对开关关闭）：退出码 0。预渲染只生成 `/trade`（即 `_shell.html`），`.output/public` 下只有 `_shell.html` 与 `404.html`，没有 `<route>/index.html`；chunk 环检查、bundle 预算通过（总计 3,116,765 gzip 字节，比基线少 37,942；交易页启动 1,547,642 gzip 字节，少 33,574）；壳内预加载 112 项；内联脚本哈希为 2 页 3 个。项目记录要求用 Node 22.15 测量精确字节数，本次没有用 22.15 复测。
-- 开发服务器浏览器检查（Vite 3015，内置浏览器，页面由脚本读取 DOM，面板隐藏时无法截图）：1440 宽的 `/terms` 只有应用的 Primary navigation 和底栏 “Documentation and legal” 两组导航，一个 `<main>`，没有错误边界；375 宽的 `/privacy` 使用 MobileHeader，没有页脚，`scrollWidth` 375，标题 “Privacy Policy | GATU”；从 `/trade/BTC` 点底栏 Terms 是客户端导航（没有新的 navigation entry），返回后回到交易页，订单簿正常。
+- 开发服务器浏览器检查（Vite 3015，内置浏览器，页面由脚本读取 DOM，面板隐藏时无法截图）：1440 宽的 `/terms` 只有应用的 Primary navigation 和底栏 “Documentation and legal” 两组导航，一个 `<main>`，没有错误边界；375 宽的 `/privacy` 使用 MobileHeader，没有页脚，`scrollWidth` 375，标题 “Privacy Policy | GATU”（改名前的实测原文）；从 `/trade/BTC` 点底栏 Terms 是客户端导航（没有新的 navigation entry），返回后回到交易页，订单簿正常。
 - 未做：真机和 iOS Safari 检查、已安装 v9 Service Worker 的浏览器跨版本首次导航、CloudFront 线上发布与 `verify`、`csp-coverage.mjs` 浏览器套件、未连接钱包以外的登录状态检查。
 
 ## 补记：三项待决事项按官方做法落地
@@ -62,7 +62,7 @@
 
 - **Cookie**：官方条款页和底栏都没有任何 Cookie 链接，站内也没有单独的 Cookie 页；`/privacyPolicy` 正文里有一段 “Cookie Policy:”。→ 在隐私政策第 4 节末尾加一句，链到 `https://app.gatu.ai/cookies`，写法与已有的 Terms ↔ Privacy 绝对链接一致；隐私政策 Last Updated 改为 September 27, 2026（按 `legal/README.md` 的规则；这个日期不驱动重新同意，已用 `git grep` 核对）；`legal/README.md` 的文档表补上 cookies 行。底栏不变。
 - **移动导航**：官方桌面 More 菜单只有 Docs 一个文档类入口；手机抽屉在更多类链接之后放 Docs、Support（都是外链），没有 Terms、Privacy。→ `MobileNavDrawer` 的 More 分组在 API Wallet 之后加 Docs（`/docs`）、Support（`/support`）；法律页照官方不进抽屉。原先断言抽屉里没有 Docs、Support 的测试是 `6678a949`（API 钱包功能）顺带加的，没有找到设计依据，已改为只断言没有 Terms / Privacy / Risk / Cookie Policy。
-- **遗留文件**：用 curl 实测，官方 `/terms/index.html` 和不存在的 `/no-such-file.js` 都返回同一个 6,831 字节的 SPA 壳；gatu 线上 `/terms/index.html` 目前返回 45,278 字节的预渲染条款页，`/no-such-page/index.html` 返回 404。→ `deploy.mjs` 新增 `RETIRED_PAGE_KEYS` 与 `buildRetiredPageCommands`：`sync` 上传完成后对六个 `<route>/index.html` 执行 `aws s3 rm`（本次构建仍包含的跳过，桶有版本控制）；`verify` 新增 “retired document pages answer 404”。IAM 策略已包含 `s3:DeleteObject`。
+- **遗留文件**：用 curl 实测，官方 `/terms/index.html` 和不存在的 `/no-such-file.js` 都返回同一个 6,831 字节的 SPA 壳；Sairn 线上 `/terms/index.html` 目前返回 45,278 字节的预渲染条款页，`/no-such-page/index.html` 返回 404。→ `deploy.mjs` 新增 `RETIRED_PAGE_KEYS` 与 `buildRetiredPageCommands`：`sync` 上传完成后对六个 `<route>/index.html` 执行 `aws s3 rm`（本次构建仍包含的跳过，桶有版本控制）；`verify` 新增 “retired document pages answer 404”。IAM 策略已包含 `s3:DeleteObject`。
 
 补记验证（同一 worktree，基线为 `2e6c5214` 加上本次未提交的改动）：`pnpm test:cloudfront` 41 项通过；`pnpm --filter @gatu/terminal typecheck` 通过；Biome 检查改动的 3 个代码文件通过；`mobile-nav-drawer`、`legal-policy-contract`、`terms-content`、`legal-doc-page`、`i18n-reactivity-contract`、`i18n-hot-switch`、`top-nav`、`footer-bar` 共 8 个文件、206 项通过；`pnpm --filter @gatu/website test` 4 项通过；`pnpm i18n:extract` 只给 Docs、Support 增加抽屉引用，缺失数不变。开发服务器上 375 宽的 `/privacy` 显示新链接（`target=_blank`，指向 `https://app.gatu.ai/cookies`）和新日期；抽屉 More 分组依次是 Statistics、API Wallet、Docs、Support，点 Support 后进入 `/support`，抽屉关闭，没有横向滚动。这次补记没有重跑完整单测和生产构建，删除命令也没有对真实的桶执行。
 

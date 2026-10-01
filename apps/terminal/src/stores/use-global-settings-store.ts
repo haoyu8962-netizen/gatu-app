@@ -17,6 +17,7 @@ import {
 import { getNetwork, type Network, subscribeNetworkStorage, switchNetwork } from "@/lib/network";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
+import { applyThemeColor } from "@/lib/theme-color";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { z } from "@/lib/zod";
 
@@ -203,11 +204,13 @@ function suppressThemeTransitions(root: HTMLElement) {
 	});
 }
 
-// Keeps <html class> in sync with the persisted theme, re-asserting past any document-shell
-// re-render (React re-acquiring the <html> singleton writes back the SSR default) via a
-// MutationObserver. The idempotent `contains` guard makes it settle in one pass.
+// Keeps <html class> and the theme-color meta in sync with the persisted theme, re-asserting past
+// any document-shell re-render (React re-acquiring the <html> singleton writes back the SSR
+// default) via a MutationObserver. The idempotent `contains` guard makes it settle in one pass; the
+// meta is synced before that guard because a re-rendered head can bring back a stale value.
 function applyThemeClass(theme: Theme, suppressTransitions = false) {
 	if (typeof document === "undefined") return;
+	applyThemeColor(theme);
 	const root = document.documentElement;
 	const other = theme === "dark" ? "light" : "dark";
 	if (root.classList.contains(theme) && !root.classList.contains(other)) return;
@@ -220,9 +223,9 @@ function syncDocumentTheme() {
 	applyThemeClass(useGlobalSettingsStore.getState().theme);
 }
 
-const globalScope = globalThis as { __gatuThemeDocSync?: boolean };
-if (typeof document !== "undefined" && !globalScope.__gatuThemeDocSync) {
-	globalScope.__gatuThemeDocSync = true;
+const globalScope = globalThis as { __sairnThemeDocSync?: boolean };
+if (typeof document !== "undefined" && !globalScope.__sairnThemeDocSync) {
+	globalScope.__sairnThemeDocSync = true;
 	syncDocumentTheme();
 	new MutationObserver(() => applyThemeClass(useGlobalSettingsStore.getState().theme, true)).observe(
 		document.documentElement,

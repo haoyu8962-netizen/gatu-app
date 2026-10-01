@@ -1,0 +1,64 @@
+{
+	"name": {
+		"display": "Sairn",
+		"lowercase": "sairn",
+		"legalEntity": "Sairn Corp."
+	},
+	"domains": {
+		"primary": {
+			"apex": "sairn.ai",
+			"www": "www.sairn.ai",
+			"app": "app.sairn.ai",
+			"testnet": "testnet.sairn.ai"
+		},
+		"legacy": [
+			{
+				"apex": "gatu.ai",
+				"www": "www.gatu.ai",
+				"app": "app.gatu.ai",
+				"testnet": "testnet.gatu.ai"
+			}
+		]
+	},
+	"emails": {
+		"support": "support@sairn.ai"
+	},
+	"colors": {
+		"light": {
+			"action": "#15171e",
+			"actionHover": "#32363d",
+			"actionActive": "#08090d",
+			"onAction": "#ffffff",
+			"signal": "#176b64",
+			"signalHover": "#0f524d",
+			"signalSoft": "rgb(23 107 100 / 10%)"
+		},
+		"dark": {
+			"action": "#edeef2",
+			"actionHover": "#ffffff",
+			"actionActive": "#d5d7de",
+			"onAction": "#08090d",
+			"signal": "#86e5d3",
+			"signalHover": "#a8eee1",
+			"signalSoft": "rgb(134 229 211 / 14%)"
+		}
+	},
+	"logo": {
+		"light": {
+			"signal": "#176b64",
+			"choice": "#99621f",
+			"wordmark": "#08262e"
+		},
+		"dark": {
+			"signal": "#86e5d3",
+			"choice": "#e6b766",
+			"wordmark": "#ffffff"
+		},
+		"iconBackground": "#0a3038"
+	},
+	"pwa": {
+		"themeColor": "#0F1A1F",
+		"lightThemeColor": "#FFFFFF",
+		"backgroundColor": "#0F1A1F"
+	}
+}

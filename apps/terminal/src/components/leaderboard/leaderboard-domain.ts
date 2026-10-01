@@ -2,7 +2,7 @@ import Big from "big.js";
 
 export const LEADERBOARD_ACCOUNT_VALUE_THRESHOLD = "100000";
 export const LEADERBOARD_ALL_TIME_VOLUME_THRESHOLD = "10000000";
-export const LEADERBOARD_POLICY_VERSION = "gatu-vault-feed-only-2026-08-14";
+export const LEADERBOARD_POLICY_VERSION = "sairn-vault-feed-only-2026-08-14";
 
 export type LeaderboardPeriod = "day" | "week" | "month" | "allTime";
 export type LeaderboardSortKey = "accountValue" | "pnl" | "roi" | "volume";

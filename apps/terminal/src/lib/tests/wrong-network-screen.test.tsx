@@ -11,7 +11,7 @@ import { createI18nRoot } from "./harness/react";
 
 const SWITCH_REJECTED = msg`Arbitrum network switch was rejected.`;
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children }: { children: ReactNode }) => createElement("div", { role: "dialog" }, children),
 	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) =>
 		createElement("button", { disabled, onClick, type: "button" }, children),

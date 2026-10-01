@@ -1,5 +1,5 @@
 ---
-const lines = ["No accounts.", "No custody.", "No middlemen."];
+const lines = ["No KYC.", "No custody.", "No middlemen."];
 
 function words(line: string, lineIndex: number) {
 	return line.split(" ").map((word, wordIndex) => ({
@@ -13,15 +13,21 @@ function words(line: string, lineIndex: number) {
 	<div class="reveal word-stagger mx-auto w-full max-w-4xl px-6 py-24 md:py-36 text-center">
 		<h2 class="font-display text-2xl md:text-3xl leading-[1.15] tracking-display">
 			{lines.map((line, lineIndex) => (
-				<span class="block">
-					{words(line, lineIndex).map(({ word, delay }) => (
-						<span class="word" style={`transition-delay:${delay}ms`}>{word}</span>
-					))}
-				</span>
+				<>
+					{lineIndex > 0 && " "}
+					<span class="block">
+						{words(line, lineIndex).map(({ word, delay }, wordIndex) => (
+							<>
+								{wordIndex > 0 && " "}
+								<span class="word" style={`transition-delay:${delay}ms`}>{word}</span>
+							</>
+						))}
+					</span>
+				</>
 			))}
 		</h2>
 		<p class="mt-6 mx-auto max-w-md text-sm text-fg-muted leading-relaxed">
-			Your keys sign, Hyperliquid settles, the code is public. That's the whole arrangement.
+			Your keys sign, Hyperliquid settles, and a 0.01% builder fee keeps us going. That's the whole arrangement.
 		</p>
 	</div>
 </section>

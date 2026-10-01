@@ -57,7 +57,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	writePersistTradingConnection: testState.writePersistTradingConnection,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({
 		className,
 		children,

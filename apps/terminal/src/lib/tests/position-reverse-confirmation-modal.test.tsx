@@ -18,7 +18,7 @@ vi.mock("@/hooks/use-mobile", () => ({
 	useIsMobile: () => testState.isMobile,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children, open, ...props }: { children: ReactNode; open: boolean } & Record<string, unknown>) => {
 		testState.adaptiveProps = props;
 		return open ? createElement("div", { role: "dialog" }, children) : null;

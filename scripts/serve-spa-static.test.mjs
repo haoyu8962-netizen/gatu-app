@@ -76,7 +76,7 @@ test("build metadata is a static file of the client build, not an API route", ()
 });
 
 test("build metadata is served uncached without an API origin, as the CDN serves it", async (context) => {
-	const publicDir = mkdtempSync(join(tmpdir(), "gatu-spa-static-"));
+	const publicDir = mkdtempSync(join(tmpdir(), "sairn-spa-static-"));
 	context.after(() => rmSync(publicDir, { recursive: true, force: true }));
 	writeFileSync(join(publicDir, SHELL_FILE), "<html></html>");
 	writeFileSync(join(publicDir, "build-meta.json"), '{"commit":"abc"}');

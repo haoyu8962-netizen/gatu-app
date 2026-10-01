@@ -1,6 +1,6 @@
-import { Button, TextInput } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+import { Button, TextInput } from "@sairn/ui";
 import { useId } from "react";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";

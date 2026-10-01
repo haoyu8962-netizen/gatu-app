@@ -1,6 +1,6 @@
-import type { AgentWallet } from "@gatu/hl-react";
-import { getExchangeMethodConfig } from "@gatu/hl-react/registries/exchange";
-import type { AgentWalletMetadata } from "@gatu/hl-react/signing/agent-storage";
+import type { AgentWallet } from "@sairn/hl-react";
+import { getExchangeMethodConfig } from "@sairn/hl-react/registries/exchange";
+import type { AgentWalletMetadata } from "@sairn/hl-react/signing/agent-storage";
 import {
 	createMobileAgentApproval,
 	createMobileAgentStorageMetadata,
@@ -11,7 +11,7 @@ import {
 	shouldClearMobileAgent,
 	verifyExpectedMobileAgent,
 	verifyMobileAgent,
-} from "@gatu/hl-react/signing/mobile-agent";
+} from "@sairn/hl-react/signing/mobile-agent";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deriveAgentRequirements, getDefinitiveMobileAgentStaleReason } from "@/lib/hyperliquid";
 
@@ -287,7 +287,7 @@ describe("mobile agent lifecycle", () => {
 			importedAtMs: NOW_MS,
 		}) satisfies AgentWalletMetadata;
 		const { readAgentFromStorage, removeAgentFromStorage, writeAgentToStorage } = await import(
-			"@gatu/hl-react/signing/agent-storage"
+			"@sairn/hl-react/signing/agent-storage"
 		);
 
 		writeAgentToStorage("Mainnet", USER_ADDRESS, approval.privateKey, approval.publicKey, metadata);
@@ -316,7 +316,7 @@ describe("mobile agent lifecycle", () => {
 			agentValidUntilMs: approval.agentValidUntilMs,
 			importedAtMs: NOW_MS,
 		}) satisfies AgentWalletMetadata;
-		const { writeAgentToStorageAndVerify } = await import("@gatu/hl-react/signing/agent-storage");
+		const { writeAgentToStorageAndVerify } = await import("@sairn/hl-react/signing/agent-storage");
 
 		const result = writeAgentToStorageAndVerify(
 			"Mainnet",
@@ -338,7 +338,7 @@ describe("mobile agent lifecycle", () => {
 	it("fails closed when strict storage cannot write or read back", async () => {
 		installStorage();
 		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
-		const { writeAgentToStorageAndVerify } = await import("@gatu/hl-react/signing/agent-storage");
+		const { writeAgentToStorageAndVerify } = await import("@sairn/hl-react/signing/agent-storage");
 
 		vi.spyOn(localStorage, "setItem").mockImplementationOnce(() => {
 			throw new Error("quota");

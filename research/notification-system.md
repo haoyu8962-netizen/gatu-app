@@ -1,4 +1,4 @@
-# gatu Notification System Spec
+# Sairn Notification System Spec
 
 ## Problem
 

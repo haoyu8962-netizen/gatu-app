@@ -2,11 +2,11 @@ import {
 	createMobileAgentName,
 	MOBILE_AGENT_NAME_BASE,
 	MOBILE_AGENT_VALIDITY_MS,
-} from "@gatu/hl-react/signing/mobile-agent";
+} from "@sairn/hl-react/signing/mobile-agent";
 import { type Address, type Hex, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-export const MOBILE_SYNC_FRAGMENT_KEY = "ht-mobile-sync";
+export const MOBILE_SYNC_FRAGMENT_KEY = "sairn-mobile-sync";
 export const MOBILE_SYNC_ROUTE_PATH = "/mobile-agent-sync";
 export const MOBILE_SYNC_PAYLOAD_TTL_MS = 2 * 60 * 1000;
 export const MOBILE_SYNC_QR_VISIBLE_MS = 60 * 1000;

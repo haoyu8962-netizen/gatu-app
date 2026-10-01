@@ -2,15 +2,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFakeSubscription } from "./harness/subscription";
 
-let createHyperliquidStore: typeof import("@gatu/hl-react/store").createHyperliquidStore;
-let getStoreInternals: typeof import("@gatu/hl-react/store").getStoreInternals;
+let createHyperliquidStore: typeof import("@sairn/hl-react/store").createHyperliquidStore;
+let getStoreInternals: typeof import("@sairn/hl-react/store").getStoreInternals;
 
 describe("store staleness integration", () => {
 	beforeEach(async () => {
 		vi.useFakeTimers();
 		vi.resetModules();
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
-		const mod = await import("@gatu/hl-react/store");
+		const mod = await import("@sairn/hl-react/store");
 		createHyperliquidStore = mod.createHyperliquidStore;
 		getStoreInternals = mod.getStoreInternals;
 	});

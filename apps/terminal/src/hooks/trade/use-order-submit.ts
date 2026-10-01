@@ -1,4 +1,4 @@
-import type { ExchangeExecutionGuard, HyperliquidExchangeSessionLease } from "@gatu/hl-react";
+import type { ExchangeExecutionGuard, HyperliquidExchangeSessionLease } from "@sairn/hl-react";
 import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
 import { getReduceOnlyMarginHint } from "@/domain/trade/insufficient-margin-hint";
 import { getOrderExecutionSummary, type OrderExecutionSummary } from "@/domain/trade/order-execution-summary";

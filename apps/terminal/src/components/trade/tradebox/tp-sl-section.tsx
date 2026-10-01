@@ -1,6 +1,6 @@
-import { Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { Select } from "@sairn/ui";
 import { useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";

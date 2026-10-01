@@ -39,7 +39,7 @@
 - CUA 绑定用户原有官方交易标签。DOM 读取返回 1 个 `.toaster`，`position: fixed`、`z-index: 9999`，当前子节点数 0；`[data-sonner-toaster]` 为 0。没有把“当前无提示”当成“没有反馈组件”。
 - 当前 pageAssets 仍列出 `index-58uVNh8f.js`、`config-DWLPMyx3.js`，复用之前保存的同 URL 公开脚本进一步检查。主脚本的 Toaster import 为 `Sd as an`，配置脚本导出 `$c as Sd`；唯一 `containerClassName: toaster` 挂载指向该组件。
 - 通知工厂以同一 store 的 success/error/loading 渲染同一个自定义内容组件；`i7` 创建 loading 时保存 `v`，成功时调用 `$(content, success, v)`，错误也传 `v`。全部平仓仍是 errorsOnly，加外层同工厂汇总。ToastBar、store、Toaster 实现与 react-hot-toast 官方源码相符；库体系识别属于代码比对，未取得官方 package manifest，未推定精确版本。
-- [参考文档](https://react-hot-toast.com/docs/toast)支持 stable ID 更新状态与自定义内容；[多宿主文档](https://react-hot-toast.com/docs/multi-toaster)说明多 Toaster 可以合理用于不同区域。因此建议基于 gatu 已复现的问题和责任边界，而不是宣称“任何两套组件都不合规范”。
+- [参考文档](https://react-hot-toast.com/docs/toast)支持 stable ID 更新状态与自定义内容；[多宿主文档](https://react-hot-toast.com/docs/multi-toaster)说明多 Toaster 可以合理用于不同区域。因此建议基于 Sairn 已复现的问题和责任边界，而不是宣称“任何两套组件都不合规范”。
 - Sonner 2.0.7 的本地声明和上游同版本源码支持需要的 custom、ID 更新及生命周期能力。建议一个根级稳定宿主、普通提示和交易任务两种内容，保留业务状态/身份/对账和锁；不能直接用 toast.promise 将网络成功当交易终态。原有队列内容可以复用，独立定位/计时外壳可移除。
 
 ## 验证与限制

@@ -20,13 +20,13 @@ interface SliderGeometry {
 }
 
 type SliderAuditWindow = Window & {
-	__gatuSliderPerf: {
+	__sairnSliderPerf: {
 		reset: () => void;
 		snapshot: () => SliderAuditSnapshot;
 		stop: () => SliderAuditSnapshot;
 	};
-	__gatuSliderPointerId?: number;
-	__gatuSliderSetPaused: (paused: boolean) => void;
+	__sairnSliderPointerId?: number;
+	__sairnSliderSetPaused: (paused: boolean) => void;
 };
 
 test.beforeEach(async ({ page }) => {
@@ -96,7 +96,7 @@ test("keeps publishing previews while the pointer moves faster than the preview 
 	const during = await page.evaluate(
 		async ({ activePointerId, fromX, toX, y }) => {
 			const control = document.querySelector("[data-trade-slider-control]");
-			const audit = (window as unknown as SliderAuditWindow).__gatuSliderPerf;
+			const audit = (window as unknown as SliderAuditWindow).__sairnSliderPerf;
 			const startedAt = performance.now();
 			let moves = 0;
 			while (performance.now() - startedAt < 400) {
@@ -155,7 +155,7 @@ test("keeps focus and the gesture when the value source pauses mid-drag, then re
 	expect(await readThumbPercent(page)).toBeCloseTo(80, 0);
 	await expect(control).toHaveAttribute("data-dragging", "true");
 
-	await page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderSetPaused(false));
+	await page.evaluate(() => (window as unknown as SliderAuditWindow).__sairnSliderSetPaused(false));
 	await expect.poll(async () => (await stopAuditSnapshot(page)).previewCallbacks).toBe(previewsAtPause + 1);
 	await expect(input).not.toHaveAttribute("aria-disabled", "true");
 
@@ -244,7 +244,7 @@ test("keeps focus and component identity when the thumb is pressed without movin
 	if (!box) throw new Error("Slider thumb geometry is unavailable");
 
 	await page.evaluate(() => {
-		Object.assign(window, { __gatuSliderInputBeforeClick: document.querySelector('input[type="range"]') });
+		Object.assign(window, { __sairnSliderInputBeforeClick: document.querySelector('input[type="range"]') });
 	});
 	await resetAudit(page);
 	await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
@@ -253,7 +253,7 @@ test("keeps focus and component identity when the thumb is pressed without movin
 	const result = await stopAudit(page);
 	const retainedIdentity = await page.evaluate(
 		() =>
-			(window as Window & { __gatuSliderInputBeforeClick?: Element }).__gatuSliderInputBeforeClick ===
+			(window as Window & { __sairnSliderInputBeforeClick?: Element }).__sairnSliderInputBeforeClick ===
 			document.querySelector('input[type="range"]'),
 	);
 
@@ -281,7 +281,7 @@ for (const requested of [63, 66]) {
 		await page.mouse.down();
 		await expect
 			.poll(() =>
-				page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPerf.snapshot().previewCallbacks),
+				page.evaluate(() => (window as unknown as SliderAuditWindow).__sairnSliderPerf.snapshot().previewCallbacks),
 			)
 			.toBe(1);
 		await expect(quantity).toHaveAttribute("data-slider-interacting", "true");
@@ -365,15 +365,15 @@ function percentX(geometry: SliderGeometry, percent: number): number {
 }
 
 async function resetAudit(page: Page): Promise<void> {
-	await page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPerf.reset());
+	await page.evaluate(() => (window as unknown as SliderAuditWindow).__sairnSliderPerf.reset());
 }
 
 async function stopAudit(page: Page): Promise<SliderAuditSnapshot> {
-	return page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPerf.stop());
+	return page.evaluate(() => (window as unknown as SliderAuditWindow).__sairnSliderPerf.stop());
 }
 
 async function stopAuditSnapshot(page: Page): Promise<SliderAuditSnapshot> {
-	return page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPerf.snapshot());
+	return page.evaluate(() => (window as unknown as SliderAuditWindow).__sairnSliderPerf.snapshot());
 }
 
 async function pauseAndReadPreviewCount(input: Locator): Promise<number> {
@@ -385,14 +385,14 @@ async function pauseAndReadPreviewCount(input: Locator): Promise<number> {
 					if (element.getAttribute("aria-disabled") !== "true") return;
 					observer.disconnect();
 					clearTimeout(timeout);
-					resolve(auditWindow.__gatuSliderPerf.snapshot().previewCallbacks);
+					resolve(auditWindow.__sairnSliderPerf.snapshot().previewCallbacks);
 				});
 				const timeout = setTimeout(() => {
 					observer.disconnect();
 					reject(new Error("The pause did not mark the held slider input aria-disabled"));
 				}, 5_000);
 				observer.observe(element, { attributeFilter: ["aria-disabled"] });
-				auditWindow.__gatuSliderSetPaused(true);
+				auditWindow.__sairnSliderSetPaused(true);
 			}),
 	);
 }
@@ -404,11 +404,11 @@ async function readValue(page: Page): Promise<number> {
 async function captureNextPointerId(page: Page): Promise<void> {
 	await page.evaluate(() => {
 		const auditWindow = window as unknown as SliderAuditWindow;
-		Reflect.deleteProperty(auditWindow, "__gatuSliderPointerId");
+		Reflect.deleteProperty(auditWindow, "__sairnSliderPointerId");
 		document.addEventListener(
 			"pointerdown",
 			(event) => {
-				auditWindow.__gatuSliderPointerId = event.pointerId;
+				auditWindow.__sairnSliderPointerId = event.pointerId;
 			},
 			{ capture: true, once: true },
 		);
@@ -416,7 +416,7 @@ async function captureNextPointerId(page: Page): Promise<void> {
 }
 
 async function readPointerId(page: Page): Promise<number> {
-	const pointerId = await page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPointerId);
+	const pointerId = await page.evaluate(() => (window as unknown as SliderAuditWindow).__sairnSliderPointerId);
 	if (pointerId === undefined) throw new Error("Slider pointer id was not captured");
 	return pointerId;
 }
@@ -548,7 +548,7 @@ test("paints a same-task burst without a business preview and flushes the last v
 	const result = await page.evaluate(
 		async ({ pointerId, x, y }) => {
 			const control = document.querySelector("[data-trade-slider-control]")!;
-			const audit = (window as unknown as SliderAuditWindow).__gatuSliderPerf;
+			const audit = (window as unknown as SliderAuditWindow).__sairnSliderPerf;
 			for (let i = 0; i < 100; i++)
 				control.dispatchEvent(
 					new PointerEvent("pointermove", {

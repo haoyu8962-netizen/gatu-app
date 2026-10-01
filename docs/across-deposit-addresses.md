@@ -4,9 +4,9 @@
 
 ## 1. 目标与首期范围
 
-为邮箱用户提供从交易所或其他钱包转入的持久地址，由 Across 归集并交付至指定 HyperCore owner，减少返回 GATU 再确认存款的操作及 Smart Wallet/Paymaster 初始化依赖。固定 SPOT 落点可能仍需显式账户模式选择或 Spot→Perp 划转；减少的操作数须实测，不能承诺所有用户一步即可交易。
+为邮箱用户提供从交易所或其他钱包转入的持久地址，由 Across 归集并交付至指定 HyperCore owner，减少返回 Sairn 再确认存款的操作及 Smart Wallet/Paymaster 初始化依赖。固定 SPOT 落点可能仍需显式账户模式选择或 Spot→Perp 划转；减少的操作数须实测，不能承诺所有用户一步即可交易。
 
-首期采用现有同源服务端 REST、SQLite 两张地址表和按需转账查询。不引入 App SDK、Swap/Gasless API、新钱包 Provider、独立 worker、定时巡检或转账全量镜像。Across 执行归集、交付和协议支持的退款；GATU 查询用于展示和排障，不是这些资金操作的执行器。代价是首期不提供离线通知、主动发现所有历史异常或独立于供应商的完整交易档案；有这些产品需求时另加后台任务和事件存储。取舍见 [ADR 0004](adr/0004-across-deposit-addresses.md)。
+首期采用现有同源服务端 REST、SQLite 两张地址表和按需转账查询。不引入 App SDK、Swap/Gasless API、新钱包 Provider、独立 worker、定时巡检或转账全量镜像。Across 执行归集、交付和协议支持的退款；Sairn 查询用于展示和排障，不是这些资金操作的执行器。代价是首期不提供离线通知、主动发现所有历史异常或独立于供应商的完整交易档案；有这些产品需求时另加后台任务和事件存储。取舍见 [ADR 0004](adr/0004-across-deposit-addresses.md)。
 
 首期仅 mainnet 邮箱用户的准确 embedded EVM owner、原生 USDC 和 USDC-SPOT 目标。先验收 Arbitrum，再逐条开放 Ethereum/Base/Polygon；不承诺四链同时上线。输入集合为“产品已验收白名单 ∩ 当前地址 supportedInputs”，不能用 Swap 链目录自动扩链。外部钱包新 PDA、Agent-only、观察地址、子账户、vault、多签、测试网、USDT、Tron、提现和自动划转不在范围内。
 
@@ -18,7 +18,7 @@
 | --- | --- |
 | 地址与权限 | [PDA 指南](https://docs.across.to/introduction/persistent-deposit-addresses)及[创建接口](https://docs.across.to/api-reference/deposit-addresses/post)：相同参数复用地址、金额不参与创建，需 `deposit-address` 权限，接口位于 Early Access。生产权限未取得 |
 | 请求与响应 | 指南、cURL 及本轮取得的页面 Request Body 类型均将 `destination.recipient` 定义为字符串；200 响应为 `{namespace,address}`，与报告的“请求 schema 为对象”不符。以字符串实现请求，P0 用项目权限验证运行契约，不通过失败后换参数形态试建地址 |
-| 退款与标识 | 正文称 `refundAddresses` 可选，已取得的 Request Body 类型要求该数组；GATU 要求非空且归属正确。200 类型明确将 `id` 描述为报障使用的 request ID，原方案的诊断用途成立；不能拿它做地址或转账主键。`expiresAt` 定义为 null，但路线和费用不因此永久有效 |
+| 退款与标识 | 正文称 `refundAddresses` 可选，已取得的 Request Body 类型要求该数组；Sairn 要求非空且归属正确。200 类型明确将 `id` 描述为报障使用的 request ID，原方案的诊断用途成立；不能拿它做地址或转账主键。`expiresAt` 定义为 null，但路线和费用不因此永久有效 |
 | 主机与 Integrator ID | [鉴权页](https://docs.across.to/introduction/api-keys)使用 `app.across.to/api`，PDA 示例使用 `across.to/api`。拟默认后者，P0 验证鉴权、重定向和 Integrator ID 在 PDA 中的具体用法；普通公开 GET 两主机相通不能证明带 Key 请求等价 |
 | 金额与费用 | 创建示例的输入 USDC 为 6 位、USDC-SPOT 为 8 位；`indicativeFees.proportionalPct` 为字符串、`fixedFeeUsd` 为 USD 数值，时间字段 `indicativeFillTime` / `indicativeFillTimeRange` 单位为秒，均可为 null；费用也可为 null，响应许多属性非必填。倍率、费用包含项和激活扣费口径仍需确认，不能套用旧 suggested-fees 的倍率；关键目的/退款/指令缺失时拒绝曝光 |
 | 限额与重新报价 | [FAQ 的地址章节](https://docs.across.to/introduction/faq#deposit-addresses)：按归集时实际余额重新报价，输入需落在对应链/币的 limits 内；重取地址刷新支持输入。显示的是指示性费用，用户数日后复用保存的地址时不受页面缓存时效保护 |
@@ -26,9 +26,9 @@
 | 单笔与批量 | [详情](https://docs.across.to/api-reference/deposit/get)只选一种 selector；一笔 sweep 可含多次 PDA 执行，应查列表。inbound 的 `depositTxnRef`、`sweepTxnRef`、桥交付和 `actionsTarget*` 不可混用 |
 | HyperCore | Across 命名空间使用 `1337`，HyperEVM 为 `999`。PDA 示例为 USDC-SPOT `0x2000000000000000000000000000000000000000`；[HyperCore 指南](https://docs.across.to/introduction/hypercore)主要描述 Swap 流程，不能据其示例自动认定 PDA 的所有模式已验收或 PERPS 可用 |
 | 首次激活 | [Hyperliquid 激活费](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/activation-gas-fee)：首次以新 HyperCore 账户为目的地的交易收取 1 个报价币。已激活但余额为零不等于新账户；供应商是否代付、预先激活、字段是否净额须另核对 |
-| 官方前端不是通用承诺 | [HL 邮箱充值 FAQ](https://hyperliquid.gitbook.io/hyperliquid-docs/support/faq/deposit-or-transfer-issues-missing-lost/deposited-usdc)描述自己的四链、误币自动转回及小额规则；Across 通用 FAQ 对误链误币要求人工恢复。GATU 不继承“10 分钟自动退回”“低于 5 退回/低于 1 丢失”等集成特定结论 |
+| 官方前端不是通用承诺 | [HL 邮箱充值 FAQ](https://hyperliquid.gitbook.io/hyperliquid-docs/support/faq/deposit-or-transfer-issues-missing-lost/deposited-usdc)描述自己的四链、误币自动转回及小额规则；Across 通用 FAQ 对误链误币要求人工恢复。Sairn 不继承“10 分钟自动退回”“低于 5 退回/低于 1 丢失”等集成特定结论 |
 
-本方案以 public PDA API 为边界，不混入[新版统一 API](https://exclusive.docs.across.to/introduction/v5-api)的 staging、executions/transfers 或 `isTerminal` 语义。只使用 GATU 自有权限，不复制 HL 官方前端凭证或依赖其未公开的 `/hyperliquid-transfers` 服务。公开文档核对不证明生产路线、配额、账户模式和真实资金已经验证。
+本方案以 public PDA API 为边界，不混入[新版统一 API](https://exclusive.docs.across.to/introduction/v5-api)的 staging、executions/transfers 或 `isTerminal` 语义。只使用 Sairn 自有权限，不复制 HL 官方前端凭证或依赖其未公开的 `/hyperliquid-transfers` 服务。公开文档核对不证明生产路线、配额、账户模式和真实资金已经验证。
 
 ## 3. 用户流程与充值资格
 
@@ -54,7 +54,7 @@
 
 ```mermaid
 flowchart LR
-  UI[共享存款与历史面板] --> API[GATU 同源 API]
+  UI[共享存款与历史面板] --> API[Sairn 同源 API]
   API --> AUTH[Privy / Host / geo / legal]
   API --> DB[SQLite 地址绑定与指令]
   API --> Q[Across 按需查询与创建]
@@ -73,7 +73,7 @@ flowchart LR
 
 拟新增 API 均同源、Bearer 认证，响应及错误统一 `Cache-Control: private, no-store`、`Referrer-Policy: no-referrer`；在 Nitro routeRules 同步覆盖 `/api/deposits/across` 及其子路径，不进入 CDN、Service Worker、共享 SSR 或浏览器持久 Query 缓存。
 
-| GATU 接口 | 输入与责任 |
+| Sairn 接口 | 输入与责任 |
 | --- | --- |
 | `GET /api/deposits/across/capability` | 当前认证用户的发布/pilot资格、可选方法和维护状态；不是一次性越过后续门控的授权 |
 | `POST /api/deposits/across/address` | 仅 `expectedOwner`、recipeVersion、sourceChain，版本必须在服务端启用配置内；源链仅用于验证/选择 instruction，不任意指定 recipient、refund、目标币或上游 URL |
@@ -87,7 +87,7 @@ flowchart LR
 
 ## 5. 身份、环境与访问门控
 
-环境由受信任请求的 canonical Host 决定，复用 `config/public-origins.ts` 的 `getCanonicalNetworkForHostname()`：`app.gatu.ai` 对应 mainnet，`testnet.gatu.ai` 不开放 PDA 创建；测试域历史不得读取主网绑定。校验 request URL、Host 和同源 Origin 的一致性，拒绝未知域，不接受客户端 network 或任意转发头切换环境。沿既有 Caddy 反代与 loopback 监听边界验证真实用户 IP；Host 是环境选择，不是用户授权。开发回环仅走显式 mock 环境/独立 DB，不因 loopback 获得生产权限。
+环境由受信任请求的 canonical Host 决定，复用 `config/public-origins.ts` 的 `getCanonicalNetworkForHostname()`：`app.sairn.ai` 对应 mainnet，`testnet.sairn.ai` 不开放 PDA 创建；测试域历史不得读取主网绑定。校验 request URL、Host 和同源 Origin 的一致性，拒绝未知域，不接受客户端 network 或任意转发头切换环境。沿既有 Caddy 反代与 loopback 监听边界验证真实用户 IP；Host 是环境选择，不是用户授权。开发回环仅走显式 mock 环境/独立 DB，不因 loopback 获得生产权限。
 
 后端拟锁定 `@privy-io/node` 的已验证版本；本轮核对 0.34.0 类型，方法为 `privy.utils().auth().verifyAccessToken(accessToken)` 与 `privy.users()._get(did)`。[Node 初始化](https://docs.privy.io/basics/nodeJS/setup)、[用户查询](https://docs.privy.io/user-management/users/managing-users/querying-users)、[Access token](https://docs.privy.io/authentication/user-authentication/access-tokens)供实施复核。验证 issuer、App ID audience、expiry、DID/sid；公开 verification key/JWKS 可用于本地验签，但要保留轮换机制，它不代替用户关联查询和删除/解绑检查。
 
@@ -131,7 +131,7 @@ SQLite 位于 `/opt/gatu/shared/across/deposits.sqlite3`，独立于 repo/releas
 
 客户端 Query key 包含环境、DID、owner 和 recipe；地址与历史不进入 localStorage 或现有持久 Query 白名单。返回结果必须匹配当前 context epoch，取消请求不能替代这个检查；切账户/源链、退出或路线有效期到期后停止旧 QR/复制，重新复核通过才恢复。旧 CCTP tracking 的持久化规则不受此限制影响。
 
-[HL 限频](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits)为每 IP 每分钟 1200 权重，userRole 为 60、普通 documented info 通常 20，部分余额查询为 2；legalCheck 的实际权重仍需确认。实施先列出新路径所有服务端调用，设总权重预算并给其他服务预留，不把每用户限流当作总容量。最多 2 个上游并发、10 秒超时、429 遵守 Retry-After；退避 5/15/60 秒加抖动是 GATU 初值，不能机械适用所有错误。达到预算返回受控暂不可用，不把无限排队或高频重试当恢复。
+[HL 限频](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits)为每 IP 每分钟 1200 权重，userRole 为 60、普通 documented info 通常 20，部分余额查询为 2；legalCheck 的实际权重仍需确认。实施先列出新路径所有服务端调用，设总权重预算并给其他服务预留，不把每用户限流当作总容量。最多 2 个上游并发、10 秒超时、429 遵守 Retry-After；退避 5/15/60 秒加抖动是 Sairn 初值，不能机械适用所有错误。达到预算返回受控暂不可用，不把无限排队或高频重试当恢复。
 
 创建/曝光建议每用户 5 次/分钟、每 IP 20 次/分钟，读取每用户 60 次/分钟；另有每供应商的总预算与缓存条目/分页上限。真实 Across/Privy 配额未取得，不据此宣布容量已通过。
 
@@ -161,15 +161,15 @@ SQLite 位于 `/opt/gatu/shared/across/deposits.sqlite3`，独立于 repo/releas
 
 `depositTxnRef`、`sweepTxnRef` 或分页序号都不能单独作转账主键。P0 需确认未归集→已索引的稳定 transfer/事件身份及关联规则；只有证据证明为同一笔才归并，不虚构响应没有的 logIndex 等字段。缺少唯一身份时保留分开的观察，刷新替换查询结果，不按 hash 增量覆盖；临时展示引用不充当业务身份。selector 无法唯一定位时不展示单笔确认详情，可展示地址列表和整笔链上交易引用。
 
-最终交付要核对 `actionsTargetRecipient/Token/ChainId/Amount/TxnRef` 等实际证据，不能用中间 HyperEVM recipient 代替 HyperCore owner。这些字段可能为空，P0 应明确替代证据接口。对同 owner 新鲜账户数据按[账户模式](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/account-abstraction-modes)核验落点，再使用现有交易 guards；默认/未知模式不自动转为 Standard。Across 按需查询中断只影响 GATU 的发现与展示，不能直接改写原转账为失败。
+最终交付要核对 `actionsTargetRecipient/Token/ChainId/Amount/TxnRef` 等实际证据，不能用中间 HyperEVM recipient 代替 HyperCore owner。这些字段可能为空，P0 应明确替代证据接口。对同 owner 新鲜账户数据按[账户模式](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/account-abstraction-modes)核验落点，再使用现有交易 guards；默认/未知模式不自动转为 Standard。Across 按需查询中断只影响 Sairn 的发现与展示，不能直接改写原转账为失败。
 
 首期退款恢复采用 **Privy 官方导出 UI + 用户自行导入外部钱包取回**，并明确需要退款源链原生 Gas。当前应用没有导出入口，但已安装的 React SDK 声明支持 `useExportWallet().exportWallet({address: exactOwner})`；入口属于 P2 必须新增的交付，不把现有 CCTP 当作所有链的退款转出能力。[Privy 导出文档](https://docs.privy.io/wallets/wallets/export)、[MFA](https://docs.privy.io/authentication/user-authentication/mfa/verify/overview)、[HL 导出实践](https://hyperliquid.gitbook.io/hyperliquid-docs/onboarding/export-your-email-wallet)。
 
-导出只能由用户明确点击，先比对 session/owner，显式传地址，使用 Privy 隔离窗口；GATU 不读取私钥、不新增 getWalletPrivateKey 调用、不接收用户粘贴的私钥。遵循实际配置的 MFA，不能假设每个用户已启用；取消/验证失败不换钱包、不自动重试导出。支持说明覆盖选择退款链、原生 Gas、导入后地址核对，以及私钥不得提供给客服。该恢复入口不要求有可交易余额或启用 sponsored，不因新充值 geo/发布门控关闭而消失；身份和钱包归属仍必须验证。钱包创建环境、导出权限、移动浏览器、MFA 与退款链均需验收；用户失去 Privy 登录或原钱包归属时转人工恢复，不保证导出可用。
+导出只能由用户明确点击，先比对 session/owner，显式传地址，使用 Privy 隔离窗口；Sairn 不读取私钥、不新增 getWalletPrivateKey 调用、不接收用户粘贴的私钥。遵循实际配置的 MFA，不能假设每个用户已启用；取消/验证失败不换钱包、不自动重试导出。支持说明覆盖选择退款链、原生 Gas、导入后地址核对，以及私钥不得提供给客服。该恢复入口不要求有可交易余额或启用 sponsored，不因新充值 geo/发布门控关闭而消失；身份和钱包归属仍必须验证。钱包创建环境、导出权限、移动浏览器、MFA 与退款链均需验收；用户失去 Privy 登录或原钱包归属时转人工恢复，不保证导出可用。
 
-Web 环境要求不等于所有内嵌浏览器均不支持：[Privy 移动导出实践](https://docs.privy.io/recipes/mobile-key-export)支持 WebView 加载导出网页。首期不新增原生桥接，也不只凭 UA/PWA standalone 禁用。P3 覆盖移动 Safari/Chrome、PWA standalone 和实际支持的内嵌环境；上下文不支持或实测阻断时，保留恢复指引，让用户在系统或桌面浏览器打开同一官方 GATU origin，重新登录并核对原 owner，不在 URL 中携带 token。已启用 MFA 的用户按 SDK 要求完成验证，覆盖验证窗口过期、取消与失败；`exportWallet()` resolve 仅表示对话框结束，不证明复制私钥或退款取回。
+Web 环境要求不等于所有内嵌浏览器均不支持：[Privy 移动导出实践](https://docs.privy.io/recipes/mobile-key-export)支持 WebView 加载导出网页。首期不新增原生桥接，也不只凭 UA/PWA standalone 禁用。P3 覆盖移动 Safari/Chrome、PWA standalone 和实际支持的内嵌环境；上下文不支持或实测阻断时，保留恢复指引，让用户在系统或桌面浏览器打开同一官方 Sairn origin，重新登录并核对原 owner，不在 URL 中携带 token。已启用 MFA 的用户按 SDK 要求完成验证，覆盖验证窗口过期、取消与失败；`exportWallet()` resolve 仅表示对话框结束，不证明复制私钥或退款取回。
 
-GATU 的误币文案在供应商确认前仅承诺“仅发送所列网络的原生 USDC，其他资产可能无法自动退回”。不照抄 HL 的小额损失/十分钟退款规则，也不把 Across 通用退款 120–150 分钟当 PDA SLA。按链验收退款币/链/扣费/耗时和一次用户自行取回；不以“地址相同”代替验收。历史页可提供用户明确点击的 [Across transfers](https://across.to/transfers)与源链浏览器兜底，使用 no-referrer，不自动拼接未文档化查询参数或触发第三方登录/连接；该页面是否显示 GATU 地址历史也需验证。
+Sairn 的误币文案在供应商确认前仅承诺“仅发送所列网络的原生 USDC，其他资产可能无法自动退回”。不照抄 HL 的小额损失/十分钟退款规则，也不把 Across 通用退款 120–150 分钟当 PDA SLA。按链验收退款币/链/扣费/耗时和一次用户自行取回；不以“地址相同”代替验收。历史页可提供用户明确点击的 [Across transfers](https://across.to/transfers)与源链浏览器兜底，使用 no-referrer，不自动拼接未文档化查询参数或触发第三方登录/连接；该页面是否显示 Sairn 地址历史也需验证。
 
 实施时支持手册需规定：收到工单后先核实归属，再按需保存脱敏的供应商观察快照，注明时间、环境、分页条件、记录身份确定性及链上引用，并明确访问权限和保留期。快照不含 token/授权头/邮箱/私钥，不证明完整历史或最终到账；供应商不可用时记录查询失败。此流程不新增 worker、镜像表或自动外发工单。
 
@@ -179,7 +179,7 @@ GATU 的误币文案在供应商确认前仅承诺“仅发送所列网络的原
 
 项目锁定 Nitro `3.0.260311-beta` 的类型/实现含 `noExternals`、`traceDeps`，原生依赖经追踪写入 `.output/server/node_modules`。拟显式把 better-sqlite3 加入 traceDeps，不能启用 noExternals=true 将其强行打包；最终以当前版本构建结果为准，不照搬另一版 Nitro 配置。Linux 发布预检在隔离临时 DB 上验证驱动加载、建表/事务/备份，检查 `.node` 二进制与运行主机匹配；不能仅检查文件存在就算通过。[Nitro 配置](https://nitro.build/config)。
 
-部署先建立 `gatu:gatu` 的 shared 目录 0700，DB/备份及 WAL/SHM 均仅服务用户可读写（创建时使用 umask 0077），再增加 `ReadWritePaths=/opt/gatu/shared/across`；保留现有 systemd 硬化。该条是可写路径声明，不声称能将 ProtectSystem=full 变成全文件系统只读。首期仍只重启 gatu，无第二 unit；release 删除不触碰 shared DB/备份。采用兼容扩展 migration，回滚不做破坏性降级。
+部署先建立 `gatu:gatu` 的 shared 目录 0700，DB/备份及 WAL/SHM 均仅服务用户可读写（创建时使用 umask 0077），再增加 `ReadWritePaths=/opt/gatu/shared/across`；保留现有 systemd 硬化。该条是可写路径声明，不声称能将 ProtectSystem=full 变成全文件系统只读。首期仍只重启 Sairn，无第二 unit；release 删除不触碰 shared DB/备份。采用兼容扩展 migration，回滚不做破坏性降级。
 
 拟新增运行时配置：`ACROSS_API_KEY`、`ACROSS_INTEGRATOR_ID`、`ACROSS_API_BASE_URL`、`PRIVY_APP_ID`、`PRIVY_APP_SECRET`、可选 `PRIVY_VERIFICATION_KEY`、`ACROSS_DEPOSIT_DB_PATH`、`ACROSS_DEPOSIT_ADDRESS_MODE=off|pilot|on`、`ACROSS_DEPOSIT_PILOT_USER_IDS`。不新增 tracking/worker 开关。秘密无 VITE 前缀；浏览器与后端 Privy App ID 一致，Across 生产主机白名单且拒绝跨主机转发 Authorization。客户端同源调用不新增 Across connect-src；导出复用现有 Privy 官方 UI，并验证所需 origin/CSP 在实际浏览器可用。
 
@@ -187,19 +187,19 @@ Privy App Secret 不是只读查询凭证，官方[删除用户示例](https://d
 
 mode=off 停止新建和操作性曝光，保留历史绑定读取、按需状态查询及导出/支持入口。后端依赖故障时关闭新曝光，历史内部数据模型区分当前观察与缓存；被动获取失败遵循移动展示契约，不渲染 unavailable/原始错误文案。用户明确重试失败及真实退款异常可提供操作反馈；不能保证供应商离线时仍有完整历史。接口日志只含内部关联 ID/错误类别，不记录 JWT、邮箱、授权头、私钥、签名或完整用户响应；地址/交易引用按需存储和受控支持，隐私文案说明向 Across 的数据传递。
 
-上线前须确认 Key 撤销、配额耗尽、服务退役与误存恢复的供应商责任。停止 GATU 查询不会主动停止 Across 已建立的资金流程，但不能据此保证 Key 撤销或 Across 停服后仍照常归集。已复制地址不可撤销或自动改 owner。首次开放后，常规回滚只允许仍保留历史/导出能力且兼容 DB 的版本；回滚到尚无 PDA 支持的版本前必须提供经过验收的恢复入口，不能随旧 release 一并删掉用户恢复能力。
+上线前须确认 Key 撤销、配额耗尽、服务退役与误存恢复的供应商责任。停止 Sairn 查询不会主动停止 Across 已建立的资金流程，但不能据此保证 Key 撤销或 Across 停服后仍照常归集。已复制地址不可撤销或自动改 owner。首次开放后，常规回滚只允许仍保留历史/导出能力且兼容 DB 的版本；回滚到尚无 PDA 支持的版本前必须提供经过验收的恢复入口，不能随旧 release 一并删掉用户恢复能力。
 
 ## 9. 开发阶段与未决条件
 
 | 阶段 | 交付与完成条件 |
 | --- | --- |
-| P0：契约核验 | 用 GATU 自己的权限固定主机、recipient 请求形态、退款参数、Integrator ID、PDA→SPOT 目标、费用/激活口径、稳定记录身份/查询保留期、误币/误链/小额及 Key 退役规则；legal 必须通过 §5 的矩阵、字段适用性和放行/拒绝标准并确认预算权重。取得脱敏可重复响应或供应商明确答复 |
+| P0：契约核验 | 用 Sairn 自己的权限固定主机、recipient 请求形态、退款参数、Integrator ID、PDA→SPOT 目标、费用/激活口径、稳定记录身份/查询保留期、误币/误链/小额及 Key 退役规则；legal 必须通过 §5 的矩阵、字段适用性和放行/拒绝标准并确认预算权重。取得脱敏可重复响应或供应商明确答复 |
 | P1：后端 | Host 隔离、Privy 身份、geo/legal、两表幂等创建、按需列表/详情、缓存/总预算、native 构建与备份恢复。生产仍关闭；未知契约用明确标识的 mock，不伪造为真实 schema |
 | P2：前端与支持 | 共享方法能力、地址/指示性费用/激活说明、历史查询、精确 owner 导出和退款教程；sponsored 按实际能力显示，旧余额和在途 CCTP 恢复保持。移动、主题、语言和账户切换无串用 |
 | P3：受控资金验收 | 授权操作员用真实小额核对新账户激活前后 role/mode/Spot/Perp、已激活零余额、重复转入、每个首发模式/链的最终交付与退款取回。退款测试先由供应商确认安全方法，不故意发送已知不可恢复小额或误币来“验证损失” |
 | P4：灰度发布 | 每个网络/收款场景单独启用；配额容量、故障关闭、历史/导出可达、备份与回滚验收完成，发布说明及支持责任明确 |
 
-P0 中必须单独回答：proportionalPct 的倍率；费用是否已包含归集/源链/目的链/首次激活；actionsTargetAmount 是否为净额；多次小额是否聚合；批量 sweep 的每笔身份；API 保留期及最终 HyperCore 证据；GATU 误存处理是否与 HL 自家集成不同；已发地址在 Key 轮换/撤销/停服后的行为。普通 Swap 目录、无 Key GET 成功、官方前端体验和 testnet 均不能替代这些答复。
+P0 中必须单独回答：proportionalPct 的倍率；费用是否已包含归集/源链/目的链/首次激活；actionsTargetAmount 是否为净额；多次小额是否聚合；批量 sweep 的每笔身份；API 保留期及最终 HyperCore 证据；Sairn 误存处理是否与 HL 自家集成不同；已发地址在 Key 轮换/撤销/停服后的行为。普通 Swap 目录、无 Key GET 成功、官方前端体验和 testnet 均不能替代这些答复。
 
 P1/P2 可按 mock 并行开发；生产地址曝光需 P0 与对应 P3 场景完成，不能拿“计划里有测试”当验收。首次激活资格应独立验收而不是永久被模式门控挡住。主网首次验收需要在仅授权操作员可达的隔离候选环境运行实际生产路径；公开 pilot 必须已有该场景资金证据。
 
@@ -219,7 +219,7 @@ P1/P2 可按 mock 并行开发；生产地址曝光需 P0 与对应 P3 场景完
 
 本轮补充的回归覆盖 token=null、一次认证重试及非认证错误不循环；§5 legal 对照的正/负场景；当前/退役 recipe 的受控恢复和证据缺失；pending→indexed 的身份不足不合并；PWA/内嵌导出阻断后的浏览器指引、重新登录 owner 核对，以及关闭导出窗口不标记退款已取回。
 
-按改动运行 `pnpm exec biome check <TS/TSX>`、`pnpm typecheck`、`pnpm --filter @gatu/terminal test`、`pnpm build` 及部署检查。AGENTS 的钱包/onboarding、资金可用性、模式、移动展示、i18n 回归仍有效。浏览器使用独立 Vite fixture cache，在 375px、1000px、1440px 与明暗/中英切换检查；自动测试不操作真实导出私钥或资金，真实验收由授权用户操作。
+按改动运行 `pnpm exec biome check <TS/TSX>`、`pnpm typecheck`、`pnpm --filter @sairn/terminal test`、`pnpm build` 及部署检查。AGENTS 的钱包/onboarding、资金可用性、模式、移动展示、i18n 回归仍有效。浏览器使用独立 Vite fixture cache，在 375px、1000px、1440px 与明暗/中英切换检查；自动测试不操作真实导出私钥或资金，真实验收由授权用户操作。
 
 度量首开/复开、源确认→索引发现→最终交付→可交易的分段时间、实际费用与步骤数。首开收益取决于精确 Privy owner 的激活；本方案不保证绕过 iframe 阻断。复开缓存不能绕过身份/许可重新检查。后台镜像与主动通知仅在出现明确需求和配额依据后另行设计。
 

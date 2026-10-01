@@ -73,6 +73,10 @@ msgstr "共 {totalCount} 笔平仓委托，其中 {acceptedCount} 笔已全部�
 msgid "{age} days"
 msgstr "{age} 天"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "{BRAND_NAME} invitation link"
+msgstr "{BRAND_NAME} 邀请链接"
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "{currentDirectionLabel} to {targetDirectionLabel}"
 msgstr "{currentDirectionLabel} 转为 {targetDirectionLabel}"
@@ -2324,8 +2328,8 @@ msgstr "无法获取您的代币余额"
 #~ msgstr "无法导入手机访问权限。请重试或在桌面端创建新二维码。"
 
 #: src/hooks/wallet/use-email-wallet-export.ts
-msgid "Could not open wallet export. Retry in your system browser on the same GATU site, using the same email."
-msgstr "无法打开钱包导出界面。请在系统浏览器打开同一个 GATU 站点，使用相同邮箱重试。"
+msgid "Could not open wallet export. Retry in your system browser on the same {BRAND_NAME} site, using the same email."
+msgstr "无法打开钱包导出界面。请在系统浏览器打开同一个 {BRAND_NAME} 站点，使用相同邮箱重试。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not render QR. Create a new key."
@@ -2897,8 +2901,8 @@ msgid "Download the credential before confirming."
 msgstr "请先下载凭据，再进行确认。"
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
-msgid "Download the credential now and move it to secure storage. Gatu cannot recover it after this window is closed."
-msgstr "请立即下载凭据，并将其转移到安全位置。关闭此窗口后，Gatu 无法恢复该凭据。"
+msgid "Download the credential now and move it to secure storage. {BRAND_NAME} cannot recover it after this window is closed."
+msgstr "请立即下载凭据，并将其转移到安全位置。关闭此窗口后，{BRAND_NAME} 无法恢复该凭据。"
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
 msgid "Downloaded"
@@ -3834,10 +3838,6 @@ msgstr "Gas（{0}）"
 msgid "Gas-sponsored CCTP deposits are not enabled for this network."
 msgstr "当前网络尚未启用 Gas 代付的 CCTP 存款。"
 
-#: src/components/referrals/referral-code-card.tsx
-msgid "Gatu invitation link"
-msgstr "Gatu 邀请链接"
-
 #: src/components/api-wallet/api-wallet-form.tsx
 msgid "Generate"
 msgstr "生成"
@@ -4044,8 +4044,8 @@ msgid "Hyperliquid will unlock code creation when the required volume is confirm
 msgstr "Hyperliquid 确认达到所需成交量后，将解锁推荐码创建功能。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "I have read and agree to the Gatu <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
-msgstr "我已阅读并同意 Gatu 的<0>使用条款</0>、<1>隐私政策</1>以及<2>Hyperliquid 使用条款</2>。"
+msgid "I have read and agree to the {BRAND_NAME} <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
+msgstr "我已阅读并同意 {BRAND_NAME} 的<0>使用条款</0>、<1>隐私政策</1>以及<2>Hyperliquid 使用条款</2>。"
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
@@ -4056,8 +4056,8 @@ msgid "I have saved the private key in a secure location"
 msgstr "我已将私钥保存到安全位置"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "I understand that Gatu uses essential cookies and browser storage for authentication, security, preferences, and trading functionality. Review the <0>Cookie Policy</0>."
-msgstr "我了解 Gatu 会使用必要的 Cookie 和浏览器存储来进行身份验证、安全保护、偏好设置及交易功能。请查看<0>Cookie 政策</0>。"
+msgid "I understand that {BRAND_NAME} uses essential cookies and browser storage for authentication, security, preferences, and trading functionality. Review the <0>Cookie Policy</0>."
+msgstr "我了解 {BRAND_NAME} 会使用必要的 Cookie 和浏览器存储来进行身份验证、安全保护、偏好设置及交易功能。请查看<0>Cookie 政策</0>。"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -4094,12 +4094,12 @@ msgid "Indices"
 msgstr "指数"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Install app"
-msgstr "安装应用"
+msgid "Install {BRAND_NAME}"
+msgstr "安装 {BRAND_NAME}"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Install gatu"
-msgstr "安装 gatu"
+msgid "Install app"
+msgstr "安装应用"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Install this web app for a full-screen, app-like trading experience."
@@ -5648,16 +5648,12 @@ msgstr "离线"
 #~ msgstr "持仓量"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
-msgstr "在 iPhone 或 iPad 上，打开“分享”菜单，选择“添加到主屏幕”，然后从主屏幕启动 gatu。"
+msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch {BRAND_NAME} from your Home Screen."
+msgstr "在 iPhone 或 iPad 上，打开“分享”菜单，选择“添加到主屏幕”，然后从主屏幕启动 {BRAND_NAME}。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#~ msgid "On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code, or scan it with your phone camera."
-#~ msgstr "在手机上打开 gatu，点击 Connect，再点「关联桌面钱包」扫描此码，或直接用手机相机扫描。"
-
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code."
-msgstr "在手机上打开 gatu，点「连接」→「链接桌面钱包」，扫描此二维码。"
+msgid "On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet and scan this code."
+msgstr "在手机上打开 {BRAND_NAME}，点「连接」→「链接桌面钱包」，扫描此二维码。"
 
 #. placeholder {0}: payload.env
 #. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale: i18n.locale })
@@ -7559,8 +7555,8 @@ msgid "Scan the QR from Link mobile device on your desktop to load a trading key
 msgstr "在桌面打开「关联移动设备」并扫描其二维码，以载入交易密钥。"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
-msgid "Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device)."
-msgstr "扫描桌面端 gatu 右上角二维码图标（关联移动设备）显示的二维码。"
+msgid "Scan the QR from the QR icon in the top-right of {BRAND_NAME} on desktop (Link mobile device)."
+msgstr "扫描桌面端 {BRAND_NAME} 右上角二维码图标（关联移动设备）显示的二维码。"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #~ msgid "Scan the QR shown by Link Mobile Device on your desktop."
@@ -9033,8 +9029,8 @@ msgid "The prior request may have reached Hyperliquid. Do not submit it again. O
 msgstr "此前的请求可能已到达 Hyperliquid。请勿再次提交。打开相关页面以继续只读核对。"
 
 #: src/components/api-wallet/api-wallet-view.tsx
-msgid "The private key is created in this browser and is never uploaded or stored by Gatu."
-msgstr "私钥在此浏览器中创建，绝不会上传或由 Gatu 存储。"
+msgid "The private key is created in this browser and is never uploaded or stored by {BRAND_NAME}."
+msgstr "私钥在此浏览器中创建，绝不会上传或由 {BRAND_NAME} 存储。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The private key is created on this desktop and embedded in the QR code."
@@ -9391,11 +9387,6 @@ msgstr "这是所选筛选条件下明确的空结果。"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This is a WalletConnect QR. Scan the Link Desktop Wallet QR instead."
 msgstr "这是 WalletConnect 二维码。请改为扫描“关联桌面钱包”二维码。"
-
-#: src/routes/mobile-agent-sync.tsx
-#: src/routes/mobile-agent-sync.tsx
-#~ msgid "This is not a valid gatu desktop wallet QR."
-#~ msgstr "这不是有效的 gatu 桌面钱包二维码。"
 
 #: src/components/referrals/referral-activity.tsx
 msgid "This is the legacy earned-reward history. Current claims are shown in the previous tab."

@@ -1,8 +1,8 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSwitchChain, useWalletClient } from "wagmi";
+import { ButtonLoading } from "@/components/brand/button-loading";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -1141,7 +1141,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						variant={buttonContent.variant}
 						onClick={handleCtaClick}
 						disabled={buttonContent.disabled}
-						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
+						iconLeft={isRegistering ? <ButtonLoading /> : undefined}
 					/>
 				)}
 				{geoRestriction.isResolved && buttonContent.disabledReason ? (
