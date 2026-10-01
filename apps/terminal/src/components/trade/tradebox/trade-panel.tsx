@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSwitchChain, useWalletClient } from "wagmi";
+import { ButtonLoading } from "@/components/brand/button-loading";
 import { LazyDialogHost } from "@/components/ui/lazy-dialog-host";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
@@ -909,7 +909,7 @@ export function TradePanel() {
 									onClick={handleCtaClick}
 									disabled={buttonContent.disabled}
 									aria-label={buttonContent.text}
-									iconLeft={isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
+									iconLeft={isRegistering ? <ButtonLoading /> : undefined}
 								/>
 							)}
 							{buttonContent.disabledReason ? (

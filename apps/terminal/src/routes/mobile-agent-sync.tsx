@@ -1,6 +1,6 @@
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { CheckCircleIcon, DeviceMobileIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { CheckCircleIcon, DeviceMobileIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import {
 	activateAgentOwnerForRegistration,
 	cancelAgentRegistrationEpochAndRemove,
@@ -13,6 +13,7 @@ import { Button } from "@sairn/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Address } from "viem";
+import { ButtonLoading } from "@/components/brand/button-loading";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { formatDateTime } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -180,13 +181,7 @@ function MobileAgentSyncRoute() {
 								className="w-full"
 								disabled={!payload || isImporting}
 								onClick={handleImport}
-								iconLeft={
-									isImporting ? (
-										<SpinnerGapIcon className="size-4 animate-spin" aria-hidden />
-									) : (
-										<DeviceMobileIcon className="size-4" aria-hidden />
-									)
-								}
+								iconLeft={isImporting ? <ButtonLoading /> : <DeviceMobileIcon className="size-4" aria-hidden />}
 							>
 								<Trans>Import</Trans>
 							</Button>

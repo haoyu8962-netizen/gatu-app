@@ -1,7 +1,8 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { ArrowLeftIcon, CameraIcon, QrCodeIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, CameraIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Button } from "@sairn/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ButtonLoading } from "@/components/brand/button-loading";
 import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { classifyQrValue, shouldShowQrFeedback } from "@/lib/mobile-sync/qr-classification";
@@ -226,13 +227,7 @@ export function MobileAgentQrScanner({
 					className="w-full"
 					disabled={cameraActive}
 					onClick={handleStartScanner}
-					iconLeft={
-						status === "starting" ? (
-							<SpinnerGapIcon className="size-4 animate-spin" aria-hidden />
-						) : (
-							<CameraIcon className="size-4" aria-hidden />
-						)
-					}
+					iconLeft={status === "starting" ? <ButtonLoading /> : <CameraIcon className="size-4" aria-hidden />}
 				>
 					{status === "starting" ? <Trans>Starting camera...</Trans> : <Trans>Start camera</Trans>}
 				</Button>

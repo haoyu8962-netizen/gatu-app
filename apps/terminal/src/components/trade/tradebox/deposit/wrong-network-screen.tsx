@@ -1,6 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
+import { ButtonLoading } from "@/components/brand/button-loading";
 import { formatTransferError } from "@/lib/errors/format";
 
 interface Props {
@@ -57,7 +58,7 @@ export function WrongNetworkScreen({ open, onClose, onSwitch, isSwitching, error
 				<Button variant="filled" intent="neutral" onClick={onSwitch} disabled={isSwitching} className="w-full">
 					{isSwitching ? (
 						<>
-							<SpinnerGapIcon className="size-4 animate-spin" />
+							<ButtonLoading />
 							<Trans>Switching...</Trans>
 						</>
 					) : (

@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import type { Chain } from "viem";
+import { ButtonLoading } from "@/components/brand/button-loading";
 import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";
 
@@ -131,7 +132,7 @@ export function WalletNotConnected({ onConnect, isConnecting = false }: WalletNo
 			</div>
 			{onConnect ? (
 				<Button onClick={onConnect} disabled={isConnecting} className="min-w-36">
-					{isConnecting ? <SpinnerGapIcon className="size-4 animate-spin" /> : <WalletIcon className="size-4" />}
+					{isConnecting ? <ButtonLoading /> : <WalletIcon className="size-4" />}
 					<Trans>Reconnect wallet</Trans>
 				</Button>
 			) : null}
