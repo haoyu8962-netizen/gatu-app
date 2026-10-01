@@ -80,9 +80,9 @@
 }
 
 /* ============================================
-   HyperTerminal UI — Design Tokens
+   Sairn UI — Design Tokens
    Source: Figma variable exports
-   + HyperTerminal Trading Extensions
+   + Sairn Trading Extensions
    ============================================ */
 
 /* --- Dark mode: class-based toggle --- */
@@ -151,7 +151,7 @@
   --tracking-uppercase: 2px;
   --tracking-heading-1: -0.5px;
 
-  /* ---- HyperTerminal Custom Animations ---- */
+  /* ---- Sairn Custom Animations ---- */
   --animate-pulse-slow: pulse-slow 2s ease-in-out infinite;
   --animate-blink: blink 1s step-end infinite;
   --animate-countdown: countdown linear forwards;
@@ -353,7 +353,7 @@
     --icon-inverse-strong: #ffffff;
     --icon-inverse-disabled: #ffffff1f;
 
-    /* HyperTerminal Trading Extensions */
+    /* Sairn Trading Extensions */
     --market-up: var(--text-success);
     --market-down: var(--text-error);
     --orderbook-depth-bid: var(--text-success);
@@ -553,7 +553,7 @@
     --icon-inverse-strong: #000626e5;
     --icon-inverse-disabled: #0011661a;
 
-    /* HyperTerminal Trading Extensions (Dark) */
+    /* Sairn Trading Extensions (Dark) */
     --market-up: var(--text-success);
     --market-down: var(--text-error);
     --orderbook-depth-bid: #1fa67d;
@@ -813,7 +813,7 @@
   --color-icon-inverse-strong: var(--icon-inverse-strong);
   --color-icon-inverse-disabled: var(--icon-inverse-disabled);
 
-  /* HyperTerminal Trading Extensions */
+  /* Sairn Trading Extensions */
   --color-market-up: var(--market-up);
   --color-market-down: var(--market-down);
   --color-market-neutral: var(--market-neutral);
@@ -874,7 +874,7 @@
 }
 
 /* =============================================
-   HyperTerminal App Styles
+   Sairn App Styles
    ============================================= */
 @layer base {
   :root {

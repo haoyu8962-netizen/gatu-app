@@ -1,6 +1,6 @@
-# Mobile PWA Features — gatu Roadmap
+# Mobile PWA Features — Sairn Roadmap
 
-Deep research into Hyperliquid mobile trading pain points, competitor analysis, PWA capabilities, and a prioritized roadmap to make gatu the best mobile perp terminal.
+Deep research into Hyperliquid mobile trading pain points, competitor analysis, PWA capabilities, and a prioritized roadmap to make Sairn the best mobile perp terminal.
 
 ---
 
@@ -240,7 +240,7 @@ Background monitoring (liquidation warnings when app is closed) **requires a ser
 
 ---
 
-## 6. Roadmap: Making gatu the Best Mobile Perp Terminal
+## 6. Roadmap: Making Sairn the Best Mobile Perp Terminal
 
 ### Phase 1: Foundation (Weeks 1-4) — "Make It Not Suck on Mobile"
 
@@ -356,7 +356,7 @@ Background monitoring (liquidation warnings when app is closed) **requires a ser
 
 ## 9. Competitive Positioning
 
-**What makes gatu's PWA win over native CEX apps:**
+**What makes Sairn's PWA win over native CEX apps:**
 
 1. **No app store gatekeeping** — instant updates, no review delays, no 30% cut
 2. **Single codebase** — desktop and mobile share components, faster iteration
@@ -364,7 +364,7 @@ Background monitoring (liquidation warnings when app is closed) **requires a ser
 4. **Server-side alerts** — match CEX notification quality without centralized custody
 5. **Open protocol** — integrate any Hyperliquid feature as it ships, no app store approval needed
 
-**What makes gatu's PWA win over Hyperliquid's own mobile UI:**
+**What makes Sairn's PWA win over Hyperliquid's own mobile UI:**
 
 1. **Mobile-first design** — not a responsive desktop layout
 2. **Push notifications** — liquidation warnings, fill alerts, price alerts

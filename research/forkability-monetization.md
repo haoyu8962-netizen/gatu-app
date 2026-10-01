@@ -1,12 +1,12 @@
 # Forkability & Builder Monetization
 
-How to make gatu extremely forkable so builders can launch branded trading terminals on Hyperliquid and monetize via builder fees.
+How to make Sairn extremely forkable so builders can launch branded trading terminals on Hyperliquid and monetize via builder fees.
 
 ---
 
 ## Current State
 
-gatu already has partial fork-friendliness:
+Sairn already has partial fork-friendliness:
 
 - **Builder fee config** in `src/config/hyperliquid.ts` — address + fee rate (0.01%)
 - **`VITE_BUILDER_ADDRESS` env var** — overrides the default builder address
@@ -142,7 +142,7 @@ gatu already has partial fork-friendliness:
 
 ### Phase 7: Builder Ecosystem
 
-- [ ] **Fork registry** — optional opt-in directory of gatu forks (name, URL, builder address, fee rate)
+- [ ] **Fork registry** — optional opt-in directory of Sairn forks (name, URL, builder address, fee rate)
 - [ ] **Upstream sync guide** — documented process for pulling upstream updates without losing customizations (git rebase strategy, merge conflict hotspots)
 - [ ] **Breaking change policy** — semver `fork.config.ts` schema; migration scripts for config changes between versions
 - [ ] **Builder showcase** — landing page on gatu.ai featuring top forks by volume
@@ -178,7 +178,7 @@ gatu already has partial fork-friendliness:
 
 **Config as code, not GUI**: `fork.config.ts` is a TypeScript file, not a JSON blob. Builders get type safety, autocomplete, and can use expressions (e.g., derive SEO description from app name). Build-time validation catches errors before deploy.
 
-**Don't abstract the SDK away**: Forks should import `@hyperliquid` SDK directly for custom features. gatu provides the trading UI shell; builders add value on top. Over-abstracting the exchange layer makes forks fragile to upstream changes.
+**Don't abstract the SDK away**: Forks should import `@hyperliquid` SDK directly for custom features. Sairn provides the trading UI shell; builders add value on top. Over-abstracting the exchange layer makes forks fragile to upstream changes.
 
 **Keep the fork surface small**: Every file a builder must touch is a merge conflict waiting to happen. The ideal fork touches exactly one file (`fork.config.ts`) and optionally adds files in designated extension directories. Core components should never need editing for basic forks.
 

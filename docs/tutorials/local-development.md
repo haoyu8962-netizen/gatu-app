@@ -114,11 +114,11 @@ design document. For TypeScript changes, run:
 
 ```bash
 pnpm exec biome check path/to/changed-file.tsx
-pnpm --filter @gatu/terminal typecheck
+pnpm --filter @sairn/terminal typecheck
 ```
 
 Replace the example path with the actual changed files. Root `pnpm typecheck`
-also checks `@gatu/hl-react` and `@gatu/ui`. Root `pnpm test` is broader: it checks
+also checks `@sairn/hl-react` and `@sairn/ui`. Root `pnpm test` is broader: it checks
 generated OG assets, terminal and website Vitest tests, and the cross-app brand
 test. `pnpm build` compiles translations, builds the terminal, then validates
 client chunk cycles and the bundle budget. Use `pnpm serve` only after a

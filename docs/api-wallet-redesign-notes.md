@@ -60,11 +60,11 @@ Repository evidence checked before implementation:
 
 | Concern | Handoff README / design runtime | Project integration layer | Official or pinned-SDK behavior | Decision |
 | --- | --- | --- | --- | --- |
-| List query | `extraAgents` is the source of truth | `useInfo("extraAgents", { user })` in `@gatu/hl-react` | Accepts the master or subaccount address; returns `{ address, name, validUntil: number \| null }[]` | Use the existing `useInfo` hook with the selected account address. Never query with the Agent address. |
+| List query | `extraAgents` is the source of truth | `useInfo("extraAgents", { user })` in `@sairn/hl-react` | Accepts the master or subaccount address; returns `{ address, name, validUntil: number \| null }[]` | Use the existing `useInfo` hook with the selected account address. Never query with the Agent address. |
 | Approval call | `approveAgent(agentName, agentAddress, validUntil)` | `useExplicitAgentApproval` delegates to the registered user-signed `approveAgent` client | v0.33.3 accepts only `agentAddress` and optional `agentName`; there is no `validUntil` property | Call only the existing approval hook. Encode expiry in `agentName` as `<base> valid_until <epoch-ms>`. |
 | Signing identity | Requires the main account | `approveAgent` is registered as a user-client method; external and embedded-wallet paths fail closed on account mismatch | `approveAgent` is a user-signed EIP-712 action | Require `hasWalletAccess`, the master address, and a case-insensitive exact match before enabling an action. Do not create a signer in the page. |
 | Name length | 2–24 characters | Pinned SDK validates the base name after removing the expiry suffix | Maximum base-name length is 16; empty is reserved for the unnamed Agent | Keep the product's conservative ASCII rule and two-character minimum, but change the maximum to 16. |
-| Name characters | Letters, digits, `_`, `-` | No additional project restriction | Protocol/SDK does not document this regex | Retain it explicitly as a Gatu product validation rule, not a protocol claim. |
+| Name characters | Letters, digits, `_`, `-` | No additional project restriction | Protocol/SDK does not document this regex | Retain it explicitly as a Sairn product validation rule, not a protocol claim. |
 | Duplicate name | Reject duplicate names | Existing Mobile verification treats name as identity | A new named approval with the same base name deregisters/replaces the old Agent | Block duplicates during creation because replacement is destructive. Use deliberate same-name replacement only for deactivation. |
 | Agent count | Fixed maximum of five | No project helper establishes a fixed five-slot account limit | Official endpoint documents one unnamed Agent, up to three named Agents, plus two named slots per subaccount | Remove the fixed `5` validation and denominator. Show the returned count; let Hyperliquid enforce the account-specific capacity and surface its exact error. |
 | Expiry choices | 30 days / 180 days / never | Existing Mobile Agent encodes a finite expiry suffix | The pinned guide documents a default finite lifetime and custom expiry up to 180 days. Omitting the suffix is not a documented “forever” named Agent contract | Offer finite 30/90/180-day choices. Do not offer “never”. Render `validUntil: null` honestly if the API returns it. |
@@ -202,7 +202,7 @@ No standalone TypeScript example is rendered by the page. The actual SDK paramet
 | Check | Result |
 | --- | --- |
 | Task TypeScript/TSX Biome check | Passed. |
-| `pnpm typecheck` (`@gatu/hl-react`, `@gatu/ui`, `@gatu/terminal`) | Passed. |
+| `pnpm typecheck` (`@sairn/hl-react`, `@sairn/ui`, `@sairn/terminal`) | Passed. |
 | Targeted API-wallet/navigation Vitest suite | Passed: 145/145 tests across nine files, including all six page states and every pure action-state transition. |
 | `pnpm i18n:extract` (second run) / `pnpm i18n:compile` | Passed and extract is idempotent. |
 | 48 screenshot files | Passed automated count/state/locale/theme checks and four representative visual inspections. |

@@ -148,7 +148,7 @@ Mobile ≠ desktop-on-small-screen. It's a fundamentally different experience:
 
 - **$1.1B** in protocol revenue in 2025 (4th highest in all crypto)
 - **97% returned to users** → near-zero budget for development/marketing
-- This constraint is gatu's advantage: HL can't build everything themselves
+- This constraint is Sairn's advantage: HL can't build everything themselves
 - Builder ecosystem must fill the gaps
 
 ### DEX Perps Market Growth

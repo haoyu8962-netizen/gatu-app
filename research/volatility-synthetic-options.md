@@ -17,7 +17,7 @@
 13. [Real-World Desk Implementation](#13-real-world-desk-implementation)
 14. [DeFi Protocols & Prior Art](#14-defi-protocols--prior-art)
 15. [Existing Tools & Platform UX Analysis](#15-existing-tools--platform-ux-analysis)
-16. [gatu Feature Ideas](#16-gatu-feature-ideas)
+16. [Sairn Feature Ideas](#16-gatu-feature-ideas)
 
 ---
 
@@ -723,7 +723,7 @@ Low VolOfVol → Stable regime → Tighter hedging, more aggressive positions.
 - LP positions = short options (providing liquidity in a range = selling a strangle)
 - "Streaming premium" — continuous funding-like mechanism replaces discrete premium
 - Empirically: Panoptic option prices track Black-Scholes with ~82% coefficient of variation
-- **Key insight for gatu:** The idea that LP positions and perp positions can synthesize options payoffs is well-validated
+- **Key insight for Sairn:** The idea that LP positions and perp positions can synthesize options payoffs is well-validated
 
 ### Opyn Squeeth (ETH²)
 - Power perpetual: constant gamma, no strikes, no expiry
@@ -786,7 +786,7 @@ Low VolOfVol → Stable regime → Tighter hedging, more aggressive positions.
 
 ---
 
-## 16. gatu Feature Ideas
+## 16. Sairn Feature Ideas
 
 ### Tier 1 — High Impact, Feasible Now
 

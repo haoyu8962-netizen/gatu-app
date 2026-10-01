@@ -10,7 +10,7 @@ And 40% of its users are already trading through third-party frontends.
 
 Not because Hyperliquid is bad. Because the official interface isn't built for all of them.
 
-That's the opening. That's why we're building gatu — and why we're doing it in the open.
+That's the opening. That's why we're building Sairn — and why we're doing it in the open.
 
 ---
 

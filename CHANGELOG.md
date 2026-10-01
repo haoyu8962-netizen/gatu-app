@@ -448,7 +448,7 @@ changes, not evidence that a build has been deployed or accepted on real devices
   `Approve mobile trading key` button signs, and the pending label reads
   `Approve QR code with wallet...`.
 - The pre-approval panel merges the create and review points, lists what the key can and cannot
-  do, and adds phone instructions (open gatu on the phone, tap Connect, then Link Desktop
+  do, and adds phone instructions (open Sairn on the phone, tap Connect, then Link Desktop
   Wallet); the screen-sharing warning now appears before `Hold to reveal QR`.
 - `Hold to reveal QR` draws its progress as a ring inside the button, and the revealed panel
   shows a visible seconds countdown to auto-close derived from the envelope expiry and the

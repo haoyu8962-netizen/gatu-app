@@ -92,7 +92,7 @@ When multiple outcome markets exist on related events — e.g., "BTC above 100K"
 
 ---
 
-## Feature Ideas for gatu
+## Feature Ideas for Sairn
 
 ### Tier 1: Core Trading Experience
 
@@ -199,7 +199,7 @@ Response:
 - Market types seen: `class:priceBinary` with encoded underlying, expiry, target price, period
 
 ### Codebase Status
-- **No existing outcomes code** in gatu
+- **No existing outcomes code** in Sairn
 - SDK (`hl-react`, `hl-sdk`) does not yet export outcome types
 - Will need new domain module: `src/domain/outcome/` for parsing outcome descriptions, formatting probabilities, computing payoffs
 - New store: `src/stores/outcome-store.ts` for selected markets, watchlists, alerts
@@ -215,14 +215,14 @@ Response:
 
 ## Competitive Positioning
 
-| Platform | Strength | gatu Opportunity |
+| Platform | Strength | Sairn Opportunity |
 |----------|----------|-------------------------|
 | Polymarket | Social/viral UX, broad markets | Professional trading tools, unified margin |
 | Kalshi | Regulatory legitimacy, US access | Speed, composability with perps, DeFi-native |
 | dYdX | Perps depth | First-mover on integrated outcomes+perps UX |
 | Drift (Solana) | BET product exists | Superior execution (HyperCore throughput) |
 
-**gatu's unique angle**: The only terminal where outcomes and perps live in the same margin account. This enables hedging workflows that are literally impossible on standalone prediction market platforms. Lead with the unified margin story.
+**Sairn's unique angle**: The only terminal where outcomes and perps live in the same margin account. This enables hedging workflows that are literally impossible on standalone prediction market platforms. Lead with the unified margin story.
 
 ---
 
@@ -231,7 +231,7 @@ Response:
 1. **Outcome market browser + basic trading** — ship when mainnet launches, be day-1 ready
 2. **Unified position view** — the differentiator, show outcomes alongside perps immediately
 3. **Event calendar** — high value, relatively low effort, drives engagement
-4. **Hedge builder** — the "why use gatu for outcomes" feature
+4. **Hedge builder** — the "why use Sairn for outcomes" feature
 5. **Cross-platform monitor** — nice-to-have, depends on external API stability
 6. **Series analytics** — needs historical data, ship after sufficient market history
 7. **Market making tools** — niche but high-value for liquidity providers

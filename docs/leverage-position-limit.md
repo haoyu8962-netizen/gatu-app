@@ -23,7 +23,7 @@
 
 - 函数逐档查找第一个 `maxLeverage < L` 的档位并返回它的 `lowerBound`，没有则返回空；只在 `marginTiers.length > 1` 时显示。
 - 文案是两句说明，第二句形如 `The max position size for {leverage}x leverage on {coin} is ${maxPosition}.`，放在滑杆上方。
-- 侦察观察到 BTC 25x 时这段说明从一行变成两行，滑杆随之下移约 6px。gatu 不照搬这种布局。
+- 侦察观察到 BTC 25x 时这段说明从一行变成两行，滑杆随之下移约 6px。Sairn 不照搬这种布局。
 
 2026-09-27 本次实施用公开 `POST /info {"type":"meta"}` 核对主 dex：多档表是 51–56 号（均为两档，下界都以 `.0` 结尾），共 34 个未下架资产，例如 BTC（56：0→40x，150,000,000→20x）、ETH（55：0→25x，100,000,000→15x）、SOL（54）、XRP（53），表 51/52 为 10x→5x（300 万 / 2,000 万）。侦察报告称当日 HIP-3 dex 全部为单档表，本次未复核 `allPerpMetas`；builder 永续走同一路径，用合成分档表测试。
 
@@ -106,7 +106,7 @@
 2026-09-27 在本分支（基线 `dbc6036e`）实际运行，全部通过：
 
 - `pnpm exec biome check`：本次改动的 16 个 TypeScript/TSX 文件，无问题。
-- `pnpm --filter @gatu/terminal typecheck`：通过（未改动 `packages/hl-react`）。
+- `pnpm --filter @sairn/terminal typecheck`：通过（未改动 `packages/hl-react`）。
 - 新增与扩展的测试：`leverage-position-limit.test.ts`（领域规则、官方循环对照、无效表与杠杆）、`leverage-position-limit-row.test.tsx`（数值、隐藏条件、计价币、数字格式与语言原位切换、五种语言的译文、单行类名）、`leverage-editor.test.tsx`（预览、取消、输入与位置）、`leverage-modal.test.tsx`（透传、`memo` 不多渲染、Confirm 不变）、`margin-mode-modal.test.tsx`（移动抽屉拖动在抽屉外壳之下、确认只提交一次；保证金视图与桌面保证金弹窗不显示）、`market-catalog.test.ts`（主 dex 与 builder dex 分档表的挂载、隐式表与不一致表）。
 - 与改动相关的既有文件与扫描器：32 个文件 500 个测试（含两个宿主的渲染测试与源码契约、`i18n-reactivity-contract`、`i18n-hot-switch`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`modal-surface-contract`、`action-progress-label-contract`、`trading-action-button-label-contract`、`mobile-data-presentation-contract`、`dialog-dismiss-control-contract`）。
 - `AGENTS.md` 分组：确认面 41 个文件 882 个测试；滑杆手势与数字/日期格式 15 个文件 267 个测试；移动端数据展示 4 个文件 74 个测试。
@@ -115,7 +115,7 @@
 审查修复（同日，本分支 `bd6bb81b` 之后）实际运行，全部通过：
 
 - 修复内容：展示层向零截断分数下界（`leverage-position-limit-row.test.tsx` 新增 `3000000.5` 的 USDC 与 USDH 用例）；宿主透传的源码契约（`lazy-trade-settings-modals.test.tsx` 新增一个用例）。
-- `pnpm exec biome check`：改动的 3 个 TypeScript/TSX 文件，无问题；`pnpm --filter @gatu/terminal typecheck`：通过。
+- `pnpm exec biome check`：改动的 3 个 TypeScript/TSX 文件，无问题；`pnpm --filter @sairn/terminal typecheck`：通过。
 - 本功能的回归入口（§9）、上述扫描器与数字/日期格式分组：22 个文件 516 个测试；`AGENTS.md` 确认面分组：41 个文件 882 个测试。
 - 变异核对：去掉截断后新用例得到 `$3,000,001` 而失败；分别从两个宿主删去 `marginTiers={marginTiers}` 或 `quoteSymbol={getTpSlCollateralSymbol(market)}`（共 4 次），源码契约用例每次都失败；恢复后通过。
 
@@ -124,7 +124,7 @@
 - 修复内容：展示层在向零截断之后，对大于 `Number.MAX_SAFE_INTEGER` 的下界显示占位符（§4.2）；布局稳定性的「无法确认」只在 §6 补充说明，没有代码改动。
 - 先写回归用例：`leverage-position-limit-row.test.tsx` 新增 8 个用例，下界 `9007199254740995.5`、`123456789012345678901.5`（超出安全整数范围，期望 `-`）与 `9007199254740991.9`、`9007199254740990.5`（截断后等于或低于上限，期望完整数值），USDC 与 USDH 各一例。在 `19af214b` 上超出范围的 4 例失败（得到 `$9,007,199,254,740,996`、`9,007,199,254,740,996 USDH`、`$123,456,789,012,345,680,000`、`123,456,789,012,345,680,000 USDH`），修复后 24 个用例全部通过。
 - `pnpm exec biome check`：改动的 2 个 TypeScript/TSX 文件，无问题。
-- `pnpm --filter @gatu/terminal typecheck`：失败，4 个错误都在 `src/lib/tests/funding-history-load-boundary.test.tsx`（资金费历史功能的 `7db5cf0b` 引入）；把本次两个文件恢复到 `19af214b` 后错误完全相同，与本功能无关，本次未处理。
+- `pnpm --filter @sairn/terminal typecheck`：失败，4 个错误都在 `src/lib/tests/funding-history-load-boundary.test.tsx`（资金费历史功能的 `7db5cf0b` 引入）；把本次两个文件恢复到 `19af214b` 后错误完全相同，与本功能无关，本次未处理。
 - 本功能的回归入口（§9）加上 `i18n-reactivity-contract`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`action-progress-label-contract`、`mobile-data-presentation-contract`：14 个文件 325 个测试，全部通过。
 - 变异核对：删去展示层的安全整数判断后，新增的 4 个超出范围用例失败，恢复后通过。
 - 文档：本文、[移动端数据展示规范](mobile-data-presentation.md) 的占位条件与[滑杆交互契约](slider-interactions.md) 的验证说明同步修改；`git diff --check` 无问题，文档修改后重跑 `mobile-data-presentation-contract` 与 `leverage-position-limit-row` 通过。

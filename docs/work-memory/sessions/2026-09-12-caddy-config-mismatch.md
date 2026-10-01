@@ -35,7 +35,7 @@
   日志到达不一致分支，说明本次明确阻断发生在文件比较，而非前面的警告。
 - 主流程在第 2 步调用该检查，第 3 步才注入环境，第 5 步才构建；本次尝试尚未进入新 release 切换。
   不据此宣称旧服务健康，服务器实时状态未检查。
-- 按部署手册以管理员权限依次执行 Caddy validate、install、systemctl reload，成功后以 gatu 用户重跑 main 部署。
+- 按部署手册以管理员权限依次执行 Caddy validate、install、systemctl reload，成功后以 Sairn 用户重跑 main 部署。
   不更改配对开关、手动创建 readiness 文件或删除覆盖客户端 IP 的配置。
 - 保留管理员安装边界，不为省略一次初始化操作而授予应用用户修改公网代理的权限。
 

@@ -4,8 +4,8 @@
 
 ## 1. 目标
 
-1. **数字格式与语言彻底分离并贯穿全部数字面**：gatu 已有独立的数字格式设置，但图表不知道它，输入框不接受它，日期数字系统也没有明确规则。目标是设置改动后，应用文本、图表价格轴/图例/十字线标签、输入框和标题使用同一套分隔符，且不 reload、不丢页面状态。
-2. **图表库内翻译的定点修补机制**：官方用 `custom_translate_function` 修 TradingView 自带译文的错误（`分钟→月`、`분→월`）。gatu 目前没有这个入口；目标是建立「只收录已确认错译、每条绑定库条目、库升级时测试提醒复核」的机制，而不是先接一个空函数。
+1. **数字格式与语言彻底分离并贯穿全部数字面**：Sairn 已有独立的数字格式设置，但图表不知道它，输入框不接受它，日期数字系统也没有明确规则。目标是设置改动后，应用文本、图表价格轴/图例/十字线标签、输入框和标题使用同一套分隔符，且不 reload、不丢页面状态。
+2. **图表库内翻译的定点修补机制**：官方用 `custom_translate_function` 修 TradingView 自带译文的错误（`分钟→月`、`분→월`）。Sairn 目前没有这个入口；目标是建立「只收录已确认错译、每条绑定库条目、库升级时测试提醒复核」的机制，而不是先接一个空函数。
 
 ## 2. 现状（2026-09-24，`f03dcbc0` 工作区实测）
 
@@ -32,9 +32,9 @@
 
 ### 2.3 图表翻译修补的现状
 
-- gatu 的 TradingView 是 v28.3.0（`public/charting_library/package.json`），`custom_translate_function` 签名是 `(originalText, singularOriginalText, translatedText?) => string | null`，**没有官方 v28.5 用到的 `{context}` 参数**，同一个英文键在不同语境下无法区分。
+- Sairn 的 TradingView 是 v28.3.0（`public/charting_library/package.json`），`custom_translate_function` 签名是 `(originalText, singularOriginalText, translatedText?) => string | null`，**没有官方 v28.5 用到的 `{context}` 参数**，同一个英文键在不同语境下无法区分。
 - 图表语言映射 `chartLocaleByAppLocale`：en/zh/es/fr/ar 直传，**hi → en**（库没有印地语包；`bundles/` 里有 `ar`、无 `hi`）。
-- 官方修的两条错译来自库的 `{en:["m"],zh:["分钟"]}` / `{en:["m"],ko:["분"]}`（把月份缩写 `m` 译成分钟）。这两条在 gatu **没有暴露面**：`timeframes_toolbar` 在 `CHART_DISABLED_FEATURES` 里（`CHART_TIME_FRAMES` 因此是死配置），间隔按钮在中文下显示 `1分 / 5分 / 1小时 / 4小时 / 天`，iframe 全文没有 `分钟`。gatu 不支持韩语。
+- 官方修的两条错译来自库的 `{en:["m"],zh:["分钟"]}` / `{en:["m"],ko:["분"]}`（把月份缩写 `m` 译成分钟）。这两条在 Sairn **没有暴露面**：`timeframes_toolbar` 在 `CHART_DISABLED_FEATURES` 里（`CHART_TIME_FRAMES` 因此是死配置），间隔按钮在中文下显示 `1分 / 5分 / 1小时 / 4小时 / 天`，iframe 全文没有 `分钟`。Sairn 不支持韩语。
 - 结论：**目前没有一条已确认的错译可以收录**。对齐官方的价值在机制，不在那两条数据。
 
 ## 3. 方案 A：数字格式贯穿图表、输入与日期
@@ -78,7 +78,7 @@
 
 ### B-1 先审计，后收录
 
-- 用 Playwright 在 zh、es、fr、ar 四种图表语言下打开 gatu 交易页，遍历 gatu **启用**的图表面：顶栏（间隔按钮与下拉、指标按钮）、指标对话框（搜索框、分类、常用指标名）、图表设置对话框各页、右键菜单、左侧绘图工具栏与其展开菜单、图例（`成交量(Volume)` 这类混合文本）、价格轴右键菜单、时区/对数/自动按钮所在的底栏（如启用）。导出 iframe 内每个面的文本清单到 `.worklog/`（Git 忽略），由懂该语言的人逐条标记「错译 / 未译 / 可接受」。
+- 用 Playwright 在 zh、es、fr、ar 四种图表语言下打开 Sairn 交易页，遍历 Sairn **启用**的图表面：顶栏（间隔按钮与下拉、指标按钮）、指标对话框（搜索框、分类、常用指标名）、图表设置对话框各页、右键菜单、左侧绘图工具栏与其展开菜单、图例（`成交量(Volume)` 这类混合文本）、价格轴右键菜单、时区/对数/自动按钮所在的底栏（如启用）。导出 iframe 内每个面的文本清单到 `.worklog/`（Git 忽略），由懂该语言的人逐条标记「错译 / 未译 / 可接受」。
 - 只有被标记为错译、且英文原键在库里唯一或所有出现面都核对过的条目，才进入修补表；未译（英文残留）不修——那是库缺译，`custom_translate_function` 拿到的 `translatedText` 就是英文，可以修但要另行翻译并承担维护，先不做。
 - 审计结果为空时：不接线、不新增文件，只在 owner 文档里记录「已审计（日期、库版本、语言、面）无错译」，避免空函数成为死代码。
 
@@ -105,7 +105,7 @@
 
 ### B-3 不做的事
 
-- 不用它翻译 gatu 自己的字符串，也不用它给库缺译的英文补翻译（维护面太大，且 `hi → en` 本来就是整包英文）。
+- 不用它翻译 Sairn 自己的字符串，也不用它给库缺译的英文补翻译（维护面太大，且 `hi → en` 本来就是整包英文）。
 - 不改 `public/charting_library/` 里的任何文件。
 
 ## 5. 实施顺序与规模
@@ -124,7 +124,7 @@
 
 ## 6. 验证标准
 
-- 单元/契约：`tradingview-chart`、`number-format-settings`、`number-format-reactivity-contract`、`format`、新的日期/排序扫描契约、`number-input`、`chart-translation-patches`（如有）；`pnpm --filter @gatu/terminal typecheck`；Biome。
+- 单元/契约：`tradingview-chart`、`number-format-settings`、`number-format-reactivity-contract`、`format`、新的日期/排序扫描契约、`number-input`、`chart-translation-patches`（如有）；`pnpm --filter @sairn/terminal typecheck`；Biome。
 - 浏览器（真实浏览器，非仅注入事件）：切数字格式为 `1.234,56` 与 `1 234,56` 后，图表价格轴、图例（含 `K/M` 紧凑值）、十字线标签、订单簿、标题分隔符一致；语言 + Reset 连续操作后图表最终值正确且遮罩无闪白；`,` 输入在三种格式下的行为符合决策；阿拉伯语界面下日期与价格数字系统一致。
 - 记录：按 `docs/work-memory/README.md` 建任务记录，实测截图放 `.worklog/`。
 

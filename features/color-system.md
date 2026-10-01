@@ -12,7 +12,7 @@
 
 ## Summary
 
-Design a comprehensive color system for HyperTerminal inspired by Linear and Vercel's design language. Prioritize eye comfort for extended trading sessions while maintaining elegance, clarity, and meaningful signal colors.
+Design a comprehensive color system for Sairn inspired by Linear and Vercel's design language. Prioritize eye comfort for extended trading sessions while maintaining elegance, clarity, and meaningful signal colors.
 
 ## Design Philosophy
 
@@ -297,7 +297,7 @@ The system now includes 5 color themes, each with light and dark variants:
 Located in Settings dialog under "Appearance":
 - Grid of 5 color theme buttons with preview swatches
 - Light/dark mode toggle in the same section
-- Persisted to `localStorage` under `gatu-color-theme`
+- Persisted to `localStorage` under `sairn-color-theme`
 
 ### Implementation
 

@@ -24,7 +24,7 @@
 | 元素 | 文案（zh / en） |
 | --- | --- |
 | 标题 | 关联移动设备 / Link mobile device |
-| 一句说明 | 在手机上打开 gatu，点「连接 → 链接桌面钱包」扫描此码。/ On your phone, open gatu, tap Connect → Link Desktop Wallet and scan this code. |
+| 一句说明 | 在手机上打开 Sairn，点「连接 → 链接桌面钱包」扫描此码。/ On your phone, open Sairn, tap Connect → Link Desktop Wallet and scan this code. |
 | 一条提示（错误色 callout） | 二维码只能交易、不能提现；不要分享、截图或在共享屏幕时显示。/ The QR can trade but not withdraw. Do not share it, screenshot it or show it while sharing your screen. |
 | 动作区 | `idle`/`signing`：「授权移动交易密钥」；`ready`：「按住以显示」（4 秒圆环）；`revealed`：二维码 + 「{n} 秒后关闭」；`error`：一行错误 |
 
@@ -45,7 +45,7 @@
 
 ### 3.3 载荷协议 v4（`lib/mobile-sync/sync-core.ts`，756 → 约 120 行）
 
-片段 `#ht-mobile-sync=<base64url(JSON)>`，明文：`{ v: 4, env, owner, agent: { address, key, name, validUntil }, createdAt, expiresAt }`。校验：版本、`env` 等于本页网络、`owner` 与 `address` 为地址、`expiresAt`（创建 + 2 分钟）未过、`createdAt` 不超前本机 60 秒。去掉 AES-GCM、AAD、`syncId`。理由：片段不离开浏览器，密文与密钥同在片段里，加密对拿到链接的人没有作用；来源绑定由 URL 的主机承载，手机页只在自身 origin 下解析。线上开关一直关闭，没有存量 v3 用户，直接升版本，v1–v3 一律「请在桌面重新生成」。
+片段 `#sairn-mobile-sync=<base64url(JSON)>`，明文：`{ v: 4, env, owner, agent: { address, key, name, validUntil }, createdAt, expiresAt }`。校验：版本、`env` 等于本页网络、`owner` 与 `address` 为地址、`expiresAt`（创建 + 2 分钟）未过、`createdAt` 不超前本机 60 秒。去掉 AES-GCM、AAD、`syncId`。理由：片段不离开浏览器，密文与密钥同在片段里，加密对拿到链接的人没有作用；来源绑定由 URL 的主机承载，手机页只在自身 origin 下解析。线上开关一直关闭，没有存量 v3 用户，直接升版本，v1–v3 一律「请在桌面重新生成」。
 
 ### 3.4 入口与开关
 
@@ -101,5 +101,5 @@
 1. **手机是否保留一次点击「导入」**：推荐保留（一个按钮，防止误开链接替换手机上的密钥）；官方是扫到即写入。同题：是否保留「同一二维码不重复导入」的 30 行去重，推荐不保留。
 2. **真机矩阵**：推荐缩为 3 行手工清单并删除校验器；这是功能做完一周仍不可达线上的直接原因。
 3. **有效期**：推荐保留 30 天；官方永久。
-4. **桌面撤销**：推荐删除面板；gatu 的 API 钱包页面已能移除任何 Agent（Mobile Agent 会以 `Mobile valid_until …` 的原始名称出现，是否美化另议）。
+4. **桌面撤销**：推荐删除面板；Sairn 的 API 钱包页面已能移除任何 Agent（Mobile Agent 会以 `Mobile valid_until …` 的原始名称出现，是否美化另议）。
 5. **边缘函数与 Service Worker 的配对放行**：推荐本次不动。

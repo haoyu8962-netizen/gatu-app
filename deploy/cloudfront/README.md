@@ -13,13 +13,13 @@
 
 ## 官方终端的托管实践（2026-09-13 只读调试 `app.hyperliquid.xyz/trade/HYPE`）
 
-| 观察 | 证据 | 对 gatu 的取舍 |
+| 观察 | 证据 | 对 Sairn 的取舍 |
 | --- | --- | --- |
-| S3 源 + CloudFront，SPA 回写靠"自定义错误响应"：任何不存在的键（`/trade/HYPE`、`/portfolio`、`/no/such/page`、甚至缺失的 `/assets/*.js` 与 `/sw.js`）都返回 `index.html` 200，响应头 `X-Cache: Error from cloudfront` | `curl -D` 各路径，ETag 与 `/index.html` 相同 | 不照搬。gatu 用 viewer-request 函数把导航改写到 `_shell.html`/文档 `index.html`，文件形态的路径保持 404，避免缺失资源变成 HTML |
-| HTML 与资源都没有 `Cache-Control`，靠 ETag/Last-Modified 与 CloudFront 默认 TTL；错误映射的 HTML 在边缘缓存超过一天（`Age: 92651`） | 响应头 | 不照搬。gatu 在上传时写对象级 `Cache-Control`：`/assets/*` immutable、壳与文档页 `no-cache`、`build-meta.json`/`sw.js` `no-store`、图表包 `must-revalidate`；发布后全量失效 |
-| 没有任何安全头（无 CSP/HSTS/XFO） | 响应头 | 不照搬。gatu 用响应头策略把 `src/config/security-headers.ts` 原样搬到边缘 |
-| API 域 `api-ui.hyperliquid.xyz`：nginx 在 CloudFront 后面，`X-Cache: Miss`，CORS `*`，无缓存 | `POST /info` 响应头 | gatu 的浏览器仍直连公共 `api.hyperliquid.xyz`（同样在 CloudFront 后面，CORS `*`），不经过自家 API |
-| 前端不做地区判定，bundle 里没有 geo/ip 查询；限制由其 API 在服务端执行 | bundle 字符串检索 | gatu 的地区门控是产品契约，保留 `/api/geo`（IPdata，含代理判定）跑在 Lambda 上 |
+| S3 源 + CloudFront，SPA 回写靠"自定义错误响应"：任何不存在的键（`/trade/HYPE`、`/portfolio`、`/no/such/page`、甚至缺失的 `/assets/*.js` 与 `/sw.js`）都返回 `index.html` 200，响应头 `X-Cache: Error from cloudfront` | `curl -D` 各路径，ETag 与 `/index.html` 相同 | 不照搬。Sairn 用 viewer-request 函数把导航改写到 `_shell.html`/文档 `index.html`，文件形态的路径保持 404，避免缺失资源变成 HTML |
+| HTML 与资源都没有 `Cache-Control`，靠 ETag/Last-Modified 与 CloudFront 默认 TTL；错误映射的 HTML 在边缘缓存超过一天（`Age: 92651`） | 响应头 | 不照搬。Sairn 在上传时写对象级 `Cache-Control`：`/assets/*` immutable、壳与文档页 `no-cache`、`build-meta.json`/`sw.js` `no-store`、图表包 `must-revalidate`；发布后全量失效 |
+| 没有任何安全头（无 CSP/HSTS/XFO） | 响应头 | 不照搬。Sairn 用响应头策略把 `src/config/security-headers.ts` 原样搬到边缘 |
+| API 域 `api-ui.hyperliquid.xyz`：nginx 在 CloudFront 后面，`X-Cache: Miss`，CORS `*`，无缓存 | `POST /info` 响应头 | Sairn 的浏览器仍直连公共 `api.hyperliquid.xyz`（同样在 CloudFront 后面，CORS `*`），不经过自家 API |
+| 前端不做地区判定，bundle 里没有 geo/ip 查询；限制由其 API 在服务端执行 | bundle 字符串检索 | Sairn 的地区门控是产品契约，保留 `/api/geo`（IPdata，含代理判定）跑在 Lambda 上 |
 
 ## 只读核查（2026-09-13）
 
@@ -37,8 +37,8 @@
 | --- | --- |
 | `apps/terminal/src/edge/lambda-handler.ts` | Lambda 函数 URL 适配器：把事件转成 `Request`，用 `x-sairn-forwarded-host` 还原公网 origin（同源校验依赖它），从 `CloudFront-Viewer-Address` 取客户端 IP，路由到 `/api/geo`、`/api/referral-geo`、`/api/client-error-report`（含旧路径别名）、`/api/leaderboard`、`/api/health`（204，保温与验证用）；其余 404（含已退役的配对票据路径） |
 | `apps/terminal/src/lib/api/payload-hash.ts` | 浏览器端 POST 辅助：CloudFront 对 Lambda 源的 OAC 签名不读请求体，viewer 必须自带 `x-amz-content-sha256`（AWS 文档要求），否则 Lambda 以签名不匹配拒绝。`createJsonPostHeaders(body)` 同步计算 SHA-256 并附上 `content-type`，`/api/referral-geo`、`/api/client-error-report`（含 `keepalive` 上报）与配对票据请求都经它发出；GET/HEAD 不需要 |
-| `scripts/inject-shell-preloads.mjs` | `pnpm build` 末尾把交易页启动闭包（静态闭包 + 移动/桌面运行时 profile，来自与预算检查相同的 chunk 图分析）写进 `_shell.html`：JS 用 `modulepreload`，CSS 用 `preload as="style"`；再按 `build-meta.json` 的 `chartLibraryScript` 预加载 TradingView 入口（带 `media="(min-width: 1001px)"`）；仅桌面或仅移动需要的启动块与图表 iframe 的 `runtime.*`、`library.*` bundle、`sameorigin.html`、暗色主题样式写进 `<meta name="gatu-preload-desktop|mobile|gatu-chart-prefetch">`，由引导块 `src/lib/preload/surface-preloads.ts` 按 `matchMedia` 追加（Chromium 忽略 `modulepreload`/`prefetch` 链接上的 `media`）；包在 `<!--gatu-shell-preloads-->` 标记里；缺文件或 bundle 不唯一即构建失败 |
-| `pnpm --filter @gatu/terminal build:lambda` | 用 Vite SSR 构建把处理器打成单文件 `apps/terminal/dist-lambda/index.mjs`（约 220 KB，不含 `public/`，无浏览器全局访问），与客户端共用构建身份 |
+| `scripts/inject-shell-preloads.mjs` | `pnpm build` 末尾把交易页启动闭包（静态闭包 + 移动/桌面运行时 profile，来自与预算检查相同的 chunk 图分析）写进 `_shell.html`：JS 用 `modulepreload`，CSS 用 `preload as="style"`；再按 `build-meta.json` 的 `chartLibraryScript` 预加载 TradingView 入口（带 `media="(min-width: 1001px)"`）；仅桌面或仅移动需要的启动块与图表 iframe 的 `runtime.*`、`library.*` bundle、`sameorigin.html`、暗色主题样式写进 `<meta name="sairn-preload-desktop|mobile|sairn-chart-prefetch">`，由引导块 `src/lib/preload/surface-preloads.ts` 按 `matchMedia` 追加（Chromium 忽略 `modulepreload`/`prefetch` 链接上的 `media`）；包在 `<!--sairn-shell-preloads-->` 标记里；缺文件或 bundle 不唯一即构建失败 |
+| `pnpm --filter @sairn/terminal build:lambda` | 用 Vite SSR 构建把处理器打成单文件 `apps/terminal/dist-lambda/index.mjs`（约 220 KB，不含 `public/`，无浏览器全局访问），与客户端共用构建身份 |
 | `functions/terminal-request.js` | viewer-request：所有应用路径（含 Docs、Support 与法律页，ADR 0020）改写到 `_shell.html`，服务端路径与文件路径原样放行，`/_serverFn/*` 直接 404，写入 `x-sairn-forwarded-host`，先丢弃访客自带的 `x-sairn-route`，再给 `/join*` 标记 `referral-join`、给 `/mobile-agent-sync`（不区分大小写、允许尾斜杠）标记 `mobile-agent-sync` |
 | `functions/terminal-response.js` | viewer-response（由 `render-functions.mjs` 从 `terminal-response.template.js` 渲染，勿手改）：所有策略共用一份目录模板，只有 `frame-ancestors`、`img-src`、`script-src` 三个槽位不同——图表包路径用同源 iframe 版本，其余用终端版本，并在 `edge-config.json` 配置了 `cspReportUri` 时下发候选策略的 `Content-Security-Policy-Report-Only`；`x-sairn-route` 标记暴露为响应头；标记为 `mobile-agent-sync` 时写 `cache-control: no-store` 与 `referrer-policy: no-referrer`（配对页与其它应用路径共用同一个壳对象，无法靠对象元数据区分；响应头策略先于本函数应用，所以这里写入的值不会被策略的 `Override` 覆盖，见 [AWS 说明](https://aws.amazon.com/blogs/networking-and-content-delivery/amazon-cloudfront-introduces-response-headers-policies/)；`no-store` 只约束下游缓存，不改变边缘对壳的缓存）。提交的文件里 `SCRIPT_HASHES_CURRENT`/`SCRIPT_HASHES_PREVIOUS` 两行为空，发布时由 `deploy.mjs functions` 填入本次构建与线上现行的内联脚本哈希（见 4c）。CloudFront 响应头策略最多接受 1,783 字符的 CSP，而应用策略是 1,946 字符，所以 CSP 由函数下发；`pnpm test:cloudfront` 会在渲染结果与 `security-headers.ts`、`edge-config.json` 不一致时失败 |
 | `function-code.mjs` | 提交的函数与发布之间的契约：读取并校验 `edge-config.json`（`cspReportUri`、`cspScriptHashes`），向函数代码写入与读回两组哈希，轮换规则（本次构建为 CURRENT，线上 CURRENT 变 PREVIOUS，同一构建重发保留 PREVIOUS），以及 10 KB 上限 |
@@ -64,13 +64,13 @@
 2. **证书（us-east-1）**：
    ```bash
    aws acm request-certificate --region us-east-1 --validation-method DNS \
-     --domain-name app.gatu.ai --subject-alternative-names testnet.gatu.ai
+     --domain-name app.sairn.ai --subject-alternative-names testnet.sairn.ai
    aws acm describe-certificate --region us-east-1 --certificate-arn <arn> \
      --query 'Certificate.DomainValidationOptions[].ResourceRecord'
    ```
    把 CNAME 记录加到 Cloudflare（DNS-only），等待 `ISSUED`。
 3. **S3 桶**（私有，禁用公共访问，开启版本控制便于回滚）：`aws s3api create-bucket --bucket gatu-terminal-2026 --region ap-northeast-1 --create-bucket-configuration LocationConstraint=ap-northeast-1`。桶策略给 CloudFront OAC 授予 `s3:GetObject` 与 `s3:ListBucket`（有 ListBucket 时缺失对象返回 404 而不是 403，Lambda 的 403 语义得以保留）。
-4. **Lambda**：Node.js 22 运行时，处理程序 `index.handler`，环境变量 `IPDATA_API_KEY`、`SAIRN_PUBLIC_ORIGIN=https://app.gatu.ai`、`SAIRN_TRUST_VIEWER_ADDRESS=true`，内存 512 MB（arm64，冷启动更短），超时 10 s；创建函数 URL，`AuthType=AWS_IAM`，并建 Lambda 类型的 OAC 供 CloudFront 签名调用。保温：用 root 创建执行角色 `gatu-terminal-api-warm-role`（信任 `scheduler.amazonaws.com`，只允许 `lambda:InvokeFunction` 该函数）和 EventBridge Scheduler `gatu-terminal-api-warm`（`rate(5 minutes)`，`FlexibleTimeWindow OFF`，目标为函数本身，输入是一条 `rawPath=/api/health` 的合成函数 URL 事件），`gatu-edge` 策略不含 `scheduler`。分发建好后给每条分发加**两条**资源策略（AWS 文档如此要求，只加第一条时 CloudFront 得到 403 `AccessDeniedException`）：
+4. **Lambda**：Node.js 22 运行时，处理程序 `index.handler`，环境变量 `IPDATA_API_KEY`、`SAIRN_PUBLIC_ORIGIN=https://app.sairn.ai`、`SAIRN_TRUST_VIEWER_ADDRESS=true`，内存 512 MB（arm64，冷启动更短），超时 10 s；创建函数 URL，`AuthType=AWS_IAM`，并建 Lambda 类型的 OAC 供 CloudFront 签名调用。保温：用 root 创建执行角色 `gatu-terminal-api-warm-role`（信任 `scheduler.amazonaws.com`，只允许 `lambda:InvokeFunction` 该函数）和 EventBridge Scheduler `gatu-terminal-api-warm`（`rate(5 minutes)`，`FlexibleTimeWindow OFF`，目标为函数本身，输入是一条 `rawPath=/api/health` 的合成函数 URL 事件），`gatu-edge` 策略不含 `scheduler`。分发建好后给每条分发加**两条**资源策略（AWS 文档如此要求，只加第一条时 CloudFront 得到 403 `AccessDeniedException`）：
    ```bash
    aws lambda add-permission --function-name gatu-terminal-api --statement-id cloudfront-mainnet \
      --action lambda:InvokeFunctionUrl --principal cloudfront.amazonaws.com \
@@ -79,13 +79,13 @@
      --action lambda:InvokeFunction --principal cloudfront.amazonaws.com \
      --source-arn arn:aws:cloudfront::<account>:distribution/<mainnet-id>
    ```
-   首次上传：`pnpm --filter @gatu/terminal build:lambda && node deploy/cloudfront/deploy.mjs lambda --function-name gatu-terminal-api --execute`。主网与测试网共用同一函数时，把 `SAIRN_PUBLIC_ORIGIN` 留空并依赖 `x-sairn-forwarded-host`。
+   首次上传：`pnpm --filter @sairn/terminal build:lambda && node deploy/cloudfront/deploy.mjs lambda --function-name gatu-terminal-api --execute`。主网与测试网共用同一函数时，把 `SAIRN_PUBLIC_ORIGIN` 留空并依赖 `x-sairn-forwarded-host`。
 4b. **CSP 报告接收器**（[ADR 0007](../../docs/adr/0007-csp-report-only-hardening.md)）：`build:lambda` 同时产出 `dist-lambda/csp-report.mjs`。创建 `gatu-terminal-api-csp-report`（nodejs22.x、arm64、128 MB、3 s、处理程序 `csp-report.handler`、复用执行角色），`put-function-concurrency 2`，函数 URL `AuthType=NONE`，资源策略给 `*` 加**两条**语句：`lambda:InvokeFunctionUrl`（`--function-url-auth-type NONE`）和 `lambda:InvokeFunction`（`--invoked-via-function-url`）。只加第一条时函数 URL 对任何请求都回 403 `AccessDeniedException` 而 `aws lambda invoke` 正常，与第 4 步 CloudFront 源的双权限是同一规则。核对：`curl -X POST -H 'content-type: application/csp-report' --data '{"csp-report":{"document-uri":"https://example.com/","effective-directive":"img-src","blocked-uri":"https://example.invalid/x.png"}}' <函数 URL>` 返回 204，`GET` 返回 405。把函数 URL 写进 `deploy/cloudfront/edge-config.json` 的 `cspReportUri`，运行 `node --experimental-strip-types deploy/cloudfront/render-functions.mjs`，再用 `node deploy/cloudfront/deploy.mjs functions --execute` 更新并发布两个函数。更新接收器代码：`node deploy/cloudfront/deploy.mjs lambda --function-name gatu-terminal-api-csp-report --lambda-entry csp-report.mjs --execute`。报告在 CloudWatch 日志组 `/aws/lambda/gatu-terminal-api-csp-report` 里以 `csp_violation` 事件出现。现状（2026-09-14）：接收器已上线，`cspReportUri` 已填入并发布到两条分发；`put-function-concurrency` 受账号并发下限限制，暂未设置预留并发。
 4c. **内联脚本哈希**（ADR 0007 决策 5，[计划](../../docs/csp-inline-script-hashes-plan.md)）：预渲染页各有三段内联脚本（主题引导、TanStack 流屏障、收尾），流屏障含资源文件名与预渲染时间戳，每次构建哈希都变，所以哈希不进仓库：`deploy.mjs functions --execute` 在发布时从产物算哈希作为 CURRENT，用 `get-function` 读线上函数的 CURRENT 作为 PREVIOUS（失效完成前边缘最多还会服务上一版页面 60 s），并用 `--origin` 抓取线上正在服务的页面、把它们的哈希一并保留——若上次发布在 `functions` 之后中断，线上函数记的是一个从未上传的构建，只有页面本身能说明该保留什么；两组一起写进函数；`sync --execute` 上传前核对线上策略已含本次构建的哈希，顺序错了会被拒绝。`edge-config.json` 的 `cspScriptHashes`：`report-only`（强制策略保留 `'unsafe-inline'`，只有 report-only 头带哈希与 `'report-sample'`）或 `enforce`（现状，2026-09-14 起：强制策略也用哈希并附 `report-uri`；图表 iframe 策略不变）。`cspImageSources` 用同一对取值切换 `img-src` 收窄（`'self' data: blob:` 加 `app.hyperliquid.xyz`、`*.privy.io`、`explorer-api.walletconnect.com`、`*.walletconnect.com`、`*.coinbase.com`；现状 `enforce`，2026-09-14 起）。两项都为 `enforce` 时候选策略与强制策略相同，函数不再下发 report-only 头，否则每条违规会报两次。紧急撤回：改回 `report-only`，重新渲染并 `functions --execute`，秒级生效。回滚一版页面不用改函数（PREVIOUS 仍在）；回滚更早版本要先用那次构建的产物执行 `functions --execute`，再恢复 S3 对象版本。
 5. **CloudFront 函数**：
    ```bash
-   aws cloudfront create-function --name gatu-terminal-request --function-config Comment="gatu shell rewrite",Runtime=cloudfront-js-2.0 --function-code fileb://deploy/cloudfront/functions/terminal-request.js
-   aws cloudfront create-function --name gatu-terminal-response --function-config Comment="gatu route marker",Runtime=cloudfront-js-2.0 --function-code fileb://deploy/cloudfront/functions/terminal-response.js
+   aws cloudfront create-function --name gatu-terminal-request --function-config Comment="sairn shell rewrite",Runtime=cloudfront-js-2.0 --function-code fileb://deploy/cloudfront/functions/terminal-request.js
+   aws cloudfront create-function --name gatu-terminal-response --function-config Comment="sairn route marker",Runtime=cloudfront-js-2.0 --function-code fileb://deploy/cloudfront/functions/terminal-response.js
    aws cloudfront publish-function --name <name> --if-match <etag>
    ```
 6. **策略**：
@@ -99,7 +99,7 @@
    ```
 7. **分发**（主网、测试网各一个，共用 S3 桶与 Lambda）：
    ```bash
-   node deploy/cloudfront/distribution-config.mjs --network mainnet --alias app.gatu.ai \
+   node deploy/cloudfront/distribution-config.mjs --network mainnet --alias app.sairn.ai \
      --certificate-arn <arn> --bucket-domain gatu-terminal-2026.s3.ap-northeast-1.amazonaws.com \
      --s3-oac <id> --lambda-url-domain <xxx>.lambda-url.ap-northeast-1.on.aws --lambda-oac <id> \
      --api-origin-request-policy <id> --api-cache-policy <id> --policy-base <id> --policy-trade <id> --policy-join <id> --policy-chart <id> \
@@ -112,22 +112,22 @@
    node deploy/cloudfront/deploy.mjs sync --bucket gatu-terminal-2026 --execute
    node deploy/cloudfront/deploy.mjs invalidate --distribution <id> --execute
    ```
-8b. **挂别名与证书**（证书 `ISSUED` 之后、切 DNS 之前，顺序不能颠倒——2026-09-15 曾先切 DNS，用户在这段时间里看到的是证书不匹配错误）：`node deploy/cloudfront/deploy.mjs aliases --distribution <mainnet-id> --alias app.gatu.ai --certificate-arn <arn> --execute`，测试网同理；命令读取现行配置、只改 `Aliases` 与 `ViewerCertificate`（`sni-only`、`TLSv1.2_2021`），`update-distribution` 后等待 `Deployed`（约 3–5 分钟）。
-9. **切换前验证**（分发 `Deployed` 后，DNS 未改）：用 `curl --resolve app.gatu.ai:443:<分发 IP>` 逐项检查，或临时把本机 hosts 指向分发后运行 `node deploy/cloudfront/deploy.mjs verify --origin https://app.gatu.ai --network mainnet`。特别确认畸形 `/join/%` 的响应状态，以及 `/api/geo` 在真实公网 IP 下返回 200。
+8b. **挂别名与证书**（证书 `ISSUED` 之后、切 DNS 之前，顺序不能颠倒——2026-09-15 曾先切 DNS，用户在这段时间里看到的是证书不匹配错误）：`node deploy/cloudfront/deploy.mjs aliases --distribution <mainnet-id> --alias app.sairn.ai --certificate-arn <arn> --execute`，测试网同理；命令读取现行配置、只改 `Aliases` 与 `ViewerCertificate`（`sni-only`、`TLSv1.2_2021`），`update-distribution` 后等待 `Deployed`（约 3–5 分钟）。
+9. **切换前验证**（分发 `Deployed` 后，DNS 未改）：用 `curl --resolve app.sairn.ai:443:<分发 IP>` 逐项检查，或临时把本机 hosts 指向分发后运行 `node deploy/cloudfront/deploy.mjs verify --origin https://app.sairn.ai --network mainnet`。特别确认畸形 `/join/%` 的响应状态，以及 `/api/geo` 在真实公网 IP 下返回 200。
 10. **切换 DNS**（已完成，2026-09-15）：Cloudflare 把 `app.gatu.ai`、`testnet.gatu.ai` 改为 CNAME 到各自分发（DNS-only）。
 11. **退役 EC2**（已完成，2026-09-17）：发布 p21 后由用户停机 `i-058ca09d0533fc11d`；`deploy/deploy.sh` 及其 Caddy/systemd 文件先转为历史资料，并于 2026-09-18 从仓库移除（提交 `5d393572` 仍保留原文）；CI 不再校验 Caddyfile。回滚不再有 EC2 路径：以上一提交重新 `pnpm build` 后 `sync` + `invalidate`，或用 S3 桶版本恢复壳与文档页。
 
 ## 日常发布
 
 ```bash
-pnpm build && pnpm --filter @gatu/terminal build:lambda
-node deploy/cloudfront/deploy.mjs functions --execute --origin https://app.gatu.ai
+pnpm build && pnpm --filter @sairn/terminal build:lambda
+node deploy/cloudfront/deploy.mjs functions --execute --origin https://app.sairn.ai
 node deploy/cloudfront/deploy.mjs lambda --function-name gatu-terminal-api --execute
 node deploy/cloudfront/deploy.mjs sync --bucket gatu-terminal-2026 --execute
 node deploy/cloudfront/deploy.mjs invalidate --distribution <mainnet-id> --execute
 node deploy/cloudfront/deploy.mjs invalidate --distribution <testnet-id> --execute
-node deploy/cloudfront/deploy.mjs verify --origin https://app.gatu.ai --network mainnet
-node deploy/cloudfront/deploy.mjs verify --origin https://testnet.gatu.ai --network testnet
+node deploy/cloudfront/deploy.mjs verify --origin https://app.sairn.ai --network mainnet
+node deploy/cloudfront/deploy.mjs verify --origin https://testnet.sairn.ai --network testnet
 ```
 
 ### 发布闸门

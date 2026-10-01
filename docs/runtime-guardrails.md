@@ -131,7 +131,7 @@ Privy. Privy owns verification/MFA and the isolated export interface. Closing th
 interface is not proof that a key was copied or funds recovered. Duplicate clicks
 are blocked and late failures after an identity change or unmount remain silent.
 
-Use the same GATU origin in a system browser if the export interface cannot open.
+Use the same Sairn origin in a system browser if the export interface cannot open.
 An independent recovery entry is preferred over moving unverified Across funding
 features into this runtime. Verify owner mismatch, logout, stale completion,
 repeated clicks, settings dismissal and English/Chinese reactivity with mocks;
@@ -409,7 +409,7 @@ mobile regressions.
   Funding keeps the widget mounted: `TradingViewChart` receives `active={false}`
   and its layer is hidden with `invisible opacity-0 pointer-events-none` plus
   `aria-hidden`. Never hide that layer with `display:none`, never wrap it in the
-  `@gatu/ui` `TabsContent` (its `[&[hidden]]:!hidden` rule removes the chart), and
+  `@sairn/ui` `TabsContent` (its `[&[hidden]]:!hidden` rule removes the chart), and
   never remount the widget for a view change. The strip has a fixed height for
   every market kind so the widget height does not change on spot/perp switches.
   `docs/market-funding-history.md` owns the view.
@@ -986,7 +986,7 @@ Before merging any change that touches the areas above:
 4. Verify the mobile path separately from desktop.
 5. Run focused `biome check` on changed files.
 6. Run the smallest relevant Vitest test(s).
-7. For terminal-facing changes, run `pnpm --filter @gatu/terminal build`.
+7. For terminal-facing changes, run `pnpm --filter @sairn/terminal build`.
 8. Keep generated or unrelated files out of the commit.
 
 ## Known Anti-Patterns

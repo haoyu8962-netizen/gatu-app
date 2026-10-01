@@ -67,7 +67,7 @@
 
 ## 执行时的验证
 
-- `pnpm test:cloudfront`、新脚本测试、`pnpm --filter @gatu/terminal typecheck`、`pnpm check`，涉及 `security-headers.ts` 的 vitest 用例。
+- `pnpm test:cloudfront`、新脚本测试、`pnpm --filter @sairn/terminal typecheck`、`pnpm check`，涉及 `security-headers.ts` 的 vitest 用例。
 - B 阶段：发布后 Playwright 全新上下文跑覆盖清单，`securitypolicyviolation` 事件中 `disposition: report` 且 `effectiveDirective: script-src` 的只能是 `eval`；CloudWatch 同样只见 `eval`。
 - C 阶段：`verify` 主网、测试网全绿；Playwright 复跑覆盖清单，页面功能正常，无 `disposition: enforce` 的 `script-src` 报告（`eval` 除外）；`get-function` 显示 CURRENT/PREVIOUS 两组哈希。
 

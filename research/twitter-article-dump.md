@@ -7,7 +7,7 @@
 
 Hyperliquid is winning. Not just as a DEX — as infrastructure. $8.3B in daily volume. The highest on-chain perps throughput on the planet. Crypto, equities, commodities — all on one neutral backend. And 40% of users are already trading through third-party frontends because the official UI doesn't serve them.
 
-That 40% is the opening. That's where gatu lives.
+That 40% is the opening. That's where Sairn lives.
 
 But "better UI" is a weak reason to build. Here's the real reason.
 
@@ -124,7 +124,7 @@ The official Hyperliquid UI is good. It's not built for:
 
 **Analytics** — Win rate, Sharpe ratio, trade tagging, tax reporting. Serious traders need this. Nobody has built it.
 
-This is the gap gatu is built to fill.
+This is the gap Sairn is built to fill.
 
 ---
 
@@ -208,7 +208,7 @@ Most trading platforms monetize by:
 - Selling your data
 - Showing you ads
 
-gatu's model:
+Sairn's model:
 - **Builder codes** — protocol-level fees paid to frontends for routing volume. Not taken from users — paid by the protocol for the service of liquidity aggregation.
 - **Freemium SaaS** — advanced analytics, alerts, institutional tools on premium tiers
 - No ads, no data selling, no hidden order flow exploitation
@@ -223,7 +223,7 @@ The business model aligns with users. That's rare.
 
 ## The Three-Sentence Version
 
-Hyperliquid is becoming the infrastructure layer for all of on-chain trading. The interface layer is still closed, centralized, and not built for what's coming — AI-assisted and autonomous trading. gatu is the open-source interface that makes the full stack verifiable, composable, and ready for the agentic era.
+Hyperliquid is becoming the infrastructure layer for all of on-chain trading. The interface layer is still closed, centralized, and not built for what's coming — AI-assisted and autonomous trading. Sairn is the open-source interface that makes the full stack verifiable, composable, and ready for the agentic era.
 
 ---
 
@@ -250,7 +250,7 @@ Hyperliquid is becoming the infrastructure layer for all of on-chain trading. Th
 "60-80% of crypto volume is already AI-driven. Most retail traders are competing against machines with spreadsheets. Here's what we're building to change that."
 
 **Angle 3: The Open Source Case**
-"Trustlessness should extend to the interface, not just the chain. Here's why we open-sourced gatu."
+"Trustlessness should extend to the interface, not just the chain. Here's why we open-sourced Sairn."
 
 **Angle 4: The Market Gap**
 "40% of Hyperliquid users use third-party clients. Nobody has built for beginners, nobody has built risk management, nobody has built for mobile. Here's our roadmap."

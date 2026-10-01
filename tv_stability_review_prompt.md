@@ -1,7 +1,7 @@
 你是严格的对抗式代码审查者。请只审查本次 TradingView 稳定性修复，不要修改代码，不要提出大范围重构。
 
 上下文：
-- 项目是 gatu，一个 Hyperliquid 交易终端。
+- 项目是 Sairn，一个 Hyperliquid 交易终端。
 - 用户在移动端/生产环境盯盘时，TradingView 偶发出现“出错了 / 重试”。本轮修复重点是移除前端自定义的 12 秒 onChartReady 超时销毁逻辑，避免 widget 因移动端加载慢、Safari 暂停、Service Worker 缓存或网络慢而被误判失败并销毁。
 - 官方依据：
   1. Hyperliquid WebSocket 文档规定 candle 实时订阅格式为 `{ "method": "subscribe", "subscription": { "type": "candle", "coin": "<coin_symbol>", "interval": "<candle_interval>" } }`，退订用 `{ "method": "unsubscribe", "subscription": { ... } }` 且 subscription 必须匹配原订阅。

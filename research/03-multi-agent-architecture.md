@@ -267,7 +267,7 @@ Hyperliquid's vault system provides a natural on-chain mapping for multi-agent t
 1. **Each strategy agent** operates its own Hyperliquid vault, executing trades autonomously
 2. **The coordinator agent** monitors all vaults, adjusts capital allocation, and enforces portfolio-level risk limits
 3. **Users** can follow individual strategy vaults or a meta-vault that distributes across all strategies
-4. **Transparency**: All agent decisions logged with natural language explanations, viewable in gatu
+4. **Transparency**: All agent decisions logged with natural language explanations, viewable in Sairn
 
 ### Technical Considerations
 
@@ -278,7 +278,7 @@ Hyperliquid's vault system provides a natural on-chain mapping for multi-agent t
 
 ---
 
-## 6. Opportunities for gatu
+## 6. Opportunities for Sairn
 
 ### Near-Term (3-6 months)
 
@@ -331,15 +331,15 @@ Hyperliquid's vault system provides a natural on-chain mapping for multi-agent t
 ## 8. Open Questions
 
 1. **Which LLM per role?** Should fundamental analysis use a different model than risk management? What is the cost-performance frontier?
-2. **Latency budget**: What is the acceptable decision latency for gatu's target trading styles (scalping vs. swing vs. position)?
+2. **Latency budget**: What is the acceptable decision latency for Sairn's target trading styles (scalping vs. swing vs. position)?
 3. **Human-in-the-loop granularity**: Which decisions require human approval? All trades? Only those above a size threshold? Only those the risk agent flags?
 4. **On-chain vs. off-chain agents**: Should agent logic run on HyperEVM, or off-chain with only trade execution on-chain?
 5. **Agent memory**: How much historical context should agents retain? Full trade history? Rolling window? Compressed summaries?
 6. **Evaluation framework**: How do we measure agent performance beyond PnL? Decision quality metrics, reasoning coherence, risk-adjusted returns?
 7. **Privacy**: If agents process user portfolio data, how is that data protected? Especially for multi-tenant vault scenarios.
-8. **Composability**: Should gatu agents be compatible with external agent ecosystems (e.g., exposing MCP tools that other agents can call)?
+8. **Composability**: Should Sairn agents be compatible with external agent ecosystems (e.g., exposing MCP tools that other agents can call)?
 9. **Failover strategy**: If the coordinator agent fails mid-decision, should specialist agents halt, continue with cached state, or fall back to a simpler strategy?
-10. **Competitive moat**: How does gatu's agent offering differentiate from standalone trading bot platforms like Katoshi, goodcryptoX, or Hummingbot?
+10. **Competitive moat**: How does Sairn's agent offering differentiate from standalone trading bot platforms like Katoshi, goodcryptoX, or Hummingbot?
 
 ---
 

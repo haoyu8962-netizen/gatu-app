@@ -4,7 +4,7 @@ Status: done
 
 ## Summary
 
-Integrate headless/custom Reown WalletConnect into the existing wallet modal while preserving gatu's wallet UX and wagmi wallet-client consumers.
+Integrate headless/custom Reown WalletConnect into the existing wallet modal while preserving Sairn's wallet UX and wagmi wallet-client consumers.
 
 ## Objective
 

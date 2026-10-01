@@ -13,7 +13,7 @@ Use this workflow whenever a trading, account, or subscription change depends on
    - <https://nktkas.gitbook.io/hyperliquid>
    - <https://nktkas.gitbook.io/hyperliquid/api-reference/info-methods>
    - <https://nktkas.gitbook.io/hyperliquid/api-reference/exchange-methods>
-3. The declarations and implementation installed in this repository are the version-locked compile-time and runtime contract. The terminal and `@gatu/hl-react` currently pin `@nktkas/hyperliquid` `0.33.3`. Online documentation may describe a newer patch release.
+3. The declarations and implementation installed in this repository are the version-locked compile-time and runtime contract. The terminal and `@sairn/hl-react` currently pin `@nktkas/hyperliquid` `0.33.3`. Online documentation may describe a newer patch release.
 
 When these sources differ, preserve the installed contract until the SDK is upgraded deliberately and its migration is tested. Never silently code against an online signature that is absent from the pinned package.
 

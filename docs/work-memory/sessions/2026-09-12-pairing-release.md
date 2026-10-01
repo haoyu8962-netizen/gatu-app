@@ -12,7 +12,7 @@
   "summary": "普通部署允许配对开关开启；自动边缘门控与可选 promote 真机验收是不同路径。",
   "thread": {
     "id": "01a09457-b938-7862-8278-681459added6",
-    "title": "解释 gatu 服务配置不匹配"
+    "title": "解释 Sairn 服务配置不匹配"
   },
   "baseCommit": "422ea8a6",
   "commits": [

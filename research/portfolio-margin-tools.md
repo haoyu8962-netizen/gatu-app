@@ -299,7 +299,7 @@ Unified account liquidations trigger **simultaneous selling of multiple position
 
 ### Overview
 
-A dedicated Portfolio Margin module in gatu that provides institutional-grade risk management tools, replacing the spreadsheets, mental math, and manual monitoring that traders currently rely on. The goal: make portfolio margin's complexity manageable and its capital efficiency accessible.
+A dedicated Portfolio Margin module in Sairn that provides institutional-grade risk management tools, replacing the spreadsheets, mental math, and manual monitoring that traders currently rely on. The goal: make portfolio margin's complexity manageable and its capital efficiency accessible.
 
 ---
 
@@ -583,7 +583,7 @@ Strategies Enabled:   3          5          9
 
 ---
 
-### Architecture Notes for gatu Integration
+### Architecture Notes for Sairn Integration
 
 | Concern | Approach |
 |---------|----------|

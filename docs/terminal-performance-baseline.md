@@ -16,14 +16,14 @@ This document defines the reproducible startup-byte gates for the trading termin
 3. Hold the build metadata constant when comparing byte measurements:
 
    ```bash
-   GATU_BUILD_SHA=e4e09966b175679ac7e13ea192246ce27fae15b5 \
-   GATU_RELEASE_ID=startup-guardrail-baseline \
-   GATU_BUILD_TIME=2026-08-27T00:00:00.000Z \
+   SAIRN_BUILD_SHA=e4e09966b175679ac7e13ea192246ce27fae15b5 \
+   SAIRN_RELEASE_ID=startup-guardrail-baseline \
+   SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z \
    NODE_ENV=production \
-   pnpm --filter @gatu/terminal build
+   pnpm --filter @sairn/terminal build
    ```
 
-4. Run `pnpm --filter @gatu/terminal perf:startup` to write the exact `client-root` JavaScript closure report to `scripts/measure/out/client-root-deps.json`.
+4. Run `pnpm --filter @sairn/terminal perf:startup` to write the exact `client-root` JavaScript closure report to `scripts/measure/out/client-root-deps.json`.
 5. For browser measurements, serve the Nitro build on loopback and use a fresh anonymous session at `/trade/HYPE`. Keep Chrome, viewport, CPU, and network settings fixed, record five mobile and five desktop runs, and compare the median and worst result.
 
 External Hyperliquid and TradingView traffic makes a single Lighthouse run unsuitable as a byte-exact CI gate. CI therefore blocks deterministic bundle regressions and relevant contract-test failures. Browser results remain required evidence for changes that claim a user-visible performance improvement.
@@ -155,7 +155,7 @@ has resolved (or after `TRADE_ROUTE_REVEAL_BUDGET_MS`), so the retry render comm
 suspending. Chunk boundaries, preload lists and budgets are unchanged; the measured before/after
 timelines live in the [task record](work-memory/sessions/2026-09-17-trade-route-reveal.md).
 
-Evidence: clean worktree build `GATU_RELEASE_ID=cloudfront-2026-09-14-p14 pnpm
+Evidence: clean worktree build `SAIRN_RELEASE_ID=cloudfront-2026-09-14-p14 pnpm
 build` with Node 22.13.0 and pnpm 10.21.0 (not the pinned CI Node 22.15.0;
 compression variance stays inside the allowance), released as p14 with build
 metadata commit `5b61a3c3` plus the then-uncommitted startup-path change. The
@@ -177,7 +177,7 @@ not the final commit, and no route-only diagnostic was recorded. The baseline
 value was kept, and the measurement was redone under the rules:
 
 - Toolchain: Node 22.15.0 (nvm), pnpm 10.21.0. Command from the worktree root:
-  `GATU_RELEASE_ID=cloudfront-2026-09-14-p18 pnpm build`, run on the working
+  `SAIRN_RELEASE_ID=cloudfront-2026-09-14-p18 pnpm build`, run on the working
   tree that became the review-fix commit recorded in the task record
   (checkpoint 28); the build metadata commit is that commit's parent
   `1c734761`. The same toolchain produced p17 one build earlier; p18 adds the
@@ -206,7 +206,7 @@ value stays at 123,242 bytes; this record is the compliant measurement.
 - Commit `0f08462a` (`claude/spa-mode`, clean source tree; the only uncommitted
   file was this task's work record). Toolchain: Node 22.15.0 (nvm), pnpm
   10.21.0. Command from the worktree root:
-  `GATU_RELEASE_ID=cloudfront-2026-09-15-p19 GATU_BUILD_TIME=2026-09-15T00:00:00.000Z pnpm build`,
+  `SAIRN_RELEASE_ID=cloudfront-2026-09-15-p19 SAIRN_BUILD_TIME=2026-09-15T00:00:00.000Z pnpm build`,
   released as p19; `build-meta.json` names that commit, release and time.
 - Graph inventory: 391 client chunks, no circular static imports, 392 graph
   assets (the content-hashed TradingView loader copy and `build-meta.json` are

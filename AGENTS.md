@@ -1,4 +1,4 @@
-# gatu Agent Rules
+# Sairn Agent Rules
 
 This file contains durable project instructions for coding agents. Read `agent.md` for the broader architecture, commands, and coding conventions. Keep this file limited to stable rules that future tasks must preserve; do not add temporary investigation notes, commit hashes, or one-off status updates.
 
@@ -152,11 +152,11 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 Browser-fixture servers must use a Vite dependency cache separate from the application dev server, with neither cache nested inside the other. Follow `docs/runtime-guardrails.md` when changing browser-test configuration; a different root or port does not isolate Vite's default cache.
 
-Run checks proportional to the touched surface before committing. Every contract above has a focused regression entry; run the groups for the sections you touched, and the full `pnpm --filter @gatu/terminal test` run when a change crosses several of them:
+Run checks proportional to the touched surface before committing. Every contract above has a focused regression entry; run the groups for the sections you touched, and the full `pnpm --filter @sairn/terminal test` run when a change crosses several of them:
 
 ```bash
 pnpm exec biome check <changed TypeScript/TSX files>
-pnpm --filter @gatu/terminal typecheck
+pnpm --filter @sairn/terminal typecheck
 
 # Wallet signing, onboarding and connection UI
 pnpm --dir apps/terminal exec vitest run \

@@ -127,7 +127,7 @@
 
 ```bash
 pnpm exec biome check <本次修改的 TS/TSX 文件>
-pnpm --filter @gatu/terminal typecheck
+pnpm --filter @sairn/terminal typecheck
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/open-interest-cap.test.ts \
   src/lib/tests/open-interest-cap-hooks.test.tsx \
@@ -145,7 +145,7 @@ pnpm --dir apps/terminal exec vitest run \
 
 ```bash
 pnpm exec biome check apps/terminal/src/lib/tests/open-interest-cap-hooks.test.tsx
-pnpm --filter @gatu/terminal typecheck
+pnpm --filter @sairn/terminal typecheck
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/open-interest-cap.test.ts \
   src/lib/tests/open-interest-cap-hooks.test.tsx \
