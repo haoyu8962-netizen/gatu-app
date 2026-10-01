@@ -166,6 +166,21 @@
 | 智能钱包 | 开，Kernel（ZeroDev）；Arbitrum 与 Arbitrum Sepolia 的 bundler 与 paymaster 都是 `rpc.zerodev.app/api/v3/9a17…` | 关 | **必须配置**，赞助充值依赖它；地址含项目 ID，由用户从旧应用复制 |
 | WalletConnect 项目 ID | 已设（32 位） | 已设（32 位），与旧应用不同 | 待用户确认来源与 Reown 域名白名单 |
 
+## 智能钱包复核与用户决定（2026-10-02）
+
+用户配置后我只读复核新应用：智能钱包已开启，服务商为 Kernel（ZeroDev）。链列表是 Ethereum、Polygon、Arbitrum、Base（多半用了 Quick setup），没有 Arbitrum Sepolia。Arbitrum 的 bundler 是 Privy 默认的 `public.pimlico.io`，paymaster 是 ZeroDev 项目 `8a00…`，与旧应用的 `9a17…` 不同。
+
+用户同时开启了 Funding：银行卡入金开，Stripe 与 MoonPay 启用；银行转账、交易所、加密货币充值关；默认网络与币种是 Ethereum 和 ETH。Privy 文档说明 Stripe 入金要求 `@privy-io/react-auth` ≥ 3.33.1 并安装 `@stripe/crypto`；项目锁定 3.32.2（带 ADR 0026 的补丁），其中没有 `useDepositFunds`，只有 `useFundWallet`。
+
+代码只在 CCTP 源链上取智能钱包（`use-deposit.ts:213-214`、`:1305`），所以另外三条链用不到；若 ZeroDev 项目对它们开着全额代付，存在额度被滥用的风险。
+
+用户决定：
+- 不需要测试网：此前已在 gatu 上测过，所以不配 Arbitrum Sepolia，p24 关闭测试网赞助充值，切换当天只做主网小额验证；
+- ZeroDev 项目已重新创建，沿用新项目；
+- 升级到 ≥ 3.33.1。
+
+升级与 Funding 接入另开分支，不进本次切换。方案 0.7、1.1、2.6 与第 7 节第 9 项已据此改写。
+
 ## 验证与限制
 
 - 2026-10-01 规划阶段只做了只读调查与文档检查。
