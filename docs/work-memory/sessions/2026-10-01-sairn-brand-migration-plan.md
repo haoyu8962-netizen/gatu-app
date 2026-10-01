@@ -14,7 +14,7 @@
   "sources": [
     { "path": "docs/brand-migration-plan.md" },
     { "path": "brand/README.md" },
-    { "path": "brand/brand-info.yaml" },
+    { "path": "brand/brand.json" },
     { "path": "apps/terminal/src/config/trading-agent.ts" },
     { "path": "apps/terminal/src/components/funds-action/funds-action-marker.ts" },
     { "path": "apps/terminal/src/lib/trade/cctp-deposit-tracking.ts" },
@@ -74,3 +74,4 @@
 - **不等决定就能做**：阶段 0a 余下的文档骨架与 ADR 草稿、阶段 1a（CI 覆盖、防静默失效、官网发布流程入库）、向设计方发补件清单。
 - **ADR 编号**：计划预分配 0027–0031，动笔前要再查一次是否被占用。
 - 没有被替代的记录。
+- 修订（2026-10-01）：`brand/brand-info.yaml` 已在执行阶段由 `brand/brand.json` 取代并删除（`c2d47191`），本记录的来源随之改指 `brand/brand.json`；执行过程见 [执行记录](2026-10-01-sairn-brand-migration-execution.md)。
