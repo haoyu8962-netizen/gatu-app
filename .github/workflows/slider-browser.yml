@@ -31,7 +31,9 @@ jobs:
         shard: [1, 2]
     name: Terminal browser regressions (${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Before the brand surface and connected header suites a shard took about 13.5 minutes; with them it
+    # outran 15 minutes (run 36889833960 was cancelled in the notification step, before the last two).
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 

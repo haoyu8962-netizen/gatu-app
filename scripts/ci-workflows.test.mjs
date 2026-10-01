@@ -90,6 +90,11 @@ test("shards every browser invocation by test, in two jobs", () => {
 		true,
 		"the brand surface regression must run in the browser job",
 	);
+	assert.equal(
+		Number(/timeout-minutes: (\d+)/.exec(browser)?.[1]) >= 25,
+		true,
+		"a shard runs every browser suite and outran a 15-minute limit; keep at least 25 minutes",
+	);
 });
 
 test("keeps the merged static checks in one job", () => {
