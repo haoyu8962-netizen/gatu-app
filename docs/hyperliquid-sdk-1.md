@@ -4,6 +4,14 @@
 > current compile-time contract. The repository pins `0.33.3`; use
 > <https://nktkas.gitbook.io/hyperliquid> and the installed package declarations for current
 > method and schema details. See `hyperliquid-sdk-reference.md` for the verification workflow.
+>
+> **Known inaccuracy (noted 2026-09-30; the pages stay as archived):** `blockDetails`, `txDetails`
+> and `userDetails` appear below under Info Methods as `POST /info` on `api.hyperliquid.xyz`. From
+> `0.33.0` they belong to `ExplorerClient`, and every release checked from `0.29.1` to `0.33.3`
+> sends them to `https://rpc.hyperliquid.xyz/explorer`; on 2026-09-30 `/info` answered these
+> request types with HTTP 422. The Quick Start and Clients chapters also predate `ExplorerClient`.
+> The `rpcUrl` note in the Transports chapter is correct. See `hyperliquid-sdk-directory.md` for
+> the current routing.
 
 A TypeScript SDK for the [Hyperliquid API](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api).
 

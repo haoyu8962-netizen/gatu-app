@@ -162,6 +162,8 @@ The Hyperliquid skill should teach this first, because most mistakes begin with 
 | `Exchange` | trading, transfers, account configuration, signed actions | action result envelopes from `/exchange`, often with per-item statuses |
 | `Subscription` | live updates and streaming data | WebSocket event payloads delivered over subscriptions |
 
+> **Correction (2026-09-30):** the "explorer-like reads" in the `Info` row are not returned from `/info`. `blockDetails`, `txDetails` and `userDetails` are served by `/explorer` on the RPC host (`https://rpc.hyperliquid.xyz`), and the `explorerBlock` / `explorerTxs` streams by `wss://rpc.hyperliquid.xyz/ws`. The references now treat `Explorer` as a fourth surface; see `references/api-selection.md`. The row above is kept as originally logged.
+
 ### Why this taxonomy matters for the skill
 
 - If the user wants data snapshots or account reads, default to `Info`.
@@ -202,6 +204,8 @@ This is the best current source for the "when to use which API and what the comm
 - `Info` methods: about 77
 - `Exchange` methods: about 51
 - `Subscription` methods: about 30
+
+> **Correction (2026-09-30):** the three-client split and these counts describe the SDK as cloned for this research. From `0.33.0` the SDK has a fourth client, `ExplorerClient`, which took over the three explorer requests and the two explorer streams. `0.33.3`, the version this repository pins, has 77 `Info`, 59 `Exchange`, 28 `Subscription` and 5 `Explorer` methods.
 
 This is important because it argues against a single flat skill file. The package needs structured references.
 

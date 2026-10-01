@@ -46,15 +46,6 @@ Typical return style:
 
 - nested object or array for the requested user/account scope
 
-### Explorer and chain reads
-
-- `blockDetails`
-- `txDetails`
-
-Typical surface:
-
-- `Info`
-
 ## Exchange families
 
 ### Orders and order management
@@ -130,8 +121,29 @@ Typical return style:
 
 - event payload delivered over WebSocket
 
+## Explorer family
+
+- `blockDetails`
+- `txDetails`
+- `userDetails`
+- `explorerBlock` (stream)
+- `explorerTxs` (stream)
+
+Typical surface:
+
+- `Explorer` (`ExplorerClient` in `@nktkas/hyperliquid` from `0.33.0`; earlier releases listed the three requests under `Info` and the two streams under `Subscription`)
+
+Typical return style:
+
+- block or transaction objects from `/explorer` on the RPC host, or arrays of them from the RPC WebSocket
+
+Important note:
+
+- none of these is served by `/info` or by the default WebSocket URL; see `api-selection.md` for the transport
+
 ## Decision rule
 
 - If a method name appears in both `Info` and `Subscription`, ask whether the user wants a snapshot or a stream.
+- If a method name is in `Explorer`, name the RPC host in the answer; do not route it through `Info` or `Subscription`.
 - If a method name is in `Exchange`, assume signing matters unless the official docs say otherwise.
 - If exact field-level return shape matters and the method is not one of the canonical examples in this package, verify against official docs or the typed TypeScript SDK before claiming exactness.
