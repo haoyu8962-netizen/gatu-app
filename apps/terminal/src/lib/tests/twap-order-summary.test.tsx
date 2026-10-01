@@ -58,7 +58,7 @@ describe("TwapOrderSummary trigger and stop rows", () => {
 		expect(labels).not.toContain("Min Price");
 		expect(container.textContent).toContain("0.0450% ($0.05)");
 		expect(container.textContent).not.toContain("Hyperliquid fee");
-		expect(container.textContent).not.toContain("GATU fee");
+		expect(container.textContent).not.toMatch(/\b(?:gatu|sairn)\s+fee\b/i);
 	});
 
 	it("keeps the documented 30-second cadence for a multi-day order", () => {

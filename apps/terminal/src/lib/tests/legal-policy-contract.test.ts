@@ -85,6 +85,6 @@ describe("published legal policy contract", () => {
 		expect(websitePage).toContain('path="/risk"');
 		expect(websiteContentConfig).toContain('"riskDisclosure.md"');
 		expect(websiteFooter).toContain("mailto:support@gatu.ai");
-		expect(websiteFooter).not.toContain("hi@gatu.ai");
+		expect(websiteFooter).not.toMatch(/\bhi@/i);
 	});
 });

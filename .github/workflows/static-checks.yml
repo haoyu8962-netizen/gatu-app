@@ -9,6 +9,7 @@ on:
       - "apps/terminal/**/*.ts"
       - "apps/terminal/**/*.tsx"
       - "apps/terminal/src/locales/**/*.po"
+      - "brand/brand.json"
       - "packages/hl-react/**/*.ts"
       - "packages/hl-react/**/*.tsx"
       - "packages/ui/**/*.ts"

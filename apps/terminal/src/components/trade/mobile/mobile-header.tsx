@@ -25,7 +25,13 @@ export function MobileHeader({ className }: Props) {
 			className={className}
 			drawer={<MobileNavDrawer />}
 			logo={
-				<Link to={tradeHomePath} search={{ scope: "all" }} aria-label="GATU" className={headerLogo}>
+				<Link
+					to={tradeHomePath}
+					search={{ scope: "all" }}
+					aria-label="GATU"
+					data-brand-home-link=""
+					className={headerLogo}
+				>
 					<GatuLogo variant="mark" micro className="size-[22px]" />
 				</Link>
 			}

@@ -132,6 +132,7 @@ vi.mock("@tanstack/react-router", () => ({
 	Link: ({
 		"aria-current": ariaCurrent,
 		"aria-label": ariaLabel,
+		"data-brand-home-link": brandHomeLink,
 		children,
 		className,
 		search,
@@ -139,6 +140,7 @@ vi.mock("@tanstack/react-router", () => ({
 	}: {
 		"aria-current"?: string;
 		"aria-label"?: string;
+		"data-brand-home-link"?: string;
 		children: ReactNode;
 		className?: string;
 		search?: unknown;
@@ -150,6 +152,7 @@ vi.mock("@tanstack/react-router", () => ({
 				"aria-current": ariaCurrent,
 				"aria-label": ariaLabel,
 				className,
+				"data-brand-home-link": brandHomeLink,
 				"data-search": search === undefined ? undefined : JSON.stringify(search),
 				"data-to": to,
 				href: to,
@@ -524,8 +527,9 @@ describe("TopNav", () => {
 		testState.tradeHomePath = "/spot/@107";
 		renderNav();
 
-		const logoLink = container.querySelector<HTMLAnchorElement>('a[aria-label="GATU"]');
+		const logoLink = container.querySelector<HTMLAnchorElement>("a[data-brand-home-link]");
 		const tradeLink = findLink("Trade");
+		expect(logoLink?.getAttribute("aria-label")).toBe("GATU");
 		for (const link of [logoLink, tradeLink]) {
 			expect(link?.dataset.to).toBe("/spot/@107");
 			expect(JSON.parse(link?.dataset.search ?? "null")).toEqual({ scope: "all" });
@@ -586,7 +590,7 @@ describe("TopNav", () => {
 		expect(testState.openDepositModal).not.toHaveBeenCalled();
 		expect(testState.openSettingsDialog).not.toHaveBeenCalled();
 
-		expect(container.querySelector<HTMLAnchorElement>('a[aria-label="GATU"]')).not.toBeNull();
+		expect(container.querySelector<HTMLAnchorElement>("a[data-brand-home-link]")).not.toBeNull();
 		expect(findLink("Trade")).not.toBeUndefined();
 		const moreTriggers = container.querySelectorAll<HTMLButtonElement>('[data-testid="more-dropdown"] > button');
 		expect(moreTriggers).toHaveLength(1);

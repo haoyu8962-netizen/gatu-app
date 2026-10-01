@@ -133,7 +133,13 @@ export function TopNav({ mode = "default" }: Props) {
 			connected={accountChipVisible}
 			compactHiddenWhenConnected={accountChipVisible}
 			logo={
-				<Link to={tradeHomePath} search={{ scope: "all" }} aria-label="GATU" className={TOP_NAV_LOGO_CLASS}>
+				<Link
+					to={tradeHomePath}
+					search={{ scope: "all" }}
+					aria-label="GATU"
+					data-brand-home-link=""
+					className={TOP_NAV_LOGO_CLASS}
+				>
 					<GatuLogo className={cn(TOP_NAV_WORDMARK_CLASS, accountChipVisible && TOP_NAV_CONNECTED_WORDMARK_CLASS)} />
 					{accountChipVisible ? <GatuLogo variant="mark" micro className={TOP_NAV_MARK_CLASS} /> : null}
 				</Link>

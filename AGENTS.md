@@ -316,6 +316,20 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/action-error.test.ts \
   src/lib/tests/errors.test.ts \
   src/lib/tests/lingui-helper-translator-contract.test.ts
+
+# Brand identity (brand/, names, logo, icons, domains, legal text; see docs/brand-migration-plan.md)
+pnpm test:brand
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/pwa-manifest.test.ts \
+  src/lib/tests/network-storage.test.ts \
+  src/lib/tests/referral-join.test.ts \
+  src/lib/tests/referral.test.ts \
+  src/lib/tests/terms-content.test.ts \
+  src/lib/tests/legal-policy-contract.test.ts \
+  src/lib/tests/trading-agent-config.test.ts \
+  src/lib/tests/order-summary.test.tsx \
+  src/lib/tests/twap-order-summary.test.tsx \
+  src/lib/tests/top-nav.test.tsx
 ```
 
 Layout contracts also have browser suites: `docs/desktop-grid-layout.md` and `docs/runtime-guardrails.md` §9 name the Playwright configs under `apps/terminal/tests/browser/`. When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.

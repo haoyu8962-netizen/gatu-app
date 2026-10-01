@@ -910,7 +910,7 @@ function installBootProbe({ expectedOrigin, expectedLocale, expectedMarket }) {
 			if (target.persistedLocaleReadyAt === null && document.documentElement?.lang === expectedLocale) {
 				target.persistedLocaleReadyAt = at;
 			}
-			if (target.dom.topNavAt === null && document.querySelector('header a[aria-label="GATU"]')) {
+			if (target.dom.topNavAt === null && document.querySelector("header a[data-brand-home-link]")) {
 				target.dom.topNavAt = at;
 			}
 			const currentLoadingWorkspace = document.querySelector('main[aria-busy="true"]');

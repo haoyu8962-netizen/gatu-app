@@ -58,7 +58,7 @@ it.each(["/trade/BTC", "/portfolio", "/vaults"])(
 		const html = renderToString(<RootComponent />);
 		expect(html).toBe(renderToString(<StartupFallback />));
 		host.innerHTML = html;
-		expect(host.querySelector("header,nav,footer,button,input")).toBeNull();
+		expect(host.querySelector('header,nav,footer,button,input,svg,img,[role="img"]')).toBeNull();
 		expect(host.querySelectorAll("output")).toHaveLength(1);
 		expect(host.querySelector("output")?.className).toBe("sr-only");
 		expect(host.firstElementChild?.getAttribute("aria-busy")).toBe("true");

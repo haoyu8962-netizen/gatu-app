@@ -16,7 +16,8 @@
 			"!**/src/styles.css",
 			"!**/src/types/charting_library.d.ts",
 			"!**/src/locales/**/messages.js",
-			"!apps/website"
+			"!apps/website",
+			"!brand"
 		]
 	},
 

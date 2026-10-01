@@ -79,7 +79,7 @@ describe("OrderSummary information rows", () => {
 		expect(container.textContent).toContain("1.4%");
 		expect(getRowValue(container, "Fees")).toBe("0.0190% / 0.0130%");
 		expect(container.textContent).not.toContain("Hyperliquid fee");
-		expect(container.textContent).not.toContain("GATU fee");
+		expect(container.textContent).not.toMatch(/\b(?:gatu|sairn)\s+fee\b/i);
 
 		act(() => container.querySelector<HTMLButtonElement>("button")?.click());
 		expect(onSlippageClick).toHaveBeenCalledTimes(1);
@@ -119,7 +119,7 @@ describe("OrderSummary information rows", () => {
 		expect(container.textContent).not.toContain("Liq. Price");
 		expect(container.textContent).not.toContain("Margin Req.");
 		expect(getRowValue(container, "Fees")).toBe("0.0090% / 0.0030%");
-		expect(container.textContent).not.toContain("GATU fee");
+		expect(container.textContent).not.toMatch(/\b(?:gatu|sairn)\s+fee\b/i);
 	});
 
 	it("includes the builder amount in the desktop scale fee", () => {
@@ -147,7 +147,7 @@ describe("OrderSummary information rows", () => {
 
 		expect(container.textContent).toContain("0.0190% ($0.08)");
 		expect(container.textContent).not.toContain("Hyperliquid fee");
-		expect(container.textContent).not.toContain("GATU fee");
+		expect(container.textContent).not.toMatch(/\b(?:gatu|sairn)\s+fee\b/i);
 	});
 
 	it("preserves low-priced spot scale boundaries without showing a margin requirement", () => {

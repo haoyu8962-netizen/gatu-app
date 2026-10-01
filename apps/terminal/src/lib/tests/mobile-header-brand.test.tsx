@@ -25,15 +25,22 @@ vi.mock("@gatu/ui", () => ({
 vi.mock("@tanstack/react-router", () => ({
 	Link: ({
 		"aria-label": ariaLabel,
+		"data-brand-home-link": brandHomeLink,
 		children,
 		className,
 		to,
 	}: {
 		"aria-label"?: string;
+		"data-brand-home-link"?: string;
 		children: ReactNode;
 		className?: string;
 		to: string;
-	}) => createElement("a", { "aria-label": ariaLabel, className, href: to }, children),
+	}) =>
+		createElement(
+			"a",
+			{ "aria-label": ariaLabel, "data-brand-home-link": brandHomeLink, className, href: to },
+			children,
+		),
 }));
 
 vi.mock("@/hooks/trade/use-trade-home-path", () => ({
@@ -73,9 +80,10 @@ describe("MobileHeader brand link", () => {
 			</I18nProvider>,
 		);
 
-		const logoLink = container.querySelector<HTMLAnchorElement>('a[aria-label="GATU"]');
+		const logoLink = container.querySelector<HTMLAnchorElement>("a[data-brand-home-link]");
 		const brandMark = logoLink?.querySelector<SVGElement>('[data-gatu-logo="mark"]');
 
+		expect(logoLink?.getAttribute("aria-label")).toBe("GATU");
 		expect(logoLink?.className).toContain("touch-target");
 		expect(logoLink?.className).toContain("focus-visible:outline-stroke-focus");
 		expect(logoLink?.className).toContain("max-[359px]:hidden");

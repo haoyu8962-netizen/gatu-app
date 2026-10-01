@@ -120,3 +120,44 @@ test("keeps brand coverage when the website workflow only starts for its own inp
 	}
 	assert.equal(/vitest run|pnpm test:brand/.test(readWorkflow("production-build.yml")), false);
 });
+
+test("re-runs the brand and legal guards whenever the brand source or legal text changes", () => {
+	const filtersOf = (name) => new Set([...readWorkflow(name).matchAll(/^      - "([^"]+)"$/gm)].map((match) => match[1]));
+
+	for (const [name, paths] of [
+		["terminal-tests.yml", ["brand/**", "legal/**", "scripts/brand*.mjs"]],
+		["production-build.yml", ["brand/**", "legal/**"]],
+		["static-checks.yml", ["brand/brand.json"]],
+		[
+			"website-build.yml",
+			[
+				"brand/**",
+				"legal/**",
+				"apps/terminal/public/manifest.json",
+				"apps/terminal/public/robots.txt",
+				"apps/terminal/public/sitemap.xml",
+				"apps/terminal/src/config/**",
+			],
+		],
+	]) {
+		const filters = filtersOf(name);
+		for (const path of paths) {
+			assert.equal(filters.has(path), true, `${name} does not start for ${path}`);
+		}
+	}
+
+	const terminalTests = readWorkflow("terminal-tests.yml");
+	for (const file of [
+		"pwa-manifest.test.ts",
+		"network-storage.test.ts",
+		"referral-join.test.ts",
+		"referral.test.ts",
+		"terms-content.test.ts",
+		"legal-policy-contract.test.ts",
+		"trading-agent-config.test.ts",
+		"order-summary.test.tsx",
+		"twap-order-summary.test.tsx",
+	]) {
+		assert.equal(terminalTests.includes(`src/lib/tests/${file}`), true, `${file} never runs in CI`);
+	}
+});

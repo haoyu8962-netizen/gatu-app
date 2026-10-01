@@ -5,7 +5,9 @@ on:
     paths:
       - ".github/workflows/production-build.yml"
       - "apps/**"
+      - "brand/**"
       - "deploy/**"
+      - "legal/**"
       - "packages/**"
       - "scripts/check-client-bundle-budget.mjs"
       - "scripts/check-client-bundle-budget.test.mjs"

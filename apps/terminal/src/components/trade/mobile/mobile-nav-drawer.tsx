@@ -181,6 +181,7 @@ export function MobileNavDrawer() {
 						<Link
 							{...navigationLinkProps({ to: tradeHomePath, search: { scope: "all" } })}
 							aria-label="GATU"
+							data-brand-home-link=""
 							className="flex items-center gap-1.5 rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
 							<GatuLogo className="h-4 w-auto" />

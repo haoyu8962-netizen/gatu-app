@@ -71,4 +71,17 @@ describe("PWA manifest", () => {
 			expect(existsSync(new URL(icon.src, publicRoot))).toBe(true);
 		}
 	});
+
+	it("keeps the install and browser theme colors on the dark terminal canvas token", () => {
+		const publicRoot = new URL("../../../public/", import.meta.url);
+		const manifest = JSON.parse(readFileSync(new URL("manifest.json", publicRoot), "utf8")) as WebAppManifest;
+		const styles = readFileSync(new URL("../../styles.css", import.meta.url), "utf8");
+		const darkBlock = styles.slice(styles.indexOf("\n  .dark {"));
+		const canvas = /--bg-base:\s*(#[0-9a-f]{6})\s*;/i.exec(darkBlock)?.[1];
+
+		expect(canvas).toBeDefined();
+		expect(manifest.theme_color.toLowerCase()).toBe(canvas?.toLowerCase());
+		expect(manifest.background_color.toLowerCase()).toBe(canvas?.toLowerCase());
+		expect(SEO_DEFAULTS.themeColor.toLowerCase()).toBe(canvas?.toLowerCase());
+	});
 });
