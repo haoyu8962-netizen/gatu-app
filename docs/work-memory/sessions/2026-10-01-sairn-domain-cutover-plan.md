@@ -80,6 +80,13 @@
 - 用户在 Cloudflare 添加了 4 条验证 CNAME。我向 `holly.ns.cloudflare.com` 逐条查询，都返回带 `aa` 的 NOERROR，目标与 ACM 给出的一致。证书 `b04a51c6…` 于 15:57:22Z `ISSUED`，四个名字都是 `SUCCESS`，有效期到 2027-04-16 23:59:59Z；还没挂到分发上，`RenewalEligibility` 为 `INELIGIBLE`。原始输出存于 `.worklog/…/aws/certificate-sairn-issued.json`。
 - 用户补充「Privy ID key 也需要更换」。核对后发现：代码只读构建变量 `VITE_PRIVY_APP_ID`（`apps/terminal/src/config/privy.ts`、`providers/client-root.tsx`），没有 Client ID，Lambda 不用 Privy 密钥；本地值在不入库的 `apps/terminal/.env.local`。`SmartWalletsProvider` 没有代码参数，智能钱包类型、链与 ZeroDev bundler/paymaster 都在 Privy 后台，赞助充值依赖它们（`docs/cctp-deposits.md`）。换应用后邮箱用户会得到新的内嵌钱包与智能钱包地址，所以方案 0.7、0.9、1.1、2.6、4.1 与风险表补了新应用的配置清单、旧地址资金转出、构建时显式覆盖 App ID 并在产物里核对、阶段 1 临时放行 gatu origin。新 App ID 尚未取得。
 
+## PR、请求头白名单与 Codex 审查（2026-10-02）
+
+- 用户已在本地 `apps/terminal/.env.local` 换上新的 Privy App ID（`cmuphjc2…`，格式核对通过；本机 10 月 1 日的构建产物里是旧 ID `cmquon74…`，确认已更换）。该文件被 `.gitignore` 的 `*.local` 忽略，不入库。
+- 用户同意推送与开 PR。推送前 `git fetch` 确认 `origin/dev` 仍是 `99ddc6b4`，扫描分支差异：没有环境文件、证据目录、密钥特征或新增大文件（`designs/mockups.pen` 早已在 `dev`）。推送 `ff34d248`，开 [PR #68](https://github.com/zora4523-bot/gatu-app/pull/68) → `dev`，并关联到会话。
+- 用户同意 0.6：源站请求策略已加入 `X-Sairn-Forwarded-Host`，结果见方案 0.6（ETag `E23ZP02F085DFQ` → `ETVPDKIKX0DER`，两个 gatu 主机的 health、geo、同源 POST 都正常）。
+- 按用户要求启动 4 路 Codex（`gpt-6-astra`，`-s read-only`，medium）对抗审查：品牌标识、状态动效与界面、部署与切换方案、文档与流程。结论与处理另记。
+
 ## 验证与限制
 
 只做了只读调查与文档检查（`git diff --check`、相对链接与引用路径检查、记录索引检查）。没有执行任何 AWS 写操作、Cloudflare、Privy 或 Hyperliquid 操作。本机经代理，系统解析器返回假地址，公共解析器结果不可信；文中 DNS 事实以 Cloudflare 权威服务器的应答为准。
