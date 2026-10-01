@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BRAND_SOURCE = "brand/brand.json";
 const LOADER_DIRECTORY = "brand/loader";
-const LOGO_GEOMETRY_OUTPUT = "apps/terminal/src/components/brand/brand-logo-geometry.gen.ts";
+const LOGO_GEOMETRY_OUTPUT = "apps/terminal/src/lib/brand/logo-geometry.gen.ts";
 // Only the variants the terminal renders go into its runtime bundle; the wordmark and the 16-grid mark stay in brand/.
 const LOGO_VARIANTS = {
 	lockup: "brand/svg/lockup/sairn-lockup",

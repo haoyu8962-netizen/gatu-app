@@ -438,6 +438,9 @@
     --position-share-outline: #ffffff66;
     --position-share-hover: #ffffff1f;
     --position-share-button-hover: #f1f4f8;
+    /* The card is dark in both themes, so the logo keeps its on-dark colours (brand/brand.json logo.dark). */
+    --position-share-logo-signal: #86e5d3;
+    --position-share-logo-choice: #e6b766;
   }
 
   /* ==================== DARK MODE ==================== */

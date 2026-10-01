@@ -20,6 +20,8 @@ const paletteVariables = {
 	"--position-share-long": "#1f8a5a",
 	"--position-share-short": "#d6453d",
 	"--position-share-divider": "#ffffff1f",
+	"--position-share-logo-signal": "#86e5d3",
+	"--position-share-logo-choice": "#e6b766",
 } as const;
 
 const palette: PositionPnlSharePalette = {
@@ -31,10 +33,11 @@ const palette: PositionPnlSharePalette = {
 	long: "#1f8a5a",
 	short: "#d6453d",
 	divider: "#ffffff1f",
+	logoSignal: "#86e5d3",
+	logoChoice: "#e6b766",
 };
 
 const imageModel: PositionPnlShareImageModel = {
-	brand: "GATU",
 	timestamp: "2026-08-05 10:30",
 	symbol: "BTC-PERP",
 	directionLabel: "Long 10x",

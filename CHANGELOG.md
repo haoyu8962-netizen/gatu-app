@@ -49,7 +49,8 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 - The product is now Sairn. The terminal and the website show the Sairn name, the logo kit v1.3
   (lockup, mark and its two-colour signal and choice panels), new favicons, PWA and Apple touch
-  icons, and the Sairn logo in the Privy login window. The page title, the startup announcement,
+  icons, the Sairn logo in the Privy login window and on the position PNL share image, and new link preview
+  images for the terminal and the website. The page title, the startup announcement,
   the installed app name and every translated message use the new name, and the legal documents
   name Sairn Corp. The chart's first load shows the Sairn page-loading motion (the two panels
   breathe in turn; a static mark when reduced motion is on). Links, brand text and focus rings use

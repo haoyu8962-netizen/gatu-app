@@ -1,4 +1,4 @@
-import type { BrandLogoPart } from "./brand-logo-geometry.gen";
+import type { BrandLogoPart } from "@/lib/brand/logo-geometry.gen";
 
 export const BRAND_LOGO_FILL: Record<BrandLogoPart, string> = {
 	signal: "var(--logo-signal, currentColor)",

@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
+import { BRAND_LOADER_VIEW_BOX, BRAND_LOGO_GEOMETRY } from "@/lib/brand/logo-geometry.gen";
 import { BRAND_LOGO_FILL } from "./brand-logo-fill";
-import { BRAND_LOADER_VIEW_BOX, BRAND_LOGO_GEOMETRY } from "./brand-logo-geometry.gen";
 
 type Props = Omit<SVGProps<SVGSVGElement>, "aria-hidden" | "children" | "focusable" | "viewBox">;
 
