@@ -71,7 +71,7 @@ export function ExecutingScreen({ address, statusText, txHash, onDone, recoveryW
 		<div className="flex flex-1 flex-col gap-4">
 			<div className="flex flex-1 flex-col items-center justify-center gap-4">
 				<div className="flex size-12 items-center justify-center rounded-full border border-stroke-signal/30 bg-signal-soft">
-					<SpinnerGapIcon className="size-6 animate-spin text-signal" />
+					<SpinnerGapIcon className="size-6 animate-spin text-fg-muted" />
 				</div>
 				<div className="text-center space-y-1">
 					<p className="text-sm font-medium text-fg">{statusText}</p>

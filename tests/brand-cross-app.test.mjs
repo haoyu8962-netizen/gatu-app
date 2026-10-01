@@ -50,6 +50,21 @@ test("every stylesheet carries the brand colors recorded in brand/brand.json", (
 	}
 });
 
+test("the brand signal stays readable as text on every terminal surface in both themes", () => {
+	for (const [selector, theme] of [
+		[":root", "light"],
+		[".dark", "dark"],
+	]) {
+		for (const surface of ["--bg-base", "--bg-raised", "--bg-overlay", "--bg-sunken"]) {
+			const background = readCssVariable(TERMINAL_STYLES, selector, surface);
+			for (const key of ["signal", "signalHover"]) {
+				const ratio = contrastRatio(BRAND.colors[theme][key], background);
+				assert.ok(ratio >= 4.5, `${theme} ${key} on ${surface} (${background}) is ${ratio.toFixed(2)}:1`);
+			}
+		}
+	}
+});
+
 test("Terminal and Website ship distinct large social cards", () => {
 	const terminalImage = readFileSync(resolve(REPOSITORY_ROOT, "apps/terminal/public/og-terminal-1200x630.png"));
 	const websiteImage = readFileSync(resolve(REPOSITORY_ROOT, "apps/website/public/og-website-1200x630.png"));
@@ -74,4 +89,17 @@ function readCssVariable(source, selector, variable) {
 	const declaration = new RegExp(`${variable}:\\s*([^;]+);`).exec(source.slice(blockStart + 1, blockEnd));
 	assert.ok(declaration?.[1], `missing variable: ${selector} ${variable}`);
 	return declaration[1].trim();
+}
+
+function contrastRatio(foreground, background) {
+	const luminance = (hex) => {
+		assert.match(hex, /^#[0-9a-f]{6}$/i, `expected a 6-digit hex colour, got ${hex}`);
+		const [red, green, blue] = [1, 3, 5].map((offset) => {
+			const channel = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+			return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+		});
+		return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+	};
+	const [lighter, darker] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+	return (lighter + 0.05) / (darker + 0.05);
 }

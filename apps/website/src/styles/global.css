@@ -65,9 +65,9 @@
 		--action-hover: #ffffff;
 		--action-active: #d5d7de;
 		--on-action: #08090d;
-		--signal: #d7ff3f;
-		--signal-hover: #e6ff70;
-		--signal-soft: rgb(215 255 63 / 14%);
+		--signal: #86e5d3;
+		--signal-hover: #a8eee1;
+		--signal-soft: rgb(134 229 211 / 14%);
 		--focus: var(--signal);
 
 		--text-strong: #ffffff;

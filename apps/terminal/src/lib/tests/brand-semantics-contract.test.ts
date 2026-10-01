@@ -11,11 +11,11 @@ describe("brand semantics contract", () => {
 	it("defines the terminal action, signal, and focus roles in both themes", () => {
 		expect(readCssVariable(TERMINAL_STYLES, ":root", "--action")).toBe("#15171e");
 		expect(readCssVariable(TERMINAL_STYLES, ":root", "--on-action")).toBe("#ffffff");
-		expect(readCssVariable(TERMINAL_STYLES, ":root", "--signal")).toBe("#667311");
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--signal")).toBe("#176b64");
 		expect(readCssVariable(TERMINAL_STYLES, ":root", "--focus")).toBe("var(--signal)");
 		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--action")).toBe("#edeef2");
 		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--on-action")).toBe("#08090d");
-		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--signal")).toBe("#d7ff3f");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--signal")).toBe("#86e5d3");
 		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--focus")).toBe("var(--signal)");
 	});
 

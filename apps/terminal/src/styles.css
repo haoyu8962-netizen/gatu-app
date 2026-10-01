@@ -270,9 +270,9 @@
     --action-hover: #32363d;
     --action-active: #08090d;
     --on-action: #ffffff;
-    --signal: #667311;
-    --signal-hover: #4f5a0d;
-    --signal-soft: rgb(102 115 17 / 10%);
+    --signal: #176b64;
+    --signal-hover: #0f524d;
+    --signal-soft: rgb(23 107 100 / 10%);
     --focus: var(--signal);
     --chart-accent: #4c64d9;
     /* Logo kit v1.3 colors on light surfaces (brand/brand.json logo.light) and the darkest loader frame. */
@@ -467,9 +467,9 @@
     --action-hover: #ffffff;
     --action-active: #d5d7de;
     --on-action: #08090d;
-    --signal: #d7ff3f;
-    --signal-hover: #e6ff70;
-    --signal-soft: rgb(215 255 63 / 14%);
+    --signal: #86e5d3;
+    --signal-hover: #a8eee1;
+    --signal-soft: rgb(134 229 211 / 14%);
     --focus: var(--signal);
     --chart-accent: #b2bcf1;
     /* Logo kit v1.3 colors on dark surfaces (brand/brand.json logo.dark) and the darkest loader frame. */

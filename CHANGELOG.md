@@ -52,7 +52,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
   icons, and the Sairn logo in the Privy login window. The page title, the startup announcement,
   the installed app name and every translated message use the new name, and the legal documents
   name Sairn Corp. The chart's first load shows the Sairn page-loading motion (the two panels
-  breathe in turn; a static mark when reduced motion is on). The desktop logo is now 24px high, so
+  breathe in turn; a static mark when reduced motion is on). Links, brand text and focus rings use
+  the Sairn accent (teal in the light theme, mint in the dark theme) instead of lime; primary buttons
+  stay neutral and waiting spinners are grey. The desktop logo is now 24px high, so
   the header has 9px less room before its navigation collapses; see
   [brand assets](docs/brand-assets.md).
 - Notices on the Staking page and in the Staking, Referral, API wallet and Vault dialogs are rounded

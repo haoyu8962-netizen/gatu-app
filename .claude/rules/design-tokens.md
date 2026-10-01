@@ -58,6 +58,11 @@ Each works as `bg-*` and `text-*`:
 
 For **borders / rings / outlines / dividers** using these semantic colors, use the stroke variants (see Strokes section) to preserve the intended alpha values.
 
+### Brand roles — `--signal`, `--action`, `--focus`
+- `--signal` is the Sairn accent (light `#176b64` teal, dark `#86e5d3` mint; hover `#0f524d` / `#a8eee1`; soft 10 % / 14 %). `text-brand`, `text-signal`, `bg-signal-soft` and the focus ring (`--focus: var(--signal)`) use it. The values live in `brand/brand.json` and must be identical in `packages/ui/src/globals.css`, the terminal and the website; `tests/brand-cross-app.test.mjs` pins the equality and a 4.5:1 text contrast on every terminal surface.
+- `--action` stays neutral (light `#15171e`, dark `#edeef2`): filled primary buttons are not tinted with the brand, so they cannot be mistaken for the green Buy button.
+- Waiting spinners use `text-fg-muted`, never `text-signal`: the kit's mint is also its success colour, and a mint spinner reads as "done".
+
 ### Fills — interactive state backgrounds
 - `bg-fill-weak` / `bg-fill-weaker` subtle tinted fills (for hover, chips)
 - `bg-fill-hover` / `bg-fill-press` interactive state fills

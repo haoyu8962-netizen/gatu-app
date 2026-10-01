@@ -64,7 +64,7 @@ export function OrderToast({ order, onDismiss }: Props) {
 			className="w-full rounded-8 border border-stroke-weak bg-overlay p-3 shadow-overlay font-sans text-xs"
 		>
 			<div className="flex items-start gap-3">
-				{waiting && <SpinnerGapIcon className="size-4 shrink-0 animate-spin text-signal" />}
+				{waiting && <SpinnerGapIcon className="size-4 shrink-0 animate-spin text-fg-muted" />}
 				{successful && <CheckIcon className="size-4 shrink-0 text-success" />}
 				{failed && <XIcon className="size-4 shrink-0 text-error" />}
 				{!waiting && !successful && !failed && <WarningCircleIcon className="size-4 shrink-0 text-warning" />}

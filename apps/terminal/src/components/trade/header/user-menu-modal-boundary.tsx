@@ -38,7 +38,7 @@ export function UserMenuModalLoadingFallback({ open, onOpenChange, presentation,
 					aria-busy="true"
 					aria-live="polite"
 				>
-					<SpinnerGapIcon className="size-4 animate-spin text-signal motion-reduce:animate-none" aria-hidden="true" />
+					<SpinnerGapIcon className="size-4 animate-spin text-fg-muted motion-reduce:animate-none" aria-hidden="true" />
 					{label ?? <Trans>Connecting...</Trans>}
 				</output>
 			</ModalContent>

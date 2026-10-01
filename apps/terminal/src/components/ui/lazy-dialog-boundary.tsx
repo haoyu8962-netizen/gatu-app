@@ -35,7 +35,7 @@ export function LazyDialogLoadingFallback({ open, onOpenChange, presentation }: 
 					aria-busy="true"
 					aria-live="polite"
 				>
-					<SpinnerGapIcon className="size-4 animate-spin text-signal motion-reduce:animate-none" aria-hidden="true" />
+					<SpinnerGapIcon className="size-4 animate-spin text-fg-muted motion-reduce:animate-none" aria-hidden="true" />
 					<Trans>Loading...</Trans>
 				</output>
 			</ModalContent>

@@ -68,7 +68,7 @@ export function StatusScreen({
 							<div className="relative">
 								<div className="absolute inset-0 animate-ping rounded-full bg-signal-soft/20" />
 								<div className="relative flex size-14 items-center justify-center rounded-full border border-stroke-signal/30 bg-signal-soft/10">
-									<SpinnerGapIcon className="size-7 animate-spin text-signal" />
+									<SpinnerGapIcon className="size-7 animate-spin text-fg-muted" />
 								</div>
 							</div>
 						) : (

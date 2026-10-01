@@ -22,18 +22,18 @@
 			"actionHover": "#32363d",
 			"actionActive": "#08090d",
 			"onAction": "#ffffff",
-			"signal": "#667311",
-			"signalHover": "#4f5a0d",
-			"signalSoft": "rgb(102 115 17 / 10%)"
+			"signal": "#176b64",
+			"signalHover": "#0f524d",
+			"signalSoft": "rgb(23 107 100 / 10%)"
 		},
 		"dark": {
 			"action": "#edeef2",
 			"actionHover": "#ffffff",
 			"actionActive": "#d5d7de",
 			"onAction": "#08090d",
-			"signal": "#d7ff3f",
-			"signalHover": "#e6ff70",
-			"signalSoft": "rgb(215 255 63 / 14%)"
+			"signal": "#86e5d3",
+			"signalHover": "#a8eee1",
+			"signalSoft": "rgb(134 229 211 / 14%)"
 		}
 	},
 	"logo": {

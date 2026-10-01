@@ -11,7 +11,7 @@ const WEBSITE_MARKETS = readFileSync(resolve(WEBSITE_ROOT, "src/components/Marke
 
 test("website uses the brand action, signal and focus roles", () => {
 	assert.equal(readCssVariable(WEBSITE_STYLES, ":root", "--action"), "#edeef2");
-	assert.equal(readCssVariable(WEBSITE_STYLES, ":root", "--signal"), "#d7ff3f");
+	assert.equal(readCssVariable(WEBSITE_STYLES, ":root", "--signal"), "#86e5d3");
 	assert.equal(readCssVariable(WEBSITE_STYLES, ":root", "--focus"), "var(--signal)");
 	assert.match(WEBSITE_HERO, /bg-action/);
 	assert.match(WEBSITE_HERO, /text-on-action/);

@@ -126,7 +126,10 @@ export function DepositModalLoadingFallback() {
 							/>
 						</div>
 					) : (
-						<SpinnerGapIcon className="size-5 animate-spin text-signal motion-reduce:animate-none" aria-hidden="true" />
+						<SpinnerGapIcon
+							className="size-5 animate-spin text-fg-muted motion-reduce:animate-none"
+							aria-hidden="true"
+						/>
 					)}
 				</div>
 			</ModalContent>
