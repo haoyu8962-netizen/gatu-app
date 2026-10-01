@@ -160,7 +160,7 @@ describe("MobileAgentQrScanner", () => {
 		});
 		expect(scannerState.startScanner).not.toHaveBeenCalled();
 		expect(container.textContent).toContain(
-			"Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device).",
+			"Scan the QR from the QR icon in the top-right of Sairn on desktop (Link mobile device).",
 		);
 
 		act(() => findButton(container, "Start camera")?.click());

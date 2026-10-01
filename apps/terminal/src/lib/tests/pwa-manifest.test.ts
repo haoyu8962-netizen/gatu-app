@@ -28,8 +28,8 @@ describe("PWA manifest", () => {
 		expect(manifest.background_color).toBe("#0F1A1F");
 		expect(SEO_DEFAULTS.themeColor).toBe("#0F1A1F");
 		expect(manifest.display).toBe("standalone");
-		expect(manifest.name).toBe("GATU");
-		expect(manifest.short_name).toBe("GATU");
+		expect(manifest.name).toBe("Sairn");
+		expect(manifest.short_name).toBe("Sairn");
 		expect(manifest.id).toBe("/");
 		expect(manifest.start_url).toBe("/");
 		expect(manifest.scope).toBe("/");

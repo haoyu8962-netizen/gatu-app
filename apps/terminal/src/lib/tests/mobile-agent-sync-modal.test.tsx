@@ -229,7 +229,7 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 		expect(container.textContent).toContain(
-			"On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code.",
+			"On your phone, open Sairn, tap Connect, then Link Desktop Wallet and scan this code.",
 		);
 		expect(container.textContent).toContain("The QR can trade but not withdraw.");
 		expect(container.querySelector("canvas")).toBeNull();

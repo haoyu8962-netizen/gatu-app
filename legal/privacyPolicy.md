@@ -1,18 +1,18 @@
-# Gatu - Privacy Policy
+# Sairn - Privacy Policy
 
 **Last Updated:** September 27, 2026
 
-This Privacy Policy ("Policy") explains how Gatu Corp. ("Gatu," "we," "us," or "our")
+This Privacy Policy ("Policy") explains how Sairn Corp. ("Sairn," "we," "us," or "our")
 handles personal data in connection with the interface available at
-[https://app.gatu.ai](https://app.gatu.ai) and related Gatu websites and support services
+[https://app.gatu.ai](https://app.gatu.ai) and related Sairn websites and support services
 (collectively, the "Services"). Capitalized terms not defined here have the meaning given in
 our [Terms of Use](https://app.gatu.ai/terms).
 
 ## 1. Scope and Roles
 
-Gatu provides non-custodial interface software. Public blockchain networks, Hyperliquid,
+Sairn provides non-custodial interface software. Public blockchain networks, Hyperliquid,
 wallet and authentication providers, RPC providers, bridges, block explorers, and other
-third-party services process data under their own terms and privacy policies. Gatu does not
+third-party services process data under their own terms and privacy policies. Sairn does not
 control public blockchain records and generally cannot delete or alter information recorded
 onchain.
 
@@ -23,7 +23,7 @@ Depending on how you use the Services, we may handle:
 - **Account and contact information:** an email address, social-login identifier, support correspondence, or other information you choose to provide. Authentication providers may process this information before making limited account information available to the Interface.
 - **Wallet and transaction information:** public wallet addresses, smart-wallet or Agent-wallet addresses, signatures, transaction hashes, orders, positions, balances, and other public or protocol-provided activity associated with an address.
 - **Device and usage information:** IP address, approximate country or region, request date and time, requested path, browser and operating-system information, language, referral information, and technical diagnostics generated when the Services are accessed.
-- **Preferences stored on your device:** language, theme, chart settings, favorites, account-mode preferences, and other local settings. Locally generated Agent credentials may also be stored on your device to support authorized trading. Gatu does not receive your seed phrase or wallet private key through ordinary use of the Interface.
+- **Preferences stored on your device:** language, theme, chart settings, favorites, account-mode preferences, and other local settings. Locally generated Agent credentials may also be stored on your device to support authorized trading. Sairn does not receive your seed phrase or wallet private key through ordinary use of the Interface.
 
 ## 3. How and Why We Use Data
 
@@ -51,7 +51,7 @@ Interface uses and how to manage it.
 
 As of the Last Updated date, the Interface does not integrate a product-analytics SDK.
 Infrastructure access logs and third-party providers may still process
-the technical data necessary to deliver, secure, and diagnose the Services. If Gatu later
+the technical data necessary to deliver, secure, and diagnose the Services. If Sairn later
 introduces a materially different analytics or tracking service, this Policy should be
 updated before that service is enabled.
 

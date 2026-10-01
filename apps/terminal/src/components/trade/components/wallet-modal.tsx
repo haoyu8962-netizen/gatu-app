@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { type LoginModalOptions, usePrivy } from "@privy-io/react-auth";
 import { useEffect, useRef, useState } from "react";
+import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { useIsMobileQrSurface } from "@/hooks/use-mobile";
 import { useReconnectWallet } from "@/hooks/wallet/use-wallet-session";
@@ -146,7 +147,7 @@ function MobileWalletChooser({
 					) : view === "scanner" ? (
 						<Trans>Link Desktop Wallet</Trans>
 					) : (
-						<Trans>Install gatu</Trans>
+						<Trans>Install {BRAND_NAME}</Trans>
 					)}
 				</ModalTitle>
 				<ModalDescription className={view === "choice" ? "sr-only" : undefined}>
@@ -160,7 +161,8 @@ function MobileWalletChooser({
 						<Trans>Only scan a QR displayed by this terminal on your desktop.</Trans>
 					) : pwaCapability === "ios-instructions" ? (
 						<Trans>
-							On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen.
+							On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch {BRAND_NAME} from your Home
+							Screen.
 						</Trans>
 					) : (
 						<Trans>Install this web app for a full-screen, app-like trading experience.</Trans>

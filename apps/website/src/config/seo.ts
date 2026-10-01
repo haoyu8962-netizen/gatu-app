@@ -5,15 +5,15 @@ export const SEO_DEFAULTS = {
 	siteName: BRAND_NAME,
 	siteUrl: SITE_URL,
 	appUrl: APP_URL,
-	defaultTitle: `${BRAND_NAME} — Gateway to on-chain transactions`,
+	defaultTitle: `${BRAND_NAME} — See the market clearly. Decide for yourself.`,
 	defaultOgTitle: BRAND_NAME,
-	defaultDescription: "Perpetual and spot trading—direct on-chain access via a single gateway.",
+	defaultDescription: "Perpetual and spot trading on Hyperliquid—direct on-chain access from your own wallet.",
 	locale: "en_US",
 	themeColor: "#0a0a0a",
 	ogImage: "/og-website-1200x630.png",
 	ogImageWidth: 1200,
 	ogImageHeight: 630,
-	ogImageAlt: `${BRAND_NAME} — Gateway to on-chain transactions`,
+	ogImageAlt: `${BRAND_NAME} — See the market clearly. Decide for yourself.`,
 	logoImage: logoImageUrl,
 } as const;
 

@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { ReferralsPage } from "@/components/referrals/referrals-page";
+import { BRAND_NAME } from "@/config/brand";
 import { bootDashboardRoute } from "@/lib/navigation/boot-dashboard-route";
 import { getNetwork } from "@/lib/network";
 import { buildPageHead } from "@/lib/seo";
@@ -18,8 +19,8 @@ export const Route = createFileRoute("/join/$code")({
 	remountDeps: ({ params }) => ({ code: params.code }),
 	head: () => {
 		const head = buildPageHead({
-			title: "Join Gatu",
-			description: "Review a Hyperliquid referral invitation in the Gatu trading terminal.",
+			title: `Join ${BRAND_NAME}`,
+			description: `Review a Hyperliquid referral invitation in the ${BRAND_NAME} trading terminal.`,
 			path: "/referrals",
 			noIndex: true,
 		});

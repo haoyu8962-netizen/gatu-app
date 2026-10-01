@@ -1,6 +1,6 @@
-# Gatu legal and policy documents
+# Sairn legal and policy documents
 
-This directory contains the source documents rendered by the Gatu websites. It is an
+This directory contains the source documents rendered by the Sairn websites. It is an
 engineering source of truth for published copy, not legal advice. Changes to eligibility,
 restricted persons, governing law, dispute resolution, data handling, or risk language must
 receive qualified legal review before production deployment.
@@ -29,7 +29,7 @@ history and must not be restored as operational guidance.
 
 ## Stable identity
 
-- Company: Gatu Corp.
+- Company: Sairn Corp.
 - Website: `https://gatu.ai`
 - Interface: `https://app.gatu.ai`
 - Support and legal contact: `support@gatu.ai`

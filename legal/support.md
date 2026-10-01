@@ -1,6 +1,6 @@
 # Support
 
-Welcome to gatu Support. This page helps you find answers, troubleshoot common issues, and get in touch with our team.
+Welcome to Sairn Support. This page helps you find answers, troubleshoot common issues, and get in touch with our team.
 
 > _Last updated: June 15, 2026_
 
@@ -19,13 +19,13 @@ Welcome to gatu Support. This page helps you find answers, troubleshoot common i
 
 ### General
 
-**What is gatu?**
-gatu is a non-custodial trading terminal for the Hyperliquid decentralized exchange, supporting perpetual futures and spot markets with real-time data and advanced charting.
+**What is Sairn?**
+Sairn is a non-custodial trading terminal for the Hyperliquid decentralized exchange, supporting perpetual futures and spot markets with real-time data and advanced charting.
 
-**Does gatu hold my funds?**
-No. gatu is fully non-custodial. Your funds remain in your own account, and we never have access to your private keys.
+**Does Sairn hold my funds?**
+No. Sairn is fully non-custodial. Your funds remain in your own account, and we never have access to your private keys.
 
-**Is gatu free to use?**
+**Is Sairn free to use?**
 Using the interface is free to use. You remain responsible for network fees and any protocol or builder fees applied to your trades.
 
 ### Wallet & Sign-In
@@ -34,7 +34,7 @@ Using the interface is free to use. You remain responsible for network fees and 
 Click **Connect Wallet** and choose an external wallet (e.g., browser extension or mobile wallet) or sign in with email to use an embedded wallet.
 
 **What is the "agent" or "trading" wallet?**
-To enable fast, pop-up-free order signing, gatu uses a delegated agent (API) wallet that you approve once with your main wallet. The agent key can place and cancel orders but **cannot withdraw your funds**.
+To enable fast, pop-up-free order signing, Sairn uses a delegated agent (API) wallet that you approve once with your main wallet. The agent key can place and cancel orders but **cannot withdraw your funds**.
 
 **I signed in with email — where is my wallet?**
 Email sign-in creates an embedded wallet for you. You can view its address in the account menu.

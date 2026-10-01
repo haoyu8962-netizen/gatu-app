@@ -279,6 +279,7 @@ jobs:
           src/lib/tests/mobile-header-brand.test.tsx
           src/lib/tests/pwa-manifest.test.ts
           src/lib/tests/public-origins.test.ts
+          src/lib/tests/brand-catalog-contract.test.ts
           src/lib/tests/network-storage.test.ts
           src/lib/tests/referral-join.test.ts
           src/lib/tests/referral.test.ts

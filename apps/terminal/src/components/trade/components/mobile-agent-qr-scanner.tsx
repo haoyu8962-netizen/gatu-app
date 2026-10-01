@@ -2,6 +2,7 @@ import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowLeftIcon, CameraIcon, QrCodeIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { classifyQrValue, shouldShowQrFeedback } from "@/lib/mobile-sync/qr-classification";
 import { isMobileSyncError, parseMobileSyncUrl } from "@/lib/mobile-sync/sync-core";
@@ -185,7 +186,9 @@ export function MobileAgentQrScanner({
 						<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-modal px-6 text-center">
 							<QrCodeIcon className="size-12 text-signal" weight="duotone" aria-hidden />
 							<p className="text-xs text-fg-muted">
-								<Trans>Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device).</Trans>
+								<Trans>
+									Scan the QR from the QR icon in the top-right of {BRAND_NAME} on desktop (Link mobile device).
+								</Trans>
 							</p>
 						</div>
 					)}

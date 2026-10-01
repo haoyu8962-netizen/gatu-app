@@ -1,12 +1,12 @@
-# Gatu - Cookie and Browser Storage Policy
+# Sairn - Cookie and Browser Storage Policy
 
 **Last Updated:** August 3, 2026
 
-This policy explains how Gatu Corp. ("Gatu," "we," "us," or "our") uses cookies and browser storage in the trading interface available at [https://app.gatu.ai](https://app.gatu.ai).
+This policy explains how Sairn Corp. ("Sairn," "we," "us," or "our") uses cookies and browser storage in the trading interface available at [https://app.gatu.ai](https://app.gatu.ai).
 
 ## 1. Essential Storage
 
-Gatu uses cookies, local storage, session storage, and similar browser capabilities where needed to authenticate a session, connect a wallet, protect the Interface, remember user preferences, and operate trading features.
+Sairn uses cookies, local storage, session storage, and similar browser capabilities where needed to authenticate a session, connect a wallet, protect the Interface, remember user preferences, and operate trading features.
 
 Examples include language and theme preferences, chart settings, market favorites, account-mode preferences, wallet-provider session data, and locally generated Agent credentials used for authorized trading.
 

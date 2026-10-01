@@ -529,7 +529,7 @@ describe("TopNav", () => {
 
 		const logoLink = container.querySelector<HTMLAnchorElement>("a[data-brand-home-link]");
 		const tradeLink = findLink("Trade");
-		expect(logoLink?.getAttribute("aria-label")).toBe("GATU");
+		expect(logoLink?.getAttribute("aria-label")).toBe("Sairn");
 		for (const link of [logoLink, tradeLink]) {
 			expect(link?.dataset.to).toBe("/spot/@107");
 			expect(JSON.parse(link?.dataset.search ?? "null")).toEqual({ scope: "all" });

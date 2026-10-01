@@ -47,6 +47,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Changed
 
+- The product is now Sairn. The terminal and the website show the Sairn name, the logo kit v1.3
+  (lockup, mark and its two-colour signal and choice panels), new favicons, PWA and Apple touch
+  icons, and the Sairn logo in the Privy login window. The page title, the startup announcement,
+  the installed app name and every translated message use the new name, and the legal documents
+  name Sairn Corp. The chart's first load shows the Sairn page-loading motion (the two panels
+  breathe in turn; a static mark when reduced motion is on). The desktop logo is now 24px high, so
+  the header has 9px less room before its navigation collapses; see
+  [brand assets](docs/brand-assets.md).
 - Notices on the Staking page and in the Staking, Referral, API wallet and Vault dialogs are rounded
   8px like the other notices; they were 4px to 10px.
 

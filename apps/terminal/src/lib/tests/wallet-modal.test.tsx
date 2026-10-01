@@ -312,7 +312,7 @@ describe("WalletModal", () => {
 		});
 		act(() => findButton(container, "Try the PWA.")?.click());
 
-		expect(container.querySelector("h2")?.textContent).toBe("Install gatu");
+		expect(container.querySelector("h2")?.textContent).toBe("Install Sairn");
 		expect(container.textContent).toContain("open the Share menu");
 		expect(findButton(container, "Install app")).toBeUndefined();
 		expect(findButton(container, "Back")).toBeDefined();

@@ -1,18 +1,18 @@
-# gatu Documentation
+# Sairn Documentation
 
-Welcome to the official documentation for **gatu**, a professional trading terminal for the Hyperliquid decentralized exchange.
+Welcome to the official documentation for **Sairn**, a professional trading terminal for the Hyperliquid decentralized exchange.
 
 > _Last updated: September 28, 2026_
 
 ---
 
-## What is gatu?
+## What is Sairn?
 
-gatu is a fast, non-custodial trading terminal for Hyperliquid. It provides a professional interface for trading perpetual futures and spot markets — with real-time market data, advanced charting, and a streamlined order-execution workflow — while keeping you in full control of your funds and private keys.
+Sairn is a fast, non-custodial trading terminal for Hyperliquid. It provides a professional interface for trading perpetual futures and spot markets — with real-time market data, advanced charting, and a streamlined order-execution workflow — while keeping you in full control of your funds and private keys.
 
 Guiding principles:
 
-- **Non-custodial** — gatu never holds your funds or private keys. You trade directly from your own wallet.
+- **Non-custodial** — Sairn never holds your funds or private keys. You trade directly from your own wallet.
 - **Fast** — orders are signed locally by a delegated trading key (agent wallet), so you can trade without a wallet pop-up on every action.
 - **Professional** — real-time order books, depth, charts, and account management in a single workspace.
 
@@ -47,7 +47,7 @@ Guiding principles:
 
 Follow these steps to place your first trade:
 
-1. **Open gatu** — navigate to https://app.gatu.ai.
+1. **Open Sairn** — navigate to https://app.gatu.ai.
 2. **Connect your wallet** — click **Connect Wallet** and choose your preferred method (external wallet or email sign-in).
 3. **Fund your account** — deposit funds directly, or use the built-in bridge to move assets from another network.
 4. **Approve the trading agent** — the first time you trade, approve the agent (API) wallet. This is a one-time signature that enables fast order signing.

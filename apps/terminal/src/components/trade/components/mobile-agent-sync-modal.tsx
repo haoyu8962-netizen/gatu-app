@@ -4,6 +4,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { DeviceMobileIcon, QrCodeIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Address } from "viem";
+import { BRAND_NAME } from "@/config/brand";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { usePressAndHold } from "@/hooks/ui/use-press-and-hold";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -173,7 +174,7 @@ function MobileAgentSyncDialog({
 					</ModalTitle>
 				</div>
 				<ModalDescription>
-					<Trans>On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code.</Trans>
+					<Trans>On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet and scan this code.</Trans>
 				</ModalDescription>
 			</ModalHeader>
 

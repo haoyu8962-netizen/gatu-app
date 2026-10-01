@@ -11,6 +11,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
+import { BRAND_NAME } from "@/config/brand";
 import type { LegalGateState } from "@/hooks/trade/use-legal-gate";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDisconnectWallet, useReconnectWallet } from "@/hooks/wallet/use-wallet-session";
@@ -179,7 +180,7 @@ export function LegalAcceptanceModal({
 							labelClassName="text-2sm leading-[1.65] text-market-close-fg text-pretty"
 							label={
 								<Trans>
-									I have read and agree to the Gatu{" "}
+									I have read and agree to the {BRAND_NAME}{" "}
 									<Link to="/terms" target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
 										Terms of Use
 									</Link>
@@ -215,8 +216,8 @@ export function LegalAcceptanceModal({
 							labelClassName="text-2sm leading-[1.65] text-market-close-fg text-pretty"
 							label={
 								<Trans>
-									I understand that Gatu uses essential cookies and browser storage for authentication, security,
-									preferences, and trading functionality. Review the{" "}
+									I understand that {BRAND_NAME} uses essential cookies and browser storage for authentication,
+									security, preferences, and trading functionality. Review the{" "}
 									<Link to="/cookies" target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
 										Cookie Policy
 									</Link>

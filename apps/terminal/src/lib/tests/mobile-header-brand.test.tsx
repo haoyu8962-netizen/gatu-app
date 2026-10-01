@@ -83,7 +83,7 @@ describe("MobileHeader brand link", () => {
 		const logoLink = container.querySelector<HTMLAnchorElement>("a[data-brand-home-link]");
 		const brandMark = logoLink?.querySelector<SVGElement>('[data-brand-logo="mark"]');
 
-		expect(logoLink?.getAttribute("aria-label")).toBe("GATU");
+		expect(logoLink?.getAttribute("aria-label")).toBe("Sairn");
 		expect(logoLink?.className).toContain("touch-target");
 		expect(logoLink?.className).toContain("focus-visible:outline-stroke-focus");
 		expect(logoLink?.className).toContain("max-[359px]:hidden");

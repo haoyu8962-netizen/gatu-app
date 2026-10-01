@@ -320,6 +320,9 @@ pnpm --dir apps/terminal exec vitest run \
 # Brand identity (brand/, names, logo, icons, domains, legal text; see docs/brand-migration-plan.md)
 pnpm test:brand
 pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/brand-logo.test.tsx \
+  src/lib/tests/brand-catalog-contract.test.ts \
+  src/lib/tests/public-origins.test.ts \
   src/lib/tests/pwa-manifest.test.ts \
   src/lib/tests/network-storage.test.ts \
   src/lib/tests/referral-join.test.ts \

@@ -1,5 +1,5 @@
 ---
-title: "Building GATU in the open"
+title: "Building Sairn in the open"
 description: "Why the source for the client that signs your trades belongs in a public repo."
 date: 2026-05-01
 ---

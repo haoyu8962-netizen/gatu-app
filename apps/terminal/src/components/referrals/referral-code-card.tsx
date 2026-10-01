@@ -1,6 +1,7 @@
 import { Button, ButtonIcon } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon, LinkSimpleIcon, ShareNetworkIcon } from "@phosphor-icons/react";
+import { BRAND_NAME } from "@/config/brand";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { formatNumber, formatUSD, shortenAddress } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -177,7 +178,11 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 					</div>
 					<div>
 						<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
-							{usesGatuInvitationLink ? <Trans>Gatu invitation link</Trans> : <Trans>Official referral link</Trans>}
+							{usesGatuInvitationLink ? (
+								<Trans>{BRAND_NAME} invitation link</Trans>
+							) : (
+								<Trans>Official referral link</Trans>
+							)}
 						</p>
 						<div className="mt-1 flex min-h-[39px] items-center gap-2 rounded-16 border border-stroke-weak px-3 py-2">
 							<LinkSimpleIcon className="size-4 shrink-0 text-fg-muted" />
