@@ -120,9 +120,9 @@ CI 中，`Terminal Tests` 在 `brand/**`、`legal/**` 变化时运行 `pnpm bran
 
 上线顺序（DNS 永远最后切，每一步用权威 DNS 和 AWS API 核对）：
 
-1. 注册并续费 `sairn.ai`；旧域名 `gatu.ai` 保持自动续费（HSTS 一年，旧 origin 的浏览器存储里可能留有 Agent 私钥）。
+1. 注册并续费 `sairn.ai`；旧域名 `gatu.ai` 保持自动续费（HSTS 一年，旧 origin 的浏览器存储里可能留有 Agent 私钥）。2026-10-01 复查：WHOIS 显示 `sairn.ai` 于 11:40:28 UTC 经 Cloudflare 注册，`.ai` 权威服务器已把它委派给 Cloudflare 名称服务器，还没有 A、MX 记录；归属账号以 Cloudflare 后台为准，仓库里没有记录。
 2. Cloudflare 建 `sairn.ai` 区（DNS-only），配置邮件 MX、SPF、DKIM、DMARC，确认 `support@sairn.ai` 可以收信。
-3. ACM（us-east-1）申请覆盖 `app.sairn.ai`、`testnet.sairn.ai`、`sairn.ai`、`www.sairn.ai` 的证书，状态为 `ISSUED` 后再继续。
+3. ACM（us-east-1）申请证书，状态为 `ISSUED` 后再继续。一个分发只能挂一张证书，而第 6 步要在同一个分发上并存新旧别名，所以每张证书都要同时覆盖新旧两组：主网终端分发 `app.sairn.ai` 与 `app.gatu.ai`，测试网分发 `testnet.sairn.ai` 与 `testnet.gatu.ai`，官网分发 `sairn.ai`、`www.sairn.ai`、`gatu.ai`、`www.gatu.ai`（`deploy/website/README.md`）。只申请新主机名的证书会让旧域名在换证书后出现证书不匹配。
 4. Privy 后台的 Allowed origins **添加** `https://app.sairn.ai`、`https://testnet.sairn.ai`，旧的先保留；应用名改为 Sairn；UI components → Logo 填 `https://app.sairn.ai/brand/email-logo.png`。代码里的 `appearance.logo` 只覆盖登录窗口，登录验证码邮件用的是后台这张 Logo，Privy 要求 `.png`（不接受 SVG），建议 2:1、180×90（这张是 2 倍尺寸的 360×180，白底，深色邮件客户端里也看得清）。
 5. 按 `deploy/cloudfront/README.md` 顶部的说明更新 API 源站请求策略的转发头（`X-Sairn-Forwarded-Host`）。
 6. 发布终端与官网；用 `deploy.mjs aliases` 给分发**同时**挂新旧别名并换上新证书，等分发状态 `Deployed`。

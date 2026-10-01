@@ -148,6 +148,15 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Runtime views stay pure, deterministic and props-only. Preserve mounted component behavior, translated labels, drafts, protocol values and every signing/data-availability guard. Do not reintroduce placeholder trees, shell-specific English catalogs or hydration route-surface overrides.
 - Application webfonts use `font-display: block`, and the startup gate waits (bounded) for the persisted locale catalog and the preloaded startup fonts before the first real render, so text never paints in a fallback font and reflows.
 
+## Brand identity contract
+
+- `docs/brand-assets.md` owns the brand source, its readers, the logo, icon, accent and status-motion rules and the sairn.ai go-live order; ADR 0027 (single source, renamed and kept identifiers, history policy), 0028 (accent colours), 0029 (status motion), 0030 (PnL share card) and 0031 (domain move) record the decisions.
+- Brand values (name, legal entity, domains, support email, accent and logo colours, PWA theme colour) come only from `brand/brand.json`, through `config/brand.ts`, the website config or `scripts/brand.mjs`. Name the product in messages only through `BRAND_NAME` / `{BRAND_NAME}`; never write brand names, domains or mailboxes as literals elsewhere.
+- Internal identifiers (storage keys, Web Lock names, the Hyperliquid Agent slot, headers, environment variables, package scope) are `sairn` literals, never read from `brand.json`; renaming one is a signing or data-continuity change, not a brand edit. The `gatu` names that stay (AWS resources, the repository, the `domains.legacy` group, the dual-written legacy forwarded-host header) are listed in ADR 0027.
+- Generated and synced files (`lib/brand/*.gen.*`, the icons and logos copied into `public/`, `brand/loader`, `brand/loader-supplement/glyphs`, `brand/tokens`) are never edited by hand: change `brand/` and run `pnpm brand:sync`; `pnpm brand:check` and `pnpm test:brand` must pass after any change to `brand/`, `legal/` or a brand reader.
+- The status of a requested action uses `StatusGlyph`, `BrandMotion` or `ButtonLoading` with semantic tones; an unknown result is never drawn as an error. Passive loading keeps the neutral spinner, and every remaining spinner is registered with its reason in `status-motion-surface-contract.test.ts`.
+- Keep `gatu.ai` in `domains.legacy` until ADR 0031's retirement step; canonical URLs, the sitemap, legal text and referral links use only `domains.primary`.
+
 ## Verification
 
 Browser-fixture servers must use a Vite dependency cache separate from the application dev server, with neither cache nested inside the other. Follow `docs/runtime-guardrails.md` when changing browser-test configuration; a different root or port does not isolate Vite's default cache.
@@ -317,10 +326,15 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/errors.test.ts \
   src/lib/tests/lingui-helper-translator-contract.test.ts
 
-# Brand identity (brand/, names, logo, icons, domains, legal text; see docs/brand-migration-plan.md)
+# Brand identity (brand/, names, logo, icons, status motion, domains, legal text; see docs/brand-assets.md and ADR 0027)
 pnpm test:brand
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/brand-logo.test.tsx \
+  src/lib/tests/status-motion-contract.test.ts \
+  src/lib/tests/status-glyph.test.tsx \
+  src/lib/tests/status-motion-surface-contract.test.ts \
+  src/lib/tests/toaster-config.test.tsx \
+  src/lib/tests/order-toast-placement.test.tsx \
   src/lib/tests/brand-catalog-contract.test.ts \
   src/lib/tests/public-origins.test.ts \
   src/lib/tests/pwa-manifest.test.ts \

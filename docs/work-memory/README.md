@@ -14,6 +14,10 @@
 
 原始 Codex 会话文件保留在应用自己的会话目录。仓库内的导出是经过筛选和脱敏的证据副本，不是完整原始会话。原始文件的长期保留取决于本机备份；Git 远端只有经过人工核对的摘要，没有本地证据副本。
 
+## 产品名称对照
+
+产品先后叫 HypeTerminal、gatu，2026-10-01 起叫 Sairn。历史记录的正文已换成 Sairn，但命令、代码、链接、路径、域名和 AWS 资源名保留当时的写法：读到 `@gatu/*`、`gatu.ai`、`gatu-terminal-*`、`gatu-edge`、`x-gatu-*`、`GATU_*` 时，它们指的是同一个产品当时的标识。哪些标识已经改为 `sairn`、哪些有意保留，见 [ADR 0027](../adr/0027-brand-single-source-and-identifier-rename.md)。
+
 ## 开始任务
 
 1. 先读当前 AGENTS.md、agent.md，再按关键词检索 INDEX.md 或 `rg -n '关键词' docs/work-memory`。
