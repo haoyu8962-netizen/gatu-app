@@ -11,7 +11,7 @@ const fees = [
 			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">Fees</span>
 			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">Fees start low and go lower.</h2>
 			<p class="mt-4 mx-auto max-w-md text-sm text-fg-muted leading-relaxed">
-				Hyperliquid's trading fee plus a flat 0.01% builder fee on every order. No gas per trade, no subscription, no spread markup.
+				Hyperliquid's trading fee plus a flat 0.01% builder fee on perp orders and spot sells. No gas per trade, no subscription, no spread markup.
 			</p>
 		</div>
 
@@ -27,8 +27,9 @@ const fees = [
 
 		<p class="mt-6 text-center text-2xs text-fg-faint">
 			Perp rates shown. Hyperliquid's share drops with volume and HYPE staking, to as low as 0% maker /
-			0.0144% taker; the 0.01% builder fee stays the same. Spot starts at 0.04% maker / 0.07% taker plus the
-			builder fee, and builder-deployed (HIP-3) markets can set their own rates.
+			0.0144% taker; the 0.01% builder fee stays the same. Spot starts at 0.04% maker / 0.07% taker, with the
+			builder fee on sells only; TWAP orders carry no builder fee, and builder-deployed (HIP-3) markets can set
+			their own rates.
 			<a
 				href="https://app.hyperliquid.xyz/fundingComparison"
 				rel="noopener"

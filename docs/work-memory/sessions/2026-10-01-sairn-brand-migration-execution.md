@@ -83,3 +83,4 @@
 - Privy 后台添加新 origin、改应用名；LI.FI 如需按 integrator 计费，登记 `sairn`；社交头像用 `brand/social`；GitHub 仓库名 `gatu-app` 是否改名由用户决定。
 - 官网自 2026-07-19 起未发布，首次发布前审查累计差异。
 - 设计方：确认悬停色 `#A8EEE1` / `#0F524D`；补 partial、info、warning 三个状态符号后再接入状态动效；`designs/mockups.pen` 仍是旧品牌设计稿。
+- 2026-10-01 补记：上面「设计方」一条中的三个状态符号、状态动效接入、`designs/mockups.pen`，以及「官网未发布」「已连接页头未测」「非 Chromium 未验证」，后续处理与仍未完成的部分见 [2026-10-01-sairn-brand-followups](2026-10-01-sairn-brand-followups.md)。

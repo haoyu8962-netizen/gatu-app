@@ -939,9 +939,10 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   the connected header was measured, ADR 0013 addendum 2026-10-01) and
   `DESKTOP_NAV_NARROW_MAX_PX` (1150; 1100 until Earn became a top-level link, ADR 0021 D8). The `nav-compact` Tailwind variant in `styles.css` must equal
   the compact constant (`desktop-nav-layout` pins it); never write a literal `max-[…px]` for it.
-- An unavailable deposit button (region restricted or the region check unresolved) shows only
-  its icon at every desktop width, with the unavailable label as its accessible name and the
-  reason as its title; an available one keeps its `Deposit` label above the compact width. The
+- An unavailable deposit button (for any reason: region restricted or still unresolved, or the
+  deposit path disabled for the wallet or network) shows only its icon, centred, at every desktop
+  width, with the unavailable label as its accessible name and the reason as its title; an
+  available one keeps its `Deposit` label above the compact width. The
   unavailable labels are 39–80px longer than `Deposit`, and a visible label that differs from the
   accessible name would fail WCAG 2.5.3.
 - Above the compact width every connected combination must keep 16px between the navigation and
@@ -1001,17 +1002,18 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   44px; Settings was pushed out of the viewport in 27 of 72 combinations at 1182px. Above the
   compact width the gap changes by exactly one pixel per viewport pixel. WebKit 26.4 and
   Firefox 140 agreed within 0.2px.
-- Evidence after the fix (2026-10-01, same fixture and browser, full matrix of 804 measurements:
-  six locales, address/ENS/e-mail, deposit available/unavailable, pairing on/off, ten widths,
-  plus English and French in the light theme). With the unavailable deposit button icon-only, the
-  widest connected case (es, e-mail, `Deposit`, pairing on) keeps 16.3px at 1370px, so the
-  compact width moved to 1379px for 10px of headroom: 26.3px at 1380px (regression run). At the
-  compact width and below every connected case keeps at least 294px (fr, 1001px). The
+- Evidence after the fix (2026-10-01, same fixture and browser). A first full matrix with the
+  compact width at 1369px (804 measurements: six locales, address/ENS/e-mail, deposit
+  available/unavailable, pairing on/off, ten widths, plus English and French in the light theme)
+  showed the widest connected case (es, e-mail, `Deposit`, pairing on) keeping 16.3px at 1370px,
+  so the compact width moved to 1379px for 10px of headroom. The full matrix was then re-run at
+  1379px with the icon-only button centred (all 75 tests passed, 804 measurements, none
+  overlapping, wrapping or off screen): the widest connected case keeps 26.3px at 1380px (es) and
+  28px (fr); at the compact width and below every connected case keeps at least 294px (fr,
+  1001px); the icon-only deposit button is centred in all 660 icon-only measurements. The
   disconnected header gains the compact language trigger from 1379px down: fr keeps 78px at
-  1182px (29px before) and 47px at 1151px (unchanged), es 122px and 91px. One measurement was
-  repeated because the font set was still loading while the stylesheet hot-reloaded during the
-  run; its geometry was unchanged. Windows fonts, real devices and a real-wallet session were not
-  measured.
+  1182px (29px before) and 47px at 1151px (unchanged), es 122px and 91px. Windows fonts, real
+  devices and a real-wallet session were not measured.
 
 ### Important Files
 

@@ -125,6 +125,11 @@ test("keeps brand coverage when the website workflow only starts for its own inp
 
 	const terminalBrandTests = packageScripts["test:brand"].match(/src\/lib\/tests\/\S+\.test\.tsx?/g) ?? [];
 	assert.equal(terminalBrandTests.length >= 5, true);
+	assert.equal(
+		terminalBrandTests.includes("src/lib/tests/status-motion-surface-contract.test.ts"),
+		true,
+		"the spinner registry must run with the brand tests",
+	);
 	for (const file of terminalBrandTests) {
 		assert.equal(terminalTests.includes(file), true, `${file} only runs when the website workflow starts`);
 	}

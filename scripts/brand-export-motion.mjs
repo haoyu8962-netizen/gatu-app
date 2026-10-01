@@ -33,12 +33,12 @@ try {
 	const tokens = await extractDesignTokens();
 	const exported = await exportMotionLibrary(workDirectory, JSON.parse(tokens));
 	const provenance = await buildProvenance(exported);
-	const supplementProvenance = await buildSupplementProvenance(exported.supplement);
+	const supplementProvenance = exported.supplement ? await buildSupplementProvenance(exported.supplement) : null;
 
 	if (checkOnly) {
 		const drift = [
 			...(await compareWithRepository(exported, tokens, provenance)),
-			...(await compareSupplementWithRepository(exported.supplement, supplementProvenance)),
+			...(exported.supplement ? await compareSupplementWithRepository(exported.supplement, supplementProvenance) : []),
 		];
 		if (drift.length > 0) {
 			console.error(`Brand motion export drifted from ${LOADER_DIRECTORY}:`);
@@ -47,14 +47,14 @@ try {
 			process.exitCode = 1;
 		} else {
 			console.log(
-				`Brand motion export matches ${LOADER_DIRECTORY} (${exported.files.length} files) and ${SUPPLEMENT_DIRECTORY} (${Object.keys(exported.supplement.files).length} files).`,
+				`Brand motion export matches ${LOADER_DIRECTORY} (${exported.files.length} files) and ${SUPPLEMENT_DIRECTORY} (${Object.keys(exported.supplement?.files ?? {}).length} files).`,
 			);
 		}
 	} else {
 		await writeRepository(exported, tokens, provenance);
-		await writeSupplement(exported.supplement, supplementProvenance);
+		if (exported.supplement) await writeSupplement(exported.supplement, supplementProvenance);
 		console.log(
-			`Wrote ${exported.files.length} motion files to ${LOADER_DIRECTORY}, ${Object.keys(exported.supplement.files).length} supplementary glyphs to ${SUPPLEMENT_DIRECTORY} and design tokens to ${TOKENS_OUTPUT}.`,
+			`Wrote ${exported.files.length} motion files to ${LOADER_DIRECTORY}, ${Object.keys(exported.supplement?.files ?? {}).length} supplementary glyphs to ${SUPPLEMENT_DIRECTORY} and design tokens to ${TOKENS_OUTPUT}.`,
 		);
 	}
 } finally {
@@ -130,7 +130,8 @@ async function renderSupplement(page, deliveredRoot, tokens) {
 		"on-light": { attention: tokens.color.theme.light.status.attention, info: tokens.color.theme.light.status.neutral },
 		mono: { attention: "currentColor", info: "currentColor" },
 	};
-	const definitions = await readFile(resolve(REPOSITORY_ROOT, SUPPLEMENT_DEFINITIONS), "utf8");
+	const definitions = await readFile(resolve(REPOSITORY_ROOT, SUPPLEMENT_DEFINITIONS), "utf8").catch(() => null);
+	if (definitions === null) return null;
 	const files = await page.evaluate(
 		({ additions, source, themes }) => {
 			const motion = window.SairnMotion;
@@ -138,7 +139,11 @@ async function renderSupplement(page, deliveredRoot, tokens) {
 			const added = (0, eval)(source);
 			const known = new Set(motion.GLYPHS.map((glyph) => glyph.id));
 			for (const glyph of added) {
-				if (known.has(glyph.id)) throw new Error(`The motion library already ships the glyph ${glyph.id}.`);
+				if (known.has(glyph.id)) {
+					throw new Error(
+						`The motion library now ships the glyph ${glyph.id}: delete brand/loader-supplement (see its README) and export again.`,
+					);
+				}
 			}
 			motion.GLYPHS.push(...added);
 			const rendered = {};

@@ -24,7 +24,14 @@ const FORBIDDEN_CLAIMS = [
 	{ pattern: /public\s+repo/i, reason: "the repository is private" },
 	{ pattern: /code is public/i, reason: "the repository is private" },
 	{ pattern: /read the client/i, reason: "the client source is not published" },
-	{ pattern: /\b50\s*[×x]/i, reason: "Hyperliquid's maximum leverage is per market and changes; do not hard-code 50×" },
+	{
+		pattern: /\b\d+\s*[×x]\s*(max|leverage)|up to \d+\s*[×x]|\b50\s*[×x]/i,
+		reason: "Hyperliquid's maximum leverage is per market and changes; do not hard-code a maximum",
+	},
+	{
+		pattern: /builder fee[^.]{0,40}\bevery (order|fill|trade)|every (order|fill|trade)[^.]{0,40}builder fee/i,
+		reason: "the builder fee applies to perp orders and spot sells, not TWAP orders or spot buys",
+	},
 	{
 		pattern: /\b1\s*[–-]\s*50\b/,
 		reason: "Hyperliquid's maximum leverage is per market and changes; do not hard-code 1–50×",

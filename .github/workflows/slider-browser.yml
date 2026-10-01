@@ -93,8 +93,6 @@ jobs:
           --config tests/browser/notifications.playwright.config.ts
           --fully-parallel --shard=${{ matrix.shard }}/2
 
-      # The Latin locales of the connected header at each side of the compact and narrow widths
-      # (runtime guardrails §11); the full locale matrix runs locally with TOP_NAV_CONNECTED_MATRIX=full.
       # Logo, loader, status glyphs, motions and notification icons in a real browser: painted colours
       # against the terminal tokens and animations with and without reduced motion (Chromium only here;
       # WebKit and Firefox run locally, see docs/brand-assets.md).
@@ -104,6 +102,8 @@ jobs:
           --config tests/browser/brand-surfaces.playwright.config.ts
           --fully-parallel --shard=${{ matrix.shard }}/2
 
+      # The Latin locales of the connected header at each side of the compact and narrow widths
+      # (runtime guardrails §11); the full locale matrix runs locally with TOP_NAV_CONNECTED_MATRIX=full.
       - name: Run connected header width regressions
         run: >-
           pnpm --dir apps/terminal exec playwright test

@@ -294,9 +294,11 @@ function checkSource(brand) {
 }
 
 function checkLoaderProvenance() {
+	// The supplement exists only until the designer's library ships its glyphs (brand/loader-supplement/README.md).
+	const supplementPresent = readTextIfPresent(`${LOADER_SUPPLEMENT_DIRECTORY}/PROVENANCE.json`) !== null;
 	return [
 		...checkExportProvenance(LOADER_DIRECTORY, []),
-		...checkExportProvenance(LOADER_SUPPLEMENT_DIRECTORY, ["README.md", "definitions.js"]),
+		...(supplementPresent ? checkExportProvenance(LOADER_SUPPLEMENT_DIRECTORY, ["README.md", "definitions.js"]) : []),
 	];
 }
 

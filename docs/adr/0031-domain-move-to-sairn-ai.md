@@ -42,8 +42,8 @@
 5. **上线顺序**以 [brand-assets.md](../brand-assets.md) 的八步为准：
    1. 注册 `sairn.ai`，`gatu.ai` 保持自动续费；
    2. 在 Cloudflare 建区（DNS-only），配置邮件；
-   3. ACM 签发证书；
-   4. 在 Privy 的 Allowed origins 里只添加新 origin，并改应用名；
+   3. ACM 签发证书（每张证书覆盖该分发的新旧两组主机名）；
+   4. 在 Privy 的 Allowed origins 里只添加新 origin，改应用名，并把后台 Logo 换成登录邮件用的 `/brand/email-logo.png`（PNG，`appearance.logo` 管不到邮件）；
    5. 更新源站请求策略的转发头；
    6. 发布终端与官网，用 `deploy.mjs aliases` 同时挂上新旧别名并换上新证书；
    7. 用 `curl --resolve` 预验证，然后加 CNAME，再用公网 DNS 复验；
@@ -66,7 +66,7 @@
 - 新 origin 上，设置、登录、Stay Connected 私钥、待处理记录和 Web Locks 全部从零开始。外部钱包需要重新授权 Agent；槽位改名本身也会要求重新授权（ADR 0027）。
 - 并存期间，两组域名运行同一份构建，都用 `sairn` 槽位。外部钱包用户在两个域名上分别授权，会互相顶掉对方的同名 Agent（计划风险 #26）。应用里没有迁移提示，只能靠公告提醒用户只在一个域名上交易。邮箱用户由内嵌钱包直接签名，不受影响。
 - 【推断，未实测】在第 6 步发布之后、第 7 步 CNAME 生效之前，用户在 `gatu.ai` 上看到的页面，生成的规范地址、站点地图、法律文本链接和品牌推荐链接都指向还不能解析的 `sairn.ai` 主机。
-- 一个 CloudFront 分发只能挂一张证书。第 6 步同时挂新旧别名，证书就必须覆盖该分发的全部别名（计划阶段 7b：终端证书覆盖新旧两组的 `app`、`testnet`，官网证书覆盖新旧两组的 apex 和 `www`）。brand-assets.md 第 3 步只列了 `sairn.ai` 的四个主机名，执行前要按计划核对。
+- 一个 CloudFront 分发只能挂一张证书。第 6 步同时挂新旧别名，证书就必须覆盖该分发的全部别名（计划阶段 7b：终端证书覆盖新旧两组的 `app`、`testnet`，官网证书覆盖新旧两组的 apex 和 `www`）。撰写本 ADR 时 brand-assets.md 第 3 步只列了 `sairn.ai` 的四个主机名；同日已改为按分发同时覆盖新旧两组主机名，与计划一致。
 - 官网分发的函数 `gatu-rewrite-index` 不在发布身份 `gatu-edge` 的权限范围内（计划 §1.4 第 9 条），官网的别名和跳转需要另行安排有权限的身份。
 - 回访用户第一次打开时，Service Worker 仍返回缓存的旧壳（计划 §1.4 第 12 条）。旧域名开启 301 之后，这一点在 Safari、iOS PWA 和 Firefox 上的表现都没有验证（计划风险 #15、#21）。
 

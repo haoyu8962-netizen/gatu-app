@@ -62,11 +62,11 @@
 
 | 组成 | 实现 | 规则 |
 |---|---|---|
-| 几何与关键帧 | `lib/brand/status-motion.gen.ts`、`status-motion.gen.css`，由 `pnpm brand:sync`（`scripts/brand-status-motion.mjs`）从 `brand/loader` 与 `brand/loader-supplement` 的 on-light 文件生成 | 每个符号与插图一个具名导出，便于按需打包；关键帧和每个动效的规则逐字取自导出文件，共用规则只保留用到的部分；生成器核对深浅两套文件几何一致、插图里的标志与 Logo 套件完全相同；不要手改 |
+| 几何与关键帧 | `lib/brand/status-glyph.gen.ts`（类型与状态符号，随通知进启动闭包）、`button-loading.gen.ts`（按钮加载，随交易面板进启动闭包）、`brand-motion.gen.ts`（状态插图与复制反馈，只随弹层懒加载）和 `status-motion.gen.css`，由 `pnpm brand:sync`（`scripts/brand-status-motion.mjs`）从 `brand/loader` 与 `brand/loader-supplement` 的 on-light 文件生成 | 按加载层级拆成三个模块，每个符号与插图一个具名导出；关键帧和每个动效的规则逐字取自导出文件，共用规则只保留用到的部分；生成器核对深浅两套文件几何一致、插图里的标志与 Logo 套件完全相同；不要手改 |
 | 状态符号 | `StatusGlyph`（`components/brand/status-glyph.tsx`） | 16 px 用 16 网格，大于 18 px 用 24 网格；通知 16 px，资金恢复提醒 20 px |
 | 插图 | `BrandMotion`（`components/brand/brand-motion.tsx`） | 进行中 64 px（`wallet-awaiting`、`submitting`、`awaiting-result`），结果至少 48 px；复制反馈 `copy-feedback` 16 px |
 | 按钮加载 | `ButtonLoading`（`components/brand/button-loading.tsx`） | 16 px、mono（`currentColor`），只用于钱包握手、安装、扫码等已点击的按钮；设计方配色放在实心按钮上对比度只有 1.28:1（深色）和 2.83:1（浅色） |
-| 颜色 | `styles.css` 按 `data-tone` 映射 | success、error、attention、neutral、info 分别取 `--text-success`、`--text-error`、`--text-warning`、`--text-weak`、`--text-info`，与旁边的通知文字同色；镂空记号取 `--on-action`；插图里的标志取 `--logo-*`；循环最暗帧 `--srm-floor` 跟随 `--logo-loader-floor`（浅色 0.78、深色 0.55），mono 固定 0.78 |
+| 颜色 | `styles.css` 按 `data-tone` 映射 | success、error、attention、neutral、info 分别取 `--text-success`、`--text-error`、`--text-warning`、`--text-weak`、`--text-info`，与 Sonner 各类型通知的文字色一致；进行中的循环从不用成功色（成功色的循环读起来像「已完成」），所以设计方画成成功色的 `submitting` 在终端里是中性色；镂空记号取 `--on-action`；插图里的标志取 `--logo-*`；循环最暗帧 `--srm-floor` 跟随 `--logo-loader-floor`（浅色 0.78、深色 0.55），mono 固定 0.78 |
 | 无障碍 | 组件默认 `aria-hidden`，单独出现时由调用方传 `label`（已翻译） | 不输出 `<title>`；循环中的组件带 `data-loading-indicator`，测试用 `harness/loading-indicator.ts` 的选择器判断「没有进度」 |
 | 减少动态效果 | 生成的 `@media (prefers-reduced-motion:reduce){.srm .srm-anim{animation:none!important}}` 加全局规则 | 直接显示终态几何；动画结束不触发任何业务状态 |
 
@@ -74,7 +74,7 @@
 
 | 场景 | 符号或插图 |
 |---|---|
-| 订单通知：提交中 / 确认中 / 未确认 / 部分成交 / 成功（含已受理）/ 已取消 / 失败 | `submitting` / `pending` / `unknown` / `partial` / `success` / `cancelled` / `error` |
+| 订单通知：提交中 / 确认中 / 未确认 / 部分成交 / 成功（含已受理）/ 已取消 / 失败 | `submitting` / `pending` / `unknown` / `partial`（只用于已核实的部分成交：有交易所回包的部分成交，或按成交计数且没有错误；只是部分受理、或带拒绝、撤销、未知子项的批次用 `warning`）/ `success` / `cancelled` / `error` |
 | Sonner：success / info / warning / error / loading | `success` / `info` / `warning` / `error` / `pending` |
 | 资金与 Earn「状态未知」通知、待核验的资金操作提醒 | `unknown`（调用方传 `icon`，从不显示成 error） |
 | 充值状态页：等待钱包 / 链上确认与转发 / 已提交 / 钱包连接失败 | `wallet-awaiting` / `awaiting-result` / `success` / `error` |
@@ -106,7 +106,7 @@
 | 命令 | 覆盖 |
 |---|---|
 | `pnpm brand:check` | 上面的静态文件与动效导出、几何模块与同步的公共文件是否最新、图标 PNG 的尺寸与不透明度；同时校验 `brand.json` 的结构（域名小写、子域名属于同一顶级域、邮箱使用主域名、主机不重复） |
-| `pnpm brand:sync` | 重新生成 Logo 几何、状态动效模块与样式，复制公共文件，然后执行同样的检查 |
+| `pnpm brand:sync` | 重新生成 Logo 几何、状态动效模块与样式，复制公共文件，然后执行同样的检查；不会重新导出 `brand/loader`、`brand/loader-supplement/glyphs`、`brand/tokens`（用 `pnpm brand:export-motion`）或重新派生图标与邮件 Logo（用 `pnpm brand:derive-icons`） |
 | `node --test tests/brand-cross-app.test.mjs` | `packages/ui`、终端、官网三份样式表的品牌色等于 `brand.json` |
 | `pnpm test:brand` | 以上两项、OG 卡、终端品牌契约测试与官网测试 |
 | `pnpm brand:export-motion`、`node scripts/brand-export-motion.mjs --check` | 重新导出动效与补充符号，并确认导出可以复现（需要 Chromium，不在 CI 中运行） |

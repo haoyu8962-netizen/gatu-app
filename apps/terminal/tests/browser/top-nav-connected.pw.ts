@@ -70,6 +70,7 @@ interface Measurement {
 	overlaps: string[];
 	offscreen: string[];
 	verticalOverflow: string[];
+	depositIconOffset: number | null;
 	fontsReady: boolean;
 }
 
@@ -175,6 +176,19 @@ async function measure(page: Page): Promise<Measurement> {
 			}
 		}
 
+		const deposit = header.querySelector<HTMLElement>("[data-top-nav-deposit]");
+		const depositLabel = deposit?.querySelector("span");
+		const depositIcon = deposit?.querySelector("svg");
+		let depositIconOffset: number | null = null;
+		if (deposit && depositIcon && depositLabel && isSrOnly(depositLabel)) {
+			const buttonRect = deposit.getBoundingClientRect();
+			const iconRect = depositIcon.getBoundingClientRect();
+			depositIconOffset = Math.max(
+				Math.abs(iconRect.left + iconRect.width / 2 - (buttonRect.left + buttonRect.width / 2)),
+				Math.abs(iconRect.top + iconRect.height / 2 - (buttonRect.top + buttonRect.height / 2)),
+			);
+		}
+
 		return {
 			direction,
 			viewportWidth: window.innerWidth,
@@ -193,6 +207,7 @@ async function measure(page: Page): Promise<Measurement> {
 			overlaps,
 			offscreen,
 			verticalOverflow,
+			depositIconOffset,
 			fontsReady:
 				document.fonts.status === "loaded" &&
 				document.fonts.check('600 13px "IBM Plex Sans Variable"') &&
@@ -251,6 +266,12 @@ async function recordScenario(page: Page, scenario: Scenario) {
 	expect.soft(result.headerScrollOverflow, `${id}: header overflow`).toBeLessThanOrEqual(0);
 	expect.soft(result.documentScrollOverflow, `${id}: page overflow`).toBeLessThanOrEqual(0);
 	expect.soft(result.wrapped, `${id}: wrapped labels`).toEqual([]);
+	if (result.depositIconOffset !== null) {
+		expect.soft(result.depositIconOffset, `${id}: icon-only deposit centred`).toBeLessThanOrEqual(1);
+	}
+	if (scenario.session !== "disconnected" && (scenario.deposit === "unavailable" || scenario.width <= DESKTOP_NAV_COMPACT_MAX_PX)) {
+		expect.soft(result.depositIconOffset, `${id}: deposit is icon-only`).not.toBeNull();
+	}
 }
 
 test.beforeAll(async ({ browser }) => {

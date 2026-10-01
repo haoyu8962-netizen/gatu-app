@@ -43,6 +43,7 @@ export function OrderToast({ order, onDismiss }: Props) {
 	const { t } = useLingui();
 	useNumberFormatRevision();
 	const copy = getOrderNotificationCopy(order, (descriptor) => t(descriptor));
+	const glyph = getOrderNotificationGlyph(order);
 	const successful = order.status === "success";
 	const failed = order.status === "failed";
 	const hasChildren = Boolean(order.children?.length);
@@ -65,7 +66,7 @@ export function OrderToast({ order, onDismiss }: Props) {
 			className="w-full rounded-8 border border-stroke-weak bg-overlay p-3 shadow-overlay font-sans text-xs"
 		>
 			<div className="flex items-start gap-3">
-				<StatusGlyph key={order.status} glyph={getOrderNotificationGlyph(order.status)} />
+				<StatusGlyph key={glyph.id} glyph={glyph} />
 				<div className="min-w-0 flex-1 space-y-1">
 					<section
 						ref={bodyRegion.ref}

@@ -169,13 +169,15 @@ export function TopNav({ mode = "default" }: Props) {
 						onClick={!isMarketLoading && depositAvailability.available ? () => openDepositModal("deposit") : undefined}
 						aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 						title={depositAvailability.unavailableReason ?? undefined}
-						iconLeft={<DownloadSimpleIcon className="size-[18px]" />}
+						iconLeft={depositAvailability.available ? <DownloadSimpleIcon className="size-[18px]" /> : undefined}
+						data-top-nav-deposit=""
 						className={cn(
 							APP_BAR_BUTTON_HEIGHT_CLASS,
 							TOP_NAV_DEPOSIT_CLASS,
 							!depositAvailability.available && TOP_NAV_DEPOSIT_ICON_ONLY_CLASS,
 						)}
 					>
+						{depositAvailability.available ? null : <DownloadSimpleIcon className="size-[18px]" />}
 						<span
 							className={
 								depositAvailability.available ? TOP_NAV_DEPOSIT_LABEL_CLASS : TOP_NAV_DEPOSIT_ICON_ONLY_LABEL_CLASS

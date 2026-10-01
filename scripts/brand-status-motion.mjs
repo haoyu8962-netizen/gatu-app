@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,26 +13,31 @@ export const STATUS_MOTION_CSS_OUTPUT = "apps/terminal/src/lib/brand/status-moti
 
 // Status glyphs and the tone each one paints. Tones are the terminal's semantic roles, not kit colours:
 // the kit's pending colour is the attention role, and the kit has no info colour (the supplement draws
-// info with neutral). The generator checks that every painted colour equals the tone's kit colour.
+// info with neutral). The generator checks that every painted colour equals the kit colour of `kitTone`
+// (default: the tone itself). In-flight states never paint the success tone, because a looping indicator in
+// the success colour reads as done (.claude/rules/design-tokens.md); `submitting` is drawn by the kit in its
+// success colour and rendered neutral here. A glyph comes from brand/loader when the library ships it, otherwise
+// from brand/loader-supplement.
 const GLYPHS = {
-	success: { tone: "success", source: "brand/loader" },
-	error: { tone: "error", source: "brand/loader" },
-	cancelled: { tone: "neutral", source: "brand/loader" },
-	unknown: { tone: "attention", source: "brand/loader" },
-	pending: { tone: "attention", source: "brand/loader" },
-	wallet: { tone: "attention", source: "brand/loader" },
-	submitting: { tone: "success", source: "brand/loader" },
-	partial: { tone: "success", source: "brand/loader-supplement" },
-	info: { tone: "info", source: "brand/loader-supplement" },
-	warning: { tone: "attention", source: "brand/loader-supplement" },
+	success: { tone: "success" },
+	error: { tone: "error" },
+	cancelled: { tone: "neutral" },
+	unknown: { tone: "attention" },
+	pending: { tone: "attention" },
+	wallet: { tone: "attention" },
+	submitting: { tone: "neutral", kitTone: "success" },
+	partial: { tone: "success" },
+	info: { tone: "info" },
+	warning: { tone: "attention" },
 };
+const GLYPH_SOURCES = ["brand/loader", "brand/loader-supplement"];
 
 // Motions the terminal renders. Status illustrations put a badge under the brand mark; button-loading is the
 // mono 16px button indicator and copy-feedback the 16px copy confirmation.
 const MOTIONS = {
 	"wallet-awaiting": { tone: "attention", appearance: "on-light" },
 	"awaiting-result": { tone: "attention", appearance: "on-light" },
-	submitting: { tone: "success", appearance: "on-light" },
+	submitting: { tone: "neutral", kitTone: "success", appearance: "on-light" },
 	success: { tone: "success", appearance: "on-light" },
 	error: { tone: "error", appearance: "on-light" },
 	unknown: { tone: "attention", appearance: "on-light" },
@@ -58,6 +63,8 @@ const ATTRIBUTE_NAMES = {
 	"stroke-linejoin": "strokeLinejoin",
 };
 const SHAPE_TAGS = new Set(["circle", "path", "rect"]);
+const MARK_PATH_ATTRIBUTES = new Set(["class", "data-part", "d", "fill"]);
+const SHAPE_ATTRIBUTES = new Set([...Object.keys(ATTRIBUTE_NAMES), "class", "fill", "stroke"]);
 
 /** Renders the status motion module and its stylesheet from the exported motion library files. */
 export function renderStatusMotion(markGeometry) {
@@ -67,7 +74,9 @@ export function renderStatusMotion(markGeometry) {
 	const css = new MotionCss();
 
 	const glyphs = {};
-	for (const [id, { tone, source }] of Object.entries(GLYPHS)) {
+	for (const [id, { tone, kitTone }] of Object.entries(GLYPHS)) {
+		const source = GLYPH_SOURCES.find((directory) => existsSync(resolve(REPOSITORY_ROOT, directory, "glyphs/on-light", `${id}.svg`)));
+		if (!source) throw new Error(`No exported glyph ${id} in ${GLYPH_SOURCES.join(" or ")}`);
 		const grids = {};
 		let className;
 		let motionCss;
@@ -78,8 +87,14 @@ export function renderStatusMotion(markGeometry) {
 			const path = `${source}/glyphs/on-light/${prefix}${id}.svg`;
 			const parsed = parseMotionSvg(path);
 			const dark = parseMotionSvg(`${source}/glyphs/on-dark/${prefix}${id}.svg`);
-			const drawing = toDrawing(parsed, { tone, palette, path, markGeometry });
-			const darkDrawing = toDrawing(dark, { tone, palette: darkPalette, path: path.replace("on-light", "on-dark"), markGeometry });
+			const drawing = toDrawing(parsed, { tone, kitTone, palette, path, markGeometry });
+			const darkDrawing = toDrawing(dark, {
+				tone,
+				kitTone,
+				palette: darkPalette,
+				path: path.replace("on-light", "on-dark"),
+				markGeometry,
+			});
 			if (JSON.stringify(drawing) !== JSON.stringify(darkDrawing)) {
 				throw new Error(`${path} and its on-dark version do not share geometry and paint roles`);
 			}
@@ -98,13 +113,19 @@ export function renderStatusMotion(markGeometry) {
 	}
 
 	const motions = {};
-	for (const [id, { tone, appearance }] of Object.entries(MOTIONS)) {
+	for (const [id, { tone, kitTone, appearance }] of Object.entries(MOTIONS)) {
 		const path = `brand/loader/svg/${appearance}/${id}.svg`;
 		const parsed = parseMotionSvg(path);
-		const drawing = toDrawing(parsed, { tone, palette: tokens.themes[appearance], path, markGeometry });
+		const drawing = toDrawing(parsed, { tone, kitTone, palette: tokens.themes[appearance], path, markGeometry });
 		if (appearance !== "mono") {
 			const darkPath = `brand/loader/svg/on-dark/${id}.svg`;
-			const darkDrawing = toDrawing(parseMotionSvg(darkPath), { tone, palette: darkPalette, path: darkPath, markGeometry });
+			const darkDrawing = toDrawing(parseMotionSvg(darkPath), {
+				tone,
+				kitTone,
+				palette: darkPalette,
+				path: darkPath,
+				markGeometry,
+			});
 			if (JSON.stringify(drawing) !== JSON.stringify(darkDrawing)) {
 				throw new Error(`${path} and ${darkPath} do not share geometry and paint roles`);
 			}
@@ -126,8 +147,9 @@ export function renderStatusMotion(markGeometry) {
 	};
 }
 
-function toDrawing(parsed, { tone, palette, path, markGeometry }) {
-	const toneColor = tone ? palette[TONE_PALETTE_ROLES[tone]].toLowerCase() : null;
+function toDrawing(parsed, { tone, kitTone, palette, path, markGeometry }) {
+	const paletteTone = kitTone ?? tone;
+	const toneColor = paletteTone ? palette[TONE_PALETTE_ROLES[paletteTone]].toLowerCase() : null;
 	const paintOf = (value, attribute) => {
 		if (value === undefined) return undefined;
 		const color = value.toLowerCase();
@@ -135,7 +157,7 @@ function toDrawing(parsed, { tone, palette, path, markGeometry }) {
 		if (color === "currentcolor") return "current";
 		if (toneColor && color === toneColor) return "tone";
 		if (color === palette.onBadge.toLowerCase()) return "on";
-		throw new Error(`${path} paints ${attribute}="${value}", which is neither its ${tone} tone nor the badge colour`);
+		throw new Error(`${path} paints ${attribute}="${value}", which is neither its ${paletteTone} kit colour nor the badge colour`);
 	};
 	const shapes = parsed.shapes.map((shape) => {
 		const attributes = {};
@@ -162,23 +184,29 @@ function toDrawing(parsed, { tone, palette, path, markGeometry }) {
 }
 
 function parseMotionSvg(path) {
-	const source = readFileSync(resolve(REPOSITORY_ROOT, path), "utf8");
+	return parseMotionSvgSource(readFileSync(resolve(REPOSITORY_ROOT, path), "utf8"), path);
+}
+
+/** Parses one exported motion SVG; anything the terminal components would not reproduce is an error. */
+export function parseMotionSvgSource(source, path) {
 	const root = /^<svg\b([^>]*)>/.exec(source);
 	if (!root) throw new Error(`${path} does not start with <svg>`);
 	const rootAttributes = parseAttributes(root[1]);
 	const style = /<style>(.*?)<\/style>/s.exec(source)?.[1] ?? "";
 	const { shared, motionCss } = splitStyle(style, path);
 	const body = source.slice(root[0].length).replace(/<title>.*?<\/title>/s, "").replace(/<style>.*?<\/style>/s, "");
+	const tagPattern = /<(\/?)([A-Za-z][\w:-]*)\b([^>]*?)(\/?)>/g;
+	if (body.replace(tagPattern, "").trim() !== "") throw new Error(`${path} has content outside the supported elements`);
 
 	const shapes = [];
 	let mark = null;
 	const groups = [];
-	for (const token of body.matchAll(/<(\/?)([a-z]+)\b([^>]*?)(\/?)>/g)) {
+	for (const token of body.matchAll(tagPattern)) {
 		const [, closing, tag, attributeText, selfClosing] = token;
 		if (tag === "svg" && closing) break;
 		if (tag === "g") {
 			if (closing) groups.pop();
-			else groups.push(parseAttributes(attributeText));
+			else groups.push(parseGroup(parseAttributes(attributeText), groups, path));
 			continue;
 		}
 		if (!SHAPE_TAGS.has(tag) || closing || !selfClosing) throw new Error(`${path} has an unsupported <${closing}${tag}> element`);
@@ -186,11 +214,17 @@ function parseMotionSvg(path) {
 		if (groups.length > 0) {
 			const markGroup = groups.find((group) => group.class === "srm-mark");
 			const transformGroup = groups.find((group) => group.transform);
-			if (!markGroup || tag !== "path" || !attributes["data-part"]) throw new Error(`${path} nests a shape outside the brand mark`);
+			if (!markGroup || tag !== "path" || !["signal", "choice"].includes(attributes["data-part"])) {
+				throw new Error(`${path} nests a shape outside the brand mark`);
+			}
+			const extra = Object.keys(attributes).filter((name) => !MARK_PATH_ATTRIBUTES.has(name));
+			if (extra.length > 0 || (attributes.class ?? "") !== "") throw new Error(`${path} styles a brand mark path (${extra.join(", ") || "class"})`);
 			mark ??= { transform: transformGroup?.transform, paths: [] };
 			mark.paths.push(attributes.d);
 			continue;
 		}
+		const unsupported = Object.keys(attributes).filter((name) => !SHAPE_ATTRIBUTES.has(name));
+		if (unsupported.length > 0) throw new Error(`${path} uses unsupported attributes on <${tag}>: ${unsupported.join(", ")}`);
 		shapes.push({ tag, attributes });
 	}
 	return {
@@ -201,6 +235,14 @@ function parseMotionSvg(path) {
 		mark,
 		shapes,
 	};
+}
+
+function parseGroup(attributes, openGroups, path) {
+	const names = Object.keys(attributes);
+	const isTransform = names.length === 1 && names[0] === "transform" && openGroups.length === 0;
+	const isMark = names.length === 1 && names[0] === "class" && attributes.class === "srm-mark" && openGroups.length === 1;
+	if (!isTransform && !isMark) throw new Error(`${path} has an unsupported <g ${names.join(" ")}> group`);
+	return attributes;
 }
 
 function parseAttributes(text) {

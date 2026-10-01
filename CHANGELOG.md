@@ -60,13 +60,15 @@ changes, not evidence that a build has been deployed or accepted on real devices
   [brand assets](docs/brand-assets.md).
 - Notifications, funds and signing status screens and wallet handshake buttons use the Sairn
   motion kit instead of spinning icons: order notifications show a glyph for submitting,
-  confirming, unconfirmed, partially filled, filled or accepted, cancelled and failed;
-  standard notifications show success, info, warning, error and pending glyphs; results whose
-  status is unknown always show the amber unknown glyph, never an error. Deposit, Vault, API
-  wallet and bridge status screens show the kit's 64px illustrations (waiting for the wallet,
-  submitting, awaiting the result, success, error, unknown, cancelled), buttons waiting for a
-  wallet show the breathing two-panel indicator in the button's own colour, and 16px copy
-  buttons draw a check. Passive loading, lazy dialog placeholders, refresh buttons and chart
+  confirming, unconfirmed, partially filled (only for a verified partial fill; a batch that was
+  only partly accepted, or that has rejected, cancelled or unknown orders, shows a warning),
+  filled or accepted, cancelled and failed; standard notifications show success, info, warning,
+  error and pending glyphs; results whose status is unknown always show the amber unknown glyph,
+  never an error, and waiting indicators are never green. Deposit, Vault, API wallet and bridge
+  status screens show the kit's illustrations, 64px while waiting for the wallet, submitting or
+  awaiting the result and 48px or larger for success, error, unknown and cancelled results;
+  buttons waiting for a wallet show the breathing two-panel indicator in the button's own colour,
+  and 16px copy buttons draw a check. Passive loading, lazy dialog placeholders, refresh buttons and chart
   recovery keep the neutral spinner. Reduced motion shows every glyph in its final state. The
   partial, info and warning glyphs are drawn by the kit's own engine pending the designer's
   confirmation; see [brand assets](docs/brand-assets.md) and

@@ -566,8 +566,10 @@ describe("TopNav", () => {
 		expect(restrictedDeposit?.disabled).toBe(true);
 		expect(restrictedDeposit?.getAttribute("aria-label")).toBe("Deposit unavailable");
 		expect(restrictedDeposit?.title).toBe("Deposits are not available in your region.");
-		expect(restrictedDeposit?.className).toContain("size-9");
-		expect(restrictedDeposit?.className).not.toContain("px-3.5");
+		const restrictedClasses = restrictedDeposit?.className.split(/\s+/) ?? [];
+		expect(restrictedClasses).toContain("size-9");
+		expect(restrictedClasses).toContain("px-0");
+		expect(restrictedClasses).not.toContain("px-3.5");
 		expect(restrictedDeposit?.querySelector("span.sr-only")?.textContent).toBe("Deposit unavailable");
 		act(() => restrictedDeposit?.click());
 		expect(testState.openDepositModal).toHaveBeenCalledTimes(1);

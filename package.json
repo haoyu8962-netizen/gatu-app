@@ -12,7 +12,7 @@
 		"build": "pnpm --filter @sairn/terminal build",
 		"serve": "pnpm --filter @sairn/terminal serve",
 		"test": "pnpm og:check && pnpm --filter @sairn/terminal test && pnpm --filter @sairn/website test && node --test tests/brand-cross-app.test.mjs",
-		"test:brand": "pnpm brand:check && pnpm og:check && pnpm --dir apps/terminal exec vitest run src/lib/tests/brand-semantics-contract.test.ts src/lib/tests/brand-logo.test.tsx src/lib/tests/status-motion-contract.test.ts src/lib/tests/status-glyph.test.tsx src/lib/tests/root-startup-fallback.test.tsx src/lib/tests/mobile-header-brand.test.tsx src/lib/tests/seo.test.ts && pnpm --filter @sairn/website test && node --test tests/brand-cross-app.test.mjs",
+		"test:brand": "pnpm brand:check && pnpm og:check && pnpm --dir apps/terminal exec vitest run src/lib/tests/brand-semantics-contract.test.ts src/lib/tests/brand-logo.test.tsx src/lib/tests/status-motion-contract.test.ts src/lib/tests/status-glyph.test.tsx src/lib/tests/status-motion-surface-contract.test.ts src/lib/tests/root-startup-fallback.test.tsx src/lib/tests/mobile-header-brand.test.tsx src/lib/tests/seo.test.ts && pnpm --filter @sairn/website test && node --test tests/brand-cross-app.test.mjs",
 		"typecheck": "pnpm --filter @sairn/hl-react typecheck && pnpm --filter @sairn/ui typecheck && pnpm --filter @sairn/terminal typecheck",
 		"diagnostics:browser": "node scripts/browser-diagnostics.js",
 		"memory:capture": "node scripts/capture-worklog.mjs",

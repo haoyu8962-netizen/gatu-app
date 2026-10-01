@@ -9,7 +9,7 @@ export interface FaqItem {
 export const FAQS: readonly FaqItem[] = [
 	{
 		q: `What does it cost to use ${BRAND_NAME}?`,
-		a: `On every trade you pay Hyperliquid's protocol fees — 0.045% taker / 0.015% maker on perps at the base tier (spot starts at 0.07% / 0.04%), dropping with volume and HYPE staking — plus a small 0.01% builder fee. That builder fee is what funds ${BRAND_NAME}: ongoing development, faster releases, new features, and keeping the terminal free to use. No subscription, no monthly fee, no gas per trade.`,
+		a: `On each trade you pay Hyperliquid's protocol fees — 0.045% taker / 0.015% maker on perps at the base tier (spot starts at 0.07% / 0.04%), dropping with volume and HYPE staking — plus a small 0.01% builder fee on perp orders and spot sells (TWAP orders and spot buys carry none). That builder fee is what funds ${BRAND_NAME}: ongoing development, faster releases, new features, and keeping the terminal free to use. No subscription, no monthly fee, no gas per trade.`,
 	},
 	{
 		q: "Do I need to sign up or KYC?",
@@ -33,7 +33,7 @@ export const FAQS: readonly FaqItem[] = [
 	},
 	{
 		q: "Where does my data live?",
-		a: "Your funds, positions, and orders live on Hyperliquid. Orders are signed with your keys and sent from your browser straight to Hyperliquid, and your settings stay in your browser. A few things do reach us or our service providers: email sign-in, region checks, error reports, leaderboard data, and gas-sponsored deposits.",
+		a: "Your funds, positions, and orders live on Hyperliquid. Orders are signed with your keys and sent from your browser straight to Hyperliquid, and your settings stay in your browser. Some things do reach us or our service providers, for example wallet and email sign-in through Privy, region checks, error reports, leaderboard data, and gas-sponsored deposits.",
 		link: { label: "Read the Privacy Policy.", href: "/privacy/" },
 	},
 	{

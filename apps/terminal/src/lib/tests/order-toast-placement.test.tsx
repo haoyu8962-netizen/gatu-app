@@ -90,7 +90,7 @@ describe("global order notifications", () => {
 			["pending", "submitting", true],
 			["confirming", "pending", true],
 			["unconfirmed", "unknown", false],
-			["partial", "partial", false],
+			["partial", "warning", false],
 			["success", "success", false],
 			["canceled", "cancelled", false],
 			["failed", "error", false],
@@ -107,6 +107,43 @@ describe("global order notifications", () => {
 			expect(icon?.getAttribute("aria-hidden"), status).toBe("true");
 			expect(icon?.hasAttribute("data-loading-indicator"), status).toBe(loading);
 			expect(container.querySelector(`[data-order-feedback="${id}"] .animate-spin`), status).toBeNull();
+		}
+	});
+	it("draws the partial-fill glyph only for a verified partial fill", async () => {
+		const cases: [Partial<OrderQueueItem>, string][] = [
+			[{ countMode: "filled", acceptedCount: 1, totalCount: 2 }, "partial"],
+			[
+				{
+					execution: {
+						evidence: "exchange-response",
+						filledSize: "0.4",
+						requestedSize: "1",
+						averagePrice: "100",
+						orderIds: [1],
+						completeness: "partial",
+					},
+				},
+				"partial",
+			],
+			[{ countMode: "accepted", acceptedCount: 7, totalCount: 10 }, "warning"],
+			[
+				{ countMode: "filled", acceptedCount: 1, totalCount: 2, error: orderReconciliationError("status-unconfirmed") },
+				"warning",
+			],
+		];
+		for (const [update, glyph] of cases) {
+			let id = "";
+			act(() => {
+				id = add();
+				updateOrderQueueItem(id, { status: "partial", ...update });
+			});
+			await flush();
+			expect(
+				container
+					.querySelector(`[data-order-feedback="${id}"] svg[data-status-glyph]`)
+					?.getAttribute("data-status-glyph"),
+				JSON.stringify(update),
+			).toBe(glyph);
 		}
 	});
 	it("keeps short live feedback out of the tab order", async () => {

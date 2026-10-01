@@ -25,7 +25,7 @@ The terminal is a TanStack Start application with edge API endpoints. The websit
 
 ## Content rules
 
-- Product claims must match the terminal. `tests/copy-contract.test.mjs` fails on retired claims (open source, MIT, self-hosting, a fixed leverage maximum, 19+ chains, LiFi, "no accounts", "no backend") and requires the builder fee next to quoted trading fees.
+- Product claims must match the terminal. `tests/copy-contract.test.mjs` fails on retired claims (open source, MIT, self-hosting, a hard-coded leverage maximum such as "50×" or "up to 40×", 19+ chains, LiFi, "no accounts", "no backend", a builder fee on "every order") and requires the builder fee next to quoted trading fees.
 - Images that can change (the hero screenshots) live in `src/assets/` and are imported, so Astro emits them under content-hashed `_astro/` URLs. Files in `public/` keep a fixed URL; only put files there whose URL must stay stable (favicon, social card, robots.txt).
 
 ## Design notes

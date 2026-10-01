@@ -96,6 +96,37 @@ describe("status motion contract", () => {
 		);
 	});
 
+	it("never paints an in-flight loop with the success tone, which reads as done", () => {
+		for (const item of [...glyphs, ...motions]) {
+			if (item.loop) expect(item.tone, item.id).not.toBe("success");
+		}
+		expect(statusGlyphs.STATUS_GLYPH_SUBMITTING.tone).toBe("neutral");
+		expect(brandMotions.BRAND_MOTION_SUBMITTING.tone).toBe("neutral");
+	});
+
+	it("refuses exported drawings the components would not reproduce", async () => {
+		const { parseMotionSvgSource } = await import(resolve(REPOSITORY_ROOT, "scripts/brand-status-motion.mjs"));
+		const source = readFileSync(resolve(REPOSITORY_ROOT, "brand/loader/svg/on-light/error.svg"), "utf8");
+		expect(() => parseMotionSvgSource(source, "error.svg")).not.toThrow();
+		const mutations: [string, string][] = [
+			[
+				"clip path",
+				source.replace("</svg>", '<clipPath id="c"><rect x="0" y="0" width="1" height="1"/></clipPath></svg>'),
+			],
+			["group opacity", source.replace('<g class="srm-mark">', '<g class="srm-mark" opacity=".5">')],
+			["mark transform", source.replace('data-part="signal"', 'data-part="signal" transform="scale(2)"')],
+			[
+				"unknown attribute",
+				source.replace('<circle class="srm-anim srm-token"', '<circle class="srm-anim srm-token" filter="url(#f)"'),
+			],
+			["stray content", source.replace("</svg>", "<!-- note --></svg>")],
+		];
+		for (const [name, mutated] of mutations) {
+			expect(mutated, name).not.toBe(source);
+			expect(() => parseMotionSvgSource(mutated, name), name).toThrow();
+		}
+	});
+
 	it("never maps an unknown result to the error tone and loops only the in-progress states", () => {
 		const tone = Object.fromEntries(glyphs.map((glyph) => [glyph.id, glyph.tone]));
 		expect(tone.unknown).toBe("attention");

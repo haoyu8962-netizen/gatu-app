@@ -34,7 +34,7 @@ Using the interface is free to use. You remain responsible for network fees and 
 Click **Connect Wallet** and choose an external wallet (e.g., browser extension or mobile wallet) or sign in with email to use an embedded wallet.
 
 **What is the "agent" or "trading" wallet?**
-To enable fast, pop-up-free order signing, Sairn uses a delegated agent (API) wallet that you approve once with your main wallet. The agent key can place and cancel orders but **cannot withdraw your funds**.
+With an external wallet, Sairn uses a delegated agent (API) wallet that you approve once with your main wallet, so orders are signed without a pop-up. The agent key can place and cancel orders but **cannot withdraw your funds**. If you signed in with email, your embedded wallet signs orders directly and no agent is created.
 
 **I signed in with email — where is my wallet?**
 Email sign-in creates an embedded wallet for you. You can view its address in the account menu.
@@ -67,7 +67,7 @@ Where phone linking is available, click the QR code icon in the desktop header, 
 
 ### Transactions failing or stuck
 - Check that you have sufficient balance for the trade and network fees.
-- Verify you approved the trading agent (first-time trading requires a one-time approval).
+- With an external wallet, verify you approved the trading agent (the first trade requires a one-time approval).
 - Wait for network congestion to clear, then retry.
 
 ### Prices or charts not updating
