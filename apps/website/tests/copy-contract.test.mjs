@@ -61,11 +61,43 @@ test("website copy makes no retired product claims", () => {
 	assert.deepEqual(violations, []);
 });
 
+// Hyperliquid's base-tier perp rates (https://hyperliquid.gitbook.io/hyperliquid-docs/trading/fees); the terminal reads
+// the live rates from the exchange, so only the builder fee has a source in this repository.
+const HYPERLIQUID_BASE_PERP_PERCENT = { maker: "0.015", taker: "0.045" };
+
+function terminalBuilderFeePercent() {
+	const config = readFileSync(resolve(WEBSITE_ROOT, "../terminal/src/config/hyperliquid.ts"), "utf8");
+	const tenthsOfBasisPoints = /\bf:\s*(\d+)\s*,/.exec(config)?.[1];
+	assert.ok(tenthsOfBasisPoints, "apps/terminal/src/config/hyperliquid.ts no longer sets the builder fee as f: <tenths of a bp>");
+	return percent(Number(tenthsOfBasisPoints) / 1_000);
+}
+
+function percent(value) {
+	return `${Number(value.toFixed(4))}%`;
+}
+
 test("website discloses the builder fee wherever it quotes trading fees", () => {
 	const fees = readSource("src/components/Fees.astro");
 	const faq = readSource("src/config/faq.ts");
-	assert.match(fees, /0\.01% builder fee/);
-	assert.match(faq, /0\.01% builder fee/);
+	const builder = terminalBuilderFeePercent();
+	assert.match(fees, new RegExp(`${builder.replace(".", "\\.")} builder fee`));
+	assert.match(faq, new RegExp(`${builder.replace(".", "\\.")} builder fee`));
+});
+
+test("website fee figures add the terminal builder fee to Hyperliquid's base rates and keep its exemptions", () => {
+	const fees = readSource("src/components/Fees.astro");
+	const faq = readSource("src/config/faq.ts");
+	const builder = Number.parseFloat(terminalBuilderFeePercent());
+	for (const [label, base] of [
+		["Maker fee", HYPERLIQUID_BASE_PERP_PERCENT.maker],
+		["Taker fee", HYPERLIQUID_BASE_PERP_PERCENT.taker],
+	]) {
+		const shown = new RegExp(`value: "([0-9.]+%)", label: "${label}"`).exec(fees)?.[1];
+		assert.equal(shown, percent(Number(base) + builder), `${label} must be ${base}% Hyperliquid + ${builder}% builder fee`);
+	}
+	assert.match(fees, /builder fee on sells only/, "spot buys carry no builder fee (order-fee-quote.ts)");
+	assert.match(fees, /TWAP orders carry no builder fee/, "twapOrder actions have no builder field (order-fee-quote.ts)");
+	assert.match(faq, /TWAP orders and spot buys carry none/);
 });
 
 test("hero screenshots are imported assets with hashed URLs, never public files", () => {
