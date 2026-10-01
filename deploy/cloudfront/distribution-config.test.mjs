@@ -137,7 +137,7 @@ test("api behaviors are evaluated before the static ones and tls uses the us-eas
 test("the api origin request policy forwards everything the handlers need except Host", () => {
 	const policy = createApiOriginRequestPolicyConfig();
 	const headers = policy.HeadersConfig.Headers.Items;
-	for (const required of ["Origin", "Sec-Fetch-Site", "Content-Type", "X-Sairn-Forwarded-Host", "CloudFront-Viewer-Address"]) {
+	for (const required of ["Origin", "Sec-Fetch-Site", "Content-Type", "X-Sairn-Forwarded-Host", "X-Gatu-Forwarded-Host", "CloudFront-Viewer-Address"]) {
 		assert.ok(headers.includes(required), required);
 	}
 	assert.ok(!headers.includes("Host"));

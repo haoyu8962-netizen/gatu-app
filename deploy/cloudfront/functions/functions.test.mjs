@@ -221,15 +221,35 @@ test("the pairing page is never stored and never sends a referrer, in any letter
 });
 
 test("a route tag sent by the viewer never reaches the response", () => {
-	const forged = { host: { value: "app.sairn.ai" }, "x-sairn-route": { value: "mobile-agent-sync" } };
+	const forged = {
+		host: { value: "app.sairn.ai" },
+		"x-sairn-route": { value: "mobile-agent-sync" },
+		"x-gatu-route": { value: "mobile-agent-sync" },
+	};
 	const request = onRequest(viewerRequest("/trade/HYPE", forged));
 	assert.equal(request.headers["x-sairn-route"], undefined);
+	assert.equal(request.headers["x-gatu-route"], undefined);
 	const response = onResponse({ request, response: { statusCode: 200, headers: {} } });
 	assert.equal(response.headers["x-sairn-route"], undefined);
 	assert.equal(response.headers["cache-control"], undefined);
 
 	const asset = onRequest(viewerRequest("/assets/app.js", forged));
 	assert.equal(asset.headers["x-sairn-route"], undefined);
+	assert.equal(asset.headers["x-gatu-route"], undefined);
+});
+
+test("the pairing headers survive a release or rollback that has published only one of the two functions", () => {
+	for (const uri of ["/mobile-agent-sync", "/join/abc"]) {
+		const tagged = onRequest(viewerRequest(uri));
+		assert.equal(tagged.headers["x-gatu-route"].value, tagged.headers["x-sairn-route"].value, uri);
+	}
+
+	const legacyTagged = { ...viewerRequest("/_shell.html").request };
+	legacyTagged.headers = { host: { value: "app.gatu.ai" }, "x-gatu-route": { value: "mobile-agent-sync" } };
+	const response = onResponse({ request: legacyTagged, response: { statusCode: 200, headers: {} } });
+	assert.equal(response.headers["cache-control"].value, "no-store");
+	assert.equal(response.headers["referrer-policy"].value, "no-referrer");
+	assert.equal(response.headers["x-sairn-route"].value, "mobile-agent-sync");
 });
 
 test("the report-only policy is emitted only when a report receiver is configured", () => {

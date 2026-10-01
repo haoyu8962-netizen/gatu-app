@@ -50,7 +50,7 @@ function isChartAsset(uri) {
 function handler(event) {
 	var request = event.request;
 	var response = event.response;
-	var route = request.headers['x-sairn-route'];
+	var route = request.headers['x-sairn-route'] || request.headers['x-gatu-route'];
 	if (route && route.value) {
 		response.headers['x-sairn-route'] = { value: route.value };
 	}

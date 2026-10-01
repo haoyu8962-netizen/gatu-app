@@ -110,6 +110,52 @@ describe("lambda function url adapter", () => {
 		expect(JSON.parse(sameOrigin.body)).toMatchObject({ status: "allowed", country: "GB", ttlMs: 60_000 });
 	});
 
+	it("prefers the renamed forwarded-host header and still restores either domain group from the legacy one", () => {
+		expect(
+			resolveRequestOrigin(
+				event({ headers: { [FORWARDED_HOST_HEADER]: "app.sairn.ai", [LEGACY_FORWARDED_HOST_HEADER]: "app.gatu.ai" } }),
+				undefined,
+			),
+		).toBe("https://app.sairn.ai");
+		expect(
+			resolveRequestOrigin(event({ headers: { [LEGACY_FORWARDED_HOST_HEADER]: "testnet.gatu.ai" } }), undefined),
+		).toBe("https://testnet.gatu.ai");
+	});
+
+	it.each([
+		["app.sairn.ai", "https://app.gatu.ai"],
+		["testnet.sairn.ai", "https://testnet.gatu.ai"],
+		["app.gatu.ai", "https://app.sairn.ai"],
+		["testnet.gatu.ai", "https://testnet.sairn.ai"],
+	])("accepts same-origin referral checks on %s from either header and rejects %s", async (host, otherOrigin) => {
+		const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ALLOWED_IPDATA_RESPONSE } as Response);
+		const handler = createLambdaHandler(environment({ fetch: fetchMock }));
+		const forwardedHeaderSets = [
+			{ [FORWARDED_HOST_HEADER]: host },
+			{ [LEGACY_FORWARDED_HOST_HEADER]: host },
+			{ [FORWARDED_HOST_HEADER]: host, [LEGACY_FORWARDED_HOST_HEADER]: host },
+		];
+		for (const forwarded of forwardedHeaderSets) {
+			const post = (origin: string) =>
+				handler(
+					event({
+						rawPath: "/api/referral-geo",
+						method: "POST",
+						body: JSON.stringify({ override: null }),
+						headers: {
+							origin,
+							"sec-fetch-site": "same-origin",
+							"content-type": "application/json",
+							[VIEWER_ADDRESS_HEADER]: "203.0.113.9:1",
+							...forwarded,
+						},
+					}),
+				);
+			expect((await post(`https://${host}`)).statusCode, JSON.stringify(forwarded)).toBe(200);
+			expect((await post(otherOrigin)).statusCode, JSON.stringify(forwarded)).toBe(403);
+		}
+	});
+
 	it("accepts client error reports on both paths and answers everything else without rendering", async () => {
 		const handler = createLambdaHandler(environment());
 		const report = JSON.stringify({
