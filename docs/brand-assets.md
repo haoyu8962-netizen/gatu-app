@@ -54,6 +54,14 @@
 - `brand/web/icon.svg`：按设计方 `icon-512.png` 量出的几何（472 px 圆角方、内缩 20 px、圆角 106 px、标志高 60.2%）绘制的矢量图标；与原图逐像素比较的平均通道差为 0.11。
 - `brand/web/icon-maskable-192.png`：与 `icon-maskable-512.png` 相同构图（满版底色、标志高 60.2%）在 Chromium 中按 192 px 渲染；与 512 原图缩小后的平均通道差为 0.2。
 
+## 设计稿
+
+`designs/mockups.pen` 是从上游导入的早期探索稿，不是视觉或令牌来源（颜色与尺寸以 `brand/brand.json`、`brand/tokens` 和代码为准）。产品名标签已经是 Sairn；以下内容保留原样，需要在 pen.dev 里手工处理：
+
+- 三个导航栏里 32×28 的 `HT` 字母徽标方块（`o15AR`、`WMxsj`、`XJZWk`）和三张探索稿里的 `A` 方块，应换成 Sairn 横版组合：高 24 px、宽约 90.5 px，三条路径（信号、选择、字标）取自 `brand/svg/lockup/sairn-lockup-on-*.svg`，共用同一个 viewBox；颜色用按主题区分的三个变量（浅色 `#176B64` / `#99621F` / `#08262E`，深色 `#86E5D3` / `#E6B766` / `#FFFFFF`）。组件实例 `8GFpt` 按 id 覆盖了徽标位置，交给 pen.dev 处理。
+- 当前 pen.dev 打开 2.10 格式会整份转换为新格式。先单独提交一次「打开即保存」的转换，再提交徽标改动，差异才可审阅。
+- 色板仍是上游的蓝紫色（`#4c64d9` / `#b2bcf1`）。若要与产品对齐，按产品的拆分把 `text-brand`、`icon-brand`、焦点映射到 `--signal`，`fill-brand-strong`、`fill-selected` 等映射到中性的 `--action`，作为单独的设计任务处理。
+
 ## 界面品牌色
 
 `--signal` 是 Sairn 的强调色：浅色主题青色 `#176b64`（悬停 `#0f524d`），深色主题薄荷色 `#86e5d3`（悬停 `#a8eee1`）；焦点环等于 `--signal`。主按钮的 `--action` 保持黑白中性，不用品牌色，以免和绿色的买入按钮混淆。等待中的转圈用中性色 `text-fg-muted`，因为薄荷色在设计令牌里同时是「成功」色。终端深色画布仍是 `#0F1A1F`，`#0A3038` 只用作图标底色。
