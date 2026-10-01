@@ -48,7 +48,10 @@ export interface PageSeoOptions {
 	noIndex?: boolean;
 }
 
-export function buildRootHead(fontPreloadUrls: readonly string[] = []): HeadOutput {
+export function buildRootHead(
+	fontPreloadUrls: readonly string[] = [],
+	themeColor: string = SEO_DEFAULTS.themeColor,
+): HeadOutput {
 	return {
 		meta: [
 			{ charSet: "utf-8" },
@@ -56,7 +59,7 @@ export function buildRootHead(fontPreloadUrls: readonly string[] = []): HeadOutp
 				name: "viewport",
 				content: "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
 			},
-			{ name: "theme-color", content: SEO_DEFAULTS.themeColor },
+			{ name: "theme-color", content: themeColor },
 			{ name: "color-scheme", content: "dark light" },
 			{ name: "author", content: SEO_DEFAULTS.siteName },
 		],

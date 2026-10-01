@@ -679,10 +679,25 @@ have an install capability.
 - A captured `beforeinstallprompt` event is single-use. Clear it before
   prompting and after installation. Do not intercept the native install flow
   on wide desktop surfaces.
-- Keep the PWA manifest and browser theme color aligned with the terminal dark
-  canvas (`#0F1A1F`); `pwa-manifest.test.ts` pins the literal and its equality
-  with the dark `--bg-base`. The logo kit's icon background `#0A3038` only
-  fills the icons themselves.
+- The PWA manifest `theme_color` and `background_color` stay on the terminal
+  dark canvas (`#0F1A1F`): a manifest holds one value and cannot follow the
+  in-app theme setting. The browser `<meta name="theme-color">` follows the
+  applied theme instead: `#0F1A1F` (dark `--bg-base`) or `#FFFFFF` (light
+  `--bg-base`, the header surface), from `brand.json` `pwa.themeColor` and
+  `pwa.lightThemeColor` through `lib/theme-color.ts`. The theme is chosen in
+  Settings, not by the OS, so a `media` attribute cannot express it. Three
+  writers share that module: the head bootstrap script sets the class and the
+  meta from one read before first paint; `applyThemeClass` sets both on every
+  theme change and every `<html>` class mutation, syncing the meta before its
+  early return; and the root route's `head()` derives the content from the
+  `<html>` theme class. TanStack runs `head()` again in the browser before
+  hydration, and React 19 claims an existing `<meta>` only when its `content`
+  matches, so a `head()` value that differs from the bootstrap's would append
+  a second, stale tag. `pwa-manifest.test.ts` pins both literals against each
+  theme's `--bg-base`; `theme-bootstrap.test.ts` and
+  `theme-document-sync.test.tsx` cover the bootstrap, the hydration value and
+  the store. The logo kit's icon background `#0A3038` only fills the icons
+  themselves.
 - Install icons come from `brand/web` through `pnpm brand:sync`
   ([brand assets](brand-assets.md)): `favicon.ico` carries the kit's 16, 32
   and 48 px frames and is declared as such in the manifest and the head;

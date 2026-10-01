@@ -311,6 +311,8 @@ pnpm --dir apps/terminal exec vitest run \
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/root-startup-fallback.test.tsx \
   src/lib/tests/root-route-transition.test.tsx \
+  src/lib/tests/theme-bootstrap.test.ts \
+  src/lib/tests/theme-document-sync.test.tsx \
   src/lib/tests/trade-terminal-page-boot.test.tsx \
   src/lib/tests/top-nav.test.tsx \
   src/lib/tests/desktop-nav-layout.test.ts \

@@ -6,7 +6,7 @@
 
 | 内容 | 来源 | 说明 |
 |---|---|---|
-| 名称、法律实体、域名、邮箱、界面品牌色、Logo 颜色、PWA 主题色 | [`brand/brand.json`](../brand/brand.json) | 应用、脚本和测试只读这里；不要在代码里再写品牌名、域名或邮箱字面量 |
+| 名称、法律实体、域名、邮箱、界面品牌色、Logo 颜色、PWA 与浏览器主题色（深色 `pwa.themeColor`、浅色 `pwa.lightThemeColor`） | [`brand/brand.json`](../brand/brand.json) | 应用、脚本和测试只读这里；不要在代码里再写品牌名、域名或邮箱字面量 |
 | Logo 与图标 | `brand/svg`、`brand/png`、`brand/web`、`brand/social` | 设计方原件，规则见 [`brand/LOGO-KIT.md`](../brand/LOGO-KIT.md) |
 | 加载与状态动效 | `brand/loader` | 由 `pnpm brand:export-motion` 从 `brand/tools` 的动效库导出，`PROVENANCE.json` 记录哈希 |
 | 补充状态符号（部分成交、提示、警告） | `brand/loader-supplement` | 动效库 v1.3 缺这三个符号；同一条导出命令用库自己的引擎渲染 `definitions.js`，待设计方确认，设计方交付后删除（`brand/loader-supplement/README.md`） |
@@ -21,8 +21,9 @@
 
 | 读取方 | 读取内容 |
 |---|---|
-| `apps/terminal/src/config/brand.ts` | `BRAND_NAME`、`BRAND_FILE_STEM`、`BRAND_LEGAL_ENTITY`、域名分组、`SUPPORT_EMAIL`、`PWA_THEME_COLOR` |
-| `apps/terminal/src/config/seo.ts` | 站点名、规范地址、标题、主题色 |
+| `apps/terminal/src/config/brand.ts` | `BRAND_NAME`、`BRAND_FILE_STEM`、`BRAND_LEGAL_ENTITY`、域名分组、`SUPPORT_EMAIL`、`PWA_THEME_COLOR`、`PWA_LIGHT_THEME_COLOR` |
+| `apps/terminal/src/config/seo.ts` | 站点名、规范地址、标题、预渲染壳的主题色（深色） |
+| `apps/terminal/src/lib/theme-color.ts` | 深浅两种主题的 `<meta name="theme-color">` 颜色，供启动引导脚本、根路由 `head()` 和主题切换共用（`docs/runtime-guardrails.md` §8） |
 | `apps/terminal/src/config/public-origins.ts` | 主网、测试网的规范地址与主机识别 |
 | 启动播报与首页链接 | `StartupFallback`、交易页工作区、移动端外壳里的 `Loading <品牌名>...`；页头、移动页头、导航抽屉的首页链接名称 |
 | 持仓盈亏分享卡 | 卡面品牌字样、下载文件名前缀 |
@@ -94,7 +95,7 @@
 
 ## 界面品牌色
 
-`--signal` 是 Sairn 的强调色：浅色主题青色 `#176b64`（悬停 `#0f524d`），深色主题薄荷色 `#86e5d3`（悬停 `#a8eee1`）；焦点环等于 `--signal`。主按钮的 `--action` 保持黑白中性，不用品牌色，以免和绿色的买入按钮混淆。等待中的转圈用中性色 `text-fg-muted`，因为薄荷色在设计令牌里同时是「成功」色。终端深色画布仍是 `#0F1A1F`，`#0A3038` 只用作图标底色。
+`--signal` 是 Sairn 的强调色：浅色主题青色 `#176b64`（悬停 `#0f524d`），深色主题薄荷色 `#86e5d3`（悬停 `#a8eee1`）；焦点环等于 `--signal`。主按钮的 `--action` 保持黑白中性，不用品牌色，以免和绿色的买入按钮混淆。等待中的转圈用中性色 `text-fg-muted`，因为薄荷色在设计令牌里同时是「成功」色。终端深色画布仍是 `#0F1A1F`，`#0A3038` 只用作图标底色。浏览器工具栏与状态栏取色的 `<meta name="theme-color">` 跟随应用里选的主题：深色 `#0F1A1F`（深色 `--bg-base`），浅色 `#FFFFFF`（浅色 `--bg-base`，也是页头底色）；manifest 只能有一个 `theme_color`，保持深色。
 
 | 组合 | 对比度 |
 |---|---|

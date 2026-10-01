@@ -69,6 +69,13 @@ describe("seo", () => {
 		expect(buildRootHead().links.some((link) => link.rel === "preload")).toBe(false);
 	});
 
+	it("renders the theme color it is given and defaults to the dark canvas for the prerendered shell", () => {
+		expect(getMetaContent(buildRootHead(), "name", "theme-color")).toBe(SEO_DEFAULTS.themeColor);
+		expect(SEO_DEFAULTS.themeColor).toBe("#0F1A1F");
+		expect(getMetaContent(buildRootHead([], "#FFFFFF"), "name", "theme-color")).toBe("#FFFFFF");
+		expect(buildRootHead().meta.filter((meta) => meta.name === "theme-color")).toHaveLength(1);
+	});
+
 	it("keeps global connection hints DNS-only so the edge can select the correct trading network", () => {
 		const links = buildRootHead().links;
 		expect(links.filter((link) => link.rel === "preconnect")).toEqual([]);
