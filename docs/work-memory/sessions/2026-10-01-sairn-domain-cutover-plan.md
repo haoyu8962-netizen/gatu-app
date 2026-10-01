@@ -57,12 +57,22 @@
 
 结论：本机没有能完成切换的身份，问题 4 仍需用户在控制台给权限或亲自操作。
 
+## 临时策略挂上后的复测（同日）
+
+用户选方案 A，要求我在浏览器里代为完成。我说明了规则：代为修改 IAM 权限、输入管理员密码都不允许，只打开了 AWS 登录页、把策略 JSON（与方案第 7 节一致，经 `json.loads` 校验）放进剪贴板，并给出控制台步骤。用户在自己登录的浏览器里新建 `gatu-edge-domain-cutover` 并挂到 `gatu-edge`，内置浏览器始终停在登录页，我没有看到也没有操作控制台。
+
+随后的只读复测（身份 `arn:aws:iam::018252911946:user/gatu-edge`）：
+
+- `get-origin-request-policy-config`（`b4401266-…`）成功：名称 `gatu-terminal-api`，头部白名单 9 个，含 `X-Gatu-Forwarded-Host`，不含 `X-Sairn-Forwarded-Host`；Cookie 不转发，查询串全部转发；ETag `E23ZP02F085DFQ`。原配置保存在 Git 忽略的 `.worklog/2026-10-01/2026-10-01-sairn-domain-cutover-plan/aws/origin-request-policy-before.json`。
+- `list-conflicting-aliases` 不再被拒，但对 `app.sairn.ai`、`testnet.sairn.ai`、`sairn.ai`、`www.sairn.ai` 都返回 `InvalidArgument`：分发当前证书不覆盖要查的名字。方案因此把 0.4 改到 0.5 之后：证书签发后先只换证书、别名不动，再查冲突；2.2、3.1 随之只加别名。
+- `acm:RequestCertificate` 没有只读的验证办法，留到 0.5 实际申请时验证；本次没有申请证书，也没有任何 AWS 写操作。
+
 ## 验证与限制
 
 只做了只读调查与文档检查（`git diff --check`、相对链接与引用路径检查、记录索引检查）。没有执行任何 AWS 写操作、Cloudflare、Privy 或 Hyperliquid 操作。本机经代理，系统解析器返回假地址，公共解析器结果不可信；文中 DNS 事实以 Cloudflare 权威服务器的应答为准。
 
 ## 后续与替代关系
 
-- 等用户选择权限给法（问题 4）并同意开始阶段 0；执行前在 PR-A 新增 ADR 0032，执行后补执行记录。
+- 权限已按方案 A 挂上；等用户同意开始阶段 0（先合并两个后台分支并推送 PR-A，再申请证书等）；执行前在 PR-A 新增 ADR 0032，执行后补执行记录。
 - 品牌替换完成后处理 gatu.ai 的邮件与 SES（方案第 7 节后续事项 1）；2028-05-06 前做完到期前清单（后续事项 2）。
 - 执行前确认只有一个会话操作 AWS 与 Cloudflare。

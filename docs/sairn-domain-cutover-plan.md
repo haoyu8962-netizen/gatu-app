@@ -1,6 +1,6 @@
 # gatu.ai 下线、切换到 sairn.ai：执行方案
 
-> **状态：拟议，尚未执行。** 2026-10-01 用户决定「旧的直接下线、替换为新的」：不设新旧并存期，不做 301 跳转。同日用户答复了第 7 节六个问题中的五个：先接后断；gatu.ai 不永久续费；gatu.ai 的邮件与 SES 等品牌替换完成后再处理；另登记一个 sairn 推荐码；不做告别 Service Worker。权限给法（问题 4）待定。本文据此替换 [ADR 0031](adr/0031-domain-move-to-sairn-ai.md) 决策 5、7 与 [品牌标识与素材](brand-assets.md)「域名切换到 sairn.ai」中的并存与跳转步骤。文中命令一条都没有执行；执行前在 PR-A 新增 ADR 0032 记录这些决定，执行后补执行记录。标注：【核实】有命令或文件依据；【推断】未实测。
+> **状态：拟议，尚未执行。** 2026-10-01 用户决定「旧的直接下线、替换为新的」：不设新旧并存期，不做 301 跳转。同日用户答复了第 7 节六个问题中的五个：先接后断；gatu.ai 不永久续费；gatu.ai 的邮件与 SES 等品牌替换完成后再处理；另登记一个 sairn 推荐码；不做告别 Service Worker。权限按问题 4 的方案 A，由用户在控制台给 `gatu-edge` 挂上了临时策略。本文据此替换 [ADR 0031](adr/0031-domain-move-to-sairn-ai.md) 决策 5、7 与 [品牌标识与素材](brand-assets.md)「域名切换到 sairn.ai」中的并存与跳转步骤。文中命令一条都没有执行；执行前在 PR-A 新增 ADR 0032 记录这些决定，执行后补执行记录。标注：【核实】有命令或文件依据；【推断】未实测。
 
 ## 1. 目标与约束
 
@@ -21,8 +21,8 @@
 | 分发 | 主网 `ET9CNVE6L1GWN`（`d2i25dhfjwco8b.cloudfront.net`，别名 `app.gatu.ai`）；测试网 `E3Q2SAX402CR9F`（`dg9o2gpw3mt8q.cloudfront.net`，`testnet.gatu.ai`）；官网 `EP2DIBP3T7M3G`（`d1bgo95x2hobvu.cloudfront.net`，`gatu.ai`、`www.gatu.ai`）【核实：`aws cloudfront list-distributions --profile gatu-edge`】 |
 | ACM（us-east-1） | 只有两张 gatu 证书：`548ac30d…`（gatu.ai、www，2027-02-03 到期）、`ff5677c6…`（app、testnet，2027-04-01 到期）；没有 sairn 证书【核实：`aws acm list-certificates`】。gatu 的验证 CNAME 仍在 gatu.ai 区里【核实：`describe-certificate` 加权威 DNS】 |
 | Lambda `gatu-terminal-api` | 环境变量只有 `GATU_TRUST_VIEWER_ADDRESS=true` 与 `IPDATA_API_KEY`；新代码在 `SAIRN_TRUST_VIEWER_ADDRESS` 未设置时按 true 处理（`apps/terminal/src/edge/lambda-handler.ts:176`） |
-| 源站请求策略 `b4401266-…` | `gatu-edge` 读不到。p23 仓库版本是 9 个头、含 `X-Gatu-Forwarded-Host`；CloudFront 上限 10 个 |
-| 本机 AWS 身份（2026-10-01 复核） | 只有两个 profile。`default` 的密钥无效（`InvalidClientTokenId`，即 2026-09-17 停用的 root 访问密钥；凭据文件 9 月 13 日后没有改过）；`gatu-edge` 有效。`gatu-edge` 实测：`get-origin-request-policy-config` 与 `list-conflicting-aliases` 都返回 AccessDenied；`iam list-attached-user-policies`、`get-policy`、`simulate-principal-policy` 也被拒，所以 `acm:RequestCertificate` 只有实际申请才能验证，本次没有申请。ACM 仍只有两张 gatu 证书，三个分发的别名没有变化【核实：只读调用】 |
+| 源站请求策略 `b4401266-…`（`gatu-terminal-api`） | 2026-10-01 挂上临时策略后读出：头部白名单 9 个（`Origin`、`X-Gatu-Forwarded-Host`、`CloudFront-Viewer-Address`、`Accept`、`CloudFront-Viewer-Country`、`Referer`、`User-Agent`、`Sec-Fetch-Site`、`Content-Type`），Cookie 不转发，查询串全部转发，ETag `E23ZP02F085DFQ`；原配置存于 Git 忽略的 `.worklog/2026-10-01/2026-10-01-sairn-domain-cutover-plan/aws/`。CloudFront 上限 10 个【核实】 |
+| 本机 AWS 身份（2026-10-01 复核） | 只有两个 profile。`default` 的密钥无效（`InvalidClientTokenId`，即 2026-09-17 停用的 root 访问密钥；凭据文件 9 月 13 日后没有改过）；`gatu-edge` 有效。`gatu-edge` 实测：`get-origin-request-policy-config` 与 `list-conflicting-aliases` 都返回 AccessDenied；`iam list-attached-user-policies`、`get-policy`、`simulate-principal-policy` 也被拒，所以 `acm:RequestCertificate` 只有实际申请才能验证，本次没有申请。ACM 仍只有两张 gatu 证书，三个分发的别名没有变化【核实：只读调用】。同日用户按方案 A 挂上临时策略后复测：读源站请求策略成功；`list-conflicting-aliases` 不再被拒，但对四个 sairn 名都返回 `InvalidArgument`（分发当前证书不覆盖要查的名字，见 0.4）；`acm:RequestCertificate` 留到 0.5 实际申请时验证 |
 | sairn.ai | 2026-10-01 11:40:28Z 在 Cloudflare 注册；有 Email Routing 的 MX 与 SPF；没有 DMARC、CAA；网页主机名都没有记录；SOA 负缓存 1800 s【核实：权威服务器】 |
 | gatu.ai | 网页记录：apex（CNAME 拉平，TTL 60）、`www`、`app`、`testnet`（CNAME，TTL 300）；邮件：Email Routing、SPF、DMARC `p=none`；另有一套**仓库从未记录的 Amazon SES 发信配置**：`support.gatu.ai` MX `feedback-smtp.us-east-1.amazonses.com`、SPF `include:amazonses.com`【核实：权威服务器】；注册到 2028-05-06 |
 | HSTS | 只有 `app`、`testnet` 下发（一年、`includeSubDomains`、无 preload），apex 不下发 |
@@ -94,12 +94,12 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 | # | 步骤 | 执行者 | 验证 |
 |---|---|---|---|
-| 0.1 | 权限（问题 4，待定）二选一：A. 你在 IAM 控制台新建临时策略 `gatu-edge-domain-cutover`（第 7 节的 JSON）并挂到用户 `gatu-edge`，0.4–0.6 与 5.2 由我用命令行做，5.2 完成后你摘除并删除这份策略；B. 不加权限，0.4–0.6 与 5.2 由你在控制台做，我给逐步说明 | [你] | A：我用 `get-origin-request-policy-config` 试读成功即生效 |
+| 0.1 | 权限（问题 4）：用户选 A，2026-10-01 已在 IAM 控制台新建临时策略 `gatu-edge-domain-cutover`（正文同第 7 节）并挂到用户 `gatu-edge`；0.4–0.6 与 5.2 由我用命令行做，5.2 完成后你摘除并删除这份策略 | [你]，已完成 | 读源站请求策略成功【核实】；证书申请权限在 0.5 实际申请时验证 |
 | 0.2 | Cloudflare：确认 sairn.ai 在项目账号下，sairn.ai 开自动续费和转移锁；gatu.ai 的续费设置本次不改（已注册到 2028-05-06，不永久续费，第 3.1 节）；导出 gatu.ai 区全部记录（含 `support.gatu.ai`、`*._domainkey`、`_…acm-validations`） | [你] | 截图与导出文件 |
 | 0.3 | 邮件（只涉及 sairn.ai）：加 `_dmarc`；`support@sairn.ai` 实测收信（法律页和支持页写的就是这个地址）。gatu.ai 的邮件与 SES 本次不动（第 7 节后续事项 1） | [你] | 测试信；`dig … _dmarc.sairn.ai TXT` |
-| 0.4 | 预检别名冲突：`aws cloudfront list-conflicting-aliases --distribution-id <ID> --alias <host>`，四个 sairn 主机名都查 | [E] 或 [你] | 无冲突 |
+| 0.4 | **在 0.5 之后做**。预检别名冲突：CloudFront 只在分发当前挂的证书覆盖待查名字时才回答，2026-10-01 对四个 sairn 名实测都返回 `InvalidArgument`【核实】。所以两张证书 `ISSUED` 后，先用 `aliases` 只把三个分发的证书换成过渡证书、别名不动（过渡证书覆盖现有 gatu 名；不覆盖现有别名的证书会被 CloudFront 拒绝），等 `Deployed`，用 `curl --resolve` 确认 gatu 仍正常；再用 `aws cloudfront list-conflicting-aliases --distribution-id <ID> --alias <host>` 查四个 sairn 名。有冲突就停下：迁移别人占用的别名要 TXT 验证加 `associate-alias`，需要另外的权限 | [E] | 无冲突；回滚：换回 `ff5677c6…`、`548ac30d…` |
 | 0.5 | 申请过渡证书（8 名）与最终证书（4 名），`--validation-method DNS`；你在 sairn.ai 区添加 4 条验证 CNAME，**DNS only**，并**永久保留**（续期要用）；`aws acm wait certificate-validated` | [E] 或 [你] 申请；[你] 加记录 | 两张都 `ISSUED`、SAN 正确 |
-| 0.6 | 源站请求策略：读出现行配置（取 `.OriginRequestPolicyConfig` 内层）；若 9 个头且含 `X-Gatu-Forwarded-Host`，**加入** `X-Sairn-Forwarded-Host` 成 10 个；保存原配置以便回滚 | [E] 或 [你] | 读回确认含 `X-Sairn-Forwarded-Host` 并留存输出（p25 前提） |
+| 0.6 | 源站请求策略：现行配置已于 2026-10-01 读出并保存（第 2 节）。执行时先重读，ETag 仍是 `E23ZP02F085DFQ`、仍是 9 个头且含 `X-Gatu-Forwarded-Host`，就取 `.OriginRequestPolicyConfig` 内层，**加入** `X-Sairn-Forwarded-Host` 成 10 个后更新；p23 不写新头，提前加入不影响线上 | [E] | 读回确认含 `X-Sairn-Forwarded-Host` 并留存输出（p25 前提） |
 | 0.7 | Privy：Allowed origins **加入** `https://app.sairn.ai`、`https://testnet.sairn.ai`（旧的先保留），应用名改为 Sairn；确认 WalletConnect 项目 ID 是默认还是自建 Reown 项目（自建就加新域名）；确认 ZeroDev 有无来源限制；截图保存全部设置 | [你] | 截图 |
 | 0.8 | LI.FI：p24 起 integrator 是 `sairn`（`config/app.ts:48`），若合作方后台登记的是 `gatu`，在 p24 前更新 | [你] | — |
 | 0.9 | Hyperliquid：在主网、测试网和每个子账户查 `extraAgents`；撤销 `gatu`、`gatu-dev` 和过期的 Mobile Agent（每账户只有 3 个命名槽位，`docs/trading-onboarding.md:185-190`），否则 1.4 授权 `sairn` 可能失败；处理完旧域名上的在途操作（CCTP 跟踪、资金待处理、TWAP）；在 gatu 上记下团队邮箱账户的内嵌钱包地址 | [你]（主钱包签名） | `extraAgents` 不再有 `gatu` |
@@ -122,8 +122,8 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 | # | 步骤 | 验证 / 停机 |
 |---|---|---|
-| 2.1 | [E] 检查：两张证书 `ISSUED`；1.3 已通过；备份齐全 | — |
-| 2.2 | [E] 接上新别名：`aliases --distribution ET9CNVE6L1GWN --alias app.gatu.ai --alias app.sairn.ai --certificate-arn <过渡>`，测试网同理（先不加 `--execute` 核对 ETag，再加） | 等 `Deployed`；gatu 不中断 |
+| 2.1 | [E] 检查：两张证书 `ISSUED`；三个分发已在 0.4 换成过渡证书且无别名冲突；1.3 已通过；备份齐全 | — |
+| 2.2 | [E] 接上新别名（证书已在 0.4 换好，这一步只加别名）：`aliases --distribution ET9CNVE6L1GWN --alias app.gatu.ai --alias app.sairn.ai --certificate-arn <过渡>`，测试网同理（先不加 `--execute` 核对 ETag，再加） | 等 `Deployed`；gatu 不中断 |
 | 2.3 | [E] `--resolve` 预检：取 `d2i25dhfjwco8b.cloudfront.net` 的真实 IP（排除代理假地址 `198.18.0.0/15`），`curl -s --noproxy '*' --resolve app.sairn.ai:443:<IP>` 请求 `/trade/HYPE`（200）、`GET /api/geo`（200）、`/api/health`（204）、`/join/__sairn_healthcheck__`（`no-store`、`x-sairn-route`），测试网同理 | TLS 正常；HSTS、CSP、preconnect 正确 |
 | 2.4 | [你] sairn.ai 区加 `app` → `d2i25dhfjwco8b.cloudfront.net`、`testnet` → `dg9o2gpw3mt8q.cloudfront.net`，**DNS only** | 权威应答（带 `aa`）有 CNAME；sairn 从此可用 |
 | 2.5 | [E] `verify --origin https://app.sairn.ai --network mainnet`、测试网同理、`csp-coverage https://app.sairn.ai` | 全部 ok |
@@ -137,7 +137,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 | # | 步骤 | 验证 / 停机 |
 |---|---|---|
-| 3.1 | [E] `aliases --distribution EP2DIBP3T7M3G --alias gatu.ai --alias www.gatu.ai --alias sairn.ai --alias www.sairn.ai --certificate-arn <过渡>` | 等 `Deployed` |
+| 3.1 | [E] 接上新别名（证书已在 0.4 换好）：`aliases --distribution EP2DIBP3T7M3G --alias gatu.ai --alias www.gatu.ai --alias sairn.ai --alias www.sairn.ai --certificate-arn <过渡>` | 等 `Deployed` |
 | 3.2 | [E] `--resolve` 预检 sairn apex 与 `www`（取 `d1bgo95x2hobvu.cloudfront.net` 的真实 IP） | 200 |
 | 3.3 | [你] sairn.ai 加 apex（CNAME 拉平）与 `www` → `d1bgo95x2hobvu.cloudfront.net`，**DNS only** | 权威应答 |
 | 3.4 | [仓库][E] 从发布提交重新构建官网（`pnpm --filter @sairn/website test && build`，`dist` 里没有 `gatu`），按 `deploy/website/README.md` 三组上传；再 `aws s3 sync … --delete --dryrun`，确认只删除已撤下的页面（含 `blog/welcome/index.html`）和 7 月版旧资源后执行；失效 `/*` 并等待完成 | `deploy/website/README.md`「发布后检查」全部通过，`/blog/welcome/` 404 |
@@ -191,16 +191,18 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 | 1 | 先接后断还是先断后接 | 先接后断 | 第 3.2 节，阶段 2、3 |
 | 2 | gatu.ai 注册 | 不永久续费；目前没有用户。已注册到 2028-05-06，到期前再决定续不续 | 第 3.1 节，0.2，后续事项 2 |
 | 3 | gatu.ai 邮件与 SES | 先不处理，记录下来，品牌替换完成后再处理；本方案不动任何邮件记录 | 0.3，3.6，5.5，后续事项 1 |
-| 4 | 权限 | **待定**，见下文 | 0.1，0.4–0.6，5.2 |
+| 4 | 权限 | 方案 A：2026-10-01 用户已在控制台新建并挂上临时策略 | 0.1，0.4–0.6，5.2 |
 | 5 | 推荐码 `gatuappweb3` | 另登记一个 sairn 推荐码 | 0.12，2.6，4.4 |
 | 6 | 告别 Service Worker | 不做（目前没有外部用户） | 第 3.4 节 |
 
-### 问题 4：权限给法（待定）
+### 问题 4：权限给法（已选 A，已挂上）
 
 本机执行 AWS 命令用的是 IAM 用户 `gatu-edge`。它挂着客户管理策略 `gatu-edge-deploy`（正文即 `deploy/cloudfront/iam/gatu-edge-release-policy.json`），只够日常发布；账号 root 的访问密钥已停用，本机没有其他可用身份（第 2 节）。这次切换有三件事超出它的权限：查询别名冲突（0.4）、申请 ACM 证书（0.5）、读改 API 源站请求策略（0.6、5.2）。
 
 - **A（推荐）**：你用管理员身份在 IAM 控制台新建一份客户管理策略 `gatu-edge-domain-cutover`，正文如下，挂到用户 `gatu-edge`。之后这几步由我用命令行执行，每一步先演练，执行后保存原始输出。5.2 做完后，你把这份策略从用户上摘除并删除。`gatu-edge-deploy` 本身不改，仓库里的发布策略文件也不变。
 - **B**：不加权限，这几步由你在 AWS 控制台操作。执行到那一步时我给出逐步说明，你把证书 ARN 和读回的策略配置发给我。
+
+2026-10-01 用户选 A：在 IAM 控制台按下面的 JSON 新建 `gatu-edge-domain-cutover` 并挂到 `gatu-edge`（规则不允许我代为修改 IAM 权限或输入管理员密码，所以由用户操作，我只准备内容、给出步骤并复测）。复测结果见第 2 节；5.2 完成后摘除并删除。
 
 ```json
 {
