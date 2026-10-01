@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["brand-identity", "static-hosting"],
-  "summary": "用户决定旧域名直接下线、不并存不 301；只读调查后写成执行方案 docs/sairn-domain-cutover-plan.md（拟议，未执行）：先接后断（窗口内过渡证书覆盖新旧 8 个名字，sairn 零中断、gatu 准时下线）、p24 保留旧组识别作回滚保险、p25 清理、只删网页记录、不做告别 SW；发现未记录的 gatu.ai SES 发信配置、另一个会话的并存方案被取代。用户随后答复五个待决问题：先接后断、gatu.ai 不永久续费（到 2028-05-06，到期前清单）、gatu.ai 邮件与 SES 推迟到品牌替换完成后、另登记 sairn 推荐码、不做告别 SW；用户按方案 A 在控制台挂上临时 IAM 策略。开始执行时用户改为先断后接，已申请 4 名 sairn 证书 b04a51c6（待 DNS 验证）。",
+  "summary": "用户决定旧域名直接下线、不并存不 301；只读调查后写成执行方案 docs/sairn-domain-cutover-plan.md（拟议，未执行）：先接后断（窗口内过渡证书覆盖新旧 8 个名字，sairn 零中断、gatu 准时下线）、p24 保留旧组识别作回滚保险、p25 清理、只删网页记录、不做告别 SW；发现未记录的 gatu.ai SES 发信配置、另一个会话的并存方案被取代。用户随后答复五个待决问题：先接后断、gatu.ai 不永久续费（到 2028-05-06，到期前清单）、gatu.ai 邮件与 SES 推迟到品牌替换完成后、另登记 sairn 推荐码、不做告别 SW；用户按方案 A 在控制台挂上临时 IAM 策略。开始执行时用户改为先断后接，4 名 sairn 证书 b04a51c6 已签发；用户决定同时换新的 Privy 应用（邮箱用户的内嵌钱包地址会变）。",
   "thread": null,
   "baseCommit": "5517ef70",
   "commits": ["64d63e20"],
@@ -74,6 +74,11 @@
 - 申请证书：`aws acm request-certificate`（us-east-1，`gatu-edge`，幂等令牌 `sairn20261001`，DNS 验证）成功，得到 `arn:aws:acm:us-east-1:018252911946:certificate/b04a51c6-126d-4f9b-a0be-cbea432551b5`，SAN 为 `sairn.ai`、`testnet.sairn.ai`、`app.sairn.ai`、`www.sairn.ai`，RSA-2048，`PENDING_VALIDATION`。这也证实了临时策略里的证书申请权限。四条验证 CNAME 已交给用户在 Cloudflare 添加；原始输出在 `.worklog/2026-10-01/2026-10-01-sairn-domain-cutover-plan/aws/`。
 - 两张证书都要用到的只有这张 4 名证书，所以即使用户其实想保留先接后断，这次申请也不会白做。
 - 在本地合并两个后台分支（`ad93cbc3` 主题色、`b3f0fb4d` 移动端下单按钮；`docs/work-memory/INDEX.md` 冲突靠重新生成解决，ADR 0029 第 5、6 条两边内容都保留）。在 `b3f0fb4d` 上：`pnpm brand:check`、合并带入文件的 Biome、终端 typecheck、相关 39 个测试文件 664 项、`pnpm test:brand` 通过；`pnpm --filter @sairn/terminal test` 全量 645 个文件中 644 个通过、1 个跳过，7,991 项中 7,990 项通过、1 项跳过，用时 281 s。尚未推送。
+
+## 证书签发与换 Privy 应用（同日）
+
+- 用户在 Cloudflare 添加了 4 条验证 CNAME。我向 `holly.ns.cloudflare.com` 逐条查询，都返回带 `aa` 的 NOERROR，目标与 ACM 给出的一致。证书 `b04a51c6…` 于 15:57:22Z `ISSUED`，四个名字都是 `SUCCESS`，有效期到 2027-04-16 23:59:59Z；还没挂到分发上，`RenewalEligibility` 为 `INELIGIBLE`。原始输出存于 `.worklog/…/aws/certificate-sairn-issued.json`。
+- 用户补充「Privy ID key 也需要更换」。核对后发现：代码只读构建变量 `VITE_PRIVY_APP_ID`（`apps/terminal/src/config/privy.ts`、`providers/client-root.tsx`），没有 Client ID，Lambda 不用 Privy 密钥；本地值在不入库的 `apps/terminal/.env.local`。`SmartWalletsProvider` 没有代码参数，智能钱包类型、链与 ZeroDev bundler/paymaster 都在 Privy 后台，赞助充值依赖它们（`docs/cctp-deposits.md`）。换应用后邮箱用户会得到新的内嵌钱包与智能钱包地址，所以方案 0.7、0.9、1.1、2.6、4.1 与风险表补了新应用的配置清单、旧地址资金转出、构建时显式覆盖 App ID 并在产物里核对、阶段 1 临时放行 gatu origin。新 App ID 尚未取得。
 
 ## 验证与限制
 
