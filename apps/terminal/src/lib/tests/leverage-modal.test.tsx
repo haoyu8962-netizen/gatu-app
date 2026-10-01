@@ -1,3 +1,4 @@
+import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 import { clearFeedback, feedbackErrorText, feedbackText, latestFeedback } from "./harness/order-feedback";
 /** @vitest-environment jsdom */
 
@@ -288,7 +289,7 @@ describe("LeverageModal", () => {
 		expect(onOpenChange).toHaveBeenCalledOnce();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		expect(getButton(container, "Confirm").textContent).toBe("Confirm");
-		expect(container.querySelector(".animate-spin")).toBeNull();
+		expect(container.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
 		expect(latestFeedback("success")).toBeUndefined();
 
 		await act(async () => resolveApply?.());

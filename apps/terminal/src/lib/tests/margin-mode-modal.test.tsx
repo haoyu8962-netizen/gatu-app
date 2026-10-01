@@ -10,6 +10,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MarginModeModal } from "@/components/trade/tradebox/margin-mode-modal";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
+import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 import { createI18nRoot } from "./harness/react";
 
 const LEVERAGE_DECREASE_ERROR =
@@ -626,7 +627,7 @@ describe("MarginModeModal", () => {
 		expect(onOpenChange).toHaveBeenCalledOnce();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		expect(getButton(container, "Confirm").textContent).toBe("Confirm");
-		expect(container.querySelector(".animate-spin")).toBeNull();
+		expect(container.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
 		expect(latestFeedback("success")).toBeUndefined();
 
 		await act(async () => resolveApply?.());

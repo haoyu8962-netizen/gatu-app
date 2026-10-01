@@ -12,6 +12,7 @@ import { TransferModal } from "@/components/trade/positions/transfer-modal";
 import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
 import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
 import { clearSendDraft } from "@/stores/use-send-draft-store";
+import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 import { createI18nRoot } from "./harness/react";
 
 const BALANCE_UNAVAILABLE = "Balance data is unavailable. Try again after the connection recovers.";
@@ -767,7 +768,7 @@ describe("funds action balance wiring", () => {
 		expect(control?.textContent?.trim()).toBe(label);
 		expect(control?.disabled).toBe(true);
 		expect(container.textContent).not.toContain("Transferring");
-		expect(container.querySelector(".animate-spin")).toBeNull();
+		expect(container.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
 	});
 
 	it.each([

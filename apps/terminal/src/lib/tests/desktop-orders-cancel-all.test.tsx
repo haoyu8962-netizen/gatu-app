@@ -1,3 +1,4 @@
+import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 /** @vitest-environment jsdom */
 
 import { createHash } from "node:crypto";
@@ -467,7 +468,7 @@ describe("desktop cancel all orders confirmation", () => {
 			expect.objectContaining({ oid: 42, order: expect.objectContaining({ a: 120_001, s: "1" }) }),
 		]);
 		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
-		expect(container.querySelector(".animate-spin")).toBeNull();
+		expect(container.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
 		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]')?.disabled).toBe(
 			true,
 		);

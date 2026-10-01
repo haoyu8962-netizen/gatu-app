@@ -11,6 +11,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountModeModal } from "@/components/trade/tradebox/account-mode-modal";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
+import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 
 const zhTranslations: Record<string, string> = {
 	"Account type": "账户类型",
@@ -134,7 +135,7 @@ describe("AccountModeModal", () => {
 		expect(onOpenChange).toHaveBeenCalledOnce();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		expect(document.body.textContent).not.toContain("Switching");
-		expect(document.body.querySelector(".animate-spin")).toBeNull();
+		expect(document.body.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
 
 		await act(async () => resolveApply?.());
 		expect(onOpenChange).toHaveBeenCalledOnce();
