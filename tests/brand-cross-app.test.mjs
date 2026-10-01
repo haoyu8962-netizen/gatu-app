@@ -50,6 +50,28 @@ test("every stylesheet carries the brand colors recorded in brand/brand.json", (
 	}
 });
 
+test("the terminal logo roles and the share card logo carry the logo colors recorded in brand/brand.json", () => {
+	for (const [selector, theme] of [
+		[":root", "light"],
+		[".dark", "dark"],
+	]) {
+		for (const part of ["signal", "choice", "wordmark"]) {
+			assert.equal(
+				readCssVariable(TERMINAL_STYLES, selector, `--logo-${part}`).toLowerCase(),
+				BRAND.logo[theme][part].toLowerCase(),
+				`apps/terminal ${selector} --logo-${part} must equal brand.json logo.${theme}.${part}`,
+			);
+		}
+	}
+	for (const part of ["signal", "choice"]) {
+		assert.equal(
+			readCssVariable(TERMINAL_STYLES, ":root", `--position-share-logo-${part}`).toLowerCase(),
+			BRAND.logo.dark[part].toLowerCase(),
+			`the share card draws the on-dark logo, so --position-share-logo-${part} must equal brand.json logo.dark.${part}`,
+		);
+	}
+});
+
 test("the brand signal stays readable as text on every terminal surface in both themes", () => {
 	for (const [selector, theme] of [
 		[":root", "light"],

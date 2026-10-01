@@ -80,6 +80,15 @@ function syncBrand() {
 	}
 }
 
+function logoColorwayFill(brand, colorway, part) {
+	if (colorway === "on-light") return brand.logo.light[part];
+	if (colorway === "on-dark") return brand.logo.dark[part];
+	if (colorway === "black") return "#000000";
+	if (colorway === "white") return "#ffffff";
+	if (colorway === "mono") return "currentColor";
+	throw new Error(`Unknown logo colorway ${colorway}`);
+}
+
 function renderLogoGeometry(brand) {
 	const partByFill = new Map([
 		[brand.logo.light.signal.toLowerCase(), "signal"],
@@ -99,6 +108,12 @@ function renderLogoGeometry(brand) {
 			if (other.viewBox !== reference.viewBox || other.paths.map((path) => path.d).join("|") !== paths.map((path) => path.d).join("|")) {
 				throw new Error(`${prefix}-${colorway}.svg does not share the on-light geometry and path order`);
 			}
+			other.paths.forEach((path, index) => {
+				const expected = logoColorwayFill(brand, colorway, paths[index].part);
+				if (path.fill.toLowerCase() !== expected.toLowerCase()) {
+					throw new Error(`${prefix}-${colorway}.svg fills its ${paths[index].part} with ${path.fill}; ${BRAND_SOURCE} gives ${expected}`);
+				}
+			});
 		}
 		variants[variant] = { viewBox: reference.viewBox, paths };
 	}

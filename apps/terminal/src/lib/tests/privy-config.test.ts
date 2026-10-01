@@ -26,12 +26,12 @@ describe("Privy wallet catalog", () => {
 	it("matches the managed wallet UI to each terminal theme without changing its catalog", () => {
 		expect(PRIVY_CONFIG_BY_THEME.dark.appearance).toMatchObject({
 			theme: "#0F1A1F",
-			accentColor: "#EDEEF2",
+			accentColor: "#edeef2",
 			logo: "/brand/lockup-on-dark.svg",
 		});
 		expect(PRIVY_CONFIG_BY_THEME.light.appearance).toMatchObject({
 			theme: "#FFFFFF",
-			accentColor: "#15171E",
+			accentColor: "#15171e",
 			logo: "/brand/lockup-on-light.svg",
 		});
 

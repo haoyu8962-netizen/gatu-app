@@ -65,6 +65,28 @@ const ATTRIBUTE_NAMES = {
 const SHAPE_TAGS = new Set(["circle", "path", "rect"]);
 const MARK_PATH_ATTRIBUTES = new Set(["class", "data-part", "d", "fill"]);
 const SHAPE_ATTRIBUTES = new Set([...Object.keys(ATTRIBUTE_NAMES), "class", "fill", "stroke"]);
+// Root attributes the components replace (size, accessibility, motion state, theme, the contrast floor) or read
+// (viewBox, class). Any other root attribute would change the drawing without ever reaching the terminal.
+const ROOT_ATTRIBUTES = new Set([
+	"xmlns",
+	"width",
+	"height",
+	"viewBox",
+	"class",
+	"style",
+	"role",
+	"focusable",
+	"aria-label",
+	"aria-valuenow",
+	"aria-valuemin",
+	"aria-valuemax",
+	"data-motion",
+	"data-theme",
+	"data-paused",
+	"data-reduced",
+	"color-interpolation",
+]);
+const ROOT_STYLE = /^--srm-floor:\s*[0-9.]+;?$/;
 
 /** Renders the status motion module and its stylesheet from the exported motion library files. */
 export function renderStatusMotion(markGeometry) {
@@ -191,7 +213,12 @@ function parseMotionSvg(path) {
 export function parseMotionSvgSource(source, path) {
 	const root = /^<svg\b([^>]*)>/.exec(source);
 	if (!root) throw new Error(`${path} does not start with <svg>`);
-	const rootAttributes = parseAttributes(root[1]);
+	const rootAttributes = parseAttributes(root[1], path);
+	const unsupportedRoot = Object.keys(rootAttributes).filter((name) => !ROOT_ATTRIBUTES.has(name));
+	if (unsupportedRoot.length > 0) throw new Error(`${path} sets unsupported root attributes: ${unsupportedRoot.join(", ")}`);
+	if (rootAttributes.style !== undefined && !ROOT_STYLE.test(rootAttributes.style)) {
+		throw new Error(`${path} sets a root style the terminal does not reproduce: ${rootAttributes.style}`);
+	}
 	const style = /<style>(.*?)<\/style>/s.exec(source)?.[1] ?? "";
 	const { shared, motionCss } = splitStyle(style, path);
 	const body = source.slice(root[0].length).replace(/<title>.*?<\/title>/s, "").replace(/<style>.*?<\/style>/s, "");
@@ -206,11 +233,11 @@ export function parseMotionSvgSource(source, path) {
 		if (tag === "svg" && closing) break;
 		if (tag === "g") {
 			if (closing) groups.pop();
-			else groups.push(parseGroup(parseAttributes(attributeText), groups, path));
+			else groups.push(parseGroup(parseAttributes(attributeText, path), groups, path));
 			continue;
 		}
 		if (!SHAPE_TAGS.has(tag) || closing || !selfClosing) throw new Error(`${path} has an unsupported <${closing}${tag}> element`);
-		const attributes = parseAttributes(attributeText);
+		const attributes = parseAttributes(attributeText, path);
 		if (groups.length > 0) {
 			const markGroup = groups.find((group) => group.class === "srm-mark");
 			const transformGroup = groups.find((group) => group.transform);
@@ -245,9 +272,13 @@ function parseGroup(attributes, openGroups, path) {
 	return attributes;
 }
 
-function parseAttributes(text) {
+function parseAttributes(text, path) {
 	const attributes = {};
-	for (const match of text.matchAll(/([\w:-]+)="([^"]*)"/g)) attributes[match[1]] = match[2];
+	const unread = text.replace(/\s*([\w:-]+)="([^"]*)"/g, (_, name, value) => {
+		attributes[name] = value;
+		return "";
+	});
+	if (unread.trim() !== "") throw new Error(`${path} has attribute syntax the generator does not read: ${unread.trim()}`);
 	return attributes;
 }
 

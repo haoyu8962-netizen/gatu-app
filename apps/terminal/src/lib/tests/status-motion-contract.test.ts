@@ -120,6 +120,22 @@ describe("status motion contract", () => {
 				source.replace('<circle class="srm-anim srm-token"', '<circle class="srm-anim srm-token" filter="url(#f)"'),
 			],
 			["stray content", source.replace("</svg>", "<!-- note --></svg>")],
+			[
+				"root attribute",
+				source.replace(
+					'<svg xmlns="http://www.w3.org/2000/svg"',
+					'<svg xmlns="http://www.w3.org/2000/svg" opacity=".5"',
+				),
+			],
+			["root style", source.replace(/style="--srm-floor:([0-9.]+)"/, 'style="--srm-floor:$1;opacity:.5"')],
+			[
+				"single-quoted attribute",
+				source.replace('<circle class="srm-anim srm-token"', "<circle class=\"srm-anim srm-token\" opacity='.5'"),
+			],
+			[
+				"unquoted attribute",
+				source.replace('<circle class="srm-anim srm-token"', '<circle class="srm-anim srm-token" opacity=.5'),
+			],
 		];
 		for (const [name, mutated] of mutations) {
 			expect(mutated, name).not.toBe(source);

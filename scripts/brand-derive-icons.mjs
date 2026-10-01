@@ -32,12 +32,18 @@ console.log(`Wrote ${ICON_SVG_OUTPUT}, ${MASKABLE_192_OUTPUT} and ${EMAIL_LOGO_O
 function readMark() {
 	const source = readFileSync(resolve(REPOSITORY_ROOT, MARK_SOURCE), "utf8");
 	const viewBox = /viewBox="([^"]+)"/.exec(source)?.[1].split(/\s+/).map(Number);
-	const paths = [...source.matchAll(/<path fill="(#[0-9A-Fa-f]{6})" d="([^"]+)"\/>/g)].map((match) => ({
+	const pathPattern = /<path fill="(#[0-9A-Fa-f]{6})" d="([^"]+)"\/>/g;
+	const paths = [...source.matchAll(pathPattern)].map((match) => ({
 		fill: match[1],
 		d: match[2],
 	}));
-	if (!viewBox || viewBox.length !== 4 || paths.length !== 2) {
-		throw new Error(`${MARK_SOURCE} no longer has the expected viewBox and two filled paths.`);
+	const unread = source
+		.replace(/^\s*<svg\b[^>]*>/, "")
+		.replace(/<\/svg>\s*$/, "")
+		.replace(/<title>[^<]*<\/title>/, "")
+		.replace(pathPattern, "");
+	if (!viewBox || viewBox.length !== 4 || paths.length !== 2 || unread.trim() !== "") {
+		throw new Error(`${MARK_SOURCE} no longer is a viewBox, an optional title and exactly two filled paths.`);
 	}
 	const [x, y, width, height] = viewBox;
 	return { x, y, width, height, paths };
