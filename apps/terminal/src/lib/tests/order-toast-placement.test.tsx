@@ -130,6 +130,62 @@ describe("global order notifications", () => {
 				{ countMode: "filled", acceptedCount: 1, totalCount: 2, error: orderReconciliationError("status-unconfirmed") },
 				"warning",
 			],
+			[
+				{
+					countMode: "filled",
+					acceptedCount: 1,
+					totalCount: 2,
+					children: [
+						{ assetId: 0, market: "HYPE", size: "1.25", filledSize: "1.25", status: "filled" },
+						{
+							assetId: 1,
+							market: "BTC",
+							size: "2.5",
+							status: "rejected",
+							error: "No liquidity available for market order.",
+						},
+					],
+				},
+				"warning",
+			],
+			...(["canceled", "unknown"] as const).map((status): [Partial<OrderQueueItem>, string] => [
+				{
+					countMode: "filled",
+					acceptedCount: 1,
+					totalCount: 2,
+					children: [
+						{ assetId: 0, market: "HYPE", size: "1", filledSize: "1", status: "filled" },
+						{ assetId: 1, market: "BTC", size: "1", status },
+					],
+				},
+				"warning",
+			]),
+			[
+				{
+					execution: {
+						evidence: "exchange-response",
+						filledSize: "0.4",
+						requestedSize: "1",
+						averagePrice: "100",
+						orderIds: [1],
+						completeness: "partial",
+					},
+					children: [{ assetId: 1, market: "BTC", size: "1", status: "rejected" }],
+				},
+				"warning",
+			],
+			[
+				{
+					countMode: "filled",
+					acceptedCount: 1,
+					totalCount: 2,
+					children: [
+						{ assetId: 0, market: "HYPE", size: "1", filledSize: "1", status: "filled" },
+						{ assetId: 1, market: "BTC", size: "2", filledSize: "1", status: "partial" },
+					],
+				},
+				"partial",
+			],
 		];
 		for (const [update, glyph] of cases) {
 			let id = "";

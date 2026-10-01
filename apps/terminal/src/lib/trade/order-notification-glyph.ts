@@ -9,7 +9,9 @@ import {
 	STATUS_GLYPH_WARNING,
 	type StatusGlyphDefinition,
 } from "@/lib/brand/status-glyph.gen";
-import type { OrderQueueItem } from "@/stores/use-order-queue-store";
+import type { OrderQueueChild, OrderQueueItem } from "@/stores/use-order-queue-store";
+
+const WARNING_CHILD_STATUSES: ReadonlySet<OrderQueueChild["status"]> = new Set(["rejected", "canceled", "unknown"]);
 
 /**
  * Status glyph of an order notification (docs/trading-notifications.md). An unconfirmed result is unknown, never
@@ -18,7 +20,7 @@ import type { OrderQueueItem } from "@/stores/use-order-queue-store";
  * cancellation or unknown child, is a warning.
  */
 export function getOrderNotificationGlyph(
-	order: Pick<OrderQueueItem, "status" | "error" | "execution" | "countMode">,
+	order: Pick<OrderQueueItem, "status" | "error" | "execution" | "countMode" | "children">,
 ): StatusGlyphDefinition {
 	switch (order.status) {
 		case "pending":
@@ -38,7 +40,8 @@ export function getOrderNotificationGlyph(
 	}
 }
 
-function isVerifiedPartialFill(order: Pick<OrderQueueItem, "error" | "execution" | "countMode">): boolean {
+function isVerifiedPartialFill(order: Pick<OrderQueueItem, "error" | "execution" | "countMode" | "children">): boolean {
 	if (order.error) return false;
+	if (order.children?.some((child) => WARNING_CHILD_STATUSES.has(child.status))) return false;
 	return order.execution?.completeness === "partial" || order.countMode === "filled";
 }
