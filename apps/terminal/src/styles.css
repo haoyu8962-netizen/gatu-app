@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "@sairn/ui/globals.css";
 @import "react-grid-layout/css/styles.css";
+@import "./lib/brand/status-motion.gen.css" layer(components);
 @source "../../../packages/ui/src";
 
 @font-face {
@@ -955,6 +956,38 @@
     .brand-page-loader__choice {
       animation: none;
     }
+  }
+
+  /* Status glyphs and motions (lib/brand/status-motion.gen.css). A tone takes the semantic text colour of
+     the message beside it; the badge cut-out takes the colour that reads on a filled tone in each theme;
+     the darkest loop frame follows the logo loader, and the mono button indicator uses the kit's 0.78. */
+  .srm {
+    --status-on: var(--on-action);
+    --srm-floor: var(--logo-loader-floor);
+  }
+
+  .srm[data-tone="success"] {
+    --status-tone: var(--text-success);
+  }
+
+  .srm[data-tone="error"] {
+    --status-tone: var(--text-error);
+  }
+
+  .srm[data-tone="attention"] {
+    --status-tone: var(--text-warning);
+  }
+
+  .srm[data-tone="neutral"] {
+    --status-tone: var(--text-weak);
+  }
+
+  .srm[data-tone="info"] {
+    --status-tone: var(--text-info);
+  }
+
+  .srm[data-appearance="mono"] {
+    --srm-floor: 0.78;
   }
 
   .api-wallet-col-name {

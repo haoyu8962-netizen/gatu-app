@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { renderStatusMotion, STATUS_MOTION_CSS_OUTPUT, STATUS_MOTION_OUTPUT } from "./brand-status-motion.mjs";
 
 const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BRAND_SOURCE = "brand/brand.json";
@@ -49,7 +50,7 @@ if (args.length > 1 || (mode !== "--check" && mode !== "--sync")) {
 
 if (mode === "--sync") {
 	syncBrand();
-	console.log(`Synced ${SYNCED_FILES.length} public files and ${LOGO_GEOMETRY_OUTPUT}.`);
+	console.log(`Synced ${SYNCED_FILES.length} public files, ${LOGO_GEOMETRY_OUTPUT} and the status motion module.`);
 }
 
 const problems = checkBrand();
@@ -63,6 +64,9 @@ if (problems.length > 0) {
 
 function syncBrand() {
 	writeFileSync(resolve(REPOSITORY_ROOT, LOGO_GEOMETRY_OUTPUT), renderLogoGeometry(readJson(BRAND_SOURCE)));
+	const statusMotion = renderStatusMotion(markGeometry());
+	writeFileSync(resolve(REPOSITORY_ROOT, STATUS_MOTION_OUTPUT), statusMotion.ts);
+	writeFileSync(resolve(REPOSITORY_ROOT, STATUS_MOTION_CSS_OUTPUT), statusMotion.css);
 	for (const [source, target] of SYNCED_FILES) {
 		mkdirSync(dirname(resolve(REPOSITORY_ROOT, target)), { recursive: true });
 		copyFileSync(resolve(REPOSITORY_ROOT, source), resolve(REPOSITORY_ROOT, target));
@@ -123,6 +127,10 @@ function renderLogoGeometry(brand) {
 		"",
 	);
 	return lines.join("\n");
+}
+
+function markGeometry() {
+	return { paths: parseSvg(`${LOGO_VARIANTS.mark}-on-light.svg`).paths };
 }
 
 function parseSvg(path) {
@@ -203,6 +211,18 @@ function checkSyncedAssets(brand) {
 	}
 	const actualGeometry = readTextIfPresent(LOGO_GEOMETRY_OUTPUT);
 	if (actualGeometry !== expectedGeometry) problems.push(`${LOGO_GEOMETRY_OUTPUT} is out of date; run pnpm brand:sync`);
+	let statusMotion;
+	try {
+		statusMotion = renderStatusMotion(markGeometry());
+	} catch (error) {
+		return [...problems, error.message];
+	}
+	for (const [output, expected] of [
+		[STATUS_MOTION_OUTPUT, statusMotion.ts],
+		[STATUS_MOTION_CSS_OUTPUT, statusMotion.css],
+	]) {
+		if (readTextIfPresent(output) !== expected) problems.push(`${output} is out of date; run pnpm brand:sync`);
+	}
 	for (const [source, target] of SYNCED_FILES) {
 		const expected = readFileSync(resolve(REPOSITORY_ROOT, source));
 		const actual = readBufferIfPresent(target);
