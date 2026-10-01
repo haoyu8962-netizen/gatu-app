@@ -479,6 +479,7 @@
   - A：只在 Privy 后台改 `logo_url`，与发布同步操作。
   - B：在代码里按主题传入 `appearance.logo`，可以是同源 URL，也可以是 React 元素。锁定版本 `@privy-io/react-auth` 3.32.2 的类型声明写明，这个字段会覆盖后台的 `logo_url`（`types-sr2FRXdy.d.ts:1513-1517`）。它随批次 B 一起发布。
 - 推荐 B。随代码发布即生效，可以回退，也可以测试。后台只需要改应用名和 OTP 邮件的发件名。
+- 更正（2026-10-01）：后台的 Logo 还用于登录验证码邮件，`appearance.logo` 管不到邮件，所以选 B 时后台也要换 Logo。Privy 只接受 `.png`、建议 2:1；仓库已派生 `brand/web/email-logo.png`（发布到 `/brand/email-logo.png`），上线步骤见 `docs/brand-assets.md`「域名切换到 sairn.ai」第 4 步。
 - 约束：
   - ADR 0026 规定主题切换只能改外观，`useWallets()` 必须保持稳定。
   - 需要跑 `privy-config`、`privy-theme-switch-wallet-stability`、`client-root-theme-lifecycle` 这几组测试。
@@ -1343,7 +1344,7 @@
 |---|---|---|---|
 | 1 | 终端发布 | 按现有 CloudFront 流程跑 `deploy.mjs` 的 sync、invalidate、verify。【事实】非哈希文件是 `max-age=0, must-revalidate`（`deploy/cloudfront/deploy.mjs:20,35-42`）。构建后按 p22、p23 的不打印值方式核对：产物里 Agent 槽位的构建值是 `gatu`，并且没有 `gatu-dev` | 用上一个提交重新构建并同步，或者恢复 S3 对象版本 |
 | 2 | 官网发布 | 按阶段 1a 入库的手册：构建，同步到 `gatu-dist-2026`（非哈希文件用 revalidate），对 `EP2DIBP3T7M3G` 做失效，再验证。这是 2026-07-19 之后的第一次官网发布，会把所有未发布的官网改动一起带上线，发布前要单独审一遍差异。顺序是终端先发并 verify，再发官网 | 重建上一版后再同步。【未验证】桶有没有开启版本控制 |
-| 3 | Privy | D24 选 B：logo 随终端代码发布，后台只改应用名，以及 OTP 邮件的发件名（如果配置了）。D24 选 A：后台同时改 logo，与发布同步操作。【未验证】后台当前的配置 | 在后台恢复旧名；选 B 时 logo 随代码一起回滚 |
+| 3 | Privy | D24 选 B：logo 随终端代码发布，后台改应用名、OTP 邮件的发件名（如果配置了），并把后台 Logo 换成 `/brand/email-logo.png`（2026-10-01 更正：邮件只用后台 Logo）。D24 选 A：后台同时改 logo，与发布同步操作。【未验证】后台当前的配置 | 在后台恢复旧名；选 B 时 logo 随代码一起回滚 |
 | 4 | 社交平台 | 头像用 `brand/social/*-400.png`，同时更新简介。账号目前未知（D2） | 换回旧头像 |
 | 5 | 链接预览缓存 | 【推断】在 X、Facebook、LinkedIn 的调试工具，以及 Telegram 的 @WebpageBot 里重新抓取 | 无需回退 |
 | 6 | LI.FI | 可选：更新合作方后台的显示信息。integrator 仍是 `gatu` | — |

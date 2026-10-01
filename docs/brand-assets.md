@@ -49,10 +49,11 @@
 
 链接预览卡（OG）由 `designs/og-cards/cards.html` 生成：深色设计令牌配色、内嵌横版组合与标志的轮廓路径、仓库自带的开源授权字体；终端卡沿用原中文产品描述（字体子集只含这些字），官网卡用口号的英文版（看清市场用信号薄荷色、自主判断用选择琥珀色）。生成与校验见 `designs/og-cards/README.md`。
 
-设计方没有交付、由脚本派生的文件只有两个，都由 `pnpm brand:derive-icons` 生成：
+设计方没有交付、由脚本派生的文件有三个，都由 `pnpm brand:derive-icons` 生成：
 
 - `brand/web/icon.svg`：按设计方 `icon-512.png` 量出的几何（472 px 圆角方、内缩 20 px、圆角 106 px、标志高 60.2%）绘制的矢量图标；与原图逐像素比较的平均通道差为 0.11。
 - `brand/web/icon-maskable-192.png`：与 `icon-maskable-512.png` 相同构图（满版底色、标志高 60.2%）在 Chromium 中按 192 px 渲染；与 512 原图缩小后的平均通道差为 0.2。
+- `brand/web/email-logo.png`：Privy 登录验证码邮件的 Logo。360×180 白底，浅底横版组合占宽 80% 居中，在 Chromium 中渲染；`pnpm brand:sync` 复制到终端的 `/brand/email-logo.png`。
 
 ## 设计稿
 
@@ -92,7 +93,7 @@ CI 中，`Terminal Tests` 在 `brand/**`、`legal/**` 变化时运行 `pnpm bran
 1. 注册并续费 `sairn.ai`；旧域名 `gatu.ai` 保持自动续费（HSTS 一年，旧 origin 的浏览器存储里可能留有 Agent 私钥）。
 2. Cloudflare 建 `sairn.ai` 区（DNS-only），配置邮件 MX、SPF、DKIM、DMARC，确认 `support@sairn.ai` 可以收信。
 3. ACM（us-east-1）申请覆盖 `app.sairn.ai`、`testnet.sairn.ai`、`sairn.ai`、`www.sairn.ai` 的证书，状态为 `ISSUED` 后再继续。
-4. Privy 后台的 Allowed origins **添加** `https://app.sairn.ai`、`https://testnet.sairn.ai`，旧的先保留；应用名改为 Sairn。
+4. Privy 后台的 Allowed origins **添加** `https://app.sairn.ai`、`https://testnet.sairn.ai`，旧的先保留；应用名改为 Sairn；UI components → Logo 填 `https://app.sairn.ai/brand/email-logo.png`。代码里的 `appearance.logo` 只覆盖登录窗口，登录验证码邮件用的是后台这张 Logo，Privy 要求 `.png`（不接受 SVG），建议 2:1、180×90（这张是 2 倍尺寸的 360×180，白底，深色邮件客户端里也看得清）。
 5. 按 `deploy/cloudfront/README.md` 顶部的说明更新 API 源站请求策略的转发头（`X-Sairn-Forwarded-Host`）。
 6. 发布终端与官网；用 `deploy.mjs aliases` 给分发**同时**挂新旧别名并换上新证书，等分发状态 `Deployed`。
 7. 用 `curl --resolve` 预验证新主机名（`deploy.mjs verify --origin https://app.sairn.ai`、测试网同理、`csp-coverage`），再在 Cloudflare 给新主机名加 CNAME，最后用公网 DNS 复验。

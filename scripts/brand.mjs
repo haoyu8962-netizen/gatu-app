@@ -29,16 +29,23 @@ const SYNCED_FILES = [
 	["brand/web/icon.svg", "apps/terminal/public/icon.svg"],
 	["brand/svg/lockup/sairn-lockup-on-dark.svg", "apps/terminal/public/brand/lockup-on-dark.svg"],
 	["brand/svg/lockup/sairn-lockup-on-light.svg", "apps/terminal/public/brand/lockup-on-light.svg"],
+	["brand/web/email-logo.png", "apps/terminal/public/brand/email-logo.png"],
 	["brand/web/favicon.ico", "apps/website/public/favicon.ico"],
 	["brand/web/apple-touch-icon.png", "apps/website/public/apple-touch-icon.png"],
 ];
-const OPAQUE_PNGS = ["brand/web/apple-touch-icon.png", "brand/web/icon-maskable-192.png", "brand/web/icon-maskable-512.png"];
+const OPAQUE_PNGS = [
+	"brand/web/apple-touch-icon.png",
+	"brand/web/icon-maskable-192.png",
+	"brand/web/icon-maskable-512.png",
+	"brand/web/email-logo.png",
+];
 const PNG_SIZES = {
-	"brand/web/apple-touch-icon.png": 180,
-	"brand/web/icon-192.png": 192,
-	"brand/web/icon-512.png": 512,
-	"brand/web/icon-maskable-192.png": 192,
-	"brand/web/icon-maskable-512.png": 512,
+	"brand/web/apple-touch-icon.png": [180, 180],
+	"brand/web/icon-192.png": [192, 192],
+	"brand/web/icon-512.png": [512, 512],
+	"brand/web/icon-maskable-192.png": [192, 192],
+	"brand/web/icon-maskable-512.png": [512, 512],
+	"brand/web/email-logo.png": [360, 180],
 };
 
 const args = process.argv.slice(2);
@@ -229,10 +236,10 @@ function checkSyncedAssets(brand) {
 		if (!actual) problems.push(`${target} is missing; run pnpm brand:sync`);
 		else if (!expected.equals(actual)) problems.push(`${target} differs from ${source}; run pnpm brand:sync`);
 	}
-	for (const [path, size] of Object.entries(PNG_SIZES)) {
+	for (const [path, [width, height]] of Object.entries(PNG_SIZES)) {
 		const png = readFileSync(resolve(REPOSITORY_ROOT, path));
-		if (png.toString("ascii", 12, 16) !== "IHDR" || png.readUInt32BE(16) !== size || png.readUInt32BE(20) !== size) {
-			problems.push(`${path} must be a ${size}×${size} PNG`);
+		if (png.toString("ascii", 12, 16) !== "IHDR" || png.readUInt32BE(16) !== width || png.readUInt32BE(20) !== height) {
+			problems.push(`${path} must be a ${width}×${height} PNG`);
 		}
 		if (OPAQUE_PNGS.includes(path) && png[25] !== 2) problems.push(`${path} must be an opaque RGB PNG`);
 	}
