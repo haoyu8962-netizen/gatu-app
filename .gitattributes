@@ -1,1 +1,2 @@
 apps/terminal/public/charting_library/** linguist-generated=true
+brand/tools/** -whitespace linguist-vendored=true
