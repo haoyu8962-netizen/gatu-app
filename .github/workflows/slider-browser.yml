@@ -92,3 +92,11 @@ jobs:
           pnpm --dir apps/terminal exec playwright test
           --config tests/browser/notifications.playwright.config.ts
           --fully-parallel --shard=${{ matrix.shard }}/2
+
+      # The Latin locales of the connected header at each side of the compact and narrow widths
+      # (runtime guardrails §11); the full locale matrix runs locally with TOP_NAV_CONNECTED_MATRIX=full.
+      - name: Run connected header width regressions
+        run: >-
+          pnpm --dir apps/terminal exec playwright test
+          --config tests/browser/top-nav-connected.playwright.config.ts
+          --fully-parallel --shard=${{ matrix.shard }}/2

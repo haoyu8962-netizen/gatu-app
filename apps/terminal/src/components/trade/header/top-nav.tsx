@@ -36,6 +36,8 @@ import { ThemeToggle } from "./theme-toggle";
 import {
 	TOP_NAV_CONNECTED_WORDMARK_CLASS,
 	TOP_NAV_DEPOSIT_CLASS,
+	TOP_NAV_DEPOSIT_ICON_ONLY_CLASS,
+	TOP_NAV_DEPOSIT_ICON_ONLY_LABEL_CLASS,
 	TOP_NAV_DEPOSIT_LABEL_CLASS,
 	TOP_NAV_LOGO_CLASS,
 	TOP_NAV_MARK_CLASS,
@@ -168,9 +170,17 @@ export function TopNav({ mode = "default" }: Props) {
 						aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 						title={depositAvailability.unavailableReason ?? undefined}
 						iconLeft={<DownloadSimpleIcon className="size-[18px]" />}
-						className={cn(APP_BAR_BUTTON_HEIGHT_CLASS, TOP_NAV_DEPOSIT_CLASS)}
+						className={cn(
+							APP_BAR_BUTTON_HEIGHT_CLASS,
+							TOP_NAV_DEPOSIT_CLASS,
+							!depositAvailability.available && TOP_NAV_DEPOSIT_ICON_ONLY_CLASS,
+						)}
 					>
-						<span className={TOP_NAV_DEPOSIT_LABEL_CLASS}>
+						<span
+							className={
+								depositAvailability.available ? TOP_NAV_DEPOSIT_LABEL_CLASS : TOP_NAV_DEPOSIT_ICON_ONLY_LABEL_CLASS
+							}
+						>
 							{depositAvailability.available ? <Trans>Deposit</Trans> : depositAvailability.unavailableLabel}
 						</span>
 					</Button>

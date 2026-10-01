@@ -80,6 +80,11 @@ test("shards every browser invocation by test, in two jobs", () => {
 		true,
 		"the notification lifecycle regression must run in the browser job",
 	);
+	assert.equal(
+		browser.includes("--config tests/browser/top-nav-connected.playwright.config.ts"),
+		true,
+		"the connected header width regression must run in the browser job",
+	);
 });
 
 test("keeps the merged static checks in one job", () => {

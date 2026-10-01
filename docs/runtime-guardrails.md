@@ -840,6 +840,16 @@ synthetic tasks without signing or sending exchange requests. The dedicated suit
 checks repeated mounts, same-card result updates, late results and shared stack
 geometry, and is included in both CI browser shards.
 
+The connected header fixture uses the sibling cache `node_modules/.vite-top-nav-connected`
+and serves its page from memory (`/top-nav-connected.html`), so the shared optimizer's
+`**/*.html` scan never reaches its TopNav graph. Run it with
+`pnpm --dir apps/terminal test:browser:top-nav-connected`; `TOP_NAV_CONNECTED_MATRIX=full`
+measures every locale, session, deposit and pairing state, and `TOP_NAV_CONNECTED_OUT`
+chooses where its JSONL measurements go. It mounts the real `TopNav`, `UserMenu`, deposit
+availability, catalogs and stylesheet; the wallet session, geo verdict, pairing flag and
+modals are stubs, and nothing signs. The shared config excludes `top-nav-connected.pw.ts`;
+the regression matrix runs in both CI browser shards.
+
 Shared desktop/mobile order summaries are emitted as separate implicit chunks
 after the client runtime entry. The trade route imports them statically inside its
 existing dynamic page boundary, and TanStack Start retains one client entry.
@@ -915,9 +925,19 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   drawer is a larger alternative, not required for this behavior. Verify actual Router links,
   duplicate/cancelled completions and a browser transition at the reported 946 × 891 viewport;
   mocked Drawer tests alone cannot prove exit animation continuity.
-- Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1181) and
+- Breakpoints are named in `config/layout.ts`: `DESKTOP_NAV_COMPACT_MAX_PX` (1379; 1181 until
+  the connected header was measured, ADR 0013 addendum 2026-10-01) and
   `DESKTOP_NAV_NARROW_MAX_PX` (1150; 1100 until Earn became a top-level link, ADR 0021 D8). The `nav-compact` Tailwind variant in `styles.css` must equal
-  the compact constant (`desktop-nav-layout` pins it); never write `max-[1181px]` again.
+  the compact constant (`desktop-nav-layout` pins it); never write a literal `max-[…px]` for it.
+- An unavailable deposit button (region restricted or the region check unresolved) shows only
+  its icon at every desktop width, with the unavailable label as its accessible name and the
+  reason as its title; an available one keeps its `Deposit` label above the compact width. The
+  unavailable labels are 39–80px longer than `Deposit`, and a visible label that differs from the
+  accessible name would fail WCAG 2.5.3.
+- Above the compact width every connected combination must keep 16px between the navigation and
+  the wallet controls; `tests/browser/top-nav-connected.pw.ts` measures it. Re-run the full matrix
+  before adding a locale, lengthening a header label, adding a header control or widening the
+  account chip.
 - Collapse rule: at or below the compact width a Soon placeholder (none today; Earn links to `/earn`
   since ADR 0021) leaves the top level and appears disabled in More; the lower entries move into More when the account chip is visible at the compact
   width or for every state at the narrow width. "Account chip visible" means `authenticated ||
@@ -960,6 +980,28 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
   before). zh, hi and ar were not re-measured. The connected header is still unmeasured: at 1182px
   French leaves 29px for any extra width of the deposit button and account chip over
   `Connecter le portefeuille` (183px).
+- Evidence for the connected header before the fix (2026-10-01, fixture
+  `tests/browser/top-nav-connected.*` mounting the real `TopNav` and `UserMenu` with a stubbed
+  wallet session, local Vite dev server, Chrome 154 on macOS, each width loaded fresh; its
+  disconnected calibration reproduced the figures above within 0.5px). With an external wallet
+  (`0x8a3f...1d3e`), `Deposit` available and pairing off, the gap at 1182px was en 55px, zh 180px,
+  hi 199px, es −36px, fr −34px, ar 104px: in Spanish and French the deposit button covered More,
+  and a hit test at the centre of More landed on the deposit button. A long ENS name or e-mail
+  (capped at 11rem) added 65–92px, `Deposit unavailable` 39–80px and the Link mobile device icon
+  44px; Settings was pushed out of the viewport in 27 of 72 combinations at 1182px. Above the
+  compact width the gap changes by exactly one pixel per viewport pixel. WebKit 26.4 and
+  Firefox 140 agreed within 0.2px.
+- Evidence after the fix (2026-10-01, same fixture and browser, full matrix of 804 measurements:
+  six locales, address/ENS/e-mail, deposit available/unavailable, pairing on/off, ten widths,
+  plus English and French in the light theme). With the unavailable deposit button icon-only, the
+  widest connected case (es, e-mail, `Deposit`, pairing on) keeps 16.3px at 1370px, so the
+  compact width moved to 1379px for 10px of headroom: 26.3px at 1380px (regression run). At the
+  compact width and below every connected case keeps at least 294px (fr, 1001px). The
+  disconnected header gains the compact language trigger from 1379px down: fr keeps 78px at
+  1182px (29px before) and 47px at 1151px (unchanged), es 122px and 91px. One measurement was
+  repeated because the font set was still loading while the stylesheet hot-reloaded during the
+  run; its geometry was unchanged. Windows fonts, real devices and a real-wallet session were not
+  measured.
 
 ### Important Files
 
@@ -968,6 +1010,7 @@ guard's bound outward would silently permit a price beyond the user's tolerance.
 - `apps/terminal/src/lib/navigation/desktop-nav.ts`
 - `apps/terminal/src/components/trade/header/top-nav.tsx`
 - `apps/terminal/src/lib/tests/desktop-nav-layout.test.ts`
+- `apps/terminal/tests/browser/top-nav-connected.pw.ts`
 - `apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx`
 - `apps/terminal/src/lib/tests/mobile-nav-drawer.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-nav-drawer-navigation.test.tsx`

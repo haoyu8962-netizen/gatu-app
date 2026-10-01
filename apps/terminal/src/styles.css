@@ -89,7 +89,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Desktop top navigation compact width; keep equal to DESKTOP_NAV_COMPACT_MAX_PX in config/layout.ts (ADR 0013). */
-@custom-variant nav-compact (@media (max-width: 1181px));
+@custom-variant nav-compact (@media (max-width: 1379px));
 
 /* =============================================
    Layer 1: Primitive Tokens

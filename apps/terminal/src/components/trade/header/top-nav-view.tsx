@@ -34,6 +34,8 @@ interface Props {
 export const TOP_NAV_DEPOSIT_CLASS =
 	"h-9 min-h-9 shrink-0 gap-[7px] rounded-[10px] bg-market-close-control px-3.5 font-market-close text-2sm leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control nav-compact:size-9 nav-compact:px-0";
 export const TOP_NAV_DEPOSIT_LABEL_CLASS = "nav-compact:sr-only";
+export const TOP_NAV_DEPOSIT_ICON_ONLY_CLASS = "size-9 px-0";
+export const TOP_NAV_DEPOSIT_ICON_ONLY_LABEL_CLASS = "sr-only";
 
 export const TOP_NAV_ITEM_CLASS =
 	"rounded-[8px] px-2.5 py-2 font-semibold whitespace-nowrap transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg";

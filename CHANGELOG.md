@@ -461,6 +461,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- With a wallet connected, the desktop header no longer overlaps between 1182px and about 1450px:
+  in Spanish and French the deposit button covered More (clicking More opened the deposit dialog)
+  and Settings could be pushed off screen. The header now switches to its compact layout at 1379px
+  instead of 1181px, and a deposit button that is unavailable shows only its icon, with the reason
+  in its tooltip. On 1280px and 1366px screens the connected header therefore shows Trade,
+  Portfolio and Earn with the rest in More, and the disconnected header shows the language icon
+  without its name. See [ADR 0013](docs/adr/0013-desktop-navigation-collapse.md).
 - On phones, Vault cards no longer run off the right edge of the screen when the list contains a
   long Vault name, so APR, equity, age and the performance line stay visible; a long name wraps onto
   more lines instead of being cut off, on phones and in the desktop table alike. On desktop, the
