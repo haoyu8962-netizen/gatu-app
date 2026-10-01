@@ -86,8 +86,8 @@ Use the **Link mobile device** option to generate a secure, time-limited pairing
 
 ## Contact Support
 
-- **Email:** support@gatu.ai
-- **Help Center / Docs:** https://app.gatu.ai/docs
+- **Email:** support@sairn.ai
+- **Help Center / Docs:** https://app.sairn.ai/docs
 - **Community:** coming soon
 
 When contacting us, please include:
@@ -103,9 +103,9 @@ When contacting us, please include:
 
 ## Reporting Bugs & Feedback
 
-- **Bug reports:** support@gatu.ai
-- **Feature requests & feedback:** support@gatu.ai
-- **Security vulnerabilities:** please report responsibly to support@gatu.ai. Do not disclose publicly until we have had a reasonable opportunity to address the issue.
+- **Bug reports:** support@sairn.ai
+- **Feature requests & feedback:** support@sairn.ai
+- **Security vulnerabilities:** please report responsibly to support@sairn.ai. Do not disclose publicly until we have had a reasonable opportunity to address the issue.
 
 ---
 

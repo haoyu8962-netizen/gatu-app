@@ -47,7 +47,7 @@ Guiding principles:
 
 Follow these steps to place your first trade:
 
-1. **Open Sairn** — navigate to https://app.gatu.ai.
+1. **Open Sairn** — navigate to https://app.sairn.ai.
 2. **Connect your wallet** — click **Connect Wallet** and choose your preferred method (external wallet or email sign-in).
 3. **Fund your account** — deposit funds directly, or use the built-in bridge to move assets from another network.
 4. **Approve the trading agent** — the first time you trade, approve the agent (API) wallet. This is a one-time signature that enables fast order signing.
@@ -69,7 +69,7 @@ Follow these steps to place your first trade:
 
 ## Help & Legal
 
-- Need help? See the [Support](/support) page or email support@gatu.ai.
+- Need help? See the [Support](/support) page or email support@sairn.ai.
 - [Terms of Service](/terms)
 - [Privacy Policy](/privacy)
 - [Risk Disclosure](/risk)

@@ -42,7 +42,7 @@ export interface LambdaFunctionUrlResult {
 export interface LambdaEnvironment {
 	development: boolean;
 	ipdataApiKey: () => string | undefined;
-	/** Public origin used when the forwarded host header is absent, e.g. `https://app.gatu.ai`. */
+	/** Public origin used when the forwarded host header is absent, e.g. `https://app.sairn.ai`. */
 	publicOrigin: string | undefined;
 	/** True only when CloudFront is the sole caller (origin access control on the function URL). */
 	trustViewerAddress: boolean;

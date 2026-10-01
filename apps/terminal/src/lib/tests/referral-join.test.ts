@@ -3,6 +3,17 @@ import { isSafeReferralJoinCode, parseReferralJoinPath, resolveReferralJoinInten
 
 describe("referral join links", () => {
 	it("resolves canonical hosts to immutable Hyperliquid environments", () => {
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.sairn.ai")).toEqual({
+			code: "sairnappweb3",
+			env: "Mainnet",
+		});
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://testnet.sairn.ai")).toEqual({
+			code: "sairnappweb3",
+			env: "Testnet",
+		});
+	});
+
+	it("keeps referral links working on the legacy gatu.ai hosts", () => {
 		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.gatu.ai")).toEqual({
 			code: "sairnappweb3",
 			env: "Mainnet",
@@ -14,10 +25,10 @@ describe("referral join links", () => {
 	});
 
 	it("rejects unknown and hostname-confusion origins", () => {
-		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.gatu.ai.evil.example")).toBeNull();
-		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://preview.gatu.ai")).toBeNull();
-		expect(resolveReferralJoinIntent("/join/sairnappweb3", "http://app.gatu.ai")).toBeNull();
-		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.gatu.ai:8443")).toBeNull();
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.sairn.ai.evil.example")).toBeNull();
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://preview.sairn.ai")).toBeNull();
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "http://app.sairn.ai")).toBeNull();
+		expect(resolveReferralJoinIntent("/join/sairnappweb3", "https://app.sairn.ai:8443")).toBeNull();
 	});
 
 	it("round-trips exact case, spaces, and Unicode once", () => {

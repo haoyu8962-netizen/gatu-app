@@ -323,8 +323,8 @@ describe("referral display derivations", () => {
 	});
 
 	it("builds environment-specific Sairn invitation links from canonical origins", () => {
-		expect(getBrandReferralUrl("SAIRN code", "Mainnet")).toBe("https://app.gatu.ai/join/SAIRN%20code");
-		expect(getBrandReferralUrl("SAIRN code", "Testnet")).toBe("https://testnet.gatu.ai/join/SAIRN%20code");
+		expect(getBrandReferralUrl("SAIRN code", "Mainnet")).toBe("https://app.sairn.ai/join/SAIRN%20code");
+		expect(getBrandReferralUrl("SAIRN code", "Testnet")).toBe("https://testnet.sairn.ai/join/SAIRN%20code");
 	});
 
 	it("validates only the SDK code length contract", () => {

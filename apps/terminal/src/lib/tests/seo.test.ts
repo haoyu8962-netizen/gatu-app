@@ -36,7 +36,7 @@ describe("seo", () => {
 		expect(getMetaContent(head, "property", "og:title")).toBe("Sairn Terminal");
 		expect(getMetaContent(head, "property", "og:locale")).toBe("zh_CN");
 		expect(getMetaContent(head, "name", "twitter:title")).toBe("Sairn Terminal");
-		expect(getMetaContent(head, "property", "og:image")).toBe("https://app.gatu.ai/og-terminal-1200x630.png");
+		expect(getMetaContent(head, "property", "og:image")).toBe("https://app.sairn.ai/og-terminal-1200x630.png");
 	});
 
 	it("formats live market titles with the price first", () => {

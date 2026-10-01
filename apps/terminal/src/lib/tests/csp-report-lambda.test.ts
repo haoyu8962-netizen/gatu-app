@@ -20,17 +20,17 @@ function event(body: string, overrides: { method?: string; contentType?: string 
 
 const LEGACY = JSON.stringify({
 	"csp-report": {
-		"document-uri": "https://app.gatu.ai/trade/HYPE",
+		"document-uri": "https://app.sairn.ai/trade/HYPE",
 		"effective-directive": "img-src",
 		"blocked-uri": "https://cdn.example/logo.png",
-		"source-file": "https://app.gatu.ai/assets/index-abc.js",
+		"source-file": "https://app.sairn.ai/assets/index-abc.js",
 		"line-number": 12,
 	},
 });
 
 const INLINE = JSON.stringify({
 	"csp-report": {
-		"document-uri": "https://app.gatu.ai/docs",
+		"document-uri": "https://app.sairn.ai/docs",
 		"effective-directive": "script-src",
 		"blocked-uri": "inline",
 		"script-sample": '(()=>{let theme="dark";try{const value=JS',
@@ -42,7 +42,7 @@ const REPORTING_API = JSON.stringify([
 	{
 		type: "csp-violation",
 		body: {
-			documentURL: "https://app.gatu.ai/portfolio",
+			documentURL: "https://app.sairn.ai/portfolio",
 			effectiveDirective: "script-src",
 			blockedURL: "blob",
 			disposition: "report",
@@ -55,17 +55,17 @@ describe("csp report receiver", () => {
 	it("summarizes both report formats and ignores other report types", () => {
 		expect(summarizeCspReports(LEGACY)).toEqual([
 			{
-				documentUrl: "https://app.gatu.ai/trade/HYPE",
+				documentUrl: "https://app.sairn.ai/trade/HYPE",
 				directive: "img-src",
 				blockedUrl: "https://cdn.example/logo.png",
-				source: "https://app.gatu.ai/assets/index-abc.js:12",
+				source: "https://app.sairn.ai/assets/index-abc.js:12",
 				sample: "",
 				disposition: "report",
 			},
 		]);
 		expect(summarizeCspReports(INLINE)).toEqual([
 			{
-				documentUrl: "https://app.gatu.ai/docs",
+				documentUrl: "https://app.sairn.ai/docs",
 				directive: "script-src",
 				blockedUrl: "inline",
 				source: "",
@@ -75,7 +75,7 @@ describe("csp report receiver", () => {
 		]);
 		expect(summarizeCspReports(REPORTING_API)).toEqual([
 			{
-				documentUrl: "https://app.gatu.ai/portfolio",
+				documentUrl: "https://app.sairn.ai/portfolio",
 				directive: "script-src",
 				blockedUrl: "blob",
 				source: "",
@@ -88,27 +88,27 @@ describe("csp report receiver", () => {
 	});
 
 	it("logs URLs without query strings, fragments or referral codes and truncates script samples", () => {
-		expect(sanitizeReportUrl("https://app.gatu.ai/join/abc123?ref=ME#x")).toBe("https://app.gatu.ai/join/*");
-		expect(sanitizeReportUrl("https://user:pw@app.gatu.ai/trade/HYPE?utm=1")).toBe("https://app.gatu.ai/trade/HYPE");
+		expect(sanitizeReportUrl("https://app.sairn.ai/join/abc123?ref=ME#x")).toBe("https://app.sairn.ai/join/*");
+		expect(sanitizeReportUrl("https://user:pw@app.sairn.ai/trade/HYPE?utm=1")).toBe("https://app.sairn.ai/trade/HYPE");
 		expect(sanitizeReportUrl("inline")).toBe("inline");
 		expect(sanitizeReportUrl("blob")).toBe("blob");
 		expect(sanitizeReportUrl("https://[bad")).toBe("");
 		const [summary] = summarizeCspReports(
 			JSON.stringify({
 				"csp-report": {
-					"document-uri": "https://app.gatu.ai/join/CODE?ref=friend",
+					"document-uri": "https://app.sairn.ai/join/CODE?ref=friend",
 					"effective-directive": "script-src",
 					"blocked-uri": "https://cdn.example/x.js?token=secret",
-					"source-file": "https://app.gatu.ai/assets/a.js?v=1",
+					"source-file": "https://app.sairn.ai/assets/a.js?v=1",
 					"line-number": 3,
 					"script-sample": "x".repeat(200),
 				},
 			}),
 		);
 		expect(summary).toMatchObject({
-			documentUrl: "https://app.gatu.ai/join/*",
+			documentUrl: "https://app.sairn.ai/join/*",
 			blockedUrl: "https://cdn.example/x.js",
-			source: "https://app.gatu.ai/assets/a.js:3",
+			source: "https://app.sairn.ai/assets/a.js:3",
 		});
 		expect(summary?.sample).toHaveLength(40);
 	});
@@ -120,7 +120,7 @@ describe("csp report receiver", () => {
 			...Array.from({ length: 30 }, () => ({
 				type: "csp-violation",
 				body: {
-					documentURL: "https://app.gatu.ai/trade/HYPE",
+					documentURL: "https://app.sairn.ai/trade/HYPE",
 					effectiveDirective: "img-src",
 					blockedURL: "https://x.example/i.png",
 				},

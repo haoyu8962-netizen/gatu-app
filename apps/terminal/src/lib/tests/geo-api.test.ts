@@ -3,7 +3,7 @@ import { createGeoApiHandlers, type GeoApiEnvironment } from "@/lib/geo/geo-api"
 import { getGeo } from "@/lib/geo/get-geo";
 import { getReferralActionGeo } from "@/lib/geo/get-referral-action-geo";
 
-const ORIGIN = "https://gatu.ai";
+const ORIGIN = "https://sairn.ai";
 const THREAT_CLEAR = { is_anonymous: false, is_proxy: false, is_tor: false };
 const ALLOWED_IPDATA_RESPONSE = { country_code: "GB", region_code: "ENG", threat: THREAT_CLEAR };
 const PROXY_IPDATA_RESPONSE = { country_code: "GB", region_code: "ENG", threat: { ...THREAT_CLEAR, is_proxy: true } };

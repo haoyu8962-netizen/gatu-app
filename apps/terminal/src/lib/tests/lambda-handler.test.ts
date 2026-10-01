@@ -34,7 +34,7 @@ function environment(overrides: Partial<LambdaEnvironment> = {}): LambdaEnvironm
 	return {
 		development: false,
 		ipdataApiKey: () => "test-key",
-		publicOrigin: "https://app.gatu.ai",
+		publicOrigin: "https://app.sairn.ai",
 		trustViewerAddress: true,
 		now: () => 1_000,
 		...overrides,
@@ -54,21 +54,21 @@ describe("lambda function url adapter", () => {
 	});
 
 	it("rebuilds the public request url from the forwarded host and never trusts a viewer-supplied client ip", () => {
-		const forwarded = event({ headers: { [FORWARDED_HOST_HEADER]: "App.Gatu.Ai", "x-sairn-client-ip": "1.1.1.1" } });
-		expect(resolveRequestOrigin(forwarded, undefined)).toBe("https://app.gatu.ai");
-		expect(resolveRequestOrigin(event(), "https://testnet.gatu.ai/")).toBe("https://testnet.gatu.ai");
+		const forwarded = event({ headers: { [FORWARDED_HOST_HEADER]: "App.Sairn.Ai", "x-sairn-client-ip": "1.1.1.1" } });
+		expect(resolveRequestOrigin(forwarded, undefined)).toBe("https://app.sairn.ai");
+		expect(resolveRequestOrigin(event(), "https://testnet.sairn.ai/")).toBe("https://testnet.sairn.ai");
 		expect(resolveRequestOrigin(event(), undefined)).toBe("https://abc.lambda-url.ap-northeast-1.on.aws");
-		expect(resolveRequestOrigin(event({ headers: { [LEGACY_FORWARDED_HOST_HEADER]: "app.gatu.ai" } }), undefined)).toBe(
-			"https://app.gatu.ai",
-		);
+		expect(
+			resolveRequestOrigin(event({ headers: { [LEGACY_FORWARDED_HOST_HEADER]: "app.sairn.ai" } }), undefined),
+		).toBe("https://app.sairn.ai");
 		expect(
 			resolveRequestOrigin(
-				event({ headers: { [FORWARDED_HOST_HEADER]: "app.sairn.ai", [LEGACY_FORWARDED_HOST_HEADER]: "app.gatu.ai" } }),
+				event({ headers: { [FORWARDED_HOST_HEADER]: "app.sairn.ai", [LEGACY_FORWARDED_HOST_HEADER]: "app.sairn.ai" } }),
 				undefined,
 			),
 		).toBe("https://app.sairn.ai");
 		const request = toRequest(forwarded, environment({ trustViewerAddress: false }));
-		expect(request.url).toBe("https://app.gatu.ai/api/geo");
+		expect(request.url).toBe("https://app.sairn.ai/api/geo");
 		expect(request.headers.get("x-sairn-client-ip")).toBe("198.51.100.7");
 	});
 
@@ -98,10 +98,10 @@ describe("lambda function url adapter", () => {
 			event({
 				...base,
 				headers: {
-					origin: "https://app.gatu.ai",
+					origin: "https://app.sairn.ai",
 					"sec-fetch-site": "same-origin",
 					"content-type": "application/json",
-					[FORWARDED_HOST_HEADER]: "app.gatu.ai",
+					[FORWARDED_HOST_HEADER]: "app.sairn.ai",
 					[VIEWER_ADDRESS_HEADER]: "203.0.113.9:1",
 				},
 			}),
@@ -129,10 +129,10 @@ describe("lambda function url adapter", () => {
 					method: "POST",
 					body: report,
 					headers: {
-						origin: "https://app.gatu.ai",
+						origin: "https://app.sairn.ai",
 						"sec-fetch-site": "same-origin",
 						"content-type": "application/json",
-						[FORWARDED_HOST_HEADER]: "app.gatu.ai",
+						[FORWARDED_HOST_HEADER]: "app.sairn.ai",
 					},
 				}),
 			);

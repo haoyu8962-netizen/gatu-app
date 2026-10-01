@@ -75,6 +75,23 @@
 
 CI 中，`Terminal Tests` 在 `brand/**`、`legal/**` 变化时运行 `pnpm brand:check` 和终端品牌测试组；`Website and Brand` 运行 `pnpm test:brand`。路径与测试清单由 `scripts/ci-workflows.test.mjs` 固定。
 
+## 域名切换到 sairn.ai
+
+代码已经以 `sairn.ai` 为主域名：SEO、站点地图、`robots.txt`、法律文本、推荐链接和官网都指向 `app.sairn.ai`、`testnet.sairn.ai`、`sairn.ai`，客服邮箱是 `support@sairn.ai`。`gatu.ai` 在 `brand.json` 的 `domains.legacy` 里继续被识别，所以新代码先部署到旧域名上也不会把测试网当成主网，旧域名上的推荐链接照常可用，切换网络时留在旧域名组内。
+
+上线顺序（DNS 永远最后切，每一步用权威 DNS 和 AWS API 核对）：
+
+1. 注册并续费 `sairn.ai`；旧域名 `gatu.ai` 保持自动续费（HSTS 一年，旧 origin 的浏览器存储里可能留有 Agent 私钥）。
+2. Cloudflare 建 `sairn.ai` 区（DNS-only），配置邮件 MX、SPF、DKIM、DMARC，确认 `support@sairn.ai` 可以收信。
+3. ACM（us-east-1）申请覆盖 `app.sairn.ai`、`testnet.sairn.ai`、`sairn.ai`、`www.sairn.ai` 的证书，状态为 `ISSUED` 后再继续。
+4. Privy 后台的 Allowed origins **添加** `https://app.sairn.ai`、`https://testnet.sairn.ai`，旧的先保留；应用名改为 Sairn。
+5. 按 `deploy/cloudfront/README.md` 顶部的说明更新 API 源站请求策略的转发头（`X-Sairn-Forwarded-Host`）。
+6. 发布终端与官网；用 `deploy.mjs aliases` 给分发**同时**挂新旧别名并换上新证书，等分发状态 `Deployed`。
+7. 用 `curl --resolve` 预验证新主机名（`deploy.mjs verify --origin https://app.sairn.ai`、测试网同理、`csp-coverage`），再在 Cloudflare 给新主机名加 CNAME，最后用公网 DNS 复验。
+8. 确认新域名稳定后，把 `gatu.ai` 跳转到 `sairn.ai`（保留路径和查询串），在 Search Console 提交地址更改，再从 `brand.json` 的 `domains.legacy` 删掉旧组，并从 Privy 移除旧 origin。
+
+换域名等于换浏览器存储的 origin：旧域名上的设置、登录状态、Stay Connected 的 Agent 私钥和进行中操作的本地记录都不会带到新域名。目前没有用户，这一步不需要迁移这些数据；外部钱包在新域名上需要重新授权（Agent 槽位名也已改为 `sairn`）。
+
 ## 改名时的约定
 
 - 名称、域名、邮箱、颜色只改 `brand/brand.json`，再按 `pnpm brand:check` 与测试的提示更新静态文件。

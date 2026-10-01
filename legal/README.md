@@ -20,19 +20,19 @@ history and must not be restored as operational guidance.
 
 | Source | Purpose | Terminal route | Marketing route |
 |---|---|---|---|
-| [terms.md](./terms.md) | Terms of Use | `https://app.gatu.ai/terms` | `https://gatu.ai/terms` |
-| [privacyPolicy.md](./privacyPolicy.md) | Privacy Policy | `https://app.gatu.ai/privacy` | `https://gatu.ai/privacy` |
-| [riskDisclosure.md](./riskDisclosure.md) | Risk Disclosure | `https://app.gatu.ai/risk` | `https://gatu.ai/risk` |
-| [support.md](./support.md) | Support information | `https://app.gatu.ai/support` | `https://gatu.ai/support` |
-| [docs.md](./docs.md) | Product documentation | `https://app.gatu.ai/docs` | Not published |
-| [cookies.md](./cookies.md) | Cookie and browser storage policy, linked from Privacy Policy Section 4 | `https://app.gatu.ai/cookies` | Not published |
+| [terms.md](./terms.md) | Terms of Use | `https://app.sairn.ai/terms` | `https://sairn.ai/terms` |
+| [privacyPolicy.md](./privacyPolicy.md) | Privacy Policy | `https://app.sairn.ai/privacy` | `https://sairn.ai/privacy` |
+| [riskDisclosure.md](./riskDisclosure.md) | Risk Disclosure | `https://app.sairn.ai/risk` | `https://sairn.ai/risk` |
+| [support.md](./support.md) | Support information | `https://app.sairn.ai/support` | `https://sairn.ai/support` |
+| [docs.md](./docs.md) | Product documentation | `https://app.sairn.ai/docs` | Not published |
+| [cookies.md](./cookies.md) | Cookie and browser storage policy, linked from Privacy Policy Section 4 | `https://app.sairn.ai/cookies` | Not published |
 
 ## Stable identity
 
 - Company: Sairn Corp.
-- Website: `https://gatu.ai`
-- Interface: `https://app.gatu.ai`
-- Support and legal contact: `support@gatu.ai`
+- Website: `https://sairn.ai`
+- Interface: `https://app.sairn.ai`
+- Support and legal contact: `support@sairn.ai`
 
 When a public policy changes, update its Last Updated date, its tests, both route surfaces,
 and every navigation entry in the same change.

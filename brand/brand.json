@@ -6,15 +6,22 @@
 	},
 	"domains": {
 		"primary": {
-			"apex": "gatu.ai",
-			"www": "www.gatu.ai",
-			"app": "app.gatu.ai",
-			"testnet": "testnet.gatu.ai"
+			"apex": "sairn.ai",
+			"www": "www.sairn.ai",
+			"app": "app.sairn.ai",
+			"testnet": "testnet.sairn.ai"
 		},
-		"legacy": []
+		"legacy": [
+			{
+				"apex": "gatu.ai",
+				"www": "www.gatu.ai",
+				"app": "app.gatu.ai",
+				"testnet": "testnet.gatu.ai"
+			}
+		]
 	},
 	"emails": {
-		"support": "support@gatu.ai"
+		"support": "support@sairn.ai"
 	},
 	"colors": {
 		"light": {

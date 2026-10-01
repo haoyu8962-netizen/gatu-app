@@ -25,7 +25,7 @@ function loadFunction(file, extra = "") {
 	return loadFunctionSource(readFileSync(join(directory, file), "utf8"), extra);
 }
 
-function viewerRequest(uri, headers = { host: { value: "app.gatu.ai" } }) {
+function viewerRequest(uri, headers = { host: { value: "app.sairn.ai" } }) {
 	return { request: { method: "GET", uri, querystring: {}, headers: { ...headers }, cookies: {} } };
 }
 
@@ -54,8 +54,8 @@ test("application navigations, legal pages included, rewrite to the shell", () =
 	]) {
 		const result = onRequest(viewerRequest(uri));
 		assert.equal(result.uri, "/_shell.html", uri);
-		assert.equal(result.headers["x-sairn-forwarded-host"].value, "app.gatu.ai");
-		assert.equal(result.headers["x-gatu-forwarded-host"].value, "app.gatu.ai");
+		assert.equal(result.headers["x-sairn-forwarded-host"].value, "app.sairn.ai");
+		assert.equal(result.headers["x-gatu-forwarded-host"].value, "app.sairn.ai");
 	}
 });
 
@@ -221,7 +221,7 @@ test("the pairing page is never stored and never sends a referrer, in any letter
 });
 
 test("a route tag sent by the viewer never reaches the response", () => {
-	const forged = { host: { value: "app.gatu.ai" }, "x-sairn-route": { value: "mobile-agent-sync" } };
+	const forged = { host: { value: "app.sairn.ai" }, "x-sairn-route": { value: "mobile-agent-sync" } };
 	const request = onRequest(viewerRequest("/trade/HYPE", forged));
 	assert.equal(request.headers["x-sairn-route"], undefined);
 	const response = onResponse({ request, response: { statusCode: 200, headers: {} } });

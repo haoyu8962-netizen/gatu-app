@@ -32,10 +32,10 @@ describe("published legal policy contract", () => {
 
 	it("describes current data handling without claiming an unused analytics provider", () => {
 		expect(privacy).toContain("**Last Updated:** September 27, 2026");
-		expect(privacy).toContain("[Cookie and Browser Storage Policy](https://app.gatu.ai/cookies)");
+		expect(privacy).toContain("[Cookie and Browser Storage Policy](https://app.sairn.ai/cookies)");
 		expect(privacy).toContain("does not integrate a product-analytics SDK");
 		expect(privacy).not.toContain("Mixpanel");
-		expect(privacy).toContain("support@gatu.ai");
+		expect(privacy).toContain("support@sairn.ai");
 	});
 
 	it("publishes an accurate cookie and browser-storage policy", () => {
@@ -44,7 +44,7 @@ describe("published legal policy contract", () => {
 		expect(cookies).toContain("**Last Updated:** August 3, 2026");
 		expect(cookies).toContain("does not integrate a product-analytics SDK");
 		expect(cookies).toContain("Essential storage cannot be disabled through the Interface");
-		expect(cookies).toContain("support@gatu.ai");
+		expect(cookies).toContain("support@sairn.ai");
 		expect(terminalRoute).toContain('createFileRoute("/cookies")');
 		expect(terminalRoute).toContain("<LegalDocPage content={content} />");
 	});
@@ -86,7 +86,7 @@ describe("published legal policy contract", () => {
 		expect(websiteContentConfig).toContain('"riskDisclosure.md"');
 		const brand = JSON.parse(readRepositoryFile("brand/brand.json")) as { emails: Record<string, string> };
 
-		expect(brand.emails).toEqual({ support: "support@gatu.ai" });
+		expect(brand.emails).toEqual({ support: "support@sairn.ai" });
 		expect(websiteFooter).toMatch(/href: `mailto:\$\{SUPPORT_EMAIL\}`/);
 		expect(websiteFooter).not.toMatch(/mailto:[^`$]/);
 		expect(websiteFooter).not.toMatch(/\bhi@/i);

@@ -2,7 +2,7 @@
 
 **Last Updated:** July 21, 2026
 
-This Risk Disclosure supplements the Sairn [Terms of Use](https://app.gatu.ai/terms). It
+This Risk Disclosure supplements the Sairn [Terms of Use](https://app.sairn.ai/terms). It
 highlights material risks but cannot describe every possible risk. If this Risk Disclosure
 conflicts with the Terms, the Terms control. Nothing in this document is investment,
 financial, legal, tax, or trading advice.

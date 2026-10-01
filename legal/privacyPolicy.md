@@ -4,9 +4,9 @@
 
 This Privacy Policy ("Policy") explains how Sairn Corp. ("Sairn," "we," "us," or "our")
 handles personal data in connection with the interface available at
-[https://app.gatu.ai](https://app.gatu.ai) and related Sairn websites and support services
+[https://app.sairn.ai](https://app.sairn.ai) and related Sairn websites and support services
 (collectively, the "Services"). Capitalized terms not defined here have the meaning given in
-our [Terms of Use](https://app.gatu.ai/terms).
+our [Terms of Use](https://app.sairn.ai/terms).
 
 ## 1. Scope and Roles
 
@@ -46,7 +46,7 @@ available under applicable data-protection law are not limited by this Policy.
 The Services may use cookies and browser storage for authentication, security, preferences,
 and feature operation. Clearing browser storage may remove settings or locally stored Agent
 credentials and may require you to reconnect or reauthorize a wallet. Our
-[Cookie and Browser Storage Policy](https://app.gatu.ai/cookies) describes the storage the
+[Cookie and Browser Storage Policy](https://app.sairn.ai/cookies) describes the storage the
 Interface uses and how to manage it.
 
 As of the Last Updated date, the Interface does not integrate a product-analytics SDK.
@@ -134,4 +134,4 @@ a later date is stated.
 ## 15. Contact
 
 Questions or privacy requests may be sent to
-[support@gatu.ai](mailto:support@gatu.ai).
+[support@sairn.ai](mailto:support@sairn.ai).

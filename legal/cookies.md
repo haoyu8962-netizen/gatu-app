@@ -2,7 +2,7 @@
 
 **Last Updated:** August 3, 2026
 
-This policy explains how Sairn Corp. ("Sairn," "we," "us," or "our") uses cookies and browser storage in the trading interface available at [https://app.gatu.ai](https://app.gatu.ai).
+This policy explains how Sairn Corp. ("Sairn," "we," "us," or "our") uses cookies and browser storage in the trading interface available at [https://app.sairn.ai](https://app.sairn.ai).
 
 ## 1. Essential Storage
 
@@ -24,8 +24,8 @@ Browser controls can block or clear cookies and storage. Doing so may disconnect
 
 ## 5. Related Documents
 
-Review the [Privacy Policy](https://app.gatu.ai/privacy) for information about personal data and the [Terms of Use](https://app.gatu.ai/terms) for the conditions governing use of the Interface.
+Review the [Privacy Policy](https://app.sairn.ai/privacy) for information about personal data and the [Terms of Use](https://app.sairn.ai/terms) for the conditions governing use of the Interface.
 
 ## 6. Contact
 
-Questions about this policy may be sent to [support@gatu.ai](mailto:support@gatu.ai).
+Questions about this policy may be sent to [support@sairn.ai](mailto:support@sairn.ai).

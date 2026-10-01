@@ -12,8 +12,8 @@ const VALID_REPORT: ClientErrorReport = {
 	componentFrames: ["source:20:4"],
 };
 
-function createReportRequest(body: BodyInit, origin = "https://gatu.ai", headers: HeadersInit = {}): Request {
-	return new Request("https://gatu.ai/api/client-error-report", {
+function createReportRequest(body: BodyInit, origin = "https://sairn.ai", headers: HeadersInit = {}): Request {
+	return new Request("https://sairn.ai/api/client-error-report", {
 		method: "POST",
 		headers: {
 			origin,
@@ -53,7 +53,7 @@ describe("client error report endpoint", () => {
 			{ write },
 		);
 		const crossSite = await handleClientErrorReport(
-			createReportRequest(JSON.stringify(VALID_REPORT), "https://gatu.ai", {
+			createReportRequest(JSON.stringify(VALID_REPORT), "https://sairn.ai", {
 				"sec-fetch-site": "cross-site",
 			}),
 			{ write },
@@ -112,7 +112,7 @@ describe("client error report endpoint", () => {
 			rateLimiter: createErrorReportRateLimiter(5, 60_000),
 		});
 		const declared = await handleClientErrorReport(
-			createReportRequest("{}", "https://gatu.ai", {
+			createReportRequest("{}", "https://sairn.ai", {
 				"content-length": String(CLIENT_ERROR_REPORT_MAX_BYTES + 1),
 			}),
 			{ rateLimiter: createErrorReportRateLimiter(5, 60_000) },

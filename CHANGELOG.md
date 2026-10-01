@@ -58,6 +58,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   stay neutral and waiting spinners are grey. The desktop logo is now 24px high, so
   the header has 9px less room before its navigation collapses; see
   [brand assets](docs/brand-assets.md).
+- The canonical domain is now `sairn.ai` (`app.sairn.ai`, `testnet.sairn.ai`, `support@sairn.ai`);
+  `gatu.ai` stays recognised until it is retired. Browser storage keys, the Hyperliquid Agent slot,
+  internal headers, build variables and package names now use `sairn`, so external wallets must
+  approve a new Agent once; see [brand assets](docs/brand-assets.md#域名切换到-sairnai).
 - Notices on the Staking page and in the Staking, Referral, API wallet and Vault dialogs are rounded
   8px like the other notices; they were 4px to 10px.
 

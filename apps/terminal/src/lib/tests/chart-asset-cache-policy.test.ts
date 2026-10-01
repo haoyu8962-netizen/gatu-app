@@ -143,7 +143,7 @@ describe("TradingView asset cache policy", () => {
 		listeners.get("fetch")?.({
 			request: {
 				method: "GET",
-				url: "https://app.gatu.ai/charting_library/charting_library.js",
+				url: "https://app.sairn.ai/charting_library/charting_library.js",
 				destination: "script",
 			},
 			respondWith: () => {
@@ -176,7 +176,7 @@ describe("TradingView asset cache policy", () => {
 		});
 
 		for (const request of [
-			{ method: "GET", url: "https://app.gatu.ai/font.woff2", destination: "font" },
+			{ method: "GET", url: "https://app.sairn.ai/font.woff2", destination: "font" },
 			{ method: "GET", url: "https://app.hyperliquid.xyz/coins/AAVE.svg", destination: "image" },
 		]) {
 			let rejectWrite: ((error: Error) => void) | undefined;

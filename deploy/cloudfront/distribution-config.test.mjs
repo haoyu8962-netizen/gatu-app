@@ -21,7 +21,7 @@ import {
 
 const OPTIONS = {
 	network: "mainnet",
-	aliases: ["app.gatu.ai"],
+	aliases: ["app.sairn.ai"],
 	certificateArn: "arn:aws:acm:us-east-1:123456789012:certificate/11111111-2222-3333-4444-555555555555",
 	bucketDomain: "gatu-terminal-2026.s3.ap-northeast-1.amazonaws.com",
 	s3OriginAccessControlId: "E1S3OAC",
@@ -165,14 +165,14 @@ test("invalid inputs are rejected before anything reaches AWS", () => {
 
 test("the cut-over adds aliases and the ACM certificate to a live distribution without touching the rest", () => {
 	const live = { ...createDistributionConfig({ ...OPTIONS, aliases: [], certificateArn: undefined }), CallerReference: "live-1" };
-	const updated = applyDistributionAliases(live, { aliases: ["app.gatu.ai"], certificateArn: OPTIONS.certificateArn });
-	assert.deepEqual(updated.Aliases, { Quantity: 1, Items: ["app.gatu.ai"] });
+	const updated = applyDistributionAliases(live, { aliases: ["app.sairn.ai"], certificateArn: OPTIONS.certificateArn });
+	assert.deepEqual(updated.Aliases, { Quantity: 1, Items: ["app.sairn.ai"] });
 	assert.equal(updated.ViewerCertificate.ACMCertificateArn, OPTIONS.certificateArn);
 	assert.equal(updated.ViewerCertificate.SSLSupportMethod, "sni-only");
 	assert.equal(updated.ViewerCertificate.MinimumProtocolVersion, "TLSv1.2_2021");
 	assert.equal(updated.CallerReference, "live-1");
 	assert.deepEqual({ ...updated, Aliases: live.Aliases, ViewerCertificate: live.ViewerCertificate }, live);
 	assert.throws(() => applyDistributionAliases(live, { aliases: [], certificateArn: OPTIONS.certificateArn }), /alias/);
-	assert.throws(() => applyDistributionAliases(live, { aliases: ["app.gatu.ai"], certificateArn: undefined }), /together/);
-	assert.throws(() => applyDistributionAliases(live, { aliases: ["App.gatu.ai"], certificateArn: OPTIONS.certificateArn }), /hostnames/);
+	assert.throws(() => applyDistributionAliases(live, { aliases: ["app.sairn.ai"], certificateArn: undefined }), /together/);
+	assert.throws(() => applyDistributionAliases(live, { aliases: ["App.sairn.ai"], certificateArn: OPTIONS.certificateArn }), /hostnames/);
 });

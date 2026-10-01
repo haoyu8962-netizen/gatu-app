@@ -196,7 +196,7 @@ test("verification passes when the edge serves the build with the expected heade
 	const publicDir = createPublicDir();
 	const headers = { "content-security-policy": "default-src 'self'", "content-security-policy-report-only": REPORT_ONLY_HEADER, link: "<https://api.hyperliquid.xyz>; rel=preconnect" };
 	const results = await verifyDeployment({
-		origin: "https://app.gatu.ai/",
+		origin: "https://app.sairn.ai/",
 		publicDir,
 		network: "mainnet",
 		scriptHashesMode: "report-only",
@@ -248,7 +248,7 @@ test("verifying a rollback checks each legal page against the page the build shi
 	}
 	async function run(overrides) {
 		const results = await verifyDeployment({
-			origin: "https://app.gatu.ai",
+			origin: "https://app.sairn.ai",
 			publicDir,
 			network: "mainnet",
 			fetchImpl: fakeFetch({
@@ -275,7 +275,7 @@ test("verification fails when the live origin exposes a gate the local build doe
 	const publicDir = createPublicDir();
 	const live = { ...BUILD_META, cctpDeposits: { ...GATES_OFF.cctpDeposits, mainnetSponsoredWallet: true } };
 	const results = await verifyDeployment({
-		origin: "https://app.gatu.ai",
+		origin: "https://app.sairn.ai",
 		publicDir,
 		network: "mainnet",
 		fetchImpl: fakeFetch({ "/build-meta.json": { body: JSON.stringify(live) }, "*": { status: 404, body: "missing" } }),
@@ -327,7 +327,7 @@ test("an acknowledgement the build does not match is refused, and so is a build 
 test("verification reports a stale shell, a wrong preconnect and a failed geo verdict", async () => {
 	const publicDir = createPublicDir();
 	const results = await verifyDeployment({
-		origin: "https://testnet.gatu.ai",
+		origin: "https://testnet.sairn.ai",
 		publicDir,
 		network: "testnet",
 		fetchImpl: fakeFetch({
@@ -364,7 +364,7 @@ test("the enforced stage rejects a policy that still allows unsafe-inline or mis
 	const publicDir = createPublicDir();
 	async function run(header) {
 		const results = await verifyDeployment({
-			origin: "https://app.gatu.ai",
+			origin: "https://app.sairn.ai",
 			publicDir,
 			network: "mainnet",
 			scriptHashesMode: "enforce",
@@ -381,7 +381,7 @@ test("the enforced stage rejects a policy that still allows unsafe-inline or mis
 	assert.match((await run("default-src 'self'")).detail, /has no content-security-policy with a script-src/);
 	async function images(header) {
 		const results = await verifyDeployment({
-			origin: "https://app.gatu.ai",
+			origin: "https://app.sairn.ai",
 			publicDir,
 			network: "mainnet",
 			scriptHashesMode: "enforce",
@@ -400,7 +400,7 @@ test("a rotation keeps the hashes of a legal page file an interrupted sync left 
 	const olderScript = '(()=>{document.documentElement.dataset.release="a"})();';
 	const olderPage = `<html><head><script>${olderScript}</script></head></html>`;
 	const served = await collectServedScriptHashes({
-		origin: "https://app.gatu.ai/",
+		origin: "https://app.sairn.ai/",
 		publicDir,
 		fetchImpl: fakeFetch({
 			"/trade/HYPE": { body: SHELL_HTML },
@@ -416,7 +416,7 @@ test("a rotation keeps the hashes of a legal page file an interrupted sync left 
 	assert.ok([...rotated.current, ...rotated.previous].includes(cspHash(olderScript)));
 	await assert.rejects(
 		collectServedScriptHashes({
-			origin: "https://app.gatu.ai",
+			origin: "https://app.sairn.ai",
 			publicDir,
 			fetchImpl: fakeFetch({ "/trade/HYPE": { body: SHELL_HTML }, "/docs/index.html": { status: 503, body: "x" }, "*": { status: 404, body: "missing" } }),
 		}),

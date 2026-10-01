@@ -17,20 +17,20 @@ const PRIVATE_KEY = `0x${"b".repeat(64)}`;
 describe("client error report privacy", () => {
 	it("only emits allowlisted diagnostics without URLs, messages, wallet addresses, or secrets", () => {
 		const error = new Error(
-			`wallet=${WALLET_ADDRESS} privateKey=${PRIVATE_KEY} https://gatu.ai/trade?token=secret#fragment`,
+			`wallet=${WALLET_ADDRESS} privateKey=${PRIVATE_KEY} https://sairn.ai/trade?token=secret#fragment`,
 		);
 		error.stack = [
 			`Error: wallet=${WALLET_ADDRESS}`,
-			`    at submit (https://gatu.ai/assets/app-safe.js?token=${PRIVATE_KEY}#fragment:12:3)`,
+			`    at submit (https://sairn.ai/assets/app-safe.js?token=${PRIVATE_KEY}#fragment:12:3)`,
 			"    at extension (https://evil.example/assets/steal.js:7:9)",
-			`    at unsafe (https://gatu.ai/src/${WALLET_ADDRESS}.ts:1:2)`,
+			`    at unsafe (https://sairn.ai/src/${WALLET_ADDRESS}.ts:1:2)`,
 		].join("\n");
 
 		const report = createClientErrorReport(error, {
 			kind: "window_error",
 			pathname: `/trade/${WALLET_ADDRESS}`,
-			origin: "https://gatu.ai",
-			componentStack: `at Secret (https://gatu.ai/src/private.tsx?seed=${PRIVATE_KEY}#fragment:8:4)`,
+			origin: "https://sairn.ai",
+			componentStack: `at Secret (https://sairn.ai/src/private.tsx?seed=${PRIVATE_KEY}#fragment:8:4)`,
 		});
 		const serialized = JSON.stringify(report);
 
@@ -54,7 +54,7 @@ describe("client error report privacy", () => {
 		const valid = createClientErrorReport(new TypeError("safe"), {
 			kind: "router_boundary",
 			pathname: "/portfolio",
-			origin: "https://gatu.ai",
+			origin: "https://sairn.ai",
 		});
 
 		expect(parseClientErrorReport(valid)).toEqual(valid);
@@ -67,7 +67,7 @@ describe("client error report privacy", () => {
 			kind: "orderbook_l2_fallback",
 			fallbackReason: "snapshot_timeout",
 			pathname: "/trade/BTC",
-			origin: "https://gatu.ai",
+			origin: "https://sairn.ai",
 		});
 
 		expect(parseClientErrorReport(report)).toEqual(report);
@@ -80,7 +80,7 @@ describe("client error report privacy", () => {
 			kind: "legal_status_check",
 			legalReason: "timeout",
 			pathname: "/trade/BTC",
-			origin: "https://gatu.ai",
+			origin: "https://sairn.ai",
 		});
 		const serialized = JSON.stringify(report);
 

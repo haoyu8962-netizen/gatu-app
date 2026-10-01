@@ -6,7 +6,7 @@ import { classifyStaticPageRequest } from "@/lib/static-pages/static-pages";
 
 const terminalRoot = resolve(__dirname, "../../..");
 const serviceWorker = readFileSync(resolve(terminalRoot, "public/sw.js"), "utf8");
-const origin = "https://app.gatu.ai";
+const origin = "https://app.sairn.ai";
 
 function html(body: string) {
 	return new Response(body, {

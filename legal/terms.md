@@ -3,7 +3,7 @@
 **Last Updated:** July 20, 2026
 
 These Terms of Use ("Terms") govern your access to and use of the Sairn website-hosted
-trading interface available at [https://app.gatu.ai](https://app.gatu.ai), together with
+trading interface available at [https://app.sairn.ai](https://app.sairn.ai), together with
 the related features, software, and services that Sairn makes available through that
 interface (collectively, the "Interface"). These Terms form an agreement between you and
 Sairn Corp. ("Sairn," the "Company," "we," "us," or "our").
@@ -300,7 +300,7 @@ owners.
 
 If you provide feedback, you grant Sairn a worldwide, perpetual, irrevocable, transferable,
 sublicensable, royalty-free right to use it without restriction or compensation. Send
-intellectual-property notices to [support@gatu.ai](mailto:support@gatu.ai).
+intellectual-property notices to [support@sairn.ai](mailto:support@sairn.ai).
 
 ## 11. Release and Indemnity
 
@@ -352,7 +352,7 @@ limitations, so portions of this section may not apply to you.
 ### 13.1. Informal Resolution
 
 Before starting a formal dispute, you must send written notice to
-[support@gatu.ai](mailto:support@gatu.ai) describing your name and contact information, the
+[support@sairn.ai](mailto:support@sairn.ai) describing your name and contact information, the
 facts and basis of the dispute, and the relief requested. The parties will attempt in good
 faith to resolve the matter for 30 days after receipt.
 
@@ -383,7 +383,7 @@ stop prohibited activity where such relief is legally available.
 
 ### 14.1. Privacy
 
-Our [Privacy Policy](https://app.gatu.ai/privacy) explains how Sairn handles personal data and
+Our [Privacy Policy](https://app.sairn.ai/privacy) explains how Sairn handles personal data and
 is incorporated into these Terms by reference.
 
 ### 14.2. Entire Agreement
@@ -414,7 +414,7 @@ the specific instance in which it is given.
 Sairn may provide notices through the Interface, by email where available, or through other
 reasonable public communication channels. A notice posted through the Interface is
 effective when posted. Legal notices to Sairn may be sent to
-[support@gatu.ai](mailto:support@gatu.ai).
+[support@sairn.ai](mailto:support@sairn.ai).
 
 ### 14.7. Headings
 
