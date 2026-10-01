@@ -4,6 +4,7 @@ import { ExchangeRequestInvalidatedError } from "@sairn/hl-react/internal/exchan
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { StatusGlyph } from "@/components/brand/status-glyph";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
@@ -17,6 +18,7 @@ import {
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { FundsActionGeoExecutionError, useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-motion.gen";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
@@ -223,6 +225,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 		}
 		if (isAmbiguousExchangeActionError(error)) {
 			toast.warning(t`Transfer status unknown`, {
+				icon: <StatusGlyph glyph={STATUS_GLYPH_UNKNOWN} />,
 				description: t`Check your balances and the Deposits & Withdrawals history before retrying.`,
 				duration: Number.POSITIVE_INFINITY,
 				closeButton: true,

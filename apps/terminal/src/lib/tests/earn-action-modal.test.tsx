@@ -15,6 +15,7 @@ import {
 } from "@/domain/earn";
 import type { EarnData, EarnFreshState } from "@/hooks/earn/use-earn-data";
 import { createI18nRoot } from "./harness/react";
+import { unknownStatusToastIcon } from "./harness/status-glyph";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
 
@@ -440,6 +441,7 @@ describe("earn action modal", () => {
 		const [warningTitle, warningOptions] = toastMocks.warning.mock.calls[0] as [unknown, { duration: number }];
 		expect(toastText(warningTitle)).toBe("Earn request status unknown");
 		expect(warningOptions.duration).toBe(Number.POSITIVE_INFINITY);
+		expect(warningOptions).toMatchObject({ icon: unknownStatusToastIcon() });
 		expect(toastMocks.error).not.toHaveBeenCalled();
 	});
 	it("rejects a second click in the same synchronous batch", async () => {

@@ -14,6 +14,7 @@ import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-ava
 import { clearSendDraft } from "@/stores/use-send-draft-store";
 import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 import { createI18nRoot } from "./harness/react";
+import { unknownStatusToastIcon } from "./harness/status-glyph";
 
 const BALANCE_UNAVAILABLE = "Balance data is unavailable. Try again after the connection recovers.";
 const BALANCE_UNAVAILABLE_AR = "بيانات الرصيد غير متاحة. حاول مرة أخرى بعد استعادة الاتصال.";
@@ -686,6 +687,7 @@ describe("funds action balance wiring", () => {
 				closeButton: true,
 				description: STATUS_UNKNOWN_DESCRIPTION,
 				duration: Number.POSITIVE_INFINITY,
+				icon: unknownStatusToastIcon(),
 			}),
 		);
 		expect(toastMocks.error).not.toHaveBeenCalled();

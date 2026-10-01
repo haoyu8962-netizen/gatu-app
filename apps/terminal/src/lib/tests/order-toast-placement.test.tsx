@@ -85,6 +85,30 @@ describe("global order notifications", () => {
 	async function flush() {
 		await act(() => vi.advanceTimersByTimeAsync(0));
 	}
+	it("shows the status glyph of each order state and never an error glyph for an unknown result", async () => {
+		const expected: [OrderQueueItem["status"], string, boolean][] = [
+			["pending", "submitting", true],
+			["confirming", "pending", true],
+			["unconfirmed", "unknown", false],
+			["partial", "partial", false],
+			["success", "success", false],
+			["canceled", "cancelled", false],
+			["failed", "error", false],
+		];
+		let id = "";
+		act(() => {
+			id = add();
+		});
+		for (const [status, glyph, loading] of expected) {
+			act(() => updateOrderQueueItem(id, { status }));
+			await flush();
+			const icon = container.querySelector(`[data-order-feedback="${id}"] svg[data-status-glyph]`);
+			expect(icon?.getAttribute("data-status-glyph"), status).toBe(glyph);
+			expect(icon?.getAttribute("aria-hidden"), status).toBe("true");
+			expect(icon?.hasAttribute("data-loading-indicator"), status).toBe(loading);
+			expect(container.querySelector(`[data-order-feedback="${id}"] .animate-spin`), status).toBeNull();
+		}
+	});
 	it("keeps short live feedback out of the tab order", async () => {
 		vi.stubGlobal("ResizeObserver", undefined);
 		let id = "";

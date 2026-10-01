@@ -1,10 +1,17 @@
 import { useLingui } from "@lingui/react/macro";
-import { CheckCircleIcon, InfoIcon, SpinnerGapIcon, WarningIcon, WarningOctagonIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { Toaster as Sonner, type ToasterProps, toast } from "sonner";
+import { StatusGlyph } from "@/components/brand/status-glyph";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { TOAST_DEFAULT_DURATION_MS } from "@/config/time";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+	STATUS_GLYPH_ERROR,
+	STATUS_GLYPH_INFO,
+	STATUS_GLYPH_PENDING,
+	STATUS_GLYPH_SUCCESS,
+	STATUS_GLYPH_WARNING,
+} from "@/lib/brand/status-motion.gen";
 import "./sonner.css";
 import { useTheme } from "@/stores/use-global-settings-store";
 
@@ -43,11 +50,11 @@ function Toaster(props: ToasterProps) {
 			containerAriaLabel={t`Notifications`}
 			duration={TOAST_DEFAULT_DURATION_MS}
 			icons={{
-				success: <CheckCircleIcon className="size-4" />,
-				info: <InfoIcon className="size-4" />,
-				warning: <WarningIcon className="size-4" />,
-				error: <WarningOctagonIcon className="size-4" />,
-				loading: <SpinnerGapIcon className="size-4 animate-spin" />,
+				success: <StatusGlyph glyph={STATUS_GLYPH_SUCCESS} />,
+				info: <StatusGlyph glyph={STATUS_GLYPH_INFO} />,
+				warning: <StatusGlyph glyph={STATUS_GLYPH_WARNING} />,
+				error: <StatusGlyph glyph={STATUS_GLYPH_ERROR} />,
+				loading: <StatusGlyph glyph={STATUS_GLYPH_PENDING} />,
 			}}
 			toastOptions={{
 				className: "text-xs font-sans",

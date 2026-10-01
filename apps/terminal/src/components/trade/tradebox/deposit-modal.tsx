@@ -5,6 +5,7 @@ import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { type Address, formatUnits, isAddress, parseUnits, zeroAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
+import { StatusGlyph } from "@/components/brand/status-glyph";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import {
 	CCTP_MAX_DEPOSIT_USDC,
@@ -48,6 +49,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-motion.gen";
 import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
 import { infoQueryOptions, useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
@@ -1075,6 +1077,7 @@ export function DepositModal() {
 		}
 		if (isAmbiguousExchangeActionError(error)) {
 			toast.warning(t`Withdrawal status unknown`, {
+				icon: <StatusGlyph glyph={STATUS_GLYPH_UNKNOWN} />,
 				description: t`Check your balances and the Deposits & Withdrawals history before retrying.`,
 				duration: Infinity,
 				closeButton: true,
@@ -1234,6 +1237,7 @@ export function DepositModal() {
 			submissionOutcomeUnknown || (hasSubmittedDeposit && !isDefinitiveDepositSourceFailure(depositError));
 		if (depositStatusUnknown) {
 			toast.warning(t`Deposit status unknown`, {
+				icon: <StatusGlyph glyph={STATUS_GLYPH_UNKNOWN} />,
 				description: (
 					<span className="flex flex-col gap-1">
 						<span>

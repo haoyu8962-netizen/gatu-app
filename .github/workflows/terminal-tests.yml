@@ -288,3 +288,7 @@ jobs:
           src/lib/tests/trading-agent-config.test.ts
           src/lib/tests/order-summary.test.tsx
           src/lib/tests/twap-order-summary.test.tsx
+          src/lib/tests/status-motion-contract.test.ts
+          src/lib/tests/status-glyph.test.tsx
+          src/lib/tests/toaster-config.test.tsx
+          src/lib/tests/order-toast-placement.test.tsx

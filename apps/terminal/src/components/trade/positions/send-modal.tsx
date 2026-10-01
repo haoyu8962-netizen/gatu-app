@@ -5,6 +5,7 @@ import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select
 import { type ChangeEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { isAddress } from "viem";
+import { StatusGlyph } from "@/components/brand/status-glyph";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
@@ -27,6 +28,7 @@ import {
 	useDefaultDexBalances,
 } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-motion.gen";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
@@ -394,6 +396,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 				clearSendDraft();
 				if (isCurrentSubmission()) {
 					toast.warning(t`Send status unknown`, {
+						icon: <StatusGlyph glyph={STATUS_GLYPH_UNKNOWN} />,
 						description: t`Check your balances and the Deposits & Withdrawals history before retrying.`,
 						duration: Number.POSITIVE_INFINITY,
 						closeButton: true,

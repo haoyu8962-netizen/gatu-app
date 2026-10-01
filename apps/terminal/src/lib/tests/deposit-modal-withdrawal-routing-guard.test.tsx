@@ -14,6 +14,7 @@ import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-ava
 import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
+import { unknownStatusToastIcon } from "./harness/status-glyph";
 
 const WITHDRAWAL_MESSAGES = {
 	accountModeChanged: "Account mode changed before the request was submitted. Review balances and try again.",
@@ -1513,6 +1514,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 				closeButton: true,
 				description: "Check your balances and the Deposits & Withdrawals history before retrying.",
 				duration: Number.POSITIVE_INFINITY,
+				icon: unknownStatusToastIcon(),
 			}),
 		);
 		expect(toastMocks.error).not.toHaveBeenCalled();
@@ -2124,7 +2126,11 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(toastMocks.error).not.toHaveBeenCalled();
 		expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith(
 			"Deposit status unknown",
-			expect.objectContaining({ closeButton: true, duration: Number.POSITIVE_INFINITY }),
+			expect.objectContaining({
+				closeButton: true,
+				duration: Number.POSITIVE_INFINITY,
+				icon: unknownStatusToastIcon(),
+			}),
 		);
 		expect(getToastText(toastMocks.warning.mock.calls[0])).toContain("its final status could not be verified");
 		expect(closeDepositModal).toHaveBeenCalledOnce();
