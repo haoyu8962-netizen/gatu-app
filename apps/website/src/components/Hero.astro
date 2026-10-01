@@ -1,5 +1,5 @@
 ---
-const appUrl = "https://app.gatu.ai";
+import { APP_HOST, APP_URL as appUrl, BRAND_NAME } from "@/config/brand";
 ---
 
 <section class="relative overflow-hidden border-b border-stroke-weaker">
@@ -67,14 +67,14 @@ const appUrl = "https://app.gatu.ai";
 							<rect x="2.5" y="3.5" width="7" height="6" rx="1.5"/>
 							<path d="M4 3.5V2.5a2 2 0 0 1 4 0v1"/>
 						</svg>
-						<span>app.gatu.ai</span>
+						<span>{APP_HOST}</span>
 					</div>
 				</div>
 
 				<!-- Desktop screenshot (hidden on mobile) -->
 				<img
 					src="/app-desktop.jpeg"
-					alt="GATU trading interface showing BTC-USDC chart, order book, and trade panel"
+					alt={`${BRAND_NAME} trading interface showing BTC-USDC chart, order book, and trade panel`}
 					class="hidden sm:block w-full h-auto bg-background"
 					loading="eager"
 					width="1600"
@@ -83,7 +83,7 @@ const appUrl = "https://app.gatu.ai";
 				<!-- Mobile screenshot (only on small) -->
 				<img
 					src="/app-mobile.jpeg"
-					alt="GATU mobile view showing BTC-USDC candle chart"
+					alt={`${BRAND_NAME} mobile view showing BTC-USDC candle chart`}
 					class="sm:hidden w-full h-auto bg-background"
 					loading="eager"
 					width="390"

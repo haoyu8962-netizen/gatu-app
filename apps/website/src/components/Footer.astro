@@ -1,7 +1,7 @@
 ---
+import { APP_URL as appUrl, BRAND_NAME, SUPPORT_EMAIL } from "@/config/brand";
 import Logo from "./Logo.astro";
 
-const appUrl = "https://app.gatu.ai";
 const year = new Date().getFullYear();
 
 const product = [
@@ -15,7 +15,7 @@ const resources = [
 	{ label: "Hyperliquid", href: "https://hyperliquid.xyz", icon: "link", external: true },
 	{ label: "Support", href: "/support", icon: "question" },
 	{ label: "Risk disclosure", href: "/risk", icon: "scale" },
-	{ label: "Contact", href: "mailto:support@gatu.ai", icon: "mail" },
+	{ label: "Contact", href: `mailto:${SUPPORT_EMAIL}`, icon: "mail" },
 ];
 
 const iconSvg: Record<string, string> = {
@@ -105,7 +105,7 @@ const iconSvg: Record<string, string> = {
 
 		<div class="mt-10 md:mt-14 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-t border-stroke-weaker pt-6">
 			<p class="text-2xs text-fg-faint">
-				© {year} GATU · Not financial advice. Trade at your own risk. ·
+				© {year} {BRAND_NAME} · Not financial advice. Trade at your own risk. ·
 				<a href="/privacy" class="hover:text-fg-muted transition-colors duration-150">Privacy</a> ·
 				<a href="/terms" class="hover:text-fg-muted transition-colors duration-150">Terms</a> ·
 				<a href="/risk" class="hover:text-fg-muted transition-colors duration-150">Risk</a>

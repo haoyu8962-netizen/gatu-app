@@ -3,6 +3,7 @@ import { GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { GatuLogo } from "@/components/brand/gatu-logo";
 import { headerLanguage, headerLogo, headerSettings } from "@/components/trade/mobile/mobile-header-view";
+import { BRAND_NAME } from "@/config/brand";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { HeaderIconButtonView } from "../header/header-icon-button-view";
@@ -28,7 +29,7 @@ export function MobileHeader({ className }: Props) {
 				<Link
 					to={tradeHomePath}
 					search={{ scope: "all" }}
-					aria-label="GATU"
+					aria-label={BRAND_NAME}
 					data-brand-home-link=""
 					className={headerLogo}
 				>

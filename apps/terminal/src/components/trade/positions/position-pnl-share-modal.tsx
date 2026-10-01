@@ -3,7 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { CheckIcon, CopyIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { APP_NAME } from "@/config/app";
+import { BRAND_FILE_STEM, BRAND_NAME } from "@/config/brand";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -146,7 +146,7 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 			const fontFamily = getComputedStyle(document.body).fontFamily;
 			const blob = await renderPositionPnlSharePng(
 				{
-					brand: APP_NAME.toLocaleUpperCase(),
+					brand: BRAND_NAME,
 					timestamp,
 					symbol: marketLabel,
 					directionLabel: `${directionLabel} ${position.leverage}x`,
@@ -166,7 +166,7 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 				exportQrDataUrl,
 			);
 			if (!isSaveOperationCurrent(saveOperationRef.current, operationEpoch)) return;
-			const filename = `${APP_NAME}-${position.coin}-pnl-${new Date(position.capturedAtMs).toISOString()}.png`;
+			const filename = `${BRAND_FILE_STEM}-${position.coin}-pnl-${new Date(position.capturedAtMs).toISOString()}.png`;
 			const shared = isMobile ? await sharePositionPnlPng(blob, filename) : false;
 			if (!isSaveOperationCurrent(saveOperationRef.current, operationEpoch)) return;
 			if (!shared) {
@@ -207,7 +207,7 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 						<header className="flex items-center justify-between gap-3">
 							<div className="flex min-w-0 items-center gap-2">
 								<span className="truncate text-xs leading-[17px] font-bold tracking-[2px] min-[1001px]:text-sm min-[1001px]:leading-5">
-									{APP_NAME.toLocaleUpperCase()}
+									{BRAND_NAME}
 								</span>
 								{networkLabel ? (
 									<span className="shrink-0 rounded-[4px] border border-position-share-outline px-1.5 py-0.5 text-[9px] leading-3 font-bold tracking-wide text-position-share-fg">

@@ -4,6 +4,7 @@ import { DownloadSimpleIcon, QrCodeIcon, SlidersHorizontalIcon } from "@phosphor
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
+import { BRAND_NAME } from "@/config/brand";
 import { DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import {
 	APP_BAR_BUTTON_HEIGHT_CLASS,
@@ -136,7 +137,7 @@ export function TopNav({ mode = "default" }: Props) {
 				<Link
 					to={tradeHomePath}
 					search={{ scope: "all" }}
-					aria-label="GATU"
+					aria-label={BRAND_NAME}
 					data-brand-home-link=""
 					className={TOP_NAV_LOGO_CLASS}
 				>

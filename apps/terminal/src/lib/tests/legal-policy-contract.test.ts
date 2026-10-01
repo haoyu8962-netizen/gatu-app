@@ -84,7 +84,11 @@ describe("published legal policy contract", () => {
 		expect(terminalRoute).toContain('createFileRoute("/risk")');
 		expect(websitePage).toContain('path="/risk"');
 		expect(websiteContentConfig).toContain('"riskDisclosure.md"');
-		expect(websiteFooter).toContain("mailto:support@gatu.ai");
+		const brand = JSON.parse(readRepositoryFile("brand/brand.json")) as { emails: Record<string, string> };
+
+		expect(brand.emails).toEqual({ support: "support@gatu.ai" });
+		expect(websiteFooter).toMatch(/href: `mailto:\$\{SUPPORT_EMAIL\}`/);
+		expect(websiteFooter).not.toMatch(/mailto:[^`$]/);
 		expect(websiteFooter).not.toMatch(/\bhi@/i);
 	});
 });

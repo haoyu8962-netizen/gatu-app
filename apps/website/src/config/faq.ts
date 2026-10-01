@@ -1,7 +1,9 @@
+import { BRAND_NAME } from "./brand";
+
 export const FAQS = [
 	{
-		q: "What does it cost to use GATU?",
-		a: "On every trade you pay Hyperliquid's protocol fees — 0.045% taker / 0.015% maker at the base tier, dropping with volume and HYPE staking — plus a small 0.01% builder fee. That builder fee is what funds GATU: ongoing development, faster releases, new features, and keeping the terminal open-source and free to run. No subscription, no monthly fee, no gas per trade.",
+		q: `What does it cost to use ${BRAND_NAME}?`,
+		a: `On every trade you pay Hyperliquid's protocol fees — 0.045% taker / 0.015% maker at the base tier, dropping with volume and HYPE staking — plus a small 0.01% builder fee. That builder fee is what funds ${BRAND_NAME}: ongoing development, faster releases, new features, and keeping the terminal open-source and free to run. No subscription, no monthly fee, no gas per trade.`,
 	},
 	{
 		q: "Do I need to sign up or KYC?",

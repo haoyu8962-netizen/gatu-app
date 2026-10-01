@@ -5,6 +5,7 @@ import { Link, type RegisteredRouter, useLocation, useRouter, type ValidateLinkO
 import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
 import { TOUCH_PRESS_CLASS, TOUCH_PRESS_FADE_CLASS } from "@/components/ui/touch-press";
+import { BRAND_NAME } from "@/config/brand";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -180,7 +181,7 @@ export function MobileNavDrawer() {
 					<div className="h-[calc(3rem+env(safe-area-inset-top))] px-3 pt-[env(safe-area-inset-top)] flex items-center justify-between border-b border-stroke-weak/60 shrink-0">
 						<Link
 							{...navigationLinkProps({ to: tradeHomePath, search: { scope: "all" } })}
-							aria-label="GATU"
+							aria-label={BRAND_NAME}
 							data-brand-home-link=""
 							className="flex items-center gap-1.5 rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>

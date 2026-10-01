@@ -1,16 +1,18 @@
+import { APP_URL, BRAND_NAME, SITE_URL } from "./brand";
+
 export const SEO_DEFAULTS = {
-	siteName: "GATU",
-	siteUrl: "https://gatu.ai",
-	appUrl: "https://app.gatu.ai",
-	defaultTitle: "GATU — Gateway to on-chain transactions",
-	defaultOgTitle: "GATU",
+	siteName: BRAND_NAME,
+	siteUrl: SITE_URL,
+	appUrl: APP_URL,
+	defaultTitle: `${BRAND_NAME} — Gateway to on-chain transactions`,
+	defaultOgTitle: BRAND_NAME,
 	defaultDescription: "Perpetual and spot trading—direct on-chain access via a single gateway.",
 	locale: "en_US",
 	themeColor: "#0a0a0a",
 	ogImage: "/og-website-1200x630.png",
 	ogImageWidth: 1200,
 	ogImageHeight: 630,
-	ogImageAlt: "GATU — Gateway to on-chain transactions",
+	ogImageAlt: `${BRAND_NAME} — Gateway to on-chain transactions`,
 	logoImage: "/gatu-logo-1024.png",
 } as const;
 
@@ -40,7 +42,7 @@ export const ROUTE_SEO = {
 	BLOG_INDEX: {
 		title: "Blog",
 		description:
-			"Notes from building GATU — architecture, signing flows, self-hosting, and the weekly changelog.",
+			`Notes from building ${BRAND_NAME} — architecture, signing flows, self-hosting, and the weekly changelog.`,
 		path: "/blog",
 		keywords: ["changelog", "architecture", "self-hosting", "signing"],
 	},

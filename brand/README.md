@@ -30,5 +30,6 @@
 ## 更新素材
 
 1. 设计方的新版本覆盖到对应目录，原始压缩包放进 `_source/`。
-2. 动效库或分享卡工具更新后，运行 `node scripts/brand-export-motion.mjs --write` 重新导出，再用 `--check` 确认导出可以复现。
+2. 动效库或分享卡工具更新后，运行 `pnpm brand:export-motion` 重新导出，再用 `node scripts/brand-export-motion.mjs --check` 确认导出可以复现。
 3. 不要手工修改 `loader/` 与 `tokens/` 下的文件，它们以 `PROVENANCE.json` 与工具原件为准。
+4. 改了 `brand.json` 或任何素材后运行 `pnpm brand:check` 与 `pnpm test:brand`；读取方和校验清单见 [docs/brand-assets.md](../docs/brand-assets.md)。

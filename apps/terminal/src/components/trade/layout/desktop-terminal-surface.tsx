@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { BRAND_NAME } from "@/config/brand";
 import { createLazyComponent, preloadLazyComponents } from "@/lib/lazy";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { GeoRestrictionBanner } from "../geo/geo-restriction-banner";
@@ -36,7 +37,7 @@ export function DesktopTerminalSurface({ marketReady, orderEntryDraftReady = tru
 					<MainWorkspace orderEntryDraftReady={orderEntryDraftReady} />
 				) : (
 					<main className="min-h-0 flex-1 bg-grid-container" aria-busy="true">
-						<output className="sr-only">Loading GATU...</output>
+						<output className="sr-only">{`Loading ${BRAND_NAME}...`}</output>
 					</main>
 				)
 			}

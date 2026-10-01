@@ -7,6 +7,17 @@ import { fileURLToPath } from "node:url";
 const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SHARED_STYLES = readFileSync(resolve(REPOSITORY_ROOT, "packages/ui/src/globals.css"), "utf8");
 const TERMINAL_STYLES = readFileSync(resolve(REPOSITORY_ROOT, "apps/terminal/src/styles.css"), "utf8");
+const WEBSITE_STYLES = readFileSync(resolve(REPOSITORY_ROOT, "apps/website/src/styles/global.css"), "utf8");
+const BRAND = JSON.parse(readFileSync(resolve(REPOSITORY_ROOT, "brand/brand.json"), "utf8"));
+const BRAND_COLOR_VARIABLES = {
+	action: "--action",
+	actionHover: "--action-hover",
+	actionActive: "--action-active",
+	onAction: "--on-action",
+	signal: "--signal",
+	signalHover: "--signal-hover",
+	signalSoft: "--signal-soft",
+};
 
 test("shared UI and Terminal expose the same brand semantics", () => {
 	for (const selector of [":root", ".dark"]) {
@@ -16,6 +27,25 @@ test("shared UI and Terminal expose the same brand semantics", () => {
 				readCssVariable(TERMINAL_STYLES, selector, variable),
 				`${selector} ${variable}`,
 			);
+		}
+	}
+});
+
+test("every stylesheet carries the brand colors recorded in brand/brand.json", () => {
+	for (const [label, source, themes] of [
+		["packages/ui", SHARED_STYLES, { ":root": "light", ".dark": "dark" }],
+		["apps/terminal", TERMINAL_STYLES, { ":root": "light", ".dark": "dark" }],
+		["apps/website (dark only)", WEBSITE_STYLES, { ":root": "dark" }],
+	]) {
+		for (const [selector, theme] of Object.entries(themes)) {
+			for (const [key, variable] of Object.entries(BRAND_COLOR_VARIABLES)) {
+				assert.equal(
+					readCssVariable(source, selector, variable).toLowerCase(),
+					BRAND.colors[theme][key].toLowerCase(),
+					`${label} ${selector} ${variable} must equal brand.json colors.${theme}.${key}`,
+				);
+			}
+			assert.equal(readCssVariable(source, selector, "--focus"), "var(--signal)", `${label} ${selector} --focus`);
 		}
 	}
 });

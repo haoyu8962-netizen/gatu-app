@@ -147,7 +147,9 @@ test("re-runs the brand and legal guards whenever the brand source or legal text
 	}
 
 	const terminalTests = readWorkflow("terminal-tests.yml");
+	assert.equal(terminalTests.includes("run: pnpm brand:check"), true, "terminal tests never check the brand source");
 	for (const file of [
+		"public-origins.test.ts",
 		"pwa-manifest.test.ts",
 		"network-storage.test.ts",
 		"referral-join.test.ts",

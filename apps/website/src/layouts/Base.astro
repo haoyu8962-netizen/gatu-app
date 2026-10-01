@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { APP_URL } from "@/config/brand";
 import { SEO_DEFAULTS } from "@/config/seo";
 import { resolveSeo, type PageSeo } from "@/lib/seo";
 
@@ -65,8 +66,8 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		<link rel="canonical" href={seo.canonical} />
 		<link rel="sitemap" href="/sitemap-index.xml" />
 
-		<link rel="preconnect" href="https://app.gatu.ai" />
-		<link rel="dns-prefetch" href="https://app.gatu.ai" />
+		<link rel="preconnect" href={APP_URL} />
+		<link rel="dns-prefetch" href={APP_URL} />
 
 		{schemas.map((schema) => (
 			<script type="application/ld+json" set:html={JSON.stringify(schema)} />

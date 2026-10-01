@@ -1,4 +1,6 @@
 ---
+import { BRAND_NAME } from "@/config/brand";
+
 interface Props {
 	withWordmark?: boolean;
 	size?: "sm" | "md";
@@ -20,6 +22,6 @@ const Tag = href ? "a" : "span";
 		width={width}
 		height={height}
 		class="h-auto shrink-0"
-		alt="GATU"
+		alt={BRAND_NAME}
 	/>
 </Tag>

@@ -62,6 +62,9 @@ jobs:
       - name: Test the CloudFront release tooling
         run: pnpm test:cloudfront
 
+      - name: Check brand source consistency
+        run: pnpm brand:check
+
       - name: Test Hyperliquid API resource hints
         working-directory: apps/terminal
         run: >-
@@ -275,6 +278,7 @@ jobs:
           src/lib/tests/root-startup-fallback.test.tsx
           src/lib/tests/mobile-header-brand.test.tsx
           src/lib/tests/pwa-manifest.test.ts
+          src/lib/tests/public-origins.test.ts
           src/lib/tests/network-storage.test.ts
           src/lib/tests/referral-join.test.ts
           src/lib/tests/referral.test.ts
