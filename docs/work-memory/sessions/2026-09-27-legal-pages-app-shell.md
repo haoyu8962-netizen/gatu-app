@@ -53,7 +53,7 @@
 - `pnpm --filter @gatu/terminal test`（改完上面这些之后的第一轮）：602 个文件，4 个失败、597 个通过、1 个跳过；6869 项里 4 项失败。其中 3 项是本次遗漏的测试：`dashboard-frame-view`（遍历预设键时找不到 `legal` 对应的页面文件）、`legal-policy-contract`（断言 `/cookies` 为 `ssr: true`）、`root-provider-runtime`（文档路由绕过运行时门），已修正。第 4 项 `chart-build-assets` 在并行负载下 5 秒超时，单独运行 17 项通过，1.7 秒，与本次改动无关。修正后这 4 个文件单独重跑，43 项通过；修正后没有再跑整套。
 - `pnpm i18n:extract`：只去掉已删除文件的引用，并把不再使用的 “Cookie Policy” 标为废弃；缺失翻译数没有变化（ar/es/fr/hi 各 56 条，zh 3 条，是原有的）。
 - `pnpm build`（Node v24.15.0，默认配对开关关闭）：退出码 0。预渲染只生成 `/trade`（即 `_shell.html`），`.output/public` 下只有 `_shell.html` 与 `404.html`，没有 `<route>/index.html`；chunk 环检查、bundle 预算通过（总计 3,116,765 gzip 字节，比基线少 37,942；交易页启动 1,547,642 gzip 字节，少 33,574）；壳内预加载 112 项；内联脚本哈希为 2 页 3 个。项目记录要求用 Node 22.15 测量精确字节数，本次没有用 22.15 复测。
-- 开发服务器浏览器检查（Vite 3015，内置浏览器，页面由脚本读取 DOM，面板隐藏时无法截图）：1440 宽的 `/terms` 只有应用的 Primary navigation 和底栏 “Documentation and legal” 两组导航，一个 `<main>`，没有错误边界；375 宽的 `/privacy` 使用 MobileHeader，没有页脚，`scrollWidth` 375，标题 “Privacy Policy | Sairn”；从 `/trade/BTC` 点底栏 Terms 是客户端导航（没有新的 navigation entry），返回后回到交易页，订单簿正常。
+- 开发服务器浏览器检查（Vite 3015，内置浏览器，页面由脚本读取 DOM，面板隐藏时无法截图）：1440 宽的 `/terms` 只有应用的 Primary navigation 和底栏 “Documentation and legal” 两组导航，一个 `<main>`，没有错误边界；375 宽的 `/privacy` 使用 MobileHeader，没有页脚，`scrollWidth` 375，标题 “Privacy Policy | GATU”（改名前的实测原文）；从 `/trade/BTC` 点底栏 Terms 是客户端导航（没有新的 navigation entry），返回后回到交易页，订单簿正常。
 - 未做：真机和 iOS Safari 检查、已安装 v9 Service Worker 的浏览器跨版本首次导航、CloudFront 线上发布与 `verify`、`csp-coverage.mjs` 浏览器套件、未连接钱包以外的登录状态检查。
 
 ## 补记：三项待决事项按官方做法落地

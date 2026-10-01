@@ -115,3 +115,7 @@
   - `node --test tests/brand-cross-app.test.mjs`：4 项通过；
   - `brand-catalog-contract`、`brand-semantics-contract`、`brand-logo`、`trading-agent-config`、`pwa-manifest`、`legal-policy-contract` 等 12 个 Vitest 文件，共 86 项通过。
 - **没有做的**：任何发布或仓库外操作；外部钱包重新授权的真实流程；Safari、Firefox、真机和已安装的 PWA。
+
+## 补充（2026-10-02，历史记录的更正）
+
+Codex 对 PR #68 的只读审查发现，有 4 处替换违反了决策 7「带日期的历史事实保留原值」：工作记录的原始任务标题（`2026-09-12-pairing-release.md` 的 `thread.title`）、本机定时任务的名称（`2026-09-12-work-memory.md`），以及两条实测输出（`2026-09-13-spa-shell-spike.md` 的 `h1`、`2026-09-27-legal-pages-app-shell.md` 的页面标题）。这些都已恢复为原文，正文处另加「改名前的实测原文」说明。任务标题、实测输出与现存外部对象的名称都属于决策 7 所说的历史事实，与命令、域名、AWS 名称一样保留原样。

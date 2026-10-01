@@ -150,12 +150,12 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 ## Brand identity contract
 
-- `docs/brand-assets.md` owns the brand source, its readers, the logo, icon, accent and status-motion rules and the sairn.ai go-live order; ADR 0027 (single source, renamed and kept identifiers, history policy), 0028 (accent colours), 0029 (status motion), 0030 (PnL share card) and 0031 (domain move) record the decisions.
+- `docs/brand-assets.md` owns the brand source, its readers, the logo, icon, accent and status-motion rules and the sairn.ai go-live order; ADR 0027 (single source, renamed and kept identifiers, history policy), 0028 (accent colours), 0029 (status motion), 0030 (PnL share card), 0031 (domain move) and 0032 (gatu.ai offline cutover) record the decisions.
 - Brand values (name, legal entity, domains, support email, accent and logo colours, PWA theme colour) come only from `brand/brand.json`, through `config/brand.ts`, the website config or `scripts/brand.mjs`. Name the product in messages only through `BRAND_NAME` / `{BRAND_NAME}`; never write brand names, domains or mailboxes as literals elsewhere.
 - Internal identifiers (storage keys, Web Lock names, the Hyperliquid Agent slot, headers, environment variables, package scope) are `sairn` literals, never read from `brand.json`; renaming one is a signing or data-continuity change, not a brand edit. The `gatu` names that stay (AWS resources, the repository, the `domains.legacy` group, the dual-written legacy forwarded-host header) are listed in ADR 0027.
 - Generated, exported and synced files are never edited by hand: `pnpm brand:export-motion` (needs Chromium) rewrites `brand/loader`, `brand/loader-supplement/glyphs` and `brand/tokens`, `pnpm brand:derive-icons` the derived icons and e-mail logo in `brand/web`, and `pnpm brand:sync` the `lib/brand/*.gen.*` modules and the copies in `public/`. `pnpm brand:check` and `pnpm test:brand` must pass after any change to `brand/`, `legal/` or a brand reader.
 - The status of a requested action uses `StatusGlyph`, `BrandMotion` or `ButtonLoading` with semantic tones; an unknown result is never drawn as an error. Passive loading keeps the neutral spinner, and every remaining spinner is registered with its reason in `status-motion-surface-contract.test.ts`.
-- Keep `gatu.ai` in `domains.legacy` until ADR 0031's retirement step; canonical URLs, the sitemap, legal text and referral links use only `domains.primary`.
+- Keep `gatu.ai` in `domains.legacy`, and the dual-written legacy forwarded-host header and route marker, until the retirement release in ADR 0032; canonical URLs, the sitemap, legal text and referral links use only `domains.primary`.
 
 ## Verification
 

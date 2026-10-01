@@ -6,17 +6,41 @@
   "title": "gatu.ai 直接下线、切换到 sairn.ai 的规划",
   "kind": "task",
   "status": "recorded",
-  "topics": ["brand-identity", "static-hosting"],
-  "summary": "用户决定旧域名直接下线、不并存不 301；只读调查后写成执行方案 docs/sairn-domain-cutover-plan.md（拟议，未执行）：先接后断（窗口内过渡证书覆盖新旧 8 个名字，sairn 零中断、gatu 准时下线）、p24 保留旧组识别作回滚保险、p25 清理、只删网页记录、不做告别 SW；发现未记录的 gatu.ai SES 发信配置、另一个会话的并存方案被取代。用户随后答复五个待决问题：先接后断、gatu.ai 不永久续费（到 2028-05-06，到期前清单）、gatu.ai 邮件与 SES 推迟到品牌替换完成后、另登记 sairn 推荐码、不做告别 SW；用户按方案 A 在控制台挂上临时 IAM 策略。开始执行时用户改为先断后接，4 名 sairn 证书 b04a51c6 已签发；用户决定同时换新的 Privy 应用（邮箱用户的内嵌钱包地址会变）。",
+  "topics": [
+    "brand-identity",
+    "static-hosting"
+  ],
+  "summary": "用户决定 gatu.ai 直接下线、不并存不 301。先做只读规划（docs/sairn-domain-cutover-plan.md），再按用户答复定稿：先断后接、gatu.ai 不永久续费、gatu.ai 邮件与 SES 推迟、另登记 sairn 推荐码、不做告别 SW、换新的 Privy 应用；决策另立 ADR 0032。用户在控制台给 gatu-edge 挂临时 IAM 策略后，已签发 4 名 sairn 证书 b04a51c6、源站请求策略加入 X-Sairn-Forwarded-Host，并开 PR #68。Codex 四路只读对抗审查报 5 项 P1、10 项 P2，复核后全部修复或改写（主网赞助充值开关待用户决定）。发布与切换尚未执行。",
   "thread": null,
   "baseCommit": "5517ef70",
-  "commits": ["64d63e20"],
+  "commits": [
+    "64d63e20"
+  ],
   "sources": [
-    { "path": "docs/sairn-domain-cutover-plan.md" },
-    { "path": "docs/adr/0031-domain-move-to-sairn-ai.md" },
-    { "path": "docs/brand-assets.md" },
-    { "path": "deploy/website/README.md" },
-    { "path": "deploy/cloudfront/README.md" }
+    {
+      "path": "docs/sairn-domain-cutover-plan.md"
+    },
+    {
+      "path": "docs/adr/0031-domain-move-to-sairn-ai.md"
+    },
+    {
+      "path": "docs/brand-assets.md"
+    },
+    {
+      "path": "deploy/website/README.md"
+    },
+    {
+      "path": "deploy/cloudfront/README.md"
+    },
+    {
+      "path": "docs/adr/0032-gatu-offline-cutover-to-sairn.md"
+    },
+    {
+      "path": "deploy/cloudfront/functions/terminal-request.js"
+    },
+    {
+      "path": "apps/terminal/src/lib/trade/order-notification-glyph.ts"
+    }
   ],
   "supersedes": []
 }
@@ -87,12 +111,49 @@
 - 用户同意 0.6：源站请求策略已加入 `X-Sairn-Forwarded-Host`，结果见方案 0.6（ETag `E23ZP02F085DFQ` → `ETVPDKIKX0DER`，两个 gatu 主机的 health、geo、同源 POST 都正常）。
 - 按用户要求启动 4 路 Codex（`gpt-6-astra`，`-s read-only`，medium）对抗审查：品牌标识、状态动效与界面、部署与切换方案、文档与流程。结论与处理另记。
 
+## Codex 对抗审查与处理（2026-10-02）
+
+用户要求用 Codex 对抗审查 PR #68，查找不规范与遗漏之处。四路审查（`gpt-6-astra`，`-s read-only`，medium，基线 `origin/dev...ff34d248`）分别覆盖品牌标识、状态动效与界面、部署与切换方案、文档与流程；报告保存在会话草稿目录，不入库。我逐条对照源码复核，用变异验证新增测试能抓住错误实现，再修复：
+
+| 发现 | 复核 | 处理 |
+|---|---|---|
+| P1 全部平仓「一笔成交、一笔被拒」显示半实心 `partial` 符号 | 成立：队列项 `status: "partial"`、`countMode: "filled"`、子项含 `rejected`、顶层无 `error` | `order-notification-glyph.ts` 子项有拒绝、撤销、未知时用 `warning`；`order-toast-placement` 补 5 个用例，去掉子项判断的变异会失败 |
+| P1 路由标记改名无过渡，两个 CloudFront 函数先后发布的间隙丢配对页安全头 | 成立：`functions` 先发请求函数，p23 响应函数只读 `x-gatu-route` | 请求函数双写并清除两种访客标记，响应函数两种都认；`functions.test.mjs` 加组合用例，三个变异都会失败 |
+| P1 部署手册要求把旧转发头「换成」新头 | 成立：生成器也只输出新头 | 生成器过渡期输出新旧两个头（10 个）；`deploy/cloudfront/README.md` 改为「加入，p25 后再删」 |
+| P1 4.1 与阶段 5 之后回滚步骤不足 | 成立 | 方案新增「按阶段回滚」表 |
+| P1（降为 P2）品牌颜色单一来源未闭合 | 部分成立：颜色现在一致，但跨应用测试没比对 `logo.*`，`brand.mjs` 不查深色 Logo 的填充色，Privy 写死颜色 | `brand.mjs` 校验每种配色版本的填充色；跨应用测试比对 `--logo-*` 与分享卡变量；Privy 经 `config/brand.ts` 读颜色（带十六进制校验）；改 `logo.dark.choice` 的变异让两道检查都失败 |
+| P2 生成器静默丢弃根属性、单引号属性 | 成立：四种输入在旧解析器上都被接受 | 根属性允许清单、根 `style` 只许 `--srm-floor`、属性解析遇到读不懂的文本即报错；派生图标脚本拒绝两条路径之外的内容；变异测试加 4 种输入 |
+| P2 翻译契约漏读多行 PO 条目 | 部分成立：现有目录只有文件头是多行 | 解析器拼接续行，加解析自测，去掉续行处理的变异会失败 |
+| P2 Lambda 测试钉不住新头优先与旧域名同源 | 成立 | 新增冲突头优先级与四主机 × 三种头组合的同源用例，「旧头优先」「忽略旧头」两个变异都会失败 |
+| P2 新 Privy 应用的赞助充值只验地址展示 | 成立 | 方案改为待用户决定（建议 p24 先关闭主网开关，带资金验收后再开），2.6 写明地址展示的证明边界 |
+| P2 官网构建命令错误、在下线之后才构建 | 成立 | 改为两条完整的 pnpm 命令并挪到摘别名之前 |
+| P2 官网首次发布删除范围与发布手册冲突 | 成立 | 方案改为按手册只删撤下的 HTML，资源不加 `--delete` |
+| P2 历史记录改写了原始任务标题与实测引文 | 成立：共 4 处 | 恢复原文并加说明，ADR 0027 追加更正 |
+| P2 本记录的限制与待办和已执行操作矛盾，文档入口仍写「拟议，未执行」 | 成立 | 本节与下两节改写，`docs/README.md`、`brand-assets.md`、ADR 0031 改为执行中并指向 ADR 0032 |
+| P2 `legal/docs.md` 入门步骤顺序与首次交易契约不符 | 成立 | 按「连接 → 接受条款 → 启用交易 → 账户为空才充值 → 下单」重写，`legal-policy-contract` 钉住顺序，调换顺序的变异会失败 |
+| P2 官网费用测试只查字符串 | 成立 | 测试从终端 `config/hyperliquid.ts` 读 builder fee，核对展示总费率、TWAP 豁免与现货只收卖单；四个变异都会失败 |
+
+审查也提醒：`hyperliquid.persist_trading_connection`、`hyperliquid_agent_*` 与 `Mobile` 槽位按归属文档保留原名，不应强行改名；本次未改。
+
 ## 验证与限制
 
-只做了只读调查与文档检查（`git diff --check`、相对链接与引用路径检查、记录索引检查）。没有执行任何 AWS 写操作、Cloudflare、Privy 或 Hyperliquid 操作。本机经代理，系统解析器返回假地址，公共解析器结果不可信；文中 DNS 事实以 Cloudflare 权威服务器的应答为准。
+- 2026-10-01 规划阶段只做了只读调查与文档检查。
+- 之后的写操作：
+  - ACM 申请并签发 sairn 证书（10-01）；
+  - 源站请求策略加入新头（10-02）；
+  - 推送分支并开 PR #68（10-02）。
+  每一项的命令与结果见上文各节。
+- 由用户在各自控制台完成的操作：
+  - Cloudflare 验证记录；
+  - 临时 IAM 策略；
+  - 本地 Privy App ID；
+  - 新 Privy 应用（尚未取得后台配置截图）。
+- 本机经代理，系统解析器返回假地址，DNS 事实以 Cloudflare 权威服务器带 `aa` 的应答为准。
+- 审查修复的验证结果见提交说明与下一次记录更新。
 
 ## 后续与替代关系
 
-- 权限已按方案 A 挂上；等用户同意开始阶段 0（先合并两个后台分支并推送 PR-A，再申请证书等）；执行前在 PR-A 新增 ADR 0032，执行后补执行记录。
+- 等用户决定主网赞助充值开关（方案第 7 节第 8 项）。
+- PR #68 的 CI 通过后合入 `dev`、再晋升 `main`；之后用新 Privy App ID 构建 p24，进入阶段 1。新 Privy 应用的后台配置按方案 0.7 由用户完成并截图。
 - 品牌替换完成后处理 gatu.ai 的邮件与 SES（方案第 7 节后续事项 1）；2028-05-06 前做完到期前清单（后续事项 2）。
-- 执行前确认只有一个会话操作 AWS 与 Cloudflare。
+- 执行时只由一个会话操作 AWS 与 Cloudflare。

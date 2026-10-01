@@ -53,7 +53,7 @@
 
 - 从别名替换生效到 sairn DNS 生效之间，两个域名都打不开，预计几分钟；公共解析器如果已经缓存了 sairn 名的否定答案，最长还要等 1800 s。目前没有用户，可以接受；验收用权威 DNS 和 `curl --resolve`，不受这层缓存影响。
 - 无法预检别名冲突：CloudFront 只在分发当前挂的证书覆盖待查名字时才回答（0.4），而 sairn 证书不覆盖现有 gatu 别名，所以换证书和换别名必须同一次完成。如果 sairn 名被别的分发占用，替换会整体失败、不改动任何东西，gatu 照常在线，再按 AWS 文档处理冲突后重试。
-- 回滚：用同一命令换回 gatu 别名和原证书，按 0.2 的快照恢复 gatu DNS。
+- 回滚：用同一命令换回 gatu 别名和原证书，按 0.2 的快照恢复 gatu DNS。4.1、阶段 5 之后还要多做几步，见第 5 节末尾「按阶段回滚」。
 
 ### 3.3 两次发布
 
@@ -87,7 +87,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 ### 4.2 PR-B：p25 清理
 
-`brand/brand.json` 删除 `domains.legacy`；`scripts/brand.mjs` 只校验主组，并新增退役名单让 `gatu.ai` 一旦再出现就报错；`config/brand.ts`、`config/public-origins.ts`、`lib/network.ts` 只认主组；删除 `LEGACY_FORWARDED_HOST_HEADER` 回退（`edge/lambda-handler.ts`）和请求函数的旧头双写（`deploy/cloudfront/functions/terminal-request.js`）；测试改为断言 gatu 主机返回 null、只带旧头被忽略（`public-origins`、`network-storage`、`referral-join`、`lambda-handler`、`functions.test.mjs`）；文档同步（`docs/brand-assets.md` 旧域名组一段、`brand/README.md`、ADR 0027/0031 追加「已退役」）。
+`brand/brand.json` 删除 `domains.legacy`；`scripts/brand.mjs` 只校验主组，并新增退役名单让 `gatu.ai` 一旦再出现就报错；`config/brand.ts`、`config/public-origins.ts`、`lib/network.ts` 只认主组；删除 `LEGACY_FORWARDED_HOST_HEADER` 回退（`edge/lambda-handler.ts`）、请求函数的旧头双写与旧路由标记 `x-gatu-route`（`deploy/cloudfront/functions/terminal-request.js` 的 `tagRoute` 与删除语句），以及响应函数对旧标记的回退（`terminal-response.template.js`，重新渲染）；`distribution-config.mjs` 的白名单删除 `X-Gatu-Forwarded-Host`，p25 验证后再按 5.2 更新线上策略；测试改为断言 gatu 主机返回 null、只带旧头被忽略（`public-origins`、`network-storage`、`referral-join`、`lambda-handler`、`functions.test.mjs`）；文档同步（`docs/brand-assets.md` 旧域名组一段、`brand/README.md`、ADR 0027/0031 追加「已退役」）。
 
 ## 5. 执行步骤
 
@@ -114,8 +114,8 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 | # | 步骤 | 验证 |
 |---|---|---|
-| 1.1 | [仓库] PR-A 已合入 `main`；在临时工作树构建 p24（Node 22.15，`SAIRN_BUILD_SHA`、`SAIRN_RELEASE_ID=cloudfront-<日期>-p24`、`VITE_HYPERLIQUID_AGENT_NAME=sairn`、`VITE_PRIVY_APP_ID=<新应用>`（命令行显式覆盖 `.env.local`，构建后在产物里确认只有新 App ID、没有旧 ID）、`VITE_MOBILE_PAIRING_ENABLED=false`、`VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true`，并**显式**写出 `VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED`、`VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED`），加 `build:lambda`。**保留该工作树与 `.output/public` 到 p25 之后**，`verify` 要比对它 | `build-meta.json` 的提交、发布号、闸门 |
-| 1.2 | [E] `deploy.mjs functions --execute --origin https://app.gatu.ai` → `lambda --function-name gatu-terminal-api --execute` → `sync --bucket gatu-terminal-2026 --allow-sponsored-mainnet-deposits --execute` → 两个终端分发 `invalidate` | 命令全部成功 |
+| 1.1 | [仓库] PR-A 已合入 `main`；在临时工作树构建 p24（Node 22.15，`SAIRN_BUILD_SHA`、`SAIRN_RELEASE_ID=cloudfront-<日期>-p24`、`VITE_HYPERLIQUID_AGENT_NAME=sairn`、`VITE_PRIVY_APP_ID=<新应用>`（命令行显式覆盖 `.env.local`，构建后在产物里确认只有新 App ID、没有旧 ID）、`VITE_MOBILE_PAIRING_ENABLED=false`、`VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED`（**待你决定**，见第 7 节第 8 项；建议先设 `false`），并**显式**写出 `VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED`、`VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED`），加 `build:lambda`。**保留该工作树与 `.output/public` 到 p25 之后**，`verify` 要比对它 | `build-meta.json` 的提交、发布号、闸门 |
+| 1.2 | [E] `deploy.mjs functions --execute --origin https://app.gatu.ai` → `lambda --function-name gatu-terminal-api --execute` → `sync --bucket gatu-terminal-2026 --execute`（只有主网赞助开关为 `true` 时才加 `--allow-sponsored-mainnet-deposits`） → 两个终端分发 `invalidate` | 命令全部成功 |
 | 1.3 | [E] `verify --origin https://app.gatu.ai --network mainnet`、测试网同理、`csp-coverage https://app.gatu.ai` | 全部 ok，违规数组为空 |
 | 1.4 | [你] 真实钱包冒烟：邮箱登录、外部钱包授权 `sairn` Agent、`/join/<code>`、主网与测试网互切；测试网各下一笔最小限价单再撤单 | 全部成功 |
 
@@ -130,7 +130,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 | 2.3 | [E] `--resolve` 预检：取 `d2i25dhfjwco8b.cloudfront.net` 的真实 IP（排除代理假地址 `198.18.0.0/15`），`curl -s --noproxy '*' --resolve app.sairn.ai:443:<IP>` 请求 `/trade/HYPE`（200）、`GET /api/geo`（200）、`/api/health`（204）、`/join/__sairn_healthcheck__`（`no-store`、`x-sairn-route`），测试网同理 | TLS 正常；HSTS、CSP、preconnect 正确 |
 | 2.4 | [你] sairn.ai 区加 `app` → `d2i25dhfjwco8b.cloudfront.net`、`testnet` → `dg9o2gpw3mt8q.cloudfront.net`，**DNS only** | 权威应答（带 `aa`）有 CNAME；sairn 终端从此可用 |
 | 2.5 | [E] `verify --origin https://app.sairn.ai --network mainnet`、测试网同理、`csp-coverage https://app.sairn.ai` | 全部 ok |
-| 2.6 | [你] 冒烟：邮箱登录（新 Privy 应用会为团队邮箱生成新的内嵌钱包，地址与 0.9 记下的旧地址**不同**是预期结果），在测试网下单撤单（证明新 origin 与新应用上能签名）；插件钱包与 WalletConnect 扫码（MetaMask、OKX、Binance、Coinbase 无安全警告）；外部钱包重新授权 `sairn`；`/join/<新推荐码>`（0.12 未完成时用 `gatuappweb3`）；主网测试网互切后留在 sairn；打开赞助充值页，确认显示充值地址（智能钱包与 paymaster 就绪检查通过，不实际充值） | 全部成功 |
+| 2.6 | [你] 冒烟：邮箱登录（新 Privy 应用会为团队邮箱生成新的内嵌钱包，地址与 0.9 记下的旧地址**不同**是预期结果），在测试网下单撤单（证明新 origin 与新应用上能签名）；插件钱包与 WalletConnect 扫码（MetaMask、OKX、Binance、Coinbase 无安全警告）；外部钱包重新授权 `sairn`；`/join/<新推荐码>`（0.12 未完成时用 `gatuappweb3`）；主网测试网互切后留在 sairn；打开赞助充值页，确认显示充值地址（智能钱包与 paymaster 就绪检查通过）。地址能显示，不证明 ZeroDev 合约策略、额度或整条链路可用（`docs/cctp-deposits.md`「Sponsored Wallet Boundary」）；新 Privy 应用的赞助充值另做验收：先在测试网带资金跑通一笔，再在受控主网跑通一笔小额，之后才打开主网赞助开关 | 全部成功 |
 | 2.7 | [你] 删除 gatu.ai 区的 `app`、`testnet` CNAME | 权威应答无 A/AAAA/CNAME（NODATA） |
 
 回滚：2.7 之前，用 `aliases` 换回 `app.gatu.ai`、`testnet.gatu.ai` 与 `ff5677c6…`，删除 sairn 的 CNAME；2.7 之后再按 0.2 的快照恢复 gatu CNAME（已缓存否定答案的解析器最多等 1800 s）。p24 内容都不用动。
@@ -139,11 +139,11 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 | # | 步骤 | 验证 / 停机 |
 |---|---|---|
-| 3.1 | [E] 替换官网别名与证书：`aliases --distribution EP2DIBP3T7M3G --alias sairn.ai --alias www.sairn.ai --certificate-arn <sairn 证书>`，等 `Deployed` | **gatu 官网从此下线** |
-| 3.2 | [仓库][E] 从发布提交重新构建官网（`pnpm --filter @sairn/website test && build`，`dist` 里没有 `gatu`），按 `deploy/website/README.md` 三组上传；再 `aws s3 sync … --delete --dryrun`，确认只删除已撤下的页面（含 `blog/welcome/index.html`）和 7 月版旧资源后执行；失效 `/*` 并等待完成 | 命令全部成功 |
-| 3.3 | [E] `--resolve` 预检 sairn apex 与 `www`（取 `d1bgo95x2hobvu.cloudfront.net` 的真实 IP） | 200 |
-| 3.4 | [你] sairn.ai 加 apex（CNAME 拉平）与 `www` → `d1bgo95x2hobvu.cloudfront.net`，**DNS only** | 权威应答 |
-| 3.5 | [E] `deploy/website/README.md`「发布后检查」 | 全部通过，`/blog/welcome/` 404 |
+| 3.1 | [仓库] 从发布提交构建并测试官网：`pnpm --filter @sairn/website test && pnpm --filter @sairn/website build`，确认 `apps/website/dist` 里没有 `gatu`。在摘旧别名之前做完，不影响线上 | 测试通过、构建成功 |
+| 3.2 | [E] 替换官网别名与证书：`aliases --distribution EP2DIBP3T7M3G --alias sairn.ai --alias www.sairn.ai --certificate-arn <sairn 证书>`，等 `Deployed` | **gatu 官网从此下线** |
+| 3.3 | [E] 按 `deploy/website/README.md` 的三组命令上传；按该手册「已撤下的页面必须删除」，只对 HTML 做一次带 `--delete` 的同步（先 `--dryrun`，确认只删 `blog/welcome/index.html` 等撤下页面）；**资源不加 `--delete`**（手册规定改名后的第一次发布保留 2026-07 的旧资源）；失效 `/*` 并等待完成 | 命令全部成功 |
+| 3.4 | [E] `--resolve` 预检 sairn apex 与 `www`（取 `d1bgo95x2hobvu.cloudfront.net` 的真实 IP） | 200 |
+| 3.5 | [你] sairn.ai 加 apex（CNAME 拉平）与 `www` → `d1bgo95x2hobvu.cloudfront.net`，**DNS only**；随后 [E] 跑 `deploy/website/README.md`「发布后检查」 | 权威应答有记录；检查全部通过，`/blog/welcome/` 404 |
 | 3.6 | [你] 删除 gatu.ai 的 apex 与 `www` 网页记录；**保留** MX、SPF、DMARC、SES 的 `support.gatu.ai` 与 DKIM（邮件推迟处理）、`_…acm-validations`（5.4 前还要用） | 权威应答无网页记录；邮件记录与 0.2 的快照一致 |
 
 回滚：用 `aliases` 换回 `gatu.ai`、`www.gatu.ai` 与 `548ac30d…`，按快照恢复 DNS；内容按 `deploy/website/README.md` 用 `aws s3 cp --recursive` 从备份恢复。
@@ -168,6 +168,18 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 | 5.4 | 30 天后删除两张 gatu 证书 `548ac30d…`、`ff5677c6…`，再删 gatu 区的 `_…acm-validations`（之后旧主机名才会是 NXDOMAIN）；证书删除不可恢复，需你确认 | 无回滚需要 |
 | 5.5 | gatu.ai 邮件与 SES：本方案不处理，品牌替换完成后按第 7 节后续事项 1 另行处理 | — |
 
+### 按阶段回滚
+
+切换后走得越远，回滚要做的事越多。别名、证书与 DNS 的恢复见阶段 2、3 的回滚说明，下表是在此之上还要补的步骤：
+
+| 已完成到 | 回滚还要做 |
+|---|---|
+| 阶段 2、3（4.1 之前） | 只恢复别名、证书与 DNS；p24 内容不动 |
+| 4.1 之后（新 Privy 应用已删 gatu origin） | 在**新** Privy 应用里重新加入 `https://app.gatu.ai`、`https://testnet.gatu.ai`，自建 Reown 项目同理。不要换回旧 App ID：那会再次改变邮箱用户的内嵌钱包地址 |
+| 5.1 之后（线上是 p25，不再识别 gatu 主机） | 先用 1.1 保留的 p24 产物按 functions → lambda → sync → invalidate 重新发布 p24，再做上面两行 |
+| 5.2 之后（白名单已删 `X-Gatu-Forwarded-Host`） | p24 同时写新旧头、Lambda 先读新头，不受影响；只有退回 p23 时才要先把旧头加回白名单 |
+| 5.4 之后（gatu 证书与验证记录已删） | 先为 gatu 名字重新申请证书，在 gatu.ai 区加回验证 CNAME，签发后才能挂回别名 |
+
 ## 6. 风险
 
 | 风险 | 缓解 |
@@ -176,7 +188,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 | 同源 POST 403（转发头与策略不匹配） | p24 双写双读；p25 前读回策略确认含新头 |
 | 旧浏览器里的 SW 与本地 Agent 私钥 | 0.9 撤销 `gatu`；4.1 删除 Privy 旧 origin；4.3 团队清理；gatu.ai 到期前做完到期前清单 |
 | 换 Privy 应用后邮箱账户换了内嵌钱包地址 | 0.9 先转出旧地址的资金并保留旧应用；2.6 用新应用实际签名；外部钱包地址不受影响 |
-| 新 Privy 应用漏配智能钱包或 paymaster | 0.7 照旧应用逐项配置并截图；2.6 确认赞助充值页显示充值地址（就绪检查通过） |
+| 新 Privy 应用漏配智能钱包或 paymaster | 0.7 照旧应用逐项配置并截图；2.6 确认赞助充值页显示充值地址；赞助充值另做测试网与受控主网的带资金验收，通过前主网开关保持关闭（第 7 节第 8 项，待你决定） |
 | 命名 Agent 槽位已满 | 0.9 先撤销旧 Agent |
 | 新域名被钱包或浏览器标为可疑 | 0.11 提交新域名；2.6 逐个钱包检查 |
 | 本机代理让 DNS 与 curl 结果失真（假地址 `198.18.x.x`、成批 REFUSED、公共解析器被劫持） | 只采信带 `aa` 的权威应答并重试 REFUSED；`curl` 加 `--noproxy '*'`；公网复验在没有代理的网络（手机流量或云端终端）做 |
@@ -200,6 +212,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 | 5 | 推荐码 `gatuappweb3` | 另登记一个 sairn 推荐码 | 0.12，2.6，4.4 |
 | 6 | 告别 Service Worker | 不做（目前没有外部用户） | 第 3.4 节 |
 | 7 | Privy 应用（用户补充） | 换新应用，App ID 随 p24 构建更换 | 0.7，0.9，1.1，2.6，4.1 |
+| 8 | 主网赞助充值开关（2026-10-02 审查补充） | **待定**。建议 p24 先关闭，新 Privy 应用在测试网与受控主网各跑通一笔带资金的赞助充值后，下一版再打开；目前没有用户，关闭不影响任何人 | 1.1，1.2，2.6 |
 
 ### 问题 4：权限给法（已选 A，已挂上）
 

@@ -77,10 +77,14 @@ changes, not evidence that a build has been deployed or accepted on real devices
   Sell name and shows no indicator, because the order's status appears in the notifications. Only
   the Enable Trading wallet signature shows progress, with the Sairn button indicator instead of
   the spinning icon it showed in both cases before.
-- The canonical domain is now `sairn.ai` (`app.sairn.ai`, `testnet.sairn.ai`, `support@sairn.ai`);
-  `gatu.ai` stays recognised until it is retired. Browser storage keys, the Hyperliquid Agent slot,
+- The canonical domain is now `sairn.ai` (`app.sairn.ai`, `testnet.sairn.ai`, `support@sairn.ai`).
+  When the domain switches, `gatu.ai` goes offline without a redirect, and settings, sign-in and saved
+  trading keys from `gatu.ai` do not carry over. Browser storage keys, the Hyperliquid Agent slot,
   internal headers, build variables and package names now use `sairn`, so external wallets must
-  approve a new Agent once; see [brand assets](docs/brand-assets.md#域名切换到-sairnai).
+  approve a new Agent once. Email sign-in moves to a new Privy app, so an email account gets a new
+  embedded wallet address; move funds from the old address before the switch. See
+  [ADR 0032](docs/adr/0032-gatu-offline-cutover-to-sairn.md) and the
+  [cutover plan](docs/sairn-domain-cutover-plan.md).
 - Notices on the Staking page and in the Staking, Referral, API wallet and Vault dialogs are rounded
   8px like the other notices; they were 4px to 10px.
 

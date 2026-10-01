@@ -119,7 +119,7 @@ CI 中，`Terminal Tests` 在 `brand/**`、`legal/**` 变化时运行 `pnpm bran
 
 代码已经以 `sairn.ai` 为主域名：SEO、站点地图、`robots.txt`、法律文本、推荐链接和官网都指向 `app.sairn.ai`、`testnet.sairn.ai`、`sairn.ai`，客服邮箱是 `support@sairn.ai`。`gatu.ai` 在 `brand.json` 的 `domains.legacy` 里继续被识别，所以新代码先部署到旧域名上也不会把测试网当成主网，旧域名上的推荐链接照常可用，切换网络时留在旧域名组内。
 
-> **2026-10-01 更新**：用户决定旧域名直接下线、不设并存期也不做 301。下面的上线顺序（尤其第 6 步长期并存、第 8 步 301）已被 [gatu.ai 下线、切换到 sairn.ai](sairn-domain-cutover-plan.md) 取代，执行以该方案为准（拟议，未执行）；本节保留作为原方案记录。同日用户还决定 `gatu.ai` 不永久续费（已注册到 2028-05-06，到期前按该方案的「到期前清单」处理后再定），第 1 步「保持自动续费」不再适用；gatu.ai 的邮件与 SES 等品牌替换完成后再处理。
+> **2026-10-01 更新**：用户决定旧域名直接下线、不设并存期也不做 301。下面的上线顺序（尤其第 6 步长期并存、第 8 步 301）已被 [gatu.ai 下线、切换到 sairn.ai](sairn-domain-cutover-plan.md) 取代，执行以该方案为准（2026-10-02 起执行中，决策见 [ADR 0032](adr/0032-gatu-offline-cutover-to-sairn.md)）；本节保留作为原方案记录。同日用户还决定 `gatu.ai` 不永久续费（已注册到 2028-05-06，到期前按该方案的「到期前清单」处理后再定），第 1 步「保持自动续费」不再适用；gatu.ai 的邮件与 SES 等品牌替换完成后再处理。
 
 上线顺序（DNS 永远最后切，每一步用权威 DNS 和 AWS API 核对）：
 
