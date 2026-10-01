@@ -34,10 +34,6 @@ const ALLOWED_SPINNERS: Record<string, { count: number; reason: string }> = {
 	},
 	"components/trade/mobile/mobile-book-view.tsx": { count: 1, reason: "passive order book reconnect" },
 	"components/trade/mobile/mobile-nav-drawer.tsx": { count: 2, reason: "lazy route chunk fallbacks" },
-	"components/trade/mobile/mobile-trade-view.tsx": {
-		count: 1,
-		reason: "mobile order submit, pending the decision to match the desktop button that shows no submission status",
-	},
 	"components/trade/positions/position-limit-close-modal.tsx": {
 		count: 1,
 		reason: "passive position snapshot loading",
@@ -68,6 +64,7 @@ const MOTION_SURFACES: Record<string, string> = {
 	"components/trade/tradebox/bridge/executing-screen.tsx": "<BrandMotion",
 	"components/trade/components/trading-action-button.tsx": "<ButtonLoading",
 	"components/trade/tradebox/trade-panel.tsx": "<ButtonLoading",
+	"components/trade/mobile/mobile-trade-view.tsx": "<ButtonLoading",
 	"components/trade/components/establish-connection-modal.tsx": "<ButtonLoading",
 	"components/trade/components/wallet-modal.tsx": "<ButtonLoading",
 	"components/trade/tradebox/deposit/wrong-network-screen.tsx": "<ButtonLoading",

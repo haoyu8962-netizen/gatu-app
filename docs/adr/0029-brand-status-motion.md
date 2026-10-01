@@ -26,7 +26,7 @@
 3. **颜色用终端的语义令牌。** 组件只输出 `data-tone` 与 CSS 变量；`styles.css` 把 success、error、attention、neutral、info 映射到 `--text-success`、`--text-error`、`--text-warning`、`--text-weak`、`--text-info`，镂空记号映射到 `--on-action`，插图里的标志用 `--logo-*`，循环最暗帧 `--srm-floor` 跟随 `--logo-loader-floor`，mono 按钮加载固定 0.78（令牌 `loopFloor.mono`）。理由：符号必须与旁边的通知文字同色，令牌已有两种主题的对比度保证。
 4. **三个组件，一处渲染。** `StatusGlyph`（≤18 px 用 16 网格，其余用 24 网格）、`BrandMotion`（插图、复制反馈）、`ButtonLoading`（16 px、`currentColor`）。默认 `aria-hidden`，单独出现时由调用方传已翻译的 `label`；不输出 `<title>`；循环中的组件带 `data-loading-indicator`。状态切换时调用方用 `key` 重新挂载，让一次性动画只在状态变化时播放。
 5. **接入范围。** 订单通知、Sonner 五种类型、资金与 Earn 的「状态未知」通知（调用方传 `unknown` 图标）、待核验资金操作提醒、充值状态页、金库弹层（顺带把未知改为 attention）、API 钱包弹层（用户拒签用 `cancelled`，表示什么都没有提交）、跨链执行页、钱包握手与扫码等按钮、16 px 的复制反馈。映射表在 `docs/brand-assets.md`「状态动效」。
-6. **保留的旋转图标。** 被动数据刷新、懒加载占位、图表重建与限流、页脚连接状态、认证初始化（会让测量过的页头变宽）、移动端下单按钮（另待决定，与桌面不一致）。`status-motion-surface-contract.test.ts` 逐文件登记数量和理由，新增转圈或回退已接入的界面都会失败。
+6. **保留的旋转图标。** 被动数据刷新、懒加载占位、图表重建与限流、页脚连接状态、认证初始化（会让测量过的页头变宽）、移动端下单按钮（另待决定，与桌面不一致）。`status-motion-surface-contract.test.ts` 逐文件登记数量和理由，新增转圈或回退已接入的界面都会失败。后续（2026-10-01）：移动端下单按钮已与桌面一致，提交订单时不显示任何指示，启用交易的签名阶段显示 `ButtonLoading`，已从保留列表移入接入列表（[确认面契约](../confirmation-surfaces.md)第 6 条）。
 7. **减少动态效果。** 生成的 `@media (prefers-reduced-motion:reduce){.srm .srm-anim{animation:none!important}}` 加既有的全局规则；动画元素停在自然几何，即终态。没有应用内开关，任何业务状态都不读 `animationend`。
 
 ## 备选方案
