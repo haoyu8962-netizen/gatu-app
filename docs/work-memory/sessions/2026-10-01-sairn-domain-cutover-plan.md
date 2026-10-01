@@ -73,6 +73,7 @@
 
 - 申请证书：`aws acm request-certificate`（us-east-1，`gatu-edge`，幂等令牌 `sairn20261001`，DNS 验证）成功，得到 `arn:aws:acm:us-east-1:018252911946:certificate/b04a51c6-126d-4f9b-a0be-cbea432551b5`，SAN 为 `sairn.ai`、`testnet.sairn.ai`、`app.sairn.ai`、`www.sairn.ai`，RSA-2048，`PENDING_VALIDATION`。这也证实了临时策略里的证书申请权限。四条验证 CNAME 已交给用户在 Cloudflare 添加；原始输出在 `.worklog/2026-10-01/2026-10-01-sairn-domain-cutover-plan/aws/`。
 - 两张证书都要用到的只有这张 4 名证书，所以即使用户其实想保留先接后断，这次申请也不会白做。
+- 在本地合并两个后台分支（`ad93cbc3` 主题色、`b3f0fb4d` 移动端下单按钮；`docs/work-memory/INDEX.md` 冲突靠重新生成解决，ADR 0029 第 5、6 条两边内容都保留）。在 `b3f0fb4d` 上：`pnpm brand:check`、合并带入文件的 Biome、终端 typecheck、相关 39 个测试文件 664 项、`pnpm test:brand` 通过；`pnpm --filter @sairn/terminal test` 全量 645 个文件中 644 个通过、1 个跳过，7,991 项中 7,990 项通过、1 项跳过，用时 281 s。尚未推送。
 
 ## 验证与限制
 
