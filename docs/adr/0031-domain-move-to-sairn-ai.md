@@ -95,3 +95,9 @@
   - `node --test deploy/cloudfront/functions/functions.test.mjs` 11 项通过；
   - 上文的 DNS 查询。
 - **没有做的**：第 1 至 8 步的任何一步（第 1、2 步的现状见「背景与约束」）；新域名上的 `deploy.mjs verify` 与 `csp-coverage`；Privy 登录；外部钱包在两个域名之间的 Agent 互相顶替；旧域名跳转在各浏览器上的表现。
+
+## 补充（2026-10-01，用户决定旧域名直接下线）
+
+用户决定不设新旧并存期、不做 301：gatu.ai 直接下线，由 sairn.ai 接替。本 ADR 决策 5 的上线顺序（第 6 步同时挂新旧别名后长期并存、第 8 步 301 跳转与 Search Console 地址更改）和决策 7（退役前继续识别旧域名组）的并存部分不再执行；决策 2 的双组识别只作为切换版本的回滚保险，下一个版本删除。执行方案见 [gatu.ai 下线、切换到 sairn.ai](../sairn-domain-cutover-plan.md)（拟议，未执行），执行后另立 ADR 0032。
+
+更正：「背景与约束」说 sairn.ai 没有 MX，同日复查已有 Cloudflare Email Routing 的 MX 与 SPF，但没有 DMARC；gatu.ai 上还有一套此前没有记录的 Amazon SES 发信配置（`support.gatu.ai`）。HSTS 不足以作为保留旧域名的理由（新持有者能签出合法证书）；保留注册的理由是旧 origin 的浏览器存储与 Service Worker 可能被接管、邮箱找回与钓鱼风险。

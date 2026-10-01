@@ -19,6 +19,8 @@ AWS 资源名保留 `gatu-*`，这是有意的：它们只是现有资源的标�
 
 ## 发布前提
 
+> **2026-10-01 更新**：用户决定 gatu.ai 直接下线。证书、别名与 DNS 的顺序以 [gatu.ai 下线、切换到 sairn.ai](../../docs/sairn-domain-cutover-plan.md) 阶段 3 为准（先接后断、窗口结束时只留 sairn 别名），下面的前提清单其余部分仍适用。
+
 以下各项全部满足之前不要发布。构建产物里的规范链接、社交卡片图片地址、`robots.txt` 与站点地图都已经指向 `https://sairn.ai`，所有按钮都指向 `https://app.sairn.ai`；在新域名可用之前发布，会让线上 `gatu.ai` 的社交卡片和"打开终端"按钮全部失效。
 
 1. **注册 `sairn.ai`。** 2026-10-01 上午 `dig +norecurse @v0n1.nic.ai sairn.ai NS` 还返回 `NXDOMAIN`；同日复查时 WHOIS 显示它已于 11:40:28 UTC 经 Cloudflare 注册，权威服务器把它委派给 `holly.ns.cloudflare.com`、`lakas.ns.cloudflare.com`，还没有 A、MX 记录。发布前确认这个 Cloudflare 区归属本项目账号，并重跑这条命令核对 NS。
