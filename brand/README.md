@@ -15,7 +15,7 @@
 | `tools/` | Motion Library 与 Share Studio 两个离线 HTML 工具 | 设计方原件；产品代码不引用 |
 | `loader/` | 动效库导出：16 种动效（三种外观、动态与静态终态）、7 个状态符号、时长令牌；`PROVENANCE.json` 记录来源哈希 | 由 `node scripts/brand-export-motion.mjs` 从 `tools/` 导出 |
 | `tokens/sairn.tokens.json` | 设计令牌（调色板、深浅主题的表面、文字、状态色） | 由同一脚本从两个 HTML 工具中提取，并校验两者一致 |
-| `share-cards/` | 分享卡与链接预览卡素材 | 待补 |
+| `share-cards/` | 分享卡与链接预览卡素材 | 设计方未交付；两张 1200×630 链接预览卡由 `designs/og-cards/cards.html` 按 Sairn 视觉生成（`pnpm og:generate`），持仓盈亏分享卡在终端代码里绘制 |
 | `fonts/` | 品牌字体与授权文件 | 当前没有专用字体 |
 | `_source/` | 原始压缩包与设计工程文件 | 不进 Git |
 

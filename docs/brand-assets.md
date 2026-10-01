@@ -46,6 +46,8 @@
 | 终端图标 | `apps/terminal/public` 下的 favicon、apple-touch、PWA 图标 | 由 `pnpm brand:sync` 从 `brand/web` 复制，不要手改 |
 | 官网 Logo、SVG 图标、结构化数据 Logo | `Logo.astro`、`Base.astro`、`config/seo.ts` 直接导入 `brand/` 下的文件（`?url`） | 构建产物带哈希或内联，避免线上旧文件的长期缓存；`favicon.ico` 与 apple-touch 由同步脚本复制到 `apps/website/public` |
 
+链接预览卡（OG）由 `designs/og-cards/cards.html` 生成：深色设计令牌配色、内嵌横版组合与标志的轮廓路径、仓库自带的开源授权字体；终端卡沿用原中文产品描述（字体子集只含这些字），官网卡用口号的英文版（看清市场用信号薄荷色、自主判断用选择琥珀色）。生成与校验见 `designs/og-cards/README.md`。
+
 设计方没有交付、由脚本派生的文件只有两个，都由 `pnpm brand:derive-icons` 生成：
 
 - `brand/web/icon.svg`：按设计方 `icon-512.png` 量出的几何（472 px 圆角方、内缩 20 px、圆角 106 px、标志高 60.2%）绘制的矢量图标；与原图逐像素比较的平均通道差为 0.11。

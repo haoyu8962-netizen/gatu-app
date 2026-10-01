@@ -54,7 +54,7 @@ if (args.has("--check") && args.has("--generate")) {
 }
 
 const checkOnly = args.has("--check");
-const temporaryDirectory = await mkdtemp(resolve(tmpdir(), "gatu-og-cards-"));
+const temporaryDirectory = await mkdtemp(resolve(tmpdir(), "og-cards-"));
 
 try {
 	const fontFileNames = await verifyVendoredFonts();
@@ -172,10 +172,10 @@ async function renderCard(page, name, outputPath) {
 	await page.goto(templateUrl.href, { waitUntil: "load" });
 	await page.evaluate(async () => {
 		await Promise.all([
-			document.fonts.load('400 16px "GATU Barlow"', "Perpetuals"),
-			document.fonts.load('400 16px "GATU Barlow Condensed"', "GATU.AI"),
-			document.fonts.load('600 16px "GATU Barlow Condensed"', "Gateway"),
-			document.fonts.load('400 16px "GATU Noto Sans SC"', "永续现货交易终端"),
+			document.fonts.load('400 16px "OG Barlow"', "Perpetuals"),
+			document.fonts.load('400 16px "OG Barlow Condensed"', "SAIRN.AI"),
+			document.fonts.load('600 16px "OG Barlow Condensed"', "Decide"),
+			document.fonts.load('400 16px "OG Noto Sans SC"', "永续现货交易终端"),
 		]);
 		await document.fonts.ready;
 	});
@@ -186,10 +186,10 @@ async function renderCard(page, name, outputPath) {
 		return {
 			card: document.documentElement.dataset.card,
 			fontsLoaded: [
-				document.fonts.check('400 16px "GATU Barlow"', "Perpetuals"),
-				document.fonts.check('400 16px "GATU Barlow Condensed"', "GATU.AI"),
-				document.fonts.check('600 16px "GATU Barlow Condensed"', "Gateway"),
-				document.fonts.check('400 16px "GATU Noto Sans SC"', "永续现货交易终端"),
+				document.fonts.check('400 16px "OG Barlow"', "Perpetuals"),
+				document.fonts.check('400 16px "OG Barlow Condensed"', "SAIRN.AI"),
+				document.fonts.check('600 16px "OG Barlow Condensed"', "Decide"),
+				document.fonts.check('400 16px "OG Noto Sans SC"', "永续现货交易终端"),
 			].every(Boolean),
 			rectangle: rectangle
 				? { height: rectangle.height, width: rectangle.width, x: rectangle.x, y: rectangle.y }

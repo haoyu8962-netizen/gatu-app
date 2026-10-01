@@ -20,7 +20,7 @@
 		"source": "https://fonts.gstatic.com/s/barlowcondensed/v13/HTxwL3I-JCGChYJ8VI-L6OO_au7B4873z3bWuYMBYro.woff2",
 		"sha256": "5bc49d41f32810a114765314392332ce2acae2276635eee265a50319a12c1b49"
 	},
-	"noto-sans-sc-regular-gatu-subset.woff2": {
+	"noto-sans-sc-regular-og-subset.woff2": {
 		"family": "Noto Sans SC",
 		"version": "v40",
 		"weight": 400,
