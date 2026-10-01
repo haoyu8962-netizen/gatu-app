@@ -22,6 +22,7 @@
 | ACM（us-east-1） | 只有两张 gatu 证书：`548ac30d…`（gatu.ai、www，2027-02-03 到期）、`ff5677c6…`（app、testnet，2027-04-01 到期）；没有 sairn 证书【核实：`aws acm list-certificates`】。gatu 的验证 CNAME 仍在 gatu.ai 区里【核实：`describe-certificate` 加权威 DNS】 |
 | Lambda `gatu-terminal-api` | 环境变量只有 `GATU_TRUST_VIEWER_ADDRESS=true` 与 `IPDATA_API_KEY`；新代码在 `SAIRN_TRUST_VIEWER_ADDRESS` 未设置时按 true 处理（`apps/terminal/src/edge/lambda-handler.ts:176`） |
 | 源站请求策略 `b4401266-…` | `gatu-edge` 读不到。p23 仓库版本是 9 个头、含 `X-Gatu-Forwarded-Host`；CloudFront 上限 10 个 |
+| 本机 AWS 身份（2026-10-01 复核） | 只有两个 profile。`default` 的密钥无效（`InvalidClientTokenId`，即 2026-09-17 停用的 root 访问密钥；凭据文件 9 月 13 日后没有改过）；`gatu-edge` 有效。`gatu-edge` 实测：`get-origin-request-policy-config` 与 `list-conflicting-aliases` 都返回 AccessDenied；`iam list-attached-user-policies`、`get-policy`、`simulate-principal-policy` 也被拒，所以 `acm:RequestCertificate` 只有实际申请才能验证，本次没有申请。ACM 仍只有两张 gatu 证书，三个分发的别名没有变化【核实：只读调用】 |
 | sairn.ai | 2026-10-01 11:40:28Z 在 Cloudflare 注册；有 Email Routing 的 MX 与 SPF；没有 DMARC、CAA；网页主机名都没有记录；SOA 负缓存 1800 s【核实：权威服务器】 |
 | gatu.ai | 网页记录：apex（CNAME 拉平，TTL 60）、`www`、`app`、`testnet`（CNAME，TTL 300）；邮件：Email Routing、SPF、DMARC `p=none`；另有一套**仓库从未记录的 Amazon SES 发信配置**：`support.gatu.ai` MX `feedback-smtp.us-east-1.amazonses.com`、SPF `include:amazonses.com`【核实：权威服务器】；注册到 2028-05-06 |
 | HSTS | 只有 `app`、`testnet` 下发（一年、`includeSubDomains`、无 preload），apex 不下发 |
@@ -196,7 +197,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 
 ### 问题 4：权限给法（待定）
 
-本机执行 AWS 命令用的是 IAM 用户 `gatu-edge`。它挂着客户管理策略 `gatu-edge-deploy`（正文即 `deploy/cloudfront/iam/gatu-edge-release-policy.json`），只够日常发布；账号 root 的访问密钥已停用。这次切换有三件事超出它的权限：查询别名冲突（0.4）、申请 ACM 证书（0.5）、读改 API 源站请求策略（0.6、5.2）。
+本机执行 AWS 命令用的是 IAM 用户 `gatu-edge`。它挂着客户管理策略 `gatu-edge-deploy`（正文即 `deploy/cloudfront/iam/gatu-edge-release-policy.json`），只够日常发布；账号 root 的访问密钥已停用，本机没有其他可用身份（第 2 节）。这次切换有三件事超出它的权限：查询别名冲突（0.4）、申请 ACM 证书（0.5）、读改 API 源站请求策略（0.6、5.2）。
 
 - **A（推荐）**：你用管理员身份在 IAM 控制台新建一份客户管理策略 `gatu-edge-domain-cutover`，正文如下，挂到用户 `gatu-edge`。之后这几步由我用命令行执行，每一步先演练，执行后保存原始输出。5.2 做完后，你把这份策略从用户上摘除并删除。`gatu-edge-deploy` 本身不改，仓库里的发布策略文件也不变。
 - **B**：不加权限，这几步由你在 AWS 控制台操作。执行到那一步时我给出逐步说明，你把证书 ARN 和读回的策略配置发给我。
@@ -209,7 +210,11 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 			"Sid": "AliasConflictCheck",
 			"Effect": "Allow",
 			"Action": ["cloudfront:ListConflictingAliases"],
-			"Resource": "*"
+			"Resource": [
+				"arn:aws:cloudfront::018252911946:distribution/ET9CNVE6L1GWN",
+				"arn:aws:cloudfront::018252911946:distribution/E3Q2SAX402CR9F",
+				"arn:aws:cloudfront::018252911946:distribution/EP2DIBP3T7M3G"
+			]
 		},
 		{
 			"Sid": "CertificateRequest",
@@ -232,7 +237,7 @@ p24 发布到窗口之间，站内推荐链接、法律页链接、站点地图�
 }
 ```
 
-这份临时策略只能在 us-east-1 申请证书，不能删除证书（5.4 的删除仍由你做）；只能读改 `b4401266-…` 这一个源站请求策略；别名冲突查询是只读的。【推断】`ListConflictingAliases` 的资源级授权没有实测，所以资源写 `*`。
+这份临时策略只能在 us-east-1 申请证书，不能删除证书（5.4 的删除仍由你做）；只能读改 `b4401266-…` 这一个源站请求策略；别名冲突查询是只读的，只对三个分发生效：2026-10-01 的拒绝信息点名的资源就是 `…:distribution/ET9CNVE6L1GWN`，说明这个操作按分发授权【核实】。
 
 ### 后续事项（不在本次切换范围）
 

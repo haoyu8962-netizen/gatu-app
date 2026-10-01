@@ -46,6 +46,17 @@
 5. 另登记一个 sairn 推荐码。依据：Hyperliquid 文档 Referrals 页写明累计交易量满 $10,000 才能创建；推荐人接口每个地址只返回一个 `code`，所以已登记 `gatuappweb3` 的地址多半不能再登记第二个（推断，未实测）。仓库里的 `sairnappweb3` 只是测试夹具名。
 6. 不做告别 Service Worker。
 
+## 本机 AWS 权限复核（同日）
+
+用户说本机 AWS CLI 有权限，要求检查。只做了只读调用，结果：
+
+- 本机只有 `default` 与 `gatu-edge` 两个 profile，没有 `AWS_*` 环境变量；凭据文件 2026-09-13 后未改。`default` 调 `sts get-caller-identity` 返回 `InvalidClientTokenId`（2026-09-17 停用的 root 访问密钥）；`gatu-edge` 有效。
+- `gatu-edge`：`cloudfront get-origin-request-policy-config`（`b4401266-…`）与 `list-conflicting-aliases`（`ET9CNVE6L1GWN`、`app.sairn.ai`）都返回 AccessDenied；`iam list-attached-user-policies`、`list-user-policies`、`get-policy`、`simulate-principal-policy` 也被拒。`acm:RequestCertificate` 没有只读的验证办法，本次没有申请证书。
+- ACM（us-east-1，全部密钥类型）仍只有两张 gatu 证书；三个分发的别名与证书没有变化。
+- 拒绝信息点名 `…:distribution/ET9CNVE6L1GWN` 为资源，所以方案第 7 节临时策略里的 `ListConflictingAliases` 从 `*` 收紧为三个分发。
+
+结论：本机没有能完成切换的身份，问题 4 仍需用户在控制台给权限或亲自操作。
+
 ## 验证与限制
 
 只做了只读调查与文档检查（`git diff --check`、相对链接与引用路径检查、记录索引检查）。没有执行任何 AWS 写操作、Cloudflare、Privy 或 Hyperliquid 操作。本机经代理，系统解析器返回假地址，公共解析器结果不可信；文中 DNS 事实以 Cloudflare 权威服务器的应答为准。
