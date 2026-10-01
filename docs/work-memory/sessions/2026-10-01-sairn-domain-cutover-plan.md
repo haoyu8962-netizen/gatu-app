@@ -149,6 +149,23 @@
 
 用户选择保持开启。同日读取线上 p23 两个主机的 `build-meta.json`：`cctpDeposits` 三项都是 `true`。方案 1.1、1.2、2.6、0.7、第 7 节第 8 项和风险表已据此改写，ADR 0032 决策 8 同步改写。
 
+## Privy 控制台对比（2026-10-02）
+
+用户要求查看 Privy 控制台。内置浏览器未登录，于是按用户要求改用 Claude in Chrome，在用户的默认浏览器 Chrome 里已登录的会话中只读对比。旧应用 gatu（`cmquon74…`）是现行构建使用的应用；新应用 sairn（`cmuphjc2…`）与本地 `.env.local` 一致。组织下另有一个 gatu（`cmqet0w5…`）和 Veyra，与切换无关。没有修改任何设置；只打开过两个链设置弹窗查看，关闭时「Save changes」仍不可用。App Secret、ZeroDev 项目 ID 与 WalletConnect 项目 ID 都没有显示完整值，只比对是否设置、哈希前缀或前四位。
+
+| 项目 | 旧应用 | 新应用 | 结论 |
+|---|---|---|---|
+| 应用状态 | 开发模式（上限 150 用户） | 开发模式 | 对外上线前升级生产模式 |
+| 概览 | 11 个用户、3 个钱包、资产 $31 | 新建 | 切换前按方案 0.9 转出旧内嵌钱包资金 |
+| 名称 / 主色 / Logo | `gatu` / `#696FFD` / 空 | `sairn` / `#696FFD` / 空 | 名称建议改为显示名 `Sairn`；Logo 按 4.1 在切换后填写 |
+| 条款与隐私链接、强制同意 | 空、关 | 空、关 | 一致，终端自有法律弹窗 |
+| Allowed origins | 默认 web 客户端：`app.gatu.ai`、`app.sairn.ai`、`testnet.sairn.ai`（无 `testnet.gatu.ai`） | 应用层：`app.sairn.ai`、`testnet.sairn.ai` | 新应用已放行 sairn；不含 localhost，本地开发会 `invalid_origin`（Privy 文档：设置后严格执行，localhost 须带端口） |
+| 登录方式 | 邮箱、外部钱包、Passkey 开 | 邮箱、外部钱包开，Passkey 关 | 新应用符合 `globalDisablePasskeys` 与项目约定 |
+| 登录时自动创建内嵌钱包（EVM） | 开 | 关 | 建议照旧应用打开 |
+| MFA、Advanced、访问控制、全局钱包、Privy 自带费用代付 | 关 | 关 | 一致 |
+| 智能钱包 | 开，Kernel（ZeroDev）；Arbitrum 与 Arbitrum Sepolia 的 bundler 与 paymaster 都是 `rpc.zerodev.app/api/v3/9a17…` | 关 | **必须配置**，赞助充值依赖它；地址含项目 ID，由用户从旧应用复制 |
+| WalletConnect 项目 ID | 已设（32 位） | 已设（32 位），与旧应用不同 | 待用户确认来源与 Reown 域名白名单 |
+
 ## 验证与限制
 
 - 2026-10-01 规划阶段只做了只读调查与文档检查。
