@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["brand-identity", "static-hosting"],
-  "summary": "用户决定旧域名直接下线、不并存不 301；只读调查后写成执行方案 docs/sairn-domain-cutover-plan.md（拟议，未执行）：先接后断（窗口内过渡证书覆盖新旧 8 个名字，sairn 零中断、gatu 准时下线）、p24 保留旧组识别作回滚保险、p25 清理、只删网页记录、不做告别 SW；发现未记录的 gatu.ai SES 发信配置、另一个会话的并存方案被取代。用户随后答复五个待决问题：先接后断、gatu.ai 不永久续费（到 2028-05-06，到期前清单）、gatu.ai 邮件与 SES 推迟到品牌替换完成后、另登记 sairn 推荐码、不做告别 SW；权限给法待定。",
+  "summary": "用户决定旧域名直接下线、不并存不 301；只读调查后写成执行方案 docs/sairn-domain-cutover-plan.md（拟议，未执行）：先接后断（窗口内过渡证书覆盖新旧 8 个名字，sairn 零中断、gatu 准时下线）、p24 保留旧组识别作回滚保险、p25 清理、只删网页记录、不做告别 SW；发现未记录的 gatu.ai SES 发信配置、另一个会话的并存方案被取代。用户随后答复五个待决问题：先接后断、gatu.ai 不永久续费（到 2028-05-06，到期前清单）、gatu.ai 邮件与 SES 推迟到品牌替换完成后、另登记 sairn 推荐码、不做告别 SW；用户按方案 A 在控制台挂上临时 IAM 策略。开始执行时用户改为先断后接，已申请 4 名 sairn 证书 b04a51c6（待 DNS 验证）。",
   "thread": null,
   "baseCommit": "5517ef70",
   "commits": ["64d63e20"],
@@ -66,6 +66,13 @@
 - `get-origin-request-policy-config`（`b4401266-…`）成功：名称 `gatu-terminal-api`，头部白名单 9 个，含 `X-Gatu-Forwarded-Host`，不含 `X-Sairn-Forwarded-Host`；Cookie 不转发，查询串全部转发；ETag `E23ZP02F085DFQ`。原配置保存在 Git 忽略的 `.worklog/2026-10-01/2026-10-01-sairn-domain-cutover-plan/aws/origin-request-policy-before.json`。
 - `list-conflicting-aliases` 不再被拒，但对 `app.sairn.ai`、`testnet.sairn.ai`、`sairn.ai`、`www.sairn.ai` 都返回 `InvalidArgument`：分发当前证书不覆盖要查的名字。方案因此把 0.4 改到 0.5 之后：证书签发后先只换证书、别名不动，再查冲突；2.2、3.1 随之只加别名。
 - `acm:RequestCertificate` 没有只读的验证办法，留到 0.5 实际申请时验证；本次没有申请证书，也没有任何 AWS 写操作。
+
+## 开始执行：改为先断后接，申请 sairn 证书（同日）
+
+用户回复「直接下线gatu 跟着替换新的域名」。我按字面理解为切换顺序改为先断后接，并在回复里写明这个理解：不再签覆盖 gatu 的过渡证书，每个分发一次 `aliases` 调用同时换别名和证书。方案第 3.2 节、0.4、0.5、阶段 2、3、5.4、第 6–9 节随之修改，`deploy/website/README.md` 的指向说明同步。
+
+- 申请证书：`aws acm request-certificate`（us-east-1，`gatu-edge`，幂等令牌 `sairn20261001`，DNS 验证）成功，得到 `arn:aws:acm:us-east-1:018252911946:certificate/b04a51c6-126d-4f9b-a0be-cbea432551b5`，SAN 为 `sairn.ai`、`testnet.sairn.ai`、`app.sairn.ai`、`www.sairn.ai`，RSA-2048，`PENDING_VALIDATION`。这也证实了临时策略里的证书申请权限。四条验证 CNAME 已交给用户在 Cloudflare 添加；原始输出在 `.worklog/2026-10-01/2026-10-01-sairn-domain-cutover-plan/aws/`。
+- 两张证书都要用到的只有这张 4 名证书，所以即使用户其实想保留先接后断，这次申请也不会白做。
 
 ## 验证与限制
 
