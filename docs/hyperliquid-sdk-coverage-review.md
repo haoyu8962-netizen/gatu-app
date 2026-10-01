@@ -107,7 +107,7 @@
 | 节点与网络 | `gossipPriorityBid`、`gossipPriorityAuctionStatus`、`gossipRootIps` |
 | 清算者与未公开语义 | `liquidatable`、`isVip`（官方仅在 Portfolio 页查询） |
 | 高风险且小众 | `convertToMultiSigUser`（单签与多签互转）、`stakingLinkDisableTradingUser`（不可逆锁定交易账户） |
-| Explorer | `blockDetails`、`txDetails`、`userDetails`、订阅 `explorerBlock` / `explorerTxs`：官方用于站内浏览器页，gatu 的外链已够用；若要在资金对账中按哈希核验交易，需另接 explorer 端点并补 CSP |
+| Explorer | `blockDetails`、`txDetails`、`userDetails`、订阅 `explorerBlock` / `explorerTxs`：官方用于站内浏览器页，gatu 的外链已够用；若要在资金对账中按哈希核验交易，需另接 explorer 端点并补 CSP（「补 CSP」只对订阅成立，见文末 [2026-09-30 更正](#更正explorer-接入前提2026-09-30-追加)） |
 
 ## 附：SDK 工具函数
 
@@ -146,3 +146,14 @@ rg -n '"fundingHistory"|\.fundingHistory\(' apps/terminal/src packages/hl-react/
 | 冗余表中的 `marginTable` | 不调用；复用 `allPerpMetas` 已解析的分档 | 杠杆弹窗显示所选杠杆下的最大仓位 | [杠杆仓位上限](leverage-position-limit.md) |
 
 未实施的第 4 项服务端账户通知（订阅 `notification`）：实施前侦察发现 SDK 0.33.3 按频道分发帧且帧内没有用户字段，同一共享 socket 上切换账户时旧账户的帧可能进入新账户的监听，需要传输层隔离的架构决策；原因与前提见规划的「范围取舍」。其余第 6、8–15 项与战略级功能未排期。
+
+## 更正：Explorer 接入前提（2026-09-30 追加）
+
+「不适用」表 Explorer 一行写「需另接 explorer 端点并补 CSP」。原句保留，只在行内加了指向本节的说明；其中「补 CSP」对它所举的按哈希核验场景不成立：
+
+- 三个请求（`blockDetails`、`txDetails`、`userDetails`）经 `HttpTransport` 发往 `https://rpc.hyperliquid.xyz/explorer`。该主机和测试网对应主机自 2026-08-05（`a10b0edd`，CCTP 提现用的 HyperEVM RPC）起已在终端 `connect-src` 中，早于本审查，所以不需要改 CSP，只需新增调用。
+- 两个订阅（`explorerBlock`、`explorerTxs`）只在 `wss://rpc.hyperliquid.xyz/ws` 推送，而 `connect-src` 的 WebSocket 来源只有 `wss://api.hyperliquid.xyz` 和测试网对应项。只有使用订阅才需要补 `wss://rpc.hyperliquid.xyz` 与 `wss://rpc.hyperliquid-testnet.xyz`，改动在 `apps/terminal/src/config/security-headers.ts`，之后按 [CloudFront 部署说明](../deploy/cloudfront/README.md)重新渲染并发布边缘函数。
+- 证据（2026-09-30）：用已提交的边缘函数产出的策略在无头 Chromium 147 中实测，POST `https://rpc.hyperliquid.xyz/explorer` 放行，`wss://rpc.hyperliquid.xyz/ws` 被 `connect-src` 拦截。线上实际下发的响应头未取。
+- 「另接 explorer 端点」仍成立：生产代码没有任何 Explorer 调用。结论不变，这组接口仍归「不适用」。
+
+端点与传输要求见[方法目录](hyperliquid-sdk-directory.md)的类型说明，取证过程与限制见[任务记录](work-memory/sessions/2026-09-30-explorer-api-doc-corrections.md)。

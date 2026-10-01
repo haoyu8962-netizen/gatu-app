@@ -11,25 +11,32 @@ Scan the "Want to..." tables below to find the right method for your task.
 - **(I)** = Info method → read-only, no wallet needed, use `InfoClient`
 - **(E)** = Exchange method → requires signing, use `ExchangeClient` with wallet
 - **(S)** = Subscription → real-time WebSocket stream, use `SubscriptionClient`
-- **(X)** = Explorer method/stream → use `ExplorerClient` with an explorer-compatible transport
+- **(X)** = Explorer method/stream → read-only, no wallet needed, use `ExplorerClient`. Explorer data is served by the RPC host, not by `/info` or the API WebSocket:
+  - requests (`blockDetails`, `txDetails`, `userDetails`) need an `HttpTransport`. It sends them to its `rpcUrl`, by default `https://rpc.hyperliquid.xyz/explorer` (Testnet `https://rpc.hyperliquid-testnet.xyz/explorer`), so a default `new HttpTransport()` works
+  - streams (`explorerBlock`, `explorerTxs`) need their own `new WebSocketTransport({ url: "wss://rpc.hyperliquid.xyz/ws" })` (Testnet `wss://rpc.hyperliquid-testnet.xyz/ws`). The default WebSocket URL is the API host: on 2026-09-30 it accepted both subscriptions and then delivered no events, so the listener never ran and no error was raised
 
 ### Step 3: Get the Current Parameter Schema
 
-The checked-in `hyperliquid-sdk-1.md` and `hyperliquid-sdk-2.md` files are archived `0.33.1`
-snapshots. They are useful for broad navigation, but they do not include every `0.33.2`/`0.33.3`
-schema change. For current parameters and response unions, use the
+The checked-in `hyperliquid-sdk-1.md` and `hyperliquid-sdk-2.md` files are archived snapshots
+labelled `0.33.1`. They are useful for broad navigation, but they do not include every
+`0.33.2`/`0.33.3` schema change, and their method pages keep the grouping from before `0.33.0`: the
+five Explorer methods are filed under Info and Subscription with the API host as their server,
+which is wrong (see the banner in each file). For current parameters and response unions, use the
 [SDK GitBook](https://nktkas.gitbook.io/hyperliquid) and the installed `0.33.3` declarations first.
+On 2026-09-30 the GitBook Explorer method pages still named the API host in their generated
+`servers` block; its Clients and Transports pages and the installed declarations name the RPC host.
 
 Archived snapshot locations:
 
 | Content | File | Lines |
 |---------|------|-------|
-| Intro, Transports, Clients, Errors | `hyperliquid-sdk-1.md` | 1-1035 |
-| **Info Methods** (all read-only) | `hyperliquid-sdk-1.md` | 1036-1775 |
-| **Exchange Methods** (signed actions) | `hyperliquid-sdk-1.md` + `sdk-2.md` | 1776-2054 + 1-220 |
-| **Subscription Methods** (WebSocket) | `hyperliquid-sdk-2.md` | 221-540 |
-| **Signing Utilities** | `hyperliquid-sdk-2.md` | 799-1060 |
-| Symbol Converter, Formatting | `hyperliquid-sdk-2.md` | 543-798 |
+| Intro, Transports, Clients, Errors | `hyperliquid-sdk-1.md` | 1-1051 |
+| **Info Methods** (all read-only) | `hyperliquid-sdk-1.md` | 1052-1781 |
+| **Exchange Methods** (signed actions) | `hyperliquid-sdk-1.md` + `sdk-2.md` | 1782-2057 + 1-233 |
+| **Subscription Methods** (WebSocket) | `hyperliquid-sdk-2.md` | 234-564 |
+| **Explorer Methods** (filed under Info and Subscription in the snapshot) | `hyperliquid-sdk-1.md` + `sdk-2.md` | 1089, 1573, 1584 + 347, 358 |
+| **Signing Utilities** | `hyperliquid-sdk-2.md` | 821-1062 |
+| Symbol Converter, Formatting | `hyperliquid-sdk-2.md` | 565-820 |
 
 ---
 

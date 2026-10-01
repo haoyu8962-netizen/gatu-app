@@ -24,7 +24,7 @@ packages/hyperliquid-api/
 
 ## Why it exists
 
-Hyperliquid has three API surfaces — `Info` (read), `Exchange` (write/signed), `Subscription` (stream) — each with their own request/response shapes and transport preferences. AI agents generating trading code were guessing. This skill gives them deterministic rules and on-demand reference material so they pick the right surface the first time.
+Hyperliquid has four API surfaces — `Info` (read), `Exchange` (write/signed), `Subscription` (stream), `Explorer` (block and transaction lookups on the RPC host) — each with their own request/response shapes and transport preferences. AI agents generating trading code were guessing. This skill gives them deterministic rules and on-demand reference material so they pick the right surface the first time.
 
 ## Install
 
