@@ -1,0 +1,56 @@
+{
+	"name": {
+		"display": "GATU",
+		"lowercase": "gatu",
+		"legalEntity": "Gatu Corp."
+	},
+	"domains": {
+		"primary": {
+			"apex": "gatu.ai",
+			"www": "www.gatu.ai",
+			"app": "app.gatu.ai",
+			"testnet": "testnet.gatu.ai"
+		},
+		"legacy": []
+	},
+	"emails": {
+		"support": "support@gatu.ai"
+	},
+	"colors": {
+		"light": {
+			"action": "#15171e",
+			"actionHover": "#32363d",
+			"actionActive": "#08090d",
+			"onAction": "#ffffff",
+			"signal": "#667311",
+			"signalHover": "#4f5a0d",
+			"signalSoft": "rgb(102 115 17 / 10%)"
+		},
+		"dark": {
+			"action": "#edeef2",
+			"actionHover": "#ffffff",
+			"actionActive": "#d5d7de",
+			"onAction": "#08090d",
+			"signal": "#d7ff3f",
+			"signalHover": "#e6ff70",
+			"signalSoft": "rgb(215 255 63 / 14%)"
+		}
+	},
+	"logo": {
+		"light": {
+			"signal": "#176b64",
+			"choice": "#99621f",
+			"wordmark": "#08262e"
+		},
+		"dark": {
+			"signal": "#86e5d3",
+			"choice": "#e6b766",
+			"wordmark": "#ffffff"
+		},
+		"iconBackground": "#0a3038"
+	},
+	"pwa": {
+		"themeColor": "#0F1A1F",
+		"backgroundColor": "#0F1A1F"
+	}
+}

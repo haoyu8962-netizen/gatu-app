@@ -1,0 +1,202 @@
+{
+  "name": "sairn",
+  "version": "1.3.0",
+  "identity": "A / Signal Gate",
+  "color": {
+    "primitive": {
+      "teal-950": "#061F27",
+      "teal-900": "#08262E",
+      "teal-850": "#0A3038",
+      "teal-800": "#0C353D",
+      "teal-750": "#123B43",
+      "teal-600": "#2B5055",
+      "teal-500": "#536C70",
+      "teal-300": "#A5BFBC",
+      "teal-250": "#C3CFCA",
+      "teal-200": "#D2DEDA",
+      "teal-150": "#DBE0D9",
+      "teal-100": "#E8EFEB",
+      "paper-50": "#FAFAF5",
+      "paper-100": "#F5F4EE",
+      "paper-200": "#F0F3ED",
+      "white": "#FFFFFF",
+      "snow": "#F4F8F4",
+      "mint-300": "#86E5D3",
+      "mint-700": "#176B64",
+      "amber-300": "#E6B766",
+      "amber-700": "#99621F",
+      "red-300": "#F09C95",
+      "red-700": "#B3443C",
+      "green-300": "#74DA86",
+      "green-700": "#247630"
+    },
+    "theme": {
+      "dark": {
+        "surface": {
+          "base": "#0A3038",
+          "card-top": "#0C353D",
+          "card-bottom": "#061F27",
+          "raised": "#123B43",
+          "code": "#08262E"
+        },
+        "border": {
+          "subtle": "#2B5055",
+          "strong": "#536C70"
+        },
+        "text": {
+          "primary": "#F4F8F4",
+          "secondary": "#A5BFBC",
+          "on-accent": "#08262E"
+        },
+        "brand": {
+          "signal": "#86E5D3",
+          "choice": "#E6B766",
+          "wordmark": "#FFFFFF"
+        },
+        "status": {
+          "success": "#86E5D3",
+          "error": "#F09C95",
+          "pending": "#E6B766",
+          "attention": "#E6B766",
+          "neutral": "#A5BFBC"
+        },
+        "pnl": {
+          "green": "#74DA86",
+          "red": "#F09C95"
+        },
+        "focus": "#E6B766"
+      },
+      "light": {
+        "surface": {
+          "base": "#F5F4EE",
+          "card-top": "#FAFAF5",
+          "card-bottom": "#F0F3ED",
+          "raised": "#E8EFEB",
+          "code": "#08262E"
+        },
+        "border": {
+          "subtle": "#DBE0D9",
+          "strong": "#C3CFCA"
+        },
+        "text": {
+          "primary": "#08262E",
+          "secondary": "#536C70",
+          "on-accent": "#FFFFFF"
+        },
+        "brand": {
+          "signal": "#176B64",
+          "choice": "#99621F",
+          "wordmark": "#08262E"
+        },
+        "status": {
+          "success": "#176B64",
+          "error": "#B3443C",
+          "pending": "#99621F",
+          "attention": "#99621F",
+          "neutral": "#536C70"
+        },
+        "pnl": {
+          "green": "#247630",
+          "red": "#B3443C"
+        },
+        "focus": "#176B64"
+      }
+    },
+    "pnlConvention": {
+      "green-up": {
+        "label": "绿涨红跌",
+        "up": "green",
+        "down": "red"
+      },
+      "red-up": {
+        "label": "红涨绿跌",
+        "up": "red",
+        "down": "green"
+      }
+    },
+    "rules": [
+      "brand.signal 不承担涨跌含义；涨跌只用 pnl.up / pnl.down。",
+      "light 主题下 amber 文字不放在 surface.raised 上（4.36:1）。",
+      "status.neutral 用于已取消；status.pending 与 status.attention 同色，以形状和是否动来区分。"
+    ]
+  },
+  "type": {
+    "family": {
+      "sans": "Arial, 'PingFang SC', 'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif",
+      "mono": "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
+    },
+    "card": {
+      "floor": 28,
+      "label": 28,
+      "legal": 28,
+      "body": 32,
+      "subtitle": 32,
+      "stat": 46,
+      "title": {
+        "portrait": 76,
+        "square": 64,
+        "story": 84,
+        "landscape": 54
+      },
+      "titleMin": {
+        "portrait": 58,
+        "square": 50,
+        "story": 64,
+        "landscape": 44
+      }
+    },
+    "ui": {
+      "min": 11,
+      "caption": 12,
+      "body": 14,
+      "title": 24
+    }
+  },
+  "motion": {
+    "duration": {
+      "feedback": 400,
+      "confirm": 560,
+      "brand": 800,
+      "loop-fast": 1400,
+      "loop": 2000,
+      "loop-calm": 2800
+    },
+    "easing": {
+      "enter": "cubic-bezier(.22,.7,.28,1)",
+      "loop": "ease-in-out",
+      "fade": "ease-out"
+    },
+    "loopFloor": {
+      "dark": 0.55,
+      "light": 0.78,
+      "mono": 0.78
+    },
+    "maxPanelTranslation": 24,
+    "rules": [
+      "不旋转标志",
+      "不变形路径",
+      "不用滤镜",
+      "动画结束不触发业务状态"
+    ]
+  },
+  "safeArea": {
+    "story": {
+      "top": 250,
+      "bottom": 340,
+      "source": "Meta Stories 建议"
+    },
+    "margin": {
+      "portrait": 72,
+      "square": 64,
+      "story": 72,
+      "landscape": 56
+    }
+  },
+  "radius": {
+    "card": 0,
+    "panel": 28,
+    "cell": 20,
+    "badge": 12,
+    "button": 16
+  }
+}
