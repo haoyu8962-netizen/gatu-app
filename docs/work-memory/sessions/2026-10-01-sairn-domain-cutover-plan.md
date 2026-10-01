@@ -10,7 +10,7 @@
     "brand-identity",
     "static-hosting"
   ],
-  "summary": "用户决定 gatu.ai 直接下线、不并存不 301。先做只读规划（docs/sairn-domain-cutover-plan.md），再按用户答复定稿：先断后接、gatu.ai 不永久续费、gatu.ai 邮件与 SES 推迟、另登记 sairn 推荐码、不做告别 SW、换新的 Privy 应用；决策另立 ADR 0032。用户在控制台给 gatu-edge 挂临时 IAM 策略后，已签发 4 名 sairn 证书 b04a51c6、源站请求策略加入 X-Sairn-Forwarded-Host，并开 PR #68。Codex 四路只读对抗审查报 5 项 P1、10 项 P2，复核后全部修复或改写（主网赞助充值开关待用户决定）。发布与切换尚未执行。",
+  "summary": "用户决定 gatu.ai 直接下线、不并存不 301。先做只读规划（docs/sairn-domain-cutover-plan.md），再按用户答复定稿：先断后接、gatu.ai 不永久续费、gatu.ai 邮件与 SES 推迟、另登记 sairn 推荐码、不做告别 SW、换新的 Privy 应用；决策另立 ADR 0032。用户在控制台给 gatu-edge 挂临时 IAM 策略后，已签发 4 名 sairn 证书 b04a51c6、源站请求策略加入 X-Sairn-Forwarded-Host，并开 PR #68。Codex 四路只读对抗审查报 5 项 P1、10 项 P2，复核后全部修复或改写；主网赞助充值经用户决定保持开启，切换当天做带资金验证。发布与切换尚未执行。",
   "thread": null,
   "baseCommit": "5517ef70",
   "commits": [
@@ -135,6 +135,20 @@
 
 审查也提醒：`hyperliquid.persist_trading_connection`、`hyperliquid_agent_*` 与 `Mobile` 槽位按归属文档保留原名，不应强行改名；本次未改。
 
+## 用户决定：主网赞助充值保持开启（2026-10-02）
+
+用户问，现在还需要赞助充值吗，不是用「CCXT」服务吗。核对后回答：
+- 仓库只在调研笔记里提到 CCXT，产品的充值走 Circle CCTP（`docs/cctp-deposits.md`）。
+- 赞助充值本身就是邮箱用户的 CCTP 充值：内嵌钱包签 EIP-3009 授权，Privy 智能钱包提交，ZeroDev paymaster 代付 Arbitrum gas。外部钱包用户自己付 gas，主网没有开关。
+- 所以关掉 `VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED`，邮箱用户就无法在应用里充值。
+
+我把此前「p24 先关闭」的建议改为「保持开启，切换当天做带资金验证」，理由有三：
+- 没有外部用户；
+- 关掉以后再打开还要重新发布一版；
+- 失败是安全失败：资金留在内嵌钱包，授权只能存入绑定的账户，过期前不能再签第二个。
+
+用户选择保持开启。同日读取线上 p23 两个主机的 `build-meta.json`：`cctpDeposits` 三项都是 `true`。方案 1.1、1.2、2.6、0.7、第 7 节第 8 项和风险表已据此改写，ADR 0032 决策 8 同步改写。
+
 ## 验证与限制
 
 - 2026-10-01 规划阶段只做了只读调查与文档检查。
@@ -168,7 +182,6 @@
 
 ## 后续与替代关系
 
-- 等用户决定主网赞助充值开关（方案第 7 节第 8 项）。
 - PR #68 的 CI 通过后合入 `dev`、再晋升 `main`；之后用新 Privy App ID 构建 p24，进入阶段 1。新 Privy 应用的后台配置按方案 0.7 由用户完成并截图。
 - 品牌替换完成后处理 gatu.ai 的邮件与 SES（方案第 7 节后续事项 1）；2028-05-06 前做完到期前清单（后续事项 2）。
 - 执行时只由一个会话操作 AWS 与 Cloudflare。
