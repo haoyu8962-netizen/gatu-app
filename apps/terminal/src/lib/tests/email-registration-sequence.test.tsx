@@ -115,6 +115,7 @@ vi.mock("@/lib/hyperliquid", async () => {
 	return {
 		classifyLegalStatusError: () => "unknown",
 		closeAgentRegistrationSessionAndRemove: session.closeRegistration,
+		getActiveAgentOwner: () => null,
 		useHyperliquid: useSessionContext,
 		useHyperliquidOptional: useSessionContext,
 		useLegalStatus: () => {

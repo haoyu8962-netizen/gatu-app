@@ -258,6 +258,21 @@ describe("legal gate hooks", () => {
 		expectStates("checking");
 	});
 
+	it("counts the activation grace from the moment the wallet exists, also while the signer is still connecting", () => {
+		vi.useFakeTimers();
+		setEmailSessionWithoutActiveOwner(EMBEDDED_OWNER);
+		testState.walletSession.isConnecting = true;
+		renderProbe();
+		expectStates("checking");
+
+		act(() => vi.advanceTimersByTime(11_000));
+		expectStates("checking");
+
+		testState.walletSession.isConnecting = false;
+		renderProbe();
+		expectStates("wallet_required");
+	});
+
 	it("never applies the email wallet setup to an external wallet session", () => {
 		Object.assign(testState.walletSession, {
 			address: undefined,

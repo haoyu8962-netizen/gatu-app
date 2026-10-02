@@ -6,7 +6,12 @@ import { toast } from "sonner";
 import { type Address, isAddress, zeroAddress } from "viem";
 import { useConnection } from "wagmi";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
-import { closeAgentRegistrationSessionAndRemove, useHyperliquid, useHyperliquidOptional } from "@/lib/hyperliquid";
+import {
+	closeAgentRegistrationSessionAndRemove,
+	getActiveAgentOwner,
+	useHyperliquid,
+	useHyperliquidOptional,
+} from "@/lib/hyperliquid";
 import { clearPrivyLoginMethod, usePrivyLoginIntent } from "@/lib/wallet/privy-login-method";
 import {
 	getPrivyEmailAddress,
@@ -289,7 +294,8 @@ export function useDisconnectWallet() {
 				toast.error(t`Disconnect failed: the active trading account could not be verified. Please retry.`);
 				return;
 			}
-			if (ownerAddress && !(await removeOwnerTradingSession(env, ownerAddress))) return;
+			const ownerToClose = ownerAddress ?? resolveHiddenAgentOnlyOwner(env);
+			if (ownerToClose && !(await removeOwnerTradingSession(env, ownerToClose))) return;
 
 			clearVerifiedExternalWalletOwner();
 			if (sessionMode === "agent-only" && !authenticated) {
@@ -312,6 +318,15 @@ export function useDisconnectWallet() {
 		disconnectWallet,
 		isDisconnecting,
 	};
+}
+
+/**
+ * A Privy login hides the stored agent-only owner without replacing it. Logging out of a session
+ * that never had an owner would hand the device back to that Agent, so it is closed first.
+ */
+function resolveHiddenAgentOnlyOwner(env: "Mainnet" | "Testnet"): Address | undefined {
+	const stored = getActiveAgentOwner();
+	return stored?.env === env ? normalizeEvmAddress(stored.address) : undefined;
 }
 
 function normalizeEvmAddress(value: string | null | undefined): Address | undefined {

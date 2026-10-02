@@ -321,7 +321,7 @@ describe("useEmailEmbeddedWalletSession", () => {
 		expect(testState.createWallet).toHaveBeenCalledTimes(2);
 	});
 
-	it("does not ask for a new wallet when existing embedded wallets cannot be selected unambiguously", () => {
+	it("never creates a wallet when existing embedded wallets cannot be selected unambiguously", async () => {
 		testState.user = {
 			...emailUser(),
 			linkedAccounts: [
@@ -350,5 +350,40 @@ describe("useEmailEmbeddedWalletSession", () => {
 		expect(hook.shouldUseEmbeddedWallet).toBe(true);
 		expect(hook.embeddedWalletAddress).toBeUndefined();
 		expect(hook.needsEmbeddedWallet).toBe(false);
+		await expect(hook.ensureEmailEmbeddedWallet()).rejects.toThrow("cannot be selected unambiguously");
+		expect(testState.createWallet).not.toHaveBeenCalled();
+	});
+
+	it("waits for the previous session's SDK request to settle before starting one for a new login", async () => {
+		let resolveFirstCreation: ((wallet: { address: string }) => void) | undefined;
+		testState.createWallet
+			.mockReturnValueOnce(
+				new Promise<{ address: string }>((resolve) => {
+					resolveFirstCreation = resolve;
+				}),
+			)
+			.mockResolvedValueOnce({ address: SECOND_EMBEDDED_WALLET_ADDRESS });
+		const firstHook = renderHook();
+		act(() => {
+			void firstHook.ensureEmailEmbeddedWallet().catch(() => undefined);
+		});
+
+		testState.user = null;
+		renderHook();
+		testState.user = emailUser();
+		const secondHook = renderHook();
+		let secondCreation: Promise<`0x${string}`> | undefined;
+		await act(async () => {
+			secondCreation = secondHook.ensureEmailEmbeddedWallet();
+		});
+		expect(testState.createWallet).toHaveBeenCalledOnce();
+
+		await act(async () => {
+			resolveFirstCreation?.({ address: EMBEDDED_WALLET_ADDRESS });
+			await expect(secondCreation).resolves.toBe(SECOND_EMBEDDED_WALLET_ADDRESS);
+		});
+
+		expect(testState.createWallet).toHaveBeenCalledTimes(2);
+		expect(hookValue?.embeddedWalletAddress).toBe(SECOND_EMBEDDED_WALLET_ADDRESS);
 	});
 });

@@ -5,33 +5,39 @@ import { describe, expect, it } from "vitest";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const SOURCE_DIR = resolve(TEST_DIR, "../..");
+const CREATION_HOOK = "hooks/wallet/use-email-embedded-wallet.ts";
 
 interface Caller {
 	trigger: "automatic" | "explicit";
 	reason: string;
-	calls: number;
+	references: number;
 }
 
+/**
+ * Every source file that mentions `ensureEmailEmbeddedWallet`, with how often. A new reference, an
+ * alias or a function handed to another hook changes a count, so it has to be registered here with
+ * its trigger. `references` counts the identifier, not only direct calls.
+ */
 const CREATION_CALLERS: Record<string, Caller> = {
 	"providers/email-embedded-wallet-provider.tsx": {
 		trigger: "automatic",
 		reason: "the only automatic creation: once per email session, never after a failure",
-		calls: 1,
+		references: 3,
 	},
 	"hooks/trade/use-legal-gate.ts": {
 		trigger: "explicit",
 		reason: "Retry in the wallet setup state of the policy dialog",
-		calls: 1,
+		references: 2,
 	},
 	"hooks/wallet/use-wallet-session.ts": {
 		trigger: "explicit",
 		reason: "Reconnect wallet for an email session that has no wallet yet",
-		calls: 1,
+		references: 3,
 	},
 	"components/trade/tradebox/deposit-modal.tsx": {
 		trigger: "explicit",
 		reason: "the funding address Retry button",
-		calls: 1,
+		references: 2,
 	},
 };
 
@@ -43,20 +49,28 @@ function listSourceFiles(directory: string): string[] {
 	});
 }
 
-function countCreationCalls(source: string): number {
-	return source.match(/ensureEmailEmbeddedWallet\(\)/g)?.length ?? 0;
+function countMatches(source: string, pattern: RegExp): number {
+	return source.match(pattern)?.length ?? 0;
 }
 
-const CALLS_BY_FILE = Object.fromEntries(
-	listSourceFiles(SOURCE_DIR)
-		.map((path) => [relative(SOURCE_DIR, path), countCreationCalls(readFileSync(path, "utf8"))] as const)
-		.filter(([, calls]) => calls > 0),
-);
+const SOURCES = listSourceFiles(SOURCE_DIR).map((path) => ({
+	file: relative(SOURCE_DIR, path),
+	source: readFileSync(path, "utf8"),
+}));
+
+function collect(pattern: RegExp): Record<string, number> {
+	return Object.fromEntries(
+		SOURCES.map(({ file, source }) => [file, countMatches(source, pattern)] as const).filter(([, count]) => count > 0),
+	);
+}
 
 describe("email wallet creation ownership", () => {
-	it("registers every place that can start an email wallet creation", () => {
-		expect(CALLS_BY_FILE).toEqual(
-			Object.fromEntries(Object.entries(CREATION_CALLERS).map(([file, caller]) => [file, caller.calls])),
+	it("registers every reference to the shared creation outside the hook that defines it", () => {
+		const { [CREATION_HOOK]: definedIn, ...references } = collect(/\bensureEmailEmbeddedWallet\b/g);
+
+		expect(definedIn).toBe(2);
+		expect(references).toEqual(
+			Object.fromEntries(Object.entries(CREATION_CALLERS).map(([file, caller]) => [file, caller.references])),
 		);
 	});
 
@@ -67,10 +81,15 @@ describe("email wallet creation ownership", () => {
 		for (const caller of Object.values(CREATION_CALLERS)) expect(caller.reason).not.toBe("");
 	});
 
-	it("starts the deposit dialog's creation only from its Retry control", () => {
-		const depositModal = readFileSync(resolve(SOURCE_DIR, "components/trade/tradebox/deposit-modal.tsx"), "utf8");
-		const retryHandler = depositModal.slice(depositModal.indexOf("onRetryFundingAddress={"));
+	it("lets only the shared hook reach Privy's wallet creation", () => {
+		expect(Object.keys(collect(/\buseCreateWallet\b/g))).toEqual([CREATION_HOOK]);
+		expect(collect(/\bcreateWallet\(/g)).toEqual({ [CREATION_HOOK]: 1 });
+	});
 
-		expect(retryHandler.slice(0, 120)).toContain("ensureEmailEmbeddedWallet()");
+	it("starts the deposit dialog's creation only from its Retry control", () => {
+		const depositModal = SOURCES.find(({ file }) => file === "components/trade/tradebox/deposit-modal.tsx")?.source;
+		const retryHandler = depositModal?.slice(depositModal.indexOf("onRetryFundingAddress={"));
+
+		expect(retryHandler?.slice(0, 120)).toContain("ensureEmailEmbeddedWallet()");
 	});
 });

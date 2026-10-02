@@ -19,7 +19,8 @@ interface EmbeddedWalletCreation {
 
 /**
  * The SDK call behind a creation. It outlives the waiter's timeout, and Privy resolves only the
- * latest wallet-proxy waiter, so a session keeps one call and a retry re-attaches to it.
+ * latest wallet-proxy waiter, so calls never overlap: a retry re-attaches to its session's call,
+ * and a new session starts its own only after the previous session's call has settled.
  */
 interface EmbeddedWalletRequest {
 	promise: Promise<EmbeddedWalletAddress>;
@@ -110,10 +111,14 @@ export function useEmailEmbeddedWalletSession() {
 		if (!sessionIdentity) {
 			throw new Error("Email wallet session is not ready");
 		}
+		if (hasPrivyEmbeddedWallet(user)) {
+			throw new Error("Email wallet cannot be selected unambiguously");
+		}
 		if (pendingRef.current?.session === session) return pendingRef.current.promise;
 
 		function startRequest(): EmbeddedWalletRequest {
-			const promise = Promise.resolve()
+			const promise = Promise.resolve(requestRef.current?.promise)
+				.catch(() => undefined)
 				.then(() => createWallet())
 				.then((wallet) => {
 					if (!wallet.address) {
@@ -161,7 +166,7 @@ export function useEmailEmbeddedWalletSession() {
 
 		pendingRef.current = { promise: pending, requestId, session };
 		return pending;
-	}, [createWallet, embeddedWalletAddress, session, sessionIdentity]);
+	}, [createWallet, embeddedWalletAddress, session, sessionIdentity, user]);
 
 	return {
 		emailAddress,

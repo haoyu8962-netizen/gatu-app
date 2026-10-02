@@ -60,12 +60,14 @@ identities and stub or fixture-generated signatures.
    `useCreateWallet().createWallet()`, and every consumer shares that one
    creation. The call opens no Privy screen while the wallet proxy is ready
    and the Privy application keeps user-owned recovery on creation off. The
-   provider is the only automatic creator and a session keeps a single SDK
-   request, which a retry re-attaches to. A failure or timeout is not retried
+   provider is the only automatic creator. Only one SDK request is ever in
+   flight: a retry re-attaches to it, and a new login waits for the previous
+   session's request to settle. A failure or timeout is not retried
    automatically: the legal gate shows `wallet_setup_failed` with Retry and
    Disconnect, Reconnect wallet retries the creation, and the deposit dialog
-   has an explicit Retry. A session without a wallet can always log out.
-   External-wallet sessions never get a wallet
+   has an explicit Retry. Once Privy's wallet directory is ready, a session
+   without a wallet can log out; a stored agent-only owner that the login was
+   hiding is closed first. External-wallet sessions never get a wallet
    ([ADR 0033](adr/0033-silent-email-wallet-creation.md)). A fresh email login
    may create a once-only deposit intent; restoration must not recreate it.
    Bind intent to user, owner and environment, wait for legal success and

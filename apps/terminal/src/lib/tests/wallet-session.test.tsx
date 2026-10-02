@@ -92,6 +92,10 @@ vi.mock("wagmi", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	closeAgentRegistrationSessionAndRemove: testState.closeRegistration,
+	getActiveAgentOwner: () => {
+		const raw = window.localStorage.getItem("hyperliquid_active_agent_owner");
+		return raw ? (JSON.parse(raw) as { env: string; address: string }) : null;
+	},
 	useHyperliquid: () => ({
 		clientKey: testState.clientKey,
 		env: testState.env,
@@ -477,7 +481,7 @@ describe("useDisconnectWallet", () => {
 		expect(window.localStorage.getItem(otherStorageKey)).toBe(AGENT_STORAGE_VALUE);
 	});
 
-	it("logs out an email session that has no embedded wallet without touching any trading key", async () => {
+	function setEmailSessionWithoutWallet() {
 		testState.sessionMode = "disconnected";
 		testState.walletAddress = undefined;
 		testState.walletConnected = false;
@@ -486,7 +490,9 @@ describe("useDisconnectWallet", () => {
 		testState.embeddedWalletAddress = undefined;
 		testState.hasEmbeddedWallet = false;
 		testState.shouldUseEmbeddedWallet = true;
+	}
 
+	async function clickDisconnect() {
 		act(() => {
 			root.render(createElement(DisconnectButton));
 		});
@@ -494,12 +500,55 @@ describe("useDisconnectWallet", () => {
 			container.querySelector("button")?.click();
 		});
 		await flushAsyncWork();
+	}
+
+	it("logs out an email session that has no wallet when no agent-only owner is stored", async () => {
+		setEmailSessionWithoutWallet();
+		window.localStorage.removeItem("hyperliquid_active_agent_owner");
+
+		await clickDisconnect();
 
 		expect(testState.closeRegistration).not.toHaveBeenCalled();
-		expect(testState.removeAgent).not.toHaveBeenCalled();
 		expect(testState.toastError).not.toHaveBeenCalled();
 		expect(testState.logout).toHaveBeenCalledTimes(1);
 		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBe(AGENT_STORAGE_VALUE);
+	});
+
+	it("closes the agent-only owner an email login was hiding, so logging out cannot hand the device back to it", async () => {
+		setEmailSessionWithoutWallet();
+
+		await clickDisconnect();
+
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+		expect(window.localStorage.getItem("hyperliquid_active_agent_owner")).toBeNull();
+		expect(testState.logout).toHaveBeenCalledTimes(1);
+	});
+
+	it("stays logged in when the hidden agent-only owner cannot be closed", async () => {
+		setEmailSessionWithoutWallet();
+		testState.removeAgent.mockReturnValue({ status: "failed", reason: "storage_unavailable" });
+
+		await clickDisconnect();
+
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(window.localStorage.getItem("hyperliquid_active_agent_owner")).not.toBeNull();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Disconnect failed: the local trading key could not be removed. Please retry.",
+		);
+	});
+
+	it("leaves an agent-only owner of the other environment alone", async () => {
+		setEmailSessionWithoutWallet();
+		window.localStorage.setItem(
+			"hyperliquid_active_agent_owner",
+			JSON.stringify({ env: "Testnet", address: USER_ADDRESS }),
+		);
+
+		await clickDisconnect();
+
+		expect(testState.closeRegistration).not.toHaveBeenCalled();
+		expect(testState.logout).toHaveBeenCalledTimes(1);
 	});
 
 	it("keeps failing closed for a walletless identity that is not an unambiguous email session", async () => {

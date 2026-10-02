@@ -489,9 +489,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   and the terms dialog opens only after the login window has closed and the new wallet is ready.
   While the wallet is being created the page waits instead of asking you to reconnect. If it is
   not ready after 20 seconds, a "Wallet not ready" dialog offers Retry and Disconnect, Reconnect
-  wallet also retries, and you can always disconnect an email login that has no wallet yet. The
+  wallet also retries, and Disconnect now works for an email login that has no wallet yet. The
   terms dialog's reconnect and verification-error states offer Disconnect as well. Privy can still
-  show its own creation screen when its wallet service does not start within 30 seconds. See
+  show its own creation screen when its wallet service does not start within 30 seconds; until
+  that service is ready, Reload page remains the only recovery. See
   [ADR 0033](docs/adr/0033-silent-email-wallet-creation.md).
 - In the light theme, browsers that tint their toolbar or status bar from the page's theme color
   (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
