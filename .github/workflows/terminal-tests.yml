@@ -293,3 +293,9 @@ jobs:
           src/lib/tests/status-motion-surface-contract.test.ts
           src/lib/tests/toaster-config.test.tsx
           src/lib/tests/order-toast-placement.test.tsx
+
+      - name: Test build configuration guards
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/vite-manual-chunks.test.ts
