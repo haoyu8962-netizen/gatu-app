@@ -565,6 +565,54 @@ export function Sample() { return <p />; }`,
 			},
 			["components/sample.tsx:2 <module> formatUSD"],
 		],
+		[
+			"a name exported through export * over an internal import of the same name",
+			{
+				"lib/safe.ts": "export function label(value: number) { return String(value); }",
+				"lib/unsafe.ts": `export { formatUSD as label } from "@/lib/format";`,
+				"lib/amount.ts": `import { label } from "@/lib/safe";
+export * from "@/lib/unsafe";
+export const local = label;`,
+				"components/sample.tsx": `import { label } from "@/lib/amount";
+export function Sample({ value }: { value: number }) { return <p>{label(value)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample label"],
+		],
+		[
+			"namespace members called through call or bind at import",
+			{
+				"components/sample.tsx": `import * as fmt from "@/lib/format";
+const A = fmt.formatUSD.call(null, 1);
+const B = fmt.formatUSD.bind(null)(2);
+export function Sample() { return <p />; }`,
+			},
+			["components/sample.tsx:2 <module> formatUSD", "components/sample.tsx:3 <module> formatUSD"],
+		],
+		[
+			"a namespace member under an asserted string key",
+			{
+				"components/sample.tsx": `import * as fmt from "@/lib/format";
+export function Sample() { return <p>{fmt["formatUSD" as const](1)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample formatUSD"],
+		],
+		[
+			"formatters whose only use is a dropped member read",
+			{
+				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
+export function Sample() { const numberFormat = useNumberFormat(); void numberFormat.formatUSD; return <p />; }`,
+			},
+			["components/sample.tsx:2 Sample useNumberFormat() result unused"],
+		],
+		[
+			"a module-level alias of the subscription called bare",
+			{
+				"components/sample.tsx": `import { useNumberFormat } from "@/lib/format";
+const useFormat = useNumberFormat;
+export function Sample() { useFormat(); return <p />; }`,
+			},
+			["components/sample.tsx:3 Sample useNumberFormat() result unused"],
+		],
 	])("flags %s", (_name, files, expected) => {
 		expect(findNumberFormatViolations(withFormatStubs(files))).toEqual(expected);
 	});
@@ -640,6 +688,34 @@ export function Sample({ kind }: { kind: number }) {
 				"lib/sample-csv.ts": `import { formatUSD } from "@/lib/format";
 const usd = formatUSD.bind(null);
 export function csvCell(value: number) { return usd(value); }`,
+			},
+		],
+		[
+			"a formatter bound through a string key at import that only non-React code calls",
+			{
+				"lib/sample-csv.ts": `import { formatUSD } from "@/lib/format";
+const usd = formatUSD["bind"](null);
+export function csvCell(value: number) { return usd(value); }`,
+			},
+		],
+		[
+			"an internal import shadowed by a safe name exported through export *",
+			{
+				"lib/safe.ts": "export function label(value: number) { return String(value); }",
+				"lib/unsafe.ts": `export { formatUSD as label } from "@/lib/format";`,
+				"lib/amount.ts": `import { label } from "@/lib/unsafe";
+export * from "@/lib/safe";
+export function csvCell(value: number) { return label(value); }`,
+				"components/sample.tsx": `import { label } from "@/lib/amount";
+export function Sample({ value }: { value: number }) { return <p>{label(value)}</p>; }`,
+			},
+		],
+		[
+			"a class expression named like a formatter",
+			{
+				"components/sample.tsx": `import { formatUSD } from "@/lib/format";
+export function exportCell(value: number) { return formatUSD(value); }
+export function Sample() { const Cell = class formatUSD { static make() { return new formatUSD(); } }; return <p>{String(Cell.make())}</p>; }`,
 			},
 		],
 		[
@@ -844,8 +920,9 @@ function describeModule(path: string, text: string, sources: Map<string, string>
 				module.declarations.set("default", [statement]);
 			}
 		} else if (ts.isVariableStatement(statement)) {
+			const exported = hasModifier(statement, ts.SyntaxKind.ExportKeyword);
 			for (const declaration of statement.declarationList.declarations) {
-				if (declaration.initializer) describeVariable(module, declaration.name, declaration.initializer);
+				if (declaration.initializer) describeVariable(module, declaration.name, declaration.initializer, exported);
 			}
 		}
 	}
@@ -854,7 +931,12 @@ function describeModule(path: string, text: string, sources: Map<string, string>
 
 // A destructured namespace import is an alias of the namespace's export; any other destructured or
 // assigned name is a declaration whose value is the initializer or a default on its path.
-function describeVariable(module: SourceModule, name: ts.BindingName, initializer: ts.Expression): void {
+function describeVariable(
+	module: SourceModule,
+	name: ts.BindingName,
+	initializer: ts.Expression,
+	exported: boolean,
+): void {
 	if (ts.isIdentifier(name)) {
 		module.declarations.set(name.text, [initializer]);
 		return;
@@ -868,7 +950,7 @@ function describeVariable(module: SourceModule, name: ts.BindingName, initialize
 		} else if (element.dotDotDotToken && ts.isIdentifier(element.name)) {
 			module.namespaces.set(element.name.text, namespaceTarget);
 		} else {
-			describeNamespaceElement(module, element, namespaceTarget, [initializer]);
+			describeNamespaceElement(module, element, namespaceTarget, [initializer], exported);
 		}
 	}
 }
@@ -880,6 +962,7 @@ function describeNamespaceElement(
 	element: ts.BindingElement,
 	namespaceTarget: string | null,
 	values: ts.Node[],
+	exported: boolean,
 ): void {
 	const exportName = getDestructuredKey(element);
 	if (exportName === undefined) {
@@ -889,6 +972,7 @@ function describeNamespaceElement(
 	const binding = { path: namespaceTarget, name: exportName };
 	if (ts.isIdentifier(element.name) && !element.initializer) {
 		module.imports.set(element.name.text, binding);
+		if (exported) module.localExports.set(element.name.text, element.name.text);
 		return;
 	}
 	const bound: ts.Identifier[] = [];
@@ -926,11 +1010,17 @@ function describeBindingElement(module: SourceModule, element: ts.BindingElement
 // At module scope a formatter that is called, or handed to a call, formats once at import; one that
 // is only stored, as an alias, a bound copy or in a table, is checked where it is called.
 function formatsAtImport(identifier: ts.Identifier): boolean {
-	let value = outermostTransparentExpression(identifier);
-	const member = value.parent;
-	if ((ts.isPropertyAccessExpression(member) || ts.isElementAccessExpression(member)) && member.expression === value) {
+	let value: ts.Expression = outermostTransparentExpression(identifier);
+	for (;;) {
+		const member = value.parent;
+		if (
+			!(ts.isPropertyAccessExpression(member) || ts.isElementAccessExpression(member)) ||
+			member.expression !== value
+		) {
+			break;
+		}
 		value = outermostTransparentExpression(member);
-		if (ts.isPropertyAccessExpression(member) && member.name.text === "bind") {
+		if (getMemberName(member) === "bind") {
 			const bindCall = value.parent;
 			if (!ts.isCallExpression(bindCall) || bindCall.expression !== value) return false;
 			value = outermostTransparentExpression(bindCall);
@@ -973,15 +1063,16 @@ function resolveReference(
 function getNamespaceMember(identifier: ts.Identifier): string | undefined {
 	const value = outermostTransparentExpression(identifier);
 	const parent = value.parent;
-	if (ts.isPropertyAccessExpression(parent) && parent.expression === value) return parent.name.text;
-	if (
-		ts.isElementAccessExpression(parent) &&
-		parent.expression === value &&
-		ts.isStringLiteralLike(parent.argumentExpression)
-	) {
-		return parent.argumentExpression.text;
+	if ((ts.isPropertyAccessExpression(parent) || ts.isElementAccessExpression(parent)) && parent.expression === value) {
+		return getMemberName(parent);
 	}
 	return undefined;
+}
+
+function getMemberName(member: ts.PropertyAccessExpression | ts.ElementAccessExpression): string | undefined {
+	if (ts.isPropertyAccessExpression(member)) return member.name.text;
+	const key = skipTransparentExpressions(member.argumentExpression);
+	return ts.isStringLiteralLike(key) ? key.text : undefined;
 }
 
 function resolveCallee(
@@ -989,17 +1080,46 @@ function resolveCallee(
 	module: SourceModule,
 	call: ts.CallExpression,
 ): string | null {
-	const callee = skipTransparentExpressions(call.expression);
-	if (ts.isIdentifier(callee)) {
-		return isLocallyBound(callee) ? null : (resolveReference(modules, module, callee)?.key ?? null);
+	return followAliases(modules, resolveExpressionKey(modules, module, call.expression));
+}
+
+// The module-level key an expression names: an unshadowed identifier or a member of a namespace.
+function resolveExpressionKey(
+	modules: Map<string, SourceModule>,
+	module: SourceModule,
+	expression: ts.Expression,
+): string | null {
+	const target = skipTransparentExpressions(expression);
+	if (ts.isIdentifier(target)) {
+		return isLocallyBound(target) ? null : (resolveReference(modules, module, target)?.key ?? null);
 	}
-	if (ts.isPropertyAccessExpression(callee) || ts.isElementAccessExpression(callee)) {
-		const object = skipTransparentExpressions(callee.expression);
+	if (ts.isPropertyAccessExpression(target) || ts.isElementAccessExpression(target)) {
+		const object = skipTransparentExpressions(target.expression);
 		if (ts.isIdentifier(object) && !isLocallyBound(object)) {
 			return resolveReference(modules, module, object)?.key ?? null;
 		}
 	}
 	return null;
+}
+
+// A module-level `const useFmt = useNumberFormat` is the hook under another name.
+function followAliases(modules: Map<string, SourceModule>, key: string | null): string | null {
+	const seen = new Set<string>();
+	let current = key;
+	while (current !== null && !seen.has(current)) {
+		seen.add(current);
+		const separator = current.lastIndexOf("#");
+		const module = modules.get(current.slice(0, separator));
+		const values = module?.declarations.get(current.slice(separator + 1));
+		const value = values?.length === 1 ? values[0] : undefined;
+		if (!module || value === undefined || ts.isFunctionDeclaration(value) || ts.isClassDeclaration(value)) {
+			return current;
+		}
+		const next = resolveExpressionKey(modules, module, value as ts.Expression);
+		if (next === null) return current;
+		current = next;
+	}
+	return current;
 }
 
 function resolveBinding(
@@ -1031,8 +1151,6 @@ function resolveExport(
 	if (localName) return resolveBinding(modules, path, localName, seen);
 	const reexport = module.reexports.get(name);
 	if (reexport?.path) return resolveExport(modules, reexport.path, reexport.name, seen);
-	const alias = module.imports.get(name);
-	if (alias?.path) return resolveExport(modules, alias.path, alias.name, seen);
 	if (name === "default") return null;
 	for (const target of module.starExports) {
 		const resolved = target ? resolveExport(modules, target, name, seen) : null;
@@ -1072,7 +1190,7 @@ function numberFormatResultIsUsed(call: ts.CallExpression, scope: ts.Node): bool
 			ts.isIdentifier(node) &&
 			names.has(node.text) &&
 			isValueReference(node) &&
-			!isDiscarded(node) &&
+			!isDiscarded(climbMemberReads(node)) &&
 			findDeclaringScope(node) === declaringScope
 		) {
 			used = true;
@@ -1081,6 +1199,18 @@ function numberFormatResultIsUsed(call: ts.CallExpression, scope: ts.Node): bool
 	};
 	visit(scope);
 	return used;
+}
+
+// `result.formatUSD` read and dropped is as unused as `result` itself; calling it is a use.
+function climbMemberReads(identifier: ts.Identifier): ts.Expression {
+	let value: ts.Expression = outermostTransparentExpression(identifier);
+	while (
+		(ts.isPropertyAccessExpression(value.parent) || ts.isElementAccessExpression(value.parent)) &&
+		value.parent.expression === value
+	) {
+		value = outermostTransparentExpression(value.parent);
+	}
+	return value;
 }
 
 function isDiscarded(expression: ts.Expression): boolean {
@@ -1099,7 +1229,12 @@ function isValueReference(identifier: ts.Identifier): boolean {
 	if (ts.isPropertyAssignment(parent) || ts.isPropertyDeclaration(parent)) return parent.initializer === identifier;
 	if (ts.isBindingElement(parent)) return parent.initializer === identifier;
 	if (ts.isVariableDeclaration(parent) || ts.isParameter(parent)) return parent.initializer === identifier;
-	if (ts.isFunctionDeclaration(parent) || ts.isFunctionExpression(parent) || ts.isClassDeclaration(parent)) {
+	if (
+		ts.isFunctionDeclaration(parent) ||
+		ts.isFunctionExpression(parent) ||
+		ts.isClassDeclaration(parent) ||
+		ts.isClassExpression(parent)
+	) {
 		return parent.name !== identifier;
 	}
 	if (ts.isImportSpecifier(parent) || ts.isImportClause(parent) || ts.isNamespaceImport(parent)) return false;

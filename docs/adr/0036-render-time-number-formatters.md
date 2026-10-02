@@ -31,7 +31,7 @@
 6. **契约。** `number-format-reactivity-contract.test.ts` 用 TypeScript AST 扫描 `apps/terminal/src`（测试、`locales`、`.gen.ts` 除外）：
    - 先跨模块求出「经模块级数字格式化函数格式化」的模块级声明。这是传递闭包，跟随 `@/` 与相对导入、具名与默认导入、命名空间导入（`format.formatNumber`、`format["formatNumber"]`，以及从命名空间解构出的名字，包括带默认值、嵌套解构与剩余元素）、具名再导出、`export *` 与本地别名导出；模块级声明包括函数、类、变量，解构出的名字连同路径上的默认值（`const { usd = formatUSD } = overrides`）。括号、类型断言（`as`、`satisfies`、尖括号）与非空断言不改变值，判断时都会穿透；
    - 组件与 Hook 里引用这些声明、模块级格式化函数或上述读取函数，且没有被局部绑定遮蔽的，都算违规；
-   - `useNumberFormat()` 的结果没有被用到算违规：结果被丢弃（裸调用、`void`、逗号运算符左侧，包括以别名导入后调用），或赋给的变量与解构出的名字在其作用域里没有被引用。引用按绑定判断，即找到声明这个名字的最近作用域（块、`switch` 的各分支、`for` 初始化、函数参数），同名的内层参数不算；只出现在 `void`、单独的表达式语句或逗号左侧也不算。这检查的是引用，不是格式化数据流；
+   - `useNumberFormat()` 的结果没有被用到算违规：结果被丢弃（裸调用、`void`、逗号运算符左侧，包括以别名导入后调用），或赋给的变量与解构出的名字在其作用域里没有被引用。引用按绑定判断，即找到声明这个名字的最近作用域（块、`switch` 的各分支、`for` 初始化、函数参数、具名类表达式），同名的内层参数不算；只出现在 `void`、单独的表达式语句或逗号左侧也不算，读取成员后丢弃（`void result.formatUSD`）同样不算。模块顶层给 `useNumberFormat` 起的别名会被跟随。这检查的是引用，不是格式化数据流；
    - 模块顶层在导入时调用格式化函数，或把它交给一次调用（如 `[0, 1].map(formatUSD)`），算违规；只保存函数引用（别名、对象表、`.bind` 出的副本）不算，但引用它们的组件仍会被拦下。
 
    组件与 Hook 的识别和语言契约共用 `src/lib/tests/harness/react-source.ts`，对照的是 `babel-plugin-react-compiler` 1.0.0 默认 infer 模式的源码。编译器只遍历类之外的函数声明、函数表达式与箭头函数，其中只有这几种可能被编译（按名称或包装识别的，还要求函数体调用 Hook 或创建 JSX）：
@@ -39,7 +39,7 @@
    - `memo`/`forwardRef` 任一参数位置的回调，写作 `memo`、`React.memo` 或 `React[memo]`（`isReactAPI`）；
    - 用 `"use memo"`、`"use forget"` 指令选择编译的函数。
 
-   契约在此之上还认：函数表达式自身的名称，赋值目标、对象与类属性、解构默认值给出的名称，任意对象上的 `memo`/`forwardRef`、嵌套或加括号与断言的包装、字符串键、`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。所以它是编译器当前规则的超集，不依赖编译器是否真的编译了某个函数；升级编译器或改变编译模式时要重新对照。附 65 个正反样例（56 个应报出、9 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
+   契约在此之上还认：函数表达式自身的名称，赋值目标、对象与类属性、解构默认值给出的名称，任意对象上的 `memo`/`forwardRef`、嵌套或加括号与断言的包装、字符串键、`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。所以它是编译器当前规则的超集，不依赖编译器是否真的编译了某个函数；升级编译器或改变编译模式时要重新对照。附 73 个正反样例（61 个应报出、12 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
 
 ## 备选方案与代价
 
@@ -55,6 +55,7 @@
 - 数字格式化有两个入口。渲染期的 React 代码用 `useNumberFormat()`，其余代码可以用模块级函数或 `getNumberFormatters()`。规则写在 [数字格式设置](../number-format-setting.md) 与 AGENTS.md。
 - 契约只看源码中的名字绑定。经 props 传给子组件、在子组件渲染时调用的闭包，只要创建它的组件正常重渲染，闭包会随格式化函数身份更新。在渲染之外创建的元素（提示内容）契约看不到，靠决策 4 的约定。它也看不到以下写法，出现时需要人工审查：
   - 类组件，以及 `memo`/`forwardRef` 之外的包装函数；
+  - TypeScript `namespace` 声明里的格式化 helper，以及在组件或 Hook 内部给 `useNumberFormat` 起的别名；
   - 动态 `import()`、`require()`（包括 `import x = require()`）取得的格式化函数，整体传递的命名空间对象，经 `export * as` 再导出的命名空间，按非字面量键访问的命名空间成员（`format[name]`），以及被重新赋值的变量；
   - 模块顶层由其他函数在导入时调用的回调，例如立即执行的函数，或传给模块顶层调用的箭头函数（`[0, 1].map((value) => formatUSD(value))`）。
 - 资金类提示（划转、发送、提现、金库）在弹出时把金额格式化成字符串，已显示的提示不随设置变化。这与这些提示在弹出时按当前语言生成文案的既有约定一致。

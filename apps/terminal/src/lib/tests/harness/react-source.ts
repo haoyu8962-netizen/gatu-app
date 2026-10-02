@@ -142,7 +142,9 @@ function getReceivingName(value: ts.Expression): string | undefined {
 
 export function getStaticName(name: ts.PropertyName): string | undefined {
 	if (ts.isIdentifier(name) || ts.isStringLiteralLike(name)) return name.text;
-	return ts.isComputedPropertyName(name) && ts.isStringLiteralLike(name.expression) ? name.expression.text : undefined;
+	if (!ts.isComputedPropertyName(name)) return undefined;
+	const key = skipTransparentExpressions(name.expression);
+	return ts.isStringLiteralLike(key) ? key.text : undefined;
 }
 
 function hasMemoizationDirective(node: ts.SignatureDeclaration): boolean {
@@ -164,19 +166,17 @@ export function calleeName(call: ts.CallExpression): string | undefined {
 	const callee = skipTransparentExpressions(call.expression);
 	if (ts.isIdentifier(callee)) return callee.text;
 	if (ts.isPropertyAccessExpression(callee)) return callee.name.text;
-	if (ts.isElementAccessExpression(callee) && ts.isStringLiteralLike(callee.argumentExpression)) {
-		return callee.argumentExpression.text;
-	}
-	return undefined;
+	if (!ts.isElementAccessExpression(callee)) return undefined;
+	const key = skipTransparentExpressions(callee.argumentExpression);
+	return ts.isStringLiteralLike(key) ? key.text : undefined;
 }
 
 // The compiler's isReactAPI also takes React[memo], an element key that is an identifier named memo,
 // although its value is unknown; only the wrapper check follows it, never hook semantics.
 function wrapperName(call: ts.CallExpression): string | undefined {
 	const callee = skipTransparentExpressions(call.expression);
-	if (ts.isElementAccessExpression(callee) && ts.isIdentifier(callee.argumentExpression)) {
-		return callee.argumentExpression.text;
-	}
+	const key = ts.isElementAccessExpression(callee) ? skipTransparentExpressions(callee.argumentExpression) : undefined;
+	if (key && ts.isIdentifier(key)) return key.text;
 	return calleeName(call);
 }
 
@@ -216,6 +216,8 @@ function collectScopeNames(scope: ts.Node): ts.Identifier[] {
 	if (ts.isFunctionLike(scope)) {
 		for (const parameter of scope.parameters) collectBindingIdentifiers(parameter.name, names);
 		if (ts.isFunctionExpression(scope) && scope.name) names.push(scope.name);
+	} else if (ts.isClassExpression(scope)) {
+		if (scope.name) names.push(scope.name);
 	} else if (ts.isCatchClause(scope)) {
 		if (scope.variableDeclaration) collectBindingIdentifiers(scope.variableDeclaration.name, names);
 	} else if (ts.isForStatement(scope) || ts.isForOfStatement(scope) || ts.isForInStatement(scope)) {

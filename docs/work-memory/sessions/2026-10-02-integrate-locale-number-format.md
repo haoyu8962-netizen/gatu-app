@@ -10,7 +10,7 @@
   "summary": "进行中：把 claude/laughing-engelbart-b9dbe6（页脚时钟）、claude/relaxed-roentgen-fd0316（Vault 与组合收益图语言依赖）、claude/wonderful-goldberg-e47b19（数字格式刷新，ADR 0036）三条叠放的未推送分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format，新增 CI 步骤，并按用户要求用 Codex 做至少 3 轮只读对抗审查、评分大于 9。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97"],
+  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-10-02-footer-clock-live-minute.md" },
     { "path": "docs/work-memory/sessions/2026-10-02-vault-fetched-time-locale.md" },
@@ -63,7 +63,7 @@
 
 更正记录：这里最初写作「31 个测试文件中有 20 个不在清单里」，文件数少算了 1 个。第 2 轮 B 路据此改为 32 与 21，但 21 只比较了显式路径；第 3 轮 B 路按通配符复核，实际未覆盖的是 20 个。两次都用 `git diff --name-only 682430ba 5d3ff8e7` 对照 `5d3ff8e7` 的 workflow 复核。
 
-新增步骤「Test number format and runtime locale contracts」（`41c585cb`）。第 1 轮审查后又补了 4 个被本 PR 改动的测试文件，共 30 个；第 2 轮审查后加入 `history-csv-twap.test.tsx`（直接测试本 PR 改动的 `useTwapFillHistoryCsv`），共 31 个；第 3 轮审查后加入新的 `bridge-success-screen-locale.test.tsx`，共 32 个。现在本 PR 改动或新增的 34 个测试文件都会被 CI 运行（按显式路径与通配符核对）。本机用单工作进程跑最初的 26 个文件，554 项通过、47 秒（负载 12–22）。`scripts/ci-workflows.test.mjs` 7 项通过，Ruby 解析 YAML 正常。
+新增步骤「Test number format and runtime locale contracts」（`41c585cb`）。第 1 轮审查后又补了 4 个被本 PR 改动的测试文件，共 30 个；第 2 轮审查后加入 `history-csv-twap.test.tsx`（直接测试本 PR 改动的 `useTwapFillHistoryCsv`），共 31 个；第 3 轮审查后加入新的 `bridge-success-screen-locale.test.tsx`，共 32 个。现在本 PR 改动或新增的 35 个测试文件都会被 CI 运行（按显式路径与通配符核对）。（这里原写作 34，是第 3 轮时的数；第 5 轮又改了 `format.test.ts`，第 7 轮 B 路指出后更正。）本机用单工作进程跑最初的 26 个文件，554 项通过、47 秒（负载 12–22）。`scripts/ci-workflows.test.mjs` 7 项通过，Ruby 解析 YAML 正常。
 
 ### Codex 对抗审查
 
@@ -242,7 +242,7 @@ B 路没有新发现。它对照本地证据核对了前四轮各路的命令数
 
 B 路、C 路没有 P0–P2，各提同一项 P3。B 路对照本地证据核对了第 5 轮的数字，并用内存执行复现了样例数、旧检查器失败数与基线结果；它也确认「本会话另补两处」与第 5 轮三份报告一致。V 路确认第 5 轮修复成立（它把 8 个包装函数逐个改回模块级函数，每一个都会让身份守卫失败），另提 1 项 P2、2 项 P3。经本会话核实，以下全部成立：
 
-- **V-P2：从命名空间解构出、再导出给别的模块的名字没被追踪。** `export const { formatUSD: usd } = format` 只登记成本模块的导入别名，`resolveExport` 不查导入别名，别的模块导入 `usd` 后就断了。已让 `resolveExport` 在最后按导入别名继续解析。TypeScript 不允许重新导出未导出的导入，所以这样做不会让未导出的名字被误认。
+- **V-P2：从命名空间解构出、再导出给别的模块的名字没被追踪。** `export const { formatUSD: usd } = format` 只登记成本模块的导入别名，`resolveExport` 不查导入别名，别的模块导入 `usd` 后就断了。已让 `resolveExport` 在最后按导入别名继续解析。TypeScript 不允许重新导出未导出的导入，所以这样做不会让未导出的名字被误认。（更正：这个判断不成立。第 7 轮 B 路给出反例：模块内部导入了 `label`，同时 `export *` 另一个模块的 `label`，类型检查零诊断，对外的 `label` 来自星号导出，按导入别名回溯会解析错。该做法已撤回，见第 7 轮。）
   - 顺着同一路径，本会话又补了两种审查没报的写法：嵌套解构（`const { table: { usd } } = fmt`，取命名空间导出 `table`，连同路径上的默认值）；剩余元素（`const { …, ...rest } = format`，`rest` 按命名空间处理）。
 - **V-P3：`.bind` 豁免也放过了立即调用的绑定。** `formatUSD.bind(null)(1)` 在导入时就格式化了。已改为只豁免存起来的绑定副本，绑定后立即调用或交给调用的仍报违规。
 - **V-P3：ADR 把编译器源码的取名分支写成了实际行为。** 本会话用安装的编译器分别编译了 6 个样例：函数声明、变量初始化、`React[memo]` 包装被编译；赋值目标（`Card = () => <p />`）、对象属性、解构默认值都没有被编译。原因是 1.0.0 的 `getFunctionName2` 拿 NodePath 对象与字符串或布尔值比较，这三个分支永远不成立。ADR 与共用模块注释已改为按实际行为描述，这三种写法改列为契约额外认的写法。
@@ -253,6 +253,40 @@ B 路、C 路没有 P0–P2，各提同一项 P3。B 路对照本地证据核对
 - 数字契约 69 项（56 个应报出、9 个应放行、4 项源码树检查），语言契约 191 项，全部通过；`format.test.ts` 36 项通过。
 - 本轮新增 4 个数字样例，接到上一版（`6ed51e97`）的检查器与共用模块上运行时全部失败。「剩余元素」样例的初稿同时引用了 `formatPrice`，旧检查器借这个引用也能报出，没有隔离出要测的写法；已改为只经 `rest` 访问，再验证确实失败。
 - 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败，语言契约全部通过；运行后已还原。
+
+**第 7 轮（三路并行，22:28–22:34）**
+
+这一轮要求 V 路按清单系统核查（模块绑定来源、引用解析、传播、导入时格式化、结果是否被用到、组件识别，以及语言契约的三个函数），一次报完。
+
+| 路 | 重点 | 用量 | 评分 |
+|---|---|---|---|
+| V | 系统核查两份契约（终评） | 22 条命令、约 12.5 万 token | 8.4 |
+| B | 规范、文档与记录终评 | 16 条命令、约 11.6 万 token | 8.8 |
+| C | 全 PR 遗漏与测试强度终评 | 19 条命令、约 12.0 万 token | 9.4 |
+
+C 路没有任何发现。B 路提 1 项 P2、1 项 P3；V 路确认第 6 轮修复成立，另提 4 项 P2 与几组 P3，全部集中在语言契约与两份契约的边缘写法。经本会话核实，以下全部成立：
+
+- **B-P2：按导入别名回溯会解析错。** 见第 6 轮一节的更正。已撤回这一回溯；只在 `export const { formatUSD: usd } = format` 这种导出语句里，把命名空间别名登记为本模块的导出。两个方向各补了样例：星号导出优先于内部导入时要报出，反过来时要放行。
+- **V-P2：任何 Hook 的对象回调都被当成延迟执行。** 自定义 Hook 可能在渲染期间调用传入的回调，例如 `useLabels({ render: () => format(at, { locale: i18n.locale }) })` 里的 `useMemo(() => render(), [render])`，两层缓存都不会随语言失效。已收窄为只豁免 `queryFn`、`mutationFn` 与 `on*` 选项；JSX 事件处理与 `ref`、effect、惰性初始化不变。
+- **V-P2：包了括号或断言的 `useMemo`/`useCallback` 回调被整个跳过。** 已穿透回调与依赖数组外的括号和断言；按名字传入、且声明在调用可见作用域里的回调会被找到并检查；以别的名字导入的 React Hook 会被跟随。其余无法解析的回调仍跳过，已写进多语言规则。
+- **V-P2：语言读取只认 `i18n.locale` 一种外形。** 现在也认 `i18n["locale"]`、`(i18n as I18n).locale`、`const { i18n: lingui } = useLingui()` 这类改名绑定，以及 `lingui.i18n.locale`、`useLingui().i18n.locale`。源码扫描的预筛选从 `i18n.locale` 放宽到 `locale`。
+- **V-P2：类型引用与读取整个对象被算作读取依赖。** `type Locale = typeof locale` 不再算读取。属性读取只算这条路径本身，方法调用另算读取了接收者。依赖挂在 Lingui 的 i18n 对象下（如 `i18n.locale`）时，必须读到这条路径本身才算：这个对象在切换语言时身份不变，只读 `i18n` 或 `i18n.messages` 不会让编译器重算。
+- **V-P3（数字契约）**：
+  - 导入时格式化的判断沿整条成员链走，`fmt.formatUSD.call(…)`、`fmt.formatUSD.bind(null)(…)` 会报出；`formatUSD["bind"](null)` 只存起来时与 `.bind` 一样放行。
+  - 静态键（含 `["formatUSD" as const]`）统一穿透括号和断言。
+  - 具名类表达式的名字建立作用域。
+  - 读取成员后丢弃（`void result.formatUSD`）不算使用。
+  - 模块顶层给 `useNumberFormat` 起的别名会被跟随；组件内部的别名与 TypeScript `namespace` 声明登记为边界。
+- **V-P3（语言契约）**：带括号的 effect 回调不再被误报；逻辑赋值（`||=`、`&&=`、`??=`）与解构默认值算作条件求值。
+- **B-P3：CI 一节的测试文件数应为 35。** 已更正并注明原值。
+
+本轮改动后，两份契约在真实源码树上仍是 0 处违规：放宽读取外形、预筛选与依赖规则，收窄延迟回调，都没有带出现有代码的违规。
+
+修复后的验证：
+
+- 数字契约 77 项（61 个应报出、12 个应放行、4 项源码树检查），语言契约 206 项，全部通过。
+- 本轮新增 23 个样例（数字 8 个、语言 15 个）。接到上一版（`c51cb05c`）的检查器与共用模块上运行，21 个失败。另 2 个是防止规则放宽的守卫，新旧检查器都通过：`useMutation` 的 `onSuccess` 回调放行；回调读到 `i18n.locale` 本身时不报。
+- 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败；语言契约在收紧后的规则下仍全部通过；运行后已还原。
 
 ## 验证与限制
 
