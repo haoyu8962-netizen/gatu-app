@@ -48,7 +48,7 @@ const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning
 vi.mock("sonner", () => ({ toast: toastMocks }));
 const closeDepositModal = vi.hoisted(() => vi.fn());
 const resetDeposit = vi.hoisted(() => vi.fn());
-const warmPrivyFiatFundingHost = vi.hoisted(() => vi.fn());
+const loadPrivyFiatFundingHost = vi.hoisted(() => vi.fn(() => Promise.resolve(true)));
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -88,6 +88,8 @@ const testState = vi.hoisted(() => ({
 	emailAddress: null as string | null,
 	submissionOutcomeUnknown: false,
 	exchangeSignal: undefined as AbortSignal | undefined,
+	fiatFlags: { mainnet: false, testnet: false },
+	isTestnet: false,
 	fiatOffer: null as null | { walletKind: "embedded" | "external"; disabled: boolean; start: ReturnType<typeof vi.fn> },
 	fiatOfferOptions: null as null | {
 		enabled: boolean;
@@ -471,7 +473,11 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	getResolvedFormatLocale: () => "en-US",
-	useIsTestnet: () => false,
+	useIsTestnet: () => testState.isTestnet,
+}));
+
+vi.mock("@/config/privy-fiat-funding", () => ({
+	isPrivyFiatFundingEnabled: (isTestnet: boolean) => testState.fiatFlags[isTestnet ? "testnet" : "mainnet"],
 }));
 
 vi.mock("@/hooks/trade/use-privy-fiat-funding-offer", () => ({
@@ -486,7 +492,7 @@ vi.mock("@/hooks/trade/use-privy-fiat-funding-offer", () => ({
 	},
 }));
 
-vi.mock("@/stores/use-privy-fiat-funding-store", () => ({ warmPrivyFiatFundingHost }));
+vi.mock("@/lib/trade/privy-fiat-funding-launch", () => ({ loadPrivyFiatFundingHost }));
 
 vi.mock("@/components/trade/components/pending-action-modal", () => ({
 	PendingActionModal: ({ children, onOpenChange }: { children?: ReactNode; onOpenChange: (open: boolean) => void }) => {
@@ -667,8 +673,10 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.fundsActionUnavailableReason = null;
 		testState.infoQueryCalls.length = 0;
 		testState.activeTab = "deposit";
+		testState.fiatFlags = { mainnet: false, testnet: false };
 		testState.fiatOffer = null;
 		testState.fiatOfferOptions = null;
+		testState.isTestnet = false;
 		testState.isArbitrum = true;
 		testState.modalOpen = false;
 		testState.modalOnOpenChange = null;
@@ -2364,22 +2372,22 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		it("warms the purchase host while the purchase entry is on screen", async () => {
 			offerCardFunding();
 			await rerender();
-			expect(warmPrivyFiatFundingHost).not.toHaveBeenCalled();
+			expect(loadPrivyFiatFundingHost).not.toHaveBeenCalled();
 
 			testState.modalOpen = true;
 			await rerender();
 			expect(methods()).not.toBeNull();
-			expect(warmPrivyFiatFundingHost).toHaveBeenCalledOnce();
+			expect(loadPrivyFiatFundingHost).toHaveBeenCalledOnce();
 
 			chooseMethod("transfer");
-			expect(warmPrivyFiatFundingHost).toHaveBeenCalledOnce();
+			expect(loadPrivyFiatFundingHost).toHaveBeenCalledOnce();
 		});
 
 		it("does not warm the purchase host when no purchase can start", async () => {
 			testState.modalOpen = true;
 			await rerender();
 			expect(depositForm()).not.toBeNull();
-			expect(warmPrivyFiatFundingHost).not.toHaveBeenCalled();
+			expect(loadPrivyFiatFundingHost).not.toHaveBeenCalled();
 
 			testState.modalOpen = false;
 			await rerender();
@@ -2387,7 +2395,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			testState.modalOpen = true;
 			await rerender();
 			expect(methods()).not.toBeNull();
-			expect(warmPrivyFiatFundingHost).not.toHaveBeenCalled();
+			expect(loadPrivyFiatFundingHost).not.toHaveBeenCalled();
 		});
 
 		it("decides the first screen again when the dialog is rebuilt for another wallet identity", async () => {
@@ -2406,6 +2414,23 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			expect(methods()).toBeNull();
 			expect(depositForm()).not.toBeNull();
 		});
+
+		it.each([
+			[{ mainnet: true, testnet: false }, false, true],
+			[{ mainnet: true, testnet: false }, true, false],
+			[{ mainnet: false, testnet: true }, false, false],
+			[{ mainnet: false, testnet: true }, true, true],
+		])(
+			"offers the purchase only under the flag of the current network: %j on testnet=%j",
+			async (flags, isTestnet, enabled) => {
+				testState.fiatFlags = flags;
+				testState.isTestnet = isTestnet;
+				testState.modalOpen = true;
+				await rerender();
+
+				expect(testState.fiatOfferOptions?.enabled).toBe(enabled);
+			},
+		);
 
 		it("lets the offer know when deposits are unavailable or busy", async () => {
 			offerCardFunding();

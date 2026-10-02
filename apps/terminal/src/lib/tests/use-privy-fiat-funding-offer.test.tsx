@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const OWNER = "0xabcdefabcdefabcdefabcdefabcdefabcdef1234";
 const OTHER = "0x2222222222222222222222222222222222222222";
 
+const launchPrivyFiatFunding = vi.hoisted(() => vi.fn());
 const testState = vi.hoisted(() => ({
 	clientKey: "",
 	sessionMode: "wallet" as "agent-only" | "disconnected" | "wallet",
@@ -23,6 +24,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({ useWalletSession: () => te
 vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => ({ clientKey: testState.clientKey, sessionMode: testState.sessionMode }),
 }));
+vi.mock("@/lib/trade/privy-fiat-funding-launch", () => ({ launchPrivyFiatFunding }));
 vi.mock("@/stores/use-global-settings-store", () => ({ useIsTestnet: () => testState.isTestnet }));
 
 import { getPrivyFiatFundingOwnerKey } from "@/domain/trade/privy-fiat-funding-owner-key";
@@ -30,7 +32,6 @@ import { type PrivyFiatFundingOffer, usePrivyFiatFundingOffer } from "@/hooks/tr
 import {
 	isCurrentPrivyFiatFundingAttempt,
 	type PrivyFiatFundingAttempt,
-	readPrivyFiatFundingAttempt,
 	requestPrivyFiatFunding,
 	resetPrivyFiatFundingStore,
 } from "@/stores/use-privy-fiat-funding-store";
@@ -77,20 +78,19 @@ describe("usePrivyFiatFundingOffer", () => {
 		vi.clearAllMocks();
 	});
 
-	it("closes the caller first, then requests funding for the exact embedded owner", () => {
-		const attemptsAtClose: (PrivyFiatFundingAttempt | null)[] = [];
-		onBeforeStart.mockImplementation(() => attemptsAtClose.push(readPrivyFiatFundingAttempt()));
+	it("closes the caller first, then launches funding for the exact embedded owner", () => {
 		render();
 		expect(offer).toMatchObject({ walletKind: "embedded", disabled: false });
 
 		act(() => offer?.start());
 
-		expect(attemptsAtClose).toEqual([null]);
-		expect(readPrivyFiatFundingAttempt()).toEqual({
+		expect(onBeforeStart).toHaveBeenCalledTimes(1);
+		expect(launchPrivyFiatFunding).toHaveBeenCalledExactlyOnceWith({
 			destination: { address: OWNER, walletKind: "embedded" },
 			network: "mainnet",
 			ownerKey: getPrivyFiatFundingOwnerKey("mainnet", OWNER),
 		});
+		expect(onBeforeStart.mock.invocationCallOrder[0]).toBeLessThan(launchPrivyFiatFunding.mock.invocationCallOrder[0]);
 	});
 
 	it("offers an external owner and keys a testnet attempt by network", () => {
@@ -101,7 +101,8 @@ describe("usePrivyFiatFundingOffer", () => {
 
 		act(() => offer?.start());
 
-		expect(readPrivyFiatFundingAttempt()).toMatchObject({
+		expect(launchPrivyFiatFunding).toHaveBeenCalledExactlyOnceWith({
+			destination: { address: OWNER, walletKind: "external" },
 			network: "testnet",
 			ownerKey: getPrivyFiatFundingOwnerKey("testnet", OWNER),
 		});
@@ -151,7 +152,7 @@ describe("usePrivyFiatFundingOffer", () => {
 		act(() => offer?.start());
 
 		expect(onBeforeStart).not.toHaveBeenCalled();
-		expect(readPrivyFiatFundingAttempt()).toBeNull();
+		expect(launchPrivyFiatFunding).not.toHaveBeenCalled();
 	});
 
 	it("stays disabled while another card purchase is open", () => {
@@ -169,6 +170,7 @@ describe("usePrivyFiatFundingOffer", () => {
 		act(() => offer?.start());
 
 		expect(onBeforeStart).not.toHaveBeenCalled();
+		expect(launchPrivyFiatFunding).not.toHaveBeenCalled();
 		expect(isCurrentPrivyFiatFundingAttempt(open)).toBe(true);
 	});
 });

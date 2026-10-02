@@ -363,8 +363,33 @@ shared store, because a separate loader module moved the import's chunk list int
 startup, 117,887 mobile and 201,548 desktop: +93 mobile and +173 desktop against the table, with no baseline change.
 After the review fixes (the gate compares the attempt's owner and network with the current identity before it reports a
 load failure) the same kind of build reads 3,286,913 total, 1,626,723 static startup, 117,968 mobile and 201,590
-desktop. The desktop runtime increment now sits 398 bytes under its allowance, so the next first-render addition on
-desktop needs its own reduction or review.
+desktop. The desktop runtime increment then sat 398 bytes under its allowance.
+
+The second review round (2026-10-02) replaced the standard Sonner notices with an identity-checked notice card and
+moved the host's dynamic import, with its "could not open" notice, from the gate to the side that starts the purchase
+(the deposit dialog's chunk); the gate now only renders the loaded host and the shared store no longer carries a
+warm-up flag. The earlier objection to a loader module does not apply to this arrangement: that module was shared by
+the gate, which pulled the import's chunk list into runtime startup, while the import now has no importer in runtime
+startup. CI-equivalent builds of the round-one commit `eec28ce2` (rebuilt the same day, equal to the numbers above) and
+of the final tree:
+
+| Metric | Round one (`eec28ce2`) | Final | Change |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,286,913 | 3,289,035 | +2,122 |
+| Static trade startup | 1,626,723 | 1,626,859 | +136 |
+| Mobile runtime increment | 117,968 | 117,653 | -315 |
+| Desktop runtime increment | 201,590 | 201,275 | -315 |
+
+Per-asset gzip comparison: the deposit dialog chunk grows by 2,332 (the notice card, its publisher and presentation,
+the launch function and the card funding domain module); that domain module's own 669-byte chunk disappears; the
+toaster chunk shrinks by 257 because the gate lost its import, identity check and message; the six catalogs grow by 225
+for the sandbox notice; the lazy host chunk grows by 165; the router vendor chunk grows by 149 for the preload lists;
+and 245 other chunks change by less than 60 bytes each (+177 in total).
+
+The total-client baseline follows the feature's measured size against the upgrade commit: 3,289,035 - 3,274,893 =
+14,142, so it is 3,269,608 + 14,142 = 3,283,750, replacing the 3,281,384 above. The other baselines are unchanged. The
+desktop runtime increment now sits 713 bytes under its allowance (201,275 against 201,988), so the next first-render
+addition on desktop still needs its own reduction or review.
 
 ## Functional acceptance gates
 

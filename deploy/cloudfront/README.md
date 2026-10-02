@@ -138,7 +138,7 @@ node deploy/cloudfront/deploy.mjs verify --origin https://testnet.sairn.ai --net
 | --- | --- | --- | --- |
 | 主网赞助充值 | `cctpDeposits.mainnetSponsoredWallet` | `--allow-sponsored-mainnet-deposits` | 见 [CCTP 充值](../../docs/cctp-deposits.md) 的发布模式 |
 | 移动配对 | `mobileSync.enabled`（2026-09-24 之前的构建为 `importFromQr` 或 `createAndReveal`，两种形状都能读） | `--allow-mobile-pairing` | 仅在 [真机清单](../../docs/mobile-phone-access-device-validation.md) 记录完成之后；此前开关必须保持关闭 |
-| 主网银行卡入金 | `privyFiatFunding.mainnet` | `--allow-mainnet-card-funding` | 仅在 [ADR 0034](../../docs/adr/0034-privy-card-funding.md) 的上线前提完成之后：Privy 控制台开启入金方式、审阅后的法律文本已发布、新的响应函数（含 Stripe 的 CSP 来源）已用 `functions --execute` 发布、沙盒与最低金额真实购买已验证 |
+| 主网银行卡入金 | `privyFiatFunding.mainnet` | `--allow-mainnet-card-funding` | 仅在[上线验收清单](../../docs/privy-card-funding-launch-checklist.md)的前两个阶段全部通过之后（[ADR 0034](../../docs/adr/0034-privy-card-funding.md)「上线前提」）：Privy 控制台开启入金方式、审阅后的法律文本已发布、新的响应函数（含 Stripe 的 CSP 来源）已用 `functions --execute` 发布、本地的沙盒与最低金额真实购买已通过、只打开测试网开关的沙盒发布已在测试网站点验收 |
 
 规则是双向精确匹配：构建打开了闸门而没有带参数，拒绝；带了参数而构建没有打开，也拒绝（说明运营方以为在发的版本和实际产物不一致）；`build-meta.json` 没有这些字段（旧构建）同样拒绝，需用当前源码重新构建。`sync` 每次都会打印一行 `release gates: …`；不带 `--execute` 的演练只给出警告。`verify` 会比较线上与本地构建的闸门状态。测试网的两个充值开关与测试网银行卡入金开关只记录、不需要确认。
 

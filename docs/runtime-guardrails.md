@@ -82,12 +82,17 @@ Do not collapse these states into one boolean.
   and Privy's connected-wallet list; never call a Privy funding hook without
   that destination, because Privy then defaults to the first embedded wallet.
   The deposit dialog closes before Privy's window opens, the page-level
-  `PrivyFiatFundingHost` (lazily loaded by `PrivyFiatFundingHostGate` on the
-  first request, so the onramp code stays out of runtime startup) owns the
-  request, and both networks stay behind their own fail-closed flags. The
-  host keeps each result with the owner and network that started it, shows
-  it only while that identity is current and retranslates it in place when
-  the language changes. Stripe's embedded onramp is the only provider that
+  `PrivyFiatFundingHost` owns the request, and both networks stay behind
+  their own fail-closed flags. The deposit dialog's chunk loads that host
+  (`launchPrivyFiatFunding`, and a warm-up while the purchase entry is on
+  screen); `PrivyFiatFundingHostGate` only renders it once loaded, so the
+  onramp code and its import list stay out of runtime startup. The host
+  keeps each result with the owner and network that started it. A notice is
+  a custom Sonner card that checks its presentation, the current owner and
+  the current network every time it renders and translates in place, so it
+  never shows to another identity, not even when Sonner inserts it after it
+  was withdrawn, and a removal it asked for itself is never taken for the
+  owner closing the notice. Stripe's embedded onramp is the only provider that
   runs inside the page; its documented script, frame and connect origins are
   the only card-funding entries in the CSP, and `permissions-policy` keeps
   `payment=()` and `camera=(self)` until a separate decision.

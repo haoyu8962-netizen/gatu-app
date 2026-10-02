@@ -1468,11 +1468,12 @@ msgstr "Impossible de passer en mode Isolé avec une position ouverte. Fermez d'
 msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
 msgstr "Carte ou virement bancaire via un prestataire de paiement tiers. Les USDC arrivent dans votre portefeuille sur Arbitrum."
 
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase confirmed"
 msgstr "Achat par carte confirmé"
 
-#: src/components/trade/tradebox/privy-fiat-funding-host-gate.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase could not open. Check your connection and try again."
 msgstr "Impossible d’ouvrir l’achat par carte. Vérifiez votre connexion et réessayez."
 
@@ -1480,7 +1481,6 @@ msgstr "Impossible d’ouvrir l’achat par carte. Vérifiez votre connexion et 
 msgid "Card purchase did not complete"
 msgstr "L’achat par carte n’a pas abouti"
 
-#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase status unknown"
 msgstr "Statut de l’achat par carte inconnu"
@@ -2864,6 +2864,7 @@ msgstr "La déconnexion nécessite la prise en charge des Web Locks. Mettez à j
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/trade/tradebox/privy-fiat-funding-notice-card.tsx
 #: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "Fermer"
@@ -9647,6 +9648,10 @@ msgstr "Ce coffre n'accepte plus de dépôts."
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
 msgstr "Ce coffre utilise la clôture proportionnelle des positions lors d’un retrait."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "This was a sandbox test: no card was charged and no USDC will arrive."
+msgstr "Il s’agissait d’un test en environnement de test : aucune carte n’a été débitée et aucun USDC n’arrivera."
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This will close the current position and open an equal position in the opposite direction at market price."

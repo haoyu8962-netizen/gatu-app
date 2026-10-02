@@ -3,8 +3,9 @@ import { type PrivyFiatFundingWalletKind, resolvePrivyFiatFundingDestination } f
 import { getPrivyFiatFundingOwnerKey } from "@/domain/trade/privy-fiat-funding-owner-key";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useHyperliquid } from "@/lib/hyperliquid";
+import { launchPrivyFiatFunding } from "@/lib/trade/privy-fiat-funding-launch";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
-import { requestPrivyFiatFunding, usePrivyFiatFundingAttempt } from "@/stores/use-privy-fiat-funding-store";
+import { usePrivyFiatFundingAttempt } from "@/stores/use-privy-fiat-funding-store";
 
 interface Options {
 	enabled: boolean;
@@ -54,7 +55,7 @@ export function usePrivyFiatFundingOffer({
 		start() {
 			if (disabled) return;
 			onBeforeStart();
-			requestPrivyFiatFunding({ destination, network, ownerKey: getPrivyFiatFundingOwnerKey(network, clientKey) });
+			launchPrivyFiatFunding({ destination, network, ownerKey: getPrivyFiatFundingOwnerKey(network, clientKey) });
 		},
 	};
 }

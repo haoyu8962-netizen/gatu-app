@@ -33,9 +33,8 @@ export const PRIVY_FIAT_FUNDING_BUSY_MESSAGE = "Existing fiat onramp flow in pro
 export const PRIVY_FIAT_FUNDING_PAYMENT_METHOD_ERROR = "StripePaymentMethodError";
 
 /**
- * Privy ends a flow with these errors before any payment was taken (checkout setup), after the
- * provider reported the transaction as failed or cancelled, or, as a
- * `StripePaymentMethodError`, after the card was declined. Every other rejection, including
+ * Privy ends a flow with these errors before any payment was taken (checkout setup) or after the
+ * provider reported the transaction as failed or cancelled. Every other rejection, including
  * Privy's "Could not confirm payment status yet." and "Unable to check payment status. Please try
  * again.", may follow a charge, so it is reported as an unknown status rather than a failure.
  */
@@ -50,6 +49,26 @@ export const PRIVY_FIAT_FUNDING_UNCONFIRMED_MESSAGES = [
 	"Could not confirm payment status yet.",
 	"Unable to check payment status. Please try again.",
 ] as const;
+
+/**
+ * `declineReason` values of Privy's `StripePaymentMethodError` that mean the issuer or the card
+ * check refused the payment, so nothing was taken. The SDK also raises that error for
+ * `processing_error`, `transaction_failed` and any provider code that merely contains "decline" or
+ * "insufficient"; those do not prove that no charge exists and stay an unknown status.
+ */
+export const PRIVY_FIAT_FUNDING_CARD_DECLINE_REASONS = [
+	"card_declined",
+	"generic_card_decline",
+	"generic_decline",
+	"insufficient_funds",
+	"card_does_not_support_crypto_purchase",
+	"card_not_supported",
+	"card_velocity_exceeded",
+	"expired_card",
+	"incorrect_cvc",
+	"incorrect_number",
+] as const;
+export const PRIVY_FIAT_FUNDING_UNPROVEN_DECLINE_REASONS = ["processing_error", "transaction_failed"] as const;
 
 interface DestinationInput {
 	clientKey: string;
@@ -128,6 +147,11 @@ export function classifyPrivyFiatFundingError(error: unknown): PrivyFiatFundingO
 		return "cancelled";
 	}
 	if (error.message === PRIVY_FIAT_FUNDING_BUSY_MESSAGE) return "busy";
-	if (error.name === PRIVY_FIAT_FUNDING_PAYMENT_METHOD_ERROR) return "failed";
+	if (error.name === PRIVY_FIAT_FUNDING_PAYMENT_METHOD_ERROR) {
+		const { declineReason } = error as { declineReason?: unknown };
+		return (PRIVY_FIAT_FUNDING_CARD_DECLINE_REASONS as readonly unknown[]).includes(declineReason)
+			? "failed"
+			: "unknown";
+	}
 	return (PRIVY_FIAT_FUNDING_FAILURE_MESSAGES as readonly string[]).includes(error.message) ? "failed" : "unknown";
 }

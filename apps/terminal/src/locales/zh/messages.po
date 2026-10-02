@@ -1468,11 +1468,12 @@ msgstr "持有仓位时无法切换到逐仓模式。请先平仓。"
 msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
 msgstr "通过第三方支付服务商以银行卡或银行转账付款，USDC 会到达您在 Arbitrum 上的钱包。"
 
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase confirmed"
 msgstr "银行卡购买已确认"
 
-#: src/components/trade/tradebox/privy-fiat-funding-host-gate.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase could not open. Check your connection and try again."
 msgstr "银行卡购买无法打开。请检查网络连接后重试。"
 
@@ -1480,7 +1481,6 @@ msgstr "银行卡购买无法打开。请检查网络连接后重试。"
 msgid "Card purchase did not complete"
 msgstr "银行卡购买未完成"
 
-#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase status unknown"
 msgstr "银行卡购买状态未知"
@@ -2864,6 +2864,7 @@ msgstr "断开连接需要浏览器支持 Web Locks。请升级浏览器后重�
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/trade/tradebox/privy-fiat-funding-notice-card.tsx
 #: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "关闭"
@@ -9647,6 +9648,10 @@ msgstr "该金库已不再接受存款。"
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
 msgstr "此金库在提款时采用按比例平仓。"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "This was a sandbox test: no card was charged and no USDC will arrive."
+msgstr "这是一次沙盒测试：没有扣款，也不会有 USDC 到账。"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This will close the current position and open an equal position in the opposite direction at market price."

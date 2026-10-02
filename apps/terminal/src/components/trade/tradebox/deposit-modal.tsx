@@ -70,6 +70,7 @@ import {
 	fundsActionFeedbackCause,
 } from "@/lib/trade/funds-action-feedback";
 import { toBig } from "@/lib/trade/numbers";
+import { loadPrivyFiatFundingHost } from "@/lib/trade/privy-fiat-funding-launch";
 import {
 	buildCctpWithdrawalParameters,
 	getMaximumWithdrawal,
@@ -88,7 +89,6 @@ import {
 	useTransferModalActions,
 } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
-import { warmPrivyFiatFundingHost } from "@/stores/use-privy-fiat-funding-store";
 import { PendingActionModal } from "../components/pending-action-modal";
 import { DepositForm } from "./deposit/deposit-form";
 import { DepositMethodChooser } from "./deposit/deposit-method-chooser";
@@ -530,7 +530,7 @@ export function DepositModal() {
 	const showsDepositMethods = visibleTab === "deposit" && depositMethodsOffered && depositStep === "methods";
 	const canStartFiatFunding = open && showsDepositMethods && fiatFundingOffer !== null && !fiatFundingOffer.disabled;
 	useEffect(() => {
-		if (canStartFiatFunding) warmPrivyFiatFundingHost();
+		if (canStartFiatFunding) void loadPrivyFiatFundingHost();
 	}, [canStartFiatFunding]);
 	const canReturnToDepositMethods =
 		visibleTab === "deposit" && canUseDeposit && depositMethodsOffered && depositStep === "transfer";

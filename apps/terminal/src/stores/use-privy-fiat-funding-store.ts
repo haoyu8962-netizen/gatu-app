@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import { create } from "zustand";
 import type { PrivyFiatFundingDestination, PrivyFiatFundingNetwork } from "@/domain/trade/privy-fiat-funding";
 
@@ -9,29 +10,26 @@ export interface PrivyFiatFundingAttempt {
 
 interface PrivyFiatFundingStore {
 	attempt: PrivyFiatFundingAttempt | null;
-	hostWarmed: boolean;
+	Host: ComponentType | null;
 }
 
-const usePrivyFiatFundingStore = create<PrivyFiatFundingStore>(() => ({ attempt: null, hostWarmed: false }));
+const usePrivyFiatFundingStore = create<PrivyFiatFundingStore>(() => ({ attempt: null, Host: null }));
 
 export function usePrivyFiatFundingAttempt(): PrivyFiatFundingAttempt | null {
 	return usePrivyFiatFundingStore((state) => state.attempt);
 }
 
-/**
- * Whether the page-level host should be loaded: a purchase was requested, or its entry is on screen
- * and was warmed so the request does not wait for the download.
- */
-export function usePrivyFiatFundingHostWanted(): boolean {
-	return usePrivyFiatFundingStore((state) => state.hostWarmed || state.attempt !== null);
+/** The purchase host once its chunk has loaded; the page-level gate renders it and keeps it mounted. */
+export function usePrivyFiatFundingHost(): ComponentType | null {
+	return usePrivyFiatFundingStore((state) => state.Host);
 }
 
-export function warmPrivyFiatFundingHost(): void {
-	usePrivyFiatFundingStore.setState({ hostWarmed: true });
+export function readPrivyFiatFundingHost(): ComponentType | null {
+	return usePrivyFiatFundingStore.getState().Host;
 }
 
-export function forgetPrivyFiatFundingHostWarmUp(): void {
-	usePrivyFiatFundingStore.setState({ hostWarmed: false });
+export function mountPrivyFiatFundingHost(Host: ComponentType): void {
+	usePrivyFiatFundingStore.setState({ Host });
 }
 
 export function requestPrivyFiatFunding(attempt: PrivyFiatFundingAttempt): boolean {
@@ -54,5 +52,5 @@ export function finishPrivyFiatFunding(attempt: PrivyFiatFundingAttempt): void {
 
 /** @internal — exported only for deterministic tests. */
 export function resetPrivyFiatFundingStore(): void {
-	usePrivyFiatFundingStore.setState({ attempt: null, hostWarmed: false });
+	usePrivyFiatFundingStore.setState({ attempt: null, Host: null });
 }

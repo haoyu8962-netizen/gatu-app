@@ -414,6 +414,15 @@ test("notes a local env file next to the application whose built assets are meas
 	assert.match(describeLocalEnvFiles(assetsDirectory) ?? "", /^Note: \.env\.local sits next to this build\. CI has no local env file/);
 });
 
+test("prints the local env note with every budget report", () => {
+	const source = readFileSync(new URL("./check-client-bundle-budget.mjs", import.meta.url), "utf8");
+	const report = source.slice(source.indexOf("export async function checkClientBundleBudget"));
+	assert.match(
+		report,
+		/const localEnvNote = describeLocalEnvFiles\(assetsDirectory\);\n\tif \(localEnvNote\) console\.log\(localEnvNote\);/,
+	);
+});
+
 test("keeps every deterministic PositionsPanel idle preload in the desktop runtime profile", () => {
 	const positionsPanelSource = readFileSync(
 		new URL("../apps/terminal/src/components/trade/positions/positions-panel.tsx", import.meta.url),

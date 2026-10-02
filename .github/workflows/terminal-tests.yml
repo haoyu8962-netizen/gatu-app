@@ -85,6 +85,8 @@ jobs:
           src/lib/tests/wallet-modal.test.tsx
           src/lib/tests/mobile-agent-sync-modal.test.tsx
           src/lib/tests/modal-surface-contract.test.ts
+          src/lib/tests/dialog-notice-radius-contract.test.ts
+          src/lib/tests/i18n-reactivity-contract.test.ts
           src/lib/tests/trades.test.ts
           src/lib/tests/orderbook-panel-safety.test.tsx
           src/lib/tests/mobile-bottom-nav.test.tsx

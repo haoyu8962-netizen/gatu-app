@@ -1468,11 +1468,12 @@ msgstr "Cannot switch to Isolated mode with an open position. Close your positio
 msgid "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
 msgstr "Card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum."
 
+#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase confirmed"
 msgstr "Card purchase confirmed"
 
-#: src/components/trade/tradebox/privy-fiat-funding-host-gate.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase could not open. Check your connection and try again."
 msgstr "Card purchase could not open. Check your connection and try again."
 
@@ -1480,7 +1481,6 @@ msgstr "Card purchase could not open. Check your connection and try again."
 msgid "Card purchase did not complete"
 msgstr "Card purchase did not complete"
 
-#: src/lib/tests/privy-fiat-funding-host.test.tsx
 #: src/lib/trade/privy-fiat-funding-feedback.ts
 msgid "Card purchase status unknown"
 msgstr "Card purchase status unknown"
@@ -2864,6 +2864,7 @@ msgstr "Disconnecting requires Web Locks support. Update your browser and try ag
 
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
+#: src/components/trade/tradebox/privy-fiat-funding-notice-card.tsx
 #: src/components/ui/sonner.tsx
 msgid "Dismiss"
 msgstr "Dismiss"
@@ -9647,6 +9648,10 @@ msgstr "This Vault no longer accepts deposits."
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
 msgstr "This Vault uses proportional position closing on withdrawal."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "This was a sandbox test: no card was charged and no USDC will arrive."
+msgstr "This was a sandbox test: no card was charged and no USDC will arrive."
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This will close the current position and open an equal position in the opposite direction at market price."
