@@ -423,6 +423,12 @@ The total-client baseline therefore becomes 3,269,608 + (3,286,456 - 3,274,893 =
 3,284,760. The other baselines are unchanged. The desktop runtime increment now sits 951 bytes under its allowance
 (201,037 against 201,988), so the next first-render addition on desktop still needs its own reduction or review.
 
+The fifth review round (commit `108dfe7f`) added one line to the Sonner patch, one statement to the Privy patch and a
+small function to the card funding store. Its CI-equivalent build reads 3,286,622 in total (+166), 1,626,753 for the
+static trade startup (+152), 117,766 for the mobile and 201,067 for the desktop runtime increment (+44 and +30); 261
+chunks change, none by 60 bytes. The baselines stay where they are: the total sits 5,451 bytes above its baseline
+against an allowance of 10,000, and the desktop runtime increment 921 bytes under its allowance.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:
