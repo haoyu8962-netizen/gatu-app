@@ -4,9 +4,8 @@ import { tooltipPopupVariants } from "@sairn/ui";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import type { OrderbookHoverController } from "@/hooks/trade/use-orderbook-hover";
 import { cn } from "@/lib/cn";
-import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
+import { szDecimalsToPriceDecimals, useNumberFormat } from "@/lib/format";
 import { useMarketsInfo } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getOrderbookQuoteDecimals } from "@/lib/trade/orderbook";
 import { getOrderbookHoverPriceDecimals, getOrderbookHoverSummary } from "@/lib/trade/orderbook-hover";
 
@@ -21,7 +20,7 @@ interface Props {
 
 export function OrderbookHoverTooltip({ hover, marketName, baseAsset, quoteAsset, szDecimals, priceDecimals }: Props) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const { getMarketByName } = useMarketsInfo();
 	const market = getMarketByName(marketName);
 	const referencePrice =

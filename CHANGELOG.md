@@ -484,6 +484,18 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Switching the number format in the language menu (for example `1,234.56` to `1.234,56`) now
+  rewrites at once the figures in positions, open orders, balances, trade, funding and order
+  histories, TWAP, the order book, desktop and mobile account summaries, order entry summaries and
+  TP/SL estimates, the order confirmation, the market header, Earn, Portfolio, Referrals and the
+  other dashboard pages, Deposits & Withdrawals and the position labels on the chart. Most of them
+  used to keep the previous format until their data changed. A few figures never follow the
+  setting; they are listed under Known. See
+  [ADR 0036](docs/adr/0036-render-time-number-formatters.md).
+- Dates in the referral histories, staking rewards, actions and lock times, the funding history
+  range, open orders, Earn interest, the bridge success screen and the pending-operation details
+  now switch to the new language at once instead of keeping the previous language until their
+  data changed.
 - The desktop footer clock keeps time again. It used to stay at the minute the footer appeared,
   even after a language switch; it now changes at the start of every minute, follows a language
   switch at once with Latin digits, and pauses while the page is hidden, catching up as soon as
@@ -677,6 +689,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Known
 
+- Some figures are formatted by hand and always use `,` grouping and a `.` decimal point,
+  whatever the number-format setting: staking amounts and ratios, vault amounts shown to the exact
+  decimal, the bridge success screen's received amount, the mobile market bar's 24h change and the
+  mobile trade view's change percent, order fee rates (so a fee reads `0.0450% ($1,23)` with the
+  `1.234,56` format) and the TP/SL risk/reward ratio. Funds notifications keep the number format
+  they were raised with.
 - Mobile pairing stays compiled out in production: both `VITE_MOBILE_PAIRING_*` flags remain off
   until the physical-device acceptance for the client-only transfer (ADR 0015 D7, option B) has
   been run.

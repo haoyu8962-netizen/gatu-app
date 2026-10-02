@@ -340,6 +340,20 @@ describe("FundsActionRecoveryHost", async () => {
 		expect(container.querySelector('a[href*="/tx/"]')).toBeNull();
 	});
 
+	it("rewrites the start time in the active language while the details stay open", async () => {
+		const marker = createVaultMarker({ owner: WALLET_OWNER });
+		expect(persistFundsActionMarker(marker)).toBe(true);
+		await renderHost();
+		openDetails();
+		const modal = container.querySelector('[data-testid="recovery-modal"]');
+		expect(container.textContent).toContain(`Started${formatDateTime(marker.startedAt, { locale: "en" })}`);
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+
+		expect(container.querySelector('[data-testid="recovery-modal"]')).toBe(modal);
+		expect(container.textContent).toContain(`Started${formatDateTime(marker.startedAt, { locale: "zh" })}`);
+	});
+
 	it("uses the shared Sonner host and hides the old account notification without clearing its marker", async () => {
 		const marker = createVaultMarker({ owner: WALLET_OWNER });
 		expect(persistFundsActionMarker(marker)).toBe(true);

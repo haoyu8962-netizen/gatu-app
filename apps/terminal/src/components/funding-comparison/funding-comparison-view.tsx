@@ -44,8 +44,7 @@ import type {
 } from "@/domain/market/funding-comparison";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatUSD } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import type { Translate } from "@/lib/translate";
 import type { FundingComparisonController } from "./use-funding-comparison-controller";
 
@@ -164,7 +163,7 @@ function FundingComparisonContent(props: ContentProps) {
 }
 
 function DesktopFundingComparison(props: ContentProps) {
-	useNumberFormatRevision();
+	const { formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	return (
 		<div className="flex flex-1 flex-col">
@@ -290,7 +289,7 @@ interface RateValueProps {
 }
 
 function RateValue({ rate }: RateValueProps) {
-	useNumberFormatRevision();
+	const { formatPercent } = useNumberFormat();
 	return (
 		<bdi dir="ltr" className={cn("font-semibold", TONE_CLASS[rate.tone])}>
 			{rate.value === null
@@ -306,7 +305,7 @@ interface ArbValueProps {
 }
 
 function ArbValue({ arb, venue }: ArbValueProps) {
-	useNumberFormatRevision();
+	const { formatPercent } = useNumberFormat();
 	const { t } = useLingui();
 	if (!arb) {
 		return (
@@ -391,7 +390,7 @@ interface MobileFundingCardProps {
 }
 
 function MobileFundingCard({ row, columnLabels, onSelectMarket }: MobileFundingCardProps) {
-	useNumberFormatRevision();
+	const { formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	return (
 		<article className="rounded-16 border border-stroke-weak">

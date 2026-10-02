@@ -49,10 +49,6 @@ vi.mock("@/lib/hyperliquid", async (importOriginal) => ({
 	}),
 }));
 
-vi.mock("@/lib/number-format-reactivity", () => ({
-	useNumberFormatRevision: () => 0,
-}));
-
 vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
 	useMarketOrderSlippageBps: () => 50,

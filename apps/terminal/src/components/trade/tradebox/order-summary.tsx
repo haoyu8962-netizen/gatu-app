@@ -6,9 +6,8 @@ import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import type { MarketSlippageEstimate } from "@/domain/trade/order/slippage";
 import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatSlippageBps, formatUSD } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { OrderFeeRatePairValue } from "../components/order-fee-summary-value";
 import { SummaryRow } from "../components/summary-row-view";
 
@@ -43,7 +42,7 @@ export function OrderSummary({
 	marketKind = "perp",
 	compact,
 }: Props) {
-	useNumberFormatRevision();
+	const { formatPrice, formatSlippageBps, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const isLeveraged = marketKind !== "spot";
 	const showSlippage = orderType === "market";

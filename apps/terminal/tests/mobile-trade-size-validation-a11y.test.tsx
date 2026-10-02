@@ -244,7 +244,6 @@ vi.mock("@/lib/lazy", () => ({
 	createRetryableLazyComponent: () => () => null,
 	preloadLazyComponents: () => Promise.resolve(),
 }));
-vi.mock("@/lib/number-format-reactivity", () => ({ useNumberFormatRevision: () => 0 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
 	useDepositModalActions: () => ({ open: vi.fn() }),

@@ -14,9 +14,8 @@ import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	getOrderHistoryStatusCategory,
 	getOrderHistoryTriggerPrice,
@@ -99,7 +98,7 @@ function MobileOrdersHistoryTabContent({
 	disclosureState,
 	scrollMode = "contained",
 }: MobileOrdersHistoryTabContentProps) {
-	useNumberFormatRevision();
+	const { formatToken, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { entries, error, isConnected, isOffline, isStale, status } = useHistoricalOrders();

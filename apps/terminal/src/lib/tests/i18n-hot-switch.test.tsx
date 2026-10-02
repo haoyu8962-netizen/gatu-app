@@ -24,6 +24,7 @@ import { TRADE_PANEL_LABELS } from "@/config/trade-panel-labels";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
+import { getNumberFormatters } from "@/lib/format";
 import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import { useOrderEntryActions, useTif } from "@/stores/use-order-entry-store";
 
@@ -382,6 +383,7 @@ function OrderLabelsProbe() {
 							orderType: "trigger",
 						},
 						(descriptor) => t(descriptor),
+						getNumberFormatters(),
 					).summary
 				}
 			</span>

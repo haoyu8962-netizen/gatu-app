@@ -140,7 +140,6 @@ vi.mock("@/hooks/trade/use-order-history", () => ({ useOrderHistory: () => mocks
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 vi.mock("@/lib/hyperliquid", () => ({ useMarkets: () => ({ getMarket: () => undefined }) }));
 vi.mock("@/lib/lazy", () => ({ createLazyComponent: () => () => null }));
-vi.mock("@/lib/number-format-reactivity", () => ({ useNumberFormatRevision: () => undefined }));
 vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
 	useIsTestnet: () => false,

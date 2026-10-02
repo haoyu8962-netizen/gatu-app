@@ -8,9 +8,8 @@ import { useTwapFillHistoryCsv } from "@/hooks/trade/use-twap-fill-history-csv";
 import { useTwapSliceFills } from "@/hooks/trade/use-twap-slice-fills";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDateTimeShort, formatNumber, formatPrice, formatToken } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getUserFillNotional } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { PassiveDataPlaceholder } from "./passive-data-placeholder";
@@ -23,7 +22,7 @@ const twapFillFooterButtonClass =
 	"h-auto min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
 
 export function TwapFillHistoryTable() {
-	useNumberFormatRevision();
+	const { formatNumber, formatPrice, formatToken } = useNumberFormat();
 	const { t } = useLingui();
 	const { fills, hasMore, isConnected, isRealtimeDegraded, loadMore, retryRealtime, status } = useTwapSliceFills();
 	const { address } = useWalletSession();

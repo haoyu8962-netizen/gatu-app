@@ -6,7 +6,7 @@ import { useAccountLedger } from "@/hooks/trade/use-account-ledger";
 import { useAccountLedgerCsv } from "@/hooks/trade/use-account-ledger-csv";
 import { useAccountLedgerLabels } from "@/hooks/trade/use-account-ledger-labels";
 import { cn } from "@/lib/cn";
-import { formatDateTimeShort } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { formatAccountLedgerAmount, formatAccountLedgerFee } from "@/lib/trade/account-ledger-format";
 import { getAccountLedgerExplorerUrl } from "@/lib/trade/account-ledger-links";
 import { isIncompleteHistorySnapshotError } from "@/lib/trade/history-pagination";
@@ -30,6 +30,7 @@ import {
 
 export function AccountTransfersTab() {
 	const { t } = useLingui();
+	const numberFormat = useNumberFormat();
 	const { error, isConnected, retry, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
 	const { exportCsv, isExporting } = useAccountLedgerCsv();
@@ -166,13 +167,13 @@ export function AccountTransfersTab() {
 													amount !== null && getValueColorClass(amount),
 												)}
 											>
-												<bdi dir="ltr">{formatAccountLedgerAmount(row)}</bdi>
+												<bdi dir="ltr">{formatAccountLedgerAmount(row, numberFormat)}</bdi>
 											</TableCell>
 											<TableCell
 												size="dense"
 												className={cn(positionsPanelTableCellClass, "text-right tabular-nums", row.fee && "text-error")}
 											>
-												<bdi dir="ltr">{formatAccountLedgerFee(row)}</bdi>
+												<bdi dir="ltr">{formatAccountLedgerFee(row, numberFormat)}</bdi>
 											</TableCell>
 										</TableRow>
 									);

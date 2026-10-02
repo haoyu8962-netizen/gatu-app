@@ -1,4 +1,4 @@
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, CaretUpIcon, CheckCircleIcon, WalletIcon } from "@phosphor-icons/react";
 import { Button } from "@sairn/ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -31,6 +31,8 @@ export function SuccessScreen({
 	onDone,
 	onNewDeposit,
 }: Props) {
+	const { i18n } = useLingui();
+	const locale = i18n.locale;
 	const formatted = formatTokenAmount(receivedAmount, 6);
 	const totalSeconds = startTime && endTime ? Math.round((endTime - startTime) / 1000) : null;
 
@@ -119,13 +121,18 @@ export function SuccessScreen({
 							{processDetails[0]?.startedAt ? (
 								<InfoRow
 									label={<Trans>Order submitted</Trans>}
-									value={formatDateTimeShort(processDetails[0].startedAt)}
+									value={formatDateTimeShort(processDetails[0].startedAt, { locale })}
 								/>
 							) : null}
 							{(() => {
 								const lastDetail = processDetails.at(-1);
 								if (!lastDetail?.doneAt) return null;
-								return <InfoRow label={<Trans>Order filled</Trans>} value={formatDateTimeShort(lastDetail.doneAt)} />;
+								return (
+									<InfoRow
+										label={<Trans>Order filled</Trans>}
+										value={formatDateTimeShort(lastDetail.doneAt, { locale })}
+									/>
+								);
 							})()}
 						</InfoRowGroup>
 					</CollapsibleContent>

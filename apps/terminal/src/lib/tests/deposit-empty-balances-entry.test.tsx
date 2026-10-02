@@ -97,10 +97,6 @@ vi.mock("@/lib/hyperliquid/markets/use-spot-tokens", () => ({
 	useSpotTokens: () => ({ getToken: () => undefined }),
 }));
 
-vi.mock("@/lib/number-format-reactivity", () => ({
-	useNumberFormatRevision: () => undefined,
-}));
-
 vi.mock("@/stores/use-global-modal-store", () => ({
 	useDepositModalActions: () => ({ open: testState.openDeposit }),
 	useSwapModalActions: () => ({ open: vi.fn() }),

@@ -2,15 +2,14 @@ import { useLingui } from "@lingui/react/macro";
 import { MARKET_HEADER_LABELS } from "@/config/market-header";
 import { get24hChange } from "@/domain/market";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
-import { formatPercent } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useFavoriteMarkets, useMarketActions, useSelectedMarket } from "@/stores/use-market-store";
 import { FavoritesStripView } from "./favorites-strip-view";
 
 export function useFavoritesStripProps() {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatPercent } = useNumberFormat();
 	const favorites = useFavoriteMarkets();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const selectedMarketName = useSelectedMarket();

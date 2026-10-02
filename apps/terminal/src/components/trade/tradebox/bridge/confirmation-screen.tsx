@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { formatSendAmount, formatTokenAmount } from "@/lib/bridge/format";
-import { formatDuration, formatUSD, shortenAddress } from "@/lib/format";
+import { formatDuration, shortenAddress, useNumberFormat } from "@/lib/format";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
 import {
 	type BridgeQuote,
@@ -23,7 +23,6 @@ import {
 	isBridgeQuoteWorse,
 	useBridgeQuote,
 } from "@/lib/lifi/use-quote";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
 import { QuoteCountdown, TokenIcon } from "./shared-ui";
 
@@ -38,7 +37,7 @@ interface Props {
 type QuoteFeedback = "expired" | "refresh-error" | "updated" | "amount-too-low" | "fees-exceed-amount" | "unavailable";
 
 export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConfirm }: Props) {
-	useNumberFormatRevision();
+	const { formatUSD } = useNumberFormat();
 	const [currentTime, setCurrentTime] = useState(Date.now);
 	const [isConfirming, setIsConfirming] = useState(false);
 	const [feedback, setFeedback] = useState<{ kind: QuoteFeedback; dataUpdatedAt: number } | null>(null);

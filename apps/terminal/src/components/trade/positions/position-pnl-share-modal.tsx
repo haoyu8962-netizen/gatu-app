@@ -9,8 +9,7 @@ import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPercent, formatQuoteAmount, szDecimalsToPriceDecimals } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { formatDateTime, szDecimalsToPriceDecimals, useNumberFormat } from "@/lib/format";
 import { toBig } from "@/lib/trade/numbers";
 import {
 	buildPositionPnlShareUrl,
@@ -47,7 +46,7 @@ export function PositionPnlShareModal({ position, onOpenChange }: PositionPnlSha
 }
 
 function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlShareDialogProps) {
-	useNumberFormatRevision();
+	const { formatPercent, formatQuoteAmount } = useNumberFormat();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const { copied, copy } = useCopyToClipboard(1500);

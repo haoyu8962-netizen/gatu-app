@@ -10,8 +10,14 @@
 4. **图表跟随数字格式。** `ChartPanel` 用 `useNumberFormatLocale()` 读设置传给 `TradingViewChart`，widget 创建时收到 `numeric_formatting: { decimal_sign, grouping_separator }`。该选项只能在构造时给，所以设置变化走与语言变化相同的「保存状态 → 重建 iframe」路径（`requestStatePreservingRebuild(widget, "numeric-format")`），`appliedNumberFormatRef` 与创建时的值比较，值未变不重建。库的 `widget.save` 在 v28.3 里同步回调，所以同一次 commit 里语言与数字格式先后变化时，第二个变化落在「widget 未就绪」分支并重新开始初始化，最终只创建一个带两个新值的 widget；若某个宿主让 `save` 异步回调，未回调期间的第二个变化并入同一次保存，变回原值则取消（两种路径都有测试）。
 5. **用户可见名称的排序** 用 `localeCompare(other, undefined, { sensitivity: "base" })`（报价币种分类、Swap 代币列表、API 钱包名称）；id、hash、地址的排序仍是无参 `localeCompare`，它们只需要稳定顺序。
 6. **输入框接受设置的小数点，值仍是协议串。** 当设置的小数点是 `,`（`de-DE`、`fr-FR`）时，输入框里打出的 `,` 在到达任何校验或状态之前被改写成 `.`；默认格式下 `,` 保持原样并被既有校验拒绝，避免把 `1,000` 读成一。输入框显示的仍是 `.` 形式的协议串（`1.5`），只有表格与标签按设置显示 `1,5`。两层接入：`NumberInput` 在 keydown 放行设置的小数键并在 `handleChange` 里用 `normalizeDecimalInputEvent` 改写 DOM 值（覆盖桌面下单表单尺寸/价格/触发价/TP/SL、移动端尺寸与价格、划转、发送、提现、充值、Swap、Scale、TWAP、逐仓保证金）；不经 `NumberInput` 的裸输入（`PriceInputWithPercent` 三个输入、Across 金额、移动端改单两个输入、内联改单、质押金额、金库金额）在 `onChange` 里同样调用 `normalizeDecimalInputEvent`，先改写 DOM 再读值，这样 React 的受控还原不会把光标推到末尾。新增裸 `<input inputMode="decimal">` 必须接同一个 helper，`locale-format-contract` 会扫描。
-7. **资金费率历史图跟随数字格式，时间跟随语言。** 桌面图表区与手机行情区的 Funding 视图（[资金费率历史](market-funding-history.md)）：坐标轴刻度、提示框与读屏摘要里的百分比经 `formatPercent`，按设置替换分隔符（德式格式下 `+0,0100%`）；提示框与横轴的时间经 `formatDateTime` 跟随界面语言并固定拉丁数字，D 区间按 UTC 日期显示。标签 helper（`lib/chart/funding-history-chart-labels.ts`）从调用方接收 `i18n.locale` 与 `useNumberFormatRevision()` 的值作为参数，React Compiler 才会在设置变化时重算；`number-format-reactivity-contract` 把 `FundingHistoryChart` 登记为该 helper 的订阅方。
+7. **资金费率历史图跟随数字格式，时间跟随语言。** 桌面图表区与手机行情区的 Funding 视图（[资金费率历史](market-funding-history.md)）：坐标轴刻度、提示框与读屏摘要里的百分比经 `formatPercent`，按设置替换分隔符（德式格式下 `+0,0100%`）；提示框与横轴的时间经 `formatDateTime` 跟随界面语言并固定拉丁数字，D 区间按 UTC 日期显示。标签 helper（`lib/chart/funding-history-chart-labels.ts`）从调用方接收 `i18n.locale` 与 `useNumberFormat()` 返回的格式化函数（规则 9），日期用传入的语言，百分比用传入的函数，React Compiler 因此在任一设置变化时重算。
 8. **页脚时钟跟随界面语言，按整分钟走时。** 桌面页脚（`FooterBar`，交易页与各仪表盘页共用）用 `formatTime` 的默认 `timeStyle: "short"` 显示本地时间，跟随界面语言并固定拉丁数字（英语 `2:31 PM`、中文 `14:31`、阿拉伯语 `2:31 م`）。时间来自 `useMinuteClock()`（`hooks/ui/use-minute-clock.ts`，`useSyncExternalStore`）：快照是按墙钟取整的当前分钟，同一分钟内是同一个数；计时器排到墙钟的下一个整分钟，触发后按当时的墙钟重新排，所以计时器提前触发或系统时间回拨都不会让走时错位；页面隐藏（`visibilityState === "hidden"`）时不保留计时器，`visibilitychange` 时立即让订阅方重读当前分钟并重新排定；没有订阅方时不留计时器与监听。`FooterBar` 先无条件读出 `const locale = i18n.locale` 再传给 `formatTime`，语言切换才会让 React Compiler 重算（见[运行时多语言](i18n-presentation.md)）；`FooterBarView` 仍是纯 props 视图，预渲染回退仍是 `clock={null}`（[ADR 0010](adr/0010-blank-until-ready-startup.md)）。已知限制：页面一直可见时若系统休眠后唤醒或系统时间被调整，显示要等到下一次计时器得以执行才校正。计时器只请求延迟，正常调度下不超过一分钟，主线程阻塞或浏览器节流时会更晚；页面打开期间若电脑的时区改变，`lib/format.ts` 缓存的格式化器仍用创建时的时区，页脚要刷新页面才换到新时区（既有行为，所有经 `lib/format.ts` 的日期与时间都一样）。
+9. **渲染期的数字格式化只用 `useNumberFormat()` 返回的函数**（[ADR 0036](adr/0036-render-time-number-formatters.md)）。
+   - 组件与 Hook 写 `const { formatNumber, formatUSD } = useNumberFormat();`，调用处与模块级函数同名同参。不引用 `lib/format.ts` 的模块级数字格式化函数、`getNumberFormatters()` 或修订号读取函数，事件回调与 effect 也一样。
+   - 每次设置变化，`useNumberFormat()` 返回一个新对象和新的函数身份，React Compiler 缓存的格式化结果因此重算。只裸调用订阅、让组件重渲染并不够：编译器按参数缓存 `formatNumber(x)`，重渲染仍返回旧字符串（2026-10-02 取证）。函数被调用时仍读当前设置。
+   - 渲染期调用的展示 helper 接收 `NumberFormatters` 参数（如 `buildOrderConfirmationRows(draft, numberFormat, translate)`、`formatAccountLedgerAmount(row, numberFormat)`），不导入模块级函数。单元测试等渲染之外的调用方传 `getNumberFormatters()`。
+   - 在别处创建、由组件渲染的回调，由渲染它的组件把格式化函数传进去（`EarnOutcomeToastContent` 的 `render(translate, numberFormat)`）。用到格式化函数的 effect 把它列入依赖（标签页标题）。
+   - `number-format-reactivity-contract` 用源码级规则检查：组件与 Hook 里不引用模块级格式化函数、经它们格式化的模块级 helper 或读取函数（跟随具名、默认、命名空间导入与各种再导出）；`useNumberFormat()` 的结果必须被用到；模块顶层不在导入时格式化数字。在别处创建、经 props 或元素传入的闭包，以及类组件、其他包装函数、计算属性名访问，契约看不到。
 
 ## 选项与存储
 
@@ -22,7 +28,7 @@
 | `fr-FR` | `1 234,56` | 普通空格 | `,` |
 
 - 存在全局设置 `global-settings-v2` 的 `numberFormatLocale` 字段（`use-global-settings-store.ts`），经 `createValidatedStorage` 校验；旧的"跟随语言"取值（`auto`、`zh-CN`、`es-ES` 等）由 `normalizeNumberFormatLocale` 迁移。
-- 变化时 store 订阅调用 `notifyNumberFormatChange()`；渲染期格式化数字的组件订阅 `useNumberFormatRevision()`，`number-format-reactivity-contract.test.ts` 保证没有遗漏。订阅只保证组件重渲染：React Compiler 缓存的格式化结果只有在修订号作为参数传进计算时才会重算，写在 `useMemo` 依赖数组里而回调不读的修订号会被编译器丢掉（[运行时多语言](i18n-presentation.md)）。资金费率图（规则 7）与组合页收益图（`PortfolioPerformanceChart`，`portfolio-performance-chart.test.tsx`）把修订号与 `locale` 作为参数传入；其他订阅方见「未完成」。
+- 变化时 store 订阅调用 `notifyNumberFormatChange()`（`lib/number-format-reactivity.ts`），`useNumberFormat()` 的快照随之换成新对象（规则 9）。
 - 入口是页头语言菜单（`language-switcher.tsx`）的「数字格式」列表；`Reset` 先恢复语言再恢复数字格式。
 - 不跟随 `navigator.language`，不进 URL，不 reload（`runtime-guardrails.md` §7）。
 
@@ -36,7 +42,18 @@
 
 - 输入框显示不本地化（规划 A-2b 未采用）：`,` 被接受但显示为 `.`；德语/法语键盘的小数键可用，但输入框与表格的写法不同。
 - 图表库内译文的定点修补机制（规划 B）等 zh/ar 审计结果。
-- 多数订阅方切换数字格式后仍显示旧格式。它们只写了裸调用 `useNumberFormatRevision();`，修订号没有进入任何缓存槽的依赖，组件虽然重渲染，`formatNumber(x)` 一类调用仍返回以参数为键缓存的旧字符串。2026-10-02 用临时探针测试（未入库）实测 `ReferralSummaryCards`：切到 `de-DE` 并通知后组件重渲染，文本仍是 `1,234`，而直接调用 `formatNumber(1234)` 已返回 `1.234`。按 `babel-plugin-react-compiler` 1.0.0 的编译产物统计，70 个被编译的订阅组件里有 200 处数字格式化调用落在不含修订号的缓存槽里，需逐处判断其他依赖是否会很快变化。已知做法：`TradeRowComponent` 用 `"use no memo"` 退出编译，`LeveragePositionLimitRow` 与两张图表把修订号传进计算。修复方式待定，`number-format-reactivity-contract` 目前只检查订阅存在。见[任务记录](work-memory/sessions/2026-10-02-vault-fetched-time-locale.md)。
+- 不经 `lib/format.ts` 的数字显示不跟随设置，固定输出 `,` 分组与 `.` 小数点（或 `toFixed` 的 `.`）：
+  - 质押页金额与比例（`components/staking/domain/staking.ts` 的 `formatStakingAmount`、`formatStakingRatio`）；
+  - 金库精确金额（`components/vaults/domain/vaults.ts` 的 `groupDecimal`）；
+  - 跨链成功页的到账金额（`lib/bridge/format.ts` 的 `formatTokenAmount`）；
+  - 手机行情条的 24h 涨跌额与涨跌幅（`mobile-market-bar.tsx` 的 `formatSignedFixed`、`formatSignedPercent`）；
+  - 手机下单页的涨跌幅（`mobile-trade-view.tsx`）；
+  - 下单费率（`domain/trade/order-fee-quote.ts` 的 `formatOrderFeeRatePercent`）。它与换算后的金额同在一串里，`1.234,56` 格式下显示为 `0.0450% ($1,23)`；
+  - TP/SL 风险收益比（`lib/trade/tpsl.ts`）。
+
+  前三类为精确十进制显示而手写格式，改造需要决定精度规则。仓库里其余 `toFixed` 多数用于协议值，没有逐处分类。
+- 资金类提示（划转、发送、提现、金库）在弹出时把金额格式化成字符串，已显示的提示不随设置变化，与这些提示在弹出时按当前语言生成文案一致。
+- 日期格式化同样从全局读语言：渲染期调用 `formatDateTime` 等函数时须传 `locale`（[运行时多语言](i18n-presentation.md)），目前没有契约检查。2026-10-02 按编译产物修复了确认的 15 处（[任务记录](work-memory/sessions/2026-10-02-number-format-reactive-formatters.md)），其余调用碰巧与 `_t` 同在一个缓存槽而正确。
 
 ## 回归入口
 
@@ -52,7 +69,16 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trades.test.ts \
   src/lib/tests/global-settings-store.test.ts \
   src/lib/tests/footer-bar.test.tsx \
-  src/lib/tests/portfolio-performance-chart.test.tsx
+  src/lib/tests/portfolio-performance-chart.test.tsx \
+  src/lib/tests/referral-summary-cards.test.tsx \
+  src/lib/tests/account-panel.test.tsx \
+  src/lib/tests/tp-sl-section.test.tsx \
+  src/lib/tests/account-ledger-number-format.test.tsx \
+  src/lib/tests/order-confirmation-modal.test.tsx \
+  src/lib/tests/use-tradingview-overlay-lines.test.tsx \
+  src/lib/tests/earn-view.test.tsx \
+  src/lib/tests/orderbook-row-tooltip.test.tsx \
+  src/lib/tests/trade-row.test.tsx
 ```
 
 手动核对（真实浏览器）：把数字格式切到 `1.234,56` 与 `1 234,56`，图表价格轴、图例紧凑值、十字线标签与订单簿、标题分隔符一致；连续切语言与 Reset 后图表最终值正确且重建期间无闪白；阿拉伯语界面下最近成交时间与价格都是拉丁数字。

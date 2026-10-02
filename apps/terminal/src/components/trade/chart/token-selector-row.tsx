@@ -3,8 +3,7 @@ import { ArrowsClockwiseIcon, StarIcon } from "@phosphor-icons/react";
 import { TOUCH_PRESS_CLASS } from "@/components/ui/touch-press";
 import { get24hChange, get24hPriceChange, getEightHourFundingRate, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { cn } from "@/lib/cn";
-import { formatNumber, formatPercent, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { szDecimalsToPriceDecimals, useNumberFormat } from "@/lib/format";
 import { AssetDisplay } from "../components/asset-display";
 import { getMarketSelectorPairName } from "./token-selector-categories";
 import { getMarketTableGridClass, type MarketRow, type MarketTableLayout } from "./token-selector-columns";
@@ -57,7 +56,7 @@ export function TokenSelectorRow({
 	onSelect,
 	onToggleFavorite,
 }: Props) {
-	useNumberFormatRevision();
+	const { formatNumber, formatPercent, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const szDecimals = getSzDecimals(market);
 	const isSpot = market.kind === "spot";

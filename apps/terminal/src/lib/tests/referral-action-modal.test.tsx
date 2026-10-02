@@ -38,7 +38,6 @@ vi.mock("@sairn/ui", () => ({
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
-vi.mock("@/lib/number-format-reactivity", () => ({ useNumberFormatRevision: () => 0 }));
 
 const feedbackIdentity = vi.hoisted(() => ({
 	clientKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",

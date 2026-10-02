@@ -1,7 +1,6 @@
 import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { formatOrderFeeRatePercent } from "@/domain/trade/order-fee-quote";
-import { formatUSD } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useNumberFormat } from "@/lib/format";
 import { isPositive } from "@/lib/trade/numbers";
 
 interface OrderFeeSummaryValueProps {
@@ -14,7 +13,7 @@ interface OrderFeeRatePairValueProps {
 }
 
 export function OrderFeeSummaryValue({ quote }: OrderFeeSummaryValueProps) {
-	useNumberFormatRevision();
+	const { formatUSD } = useNumberFormat();
 	const hasOrderValue = isPositive(quote.orderValue);
 	const totalRate = formatOrderFeeRatePercent(quote.totalRate);
 	const total = hasOrderValue ? `${totalRate} (${formatUSD(quote.totalAmount)})` : totalRate;

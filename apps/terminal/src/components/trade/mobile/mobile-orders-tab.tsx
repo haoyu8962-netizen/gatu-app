@@ -42,7 +42,7 @@ import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { type ActionFailure, formatActionFailure } from "@/lib/errors/action-error";
-import { formatDateTime, formatNumber, formatPercent, formatPrice, formatToken } from "@/lib/format";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import {
 	type ExchangeParams,
 	type SubscriptionStatus,
@@ -52,7 +52,6 @@ import {
 	useMarketsInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isClosePositionOrder, isMarketTriggerOrder, type OpenOrder } from "@/lib/trade/open-orders";
 import {
 	ensurePendingTradingActionFeedback,
@@ -1260,7 +1259,7 @@ function MobileOrderCard({
 	onSelectMarket,
 	onExpandedChange,
 }: MobileOrderCardProps) {
-	useNumberFormatRevision();
+	const { formatNumber, formatPercent, formatPrice, formatToken } = useNumberFormat();
 	const { t } = useLingui();
 	const detailsId = useId();
 	const { getOrderSideLabel, getOrderTypeLabel, getTriggerConditionLabel } = useOrderDisplayLabels();

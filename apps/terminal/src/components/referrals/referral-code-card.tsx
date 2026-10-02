@@ -5,9 +5,8 @@ import { BrandMotion } from "@/components/brand/brand-motion";
 import { BRAND_NAME } from "@/config/brand";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { BRAND_MOTION_COPY_FEEDBACK } from "@/lib/brand/brand-motion.gen";
-import { formatNumber, formatUSD, shortenAddress } from "@/lib/format";
+import { shortenAddress, useNumberFormat } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	canApplyReferralCode,
 	getBrandReferralUrl,
@@ -28,7 +27,7 @@ interface Props {
 }
 
 export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onApplyCode, onCreateCode }: Props) {
-	useNumberFormatRevision();
+	const { formatNumber, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const { env } = useHyperliquid();
 	const codeCopy = useCopyToClipboard();

@@ -25,7 +25,8 @@ import {
 import { FundsRecoveryNotification } from "./funds-recovery-notification";
 
 export function FundsActionRecoveryHost() {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const isMobile = useIsMobile();
 	const { clientKey, env, sessionMode } = useHyperliquid();
 	const activeAgentOwner = useActiveAgentOwner();
@@ -144,7 +145,7 @@ export function FundsActionRecoveryHost() {
 						<RecoveryRow label={t`Amount`} value={`${activeMarker.displayAmount} ${activeMarker.asset}`} />
 						<RecoveryRow label={t`Atomic amount`} value={activeMarker.atomicAmount} />
 						<RecoveryRow label={t`Atomic decimals`} value={String(activeMarker.atomicDecimals)} />
-						<RecoveryRow label={t`Started`} value={formatDateTime(activeMarker.startedAt)} />
+						<RecoveryRow label={t`Started`} value={formatDateTime(activeMarker.startedAt, { locale })} />
 						<RecoveryRow label={t`Identity epoch`} value={activeMarker.identityEpoch} />
 					</dl>
 					{confirmClear ? (

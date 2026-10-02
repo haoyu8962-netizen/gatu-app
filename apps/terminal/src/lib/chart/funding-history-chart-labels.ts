@@ -4,7 +4,7 @@ import {
 	type FundingRateBucket,
 	type FundingRateBucketSummary,
 } from "@/domain/market/funding-rate-history";
-import { formatDateTime, formatPercent } from "@/lib/format";
+import { formatDateTime, type NumberFormatters } from "@/lib/format";
 import type { FundingChartModel } from "./funding-history-chart-model";
 
 const DAY_MS = 86_400_000;
@@ -37,29 +37,29 @@ export interface FundingSummaryLabels {
 }
 
 /**
- * Formatting for the funding history chart. Callers pass the interface locale and the
- * number-format revision so React Compiler recomputes the labels when either one changes; the
- * formatters read both from global state. Daily buckets are UTC days, so their dates are shown in
- * UTC; hourly and eight-hour buckets show local time.
+ * Formatting for the funding history chart. Callers pass the interface locale and the number
+ * formatters from `useNumberFormat()`, so React Compiler recomputes the labels when the language or
+ * the number format changes. Daily buckets are UTC days, so their dates are shown in UTC; hourly and
+ * eight-hour buckets show local time.
  */
 export function formatFundingChartAxisLabels(
 	model: FundingChartModel,
 	range: FundingHistoryRange,
-	_locale: string,
-	_numberFormatRevision: number,
+	locale: string,
+	numberFormat: NumberFormatters,
 ): FundingChartAxisLabels {
 	const timeTicks: FundingChartTimeLabel[] = [];
 	for (const tick of model.timeTicks) {
-		const label = formatDateTime(tick.time, { day: "numeric", month: "numeric", ...getRangeTimeZone(range) });
+		const label = formatDateTime(tick.time, { locale, day: "numeric", month: "numeric", ...getRangeTimeZone(range) });
 		if (timeTicks.at(-1)?.label !== label) timeTicks.push({ label, time: tick.time, x: tick.x });
 	}
 
 	return {
 		cumulativeTicks: model.cumulativeTicks.map((tick) =>
-			formatPercent(tick.value, { decimals: tick.decimals, signDisplay: "auto" }),
+			numberFormat.formatPercent(tick.value, { decimals: tick.decimals, signDisplay: "auto" }),
 		),
 		rateTicks: model.rateTicks.map((tick) =>
-			formatPercent(tick.value, { decimals: tick.decimals, signDisplay: "auto" }),
+			numberFormat.formatPercent(tick.value, { decimals: tick.decimals, signDisplay: "auto" }),
 		),
 		timeTicks,
 	};
@@ -68,41 +68,54 @@ export function formatFundingChartAxisLabels(
 export function formatFundingBucketLabels(
 	bucket: FundingRateBucket,
 	range: FundingHistoryRange,
-	_locale: string,
-	_numberFormatRevision: number,
+	locale: string,
+	numberFormat: NumberFormatters,
 ): FundingBucketLabels {
 	return {
-		cumulativeRate: formatFundingRate(bucket.cumulativeRate),
-		rate: formatFundingRate(bucket.rate),
-		time: formatBucketTime(bucket.time, range),
+		cumulativeRate: formatFundingRate(bucket.cumulativeRate, numberFormat),
+		rate: formatFundingRate(bucket.rate, numberFormat),
+		time: formatBucketTime(bucket.time, range, locale),
 	};
 }
 
 export function formatFundingSummaryLabels(
 	summary: FundingRateBucketSummary,
 	range: FundingHistoryRange,
-	_locale: string,
-	_numberFormatRevision: number,
+	locale: string,
+	numberFormat: NumberFormatters,
 ): FundingSummaryLabels {
 	return {
-		cumulativeRate: formatFundingRate(summary.cumulativeRate),
-		endTime: formatBucketTime(summary.endTime, range),
-		latestRate: formatFundingRate(summary.latestRate),
-		maxRate: formatFundingRate(summary.maxRate),
-		minRate: formatFundingRate(summary.minRate),
-		startTime: formatBucketTime(summary.startTime, range),
+		cumulativeRate: formatFundingRate(summary.cumulativeRate, numberFormat),
+		endTime: formatBucketTime(summary.endTime, range, locale),
+		latestRate: formatFundingRate(summary.latestRate, numberFormat),
+		maxRate: formatFundingRate(summary.maxRate, numberFormat),
+		minRate: formatFundingRate(summary.minRate, numberFormat),
+		startTime: formatBucketTime(summary.startTime, range, locale),
 	};
 }
 
-function formatFundingRate(value: string): string {
-	return formatPercent(value, { decimals: 4, signDisplay: "exceptZero" });
+function formatFundingRate(value: string, numberFormat: NumberFormatters): string {
+	return numberFormat.formatPercent(value, { decimals: 4, signDisplay: "exceptZero" });
 }
 
-function formatBucketTime(time: number, range: FundingHistoryRange): string {
+function formatBucketTime(time: number, range: FundingHistoryRange, locale: string): string {
 	if (FUNDING_HISTORY_RANGES[range].bucketMs >= DAY_MS) {
-		return formatDateTime(time, { day: "numeric", month: "short", year: "numeric", ...getRangeTimeZone(range) });
+		return formatDateTime(time, {
+			locale,
+			day: "numeric",
+			month: "short",
+			year: "numeric",
+			...getRangeTimeZone(range),
+		});
 	}
-	return formatDateTime(time, { day: "numeric", hour: "2-digit", hourCycle: "h23", minute: "2-digit", month: "short" });
+	return formatDateTime(time, {
+		locale,
+		day: "numeric",
+		hour: "2-digit",
+		hourCycle: "h23",
+		minute: "2-digit",
+		month: "short",
+	});
 }
 
 function getRangeTimeZone(range: FundingHistoryRange): { timeZone?: string } {

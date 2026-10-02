@@ -4661,7 +4661,7 @@ msgstr "No se pudo verificar la elegibilidad por ubicación."
 msgid "Lock period progress"
 msgstr "Progreso del período de bloqueo"
 
-#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp)
+#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp, { locale })
 #: src/components/staking/staking-view.tsx
 msgid "Locked until {0}"
 msgstr "Bloqueado hasta {0}"

@@ -2,9 +2,8 @@ import { useLingui } from "@lingui/react/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatUSD } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { SummaryRow } from "../components/summary-row-view";
 
@@ -33,7 +32,7 @@ export function ScaleOrderSummary({
 	marketKind = "perp",
 	compact,
 }: Props) {
-	useNumberFormatRevision();
+	const { formatPrice, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const isLeveraged = marketKind !== "spot";
 

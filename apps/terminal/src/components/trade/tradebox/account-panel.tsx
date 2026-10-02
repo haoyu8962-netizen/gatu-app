@@ -12,9 +12,8 @@ import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatNumber, formatPercent, formatUSD } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 import { AccountPanelFrameView } from "./account-panel-frame-view";
 import { DisconnectedAccountOverview } from "./disconnected-account-overview";
@@ -27,7 +26,7 @@ type SummaryRow = {
 };
 
 export function AccountPanel() {
-	useNumberFormatRevision();
+	const { formatNumber, formatPercent, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const overviewTitleId = useId();
 	const transferDescriptionId = useId();

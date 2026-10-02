@@ -1,10 +1,10 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { ACCOUNT_LABELS } from "@/config/account-labels";
-import { formatNumber, formatPercent, formatUSD } from "@/lib/format";
+import type { NumberFormatters } from "@/lib/format";
 
 export function getDisconnectedAccountOverviewRows(
 	t: (descriptor: MessageDescriptor) => string,
-	_numberFormatRevision: number,
+	{ formatNumber, formatPercent, formatUSD }: NumberFormatters,
 ) {
 	return [
 		{ key: "margin-ratio", label: t(ACCOUNT_LABELS.marginRatio), value: formatPercent(0, 2) },

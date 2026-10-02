@@ -4661,7 +4661,7 @@ msgstr "无法核实所在地区资格。"
 msgid "Lock period progress"
 msgstr "锁定期进度"
 
-#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp)
+#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp, { locale })
 #: src/components/staking/staking-view.tsx
 msgid "Locked until {0}"
 msgstr "锁定至 {0}"

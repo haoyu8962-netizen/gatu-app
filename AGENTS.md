@@ -93,6 +93,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 
 - `docs/number-format-setting.md` owns the number-format options, their storage and which surfaces follow them.
 - Numbers follow the number-format setting, never the interface language; dates and times follow the interface language with Latin digits. Components and business code format both through `lib/format.ts` and never call `toLocale*` or construct `Intl.*` formatters directly.
+- Components and hooks take their number formatters from `useNumberFormat()` and pass them to any helper that formats during render; they never reference the module-level number formatters, because React Compiler caches those calls by their arguments only (`docs/adr/0036-render-time-number-formatters.md`, enforced by `number-format-reactivity-contract`). New and changed render-time date and list formatting passes `locale`; older calls that omit it rely on sharing a cache slot with the translator and are not yet checked (`docs/i18n-presentation.md`).
 - Typed decimal input stays a `.` protocol string; when the setting displays `,` as the decimal sign, a typed `,` is normalized to `.` before validation (`normalizeDecimalInput` / `normalizeDecimalInputEvent`), and every bare `<input inputMode="decimal">` must use that helper; `locale-format-contract` scans both rules.
 - The chart receives `numeric_formatting` at creation and follows a setting change through the same state-preserving rebuild as a locale change; a number-format change never reloads the page.
 

@@ -20,9 +20,8 @@ import {
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
+import { szDecimalsToPriceDecimals, useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useMarketsInfo, useUserPositions } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import { createPositionCloseSizingViewModel } from "@/lib/trade/position-close-sizing-presentation";
 import { getPositionMarketCloseErrorMessage } from "@/lib/trade/position-market-close-errors";
@@ -109,7 +108,7 @@ interface ModalBodyProps extends BodyProps {
 
 function PositionLimitCloseModalBody({ position, openingTarget, open, onOpenChange }: ModalBodyProps) {
 	const { clientKey, env } = useHyperliquid();
-	useNumberFormatRevision();
+	const { formatPrice, formatToken, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const userPositions = useUserPositions();

@@ -7,7 +7,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradeRow } from "@/components/trade/orderbook/trade-row";
 import { formatNumber } from "@/lib/format";
-import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
+import { getNumberFormatRevision, notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import type { ProcessedTrade } from "@/lib/trade/trades";
 import { getResolvedFormatLocale } from "@/stores/use-global-settings-store";
 
@@ -18,14 +18,14 @@ vi.mock("@/lib/hyperliquid", () => ({
 		`https://${isTestnet ? "testnet." : ""}example.test/tx/${hash}`,
 }));
 
-vi.mock("@/lib/number-format-reactivity", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/number-format-reactivity")>();
+vi.mock("@/lib/format", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/format")>();
 	return {
 		...actual,
-		useNumberFormatRevision: () => {
+		useNumberFormat: () => {
 			mocks.renderCount += 1;
-			mocks.lastRevision = actual.useNumberFormatRevision();
-			return mocks.lastRevision;
+			mocks.lastRevision = getNumberFormatRevision();
+			return actual.useNumberFormat();
 		},
 	};
 });

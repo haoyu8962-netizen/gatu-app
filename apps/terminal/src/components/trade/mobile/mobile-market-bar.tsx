@@ -8,16 +8,8 @@ import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { getSpotAssetSocials, hasSpotSocialLinks, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
-import {
-	formatClockDuration,
-	formatNumber,
-	formatPercent,
-	formatQuoteAmount,
-	formatUSD,
-	shortenAddress,
-} from "@/lib/format";
+import { formatClockDuration, type NumberFormatters, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTokenUrl, type UnifiedMarketInfo } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import { getTradePriceDecimals } from "@/lib/trade/trades";
 import { TokenSelector } from "../chart/token-selector";
@@ -56,7 +48,8 @@ function getSafeAreaInset(variable: "--sal" | "--sar"): number {
 
 export function MobileMarketBar({ className }: Props) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
+	const { formatPercent, formatQuoteAmount, formatUSD } = numberFormat;
 	const {
 		market,
 		displayPrice,
@@ -96,7 +89,7 @@ export function MobileMarketBar({ className }: Props) {
 	const change24h = get24hChange(prevDayPx, displayPrice);
 	const changeAmount = getPriceChangeAmount(displayPrice, prevDayPx);
 	const changeColorClass = getPriceChangeColorClass(change24h);
-	const priceText = formatDisplayPrice(displayPrice, priceDecimals);
+	const priceText = formatDisplayPrice(displayPrice, priceDecimals, numberFormat);
 	const changeAmountText = formatSignedFixed(changeAmount, priceDecimals);
 	const changePercentText = formatSignedPercent(change24h);
 	const oiUsd = getOiUsd(openInterest, marketMarkPx);
@@ -150,7 +143,7 @@ export function MobileMarketBar({ className }: Props) {
 											</>
 										}
 										tooltipContent={t`Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details.`}
-										value={`${formatDisplayPrice(marketMarkPx, priceDecimals)} / ${formatDisplayPrice(oraclePx, priceDecimals)}`}
+										value={`${formatDisplayPrice(marketMarkPx, priceDecimals, numberFormat)} / ${formatDisplayPrice(oraclePx, priceDecimals, numberFormat)}`}
 									/>
 									<DetailCell
 										label={t(MARKET_HEADER_LABELS.volume24h)}
@@ -194,7 +187,7 @@ export function MobileMarketBar({ className }: Props) {
 								<div className="grid grid-cols-2 gap-x-4 py-2.5">
 									<DetailCell
 										label={t(MARKET_HEADER_LABELS.price)}
-										value={formatDisplayPrice(displayPrice, priceDecimals)}
+										value={formatDisplayPrice(displayPrice, priceDecimals, numberFormat)}
 									/>
 									<DetailCell label={t(MARKET_HEADER_LABELS.volume24h)} value={spotVolumeText} />
 								</div>
@@ -425,8 +418,12 @@ function getPriceDecimals(
 	return getTradePriceDecimals(referencePrice, market.szDecimals, market.kind === "spot" ? "spot" : "perp");
 }
 
-function formatDisplayPrice(value: string | number | null | undefined, decimals: number): string {
-	return formatNumber(value, {
+function formatDisplayPrice(
+	value: string | number | null | undefined,
+	decimals: number,
+	numberFormat: NumberFormatters,
+): string {
+	return numberFormat.formatNumber(value, {
 		minimumFractionDigits: decimals,
 		maximumFractionDigits: decimals,
 	});

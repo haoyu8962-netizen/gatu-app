@@ -1,9 +1,8 @@
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { memo } from "react";
 import { cn } from "@/lib/cn";
-import { formatNumber } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getTradeQuoteSize, type ProcessedTrade } from "@/lib/trade/trades";
 
 interface Props {
@@ -42,9 +41,7 @@ function TradeRowComponent({
 	compact = false,
 	initial = false,
 }: Props) {
-	"use no memo";
-	// The compiler cannot infer formatNumber's external-store dependency; the explicit row memo below remains active.
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const priceDisplay = formatNumber(trade.price, priceDecimals);
 	const sizeDisplay = showInQuote
 		? formatNumber(getTradeQuoteSize(trade.price, trade.size), 2)

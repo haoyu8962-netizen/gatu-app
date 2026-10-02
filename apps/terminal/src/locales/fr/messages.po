@@ -4661,7 +4661,7 @@ msgstr "Impossible de vérifier l'éligibilité selon la localisation."
 msgid "Lock period progress"
 msgstr "Progression de la période de verrouillage"
 
-#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp)
+#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp, { locale })
 #: src/components/staking/staking-view.tsx
 msgid "Locked until {0}"
 msgstr "Verrouillé jusqu’au {0}"

@@ -39,10 +39,6 @@ vi.mock("@/lib/hyperliquid", async (importOriginal) => ({
 	}),
 }));
 
-vi.mock("@/lib/number-format-reactivity", () => ({
-	useNumberFormatRevision: () => 0,
-}));
-
 vi.mock("@/components/trade/components/trade-size-slider", () => ({
 	TradeSizeSlider: (props: NonNullable<typeof tradeSizeSliderState.props>) => {
 		tradeSizeSliderState.props = props;
