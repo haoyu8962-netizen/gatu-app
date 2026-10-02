@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "id": "2026-10-02-integrate-locale-number-format",
   "date": "2026-10-02",
-  "title": "集成 PR：页脚时钟、Vault 语言依赖与数字格式刷新三条分支合并进 dev，Codex 多轮对抗审查",
+  "title": "集成 PR：页脚时钟、Vault、数字格式刷新与四条后续分支合并进 dev，Codex 多轮对抗审查",
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime", "pr-review"],
-  "summary": "把 claude/laughing-engelbart-b9dbe6（页脚时钟）、claude/relaxed-roentgen-fd0316（Vault 与组合收益图语言依赖）、claude/wonderful-goldberg-e47b19（数字格式刷新，ADR 0036）三条叠放的未推送分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format，代码树与 04469b52 相同；新增 CI 步骤（34 个文件），按 16 轮 Codex 只读对抗审查补测试、加强两份源码契约（共用 harness/react-source.ts）并更新文档，集成后不再改产品代码。第 16 轮三路 9.1/9.3/9.3、无 P0–P2，余 3 项 P3 已登记；之后的重定基线与记录收尾由第 17–19 轮单路复审，最后一轮 9.5、无发现。类型检查、全量单测（8,242 项通过）、Biome、记忆检查通过；按 CI 环境构建时总量超出预算 154 字节，按性能基线规则用固定元数据测得本 PR 增量 +4,671 并在 00169c24 重定基线，之后预算检查通过；没有浏览器验收。",
+  "summary": "把页脚时钟、Vault 与组合收益图语言依赖、数字格式刷新（ADR 0036）三条叠放分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format（PR #71），新增 CI 步骤，按 19 轮 Codex 只读对抗审查补测试、加强两份源码契约并重定总量预算基线。PR 开出后按用户要求再并入四条后续分支：删除未用的 lib/chart/format.ts、CI 失效测试路径修复、日期与列表 locale 契约、精确小数串跟随数字格式（ADR 0037）；日期契约改用从数字契约抽出的共用模块图与组件识别，15 个测试补进 CI，总量与桌面运行时基线按集成后的固定元数据实测改写。类型检查、全量单测（8,358 项通过）、Biome、CI 式与固定元数据构建通过；没有浏览器验收。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea", "deff2eba", "5ea0d370", "f1956c10", "a8a4fed1", "236c998d", "1dba0675", "446cbfc6", "2d6f4676", "00169c24", "162a1501", "229d9683", "bc6c206d"],
+  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea", "deff2eba", "5ea0d370", "f1956c10", "a8a4fed1", "236c998d", "1dba0675", "446cbfc6", "2d6f4676", "00169c24", "162a1501", "229d9683", "bc6c206d", "56fd6d61", "242db030", "62d7f26b", "f25be9a3", "c110dc80", "1cb73bcf", "f1f769c5"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-10-02-footer-clock-live-minute.md" },
     { "path": "docs/work-memory/sessions/2026-10-02-vault-fetched-time-locale.md" },
@@ -26,7 +26,7 @@
   "supersedes": []
 }
 -->
-# 集成 PR：页脚时钟、Vault 语言依赖与数字格式刷新三条分支合并进 dev，Codex 多轮对抗审查
+# 集成 PR：页脚时钟、Vault、数字格式刷新与四条后续分支合并进 dev，Codex 多轮对抗审查
 
 ## 背景与范围
 
@@ -621,6 +621,66 @@ VITE_MOBILE_PAIRING_ENABLED=false pnpm --filter @sairn/terminal build
 - 验证：调整后对同一份固定元数据产物重跑 `check-client-bundle-budget.mjs`，通过（总量比新基线多 5,160），脚本自带测试 16 项通过。用 CI 元数据时同一份代码是 3,196,075，比新基线多 5,483，在 10,000 以内；这一点是按数字推算的，没有用 CI 元数据重新构建。
 - 本机两种元数据下，同一份代码的总量相差 323 字节。CI 的实际数字要以 PR 的 Production Builds 为准。
 
+### 第二次集成：并入四条后续分支（2026-10-03）
+
+PR #71 开出后，用户要求：「下面的分支合入#71 一起创建PR 提交」。这里的分支，指上一次答复「受影响的其他会话」里列出的四条后续分支。
+
+合并前的核对：
+
+- 四个会话在 `list_sessions` 里都是 `isRunning: false`，对应工作树没有未提交的改动，也没有进程以它们为工作目录。`origin/dev` 仍是 `682430ba`。
+- 「Fix stale geo test path in terminal CI」会话的修复不在 `claude/jolly-stonebraker-c3d1de`（仍停在 `3ced842e`），而在同一工作树后来签出的 `claude/ci-listed-test-paths`（`6c8d815e`，基于 `dev`，2026-10-02 22:22 提交）。上一次答复和下文「后续」都说它还没有提交，是查错了分支名。
+
+按依赖顺序用 `--no-ff` 合入：
+
+| 顺序 | 分支 | 提交 | 合并提交 | 冲突 |
+|---|---|---|---|---|
+| 1 | `claude/wonderful-mccarthy-709acd` | `f66d36f2` | `242db030` | `INDEX.md` |
+| 2 | `claude/ci-listed-test-paths` | `6c8d815e` | `62d7f26b` | `CHANGELOG.md`、`INDEX.md` |
+| 3 | `claude/sleepy-archimedes-fbff3e` | `cae7c133`、`6b18c20b` | `f25be9a3` | `AGENTS.md`、`docs/i18n-presentation.md`、`docs/number-format-setting.md`、预算脚本、`INDEX.md` |
+| 4 | `claude/angry-northcutt-d85ed7` | `f7ae69a2` | `1cb73bcf` | `CHANGELOG.md`、质押弹窗测试、ADR 0036、`docs/number-format-setting.md`、预算脚本、`INDEX.md` |
+
+冲突的处理：
+
+- `INDEX.md` 每次都用 `pnpm memory:index` 重建。CHANGELOG 的两条 Fixed 都保留。
+- 日期规则以日期契约分支的写法为准（`AGENTS.md`、规则 2），删去「未完成」里原来的日期条目。本 PR 加的「所在函数没被编译也会碰巧正确」那句，并进了日期分支的新段落。
+- 手写数字：「未完成」与 CHANGELOG 的 Known 只保留图表仓位线的仓位数量。`lib/chart/tradingview-overlays.ts` 第 335 行仍是 `size.abs().toString()`，`f7ae69a2` 没有改它。ADR 0036 的追记注明这一项除外；规则 9 之后接上 ADR 0037 的规则 10。
+- 质押弹窗测试：导入取两边的并集，其余部分自动合并。
+- 预算脚本：合并时先保留两边的注释、数值取两者之和，之后按下文的重新测量改写。
+- 语义冲突：`format.test.ts` 钉住了快照里格式化函数的清单，而 `f7ae69a2` 给 `NumberFormatters` 加了 `formatDecimalString`。合并后这一项失败，同时也是类型错误；已在合并提交里把它补进清单与样例。
+
+日期契约改用共用模块（`c110dc80`）：
+
+- 日期契约原是数字契约在 `04469b52`/`089747f5` 时的一份拷贝，组件识别与模块图都停在那时，数字契约第 3–8 轮修过的问题它都还有。
+- 把数字契约里与数字语义无关的模块图原样移到 `harness/module-graph.ts`（`describeModules`、`resolveExport`、`followAliases`、`runsAtImport` 等），数字契约净减约 400 行。日期契约改用它和 `react-source.ts`，从 913 行减到 600 行。别名改为经 `followAliases` 判断，所以通过别名、带 `locale` 的调用仍然放行。
+- 新增 8 个应报出、1 个放行的样例。临时探针显示，8 个应报出的样例放到 `6b18c20b` 的原检查器上全部失败（探针已删除）。放行样例新旧都通过，它用来防止移植后出现误报。
+- 基线复核（独立 worktree）：日期契约在 `04469b52` 上报 38 处，与原检查器的结果逐条相同；数字契约在 `5425b7c1` 上仍报 356 处、4 项失败。
+- 新增一种偏严的行为：带默认值或经嵌套解构得到的名字可能是别的值，所以即使调用时传了 `locale` 也会报出。已写进 `docs/i18n-presentation.md`。
+- CI 条目移到「Test number format and runtime locale contracts」步骤；ADR 0036 第 6 项与规则 9 写明两份契约共用这两个模块。
+
+CI 覆盖：本 PR 相对 `dev` 改动或新增的 60 个测试文件里，有 15 个不在清单里，都来自 `f7ae69a2`。已加入同一步骤，该步骤现在共 50 个文件。`6c8d815e` 新加的「清单路径必须存在」检查共 8 项，全部通过。
+
+包体预算（`f1f769c5`）：用与第一次相同的固定元数据命令，在独立 worktree 里分别构建了加入日期契约后的 `c110dc80` 和全部合并后的 `1cb73bcf`。两次构建前都核对过，只有仓库跟踪的 `.env.example`；这次检查没有存档。
+
+| 项（gzip 字节） | #71 `2d6f4676` | `c110dc80` | `1cb73bcf` | 日期契约 | ADR 0037 |
+|---|---:|---:|---:|---:|---:|
+| 客户端总量 | 3,195,752 | 3,196,169 | 3,197,561 | +417 | +1,392 |
+| 路由预加载本身（6 个） | 515,907 | 515,929 | 515,927 | +22 | -2 |
+| 运行时入口（1 个） | 2,047 | 2,046 | 2,048 | -1 | +2 |
+| 语义入口（4 个） | 138,469 | 138,477 | 138,656 | +8 | +179 |
+| 交易页静态启动（102 个资产） | 1,563,683 | 1,563,886 | 1,564,326 | +203 | +440 |
+| 手机运行时增量（14 个资产） | 117,581 | 117,592 | 117,671 | +11 | +79 |
+| 桌面运行时增量（29 个资产） | 201,842 | 201,956 | 202,047 | +114 | +91 |
+| `staking` | 24,047 | 24,045 | 24,246 | -2 | +201 |
+| `vaults-page` | 28,931 | 28,929 | 29,238 | -2 | +309 |
+
+三个版本的产物图都有 437 个资产（JS 435 个、CSS 2 个），`client-root` 静态闭包都是 34 个 chunk。删除 `lib/chart/format.ts`、修 CI 路径这两步不进包，含在「日期契约」一列里。
+
+- 两条分支原来的上调注释，是各自在 `04469b52` 上测的：总量 +475、+1,216，桌面运行时 +170。现已改写为集成后的实测：总量 +417、+1,392，基线到 3,192,401。原注释见 `cae7c133`、`f7ae69a2`。
+- 桌面运行时：加入日期契约这一步之后，用固定元数据测只剩 32 字节余量，而 CI 元数据大约还要多 64 字节，按 CI 环境会超限。所以把桌面基线按日期契约 +114、ADR 0037 +91 上调到 192,193，替换原来的 +170。
+- 改写后，最终版本比新基线多 5,160（总量）与 9,854（桌面）。前者等于 `dev` 原本已用掉的余量，后者的余量 146 与 #71 时相同。用新脚本检查 `1cb73bcf` 的产物，通过；脚本自测 16 项通过。
+- CI 元数据下的最终构建：在独立 worktree 里按第一次的 CI 式元数据（`SAIRN_BUILD_SHA` 取提交号、`SAIRN_RELEASE_ID=ci-18000000000-1`、不固定构建时间）构建 `f1f769c5`，通过。总量 3,197,656，比新基线多 5,255；桌面运行时 202,115，比新基线多 9,922，余 78 字节；手机运行时 117,680；交易页静态启动 1,564,337。CI 的实际数字要以 PR 的 Production Builds 为准。
+- 这次的构建日志、诊断输出和日期契约的基线复核结果，存在 `.worklog/2026-10-02/integrate-locale-number-format/second-integration/`。
+
 ## 验证与限制
 
 版本：`2d6f4676`，加上本节与上面第 16 轮那条更正（只改本记录）；预算基线调整 `00169c24` 只改了一个数和注释，之后只重跑了预算检查和它的测试。产品代码与 `04469b52`、`5d3ff8e7` 相同，之后的提交只改测试、CI、规则与文档。检查在 2026-10-03 00:47 之后、全部 Codex 进程结束后进行，没有和审查同时运行。
@@ -633,9 +693,17 @@ VITE_MOBILE_PAIRING_ENABLED=false pnpm --filter @sairn/terminal build
 - `pnpm memory:index`、`memory:check` 通过，`memory:test` 8 项通过。
 - 上面三组小测试第一次运行的输出没有存档，终端里看到的是 16、7、8 项通过。第 17 轮之后重新运行，结果相同，这次的输出已存进证据目录。
 
+第二次集成之后的验证（`f1f769c5`，另加只改本记录的提交）：
+
+- 类型检查：日期契约改用共用模块后（提交 `c110dc80` 之前）跑过一次；合并 `f7ae69a2` 并补好 `format.test.ts` 后（提交 `1cb73bcf` 之前）又跑过一次，都通过。`f1f769c5` 只改 CI、文档和 `scripts/` 下的预算脚本，不在终端的类型检查范围内。
+- 全量 `pnpm --filter @sairn/terminal test`（02:36:45 起，130 秒）：654 个文件中 653 个通过、1 个跳过；8,359 项中 8,358 项通过、1 项跳过。数字、语言、日期、小数显示四份契约都包含在内，真实源码上都是 0 处违规。
+- `pnpm exec biome check`：自 `56fd6d61` 以来改动的 99 个脚本文件中，在 Biome 范围内的 95 个通过，其余 4 个不在它的 `includes` 内。
+- `node --test scripts/ci-workflows.test.mjs` 8 项通过；预算脚本自测 16 项通过；`pnpm memory:index`、`memory:check` 通过。
+- 两次固定元数据构建与一次 CI 式构建，见上文「第二次集成」。
+
 限制：
 
-- 本次集成没有做浏览器或真机验收。集成之后没有改产品代码；各分支在开发服务器上核对页面的情况，见各自记录。
+- 本次集成没有做浏览器或真机验收。第一次集成之后没有改产品代码；第二次并入的两条分支带来了产品改动（ADR 0037 约 30 个组件、38 处日期调用），本会话只做了单测、契约与构建检查。各分支在开发服务器或无头浏览器上核对页面的情况，见各自记录。
 - Codex 审查是只读的代码审查与内存推演，评分是模型判断，不是运行时验收。命令数与 token 取自 `.worklog` 的汇总，原始日志没有归档。
 - 第 16 轮之后的改动又做了三轮单路、窄范围的审查，见上文：
   - 第 17 轮审 `446cbfc6..162a1501`，8.8 分；
@@ -648,8 +716,8 @@ VITE_MOBILE_PAIRING_ENABLED=false pnpm --filter @sairn/terminal build
 
 ## 后续与替代关系
 
-- 推送分支并开 PR 到 `dev`。合入后，三条源分支的提交随之进入 `dev`。
-- 有三条未推送的分支与本 PR 有关，本 PR 合入后都要先合并 `dev`（2026-10-03 用 `git log`/`git diff` 核对）：
+- 已推送并开 [PR #71](https://github.com/zora4523-bot/gatu-app/pull/71) 到 `dev`，未合入。合入后，七条源分支的提交随之进入 `dev`。
+- 已完成（2026-10-03「第二次集成」）：下面三条分支已并入本 PR，原写的合并注意事项保留作历史。有三条未推送的分支与本 PR 有关，本 PR 合入后都要先合并 `dev`（2026-10-03 用 `git log`/`git diff` 核对）：
   - `claude/angry-northcutt-d85ed7`（`f7ae69a2`，ADR 0037，叠在 `04469b52` 上）处理了上面「手写数字」清单的大部分，会和本 PR 在 `docs/number-format-setting.md` 的「未完成」清单处冲突。它没有改图表仓位线里的仓位数量（`lib/chart/tradingview-overlays.ts`），合并时这一条要保留。
   - `claude/sleepy-archimedes-fbff3e`（`cae7c133`、`6b18c20b`，叠在 `04469b52` 上）加了日期 `locale` 契约。它的组件识别代码复制自 `04469b52`/`089747f5`，没有用共用模块 `harness/react-source.ts`，所以第 4–16 轮对识别规则的修补都没有带过去。合并时要改用共用模块，并把 CI 条目移到本 PR 新增的步骤。
   - `claude/wonderful-mccarthy-709acd`（`f66d36f2`，基于 `dev`）删除未用的 `lib/chart/format.ts`，与本 PR 只在 `INDEX.md` 重叠。
@@ -660,4 +728,8 @@ VITE_MOBILE_PAIRING_ENABLED=false pnpm --filter @sairn/terminal build
     它们都会和 `00169c24` 在这一行冲突。合并时应在 3,190,592 上叠加各自的实测增量，并用干净 worktree、固定元数据重新测量。
   - `f7ae69a2` 的注释称：用固定元数据测 `04469b52`，结果是 3,198,667，超出允许增量 2,746 字节。本会话用同样的固定元数据，在没有 `.env.local` 的干净 worktree 里测产品代码完全相同的 `2d6f4676`，结果是 3,195,752，相差 2,915 字节。原因没有查，可能是那个工作树的 `node_modules` 或环境文件不同。合并那条分支时，这段注释需要按重测结果改写。
 - CI 里既有的失效路径 `src/lib/tests/geo-server-functions.test.ts` 与本 PR 无关。已另开会话「Fix stale geo test path in terminal CI」处理，2026-10-03 时那条分支还没有提交。
+  - 更正记录：「那条分支还没有提交」不对。修复已在 2026-10-02 提交到 `claude/ci-listed-test-paths`（`6c8d815e`），当时查错了分支名；它已在「第二次集成」里并入。
 - 如果要处理语言契约剩余的两项 P3，做法是区分「尚未解析」和「已知的普通值」，或者按需重算受影响的绑定，避免把迭代中的临时结果永久并入。
+- 图表仓位线的仓位数量仍不跟随数字格式设置（`lib/chart/tradingview-overlays.ts` 第 335 行 `size.abs().toString()`），可按规则 10 改经 `formatDecimalString`。
+- 桌面运行时启动按 CI 元数据只剩 78 字节余量；之后的增长可能超限，超限时要么去掉增量，要么按规则说明理由后重定基线。
+- 两条后续分支自己记下的后续事项（如 `bpsToPercentage`、`close-order-feedback.ts` 的指数写法、LiFi 只有 jsdom 证据、`processTrades` 的可选 `locale`）仍以各自记录为准。
