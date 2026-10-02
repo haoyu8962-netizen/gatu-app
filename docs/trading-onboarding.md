@@ -140,10 +140,10 @@ dialog (`required`, `blocked`, `wallet_required`, `wallet_setup_failed`,
 email session without an active owner is also `checking` while its embedded
 wallet is missing or being created, and for 10 seconds after the wallet exists
 so Privy and wagmi can activate it. That grace counts from the moment the
-wallet appears in the Privy user without being the active owner; time spent
-while the wallet directory is unresolved or the signer is connecting is
-`checking` for its own reason and is not added to it. Only after the grace does
-a missing owner become `wallet_required`. A creation that failed or timed out
+shared creation hook knows the wallet address, from the creation result or the
+Privy user, while it is not the active owner; it keeps running while the signer
+is connecting. Only after the grace does a missing owner become
+`wallet_required`. A creation that failed or timed out
 is `wallet_setup_failed`.
 The policy dialog cannot be dismissed, so its `wallet_required`,
 `wallet_setup_failed` and `error` states each offer Disconnect next to their
@@ -548,8 +548,9 @@ automatically: the user retries from the policy dialog, from a Reconnect wallet
 entry or from the deposit dialog, or disconnects. A session without a wallet
 has no trading owner of its own, so Disconnect logs it out without an owner
 cleanup; if the browser still stores an agent-only owner that the login was
-hiding, that owner is closed first and a failed cleanup keeps the session
-logged in, so logging out cannot hand the device back to it. These entries need
+hiding, that owner is closed first. A failed cleanup, or another agent-only
+owner found after it, keeps the session logged in, so logging out cannot hand
+the device back to an Agent. These entries need
 Privy's wallet directory to be ready; while it is unresolved the existing
 30-second Reload page recovery is the only entry, as before.
 External-wallet sessions never get a wallet. Authentication alone never

@@ -2798,6 +2798,7 @@ msgid "Disconnect"
 msgstr "Disconnect"
 
 #: src/hooks/wallet/use-wallet-session.ts
+#: src/hooks/wallet/use-wallet-session.ts
 msgid "Disconnect failed: the active trading account could not be verified. Please retry."
 msgstr "Disconnect failed: the active trading account could not be verified. Please retry."
 

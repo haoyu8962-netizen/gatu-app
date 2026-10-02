@@ -296,6 +296,10 @@ export function useDisconnectWallet() {
 			}
 			const ownerToClose = ownerAddress ?? resolveHiddenAgentOnlyOwner(env);
 			if (ownerToClose && !(await removeOwnerTradingSession(env, ownerToClose))) return;
+			if (hasNoTradingOwner && resolveHiddenAgentOnlyOwner(env)) {
+				toast.error(t`Disconnect failed: the active trading account could not be verified. Please retry.`);
+				return;
+			}
 
 			clearVerifiedExternalWalletOwner();
 			if (sessionMode === "agent-only" && !authenticated) {

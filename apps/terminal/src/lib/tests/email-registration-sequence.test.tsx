@@ -259,6 +259,25 @@ describe("email registration sequence", () => {
 		expect(session.createWallet).toHaveBeenCalledOnce();
 	});
 
+	it("never asks to reconnect while the created wallet is waiting for Privy's user and wagmi to catch up", async () => {
+		session.createWallet.mockResolvedValueOnce({ address: EMBEDDED_WALLET });
+		renderApp();
+
+		await update({ authenticated: true, user: emailUser(false) });
+		expect(session.createWallet).toHaveBeenCalledOnce();
+		expect(latestGate?.state).toBe("checking");
+
+		await update({ user: emailUser(true) });
+		expect(latestGate?.state).toBe("checking");
+
+		await update({
+			wallets: [{ address: EMBEDDED_WALLET, connectorType: "embedded", walletClientType: "privy" }],
+			activeAddress: EMBEDDED_WALLET,
+		});
+		expect(latestGate?.state).toBe("required");
+		expect(observedStates).toEqual(["inactive", "checking", "required"]);
+	});
+
 	it("keeps the policy dialog back while Privy's window is still open over an active owner", async () => {
 		session.createWallet.mockResolvedValueOnce({ address: EMBEDDED_WALLET });
 		renderApp();

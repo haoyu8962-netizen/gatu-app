@@ -538,6 +538,24 @@ describe("useDisconnectWallet", () => {
 		);
 	});
 
+	it("stays logged in when another agent-only owner took the place of the one that was closed", async () => {
+		const replacement = "0x4444444444444444444444444444444444444444";
+		setEmailSessionWithoutWallet();
+		testState.removeAgent.mockImplementation((env: string, ownerAddress: string) => {
+			window.localStorage.removeItem(`hyperliquid_agent_${env}_${ownerAddress.toLowerCase()}`);
+			window.localStorage.setItem("hyperliquid_active_agent_owner", JSON.stringify({ env, address: replacement }));
+			return { status: "removed" };
+		});
+
+		await clickDisconnect();
+
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Disconnect failed: the active trading account could not be verified. Please retry.",
+		);
+	});
+
 	it("leaves an agent-only owner of the other environment alone", async () => {
 		setEmailSessionWithoutWallet();
 		window.localStorage.setItem(

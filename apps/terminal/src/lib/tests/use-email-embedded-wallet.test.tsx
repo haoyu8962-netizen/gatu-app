@@ -187,10 +187,12 @@ describe("useEmailEmbeddedWalletSession", () => {
 		const firstHook = renderHook();
 		let staleRequest: Promise<`0x${string}`> | undefined;
 
-		act(() => {
+		await act(async () => {
 			staleRequest = firstHook.ensureEmailEmbeddedWallet();
+			staleRequest.catch(() => undefined);
 		});
 		expect(hookValue?.isCreatingEmbeddedWallet).toBe(true);
+		expect(testState.createWallet).toHaveBeenCalledOnce();
 
 		testState.user = emailUser({ email: "second@example.com", id: "did:privy:second-user" });
 		let secondHook = renderHook();
@@ -221,9 +223,11 @@ describe("useEmailEmbeddedWalletSession", () => {
 		);
 		const firstHook = renderHook();
 		let staleRequest: Promise<`0x${string}`> | undefined;
-		act(() => {
+		await act(async () => {
 			staleRequest = firstHook.ensureEmailEmbeddedWallet();
+			staleRequest.catch(() => undefined);
 		});
+		expect(testState.createWallet).toHaveBeenCalledOnce();
 
 		testState.user = null;
 		renderHook();
@@ -364,9 +368,10 @@ describe("useEmailEmbeddedWalletSession", () => {
 			)
 			.mockResolvedValueOnce({ address: SECOND_EMBEDDED_WALLET_ADDRESS });
 		const firstHook = renderHook();
-		act(() => {
+		await act(async () => {
 			void firstHook.ensureEmailEmbeddedWallet().catch(() => undefined);
 		});
+		expect(testState.createWallet).toHaveBeenCalledOnce();
 
 		testState.user = null;
 		renderHook();
@@ -385,5 +390,35 @@ describe("useEmailEmbeddedWalletSession", () => {
 
 		expect(testState.createWallet).toHaveBeenCalledTimes(2);
 		expect(hookValue?.embeddedWalletAddress).toBe(SECOND_EMBEDDED_WALLET_ADDRESS);
+	});
+
+	it("drops a queued creation whose login ended before the previous SDK request settled", async () => {
+		let resolveFirstCreation: ((wallet: { address: string }) => void) | undefined;
+		testState.createWallet.mockReturnValueOnce(
+			new Promise<{ address: string }>((resolve) => {
+				resolveFirstCreation = resolve;
+			}),
+		);
+		const firstHook = renderHook();
+		await act(async () => {
+			void firstHook.ensureEmailEmbeddedWallet().catch(() => undefined);
+		});
+		expect(testState.createWallet).toHaveBeenCalledOnce();
+
+		testState.user = emailUser({ email: "second@example.com", id: "did:privy:second-user" });
+		const secondHook = renderHook();
+		let queuedCreation: Promise<unknown> | undefined;
+		await act(async () => {
+			queuedCreation = secondHook.ensureEmailEmbeddedWallet().catch((error: unknown) => error);
+		});
+
+		testState.user = null;
+		renderHook();
+		await act(async () => {
+			resolveFirstCreation?.({ address: EMBEDDED_WALLET_ADDRESS });
+		});
+
+		expect(await queuedCreation).toEqual(new Error("Email wallet session changed before wallet creation"));
+		expect(testState.createWallet).toHaveBeenCalledOnce();
 	});
 });

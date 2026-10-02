@@ -15,7 +15,6 @@ const testState = vi.hoisted(() => ({
 		authenticated: true,
 		authenticationModalOpen: false,
 		authenticationReady: true,
-		embeddedWalletAddress: undefined as string | undefined,
 		hasWalletAccess: true,
 		isConnected: true,
 		isConnecting: false,
@@ -25,6 +24,7 @@ const testState = vi.hoisted(() => ({
 		walletIntent: "external" as "ambiguous" | "embedded" | "external" | "unavailable",
 	},
 	emailWallet: {
+		embeddedWalletAddress: undefined as string | undefined,
 		needsEmbeddedWallet: false,
 		isCreatingEmbeddedWallet: false,
 		embeddedWalletError: null as Error | null,
@@ -98,7 +98,6 @@ describe("legal gate hooks", () => {
 			authenticated: true,
 			authenticationModalOpen: false,
 			authenticationReady: true,
-			embeddedWalletAddress: undefined,
 			hasWalletAccess: true,
 			isConnected: true,
 			isConnecting: false,
@@ -108,6 +107,7 @@ describe("legal gate hooks", () => {
 			walletIntent: "external",
 		});
 		Object.assign(testState.emailWallet, {
+			embeddedWalletAddress: undefined,
 			needsEmbeddedWallet: false,
 			isCreatingEmbeddedWallet: false,
 			embeddedWalletError: null,
@@ -127,12 +127,12 @@ describe("legal gate hooks", () => {
 	function setEmailSessionWithoutActiveOwner(embeddedWalletAddress: string | undefined) {
 		Object.assign(testState.walletSession, {
 			address: undefined,
-			embeddedWalletAddress,
 			hasWalletAccess: false,
 			isConnected: false,
 			sessionMode: "disconnected",
 			walletIntent: "embedded",
 		});
+		testState.emailWallet.embeddedWalletAddress = embeddedWalletAddress;
 	}
 
 	function renderProbe() {
@@ -276,12 +276,11 @@ describe("legal gate hooks", () => {
 	it("never applies the email wallet setup to an external wallet session", () => {
 		Object.assign(testState.walletSession, {
 			address: undefined,
-			embeddedWalletAddress: EMBEDDED_OWNER,
 			hasWalletAccess: false,
 			isConnected: false,
 			sessionMode: "disconnected",
 		});
-		testState.emailWallet.needsEmbeddedWallet = true;
+		Object.assign(testState.emailWallet, { embeddedWalletAddress: EMBEDDED_OWNER, needsEmbeddedWallet: true });
 		renderProbe();
 		expectStates("wallet_required");
 	});

@@ -119,7 +119,12 @@ export function useEmailEmbeddedWalletSession() {
 		function startRequest(): EmbeddedWalletRequest {
 			const promise = Promise.resolve(requestRef.current?.promise)
 				.catch(() => undefined)
-				.then(() => createWallet())
+				.then(() => {
+					if (committedSessionRef.current !== session) {
+						throw new Error("Email wallet session changed before wallet creation");
+					}
+					return createWallet();
+				})
 				.then((wallet) => {
 					if (!wallet.address) {
 						throw new Error("Embedded wallet was created without an address");

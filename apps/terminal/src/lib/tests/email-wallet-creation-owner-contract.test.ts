@@ -83,7 +83,7 @@ describe("email wallet creation ownership", () => {
 
 	it("lets only the shared hook reach Privy's wallet creation", () => {
 		expect(Object.keys(collect(/\buseCreateWallet\b/g))).toEqual([CREATION_HOOK]);
-		expect(collect(/\bcreateWallet\(/g)).toEqual({ [CREATION_HOOK]: 1 });
+		expect(collect(/\bcreateWallet\b/g)).toEqual({ [CREATION_HOOK]: 3 });
 	});
 
 	it("starts the deposit dialog's creation only from its Retry control", () => {

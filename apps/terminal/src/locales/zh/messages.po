@@ -2798,6 +2798,7 @@ msgid "Disconnect"
 msgstr "断开连接"
 
 #: src/hooks/wallet/use-wallet-session.ts
+#: src/hooks/wallet/use-wallet-session.ts
 msgid "Disconnect failed: the active trading account could not be verified. Please retry."
 msgstr "断开连接失败：无法校验当前交易账户。请重试。"
 

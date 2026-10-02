@@ -1,6 +1,6 @@
 # ADR 0033：邮箱钱包在登录后静默创建，协议弹窗等 Privy 窗口关闭后再出现
 
-- 状态：已接受并实施（2026-10-02）；同日经 Codex 两轮只读对抗审查后修订。真实邮箱注册的端到端验收还没有做；「待用户决定」一节有一项没有定。
+- 状态：已接受并实施（2026-10-02）；同日经 Codex 三轮只读对抗审查后修订。真实邮箱注册的端到端验收还没有做；「待用户决定」一节有一项没有定。
 - 关联：[邮箱交易签名](../email-trading-signing.md)、[首次交易引导](../trading-onboarding.md)、[运行时约束](../runtime-guardrails.md) §1、[移动端数据提示](../mobile-data-presentation.md)、[ADR 0002](0002-exact-owner-trading-signers.md)、[任务记录](../work-memory/sessions/2026-10-02-silent-email-wallet-creation.md)。
 
 ## 背景与约束
@@ -33,7 +33,7 @@
 3. **任何时候只有一个在途的 SDK 请求。**
    - 应用的等待上限是 20 秒，超时只结束等待，不取消 SDK 请求。
    - SDK 请求还没结束时，重试会接回同一个请求，不会再调用一次 `createWallet()`。
-   - 登出后重新登录是新的会话。新会话的请求要等上一个会话的请求结束后才发出。
+   - 登出后重新登录是新的会话。新会话的请求要等上一个会话的请求结束后才发出；排队期间这次登录已经结束的，不再调用 SDK。
    - 请求在超时之后才成功的，钱包照常被采用；结果只写回发起它的那个会话。
    - 用户已有内嵌钱包、只是无法确定用哪一个时，不调用 SDK，直接报错。
 4. **用户主动重试的入口有三个**，都走同一个共享创建：
@@ -42,11 +42,13 @@
    - 充值弹窗里资金地址的 Retry 按钮。
 5. **协议门控按创建进度显示。**
    - 邮箱会话缺少钱包或正在创建时为 `checking`。
-   - 钱包已经存在、但还没成为当前钱包时，给 10 秒宽限，之后才判 `wallet_required`。这 10 秒从用户资料里出现钱包、而它还不是当前钱包时开始计。钱包目录未就绪或签名器连接中造成的等待另算，不占用也不延长这 10 秒。
+   - 钱包已经存在、但还没成为当前钱包时，给 10 秒宽限，之后才判 `wallet_required`。
+   - 这 10 秒从共享 hook 拿到钱包地址（创建结果或用户资料，先到的那个）、而它还不是当前钱包时开始计。签名器连接期间计时照常走，不暂停。
    - 创建失败或超时是新状态 `wallet_setup_failed`。文案是「钱包尚未就绪」，不断言创建一定失败；弹窗提供 Retry 和「断开连接」。
 6. **没有钱包的邮箱会话可以登出。**
    - 它自己没有交易 owner，登出不需要按 owner 清理密钥。
    - 浏览器里可能还存着一个被这次登录隐藏的 Agent-only owner（例如手机上导入的桌面授权）。登出前先按原有流程关闭它；关闭失败就不登出。不这样做的话，登出后设备会回到那个 Agent 会话。
+   - 关闭之后再查一次。如果这时又存着一个 Agent-only owner（例如另一个标签页刚换了一个），也不登出，让用户重试。
    - 其他情况仍按原规则：owner 不能确认时拒绝断开。
    - 重连和断开都要等 Privy 钱包目录就绪。目录没就绪时沿用原有规则：两者禁用，30 秒后出现「重新加载页面」。
 7. **协议弹窗等 Privy 窗口关闭后再出现。**
@@ -141,13 +143,13 @@ pnpm --filter @sairn/terminal test
 | 测试 | 覆盖 |
 |---|---|
 | `privy-config` | `createOnLogin: "off"` |
-| `use-email-embedded-wallet` | 单个在途请求、20 秒超时后重试接回原请求、超时后迟到的钱包被采用、新会话等旧请求结束、已有内嵌钱包时不调用 SDK、会话切换 |
+| `use-email-embedded-wallet` | 单个在途请求、20 秒超时后重试接回原请求、超时后迟到的钱包被采用、新会话等旧请求结束、排队期间登录已结束的不再调用 SDK、已有内嵌钱包时不调用 SDK、会话切换 |
 | `email-embedded-wallet-provider` | 只自动创建一次、失败后不自动重试（SDK 函数每次渲染换引用）、外部钱包不创建 |
 | `email-wallet-creation-owner-contract` | 登记所有引用共享创建的位置和次数，自动创建方只有 provider，只有共享 hook 能调用 Privy 的 `createWallet` |
 | `legal-gate`、`legal-gate-hooks` | 创建中、失败、激活宽限及其计时起点、Privy 窗口期间暂缓 |
 | `legal-acceptance-modal` | 三个状态页的「断开连接」、失败状态的 Retry |
-| `email-registration-sequence` | 用真实的 provider、会话和门控 hook 走完整顺序：验证码通过 → 后台创建 → Privy 窗口关闭 → owner 激活 → 协议弹窗；以及创建失败后的重试与登出 |
-| `wallet-session` | 没有钱包的邮箱会话可以登出；被隐藏的 Agent-only owner 先关闭、关闭失败不登出；重新连接会重试创建；`isModalOpen` 透传 |
+| `email-registration-sequence` | 用真实的 provider、会话和门控 hook 走完整顺序：验证码通过 → 后台创建 → Privy 窗口关闭 → owner 激活 → 协议弹窗；创建已返回而用户资料还没更新时不闪出「重新连接钱包」；以及创建失败后的重试与登出 |
+| `wallet-session` | 没有钱包的邮箱会话可以登出；被隐藏的 Agent-only owner 先关闭，关闭失败或关闭后又出现一个都不登出；重新连接会重试创建；`isModalOpen` 透传 |
 | `global-modals-hip3-disclaimer` | 全局弹窗把 Retry 接到门控 |
 | `root-provider-split` | provider 层级 |
 

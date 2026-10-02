@@ -163,7 +163,6 @@ export function useLegalGateSession() {
 		authenticated,
 		authenticationModalOpen,
 		authenticationReady,
-		embeddedWalletAddress,
 		hasWalletAccess,
 		isConnected,
 		isConnecting,
@@ -172,8 +171,13 @@ export function useLegalGateSession() {
 		walletDirectoryReady,
 		walletIntent,
 	} = useWalletSession();
-	const { needsEmbeddedWallet, isCreatingEmbeddedWallet, embeddedWalletError, ensureEmailEmbeddedWallet } =
-		useEmailEmbeddedWallet();
+	const {
+		embeddedWalletAddress,
+		needsEmbeddedWallet,
+		isCreatingEmbeddedWallet,
+		embeddedWalletError,
+		ensureEmailEmbeddedWallet,
+	} = useEmailEmbeddedWallet();
 	const activationKey =
 		walletIntent === "embedded" && !address && embeddedWalletAddress ? embeddedWalletAddress.toLowerCase() : null;
 	const withinActivationGrace = useWithinGrace(activationKey, EMAIL_OWNER_ACTIVATION_GRACE_MS);
