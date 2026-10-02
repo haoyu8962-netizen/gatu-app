@@ -5,7 +5,10 @@ import { i18n } from "@lingui/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { FundsActionReference } from "@/components/funds-action/funds-action-marker";
+import { formatDateTime } from "@/lib/format";
 import { createI18nRoot } from "@/lib/tests/harness/react";
+import { createStakingActionSubmission } from "../domain/staking";
 import { StakingActionModal } from "../staking-action-modal";
 
 const OWNER = "0x1111111111111111111111111111111111111111" as const;
@@ -96,5 +99,71 @@ describe("StakingActionModal amount errors", () => {
 		expect(document.body.textContent).not.toContain(EXCEEDS_BALANCE);
 		expect(amountInput()).toBe(input);
 		expect(input.value).toBe("9");
+	});
+});
+
+describe("StakingActionModal operation reference", () => {
+	const startedAt = new Date(2026, 9, 2, 14, 31).getTime();
+	const reference: FundsActionReference = {
+		id: "reference-1",
+		env: "Mainnet",
+		owner: OWNER,
+		method: "cDeposit",
+		target: "staking",
+		direction: "deposit",
+		displayAmount: "1",
+		atomicAmount: "100000000",
+		atomicDecimals: 8,
+		asset: "HYPE",
+		startedAt,
+		identityEpoch: "epoch-1",
+	};
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		Object.defineProperty(window, "matchMedia", {
+			configurable: true,
+			value: vi.fn().mockReturnValue({ addEventListener: vi.fn(), matches: false, removeEventListener: vi.fn() }),
+		});
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createI18nRoot(container);
+	});
+
+	afterEach(() => {
+		act(() => root.unmount());
+		container.remove();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("rewrites the started time in the active language while the reference stays mounted", () => {
+		const action = { kind: "cDeposit", maxAmount: "8" } as const;
+		act(() =>
+			root.render(
+				<StakingActionModal
+					action={action}
+					ownerAddress={OWNER}
+					open
+					isMobile={false}
+					onOpenChange={vi.fn()}
+					onSubmit={vi.fn()}
+					submission={createStakingActionSubmission(action, "1") ?? undefined}
+					fundsState={{ stage: "done", result: "unknown" }}
+					reference={reference}
+				/>,
+			),
+		);
+		const english = formatDateTime(startedAt, { locale: "en" });
+		const chinese = formatDateTime(startedAt, { locale: "zh" });
+		const started = [...document.body.querySelectorAll("dd")].find((value) => value.textContent === english);
+		expect(started).toBeDefined();
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+
+		expect(started?.isConnected).toBe(true);
+		expect(started?.textContent).toBe(chinese);
+		expect(chinese).not.toBe(english);
 	});
 });

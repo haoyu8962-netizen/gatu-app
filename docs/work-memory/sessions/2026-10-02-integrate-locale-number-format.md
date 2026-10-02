@@ -10,7 +10,7 @@
   "summary": "进行中：把 claude/laughing-engelbart-b9dbe6（页脚时钟）、claude/relaxed-roentgen-fd0316（Vault 与组合收益图语言依赖）、claude/wonderful-goldberg-e47b19（数字格式刷新，ADR 0036）三条叠放的未推送分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format，新增 CI 步骤，并按用户要求用 Codex 做至少 3 轮只读对抗审查、评分大于 9。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85"],
+  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-10-02-footer-clock-live-minute.md" },
     { "path": "docs/work-memory/sessions/2026-10-02-vault-fetched-time-locale.md" },
@@ -63,7 +63,7 @@
 
 更正记录：这里最初写作「31 个测试文件中有 20 个不在清单里」，文件数少算了 1 个。第 2 轮 B 路据此改为 32 与 21，但 21 只比较了显式路径；第 3 轮 B 路按通配符复核，实际未覆盖的是 20 个。两次都用 `git diff --name-only 682430ba 5d3ff8e7` 对照 `5d3ff8e7` 的 workflow 复核。
 
-新增步骤「Test number format and runtime locale contracts」（`41c585cb`）。第 1 轮审查后又补了 4 个被本 PR 改动的测试文件，共 30 个；第 2 轮审查后加入 `history-csv-twap.test.tsx`（直接测试本 PR 改动的 `useTwapFillHistoryCsv`），共 31 个；第 3 轮审查后加入新的 `bridge-success-screen-locale.test.tsx`，共 32 个。现在本 PR 改动或新增的 35 个测试文件都会被 CI 运行（按显式路径与通配符核对）。（这里原写作 34，是第 3 轮时的数；第 5 轮又改了 `format.test.ts`，第 7 轮 B 路指出后更正。）本机用单工作进程跑最初的 26 个文件，554 项通过、47 秒（负载 12–22）。`scripts/ci-workflows.test.mjs` 7 项通过，Ruby 解析 YAML 正常。
+新增步骤「Test number format and runtime locale contracts」（`41c585cb`）。第 1 轮审查后又补了 4 个被本 PR 改动的测试文件，共 30 个；第 2 轮审查后加入 `history-csv-twap.test.tsx`（直接测试本 PR 改动的 `useTwapFillHistoryCsv`），共 31 个；第 3 轮审查后加入新的 `bridge-success-screen-locale.test.tsx`，共 32 个；第 9 轮审查后加入 `staking-action-modal.test.tsx`（新增了质押参考信息的日期用例），共 33 个。现在本 PR 改动或新增的 36 个测试文件都会被 CI 运行（按显式路径与通配符核对）。（这里原写作 34，是第 3 轮时的数；第 5 轮又改了 `format.test.ts`，第 7 轮 B 路指出后更正。）本机用单工作进程跑最初的 26 个文件，554 项通过、47 秒（负载 12–22）。`scripts/ci-workflows.test.mjs` 7 项通过，Ruby 解析 YAML 正常。
 
 ### Codex 对抗审查
 
@@ -298,7 +298,7 @@ C 路没有任何发现。B 路提 1 项 P2、1 项 P3；V 路确认第 6 轮修
 
 C 路仍没有发现。B 路核对了第 7 轮一节与两处更正，全部对上，另提 2 项 P2；V 路确认第 7 轮修复成立，另提 2 项 P2、3 组 P3，其中两项与 B 路重合。经本会话核实，以下全部成立：
 
-- **V-P2：Lingui 来源按名字识别。** `import { useLingui as useI18n } from "@lingui/react"` 后 `const { i18n: intl } = useI18n()`，以及 `const intl = i18n` 这类局部别名，都没被当成 Lingui 对象；编译产物的缓存守卫只有 `at` 与稳定的 `intl`。已按导入来源识别 `useLingui` 与 `@lingui/core` 的 `i18n`（含别名），并把 `const intl = i18n`、`const intl = lingui.i18n`、`const { i18n: intl } = lingui` 等别名反复传播到不再增加。名字仍按整个文件计，同名遮蔽会让检查偏严、不会漏报。
+- **V-P2：Lingui 来源按名字识别。** `import { useLingui as useI18n } from "@lingui/react"` 后 `const { i18n: intl } = useI18n()`，以及 `const intl = i18n` 这类局部别名，都没被当成 Lingui 对象；编译产物的缓存守卫只有 `at` 与稳定的 `intl`。已按导入来源识别 `useLingui` 与 `@lingui/core` 的 `i18n`（含别名），并把 `const intl = i18n`、`const intl = lingui.i18n`、`const { i18n: intl } = lingui` 等别名反复传播到不再增加。名字仍按整个文件计，同名遮蔽会让检查偏严、不会漏报。（更正：这个结论不成立。第 9 轮 V 路给出反例：两个组件里同名的 `intl` 一个是 `useLingui()` 结果、一个是 i18n 对象，按文件计的两个名字集合互相排斥，别名 `clockI18n` 被归错类而漏报。已改为按声明绑定识别，见第 9 轮。）
 - **V-P2：回调里解构出的 `locale` 不算语言读取。** `rows.map((at) => { const { locale } = i18n; … })` 与 `useQuery({ select })` 里的同样写法都漏报；TanStack Query 在数据与 `select` 身份不变时复用结果，这正是上一轮把 `select` 留在渲染期检查的原因。已把 `const { locale } = i18n` 与 `const { i18n: { locale } } = useLingui()` 当作读取 `locale` 的位置。
 - **B-P2 / V-P3：依赖路径没有统一。** 回调写 `i18n["locale"]`、`(i18n as I18n).locale` 或解构 `locale` 时，依赖 `i18n.locale` 被误报为未读；依赖写成 `i18n["locale"]` 时被跳过；只读稳定的 `lingui.i18n` 却算读到了 `lingui.i18n.locale`。已统一读取路径：点、静态键、断言与解构都归一到同一条路径；`lingui.i18n` 与 `i18n` 一样按稳定对象处理，读到它上面的 `lingui` 仍算读取；只被丢弃的值（`void locale`）不算读取。
 - **B-P2 / V-P3：没有 `export` 的本地声明仍会遮住 `export *`。** 上一轮只撤回了导入别名这一条路，模块级声明仍被无条件当成导出。已把「实际导出的声明」单独登记（`export` 修饰的函数、类、变量与默认导出），跨模块解析只认它们，本模块内部的引用仍按全部声明解析。正反两个方向都补了样例。
@@ -310,6 +310,30 @@ C 路再次提到既有的 CI 失效路径 `geo-server-functions.test.ts`，已�
 
 - 数字契约 80 项（62 个应报出、14 个应放行、4 项源码树检查），语言契约 217 项，全部通过；真实源码树仍是 0 处违规。
 - 本轮新增 14 个样例（数字 3 个、语言 11 个）。接到上一版（`8b0dde85`）的检查器与共用模块上运行，13 个失败；另 1 个是守卫（组件顶层解构 `locale` 放行），新旧检查器都通过。
+- 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败；语言契约全部通过；运行后已还原。
+
+**第 9 轮（三路并行，23:01–23:09）**
+
+| 路 | 重点 | 用量 | 评分 |
+|---|---|---|---|
+| V | 系统复核两份契约（终评） | 23 条命令、约 13.1 万 token | 8.8 |
+| B | 规范、文档与记录终评 | 19 条命令、约 10.6 万 token | 9.3 |
+| C | 全 PR 遗漏与测试强度终评 | 24 条命令、约 13.6 万 token | 9.3 |
+
+B 路核对了第 8 轮一节，全部对上，另提 1 项 P3；C 路提 1 项 P3；V 路确认第 8 轮的原始反例都已修复，另提 2 项 P2、2 项 P3。经本会话核实，以下全部成立：
+
+- **V-P2：按文件计的名字集合会互相排斥。** 见第 8 轮一节的更正。
+- **V-P2：Lingui 来源仍漏掉静态 Hook 别名与 core 命名空间成员。** `const useI18n = useLingui` 与 `core.i18n.locale`（`import * as core from "@lingui/core"`）都漏报，编译产物切换语言后仍输出旧语言。
+- 这两项的根因都是按名字识别。已在共用模块加入按声明绑定解析的 `findBinding`（含模块的导入与顶层声明）。语言契约改为给每个绑定记一种 Lingui 角色：i18n 对象、`useLingui()` 结果、`useLingui` Hook、`@lingui/core` 或 `@lingui/react` 的命名空间。角色从导入出发，沿别名、解构与成员访问传播到不再变化；同名的不同绑定互不影响。名字恰好叫 `i18n`、却不是 Lingui 对象的回调参数，现在也不再被误报。
+- **V-P3：回调内部的别名被误报为没读依赖。** `const intl = i18n; … intl.locale` 现在按它代表的外部路径 `i18n.locale` 计入。
+- **V-P3：解构后丢弃的 `locale` 被算作读取。** 解构出的局部变量改为在被实际使用时才计入它代表的路径，所以 `const { locale } = i18n; void locale;` 不再算读取。解构用了动态键或剩余元素时，按读取整个源对象处理。
+- **B-P3：多语言规则漏写了 `useMemo` 回调里无条件读取的例外。** 已补写。
+- **C-P3：质押参考信息的日期修复没有专门测试。** 已在 `staking-action-modal.test.tsx` 加入挂载中切换语言的用例，并把该文件加入 CI 新步骤。把组件里的 `{ locale }` 删掉后，它在「Started」一行失败：切换后仍是 `Oct 2, 2026, 2:31 PM`；还原后通过。
+
+修复后的验证：
+
+- 数字契约 80 项、语言契约 223 项，全部通过；真实源码树仍是 0 处违规。
+- 本轮新增 6 个语言样例，接到上一版（`cb15f488`）的检查器与共用模块上运行时全部失败。
 - 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败；语言契约全部通过；运行后已还原。
 
 ## 验证与限制

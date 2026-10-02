@@ -193,6 +193,41 @@ export function findDeclaringScope(identifier: ts.Identifier): ts.Node {
 	return identifier.getSourceFile();
 }
 
+// The identifier that declares the binding `identifier` refers to: the innermost enclosing scope that
+// declares its name, up to the module's imports and top-level declarations; undefined for a global.
+export function findBinding(identifier: ts.Identifier): ts.Identifier | undefined {
+	for (let node: ts.Node | undefined = identifier.parent; node; node = node.parent) {
+		const binding = getScopeBindings(node).get(identifier.text);
+		if (binding) return binding;
+	}
+	return undefined;
+}
+
+const scopeBindingCache = new WeakMap<ts.Node, ReadonlyMap<string, ts.Identifier>>();
+
+function getScopeBindings(scope: ts.Node): ReadonlyMap<string, ts.Identifier> {
+	let bindings = scopeBindingCache.get(scope);
+	if (!bindings) {
+		const names = ts.isSourceFile(scope) ? collectModuleNames(scope) : collectScopeNames(scope);
+		bindings = new Map(names.map((name) => [name.text, name]));
+		scopeBindingCache.set(scope, bindings);
+	}
+	return bindings;
+}
+
+function collectModuleNames(file: ts.SourceFile): ts.Identifier[] {
+	const names = collectStatementNames(file.statements);
+	for (const statement of file.statements) {
+		if (!ts.isImportDeclaration(statement)) continue;
+		const clause = statement.importClause;
+		if (clause?.name) names.push(clause.name);
+		const bindings = clause?.namedBindings;
+		if (bindings && ts.isNamespaceImport(bindings)) names.push(bindings.name);
+		if (bindings && ts.isNamedImports(bindings)) names.push(...bindings.elements.map((element) => element.name));
+	}
+	return names;
+}
+
 export function isWithin(node: ts.Node, ancestor: ts.Node): boolean {
 	for (let current: ts.Node | undefined = node; current; current = current.parent) {
 		if (current === ancestor) return true;
@@ -226,14 +261,20 @@ function collectScopeNames(scope: ts.Node): ts.Identifier[] {
 		}
 	} else if (ts.isBlock(scope) || ts.isCaseBlock(scope)) {
 		const statements = ts.isBlock(scope) ? scope.statements : scope.clauses.flatMap((clause) => [...clause.statements]);
-		for (const statement of statements) {
-			if (ts.isVariableStatement(statement)) {
-				for (const declaration of statement.declarationList.declarations) {
-					collectBindingIdentifiers(declaration.name, names);
-				}
-			} else if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) && statement.name) {
-				names.push(statement.name);
+		names.push(...collectStatementNames(statements));
+	}
+	return names;
+}
+
+function collectStatementNames(statements: readonly ts.Statement[]): ts.Identifier[] {
+	const names: ts.Identifier[] = [];
+	for (const statement of statements) {
+		if (ts.isVariableStatement(statement)) {
+			for (const declaration of statement.declarationList.declarations) {
+				collectBindingIdentifiers(declaration.name, names);
 			}
+		} else if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) && statement.name) {
+			names.push(statement.name);
 		}
 	}
 	return names;
