@@ -10,7 +10,7 @@
   "summary": "进行中：把 claude/laughing-engelbart-b9dbe6（页脚时钟）、claude/relaxed-roentgen-fd0316（Vault 与组合收益图语言依赖）、claude/wonderful-goldberg-e47b19（数字格式刷新，ADR 0036）三条叠放的未推送分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format，新增 CI 步骤，并按用户要求用 Codex 做至少 3 轮只读对抗审查、评分大于 9。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488"],
+  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1", "90dc70ef", "1419edb8", "6ed51e97", "c51cb05c", "8b0dde85", "cb15f488", "1bee47ea"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-10-02-footer-clock-live-minute.md" },
     { "path": "docs/work-memory/sessions/2026-10-02-vault-fetched-time-locale.md" },
@@ -63,7 +63,7 @@
 
 更正记录：这里最初写作「31 个测试文件中有 20 个不在清单里」，文件数少算了 1 个。第 2 轮 B 路据此改为 32 与 21，但 21 只比较了显式路径；第 3 轮 B 路按通配符复核，实际未覆盖的是 20 个。两次都用 `git diff --name-only 682430ba 5d3ff8e7` 对照 `5d3ff8e7` 的 workflow 复核。
 
-新增步骤「Test number format and runtime locale contracts」（`41c585cb`）。第 1 轮审查后又补了 4 个被本 PR 改动的测试文件，共 30 个；第 2 轮审查后加入 `history-csv-twap.test.tsx`（直接测试本 PR 改动的 `useTwapFillHistoryCsv`），共 31 个；第 3 轮审查后加入新的 `bridge-success-screen-locale.test.tsx`，共 32 个；第 9 轮审查后加入 `staking-action-modal.test.tsx`（新增了质押参考信息的日期用例），共 33 个。现在本 PR 改动或新增的 36 个测试文件都会被 CI 运行（按显式路径与通配符核对）。（这里原写作 34，是第 3 轮时的数；第 5 轮又改了 `format.test.ts`，第 7 轮 B 路指出后更正。）本机用单工作进程跑最初的 26 个文件，554 项通过、47 秒（负载 12–22）。`scripts/ci-workflows.test.mjs` 7 项通过，Ruby 解析 YAML 正常。
+新增步骤「Test number format and runtime locale contracts」（`41c585cb`）。第 1 轮审查后又补了 4 个被本 PR 改动的测试文件，共 30 个；第 2 轮审查后加入 `history-csv-twap.test.tsx`（直接测试本 PR 改动的 `useTwapFillHistoryCsv`），共 31 个；第 3 轮审查后加入新的 `bridge-success-screen-locale.test.tsx`，共 32 个；第 9 轮审查后加入 `staking-action-modal.test.tsx`（新增了质押参考信息的日期用例），共 33 个；第 10 轮审查后加入共用模块的自测 `react-source-harness.test.ts`，共 34 个。现在本 PR 改动或新增的 37 个测试文件都会被 CI 运行（按显式路径与通配符核对）。（这里原写作 34，是第 3 轮时的数；第 5 轮又改了 `format.test.ts`，第 7 轮 B 路指出后更正。）本机用单工作进程跑最初的 26 个文件，554 项通过、47 秒（负载 12–22）。`scripts/ci-workflows.test.mjs` 7 项通过，Ruby 解析 YAML 正常。
 
 ### Codex 对抗审查
 
@@ -334,6 +334,29 @@ B 路核对了第 8 轮一节，全部对上，另提 1 项 P3；C 路提 1 项 
 
 - 数字契约 80 项、语言契约 223 项，全部通过；真实源码树仍是 0 处违规。
 - 本轮新增 6 个语言样例，接到上一版（`cb15f488`）的检查器与共用模块上运行时全部失败。
+- 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败；语言契约全部通过；运行后已还原。
+
+**第 10 轮（三路并行，23:18–23:26）**
+
+| 路 | 重点 | 用量 | 评分 |
+|---|---|---|---|
+| V | 系统复核两份契约（终评） | 17 条命令、约 12.1 万 token | 8.8 |
+| B | 规范、文档与记录终评 | 15 条命令、约 9.7 万 token | 9.5 |
+| C | 全 PR 遗漏与测试强度终评 | 22 条命令、约 12.5 万 token | 9.4 |
+
+B 路与 C 路都没有任何发现。B 路复核了第 9 轮一节、对第 8 轮的更正与 CI 计数，全部对上。V 路确认第 9 轮的反例都已修复，另提 1 项 P2、2 项 P3。经本会话核实，以下全部成立：
+
+- **V-P2：自定义 Hook 返回 `useLingui()` 后来源中断。** 例如 `function useLocaleContext() { return useLingui(); }` 后写 `const { i18n } = useLocaleContext()`，编译产物切换语言后仍输出旧语言。改动有两部分：
+  - 同文件里的函数记录「返回值角色」，看它第一个带角色的 `return`，或箭头函数的表达式体，因此返回 `useLingui()` 或 i18n 对象的 Hook 都能跟上；
+  - 跨模块的情况，把任何以 `use` 开头的调用结果里的 `i18n` 成员都当作 Lingui 的 i18n 对象（宁可偏严）。
+  - 其他模块里、名字不像 Hook 的函数直接返回 i18n 对象，仍跟随不到，已写进多语言规则。
+- **V-P3：依赖写外部别名、回调读原路径时误报；回调里先声明的函数读后声明的解构局部变量时误报。** 已把读取与依赖都按绑定展开成「规范路径」：`const` 别名（含无默认值、无剩余元素的解构）代表它的来源路径，不论声明在回调内外、先后。报告里的依赖仍按原写法显示。
+- **V-P3：`findBinding` 让具名函数表达式自身的名字压过同名参数。** 已改为同一作用域里先登记的优先，参数排在函数名之前；并新增共用模块自测 `react-source-harness.test.ts`（7 项：参数与函数名的优先级、块、`catch`、`for`、具名类表达式、模块导入与顶层声明、全局），加入 CI 新步骤。
+
+修复后的验证：
+
+- 数字契约 80 项、语言契约 229 项、共用模块自测 7 项，全部通过；真实源码树仍是 0 处违规。
+- 本轮新增 6 个语言样例。接到上一版（`1bee47ea`）的检查器与共用模块上运行，5 个失败；另 1 个是守卫（不是 Hook 返回的值上的 `i18n` 成员不算），新旧都通过。自测里参数优先级那一项在旧共用模块上失败，其余 6 项是作用域守卫，新旧都通过。
 - 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败；语言契约全部通过；运行后已还原。
 
 ## 验证与限制

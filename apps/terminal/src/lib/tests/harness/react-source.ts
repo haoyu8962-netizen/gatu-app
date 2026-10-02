@@ -209,7 +209,9 @@ function getScopeBindings(scope: ts.Node): ReadonlyMap<string, ts.Identifier> {
 	let bindings = scopeBindingCache.get(scope);
 	if (!bindings) {
 		const names = ts.isSourceFile(scope) ? collectModuleNames(scope) : collectScopeNames(scope);
-		bindings = new Map(names.map((name) => [name.text, name]));
+		const map = new Map<string, ts.Identifier>();
+		for (const name of names) if (!map.has(name.text)) map.set(name.text, name);
+		bindings = map;
 		scopeBindingCache.set(scope, bindings);
 	}
 	return bindings;
@@ -249,6 +251,7 @@ function scopeDeclares(scope: ts.Node, name: string): boolean {
 function collectScopeNames(scope: ts.Node): ts.Identifier[] {
 	const names: ts.Identifier[] = [];
 	if (ts.isFunctionLike(scope)) {
+		// Parameters come first: inside the function they shadow a function expression's own name.
 		for (const parameter of scope.parameters) collectBindingIdentifiers(parameter.name, names);
 		if (ts.isFunctionExpression(scope) && scope.name) names.push(scope.name);
 	} else if (ts.isClassExpression(scope)) {
