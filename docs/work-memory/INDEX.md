@@ -320,7 +320,7 @@
 
 当前规范：[docs/trading-onboarding.md](../../docs/trading-onboarding.md) · [docs/email-trading-signing.md](../../docs/email-trading-signing.md)
 
-- [邮箱注册后静默创建钱包，协议弹窗不再与 Privy 窗口重叠](sessions/2026-10-02-silent-email-wallet-creation.md) — 2026-10-02；已验证，范围见正文。用户报告邮箱注册后出现「创建钱包」提示并与协议勾选同时显示。原因：createOnLogin 让 Privy 在登录窗口里创建钱包（0.9 秒后切到 Creating your wallet，创建完再显示 2.5 秒 Welcome），协议门控一拿到地址就打开。改为 createOnLogin off，根部 EmailEmbeddedWalletProvider 用 Privy 无界面 createWallet() 为没有钱包的邮箱会话创建一次、所有使用方共享、失败不自动重试；协议门控在创建中与 10 秒激活宽限内为 checking，创建失败为 wallet_setup_failed（Retry），Privy 窗口可见时不弹协议弹窗。ADR 0033。单测、四个变异检查、类型检查与终端全量单测通过；未做真实邮箱注册验收，未发布。
+- [邮箱注册后静默创建钱包，协议弹窗不再与 Privy 窗口重叠](sessions/2026-10-02-silent-email-wallet-creation.md) — 2026-10-02；已验证，范围见正文。用户报告邮箱注册后出现「创建钱包」提示并与协议勾选同时显示。原因：createOnLogin 让 Privy 在登录窗口里创建钱包，协议门控一拿到地址就打开。改为 createOnLogin off，根部 EmailEmbeddedWalletProvider 作为唯一自动创建方调用 Privy 的 createWallet()，同一会话只保留一个 SDK 请求，失败或超时不自动重试；协议门控在创建中与 10 秒激活宽限内为 checking，失败为 wallet_setup_failed（Retry 与断开连接），未提交的协议状态等 Privy 窗口关闭后再出现。Codex 三路对抗审查（评分 3–8.5）指出第一版的失败路径有缺口：充值弹窗会循环重试、没有钱包的邮箱会话无法登出、推荐页重试入口不可达、超时后重试会与原请求重叠、文档把 SDK 行为说得过满、新测试不在 CI 清单；均已核实并修复。ADR 0033。单测、12 个变异检查、类型检查与终端全量单测通过；未做真实邮箱注册验收，未发布。
 
 ## 按记录日期检索
 

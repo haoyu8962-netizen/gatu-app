@@ -2792,6 +2792,7 @@ msgid "Discard local key"
 msgstr "स्थानीय कुंजी हटाएँ"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "डिस्कनेक्ट करें"
@@ -10918,6 +10919,10 @@ msgstr "खाता मोड अपडेट करने के लिए व
 msgid "Wallet not connected"
 msgstr "वॉलेट कनेक्ट नहीं है"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet not ready"
+msgstr "वॉलेट तैयार नहीं है"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "कनेक्शन पूरा होने से पहले वॉलेट या नेटवर्क बदल गया। वर्तमान खाते के लिए कार्रवाई दोबारा खोलें।"
@@ -10932,8 +10937,8 @@ msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet
 msgstr "वॉलेट ने लेनदेन हैश लौटाया है, लेकिन वह अभी Arbitrum पर दिखाई नहीं दे रहा है। जमा दो बार भेजने से बचने के लिए दोबारा प्रयास करने से पहले वॉलेट गतिविधि या Arbiscan जांचें."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Wallet setup failed"
-msgstr "वॉलेट सेटअप विफल रहा"
+msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
+msgstr "हम आपके वॉलेट का सेटअप पूरा नहीं कर सके। अपना कनेक्शन जाँचें और फिर प्रयास करें, या डिस्कनेक्ट करके दोबारा लॉग इन करें।"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
@@ -11326,7 +11331,3 @@ msgstr "आपका लेन-देन प्रोसेस हो रहा 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "आपका वॉल्ट बैलेंस सत्यापित नहीं किया जा सका। खाता मूल्य और निकासी उपलब्ध नहीं रहेंगे।"
-
-#: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Your wallet could not be created. Check your connection and try again."
-msgstr "आपका वॉलेट नहीं बनाया जा सका। अपना कनेक्शन जाँचें और फिर प्रयास करें।"

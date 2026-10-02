@@ -129,15 +129,16 @@ The browser-only [ClientRootProvider](src/providers/client-root.tsx) composes:
 PwaInstallProvider
   PrivyProvider
     PrivyLoginMethodObserver
-    SmartWalletsProvider
-      PersistQueryClientProvider (same QueryClient)
-        @privy-io/wagmi WagmiProvider
-          I18nProvider → BaseUiDirectionProvider
-            HyperliquidExchangePolicyProvider → HyperliquidProvider
-              HyperliquidOwnerSignerBridge → HyperliquidAgentApprovalProvider
-                legal lifecycle + MarketsProvider
-                  deposit/order/TWAP reconciliation + ClientRuntimeProvider
-                    I18nReadyGate → ExchangeScopeProvider → MarketsInfoProvider → Outlet
+    EmailEmbeddedWalletProvider (silent email wallet creation, ADR 0033)
+      SmartWalletsProvider
+        PersistQueryClientProvider (same QueryClient)
+          @privy-io/wagmi WagmiProvider
+            I18nProvider → BaseUiDirectionProvider
+              HyperliquidExchangePolicyProvider → HyperliquidProvider
+                HyperliquidOwnerSignerBridge → HyperliquidAgentApprovalProvider
+                  legal lifecycle + MarketsProvider
+                    deposit/order/TWAP reconciliation + ClientRuntimeProvider
+                      I18nReadyGate → ExchangeScopeProvider → MarketsInfoProvider → Outlet
 ```
 
 The final locale/scope/market-info gate is composed by `AppRuntime` in `__root.tsx`. `MarketsProvider` provides the market catalog; `MarketsInfoProvider` is a distinct application layer. [config/wagmi.ts](src/config/wagmi.ts) configures bridge chains/transports and intentionally supplies no parallel connector list: Privy owns wallet selection.

@@ -5,11 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { type Address, isAddress, zeroAddress } from "viem";
 import { useConnection } from "wagmi";
+import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { closeAgentRegistrationSessionAndRemove, useHyperliquid, useHyperliquidOptional } from "@/lib/hyperliquid";
 import { clearPrivyLoginMethod, usePrivyLoginIntent } from "@/lib/wallet/privy-login-method";
 import {
 	getPrivyEmailAddress,
 	getPrivyEmbeddedWalletAddress,
+	hasPrivyEmbeddedWallet,
 	hasSameWalletAddress,
 	resolvePrivyWalletIntent,
 	selectPrivyWagmiWallet,
@@ -47,6 +49,26 @@ function notifyWalletConnectionFailure(): void {
 
 function notifyEmailWalletUnavailable(): void {
 	toast.error(t`Your email wallet is unavailable. Disconnect, then log in again with the same email.`);
+}
+
+async function removeOwnerTradingSession(env: "Mainnet" | "Testnet", ownerAddress: Address): Promise<boolean> {
+	let shutdown: Awaited<ReturnType<typeof closeAgentRegistrationSessionAndRemove>>;
+	try {
+		shutdown = await closeAgentRegistrationSessionAndRemove(env, ownerAddress);
+	} catch {
+		toast.error(t`Disconnect failed: the local trading key could not be removed. Please retry.`);
+		return false;
+	}
+	if (shutdown.status !== "failed") return true;
+
+	if (shutdown.reason === "lock_unavailable") {
+		toast.error(t`Disconnecting requires Web Locks support. Update your browser and try again.`);
+	} else if (shutdown.reason === "owner_cleanup_failed") {
+		toast.error(t`Disconnect failed: the local trading session could not be cleared. Please retry.`);
+	} else {
+		toast.error(t`Disconnect failed: the local trading key could not be removed. Please retry.`);
+	}
+	return false;
 }
 
 /** @internal — exported only for deterministic session-boundary tests. */
@@ -141,6 +163,7 @@ export function useReconnectWallet() {
 	const { ready: walletsReady, wallets } = useWallets();
 	const { connectWallet } = useConnectWallet();
 	const { setActiveWallet } = useSetActiveWallet();
+	const { needsEmbeddedWallet, ensureEmailEmbeddedWallet } = useEmailEmbeddedWallet();
 	const [isReconnecting, setIsReconnecting] = useState(false);
 	const loginIntent = usePrivyLoginIntent(authenticated ? user?.id : undefined);
 	const walletIntent = authenticated ? resolvePrivyWalletIntent(user, loginIntent) : "unavailable";
@@ -169,7 +192,12 @@ export function useReconnectWallet() {
 			if (walletIntent === "embedded") {
 				// An email session must never fall back to an arbitrary
 				// external wallet while its exact embedded signer is absent
-				// or ambiguous.
+				// or ambiguous. A session that has no wallet yet retries the
+				// shared silent creation instead.
+				if (needsEmbeddedWallet) {
+					await ensureEmailEmbeddedWallet();
+					return;
+				}
 				notifyEmailWalletUnavailable();
 				return;
 			}
@@ -193,9 +221,11 @@ export function useReconnectWallet() {
 	}, [
 		authenticated,
 		connectWallet,
+		ensureEmailEmbeddedWallet,
 		isReconnecting,
 		login,
 		loginIntent,
+		needsEmbeddedWallet,
 		setActiveWallet,
 		user,
 		walletIntent,
@@ -213,6 +243,8 @@ export function useDisconnectWallet() {
 	const [isDisconnecting, setIsDisconnecting] = useState(false);
 	const embeddedSession = walletIntent === "embedded";
 	const privyUserId = authenticated ? user?.id : undefined;
+	const hasNoTradingOwner =
+		authenticated && embeddedSession && sessionMode === "disconnected" && !hasPrivyEmbeddedWallet(user);
 
 	useEffect(() => {
 		if (!authenticated || !privyUserId) {
@@ -253,28 +285,11 @@ export function useDisconnectWallet() {
 				walletAddress,
 				walletIntent,
 			});
-			if (!ownerAddress) {
+			if (!ownerAddress && !hasNoTradingOwner) {
 				toast.error(t`Disconnect failed: the active trading account could not be verified. Please retry.`);
 				return;
 			}
-
-			let shutdown: Awaited<ReturnType<typeof closeAgentRegistrationSessionAndRemove>>;
-			try {
-				shutdown = await closeAgentRegistrationSessionAndRemove(env, ownerAddress);
-			} catch {
-				toast.error(t`Disconnect failed: the local trading key could not be removed. Please retry.`);
-				return;
-			}
-			if (shutdown.status === "failed") {
-				toast.error(
-					shutdown.reason === "lock_unavailable"
-						? t`Disconnecting requires Web Locks support. Update your browser and try again.`
-						: shutdown.reason === "owner_cleanup_failed"
-							? t`Disconnect failed: the local trading session could not be cleared. Please retry.`
-							: t`Disconnect failed: the local trading key could not be removed. Please retry.`,
-				);
-				return;
-			}
+			if (ownerAddress && !(await removeOwnerTradingSession(env, ownerAddress))) return;
 
 			clearVerifiedExternalWalletOwner();
 			if (sessionMode === "agent-only" && !authenticated) {

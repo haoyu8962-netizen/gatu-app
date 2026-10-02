@@ -2792,6 +2792,7 @@ msgid "Discard local key"
 msgstr "丢弃本地私钥"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "断开连接"
@@ -10918,6 +10919,10 @@ msgstr "钱包尚未就绪，无法更新账户模式"
 msgid "Wallet not connected"
 msgstr "钱包未连接"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet not ready"
+msgstr "钱包尚未就绪"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "钱包或网络在连接完成前发生变化。请为当前账户重新打开操作。"
@@ -10932,8 +10937,8 @@ msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet
 msgstr "钱包已返回交易哈希，但该交易暂时还无法在 Arbitrum 上查到。请先检查钱包活动或 Arbiscan，避免重复发送同一笔存款。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Wallet setup failed"
-msgstr "钱包创建失败"
+msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
+msgstr "未能完成钱包设置。请检查网络连接后重试，或断开连接后重新登录。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
@@ -11326,7 +11331,3 @@ msgstr "您的交易正在处理中"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "无法验证您的金库余额。账户价值和提款功能仍不可用。"
-
-#: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Your wallet could not be created. Check your connection and try again."
-msgstr "未能创建你的钱包。请检查网络连接后重试。"

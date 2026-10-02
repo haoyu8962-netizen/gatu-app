@@ -19,7 +19,7 @@ const testState = vi.hoisted(() => ({
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 vi.mock("@privy-io/react-auth", () => ({
-	useCreateWallet: () => ({ createWallet: testState.createWallet }),
+	useCreateWallet: () => ({ createWallet: (...args: unknown[]) => testState.createWallet(...args) }),
 	usePrivy: () => ({ authenticated: true, ready: true, user: testState.user }),
 }));
 
@@ -114,7 +114,7 @@ describe("EmailEmbeddedWalletProvider", () => {
 		});
 	}
 
-	it("creates the email owner wallet once without wallet UI and shares it with every consumer", async () => {
+	it("creates the email owner wallet once, with no arguments, and shares it with every consumer", async () => {
 		let resolveCreation: ((wallet: { address: string }) => void) | undefined;
 		testState.createWallet.mockReturnValueOnce(
 			new Promise<{ address: string }>((resolve) => {
@@ -161,9 +161,12 @@ describe("EmailEmbeddedWalletProvider", () => {
 		expect(consumer("legal").embeddedWalletError).toBe(creationError);
 		expect(consumer("legal").isCreatingEmbeddedWallet).toBe(false);
 
-		renderProvider();
-		await act(async () => {});
+		for (let render = 0; render < 3; render += 1) {
+			renderProvider();
+			await act(async () => {});
+		}
 		expect(testState.createWallet).toHaveBeenCalledOnce();
+		expect(consumer("deposit").embeddedWalletError).toBe(creationError);
 
 		await act(async () => {
 			await expect(consumer("legal").ensureEmailEmbeddedWallet()).resolves.toBe(CREATED_WALLET_ADDRESS);

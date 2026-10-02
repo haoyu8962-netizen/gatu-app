@@ -75,8 +75,10 @@ release policy and a completed, unrestricted geo verdict.
 The external path additionally requires its exact owner signer to be ready, so
 Agent-only and disconnected external sessions remain unavailable. An eligible,
 authenticated email session may open the modal before its exact embedded signer
-has been created or activated; the modal owns that activation and still withholds
-the funding address until readiness succeeds. Unresolved-geo, restricted-geo,
+has been created or activated. The root `EmailEmbeddedWalletProvider` owns the
+silent creation ([ADR 0033](adr/0033-silent-email-wallet-creation.md)); the modal
+waits for it, never starts a creation by itself, offers an explicit Retry after a
+failure, and still withholds the funding address until readiness succeeds. Unresolved-geo, restricted-geo,
 and disabled controlled-path states must not open a modal that can only fail
 later. A release flag for another environment never satisfies this check.
 

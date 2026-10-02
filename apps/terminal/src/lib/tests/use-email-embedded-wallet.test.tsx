@@ -18,7 +18,7 @@ const testState = vi.hoisted(() => ({
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 vi.mock("@privy-io/react-auth", () => ({
-	useCreateWallet: () => ({ createWallet: testState.createWallet }),
+	useCreateWallet: () => ({ createWallet: (...args: unknown[]) => testState.createWallet(...args) }),
 	usePrivy: () => ({ authenticated: true, ready: true, user: testState.user }),
 }));
 
@@ -75,6 +75,7 @@ describe("useEmailEmbeddedWalletSession", () => {
 	});
 
 	afterEach(() => {
+		vi.useRealTimers();
 		act(() => root.unmount());
 		container.remove();
 		window.localStorage.clear();
@@ -236,5 +237,118 @@ describe("useEmailEmbeddedWalletSession", () => {
 		});
 		expect(hookValue?.embeddedWalletAddress).toBeUndefined();
 		expect(hookValue?.embeddedWalletError).toBeNull();
+	});
+
+	it("keeps one SDK request across the timeout so a retry re-attaches instead of creating again", async () => {
+		vi.useFakeTimers();
+		let resolveCreation: ((wallet: { address: string }) => void) | undefined;
+		testState.createWallet.mockReturnValueOnce(
+			new Promise<{ address: string }>((resolve) => {
+				resolveCreation = resolve;
+			}),
+		);
+		const hook = renderHook();
+		let firstAttempt: Promise<unknown> | undefined;
+
+		act(() => {
+			firstAttempt = hook.ensureEmailEmbeddedWallet().catch((error: unknown) => error);
+		});
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(20_000);
+		});
+
+		expect(await firstAttempt).toEqual(new Error("Embedded wallet creation timed out"));
+		expect(hookValue?.embeddedWalletError).toEqual(new Error("Embedded wallet creation timed out"));
+		expect(hookValue?.isCreatingEmbeddedWallet).toBe(false);
+
+		let retry: Promise<`0x${string}`> | undefined;
+		act(() => {
+			retry = hookValue?.ensureEmailEmbeddedWallet();
+		});
+		expect(hookValue?.isCreatingEmbeddedWallet).toBe(true);
+		expect(testState.createWallet).toHaveBeenCalledOnce();
+
+		await act(async () => {
+			resolveCreation?.({ address: EMBEDDED_WALLET_ADDRESS });
+			await expect(retry).resolves.toBe(EMBEDDED_WALLET_ADDRESS);
+		});
+
+		expect(hookValue?.embeddedWalletAddress).toBe(EMBEDDED_WALLET_ADDRESS);
+		expect(hookValue?.embeddedWalletError).toBeNull();
+		expect(testState.createWallet).toHaveBeenCalledOnce();
+	});
+
+	it("adopts a wallet that the SDK returns after the waiter timed out", async () => {
+		vi.useFakeTimers();
+		let resolveCreation: ((wallet: { address: string }) => void) | undefined;
+		testState.createWallet.mockReturnValueOnce(
+			new Promise<{ address: string }>((resolve) => {
+				resolveCreation = resolve;
+			}),
+		);
+		const hook = renderHook();
+
+		act(() => {
+			void hook.ensureEmailEmbeddedWallet().catch(() => undefined);
+		});
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(20_000);
+		});
+		expect(hookValue?.embeddedWalletError).not.toBeNull();
+
+		await act(async () => {
+			resolveCreation?.({ address: EMBEDDED_WALLET_ADDRESS });
+		});
+
+		expect(hookValue?.embeddedWalletAddress).toBe(EMBEDDED_WALLET_ADDRESS);
+		expect(hookValue?.needsEmbeddedWallet).toBe(false);
+		expect(hookValue?.embeddedWalletError).toBeNull();
+	});
+
+	it("starts a new SDK request once the previous one has settled with a failure", async () => {
+		testState.createWallet
+			.mockRejectedValueOnce(new Error("Wallet creation failed"))
+			.mockResolvedValueOnce({ address: EMBEDDED_WALLET_ADDRESS });
+		const hook = renderHook();
+
+		await act(async () => {
+			await expect(hook.ensureEmailEmbeddedWallet()).rejects.toThrow("Wallet creation failed");
+		});
+		await act(async () => {
+			await expect(hookValue?.ensureEmailEmbeddedWallet()).resolves.toBe(EMBEDDED_WALLET_ADDRESS);
+		});
+
+		expect(testState.createWallet).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not ask for a new wallet when existing embedded wallets cannot be selected unambiguously", () => {
+		testState.user = {
+			...emailUser(),
+			linkedAccounts: [
+				{ address: "trader@example.com", type: "email" },
+				{
+					address: EMBEDDED_WALLET_ADDRESS,
+					chainType: "ethereum",
+					connectorType: "embedded",
+					type: "wallet",
+					walletClientType: "privy",
+					walletIndex: 1,
+				},
+				{
+					address: SECOND_EMBEDDED_WALLET_ADDRESS,
+					chainType: "ethereum",
+					connectorType: "embedded",
+					type: "wallet",
+					walletClientType: "privy",
+					walletIndex: 2,
+				},
+			],
+		} as User;
+
+		const hook = renderHook();
+
+		expect(hook.shouldUseEmbeddedWallet).toBe(true);
+		expect(hook.embeddedWalletAddress).toBeUndefined();
+		expect(hook.needsEmbeddedWallet).toBe(false);
 	});
 });

@@ -57,10 +57,15 @@ identities and stub or fixture-generated signatures.
    window never creates the wallet (`createOnLogin: "off"`); once an email
    session is authenticated without an embedded wallet, the root
    `EmailEmbeddedWalletProvider` creates it once with
-   `useCreateWallet().createWallet()` and no wallet UI, and every consumer
-   shares that one creation. A failure is not retried automatically: the
-   legal gate shows `wallet_setup_failed` with Retry, and the deposit dialog
-   keeps its own retry. External-wallet sessions never get a wallet
+   `useCreateWallet().createWallet()`, and every consumer shares that one
+   creation. The call opens no Privy screen while the wallet proxy is ready
+   and the Privy application keeps user-owned recovery on creation off. The
+   provider is the only automatic creator and a session keeps a single SDK
+   request, which a retry re-attaches to. A failure or timeout is not retried
+   automatically: the legal gate shows `wallet_setup_failed` with Retry and
+   Disconnect, Reconnect wallet retries the creation, and the deposit dialog
+   has an explicit Retry. A session without a wallet can always log out.
+   External-wallet sessions never get a wallet
    ([ADR 0033](adr/0033-silent-email-wallet-creation.md)). A fresh email login
    may create a once-only deposit intent; restoration must not recreate it.
    Bind intent to user, owner and environment, wait for legal success and
@@ -92,8 +97,10 @@ onboarding](trading-onboarding.md).
 - Fresh email user and returning email login; delayed embedded-wallet creation
   and activation; refresh without repeat setup or signing. A fresh email user
   sees no Privy wallet-creation screen; the policy dialog opens only after the
-  Privy window has closed and the exact owner is active, and a failed creation
-  offers Retry instead of a reconnect request. Verify independent
+  Privy window has closed and the exact owner is active, and a failed or
+  timed-out creation offers Retry and Disconnect instead of a reconnect
+  request. None of this has been checked with a real email registration yet;
+  ADR 0033 holds the acceptance list. Verify independent
   identity-menu access, explicit reload after 30 seconds, and timer reset on
   readiness or identity changes.
 - Exact owner match, account/user/environment switch during signing, missing

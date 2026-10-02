@@ -82,10 +82,13 @@ Do not collapse these states into one boolean.
   `wallet_connect_qr` or label an unrelated catalog identifier as SafePal.
 - Login methods remain `wallet` and `email`; Passkey login is intentionally
   disabled. Privy's login window never creates a wallet (`createOnLogin:
-  "off"`): `EmailEmbeddedWalletProvider` creates the embedded Ethereum wallet
-  of an email session that has none, once and without wallet UI, after login
-  ([ADR 0033](adr/0033-silent-email-wallet-creation.md)). External-wallet
-  sessions never get one, and Privy's embedded wallet UI remains hidden.
+  "off"`): after login, `EmailEmbeddedWalletProvider` creates the embedded
+  Ethereum wallet of an email session that has none, once per session through
+  Privy's `createWallet()`
+  ([ADR 0033](adr/0033-silent-email-wallet-creation.md)). That call shows no
+  Privy screen only while the wallet proxy is ready and the Privy application
+  keeps user-owned recovery on creation off. External-wallet sessions never
+  get one, and Privy's embedded wallet UI remains hidden.
 - Dark/light Privy configuration changes appearance, accent color and the
   login-window logo only. The logo is the brand lockup for that theme, a
   same-origin file (`/brand/lockup-on-dark.svg`, `/brand/lockup-on-light.svg`)

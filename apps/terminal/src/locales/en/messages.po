@@ -2792,6 +2792,7 @@ msgid "Discard local key"
 msgstr "Discard local key"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "Disconnect"
@@ -10918,6 +10919,10 @@ msgstr "Wallet is not ready to update account mode"
 msgid "Wallet not connected"
 msgstr "Wallet not connected"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet not ready"
+msgstr "Wallet not ready"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "Wallet or network changed before the connection completed. Reopen the action for the current account."
@@ -10932,8 +10937,8 @@ msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet
 msgstr "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Wallet setup failed"
-msgstr "Wallet setup failed"
+msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
+msgstr "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
@@ -11326,7 +11331,3 @@ msgstr "Your transaction is being processed"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
-
-#: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Your wallet could not be created. Check your connection and try again."
-msgstr "Your wallet could not be created. Check your connection and try again."

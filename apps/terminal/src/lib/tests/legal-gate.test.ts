@@ -141,7 +141,7 @@ describe("legal gate state", () => {
 		expect(deriveLegalGateState({ ...missingOwner, ownerSetup: "settled" })).toBe("wallet_required");
 	});
 
-	it("holds every legal dialog while the Privy modal is visible", () => {
+	it("holds every policy dialog state that is not being submitted while the Privy modal is visible", () => {
 		const behindPrivy = { ...READY, authenticationModalOpen: true };
 
 		expect(deriveLegalGateState({ ...behindPrivy, acceptedTerms: false })).toBe("checking");
@@ -153,7 +153,7 @@ describe("legal gate state", () => {
 		expect(deriveLegalGateState({ ...behindPrivy, hasOwnerIdentity: false, hasWalletAccess: false })).toBe("checking");
 	});
 
-	it("keeps accepted, inactive and submitting states while the Privy modal is visible", () => {
+	it("keeps accepted and inactive sessions, and a dialog whose acceptance is being submitted, as they are", () => {
 		const behindPrivy = { ...READY, authenticationModalOpen: true };
 
 		expect(deriveLegalGateState(behindPrivy)).toBe("accepted");

@@ -375,13 +375,62 @@ describe("LegalAcceptanceModal", () => {
 			);
 		});
 
-		expect(container.textContent).toContain("Wallet setup failed");
+		expect(container.textContent).toContain("Wallet not ready");
+		expect(container.textContent).toContain("We could not finish setting up your wallet.");
 		expect(container.textContent).not.toContain("Selected wallet does not match");
 		act(() => findButton(container, "Retry").click());
 		expect(onRetryWalletSetup).toHaveBeenCalledOnce();
 		expect(onRetryStatus).not.toHaveBeenCalled();
 		expect(testState.reconnectWallet).not.toHaveBeenCalled();
 		expect(onAccept).not.toHaveBeenCalled();
+	});
+
+	it.each(["wallet_required", "wallet_setup_failed", "error"] as const)(
+		"offers Disconnect as the way out of the %s state",
+		async (state) => {
+			const { LegalAcceptanceModal } = await import("@/components/trade/components/legal-acceptance-modal");
+
+			act(() => {
+				root.render(
+					createElement(LegalAcceptanceModal, {
+						state,
+						acceptanceError: null,
+						onAccept,
+						onRetryStatus,
+						onRetryWalletSetup,
+						onResetAcceptance,
+					}),
+				);
+			});
+
+			act(() => findButton(container, "Disconnect").click());
+			expect(testState.disconnectWallet).toHaveBeenCalledOnce();
+			expect(onRetryStatus).not.toHaveBeenCalled();
+			expect(onRetryWalletSetup).not.toHaveBeenCalled();
+			expect(testState.reconnectWallet).not.toHaveBeenCalled();
+			expect(onAccept).not.toHaveBeenCalled();
+		},
+	);
+
+	it("disables the Disconnect exit while a disconnect is already running", async () => {
+		const { LegalAcceptanceModal } = await import("@/components/trade/components/legal-acceptance-modal");
+		testState.isDisconnecting = true;
+
+		act(() => {
+			root.render(
+				createElement(LegalAcceptanceModal, {
+					state: "wallet_setup_failed",
+					acceptanceError: null,
+					onAccept,
+					onRetryStatus,
+					onRetryWalletSetup,
+					onResetAcceptance,
+				}),
+			);
+		});
+
+		expect(findButton(container, "Disconnect").disabled).toBe(true);
+		expect(findButton(container, "Retry").disabled).toBe(false);
 	});
 
 	it("resets the failed acceptance before retrying legal status", async () => {

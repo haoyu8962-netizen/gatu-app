@@ -2792,6 +2792,7 @@ msgid "Discard local key"
 msgstr "تجاهل المفتاح المحلي"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "قطع الاتصال"
@@ -10918,6 +10919,10 @@ msgstr "المحفظة غير جاهزة لتحديث وضع الحساب"
 msgid "Wallet not connected"
 msgstr "المحفظة غير متصلة"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet not ready"
+msgstr "المحفظة غير جاهزة"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
 msgstr "تغيرت المحفظة أو الشبكة قبل اكتمال الاتصال. أعد فتح الإجراء للحساب الحالي."
@@ -10932,8 +10937,8 @@ msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet
 msgstr "أعادت المحفظة تجزئة معاملة، لكنها غير ظاهرة على Arbitrum بعد. تحقق من نشاط المحفظة أو Arbiscan قبل إعادة المحاولة لتجنب إرسال الإيداع مرتين."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Wallet setup failed"
-msgstr "تعذر إعداد المحفظة"
+msgid "We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in again."
+msgstr "تعذر إكمال إعداد محفظتك. تحقق من اتصالك وحاول مرة أخرى، أو اقطع الاتصال ثم سجّل الدخول مجددًا."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
@@ -11326,7 +11331,3 @@ msgstr "جارٍ معالجة معاملتك"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "تعذر التحقق من رصيدك في الخزنة. تظل قيم الحساب والسحب غير متاحة."
-
-#: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Your wallet could not be created. Check your connection and try again."
-msgstr "تعذر إنشاء محفظتك. تحقق من اتصالك وحاول مرة أخرى."

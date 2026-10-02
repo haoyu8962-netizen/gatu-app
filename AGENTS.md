@@ -39,7 +39,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Preserve the order: connect the exact owner wallet, verify/accept legal terms, establish the trading signer, classify complete account funding snapshots, then open deposit only for a definitively empty account. Ordinary email trading uses the exact active Privy embedded owner and never generates or approves a local Agent; external wallets and Agent-only sessions require a verified Agent/API wallet.
 - Legal status, embedded-owner signer readiness, Agent approval, local Agent key, builder-fee approval and funding state are separate gates. Errors or missing snapshots fail closed and are never treated as acceptance, approval or an empty account.
 - Agent registration must not approve the builder fee; that approval belongs to the first trading action that requires the configured builder code. Login, refresh and status checks must never sign.
-- Email registration creates the embedded owner silently after login (`docs/adr/0033-silent-email-wallet-creation.md`): keep Privy's `createOnLogin` off, let the root `EmailEmbeddedWalletProvider` create the wallet once for every consumer, and keep the policy dialog closed while that wallet is pending and while a Privy window is visible.
+- Email registration creates the embedded owner silently after login (`docs/adr/0033-silent-email-wallet-creation.md`): keep Privy's `createOnLogin` off and the root `EmailEmbeddedWalletProvider` the only automatic creator, with one SDK request per session. Keep the policy dialog closed while that wallet is pending and, unless an acceptance is being submitted, while a Privy window is visible. A session without a wallet must always be able to retry and to disconnect.
 - `Stay Connected` is off by default, and every Agent-registration entry point honors the same `hyperliquid.persist_trading_connection` preference. Mobile wallet approval timeouts pause while the page is hidden; a late approval commits only after revalidating owner, registration epoch, stored key and server-approved Agent address.
 
 ## Wallet connection UI contract
@@ -179,7 +179,11 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/mobile-agent-lifecycle.test.ts \
   src/lib/tests/legal-gate.test.ts \
   src/lib/tests/legal-gate-hooks.test.tsx \
+  src/lib/tests/legal-acceptance-modal.test.tsx \
+  src/lib/tests/use-email-embedded-wallet.test.tsx \
   src/lib/tests/email-embedded-wallet-provider.test.tsx \
+  src/lib/tests/email-wallet-creation-owner-contract.test.ts \
+  src/lib/tests/email-registration-sequence.test.tsx \
   src/lib/tests/privy-config.test.ts \
   src/lib/tests/privy-theme-switch-wallet-stability.test.tsx \
   src/lib/tests/client-root-theme-lifecycle.test.tsx \

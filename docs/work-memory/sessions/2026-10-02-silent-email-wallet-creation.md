@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "verified",
   "topics": ["wallet-onboarding"],
-  "summary": "用户报告邮箱注册后出现「创建钱包」提示并与协议勾选同时显示。原因：createOnLogin 让 Privy 在登录窗口里创建钱包（0.9 秒后切到 Creating your wallet，创建完再显示 2.5 秒 Welcome），协议门控一拿到地址就打开。改为 createOnLogin off，根部 EmailEmbeddedWalletProvider 用 Privy 无界面 createWallet() 为没有钱包的邮箱会话创建一次、所有使用方共享、失败不自动重试；协议门控在创建中与 10 秒激活宽限内为 checking，创建失败为 wallet_setup_failed（Retry），Privy 窗口可见时不弹协议弹窗。ADR 0033。单测、四个变异检查、类型检查与终端全量单测通过；未做真实邮箱注册验收，未发布。",
+  "summary": "用户报告邮箱注册后出现「创建钱包」提示并与协议勾选同时显示。原因：createOnLogin 让 Privy 在登录窗口里创建钱包，协议门控一拿到地址就打开。改为 createOnLogin off，根部 EmailEmbeddedWalletProvider 作为唯一自动创建方调用 Privy 的 createWallet()，同一会话只保留一个 SDK 请求，失败或超时不自动重试；协议门控在创建中与 10 秒激活宽限内为 checking，失败为 wallet_setup_failed（Retry 与断开连接），未提交的协议状态等 Privy 窗口关闭后再出现。Codex 三路对抗审查（评分 3–8.5）指出第一版的失败路径有缺口：充值弹窗会循环重试、没有钱包的邮箱会话无法登出、推荐页重试入口不可达、超时后重试会与原请求重叠、文档把 SDK 行为说得过满、新测试不在 CI 清单；均已核实并修复。ADR 0033。单测、12 个变异检查、类型检查与终端全量单测通过；未做真实邮箱注册验收，未发布。",
   "thread": null,
   "baseCommit": "04a52301",
-  "commits": [],
+  "commits": ["176c5a2a"],
   "sources": [
     { "path": "apps/terminal/src/config/privy.ts" },
     { "path": "apps/terminal/src/providers/email-embedded-wallet-provider.tsx" },
@@ -19,6 +19,10 @@
     { "path": "apps/terminal/src/components/trade/components/legal-acceptance-modal.tsx" },
     { "path": "apps/terminal/src/lib/tests/email-embedded-wallet-provider.test.tsx" },
     { "path": "apps/terminal/src/lib/tests/legal-gate-hooks.test.tsx" },
+    { "path": "apps/terminal/src/hooks/wallet/use-wallet-session.ts" },
+    { "path": "apps/terminal/src/lib/tests/email-registration-sequence.test.tsx" },
+    { "path": "apps/terminal/src/lib/tests/email-wallet-creation-owner-contract.test.ts" },
+    { "path": ".github/workflows/terminal-tests.yml" },
     { "path": "docs/adr/0033-silent-email-wallet-creation.md" },
     { "path": "docs/trading-onboarding.md" },
     { "path": "docs/email-trading-signing.md" }
@@ -91,12 +95,113 @@
   - 发布。
 - 这些测试都用桩替代 Privy，不能证明线上 Privy 窗口和 SDK 时序。最终以用户在 app.sairn.ai 重新注册一次的结果为准。
 
+## Codex 对抗审查与修复（2026-10-02）
+
+用户要求用 Codex 对提交 `176c5a2a` 做对抗审查，看有没有不规范、评分低和遗漏任务的地方。
+
+- 方式：三路只读审查，`codex exec -m gpt-6-astra -s read-only`，推理强度 medium，并行运行。只读沙箱下 Codex 不能运行 vitest，它的结论是静态推演；下面「核实」一列是我对照代码和 SDK 源码复核的结果。
+- 会话与用量：A（行为与正确性）`01a0fac3-8e4a…`，136,705 token；B（规范与文档）`01a0fac3-8e56…`，145,328 token；C（任务完整性）`01a0fac3-8dc9…`，143,180 token。
+- 三路的总体结论都是「修复后可合并」，没有 P0。
+
+评分（满分 10）：
+
+| 审查 | 维度 | 分数 |
+|---|---|---|
+| A | 正确性 | 6 |
+| A | 失败路径健壮性 | 3 |
+| A | 测试有效性 | 5 |
+| B | 代码规范 | 8.5 |
+| B | 契约遵循 | 6.5 |
+| B | 文档准确性 | 5.5 |
+| B | i18n | 8.5 |
+| B | 工作记录与提交卫生 | 7 |
+| C | 用户诉求达成度 | 6 |
+| C | 计划完成度 | 6 |
+| C | 文档与清单同步度 | 7 |
+| C | 测试覆盖度 | 5 |
+
+发现与处理（同一问题被多路报告的合并为一行）：
+
+| 来源 | 发现 | 核实 | 处理 |
+|---|---|---|---|
+| A-P1 | 充值弹窗的 effect 绕过 provider 的失败保护，创建失败后会循环重试 | 属实：Privy 的 `createWallet` 每次渲染都是新引用，effect 反复触发 | 删除充值弹窗的自动创建 effect；新增契约测试登记所有能发起创建的位置 |
+| A-P1、B-P2、C-P1 | 创建失败后弹窗只有 Retry，用户也无法登出 | 属实：没有内嵌钱包时 `resolveDisconnectOwner` 返回空，断开在登出之前就报错返回 | 没有钱包的邮箱会话直接登出；协议弹窗的三个状态页都加「断开连接」 |
+| A-P2、C-P2 | 推荐页和没有协议门控的页面上，创建失败后的重试入口点不到 | 属实：这些入口调用的是 `reconnectWallet()`，它只提示「邮箱钱包不可用」 | `reconnectWallet()` 在邮箱会话缺钱包时重试共享创建 |
+| A-P2、B-P2、C-P1 | 20 秒超时不取消 SDK 请求；重试会和原请求重叠，原请求 30 秒后会弹出 Privy 的创建界面 | 属实：Privy 只唤醒最后一个等待代理的调用 | 同一会话只保留一个 SDK 请求，重试接回原请求；超时后迟到的钱包照常采用；文案改为「钱包尚未就绪」，不断言创建失败 |
+| B-P2、C-P1 | 文档说「代理就绪就不显示界面」，漏了控制台的恢复方式配置 | 属实 | 文档补上配置前提；读取线上应用的公开配置确认当前值（见 ADR 0033 的表） |
+| B-P2 | 「协议弹窗永不与 Privy 窗口重叠」与代码里 `submitting` 的例外矛盾 | 属实 | AGENTS.md、CHANGELOG、引导文档和 ADR 的表述收窄；两个测试标题同步修改 |
+| B-P2 | 智能钱包关联的后台签名没有写进规范，「赞助充值不受影响」缺证据 | 属实，签名是本次之前就有的 SDK 行为 | 引导文档补记这个例外；结论改为「依赖仍在，待带资金验收」 |
+| B-P3 | provider 层级没有测试钉住；测试标题「without wallet UI」超出了断言；SDK 桩的函数引用是稳定的 | 属实 | 更新 `root-provider-split`；改标题；桩改为每次渲染换引用 |
+| B-P3 | ADR 缺验证命令，「通常 1–3 秒」「最多晚 10 秒」没有依据 | 属实 | ADR 重写验证一节，删掉没有实测的耗时 |
+| C-P2 | 新增的核心测试不在 CI 的显式清单里 | 属实：CI 只跑清单里的文件 | 7 个测试文件加入 `terminal-tests.yml` |
+| C-P2 | 「静默创建时序测试」只测了分离的状态机 | 属实 | 新增 `email-registration-sequence.test.tsx`，用真实的 provider、会话和门控 hook 走完整顺序 |
+| C-P2 | 上线验收只有三条概括 | 属实 | ADR 增加七项验收清单和通过标准 |
+| C-P3 | 终端 README、充值说明、钱包初始化排查、移动端提示规范没有同步 | 属实 | 四份文档已补；上线方案和上线记录各追加一条补记 |
+| B | 西语新文案的用词和称呼与同一弹窗不一致 | 属实 | 新文案用 `monedero` 和 usted 称呼 |
+
+顺带做的两处收紧：
+- `needsEmbeddedWallet` 现在要求用户没有任何以太坊内嵌钱包。以前只看能不能选出唯一地址，多钱包无法确定时会去创建，然后被 Privy 拒绝。
+- 断开连接时清理本地密钥的失败提示，从嵌套三元改成了分支语句，文案不变。
+
+保留的限制，没有改：
+- 钱包代理 30 秒内不就绪时，Privy 仍会打开自己的创建界面。
+- 跨标签页同时首次登录没有加锁，也没有实测。
+- Privy 窗口打开时协议弹窗会卸载，已勾选未提交的勾选会丢。现在的流程里没有这样的操作。
+- Privy 控制台的「登录时自动创建」开关没有动。
+- 新 Privy 应用的 Allowed origins 不含 localhost，所以真实注册只能在线上域名验收；要在本地先验，需要用户临时加一个 localhost origin。
+
+## 对第一版记录的更正
+
+- 上文「先等钱包代理就绪，最多 30 s，再刷新用户」顺序写反了：SDK 先刷新用户，再等代理。
+- 上文「只有代理没就绪时，才退回打开」不完整：控制台要求创建时设置恢复方式时也会打开。
+- 上文「所以赞助充值的链路不受影响」超出了证据：能确认的只是关联逻辑仍会触发，完整链路要带资金验收。
+- 上文「自动充值桥失败后会立即重试」只说了一处：充值弹窗的 effect 有同样的循环，第一版没有处理。
+- 第一版的四个变异只证明了各自的局部条件。充值弹窗循环、无法登出这类组合缺陷，那四个变异测不出来。
+- 第一版新增的文案「Wallet setup failed」及其说明已被替换，没有发布过。
+
+## 修复后的验证
+
+以下在同一 worktree 上运行，基线是 `176c5a2a` 加本次修复，代码与修复提交相同。
+
+- `pnpm --filter @sairn/terminal typecheck` 通过。
+- Biome 检查本次修复改动和新增的 16 个 TS/TSX 文件，通过。
+- `pnpm i18n:extract`：新文案 5 种语言都已翻译，缺译数与改动前相同（ar/es/fr/hi 43，zh 3）。第一版那两条没发布过的文案已从目录里删掉。
+- ADR 0033「验证」一节列的 11 个测试文件一起运行：11 个文件、139 个测试通过。另外 `privy-wagmi.test.ts` 新增两个测试，该文件 21 个测试通过。
+- 变异检查 12 项，每项都让对应测试失败，之后文件已恢复：
+  1. 充值弹窗恢复自动创建；
+  2. 没有钱包的邮箱会话不能登出；
+  3. 重新连接不再重试创建；
+  4. 重试时再发一个 SDK 请求；
+  5. 失败状态去掉「断开连接」；
+  6. 根部去掉 provider；
+  7. Privy 窗口状态不透传；
+  8. 已有内嵌钱包时仍然创建；
+  9. 全局弹窗不接 Retry；
+  10. 超时后迟到的钱包不被采用；
+  11. 自动充值桥恢复自动创建；
+  12. provider 失败后自动重试。
+- `node --test scripts/ci-workflows.test.mjs`：7 个测试通过。
+- 终端全量单测跑了三轮。本机同时有其他会话在跑重任务，负载很高：
+  - 第一轮在补 `email-registration-sequence` 和一处测试类型修正之前：646 个文件、8,030 个测试通过，1 个跳过，没有失败。
+  - 第二轮是最终代码，负载 28–42：4 个文件各有 1 个超时（`positions-panel-preload`、`chart-build-assets`、`chart-store`、`dashboard-chrome`），都和本次改动无关；单独重跑这 4 个文件，50 个测试全部通过。
+  - 第三轮是最终代码，`--maxWorkers=4`：646 个文件、8,032 个测试通过；`chart-build-assets` 的 TradingView 摘要校验再次在 5 秒超时，单独重跑 17 个测试通过。
+- 线上 Privy 应用的公开配置：用应用 ID 请求 `auth.privy.io/api/v1/apps/<id>`，读到 ADR 表里的五项。
+- CI 式生产构建（Node 22.15.0，`NODE_ENV=production`，`VITE_MOBILE_PAIRING_ENABLED=false`，`pnpm --filter @sairn/terminal build`）通过，用时 9 分 28 秒：
+  - 435 个客户端 chunk，没有循环静态导入；
+  - 包体预算检查通过：总量 3,193,715 字节 gzip，比基线多 7,794；交易页启动 1,562,750（比基线少 18,466）；移动运行时增量 117,765（多 7,185）；桌面运行时增量 201,387（多 9,399）；
+  - 这些差值是相对仓库记录的基线，不是相对父提交，本次改动占其中多少没有单独量。
+- 未做：
+  - 真实邮箱注册。验收清单在 ADR 0033。
+  - 浏览器里的手动检查。新 Privy 应用不允许 localhost，本地开发服务器登录不了。
+  - 推送、PR 和发布。
+- Codex 的结论是静态审查，它没有运行测试。上面的测试和变异都是我在本机运行的。
+
 ## 后续与替代关系
 
-- 推送、开 PR 到 `dev`、晋升 `main` 和发布，都要等用户同意。发布后请用户用新邮箱注册一次，确认三点：
-  - 不再出现 Privy 的创建界面和欢迎界面；
-  - 协议弹窗在登录窗口关闭后才出现；
-  - 首次充值引导照常。
-- Privy 控制台的「登录时自动创建」开关可以保留：客户端配置优先，本次未改动。
-- 另一个会话正在做 Privy SDK 升级和 Funding（`docs/privy-upgrade-and-funding-plan.md`），它原计划使用 ADR 0033，现在应改用下一个空号。升级时要保留 `createOnLogin: "off"`，并重跑 `email-embedded-wallet-provider`、`legal-gate-hooks`、`privy-config` 三个测试。
+- 推送、开 PR 到 `dev`、晋升 `main` 和发布，都要等用户同意。
+- 发布后按 ADR 0033 的验收清单做一次真实验收，至少包括全新邮箱注册、已有钱包的邮箱登录、断网后的失败与恢复。
+- 需要用户确认的一点：引导文档补记了「Privy 智能钱包关联会在后台签一条 SIWE 消息」这个既有例外。`AGENTS.md` 里「登录、刷新和状态检查绝不签名」的原句没有改。
+- Privy 控制台的「登录时自动创建」开关可以保留：客户端配置优先，本次未改动。关掉它可以避免以后有人删掉客户端配置时旧行为回来。
+- 另一个会话正在做 Privy SDK 升级和 Funding。它已确认保留 `createOnLogin: "off"`、把自己的 ADR 改为 0034，并静态核对了 3.46.0 的三项行为。本次修订新增一项要它核对：代理等待是否仍只唤醒最后一个调用。
+- 协议弹窗的 `required` 状态在 Privy 窗口打开时会丢失勾选。现在没有触发路径；以后如果加了会在这时打开 Privy 窗口的操作，要把勾选状态提到弹窗之外。
 - 发布编号：上线方案里 p25 留给旧域名清理。本修复如果先发，要按当时的序号命名，并同步更新切换方案中的引用。

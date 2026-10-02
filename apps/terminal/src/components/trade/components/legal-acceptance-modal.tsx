@@ -69,6 +69,12 @@ export function LegalAcceptanceModal({
 		void disconnectWallet();
 	}
 
+	const disconnectAction = {
+		label: <Trans>Disconnect</Trans>,
+		disabled: isDisconnecting,
+		onAction: handleDecline,
+	};
+
 	let content: ReactNode;
 	if (state === "wallet_required") {
 		content = (
@@ -80,15 +86,22 @@ export function LegalAcceptanceModal({
 				actionLabel={<Trans>Reconnect wallet</Trans>}
 				actionDisabled={isReconnecting}
 				onAction={() => void reconnectWallet()}
+				secondaryAction={disconnectAction}
 			/>
 		);
 	} else if (state === "wallet_setup_failed") {
 		content = (
 			<LegalStatusMessage
-				title={<Trans>Wallet setup failed</Trans>}
-				description={<Trans>Your wallet could not be created. Check your connection and try again.</Trans>}
+				title={<Trans>Wallet not ready</Trans>}
+				description={
+					<Trans>
+						We could not finish setting up your wallet. Check your connection and try again, or disconnect and log in
+						again.
+					</Trans>
+				}
 				actionLabel={<Trans>Retry</Trans>}
 				onAction={onRetryWalletSetup}
+				secondaryAction={disconnectAction}
 			/>
 		);
 	} else if (state === "blocked") {
@@ -114,6 +127,7 @@ export function LegalAcceptanceModal({
 				}
 				actionLabel={<Trans>Retry</Trans>}
 				onAction={handleRetry}
+				secondaryAction={disconnectAction}
 			/>
 		);
 	} else {

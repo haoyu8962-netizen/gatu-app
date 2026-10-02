@@ -4,6 +4,7 @@ import { usePrivyLoginIntent } from "@/lib/wallet/privy-login-method";
 import {
 	getPrivyEmailAddress,
 	getPrivyEmbeddedWalletAddress,
+	hasPrivyEmbeddedWallet,
 	resolvePrivyWalletIntent,
 } from "@/lib/wallet/privy-wagmi";
 
@@ -13,6 +14,15 @@ type EmbeddedWalletAddress = `0x${string}`;
 interface EmbeddedWalletCreation {
 	promise: Promise<EmbeddedWalletAddress>;
 	requestId: number;
+	session: EmailWalletSession;
+}
+
+/**
+ * The SDK call behind a creation. It outlives the waiter's timeout, and Privy resolves only the
+ * latest wallet-proxy waiter, so a session keeps one call and a retry re-attaches to it.
+ */
+interface EmbeddedWalletRequest {
+	promise: Promise<EmbeddedWalletAddress>;
 	session: EmailWalletSession;
 }
 
@@ -61,6 +71,7 @@ export function useEmailEmbeddedWalletSession() {
 	const { ready, authenticated, user } = usePrivy();
 	const { createWallet } = useCreateWallet();
 	const pendingRef = useRef<EmbeddedWalletCreation | null>(null);
+	const requestRef = useRef<EmbeddedWalletRequest | null>(null);
 	const nextRequestIdRef = useRef(0);
 	const [createdAddress, setCreatedAddress] = useState<SessionAddress | null>(null);
 	const [creationState, setCreationState] = useState<SessionCreationState | null>(null);
@@ -91,7 +102,8 @@ export function useEmailEmbeddedWalletSession() {
 	const currentCreationState = creationState?.session === session ? creationState : null;
 	const isCreatingEmbeddedWallet = currentCreationState?.isCreating ?? false;
 	const embeddedWalletError = currentCreationState?.error ?? null;
-	const needsEmbeddedWallet = ready && authenticated && shouldUseEmbeddedWallet && !embeddedWalletAddress;
+	const needsEmbeddedWallet =
+		ready && authenticated && shouldUseEmbeddedWallet && !embeddedWalletAddress && !hasPrivyEmbeddedWallet(user);
 
 	const ensureEmailEmbeddedWallet = useCallback(async (): Promise<EmbeddedWalletAddress> => {
 		if (embeddedWalletAddress) return embeddedWalletAddress;
@@ -100,23 +112,36 @@ export function useEmailEmbeddedWalletSession() {
 		}
 		if (pendingRef.current?.session === session) return pendingRef.current.promise;
 
+		function startRequest(): EmbeddedWalletRequest {
+			const promise = Promise.resolve()
+				.then(() => createWallet())
+				.then((wallet) => {
+					if (!wallet.address) {
+						throw new Error("Embedded wallet was created without an address");
+					}
+					const address = wallet.address as EmbeddedWalletAddress;
+					if (committedSessionRef.current === session) setCreatedAddress({ address, session });
+					return address;
+				});
+			const request = { promise, session };
+			function release() {
+				if (requestRef.current === request) requestRef.current = null;
+			}
+			requestRef.current = request;
+			promise.then(release, release);
+			return request;
+		}
+
 		const requestId = nextRequestIdRef.current + 1;
 		nextRequestIdRef.current = requestId;
 		setCreationState({ error: null, isCreating: true, session });
 
-		const pending = withTimeout(
-			Promise.resolve().then(() => createWallet()),
-			EMBEDDED_WALLET_CREATE_TIMEOUT_MS,
-		)
-			.then((wallet) => {
+		const request = requestRef.current?.session === session ? requestRef.current : startRequest();
+		const pending = withTimeout(request.promise, EMBEDDED_WALLET_CREATE_TIMEOUT_MS)
+			.then((address) => {
 				if (committedSessionRef.current !== session || pendingRef.current?.requestId !== requestId) {
 					throw new Error("Email wallet session changed during wallet creation");
 				}
-				if (!wallet.address) {
-					throw new Error("Embedded wallet was created without an address");
-				}
-				const address = wallet.address as EmbeddedWalletAddress;
-				setCreatedAddress({ address, session });
 				return address;
 			})
 			.catch((error) => {
