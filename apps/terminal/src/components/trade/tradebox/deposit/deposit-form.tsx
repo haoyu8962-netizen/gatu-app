@@ -4,6 +4,7 @@ import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
+import { useNumberFormat } from "@/lib/format";
 import type { SponsoredCctpReadiness } from "@/lib/hyperliquid/use-deposit";
 import { AmountInput } from "./amount-input";
 import { FundingAddressCard } from "./funding-address-card";
@@ -47,7 +48,7 @@ interface Props {
 export function DepositForm({
 	amount,
 	onAmountChange,
-	balance,
+	balance: walletBalance,
 	maxAmount,
 	maxDepositRaw,
 	balanceStatus,
@@ -66,7 +67,7 @@ export function DepositForm({
 	sponsoredCctpReadiness,
 	depositUnavailableReason = null,
 	requiresExplicitFundingDeposit,
-	cctpFee,
+	cctpFee: cctpFeeAmount,
 	cctpFeeLoading,
 	cctpFeeError,
 	pendingCctpRecovery,
@@ -77,7 +78,10 @@ export function DepositForm({
 	onRetryFundingAddress,
 	onDone,
 }: Props) {
-	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
+	const { formatDecimalString } = useNumberFormat();
+	const balance = formatDecimalString(walletBalance);
+	const cctpFee = cctpFeeAmount === null ? null : formatDecimalString(cctpFeeAmount);
+	const minimumDeposit = `${formatDecimalString(formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS))} USDC`;
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
 	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
 	const explicitFundingDepositReady =
@@ -363,7 +367,7 @@ export function DepositForm({
 							</div>
 						) : null}
 
-						<UnitDepositInfo cctpFee={cctpFee} cctpFeeLoading={cctpFeeLoading} cctpFeeError={cctpFeeError} />
+						<UnitDepositInfo cctpFee={cctpFeeAmount} cctpFeeLoading={cctpFeeLoading} cctpFeeError={cctpFeeError} />
 					</div>
 				) : showFundingDestinationPlaceholders ? (
 					<div
@@ -485,7 +489,7 @@ export function DepositForm({
 			<AmountInput
 				amount={amount}
 				onAmountChange={onAmountChange}
-				balance={balance}
+				balance={walletBalance}
 				maxAmount={maxAmount}
 				balanceStatus={balanceStatus}
 				validation={validation}

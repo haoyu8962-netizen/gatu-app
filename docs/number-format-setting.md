@@ -18,6 +18,18 @@
    - 渲染期调用的展示 helper 接收 `NumberFormatters` 参数（如 `buildOrderConfirmationRows(draft, numberFormat, translate)`、`formatAccountLedgerAmount(row, numberFormat)`），不导入模块级函数。单元测试等渲染之外的调用方传 `getNumberFormatters()`。
    - 在别处创建、由组件渲染的回调，由渲染它的组件把格式化函数传进去（`EarnOutcomeToastContent` 的 `render(translate, numberFormat)`）。用到格式化函数的 effect 把它列入依赖（标签页标题）。
    - `number-format-reactivity-contract` 用源码级规则检查：组件与 Hook 里不引用模块级格式化函数、经它们格式化的模块级 helper（函数、类、变量与解构默认值）或读取函数（跟随具名、默认、命名空间导入与各种再导出，穿透括号与类型断言）；`useNumberFormat()` 的结果必须被用到（按绑定判断，只出现在 `void`、单独的表达式语句或逗号左侧不算）；模块顶层不在导入时调用格式化函数，也不把它交给一次调用（只保存函数引用不算，但引用它的组件仍会被拦下）。组件与 Hook 的识别与语言契约共用 `src/lib/tests/harness/react-source.ts`，覆盖 React Compiler 1.0.0 infer 模式的推断规则（名称、`memo`/`forwardRef` 回调、`"use memo"` 指令），另含匿名默认导出与路由组件选项。在别处创建、经 props 或元素传入的闭包，类组件、其他包装函数，TypeScript `namespace` 声明、组件内部的 `useNumberFormat` 别名，动态 `import()`、`require()`、整体传递或经 `export * as` 再导出的命名空间、按非字面量键访问、被重新赋值的变量，以及导入时由其他函数调用的回调，契约看不到（[ADR 0036](adr/0036-render-time-number-formatters.md)「后果与边界」）。
+10. **精确小数串只经 `formatDecimalString` 换分隔符**（[ADR 0037](adr/0037-exact-decimal-display-separators.md)）。
+   - 已经按调用方规则取整或截断好的纯小数串用 `useNumberFormat()` 返回的 `formatDecimalString(value, { trimTrailingZeros? })` 显示，包括 Big.js 的 `toFixed` 结果、协议价格与数量、viem `formatUnits` 的结果。它按设置插入分组符、替换小数点，数字一位不改，所以超过双精度的值与调用方的舍入方向（如按 `Big.roundDown` 截断的可用余额）都保留；整数部分多余的前导 0 会去掉，免得 `0005` 分组后读成 `0,005`；不是纯小数串时返回占位符。用户输入的金额（金库确认、充值进行中）先经 `toPlainDecimal` 规范成提交时的写法再显示。本来就是 JS 数字的（滑点及其范围、规模偏斜、耗时）用 `formatNumber`。
+   - 不把 `toFixed`、`toPrecision` 的结果直接拼进文本，也不手写分组正则：它们固定输出 `.` 小数点，没有分组或只有 `,` 分组。展示 helper 接收 `NumberFormatters`（规则 9）；协议串在显示处格式化，原始值继续用于输入框、计算与提交，输入框的值仍是 `.` 协议串（规则 6）。Lingui 消息里的占位名保持原变量名、只换成格式化后的值，消息 ID 与译文不变。
+   - 使用方：
+     - 质押、金库、跨链（到账、发送、钱包余额）；
+     - 手机行情条与手机下单页的涨跌、下单与规模摘要的费率、TP/SL 风险收益比；
+     - 下单通知与子订单的数量、划转与发送的可用余额、下单面板持仓数量、提现最低额；
+     - 订单簿分组标签、TWAP 触发价提示与 Mid 按钮读屏名、平仓滑杆读屏文字；
+     - 资金恢复通知与质押操作参考的金额、充值表单的余额与手续费、充值进行中的金额、金库确认页的金额；
+     - 设置弹窗的滑点范围。
+   - 原子数量（wei）、原子小数位、金库操作参考串这类技术标识照原样显示，便于逐位核对与复制。
+   - `decimal-display-contract` 用源码级规则检查：每个 `.toFixed(`、`.toPrecision(` 要么写在 `formatDecimalString(...)` 第一个参数的表达式里，要么所在文件已登记用途与精确次数，新增、次数变化或登记过期都失败；`lib/format.ts` 以外不得手写千分位正则。已登记 helper 返回的协议串在别处显示时契约跟不到，由登记的用途写明显示处如何格式化。
 
 ## 选项与存储
 
@@ -42,21 +54,7 @@
 
 - 输入框显示不本地化（规划 A-2b 未采用）：`,` 被接受但显示为 `.`；德语/法语键盘的小数键可用，但输入框与表格的写法不同。
 - 图表库内译文的定点修补机制（规划 B）等 zh/ar 审计结果。
-- 不经 `lib/format.ts` 的数字显示不跟随设置，固定输出 `,` 分组与 `.` 小数点（或 `toFixed` 的 `.`），或原样显示协议字符串：
-  - 质押页金额与比例（`components/staking/domain/staking.ts` 的 `formatStakingAmount`、`formatStakingRatio`）；
-  - 金库页的金额、紧凑金额与比例（`components/vaults/domain/vaults.ts` 的 `formatVaultUsd`、`formatVaultSignedUsd`、`formatVaultCompactUsd`、`formatVaultRatio`），包括资产总值（如 `$1.23M`）、APR 与 Leader commission；
-  - 跨链各屏的金额（`lib/bridge/format.ts`）：资产选择页余额（`formatTokenBalance`）、确认页的发送与到账数量（`formatSendAmount`、`formatTokenAmount`）、成功页到账金额（`formatTokenAmount`）；
-  - 手机行情条的 24h 涨跌额与涨跌幅（`mobile-market-bar.tsx` 的 `formatSignedFixed`、`formatSignedPercent`）；
-  - 手机下单页的涨跌幅（`mobile-trade-view.tsx`）；
-  - 下单费率（`domain/trade/order-fee-quote.ts` 的 `formatOrderFeeRatePercent`）。它与换算后的金额同在一串里，`1.234,56` 格式下显示为 `0.0450% ($1,23)`；
-  - TP/SL 风险收益比（`lib/trade/tpsl.ts`）；
-  - 订单簿价格分组标签（`lib/trade/orderbook.ts` 的 `formatTickSize`，如 `0.01`）。它同时用作分组选项的显示，改造时要保持选项值与订阅参数不变；
-  - 市价单最大滑点：下单摘要（`order-summary.tsx`、`mobile-trade-summary-view.tsx`）直接显示 `slippagePercent`，全局设置里的范围说明（`global-settings-modal.tsx`）直接显示 `0.1% – 5%` 两个常量；
-  - 图表仓位线里的仓位数量（`lib/chart/tradingview-overlays.ts`，原样显示仓位大小；同一行的盈亏与 ROE 已跟随设置）；
-  - 成交通知里的成交数量与部分成交进度（`lib/trade/order-notification-copy.ts`，原样显示 `filledSize` 与 `requestedSize`；成交均价已跟随设置）；
-  - 平仓滑块的读屏文本（`position-close-sizing-controls.tsx` 的 `aria-valuetext`，百分比来自 `domain/trade/position-market-close.ts` 的 `formatPositionMarketClosePercent`）。
-
-  前三类为精确十进制显示而手写格式，改造需要决定精度规则。仓库里其余 `toFixed` 多数用于协议值，没有逐处分类。
+- 图表仓位线里的仓位数量不跟随设置：`lib/chart/tradingview-overlays.ts` 用 `size.abs().toString()` 原样显示仓位大小，没有分组、固定 `.` 小数点；同一行的盈亏与 ROE 已跟随设置。其余手写格式的数字已按规则 10 改经 `formatDecimalString`（[ADR 0037](adr/0037-exact-decimal-display-separators.md)）。
 - 资金类提示（划转、发送、提现、金库）在弹出时把金额格式化成字符串，已显示的提示不随设置变化，与这些提示在弹出时按当前语言生成文案一致。
 
 ## 回归入口
@@ -83,7 +81,30 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/use-tradingview-overlay-lines.test.tsx \
   src/lib/tests/earn-view.test.tsx \
   src/lib/tests/orderbook-row-tooltip.test.tsx \
-  src/lib/tests/trade-row.test.tsx
+  src/lib/tests/trade-row.test.tsx \
+  src/lib/tests/decimal-display-contract.test.ts \
+  src/lib/tests/order-summary.test.tsx \
+  src/lib/tests/mobile-market-bar.test.tsx \
+  src/lib/tests/vaults-view.test.tsx \
+  src/lib/tests/vault-action-modal.test.tsx \
+  src/lib/tests/bridge-amount-number-format.test.tsx \
+  src/lib/tests/order-toast-number-format.test.tsx \
+  src/lib/tests/funds-action-balances.test.tsx \
+  src/lib/tests/funds-action-recovery-host.test.tsx \
+  src/lib/tests/deposit-amount-input.test.tsx \
+  src/lib/tests/deposit-form-routing.test.tsx \
+  src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx \
+  src/lib/tests/orderbook-panel-safety.test.tsx \
+  src/lib/tests/mobile-orderbook-mode.test.tsx \
+  src/lib/tests/trade-form-twap.test.tsx \
+  src/lib/tests/trade-form-scale-mid.test.tsx \
+  src/lib/tests/mobile-trade-price-field.test.tsx \
+  src/lib/tests/trade-form-fields-order-entry-data.test.tsx \
+  src/lib/tests/order-confirmation-rows.test.ts \
+  src/components/staking/__tests__/staking-view.test.tsx \
+  src/components/staking/__tests__/staking-action-modal.test.tsx \
+  tests/position-close-slider-effective-aria.test.tsx \
+  tests/mobile-trade-size-validation-a11y.test.tsx
 ```
 
 手动核对（真实浏览器）：把数字格式切到 `1.234,56` 与 `1 234,56`，图表价格轴、图例紧凑值、十字线标签与订单簿、标题分隔符一致；连续切语言与 Reset 后图表最终值正确且重建期间无闪白；阿拉伯语界面下最近成交时间与价格都是拉丁数字。

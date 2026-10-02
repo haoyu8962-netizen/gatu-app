@@ -130,14 +130,14 @@ export function OrderToast({ order, onDismiss }: Props) {
 									<p>
 										{t`Filled`}:{" "}
 										<bdi>
-											{child.filledSize}
-											{child.size && ` / ${child.size}`}
+											{numberFormat.formatDecimalString(child.filledSize)}
+											{child.size && ` / ${numberFormat.formatDecimalString(child.size)}`}
 										</bdi>
 									</p>
 								)}
 								{child.filledSize === undefined && child.size && (
 									<p>
-										{t`Size`}: <bdi>{child.size}</bdi>
+										{t`Size`}: <bdi>{numberFormat.formatDecimalString(child.size)}</bdi>
 									</p>
 								)}
 								{child.error && (

@@ -10,6 +10,7 @@ import {
 	LEGACY_MINIMUM_WITHDRAWAL_USDC,
 	LEGACY_WITHDRAWAL_FEE_USDC,
 } from "@/config/cctp";
+import type { NumberFormatters } from "@/lib/format";
 
 export type WithdrawalRoute = "arbitrum-cctp" | "arbitrum-legacy";
 export type WithdrawalSourceDex = "" | "spot";
@@ -95,6 +96,7 @@ export function getWithdrawalSourceDex(usesSpotStateForPerps: boolean): Withdraw
 export function validateWithdrawal(
 	{ amount, available, route, routeFee, activationFee }: WithdrawalValidationInput,
 	translate: (message: MessageDescriptor) => string,
+	numberFormat: NumberFormatters,
 ): WithdrawalValidation {
 	if (!amount || amount === "0") return { valid: false, error: null };
 	const withdrawalAmount = toUnsignedBig(amount);
@@ -103,7 +105,7 @@ export function validateWithdrawal(
 	const minimum = getMinimumWithdrawal(route, routeFee);
 	if (minimum === null) return { valid: false, error: null };
 	if (withdrawalAmount.lt(minimum)) {
-		return { valid: false, error: translate(msg`Minimum withdrawal is $${minimum}`) };
+		return { valid: false, error: translateMinimumWithdrawal(minimum, translate, numberFormat) };
 	}
 
 	const availableAmount = toUnsignedBig(available);
@@ -115,6 +117,15 @@ export function validateWithdrawal(
 	}
 
 	return { valid: true, error: null };
+}
+
+function translateMinimumWithdrawal(
+	minimumAmount: string,
+	translate: (message: MessageDescriptor) => string,
+	numberFormat: NumberFormatters,
+): string {
+	const minimum = numberFormat.formatDecimalString(minimumAmount);
+	return translate(msg`Minimum withdrawal is $${minimum}`);
 }
 
 export function buildCctpWithdrawalParameters({

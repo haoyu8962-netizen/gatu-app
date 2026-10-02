@@ -90,7 +90,7 @@ interface BodyProps {
 
 function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }: BodyProps) {
 	const { t } = useLingui();
-	const { formatNumber } = useNumberFormat();
+	const { formatDecimalString, formatNumber } = useNumberFormat();
 	const submissionSequenceRef = useRef(0);
 	const submissionIdentityRef = useRef<object | null>(null);
 	const submissionRef = useRef<SendSubmission | null>(null);
@@ -499,7 +499,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 								{t`Available`}:{" "}
 								<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 									{accountModeReady && accountDataReady
-										? `${floorToString(availableBalance, decimals)} ${selectedToken}`
+										? `${formatDecimalString(floorToString(availableBalance, decimals))} ${selectedToken}`
 										: "—"}
 								</span>
 							</>

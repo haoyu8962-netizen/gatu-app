@@ -38,6 +38,7 @@ import {
 const SOURCE_ROOT = resolve(__dirname, "../..");
 const FORMAT_MODULE = "lib/format.ts";
 const GLOBAL_NUMBER_FORMAT_READERS = new Set([
+	"formatDecimalString",
 	"formatLiquidationPrice",
 	"formatNumber",
 	"formatPercent",

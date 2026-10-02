@@ -1,9 +1,11 @@
 import { i18n } from "@lingui/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import {
 	bpsToPercentage,
 	formatDateTime,
 	formatDateTimeShort,
+	formatDecimalString,
 	formatLiquidationPrice,
 	formatNumber,
 	formatPercent,
@@ -41,6 +43,7 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 const NUMBER_FORMATTER_NAMES: (keyof NumberFormatters)[] = [
+	"formatDecimalString",
 	"formatLiquidationPrice",
 	"formatNumber",
 	"formatPercent",
@@ -52,6 +55,7 @@ const NUMBER_FORMATTER_NAMES: (keyof NumberFormatters)[] = [
 ];
 
 const SAMPLE_CALLS: { [Name in keyof NumberFormatters]: Parameters<NumberFormatters[Name]> } = {
+	formatDecimalString: ["1234.56"],
 	formatLiquidationPrice: ["1234.56", 2],
 	formatNumber: [1234.56, 2],
 	formatPercent: [12.5, 2],
@@ -144,6 +148,39 @@ describe("format", () => {
 		expect(formatUSD(1234.56, { compact: false })).toBe(usd);
 		expect(formatPercent(0.125, 2)).toBe(percent);
 		expect(formatUSD(12500, { decimals: 1 })).toBe(compactUsd);
+	});
+
+	it.each([
+		["en-US", "9,007,199,254,740,993.01", "-1,234.50", "+2,345", "12,345.6789", "1,234", "0.0450"],
+		["de-DE", "9.007.199.254.740.993,01", "-1.234,50", "+2.345", "12.345,6789", "1.234", "0,0450"],
+		["fr-FR", "9 007 199 254 740 993,01", "-1 234,50", "+2 345", "12 345,6789", "1 234", "0,0450"],
+	] as const)(
+		"writes exact decimal strings with the %s separators and unchanged digits",
+		(locale, beyondDouble, negative, signed, trimmed, whole, rate) => {
+			formatSettings.numberFormatLocale = locale;
+
+			expect(formatDecimalString("9007199254740993.01")).toBe(beyondDouble);
+			expect(formatDecimalString("-1234.50")).toBe(negative);
+			expect(formatDecimalString("+2345")).toBe(signed);
+			expect(formatDecimalString("12345.67890000", { trimTrailingZeros: true })).toBe(trimmed);
+			expect(formatDecimalString("1234.000", { trimTrailingZeros: true })).toBe(whole);
+			expect(formatDecimalString("0.0450")).toBe(rate);
+			expect(formatDecimalString("123")).toBe("123");
+		},
+	);
+
+	it("drops redundant leading zeros so grouping cannot misstate a zero-padded value", () => {
+		formatSettings.numberFormatLocale = "en-US";
+		expect(formatDecimalString("0005")).toBe("5");
+		expect(formatDecimalString("-0001234.50")).toBe("-1,234.50");
+		expect(formatDecimalString("000.5")).toBe("0.5");
+		expect(formatDecimalString("0000")).toBe("0");
+	});
+
+	it("refuses anything that is not a plain decimal string instead of guessing its separators", () => {
+		for (const value of ["1e-7", "1.2346e+5", "<0.0001", "1,234.5", "1.", ".5", "", " 1", "NaN", null, undefined]) {
+			expect(formatDecimalString(value)).toBe(FALLBACK_VALUE_PLACEHOLDER);
+		}
 	});
 
 	it.each([

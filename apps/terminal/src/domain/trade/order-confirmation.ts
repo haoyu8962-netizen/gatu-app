@@ -1,7 +1,7 @@
 import { i18n, type MessageDescriptor } from "@lingui/core";
 import { msg, t } from "@lingui/core/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { type LimitTif, ORDER_TYPE_MESSAGES, type OrderType } from "@/config/trade";
+import { type LimitTif, ORDER_TYPE_MESSAGES, type OrderType, SCALE_SKEW_MAX_DECIMALS } from "@/config/trade";
 import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { formatDuration, type NumberFormatters } from "@/lib/format";
 import type { MarginMode } from "@/lib/trade/margin-mode";
@@ -170,8 +170,12 @@ function getScalePriceRows(draft: OrderConfirmationDraft, numberFormat: NumberFo
 			value: formatSubmittedPrice(draft, draft.scaleStartPrice, numberFormat),
 		},
 		{ key: "scaleEnd", label: t`End Price`, value: formatSubmittedPrice(draft, draft.scaleEndPrice, numberFormat) },
-		{ key: "scaleLevels", label: t`Number of Orders`, value: formatCount(draft.scaleLevels) },
-		{ key: "scaleSkew", label: t`Size Skew`, value: formatCount(draft.scaleSkew) },
+		{ key: "scaleLevels", label: t`Number of Orders`, value: formatCount(draft.scaleLevels, numberFormat) },
+		{
+			key: "scaleSkew",
+			label: t`Size Skew`,
+			value: formatCount(draft.scaleSkew, numberFormat, SCALE_SKEW_MAX_DECIMALS),
+		},
 	];
 }
 
@@ -227,9 +231,9 @@ function getRuntimeValue(minutes: number | null): string {
 	return formatDuration(Math.round(minutes));
 }
 
-function formatCount(value: number | null): string {
+function formatCount(value: number | null, numberFormat: NumberFormatters, maximumFractionDigits = 0): string {
 	if (!isPositive(value)) return FALLBACK_VALUE_PLACEHOLDER;
-	return String(value);
+	return numberFormat.formatNumber(value, { maximumFractionDigits });
 }
 
 function formatSubmittedPrice(

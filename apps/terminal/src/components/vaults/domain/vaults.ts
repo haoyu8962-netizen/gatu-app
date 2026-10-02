@@ -1,4 +1,5 @@
 import Big from "big.js";
+import type { NumberFormatters } from "@/lib/format";
 
 export const VAULT_PERIODS = ["day", "week", "month", "allTime"] as const;
 export type VaultPeriod = (typeof VAULT_PERIODS)[number];
@@ -548,19 +549,23 @@ export function getLatestVaultHistoryValue(
 	return history.at(-1)?.value ?? null;
 }
 
-export function formatVaultUsd(value: string | null | undefined, decimals = 2): string {
+export function formatVaultUsd(value: string | null | undefined, numberFormat: NumberFormatters, decimals = 2): string {
 	const parsed = toBig(value, true);
 	if (!parsed) return "—";
-	return `${parsed.lt(0) ? "-" : ""}$${groupDecimal(parsed.abs().toFixed(decimals))}`;
+	return `${parsed.lt(0) ? "-" : ""}$${numberFormat.formatDecimalString(parsed.abs().toFixed(decimals))}`;
 }
 
-export function formatVaultSignedUsd(value: string | null | undefined, decimals = 2): string {
+export function formatVaultSignedUsd(
+	value: string | null | undefined,
+	numberFormat: NumberFormatters,
+	decimals = 2,
+): string {
 	const parsed = toBig(value, true);
 	if (!parsed) return "—";
-	return `${parsed.gt(0) ? "+" : parsed.lt(0) ? "-" : ""}$${groupDecimal(parsed.abs().toFixed(decimals))}`;
+	return `${parsed.gt(0) ? "+" : parsed.lt(0) ? "-" : ""}$${numberFormat.formatDecimalString(parsed.abs().toFixed(decimals))}`;
 }
 
-export function formatVaultCompactUsd(value: string | null | undefined): string {
+export function formatVaultCompactUsd(value: string | null | undefined, numberFormat: NumberFormatters): string {
 	const parsed = toBig(value, true);
 	if (!parsed) return "—";
 	const absolute = parsed.abs();
@@ -570,18 +575,24 @@ export function formatVaultCompactUsd(value: string | null | undefined): string 
 		{ threshold: Big("1000"), divisor: Big("1000"), suffix: "K" },
 	] as const;
 	const unit = units.find(({ threshold }) => absolute.gte(threshold));
-	if (!unit) return formatVaultUsd(parsed.toString(), 2);
+	if (!unit) return formatVaultUsd(parsed.toString(), numberFormat, 2);
 	const scaled = absolute.div(unit.divisor);
 	const decimals = scaled.gte(100) ? 0 : scaled.gte(10) ? 1 : 2;
-	return `${parsed.lt(0) ? "-" : ""}$${trimDecimal(scaled.toFixed(decimals))}${unit.suffix}`;
+	const amount = numberFormat.formatDecimalString(scaled.toFixed(decimals), { trimTrailingZeros: true });
+	return `${parsed.lt(0) ? "-" : ""}$${amount}${unit.suffix}`;
 }
 
-export function formatVaultRatio(value: string | null | undefined, decimals = 2, signed = false): string {
+export function formatVaultRatio(
+	value: string | null | undefined,
+	numberFormat: NumberFormatters,
+	decimals = 2,
+	signed = false,
+): string {
 	const parsed = toBig(value, true);
 	if (!parsed) return "—";
 	const percent = parsed.times(100);
 	const prefix = signed && percent.gt(0) ? "+" : "";
-	return `${prefix}${groupDecimal(percent.toFixed(decimals))}%`;
+	return `${prefix}${numberFormat.formatDecimalString(percent.toFixed(decimals))}%`;
 }
 
 export function getVaultValueTone(value: string | null | undefined): "positive" | "negative" | "neutral" {
@@ -693,12 +704,6 @@ function toBig(value: string | null | undefined, signed: boolean): Big | null {
 	} catch {
 		return null;
 	}
-}
-
-function groupDecimal(value: string): string {
-	const [integer, fraction] = value.split(".");
-	const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-	return fraction === undefined ? grouped : `${grouped}.${fraction}`;
 }
 
 function trimDecimal(value: string): string {

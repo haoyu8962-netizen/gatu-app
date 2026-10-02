@@ -5,6 +5,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
 import { formatTwapPriceInput, getTwapTriggerDirection } from "@/domain/trade/twap-details";
 import { cn } from "@/lib/cn";
+import { useNumberFormat } from "@/lib/format";
 import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
 import type { Side } from "@/lib/trade/types";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
@@ -64,6 +65,7 @@ export function TradeFormTwap({
 	reduceOnly,
 }: Props) {
 	const { t } = useLingui();
+	const { formatDecimalString } = useNumberFormat();
 	const triggerFieldId = useId();
 	const stopFieldId = useId();
 	const advancedFieldsId = useId();
@@ -80,7 +82,7 @@ export function TradeFormTwap({
 	const stopPriceLabel = getTwapStopPriceLabel(side, { buy: t`Max Price`, sell: t`Min Price` });
 	const triggerPx = formatTwapPriceInput(twapTriggerPrice, { assetId, szDecimals });
 	const triggerDirection = getTwapTriggerDirection(triggerPx, markPx);
-	const triggerPrice = triggerPx ?? "";
+	const triggerPrice = triggerPx ? formatDecimalString(triggerPx) : "";
 	const aboveTriggerHint = t`Activates when mark ≥ ${triggerPrice}`;
 	const belowTriggerHint = t`Activates when mark ≤ ${triggerPrice}`;
 	const triggerHint =

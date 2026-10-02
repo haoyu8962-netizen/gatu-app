@@ -96,7 +96,7 @@ export function TradeFormFields({
 	onSizeInteractionChange,
 	onSwapClick,
 }: Props) {
-	const { formatToken } = useNumberFormat();
+	const { formatDecimalString, formatToken } = useNumberFormat();
 	const { t } = useLingui();
 	const sizeFieldId = useId();
 	const sizeErrorId = useId();
@@ -261,7 +261,7 @@ export function TradeFormFields({
 					positionValue={
 						<span className={cn("whitespace-nowrap font-semibold tabular-nums", getValueColorClass(positionSize))}>
 							{positionSize > 0 ? "+" : ""}
-							{formatDecimalFloor(positionSize, szDecimals)} {baseToken}
+							{formatDecimalString(formatDecimalFloor(positionSize, szDecimals))} {baseToken}
 						</span>
 					}
 				/>

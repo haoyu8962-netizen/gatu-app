@@ -24,6 +24,7 @@ const testState = vi.hoisted(() => ({
 	modalProps: null as Record<string, unknown> | null,
 	isMobile: false,
 	marketOrderSlippagePercent: 0.5,
+	formatLocale: "en-US",
 	setMarketOrderSlippagePercent: vi.fn((value: number) => {
 		testState.marketOrderSlippagePercent = value;
 	}),
@@ -106,6 +107,7 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
+	getResolvedFormatLocale: () => testState.formatLocale,
 	useGlobalSettings: () => ({ showOrderbookInQuote: false }),
 	useGlobalSettingsActions: () => ({
 		setMarketOrderSlippagePercent: testState.setMarketOrderSlippagePercent,
@@ -121,6 +123,7 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 }));
 
 import { GlobalSettingsModal } from "@/components/trade/components/global-settings-modal";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 describe("GlobalSettingsModal", () => {
 	let container: HTMLDivElement;
@@ -135,6 +138,7 @@ describe("GlobalSettingsModal", () => {
 		testState.modalProps = null;
 		testState.isMobile = false;
 		testState.marketOrderSlippagePercent = 0.5;
+		testState.formatLocale = "en-US";
 		testState.setMarketOrderSlippagePercent.mockClear();
 		testState.setShowOrderbookInQuote.mockClear();
 		testState.animateOrderbook = true;
@@ -296,6 +300,13 @@ describe("GlobalSettingsModal", () => {
 		act(() => (toggle?.onCheckedChange as ((next: boolean) => void) | undefined)?.(true));
 
 		expect(testState.setSkipOrderConfirmation).toHaveBeenCalledWith(false);
+	});
+
+	it("writes the slippage range with the number-format decimal sign", () => {
+		const rangeId = container.querySelector("input")?.getAttribute("aria-describedby");
+		testState.formatLocale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(document.getElementById(rangeId ?? "")?.textContent).toBe("0,1% – 5%");
 	});
 
 	it("names the slippage input and every settings toggle", () => {

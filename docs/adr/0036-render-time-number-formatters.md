@@ -59,7 +59,7 @@
   - 动态 `import()`、`require()`（包括 `import x = require()`）取得的格式化函数，整体传递的命名空间对象，经 `export * as` 再导出的命名空间，按非字面量键访问的命名空间成员（`format[name]`），以及被重新赋值的变量；
   - 模块顶层由其他函数在导入时调用的回调，例如立即执行的函数，或传给模块顶层调用的箭头函数（`[0, 1].map((value) => formatUSD(value))`）。
 - 资金类提示（划转、发送、提现、金库）在弹出时把金额格式化成字符串，已显示的提示不随设置变化。这与这些提示在弹出时按当前语言生成文案的既有约定一致。
-- 没有经 `lib/format.ts` 的数字显示不受本决策约束，也不跟随设置，固定输出 `,` 分组与 `.` 小数点（或 `toFixed` 的 `.`），或原样显示协议字符串。2026-10-02 的审查与排查确认了这些：
+- 没有经 `lib/format.ts` 的数字显示不受本决策约束，也不跟随设置，固定输出 `,` 分组与 `.` 小数点（或 `toFixed` 的 `.`），或原样显示协议字符串。2026-10-02 的审查与排查确认了这些（2026-10-02 后续：除图表仓位线的仓位数量外，这些显示与逐处分类后发现的同类显示已由 [ADR 0037](0037-exact-decimal-display-separators.md) 改为经 `formatDecimalString` 跟随设置）：
   - 质押金额与比例（`formatStakingAmount`、`formatStakingRatio`）；
   - 金库页的金额、紧凑金额与比例（`formatVaultUsd`、`formatVaultSignedUsd`、`formatVaultCompactUsd`、`formatVaultRatio`），包括资产总值、APR 与 Leader commission；
   - 跨链各屏金额（`lib/bridge/format.ts` 的 `formatTokenBalance`、`formatSendAmount`、`formatTokenAmount`）；

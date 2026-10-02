@@ -874,7 +874,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						{typeof change24h === "number" && (
 							<div className={cn("truncate whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
 								{change24h >= 0 ? "+" : ""}
-								{change24h.toFixed(2)}%
+								{numberFormat.formatDecimalString(change24h.toFixed(2))}%
 							</div>
 						)}
 					</div>
@@ -1102,7 +1102,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 										max: t(TRADE_PANEL_LABELS.max),
 									}}
 									value={estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
-									slippagePercent={slippagePercent}
+									slippagePercent={numberFormat.formatNumber(slippagePercent)}
 									onClick={openSettingsDialog}
 									embedded={embedded}
 								/>

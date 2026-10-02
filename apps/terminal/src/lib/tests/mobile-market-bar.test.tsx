@@ -9,9 +9,11 @@ import { MobileMarketBar } from "@/components/trade/mobile/mobile-market-bar";
 import { MobileMarketBarProvider } from "@/components/trade/mobile/mobile-market-bar-provider";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { SpotAssetSocials } from "@/domain/market/spot-asset-info";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 const BASE_TOKEN_ID = "0x11111111111111111111111111111111";
 const mocks = vi.hoisted(() => ({
+	formatLocale: "en-US",
 	copy: vi.fn(),
 	copiedValue: null as string | null,
 	midPx: undefined as string | undefined,
@@ -40,6 +42,11 @@ const mocks = vi.hoisted(() => ({
 		],
 	},
 	socials: null as SpotAssetSocials | null,
+}));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => mocks.formatLocale,
 }));
 
 vi.mock("@/components/trade/chart/token-selector", () => ({
@@ -145,6 +152,7 @@ describe("MobileMarketBar", () => {
 
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+		mocks.formatLocale = "en-US";
 		mocks.copy.mockReset();
 		mocks.copiedValue = null;
 		mocks.midPx = undefined;
@@ -430,5 +438,28 @@ describe("MobileMarketBar", () => {
 		price = container.querySelector<HTMLElement>('[data-boneyard="market-price"] span');
 		expect(price?.title).toBe("72.138");
 		expect(price?.dataset.direction).toBe("up");
+	});
+
+	it("writes the 24h change amount and percent with the number-format separators", () => {
+		Object.assign(mocks.selectedMarket, { markPx: "12345", prevDayPx: "10000", dayNtlVlm: "0" });
+
+		renderBar();
+		const change = () => container.querySelector<HTMLElement>("[title$='%']");
+		const section = change();
+		expect(change()?.textContent).toBe("+2,345 / +23.45%");
+		expect(change()?.title).toBe("+2,345 / +23.45%");
+
+		mocks.formatLocale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(change()).toBe(section);
+		expect(change()?.textContent).toBe("+2.345 / +23,45%");
+
+		Object.assign(mocks.selectedMarket, { markPx: "8765.4", prevDayPx: "10000" });
+		renderBar();
+		expect(change()?.textContent).toBe("-1.234,6 / -12,35%");
+
+		mocks.formatLocale = "fr-FR";
+		act(() => notifyNumberFormatChange());
+		expect(change()?.textContent).toBe("-1 234,6 / -12,35%");
 	});
 });

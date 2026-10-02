@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { SCALE_SKEW_MAX_DECIMALS } from "@/config/trade";
 import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { cn } from "@/lib/cn";
 import { useNumberFormat } from "@/lib/format";
@@ -32,7 +33,7 @@ export function ScaleOrderSummary({
 	marketKind = "perp",
 	compact,
 }: Props) {
-	const { formatPrice, formatUSD } = useNumberFormat();
+	const { formatNumber, formatPrice, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const isLeveraged = marketKind !== "spot";
 
@@ -66,7 +67,7 @@ export function ScaleOrderSummary({
 				<>
 					<SummaryRow compact={compact} label={t`Number of Orders`}>
 						<span className={cn("whitespace-nowrap", scaleLevels > 0 ? "" : "font-normal text-trading-panel-muted")}>
-							{scaleLevels > 0 ? scaleLevels : FALLBACK_VALUE_PLACEHOLDER}
+							{scaleLevels > 0 ? formatNumber(scaleLevels) : FALLBACK_VALUE_PLACEHOLDER}
 						</span>
 					</SummaryRow>
 					<SummaryRow compact={compact} label={t`Size Skew`}>
@@ -76,7 +77,9 @@ export function ScaleOrderSummary({
 								scaleSkew !== null && scaleSkew > 0 ? "" : "font-normal text-trading-panel-muted",
 							)}
 						>
-							{scaleSkew !== null && scaleSkew > 0 ? scaleSkew : FALLBACK_VALUE_PLACEHOLDER}
+							{scaleSkew !== null && scaleSkew > 0
+								? formatNumber(scaleSkew, { maximumFractionDigits: SCALE_SKEW_MAX_DECIMALS })
+								: FALLBACK_VALUE_PLACEHOLDER}
 						</span>
 					</SummaryRow>
 				</>

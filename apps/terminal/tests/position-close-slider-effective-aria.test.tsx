@@ -11,8 +11,16 @@ import {
 	resolvePositionMarketClosePercent,
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { createPositionCloseSizingViewModel } from "@/lib/trade/position-close-sizing-presentation";
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 const sliderState = vi.hoisted(() => ({
 	props: null as null | {
@@ -105,6 +113,7 @@ describe("position close slider effective aria contract", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -135,6 +144,16 @@ describe("position close slider effective aria contract", () => {
 			expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuetext")).toBe(expected);
 		},
 	);
+
+	it("writes the requested and effective percentages with the number-format decimal sign", () => {
+		renderSizingControls(root);
+		const slider = container.querySelector('[role="slider"]');
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(slider?.getAttribute("aria-valuetext")).toBe("50% requested; 46,6% after size precision");
+		expect(Number(slider?.getAttribute("aria-valuenow"))).toBeCloseTo(46.6667, 3);
+	});
 
 	it("shows rounded effective percentages without promoting a partial request to max on blur", () => {
 		const onIntentChange = vi.fn();

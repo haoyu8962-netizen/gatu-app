@@ -65,7 +65,7 @@ interface BodyProps {
 
 function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) {
 	const { t } = useLingui();
-	const { formatNumber } = useNumberFormat();
+	const { formatDecimalString, formatNumber } = useNumberFormat();
 	const submissionSequenceRef = useRef(0);
 	const submissionIdentityRef = useRef<object | null>(null);
 	const submissionRef = useRef<TransferSubmission | null>(null);
@@ -339,7 +339,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 									<>
 										{t`Available`}:{" "}
 										<span className="underline decoration-dashed underline-offset-2 decoration-stroke-weak">
-											{floorToString(availableBalanceExact, USDC_TRANSFER_DECIMALS)} USDC
+											{formatDecimalString(floorToString(availableBalanceExact, USDC_TRANSFER_DECIMALS))} USDC
 										</span>
 									</>
 								}

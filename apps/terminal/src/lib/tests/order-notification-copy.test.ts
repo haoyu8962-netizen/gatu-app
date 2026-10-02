@@ -71,6 +71,19 @@ describe("compact order notification copy", () => {
 		expect(copy({ execution: { ...execution, averagePrice: "1234567.89" } }).detail).toBe("Avg. $1,234,567.9");
 		expect(copy({ execution: { ...execution, averagePrice: "101.123456789" } }).detail).toBe("Avg. $101.12346");
 	});
+	it.each([
+		["en-US", "Bought 1,234.5 HYPE", "Partially filled 1,234.5 / 2,000.25 HYPE"],
+		["de-DE", "Bought 1.234,5 HYPE", "Partially filled 1.234,5 / 2.000,25 HYPE"],
+		["fr-FR", "Bought 1 234,5 HYPE", "Partially filled 1 234,5 / 2 000,25 HYPE"],
+	])("writes filled and requested sizes with the %s separators", (locale, full, partial) => {
+		formatSettings.numberFormatLocale = locale;
+		const fill = { ...execution, filledSize: "1234.5", requestedSize: "1234.5" };
+		expect(copy({ execution: fill }).summary).toBe(full);
+		expect(
+			copy({ status: "partial", execution: { ...fill, requestedSize: "2000.25", completeness: "partial" } }).summary,
+		).toBe(partial);
+		expect(fill.filledSize).toBe("1234.5");
+	});
 	it("keeps number preferences independent of translation language", () => {
 		formatSettings.numberFormatLocale = "de-DE";
 		i18n.loadAndActivate({ locale: "ar", messages: {} });

@@ -95,6 +95,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Numbers follow the number-format setting, never the interface language; dates and times follow the interface language with Latin digits. Components and business code format both through `lib/format.ts` and never call `toLocale*` or construct `Intl.*` formatters directly.
 - Components and hooks take their number formatters from `useNumberFormat()` and pass them to any helper that formats during render; they never reference the module-level number formatters, because React Compiler caches those calls by their arguments only (`docs/adr/0036-render-time-number-formatters.md`, enforced by `number-format-reactivity-contract`). For the same reason every date and list formatter call in them passes a `locale` option, effects, event handlers and export columns included: `const locale = i18n.locale;` read during render, or `i18n.locale` read when an effect or inline event handler runs; a helper they reach passes on the locale it receives (`docs/i18n-presentation.md`, enforced by `date-locale-reactivity-contract`).
 - Typed decimal input stays a `.` protocol string; when the setting displays `,` as the decimal sign, a typed `,` is normalized to `.` before validation (`normalizeDecimalInput` / `normalizeDecimalInputEvent`), and every bare `<input inputMode="decimal">` must use that helper; `locale-format-contract` scans both rules.
+- A decimal string that is already rounded or truncated for display (a Big.js `toFixed` result, a protocol price or size shown as is, a viem amount) goes through `formatDecimalString` from `useNumberFormat()`, which keeps the caller's digits and swaps the separators; values that still need rounding keep the rounding formatters. Never build display text from `toFixed`/`toPrecision` or group thousands by hand (`docs/number-format-setting.md` rule 10, `docs/adr/0037-exact-decimal-display-separators.md`); `decimal-display-contract` requires every other `toFixed`/`toPrecision` call to be registered by file with its use and count.
 - The chart receives `numeric_formatting` at creation and follows a setting change through the same state-preserving rebuild as a locale change; a number-format change never reloads the page.
 
 ## Desktop trading layout contract
@@ -229,6 +230,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/number-format-reactivity-contract.test.ts \
   src/lib/tests/date-locale-reactivity-contract.test.ts \
   src/lib/tests/locale-format-contract.test.ts \
+  src/lib/tests/decimal-display-contract.test.ts \
   src/lib/tests/decimal-input-normalization.test.tsx \
   src/lib/tests/tradingview-chart.test.tsx
 

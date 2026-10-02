@@ -3159,7 +3159,7 @@ msgstr "अनु. स्लिपेज"
 msgid "Establish Connection"
 msgstr "कनेक्शन स्थापित करें"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr)
+#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "अनुमानित APR {0}"
@@ -4985,7 +4985,7 @@ msgstr "अधिकतम आपूर्ति"
 msgid "Maximum withdrawable"
 msgstr "अधिकतम निकासी योग्य राशि"
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Maximum withdrawable: {0}"
 msgstr "अधिकतम निकासी योग्य राशि: {0}"
@@ -10741,7 +10741,7 @@ msgstr "सत्यापन संदर्भ"
 msgid "Verified Vault details are unavailable."
 msgstr "सत्यापित वॉल्ट विवरण उपलब्ध नहीं हैं।"
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Verified wallet balance: {0}"
 msgstr "सत्यापित वॉलेट बैलेंस: {0}"

@@ -46,13 +46,18 @@ const budgets = {
 	// 84 bytes of its allowance). Measured as the local Node 22.15.0 build (3,195,944) minus the local build of
 	// 04469b52 before the change (3,195,469), both with the same build SHA and release id; the +9,548 already used
 	// before this change stays counted.
+	// Raised 2026-10-02 by +1,216 for ADR 0037 (exact decimal strings through formatDecimalString): the helper in
+	// lib/format.ts and the number-format hook in about thirty components (staking +192, vaults +311, desktop runtime
+	// startup +170). Measured with the fixed build metadata of docs/terminal-performance-baseline.md as the local
+	// Node 22.15.0 build (3,199,883) minus the local build of 04469b52 before the change (3,198,667). That base already
+	// measures 2,746 bytes above the allowance this way; this raise does not cover it.
 	// Raised 2026-10-03 by +4,671 for the locale and number-format refresh (footer clock, vault labels, ADR 0036):
 	// components take their formatters from useNumberFormat() and read the locale before formatting, which adds
 	// React Compiler cache-guard dependencies (trade startup +2,410, desktop runtime startup +829, mobile +142).
 	// Measured as the local Node 22.15.0 build of 2d6f4676 (3,195,752) minus the local build of dev 682430ba
 	// (3,191,081), both with the fixed metadata of docs/terminal-performance-baseline.md; the +5,160 dev had already
 	// used stays counted. With CI metadata the same head measured 3,196,075, 154 bytes over the previous allowance.
-	totalGzipBaselineBytes: 3_191_067,
+	totalGzipBaselineBytes: 3_192_283,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
@@ -76,7 +81,10 @@ const budgets = {
 			{
 				name: "desktop",
 				moduleIds: TRADE_DESKTOP_RUNTIME_MODULE_IDS,
-				baselineGzipBytes: 191_988,
+				// Raised 2026-10-02 by +170 for ADR 0037: formatDecimalString and the number-format hook in the order form,
+				// order book and funds recovery host (local Node 22.15.0 builds with fixed metadata: 202,155 after,
+				// 201,985 at 04469b52 before).
+				baselineGzipBytes: 192_158,
 				allowedIncreaseBytes: 10_000,
 			},
 		],

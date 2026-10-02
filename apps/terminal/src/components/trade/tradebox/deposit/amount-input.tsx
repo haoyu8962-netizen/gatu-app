@@ -4,6 +4,7 @@ import { Button } from "@sairn/ui";
 import { useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
+import { useNumberFormat } from "@/lib/format";
 
 interface Props {
 	amount: string;
@@ -29,6 +30,7 @@ export function AmountInput({
 	onSubmit,
 }: Props) {
 	const { t } = useLingui();
+	const { formatDecimalString } = useNumberFormat();
 	const helperId = useId();
 	const isBalanceLoading = balanceStatus === "loading";
 	const isBalanceReady = balanceStatus === "success";
@@ -45,7 +47,9 @@ export function AmountInput({
 					labelValue={
 						<>
 							<Trans>Available</Trans>:{" "}
-							<span className="tabular-nums">{balanceStatus === "success" ? balance : "--"} USDC</span>
+							<span className="tabular-nums">
+								{balanceStatus === "success" ? formatDecimalString(balance) : "--"} USDC
+							</span>
 						</>
 					}
 					onLabelValueClick={() => onAmountChange(maxAmount)}

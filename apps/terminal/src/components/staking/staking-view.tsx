@@ -27,7 +27,7 @@ import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "rea
 import { toast } from "sonner";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatDateTime, shortenAddress } from "@/lib/format";
+import { formatDateTime, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl } from "@/lib/hyperliquid";
 import {
 	canDelegateToValidator,
@@ -64,6 +64,7 @@ export interface StakingViewProps extends StakingController {
 
 export function StakingView(props: StakingViewProps) {
 	const { t } = useLingui();
+	const numberFormat = useNumberFormat();
 	const isMobile = useIsMobile();
 	const titleId = useId();
 	const [activeTab, setActiveTab] = useState<StakingTab>("validators");
@@ -82,7 +83,7 @@ export function StakingView(props: StakingViewProps) {
 		reportedOutcomeRef.current = outcomeKey;
 		if (settledResult === "success") {
 			const hash = session.match?.hash;
-			const amount = formatStakingAmount(session.submission.amount, 8);
+			const amount = formatStakingAmount(session.submission.amount, numberFormat, 8);
 			toast.success(t(getStakingActionSuccessMessage(session.submission.request.kind, amount)), {
 				description: hash ? (
 					<a
@@ -217,18 +218,18 @@ export function StakingView(props: StakingViewProps) {
 							value={
 								props.networkStakeApproximate === null
 									? "0 HYPE"
-									: `≈ ${formatStakingAmount(props.networkStakeApproximate, 0)} HYPE`
+									: `≈ ${formatStakingAmount(props.networkStakeApproximate, numberFormat, 0)} HYPE`
 							}
 							description={<Trans>Approximate: the SDK parses the raw total as a JavaScript number.</Trans>}
 						/>
 						<MetricCard
 							label={<Trans>Your delegated stake</Trans>}
-							value={account ? `${formatStakingAmount(account.summary.delegated)} HYPE` : "0 HYPE"}
+							value={account ? `${formatStakingAmount(account.summary.delegated, numberFormat)} HYPE` : "0 HYPE"}
 							description={
 								props.weightedApr === null ? (
 									<Trans>Estimated APR unavailable</Trans>
 								) : (
-									<Trans>Estimated APR {formatStakingRatio(props.weightedApr)}</Trans>
+									<Trans>Estimated APR {formatStakingRatio(props.weightedApr, numberFormat)}</Trans>
 								)
 							}
 						/>
@@ -236,19 +237,21 @@ export function StakingView(props: StakingViewProps) {
 					<div className="mt-3 divide-y divide-stroke-weak">
 						<BalanceRow
 							label={<Trans>Available in Spot</Trans>}
-							value={account ? `${formatStakingAmount(account.spotHypeAvailable)} HYPE` : "0 HYPE"}
+							value={account ? `${formatStakingAmount(account.spotHypeAvailable, numberFormat)} HYPE` : "0 HYPE"}
 						/>
 						<BalanceRow
 							label={<Trans>Available for delegation</Trans>}
-							value={account ? `${formatStakingAmount(account.summary.undelegated)} HYPE` : "0 HYPE"}
+							value={account ? `${formatStakingAmount(account.summary.undelegated, numberFormat)} HYPE` : "0 HYPE"}
 						/>
 						<BalanceRow
 							label={<Trans>Delegated</Trans>}
-							value={account ? `${formatStakingAmount(account.summary.delegated)} HYPE` : "0 HYPE"}
+							value={account ? `${formatStakingAmount(account.summary.delegated, numberFormat)} HYPE` : "0 HYPE"}
 						/>
 						<BalanceRow
 							label={<Trans>Pending transfer to Spot</Trans>}
-							value={account ? `${formatStakingAmount(account.summary.totalPendingWithdrawal)} HYPE` : "0 HYPE"}
+							value={
+								account ? `${formatStakingAmount(account.summary.totalPendingWithdrawal, numberFormat)} HYPE` : "0 HYPE"
+							}
 						/>
 					</div>
 				</section>
@@ -267,7 +270,7 @@ export function StakingView(props: StakingViewProps) {
 									</div>
 									<span className="text-xs font-semibold text-warning tabular-nums">
 										<bdi dir="ltr">
-											{formatStakingAmount(account.summary.totalPendingWithdrawal)} HYPE ·{" "}
+											{formatStakingAmount(account.summary.totalPendingWithdrawal, numberFormat)} HYPE ·{" "}
 											{account.summary.nPendingWithdrawals}/5
 										</bdi>
 									</span>
@@ -492,6 +495,7 @@ function ValidatorContent({
 }) {
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
+	const numberFormat = useNumberFormat();
 	if (publicState === "loading") return <TableSkeleton />;
 	if (publicState === "error") {
 		return (
@@ -565,10 +569,10 @@ function ValidatorContent({
 								<ValidatorStatusBadge status={validator.status} />
 							</TableCell>
 							<TableCell size="dense" className="text-right text-fg tabular-nums">
-								<bdi dir="ltr">≈ {formatStakingAmount(validator.stakeApproximateHype, 0)} HYPE</bdi>
+								<bdi dir="ltr">≈ {formatStakingAmount(validator.stakeApproximateHype, numberFormat, 0)} HYPE</bdi>
 							</TableCell>
 							<TableCell size="dense" className="text-right text-fg tabular-nums">
-								<bdi dir="ltr">{formatStakingAmount(validator.delegatedAmount)} HYPE</bdi>
+								<bdi dir="ltr">{formatStakingAmount(validator.delegatedAmount, numberFormat)} HYPE</bdi>
 								{validator.lockedUntilTimestamp && validator.lockedUntilTimestamp > Date.now() ? (
 									<span className="mt-0.5 block text-2xs text-warning">
 										<Trans>Locked until {formatDateTime(validator.lockedUntilTimestamp, { locale })}</Trans>
@@ -576,13 +580,13 @@ function ValidatorContent({
 								) : null}
 							</TableCell>
 							<TableCell size="dense" className="text-right tabular-nums">
-								<bdi dir="ltr">{formatStakingRatio(validator.selectedStats.uptimeFraction)}</bdi>
+								<bdi dir="ltr">{formatStakingRatio(validator.selectedStats.uptimeFraction, numberFormat)}</bdi>
 							</TableCell>
 							<TableCell size="dense" className="text-right tabular-nums">
-								<bdi dir="ltr">{formatStakingRatio(validator.selectedStats.predictedApr)}</bdi>
+								<bdi dir="ltr">{formatStakingRatio(validator.selectedStats.predictedApr, numberFormat)}</bdi>
 							</TableCell>
 							<TableCell size="dense" className="text-right tabular-nums">
-								<bdi dir="ltr">{formatStakingRatio(validator.commission)}</bdi>
+								<bdi dir="ltr">{formatStakingRatio(validator.commission, numberFormat)}</bdi>
 							</TableCell>
 							<TableCell size="dense">
 								<div className="flex justify-end gap-1">
@@ -640,6 +644,7 @@ function RewardsContent({
 }) {
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
+	const numberFormat = useNumberFormat();
 	if (accountState === "disconnected") {
 		return (
 			<EmptyState
@@ -692,7 +697,7 @@ function RewardsContent({
 							{reward.source === "delegation" ? <Trans>Delegation</Trans> : <Trans>Validator commission</Trans>}
 						</TableCell>
 						<TableCell size="dense" className="text-right font-semibold text-success tabular-nums">
-							<bdi dir="ltr">+{formatStakingAmount(reward.totalAmount, 8)} HYPE</bdi>
+							<bdi dir="ltr">+{formatStakingAmount(reward.totalAmount, numberFormat, 8)} HYPE</bdi>
 						</TableCell>
 					</TableRow>
 				))}
@@ -716,6 +721,7 @@ function HistoryContent({
 }) {
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
+	const numberFormat = useNumberFormat();
 	if (accountState === "disconnected") {
 		return (
 			<EmptyState
@@ -769,7 +775,7 @@ function HistoryContent({
 						</TableCell>
 						<TableCell size="dense">{getHistoryActionLabel(entry.action, validatorNames)}</TableCell>
 						<TableCell size="dense" className="text-right text-fg tabular-nums">
-							<bdi dir="ltr">{formatStakingAmount(entry.action.amount, 8)} HYPE</bdi>
+							<bdi dir="ltr">{formatStakingAmount(entry.action.amount, numberFormat, 8)} HYPE</bdi>
 						</TableCell>
 						<TableCell size="dense" className="text-right">
 							{isSystemFinalizedWithdrawal(entry) ? (

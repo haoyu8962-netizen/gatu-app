@@ -7,9 +7,17 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FundsActionReference } from "@/components/funds-action/funds-action-marker";
 import { formatDateTime } from "@/lib/format";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { createStakingActionSubmission } from "../domain/staking";
 import { StakingActionModal } from "../staking-action-modal";
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 const OWNER = "0x1111111111111111111111111111111111111111" as const;
 const EXCEEDS_BALANCE = "Amount exceeds the verified available balance.";
@@ -42,6 +50,7 @@ describe("StakingActionModal amount errors", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		Object.defineProperty(window, "matchMedia", {
 			configurable: true,
 			value: vi.fn().mockReturnValue({ addEventListener: vi.fn(), matches: false, removeEventListener: vi.fn() }),
@@ -99,6 +108,65 @@ describe("StakingActionModal amount errors", () => {
 		expect(document.body.textContent).not.toContain(EXCEEDS_BALANCE);
 		expect(amountInput()).toBe(input);
 		expect(input.value).toBe("9");
+	});
+
+	it("writes the available and reviewed HYPE amounts with the number-format separators", () => {
+		renderModal("12345.678912345");
+		expect(document.body.textContent).toContain("Available: 12,345.6789 HYPE");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(document.body.textContent).toContain("Available: 12.345,6789 HYPE");
+
+		const input = amountInput();
+		act(() => changeInput(input, "1234,56789012"));
+		expect(input.value).toBe("1234.56789012");
+		act(() => button("Review").click());
+		expect(document.body.textContent).toContain("1.234,56789012 HYPE");
+
+		numberFormatSetting.locale = "fr-FR";
+		act(() => notifyNumberFormatChange());
+		expect(document.body.textContent).toContain("1 234,56789012 HYPE");
+	});
+
+	it("writes the unconfirmed operation amount with the number-format separators", () => {
+		const reference = {
+			id: "reference",
+			env: "Mainnet",
+			owner: OWNER,
+			method: "cDeposit",
+			target: "staking",
+			direction: "deposit",
+			displayAmount: "1234.5",
+			atomicAmount: "123450000000",
+			atomicDecimals: 8,
+			asset: "HYPE",
+			startedAt: 1_700_000_000_000,
+			identityEpoch: "epoch",
+		} as unknown as FundsActionReference;
+		act(() =>
+			root.render(
+				<StakingActionModal
+					action={{ kind: "cDeposit", maxAmount: "2000" }}
+					ownerAddress={OWNER}
+					open
+					isMobile={false}
+					onOpenChange={vi.fn()}
+					onSubmit={vi.fn()}
+					submission={{ request: { kind: "cDeposit", maxAmount: "2000" }, amount: "1234.5", wei: 123_450_000_000 }}
+					fundsState={{ stage: "done", result: "unknown" }}
+					reference={reference}
+				/>,
+			),
+		);
+		const amountTerm = [...document.body.querySelectorAll("dt")].find((term) => term.textContent === "Amount");
+		expect(amountTerm?.nextElementSibling?.textContent).toBe("1,234.5 HYPE");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(amountTerm?.nextElementSibling?.textContent).toBe("1.234,5 HYPE");
+		const atomicTerm = [...document.body.querySelectorAll("dt")].find((term) => term.textContent === "Atomic amount");
+		expect(atomicTerm?.nextElementSibling?.textContent).toBe("123450000000");
 	});
 });
 

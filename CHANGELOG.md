@@ -489,9 +489,26 @@ changes, not evidence that a build has been deployed or accepted on real devices
   histories, TWAP, the order book, desktop and mobile account summaries, order entry summaries and
   TP/SL estimates, the order confirmation, the market header, Earn, Portfolio, Referrals and the
   other dashboard pages, Deposits & Withdrawals and the position labels on the chart. Most of them
-  used to keep the previous format until their data changed. A few figures never follow the
-  setting; they are listed under Known. See
+  used to keep the previous format until their data changed. See
   [ADR 0036](docs/adr/0036-render-time-number-formatters.md).
+- Figures that were formatted by hand now follow the number-format setting as well:
+  - staking amounts and ratios, vault amounts, and bridge amounts and wallet balances;
+  - the mobile market bar's 24h change and the mobile trade view's change percent;
+  - order fee rates (with the `1.234,56` format, `0.0450% ($1,23)` now reads `0,0450% ($1,23)`),
+    slippage, Scale size skew and the TP/SL risk/reward ratio;
+  - filled sizes in order notifications, available balances in Transfer and Send, the desktop order
+    form's position size and the minimum withdrawal message;
+  - order-book price grouping options, the TWAP activation hint and the Mid buttons' screen-reader
+    names;
+  - the deposit wallet balance and fee, the amount of a deposit in progress, the pending funds
+    operation amount and the Vault review amount, which now show the amount as submitted (`0005`
+    reads `5`);
+  - the slippage range in Settings.
+
+  They keep their exact digits and rounding; only the separators change. With the default format,
+  figures that had no thousands separator gain one (`+2345` becomes `+2,345`). Bridge send amounts
+  from 99,999.5 up no longer appear in exponent notation. Atomic amounts and operation references
+  stay unformatted. See [ADR 0037](docs/adr/0037-exact-decimal-display-separators.md).
 - Dates in the referral histories, staking rewards, actions and lock times, the funding history
   range, open orders, Earn interest, the bridge success screen and the pending-operation details
   now switch to the new language at once instead of keeping the previous language until their
@@ -694,15 +711,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Known
 
-- Some figures are formatted by hand or shown as received and always use `,` grouping and a `.`
-  decimal point, whatever the number-format setting: staking amounts and ratios, vault amounts,
-  compact vault values, APR and leader commission, the bridge screens' balances and send, receive
-  and received amounts, the mobile market bar's 24h change and the mobile trade view's change
-  percent, order fee rates (so a fee reads `0.0450% ($1,23)` with the `1.234,56` format), the TP/SL
-  risk/reward ratio, the order book's price grouping labels, the market-order slippage in the order
-  summaries and its range in the settings, the position size on chart position lines, the filled
-  size and partial-fill progress in fill notifications and the close slider's screen-reader
-  percent. Funds notifications keep the number format they were raised with.
+- The position size on chart position lines is shown without grouping and with a `.` decimal
+  point, whatever the number-format setting; every other hand-formatted figure listed here before
+  now follows it (ADR 0037). Funds notifications keep the number format they were raised with.
 - Mobile pairing stays compiled out in production: both `VITE_MOBILE_PAIRING_*` flags remain off
   until the physical-device acceptance for the client-only transfer (ADR 0015 D7, option B) has
   been run.

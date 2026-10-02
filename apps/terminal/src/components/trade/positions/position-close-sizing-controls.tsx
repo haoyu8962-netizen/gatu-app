@@ -6,6 +6,7 @@ import {
 	type PositionCloseSizingIntent,
 	type PositionMarketCloseResolution,
 } from "@/domain/trade/position-market-close";
+import { useNumberFormat } from "@/lib/format";
 import { toBig, toFixed } from "@/lib/trade/numbers";
 import type { PositionCloseSizingViewModel } from "@/lib/trade/position-close-sizing-presentation";
 import { TradeSizeSlider } from "../components/trade-size-slider";
@@ -50,10 +51,12 @@ export function PositionCloseSizingControls({
 	children,
 }: Props) {
 	const { t } = useLingui();
-	const requestedPercent = formatPositionMarketClosePercent(viewModel.requestedPercent);
-	const effectivePercent = viewModel.effectivePercent;
-	const requestedValue = toBig(requestedPercent);
-	const effectiveValue = toBig(effectivePercent);
+	const { formatDecimalString } = useNumberFormat();
+	const requestedPercentValue = formatPositionMarketClosePercent(viewModel.requestedPercent);
+	const requestedValue = toBig(requestedPercentValue);
+	const effectiveValue = toBig(viewModel.effectivePercent);
+	const requestedPercent = formatDecimalString(requestedPercentValue);
+	const effectivePercent = formatDecimalString(viewModel.effectivePercent);
 	const sliderStartIntentRef = useRef<{ identity: string; intent: PositionCloseSizingIntent } | null>(null);
 	const [percentDraft, setPercentDraft] = useState<{ identity: string; value: string } | null>(null);
 	if (percentDraft && percentDraft.identity !== interactionIdentity) setPercentDraft(null);

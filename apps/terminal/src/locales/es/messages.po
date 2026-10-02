@@ -3159,7 +3159,7 @@ msgstr "Deslizamiento est."
 msgid "Establish Connection"
 msgstr "Establecer conexión"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr)
+#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "APR estimado: {0}"
@@ -4985,7 +4985,7 @@ msgstr "Suministro máximo"
 msgid "Maximum withdrawable"
 msgstr "Máximo disponible para retirar"
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Maximum withdrawable: {0}"
 msgstr "Máximo disponible para retirar: {0}"
@@ -10741,7 +10741,7 @@ msgstr "Referencia de verificación"
 msgid "Verified Vault details are unavailable."
 msgstr "Los detalles verificados de la bóveda no están disponibles."
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Verified wallet balance: {0}"
 msgstr "Saldo verificado del monedero: {0}"
