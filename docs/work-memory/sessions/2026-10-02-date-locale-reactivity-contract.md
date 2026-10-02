@@ -301,4 +301,5 @@ CI：`.github/workflows/terminal-tests.yml` 的「Test recent trade rendering co
   - 脚本里本分支的预算上调注释已按集成后的实测改写：总量 +417，另把桌面运行时基线上调 +114。原注释（+475）见本分支的提交 `cae7c133`。
 
   上文提到的 `lib/chart/format.ts` 已由 `f66d36f2` 删除（[记录](2026-10-02-remove-dead-chart-format-module.md)），提到它的句子保留原样。
+- 2026-10-03 更正：上文「导出列」一条说表头用的是那次渲染的 `t`、传入同一次渲染的 `locale` 后两者一致，这不成立。`t` 在调用时才读当前语言，而导出的列名在请求结束后才翻译，所以导出进行中切换语言时，列名是新语言、日期是旧语言。集成分支已改为在 `buildRows` 里生成时读 `i18n.locale`，并补了测试，见[集成记录](2026-10-02-integrate-locale-number-format.md)「第 20 轮」。
 - 没有被整体替代的记录。
