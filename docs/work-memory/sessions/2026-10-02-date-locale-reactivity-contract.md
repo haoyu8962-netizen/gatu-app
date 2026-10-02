@@ -294,4 +294,10 @@ CI：`.github/workflows/terminal-tests.yml` 的「Test recent trade rendering co
   - 把新契约移到 `41c585cb` 新建的 CI 步骤里；
   - 对照 `089747f5`、`18cc35b1` 之后数字契约的修补，同步到日期契约。
 - 本记录完成[上一条记录](2026-10-02-number-format-reactive-formatters.md)「后续」里的「日期格式化目前只有约定、没有契约」一项；那条记录本身未改动。
+- 2026-10-03 追记：本分支已并入集成分支 `claude/integrate-locale-number-format`（PR #71），上面「合并进集成分支时还要」各项已完成，经过见[集成记录](2026-10-02-integrate-locale-number-format.md)：
+  - 日期契约改用 `harness/react-source.ts`，以及从数字契约抽出的 `harness/module-graph.ts`；
+  - CI 条目已移到「Test number format and runtime locale contracts」步骤；
+  - `docs/i18n-presentation.md` 的冲突已合并，双方内容都保留。
+
+  上文提到的 `lib/chart/format.ts` 已由 `f66d36f2` 删除（[记录](2026-10-02-remove-dead-chart-format-module.md)），提到它的句子保留原样。
 - 没有被整体替代的记录。

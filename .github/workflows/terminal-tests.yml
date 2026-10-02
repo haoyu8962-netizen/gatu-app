@@ -235,7 +235,6 @@ jobs:
         run: >-
           pnpm exec vitest run --maxWorkers=1
           src/lib/tests/number-format-reactivity-contract.test.ts
-          src/lib/tests/date-locale-reactivity-contract.test.ts
           src/lib/tests/responsive-panel-layout.test.ts
           src/lib/tests/trade-row.test.tsx
           src/lib/tests/trades-panel.test.tsx
@@ -250,6 +249,7 @@ jobs:
           src/lib/tests/decimal-input-normalization.test.tsx
           src/lib/tests/global-settings-store.test.ts
           src/lib/tests/i18n-reactivity-contract.test.ts
+          src/lib/tests/date-locale-reactivity-contract.test.ts
           src/lib/tests/i18n-hot-switch.test.tsx
           src/lib/tests/action-error.test.ts
           src/lib/tests/errors.test.ts

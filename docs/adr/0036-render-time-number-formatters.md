@@ -34,7 +34,7 @@
    - `useNumberFormat()` 的结果没有被用到算违规：结果被丢弃（裸调用、`void`、逗号运算符左侧，包括以别名导入后调用），或赋给的变量与解构出的名字在其作用域里没有被引用。引用按绑定判断，即找到声明这个名字的最近作用域（块、`switch` 的各分支、`for` 初始化、函数参数、具名类表达式），同名的内层参数不算；只出现在 `void`、单独的表达式语句或逗号左侧也不算，读取成员后丢弃（`void result.formatUSD`）同样不算。模块顶层给 `useNumberFormat` 起的别名会被跟随。这检查的是引用，不是格式化数据流；
    - 模块顶层在导入时调用格式化函数，或把它交给一次调用（如 `[0, 1].map(formatUSD)`），算违规；只保存函数引用（别名、对象表、`.bind` 出的副本）不算，但引用它们的组件仍会被拦下。
 
-   组件与 Hook 的识别和语言契约共用 `src/lib/tests/harness/react-source.ts`，对照的是 `babel-plugin-react-compiler` 1.0.0 默认 infer 模式的源码。编译器只遍历类之外的函数声明、函数表达式与箭头函数，其中只有这几种可能被编译（按名称或包装识别的，还要求函数体调用 Hook 或创建 JSX）：
+   上面的模块图（导入、实际导出表、`export *`、别名、命名空间与解构）放在 `src/lib/tests/harness/module-graph.ts`，日期契约 `date-locale-reactivity-contract` 也用它。组件与 Hook 的识别和语言契约、日期契约共用 `src/lib/tests/harness/react-source.ts`，对照的是 `babel-plugin-react-compiler` 1.0.0 默认 infer 模式的源码。编译器只遍历类之外的函数声明、函数表达式与箭头函数，其中只有这几种可能被编译（按名称或包装识别的，还要求函数体调用 Hook 或创建 JSX）：
    - 名称像组件或 Hook 的函数：函数声明取自身名称，函数表达式与箭头函数取初始化它的变量名（`getFunctionName2`）。这个函数的源码另有赋值目标、对象属性与解构默认值三个分支，但 1.0.0 把 Babel 的 NodePath 对象与字符串或布尔值比较（`parent.get("operator") === "="`、`!parent.get("computed")`），条件永远不成立；本机编译确认这三种写法都没有被编译；
    - `memo`/`forwardRef` 任一参数位置的回调，写作 `memo`、`React.memo` 或 `React[memo]`（`isReactAPI`）；
    - 用 `"use memo"`、`"use forget"` 指令选择编译的函数。

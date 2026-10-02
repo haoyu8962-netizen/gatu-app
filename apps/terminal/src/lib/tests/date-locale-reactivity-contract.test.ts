@@ -1,7 +1,28 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import {
+	describeModules,
+	followAliases,
+	isInsideFunction,
+	isLocallyBound,
+	isValueReference,
+	readSourceTree,
+	resolveBinding,
+	resolveExport,
+	resolveReference,
+	runsAtImport,
+	type SourceModule,
+} from "./harness/module-graph";
+import {
+	getComponentOrHookName,
+	getStaticName,
+	hasModifier,
+	outermostTransparentExpression,
+	parseSource,
+	skipTransparentExpressions,
+} from "./harness/react-source";
 
 // formatDateTime, formatDateTimeShort, formatTime and formatList in lib/format.ts read the interface
 // language from the global Lingui instance when a call passes no `locale` option. React Compiler caches
@@ -9,12 +30,11 @@ import { describe, expect, it } from "vitest";
 // its cache slot happens to depend on the translator as well. Components and hooks therefore pass a
 // `locale` option to every call, effects and event handlers included, and a module-level helper they
 // reach passes on the locale it receives (docs/i18n-presentation.md). Source-level rules, independent
-// of how the compiler currently groups a component's cache slots.
+// of how the compiler currently groups a component's cache slots. Components, hooks and the module graph
+// are recognized by the harness shared with number-format-reactivity-contract.
 const SOURCE_ROOT = resolve(__dirname, "../..");
 const FORMAT_MODULE = "lib/format.ts";
 const LANGUAGE_FORMATTERS = new Set(["formatDateTime", "formatDateTimeShort", "formatList", "formatTime"]);
-const COMPONENT_WRAPPERS = new Set(["forwardRef", "memo"]);
-const ROUTE_COMPONENT_PROPERTIES = new Set(["component", "errorComponent", "notFoundComponent", "pendingComponent"]);
 
 describe("date and list locale contract", () => {
 	it("passes a locale to every date and list formatter call in components and hooks", () => {
@@ -286,6 +306,82 @@ export function Sample() { return <p>{OPENED_AT}</p>; }`,
 			},
 			["components/sample.tsx:2 <module> formatDateTime", "components/sample.tsx:3 Sample OPENED_AT"],
 		],
+		[
+			"a component wrapped in a computed React member",
+			{
+				"components/sample.tsx": `import * as React from "react";
+import { formatDateTime } from "@/lib/format";
+export const Sample = React["memo"](function render({ at }: { at: number }) { return <p>{formatDateTime(at)}</p>; });`,
+			},
+			["components/sample.tsx:3 Sample formatDateTime"],
+		],
+		[
+			"a lowercase function that opts in with a directive",
+			{
+				"components/sample.tsx": `import { formatTime } from "@/lib/format";
+export function renderLabel(at: number) { "use memo"; return formatTime(at); }`,
+			},
+			["components/sample.tsx:2 renderLabel formatTime"],
+		],
+		[
+			"an export star that a local declaration of the same name does not shadow",
+			{
+				"lib/when.ts": `import { formatDateTime } from "@/lib/format";
+export const formatWhen = formatDateTime;`,
+				"lib/labels.ts": `export * from "./when";
+const formatWhen = (at: number) => String(at);
+export function plain(at: number) { return formatWhen(at); }`,
+				"components/sample.tsx": `import { formatWhen } from "@/lib/labels";
+export function Sample({ at }: { at: number }) { return <p>{formatWhen(at)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample formatWhen"],
+		],
+		[
+			"a call through a member chain at module scope",
+			{
+				"components/sample.tsx": `import { formatDateTime } from "@/lib/format";
+const OPENED_AT = formatDateTime.call(null, Date.now());
+export function Sample() { return <p>{OPENED_AT}</p>; }`,
+			},
+			["components/sample.tsx:2 <module> formatDateTime", "components/sample.tsx:3 Sample OPENED_AT"],
+		],
+		[
+			"a namespace member destructured under a string key",
+			{
+				"components/sample.tsx": `import * as format from "@/lib/format";
+const { "formatDateTime": when } = format;
+export function Sample({ at }: { at: number }) { return <p>{when(at)}</p>; }`,
+			},
+			["components/sample.tsx:3 Sample when"],
+		],
+		[
+			"a formatter as the default of a destructured module-level name",
+			{
+				"lib/labels.ts": `import { formatTime } from "@/lib/format";
+export const { label = formatTime } = {} as { label?: (at: number) => string };`,
+				"components/sample.tsx": `import { label } from "@/lib/labels";
+export function Sample({ at }: { at: number }) { return <p>{label(at)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample label"],
+		],
+		[
+			"a module-level class whose method formats",
+			{
+				"lib/clock.ts": `import { formatTime } from "@/lib/format";
+export class Clock { text(at: number) { return formatTime(at); } }`,
+				"components/sample.tsx": `import { Clock } from "@/lib/clock";
+export function Sample({ at }: { at: number }) { return <p>{new Clock().text(at)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample Clock"],
+		],
+		[
+			"a parenthesized or bracketed namespace member without a locale",
+			{
+				"components/sample.tsx": `import * as format from "@/lib/format";
+export function Sample({ at }: { at: number }) { return <p>{(format).formatDateTime(at)}{format["formatTime"](at)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample formatDateTime", "components/sample.tsx:2 Sample formatTime"],
+		],
 	])("flags %s", (_name, files, expected) => {
 		expect(findLanguageFormatViolations(withFormatStubs(files))).toEqual(expected);
 	});
@@ -380,26 +476,19 @@ export function Sample() { const formatList = (items: string[]) => items.join();
 export function buildCsvCell(at: number) { return formatDateTime(at); }`,
 			},
 		],
+		[
+			"a parenthesized or bracketed namespace member called with a locale",
+			{
+				"components/sample.tsx": `import * as format from "@/lib/format";
+export function Sample({ at, locale }: { at: number; locale: string }) {
+	return <p>{(format).formatDateTime(at, { locale })}{format["formatTime"](at, { locale })}</p>;
+}`,
+			},
+		],
 	])("allows %s", (_name, files) => {
 		expect(findLanguageFormatViolations(withFormatStubs(files))).toEqual([]);
 	});
 });
-
-interface ModuleBinding {
-	path: string | null;
-	name: string;
-}
-
-interface SourceModule {
-	path: string;
-	file: ts.SourceFile;
-	imports: Map<string, ModuleBinding>;
-	namespaces: Map<string, string | null>;
-	reexports: Map<string, ModuleBinding>;
-	starExports: (string | null)[];
-	localExports: Map<string, string>;
-	declarations: Map<string, ts.Node>;
-}
 
 function withFormatStubs(files: Record<string, string>): Map<string, string> {
 	return new Map([
@@ -414,33 +503,24 @@ function withFormatStubs(files: Record<string, string>): Map<string, string> {
 	]);
 }
 
-function readSourceTree(directory: string): Map<string, string> {
-	const sources = new Map<string, string>();
-	const visit = (current: string) => {
-		for (const entry of readdirSync(current, { withFileTypes: true })) {
-			const entryPath = resolve(current, entry.name);
-			if (entry.isDirectory()) {
-				if (!["__tests__", "locales", "tests"].includes(entry.name)) visit(entryPath);
-			} else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$|\.d\.ts$|\.gen\.ts$/.test(entry.name)) {
-				sources.set(relative(directory, entryPath), readFileSync(entryPath, "utf8"));
-			}
-		}
-	};
-	visit(directory);
-	return sources;
-}
-
 function findLanguageFormatViolations(sources: Map<string, string>): string[] {
-	const modules = new Map<string, SourceModule>();
-	for (const [path, text] of sources) modules.set(path, describeModule(path, text, sources));
+	const modules = describeModules(sources);
 
 	const globalLocaleReaders = new Set([...LANGUAGE_FORMATTERS].map((name) => `${FORMAT_MODULE}#${name}`));
 	const references = new Map<string, Set<string>>();
 	for (const module of modules.values()) {
 		if (module.path === FORMAT_MODULE) continue;
-		for (const [name, node] of module.declarations) {
-			if (ts.isFunctionLike(node) && getOwnerName(node, module) !== undefined) continue;
-			references.set(`${module.path}#${name}`, collectGlobalLocaleReferences(modules, module, node));
+		for (const [name, nodes] of module.declarations) {
+			if (nodes.some((node) => ts.isFunctionLike(node) && getComponentOrHookName(node, module.path) !== undefined)) {
+				continue;
+			}
+			const keys = new Set(nodes.flatMap((node) => [...collectGlobalLocaleReferences(modules, module, node)]));
+			const namespaceExport = module.namespaceSources.get(name);
+			const exportKey = namespaceExport?.path
+				? resolveExport(modules, namespaceExport.path, namespaceExport.name, new Set())
+				: null;
+			if (exportKey) keys.add(exportKey);
+			references.set(`${module.path}#${name}`, keys);
 		}
 	}
 	let changed = true;
@@ -461,11 +541,11 @@ function findLanguageFormatViolations(sources: Map<string, string>): string[] {
 		const line = (node: ts.Node) => module.file.getLineAndCharacterOfPosition(node.getStart()).line + 1;
 		const visit = (node: ts.Node, owner: string | null) => {
 			let currentOwner = owner;
-			if (ts.isFunctionLike(node)) currentOwner = getOwnerName(node, module) ?? owner;
+			if (ts.isFunctionLike(node)) currentOwner = getComponentOrHookName(node, module.path) ?? owner;
 			const reference = ts.isIdentifier(node) ? readsGlobalLocale(modules, module, node) : null;
 			if (ts.isIdentifier(node) && reference && globalLocaleReaders.has(reference.key)) {
-				const callsAtImport = currentOwner === null && !isInsideFunction(node) && callOf(module, node) !== undefined;
-				if (currentOwner !== null || callsAtImport) {
+				const atImport = currentOwner === null && !isInsideFunction(node) && runsAtImport(node);
+				if (currentOwner !== null || atImport) {
 					violations.push(`${module.path}:${line(node)} ${currentOwner ?? "<module>"} ${reference.name}`);
 				}
 			}
@@ -477,7 +557,9 @@ function findLanguageFormatViolations(sources: Map<string, string>): string[] {
 }
 
 // A reference that may read the global language: any reference to a module-level declaration that does,
-// and any reference to a language formatter except the callee of a call that passes a `locale` option.
+// and any reference to a language formatter, directly or through module-level aliases, except the callee
+// of a call that passes a `locale` option. A name that may also hold something else, such as one
+// destructured with a default, is a declaration of its own and counts even when called with a locale.
 function readsGlobalLocale(
 	modules: Map<string, SourceModule>,
 	module: SourceModule,
@@ -485,20 +567,26 @@ function readsGlobalLocale(
 ): { key: string; name: string } | null {
 	if (!isValueReference(node) || isLocallyBound(node)) return null;
 	const reference = resolveReference(modules, module, node);
-	if (!reference || !isLanguageFormatter(reference.key)) return reference;
+	if (!reference || !isLanguageFormatter(followAliases(modules, reference.key))) return reference;
 	const call = callOf(module, node);
 	return call && passesLocale(call) ? null : reference;
 }
 
-function isLanguageFormatter(key: string): boolean {
-	return key.startsWith(`${FORMAT_MODULE}#`) && LANGUAGE_FORMATTERS.has(key.slice(FORMAT_MODULE.length + 1));
+function isLanguageFormatter(key: string | null): boolean {
+	if (key === null || !key.startsWith(`${FORMAT_MODULE}#`)) return false;
+	return LANGUAGE_FORMATTERS.has(key.slice(FORMAT_MODULE.length + 1));
 }
 
-// The call whose callee is this reference (the identifier, or `namespace.name` for a namespace import),
+// The call whose callee is this reference (the identifier, or the member a namespace import names),
 // looking through parentheses and type assertions.
 function callOf(module: SourceModule, identifier: ts.Identifier): ts.CallExpression | undefined {
-	let callee: ts.Node = module.namespaces.has(identifier.text) ? identifier.parent : identifier;
-	while (isOuterExpression(callee.parent)) callee = callee.parent;
+	let callee: ts.Expression = outermostTransparentExpression(identifier);
+	if (module.namespaces.has(identifier.text)) {
+		const member = callee.parent;
+		if (!(ts.isPropertyAccessExpression(member) || ts.isElementAccessExpression(member))) return undefined;
+		if (member.expression !== callee) return undefined;
+		callee = outermostTransparentExpression(member);
+	}
 	const call = callee.parent;
 	return ts.isCallExpression(call) && call.expression === callee ? call : undefined;
 }
@@ -506,15 +594,13 @@ function callOf(module: SourceModule, identifier: ts.Identifier): ts.CallExpress
 function passesLocale(call: ts.CallExpression): boolean {
 	const options = call.arguments[1];
 	if (options === undefined) return false;
-	const literal = skipOuterExpressions(options);
+	const literal = skipTransparentExpressions(options);
 	return ts.isObjectLiteralExpression(literal) && literal.properties.some(isLocaleProperty);
 }
 
 function isLocaleProperty(property: ts.ObjectLiteralElementLike): boolean {
 	if (ts.isShorthandPropertyAssignment(property)) return property.name.text === "locale";
-	if (!ts.isPropertyAssignment(property)) return false;
-	const name = ts.isComputedPropertyName(property.name) ? property.name.expression : property.name;
-	return (ts.isIdentifier(name) || ts.isStringLiteralLike(name)) && name.text === "locale";
+	return ts.isPropertyAssignment(property) && getStaticName(property.name) === "locale";
 }
 
 function collectGlobalLocaleReferences(
@@ -596,318 +682,4 @@ function findLanguageReadingExports(text: string): string[] {
 		}
 	}
 	return [...exported].filter((name) => languageReaders.has(name)).sort();
-}
-
-function describeModule(path: string, text: string, sources: Map<string, string>): SourceModule {
-	const file = parseSource(text, path);
-	const module: SourceModule = {
-		path,
-		file,
-		imports: new Map(),
-		namespaces: new Map(),
-		reexports: new Map(),
-		starExports: [],
-		localExports: new Map(),
-		declarations: new Map(),
-	};
-	for (const statement of file.statements) {
-		if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
-		const target = resolveModulePath(path, statement.moduleSpecifier.text, sources);
-		const clause = statement.importClause;
-		if (clause?.name) module.imports.set(clause.name.text, { path: target, name: "default" });
-		const bindings = clause?.namedBindings;
-		if (bindings && ts.isNamespaceImport(bindings)) module.namespaces.set(bindings.name.text, target);
-		if (bindings && ts.isNamedImports(bindings)) {
-			for (const element of bindings.elements) {
-				module.imports.set(element.name.text, { path: target, name: (element.propertyName ?? element.name).text });
-			}
-		}
-	}
-	for (const statement of file.statements) {
-		if (ts.isExportDeclaration(statement)) {
-			const target =
-				statement.moduleSpecifier && ts.isStringLiteral(statement.moduleSpecifier)
-					? resolveModulePath(path, statement.moduleSpecifier.text, sources)
-					: undefined;
-			if (!statement.exportClause) {
-				if (target !== undefined) module.starExports.push(target);
-			} else if (ts.isNamedExports(statement.exportClause)) {
-				for (const element of statement.exportClause.elements) {
-					const localName = (element.propertyName ?? element.name).text;
-					if (target === undefined) module.localExports.set(element.name.text, localName);
-					else module.reexports.set(element.name.text, { path: target, name: localName });
-				}
-			}
-		} else if (ts.isExportAssignment(statement)) {
-			const expression = skipOuterExpressions(statement.expression);
-			if (ts.isIdentifier(expression)) module.localExports.set("default", expression.text);
-			else module.declarations.set("default", expression);
-		} else if (ts.isFunctionDeclaration(statement)) {
-			const isDefault = hasModifier(statement, ts.SyntaxKind.DefaultKeyword);
-			if (statement.name) {
-				module.declarations.set(statement.name.text, statement);
-				if (isDefault) module.localExports.set("default", statement.name.text);
-			} else if (isDefault) {
-				module.declarations.set("default", statement);
-			}
-		} else if (ts.isVariableStatement(statement)) {
-			for (const declaration of statement.declarationList.declarations) {
-				if (declaration.initializer) describeVariable(module, declaration.name, declaration.initializer);
-			}
-		}
-	}
-	return module;
-}
-
-// `const alias = imported` and `const alias = namespace.name` are aliases of the imported binding, and
-// so is a name destructured from a namespace import; any other variable is a declaration whose value is
-// its initializer.
-function describeVariable(module: SourceModule, name: ts.BindingName, initializer: ts.Expression): void {
-	const source = skipOuterExpressions(initializer);
-	if (ts.isIdentifier(name)) {
-		const alias = importAlias(module, source);
-		if (alias) module.imports.set(name.text, alias);
-		else module.declarations.set(name.text, initializer);
-		return;
-	}
-	const namespaceTarget = ts.isIdentifier(source) ? module.namespaces.get(source.text) : undefined;
-	for (const element of name.elements) {
-		if (ts.isOmittedExpression(element)) continue;
-		const property = element.propertyName && ts.isIdentifier(element.propertyName) ? element.propertyName.text : null;
-		if (namespaceTarget !== undefined && ts.isIdentifier(element.name)) {
-			module.imports.set(element.name.text, { path: namespaceTarget, name: property ?? element.name.text });
-			continue;
-		}
-		const names: string[] = [];
-		collectBindingNames(element.name, names);
-		for (const bound of names) module.declarations.set(bound, initializer);
-	}
-}
-
-function importAlias(module: SourceModule, source: ts.Expression): ModuleBinding | undefined {
-	if (ts.isIdentifier(source)) return module.imports.get(source.text);
-	if (!ts.isPropertyAccessExpression(source) || !ts.isIdentifier(source.expression)) return undefined;
-	const target = module.namespaces.get(source.expression.text);
-	return target === undefined ? undefined : { path: target, name: source.name.text };
-}
-
-function skipOuterExpressions(expression: ts.Expression): ts.Expression {
-	let current = expression;
-	while (isOuterExpression(current)) current = current.expression;
-	return current;
-}
-
-function isOuterExpression(
-	node: ts.Node,
-): node is ts.ParenthesizedExpression | ts.AsExpression | ts.SatisfiesExpression | ts.NonNullExpression {
-	return (
-		ts.isParenthesizedExpression(node) ||
-		ts.isAsExpression(node) ||
-		ts.isSatisfiesExpression(node) ||
-		ts.isNonNullExpression(node)
-	);
-}
-
-function resolveModulePath(fromPath: string, specifier: string, sources: Map<string, string>): string | null {
-	let base: string;
-	if (specifier.startsWith("@/")) base = specifier.slice(2);
-	else if (specifier.startsWith(".")) base = relative(SOURCE_ROOT, resolve(SOURCE_ROOT, fromPath, "..", specifier));
-	else return null;
-	for (const candidate of [base, `${base}.ts`, `${base}.tsx`, `${base}/index.ts`, `${base}/index.tsx`]) {
-		if (sources.has(candidate)) return candidate;
-	}
-	return null;
-}
-
-function resolveReference(
-	modules: Map<string, SourceModule>,
-	module: SourceModule,
-	identifier: ts.Identifier,
-): { key: string; name: string } | null {
-	const parent = identifier.parent;
-	if (module.namespaces.has(identifier.text)) {
-		const target = module.namespaces.get(identifier.text);
-		if (!target || !ts.isPropertyAccessExpression(parent) || parent.expression !== identifier) return null;
-		const key = resolveExport(modules, target, parent.name.text, new Set());
-		return key ? { key, name: parent.name.text } : null;
-	}
-	const key = resolveBinding(modules, module.path, identifier.text, new Set());
-	return key ? { key, name: identifier.text } : null;
-}
-
-function resolveBinding(
-	modules: Map<string, SourceModule>,
-	path: string,
-	name: string,
-	seen: Set<string>,
-): string | null {
-	const module = modules.get(path);
-	if (!module) return null;
-	if (module.declarations.has(name)) return `${path}#${name}`;
-	const imported = module.imports.get(name);
-	return imported?.path ? resolveExport(modules, imported.path, imported.name, seen) : null;
-}
-
-function resolveExport(
-	modules: Map<string, SourceModule>,
-	path: string,
-	name: string,
-	seen: Set<string>,
-): string | null {
-	const key = `${path}#${name}`;
-	if (seen.has(key)) return null;
-	seen.add(key);
-	const module = modules.get(path);
-	if (!module) return null;
-	if (module.declarations.has(name)) return key;
-	const localName = module.localExports.get(name);
-	if (localName) return resolveBinding(modules, path, localName, seen);
-	const reexport = module.reexports.get(name);
-	if (reexport?.path) return resolveExport(modules, reexport.path, reexport.name, seen);
-	if (name === "default") return null;
-	// `export const alias = imported` is recorded as an import alias (describeVariable).
-	if (module.imports.has(name)) return resolveBinding(modules, path, name, seen);
-	for (const target of module.starExports) {
-		const resolved = target ? resolveExport(modules, target, name, seen) : null;
-		if (resolved) return resolved;
-	}
-	return null;
-}
-
-function isValueReference(identifier: ts.Identifier): boolean {
-	const parent = identifier.parent;
-	if (ts.isPropertyAccessExpression(parent)) return parent.expression === identifier;
-	if (ts.isPropertySignature(parent) || ts.isMethodDeclaration(parent) || ts.isMethodSignature(parent)) return false;
-	if (ts.isPropertyAssignment(parent) || ts.isPropertyDeclaration(parent)) return parent.initializer === identifier;
-	if (ts.isBindingElement(parent)) return parent.initializer === identifier;
-	if (ts.isVariableDeclaration(parent) || ts.isParameter(parent)) return parent.initializer === identifier;
-	if (ts.isFunctionDeclaration(parent) || ts.isFunctionExpression(parent) || ts.isClassDeclaration(parent)) {
-		return parent.name !== identifier;
-	}
-	if (ts.isImportSpecifier(parent) || ts.isImportClause(parent) || ts.isNamespaceImport(parent)) return false;
-	if (ts.isExportSpecifier(parent)) return false;
-	if (ts.isJsxAttribute(parent)) return false;
-	if (ts.isJsxOpeningElement(parent) || ts.isJsxSelfClosingElement(parent) || ts.isJsxClosingElement(parent)) {
-		return false;
-	}
-	if (ts.isTypeReferenceNode(parent) || ts.isTypeQueryNode(parent) || ts.isQualifiedName(parent)) return false;
-	return !ts.isTypeNode(parent);
-}
-
-function isLocallyBound(identifier: ts.Identifier): boolean {
-	for (let node: ts.Node = identifier.parent; !ts.isSourceFile(node); node = node.parent) {
-		if (scopeDeclares(node, identifier.text)) return true;
-	}
-	return false;
-}
-
-const scopeNameCache = new WeakMap<ts.Node, ReadonlySet<string>>();
-
-function scopeDeclares(scope: ts.Node, name: string): boolean {
-	let names = scopeNameCache.get(scope);
-	if (!names) {
-		names = new Set(collectScopeNames(scope));
-		scopeNameCache.set(scope, names);
-	}
-	return names.has(name);
-}
-
-function collectScopeNames(scope: ts.Node): string[] {
-	const names: string[] = [];
-	if (ts.isFunctionLike(scope)) {
-		for (const parameter of scope.parameters) collectBindingNames(parameter.name, names);
-		if (ts.isFunctionExpression(scope) && scope.name) names.push(scope.name.text);
-	} else if (ts.isCatchClause(scope)) {
-		if (scope.variableDeclaration) collectBindingNames(scope.variableDeclaration.name, names);
-	} else if (ts.isForStatement(scope) || ts.isForOfStatement(scope) || ts.isForInStatement(scope)) {
-		if (scope.initializer && ts.isVariableDeclarationList(scope.initializer)) {
-			for (const declaration of scope.initializer.declarations) collectBindingNames(declaration.name, names);
-		}
-	} else if (ts.isBlock(scope) || ts.isCaseBlock(scope)) {
-		const statements = ts.isBlock(scope) ? scope.statements : scope.clauses.flatMap((clause) => [...clause.statements]);
-		for (const statement of statements) {
-			if (ts.isVariableStatement(statement)) {
-				for (const declaration of statement.declarationList.declarations) {
-					collectBindingNames(declaration.name, names);
-				}
-			} else if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) && statement.name) {
-				names.push(statement.name.text);
-			}
-		}
-	}
-	return names;
-}
-
-function collectBindingNames(name: ts.BindingName, into: string[]): void {
-	if (ts.isIdentifier(name)) {
-		into.push(name.text);
-		return;
-	}
-	for (const element of name.elements) {
-		if (!ts.isOmittedExpression(element)) collectBindingNames(element.name, into);
-	}
-}
-
-function isInsideFunction(node: ts.Node): boolean {
-	for (let current = node.parent; current && !ts.isSourceFile(current); current = current.parent) {
-		if (ts.isFunctionLike(current)) return true;
-	}
-	return false;
-}
-
-function isFunctionLikeDeclaration(node: ts.Node): node is ts.FunctionLikeDeclaration {
-	return (
-		ts.isFunctionDeclaration(node) ||
-		ts.isMethodDeclaration(node) ||
-		ts.isFunctionExpression(node) ||
-		ts.isArrowFunction(node)
-	);
-}
-
-// Components and hooks are recognized by name: their own name, or the variable a `memo`/`forwardRef`
-// wrapper is assigned to. Two anonymous kinds count as well: a default-exported function in a .tsx
-// module and a function passed as a route's component option.
-function getOwnerName(node: ts.SignatureDeclaration, module: SourceModule): string | undefined {
-	const ownName = node.name && ts.isIdentifier(node.name) ? node.name.text : undefined;
-	if (ownName !== undefined && isComponentOrHookName(ownName)) return ownName;
-	let parent = node.parent;
-	while (
-		ts.isParenthesizedExpression(parent) ||
-		ts.isAsExpression(parent) ||
-		ts.isSatisfiesExpression(parent) ||
-		(ts.isCallExpression(parent) && COMPONENT_WRAPPERS.has(calleeName(parent) ?? ""))
-	) {
-		parent = parent.parent;
-	}
-	if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) {
-		return isComponentOrHookName(parent.name.text) ? parent.name.text : undefined;
-	}
-	if (ownName !== undefined || !isFunctionLikeDeclaration(node)) return undefined;
-	const isAnonymousDefault =
-		(ts.isFunctionDeclaration(node) && hasModifier(node, ts.SyntaxKind.DefaultKeyword)) ||
-		ts.isExportAssignment(parent);
-	if (isAnonymousDefault && module.path.endsWith(".tsx")) return "<default>";
-	if (ts.isPropertyAssignment(parent) && (ts.isIdentifier(parent.name) || ts.isStringLiteral(parent.name))) {
-		return ROUTE_COMPONENT_PROPERTIES.has(parent.name.text) ? parent.name.text : undefined;
-	}
-	return undefined;
-}
-
-function isComponentOrHookName(name: string): boolean {
-	return /^(?:[A-Z]|use[A-Z0-9])/.test(name);
-}
-
-function hasModifier(node: ts.Node, kind: ts.SyntaxKind): boolean {
-	return ts.canHaveModifiers(node) && (ts.getModifiers(node)?.some((modifier) => modifier.kind === kind) ?? false);
-}
-
-function calleeName(call: ts.CallExpression): string | undefined {
-	if (ts.isIdentifier(call.expression)) return call.expression.text;
-	if (ts.isPropertyAccessExpression(call.expression)) return call.expression.name.text;
-	return undefined;
-}
-
-function parseSource(source: string, fileName: string): ts.SourceFile {
-	const scriptKind = fileName.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.TSX;
-	return ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, scriptKind);
 }
