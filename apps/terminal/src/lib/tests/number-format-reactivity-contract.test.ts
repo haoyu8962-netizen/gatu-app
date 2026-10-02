@@ -6,6 +6,7 @@ import {
 	collectBindingIdentifiers,
 	findDeclaringScope,
 	getComponentOrHookName,
+	getStaticName,
 	hasModifier,
 	outermostTransparentExpression,
 	parseSource,
@@ -488,6 +489,27 @@ export let Price: unknown;
 			},
 			["components/sample.tsx:3 Price formatUSD"],
 		],
+		[
+			"a component wrapped through a computed React member",
+			{
+				"components/sample.tsx": `import React from "react";
+import { formatUSD } from "@/lib/format";
+const memo = "memo";
+export default React[memo](function render() { return <p>{formatUSD(1)}</p>; });`,
+			},
+			["components/sample.tsx:4 <default> formatUSD"],
+		],
+		[
+			"formatters destructured from a namespace under string keys",
+			{
+				"lib/sample-label.ts": `import * as format from "@/lib/format";
+const { "formatUSD": usd, ["formatPrice"]: price } = format;
+export function label(value: number) { return \`\${usd(value)} \${price(value)}\`; }`,
+				"components/sample.tsx": `import { label } from "@/lib/sample-label";
+export function Sample() { return <p>{label(1)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample label"],
+		],
 	])("flags %s", (_name, files, expected) => {
 		expect(findNumberFormatViolations(withFormatStubs(files))).toEqual(expected);
 	});
@@ -769,13 +791,18 @@ function describeVariable(module: SourceModule, name: ts.BindingName, initialize
 	const namespaceTarget = ts.isIdentifier(source) ? module.namespaces.get(source.text) : undefined;
 	for (const element of name.elements) {
 		if (ts.isOmittedExpression(element)) continue;
-		const property = element.propertyName && ts.isIdentifier(element.propertyName) ? element.propertyName.text : null;
-		if (namespaceTarget !== undefined && ts.isIdentifier(element.name)) {
-			module.imports.set(element.name.text, { path: namespaceTarget, name: property ?? element.name.text });
+		const exportName = getDestructuredKey(element);
+		if (namespaceTarget !== undefined && ts.isIdentifier(element.name) && exportName !== undefined) {
+			module.imports.set(element.name.text, { path: namespaceTarget, name: exportName });
 			continue;
 		}
 		describeBindingElement(module, element, [initializer]);
 	}
+}
+
+function getDestructuredKey(element: ts.BindingElement): string | undefined {
+	if (element.propertyName) return getStaticName(element.propertyName);
+	return ts.isIdentifier(element.name) ? element.name.text : undefined;
 }
 
 function describeBindingElement(module: SourceModule, element: ts.BindingElement, values: ts.Node[]): void {

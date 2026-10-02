@@ -44,13 +44,16 @@ export function outermostTransparentExpression(node: ts.Expression): ts.Expressi
 	return current;
 }
 
-// React Compiler (infer mode) compiles a function named like a component or hook, where the name is
-// the function's own or that of the variable, assignment target, object or class property or
-// destructuring default that receives it; any memo or forwardRef callback; and any function that
-// opts in with "use memo" or "use forget". The contracts recognize a superset that does not depend on
-// what the compiler compiles today: wrapper callbacks may sit behind parentheses or assertions,
-// string keys count, and an anonymous default export in a .tsx module and a route's component option,
-// written as a function or a method, are components too.
+// babel-plugin-react-compiler 1.0.0 in its default infer mode visits function declarations,
+// function expressions and arrow functions outside classes. It compiles one named like a component or
+// hook, where the name is the function's own or that of the variable, assignment target, object
+// property or destructuring default that receives it (getFunctionName2); a callback passed in any
+// argument of memo or forwardRef, written plainly, as React.memo or as React[memo] (isReactAPI); and
+// any function that opts in with "use memo" or "use forget". The contracts recognize a superset, so
+// they do not depend on what the compiler compiles today: wrappers on any object or behind
+// parentheses and assertions, string keys, class properties, an anonymous default export in a .tsx
+// module and a route's component option, written as a function or a method. Recheck these rules
+// when the compiler is upgraded or configured differently.
 export function getComponentOrHookName(node: ts.SignatureDeclaration, fileName: string): string | undefined {
 	const ownName = node.name === undefined ? undefined : getStaticName(node.name);
 	if (ownName !== undefined && isComponentOrHookName(ownName)) return ownName;
@@ -134,7 +137,7 @@ function getReceivingName(value: ts.Expression): string | undefined {
 	return undefined;
 }
 
-function getStaticName(name: ts.PropertyName): string | undefined {
+export function getStaticName(name: ts.PropertyName): string | undefined {
 	if (ts.isIdentifier(name) || ts.isStringLiteralLike(name)) return name.text;
 	return ts.isComputedPropertyName(name) && ts.isStringLiteralLike(name.expression) ? name.expression.text : undefined;
 }
@@ -157,7 +160,9 @@ export function calleeName(call: ts.CallExpression): string | undefined {
 	const callee = skipTransparentExpressions(call.expression);
 	if (ts.isIdentifier(callee)) return callee.text;
 	if (ts.isPropertyAccessExpression(callee)) return callee.name.text;
-	return undefined;
+	if (!ts.isElementAccessExpression(callee)) return undefined;
+	const key = callee.argumentExpression;
+	return ts.isIdentifier(key) || ts.isStringLiteralLike(key) ? key.text : undefined;
 }
 
 export function hasModifier(node: ts.Node, kind: ts.SyntaxKind): boolean {

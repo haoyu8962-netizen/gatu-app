@@ -34,12 +34,12 @@
    - `useNumberFormat()` 的结果没有被用到算违规：结果被丢弃（裸调用、`void`、逗号运算符左侧，包括以别名导入后调用），或赋给的变量与解构出的名字在其作用域里没有被引用。引用按绑定判断，即找到声明这个名字的最近作用域（块、`switch` 的各分支、`for` 初始化、函数参数），同名的内层参数不算；只出现在 `void`、单独的表达式语句或逗号左侧也不算。这检查的是引用，不是格式化数据流；
    - 模块顶层在导入时调用格式化函数，或把它交给一次调用（如 `[0, 1].map(formatUSD)`），算违规；只保存函数引用（别名、对象表）不算，但引用这个别名或表的组件仍会被拦下。
 
-   组件与 Hook 的识别和语言契约共用 `src/lib/tests/harness/react-source.ts`，对照的是 `babel-plugin-react-compiler` 1.0.0 默认 infer 模式的推断规则（`getComponentOrHookLike`、`getFunctionName2`）：
-   - 名称取自函数本身，或接收它的变量、赋值目标、对象或类属性、解构默认值；大写开头或 `use` 后接大写或数字的算组件或 Hook；
-   - `memo`/`forwardRef` 任一参数位置的函数，不论自身名称都算组件；
-   - 用 `"use memo"`、`"use forget"` 指令选择编译的函数也算。
+   组件与 Hook 的识别和语言契约共用 `src/lib/tests/harness/react-source.ts`，对照的是 `babel-plugin-react-compiler` 1.0.0 默认 infer 模式的源码。编译器只遍历类之外的函数声明、函数表达式与箭头函数，其中只有这几种可能被编译（按名称或包装识别的，还要求函数体调用 Hook 或创建 JSX）：
+   - 名称像组件或 Hook 的函数，名称取自函数本身，或接收它的变量、赋值目标、对象属性、解构默认值（`getFunctionName2`）；
+   - `memo`/`forwardRef` 任一参数位置的回调，写作 `memo`、`React.memo` 或 `React[memo]`（`isReactAPI`）；
+   - 用 `"use memo"`、`"use forget"` 指令选择编译的函数。
 
-   契约在此之上还认：嵌套、加括号或断言的包装，字符串键，`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。所以它是编译器当前规则的超集，不依赖编译器是否真的编译了某个函数。附 57 个正反样例（49 个应报出、8 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
+   契约在此之上还认：任意对象上的 `memo`/`forwardRef`、嵌套或加括号与断言的包装、字符串键、类属性、`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。所以它是编译器当前规则的超集，不依赖编译器是否真的编译了某个函数；升级编译器或改变编译模式时要重新对照。附 59 个正反样例（51 个应报出、8 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
 
 ## 备选方案与代价
 

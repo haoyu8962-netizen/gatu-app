@@ -356,6 +356,10 @@ describe("dependencies React Compiler can see", () => {
 			"a function that opts in to compilation with a directive",
 			`function label({ at }: Props) { "use memo"; ${BRANCHED_READ} }`,
 		],
+		[
+			"a component wrapped through a computed React member",
+			`const memo = "memo"; export const row = React[memo](function render({ at }: Props) { ${BRANCHED_READ} });`,
+		],
 	])("flags a branch-only locale read in %s", (_, declaration) => {
 		expect(findBranchOnlyLocaleReads(`import { useLingui } from "@lingui/react/macro";\n${declaration}`)).toHaveLength(
 			1,

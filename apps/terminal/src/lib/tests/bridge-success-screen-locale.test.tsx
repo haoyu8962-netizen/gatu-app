@@ -28,7 +28,7 @@ describe("bridge success screen dates", () => {
 		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
 	});
 
-	it("rewrites the submitted and filled times in the active language without remounting", () => {
+	it("rewrites the submitted and filled times in the active language in the same open details", () => {
 		act(() =>
 			root.render(
 				<SuccessScreen
@@ -49,18 +49,24 @@ describe("bridge success screen dates", () => {
 			button.textContent?.includes("More details"),
 		);
 		act(() => trigger?.click());
-		const screen = container.firstElementChild;
-		const englishTimes = [
-			formatDateTimeShort(STARTED_AT, { locale: "en" }),
-			formatDateTimeShort(DONE_AT, { locale: "en" }),
-		];
-		for (const time of englishTimes) expect(container.textContent).toContain(time);
+		const values = [...container.querySelectorAll('[data-slot="info-row-value"]')];
+		const timeValues = [STARTED_AT, DONE_AT].map((time) =>
+			values.find((value) => value.textContent === formatDateTimeShort(time, { locale: "en" })),
+		);
+		expect(trigger?.getAttribute("aria-expanded")).toBe("true");
+		expect(timeValues.every((value) => value !== undefined)).toBe(true);
 
 		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
 
-		expect(container.firstElementChild).toBe(screen);
-		expect(container.textContent).toContain(formatDateTimeShort(STARTED_AT, { locale: "zh" }));
-		expect(container.textContent).toContain(formatDateTimeShort(DONE_AT, { locale: "zh" }));
-		for (const time of englishTimes) expect(container.textContent).not.toContain(time);
+		expect(trigger?.isConnected).toBe(true);
+		expect(trigger?.getAttribute("aria-expanded")).toBe("true");
+		expect(timeValues.map((value) => value?.isConnected)).toEqual([true, true]);
+		expect(timeValues.map((value) => value?.textContent)).toEqual([
+			formatDateTimeShort(STARTED_AT, { locale: "zh" }),
+			formatDateTimeShort(DONE_AT, { locale: "zh" }),
+		]);
+		expect(formatDateTimeShort(STARTED_AT, { locale: "zh" })).not.toBe(
+			formatDateTimeShort(STARTED_AT, { locale: "en" }),
+		);
 	});
 });
