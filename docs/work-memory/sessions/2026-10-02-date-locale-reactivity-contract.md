@@ -10,7 +10,7 @@
   "summary": "formatDateTime、formatDateTimeShort、formatTime、formatList 不传 locale 时读全局 Lingui 语言，React Compiler 按其余参数缓存。新增跨模块源码级契约 date-locale-reactivity-contract：组件与 Hook 里对这四个函数（含别名）的每次引用都须是带 locale 选项的调用，effect、事件回调与 CSV 导出列也算；经模块级 helper 的传递闭包与导入时调用同样拦截，并自检 lib/format.ts 读语言的导出名单。它在 04469b52 上报 38 处、修复后为 0，没有例外清单。38 处（19 个文件）改为无条件读 const locale = i18n.locale 后传入。编译产物显示修复前这些调用都碰巧正确（守卫含 _t/translate、不缓存或导出时才执行），用户可见行为不变，不写 CHANGELOG。独立审查后移植集成分支 089747f5 对数字契约的修补并补别名处理，8 个变异都被样例拦下。类型检查、Biome、两组回归 484 项、触及面 456 项通过；全量单测除负载超时外通过，失败的 7 个文件重跑通过。生产构建客户端总量 +475、超出预算 23 字节，按惯例上调总量基线，桌面运行时启动只余 84 字节。新契约已加入 CI。",
   "thread": null,
   "baseCommit": "04469b52",
-  "commits": [],
+  "commits": ["cae7c133"],
   "sources": [
     { "path": "apps/terminal/src/lib/tests/date-locale-reactivity-contract.test.ts" },
     { "path": "apps/terminal/src/lib/format.ts" },
@@ -51,7 +51,14 @@
 - `41c585cb`：新增 CI 步骤「Test number format and runtime locale contracts」；
 - `089747f5`：按审查补数字契约的组件识别与模块图漏洞，并改了 `code-style.md`、ADR 0036、`number-format-setting.md` 等文档。
 
-本分支仍按用户要求基于 `04469b52`，没有叠到集成分支上。核对过文档：那两个提交改的行与本次改的行之间都隔着未改动的行，按 diff 判断合并时不会冲突。**上面这些分支如果被改写，本分支需要重新叠放；按提交合并时会带上它们的提交。**
+本分支仍按用户要求基于 `04469b52`，没有叠到集成分支上。**上面这些分支如果被改写，本分支需要重新叠放；按提交合并时会带上它们的提交。**
+
+**更正与补充（提交 `cae7c133` 之后）。** 提交前只读 diff 判断，那两个提交改的行与本次改的行之间都隔着未改动的行，合并不会冲突。提交后用 `git merge-tree --write-tree` 实际试合并时，集成分支已到 `18cc35b1`（21:25，「share react identity across render contracts」）。这个提交做了两件事：
+
+- 新建共享测试 helper `apps/terminal/src/lib/tests/harness/react-source.ts`，数字契约与 i18n 契约的组件识别、透明表达式与作用域代码都改用它；
+- 改了 `docs/i18n-presentation.md` 里日期条目前面紧挨着的两条。
+
+试合并结果：`docs/i18n-presentation.md` 有一处内容冲突，双方改的是相邻的行；其余文件（`code-style.md`、`terminal-tests.yml`、ADR 0036、`number-format-setting.md`、`INDEX.md`）自动合并。原先「不会冲突」的判断只对 `41c585cb` 与 `089747f5` 成立。
 
 ## 结论与依据
 
@@ -280,9 +287,11 @@ CI：`.github/workflows/terminal-tests.yml` 的「Test recent trade rendering co
 - 契约只检查写了 `locale`。可选的 `locale` 参数（`processTrades(trades, locale?)`）若改为必填，类型检查就能兜住调用方漏传；本次没有改，它的唯一调用方已经传入。
 - 范围外发现：`apps/terminal/src/lib/chart/format.ts`（`formatShortDate`、`formatTime`、`formatTooltipDate`）在 `apps`、`packages`、`scripts` 里都没有被导入，像是死代码。它自己的 `formatTime` 与 `lib/format.ts` 的同名函数容易混淆。本次没有动，已开后续任务卡片。
 - 构建预算余量很小：桌面运行时启动只剩 84 字节，客户端总量 452 字节（本次已上调一次总量基线）。下一个碰到持仓页签或这些页面的改动，很可能要按惯例重定基线。
-- 日期契约与数字契约各有一份相同的模块图代码。集成分支合并后，可以抽成共享的测试 helper，避免两份再次分叉。眼下抽取会与 `089747f5` 冲突，所以没有做。
-- 合并进集成分支时：
+- 日期契约自带一份模块图与组件识别代码，与数字契约分开维护。集成分支的 `18cc35b1` 已把组件识别、透明表达式与作用域代码抽到 `harness/react-source.ts`。合并进集成分支时，日期契约也应改用它，避免两份再次分叉。本分支基于 `04469b52`，还没有这个 helper，所以没有做。
+- 合并进集成分支时还要：
+  - 解决 `docs/i18n-presentation.md` 的冲突，保留双方的改动；
+  - 重新生成 `docs/work-memory/INDEX.md`；
   - 把新契约移到 `41c585cb` 新建的 CI 步骤里；
-  - 若 `089747f5` 之后数字契约又有修补，同步到日期契约。
+  - 对照 `089747f5`、`18cc35b1` 之后数字契约的修补，同步到日期契约。
 - 本记录完成[上一条记录](2026-10-02-number-format-reactive-formatters.md)「后续」里的「日期格式化目前只有约定、没有契约」一项；那条记录本身未改动。
 - 没有被整体替代的记录。
