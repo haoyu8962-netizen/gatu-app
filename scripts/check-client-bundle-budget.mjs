@@ -40,7 +40,13 @@ const budgets = {
 	// illustration data (about 2.3 kB), their keyframes in the stylesheet (0.8 kB) and the three components, split
 	// so the illustrations load only with their dialogs (desktop runtime startup +769, mobile +151). Measured as the
 	// local Node 22.15.0 build (3,193,087) minus the local build of f440fa1b before the change (3,186,543).
-	totalGzipBaselineBytes: 3_185_921,
+	// Raised 2026-10-03 by +4,671 for the locale and number-format refresh (footer clock, vault labels, ADR 0036):
+	// components take their formatters from useNumberFormat() and read the locale before formatting, which adds
+	// React Compiler cache-guard dependencies (trade startup +2,410, desktop runtime startup +829, mobile +142).
+	// Measured as the local Node 22.15.0 build of 2d6f4676 (3,195,752) minus the local build of dev 682430ba
+	// (3,191,081), both with the fixed metadata of docs/terminal-performance-baseline.md; the +5,160 dev had already
+	// used stays counted. With CI metadata the same head measured 3,196,075, 154 bytes over the previous allowance.
+	totalGzipBaselineBytes: 3_190_592,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
