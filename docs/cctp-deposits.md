@@ -116,6 +116,10 @@ routing guard and the geo check still decide whether it can reach HyperCore.
 An external wallet needs Arbitrum ETH for that second step. The entry closes
 the deposit dialog before Privy's window opens, and a provider's `confirmed` or
 `submitted` result is reported as a purchase, never as an arrival or a deposit.
+While the purchase entry is on screen and can start, the dialog asks the
+page-level host to load ahead of the click. What has to be verified before the
+flag is turned on is listed in the
+[launch checklist](privy-card-funding-launch-checklist.md).
 
 ## Sponsored Wallet Boundary
 

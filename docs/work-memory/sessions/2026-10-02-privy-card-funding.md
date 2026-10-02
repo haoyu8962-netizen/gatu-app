@@ -7,10 +7,10 @@
   "kind": "task",
   "status": "recorded",
   "topics": ["account-funding", "static-hosting"],
-  "summary": "按用户决定（只做法币、邮箱与外部钱包都开放、主网测试网分开开关）在阶段一升级之上实现银行卡入金：useFiatOnramp 显式收款到精确的 Hyperliquid owner（须在 Privy 已连接列表中），不用会退回第一个嵌入式钱包的 useDepositFunds；用户看过官方终端后要求独立入口，充值弹层第一屏改为「转入 USDC」与「用银行卡购买 USDC」两个入口；购买窗口默认美元 100；选购买先关充值弹层，页面级宿主（首次请求时懒加载）持有请求，确认/提交都不声称到账，可能已扣款的拒绝报常驻的状态未知；独立审查 1 项 P2、9 项 P3 已修；build-meta 记录开关，主网发布需 --allow-mainnet-card-funding；CSP 静态放行 Stripe 公布的来源并重新生成 CloudFront 响应函数；总量基线按 CI 同口径实测 +11,776；ADR 0034。法律文本未改（需合格法律审阅），permissions-policy 未改（Apple/Google Pay 与页面内摄像头不可用）。未开启 Privy 控制台、未做沙盒与真实购买。",
+  "summary": "按用户决定（只做法币、邮箱与外部钱包都开放、主网测试网分开开关）在阶段一升级之上实现银行卡入金：useFiatOnramp 显式收款到精确的 Hyperliquid owner（须在 Privy 已连接列表中），不用会退回第一个嵌入式钱包的 useDepositFunds；用户看过官方终端后要求独立入口，充值弹层第一屏改为「转入 USDC」与「用银行卡购买 USDC」两个入口；购买窗口默认美元 100；选购买先关充值弹层，页面级宿主（首次请求时懒加载）持有请求，确认/提交都不声称到账，可能已扣款的拒绝报常驻的状态未知；独立审查 1 项 P2、9 项 P3 已修；build-meta 记录开关，主网发布需 --allow-mainnet-card-funding；CSP 静态放行 Stripe 公布的来源并重新生成 CloudFront 响应函数；总量基线按 CI 同口径实测 +11,776；ADR 0034。后续同日：选择页显示时预热宿主；生产构建实测点击到 Privy 首个请求 22–29 ms，此前记录的 8–14 秒是被遮挡窗口里定时器被限速所致；控制台只读核对线上应用的卡入金已开启（Stripe、MoonPay）、应用处于 development mode；待人工完成的各项写成上线验收清单，法律文本写成待审草案。法律文本未改（需合格法律审阅），permissions-policy 未改（Apple/Google Pay 与页面内摄像头不可用）。未做沙盒与真实购买、外部钱包与手机实测。",
   "thread": null,
   "baseCommit": "c0e550c7",
-  "commits": ["ca2cae61"],
+  "commits": ["ca2cae61", "a7b48b21"],
   "sources": [
     { "path": "docs/adr/0034-privy-card-funding.md" },
     { "path": "docs/privy-upgrade-and-funding-plan.md" },
@@ -22,6 +22,11 @@
     { "path": "apps/terminal/src/config/security-headers.ts" },
     { "path": "deploy/cloudfront/deploy.mjs" },
     { "path": "docs/cctp-deposits.md" },
+    { "path": "docs/privy-card-funding-launch-checklist.md" },
+    { "path": "docs/privy-card-funding-legal-draft.md" },
+    { "path": "docs/terminal-performance-baseline.md" },
+    { "path": "apps/terminal/src/stores/use-privy-fiat-funding-store.ts" },
+    { "path": "scripts/check-client-bundle-budget.mjs" },
     { "path": "docs/confirmation-surfaces.md" }
   ],
   "supersedes": []
@@ -51,6 +56,12 @@
 
 - 用户要求「review 一遍」：启动独立代理对 `git diff c0e550c7`（含未提交与未跟踪文件）做只读审查，结论无 P0/P1，1 项 P2、9 项 P3，逐条核实后全部处理：P2 可能已扣款的拒绝被显示成红色失败（读产物确认 Privy 在 `Could not confirm payment status yet.`、`Unable to check payment status. Please try again.` 与未识别异常时都以错误结束流程）→ 只有结账准备阶段的三条错误与服务商报告的 `Transaction failed` 算失败，其余为常驻「状态未知」；P3 宿主启动前不复核身份、首屏随会话状态翻转、切网页回不到选择页、外部钱包的转入说明不准、不确定通知 10 秒消失、测试缺口（关闭回调、准备提交期间禁用返回、首屏只决定一次、切网页返回）、嵌套三元与 `market-close-*` 令牌、悬停未加 `not-data-disabled`、两段译文用空格拼接、文档数字落后，均已修复或更新。
 
+- 用户要求继续处理上一轮留下的三件事（包体数字含本地配置、点购买后的空白、上线前提）。做法与依据：
+  - 包体：在不含 `.env.local` 的隔离 worktree 里补测升级前的 `682430ba`，与同口径的 `c0e550c7` 相比 +84,032 / 首屏 +62,911（原记录 +83,687 / +62,713），差值在构建抖动内，基线不动；预算脚本在构建旁有 `.env*.local` 时打印提示（`findLocalEnvFiles`），避免再把本地配置量进基线。
+  - 点购买后的空白：读 3.46.0 产物，`fund()` 同步调用 `openModal`，后者用 `setTimeout(…, 15)` 打开窗口，购买页是窗口内部的懒加载块并自带加载态。在生产构建上实测，点击到 Privy 第一个请求 22–29 ms。操作的 Chrome 窗口被遮挡（`visibilityState` 为 `hidden`），15 ms 的定时器实际要 590–1001 ms、页面不出帧，上一轮看到的「8–14 秒」和「空白退出框」是这个状态造成的，不是产品行为。我们这一侧能省的只有宿主块的下载：选择页显示且入口可用时预热。
+  - 预热的实现选型：单独的加载器模块会把动态导入的块清单搬进运行时首屏的共享小块，手机与桌面运行时各多约 420 字节（在带开关并读 `.env.local` 的构建里桌面只剩 155 字节余量）；改为在 store 里记标记、下载仍留在闸门里，实测各多 93 与 173 字节。
+  - 上线前提：读 Privy 文档与产物确认控制台要求、沙盒测试值和 Stripe 流程会收集的资料；线上 `app.sairn.ai` 与本地用的是同一个 Privy 应用；在用户 Chrome 已登录的控制台里只读查看了 Funding 页。点 `Continue` 之后的步骤会把登录邮箱交给 Stripe 并创建 Link 账户，测试网还要先签署条款，都需要用户本人，没有做。
+
 ## 验证与限制
 
 工作区基线 `c0e550c7`，2026-10-02 本机执行（机器负载高，load average 12–41）。
@@ -77,11 +88,26 @@
 
 未做：Privy 控制台入金方式的确认、沙盒与真实购买（未点 Continue）、外部钱包会话与手机/PWA 的真实测试、Stripe 嵌入组件在我们 CSP 下的加载、法律审阅与发布。
 
+预热、复测与上线材料（提交 `a7b48b21` 之上的工作区，2026-10-02 16:00–17:45）：
+
+- 更正上文两处观察：「约 8–14 秒后 Privy 窗口出现」与「关闭后约 3–5 秒的空白退出框」都发生在被遮挡的 Chrome 窗口里，原因是定时器限速与不出帧（见「结论与依据」最后一条），不是开发服务器转译，也不是产品行为；同一状态下页面加载后的第一次点击不命中，先截图出一帧后正常。
+- 单测：`privy-fiat-funding-host-gate.test.tsx` 5 项（新增预热后提前加载、预热失败不提示且下次请求重试、预热期间发起的购买在加载失败时仍报告）、`deposit-modal-withdrawal-routing-guard.test.tsx` 112 项（新增只在入口显示且可用时预热）通过；变异核对：去掉闸门里的清除标记、把预热条件放宽为弹层打开，各有 1 项失败。`check-client-bundle-budget.test.mjs` 17 项通过。类型检查通过。
+- 终端全量测试两轮（Node 22.15.0）：第一轮 8,057 项通过、1 项跳过、1 项失败（`client-bootstrap-error.test.ts` 的遥测模块加载失败用例，1,008 ms 超时；该文件单独重跑三次均为 2 项通过，本次没有改动它涉及的代码，当时负载约 17–47）；第二轮 649 个文件通过、1 个跳过，8,058 项通过、1 项跳过，无失败。`account-actions` 浏览器套件这一轮没有重跑（夹具不经过充值弹层与 store）。
+- CI 同口径构建（不含 `.env.local`，固定构建身份，Node 22.15.0）：`682430ba` 3,190,861 / 1,561,189 / 117,427 / 201,008；带预热的工作区 3,287,254 / 1,626,872 / 117,887 / 201,548，预算通过，桌面运行时余量 440 字节。
+- 生产构建实测（两个开关打开并读 `.env.local` 的构建、本地 Nitro、强制 CSP；`/api/geo` 由只回答该路径的本地代理返回 GB，因为 IP 归属服务不认回环地址、存款按设计保持关闭）：用户 Chrome 的邮箱会话、主网。选择页出现前 5 ms 宿主块开始下载；两次点击「购买」后 29 ms 与 22 ms Privy 发出 `sessions` / `quotes` 请求；窗口显示 Buy USDC、$100、USD，`Continue` 可用（报价 1 条，未看到服务商名）；关闭后无通知、入口恢复；全程 `securitypolicyviolation` 为空。输入路径是扩展注入的鼠标事件，窗口处于 hidden。
+- 策略探测（同一页面）：preload `js.stripe.com/crypto-onramp/v1/crypto-onramp.js`（3.46.0 实际加载的 SDK）与 `crypto-js.stripe.com/crypto-onramp-outer.js`、no-cors 请求 `api.stripe.com` 与 `link.com`、隐藏 iframe `js.stripe.com` 与 `hooks.stripe.com` 均无违规；对照 `example.com` 的脚本、请求、框架各触发一次违规。这只证明策略放行这些来源，不是 Stripe 流程的验证。
+- 线上核对：`app.sairn.ai` 首屏 130 个脚本里 5 个含本地 Privy 应用 ID（不输出值）；`build-meta.json` 为 p24，`cctpDeposits.testnetSponsoredWallet` 为 false。
+- Privy 控制台（用户 Chrome 已登录，只读）：Sairn 应用的 Card onramps 开启，Stripe、MoonPay 为 Enabled，Meld 未配置，Bank transfer、Exchange、Crypto deposits 关闭；页面提示应用处于 development mode。没有改任何设置。
+- 测试中切到过 Testnet：弹出条款接受窗口，未接受也未拒绝；用本地存储键改回 Mainnet 并刷新。测试后清除了本地 3005 的 Service Worker 壳缓存，开发服务器已恢复。
+- 窗口尺寸调整在被遮挡的窗口里不生效，没有做手机宽度下真实 Privy 窗口的检查。
+
 ## 后续与替代关系
 
 - 打开主网开关前按 ADR 0034「上线前提」逐条完成并记录。
 - `permissions-policy` 是否为 Stripe 放开 `payment` 与 `camera`，待沙盒实测后单独决定。
 - 应用 viem 去重（见阶段一记录）仍是后续。
 - 合并 `claude/silent-email-wallet` 时保留 `createOnLogin: "off"` 与 `EmailEmbeddedWalletProvider`，并重跑其列出的四个测试。
-- 选「购买」后到 Privy 窗口出现之间没有进度提示。生产环境里我们懒加载的只有约 1.3 KB 的宿主块（Privy 入金模块已在交易首屏闭包里），其余是 Privy 自己的购买窗口块，等待应远短于开发服务器上的 8–14 秒（未在生产构建上测量）；若真机上仍明显，可在指向或聚焦购买入口时预热宿主块。
-- 桌面运行时增量余量 613 字节：下一个进入桌面首屏的改动需要自己的缩减或评审。
+- （已由上文更正并处理：实测间隔为几十毫秒，宿主块改为预热。）选「购买」后到 Privy 窗口出现之间没有进度提示。生产环境里我们懒加载的只有约 1.3 KB 的宿主块（Privy 入金模块已在交易首屏闭包里），其余是 Privy 自己的购买窗口块，等待应远短于开发服务器上的 8–14 秒（未在生产构建上测量）；若真机上仍明显，可在指向或聚焦购买入口时预热宿主块。
+- 桌面运行时增量余量 613 字节，加入预热后为 440 字节：下一个进入桌面首屏的改动需要自己的缩减或评审。
+- 待人工完成的验收逐行写在[上线验收清单](../../privy-card-funding-launch-checklist.md)；法律文本的[待审草案](../../privy-card-funding-legal-draft.md)需要合格法律审阅。
+- 待用户决定：是否把购买窗口的币种收窄到有服务商的四种（USD、EUR、AUD、BRL）；Privy 应用是否从 development mode 升级；是否做 Meld KYB。

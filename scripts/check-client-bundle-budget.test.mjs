@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import {
 	collectTradeStartupFiles,
+	findLocalEnvFiles,
 	getBudgetIncreaseViolation,
 	TRADE_DESKTOP_RUNTIME_MODULE_IDS,
 } from "./check-client-bundle-budget.mjs";
@@ -387,6 +388,17 @@ test("applies budget tolerance", () => {
 		}),
 		"trade startup gzip increased by 10001 bytes from baseline 100000; allowed increase is 10000 bytes",
 	);
+});
+
+test("names developer-only env files that make a local build measure differently from CI", (context) => {
+	const appDirectory = mkdtempSync(join(tmpdir(), "sairn-budget-env-"));
+	context.after(() => rmSync(appDirectory, { recursive: true, force: true }));
+	for (const file of [".env", ".env.example", ".env.production", ".env.production.local", ".env.local", "notes.local"]) {
+		writeFileSync(join(appDirectory, file), "");
+	}
+
+	assert.deepEqual(findLocalEnvFiles(appDirectory), [".env.local", ".env.production.local"]);
+	assert.deepEqual(findLocalEnvFiles(join(appDirectory, "missing")), []);
 });
 
 test("keeps every deterministic PositionsPanel idle preload in the desktop runtime profile", () => {

@@ -42,7 +42,7 @@ const budgets = {
 	// local Node 22.15.0 build (3,193,087) minus the local build of f440fa1b before the change (3,186,543).
 	// Raised 2026-10-02 by +83,687 for the Privy React Auth 3.46.0 upgrade (docs/terminal-performance-baseline.md):
 	// fixed-metadata Node 22.15.0 builds, pairing off, 3,275,424 after minus 3,191,737 for 682430ba before (both
-	// sides read a developer .env.local; a CI-equivalent build of the after side reads 3,274,893).
+	// sides read a developer .env.local; CI-equivalent builds read 3,274,893 minus 3,190,861 = +84,032).
 	// Raised 2026-10-02 by +11,776 for card funding (ADR 0034): the onramp host loads lazily, but using
 	// useFiatOnramp splits Privy's funding module out of its main chunk (+1,380 net, both in trade startup), the
 	// six catalogs (+2,024), the deposit method chooser (+1,922), the host (+1,346), the domain, store and gate
@@ -107,6 +107,22 @@ export function collectTradeStartupFiles({
 		assetFiles,
 		entryFiles: [...routePreloadFiles, ...runtimeEntryFiles, ...semanticEntryFiles],
 	});
+}
+
+const LOCAL_ENV_FILE_PATTERN = /^\.env(?:\.[^.]+)?\.local$/;
+
+/**
+ * Developer-only Vite env files next to the built application. Vite inlines their `VITE_*` values, so a build that
+ * read one measures a few hundred bytes more than CI, which has none (docs/terminal-performance-baseline.md).
+ */
+export function findLocalEnvFiles(appDirectory) {
+	try {
+		return readdirSync(appDirectory)
+			.filter((file) => LOCAL_ENV_FILE_PATTERN.test(file))
+			.sort();
+	} catch {
+		return [];
+	}
 }
 
 export function getBudgetIncreaseViolation({ label, actualBytes, baselineBytes, allowedIncreaseBytes }) {
@@ -250,6 +266,7 @@ export async function analyzeClientBundle(assetsDirectoryArgument) {
 
 export async function checkClientBundleBudget(assetsDirectoryArgument) {
 	const {
+		assetsDirectory,
 		largestChunk,
 		totalGzip,
 		violations,
@@ -324,6 +341,12 @@ export async function checkClientBundleBudget(assetsDirectoryArgument) {
 	for (const surface of surfaceSizes) {
 		const asset = surface.assets.length === 1 ? surface.assets[0] : undefined;
 		if (asset) console.log(`- ${asset.file}: ${asset.gzip} gzip bytes`);
+	}
+	const localEnvFiles = findLocalEnvFiles(resolve(assetsDirectory, "../../.."));
+	if (localEnvFiles.length > 0) {
+		console.log(
+			`Note: ${localEnvFiles.join(", ")} sits next to this build. CI has no local env file, so a build that read it measures a few hundred bytes above CI; take re-baseline measurements in a checkout without it.`,
+		);
 	}
 
 	if (violations.length > 0) {

@@ -88,6 +88,7 @@ import {
 	useTransferModalActions,
 } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { warmPrivyFiatFundingHost } from "@/stores/use-privy-fiat-funding-store";
 import { PendingActionModal } from "../components/pending-action-modal";
 import { DepositForm } from "./deposit/deposit-form";
 import { DepositMethodChooser } from "./deposit/deposit-method-chooser";
@@ -527,6 +528,10 @@ export function DepositModal() {
 		}
 	}
 	const showsDepositMethods = visibleTab === "deposit" && depositMethodsOffered && depositStep === "methods";
+	const canStartFiatFunding = open && showsDepositMethods && fiatFundingOffer !== null && !fiatFundingOffer.disabled;
+	useEffect(() => {
+		if (canStartFiatFunding) warmPrivyFiatFundingHost();
+	}, [canStartFiatFunding]);
 	const canReturnToDepositMethods =
 		visibleTab === "deposit" && canUseDeposit && depositMethodsOffered && depositStep === "transfer";
 	const depositMethodChoice = fiatFundingOffer ?? {

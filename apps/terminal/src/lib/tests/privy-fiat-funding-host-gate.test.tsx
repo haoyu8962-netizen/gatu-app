@@ -43,6 +43,13 @@ describe("PrivyFiatFundingHostGate", () => {
 		vi.clearAllMocks();
 	});
 
+	async function settleHostImport() {
+		await act(async () => {
+			await import(HOST_MODULE).catch(() => undefined);
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		});
+	}
+
 	it("loads the onramp host only after a purchase is requested", async () => {
 		const hostRenders = vi.fn(() => null);
 		vi.doMock(HOST_MODULE, () => ({ PrivyFiatFundingHost: hostRenders }));
@@ -53,11 +60,24 @@ describe("PrivyFiatFundingHostGate", () => {
 		await act(async () => {
 			store.requestPrivyFiatFunding(createAttempt());
 		});
-		await act(async () => {
-			await import(HOST_MODULE);
-			await new Promise((resolve) => setTimeout(resolve, 0));
-		});
+		await settleHostImport();
 		expect(hostRenders).toHaveBeenCalled();
+		expect(toastMocks.error).not.toHaveBeenCalled();
+	});
+
+	it("loads the host ahead of the request once the purchase entry warms it", async () => {
+		const hostRenders = vi.fn(() => null);
+		vi.doMock(HOST_MODULE, () => ({ PrivyFiatFundingHost: hostRenders }));
+		const { PrivyFiatFundingHostGate, store } = await loadGate();
+		await act(async () => root.render(createElement(PrivyFiatFundingHostGate)));
+
+		await act(async () => {
+			store.warmPrivyFiatFundingHost();
+		});
+		await settleHostImport();
+
+		expect(hostRenders).toHaveBeenCalled();
+		expect(store.readPrivyFiatFundingAttempt()).toBeNull();
 		expect(toastMocks.error).not.toHaveBeenCalled();
 	});
 
@@ -72,12 +92,63 @@ describe("PrivyFiatFundingHostGate", () => {
 		await act(async () => {
 			store.requestPrivyFiatFunding(attempt);
 		});
-		await act(async () => {
-			await import(HOST_MODULE).catch(() => undefined);
-			await new Promise((resolve) => setTimeout(resolve, 0));
-		});
+		await settleHostImport();
 		expect(toastMocks.error).toHaveBeenCalledWith("Card purchase could not open. Check your connection and try again.");
 		expect(store.isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
 		expect(JSON.stringify(toastMocks.error.mock.calls)).not.toContain("dynamically imported");
+	});
+
+	it("stays quiet when a warm-up cannot load the host and tries again for the next request", async () => {
+		const hostRenders = vi.fn(() => null);
+		let available = false;
+		vi.doMock(HOST_MODULE, () => {
+			if (!available) throw new Error("Failed to fetch dynamically imported module");
+			return { PrivyFiatFundingHost: hostRenders };
+		});
+		const { PrivyFiatFundingHostGate, store } = await loadGate();
+		await act(async () => root.render(createElement(PrivyFiatFundingHostGate)));
+
+		await act(async () => {
+			store.warmPrivyFiatFundingHost();
+		});
+		await settleHostImport();
+		expect(toastMocks.error).not.toHaveBeenCalled();
+		expect(hostRenders).not.toHaveBeenCalled();
+
+		available = true;
+		const attempt = createAttempt();
+		await act(async () => {
+			store.requestPrivyFiatFunding(attempt);
+		});
+		await settleHostImport();
+		expect(hostRenders).toHaveBeenCalled();
+		expect(store.isCurrentPrivyFiatFundingAttempt(attempt)).toBe(true);
+		expect(toastMocks.error).not.toHaveBeenCalled();
+	});
+
+	it("reports a purchase that was requested while a failing warm-up was still loading", async () => {
+		let failHostImport: (error: Error) => void = () => undefined;
+		const hostImport = new Promise<never>((_resolve, reject) => {
+			failHostImport = reject;
+		});
+		vi.doMock(HOST_MODULE, () => hostImport);
+		const { PrivyFiatFundingHostGate, store } = await loadGate();
+		await act(async () => root.render(createElement(PrivyFiatFundingHostGate)));
+		const attempt = createAttempt();
+
+		await act(async () => {
+			store.warmPrivyFiatFundingHost();
+		});
+		await act(async () => {
+			store.requestPrivyFiatFunding(attempt);
+		});
+		expect(toastMocks.error).not.toHaveBeenCalled();
+
+		failHostImport(new Error("Failed to fetch dynamically imported module"));
+		await settleHostImport();
+		expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(
+			"Card purchase could not open. Check your connection and try again.",
+		);
+		expect(store.isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
 	});
 });

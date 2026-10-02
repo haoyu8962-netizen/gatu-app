@@ -9,12 +9,29 @@ export interface PrivyFiatFundingAttempt {
 
 interface PrivyFiatFundingStore {
 	attempt: PrivyFiatFundingAttempt | null;
+	hostWarmed: boolean;
 }
 
-const usePrivyFiatFundingStore = create<PrivyFiatFundingStore>(() => ({ attempt: null }));
+const usePrivyFiatFundingStore = create<PrivyFiatFundingStore>(() => ({ attempt: null, hostWarmed: false }));
 
 export function usePrivyFiatFundingAttempt(): PrivyFiatFundingAttempt | null {
 	return usePrivyFiatFundingStore((state) => state.attempt);
+}
+
+/**
+ * Whether the page-level host should be loaded: a purchase was requested, or its entry is on screen
+ * and was warmed so the request does not wait for the download.
+ */
+export function usePrivyFiatFundingHostWanted(): boolean {
+	return usePrivyFiatFundingStore((state) => state.hostWarmed || state.attempt !== null);
+}
+
+export function warmPrivyFiatFundingHost(): void {
+	usePrivyFiatFundingStore.setState({ hostWarmed: true });
+}
+
+export function forgetPrivyFiatFundingHostWarmUp(): void {
+	usePrivyFiatFundingStore.setState({ hostWarmed: false });
 }
 
 export function requestPrivyFiatFunding(attempt: PrivyFiatFundingAttempt): boolean {
@@ -37,5 +54,5 @@ export function finishPrivyFiatFunding(attempt: PrivyFiatFundingAttempt): void {
 
 /** @internal — exported only for deterministic tests. */
 export function resetPrivyFiatFundingStore(): void {
-	usePrivyFiatFundingStore.setState({ attempt: null });
+	usePrivyFiatFundingStore.setState({ attempt: null, hostWarmed: false });
 }

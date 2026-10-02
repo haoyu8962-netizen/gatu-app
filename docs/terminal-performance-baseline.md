@@ -305,10 +305,20 @@ unchanged. No static import cycle was reported. This is a byte measurement, not 
 heavier startup were not measured.
 
 Correction (2026-10-02): both sides of this measurement read the developer `apps/terminal/.env.local` (the Privy app ID
-and three CCTP flags, which every whole-object `import.meta.env` literal then carries). The change column compares like
-with like, but CI builds without that file: a CI-equivalent build of the after side (`c0e550c7`) reads 3,274,893 total,
-1,624,100 static startup, 117,422 mobile and 200,714 desktop (-531, -327, +9 and -4 against the table). Take future
-re-baseline measurements in a checkout without `.env.local`.
+and three CCTP flags, which every whole-object `import.meta.env` literal then carries). CI builds without that file, so
+both sides were measured again in isolated worktrees without it, with the same build identity, Node and pnpm versions:
+
+| Metric | Before (`682430ba`) | After (`c0e550c7`) | Change |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,190,861 | 3,274,893 | +84,032 |
+| Static trade startup | 1,561,189 (102 assets) | 1,624,100 (101 assets) | +62,911 |
+| Mobile runtime increment | 117,427 | 117,422 | -5 |
+| Desktop runtime increment | 201,008 | 200,714 | -294 |
+
+The changes agree with the table above within the build-to-build variation of a few hundred bytes (345 more in total,
+198 more in static startup), so the baselines keep the smaller raises measured there. Take re-baseline measurements in
+a checkout without local env files; `scripts/check-client-bundle-budget.mjs` now prints a note when one sits next to the
+build it measures.
 
 ## Card funding total-client re-baseline (2026-10-02)
 
@@ -342,10 +352,17 @@ funding-module split, the preload lists, the icon chunk and the stylesheet.
 
 Only the total-client baseline moved: 3,269,608 + 11,776 = 3,281,384. This replaces the +9,725 raise of the first
 version (an entry card inside the deposit form), which had been measured with `.env.local` on both sides. The desktop
-runtime increment now sits 613 bytes under its 10,000-byte allowance (201,375 against 201,988), so the next first-render
-addition on desktop needs its own reduction or review. Builds of the same source differ by a few hundred bytes
-(renamed chunk imports), and a build that reads the developer `.env.local` is larger: 3,287,147 total and 1,627,062
-static startup for the same after tree, while its runtime increments differ by 1 to 2 bytes.
+runtime increment then sat 613 bytes under its 10,000-byte allowance (201,375 against 201,988). Builds of the same
+source differ by a few hundred bytes (renamed chunk imports), and a build that reads the developer `.env.local` is
+larger: 3,287,147 total and 1,627,062 static startup for the same after tree, while its runtime increments differ by
+1 to 2 bytes.
+
+The purchase-host warm-up added later the same day keeps the dynamic import in the gate and only adds a flag to the
+shared store, because a separate loader module moved the import's chunk list into the small shared chunk and cost about
+420 bytes in both runtime increments. A CI-equivalent build with the warm-up reads 3,287,254 total, 1,626,872 static
+startup, 117,887 mobile and 201,548 desktop: +93 mobile and +173 desktop against the table, with no baseline change.
+The desktop runtime increment now sits 440 bytes under its allowance, so the next first-render addition on desktop needs
+its own reduction or review.
 
 ## Functional acceptance gates
 

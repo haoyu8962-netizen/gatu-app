@@ -1,15 +1,20 @@
 import { useLingui } from "@lingui/react/macro";
 import { type ComponentType, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { finishPrivyFiatFunding, usePrivyFiatFundingAttempt } from "@/stores/use-privy-fiat-funding-store";
+import {
+	finishPrivyFiatFunding,
+	forgetPrivyFiatFundingHostWarmUp,
+	readPrivyFiatFundingAttempt,
+	usePrivyFiatFundingHostWanted,
+} from "@/stores/use-privy-fiat-funding-store";
 
 export function PrivyFiatFundingHostGate() {
 	const { t } = useLingui();
-	const attempt = usePrivyFiatFundingAttempt();
+	const hostWanted = usePrivyFiatFundingHostWanted();
 	const [Host, setHost] = useState<ComponentType | null>(null);
 
 	useEffect(() => {
-		if (!attempt || Host) return;
+		if (!hostWanted || Host) return;
 		let cancelled = false;
 		import("./privy-fiat-funding-host").then(
 			(module) => {
@@ -17,6 +22,9 @@ export function PrivyFiatFundingHostGate() {
 			},
 			() => {
 				if (cancelled) return;
+				forgetPrivyFiatFundingHostWarmUp();
+				const attempt = readPrivyFiatFundingAttempt();
+				if (!attempt) return;
 				finishPrivyFiatFunding(attempt);
 				toast.error(t`Card purchase could not open. Check your connection and try again.`);
 			},
@@ -24,7 +32,7 @@ export function PrivyFiatFundingHostGate() {
 		return () => {
 			cancelled = true;
 		};
-	}, [attempt, Host, t]);
+	}, [hostWanted, Host, t]);
 
 	return Host ? <Host /> : null;
 }

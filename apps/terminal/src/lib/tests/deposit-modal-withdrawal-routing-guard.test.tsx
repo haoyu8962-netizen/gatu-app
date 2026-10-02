@@ -48,6 +48,7 @@ const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning
 vi.mock("sonner", () => ({ toast: toastMocks }));
 const closeDepositModal = vi.hoisted(() => vi.fn());
 const resetDeposit = vi.hoisted(() => vi.fn());
+const warmPrivyFiatFundingHost = vi.hoisted(() => vi.fn());
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -483,6 +484,8 @@ vi.mock("@/hooks/trade/use-privy-fiat-funding-offer", () => ({
 		return testState.fiatOffer;
 	},
 }));
+
+vi.mock("@/stores/use-privy-fiat-funding-store", () => ({ warmPrivyFiatFundingHost }));
 
 vi.mock("@/components/trade/components/pending-action-modal", () => ({
 	PendingActionModal: ({ children, onOpenChange }: { children?: ReactNode; onOpenChange: (open: boolean) => void }) => {
@@ -2354,6 +2357,35 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 			expect(methods()).not.toBeNull();
 			expect(container.querySelector('[data-testid="wrong-network-screen"]')).toBeNull();
+		});
+
+		it("warms the purchase host while the purchase entry is on screen", async () => {
+			offerCardFunding();
+			await rerender();
+			expect(warmPrivyFiatFundingHost).not.toHaveBeenCalled();
+
+			testState.modalOpen = true;
+			await rerender();
+			expect(methods()).not.toBeNull();
+			expect(warmPrivyFiatFundingHost).toHaveBeenCalledOnce();
+
+			chooseMethod("transfer");
+			expect(warmPrivyFiatFundingHost).toHaveBeenCalledOnce();
+		});
+
+		it("does not warm the purchase host when no purchase can start", async () => {
+			testState.modalOpen = true;
+			await rerender();
+			expect(depositForm()).not.toBeNull();
+			expect(warmPrivyFiatFundingHost).not.toHaveBeenCalled();
+
+			testState.modalOpen = false;
+			await rerender();
+			testState.fiatOffer = { walletKind: "embedded", disabled: true, start: vi.fn() };
+			testState.modalOpen = true;
+			await rerender();
+			expect(methods()).not.toBeNull();
+			expect(warmPrivyFiatFundingHost).not.toHaveBeenCalled();
 		});
 
 		it("lets the offer know when deposits are unavailable or busy", async () => {
