@@ -10,7 +10,7 @@
     "brand-identity",
     "static-hosting"
   ],
-  "summary": "用户决定 gatu.ai 直接下线、不并存不 301。先做只读规划（docs/sairn-domain-cutover-plan.md），再按用户答复定稿：先断后接、gatu.ai 不永久续费、gatu.ai 邮件与 SES 推迟、另登记 sairn 推荐码、不做告别 SW、换新的 Privy 应用；决策另立 ADR 0032。用户在控制台给 gatu-edge 挂临时 IAM 策略后，已签发 4 名 sairn 证书 b04a51c6、源站请求策略加入 X-Sairn-Forwarded-Host，并开 PR #68。Codex 四路只读对抗审查报 5 项 P1、10 项 P2，复核后全部修复或改写；主网赞助充值经用户决定保持开启，切换当天做带资金验证。发布与切换尚未执行。",
+  "summary": "gatu.ai 直接下线、切换到 sairn.ai：2026-10-02 已上线。PR #68 合入 dev（682430ba），经 #67 晋升 main（3ced842e），从 main 构建 p24（cloudfront-2026-10-02-p24，新 Privy 应用，主网赞助开、测试网赞助关、配对关）。发布 CloudFront 函数、Lambda、S3 后，三个分发一次换成 sairn 别名与 4 名证书 b04a51c6；官网上传并删除撤下页面。verify 主网 15 项、测试网 16 项通过（首轮图表包缓存未命中，预热后通过），CSP 覆盖无违规，官网检查通过，gatu 四个主机已不可达。决策另见 ADR 0032。真实钱包冒烟、主网小额赞助充值与 p25 清理未做。",
   "thread": null,
   "baseCommit": "5517ef70",
   "commits": [
@@ -180,6 +180,46 @@
 - 升级到 ≥ 3.33.1。
 
 升级与 Funding 接入另开分支，不进本次切换。方案 0.7、1.1、2.6 与第 7 节第 9 项已据此改写。
+
+## 上线执行（2026-10-02）
+
+用户确认：
+- 智能钱包已按要求配好；
+- WalletConnect 项目 ID 是 `df8c…`，与新应用里填的相同（SHA-256 前缀一致）；
+- 旧内嵌钱包的资金已转出；
+- 不需要回滚准备；
+- 同意合并与发布，要求不要再先发 gatu 验证，直接上线 sairn。
+
+用户随后在 Cloudflare 添加了 4 条网页记录，权威应答核对无误：`app` → `d2i25dhfjwco8b.cloudfront.net`、`testnet` → `dg9o2gpw3mt8q.cloudfront.net`、`www` → `d1bgo95x2hobvu.cloudfront.net`、根域名经 CNAME 拉平。
+
+1. **合并与晋升**：PR #68 在 CI 全绿（`e2e873f2`）后以 merge commit 合入 `dev`（`682430ba`）。晋升 PR #67 改名为「Promote dev to main: PR 66 and PR 68」，7 项 CI 全绿后合入 `main`（`3ced842e`），树与 `682430ba` 相同。浏览器回归分片 1 用时 22 分 24 秒，接近 25 分钟上限。
+2. **构建**：在仓库外的工作树 `/Users/zhixing/我的项目/gatu-release-p24` 用 Node 22.15 构建 p24，`.env.local` 只软链、不读取，开关全部在命令行显式给出。
+   - `build-meta.json`：`3ced842e`、`cloudfront-2026-10-02-p24`；主网赞助 `true`、测试网外部 `true`、测试网赞助 `false`；配对 `false`。
+   - 包体总量 3,191,607 gzip 字节，比基线多 5,686；Lambda 225.92 kB。
+   - 产物核对：新 Privy App ID 出现在 5 个文件，旧 ID 0 个，无开发用 Agent 槽位。
+   - 官网测试 10 项通过，`dist` 中没有 `gatu`。
+3. **发布**（`gatu-edge`，退出码全部为 0）：
+   - `functions --execute --origin https://app.gatu.ai`：3 个本次哈希加 10 个旧哈希。
+   - `lambda --function-name gatu-terminal-api --execute`：版本 9，环境变量未动。
+   - `sync --bucket gatu-terminal-2026 --allow-sponsored-mainnet-deposits --execute`：上传前确认线上函数放行全部 3 个哈希，上传后发布标记与本地一致。
+   - 两个终端分发 `invalidate`。
+   - 官网分三组上传，`--delete` 只删 `blog/welcome/index.html`（先 `--dryrun`），再 `invalidate`。
+4. **切换**：先演练确认只改 `Aliases` 与 `ViewerCertificate`，再执行 `aliases`：主网 `app.sairn.ai`、测试网 `testnet.sairn.ai`、官网 `sairn.ai` 与 `www.sairn.ai`，证书 `b04a51c6…`。三个分发都等到 `Deployed`。
+5. **验证**：
+   - `verify`：首轮主网 14/15、测试网 15/16，失败的都是「图表包在边缘命中缓存」（刚做过全量失效，`x-cache: Miss`）；预热后重跑主网 15/15、测试网 16/16。
+   - `csp-coverage.mjs https://app.sairn.ai`：退出码 0，三类违规都为空；跳过 WalletConnect 二维码与手机图表页两步。
+   - 官网发布后检查：首页、`www`、`/risk`、静态文件均为预期状态码与缓存头；不存在的页面与 `/blog/welcome/` 的 GET 与 HEAD 都是 404，内容是 404 页（`curl -I` 经本机代理时首行是代理的 `200 Connection established`，第一次统计误读为 200，已用 `-w %{http_code}` 更正）；canonical 与 `og:*` 指向 `https://sairn.ai/`。
+   - `https://app.sairn.ai/brand/email-logo.png` 返回 200 PNG。
+   - `gatu.ai`、`www`、`app`、`testnet` 四个主机连接失败（000）。
+
+未做或待做：
+- 真实钱包冒烟：邮箱登录生成新的内嵌钱包、主网至少 5 USDC 的赞助充值，由用户进行；
+- Privy 新应用后台的 Logo 尚未填写；
+- p25 清理（≥ 7 天后）以及之后摘除临时 IAM 策略；
+- Privy 升级到生产模式；
+- 升级 `@privy-io/react-auth` 并接入 Funding；
+- 浏览器回归分片耗时接近上限；
+- gatu.ai 网页 DNS 记录是否删除由用户决定，不影响下线结果。
 
 ## 验证与限制
 
