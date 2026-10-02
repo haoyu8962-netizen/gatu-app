@@ -14,7 +14,7 @@ These are the facts the reviewer needs. They come from the application code and 
 - For the Stripe flow, Privy passes the user's sign-in e-mail address (and phone number, if the Privy account has one) to Stripe. The window then asks the user for a phone number, legal name, date of birth, residential address, nationality and national identifiers such as a US Social Security number or an EU tax or identity number, and may require a document and selfie check. Those fields are drawn by Privy's software inside the Sairn page and sent to the provider. Card details are entered in elements supplied by Stripe.
 - Sairn's own code does not read, store or transmit those identity or payment details, and Sairn has no server that receives them. In the browser Sairn learns only how the flow ended: confirmed, submitted, failed, cancelled or unknown.
 - The provider delivers USDC to the user's wallet on Arbitrum. Sairn cannot cancel, refund or reverse a purchase. The USDC is not in the trading account until the user makes a separate deposit; an external wallet pays Arbitrum network fees for that deposit.
-- The entry is shown only where deposits are available, so Sairn's existing regional restrictions also apply to it. Provider coverage is narrower: Stripe's onramp is offered in the United States (excluding New York) and the European Union.
+- The entry can be started only where deposits are available, so Sairn's existing regional restrictions also apply to it; where they are not, the entry may still be shown, disabled, next to the reason. Provider coverage is narrower: Stripe's onramp is offered in the United States (excluding New York) and the European Union.
 
 ## Proposed changes
 

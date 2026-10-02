@@ -11,6 +11,7 @@ describe("DepositMethodChooser", () => {
 	let root: Root;
 	const onTransfer = vi.fn();
 	const onBuy = vi.fn();
+	const onBuyAvailable = vi.fn();
 
 	beforeEach(() => {
 		container = document.createElement("div");
@@ -25,7 +26,7 @@ describe("DepositMethodChooser", () => {
 	});
 
 	function render(fiat: { walletKind: "embedded" | "external"; disabled: boolean }, notice: string | null = null) {
-		act(() => root.render(createElement(DepositMethodChooser, { fiat, notice, onTransfer, onBuy })));
+		act(() => root.render(createElement(DepositMethodChooser, { fiat, notice, onTransfer, onBuy, onBuyAvailable })));
 	}
 
 	function option(method: "fiat" | "transfer") {
@@ -56,6 +57,19 @@ describe("DepositMethodChooser", () => {
 		expect(option("fiat").textContent).toContain("Depositing it needs a little ETH on Arbitrum for network fees.");
 		expect(option("transfer").textContent).toContain("Deposit native USDC on Arbitrum from your connected wallet.");
 		expect(option("transfer").textContent).not.toContain("exchange");
+	});
+
+	it("reports the purchase entry once each time it becomes available on screen, and never while disabled", () => {
+		render({ walletKind: "embedded", disabled: true });
+		expect(onBuyAvailable).not.toHaveBeenCalled();
+
+		render({ walletKind: "embedded", disabled: false });
+		render({ walletKind: "embedded", disabled: false }, "Another render");
+		expect(onBuyAvailable).toHaveBeenCalledTimes(1);
+
+		render({ walletKind: "embedded", disabled: true });
+		render({ walletKind: "embedded", disabled: false });
+		expect(onBuyAvailable).toHaveBeenCalledTimes(2);
 	});
 
 	it("keeps the purchase entry disabled from the availability flag and shows the shared notice", () => {

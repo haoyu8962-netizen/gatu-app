@@ -1,11 +1,24 @@
 import { useSyncExternalStore } from "react";
 
-interface CardFundingSession {
+export interface CardFundingSession {
 	clientKey: string;
 	isTestnet: boolean;
+	sessionMode: "agent-only" | "disconnected" | "wallet";
+	walletAddress: string | undefined;
+	walletIntent: "ambiguous" | "embedded" | "external" | "unavailable";
+	embeddedWalletAddress: string | undefined;
+	privyWallets: readonly { address: string }[];
 }
 
-let session: CardFundingSession = { clientKey: "", isTestnet: false };
+let session: CardFundingSession = {
+	clientKey: "",
+	isTestnet: false,
+	sessionMode: "disconnected",
+	walletAddress: undefined,
+	walletIntent: "unavailable",
+	embeddedWalletAddress: undefined,
+	privyWallets: [],
+};
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
@@ -15,16 +28,25 @@ function subscribe(listener: () => void) {
 	};
 }
 
-/** The identity the card funding surfaces read, switchable while they are mounted. */
+/** The identity and wallet session the card funding surfaces read, switchable while they are mounted. */
 export function setCardFundingSession(next: Partial<CardFundingSession>): void {
 	session = { ...session, ...next };
 	for (const listener of listeners) listener();
 }
 
-export function useCardFundingSessionClientKey(): string {
-	return useSyncExternalStore(subscribe, () => session.clientKey);
+/** A wallet session whose exact owner is `address`, on Mainnet. */
+export function signInCardFundingOwner(address: string, walletKind: "embedded" | "external" = "embedded"): void {
+	setCardFundingSession({
+		clientKey: address.toLowerCase(),
+		isTestnet: false,
+		sessionMode: "wallet",
+		walletAddress: address,
+		walletIntent: walletKind,
+		embeddedWalletAddress: walletKind === "embedded" ? address : undefined,
+		privyWallets: [{ address }],
+	});
 }
 
-export function useCardFundingSessionIsTestnet(): boolean {
-	return useSyncExternalStore(subscribe, () => session.isTestnet);
+export function useCardFundingSession(): CardFundingSession {
+	return useSyncExternalStore(subscribe, () => session);
 }

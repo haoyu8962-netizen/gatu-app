@@ -1,6 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { CaretRightIcon, CreditCardIcon } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { TOUCH_PRESS_CLASS } from "@/components/ui/touch-press";
 import { USDC_ICON_URL } from "@/config/bridge";
 import type { PrivyFiatFundingWalletKind } from "@/domain/trade/privy-fiat-funding";
@@ -11,9 +11,16 @@ interface Props {
 	notice: ReactNode;
 	onTransfer: () => void;
 	onBuy: () => void;
+	onBuyAvailable: () => void;
 }
 
-export function DepositMethodChooser({ fiat, notice, onTransfer, onBuy }: Props) {
+export function DepositMethodChooser({ fiat, notice, onTransfer, onBuy, onBuyAvailable }: Props) {
+	const buyAvailable = !fiat.disabled;
+
+	useEffect(() => {
+		if (buyAvailable) onBuyAvailable();
+	}, [buyAvailable, onBuyAvailable]);
+
 	return (
 		<div className="flex flex-col gap-3 font-market-close text-trading-panel-fg" data-deposit-layout="methods">
 			<h3 className="pb-1 text-center text-base font-bold">

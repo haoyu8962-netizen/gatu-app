@@ -1,20 +1,25 @@
 import { useFiatOnramp } from "@privy-io/react-auth";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
 	classifyPrivyFiatFundingError,
 	classifyPrivyFiatFundingResult,
 	createPrivyFiatFundingRequest,
-	type PrivyFiatFundingOutcome,
+	isSamePrivyFiatFundingDestination,
 } from "@/domain/trade/privy-fiat-funding";
 import { getPrivyFiatFundingOwnerKey } from "@/domain/trade/privy-fiat-funding-owner-key";
+import { usePrivyFiatFundingDestination } from "@/hooks/trade/use-privy-fiat-funding-destination";
 import { useHyperliquid } from "@/lib/hyperliquid";
-import type { PrivyFiatFundingNotice } from "@/lib/trade/privy-fiat-funding-feedback";
+import type { PrivyFiatFundingNotice, PrivyFiatFundingNoticeKind } from "@/lib/trade/privy-fiat-funding-feedback";
 import type { PrivyFiatFundingNoticePresentation } from "@/lib/trade/privy-fiat-funding-notice-presentation";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import {
+	addPrivyFiatFundingNotice,
 	finishPrivyFiatFunding,
 	type PrivyFiatFundingAttempt,
+	removePrivyFiatFundingNotice,
+	startPrivyFiatFunding,
 	usePrivyFiatFundingAttempt,
+	usePrivyFiatFundingNotices,
 } from "@/stores/use-privy-fiat-funding-store";
 import { retractPrivyFiatFundingNotice, showPrivyFiatFundingNotice } from "./privy-fiat-funding-notice-toast";
 
@@ -22,41 +27,44 @@ export function PrivyFiatFundingHost() {
 	const { fund } = useFiatOnramp();
 	const { clientKey } = useHyperliquid();
 	const isTestnet = useIsTestnet();
+	const destination = usePrivyFiatFundingDestination();
 	const attempt = usePrivyFiatFundingAttempt();
+	const notices = usePrivyFiatFundingNotices();
 	const ownerKey = getPrivyFiatFundingOwnerKey(isTestnet ? "testnet" : "mainnet", clientKey);
-	const ownerKeyRef = useRef(ownerKey);
-	const startedAttemptRef = useRef<PrivyFiatFundingAttempt | null>(null);
-	const [notices, setNotices] = useState<readonly PrivyFiatFundingNotice[]>([]);
+	const sessionRef = useRef({ destination, ownerKey });
 	const displayedRef = useRef(new Map<PrivyFiatFundingNotice, PrivyFiatFundingNoticePresentation>());
 
 	useEffect(() => {
-		ownerKeyRef.current = ownerKey;
-	}, [ownerKey]);
+		sessionRef.current = { destination, ownerKey };
+	}, [destination, ownerKey]);
 
 	useEffect(() => {
-		if (!attempt || startedAttemptRef.current === attempt) return;
+		if (!attempt || !startPrivyFiatFunding(attempt)) return;
 		const current: PrivyFiatFundingAttempt = attempt;
-		startedAttemptRef.current = current;
-		if (ownerKeyRef.current !== current.ownerKey) {
-			finishPrivyFiatFunding(current);
-			return;
-		}
+		const session = sessionRef.current;
 
-		function settle(outcome: PrivyFiatFundingOutcome) {
+		function report(kind: PrivyFiatFundingNoticeKind | "cancelled") {
 			finishPrivyFiatFunding(current);
-			if (outcome === "cancelled") return;
-			const notice: PrivyFiatFundingNotice = {
-				kind: outcome,
+			if (kind === "cancelled") return;
+			addPrivyFiatFundingNotice({
+				kind,
 				network: current.network,
 				ownerKey: current.ownerKey,
 				walletKind: current.destination.walletKind,
-			};
-			setNotices((kept) => [...kept, notice]);
+			});
 		}
 
+		if (session.ownerKey !== current.ownerKey) {
+			finishPrivyFiatFunding(current);
+			return;
+		}
+		if (!isSamePrivyFiatFundingDestination(session.destination, current.destination)) {
+			report("unavailable");
+			return;
+		}
 		new Promise((resolve) => resolve(fund(createPrivyFiatFundingRequest(current.destination, current.network)))).then(
-			(result) => settle(classifyPrivyFiatFundingResult(result)),
-			(error: unknown) => settle(classifyPrivyFiatFundingError(error)),
+			(result) => report(classifyPrivyFiatFundingResult(result)),
+			(error: unknown) => report(classifyPrivyFiatFundingError(error)),
 		);
 	}, [attempt, fund]);
 
@@ -73,7 +81,7 @@ export function PrivyFiatFundingHost() {
 				notice,
 				showPrivyFiatFundingNotice(notice, () => {
 					displayed.delete(notice);
-					setNotices((kept) => kept.filter((item) => item !== notice));
+					removePrivyFiatFundingNotice(notice);
 				}),
 			);
 		}

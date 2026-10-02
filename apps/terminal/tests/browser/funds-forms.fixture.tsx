@@ -62,6 +62,7 @@ export function FundsFormsFixture() {
 								setPurchases(purchases + 1);
 								setForm(null);
 							}}
+							onBuyAvailable={() => undefined}
 						/>
 					) : null}
 					{!showsDepositMethods && form === "deposit" ? (

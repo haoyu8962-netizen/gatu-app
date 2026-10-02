@@ -70,7 +70,7 @@ import {
 	fundsActionFeedbackCause,
 } from "@/lib/trade/funds-action-feedback";
 import { toBig } from "@/lib/trade/numbers";
-import { loadPrivyFiatFundingHost } from "@/lib/trade/privy-fiat-funding-launch";
+import { warmPrivyFiatFundingHost } from "@/lib/trade/privy-fiat-funding-launch";
 import {
 	buildCctpWithdrawalParameters,
 	getMaximumWithdrawal,
@@ -517,7 +517,6 @@ export function DepositModal() {
 	const fiatFundingOffer = usePrivyFiatFundingOffer({
 		enabled: isPrivyFiatFundingEnabled(isTestnet),
 		available: open && depositAvailability.available && !isDepositPending && !isWithdrawPending,
-		embeddedWalletAddress: depositEmbeddedWalletAddress,
 		onBeforeStart: handleClose,
 	});
 	if (depositStepOpen !== open) {
@@ -528,10 +527,6 @@ export function DepositModal() {
 		}
 	}
 	const showsDepositMethods = visibleTab === "deposit" && depositMethodsOffered && depositStep === "methods";
-	const canStartFiatFunding = open && showsDepositMethods && fiatFundingOffer !== null && !fiatFundingOffer.disabled;
-	useEffect(() => {
-		if (canStartFiatFunding) void loadPrivyFiatFundingHost();
-	}, [canStartFiatFunding]);
 	const canReturnToDepositMethods =
 		visibleTab === "deposit" && canUseDeposit && depositMethodsOffered && depositStep === "transfer";
 	const depositMethodChoice = fiatFundingOffer ?? {
@@ -1445,6 +1440,7 @@ export function DepositModal() {
 					notice={getFundsAvailabilityNotice(depositAvailability)}
 					onTransfer={() => setDepositStep("transfer")}
 					onBuy={depositMethodChoice.start}
+					onBuyAvailable={warmPrivyFiatFundingHost}
 				/>
 			);
 		}

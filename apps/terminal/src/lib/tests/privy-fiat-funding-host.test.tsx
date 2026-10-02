@@ -7,7 +7,7 @@ import { act, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setCardFundingSession } from "./harness/card-funding-session";
+import { type CardFundingSession, setCardFundingSession, signInCardFundingOwner } from "./harness/card-funding-session";
 import { installSonnerClock } from "./harness/sonner-clock";
 
 const OWNER = "0xabcdefabcdefabcdefabcdefabcdefabcdef1234";
@@ -16,16 +16,26 @@ const SANDBOX_NOTE = "This was a sandbox test: no card was charged and no USDC w
 
 const testState = vi.hoisted(() => ({ fund: vi.fn() }));
 
-vi.mock("@privy-io/react-auth", () => ({ useFiatOnramp: () => ({ fund: testState.fund }) }));
+vi.mock("@privy-io/react-auth", async () => {
+	const { useCardFundingSession } = await import("./harness/card-funding-session");
+	return {
+		useFiatOnramp: () => ({ fund: testState.fund }),
+		useWallets: () => ({ ready: true, wallets: useCardFundingSession().privyWallets }),
+	};
+});
+vi.mock("@/hooks/wallet/use-wallet-session", async () => {
+	const { useCardFundingSession } = await import("./harness/card-funding-session");
+	return { useWalletSession: useCardFundingSession };
+});
 vi.mock("@/lib/hyperliquid", async () => {
-	const { useCardFundingSessionClientKey } = await import("./harness/card-funding-session");
-	return { useHyperliquid: () => ({ clientKey: useCardFundingSessionClientKey() }) };
+	const { useCardFundingSession } = await import("./harness/card-funding-session");
+	return { useHyperliquid: useCardFundingSession };
 });
 vi.mock("@/stores/use-global-settings-store", async (importOriginal) => {
-	const { useCardFundingSessionIsTestnet } = await import("./harness/card-funding-session");
+	const { useCardFundingSession } = await import("./harness/card-funding-session");
 	return {
 		...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
-		useIsTestnet: useCardFundingSessionIsTestnet,
+		useIsTestnet: () => useCardFundingSession().isTestnet,
 	};
 });
 
@@ -87,7 +97,7 @@ describe("PrivyFiatFundingHost", () => {
 	beforeEach(async () => {
 		clock = installSonnerClock();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
-		setCardFundingSession({ clientKey: OWNER.toLowerCase(), isTestnet: false });
+		signInCardFundingOwner(OWNER);
 		pending = deferred<unknown>();
 		testState.fund.mockReset();
 		testState.fund.mockImplementation(() => pending.promise);
@@ -142,7 +152,7 @@ describe("PrivyFiatFundingHost", () => {
 		return attempt;
 	}
 
-	async function switchSession(next: { clientKey?: string; isTestnet?: boolean }) {
+	async function switchSession(next: Partial<CardFundingSession>) {
 		await act(async () => setCardFundingSession(next));
 	}
 
@@ -178,7 +188,9 @@ describe("PrivyFiatFundingHost", () => {
 		expect(isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
 		expect(await request(createAttempt())).toBe(true);
 
-		await clock.timers(10_000);
+		await clock.timers(9_900);
+		expect(cards()).toHaveLength(1);
+		await clock.timers(200);
 		await clock.settle();
 		expect(toasts()).toHaveLength(0);
 		await switchSession({ clientKey: OTHER });
@@ -188,6 +200,7 @@ describe("PrivyFiatFundingHost", () => {
 	});
 
 	it("keeps a submitted purchase on screen as uncertain, with the gas note on its own line for an external wallet", async () => {
+		await act(async () => signInCardFundingOwner(OWNER, "external"));
 		await purchase({ resolve: { status: "submitted" } }, createAttempt("external"));
 
 		const [card] = cards();
@@ -235,7 +248,7 @@ describe("PrivyFiatFundingHost", () => {
 			"Card purchase did not completeIf you were charged, check the payment provider's email before trying again.",
 		);
 		expect(container.textContent).not.toContain("payment session");
-		await clock.timers(10_000);
+		await clock.timers(10_100);
 		await clock.settle();
 		expect(toasts()).toHaveLength(0);
 	});
@@ -396,6 +409,39 @@ describe("PrivyFiatFundingHost", () => {
 		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["submitted"]);
 	});
 
+	it("lets Sonner measure every shown notice again after a language change, also the ones behind", async () => {
+		await purchase({ reject: new Error("Could not confirm payment status yet.") });
+		await purchase({ resolve: { status: "submitted" } });
+		await clock.timers();
+		const contents = () => toast.getToasts().map((entry) => ("jsx" in entry ? entry.jsx : null));
+		const published = contents();
+
+		await act(async () => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+		await clock.timers();
+
+		const translated = contents();
+		expect(translated).toHaveLength(2);
+		expect(translated[0]).not.toBe(published[0]);
+		expect(translated[1]).not.toBe(published[1]);
+		await clock.timers(600_000);
+		expect(cards()).toHaveLength(2);
+	});
+
+	it("does not publish a withdrawn notice again when its layout report was still waiting", async () => {
+		await purchase({ resolve: { status: "submitted" } });
+		const id = toast.getToasts()[0]?.id;
+		const published = toast.getHistory().find((entry) => entry.id === id);
+		if (!published || !("jsx" in published)) throw new Error("Expected the notice's toast");
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+		act(() => setCardFundingSession({ clientKey: OTHER }));
+		await clock.settle();
+
+		const kept = toast.getHistory().find((entry) => entry.id === id);
+		expect(kept && "jsx" in kept ? kept.jsx : null).toBe(published.jsx);
+		expect(toasts()).toHaveLength(0);
+	});
+
 	it("removes its notices when the host unmounts, even before Sonner inserted them", async () => {
 		await purchase({ resolve: { status: "submitted" } });
 		await request(createAttempt());
@@ -410,6 +456,10 @@ describe("PrivyFiatFundingHost", () => {
 		await clock.settle();
 		await clock.timers(600_000);
 		expect(toasts()).toHaveLength(0);
+
+		await act(async () => root.render(<Harness />));
+		await clock.timers();
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["unknown", "submitted"]);
 	});
 
 	it("keeps several notices apart: closing one leaves the other, also across an owner round trip", async () => {
@@ -466,9 +516,11 @@ describe("PrivyFiatFundingHost", () => {
 		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["submitted"]);
 	});
 
-	it("retranslates a shown notice in place without restarting its time on screen", async () => {
+	it("retranslates a shown notice in place, lets Sonner measure it again and keeps the time that was left", async () => {
 		await purchase({ resolve: { status: "confirmed" } });
+		await clock.timers();
 		const shown = toasts()[0];
+		const published = toast.getToasts()[0];
 		await clock.timers(6_000);
 
 		await act(async () =>
@@ -480,15 +532,92 @@ describe("PrivyFiatFundingHost", () => {
 
 		expect(cards()[0].textContent).toContain("银行卡购买已确认");
 		expect(cards()[0].textContent).not.toContain("Card purchase confirmed");
+		await clock.timers();
+		const republished = toast.getToasts()[0];
+		if (!("jsx" in published) || !("jsx" in republished)) throw new Error("Expected custom notice content");
+		expect(republished.id).toBe(published.id);
+		expect(republished.jsx).not.toBe(published.jsx);
 		expect(toasts()[0]).toBe(shown);
-		await clock.timers(4_100);
+		await clock.timers(3_800);
+		expect(cards()).toHaveLength(1);
+		await clock.timers(300);
 		await clock.settle();
 		expect(toasts()).toHaveLength(0);
 	});
 
+	it.each([
+		["fell back to a trading key of the same owner", { sessionMode: "agent-only", walletAddress: undefined }],
+		["lost the owner wallet from Privy's connected wallets", { privyWallets: [{ address: OTHER }] }],
+		["now signs with an external wallet", { walletIntent: "external", embeddedWalletAddress: undefined }],
+		["has another embedded wallet", { embeddedWalletAddress: OTHER }],
+	] satisfies [string, Partial<CardFundingSession>][])(
+		"does not open Privy when the session %s while the host was loading",
+		async (_label, change) => {
+			await act(async () => root.render(<Harness showHost={false} />));
+			const attempt = createAttempt();
+			await request(attempt);
+			await switchSession(change);
+
+			await act(async () => root.render(<Harness />));
+			await clock.timers();
+
+			expect(testState.fund).not.toHaveBeenCalled();
+			expect(isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
+			expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["unavailable"]);
+			expect(await request(createAttempt())).toBe(true);
+		},
+	);
+
+	it("counts a result's time on screen only while it is in front, so it cannot expire unseen", async () => {
+		await purchase({ resolve: { status: "confirmed" } });
+		await purchase({ resolve: { status: "submitted" } });
+		await clock.timers(600_000);
+		await clock.settle();
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["submitted", "confirmed"]);
+
+		await dismiss(cards()[0]);
+		await clock.settle();
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["confirmed"]);
+		await clock.timers(8_000);
+		expect(cards()).toHaveLength(1);
+		await clock.timers(2_100);
+		await clock.settle();
+		expect(toasts()).toHaveLength(0);
+
+		await switchSession({ clientKey: OTHER });
+		await switchSession({ clientKey: OWNER.toLowerCase() });
+		await clock.settle();
+		expect(toasts()).toHaveLength(0);
+	});
+
+	it("opens Privy once and still reports the result when the host mounts again during a purchase", async () => {
+		await request(createAttempt());
+		expect(testState.fund).toHaveBeenCalledTimes(1);
+
+		await act(async () => root.render(<Harness showHost={false} />));
+		await act(async () => root.render(<Harness />));
+		expect(testState.fund).toHaveBeenCalledTimes(1);
+
+		await endFlow({ resolve: { status: "submitted" } });
+		await clock.timers();
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["submitted"]);
+	});
+
+	it("keeps a result that arrives while no host is mounted and shows it when one mounts", async () => {
+		await request(createAttempt());
+		await act(async () => root.render(<Harness showHost={false} />));
+		await endFlow({ reject: new Error("Could not confirm payment status yet.") });
+		await clock.settle();
+		expect(toasts()).toHaveLength(0);
+
+		await act(async () => root.render(<Harness />));
+		await clock.timers();
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["unknown"]);
+	});
+
 	it("runs the sandbox for a testnet owner and says that nothing was charged or sent", async () => {
-		await switchSession({ clientKey: OWNER, isTestnet: true });
-		await purchase({ resolve: { status: "confirmed" } }, createAttempt("external", "testnet"));
+		await switchSession({ isTestnet: true });
+		await purchase({ resolve: { status: "confirmed" } }, createAttempt("embedded", "testnet"));
 		expect(testState.fund.mock.calls[0][0].environment).toBe("sandbox");
 		await purchase(
 			{ reject: new Error("Could not confirm payment status yet.") },
@@ -503,6 +632,9 @@ describe("PrivyFiatFundingHost", () => {
 		expect(container.textContent).not.toContain("Open Deposit");
 		expect(container.textContent).not.toContain("If you paid");
 
+		await clock.timers(10_100);
+		await clock.settle();
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["confirmed"]);
 		await clock.timers(10_100);
 		await clock.settle();
 		expect(toasts()).toHaveLength(0);

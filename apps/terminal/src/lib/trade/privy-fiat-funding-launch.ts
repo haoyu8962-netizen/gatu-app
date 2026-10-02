@@ -23,6 +23,11 @@ export function loadPrivyFiatFundingHost(): Promise<boolean> {
 	);
 }
 
+/** Starts the download ahead of a purchase, for the moment its entry comes on screen. A failure stays silent. */
+export function warmPrivyFiatFundingHost(): void {
+	void loadPrivyFiatFundingHost();
+}
+
 /**
  * Hands a purchase attempt to the page-level host and makes sure that host is loaded. An attempt
  * whose host cannot load ends with a notice for its owner instead of blocking later purchases.

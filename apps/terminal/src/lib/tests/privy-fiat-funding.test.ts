@@ -7,6 +7,7 @@ import {
 	classifyPrivyFiatFundingError,
 	classifyPrivyFiatFundingResult,
 	createPrivyFiatFundingRequest,
+	isSamePrivyFiatFundingDestination,
 	PRIVY_FIAT_FUNDING_ASSET,
 	PRIVY_FIAT_FUNDING_BACK_NAVIGATION_ERROR,
 	PRIVY_FIAT_FUNDING_BUSY_MESSAGE,
@@ -53,49 +54,59 @@ function readPrivyFiatOnrampScreen(): string {
 		.join("\n");
 }
 
+const PRIVY_ONRAMP_CLOSE_HANDLER =
+	/async\(\)=>\{let\{error:\w+,state:\w+,isLoading:\w+,onFailure:\w+,onSuccess:\w+\}=(\w+)\(\);(\w+)\(\),(\w+)\(\);let \w+=\(\(\{state:\w+,error:\w+,isLoading:\w+\}\)=>.*?\)\(\{state:\w+,error:\w+,isLoading:\w+\}\);"success"===\w+\.type\?await \w+\(\w+\.value\):\w+\(\w+\.error\)\}/;
+
+const PRIVY_ONRAMP_CLOSE_CASES = {
+	"an error is on screen": { state: { status: "provider-success" }, error: "shown error", isLoading: false },
+	"the provider reported success": { state: { status: "provider-success" }, error: null, isLoading: false },
+	"the provider is confirming": { state: { status: "provider-confirming" }, error: null, isLoading: false },
+	"the Stripe checkout is being confirmed": {
+		state: { status: "stripe-flow", step: "confirm-checkout" },
+		error: null,
+		isLoading: true,
+	},
+	"the Stripe checkout is waiting for the user": {
+		state: { status: "stripe-flow", step: "confirm-checkout" },
+		error: null,
+		isLoading: false,
+	},
+	"the Stripe payment step is loading": {
+		state: { status: "stripe-flow", step: "payment" },
+		error: null,
+		isLoading: true,
+	},
+	"the amount is being chosen": { state: { status: "select-amount" }, error: null, isLoading: false },
+};
+
 /**
- * Runs the expression the installed SDK uses to decide how `fund()` settles when its window
- * closes, over the states that matter here. Matching it as text cannot notice a changed operand;
- * evaluating it can.
+ * Runs the handler the installed SDK calls when its purchase window closes, with the SDK's own
+ * store getter replaced, and records how `fund()` would settle. Matching the source as text cannot
+ * notice a changed operand, and evaluating only the decision cannot notice what the handler passes
+ * to it or which callback it calls; running the whole handler can.
  */
-function evaluatePrivyFiatOnrampCloseRule(screen: string): Record<string, unknown> {
-	const rule =
-		/\(\(\{state:\w+,error:\w+,isLoading:\w+\}\)=>.*?:\{type:"failure",error:Error\("User exited flow"\)\}\)(?=\(\{state:)/.exec(
-			screen,
-		)?.[0];
-	if (!rule) throw new Error("The installed Privy SDK no longer contains the expected close rule");
-	const decide = new Function(`return ${rule}`)() as (input: {
-		state: { status: string; step?: string };
-		error: unknown;
-		isLoading: boolean;
-	}) => { type: string; value?: unknown; error?: unknown };
-	const cases = {
-		"an error is on screen": { state: { status: "provider-success" }, error: "shown error", isLoading: false },
-		"the provider reported success": { state: { status: "provider-success" }, error: null, isLoading: false },
-		"the provider is confirming": { state: { status: "provider-confirming" }, error: null, isLoading: false },
-		"the Stripe checkout is being confirmed": {
-			state: { status: "stripe-flow", step: "confirm-checkout" },
-			error: null,
-			isLoading: true,
-		},
-		"the Stripe checkout is waiting for the user": {
-			state: { status: "stripe-flow", step: "confirm-checkout" },
-			error: null,
-			isLoading: false,
-		},
-		"the Stripe payment step is loading": {
-			state: { status: "stripe-flow", step: "payment" },
-			error: null,
-			isLoading: true,
-		},
-		"the amount is being chosen": { state: { status: "select-amount" }, error: null, isLoading: false },
-	};
-	return Object.fromEntries(
-		Object.entries(cases).map(([label, input]) => {
-			const decision = decide(input);
-			return [label, decision.error instanceof Error ? { ...decision, error: decision.error.message } : decision];
-		}),
-	);
+async function settlePrivyFiatOnrampClose(screen: string): Promise<Record<string, unknown>> {
+	const match = PRIVY_ONRAMP_CLOSE_HANDLER.exec(screen);
+	if (!match) throw new Error("The installed Privy SDK no longer contains the expected close handler");
+	const [source, readFlow, ...cleanups] = match;
+	const settled: Record<string, unknown> = {};
+	for (const [label, flow] of Object.entries(PRIVY_ONRAMP_CLOSE_CASES)) {
+		const scope: Record<string, unknown> = Object.fromEntries(cleanups.map((name) => [name, () => undefined]));
+		scope[readFlow] = () => ({
+			...flow,
+			onSuccess: async (value: unknown) => {
+				settled[label] = { resolved: value };
+			},
+			onFailure: (error: unknown) => {
+				settled[label] = { rejected: error instanceof Error ? error.message : error };
+			},
+		});
+		const close = new Function(...Object.keys(scope), `return ${source}`)(
+			...Object.values(scope),
+		) as () => Promise<void>;
+		await close();
+	}
+	return settled;
 }
 
 const embeddedSession = {
@@ -147,6 +158,19 @@ describe("card funding destination", () => {
 				privyWalletAddresses: [OWNER, OTHER],
 			}),
 		).toBeNull();
+	});
+});
+
+describe("card funding destination recheck", () => {
+	const requested = { address: OWNER, walletKind: "embedded" } as const;
+
+	it("accepts only the same wallet, comparing the address without regard to case", () => {
+		expect(isSamePrivyFiatFundingDestination({ address: OWNER_CHECKSUM_CASE, walletKind: "embedded" }, requested)).toBe(
+			true,
+		);
+		expect(isSamePrivyFiatFundingDestination({ address: OTHER, walletKind: "embedded" }, requested)).toBe(false);
+		expect(isSamePrivyFiatFundingDestination({ address: OWNER, walletKind: "external" }, requested)).toBe(false);
+		expect(isSamePrivyFiatFundingDestination(null, requested)).toBe(false);
 	});
 });
 
@@ -262,15 +286,15 @@ describe("card funding outcomes", () => {
 		);
 	});
 
-	it("relies on how the installed Privy SDK ends a flow that the user closes", () => {
-		expect(evaluatePrivyFiatOnrampCloseRule(readPrivyFiatOnrampScreen())).toEqual({
-			"an error is on screen": { type: "failure", error: "shown error" },
-			"the provider reported success": { type: "success", value: { status: "confirmed" } },
-			"the provider is confirming": { type: "success", value: { status: "submitted" } },
-			"the Stripe checkout is being confirmed": { type: "success", value: { status: "submitted" } },
-			"the Stripe checkout is waiting for the user": { type: "failure", error: "User exited flow" },
-			"the Stripe payment step is loading": { type: "failure", error: "User exited flow" },
-			"the amount is being chosen": { type: "failure", error: "User exited flow" },
+	it("relies on how the installed Privy SDK ends a flow that the user closes", async () => {
+		expect(await settlePrivyFiatOnrampClose(readPrivyFiatOnrampScreen())).toEqual({
+			"an error is on screen": { rejected: "shown error" },
+			"the provider reported success": { resolved: { status: "confirmed" } },
+			"the provider is confirming": { resolved: { status: "submitted" } },
+			"the Stripe checkout is being confirmed": { resolved: { status: "submitted" } },
+			"the Stripe checkout is waiting for the user": { rejected: "User exited flow" },
+			"the Stripe payment step is loading": { rejected: "User exited flow" },
+			"the amount is being chosen": { rejected: "User exited flow" },
 		});
 	});
 
@@ -282,11 +306,23 @@ describe("card funding outcomes", () => {
 		],
 		["a confirming provider no longer counts as submitted", /"provider-confirming"===\w+\.status/, "!1"],
 		["a shown error no longer wins", /\w+\?\{type:"failure",error:\w+\}:/, ""],
-	])("would notice if %s in the installed Privy SDK", (_label, operand, replacement) => {
+		[
+			"the handler stops passing the shown error to the decision",
+			/\}\)\(\{state:(\w+),error:\w+,isLoading:(\w+)\}\);"success"/,
+			'})({state:$1,error:null,isLoading:$2});"success"',
+		],
+		[
+			"the handler stops passing the loading state to the decision",
+			/\}\)\(\{state:(\w+),error:(\w+),isLoading:\w+\}\);"success"/,
+			'})({state:$1,error:$2,isLoading:!1});"success"',
+		],
+		["the handler calls the wrong callback", /;"success"===(\w+)\.type\?await/, ';"failure"===$1.type?await'],
+	])("would notice if %s in the installed Privy SDK", async (_label, operand, replacement) => {
 		const screen = readPrivyFiatOnrampScreen();
 		const changed = screen.replace(operand, replacement);
 		expect(changed).not.toBe(screen);
-		expect(evaluatePrivyFiatOnrampCloseRule(changed)).not.toEqual(evaluatePrivyFiatOnrampCloseRule(screen));
+		const noticed = await settlePrivyFiatOnrampClose(changed).catch((error: Error) => error.message);
+		expect(noticed).not.toEqual(await settlePrivyFiatOnrampClose(screen));
 	});
 });
 

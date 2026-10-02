@@ -117,6 +117,21 @@ export function resolvePrivyFiatFundingDestination({
 	return walletIntent === "external" ? { address, walletKind: "external" } : null;
 }
 
+/**
+ * Whether the session still pays out to the destination a purchase was requested for. The host
+ * asks this again right before it opens Privy, because the request can wait for the host to load.
+ */
+export function isSamePrivyFiatFundingDestination(
+	current: PrivyFiatFundingDestination | null,
+	requested: PrivyFiatFundingDestination,
+): boolean {
+	return (
+		current !== null &&
+		current.walletKind === requested.walletKind &&
+		hasSameWalletAddress(current.address, requested.address)
+	);
+}
+
 export function createPrivyFiatFundingRequest(
 	destination: PrivyFiatFundingDestination,
 	network: PrivyFiatFundingNetwork,
