@@ -484,9 +484,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
-- The chart now formats prices by Hyperliquid's price rules for the market: each price is rounded to
-  five significant figures, with no more decimals than the market allows and whole-number prices
-  never rounded, so HYPE around $90 reads `90.086` and BTC at its current price shows whole dollars.
+- The chart now formats prices by Hyperliquid's price rules for the market: each price is shown with
+  at most five significant figures and no more decimals than the market allows, and whole-number
+  prices are never cut, so HYPE around $90 reads `90.086` and BTC at its current price shows whole
+  dollars.
   Each chart load or rebuild (first load, language or number-format change, recovery) used to take
   its precision from whatever digits the mark price had at that moment, so the same market could
   show 2, 3 or 4 decimals. When a price crosses a power of ten, its precision changes without

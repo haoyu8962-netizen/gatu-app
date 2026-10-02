@@ -1,19 +1,22 @@
 // Proves that the vendored charting library formats chart prices with Hyperliquid's tick bands
-// (docs/adr/0035-chart-price-precision-from-market-rules.md). Around every band boundary it formats the
-// band's largest valid price, a value just below the five-significant-figure rounding threshold, the
-// threshold itself and the next power of ten, and compares the full text with the value rounded half-up
-// to five significant figures (en-US separators, the default number format). The unit tests only
-// mirror the library's band lookup, so run this after every library upgrade:
+// (docs/adr/0035-chart-price-precision-from-market-rules.md). Each market's band count comes from its
+// szDecimals, not from the chart. Around every band boundary it formats the band's largest valid
+// price, a value just below the five-significant-figure rounding threshold, the threshold itself and
+// the next power of ten, plus the latest close, and compares the full text with the value rounded
+// half-up to five significant figures (en-US separators, the default number format). The unit tests
+// only mirror the library's band lookup, so run this after every library upgrade:
 // node apps/terminal/tests/browser/chart-price-format-probe.mjs <origin> [settle-ms]
 import { chromium } from "@playwright/test";
 import Big from "big.js";
 
 const origin = (process.argv[2] ?? "http://localhost:3005").replace(/\/+$/, "");
 const settleMs = Number(process.argv[3] ?? 45000);
+// Maximum decimals from Hyperliquid metadata on 2026-10-02: HYPE perp szDecimals 2 (6 - 2),
+// BTC perp szDecimals 5 (6 - 5), PURR/USDC spot szDecimals 0 (8 - 0).
 const markets = [
-	{ route: "/trade/HYPE", ticker: "HYPE" },
-	{ route: "/trade/BTC", ticker: "BTC" },
-	{ route: "/trade/PURR/USDC", ticker: "PURR/USDC" },
+	{ route: "/trade/HYPE", ticker: "HYPE", maxDecimals: 4 },
+	{ route: "/trade/BTC", ticker: "BTC", maxDecimals: 1 },
+	{ route: "/trade/PURR/USDC", ticker: "PURR/USDC", maxDecimals: 8 },
 ];
 const TEN = new Big(10);
 
@@ -28,11 +31,9 @@ function formatExpected(value, maxDecimals) {
 	return fraction ? `${grouped}.${fraction}` : grouped;
 }
 
-function getBoundaryValues(variableTickSize) {
-	const parts = variableTickSize.split(" ");
+function getBoundaryValues(maxDecimals) {
 	const values = [];
-	for (let index = 0; index + 2 < parts.length; index += 2) {
-		const decimals = countDecimals(parts[index]);
+	for (let decimals = maxDecimals; decimals > 0; decimals -= 1) {
 		const powerOfTen = TEN.pow(5 - decimals);
 		const threshold = powerOfTen.minus(TEN.pow(-decimals).div(2));
 		values.push(
@@ -50,8 +51,14 @@ async function readSymbol(page) {
 		const frame = document.querySelector('iframe[id^="tradingview_"]');
 		const series = frame?.contentWindow?.tradingViewApi?.activeChart()._chartWidget.model().mainSeries();
 		const info = series?.symbolInfo();
-		if (!series || !info || series.bars().size() === 0) return null;
-		return { ticker: info.ticker, pricescale: info.pricescale, variableTickSize: info.variable_tick_size ?? "" };
+		const close = series?.bars().last()?.value[4];
+		if (!series || !info || typeof close !== "number") return null;
+		return {
+			ticker: info.ticker,
+			pricescale: info.pricescale,
+			variableTickSize: info.variable_tick_size ?? "",
+			close,
+		};
 	});
 }
 
@@ -74,17 +81,23 @@ for (const market of markets) {
 		symbol = await readSymbol(page).catch(() => null);
 		if (!symbol) await page.waitForTimeout(500);
 	}
-	const values = symbol ? getBoundaryValues(symbol.variableTickSize) : [];
-	const maxDecimals = symbol ? countDecimals(symbol.variableTickSize.split(" ")[0]) : 0;
+	const ticks = symbol?.variableTickSize.split(" ") ?? [];
+	const bandsMatch =
+		ticks.length === 2 * market.maxDecimals + 1 && countDecimals(ticks[0] ?? "") === market.maxDecimals;
+	const values = symbol ? [...getBoundaryValues(market.maxDecimals), new Big(String(symbol.close))] : [];
 	const formatted = values.length > 0 ? await formatInChart(page, values.map((value) => value.toNumber())) : [];
 	const checks = values.map((value, index) => ({
 		value: value.toString(),
 		formatted: formatted[index],
-		expected: formatExpected(value, maxDecimals),
+		expected: formatExpected(value, market.maxDecimals),
 	}));
 	const failures = checks.filter((check) => check.formatted !== check.expected);
-	const ok = symbol?.ticker === market.ticker && checks.length >= 4 && failures.length === 0;
-	results.push({ ...market, symbol, checks: checks.length, failures, ok });
+	const ok =
+		symbol?.ticker === market.ticker &&
+		bandsMatch &&
+		checks.length === 4 * market.maxDecimals + 1 &&
+		failures.length === 0;
+	results.push({ ...market, symbol, bandsMatch, checks: checks.length, failures, ok });
 }
 await browser.close();
 console.log(JSON.stringify({ origin, results }, null, 2));
