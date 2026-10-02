@@ -55,7 +55,7 @@ export function clearVerifiedExternalWalletOwner(): void {
 }
 
 export function useWalletSession() {
-	const { ready, authenticated, login, logout, user } = usePrivy();
+	const { ready, authenticated, isModalOpen, login, logout, user } = usePrivy();
 	const { ready: walletsReady, wallets } = useWallets();
 	const {
 		address: connectedWalletAddress,
@@ -98,6 +98,7 @@ export function useWalletSession() {
 	return {
 		ready: sessionReady,
 		authenticationReady: ready,
+		authenticationModalOpen: isModalOpen === true,
 		walletDirectoryReady: walletsReady,
 		authenticated,
 		login,

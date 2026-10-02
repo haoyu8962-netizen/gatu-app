@@ -81,16 +81,19 @@ Do not collapse these states into one boolean.
   `wallet_connect` for Privy's long-tail catalog; do not substitute
   `wallet_connect_qr` or label an unrelated catalog identifier as SafePal.
 - Login methods remain `wallet` and `email`; Passkey login is intentionally
-  disabled. Embedded Ethereum wallets are created only for users without a
-  wallet, and Privy's embedded wallet UI remains hidden.
+  disabled. Privy's login window never creates a wallet (`createOnLogin:
+  "off"`): `EmailEmbeddedWalletProvider` creates the embedded Ethereum wallet
+  of an email session that has none, once and without wallet UI, after login
+  ([ADR 0033](adr/0033-silent-email-wallet-creation.md)). External-wallet
+  sessions never get one, and Privy's embedded wallet UI remains hidden.
 - Dark/light Privy configuration changes appearance, accent color and the
   login-window logo only. The logo is the brand lockup for that theme, a
   same-origin file (`/brand/lockup-on-dark.svg`, `/brand/lockup-on-light.svg`)
   that `pnpm brand:sync` copies from `brand/svg`; it overrides the dashboard
   `logo_url`, so the dashboard logo is never the source of truth. Wallet ordering and authentication behavior stay identical across themes,
   and the authentication provider is never remounted merely to change theme.
-  Preserve `PwaInstallProvider > PrivyProvider > SmartWalletsProvider >`
-  `PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
+  Preserve `PwaInstallProvider > PrivyProvider > EmailEmbeddedWalletProvider >`
+  `SmartWalletsProvider > PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
   Ethereum-only wallet selection, and customize radius through Privy's
   supported public CSS variables rather than generated DOM classes.
 - `ClientRootProvider` passes `PRIVY_CONFIG_BY_THEME[theme]` from the live

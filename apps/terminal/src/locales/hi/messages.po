@@ -7194,6 +7194,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
@@ -10931,6 +10932,10 @@ msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet
 msgstr "वॉलेट ने लेनदेन हैश लौटाया है, लेकिन वह अभी Arbitrum पर दिखाई नहीं दे रहा है। जमा दो बार भेजने से बचने के लिए दोबारा प्रयास करने से पहले वॉलेट गतिविधि या Arbiscan जांचें."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet setup failed"
+msgstr "वॉलेट सेटअप विफल रहा"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
 msgstr "हम इस वॉलेट की कानूनी स्थिति सत्यापित नहीं कर सके। अपना कनेक्शन जाँचें और फिर प्रयास करें।"
 
@@ -11321,3 +11326,7 @@ msgstr "आपका लेन-देन प्रोसेस हो रहा 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "आपका वॉल्ट बैलेंस सत्यापित नहीं किया जा सका। खाता मूल्य और निकासी उपलब्ध नहीं रहेंगे।"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Your wallet could not be created. Check your connection and try again."
+msgstr "आपका वॉलेट नहीं बनाया जा सका। अपना कनेक्शन जाँचें और फिर प्रयास करें।"

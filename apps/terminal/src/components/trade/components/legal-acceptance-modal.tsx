@@ -24,6 +24,7 @@ interface Props {
 	blockedDescription?: ReactNode;
 	onAccept: () => Promise<unknown>;
 	onRetryStatus: () => Promise<unknown>;
+	onRetryWalletSetup: () => void;
 	onResetAcceptance: () => void;
 }
 
@@ -42,6 +43,7 @@ export function LegalAcceptanceModal({
 	blockedDescription,
 	onAccept,
 	onRetryStatus,
+	onRetryWalletSetup,
 	onResetAcceptance,
 }: Props) {
 	const isMobile = useIsMobile();
@@ -78,6 +80,15 @@ export function LegalAcceptanceModal({
 				actionLabel={<Trans>Reconnect wallet</Trans>}
 				actionDisabled={isReconnecting}
 				onAction={() => void reconnectWallet()}
+			/>
+		);
+	} else if (state === "wallet_setup_failed") {
+		content = (
+			<LegalStatusMessage
+				title={<Trans>Wallet setup failed</Trans>}
+				description={<Trans>Your wallet could not be created. Check your connection and try again.</Trans>}
+				actionLabel={<Trans>Retry</Trans>}
+				onAction={onRetryWalletSetup}
 			/>
 		);
 	} else if (state === "blocked") {

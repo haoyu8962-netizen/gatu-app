@@ -52,12 +52,20 @@ identities and stub or fixture-generated signatures.
    through trading signer readiness. Agent management continues to query real
    Agent approval. Preserve exact owner signing for withdrawals and other funds
    actions, including existing dedicated confirmation and environment gates.
-6. Preserve Privy's email OTP registration and exact-wallet activation. Keep
-   `users-without-wallets`, wallet/email login only, and no parallel registration
-   form. A fresh email login may create a once-only deposit intent; restoration
-   must not recreate it. Bind intent to user, owner and environment, wait for
-   legal success and complete current funding snapshots, and preserve all
-   existing deposit eligibility and routing requirements.
+6. Preserve Privy's email OTP registration and exact-wallet activation,
+   wallet/email login only, and no parallel registration form. Privy's login
+   window never creates the wallet (`createOnLogin: "off"`); once an email
+   session is authenticated without an embedded wallet, the root
+   `EmailEmbeddedWalletProvider` creates it once with
+   `useCreateWallet().createWallet()` and no wallet UI, and every consumer
+   shares that one creation. A failure is not retried automatically: the
+   legal gate shows `wallet_setup_failed` with Retry, and the deposit dialog
+   keeps its own retry. External-wallet sessions never get a wallet
+   ([ADR 0033](adr/0033-silent-email-wallet-creation.md)). A fresh email login
+   may create a once-only deposit intent; restoration must not recreate it.
+   Bind intent to user, owner and environment, wait for legal success and
+   complete current funding snapshots, and preserve all existing deposit
+   eligibility and routing requirements.
 
 ## Authentication UI Recovery
 
@@ -82,7 +90,10 @@ onboarding](trading-onboarding.md).
 ## Validation Matrix
 
 - Fresh email user and returning email login; delayed embedded-wallet creation
-  and activation; refresh without repeat setup or signing. Verify independent
+  and activation; refresh without repeat setup or signing. A fresh email user
+  sees no Privy wallet-creation screen; the policy dialog opens only after the
+  Privy window has closed and the exact owner is active, and a failed creation
+  offers Retry instead of a reconnect request. Verify independent
   identity-menu access, explicit reload after 30 seconds, and timer reset on
   readiness or identity changes.
 - Exact owner match, account/user/environment switch during signing, missing
@@ -110,6 +121,9 @@ onboarding](trading-onboarding.md).
   execute a retained action.
 - `useExplicitTermsAcceptance` preserves the application policy review and
   rechecks the same signing session before the final `acceptTerms2` request.
+- `EmailEmbeddedWalletProvider` owns the single `useEmailEmbeddedWalletSession`
+  instance: it creates a missing email wallet once per session and shares the
+  creation state through `useEmailEmbeddedWallet()`.
 - `PrivyLoginMethodObserver` records the fresh-login intent;
   `TradingOnboardingGate` consumes it after the legal gate and account checks.
   Deposit routing and sponsored submission checks remain in the existing

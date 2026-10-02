@@ -1,5 +1,5 @@
 import { useCreateWallet, usePrivy } from "@privy-io/react-auth";
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState } from "react";
 import { usePrivyLoginIntent } from "@/lib/wallet/privy-login-method";
 import {
 	getPrivyEmailAddress,
@@ -32,6 +32,14 @@ interface SessionCreationState {
 	session: EmailWalletSession;
 }
 
+export type EmailEmbeddedWallet = ReturnType<typeof useEmailEmbeddedWalletSession>;
+
+/**
+ * One instance per Privy session. `EmailEmbeddedWalletProvider` owns it so that every consumer
+ * shares the same in-flight creation and its outcome.
+ */
+export const EmailEmbeddedWalletContext = createContext<EmailEmbeddedWallet | null>(null);
+
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 	let timeoutId: ReturnType<typeof setTimeout> | undefined;
 	const timeout = new Promise<never>((_, reject) => {
@@ -43,7 +51,13 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 	});
 }
 
-export function useEmailEmbeddedWallet() {
+export function useEmailEmbeddedWallet(): EmailEmbeddedWallet {
+	const wallet = useContext(EmailEmbeddedWalletContext);
+	if (!wallet) throw new Error("useEmailEmbeddedWallet must be used within EmailEmbeddedWalletProvider");
+	return wallet;
+}
+
+export function useEmailEmbeddedWalletSession() {
 	const { ready, authenticated, user } = usePrivy();
 	const { createWallet } = useCreateWallet();
 	const pendingRef = useRef<EmbeddedWalletCreation | null>(null);

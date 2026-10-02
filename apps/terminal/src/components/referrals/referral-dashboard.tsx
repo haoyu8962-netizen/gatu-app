@@ -301,6 +301,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 					blockedDescription={<Trans>This account is not currently permitted to use Hyperliquid referrals.</Trans>}
 					onAccept={legalGate.accept}
 					onRetryStatus={legalGate.retryStatus}
+					onRetryWalletSetup={legalGate.retryWalletSetup}
 					onResetAcceptance={legalGate.resetAcceptance}
 				/>
 			) : null}

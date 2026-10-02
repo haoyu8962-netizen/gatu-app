@@ -484,6 +484,12 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Signing up with email no longer shows Privy's "Creating your wallet" and welcome screens next to
+  the terms dialog. The wallet is now created silently after the email code is accepted, and the
+  terms dialog opens only after the login window has closed and the new wallet is ready; it never
+  appears over an open Privy window. While the wallet is being created the page waits instead of
+  asking you to reconnect, and if creating it fails, the dialog offers Retry. See
+  [ADR 0033](docs/adr/0033-silent-email-wallet-creation.md).
 - In the light theme, browsers that tint their toolbar or status bar from the page's theme color
   (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
   terminal teal. The theme color follows the theme chosen in Settings from the first paint and on

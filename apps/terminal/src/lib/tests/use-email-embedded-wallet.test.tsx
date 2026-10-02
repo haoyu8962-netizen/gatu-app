@@ -4,7 +4,7 @@ import type { User } from "@privy-io/react-auth";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
+import { useEmailEmbeddedWalletSession } from "@/hooks/wallet/use-email-embedded-wallet";
 import { recordPrivyLoginMethod } from "@/lib/wallet/privy-login-method";
 
 const EMBEDDED_WALLET_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
@@ -22,10 +22,10 @@ vi.mock("@privy-io/react-auth", () => ({
 	usePrivy: () => ({ authenticated: true, ready: true, user: testState.user }),
 }));
 
-let hookValue: ReturnType<typeof useEmailEmbeddedWallet> | null = null;
+let hookValue: ReturnType<typeof useEmailEmbeddedWalletSession> | null = null;
 
 function Probe() {
-	hookValue = useEmailEmbeddedWallet();
+	hookValue = useEmailEmbeddedWalletSession();
 	return null;
 }
 
@@ -59,7 +59,7 @@ function hydratedEmailUser(): User {
 	} as User;
 }
 
-describe("useEmailEmbeddedWallet", () => {
+describe("useEmailEmbeddedWalletSession", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 

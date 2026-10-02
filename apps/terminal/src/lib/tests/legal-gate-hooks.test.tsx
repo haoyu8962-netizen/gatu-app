@@ -7,22 +7,32 @@ import { useLegalGate } from "@/hooks/trade/use-legal-gate";
 import { useReferralLegalGate } from "@/hooks/trade/use-referral-legal-gate";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
+const EMBEDDED_OWNER = "0x2222222222222222222222222222222222222222";
 
 const testState = vi.hoisted(() => ({
 	walletSession: {
 		address: "0x1111111111111111111111111111111111111111" as string | undefined,
 		authenticated: true,
+		authenticationModalOpen: false,
 		authenticationReady: true,
+		embeddedWalletAddress: undefined as string | undefined,
 		hasWalletAccess: true,
 		isConnected: true,
 		isConnecting: false,
 		isReconnecting: false,
 		sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
 		walletDirectoryReady: true,
+		walletIntent: "external" as "ambiguous" | "embedded" | "external" | "unavailable",
+	},
+	emailWallet: {
+		needsEmbeddedWallet: false,
+		isCreatingEmbeddedWallet: false,
+		embeddedWalletError: null as Error | null,
+		ensureEmailEmbeddedWallet: vi.fn(() => Promise.resolve("0x2222222222222222222222222222222222222222")),
 	},
 	legalStatus: {
 		data: {
-			acceptedTerms: true,
+			acceptedTerms: true as boolean,
 			userAllowed: true,
 			canPerformActions: true,
 			canUseReferrals: true,
@@ -45,6 +55,10 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => testState.walletSession,
 }));
 
+vi.mock("@/hooks/wallet/use-email-embedded-wallet", () => ({
+	useEmailEmbeddedWallet: () => testState.emailWallet,
+}));
+
 vi.mock("@/hooks/wallet/use-explicit-terms-acceptance", () => ({
 	useExplicitTermsAcceptance: () => testState.acceptance,
 }));
@@ -58,9 +72,12 @@ vi.mock("@/lib/error-reporting/client", () => ({
 	reportClientError: testState.reportClientError,
 }));
 
+let latestLegalGate: ReturnType<typeof useLegalGate> | null = null;
+
 function LegalGateProbe() {
 	const legalGate = useLegalGate();
 	const referralGate = useReferralLegalGate();
+	latestLegalGate = legalGate;
 
 	return createElement("output", {
 		"data-legal-state": legalGate.state,
@@ -79,22 +96,44 @@ describe("legal gate hooks", () => {
 		Object.assign(testState.walletSession, {
 			address: OWNER,
 			authenticated: true,
+			authenticationModalOpen: false,
 			authenticationReady: true,
+			embeddedWalletAddress: undefined,
 			hasWalletAccess: true,
 			isConnected: true,
 			isConnecting: false,
 			isReconnecting: false,
 			sessionMode: "wallet",
 			walletDirectoryReady: true,
+			walletIntent: "external",
 		});
+		Object.assign(testState.emailWallet, {
+			needsEmbeddedWallet: false,
+			isCreatingEmbeddedWallet: false,
+			embeddedWalletError: null,
+		});
+		testState.legalStatus.data.acceptedTerms = true;
 		testState.legalStatus.isError = false;
+		latestLegalGate = null;
 	});
 
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
 		vi.clearAllMocks();
+		vi.useRealTimers();
 	});
+
+	function setEmailSessionWithoutActiveOwner(embeddedWalletAddress: string | undefined) {
+		Object.assign(testState.walletSession, {
+			address: undefined,
+			embeddedWalletAddress,
+			hasWalletAccess: false,
+			isConnected: false,
+			sessionMode: "disconnected",
+			walletIntent: "embedded",
+		});
+	}
 
 	function renderProbe() {
 		act(() => root.render(createElement(LegalGateProbe)));
@@ -170,5 +209,76 @@ describe("legal gate hooks", () => {
 		testState.legalStatus.isError = true;
 		renderProbe();
 		expectStates("error");
+	});
+
+	it("waits while an email session's wallet is created silently and offers a retry when it fails", () => {
+		setEmailSessionWithoutActiveOwner(undefined);
+		testState.emailWallet.needsEmbeddedWallet = true;
+		renderProbe();
+		expectStates("checking");
+
+		testState.emailWallet.isCreatingEmbeddedWallet = true;
+		renderProbe();
+		expectStates("checking");
+
+		Object.assign(testState.emailWallet, {
+			isCreatingEmbeddedWallet: false,
+			embeddedWalletError: new Error("Embedded wallet creation timed out"),
+		});
+		renderProbe();
+		expectStates("wallet_setup_failed");
+
+		act(() => latestLegalGate?.retryWalletSetup());
+		expect(testState.emailWallet.ensureEmailEmbeddedWallet).toHaveBeenCalledOnce();
+	});
+
+	it("gives a created email wallet a bounded grace period to become the active owner", () => {
+		vi.useFakeTimers();
+		setEmailSessionWithoutActiveOwner(EMBEDDED_OWNER);
+		renderProbe();
+		expectStates("checking");
+
+		act(() => vi.advanceTimersByTime(9_999));
+		expectStates("checking");
+
+		act(() => vi.advanceTimersByTime(1));
+		expectStates("wallet_required");
+
+		Object.assign(testState.walletSession, {
+			address: EMBEDDED_OWNER,
+			hasWalletAccess: true,
+			isConnected: true,
+			sessionMode: "wallet",
+		});
+		renderProbe();
+		expectStates("accepted");
+
+		setEmailSessionWithoutActiveOwner(EMBEDDED_OWNER);
+		renderProbe();
+		expectStates("checking");
+	});
+
+	it("never applies the email wallet setup to an external wallet session", () => {
+		Object.assign(testState.walletSession, {
+			address: undefined,
+			embeddedWalletAddress: EMBEDDED_OWNER,
+			hasWalletAccess: false,
+			isConnected: false,
+			sessionMode: "disconnected",
+		});
+		testState.emailWallet.needsEmbeddedWallet = true;
+		renderProbe();
+		expectStates("wallet_required");
+	});
+
+	it("opens the policy dialog only after the Privy modal closes", () => {
+		testState.legalStatus.data.acceptedTerms = false;
+		testState.walletSession.authenticationModalOpen = true;
+		renderProbe();
+		expectStates("checking");
+
+		testState.walletSession.authenticationModalOpen = false;
+		renderProbe();
+		expectStates("required");
 	});
 });

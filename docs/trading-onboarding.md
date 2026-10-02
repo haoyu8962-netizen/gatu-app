@@ -48,7 +48,10 @@ checks whenever the SDK is upgraded.
 The terminal must preserve this ordering:
 
 1. **Connect and authenticate the owner wallet.** Privy or the selected wallet
-   provider owns the wallet connection and authentication prompts.
+   provider owns the wallet connection and authentication prompts. An email
+   session's embedded owner wallet is created silently by the application
+   after login, never by Privy's login window; see
+   [Email Registration and Direct Signing](#email-registration-and-direct-signing).
 2. **Verify legal status.** Query Hyperliquid `legalCheck` for the selected
    owner. Unknown, failed, or restricted responses fail closed and must not
    fall through to trading setup. The dialog is presentation only: every
@@ -129,7 +132,15 @@ The terminal must preserve this ordering:
    before the first action that needs the configured builder code.
 
 The legal gate has priority over signer readiness, Agent setup and trading or
-funds dialogs. While the status is being checked, trading and funds dialogs are
+funds dialogs. It never opens over a visible Privy window: while
+`usePrivy().isModalOpen` is true, every state that would show the policy
+dialog (`required`, `blocked`, `wallet_required`, `wallet_setup_failed`,
+`error`) reports `checking`, while `accepted`, `inactive` and `submitting` are
+unchanged. An email session without an active owner is also `checking` while
+its embedded wallet is missing or being created, and for 10 seconds after the
+wallet exists so Privy and wagmi can activate it; only then does a missing
+owner become `wallet_required`. A failed creation is `wallet_setup_failed`,
+whose dialog offers Retry. While the status is being checked, trading and funds dialogs are
 suspended rather than discarded: the global modal store keeps them, and they
 return once the status resolves. Order entry shows no passive verification
 notice, matching the official terminal, whose equivalent `acceptTermsLoading`
@@ -410,6 +421,7 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
 | Legal UI state | `apps/terminal/src/hooks/trade/use-legal-gate.ts` |
 | Blocking policy dialog | `apps/terminal/src/components/trade/components/legal-acceptance-modal.tsx` |
 | Privy login intent | `apps/terminal/src/lib/wallet/privy-login-method.ts`, `providers/privy-login-method-observer.tsx` |
+| Silent email wallet creation | `apps/terminal/src/providers/email-embedded-wallet-provider.tsx`, `hooks/wallet/use-email-embedded-wallet.ts` |
 | Email terms signer | `apps/terminal/src/hooks/wallet/use-explicit-terms-acceptance.ts`, `lib/wallet/privy-legal-signer.ts` |
 | Agent storage and preference | `packages/hl-react/src/signing/agent-storage.ts` |
 | Agent registration | `packages/hl-react/src/signing/use-agent-registration.ts` |
@@ -434,7 +446,13 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
 At minimum, changes to this flow must cover:
 
 - legal status: inactive, checking, required, submitting, blocked,
-  wallet-required, error, and accepted;
+  wallet-required, wallet-setup-failed, error, and accepted;
+- an email session waiting silently (`checking`) while its embedded wallet is
+  missing or being created and during the 10-second activation grace, a
+  failed creation offering Retry without automatic retries, one shared
+  creation for every consumer, and no creation for external-wallet sessions;
+- every policy dialog state held as `checking` while the Privy window is
+  visible, with accepted, inactive and submitting states unchanged;
 - while legal status is `checking`, preference dialogs remain available while
   trading and funds dialogs stay suppressed and return once it resolves;
 - the page-level position-dialog host keeps the same instance through every
@@ -496,8 +514,13 @@ commit, log, or expose its value through a `VITE_` client variable.
 ## Email Registration and Direct Signing
 
 Follow [Email trading design](email-trading-signing.md). Login and registration
-share Privy's email OTP flow and create embedded Ethereum wallets only for
-users without a wallet. Authentication alone never establishes a signer. Wait
+share Privy's email OTP flow. Privy's login window never creates a wallet
+(`createOnLogin: "off"`), so it shows no wallet-creation screen; once an email
+session is authenticated without an embedded wallet,
+`EmailEmbeddedWalletProvider` creates one with Privy's headless
+`createWallet()`, once per session and shared by every consumer
+([ADR 0033](adr/0033-silent-email-wallet-creation.md)). External-wallet
+sessions never get one. Authentication alone never establishes a signer. Wait
 for the exact wallet directory entry and active account, then verify legal
 status before allowing actions. Do not add a second registration form, create
 wallets for external-wallet users, or imitate the official site's signing

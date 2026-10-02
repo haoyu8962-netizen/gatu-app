@@ -7194,6 +7194,7 @@ msgstr "Reprendre le suivi"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
@@ -10931,6 +10932,10 @@ msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet
 msgstr "Le portefeuille a renvoyé un hash de transaction, mais il n'est pas encore visible sur Arbitrum. Vérifiez l'activité du portefeuille ou Arbiscan avant de réessayer afin d'éviter d'envoyer le dépôt deux fois."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet setup failed"
+msgstr "Échec de la configuration du portefeuille"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
 msgstr "Nous n'avons pas pu vérifier le statut juridique de ce portefeuille. Vérifiez votre connexion et réessayez."
 
@@ -11321,3 +11326,7 @@ msgstr "Votre transaction est en cours de traitement"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "Le solde de votre coffre n’a pas pu être vérifié. Les valeurs du compte et le retrait restent indisponibles."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Your wallet could not be created. Check your connection and try again."
+msgstr "Votre portefeuille n'a pas pu être créé. Vérifiez votre connexion et réessayez."

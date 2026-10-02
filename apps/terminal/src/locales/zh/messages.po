@@ -7194,6 +7194,7 @@ msgstr "继续跟踪"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
@@ -10931,6 +10932,10 @@ msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet
 msgstr "钱包已返回交易哈希，但该交易暂时还无法在 Arbitrum 上查到。请先检查钱包活动或 Arbiscan，避免重复发送同一笔存款。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet setup failed"
+msgstr "钱包创建失败"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
 msgstr "无法验证此钱包的法律状态。请检查网络连接后重试。"
 
@@ -11321,3 +11326,7 @@ msgstr "您的交易正在处理中"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "无法验证您的金库余额。账户价值和提款功能仍不可用。"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Your wallet could not be created. Check your connection and try again."
+msgstr "未能创建你的钱包。请检查网络连接后重试。"

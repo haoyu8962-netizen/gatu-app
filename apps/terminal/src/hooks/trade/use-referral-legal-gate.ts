@@ -1,34 +1,22 @@
 import { useEffect } from "react";
-import { deriveLegalGateSession, deriveLegalGateState } from "@/hooks/trade/use-legal-gate";
+import { deriveLegalGateState, useLegalGateSession } from "@/hooks/trade/use-legal-gate";
 import { useExplicitTermsAcceptance } from "@/hooks/wallet/use-explicit-terms-acceptance";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { reportClientError } from "@/lib/error-reporting/client";
 import { classifyLegalStatusError, useLegalStatus } from "@/lib/hyperliquid";
 
 export function useReferralLegalGate() {
 	const {
 		address,
-		authenticated,
-		authenticationReady,
+		authenticationModalOpen,
+		hasSession,
 		hasWalletAccess,
-		isConnected,
-		isConnecting,
-		isReconnecting,
-		sessionMode,
-		walletDirectoryReady,
-	} = useWalletSession();
+		isSessionPending,
+		ownerSetup,
+		retryWalletSetup,
+	} = useLegalGateSession();
 	const legalStatus = useLegalStatus();
 	const acceptance = useExplicitTermsAcceptance();
 	const legalErrorReason = legalStatus.error ? classifyLegalStatusError(legalStatus.error) : undefined;
-	const session = deriveLegalGateSession({
-		authenticationReady,
-		authenticated,
-		walletDirectoryReady,
-		isConnecting,
-		isReconnecting,
-		isConnected,
-		sessionMode,
-	});
 
 	useEffect(() => {
 		if (!legalStatus.error || !legalErrorReason || legalErrorReason === "aborted") return;
@@ -36,8 +24,11 @@ export function useReferralLegalGate() {
 	}, [legalErrorReason, legalStatus.error]);
 
 	const state = deriveLegalGateState({
-		...session,
+		hasSession,
+		isSessionPending,
+		authenticationModalOpen,
 		hasOwnerIdentity: !!address,
+		ownerSetup,
 		hasWalletAccess,
 		hasStatusError: legalStatus.isError,
 		isPending: legalStatus.isPending,
@@ -53,6 +44,7 @@ export function useReferralLegalGate() {
 		identity: address?.toLowerCase() ?? "disconnected",
 		resetAcceptance: acceptance.reset,
 		retryStatus: legalStatus.refetch,
+		retryWalletSetup,
 		state,
 	};
 }

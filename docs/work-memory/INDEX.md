@@ -316,10 +316,17 @@
 - [gatu.ai 直接下线、切换到 sairn.ai 的规划](sessions/2026-10-01-sairn-domain-cutover-plan.md) — 2026-10-01；已整理，验证见正文。gatu.ai 直接下线、切换到 sairn.ai：2026-10-02 已上线。PR #68 合入 dev（682430ba），经 #67 晋升 main（3ced842e），从 main 构建 p24（cloudfront-2026-10-02-p24，新 Privy 应用，主网赞助开、测试网赞助关、配对关）。发布 CloudFront 函数、Lambda、S3 后，三个分发一次换成 sairn 别名与 4 名证书 b04a51c6；官网上传并删除撤下页面。verify 主网 15 项、测试网 16 项通过（首轮图表包缓存未命中，预热后通过），CSP 覆盖无违规，官网检查通过，gatu 四个主机已不可达。决策另见 ADR 0032。真实钱包冒烟、主网小额赞助充值与 p25 清理未做。
 - [浏览器主题色跟随应用主题（浅色 #FFFFFF）](sessions/2026-10-01-theme-color-follows-theme.md) — 2026-10-01；已验证，范围见正文。<meta name="theme-color"> 此前（913dfacf 起）两种主题都固定 #0F1A1F，浅色主题下 Safari 15+ 与 Android Chrome 会把工具栏染成深青色。用户选定浅色用 #FFFFFF（浅色 --bg-base、页头底色）。新增 brand.json pwa.lightThemeColor 与 lib/theme-color.ts：启动引导脚本同一次读取写主题类和 meta，applyThemeClass 在早退前同步所有 theme-color 标签，根路由 head() 按 <html> 主题类取色——因为 TanStack 水合前在浏览器重跑 head()，React 19.2 只按 content 认领已有 <meta>，值不同会追加一个过期的重复标签。manifest 保持深色。单测、两组回归、类型检查与 CI 式生产构建通过；生产构建无头 Chromium 实测每一步只有一个标签且颜色正确；未做真机工具栏取色验收。
 
+### 钱包身份与首次交易引导
+
+当前规范：[docs/trading-onboarding.md](../../docs/trading-onboarding.md) · [docs/email-trading-signing.md](../../docs/email-trading-signing.md)
+
+- [邮箱注册后静默创建钱包，协议弹窗不再与 Privy 窗口重叠](sessions/2026-10-02-silent-email-wallet-creation.md) — 2026-10-02；已验证，范围见正文。用户报告邮箱注册后出现「创建钱包」提示并与协议勾选同时显示。原因：createOnLogin 让 Privy 在登录窗口里创建钱包（0.9 秒后切到 Creating your wallet，创建完再显示 2.5 秒 Welcome），协议门控一拿到地址就打开。改为 createOnLogin off，根部 EmailEmbeddedWalletProvider 用 Privy 无界面 createWallet() 为没有钱包的邮箱会话创建一次、所有使用方共享、失败不自动重试；协议门控在创建中与 10 秒激活宽限内为 checking，创建失败为 wallet_setup_failed（Retry），Privy 窗口可见时不弹协议弹窗。ADR 0033。单测、四个变异检查、类型检查与终端全量单测通过；未做真实邮箱注册验收，未发布。
+
 ## 按记录日期检索
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-02 | [邮箱注册后静默创建钱包，协议弹窗不再与 Privy 窗口重叠](sessions/2026-10-02-silent-email-wallet-creation.md) | 未取得任务标识，见正文 | `04a52301` | 已验证，范围见正文 |
 | 2026-10-01 | [移动端下单按钮的提交状态与桌面一致](sessions/2026-10-01-mobile-order-button-status.md) | 未取得任务标识，见正文 | `2baa44e2` | 已验证，范围见正文 |
 | 2026-10-01 | [PR 63 并入公告与 Privy 分支、五路对抗审查与修复](sessions/2026-10-01-pr63-merge-and-adversarial-review.md) | 未取得任务标识，见正文 | `a613e212` | 已验证，范围见正文 |
 | 2026-10-01 | [Sairn 品牌迁移的五项遗留：页头、设计稿、官网、跨浏览器、状态动效](sessions/2026-10-01-sairn-brand-followups.md) | 未取得任务标识，见正文 | `f440fa1b` | 已验证，范围见正文 |

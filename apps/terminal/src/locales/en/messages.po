@@ -7194,6 +7194,7 @@ msgstr "Resume tracking"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
@@ -10931,6 +10932,10 @@ msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet
 msgstr "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Wallet setup failed"
+msgstr "Wallet setup failed"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
 msgstr "We could not verify the legal status for this wallet. Check your connection and try again."
 
@@ -11321,3 +11326,7 @@ msgstr "Your transaction is being processed"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Your wallet could not be created. Check your connection and try again."
+msgstr "Your wallet could not be created. Check your connection and try again."
