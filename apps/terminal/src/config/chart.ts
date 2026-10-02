@@ -122,18 +122,3 @@ export const CHART_DATAFEED_CONFIG = {
 } as const;
 
 export const CHART_MIN_HEIGHT_PX = 300;
-
-export const SHORT_MONTHS = [
-	"Jan",
-	"Feb",
-	"Mar",
-	"Apr",
-	"May",
-	"Jun",
-	"Jul",
-	"Aug",
-	"Sep",
-	"Oct",
-	"Nov",
-	"Dec",
-] as const;
