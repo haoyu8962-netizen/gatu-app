@@ -19,7 +19,8 @@ interface Props {
 
 export function MobileTwapHistoryList({ className, scrollMode = "contained" }: Props) {
 	const { formatNumber, formatPrice } = useNumberFormat();
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { hasMore, history, isConnected, isRealtimeDegraded, loadMore, status } = useTwapHistory();
 	const { getTwapHistoryStatusLabel } = useOrderDisplayLabels();
 	const navigateToMarket = useMarketNavigation();
@@ -97,7 +98,7 @@ export function MobileTwapHistoryList({ className, scrollMode = "contained" }: P
 									{statusLabel}
 								</span>
 								<span className="text-[10px] text-market-close-subtle tabular-nums">
-									{formatDateTimeShort(getTwapHistoryTimeMs(entry))}
+									{formatDateTimeShort(getTwapHistoryTimeMs(entry), { locale })}
 								</span>
 							</div>
 						</div>

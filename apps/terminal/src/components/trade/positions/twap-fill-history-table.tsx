@@ -23,7 +23,8 @@ const twapFillFooterButtonClass =
 
 export function TwapFillHistoryTable() {
 	const { formatNumber, formatPrice, formatToken } = useNumberFormat();
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { fills, hasMore, isConnected, isRealtimeDegraded, loadMore, retryRealtime, status } = useTwapSliceFills();
 	const { address } = useWalletSession();
 	const { exportCsv, isExporting } = useTwapFillHistoryCsv();
@@ -90,7 +91,7 @@ export function TwapFillHistoryTable() {
 											)}
 										>
 											<td className="p-0 whitespace-nowrap text-market-close-muted tabular-nums">
-												{formatDateTimeShort(fill.time)}
+												{formatDateTimeShort(fill.time, { locale })}
 											</td>
 											<td className="p-0">
 												<button

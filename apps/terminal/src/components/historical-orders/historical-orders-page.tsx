@@ -56,7 +56,8 @@ function getOrderHistoryStatusBadgeClass(status: Exclude<OrderHistoryStatusFilte
 
 export function HistoricalOrdersPage({ address }: Props) {
 	const { formatToken } = useNumberFormat();
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
 	const markets = useMarkets();
@@ -117,7 +118,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 			buildCsvRows(exportEntries.filter(matchesFilters), [
 				{
 					header: t`Time`,
-					getValue: (entry) => formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" }),
+					getValue: (entry) => formatDateTime(entry.createdAt, { locale, dateStyle: "short", timeStyle: "short" }),
 				},
 				{ header: t`Asset`, getValue: (entry) => entry.coin },
 				{
@@ -137,7 +138,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 				{ header: t`Status`, getValue: (entry) => getHistoricalOrderStatusLabel(entry.order.status) },
 				{
 					header: t`Updated`,
-					getValue: (entry) => formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" }),
+					getValue: (entry) => formatDateTime(entry.updatedAt, { locale, dateStyle: "short", timeStyle: "short" }),
 				},
 			]),
 	});
@@ -336,7 +337,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 												fit
 											/>
 											<time className="shrink-0 text-xs tabular-nums text-fg-muted">
-												{formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" })}
+												{formatDateTime(entry.createdAt, { locale, dateStyle: "short", timeStyle: "short" })}
 											</time>
 										</div>
 										<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
@@ -388,7 +389,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 													<Trans>Updated</Trans>
 												</dt>
 												<dd className="mt-0.5 text-xs tabular-nums text-fg-muted">
-													{formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" })}
+													{formatDateTime(entry.updatedAt, { locale, dateStyle: "short", timeStyle: "short" })}
 												</dd>
 											</div>
 										</dl>
@@ -451,7 +452,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 										return (
 											<TableRow key={entry.key} className="h-12 border-stroke-weak hover:bg-fill-hover">
 												<TableCell className="px-5 py-0 text-xs text-fg-muted">
-													{formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" })}
+													{formatDateTime(entry.createdAt, { locale, dateStyle: "short", timeStyle: "short" })}
 												</TableCell>
 												<TableCell className="px-3 py-0 font-semibold">
 													<AssetBadge
@@ -484,7 +485,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 													</span>
 												</TableCell>
 												<TableCell className="px-5 py-0 text-right text-xs text-fg-muted">
-													{formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" })}
+													{formatDateTime(entry.updatedAt, { locale, dateStyle: "short", timeStyle: "short" })}
 												</TableCell>
 											</TableRow>
 										);

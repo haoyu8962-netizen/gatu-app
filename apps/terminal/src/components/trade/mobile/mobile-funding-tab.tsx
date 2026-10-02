@@ -69,7 +69,8 @@ function MobileFundingTabContent({
 	scrollMode = "contained",
 }: MobileFundingTabContentProps) {
 	const { formatPercent, formatToken, formatUSD } = useNumberFormat();
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const { error, fundings: updates, isOffline, isStale, status } = useUserFunding();
@@ -99,7 +100,7 @@ function MobileFundingTabContent({
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time) },
+				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time, { locale }) },
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
 					header: t`Position`,
@@ -254,7 +255,7 @@ function MobileFundingTabContent({
 											<div className="min-w-0">
 												<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Time`}</div>
 												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-													{formatDateTimeShort(update.time)}
+													{formatDateTimeShort(update.time, { locale })}
 												</div>
 											</div>
 											<div className="min-w-0">

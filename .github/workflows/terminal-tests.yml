@@ -235,6 +235,7 @@ jobs:
         run: >-
           pnpm exec vitest run --maxWorkers=1
           src/lib/tests/number-format-reactivity-contract.test.ts
+          src/lib/tests/date-locale-reactivity-contract.test.ts
           src/lib/tests/responsive-panel-layout.test.ts
           src/lib/tests/trade-row.test.tsx
           src/lib/tests/trades-panel.test.tsx

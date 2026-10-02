@@ -1260,7 +1260,8 @@ function MobileOrderCard({
 	onExpandedChange,
 }: MobileOrderCardProps) {
 	const { formatNumber, formatPercent, formatPrice, formatToken } = useNumberFormat();
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const detailsId = useId();
 	const { getOrderSideLabel, getOrderTypeLabel, getTriggerConditionLabel } = useOrderDisplayLabels();
 	const sideLabel = getOrderSideLabel(order.side, order.reduceOnly);
@@ -1325,7 +1326,7 @@ function MobileOrderCard({
 					<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-x-2.5 gap-y-3">
 						<OrderMetric
 							label={t`Time`}
-							value={formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
+							value={formatDateTime(order.timestamp, { locale, dateStyle: "short", timeStyle: "short" })}
 						/>
 						<OrderMetric
 							label={t`Direction`}

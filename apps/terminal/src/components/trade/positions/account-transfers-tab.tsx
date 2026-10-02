@@ -29,7 +29,8 @@ import {
 } from "./positions-panel-table-styles";
 
 export function AccountTransfersTab() {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const numberFormat = useNumberFormat();
 	const { error, isConnected, retry, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
@@ -142,7 +143,7 @@ export function AccountTransfersTab() {
 													rel="noopener noreferrer"
 													className="inline-flex items-center gap-1 underline decoration-dashed decoration-fg-muted/30 hover:text-fg"
 												>
-													{formatDateTimeShort(row.time)}
+													{formatDateTimeShort(row.time, { locale })}
 													<ArrowSquareOutIcon className="size-2.5" aria-hidden="true" />
 												</a>
 											</TableCell>

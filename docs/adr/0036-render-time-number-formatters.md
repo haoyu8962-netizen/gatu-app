@@ -74,7 +74,7 @@
   - 平仓滑块的读屏文本（`position-close-sizing-controls.tsx` 的 `aria-valuetext`，百分比来自 `formatPositionMarketClosePercent`）。
 
   全仓库还有约 119 处 `toFixed`，多数用于协议值或计算，没有逐处分类。登记为后续。
-- 日期是同一类问题：`formatDateTime` 等函数不传 `locale` 时读全局语言。本次修复了编译产物确认的 15 处，规则写入[运行时多语言](../i18n-presentation.md)，尚无契约，登记为后续。
+- 日期是同一类问题：`formatDateTime` 等函数不传 `locale` 时读全局语言。本次修复了编译产物确认的 15 处，规则写入[运行时多语言](../i18n-presentation.md)，尚无契约，登记为后续。（2026-10-02 后续：`date-locale-reactivity-contract` 补上了源码级契约，其余 38 处调用也已传入 `locale`，见[任务记录](../work-memory/sessions/2026-10-02-date-locale-reactivity-contract.md)。）
 - 构建体积：编译产物的缓存槽多了依赖项，体积变化见任务记录「验证与限制」。
 
 ## 证据

@@ -65,7 +65,8 @@ function FundingLoadingPlaceholder() {
 }
 
 export function FundingTab({ toolbarTarget }: Props = {}) {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { formatPercent, formatToken, formatUSD } = useNumberFormat();
 	const navigateToMarket = useMarketNavigation();
 	const { error, fundings: updates, isConnected, isOffline, isStale, status } = useUserFunding();
@@ -80,7 +81,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time) },
+				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time, { locale }) },
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
 					header: t`Position`,
@@ -216,7 +217,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 												)}
 											>
 												<div className="flex flex-col items-end">
-													<span>{formatDateTimeShort(update.time)}</span>
+													<span>{formatDateTimeShort(update.time, { locale })}</span>
 												</div>
 											</TableCell>
 										</TableRow>

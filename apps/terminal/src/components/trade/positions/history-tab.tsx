@@ -37,7 +37,8 @@ const historyFooterButtonClass =
 	"h-auto min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
 
 export function HistoryTab() {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
 	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
 	const { address } = useWalletSession();
@@ -58,7 +59,7 @@ export function HistoryTab() {
 		filename: "trade_history.csv",
 		buildRows: (exportFills) =>
 			buildCsvRows(exportFills, [
-				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
+				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale }) },
 				{ header: t`Asset`, getValue: (fill) => fill.coin },
 				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
 				{ header: t`Type`, getValue: () => t`Trade` },
@@ -239,14 +240,14 @@ export function HistoryTab() {
 															target="_blank"
 															rel="noopener noreferrer"
 														>
-															<span>{formatDateTimeShort(fill.time)}</span>
+															<span>{formatDateTimeShort(fill.time, { locale })}</span>
 															<ArrowSquareOutIcon
 																className="size-2.5 text-market-close-stroke-control"
 																aria-hidden="true"
 															/>
 														</a>
 													) : (
-														<span>{formatDateTimeShort(fill.time)}</span>
+														<span>{formatDateTimeShort(fill.time, { locale })}</span>
 													)}
 												</div>
 											</TableCell>
