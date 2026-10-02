@@ -297,7 +297,8 @@ CI：`.github/workflows/terminal-tests.yml` 的「Test recent trade rendering co
 - 2026-10-03 追记：本分支已并入集成分支 `claude/integrate-locale-number-format`（PR #71），上面「合并进集成分支时还要」各项已完成，经过见[集成记录](2026-10-02-integrate-locale-number-format.md)：
   - 日期契约改用 `harness/react-source.ts`，以及从数字契约抽出的 `harness/module-graph.ts`；
   - CI 条目已移到「Test number format and runtime locale contracts」步骤；
-  - `docs/i18n-presentation.md` 的冲突已合并，双方内容都保留。
+  - `docs/i18n-presentation.md` 的冲突已合并，双方内容都保留；
+  - 脚本里本分支的预算上调注释已按集成后的实测改写：总量 +417，另把桌面运行时基线上调 +114。原注释（+475）见本分支的提交 `cae7c133`。
 
   上文提到的 `lib/chart/format.ts` 已由 `f66d36f2` 删除（[记录](2026-10-02-remove-dead-chart-format-module.md)），提到它的句子保留原样。
 - 没有被整体替代的记录。

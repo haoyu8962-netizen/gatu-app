@@ -40,24 +40,24 @@ const budgets = {
 	// illustration data (about 2.3 kB), their keyframes in the stylesheet (0.8 kB) and the three components, split
 	// so the illustrations load only with their dialogs (desktop runtime startup +769, mobile +151). Measured as the
 	// local Node 22.15.0 build (3,193,087) minus the local build of f440fa1b before the change (3,186,543).
-	// Raised 2026-10-02 by +475 for the date and list locale contract (docs/i18n-presentation.md): 38 date calls
-	// in 18 components and one hook (histories, funding, TWAP, transfers, orders, the PnL card and Earn) now pass
-	// the active locale, which adds it to their React Compiler cache guards (desktop runtime startup +67, leaving
-	// 84 bytes of its allowance). Measured as the local Node 22.15.0 build (3,195,944) minus the local build of
-	// 04469b52 before the change (3,195,469), both with the same build SHA and release id; the +9,548 already used
-	// before this change stays counted.
-	// Raised 2026-10-02 by +1,216 for ADR 0037 (exact decimal strings through formatDecimalString): the helper in
-	// lib/format.ts and the number-format hook in about thirty components (staking +192, vaults +311, desktop runtime
-	// startup +170). Measured with the fixed build metadata of docs/terminal-performance-baseline.md as the local
-	// Node 22.15.0 build (3,199,883) minus the local build of 04469b52 before the change (3,198,667). That base already
-	// measures 2,746 bytes above the allowance this way; this raise does not cover it.
 	// Raised 2026-10-03 by +4,671 for the locale and number-format refresh (footer clock, vault labels, ADR 0036):
 	// components take their formatters from useNumberFormat() and read the locale before formatting, which adds
 	// React Compiler cache-guard dependencies (trade startup +2,410, desktop runtime startup +829, mobile +142).
 	// Measured as the local Node 22.15.0 build of 2d6f4676 (3,195,752) minus the local build of dev 682430ba
 	// (3,191,081), both with the fixed metadata of docs/terminal-performance-baseline.md; the +5,160 dev had already
 	// used stays counted. With CI metadata the same head measured 3,196,075, 154 bytes over the previous allowance.
-	totalGzipBaselineBytes: 3_192_283,
+	// Raised 2026-10-03 by +417 for the date and list locale contract (docs/i18n-presentation.md): 38 date calls in
+	// 18 components and one hook (histories, funding, TWAP, transfers, orders, the PnL card and Earn) pass the active
+	// locale, which adds it to their React Compiler cache guards (trade startup +203, desktop runtime startup +114,
+	// mobile +11). Measured as the local Node 22.15.0 build of c110dc80 (3,196,169) minus that of 2d6f4676
+	// (3,195,752), both with the fixed metadata of docs/terminal-performance-baseline.md; the date branch's own build
+	// against 04469b52 had measured +475.
+	// Raised 2026-10-03 by +1,392 for ADR 0037 (exact decimal strings through formatDecimalString): the helper in
+	// lib/format.ts and the number-format hook in about thirty components (staking +201, vaults +309, trade startup
+	// +440, desktop runtime startup +91). Measured as the local Node 22.15.0 build of 1cb73bcf (3,197,561) minus that
+	// of c110dc80 (3,196,169), both with the fixed metadata of docs/terminal-performance-baseline.md; the ADR 0037
+	// branch's own build against 04469b52 had measured +1,216.
+	totalGzipBaselineBytes: 3_192_401,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
@@ -81,10 +81,12 @@ const budgets = {
 			{
 				name: "desktop",
 				moduleIds: TRADE_DESKTOP_RUNTIME_MODULE_IDS,
-				// Raised 2026-10-02 by +170 for ADR 0037: formatDecimalString and the number-format hook in the order form,
-				// order book and funds recovery host (local Node 22.15.0 builds with fixed metadata: 202,155 after,
-				// 201,985 at 04469b52 before).
-				baselineGzipBytes: 192_158,
+				// Raised 2026-10-03 by +205: the date and list locale contract passes the locale in the positions panels
+				// and their history tabs (+114), and ADR 0037 adds formatDecimalString and the number-format hook to the
+				// order form, order book and funds recovery host (+91). Measured with the fixed metadata of
+				// docs/terminal-performance-baseline.md as the local Node 22.15.0 builds of 2d6f4676 (201,842), c110dc80
+				// (201,956) and 1cb73bcf (202,047).
+				baselineGzipBytes: 192_193,
 				allowedIncreaseBytes: 10_000,
 			},
 		],

@@ -262,3 +262,7 @@
 - LiFi 跨链在默认开关下不出现，只有 jsdom 证据。
 - 组合收益图手写的日期刻度属于日期规则，未处理。
 - 本记录完成了上一条记录「后续」的第一项（不经 `lib/format.ts` 的数字显示）；那条记录本身未改动。没有被整体替代的记录。
+- 2026-10-03 追记：本分支已并入集成分支 `claude/integrate-locale-number-format`（PR #71），经过见[集成记录](2026-10-02-integrate-locale-number-format.md)：
+  - 上文「构建预算总量」一项：集成会话在没有 `.env.local` 的干净 worktree 里，用同样的固定元数据构建产品代码与 `04469b52` 相同的 `2d6f4676`，结果是 3,195,752，在预算内；与这里记的 3,198,667 相差 2,915，原因没有查。脚本里本分支的上调注释已按集成后的实测改写，原注释见本分支的提交 `f7ae69a2`。
+  - 合并时 `format.test.ts` 的格式化函数清单补上了 `formatDecimalString`。本分支改动或新增、原先不在 CI 清单里的 15 个测试文件，已加入「Test number format and runtime locale contracts」步骤。
+  - 图表仓位线的仓位数量（`lib/chart/tradingview-overlays.ts`）本分支没有覆盖，仍列在 `docs/number-format-setting.md`「未完成」。

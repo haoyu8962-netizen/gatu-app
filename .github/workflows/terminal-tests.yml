@@ -278,6 +278,21 @@ jobs:
           src/lib/tests/bridge-success-screen-locale.test.tsx
           src/components/staking/__tests__/staking-action-modal.test.tsx
           src/lib/tests/react-source-harness.test.ts
+          src/lib/tests/decimal-display-contract.test.ts
+          src/components/staking/__tests__/staking-domain.test.ts
+          src/lib/tests/vaults-domain.test.ts
+          src/lib/tests/bridge-amount-number-format.test.tsx
+          src/lib/tests/deposit-amount-input.test.tsx
+          src/lib/tests/withdrawal.test.ts
+          src/lib/tests/global-settings-modal.test.tsx
+          src/lib/tests/mobile-market-bar.test.tsx
+          src/lib/tests/mobile-orderbook-mode.test.tsx
+          src/lib/tests/mobile-trade-price-field.test.tsx
+          src/lib/tests/order-fee-quote.test.ts
+          src/lib/tests/order-toast-number-format.test.tsx
+          src/lib/tests/trade-form-scale-mid.test.tsx
+          src/lib/tests/trade-form-twap.test.tsx
+          src/lib/tests/rtl-financial-ui-contract.test.ts
 
       - name: Test Deposit, CCTP, routing, and geo guards
         working-directory: apps/terminal
