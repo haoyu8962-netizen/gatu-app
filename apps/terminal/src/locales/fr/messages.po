@@ -3159,7 +3159,7 @@ msgstr "Glissement est."
 msgid "Establish Connection"
 msgstr "Établir la connexion"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr)
+#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "Taux annuel estimé : {0}"
@@ -4985,7 +4985,7 @@ msgstr "Offre maximale"
 msgid "Maximum withdrawable"
 msgstr "Maximum retirable"
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Maximum withdrawable: {0}"
 msgstr "Maximum retirable : {0}"
@@ -10741,7 +10741,7 @@ msgstr "Référence de vérification"
 msgid "Verified Vault details are unavailable."
 msgstr "Les détails vérifiés du coffre sont indisponibles."
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Verified wallet balance: {0}"
 msgstr "Solde vérifié du portefeuille : {0}"

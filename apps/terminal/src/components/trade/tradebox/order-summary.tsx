@@ -42,7 +42,7 @@ export function OrderSummary({
 	marketKind = "perp",
 	compact,
 }: Props) {
-	const { formatPrice, formatSlippageBps, formatUSD } = useNumberFormat();
+	const { formatNumber, formatPrice, formatSlippageBps, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const isLeveraged = marketKind !== "spot";
 	const showSlippage = orderType === "market";
@@ -96,7 +96,7 @@ export function OrderSummary({
 							onClick={onSlippageClick}
 							className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80 active:opacity-60"
 						>
-							<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+							<span className="tabular-nums text-trading-panel-error">{formatNumber(slippagePercent)}%</span>
 							<PencilIcon className="size-2.5 text-trading-panel-subtle" />
 						</button>
 					</SummaryRow>

@@ -89,7 +89,8 @@ export function TpSlSection({
 	linkedReturnInputs,
 }: Props) {
 	const { t } = useLingui();
-	const { formatQuoteAmount, formatUSD } = useNumberFormat();
+	const numberFormat = useNumberFormat();
+	const { formatQuoteAmount, formatUSD } = numberFormat;
 	const normalizedQuoteSymbol = quoteSymbol?.trim() || null;
 	function formatPnlValue(value: string | number): string {
 		if (!normalizedQuoteSymbol) return "";
@@ -132,7 +133,7 @@ export function TpSlSection({
 		slPnl: string | number;
 	} | null = null;
 	if (riskRewardRatio !== null && tpPnl !== null && slPnl !== null) {
-		const rrDisplay = formatRiskRewardRatio(riskRewardRatio);
+		const rrDisplay = formatRiskRewardRatio(riskRewardRatio, numberFormat);
 		if (rrDisplay) riskRewardDisplay = { rrDisplay, tpPnl, slPnl };
 	}
 

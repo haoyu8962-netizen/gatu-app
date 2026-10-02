@@ -90,8 +90,8 @@ export function MobileMarketBar({ className }: Props) {
 	const changeAmount = getPriceChangeAmount(displayPrice, prevDayPx);
 	const changeColorClass = getPriceChangeColorClass(change24h);
 	const priceText = formatDisplayPrice(displayPrice, priceDecimals, numberFormat);
-	const changeAmountText = formatSignedFixed(changeAmount, priceDecimals);
-	const changePercentText = formatSignedPercent(change24h);
+	const changeAmountText = formatSignedFixed(changeAmount, priceDecimals, numberFormat);
+	const changePercentText = formatSignedPercent(change24h, numberFormat);
 	const oiUsd = getOiUsd(openInterest, marketMarkPx);
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotMarkPx);
 	const spotTokenAddress = getSpotTokenAddress(market);
@@ -124,7 +124,7 @@ export function MobileMarketBar({ className }: Props) {
 			changeText={
 				changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
 					? `${changeAmountText} / ${changePercentText}`
-					: "0.00 / 0.00%"
+					: `${numberFormat.formatDecimalString("0.00")} / ${numberFormat.formatDecimalString("0.00")}%`
 			}
 			expanded={expanded}
 			detailsId={detailsId}
@@ -439,19 +439,22 @@ function getPriceChangeAmount(
 	return current.minus(previous);
 }
 
-function formatSignedFixed(value: ReturnType<typeof getPriceChangeAmount>, decimals: number): string {
+function formatSignedFixed(
+	value: ReturnType<typeof getPriceChangeAmount>,
+	decimals: number,
+	numberFormat: NumberFormatters,
+): string {
 	if (!value) return FALLBACK_VALUE_PLACEHOLDER;
 	const rounded = value.round(decimals);
-	if (rounded.eq(0)) return rounded.toFixed(decimals);
 	const sign = rounded.gt(0) ? "+" : "";
-	return `${sign}${rounded.toFixed(decimals)}`;
+	return `${sign}${numberFormat.formatDecimalString(rounded.toFixed(decimals))}`;
 }
 
-function formatSignedPercent(value: number | null): string {
+function formatSignedPercent(value: number | null, numberFormat: NumberFormatters): string {
 	if (typeof value !== "number" || !Number.isFinite(value)) return FALLBACK_VALUE_PLACEHOLDER;
-	if (Math.abs(value) < 0.005) return "0.00%";
+	if (Math.abs(value) < 0.005) return `${numberFormat.formatDecimalString("0.00")}%`;
 	const sign = value > 0 ? "+" : "";
-	return `${sign}${value.toFixed(2)}%`;
+	return `${sign}${numberFormat.formatDecimalString(value.toFixed(2))}%`;
 }
 
 function getPriceChangeColorClass(value: number | null): string {

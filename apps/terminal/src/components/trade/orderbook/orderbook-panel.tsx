@@ -31,7 +31,7 @@ import { TradesPanel } from "./trades-panel";
 import { useOrderbookRows } from "./use-orderbook-rows";
 
 export function OrderbookPanel() {
-	const { formatNumber } = useNumberFormat();
+	const { formatDecimalString, formatNumber } = useNumberFormat();
 	const { t } = useLingui();
 	const { env } = useHyperliquid();
 	useRenderCommitTrack("orderbook");
@@ -142,8 +142,9 @@ export function OrderbookPanel() {
 
 	const hasFailure = orderbookStatus === "error" || orderbookIsStale;
 
+	const groupingLabel = selectedOption?.label ?? priceGroupingOptions[0]?.label;
 	const dropdownItems = priceGroupingOptions.map((option) => ({
-		label: option.label,
+		label: formatDecimalString(option.label),
 		active: option.key === selectedOption?.key,
 		onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
 	}));
@@ -201,7 +202,7 @@ export function OrderbookPanel() {
 					grouping={
 						<Dropdown
 							renderTrigger={
-								<OrderbookGroupingTriggerView label={selectedOption?.label ?? priceGroupingOptions[0]?.label ?? "—"} />
+								<OrderbookGroupingTriggerView label={groupingLabel ? formatDecimalString(groupingLabel) : "—"} />
 							}
 							items={dropdownItems}
 							size="xxs"

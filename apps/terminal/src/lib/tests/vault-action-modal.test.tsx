@@ -5,7 +5,15 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VaultActionModal, type VaultActionModalProps } from "@/components/vaults/vault-action-modal";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "./harness/react";
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -19,7 +27,12 @@ vi.mock("@sairn/ui", () => ({
 	ModalFooter: ({ children }: { children: ReactNode }) => <footer>{children}</footer>,
 	ModalHeader: ({ children }: { children: ReactNode }) => <header>{children}</header>,
 	ModalTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
-	TextInput: () => <input />,
+	TextInput: ({ hint }: { hint?: ReactNode }) => (
+		<label>
+			<input />
+			<span data-testid="text-input-hint">{hint}</span>
+		</label>
+	),
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
@@ -32,6 +45,7 @@ describe("Vault action modal", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -82,6 +96,27 @@ describe("Vault action modal", () => {
 		).toBe(true);
 		expect(container.textContent).toContain("four-day lock after the latest HLP deposit");
 		expect(container.textContent).toContain("one-day lock for user Vaults");
+	});
+
+	it("writes the verified balance, leader commission and reviewed amount with the number-format separators", () => {
+		const hint = () => container.querySelector('[data-testid="text-input-hint"]')?.textContent;
+		act(() =>
+			root.render(<VaultActionModal {...props({ stage: "input", result: undefined, availableAmount: "12345.678" })} />),
+		);
+		expect(hint()).toBe("Verified wallet balance: $12,345.68");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(hint()).toBe("Verified wallet balance: $12.345,68");
+
+		act(() => root.render(<VaultActionModal {...props({ stage: "review", result: undefined, amount: "1234.5 " })} />));
+		const commission = [...container.querySelectorAll("dt")].find((term) => term.textContent === "Leader commission");
+		expect(commission?.nextElementSibling?.textContent).toBe("10,00%");
+		const amount = [...container.querySelectorAll("dt")].find((term) => term.textContent === "Amount");
+		expect(amount?.nextElementSibling?.textContent).toBe("1.234,5 USDC");
+
+		act(() => root.render(<VaultActionModal {...props({ stage: "review", result: undefined, amount: "0005" })} />));
+		expect(amount?.nextElementSibling?.textContent).toBe("5 USDC");
 	});
 });
 

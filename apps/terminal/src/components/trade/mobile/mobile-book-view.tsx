@@ -170,7 +170,7 @@ export function MobileBookView({
 	showOrderbookInQuote: controlledShowOrderbookInQuote,
 	view: viewProp,
 }: MobileBookViewProps) {
-	const { formatNumber } = useNumberFormat();
+	const { formatDecimalString, formatNumber } = useNumberFormat();
 	const { t } = useLingui();
 	const { env } = useHyperliquid();
 	const [internalView, setView] = useState<View>("book");
@@ -359,14 +359,14 @@ export function MobileBookView({
 						<Dropdown
 							triggerVariant="minimal"
 							size="xxs"
-							trigger={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
+							trigger={selectedOption ? formatDecimalString(selectedOption.label) : FALLBACK_VALUE_PLACEHOLDER}
 							triggerAriaLabel={t`Price grouping`}
 							triggerClassName={cn(MOBILE_FILTER_CHIP_CLASS, "tabular-nums")}
 							popupClassName="min-w-28"
 							align="start"
 							items={priceGroupingOptions.map(
 								(option): DropdownItem => ({
-									label: option.label,
+									label: formatDecimalString(option.label),
 									active: getPriceGroupingKey(option) === selectedOptionKey,
 									onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
 								}),
@@ -415,7 +415,9 @@ export function MobileBookView({
 						mid={mid}
 						midDirection={midDirection}
 						marketName={name}
-						selectedOptionLabel={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
+						selectedOptionLabel={
+							selectedOption ? formatDecimalString(selectedOption.label) : FALLBACK_VALUE_PLACEHOLDER
+						}
 						priceGroupingOptions={priceGroupingOptions}
 						setSelectedOptionKey={setSelectedOptionKey}
 						mode={compactOrderbookMode}
@@ -508,7 +510,7 @@ export function CompactOrderbook({
 	quoteToken,
 	sizeToken,
 }: CompactOrderbookProps) {
-	const { formatNumber } = useNumberFormat();
+	const { formatDecimalString, formatNumber } = useNumberFormat();
 	const { t } = useLingui();
 	const [height, orderbookRef] = useOrderbookHeight<HTMLFieldSetElement>();
 	const measuredLayout = getCompactOrderbookLayout(height, mode);
@@ -697,7 +699,7 @@ export function CompactOrderbook({
 					popupClassName={tradingPanelDropdownPopupClass}
 					items={priceGroupingOptions.map(
 						(option): DropdownItem => ({
-							label: option.label,
+							label: formatDecimalString(option.label),
 							onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
 						}),
 					)}

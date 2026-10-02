@@ -20,7 +20,7 @@ function tokenRowStyle(isDust: boolean): string {
 }
 
 function TokenRow({ token, onSelect }: TokenRowProps) {
-	const { formatUSD } = useNumberFormat();
+	const numberFormat = useNumberFormat();
 	return (
 		<button
 			type="button"
@@ -46,8 +46,10 @@ function TokenRow({ token, onSelect }: TokenRowProps) {
 				)}
 			</div>
 			<div className="text-right shrink-0">
-				<div className="text-xs tabular-nums text-fg">{formatTokenBalance(token.amount, token.decimals)}</div>
-				<div className="text-xs tabular-nums text-fg-muted">{formatUSD(token.amountUSD, 2)}</div>
+				<div className="text-xs tabular-nums text-fg">
+					{formatTokenBalance(token.amount, token.decimals, numberFormat)}
+				</div>
+				<div className="text-xs tabular-nums text-fg-muted">{numberFormat.formatUSD(token.amountUSD, 2)}</div>
 			</div>
 		</button>
 	);

@@ -5,7 +5,15 @@ import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AmountInput } from "@/components/trade/tradebox/deposit/amount-input";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createI18nRoot } from "./harness/react";
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 const defaultProps = {
 	amount: "",
@@ -24,6 +32,7 @@ describe("deposit AmountInput accessibility", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		vi.clearAllMocks();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
@@ -34,6 +43,28 @@ describe("deposit AmountInput accessibility", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+	});
+
+	it("writes the wallet balance with the number-format separators while Max fills the protocol amount", () => {
+		const onAmountChange = vi.fn();
+		act(() => {
+			root.render(
+				createElement(AmountInput, {
+					...defaultProps,
+					balance: "1234.567891",
+					maxAmount: "1234.567891",
+					onAmountChange,
+				}),
+			);
+		});
+		expect(container.textContent).toContain("Available: 1,234.567891 USDC");
+
+		numberFormatSetting.locale = "fr-FR";
+		act(() => notifyNumberFormatChange());
+		expect(container.textContent).toContain("Available: 1 234,567891 USDC");
+		const max = [...container.querySelectorAll("button")].find((button) => button.textContent === "Max");
+		act(() => max?.click());
+		expect(onAmountChange).toHaveBeenCalledWith("1234.567891");
 	});
 
 	it("associates a visible validation helper with the invalid amount input", () => {

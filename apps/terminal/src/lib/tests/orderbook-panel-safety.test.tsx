@@ -7,9 +7,11 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
 import { ORDERBOOK_PANEL_CLASS, ORDERBOOK_TAB_CONTENT_CLASS } from "@/components/trade/orderbook/orderbook-panel-view";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
 
 const mocks = vi.hoisted(() => ({
+	formatLocale: "en-US",
 	book: undefined as
 		| {
 				coin: string;
@@ -73,7 +75,7 @@ vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	useAnimateOrderbook: () => true,
-	getResolvedFormatLocale: () => "en-US",
+	getResolvedFormatLocale: () => mocks.formatLocale,
 	useIsTestnet: () => false,
 }));
 
@@ -97,6 +99,7 @@ describe("OrderbookPanel safety", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.formatLocale = "en-US";
 		mocks.book = undefined;
 		mocks.error = undefined;
 		mocks.isStale = false;
@@ -177,6 +180,23 @@ describe("OrderbookPanel safety", () => {
 			expect(container.querySelectorAll('button[aria-label*="limit price"]')).toHaveLength(2);
 		},
 	);
+
+	it("writes the price-grouping trigger and options with the number-format separators", async () => {
+		mocks.market = { kind: "perp", markPx: "123456", name: "BTC", pairName: "BTC-USDC", szDecimals: 0 };
+		renderPanel();
+		const trigger = () => container.querySelector<HTMLButtonElement>('button[aria-label="Price grouping"]');
+		expect(trigger()?.textContent).toBe("1");
+
+		mocks.formatLocale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		await act(async () => trigger()?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })));
+		const options = [...document.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent);
+		expect(options).toEqual(expect.arrayContaining(["1.000", "10.000"]));
+
+		mocks.market = { kind: "perp", markPx: "100", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 };
+		renderPanel();
+		expect(trigger()?.textContent).toBe("0,01");
+	});
 
 	it("does not render a snapshot from a different market", () => {
 		mocks.book = snapshot("ETH", [{ n: 1, px: "1920.5", sz: "1" }], [{ n: 1, px: "1921.0", sz: "1" }]);

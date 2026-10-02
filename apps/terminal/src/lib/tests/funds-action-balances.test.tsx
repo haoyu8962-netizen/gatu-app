@@ -11,6 +11,7 @@ import { SendModal } from "@/components/trade/positions/send-modal";
 import { TransferModal } from "@/components/trade/positions/transfer-modal";
 import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
 import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { clearSendDraft } from "@/stores/use-send-draft-store";
 import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 import { createI18nRoot } from "./harness/react";
@@ -43,6 +44,12 @@ const arabicMessages: Messages = {
 
 const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning: vi.fn() }));
 vi.mock("sonner", () => ({ toast: toastMocks }));
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 const testState = vi.hoisted(() => ({
 	pendingMethods: new Set<string>(),
@@ -270,6 +277,7 @@ describe("funds action balance wiring", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.exchangeIdentity.clientKey = "0x1111111111111111111111111111111111111111";
 		testState.exchangeIdentity.env = "Mainnet";
@@ -327,8 +335,8 @@ describe("funds action balance wiring", () => {
 			root.render(createElement(TransferModal, { initialDirection: "toPerp", onOpenChange: vi.fn(), open: true })),
 		);
 
-		expect(container.textContent).toContain("4964.51 USDC");
-		expect(container.textContent).not.toContain("4947.18 USDC");
+		expect(container.textContent).toContain("4,964.51 USDC");
+		expect(container.textContent).not.toContain("4,947.18 USDC");
 		clickAvailableBalance(container);
 		expect(getAmountInput(container).value).toBe("4964.51");
 	});
@@ -351,6 +359,26 @@ describe("funds action balance wiring", () => {
 		},
 	);
 
+	it("writes available balances with the number-format separators while Max fills the protocol amount", () => {
+		act(() =>
+			root.render(createElement(TransferModal, { initialDirection: "toPerp", onOpenChange: vi.fn(), open: true })),
+		);
+		const available = () => container.querySelector('[data-testid="available-balance"] span')?.textContent;
+		expect(available()).toBe("4,964.51 USDC");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(available()).toBe("4.964,51 USDC");
+		clickAvailableBalance(container);
+		expect(getAmountInput(container).value).toBe("4964.51");
+
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		expect(available()).toBe("4.964,51 USDC");
+		numberFormatSetting.locale = "fr-FR";
+		act(() => notifyNumberFormatChange());
+		expect(available()).toBe("4 964,51 USDC");
+	});
+
 	it("uses clearinghouseState.withdrawable for sends from the Perps account", () => {
 		act(() => root.render(createElement(SendModal, { initialAccountType: "perp", onOpenChange: vi.fn(), open: true })));
 
@@ -363,8 +391,8 @@ describe("funds action balance wiring", () => {
 	it("uses settled Spot total minus hold for spot sends", () => {
 		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
 
-		expect(container.textContent).toContain("4964.51 USDC");
-		expect(container.textContent).not.toContain("4947.18 USDC");
+		expect(container.textContent).toContain("4,964.51 USDC");
+		expect(container.textContent).not.toContain("4,947.18 USDC");
 		expect(container.querySelector('select[aria-label="Account"]')).not.toBeNull();
 		expect(container.querySelector('select[aria-label="Asset"]')).not.toBeNull();
 		clickAvailableBalance(container);
@@ -427,14 +455,14 @@ describe("funds action balance wiring", () => {
 
 			expect(container.textContent).toContain("Select a supported account mode before moving funds.");
 			expect(container.textContent).not.toContain("40.00 USDC");
-			expect(container.textContent).not.toContain("4964.51 USDC");
+			expect(container.textContent).not.toContain("4,964.51 USDC");
 			expect(container.querySelector('input[aria-label="Amount"]')).toBeNull();
 			expect(getButton(container, "Transfer").disabled).toBe(true);
 
 			act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
 			expect(container.textContent).toContain("Select a supported account mode before moving funds.");
 			expect(container.textContent).not.toContain("40.00 USDC");
-			expect(container.textContent).not.toContain("4964.51 USDC");
+			expect(container.textContent).not.toContain("4,964.51 USDC");
 			expect(getButton(container, "Send").disabled).toBe(true);
 		},
 	);

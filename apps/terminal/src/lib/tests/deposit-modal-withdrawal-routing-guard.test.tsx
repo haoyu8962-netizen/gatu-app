@@ -14,6 +14,7 @@ import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-ava
 import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
 import { LocalizedActionError } from "@/lib/errors/localized-action-error";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { unknownStatusToastIcon } from "./harness/status-glyph";
 
 const WITHDRAWAL_MESSAGES = {
@@ -61,6 +62,8 @@ const arabicMessages: Messages = Object.fromEntries(
 );
 
 const testState = vi.hoisted(() => ({
+	formatLocale: "en-US",
+	depositExecutionAmount: null as string | null,
 	accountGuard: vi.fn(),
 	accountAbstraction: "disabled" as string | null,
 	activeTab: "deposit" as "deposit" | "withdraw",
@@ -410,7 +413,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			refreshBalance: testState.refreshDepositBalance,
 			deposit: testState.deposit,
 			error: testState.depositError,
-			executionAmount: null,
+			executionAmount: testState.depositExecutionAmount,
 			executionRoute: testState.depositExecutionRoute,
 			hash: testState.depositHash,
 			isArbitrum: true,
@@ -458,7 +461,7 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
-	getResolvedFormatLocale: () => "en-US",
+	getResolvedFormatLocale: () => testState.formatLocale,
 	useIsTestnet: () => false,
 }));
 
@@ -561,9 +564,11 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		showSpotFundsNotice,
 		prerequisiteError,
 		canSubmit,
+		validation,
 	}: {
 		prerequisiteError: string | null;
 		canSubmit: boolean;
+		validation: { valid: boolean; error: string | null };
 		activationFee: string;
 		amount: string;
 		available: string;
@@ -592,6 +597,7 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 			},
 			createElement("button", { onClick: () => onAmountChange(testState.withdrawDraft), type: "button" }, "Set amount"),
 			createElement("p", { "data-testid": "withdrawal-prerequisite" }, prerequisiteError),
+			createElement("p", { "data-testid": "withdrawal-validation" }, validation.error),
 			createElement("button", { disabled: !canSubmit, onClick: onSubmit, type: "button" }, "Submit withdrawal"),
 			createElement("button", { onClick: onRetryPrerequisites, type: "button" }, "Retry withdrawal route"),
 		);
@@ -609,6 +615,8 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 	beforeEach(async () => {
 		vi.clearAllMocks();
+		testState.formatLocale = "en-US";
+		testState.depositExecutionAmount = null;
 		testState.accountAbstraction = "disabled";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.exchangeGuards.clear();
@@ -781,6 +789,32 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			for (const mutation of testState.exchangeSdkCalls.values()) expect(mutation).not.toHaveBeenCalled();
 		},
 	);
+
+	it("writes the amount of a pending deposit in plain notation with the number-format separators", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.depositStatus = "pending";
+		testState.depositExecutionAmount = "0001234.5";
+		testState.formatLocale = "de-DE";
+		await rerender();
+		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toContain(
+			"1.234,5 USDC → Hyperliquid",
+		);
+	});
+
+	it("writes the CCTP minimum withdrawal with the number-format separators", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.cctpWithdrawalFee = "600.25";
+		await rerender();
+		act(() => getButton("Set amount").click());
+		const validation = () => container.querySelector('[data-testid="withdrawal-validation"]')?.textContent;
+		expect(validation()).toBe("Minimum withdrawal is $1,200.5");
+
+		testState.formatLocale = "de-DE";
+		await act(async () => notifyNumberFormatChange());
+		expect(validation()).toBe("Minimum withdrawal is $1.200,5");
+	});
 
 	it("derives the CCTP pre-transfer target from spotMeta and checks it at the SDK boundary", async () => {
 		testState.modalOpen = true;

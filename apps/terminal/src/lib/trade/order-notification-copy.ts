@@ -51,9 +51,11 @@ export function getOrderNotificationCopy(
 	} else if (order.positionsClosed && order.status === "success") {
 		summary = translate(msg`All positions closed`);
 	} else if (showExecution) {
-		const quantity = isolate(`${execution.filledSize} ${market}`);
+		const filledSize = numberFormat.formatDecimalString(execution.filledSize);
+		const quantity = isolate(`${filledSize} ${market}`);
 		if (execution.completeness === "partial") {
-			const progress = isolate(`${execution.filledSize} / ${execution.requestedSize} ${market}`);
+			const requestedSize = numberFormat.formatDecimalString(execution.requestedSize);
+			const progress = isolate(`${filledSize} / ${requestedSize} ${market}`);
 			summary = translate(msg`Partially filled ${progress}`);
 			if (order.tpPrice || order.slPrice) {
 				notice = translate(

@@ -5,7 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { LIFI_EXPLORER_URL } from "@/config/bridge";
 import { formatTokenAmount, processTypeLabel } from "@/lib/bridge/format";
-import { formatDateTimeShort, shortenAddress } from "@/lib/format";
+import { formatDateTimeShort, shortenAddress, useNumberFormat } from "@/lib/format";
 import type { ProcessDetail } from "@/lib/lifi/use-bridge";
 import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
 import { ExplorerLink } from "./shared-ui";
@@ -33,8 +33,10 @@ export function SuccessScreen({
 }: Props) {
 	const { i18n } = useLingui();
 	const locale = i18n.locale;
-	const formatted = formatTokenAmount(receivedAmount, 6);
-	const totalSeconds = startTime && endTime ? Math.round((endTime - startTime) / 1000) : null;
+	const numberFormat = useNumberFormat();
+	const formatted = formatTokenAmount(receivedAmount, 6, numberFormat);
+	const totalSeconds =
+		startTime && endTime ? numberFormat.formatNumber(Math.round((endTime - startTime) / 1000)) : null;
 
 	return (
 		<div className="flex flex-1 flex-col gap-4">

@@ -8,12 +8,18 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const useOrderEntryDataMock = vi.hoisted(() => vi.fn());
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
 const tradeSizeSliderState = vi.hoisted(() => ({
 	props: null as null | {
 		onPercentCancel: (value: number) => void;
 		onPercentChange: (value: number) => void;
 		onPercentInteractionStart?: (value: number) => void;
 	},
+}));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
 }));
 
 vi.mock("@/hooks/trade/use-order-entry-data", () => ({
@@ -49,6 +55,7 @@ vi.mock("@/components/trade/components/trade-size-slider", () => ({
 import { TradeFormFields } from "@/components/trade/tradebox/trade-form-fields";
 import { TradeHeader } from "@/components/trade/tradebox/trade-header";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { createI18nRoot } from "./harness/react";
 
@@ -99,9 +106,11 @@ describe("TradeFormFields order-entry data ownership", () => {
 
 	function ParentHarness({
 		maxSize = 10,
+		positionSize = 0,
 		swapTargetToken = null,
 	}: {
 		maxSize?: number;
+		positionSize?: number;
 		swapTargetToken?: string | null;
 	}) {
 		const hookOrderEntryData = useOrderEntryData({
@@ -136,7 +145,7 @@ describe("TradeFormFields order-entry data ownership", () => {
 					orderEntryData={orderEntryData}
 					visibleValidationErrors={[]}
 					price={100}
-					positionSize={0}
+					positionSize={positionSize}
 					swapTargetToken={swapTargetToken}
 					onSizeModeToggle={vi.fn()}
 					onSizePercentApply={(percent) => actions.setSize(percent === 80 ? "8" : String(percent))}
@@ -147,6 +156,7 @@ describe("TradeFormFields order-entry data ownership", () => {
 	}
 
 	beforeEach(() => {
+		numberFormatSetting.locale = "en-US";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		localStorage.clear();
 		useOrderEntryDataMock.mockReset();
@@ -164,6 +174,21 @@ describe("TradeFormFields order-entry data ownership", () => {
 		container.remove();
 		localStorage.clear();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("writes the open position size with the number-format separators, truncated to the size decimals", () => {
+		act(() => root.render(<ParentHarness positionSize={1234.56789} />));
+		const position = () =>
+			[...container.querySelectorAll("span.font-semibold")].find((node) => node.textContent?.includes("BTC"))
+				?.textContent;
+		expect(position()).toBe("+1,234.5678 BTC");
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+		expect(position()).toBe("+1.234,5678 BTC");
+
+		act(() => root.render(<ParentHarness positionSize={-1234.5} />));
+		expect(position()).toBe("-1.234,5 BTC");
 	});
 
 	it("preserves a successful balance and Swap when only the reduce-only position is unavailable", () => {

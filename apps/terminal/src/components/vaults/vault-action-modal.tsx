@@ -18,6 +18,8 @@ import {
 	BRAND_MOTION_SUBMITTING,
 	BRAND_MOTION_UNKNOWN,
 } from "@/lib/brand/brand-motion.gen";
+import { useNumberFormat } from "@/lib/format";
+import { toPlainDecimal } from "@/lib/trade/numbers";
 import { formatVaultRatio, formatVaultUsd, type VaultDetail } from "./domain/vaults";
 
 export type VaultActionStage = "input" | "review" | "awaiting" | "submitted" | "reconciling" | "done";
@@ -65,6 +67,7 @@ export function VaultActionModal({
 	onClose,
 }: VaultActionModalProps) {
 	const { t } = useLingui();
+	const numberFormat = useNumberFormat();
 	const isMobile = useIsMobile();
 	const showsResult = stage === "done" && result === "unknown";
 	const isSettling = stage === "done" && !showsResult;
@@ -104,8 +107,8 @@ export function VaultActionModal({
 								availableAmount === null
 									? t`Available amount is not verified`
 									: action === "deposit"
-										? t`Verified wallet balance: ${formatVaultUsd(availableAmount)}`
-										: t`Maximum withdrawable: ${formatVaultUsd(availableAmount)}`
+										? t`Verified wallet balance: ${formatVaultUsd(availableAmount, numberFormat)}`
+										: t`Maximum withdrawable: ${formatVaultUsd(availableAmount, numberFormat)}`
 							}
 						/>
 						<p className="text-xs leading-5 text-fg-muted">
@@ -122,8 +125,14 @@ export function VaultActionModal({
 						<dl className="divide-y divide-stroke-weak py-2 text-xs">
 							<ReviewRow label={<Trans>Owner</Trans>} value={ownerAddress} mono />
 							<ReviewRow label={<Trans>Vault</Trans>} value={detail.vaultAddress} mono />
-							<ReviewRow label={<Trans>Amount</Trans>} value={`${amount} USDC`} />
-							<ReviewRow label={<Trans>Leader commission</Trans>} value={formatVaultRatio(detail.leaderCommission)} />
+							<ReviewRow
+								label={<Trans>Amount</Trans>}
+								value={`${numberFormat.formatDecimalString(toPlainDecimal(amount))} USDC`}
+							/>
+							<ReviewRow
+								label={<Trans>Leader commission</Trans>}
+								value={formatVaultRatio(detail.leaderCommission, numberFormat)}
+							/>
 						</dl>
 						<VaultActionRisk action={action} alwaysCloseOnWithdraw={detail.alwaysCloseOnWithdraw} />
 						{errorMessage ? (

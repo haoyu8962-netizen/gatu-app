@@ -3159,7 +3159,7 @@ msgstr "预估滑点"
 msgid "Establish Connection"
 msgstr "建立连接"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr)
+#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "预计 APR {0}"
@@ -4985,7 +4985,7 @@ msgstr "最大供应量"
 msgid "Maximum withdrawable"
 msgstr "最大可提款金额"
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Maximum withdrawable: {0}"
 msgstr "最大可提款金额：{0}"
@@ -10741,7 +10741,7 @@ msgstr "验证参考"
 msgid "Verified Vault details are unavailable."
 msgstr "无法获取已验证的金库详情。"
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Verified wallet balance: {0}"
 msgstr "已验证的钱包余额：{0}"

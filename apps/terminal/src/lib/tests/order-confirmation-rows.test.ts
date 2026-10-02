@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import {
 	buildOrderConfirmationRows,
@@ -7,6 +7,13 @@ import {
 } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { getNumberFormatters } from "@/lib/format";
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 const numberFormat = getNumberFormatters();
 
@@ -155,6 +162,25 @@ describe("buildOrderConfirmationRows", () => {
 		expect(byKey(rows, "scaleLevels")?.value).toBe("5");
 		expect(byKey(rows, "scaleSkew")?.value).toBe("2");
 		expect(byKey(rows, "price")).toBeUndefined();
+	});
+
+	it("writes the scale size skew with every allowed decimal and the number-format separators", () => {
+		const scale = draft({
+			orderType: "scale",
+			scaleStartPrice: 95,
+			scaleEndPrice: 105,
+			scaleLevels: 12,
+			scaleSkew: 1.2345,
+		});
+		expect(byKey(buildOrderConfirmationRows(scale, numberFormat), "scaleSkew")?.value).toBe("1.2345");
+
+		numberFormatSetting.locale = "de-DE";
+		try {
+			expect(byKey(buildOrderConfirmationRows(scale, numberFormat), "scaleSkew")?.value).toBe("1,2345");
+			expect(byKey(buildOrderConfirmationRows(scale, numberFormat), "scaleLevels")?.value).toBe("12");
+		} finally {
+			numberFormatSetting.locale = "en-US";
+		}
 	});
 
 	it("describes the twap schedule including its optional trigger and stop prices", () => {

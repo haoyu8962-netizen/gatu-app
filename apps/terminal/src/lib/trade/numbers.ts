@@ -70,6 +70,11 @@ export function floor(value: Numeric, decimals: number): number | null {
 	return floored.toNumber();
 }
 
+/** A decimal such as a typed amount ("0005", "5.") in plain notation with every digit kept, or null. */
+export function toPlainDecimal(value: Numeric): string | null {
+	return toBig(value)?.toFixed() ?? null;
+}
+
 export function floorToString(value: Numeric, decimals: number): string {
 	const big = toBig(value);
 	return big === null ? "0" : big.round(decimals, Big.roundDown).toFixed(decimals);

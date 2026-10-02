@@ -3159,7 +3159,7 @@ msgstr "Est. Slippage"
 msgid "Establish Connection"
 msgstr "Establish Connection"
 
-#. placeholder {0}: formatStakingRatio(props.weightedApr)
+#. placeholder {0}: formatStakingRatio(props.weightedApr, numberFormat)
 #: src/components/staking/staking-view.tsx
 msgid "Estimated APR {0}"
 msgstr "Estimated APR {0}"
@@ -4985,7 +4985,7 @@ msgstr "Maximum supply"
 msgid "Maximum withdrawable"
 msgstr "Maximum withdrawable"
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Maximum withdrawable: {0}"
 msgstr "Maximum withdrawable: {0}"
@@ -10741,7 +10741,7 @@ msgstr "Verification reference"
 msgid "Verified Vault details are unavailable."
 msgstr "Verified Vault details are unavailable."
 
-#. placeholder {0}: formatVaultUsd(availableAmount)
+#. placeholder {0}: formatVaultUsd(availableAmount, numberFormat)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Verified wallet balance: {0}"
 msgstr "Verified wallet balance: {0}"

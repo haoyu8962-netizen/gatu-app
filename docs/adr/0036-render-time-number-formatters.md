@@ -50,7 +50,7 @@
 - 数字格式化有两个入口。渲染期的 React 代码用 `useNumberFormat()`，其余代码可以用模块级函数或 `getNumberFormatters()`。规则写在 [数字格式设置](../number-format-setting.md) 与 AGENTS.md。
 - 契约只看源码中的名字绑定。经 props 传给子组件、在子组件渲染时调用的闭包，只要创建它的组件正常重渲染，闭包会随格式化函数身份更新。在渲染之外创建的元素（提示内容）契约看不到，靠决策 4 的约定。它也不识别类组件、`memo`/`forwardRef` 之外的包装函数，以及按计算属性名访问的格式化函数（`format[name]`）。
 - 资金类提示（划转、发送、提现、金库）在弹出时把金额格式化成字符串，已显示的提示不随设置变化。这与这些提示在弹出时按当前语言生成文案的既有约定一致。
-- 没有经 `lib/format.ts` 的数字显示不受本决策约束，也不跟随设置，固定输出 `,` 分组与 `.` 小数点（或 `toFixed` 的 `.`）。2026-10-02 的审查与排查确认了这些：
+- 没有经 `lib/format.ts` 的数字显示不受本决策约束，也不跟随设置，固定输出 `,` 分组与 `.` 小数点（或 `toFixed` 的 `.`）。2026-10-02 的审查与排查确认了这些（2026-10-02 后续：这些显示与逐处分类后发现的同类显示已由 [ADR 0037](0037-exact-decimal-display-separators.md) 改为经 `formatDecimalString` 跟随设置）：
   - 质押金额与比例（`formatStakingAmount`、`formatStakingRatio`）；
   - 金库精确金额（`groupDecimal`）；
   - 跨链成功页金额（`formatTokenAmount`）；

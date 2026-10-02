@@ -94,11 +94,13 @@ describe("RTL financial UI contract", () => {
 		expect(viewSource).toContain('<bdi dir="ltr">{shortenAddress(validator.validator)}</bdi>');
 		expect(viewSource).toContain('<bdi dir="ltr">{shortenAddress(entry.hash, 6, 6)}</bdi>');
 		expect(viewSource).toContain(
-			'<bdi dir="ltr">≈ {formatStakingAmount(validator.stakeApproximateHype, 0)} HYPE</bdi>',
+			'<bdi dir="ltr">≈ {formatStakingAmount(validator.stakeApproximateHype, numberFormat, 0)} HYPE</bdi>',
 		);
-		expect(viewSource).toContain('<bdi dir="ltr">{formatStakingAmount(entry.action.amount, 8)} HYPE</bdi>');
-		expect(viewSource).toContain('<bdi dir="ltr">{formatStakingRatio(validator.commission)}</bdi>');
-		expect(modalSource).toContain('<bdi dir="ltr">{formatStakingAmount(action.maxAmount)} HYPE</bdi>');
+		expect(viewSource).toContain(
+			'<bdi dir="ltr">{formatStakingAmount(entry.action.amount, numberFormat, 8)} HYPE</bdi>',
+		);
+		expect(viewSource).toContain('<bdi dir="ltr">{formatStakingRatio(validator.commission, numberFormat)}</bdi>');
+		expect(modalSource).toContain('<bdi dir="ltr">{formatStakingAmount(action.maxAmount, numberFormat)} HYPE</bdi>');
 		expect(viewSource).toContain('<bdi dir="ltr">{shortenAddress(hash, 6, 6)}</bdi>');
 		expect(modalSource).toContain('mono || ltr ? <bdi dir="ltr">{value}</bdi> : value');
 	});

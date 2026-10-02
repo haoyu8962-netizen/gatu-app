@@ -507,6 +507,34 @@ function getSlippagePercentDecimals(percent: number): number {
 	return 4;
 }
 
+const PLAIN_DECIMAL_PATTERN = /^([+-]?)(\d+)(?:\.(\d+))?$/u;
+const THOUSANDS_BOUNDARY_PATTERN = /\B(?=(\d{3})+(?!\d))/gu;
+
+export interface FormatDecimalStringOptions {
+	/** Drop trailing fraction zeros, and the decimal sign once no fraction digit is left. */
+	trimTrailingZeros?: boolean;
+}
+
+/**
+ * Write an exact decimal string with the grouping and decimal signs of the number-format setting.
+ * The caller keeps the digits: round or truncate first (for example `Big#toFixed(4, Big.roundDown)`)
+ * and pass the plain decimal string; only the separators change, so values beyond double precision
+ * and the caller's rounding direction survive. Redundant leading zeros are dropped, because grouping
+ * "0005" would read as 0,005. Anything that is not a plain decimal string returns the fallback
+ * placeholder.
+ * @example formatDecimalString("-1234.50") -> "-1,234.50" with 1,234.56, "-1.234,50" with 1.234,56
+ * @example formatDecimalString("12.3400", { trimTrailingZeros: true }) -> "12.34"
+ */
+export function formatDecimalString(value: string | null | undefined, opts?: FormatDecimalStringOptions): string {
+	const match = typeof value === "string" ? PLAIN_DECIMAL_PATTERN.exec(value) : null;
+	if (!match) return FALLBACK_VALUE_PLACEHOLDER;
+	const [, sign, integer, fraction = ""] = match;
+	const separators = getActiveNumberSeparators();
+	const digits = opts?.trimTrailingZeros ? fraction.replace(/0+$/u, "") : fraction;
+	const grouped = integer.replace(/^0+(?=\d)/u, "").replace(THOUSANDS_BOUNDARY_PATTERN, separators.group);
+	return digits ? `${sign}${grouped}${separators.decimal}${digits}` : `${sign}${grouped}`;
+}
+
 /**
  * The number formatters for components, hooks and the presentation helpers they call during render.
  * Every number-format change produces a new object with new function identities, so React Compiler
@@ -515,6 +543,7 @@ function getSlippagePercentDecimals(percent: number): number {
  * module-level functions (ADR 0036).
  */
 export interface NumberFormatters {
+	formatDecimalString: typeof formatDecimalString;
 	formatLiquidationPrice: typeof formatLiquidationPrice;
 	formatNumber: typeof formatNumber;
 	formatPercent: typeof formatPercent;
@@ -527,6 +556,7 @@ export interface NumberFormatters {
 
 function createNumberFormatters(): NumberFormatters {
 	return {
+		formatDecimalString: (...args) => formatDecimalString(...args),
 		formatLiquidationPrice: (...args) => formatLiquidationPrice(...args),
 		formatNumber: (...args) => formatNumber(...args),
 		formatPercent: (...args) => formatPercent(...args),

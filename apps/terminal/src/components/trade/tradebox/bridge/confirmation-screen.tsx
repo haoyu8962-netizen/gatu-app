@@ -37,7 +37,8 @@ interface Props {
 type QuoteFeedback = "expired" | "refresh-error" | "updated" | "amount-too-low" | "fees-exceed-amount" | "unavailable";
 
 export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConfirm }: Props) {
-	const { formatUSD } = useNumberFormat();
+	const numberFormat = useNumberFormat();
+	const { formatUSD } = numberFormat;
 	const [currentTime, setCurrentTime] = useState(Date.now);
 	const [isConfirming, setIsConfirming] = useState(false);
 	const [feedback, setFeedback] = useState<{ kind: QuoteFeedback; dataUpdatedAt: number } | null>(null);
@@ -131,11 +132,11 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 		try {
 			return formatUSD(Big(tokenAmount).times(token.priceUSD).toNumber(), 2);
 		} catch {
-			return "$0.00";
+			return formatUSD(0, 2);
 		}
 	})();
 
-	const receiveAmount = quote ? formatTokenAmount(quote.toAmount, 6) : "---";
+	const receiveAmount = quote ? formatTokenAmount(quote.toAmount, 6, numberFormat) : "---";
 	const receiveAmountUSD = quote ? formatUSD(quote.toAmountUSD, 2) : "";
 
 	return (
@@ -187,7 +188,7 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 						value={
 							<span className="flex items-center gap-1.5">
 								<TokenIcon token={token} size="sm" />
-								{formatSendAmount(tokenAmount)} {token.symbol}
+								{formatSendAmount(tokenAmount, numberFormat)} {token.symbol}
 							</span>
 						}
 					/>

@@ -1,4 +1,6 @@
+import type Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import type { NumberFormatters } from "@/lib/format";
 import { type Numeric, toBig, toSafeBig } from "./numbers";
 import type { Side } from "./types";
 
@@ -224,7 +226,7 @@ export interface RiskRewardDisplay {
 	isFavorable: boolean;
 }
 
-export function formatRiskRewardRatio(ratio: Numeric): RiskRewardDisplay | null {
+export function formatRiskRewardRatio(ratio: Numeric, numberFormat: NumberFormatters): RiskRewardDisplay | null {
 	const ratioBig = toBig(ratio);
 	if (!ratioBig || ratioBig.lte(0)) return null;
 
@@ -232,23 +234,24 @@ export function formatRiskRewardRatio(ratio: Numeric): RiskRewardDisplay | null 
 	const isFavorable = ratioNum >= 1;
 
 	if (ratioNum >= 1) {
-		const rounded = ratioBig.round(1).toNumber();
-		const isWhole = rounded === Math.round(rounded);
+		const rounded = ratioBig.round(1);
 		return {
 			risk: 1,
-			reward: rounded,
-			label: `1:${isWhole ? Math.round(rounded) : rounded.toFixed(1)}`,
+			reward: rounded.toNumber(),
+			label: `1:${formatRiskRewardTerm(rounded, numberFormat)}`,
 			isFavorable,
 		};
 	}
 
-	const inverted = toSafeBig(1).div(ratioBig);
-	const rounded = inverted.round(1).toNumber();
-	const isWhole = rounded === Math.round(rounded);
+	const rounded = toSafeBig(1).div(ratioBig).round(1);
 	return {
-		risk: rounded,
+		risk: rounded.toNumber(),
 		reward: 1,
-		label: `${isWhole ? Math.round(rounded) : rounded.toFixed(1)}:1`,
+		label: `${formatRiskRewardTerm(rounded, numberFormat)}:1`,
 		isFavorable,
 	};
+}
+
+function formatRiskRewardTerm(rounded: Big, numberFormat: NumberFormatters): string {
+	return numberFormat.formatDecimalString(rounded.toFixed(1), { trimTrailingZeros: true });
 }
