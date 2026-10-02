@@ -106,6 +106,21 @@ ${exports}`;
 			'import * as lingui from "@lingui/core";\nexport function makeI18n() { return lingui.setupI18n(); }',
 			[],
 		],
+		[
+			"i18n destructured from the Lingui core namespace",
+			'import * as lingui from "@lingui/core";\nconst { i18n: intl } = lingui;\nexport function formatRelative(at: number) { return String(at) + intl.locale; }',
+			["formatRelative"],
+		],
+		[
+			"an alias of the Lingui core namespace",
+			'import * as lingui from "@lingui/core";\nconst core = lingui;\nexport function formatRelative(at: number) { return String(at) + core.i18n.locale; }',
+			["formatRelative"],
+		],
+		[
+			"another member destructured from the Lingui core namespace",
+			'import * as lingui from "@lingui/core";\nconst { setupI18n } = lingui;\nexport function makeI18n() { return setupI18n(); }',
+			[],
+		],
 	])("reads the interface language through %s", (_name, source, expected) => {
 		expect(findLanguageReadingExports(source)).toEqual(expected);
 	});
@@ -769,6 +784,22 @@ function destructuredNamespaceExports(
 	return members;
 }
 
+// A use of the `@lingui/core` namespace reads `i18n` unless it names another member: `lingui.i18n`, an alias of
+// the namespace and a destructuring that takes `i18n` (or cannot be read statically) all count, while
+// `lingui.setupI18n` or `const { setupI18n } = lingui` do not.
+function readsLinguiI18n(namespace: ts.Identifier): boolean {
+	const member = getNamespaceMember(namespace);
+	if (member !== undefined) return member === "i18n";
+	const value = outermostTransparentExpression(namespace);
+	const declaration = value.parent;
+	if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== value) return true;
+	if (!ts.isObjectBindingPattern(declaration.name)) return true;
+	return declaration.name.elements.some((element) => {
+		const key = getDestructuredKey(element);
+		return element.dotDotDotToken !== undefined || key === undefined || key === "i18n";
+	});
+}
+
 function isAliasInitializer(value: ts.Node, name: string): boolean {
 	const declaration = value.parent;
 	return (
@@ -901,8 +932,8 @@ function findLanguageReadingExports(text: string): string[] {
 		const reads = new Set<string>();
 		const visit = (child: ts.Node) => {
 			if (ts.isIdentifier(child) && isValueReference(child) && !isLocallyBound(child)) {
-				const readsLinguiI18n = linguiNamespaces.has(child.text) && getNamespaceMember(child) === "i18n";
-				reads.add(readsLinguiI18n ? LINGUI_I18N_READ : child.text);
+				const isLinguiI18nRead = linguiNamespaces.has(child.text) && readsLinguiI18n(child);
+				reads.add(isLinguiI18nRead ? LINGUI_I18N_READ : child.text);
 			}
 			ts.forEachChild(child, visit);
 		};
