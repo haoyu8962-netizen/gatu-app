@@ -394,10 +394,34 @@ under the builds of the commits themselves, although the sources are identical; 
 the chunks that import a renamed chunk. Treat totals as reproducible to within about 600 bytes, and take re-baseline
 measurements from checkouts of commits.
 
-The total-client baseline follows the feature's measured size against the upgrade commit: 3,290,045 - 3,274,893 =
-15,152, so it is 3,269,608 + 15,152 = 3,284,760, replacing the 3,281,384 above. The other baselines are unchanged. The
-desktop runtime increment now sits 583 bytes under its allowance (201,405 against 201,988), so the next first-render
-addition on desktop still needs its own reduction or review.
+After round three the total-client baseline followed the feature's measured size against the upgrade commit:
+3,290,045 - 3,274,893 = 15,152, so it was 3,269,608 + 15,152 = 3,284,760, replacing the 3,281,384 above, and the
+desktop runtime increment sat 583 bytes under its allowance (201,405 against 201,988).
+
+The fourth review round (commit `e257426d`) made the host read Privy's window state (`useModalStatus`) next to
+`useFiatOnramp`, so that the purchase entry is released when the window closes. That changed the chunk graph: the lazy
+host now imports Privy's main chunk directly, and Rollup no longer splits Privy's funding module into a chunk of its
+own. CI-equivalent builds from isolated checkouts (the upgrade commit was built again and read the same as before):
+
+| Metric | Upgrade (`c0e550c7`) | Round three (`566713d3`) | Round four (`e257426d`) |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,274,893 | 3,290,045 | 3,286,456 |
+| Static trade startup | 1,624,100 (101 assets) | 1,626,771 (102 assets) | 1,626,601 (101 assets) |
+| Mobile runtime increment | 117,422 | 117,769 | 117,722 |
+| Desktop runtime increment | 200,714 | 201,405 | 201,037 |
+
+Round three to round four, per asset: Privy's main chunk grows by 76,285 and the 76,156-byte funding chunk disappears
+(+129 net); the six catalogs grow by 160 and the lazy host chunk by 89 for the new notices and the window check; 254
+other chunks shrink by 3,967 in total, of which the 104 that imported the separate funding chunk no longer do. The
+whole feature against the upgrade, per asset (measured against `26a999aa`, the upgrade branch tip with the same client
+source, which reads 3,275,004; its 111-byte difference from `c0e550c7` is spread over 229 chunks, none by 60 bytes): the
+deposit dialog chunk +4,800, the six catalogs +2,409, the lazy host chunk 1,705, Privy's main chunk +1,522 (the funding
+exports the host uses are no longer dropped), the store chunk 750 against the 491-byte shared chunk it replaces, the
+router vendor chunk +468, the icon vendor chunk +402, and 232 other chunks -113 in total.
+
+The total-client baseline therefore becomes 3,269,608 + (3,286,456 - 3,274,893 = 11,563) = 3,281,171, replacing
+3,284,760. The other baselines are unchanged. The desktop runtime increment now sits 951 bytes under its allowance
+(201,037 against 201,988), so the next first-render addition on desktop still needs its own reduction or review.
 
 ## Functional acceptance gates
 
