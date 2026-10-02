@@ -53,8 +53,9 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 	const pageRows = selectedRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 	const groups = getVisibleGroups(pageRows, filter, selection.status === "ready" && selection.classificationAvailable);
 	const ageReferenceTime = fetchedAt ?? Date.now();
+	const locale = i18n.locale;
 	const fetchedLabel =
-		fetchedAt === null ? null : formatTime(fetchedAt, { locale: i18n.locale, hour: "2-digit", minute: "2-digit" });
+		fetchedAt === null ? null : formatTime(fetchedAt, { locale, hour: "2-digit", minute: "2-digit" });
 
 	function changeFilter(nextFilter: VaultFilter) {
 		setFilter(nextFilter);

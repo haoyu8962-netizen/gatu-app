@@ -5656,7 +5656,7 @@ msgid "On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet a
 msgstr ""
 
 #. placeholder {0}: payload.env
-#. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale: i18n.locale })
+#. placeholder {1}: formatDateTime(payload.agentValidUntilMs, { locale })
 #: src/routes/mobile-agent-sync.tsx
 msgid "Once imported, this phone trades on {0} with the desktop-approved key until {1}. It cannot withdraw."
 msgstr ""
@@ -7757,7 +7757,7 @@ msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
 msgid "Sent {sentAmount} {sentToken}"
 msgstr "{sentAmount} {sentToken} envoyés"
 
-#. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
+#. placeholder {0}: formatTimestamp(owner.lockedUntil, locale)
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Server unlock time: {0}"
 msgstr "Heure de déverrouillage du serveur : {0}"

@@ -43,6 +43,7 @@ export function VaultDetailView({
 	onRequestAction,
 }: VaultDetailViewProps) {
 	const { t, i18n } = useLingui();
+	const locale = i18n.locale;
 	const riskTitleId = useId();
 	const depositReasonId = useId();
 	const withdrawReasonId = useId();
@@ -185,7 +186,7 @@ export function VaultDetailView({
 									{owner.lockedUntil === null ? (
 										<Trans>No lock timestamp was returned</Trans>
 									) : (
-										<Trans>Server unlock time: {formatTimestamp(owner.lockedUntil, i18n.locale)}</Trans>
+										<Trans>Server unlock time: {formatTimestamp(owner.lockedUntil, locale)}</Trans>
 									)}
 								</p>
 							</div>

@@ -22,7 +22,7 @@
 | `fr-FR` | `1 234,56` | 普通空格 | `,` |
 
 - 存在全局设置 `global-settings-v2` 的 `numberFormatLocale` 字段（`use-global-settings-store.ts`），经 `createValidatedStorage` 校验；旧的"跟随语言"取值（`auto`、`zh-CN`、`es-ES` 等）由 `normalizeNumberFormatLocale` 迁移。
-- 变化时 store 订阅调用 `notifyNumberFormatChange()`；渲染期格式化数字的组件订阅 `useNumberFormatRevision()`，`number-format-reactivity-contract.test.ts` 保证没有遗漏。
+- 变化时 store 订阅调用 `notifyNumberFormatChange()`；渲染期格式化数字的组件订阅 `useNumberFormatRevision()`，`number-format-reactivity-contract.test.ts` 保证没有遗漏。订阅只保证组件重渲染：React Compiler 缓存的格式化结果只有在修订号作为参数传进计算时才会重算，写在 `useMemo` 依赖数组里而回调不读的修订号会被编译器丢掉（[运行时多语言](i18n-presentation.md)）。资金费率图（规则 7）与组合页收益图（`PortfolioPerformanceChart`，`portfolio-performance-chart.test.tsx`）把修订号与 `locale` 作为参数传入；其他订阅方见「未完成」。
 - 入口是页头语言菜单（`language-switcher.tsx`）的「数字格式」列表；`Reset` 先恢复语言再恢复数字格式。
 - 不跟随 `navigator.language`，不进 URL，不 reload（`runtime-guardrails.md` §7）。
 
@@ -36,6 +36,7 @@
 
 - 输入框显示不本地化（规划 A-2b 未采用）：`,` 被接受但显示为 `.`；德语/法语键盘的小数键可用，但输入框与表格的写法不同。
 - 图表库内译文的定点修补机制（规划 B）等 zh/ar 审计结果。
+- 多数订阅方切换数字格式后仍显示旧格式。它们只写了裸调用 `useNumberFormatRevision();`，修订号没有进入任何缓存槽的依赖，组件虽然重渲染，`formatNumber(x)` 一类调用仍返回以参数为键缓存的旧字符串。2026-10-02 用临时探针测试（未入库）实测 `ReferralSummaryCards`：切到 `de-DE` 并通知后组件重渲染，文本仍是 `1,234`，而直接调用 `formatNumber(1234)` 已返回 `1.234`。按 `babel-plugin-react-compiler` 1.0.0 的编译产物统计，70 个被编译的订阅组件里有 200 处数字格式化调用落在不含修订号的缓存槽里，需逐处判断其他依赖是否会很快变化。已知做法：`TradeRowComponent` 用 `"use no memo"` 退出编译，`LeveragePositionLimitRow` 与两张图表把修订号传进计算。修复方式待定，`number-format-reactivity-contract` 目前只检查订阅存在。见[任务记录](work-memory/sessions/2026-10-02-vault-fetched-time-locale.md)。
 
 ## 回归入口
 
@@ -50,7 +51,8 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/funding-history-panel.test.tsx \
   src/lib/tests/trades.test.ts \
   src/lib/tests/global-settings-store.test.ts \
-  src/lib/tests/footer-bar.test.tsx
+  src/lib/tests/footer-bar.test.tsx \
+  src/lib/tests/portfolio-performance-chart.test.tsx
 ```
 
 手动核对（真实浏览器）：把数字格式切到 `1.234,56` 与 `1 234,56`，图表价格轴、图例紧凑值、十字线标签与订单簿、标题分隔符一致；连续切语言与 Reset 后图表最终值正确且重建期间无闪白；阿拉伯语界面下最近成交时间与价格都是拉丁数字。
