@@ -45,12 +45,13 @@ export function outermostTransparentExpression(node: ts.Expression): ts.Expressi
 }
 
 // babel-plugin-react-compiler 1.0.0 in its default infer mode visits function declarations,
-// function expressions and arrow functions outside classes. It compiles one named like a component or
-// hook, where the name is the function's own or that of the variable, assignment target, object
-// property or destructuring default that receives it (getFunctionName2); a callback passed in any
-// argument of memo or forwardRef, written plainly, as React.memo or as React[memo] (isReactAPI); and
-// any function that opts in with "use memo" or "use forget". The contracts recognize a superset, so
-// they do not depend on what the compiler compiles today: wrappers on any object or behind
+// function expressions and arrow functions outside classes. It can compile one named like a component
+// or hook, where the name is a function declaration's own, or for a function expression or arrow
+// function that of the variable, assignment target, object property or destructuring default that
+// receives it (getFunctionName2); a callback passed in any argument of memo or forwardRef, written
+// plainly, as React.memo or as React[memo] (isReactAPI); and any function that opts in with
+// "use memo" or "use forget". The contracts recognize a superset, so they do not depend on what the
+// compiler compiles today: a function expression's own name, wrappers on any object or behind
 // parentheses and assertions, string keys, class properties, an anonymous default export in a .tsx
 // module and a route's component option, written as a function or a method. Recheck these rules
 // when the compiler is upgraded or configured differently.
@@ -104,9 +105,9 @@ function climbFunctionValue(node: ts.Expression): { value: ts.Expression; wrappe
 		} else if (
 			ts.isCallExpression(parent) &&
 			parent.arguments.includes(value) &&
-			COMPONENT_WRAPPERS.has(calleeName(parent) ?? "")
+			COMPONENT_WRAPPERS.has(wrapperName(parent) ?? "")
 		) {
-			wrapper = calleeName(parent);
+			wrapper = wrapperName(parent);
 			value = parent;
 		} else {
 			return { value, wrapper };
@@ -156,13 +157,25 @@ export function isComponentOrHookName(name: string): boolean {
 	return /^(?:[A-Z]|use[A-Z0-9])/.test(name);
 }
 
+// The function a call names statically: an identifier, a property or a string-literal element key.
 export function calleeName(call: ts.CallExpression): string | undefined {
 	const callee = skipTransparentExpressions(call.expression);
 	if (ts.isIdentifier(callee)) return callee.text;
 	if (ts.isPropertyAccessExpression(callee)) return callee.name.text;
-	if (!ts.isElementAccessExpression(callee)) return undefined;
-	const key = callee.argumentExpression;
-	return ts.isIdentifier(key) || ts.isStringLiteralLike(key) ? key.text : undefined;
+	if (ts.isElementAccessExpression(callee) && ts.isStringLiteralLike(callee.argumentExpression)) {
+		return callee.argumentExpression.text;
+	}
+	return undefined;
+}
+
+// The compiler's isReactAPI also takes React[memo], an element key that is an identifier named memo,
+// although its value is unknown; only the wrapper check follows it, never hook semantics.
+function wrapperName(call: ts.CallExpression): string | undefined {
+	const callee = skipTransparentExpressions(call.expression);
+	if (ts.isElementAccessExpression(callee) && ts.isIdentifier(callee.argumentExpression)) {
+		return callee.argumentExpression.text;
+	}
+	return calleeName(call);
 }
 
 export function hasModifier(node: ts.Node, kind: ts.SyntaxKind): boolean {

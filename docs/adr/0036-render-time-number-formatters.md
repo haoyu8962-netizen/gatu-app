@@ -32,14 +32,14 @@
    - 先跨模块求出「经模块级数字格式化函数格式化」的模块级声明。这是传递闭包，跟随 `@/` 与相对导入、具名与默认导入、命名空间导入（`format.formatNumber`、`format["formatNumber"]`，以及从命名空间解构出的名字）、具名再导出、`export *` 与本地别名导出；模块级声明包括函数、类、变量，解构出的名字连同路径上的默认值（`const { usd = formatUSD } = overrides`）。括号、类型断言（`as`、`satisfies`、尖括号）与非空断言不改变值，判断时都会穿透；
    - 组件与 Hook 里引用这些声明、模块级格式化函数或上述读取函数，且没有被局部绑定遮蔽的，都算违规；
    - `useNumberFormat()` 的结果没有被用到算违规：结果被丢弃（裸调用、`void`、逗号运算符左侧，包括以别名导入后调用），或赋给的变量与解构出的名字在其作用域里没有被引用。引用按绑定判断，即找到声明这个名字的最近作用域（块、`switch` 的各分支、`for` 初始化、函数参数），同名的内层参数不算；只出现在 `void`、单独的表达式语句或逗号左侧也不算。这检查的是引用，不是格式化数据流；
-   - 模块顶层在导入时调用格式化函数，或把它交给一次调用（如 `[0, 1].map(formatUSD)`），算违规；只保存函数引用（别名、对象表）不算，但引用这个别名或表的组件仍会被拦下。
+   - 模块顶层在导入时调用格式化函数，或把它交给一次调用（如 `[0, 1].map(formatUSD)`），算违规；只保存函数引用（别名、对象表、`.bind` 出的副本）不算，但引用它们的组件仍会被拦下。
 
    组件与 Hook 的识别和语言契约共用 `src/lib/tests/harness/react-source.ts`，对照的是 `babel-plugin-react-compiler` 1.0.0 默认 infer 模式的源码。编译器只遍历类之外的函数声明、函数表达式与箭头函数，其中只有这几种可能被编译（按名称或包装识别的，还要求函数体调用 Hook 或创建 JSX）：
-   - 名称像组件或 Hook 的函数，名称取自函数本身，或接收它的变量、赋值目标、对象属性、解构默认值（`getFunctionName2`）；
+   - 名称像组件或 Hook 的函数：函数声明取自身名称，函数表达式与箭头函数取接收它的变量、赋值目标、对象属性或解构默认值的名称（`getFunctionName2`）；
    - `memo`/`forwardRef` 任一参数位置的回调，写作 `memo`、`React.memo` 或 `React[memo]`（`isReactAPI`）；
    - 用 `"use memo"`、`"use forget"` 指令选择编译的函数。
 
-   契约在此之上还认：任意对象上的 `memo`/`forwardRef`、嵌套或加括号与断言的包装、字符串键、类属性、`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。所以它是编译器当前规则的超集，不依赖编译器是否真的编译了某个函数；升级编译器或改变编译模式时要重新对照。附 59 个正反样例（51 个应报出、8 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
+   契约在此之上还认：函数表达式自身的名称、任意对象上的 `memo`/`forwardRef`、嵌套或加括号与断言的包装、字符串键、类属性、`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。所以它是编译器当前规则的超集，不依赖编译器是否真的编译了某个函数；升级编译器或改变编译模式时要重新对照。附 61 个正反样例（52 个应报出、9 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
 
 ## 备选方案与代价
 
@@ -81,6 +81,7 @@
 - 代码：`apps/terminal/src/lib/format.ts`（`NumberFormatters`、`getNumberFormatters`、`useNumberFormat`）、`lib/number-format-reactivity.ts`、决策 3 列出的 helper 及其调用方，以及 89 个组件与 Hook 文件（其中 4 个只改日期）。
 - 测试：
   - `number-format-reactivity-contract.test.ts`；
+  - `format.test.ts` 逐个检查 8 个格式化函数：设置变化时换新身份，同一设置内身份不变，旧快照里的函数调用时也按当前设置输出；
   - 在真实挂载界面上先失败的用例：推荐汇总卡、桌面账户面板、TP/SL 区、桌面与手机账户流水、下单确认弹窗、图表叠加线 Hook、Earn 页、订单簿行；
   - 改为包装 `useNumberFormat` 计数渲染的 `trade-row.test.tsx`。
 - 验证命令与本次结果：见任务记录。

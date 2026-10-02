@@ -285,6 +285,10 @@ describe("dependencies React Compiler can see", () => {
 		],
 		["an Array.from callback", "return Array.from(groups, (group) => formatList(group, { locale: i18n.locale }));"],
 		[
+			"a callback called through an element key named like a hook",
+			'const useEffect = "map"; return <div>{groups[useEffect]((group) => formatList(group, { locale: i18n.locale }))}</div>;',
+		],
+		[
 			"a useCallback callback",
 			"const label = useCallback(() => format(at, { locale: i18n.locale }), [at, i18n.locale]); return label();",
 		],
@@ -413,6 +417,16 @@ describe("dependencies React Compiler can see", () => {
 		[
 			"no dependency when a computed destructuring key reads it",
 			"const locale = i18n.locale; return useMemo(() => { const { [locale]: label } = labels; return label; }, [labels, locale]);",
+			[],
+		],
+		[
+			"a dependency named only as an object method",
+			'const locale = i18n.locale; return useMemo(() => ({ locale() { return "en"; } }), [locale]);',
+			["locale"],
+		],
+		[
+			"no dependency for a call through an element key named like useMemo",
+			'const locale = i18n.locale; const useMemo = "map"; return groups[useMemo]((group) => group[0], [groups, locale]);',
 			[],
 		],
 		[
@@ -559,7 +573,7 @@ function collectReadPaths(callback: ts.Node): string[] {
 	const readsOuterBinding = (identifier: ts.Identifier) => !isWithin(findDeclaringScope(identifier), callback);
 	const visit = (node: ts.Node): void => {
 		if (ts.isIdentifier(node)) {
-			if (readsOuterBinding(node)) reads.push(node.text);
+			if (!isMemberOrLabelName(node) && readsOuterBinding(node)) reads.push(node.text);
 			return;
 		}
 		if (ts.isPropertyAccessExpression(node)) {
@@ -603,6 +617,17 @@ function getReadPath(node: ts.Node): string | undefined {
 		return base === undefined ? undefined : `${base}.${node.name.text}`;
 	}
 	return undefined;
+}
+
+function isMemberOrLabelName(identifier: ts.Identifier): boolean {
+	const parent = identifier.parent;
+	if (ts.isLabeledStatement(parent) || ts.isBreakOrContinueStatement(parent)) return parent.label === identifier;
+	const isMember =
+		ts.isMethodDeclaration(parent) ||
+		ts.isGetAccessorDeclaration(parent) ||
+		ts.isSetAccessorDeclaration(parent) ||
+		ts.isPropertyDeclaration(parent);
+	return isMember && parent.name === identifier;
 }
 
 function getReadRoot(node: ts.Expression): ts.Identifier | undefined {

@@ -510,6 +510,18 @@ export function Sample() { return <p>{label(1)}</p>; }`,
 			},
 			["components/sample.tsx:2 Sample label"],
 		],
+		[
+			"a namespace member that falls back to a formatter as a destructuring default",
+			{
+				"lib/overrides.ts": "export const formatAmount: ((value: number) => string) | undefined = undefined;",
+				"lib/amount.ts": `import * as overrides from "@/lib/overrides";
+import { formatUSD } from "@/lib/format";
+export const { formatAmount = formatUSD } = overrides;`,
+				"components/sample.tsx": `import { formatAmount } from "@/lib/amount";
+export function Sample({ value }: { value: number }) { return <p>{formatAmount(value)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample formatAmount"],
+		],
 	])("flags %s", (_name, files, expected) => {
 		expect(findNumberFormatViolations(withFormatStubs(files))).toEqual(expected);
 	});
@@ -580,6 +592,14 @@ export function Sample({ kind }: { kind: number }) {
 			},
 		],
 		[
+			"a formatter bound at import that only non-React code calls",
+			{
+				"lib/sample-csv.ts": `import { formatUSD } from "@/lib/format";
+const usd = formatUSD.bind(null);
+export function csvCell(value: number) { return usd(value); }`,
+			},
+		],
+		[
 			"a module-level table of formatters that only non-React code calls",
 			{
 				"lib/sample-csv.ts": `import { formatToken, formatUSD } from "@/lib/format";
@@ -608,6 +628,8 @@ interface SourceModule {
 	// The nodes a module-level name takes its value from: an initializer, plus the defaults on its
 	// destructuring path, or the function or class declaration itself.
 	declarations: Map<string, ts.Node[]>;
+	// A name destructured from a namespace with a default takes the namespace export or the default.
+	namespaceDefaults: Map<string, ModuleBinding>;
 }
 
 function withFormatStubs(files: Record<string, string>): Map<string, string> {
@@ -655,6 +677,11 @@ function findNumberFormatViolations(sources: Map<string, string>): string[] {
 				continue;
 			}
 			const keys = new Set(nodes.flatMap((node) => [...collectModuleReferences(modules, module, node)]));
+			const namespaceExport = module.namespaceDefaults.get(name);
+			const exportKey = namespaceExport?.path
+				? resolveExport(modules, namespaceExport.path, namespaceExport.name, new Set())
+				: null;
+			if (exportKey) keys.add(exportKey);
 			references.set(`${module.path}#${name}`, keys);
 		}
 	}
@@ -730,6 +757,7 @@ function describeModule(path: string, text: string, sources: Map<string, string>
 		starExports: [],
 		localExports: new Map(),
 		declarations: new Map(),
+		namespaceDefaults: new Map(),
 	};
 	for (const statement of file.statements) {
 		if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
@@ -793,7 +821,13 @@ function describeVariable(module: SourceModule, name: ts.BindingName, initialize
 		if (ts.isOmittedExpression(element)) continue;
 		const exportName = getDestructuredKey(element);
 		if (namespaceTarget !== undefined && ts.isIdentifier(element.name) && exportName !== undefined) {
-			module.imports.set(element.name.text, { path: namespaceTarget, name: exportName });
+			const binding = { path: namespaceTarget, name: exportName };
+			if (element.initializer) {
+				module.declarations.set(element.name.text, [element.initializer]);
+				module.namespaceDefaults.set(element.name.text, binding);
+			} else {
+				module.imports.set(element.name.text, binding);
+			}
 			continue;
 		}
 		describeBindingElement(module, element, [initializer]);
@@ -817,11 +851,12 @@ function describeBindingElement(module: SourceModule, element: ts.BindingElement
 }
 
 // At module scope a formatter that is called, or handed to a call, formats once at import; one that
-// is only stored, as an alias or in a table, is checked where it is called.
+// is only stored, as an alias, a bound copy or in a table, is checked where it is called.
 function formatsAtImport(identifier: ts.Identifier): boolean {
 	let value = outermostTransparentExpression(identifier);
 	const member = value.parent;
 	if ((ts.isPropertyAccessExpression(member) || ts.isElementAccessExpression(member)) && member.expression === value) {
+		if (ts.isPropertyAccessExpression(member) && member.name.text === "bind") return false;
 		value = outermostTransparentExpression(member);
 	}
 	const parent = value.parent;

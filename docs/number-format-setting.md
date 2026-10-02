@@ -58,7 +58,7 @@
 
   前三类为精确十进制显示而手写格式，改造需要决定精度规则。仓库里其余 `toFixed` 多数用于协议值，没有逐处分类。
 - 资金类提示（划转、发送、提现、金库）在弹出时把金额格式化成字符串，已显示的提示不随设置变化，与这些提示在弹出时按当前语言生成文案一致。
-- 日期格式化同样从全局读语言：渲染期调用 `formatDateTime` 等函数时须传 `locale`（[运行时多语言](i18n-presentation.md)），目前没有契约检查。2026-10-02 按编译产物修复了确认的 15 处（[任务记录](work-memory/sessions/2026-10-02-number-format-reactive-formatters.md)），其余调用碰巧与 `_t` 同在一个缓存槽而正确。
+- 日期格式化同样从全局读语言：渲染期调用 `formatDateTime` 等函数时须传 `locale`（[运行时多语言](i18n-presentation.md)），目前没有契约检查。2026-10-02 按编译产物修复了确认的 15 处（[任务记录](work-memory/sessions/2026-10-02-number-format-reactive-formatters.md)）。其余不传 `locale` 的调用目前显示正确，但都是碰巧：有的与 `_t` 同在一个缓存槽，有的所在函数没有被编译器编译（例如 `position-pnl-share-modal.tsx` 的 `PositionPnlShareDialog`）。组件一改动，这些前提都可能失效。
 
 ## 回归入口
 

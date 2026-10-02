@@ -13,10 +13,13 @@ import {
 	formatTime,
 	formatToken,
 	formatUSD,
+	getNumberFormatters,
+	type NumberFormatters,
 	normalizeDecimalInput,
 	shortenAddress,
 	szDecimalsToPriceDecimals,
 } from "@/lib/format";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 
 const formatSettings = vi.hoisted(() => ({
 	numberFormatLocale: "en-US" as "en-US" | "de-DE" | "fr-FR",
@@ -36,6 +39,48 @@ vi.mock("@lingui/core/macro", () => ({
 		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
 	},
 }));
+
+const NUMBER_FORMATTER_NAMES: (keyof NumberFormatters)[] = [
+	"formatLiquidationPrice",
+	"formatNumber",
+	"formatPercent",
+	"formatPrice",
+	"formatQuoteAmount",
+	"formatSlippageBps",
+	"formatToken",
+	"formatUSD",
+];
+
+describe("number formatters from useNumberFormat()", () => {
+	beforeEach(() => {
+		formatSettings.numberFormatLocale = "en-US";
+	});
+
+	it("lists every formatter the snapshot carries", () => {
+		expect(Object.keys(getNumberFormatters()).sort()).toEqual([...NUMBER_FORMATTER_NAMES].sort());
+	});
+
+	it.each(NUMBER_FORMATTER_NAMES)("gives %s a new identity on each change and keeps it until the next", (name) => {
+		const before = getNumberFormatters();
+		expect(getNumberFormatters()[name]).toBe(before[name]);
+
+		notifyNumberFormatChange();
+		const after = getNumberFormatters();
+
+		expect(after).not.toBe(before);
+		expect(after[name]).not.toBe(before[name]);
+		expect(getNumberFormatters()[name]).toBe(after[name]);
+	});
+
+	it("formats with the setting current at call time, also through an earlier snapshot", () => {
+		const before = getNumberFormatters();
+		formatSettings.numberFormatLocale = "de-DE";
+		notifyNumberFormatChange();
+
+		expect(getNumberFormatters().formatNumber(1234.56, 2)).toBe("1.234,56");
+		expect(before.formatNumber(1234.56, 2)).toBe("1.234,56");
+	});
+});
 
 describe("format", () => {
 	beforeEach(() => {
