@@ -365,30 +365,38 @@ After the review fixes (the gate compares the attempt's owner and network with t
 load failure) the same kind of build reads 3,286,913 total, 1,626,723 static startup, 117,968 mobile and 201,590
 desktop. The desktop runtime increment then sat 398 bytes under its allowance.
 
-The second review round (2026-10-02) replaced the standard Sonner notices with an identity-checked notice card and
-moved the host's dynamic import, with its "could not open" notice, from the gate to the side that starts the purchase
-(the deposit dialog's chunk); the gate now only renders the loaded host and the shared store no longer carries a
-warm-up flag. The earlier objection to a loader module does not apply to this arrangement: that module was shared by
-the gate, which pulled the import's chunk list into runtime startup, while the import now has no importer in runtime
-startup. CI-equivalent builds of the round-one commit `eec28ce2` (rebuilt the same day, equal to the numbers above) and
-of the final tree:
+The second and third review rounds (2026-10-02) changed where this code lives. The standard Sonner notices became an
+identity-checked notice card; the host's dynamic import, with its "could not open" notice, moved from the gate to the
+side that starts the purchase (the deposit dialog's chunk), so the gate only renders the loaded host and the shared
+store no longer carries a warm-up flag; and the store now keeps the purchase results and the claim that an attempt was
+started, so a host that mounts again neither repeats the purchase nor loses a result. The earlier objection to a loader
+module does not apply to this arrangement: that module was shared by the gate, which pulled the import's chunk list
+into runtime startup, while the import now has no importer in runtime startup. CI-equivalent builds from isolated
+checkouts of the three commits:
 
-| Metric | Round one (`eec28ce2`) | Final | Change |
+| Metric | Round one (`eec28ce2`) | Round two (`9f41ae9d`) | Round three (`cc3ff357`) |
 | --- | ---: | ---: | ---: |
-| All client JS + CSS | 3,286,913 | 3,289,035 | +2,122 |
-| Static trade startup | 1,626,723 | 1,626,859 | +136 |
-| Mobile runtime increment | 117,968 | 117,653 | -315 |
-| Desktop runtime increment | 201,590 | 201,275 | -315 |
+| All client JS + CSS | 3,286,913 | 3,289,266 | 3,290,045 |
+| Static trade startup | 1,626,723 | 1,626,847 | 1,626,771 |
+| Mobile runtime increment | 117,968 | 117,667 | 117,769 |
+| Desktop runtime increment | 201,590 | 201,301 | 201,405 |
 
-Per-asset gzip comparison: the deposit dialog chunk grows by 2,332 (the notice card, its publisher and presentation,
-the launch function and the card funding domain module); that domain module's own 669-byte chunk disappears; the
-toaster chunk shrinks by 257 because the gate lost its import, identity check and message; the six catalogs grow by 225
-for the sandbox notice; the lazy host chunk grows by 165; the router vendor chunk grows by 149 for the preload lists;
-and 245 other chunks change by less than 60 bytes each (+177 in total).
+Per-asset gzip comparison, round one to round two: the deposit dialog chunk grows by 2,332 (the notice card, its
+publisher and presentation, the launch function and the card funding domain module); that domain module's own 669-byte
+chunk disappears; the toaster chunk shrinks by 257 because the gate lost its import, identity check and message; the six
+catalogs grow by 225 for the sandbox notice; the lazy host chunk grows by 165; and the router vendor chunk grows for the
+preload lists. Round two to round three: the deposit dialog chunk grows by 541 (the destination hook, the front-toast
+hook and the timing in the notice publisher), the store chunk by 105 (results and the started claim, in both runtime
+increments), and 251 other chunks change by less than 60 bytes each (+133 in total).
 
-The total-client baseline follows the feature's measured size against the upgrade commit: 3,289,035 - 3,274,893 =
-14,142, so it is 3,269,608 + 14,142 = 3,283,750, replacing the 3,281,384 above. The other baselines are unchanged. The
-desktop runtime increment now sits 713 bytes under its allowance (201,275 against 201,988), so the next first-render
+Builds of the working tree just before each of the last two commits read 3,289,035 and 3,289,465, a few hundred bytes
+under the builds of the commits themselves, although the sources are identical; the per-asset difference is spread over
+the chunks that import a renamed chunk. Treat totals as reproducible to within about 600 bytes, and take re-baseline
+measurements from checkouts of commits.
+
+The total-client baseline follows the feature's measured size against the upgrade commit: 3,290,045 - 3,274,893 =
+15,152, so it is 3,269,608 + 15,152 = 3,284,760, replacing the 3,281,384 above. The other baselines are unchanged. The
+desktop runtime increment now sits 583 bytes under its allowance (201,405 against 201,988), so the next first-render
 addition on desktop still needs its own reduction or review.
 
 ## Functional acceptance gates
