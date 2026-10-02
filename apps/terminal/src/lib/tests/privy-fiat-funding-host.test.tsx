@@ -239,6 +239,16 @@ describe("PrivyFiatFundingHost", () => {
 		expect(cards()).toHaveLength(1);
 	});
 
+	it("reports a flow that resolved with a shape Privy does not document as an unknown status", async () => {
+		await purchase({ resolve: {} });
+
+		const [card] = cards();
+		expect(card.dataset.privyFiatFundingNotice).toBe("unknown");
+		expect(card.textContent).toContain("Card purchase status unknown");
+		await clock.timers(600_000);
+		expect(cards()).toHaveLength(1);
+	});
+
 	it("reports a definite provider failure as an error that closes on its own", async () => {
 		await purchase({ reject: new Error("Unable to start payment session") });
 

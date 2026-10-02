@@ -116,9 +116,11 @@ function createDeferred(): Deferred {
  * does with them is the SDK's own code, so the order in which it opens the window, waits for
  * quotes, closes and settles is observed, not assumed. Every name the hook reads outside itself is
  * identified by its role in the source; a name without a stand-in throws, so a dependency that a
- * later SDK adds cannot be swallowed. `rejectionHandlers` counts the `catch` calls on a result
- * promise, which is what the patch adds; the stand-in handles the rejection itself, so a run
- * without the patch stays quiet too.
+ * later SDK adds on this path cannot be swallowed. Only opening, quotes, closing and settling run:
+ * the branch for a user with a phone number and the callbacks for ownership signing, the provider
+ * URL and the status poll are never called and have no stand-ins. `rejectionHandlers` counts the
+ * `catch` calls on a result promise, which is what the patch adds; the stand-in handles the
+ * rejection itself, so a run without the patch stays quiet too.
  */
 function runPrivyFiatOnrampHook(source: string) {
 	function role(pattern: RegExp): string {

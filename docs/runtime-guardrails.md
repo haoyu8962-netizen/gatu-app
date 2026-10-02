@@ -86,7 +86,10 @@ Do not collapse these states into one boolean.
   their own fail-closed flags. The deposit dialog's chunk loads that host
   (`launchPrivyFiatFunding`, and a warm-up while the purchase entry is on
   screen); `PrivyFiatFundingHostGate` only renders it once loaded, so the
-  onramp code and its import list stay out of runtime startup. Right
+  application's purchase host, its notice card and the import's chunk list
+  stay out of runtime startup. Privy's own funding module is part of Privy's
+  main chunk, which the static trade startup already loads with or without
+  the flag; Privy loads the purchase screen itself when the window opens. Right
   before it opens Privy the host resolves the destination again from the
   current session and refuses when it is no longer the wallet the purchase
   was requested for. The purchase entry is released when `fund()` settles or

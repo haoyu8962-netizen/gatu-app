@@ -429,6 +429,10 @@ static trade startup (+152), 117,766 for the mobile and 201,067 for the desktop 
 chunks change, none by 60 bytes. The baselines stay where they are: the total sits 5,451 bytes above its baseline
 against an allowance of 10,000, and the desktop runtime increment 921 bytes under its allowance.
 
+The sixth round (commit `4af147fd`) changed one classification function in the deposit dialog chunk. Its build reads
+3,286,638 in total (+16), 1,626,663 static trade startup, 117,769 mobile and 201,070 desktop, with the desktop runtime
+increment 918 bytes under its allowance. Later commits on the branch change tests and documents only.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:
