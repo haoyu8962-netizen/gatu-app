@@ -2,8 +2,10 @@
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import { act, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FooterBar, type FooterBarMode } from "@/components/trade/footer/footer-bar";
 import { formatTime } from "@/lib/format";
@@ -175,10 +177,11 @@ describe("FooterBar", () => {
 		});
 
 		it("keeps one snapshot for the whole minute, so a notification inside it renders nothing", () => {
+			act(() => vi.setSystemTime(new Date(2026, 9, 2, 14, 31, 5)));
 			renderFooter("default");
 			const formattedTimes = vi.mocked(formatTime).mock.calls.length;
 
-			act(() => vi.advanceTimersByTime(20_000));
+			act(() => vi.advanceTimersByTime(50_000));
 			setPageVisibility("visible");
 
 			expect(vi.mocked(formatTime).mock.calls.length).toBe(formattedTimes);
@@ -230,7 +233,9 @@ describe("FooterBar", () => {
 			expect(readClock()).toBe("2:37 PM");
 		});
 
-		it("shows the current minute when mounted in a hidden page and releases its timer on unmount", () => {
+		it("shows the current minute when mounted in a hidden page and releases its timer and listener on unmount", () => {
+			const addListener = vi.spyOn(document, "addEventListener");
+			const removeListener = vi.spyOn(document, "removeEventListener");
 			pageVisibility = "hidden";
 			act(() => vi.setSystemTime(new Date(2026, 9, 2, 9, 5, 0)));
 			renderFooter("default");
@@ -242,6 +247,42 @@ describe("FooterBar", () => {
 
 			act(() => root.unmount());
 			expect(vi.getTimerCount()).toBe(0);
+			const added = addListener.mock.calls
+				.filter(([type]) => type === "visibilitychange")
+				.map(([, handler]) => handler);
+			const removed = removeListener.mock.calls
+				.filter(([type]) => type === "visibilitychange")
+				.map(([, handler]) => handler);
+			expect(added).toHaveLength(1);
+			expect(removed).toEqual(added);
+		});
+
+		it("keeps the shared timer for the footer that stays mounted when another one unmounts", () => {
+			const otherContainer = document.createElement("div");
+			document.body.appendChild(otherContainer);
+			const otherRoot = createI18nRoot(otherContainer);
+			renderFooter("default");
+			act(() => otherRoot.render(<FooterBar mode="default" />));
+			expect(vi.getTimerCount()).toBe(1);
+
+			act(() => otherRoot.unmount());
+			otherContainer.remove();
+			expect(vi.getTimerCount()).toBe(1);
+
+			act(() => vi.advanceTimersByTime(30_000));
+			expect(readClock()).toBe("2:32 PM");
+		});
+
+		it("renders no time on the server", () => {
+			const host = document.createElement("div");
+			host.innerHTML = renderToString(
+				<I18nProvider i18n={i18n}>
+					<FooterBar mode="default" />
+				</I18nProvider>,
+			);
+			const clock = host.querySelector("footer .tabular-nums");
+			expect(clock?.classList.contains("invisible")).toBe(true);
+			expect(clock?.textContent).toBe("00:00 AM");
 		});
 	});
 
