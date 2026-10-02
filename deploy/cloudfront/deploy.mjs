@@ -542,6 +542,7 @@ function readArgs(argv) {
 				break;
 			case "--allow-sponsored-mainnet-deposits":
 			case "--allow-mobile-pairing":
+			case "--allow-mainnet-card-funding":
 				options.acknowledged.push(RELEASE_GATES.find((gate) => gate.option === flag).id);
 				break;
 			default:
@@ -614,6 +615,12 @@ export const RELEASE_GATES = Object.freeze([
 			if (typeof pairing?.createAndReveal !== "boolean" || typeof pairing?.importFromQr !== "boolean") return undefined;
 			return pairing.createAndReveal || pairing.importFromQr;
 		},
+	},
+	{
+		id: "mainnet-card-funding",
+		option: "--allow-mainnet-card-funding",
+		label: "Mainnet card funding",
+		read: (buildMeta) => buildMeta.privyFiatFunding?.mainnet,
 	},
 ]);
 

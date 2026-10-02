@@ -1,6 +1,6 @@
 # Privy SDK 升级与 Funding 接入规划
 
-状态：用户已于 2026-10-02 决定（见「决定」），阶段一实施中，阶段二未实施。日期：2026-10-02。分支 `claude/privy-sdk-upgrade-funding-feac6f`（基于 `origin/dev` 682430ba），完成后按 `.claude/rules/git.md` 开 PR 到 `dev`。取证与规划阶段没有改代码、没有登录真实账户；各阶段的实际验证见对应任务记录。任何阶段都没有改 Privy 控制台。
+状态：用户已于 2026-10-02 决定（见「决定」）；阶段一已提交（分支 `claude/privy-sdk-upgrade-funding-feac6f`），阶段二已实施在其上的分支 `claude/privy-fiat-funding`，默认关闭；均未推送。日期：2026-10-02。分支 `claude/privy-sdk-upgrade-funding-feac6f`（基于 `origin/dev` 682430ba），完成后按 `.claude/rules/git.md` 开 PR 到 `dev`。取证与规划阶段没有改代码、没有登录真实账户；各阶段的实际验证见对应任务记录。任何阶段都没有改 Privy 控制台。
 
 ## 目标
 
@@ -76,6 +76,18 @@
 - 浏览器：充值弹层截图（桌面、手机、深浅主题），CSP 无新增违规报告。
 - 沙盒：测试网环境下 `fiat.environment: 'sandbox'` + Arbitrum 主网链 ID，用 Stripe 测试卡走完流程（不会产生真实资金，也不会到账）。
 - 真实验收（需要用户）：控制台开启入金方式后，用最低金额真实购买一次，确认 USDC 到 owner 地址，再完成一次赞助 CCTP 存款进入 HyperCore。代码评审和自动化测试都不是这一步的证据。
+
+### 阶段二实施结果（2026-10-02）
+
+实施记录在 [ADR 0034](adr/0034-privy-card-funding.md)。与上文设计的差异：
+
+- 调用 `useFiatOnramp` 而不是 `useDepositFunds`：前者要求显式收款地址与代币地址，后者省略收款钱包时会取第一个嵌入式钱包。
+- 收款地址还必须在 Privy 的已连接钱包列表中：Privy 的流程需要证明收款地址归属时，会在该列表里找钱包请它签一条消息（外部钱包这时会弹出签名请求；哪一步触发未实测）。
+- 页面级 `PrivyFiatFundingHost` 持有购买请求，首次请求时才由 `PrivyFiatFundingHostGate` 懒加载（静态挂载时桌面运行时超出预算）；入口点击后先关闭充值弹层；可用性复用 `useDepositAvailability()`。
+- 包体：客户端总量比阶段一多 9,725（Privy 入金模块被拆成独立块、六种语言目录、懒加载宿主、入口），按性能基线文档的规则上调总量基线；桌面运行时增量只剩约 250–340 字节余量（两次相同源码构建之间有几百字节抖动）。
+- 没有修改 `legal/`：法律目录要求数据处理与风险措辞先经合格法律审阅，拟议措辞写在 ADR 0034 的上线前提里，主网开关在发布前保持关闭。
+- `permissions-policy` 未改，Stripe 嵌入流程里的 Apple Pay / Google Pay 与页面内摄像头拍证件不可用，作为单独决策留待沙盒实测。
+- 发布闸门新增 `--allow-mainnet-card-funding`，CloudFront 响应函数随 CSP 重新生成。
 
 ## 规划时的待决事项（已于 2026-10-02 答复，见「决定」）
 

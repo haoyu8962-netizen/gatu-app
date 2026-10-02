@@ -299,6 +299,10 @@ msgstr "8小时资金费率"
 msgid "90 days"
 msgstr "90 天"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "A card purchase is already open. Finish or close it first."
+msgstr "已有一笔银行卡购买正在进行。请先完成或关闭它。"
+
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "A confirmation is shown before each market close."
 msgstr "每次市价平仓前都会显示确认。"
@@ -1306,6 +1310,14 @@ msgstr "买入 / 做多"
 msgid "Buy Long"
 msgstr "买入做多"
 
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+msgid "Buy USDC"
+msgstr "购买 USDC"
+
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+msgid "Buy USDC with a card"
+msgstr "用银行卡购买 USDC"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "默认情况下，止盈止损应用于全部仓位，并在标记价格达到触发价时提交市价单。可设置固定数量，或选择限价执行并按指定限价提交。"
@@ -1453,6 +1465,22 @@ msgstr "持有仓位时无法切换到逐仓模式"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "持有仓位时无法切换到逐仓模式。请先平仓。"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase confirmed"
+msgstr "银行卡购买已确认"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase could not open. Check your connection and try again."
+msgstr "银行卡购买无法打开。请检查网络连接后重试。"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase did not complete"
+msgstr "银行卡购买未完成"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase submitted"
+msgstr "银行卡购买已提交"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2659,6 +2687,11 @@ msgstr "已存入"
 #: src/components/vaults/vaults-list.tsx
 msgid "Deposited and Leading filters fail closed until both account snapshots are available."
 msgstr "在两个账户快照均可用前，“已存入”和“管理中”筛选会保持关闭。"
+
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Depositing it needs a little ETH on Arbitrum for network fees."
+msgstr "将其存入交易账户需要钱包在 Arbitrum 上有少量 ETH 支付网络费。"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Depositing USDC to Hyperliquid..."
@@ -4067,6 +4100,10 @@ msgstr "身份版本"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr "如果这不是你本人导入的，请立即在电脑端用主钱包撤销手机访问权限。"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you were charged, check the payment provider's email before trying again."
+msgstr "如已扣款，请先查看支付服务商发来的邮件，再重试。"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Image saved"
@@ -6078,6 +6115,10 @@ msgstr "暂停"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
 msgstr "暂停不可用：Hyperliquid 不支持暂停正在执行的 TWAP 委托。"
+
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+msgid "Pay by card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum, and you deposit it from here."
+msgstr "通过第三方支付服务商以银行卡或银行转账付款。USDC 会到达您在 Arbitrum 上的钱包，之后可在此存入。"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -9007,6 +9048,10 @@ msgstr "本页面加载一份近期成交快照。可导出 CSV 以请求范围�
 msgid "The page you are looking for does not exist."
 msgstr "您查找的页面不存在。"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "The payment provider is still processing it. USDC arrives in your wallet on Arbitrum when it completes; then open Deposit."
+msgstr "支付服务商仍在处理。完成后 USDC 会到达您在 Arbitrum 上的钱包，届时请打开“存款”。"
+
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
 msgstr "确认后仓位数量增加，本次未平仓。请重新打开市价平仓核对新的数量。"
@@ -10512,6 +10557,10 @@ msgstr "USDC 存款已在 Arbitrum 确认"
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 #~ msgid "USDC deposit submitted to Hyperliquid"
 #~ msgstr "USDC 存款已提交到 Hyperliquid"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives."
+msgstr "USDC 正在转入您在 Arbitrum 上的钱包。到账后请打开“存款”。"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"

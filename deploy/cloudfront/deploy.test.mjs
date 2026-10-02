@@ -153,6 +153,7 @@ const SHELL_HTML = `<html><head><script>${THEME_SCRIPT}</script>${SHELL_PRELOADS
 const GATES_OFF = {
 	mobileSync: { enabled: false },
 	cctpDeposits: { mainnetSponsoredWallet: false, testnetExternalWallet: false, testnetSponsoredWallet: false },
+	privyFiatFunding: { mainnet: false, testnet: false },
 };
 const BUILD_META = { commit: "abc", release: "r1", ...GATES_OFF };
 const REPORT_ONLY_HEADER = `default-src 'self'; img-src 'self' data: https://app.hyperliquid.xyz; script-src 'self' 'report-sample' '${THEME_HASH}'; report-uri https://reports.example/`;
@@ -237,7 +238,7 @@ test("verification passes when the edge serves the build with the expected heade
 	assert.equal(results.find((result) => result.name === "shell repeats from the edge")?.detail, "Hit from cloudfront");
 	assert.equal(results.find((result) => result.name === "legal pages match the build")?.detail, "6 shell, 0 standalone");
 	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
-	assert.equal(results.find((result) => result.name === "build metadata parity")?.detail, "abc / r1 / sponsored-mainnet-deposits=off mobile-pairing=off");
+	assert.equal(results.find((result) => result.name === "build metadata parity")?.detail, "abc / r1 / sponsored-mainnet-deposits=off mobile-pairing=off mainnet-card-funding=off");
 });
 
 test("verifying a rollback checks each legal page against the page the build ships", async () => {
@@ -282,12 +283,12 @@ test("verification fails when the live origin exposes a gate the local build doe
 	});
 	const parity = results.find((result) => result.name === "build metadata parity");
 	assert.equal(parity.ok, false);
-	assert.match(parity.detail, /sponsored-mainnet-deposits=on mobile-pairing=off\) differ from the local build \(sponsored-mainnet-deposits=off/);
+	assert.match(parity.detail, /sponsored-mainnet-deposits=on mobile-pairing=off mainnet-card-funding=off\) differ from the local build \(sponsored-mainnet-deposits=off/);
 });
 
 test("an upload that exposes a funds or credential path needs its own acknowledgement", () => {
 	assert.deepEqual(evaluateReleaseGates({ buildMeta: BUILD_META }), {
-		state: { "sponsored-mainnet-deposits": false, "mobile-pairing": false },
+		state: { "sponsored-mainnet-deposits": false, "mobile-pairing": false, "mainnet-card-funding": false },
 		problems: [],
 	});
 
@@ -308,16 +309,30 @@ test("an upload that exposes a funds or credential path needs its own acknowledg
 	const both = evaluateReleaseGates({ buildMeta: { ...sponsored, mobileSync: { enabled: true } }, acknowledged: ["mobile-pairing"] });
 	assert.equal(both.problems.length, 1);
 	assert.match(both.problems[0], /sponsored Mainnet/);
+
+	const cardFunding = { ...BUILD_META, privyFiatFunding: { mainnet: true, testnet: false } };
+	assert.match(evaluateReleaseGates({ buildMeta: cardFunding }).problems.join("\n"), /exposes Mainnet card funding; pass --allow-mainnet-card-funding/);
+	assert.deepEqual(evaluateReleaseGates({ buildMeta: cardFunding, acknowledged: ["mainnet-card-funding"] }).problems, []);
+	const testnetCardFunding = { ...BUILD_META, privyFiatFunding: { mainnet: false, testnet: true } };
+	assert.deepEqual(evaluateReleaseGates({ buildMeta: testnetCardFunding }).problems, []);
 });
 
 test("an acknowledgement the build does not match is refused, and so is a build that records no gates", () => {
-	const mismatch = evaluateReleaseGates({ buildMeta: BUILD_META, acknowledged: ["sponsored-mainnet-deposits", "mobile-pairing"] });
-	assert.equal(mismatch.problems.length, 2);
+	const mismatch = evaluateReleaseGates({
+		buildMeta: BUILD_META,
+		acknowledged: ["sponsored-mainnet-deposits", "mobile-pairing", "mainnet-card-funding"],
+	});
+	assert.equal(mismatch.problems.length, 3);
 	assert.match(mismatch.problems[0], /--allow-sponsored-mainnet-deposits was passed but this build does not expose/);
 	assert.match(mismatch.problems[1], /--allow-mobile-pairing was passed but this build does not expose/);
+	assert.match(mismatch.problems[2], /--allow-mainnet-card-funding was passed but this build does not expose/);
 
 	assert.throws(() => releaseGateState({ commit: "abc", release: "r1", mobileSync: GATES_OFF.mobileSync }), /does not record sponsored Mainnet CCTP deposits; rebuild/);
 	assert.throws(() => releaseGateState({ commit: "abc", release: "r1", cctpDeposits: GATES_OFF.cctpDeposits }), /does not record Mobile Agent pairing; rebuild/);
+	assert.throws(
+		() => releaseGateState({ commit: "abc", release: "r1", cctpDeposits: GATES_OFF.cctpDeposits, mobileSync: GATES_OFF.mobileSync }),
+		/does not record Mainnet card funding; rebuild/,
+	);
 	assert.throws(
 		() => releaseGateState({ ...BUILD_META, cctpDeposits: { ...GATES_OFF.cctpDeposits, mainnetSponsoredWallet: "true" } }),
 		/does not record sponsored Mainnet CCTP deposits/,

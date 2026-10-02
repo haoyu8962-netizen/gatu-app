@@ -149,6 +149,26 @@ describe("DepositForm routing gate", () => {
 		expect(container.querySelector('[data-testid="amount-input"]')).not.toBeNull();
 	});
 
+	it.each([
+		["the funding address flow", true],
+		["the external wallet form", false],
+	])("renders the card funding entry in %s only when one is supplied", async (_label, usesFundingAddressFlow) => {
+		const props = { ...createProps("ready", "cctp"), usesFundingAddressFlow };
+		const entry = createElement("section", { "data-testid": "fiat-entry" });
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+		expect(container.querySelector('[data-testid="fiat-entry"]')).toBeNull();
+
+		await act(async () => {
+			root.render(
+				createElement(I18nProvider, { i18n }, createElement(DepositForm, { ...props, fiatFundingEntry: entry })),
+			);
+		});
+		expect(container.querySelectorAll('[data-testid="fiat-entry"]')).toHaveLength(1);
+	});
+
 	it("announces a changed route even when the refreshed route itself is ready", async () => {
 		const props = {
 			...createProps("ready", "cctp"),

@@ -304,6 +304,33 @@ The total-client baseline moved from 3,185,921 to 3,269,608 and the static trade
 unchanged. No static import cycle was reported. This is a byte measurement, not a browser timing; LCP and INP on the
 heavier startup were not measured.
 
+## Card funding total-client re-baseline (2026-10-02)
+
+Card funding ([ADR 0034](adr/0034-privy-card-funding.md)) first mounted its onramp host statically in `AppToaster`, which
+put the desktop runtime increment at 202,247 bytes (over the 201,988-byte limit) and the total client 14,438 bytes over
+its baseline. The host now loads lazily on the first purchase request (`PrivyFiatFundingHostGate`), which removed the
+runtime overage. The remaining total growth was re-baselined, measured with the same fixed build identity, Node 22.15.0,
+pnpm 10.21.0 and pairing off as the section above, after (card funding working tree) minus before (upgrade commit
+`c0e550c7` in an isolated worktree):
+
+| Metric | Before (`c0e550c7`) | After | Change |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,275,424 | 3,285,149 | +9,725 |
+| Static trade startup | 1,624,427 | 1,626,880 | +2,453 |
+| Mobile runtime increment | 117,413 | 118,090 | +677 |
+| Desktop runtime increment | 200,718 | 201,646 | +928 |
+
+Per-asset gzip comparison: using `useFiatOnramp` makes Rollup split Privy's funding module out of its main chunk
+(76,568 new against 74,989 removed, +1,579 net) and renames that import in Privy's lazy screens (about 31 bytes each);
+the six locale catalogs grow by 1,592 for twelve messages, the lazy host chunk is 1,131, the deposit dialog grows by 875,
+the store, domain and gate chunks add about 1,800, and the card icon adds 411. Only the total-client baseline moved
+(3,269,608 → 3,279,333). A second complete build of the same source with the same fixed identity, run to confirm the
+whole pipeline (cycle check, budgets, shell preloads, inline script hashes) passes, read 3,285,514 total, 1,627,095
+static startup, 118,097 mobile and 201,735 desktop: a few bytes moved in many chunks, consistent with renamed chunk
+imports, so treat a few hundred bytes as build-to-build noise. The desktop runtime increment now sits only about 250 to
+340 bytes under its 10,000-byte allowance, so the next first-render addition on desktop needs its own reduction or
+review.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:

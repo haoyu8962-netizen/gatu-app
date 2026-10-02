@@ -14,6 +14,7 @@ import {
 	isCctpSponsoredDepositEnabled,
 } from "@/config/cctp-deposit";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
+import { isPrivyFiatFundingEnabled } from "@/config/privy-fiat-funding";
 import { DEPOSIT_BALANCE_REFRESH_MS, FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import {
 	getAccountBalanceSummary,
@@ -87,6 +88,7 @@ import {
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { PendingActionModal } from "../components/pending-action-modal";
 import { DepositForm } from "./deposit/deposit-form";
+import { PrivyFiatFundingEntry } from "./deposit/privy-fiat-funding-entry";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
 import { WithdrawForm } from "./deposit/withdraw-form";
 import { WrongNetworkScreen } from "./deposit/wrong-network-screen";
@@ -1497,6 +1499,15 @@ export function DepositModal() {
 									void ensureEmailEmbeddedWallet().catch(() => {});
 								}}
 								onDone={handleClose}
+								fiatFundingEntry={
+									isPrivyFiatFundingEnabled(isTestnet) ? (
+										<PrivyFiatFundingEntry
+											available={depositAvailability.available && !isDepositPending && !isWithdrawPending}
+											embeddedWalletAddress={depositEmbeddedWalletAddress}
+											onBeforeStart={handleClose}
+										/>
+									) : null
+								}
 							/>
 						) : (
 							<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />

@@ -299,6 +299,10 @@ msgstr "8 घंटे की फंडिंग"
 msgid "90 days"
 msgstr "90 दिन"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "A card purchase is already open. Finish or close it first."
+msgstr "एक कार्ड खरीदारी पहले से खुली है। पहले उसे पूरा करें या बंद करें।"
+
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "A confirmation is shown before each market close."
 msgstr "हर मार्केट क्लोज़ से पहले एक पुष्टि दिखाई जाती है।"
@@ -1306,6 +1310,14 @@ msgstr "खरीदें / लॉन्ग"
 msgid "Buy Long"
 msgstr "लॉन्ग खरीदें"
 
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+msgid "Buy USDC"
+msgstr "USDC खरीदें"
+
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+msgid "Buy USDC with a card"
+msgstr "कार्ड से USDC खरीदें"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "डिफ़ॉल्ट रूप से, TP/SL पूरी पोज़िशन पर लागू होता है और मार्क मूल्य ट्रिगर तक पहुँचने पर मार्केट ऑर्डर सबमिट करता है। निश्चित आकार रखने के लिए राशि कॉन्फ़िगर करें, या अपनी लिमिट प्राइस पर सबमिट करने के लिए लिमिट निष्पादन चुनें।"
@@ -1453,6 +1465,22 @@ msgstr "खुली पोज़िशन रहते हुए आइसो�
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "खुली पोज़िशन के साथ आइसोलेटेड मोड पर स्विच नहीं कर सकते। पहले अपनी पोज़िशन बंद करें।"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase confirmed"
+msgstr "कार्ड खरीदारी की पुष्टि हुई"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase could not open. Check your connection and try again."
+msgstr "कार्ड खरीदारी नहीं खुल सकी। अपना कनेक्शन जांचें और फिर से कोशिश करें।"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase did not complete"
+msgstr "कार्ड खरीदारी पूरी नहीं हुई"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase submitted"
+msgstr "कार्ड खरीदारी सबमिट की गई"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2659,6 +2687,11 @@ msgstr "जमा किया गया"
 #: src/components/vaults/vaults-list.tsx
 msgid "Deposited and Leading filters fail closed until both account snapshots are available."
 msgstr "दोनों खाता स्नैपशॉट उपलब्ध होने तक जमा और लीडिंग फ़िल्टर सुरक्षित रूप से अक्षम रहते हैं।"
+
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Depositing it needs a little ETH on Arbitrum for network fees."
+msgstr "इसे जमा करने के लिए नेटवर्क शुल्क हेतु Arbitrum पर थोड़ा ETH चाहिए।"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Depositing USDC to Hyperliquid..."
@@ -4067,6 +4100,10 @@ msgstr "पहचान epoch"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr ""
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you were charged, check the payment provider's email before trying again."
+msgstr "अगर आपसे शुल्क लिया गया है, तो दोबारा कोशिश करने से पहले भुगतान प्रदाता का ईमेल देखें।"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Image saved"
@@ -6078,6 +6115,10 @@ msgstr "पॉज़ करें"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
 msgstr "पॉज़ अनुपलब्ध: Hyperliquid सक्रिय TWAP ऑर्डर को पॉज़ करने का समर्थन नहीं करता।"
+
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+msgid "Pay by card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum, and you deposit it from here."
+msgstr "किसी तृतीय-पक्ष भुगतान प्रदाता के ज़रिए कार्ड या बैंक ट्रांसफ़र से भुगतान करें। USDC Arbitrum पर आपके वॉलेट में आते हैं, और आप उन्हें यहीं से जमा करते हैं।"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -9007,6 +9048,10 @@ msgstr "पेज हाल के फ़िल का एक स्नैपश
 msgid "The page you are looking for does not exist."
 msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "The payment provider is still processing it. USDC arrives in your wallet on Arbitrum when it completes; then open Deposit."
+msgstr "भुगतान प्रदाता अभी इसे प्रोसेस कर रहा है। पूरा होने पर USDC Arbitrum पर आपके वॉलेट में आएंगे; फिर जमा करें खोलें।"
+
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
 msgstr "आपकी पुष्टि के बाद पोज़िशन बढ़ गई, इसलिए कुछ भी क्लोज़ नहीं किया गया। नया आकार देखने के लिए Market क्लोज़ फिर से खोलें।"
@@ -10512,6 +10557,10 @@ msgstr "USDC जमा की Arbitrum पर पुष्टि हो गई"
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 #~ msgid "USDC deposit submitted to Hyperliquid"
 #~ msgstr "USDC जमा Hyperliquid को भेज दिया गया"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives."
+msgstr "USDC Arbitrum पर आपके वॉलेट में आ रहे हैं। पहुंचने के बाद जमा करें खोलें।"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"

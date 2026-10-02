@@ -226,6 +226,34 @@ for (const width of [375, 393, 1363]) {
 	}
 }
 
+for (const width of [375, 1363]) {
+	for (const theme of ["light", "dark"] as const) {
+		test(`shows the ${theme} card funding entry in both deposit forms at ${width}px`, async ({ page }) => {
+			await page.setViewportSize({ width, height: width === 375 ? 666 : 852 });
+			await page.goto("/account-actions.html?surface=funds");
+			await page.getByRole("button", { name: `Theme ${theme}`, exact: true }).click();
+			await page.getByRole("button", { name: "Toggle card funding", exact: true }).click();
+			const dialog = page.getByRole("dialog");
+			for (const walletKind of ["embedded", "external"] as const) {
+				if (walletKind === "external") await page.getByRole("button", { name: "Toggle email", exact: true }).click();
+				await page.getByRole("button", { name: "Open deposit", exact: true }).click();
+				const card = dialog.locator('[data-deposit-slot="fiat-funding"]');
+				await expect(card).toHaveAttribute("data-wallet-kind", walletKind);
+				await expect(card.getByRole("heading", { name: "Buy USDC with a card" })).toBeVisible();
+				await expect(card.getByText("ETH on Arbitrum", { exact: false })).toHaveCount(walletKind === "external" ? 1 : 0);
+				expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+				const button = card.getByRole("button", { name: "Buy USDC", exact: true });
+				await button.scrollIntoViewIfNeeded();
+				await expect(button).toBeInViewport();
+				await expect(button).toBeEnabled();
+				await page.screenshot({ path: test.info().outputPath(`card-funding-${walletKind}-${width}-${theme}.png`) });
+				await button.click();
+				await expect(dialog).toHaveCount(0);
+			}
+		});
+	}
+}
+
 for (const width of [375, 393, 1001, 1363]) {
 	test(`keeps mode summaries and funding controls consistent at ${width}px`, async ({ page }) => {
 		await page.setViewportSize({ width, height: width === 375 ? 666 : 852 });

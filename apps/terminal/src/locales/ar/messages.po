@@ -299,6 +299,10 @@ msgstr "تمويل 8 ساعات"
 msgid "90 days"
 msgstr "90 يومًا"
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "A card purchase is already open. Finish or close it first."
+msgstr "هناك عملية شراء بالبطاقة مفتوحة بالفعل. أكملها أو أغلقها أولًا."
+
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "A confirmation is shown before each market close."
 msgstr "يظهر تأكيد قبل كل إغلاق بسعر السوق."
@@ -1306,6 +1310,14 @@ msgstr "شراء / طويل"
 msgid "Buy Long"
 msgstr "شراء طويل"
 
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+msgid "Buy USDC"
+msgstr "شراء USDC"
+
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+msgid "Buy USDC with a card"
+msgstr "شراء USDC بالبطاقة"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "افتراضياً، ينطبق TP/SL على المركز بأكمله ويرسل أمراً بسعر السوق عندما يصل سعر العلامة إلى سعر التفعيل. حدد مبلغاً للاحتفاظ بحجم ثابت، أو اختر التنفيذ بسعر محدد ليتم الإرسال بسعرك المحدد."
@@ -1453,6 +1465,22 @@ msgstr "لا يمكن التبديل إلى الوضع المعزول مع وج�
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "لا يمكن التبديل إلى وضع الهامش المعزول مع وجود مركز مفتوح. أغلق مركزك أولاً."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase confirmed"
+msgstr "تم تأكيد الشراء بالبطاقة"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase could not open. Check your connection and try again."
+msgstr "تعذّر فتح الشراء بالبطاقة. تحقّق من اتصالك وحاول مرة أخرى."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase did not complete"
+msgstr "لم تكتمل عملية الشراء بالبطاقة"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Card purchase submitted"
+msgstr "تم إرسال الشراء بالبطاقة"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2659,6 +2687,11 @@ msgstr "تم الإيداع"
 #: src/components/vaults/vaults-list.tsx
 msgid "Deposited and Leading filters fail closed until both account snapshots are available."
 msgstr "تظل عوامل تصفية «تم الإيداع» و«القيادة» غير متاحة احترازيًا حتى تتوفر لقطتا الحساب."
+
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Depositing it needs a little ETH on Arbitrum for network fees."
+msgstr "يتطلب إيداعه قليلًا من ETH على Arbitrum لرسوم الشبكة."
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Depositing USDC to Hyperliquid..."
@@ -4067,6 +4100,10 @@ msgstr "حقبة الهوية"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "If you did not import this yourself, revoke phone access from the master wallet on desktop now."
 #~ msgstr ""
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "If you were charged, check the payment provider's email before trying again."
+msgstr "إذا تم خصم المبلغ منك، فراجع البريد الإلكتروني من مزوّد الدفع قبل إعادة المحاولة."
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Image saved"
@@ -6078,6 +6115,10 @@ msgstr "إيقاف مؤقت"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
 msgstr "الإيقاف المؤقت غير متاح: لا يدعم Hyperliquid إيقاف أوامر TWAP النشطة مؤقتًا."
+
+#: src/components/trade/tradebox/deposit/privy-fiat-funding-card.tsx
+msgid "Pay by card or bank transfer through a third-party payment provider. USDC arrives in your wallet on Arbitrum, and you deposit it from here."
+msgstr "ادفع بالبطاقة أو بالتحويل المصرفي عبر مزوّد دفع خارجي. تصل USDC إلى محفظتك على Arbitrum، ثم تودعها من هنا."
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -9007,6 +9048,10 @@ msgstr "تحمّل الصفحة لقطة واحدة لعمليات التنفي�
 msgid "The page you are looking for does not exist."
 msgstr "الصفحة التي تبحث عنها غير موجودة."
 
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "The payment provider is still processing it. USDC arrives in your wallet on Arbitrum when it completes; then open Deposit."
+msgstr "لا يزال مزوّد الدفع يعالجها. ستصل USDC إلى محفظتك على Arbitrum عند اكتمالها، ثم افتح «إيداع»."
+
 #: src/lib/trade/position-submit-feedback.ts
 msgid "The position grew after you confirmed, so nothing was closed. Reopen Market Close to review the new size."
 msgstr "زاد حجم المركز بعد تأكيدك، لذلك لم يتم إغلاق أي شيء. أعد فتح إغلاق بسعر السوق لمراجعة الحجم الجديد."
@@ -10512,6 +10557,10 @@ msgstr "تم تأكيد إيداع USDC على Arbitrum"
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 #~ msgid "USDC deposit submitted to Hyperliquid"
 #~ msgstr "تم إرسال إيداع USDC إلى Hyperliquid"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "USDC is on its way to your wallet on Arbitrum. Open Deposit once it arrives."
+msgstr "USDC في طريقها إلى محفظتك على Arbitrum. افتح «إيداع» عند وصولها."
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "USDC on HyperCore"

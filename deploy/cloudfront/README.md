@@ -132,14 +132,15 @@ node deploy/cloudfront/deploy.mjs verify --origin https://testnet.sairn.ai --net
 
 ### 发布闸门
 
-会暴露资金或凭证路径的构建开关，上传时需要运营方再确认一次；只在 `apps/terminal/.env.local` 里打开不算确认。构建把实际生效的值写进 `build-meta.json`（`cctpDeposits`、`mobileSync`，与应用运行时用同一个解析函数），`sync` 读的是构建产物而不是环境文件，所以构建之后再改环境文件不会影响判断。
+会暴露资金或凭证路径的构建开关，上传时需要运营方再确认一次；只在 `apps/terminal/.env.local` 里打开不算确认。构建把实际生效的值写进 `build-meta.json`（`cctpDeposits`、`mobileSync`、`privyFiatFunding`，与应用运行时用同一个解析函数），`sync` 读的是构建产物而不是环境文件，所以构建之后再改环境文件不会影响判断。
 
 | 闸门 | `build-meta.json` 字段 | 确认参数 | 何时可以打开 |
 | --- | --- | --- | --- |
 | 主网赞助充值 | `cctpDeposits.mainnetSponsoredWallet` | `--allow-sponsored-mainnet-deposits` | 见 [CCTP 充值](../../docs/cctp-deposits.md) 的发布模式 |
 | 移动配对 | `mobileSync.enabled`（2026-09-24 之前的构建为 `importFromQr` 或 `createAndReveal`，两种形状都能读） | `--allow-mobile-pairing` | 仅在 [真机清单](../../docs/mobile-phone-access-device-validation.md) 记录完成之后；此前开关必须保持关闭 |
+| 主网银行卡入金 | `privyFiatFunding.mainnet` | `--allow-mainnet-card-funding` | 仅在 [ADR 0034](../../docs/adr/0034-privy-card-funding.md) 的上线前提完成之后：Privy 控制台开启入金方式、审阅后的法律文本已发布、新的响应函数（含 Stripe 的 CSP 来源）已用 `functions --execute` 发布、沙盒与最低金额真实购买已验证 |
 
-规则是双向精确匹配：构建打开了闸门而没有带参数，拒绝；带了参数而构建没有打开，也拒绝（说明运营方以为在发的版本和实际产物不一致）；`build-meta.json` 没有这些字段（旧构建）同样拒绝，需用当前源码重新构建。`sync` 每次都会打印一行 `release gates: …`；不带 `--execute` 的演练只给出警告。`verify` 会比较线上与本地构建的闸门状态。测试网的两个充值开关只记录、不需要确认。
+规则是双向精确匹配：构建打开了闸门而没有带参数，拒绝；带了参数而构建没有打开，也拒绝（说明运营方以为在发的版本和实际产物不一致）；`build-meta.json` 没有这些字段（旧构建）同样拒绝，需用当前源码重新构建。`sync` 每次都会打印一行 `release gates: …`；不带 `--execute` 的演练只给出警告。`verify` 会比较线上与本地构建的闸门状态。测试网的两个充值开关与测试网银行卡入金开关只记录、不需要确认。
 
 未从旧 EC2 校验器移植的部分：`VITE_PRIVY_APP_ID` 非空、`VITE_HYPERLIQUID_AGENT_NAME=sairn`、`VITE_HYPERLIQUID_TESTNET` 为空、禁止 `.env.production*` 这几条属于环境文件拼写检查而不是暴露确认；其中「哪个文件生效」已由读取构建产物覆盖，其余仍靠发布前人工核对 [`env.build.example`](../env.build.example)。
 

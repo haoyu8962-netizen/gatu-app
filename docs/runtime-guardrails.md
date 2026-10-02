@@ -76,6 +76,18 @@ Do not collapse these states into one boolean.
   directly.
 - Privy owns the managed external-wallet directory. Do not add a second
   Reown/AppKit chooser or reimplement the catalog in application components.
+- Card funding ([ADR 0034](adr/0034-privy-card-funding.md)) calls Privy's
+  `useFiatOnramp` with an explicit destination that
+  `resolvePrivyFiatFundingDestination` derives from the exact Hyperliquid owner
+  and Privy's connected-wallet list; never call a Privy funding hook without
+  that destination, because Privy then defaults to the first embedded wallet.
+  The deposit dialog closes before Privy's window opens, the page-level
+  `PrivyFiatFundingHost` (lazily loaded by `PrivyFiatFundingHostGate` on the
+  first request, so the onramp code stays out of runtime startup) owns the
+  request, and both networks stay behind their own fail-closed flags. Stripe's embedded onramp is the only provider that
+  runs inside the page; its documented script, frame and connect origins are
+  the only card-funding entries in the CSP, and `permissions-policy` keeps
+  `payment=()` and `camera=(self)` until a separate decision.
 - `PRIVY_WALLET_LIST` is the single source for recommended-wallet ordering.
   Keep named wallets ahead of detected/fallback entries and use
   `wallet_connect` for Privy's long-tail catalog; do not substitute

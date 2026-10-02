@@ -9,6 +9,7 @@ import {
 import { createBuildMeta } from "@/config/build-meta";
 import { CCTP_DEPOSIT_FEATURES } from "@/config/cctp-deposit";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
+import { PRIVY_FIAT_FUNDING_FEATURES } from "@/config/privy-fiat-funding";
 
 export const Route = createFileRoute("/build-meta.json")({
 	server: {
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/build-meta.json")({
 						builtAt: APP_BUILD_TIME,
 						pairing: MOBILE_PAIRING_FEATURES,
 						cctpDeposits: CCTP_DEPOSIT_FEATURES,
+						privyFiatFunding: PRIVY_FIAT_FUNDING_FEATURES,
 						chartLibraryHash: APP_CHART_LIBRARY_HASH,
 					}),
 					{ headers: { "cache-control": "no-store" } },

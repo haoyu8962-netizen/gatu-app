@@ -2,6 +2,7 @@ import { Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useState } from "react";
 import { PendingActionModal } from "@/components/trade/components/pending-action-modal";
 import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";
+import { PrivyFiatFundingCard } from "@/components/trade/tradebox/deposit/privy-fiat-funding-card";
 import { WithdrawForm } from "@/components/trade/tradebox/deposit/withdraw-form";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -12,6 +13,7 @@ export function FundsFormsFixture() {
 	const mobile = useIsMobile();
 	const [form, setForm] = useState<"deposit" | "withdraw" | null>(null);
 	const [email, setEmail] = useState(true);
+	const [cardFunding, setCardFunding] = useState(false);
 	const [status, setStatus] = useState<"success" | "loading" | "error">("success");
 	const [amount, setAmount] = useState("");
 	const [destination, setDestination] = useState("");
@@ -24,6 +26,7 @@ export function FundsFormsFixture() {
 				<Button onClick={() => setForm("withdraw")}>Open withdraw</Button>
 				<Button onClick={() => setEmail(!email)}>Toggle email</Button>
 				<Button onClick={() => setStatus(status === "success" ? "error" : "success")}>Toggle data</Button>
+				<Button onClick={() => setCardFunding(!cardFunding)}>Toggle card funding</Button>
 				<output aria-label="Fixture submissions">{submitted}</output>
 			</div>
 			<PendingActionModal
@@ -66,6 +69,15 @@ export function FundsFormsFixture() {
 							fundingAddressPending={false}
 							fundingAddress={address}
 							onDone={() => setForm(null)}
+							fiatFundingEntry={
+								cardFunding ? (
+									<PrivyFiatFundingCard
+										walletKind={email ? "embedded" : "external"}
+										disabled={!ready}
+										onStart={() => setForm(null)}
+									/>
+								) : null
+							}
 						/>
 					) : (
 						<WithdrawForm
