@@ -274,6 +274,7 @@ jobs:
           src/lib/tests/position-close-all-submit.test.tsx
           src/lib/tests/trade-form-fields-order-entry-data.test.tsx
           src/lib/tests/history-csv-twap.test.tsx
+          src/lib/tests/bridge-success-screen-locale.test.tsx
 
       - name: Test Deposit, CCTP, routing, and geo guards
         working-directory: apps/terminal

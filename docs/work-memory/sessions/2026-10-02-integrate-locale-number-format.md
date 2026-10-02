@@ -10,7 +10,7 @@
   "summary": "进行中：把 claude/laughing-engelbart-b9dbe6（页脚时钟）、claude/relaxed-roentgen-fd0316（Vault 与组合收益图语言依赖）、claude/wonderful-goldberg-e47b19（数字格式刷新，ADR 0036）三条叠放的未推送分支以 --no-ff 合进从 origin/dev 建的 claude/integrate-locale-number-format，新增 CI 步骤，并按用户要求用 Codex 做至少 3 轮只读对抗审查、评分大于 9。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5"],
+  "commits": ["b99a1190", "2b7973b4", "5425b7c1", "04469b52", "41c585cb", "089747f5", "18cc35b1"],
   "sources": [
     { "path": "docs/work-memory/sessions/2026-10-02-footer-clock-live-minute.md" },
     { "path": "docs/work-memory/sessions/2026-10-02-vault-fetched-time-locale.md" },
@@ -59,9 +59,11 @@
 
 ### CI
 
-`terminal-tests.yml` 只跑显式列出的测试文件（少数用通配符）。合并时本 PR 改动的 32 个测试文件中有 21 个不在清单里，包括 3 个新测试文件、AGENTS.md「Number and date formatting」与「Runtime translation contract」两组的大部分文件。（这里原写作 31 与 20，第 2 轮 B 路指出少算 1 个，按 `git diff --name-only 682430ba 5d3ff8e7` 复核后更正。）
+`terminal-tests.yml` 只跑显式列出的测试文件（少数用通配符）。合并时本 PR 改动了 32 个测试文件，其中 21 个不在显式清单里；`tradingview-overlays.test.ts` 由已有的 `tradingview-*.test.ts` 通配符覆盖，所以实际没被 CI 运行的是 20 个，包括 3 个新测试文件、AGENTS.md「Number and date formatting」与「Runtime translation contract」两组的大部分文件。
 
-新增步骤「Test number format and runtime locale contracts」（`41c585cb`）。第 1 轮审查后又补了 4 个被本 PR 改动的测试文件，共 30 个；第 2 轮审查后加入 `history-csv-twap.test.tsx`（直接测试本 PR 改动的 `useTwapFillHistoryCsv`），共 31 个。现在 32 个改动过的测试文件都在 CI 里，其中 `tradingview-overlays.test.ts` 由已有的 `tradingview-*.test.ts` 通配符覆盖。本机用单工作进程跑最初的 26 个文件，554 项通过、47 秒（负载 12–22）。`scripts/ci-workflows.test.mjs` 7 项通过，Ruby 解析 YAML 正常。
+更正记录：这里最初写作「31 个测试文件中有 20 个不在清单里」，文件数少算了 1 个。第 2 轮 B 路据此改为 32 与 21，但 21 只比较了显式路径；第 3 轮 B 路按通配符复核，实际未覆盖的是 20 个。两次都用 `git diff --name-only 682430ba 5d3ff8e7` 对照 `5d3ff8e7` 的 workflow 复核。
+
+新增步骤「Test number format and runtime locale contracts」（`41c585cb`）。第 1 轮审查后又补了 4 个被本 PR 改动的测试文件，共 30 个；第 2 轮审查后加入 `history-csv-twap.test.tsx`（直接测试本 PR 改动的 `useTwapFillHistoryCsv`），共 31 个；第 3 轮审查后加入新的 `bridge-success-screen-locale.test.tsx`，共 32 个。现在本 PR 改动或新增的 34 个测试文件都会被 CI 运行（按显式路径与通配符核对）。本机用单工作进程跑最初的 26 个文件，554 项通过、47 秒（负载 12–22）。`scripts/ci-workflows.test.mjs` 7 项通过，Ruby 解析 YAML 正常。
 
 ### Codex 对抗审查
 
@@ -138,6 +140,42 @@ B 路没有 P0–P2，两项 P3 都已处理：
 - 语言契约新增 11 项：6 个组件身份样例、3 个遮蔽依赖样例，以及 2 个守卫（嵌套回调读取外层绑定、既非组件名也无包装的小写 helper）。前 9 个接到改动前的检查器上全部失败。
 - 把两份新契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败；语言契约 183 项全部通过（这两条依赖规则正是在 `5425b7c1` 引入的）。运行后已还原该 worktree。
 - 当前代码上两份契约都通过：数字契约 54 项、语言契约 183 项，源码树检查都是 0 处违规。识别范围变宽后，真实源码里没有出现新的违规。
+
+**第 3 轮（三路并行，21:27–21:33）**
+
+V 路核实第 2 轮修复并证伪共用模块，B 路终评规范与记录，C 路以新视角找整个 PR 的遗漏并做变异推演。
+
+| 路 | 重点 | 用量 | 评分 |
+|---|---|---|---|
+| V | 核实第 2 轮修复、证伪共用识别模块 | 21 条命令、约 11.9 万 token | 8.6 |
+| B | 规范、文档与记录终评 | 16 条命令、约 10.7 万 token | 8.8 |
+| C | 全 PR 遗漏与测试强度、变异推演 | 23 条命令、约 14.5 万 token | 9.1 |
+
+三路都复现了第 2 轮记录的数字：样例数，新样例在旧检查器上的失败数，基线 356 处，源码树 0 处。新发现经本会话逐条核实，全部成立：
+
+- **V-P2：数字契约漏掉模块级解构默认值与类。** `export const { usd: priceLabel = formatUSD } = overrides` 只记录了右侧的 `overrides`；模块级 `class PriceLabel` 的方法用 `formatUSD`，组件 `new PriceLabel(value).text()` 也没被拦下。已让模块级声明记录初始值加上解构路径上的默认值，并收录类声明。
+- **V-P2：语言契约把回调里解构默认值、计算键对依赖的读取当成未读。** `const { text = locale } = labels` 与 `const { [locale]: text } = labels` 会被误报。已遍历绑定模式里的默认值与计算键，声明名本身仍不算读取。
+- **V-P3：「编译器推断规则的超集」不成立。** 编译器的 `isMemoCallback`、`isForwardRefCallback` 不限参数位置，共用模块原先只认第一个参数。
+  - 已改为任一参数位置。
+  - 本会话又对照了 `getReactFunctionType` 与 `getFunctionName2`，补上三处：`"use memo"`、`"use forget"` 指令让任何函数进入编译；类属性与解构赋值的默认值也给函数命名。
+  - 文档改为写明对照的是 1.0.0 默认 infer 模式。
+- **V-P3：已知例外漏了市价单最大滑点。** 下单摘要（桌面与手机）直接显示 `slippagePercent`。本会话排查同类写法时又发现全局设置里的范围说明 `0.1% – 5%` 也是直接显示常量，两处一并补进归属文档、ADR 与 CHANGELOG。
+  - 另查了整数类显示：快捷百分比 25/50/…、兑换滑点 1%、杠杆倍数。它们小于 1000 且没有小数，在各选项下写法相同，不列入。
+- **B-P2：字符串键的路由方法写法没被识别。** `"component"() { … }` 两份契约都漏报。已统一按静态名取方法与属性名，支持标识符、字符串与字面量计算键。
+- **B-P3：CI 历史覆盖数应为 20。** 已在 CI 一节第二次更正，并写明原值与复核方法。
+- **C-P3：跨链成功页的两处日期修复没有直接测试。** 已新增 `bridge-success-screen-locale.test.tsx`：挂载真实 `SuccessScreen`，展开详情，再切换语言，断言提交与完成时间换成中文写法且节点不重挂载。把组件里两处 `{ locale }` 删掉后它失败（切换后仍是英文写法），还原后通过。
+
+B 路列为「无法确认」的提交 trailer：每个提交正文都带 `Co-Authored-By`，这是本会话署名指令的要求；`dev` 最近 200 个非合并提交中有 192 个带同样的 trailer。
+
+C 路还指出 CI 里有一个既有的失效路径：`src/lib/tests/geo-server-functions.test.ts` 不存在（`cdc4d3d2` 起就在 `682430ba` 里），与本 PR 无关，另开后续处理。
+
+修复后的验证：
+
+- 数字契约 61 项：49 个应报出样例、8 个应放行样例、4 项源码树检查。
+- 语言契约 187 项。
+- 本轮新增 11 个样例（数字 7 个、语言 4 个），接到上一版（`18cc35b1`）的检查器与共用模块上运行时全部失败。
+- 把两份契约与共用模块复制到基线 `5425b7c1` 的 worktree 上运行：数字契约仍报 356 处违规、4 项失败，语言契约全部通过；运行后已还原。
+- 当前代码上两份契约都通过，源码树 0 处违规。识别范围再次变宽（任一参数位置的包装、类属性、指令、类与解构默认值），真实源码里没有出现新的违规。
 
 ## 验证与限制
 

@@ -694,9 +694,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   compact vault values, APR and leader commission, the bridge screens' balances and send, receive
   and received amounts, the mobile market bar's 24h change and the mobile trade view's change
   percent, order fee rates (so a fee reads `0.0450% ($1,23)` with the `1.234,56` format), the TP/SL
-  risk/reward ratio, the order book's price grouping labels, the position size on chart position
-  lines, the filled size and partial-fill progress in fill notifications and the close slider's
-  screen-reader percent. Funds notifications keep the number format they were raised with.
+  risk/reward ratio, the order book's price grouping labels, the market-order slippage in the order
+  summaries and its range in the settings, the position size on chart position lines, the filled
+  size and partial-fill progress in fill notifications and the close slider's screen-reader
+  percent. Funds notifications keep the number format they were raised with.
 - Mobile pairing stays compiled out in production: both `VITE_MOBILE_PAIRING_*` flags remain off
   until the physical-device acceptance for the client-only transfer (ADR 0015 D7, option B) has
   been run.

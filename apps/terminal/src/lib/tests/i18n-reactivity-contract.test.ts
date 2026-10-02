@@ -348,6 +348,14 @@ describe("dependencies React Compiler can see", () => {
 			`export const Route = createFileRoute("/sample")({ component: function render() { ${BRANCHED_READ} } });`,
 		],
 		["a component held by an object key", `export const cells = { Time: ({ at }: Props) => { ${BRANCHED_READ} } };`],
+		[
+			"a route component method under a string key",
+			`export const Route = createFileRoute("/sample")({ "component"() { ${BRANCHED_READ} } });`,
+		],
+		[
+			"a function that opts in to compilation with a directive",
+			`function label({ at }: Props) { "use memo"; ${BRANCHED_READ} }`,
+		],
 	])("flags a branch-only locale read in %s", (_, declaration) => {
 		expect(findBranchOnlyLocaleReads(`import { useLingui } from "@lingui/react/macro";\n${declaration}`)).toHaveLength(
 			1,
@@ -392,6 +400,16 @@ describe("dependencies React Compiler can see", () => {
 			"a property dependency read only through a shadowing parameter",
 			"return useMemo(() => groups.map((i18n) => i18n.locale), [groups, i18n.locale]);",
 			["i18n.locale"],
+		],
+		[
+			"no dependency when a destructuring default reads it",
+			"const locale = i18n.locale; return useMemo(() => { const { label = locale } = options; return label; }, [options, locale]);",
+			[],
+		],
+		[
+			"no dependency when a computed destructuring key reads it",
+			"const locale = i18n.locale; return useMemo(() => { const { [locale]: label } = labels; return label; }, [labels, locale]);",
+			[],
 		],
 		[
 			"no dependency when a nested callback reads the outer binding",
@@ -557,6 +575,10 @@ function collectReadPaths(callback: ts.Node): string[] {
 			return;
 		}
 		if (ts.isVariableDeclaration(node) || ts.isParameter(node) || ts.isBindingElement(node)) {
+			if (!ts.isIdentifier(node.name)) ts.forEachChild(node.name, visit);
+			if (ts.isBindingElement(node) && node.propertyName && ts.isComputedPropertyName(node.propertyName)) {
+				visit(node.propertyName.expression);
+			}
 			if (node.initializer) visit(node.initializer);
 			return;
 		}

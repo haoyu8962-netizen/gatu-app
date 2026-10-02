@@ -6,6 +6,7 @@ import ts from "typescript";
 
 const COMPONENT_WRAPPERS = new Set(["forwardRef", "memo"]);
 const ROUTE_COMPONENT_PROPERTIES = new Set(["component", "errorComponent", "notFoundComponent", "pendingComponent"]);
+const MEMOIZATION_DIRECTIVES = new Set(["use forget", "use memo"]);
 
 type TransparentExpression =
 	| ts.AsExpression
@@ -43,14 +44,30 @@ export function outermostTransparentExpression(node: ts.Expression): ts.Expressi
 	return current;
 }
 
-// React Compiler infers components and hooks from a function's name, from the variable, assignment
-// target or object key that receives it, and treats a memo or forwardRef callback as a component
-// whatever its own name. The contracts recognize a superset that does not depend on what the
-// compiler compiles today: wrappers may nest or be parenthesized or asserted, and an anonymous
-// default export in a .tsx module and a route's component option are components too.
+// React Compiler (infer mode) compiles a function named like a component or hook, where the name is
+// the function's own or that of the variable, assignment target, object or class property or
+// destructuring default that receives it; any memo or forwardRef callback; and any function that
+// opts in with "use memo" or "use forget". The contracts recognize a superset that does not depend on
+// what the compiler compiles today: wrapper callbacks may sit behind parentheses or assertions,
+// string keys count, and an anonymous default export in a .tsx module and a route's component option,
+// written as a function or a method, are components too.
 export function getComponentOrHookName(node: ts.SignatureDeclaration, fileName: string): string | undefined {
-	const ownName = node.name && ts.isIdentifier(node.name) ? node.name.text : undefined;
+	const ownName = node.name === undefined ? undefined : getStaticName(node.name);
 	if (ownName !== undefined && isComponentOrHookName(ownName)) return ownName;
+	const inferred = inferComponentOrHookName(node, ownName, fileName);
+	if (inferred !== undefined || !hasMemoizationDirective(node)) return inferred;
+	const receiver =
+		ts.isFunctionExpression(node) || ts.isArrowFunction(node)
+			? getReceivingName(climbFunctionValue(node).value)
+			: undefined;
+	return ownName ?? receiver ?? "<use memo>";
+}
+
+function inferComponentOrHookName(
+	node: ts.SignatureDeclaration,
+	ownName: string | undefined,
+	fileName: string,
+): string | undefined {
 	if (ts.isMethodDeclaration(node)) {
 		const isRouteOption = ts.isObjectLiteralExpression(node.parent) && ROUTE_COMPONENT_PROPERTIES.has(ownName ?? "");
 		return isRouteOption ? ownName : undefined;
@@ -60,24 +77,7 @@ export function getComponentOrHookName(node: ts.SignatureDeclaration, fileName: 
 		return isAnonymousDefault && fileName.endsWith(".tsx") ? "<default>" : undefined;
 	}
 	if (!ts.isFunctionExpression(node) && !ts.isArrowFunction(node)) return undefined;
-
-	let value: ts.Expression = node;
-	let wrapper: string | undefined;
-	for (;;) {
-		const parent = value.parent;
-		if (isTransparentExpression(parent)) {
-			value = parent;
-		} else if (
-			ts.isCallExpression(parent) &&
-			parent.arguments[0] === value &&
-			COMPONENT_WRAPPERS.has(calleeName(parent) ?? "")
-		) {
-			wrapper = calleeName(parent);
-			value = parent;
-		} else {
-			break;
-		}
-	}
+	const { value, wrapper } = climbFunctionValue(node);
 	const receiver = getReceivingName(value);
 	if (receiver !== undefined) {
 		const isRouteOption = ts.isPropertyAssignment(value.parent) && ROUTE_COMPONENT_PROPERTIES.has(receiver);
@@ -87,6 +87,28 @@ export function getComponentOrHookName(node: ts.SignatureDeclaration, fileName: 
 		return wrapper !== undefined || (ownName === undefined && fileName.endsWith(".tsx")) ? "<default>" : undefined;
 	}
 	return wrapper === undefined ? undefined : (ownName ?? `<${wrapper}>`);
+}
+
+// The expression that carries a function expression's value: past parentheses, assertions and any
+// memo or forwardRef calls that receive it, with the outermost wrapper's name.
+function climbFunctionValue(node: ts.Expression): { value: ts.Expression; wrapper: string | undefined } {
+	let value = node;
+	let wrapper: string | undefined;
+	for (;;) {
+		const parent = value.parent;
+		if (isTransparentExpression(parent)) {
+			value = parent;
+		} else if (
+			ts.isCallExpression(parent) &&
+			parent.arguments.includes(value) &&
+			COMPONENT_WRAPPERS.has(calleeName(parent) ?? "")
+		) {
+			wrapper = calleeName(parent);
+			value = parent;
+		} else {
+			return { value, wrapper };
+		}
+	}
 }
 
 function getReceivingName(value: ts.Expression): string | undefined {
@@ -105,10 +127,26 @@ function getReceivingName(value: ts.Expression): string | undefined {
 		if (ts.isIdentifier(parent.left)) return parent.left.text;
 		return ts.isPropertyAccessExpression(parent.left) ? parent.left.name.text : undefined;
 	}
-	if (ts.isPropertyAssignment(parent) && parent.initializer === value) {
-		return ts.isIdentifier(parent.name) || ts.isStringLiteral(parent.name) ? parent.name.text : undefined;
+	if ((ts.isPropertyAssignment(parent) || ts.isPropertyDeclaration(parent)) && parent.initializer === value) {
+		return getStaticName(parent.name);
 	}
+	if (ts.isShorthandPropertyAssignment(parent) && parent.objectAssignmentInitializer === value) return parent.name.text;
 	return undefined;
+}
+
+function getStaticName(name: ts.PropertyName): string | undefined {
+	if (ts.isIdentifier(name) || ts.isStringLiteralLike(name)) return name.text;
+	return ts.isComputedPropertyName(name) && ts.isStringLiteralLike(name.expression) ? name.expression.text : undefined;
+}
+
+function hasMemoizationDirective(node: ts.SignatureDeclaration): boolean {
+	if (!ts.isFunctionDeclaration(node) && !ts.isFunctionExpression(node) && !ts.isArrowFunction(node)) return false;
+	if (!node.body || !ts.isBlock(node.body)) return false;
+	for (const statement of node.body.statements) {
+		if (!ts.isExpressionStatement(statement) || !ts.isStringLiteral(statement.expression)) return false;
+		if (MEMOIZATION_DIRECTIVES.has(statement.expression.text)) return true;
+	}
+	return false;
 }
 
 export function isComponentOrHookName(name: string): boolean {

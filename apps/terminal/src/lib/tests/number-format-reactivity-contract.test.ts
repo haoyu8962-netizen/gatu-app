@@ -425,6 +425,69 @@ export function Sample() { return <p>{format["formatUSD"](1)}{(format).formatPri
 			},
 			["components/sample.tsx:2 Sample formatPrice", "components/sample.tsx:2 Sample formatUSD"],
 		],
+		[
+			"a helper that falls back to a formatter as a destructuring default",
+			{
+				"lib/labels.ts": `import { formatUSD } from "@/lib/format";
+const overrides: { usd?: typeof formatUSD } = {};
+export const { usd: priceLabel = formatUSD } = overrides;`,
+				"components/sample.tsx": `import { priceLabel } from "@/lib/labels";
+export function Sample({ value }: { value: number }) { return <p>{priceLabel(value)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample priceLabel"],
+		],
+		[
+			"a module-level class whose method formats",
+			{
+				"lib/price-label.ts": `import { formatUSD } from "@/lib/format";
+export class PriceLabel { constructor(private readonly value: number) {} text() { return formatUSD(this.value); } }`,
+				"components/sample.tsx": `import { PriceLabel } from "@/lib/price-label";
+export function Sample({ value }: { value: number }) { return <p>{new PriceLabel(value).text()}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample PriceLabel"],
+		],
+		[
+			"a function in any argument of a component wrapper",
+			{
+				"components/sample.tsx": `import { memo } from "react";
+import { formatUSD } from "@/lib/format";
+export const Sample = memo(Row, function compare() { return formatUSD(1) === ""; });`,
+			},
+			["components/sample.tsx:3 Sample formatUSD"],
+		],
+		[
+			"a route component method under a string key",
+			{
+				"routes/sample.tsx": `import { formatUSD } from "@/lib/format";
+export const Route = createFileRoute("/sample")({ "component"() { return <p>{formatUSD(1)}</p>; } });`,
+			},
+			["routes/sample.tsx:2 component formatUSD"],
+		],
+		[
+			"a function that opts in to compilation with a directive",
+			{
+				"lib/sample-label.ts": `import { formatUSD } from "@/lib/format";
+export function label(value: number) { "use memo"; return formatUSD(value); }`,
+			},
+			["lib/sample-label.ts:2 label formatUSD"],
+		],
+		[
+			"a component held by a class property",
+			{
+				"components/sample.tsx": `import { formatUSD } from "@/lib/format";
+export class Registry { Price = () => <p>{formatUSD(1)}</p>; }`,
+			},
+			["components/sample.tsx:2 Price formatUSD"],
+		],
+		[
+			"a component received as a destructuring assignment default",
+			{
+				"components/sample.tsx": `import { formatUSD } from "@/lib/format";
+export let Price: unknown;
+({ Price = () => <p>{formatUSD(1)}</p> } = {});`,
+			},
+			["components/sample.tsx:3 Price formatUSD"],
+		],
 	])("flags %s", (_name, files, expected) => {
 		expect(findNumberFormatViolations(withFormatStubs(files))).toEqual(expected);
 	});
@@ -520,7 +583,9 @@ interface SourceModule {
 	reexports: Map<string, ModuleBinding>;
 	starExports: (string | null)[];
 	localExports: Map<string, string>;
-	declarations: Map<string, ts.Node>;
+	// The nodes a module-level name takes its value from: an initializer, plus the defaults on its
+	// destructuring path, or the function or class declaration itself.
+	declarations: Map<string, ts.Node[]>;
 }
 
 function withFormatStubs(files: Record<string, string>): Map<string, string> {
@@ -563,9 +628,12 @@ function findNumberFormatViolations(sources: Map<string, string>): string[] {
 	const references = new Map<string, Set<string>>();
 	for (const module of modules.values()) {
 		if (module.path === FORMAT_MODULE || module.path === REACTIVITY_MODULE) continue;
-		for (const [name, node] of module.declarations) {
-			if (ts.isFunctionLike(node) && getComponentOrHookName(node, module.path) !== undefined) continue;
-			references.set(`${module.path}#${name}`, collectModuleReferences(modules, module, node));
+		for (const [name, nodes] of module.declarations) {
+			if (nodes.some((node) => ts.isFunctionLike(node) && getComponentOrHookName(node, module.path) !== undefined)) {
+				continue;
+			}
+			const keys = new Set(nodes.flatMap((node) => [...collectModuleReferences(modules, module, node)]));
+			references.set(`${module.path}#${name}`, keys);
 		}
 	}
 	let changed = true;
@@ -672,14 +740,14 @@ function describeModule(path: string, text: string, sources: Map<string, string>
 		} else if (ts.isExportAssignment(statement)) {
 			const expression = skipTransparentExpressions(statement.expression);
 			if (ts.isIdentifier(expression)) module.localExports.set("default", expression.text);
-			else module.declarations.set("default", expression);
-		} else if (ts.isFunctionDeclaration(statement)) {
+			else module.declarations.set("default", [expression]);
+		} else if (ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) {
 			const isDefault = hasModifier(statement, ts.SyntaxKind.DefaultKeyword);
 			if (statement.name) {
-				module.declarations.set(statement.name.text, statement);
+				module.declarations.set(statement.name.text, [statement]);
 				if (isDefault) module.localExports.set("default", statement.name.text);
 			} else if (isDefault) {
-				module.declarations.set("default", statement);
+				module.declarations.set("default", [statement]);
 			}
 		} else if (ts.isVariableStatement(statement)) {
 			for (const declaration of statement.declarationList.declarations) {
@@ -691,10 +759,10 @@ function describeModule(path: string, text: string, sources: Map<string, string>
 }
 
 // A destructured namespace import is an alias of the namespace's export; any other destructured or
-// assigned name is a declaration whose value is the initializer.
+// assigned name is a declaration whose value is the initializer or a default on its path.
 function describeVariable(module: SourceModule, name: ts.BindingName, initializer: ts.Expression): void {
 	if (ts.isIdentifier(name)) {
-		module.declarations.set(name.text, initializer);
+		module.declarations.set(name.text, [initializer]);
 		return;
 	}
 	const source = skipTransparentExpressions(initializer);
@@ -706,9 +774,18 @@ function describeVariable(module: SourceModule, name: ts.BindingName, initialize
 			module.imports.set(element.name.text, { path: namespaceTarget, name: property ?? element.name.text });
 			continue;
 		}
-		const bound: ts.Identifier[] = [];
-		collectBindingIdentifiers(element.name, bound);
-		for (const identifier of bound) module.declarations.set(identifier.text, initializer);
+		describeBindingElement(module, element, [initializer]);
+	}
+}
+
+function describeBindingElement(module: SourceModule, element: ts.BindingElement, values: ts.Node[]): void {
+	const elementValues = element.initializer ? [...values, element.initializer] : values;
+	if (ts.isIdentifier(element.name)) {
+		module.declarations.set(element.name.text, elementValues);
+		return;
+	}
+	for (const child of element.name.elements) {
+		if (!ts.isOmittedExpression(child)) describeBindingElement(module, child, elementValues);
 	}
 }
 
