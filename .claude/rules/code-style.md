@@ -32,9 +32,9 @@ Only create helpers when logic is reused, complex, or significantly improves rea
 
 ## React Hooks
 
-- **React 19 Compiler**: Project uses React 19 with the compiler enabled. Don't add manual `useMemo`/`useCallback` for performance - the compiler handles memoization automatically.
+- **React 19 Compiler**: Project uses React 19 with the compiler enabled. Don't add manual `useMemo`/`useCallback` for performance - the compiler handles memoization automatically (one documented exception under useMemo below).
 - **useEffect**: Only for side effects (subscriptions, DOM, external APIs). Never for derived state.
-- **useMemo**: Only for semantic purposes (e.g., referential equality for context values). Not needed for performance.
+- **useMemo**: Only for semantic purposes (e.g., referential equality for context values). Not needed for performance. The one documented exception is the `useMemo` around `buildChart` in `PortfolioPerformanceChart`: without it the compiled output stops caching the chart model (cache slots 118 → 43) and every pointer move rebuilds it (`docs/i18n-presentation.md`). Add another exception only with the same compiled-output evidence.
 - **useState**: Prefer primitives/indices over complex objects.
 - **useCallback**: Only when semantically required. Not needed for performance.
 

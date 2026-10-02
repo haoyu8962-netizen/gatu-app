@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime"],
-  "summary": "只裸调用 useNumberFormatRevision() 的组件切换数字格式后仍显示旧格式：React Compiler 1.0.0 按参数缓存 formatNumber(x)，格式化函数读全局设置。用户在三个方案中选定方案 B（ADR 0036）：lib/format 新增 useNumberFormat()（useSyncExternalStore，每次变化换新的函数身份），89 个组件与 Hook 文件改为从它取格式化函数，渲染期 helper 显式接收 NumberFormatters，删除 useNumberFormatRevision 与交易行的 use no memo；number-format-reactivity-contract 改为跨模块源码级规则，基线报 356 处、修复后 0。另按编译产物修复 15 处不传 locale 的日期缓存（含编译器提升的闭包里漏统计的 4 处）。真实挂载界面上 9 个数字用例与 8 个语言用例在旧代码上失败、修复后通过；全量单测、类型检查、Biome、生产构建预算通过，余量收紧；开发服务器真实页面核对数字与日期切换。范围外：质押、金库精确金额、跨链到账金额手写格式不跟随设置。",
+  "summary": "只裸调用 useNumberFormatRevision() 的组件切换数字格式后仍显示旧格式：React Compiler 1.0.0 按参数缓存 formatNumber(x)，格式化函数读全局设置。用户在三个方案中选定方案 B（ADR 0036）：lib/format 新增 useNumberFormat()（useSyncExternalStore，每次变化换新的函数身份），85 个组件与 Hook 文件改为从它取格式化函数（另有 4 个只改日期），渲染期 helper 显式接收 NumberFormatters，删除 useNumberFormatRevision 与交易行的 use no memo；number-format-reactivity-contract 改为跨模块源码级规则，基线报 356 处、修复后 0。另按编译产物修复 15 处不传 locale 的日期缓存（含编译器提升的闭包里漏统计的 4 处）。真实挂载界面上 9 个数字用例与 8 个语言用例在旧代码上失败、修复后通过。改造后两次全量单测通过；审查修改后的第三次全量在高负载下有 3 处超时（两个无关文件单独重跑通过，契约测试提速并设超时），之后未再跑全量，改跑 42 个相关文件 946 项全部通过；类型检查、Biome、生产构建预算通过，余量收紧；开发服务器真实页面核对数字与日期切换。范围外：质押、金库、跨链各屏、手机行情涨跌、费率、风险收益比与订单簿分组标签的手写格式不跟随设置。",
   "thread": null,
   "baseCommit": "5425b7c1",
   "commits": [],
@@ -234,6 +234,10 @@
 - 未运行 Playwright 浏览器套件。
 - 没有物理输入。
 - 交易页、账户面板（需连接钱包）等面没有在真实浏览器里切换核对。
+
+## 更正记录
+
+- 2026-10-02 集成审查（[集成记录](2026-10-02-integrate-locale-number-format.md)）：摘要原写「89 个组件与 Hook 文件改为从它取格式化函数」与「全量单测……通过」。前者应为 85 个（另 4 个只改日期，ADR 0036 的写法正确）；后者把较早版本的全量通过概括成了最终结果。两处都已按正文改写，正文未改。集成审查对契约与测试的后续补强记在集成记录里。
 
 ## 后续与替代关系
 

@@ -691,10 +691,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 - Some figures are formatted by hand and always use `,` grouping and a `.` decimal point,
   whatever the number-format setting: staking amounts and ratios, vault amounts shown to the exact
-  decimal, the bridge success screen's received amount, the mobile market bar's 24h change and the
-  mobile trade view's change percent, order fee rates (so a fee reads `0.0450% ($1,23)` with the
-  `1.234,56` format) and the TP/SL risk/reward ratio. Funds notifications keep the number format
-  they were raised with.
+  decimal, the bridge screens' balances and send, receive and received amounts, the mobile market
+  bar's 24h change and the mobile trade view's change percent, order fee rates (so a fee reads
+  `0.0450% ($1,23)` with the `1.234,56` format), the TP/SL risk/reward ratio and the order book's
+  price grouping labels. Funds notifications keep the number format they were raised with.
 - Mobile pairing stays compiled out in production: both `VITE_MOBILE_PAIRING_*` flags remain off
   until the physical-device acceptance for the client-only transfer (ADR 0015 D7, option B) has
   been run.

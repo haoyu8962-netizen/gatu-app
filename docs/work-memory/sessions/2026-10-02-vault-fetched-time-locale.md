@@ -7,7 +7,7 @@
   "kind": "task",
   "status": "verified",
   "topics": ["i18n-runtime"],
-  "summary": "Vault 列表的获取时间在语言切换后一直保持旧语言格式：fetchedLabel 只在三元分支里读 i18n.locale，babel-plugin-react-compiler 1.0.0 把缓存槽依赖记成不变的 i18n 单例；先读出 const locale 后依赖变为 locale。按编译产物排查全部 i18n.locale 读取，另确认组合收益图手写 useMemo 依赖里的 i18n.locale 与 numberFormatRevision 被编译器丢弃（语言与数字格式切换后坐标轴和选中点不变），改为作为参数传入并保留 useMemo（去掉后缓存槽 118→43）。四处被掩盖或所在组件未被编译的分支读取一并改写；i18n-reactivity-contract 新增两条契约（分支或渲染期回调里的 i18n.locale、useMemo/useCallback 中回调不读的依赖），在修复前代码上分别报出 6 处与 2 项。全量单测除负载超时外通过；无头 Chromium 在本工作树开发服务器的 /vaults 上复现旧代码缺陷并确认修复。范围外发现：只裸调用 useNumberFormatRevision() 的组件切换数字格式后不刷新（探针实测，编译产物统计 200 处），已登记为后续。",
+  "summary": "Vault 列表的获取时间在语言切换后一直保持旧语言格式：fetchedLabel 只在三元分支里读 i18n.locale，babel-plugin-react-compiler 1.0.0 把缓存槽依赖记成不变的 i18n 单例；先读出 const locale 后依赖变为 locale。按编译产物排查全部 i18n.locale 读取，另确认组合收益图手写 useMemo 依赖里的 i18n.locale 与 numberFormatRevision 被编译器丢弃（语言与数字格式切换后坐标轴和选中点不变），改为作为参数传入并保留 useMemo（去掉后缓存槽 118→43）。四处被掩盖或所在组件未被编译的分支读取一并改写；i18n-reactivity-contract 新增两条契约（分支或渲染期回调里的 i18n.locale、useMemo/useCallback 中回调不读的依赖），在修复前代码上分别报出 6 处与 2 项。全量单测 8,026 项中 9 项失败（7 项超时、2 项断言，所在 6 个文件都不渲染本次改动的组件），这 6 个文件单独重跑全部通过；无头 Chromium 在本工作树开发服务器的 /vaults 上复现旧代码缺陷并确认修复。范围外发现：只裸调用 useNumberFormatRevision() 的组件切换数字格式后不刷新（探针实测，编译产物统计 200 处），已登记为后续。",
   "thread": null,
   "baseCommit": "2b7973b4",
   "commits": [],
@@ -209,6 +209,10 @@
 - 组合收益图、Vault 详情、资金费率图、配对页、组合页没有在浏览器里核对，只有单元测试与编译产物。
 - 没有在真实浏览器里切换数字格式。
 - 没有物理输入。
+
+## 更正记录
+
+- 2026-10-02 集成审查（[集成记录](2026-10-02-integrate-locale-number-format.md)）：摘要原写「全量单测除负载超时外通过」，与正文「验证与限制」记载的 2 项断言失败不符，改为如实列出失败数与单独重跑结果。正文未改。
 
 ## 后续与替代关系
 

@@ -31,8 +31,8 @@
 6. **契约。** `number-format-reactivity-contract.test.ts` 用 TypeScript AST 扫描 `apps/terminal/src`（测试、`locales`、`.gen.ts` 除外）：
    - 先跨模块求出「经模块级数字格式化函数格式化」的模块级声明。这是传递闭包，跟随 `@/` 与相对导入、具名与默认导入、命名空间导入（`format.formatNumber`）、具名再导出、`export *` 与本地别名导出；
    - 组件与 Hook 里引用这些声明、模块级格式化函数或上述读取函数，且没有被局部绑定遮蔽的，都算违规；
-   - `useNumberFormat()` 的结果到不了任何格式化算违规：裸调用（包括以别名导入后裸调用），或赋给的变量与解构出的名字在组件里都没有用到；
-   - 模块顶层在导入时格式化数字算违规。
+   - `useNumberFormat()` 的结果没有被用到算违规：裸调用（包括以别名导入后裸调用），或赋给的变量与解构出的名字在其作用域里没有被引用。引用按绑定判断，同名的内层参数不算；只出现在 `void` 或单独的表达式语句里也不算。这检查的是引用，不是格式化数据流；
+   - 模块顶层在导入时调用格式化函数算违规；只保存函数引用不算，但引用这个别名的组件仍会被拦下。
 
    组件按名称识别（大写开头或 `use` 后接大写或数字，`memo`/`forwardRef` 包装按变量名）。另外两类也算组件：`.tsx` 里匿名的默认导出函数，以及传给路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数。附 24 个正反样例（19 个应报出、5 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
 
@@ -53,11 +53,12 @@
 - 没有经 `lib/format.ts` 的数字显示不受本决策约束，也不跟随设置，固定输出 `,` 分组与 `.` 小数点（或 `toFixed` 的 `.`）。2026-10-02 的审查与排查确认了这些：
   - 质押金额与比例（`formatStakingAmount`、`formatStakingRatio`）；
   - 金库精确金额（`groupDecimal`）；
-  - 跨链成功页金额（`formatTokenAmount`）；
+  - 跨链各屏金额（`lib/bridge/format.ts` 的 `formatTokenBalance`、`formatSendAmount`、`formatTokenAmount`）；
   - 手机行情条的 24h 涨跌额与涨跌幅（`formatSignedFixed`、`formatSignedPercent`）；
   - 手机下单页的涨跌幅；
   - 下单费率（`formatOrderFeeRatePercent`，与换算后的金额同在一串里，德式格式下显示为 `0.0450% ($1,23)`）；
-  - TP/SL 风险收益比（`lib/trade/tpsl.ts`）。
+  - TP/SL 风险收益比（`lib/trade/tpsl.ts`）；
+  - 订单簿价格分组标签（`formatTickSize`）。
 
   全仓库还有约 119 处 `toFixed`，多数用于协议值或计算，没有逐处分类。登记为后续。
 - 日期是同一类问题：`formatDateTime` 等函数不传 `locale` 时读全局语言。本次修复了编译产物确认的 15 处，规则写入[运行时多语言](../i18n-presentation.md)，尚无契约，登记为后续。

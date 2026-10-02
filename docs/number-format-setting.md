@@ -17,7 +17,7 @@
    - 每次设置变化，`useNumberFormat()` 返回一个新对象和新的函数身份，React Compiler 缓存的格式化结果因此重算。只裸调用订阅、让组件重渲染并不够：编译器按参数缓存 `formatNumber(x)`，重渲染仍返回旧字符串（2026-10-02 取证）。函数被调用时仍读当前设置。
    - 渲染期调用的展示 helper 接收 `NumberFormatters` 参数（如 `buildOrderConfirmationRows(draft, numberFormat, translate)`、`formatAccountLedgerAmount(row, numberFormat)`），不导入模块级函数。单元测试等渲染之外的调用方传 `getNumberFormatters()`。
    - 在别处创建、由组件渲染的回调，由渲染它的组件把格式化函数传进去（`EarnOutcomeToastContent` 的 `render(translate, numberFormat)`）。用到格式化函数的 effect 把它列入依赖（标签页标题）。
-   - `number-format-reactivity-contract` 用源码级规则检查：组件与 Hook 里不引用模块级格式化函数、经它们格式化的模块级 helper 或读取函数（跟随具名、默认、命名空间导入与各种再导出）；`useNumberFormat()` 的结果必须被用到；模块顶层不在导入时格式化数字。在别处创建、经 props 或元素传入的闭包，以及类组件、其他包装函数、计算属性名访问，契约看不到。
+   - `number-format-reactivity-contract` 用源码级规则检查：组件与 Hook 里不引用模块级格式化函数、经它们格式化的模块级 helper 或读取函数（跟随具名、默认、命名空间导入与各种再导出）；`useNumberFormat()` 的结果必须被用到（按绑定判断，只出现在 `void` 或单独的表达式语句里不算）；模块顶层不在导入时调用格式化函数（只保存函数引用不算，但引用它的组件仍会被拦下）。在别处创建、经 props 或元素传入的闭包，以及类组件、其他包装函数、计算属性名访问，契约看不到。
 
 ## 选项与存储
 
@@ -45,11 +45,12 @@
 - 不经 `lib/format.ts` 的数字显示不跟随设置，固定输出 `,` 分组与 `.` 小数点（或 `toFixed` 的 `.`）：
   - 质押页金额与比例（`components/staking/domain/staking.ts` 的 `formatStakingAmount`、`formatStakingRatio`）；
   - 金库精确金额（`components/vaults/domain/vaults.ts` 的 `groupDecimal`）；
-  - 跨链成功页的到账金额（`lib/bridge/format.ts` 的 `formatTokenAmount`）；
+  - 跨链各屏的金额（`lib/bridge/format.ts`）：资产选择页余额（`formatTokenBalance`）、确认页的发送与到账数量（`formatSendAmount`、`formatTokenAmount`）、成功页到账金额（`formatTokenAmount`）；
   - 手机行情条的 24h 涨跌额与涨跌幅（`mobile-market-bar.tsx` 的 `formatSignedFixed`、`formatSignedPercent`）；
   - 手机下单页的涨跌幅（`mobile-trade-view.tsx`）；
   - 下单费率（`domain/trade/order-fee-quote.ts` 的 `formatOrderFeeRatePercent`）。它与换算后的金额同在一串里，`1.234,56` 格式下显示为 `0.0450% ($1,23)`；
-  - TP/SL 风险收益比（`lib/trade/tpsl.ts`）。
+  - TP/SL 风险收益比（`lib/trade/tpsl.ts`）；
+  - 订单簿价格分组标签（`lib/trade/orderbook.ts` 的 `formatTickSize`，如 `0.01`）。它同时用作分组选项的显示，改造时要保持选项值与订阅参数不变。
 
   前三类为精确十进制显示而手写格式，改造需要决定精度规则。仓库里其余 `toFixed` 多数用于协议值，没有逐处分类。
 - 资金类提示（划转、发送、提现、金库）在弹出时把金额格式化成字符串，已显示的提示不随设置变化，与这些提示在弹出时按当前语言生成文案一致。

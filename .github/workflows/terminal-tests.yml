@@ -269,6 +269,10 @@ jobs:
           src/lib/tests/orderbook-row-tooltip.test.tsx
           src/lib/tests/use-tradingview-overlay-lines.test.tsx
           src/lib/tests/funds-action-recovery-host.test.tsx
+          src/lib/tests/historical-orders-page.test.tsx
+          src/lib/tests/trade-history-page.test.tsx
+          src/lib/tests/position-close-all-submit.test.tsx
+          src/lib/tests/trade-form-fields-order-entry-data.test.tsx
 
       - name: Test Deposit, CCTP, routing, and geo guards
         working-directory: apps/terminal

@@ -6,6 +6,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ReferralClaimHistory } from "@/components/referrals/referral-claim-history";
 import { ReferralLegacyHistory } from "@/components/referrals/referral-legacy-history";
+import { ReferredTraders } from "@/components/referrals/referred-traders";
 import { formatDateTime } from "@/lib/format";
 import type { ReferralRewardHistoryItem } from "@/lib/trade/referral";
 import { createI18nRoot } from "./harness/react";
@@ -52,6 +53,24 @@ describe("referral history dates", () => {
 			() => (
 				<ReferralLegacyHistory
 					rows={[{ earned: "12.5", referralVlm: "1000", time: LOCAL_TIME } as unknown as ReferralRewardHistoryItem]}
+				/>
+			),
+		],
+		[
+			"referred traders",
+			() => (
+				<ReferredTraders
+					traders={[
+						{
+							cumFeesRewardedToReferrer: "2",
+							cumRewardedFeesSinceReferred: "1",
+							cumVlm: "1000",
+							timeJoined: LOCAL_TIME,
+							tokenToState: [],
+							user: `0x${"b".repeat(40)}`,
+						},
+					]}
+					tokenMetadata={null}
 				/>
 			),
 		],
