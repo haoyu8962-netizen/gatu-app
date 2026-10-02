@@ -1,4 +1,3 @@
-import { Button, Dropdown } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	ArrowClockwiseIcon,
@@ -8,6 +7,7 @@ import {
 	SpinnerGapIcon,
 	WalletIcon,
 } from "@phosphor-icons/react";
+import { Button, Dropdown } from "@sairn/ui";
 import { Suspense, useState } from "react";
 import { useEnsName } from "wagmi";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";

@@ -29,7 +29,7 @@ const mocks = vi.hoisted(() => ({
 	toastSuccess: vi.fn(),
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Modal: ({ children, open }: { children: ReactNode; open: boolean }) =>
 		createElement("div", { "data-testid": "modal", "data-open": String(open) }, open ? children : null),
 	ModalPopup: ({

@@ -21,7 +21,7 @@ const drawerState = vi.hoisted(() => ({
 	preloadGlobalModal: vi.fn(async (): Promise<void> => undefined),
 }));
 
-vi.mock("@gatu/ui", () => {
+vi.mock("@sairn/ui", () => {
 	function Button({
 		children,
 		onClick,
@@ -195,7 +195,7 @@ describe("MobileNavDrawer navigation with the real router", () => {
 		expect(navigate).toHaveBeenCalledTimes(1);
 	});
 
-	it.each(["Trade", "GATU"])("preserves scope search through the %s link", async (label) => {
+	it.each(["Trade", "Sairn"])("preserves scope search through the %s link", async (label) => {
 		await mount();
 		expect(link(label).getAttribute("href")).toBe("/trade/HYPE?scope=all");
 		await act(async () => link(label).click());

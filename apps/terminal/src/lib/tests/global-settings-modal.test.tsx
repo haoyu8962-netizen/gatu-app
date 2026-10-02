@@ -48,7 +48,7 @@ vi.mock("@/hooks/wallet/use-email-wallet-export", () => ({
 	}),
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
 		createElement("button", { type: "button", ...props }, children),
 	Modal: (props: { children: ReactNode } & Record<string, unknown>) => {

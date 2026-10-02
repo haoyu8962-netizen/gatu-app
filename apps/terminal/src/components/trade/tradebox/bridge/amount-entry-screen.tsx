@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import Big from "big.js";
 import { useState } from "react";
 import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";

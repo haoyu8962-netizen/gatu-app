@@ -11,40 +11,37 @@ describe("brand semantics contract", () => {
 	it("defines the terminal action, signal, and focus roles in both themes", () => {
 		expect(readCssVariable(TERMINAL_STYLES, ":root", "--action")).toBe("#15171e");
 		expect(readCssVariable(TERMINAL_STYLES, ":root", "--on-action")).toBe("#ffffff");
-		expect(readCssVariable(TERMINAL_STYLES, ":root", "--signal")).toBe("#667311");
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--signal")).toBe("#176b64");
 		expect(readCssVariable(TERMINAL_STYLES, ":root", "--focus")).toBe("var(--signal)");
 		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--action")).toBe("#edeef2");
 		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--on-action")).toBe("#08090d");
-		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--signal")).toBe("#d7ff3f");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--signal")).toBe("#86e5d3");
 		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--focus")).toBe("var(--signal)");
 	});
 
 	it("keeps logo roles theme-aware and chart accent independent from the brand roles", () => {
-		expect(readCssVariable(TERMINAL_STYLES, ":root", "--logo-ink")).toBe("#15171e");
-		expect(readCssVariable(TERMINAL_STYLES, ":root", "--logo-node")).toBe("#15171e");
-		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--logo-ink")).toBe("#edeef2");
-		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--logo-node")).toBe("#d7ff3f");
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--logo-signal")).toBe("#176b64");
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--logo-choice")).toBe("#99621f");
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--logo-wordmark")).toBe("#08262e");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--logo-signal")).toBe("#86e5d3");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--logo-choice")).toBe("#e6b766");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--logo-wordmark")).toBe("#ffffff");
 		expect(readCssVariable(TERMINAL_STYLES, ":root", "--chart-accent")).toBe("#4c64d9");
 		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--chart-accent")).toBe("#b2bcf1");
 		expect(CHART_THEME_COLORS).toContain('getCssVar("--chart-accent")');
 		expect(CHART_THEME_COLORS).not.toContain('getCssVar("--fill-brand-strong")');
 	});
 
-	it("keeps the orbit loader tokenized and replaces motion with the complete static mark", () => {
-		expect(TERMINAL_STYLES).toContain("animation: gatu-orbit-loader 1.5s linear infinite;");
-		expect(TERMINAL_STYLES).toContain("stroke-dashoffset: -100;");
+	it("breathes the two loader panels in turn and keeps the darkest frame at the kit's contrast floor", () => {
+		expect(TERMINAL_STYLES).toContain("animation: brand-page-loader-breathe 2000ms ease-in-out infinite;");
+		expect(TERMINAL_STYLES).toContain("animation: brand-page-loader-breathe 2000ms -1000ms ease-in-out infinite;");
+		expect(TERMINAL_STYLES).toContain("opacity: var(--logo-loader-floor, 0.55);");
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--logo-loader-floor")).toBe("0.78");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--logo-loader-floor")).toBe("0.55");
 		expect(TERMINAL_STYLES).toContain(`@media (prefers-reduced-motion: reduce) {
-    .gatu-orbit-loader__track {
-      opacity: 1;
-    }
-
-    .gatu-orbit-loader__segment {
+    .brand-page-loader__signal,
+    .brand-page-loader__choice {
       animation: none;
-      opacity: 0;
-    }
-
-    .gatu-orbit-loader__static-node {
-      opacity: 1;
     }
   }`);
 	});

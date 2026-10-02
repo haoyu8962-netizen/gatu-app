@@ -1,12 +1,12 @@
-# Gatu - Terms of Use
+# Sairn - Terms of Use
 
-**Last Updated:** July 20, 2026
+**Last Updated:** October 1, 2026
 
-These Terms of Use ("Terms") govern your access to and use of the Gatu website-hosted
-trading interface available at [https://app.gatu.ai](https://app.gatu.ai), together with
-the related features, software, and services that Gatu makes available through that
+These Terms of Use ("Terms") govern your access to and use of the Sairn website-hosted
+trading interface available at [https://app.sairn.ai](https://app.sairn.ai), together with
+the related features, software, and services that Sairn makes available through that
 interface (collectively, the "Interface"). These Terms form an agreement between you and
-Gatu Corp. ("Gatu," the "Company," "we," "us," or "our").
+Sairn Corp. ("Sairn," the "Company," "we," "us," or "our").
 
 Please read these Terms carefully. By visiting or using the Interface, creating or
 accessing an embedded wallet, connecting a wallet, accepting an in-product notice, or
@@ -19,7 +19,7 @@ to these Terms. If you do not agree, do not use the Interface.
 
 The Interface is software that helps users view public blockchain information and prepare,
 sign, and transmit instructions to Hyperliquid and other supported blockchain systems. It
-is only one way to interact with those systems. Gatu is an independent interface provider
+is only one way to interact with those systems. Sairn is an independent interface provider
 and is not Hyperliquid Corp., the Hyper Foundation, a validator, or a third-party market
 deployer.
 
@@ -27,15 +27,15 @@ deployer.
 
 Orders, transfers, deposits, withdrawals, liquidations, and other transactions are
 processed by the relevant blockchain, protocol, smart contract, validator set, bridge, or
-third-party service. Gatu does not control consensus, block production, order matching,
+third-party service. Sairn does not control consensus, block production, order matching,
 settlement, protocol governance, market parameters, oracle values, or the continued
 operation of any supported network. We cannot cancel, reverse, or amend a transaction after
 it has been accepted by the relevant system.
 
 ### 1.3. No Brokerage, Exchange, or Custody Service
 
-Gatu does not act as your broker, dealer, investment adviser, clearing agency, exchange,
-bank, money transmitter, fiduciary, or custodian merely because you use the Interface. Gatu
+Sairn does not act as your broker, dealer, investment adviser, clearing agency, exchange,
+bank, money transmitter, fiduciary, or custodian merely because you use the Interface. Sairn
 is not a counterparty to transactions entered through the Interface and does not guarantee
 execution, settlement, liquidity, best price, or best execution.
 
@@ -45,7 +45,7 @@ The Interface may display markets created under permissionless deployment mechan
 including HIP-3 builder-deployed perpetual markets. Such markets are operated or configured
 by independent deployers. Their inclusion may be based on public metadata, onchain activity,
 technical compatibility, or other neutral criteria. Unless expressly stated otherwise,
-Gatu has not audited, approved, endorsed, or verified a market, deployer, token, oracle, or
+Sairn has not audited, approved, endorsed, or verified a market, deployer, token, oracle, or
 related documentation. You must independently evaluate each market before trading.
 
 ### 1.5. Wallets and Signing Methods
@@ -58,7 +58,7 @@ after the relevant master wallet has approved that authorization.
 Wallet providers, key-management providers, paymasters, and signing services are third
 parties and may impose separate terms. You are responsible for protecting every device,
 credential, recovery method, wallet, session, and signing authorization associated with
-your use of the Interface. Gatu does not receive your seed phrase through ordinary use and
+your use of the Interface. Sairn does not receive your seed phrase through ordinary use and
 cannot guarantee that a lost wallet, credential, local Agent key, or asset can be recovered.
 Disconnecting a wallet from the Interface does not necessarily revoke authorizations that
 exist onchain or within a third-party service.
@@ -69,7 +69,7 @@ The Interface depends on or may link to third-party software and services, inclu
 providers, RPC services, bridges, paymasters, indexers, data providers, charting software,
 oracles, cloud infrastructure, and block explorers. Their services may be unavailable,
 delayed, inaccurate, compromised, or changed without notice. Your use of them may be
-governed by separate agreements. Gatu is not responsible for third-party services or
+governed by separate agreements. Sairn is not responsible for third-party services or
 content.
 
 ### 1.7. Regulatory Status
@@ -93,10 +93,10 @@ The Interface is not intended for, and may not be used by, a "Restricted Person.
 Restricted Person includes:
 
 - a person or entity residing, located, incorporated, registered, or principally operating in the United States of America, the People's Republic of China, or the Province of Ontario, Canada;
-- a person or entity in a jurisdiction subject to comprehensive sanctions, embargoes, or export restrictions administered by the United States, United Kingdom, European Union, United Nations, or another authority applicable to Gatu, including Crimea, Cuba, Iran, North Korea, Syria, Myanmar, Donetsk, and Luhansk;
+- a person or entity in a jurisdiction subject to comprehensive sanctions, embargoes, or export restrictions administered by the United States, United Kingdom, European Union, United Nations, or another authority applicable to Sairn, including Crimea, Cuba, Iran, North Korea, Syria, Myanmar, Donetsk, and Luhansk;
 - a citizen of a comprehensively restricted territory where applicable restrictions follow that person regardless of current location;
 - a person or entity named on, owned by, or controlled by a person on an applicable sanctions or restricted-party list; or
-- a person or entity in another location that Gatu identifies as restricted because access would be unlawful, would require an authorization that has not been obtained, or would expose Gatu or another service provider to unacceptable legal or compliance risk.
+- a person or entity in another location that Sairn identifies as restricted because access would be unlawful, would require an authorization that has not been obtained, or would expose Sairn or another service provider to unacceptable legal or compliance risk.
 
 ### 2.3. No Evasion
 
@@ -125,7 +125,7 @@ way that violates law, these Terms, or a restriction applicable to that person.
 ### 3.1. As-Is Availability
 
 To the fullest extent allowed by law, the Interface is supplied "as is" and "as available."
-Gatu disclaims express, implied, and statutory warranties, including warranties of title,
+Sairn disclaims express, implied, and statutory warranties, including warranties of title,
 merchantability, fitness for a particular purpose, non-infringement, accuracy, security,
 availability, and uninterrupted operation. We do not promise that defects will be corrected
 or that displayed information will always be complete, current, or free from error.
@@ -168,7 +168,7 @@ and recovery methods associated with your account.
 Third-party deployed markets may have limited liquidity, incomplete or inaccurate
 documentation, concentrated control, unusual oracle or settlement design, higher volatility,
 or a greater risk of liquidation and discontinuation. A disclaimer, category label, deployer
-link, or other notice does not constitute due diligence or endorsement by Gatu.
+link, or other notice does not constitute due diligence or endorsement by Sairn.
 
 ### 3.7. Regulatory and Tax Risk
 
@@ -195,7 +195,7 @@ the Interface:
 
 We may restrict Interface access, preserve relevant records, or cooperate with lawful
 requests when we reasonably believe prohibited activity has occurred. This does not imply
-that Gatu monitors or controls all onchain activity.
+that Sairn monitors or controls all onchain activity.
 
 ## 5. No Professional Advice
 
@@ -216,7 +216,7 @@ professionals when necessary.
 ### 5.3. No Advisory or Fiduciary Relationship
 
 Use of the Interface does not create an advisory, agency, partnership, fiduciary, or client
-relationship between you and Gatu. Gatu has no duty to monitor your positions, warn you of a
+relationship between you and Sairn. Sairn has no duty to monitor your positions, warn you of a
 market event, update information, or determine whether a transaction is suitable for you.
 
 ## 6. Fees and Transactions
@@ -231,7 +231,7 @@ can change. You are responsible for reviewing and paying all applicable amounts.
 ### 6.2. Transaction Instructions
 
 You are responsible for all instructions signed by or submitted through your wallet,
-embedded wallet, smart wallet, approved Agent wallet, or active session. Gatu may display an
+embedded wallet, smart wallet, approved Agent wallet, or active session. Sairn may display an
 estimate or preview, but the signed payload and authoritative onchain or protocol state
 control. Network conditions, slippage, partial fills, rejected orders, and intervening state
 changes can cause the final result to differ from an estimate.
@@ -239,7 +239,7 @@ changes can cause the final result to differ from an estimate.
 ### 6.3. Irreversibility and Recovery
 
 Transactions accepted by a blockchain or decentralized protocol are generally irreversible.
-Gatu does not have unilateral authority to retrieve assets, reverse fills, restore a wallet,
+Sairn does not have unilateral authority to retrieve assets, reverse fills, restore a wallet,
 change a liquidation, or resolve a dispute between protocol participants.
 
 ## 7. Interface Availability and Third-Party Dependencies
@@ -248,7 +248,7 @@ change a liquidation, or resolve a dispute between protocol participants.
 
 The Interface may be slow, unavailable, inaccurate, or interrupted because of maintenance,
 software defects, heavy traffic, device limitations, internet failure, blockchain events,
-third-party outages, security incidents, or circumstances outside Gatu's control. We do not
+third-party outages, security incidents, or circumstances outside Sairn's control. We do not
 promise continuous operation or preservation of local settings, cached data, chart layouts,
 or locally stored Agent credentials.
 
@@ -262,13 +262,13 @@ does not alter transactions already submitted to an underlying protocol.
 ### 7.3. Third-Party Links and Materials
 
 Links to deployer documentation, explorers, support resources, or other websites are
-provided for convenience. Gatu does not control their contents and does not guarantee their
+provided for convenience. Sairn does not control their contents and does not guarantee their
 accuracy, legality, security, or continued availability. Accessing a third-party resource is
 at your own risk.
 
 ## 8. Programs and Promotions
 
-Gatu may offer promotions, rewards, referrals, competitions, testing programs, or other
+Sairn may offer promotions, rewards, referrals, competitions, testing programs, or other
 optional initiatives (each, a "Program"). A Program may have additional eligibility rules
 and terms. Those additional terms govern the Program if they conflict with these Terms.
 
@@ -287,8 +287,8 @@ revision, stop using the Interface.
 
 ## 10. Intellectual Property and Feedback
 
-Gatu and its licensors retain their rights in the Interface, software, branding, and
-original content. Subject to these Terms, Gatu grants you a limited, personal, revocable,
+Sairn and its licensors retain their rights in the Interface, software, branding, and
+original content. Subject to these Terms, Sairn grants you a limited, personal, revocable,
 non-exclusive, non-transferable, and non-sublicensable right to use the Interface for its
 intended purpose.
 
@@ -298,23 +298,23 @@ permits it. Open-source components remain subject to their respective licenses. 
 wallet-provider, deployer, token, and third-party names and marks belong to their respective
 owners.
 
-If you provide feedback, you grant Gatu a worldwide, perpetual, irrevocable, transferable,
+If you provide feedback, you grant Sairn a worldwide, perpetual, irrevocable, transferable,
 sublicensable, royalty-free right to use it without restriction or compensation. Send
-intellectual-property notices to [support@gatu.ai](mailto:support@gatu.ai).
+intellectual-property notices to [support@sairn.ai](mailto:support@sairn.ai).
 
 ## 11. Release and Indemnity
 
 ### 11.1. Release
 
 To the fullest extent permitted by law, you assume the risks connected with the Interface
-and release Gatu and its officers, directors, employees, contractors, agents, affiliates,
+and release Sairn and its officers, directors, employees, contractors, agents, affiliates,
 and service providers from claims arising from your voluntary interaction with supported
 blockchains, protocols, wallets, markets, deployers, and third-party services, except to the
 extent a claim cannot lawfully be released.
 
 ### 11.2. Indemnity
 
-You agree to defend, indemnify, and hold harmless Gatu and its officers, directors,
+You agree to defend, indemnify, and hold harmless Sairn and its officers, directors,
 employees, contractors, agents, affiliates, and subsidiaries from claims, proceedings,
 damages, losses, liabilities, penalties, and reasonable legal costs resulting from:
 
@@ -324,25 +324,25 @@ damages, losses, liabilities, penalties, and reasonable legal costs resulting fr
 - prohibited or unlawful activity by you; or
 - a false or misleading statement made by you in connection with the Interface.
 
-You must reasonably cooperate in the defense of an indemnified matter. Gatu may control the
+You must reasonably cooperate in the defense of an indemnified matter. Sairn may control the
 defense or settlement of such a matter, and you may not settle it in a way that imposes an
-obligation on an indemnified party without Gatu's prior written approval.
+obligation on an indemnified party without Sairn's prior written approval.
 
 ## 12. Limitation of Liability
 
-To the maximum extent permitted by applicable law, Gatu and its officers, directors,
+To the maximum extent permitted by applicable law, Sairn and its officers, directors,
 employees, contractors, agents, affiliates, subsidiaries, and licensors will not be liable
 for lost profits, lost data, lost opportunity, loss of digital assets, trading loss,
 liquidation, business interruption, or any indirect, incidental, special, punitive,
 consequential, or exemplary damages arising from or related to the Interface, even if the
 possibility of such damages was known.
 
-Without limiting the preceding paragraph, Gatu is not responsible for losses caused by
+Without limiting the preceding paragraph, Sairn is not responsible for losses caused by
 incorrect or delayed data, user error, wallet compromise, unauthorized signatures,
 blockchain or validator failure, protocol or smart-contract defects, oracle or bridge
 failure, third-party conduct, regulatory action, or suspension of a feature.
 
-To the fullest extent permitted by law, the total aggregate liability of Gatu and the other
+To the fullest extent permitted by law, the total aggregate liability of Sairn and the other
 parties identified above for all claims relating to the Interface will not exceed
 **US$100**. Some jurisdictions do not permit particular warranty exclusions or liability
 limitations, so portions of this section may not apply to you.
@@ -352,16 +352,16 @@ limitations, so portions of this section may not apply to you.
 ### 13.1. Informal Resolution
 
 Before starting a formal dispute, you must send written notice to
-[support@gatu.ai](mailto:support@gatu.ai) describing your name and contact information, the
+[support@sairn.ai](mailto:support@sairn.ai) describing your name and contact information, the
 facts and basis of the dispute, and the relief requested. The parties will attempt in good
 faith to resolve the matter for 30 days after receipt.
 
 ### 13.2. Individual Arbitration
 
-Except for a matter that must be heard in an eligible small-claims court, you and Gatu agree
+Except for a matter that must be heard in an eligible small-claims court, you and Sairn agree
 that a dispute arising from these Terms or the Interface will be resolved by binding
 arbitration rather than in court. Arbitration must proceed only on an individual basis. You
-and Gatu waive participation in a class, collective, consolidated, or representative action
+and Sairn waive participation in a class, collective, consolidated, or representative action
 to the extent that waiver is permitted by law.
 
 ### 13.3. Governing Law and Procedure
@@ -383,19 +383,19 @@ stop prohibited activity where such relief is legally available.
 
 ### 14.1. Privacy
 
-Our [Privacy Policy](https://app.gatu.ai/privacy) explains how Gatu handles personal data and
+Our [Privacy Policy](https://app.sairn.ai/privacy) explains how Sairn handles personal data and
 is incorporated into these Terms by reference.
 
 ### 14.2. Entire Agreement
 
 These Terms and any additional terms expressly incorporated into them are the entire
-agreement between you and Gatu concerning the Interface and supersede prior discussions or
+agreement between you and Sairn concerning the Interface and supersede prior discussions or
 agreements about the same subject.
 
 ### 14.3. Assignment
 
-You may not transfer your rights or obligations under these Terms without Gatu's prior
-written consent. Gatu may transfer these Terms, in whole or in part, in connection with a
+You may not transfer your rights or obligations under these Terms without Sairn's prior
+written consent. Sairn may transfer these Terms, in whole or in part, in connection with a
 reorganization, financing, merger, sale, or transfer of the Interface or related business.
 
 ### 14.4. Severability
@@ -411,10 +411,10 @@ the specific instance in which it is given.
 
 ### 14.6. Notices
 
-Gatu may provide notices through the Interface, by email where available, or through other
+Sairn may provide notices through the Interface, by email where available, or through other
 reasonable public communication channels. A notice posted through the Interface is
-effective when posted. Legal notices to Gatu may be sent to
-[support@gatu.ai](mailto:support@gatu.ai).
+effective when posted. Legal notices to Sairn may be sent to
+[support@sairn.ai](mailto:support@sairn.ai).
 
 ### 14.7. Headings
 

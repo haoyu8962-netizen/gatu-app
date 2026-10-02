@@ -6,6 +6,7 @@ import { act, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FooterBar, type FooterBarMode } from "@/components/trade/footer/footer-bar";
+import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
@@ -19,7 +20,7 @@ const arabicMessages: Messages = {
 		DOCUMENTATION_AND_LEGAL_AR,
 };
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Divider: ({ className }: { className?: string }) => <hr className={className} />,
 }));
 
@@ -77,7 +78,7 @@ describe("FooterBar", () => {
 
 	function expectStatusAndLinks() {
 		expect(container.textContent).toContain("Connecting");
-		expect(container.querySelector(".animate-spin")).not.toBeNull();
+		expect(container.querySelector(LOADING_INDICATOR_SELECTOR)).not.toBeNull();
 
 		expect(
 			[...container.querySelectorAll<HTMLAnchorElement>('nav[aria-label="Documentation and legal"] a')].map((link) => [

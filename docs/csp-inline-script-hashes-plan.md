@@ -4,6 +4,7 @@
 - 目标：CloudFront 目标的主文档策略把 `script-src` 从 `'self' blob: 'unsafe-inline' https://challenges.cloudflare.com` 收紧为 `'self' https://challenges.cloudflare.com` 加预渲染页内联脚本的 SHA-256 哈希，先以 report-only 观察，再强制。图表 iframe 策略（`charting_library/`、主题样式）与 `style-src` 不在本步范围。
 - 执行后：ADR 0007 记录最终决策，本文只保留计划与执行时的偏差。
 - 更正（2026-09-27）：下文“6 个文档页”是 2026-09-14 构建的现状。[ADR 0020](adr/0020-legal-pages-in-app-shell.md) 起构建只预渲染 `_shell.html`（另有无脚本的 `404.html`），哈希收集与发布核对的逻辑不变。
+- 更正（2026-10-01）：主题引导脚本移到 `apps/terminal/src/lib/theme-color.ts`，并同时写 `<meta name="theme-color">`（`docs/runtime-guardrails.md` §8），下文的 264 B 与它的哈希随之改变；仍是 1 个哈希、只随源码变化，收集与发布核对的逻辑不变。
 
 ## 现状（2026-09-14，构建 `fc0fc240` / `cloudfront-2026-09-14-p7` 的产物）
 
@@ -67,7 +68,7 @@
 
 ## 执行时的验证
 
-- `pnpm test:cloudfront`、新脚本测试、`pnpm --filter @gatu/terminal typecheck`、`pnpm check`，涉及 `security-headers.ts` 的 vitest 用例。
+- `pnpm test:cloudfront`、新脚本测试、`pnpm --filter @sairn/terminal typecheck`、`pnpm check`，涉及 `security-headers.ts` 的 vitest 用例。
 - B 阶段：发布后 Playwright 全新上下文跑覆盖清单，`securitypolicyviolation` 事件中 `disposition: report` 且 `effectiveDirective: script-src` 的只能是 `eval`；CloudWatch 同样只见 `eval`。
 - C 阶段：`verify` 主网、测试网全绿；Playwright 复跑覆盖清单，页面功能正常，无 `disposition: enforce` 的 `script-src` 报告（`eval` 除外）；`get-function` 显示 CURRENT/PREVIOUS 两组哈希。
 

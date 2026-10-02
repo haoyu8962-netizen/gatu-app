@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { useLegalStatusLifecycle } from "@gatu/hl-react";
+import { useLegalStatusLifecycle } from "@sairn/hl-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";

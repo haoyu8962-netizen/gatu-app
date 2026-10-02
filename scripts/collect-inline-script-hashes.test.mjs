@@ -23,7 +23,7 @@ function expectedHash(text) {
 }
 
 function createPublicDir() {
-	const dir = mkdtempSync(join(tmpdir(), "gatu-inline-hashes-"));
+	const dir = mkdtempSync(join(tmpdir(), "sairn-inline-hashes-"));
 	writeFileSync(join(dir, "_shell.html"), SHELL);
 	writeFileSync(join(dir, "404.html"), "<html><body>missing</body></html>");
 	for (const route of ["docs", "terms"]) {

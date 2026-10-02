@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { GatuOrbitLoader } from "@/components/brand/gatu-orbit-loader";
+import { BrandPageLoader } from "@/components/brand/brand-page-loader";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { defaultNumberFormatLocale, type NumberFormatLocale, numberSeparatorsByFormatLocale } from "@/config/i18n";
 import { getCandleGateRetryAt, subscribeCandleGate } from "@/lib/chart/candle-gate";
@@ -1612,9 +1612,12 @@ export function TradingViewChart({
 					className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center text-fg-muted"
 				>
 					{hasCompletedInitialWidgetLoadRef.current ? (
-						<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-signal motion-reduce:animate-none" />
+						<SpinnerGapIcon
+							aria-hidden="true"
+							className="size-4 animate-spin text-fg-muted motion-reduce:animate-none"
+						/>
 					) : (
-						<GatuOrbitLoader className="size-9 shrink-0" />
+						<BrandPageLoader className="size-12 shrink-0" />
 					)}
 					<span className="sr-only">{t`Loading...`}</span>
 				</output>
@@ -1631,7 +1634,10 @@ export function TradingViewChart({
 					)}
 				>
 					{(historyRateLimit?.phase === "recovering" || !hasLoadedHistoryRef.current) && (
-						<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-signal motion-reduce:animate-none" />
+						<SpinnerGapIcon
+							aria-hidden="true"
+							className="size-4 animate-spin text-fg-muted motion-reduce:animate-none"
+						/>
 					)}
 					{t`Live chart data is rate limited. Retrying shortly.`}
 				</output>

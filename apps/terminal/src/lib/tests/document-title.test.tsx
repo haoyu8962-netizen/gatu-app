@@ -62,11 +62,11 @@ describe("market document title ownership", () => {
 		act(() => root.render(null));
 	}
 
-	it.each(["Terms of Service | GATU", "Privacy Policy | GATU"])(
+	it.each(["Terms of Service | Sairn", "Privacy Policy | Sairn"])(
 		"preserves the destination title %s when its head updates before the trading effect cleans up",
 		(title) => {
 			renderTitle();
-			expect(document.title).toBe("61.12 HYPE/USDC · GATU");
+			expect(document.title).toBe("61.12 HYPE/USDC · Sairn");
 			document.title = title;
 			removeTitle();
 			expect(document.title).toBe(title);
@@ -82,18 +82,18 @@ describe("market document title ownership", () => {
 	it.each(["price", "pair"])("does not change another title when no %s was available to publish", (missing) => {
 		if (missing === "price") runtime.perpPrice = undefined;
 		else runtime.market.pairName = undefined;
-		document.title = "Terms of Service | GATU";
+		document.title = "Terms of Service | Sairn";
 		renderTitle();
-		expect(document.title).toBe("Terms of Service | GATU");
+		expect(document.title).toBe("Terms of Service | Sairn");
 		removeTitle();
-		expect(document.title).toBe("Terms of Service | GATU");
+		expect(document.title).toBe("Terms of Service | Sairn");
 	});
 
 	it("updates the market title and tracks ownership of the latest price", () => {
 		renderTitle();
 		runtime.perpPrice = "63.45";
 		renderTitle();
-		expect(document.title).toBe("63.45 HYPE/USDC · GATU");
+		expect(document.title).toBe("63.45 HYPE/USDC · Sairn");
 		removeTitle();
 		expect(document.title).toBe(SEO_DEFAULTS.defaultTitle);
 	});
@@ -102,7 +102,7 @@ describe("market document title ownership", () => {
 		renderTitle();
 		runtime.formatLocale = "de-DE";
 		act(() => notifyNumberFormatChange());
-		expect(document.title).toBe("61,12 HYPE/USDC · GATU");
+		expect(document.title).toBe("61,12 HYPE/USDC · Sairn");
 		removeTitle();
 		expect(document.title).toBe(SEO_DEFAULTS.defaultTitle);
 	});
@@ -120,6 +120,6 @@ describe("market document title ownership", () => {
 			{ coin: "@107" },
 			{ enabled: kind === "spot", pauseWhenHidden: false },
 		);
-		expect(document.title).toBe(`${kind === "spot" ? "62.23" : "61.12"} HYPE/USDC · GATU`);
+		expect(document.title).toBe(`${kind === "spot" ? "62.23" : "61.12"} HYPE/USDC · Sairn`);
 	});
 });

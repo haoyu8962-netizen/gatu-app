@@ -178,15 +178,15 @@ describe("useReferralActions", () => {
 
 	it("sets a referral code only after fresh legal and referral checks", async () => {
 		const before = createReferralData();
-		const after = createReferralData({ referredBy: { code: "GATU", referrer: OWNER } });
+		const after = createReferralData({ referredBy: { code: "SAIRN", referrer: OWNER } });
 		const refetchReferral = vi.fn().mockResolvedValueOnce(before).mockResolvedValueOnce(after);
 		const hook = renderHook(refetchReferral);
 
 		await act(async () => {
-			await expect(hook.submit("apply", "GATU")).resolves.toBeUndefined();
+			await expect(hook.submit("apply", "SAIRN")).resolves.toBeUndefined();
 		});
 
-		expect(testState.setReferrer).toHaveBeenCalledExactlyOnceWith({ code: "GATU" });
+		expect(testState.setReferrer).toHaveBeenCalledExactlyOnceWith({ code: "SAIRN" });
 		expect(testState.registerReferrer).not.toHaveBeenCalled();
 		expect(testState.claimRewards).not.toHaveBeenCalled();
 		expect(testState.legalRefetch).toHaveBeenCalledOnce();
@@ -245,7 +245,7 @@ describe("useReferralActions", () => {
 		const hook = renderHook(refetchReferral);
 
 		await act(async () => {
-			await expect(hook.submit("apply", "GATU")).rejects.toThrow(
+			await expect(hook.submit("apply", "SAIRN")).rejects.toThrow(
 				"Unable to verify regional availability. This referral request was not submitted.",
 			);
 		});
@@ -260,7 +260,7 @@ describe("useReferralActions", () => {
 		let rejection: unknown;
 
 		await act(async () => {
-			rejection = await hook.submit("apply", "GATU").catch((error: unknown) => error);
+			rejection = await hook.submit("apply", "SAIRN").catch((error: unknown) => error);
 		});
 
 		const failure = classifyActionErrorOr(rejection, msg`Referral request could not be completed.`);
@@ -287,7 +287,7 @@ describe("useReferralActions", () => {
 		const hook = renderHook(refetchReferral);
 
 		await act(async () => {
-			await expect(hook.submit("apply", "GATU")).rejects.toThrow(
+			await expect(hook.submit("apply", "SAIRN")).rejects.toThrow(
 				"The regional availability check expired before signing. This referral request was not submitted.",
 			);
 		});
@@ -298,11 +298,11 @@ describe("useReferralActions", () => {
 	it("uses a monotonic local lease when the wall clock is skewed", async () => {
 		const wallClock = vi.spyOn(Date, "now").mockReturnValue(Number.MAX_SAFE_INTEGER);
 		const before = createReferralData();
-		const after = createReferralData({ referredBy: { code: "GATU", referrer: OWNER } });
+		const after = createReferralData({ referredBy: { code: "SAIRN", referrer: OWNER } });
 		const hook = renderHook(vi.fn().mockResolvedValueOnce(before).mockResolvedValueOnce(after));
 
 		await act(async () => {
-			await expect(hook.submit("apply", "GATU")).resolves.toBeUndefined();
+			await expect(hook.submit("apply", "SAIRN")).resolves.toBeUndefined();
 		});
 
 		expect(testState.setReferrer).toHaveBeenCalledOnce();
@@ -316,7 +316,7 @@ describe("useReferralActions", () => {
 			error: null,
 		});
 		const hook = renderHook(() => referral.promise);
-		const submission = hook.submit("apply", "GATU");
+		const submission = hook.submit("apply", "SAIRN");
 		const rejection = expect(submission).rejects.toThrow("Wallet or network changed");
 
 		await vi.waitFor(() => expect(testState.legalRefetch).toHaveBeenCalledOnce());
@@ -338,7 +338,7 @@ describe("useReferralActions", () => {
 	it("fails closed if the referral route unmounts before signing", async () => {
 		const referral = deferred<ReferralData>();
 		const hook = renderHook(() => referral.promise);
-		const submission = hook.submit("apply", "GATU");
+		const submission = hook.submit("apply", "SAIRN");
 		const rejection = expect(submission).rejects.toThrow("Referral request is no longer active");
 
 		await vi.waitFor(() => expect(testState.legalRefetch).toHaveBeenCalledOnce());
@@ -354,13 +354,13 @@ describe("useReferralActions", () => {
 
 	it("reconciles an ambiguous transport error before reporting success", async () => {
 		const before = createReferralData();
-		const after = createReferralData({ referredBy: { code: "GATU", referrer: OWNER } });
+		const after = createReferralData({ referredBy: { code: "SAIRN", referrer: OWNER } });
 		testState.setReferrer.mockRejectedValue(createHttpRequestError());
 		const refetchReferral = vi.fn().mockResolvedValueOnce(before).mockResolvedValueOnce(after);
 		const hook = renderHook(refetchReferral);
 
 		await act(async () => {
-			await expect(hook.submit("apply", "GATU")).resolves.toBeUndefined();
+			await expect(hook.submit("apply", "SAIRN")).resolves.toBeUndefined();
 		});
 
 		expect(testState.setReferrer).toHaveBeenCalledOnce();

@@ -1,5 +1,5 @@
-import { Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
+import { Button } from "@sairn/ui";
 import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";

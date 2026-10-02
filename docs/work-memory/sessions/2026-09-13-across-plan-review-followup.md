@@ -42,10 +42,10 @@
 | P0-2 首次账户模式 | 设计缺口成立；§3/§9 分离充值接收和交易资格，将成功 missing、既有 default、支持模式分别验收。报告“曝光完全不看模式”的范围过宽；未知/失败不能等同新账户，旧 dexAbstraction 不直接开放 |
 | P0-3 退款取回 | 具体恢复路径缺失成立；§4/§7/§9 增加显式 Privy 导出、原链 Gas、自助导入及实际取回验收。应用当前无导出入口，但 SDK 有能力；不能断言资金事实上不可取回，也不能忽略已启用 sponsored 对旧 Arbitrum 余额的作用。MFA 按实际配置，不假设所有用户已启用 |
 | P0-4 legal 语义 | 出口语义与总配额需要验证成立；§5/§6/§9 保留现有 parse/assert 和真实用户 IP 判定。`u` 的 UK 描述不足以证明字段仅依赖出口；不采纳只检查 acceptedTerms 或 5–10 分钟许可缓存，未知时失败关闭 |
-| P0-5 误存退款 | 来源适用范围差异成立；§2/§7/§9 要求 GATU 自己的权限实测或供应商答复。HL 自家十分钟、5/1 USDC 规则和通用退款时间均不是 GATU 的默认承诺 |
+| P0-5 误存退款 | 来源适用范围差异成立；§2/§7/§9 要求 Sairn 自己的权限实测或供应商答复。HL 自家十分钟、5/1 USDC 规则和通用退款时间均不是 Sairn 的默认承诺 |
 | P1-1 后端过大 | 采纳两张地址表与按需代理；§1/§4/§6–§10 移除 worker、租约、全量镜像，也不添加报告中可选的五分钟巡检。记录代价：无离线主动告警/独立完整交易档案、依赖 API 保留期；不能承诺“随时取到全部历史”。备份/旧地址/停服责任仍保留 |
 | P1-2 环境来源 | 成立；§5 采用现有 canonical Host，主网/测试域同进程隔离。Host 不是认证，反代/Origin/IP 信任仍需校验；开发 mock 使用独立环境 |
-| P1-3 native 与部署 | 成立；§8/ADR 明选 better-sqlite3，保留 Node 22.15+，核对锁定 Nitro 的 traceDeps/外置实现，要求 Linux 实际加载和备份恢复。增加持久目录权限与 ReadWritePaths；不虚称它使 ProtectSystem=full 全盘只读。首期只有 gatu unit，回滚仍须保留恢复能力 |
+| P1-3 native 与部署 | 成立；§8/ADR 明选 better-sqlite3，保留 Node 22.15+，核对锁定 Nitro 的 traceDeps/外置实现，要求 Linux 实际加载和备份恢复。增加持久目录权限与 ReadWritePaths；不虚称它使 ProtectSystem=full 全盘只读。首期只有 Sairn unit，回滚仍须保留恢复能力 |
 | P1-4 Privy 服务端 | 方法/字段适配与原 DID 隔离建议成立；§5 固定 Node SDK 方法并以锁定类型复核。报告的“强制 index-0 与客户端一致”不成立：当前代码先 primary、再唯一、再唯一 index-0，且兼容 privy-v2；服务端没有可信 primary 时不能信前端。验签本地化不能替代钱包关联查询 |
 | P1-5 Across schema | 部分成立：§2/§7 补指示性费用、秒单位、可空性、状态/过滤差异、主机和重报价。深入读取页面自带 Request Body 类型后，确认 recipient 是 string，200 返回才是 Account；200 类型的 id 明确为报障 request ID。报告这两项与当前页面不符，不保留伪缺口。费用倍率/包含项仍未明确，真实 Key 契约仍须验证 |
 | P1-6 当前部署 | 条件性采纳 §1/§3 的 sponsored 可用才展示；报告“示例和文档均为 external-only”不成立，部署文档含 both，真实运行配置本轮未读取。默认 false 不证明生产状态，不能宣称 Across 一定是唯一可用入口 |
@@ -53,7 +53,7 @@
 | P2 routeRules/CSP | §4/§8 增加所有 API 成功/错误 no-store 与 no-referrer、同源调用及导出 CSP 验收，不新增 Across 浏览器 connect-src |
 | P2 QR 复用 | §4 复用现有 qrcode/card，补充不能复用其 warning/unavailable 态展示被动获取失败 |
 | P2 reason 与资金 guards | §3/§10 同步能力原因类别及资金可用性回归，原有 CCTP guards 保持 |
-| P2 Across 查询页 | §7 提供用户主动点击的 transfers 兜底，不猜查询参数，也不把该页对 GATU 历史的可用性当作已验收 |
+| P2 Across 查询页 | §7 提供用户主动点击的 transfers 兜底，不猜查询参数，也不把该页对 Sairn 历史的可用性当作已验收 |
 | P2 当前契约同步 | §9 保留实施前先修改相关 Reference 的顺序；本轮不把 runtime-guardrails、onboarding 或 CHANGELOG 写成已支持 Across |
 | P2 README 状态 | 保留拟议/未实施标记，ADR 导航同步为两表及按需查询 |
 | P2 历史链接验证 | 原记录 122 个链接是旧版本检查；本轮另查修改文档与导航的本地路径，不冒用旧结果 |

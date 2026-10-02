@@ -163,10 +163,10 @@ describe("referral UI governance contract", () => {
 		expect(actionModal).toContain('const isReferralCodeLocked = action === "apply" && initialCode !== undefined;');
 		expect(joinRoute).toContain("remountDeps: ({ params }) => ({ code: params.code })");
 		expect(joinRoute).toContain("if (!isSafeReferralJoinCode(params.code)) throw notFound()");
-		expect(joinRoute).toContain('{ name: "gatu-route", content: "referral-join" }');
+		expect(joinRoute).toContain('{ name: "sairn-route", content: "referral-join" }');
 		expect(joinRoute).toContain("ssr: false");
 		expect(joinFallback).toContain("throw notFound()");
-		expect(viteConfig).toContain("name: 'gatu-referral-join-dev-request-guard'");
+		expect(viteConfig).toContain("name: 'sairn-referral-join-dev-request-guard'");
 		expect(viteConfig).toContain("decodeURI(pathname)");
 	});
 });

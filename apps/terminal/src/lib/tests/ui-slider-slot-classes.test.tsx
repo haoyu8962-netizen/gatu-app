@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { Slider } from "@gatu/ui";
+import { Slider } from "@sairn/ui";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";

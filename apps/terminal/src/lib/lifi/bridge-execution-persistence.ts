@@ -2,7 +2,7 @@ import type { RouteExtended } from "@lifi/sdk";
 import { isAddress } from "viem";
 import { HYPERCORE_CHAIN_ID, HYPERCORE_USDC_ADDRESS } from "@/config/contracts";
 
-export const BRIDGE_EXECUTION_STORAGE_KEY = "gatu:lifi-bridge-execution:v1";
+export const BRIDGE_EXECUTION_STORAGE_KEY = "sairn:lifi-bridge-execution:v1";
 export const BRIDGE_EXECUTION_RECOVERY_TTL_MS = 24 * 60 * 60 * 1000;
 export const BRIDGE_EXECUTION_MAX_SERIALIZED_CHARACTERS = 256 * 1024;
 

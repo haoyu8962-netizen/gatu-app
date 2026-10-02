@@ -1,4 +1,4 @@
-import { useActiveAgentOwner } from "@gatu/hl-react";
+import { useActiveAgentOwner } from "@sairn/hl-react";
 import { useState } from "react";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useHyperliquid, useInfo } from "@/lib/hyperliquid";

@@ -1,3 +1,10 @@
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
+import type {
+	TopUpIsolatedOnlyMarginParameters,
+	UpdateIsolatedMarginParameters,
+} from "@nktkas/hyperliquid/api/exchange";
+import { WarningIcon } from "@phosphor-icons/react";
 import {
 	Button,
 	ModalContent,
@@ -7,14 +14,7 @@ import {
 	ModalTitle,
 	SegmentedControlItem,
 	SegmentedControls,
-} from "@gatu/ui";
-import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
-import type {
-	TopUpIsolatedOnlyMarginParameters,
-	UpdateIsolatedMarginParameters,
-} from "@nktkas/hyperliquid/api/exchange";
-import { WarningIcon } from "@phosphor-icons/react";
+} from "@sairn/ui";
 import { useRef, useState } from "react";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";

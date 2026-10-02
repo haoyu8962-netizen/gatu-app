@@ -34,9 +34,9 @@ describe("bootstrap error page", () => {
 		const reloadButton = document.querySelector<HTMLButtonElement>("button");
 		expect(reloadButton).not.toBeNull();
 		expect(document.activeElement).toBe(reloadButton);
-		expect(reloadButton?.style.backgroundColor).toBe("rgb(215, 255, 63)");
+		expect(reloadButton?.style.backgroundColor).toBe("rgb(134, 229, 211)");
 		expect(reloadButton?.style.color).toBe("rgb(8, 9, 13)");
-		expect(getContrastRatio("#d7ff3f", "#08090d")).toBeGreaterThanOrEqual(4.5);
+		expect(getContrastRatio("#86e5d3", "#08090d")).toBeGreaterThanOrEqual(4.5);
 		reloadButton?.click();
 		reloadButton?.click();
 

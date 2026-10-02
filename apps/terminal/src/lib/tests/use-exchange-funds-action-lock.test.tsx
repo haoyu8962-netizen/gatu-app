@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import type { ExchangeParams } from "@gatu/hl-react";
-import { useExchange } from "@gatu/hl-react/hooks/useExchange";
-import { FundsActionLockTimeoutError } from "@gatu/hl-react/internal/exchange/funds-action-lock";
+import type { ExchangeParams } from "@sairn/hl-react";
+import { useExchange } from "@sairn/hl-react/hooks/useExchange";
+import { FundsActionLockTimeoutError } from "@sairn/hl-react/internal/exchange/funds-action-lock";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, useLayoutEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -44,7 +44,7 @@ const providerState = vi.hoisted(() => ({
 	executionGuard: vi.fn(),
 }));
 
-vi.mock("@gatu/hl-react/hooks/useClients", () => ({
+vi.mock("@sairn/hl-react/hooks/useClients", () => ({
 	useHyperliquidClients: () => {
 		const hookIndex = clients.hookCallCount % 3;
 		const user = hookIndex === 1 ? clients.second : clients.first;
@@ -60,7 +60,7 @@ vi.mock("@gatu/hl-react/hooks/useClients", () => ({
 	},
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		builderConfig: { b: "0x0000000000000000000000000000000000000000", f: 0 },
 		clientKey: OWNER,

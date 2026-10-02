@@ -13,9 +13,9 @@ describe("QR classification", () => {
 		});
 	});
 
-	it("classifies gatu phone-access links", () => {
-		const origin = "https://app.gatu.test";
-		const url = `${origin}/mobile-agent-sync#ht-mobile-sync=payload`;
+	it("classifies sairn phone-access links", () => {
+		const origin = "https://app.sairn.test";
+		const url = `${origin}/mobile-agent-sync#sairn-mobile-sync=payload`;
 		expect(classifyQrValue(url, origin)).toEqual({
 			type: "phoneAccessLink",
 			url,
@@ -23,10 +23,10 @@ describe("QR classification", () => {
 	});
 
 	it("rejects cross-origin, wrong-path, and incomplete phone-access links", () => {
-		const origin = "https://app.gatu.test";
+		const origin = "https://app.sairn.test";
 		for (const value of [
-			"https://evil.example/mobile-agent-sync#ht-mobile-sync=payload",
-			`${origin}/trade#ht-mobile-sync=payload`,
+			"https://evil.example/mobile-agent-sync#sairn-mobile-sync=payload",
+			`${origin}/trade#sairn-mobile-sync=payload`,
 			`${origin}/mobile-agent-sync#other=payload`,
 		]) {
 			expect(classifyQrValue(value, origin)).toEqual({
@@ -36,7 +36,7 @@ describe("QR classification", () => {
 	});
 
 	it("rejects an official-style same-origin ?link= query without decoding it", () => {
-		const origin = "https://app.gatu.test";
+		const origin = "https://app.sairn.test";
 		const decode = vi.spyOn(globalThis, "atob");
 		const link = Buffer.from(JSON.stringify({ address: "0x1111", key: "0xsecret" })).toString("base64");
 

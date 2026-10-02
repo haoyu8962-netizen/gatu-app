@@ -1,4 +1,4 @@
-import { invalidateAllExchangeRequestIdentities } from "@gatu/hl-react/internal/exchange/request-scheduler";
+import { invalidateAllExchangeRequestIdentities } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { useRouter } from "@tanstack/react-router";
 import { useLayoutEffect } from "react";

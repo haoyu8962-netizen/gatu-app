@@ -1,4 +1,5 @@
 import { Activity, Suspense } from "react";
+import { BRAND_NAME } from "@/config/brand";
 import { useHasBeenActive } from "@/hooks/ui/use-has-been-active";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -42,7 +43,7 @@ export function MobileTerminal({ className, marketReady = true, orderEntryDraftR
 				<Suspense
 					fallback={
 						<MobileWorkspaceView busy>
-							<output className="sr-only">Loading GATU...</output>
+							<output className="sr-only">{`Loading ${BRAND_NAME}...`}</output>
 						</MobileWorkspaceView>
 					}
 				>
@@ -99,7 +100,7 @@ export function MobileTerminal({ className, marketReady = true, orderEntryDraftR
 						</MobileMarketBarProvider>
 					) : (
 						<MobileWorkspaceView busy>
-							<output className="sr-only">Loading GATU...</output>
+							<output className="sr-only">{`Loading ${BRAND_NAME}...`}</output>
 						</MobileWorkspaceView>
 					)}
 				</Suspense>

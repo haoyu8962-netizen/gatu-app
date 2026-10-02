@@ -85,8 +85,8 @@ const outcomeOrder = {
 	oid: 43,
 } as OpenOrder;
 
-vi.mock("@gatu/ui", async () => {
-	const actual = await vi.importActual<typeof import("@gatu/ui")>("@gatu/ui");
+vi.mock("@sairn/ui", async () => {
+	const actual = await vi.importActual<typeof import("@sairn/ui")>("@sairn/ui");
 	return {
 		...actual,
 		Select: ({

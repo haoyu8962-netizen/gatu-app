@@ -59,7 +59,7 @@
 ### 4. 持仓 TP/SL 大额滑点提示
 
 - 官方：持仓 TP/SL 弹窗加载 `maxMarketOrderNtls`，按持仓当前杠杆选出分档上限，持仓价值超过时显示滑点警告；不影响提交。
-- 方案：领域函数按「不高于当前杠杆的最高档」取上限并用 Big.js 严格比较；分档表格式异常时整表视为不可用、不提示；提示为语义 warning 块，放在数量滑杆下方、确认按钮上方；文案不照搬官方「分多个触发价下多笔部分 TP/SL」的建议（与 gatu 的单一 TP/SL 模型冲突）。与协议规格按资产最大杠杆分档的差异写入归属文档。
+- 方案：领域函数按「不高于当前杠杆的最高档」取上限并用 Big.js 严格比较；分档表格式异常时整表视为不可用、不提示；提示为语义 warning 块，放在数量滑杆下方、确认按钮上方；文案不照搬官方「分多个触发价下多笔部分 TP/SL」的建议（与 Sairn 的单一 TP/SL 模型冲突）。与协议规格按资产最大杠杆分档的差异写入归属文档。
 
 ### 5. TWAP 成交 CSV 导出
 
@@ -121,7 +121,7 @@
 ### 验证（集成头，2026-09-28）
 
 - `pnpm typecheck`（hl-react、ui、terminal）：通过。`pnpm exec biome check`（本批 105 个 TS/TSX 文件）：通过。`git diff --check`：通过。
-- 完整终端测试 `pnpm --filter @gatu/terminal test`：
+- 完整终端测试 `pnpm --filter @sairn/terminal test`：
   - 第 1 轮修复合入后（`1411036c`）：621 个文件通过、1 个跳过，7,471 项测试通过。
   - 最终头：620 个文件通过、1 个跳过、1 个失败（`mobile-agent-sync-modal.test.tsx` 的 1 秒 `vi.waitFor` 超时）。该文件与其组件本批均未改动，单独运行 5 次全部通过，项目记录中已列为负载敏感测试；本批此前两次完整运行也都通过它。7,490 项测试通过。
 - 生产构建（Node 22.15.0，移开 `.env.local`）：分块环检查与包体预算通过。与同条件的基线构建（`dbc6036e`）相比：总 gzip +30,452 字节（仍低于脚本基线 2,612）；交易启动闭包 +5,688；`trade-terminal-page` +1,725（允许增量 4,000 中已用 1,736）；桌面运行时 −328、手机运行时 −717；新增 `fundingComparison` 块 11,264、`funding-history-panel` 块 8,902，已在 `scripts/check-client-bundle-budget.mjs` 登记（`19af214b`，允许增量各 1,500）。`trade-terminal-page` 的增量来自未平仓量上限的校验与资产信息查询，以及 Funding 页签条（按产物中的特征字符串定位）。
@@ -129,7 +129,7 @@
 
 ### 交付前自查（2026-09-28）
 
-- 语言目录：在集成头重新运行 `pnpm --filter @gatu/terminal i18n:extract`，目录没有变化（CI 的静态检查会因目录漂移失败）。
+- 语言目录：在集成头重新运行 `pnpm --filter @sairn/terminal i18n:extract`，目录没有变化（CI 的静态检查会因目录漂移失败）。
 - 规范扫描：本批改动的组件没有新增注释、`type Props`、`console.log`、颜色字面量；新增的 `text-[Npx]` / `rounded-[Npx]` 行都是 TWAP 列表加导出页脚后被整体缩进的原有代码，令牌棘轮测试不变；唯一新增的 `useMemo` 用于给 `useSyncExternalStore` 提供按快照接收时间创建的稳定时钟，属于语义用途。
 - 文档：补上 `docs/hyperliquid-sdk-reference.md` 里 `predictedFundings` 的已核对契约（其余五个接口此前已补）。
 - Playwright 浏览器套件（集成头，逐个配置顺序运行）：共享配置 112 项（含桌面网格、下单布局、交易面板、滑杆等）、手机下单 47 项、账户操作 24 项、全部平仓 41 项、通知 19 项全部通过。`user-menu-recovery` 10 项中 2 项失败（期待用户菜单里有「Link mobile device」菜单项）；在基线 `dbc6036e` 的临时 worktree 中同样 2 项、同一断言失败，属于本批之前就存在的问题，该套件也不在 CI 的浏览器列表中，已另列后续任务。

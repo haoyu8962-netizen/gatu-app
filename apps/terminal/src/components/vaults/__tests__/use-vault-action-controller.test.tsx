@@ -506,7 +506,7 @@ describe("useVaultActionController", () => {
 		mocks.exchangeMutate.mockImplementation(async (params) => {
 			const marker = getFundsActionMarkers()[0];
 			expect(marker).toBeDefined();
-			if (marker) window.localStorage.removeItem("gatu.funds_action.pending.v1");
+			if (marker) window.localStorage.removeItem("sairn.funds_action.pending.v1");
 			mocks.exchangeGuard?.(params);
 		});
 		await openAndReview();
@@ -946,7 +946,7 @@ describe("useVaultActionController", () => {
 		if (!staleReference) return;
 		const replacement = { ...staleReference, id: `${staleReference.id}:replacement`, identityEpoch: "replacement" };
 		act(() => {
-			window.localStorage.removeItem("gatu.funds_action.pending.v1");
+			window.localStorage.removeItem("sairn.funds_action.pending.v1");
 			clearFundsActionMarkersForTests();
 			expect(persistFundsActionMarker(replacement)).toBe(true);
 		});

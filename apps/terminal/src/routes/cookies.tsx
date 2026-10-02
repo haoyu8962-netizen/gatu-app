@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalDocPage } from "@/components/legal/legal-doc-page";
+import { BRAND_NAME } from "@/config/brand";
 import { bootDashboardRoute } from "@/lib/navigation/boot-dashboard-route";
 import { buildPageHead } from "@/lib/seo";
 import content from "../../../../legal/cookies.md?raw";
@@ -10,7 +11,7 @@ export const Route = createFileRoute("/cookies")({
 	head: () =>
 		buildPageHead({
 			title: "Cookie Policy",
-			description: "Cookie and browser storage policy for the gatu trading terminal.",
+			description: `Cookie and browser storage policy for the ${BRAND_NAME} trading terminal.`,
 			path: "/cookies",
 		}),
 	component: CookiesRoute,

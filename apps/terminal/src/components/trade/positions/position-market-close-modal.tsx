@@ -1,6 +1,6 @@
-import { Checkbox, ModalDescription, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
+import { Checkbox, ModalDescription, ModalTitle } from "@sairn/ui";
 import { useRef, useState } from "react";
 import {
 	estimatePositionMarketClosePnl,

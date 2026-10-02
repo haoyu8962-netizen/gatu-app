@@ -1,10 +1,10 @@
-// Films the first seconds of a cold load on the gatu terminal and the official app: screenshots and
+// Films the first seconds of a cold load on the sairn terminal and the official app: screenshots and
 // DOM markers at fixed offsets after navigation start, plus the script waterfall and the HTML tags.
 // Usage: node apps/terminal/tests/browser/first-paint-race.mjs <output-dir>
 import { chromium } from "@playwright/test";
 import { writeFileSync } from "node:fs";
 const targets = [
-	{ name: "gatu", url: "https://d2i25dhfjwco8b.cloudfront.net/trade/HYPE" },
+	{ name: "sairn", url: "https://d2i25dhfjwco8b.cloudfront.net/trade/HYPE" },
 	{ name: "official", url: "https://app.hyperliquid.xyz/trade/HYPE" },
 ];
 const TICKS = [250, 500, 750, 1000, 1300, 1600, 2000, 2500, 3000, 4000, 5500];

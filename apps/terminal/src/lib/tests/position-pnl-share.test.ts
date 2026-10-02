@@ -20,6 +20,8 @@ const paletteVariables = {
 	"--position-share-long": "#1f8a5a",
 	"--position-share-short": "#d6453d",
 	"--position-share-divider": "#ffffff1f",
+	"--position-share-logo-signal": "#86e5d3",
+	"--position-share-logo-choice": "#e6b766",
 } as const;
 
 const palette: PositionPnlSharePalette = {
@@ -31,10 +33,11 @@ const palette: PositionPnlSharePalette = {
 	long: "#1f8a5a",
 	short: "#d6453d",
 	divider: "#ffffff1f",
+	logoSignal: "#86e5d3",
+	logoChoice: "#e6b766",
 };
 
 const imageModel: PositionPnlShareImageModel = {
-	brand: "GATU",
 	timestamp: "2026-08-05 10:30",
 	symbol: "BTC-PERP",
 	directionLabel: "Long 10x",
@@ -79,7 +82,7 @@ describe("position PNL share URL", () => {
 
 describe("position PNL share filename", () => {
 	it("returns a portable PNG filename", () => {
-		expect(sanitizePositionPnlShareFilename(" GATU / BTC:* PNL.png ")).toBe("GATU-BTC-PNL.png");
+		expect(sanitizePositionPnlShareFilename(" SAIRN / BTC:* PNL.png ")).toBe("SAIRN-BTC-PNL.png");
 		expect(sanitizePositionPnlShareFilename("CON")).toBe("position-CON.png");
 		expect(sanitizePositionPnlShareFilename("\u0000\n")).toBe("position-pnl.png");
 	});
@@ -152,10 +155,10 @@ describe("position PNL share browser failures", () => {
 		vi.useFakeTimers();
 
 		try {
-			downloadPositionPnlSharePng(new Blob(["png"], { type: "image/png" }), "GATU/BTC?.png");
+			downloadPositionPnlSharePng(new Blob(["png"], { type: "image/png" }), "SAIRN/BTC?.png");
 
 			expect(click).toHaveBeenCalledOnce();
-			expect(downloadedFilename).toBe("GATU-BTC.png");
+			expect(downloadedFilename).toBe("SAIRN-BTC.png");
 			expect(createObjectUrl).toHaveBeenCalledOnce();
 			expect(document.querySelector("a[download]")).toBeNull();
 			vi.runAllTimers();

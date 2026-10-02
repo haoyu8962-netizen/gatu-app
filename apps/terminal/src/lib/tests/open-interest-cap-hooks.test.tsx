@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 
-import type { CompactSubscriptionClient } from "@gatu/hl-react";
+import type { InfoClient } from "@nktkas/hyperliquid";
+import type { CompactSubscriptionClient } from "@sairn/hl-react";
 import {
 	HyperliquidStoreContext,
 	HyperliquidTransportContext,
 	type HyperliquidTransportContextValue,
-} from "@gatu/hl-react/provider";
-import { createHyperliquidStore, type HyperliquidStore } from "@gatu/hl-react/store";
-import type { InfoClient } from "@nktkas/hyperliquid";
+} from "@sairn/hl-react/provider";
+import { createHyperliquidStore, type HyperliquidStore } from "@sairn/hl-react/store";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

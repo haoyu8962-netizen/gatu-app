@@ -1,6 +1,6 @@
 # Asset Fragmentation on Hyperliquid: The Problem & The Opportunity
 
-> **Key finding**: While Hyperliquid prevents duplicate *native* markets, HIP-3 builders CAN and DO list the same asset with different settlement currencies. TSLA, NVDA, and SPACEX all have multiple listings. This is a confirmed pain point — and an opportunity for gatu to be the aggregation layer.
+> **Key finding**: While Hyperliquid prevents duplicate *native* markets, HIP-3 builders CAN and DO list the same asset with different settlement currencies. TSLA, NVDA, and SPACEX all have multiple listings. This is a confirmed pain point — and an opportunity for Sairn to be the aggregation layer.
 
 ## The Fragmentation Landscape
 
@@ -75,7 +75,7 @@ DEX aggregators deliver **1-3% better execution** and have become dominant inter
 
 ---
 
-## The gatu Aggregation Opportunity
+## The Sairn Aggregation Opportunity
 
 ### What to Build
 
@@ -116,7 +116,7 @@ Behind scenes: Compare TradeXYZ TSLA-USDC vs Felix TSLA-USDH vs Ventuals TSLA-US
 4. Execute and report fill details
 5. Display savings vs worst-available price
 
-### Unique to gatu
+### Unique to Sairn
 Unlike generic DEX aggregators, HL aggregation is simpler because:
 - All markets are on the same L1 (no cross-chain complexity)
 - Same API for all builders (Hyperliquid SDK)
@@ -138,11 +138,11 @@ This makes the aggregation layer technically straightforward while being highly 
 
 **Pattern**: The aggregation layer becomes the default interface. Individual venues become "backends."
 
-### Applied to gatu
+### Applied to Sairn
 - Individual HIP-3 builders (TradeXYZ, Felix, Ventuals) = backends
-- gatu = the unified frontend that aggregates them
+- Sairn = the unified frontend that aggregates them
 - Users see clean, deduplicated market lists with best execution
-- Builders get volume through gatu's routing
+- Builders get volume through Sairn's routing
 
 ---
 

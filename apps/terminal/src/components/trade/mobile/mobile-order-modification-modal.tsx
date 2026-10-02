@@ -1,5 +1,5 @@
-import { AdaptiveModal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { AdaptiveModal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { type FormEvent, type KeyboardEvent, useId, useRef } from "react";
 import { normalizeDecimalInputEvent } from "@/components/ui/decimal-input-event";
 import { cn } from "@/lib/cn";

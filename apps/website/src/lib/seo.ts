@@ -19,7 +19,7 @@ export interface ResolvedSeo {
 	title: string;
 	ogTitle: string;
 	description: string;
-	canonical: string;
+	canonical?: string;
 	ogImage: string;
 	ogImageAlt: string;
 	ogType: "website" | "article";
@@ -49,7 +49,7 @@ export function resolveSeo(options: PageSeo = {}): ResolvedSeo {
 	const pageTitle = title ? (fullTitle ? title : `${title} — ${SEO_DEFAULTS.siteName}`) : SEO_DEFAULTS.defaultTitle;
 	const socialTitle = ogTitle ?? (title ? pageTitle : SEO_DEFAULTS.defaultOgTitle);
 
-	const canonical = new URL(path, SEO_DEFAULTS.siteUrl).toString().replace(/\/$/, path === "/" ? "/" : "");
+	const canonical = noIndex ? undefined : canonicalUrl(path);
 
 	const resolvedImage = new URL(ogImage ?? SEO_DEFAULTS.ogImage, SEO_DEFAULTS.siteUrl).toString();
 
@@ -69,6 +69,13 @@ export function resolveSeo(options: PageSeo = {}): ResolvedSeo {
 		modifiedTime,
 		author,
 	};
+}
+
+/** Astro emits every page as `<route>/index.html`, and the sitemap lists `<route>/`; canonical URLs match it. */
+export function canonicalUrl(path: string): string {
+	const lastSegment = path.split("/").at(-1) ?? "";
+	const directoryPath = path.endsWith("/") || lastSegment.includes(".") ? path : `${path}/`;
+	return new URL(directoryPath, SEO_DEFAULTS.siteUrl).toString();
 }
 
 export function organizationSchema() {
@@ -111,7 +118,7 @@ export function blogSchema() {
 		"@context": "https://schema.org",
 		"@type": "Blog",
 		name: `${SEO_DEFAULTS.siteName} Blog`,
-		url: new URL("/blog", SEO_DEFAULTS.siteUrl).toString(),
+		url: canonicalUrl("/blog/"),
 		publisher: { "@type": "Organization", name: SEO_DEFAULTS.siteName, url: SEO_DEFAULTS.siteUrl },
 	};
 }
@@ -126,7 +133,7 @@ interface BlogPostingInput {
 }
 
 export function blogPostingSchema(post: BlogPostingInput) {
-	const url = new URL(`/blog/${post.slug}`, SEO_DEFAULTS.siteUrl).toString();
+	const url = canonicalUrl(`/blog/${post.slug}/`);
 	return {
 		"@context": "https://schema.org",
 		"@type": "BlogPosting",
@@ -163,7 +170,7 @@ export function breadcrumbSchema(items: BreadcrumbItem[]) {
 			"@type": "ListItem",
 			position: index + 1,
 			name: item.name,
-			item: new URL(item.path, SEO_DEFAULTS.siteUrl).toString(),
+			item: canonicalUrl(item.path),
 		})),
 	};
 }

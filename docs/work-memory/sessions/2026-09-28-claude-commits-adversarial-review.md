@@ -113,7 +113,7 @@
 ### 官方协议、SDK 与实际页面核对
 
 - [官方 Info 分页规则](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)和[永续接口](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals)：时间游标包含边界，市场历史费率用 `fundingHistory`，跨交易所预测费率用 `predictedFundings`，后者只覆盖主 perp dex。
-- 已安装 SDK `@nktkas/hyperliquid 0.33.3` 的 `esm/api/info/_methods/fundingHistory.d.ts`：`coin`、毫秒 `startTime/endTime`，返回 `coin/fundingRate/premium/time`；费率和 premium 为字符串。实际 HYPE 三十天查询得到 500 条升序记录，下一页用最后时间继续，返回 221 条且首项与前页末项重合。gatu 显式固定 `endTime` 并以时间去重，符合协议。官方 HYPE 的 Funding 入口实际发出 `fundingHistory` 请求，并提供 1h/8h/D、单期与累计费率展示。
+- 已安装 SDK `@nktkas/hyperliquid 0.33.3` 的 `esm/api/info/_methods/fundingHistory.d.ts`：`coin`、毫秒 `startTime/endTime`，返回 `coin/fundingRate/premium/time`；费率和 premium 为字符串。实际 HYPE 三十天查询得到 500 条升序记录，下一页用最后时间继续，返回 221 条且首项与前页末项重合。Sairn 显式固定 `endTime` 并以时间去重，符合协议。官方 HYPE 的 Funding 入口实际发出 `fundingHistory` 请求，并提供 1h/8h/D、单期与累计费率展示。
 - [SDK predictedFundings 文档](https://nktkas.gitbook.io/hyperliquid/api-reference/info-methods/predictedfundings)及锁定声明：`[asset, [venue, data|null][]][]`，`fundingIntervalHours` 可选。公开响应 234 个资产，已观察间隔 1/4/8 小时，20 个 Binance 条目缺间隔（19 个零值、MATIC 为 `0.0001`）。这只是本轮快照，不能反向证明历史记录在另一采样时刻错误。
 - 官方 Funding Comparison 默认为 8 Hours。BTC 原始 HL `0.0000125 / 1h`、Binance `0.00006235 / 8h`，页面分别显示 `0.0100%`、`0.0062%`；按各自周期转小时后比较符合当前领域实现。该快照中 HYPE 的两个 CEX 条目均为 `null`；不应把无 CEX 数据的资产过滤解释为遗漏 HYPE。UI 是比较基准，协议语义仍以官方文档与响应为准。
 - 已核对 `openOrders` 的 `user/dex/orders` 与 `twapStates` 的 `user/dex/states: [id,state][]` 声明；本批新增的 `monotonicLastMessageAt` 是客户端接收元数据，并非 SDK/交易所原生字段。写入与隐藏缓冲提交保留原始接收时间对，没有把交易所 `time` 当作本机单调时钟。

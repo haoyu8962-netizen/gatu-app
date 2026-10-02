@@ -1,10 +1,11 @@
-import { Button, ButtonIcon, Drawer, DrawerContent, DrawerTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons/react";
+import { Button, ButtonIcon, Drawer, DrawerContent, DrawerTitle } from "@sairn/ui";
 import { Link, type RegisteredRouter, useLocation, useRouter, type ValidateLinkOptions } from "@tanstack/react-router";
 import { type MouseEvent, useEffect, useRef, useState } from "react";
-import { GatuLogo } from "@/components/brand/gatu-logo";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { TOUCH_PRESS_CLASS, TOUCH_PRESS_FADE_CLASS } from "@/components/ui/touch-press";
+import { BRAND_NAME } from "@/config/brand";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -180,10 +181,11 @@ export function MobileNavDrawer() {
 					<div className="h-[calc(3rem+env(safe-area-inset-top))] px-3 pt-[env(safe-area-inset-top)] flex items-center justify-between border-b border-stroke-weak/60 shrink-0">
 						<Link
 							{...navigationLinkProps({ to: tradeHomePath, search: { scope: "all" } })}
-							aria-label="GATU"
+							aria-label={BRAND_NAME}
+							data-brand-home-link=""
 							className="flex items-center gap-1.5 rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
-							<GatuLogo className="h-4 w-auto" />
+							<BrandLogo className="h-6 w-auto" />
 						</Link>
 						<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label={t`Close navigation`} onClick={close}>
 							<XIcon className="size-4" />

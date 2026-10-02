@@ -227,7 +227,7 @@ export function getOfficialReferralUrl(code: string, env: "Mainnet" | "Testnet")
 	return `${host}/join/${encodeURIComponent(code)}`;
 }
 
-export function getGatuReferralUrl(code: string, env: "Mainnet" | "Testnet"): string {
+export function getBrandReferralUrl(code: string, env: "Mainnet" | "Testnet"): string {
 	const origin = getPublicOrigin(env === "Testnet" ? "testnet" : "mainnet");
 	return `${origin}/join/${encodeURIComponent(code)}`;
 }

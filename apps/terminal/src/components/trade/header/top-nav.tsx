@@ -1,9 +1,10 @@
-import { Button, Dropdown } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, QrCodeIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
+import { Button, Dropdown } from "@sairn/ui";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { GatuLogo } from "@/components/brand/gatu-logo";
+import { BrandLogo } from "@/components/brand/brand-logo";
+import { BRAND_NAME } from "@/config/brand";
 import { DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import {
 	APP_BAR_BUTTON_HEIGHT_CLASS,
@@ -35,6 +36,8 @@ import { ThemeToggle } from "./theme-toggle";
 import {
 	TOP_NAV_CONNECTED_WORDMARK_CLASS,
 	TOP_NAV_DEPOSIT_CLASS,
+	TOP_NAV_DEPOSIT_ICON_ONLY_CLASS,
+	TOP_NAV_DEPOSIT_ICON_ONLY_LABEL_CLASS,
 	TOP_NAV_DEPOSIT_LABEL_CLASS,
 	TOP_NAV_LOGO_CLASS,
 	TOP_NAV_MARK_CLASS,
@@ -133,9 +136,15 @@ export function TopNav({ mode = "default" }: Props) {
 			connected={accountChipVisible}
 			compactHiddenWhenConnected={accountChipVisible}
 			logo={
-				<Link to={tradeHomePath} search={{ scope: "all" }} aria-label="GATU" className={TOP_NAV_LOGO_CLASS}>
-					<GatuLogo className={cn(TOP_NAV_WORDMARK_CLASS, accountChipVisible && TOP_NAV_CONNECTED_WORDMARK_CLASS)} />
-					{accountChipVisible ? <GatuLogo variant="mark" micro className={TOP_NAV_MARK_CLASS} /> : null}
+				<Link
+					to={tradeHomePath}
+					search={{ scope: "all" }}
+					aria-label={BRAND_NAME}
+					data-brand-home-link=""
+					className={TOP_NAV_LOGO_CLASS}
+				>
+					<BrandLogo className={cn(TOP_NAV_WORDMARK_CLASS, accountChipVisible && TOP_NAV_CONNECTED_WORDMARK_CLASS)} />
+					{accountChipVisible ? <BrandLogo variant="mark" className={TOP_NAV_MARK_CLASS} /> : null}
 				</Link>
 			}
 			moreTrigger={
@@ -160,10 +169,20 @@ export function TopNav({ mode = "default" }: Props) {
 						onClick={!isMarketLoading && depositAvailability.available ? () => openDepositModal("deposit") : undefined}
 						aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 						title={depositAvailability.unavailableReason ?? undefined}
-						iconLeft={<DownloadSimpleIcon className="size-[18px]" />}
-						className={cn(APP_BAR_BUTTON_HEIGHT_CLASS, TOP_NAV_DEPOSIT_CLASS)}
+						iconLeft={depositAvailability.available ? <DownloadSimpleIcon className="size-[18px]" /> : undefined}
+						data-top-nav-deposit=""
+						className={cn(
+							APP_BAR_BUTTON_HEIGHT_CLASS,
+							TOP_NAV_DEPOSIT_CLASS,
+							!depositAvailability.available && TOP_NAV_DEPOSIT_ICON_ONLY_CLASS,
+						)}
 					>
-						<span className={TOP_NAV_DEPOSIT_LABEL_CLASS}>
+						{depositAvailability.available ? null : <DownloadSimpleIcon className="size-[18px]" />}
+						<span
+							className={
+								depositAvailability.available ? TOP_NAV_DEPOSIT_LABEL_CLASS : TOP_NAV_DEPOSIT_ICON_ONLY_LABEL_CLASS
+							}
+						>
 							{depositAvailability.available ? <Trans>Deposit</Trans> : depositAvailability.unavailableLabel}
 						</span>
 					</Button>

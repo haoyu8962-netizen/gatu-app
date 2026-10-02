@@ -1,6 +1,6 @@
-import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@sairn/ui";
 import { memo, useEffect, useRef, useState } from "react";
 import type { MarginTierInput } from "@/domain/trade/order/liquidation";
 import { classifyActionError, isAmbiguousExchangeActionError } from "@/lib/errors/action-error";

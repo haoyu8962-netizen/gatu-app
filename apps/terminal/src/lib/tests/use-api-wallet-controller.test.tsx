@@ -63,7 +63,7 @@ const testState = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock("@gatu/hl-react", () => ({ useActiveAgentOwner: () => testState.activeOwner }));
+vi.mock("@sairn/hl-react", () => ({ useActiveAgentOwner: () => testState.activeOwner }));
 
 vi.mock("@/hooks/wallet/use-explicit-agent-approval", () => ({
 	useExplicitAgentApproval: () => ({ isPending: false, mutateAsync: testState.approveAgent }),

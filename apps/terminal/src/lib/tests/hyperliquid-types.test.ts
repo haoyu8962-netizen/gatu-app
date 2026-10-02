@@ -1,4 +1,3 @@
-import type { CompactSubscriptionClient } from "@gatu/hl-react";
 import type {
 	AllMidsParameters,
 	AllMidsResponse,
@@ -20,6 +19,7 @@ import type {
 	UserFillsWsEvent,
 	UserFillsWsParameters,
 } from "@nktkas/hyperliquid";
+import type { CompactSubscriptionClient } from "@sairn/hl-react";
 import { describe, expectTypeOf, it } from "vitest";
 import type {
 	ExchangeMethod,

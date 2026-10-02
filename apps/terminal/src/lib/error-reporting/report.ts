@@ -1,5 +1,5 @@
-import { LEGAL_STATUS_ERROR_REASONS, type LegalStatusErrorReason } from "@gatu/hl-react/legal";
-import { L2_BOOK_STREAM_ERROR_CODES, type L2BookStreamErrorCode } from "@gatu/hl-react/subscriptions/l2";
+import { LEGAL_STATUS_ERROR_REASONS, type LegalStatusErrorReason } from "@sairn/hl-react/legal";
+import { L2_BOOK_STREAM_ERROR_CODES, type L2BookStreamErrorCode } from "@sairn/hl-react/subscriptions/l2";
 import { CLIENT_ERROR_REPORT_API_PATH } from "@/config/api-paths";
 
 export const CLIENT_ERROR_REPORT_ENDPOINT = CLIENT_ERROR_REPORT_API_PATH;

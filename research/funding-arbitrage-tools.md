@@ -1,7 +1,7 @@
 # Funding Rate Arbitrage Tools & Monitors: Comprehensive Research
 
 > **Date:** 2026-03-23
-> **Scope:** Hyperliquid funding mechanics, cross-DEX arbitrage, existing tools, and gatu integration plan
+> **Scope:** Hyperliquid funding mechanics, cross-DEX arbitrage, existing tools, and Sairn integration plan
 
 ---
 
@@ -13,7 +13,7 @@
 4. [Cross-Exchange Opportunities](#4-cross-exchange-opportunities)
 5. [Existing Tools & Monitors](#5-existing-tools--monitors)
 6. [Delta-Neutral Setups](#6-delta-neutral-setups)
-7. [gatu Feature Ideas](#7-gatu-feature-ideas)
+7. [Sairn Feature Ideas](#7-gatu-feature-ideas)
 8. [UI Ideas](#8-ui-ideas)
 9. [Hyperliquid Integration](#9-hyperliquid-integration)
 10. [Risk Factors](#10-risk-factors)
@@ -582,7 +582,7 @@ Provide liquidity in HyperEVM DeFi protocol + Short Perp hedge
 
 ---
 
-## 7. gatu Feature Ideas
+## 7. Sairn Feature Ideas
 
 ### 7.1 Real-Time Funding Rate Scanner
 
@@ -679,7 +679,7 @@ interface ArbPosition {
 - Rolling 7-day, 30-day, 90-day average APR per asset
 - Cross-exchange funding rate correlation charts
 
-**Unique to gatu:**
+**Unique to Sairn:**
 - Overlay funding rate with price action (already have chart infrastructure via trading-view)
 - Show funding rate alongside open interest changes
 - Funding rate vs volume correlation
@@ -1277,6 +1277,6 @@ async function openDeltaNeutralPosition(params: {
 | Hummingbot | No | No | No | Yes | Basic | No | No |
 | Liminal | No | No | No | Yes (vault) | Yes (vault) | No | No |
 | Neutral Trade | No | No | No | Yes (vault) | Yes (vault) | No | No |
-| **gatu (proposed)** | **Yes** | **Yes** | **Planned** | **Yes** | **Yes** | **Yes** | **N/A (UI)** |
+| **Sairn (proposed)** | **Yes** | **Yes** | **Planned** | **Yes** | **Yes** | **Yes** | **N/A (UI)** |
 
-**gatu's differentiation:** No existing tool combines scanning + historical analytics + one-click execution + position management + alerts in a single integrated UI. Most tools are either data-only (CoinGlass, Loris) or execution-only (HL-Delta, Hummingbot). gatu can be the first all-in-one funding rate arbitrage workstation.
+**Sairn's differentiation:** No existing tool combines scanning + historical analytics + one-click execution + position management + alerts in a single integrated UI. Most tools are either data-only (CoinGlass, Loris) or execution-only (HL-Delta, Hummingbot). Sairn can be the first all-in-one funding rate arbitrage workstation.

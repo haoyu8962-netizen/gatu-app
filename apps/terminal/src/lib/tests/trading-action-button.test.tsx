@@ -12,6 +12,7 @@ const testState = vi.hoisted(() => ({
 	error: null as Error | null,
 	guardAction: vi.fn(),
 	guardOptions: [] as Array<{ requiresBuilderFee?: boolean }>,
+	isEnabling: false,
 	isReady: false,
 	needsTrading: true,
 }));
@@ -21,7 +22,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		testState.guardOptions.push(options);
 		return {
 			isReady: testState.isReady,
-			isEnabling: false,
+			isEnabling: testState.isEnabling,
 			needsTrading: testState.needsTrading,
 			enableTrading: testState.enableTrading,
 			guardAction: testState.guardAction,
@@ -47,6 +48,7 @@ describe("TradingActionButton", () => {
 		testState.enableTrading.mockReset();
 		testState.guardAction.mockReset();
 		testState.guardOptions.length = 0;
+		testState.isEnabling = false;
 		testState.isReady = false;
 		testState.needsTrading = true;
 	});
@@ -55,6 +57,21 @@ describe("TradingActionButton", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.useRealTimers();
+	});
+
+	it("shows the mono button indicator while the trading signer is being enabled", () => {
+		testState.isEnabling = true;
+
+		act(() => {
+			root.render(<TradingActionButton onClick={vi.fn()}>Swap</TradingActionButton>);
+		});
+
+		const button = container.querySelector("button");
+		const indicator = button?.querySelector('svg[data-brand-motion="button-loading"]');
+		expect(button?.textContent).toBe("Enabling");
+		expect(indicator?.getAttribute("data-appearance")).toBe("mono");
+		expect(indicator?.getAttribute("aria-hidden")).toBe("true");
+		expect(button?.querySelector(".animate-spin")).toBeNull();
 	});
 
 	it("surfaces trading enablement errors next to the action", () => {

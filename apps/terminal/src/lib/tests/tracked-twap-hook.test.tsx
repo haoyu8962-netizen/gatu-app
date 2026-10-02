@@ -472,7 +472,7 @@ describe("useTrackedTwapOrder", () => {
 	it("keeps the pending reservation when active TWAP promotion cannot be persisted", async () => {
 		const nativeSetItem = Storage.prototype.setItem;
 		vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
-			if (key.startsWith("gatu-order-asset-reservations") && value.includes("active-twap:79")) {
+			if (key.startsWith("sairn-order-asset-reservations") && value.includes("active-twap:79")) {
 				throw new Error("storage unavailable");
 			}
 			return nativeSetItem.call(this, key, value);

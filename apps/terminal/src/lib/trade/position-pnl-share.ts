@@ -1,9 +1,12 @@
+import { BRAND_LOGO_GEOMETRY } from "@/lib/brand/logo-geometry.gen";
 import { getTradePathForMarketName } from "@/lib/hyperliquid/market-route";
 
 const CARD_WIDTH = 360;
 const CARD_HEIGHT = 260;
 const EXPORT_SCALE = 2;
 const QR_SIZE = 44;
+// The logo kit allows the lockup from 24 px high.
+const BRAND_LOCKUP = { x: 26, y: 18, height: 24 } as const;
 
 const paletteVariables = {
 	card: "--position-share-card",
@@ -14,6 +17,8 @@ const paletteVariables = {
 	long: "--position-share-long",
 	short: "--position-share-short",
 	divider: "--position-share-divider",
+	logoSignal: "--position-share-logo-signal",
+	logoChoice: "--position-share-logo-choice",
 } as const;
 
 export interface PositionPnlSharePalette {
@@ -25,10 +30,11 @@ export interface PositionPnlSharePalette {
 	long: string;
 	short: string;
 	divider: string;
+	logoSignal: string;
+	logoChoice: string;
 }
 
 export interface PositionPnlShareImageModel {
-	brand: string;
 	timestamp: string;
 	symbol: string;
 	directionLabel: string;
@@ -108,6 +114,8 @@ export function readPositionPnlSharePalette(root?: Element): PositionPnlSharePal
 		long: readVariable(paletteVariables.long),
 		short: readVariable(paletteVariables.short),
 		divider: readVariable(paletteVariables.divider),
+		logoSignal: readVariable(paletteVariables.logoSignal),
+		logoChoice: readVariable(paletteVariables.logoChoice),
 	};
 }
 
@@ -200,10 +208,7 @@ function drawShareCardContent(
 	palette: PositionPnlSharePalette,
 ): void {
 	context.textBaseline = "alphabetic";
-	context.textAlign = "left";
-	context.fillStyle = palette.foreground;
-	setFont(context, 700, 14, model.fontFamily);
-	context.fillText(fitText(context, model.brand, 170), 26, 38);
+	drawBrandLockup(context, palette);
 
 	context.textAlign = "right";
 	context.fillStyle = palette.muted;
@@ -233,6 +238,21 @@ function drawShareCardContent(
 
 	drawPriceField(context, model.entryLabel, model.entryValue, 26, model.fontFamily, palette);
 	drawPriceField(context, model.markLabel, model.markValue, 144, model.fontFamily, palette);
+}
+
+function drawBrandLockup(context: CanvasRenderingContext2D, palette: PositionPnlSharePalette): void {
+	const { viewBox, paths } = BRAND_LOGO_GEOMETRY.lockup;
+	const [minX, minY, , height] = viewBox.split(" ").map(Number);
+	const scale = BRAND_LOCKUP.height / height;
+	const fills = { signal: palette.logoSignal, choice: palette.logoChoice, wordmark: palette.foreground };
+	context.save();
+	context.translate(BRAND_LOCKUP.x - minX * scale, BRAND_LOCKUP.y - minY * scale);
+	context.scale(scale, scale);
+	for (const path of paths) {
+		context.fillStyle = fills[path.part];
+		context.fill(new Path2D(path.d));
+	}
+	context.restore();
 }
 
 function drawDirectionBadge(

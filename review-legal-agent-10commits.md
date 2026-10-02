@@ -74,9 +74,9 @@ if (fundingState === "empty") deposit.open("deposit");
 - **agent-only 会话完全绕过法律网关**:`useLegalGate` 依赖 `hasWalletAccess`,手机 QR 导入的 agent-only 会话不满足该条件 → 网关 `"inactive"` → 受限账户在该模式下不被封禁
 - **法律页面的 GlobalModals 未挂门控**:`legal-doc-page.tsx:62` 渲染的全局弹窗没有门控,从条款弹窗内的链接一键即可打开入金/提现/跨链弹窗
 
-**把 Hyperliquid 的同意当成 gatu 的同意(规范性):**
+**把 Hyperliquid 的同意当成 Sairn 的同意(规范性):**
 
-`canPerformActions` 依据的是 Hyperliquid 全局 `acceptedTerms`。**已在 Hyperliquid 官方前端接受过条款的老用户,永远看不到 gatu 自己的 clickwrap**;签名载荷只有 `hyperliquidChain + time`,**不含任何文档 URL/版本/哈希**,gatu 侧零留痕 → 条款更新后无法强制重新接受,事后也无法证明用户接受的是哪一版。
+`canPerformActions` 依据的是 Hyperliquid 全局 `acceptedTerms`。**已在 Hyperliquid 官方前端接受过条款的老用户,永远看不到 Sairn 自己的 clickwrap**;签名载荷只有 `hyperliquidChain + time`,**不含任何文档 URL/版本/哈希**,Sairn 侧零留痕 → 条款更新后无法强制重新接受,事后也无法证明用户接受的是哪一版。
 
 **会话级 key 的多标签页代价:**
 

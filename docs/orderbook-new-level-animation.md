@@ -149,7 +149,7 @@
 - 35 项 Chromium 浏览器回归通过：新增动效 30 项、原订单簿布局 4 项、原移动 CLS 1 项。桌面 1661/1238/1001px、移动 1000/390px、半像素高度、紧凑三模式与深浅主题均已覆盖；移动触屏操作使用浏览器触屏模拟，不代表真机 Safari 验证。
 - 原 CLS 回归的数量更新与排名更新均为 0；脉冲峰值的键盘焦点保持 2px 实线轮廓。紧凑中间价灰底上的价差文字按实际祖先背景叠层计算，通过 4.5:1 门槛。
 - 复现并修复媒体查询通知晚于实时快照的恢复竞态；保留原始浏览器测试序列，关闭减少动态效果后首帧静默、第二帧新增档位正常播放。
-- `pnpm --filter @gatu/terminal typecheck`、所有改动 TypeScript/TSX 文件的 Biome、文档链接与 `git diff --check` 通过。浏览器测试文件使用相同 Biome 规则，检查时仅移除项目配置对 `src` 目录的路径过滤。
+- `pnpm --filter @sairn/terminal typecheck`、所有改动 TypeScript/TSX 文件的 Biome、文档链接与 `git diff --check` 通过。浏览器测试文件使用相同 Biome 规则，检查时仅移除项目配置对 `src` 目录的路径过滤。
 - 本地 3006 页面检查了真实行情和桌面、手机紧凑模式的深浅主题；实际脉冲为 0.8s ease，覆盖层不接收指针，行高稳定。浏览器夹具的 4179 服务与独立调试浏览器已关闭，3006 应用服务器继续运行。
 
 ### 深色前景校准验证
@@ -157,7 +157,7 @@
 - 深度、悬停与 0.7 脉冲同时覆盖时，买盘价格对比度约为 4.65:1、卖盘价格约为 4.67:1；数量两种变化起始色跨买卖背景的最差值约为 4.65:1。现有颜色回归还验证完整 sRGB/OKLab 渐变过程均满足 4.5:1。
 - 6 个 Vitest 文件、57 项通过：`orderbook-color-contrast`、`trading-panel-theme-contract`、`orderbook`、`orderbook-size-cell`、`orderbook-rows`、`orderbook-level-pulse`。
 - `orderbook-level-pulse.pw.ts` 的 30 项 Chromium 回归通过，覆盖深浅主题、桌面与移动完整/紧凑模式、动画峰值焦点、选价、触屏、减少动态效果及恢复边界；移动交互使用触屏模拟。
-- `pnpm --filter @gatu/terminal typecheck` 与 `git diff --check` 通过。3006 实际行情页面核实桌面和手机紧凑价格计算色值一致，并检查了三种布局的动画峰值截图。本次生产改动仅为四个 CSS 前景 token，无 TypeScript/TSX 改动。
+- `pnpm --filter @sairn/terminal typecheck` 与 `git diff --check` 通过。3006 实际行情页面核实桌面和手机紧凑价格计算色值一致，并检查了三种布局的动画峰值截图。本次生产改动仅为四个 CSS 前景 token，无 TypeScript/TSX 改动。
 
 ### 浅色背景校准验证
 
@@ -165,7 +165,7 @@
 - 6 个 Vitest 文件、57 项通过：`orderbook-color-contrast`、`trading-panel-theme-contract`、`orderbook`、`orderbook-size-cell`、`orderbook-rows`、`orderbook-level-pulse`。
 - `orderbook-level-pulse.pw.ts` 的 30 项 Chromium 回归通过，覆盖深浅主题、桌面断点、移动完整双栏、紧凑双边与单边模式，以及选价、键盘焦点、触屏和恢复边界。已检查三种布局的浅色动画峰值截图；触屏验证为浏览器模拟。
 - 3006 实际行情中，桌面与手机紧凑模式均读到买盘 `rgb(171, 216, 201)`、卖盘 `rgb(244, 195, 203)`，动画为 `0.8s` 且不接收指针事件。
-- `pnpm --filter @gatu/terminal typecheck`、文档链接与 `git diff --check` 通过。本次生产改动仅为两个浅色 CSS 背景 token，无 TypeScript/TSX 改动，深色主题保持原样。
+- `pnpm --filter @sairn/terminal typecheck`、文档链接与 `git diff --check` 通过。本次生产改动仅为两个浅色 CSS 背景 token，无 TypeScript/TSX 改动，深色主题保持原样。
 
 ### 数量动画与设置开关验证
 

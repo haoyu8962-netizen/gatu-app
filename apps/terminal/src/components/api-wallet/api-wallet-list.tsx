@@ -1,4 +1,3 @@
-import { Badge, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	ArrowDownIcon,
@@ -8,6 +7,7 @@ import {
 	WalletIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
+import { Badge, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@sairn/ui";
 import { useId, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";

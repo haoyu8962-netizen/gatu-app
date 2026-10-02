@@ -1,4 +1,4 @@
-import { isSpotAssetId } from "@gatu/hl-react";
+import { isSpotAssetId } from "@sairn/hl-react";
 import Big from "big.js";
 import {
 	type ExchangeOrder,

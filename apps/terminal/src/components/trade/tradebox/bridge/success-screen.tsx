@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { CaretDownIcon, CaretUpIcon, CheckCircleIcon, WalletIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { LIFI_EXPLORER_URL } from "@/config/bridge";

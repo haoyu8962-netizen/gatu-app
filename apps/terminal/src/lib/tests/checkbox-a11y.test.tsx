@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { Checkbox } from "@gatu/ui";
+import { Checkbox } from "@sairn/ui";
 import { act, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";

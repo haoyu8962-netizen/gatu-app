@@ -1,6 +1,6 @@
-import { ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDepositModalActions, useDepositModalTab } from "@/stores/use-global-modal-store";
 import { PendingActionModal } from "./pending-action-modal";
@@ -126,7 +126,10 @@ export function DepositModalLoadingFallback() {
 							/>
 						</div>
 					) : (
-						<SpinnerGapIcon className="size-5 animate-spin text-signal motion-reduce:animate-none" aria-hidden="true" />
+						<SpinnerGapIcon
+							className="size-5 animate-spin text-fg-muted motion-reduce:animate-none"
+							aria-hidden="true"
+						/>
 					)}
 				</div>
 			</ModalContent>

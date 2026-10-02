@@ -38,7 +38,7 @@ The limits are well-defined and relatively tight:
 | Master account | 1 | 3 |
 | Per subaccount | 0 | 2 |
 
-These limits mean a single Hyperliquid account can support a maximum of approximately 5 concurrent automated processes (1 unnamed + 3 named on master, plus 2 per subaccount). For a platform like gatu that may want to run multiple strategies per user, subaccount management becomes critical.
+These limits mean a single Hyperliquid account can support a maximum of approximately 5 concurrent automated processes (1 unnamed + 3 named on master, plus 2 per subaccount). For a platform like Sairn that may want to run multiple strategies per user, subaccount management becomes critical.
 
 ### Nonce Management
 
@@ -67,9 +67,9 @@ Agent wallets on Hyperliquid are authorized for exchange operations:
 
 This is a trade-only permission model. There is no granular permission scoping within trade operations --- an agent that can place orders can also cancel them, and there is no read-only mode for agents (read access is public via the info API).
 
-### Implications for gatu
+### Implications for Sairn
 
-The lack of granular permissions means gatu cannot create "view-only" agent wallets or restrict an agent to specific markets. Any agent authorized for a master account can trade any asset on that account. Risk management must be implemented at the application layer, not the protocol layer.
+The lack of granular permissions means Sairn cannot create "view-only" agent wallets or restrict an agent to specific markets. Any agent authorized for a master account can trade any asset on that account. Risk management must be implemented at the application layer, not the protocol layer.
 
 ---
 
@@ -96,7 +96,7 @@ Privy supports creating and managing Hyperliquid subaccounts:
 
 Agent wallets can be given an expiration timestamp by encoding it in the agent name (e.g., "Trading Bot valid_until 1720000000"). This is a convention, not a protocol-enforced mechanism --- the application must check and rotate expired agents.
 
-### Benefits for gatu
+### Benefits for Sairn
 
 - **No seed phrase UX**: Users sign up and get a wallet without managing mnemonics
 - **Programmatic agent lifecycle**: Create, authorize, and revoke agents via API
@@ -113,7 +113,7 @@ Hypersig (hypersig.xyz) is a multisig platform built specifically for Hyperliqui
 
 ### Approval Flow Patterns for Agent Trading
 
-For gatu, several approval patterns are relevant:
+For Sairn, several approval patterns are relevant:
 
 1. **Pre-trade approval**: Agent proposes a trade, human approves before execution. High latency but maximum control.
 2. **Post-trade notification**: Agent executes within pre-defined parameters, human is notified. Low latency, relies on parameter constraints.
@@ -173,11 +173,11 @@ Hyperliquid's API key model is essentially the agent wallet system itself. There
 - Never reuse agent wallet private keys across different services
 - Store private keys encrypted at rest, decrypt only in memory during signing
 
-### gatu Key Management Architecture
+### Sairn Key Management Architecture
 
-A recommended architecture for gatu:
+A recommended architecture for Sairn:
 1. User authenticates via Privy (embedded wallet or external wallet)
-2. gatu generates an agent keypair server-side in a secure enclave
+2. Sairn generates an agent keypair server-side in a secure enclave
 3. User's master wallet signs the `approveAgent` transaction
 4. Agent private key is stored encrypted, accessible only by the trading engine
 5. Rotation is triggered on a schedule or on-demand by the user
@@ -217,7 +217,7 @@ As reported by Yahoo Finance and CoinDesk, AI agents holding crypto wallets crea
 - **Liability gap**: If an AI agent makes a trade that causes significant losses (to the user or to counterparties), the chain of liability is unclear. Is it the platform? The agent developer? The user who activated it?
 - **Regulatory uncertainty**: No jurisdiction has established clear rules for autonomous AI agents in financial markets. The SEC, CFTC, and international regulators are still formulating approaches.
 
-### Risk Mitigation for gatu
+### Risk Mitigation for Sairn
 
 - **Agent wallets do not hold funds**: Hyperliquid's architecture helps --- the agent cannot withdraw, only trade. This limits the blast radius.
 - **Clear user agreements**: Users must acknowledge that they are authorizing automated trading and accept the risks.
@@ -262,7 +262,7 @@ TEEs (Intel SGX, AMD SEV, ARM CCA) provide isolated execution environments:
 
 The recommended architecture combines both: HSMs for root key storage, TEEs for hot-path signing and agent execution. This is the approach gaining traction in 2026, with the confidential computing market projected to reach $350B by 2032.
 
-### Practical Security Tiers for gatu
+### Practical Security Tiers for Sairn
 
 | Tier | Approach | Cost | Security |
 |------|----------|------|----------|
@@ -275,7 +275,7 @@ For an initial launch, Cloud KMS or Turnkey integration provides a strong securi
 
 ---
 
-## Opportunities for gatu
+## Opportunities for Sairn
 
 1. **Seamless agent onboarding**: Abstract away all wallet complexity. User clicks "Enable AI Trading" and the platform handles agent wallet creation, authorization, and key management.
 2. **Strategy marketplace**: Allow users to deploy pre-built or community-created trading agents with one click, each running on its own agent wallet with isolated risk.
@@ -290,7 +290,7 @@ For an initial launch, Cloud KMS or Turnkey integration provides a strong securi
 
 - **Agent wallet limits**: 3 named agents per account constrains multi-strategy deployments. Workaround: heavy use of subaccounts.
 - **No granular permissions**: Cannot restrict an agent to specific markets or position sizes at the protocol level. Must enforce in application.
-- **Legal liability**: Unclear who is responsible when an AI agent causes losses. gatu as the platform may bear significant liability.
+- **Legal liability**: Unclear who is responsible when an AI agent causes losses. Sairn as the platform may bear significant liability.
 - **Key management complexity**: Secure key storage adds infrastructure cost and operational complexity.
 - **Nonce collisions**: Concurrent agents on the same account require careful nonce management to avoid failed transactions.
 - **Regulatory risk**: Regulations may restrict or prohibit AI-driven trading on crypto exchanges in certain jurisdictions.
@@ -302,10 +302,10 @@ For an initial launch, Cloud KMS or Turnkey integration provides a strong securi
 
 1. Will Hyperliquid expand the agent wallet limit per account? The current 3 named agents may be insufficient for power users running many strategies.
 2. Will Hyperliquid introduce granular permissions (e.g., per-market or per-size-limit agent scoping)? This would significantly improve the security model.
-3. How should gatu handle liability for AI agent trading losses? What terms of service and disclaimers are needed?
+3. How should Sairn handle liability for AI agent trading losses? What terms of service and disclaimers are needed?
 4. Should agent wallet keys be stored server-side (always-on trading, higher risk) or client-side (user-controlled, requires browser to be open)?
 5. What is the right balance between autonomous execution and human-in-the-loop approval for different user segments?
-6. How will insurance products for AI agent trading evolve, and should gatu integrate or offer them?
+6. How will insurance products for AI agent trading evolve, and should Sairn integrate or offer them?
 7. Will the Agentic AI Foundation (AAIF) produce standards for AI agent identity that could apply to trading agents?
 8. How should agent reputation/trust scores handle strategy changes --- does a previously profitable agent get reset if its strategy fundamentally changes?
 

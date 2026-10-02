@@ -1,20 +1,28 @@
-import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-	ArrowSquareOutIcon,
-	CheckCircleIcon,
-	SpinnerGapIcon,
-	WalletIcon,
-	WarningCircleIcon,
-} from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, WalletIcon } from "@phosphor-icons/react";
+import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import type { Chain } from "viem";
-import { cn } from "@/lib/cn";
+import { BrandMotion } from "@/components/brand/brand-motion";
+import { ButtonLoading } from "@/components/brand/button-loading";
+import {
+	BRAND_MOTION_AWAITING_RESULT,
+	BRAND_MOTION_ERROR,
+	BRAND_MOTION_SUCCESS,
+	BRAND_MOTION_WALLET_AWAITING,
+} from "@/lib/brand/brand-motion.gen";
 import { getExplorerTxUrl } from "@/lib/explorer";
+
+const STATUS_SCREEN_MOTIONS = {
+	wallet: BRAND_MOTION_WALLET_AWAITING,
+	awaiting: BRAND_MOTION_AWAITING_RESULT,
+	success: BRAND_MOTION_SUCCESS,
+	error: BRAND_MOTION_ERROR,
+} as const;
 
 interface StatusScreenProps {
 	open: boolean;
 	title: React.ReactNode;
-	icon: "success" | "error" | "loading";
+	icon: keyof typeof STATUS_SCREEN_MOTIONS;
 	heading: React.ReactNode;
 	description?: React.ReactNode;
 	txHash?: string;
@@ -64,29 +72,7 @@ export function StatusScreen({
 						aria-atomic="true"
 						className="flex flex-col items-center gap-4"
 					>
-						{icon === "loading" ? (
-							<div className="relative">
-								<div className="absolute inset-0 animate-ping rounded-full bg-signal-soft/20" />
-								<div className="relative flex size-14 items-center justify-center rounded-full border border-stroke-signal/30 bg-signal-soft/10">
-									<SpinnerGapIcon className="size-7 animate-spin text-signal" />
-								</div>
-							</div>
-						) : (
-							<div
-								className={cn(
-									"flex size-14 items-center justify-center rounded-full border",
-									icon === "success"
-										? "bg-success-soft border-stroke-success-strong/30"
-										: "bg-error-soft border-stroke-error-strong/30",
-								)}
-							>
-								{icon === "success" ? (
-									<CheckCircleIcon className="size-7 text-success" />
-								) : (
-									<WarningCircleIcon className="size-7 text-error" />
-								)}
-							</div>
-						)}
+						<BrandMotion key={icon} motion={STATUS_SCREEN_MOTIONS[icon]} size={64} />
 						<div className="space-y-1.5 text-center">
 							<p className="text-sm font-medium">{heading}</p>
 							{description && <div className="text-xs text-fg-muted">{description}</div>}
@@ -131,7 +117,7 @@ export function WalletNotConnected({ onConnect, isConnecting = false }: WalletNo
 			</div>
 			{onConnect ? (
 				<Button onClick={onConnect} disabled={isConnecting} className="min-w-36">
-					{isConnecting ? <SpinnerGapIcon className="size-4 animate-spin" /> : <WalletIcon className="size-4" />}
+					{isConnecting ? <ButtonLoading /> : <WalletIcon className="size-4" />}
 					<Trans>Reconnect wallet</Trans>
 				</Button>
 			) : null}

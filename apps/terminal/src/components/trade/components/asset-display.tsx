@@ -1,4 +1,4 @@
-import { Avatar } from "@gatu/ui";
+import { Avatar } from "@sairn/ui";
 import type { ReactNode } from "react";
 import { BUILDER_DEX_SEPARATOR, getIconUrlFromMarketName } from "@/domain/market";
 import { cn } from "@/lib/cn";

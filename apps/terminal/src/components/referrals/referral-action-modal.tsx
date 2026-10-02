@@ -1,3 +1,6 @@
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import {
 	AdaptiveModal,
 	Button,
@@ -7,10 +10,7 @@ import {
 	ModalHeader,
 	ModalTitle,
 	TextInput,
-} from "@gatu/ui";
-import { msg } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { WarningCircleIcon } from "@phosphor-icons/react";
+} from "@sairn/ui";
 import { useRef, useState } from "react";
 import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import { type ReferralAction, ReferralActionStatusUnknownError } from "@/hooks/trade/use-referral-actions";

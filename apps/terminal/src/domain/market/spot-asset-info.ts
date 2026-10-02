@@ -1,4 +1,4 @@
-import type { UnifiedMarket } from "@gatu/hl-react";
+import type { UnifiedMarket } from "@sairn/hl-react";
 import { SPOT_ASSET_SOCIALS } from "./spot-asset-socials.generated";
 
 export type SpotAssetDescriptionLocale = "en" | "es" | "fr" | "zh-CN";

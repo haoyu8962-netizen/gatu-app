@@ -19,7 +19,7 @@
 - 手机端是行情区 Chart / Order Book / Trades 之后的第四个 Funding 页签。
 - 现货没有该页签；桌面现货市场上官方连整个页签条都不显示（图表因此上移约 39px）。
 
-gatu 与官方的差异：页签条对所有市场保持固定高度（现货只有 Chart），不随市场类型增减；TradingView 用可见性分层隐藏，不用 `display:none`；图表手绘 SVG，不新增图表依赖。原因见「备选方案与代价」。
+Sairn 与官方的差异：页签条对所有市场保持固定高度（现货只有 Chart），不随市场类型增减；TradingView 用可见性分层隐藏，不用 `display:none`；图表手绘 SVG，不新增图表依赖。原因见「备选方案与代价」。
 
 ## 约束
 
@@ -93,7 +93,7 @@ hook 只为空快照建一个到期时钟（`useSyncExternalStore`）：创建�
 ### 桌面
 
 - `ChartPanel` 新增 `showFundingTab`，默认 `false`；只有 `main-workspace.tsx` 打开它。手机 `MobileChartView` 等其他使用者输出不变（无页签条，结构与之前相同）。
-- 打开后 `ChartPanel` 在顶部渲染 `@gatu/ui` 的下划线页签条（`size="sm"`，与订单簿页签同一视觉），对所有市场、包括现货和市场尚未解析时都存在：`Chart` 始终在，`Funding` 只在 `perp` / `builderPerp` 出现。页签条高度固定（约 33px），TradingView 的高度不随市场类型变化；在图表的最小网格高度（16 行，约 525px）下 TradingView 仍高于 `CHART_MIN_HEIGHT_PX`（300px）。
+- 打开后 `ChartPanel` 在顶部渲染 `@sairn/ui` 的下划线页签条（`size="sm"`，与订单簿页签同一视觉），对所有市场、包括现货和市场尚未解析时都存在：`Chart` 始终在，`Funding` 只在 `perp` / `builderPerp` 出现。页签条高度固定（约 33px），TradingView 的高度不随市场类型变化；在图表的最小网格高度（16 行，约 525px）下 TradingView 仍高于 `CHART_MIN_HEIGHT_PX`（300px）。
 - 页签条下方是一个 `relative` 容器，两层绝对定位的 `role="tabpanel"`：
   - 图表层始终挂载原有的 `ClientOnly` / `Suspense` / `TradingViewChart`，`active={active && view === "chart"}`。切到 Funding 时加 `invisible opacity-0 pointer-events-none` 与 `aria-hidden`，不使用 `display:none`，也不放进 `TabsContent`（它的 `[&[hidden]]:!hidden` 会隐藏 TradingView）。
   - Funding 层在第一次选中 Funding 后才挂载，之后保留；隐藏时同样用可见性分层，面板收到 `active=false`，查询停用。
@@ -147,7 +147,7 @@ hook 只为空快照建一个到期时钟（`useSyncExternalStore`）：创建�
 | 点击行情头资金费率打开弹窗 | 与官方的位置不一致；弹窗遮住图表与下单面板，且要另建弹窗会话与关闭路径 |
 | 引入 recharts 或 lightweight-charts | 新依赖进入包体与安全审查；只需要两条折线和一个提示框，手绘 SVG 已有资产组合与金库图可参照 |
 | 切到 Funding 时卸载 TradingView | 违反 TradingView 生命周期规则，回到 Chart 要重新初始化、重新拉取 K 线 |
-| 像官方一样用 `display:none` 隐藏 TradingView | widget 会以 0×0 自适应，在 gatu 没有测试覆盖；可见性分层是手机端已经验证过的路径，代价是隐藏期间 iframe 仍会绘制实时 K 线 |
+| 像官方一样用 `display:none` 隐藏 TradingView | widget 会以 0×0 自适应，在 Sairn 没有测试覆盖；可见性分层是手机端已经验证过的路径，代价是隐藏期间 iframe 仍会绘制实时 K 线 |
 | 现货上去掉整个页签条（官方做法） | 每次现货与永续切换都会改变 TradingView 高度并触发重排；固定高度的条让几何稳定，代价是现货上多一个只有 Chart 的条 |
 | 持久化视图与区间 | 刷新后直接进入 Funding 会让它成为首屏惰性块，违反启动渲染契约 |
 | 键盘逐点浏览（资产组合图的 `role="slider"` 模式） | 实现与测试成本较高，官方也没有；以读屏摘要代替，保留为后续可选项 |
@@ -164,7 +164,7 @@ hook 只为空快照建一个到期时钟（`useSyncExternalStore`）：创建�
 
 2026-09-27 在本分支实际运行（jsdom，脚本派发的事件，不代表真实指针或触摸输入）：
 
-- `pnpm --filter @gatu/terminal typecheck`：通过。
+- `pnpm --filter @sairn/terminal typecheck`：通过。
 - `pnpm exec biome check`（本功能改动的全部 TS / TSX 文件）：通过。
 - 新增测试：`market-funding-rate-history.test.ts`（区间表、UTC 纪元对齐、毫秒偏移、Big.js 精确求和与累计、负费率、乱序与重复、首尾不完整桶、空输入）、`market-funding-history-fetch.test.ts`（请求参数、包含式游标续页去重、短页结束、20 页上限、坐标与格式校验、HIP-3 前缀、429 重试、中止）、`use-market-funding-history.test.tsx`（停用不请求、状态映射、键隔离、刷新失败保留、离线、聚焦不刷新、重新激活后台刷新）、`funding-history-chart-model.test.ts`（零线与网格共享、点位落在各自轴上、正负单边、刻度小数位、单点、平坦数据、最近点查找、提示框位置）、`funding-history-panel.test.tsx`（请求参数、忙碌 / 错误 / 离线 / 空态、渐变色调与累计色、区间切换、提示框时间与 4 位小数、D 区间 UTC 日期、语言与数字格式切换不重挂载）、`mobile-trade-layout-funding-tab.test.tsx`（永续四个页签、现货三个、Funding 期间图表与订单簿不活跃、预热、四页签键盘与 RTL、切到现货回到 Chart、交易页不变）；扩展 `chart-panel.test.tsx`（无页签条时结构不变、Funding 期间 TradingView 同一节点且 `active=false`、现货与未知市场只有 Chart、切到现货回退、预热）。全部通过。
 - `funding-history-load-boundary.test.tsx`（集成时补充）：真实的 `createRetryableLazyComponent`，第一次导入失败时只显示中性「重试」、上报一次错误、不写入 TanStack 的重载标记；点击后第二次导入并渲染面板；加载中为空白 `aria-busy`；普通渲染错误交给外层边界。删掉重试里的 `loadError.retry()` 后该测试失败（变异检查，已还原）。
@@ -179,7 +179,7 @@ hook 只为空快照建一个到期时钟（`useSyncExternalStore`）：创建�
   - 新增 `funding-history-panel-snapshot.test.tsx`：面板接真实 hook 与 QueryClient，空快照过期后刷新失败时正文只剩「重试」（无 `role="alert"`），离线暂停时正文为空；在 `19af214b` 上两例都仍显示「暂无资金费率历史」。
   - `funding-history-panel.test.tsx` 补两条钉住用例（审查报告的变异表 P3，修复前后都通过）：`pointercancel` 让提示框与十字线消失；D 区间日期测试在用例内把 `process.env.TZ` 设为 `America/Los_Angeles`，并先断言本地时区格式与 UTC 格式不同，保证时区确实生效。
 - 变异检查（临时改生产代码后运行，均已还原）：删掉停用时的 `cancelQueries` effect，停用用例失败；去掉 `type: "inactive"`，共享观察者用例失败；把状态恢复成「有数据即 `ready`」，三个 hook 用例与两个面板用例失败；分别去掉空态条件中的 `status === "success"`、`fetchStatus === "idle"`、`isOnline`、`length > 0`，各有至少一个用例失败；删掉 `onPointerCancel`，`pointercancel` 用例失败；去掉 D 区间提示框日期的 UTC 时区，西半球用例失败（得到 `Sep 19, 2026`）。
-- `pnpm --filter @gatu/terminal typecheck`：`19af214b` 上已有 4 个错误，全部在 `funding-history-load-boundary.test.tsx`（`RealPanel` 无参数，`createRetryableLazyComponent` 推导出的 props 为 `never`）；给测试夹具加上 `_props: object` 后通过。该文件只改了夹具签名，3 个用例仍通过。
+- `pnpm --filter @sairn/terminal typecheck`：`19af214b` 上已有 4 个错误，全部在 `funding-history-load-boundary.test.tsx`（`RealPanel` 无参数，`createRetryableLazyComponent` 推导出的 props 为 `never`）；给测试夹具加上 `_props: object` 后通过。该文件只改了夹具签名，3 个用例仍通过。
 - `pnpm exec biome check`（改动的 5 个 TS / TSX 文件）：通过。
 - 回归入口列出的 11 个文件，加上 `i18n-reactivity-contract`、`number-format-reactivity-contract`、`locale-format-contract`、`design-token-ratchet`、`action-progress-label-contract`、`mobile-data-presentation-contract`：17 个文件、373 个用例全部通过。
 
@@ -201,7 +201,7 @@ hook 只为空快照建一个到期时钟（`useSyncExternalStore`）：创建�
   - `refetchIntervalInBackground` 改为 `true`：「后台过期」用例失败。
   - 聚焦刷新改为对所有快照生效：既有的「聚焦不刷新过期快照」失败。
 - `pnpm exec biome check`（改动的 3 个 TS / TSX 文件）：通过。
-- `pnpm --filter @gatu/terminal typecheck`：通过。
+- `pnpm --filter @sairn/terminal typecheck`：通过。
 - 回归入口列出的 11 个文件，加上 `mobile-data-presentation-contract`、`i18n-reactivity-contract`、`number-format-reactivity-contract`：14 个文件、371 个用例全部通过。
 - 既有的偶发失败，与本次修复无关：`use-market-funding-history.test.tsx` 有几条旧用例在 mock 立即 resolve 的 `render` 之后马上断言 `loading`，结果取决于 TanStack 的真实 `setTimeout(0)` 通知是否赶在 React `act` 收尾之前。在未改动的 `1411036c` 文件上连续跑 20 次，失败 1 次（第 3 次，`maps a complete snapshot to ready range buckets`）。修复版在本次约 25 次运行里失败过 2 次，都在 `aborts an in-flight load when the view deactivates…` 的同一条断言上：一次是修复后第一次运行，另一次是去掉 `refetchInterval` 的变异运行。这两处都不经过新增的轮询与过期判断（数据为 `undefined`），本次没有改动。
 
@@ -216,7 +216,7 @@ hook 只为空快照建一个到期时钟（`useSyncExternalStore`）：创建�
   - 在 `4c7ee2e1` 的 hook 上，新增的 hook 与面板用例共 8 例失败：两个后台用例停在 `ready`，其余停在 1 次请求；非空历史用例通过（钉住既有行为）。
 - 修复：见上文「查询」一节后的过期说明（接收时间、到期时钟与失效）。
 - 变异检查（临时改生产代码后运行上述三个测试文件，均已还原）：空态条件不看到期时钟、去掉失效、只用墙钟计龄、去掉「墙钟早于接收时间即过期」、失效时总是刷新、失效时从不刷新、非空快照也建到期时钟、没有空快照也失效、去掉 `focus` / `visibilitychange` 重新核对，每一项都有用例失败。实现过程中曾有两个守卫：失效前要求 `!isStale`，以及要求 `fetchStatus === "idle"`。去掉后都没有用例失败；核实它们只省掉一次多余的失效标记（进行中的请求不会被打断，成功后失效标记自动清除），已从实现中删除。
-- `pnpm exec biome check`（改动的 5 个 TS / TSX 文件）：通过。`pnpm --filter @gatu/terminal typecheck`（TypeScript 5.7.2）：通过。
+- `pnpm exec biome check`（改动的 5 个 TS / TSX 文件）：通过。`pnpm --filter @sairn/terminal typecheck`（TypeScript 5.7.2）：通过。
 - 回归入口的 11 个文件，加上移动端数据展示组 4 个文件与 `i18n-reactivity-contract`、`locale-format-contract`、`action-progress-label-contract`：18 个文件、444 个用例全部通过。
 
 未运行：完整终端测试、`pnpm build`、浏览器与真机核对；没有真实修改系统时间，也没有核对设备休眠期间 `performance.now()` 是否计时。

@@ -1,6 +1,6 @@
-import { Dropdown } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { GlobeIcon } from "@phosphor-icons/react";
+import { Dropdown } from "@sairn/ui";
 import { toast } from "sonner";
 import { DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
 import { defaultLocale, defaultNumberFormatLocale, localeList, numberFormatLocaleList } from "@/config/i18n";

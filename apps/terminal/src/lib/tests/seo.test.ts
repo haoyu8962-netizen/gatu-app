@@ -31,25 +31,25 @@ describe("seo", () => {
 	it("keeps the Terminal document and social titles distinct", () => {
 		const head = buildPageHead(ROUTE_SEO.TRADE);
 
-		expect(head.meta.find((meta) => meta.title)?.title).toBe("GATU Terminal — 永续 · 现货交易终端");
+		expect(head.meta.find((meta) => meta.title)?.title).toBe("Sairn Terminal — 永续 · 现货交易终端");
 		expect(getMetaContent(head, "name", "description")).toBe("低延迟链上交易终端：永续、现货、组合与订单管理。");
-		expect(getMetaContent(head, "property", "og:title")).toBe("GATU Terminal");
+		expect(getMetaContent(head, "property", "og:title")).toBe("Sairn Terminal");
 		expect(getMetaContent(head, "property", "og:locale")).toBe("zh_CN");
-		expect(getMetaContent(head, "name", "twitter:title")).toBe("GATU Terminal");
-		expect(getMetaContent(head, "property", "og:image")).toBe("https://app.gatu.ai/og-terminal-1200x630.png");
+		expect(getMetaContent(head, "name", "twitter:title")).toBe("Sairn Terminal");
+		expect(getMetaContent(head, "property", "og:image")).toBe("https://app.sairn.ai/og-terminal-1200x630.png");
 	});
 
 	it("formats live market titles with the price first", () => {
-		expect(buildMarketDocumentTitle("0.8471", "GTU-USDC")).toBe("0.8471 GTU/USDC · GATU");
-		expect(buildMarketDocumentTitle("0.8471", "GTU/USDC")).toBe("0.8471 GTU/USDC · GATU");
+		expect(buildMarketDocumentTitle("0.8471", "GTU-USDC")).toBe("0.8471 GTU/USDC · Sairn");
+		expect(buildMarketDocumentTitle("0.8471", "GTU/USDC")).toBe("0.8471 GTU/USDC · Sairn");
 	});
 
 	it("keeps route-specific social titles when no override is provided", () => {
 		const head = buildPageHead({ title: "Portfolio", path: "/portfolio" });
 
-		expect(getMetaContent(head, "property", "og:title")).toBe("Portfolio | GATU");
+		expect(getMetaContent(head, "property", "og:title")).toBe("Portfolio | Sairn");
 		expect(getMetaContent(head, "property", "og:locale")).toBe("en_US");
-		expect(getMetaContent(head, "name", "twitter:title")).toBe("Portfolio | GATU");
+		expect(getMetaContent(head, "name", "twitter:title")).toBe("Portfolio | Sairn");
 	});
 
 	it("keeps canonical links route-owned so only one is rendered", () => {
@@ -69,6 +69,13 @@ describe("seo", () => {
 		expect(buildRootHead().links.some((link) => link.rel === "preload")).toBe(false);
 	});
 
+	it("renders the theme color it is given and defaults to the dark canvas for the prerendered shell", () => {
+		expect(getMetaContent(buildRootHead(), "name", "theme-color")).toBe(SEO_DEFAULTS.themeColor);
+		expect(SEO_DEFAULTS.themeColor).toBe("#0F1A1F");
+		expect(getMetaContent(buildRootHead([], "#FFFFFF"), "name", "theme-color")).toBe("#FFFFFF");
+		expect(buildRootHead().meta.filter((meta) => meta.name === "theme-color")).toHaveLength(1);
+	});
+
 	it("keeps global connection hints DNS-only so the edge can select the correct trading network", () => {
 		const links = buildRootHead().links;
 		expect(links.filter((link) => link.rel === "preconnect")).toEqual([]);
@@ -80,7 +87,7 @@ describe("seo", () => {
 	it("publishes the dedicated vector favicon alongside ICO and Apple fallbacks", () => {
 		const iconLinks = buildRootHead().links.filter((link) => link.rel === "icon" || link.rel === "apple-touch-icon");
 		expect(iconLinks).toEqual([
-			{ rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48 64x64", type: "image/x-icon" },
+			{ rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
 			{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 		]);

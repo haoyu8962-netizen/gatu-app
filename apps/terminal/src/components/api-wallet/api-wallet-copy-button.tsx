@@ -1,6 +1,6 @@
-import { Button, ButtonIcon } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
+import { Button, ButtonIcon } from "@sairn/ui";
 import type { MouseEvent } from "react";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useIsMobile } from "@/hooks/use-mobile";

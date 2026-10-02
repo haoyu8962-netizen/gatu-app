@@ -14,6 +14,8 @@ export default defineConfig({
 		"account-actions.pw.ts",
 		"position-close-all.pw.ts",
 		"notifications.pw.ts",
+		"top-nav-connected.pw.ts",
+		"brand-surfaces.pw.ts",
 	],
 	outputDir: fileURLToPath(new URL("../../test-results/shared-browser", import.meta.url)),
 	fullyParallel: false,

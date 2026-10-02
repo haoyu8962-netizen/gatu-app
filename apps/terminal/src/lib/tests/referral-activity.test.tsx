@@ -12,7 +12,7 @@ const tabsHarness = vi.hoisted(() => ({
 	onValueChange: undefined as ((value: string) => void) | undefined,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
 		<button type="button" onClick={onClick}>
 			{children}

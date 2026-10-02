@@ -7,8 +7,8 @@ import {
 	removeAgentFromStorageAndVerify,
 	writeAgentToStorageAndVerify,
 	writePersistTradingConnection,
-} from "@gatu/hl-react/signing/agent-storage";
-import { createMobileAgentName, MOBILE_AGENT_NAME_BASE } from "@gatu/hl-react/signing/mobile-agent";
+} from "@sairn/hl-react/signing/agent-storage";
+import { createMobileAgentName, MOBILE_AGENT_NAME_BASE } from "@sairn/hl-react/signing/mobile-agent";
 import { privateKeyToAccount } from "viem/accounts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

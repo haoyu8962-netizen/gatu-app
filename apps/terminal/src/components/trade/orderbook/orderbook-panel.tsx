@@ -1,6 +1,6 @@
-import { Dropdown, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { BookBookmarkIcon, ListDashesIcon } from "@phosphor-icons/react";
+import { Dropdown, Tabs, TabsContent, TabsList, TabsTrigger } from "@sairn/ui";
 import { useMemo, useRef, useState } from "react";
 import { ORDERBOOK_LABELS } from "@/config/orderbook-labels";
 import { getBaseQuoteFromPairName } from "@/domain/market";

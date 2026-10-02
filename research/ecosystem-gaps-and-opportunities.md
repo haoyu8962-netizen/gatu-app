@@ -31,7 +31,7 @@
 | Phantom Wallet | Integrated HL trading | $100K/day |
 | PVP.trade | Specialized interface | $7.2M lifetime |
 | Insilico Terminal | Alternative interface | — |
-| gatu (us) | Alternative trading terminal | — |
+| Sairn (us) | Alternative trading terminal | — |
 
 ### Portfolio & Analytics
 | Tool | Description | Gap |

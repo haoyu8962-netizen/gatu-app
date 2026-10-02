@@ -1,4 +1,4 @@
-# RWA Expansion on Hyperliquid — New Asset Integration Roadmap for gatu
+# RWA Expansion on Hyperliquid — New Asset Integration Roadmap for Sairn
 
 ## Context
 
@@ -40,7 +40,7 @@ RWA perps trade **24/7** on Hyperliquid, including when underlying traditional m
 
 ### Fee Structure
 
-Builder perps charge **2x standard fees**, split 50/50 between builder and protocol. This is baked into the Hyperliquid protocol — gatu doesn't need to handle fee differences, but should **display effective fee rates** for user awareness.
+Builder perps charge **2x standard fees**, split 50/50 between builder and protocol. This is baked into the Hyperliquid protocol — Sairn doesn't need to handle fee differences, but should **display effective fee rates** for user awareness.
 
 ### Funding Rates
 
@@ -57,11 +57,11 @@ Same hourly formula (1/8 of 8h rate, premium index vs oracle), but:
 
 ---
 
-## gatu Current Architecture Readiness
+## Sairn Current Architecture Readiness
 
 ### What Already Works
 
-gatu's builder perp infrastructure is solid:
+Sairn's builder perp infrastructure is solid:
 
 - **Asset ID encoding** (`src/lib/hyperliquid/asset-id.ts`): `100000 + dexIndex * 10000 + assetIndex` — already handles builder perps including RWA
 - **Market kinds**: `"perp" | "spot" | "builderPerp"` — RWA assets are `builderPerp` kind, no new type needed
@@ -177,7 +177,7 @@ Two oracle modes exist for builder perps:
 1. **Standard**: External oracle (RedStone HyperStone) — price updates continuously from real-world feeds
 2. **Hyperps**: No external oracle dependency — funding rate uses 8h EMA of mark prices. Used by some RWA markets for true 24/7 operation
 
-gatu should detect which mode a market uses and display accordingly (affects how "oracle price" is interpreted in market overview).
+Sairn should detect which mode a market uses and display accordingly (affects how "oracle price" is interpreted in market overview).
 
 ### Price Decimals
 
@@ -200,4 +200,4 @@ This is already handled by the `szDecimals` / `pxDecimals` fields in market meta
 - S&P 500 licensing signals institutional legitimacy
 - RedStone HyperStone covers 1,300+ assets — supply of tradeable RWAs will keep expanding
 
-gatu's existing builder perp infrastructure means RWA assets already work. The opportunity is making them **discoverable, contextual, and optimized** for traders who think in traditional market terms rather than crypto-native conventions.
+Sairn's existing builder perp infrastructure means RWA assets already work. The opportunity is making them **discoverable, contextual, and optimized** for traders who think in traditional market terms rather than crypto-native conventions.

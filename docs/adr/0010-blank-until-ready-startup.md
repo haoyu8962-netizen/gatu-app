@@ -52,3 +52,7 @@
 3. `MarketOverview` 的 pending 叠加 IBM Plex 两个规格的就绪（`useFontsReady`），覆盖门控超时与切换市场的情况。
 
 后果：正常情况下首帧已按最终字体度量排版，不再因换字重排；字体极端缓慢时最多空白 3 s 后以回退字体显示，与 block 语义一致。实测记录在[任务记录](../work-memory/sessions/2026-09-16-remove-startup-placeholders.md)。
+
+## 更正（2026-10-01，品牌改名）
+
+决策 1 写的播报文字 `Loading GATU...` 是当时的产品名。改名后播报为 `Loading Sairn...`，品牌名取自 `BRAND_NAME`（`brand/brand.json`），不再写死；结构（一个 `aria-busy` 容器加一个 `sr-only` output）不变，见 [ADR 0027](0027-brand-single-source-and-identifier-rename.md)。

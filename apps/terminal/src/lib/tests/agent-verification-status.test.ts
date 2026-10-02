@@ -1,19 +1,19 @@
-import type { AgentWallet } from "@gatu/hl-react";
-import { createMobileAgentWalletRecord } from "@gatu/hl-react/signing/mobile-agent";
+import type { ExtraAgentsResponse } from "@nktkas/hyperliquid";
+import type { AgentWallet } from "@sairn/hl-react";
+import { createMobileAgentWalletRecord } from "@sairn/hl-react/signing/mobile-agent";
 import {
 	classifyAgentStatusError,
 	deriveAgentMissingReason,
 	deriveAgentRequirements,
 	deriveAgentVerificationStatus,
-} from "@gatu/hl-react/signing/use-agent-status";
-import type { ExtraAgentsResponse } from "@nktkas/hyperliquid";
+} from "@sairn/hl-react/signing/use-agent-status";
 import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { describe, expect, it } from "vitest";
 
 const AGENT = "0x2222222222222222222222222222222222222222" as Address;
 const OTHER_AGENT = "0x3333333333333333333333333333333333333333" as Address;
-const APPROVED_AGENTS: ExtraAgentsResponse = [{ address: AGENT, name: "gatu", validUntil: null }];
+const APPROVED_AGENTS: ExtraAgentsResponse = [{ address: AGENT, name: "sairn", validUntil: null }];
 const LOCAL_AGENT: AgentWallet = {
 	privateKey: `0x${"ab".repeat(32)}`,
 	publicKey: AGENT,
@@ -58,11 +58,11 @@ describe("Agent verification status", () => {
 	});
 
 	it("requires the deployment Agent name as well as the local public key", () => {
-		expect(requirements(APPROVED_AGENTS, "gatu-dev")).toMatchObject({
+		expect(requirements(APPROVED_AGENTS, "sairn-dev")).toMatchObject({
 			isAgentReady: false,
 			needsAgent: true,
 		});
-		expect(requirements(APPROVED_AGENTS, "gatu")).toMatchObject({
+		expect(requirements(APPROVED_AGENTS, "sairn")).toMatchObject({
 			isAgentReady: true,
 			needsAgent: false,
 		});
@@ -80,7 +80,7 @@ describe("Agent missing reason", () => {
 		extraAgentsData: [] as ExtraAgentsResponse,
 		localAgent: LOCAL_AGENT,
 		hasInvalidStorageRecord: false,
-		expectedAgentName: "gatu-dev",
+		expectedAgentName: "sairn-dev",
 		nowMs: 1_000,
 	};
 
@@ -107,7 +107,7 @@ describe("Agent missing reason", () => {
 			deriveAgentMissingReason({
 				...baseOptions,
 				localAgent: null,
-				extraAgentsData: [{ address: OTHER_AGENT, name: "gatu-dev", validUntil: null }],
+				extraAgentsData: [{ address: OTHER_AGENT, name: "sairn-dev", validUntil: null }],
 			}),
 		).toBe("remote_named_agent_exists");
 	});
@@ -116,7 +116,7 @@ describe("Agent missing reason", () => {
 		expect(
 			deriveAgentMissingReason({
 				...baseOptions,
-				extraAgentsData: [{ address: OTHER_AGENT, name: "gatu-dev", validUntil: null }],
+				extraAgentsData: [{ address: OTHER_AGENT, name: "sairn-dev", validUntil: null }],
 			}),
 		).toBe("remote_key_replaced");
 	});
@@ -125,7 +125,7 @@ describe("Agent missing reason", () => {
 		expect(
 			deriveAgentMissingReason({
 				...baseOptions,
-				extraAgentsData: [{ address: AGENT, name: "gatu", validUntil: null }],
+				extraAgentsData: [{ address: AGENT, name: "sairn", validUntil: null }],
 			}),
 		).toBe("agent_name_mismatch");
 	});
@@ -144,7 +144,7 @@ describe("Agent missing reason", () => {
 		expect(
 			deriveAgentMissingReason({
 				...baseOptions,
-				extraAgentsData: [{ address: AGENT, name: "gatu-dev", validUntil: 999 }],
+				extraAgentsData: [{ address: AGENT, name: "sairn-dev", validUntil: 999 }],
 			}),
 		).toBe("local_key_not_approved");
 	});

@@ -1,4 +1,4 @@
-import type { MarketSpotToken as SpotToken } from "@gatu/hl-react";
+import type { MarketSpotToken as SpotToken } from "@sairn/hl-react";
 import { useMemo } from "react";
 import { useMarkets } from "./use-markets";
 

@@ -1,7 +1,7 @@
 ---
 name: hyperliquid-api
 description: Use this skill when the user needs to work with the Hyperliquid API, Hyperliquid SDKs, common request and response shapes, signing, WebSocket subscriptions, rate limits, or when they ask which Hyperliquid API surface to use for a task. Especially use it when correctness about API-surface selection, core return patterns, action results, signing mode, or transport choice matters.
-license: Proprietary to gatu workspace unless replaced before publishing
+license: Proprietary to Sairn workspace unless replaced before publishing
 compatibility: Designed for Agent Skills-compatible clients such as Codex and Claude Code. Requires filesystem access to bundled references; network access may be needed if live verification is requested.
 ---
 
@@ -14,12 +14,13 @@ Use this skill to choose the correct Hyperliquid API surface and avoid guessing 
 1. If the task is read-only, start with `Info`.
 2. If the task changes state, places trades, transfers funds, or configures the account, use `Exchange`.
 3. If the task needs live updates or streaming, use `Subscription`.
-4. If the task mentions low latency, streaming, or continuous updates, consider `WebSocketTransport`.
-5. If the task needs simple snapshot reads or serverless-style usage, prefer `HttpTransport`.
+4. If the task looks up or streams HyperCore blocks or transactions (by height, hash, or address), use `Explorer`, not `Info` or `Subscription`.
+5. If the task mentions low latency, streaming, or continuous updates, consider `WebSocketTransport`.
+6. If the task needs simple snapshot reads or serverless-style usage, prefer `HttpTransport`.
 
 ## What to do first
 
-1. Classify the task as `Info`, `Exchange`, or `Subscription`.
+1. Classify the task as `Info`, `Exchange`, `Subscription`, or `Explorer`.
 2. State that classification explicitly in your reasoning or answer.
 3. Load only the reference file needed for that task:
    - `references/api-selection.md` for surface selection
@@ -37,6 +38,7 @@ Use this skill to choose the correct Hyperliquid API surface and avoid guessing 
 - Do not describe `Exchange` responses as a single boolean success unless the specific method guarantees that. Order-like actions can return mixed per-item statuses.
 - Do not recommend WebSocket only for subscriptions. It can also matter for lower-latency request patterns.
 - Do not assume rate limits are only IP-based. Address-based action limits also matter.
+- Do not send `Explorer` requests to `/info` or `Explorer` streams to the default WebSocket URL. Both live on the RPC host; see `references/api-selection.md`.
 - Do not dump all method details from memory. Load the targeted reference file instead.
 - If the user asks about an exact method-specific return shape that is not covered by the bundled examples, say that you are giving the common pattern and verify the exact method against the official docs or the typed TypeScript SDK before claiming full certainty.
 

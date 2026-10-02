@@ -1,6 +1,6 @@
-# @gatu/ui
+# @sairn/ui
 
-The gatu design system. Primitives, tokens, and variants — nothing app-specific.
+The Sairn design system. Primitives, tokens, and variants — nothing app-specific.
 
 Built on [Base UI](https://base-ui.com) (headless accessibility primitives), [Tailwind CSS v4](https://tailwindcss.com) (utility classes + `@theme` tokens), [Class Variance Authority](https://cva.style) (variants), and [Phosphor Icons](https://phosphoricons.com).
 
@@ -125,13 +125,13 @@ Overlays use Base UI's compound pattern:
 ```tsx
 // App-level styles entry — apps/terminal/src/styles.css
 @import "tailwindcss";
-@import "@gatu/ui/globals.css";
+@import "@sairn/ui/globals.css";
 @source "../../../packages/ui/src";   // scan primitives for used utilities
 ```
 
 ```tsx
 // In any component
-import { Button, Modal, TextInput } from "@gatu/ui";
+import { Button, Modal, TextInput } from "@sairn/ui";
 
 <Button variant="filled" intent="brand" size="md">Place order</Button>
 ```
@@ -142,7 +142,7 @@ When the app needs a specialized component, wrap — don't modify the primitive.
 
 ```tsx
 // apps/terminal/src/components/ui/info-row.tsx
-import { Divider } from "@gatu/ui";
+import { Divider } from "@sairn/ui";
 
 export function InfoRow({ label, value }: Props) {
   return (
@@ -174,10 +174,10 @@ No runtime deps — the consuming app owns the versions.
 
 ```ts
 // index (components + utils)
-import { Button, Modal, Table, cn } from "@gatu/ui";
+import { Button, Modal, Table, cn } from "@sairn/ui";
 
 // tokens + base styles
-import "@gatu/ui/globals.css";
+import "@sairn/ui/globals.css";
 ```
 
 ## Conventions

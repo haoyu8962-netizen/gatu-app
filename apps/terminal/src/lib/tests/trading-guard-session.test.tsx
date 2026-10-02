@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { useTradingGuard } from "@gatu/hl-react/hooks/useTradingGuard";
+import { useTradingGuard } from "@sairn/hl-react/hooks/useTradingGuard";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,7 +13,7 @@ const state = vi.hoisted(() => ({
 	authorize: vi.fn(),
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({ clientKey: state.owner, env: "Mainnet", sessionMode: "wallet" }),
 }));
 vi.mock("../../../../../packages/hl-react/src/signing/use-trading-status", () => ({
@@ -26,7 +26,7 @@ vi.mock("../../../../../packages/hl-react/src/signing/use-trading-status", () =>
 		isBuilderFeeLoading: false,
 	}),
 }));
-vi.mock("@gatu/hl-react/signing/use-trading-authorization", () => ({
+vi.mock("@sairn/hl-react/signing/use-trading-authorization", () => ({
 	useTradingAuthorization: () => ({ authorize: state.authorize, status: "idle", error: null }),
 }));
 

@@ -1,4 +1,4 @@
-import { isNonZeroPositionSize } from "@gatu/hl-react";
+import { isNonZeroPositionSize } from "@sairn/hl-react";
 import { describe, expect, it } from "vitest";
 
 describe("position size string gate", () => {

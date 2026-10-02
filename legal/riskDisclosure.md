@@ -1,17 +1,17 @@
-# Gatu - Risk Disclosure
+# Sairn - Risk Disclosure
 
-**Last Updated:** July 21, 2026
+**Last Updated:** October 1, 2026
 
-This Risk Disclosure supplements the Gatu [Terms of Use](https://app.gatu.ai/terms). It
+This Risk Disclosure supplements the Sairn [Terms of Use](https://app.sairn.ai/terms). It
 highlights material risks but cannot describe every possible risk. If this Risk Disclosure
 conflicts with the Terms, the Terms control. Nothing in this document is investment,
 financial, legal, tax, or trading advice.
 
 ## 1. Interface and Third-Party Systems
 
-Gatu is non-custodial interface software. Orders, transfers, deposits, withdrawals,
+Sairn is non-custodial interface software. Orders, transfers, deposits, withdrawals,
 liquidations, and settlements are performed by Hyperliquid, supported blockchains, smart
-contracts, bridges, validators, wallets, and other third-party systems. Gatu does not control
+contracts, bridges, validators, wallets, and other third-party systems. Sairn does not control
 those systems and cannot reverse a transaction or guarantee execution, settlement,
 availability, or recovery.
 
@@ -53,7 +53,7 @@ HIP-3 markets are deployed and operated independently by third parties. A deploy
 contract specifications, oracle methodology, leverage limits, and settlement behavior. Such
 markets may have limited liquidity, incomplete documentation, concentrated control, unusual
 trading hours, or greater manipulation, discontinuation, and liquidation risk. Displaying a
-market, label, disclaimer, or deployer link does not mean Gatu audited, approved, or endorsed
+market, label, disclaimer, or deployer link does not mean Sairn audited, approved, or endorsed
 the market or deployer.
 
 ## 6. Spot Asset and Token Risk

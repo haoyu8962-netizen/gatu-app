@@ -1,4 +1,4 @@
-import { createStalenessWatchdog, type StalenessWatchdog } from "@gatu/hl-react/internal/websocket/staleness";
+import { createStalenessWatchdog, type StalenessWatchdog } from "@sairn/hl-react/internal/websocket/staleness";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("staleness watchdog", () => {

@@ -1,15 +1,3 @@
-import {
-	Button,
-	ButtonIcon,
-	SearchInput,
-	Select,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	ArrowClockwiseIcon,
@@ -24,6 +12,18 @@ import {
 	UserCircleIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
+import {
+	Button,
+	ButtonIcon,
+	SearchInput,
+	Select,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@sairn/ui";
 import type { ReactNode } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";

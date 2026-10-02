@@ -1,6 +1,7 @@
-import { Badge, Button, Checkbox } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { DownloadSimpleIcon, EyeIcon, EyeSlashIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { Badge, Button, Checkbox } from "@sairn/ui";
+import { BRAND_NAME } from "@/config/brand";
 import { ApiWalletCopyButton } from "./api-wallet-copy-button";
 
 const MASKED_PRIVATE_KEY = "••••••••••••••••••••••••••••••••";
@@ -84,8 +85,8 @@ export function ApiWalletCredentialBox({
 				<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
 				<p>
 					<Trans>
-						Download the credential now and move it to secure storage. Gatu cannot recover it after this window is
-						closed.
+						Download the credential now and move it to secure storage. {BRAND_NAME} cannot recover it after this window
+						is closed.
 					</Trans>
 				</p>
 			</div>

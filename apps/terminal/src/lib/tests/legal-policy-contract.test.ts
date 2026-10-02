@@ -21,6 +21,20 @@ describe("published legal policy contract", () => {
 		expect(docs).not.toContain("placeholders for more detailed documentation");
 		expect(docs).not.toContain("Replace each link");
 	});
+	it("lists the first-trade steps in the order the terminal enforces (docs/trading-onboarding.md)", () => {
+		const docs = readRepositoryFile("legal/docs.md");
+		const steps = [
+			"**Connect your wallet**",
+			"**Accept the terms**",
+			"**Enable trading**",
+			"**Fund your account if it is empty**",
+			"**Place a trade**",
+		].map((step) => docs.indexOf(step));
+		expect(steps.every((index) => index >= 0)).toBe(true);
+		expect([...steps].sort((a, b) => a - b)).toEqual(steps);
+		expect(docs).toContain("Email sign-in skips this step");
+	});
+
 	it("keeps the Terms as the governing source for supplemental policies", () => {
 		expect(terms).toContain("laws of England and Wales");
 		expect(terms).toMatch(/London\s+Court of International Arbitration \(LCIA\)/);
@@ -31,26 +45,26 @@ describe("published legal policy contract", () => {
 	});
 
 	it("describes current data handling without claiming an unused analytics provider", () => {
-		expect(privacy).toContain("**Last Updated:** September 27, 2026");
-		expect(privacy).toContain("[Cookie and Browser Storage Policy](https://app.gatu.ai/cookies)");
+		expect(privacy).toContain("**Last Updated:** October 1, 2026");
+		expect(privacy).toContain("[Cookie and Browser Storage Policy](https://app.sairn.ai/cookies)");
 		expect(privacy).toContain("does not integrate a product-analytics SDK");
 		expect(privacy).not.toContain("Mixpanel");
-		expect(privacy).toContain("support@gatu.ai");
+		expect(privacy).toContain("support@sairn.ai");
 	});
 
 	it("publishes an accurate cookie and browser-storage policy", () => {
 		const terminalRoute = readRepositoryFile("apps/terminal/src/routes/cookies.tsx");
 
-		expect(cookies).toContain("**Last Updated:** August 3, 2026");
+		expect(cookies).toContain("**Last Updated:** October 1, 2026");
 		expect(cookies).toContain("does not integrate a product-analytics SDK");
 		expect(cookies).toContain("Essential storage cannot be disabled through the Interface");
-		expect(cookies).toContain("support@gatu.ai");
+		expect(cookies).toContain("support@sairn.ai");
 		expect(terminalRoute).toContain('createFileRoute("/cookies")');
 		expect(terminalRoute).toContain("<LegalDocPage content={content} />");
 	});
 
 	it("publishes a completed disclosure for the product's material risk surfaces", () => {
-		expect(risk).toContain("**Last Updated:** July 21, 2026");
+		expect(risk).toContain("**Last Updated:** October 1, 2026");
 		expect(risk).not.toContain("DRAFT");
 		expect(risk).not.toContain("【");
 		for (const topic of [
@@ -84,7 +98,11 @@ describe("published legal policy contract", () => {
 		expect(terminalRoute).toContain('createFileRoute("/risk")');
 		expect(websitePage).toContain('path="/risk"');
 		expect(websiteContentConfig).toContain('"riskDisclosure.md"');
-		expect(websiteFooter).toContain("mailto:support@gatu.ai");
-		expect(websiteFooter).not.toContain("hi@gatu.ai");
+		const brand = JSON.parse(readRepositoryFile("brand/brand.json")) as { emails: Record<string, string> };
+
+		expect(brand.emails).toEqual({ support: "support@sairn.ai" });
+		expect(websiteFooter).toMatch(/href: `mailto:\$\{SUPPORT_EMAIL\}`/);
+		expect(websiteFooter).not.toMatch(/mailto:[^`$]/);
+		expect(websiteFooter).not.toMatch(/\bhi@/i);
 	});
 });

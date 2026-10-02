@@ -1,4 +1,4 @@
-import { useInfo } from "@gatu/hl-react";
+import { useInfo } from "@sairn/hl-react";
 import { getCoreRowModel, getSortedRowModel, type Row, type SortingState, useReactTable } from "@tanstack/react-table";
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";

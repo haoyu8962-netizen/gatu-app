@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { Table } from "@gatu/ui";
+import { Table } from "@sairn/ui";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

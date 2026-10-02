@@ -315,7 +315,7 @@ test("requires exactly one generated JavaScript chunk for a prefix", () => {
 });
 
 test("writes graph cache atomically and explains a missing cache", (context) => {
-	const temporaryDirectory = mkdtempSync(join(tmpdir(), "gatu-client-chunk-graph-"));
+	const temporaryDirectory = mkdtempSync(join(tmpdir(), "sairn-client-chunk-graph-"));
 	context.after(() => rmSync(temporaryDirectory, { recursive: true, force: true }));
 	const graphFile = join(temporaryDirectory, "cache", "client-chunk-graph.json");
 
@@ -332,12 +332,12 @@ test("writes graph cache atomically and explains a missing cache", (context) => 
 	);
 	assert.throws(
 		() => readClientChunkGraphFile(join(temporaryDirectory, "missing.json")),
-		/pnpm --filter @gatu\/terminal build/,
+		/pnpm --filter @sairn\/terminal build/,
 	);
 });
 
 test("removes the same-directory temporary graph when atomic rename fails", (context) => {
-	const temporaryDirectory = mkdtempSync(join(tmpdir(), "gatu-client-chunk-graph-failure-"));
+	const temporaryDirectory = mkdtempSync(join(tmpdir(), "sairn-client-chunk-graph-failure-"));
 	context.after(() => rmSync(temporaryDirectory, { recursive: true, force: true }));
 	const graphFile = join(temporaryDirectory, "existing-directory");
 	mkdirSync(graphFile);
@@ -350,7 +350,7 @@ test("removes the same-directory temporary graph when atomic rename fails", (con
 });
 
 test("does not allow chunk graph diagnostics in public output", (context) => {
-	const publicDirectory = mkdtempSync(join(tmpdir(), "gatu-client-public-"));
+	const publicDirectory = mkdtempSync(join(tmpdir(), "sairn-client-public-"));
 	context.after(() => rmSync(publicDirectory, { recursive: true, force: true }));
 	const nestedAssets = join(publicDirectory, "nested", "assets");
 	mkdirSync(nestedAssets, { recursive: true });
@@ -434,7 +434,7 @@ test("keeps graph helpers and tests in the production workflow path filter", () 
 	assert.equal(workflow.includes('- "scripts/check-client-bundle-budget.test.mjs"'), true);
 	assert.equal(workflow.includes('- "scripts/client-chunk-graph.*"'), true);
 	assert.equal(workflow.includes("scripts/check-client-bundle-budget.test.mjs"), true);
-	assert.equal(workflow.includes("pnpm --filter @gatu/terminal perf:startup"), true);
+	assert.equal(workflow.includes("pnpm --filter @sairn/terminal perf:startup"), true);
 });
 
 test("runs the budget tests once from the terminal test workflow, outside the build matrix", () => {

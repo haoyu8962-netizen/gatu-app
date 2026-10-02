@@ -8,6 +8,6 @@ export type {
 	SpotMarket,
 	SpotPair,
 	UnifiedMarket,
-} from "@gatu/hl-react";
+} from "@sairn/hl-react";
 export { MarketsProvider, useMarkets } from "./use-markets";
 export { type UseSpotTokensReturn, useSpotTokens } from "./use-spot-tokens";

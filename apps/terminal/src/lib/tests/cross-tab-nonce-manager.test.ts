@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { createCrossTabNonceManager } from "@gatu/hl-react/internal/exchange/cross-tab-nonce-manager";
+import { createCrossTabNonceManager } from "@sairn/hl-react/internal/exchange/cross-tab-nonce-manager";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const SIGNER = "0x1111111111111111111111111111111111111111";

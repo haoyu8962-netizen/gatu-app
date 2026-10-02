@@ -72,9 +72,9 @@ Not included in this slice:
 Required local checks before shipping:
 
 - `pnpm exec biome check <changed files>`
-- `pnpm --filter @gatu/terminal exec vitest run src/lib/tests/market-route.test.ts`
+- `pnpm --filter @sairn/terminal exec vitest run src/lib/tests/market-route.test.ts`
 - `git diff --check`
-- `pnpm --filter @gatu/terminal build`
+- `pnpm --filter @sairn/terminal build`
 - Runtime smoke:
   - `/trade/BTC`
   - `/trade/xyz:SILVER`

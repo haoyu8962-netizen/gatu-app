@@ -1,7 +1,7 @@
 import {
 	createWsTransportMonitor,
 	type WsTransportMonitorOptions,
-} from "@gatu/hl-react/internal/websocket/transport-monitor";
+} from "@sairn/hl-react/internal/websocket/transport-monitor";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 class FakeSocket extends EventTarget {

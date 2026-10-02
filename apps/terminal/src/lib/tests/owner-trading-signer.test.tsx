@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { useHyperliquidClients } from "@gatu/hl-react/hooks/useClients";
-import { useExchange } from "@gatu/hl-react/hooks/useExchange";
 import type { AbstractViemJsonRpcAccount } from "@nktkas/hyperliquid/signing";
+import { useHyperliquidClients } from "@sairn/hl-react/hooks/useClients";
+import { useExchange } from "@sairn/hl-react/hooks/useExchange";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -27,7 +27,7 @@ const state = vi.hoisted(() => ({
 	externalClient: { account: { address: "0x2222222222222222222222222222222222222222" }, signTypedData: vi.fn() },
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		clientKey: state.clientKey,
 		env: "Mainnet",
@@ -38,8 +38,8 @@ vi.mock("@gatu/hl-react/provider", () => ({
 		subscription: {},
 	}),
 }));
-vi.mock("@gatu/hl-react/clients", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@gatu/hl-react/clients")>()),
+vi.mock("@sairn/hl-react/clients", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@sairn/hl-react/clients")>()),
 	getTradingClient: state.getTradingClient,
 	getHttpTransport: () => ({ isTestnet: false, request: state.httpRequest }),
 }));

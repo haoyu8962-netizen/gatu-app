@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ChartLineIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { Button } from "@sairn/ui";
 import { useMemo, useState } from "react";
 import { warmPositionMarketCloseSubmitHost } from "@/components/trade/components/position-market-close-submit-host-loader";
 import { DataPendingState } from "@/components/ui/data-pending-state";

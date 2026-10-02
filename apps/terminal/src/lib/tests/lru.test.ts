@@ -1,4 +1,4 @@
-import { LRU } from "@gatu/hl-react/lru";
+import { LRU } from "@sairn/hl-react/lru";
 import { describe, expect, it } from "vitest";
 
 describe("LRU", () => {

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { DirectionProvider } from "@base-ui/react/direction-provider";
-import { Button, ButtonIcon, Drawer, DrawerTrigger, Dropdown } from "@gatu/ui";
 import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { WalletIcon } from "@phosphor-icons/react";
+import { Button, ButtonIcon, Drawer, DrawerTrigger, Dropdown } from "@sairn/ui";
 import { act, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";

@@ -25,16 +25,16 @@ const testState = vi.hoisted(() => ({
 	refetchError: null as Error | null,
 }));
 
-vi.mock("@gatu/hl-react/provider", () => ({
+vi.mock("@sairn/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		env: "Mainnet",
 		builderConfig: undefined,
 		clientKey: OWNER,
-		agentName: "gatu-dev",
+		agentName: "sairn-dev",
 	}),
 }));
 
-vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
+vi.mock("@sairn/hl-react/hooks/useInfo", () => ({
 	useInfo: (method: string) =>
 		method === "extraAgents"
 			? {
@@ -55,13 +55,13 @@ vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
 				},
 }));
 
-vi.mock("@gatu/hl-react/signing/agent-storage", () => ({
+vi.mock("@sairn/hl-react/signing/agent-storage", () => ({
 	readAgentFromStorage: () => testState.localAgent,
 	useAgentWalletStorage: () => testState.localAgent,
 	useInvalidAgentStorageRecord: () => false,
 }));
 
-import { AgentStatusError, useAgentStatus } from "@gatu/hl-react/signing/use-agent-status";
+import { AgentStatusError, useAgentStatus } from "@sairn/hl-react/signing/use-agent-status";
 
 let observedStatus: ReturnType<typeof useAgentStatus> | undefined;
 
@@ -137,7 +137,7 @@ describe("useAgentStatus definitive verification", () => {
 	});
 
 	it("fails closed instead of trusting cached data after an error", () => {
-		testState.data = [{ address: AGENT, name: "gatu", validUntil: null }];
+		testState.data = [{ address: AGENT, name: "sairn", validUntil: null }];
 		testState.error = new Error("network unavailable");
 		const probe = renderProbe();
 
@@ -163,7 +163,7 @@ describe("useAgentStatus definitive verification", () => {
 	});
 
 	it("keeps an exact unexpired Agent ready during background verification", () => {
-		testState.data = [{ address: AGENT, name: "gatu-dev", validUntil: null }];
+		testState.data = [{ address: AGENT, name: "sairn-dev", validUntil: null }];
 		testState.isFetching = true;
 		const probe = renderProbe();
 
@@ -176,7 +176,7 @@ describe("useAgentStatus definitive verification", () => {
 	});
 
 	it("requires the Provider deployment name for the stored Agent", () => {
-		testState.data = [{ address: AGENT, name: "gatu", validUntil: null }];
+		testState.data = [{ address: AGENT, name: "sairn", validUntil: null }];
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("missing");
@@ -195,7 +195,7 @@ describe("useAgentStatus definitive verification", () => {
 
 	it("warns when an absent local key would replace a same-name remote Agent", () => {
 		testState.localAgent = null;
-		testState.data = [{ address: "0x3333333333333333333333333333333333333333", name: "gatu-dev", validUntil: null }];
+		testState.data = [{ address: "0x3333333333333333333333333333333333333333", name: "sairn-dev", validUntil: null }];
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("missing");
@@ -224,7 +224,7 @@ describe("useAgentStatus definitive verification", () => {
 			publicKey: NEXT_AGENT,
 			source: "local-registration",
 		};
-		testState.refetchData = [{ address: NEXT_AGENT, name: "gatu-dev", validUntil: null }];
+		testState.refetchData = [{ address: NEXT_AGENT, name: "sairn-dev", validUntil: null }];
 
 		await expect(observedStatus?.refetchAgent()).resolves.toMatchObject({
 			isAgentReady: true,

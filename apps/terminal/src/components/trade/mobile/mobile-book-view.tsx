@@ -1,6 +1,6 @@
-import { Button, Dropdown, type DropdownItem } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
+import { Button, Dropdown, type DropdownItem } from "@sairn/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ORDERBOOK_LABELS } from "@/config/orderbook-labels";

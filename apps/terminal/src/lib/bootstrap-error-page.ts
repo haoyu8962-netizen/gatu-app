@@ -40,7 +40,7 @@ export function renderBootstrapErrorPage({ onReload = reloadWindow }: BootstrapE
 		reloadButton.type = "button";
 		reloadButton.textContent = copy.reload;
 		reloadButton.style.cssText =
-			"border:0;border-radius:6px;padding:8px 12px;background:#D7FF3F;color:#08090D;font:inherit;cursor:pointer";
+			"border:0;border-radius:6px;padding:8px 12px;background:#86E5D3;color:#08090D;font:inherit;cursor:pointer";
 		reloadButton.addEventListener("click", onReload, { once: true });
 
 		content.append(heading, description, reloadButton);

@@ -1,8 +1,8 @@
 # Support
 
-Welcome to gatu Support. This page helps you find answers, troubleshoot common issues, and get in touch with our team.
+Welcome to Sairn Support. This page helps you find answers, troubleshoot common issues, and get in touch with our team.
 
-> _Last updated: June 15, 2026_
+> _Last updated: October 1, 2026_
 
 ---
 
@@ -19,13 +19,13 @@ Welcome to gatu Support. This page helps you find answers, troubleshoot common i
 
 ### General
 
-**What is gatu?**
-gatu is a non-custodial trading terminal for the Hyperliquid decentralized exchange, supporting perpetual futures and spot markets with real-time data and advanced charting.
+**What is Sairn?**
+Sairn is a non-custodial trading terminal for the Hyperliquid decentralized exchange, supporting perpetual futures and spot markets with real-time data and advanced charting.
 
-**Does gatu hold my funds?**
-No. gatu is fully non-custodial. Your funds remain in your own account, and we never have access to your private keys.
+**Does Sairn hold my funds?**
+No. Sairn is fully non-custodial. Your funds remain in your own account, and we never have access to your private keys.
 
-**Is gatu free to use?**
+**Is Sairn free to use?**
 Using the interface is free to use. You remain responsible for network fees and any protocol or builder fees applied to your trades.
 
 ### Wallet & Sign-In
@@ -34,7 +34,7 @@ Using the interface is free to use. You remain responsible for network fees and 
 Click **Connect Wallet** and choose an external wallet (e.g., browser extension or mobile wallet) or sign in with email to use an embedded wallet.
 
 **What is the "agent" or "trading" wallet?**
-To enable fast, pop-up-free order signing, gatu uses a delegated agent (API) wallet that you approve once with your main wallet. The agent key can place and cancel orders but **cannot withdraw your funds**.
+With an external wallet, Sairn uses a delegated agent (API) wallet that you approve once with your main wallet, so orders are signed without a pop-up. The agent key can place and cancel orders but **cannot withdraw your funds**. If you signed in with email, your embedded wallet signs orders directly and no agent is created.
 
 **I signed in with email — where is my wallet?**
 Email sign-in creates an embedded wallet for you. You can view its address in the account menu.
@@ -42,7 +42,7 @@ Email sign-in creates an embedded wallet for you. You can view its address in th
 ### Trading
 
 **How do I deposit funds?**
-Deposit directly to your trading account, or use the built-in bridge to move assets from a supported network.
+Open **Deposit** and send USDC from Arbitrum. The terminal moves it to your Hyperliquid trading account through Circle's CCTP.
 
 **Why was my order rejected or not filled?**
 Common reasons include insufficient margin, the price moving away from a limit order, or temporary network/exchange conditions. See [Troubleshooting](#troubleshooting).
@@ -53,7 +53,7 @@ Open the account/deposit panel and follow the withdrawal flow. Withdrawals are s
 ### Mobile
 
 **How do I link my phone?**
-Use the **Link mobile device** option to generate a secure, time-limited pairing link and code. Open the link on your phone and enter the pairing code to complete the link. Connect the **same wallet** on both devices.
+Where phone linking is available, click the QR code icon in the desktop header, approve the request with your main wallet, then reveal the QR code and scan it with your phone. The phone then trades with the trading key you approved; deposits, withdrawals and transfers still need your main wallet on desktop. Approving again replaces the phone's key, and you can remove it on the API Wallet page.
 
 ---
 
@@ -67,7 +67,7 @@ Use the **Link mobile device** option to generate a secure, time-limited pairing
 
 ### Transactions failing or stuck
 - Check that you have sufficient balance for the trade and network fees.
-- Verify you approved the trading agent (first-time trading requires a one-time approval).
+- With an external wallet, verify you approved the trading agent (the first trade requires a one-time approval).
 - Wait for network congestion to clear, then retry.
 
 ### Prices or charts not updating
@@ -76,9 +76,9 @@ Use the **Link mobile device** option to generate a secure, time-limited pairing
 - Disable browser extensions that may block real-time connections.
 
 ### Mobile link not working
-- Pairing links are short-lived — generate a new one if it expired.
-- Make sure you entered the correct pairing code.
-- Ensure you connect the **same wallet** on both devices.
+- The QR code is short-lived and closes when you leave the window — reveal a new one and scan it right away.
+- Make sure the phone opens the same network (mainnet or testnet) as the desktop.
+- If importing fails, approve again on desktop and scan the new code.
 
 > If an issue persists, please contact support with details (see below).
 
@@ -86,8 +86,8 @@ Use the **Link mobile device** option to generate a secure, time-limited pairing
 
 ## Contact Support
 
-- **Email:** support@gatu.ai
-- **Help Center / Docs:** https://app.gatu.ai/docs
+- **Email:** support@sairn.ai
+- **Help Center / Docs:** https://app.sairn.ai/docs
 - **Community:** coming soon
 
 When contacting us, please include:
@@ -103,9 +103,9 @@ When contacting us, please include:
 
 ## Reporting Bugs & Feedback
 
-- **Bug reports:** support@gatu.ai
-- **Feature requests & feedback:** support@gatu.ai
-- **Security vulnerabilities:** please report responsibly to support@gatu.ai. Do not disclose publicly until we have had a reasonable opportunity to address the issue.
+- **Bug reports:** support@sairn.ai
+- **Feature requests & feedback:** support@sairn.ai
+- **Security vulnerabilities:** please report responsibly to support@sairn.ai. Do not disclose publicly until we have had a reasonable opportunity to address the issue.
 
 ---
 

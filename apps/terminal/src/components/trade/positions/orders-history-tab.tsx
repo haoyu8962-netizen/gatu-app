@@ -1,5 +1,5 @@
-import { Button, Select, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
+import { Button, Select, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@sairn/ui";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";

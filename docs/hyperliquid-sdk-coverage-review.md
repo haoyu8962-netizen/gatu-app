@@ -25,7 +25,7 @@
 | 冗余：已有等价来源 | 18 | 见[冗余](#冗余已有等价来源) |
 | 与交易终端无关 | 28 | 见[不适用](#不适用部署者验证者与节点运营) |
 
-性价比最高的是资金费率历史、OI 上限预警和跨交易所资金费率对比：都是公开只读接口，官方前端都在用。gatu 目前只显示当前资金费率和结算倒计时，订单撞上 OI 上限后才显示拒单原因。收益最大的是子账户和 HIP-4 预测市场，但两者会改变账户或市场模型，不能当作接一个接口处理。
+性价比最高的是资金费率历史、OI 上限预警和跨交易所资金费率对比：都是公开只读接口，官方前端都在用。Sairn 目前只显示当前资金费率和结算倒计时，订单撞上 OI 上限后才显示拒单原因。收益最大的是子账户和 HIP-4 预测市场，但两者会改变账户或市场模型，不能当作接一个接口处理。
 
 ## 判定方法
 
@@ -49,20 +49,20 @@
 
 | 顺序 | 接入项 | 用途 | 收益 | 成本 | 依据与前置 |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | 资金费率历史：`fundingHistory` | 在市场详情或资金费率悬浮层显示历史费率曲线（小时粒度，按区间取数） | 高 | 低 | 官方用 `fundingRateHistory` 查询画渐变图；gatu 只显示当前费率与“Resets in”倒计时（`components/trade/market-overview.tsx`、`mobile-market-bar.tsx`）。实测每页 500 条、按时间升序，HIP-3 币（`xyz:AAPL`）可用；分页可复用 `lib/trade/history-pagination.ts`，数字经 `lib/format.ts` 格式化 |
-| 2 | OI 上限预警：`perpsAtOpenInterestCap` + `perpDexLimits` | 市场达到 OI 上限时在下单区提示只能减仓或价格受限；HIP-3 市场显示每币 OI 上限和单笔划转上限 | 中 | 低 | 字段已随现有 `webData3` 订阅到达（`perpDexStates[].perpsAtOpenInterestCap`），gatu 没有读取；未连接钱包时才需要 Info 请求。官方读取同一字段，并以 5 分钟缓存请求 `perpDexLimits`。实测主网 7 个处于上限的市场全部已下架，10 个 HIP-3 dex 为空；但 HIP-3 每币上限可低至 `km:AAPL` 16 万美元、`mkts:BVIV` 200 美元。gatu 目前只在拒单后显示 `positionIncreaseAtOpenInterestCapRejected` 等状态标签。新提示属于被动数据提示，须先更新[数据展示契约](mobile-data-presentation.md) |
+| 1 | 资金费率历史：`fundingHistory` | 在市场详情或资金费率悬浮层显示历史费率曲线（小时粒度，按区间取数） | 高 | 低 | 官方用 `fundingRateHistory` 查询画渐变图；Sairn 只显示当前费率与“Resets in”倒计时（`components/trade/market-overview.tsx`、`mobile-market-bar.tsx`）。实测每页 500 条、按时间升序，HIP-3 币（`xyz:AAPL`）可用；分页可复用 `lib/trade/history-pagination.ts`，数字经 `lib/format.ts` 格式化 |
+| 2 | OI 上限预警：`perpsAtOpenInterestCap` + `perpDexLimits` | 市场达到 OI 上限时在下单区提示只能减仓或价格受限；HIP-3 市场显示每币 OI 上限和单笔划转上限 | 中 | 低 | 字段已随现有 `webData3` 订阅到达（`perpDexStates[].perpsAtOpenInterestCap`），Sairn 没有读取；未连接钱包时才需要 Info 请求。官方读取同一字段，并以 5 分钟缓存请求 `perpDexLimits`。实测主网 7 个处于上限的市场全部已下架，10 个 HIP-3 dex 为空；但 HIP-3 每币上限可低至 `km:AAPL` 16 万美元、`mkts:BVIV` 200 美元。Sairn 目前只在拒单后显示 `positionIncreaseAtOpenInterestCapRejected` 等状态标签。新提示属于被动数据提示，须先更新[数据展示契约](mobile-data-presentation.md) |
 | 3 | 跨交易所资金费率对比：`predictedFundings` | 列出 Hyperliquid、Binance、Bybit 的预测费率、下次结算时间与价差；也可在市场头显示 HL 预测费率 | 中 | 低 | 官方 Funding Comparison 页（`FundingPage` 模块）只调用这一个接口并过滤已下架币。实测 234 个资产、3 个场所，单次约 64 KB；协议只支持第一个 perp dex |
 | 4 | 服务端账户通知：订阅 `notification` | 接收服务器推送给该账户的文本通知 | 中低 | 低 | 官方订阅当前账户并以成功样式 toast 显示原文。消息内容和频率未取得（需要真实账户观察）；原文是英文字符串，与[运行时翻译](i18n-presentation.md)冲突，需先决定原文展示还是映射已知消息；接入 `AppToaster` 前更新[通知规范](trading-notifications.md) |
 | 5 | 大额市价单上限：`maxMarketOrderNtls` | 下单前提示市价单名义价值超出上限，避免被拒 | 中低 | 低 | 实测按资产最大杠杆分档：25x 及以上 3000 万美元、20x 500 万、10x 200 万、其余 50 万。官方在持仓 TP/SL 弹窗加载。只作提示，不改变现有签名与可用性守卫 |
 | 6 | Earn 利息明细：`userBorrowLendInterest` | Earn 页展示每期借出/借入利息 | 中（Earn 合入后） | 低 | `claude/earn-page` 已接 `borrowLend` 与两个状态查询，未接利息历史。官方还订阅同名 WebSocket 频道，SDK 0.33.3 只有 Info 版本 |
-| 7 | TWAP 成交完整历史：`userTwapSliceFillsByTime` | 按时间分页取 TWAP 子单成交，补 CSV 导出，并突破 `MAX_TWAP_HISTORY_ROWS`（2000）截断 | 中低 | 低 | 官方在 TWAP 成交页签的 CSV 导出中使用；gatu 的成交 CSV 只导出非 TWAP 成交（`fill.twapId === null`） |
+| 7 | TWAP 成交完整历史：`userTwapSliceFillsByTime` | 按时间分页取 TWAP 子单成交，补 CSV 导出，并突破 `MAX_TWAP_HISTORY_ROWS`（2000）截断 | 中低 | 低 | 官方在 TWAP 成交页签的 CSV 导出中使用；Sairn 的成交 CSV 只导出非 TWAP 成交（`fill.twapId === null`） |
 | 8 | Agent 代签资金操作：`agentSendAsset`、`agentSetAbstraction` | Agent 签名的自有账户划转（perp、spot、HIP-3 dex 之间，协议要求目标地址等于源地址）和账户模式切换 | 中 | 中 | 能让 Agent-only 会话（桌面配对的手机）使用划转，外部钱包做内部划转也不再弹钱包。这会改变签名模型：先更新 [ADR 0002](adr/0002-exact-owner-trading-signers.md)、[签名机制](hyperliquid-signing.md)，以及 Runtime guardrails §8 中“Agent-only 资金操作显示需桌面”的约定。资金锁已预留两者；生产配对开关仍关闭，近期收益有限；`agentSetAbstraction` 的组合保证金取值已被策略拦截 |
 | 9 | 多签账户识别：`userToMultiSigSigners` | 连接时识别多签账户，给出明确的失败原因，而不是签名报错 | 中低 | 低 | 官方在账户状态中查询。符合签名契约“缺失或不一致时 fail closed” |
-| 10 | 地址级限频额度：`userRateLimit`，可附 `reserveRequestWeight` | 显示已用/上限请求数，解释“累计请求超过成交量额度”的拒单；可选付费预留额度（每次请求 0.0005 USDC，从 Perps 余额扣） | 中低 | 低 | 官方未使用。gatu 已处理 IP 级 429（图表、历史分页），未处理地址级限频 |
+| 10 | 地址级限频额度：`userRateLimit`，可附 `reserveRequestWeight` | 显示已用/上限请求数，解释“累计请求超过成交量额度”的拒单；可选付费预留额度（每次请求 0.0005 USDC，从 Perps 余额扣） | 中低 | 低 | 官方未使用。Sairn 已处理 IP 级 429（图表、历史分页），未处理地址级限频 |
 | 11 | 质押账户关联：`linkStakingUser` | 交易账户发起、质押账户确认后，质押量计入交易账户的手续费折扣 | 中低 | 中 | Staking 页已只读显示关联状态（`userFees.stakingLink`）。两步分别由交易账户和质押账户做 EIP-712 签名；不可逆的 `stakingLinkDisableTradingUser` 不应一并提供 |
 | 12 | Builder 授权清单：`approvedBuilders` | 列出账户授权过的 builder，可用 `approveBuilderFee` 设为 0 撤销 | 低 | 低 | 官方 Builder Codes 页使用 |
 | 13 | 死人开关：`scheduleCancel` | 设定时间点自动撤销全部挂单；时间至少在 5 秒后，每日最多触发 10 次 | 中低 | 中 | 官方文档注明“API only”，官方前端未用。需要页面存活心跳与可见性处理；撤单状态标签 `scheduledCancel` 已存在；多数挂单用户希望离线后订单保留，只能默认关闭 |
-| 14 | 在途订单撤销：`cancelByCloid`、`noop` | 未拿到 oid 时按 cloid 撤单；用 `noop` 占用 nonce，使未确认的在途动作无法再落地 | 中低 | 中高 | 官方未用。gatu 下单已带 cloid（`domain/trade/order-tracking.ts`），调度器已给 `cancelByCloid` 设紧急优先级；`noop` 需要 hl-react 掌握 nonce，并牵涉“结果未确认”的通知语义 |
+| 14 | 在途订单撤销：`cancelByCloid`、`noop` | 未拿到 oid 时按 cloid 撤单；用 `noop` 占用 nonce，使未确认的在途动作无法再落地 | 中低 | 中高 | 官方未用。Sairn 下单已带 cloid（`domain/trade/order-tracking.ts`），调度器已给 `cancelByCloid` 设紧急优先级；`noop` 需要 hl-react 掌握 nonce，并牵涉“结果未确认”的通知语义 |
 | 15 | 零散设置：`exchangeStatus`、`spotUser`、`setDisplayName` | 交易所特殊状态横幅、退出现货小额清扫、排行榜昵称 | 低 | 低 | `exchangeStatus` 实测 `specialStatuses: null`，字段语义无文档，官方未用，做横幅同样属于被动数据提示；后两项官方用 Agent 签名 |
 
 只看收益：高是子账户、HIP-4 预测市场、资金费率历史；中是 OI 上限预警、跨交易所资金费率、Agent 代签资金操作、Earn 利息明细、组合保证金；其余为中低或低。
@@ -82,7 +82,7 @@
 
 | 接口 | 等价来源 |
 | --- | --- |
-| `marginTable` | `allPerpMetas` 的 `marginTables` 加隐式单档规则（`resolveMarketMarginTiers`）。实测 11 个 dex、528 个资产全部可解析（显式 43、隐式 485），0 缺失。官方在杠杆弹窗按所选杠杆取分档下界，显示该杠杆可开的仓位上限；gatu 杠杆弹窗没有这项信息，但可直接用现有分档实现，属于功能缺口而非接口缺口 |
+| `marginTable` | `allPerpMetas` 的 `marginTables` 加隐式单档规则（`resolveMarketMarginTiers`）。实测 11 个 dex、528 个资产全部可解析（显式 43、隐式 485），0 缺失。官方在杠杆弹窗按所选杠杆取分档下界，显示该杠杆可开的仓位上限；Sairn 杠杆弹窗没有这项信息，但可直接用现有分档实现，属于功能缺口而非接口缺口 |
 | `perpCategories` | 已接入的 `perpConciseAnnotations` 带同一分类；实测 206 个币全部一致 |
 | Info `openOrders`、Info `activeAssetData` | 同名订阅，以及 `frontendOpenOrders` |
 | `spotMetaAndAssetCtxs`、订阅 `assetCtxs` | `spotMeta` 加紧凑 `sac` / `pac` 频道，回退 `spotAssetCtxs` / `allDexsAssetCtxs` |
@@ -107,11 +107,11 @@
 | 节点与网络 | `gossipPriorityBid`、`gossipPriorityAuctionStatus`、`gossipRootIps` |
 | 清算者与未公开语义 | `liquidatable`、`isVip`（官方仅在 Portfolio 页查询） |
 | 高风险且小众 | `convertToMultiSigUser`（单签与多签互转）、`stakingLinkDisableTradingUser`（不可逆锁定交易账户） |
-| Explorer | `blockDetails`、`txDetails`、`userDetails`、订阅 `explorerBlock` / `explorerTxs`：官方用于站内浏览器页，gatu 的外链已够用；若要在资金对账中按哈希核验交易，需另接 explorer 端点并补 CSP |
+| Explorer | `blockDetails`、`txDetails`、`userDetails`、订阅 `explorerBlock` / `explorerTxs`：官方用于站内浏览器页，Sairn 的外链已够用；若要在资金对账中按哈希核验交易，需另接 explorer 端点并补 CSP（「补 CSP」只对订阅成立，见文末 [2026-09-30 更正](#更正explorer-接入前提2026-09-30-追加)） |
 
 ## 附：SDK 工具函数
 
-`@nktkas/hyperliquid/utils` 的 `formatPrice`、`formatSize`、`SymbolConverter` 未使用。gatu 有自己的 `formatPriceForOrder` / `formatSizeForOrder`（`apps/terminal/src/domain/trade/orders.ts`，Big.js 实现，`orders.test.ts` 覆盖）和市场目录。不建议替换；可以在测试中把 SDK 函数当对照，替换前先核对两边的舍入方向。
+`@nktkas/hyperliquid/utils` 的 `formatPrice`、`formatSize`、`SymbolConverter` 未使用。Sairn 有自己的 `formatPriceForOrder` / `formatSizeForOrder`（`apps/terminal/src/domain/trade/orders.ts`，Big.js 实现，`orders.test.ts` 覆盖）和市场目录。不建议替换；可以在测试中把 SDK 函数当对照，替换前先核对两边的舍入方向。
 
 ## 验证与限制
 
@@ -146,3 +146,14 @@ rg -n '"fundingHistory"|\.fundingHistory\(' apps/terminal/src packages/hl-react/
 | 冗余表中的 `marginTable` | 不调用；复用 `allPerpMetas` 已解析的分档 | 杠杆弹窗显示所选杠杆下的最大仓位 | [杠杆仓位上限](leverage-position-limit.md) |
 
 未实施的第 4 项服务端账户通知（订阅 `notification`）：实施前侦察发现 SDK 0.33.3 按频道分发帧且帧内没有用户字段，同一共享 socket 上切换账户时旧账户的帧可能进入新账户的监听，需要传输层隔离的架构决策；原因与前提见规划的「范围取舍」。其余第 6、8–15 项与战略级功能未排期。
+
+## 更正：Explorer 接入前提（2026-09-30 追加）
+
+「不适用」表 Explorer 一行写「需另接 explorer 端点并补 CSP」。原句保留，只在行内加了指向本节的说明；其中「补 CSP」对它所举的按哈希核验场景不成立：
+
+- 三个请求（`blockDetails`、`txDetails`、`userDetails`）经 `HttpTransport` 发往 `https://rpc.hyperliquid.xyz/explorer`。该主机和测试网对应主机自 2026-08-05（`a10b0edd`，CCTP 提现用的 HyperEVM RPC）起已在终端 `connect-src` 中，早于本审查，所以不需要改 CSP，只需新增调用。
+- 两个订阅（`explorerBlock`、`explorerTxs`）只在 `wss://rpc.hyperliquid.xyz/ws` 推送，而 `connect-src` 的 WebSocket 来源只有 `wss://api.hyperliquid.xyz` 和测试网对应项。只有使用订阅才需要补 `wss://rpc.hyperliquid.xyz` 与 `wss://rpc.hyperliquid-testnet.xyz`，改动在 `apps/terminal/src/config/security-headers.ts`，之后按 [CloudFront 部署说明](../deploy/cloudfront/README.md)重新渲染并发布边缘函数。
+- 证据（2026-09-30）：用已提交的边缘函数产出的策略在无头 Chromium 147 中实测，POST `https://rpc.hyperliquid.xyz/explorer` 放行，`wss://rpc.hyperliquid.xyz/ws` 被 `connect-src` 拦截。线上实际下发的响应头未取。
+- 「另接 explorer 端点」仍成立：生产代码没有任何 Explorer 调用。结论不变，这组接口仍归「不适用」。
+
+端点与传输要求见[方法目录](hyperliquid-sdk-directory.md)的类型说明，取证过程与限制见[任务记录](work-memory/sessions/2026-09-30-explorer-api-doc-corrections.md)。

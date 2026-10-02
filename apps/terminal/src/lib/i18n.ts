@@ -48,9 +48,9 @@ function syncDocumentLocale() {
 
 // Install the change listener + observer once per page (the guard avoids duplicates across HMR /
 // repeated module evaluation in dev).
-const globalScope = globalThis as { __gatuI18nDocSync?: boolean };
-if (typeof document !== "undefined" && !globalScope.__gatuI18nDocSync) {
-	globalScope.__gatuI18nDocSync = true;
+const globalScope = globalThis as { __sairnI18nDocSync?: boolean };
+if (typeof document !== "undefined" && !globalScope.__sairnI18nDocSync) {
+	globalScope.__sairnI18nDocSync = true;
 	i18n.on("change", syncDocumentLocale);
 	new MutationObserver(syncDocumentLocale).observe(document.documentElement, {
 		attributes: true,

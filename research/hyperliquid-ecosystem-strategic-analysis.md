@@ -81,7 +81,7 @@ The single most important data point: **the top 200 addresses account for 98.81%
 |-----|----------|---------|-----|
 | Official Python | Python | Medium | No TWAP in high-level methods, sync only |
 | Official Rust | Rust | Basic | Less actively maintained |
-| **@nktkas/hyperliquid** | TypeScript | High | Single maintainer (gatu uses this) |
+| **@nktkas/hyperliquid** | TypeScript | High | Single maintainer (Sairn uses this) |
 | Infinite Field | Rust | High | Enhanced: HIP-3, multisig, EVM-Core |
 | sonirico/go-hyperliquid | Go | Medium | Single maintainer |
 | CCXT | Multi | High | Generic, not HL-optimized |
@@ -190,13 +190,13 @@ For context: Phantom captures ~1.5% of flow and earns ~$100K/day ($36M/yr annual
 
 ---
 
-## Part 5: Ranked Opportunities for gatu
+## Part 5: Ranked Opportunities for Sairn
 
-Given gatu's existing codebase (full trading terminal, 45+ SDK hooks, builder code integration, all order types including TWAP, TradingView charting, mobile-responsive), here are the opportunities ranked by **volume potential / effort required**:
+Given Sairn's existing codebase (full trading terminal, 45+ SDK hooks, builder code integration, all order types including TWAP, TradingView charting, mobile-responsive), here are the opportunities ranked by **volume potential / effort required**:
 
 ### Tier 1: High Volume, Leverages Existing Code
 
-#### 1. Copy Trading Layer (on top of gatu)
+#### 1. Copy Trading Layer (on top of Sairn)
 **Effort**: Medium | **Revenue ceiling**: $5-15M/year | **Time to value**: 4-8 weeks
 
 **Why this is low-hanging fruit:**
@@ -231,7 +231,7 @@ Given gatu's existing codebase (full trading terminal, 45+ SDK hooks, builder co
 - pvp.trade ($7.2M) proves Telegram works for HL perps
 - No dominant "BONKbot for perps" exists
 - Telegram is the #1 distribution channel in crypto (zero friction, always open)
-- You can reuse gatu's trading logic -- different UI, same execution
+- You can reuse Sairn's trading logic -- different UI, same execution
 
 **What's needed:**
 - Telegram bot framework (grammY or telegraf)
@@ -249,7 +249,7 @@ Given gatu's existing codebase (full trading terminal, 45+ SDK hooks, builder co
 **Effort**: Low-Medium | **Revenue ceiling**: Indirect ($5-20M/year via ecosystem) | **Time to value**: 2-4 weeks
 
 **Why this is uniquely positioned:**
-- gatu already has 45+ hooks wrapping @nktkas/hyperliquid
+- Sairn already has 45+ hooks wrapping @nktkas/hyperliquid
 - `useInfo*`, `useSub*`, `useExchange*` patterns are production-tested
 - No React-specific SDK exists for Hyperliquid
 - Every new HL frontend builder reinvents this wheel
@@ -268,7 +268,7 @@ Given gatu's existing codebase (full trading terminal, 45+ SDK hooks, builder co
 - Almost zero marginal cost (extract what you already built)
 - Creates an ecosystem moat (developers build on your primitives)
 - Compounds: more apps = more builder fee revenue
-- Marketing for gatu itself
+- Marketing for Sairn itself
 - Establishes you as infra, not just another frontend
 
 ---
@@ -283,7 +283,7 @@ Given gatu's existing codebase (full trading terminal, 45+ SDK hooks, builder co
 - Silver perps: $4.09B in one day. Oil: $5B in 72hrs. Weekend equity trading: $1.4B.
 - No frontend is optimized for TradFi traders who want 24/7 commodity/equity exposure
 - These users think in different terms (contracts, lot sizes, settlement dates) vs. crypto-native UX
-- gatu already supports builder perps (where RWA markets live via HIP-3)
+- Sairn already supports builder perps (where RWA markets live via HIP-3)
 
 **What's needed:**
 - TradFi-style market views (sector groupings: commodities, equities, FX, crypto)
@@ -395,7 +395,7 @@ Layer 3: Telegram Bot (6-10 weeks)
 
 If you want the single fastest path to revenue:
 
-**Copy Trading in gatu** -- You already have 95% of the infrastructure. The delta is:
+**Copy Trading in Sairn** -- You already have 95% of the infrastructure. The delta is:
 1. Wallet tracking engine (~1 week)
 2. Position replication logic (~1 week)
 3. Risk controls UI (~1 week)

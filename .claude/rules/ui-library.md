@@ -1,4 +1,4 @@
-## HyperTerminal UI (`@gatu/ui`)
+## Sairn UI (`@sairn/ui`)
 
 The design system lives in `packages/ui/` as a workspace package.
 
@@ -13,7 +13,7 @@ The design system lives in `packages/ui/` as a workspace package.
 ### Import convention
 ```tsx
 // Correct — import from the UI package
-import { Button, Modal, Tabs } from "@gatu/ui";
+import { Button, Modal, Tabs } from "@sairn/ui";
 
 // Correct — app-specific component that composes UI primitives
 import { InfoRow } from "@/components/ui/info-row";

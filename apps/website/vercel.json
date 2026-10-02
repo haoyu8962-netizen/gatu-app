@@ -1,8 +1,8 @@
 {
 	"$schema": "https://openapi.vercel.sh/vercel.json",
 	"framework": "astro",
-	"buildCommand": "pnpm --filter @gatu/website build",
-	"installCommand": "pnpm install --filter @gatu/website...",
+	"buildCommand": "pnpm --filter @sairn/website build",
+	"installCommand": "pnpm install --filter @sairn/website...",
 	"outputDirectory": "dist",
 	"ignoreCommand": "cd ../.. && git diff --quiet HEAD^ HEAD -- apps/website pnpm-lock.yaml"
 }

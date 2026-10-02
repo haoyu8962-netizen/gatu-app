@@ -81,6 +81,8 @@ Scale 的成功只代表全部子项已受理，与 `execution.completeness` 的
 | CCTP | forwarding 和明确失败常驻；转发已提交 10 秒；切账户/环境撤掉原身份的展示 |
 | 资金恢复提醒 | 常驻且不允许划走关闭；通过 Review 与既有核验/清理路径处理 |
 
+状态图标（2026-10-01，[ADR 0029](adr/0029-brand-status-motion.md)）：订单通知按状态显示品牌状态符号——提交中 `submitting`（中性色）、确认中 `pending`、未确认 `unknown`、`partial` 状态中只有已核实的部分成交（交易所回包的 `execution.completeness: partial`，或 `countMode: filled` 且没有错误）用半实心的 `partial`，只是部分受理、或带拒绝、撤销、未知子项的批次用 `warning`；成功与已受理 `success`（受理与成交靠文案区分）、取消 `cancelled`、失败 `error`；标准通知的 success、info、warning、error、loading 分别是 `success`、`info`、`warning`、`error`、`pending`。资金、Earn 的「状态未知」通知和待核验的资金操作提醒由调用方传 `unknown` 图标，未知结果从不显示成失败。符号用 `--text-*` 语义令牌着色，标准通知里与该类型的文字同色；进行中的循环从不用成功色。符号是装饰性的、不单独播报；状态切换时符号重新挂载，一次性动画只在状态变化时播放，切换语言不重播；系统开启减少动态效果时直接显示终态。
+
 悬停、页面后台及退出动画由 Sonner 生命周期处理。Toaster 使用 `bg-overlay`、共享 `z-toast` 与主题色；项目移动断点是 `<=1000px`，两个 offset 分支均保留 56px 底部导航、安全区和 12px 间隙；桌面用安全区内右下角。没有另加高于所有弹层的硬编码层级。任务有可访问名称、状态/错误播报与关闭按钮。
 
 真实部分成交沿用三秒是用户明确选择；不因附带 `execution` 单独延长。通知不是成交证据的唯一入口，成交历史及订单列表仍承担持续核对。正常受理的 Scale 成交进度使用成功状态和成功时长。

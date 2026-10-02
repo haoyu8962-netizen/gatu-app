@@ -63,6 +63,31 @@ describe("Toaster configuration", () => {
 		expect(closeButton?.getAttribute("aria-label")).toBe("关闭");
 	});
 
+	it("marks each notification type with its Sairn status glyph", async () => {
+		await act(async () => {
+			toast.success("Copied", { id: "success" });
+			toast.info("Heads up", { id: "info" });
+			toast.warning("Check this", { id: "warning" });
+			toast.error("Failed", { id: "error" });
+			toast.loading("Working", { id: "loading" });
+			await vi.advanceTimersByTimeAsync(0);
+		});
+		const glyphs = [...container.querySelectorAll("[data-sonner-toast]")].map((item) => ({
+			type: item.getAttribute("data-type"),
+			glyph: item.querySelector("[data-icon] svg")?.getAttribute("data-status-glyph"),
+		}));
+		expect(glyphs).toEqual(
+			expect.arrayContaining([
+				{ type: "success", glyph: "success" },
+				{ type: "info", glyph: "info" },
+				{ type: "warning", glyph: "warning" },
+				{ type: "error", glyph: "error" },
+				{ type: "loading", glyph: "pending" },
+			]),
+		);
+		expect(container.querySelector("[data-sonner-toast] .animate-spin")).toBeNull();
+	});
+
 	it("offsets mobile toasts above the bottom navigation", async () => {
 		await act(async () => {
 			toast.success("Order placed");

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { REFERRAL_JOIN_ROUTE_MARKER } from "@/lib/static-pages/static-pages";
 import { createStaticPagesResponder } from "@/lib/static-pages/static-pages-responder";
 
-const ORIGIN = "https://gatu.ai";
+const ORIGIN = "https://sairn.ai";
 const SHELL = "<html><head><title>shell</title></head><body>shell</body></html>";
 const RETIRED_DOCS = "<html><head><title>docs</title></head><body>docs</body></html>";
 

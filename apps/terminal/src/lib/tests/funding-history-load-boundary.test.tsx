@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({ reportClientError: vi.fn() }));
 
 vi.mock("@/lib/error-reporting/client", () => ({ reportClientError: mocks.reportClientError }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
 		<button type="button" onClick={onClick}>
 			{children}

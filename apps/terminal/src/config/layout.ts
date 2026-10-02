@@ -5,10 +5,12 @@ export const DESKTOP_MEDIA_QUERY = `(min-width: ${MOBILE_BREAKPOINT_PX + 1}px)`;
 /**
  * Desktop top navigation (ADR 0013). At or below the compact width a connected header shrinks its
  * logo, deposit button, address and utilities, and the Soon placeholder leaves the top level; the
- * `nav-compact` Tailwind variant in `styles.css` must carry the same pixel value. At or below the
- * narrow width every wallet state moves the lower-priority entries into More.
+ * `nav-compact` Tailwind variant in `styles.css` must carry the same pixel value. The widest connected
+ * header measured in `tests/browser/top-nav-connected.pw.ts` keeps 16px from 1370px; 1379 adds 10px for
+ * platform text metrics (runtime guardrails §11). At or below the narrow width every wallet state moves the
+ * lower-priority entries into More.
  */
-export const DESKTOP_NAV_COMPACT_MAX_PX = 1181;
+export const DESKTOP_NAV_COMPACT_MAX_PX = 1379;
 export const DESKTOP_NAV_NARROW_MAX_PX = 1150;
 export const DESKTOP_NAV_COMPACT_MEDIA_QUERY = `(max-width: ${DESKTOP_NAV_COMPACT_MAX_PX}px)`;
 export const DESKTOP_NAV_NARROW_MEDIA_QUERY = `(max-width: ${DESKTOP_NAV_NARROW_MAX_PX}px)`;

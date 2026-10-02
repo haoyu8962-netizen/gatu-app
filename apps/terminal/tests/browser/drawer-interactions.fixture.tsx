@@ -6,7 +6,7 @@ import {
 	DrawerHeader,
 	type DrawerSide,
 	DrawerTitle,
-} from "@gatu/ui";
+} from "@sairn/ui";
 import { i18n } from "@lingui/core";
 import { useState } from "react";
 import { TradeSlider } from "@/components/trade/components/trade-slider";

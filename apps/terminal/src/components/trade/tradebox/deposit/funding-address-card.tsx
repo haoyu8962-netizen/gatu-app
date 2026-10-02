@@ -1,8 +1,10 @@
-import { ButtonIcon } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { CheckIcon, CopyIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { CopyIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ButtonIcon } from "@sairn/ui";
 import { type ReactNode, useEffect, useRef } from "react";
+import { BrandMotion } from "@/components/brand/brand-motion";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { BRAND_MOTION_COPY_FEEDBACK } from "@/lib/brand/brand-motion.gen";
 
 interface ReadyProps {
 	address: `0x${string}`;
@@ -133,7 +135,7 @@ export function FundingAddressCard(props: Props) {
 						className="rounded-[7px] border-market-close-stroke-input bg-modal text-market-close-fg shadow-none hover:border-market-close-control"
 					>
 						{copied ? (
-							<CheckIcon className="size-4 text-success" weight="bold" aria-hidden="true" />
+							<BrandMotion motion={BRAND_MOTION_COPY_FEEDBACK} size={16} />
 						) : (
 							<CopyIcon className="size-4" aria-hidden="true" />
 						)}

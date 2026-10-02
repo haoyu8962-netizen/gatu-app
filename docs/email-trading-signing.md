@@ -128,7 +128,7 @@ failed snapshots and dismissed deposits.
   --maxWorkers=4`) passed: 504 files and 5,036 tests; the opt-in long-running
   WebSocket soak test was skipped. The final run includes the adapted builder
   status and client-root theme mocks as well as the new signing regressions.
-- `@gatu/hl-react` and terminal typechecks passed. Biome passed for all changed
+- `@sairn/hl-react` and terminal typechecks passed. Biome passed for all changed
   TypeScript files.
 - The complete production build passed using Node 22.15.0 and the fixed build
   identity from `terminal-performance-baseline.md`. It verified 379 client

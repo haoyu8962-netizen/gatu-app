@@ -1,6 +1,6 @@
-import { ModalDescription, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
+import { ModalDescription, ModalTitle } from "@sairn/ui";
 import { useRef, useState } from "react";
 import { PriceInput } from "@/components/ui/price-input";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";

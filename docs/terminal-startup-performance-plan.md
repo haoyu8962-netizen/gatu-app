@@ -30,7 +30,7 @@
 
 ## 设计
 
-### P1 · 壳内预加载交易页静态闭包（最大收益）— 已实施；第十一检查点起按表面拆分：共有闭包仍是 HTML `modulepreload`，仅桌面或仅移动需要的块写进 `<meta name="gatu-preload-desktop|mobile">` 由引导块追加，手机不再下载桌面面板块
+### P1 · 壳内预加载交易页静态闭包（最大收益）— 已实施；第十一检查点起按表面拆分：共有闭包仍是 HTML `modulepreload`，仅桌面或仅移动需要的块写进 `<meta name="sairn-preload-desktop|mobile">` 由引导块追加，手机不再下载桌面面板块
 
 问题：壳只写 6 个 `modulepreload`，其余 92 个块靠嵌套 `import()` 逐层发现，形成 `client-root` → 主块 → 页面块 → 面板块的四层瀑布；官方站把 45 个块一次写进 HTML。
 

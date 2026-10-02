@@ -183,8 +183,8 @@ the stored public key and the exact deployment Agent name returned by
 `extraAgents`.
 
 Hyperliquid deregisters an existing named Agent when another `approveAgent`
-uses the same name. Production reserves `gatu`; local development defaults to
-`gatu-dev`. A mainnet preview or staging build must set its own stable
+uses the same name. Production reserves `sairn`; local development defaults to
+`sairn-dev`. A mainnet preview or staging build must set its own stable
 `VITE_HYPERLIQUID_AGENT_NAME` (maximum 16 characters) and must not reuse the
 production slot. Names are finite deployment slots, not random per-session
 identifiers, because an account supports only three named Agents.

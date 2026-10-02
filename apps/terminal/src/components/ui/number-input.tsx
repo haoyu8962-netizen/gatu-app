@@ -1,7 +1,7 @@
 /**
  * String-based numeric input for the trade UI.
  *
- * This does NOT use `NumberInput` from `@gatu/ui`. The package primitive
+ * This does NOT use `NumberInput` from `@sairn/ui`. The package primitive
  * exposes a `number | null` value via `onValueChange` (built on @base-ui NumberField)
  * and wraps the input in `Field.Root` with label/hint/error slots. The tradebox
  * callers (size/price/TP/SL/leverage/trigger inputs) keep Hyperliquid price/size

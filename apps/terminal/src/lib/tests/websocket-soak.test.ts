@@ -1,11 +1,11 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { isPayloadOversized } from "@gatu/hl-react/internal/websocket/payload-guard";
+import { isPayloadOversized } from "@sairn/hl-react/internal/websocket/payload-guard";
 import {
 	getPayloadLimitBytesForSubscriptionKey,
 	WS_RELIABILITY_LIMITS,
-} from "@gatu/hl-react/internal/websocket/reliability";
-import { createHyperliquidStore } from "@gatu/hl-react/store";
+} from "@sairn/hl-react/internal/websocket/reliability";
+import { createHyperliquidStore } from "@sairn/hl-react/store";
 import { afterEach, describe, expect, it } from "vitest";
 import { createCandleStore } from "@/lib/chart/store";
 import type { HyperliquidConfig } from "@/lib/hyperliquid";

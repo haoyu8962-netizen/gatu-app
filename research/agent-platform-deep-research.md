@@ -1,4 +1,4 @@
-# gatu Agent Platform: Deep Research
+# Sairn Agent Platform: Deep Research
 
 > Comprehensive research on making Hyperliquid ready for agent-based trading
 > Date: 2026-03-23
@@ -25,7 +25,7 @@
 
 The AI agent trading market is projected at **$47.4B in 2025**, growing at 14% CAGR to $200B by 2035. The crypto social trading market alone is $6.6B. Hyperliquid processes 200K+ orders/sec with sub-second finality and controls ~70% of on-chain perp open interest — making it the natural home for autonomous trading agents.
 
-**The opportunity**: There is **no dominant agent framework** for Hyperliquid. The ecosystem is fragmented across individual bot scripts. gatu already has the foundation (agent wallets, 48+ exchange hooks, real-time WebSocket infrastructure, builder code support) to become **the** platform where agents trade on Hyperliquid.
+**The opportunity**: There is **no dominant agent framework** for Hyperliquid. The ecosystem is fragmented across individual bot scripts. Sairn already has the foundation (agent wallets, 48+ exchange hooks, real-time WebSocket infrastructure, builder code support) to become **the** platform where agents trade on Hyperliquid.
 
 **The thesis**: Every agent trade generates builder fee revenue. More agents → more volume → more revenue. Build the best tools for agents to trade, and monetize every transaction they make.
 
@@ -40,7 +40,7 @@ The AI agent trading market is projected at **$47.4B in 2025**, growing at 14% C
 
 ## 2. Current Foundation
 
-### What gatu Already Has
+### What Sairn Already Has
 
 **Hyperliquid SDK**: `@nktkas/hyperliquid` v0.31.0 with:
 - `InfoClient` — REST queries (50+ methods)
@@ -488,10 +488,10 @@ hyper risk status / kill / limits
 | Spread Markup | 0.5-3% | Low | Low |
 | Marketplace Cut | 20-30% of creator earnings | High | Medium |
 
-### Recommended Revenue Stack for gatu
+### Recommended Revenue Stack for Sairn
 
 **Layer 1 — Builder Code (Baseline, Immediate)**:
-- 0.01-0.05% on every trade routed through gatu
+- 0.01-0.05% on every trade routed through Sairn
 - Every agent trade, copy trade, grid order, DCA buy generates revenue
 - At $100M daily volume → $10K-50K/day → **$3.6M-18M/year**
 - Zero friction — users already approve builder fees
@@ -542,7 +542,7 @@ MCP is Anthropic's open standard (adopted by Microsoft, OpenAI, Google) for conn
 | Alpaca MCP | Stocks, ETFs, crypto, options |
 | Paradex MCP | Perp futures |
 
-**Opportunity**: Build the definitive Hyperliquid MCP server — become the gateway for any AI agent to trade on HL. Every Claude, GPT, or Gemini agent wanting to trade perps would route through gatu's MCP server → builder fee revenue.
+**Opportunity**: Build the definitive Hyperliquid MCP server — become the gateway for any AI agent to trade on HL. Every Claude, GPT, or Gemini agent wanting to trade perps would route through Sairn's MCP server → builder fee revenue.
 
 ### Agent Identity & Reputation
 
@@ -561,7 +561,7 @@ Top Telegram bots: Trojan (~2M users, $24B+ volume), Banana Gun (~600K users, $1
 
 Architecture: Telegram Bot API → Backend → Smart Contract Layer → Wallet Management
 
-**Opportunity**: gatu Telegram bot for Hyperliquid trading — natural language commands, position management, alerts.
+**Opportunity**: Sairn Telegram bot for Hyperliquid trading — natural language commands, position management, alerts.
 
 ### Intent-Based Trading
 
@@ -673,7 +673,7 @@ Users sign intents (not transactions) → Solvers compete for best execution →
 ### Phase 1: Foundation (Immediate — Builder Fee Revenue)
 
 **1a. Builder Code Integration**
-- Route all gatu trades through builder code
+- Route all Sairn trades through builder code
 - Immediate revenue on existing volume
 - Barrier: 100 USDC
 - Every manual trade, every agent trade generates revenue
@@ -688,7 +688,7 @@ Users sign intents (not transactions) → Solvers compete for best execution →
 - Grid trading bot (proven, $670M+ at BingX alone)
 - DCA bot (lowest complexity, highest retail adoption)
 - Trailing stop-loss bot
-- Configuration UI in gatu dashboard
+- Configuration UI in Sairn dashboard
 
 ### Phase 2: Agent Infrastructure (1-3 months)
 
@@ -700,7 +700,7 @@ Users sign intents (not transactions) → Solvers compete for best execution →
 - Order management system with event-sourced state machine
 
 **2b. Agent Wallet Management UI**
-- Create/register agent wallets from gatu
+- Create/register agent wallets from Sairn
 - Per-agent permissions (markets, max size, max leverage)
 - Sub-account isolation per strategy
 - Agent health dashboard (status, PnL, positions)
@@ -722,7 +722,7 @@ Users sign intents (not transactions) → Solvers compete for best execution →
 
 **3b. MCP Server for Hyperliquid**
 - Expose full Hyperliquid trading as MCP tools
-- Any Claude/GPT/Gemini agent can trade through gatu
+- Any Claude/GPT/Gemini agent can trade through Sairn
 - Every agent trade → builder fee revenue
 - Open-source for ecosystem adoption
 
@@ -800,7 +800,7 @@ Users sign intents (not transactions) → Solvers compete for best execution →
 | ElizaOS | AI agent framework | General purpose, not trading-optimized |
 | Hyperliquid native UI | Official frontend | No bots, no agents, no marketplace |
 
-**gatu's moat**: Purpose-built for Hyperliquid + agent-first architecture + builder code monetization + existing trading infrastructure.
+**Sairn's moat**: Purpose-built for Hyperliquid + agent-first architecture + builder code monetization + existing trading infrastructure.
 
 ## Appendix B: Market Sizing
 

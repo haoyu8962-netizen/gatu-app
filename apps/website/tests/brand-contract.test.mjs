@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -9,12 +9,10 @@ const WEBSITE_STYLES = readFileSync(resolve(WEBSITE_ROOT, "src/styles/global.css
 const WEBSITE_HERO = readFileSync(resolve(WEBSITE_ROOT, "src/components/Hero.astro"), "utf8");
 const WEBSITE_MARKETS = readFileSync(resolve(WEBSITE_ROOT, "src/components/Markets.astro"), "utf8");
 
-test("website uses the GATU action, signal, focus, and logo roles", () => {
+test("website uses the brand action, signal and focus roles", () => {
 	assert.equal(readCssVariable(WEBSITE_STYLES, ":root", "--action"), "#edeef2");
-	assert.equal(readCssVariable(WEBSITE_STYLES, ":root", "--signal"), "#d7ff3f");
+	assert.equal(readCssVariable(WEBSITE_STYLES, ":root", "--signal"), "#86e5d3");
 	assert.equal(readCssVariable(WEBSITE_STYLES, ":root", "--focus"), "var(--signal)");
-	assert.equal(readCssVariable(WEBSITE_STYLES, ":root", "--logo-ink"), "#edeef2");
-	assert.equal(readCssVariable(WEBSITE_STYLES, ":root", "--logo-node"), "#d7ff3f");
 	assert.match(WEBSITE_HERO, /bg-action/);
 	assert.match(WEBSITE_HERO, /text-on-action/);
 	assert.match(WEBSITE_HERO, /text-signal/);
@@ -36,6 +34,20 @@ test("website faint text remains WCAG AA on every supported dark surface", () =>
 			contrastRatio(compositeHex(foreground, surface), surface) >= 4.5,
 			`${foreground} must remain AA on ${surfaceVariable} (${surface})`,
 		);
+	}
+});
+
+test("website renders the logo kit's on-dark lockup and mark from brand/ instead of public copies", () => {
+	const logo = readFileSync(resolve(WEBSITE_ROOT, "src/components/Logo.astro"), "utf8");
+	const base = readFileSync(resolve(WEBSITE_ROOT, "src/layouts/Base.astro"), "utf8");
+	const seo = readFileSync(resolve(WEBSITE_ROOT, "src/config/seo.ts"), "utf8");
+
+	assert.match(logo, /from "\.\.\/\.\.\/\.\.\/\.\.\/brand\/svg\/lockup\/sairn-lockup-on-dark\.svg\?url"/);
+	assert.match(logo, /from "\.\.\/\.\.\/\.\.\/\.\.\/brand\/svg\/mark\/sairn-mark-on-dark\.svg\?url"/);
+	assert.match(base, /from "\.\.\/\.\.\/\.\.\/\.\.\/brand\/web\/favicon\.svg\?url"/);
+	assert.match(seo, /from "\.\.\/\.\.\/\.\.\/\.\.\/brand\/social\/sairn-avatar-light-1024\.png\?url"/);
+	for (const retired of ["logo.svg", "logo-mark.svg", "gatu-logo-1024.png", "favicon.svg"]) {
+		assert.equal(existsSync(resolve(WEBSITE_ROOT, "public", retired)), false, `public/${retired} must not shadow the brand source`);
 	}
 });
 

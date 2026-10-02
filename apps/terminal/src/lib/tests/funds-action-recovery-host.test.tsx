@@ -35,7 +35,7 @@ const mocks = vi.hoisted(() => ({
 	stakingHistory: [] as unknown[],
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children, open, presentation }: { children: ReactNode; open: boolean; presentation?: string }) =>
 		open ? (
 			<section data-presentation={presentation} data-testid="recovery-modal">
@@ -182,6 +182,9 @@ describe("FundsActionRecoveryHost", async () => {
 
 		await act(() => vi.advanceTimersByTimeAsync(0));
 		expect(container.textContent).toContain("Pending funds operation");
+		const recoveryGlyph = container.querySelector('[role="status"] svg[data-status-glyph]');
+		expect(recoveryGlyph?.getAttribute("data-status-glyph")).toBe("unknown");
+		expect(recoveryGlyph?.getAttribute("viewBox")).toBe("0 0 24 24");
 		expect(container.textContent).toContain("3 USDC");
 	});
 

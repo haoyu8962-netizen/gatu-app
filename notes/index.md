@@ -32,8 +32,8 @@
 
 | 原始文件 | 原标题 |
 | --- | --- |
-| [launch-review-2026-07-21.md](../launch-review-2026-07-21.md) | gatu 交易终端上线审查报告 |
-| [launch-review-2026-07-30-round2.md](../launch-review-2026-07-30-round2.md) | gatu 交易终端上线审查报告(第二轮) |
+| [launch-review-2026-07-21.md](../launch-review-2026-07-21.md) | Sairn 交易终端上线审查报告 |
+| [launch-review-2026-07-30-round2.md](../launch-review-2026-07-30-round2.md) | Sairn 交易终端上线审查报告(第二轮) |
 | [2026-05-21-trade-layout-resize-notes.md](session-logs/2026-05-21-trade-layout-resize-notes.md) | Trade Layout Resize Notes |
 | [review-0e89a90a.md](../review-0e89a90a.md) | 对抗审查报告:`0e89a90a` fix(trading): prevent mobile order size overrides |
 | [review-3965ddff-0bc72134.md](../review-3965ddff-0bc72134.md) | 对抗审查报告：3965ddff + 0bc72134（供独立核验） |

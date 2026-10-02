@@ -7,12 +7,12 @@ const TERMINAL_ROOT = resolve(TEST_DIR, "../../..");
 const REPOSITORY_ROOT = resolve(TERMINAL_ROOT, "../..");
 const terms = readFileSync(resolve(REPOSITORY_ROOT, "legal/terms.md"), "utf8");
 
-describe("Gatu Terms of Use", () => {
-	it("uses Gatu legal identities and routes", () => {
-		expect(terms).toContain("Gatu Corp.");
-		expect(terms).toContain("https://app.gatu.ai");
-		expect(terms).toContain("support@gatu.ai");
-		expect(terms).toContain("https://app.gatu.ai/privacy");
+describe("Sairn Terms of Use", () => {
+	it("uses Sairn legal identities and routes", () => {
+		expect(terms).toContain("Sairn Corp.");
+		expect(terms).toContain("https://app.sairn.ai");
+		expect(terms).toContain("support@sairn.ai");
+		expect(terms).toContain("https://app.sairn.ai/privacy");
 		expect(terms).not.toContain("app.hyperliquid.xyz");
 		expect(terms).not.toContain("support@hyperliquid.zendesk.com");
 	});

@@ -1,4 +1,4 @@
-# Hyperliquid 官方站首次加载调试记录与 Gatu 规划
+# Hyperliquid 官方站首次加载调试记录与 Sairn 规划
 
 调试日期：2026-08-21
 
@@ -19,7 +19,7 @@ Hyperliquid 官方站的首次加载不是“先画一套完整终端骨架，�
 
 这套“稳定真实外框 + 精确市场门控 + 面板局部就绪”的组织方式值得参考，但官方的纯空白首屏、首批资源体积、缓存策略和无障碍反馈不应复制。Slow 4G 加 4 倍 CPU 降速时，官方约 14.65 秒才出现导航，约 20.60 秒才出现市场工作区，期间只有深色空画布。
 
-Gatu 的推荐方向因此不是删除所有占位，而是缩小占位的职责：
+Sairn 的推荐方向因此不是删除所有占位，而是缩小占位的职责：
 
 ```text
 SSR/runtime/i18n 未就绪
@@ -45,7 +45,7 @@ ClientRuntime 与 i18n 已就绪
 - 正常网络与 `Slow 4G + 4x CPU` 两组启动；
 - accessibility tree 检查；
 - 公开压缩 bundle 的路由、默认市场和挂载条件检查；
-- 与当前 Gatu 启动边界逐项对照。
+- 与当前 Sairn 启动边界逐项对照。
 
 限制：
 
@@ -82,7 +82,7 @@ ClientRuntime 与 i18n 已就绪
 | 约 `14.65 s` | 真实导航首次出现 |
 | 约 `20.60 s` | 市场和盘口首次出现 |
 
-这组结果说明官方的空 root 不是可复制的“高级过渡”：弱网和低性能设备会长时间没有内容或进度反馈。Gatu 保留轻量 SSR 静态壳更合理。
+这组结果说明官方的空 root 不是可复制的“高级过渡”：弱网和低性能设备会长时间没有内容或进度反馈。Sairn 保留轻量 SSR 静态壳更合理。
 
 ## HTML、资源与缓存
 
@@ -116,7 +116,7 @@ HTML 明示的首批 50 个 JS/CSS 资源：
 - 普通浏览器模式不会使用应用 Service Worker，只有 standalone PWA 在 window load 后注册；
 - standalone PWA 的 Workbox Service Worker 预缓存约 467 项，首次安装成本很高。
 
-因此官方的缓存与 PWA 策略不是 Gatu 的优化目标模板。
+因此官方的缓存与 PWA 策略不是 Sairn 的优化目标模板。
 
 ## 数据启动与市场门控
 
@@ -161,7 +161,7 @@ HTML 明示的首批 50 个 JS/CSS 资源：
 
 当前市场随后写回 `localStorage.activeCoin`。根路径在客户端 replace 到 `/trade`，URL 默认不携带 HYPE；全新隔离会话因此显示 HYPE，已有会话可恢复上次市场。
 
-这只是官方产品规则。Gatu 当前首页仍应使用有效的持久化 `selectedMarkets.all`，缺省为 BTC，并 replace 到带市场身份的 `/trade/<market>?scope=all`。
+这只是官方产品规则。Sairn 当前首页仍应使用有效的持久化 `selectedMarkets.all`，缺省为 BTC，并 replace 到带市场身份的 `/trade/<market>?scope=all`。
 
 ### 工作区挂载条件
 
@@ -216,10 +216,10 @@ HTML 明示的首批 50 个 JS/CSS 资源：
 - hashed 资源缺少明确 immutable；
 - standalone PWA 一次预缓存约 467 项；
 - 官方 HYPE/`activeCoin` 默认规则；
-- 官方无效路由处理替代 Gatu 已有的 canonical、404、paused 和 fail-visible 规则；
+- 官方无效路由处理替代 Sairn 已有的 canonical、404、paused 和 fail-visible 规则；
 - 为图表复制新的动画 loader。
 
-## 当前 Gatu 为什么会显示截图中的样式
+## 当前 Sairn 为什么会显示截图中的样式
 
 当前代码有三个不同的启动门槛，却复用了同一个 `AppShellSkeleton`：
 
@@ -242,7 +242,7 @@ HTML 明示的首批 50 个 JS/CSS 资源：
 - 整个 skeleton 被 `aria-hidden`，没有可访问进度；
 - 若简单在 loading/ready 两个分支各放一个 TopNav，市场 ready 时会卸载重挂，正在打开的钱包菜单和焦点会丢失。
 
-## Gatu 修改计划
+## Sairn 修改计划
 
 ### 阶段 0：先建立当前项目基线
 
@@ -266,7 +266,7 @@ HTML 明示的首批 50 个 JS/CSS 资源：
 
 ```json
 {
-  "name": "gatu",
+  "name": "sairn",
   "version": "0.1.0",
   "commit": "fee5e594d8b0d8df29bb601dc8a3fc4b42594181",
   "release": "local",
@@ -410,7 +410,7 @@ SSR 前的状态文案要在实现时专门验证语言与 hydration 行为，�
 - 在 CXMT 尚未确认时把 BTC、HYPE 或本地上次市场提交进 route scope；
 - 提前运行 `RouteMarketSync`；
 - 提前挂载会订阅默认市场的工作区；
-- 将官方 `/trade + activeCoin/HYPE` 规则移植到 Gatu。
+- 将官方 `/trade + activeCoin/HYPE` 规则移植到 Sairn。
 
 ### React 状态与 Effect 约束
 
@@ -561,7 +561,7 @@ Privy → SmartWallets → PersistQuery → Wagmi → Hyperliquid → Markets
 | `@privy-io/wagmi` | 946 B | 0.08% | 731,126 B | 61.02% |
 | WalletConnect | 67,349 B | 5.62% | 138,347 B | 11.55% |
 | 密码学库集合 | 34,382 B | 2.87% | 34,569 B | 2.88% |
-| `@gatu/hl-react` | 24,062 B | 2.01% | 265,158 B | 22.13% |
+| `@sairn/hl-react` | 24,062 B | 2.01% | 265,158 B | 22.13% |
 | 钱包五组去重并集 | — | — | 768,615 B | 64.14% |
 
 钱包五组 inclusive 朴素相加为 `1,986,102 B`，去重后只有 `768,615 B`；实际决策使用后者。闭包的两个大块是 `pwa-install-*.js` `583,168 B` gzip（48.67%）和 `vendor-tanstack-router-*.js` `360,056 B`（30.05%）。前者名称只是 Rollup 选的 chunk 名，不代表 583 KB 都属于 PWA 业务；模块归因显示其中 `577,931 B`（99.10%）属于上述去重钱包依赖并集。
@@ -615,7 +615,7 @@ CDP 对 `/trade/xyz%3ACXMT` 的一次 production slow4g-cold 采样捕获了 15/
 
 #### 修订后的触发线与判定
 
-以下是 Gatu 内部规划预算，不是 Web 官方指标：
+以下是 Sairn 内部规划预算，不是 Web 官方指标：
 
 1. **(a) 固定激活占比**：阶段 1 后 normal-cold 的 `hydration → ClientRuntime ready` 超过 500 ms，或占 `navigation → TopNav commit` 25% 以上。判定：**命中**。绝对值约 306.5 ms 未命中，但 9/9 正常冷缓存样本的占比都为 64.96–77.23%；
 2. **(b) 钱包字节关键链**：去重钱包依赖子树达到 client-root 必需静态闭包 gzip 的 40%，或钱包主导 chunk 达到 Slow 4G 观察闭包传输字节的 40%。判定：**命中**，两个值分别为 64.14% 和 44.18%。旧措辞“公开 bootstrap 已开始，但钱包 chunk 拖住外框”已删除：当前 `MarketsProvider` 就在 client-root 内，market bootstrap 与外框被同一静态链共同延迟，无法观测前者先于钱包链开始；
@@ -625,7 +625,7 @@ CDP 对 `/trade/xyz%3ACXMT` 的一次 production slow4g-cold 采样捕获了 15/
 
 实施仍必须是独立任务，并按以下顺序：
 
-1. 在 `@gatu/hl-react` 内拆兼容上下文：
+1. 在 `@sairn/hl-react` 内拆兼容上下文：
    - `HyperliquidTransportContext`：env、info、subscription、唯一 store；
    - `HyperliquidSessionContext`：clientKey、sessionMode、签名身份、Agent cleanup；
    - 原 `HyperliquidProvider` 暂时组合二者，保持调用方兼容；
@@ -670,7 +670,7 @@ CDP 对 `/trade/xyz%3ACXMT` 的一次 production slow4g-cold 采样捕获了 15/
 
 production client、SSR、Nitro 产物均生成，356 个 client chunk 无静态循环；startup gzip 为 `531,107 B`（相对预算基线 `+5,198 B`），各页面预算也通过。总 client gzip 为 `3,088,782 B`，相对 `3,073,703 B` 基线累计增加 `15,079 B`，超过允许增量 `5,079 B`。这符合 `f83ff963` 后已知的累计超预算预案；本轮没有修改 `check-client-bundle-budget.mjs` 常量。应参照 `24d6a445` 的先例另立 re-baseline 决策，不能把预算重置混入 Provider 拆分。
 
-此前 `64.14%` 是钱包五组在旧 client-root 必需闭包中的去重 inclusive 上界，不等于 step 3 一定能剥离的字节。它包含钱包与 `@gatu/hl-react`、router、UI 及未来 public shell 共享的重叠模块。完成 step 3 后必须在新构建图上重跑 `analyze-client-root-deps.mjs`，分别报告 wallet union、transport/public-shell union、二者交集，以及真正从首屏必需静态闭包移除的 gzip；step 3 应以实际关键链字节和 Slow 4G 下载尾部为主要判据，而不是要求上述约 306 ms 固定激活成本消失。
+此前 `64.14%` 是钱包五组在旧 client-root 必需闭包中的去重 inclusive 上界，不等于 step 3 一定能剥离的字节。它包含钱包与 `@sairn/hl-react`、router、UI 及未来 public shell 共享的重叠模块。完成 step 3 后必须在新构建图上重跑 `analyze-client-root-deps.mjs`，分别报告 wallet union、transport/public-shell union、二者交集，以及真正从首屏必需静态闭包移除的 gzip；step 3 应以实际关键链字节和 Slow 4G 下载尾部为主要判据，而不是要求上述约 306 ms 固定激活成本消失。
 
 禁止使用以下快捷方式：
 

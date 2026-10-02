@@ -1,5 +1,7 @@
 ---
-const appUrl = "https://app.gatu.ai";
+import desktopScreenshot from "@/assets/terminal-desktop.jpeg";
+import mobileScreenshot from "@/assets/terminal-mobile.jpeg";
+import { APP_HOST, APP_URL as appUrl, BRAND_NAME } from "@/config/brand";
 ---
 
 <section class="relative overflow-hidden border-b border-stroke-weaker">
@@ -15,19 +17,19 @@ const appUrl = "https://app.gatu.ai";
 					<span class="inline-block h-1.5 w-1.5 rounded-full bg-live"></span>
 					<span class="absolute inset-0 inline-block h-1.5 w-1.5 rounded-full bg-live opacity-75 animate-ping"></span>
 				</span>
-				<span class="uppercase tracking-uppercase">Open source · Live on mainnet</span>
+				<span class="uppercase tracking-uppercase">Live on mainnet</span>
 				<svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" class="opacity-60 group-hover:translate-x-0.5 transition">
 					<path d="M4.5 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 				</svg>
 			</a>
 
 			<h1 class="font-display stagger-item mt-7 md:mt-8 max-w-3xl text-3xl md:text-4xl leading-[1.02] tracking-display">
-				The open-source terminal<br />
+				The trading terminal<br />
 				<span class="text-fg-subtle">for </span><span class="text-signal">Hyperliquid</span><span class="text-fg-subtle">.</span>
 			</h1>
 
 			<p class="stagger-item mt-5 md:mt-6 max-w-xl text-sm md:text-base text-fg-muted leading-relaxed">
-				Read the client. Fork it. Run it yourself. Crypto, stocks, and indices — perps and spot in one workspace, with pro charts, every order type, and 1–50× leverage on Hyperliquid's WebSocket.
+				Crypto, stocks, and indices — perps and spot in one workspace, with pro charts, every order type, and each market's full leverage, streamed live from Hyperliquid's WebSocket.
 			</p>
 
 			<div class="stagger-item mt-8 md:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
@@ -49,7 +51,7 @@ const appUrl = "https://app.gatu.ai";
 			</div>
 
 			<p class="stagger-item mt-5 text-2xs text-fg-faint uppercase tracking-uppercase">
-				Open source · Wallet-native · No signup
+				Non-custodial · Wallet or email · No KYC
 			</p>
 		</div>
 
@@ -63,32 +65,32 @@ const appUrl = "https://app.gatu.ai";
 					<span class="h-2 w-2 md:h-2.5 md:w-2.5 rounded-full bg-fill-weak"></span>
 					<span class="h-2 w-2 md:h-2.5 md:w-2.5 rounded-full bg-fill-weak"></span>
 					<div class="ml-3 md:ml-4 inline-flex items-center gap-1.5 rounded-full bg-fill-weaker px-2.5 py-0.5 text-2xs text-fg-faint tabular truncate">
-						<svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 							<rect x="2.5" y="3.5" width="7" height="6" rx="1.5"/>
 							<path d="M4 3.5V2.5a2 2 0 0 1 4 0v1"/>
 						</svg>
-						<span>app.gatu.ai</span>
+						<span>{APP_HOST}</span>
 					</div>
 				</div>
 
-				<!-- Desktop screenshot (hidden on mobile) -->
-				<img
-					src="/app-desktop.jpeg"
-					alt="GATU trading interface showing BTC-USDC chart, order book, and trade panel"
-					class="hidden sm:block w-full h-auto bg-background"
-					loading="eager"
-					width="1600"
-					height="900"
-				/>
-				<!-- Mobile screenshot (only on small) -->
-				<img
-					src="/app-mobile.jpeg"
-					alt="GATU mobile view showing BTC-USDC candle chart"
-					class="sm:hidden w-full h-auto bg-background"
-					loading="eager"
-					width="390"
-					height="844"
-				/>
+				<!-- One art-directed picture: the browser downloads only the screenshot for the current width. -->
+				<picture>
+					<source
+						media="(min-width: 640px)"
+						srcset={desktopScreenshot.src}
+						width={desktopScreenshot.width}
+						height={desktopScreenshot.height}
+					/>
+					<img
+						src={mobileScreenshot.src}
+						alt={`${BRAND_NAME} trading terminal on BTC-USDC with the live order book and order form`}
+						class="block w-full h-auto bg-background"
+						loading="eager"
+						decoding="async"
+						width={mobileScreenshot.width}
+						height={mobileScreenshot.height}
+					/>
+				</picture>
 			</div>
 
 			<!-- Floating "CONNECTED" status chip, anchored bottom-left of screenshot -->

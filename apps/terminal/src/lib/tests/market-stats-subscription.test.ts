@@ -6,7 +6,7 @@ describe("market stats subscription policy", () => {
 		{ pathname: "/referrals", expected: false },
 		{ pathname: "/referrals/", expected: false },
 		{ pathname: "/join", expected: false },
-		{ pathname: "/join/gatuappweb3", expected: false },
+		{ pathname: "/join/sairnappweb3", expected: false },
 		{ pathname: "/leaderboard", expected: false },
 		{ pathname: "/leaderboard/", expected: false },
 		{ pathname: "/joiner", expected: true },

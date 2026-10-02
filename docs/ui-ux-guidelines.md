@@ -3,7 +3,7 @@
 This file is a compact entry point, not a second copy of the design system. When guidance conflicts, use this authority order:
 
 1. `AGENTS.md` product contracts.
-2. `packages/ui/README.md`, exported `@gatu/ui` component APIs, `.claude/rules/design-tokens.md`, and the active application stylesheet.
+2. `packages/ui/README.md`, exported `@sairn/ui` component APIs, `.claude/rules/design-tokens.md`, and the active application stylesheet.
 3. Executable page and component contract tests. Tests may refine a screen but must not override shared token rules.
 4. This document.
 
@@ -17,7 +17,7 @@ This file is a compact entry point, not a second copy of the design system. When
 
 ## Components and tokens
 
-- Start with components exported by `@gatu/ui`; compose semantic HTML around them when page structure requires elements such as `article`, `section`, or `table`.
+- Start with components exported by `@sairn/ui`; compose semantic HTML around them when page structure requires elements such as `article`, `section`, or `table`.
 - Use semantic foreground, surface, fill, stroke, action, signal, success, warning, error, and info tokens. Do not hard-code theme colors in components.
 - Use `bg-dashboard-canvas` for the branded data-dashboard canvas and `bg-grid-container` for the desktop grid underlay. `bg-portfolio-canvas` is a compatibility alias for Portfolio, not a general page token.
 - A translucent fill communicates a state or inset region, not elevation. Do not nest the same translucent fill on a parent card and its children; use a raised surface, an outlined structural region, and at most one filled inset level.
@@ -33,7 +33,7 @@ This file is a compact entry point, not a second copy of the design system. When
 
 ## Interaction and accessibility
 
-- Preserve the focus-visible treatment, keyboard behavior, accessible names, and disabled semantics provided by `@gatu/ui`.
+- Preserve the focus-visible treatment, keyboard behavior, accessible names, and disabled semantics provided by `@sairn/ui`.
 - Icon-only controls require an accessible name. Custom interactive elements must use the correct native element before adding ARIA.
 - Loading, empty, stale, and error states must remain distinguishable without color and must not expose actions against unverified data.
 - Verify affected views in light and dark themes, at desktop and mobile widths, and at boundary breakpoints. Check reflow and text scaling rather than treating a single screenshot as the contract.

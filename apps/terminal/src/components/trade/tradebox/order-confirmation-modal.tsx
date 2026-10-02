@@ -1,3 +1,5 @@
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 import {
 	AdaptiveModal,
 	Checkbox,
@@ -6,9 +8,7 @@ import {
 	ModalFooter,
 	ModalHeader,
 	ModalTitle,
-} from "@gatu/ui";
-import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
+} from "@sairn/ui";
 import {
 	buildOrderConfirmationRows,
 	getOrderConfirmationSubmitLabel,

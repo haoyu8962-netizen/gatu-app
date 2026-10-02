@@ -167,7 +167,7 @@ export function validateOptions(options) {
 export function createApiCachePolicyConfig() {
 	return {
 		Name: API_CACHE_POLICY_NAME,
-		Comment: "gatu API responses cached by origin s-maxage, keyed by query string",
+		Comment: "sairn API responses cached by origin s-maxage, keyed by query string",
 		DefaultTTL: 0,
 		MaxTTL: 1800,
 		MinTTL: 0,
@@ -187,7 +187,9 @@ export function createApiOriginRequestPolicyConfig() {
 		Comment: "Same-origin API on a Lambda function URL: every viewer header except Host, plus the viewer address",
 		HeadersConfig: {
 			HeaderBehavior: "whitelist",
-			// CloudFront allows at most ten whitelisted headers per origin request policy.
+			// CloudFront allows at most ten whitelisted headers per origin request policy. X-Gatu-Forwarded-Host stays
+			// until the release that drops the gatu.ai group (docs/sairn-domain-cutover-plan.md, PR-B): the release
+			// still serving gatu hosts only writes that header, and the API cannot restore its origin without it.
 			Headers: list([
 				"Accept",
 				"Content-Type",
@@ -195,6 +197,7 @@ export function createApiOriginRequestPolicyConfig() {
 				"Referer",
 				"Sec-Fetch-Site",
 				"User-Agent",
+				"X-Sairn-Forwarded-Host",
 				"X-Gatu-Forwarded-Host",
 				"CloudFront-Viewer-Address",
 				"CloudFront-Viewer-Country",
@@ -220,7 +223,7 @@ export function createDistributionConfig(options) {
 		responseHeadersPolicyIds,
 		functionArns,
 		callerReference = `gatu-terminal-${network}-${randomUUID()}`,
-		comment = `gatu trading terminal (${network}): static shell on S3, API on Lambda`,
+		comment = `sairn trading terminal (${network}): static shell on S3, API on Lambda`,
 		policies = MANAGED_POLICIES,
 	} = options;
 

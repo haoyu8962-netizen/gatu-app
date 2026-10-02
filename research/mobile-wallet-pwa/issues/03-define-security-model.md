@@ -193,7 +193,7 @@ Before enabling mobile sync on authenticated trading pages:
 
 - Hyperliquid `approveAgent` accepts `agentAddress` and optional `agentName`, and the official docs note named-agent limits.
 - The `@nktkas/hyperliquid` client accepts `agentName` values of the form `<base> valid_until <timestamp>` and validates the base name length after stripping that suffix.
-- Existing gatu agent storage already uses localStorage-backed `{ privateKey, publicKey }` records; v1 may extend that shape for mobile metadata rather than introducing a second secret store.
+- Existing Sairn agent storage already uses localStorage-backed `{ privateKey, publicKey }` records; v1 may extend that shape for mobile metadata rather than introducing a second secret store.
 
 ## Notes
 

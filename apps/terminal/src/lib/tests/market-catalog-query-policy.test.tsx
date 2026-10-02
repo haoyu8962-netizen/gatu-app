@@ -35,7 +35,7 @@ const QUERY_DATA = {
 	allPerpMetas: [{ universe: [], marginTables: [], collateralToken: 0 }] as MetaResponse[],
 };
 
-vi.mock("@gatu/hl-react", () => ({
+vi.mock("@sairn/hl-react", () => ({
 	useInfo: (method: keyof typeof QUERY_DATA, params: undefined, options: unknown) => {
 		mocks.useInfo(method, params, options);
 		return {

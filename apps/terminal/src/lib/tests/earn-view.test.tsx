@@ -13,7 +13,7 @@ function passthrough(tag: string) {
 	return ({ children }: { children?: ReactNode }) => createElement(tag, null, children);
 }
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) =>
 		createElement("button", { type: "button", disabled, onClick }, children),
 	Table: passthrough("table"),

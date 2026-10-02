@@ -1,5 +1,5 @@
-import { infoPersistedKey, infoQueryOptions } from "@gatu/hl-react/query/info";
 import type { InfoClient } from "@nktkas/hyperliquid";
+import { infoPersistedKey, infoQueryOptions } from "@sairn/hl-react/query/info";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
 
 export const MARKET_CATALOG_META_STALE_TIME_MS = 30 * 60 * 1_000;

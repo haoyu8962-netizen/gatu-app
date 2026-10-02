@@ -8,8 +8,8 @@ import { getPortfolioQueryStatus } from "@/domain/portfolio";
 import { usePortfolioInfo } from "@/hooks/portfolio/use-portfolio-info";
 
 const transport = vi.hoisted(() => ({ env: "Mainnet", info: { userVaultEquities: vi.fn() } }));
-vi.mock("@gatu/hl-react", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@gatu/hl-react")>()),
+vi.mock("@sairn/hl-react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@sairn/hl-react")>()),
 	useHyperliquidTransport: () => transport,
 }));
 

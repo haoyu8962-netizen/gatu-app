@@ -49,7 +49,7 @@ vi.mock("@/hooks/use-mobile", () => ({
 	useIsMobile: () => testState.isMobile,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		onOpenChange,
@@ -101,8 +101,8 @@ vi.mock("@gatu/ui", () => ({
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 }));
 
-vi.mock("@gatu/hl-react/signing/mobile-agent", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@gatu/hl-react/signing/mobile-agent")>();
+vi.mock("@sairn/hl-react/signing/mobile-agent", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@sairn/hl-react/signing/mobile-agent")>();
 	return {
 		...actual,
 		createMobileAgentApproval: () => ({
@@ -229,7 +229,7 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 		expect(container.textContent).toContain(
-			"On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code.",
+			"On your phone, open Sairn, tap Connect, then Link Desktop Wallet and scan this code.",
 		);
 		expect(container.textContent).toContain("The QR can trade but not withdraw.");
 		expect(container.querySelector("canvas")).toBeNull();
@@ -313,7 +313,7 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.querySelector("canvas")).not.toBeNull();
 		await vi.waitFor(() => expect(testState.qrToCanvas).toHaveBeenCalledTimes(1));
 		const [, url] = testState.qrToCanvas.mock.calls[0] as [unknown, string];
-		expect(url.startsWith(`${window.location.origin}/mobile-agent-sync#ht-mobile-sync=`)).toBe(true);
+		expect(url.startsWith(`${window.location.origin}/mobile-agent-sync#sairn-mobile-sync=`)).toBe(true);
 		expect(url).not.toContain("k=");
 		expect(container.textContent).toContain("Closes in 60s");
 

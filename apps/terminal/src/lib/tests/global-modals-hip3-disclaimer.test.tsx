@@ -5,6 +5,7 @@ import { I18nProvider } from "@lingui/react";
 import { act, createElement, type ReactNode, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 
 const testState = vi.hoisted(() => ({
 	activeModalListeners: new Set<() => void>(),
@@ -395,7 +396,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(depositTitle?.className).toContain("sr-only");
 		expect(document.body.querySelector('[role="dialog"]')?.getAttribute("aria-labelledby")).toBe(depositTitle?.id);
 		expect(fallback?.querySelector("span.sr-only")?.textContent).toContain("Loading");
-		expect(fallback?.querySelector(".animate-spin")).toBeNull();
+		expect(fallback?.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
 		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).toBeNull();
 
 		const closeButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Close"]');

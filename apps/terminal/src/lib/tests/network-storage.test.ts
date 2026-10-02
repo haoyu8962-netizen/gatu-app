@@ -30,26 +30,37 @@ describe("network storage", () => {
 	});
 
 	it("binds each canonical production hostname to exactly one network", () => {
+		expect(getCanonicalNetworkForHostname("app.sairn.ai")).toBe("mainnet");
+		expect(getCanonicalNetworkForHostname("APP.SAIRN.AI")).toBe("mainnet");
+		expect(getCanonicalNetworkForHostname("testnet.sairn.ai")).toBe("testnet");
+		expect(getCanonicalNetworkForHostname("app.sairn.ai.evil.example")).toBeNull();
+		expect(getCanonicalNetworkForHostname("preview.sairn.ai")).toBeNull();
+	});
+
+	it("keeps recognising the legacy gatu.ai hosts until they are retired from brand.json", async () => {
 		expect(getCanonicalNetworkForHostname("app.gatu.ai")).toBe("mainnet");
-		expect(getCanonicalNetworkForHostname("APP.GATU.AI")).toBe("mainnet");
 		expect(getCanonicalNetworkForHostname("testnet.gatu.ai")).toBe("testnet");
 		expect(getCanonicalNetworkForHostname("app.gatu.ai.evil.example")).toBeNull();
-		expect(getCanonicalNetworkForHostname("preview.gatu.ai")).toBeNull();
+
+		const { switchNetwork } = await import("@/lib/network");
+		const navigate = vi.fn();
+		expect(switchNetwork("testnet", "app.gatu.ai", navigate)).toBe("navigating");
+		expect(navigate).toHaveBeenCalledExactlyOnceWith("https://testnet.gatu.ai");
 	});
 
 	it("ignores stored network values on canonical production hostnames", async () => {
 		localStorage.setItem(STORAGE_KEYS.NETWORK, "testnet");
 		const { getNetwork } = await import("@/lib/network");
-		expect(getNetwork("app.gatu.ai")).toBe("mainnet");
+		expect(getNetwork("app.sairn.ai")).toBe("mainnet");
 
 		localStorage.setItem(STORAGE_KEYS.NETWORK, "mainnet");
-		expect(getNetwork("testnet.gatu.ai")).toBe("testnet");
+		expect(getNetwork("testnet.sairn.ai")).toBe("testnet");
 	});
 
 	it("does not persist network overrides on canonical production hostnames", async () => {
 		localStorage.setItem(STORAGE_KEYS.NETWORK, "mainnet");
 		const { persistNetwork } = await import("@/lib/network");
-		persistNetwork("testnet", "app.gatu.ai");
+		persistNetwork("testnet", "app.sairn.ai");
 		expect(localStorage.getItem(STORAGE_KEYS.NETWORK)).toBe("mainnet");
 	});
 
@@ -57,17 +68,17 @@ describe("network storage", () => {
 		const { switchNetwork } = await import("@/lib/network");
 		const navigate = vi.fn();
 
-		expect(switchNetwork("testnet", "app.gatu.ai", navigate)).toBe("navigating");
+		expect(switchNetwork("testnet", "app.sairn.ai", navigate)).toBe("navigating");
 		expect(navigate).toHaveBeenCalledExactlyOnceWith(PUBLIC_ORIGINS.testnet);
 		expect(navigate.mock.calls[0]?.[0]).not.toContain("?");
 		expect(navigate.mock.calls[0]?.[0]).not.toContain("#");
 
 		navigate.mockClear();
-		expect(switchNetwork("mainnet", "testnet.gatu.ai", navigate)).toBe("navigating");
+		expect(switchNetwork("mainnet", "testnet.sairn.ai", navigate)).toBe("navigating");
 		expect(navigate).toHaveBeenCalledExactlyOnceWith(PUBLIC_ORIGINS.mainnet);
 
 		navigate.mockClear();
-		expect(switchNetwork("mainnet", "app.gatu.ai", navigate)).toBe("unchanged");
+		expect(switchNetwork("mainnet", "app.sairn.ai", navigate)).toBe("unchanged");
 		expect(navigate).not.toHaveBeenCalled();
 	});
 
@@ -106,7 +117,7 @@ describe("network storage", () => {
 	it("ignores cross-tab network storage events on canonical production hostnames", async () => {
 		const { subscribeNetworkStorage } = await import("@/lib/network");
 		const listener = vi.fn();
-		const unsubscribe = subscribeNetworkStorage(listener, "app.gatu.ai");
+		const unsubscribe = subscribeNetworkStorage(listener, "app.sairn.ai");
 
 		window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEYS.NETWORK, newValue: "testnet" }));
 

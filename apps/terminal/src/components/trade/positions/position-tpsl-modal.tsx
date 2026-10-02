@@ -1,7 +1,7 @@
-import { Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { WarningIcon } from "@phosphor-icons/react";
+import { Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { InfoRow } from "@/components/ui/info-row";

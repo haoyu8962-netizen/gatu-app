@@ -1,6 +1,6 @@
 import { createChartLibraryScriptUrl } from "./chart-library";
 
-export const APP_NAME = "gatu";
+export const APP_NAME = "sairn";
 
 export interface BuildMetaInput {
 	version: string;

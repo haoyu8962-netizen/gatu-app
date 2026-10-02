@@ -6,6 +6,7 @@ import { act, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WithdrawForm } from "@/components/trade/tradebox/deposit/withdraw-form";
+import { LOADING_INDICATOR_SELECTOR } from "./harness/loading-indicator";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -202,7 +203,7 @@ describe("WithdrawForm UI", () => {
 	it("keeps the button name and only disables it during an actual withdrawal attempt", async () => {
 		const { onSubmit } = await renderForm({ isPending: true });
 		expect(container.textContent).not.toContain("Processing");
-		expect(container.querySelector(".animate-spin")).toBeNull();
+		expect(container.querySelector(LOADING_INDICATOR_SELECTOR)).toBeNull();
 		expect(getButton("Withdraw").disabled).toBe(true);
 		act(() => getButton("Withdraw").click());
 		expect(onSubmit).not.toHaveBeenCalled();

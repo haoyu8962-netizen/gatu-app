@@ -312,7 +312,7 @@ describe("root route provider lifetime during committed route transitions", () =
 				expect(container.querySelector('[data-testid="startup-fallback"]')?.getAttribute("aria-busy")).toBe("true");
 				expect(container.querySelector("nav, header, footer, main")).toBeNull();
 				expect(container.querySelector("output")?.className).toBe("sr-only");
-				expect(container.textContent).toBe("Loading GATU...");
+				expect(container.textContent).toBe("Loading Sairn...");
 			});
 		},
 	);

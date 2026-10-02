@@ -7,6 +7,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TopNav, type TopNavMode } from "@/components/trade/header/top-nav";
 import { DESKTOP_NAV_ITEMS, DESKTOP_NAV_LABELS } from "@/config/desktop-nav";
+import { DESKTOP_NAV_COMPACT_MAX_PX, DESKTOP_NAV_NARROW_MAX_PX } from "@/config/layout";
 import { HYPERSCREENER_URL } from "@/config/nav";
 import { createI18nRoot } from "./harness/react";
 
@@ -32,10 +33,11 @@ const testState = vi.hoisted(() => ({
 	userMenuUnmounts: 0,
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({
 		"aria-label": ariaLabel,
 		children,
+		className,
 		disabled,
 		iconLeft,
 		onClick,
@@ -43,12 +45,18 @@ vi.mock("@gatu/ui", () => ({
 	}: {
 		"aria-label"?: string;
 		children: ReactNode;
+		className?: string;
 		disabled?: boolean;
 		iconLeft?: ReactNode;
 		onClick?: () => void;
 		title?: string;
 	}) =>
-		createElement("button", { "aria-label": ariaLabel, disabled, onClick, title, type: "button" }, iconLeft, children),
+		createElement(
+			"button",
+			{ "aria-label": ariaLabel, className, disabled, onClick, title, type: "button" },
+			iconLeft,
+			children,
+		),
 	ButtonIcon: ({
 		"aria-label": ariaLabel,
 		children,
@@ -132,6 +140,7 @@ vi.mock("@tanstack/react-router", () => ({
 	Link: ({
 		"aria-current": ariaCurrent,
 		"aria-label": ariaLabel,
+		"data-brand-home-link": brandHomeLink,
 		children,
 		className,
 		search,
@@ -139,6 +148,7 @@ vi.mock("@tanstack/react-router", () => ({
 	}: {
 		"aria-current"?: string;
 		"aria-label"?: string;
+		"data-brand-home-link"?: string;
 		children: ReactNode;
 		className?: string;
 		search?: unknown;
@@ -150,6 +160,7 @@ vi.mock("@tanstack/react-router", () => ({
 				"aria-current": ariaCurrent,
 				"aria-label": ariaLabel,
 				className,
+				"data-brand-home-link": brandHomeLink,
 				"data-search": search === undefined ? undefined : JSON.stringify(search),
 				"data-to": to,
 				href: to,
@@ -441,7 +452,11 @@ describe("TopNav", () => {
 			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Earn", "Vaults", "Staking", "Referrals", "Leaderboard"]);
 			expect(moreMenuLabels()).toEqual(["Funding Comparison", "Statistics", "API Wallet"]);
 
-			stubViewportWidth(1181);
+			stubViewportWidth(DESKTOP_NAV_COMPACT_MAX_PX + 1);
+			renderNav();
+			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Earn", "Vaults", "Staking", "Referrals", "Leaderboard"]);
+
+			stubViewportWidth(DESKTOP_NAV_COMPACT_MAX_PX);
 			renderNav();
 			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Earn"]);
 			expect(moreMenuLabels()).toEqual([
@@ -471,7 +486,7 @@ describe("TopNav", () => {
 			expect(moreMenuLabels()).toEqual(["Funding Comparison", "Statistics", "API Wallet"]);
 			expect(findDesktopUtilitiesButton()).toBeUndefined();
 
-			stubViewportWidth(1100);
+			stubViewportWidth(DESKTOP_NAV_NARROW_MAX_PX);
 			renderNav();
 			expect(topLevelLabels()).toEqual(["Trade", "Portfolio", "Earn"]);
 			expect(moreMenuLabels()).toEqual([
@@ -490,7 +505,7 @@ describe("TopNav", () => {
 
 	it("keeps the compact utilities menu and hidden utility icons consistent while the market loads", () => {
 		try {
-			stubViewportWidth(1181);
+			stubViewportWidth(DESKTOP_NAV_COMPACT_MAX_PX);
 			renderNav("market-loading");
 			const utilities = findDesktopUtilitiesButton();
 			expect(utilities?.disabled).toBe(false);
@@ -505,7 +520,7 @@ describe("TopNav", () => {
 
 	it("highlights More when a collapsed entry is the current route", () => {
 		try {
-			stubViewportWidth(1181);
+			stubViewportWidth(DESKTOP_NAV_COMPACT_MAX_PX);
 			testState.pathname = "/vaults/0x123";
 			renderNav();
 			const trigger = container.querySelector<HTMLElement>('[data-testid="more-dropdown"] button[aria-label="More"]');
@@ -524,8 +539,9 @@ describe("TopNav", () => {
 		testState.tradeHomePath = "/spot/@107";
 		renderNav();
 
-		const logoLink = container.querySelector<HTMLAnchorElement>('a[aria-label="GATU"]');
+		const logoLink = container.querySelector<HTMLAnchorElement>("a[data-brand-home-link]");
 		const tradeLink = findLink("Trade");
+		expect(logoLink?.getAttribute("aria-label")).toBe("Sairn");
 		for (const link of [logoLink, tradeLink]) {
 			expect(link?.dataset.to).toBe("/spot/@107");
 			expect(JSON.parse(link?.dataset.search ?? "null")).toEqual({ scope: "all" });
@@ -537,6 +553,7 @@ describe("TopNav", () => {
 		act(() => findButton("Deposit")?.click());
 		expect(testState.openDepositModal).toHaveBeenCalledOnce();
 		expect(testState.openDepositModal).toHaveBeenCalledWith("deposit");
+		expect(findButton("Deposit")?.querySelector("span")?.className).toBe("nav-compact:sr-only");
 
 		testState.hasWalletAccess = false;
 		renderNav();
@@ -549,6 +566,11 @@ describe("TopNav", () => {
 		expect(restrictedDeposit?.disabled).toBe(true);
 		expect(restrictedDeposit?.getAttribute("aria-label")).toBe("Deposit unavailable");
 		expect(restrictedDeposit?.title).toBe("Deposits are not available in your region.");
+		const restrictedClasses = restrictedDeposit?.className.split(/\s+/) ?? [];
+		expect(restrictedClasses).toContain("size-9");
+		expect(restrictedClasses).toContain("px-0");
+		expect(restrictedClasses).not.toContain("px-3.5");
+		expect(restrictedDeposit?.querySelector("span.sr-only")?.textContent).toBe("Deposit unavailable");
 		act(() => restrictedDeposit?.click());
 		expect(testState.openDepositModal).toHaveBeenCalledTimes(1);
 	});
@@ -586,7 +608,7 @@ describe("TopNav", () => {
 		expect(testState.openDepositModal).not.toHaveBeenCalled();
 		expect(testState.openSettingsDialog).not.toHaveBeenCalled();
 
-		expect(container.querySelector<HTMLAnchorElement>('a[aria-label="GATU"]')).not.toBeNull();
+		expect(container.querySelector<HTMLAnchorElement>("a[data-brand-home-link]")).not.toBeNull();
 		expect(findLink("Trade")).not.toBeUndefined();
 		const moreTriggers = container.querySelectorAll<HTMLButtonElement>('[data-testid="more-dropdown"] > button');
 		expect(moreTriggers).toHaveLength(1);

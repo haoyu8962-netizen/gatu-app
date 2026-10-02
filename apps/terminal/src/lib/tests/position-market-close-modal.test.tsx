@@ -78,7 +78,7 @@ function activateLocale(locale: "en" | "zh") {
 	i18n.loadAndActivate({ locale, messages: locale === "zh" ? zhMessages : {} });
 }
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) => {
 		testState.adaptiveProps = props;
 		return createElement("div", { "data-testid": "adaptive-modal" }, children);

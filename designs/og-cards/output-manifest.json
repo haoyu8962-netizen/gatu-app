@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"sourceSha256": "e410ca7ad9d0dd2221e14cb2363bb2cc6e34ecef27c1303622740c5d07013322",
+	"sourceSha256": "cd76512b4f1b536a98d3170638c7cf07d62f4f69d78ebf5e40ab526df3471124",
 	"dimensions": {
 		"height": 630,
 		"width": 1200
@@ -8,11 +8,11 @@
 	"outputs": {
 		"terminal": {
 			"path": "apps/terminal/public/og-terminal-1200x630.png",
-			"sha256": "303a2868dc0f656bd52793d3cbff60f345a5333612edce5f8b8ea043aef51b7d"
+			"sha256": "727fee1a0bcbc64ce1ddfc1c28b0662af07912d98523258544a1467fa3a5bf2a"
 		},
 		"website": {
 			"path": "apps/website/public/og-website-1200x630.png",
-			"sha256": "2a7ff82b0c996051d04381e3acc9c9b6e02625a4a6ccdbcaf050ae77eb1b804e"
+			"sha256": "f206d05b2bd6a13971fa113e9414fad6a5523d2aaff09e8e523dfdaac0de71a6"
 		}
 	}
 }

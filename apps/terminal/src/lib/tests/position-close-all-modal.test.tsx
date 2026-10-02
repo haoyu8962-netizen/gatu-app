@@ -27,7 +27,7 @@ const testState = vi.hoisted(() => ({
 
 const toastMock = vi.hoisted(() => ({ success: vi.fn(), info: vi.fn(), warning: vi.fn(), error: vi.fn() }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	ModalDescription: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
 		createElement("p", props, children),
 	ModalTitle: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>

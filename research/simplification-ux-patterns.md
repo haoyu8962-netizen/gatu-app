@@ -35,7 +35,7 @@
 | Kraken | Standard | Pro |
 | Bybit | Simple buy/sell | Full terminal |
 
-**Lesson for HL**: The most common solution because serving both audiences with one UI is nearly impossible. A toggle between "Simple" and "Advanced" in gatu.
+**Lesson for HL**: The most common solution because serving both audiences with one UI is nearly impossible. A toggle between "Simple" and "Advanced" in Sairn.
 
 ### 4. Workspace Composability (Bloomberg, TradingView)
 **How it works**: Users build their own layouts
@@ -79,7 +79,7 @@
 
 ---
 
-## Design Principles for gatu
+## Design Principles for Sairn
 
 ### Priority 1: Sensible Defaults
 - Default to market order

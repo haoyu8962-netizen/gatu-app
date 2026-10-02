@@ -1,4 +1,4 @@
-import { invalidateAllExchangeRequestIdentities } from "@gatu/hl-react/internal/exchange/request-scheduler";
+import { invalidateAllExchangeRequestIdentities } from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { StartClient } from "@tanstack/react-start/client";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot, type Root } from "react-dom/client";

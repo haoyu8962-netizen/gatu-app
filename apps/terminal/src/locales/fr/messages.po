@@ -73,6 +73,10 @@ msgstr "{acceptedCount} ordres de clôture sur {totalCount} ont été entièreme
 msgid "{age} days"
 msgstr "{age} jours"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "{BRAND_NAME} invitation link"
+msgstr "Lien d’invitation {BRAND_NAME}"
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "{currentDirectionLabel} to {targetDirectionLabel}"
 msgstr "{currentDirectionLabel} vers {targetDirectionLabel}"
@@ -2324,8 +2328,8 @@ msgstr "Impossible de récupérer vos soldes de tokens"
 #~ msgstr "Impossible d'importer l'accès mobile. Réessayez ou créez un nouveau QR de bureau."
 
 #: src/hooks/wallet/use-email-wallet-export.ts
-msgid "Could not open wallet export. Retry in your system browser on the same GATU site, using the same email."
-msgstr "Impossible d’ouvrir l’exportation. Réessayez dans le navigateur système, sur le même site GATU et avec le même e-mail."
+msgid "Could not open wallet export. Retry in your system browser on the same {BRAND_NAME} site, using the same email."
+msgstr "Impossible d’ouvrir l’exportation. Réessayez dans le navigateur système, sur le même site {BRAND_NAME} et avec le même e-mail."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not render QR. Create a new key."
@@ -2897,8 +2901,8 @@ msgid "Download the credential before confirming."
 msgstr "Téléchargez les identifiants avant de confirmer."
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
-msgid "Download the credential now and move it to secure storage. Gatu cannot recover it after this window is closed."
-msgstr "Téléchargez les identifiants maintenant et placez-les dans un stockage sécurisé. Gatu ne pourra pas les récupérer après la fermeture de cette fenêtre."
+msgid "Download the credential now and move it to secure storage. {BRAND_NAME} cannot recover it after this window is closed."
+msgstr "Téléchargez les identifiants maintenant et placez-les dans un stockage sécurisé. {BRAND_NAME} ne pourra pas les récupérer après la fermeture de cette fenêtre."
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
 msgid "Downloaded"
@@ -3834,10 +3838,6 @@ msgstr "Gas ({0})"
 msgid "Gas-sponsored CCTP deposits are not enabled for this network."
 msgstr "Les dépôts CCTP avec frais de gaz sponsorisés ne sont pas activés pour ce réseau."
 
-#: src/components/referrals/referral-code-card.tsx
-msgid "Gatu invitation link"
-msgstr "Lien d’invitation Gatu"
-
 #: src/components/api-wallet/api-wallet-form.tsx
 msgid "Generate"
 msgstr "Générer"
@@ -4044,8 +4044,8 @@ msgid "Hyperliquid will unlock code creation when the required volume is confirm
 msgstr "Hyperliquid débloquera la création du code une fois le volume requis confirmé."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "I have read and agree to the Gatu <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
-msgstr "J'ai lu et j'accepte les <0>Conditions d'utilisation</0> de Gatu, la <1>Politique de confidentialité</1> et les <2>Conditions d'utilisation d'Hyperliquid</2>."
+msgid "I have read and agree to the {BRAND_NAME} <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
+msgstr "J'ai lu et j'accepte les <0>Conditions d'utilisation</0> de {BRAND_NAME}, la <1>Politique de confidentialité</1> et les <2>Conditions d'utilisation d'Hyperliquid</2>."
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
@@ -4056,8 +4056,8 @@ msgid "I have saved the private key in a secure location"
 msgstr "J’ai enregistré la clé privée dans un emplacement sécurisé"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "I understand that Gatu uses essential cookies and browser storage for authentication, security, preferences, and trading functionality. Review the <0>Cookie Policy</0>."
-msgstr "Je comprends que Gatu utilise des cookies essentiels et le stockage du navigateur pour l'authentification, la sécurité, les préférences et les fonctions de trading. Consultez la <0>Politique relative aux cookies</0>."
+msgid "I understand that {BRAND_NAME} uses essential cookies and browser storage for authentication, security, preferences, and trading functionality. Review the <0>Cookie Policy</0>."
+msgstr "Je comprends que {BRAND_NAME} utilise des cookies essentiels et le stockage du navigateur pour l'authentification, la sécurité, les préférences et les fonctions de trading. Consultez la <0>Politique relative aux cookies</0>."
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
@@ -4094,12 +4094,12 @@ msgid "Indices"
 msgstr "Indices"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Install app"
-msgstr "Installer l’application"
+msgid "Install {BRAND_NAME}"
+msgstr "Installer {BRAND_NAME}"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Install gatu"
-msgstr "Installer gatu"
+msgid "Install app"
+msgstr "Installer l’application"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Install this web app for a full-screen, app-like trading experience."
@@ -5648,15 +5648,11 @@ msgstr "Hors ligne"
 #~ msgstr "OI"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
-msgstr "Sur iPhone ou iPad, ouvrez le menu Partager, choisissez Sur l’écran d’accueil, puis lancez gatu depuis l’écran d’accueil."
+msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch {BRAND_NAME} from your Home Screen."
+msgstr "Sur iPhone ou iPad, ouvrez le menu Partager, choisissez Sur l’écran d’accueil, puis lancez {BRAND_NAME} depuis l’écran d’accueil."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#~ msgid "On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code, or scan it with your phone camera."
-#~ msgstr ""
-
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "On your phone, open gatu, tap Connect, then Link Desktop Wallet and scan this code."
+msgid "On your phone, open {BRAND_NAME}, tap Connect, then Link Desktop Wallet and scan this code."
 msgstr ""
 
 #. placeholder {0}: payload.env
@@ -7559,8 +7555,8 @@ msgid "Scan the QR from Link mobile device on your desktop to load a trading key
 msgstr ""
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
-msgid "Scan the QR from the QR icon in the top-right of gatu on desktop (Link mobile device)."
-msgstr "Scannez le QR affiché via l'icône QR en haut à droite de gatu sur ordinateur (Associer un appareil mobile)."
+msgid "Scan the QR from the QR icon in the top-right of {BRAND_NAME} on desktop (Link mobile device)."
+msgstr "Scannez le QR affiché via l'icône QR en haut à droite de {BRAND_NAME} sur ordinateur (Associer un appareil mobile)."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #~ msgid "Scan the QR shown by Link Mobile Device on your desktop."
@@ -9033,8 +9029,8 @@ msgid "The prior request may have reached Hyperliquid. Do not submit it again. O
 msgstr "La demande précédente a peut-être atteint Hyperliquid. Ne la soumettez pas à nouveau. Ouvrez la page associée pour poursuivre le rapprochement en lecture seule."
 
 #: src/components/api-wallet/api-wallet-view.tsx
-msgid "The private key is created in this browser and is never uploaded or stored by Gatu."
-msgstr "La clé privée est créée dans ce navigateur et n’est jamais téléversée ni stockée par Gatu."
+msgid "The private key is created in this browser and is never uploaded or stored by {BRAND_NAME}."
+msgstr "La clé privée est créée dans ce navigateur et n’est jamais téléversée ni stockée par {BRAND_NAME}."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The private key is created on this desktop and embedded in the QR code."
@@ -9391,11 +9387,6 @@ msgstr "Il s’agit d’un résultat définitivement vide pour le filtre sélect
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This is a WalletConnect QR. Scan the Link Desktop Wallet QR instead."
 msgstr "Ceci est un QR WalletConnect. Scannez plutôt le QR Associer un portefeuille de bureau."
-
-#: src/routes/mobile-agent-sync.tsx
-#: src/routes/mobile-agent-sync.tsx
-#~ msgid "This is not a valid gatu desktop wallet QR."
-#~ msgstr "Ceci n'est pas un QR de portefeuille de bureau gatu valide."
 
 #: src/components/referrals/referral-activity.tsx
 msgid "This is the legacy earned-reward history. Current claims are shown in the previous tab."

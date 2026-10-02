@@ -20,6 +20,10 @@ const DEFAULT_MAX_MEAN_CHANNEL_DELTA = 2;
 // guard against localized drift.
 const WEBSITE_MAX_MEAN_CHANNEL_DELTA = 3.5;
 const MAX_CHANGED_PIXEL_RATIO = 0.03;
+// The Sairn website card rendered on macOS and re-rendered by CI on Linux differ on 3.353 % of pixels
+// (mean channel delta 2.9187, CI run 36889833952) because of its larger display copy; the terminal card
+// stays under the default cap.
+const WEBSITE_MAX_CHANGED_PIXEL_RATIO = 0.045;
 const MATERIAL_CHANNEL_DELTA = 16;
 
 const CARDS = [
@@ -31,6 +35,7 @@ const CARDS = [
 		name: "website",
 		output: resolve(REPOSITORY_ROOT, "apps/website/public/og-website-1200x630.png"),
 		maxMeanChannelDelta: WEBSITE_MAX_MEAN_CHANNEL_DELTA,
+		maxChangedPixelRatio: WEBSITE_MAX_CHANGED_PIXEL_RATIO,
 	},
 ];
 
@@ -54,7 +59,7 @@ if (args.has("--check") && args.has("--generate")) {
 }
 
 const checkOnly = args.has("--check");
-const temporaryDirectory = await mkdtemp(resolve(tmpdir(), "gatu-og-cards-"));
+const temporaryDirectory = await mkdtemp(resolve(tmpdir(), "og-cards-"));
 
 try {
 	const fontFileNames = await verifyVendoredFonts();
@@ -172,10 +177,10 @@ async function renderCard(page, name, outputPath) {
 	await page.goto(templateUrl.href, { waitUntil: "load" });
 	await page.evaluate(async () => {
 		await Promise.all([
-			document.fonts.load('400 16px "GATU Barlow"', "Perpetuals"),
-			document.fonts.load('400 16px "GATU Barlow Condensed"', "GATU.AI"),
-			document.fonts.load('600 16px "GATU Barlow Condensed"', "Gateway"),
-			document.fonts.load('400 16px "GATU Noto Sans SC"', "永续现货交易终端"),
+			document.fonts.load('400 16px "OG Barlow"', "Perpetuals"),
+			document.fonts.load('400 16px "OG Barlow Condensed"', "SAIRN.AI"),
+			document.fonts.load('600 16px "OG Barlow Condensed"', "Decide"),
+			document.fonts.load('400 16px "OG Noto Sans SC"', "永续现货交易终端"),
 		]);
 		await document.fonts.ready;
 	});
@@ -186,10 +191,10 @@ async function renderCard(page, name, outputPath) {
 		return {
 			card: document.documentElement.dataset.card,
 			fontsLoaded: [
-				document.fonts.check('400 16px "GATU Barlow"', "Perpetuals"),
-				document.fonts.check('400 16px "GATU Barlow Condensed"', "GATU.AI"),
-				document.fonts.check('600 16px "GATU Barlow Condensed"', "Gateway"),
-				document.fonts.check('400 16px "GATU Noto Sans SC"', "永续现货交易终端"),
+				document.fonts.check('400 16px "OG Barlow"', "Perpetuals"),
+				document.fonts.check('400 16px "OG Barlow Condensed"', "SAIRN.AI"),
+				document.fonts.check('600 16px "OG Barlow Condensed"', "Decide"),
+				document.fonts.check('400 16px "OG Noto Sans SC"', "永续现货交易终端"),
 			].every(Boolean),
 			rectangle: rectangle
 				? { height: rectangle.height, width: rectangle.width, x: rectangle.x, y: rectangle.y }
@@ -300,9 +305,10 @@ function assertValidPng(cardName, kind, analysis) {
 
 function assertSafeDifference(card, difference) {
 	const maxMeanChannelDelta = card.maxMeanChannelDelta ?? DEFAULT_MAX_MEAN_CHANNEL_DELTA;
+	const maxChangedPixelRatio = card.maxChangedPixelRatio ?? MAX_CHANGED_PIXEL_RATIO;
 	if (
 		difference.meanChannelDelta > maxMeanChannelDelta ||
-		difference.changedPixelRatio > MAX_CHANGED_PIXEL_RATIO
+		difference.changedPixelRatio > maxChangedPixelRatio
 	) {
 		throw new Error(
 			`${card.name} render differs materially from the deployed card: ${formatDifference(difference)}. ` +

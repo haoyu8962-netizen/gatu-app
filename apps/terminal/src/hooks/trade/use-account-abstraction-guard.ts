@@ -1,4 +1,4 @@
-import { infoQueryOptions, useHyperliquid } from "@gatu/hl-react";
+import { infoQueryOptions, useHyperliquid } from "@sairn/hl-react";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { type AccountAbstraction, isSupportedAccountAbstraction } from "@/hooks/trade/use-account-balances";

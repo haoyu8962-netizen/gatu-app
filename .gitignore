@@ -59,3 +59,7 @@ designs/**/.thumbnail
 
 # Auto-generated boneyard skeleton registry (built from dev server)
 apps/terminal/src/bones/registry.ts
+
+# Brand design originals (.fig/.ai/.psd/.sketch); only exported assets are tracked
+brand/_source/*
+!brand/_source/.gitkeep

@@ -12,6 +12,7 @@ import { areFontsReady, STARTUP_FONT_SPECS, waitForFonts } from "@/lib/fonts/fon
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
 import { buildRootHead } from "@/lib/seo";
+import { getDocumentThemeColor, THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme-color";
 import { useClientRuntimeReady } from "@/providers/client-runtime";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
 import { ClientRuntimeGate } from "@/providers/root";
@@ -22,7 +23,6 @@ import appCss from "../styles.css?url";
 
 const FONT_PRELOAD_URLS = [interLatinWoff2, ibmPlexSansLatinWoff2];
 
-const THEME_BOOTSTRAP_SCRIPT = `(()=>{let theme="dark";try{const value=JSON.parse(localStorage.getItem("global-settings-v2")||"null");if(value?.state?.theme==="light")theme="light"}catch{}document.documentElement.classList.remove("light","dark");document.documentElement.classList.add(theme)})();`;
 let serviceWorkerRegistration: Promise<ServiceWorkerRegistration | undefined> | undefined;
 
 function registerServiceWorker() {
@@ -42,7 +42,7 @@ interface RootSearch {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	validateSearch: (search: Record<string, unknown>): RootSearch => (search.scope === "all" ? { scope: "all" } : {}),
-	head: () => buildRootHead(FONT_PRELOAD_URLS),
+	head: () => buildRootHead(FONT_PRELOAD_URLS, getDocumentThemeColor()),
 	shellComponent: RootDocument,
 	component: RootComponent,
 	pendingComponent: StartupFallback,

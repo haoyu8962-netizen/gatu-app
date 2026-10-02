@@ -40,7 +40,7 @@ Hyperliquid HYPE 刷新的浏览器对照见 [订单簿实测记录](orderbook-u
 
 ```bash
 pnpm exec biome check <本次修改的 TypeScript/TSX 文件>
-pnpm --filter @gatu/terminal typecheck
+pnpm --filter @sairn/terminal typecheck
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/trades-panel.test.tsx \
   src/lib/tests/account-panel.test.tsx \

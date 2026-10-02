@@ -36,7 +36,7 @@
 ## 结论与依据
 
 - 覆盖：169 个方法中生产代码调用 88 个。只在 `USER_SIGNED_METHODS`、资金操作锁、组合保证金策略或调度优先级中出现的方法算未接入，但降低了接入成本。
-- 建议优先：`fundingHistory`（官方有资金费率历史图，gatu 只有当前费率和倒计时）、OI 上限（`webData3` 已带 `perpDexStates[].perpsAtOpenInterestCap` 但未读取，另加 `perpDexLimits`）、`predictedFundings`（官方 Funding Comparison 页只调用它）。随后是 `notification` 订阅和 `maxMarketOrderNtls`。
+- 建议优先：`fundingHistory`（官方有资金费率历史图，Sairn 只有当前费率和倒计时）、OI 上限（`webData3` 已带 `perpDexStates[].perpsAtOpenInterestCap` 但未读取，另加 `perpDexLimits`）、`predictedFundings`（官方 Funding Comparison 页只调用它）。随后是 `notification` 订阅和 `maxMarketOrderNtls`。
 - 战略级：子账户、HIP-4 预测市场、金库管理各需设计与 ADR；组合保证金路由已存在但被策略默认拦截。
 - 判为冗余的两项有实测依据：`allPerpMetas` 的分档对 11 个 dex、528 个资产全部可解析，`marginTable` 不需要；`perpCategories` 与已接入的 `perpConciseAnnotations` 分类 206/206 一致。
 - 未合入分支中只有 `claude/earn-page` 新增了候选之一（`borrowLend`）。

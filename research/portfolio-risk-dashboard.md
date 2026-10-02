@@ -1,6 +1,6 @@
 # Portfolio Delta & Risk Manager — Research
 
-Comprehensive research on portfolio-level risk tools, dashboard design patterns, and specific implementation ideas for gatu.
+Comprehensive research on portfolio-level risk tools, dashboard design patterns, and specific implementation ideas for Sairn.
 
 ---
 
@@ -15,7 +15,7 @@ Comprehensive research on portfolio-level risk tools, dashboard design patterns,
 7. [Data Visualization for Risk](#7-data-visualization-for-risk)
 8. [Real-Time Risk UI Patterns](#8-real-time-risk-ui-patterns)
 9. [Platform Analysis](#9-platform-analysis)
-10. [gatu Implementation Ideas](#10-gatu-implementation-ideas)
+10. [Sairn Implementation Ideas](#10-gatu-implementation-ideas)
 11. [Existing Codebase Infrastructure](#11-existing-codebase-infrastructure)
 12. [Sources](#12-sources)
 
@@ -163,7 +163,7 @@ beta_weighted_delta_btc = Σ (position_delta_usd × β_asset_vs_btc) / btc_price
 
 ### VaR Approaches for Crypto
 
-**Historical VaR (Most Practical for gatu)**
+**Historical VaR (Most Practical for Sairn)**
 1. Collect last N days of returns for each asset (e.g., 252 trading days)
 2. Apply current portfolio weights to historical returns
 3. Generate distribution of hypothetical portfolio returns
@@ -426,7 +426,7 @@ HHI = Σ (weight_i)²  where weight_i = position_notional_i / total_notional
 - Separate panels: Dashboard, P&L plot, Risk summary
 - Menu-driven: Portfolio, Edit, Report, Metrics, View, Settings
 
-**Modern Fintech Model (for gatu):**
+**Modern Fintech Model (for Sairn):**
 - Clean dark-theme grid layout
 - Modular card/panel system
 - Progressive disclosure: summary → details on click
@@ -645,7 +645,7 @@ HHI = Σ (weight_i)²  where weight_i = position_notional_i / total_notional
 
 ---
 
-## 10. gatu Implementation Ideas
+## 10. Sairn Implementation Ideas
 
 ### Feature Tiers
 
@@ -816,7 +816,7 @@ New route: `/risk` or as a tab within the existing trade layout
 
 ### Differentiation from Competitors
 
-Most crypto terminals show position-level data but NOT portfolio-level risk analytics. gatu can differentiate by:
+Most crypto terminals show position-level data but NOT portfolio-level risk analytics. Sairn can differentiate by:
 
 1. **Beta-weighted delta** — no crypto terminal does this today
 2. **VaR / CVaR** — institutional-grade risk metric, unprecedented in DeFi

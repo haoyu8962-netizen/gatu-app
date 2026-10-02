@@ -28,7 +28,7 @@ const testState = vi.hoisted(() => ({
 	open: true,
 }));
 
-vi.mock("@gatu/hl-react", () => ({
+vi.mock("@sairn/hl-react", () => ({
 	useInfo: () => ({
 		data: testState.annotations,
 		isPending: testState.annotationsPending,

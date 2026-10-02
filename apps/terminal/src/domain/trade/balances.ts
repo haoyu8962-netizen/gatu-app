@@ -1,4 +1,4 @@
-import type { SpotMarket, UnifiedMarket } from "@gatu/hl-react";
+import type { SpotMarket, UnifiedMarket } from "@sairn/hl-react";
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { isSupportedAccountAbstraction } from "@/domain/trade/account-abstraction";

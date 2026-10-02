@@ -1,4 +1,4 @@
-import { Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
+import { Button, ModalContent, ModalHeader, ModalTitle } from "@sairn/ui";
 import { useState } from "react";
 import { PendingActionModal } from "@/components/trade/components/pending-action-modal";
 import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";

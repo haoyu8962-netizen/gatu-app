@@ -23,7 +23,7 @@ const DATA: ReferralData = {
 	builderRewards: "0",
 	referrerState: {
 		stage: "ready",
-		data: { code: params.get("code") ?? "GATU", nReferrals: 0, referralStates: [] },
+		data: { code: params.get("code") ?? "SAIRN", nReferrals: 0, referralStates: [] },
 	},
 	rewardHistory: [],
 	tokenToState: [],

@@ -1,5 +1,5 @@
-import { Tabs, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { Tabs, TabsList, TabsTrigger } from "@sairn/ui";
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { resolveChartLocale } from "@/config/chart";

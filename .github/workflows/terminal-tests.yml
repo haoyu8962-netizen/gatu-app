@@ -5,9 +5,12 @@ on:
     paths:
       - ".github/workflows/**"
       - "apps/**"
+      - "brand/**"
       - "deploy/**"
+      - "legal/**"
       - "packages/**"
       - "patches/**"
+      - "scripts/brand*.mjs"
       - "scripts/check-client-bundle-budget.mjs"
       - "scripts/check-client-bundle-budget.test.mjs"
       - "scripts/ci-workflows.test.mjs"
@@ -58,6 +61,9 @@ jobs:
 
       - name: Test the CloudFront release tooling
         run: pnpm test:cloudfront
+
+      - name: Check brand source consistency
+        run: pnpm brand:check
 
       - name: Test Hyperliquid API resource hints
         working-directory: apps/terminal
@@ -268,6 +274,22 @@ jobs:
         run: >-
           pnpm exec vitest run --maxWorkers=1
           src/lib/tests/brand-semantics-contract.test.ts
-          src/lib/tests/gatu-logo.test.tsx
+          src/lib/tests/brand-logo.test.tsx
           src/lib/tests/root-startup-fallback.test.tsx
           src/lib/tests/mobile-header-brand.test.tsx
+          src/lib/tests/pwa-manifest.test.ts
+          src/lib/tests/public-origins.test.ts
+          src/lib/tests/brand-catalog-contract.test.ts
+          src/lib/tests/network-storage.test.ts
+          src/lib/tests/referral-join.test.ts
+          src/lib/tests/referral.test.ts
+          src/lib/tests/terms-content.test.ts
+          src/lib/tests/legal-policy-contract.test.ts
+          src/lib/tests/trading-agent-config.test.ts
+          src/lib/tests/order-summary.test.tsx
+          src/lib/tests/twap-order-summary.test.tsx
+          src/lib/tests/status-motion-contract.test.ts
+          src/lib/tests/status-glyph.test.tsx
+          src/lib/tests/status-motion-surface-contract.test.ts
+          src/lib/tests/toaster-config.test.tsx
+          src/lib/tests/order-toast-placement.test.tsx

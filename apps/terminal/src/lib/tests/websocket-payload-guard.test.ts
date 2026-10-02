@@ -1,9 +1,9 @@
-import { estimatePayloadSizeBytes, isPayloadOversized } from "@gatu/hl-react/internal/websocket/payload-guard";
+import { estimatePayloadSizeBytes, isPayloadOversized } from "@sairn/hl-react/internal/websocket/payload-guard";
 import {
 	getPayloadLimitBytesForSubscriptionKey,
 	shouldDropOversizedPayloadForSubscriptionKey,
 	WS_RELIABILITY_LIMITS,
-} from "@gatu/hl-react/internal/websocket/reliability";
+} from "@sairn/hl-react/internal/websocket/reliability";
 import { describe, expect, it } from "vitest";
 
 describe("websocket payload guard", () => {

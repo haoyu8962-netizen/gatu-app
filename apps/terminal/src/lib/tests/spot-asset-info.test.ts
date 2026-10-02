@@ -1,4 +1,4 @@
-import type { UnifiedMarket } from "@gatu/hl-react";
+import type { UnifiedMarket } from "@sairn/hl-react";
 import { describe, expect, it } from "vitest";
 import {
 	getSpotAssetSnapshotIdentity,

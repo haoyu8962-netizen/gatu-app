@@ -1,7 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@gatu/ui/globals.css";
+@import "@sairn/ui/globals.css";
 @import "react-grid-layout/css/styles.css";
+@import "./lib/brand/status-motion.gen.css" layer(components);
 @source "../../../packages/ui/src";
 
 @font-face {
@@ -80,16 +81,16 @@
 }
 
 /* ============================================
-   HyperTerminal UI — Design Tokens
+   Sairn UI — Design Tokens
    Source: Figma variable exports
-   + HyperTerminal Trading Extensions
+   + Sairn Trading Extensions
    ============================================ */
 
 /* --- Dark mode: class-based toggle --- */
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Desktop top navigation compact width; keep equal to DESKTOP_NAV_COMPACT_MAX_PX in config/layout.ts (ADR 0013). */
-@custom-variant nav-compact (@media (max-width: 1181px));
+@custom-variant nav-compact (@media (max-width: 1379px));
 
 /* =============================================
    Layer 1: Primitive Tokens
@@ -101,7 +102,7 @@
   --font-mono: ui-monospace, "SF Mono", monospace;
 
   /* ---- Typography Scale (Desktop) ----
-     Equal to the @gatu/ui scale (typography-scale-contract); Layer 4 shrinks xl/2xl/3xl at 1000px.
+     Equal to the @sairn/ui scale (typography-scale-contract); Layer 4 shrinks xl/2xl/3xl at 1000px.
      size/line-height → Tailwind class
      10/14 → text-3xs    11/16 → text-2xs    12/16 → text-xs     13/18 → text-2sm
      14/20 → text-sm     16/24 → text-base   20/28 → text-lg     28/36 → text-xl
@@ -151,7 +152,7 @@
   --tracking-uppercase: 2px;
   --tracking-heading-1: -0.5px;
 
-  /* ---- HyperTerminal Custom Animations ---- */
+  /* ---- Sairn Custom Animations ---- */
   --animate-pulse-slow: pulse-slow 2s ease-in-out infinite;
   --animate-blink: blink 1s step-end infinite;
   --animate-countdown: countdown linear forwards;
@@ -202,9 +203,6 @@
     --api-wallet-mobile-control-height: 3rem;
     --api-wallet-state-icon-size: 2.75rem;
     --api-wallet-mobile-state-icon-size: 2.5rem;
-    --api-wallet-progress-ring-size: 3.75rem;
-    --api-wallet-mobile-progress-ring-size: 3.5rem;
-    --api-wallet-progress-ring-stroke: 0.1875rem;
     --api-wallet-step-dot-size: 1rem;
     --api-wallet-skeleton-line-height: 0.6875rem;
     --api-wallet-secret-tracking: 0.18em;
@@ -270,13 +268,16 @@
     --action-hover: #32363d;
     --action-active: #08090d;
     --on-action: #ffffff;
-    --signal: #667311;
-    --signal-hover: #4f5a0d;
-    --signal-soft: rgb(102 115 17 / 10%);
+    --signal: #176b64;
+    --signal-hover: #0f524d;
+    --signal-soft: rgb(23 107 100 / 10%);
     --focus: var(--signal);
     --chart-accent: #4c64d9;
-    --logo-ink: #15171e;
-    --logo-node: #15171e;
+    /* Logo kit v1.3 colors on light surfaces (brand/brand.json logo.light) and the darkest loader frame. */
+    --logo-signal: #176b64;
+    --logo-choice: #99621f;
+    --logo-wordmark: #08262e;
+    --logo-loader-floor: 0.78;
 
     /* Text */
     --text-strong: #000626e5;
@@ -350,7 +351,7 @@
     --icon-inverse-strong: #ffffff;
     --icon-inverse-disabled: #ffffff1f;
 
-    /* HyperTerminal Trading Extensions */
+    /* Sairn Trading Extensions */
     --market-up: var(--text-success);
     --market-down: var(--text-error);
     --orderbook-depth-bid: var(--text-success);
@@ -435,6 +436,9 @@
     --position-share-outline: #ffffff66;
     --position-share-hover: #ffffff1f;
     --position-share-button-hover: #f1f4f8;
+    /* The card is dark in both themes, so the logo keeps its on-dark colours (brand/brand.json logo.dark). */
+    --position-share-logo-signal: #86e5d3;
+    --position-share-logo-choice: #e6b766;
   }
 
   /* ==================== DARK MODE ==================== */
@@ -464,13 +468,16 @@
     --action-hover: #ffffff;
     --action-active: #d5d7de;
     --on-action: #08090d;
-    --signal: #d7ff3f;
-    --signal-hover: #e6ff70;
-    --signal-soft: rgb(215 255 63 / 14%);
+    --signal: #86e5d3;
+    --signal-hover: #a8eee1;
+    --signal-soft: rgb(134 229 211 / 14%);
     --focus: var(--signal);
     --chart-accent: #b2bcf1;
-    --logo-ink: #edeef2;
-    --logo-node: #d7ff3f;
+    /* Logo kit v1.3 colors on dark surfaces (brand/brand.json logo.dark) and the darkest loader frame. */
+    --logo-signal: #86e5d3;
+    --logo-choice: #e6b766;
+    --logo-wordmark: #ffffff;
+    --logo-loader-floor: 0.55;
 
     /* Text */
     --text-strong: #ffffff;
@@ -544,7 +551,7 @@
     --icon-inverse-strong: #000626e5;
     --icon-inverse-disabled: #0011661a;
 
-    /* HyperTerminal Trading Extensions (Dark) */
+    /* Sairn Trading Extensions (Dark) */
     --market-up: var(--text-success);
     --market-down: var(--text-error);
     --orderbook-depth-bid: #1fa67d;
@@ -804,7 +811,7 @@
   --color-icon-inverse-strong: var(--icon-inverse-strong);
   --color-icon-inverse-disabled: var(--icon-inverse-disabled);
 
-  /* HyperTerminal Trading Extensions */
+  /* Sairn Trading Extensions */
   --color-market-up: var(--market-up);
   --color-market-down: var(--market-down);
   --color-market-neutral: var(--market-neutral);
@@ -865,7 +872,7 @@
 }
 
 /* =============================================
-   HyperTerminal App Styles
+   Sairn App Styles
    ============================================= */
 @layer base {
   :root {
@@ -921,37 +928,63 @@
 }
 
 @layer components {
-  .gatu-orbit-loader__track {
-    opacity: 0.2;
+  /* Motion library v1.3 page-loading: the two panels breathe in turn, see brand/loader/svg/on-dark/page-loading.svg. */
+  .brand-page-loader__signal {
+    animation: brand-page-loader-breathe 2000ms ease-in-out infinite;
   }
 
-  .gatu-orbit-loader__segment {
-    animation: gatu-orbit-loader 1.5s linear infinite;
+  .brand-page-loader__choice {
+    animation: brand-page-loader-breathe 2000ms -1000ms ease-in-out infinite;
   }
 
-  .gatu-orbit-loader__static-node {
-    opacity: 0;
-  }
+  @keyframes brand-page-loader-breathe {
+    0%,
+    100% {
+      opacity: 1;
+    }
 
-  @keyframes gatu-orbit-loader {
-    to {
-      stroke-dashoffset: -100;
+    50% {
+      opacity: var(--logo-loader-floor, 0.55);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .gatu-orbit-loader__track {
-      opacity: 1;
-    }
-
-    .gatu-orbit-loader__segment {
+    .brand-page-loader__signal,
+    .brand-page-loader__choice {
       animation: none;
-      opacity: 0;
     }
+  }
 
-    .gatu-orbit-loader__static-node {
-      opacity: 1;
-    }
+  /* Status glyphs and motions (lib/brand/status-motion.gen.css). A tone takes the semantic text colour of
+     the message beside it; the badge cut-out takes the colour that reads on a filled tone in each theme;
+     the darkest loop frame follows the logo loader, and the mono button indicator uses the kit's 0.78. */
+  .srm {
+    --status-on: var(--on-action);
+    --srm-floor: var(--logo-loader-floor);
+  }
+
+  .srm[data-tone="success"] {
+    --status-tone: var(--text-success);
+  }
+
+  .srm[data-tone="error"] {
+    --status-tone: var(--text-error);
+  }
+
+  .srm[data-tone="attention"] {
+    --status-tone: var(--text-warning);
+  }
+
+  .srm[data-tone="neutral"] {
+    --status-tone: var(--text-weak);
+  }
+
+  .srm[data-tone="info"] {
+    --status-tone: var(--text-info);
+  }
+
+  .srm[data-appearance="mono"] {
+    --srm-floor: 0.78;
   }
 
   .api-wallet-col-name {

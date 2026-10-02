@@ -13,10 +13,13 @@
 			"**/index.html",
 			"**/vite.config.js",
 			"!**/src/routeTree.gen.ts",
+			"!**/src/**/*.gen.ts",
+			"!**/src/**/*.gen.css",
 			"!**/src/styles.css",
 			"!**/src/types/charting_library.d.ts",
 			"!**/src/locales/**/messages.js",
-			"!apps/website"
+			"!apps/website",
+			"!brand"
 		]
 	},
 

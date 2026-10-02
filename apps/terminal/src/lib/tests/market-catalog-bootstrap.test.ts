@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { infoPersistedKey } from "@gatu/hl-react/query/info";
 import type { InfoClient, MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
+import { infoPersistedKey } from "@sairn/hl-react/query/info";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { dehydrate, hydrate, onlineManager, QueryClient } from "@tanstack/react-query";
 import { persistQueryClientRestore } from "@tanstack/react-query-persist-client";

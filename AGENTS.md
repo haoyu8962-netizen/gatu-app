@@ -1,4 +1,4 @@
-# gatu Agent Rules
+# Sairn Agent Rules
 
 This file contains durable project instructions for coding agents. Read `agent.md` for the broader architecture, commands, and coding conventions. Keep this file limited to stable rules that future tasks must preserve; do not add temporary investigation notes, commit hashes, or one-off status updates.
 
@@ -148,15 +148,24 @@ This file contains durable project instructions for coding agents. Read `agent.m
 - Runtime views stay pure, deterministic and props-only. Preserve mounted component behavior, translated labels, drafts, protocol values and every signing/data-availability guard. Do not reintroduce placeholder trees, shell-specific English catalogs or hydration route-surface overrides.
 - Application webfonts use `font-display: block`, and the startup gate waits (bounded) for the persisted locale catalog and the preloaded startup fonts before the first real render, so text never paints in a fallback font and reflows.
 
+## Brand identity contract
+
+- `docs/brand-assets.md` owns the brand source, its readers, the logo, icon, accent and status-motion rules and the sairn.ai go-live order; ADR 0027 (single source, renamed and kept identifiers, history policy), 0028 (accent colours), 0029 (status motion), 0030 (PnL share card), 0031 (domain move) and 0032 (gatu.ai offline cutover) record the decisions.
+- Brand values (name, legal entity, domains, support email, accent and logo colours, PWA theme colour) come only from `brand/brand.json`, through `config/brand.ts`, the website config or `scripts/brand.mjs`. Name the product in messages only through `BRAND_NAME` / `{BRAND_NAME}`; never write brand names, domains or mailboxes as literals elsewhere.
+- Internal identifiers (storage keys, Web Lock names, the Hyperliquid Agent slot, headers, environment variables, package scope) are `sairn` literals, never read from `brand.json`; renaming one is a signing or data-continuity change, not a brand edit. The `gatu` names that stay (AWS resources, the repository, the `domains.legacy` group, the dual-written legacy forwarded-host header) are listed in ADR 0027.
+- Generated, exported and synced files are never edited by hand: `pnpm brand:export-motion` (needs Chromium) rewrites `brand/loader`, `brand/loader-supplement/glyphs` and `brand/tokens`, `pnpm brand:derive-icons` the derived icons and e-mail logo in `brand/web`, and `pnpm brand:sync` the `lib/brand/*.gen.*` modules and the copies in `public/`. `pnpm brand:check` and `pnpm test:brand` must pass after any change to `brand/`, `legal/` or a brand reader.
+- The status of a requested action uses `StatusGlyph`, `BrandMotion` or `ButtonLoading` with semantic tones; an unknown result is never drawn as an error. Passive loading keeps the neutral spinner, and every remaining spinner is registered with its reason in `status-motion-surface-contract.test.ts`.
+- Keep `gatu.ai` in `domains.legacy`, and the dual-written legacy forwarded-host header and route marker, until the retirement release in ADR 0032; canonical URLs, the sitemap, legal text and referral links use only `domains.primary`.
+
 ## Verification
 
 Browser-fixture servers must use a Vite dependency cache separate from the application dev server, with neither cache nested inside the other. Follow `docs/runtime-guardrails.md` when changing browser-test configuration; a different root or port does not isolate Vite's default cache.
 
-Run checks proportional to the touched surface before committing. Every contract above has a focused regression entry; run the groups for the sections you touched, and the full `pnpm --filter @gatu/terminal test` run when a change crosses several of them:
+Run checks proportional to the touched surface before committing. Every contract above has a focused regression entry; run the groups for the sections you touched, and the full `pnpm --filter @sairn/terminal test` run when a change crosses several of them:
 
 ```bash
 pnpm exec biome check <changed TypeScript/TSX files>
-pnpm --filter @gatu/terminal typecheck
+pnpm --filter @sairn/terminal typecheck
 
 # Wallet signing, onboarding and connection UI
 pnpm --dir apps/terminal exec vitest run \
@@ -302,6 +311,8 @@ pnpm --dir apps/terminal exec vitest run \
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/root-startup-fallback.test.tsx \
   src/lib/tests/root-route-transition.test.tsx \
+  src/lib/tests/theme-bootstrap.test.ts \
+  src/lib/tests/theme-document-sync.test.tsx \
   src/lib/tests/trade-terminal-page-boot.test.tsx \
   src/lib/tests/top-nav.test.tsx \
   src/lib/tests/desktop-nav-layout.test.ts \
@@ -316,6 +327,28 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/action-error.test.ts \
   src/lib/tests/errors.test.ts \
   src/lib/tests/lingui-helper-translator-contract.test.ts
+
+# Brand identity (brand/, names, logo, icons, status motion, domains, legal text; see docs/brand-assets.md and ADR 0027)
+pnpm test:brand
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/brand-logo.test.tsx \
+  src/lib/tests/status-motion-contract.test.ts \
+  src/lib/tests/status-glyph.test.tsx \
+  src/lib/tests/status-motion-surface-contract.test.ts \
+  src/lib/tests/toaster-config.test.tsx \
+  src/lib/tests/order-toast-placement.test.tsx \
+  src/lib/tests/brand-catalog-contract.test.ts \
+  src/lib/tests/public-origins.test.ts \
+  src/lib/tests/pwa-manifest.test.ts \
+  src/lib/tests/network-storage.test.ts \
+  src/lib/tests/referral-join.test.ts \
+  src/lib/tests/referral.test.ts \
+  src/lib/tests/terms-content.test.ts \
+  src/lib/tests/legal-policy-contract.test.ts \
+  src/lib/tests/trading-agent-config.test.ts \
+  src/lib/tests/order-summary.test.tsx \
+  src/lib/tests/twap-order-summary.test.tsx \
+  src/lib/tests/top-nav.test.tsx
 ```
 
 Layout contracts also have browser suites: `docs/desktop-grid-layout.md` and `docs/runtime-guardrails.md` §9 name the Playwright configs under `apps/terminal/tests/browser/`. When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.

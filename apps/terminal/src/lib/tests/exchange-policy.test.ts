@@ -1,4 +1,4 @@
-import { assertExchangeMutationAllowed, isPortfolioMarginActivation } from "@gatu/hl-react/exchange-policy";
+import { assertExchangeMutationAllowed, isPortfolioMarginActivation } from "@sairn/hl-react/exchange-policy";
 import { describe, expect, it } from "vitest";
 
 const USER = "0x1234567890abcdef1234567890abcdef12345678";

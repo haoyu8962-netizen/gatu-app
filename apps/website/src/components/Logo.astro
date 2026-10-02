@@ -1,13 +1,17 @@
 ---
+import { BRAND_NAME } from "@/config/brand";
+import lockupUrl from "../../../../brand/svg/lockup/sairn-lockup-on-dark.svg?url";
+import markUrl from "../../../../brand/svg/mark/sairn-mark-on-dark.svg?url";
+
 interface Props {
 	withWordmark?: boolean;
-	size?: "sm" | "md";
 	href?: string | null;
 }
 
-const { withWordmark = true, size = "md", href = "/" } = Astro.props;
-const height = size === "sm" ? 16 : 20;
-const width = withWordmark ? (size === "sm" ? 72 : 90) : height;
+// The logo kit allows the mark and the lockup from 24 px high; the lockup is 1244 × 330 and the mark 472 × 631.
+const { withWordmark = true, href = "/" } = Astro.props;
+const height = 24;
+const width = withWordmark ? 91 : 18;
 const Tag = href ? "a" : "span";
 ---
 
@@ -16,10 +20,11 @@ const Tag = href ? "a" : "span";
 	class:list={["inline-flex items-center text-fg", href && "hover:opacity-90 transition"]}
 >
 	<img
-		src={withWordmark ? "/logo.svg" : "/logo-mark.svg"}
+		src={withWordmark ? lockupUrl : markUrl}
 		width={width}
 		height={height}
-		class="h-auto shrink-0"
-		alt="GATU"
+		class="h-6 w-auto shrink-0"
+		alt={BRAND_NAME}
+		data-brand-logo={withWordmark ? "lockup" : "mark"}
 	/>
 </Tag>

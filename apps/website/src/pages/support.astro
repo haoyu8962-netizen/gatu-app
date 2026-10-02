@@ -1,4 +1,5 @@
 ---
+import { BRAND_NAME } from "@/config/brand";
 import Base from "@/layouts/Base.astro";
 import Nav from "@/components/Nav.astro";
 import LegalArticle from "@/components/LegalArticle.astro";
@@ -7,7 +8,7 @@ import Footer from "@/components/Footer.astro";
 
 <Base
 	title="Support"
-	description="Answers, troubleshooting, and how to reach the GATU team."
+	description={`Answers, troubleshooting, and how to reach the ${BRAND_NAME} team.`}
 	path="/support"
 >
 	<Nav />

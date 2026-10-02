@@ -172,7 +172,7 @@
 
 ```bash
 pnpm exec biome check <本任务改动的 TS/TSX 文件>
-pnpm --filter @gatu/terminal typecheck
+pnpm --filter @sairn/terminal typecheck
 pnpm --dir apps/terminal exec vitest run <上述新增与更新的测试> \
   src/lib/tests/number-format-reactivity-contract.test.ts src/lib/tests/locale-format-contract.test.ts \
   src/lib/tests/design-token-ratchet.test.ts src/lib/tests/modal-surface-contract.test.ts \
@@ -189,7 +189,7 @@ r1 审查修复（2026-09-27，分支 `claude/sdk-fix-r1-funding-comparison`，�
 
 ```bash
 pnpm exec biome check <本次改动的 5 个 TS/TSX 文件>
-pnpm --filter @gatu/terminal typecheck
+pnpm --filter @sairn/terminal typecheck
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/funding-comparison-domain.test.ts src/lib/tests/funding-comparison-catalogs.test.ts \
   src/components/funding-comparison/__tests__/use-funding-comparison-controller.test.tsx \

@@ -22,7 +22,7 @@ const arabicMessages: Messages = {
 	[getMessageId(REFERRAL_FAILURE)]: ARABIC_REFERRAL_FAILURE,
 };
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	AdaptiveModal: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 	Button: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
 		<button type="button" onClick={onClick}>
@@ -73,14 +73,14 @@ describe("ReferralActionModal invitation flow", () => {
 				<ReferralActionModal
 					action="apply"
 					unclaimedRewards={[]}
-					initialCode="gatuappweb3"
+					initialCode="sairnappweb3"
 					onClose={vi.fn()}
 					onSubmit={onSubmit}
 				/>,
 			);
 		});
 
-		expect(container.textContent).toContain("gatuappweb3");
+		expect(container.textContent).toContain("sairnappweb3");
 		expect(onSubmit).not.toHaveBeenCalled();
 
 		const confirm = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Confirm");
@@ -89,7 +89,7 @@ describe("ReferralActionModal invitation flow", () => {
 			confirm.click();
 		});
 
-		expect(onSubmit).toHaveBeenCalledExactlyOnceWith("apply", "gatuappweb3");
+		expect(onSubmit).toHaveBeenCalledExactlyOnceWith("apply", "sairnappweb3");
 	});
 
 	it("keeps a deep-linked code locked when the secondary action is selected", async () => {

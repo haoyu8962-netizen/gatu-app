@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { PERSIST_TRADING_CONNECTION_STORAGE_KEY } from "@gatu/hl-react/signing/agent-storage";
-import { deriveAgentRequirements } from "@gatu/hl-react/signing/use-agent-status";
-import { useTradingAuthorization } from "@gatu/hl-react/signing/use-trading-authorization";
+import { PERSIST_TRADING_CONNECTION_STORAGE_KEY } from "@sairn/hl-react/signing/agent-storage";
+import { deriveAgentRequirements } from "@sairn/hl-react/signing/use-agent-status";
+import { useTradingAuthorization } from "@sairn/hl-react/signing/use-trading-authorization";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -21,8 +21,8 @@ const testState = vi.hoisted(() => ({
 	refetchAgent: vi.fn(),
 }));
 
-vi.mock("@gatu/hl-react/signing/use-agent-status", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@gatu/hl-react/signing/use-agent-status")>();
+vi.mock("@sairn/hl-react/signing/use-agent-status", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@sairn/hl-react/signing/use-agent-status")>();
 	return {
 		...original,
 		useAgentStatus: () => ({
@@ -33,7 +33,7 @@ vi.mock("@gatu/hl-react/signing/use-agent-status", async (importOriginal) => {
 	};
 });
 
-vi.mock("@gatu/hl-react/signing/use-agent-registration", () => ({
+vi.mock("@sairn/hl-react/signing/use-agent-registration", () => ({
 	useAgentRegistration: () => ({
 		error: null,
 		register: testState.registerAgent,
@@ -41,7 +41,7 @@ vi.mock("@gatu/hl-react/signing/use-agent-registration", () => ({
 	}),
 }));
 
-vi.mock("@gatu/hl-react/signing/use-builder-fee-approval", () => ({
+vi.mock("@sairn/hl-react/signing/use-builder-fee-approval", () => ({
 	useBuilderFeeApproval: () => ({
 		approve: testState.approveBuilderFee,
 		error: testState.builderError,
@@ -115,7 +115,7 @@ describe("trading authorization contracts", () => {
 	}
 
 	it("derives Agent and builder readiness independently", () => {
-		const remoteAgent = { address: AGENT, name: "Gatu", validUntil: Date.now() + 60_000 };
+		const remoteAgent = { address: AGENT, name: "Sairn", validUntil: Date.now() + 60_000 };
 		const localAgent = { privateKey: "0x01" as const, publicKey: AGENT, source: "local-registration" as const };
 
 		expect(deriveAgentRequirements(0, [remoteAgent], localAgent, { b: BUILDER, f: 10 })).toMatchObject({

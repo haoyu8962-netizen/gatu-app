@@ -5,7 +5,7 @@ import {
 	ExchangeRequestScheduler,
 	getExchangeRequestPriority,
 	invalidateExchangeRequestIdentity,
-} from "@gatu/hl-react/internal/exchange/request-scheduler";
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import { describe, expect, it, vi } from "vitest";
 
 describe("exchange request scheduler", () => {

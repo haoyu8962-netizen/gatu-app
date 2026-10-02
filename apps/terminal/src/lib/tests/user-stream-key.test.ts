@@ -1,4 +1,4 @@
-import { getStalenessThresholdForKey, isUserStreamKey } from "@gatu/hl-react/internal/websocket/reliability";
+import { getStalenessThresholdForKey, isUserStreamKey } from "@sairn/hl-react/internal/websocket/reliability";
 import { describe, expect, it, vi } from "vitest";
 
 function key(method: string, params: Record<string, unknown> = {}) {

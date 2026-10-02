@@ -5,7 +5,7 @@ import {
 	ExchangeRequestInvalidatedError,
 	ExchangeRequestScheduler,
 	type ExchangeRequestStartGate,
-} from "@gatu/hl-react/internal/exchange/request-scheduler";
+} from "@sairn/hl-react/internal/exchange/request-scheduler";
 import {
 	AGENT_REGISTRATION_COORDINATION_WINDOW_MS,
 	AgentRegistrationPreExecutionGuardTimeoutError,
@@ -23,12 +23,12 @@ import {
 	startAgentRegistrationExecution,
 	startAgentRegistrationSubmission,
 	verifyAgentRegistrationOrRemove,
-} from "@gatu/hl-react/signing/agent-registration-session";
+} from "@sairn/hl-react/signing/agent-registration-session";
 import {
 	clearActiveAgentOwner,
 	getActiveAgentOwner,
 	setActiveAgentOwnerAndVerify,
-} from "@gatu/hl-react/signing/agent-session";
+} from "@sairn/hl-react/signing/agent-session";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -72,7 +72,7 @@ test("the chart entry is preloaded on desktop widths and its iframe files are li
 });
 
 test("exactly one runtime and one library bundle must exist in the TradingView package", () => {
-	const dir = mkdtempSync(join(tmpdir(), "gatu-chart-bundles-"));
+	const dir = mkdtempSync(join(tmpdir(), "sairn-chart-bundles-"));
 	mkdirSync(join(dir, "bundles"));
 	writeFileSync(join(dir, "bundles", "runtime.4d986d07cb97d8edacba.js"), "js");
 	writeFileSync(join(dir, "bundles", "library.f5eaeb6901219f861981.js"), "js");

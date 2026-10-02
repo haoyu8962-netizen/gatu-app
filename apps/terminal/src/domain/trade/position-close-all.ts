@@ -1,4 +1,4 @@
-import type { UnifiedMarket } from "@gatu/hl-react";
+import type { UnifiedMarket } from "@sairn/hl-react";
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import type { MarginMode } from "@/lib/trade/margin-mode";

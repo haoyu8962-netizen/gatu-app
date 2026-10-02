@@ -1,6 +1,6 @@
 import { Tooltip } from "@base-ui/react/tooltip";
-import { tooltipPopupVariants } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
+import { tooltipPopupVariants } from "@sairn/ui";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import type { OrderbookHoverController } from "@/hooks/trade/use-orderbook-hover";
 import { cn } from "@/lib/cn";

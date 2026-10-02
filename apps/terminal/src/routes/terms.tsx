@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalDocPage } from "@/components/legal/legal-doc-page";
+import { BRAND_NAME } from "@/config/brand";
 import { bootDashboardRoute } from "@/lib/navigation/boot-dashboard-route";
 import { buildPageHead } from "@/lib/seo";
 import content from "../../../../legal/terms.md?raw";
@@ -10,7 +11,7 @@ export const Route = createFileRoute("/terms")({
 	head: () =>
 		buildPageHead({
 			title: "Terms of Use",
-			description: "Terms of Use for the gatu trading terminal.",
+			description: `Terms of Use for the ${BRAND_NAME} trading terminal.`,
 			path: "/terms",
 		}),
 	component: TermsRoute,

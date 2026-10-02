@@ -6,7 +6,7 @@
 - **A2UI** is Google's complementary specification enabling agents to describe UI as structured JSONL -- a declarative blueprint rendered natively by the host app (React, Flutter, Angular) using its own component catalog, eliminating UI injection risk.
 - Three **generative UI patterns** define the control spectrum: static (agent picks predefined components), declarative (agent returns structured UI spec), and open-ended (agent returns full UI surfaces via MCP Apps).
 - **Bloomberg ASKB** validates the paradigm in finance: a conversational AI layer replacing command-based terminal navigation with natural language workflows, synthesizing data from structured and unstructured sources in real time.
-- **Oracle's Open Agent Specification + AG-UI + A2UI** (March 2026 joint release) creates a full-stack standard: define agents declaratively, stream interactions in real time, and describe required UI as structured data -- a composable foundation gatu can adopt.
+- **Oracle's Open Agent Specification + AG-UI + A2UI** (March 2026 joint release) creates a full-stack standard: define agents declaratively, stream interactions in real time, and describe required UI as structured data -- a composable foundation Sairn can adopt.
 
 ---
 
@@ -137,7 +137,7 @@ Enabled by **MCP Apps** -- the agent returns a full UI surface (often embedded H
 - Requires sandboxing (iframe, CSP policies).
 - Best for: one-off analytical tools, experimental visualizations, third-party integrations.
 
-### Recommended Approach for gatu
+### Recommended Approach for Sairn
 
 Start with **Pattern 1** (static) for all order execution surfaces. Use **Pattern 2** (declarative) for analytical and informational surfaces. Avoid Pattern 3 unless there is a compelling use case that cannot be served by the first two.
 
@@ -169,13 +169,13 @@ Agent Response <- AG-UI Events <- Tool Results / State
                                                     A2UI UI Spec (optional)
 ```
 
-### Relevance to gatu
+### Relevance to Sairn
 
-CopilotKit can be integrated into an existing React application without rewriting the app. The SDK wraps the existing app, exposing state and tools to an agent backend. For gatu:
+CopilotKit can be integrated into an existing React application without rewriting the app. The SDK wraps the existing app, exposing state and tools to an agent backend. For Sairn:
 
 - Expose current market, position, and order state via `useCopilotReadable`.
 - Define trading tools (place order, modify order, close position) as frontend tools with confirmation steps.
-- Render agent responses as native gatu components using the existing design system.
+- Render agent responses as native Sairn components using the existing design system.
 
 ---
 
@@ -200,7 +200,7 @@ MCP crossed **97 million monthly SDK downloads** (Python + TypeScript combined) 
 
 ### MCP Apps vs AG-UI
 
-MCP Apps (formerly MCP-UI) is the right fit when a **tool** needs to render a form, dashboard, or workflow inside a chat or IDE host. AG-UI is the right fit when you **own the frontend** and need a live, stateful agent session. For gatu, AG-UI is the primary protocol -- MCP provides the tool layer underneath.
+MCP Apps (formerly MCP-UI) is the right fit when a **tool** needs to render a form, dashboard, or workflow inside a chat or IDE host. AG-UI is the right fit when you **own the frontend** and need a live, stateful agent session. For Sairn, AG-UI is the primary protocol -- MCP provides the tool layer underneath.
 
 ---
 
@@ -220,10 +220,10 @@ ASKB uses a coordinated network of AI agents working in parallel. These agents d
 - **ASKB Workflows** -- users describe multi-step activities (pre-earnings prep, post-earnings analysis, meeting prep) and ASKB assembles structured output in minutes.
 - **BQL code generation** -- the system can generate Bloomberg Query Language code for advanced analysis in Excel or BQuant.
 
-### Lessons for gatu
+### Lessons for Sairn
 
-1. **Replace, don't replicate** -- ASKB doesn't add a chatbot beside the terminal. It replaces command navigation with conversation. gatu should aim for the same: natural language as a first-class navigation and execution method, not a sidebar feature.
-2. **Multi-agent coordination** -- ASKB uses parallel agents for different data domains. gatu could use separate agents for market data, position management, and risk analysis.
+1. **Replace, don't replicate** -- ASKB doesn't add a chatbot beside the terminal. It replaces command navigation with conversation. Sairn should aim for the same: natural language as a first-class navigation and execution method, not a sidebar feature.
+2. **Multi-agent coordination** -- ASKB uses parallel agents for different data domains. Sairn could use separate agents for market data, position management, and risk analysis.
 3. **Structured output** -- ASKB generates structured workflows, not just text answers. Trading UIs need structured output (order cards, position tables) more than prose.
 
 ---
@@ -313,11 +313,11 @@ Developers define agents declaratively once and expose a standardized interactio
 
 ### Relevance
 
-For gatu, this means a trading agent defined in Agent Spec could be swapped between runtimes (LangGraph, custom Python, etc.) without changing the frontend integration. The AG-UI contract remains stable.
+For Sairn, this means a trading agent defined in Agent Spec could be swapped between runtimes (LangGraph, custom Python, etc.) without changing the frontend integration. The AG-UI contract remains stable.
 
 ---
 
-## 10. Opportunities for gatu
+## 10. Opportunities for Sairn
 
 1. **Command Palette Agent** -- a Cmd+K interface that accepts natural language, resolves intent, and renders actionable UI (order cards, position summaries, market comparisons) using static generative UI with the existing component library.
 

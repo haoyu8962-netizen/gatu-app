@@ -20,18 +20,18 @@ const storeMocks = vi.hoisted(() => ({
 	create: vi.fn(),
 }));
 
-vi.mock("@gatu/hl-react/internal/websocket/chaos", () => ({
+vi.mock("@sairn/hl-react/internal/websocket/chaos", () => ({
 	registerChaosHarness: vi.fn(),
 }));
-vi.mock("@gatu/hl-react/internal/websocket/debug", () => ({
+vi.mock("@sairn/hl-react/internal/websocket/debug", () => ({
 	registerDebugSnapshot: vi.fn(),
 	setDebugStore: vi.fn(),
 }));
-vi.mock("@gatu/hl-react/internal/exchange/request-scheduler", () => ({
+vi.mock("@sairn/hl-react/internal/exchange/request-scheduler", () => ({
 	invalidateExchangeProviderLifecycle: schedulerMocks.invalidateLifecycle,
 	invalidateExchangeRequestIdentity: schedulerMocks.invalidateIdentity,
 }));
-vi.mock("@gatu/hl-react/clients", () => ({
+vi.mock("@sairn/hl-react/clients", () => ({
 	createWsReconnectTrigger: () => () => {},
 	getHttpTransport: () => ({}),
 	getInfoClient: () => ({}),
@@ -39,14 +39,14 @@ vi.mock("@gatu/hl-react/clients", () => ({
 	getWsTransport: () => ({}),
 	initializeClients: vi.fn(),
 }));
-vi.mock("@gatu/hl-react/create-config", () => ({
+vi.mock("@sairn/hl-react/create-config", () => ({
 	createHyperliquidConfig: () => ({
 		httpTransport: {},
 		wsTransport: {},
 		ssr: false,
 	}),
 }));
-vi.mock("@gatu/hl-react/store", async () => {
+vi.mock("@sairn/hl-react/store", async () => {
 	const { createStore } = await vi.importActual<typeof import("zustand")>("zustand");
 	return {
 		createHyperliquidStore: (...args: unknown[]) => {
@@ -55,7 +55,7 @@ vi.mock("@gatu/hl-react/store", async () => {
 		},
 	};
 });
-vi.mock("@gatu/hl-react/signing/agent-registration-session", () => ({
+vi.mock("@sairn/hl-react/signing/agent-registration-session", () => ({
 	activateAgentRegistrationSession: sessionMocks.activate,
 	closeAgentRegistrationSessionAndRemove: sessionMocks.closeAndRemove,
 }));
@@ -76,7 +76,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 
 	it("allows transport consumers without a signing session", async () => {
 		const { HyperliquidTransportProvider, useHyperliquidOptional, useHyperliquidStoreApi, useHyperliquidTransport } =
-			await import("@gatu/hl-react/provider");
+			await import("@sairn/hl-react/provider");
 
 		let capturedEnv: string | undefined;
 		let hasStore = false;
@@ -109,7 +109,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	it("throws when a transport consumer has no transport provider", async () => {
-		const { useHyperliquidTransport } = await import("@gatu/hl-react/provider");
+		const { useHyperliquidTransport } = await import("@sairn/hl-react/provider");
 		function Consumer() {
 			useHyperliquidTransport();
 			return null;
@@ -131,7 +131,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 
 	it("composes transport and session contexts around one store", async () => {
 		const { HyperliquidProvider, useHyperliquid, useHyperliquidStoreApi, useHyperliquidTransport } = await import(
-			"@gatu/hl-react/provider"
+			"@sairn/hl-react/provider"
 		);
 		const stores = new Set<unknown>();
 		let contextsShareTransport = false;
@@ -185,7 +185,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	it("preserves the full context reference across consumer-only rerenders", async () => {
-		const { HyperliquidProvider, useHyperliquid, useHyperliquidOptional } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider, useHyperliquid, useHyperliquidOptional } = await import("@sairn/hl-react/provider");
 		const requiredContexts: ReturnType<typeof useHyperliquid>[] = [];
 		const optionalContexts: ReturnType<typeof useHyperliquidOptional>[] = [];
 		let rerenderConsumer = () => {};
@@ -219,7 +219,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	it("sets clientKey to 'disconnected' when userAddress is undefined", async () => {
-		const { HyperliquidProvider, useHyperliquid } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider, useHyperliquid } = await import("@sairn/hl-react/provider");
 
 		let capturedKey: string | undefined;
 		function Consumer() {
@@ -246,7 +246,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	it("sets clientKey to address when userAddress is provided", async () => {
-		const { HyperliquidProvider, useHyperliquid } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider, useHyperliquid } = await import("@sairn/hl-react/provider");
 
 		let capturedKey: string | undefined;
 		function Consumer() {
@@ -274,9 +274,9 @@ describe("HyperliquidProvider userAddress prop", () => {
 
 	it("does not fall back to an agent-only owner while wallet restoration is unresolved", async () => {
 		const { clearActiveAgentOwner, setActiveAgentOwnerAndVerify } = await import(
-			"@gatu/hl-react/signing/agent-session"
+			"@sairn/hl-react/signing/agent-session"
 		);
-		const { HyperliquidProvider, useHyperliquid } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider, useHyperliquid } = await import("@sairn/hl-react/provider");
 		clearActiveAgentOwner();
 		expect(setActiveAgentOwnerAndVerify("Testnet", ADDRESS_B)).toBe(true);
 		let capturedKey: string | undefined;
@@ -313,7 +313,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	it("keeps the exact Agent while a wallet signer is transiently unavailable", async () => {
-		const { HyperliquidProvider } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider } = await import("@sairn/hl-react/provider");
 		const container = document.createElement("div");
 		const root = createRoot(container);
 
@@ -341,7 +341,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	it("restores the same wallet after a transient disconnect without deleting its Agent", async () => {
-		const { HyperliquidProvider } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider } = await import("@sairn/hl-react/provider");
 		const container = document.createElement("div");
 		const root = createRoot(container);
 
@@ -376,7 +376,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	it("cleans account A when a transient disconnect resolves to account B", async () => {
-		const { HyperliquidProvider } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider } = await import("@sairn/hl-react/provider");
 		const container = document.createElement("div");
 		const root = createRoot(container);
 
@@ -415,7 +415,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	it("removes account A before retiring its lifecycle when the wallet switches to B", async () => {
-		const { HyperliquidProvider } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider } = await import("@sairn/hl-react/provider");
 		const container = document.createElement("div");
 		const root = createRoot(container);
 
@@ -447,7 +447,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	it("surfaces verified cleanup failure while leaving lifecycle cleanup fail-closed", async () => {
-		const { HyperliquidProvider } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider } = await import("@sairn/hl-react/provider");
 		const onCleanupFailure = vi.fn();
 		sessionMocks.closeAndRemove.mockResolvedValue({ status: "failed", reason: "remove_failed" });
 		const container = document.createElement("div");
@@ -491,7 +491,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	it("marks the lifecycle inactive and invalidates it after a real Provider unmount", async () => {
-		const { HyperliquidProvider, useHyperliquid } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider, useHyperliquid } = await import("@sairn/hl-react/provider");
 		let lifecycle: ReturnType<typeof useHyperliquid>["exchangeLifecycle"] | undefined;
 		function Consumer() {
 			lifecycle = useHyperliquid().exchangeLifecycle;
@@ -519,7 +519,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 	});
 
 	async function createSessionProbe() {
-		const { HyperliquidProvider, useHyperliquid } = await import("@gatu/hl-react/provider");
+		const { HyperliquidProvider, useHyperliquid } = await import("@sairn/hl-react/provider");
 		let currentLease: ReturnType<typeof useHyperliquid>["exchangeSession"] | undefined;
 		function Consumer() {
 			currentLease = useHyperliquid().exchangeSession;
@@ -604,7 +604,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 
 	it("invalidates the lease when the same owner changes between wallet and agent-only signing", async () => {
 		const { clearActiveAgentOwner, setActiveAgentOwnerAndVerify } = await import(
-			"@gatu/hl-react/signing/agent-session"
+			"@sairn/hl-react/signing/agent-session"
 		);
 		clearActiveAgentOwner();
 		expect(setActiveAgentOwnerAndVerify("Testnet", ADDRESS_A)).toBe(true);

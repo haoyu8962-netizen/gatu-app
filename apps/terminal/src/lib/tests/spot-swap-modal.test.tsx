@@ -24,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 	submitOrder: vi.fn(),
 }));
 
-vi.mock("@gatu/ui", () => ({
+vi.mock("@sairn/ui", () => ({
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
 		createElement("button", { ...props, type: "button" }, children),
 	Modal: ({ children, open }: { children: ReactNode; open: boolean }) =>

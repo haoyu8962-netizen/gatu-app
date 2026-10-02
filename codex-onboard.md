@@ -1,4 +1,4 @@
-# Onboarding task — understand the "gatu" repo, then run it on http://localhost:3005
+# Onboarding task — understand the "Sairn" repo, then run it on http://localhost:3005
 
 ## Your role
 You are a senior engineer onboarding onto an unfamiliar PRODUCTION codebase.
@@ -7,7 +7,7 @@ Two goals, in order: (1) build an accurate mental model of this project;
 Read before you run. Work from the actual files — never assume contents.
 
 ## What this project is
-"gatu" is a production web trading terminal for the Hyperliquid DEX (perps + spot):
+"Sairn" is a production web trading terminal for the Hyperliquid DEX (perps + spot):
 real-time orderbook/charts, wallet connect, order entry. It is a pnpm monorepo.
 Stack: TanStack Start 1.132 (SSR) + Nitro · React 19 (compiler ON) · Vite 7 · TypeScript ·
 Tailwind v4 · Lingui i18n · Privy (wallet auth) · @nktkas/hyperliquid SDK · big.js (money math) ·
@@ -30,7 +30,7 @@ Zustand · TanStack Query/Router/Table/Virtual · Biome (lint/format). Node 24, 
 4. `packages/`:
    - `hl-react` — the data layer: `useSubL2Book`/`useSubTrades` (real-time WS),
      `useInfo*` (one-shot), `useAction*` (signed mutations).
-   - `hyperliquid-api` — API/types surface. `ui` — `@gatu/ui` design system (primitives only).
+   - `hyperliquid-api` — API/types surface. `ui` — `@sairn/ui` design system (primitives only).
 
 ## Facts you MUST respect
 - SSR: all module top-level code runs on the server. Never touch `window`/`document`/
@@ -51,9 +51,9 @@ Zustand · TanStack Query/Router/Table/Virtual · Biome (lint/format). Node 24, 
    (page renders without `VITE_PRIVY_APP_ID`; only wallet login is disabled).
 3. Start dev server on 3005:
    `cd apps/terminal && pnpm dev --port 3005`
-   (if the flag isn't honored: `pnpm --filter @gatu/terminal exec vite --port 3005`)
+   (if the flag isn't honored: `pnpm --filter @sairn/terminal exec vite --port 3005`)
 4. Verify: `curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:3005/` → expect `200`;
-   SSR HTML `<title>` should be `Trade | gatu`.
+   SSR HTML `<title>` should be `Trade | Sairn`.
    This is the HMR dev server (not a prod build); run it backgrounded if you need the shell.
 
 ## Guardrails
@@ -71,5 +71,5 @@ Zustand · TanStack Query/Router/Table/Virtual · Biome (lint/format). Node 24, 
 6. Run result: the :3005 HTTP status, page title, any console/server warnings.
 
 ## Acceptance criteria
-- http://localhost:3005/ returns 200 and serves the gatu SSR page (`<title>Trade | gatu</title>`).
+- http://localhost:3005/ returns 200 and serves the Sairn SSR page (`<title>Trade | Sairn</title>`).
 - A structured understanding summary covering all six deliverable points.

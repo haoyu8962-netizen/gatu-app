@@ -5,7 +5,7 @@
 The trading quantity and leverage controls share `TradeSlider`, an application-only
 single-thumb control. It uses Pointer Events and a native range input for keyboard
 and assistive technology access. `TradeSizeSlider` and `LeverageSlider` are thin
-business adapters. The shared `@gatu/ui` Slider remains available for other products;
+business adapters. The shared `@sairn/ui` Slider remains available for other products;
 no new dependency or alternate wallet/trading execution path is introduced.
 
 The reference is the [Hyperliquid trading terminal](https://app.hyperliquid.xyz/trade/HYPE),

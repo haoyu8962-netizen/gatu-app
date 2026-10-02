@@ -246,7 +246,7 @@ export function EmbeddedDepositAutoBridge() {
 		activeAttemptAbortRef.current = abortController;
 		activeAttemptIdentityRef.current = depositIdentityKey;
 		const normalizedWalletAddress = depositEmbeddedWalletAddress.toLowerCase();
-		const lockName = `gatu:embedded-cctp-deposit:${networkName}:${normalizedWalletAddress}`;
+		const lockName = `sairn:embedded-cctp-deposit:${networkName}:${normalizedWalletAddress}`;
 
 		void runWithExclusiveBrowserLock({
 			name: lockName,

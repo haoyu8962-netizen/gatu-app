@@ -4,6 +4,14 @@
 > `@nktkas/hyperliquid@0.33.1` snapshot and is not the current compile-time contract. The
 > repository pins `0.33.3`; use <https://nktkas.gitbook.io/hyperliquid> and the installed package
 > declarations for current method and schema details.
+>
+> **Known inaccuracy (noted 2026-09-30; the pages stay as archived):** `explorerBlock` and
+> `explorerTxs` appear below under Subscription Methods with `wss://api.hyperliquid.xyz/ws` as
+> their server. From `0.33.0` they belong to `ExplorerClient`, and on 2026-09-30 only
+> `wss://rpc.hyperliquid.xyz/ws` (Testnet `wss://rpc.hyperliquid-testnet.xyz/ws`) delivered their
+> events; the API host acknowledged the subscriptions and then sent nothing. The Tree-shaking
+> chapter's export list also predates `@nktkas/hyperliquid/api/explorer`. See
+> `hyperliquid-sdk-directory.md` for the current routing.
 
 ## POST /exchange
 

@@ -60,7 +60,7 @@ md 布局（14 列）：
 ## 5. 契约与文档
 
 - AGENTS.md 桌面布局契约第三条按断点描述：lg 三列共边不变；md 两列，图表与下单面板共底边，订单簿与账户信息在右列纵向堆叠。
-- [桌面网格布局](desktop-grid-layout.md)：默认跨度段、Shared boundaries、Height ownership、持久化 v12 迁移、验证宽度；删除"GATU retains its documented three-column desktop contract"。
+- [桌面网格布局](desktop-grid-layout.md)：默认跨度段、Shared boundaries、Height ownership、持久化 v12 迁移、验证宽度；删除"Sairn retains its documented three-column desktop contract"。
 - 新增 ADR 0011（背景、约束、决策、备选、后果、验证）；CHANGELOG；任务记录；[订单表单审计](order-entry-layout-audit.md)与[订单簿布局](orderbook-layout.md)补充 md 面板宽度区间；本计划状态改为已实施并链接 ADR。
 
 ## 6. 对其他功能的影响与核对点
@@ -80,7 +80,7 @@ md 布局（14 列）：
 
 ## 8. 验证顺序
 
-1. 单测组：desktop-grid-layout、grid-content-height、trade-terminal-page-boot、order-entry 组；`pnpm --filter @gatu/terminal typecheck`；Biome。
+1. 单测组：desktop-grid-layout、grid-content-height、trade-terminal-page-boot、order-entry 组；`pnpm --filter @sairn/terminal typecheck`；Biome。
 2. 浏览器：desktop-grid-layout、desktop-order-entry-layout、trade-panel-layout、orderbook-layout 与 account-actions 五套在 1001 / 1280 / 1363 / 1420 / 1421 / 1545 px 全绿。
 3. 生产构建后冷加载 1001 / 1238 / 1316 / 1420 / 1421 / 1440 px，对照官方数字（1316 px：图表列 935、右列 372、下单面板 677、订单簿 y 683）；复跑 `tests/browser/boot-milestones.mjs` 与市场头抖动测量确认启动无回归。
 4. 全量 Vitest 与既有基线红比对，build 预算，memory 索引检查，一次提交。

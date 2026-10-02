@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { Dropdown } from "@gatu/ui";
+import { Dropdown } from "@sairn/ui";
 import { act, createRef } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
