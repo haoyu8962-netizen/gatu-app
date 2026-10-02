@@ -101,8 +101,8 @@ Do not collapse these states into one boolean.
   across theme-only provider renders: `@privy-io/wagmi` answers every new array with
   `reconnect()` on the `setActiveWalletForWagmi` path, and `useWalletSession`
   drops the address while wagmi reports `reconnecting`. `@privy-io/react-auth`
-  3.32.2 preserves the array for unchanged nonempty embedded-wallet lists;
-  `patches/@privy-io__react-auth@3.32.2.patch` does the same for an empty
+  3.46.0 preserves the array for unchanged nonempty embedded-wallet lists;
+  `patches/@privy-io__react-auth@3.46.0.patch` does the same for an empty
   embedded list (external-wallet and logged-out sessions). Before upgrading
   Privy, run `privy-theme-switch-wallet-stability.test.tsx` against the new
   version and drop the patch only when the test passes without it.

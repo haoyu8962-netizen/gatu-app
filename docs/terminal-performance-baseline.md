@@ -262,6 +262,48 @@ header gained its chip row. The baseline is unchanged; the regression was remove
   is the recovery and stays the user's decision. Latency was local; a slow mobile network can show the loading shell on
   the first open.
 
+## Privy React Auth 3.46.0 upgrade re-baseline (2026-10-02)
+
+Upgrading `@privy-io/react-auth` from 3.32.2 to 3.46.0 (and `@privy-io/wagmi` to 4.0.17, whose code is unchanged) raised
+the total client and the static trade startup beyond their 10,000-byte allowances. This is an intentional re-baseline
+for a dependency upgrade the product owner requested; see [the upgrade plan](privy-upgrade-and-funding-plan.md) and the
+correction section of [ADR 0026](adr/0026-privy-follows-theme-after-upgrade.md).
+
+- Removed first: the `vendor-base-ui` manual chunk matched every `@base-ui` path, so Privy's own Base UI 1.8 copy, which
+  only its lazily loaded fiat onramp screen uses, was pulled into trade startup next to the application's 1.3 copy. The
+  manual chunk now takes only the application's copy (`isApplicationBaseUiModule` in `apps/terminal/vite.config.ts`), and
+  Privy's copy stays in the lazy `FiatOnrampScreen` chunk. That removed about 40 kB of the startup increase.
+- What remains is upstream: `@privy-io/js-sdk-core` 0.77.0 imports `libphonenumber-js/min` and its mobile example
+  numbers statically (0.67.4 did not; before, the library only loaded with the lazy phone-login form), and the viem copy
+  Privy bundles grew from 2.52.0 to 2.56.0. In raw rendered bytes of the startup closure: libphonenumber-js +351,428,
+  viem +114,373, ox +33,846, `@privy-io/js-sdk-core` +29,229, `@privy-io/react-auth` +15,712. Privy's own main chunk
+  shrank (435,007 → 409,991 gzip). Removing the remaining increase would mean patching Privy's import graph; it was not
+  done.
+- The application's viem 2.42.1 (about 1.39 MB raw in startup) and Privy's 2.56.0 (about 0.80 MB raw) are separate
+  copies both before and after this change. Moving the application to Privy's viem version would remove one copy and
+  more than offset this increase; it touches every signing path and was deliberately left out of this upgrade.
+- Measurement: Node 22.15.0, pnpm 10.21.0, `pnpm install --frozen-lockfile`, pairing off, the same build identity for
+  both sides (`SAIRN_BUILD_SHA=682430baffdc50cf62538795866ca5c70b9d16e0 SAIRN_RELEASE_ID=privy-346-rebaseline
+  SAIRN_BUILD_TIME=2026-10-02T00:00:00.000Z NODE_ENV=production NITRO_PRESET=node-server VITE_MOBILE_PAIRING_ENABLED=false
+  pnpm --filter @sairn/terminal build`), before = `origin/dev` at `682430ba` in an isolated worktree, after = the upgrade
+  working tree.
+
+| Metric | Before (`682430ba`) | After | Change |
+| --- | ---: | ---: | ---: |
+| Client assets (graph inventory) | 437 | 442 | +5 |
+| All client JS + CSS | 3,191,737 | 3,275,424 | +83,687 |
+| Route preloads only (diagnostic) | 515,950 | 515,884 | -66 |
+| Static trade startup | 1,561,714 (102 assets) | 1,624,427 (101 assets) | +62,713 |
+| Mobile runtime increment / combined | 117,460 / 1,679,174 | 117,413 / 1,741,840 | -47 / +62,666 |
+| Desktop runtime increment / combined | 201,046 / 1,762,760 | 200,718 / 1,825,145 | -328 / +62,385 |
+| `client-root` JS static closure | 1,203,943 (34 chunks) | 1,266,781 (33 chunks) | +62,838 |
+| Largest JS chunk (Privy main) | 435,007 gzip / 1,538,745 raw | 409,991 gzip / 1,410,784 raw | -25,016 gzip |
+
+The total-client baseline moved from 3,185,921 to 3,269,608 and the static trade startup baseline from 1,581,216 to
+1,643,929 (each by the measured change); allowances, runtime profiles, named surfaces and the validation scripts are
+unchanged. No static import cycle was reported. This is a byte measurement, not a browser timing; LCP and INP on the
+heavier startup were not measured.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:
