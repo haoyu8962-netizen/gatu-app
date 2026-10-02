@@ -6,13 +6,14 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { getTradePriceDecimals } from "@/lib/trade/trades";
 
 const PERP_SZ_DECIMALS_0_TICKS =
-	"0.000001 0.099999 0.00001 0.99999 0.0001 9.9999 0.001 99.999 0.01 999.99 0.1 9999.9 1";
-const PERP_SZ_DECIMALS_2_TICKS = "0.0001 9.9999 0.001 99.999 0.01 999.99 0.1 9999.9 1";
-const PERP_SZ_DECIMALS_4_TICKS = "0.01 999.99 0.1 9999.9 1";
-const PERP_SZ_DECIMALS_5_TICKS = "0.1 9999.9 1";
+	"0.000001 0.09999949999999999 0.00001 0.9999949999999999 0.0001 9.999949999999998 0.001 99.99949999999998 0.01 999.9949999999999 0.1 9999.949999999999 1";
+const PERP_SZ_DECIMALS_2_TICKS =
+	"0.0001 9.999949999999998 0.001 99.99949999999998 0.01 999.9949999999999 0.1 9999.949999999999 1";
+const PERP_SZ_DECIMALS_4_TICKS = "0.01 999.9949999999999 0.1 9999.949999999999 1";
+const PERP_SZ_DECIMALS_5_TICKS = "0.1 9999.949999999999 1";
 const SPOT_SZ_DECIMALS_0_TICKS =
-	"0.00000001 0.00099999 0.0000001 0.0099999 0.000001 0.099999 0.00001 0.99999 0.0001 9.9999 0.001 99.999 0.01 999.99 0.1 9999.9 1";
-const SPOT_SZ_DECIMALS_5_TICKS = "0.001 99.999 0.01 999.99 0.1 9999.9 1";
+	"0.00000001 0.0009999949999999998 0.0000001 0.009999949999999999 0.000001 0.09999949999999999 0.00001 0.9999949999999999 0.0001 9.999949999999998 0.001 99.99949999999998 0.01 999.9949999999999 0.1 9999.949999999999 1";
+const SPOT_SZ_DECIMALS_5_TICKS = "0.001 99.99949999999998 0.01 999.9949999999999 0.1 9999.949999999999 1";
 
 type MarketFields = Pick<UnifiedMarketInfo, "kind" | "name" | "pairName" | "szDecimals">;
 
@@ -34,8 +35,8 @@ function getTradingViewTickDecimals(variableTickSize: string, price: string): nu
 	return getDecimals(parts.at(-1) ?? "");
 }
 
-function getHyperliquidPriceDecimals(price: string, maxDecimals: number): number {
-	return Math.min(maxDecimals, Math.max(0, 4 - new Big(price).e));
+function getFiveSignificantFigureDecimals(price: string, maxDecimals: number): number {
+	return Math.min(maxDecimals, Math.max(0, 4 - new Big(price).prec(5).e));
 }
 
 describe("chart price format", () => {
@@ -109,17 +110,33 @@ describe("chart price format", () => {
 		},
 	);
 
-	it("keeps the per-price ticks when the mark price crosses a power of ten", () => {
-		const fields: MarketFields = { kind: "perp", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 };
+	it.each([
+		["99.999", 1_000],
+		["99.9991", 1_000],
+		["99.9994", 1_000],
+		["99.9995", 100],
+		["99.9996", 100],
+		["100", 100],
+	])(
+		"keeps the per-price ticks and takes the band of mark price %s after five-significant-figure rounding",
+		(markPx, pricescale) => {
+			const fields: MarketFields = { kind: "perp", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 };
 
-		expect(getChartSymbolInfo(withMarkPx(fields, "99.999"))).toMatchObject({
-			pricescale: 1_000,
-			variable_tick_size: PERP_SZ_DECIMALS_2_TICKS,
-		});
-		expect(getChartSymbolInfo(withMarkPx(fields, "100"))).toMatchObject({
-			pricescale: 100,
-			variable_tick_size: PERP_SZ_DECIMALS_2_TICKS,
-		});
+			expect(getChartSymbolInfo(withMarkPx(fields, markPx))).toEqual(
+				expect.objectContaining({ pricescale, variable_tick_size: PERP_SZ_DECIMALS_2_TICKS }),
+			);
+		},
+	);
+
+	it("takes the reference price from the mark price only", () => {
+		const market = {
+			...withMarkPx({ kind: "perp", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 }, "90"),
+			midPx: "100",
+			oraclePx: "100",
+			prevDayPx: "100",
+		} as UnifiedMarketInfo;
+
+		expect(getChartSymbolInfo(market).pricescale).toBe(1_000);
 	});
 
 	it.each([undefined, "", "0", "-1", "not a price"])(
@@ -136,7 +153,7 @@ describe("chart price format", () => {
 		},
 	);
 
-	it.each([undefined, Number.NaN, -1, 1.5])(
+	it.each([undefined, Number.NaN, Number.POSITIVE_INFINITY, -1, 1.5, 2 ** 53])(
 		"falls back to the protocol maximum for invalid szDecimals (%s)",
 		(szDecimals) => {
 			expect(getChartPriceFormat(szDecimals, "perp", "90")).toEqual({
@@ -159,16 +176,29 @@ describe("chart price format", () => {
 				"0.5",
 				"1.2345",
 				"9.9999",
+				"9.99991",
+				"9.999949",
+				"9.99995",
+				"9.999951",
 				"10",
 				"10.001",
 				"99.999",
+				"99.9991",
+				"99.99949",
+				"99.9995",
+				"99.9996",
 				"100",
 				"100.01",
 				"999.99",
+				"999.991",
+				"999.995",
 				"1000",
 				"1000.1",
 				"9999.9",
+				"9999.94",
+				"9999.95",
 				"10000",
+				"99999.4",
 				"123456",
 			],
 		],
@@ -179,13 +209,18 @@ describe("chart price format", () => {
 				"0.00000001",
 				"0.00012345",
 				"0.00099999",
+				"0.000999994",
+				"0.000999995",
 				"0.001",
 				"0.0012345",
 				"0.0099999",
+				"0.00999995",
 				"0.01",
 				"0.099999",
+				"0.0999995",
 				"0.1",
 				"0.99999",
+				"0.999995",
 				"1",
 				"9.9999",
 				"10",
@@ -193,9 +228,11 @@ describe("chart price format", () => {
 				"123456",
 			],
 		],
-	])("maps every band boundary of %s to Hyperliquid's decimals", (ticks, maxDecimals, prices) => {
+	])("rounds every price around the boundaries of %s to five significant figures", (ticks, maxDecimals, prices) => {
 		for (const price of prices) {
-			expect(getTradingViewTickDecimals(ticks, price), price).toBe(getHyperliquidPriceDecimals(price, maxDecimals));
+			expect(getTradingViewTickDecimals(ticks, price), price).toBe(
+				getFiveSignificantFigureDecimals(price, maxDecimals),
+			);
 		}
 	});
 });

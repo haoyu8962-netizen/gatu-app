@@ -280,7 +280,8 @@ describe("TradingView datafeed", () => {
 			ticker: "HYPE",
 			minmov: 1,
 			pricescale: 1000,
-			variable_tick_size: "0.0001 9.9999 0.001 99.999 0.01 999.99 0.1 9999.9 1",
+			variable_tick_size:
+				"0.0001 9.999949999999998 0.001 99.99949999999998 0.01 999.9949999999999 0.1 9999.949999999999 1",
 		});
 		expect(infoClient.meta).not.toHaveBeenCalled();
 		expect(infoClient.allMids).not.toHaveBeenCalled();
@@ -296,7 +297,7 @@ describe("TradingView datafeed", () => {
 
 			const symbol = await resolveDatafeedSymbol(createIsolatedDatafeed(), "BTC");
 
-			expect(symbol).toMatchObject({ ticker: "BTC", pricescale: 1, variable_tick_size: "0.1 9999.9 1" });
+			expect(symbol).toMatchObject({ ticker: "BTC", pricescale: 1, variable_tick_size: "0.1 9999.949999999999 1" });
 		},
 	);
 
@@ -311,7 +312,8 @@ describe("TradingView datafeed", () => {
 		expect(symbol).toMatchObject({
 			ticker: "HYPE",
 			pricescale: 10_000,
-			variable_tick_size: "0.0001 9.9999 0.001 99.999 0.01 999.99 0.1 9999.9 1",
+			variable_tick_size:
+				"0.0001 9.999949999999998 0.001 99.99949999999998 0.01 999.9949999999999 0.1 9999.949999999999 1",
 		});
 	});
 

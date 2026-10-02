@@ -454,11 +454,13 @@ mobile regressions.
   price string happens to have. `getChartSymbolInfo` derives `pricescale` and
   `variable_tick_size` from `szDecimals` and the market kind under
   Hyperliquid's tick rules (`apps/terminal/src/lib/chart/price-format.ts`).
-  `variable_tick_size` sets every value's decimals at its own magnitude, so a
-  price crossing a power of ten never rebuilds the widget; `pricescale` is the
-  tick at the reference price's magnitude and only sets the finest price-axis
-  step. `docs/adr/0035-chart-price-precision-from-market-rules.md` owns the
-  band limits and the tradeoffs. The limits rely on the vendored library
+  `variable_tick_size` gives every value the decimals of its rounding to five
+  significant figures, so a price crossing a power of ten never rebuilds the
+  widget. `pricescale` is the band of the reference price: it does not format
+  values in the default price format, but it sets the smallest price-axis step
+  and the drawing price step, and TradingView caches it per symbol for the
+  widget's lifetime. `docs/adr/0035-chart-price-precision-from-market-rules.md`
+  owns the band limits and the tradeoffs. The limits rely on the vendored library
   giving a price equal to a band limit that band's tick, which unit tests can
   only mirror: re-check after every library upgrade with
   `node apps/terminal/tests/browser/chart-price-format-probe.mjs <origin>`.

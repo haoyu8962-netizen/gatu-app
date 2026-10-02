@@ -19,7 +19,8 @@ function getMaxPriceDecimals(szDecimals: number | undefined, marketType: ChartPr
 	return szDecimalsToPriceDecimals(szDecimals, marketType);
 }
 
-function getPriceDecimalsAtExponent(exponent: number, maxDecimals: number): number {
+function getPriceDecimals(price: Big, maxDecimals: number): number {
+	const exponent = price.prec(HL_PRICE_MAX_SIG_FIGS).e;
 	return Math.min(maxDecimals, Math.max(0, HL_PRICE_MAX_SIG_FIGS - 1 - exponent));
 }
 
@@ -27,19 +28,26 @@ function getTickSize(decimals: number): string {
 	return TEN.pow(-decimals).toFixed(decimals);
 }
 
-// TradingView applies a band's tick up to and including the band's price limit, so each limit is
-// the largest five-significant-figure price that still has the band's decimals (9.9999, 99.999, …).
-function getLargestPriceWithDecimals(decimals: number): string {
-	return TEN.pow(HL_PRICE_MAX_SIG_FIGS - decimals)
-		.minus(TEN.pow(-decimals))
-		.toFixed(decimals);
+function getPreviousDouble(value: number): number {
+	const view = new DataView(new ArrayBuffer(8));
+	view.setFloat64(0, value);
+	view.setBigUint64(0, view.getBigUint64(0) - 1n);
+	return view.getFloat64(0);
+}
+
+// TradingView gives a band's tick to prices up to and including the band's limit. A price that rounds
+// up into the next band at five significant figures (99.9995 → 100.00) must take the coarser tick, so
+// each limit is the last double below that rounding threshold.
+function getBandLimit(decimals: number): string {
+	const roundingThreshold = TEN.pow(HL_PRICE_MAX_SIG_FIGS - decimals).minus(TEN.pow(-decimals).div(2));
+	return String(getPreviousDouble(roundingThreshold.toNumber()));
 }
 
 function getVariableTickSize(maxDecimals: number): string | undefined {
 	if (maxDecimals === 0) return undefined;
 	const bands: string[] = [];
 	for (let decimals = maxDecimals; decimals > 0; decimals -= 1) {
-		bands.push(getTickSize(decimals), getLargestPriceWithDecimals(decimals));
+		bands.push(getTickSize(decimals), getBandLimit(decimals));
 	}
 	bands.push(getTickSize(0));
 	return bands.join(" ");
@@ -52,7 +60,7 @@ export function getChartPriceFormat(
 ): ChartPriceFormat {
 	const maxDecimals = getMaxPriceDecimals(szDecimals, marketType);
 	const reference = toBig(referencePrice);
-	const decimals = reference?.gt(0) ? getPriceDecimalsAtExponent(reference.e, maxDecimals) : maxDecimals;
+	const decimals = reference?.gt(0) ? getPriceDecimals(reference, maxDecimals) : maxDecimals;
 	const variableTickSize = getVariableTickSize(maxDecimals);
 	return variableTickSize
 		? { pricescale: 10 ** decimals, variable_tick_size: variableTickSize }
