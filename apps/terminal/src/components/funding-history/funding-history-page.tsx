@@ -73,7 +73,7 @@ export function FundingHistoryPage({ address }: Props) {
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (funding) => formatDateTimeShort(funding.time, { locale }) },
+				{ header: t`Time`, getValue: (funding) => formatDateTimeShort(funding.time, { locale: i18n.locale }) },
 				{ header: t`Asset`, getValue: (funding) => funding.coin },
 				{
 					header: t`Position`,

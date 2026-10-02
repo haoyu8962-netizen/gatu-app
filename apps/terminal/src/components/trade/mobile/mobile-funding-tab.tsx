@@ -100,7 +100,7 @@ function MobileFundingTabContent({
 		filename: "funding_history.csv",
 		buildRows: (fundings) =>
 			buildCsvRows(fundings, [
-				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time, { locale }) },
+				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time, { locale: i18n.locale }) },
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
 					header: t`Position`,

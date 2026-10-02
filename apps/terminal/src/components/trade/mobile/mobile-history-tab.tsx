@@ -157,7 +157,7 @@ function MobileHistoryTabContent({
 						(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
 				),
 				[
-					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale }) },
+					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
 					{
 						header: t`Direction`,

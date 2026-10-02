@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
 import type { HistoricalOrdersResponse, UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
@@ -303,6 +304,7 @@ describe("TWAP fill history CSV export", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
 		vi.useRealTimers();
 		vi.clearAllMocks();
 	});
@@ -336,6 +338,30 @@ describe("TWAP fill history CSV export", () => {
 			user: "0x1111111111111111111111111111111111111111",
 		});
 		expect(signal).toBeInstanceOf(AbortSignal);
+	});
+
+	it("formats dates in the language active when the rows are built, after a switch during the export", async () => {
+		const fill = createSliceFill({ time: 1_000 });
+		let releasePages: () => void = () => {};
+		const pagesReleased = new Promise<void>((resolve) => {
+			releasePages = resolve;
+		});
+		mocks.userTwapSliceFillsByTime.mockImplementation(
+			async ({ endTime, startTime }: { endTime: number; startTime: number }) => {
+				await pagesReleased;
+				return [fill].filter((entry) => entry.fill.time >= startTime && entry.fill.time <= endTime);
+			},
+		);
+		const hook = renderProbe();
+
+		const pendingExport = startExport(hook);
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+		releasePages();
+		await act(async () => pendingExport);
+
+		const [, rows] = mocks.downloadCsv.mock.calls[0] as [string, string[][]];
+		expect(rows[1]?.[0]).toBe(formatDateTimeShort(1_000, { locale: "zh" }));
+		expect(formatDateTimeShort(1_000, { locale: "zh" })).not.toBe(formatDateTimeShort(1_000, { locale: "en" }));
 	});
 
 	it("downloads every slice fill in ascending order with the trade history columns", async () => {

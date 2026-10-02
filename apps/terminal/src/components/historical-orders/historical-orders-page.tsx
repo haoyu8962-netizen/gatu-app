@@ -118,7 +118,8 @@ export function HistoricalOrdersPage({ address }: Props) {
 			buildCsvRows(exportEntries.filter(matchesFilters), [
 				{
 					header: t`Time`,
-					getValue: (entry) => formatDateTime(entry.createdAt, { locale, dateStyle: "short", timeStyle: "short" }),
+					getValue: (entry) =>
+						formatDateTime(entry.createdAt, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
 				},
 				{ header: t`Asset`, getValue: (entry) => entry.coin },
 				{
@@ -138,7 +139,8 @@ export function HistoricalOrdersPage({ address }: Props) {
 				{ header: t`Status`, getValue: (entry) => getHistoricalOrderStatusLabel(entry.order.status) },
 				{
 					header: t`Updated`,
-					getValue: (entry) => formatDateTime(entry.updatedAt, { locale, dateStyle: "short", timeStyle: "short" }),
+					getValue: (entry) =>
+						formatDateTime(entry.updatedAt, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
 				},
 			]),
 	});

@@ -59,7 +59,7 @@ export function HistoryTab() {
 		filename: "trade_history.csv",
 		buildRows: (exportFills) =>
 			buildCsvRows(exportFills, [
-				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale }) },
+				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
 				{ header: t`Asset`, getValue: (fill) => fill.coin },
 				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
 				{ header: t`Type`, getValue: () => t`Trade` },

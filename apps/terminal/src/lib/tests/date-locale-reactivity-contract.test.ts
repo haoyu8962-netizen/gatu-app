@@ -4,13 +4,13 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
 	describeModules,
-	followAliases,
 	isInsideFunction,
 	isLocallyBound,
 	isValueReference,
 	readSourceTree,
 	resolveBinding,
 	resolveExport,
+	resolveExpressionKey,
 	resolveReference,
 	runsAtImport,
 	type SourceModule,
@@ -375,6 +375,19 @@ export function Sample({ at }: { at: number }) { return <p>{new Clock().text(at)
 			["components/sample.tsx:2 Sample Clock"],
 		],
 		[
+			"a namespace member destructured with a formatter default and called with a locale",
+			{
+				"lib/unsafe.ts": `import { formatTime } from "@/lib/format";
+export function when(at: number, _options?: { locale?: string }) { return formatTime(at); }`,
+				"lib/alias.ts": `import * as labels from "./unsafe";
+import { formatTime } from "@/lib/format";
+export const { when = formatTime } = labels;`,
+				"components/sample.tsx": `import { when } from "@/lib/alias";
+export function Sample({ at, locale }: { at: number; locale: string }) { return <p>{when(at, { locale })}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample when"],
+		],
+		[
 			"a parenthesized or bracketed namespace member without a locale",
 			{
 				"components/sample.tsx": `import * as format from "@/lib/format";
@@ -559,7 +572,7 @@ function findLanguageFormatViolations(sources: Map<string, string>): string[] {
 // A reference that may read the global language: any reference to a module-level declaration that does,
 // and any reference to a language formatter, directly or through module-level aliases, except the callee
 // of a call that passes a `locale` option. A name that may also hold something else, such as one
-// destructured with a default, is a declaration of its own and counts even when called with a locale.
+// destructured from a namespace or with a default, is not an alias and counts even when called with a locale.
 function readsGlobalLocale(
 	modules: Map<string, SourceModule>,
 	module: SourceModule,
@@ -567,14 +580,44 @@ function readsGlobalLocale(
 ): { key: string; name: string } | null {
 	if (!isValueReference(node) || isLocallyBound(node)) return null;
 	const reference = resolveReference(modules, module, node);
-	if (!reference || !isLanguageFormatter(followAliases(modules, reference.key))) return reference;
+	if (!reference || !namesLanguageFormatter(modules, reference.key)) return reference;
 	const call = callOf(module, node);
 	return call && passesLocale(call) ? null : reference;
 }
 
-function isLanguageFormatter(key: string | null): boolean {
-	if (key === null || !key.startsWith(`${FORMAT_MODULE}#`)) return false;
+function isLanguageFormatter(key: string): boolean {
+	if (!key.startsWith(`${FORMAT_MODULE}#`)) return false;
 	return LANGUAGE_FORMATTERS.has(key.slice(FORMAT_MODULE.length + 1));
+}
+
+// A language formatter, or a chain of module-level `const alias = name` declarations ending in one.
+function namesLanguageFormatter(modules: Map<string, SourceModule>, key: string): boolean {
+	const seen = new Set<string>();
+	let current: string | null = key;
+	while (current !== null && !seen.has(current)) {
+		if (isLanguageFormatter(current)) return true;
+		seen.add(current);
+		const separator = current.lastIndexOf("#");
+		const module = modules.get(current.slice(0, separator));
+		const name = current.slice(separator + 1);
+		const values = module?.declarations.get(name);
+		const value = values?.length === 1 ? values[0] : undefined;
+		if (!module || module.namespaceSources.has(name) || value === undefined || !isAliasInitializer(value, name)) {
+			return false;
+		}
+		current = resolveExpressionKey(modules, module, value as ts.Expression);
+	}
+	return false;
+}
+
+function isAliasInitializer(value: ts.Node, name: string): boolean {
+	const declaration = value.parent;
+	return (
+		ts.isVariableDeclaration(declaration) &&
+		declaration.initializer === value &&
+		ts.isIdentifier(declaration.name) &&
+		declaration.name.text === name
+	);
 }
 
 // The call whose callee is this reference (the identifier, or the member a namespace import names),

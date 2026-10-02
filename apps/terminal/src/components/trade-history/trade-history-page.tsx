@@ -125,7 +125,7 @@ export function TradeHistoryPage({ address }: Props) {
 					(coin) => markets.getMarket(coin)?.kind,
 				),
 				[
-					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale }) },
+					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale: i18n.locale }) },
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
 					{ header: t`Direction`, getValue: (fill) => getDirectionLabel(fill.dir) },
 					{ header: t`Type`, getValue: getTypeLabel },

@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import { skipTransparentExpressions } from "./harness/react-source";
 
 // A string from toFixed or toPrecision always has a "." decimal point and no grouping, so text built from it
 // ignores the number-format setting. Display code passes such a string to formatDecimalString, which keeps the
@@ -211,6 +212,24 @@ describe("decimal display contract checker", () => {
 			["lib/label.ts:1 toFixed is not passed to formatDecimalString and the file is not registered"],
 		],
 		[
+			"a parenthesized, bracketed or borrowed method",
+			{
+				"lib/label.ts": [
+					"export const a = (v: Big) => (v.toFixed)(2);",
+					'export const b = (v: Big) => v["toFixed"](2);',
+					"export const c = (v: Big) => v.toFixed.call(v, 2);",
+					'export const d = (v: Big) => (v as Big)["toPrecision"].apply(v, [3]);',
+				].join("\n"),
+			},
+			{},
+			[
+				"lib/label.ts:1 toFixed is not passed to formatDecimalString and the file is not registered",
+				"lib/label.ts:2 toFixed is not passed to formatDecimalString and the file is not registered",
+				"lib/label.ts:3 toFixed is not passed to formatDecimalString and the file is not registered",
+				"lib/label.ts:4 toPrecision is not passed to formatDecimalString and the file is not registered",
+			],
+		],
+		[
 			"a registered file whose count changed",
 			{ "lib/size.ts": "export const a = (v: Big) => v.toFixed(2);\nexport const b = (v: Big) => v.toFixed(3);" },
 			{ "lib/size.ts": { count: 1, use: "input values" } },
@@ -287,16 +306,9 @@ function findFixedPointViolations(
 		);
 		const calls: { method: string; line: number }[] = [];
 		const visit = (node: ts.Node) => {
-			if (
-				ts.isCallExpression(node) &&
-				ts.isPropertyAccessExpression(node.expression) &&
-				FIXED_POINT_METHODS.has(node.expression.name.text) &&
-				!isInsideDecimalStringArgument(node)
-			) {
-				calls.push({
-					method: node.expression.name.text,
-					line: file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1,
-				});
+			const method = ts.isCallExpression(node) ? getFixedPointMethod(node) : undefined;
+			if (method !== undefined && !isInsideDecimalStringArgument(node)) {
+				calls.push({ method, line: file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1 });
 			}
 			ts.forEachChild(node, visit);
 		};
@@ -339,6 +351,27 @@ function isInsideDecimalStringArgument(node: ts.Node): boolean {
 		parent = parent.parent;
 	}
 	return false;
+}
+
+// The fixed-point method a call runs: `v.toFixed(2)`, `(v.toFixed)(2)`, `v["toFixed"](2)`, and the same method
+// through `.call` or `.apply`. A method stored in a variable or passed elsewhere is not followed.
+function getFixedPointMethod(call: ts.CallExpression): string | undefined {
+	let callee = skipTransparentExpressions(call.expression);
+	let name = getMemberName(callee);
+	if ((name === "call" || name === "apply") && !ts.isIdentifier(callee)) {
+		callee = skipTransparentExpressions(
+			(callee as ts.PropertyAccessExpression | ts.ElementAccessExpression).expression,
+		);
+		name = getMemberName(callee);
+	}
+	return name !== undefined && FIXED_POINT_METHODS.has(name) ? name : undefined;
+}
+
+function getMemberName(expression: ts.Expression): string | undefined {
+	if (ts.isPropertyAccessExpression(expression)) return expression.name.text;
+	if (!ts.isElementAccessExpression(expression)) return undefined;
+	const key = skipTransparentExpressions(expression.argumentExpression);
+	return ts.isStringLiteralLike(key) ? key.text : undefined;
 }
 
 function getCalleeName(call: ts.CallExpression): string | null {

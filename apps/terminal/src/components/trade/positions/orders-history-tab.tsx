@@ -155,7 +155,8 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 				[
 					{
 						header: t`Time`,
-						getValue: (entry) => formatDateTime(entry.createdAt, { locale, dateStyle: "short", timeStyle: "short" }),
+						getValue: (entry) =>
+							formatDateTime(entry.createdAt, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
 					},
 					{ header: t`Asset`, getValue: (entry) => entry.coin },
 					{
@@ -181,7 +182,8 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 					{ header: t`Status`, getValue: getEntryStatusLabel },
 					{
 						header: t`Updated`,
-						getValue: (entry) => formatDateTime(entry.updatedAt, { locale, dateStyle: "short", timeStyle: "short" }),
+						getValue: (entry) =>
+							formatDateTime(entry.updatedAt, { locale: i18n.locale, dateStyle: "short", timeStyle: "short" }),
 					},
 				],
 			),

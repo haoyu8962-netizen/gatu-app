@@ -23,7 +23,7 @@ const SHORT_CIRCUIT_OPERATORS = new Set([
 	ts.SyntaxKind.BarBarEqualsToken,
 	ts.SyntaxKind.QuestionQuestionEqualsToken,
 ]);
-const DEFERRED_OPTION_KEYS = new Set(["mutationFn", "queryFn"]);
+const DEFERRED_OPTION_KEYS = new Set(["buildRows", "mutationFn", "queryFn"]);
 const EFFECT_HOOKS = new Set(["useEffect", "useInsertionEffect", "useLayoutEffect"]);
 
 const REACTIVE_COMPONENTS = [
@@ -408,6 +408,10 @@ describe("dependencies React Compiler can see", () => {
 		["a lazy state initializer", "const [initial] = useState(() => i18n.locale); return initial;"],
 		["a query function", "useQuery({ queryKey: [i18n.locale], queryFn: () => load(i18n.locale) }); return null;"],
 		["a mutation callback", "useMutation({ mutationFn: send, onSuccess: () => notify(i18n.locale) }); return null;"],
+		[
+			"a CSV row builder",
+			'useUserFillsCsvExport({ filename: "fills.csv", buildRows: (rows) => rows.map((row) => [format(row, { locale: i18n.locale })]) }); return null;',
+		],
 		["a parenthesized effect callback", "useEffect((() => { send(i18n.locale); }), [i18n.locale]); return null;"],
 		[
 			"a locale member of a value that no hook returned",
@@ -1139,8 +1143,9 @@ function isDeferredCallback(fn: ts.SignatureDeclaration, context: FileContext): 
 	return false;
 }
 
-// Options a hook's library runs outside render: query and mutation functions and event-style
-// callbacks such as onSuccess. Any other callback handed to a hook may run during render.
+// Options a hook's library runs outside render: query and mutation functions, the CSV row builders that the
+// history export hooks call once their requests settle, and event-style callbacks such as onSuccess. Any other
+// callback handed to a hook may run during render.
 function isDeferredOption(name: ts.PropertyName, options: ts.ObjectLiteralExpression, context: FileContext): boolean {
 	const key = getStaticName(name);
 	if (key === undefined || (!DEFERRED_OPTION_KEYS.has(key) && !/^on[A-Z]/.test(key))) return false;

@@ -505,7 +505,9 @@ changes, not evidence that a build has been deployed or accepted on real devices
     reads `5`);
   - the slippage range in Settings.
 
-  They keep their exact digits and rounding; only the separators change. With the default format,
+  Most keep their exact digits and rounding, so only the separators change; a tiny staking ratio
+  now reads `0%` instead of `—%`, and slippage and Scale size skew show at most 3 and 4 decimals.
+  With the default format,
   figures that had no thousands separator gain one (`+2345` becomes `+2,345`). Bridge send amounts
   from 99,999.5 up no longer appear in exponent notation. Atomic amounts and operation references
   stay unformatted. See [ADR 0037](docs/adr/0037-exact-decimal-display-separators.md).
@@ -711,9 +713,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Known
 
-- The position size on chart position lines is shown without grouping and with a `.` decimal
-  point, whatever the number-format setting; every other hand-formatted figure listed here before
-  now follows it (ADR 0037). Funds notifications keep the number format they were raised with.
+- Some figures still ignore the number-format setting: the position size on chart position lines
+  (no grouping, a `.` decimal point), the `0.00` that Swap shows before a quote arrives, and counts
+  written by Lingui plurals such as `1,234 orders`, which follow the interface language instead.
+  The other hand-formatted figures listed here before now follow the setting (ADR 0037). Funds
+  notifications keep the number format they were raised with.
 - Mobile pairing stays compiled out in production: both `VITE_MOBILE_PAIRING_*` flags remain off
   until the physical-device acceptance for the client-only transfer (ADR 0015 D7, option B) has
   been run.

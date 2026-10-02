@@ -5,7 +5,7 @@
 ## 规则
 
 1. **数字跟随数字格式设置，不跟随语言。** 价格、数量、百分比、金额、紧凑单位（`K/M`）和文档标题里的价格都经 `lib/format.ts`：用 `en-US` 的 `Intl.NumberFormat.formatToParts` 分解，再按设置替换 `group` 与 `decimal` 两类 part（`numberSeparatorsByFormatLocale`）。数字永远是拉丁数字，只有分隔符变化。
-2. **日期与时间跟随界面语言，数字系统固定拉丁。** `formatTime`、`formatDateTime`、`formatDateTimeShort` 用 `languageToIntlLocale[i18n.locale]` 选格式，并强制 `numberingSystem: "latn"`，所以阿拉伯语界面的 `٧:٠٥` 变为 `7:05`，与同一行的价格数字一致。显式传 `locale` 时接受界面语言代码（`zh`）或 Intl locale（`zh-CN`），前者按映射表解析。24 小时制等既有约定不变（`recent-trades.md`：`HH:mm:ss`、`hourCycle: "h23"`）。组件与 Hook 调用这三个函数和 `formatList` 时一律传 `locale`，effect、事件回调与 CSV 导出列也一样：渲染期用先无条件读出的 `const locale = i18n.locale;`，effect 与内联事件回调也可以在执行时读 `i18n.locale`。不传时函数读全局语言，React Compiler 按其余参数缓存结果，语言切换后可能保留旧语言。规则见[运行时多语言](i18n-presentation.md)，`date-locale-reactivity-contract` 检查。
+2. **日期与时间跟随界面语言，数字系统固定拉丁。** `formatTime`、`formatDateTime`、`formatDateTimeShort` 用 `languageToIntlLocale[i18n.locale]` 选格式，并强制 `numberingSystem: "latn"`，所以阿拉伯语界面的 `٧:٠٥` 变为 `7:05`，与同一行的价格数字一致。显式传 `locale` 时接受界面语言代码（`zh`）或 Intl locale（`zh-CN`），前者按映射表解析。24 小时制等既有约定不变（`recent-trades.md`：`HH:mm:ss`、`hourCycle: "h23"`）。组件与 Hook 调用这三个函数和 `formatList` 时一律传 `locale`，effect、事件回调与 CSV 导出列也一样：渲染期用先无条件读出的 `const locale = i18n.locale;`，effect、内联事件回调与 CSV 行构建函数（`buildRows`）也可以在执行时读 `i18n.locale`。导出要等请求完成才生成行，这时读当前语言，才与同时用 `t` 翻译的列名一致。不传时函数读全局语言，React Compiler 按其余参数缓存结果，语言切换后可能保留旧语言。规则见[运行时多语言](i18n-presentation.md)，`date-locale-reactivity-contract` 检查。
 3. **组件与业务代码不得直接调用 `toLocale*` 或构造任何 `Intl.*` 格式化器。** 一律经 `lib/format.ts`（数字、日期、列表 `formatList`）；`locale-format-contract.test.ts` 扫描 `apps/terminal/src`（测试目录除外）中的 `.toLocale*(` 与 `Intl.<Name>(` 调用并在出现时失败，同一测试也检查每个裸 `<input inputMode="decimal">` 都接了规则 6 的归一化。
 4. **图表跟随数字格式。** `ChartPanel` 用 `useNumberFormatLocale()` 读设置传给 `TradingViewChart`，widget 创建时收到 `numeric_formatting: { decimal_sign, grouping_separator }`。该选项只能在构造时给，所以设置变化走与语言变化相同的「保存状态 → 重建 iframe」路径（`requestStatePreservingRebuild(widget, "numeric-format")`），`appliedNumberFormatRef` 与创建时的值比较，值未变不重建。库的 `widget.save` 在 v28.3 里同步回调，所以同一次 commit 里语言与数字格式先后变化时，第二个变化落在「widget 未就绪」分支并重新开始初始化，最终只创建一个带两个新值的 widget；若某个宿主让 `save` 异步回调，未回调期间的第二个变化并入同一次保存，变回原值则取消（两种路径都有测试）。
 5. **用户可见名称的排序** 用 `localeCompare(other, undefined, { sensitivity: "base" })`（报价币种分类、Swap 代币列表、API 钱包名称）；id、hash、地址的排序仍是无参 `localeCompare`，它们只需要稳定顺序。
@@ -54,7 +54,12 @@
 
 - 输入框显示不本地化（规划 A-2b 未采用）：`,` 被接受但显示为 `.`；德语/法语键盘的小数键可用，但输入框与表格的写法不同。
 - 图表库内译文的定点修补机制（规划 B）等 zh/ar 审计结果。
-- 图表仓位线里的仓位数量不跟随设置：`lib/chart/tradingview-overlays.ts` 用 `size.abs().toString()` 原样显示仓位大小，没有分组、固定 `.` 小数点；同一行的盈亏与 ROE 已跟随设置。其余手写格式的数字已按规则 10 改经 `formatDecimalString`（[ADR 0037](adr/0037-exact-decimal-display-separators.md)）。
+- 已知仍不跟随设置的数字显示。这不是完整清单：ADR 0037 的逐处分类只覆盖 `toFixed`/`toPrecision`。
+  - 图表仓位线里的仓位数量：`lib/chart/tradingview-overlays.ts` 用 `size.abs().toString()` 原样显示，没有分组，固定 `.` 小数点；同一行的盈亏与 ROE 已跟随设置。
+  - Swap 弹窗在拿到报价之前，接收数量显示固定的 `"0.00"`（`spot-swap-modal.tsx`）。
+  - Lingui `<Plural>` 里 `#` 显示的数量，例如委托与成交历史的条数、委托页签的条数和「全部平仓」弹窗里的仓位数。它们由 Lingui 按界面语言格式化，跟随语言而不是数字格式设置。
+
+  其余手写格式的数字已按规则 10 改经 `formatDecimalString`（[ADR 0037](adr/0037-exact-decimal-display-separators.md)）。
 - 资金类提示（划转、发送、提现、金库）在弹出时把金额格式化成字符串，已显示的提示不随设置变化，与这些提示在弹出时按当前语言生成文案一致。
 
 ## 回归入口
