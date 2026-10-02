@@ -524,7 +524,29 @@ F 路复核了以下几项，都对得上：预算算术；「产品代码不变
 - **P3：「要去掉增量就得撤回修复」超出了测量能证明的范围。** 已改为「这是当前实现的实测成本，本次接受」。
 - **P3：「下一个改动会超限、必须重定基线」把可能写成了必然，也漏了「去掉增量」这条路。** 已改。
 
-F 路列为「无法确认」的事项里，有三项可以补证据：构建前的工作树与安装状态、预算脚本测试的输出、CI 工作流测试与 `memory:test` 的输出。这些都已存进证据目录（`build-state.txt` 与三份测试日志）。剩下的「Production Builds 是否通过」要等 PR 的 CI 结果。
+F 路还列了几项「无法确认」，处理如下：
+
+- 预算脚本测试、CI 工作流测试与 `memory:test` 的输出：已重新运行，输出存进证据目录。
+- 工作树与安装状态：在构建后补查并存档（`build-state.txt`），这只能说明构建之后的状态。（这里原写作「有三项可以补证据……都已存进证据目录」，把补查写成了构建前状态的证据；第 18 轮指出后已改。）
+- 「Production Builds 是否通过」：要等 PR 的 CI 结果。
+
+**第 18 轮（单路、窄范围，01:25–01:27）：只审第 17 轮的修复 `229d9683`**
+
+| 路 | 重点 | 用量 | 评分 |
+|---|---|---|---|
+| F | 第 17 轮三条发现的处理，补记数字与证据是否一致 | 7 条命令、约 4.8 万 token | 8.8 |
+
+F 路核实了以下几项，都对得上：
+
+- 在本分支产物上重新运行诊断脚本，结果与存档一致；
+- 补记的数字与算术；
+- 三组测试日志；
+- 两处措辞更正保留了原文。
+
+它另提 1 项 P2、1 项 P3，本会话核实后全部成立：
+
+- **P2：构建前的状态写得像有同期证据。** `build-state.txt` 是构建后在 `162a1501` 补查的；构建前的检查只在终端里看过，没有存档。已把「包体预算」里这一段拆成两部分：构建前的回顾，与构建后补查的存档。第 17 轮小节里同样的说法也已改正。
+- **P3：「验证与限制」提前写了「由第 18 轮审查，见上文」，当时还没有这一小节。** 现已补上本小节。
 
 ### 包体预算
 
@@ -532,8 +554,8 @@ F 路列为「无法确认」的事项里，有三项可以补证据：构建前
 
 `docs/terminal-performance-baseline.md` 的规则要求：超出容差时，要么去掉增量，要么记录并审查一次有意的重定基线，不能只为让 CI 变绿改数字；重定基线必须用 CI 的 Node 与 pnpm 版本和固定的构建元数据做干净构建。因此用该文档第 3 步的固定元数据（`SAIRN_BUILD_SHA=e4e09966…`、`SAIRN_RELEASE_ID=startup-guardrail-baseline`、`SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z`），加上 `NODE_ENV=production`、`NITRO_PRESET=node-server`、`VITE_MOBILE_PAIRING_ENABLED=false`，依次构建了两边：
 
-- `dev`：在草稿目录的独立 worktree 里，切到 `682430ba`，它有自己安装的 `node_modules`，没有 `.env.local`；
-- 本分支：`2d6f4676`，本工作树，同样没有 `.env.local`。
+- `dev`：在草稿目录的独立 worktree 里，切到 `682430ba`，它有自己安装的 `node_modules`；
+- 本分支：`2d6f4676`，本工作树。
 
 两边都用 Node 22.15.0、pnpm 10.21.0，在各自工作树里执行同一条命令，之后运行 `pnpm --filter @sairn/terminal perf:startup`：
 
@@ -543,14 +565,21 @@ SAIRN_BUILD_TIME=2026-08-27T00:00:00.000Z NODE_ENV=production NITRO_PRESET=node-
 VITE_MOBILE_PAIRING_ENABLED=false pnpm --filter @sairn/terminal build
 ```
 
-构建前的状态：
+构建环境的状态：
 
-- 两边都没有已跟踪文件的改动；本工作树当时只有本记录未提交。
-- 环境文件只有仓库跟踪的 `apps/terminal/.env.example`。
+- 构建前，本会话在终端里看过两边的 `git status --short` 和环境文件：
+  - 基线工作树切到 `682430ba` 后没有改动；
+  - 本工作树只有本记录未提交，只改了文档；
+  - 两边都只有仓库跟踪的 `apps/terminal/.env.example`，没有 `.env.local`。
+
+  这些输出没有存档，只是回顾。
 - `node_modules` 是此前安装的，构建前没有重新执行 `pnpm install --frozen-lockfile`。
-- 两边的锁文件相同（`682430ba..2d6f4676` 没有改 `pnpm-lock.yaml`）。两边的 `node_modules/.pnpm/lock.yaml` 与 `pnpm-lock.yaml` 都只差 `@sairn/hl-react`、`@sairn/ui` 两个工作区条目的排列位置，各 6 行，内容相同。
+- 存档的是构建后补查的结果，见证据目录的 `build-state.txt`。补查时本工作树已在 `162a1501`。
+  - 两边都没有已跟踪文件的改动，环境文件同上。
+  - 两边的锁文件相同：`682430ba..2d6f4676` 没有改 `pnpm-lock.yaml`。
+  - 两边的 `node_modules/.pnpm/lock.yaml` 与 `pnpm-lock.yaml` 都只差 `@sairn/hl-react`、`@sairn/ui` 两个工作区条目的排列位置，各 6 行，内容相同。
 
-构建后又补查了一次，结果相同，见证据目录的 `build-state.txt`。
+  补查只能说明构建之后的状态，不能证明构建当时的状态。
 
 | 项（gzip 字节） | `dev` 682430ba | 本 PR 2d6f4676 | 增量 |
 |---|---:|---:|---:|
@@ -588,7 +617,7 @@ VITE_MOBILE_PAIRING_ENABLED=false pnpm --filter @sairn/terminal build
 - `node --test scripts/ci-workflows.test.mjs`：7 项通过。`node --test scripts/check-client-bundle-budget.test.mjs`：16 项通过。`git diff --check origin/dev...HEAD`：通过。
 - 生产构建与包体预算：先按 CI 环境构建，总量超出允许增量 154 字节；改用固定元数据测量并在 `00169c24` 重定基线，经过见上文「包体预算」。重定基线后预算检查通过；其间 chunk 循环检查、`perf:startup` 均通过。这几次构建的日志在 `.worklog/2026-10-02/integrate-locale-number-format/final-verification/`。
 - `pnpm memory:index`、`memory:check` 通过，`memory:test` 8 项通过。
-- 上面三组小测试第一次运行时没有留存输出。第 17 轮之后重新运行，结果相同，输出已存进证据目录。
+- 上面三组小测试第一次运行的输出没有存档，终端里看到的是 16、7、8 项通过。第 17 轮之后重新运行，结果相同，这次的输出已存进证据目录。
 
 限制：
 
