@@ -62,6 +62,22 @@ function readPrivyFiatOnrampScreen(): string {
 	return readPrivyBundle(PRIVY_DIST, "FiatOnrampScreen-", ".mjs");
 }
 
+/** The arrow function that begins at `start` in minified source, up to the brace that closes its body. */
+function sliceArrowFunction(source: string, start: number): string {
+	let depth = 0;
+	let quote = "";
+	for (let index = source.indexOf("{", start); index < source.length; index++) {
+		const character = source[index];
+		if (quote) {
+			if (character === "\\") index++;
+			else if (character === quote) quote = "";
+		} else if (character === '"' || character === "'" || character === "`") quote = character;
+		else if (character === "{") depth++;
+		else if (character === "}" && --depth === 0) return source.slice(start, index + 1);
+	}
+	throw new Error("A function of the installed Privy SDK does not end");
+}
+
 /** The source of the hook behind `useFiatOnramp` in the installed SDK, as one arrow function. */
 function readPrivyFiatOnrampHook(): string {
 	const bundle = readPrivyBundle(PRIVY_DIST, PRIVY_ONRAMP_HOOK_FILE, ".mjs");
@@ -70,18 +86,7 @@ function readPrivyFiatOnrampHook(): string {
 			bundle,
 		);
 	if (!start) throw new Error("The installed Privy SDK no longer contains the expected fiat onramp hook");
-	let depth = 0;
-	let quote = "";
-	for (let index = bundle.indexOf("{", start.index); index < bundle.length; index++) {
-		const character = bundle[index];
-		if (quote) {
-			if (character === "\\") index++;
-			else if (character === quote) quote = "";
-		} else if (character === '"' || character === "'" || character === "`") quote = character;
-		else if (character === "{") depth++;
-		else if (character === "}" && --depth === 0) return bundle.slice(start.index, index + 1);
-	}
-	throw new Error("The fiat onramp hook of the installed Privy SDK does not end");
+	return sliceArrowFunction(bundle, start.index);
 }
 
 interface PrivyFiatOnrampFlow {
@@ -107,12 +112,13 @@ function createDeferred(): Deferred {
 
 /**
  * Runs the hook of the installed SDK with its surroundings replaced: Privy's window, its quote
- * request, its flow store and its deferred timer are recorded instead of performed, and every
- * other name it reads resolves to an empty stand-in. What `fund()` does with them is the SDK's own
- * code, so the order in which it opens the window, waits for quotes, closes and settles is
- * observed, not assumed. `rejectionHandlers` counts the `catch` calls on a result promise, which is
- * what the patch adds; the stand-in handles the rejection itself, so a run without the patch stays
- * quiet too.
+ * request, its flow store and its deferred timer are recorded instead of performed. What `fund()`
+ * does with them is the SDK's own code, so the order in which it opens the window, waits for
+ * quotes, closes and settles is observed, not assumed. Every name the hook reads outside itself is
+ * identified by its role in the source; a name without a stand-in throws, so a dependency that a
+ * later SDK adds cannot be swallowed. `rejectionHandlers` counts the `catch` calls on a result
+ * promise, which is what the patch adds; the stand-in handles the rejection itself, so a run
+ * without the patch stays quiet too.
  */
 function runPrivyFiatOnrampHook(source: string) {
 	function role(pattern: RegExp): string {
@@ -155,22 +161,33 @@ function runPrivyFiatOnrampHook(source: string) {
 				},
 			},
 		}),
+		[role(/\{navigate:\w+\}=(\w+)\(\)/)]: () => ({}),
+		[role(/\{user:\w+\}=(\w+)\(\)/)]: () => ({}),
+		[role(/\{wallets:\w+\}=(\w+)\(\),\{wallets:\w+\}=\w+\(\)/)]: () => ({}),
+		[role(/\{wallets:\w+\}=\w+\(\),\{wallets:\w+\}=(\w+)\(\)/)]: () => ({}),
+		[role(/,\w+=(\w+)\(null\)/)]: (current: unknown) => ({ current }),
 		[role(/\},(\w+)\(\(\(\)=>\(\{fund:/)]: (create: () => unknown) => create(),
 		[role(/promise:\w+\}=(\w+)\(\)/)]: createResult,
 		[role(/Object\.keys\((\w+)\)/)]: { usd: true },
-		[role(/if\((\w+)\.getState\(\)\)return/)]: {
+		[role(/(\w+)\.setState\(\{onSuccess:/)]: {
 			getState: () => flow,
 			setState(next: PrivyFiatOnrampFlow | null) {
 				flow = next;
 			},
 		},
+		[role(/fetchPrivyRoute\((\w+),\{body:\w+\}\),\w+=async\(\)=>/)]: "quotes route",
 		[role(/return (\w+)\(\{initialQuotes:/)]: (quotes: { initialQuotes: unknown }) =>
 			appliedQuotes.push(quotes.initialQuotes),
+		[role(/initialSelectedQuote:(\w+)\(/)]: () => null,
+		[role(/quotesWarning:(\w+)\(/)]: () => null,
 		setTimeout: (callback: () => void) => timers.push(callback),
 	};
 	const scope = new Proxy(surroundings, {
 		has: (target, name) => typeof name === "string" && (name in target || !(name in globalThis)),
-		get: (target, name) => (typeof name === "string" && !(name in target) ? () => ({}) : Reflect.get(target, name)),
+		get(target, name) {
+			if (typeof name !== "string" || name in target) return Reflect.get(target, name);
+			throw new Error(`The fiat onramp hook of the installed Privy SDK reads ${name}, which has no stand-in here`);
+		},
 	});
 	const useFiatOnramp = new Function("scope", `with (scope) { return ${source}; }`)(scope) as () => {
 		fund: (request: unknown) => Promise<unknown>;
@@ -225,7 +242,7 @@ async function observePrivyFiatOnrampFund(source: string) {
 		appliedQuotes: [...closedEarly.appliedQuotes],
 		secondFlowKept: closedEarly.flow() === secondFlow,
 	};
-	closedEarly.quoteRequests[1].resolve({ quotes: ["fresh"] });
+	closedEarly.quoteRequests[1]?.resolve({ quotes: ["fresh"] });
 	await nextTask();
 
 	const finished = runPrivyFiatOnrampHook(source);
@@ -253,6 +270,7 @@ async function observePrivyFiatOnrampFund(source: string) {
 		registeredUntilTimer,
 		clearedByTimer,
 		afterStaleQuotes,
+		quoteRequests: closedEarly.quoteRequests.length,
 		appliedQuotes: closedEarly.appliedQuotes,
 		finished: finished.events,
 		failed: failed.events,
@@ -264,8 +282,8 @@ function nextTask(): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-const PRIVY_ONRAMP_CLOSE_HANDLER =
-	/async\(\)=>\{let\{error:\w+,state:\w+,isLoading:\w+,onFailure:\w+,onSuccess:\w+\}=(\w+)\(\);(\w+)\(\),(\w+)\(\);let \w+=\(\(\{state:\w+,error:\w+,isLoading:\w+\}\)=>.*?\)\(\{state:\w+,error:\w+,isLoading:\w+\}\);"success"===\w+\.type\?await \w+\(\w+\.value\):\w+\(\w+\.error\)\}/;
+const PRIVY_ONRAMP_CLOSE_HANDLER_START =
+	/async\(\)=>\{let\{error:\w+,state:\w+,isLoading:\w+,onFailure:\w+,onSuccess:\w+\}=(\w+)\(\);(\w+)\(\),(\w+)\(\);/;
 
 const PRIVY_ONRAMP_CLOSE_CASES = {
 	"an error is on screen": { state: { status: "provider-success" }, error: "shown error", isLoading: false },
@@ -296,9 +314,10 @@ const PRIVY_ONRAMP_CLOSE_CASES = {
  * to it or which callback it calls; running the whole handler can.
  */
 async function settlePrivyFiatOnrampClose(screen: string): Promise<Record<string, unknown>> {
-	const match = PRIVY_ONRAMP_CLOSE_HANDLER.exec(screen);
+	const match = PRIVY_ONRAMP_CLOSE_HANDLER_START.exec(screen);
 	if (!match) throw new Error("The installed Privy SDK no longer contains the expected close handler");
-	const [source, readFlow, ...cleanups] = match;
+	const [, readFlow, ...cleanups] = match;
+	const source = sliceArrowFunction(screen, match.index);
 	const settled: Record<string, unknown> = {};
 	for (const [label, flow] of Object.entries(PRIVY_ONRAMP_CLOSE_CASES)) {
 		const scope: Record<string, unknown> = Object.fromEntries(cleanups.map((name) => [name, () => undefined]));
@@ -409,11 +428,13 @@ describe("card funding request", () => {
 });
 
 describe("card funding outcomes", () => {
-	it("treats only a confirmed status as confirmed and anything else that resolved as submitted", () => {
+	it("takes the two statuses Privy resolves with and treats any other resolved value as an unknown status", () => {
 		expect(classifyPrivyFiatFundingResult({ status: "confirmed" })).toBe("confirmed");
 		expect(classifyPrivyFiatFundingResult({ status: "submitted" })).toBe("submitted");
-		expect(classifyPrivyFiatFundingResult({ status: "unexpected" })).toBe("submitted");
-		expect(classifyPrivyFiatFundingResult(undefined)).toBe("submitted");
+		expect(classifyPrivyFiatFundingResult({ status: "unexpected" })).toBe("unknown");
+		expect(classifyPrivyFiatFundingResult({})).toBe("unknown");
+		expect(classifyPrivyFiatFundingResult(undefined)).toBe("unknown");
+		expect(classifyPrivyFiatFundingResult("confirmed")).toBe("unknown");
 	});
 
 	it("separates a user exit, a flow already in progress, a definite failure and an unknown status", () => {
@@ -528,6 +549,7 @@ describe("card funding outcomes", () => {
 				appliedQuotes: [],
 				secondFlowKept: true,
 			},
+			quoteRequests: 2,
 			appliedQuotes: [["fresh"]],
 			finished: [
 				"opened FiatOnrampScreen",
@@ -568,8 +590,19 @@ describe("card funding outcomes", () => {
 		const source = readPrivyFiatOnrampHook();
 		const changed = source.replace(change, replacement);
 		expect(changed).not.toBe(source);
-		const noticed = await observePrivyFiatOnrampFund(changed).catch((error: Error) => error.message);
-		expect(noticed).not.toEqual(await observePrivyFiatOnrampFund(source));
+		expect(await observePrivyFiatOnrampFund(changed)).not.toEqual(await observePrivyFiatOnrampFund(source));
+	});
+
+	it("does not stand in for a name the hook of the installed Privy SDK did not read before", async () => {
+		const sdk = runPrivyFiatOnrampHook(
+			readPrivyFiatOnrampHook().replace(/let\{reject:/, "unknownHelper();let{reject:"),
+		);
+		sdk.fund("purchase");
+		await nextTask();
+
+		expect(sdk.events).toEqual([
+			"purchase rejected The fiat onramp hook of the installed Privy SDK reads unknownHelper, which has no stand-in here",
+		]);
 	});
 
 	it("relies on the same patch in the CommonJS build of the installed Privy SDK", () => {
@@ -609,8 +642,7 @@ describe("card funding outcomes", () => {
 		const screen = readPrivyFiatOnrampScreen();
 		const changed = screen.replace(operand, replacement);
 		expect(changed).not.toBe(screen);
-		const noticed = await settlePrivyFiatOnrampClose(changed).catch((error: Error) => error.message);
-		expect(noticed).not.toEqual(await settlePrivyFiatOnrampClose(screen));
+		expect(await settlePrivyFiatOnrampClose(changed)).not.toEqual(await settlePrivyFiatOnrampClose(screen));
 	});
 });
 

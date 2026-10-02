@@ -145,12 +145,14 @@ export function createPrivyFiatFundingRequest(
 }
 
 /**
- * A resolved flow is at least a submitted purchase. Only `confirmed` means the provider confirmed
- * it; neither means USDC has arrived, and an unrecognized status stays the uncertain outcome.
+ * Privy resolves a flow as `confirmed`, the provider confirmed the purchase, or `submitted`, the
+ * provider is still processing it; neither means USDC has arrived. A resolved value with any other
+ * shape proves neither, so it is an unknown status, not a purchase still being processed.
  */
 export function classifyPrivyFiatFundingResult(result: unknown): PrivyFiatFundingOutcome {
 	const status = typeof result === "object" && result !== null ? (result as { status?: unknown }).status : undefined;
-	return status === "confirmed" ? "confirmed" : "submitted";
+	if (status === "confirmed" || status === "submitted") return status;
+	return "unknown";
 }
 
 export function classifyPrivyFiatFundingError(error: unknown): PrivyFiatFundingOutcome {

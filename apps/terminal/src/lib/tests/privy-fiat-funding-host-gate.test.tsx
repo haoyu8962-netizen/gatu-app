@@ -7,6 +7,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Transform the subject during collection; every test re-evaluates it after resetting modules.
+import "@/components/app-runtime-overlays";
 import "@/components/app-toaster";
 import "@/components/trade/tradebox/privy-fiat-funding-host";
 import "@/lib/trade/privy-fiat-funding-launch";
@@ -63,12 +64,15 @@ vi.mock("@/stores/use-global-settings-store", async (importOriginal) => {
 	};
 });
 
-/** The production toaster as the application mounts it, with only its unrelated hosts left out. */
+/**
+ * The overlays the root route mounts, with their own lazy toaster: the purchase gate is reached the
+ * way the application reaches it, and only the toaster's unrelated hosts are left out.
+ */
 async function loadSubject() {
 	const launch = await import("@/lib/trade/privy-fiat-funding-launch");
-	const { AppToaster } = await import("@/components/app-toaster");
+	const overlays = await import("@/components/app-runtime-overlays");
 	const store = await import("@/stores/use-privy-fiat-funding-store");
-	return { ...launch, AppToaster, store };
+	return { ...launch, ...overlays, store };
 }
 
 function createAttempt(network: "mainnet" | "testnet" = "mainnet") {
@@ -104,16 +108,18 @@ describe("card funding host loading", () => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
-		const { AppToaster } = subject;
-		await act(async () =>
+		const { AppRuntimeOverlays, preloadAppRuntimeOverlays } = subject;
+		await act(async () => {
 			root.render(
 				<StrictMode>
 					<I18nProvider i18n={i18n}>
-						<AppToaster />
+						<AppRuntimeOverlays />
 					</I18nProvider>
 				</StrictMode>,
-			),
-		);
+			);
+			await preloadAppRuntimeOverlays();
+		});
+		expect(container.querySelector("section[aria-live]")).not.toBeNull();
 	});
 
 	afterEach(async () => {
