@@ -256,7 +256,7 @@ jobs:
           src/lib/tests/development-geo.test.ts
           src/lib/tests/embedded-deposit-auto-bridge.test.tsx
           src/lib/tests/funding-address-card.test.tsx
-          src/lib/tests/geo-server-functions.test.ts
+          src/lib/tests/geo-api.test.ts
           src/lib/tests/referral-action-geo.test.ts
           src/lib/tests/trading-onboarding-gate.test.tsx
           src/lib/tests/usdc-routing.test.ts

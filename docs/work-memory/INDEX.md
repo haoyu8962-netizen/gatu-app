@@ -12,6 +12,7 @@
 
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
+- [CI 测试清单的失效 geo 参数换成继任测试，并钉住列出的路径必须存在](sessions/2026-10-02-ci-listed-test-paths.md) — 2026-10-02；已验证，范围见正文。terminal-tests.yml 的 geo 步骤一直列着 2026-09-13 被 5944465d 删除的 geo-server-functions.test.ts，vitest 把不匹配的参数当作空过滤器，该步骤实际少跑一个文件仍然通过；继任测试 geo-api.test.ts 从未进入 CI。参数已换成 geo-api.test.ts，ci-workflows.test.mjs 新增钉子：工作流传给 vitest、Playwright 与 node --test 的每个路径（文件名通配符展开后）都必须匹配到文件。本机验证通过，未推送，GitHub 上未运行。
 - [PR 63 并入公告与 Privy 分支、五路对抗审查与修复](sessions/2026-10-01-pr63-merge-and-adversarial-review.md) — 2026-10-01；已验证，范围见正文。按用户要求把 claude/agent-verify-official-announcements-eb8c45 与 claude/privy-theme-css-vars 以 --no-ff 并入 claude/from-dev-0928（PR 63），冲突只在生成的 INDEX.md 与 CHANGELOG.md（取两边条目）。随后五路只读对抗审查全 PR（32 个提交、156 个文件）：无 P0/P1，3 项 P2 全部核实成立并修复——金库提款成功通知在账本缺净额时把请求金额写成已收到；hyperliquid-signing.md 仍称 Bridge2 旧记录可用于恢复；Privy 非空嵌入式钱包路径没有测试保护（改为钉住 SDK 两个产物里的字段比较并在 ADR 0026 与 runtime-guardrails 写明限制）。同时修复文档类 P3；推送后按用户要求处理代码类 P3（弹窗提示圆角契约改为按弹窗元素识别并合并 cn() 参数、金库徽标保留组合符号、抽屉路由目标恢复类型检查、提现状态未知说明指向存款和提款页签），其中金库卡片截断经浏览器测试证实不成立，提现通知措辞改为写明有意不加估算词。未做真机与真实钱包验收。2026-10-01 CI 六项全部通过后，PR 63 以 merge commit 合入 dev（b4b0ae1b），未晋升 main、未发布。
 - [方案 A：移动菜单退出完成后再导航](sessions/2026-09-30-mobile-navigation-close-before-route.md) — 2026-09-30；已验证，范围见正文。实施用户选择的方案 A：目标预加载与抽屉退出并行，关闭完成后导航；137 项回归和 946 × 891 浏览器动画验证通过，Earn 列表位移未改；未经人工真机确认原始体感。
 - [946 × 891 菜单跳转抖动复核](sessions/2026-09-30-mobile-navigation-jitter-review.md) — 2026-09-30；已验证，范围见正文。浏览器逐帧确认菜单路由跳转截断退出动画；Earn 首次列表填充有局部位移，未观察到顶部横移；仅复核，未修复。
@@ -320,6 +321,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-02 | [CI 测试清单的失效 geo 参数换成继任测试，并钉住列出的路径必须存在](sessions/2026-10-02-ci-listed-test-paths.md) | 未取得任务标识，见正文 | `682430ba` | 已验证，范围见正文 |
 | 2026-10-01 | [移动端下单按钮的提交状态与桌面一致](sessions/2026-10-01-mobile-order-button-status.md) | 未取得任务标识，见正文 | `2baa44e2` | 已验证，范围见正文 |
 | 2026-10-01 | [PR 63 并入公告与 Privy 分支、五路对抗审查与修复](sessions/2026-10-01-pr63-merge-and-adversarial-review.md) | 未取得任务标识，见正文 | `a613e212` | 已验证，范围见正文 |
 | 2026-10-01 | [Sairn 品牌迁移的五项遗留：页头、设计稿、官网、跨浏览器、状态动效](sessions/2026-10-01-sairn-brand-followups.md) | 未取得任务标识，见正文 | `f440fa1b` | 已验证，范围见正文 |
