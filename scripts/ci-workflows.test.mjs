@@ -184,3 +184,14 @@ test("re-runs the brand and legal guards whenever the brand source or legal text
 		assert.equal(terminalTests.includes(`src/lib/tests/${file}`), true, `${file} never runs in CI`);
 	}
 });
+
+test("rebuilds and re-checks chunking when a dependency patch changes", () => {
+	for (const name of ["terminal-tests.yml", "production-build.yml"]) {
+		assert.equal(readWorkflow(name).includes('- "patches/**"'), true, `${name} does not start for patches/**`);
+	}
+	assert.equal(
+		readWorkflow("terminal-tests.yml").includes("src/lib/tests/vite-manual-chunks.test.ts"),
+		true,
+		"the manual chunk guard never runs in CI",
+	);
+});
