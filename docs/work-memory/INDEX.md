@@ -287,6 +287,7 @@
 
 当前规范：[docs/i18n-presentation.md](../../docs/i18n-presentation.md) · [docs/runtime-guardrails.md](../../docs/runtime-guardrails.md)
 
+- [删除无人导入的图表日期格式模块 lib/chart/format.ts 与 SHORT_MONTHS](sessions/2026-10-02-remove-dead-chart-format-module.md) — 2026-10-02；已验证，范围见正文。在 dev（682430ba）上复核：终端的 lib/chart/format.ts（formatShortDate、formatTime、formatTooltipDate，手写月日与时分，不跟随界面语言和数字格式设置）自 10952c74（2026-07-21）删除 KLineChart 后再没有导入方，静态与动态导入、vi.mock、lib/chart 桶文件、测试、脚本、官网和文档都没有；config/chart.ts 的 SHORT_MONTHS 只被它使用。两者一并删除，行为不变，现行文档不涉及。终端类型检查、Biome、「Number and date formatting」测试组与 17 个图表相关测试文件通过；在未推送的 claude/sleepy-archimedes-fbff3e 上叠加本次删除后，日期语言契约 40 项与类型检查通过；对领先 dev 的本地与远端分支预演合并，没有新增冲突。未跑完整测试、生产构建与浏览器检查。
 - [gatu → Sairn 品牌迁移：执行记录](sessions/2026-10-01-sairn-brand-migration-execution.md) — 2026-10-01；已验证，范围见正文。按 docs/brand-migration-plan.md 与用户决定完成 gatu → Sairn 品牌迁移（未发布）：brand/ 单一来源与设计交付物、Logo/图标/加载动效/Privy logo/OG 卡/盈亏分享卡、名称与六种语言目录（{BRAND_NAME} 占位）、法律实体 Sairn Corp.、青色与薄荷强调色、存储键与锁名/Agent 槽位名 sairn/请求头/环境变量/包作用域 @sairn、规范域名 sairn.ai（gatu.ai 过渡期继续识别）、现行文档与历史记录的产品名。最终验证：全仓类型检查、改动文件 Biome、终端 640 文件 7,938 项、官网测试与构建、脚本与 CloudFront 测试、test:brand、记录检查、Node 22.15 生产构建（预算 +7,166）与 Lambda 构建、7 组浏览器套件 216 项全部通过。未做：状态动效、已连接页头测量、真机与非 Chromium 浏览器、任何发布与仓库外操作（DNS、证书、CloudFront 别名与源站请求策略、Privy、邮件、LI.FI 登记）。
 - [通知审查的后续：划转/发送结果不明、金库与推荐卡显示、中文存款/提款用词、Bridge2 残留](sessions/2026-09-29-funds-ui-followups.md) — 2026-09-29；已整理，验证见正文。处理通知文案审查留下的待决项。用户要求先审查规划，再「按建议执行」：发送结果不明时清掉草稿；用词按「按钮、标签、名词用存款/提款，带宾语的动词短语保留存入/提取」全量统一。五批：1 划转/发送结果不明改为与提款一致的常驻警告，发送不再保留可一键重发的草稿；2 金库名称完整换行（计划的两行上限在 320 宽放不下真实长名称，改为不限行）、详情图表数值移到图表上方、11 条中文 Vault 改为金库；3 推荐码完整换行、步骤标签窄屏内边距与 text-balance，并修复实测发现的既有缺陷：手机网格没有显式列，邀请链接把卡片撑宽、被外层 overflow-hidden 裁掉；4 中文 30 条存入/提取标签改为存款/提款（含桌面持仓工具栏按钮）；5 删除不可达的 Bridge2 存款成功通知、自动存款暂停提示与旧桥网络配置，更正 4 份文档里并不存在的 Bridge2 恢复说法。每批浏览器或单测断言都在改动前的代码上验证过会失败。
 - [全站通知文案审查：准确、不重复、用词跟随界面按钮](sessions/2026-09-29-notification-copy-review.md) — 2026-09-29；已整理，验证见正文。提现成功通知精简之后，用户要求审查其他通知是否有同类问题（冗长、重复、语义与实际状态不符、用词与界面不一致）并一并修复，中文用词统一跟随界面按钮：存款、提款。三个只读子代理分别审查资金、交易与其他通知，逐条对照代码核实后分四批修改：A 中文目录 48 条充值/提现/入金改为存款/提款；B 资金通知（提现状态未知、自动测试网存款、CCTP 转发、金库、质押、Earn、推荐、转账/发送数字格式）；C 交易通知（TP/SL 无法确认不再声称已提交、泛化失败原因不再重复、单一目标部分成交、兑换显示交易对、保证金模式与账户类型写明实际结果、中文用委托/取消/终止）；D 其他（断开连接失败、盈亏分享图片只在下载时提示已保存、TWAP 成交记录中文）。一项代理结论经核实不成立未改；其余延后项记录在后续。在 claude/withdraw-toast-copy 完成，快进合并回 claude/from-dev-0928。
@@ -320,6 +321,7 @@
 
 | 记录日期 | 任务记录 | 来源任务 | 基线提交 | 状态 |
 | --- | --- | --- | --- | --- |
+| 2026-10-02 | [删除无人导入的图表日期格式模块 lib/chart/format.ts 与 SHORT_MONTHS](sessions/2026-10-02-remove-dead-chart-format-module.md) | 未取得任务标识，见正文 | `682430ba` | 已验证，范围见正文 |
 | 2026-10-01 | [移动端下单按钮的提交状态与桌面一致](sessions/2026-10-01-mobile-order-button-status.md) | 未取得任务标识，见正文 | `2baa44e2` | 已验证，范围见正文 |
 | 2026-10-01 | [PR 63 并入公告与 Privy 分支、五路对抗审查与修复](sessions/2026-10-01-pr63-merge-and-adversarial-review.md) | 未取得任务标识，见正文 | `a613e212` | 已验证，范围见正文 |
 | 2026-10-01 | [Sairn 品牌迁移的五项遗留：页头、设计稿、官网、跨浏览器、状态动效](sessions/2026-10-01-sairn-brand-followups.md) | 未取得任务标识，见正文 | `f440fa1b` | 已验证，范围见正文 |
