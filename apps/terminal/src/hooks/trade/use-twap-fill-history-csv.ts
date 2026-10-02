@@ -22,7 +22,8 @@ interface TwapFillHistoryCsvResult {
 
 export function useTwapFillHistoryCsv(): TwapFillHistoryCsvResult {
 	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const markets = useMarkets();
 	const { isExporting, run } = useHistoryExportRunner();
 
@@ -54,7 +55,7 @@ export function useTwapFillHistoryCsv(): TwapFillHistoryCsvResult {
 			downloadCsv(
 				TWAP_FILL_HISTORY_CSV_FILENAME,
 				buildCsvRows(history.items, [
-					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
+					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale }) },
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
 					{
 						header: t`Direction`,

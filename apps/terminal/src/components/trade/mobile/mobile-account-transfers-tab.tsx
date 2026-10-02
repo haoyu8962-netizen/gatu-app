@@ -21,7 +21,8 @@ interface Props {
 }
 
 export function MobileAccountTransfersTab({ className, scrollMode = "contained" }: Props) {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const numberFormat = useNumberFormat();
 	const { isConnected, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
@@ -114,7 +115,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 								/>
 							</div>
 							<div className="flex items-center justify-between px-3 py-1.5">
-								<span className="text-xs tabular-nums text-fg-muted">{formatDateTimeShort(row.time)}</span>
+								<span className="text-xs tabular-nums text-fg-muted">{formatDateTimeShort(row.time, { locale })}</span>
 								{explorerUrl ? (
 									<a
 										href={explorerUrl}

@@ -18,7 +18,8 @@ const twapHistoryGridClass =
 
 export function TwapHistoryTable() {
 	const { formatNumber, formatPrice } = useNumberFormat();
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { hasMore, history, isConnected, isRealtimeDegraded, loadMore, retryRealtime, status } = useTwapHistory();
 	const { getTwapHistoryStatusLabel } = useOrderDisplayLabels();
 	const navigateToMarket = useMarketNavigation();
@@ -83,7 +84,7 @@ export function TwapHistoryTable() {
 										)}
 									>
 										<td className="p-0 whitespace-nowrap text-market-close-muted tabular-nums">
-											{formatDateTimeShort(getTwapHistoryTimeMs(entry))}
+											{formatDateTimeShort(getTwapHistoryTimeMs(entry), { locale })}
 										</td>
 										<td className="p-0">
 											<button

@@ -576,7 +576,8 @@ interface HistoryTableProps {
 }
 
 function HistoryTable({ rows, ready }: HistoryTableProps) {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { formatNumber } = useNumberFormat();
 	const translate = (descriptor: MessageDescriptor) => t(descriptor);
 	return (
@@ -594,7 +595,7 @@ function HistoryTable({ rows, ready }: HistoryTableProps) {
 						? rows.map((row) => (
 								<TableRow key={row.id}>
 									<TableCell size="dense" className="text-fg-muted tabular-nums">
-										<bdi dir="ltr">{formatDateTime(row.time)}</bdi>
+										<bdi dir="ltr">{formatDateTime(row.time, { locale })}</bdi>
 									</TableCell>
 									<TableCell size="dense" className="text-fg">
 										{getHistoryActionLabel(row.action, translate)}

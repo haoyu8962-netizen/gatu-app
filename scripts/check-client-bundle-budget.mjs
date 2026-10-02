@@ -40,7 +40,13 @@ const budgets = {
 	// illustration data (about 2.3 kB), their keyframes in the stylesheet (0.8 kB) and the three components, split
 	// so the illustrations load only with their dialogs (desktop runtime startup +769, mobile +151). Measured as the
 	// local Node 22.15.0 build (3,193,087) minus the local build of f440fa1b before the change (3,186,543).
-	totalGzipBaselineBytes: 3_185_921,
+	// Raised 2026-10-02 by +475 for the date and list locale contract (docs/i18n-presentation.md): 38 date calls
+	// in 18 components and one hook (histories, funding, TWAP, transfers, orders, the PnL card and Earn) now pass
+	// the active locale, which adds it to their React Compiler cache guards (desktop runtime startup +67, leaving
+	// 84 bytes of its allowance). Measured as the local Node 22.15.0 build (3,195,944) minus the local build of
+	// 04469b52 before the change (3,195,469), both with the same build SHA and release id; the +9,548 already used
+	// before this change stays counted.
+	totalGzipBaselineBytes: 3_186_396,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],

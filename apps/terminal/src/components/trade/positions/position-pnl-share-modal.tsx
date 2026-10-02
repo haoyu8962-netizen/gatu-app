@@ -47,7 +47,8 @@ export function PositionPnlShareModal({ position, onOpenChange }: PositionPnlSha
 
 function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlShareDialogProps) {
 	const { formatPercent, formatQuoteAmount } = useNumberFormat();
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const isMobile = useIsMobile();
 	const { copied, copy } = useCopyToClipboard(1500);
 	const [qrState, setQrState] = useState<QrState | null>(null);
@@ -67,6 +68,7 @@ function PositionPnlShareDialog({ position, open, onOpenChange }: PositionPnlSha
 	const isProfit = pnl?.gte(0) ?? true;
 	const directionLabel = isLong ? t`Long` : t`Short`;
 	const timestamp = formatDateTime(position.capturedAtMs, {
+		locale,
 		year: "numeric",
 		month: "2-digit",
 		day: "2-digit",

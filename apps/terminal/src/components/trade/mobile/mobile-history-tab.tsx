@@ -80,7 +80,8 @@ function MobileHistoryTabContent({
 	scrollMode = "contained",
 }: MobileHistoryTabContentProps) {
 	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -156,7 +157,7 @@ function MobileHistoryTabContent({
 						(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
 				),
 				[
-					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
+					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time, { locale }) },
 					{ header: t`Asset`, getValue: (fill) => fill.coin },
 					{
 						header: t`Direction`,
@@ -341,7 +342,7 @@ function MobileHistoryTabContent({
 											<div className="min-w-0">
 												<div className="truncate text-3xs leading-[14px] text-market-close-subtle">{t`Time`}</div>
 												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-													{formatDateTimeShort(fill.time)}
+													{formatDateTimeShort(fill.time, { locale })}
 												</div>
 											</div>
 											<div className="min-w-0">

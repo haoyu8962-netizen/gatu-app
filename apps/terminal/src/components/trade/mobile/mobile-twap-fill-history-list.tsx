@@ -23,7 +23,8 @@ interface Props {
 
 export function MobileTwapFillHistoryList({ className, scrollMode = "contained" }: Props) {
 	const { formatNumber, formatPrice, formatToken } = useNumberFormat();
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { fills, hasMore, isConnected, isRealtimeDegraded, loadMore, status } = useTwapSliceFills();
 	const { exportCsv, isExporting } = useTwapFillHistoryCsv();
 	const navigateToMarket = useMarketNavigation();
@@ -118,7 +119,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 										{getDirectionLabel(fill.dir)}
 									</span>
 									<span className="text-[10px] text-market-close-subtle tabular-nums">
-										{formatDateTimeShort(fill.time)}
+										{formatDateTimeShort(fill.time, { locale })}
 									</span>
 								</div>
 							</div>

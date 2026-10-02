@@ -5,7 +5,7 @@
 ## 规则
 
 1. **数字跟随数字格式设置，不跟随语言。** 价格、数量、百分比、金额、紧凑单位（`K/M`）和文档标题里的价格都经 `lib/format.ts`：用 `en-US` 的 `Intl.NumberFormat.formatToParts` 分解，再按设置替换 `group` 与 `decimal` 两类 part（`numberSeparatorsByFormatLocale`）。数字永远是拉丁数字，只有分隔符变化。
-2. **日期与时间跟随界面语言，数字系统固定拉丁。** `formatTime`、`formatDateTime`、`formatDateTimeShort` 用 `languageToIntlLocale[i18n.locale]` 选格式，并强制 `numberingSystem: "latn"`，所以阿拉伯语界面的 `٧:٠٥` 变为 `7:05`，与同一行的价格数字一致。显式传 `locale` 时接受界面语言代码（`zh`）或 Intl locale（`zh-CN`），前者按映射表解析。24 小时制等既有约定不变（`recent-trades.md`：`HH:mm:ss`、`hourCycle: "h23"`）。
+2. **日期与时间跟随界面语言，数字系统固定拉丁。** `formatTime`、`formatDateTime`、`formatDateTimeShort` 用 `languageToIntlLocale[i18n.locale]` 选格式，并强制 `numberingSystem: "latn"`，所以阿拉伯语界面的 `٧:٠٥` 变为 `7:05`，与同一行的价格数字一致。显式传 `locale` 时接受界面语言代码（`zh`）或 Intl locale（`zh-CN`），前者按映射表解析。24 小时制等既有约定不变（`recent-trades.md`：`HH:mm:ss`、`hourCycle: "h23"`）。组件与 Hook 调用这三个函数和 `formatList` 时一律传 `locale`，effect、事件回调与 CSV 导出列也一样：渲染期用先无条件读出的 `const locale = i18n.locale;`，effect 与内联事件回调也可以在执行时读 `i18n.locale`。不传时函数读全局语言，React Compiler 按其余参数缓存结果，语言切换后可能保留旧语言。规则见[运行时多语言](i18n-presentation.md)，`date-locale-reactivity-contract` 检查。
 3. **组件与业务代码不得直接调用 `toLocale*` 或构造任何 `Intl.*` 格式化器。** 一律经 `lib/format.ts`（数字、日期、列表 `formatList`）；`locale-format-contract.test.ts` 扫描 `apps/terminal/src`（测试目录除外）中的 `.toLocale*(` 与 `Intl.<Name>(` 调用并在出现时失败，同一测试也检查每个裸 `<input inputMode="decimal">` 都接了规则 6 的归一化。
 4. **图表跟随数字格式。** `ChartPanel` 用 `useNumberFormatLocale()` 读设置传给 `TradingViewChart`，widget 创建时收到 `numeric_formatting: { decimal_sign, grouping_separator }`。该选项只能在构造时给，所以设置变化走与语言变化相同的「保存状态 → 重建 iframe」路径（`requestStatePreservingRebuild(widget, "numeric-format")`），`appliedNumberFormatRef` 与创建时的值比较，值未变不重建。库的 `widget.save` 在 v28.3 里同步回调，所以同一次 commit 里语言与数字格式先后变化时，第二个变化落在「widget 未就绪」分支并重新开始初始化，最终只创建一个带两个新值的 widget；若某个宿主让 `save` 异步回调，未回调期间的第二个变化并入同一次保存，变回原值则取消（两种路径都有测试）。
 5. **用户可见名称的排序** 用 `localeCompare(other, undefined, { sensitivity: "base" })`（报价币种分类、Swap 代币列表、API 钱包名称）；id、hash、地址的排序仍是无参 `localeCompare`，它们只需要稳定顺序。
@@ -53,7 +53,6 @@
 
   前三类为精确十进制显示而手写格式，改造需要决定精度规则。仓库里其余 `toFixed` 多数用于协议值，没有逐处分类。
 - 资金类提示（划转、发送、提现、金库）在弹出时把金额格式化成字符串，已显示的提示不随设置变化，与这些提示在弹出时按当前语言生成文案一致。
-- 日期格式化同样从全局读语言：渲染期调用 `formatDateTime` 等函数时须传 `locale`（[运行时多语言](i18n-presentation.md)），目前没有契约检查。2026-10-02 按编译产物修复了确认的 15 处（[任务记录](work-memory/sessions/2026-10-02-number-format-reactive-formatters.md)），其余调用碰巧与 `_t` 同在一个缓存槽而正确。
 
 ## 回归入口
 
@@ -62,6 +61,7 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/format.test.ts \
   src/lib/tests/number-format-settings.test.ts \
   src/lib/tests/number-format-reactivity-contract.test.ts \
+  src/lib/tests/date-locale-reactivity-contract.test.ts \
   src/lib/tests/locale-format-contract.test.ts \
   src/lib/tests/decimal-input-normalization.test.tsx \
   src/lib/tests/tradingview-chart.test.tsx \
