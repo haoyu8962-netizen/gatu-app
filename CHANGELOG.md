@@ -505,6 +505,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
   chart likewise rewrites the selected point's date after a language switch, and its axis labels
   and selected value after a number-format change, instead of keeping the previous format until
   the history, period or chart size changed.
+- `Terminal Tests` runs the geo API handler and client tests (`geo-api.test.ts`). They replaced
+  `geo-server-functions.test.ts` on 2026-09-13, but the geo step still listed the deleted file,
+  which vitest reads as a filter that selects nothing, so the step passed with one test file fewer
+  than it listed. `scripts/ci-workflows.test.mjs` now fails when a workflow passes vitest,
+  Playwright or `node --test` a path that matches no file.
 - In the light theme, browsers that tint their toolbar or status bar from the page's theme color
   (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
   terminal teal. The theme color follows the theme chosen in Settings from the first paint and on

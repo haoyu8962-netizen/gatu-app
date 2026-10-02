@@ -50,6 +50,7 @@
 - 测试与构建并行、不设 `needs`：等待时间取两者较大值，代价是测试失败时构建不再被跳过。
 - `production-build.yml` 的路径过滤仍包含已移走测试的脚本路径；这是无害的超集，且被既有断言钉住。随网站 job 移走的三项（`designs/og-cards/**`、`tests/**`、`scripts/generate-og-cards.mjs`）已从中删除。
 - CI 的手选测试清单里 `src/lib/tests/geo-server-functions.test.ts` 已不存在（`5944465d` 删除），vitest 会静默忽略不匹配的参数。本次按原样搬移，未清理；全量单测成为闸门后这份清单应整体移除。
+- 2026-10-02 补记：上一条的失效参数已换成 `5944465d` 中取代它的 `src/lib/tests/geo-api.test.ts`（地区 API 处理器与客户端测试，此前从未进入任何工作流）。`scripts/ci-workflows.test.mjs` 新增钉子：工作流传给 vitest、Playwright 与 `node --test` 的每个路径都必须匹配到文件，文件名里的 `*` 按 shell 方式展开。手选清单由全量单测取代的计划不变。见[任务记录](../work-memory/sessions/2026-10-02-ci-listed-test-paths.md)。
 - 本地实跑两个分片时，99 个测试中有 1 个失败过一次（`drawer-interactions` 的 bottom drawer swipe，当轮分片 1 的第一个测试）；之后原始调用方式、分片方式和清空 Vite 缓存后的冷启动各重跑 2 次均全部通过，未能复现或归因。首次 CI 运行后需观察它。
 
 ## 证据
