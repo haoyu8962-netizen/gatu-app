@@ -195,3 +195,20 @@ test("rebuilds and re-checks chunking when a dependency patch changes", () => {
 		"the manual chunk guard never runs in CI",
 	);
 });
+
+test("runs the release metadata, CSP and card funding guards on pull requests", () => {
+	const terminalTests = readWorkflow("terminal-tests.yml");
+	for (const file of [
+		"src/lib/tests/build-meta.test.ts",
+		"src/lib/tests/security-policy-docs.test.ts",
+		"src/lib/tests/privy-fiat-funding.test.ts",
+		"src/lib/tests/privy-fiat-funding-host.test.tsx",
+		"src/lib/tests/privy-fiat-funding-host-gate.test.tsx",
+		"src/lib/tests/use-privy-fiat-funding-offer.test.tsx",
+		"src/lib/tests/deposit-method-chooser.test.tsx",
+		"src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx",
+		"src/lib/tests/wrong-network-screen.test.tsx",
+	]) {
+		assert.equal(terminalTests.includes(file), true, `${file} never runs in CI`);
+	}
+});

@@ -361,8 +361,10 @@ The purchase-host warm-up added later the same day keeps the dynamic import in t
 shared store, because a separate loader module moved the import's chunk list into the small shared chunk and cost about
 420 bytes in both runtime increments. A CI-equivalent build with the warm-up reads 3,287,254 total, 1,626,872 static
 startup, 117,887 mobile and 201,548 desktop: +93 mobile and +173 desktop against the table, with no baseline change.
-The desktop runtime increment now sits 440 bytes under its allowance, so the next first-render addition on desktop needs
-its own reduction or review.
+After the review fixes (the gate compares the attempt's owner and network with the current identity before it reports a
+load failure) the same kind of build reads 3,286,913 total, 1,626,723 static startup, 117,968 mobile and 201,590
+desktop. The desktop runtime increment now sits 398 bytes under its allowance, so the next first-render addition on
+desktop needs its own reduction or review.
 
 ## Functional acceptance gates
 
