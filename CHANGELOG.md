@@ -484,6 +484,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- The desktop footer clock keeps time again. It used to stay at the minute the footer appeared,
+  even after a language switch; it now changes at the start of every minute, follows a language
+  switch at once with Latin digits, and pauses while the page is hidden, catching up as soon as
+  the page is visible again.
 - In the light theme, browsers that tint their toolbar or status bar from the page's theme color
   (Safari 15 and later, Chrome on Android) now use white like the page header instead of the dark
   terminal teal. The theme color follows the theme chosen in Settings from the first paint and on
