@@ -56,9 +56,13 @@ export function DepositMethodChooser({ fiat, notice, onTransfer, onBuy }: Props)
 				onClick={onBuy}
 			/>
 			{notice ? (
-				<p className="text-center text-xs leading-5 text-market-close-danger" data-deposit-slot="methods-notice">
+				<div
+					role="alert"
+					className="rounded-16 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-xs text-market-close-danger"
+					data-deposit-slot="methods-notice"
+				>
 					{notice}
-				</p>
+				</div>
 			) : null}
 		</div>
 	);

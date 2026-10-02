@@ -251,12 +251,16 @@ jobs:
           src/lib/tests/deposit-empty-balances-entry.test.tsx
           src/lib/tests/deposit-execution-state.test.ts
           src/lib/tests/deposit-form-routing.test.tsx
+          src/lib/tests/deposit-method-chooser.test.tsx
           src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx
           src/lib/tests/deposit-order-cta.test.tsx
           src/lib/tests/development-geo.test.ts
           src/lib/tests/embedded-deposit-auto-bridge.test.tsx
           src/lib/tests/funding-address-card.test.tsx
           src/lib/tests/geo-server-functions.test.ts
+          src/lib/tests/privy-fiat-funding.test.ts
+          src/lib/tests/privy-fiat-funding-host.test.tsx
+          src/lib/tests/privy-fiat-funding-host-gate.test.tsx
           src/lib/tests/referral-action-geo.test.ts
           src/lib/tests/trading-onboarding-gate.test.tsx
           src/lib/tests/usdc-routing.test.ts
@@ -264,6 +268,7 @@ jobs:
           src/lib/tests/use-deposit-routing-guard.test.tsx
           src/lib/tests/use-email-embedded-wallet.test.tsx
           src/lib/tests/use-geo-restriction.test.tsx
+          src/lib/tests/use-privy-fiat-funding-offer.test.tsx
           src/lib/tests/use-usdc-routing.test.ts
           src/lib/tests/unit-deposit-info.test.tsx
 

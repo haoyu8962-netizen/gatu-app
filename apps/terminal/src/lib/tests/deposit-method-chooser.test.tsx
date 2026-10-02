@@ -65,8 +65,8 @@ describe("DepositMethodChooser", () => {
 		expect(option("transfer").disabled).toBe(false);
 		act(() => option("fiat").click());
 		expect(onBuy).not.toHaveBeenCalled();
-		expect(container.querySelector('[data-deposit-slot="methods-notice"]')?.textContent).toBe(
-			"Funds actions are not available in your region.",
-		);
+		const notice = container.querySelector('[data-deposit-slot="methods-notice"]');
+		expect(notice?.textContent).toBe("Funds actions are not available in your region.");
+		expect(notice?.getAttribute("role")).toBe("alert");
 	});
 });

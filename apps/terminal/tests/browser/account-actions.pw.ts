@@ -260,6 +260,16 @@ for (const width of [375, 1363]) {
 				await expect(dialog).toHaveCount(0);
 			}
 			await expect(page.getByRole("status", { name: "Fixture card purchases" })).toHaveText("2");
+
+			await page.getByRole("button", { name: "Toggle data", exact: true }).click();
+			await page.getByRole("button", { name: "Open deposit", exact: true }).click();
+			await expect(dialog.locator('[data-deposit-method="fiat"]')).toBeDisabled();
+			await expect(dialog.locator('[data-deposit-method="transfer"]')).toBeEnabled();
+			const notice = dialog.getByRole("alert");
+			await expect(notice).toHaveText("Deposits are not available in your region.");
+			await expect(notice).toBeInViewport({ ratio: 1 });
+			expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+			await page.screenshot({ path: test.info().outputPath(`deposit-methods-unavailable-${width}-${theme}.png`) });
 		});
 	}
 }

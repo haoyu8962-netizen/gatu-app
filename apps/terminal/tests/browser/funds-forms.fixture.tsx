@@ -56,7 +56,7 @@ export function FundsFormsFixture() {
 					{showsDepositMethods ? (
 						<DepositMethodChooser
 							fiat={{ walletKind: email ? "embedded" : "external", disabled: !ready }}
-							notice={null}
+							notice={ready ? null : "Deposits are not available in your region."}
 							onTransfer={() => setDepositStep("transfer")}
 							onBuy={() => {
 								setPurchases(purchases + 1);
