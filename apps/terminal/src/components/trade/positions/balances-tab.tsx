@@ -11,9 +11,8 @@ import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatToken, formatUSD } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useDepositModalActions, useSwapModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-global-settings-store";
 import { AssetDisplay } from "../components/asset-display";
@@ -44,7 +43,7 @@ interface Props {
 
 export function BalancesTab({ toolbarTarget }: Props) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatToken, formatUSD } = useNumberFormat();
 	const { getToken } = useSpotTokens();
 	const hideSmallBalances = useHideSmallBalances();
 	const { setHideSmallBalances } = useGlobalSettingsActions();

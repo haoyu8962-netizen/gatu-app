@@ -1,4 +1,5 @@
 import { i18n } from "@lingui/core";
+import { useSyncExternalStore } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER, FORMAT_COMPACT_DEFAULT, FORMAT_COMPACT_THRESHOLD } from "@/config/app";
 import {
 	defaultLocale,
@@ -10,6 +11,7 @@ import {
 	numberSeparatorsByFormatLocale,
 } from "@/config/i18n";
 import { HL_PERP_PRICE_MAX_DECIMALS, HL_PRICE_MAX_DECIMALS } from "@/config/trade";
+import { getNumberFormatRevision, subscribeNumberFormatChange } from "@/lib/number-format-reactivity";
 import { toNumber } from "@/lib/trade/numbers";
 import { getResolvedFormatLocale } from "@/stores/use-global-settings-store";
 
@@ -503,6 +505,55 @@ function getSlippagePercentDecimals(percent: number): number {
 	if (percent >= 0.1) return 2;
 	if (percent >= 0.01) return 3;
 	return 4;
+}
+
+/**
+ * The number formatters for components, hooks and the presentation helpers they call during render.
+ * Every number-format change produces a new object with new function identities, so React Compiler
+ * recomputes each cached value that calls one of them; like the module-level functions, they read the
+ * active setting when called. Helpers receive this object as an argument instead of importing the
+ * module-level functions (ADR 0036).
+ */
+export interface NumberFormatters {
+	formatLiquidationPrice: typeof formatLiquidationPrice;
+	formatNumber: typeof formatNumber;
+	formatPercent: typeof formatPercent;
+	formatPrice: typeof formatPrice;
+	formatQuoteAmount: typeof formatQuoteAmount;
+	formatSlippageBps: typeof formatSlippageBps;
+	formatToken: typeof formatToken;
+	formatUSD: typeof formatUSD;
+}
+
+function createNumberFormatters(): NumberFormatters {
+	return {
+		formatLiquidationPrice: (...args) => formatLiquidationPrice(...args),
+		formatNumber: (...args) => formatNumber(...args),
+		formatPercent: (...args) => formatPercent(...args),
+		formatPrice: (...args) => formatPrice(...args),
+		formatQuoteAmount: (...args) => formatQuoteAmount(...args),
+		formatSlippageBps: (...args) => formatSlippageBps(...args),
+		formatToken: (...args) => formatToken(...args),
+		formatUSD: (...args) => formatUSD(...args),
+	};
+}
+
+let numberFormatters = createNumberFormatters();
+let numberFormattersRevision = getNumberFormatRevision();
+
+/** The current formatters, for code that runs outside render (event handlers, effects, exports). */
+export function getNumberFormatters(): NumberFormatters {
+	const revision = getNumberFormatRevision();
+	if (revision !== numberFormattersRevision) {
+		numberFormattersRevision = revision;
+		numberFormatters = createNumberFormatters();
+	}
+	return numberFormatters;
+}
+
+/** Subscribes the caller to the number-format setting and returns the formatters for this render. */
+export function useNumberFormat(): NumberFormatters {
+	return useSyncExternalStore(subscribeNumberFormatChange, getNumberFormatters, getNumberFormatters);
 }
 
 /**

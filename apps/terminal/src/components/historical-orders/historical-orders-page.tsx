@@ -15,9 +15,8 @@ import { useOrderHistory } from "@/hooks/trade/use-order-history";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTime, formatToken, shortenAddress } from "@/lib/format";
+import { formatDateTime, shortenAddress, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getOrderHistoryStatusCategory, getOrderHistoryTriggerPrice } from "@/lib/trade/order-history";
 import {
 	DEFAULT_ORDER_HISTORY_PAGE_SIZE,
@@ -56,7 +55,7 @@ function getOrderHistoryStatusBadgeClass(status: Exclude<OrderHistoryStatusFilte
 }
 
 export function HistoricalOrdersPage({ address }: Props) {
-	useNumberFormatRevision();
+	const { formatToken } = useNumberFormat();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();

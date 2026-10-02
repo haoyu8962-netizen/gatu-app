@@ -19,7 +19,7 @@
 - 计算放在 `domain/market/funding-comparison.ts`，用 Big.js，协议费率保持十进制字符串，直到 `lib/format.ts` 格式化。
 - 被动数据遵循 [数据展示契约](mobile-data-presentation.md)：加载、失败、离线不显示错误文字或警告图标；只有完整、当前、成功的快照才能得出「没有数据」。本页没有新增被动提示类别。
 - 翻译用 `@lingui/react/macro` 的响应式 `t` / `Trans`；切换语言不重挂载页面、不清空搜索框、不改变所选周期（`i18n-presentation.md`）。
-- 数字格式随数字格式设置；每个格式化数字的组件调用 `useNumberFormatRevision()`。
+- 数字格式随数字格式设置；每个格式化数字的组件从 `useNumberFormat()` 取格式化函数（[数字格式规则 9](number-format-setting.md)）。
 - 仪表盘启动遵循 [ADR 0010](adr/0010-blank-until-ready-startup.md)：路由 `beforeLoad` 等待 `bootDashboardRoute()`，`ssr: false`；页面在真实 `DashboardFrameView` 中显示数据骨架，不新增首屏惰性块。
 - 桌面「更多」菜单只来自 `config/desktop-nav.ts`（[runtime-guardrails §11](runtime-guardrails.md)）；新入口是 `more` 类型，不占顶层位置，不影响 ADR 0013 的窄屏宽度证据。
 
@@ -77,7 +77,7 @@
 ## 5. 页面与入口
 
 - 路由：`apps/terminal/src/routes/fundingComparison.tsx`（`beforeLoad: () => bootDashboardRoute()`、`ssr: false`、`buildPageHead`）；页面框架预设为 `DASHBOARD_FRAMES["/funding-comparison"]`，与排行榜相同；页头、页脚与全局弹窗使用 `components/dashboard/dashboard-chrome.tsx` 的共享实例（`DashboardHeader`、`FooterBar`、`GlobalModals`），与合入 `dev` 的仪表盘页一致，由 `bootDashboardRoute` 在揭示前预加载。`routeTree.gen.ts` 由 TanStack 路由生成器生成。
-- 结构：`funding-comparison-page.tsx`（框架与真实页头、页脚、全局弹窗）→ `use-funding-comparison-controller.ts`（数据、状态与界面状态）→ `funding-comparison-view.tsx`（纯展示，只使用 `useLingui`、`useIsMobile`、`useNumberFormatRevision`）。
+- 结构：`funding-comparison-page.tsx`（框架与真实页头、页脚、全局弹窗）→ `use-funding-comparison-controller.ts`（数据、状态与界面状态）→ `funding-comparison-view.tsx`（纯展示，只使用 `useLingui`、`useIsMobile`、`useNumberFormat`）。
 - 页头：标题「Funding Comparison」、副标题「Funding rate differences across exchanges.」；工具栏为搜索框（占位「Search by market」）与周期下拉（无障碍名称「Funding period」）。
 - 桌面（1001px 及以上）：七列可排序表格（Market、Hyperliquid OI、Hyperliquid、Binance、Binance-HL Arb、Bybit、Bybit-HL Arb），表头按钮带 `aria-sort`，表格带 `scrollableRegionLabel` 与屏幕阅读器标题；Market 列的资产徽标调用 `useMarketNavigation()` 打开对应交易页。
 - 手机（1000px 及以下）：排序下拉与方向按钮，每个资产一张卡片；卡片头是整行按钮（`TOUCH_PRESS_CLASS`、`cursor-pointer`），点击打开交易页；卡片列出 OI、三个费率和两个差值。

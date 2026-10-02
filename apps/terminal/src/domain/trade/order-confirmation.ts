@@ -3,7 +3,7 @@ import { msg, t } from "@lingui/core/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { type LimitTif, ORDER_TYPE_MESSAGES, type OrderType } from "@/config/trade";
 import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
-import { formatDuration, formatPrice, formatToken } from "@/lib/format";
+import { formatDuration, type NumberFormatters } from "@/lib/format";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive } from "@/lib/trade/numbers";
 import {
@@ -64,17 +64,18 @@ export interface OrderConfirmationDraft {
 
 export function buildOrderConfirmationRows(
 	draft: OrderConfirmationDraft,
+	numberFormat: NumberFormatters,
 	translate: (message: MessageDescriptor) => string = translateOrderMessage,
 ): OrderConfirmationRow[] {
 	const tone: OrderConfirmationTone = draft.side === "buy" ? "up" : "down";
 	return [
 		{ key: "action", label: t`Action`, value: getOrderConfirmationSideLabel(draft, translate), tone },
 		...getOrderTypeRows(draft, translate),
-		{ key: "size", label: t`Size`, value: getSizeValue(draft), tone },
-		...getPriceRows(draft, translate),
-		...getTpSlRows(draft),
+		{ key: "size", label: t`Size`, value: getSizeValue(draft, numberFormat), tone },
+		...getPriceRows(draft, numberFormat, translate),
+		...getTpSlRows(draft, numberFormat),
 		...getReduceOnlyRows(draft),
-		...getLiquidationRows(draft),
+		...getLiquidationRows(draft, numberFormat),
 	];
 }
 
@@ -114,27 +115,29 @@ function getMarketExecutionLabel(): string {
 	return t({ message: "Market", context: "Order type" });
 }
 
-function getSizeValue(draft: OrderConfirmationDraft): string {
+function getSizeValue(draft: OrderConfirmationDraft, numberFormat: NumberFormatters): string {
 	if (!isPositive(draft.sizeValue)) return FALLBACK_VALUE_PLACEHOLDER;
 	const submittedSize = formatSizeForOrder(draft.sizeForOrder ?? draft.sizeValue, draft.szDecimals ?? 0);
-	return formatToken(submittedSize, { decimals: draft.szDecimals, symbol: draft.baseToken });
+	return numberFormat.formatToken(submittedSize, { decimals: draft.szDecimals, symbol: draft.baseToken });
 }
 
 function getPriceRows(
 	draft: OrderConfirmationDraft,
+	numberFormat: NumberFormatters,
 	translate: (message: MessageDescriptor) => string,
 ): OrderConfirmationRow[] {
-	if (isTwapOrderType(draft.orderType)) return getTwapPriceRows(draft, translate);
-	if (isScaleOrderType(draft.orderType)) return getScalePriceRows(draft);
-	if (isTriggerOrderType(draft.orderType)) return getTriggerPriceRows(draft);
+	if (isTwapOrderType(draft.orderType)) return getTwapPriceRows(draft, numberFormat, translate);
+	if (isScaleOrderType(draft.orderType)) return getScalePriceRows(draft, numberFormat);
+	if (isTriggerOrderType(draft.orderType)) return getTriggerPriceRows(draft, numberFormat);
 	if (usesLimitPriceForOrder(draft.orderType)) {
-		return [{ key: "price", label: t`Price`, value: formatSubmittedPrice(draft, draft.limitPrice) }];
+		return [{ key: "price", label: t`Price`, value: formatSubmittedPrice(draft, draft.limitPrice, numberFormat) }];
 	}
 	return [{ key: "price", label: t`Price`, value: getMarketExecutionLabel() }];
 }
 
 function getTwapPriceRows(
 	draft: OrderConfirmationDraft,
+	numberFormat: NumberFormatters,
 	translate: (message: MessageDescriptor) => string,
 ): OrderConfirmationRow[] {
 	const rows: OrderConfirmationRow[] = [
@@ -146,46 +149,58 @@ function getTwapPriceRows(
 		rows.push({
 			key: "twapTrigger",
 			label: t`Trigger Price`,
-			value: formatSubmittedPrice(draft, draft.twapTriggerPrice),
+			value: formatSubmittedPrice(draft, draft.twapTriggerPrice, numberFormat),
 		});
 	}
 	if (isPositive(draft.twapStopPrice)) {
 		rows.push({
 			key: "twapStop",
 			label: getTwapStopPriceLabel(draft.side, { buy: translate(msg`Max Price`), sell: translate(msg`Min Price`) }),
-			value: formatSubmittedPrice(draft, draft.twapStopPrice),
+			value: formatSubmittedPrice(draft, draft.twapStopPrice, numberFormat),
 		});
 	}
 	return rows;
 }
 
-function getScalePriceRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
+function getScalePriceRows(draft: OrderConfirmationDraft, numberFormat: NumberFormatters): OrderConfirmationRow[] {
 	return [
-		{ key: "scaleStart", label: t`Start Price`, value: formatSubmittedPrice(draft, draft.scaleStartPrice) },
-		{ key: "scaleEnd", label: t`End Price`, value: formatSubmittedPrice(draft, draft.scaleEndPrice) },
+		{
+			key: "scaleStart",
+			label: t`Start Price`,
+			value: formatSubmittedPrice(draft, draft.scaleStartPrice, numberFormat),
+		},
+		{ key: "scaleEnd", label: t`End Price`, value: formatSubmittedPrice(draft, draft.scaleEndPrice, numberFormat) },
 		{ key: "scaleLevels", label: t`Number of Orders`, value: formatCount(draft.scaleLevels) },
 		{ key: "scaleSkew", label: t`Size Skew`, value: formatCount(draft.scaleSkew) },
 	];
 }
 
-function getTriggerPriceRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
+function getTriggerPriceRows(draft: OrderConfirmationDraft, numberFormat: NumberFormatters): OrderConfirmationRow[] {
 	const limitRow: OrderConfirmationRow = usesLimitPriceForOrder(draft.orderType)
-		? { key: "price", label: t`Price`, value: formatSubmittedPrice(draft, draft.limitPrice) }
+		? { key: "price", label: t`Price`, value: formatSubmittedPrice(draft, draft.limitPrice, numberFormat) }
 		: { key: "price", label: t`Price`, value: getMarketExecutionLabel() };
 	return [
-		{ key: "trigger", label: t`Trigger Price`, value: formatSubmittedPrice(draft, draft.triggerPrice) },
+		{ key: "trigger", label: t`Trigger Price`, value: formatSubmittedPrice(draft, draft.triggerPrice, numberFormat) },
 		limitRow,
 	];
 }
 
-function getTpSlRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
+function getTpSlRows(draft: OrderConfirmationDraft, numberFormat: NumberFormatters): OrderConfirmationRow[] {
 	if (!draft.tpSlEnabled) return [];
 	const rows: OrderConfirmationRow[] = [];
 	if (isPositive(draft.tpPrice)) {
-		rows.push({ key: "takeProfit", label: t`Take Profit`, value: formatSubmittedPrice(draft, draft.tpPrice) });
+		rows.push({
+			key: "takeProfit",
+			label: t`Take Profit`,
+			value: formatSubmittedPrice(draft, draft.tpPrice, numberFormat),
+		});
 	}
 	if (isPositive(draft.slPrice)) {
-		rows.push({ key: "stopLoss", label: t`Stop Loss`, value: formatSubmittedPrice(draft, draft.slPrice) });
+		rows.push({
+			key: "stopLoss",
+			label: t`Stop Loss`,
+			value: formatSubmittedPrice(draft, draft.slPrice, numberFormat),
+		});
 	}
 	return rows;
 }
@@ -195,13 +210,13 @@ function getReduceOnlyRows(draft: OrderConfirmationDraft): OrderConfirmationRow[
 	return [{ key: "reduceOnly", label: t`Reduce Only`, value: t`Yes` }];
 }
 
-function getLiquidationRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
+function getLiquidationRows(draft: OrderConfirmationDraft, numberFormat: NumberFormatters): OrderConfirmationRow[] {
 	if (!draft.isLeveraged) return [];
 	return [
 		{
 			key: "liqPrice",
 			label: t`Estimated Liquidation Price`,
-			value: formatEstimatedPrice(draft, draft.liqPrice),
+			value: formatEstimatedPrice(draft, draft.liqPrice, numberFormat),
 			tone: draft.liqWarning && isPositive(draft.liqPrice) ? "down" : undefined,
 		},
 	];
@@ -217,13 +232,21 @@ function formatCount(value: number | null): string {
 	return String(value);
 }
 
-function formatSubmittedPrice(draft: OrderConfirmationDraft, value: number | null): string {
+function formatSubmittedPrice(
+	draft: OrderConfirmationDraft,
+	value: number | null,
+	numberFormat: NumberFormatters,
+): string {
 	if (!isPositive(value)) return FALLBACK_VALUE_PLACEHOLDER;
 	const submitted = formatPriceForOrder(value, { assetId: draft.assetId, szDecimals: draft.szDecimals ?? 0 });
-	return formatEstimatedPrice(draft, Number(submitted));
+	return formatEstimatedPrice(draft, Number(submitted), numberFormat);
 }
 
-function formatEstimatedPrice(draft: OrderConfirmationDraft, value: number | null): string {
+function formatEstimatedPrice(
+	draft: OrderConfirmationDraft,
+	value: number | null,
+	numberFormat: NumberFormatters,
+): string {
 	if (!isPositive(value)) return FALLBACK_VALUE_PLACEHOLDER;
-	return formatPrice(value, { szDecimals: draft.szDecimals, marketType: draft.marketKind });
+	return numberFormat.formatPrice(value, { szDecimals: draft.szDecimals, marketType: draft.marketKind });
 }

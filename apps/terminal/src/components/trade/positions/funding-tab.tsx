@@ -12,9 +12,8 @@ import { useUserFunding } from "@/hooks/trade/use-user-funding";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
@@ -67,7 +66,7 @@ function FundingLoadingPlaceholder() {
 
 export function FundingTab({ toolbarTarget }: Props = {}) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatPercent, formatToken, formatUSD } = useNumberFormat();
 	const navigateToMarket = useMarketNavigation();
 	const { error, fundings: updates, isConnected, isOffline, isStale, status } = useUserFunding();
 	const { address } = useWalletSession();

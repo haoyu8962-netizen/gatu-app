@@ -16,9 +16,8 @@ import { useTradeHistory } from "@/hooks/trade/use-trade-history";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, formatNumber, formatToken, formatUSD, shortenAddress } from "@/lib/format";
+import { formatDateTimeShort, shortenAddress, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	ACCOUNT_HISTORY_PAGE_SIZES,
 	type AccountHistoryPageSize,
@@ -59,7 +58,7 @@ function getDirectionColorClass(fill: UserFill) {
 }
 
 export function TradeHistoryPage({ address }: Props) {
-	useNumberFormatRevision();
+	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();

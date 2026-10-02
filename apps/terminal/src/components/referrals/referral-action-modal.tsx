@@ -17,9 +17,8 @@ import { type ReferralAction, ReferralActionStatusUnknownError } from "@/hooks/t
 import { useIsMobile } from "@/hooks/use-mobile";
 import { classifyActionErrorOr } from "@/lib/errors/action-error";
 import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
-import { formatToken } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { ReferralRewardRow } from "@/lib/trade/referral";
 import { addOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 
@@ -34,7 +33,7 @@ interface Props {
 }
 
 export function ReferralActionModal({ action, unclaimedRewards, initialCode, onClose, onSubmit }: Props) {
-	useNumberFormatRevision();
+	const { formatToken } = useNumberFormat();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const { clientKey, env } = useHyperliquid();

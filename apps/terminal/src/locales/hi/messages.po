@@ -4661,7 +4661,7 @@ msgstr "स्थान पात्रता सत्यापित नही
 msgid "Lock period progress"
 msgstr "लॉक अवधि की प्रगति"
 
-#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp)
+#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp, { locale })
 #: src/components/staking/staking-view.tsx
 msgid "Locked until {0}"
 msgstr "{0} तक लॉक"

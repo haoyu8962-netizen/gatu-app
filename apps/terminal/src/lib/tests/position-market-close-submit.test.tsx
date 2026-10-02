@@ -7,6 +7,7 @@ import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
+import { getNumberFormatters } from "@/lib/format";
 import { reserveOrderAssets, runWithOrderAssetLocks } from "@/lib/trade/order-asset-lock";
 import { getOrderNotificationCopy } from "@/lib/trade/order-notification-copy";
 import { formatOrderChildError } from "@/lib/trade/order-status-reasons";
@@ -543,7 +544,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		});
 		if (!failed) throw new Error("Expected a failed market close");
 		const translate = (descriptor: MessageDescriptor) => i18n._(descriptor);
-		expect(getOrderNotificationCopy(failed, translate).error).toBeUndefined();
+		expect(getOrderNotificationCopy(failed, translate, getNumberFormatters()).error).toBeUndefined();
 		expect(formatOrderChildError(rejection, translate)).toBe(
 			"The order could not immediately match any resting orders.",
 		);

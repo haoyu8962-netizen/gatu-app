@@ -255,6 +255,8 @@ function ActionStatus({
 }
 
 function StakingOperationReference({ reference }: { reference: FundsActionReference }) {
+	const { i18n } = useLingui();
+	const locale = i18n.locale;
 	return (
 		<dl className="divide-y divide-stroke-weak rounded-16 border border-stroke-weak px-3 text-xs">
 			<ReferenceRow label={<Trans>Network</Trans>} value={reference.env} />
@@ -264,7 +266,7 @@ function StakingOperationReference({ reference }: { reference: FundsActionRefere
 			<ReferenceRow label={<Trans>Direction</Trans>} value={<DirectionLabel direction={reference.direction} />} />
 			<ReferenceRow label={<Trans>Amount</Trans>} value={`${reference.displayAmount} ${reference.asset}`} ltr />
 			<ReferenceRow label={<Trans>Atomic amount</Trans>} value={reference.atomicAmount} mono />
-			<ReferenceRow label={<Trans>Started</Trans>} value={formatDateTime(reference.startedAt)} ltr />
+			<ReferenceRow label={<Trans>Started</Trans>} value={formatDateTime(reference.startedAt, { locale })} ltr />
 			<ReferenceRow label={<Trans>Identity epoch</Trans>} value={reference.identityEpoch} mono />
 		</dl>
 	);

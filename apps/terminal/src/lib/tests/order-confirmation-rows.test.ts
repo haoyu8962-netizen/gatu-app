@@ -6,6 +6,9 @@ import {
 	type OrderConfirmationRow,
 } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
+import { getNumberFormatters } from "@/lib/format";
+
+const numberFormat = getNumberFormatters();
 
 const BASE_DRAFT: OrderConfirmationDraft = {
 	assetId: 0,
@@ -66,13 +69,17 @@ describe("buildOrderConfirmationRows", () => {
 		["twap", "TWAP"],
 		["scale", "Scale"],
 	] as const)("uses the supplied translator for the %s order type", (orderType, label) => {
-		const rows = buildOrderConfirmationRows(draft({ orderType }), (message) => `translated:${message.message}`);
+		const rows = buildOrderConfirmationRows(
+			draft({ orderType }),
+			numberFormat,
+			(message) => `translated:${message.message}`,
+		);
 
 		expect(byKey(rows, "orderType")?.value).toBe(`translated:${label}`);
 	});
 
 	it("limits a perp market order to the action, size, price and estimated liquidation price", () => {
-		const rows = buildOrderConfirmationRows(BASE_DRAFT);
+		const rows = buildOrderConfirmationRows(BASE_DRAFT, numberFormat);
 
 		expect(rows.map((row) => row.key)).toEqual(["action", "size", "price", "liqPrice"]);
 		expect(byKey(rows, "price")?.value).toBe("Market");
@@ -81,14 +88,17 @@ describe("buildOrderConfirmationRows", () => {
 	});
 
 	it("limits a good-till-cancelled limit order to the same four rows", () => {
-		const rows = buildOrderConfirmationRows(draft({ orderType: "limit", tif: "Gtc", limitPrice: 99_000 }));
+		const rows = buildOrderConfirmationRows(
+			draft({ orderType: "limit", tif: "Gtc", limitPrice: 99_000 }),
+			numberFormat,
+		);
 
 		expect(rows.map((row) => row.key)).toEqual(["action", "size", "price", "liqPrice"]);
 	});
 
 	it("colors the action and the size by direction", () => {
-		const long = buildOrderConfirmationRows(BASE_DRAFT);
-		const short = buildOrderConfirmationRows(draft({ side: "sell" }));
+		const long = buildOrderConfirmationRows(BASE_DRAFT, numberFormat);
+		const short = buildOrderConfirmationRows(draft({ side: "sell" }), numberFormat);
 
 		expect(byKey(long, "action")?.tone).toBe("up");
 		expect(byKey(long, "size")?.tone).toBe("up");
@@ -97,7 +107,10 @@ describe("buildOrderConfirmationRows", () => {
 	});
 
 	it("keeps the time in force of a limit order that is not good-till-cancelled", () => {
-		const rows = buildOrderConfirmationRows(draft({ orderType: "limit", tif: "Alo", limitPrice: 99_000 }));
+		const rows = buildOrderConfirmationRows(
+			draft({ orderType: "limit", tif: "Alo", limitPrice: 99_000 }),
+			numberFormat,
+		);
 
 		expect(byKey(rows, "orderType")?.value).toBe("Limit · Post Only");
 		expect(byKey(rows, "price")?.value).toBe("$99,000");
@@ -106,6 +119,7 @@ describe("buildOrderConfirmationRows", () => {
 	it("shows the trigger price plus the resting limit price for stop-limit orders", () => {
 		const rows = buildOrderConfirmationRows(
 			draft({ orderType: "stopLimit", triggerPrice: 95_000, limitPrice: 94_500 }),
+			numberFormat,
 		);
 
 		expect(byKey(rows, "orderType")?.value).toBe("Stop Limit");
@@ -114,7 +128,10 @@ describe("buildOrderConfirmationRows", () => {
 	});
 
 	it("marks trigger-market orders as executing at market", () => {
-		const rows = buildOrderConfirmationRows(draft({ orderType: "takeProfitMarket", triggerPrice: 105_000 }));
+		const rows = buildOrderConfirmationRows(
+			draft({ orderType: "takeProfitMarket", triggerPrice: 105_000 }),
+			numberFormat,
+		);
 
 		expect(byKey(rows, "orderType")?.value).toBe("Take Profit Market");
 		expect(byKey(rows, "trigger")?.value).toBe("$105,000");
@@ -130,6 +147,7 @@ describe("buildOrderConfirmationRows", () => {
 				scaleLevels: 5,
 				scaleSkew: 2,
 			}),
+			numberFormat,
 		);
 
 		expect(byKey(rows, "scaleStart")?.value).toBe("$90,000");
@@ -148,6 +166,7 @@ describe("buildOrderConfirmationRows", () => {
 				twapTriggerPrice: 101_000,
 				twapStopPrice: 102_000,
 			}),
+			numberFormat,
 		);
 
 		expect(byKey(rows, "price")?.value).toBe("Market");
@@ -163,6 +182,7 @@ describe("buildOrderConfirmationRows", () => {
 	] as const)("uses the supplied translator for a $side TWAP stop label", ({ side, label }) => {
 		const rows = buildOrderConfirmationRows(
 			draft({ orderType: "twap", side, twapStopPrice: 102_000 }),
+			numberFormat,
 			(message) => `translated:${message.message}`,
 		);
 
@@ -170,9 +190,15 @@ describe("buildOrderConfirmationRows", () => {
 	});
 
 	it("adds take-profit and stop-loss rows only when they carry prices", () => {
-		const withBoth = buildOrderConfirmationRows(draft({ tpSlEnabled: true, tpPrice: 110_000, slPrice: 90_000 }));
-		const withNeither = buildOrderConfirmationRows(draft({ tpSlEnabled: true }));
-		const disabled = buildOrderConfirmationRows(draft({ tpSlEnabled: false, tpPrice: 110_000, slPrice: 90_000 }));
+		const withBoth = buildOrderConfirmationRows(
+			draft({ tpSlEnabled: true, tpPrice: 110_000, slPrice: 90_000 }),
+			numberFormat,
+		);
+		const withNeither = buildOrderConfirmationRows(draft({ tpSlEnabled: true }), numberFormat);
+		const disabled = buildOrderConfirmationRows(
+			draft({ tpSlEnabled: false, tpPrice: 110_000, slPrice: 90_000 }),
+			numberFormat,
+		);
 
 		expect(byKey(withBoth, "takeProfit")?.value).toBe("$110,000");
 		expect(byKey(withBoth, "stopLoss")?.value).toBe("$90,000");
@@ -182,20 +208,27 @@ describe("buildOrderConfirmationRows", () => {
 	});
 
 	it("surfaces reduce-only only when the order carries the flag", () => {
-		expect(byKey(buildOrderConfirmationRows(draft({ reduceOnly: true })), "reduceOnly")?.value).toBe("Yes");
-		expect(byKey(buildOrderConfirmationRows(BASE_DRAFT), "reduceOnly")).toBeUndefined();
+		expect(byKey(buildOrderConfirmationRows(draft({ reduceOnly: true }), numberFormat), "reduceOnly")?.value).toBe(
+			"Yes",
+		);
+		expect(byKey(buildOrderConfirmationRows(BASE_DRAFT, numberFormat), "reduceOnly")).toBeUndefined();
 	});
 
 	it("drops the liquidation row on spot markets", () => {
-		const rows = buildOrderConfirmationRows(draft({ marketKind: "spot", isLeveraged: false, leverage: null }));
+		const rows = buildOrderConfirmationRows(
+			draft({ marketKind: "spot", isLeveraged: false, leverage: null }),
+			numberFormat,
+		);
 
 		expect(rows.map((row) => row.key)).toEqual(["action", "size", "price"]);
 		expect(byKey(rows, "action")?.value).toBe("Buy");
 	});
 
 	it("flags a liquidation price that sits too close to the entry", () => {
-		expect(byKey(buildOrderConfirmationRows(draft({ liqWarning: true })), "liqPrice")?.tone).toBe("down");
-		expect(byKey(buildOrderConfirmationRows(draft({ liqWarning: true, liqPrice: null })), "liqPrice")).toEqual({
+		expect(byKey(buildOrderConfirmationRows(draft({ liqWarning: true }), numberFormat), "liqPrice")?.tone).toBe("down");
+		expect(
+			byKey(buildOrderConfirmationRows(draft({ liqWarning: true, liqPrice: null }), numberFormat), "liqPrice"),
+		).toEqual({
 			key: "liqPrice",
 			label: "Estimated Liquidation Price",
 			value: FALLBACK_VALUE_PLACEHOLDER,
@@ -206,6 +239,7 @@ describe("buildOrderConfirmationRows", () => {
 	it("shows the price the exchange will receive, not the display rounding", () => {
 		const rows = buildOrderConfirmationRows(
 			draft({ orderType: "limit", szDecimals: 3, limitPrice: 60_123.456, tpSlEnabled: true, tpPrice: 61_234.567 }),
+			numberFormat,
 		);
 
 		expect(byKey(rows, "price")?.value).toBe("$60,123");
@@ -213,13 +247,13 @@ describe("buildOrderConfirmationRows", () => {
 	});
 
 	it("shows the size the exchange will receive, rounded down to szDecimals", () => {
-		const rows = buildOrderConfirmationRows(draft({ sizeValue: 0.11119, orderValue: 0 }));
+		const rows = buildOrderConfirmationRows(draft({ sizeValue: 0.11119, orderValue: 0 }), numberFormat);
 
 		expect(byKey(rows, "size")?.value).toBe("0.1111 BTC");
 	});
 
 	it("falls back to a placeholder for an empty size", () => {
-		const rows = buildOrderConfirmationRows(draft({ sizeValue: 0, orderValue: 0 }));
+		const rows = buildOrderConfirmationRows(draft({ sizeValue: 0, orderValue: 0 }), numberFormat);
 
 		expect(byKey(rows, "size")?.value).toBe(FALLBACK_VALUE_PLACEHOLDER);
 	});

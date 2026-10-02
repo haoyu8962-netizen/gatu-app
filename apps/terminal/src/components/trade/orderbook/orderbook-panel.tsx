@@ -7,9 +7,8 @@ import { getBaseQuoteFromPairName } from "@/domain/market";
 import { useOrderbookHover } from "@/hooks/trade/use-orderbook-hover";
 import { useOrderbookLevelPulses } from "@/hooks/trade/use-orderbook-level-pulses";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
-import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
+import { szDecimalsToPriceDecimals, useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumber } from "@/lib/trade/numbers";
 import {
@@ -32,7 +31,7 @@ import { TradesPanel } from "./trades-panel";
 import { useOrderbookRows } from "./use-orderbook-rows";
 
 export function OrderbookPanel() {
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const { t } = useLingui();
 	const { env } = useHyperliquid();
 	useRenderCommitTrack("orderbook");

@@ -53,15 +53,7 @@ import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { type ActionFailure, formatActionFailure } from "@/lib/errors/action-error";
-import {
-	formatDateTime,
-	formatNumber,
-	formatPercent,
-	formatPrice,
-	formatQuoteAmount,
-	formatToken,
-	formatUSD,
-} from "@/lib/format";
+import { formatDateTime, type NumberFormatters, useNumberFormat } from "@/lib/format";
 import {
 	type ExchangeParams,
 	type SubscriptionStatus,
@@ -71,7 +63,6 @@ import {
 	useMarketsInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	isClosePositionOrder,
 	isMarketTriggerOrder,
@@ -221,10 +212,14 @@ function getOrderEditTriggerId(oid: number, field: OpenOrderModifyField): string
 	return `order-edit-${oid}-${field}`;
 }
 
-function getCurrentOrderTriggerConditionLabel(condition: string, triggerPx: string): string | null {
+function getCurrentOrderTriggerConditionLabel(
+	condition: string,
+	triggerPx: string,
+	numberFormat: NumberFormatters,
+): string | null {
 	const operator = getToolbarTriggerConditionOperator(condition);
 	if (!operator) return null;
-	return `${operator} ${formatNumber(triggerPx)}`;
+	return `${operator} ${numberFormat.formatNumber(triggerPx)}`;
 }
 
 interface Props {
@@ -1414,8 +1409,10 @@ function OrderRow({
 	onCancelEdit,
 	onConfirmEdit,
 }: OrderRowProps) {
-	useNumberFormatRevision();
-	const { t } = useLingui();
+	const numberFormat = useNumberFormat();
+	const { formatPercent, formatPrice, formatQuoteAmount, formatToken, formatUSD } = numberFormat;
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	const { getOrderSideLabel, getOrderTypeLabel, getTriggerConditionLabel } = useOrderDisplayLabels();
 	const orderTypeLabel = getOrderTypeLabel(order.orderType);
 	const isBuy = order.side === "B";
@@ -1435,7 +1432,7 @@ function OrderRow({
 	const isNearMark = isToolbarOrderNearMark(metrics.markDistanceRatio);
 	const triggerConditionLabel =
 		order.isTrigger && order.triggerCondition
-			? (getCurrentOrderTriggerConditionLabel(order.triggerCondition, order.triggerPx) ??
+			? (getCurrentOrderTriggerConditionLabel(order.triggerCondition, order.triggerPx, numberFormat) ??
 				getTriggerConditionLabel(order.triggerCondition))
 			: FALLBACK_VALUE_PLACEHOLDER;
 	const takeProfitPx = order.children.find(isTakeProfitOrder)?.triggerPx;
@@ -1478,7 +1475,7 @@ function OrderRow({
 						disabled={isCancelling}
 					/>
 				</span>
-				<span>{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}</span>
+				<span>{formatDateTime(order.timestamp, { locale, dateStyle: "short", timeStyle: "short" })}</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass)}>
 				<Tooltip content={orderTypeLabel}>

@@ -48,7 +48,7 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatTransferError } from "@/lib/errors/format";
-import { formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
+import { type NumberFormatters, useNumberFormat } from "@/lib/format";
 import {
 	getMarketCapabilities,
 	type UnifiedMarketInfo,
@@ -58,7 +58,6 @@ import {
 	useUserPositions,
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
@@ -149,7 +148,8 @@ function warmMobileTradeSettingsModals() {
 }
 
 export function MobileTradeView({ active = true, className, embedded, sizeMode, onSizeModeChange }: Props) {
-	useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
+	const { formatPrice, formatSlippageBps, formatToken, formatUSD } = numberFormat;
 	const { t } = useLingui();
 	const validationErrorId = useId();
 	const { address, isConnected } = useWalletSession();
@@ -1073,7 +1073,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							{capabilities.isLeveraged && (
 								<MobileSummaryRowView
 									label={t`Liq. Price`}
-									value={formatSummaryPrice(liqPrice, market?.szDecimals, marketType)}
+									value={formatSummaryPrice(liqPrice, market?.szDecimals, marketType, numberFormat)}
 									valueClass={getLiquidationPriceClassName(liqPrice, liqWarning)}
 									compact={embedded}
 								/>
@@ -1183,8 +1183,13 @@ function getLiquidationPriceClassName(liqPrice: number | null, liqWarning: boole
 	return undefined;
 }
 
-function formatSummaryPrice(value: number | null, szDecimals: number | undefined, marketType: "perp" | "spot"): string {
-	return isPositive(value) ? formatPrice(value, { szDecimals, marketType }) : FALLBACK_VALUE_PLACEHOLDER;
+function formatSummaryPrice(
+	value: number | null,
+	szDecimals: number | undefined,
+	marketType: "perp" | "spot",
+	numberFormat: NumberFormatters,
+): string {
+	return isPositive(value) ? numberFormat.formatPrice(value, { szDecimals, marketType }) : FALLBACK_VALUE_PLACEHOLDER;
 }
 
 interface MobileButtonContentInput {

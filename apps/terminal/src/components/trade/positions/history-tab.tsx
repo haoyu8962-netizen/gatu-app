@@ -12,9 +12,8 @@ import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -39,7 +38,7 @@ const historyFooterButtonClass =
 
 export function HistoryTab() {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
 	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
 	const { address } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();

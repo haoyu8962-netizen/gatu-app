@@ -4,9 +4,8 @@ import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { getTwapRuntimeMinutes } from "@/domain/trade/twap-details";
 import { cn } from "@/lib/cn";
-import { formatDuration, formatPrice } from "@/lib/format";
+import { formatDuration, useNumberFormat } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isPositive } from "@/lib/trade/numbers";
 import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
 import type { Side } from "@/lib/trade/types";
@@ -34,7 +33,7 @@ export function TwapOrderSummary({
 	compact,
 	marketKind,
 }: Props) {
-	useNumberFormatRevision();
+	const { formatPrice } = useNumberFormat();
 	const { t } = useLingui();
 	const minutes = getTwapRuntimeMinutes(twapMinutesNum);
 	const stopPriceLabel = getTwapStopPriceLabel(side, { buy: t`Max Price`, sell: t`Min Price` });

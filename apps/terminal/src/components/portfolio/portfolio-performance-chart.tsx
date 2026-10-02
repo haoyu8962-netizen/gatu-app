@@ -4,8 +4,7 @@ import Big from "big.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PortfolioPeriod, PortfolioSnapshot } from "@/domain/portfolio";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatTime, formatUSD } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { formatDateTime, formatTime, type NumberFormatters, useNumberFormat } from "@/lib/format";
 
 type ChartMetric = "accountValue" | "pnl" | "perpsPnl";
 type History = PortfolioSnapshot["pnlHistory"];
@@ -101,7 +100,7 @@ export function PortfolioPerformanceChart({
 	onRetry,
 	period,
 }: Props) {
-	const numberFormatRevision = useNumberFormatRevision();
+	const numberFormat = useNumberFormat();
 	const { i18n, t } = useLingui();
 	const locale = i18n.locale;
 	const plotRef = useRef<HTMLDivElement>(null);
@@ -120,15 +119,15 @@ export function PortfolioPerformanceChart({
 		setInteractionStore({ history, metric, period, value: null });
 	}
 	const chart = useMemo(
-		() => buildChart(history, period, chartSize, locale, numberFormatRevision),
-		[chartSize, history, locale, numberFormatRevision, period],
+		() => buildChart(history, period, chartSize, locale, numberFormat),
+		[chartSize, history, locale, numberFormat, period],
 	);
 	const activeInteraction = interactionContextIsCurrent ? interactionStore.value : null;
 	const activePoint = activeInteraction ? chart.points[activeInteraction.index] : undefined;
 	const latestValue = chart.points.at(-1)?.rawValue ?? null;
-	const formattedLatestValue = formatLatestValue(latestValue, metric);
+	const formattedLatestValue = formatLatestValue(latestValue, metric, numberFormat);
 	const latestValueTone = metric === "accountValue" ? "text-fg" : getMarketToneClass(latestValue);
-	const activeLabel = activePoint ? formatPointLabel(activePoint, locale, numberFormatRevision) : null;
+	const activeLabel = activePoint ? formatPointLabel(activePoint, locale, numberFormat) : null;
 	const hasRenderableChart = !isLoading && !isUnavailable && chart.points.length > 0;
 	const tooltipAnchor =
 		activeInteraction?.source === "pointer"
@@ -478,16 +477,16 @@ function selectHistory(
 	return pnlHistory;
 }
 
-function formatLatestValue(latestValue: string | null, metric: ChartMetric): string {
-	return formatUSD(latestValue ?? "0", {
+function formatLatestValue(latestValue: string | null, metric: ChartMetric, numberFormat: NumberFormatters): string {
+	return numberFormat.formatUSD(latestValue ?? "0", {
 		compact: false,
 		signDisplay: metric === "accountValue" ? "auto" : "exceptZero",
 	});
 }
 
-function formatPointLabel(point: ChartPoint, locale: string, _numberFormatRevision: number): string {
+function formatPointLabel(point: ChartPoint, locale: string, numberFormat: NumberFormatters): string {
 	const date = formatDateTime(point.timestamp, { locale, year: "numeric", month: "long", day: "numeric" });
-	const value = formatUSD(point.rawValue, {
+	const value = numberFormat.formatUSD(point.rawValue, {
 		compact: false,
 		signDisplay: "exceptZero",
 	});
@@ -520,7 +519,7 @@ function buildChart(
 	period: PortfolioPeriod | undefined,
 	size: ChartSize,
 	locale: string,
-	_numberFormatRevision: number,
+	numberFormat: NumberFormatters,
 ): ChartModel {
 	const points = parsePoints(history);
 	const plotLeft = PLOT_PADDING_LEFT;
@@ -541,6 +540,7 @@ function buildChart(
 		points.map((point) => point.value),
 		plotTop,
 		plotBottom,
+		numberFormat,
 	);
 	const chartPoints = points.map((point) => ({ ...point, x: toX(point.timestamp), y: yScale.toY(point.value) }));
 	const path =
@@ -579,7 +579,7 @@ function parsePoints(history: History): ParsedPoint[] {
 		.sort((first, second) => first.timestamp - second.timestamp || first.sourceIndex - second.sourceIndex);
 }
 
-function createYScale(values: number[], plotTop: number, plotBottom: number) {
+function createYScale(values: number[], plotTop: number, plotBottom: number, numberFormat: NumberFormatters) {
 	const rawMinimum = Math.min(...values, 0);
 	const rawMaximum = Math.max(...values, 0);
 	let minimum = rawMinimum;
@@ -612,7 +612,7 @@ function createYScale(values: number[], plotTop: number, plotBottom: number) {
 		toY,
 		ticks: tickValues.map((value) => ({
 			value,
-			label: formatUSD(value, {
+			label: numberFormat.formatUSD(value, {
 				compact: true,
 				minimumFractionDigits: 0,
 				maximumFractionDigits: decimals,

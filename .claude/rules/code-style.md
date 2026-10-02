@@ -52,6 +52,8 @@ Only create helpers when logic is reused, complex, or significantly improves rea
 
 Pass API values directly to formatters - they accept `string | number | null | undefined`:
 
+In components and hooks, take the number formatters from `useNumberFormat()` (`const { formatUSD } = useNumberFormat()`) and pass them to presentation helpers; never reference the module-level number formatters anywhere in a component or hook, including its event handlers and effects (ADR 0036). New render-time date formatting passes `locale`.
+
 
 ## Icons
 

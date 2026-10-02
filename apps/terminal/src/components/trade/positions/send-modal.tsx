@@ -31,10 +31,9 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { STATUS_GLYPH_UNKNOWN } from "@/lib/brand/status-glyph.gen";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
-import { formatNumber } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { type ExchangeParams, useExchange, useHyperliquid } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	FundsActionFeedbackCause,
 	formatFundsActionFeedback,
@@ -91,7 +90,7 @@ interface BodyProps {
 
 function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }: BodyProps) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const submissionSequenceRef = useRef(0);
 	const submissionIdentityRef = useRef<object | null>(null);
 	const submissionRef = useRef<SendSubmission | null>(null);

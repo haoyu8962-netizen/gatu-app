@@ -1,6 +1,5 @@
-import { Trans } from "@lingui/react/macro";
-import { formatDateTime, formatUSD } from "@/lib/format";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { formatDateTime, useNumberFormat } from "@/lib/format";
 import type { ReferralRewardHistoryItem } from "@/lib/trade/referral";
 
 interface Props {
@@ -8,7 +7,9 @@ interface Props {
 }
 
 export function ReferralLegacyHistory({ rows }: Props) {
-	useNumberFormatRevision();
+	const { formatUSD } = useNumberFormat();
+	const { i18n } = useLingui();
+	const locale = i18n.locale;
 	return (
 		<div className="divide-y divide-stroke-weak">
 			{rows.map((row) => (
@@ -20,7 +21,7 @@ export function ReferralLegacyHistory({ rows }: Props) {
 						<p className="text-2xs text-fg-muted">
 							<Trans>Time</Trans>
 						</p>
-						<p className="mt-0.5 text-xs text-fg min-[1001px]:text-2sm">{formatDateTime(row.time)}</p>
+						<p className="mt-0.5 text-xs text-fg min-[1001px]:text-2sm">{formatDateTime(row.time, { locale })}</p>
 					</div>
 					<div>
 						<p className="text-2xs text-fg-muted">

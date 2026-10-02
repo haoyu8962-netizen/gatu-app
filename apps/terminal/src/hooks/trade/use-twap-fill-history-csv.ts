@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { buildCsvRows, downloadCsv } from "@/lib/csv";
-import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { getInfoClient, useMarkets } from "@/lib/hyperliquid";
 import { getNetwork } from "@/lib/network";
 import {
@@ -21,6 +21,7 @@ interface TwapFillHistoryCsvResult {
 }
 
 export function useTwapFillHistoryCsv(): TwapFillHistoryCsvResult {
+	const { formatNumber, formatToken, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const markets = useMarkets();
 	const { isExporting, run } = useHistoryExportRunner();

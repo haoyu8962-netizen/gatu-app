@@ -26,7 +26,7 @@ Sairn 与官方的差异：页签条对所有市场保持固定高度（现货�
 - [TradingView 生命周期](runtime-guardrails.md#4-tradingview-lifecycle)：切换页签不得重建 widget；只切换 `active`，主题、语言、数字格式的重建路径不变。
 - [移动端运行时布局](runtime-guardrails.md#5-mobile-runtime-layout)：隐藏但保持挂载的视图不得继续昂贵的订阅或请求。
 - [被动数据展示](mobile-data-presentation.md)：加载与失败不显示文字，只允许中性「重试」；空态只来自完整成功的快照。桌面同样适用（受约束的入口一节）。
-- [数字格式](number-format-setting.md)：百分比经 `formatPercent`（输入是比例，`0.0000125` 显示为 `0.0013%`），日期经 `formatDateTime`；组件订阅 `useNumberFormatRevision()`。
+- [数字格式](number-format-setting.md)：百分比经 `formatPercent`（输入是比例，`0.0000125` 显示为 `0.0013%`），日期经 `formatDateTime`；组件从 `useNumberFormat()` 取格式化函数（规则 9）。
 - [启动渲染](adr/0010-blank-until-ready-startup.md)：首屏不新增惰性块；视图与区间不持久化，否则 Funding 代码会变成首屏负担。
 - 业务计算放在 `domain/` 与 `lib/`，费率用 Big.js 与协议字符串；只有像素坐标转成 `number`。
 - 桌面网格几何、`DESKTOP_GRID_STORAGE_KEY` 与测量不变（[桌面网格](desktop-grid-layout.md)）。
@@ -137,7 +137,7 @@ hook 只为空快照建一个到期时钟（`useSyncExternalStore`）：创建�
 
 - 百分比全部经 `formatPercent`，跟随数字格式设置：坐标轴刻度 `signDisplay: "auto"`；提示框与读屏摘要为 4 位小数、`signDisplay: "exceptZero"`（如 `+0.0100%`，德式格式为 `+0,0100%`）。
 - 时间经 `formatDateTime`，跟随界面语言并固定拉丁数字：1h 与 8h 的提示框为「月 日 时:分」（`hourCycle: "h23"`，本地时区）；D 区间的桶是 UTC 日，提示框与横轴日期按 UTC 显示「年 月 日」，避免西半球用户看到前一天。横轴刻度为「月/日」，相邻相同标签合并。
-- 标签由 `lib/chart/funding-history-chart-labels.ts` 生成，调用方把 `i18n.locale` 与 `useNumberFormatRevision()` 的值作为参数传入；React Compiler 按参数决定是否重算，格式化函数读全局状态这一点它看不到。`number-format-reactivity-contract` 登记 `FundingHistoryChart` 为该 helper 的订阅方。
+- 标签由 `lib/chart/funding-history-chart-labels.ts` 生成，调用方把 `i18n.locale` 与 `useNumberFormat()` 返回的格式化函数作为参数传入，日期用传入的语言，百分比用传入的函数；React Compiler 按参数决定是否重算（[ADR 0036](adr/0036-render-time-number-formatters.md)）。
 - 页签名复用 `MARKET_HEADER_LABELS.funding`（中文「资金费率」）与既有的 `Chart`、`Retry`、`Loading...`；新文案在六个语言目录都给出译文。
 
 ## 备选方案与代价

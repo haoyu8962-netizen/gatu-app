@@ -32,9 +32,8 @@ import { createClientOrderId, isAmbiguousExchangeRequestError } from "@/domain/t
 import { useLingeringValue } from "@/hooks/use-lingering-value";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { formatLiquidationPrice, formatNumber, formatUSD } from "@/lib/format";
+import { useNumberFormat } from "@/lib/format";
 import { useExchange, useHyperliquid, useMarkets, useUserPositions } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import {
 	getOrderAssetReservationState,
@@ -97,7 +96,7 @@ function isConfirmedDefaultExchangeResponse(response: unknown): boolean {
 
 function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChange }: BodyProps) {
 	const { t } = useLingui();
-	useNumberFormatRevision();
+	const { formatLiquidationPrice, formatNumber, formatUSD } = useNumberFormat();
 	const [mode, setMode] = useState<AdjustmentMode>("amount");
 	const [direction, setDirection] = useState<IsolatedMarginDirection>("add");
 	const [amountInput, setAmountInput] = useState("");

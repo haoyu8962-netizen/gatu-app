@@ -10,9 +10,8 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useTwapCancel } from "@/hooks/trade/use-twap-cancel";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatClockDuration, formatNumber, formatPercent, formatPrice } from "@/lib/format";
+import { formatClockDuration, useNumberFormat } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { MobileTwapFillHistoryList } from "./mobile-twap-fill-history-list";
 import { MobileTwapHistoryList } from "./mobile-twap-history-list";
@@ -24,7 +23,7 @@ interface Props {
 }
 
 export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
-	useNumberFormatRevision();
+	const { formatNumber, formatPercent, formatPrice } = useNumberFormat();
 	const { t } = useLingui();
 	const [subview, setSubview] = useState<TwapSubview>("current");
 	const { address, isConnected } = useWalletSession();

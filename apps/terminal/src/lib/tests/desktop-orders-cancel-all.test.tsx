@@ -8,6 +8,7 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrdersTab } from "@/components/trade/positions/orders-tab";
+import { formatDateTime } from "@/lib/format";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import {
 	getOrderQueueItem,
@@ -371,6 +372,20 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(mocks.getOrderSideLabel).toHaveBeenCalledWith("B", true);
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).not.toBeNull();
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).toBeNull();
+	});
+
+	it("rewrites the order time in the active language without remounting the row", () => {
+		const timeIn = (locale: string) =>
+			formatDateTime(1_786_000_000_000, { locale, dateStyle: "short", timeStyle: "short" });
+		act(() => root.render(<ReviewedOrders />));
+		const row = container.querySelector("tbody tr");
+		expect(row?.querySelector("td")?.textContent).toContain(timeIn("en"));
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+
+		expect(container.querySelector("tbody tr")).toBe(row);
+		expect(timeIn("zh")).not.toBe(timeIn("en"));
+		expect(row?.querySelector("td")?.textContent).toContain(timeIn("zh"));
 	});
 
 	it("shows edit controls only for fields supported by the order capability", () => {

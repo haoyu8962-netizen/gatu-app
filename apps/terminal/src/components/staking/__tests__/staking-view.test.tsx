@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { shortenAddress } from "@/lib/format";
+import { formatDateTime, shortenAddress } from "@/lib/format";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import type { StakingValidatorView } from "../domain/staking";
 import { StakingView, type StakingViewProps } from "../staking-view";
@@ -147,6 +148,7 @@ describe("StakingView", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
 		vi.restoreAllMocks();
 		toastMocks.error.mockReset();
 		toastMocks.success.mockReset();
@@ -295,6 +297,23 @@ describe("StakingView", () => {
 		expect(container.textContent).toContain("Delegation");
 		expect(container.textContent).not.toContain(ACTIVE);
 	});
+
+	it.each(["Staking rewards", "Staking actions"])(
+		"rewrites the %s times in the active language without remounting the table",
+		(tabLabel) => {
+			act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
+			act(() => root.render(<StakingView {...props()} />));
+			act(() => button(container, tabLabel).click());
+			const table = activeTableScrollRegion(container);
+			expect(container.textContent).toContain(formatDateTime(1_700_000_000_000, { locale: "en" }));
+
+			act(() => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+
+			expect(activeTableScrollRegion(container)).toBe(table);
+			expect(container.textContent).toContain(formatDateTime(1_700_000_000_000, { locale: "zh" }));
+			expect(container.textContent).not.toContain(formatDateTime(1_700_000_000_000, { locale: "en" }));
+		},
+	);
 
 	it("keeps undelegation and the Mainnet Spot transfer as separate history semantics", () => {
 		act(() => root.render(<StakingView {...props()} />));

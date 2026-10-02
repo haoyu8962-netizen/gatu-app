@@ -12,9 +12,8 @@ import { useUserFunding } from "@/hooks/trade/use-user-funding";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
-import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	type FundingHistorySideFilter,
 	getFundingHistorySide,
@@ -69,7 +68,7 @@ function MobileFundingTabContent({
 	isConnected,
 	scrollMode = "contained",
 }: MobileFundingTabContentProps) {
-	useNumberFormatRevision();
+	const { formatPercent, formatToken, formatUSD } = useNumberFormat();
 	const { t } = useLingui();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();

@@ -1,7 +1,7 @@
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN, FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { LeveragePositionLimit } from "@/domain/trade/order/liquidation";
-import { formatQuoteAmount, formatUSD } from "@/lib/format";
+import type { NumberFormatters } from "@/lib/format";
 import { toBig } from "@/lib/trade/numbers";
 
 interface LeveragePositionLimitDisplayInput {
@@ -22,7 +22,7 @@ interface LeveragePositionLimitDisplayInput {
  */
 export function formatLeveragePositionLimit(
 	{ limit, quoteSymbol, noTierLimitLabel }: LeveragePositionLimitDisplayInput,
-	_numberFormatRevision: number,
+	numberFormat: NumberFormatters,
 ): string {
 	if (limit.status === "unlimited") return noTierLimitLabel;
 	const symbol = quoteSymbol?.trim();
@@ -33,6 +33,6 @@ export function formatLeveragePositionLimit(
 	if (truncatedNotional.gt(Number.MAX_SAFE_INTEGER)) return FALLBACK_VALUE_PLACEHOLDER;
 
 	const displayedNotional = truncatedNotional.toFixed();
-	if (symbol === DEFAULT_QUOTE_TOKEN) return formatUSD(displayedNotional, { compact: false, decimals: 0 });
-	return formatQuoteAmount(displayedNotional, symbol, { compact: false, decimals: 0 });
+	if (symbol === DEFAULT_QUOTE_TOKEN) return numberFormat.formatUSD(displayedNotional, { compact: false, decimals: 0 });
+	return numberFormat.formatQuoteAmount(displayedNotional, symbol, { compact: false, decimals: 0 });
 }

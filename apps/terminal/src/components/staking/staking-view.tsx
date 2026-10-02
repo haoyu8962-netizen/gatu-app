@@ -490,7 +490,8 @@ function ValidatorContent({
 	onRetry: () => void;
 	onOpenAction: (request: StakingActionRequest) => void;
 }) {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	if (publicState === "loading") return <TableSkeleton />;
 	if (publicState === "error") {
 		return (
@@ -570,7 +571,7 @@ function ValidatorContent({
 								<bdi dir="ltr">{formatStakingAmount(validator.delegatedAmount)} HYPE</bdi>
 								{validator.lockedUntilTimestamp && validator.lockedUntilTimestamp > Date.now() ? (
 									<span className="mt-0.5 block text-2xs text-warning">
-										<Trans>Locked until {formatDateTime(validator.lockedUntilTimestamp)}</Trans>
+										<Trans>Locked until {formatDateTime(validator.lockedUntilTimestamp, { locale })}</Trans>
 									</span>
 								) : null}
 							</TableCell>
@@ -637,7 +638,8 @@ function RewardsContent({
 	rewards: NonNullable<StakingController["account"]>["rewards"] | undefined;
 	onRetry: () => void;
 }) {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	if (accountState === "disconnected") {
 		return (
 			<EmptyState
@@ -684,7 +686,7 @@ function RewardsContent({
 				{rewards.map((reward) => (
 					<TableRow key={`${reward.time}:${reward.source}:${reward.totalAmount}`}>
 						<TableCell size="dense" className="text-fg">
-							{formatDateTime(reward.time)}
+							{formatDateTime(reward.time, { locale })}
 						</TableCell>
 						<TableCell size="dense">
 							{reward.source === "delegation" ? <Trans>Delegation</Trans> : <Trans>Validator commission</Trans>}
@@ -712,7 +714,8 @@ function HistoryContent({
 	isTestnet: boolean;
 	onRetry: () => void;
 }) {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const locale = i18n.locale;
 	if (accountState === "disconnected") {
 		return (
 			<EmptyState
@@ -762,7 +765,7 @@ function HistoryContent({
 				{history.map((entry) => (
 					<TableRow key={`${entry.time}:${entry.hash}:${entry.action.type}`}>
 						<TableCell size="dense" className="text-fg">
-							{formatDateTime(entry.time)}
+							{formatDateTime(entry.time, { locale })}
 						</TableCell>
 						<TableCell size="dense">{getHistoryActionLabel(entry.action, validatorNames)}</TableCell>
 						<TableCell size="dense" className="text-right text-fg tabular-nums">

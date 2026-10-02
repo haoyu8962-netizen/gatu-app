@@ -14,7 +14,7 @@
 - 选项 `numberFormatLocales`（[config/i18n.ts](../apps/terminal/src/config/i18n.ts)）：`en-US` `1,234.56`、`de-DE` `1.234,56`、`fr-FR` `1 234,56`，默认 `en-US`；`number-format-settings.test.ts` 钉住"设计给的正好三种"。
 - 持久化在全局设置 `global-settings-v2` 的 `numberFormatLocale` 字段，经 `createValidatedStorage` 校验，`normalizeNumberFormatLocale` 迁移旧的"跟随语言"值（`auto`、`zh-CN` 等）。
 - 格式化在 [lib/format.ts](../apps/terminal/src/lib/format.ts)：所有数字走 `formatNumberParts` —— 用 `en-US` 的 `formatToParts` 再按设置替换 `group`/`decimal` 两类 part，因此数字永远是拉丁数字、只有分隔符变化。
-- 响应式：store 订阅里 `numberFormatLocale` 变化 → `notifyNumberFormatChange()`；渲染期格式化数字的组件调用 `useNumberFormatRevision()`，`number-format-reactivity-contract.test.ts` 用扫描保证每个这样的组件都订阅了。
+- 响应式：store 订阅里 `numberFormatLocale` 变化 → `notifyNumberFormatChange()`；渲染期格式化数字的组件调用 `useNumberFormatRevision()`，`number-format-reactivity-contract.test.ts` 用扫描保证每个这样的组件都订阅了。（2026-10-02 更正：只订阅不够，React Compiler 按参数缓存格式化结果；现行做法是组件从 `useNumberFormat()` 取格式化函数，见 [ADR 0036](adr/0036-render-time-number-formatters.md)。）
 - UI：[language-switcher.tsx](../apps/terminal/src/components/trade/header/language-switcher.tsx) 的下拉里「数字格式」三项 + 语言列表 + Reset（先 `dynamicActivate(defaultLocale)` 再 `setNumberFormatLocale(default)`）。
 
 所以对齐点 1 的"分离"本身已经做完；剩下的是没有覆盖到的面。

@@ -8,8 +8,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderbookHoverTooltip } from "@/components/trade/orderbook/orderbook-hover-tooltip";
 import { OrderbookRow } from "@/components/trade/orderbook/orderbook-row";
 import { useOrderbookHover } from "@/hooks/trade/use-orderbook-hover";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
 import { createI18nRoot } from "./harness/react";
+
+const numberFormatSetting = vi.hoisted(() => ({ locale: "en-US" }));
+
+vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/stores/use-global-settings-store")>()),
+	getResolvedFormatLocale: () => numberFormatSetting.locale,
+}));
 
 const reference = vi.hoisted(() => ({
 	midPx: "58.6" as string | null,
@@ -115,6 +123,7 @@ describe("compact orderbook cumulative tooltip", () => {
 
 	beforeEach(() => {
 		vi.useFakeTimers();
+		numberFormatSetting.locale = "en-US";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		reference.midPx = "58.6";
 		reference.markPriceStatus = "success";
@@ -189,6 +198,24 @@ describe("compact orderbook cumulative tooltip", () => {
 		expect(row.getAttribute("aria-describedby")).toBe(
 			document.body.querySelector('[data-slot="orderbook-cumulative-tooltip"]')?.id,
 		);
+	});
+
+	it("rewrites the row figures in place when the number format changes", () => {
+		renderRow("bid", false);
+		const row = container.querySelector<HTMLButtonElement>("button");
+		const cells = () =>
+			Array.from(
+				row?.querySelectorAll(".orderbook-price-bid, .orderbook-value-text") ?? [],
+				(cell) => cell.textContent,
+			);
+		expect(cells()).toEqual(["58.625", "125.50", "310.25"]);
+
+		numberFormatSetting.locale = "de-DE";
+		act(() => notifyNumberFormatChange());
+
+		expect(container.querySelector("button")).toBe(row);
+		expect(cells()).toEqual(["58,625", "125,50", "310,25"]);
+		expect(row?.getAttribute("aria-label")).toContain("Price 58,625");
 	});
 
 	it("uses shared order book price colors for compact and standard rows", () => {

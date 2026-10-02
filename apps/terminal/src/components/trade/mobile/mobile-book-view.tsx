@@ -15,9 +15,8 @@ import { useOrderbookHover } from "@/hooks/trade/use-orderbook-hover";
 import { useOrderbookLevelPulses } from "@/hooks/trade/use-orderbook-level-pulses";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { cn } from "@/lib/cn";
-import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
+import { szDecimalsToPriceDecimals, useNumberFormat } from "@/lib/format";
 import { type SubParams, useHyperliquid, useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig, toNumber } from "@/lib/trade/numbers";
 import {
 	type BookLevel,
@@ -171,7 +170,7 @@ export function MobileBookView({
 	showOrderbookInQuote: controlledShowOrderbookInQuote,
 	view: viewProp,
 }: MobileBookViewProps) {
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const { t } = useLingui();
 	const { env } = useHyperliquid();
 	const [internalView, setView] = useState<View>("book");
@@ -509,7 +508,7 @@ export function CompactOrderbook({
 	quoteToken,
 	sizeToken,
 }: CompactOrderbookProps) {
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const { t } = useLingui();
 	const [height, orderbookRef] = useOrderbookHeight<HTMLFieldSetElement>();
 	const measuredLayout = getCompactOrderbookLayout(height, mode);
@@ -1073,7 +1072,7 @@ export function SplitOrderbookRow({
 	showInQuote,
 	szDecimals,
 }: SplitOrderbookRowProps) {
-	useNumberFormatRevision();
+	const { formatNumber } = useNumberFormat();
 	const { setSelectedPrice } = useOrderbookActions();
 	const isAsk = side === "ask";
 	const totalValue = showInQuote ? level.quoteTotal : level.total;

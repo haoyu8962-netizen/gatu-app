@@ -1,4 +1,4 @@
-import { formatPercent, formatQuoteAmount } from "@/lib/format";
+import type { NumberFormatters } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { isStopOrder, isTakeProfitOrder, type OpenOrder } from "@/lib/trade/open-orders";
@@ -38,6 +38,7 @@ interface BuildParams {
 	orders: readonly OpenOrder[];
 	positions: readonly Position[];
 	labels: TradingViewOverlayLabels;
+	numberFormat: NumberFormatters;
 }
 
 interface OverlayEntry {
@@ -68,6 +69,7 @@ export function buildTradingViewOverlayLines({
 	orders,
 	positions,
 	labels,
+	numberFormat,
 }: BuildParams) {
 	const lines: TradingViewOverlayLine[] = [];
 
@@ -104,7 +106,15 @@ export function buildTradingViewOverlayLines({
 		key: `position:${positionKey}`,
 		kind: "position",
 		price: entryPrice,
-		label: buildPositionLabel(side === "buy" ? labels.long : labels.short, position, size, pnl, quoteSymbol, labels),
+		label: buildPositionLabel(
+			side === "buy" ? labels.long : labels.short,
+			position,
+			size,
+			pnl,
+			quoteSymbol,
+			labels,
+			numberFormat,
+		),
 		tone: getPositionTone(pnl ?? toBig(position.returnOnEquity)),
 		side,
 	});
@@ -307,18 +317,19 @@ function buildPositionLabel(
 	pnl: ReturnType<typeof toBig>,
 	quoteSymbol: string,
 	labels: TradingViewOverlayLabels,
+	numberFormat: NumberFormatters,
 ): string {
 	const roe = toBig(position.returnOnEquity);
 	let performance = "";
 	if (pnl) {
-		const formattedPnl = formatQuoteAmount(pnl.toString(), quoteSymbol, {
+		const formattedPnl = numberFormat.formatQuoteAmount(pnl.toString(), quoteSymbol, {
 			decimals: 2,
 			signDisplay: "exceptZero",
 		});
-		const formattedRoe = roe ? ` (${formatPercent(roe.toString(), 1)})` : "";
+		const formattedRoe = roe ? ` (${numberFormat.formatPercent(roe.toString(), 1)})` : "";
 		performance = `${labels.pnl} ${formattedPnl}${formattedRoe}`;
 	} else if (roe) {
-		performance = `${labels.roe} ${formatPercent(roe.toString(), 1)}`;
+		performance = `${labels.roe} ${numberFormat.formatPercent(roe.toString(), 1)}`;
 	}
 
 	const quantity = size.abs().toString();

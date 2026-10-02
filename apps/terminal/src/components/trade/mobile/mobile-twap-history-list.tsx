@@ -6,9 +6,8 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useTwapHistory } from "@/hooks/trade/use-twap-history";
 import { cn } from "@/lib/cn";
-import { formatClockDuration, formatDateTimeShort, formatNumber, formatPrice } from "@/lib/format";
+import { formatClockDuration, formatDateTimeShort, useNumberFormat } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
-import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getTwapAverageFillPrice, getTwapHistoryDurationMs, getTwapHistoryTimeMs } from "@/lib/trade/order-history";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
@@ -19,7 +18,7 @@ interface Props {
 }
 
 export function MobileTwapHistoryList({ className, scrollMode = "contained" }: Props) {
-	useNumberFormatRevision();
+	const { formatNumber, formatPrice } = useNumberFormat();
 	const { t } = useLingui();
 	const { hasMore, history, isConnected, isRealtimeDegraded, loadMore, status } = useTwapHistory();
 	const { getTwapHistoryStatusLabel } = useOrderDisplayLabels();
