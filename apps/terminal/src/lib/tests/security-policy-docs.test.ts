@@ -63,7 +63,12 @@ describe("security policy documentation", () => {
 		expect(stripeSources(cspReportOnlyDirectives, "script-src")).toEqual(scripts);
 		expect(stripeSources(cspReportOnlyDirectives, "img-src")).toEqual(["https://*.stripe.com", "https://*.link.com"]);
 		for (const directive of ["script-src", "frame-src", "child-src", "connect-src"]) {
-			expect(cspDirectives[directive].split(" ")).not.toContain("https:");
+			for (const directives of [cspDirectives, cspReportOnlyDirectives]) {
+				const openSources = (directives[directive] ?? "")
+					.split(" ")
+					.filter((source) => /^(?:\*|[a-z][a-z0-9+.-]*:(?:\/\/\*)?)$/.test(source) && source !== "blob:");
+				expect(openSources, directive).toEqual([]);
+			}
 		}
 	});
 

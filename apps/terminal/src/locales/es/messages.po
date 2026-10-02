@@ -299,10 +299,6 @@ msgstr "Financiación 8 h"
 msgid "90 days"
 msgstr "90 días"
 
-#: src/lib/trade/privy-fiat-funding-feedback.ts
-msgid "A card purchase is already open. Finish or close it first."
-msgstr "Ya hay una compra con tarjeta abierta. Termínala o ciérrala primero."
-
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "A confirmation is shown before each market close."
 msgstr "Se muestra una confirmación antes de cada cierre a mercado."
@@ -792,6 +788,10 @@ msgstr "Una cuenta solo se excluye si tanto el valor de su cuenta es inferior a 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 msgstr "Un monedero API aprobado puede firmar acciones delegadas de L1, como colocar y cancelar órdenes o ajustar el apalancamiento y el modo de margen. La aprobación no se limita a acciones concretas. Las acciones exclusivas del monedero maestro, incluidos los retiros externos, siguen requiriendo el monedero maestro."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "An earlier card purchase is still open on this page. Reload the page, then try again."
+msgstr "Una compra con tarjeta anterior sigue abierta en esta página. Recarga la página e inténtalo de nuevo."
 
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/trade/position-submit-feedback.ts
@@ -11396,3 +11396,7 @@ msgstr "Tu transacción se está procesando"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "No se pudo verificar el saldo de tu bóveda. Los valores de la cuenta y el retiro siguen sin estar disponibles."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."
+msgstr "Tu sesión de billetera cambió, por lo que la compra con tarjeta no se abrió. Vuelve a conectar tu billetera e inténtalo de nuevo."

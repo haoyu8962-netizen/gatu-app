@@ -20,6 +20,7 @@ vi.mock("@privy-io/react-auth", async () => {
 	const { useCardFundingSession } = await import("./harness/card-funding-session");
 	return {
 		useFiatOnramp: () => ({ fund: testState.fund }),
+		useModalStatus: () => ({ isOpen: useCardFundingSession().privyWindowOpen }),
 		useWallets: () => ({ ready: true, wallets: useCardFundingSession().privyWallets }),
 	};
 });
@@ -516,7 +517,7 @@ describe("PrivyFiatFundingHost", () => {
 		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["submitted"]);
 	});
 
-	it("retranslates a shown notice in place, lets Sonner measure it again and keeps the time that was left", async () => {
+	it("retranslates a shown notice in place and lets Sonner measure it again without shortening its time", async () => {
 		await purchase({ resolve: { status: "confirmed" } });
 		await clock.timers();
 		const shown = toasts()[0];
@@ -537,12 +538,109 @@ describe("PrivyFiatFundingHost", () => {
 		if (!("jsx" in published) || !("jsx" in republished)) throw new Error("Expected custom notice content");
 		expect(republished.id).toBe(published.id);
 		expect(republished.jsx).not.toBe(published.jsx);
+		expect(republished.duration).toBe(published.duration);
 		expect(toasts()[0]).toBe(shown);
-		await clock.timers(3_800);
+		await clock.timers(9_800);
 		expect(cards()).toHaveLength(1);
 		await clock.timers(300);
 		await clock.settle();
 		expect(toasts()).toHaveLength(0);
+	});
+
+	it("leaves the time Sonner paused for a hovered stack alone when the language changes", async () => {
+		await purchase({ resolve: { status: "confirmed" } });
+		await clock.timers(1_000);
+		const stack = container.querySelector("[data-sonner-toaster]");
+		if (!stack) throw new Error("Expected Sonner's toast list");
+
+		await act(async () => {
+			stack.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+		});
+		expect(toasts()[0].getAttribute("data-expanded")).toBe("true");
+		await clock.timers(30_000);
+		await act(async () => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+		await clock.timers();
+		expect(cards()).toHaveLength(1);
+
+		await act(async () => {
+			stack.dispatchEvent(new MouseEvent("mouseout", { bubbles: true }));
+		});
+		expect(toasts()[0].getAttribute("data-expanded")).toBe("false");
+		await clock.timers(8_800);
+		expect(cards()).toHaveLength(1);
+		await clock.timers(400);
+		await clock.settle();
+		expect(toasts()).toHaveLength(0);
+	});
+
+	it("frees the purchase entry when Privy's window closes, before Privy settles, and still reports the result", async () => {
+		const first = deferred<unknown>();
+		const second = deferred<unknown>();
+		testState.fund.mockImplementationOnce(() => first.promise).mockImplementationOnce(() => second.promise);
+		const closed = createAttempt();
+		await request(closed);
+		await switchSession({ privyWindowOpen: true });
+		expect(isCurrentPrivyFiatFundingAttempt(closed)).toBe(true);
+
+		await switchSession({ privyWindowOpen: false });
+		expect(isCurrentPrivyFiatFundingAttempt(closed)).toBe(false);
+		const next = createAttempt();
+		expect(await request(next)).toBe(true);
+		expect(testState.fund).toHaveBeenCalledTimes(2);
+
+		await act(async () => {
+			first.resolve({ status: "submitted" });
+			await first.promise;
+		});
+		await clock.timers();
+		expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["submitted"]);
+		expect(isCurrentPrivyFiatFundingAttempt(next)).toBe(true);
+
+		await act(async () => {
+			second.reject(new Error("User exited flow"));
+			await second.promise.catch(() => undefined);
+		});
+		expect(isCurrentPrivyFiatFundingAttempt(next)).toBe(false);
+		expect(cards()).toHaveLength(1);
+	});
+
+	it("keeps the purchase entry locked until Privy's window was open for this purchase", async () => {
+		await switchSession({ privyWindowOpen: true });
+		await switchSession({ privyWindowOpen: false });
+		const attempt = createAttempt();
+		await request(attempt);
+		await act(async () => i18n.loadAndActivate({ locale: "zh", messages: {} }));
+		await clock.timers(60_000);
+
+		expect(isCurrentPrivyFiatFundingAttempt(attempt)).toBe(true);
+		expect(await request(createAttempt())).toBe(false);
+	});
+
+	it("frees the entry when Privy closes its window without ending the flow, and asks for a reload when Privy still holds it", async () => {
+		testState.fund
+			.mockImplementationOnce(() => new Promise(() => undefined))
+			.mockImplementationOnce(() => Promise.reject(new Error("Existing fiat onramp flow in progress")));
+		const abandoned = createAttempt();
+		await request(abandoned);
+		await switchSession({ privyWindowOpen: true });
+		await switchSession({ privyWindowOpen: false });
+		await clock.timers();
+
+		expect(isCurrentPrivyFiatFundingAttempt(abandoned)).toBe(false);
+		expect(toasts()).toHaveLength(0);
+
+		const next = createAttempt();
+		expect(await request(next)).toBe(true);
+		await clock.timers();
+
+		expect(isCurrentPrivyFiatFundingAttempt(next)).toBe(false);
+		const [card] = cards();
+		expect(card.dataset.privyFiatFundingNotice).toBe("busy");
+		expect(card.querySelector("[data-status-glyph]")?.getAttribute("data-status-glyph")).toBe("warning");
+		expect(card.querySelector('[role="status"]')?.textContent).toBe(
+			"An earlier card purchase is still open on this page. Reload the page, then try again.",
+		);
+		expect(await request(createAttempt())).toBe(true);
 	});
 
 	it.each([
@@ -563,7 +661,10 @@ describe("PrivyFiatFundingHost", () => {
 
 			expect(testState.fund).not.toHaveBeenCalled();
 			expect(isCurrentPrivyFiatFundingAttempt(attempt)).toBe(false);
-			expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["unavailable"]);
+			expect(cards().map((card) => card.dataset.privyFiatFundingNotice)).toEqual(["wallet-changed"]);
+			expect(cards()[0].querySelector('[role="alert"]')?.textContent).toBe(
+				"Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again.",
+			);
 			expect(await request(createAttempt())).toBe(true);
 		},
 	);

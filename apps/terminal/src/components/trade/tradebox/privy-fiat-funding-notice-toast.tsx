@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { FUNDS_OUTCOME_TOAST_DURATION_MS, TOAST_DEFAULT_DURATION_MS } from "@/config/time";
+import { FUNDS_OUTCOME_TOAST_DURATION_MS } from "@/config/time";
 import {
 	isPersistentPrivyFiatFundingNotice,
 	type PrivyFiatFundingNotice,
@@ -25,10 +25,12 @@ export function retractPrivyFiatFundingNotice(presentation: PrivyFiatFundingNoti
  *
  * A notice that closes on its own only counts its time while it is the front toast, the one a
  * collapsed stack shows; behind other toasts it waits. The content reports when that changes and
- * when another language changed its size; publishing it again makes Sonner measure it again, with
- * the time that is left instead of a fresh full period. The content reports from an effect of the
- * commit that inserted it, in which Sonner's Toaster has dropped its subscription and not yet
- * renewed it, so publishing again waits for a microtask.
+ * when another language changed its size, and publishing it again makes Sonner measure it again.
+ * The duration passed to Sonner never changes while the notice counts, so Sonner keeps its own
+ * record of the time that is left, including what it paused for a hover or a hidden page: a
+ * language change can give a notice a fresh period but never a shorter one. The content reports
+ * from an effect of the commit that inserted it, in which Sonner's Toaster has dropped its
+ * subscription and not yet renewed it, so publishing again waits for a microtask.
  */
 export function showPrivyFiatFundingNotice(
 	notice: PrivyFiatFundingNotice,
@@ -36,7 +38,7 @@ export function showPrivyFiatFundingNotice(
 ): PrivyFiatFundingNoticePresentation {
 	const presentation = createPrivyFiatFundingNoticePresentation(notice);
 	const closesByItself = !isPersistentPrivyFiatFundingNotice(notice);
-	let closesAt: number | null = null;
+	let counting = false;
 	let shownLocale: string | null = null;
 
 	function close() {
@@ -47,12 +49,10 @@ export function showPrivyFiatFundingNotice(
 
 	function layOut(front: boolean, locale: string) {
 		if (!presentation.getSnapshot()) return;
-		const counting = front && closesByItself;
 		const resized = shownLocale !== null && shownLocale !== locale;
 		shownLocale = locale;
-		if (counting === (closesAt !== null) && !resized) return;
-		if (!counting) closesAt = null;
-		else if (closesAt === null) closesAt = Date.now() + FUNDS_OUTCOME_TOAST_DURATION_MS;
+		if (counting === (front && closesByItself) && !resized) return;
+		counting = front && closesByItself;
 		queueMicrotask(() => {
 			if (presentation.getSnapshot()) publish();
 		});
@@ -61,8 +61,7 @@ export function showPrivyFiatFundingNotice(
 	function publish() {
 		toast.custom(() => <PrivyFiatFundingNoticeCard presentation={presentation} onDismiss={close} onLayout={layOut} />, {
 			id: presentation.toastId,
-			duration:
-				closesAt === null ? Number.POSITIVE_INFINITY : Math.max(closesAt - Date.now(), TOAST_DEFAULT_DURATION_MS),
+			duration: counting ? FUNDS_OUTCOME_TOAST_DURATION_MS : Number.POSITIVE_INFINITY,
 			dismissible: true,
 			onDismiss: close,
 			onAutoClose: close,

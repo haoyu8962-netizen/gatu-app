@@ -298,6 +298,35 @@ describe("card funding outcomes", () => {
 		});
 	});
 
+	it("relies on the installed Privy SDK running that handler when its window closes", () => {
+		const screen = readPrivyFiatOnrampScreen();
+		const handler =
+			/const (\w+)=async\(\)=>\{let\{error:\w+,state:\w+,isLoading:\w+,onFailure:\w+,onSuccess:\w+\}/.exec(screen)?.[1];
+		expect(handler).toBeDefined();
+		expect(screen).toContain(`onClose:${handler},`);
+		expect(screen).toMatch(new RegExp(`\\w+\\.current=${handler};`));
+	});
+
+	it("relies on when the installed Privy SDK closes its window and settles fund()", () => {
+		const hook = readdirSync(PRIVY_DIST)
+			.filter((name) => name.startsWith("use-headless-crypto-deposit-") && name.endsWith(".mjs"))
+			.map((name) => readFileSync(resolve(PRIVY_DIST, name), "utf8"))
+			.join("\n");
+		const cleanup =
+			/(\w+)=async\(\)=>\{\w+\.current\?\.abort\(\),\w+\(null\),await \w+\(\{shouldCallAuthOnSuccess:!1,isSuccess:!0\}\),setTimeout\(\(\(\)=>\{\w+\.setState\(null\)\}\),0\)\}/.exec(
+				hook,
+			)?.[1];
+		expect(cleanup).toBeDefined();
+		expect(hook).toMatch(
+			new RegExp(
+				`onSuccess:async (\\w+)=>\\{await ${cleanup}\\(\\),\\w+\\(\\1\\)\\},onFailure:async (\\w+)=>\\{await ${cleanup}\\(\\),\\w+\\(\\2\\)\\}`,
+			),
+		);
+		expect(hook).toMatch(
+			/\("FiatOnrampScreen"\);let (\w+)=await \w+\(\{source:.*?\}\)\.catch\(\(\(\)=>\(\{quotes:\[\]\}\)\)\);if\(\w+\.getState\(\)\?\.flowId!==\w+\)return await \w+;/,
+		);
+	});
+
 	it.each([
 		[
 			"the Stripe checkout no longer counts as submitted",
@@ -404,7 +433,15 @@ describe("card funding attempt store", () => {
 
 describe("card funding feedback", () => {
 	const translate = (descriptor: MessageDescriptor) => descriptor.message ?? descriptor.id;
-	const KINDS: PrivyFiatFundingNoticeKind[] = ["busy", "confirmed", "failed", "submitted", "unavailable", "unknown"];
+	const KINDS: PrivyFiatFundingNoticeKind[] = [
+		"busy",
+		"confirmed",
+		"failed",
+		"submitted",
+		"unavailable",
+		"unknown",
+		"wallet-changed",
+	];
 	const SANDBOX_NOTE = "This was a sandbox test: no card was charged and no USDC will arrive.";
 
 	function createNotice(kind: PrivyFiatFundingNoticeKind, overrides: Partial<PrivyFiatFundingNotice> = {}) {
@@ -444,7 +481,7 @@ describe("card funding feedback", () => {
 	it("reports a definite failure as an error and a busy flow as a warning", () => {
 		expect(getPrivyFiatFundingFeedback(createNotice("busy"), translate)).toEqual({
 			tone: "warning",
-			title: "A card purchase is already open. Finish or close it first.",
+			title: "An earlier card purchase is still open on this page. Reload the page, then try again.",
 			descriptionLines: [],
 		});
 		expect(getPrivyFiatFundingNoticeGlyph(createNotice("busy"))).toBe(STATUS_GLYPH_WARNING);
@@ -457,11 +494,16 @@ describe("card funding feedback", () => {
 		expect(getPrivyFiatFundingNoticeGlyph(createNotice("confirmed"))).toBe(STATUS_GLYPH_SUCCESS);
 	});
 
-	it("reports a purchase window that could not load as an error without a provider hint", () => {
+	it("tells a purchase window that could not load apart from a wallet session that changed", () => {
 		for (const network of ["mainnet", "testnet"] as const) {
 			expect(getPrivyFiatFundingFeedback(createNotice("unavailable", { network }), translate)).toEqual({
 				tone: "error",
 				title: "Card purchase could not open. Check your connection and try again.",
+				descriptionLines: [],
+			});
+			expect(getPrivyFiatFundingFeedback(createNotice("wallet-changed", { network }), translate)).toEqual({
+				tone: "error",
+				title: "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again.",
 				descriptionLines: [],
 			});
 		}

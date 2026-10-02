@@ -299,10 +299,6 @@ msgstr "8小时资金费率"
 msgid "90 days"
 msgstr "90 天"
 
-#: src/lib/trade/privy-fiat-funding-feedback.ts
-msgid "A card purchase is already open. Finish or close it first."
-msgstr "已有一笔银行卡购买正在进行。请先完成或关闭它。"
-
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "A confirmation is shown before each market close."
 msgstr "每次市价平仓前都会显示确认。"
@@ -792,6 +788,10 @@ msgstr "仅当账户价值低于 $100,000 且历史总交易量低于 $10,000,00
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 msgstr "已授权的 API 钱包可签署委托的 L1 操作，例如下单、撤单，以及调整杠杆或保证金模式。授权无法按操作细分。包括外部提款在内的仅限主钱包操作仍需由主钱包执行。"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "An earlier card purchase is still open on this page. Reload the page, then try again."
+msgstr "此页面上还有一笔较早的银行卡购买没有结束。请刷新页面后重试。"
 
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/trade/position-submit-feedback.ts
@@ -11396,3 +11396,7 @@ msgstr "您的交易正在处理中"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "无法验证您的金库余额。账户价值和提款功能仍不可用。"
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."
+msgstr "钱包会话已变化，银行卡购买没有打开。请重新连接钱包后重试。"

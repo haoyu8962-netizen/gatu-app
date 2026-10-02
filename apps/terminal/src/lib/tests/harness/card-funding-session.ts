@@ -8,6 +8,7 @@ export interface CardFundingSession {
 	walletIntent: "ambiguous" | "embedded" | "external" | "unavailable";
 	embeddedWalletAddress: string | undefined;
 	privyWallets: readonly { address: string }[];
+	privyWindowOpen: boolean;
 }
 
 let session: CardFundingSession = {
@@ -18,6 +19,7 @@ let session: CardFundingSession = {
 	walletIntent: "unavailable",
 	embeddedWalletAddress: undefined,
 	privyWallets: [],
+	privyWindowOpen: false,
 };
 const listeners = new Set<() => void>();
 
@@ -44,6 +46,7 @@ export function signInCardFundingOwner(address: string, walletKind: "embedded" |
 		walletIntent: walletKind,
 		embeddedWalletAddress: walletKind === "embedded" ? address : undefined,
 		privyWallets: [{ address }],
+		privyWindowOpen: false,
 	});
 }
 

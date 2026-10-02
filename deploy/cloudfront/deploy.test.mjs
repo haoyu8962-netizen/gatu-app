@@ -315,6 +315,30 @@ test("an upload that exposes a funds or credential path needs its own acknowledg
 	assert.deepEqual(evaluateReleaseGates({ buildMeta: cardFunding, acknowledged: ["mainnet-card-funding"] }).problems, []);
 	const testnetCardFunding = { ...BUILD_META, privyFiatFunding: { mainnet: false, testnet: true } };
 	assert.deepEqual(evaluateReleaseGates({ buildMeta: testnetCardFunding }).problems, []);
+	assert.equal(evaluateReleaseGates({ buildMeta: testnetCardFunding }).state["mainnet-card-funding"], false);
+	const bothCardFunding = { ...BUILD_META, privyFiatFunding: { mainnet: true, testnet: true } };
+	assert.equal(evaluateReleaseGates({ buildMeta: bothCardFunding }).state["mainnet-card-funding"], true);
+	assert.match(evaluateReleaseGates({ buildMeta: bothCardFunding }).problems.join("\n"), /exposes Mainnet card funding; pass --allow-mainnet-card-funding/);
+	assert.deepEqual(evaluateReleaseGates({ buildMeta: bothCardFunding, acknowledged: ["mainnet-card-funding"] }).problems, []);
+});
+
+test("verification fails when the live origin sells Mainnet card funding next to the sandbox and the local build does not", async () => {
+	const publicDir = createPublicDir();
+	for (const [privyFiatFunding, differs] of [
+		[{ mainnet: true, testnet: true }, true],
+		[{ mainnet: true, testnet: false }, true],
+		[{ mainnet: false, testnet: true }, false],
+	]) {
+		const results = await verifyDeployment({
+			origin: "https://app.sairn.ai",
+			publicDir,
+			network: "mainnet",
+			fetchImpl: fakeFetch({ "/build-meta.json": { body: JSON.stringify({ ...BUILD_META, privyFiatFunding }) }, "*": { status: 404, body: "missing" } }),
+		});
+		const parity = results.find((result) => result.name === "build metadata parity");
+		assert.equal(parity.ok, !differs, JSON.stringify(privyFiatFunding));
+		if (differs) assert.match(parity.detail, /mainnet-card-funding=on\) differ from the local build \(sponsored-mainnet-deposits=off mobile-pairing=off mainnet-card-funding=off\)/);
+	}
 });
 
 test("an acknowledgement the build does not match is refused, and so is a build that records no gates", () => {

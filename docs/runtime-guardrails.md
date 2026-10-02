@@ -89,8 +89,12 @@ Do not collapse these states into one boolean.
   onramp code and its import list stay out of runtime startup. Right
   before it opens Privy the host resolves the destination again from the
   current session and refuses when it is no longer the wallet the purchase
-  was requested for. Each result is stored with the owner and network that
-  started it. A notice is
+  was requested for. The purchase entry is released when `fund()` settles or
+  when Privy's window, once seen open for that attempt, has closed: `fund()`
+  itself waits for its first quote request, and a window that Privy closes
+  without ending the flow (a logout) never settles it. A result that arrives
+  later is still reported. Each result is stored with the owner and network
+  that started it. A notice is
   a custom Sonner card that checks its presentation, the current owner and
   the current network every time it renders and translates in place, so it
   never shows to another identity, not even when Sonner inserts it after it

@@ -1,4 +1,4 @@
-import { useFiatOnramp } from "@privy-io/react-auth";
+import { useFiatOnramp, useModalStatus } from "@privy-io/react-auth";
 import { useEffect, useRef } from "react";
 import {
 	classifyPrivyFiatFundingError,
@@ -25,6 +25,7 @@ import { retractPrivyFiatFundingNotice, showPrivyFiatFundingNotice } from "./pri
 
 export function PrivyFiatFundingHost() {
 	const { fund } = useFiatOnramp();
+	const { isOpen: privyWindowOpen } = useModalStatus();
 	const { clientKey } = useHyperliquid();
 	const isTestnet = useIsTestnet();
 	const destination = usePrivyFiatFundingDestination();
@@ -32,6 +33,7 @@ export function PrivyFiatFundingHost() {
 	const notices = usePrivyFiatFundingNotices();
 	const ownerKey = getPrivyFiatFundingOwnerKey(isTestnet ? "testnet" : "mainnet", clientKey);
 	const sessionRef = useRef({ destination, ownerKey });
+	const windowSeenRef = useRef<PrivyFiatFundingAttempt | null>(null);
 	const displayedRef = useRef(new Map<PrivyFiatFundingNotice, PrivyFiatFundingNoticePresentation>());
 
 	useEffect(() => {
@@ -59,7 +61,7 @@ export function PrivyFiatFundingHost() {
 			return;
 		}
 		if (!isSamePrivyFiatFundingDestination(session.destination, current.destination)) {
-			report("unavailable");
+			report("wallet-changed");
 			return;
 		}
 		new Promise((resolve) => resolve(fund(createPrivyFiatFundingRequest(current.destination, current.network)))).then(
@@ -67,6 +69,15 @@ export function PrivyFiatFundingHost() {
 			(error: unknown) => report(classifyPrivyFiatFundingError(error)),
 		);
 	}, [attempt, fund]);
+
+	useEffect(() => {
+		if (!attempt) return;
+		if (privyWindowOpen) {
+			windowSeenRef.current = attempt;
+			return;
+		}
+		if (windowSeenRef.current === attempt) finishPrivyFiatFunding(attempt);
+	}, [attempt, privyWindowOpen]);
 
 	useEffect(() => {
 		const displayed = displayedRef.current;

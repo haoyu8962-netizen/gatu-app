@@ -374,7 +374,7 @@ module does not apply to this arrangement: that module was shared by the gate, w
 into runtime startup, while the import now has no importer in runtime startup. CI-equivalent builds from isolated
 checkouts of the three commits:
 
-| Metric | Round one (`eec28ce2`) | Round two (`9f41ae9d`) | Round three (`cc3ff357`) |
+| Metric | Round one (`eec28ce2`) | Round two (`9f41ae9d`) | Round three (`566713d3`) |
 | --- | ---: | ---: | ---: |
 | All client JS + CSS | 3,286,913 | 3,289,266 | 3,290,045 |
 | Static trade startup | 1,626,723 | 1,626,847 | 1,626,771 |

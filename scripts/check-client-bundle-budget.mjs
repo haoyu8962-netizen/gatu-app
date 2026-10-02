@@ -47,7 +47,7 @@ const budgets = {
 	// useFiatOnramp splits Privy's funding module out of its main chunk (+1,380 net, both in trade startup), the
 	// six catalogs (+2,249), the deposit dialog chunk with the method chooser, the purchase launch and the
 	// identity-checked notice card (+4,795), the lazy host, the store and gate chunks and renamed imports.
-	// CI-equivalent builds of the commits (no .env.local): 3,290,045 for cc3ff357 minus 3,274,893 for the upgrade
+	// CI-equivalent builds of the commits (no .env.local): 3,290,045 for 566713d3 minus 3,274,893 for the upgrade
 	// commit c0e550c7. This replaces the +11,776 measured before the review fixes
 	// (docs/terminal-performance-baseline.md).
 	totalGzipBaselineBytes: 3_284_760,

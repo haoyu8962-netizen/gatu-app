@@ -299,10 +299,6 @@ msgstr "تمويل 8 ساعات"
 msgid "90 days"
 msgstr "90 يومًا"
 
-#: src/lib/trade/privy-fiat-funding-feedback.ts
-msgid "A card purchase is already open. Finish or close it first."
-msgstr "هناك عملية شراء بالبطاقة مفتوحة بالفعل. أكملها أو أغلقها أولًا."
-
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "A confirmation is shown before each market close."
 msgstr "يظهر تأكيد قبل كل إغلاق بسعر السوق."
@@ -792,6 +788,10 @@ msgstr "يُستبعد الحساب فقط عندما تقل قيمة حسابه
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 msgstr "يمكن لمحفظة API المعتمدة توقيع إجراءات L1 المفوّضة، مثل إنشاء الأوامر وإلغائها وتعديل الرافعة المالية أو وضع الهامش. لا يقتصر التفويض على إجراء بعينه. وتظل الإجراءات المخصصة للمحفظة الرئيسية، بما فيها عمليات السحب الخارجية، بحاجة إلى المحفظة الرئيسية."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "An earlier card purchase is still open on this page. Reload the page, then try again."
+msgstr "ما زالت عملية شراء سابقة بالبطاقة مفتوحة في هذه الصفحة. أعد تحميل الصفحة ثم حاول مرة أخرى."
 
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/trade/position-submit-feedback.ts
@@ -11396,3 +11396,7 @@ msgstr "جارٍ معالجة معاملتك"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "تعذر التحقق من رصيدك في الخزنة. تظل قيم الحساب والسحب غير متاحة."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."
+msgstr "تغيّرت جلسة محفظتك، لذلك لم يُفتح الشراء بالبطاقة. أعد ربط محفظتك وحاول مرة أخرى."

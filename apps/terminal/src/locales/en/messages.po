@@ -299,10 +299,6 @@ msgstr "8h Funding"
 msgid "90 days"
 msgstr "90 days"
 
-#: src/lib/trade/privy-fiat-funding-feedback.ts
-msgid "A card purchase is already open. Finish or close it first."
-msgstr "A card purchase is already open. Finish or close it first."
-
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "A confirmation is shown before each market close."
 msgstr "A confirmation is shown before each market close."
@@ -792,6 +788,10 @@ msgstr "An account is excluded only when both its account value is below $100,00
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 msgstr "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "An earlier card purchase is still open on this page. Reload the page, then try again."
+msgstr "An earlier card purchase is still open on this page. Reload the page, then try again."
 
 #: src/hooks/trade/use-asset-leverage.ts
 #: src/lib/trade/position-submit-feedback.ts
@@ -11396,3 +11396,7 @@ msgstr "Your transaction is being processed"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
 msgstr "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+
+#: src/lib/trade/privy-fiat-funding-feedback.ts
+msgid "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."
+msgstr "Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again."

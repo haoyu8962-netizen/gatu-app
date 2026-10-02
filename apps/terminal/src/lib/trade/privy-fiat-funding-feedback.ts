@@ -14,8 +14,15 @@ import {
 } from "@/lib/brand/status-glyph.gen";
 import type { Translate } from "@/lib/translate";
 
-/** `unavailable`: the purchase window could not be loaded, so no provider flow started. */
-export type PrivyFiatFundingNoticeKind = Exclude<PrivyFiatFundingOutcome, "cancelled"> | "unavailable";
+/**
+ * Besides the outcomes of a provider flow, two reasons why none started: `unavailable`, the
+ * purchase window could not be loaded, and `wallet-changed`, the session could no longer pay out
+ * to the wallet the purchase was requested for.
+ */
+export type PrivyFiatFundingNoticeKind =
+	| Exclude<PrivyFiatFundingOutcome, "cancelled">
+	| "unavailable"
+	| "wallet-changed";
 
 /**
  * What a card purchase attempt has to tell its owner. It is stored as semantics (the owner and
@@ -43,6 +50,7 @@ const TONE_BY_KIND: Record<PrivyFiatFundingNoticeKind, PrivyFiatFundingFeedbackT
 	submitted: "uncertain",
 	unavailable: "error",
 	unknown: "uncertain",
+	"wallet-changed": "error",
 };
 
 const GLYPH_BY_TONE: Record<PrivyFiatFundingFeedbackTone, StatusGlyphDefinition> = {
@@ -119,13 +127,21 @@ export function getPrivyFiatFundingFeedback(
 		case "busy":
 			return {
 				tone,
-				title: translate(msg`A card purchase is already open. Finish or close it first.`),
+				title: translate(msg`An earlier card purchase is still open on this page. Reload the page, then try again.`),
 				descriptionLines: [],
 			};
 		case "unavailable":
 			return {
 				tone,
 				title: translate(msg`Card purchase could not open. Check your connection and try again.`),
+				descriptionLines: [],
+			};
+		case "wallet-changed":
+			return {
+				tone,
+				title: translate(
+					msg`Your wallet session changed, so the card purchase did not open. Reconnect your wallet and try again.`,
+				),
 				descriptionLines: [],
 			};
 	}
