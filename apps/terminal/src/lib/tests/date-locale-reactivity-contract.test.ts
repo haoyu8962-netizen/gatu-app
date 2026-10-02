@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
 	describeModules,
 	getDestructuredKey,
+	getNamespaceMember,
 	isInsideFunction,
 	isLocallyBound,
 	isValueReference,
@@ -37,6 +38,7 @@ import {
 const SOURCE_ROOT = resolve(__dirname, "../..");
 const FORMAT_MODULE = "lib/format.ts";
 const LANGUAGE_FORMATTERS = new Set(["formatDateTime", "formatDateTimeShort", "formatList", "formatTime"]);
+const LINGUI_I18N_READ = "@lingui/core#i18n";
 
 describe("date and list locale contract", () => {
 	it("passes a locale to every date and list formatter call in components and hooks", () => {
@@ -85,6 +87,26 @@ export default formatSince;`;
 		const source = `import { i18n } from "@lingui/core";
 function activeLocale() { return i18n.locale; }
 ${exports}`;
+		expect(findLanguageReadingExports(source)).toEqual(expected);
+	});
+
+	it.each([
+		[
+			"a member of the Lingui core namespace",
+			'import * as lingui from "@lingui/core";\nexport function formatRelative(at: number) { return String(at) + lingui.i18n.locale; }',
+			["formatRelative"],
+		],
+		[
+			"a bracketed member of the Lingui core namespace",
+			'import * as core from "@lingui/core";\nexport function formatRelative(at: number) { return String(at) + core["i18n"].locale; }',
+			["formatRelative"],
+		],
+		[
+			"another member of the Lingui core namespace",
+			'import * as lingui from "@lingui/core";\nexport function makeI18n() { return lingui.setupI18n(); }',
+			[],
+		],
+	])("reads the interface language through %s", (_name, source, expected) => {
 		expect(findLanguageReadingExports(source)).toEqual(expected);
 	});
 });
@@ -825,12 +847,17 @@ function mayReachGlobalLocale(
 function findLanguageReadingExports(text: string): string[] {
 	const file = parseSource(text, FORMAT_MODULE);
 	const linguiBindings = new Set<string>();
+	const linguiNamespaces = new Set<string>();
 	const declarations = new Map<string, ts.Node>();
 	const exported = new Map<string, string>();
 	for (const statement of file.statements) {
 		if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier)) {
 			const bindings = statement.importClause?.namedBindings;
-			if (statement.moduleSpecifier.text !== "@lingui/core" || !bindings || !ts.isNamedImports(bindings)) continue;
+			if (statement.moduleSpecifier.text !== "@lingui/core" || !bindings) continue;
+			if (ts.isNamespaceImport(bindings)) {
+				linguiNamespaces.add(bindings.name.text);
+				continue;
+			}
 			for (const element of bindings.elements) {
 				if ((element.propertyName ?? element.name).text === "i18n") linguiBindings.add(element.name.text);
 			}
@@ -873,7 +900,10 @@ function findLanguageReadingExports(text: string): string[] {
 	for (const [name, node] of declarations) {
 		const reads = new Set<string>();
 		const visit = (child: ts.Node) => {
-			if (ts.isIdentifier(child) && isValueReference(child) && !isLocallyBound(child)) reads.add(child.text);
+			if (ts.isIdentifier(child) && isValueReference(child) && !isLocallyBound(child)) {
+				const readsLinguiI18n = linguiNamespaces.has(child.text) && getNamespaceMember(child) === "i18n";
+				reads.add(readsLinguiI18n ? LINGUI_I18N_READ : child.text);
+			}
 			ts.forEachChild(child, visit);
 		};
 		visit(node);
@@ -885,7 +915,9 @@ function findLanguageReadingExports(text: string): string[] {
 		changed = false;
 		for (const [name, reads] of readsByDeclaration) {
 			if (languageReaders.has(name)) continue;
-			if ([...reads].some((read) => linguiBindings.has(read) || languageReaders.has(read))) {
+			if (
+				[...reads].some((read) => read === LINGUI_I18N_READ || linguiBindings.has(read) || languageReaders.has(read))
+			) {
 				languageReaders.add(name);
 				changed = true;
 			}
