@@ -17,6 +17,7 @@ import {
 	type SourceModule,
 } from "./harness/module-graph";
 import {
+	collectBindingIdentifiers,
 	getComponentOrHookName,
 	getStaticName,
 	hasModifier,
@@ -64,6 +65,27 @@ function formatSince(at: number) { return formatRelative(at); }
 export { formatRelative, formatPlain, formatSince as formatAgo };
 export default formatSince;`;
 		expect(findLanguageReadingExports(source)).toEqual(["default", "formatAgo", "formatRelative"]);
+	});
+
+	it.each([
+		[
+			"an anonymous default function",
+			"export default function (at: number) { return String(at) + activeLocale(); }",
+			["default"],
+		],
+		["a default arrow function", "export default (at: number) => String(at) + activeLocale();", ["default"]],
+		["an anonymous default class", "export default class { label() { return activeLocale(); } }", ["default"]],
+		["an exported class", "export class Clock { label() { return activeLocale(); } }", ["Clock"]],
+		[
+			"a destructured export",
+			"const helpers = { formatSince: () => activeLocale(), formatPlain: () => '' };\nexport const { formatSince, formatPlain } = helpers;",
+			["formatPlain", "formatSince"],
+		],
+	])("finds a language reader exported as %s", (_name, exports, expected) => {
+		const source = `import { i18n } from "@lingui/core";
+function activeLocale() { return i18n.locale; }
+${exports}`;
+		expect(findLanguageReadingExports(source)).toEqual(expected);
 	});
 });
 
@@ -796,9 +818,10 @@ function mayReachGlobalLocale(
 }
 
 // The lib/format.ts exports whose code reaches the imported Lingui `i18n`, followed through the module's
-// own functions. Exports count whether they are written on the declaration, in an export list (renamed or
-// not) or as the default export. A new export that reads the interface language must join
-// LANGUAGE_FORMATTERS.
+// own functions, classes and variables. Exports count whether they are written on the declaration
+// (destructured or not), in an export list (renamed or not) or as the default export, named or anonymous.
+// A name re-exported from another module is not followed. A new export that reads the interface language
+// must join LANGUAGE_FORMATTERS.
 function findLanguageReadingExports(text: string): string[] {
 	const file = parseSource(text, FORMAT_MODULE);
 	const linguiBindings = new Set<string>();
@@ -811,17 +834,20 @@ function findLanguageReadingExports(text: string): string[] {
 			for (const element of bindings.elements) {
 				if ((element.propertyName ?? element.name).text === "i18n") linguiBindings.add(element.name.text);
 			}
-		} else if (ts.isFunctionDeclaration(statement) && statement.name) {
-			declarations.set(statement.name.text, statement);
-			if (hasModifier(statement, ts.SyntaxKind.DefaultKeyword)) exported.set("default", statement.name.text);
-			else if (hasModifier(statement, ts.SyntaxKind.ExportKeyword))
-				exported.set(statement.name.text, statement.name.text);
+		} else if (ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) {
+			const localName = statement.name?.text ?? "default";
+			declarations.set(localName, statement);
+			if (hasModifier(statement, ts.SyntaxKind.DefaultKeyword)) exported.set("default", localName);
+			else if (hasModifier(statement, ts.SyntaxKind.ExportKeyword)) exported.set(localName, localName);
 		} else if (ts.isVariableStatement(statement)) {
+			const isExported = hasModifier(statement, ts.SyntaxKind.ExportKeyword);
 			for (const declaration of statement.declarationList.declarations) {
-				if (!ts.isIdentifier(declaration.name) || !declaration.initializer) continue;
-				declarations.set(declaration.name.text, declaration.initializer);
-				if (hasModifier(statement, ts.SyntaxKind.ExportKeyword)) {
-					exported.set(declaration.name.text, declaration.name.text);
+				if (!declaration.initializer) continue;
+				const bound: ts.Identifier[] = [];
+				collectBindingIdentifiers(declaration.name, bound);
+				for (const identifier of bound) {
+					declarations.set(identifier.text, ts.isIdentifier(declaration.name) ? declaration.initializer : declaration);
+					if (isExported) exported.set(identifier.text, identifier.text);
 				}
 			}
 		} else if (
@@ -835,7 +861,12 @@ function findLanguageReadingExports(text: string): string[] {
 			}
 		} else if (ts.isExportAssignment(statement)) {
 			const expression = skipTransparentExpressions(statement.expression);
-			if (ts.isIdentifier(expression)) exported.set("default", expression.text);
+			if (ts.isIdentifier(expression)) {
+				exported.set("default", expression.text);
+			} else {
+				declarations.set("default", expression);
+				exported.set("default", "default");
+			}
 		}
 	}
 	const readsByDeclaration = new Map<string, Set<string>>();

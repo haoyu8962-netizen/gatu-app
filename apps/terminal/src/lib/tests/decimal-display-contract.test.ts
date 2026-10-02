@@ -251,6 +251,10 @@ describe("decimal display contract checker", () => {
 			"a call inside a template passed to the formatter object",
 			`export const a = (n: NumberFormatters, v: Big) => n.formatDecimalString(\`-\${v.abs().toFixed(2)}\`, { trimTrailingZeros: true });`,
 		],
+		[
+			"a call passed to a parenthesized or bracketed formatter",
+			'export const a = (n: NumberFormatters, v: Big) => (n.formatDecimalString)(v.toFixed(2)) + n["formatDecimalString"](v.toFixed(3));',
+		],
 		["calls in lib/format.ts", ""],
 	])("allows %s", (_name, source) => {
 		const files = new Map([
@@ -374,10 +378,12 @@ function getMemberName(expression: ts.Expression): string | undefined {
 	return ts.isStringLiteralLike(key) ? key.text : undefined;
 }
 
+// `formatDecimalString(…)`, `n.formatDecimalString(…)`, `(n.formatDecimalString)(…)` and
+// `n["formatDecimalString"](…)` all name the formatter.
 function getCalleeName(call: ts.CallExpression): string | null {
-	if (ts.isIdentifier(call.expression)) return call.expression.text;
-	if (ts.isPropertyAccessExpression(call.expression)) return call.expression.name.text;
-	return null;
+	const callee = skipTransparentExpressions(call.expression);
+	if (ts.isIdentifier(callee)) return callee.text;
+	return getMemberName(callee) ?? null;
 }
 
 function findHandWrittenGrouping(sources: Map<string, string>): string[] {
