@@ -203,7 +203,7 @@ function collectPathDefaults(element: ts.BindingElement, identifier: ts.Identifi
 	return defaults;
 }
 
-function getDestructuredKey(element: ts.BindingElement): string | undefined {
+export function getDestructuredKey(element: ts.BindingElement): string | undefined {
 	if (element.propertyName) return getStaticName(element.propertyName);
 	return ts.isIdentifier(element.name) ? element.name.text : undefined;
 }

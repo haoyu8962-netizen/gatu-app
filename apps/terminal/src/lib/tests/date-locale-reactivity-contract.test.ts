@@ -4,6 +4,7 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
 	describeModules,
+	getDestructuredKey,
 	isInsideFunction,
 	isLocallyBound,
 	isValueReference,
@@ -388,6 +389,24 @@ export function Sample({ at, locale }: { at: number; locale: string }) { return 
 			["components/sample.tsx:2 Sample when"],
 		],
 		[
+			"a namespace destructured inside a component",
+			{
+				"components/sample.tsx": `import * as fmt from "@/lib/format";
+export function Sample({ at }: { at: number }) { const { formatDateTime: when } = fmt; return <p>{when(at)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample formatDateTime"],
+		],
+		[
+			"a module-level helper that destructures the namespace and calls the formatter",
+			{
+				"lib/when.ts": `import * as fmt from "@/lib/format";
+export function when(at: number) { const { formatTime } = fmt; return formatTime(at); }`,
+				"components/sample.tsx": `import { when } from "@/lib/when";
+export function Sample({ at }: { at: number }) { return <p>{when(at)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample when"],
+		],
+		[
 			"a parenthesized or bracketed namespace member without a locale",
 			{
 				"components/sample.tsx": `import * as format from "@/lib/format";
@@ -490,6 +509,16 @@ export function buildCsvCell(at: number) { return formatDateTime(at); }`,
 			},
 		],
 		[
+			"a destructured parameter that shadows the namespace name",
+			{
+				"components/sample.tsx": `import * as fmt from "@/lib/format";
+export function Sample({ at, fmt }: { at: number; fmt: { formatDateTime: (at: number) => string } }) {
+	const { formatDateTime: when } = fmt;
+	return <p>{when(at)}</p>;
+}`,
+			},
+		],
+		[
 			"a parenthesized or bracketed namespace member called with a locale",
 			{
 				"components/sample.tsx": `import * as format from "@/lib/format";
@@ -562,6 +591,11 @@ function findLanguageFormatViolations(sources: Map<string, string>): string[] {
 					violations.push(`${module.path}:${line(node)} ${currentOwner ?? "<module>"} ${reference.name}`);
 				}
 			}
+			if (ts.isIdentifier(node) && currentOwner !== null) {
+				for (const formatter of destructuredLanguageFormatters(modules, module, node)) {
+					violations.push(`${module.path}:${line(node)} ${currentOwner} ${formatter.name}`);
+				}
+			}
 			ts.forEachChild(node, (child) => visit(child, currentOwner));
 		};
 		visit(module.file, null);
@@ -610,6 +644,29 @@ function namesLanguageFormatter(modules: Map<string, SourceModule>, key: string)
 	return false;
 }
 
+// A namespace import destructured inside a function (`const { formatDateTime: when } = format`) takes the
+// formatter out as a value, like `const when = format.formatDateTime`, so it counts as a reference to it
+// even when every later call passes a locale. A destructuring at module scope is an import alias instead.
+function destructuredLanguageFormatters(
+	modules: Map<string, SourceModule>,
+	module: SourceModule,
+	identifier: ts.Identifier,
+): { key: string; name: string }[] {
+	const target = module.namespaces.get(identifier.text);
+	if (!target || isLocallyBound(identifier)) return [];
+	const value = outermostTransparentExpression(identifier);
+	const declaration = value.parent;
+	if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== value) return [];
+	if (!ts.isObjectBindingPattern(declaration.name)) return [];
+	const formatters: { key: string; name: string }[] = [];
+	for (const element of declaration.name.elements) {
+		const name = getDestructuredKey(element);
+		const key = name === undefined ? null : resolveExport(modules, target, name, new Set());
+		if (name !== undefined && key !== null && isLanguageFormatter(key)) formatters.push({ key, name });
+	}
+	return formatters;
+}
+
 function isAliasInitializer(value: ts.Node, name: string): boolean {
 	const declaration = value.parent;
 	return (
@@ -655,6 +712,9 @@ function collectGlobalLocaleReferences(
 	const visit = (node: ts.Node) => {
 		const reference = ts.isIdentifier(node) ? readsGlobalLocale(modules, module, node) : null;
 		if (reference) keys.add(reference.key);
+		if (ts.isIdentifier(node) && isInsideFunction(node)) {
+			for (const formatter of destructuredLanguageFormatters(modules, module, node)) keys.add(formatter.key);
+		}
 		ts.forEachChild(node, visit);
 	};
 	visit(root);

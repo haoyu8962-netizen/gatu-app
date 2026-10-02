@@ -293,6 +293,7 @@ jobs:
           src/lib/tests/trade-form-scale-mid.test.tsx
           src/lib/tests/trade-form-twap.test.tsx
           src/lib/tests/rtl-financial-ui-contract.test.ts
+          src/lib/tests/desktop-history-exports.test.tsx
 
       - name: Test Deposit, CCTP, routing, and geo guards
         working-directory: apps/terminal
