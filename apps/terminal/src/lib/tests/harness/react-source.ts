@@ -46,15 +46,17 @@ export function outermostTransparentExpression(node: ts.Expression): ts.Expressi
 
 // babel-plugin-react-compiler 1.0.0 in its default infer mode visits function declarations,
 // function expressions and arrow functions outside classes. It can compile one named like a component
-// or hook, where the name is a function declaration's own, or for a function expression or arrow
-// function that of the variable, assignment target, object property or destructuring default that
-// receives it (getFunctionName2); a callback passed in any argument of memo or forwardRef, written
-// plainly, as React.memo or as React[memo] (isReactAPI); and any function that opts in with
-// "use memo" or "use forget". The contracts recognize a superset, so they do not depend on what the
-// compiler compiles today: a function expression's own name, wrappers on any object or behind
-// parentheses and assertions, string keys, class properties, an anonymous default export in a .tsx
-// module and a route's component option, written as a function or a method. Recheck these rules
-// when the compiler is upgraded or configured differently.
+// or hook, where the name is a function declaration's own or that of the variable a function
+// expression or arrow function initializes (getFunctionName2; its assignment, object property and
+// destructuring default branches compare Babel NodePath objects with primitives and never match in
+// this version); a callback passed in any argument of memo or forwardRef, written plainly, as
+// React.memo or as React[memo] (isReactAPI); and any function that opts in with "use memo" or
+// "use forget". The contracts recognize a superset, so they do not depend on what the compiler
+// compiles today: a function expression's own name, names from assignment targets, object and class
+// properties and destructuring defaults, wrappers on any object or behind parentheses and assertions,
+// string keys, an anonymous default export in a .tsx module and a route's component option, written
+// as a function or a method. Recheck these rules when the compiler is upgraded or configured
+// differently.
 export function getComponentOrHookName(node: ts.SignatureDeclaration, fileName: string): string | undefined {
 	const ownName = node.name === undefined ? undefined : getStaticName(node.name);
 	if (ownName !== undefined && isComponentOrHookName(ownName)) return ownName;

@@ -51,6 +51,21 @@ const NUMBER_FORMATTER_NAMES: (keyof NumberFormatters)[] = [
 	"formatUSD",
 ];
 
+const SAMPLE_CALLS: { [Name in keyof NumberFormatters]: Parameters<NumberFormatters[Name]> } = {
+	formatLiquidationPrice: ["1234.56", 2],
+	formatNumber: [1234.56, 2],
+	formatPercent: [12.5, 2],
+	formatPrice: [1234.56, { szDecimals: 2 }],
+	formatQuoteAmount: ["1234.56", "USDC", 2],
+	formatSlippageBps: [37],
+	formatToken: ["1234.56", 2],
+	formatUSD: [1234.56],
+};
+
+function callFormatter(formatters: NumberFormatters, name: keyof NumberFormatters) {
+	return (formatters[name] as (...args: unknown[]) => string | null)(...SAMPLE_CALLS[name]);
+}
+
 describe("number formatters from useNumberFormat()", () => {
 	beforeEach(() => {
 		formatSettings.numberFormatLocale = "en-US";
@@ -72,13 +87,15 @@ describe("number formatters from useNumberFormat()", () => {
 		expect(getNumberFormatters()[name]).toBe(after[name]);
 	});
 
-	it("formats with the setting current at call time, also through an earlier snapshot", () => {
+	it.each(NUMBER_FORMATTER_NAMES)("lets %s from an earlier snapshot format with the current setting", (name) => {
 		const before = getNumberFormatters();
+		const english = callFormatter(before, name);
 		formatSettings.numberFormatLocale = "de-DE";
 		notifyNumberFormatChange();
+		const german = callFormatter(getNumberFormatters(), name);
 
-		expect(getNumberFormatters().formatNumber(1234.56, 2)).toBe("1.234,56");
-		expect(before.formatNumber(1234.56, 2)).toBe("1.234,56");
+		expect(german).not.toBe(english);
+		expect(callFormatter(before, name)).toBe(german);
 	});
 });
 

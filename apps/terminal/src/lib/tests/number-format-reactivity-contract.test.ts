@@ -522,6 +522,49 @@ export function Sample({ value }: { value: number }) { return <p>{formatAmount(v
 			},
 			["components/sample.tsx:2 Sample formatAmount"],
 		],
+		[
+			"a namespace member destructured and exported to another module",
+			{
+				"lib/amount.ts": `import * as format from "@/lib/format";
+export const { formatUSD: usd } = format;`,
+				"components/sample.tsx": `import { usd } from "@/lib/amount";
+export function Sample({ value }: { value: number }) { return <p>{usd(value)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample usd"],
+		],
+		[
+			"a formatter reached through a nested namespace pattern",
+			{
+				"lib/fmt.ts": `import { formatUSD } from "@/lib/format";
+export const table = { usd: formatUSD };`,
+				"lib/sample-label.ts": `import * as fmt from "@/lib/fmt";
+const { table: { usd } } = fmt;
+export function label(value: number) { return usd(value); }`,
+				"components/sample.tsx": `import { label } from "@/lib/sample-label";
+export function Sample() { return <p>{label(1)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample label"],
+		],
+		[
+			"a formatter reached through the rest of a namespace",
+			{
+				"lib/sample-label.ts": `import * as format from "@/lib/format";
+const { useNumberFormat: _hook, ...rest } = format;
+export function label(value: number) { return rest.formatUSD(value); }`,
+				"components/sample.tsx": `import { label } from "@/lib/sample-label";
+export function Sample() { return <p>{label(1)}</p>; }`,
+			},
+			["components/sample.tsx:2 Sample label"],
+		],
+		[
+			"a bound formatter called at import",
+			{
+				"components/sample.tsx": `import { formatUSD } from "@/lib/format";
+const LABEL = formatUSD.bind(null)(1);
+export function Sample() { return <p />; }`,
+			},
+			["components/sample.tsx:2 <module> formatUSD"],
+		],
 	])("flags %s", (_name, files, expected) => {
 		expect(findNumberFormatViolations(withFormatStubs(files))).toEqual(expected);
 	});
@@ -628,8 +671,9 @@ interface SourceModule {
 	// The nodes a module-level name takes its value from: an initializer, plus the defaults on its
 	// destructuring path, or the function or class declaration itself.
 	declarations: Map<string, ts.Node[]>;
-	// A name destructured from a namespace with a default takes the namespace export or the default.
-	namespaceDefaults: Map<string, ModuleBinding>;
+	// A name destructured from a namespace with a default or through a nested pattern takes its value
+	// from the namespace export or from the defaults on its path.
+	namespaceSources: Map<string, ModuleBinding>;
 }
 
 function withFormatStubs(files: Record<string, string>): Map<string, string> {
@@ -677,7 +721,7 @@ function findNumberFormatViolations(sources: Map<string, string>): string[] {
 				continue;
 			}
 			const keys = new Set(nodes.flatMap((node) => [...collectModuleReferences(modules, module, node)]));
-			const namespaceExport = module.namespaceDefaults.get(name);
+			const namespaceExport = module.namespaceSources.get(name);
 			const exportKey = namespaceExport?.path
 				? resolveExport(modules, namespaceExport.path, namespaceExport.name, new Set())
 				: null;
@@ -757,7 +801,7 @@ function describeModule(path: string, text: string, sources: Map<string, string>
 		starExports: [],
 		localExports: new Map(),
 		declarations: new Map(),
-		namespaceDefaults: new Map(),
+		namespaceSources: new Map(),
 	};
 	for (const statement of file.statements) {
 		if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
@@ -819,19 +863,48 @@ function describeVariable(module: SourceModule, name: ts.BindingName, initialize
 	const namespaceTarget = ts.isIdentifier(source) ? module.namespaces.get(source.text) : undefined;
 	for (const element of name.elements) {
 		if (ts.isOmittedExpression(element)) continue;
-		const exportName = getDestructuredKey(element);
-		if (namespaceTarget !== undefined && ts.isIdentifier(element.name) && exportName !== undefined) {
-			const binding = { path: namespaceTarget, name: exportName };
-			if (element.initializer) {
-				module.declarations.set(element.name.text, [element.initializer]);
-				module.namespaceDefaults.set(element.name.text, binding);
-			} else {
-				module.imports.set(element.name.text, binding);
-			}
-			continue;
+		if (namespaceTarget === undefined || !ts.isObjectBindingPattern(name)) {
+			describeBindingElement(module, element, [initializer]);
+		} else if (element.dotDotDotToken && ts.isIdentifier(element.name)) {
+			module.namespaces.set(element.name.text, namespaceTarget);
+		} else {
+			describeNamespaceElement(module, element, namespaceTarget, [initializer]);
 		}
-		describeBindingElement(module, element, [initializer]);
 	}
+}
+
+// A plain destructured namespace member is an alias of the export. With a default, or through a
+// nested pattern, each bound name takes the export (or the member of it) or a default on its path.
+function describeNamespaceElement(
+	module: SourceModule,
+	element: ts.BindingElement,
+	namespaceTarget: string | null,
+	values: ts.Node[],
+): void {
+	const exportName = getDestructuredKey(element);
+	if (exportName === undefined) {
+		describeBindingElement(module, element, values);
+		return;
+	}
+	const binding = { path: namespaceTarget, name: exportName };
+	if (ts.isIdentifier(element.name) && !element.initializer) {
+		module.imports.set(element.name.text, binding);
+		return;
+	}
+	const bound: ts.Identifier[] = [];
+	collectBindingIdentifiers(element.name, bound);
+	for (const identifier of bound) {
+		module.declarations.set(identifier.text, collectPathDefaults(element, identifier));
+		module.namespaceSources.set(identifier.text, binding);
+	}
+}
+
+function collectPathDefaults(element: ts.BindingElement, identifier: ts.Identifier): ts.Node[] {
+	const defaults: ts.Node[] = [];
+	for (let node: ts.Node = identifier; node !== element.parent; node = node.parent) {
+		if (ts.isBindingElement(node) && node.initializer) defaults.push(node.initializer);
+	}
+	return defaults;
 }
 
 function getDestructuredKey(element: ts.BindingElement): string | undefined {
@@ -856,8 +929,12 @@ function formatsAtImport(identifier: ts.Identifier): boolean {
 	let value = outermostTransparentExpression(identifier);
 	const member = value.parent;
 	if ((ts.isPropertyAccessExpression(member) || ts.isElementAccessExpression(member)) && member.expression === value) {
-		if (ts.isPropertyAccessExpression(member) && member.name.text === "bind") return false;
 		value = outermostTransparentExpression(member);
+		if (ts.isPropertyAccessExpression(member) && member.name.text === "bind") {
+			const bindCall = value.parent;
+			if (!ts.isCallExpression(bindCall) || bindCall.expression !== value) return false;
+			value = outermostTransparentExpression(bindCall);
+		}
 	}
 	const parent = value.parent;
 	if (ts.isCallExpression(parent)) return parent.expression === value || parent.arguments.includes(value);
@@ -954,6 +1031,8 @@ function resolveExport(
 	if (localName) return resolveBinding(modules, path, localName, seen);
 	const reexport = module.reexports.get(name);
 	if (reexport?.path) return resolveExport(modules, reexport.path, reexport.name, seen);
+	const alias = module.imports.get(name);
+	if (alias?.path) return resolveExport(modules, alias.path, alias.name, seen);
 	if (name === "default") return null;
 	for (const target of module.starExports) {
 		const resolved = target ? resolveExport(modules, target, name, seen) : null;

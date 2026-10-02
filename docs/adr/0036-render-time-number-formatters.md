@@ -29,17 +29,17 @@
 4. **外部创建、在别处渲染的回调由渲染方传入格式化函数。** `EarnOutcomeToastContent` 渲染的 `render` 回调是提交时在异步流程里创建的。它原先只裸订阅，缓存的输出不会重算。现在由它把自己的 `NumberFormatters` 和 `translate` 一起传给回调。
 5. **删除 `useNumberFormatRevision`。** `lib/number-format-reactivity.ts` 只保留通知、订阅与修订号读取。`TradeRowComponent` 的 `"use no memo"` 当初只是为了这个依赖加的（`6e70351b`），一并删除，显式的 `memo` 比较函数保留。标签页标题的 effect 把 `formatPrice` 列入依赖，替代原来的 `void numberFormatRevision`。
 6. **契约。** `number-format-reactivity-contract.test.ts` 用 TypeScript AST 扫描 `apps/terminal/src`（测试、`locales`、`.gen.ts` 除外）：
-   - 先跨模块求出「经模块级数字格式化函数格式化」的模块级声明。这是传递闭包，跟随 `@/` 与相对导入、具名与默认导入、命名空间导入（`format.formatNumber`、`format["formatNumber"]`，以及从命名空间解构出的名字）、具名再导出、`export *` 与本地别名导出；模块级声明包括函数、类、变量，解构出的名字连同路径上的默认值（`const { usd = formatUSD } = overrides`）。括号、类型断言（`as`、`satisfies`、尖括号）与非空断言不改变值，判断时都会穿透；
+   - 先跨模块求出「经模块级数字格式化函数格式化」的模块级声明。这是传递闭包，跟随 `@/` 与相对导入、具名与默认导入、命名空间导入（`format.formatNumber`、`format["formatNumber"]`，以及从命名空间解构出的名字，包括带默认值、嵌套解构与剩余元素）、具名再导出、`export *` 与本地别名导出；模块级声明包括函数、类、变量，解构出的名字连同路径上的默认值（`const { usd = formatUSD } = overrides`）。括号、类型断言（`as`、`satisfies`、尖括号）与非空断言不改变值，判断时都会穿透；
    - 组件与 Hook 里引用这些声明、模块级格式化函数或上述读取函数，且没有被局部绑定遮蔽的，都算违规；
    - `useNumberFormat()` 的结果没有被用到算违规：结果被丢弃（裸调用、`void`、逗号运算符左侧，包括以别名导入后调用），或赋给的变量与解构出的名字在其作用域里没有被引用。引用按绑定判断，即找到声明这个名字的最近作用域（块、`switch` 的各分支、`for` 初始化、函数参数），同名的内层参数不算；只出现在 `void`、单独的表达式语句或逗号左侧也不算。这检查的是引用，不是格式化数据流；
    - 模块顶层在导入时调用格式化函数，或把它交给一次调用（如 `[0, 1].map(formatUSD)`），算违规；只保存函数引用（别名、对象表、`.bind` 出的副本）不算，但引用它们的组件仍会被拦下。
 
    组件与 Hook 的识别和语言契约共用 `src/lib/tests/harness/react-source.ts`，对照的是 `babel-plugin-react-compiler` 1.0.0 默认 infer 模式的源码。编译器只遍历类之外的函数声明、函数表达式与箭头函数，其中只有这几种可能被编译（按名称或包装识别的，还要求函数体调用 Hook 或创建 JSX）：
-   - 名称像组件或 Hook 的函数：函数声明取自身名称，函数表达式与箭头函数取接收它的变量、赋值目标、对象属性或解构默认值的名称（`getFunctionName2`）；
+   - 名称像组件或 Hook 的函数：函数声明取自身名称，函数表达式与箭头函数取初始化它的变量名（`getFunctionName2`）。这个函数的源码另有赋值目标、对象属性与解构默认值三个分支，但 1.0.0 把 Babel 的 NodePath 对象与字符串或布尔值比较（`parent.get("operator") === "="`、`!parent.get("computed")`），条件永远不成立；本机编译确认这三种写法都没有被编译；
    - `memo`/`forwardRef` 任一参数位置的回调，写作 `memo`、`React.memo` 或 `React[memo]`（`isReactAPI`）；
    - 用 `"use memo"`、`"use forget"` 指令选择编译的函数。
 
-   契约在此之上还认：函数表达式自身的名称、任意对象上的 `memo`/`forwardRef`、嵌套或加括号与断言的包装、字符串键、类属性、`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。所以它是编译器当前规则的超集，不依赖编译器是否真的编译了某个函数；升级编译器或改变编译模式时要重新对照。附 61 个正反样例（52 个应报出、9 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
+   契约在此之上还认：函数表达式自身的名称，赋值目标、对象与类属性、解构默认值给出的名称，任意对象上的 `memo`/`forwardRef`、嵌套或加括号与断言的包装、字符串键、`.tsx` 里匿名的默认导出函数（包括 `export default memo(function render…)`），以及路由 `component`、`pendingComponent`、`errorComponent`、`notFoundComponent` 选项的函数或方法。所以它是编译器当前规则的超集，不依赖编译器是否真的编译了某个函数；升级编译器或改变编译模式时要重新对照。附 65 个正反样例（56 个应报出、9 个应放行）。它在基线代码上报出 356 处违规，在本次代码上为 0。
 
 ## 备选方案与代价
 
