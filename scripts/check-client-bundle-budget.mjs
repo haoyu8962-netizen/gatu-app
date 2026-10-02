@@ -41,7 +41,8 @@ const budgets = {
 	// so the illustrations load only with their dialogs (desktop runtime startup +769, mobile +151). Measured as the
 	// local Node 22.15.0 build (3,193,087) minus the local build of f440fa1b before the change (3,186,543).
 	// Raised 2026-10-02 by +83,687 for the Privy React Auth 3.46.0 upgrade (docs/terminal-performance-baseline.md):
-	// fixed-metadata Node 22.15.0 builds, pairing off, 3,275,424 after minus 3,191,737 for 682430ba before.
+	// fixed-metadata Node 22.15.0 builds, pairing off, 3,275,424 after minus 3,191,737 for 682430ba before (both
+	// sides read a developer .env.local; CI-equivalent builds read 3,274,893 minus 3,190,861 = +84,032).
 	totalGzipBaselineBytes: 3_269_608,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {

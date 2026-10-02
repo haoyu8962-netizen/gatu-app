@@ -304,6 +304,21 @@ The total-client baseline moved from 3,185,921 to 3,269,608 and the static trade
 unchanged. No static import cycle was reported. This is a byte measurement, not a browser timing; LCP and INP on the
 heavier startup were not measured.
 
+Correction (2026-10-02): both sides of this measurement read the developer `apps/terminal/.env.local` (the Privy app ID
+and three CCTP flags, which every whole-object `import.meta.env` literal then carries). CI builds without that file, so
+both sides were measured again in isolated worktrees without it, with the same build identity, Node and pnpm versions:
+
+| Metric | Before (`682430ba`) | After (`c0e550c7`) | Change |
+| --- | ---: | ---: | ---: |
+| All client JS + CSS | 3,190,861 | 3,274,893 | +84,032 |
+| Static trade startup | 1,561,189 (102 assets) | 1,624,100 (101 assets) | +62,911 |
+| Mobile runtime increment | 117,427 | 117,422 | -5 |
+| Desktop runtime increment | 201,008 | 200,714 | -294 |
+
+The changes agree with the table above within the build-to-build variation of a few hundred bytes (345 more in total,
+198 more in static startup), so the baselines keep the smaller raises measured there. Take re-baseline measurements in
+a checkout without local env files.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:

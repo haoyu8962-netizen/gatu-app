@@ -10,7 +10,7 @@
   "summary": "用户要求单独开分支规划并执行 Privy SDK 升级与 Funding 接入，决定只做法币、邮箱与外部钱包都开放、其余按推荐（两个 PR、开关分网、viem 不动）。阶段一把 react-auth 升到 3.46.0、wagmi 升到 4.0.17：空嵌入式钱包列表补丁按新产物重做（不带补丁对照 2 项失败、加补丁 4 项通过），手动分块只收应用自己的 Base UI（首屏省约 40 kB），其余增量来自 Privy 核心库静态引入 libphonenumber-js 与自带 viem 变大，按规则用固定元数据前后构建重设基线（总量 +83,687、交易首屏 +62,713）。类型检查、钱包回归 264 项、终端全量 7,996 项通过（1 项 TradingView 摘要用例负载下超时、单跑通过）。未做真实钱包验收；阶段二未实施。",
   "thread": null,
   "baseCommit": "682430ba",
-  "commits": ["283f9cb0"],
+  "commits": ["283f9cb0", "c0e550c7"],
   "sources": [
     { "path": "docs/privy-upgrade-and-funding-plan.md" },
     { "path": "docs/adr/0026-privy-follows-theme-after-upgrade.md" },
@@ -58,6 +58,9 @@
 - `vite-manual-chunks.test.ts` 16 项通过（新增 Base UI 归属用例）；`node --test scripts/check-client-bundle-budget.test.mjs` 16 项通过。
 - 终端全量（Node 24.15）：7,996 项通过，1 项失败为 `chart-build-assets.test.ts` 的 TradingView 摘要校验在全量负载下超过 5 秒，单独重跑 17 项全部通过；与本次改动无关。
 - 生产构建（Node 22.15.0、上述固定构建身份、配对关闭）：重设基线后完整构建通过，含无循环检查、包体预算、壳预加载注入与内联脚本哈希收集；客户端总量 3,275,424（新基线下 +5,816）、交易首屏 1,624,427、手机与桌面运行时增量 117,413 与 200,718，与测量构建逐字节一致。
+
+- 更正（2026-10-02，提交 `c0e550c7` 之后）：上面的生产构建两边都读了开发用的 `apps/terminal/.env.local`，CI 没有这个文件。在不含它的两个隔离 worktree 里用同一构建身份重测：`682430ba` 总量 3,190,861、交易首屏 1,561,189、手机与桌面运行时增量 117,427 与 201,008；`c0e550c7` 为 3,274,893、1,624,100、117,422 与 200,714，即总量 +84,032、首屏 +62,911。与原记录的 +83,687、+62,713 相差 345 与 198 字节，在两次构建的抖动之内，基线不动；更正表写进性能基线文档。
+- CI：`vite-manual-chunks.test.ts` 原先不在任何工作流里，`production-build.yml` 的路径过滤也没有 `patches/**`（只改补丁不会触发生产构建）。两处都已补上，`scripts/ci-workflows.test.mjs` 增加对应断言（8 项通过）。
 
 未做：真实钱包验收（邮箱登录后切换主题不重连、外部钱包登录与 Agent 注册、普通下单签名、赞助 CCTP 小额充值）、浏览器时序测量（LCP/INP）、Privy 控制台配置。三项 SDK 行为核对是读发布产物的静态结论，没有运行真实登录。
 
